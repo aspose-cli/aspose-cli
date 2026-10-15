@@ -5,9 +5,9 @@ namespace Aspose.Cli.Product.Slides.Engine.Editing;
 
 /// <summary>
 /// The presentation a <c>slides edit</c> batch changes, as the SDK runner applies operations to
-/// it and snapshots them (<see cref="SlidesSnapshots"/>). Every operation's targets are resolved
-/// against the presentation as it was before the first operation, so an operation addresses
-/// what the caller read, not what earlier operations made.
+/// it and snapshots them (<see cref="SlidesSnapshots"/>). The operations run in order, and each
+/// one's targets are resolved just before it runs, against the presentation as the earlier
+/// operations left it, so an operation can address a slide an earlier one inserted.
 /// </summary>
 internal sealed class SlidesEditModel : IOperationModel<SlidesOp>
 {
@@ -30,7 +30,6 @@ internal sealed class SlidesEditModel : IOperationModel<SlidesOp>
     /// <param name="inputs">Reads and charges the files that operations read.</param>
     /// <param name="loader">Opens the presentations that operations import.</param>
     /// <param name="presentation">The presentation being edited.</param>
-    /// <param name="batch">The validated operations, whose targets are resolved now.</param>
     /// <param name="evaluation">Whether the engine runs in evaluation mode, which cuts text short when it is read.</param>
     /// <param name="secrets">The secrets the operations name by environment variable.</param>
     /// <param name="readInput">Tells the write pipeline that an operation read the presentation's text.</param>
@@ -38,7 +37,6 @@ internal sealed class SlidesEditModel : IOperationModel<SlidesOp>
         InputSource inputs,
         SlidesPresentationLoader loader,
         Presentation presentation,
-        IReadOnlyList<SlidesOp> batch,
         bool evaluation,
         IReadOnlyDictionary<string, Secret>? secrets,
         Action readInput)
@@ -49,24 +47,31 @@ internal sealed class SlidesEditModel : IOperationModel<SlidesOp>
         _evaluation = evaluation;
         _secrets = secrets;
         _readInput = readInput;
-        foreach (SlidesMutationHandlers.ResolvedSlidesOp target in SlidesMutationHandlers.ResolveBatch(presentation, batch))
-        {
-            _targets[target.Op] = target;
-        }
     }
 
-    /// <summary>The operation's targets as resolved before the batch: the slides and shape it addresses, whatever earlier operations moved.</summary>
-    internal SlidesMutationHandlers.ResolvedSlidesOp Target(SlidesOp operation) => _targets[operation];
+    /// <summary>
+    /// The operation's targets, resolved the first time it is asked for, just before the
+    /// operation runs: the slides and shape it addresses, wherever later operations move them.
+    /// </summary>
+    internal SlidesMutationHandlers.ResolvedSlidesOp Target(SlidesOp operation)
+    {
+        if (!_targets.TryGetValue(operation, out SlidesMutationHandlers.ResolvedSlidesOp? target))
+        {
+            _targets[operation] = target = SlidesMutationHandlers.ResolveTarget(_presentation, operation);
+        }
+
+        return target;
+    }
 
     /// <summary>What the operations reported about their results, such as a background they reset.</summary>
     internal IReadOnlyList<Warning> Warnings => _warnings;
 
     public OperationSnapshot Snapshot(SlidesOp operation)
     {
-        SlidesMutationHandlers.ResolvedSlidesOp target = _targets[operation];
+        SlidesMutationHandlers.ResolvedSlidesOp target = Target(operation);
         if (!ReferenceEquals(operation, _applied))
         {
-            SlidesMutationHandlers.EnsureLive(_presentation, target);
+            SlidesMutationHandlers.EnsureResolved(target);
         }
 
         return SlidesMutationHandlers.Engine(() => operation.Accept(new SlidesSnapshots(_presentation, target)));
@@ -75,7 +80,7 @@ internal sealed class SlidesEditModel : IOperationModel<SlidesOp>
     public void Apply(SlidesOp operation)
     {
         _applied = operation;
-        new SlidesMutationHandlers(_inputs, _loader, _presentation, _targets[operation], _warnings, _evaluation, _secrets, () =>
+        new SlidesMutationHandlers(_inputs, _loader, _presentation, Target(operation), _warnings, _evaluation, _secrets, () =>
         {
             _truncated.Add(operation);
             _readInput();
@@ -83,12 +88,12 @@ internal sealed class SlidesEditModel : IOperationModel<SlidesOp>
     }
 
     /// <summary>
-    /// What a failed operation addressed: its shape, its slide or slides as resolved before the
-    /// batch, the slides it names, or the part of the presentation it changes.
+    /// What a failed operation addressed: its shape, its slide or slides as resolved when it
+    /// ran, the slides it names, or the part of the presentation it changes.
     /// </summary>
     public IReadOnlyList<string> AttemptedTargets(SlidesOp operation)
     {
-        SlidesMutationHandlers.ResolvedSlidesOp target = _targets[operation];
+        SlidesMutationHandlers.ResolvedSlidesOp target = Target(operation);
         int Number(ISlide slide) => _presentation.Slides.IndexOf(slide) + 1;
         if (operation is InsertSectionOp section)
         {
@@ -109,6 +114,7 @@ internal sealed class SlidesEditModel : IOperationModel<SlidesOp>
 
         return operation switch
         {
+            ShapeTargetOp { Slide: int number, ShapeId: long shapeId } => [SlidesStateProjection.ShapeAddress(number, shapeId)],
             SlideTargetOp { Slide: int number } => [SlidesStateProjection.SlideAddress(number)],
             SlidesSetPropertiesOp => [SlidesStateProjection.AllAddress("property")],
             SetSlideSizeOp => [SlidesStateProjection.SlideSizeAddress],

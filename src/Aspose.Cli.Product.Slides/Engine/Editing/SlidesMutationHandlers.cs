@@ -26,7 +26,7 @@ internal sealed partial class SlidesMutationHandlers : ISlidesOpHandler<ValueTup
     /// <param name="inputs">Reads and charges the files that operations read.</param>
     /// <param name="loader">Opens the presentations that operations append.</param>
     /// <param name="presentation">The presentation being edited.</param>
-    /// <param name="target">The operation with the targets it resolved before the batch started.</param>
+    /// <param name="target">The operation with the targets it resolved just before it runs.</param>
     /// <param name="warnings">Receives what the operation reports about its result.</param>
     /// <param name="evaluation">Whether the engine runs in evaluation mode, which cuts text short when it is read.</param>
     /// <param name="secrets">The secrets the operations name by environment variable.</param>
@@ -61,29 +61,21 @@ internal sealed partial class SlidesMutationHandlers : ISlidesOpHandler<ValueTup
     private IReadOnlyList<ISlide> Slides => _target.Slides!;
 
     /// <summary>
-    /// Resolves every operation's targets against the presentation before the first one is
-    /// applied, so later operations address what the caller read, not what earlier ones made.
-    /// A target that cannot be resolved becomes the operation's failure, raised when the
-    /// operation runs so the batch reports it at that operation's position.
+    /// Resolves an operation's targets against the presentation as the earlier operations of the
+    /// batch left it, just before the operation runs, so it can address a slide an earlier one
+    /// inserted. A target that cannot be resolved becomes the operation's failure, raised when
+    /// the operation runs so the batch reports it at that operation's position.
     /// </summary>
-    internal static IReadOnlyList<ResolvedSlidesOp> ResolveBatch(
-        Presentation presentation,
-        IReadOnlyList<SlidesOp> batch)
+    internal static ResolvedSlidesOp ResolveTarget(Presentation presentation, SlidesOp op)
     {
-        var resolved = new List<ResolvedSlidesOp>(batch.Count);
-        foreach (SlidesOp op in batch)
+        try
         {
-            try
-            {
-                resolved.Add(Resolve(presentation, op));
-            }
-            catch (Exception failure) when (failure is CliException or OperationInvalidException)
-            {
-                resolved.Add(new ResolvedSlidesOp(op, null, null, null, null, null, failure));
-            }
+            return Resolve(presentation, op);
         }
-
-        return resolved;
+        catch (Exception failure) when (failure is CliException or OperationInvalidException)
+        {
+            return new ResolvedSlidesOp(op, null, null, null, null, null, failure);
+        }
     }
 
     private static ResolvedSlidesOp Resolve(Presentation presentation, SlidesOp op)
@@ -121,36 +113,22 @@ internal sealed partial class SlidesMutationHandlers : ISlidesOpHandler<ValueTup
     }
 
     /// <summary>
-    /// Applies the operation once its targets are still part of the presentation; an
-    /// Aspose.Slides failure becomes an engine failure. A file the operation reads is opened
-    /// through the SDK, which reports a file it cannot open.
+    /// Applies the operation once its targets resolved; an Aspose.Slides failure becomes an
+    /// engine failure. A file the operation reads is opened through the SDK, which reports a
+    /// file it cannot open.
     /// </summary>
     internal void Run()
     {
-        EnsureLive(_presentation, _target);
+        EnsureResolved(_target);
         Engine(() => _target.Op.Accept(this));
     }
 
-    /// <summary>
-    /// Refuses an operation whose target could not be resolved before the batch, or whose
-    /// slide or shape an earlier operation of the batch deleted.
-    /// </summary>
-    internal static void EnsureLive(Presentation presentation, ResolvedSlidesOp target)
+    /// <summary>Refuses an operation whose target could not be resolved.</summary>
+    internal static void EnsureResolved(ResolvedSlidesOp target)
     {
         if (target.Failure is not null)
         {
             ExceptionDispatchInfo.Throw(target.Failure);
-        }
-
-        if (target.Slide is not null && !presentation.Slides.Contains(target.Slide)
-            || target.Slides?.Any(slide => !presentation.Slides.Contains(slide)) == true)
-        {
-            throw new OperationInvalidException("A targeted slide was deleted by an earlier operation.");
-        }
-
-        if (target.Shape is not null && !target.Slide!.Shapes.Any(shape => ReferenceEquals(shape, target.Shape)))
-        {
-            throw new OperationInvalidException("A targeted shape was deleted by an earlier operation.");
         }
     }
 

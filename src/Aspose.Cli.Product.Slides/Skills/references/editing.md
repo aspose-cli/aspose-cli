@@ -10,9 +10,11 @@ aspose-cli schema v2/slides/ops --operation insert_chart
 
 ## Addressing within a batch
 
-- Every slide and shape target resolves against the presentation as it was before the first
-  operation. Content inserted earlier in the batch cannot be addressed later in it; a slide or
-  shape deleted earlier fails the operation that targets it. Moving a slide keeps its `slideId`.
+- Operations run in order, and each one's slide and shape targets resolve against the
+  presentation as the earlier operations left it. A slide inserted earlier in the batch is
+  addressed by its new number, so one batch can add a slide and fill it; after a move or a
+  deletion, `slide` numbers count the slides as they now stand. Moving a slide keeps its
+  `slideId`, so `slideId` keeps addressing the same slide wherever it moves.
 - `shapeId` is persistent within its slide, not a position or a presentation-wide counter; pair
   it with that slide's `slide` or `slideId`. Reading a different slide window does not change
   ids. Read new ids after copying or importing slides.

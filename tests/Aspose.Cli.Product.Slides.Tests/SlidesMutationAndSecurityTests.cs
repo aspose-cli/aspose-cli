@@ -11,8 +11,8 @@ public sealed class SlidesMutationAndSecurityTests
     [Theory]
     [InlineData(false, "1-3")]
     [InlineData(true, "1-3")]
-    [InlineData(false, "1")]
-    [InlineData(true, "1")]
+    [InlineData(false, "3")]
+    [InlineData(true, "3")]
     [InlineData(false, "2-3")]
     [InlineData(true, "2-3")]
     public void DeleteSlides_ValidatesEveryResolvedTargetBeforeMutating(bool bestEffort, string secondRange)

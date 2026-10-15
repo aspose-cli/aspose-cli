@@ -28,7 +28,8 @@ internal sealed partial class SlidesMutationHandlers
     /// its first characters and a truncation notice: a paragraph it cut short is left as it is,
     /// since writing back what was read would lose the rest of its text, and the result
     /// discloses the cut with EVALUATION_INPUT_TRUNCATED. The watermark text box an evaluation
-    /// save added is left alone.
+    /// save added is left alone. With a maximum count, the first matches in slide, shape and
+    /// paragraph order are replaced.
     /// </summary>
     public ValueTuple Apply(SlidesReplaceTextOp operation)
     {
@@ -38,13 +39,19 @@ internal sealed partial class SlidesMutationHandlers
             _readInput();
         }
 
+        int remaining = operation.MaxReplacementCount ?? int.MaxValue;
         foreach (IParagraph paragraph in _presentation.Slides
             .SelectMany(slide => Frames(slide, operation.Scope))
             .SelectMany(static frame => frame.Paragraphs)
             .Where(paragraph => !_evaluation || !CutByEvaluation(paragraph.Text))
             .ToArray())
         {
-            Replace(paragraph, operation, regex);
+            if (remaining == 0)
+            {
+                break;
+            }
+
+            remaining -= Replace(paragraph, operation, regex, remaining);
         }
 
         return default;
@@ -62,7 +69,7 @@ internal sealed partial class SlidesMutationHandlers
             : shapes;
     }
 
-    private static int Replace(IParagraph paragraph, SlidesReplaceTextOp op, Regex? regex)
+    private static int Replace(IParagraph paragraph, SlidesReplaceTextOp op, Regex? regex, int limit)
     {
         IPortion[] portions = paragraph.Portions.ToArray();
         if (portions.Length == 0)
@@ -72,7 +79,7 @@ internal sealed partial class SlidesMutationHandlers
 
         string[] original = portions.Select(static portion => portion.Text ?? string.Empty).ToArray();
         IReadOnlyList<(int Start, int Length, string Replacement)> matches =
-            Matches(string.Concat(original), op, regex);
+            Matches(string.Concat(original), op, regex, limit);
         if (matches.Count == 0)
         {
             return 0;
@@ -127,14 +134,18 @@ internal sealed partial class SlidesMutationHandlers
         return matches.Count;
     }
 
+    /// <summary>The first <paramref name="limit"/> matches in a paragraph's text, each a whole word when the operation asks for it.</summary>
     private static IReadOnlyList<(int Start, int Length, string Replacement)> Matches(
         string text,
         SlidesReplaceTextOp op,
-        Regex? regex)
+        Regex? regex,
+        int limit)
     {
         if (regex is not null)
         {
             return regex.Matches(text)
+                .Where(match => !op.WholeWord || IsWholeWord(text, match.Index, match.Length))
+                .Take(limit)
                 .Select(match => (match.Index, match.Length, match.Result(op.Replace)))
                 .ToArray();
         }
@@ -143,15 +154,27 @@ internal sealed partial class SlidesMutationHandlers
             ? StringComparison.Ordinal
             : StringComparison.OrdinalIgnoreCase;
         var matches = new List<(int, int, string)>();
-        for (int found = text.IndexOf(op.Find, comparison);
-            found >= 0;
-            found = text.IndexOf(op.Find, found + op.Find.Length, comparison))
+        for (int found = text.IndexOf(op.Find, comparison); found >= 0 && matches.Count < limit;)
         {
+            if (op.WholeWord && !IsWholeWord(text, found, op.Find.Length))
+            {
+                found = text.IndexOf(op.Find, found + 1, comparison);
+                continue;
+            }
+
             matches.Add((found, op.Find.Length, op.Replace));
+            found = text.IndexOf(op.Find, found + op.Find.Length, comparison);
         }
 
         return matches;
     }
+
+    /// <summary>Whether no letter, digit or underscore adjoins the text at <paramref name="start"/> on either side.</summary>
+    private static bool IsWholeWord(string text, int start, int length) =>
+        (start == 0 || !IsWordCharacter(text[start - 1]))
+        && (start + length >= text.Length || !IsWordCharacter(text[start + length]));
+
+    private static bool IsWordCharacter(char character) => char.IsLetterOrDigit(character) || character == '_';
 
     public ValueTuple Apply(SetNotesOp operation)
     {

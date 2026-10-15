@@ -10,9 +10,10 @@ namespace Aspose.Cli.Product.Slides.Contracts;
 public sealed record SlidesOpsBatch : BoundedOperationEnvelope<SlidesOp>;
 
 /// <summary>
-/// The operation document of <c>slides edit --ops</c>. Every slide and shape target resolves
-/// against the presentation as it was before the first operation, so content inserted earlier
-/// in the batch cannot be targeted, and a target deleted earlier fails the operation.
+/// The operation document of <c>slides edit --ops</c>. Each operation's slide and shape targets
+/// resolve against the presentation as the earlier operations left it: a slide inserted earlier
+/// in the batch can be targeted by its new number, and slide numbers count the slides that
+/// earlier moves and deletions left.
 /// </summary>
 [OperationVocabulary("ops", JsonContext = typeof(SlidesOpsJsonContext), Addresses = new[] { "slide", "slideId", "slides", "shapeId", "shapeName", "placeholder", "at", "path" })]
 [JsonConverter(typeof(OperationJsonConverter<SlidesOp>))]
@@ -324,8 +325,16 @@ public sealed record SlidesReplaceTextOp : SlidesOp
     [NotState]
     public bool CaseSensitive { get; init; }
 
+    /// <summary>Whether a match counts only when no letter, digit or underscore adjoins it on either side.</summary>
+    [NotState]
+    public bool WholeWord { get; init; }
+
     [NotState]
     [AllowedValues(typeof(SlidesSearchScopes))] public string Scope { get; init; } = SlidesSearchScopes.All;
+
+    /// <summary>The most matches replaced, the first ones in slide and shape order; every match when omitted.</summary>
+    [NotState]
+    [Minimum(1)] public int? MaxReplacementCount { get; init; }
 
     /// <inheritdoc />
     protected override BoundedOperation Validated()

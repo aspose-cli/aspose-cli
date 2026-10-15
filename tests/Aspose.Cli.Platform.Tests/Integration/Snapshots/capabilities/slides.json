@@ -37,7 +37,7 @@
         "command": "edit",
         "inputSchema": "v2/slides/ops",
         "operationSchema": "aspose-cli schema v2/slides/ops --operation <op>",
-        "contractFingerprint": "sha256:83a37ecd2f8e9d7bfa8f328a21eae0942b01027581ec730a635507699bcd2510",
+        "contractFingerprint": "sha256:fecaac565bf5287660d5e628720570afdba1833bf867c8fab2a3004da33db90d",
         "maximumOperationCount": 10000,
         "ops": [
           "copy_slide",
@@ -3201,7 +3201,7 @@
     "v2/slides/ops": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
       "$id": "https://schemas.aspose.com/aspose-cli/v2/slides/ops.schema.json",
-      "description": "The operation document of slides edit --ops. Every slide and shape target resolves against the presentation as it was before the first operation, so content inserted earlier in the batch cannot be targeted, and a target deleted earlier fails the operation. Operations apply in order. Without --best-effort the batch is atomic: if any operation fails, no file is written. With --best-effort the operations that succeed are kept and saved, each one that fails is reported, and the command exits 8 when any failed; an invalid document or a failure inside the document engine still writes nothing. The bare array of operations is accepted as the document with only its ops. Each operation field's x-readBack says whether it is state the operation writes and where a read reports it: a read result's schema URI with a JSON Pointer to the property that reports the field, where a pointer ending in a dictionary's additionalProperties is the entry named after the field; unread for state no read reports yet; position for state a read reports by position rather than by name, such as cell values; not-state for a selector, a source or a parameter of the action.",
+      "description": "The operation document of slides edit --ops. Each operation's slide and shape targets resolve against the presentation as the earlier operations left it: a slide inserted earlier in the batch can be targeted by its new number, and slide numbers count the slides that earlier moves and deletions left. Operations apply in order. Without --best-effort the batch is atomic: if any operation fails, no file is written. With --best-effort the operations that succeed are kept and saved, each one that fails is reported, and the command exits 8 when any failed; an invalid document or a failure inside the document engine still writes nothing. The bare array of operations is accepted as the document with only its ops. Each operation field's x-readBack says whether it is state the operation writes and where a read reports it: a read result's schema URI with a JSON Pointer to the property that reports the field, where a pointer ending in a dictionary's additionalProperties is the entry named after the field; unread for state no read reports yet; position for state a read reports by position rather than by name, such as cell values; not-state for a selector, a source or a parameter of the action.",
       "type": "object",
       "required": [
         "ops"
@@ -4046,6 +4046,12 @@
               "default": false,
               "x-readBack": "not-state"
             },
+            "wholeWord": {
+              "description": "Whether a match counts only when no letter, digit or underscore adjoins it on either side.",
+              "type": "boolean",
+              "default": false,
+              "x-readBack": "not-state"
+            },
             "scope": {
               "type": "string",
               "enum": [
@@ -4054,6 +4060,12 @@
                 "all"
               ],
               "default": "all",
+              "x-readBack": "not-state"
+            },
+            "maxReplacementCount": {
+              "description": "The most matches replaced, the first ones in slide and shape order; every match when omitted.",
+              "type": "integer",
+              "minimum": 1,
               "x-readBack": "not-state"
             }
           }

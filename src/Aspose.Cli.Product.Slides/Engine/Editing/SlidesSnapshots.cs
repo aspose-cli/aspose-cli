@@ -18,7 +18,7 @@ namespace Aspose.Cli.Product.Slides.Engine.Editing;
 /// stores it, and the addresses come from <see cref="SlidesStateProjection"/>.
 /// </summary>
 /// <param name="presentation">The presentation being edited.</param>
-/// <param name="target">The operation's targets, resolved before the batch started.</param>
+/// <param name="target">The operation's targets, resolved just before it runs.</param>
 internal sealed class SlidesSnapshots(Presentation presentation, SlidesMutationHandlers.ResolvedSlidesOp target)
     : ISlidesOpHandler<OperationSnapshot>
 {
