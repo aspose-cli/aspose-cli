@@ -7,7 +7,8 @@ namespace Aspose.Cli.Sdk.Extensibility.Commanding;
 /// <summary>
 /// The one <c>--out-dir</c> option of commands that publish a set of files into a directory
 /// that may exist. It has no alias: <c>--out</c> always names one output, a file or, for
-/// <c>review</c>, one new evidence directory.
+/// <c>review</c>, its evidence directory as a whole: one that does not exist yet, or with
+/// <c>--overwrite</c> an empty one or an earlier evidence, which it replaces.
 /// </summary>
 internal sealed class OutputDirectoryOption
 {
