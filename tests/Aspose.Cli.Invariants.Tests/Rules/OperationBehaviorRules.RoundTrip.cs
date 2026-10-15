@@ -60,6 +60,7 @@ internal static partial class ContractRules
         ["pdf add_attachment"] = new(RoundTripPart.SameValue, AddsAgain),
         ["pdf add_bookmark"] = new(Both, Adds),
         ["pdf add_hyperlink"] = new(RoundTripPart.SameValue, AddsAgain),
+        ["pdf encrypt_document"] = new(RoundTripPart.SameValue, "Encrypting again re-keys the file under passwords no read reports, so the read state written back still changes the output and counts 1."),
         ["pdf insert_page"] = new(Both, Adds),
         ["pdf set_page_labels ranges.startPage"] = new(RoundTripPart.OneChange, "The fixture has one page, so a range cannot start on another."),
         ["slides insert_chart"] = new(RoundTripPart.SameValue, AddsAgain),
