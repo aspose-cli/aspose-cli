@@ -22,7 +22,7 @@ namespace Aspose.Cli.Product.Pdf.Engine.Editing;
 /// reports of these objects is the state <see cref="PdfInfoProjection"/> reads, and an object
 /// with a name is addressed by <see cref="PdfInfoProjection.Address"/>.
 /// </summary>
-internal sealed class PdfSnapshots(Document document, PdfPageIdentities pages, Func<string?> encryption) : IPdfOpHandler<OperationSnapshot>
+internal sealed class PdfSnapshots(Document document, PdfPageIdentities pages, Func<string?> encryption) : IPdfOpHandler<PdfSnapshots.Scope>
 {
     /// <summary>The unit of a page's address, whose changed ones are the pages the batch touched.</summary>
     internal const string PageUnit = "page";
@@ -61,57 +61,98 @@ internal sealed class PdfSnapshots(Document document, PdfPageIdentities pages, F
     /// </summary>
     internal static readonly IReadOnlySet<string> SaveStamped = new HashSet<string>(["creator", "producer", "modificationDate"], StringComparer.Ordinal);
 
-    public OperationSnapshot Apply(RotatePagesOp operation) => Pages(operation.Pages);
+    /// <summary>
+    /// What one operation can change: the addresses it attempts to change, reported when it
+    /// fails, and the snapshot of the objects it can change, taken when asked. The targets are a
+    /// page selection as written (<c>page/2-4</c>, <c>page/all</c> without one) and the named
+    /// objects of the operation, addressed by <see cref="PdfInfoProjection.Address"/>; reading
+    /// them never touches the document.
+    /// </summary>
+    internal readonly record struct Scope(IReadOnlyList<string> Targets, Func<OperationSnapshot> Take);
 
-    public OperationSnapshot Apply(DeletePagesOp operation) => PageOrder();
+    public Scope Apply(RotatePagesOp operation) => Pages(operation.Pages);
 
-    public OperationSnapshot Apply(MovePagesOp operation) => PageOrder();
+    public Scope Apply(DeletePagesOp operation) => PageOrder(Selection(operation.Pages));
 
-    public OperationSnapshot Apply(ImportPagesOp operation) => PageOrder();
+    public Scope Apply(MovePagesOp operation) => PageOrder(Selection(operation.Pages));
 
-    public OperationSnapshot Apply(InsertPageOp operation) => PageOrder();
+    public Scope Apply(ImportPagesOp operation) => PageOrder(Numbered(operation.At));
 
-    public OperationSnapshot Apply(CropPagesOp operation) => Pages(operation.Pages);
+    public Scope Apply(InsertPageOp operation) => PageOrder(Numbered(operation.At));
 
-    public OperationSnapshot Apply(SetPageSizeOp operation) => Pages(operation.Pages);
+    public Scope Apply(CropPagesOp operation) => Pages(operation.Pages);
 
-    public OperationSnapshot Apply(AddWatermarkTextOp operation) => Pages(operation.Pages);
+    public Scope Apply(SetPageSizeOp operation) => Pages(operation.Pages);
 
-    public OperationSnapshot Apply(AddWatermarkImageOp operation) => Pages(operation.Pages);
+    public Scope Apply(AddWatermarkTextOp operation) => Pages(operation.Pages);
 
-    public OperationSnapshot Apply(AddPageNumbersOp operation) => Pages(operation.Pages);
+    public Scope Apply(AddWatermarkImageOp operation) => Pages(operation.Pages);
 
-    public OperationSnapshot Apply(AddHeaderTextOp operation) => Pages(operation.Pages);
+    public Scope Apply(AddPageNumbersOp operation) => Pages(operation.Pages);
 
-    public OperationSnapshot Apply(AddFooterTextOp operation) => Pages(operation.Pages);
+    public Scope Apply(AddHeaderTextOp operation) => Pages(operation.Pages);
 
-    public OperationSnapshot Apply(AddStampImageOp operation) => Page(operation.Page);
+    public Scope Apply(AddFooterTextOp operation) => Pages(operation.Pages);
 
-    public OperationSnapshot Apply(AddHyperlinkOp operation) => Page(operation.Page);
+    public Scope Apply(AddStampImageOp operation) => Page(operation.Page);
 
-    public OperationSnapshot Apply(RedactTextOp operation) => Pages(operation.Pages, content: true);
+    public Scope Apply(AddHyperlinkOp operation) => Page(operation.Page);
 
-    public OperationSnapshot Apply(RedactAreaOp operation) => Page(operation.Page, content: true);
+    public Scope Apply(RedactTextOp operation) => Pages(operation.Pages, content: true);
 
-    public OperationSnapshot Apply(SetPropertiesOp operation) => Metadata();
+    public Scope Apply(RedactAreaOp operation) => Page(operation.Page, content: true);
 
-    public OperationSnapshot Apply(ClearPropertiesOp operation) => Metadata();
+    public Scope Apply(SetPropertiesOp operation) =>
+        new([.. PdfPropertyNames.Written(operation).Select(static entry => PdfInfoProjection.PropertyAddress(entry.Key))], Metadata);
+
+    public Scope Apply(ClearPropertiesOp operation) => new(["property/all"], Metadata);
 
     /// <summary>
     /// The bookmarks at the level the new one joins, with what lies below its parent: appending
     /// it changes nothing else of the outline.
     /// </summary>
-    public OperationSnapshot Apply(AddBookmarkOp operation) => operation.Parent is { } parent
+    public Scope Apply(AddBookmarkOp operation) => new([$"bookmark/{operation.Parent ?? "all"}"], () => operation.Parent is { } parent
         ? Bookmarks(Outline(document.Outlines, parent), parent, int.MaxValue)
-        : Bookmarks(document.Outlines, parent: null, levels: 1);
+        : Bookmarks(document.Outlines, parent: null, levels: 1));
 
-    public OperationSnapshot Apply(DeleteBookmarksOp operation) => Bookmarks(document.Outlines, parent: null, int.MaxValue);
+    public Scope Apply(DeleteBookmarksOp operation) => new(
+        operation.Bookmarks is null ? ["bookmark/all"] : [.. operation.Bookmarks.Select(static address => $"bookmark/{address}")],
+        () => Bookmarks(document.Outlines, parent: null, int.MaxValue));
 
-    public OperationSnapshot Apply(AddAttachmentOp operation) => Attachments();
+    public Scope Apply(AddAttachmentOp operation) =>
+        new([PdfInfoProjection.Address("attachment", operation.Name ?? Path.GetFileName(operation.Path))], Attachments);
 
-    public OperationSnapshot Apply(DeleteAttachmentOp operation) => Attachments();
+    public Scope Apply(DeleteAttachmentOp operation) => new([PdfInfoProjection.Address("attachment", operation.Name)], Attachments);
 
-    public OperationSnapshot Apply(SetPageLabelsOp operation)
+    public Scope Apply(SetPageLabelsOp operation) => new([.. operation.Ranges.Select(static range => $"page-label/{range.StartPage}")], PageLabels);
+
+    public Scope Apply(SetFormFieldOp operation) => new([PdfInfoProjection.Address("field", operation.Name)], () => Fields([operation.Name]));
+
+    public Scope Apply(FlattenFormsOp operation) => new(
+        operation.Fields is null ? ["field/all"] : [.. operation.Fields.Select(static name => PdfInfoProjection.Address("field", name))],
+        () => Fields(operation.Fields));
+
+    public Scope Apply(EncryptDocumentOp operation) => new([SecurityAddress], Security);
+
+    public Scope Apply(DecryptDocumentOp operation) => new([SecurityAddress], Security);
+
+    public Scope Apply(OptimizeDocumentOp operation) => new([$"{PageUnit}/all"], OptimizedObjects);
+
+    private const string SecurityAddress = "security/encryption";
+
+    /// <summary>The pages a selection names, or every page without one, each by its content.</summary>
+    private Scope Pages(string? selection, bool content = false) => new(Selection(selection), () => SelectedPages(selection, content));
+
+    private Scope Page(int number, bool content = false) => new(Numbered(number), () => SinglePage(number, content));
+
+    /// <summary>The order of the pages, each by its identity: inserting, deleting or moving pages changes it.</summary>
+    private Scope PageOrder(IReadOnlyList<string> targets) => new(targets, PageIdentities);
+
+    private static string[] Selection(string? selection) => [$"{PageUnit}/{selection ?? "all"}"];
+
+    private static string[] Numbered(int number) => [Address(PageUnit, number)];
+
+    private OperationSnapshot PageLabels()
     {
         var snapshot = new OperationSnapshot();
         foreach (PdfPageLabelInfo label in PdfInfoProjection.PageLabels(document))
@@ -122,21 +163,13 @@ internal sealed class PdfSnapshots(Document document, PdfPageIdentities pages, F
         return snapshot;
     }
 
-    public OperationSnapshot Apply(SetFormFieldOp operation) => Fields([operation.Name]);
-
-    public OperationSnapshot Apply(FlattenFormsOp operation) => Fields(operation.Fields);
-
-    public OperationSnapshot Apply(EncryptDocumentOp operation) => Security();
-
-    public OperationSnapshot Apply(DecryptDocumentOp operation) => Security();
-
     /// <summary>
     /// What optimizing changes that a reader of the file can see: each image a page draws,
     /// directly or through a form, by its size, compression and encoded data, and each font by
     /// whether it is embedded. Removing unused objects and compressing streams store the same
     /// content in fewer bytes and change no object.
     /// </summary>
-    public OperationSnapshot Apply(OptimizeDocumentOp operation)
+    private OperationSnapshot OptimizedObjects()
     {
         var snapshot = new OperationSnapshot();
         for (int number = 1; number <= document.Pages.Count; number++)
@@ -178,8 +211,7 @@ internal sealed class PdfSnapshots(Document document, PdfPageIdentities pages, F
         return snapshot;
     }
 
-    /// <summary>The pages a selection names, or every page without one, each by its content.</summary>
-    private OperationSnapshot Pages(string? selection, bool content = false)
+    private OperationSnapshot SelectedPages(string? selection, bool content)
     {
         var snapshot = new OperationSnapshot();
         foreach (int number in ResolveOptional(document, selection))
@@ -190,11 +222,10 @@ internal sealed class PdfSnapshots(Document document, PdfPageIdentities pages, F
         return snapshot;
     }
 
-    private OperationSnapshot Page(int number, bool content = false) =>
+    private OperationSnapshot SinglePage(int number, bool content) =>
         new OperationSnapshot().Add(Address(PageUnit, number), State(PageAt(document, number), content));
 
-    /// <summary>The order of the pages, each by its identity: inserting, deleting or moving pages changes it.</summary>
-    private OperationSnapshot PageOrder() =>
+    private OperationSnapshot PageIdentities() =>
         new OperationSnapshot().AddSequence(PageUnit, Enumerable.Range(1, document.Pages.Count).Select(number => pages.Of(document.Pages[number])));
 
     /// <summary>
@@ -248,7 +279,7 @@ internal sealed class PdfSnapshots(Document document, PdfPageIdentities pages, F
     /// (its password variables and permissions) or the input's own.
     /// </summary>
     private OperationSnapshot Security() =>
-        new OperationSnapshot().Add("security/encryption", document.IsEncrypted
+        new OperationSnapshot().Add(SecurityAddress, document.IsEncrypted
             ? encryption() ?? string.Create(CultureInfo.InvariantCulture, $"input|{(int)document.Permissions}")
             : "none");
 
