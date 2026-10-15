@@ -189,10 +189,13 @@ internal static class SlidesReviewAnalyzer
                      && string.IsNullOrWhiteSpace(shape.Text)))
         {
             result.EmptyPlaceholders++;
-            result.Findings.Add(Finding(
-                SlidesReviewChecks.PlaceholderEmpty,
-                slide,
-                $"Placeholder {Label(shape)} is empty; PowerPoint shows its prompt text while the deck is edited. Delete it or fill it."));
+            string address = string.Create(CultureInfo.InvariantCulture, $"\"slide\":{slide.Slide},\"shapeId\":{shape.ShapeId}");
+            result.Findings.Add(SlidesReviewChecks.PlaceholderEmpty.Finding(
+                $"Placeholder {Label(shape)} is empty; PowerPoint shows its prompt text while the deck is edited. Delete it or fill it.",
+                Location(slide.Slide),
+                $"Fill it with {{\"op\":\"set_text\",{address},\"text\":\"...\"}} or remove it with {{\"op\":\"delete_shape\",{address}}}; "
+                    + "a slide whose layout changed, such as to Section Header, keeps the new layout's placeholders even when it has nothing for them.",
+                SlidesViews.PartId(slide.SlideId)));
         }
     }
 

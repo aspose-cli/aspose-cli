@@ -471,4 +471,17 @@ public sealed class SlidesReviewCheckTests
     private static SlidesShapeData Occluder(long id, Rect rect) => Shape(id, rect) with { HasOpaqueFill = true };
 
     private readonly record struct Rect(double X, double Y, double Width, double Height);
+
+    [Fact]
+    public void EmptyPlaceholder_HintNamesTheOperationsThatFillOrDeleteIt()
+    {
+        SlidesReviewAnalysis analysis = SlidesReviewAnalyzer.Analyze(
+            [Slide(2, Shape(5, new(60, 120, 400, 200)) with { Placeholder = "body" })],
+            Width,
+            Height);
+
+        ReviewFinding finding = Assert.Single(analysis.Findings, static finding => finding.Code == SlidesReviewChecks.PlaceholderEmpty.Code);
+        Assert.Contains("\"op\":\"set_text\",\"slide\":2,\"shapeId\":5", finding.Hint, StringComparison.Ordinal);
+        Assert.Contains("\"op\":\"delete_shape\",\"slide\":2,\"shapeId\":5", finding.Hint, StringComparison.Ordinal);
+    }
 }
