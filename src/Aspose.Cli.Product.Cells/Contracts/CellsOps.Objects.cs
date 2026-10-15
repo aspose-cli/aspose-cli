@@ -14,6 +14,7 @@ namespace Aspose.Cli.Product.Cells.Contracts;
 [MistakenFor("create_chart", "add_chart")]
 public sealed record InsertChartOp : CellsSheetOp
 {
+    /// <summary>The chart type: column has vertical bars, bar horizontal ones.</summary>
     [MistakenFor("type")]
     [ReadBack("inspect-result.schema.json#/$defs/cellsChartInfo/properties/kind")]
     [AllowedValues(typeof(CellsChartTypes))] public required string Kind { get; init; }
@@ -28,6 +29,7 @@ public sealed record InsertChartOp : CellsSheetOp
     /// <summary>The range of at least two cells the chart is placed over, such as E2:L18.</summary>
     [A1Range] public required string At { get; init; }
 
+    /// <summary>The chart title; the engine's automatic title when omitted, which a read reports as no title.</summary>
     [ReadBack("inspect-result.schema.json#/$defs/cellsChartInfo/properties/title")]
     public string? Title { get; init; }
 
@@ -35,9 +37,11 @@ public sealed record InsertChartOp : CellsSheetOp
     [ReadBack("inspect-result.schema.json#/$defs/cellsChartInfo/properties/seriesInRows")]
     public bool SeriesInRows { get; init; }
 
+    /// <summary>The legend's visibility and position; shown at the bottom when omitted.</summary>
     [ReadBack("inspect-result.schema.json#/$defs/cellsChartInfo/properties/legend")]
     public CellsChartLegend? Legend { get; init; }
 
+    /// <summary>The titles of the category and value axes; no axis titles when omitted.</summary>
     [ReadBack("inspect-result.schema.json#/$defs/cellsChartInfo/properties/axisTitles")]
     public CellsChartAxisTitles? AxisTitles { get; init; }
 
@@ -48,6 +52,7 @@ public sealed record InsertChartOp : CellsSheetOp
     [ReadBack("inspect-result.schema.json#/$defs/cellsChartInfo/properties/seriesColors")]
     [MinItems(1), HexColor] public IReadOnlyList<string>? SeriesColors { get; init; }
 
+    /// <summary>The point labels of every series; no labels when omitted.</summary>
     [ReadBack("inspect-result.schema.json#/$defs/cellsChartInfo/properties/dataLabels")]
     public CellsChartDataLabels? DataLabels { get; init; }
 
@@ -335,6 +340,7 @@ public sealed record SetChartOp : CellsSheetOp
     [NotState]
     [Pattern(@"\S")] public string? Name { get; init; }
 
+    /// <summary>The new chart title; unchanged when omitted.</summary>
     [ReadBack("inspect-result.schema.json#/$defs/cellsChartInfo/properties/title")]
     public string? Title { get; init; }
 
@@ -342,6 +348,7 @@ public sealed record SetChartOp : CellsSheetOp
     [ReadBack("inspect-result.schema.json#/$defs/cellsChartInfo/properties/dataRange")]
     [A1Reference] public string? DataRange { get; init; }
 
+    /// <summary>The new chart type; unchanged when omitted.</summary>
     [MistakenFor("type")]
     [ReadBack("inspect-result.schema.json#/$defs/cellsChartInfo/properties/kind")]
     [AllowedValues(typeof(CellsChartTypes))] public string? Kind { get; init; }
@@ -350,9 +357,11 @@ public sealed record SetChartOp : CellsSheetOp
     [ReadBack("inspect-result.schema.json#/$defs/cellsChartInfo/properties/seriesInRows")]
     public bool? SeriesInRows { get; init; }
 
+    /// <summary>The legend fields to change; the legend is unchanged when omitted.</summary>
     [ReadBack("inspect-result.schema.json#/$defs/cellsChartInfo/properties/legend")]
     public CellsChartLegend? Legend { get; init; }
 
+    /// <summary>The axis titles to change; the axis titles are unchanged when omitted.</summary>
     [ReadBack("inspect-result.schema.json#/$defs/cellsChartInfo/properties/axisTitles")]
     public CellsChartAxisTitles? AxisTitles { get; init; }
 
@@ -363,6 +372,7 @@ public sealed record SetChartOp : CellsSheetOp
     [ReadBack("inspect-result.schema.json#/$defs/cellsChartInfo/properties/seriesColors")]
     [MinItems(1), HexColor] public IReadOnlyList<string>? SeriesColors { get; init; }
 
+    /// <summary>The data-label fields to change; the labels are unchanged when omitted.</summary>
     [ReadBack("inspect-result.schema.json#/$defs/cellsChartInfo/properties/dataLabels")]
     public CellsChartDataLabels? DataLabels { get; init; }
 

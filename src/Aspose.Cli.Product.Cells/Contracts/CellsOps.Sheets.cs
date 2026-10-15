@@ -158,6 +158,7 @@ public sealed record UnfreezePanesOp : CellsSheetOp;
 [AtLeastOneOf("orientation", "pageSize", "fitToWidth", "fitToHeight", "scalePercent", "margins", "headerMargin", "footerMargin", "headerCenter", "footerCenter")]
 public sealed record SetPageSetupOp : CellsSheetOp
 {
+    /// <summary>Whether the page is printed upright (portrait) or sideways (landscape).</summary>
     [ReadBack("inspect-result.schema.json#/$defs/cellsPageSetupInfo/properties/orientation")]
     [AllowedValues(typeof(CellsPageOrientations))] public string? Orientation { get; init; }
 
@@ -182,6 +183,7 @@ public sealed record SetPageSetupOp : CellsSheetOp
     [ReadBack("inspect-result.schema.json#/$defs/cellsPageSetupInfo/properties/scalePercent")]
     [Minimum(10), Maximum(400)] public int? ScalePercent { get; init; }
 
+    /// <summary>The page margins; only the sides present change.</summary>
     [ReadBack("inspect-result.schema.json#/$defs/cellsPageSetupInfo/properties/margins")]
     public CellsMargins? Margins { get; init; }
 

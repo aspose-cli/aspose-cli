@@ -21,10 +21,12 @@ public sealed record SetBordersOp : CellsSheetOp
     [NotState]
     [MinItems(1), AllowedValues(typeof(CellsBorderEdges))] public required IReadOnlyList<string> Edges { get; init; }
 
+    /// <summary>The line drawn on every named edge; hair is the thinnest line, which Excel draws finely dotted; thick is the heaviest single line.</summary>
     [MistakenFor("style")]
     [ReadBack("read-result.schema.json#/$defs/cellsBorderData/properties/lineStyle")]
     [AllowedValues(typeof(CellsBorderLineStyles))] public string LineStyle { get; init; } = CellsBorderLineStyles.Thin;
 
+    /// <summary>The line color of every named edge.</summary>
     [ReadBack("read-result.schema.json#/$defs/cellsBorderData/properties/color")]
     [HexColor] public string Color { get; init; } = "#000000";
 

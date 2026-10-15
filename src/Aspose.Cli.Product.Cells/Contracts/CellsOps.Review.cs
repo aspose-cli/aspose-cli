@@ -14,6 +14,7 @@ public sealed record AddCommentOp : CellsSheetOp
     /// <summary>The cell to annotate, such as B2.</summary>
     [A1Cell] public required string Cell { get; init; }
 
+    /// <summary>The comment text; on a cell that has a comment, the new paragraph.</summary>
     [ReadBack("inspect-result.schema.json#/$defs/cellsCommentInfo/properties/text")]
     [MinLength(1)] public required string Text { get; init; }
 

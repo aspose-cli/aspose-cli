@@ -20,6 +20,7 @@ public sealed record AddConditionalFormatOp : CellsSheetOp
     /// </summary>
     [A1RangeList] public required string Range { get; init; }
 
+    /// <summary>The rule that decides which cells are formatted, or how they are shaded.</summary>
     [ReadBack("inspect-result.schema.json#/$defs/cellsConditionalFormatInfo/properties/rule")]
     public required CellsConditionalRule Rule { get; init; }
 

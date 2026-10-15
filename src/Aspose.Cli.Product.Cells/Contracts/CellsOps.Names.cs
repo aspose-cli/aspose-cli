@@ -22,6 +22,7 @@ public sealed record DefineNameOp : CellsOp
 [Operation("delete_name")]
 public sealed record DeleteNameOp : CellsOp
 {
+    /// <summary>The name to remove, such as TaxRate.</summary>
     [NotState]
     [Pattern(@"\S")] public required string Name { get; init; }
 }

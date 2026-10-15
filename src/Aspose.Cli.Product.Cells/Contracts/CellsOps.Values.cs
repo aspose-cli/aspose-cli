@@ -99,6 +99,7 @@ public sealed record FormatRangeOp : CellsSheetOp
     /// <summary>The range to format, such as B2:D10.</summary>
     [A1Range] public required string Range { get; init; }
 
+    /// <summary>The formatting to apply; each field left out keeps the cells' current value.</summary>
     public required CellsStyleData Style { get; init; }
 
     /// <inheritdoc />
@@ -140,6 +141,7 @@ public sealed record ReplaceTextOp : CellsSheetOp
     /// <summary>The range to replace in, such as A1:D20; every cell of the sheet when omitted.</summary>
     [A1Range] public string? Range { get; init; }
 
+    /// <summary>The text to find, or the pattern when regex is true.</summary>
     [NotState]
     [MinLength(1)] public required string Find { get; init; }
 
@@ -152,6 +154,7 @@ public sealed record ReplaceTextOp : CellsSheetOp
     [NotState]
     public bool Regex { get; init; }
 
+    /// <summary>Whether a match must have the same letter case as find.</summary>
     [MistakenFor("matchCase")]
     [NotState]
     public bool CaseSensitive { get; init; }
