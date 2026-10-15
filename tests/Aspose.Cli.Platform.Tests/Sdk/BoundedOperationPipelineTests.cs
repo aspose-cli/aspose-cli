@@ -113,7 +113,8 @@ public sealed class BoundedOperationPipelineTests
 
         Assert.Equal(ErrorCodes.OpsInvalid, error.Code);
         Assert.Equal("op-0001", error.Details!["id"]!.GetValue<string>());
-        Assert.Null(error.Details["op"]);
+        // The op as the entry wrote it, so the caller finds the entry by either.
+        Assert.Equal(name, error.Details["op"]!.GetValue<string>());
         Assert.Equal($"unknown op '{name}'", error.Details["reason"]!.GetValue<string>());
         string[] available = [.. error.Details["available"]!.AsArray().Select(static item => item!.GetValue<string>())];
         Assert.Equal(Catalog.Names.Order(StringComparer.Ordinal), available.Order(StringComparer.Ordinal));

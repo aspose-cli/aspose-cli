@@ -24,6 +24,13 @@ public sealed class NotFoundErrorTests
         Assert.Equal(expected, NameSuggestions.Closest(requested, ["Summary", "Sales", "Q4", "Sales 2026"]));
 
     [Theory]
+    [InlineData("add_image_stamp", new[] { "add_stamp_image", "add_image" })]
+    [InlineData("image_add", new[] { "add_image" })]
+    [InlineData("stamp_add", new string[0])]
+    public void Closest_FindsTheSameWordsInAnotherOrder(string requested, string[] expected) =>
+        Assert.Equal(expected, NameSuggestions.Closest(requested, ["add_watermark_text", "add_stamp_image", "add_image"]));
+
+    [Theory]
     [InlineData("fontSize", new[] { "size", "font" })]
     [InlineData("fontName", new[] { "name", "font" })]
     [InlineData("borderColor", new[] { "color", "border" })]

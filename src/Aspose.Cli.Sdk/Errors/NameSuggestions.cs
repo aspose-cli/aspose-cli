@@ -3,8 +3,9 @@ namespace Aspose.Cli.Sdk.Errors;
 /// <summary>
 /// Ranks the existing names closest to a name that was not found, so a caller can correct a
 /// typo or a casing slip in one step. Ranking is deterministic: a match that ignores case and
-/// surrounding white space comes first, then names that contain the request or are a whole
-/// word of it, then names within a small edit distance; ties keep the candidates' order.
+/// surrounding white space comes first, then names with the same words in another order, then
+/// names that contain the request or are a whole word of it, then names within a small edit
+/// distance; ties keep the candidates' order.
 /// </summary>
 internal static class NameSuggestions
 {
@@ -50,9 +51,10 @@ internal static class NameSuggestions
 
             string name = Normalize(candidate);
             int? rank = name == wanted ? 0
-                : fieldNames ? FieldRank(trimmed, candidate.Trim(), wanted, name, allowedDistance)
-                : Overlaps(trimmed, candidate.Trim()) ? 1
-                : Distance(wanted, name, allowedDistance) is int distance ? 2 + distance
+                : SameWords(wanted, name) ? 1
+                : fieldNames ? 1 + FieldRank(trimmed, candidate.Trim(), wanted, name, allowedDistance)
+                : Overlaps(trimmed, candidate.Trim()) ? 2
+                : Distance(wanted, name, allowedDistance) is int distance ? 3 + distance
                 : null;
             if (rank is int value)
             {
@@ -71,6 +73,16 @@ internal static class NameSuggestions
     }
 
     private static string Normalize(string value) => value.Trim().ToUpperInvariant();
+
+    // The same words in another order, such as "add_image_stamp" for "add_stamp_image".
+    private static bool SameWords(string wanted, string name)
+    {
+        string[] requested = Words(wanted);
+        return requested.Length > 1 && requested.SequenceEqual(Words(name), StringComparer.Ordinal);
+
+        static string[] Words(string value) =>
+            [.. value.Split(['_', '-', ' '], StringSplitOptions.RemoveEmptyEntries).Order(StringComparer.Ordinal)];
+    }
 
     // A compound field name says what it is in its last word: a contained name that ends the
     // other comes first ("size" for "fontSize"), then one that shares the start, including a

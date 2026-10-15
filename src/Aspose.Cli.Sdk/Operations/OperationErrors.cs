@@ -51,9 +51,9 @@ internal static class OperationErrors
     }
 
     /// <summary>
-    /// Rejects every invalid operation of a batch at once, so a caller fixes them in one pass.
-    /// With more than one, the first leads the details and <c>details.errors</c> lists the
-    /// details of each; the message counts them and quotes the first.
+    /// Rejects every invalid operation of a batch at once, and every unknown field of each, so a
+    /// caller fixes them in one pass. With more than one failure, the first leads the details and
+    /// <c>details.errors</c> lists the details of each; the message counts them and quotes the first.
     /// </summary>
     internal static CliException InvalidAll(IReadOnlyList<CliException> failures)
     {
@@ -65,19 +65,24 @@ internal static class OperationErrors
 
         JsonObject details = first.Details!.DeepClone().AsObject();
         details["errors"] = new JsonArray([.. failures.Select(static failure => failure.Details!.DeepClone())]);
+        int operations = failures.Select(static failure => failure.Details?["id"]?.GetValue<string>()).Distinct(StringComparer.Ordinal).Count();
+        string counted = operations == failures.Count ? $"{failures.Count} operations are invalid"
+            : operations == 1 ? $"{failures.Count} problems make one operation invalid"
+            : $"{failures.Count} problems make {operations} operations invalid";
         return CliException.Create(
             ErrorCodes.OpsInvalid,
-            $"{failures.Count} operations are invalid, each listed in details.errors; the first: {first.Message}",
+            $"{counted}, each listed in details.errors; the first: {first.Message}",
             hint: first.Hint, details: details);
     }
 
     /// <summary>
     /// Rejects an entry whose op names no operation of the vocabulary, listing the operations in
-    /// <c>available</c> and, when some are likely meant, naming them in <c>suggestions</c>.
+    /// <c>available</c> and, when some are likely meant, naming them in <c>suggestions</c>;
+    /// <c>details.op</c> is the op name as the entry wrote it, so the caller finds the entry.
     /// </summary>
     internal static CliException UnknownAt(string id, string reason, string hint, Mistake operation)
     {
-        JsonObject details = Identify(id, name: null);
+        JsonObject details = Identify(id, operation.Requested);
         details["reason"] = reason;
         operation.WriteTo(details);
         return CliException.Create(ErrorCodes.OpsInvalid, $"{Subject(id, name: null)} is invalid: {reason}{Listed(operation)}",

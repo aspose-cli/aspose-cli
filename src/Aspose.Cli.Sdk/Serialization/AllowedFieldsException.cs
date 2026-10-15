@@ -58,3 +58,14 @@ internal sealed class AllowedFieldsException : JsonException
     public static AllowedFieldsException NotAnObject(string path, IReadOnlyList<string> allowedFields) =>
         new($"{path} must be an object; details.available lists its fields", allowedFields, mistake: null);
 }
+
+/// <summary>
+/// Several unknown fields of one operation entry, each an <see cref="AllowedFieldsException"/>,
+/// so the operation error lists every one of them.
+/// </summary>
+internal sealed class UnknownFieldsException(IReadOnlyList<AllowedFieldsException> fields)
+    : JsonException(string.Join("; ", fields.Select(static field => field.Message)))
+{
+    /// <summary>The unknown fields in the entry's order.</summary>
+    public IReadOnlyList<AllowedFieldsException> Fields { get; } = fields;
+}

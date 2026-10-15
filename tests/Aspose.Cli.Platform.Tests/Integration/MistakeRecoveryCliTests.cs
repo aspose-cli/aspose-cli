@@ -35,6 +35,42 @@ public sealed class MistakeRecoveryCliTests : IDisposable
         Assert.StartsWith($"Did you mean '{suggestion}'", error["hint"]!.GetValue<string>(), StringComparison.Ordinal);
     }
 
+    /// <summary>Every unknown field of one operation is reported at once, each with the field meant.</summary>
+    [Theory]
+    [InlineData("slides", "a.pptx", """{"op":"format_shape","slide":1,"shapeId":4,"style":{"fill":"#FF0000","size":20}}""", "fillColor", "fontSize")]
+    [InlineData("pdf", "a.pdf", """{"op":"add_page_numbers","txet":"{n}","placment":"bottom-center"}""", "text", "placement")]
+    public void SeveralUnknownFieldsOfOneOperation_AreListedTogether(string product, string file, string operation, string first, string second)
+    {
+        File.WriteAllText(_workspace.File(file), "not a document");
+        File.WriteAllText(_workspace.File("ops.json"), $$"""{"ops":[{{operation}}]}""");
+
+        CliResult result = _workspace.Run(product, "edit", file, "--ops", "ops.json", "--output-format", "json");
+
+        JsonNode error = JsonNode.Parse(result.StdErr)!["error"]!;
+        Assert.Equal("OPS_INVALID", error["code"]!.GetValue<string>());
+        JsonArray errors = error["details"]!["errors"]!.AsArray();
+        Assert.Equal(2, errors.Count);
+        Assert.All(errors, item => Assert.Equal("op-0001", item!["id"]!.GetValue<string>()));
+        Assert.Equal([first, second], errors.Select(static item => item!["suggestions"]![0]!.GetValue<string>()));
+        Assert.StartsWith("2 problems make one operation invalid", error["message"]!.GetValue<string>(), StringComparison.Ordinal);
+    }
+
+    /// <summary>An unknown op names the entry by the op it wrote, and the same words in another order are the name meant.</summary>
+    [Fact]
+    public void UnknownOperation_StatesTheOpItWroteAndSuggestsTheReorderedName()
+    {
+        File.WriteAllText(_workspace.File("a.pdf"), "not a document");
+        File.WriteAllText(_workspace.File("ops.json"), """{"ops":[{"op":"add_image_stamp","image":"x.png"}]}""");
+
+        CliResult result = _workspace.Run("pdf", "edit", "a.pdf", "--ops", "ops.json", "--output-format", "json");
+
+        JsonNode error = JsonNode.Parse(result.StdErr)!["error"]!;
+        Assert.Equal("OPS_INVALID", error["code"]!.GetValue<string>());
+        Assert.Equal("op-0001", error["details"]!["id"]!.GetValue<string>());
+        Assert.Equal("add_image_stamp", error["details"]!["op"]!.GetValue<string>());
+        Assert.Equal("add_stamp_image", error["details"]!["suggestions"]![0]!.GetValue<string>());
+    }
+
     [Theory]
     [InlineData("""{"op":"clear_rnage","range":"A1"}""", "clear_range")]
     [InlineData("""{"op":"clear_range","range":"A1","waht":"all"}""", "what")]
