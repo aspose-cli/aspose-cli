@@ -21,7 +21,7 @@ public static class RenderSelection
     /// <param name="notFound">The product's not-found code for a part past the count.</param>
     /// <param name="part">What one part is called, such as <c>page</c>; its selection option is <c>--{part}s</c>.</param>
     /// <exception cref="CliException">
-    /// The not-found error for a part past the count; <c>USAGE_ERROR</c> when the selection holds
+    /// The not-found error for a part past the count; <c>OPTION_INVALID</c> when the selection holds
     /// more than <see cref="MaximumParts"/> parts.
     /// </exception>
     public static IReadOnlyList<int> Resolve(PageRange? range, int available, ErrorCode notFound, string part)

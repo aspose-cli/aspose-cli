@@ -429,7 +429,7 @@ public sealed class CellsCliTests : IDisposable
         CliResult wide = _workspace.Run("cells", "render", "wide.xlsx", "--out", "wide/wide.png", "--output-format", "json");
         Assert.Equal(2, wide.ExitCode);
         JsonNode error = JsonNode.Parse(wide.StdErr)!["error"]!;
-        Assert.Equal("USAGE_ERROR", error["code"]!.GetValue<string>());
+        Assert.Equal("OPTION_INVALID", error["code"]!.GetValue<string>());
         Assert.Equal("--sheets", error["details"]!["option"]!.GetValue<string>());
         Assert.Equal(20, error["details"]!["limit"]!.GetValue<int>());
         Assert.False(Directory.Exists(_workspace.File("wide")));
