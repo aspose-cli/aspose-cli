@@ -79,7 +79,7 @@ internal sealed class ParsedInvocation
         {
             throw refused.ValuesOnly
                 ? CliErrors.OptionValuesRefused(refused.Problems, refused.Parameter!, refused.Mistake)
-                : CliErrors.Usage(refused.Problems, refused.Mistake, refused.Corrected, refused.Parameter);
+                : CliErrors.Usage(refused.Problems, refused.Mistake, refused.Corrected, refused.Parameter, refused.Hint);
         }
     }
 
@@ -140,7 +140,10 @@ internal sealed class ParsedInvocation
                 ? Mistake.Of(string.Empty, allowed)
                 : null);
         string? parameter = unknownOption ?? missing?.Name ?? MissingArguments().FirstOrDefault()?.Name ?? first?.Parameter;
-        return new(problems, mistake, parameter, ValuesOnly: false);
+        return new(problems, mistake, parameter, ValuesOnly: false)
+        {
+            Hint = unknownOption is null ? null : Command.RefusedOptionHint(unknownOption),
+        };
     }
 
     /// <summary>
@@ -205,7 +208,11 @@ internal sealed class ParsedInvocation
     }
 
     /// <summary>What fails a command line; see <see cref="Problems"/>. <c>Corrected</c> is the command line that fixes it, when one is known.</summary>
-    private sealed record Refusal(string[] Problems, Mistake? Mistake, string? Parameter, bool ValuesOnly, IReadOnlyList<string>? Corrected = null);
+    private sealed record Refusal(string[] Problems, Mistake? Mistake, string? Parameter, bool ValuesOnly, IReadOnlyList<string>? Corrected = null)
+    {
+        /// <summary>The hint the command declares for the unknown option, in place of the advice to read help.</summary>
+        public string? Hint { get; init; }
+    }
 
     /// <summary>A value the command refused: the sentence that states it, its option or argument, and the mistake when it has a list of values.</summary>
     private sealed record RefusedValue(string Problem, string Parameter, Mistake? Mistake);

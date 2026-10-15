@@ -108,6 +108,14 @@ public sealed class CommandDefinition<TRequest, TResult>
     /// </summary>
     public IReadOnlyList<string> MistakenFor { get; init; } = [];
 
+    /// <summary>
+    /// Options the command does not have that a caller may reach for, such as <c>--encrypt</c> on a
+    /// command that never encrypts, each with the hint that names what does it instead. The
+    /// parser refuses them as any unknown option, with that hint; help and capabilities do not
+    /// list them.
+    /// </summary>
+    public IReadOnlyList<RefusedOption> RefusedOptions { get; init; } = [];
+
     /// <summary>Help examples, written after the executable name.</summary>
     public IReadOnlyList<string> Examples { get; init; } = [];
 
@@ -154,6 +162,7 @@ public sealed class CommandDefinition<TRequest, TResult>
         Command command = options.CreateCommand(Name, Description, _parameters);
         command.SetAction(parse => context.Run(parse, scope => Execute(options, parse, scope, context, handler)));
         CommandMistakes.Declare(command, MistakenFor);
+        CommandMistakes.DeclareRefused(command, RefusedOptions);
         if (EncryptingDocument is { } encrypting)
         {
             ProtectionAdvice.Declare(command, encrypting);
