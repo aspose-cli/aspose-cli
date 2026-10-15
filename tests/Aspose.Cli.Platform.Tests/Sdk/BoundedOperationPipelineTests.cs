@@ -372,6 +372,75 @@ public sealed class BoundedOperationPipelineTests
         Assert.Equal(missing, error.Details["path"]!.GetValue<string>());
     }
 
+    /// <summary>A file failure as .NET words it, naming <paramref name="path"/>.</summary>
+    private static Exception FileFailure(string kind, string path) => kind switch
+    {
+        // HRESULT_FROM_WIN32(ERROR_SHARING_VIOLATION): another program holds the file.
+        "locked" => new IOException($"The process cannot access the file '{path}' because it is being used by another process.", unchecked((int)0x80070020)),
+        "denied" => new UnauthorizedAccessException($"Access to the path '{path}' is denied."),
+        _ => new FileNotFoundException($"Could not find file '{path}'."),
+    };
+
+    /// <summary>
+    /// A file the operation declares that cannot be opened keeps the code of that failure and
+    /// names the declared file, also when the exception names it only in its message, raised
+    /// directly or by the engine.
+    /// </summary>
+    [Theory]
+    [InlineData("locked", "FILE_LOCKED", false)]
+    [InlineData("locked", "FILE_LOCKED", true)]
+    [InlineData("denied", "FILE_ACCESS_DENIED", false)]
+    [InlineData("denied", "FILE_ACCESS_DENIED", true)]
+    [InlineData("missing", "FILE_NOT_FOUND", true)]
+    public void Run_ReportsADeclaredFileThatCannotBeOpenedByItsCode(string kind, string code, bool engine)
+    {
+        string declared = Path.Combine(Path.GetTempPath(), "held-picture.png");
+        TestBatch batch = Catalog.Prepare(new TestBatch { Ops = [Set(1), new LinkOp { Path = declared }] });
+        void Apply(TestOp op)
+        {
+            if (op is LinkOp)
+            {
+                Exception cause = FileFailure(kind, declared);
+                throw engine ? new EngineOpException("the engine could not open the file", cause) : cause;
+            }
+        }
+
+        CliException error = Assert.Throws<CliException>(() => Run(batch, bestEffort: false, Apply));
+        ErrorPayload recorded = Run(batch, bestEffort: true, Apply)[1].Error!;
+
+        Assert.Equal(code, error.Code.Name);
+        Assert.Equal("op-0002", error.Details!["id"]!.GetValue<string>());
+        Assert.Equal(declared, error.Details["path"]!.GetValue<string>());
+        Assert.Equal(code, recorded.Code);
+    }
+
+    /// <summary>
+    /// A failure of another file than the one the operation declares, such as a temporary file
+    /// the engine writes or a file whose name only ends like the declared one's, is not the
+    /// declared file's: the engine's stops the batch as an engine failure, in every mode.
+    /// </summary>
+    [Theory]
+    [InlineData("locked")]
+    [InlineData("denied")]
+    public void Run_NeverBlamesTheDeclaredFileForAnotherFilesFailure(string kind)
+    {
+        string declared = Path.Combine(Path.GetTempPath(), "a.png");
+        TestBatch batch = Catalog.Prepare(new TestBatch { Ops = [new LinkOp { Path = declared }, Set(1)] });
+        foreach (string other in new[] { Path.Combine(Path.GetTempPath(), "engine-scratch.tmp"), Path.Combine(Path.GetTempPath(), "ba.png") })
+        {
+            CliException error = Assert.Throws<CliException>(() => Run(batch, bestEffort: true, op =>
+            {
+                if (op is LinkOp)
+                {
+                    throw new EngineOpException("the engine failed", FileFailure(kind, other));
+                }
+            }));
+
+            Assert.Equal(ErrorCodes.FeatureUnsupported, error.Code);
+            Assert.Null(error.Details!["path"]);
+        }
+    }
+
     /// <summary>
     /// A missing file the operation does not declare, such as an assembly the runtime could not
     /// load, is no rejection a best-effort batch could continue past.
