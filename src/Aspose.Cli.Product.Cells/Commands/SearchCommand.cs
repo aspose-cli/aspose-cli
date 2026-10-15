@@ -82,7 +82,7 @@ internal static class SearchCommand
             var table = new TextTable("sheet", "cell", "text");
             foreach (CellsSearchHit hit in search.Hits)
             {
-                table.AddRow(hit.Sheet, hit.Cell, hit.Text);
+                table.AddRow(hit.Sheet, hit.Cell, hit.Context);
             }
 
             table.WriteTo(surface.Out, surface.Format);

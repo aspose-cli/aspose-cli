@@ -380,5 +380,5 @@ public sealed class WordsCliTests : IDisposable
     public void Dispose() => _workspace.Dispose();
 
     private static IEnumerable<string> HitTexts(JsonNode result) =>
-        result["hits"]!.AsArray().Select(static hit => hit!["text"]!.GetValue<string>());
+        result["hits"]!.AsArray().Select(static hit => hit!["context"]!.GetValue<string>());
 }

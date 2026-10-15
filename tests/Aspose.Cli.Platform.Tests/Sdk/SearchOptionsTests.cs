@@ -123,6 +123,17 @@ public sealed class SearchOptionsTests
         Assert.Equal(ErrorCodes.OperationTimeout, error.Code);
     }
 
+    [Fact]
+    public void TextSearch_ContextShowsFortyCharactersAroundTheMatchOnOneLine()
+    {
+        string before = new('a', 50);
+        string after = new('b', 50);
+
+        Assert.Equal("one two three four", TextSearch.Context("one\r\ntwo\tthree\vfour", 5, 3));
+        Assert.Equal("…" + new string('a', 40) + "X" + new string('b', 40) + "…", TextSearch.Context(before + "X" + after, 50, 1));
+        Assert.Equal("short", TextSearch.Context("short", 0, 5));
+    }
+
     private static SearchQuery Read(SearchOptions options, params string[] arguments) =>
         options.Read(Parse(options, arguments));
 

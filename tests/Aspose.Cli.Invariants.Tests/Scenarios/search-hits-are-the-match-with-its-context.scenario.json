@@ -1,0 +1,52 @@
+{
+  "name": "every product's search hit is the match itself, with the text around it as context",
+  "files": {
+    "book.xlsx": { "fixture": "cells.xlsx" },
+    "doc.pdf": { "fixture": "pdf.pdf" },
+    "deck.pptx": { "fixture": "slides.pptx" },
+    "doc.docx": { "fixture": "words.docx" }
+  },
+  "steps": [
+    {
+      "args": ["cells", "search", "book.xlsx", "--pattern", "invariant"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "hits[0].text", "equals": "invariant" },
+          { "path": "hits[0].context", "equals": "Hello invariant world" }
+        ]
+      }
+    },
+    {
+      "args": ["pdf", "search", "doc.pdf", "--pattern", "invariant"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "hits[0].text", "equals": "invariant" },
+          { "path": "hits[0].context", "contains": "Hello invariant world" }
+        ]
+      }
+    },
+    {
+      "args": ["slides", "search", "deck.pptx", "--pattern", "hello"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "hits[0].text", "equals": "Hello" },
+          { "path": "hits[0].context", "contains": "Hello" },
+          { "path": "hits[0].start", "exists": false }
+        ]
+      }
+    },
+    {
+      "args": ["words", "search", "doc.docx", "--pattern", "invariant"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "hits[0].text", "equals": "invariant" },
+          { "path": "hits[0].context", "equals": "Hello invariant world" }
+        ]
+      }
+    }
+  ]
+}

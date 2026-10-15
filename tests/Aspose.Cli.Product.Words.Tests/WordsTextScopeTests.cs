@@ -25,7 +25,8 @@ public sealed class WordsTextScopeTests : IClassFixture<WordsFixture>
         WordsSearchResult result = WordsSearch.Run(_fixture.Session, WordsFixture.Search(input, "needle", scope));
 
         Assert.All(result.Hits, hit => Assert.Equal(scope, hit.Scope));
-        Assert.Equal(expected.Order(), result.Hits.SelectMany(static hit => Needles(hit.Text)).Order());
+        Assert.Equal(expected.Length, result.Hits.Count);
+        Assert.Equal(expected.Order(), result.Hits.SelectMany(static hit => Needles(hit.Context)).Distinct().Order());
     }
 
     [Fact]
@@ -35,9 +36,10 @@ public sealed class WordsTextScopeTests : IClassFixture<WordsFixture>
 
         WordsSearchResult result = WordsSearch.Run(_fixture.Session, WordsFixture.Search(input, "needle", "all"));
 
+        Assert.Equal(6, result.Hits.Count);
         Assert.Equal(
             ["Body needle", "Box needle", "Comment needle", "Footer needle", "Footnote needle", "Header needle"],
-            result.Hits.SelectMany(static hit => Needles(hit.Text)).Order());
+            result.Hits.SelectMany(static hit => Needles(hit.Context)).Distinct().Order());
     }
 
     [Fact]
@@ -66,7 +68,7 @@ public sealed class WordsTextScopeTests : IClassFixture<WordsFixture>
         WordsSearchHit[] headers = result.Hits.Where(static hit => hit.Scope == "headers-footers").ToArray();
         Assert.Equal([1, 2], headers.Select(static hit => hit.Section));
         Assert.All(headers, static hit => Assert.Null(hit.Block));
-        Assert.Contains("Contract 2 needle", headers[1].Text, StringComparison.Ordinal);
+        Assert.Contains("Contract 2 needle", headers[1].Context, StringComparison.Ordinal);
     }
 
     [Fact]

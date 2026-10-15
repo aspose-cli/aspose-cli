@@ -44,7 +44,7 @@ internal static class SearchCommand
 
     internal static void Table(SlidesSearchResult result, TableSurface surface)
     {
-        var table = new TextTable("slide", "id", "scope", "shape", "start", "text");
+        var table = new TextTable("slide", "id", "scope", "shape", "text");
         foreach (SlidesSearchHit hit in result.Hits)
         {
             table.AddRow(
@@ -52,8 +52,7 @@ internal static class SearchCommand
                 hit.SlideId.ToString(CultureInfo.InvariantCulture),
                 hit.Scope,
                 hit.ShapeName ?? hit.ShapeId?.ToString(CultureInfo.InvariantCulture),
-                TableText.Int(hit.Start),
-                hit.Text);
+                hit.Context);
         }
 
         table.WriteTo(surface.Out, surface.Format);

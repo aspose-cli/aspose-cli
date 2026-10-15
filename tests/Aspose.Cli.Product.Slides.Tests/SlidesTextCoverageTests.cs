@@ -58,7 +58,7 @@ public sealed class SlidesTextCoverageTests
 
         SlidesShapeData shape = Assert.Single(read.Slides[0].Shapes, static shape => !shape.EvaluationWatermark);
         Assert.Equal("q\nx y", shape.Text);
-        Assert.Contains("q\nx y", Assert.Single(search.Hits).Text, StringComparison.Ordinal);
+        Assert.Equal("q x y", Assert.Single(search.Hits).Context);
     }
 
     [Fact]
@@ -179,7 +179,7 @@ public sealed class SlidesTextCoverageTests
         string text = File.ReadAllText(Assert.Single(extract.Items).Path);
         Assert.DoesNotContain('\r', text);
         Assert.Contains("ab\ncd\nef", text, StringComparison.Ordinal);
-        Assert.Equal("ab\ncd", Assert.Single(search.Hits).Text);
+        Assert.Equal("ab cd", Assert.Single(search.Hits).Context);
     }
 
     [Fact]

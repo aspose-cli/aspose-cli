@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using Aspose.Cli.Sdk.Licensing;
 using Aspose.Cli.Sdk.Results;
 using Aspose.Cli.Sdk.Text;
@@ -9,6 +10,11 @@ namespace Aspose.Cli.Product.Slides.Engine;
 /// <summary>Bounded shape and speaker-notes text search.</summary>
 internal static class SlidesSearch
 {
+    /// <summary>The notice evaluation mode puts after the first characters of a text it cuts short.</summary>
+    private static readonly Regex EvaluationNotice = new(
+        @"\.\.\.\s*text has been " + Regex.Escape(EvaluationTruncationMarker) + @"\.?",
+        RegexOptions.IgnoreCase | RegexOptions.CultureInvariant | RegexOptions.NonBacktracking);
+
     internal static SlidesSearchResult Run(SlidesSession session, SlidesSearchRequest request)
     {
         TextSearch text = request.Query.Text;
@@ -47,8 +53,14 @@ internal static class SlidesSearch
             // Offers every match in one text; false once the hit window is full.
             bool Offer(string source, string hitScope, long? shapeId, string? shapeName)
             {
+                IReadOnlyList<(int Start, int Length)> notices = EvaluationNotices(source);
                 foreach ((int start, int length) in text.Find(source))
                 {
+                    if (notices.Any(notice => start < notice.Start + notice.Length && notice.Start < start + length))
+                    {
+                        continue;
+                    }
+
                     if (!hits.Offer(() => new SlidesSearchHit
                     {
                         Slide = index + 1,
@@ -56,9 +68,8 @@ internal static class SlidesSearch
                         Scope = hitScope,
                         ShapeId = shapeId,
                         ShapeName = EmptyToNull(shapeName),
-                        Text = MatchPreview(source, start, length),
-                        Start = start,
-                        Length = length,
+                        Text = source.Substring(start, length),
+                        Context = TextSearch.Context(source, start, length),
                     }))
                     {
                         return false;
@@ -81,6 +92,13 @@ internal static class SlidesSearch
         };
     }
 
-    private static string MatchPreview(string text, int start, int length) =>
-        TextSearch.Preview(text, start, length, radius: 100);
+    /// <summary>
+    /// Where evaluation mode put its truncation notice in a text it cut short, such as
+    /// "First... text has been truncated due to evaluation version limitation.": the notice is
+    /// the engine's, not the presentation's, so a match in it is no hit.
+    /// </summary>
+    private static IReadOnlyList<(int Start, int Length)> EvaluationNotices(string text) =>
+        CutByEvaluation(text)
+            ? [.. EvaluationNotice.Matches(text).Select(static notice => (notice.Index, notice.Length))]
+            : [];
 }

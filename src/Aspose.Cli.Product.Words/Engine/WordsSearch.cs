@@ -22,8 +22,7 @@ internal static class WordsSearch
             .SelectMany(static story => WordsStories.Units(story.Story).Select(unit => (unit, story.Scope)));
         foreach ((Node node, string scope) in units)
         {
-            string text = WordsText.Of(node);
-            if (query.Text.IsMatch(text) && !hits.Offer(() => Hit(index, node, scope, text)))
+            if (!OfferEach(hits, query.Text, index, node, scope))
             {
                 break;
             }
@@ -40,7 +39,22 @@ internal static class WordsSearch
         };
     }
 
-    private static WordsSearchHit Hit(DocumentBlockIndex index, Node node, string scope, string text)
+    /// <summary>Offers every match in one paragraph, comment or note; false once the hit window is full.</summary>
+    private static bool OfferEach(SearchHits<WordsSearchHit> hits, TextSearch query, DocumentBlockIndex index, Node node, string scope)
+    {
+        string text = WordsText.Of(node);
+        foreach ((int start, int length) in query.Find(text))
+        {
+            if (!hits.Offer(() => Hit(index, node, scope, text, start, length)))
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private static WordsSearchHit Hit(DocumentBlockIndex index, Node node, string scope, string text, int start, int length)
     {
         (string Location, string Kind)? place = scope == WordsTextScopes.HeadersFooters && node.GetAncestor(NodeType.HeaderFooter) is HeaderFooter headerFooter
             ? WordsStories.PlaceOf(headerFooter)
@@ -52,7 +66,8 @@ internal static class WordsSearch
             Scope = scope,
             Location = place?.Location,
             Kind = place?.Kind,
-            Text = TextSearch.Truncate(text, 300),
+            Text = text.Substring(start, length),
+            Context = TextSearch.Context(text, start, length),
         };
     }
 }

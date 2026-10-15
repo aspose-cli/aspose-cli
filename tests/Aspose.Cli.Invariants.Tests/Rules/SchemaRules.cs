@@ -824,6 +824,16 @@ internal static partial class ContractRules
                 string[] instead = [.. PublishedSchema.Required(hit).Where(static name => name is "snippet" or "value" or "match")];
                 yield return $"hits[] does not require text{(instead.Length > 0 ? $" (it has {string.Join(", ", instead)})" : string.Empty)}";
             }
+            // text is the match itself and context the text around it, never offsets into a text the hit does not return.
+            if (hit["properties"]?["context"] is null)
+            {
+                yield return "hits[] has no context beside the matched text";
+            }
+            string[] offsets = [.. new[] { "start", "length" }.Where(name => hit["properties"]?[name] is not null)];
+            if (offsets.Length > 0)
+            {
+                yield return $"hits[] has {string.Join(", ", offsets)}, offsets into a text it does not return";
+            }
         }
     }
 
