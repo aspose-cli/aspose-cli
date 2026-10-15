@@ -230,7 +230,9 @@ internal sealed class PdfSnapshots(Document document, PdfPageIdentities pages, F
     private OperationSnapshot Attachments() =>
         new OperationSnapshot().AddSequence("attachment", PdfInfoProjection.AttachmentEntries(document)
             .Where(static entry => entry.Info.Name.Length > 0)
-            .Select(static entry => (PdfInfoProjection.Address("attachment", entry.Info.Name), PdfInfoProjection.Unreported.Attachment(entry.File))));
+            // The name is part of the state: the engine keeps attachments in name order, so two
+            // with the same content are told apart by name, not by where they stand.
+            .Select(static entry => (PdfInfoProjection.Address("attachment", entry.Info.Name), $"{entry.Info.Name}|{PdfInfoProjection.Unreported.Attachment(entry.File)}")));
 
     /// <summary>
     /// The form fields of the names an operation lists, or every field without a list, in order,
