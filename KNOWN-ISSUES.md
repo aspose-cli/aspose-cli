@@ -214,10 +214,12 @@ fails, delete the issue's section, the code that names it and the test, then upd
 ### PDF-HTML-FORM-NAMES
 
 - **Defect:** the HTML importer keeps the `name` of single-line text inputs only. It names check
-  boxes, radio groups, selects, text areas and buttons itself (such as `field_#0`, `field_1` and
-  `radio`) and drops their `value` attributes: a check box is checked with `Yes` and radio buttons
+  boxes, selects, text areas and buttons after their `id` attribute, or itself when they have
+  none, and radio groups always itself (such as `field_#0`, `field_1` and `radio`), and it drops
+  their `value` attributes: a check box is checked with `Yes` and radio buttons
   take the values `Item0`, `Item1` and so on. `HtmlLoadOptions` has no option to keep them.
-- **CLI behavior:** `pdf create --from-html` warns `LOSSY_CONVERSION` with the generated names;
+- **CLI behavior:** `pdf create --from-html` warns `LOSSY_CONVERSION` with these names, saying
+  which come from an `id` attribute and which are generated;
   `pdf inspect --detail forms` gives each field's `page` and `rect`.
 - **Workaround:** match each generated field to the label beside it by its `rect` before filling.
 - **Reproduction:** [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownIssueTests.cs)
