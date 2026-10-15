@@ -1062,6 +1062,19 @@ public static partial class CliErrors
         details: new JsonObject { ["reason"] = "content-too-large" });
 
     /// <summary>
+    /// Content the document engine would write wrong, a confirmed defect of the engine that
+    /// <c>KNOWN-ISSUES.md</c> records, so the command refuses it before writing anything.
+    /// <c>details.reason</c> is <c>engine-defect</c>.
+    /// </summary>
+    /// <param name="message">What the engine would write wrong, and for which content.</param>
+    /// <param name="hint">How to get a correct output another way.</param>
+    public static CliException EngineDefect(string message, string hint) => CliException.Create(
+        ErrorCodes.FeatureUnsupported,
+        message,
+        hint: hint,
+        details: new JsonObject { ["reason"] = "engine-defect" });
+
+    /// <summary>
     /// The local environment a document engine reads, such as the font registry, holds
     /// something the engine cannot read, so every document would fail the same way.
     /// <c>details.reason</c> is <c>environment</c>.

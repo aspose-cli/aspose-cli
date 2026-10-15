@@ -124,6 +124,18 @@ fails, delete the issue's section, the code that names it and the test, then upd
   covers after the delete, as Excel does, and remove a validation left with no area.
 - **Reproduction:** [CellsKnownIssueTests](tests/Aspose.Cli.Product.Cells.Tests/CellsKnownIssueTests.cs)
 
+### CELLS-JSON-HEADER-ONLY
+
+- **Defect:** saving as JSON a sheet whose data is a single row, which the engine takes for the
+  header, writes the header's names as members of an array, such as `["Name": null]`, which is
+  not JSON; no `JsonSaveOptions` setting writes it as an empty list of records.
+- **CLI behavior:** `cells convert --to json` leaves out the evaluation warning sheets, whose
+  notice is such a row, and refuses a workbook with any other such sheet with
+  `FEATURE_UNSUPPORTED` (`details.reason` `engine-defect`), naming the sheets, before it writes
+  anything.
+- **Workaround:** add a data row below the header, delete the sheet, or convert to csv.
+- **Reproduction:** [CellsConvertKnownIssueTests](tests/Aspose.Cli.Product.Cells.Tests/CellsConvertKnownIssueTests.cs)
+
 ## Aspose.PDF.Drawing 26.8.0
 
 ### PDF-HTML-EGRESS
