@@ -8,7 +8,7 @@
       "args": ["pdf", "convert", "input.pdf", "--to", "docx", "--out", "out.xlsx"],
       "expect": {
         "exitCode": 2,
-        "error": "USAGE_ERROR",
+        "error": "OPTION_INVALID",
         "json": [{ "path": "error.message", "contains": "contradicts --out" }],
         "files": { "absent": ["out.xlsx", "out.docx"], "nothingWritten": true }
       }

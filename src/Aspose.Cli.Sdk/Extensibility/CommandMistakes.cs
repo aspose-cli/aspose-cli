@@ -6,11 +6,13 @@ namespace Aspose.Cli.Sdk.Extensibility;
 /// <summary>
 /// The names a command declares a caller may mistake for it (a command definition's <c>MistakenFor</c>),
 /// such as a command that no longer exists. They are names of no command: the parser refuses
-/// them, and the error suggests every command that declares the name first.
+/// them, and the error suggests every command that declares the name first. An option declares
+/// the same for its values: the value a refused one stands for leads the suggestions.
 /// </summary>
 public static class CommandMistakes
 {
     private static readonly ConditionalWeakTable<Command, IReadOnlyList<string>> Declared = [];
+    private static readonly ConditionalWeakTable<Option, Func<string, string?>> MeantValues = [];
 
     /// <summary>Declares the names <paramref name="command"/> is mistaken for.</summary>
     internal static void Declare(Command command, IReadOnlyList<string> names)
@@ -36,6 +38,30 @@ public static class CommandMistakes
     {
         ArgumentNullException.ThrowIfNull(command);
         return Declared.TryGetValue(command, out IReadOnlyList<string>? names) ? names : [];
+    }
+
+    /// <summary>
+    /// Declares how <paramref name="option"/> reads a value it refuses: <paramref name="meant"/>
+    /// returns the value a refused one most likely stands for, such as the format id of a file
+    /// extension given to <c>--to</c>, or null when it stands for none.
+    /// </summary>
+    internal static void DeclareValues(Option option, Func<string, string?> meant)
+    {
+        ArgumentNullException.ThrowIfNull(meant);
+        MeantValues.AddOrUpdate(option, meant);
+    }
+
+    /// <summary>
+    /// The value <paramref name="option"/> declares <paramref name="value"/> most likely stands for,
+    /// such as <c>md</c> for <c>--to markdown</c>; null when it declares none.
+    /// </summary>
+    /// <param name="option">The option that refused the value.</param>
+    /// <param name="value">The refused value as the caller wrote it.</param>
+    public static string? MeantValue(this Option option, string value)
+    {
+        ArgumentNullException.ThrowIfNull(option);
+        ArgumentNullException.ThrowIfNull(value);
+        return MeantValues.TryGetValue(option, out Func<string, string?>? meant) ? meant(value) : null;
     }
 
     /// <summary>

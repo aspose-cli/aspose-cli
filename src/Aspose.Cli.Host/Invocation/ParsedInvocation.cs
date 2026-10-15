@@ -40,63 +40,187 @@ internal sealed class ParsedInvocation
 
     /// <summary>
     /// Whether the command only groups other commands and was given none of them, such as
-    /// <c>aspose-cli cells</c>: it does nothing on its own, so its help is the answer.
+    /// <c>aspose-cli cells</c> or <c>aspose-cli cells --bogus</c>: it does nothing on its own, so
+    /// its help is the answer. Options it does not know are reported beside the missing command.
     /// </summary>
     internal bool LacksCommand =>
         ParseResult.Errors.Count > 0
         && ParseResult.Errors.All(static error => error.SymbolResult is CommandResult)
         && Command.Action is null
         && VisibleCommands().Length > 0
-        && ParseResult.UnmatchedTokens.Count == 0
+        && (ParseResult.UnmatchedTokens.FirstOrDefault() is not { } first || first.StartsWith('-'))
         && !OptionLikeArguments().Any();
 
     internal void EnsureValid()
     {
         if (LacksCommand)
         {
+            string[] unknown = [.. ParseResult.UnmatchedTokens.Where(static token => token.StartsWith('-'))];
             throw CliErrors.CommandRequired(
-                string.Join(' ', [DistributionInfo.CommandName, .. CommandPath.Select(static command => command.Name)]),
-                [.. VisibleCommands().Select(Below)]);
+                Path(),
+                [.. VisibleCommands().Select(Below)],
+                unknown,
+                unknown.Length > 0 ? UnknownOptionMistake(unknown[0]).Suggestions : null);
         }
 
         // Before help: a mistaken name beside --help would otherwise show the help as if it were right.
         if (MistakenName() is { } mistaken)
         {
-            throw mistaken.Others is { } others
-                ? CliErrors.Usage([mistaken.Problem, .. others], mistaken.Mistake)
-                : CliErrors.Usage([mistaken.Problem], mistaken.Mistake, mistaken.Corrected);
+            throw CliErrors.Usage([mistaken.Problem, .. mistaken.Others], mistaken.Mistake, mistaken.Corrected);
+        }
+
+        if (VersionWithOthers() is { } version)
+        {
+            throw CliErrors.Usage([$"'{version}' is not an option of --version, which takes only --output-format."],
+                UnknownOptionMistake(version), parameter: version);
         }
 
         if (Problems() is { } refused)
         {
-            throw CliErrors.Usage(refused.Problems, refused.Mistake);
+            throw refused.ValuesOnly
+                ? CliErrors.OptionValuesRefused(refused.Problems, refused.Parameter!, refused.Mistake)
+                : CliErrors.Usage(refused.Problems, refused.Mistake, refused.Corrected, refused.Parameter);
         }
     }
 
     /// <summary>
-    /// What makes the command line not parse, other than a mistaken name, and the first unknown
-    /// command, option or value among it; null when it parses.
+    /// What makes the command line fail, other than a mistaken name: the problems, the first
+    /// unknown command, option or value among it, the option or argument the first problem is
+    /// about, and whether every problem is a value the command refused, so the command line
+    /// itself parses; null when nothing fails.
     /// </summary>
-    private (string[] Problems, Mistake? Mistake)? Problems()
+    private Refusal? Problems()
     {
         if (LacksCommand)
         {
-            return ([$"'{string.Join(' ', [DistributionInfo.CommandName, .. CommandPath.Select(static command => command.Name)])}' needs a command."], null);
+            return new([$"'{Path()}' needs a command."], null, null, ValuesOnly: false);
         }
 
         if ((UnknownCommand() ?? HelpOrVersionWord()) is { } unknown)
         {
-            return ([unknown.Problem], unknown.Mistake);
+            return new([unknown.Problem], unknown.Mistake, null, ValuesOnly: false);
         }
 
-        (ParseError Error, string Problem, Mistake Mistake)? value = UnknownValue();
+        if (Placeholder() is { } placeholder)
+        {
+            return placeholder;
+        }
+
+        var values = new Dictionary<ParseError, RefusedValue>();
+        foreach (ParseError error in ParseResult.Errors)
+        {
+            if (Refused(error) is { } value)
+            {
+                values[error] = value;
+            }
+        }
+
+        string[] optionLike = [.. OptionLikeArguments()];
         string[] problems =
         [
-            .. ParseResult.Errors.Select(error => value is { } refused && refused.Error == error ? refused.Problem : error.Message),
-            .. OptionLikeArguments().Select(static token => $"Unrecognized command or argument '{token}'."),
+            .. ParseResult.Errors.Select(error => values.TryGetValue(error, out RefusedValue? refused) ? refused.Problem : error.Message),
+            .. optionLike.Select(static token => $"Unrecognized command or argument '{token}'."),
         ];
-        return problems.Length > 0 ? (problems, UnknownOption() ?? value?.Mistake) : null;
+        if (problems.Length == 0)
+        {
+            return null;
+        }
+
+        RefusedValue? first = ParseResult.Errors.Select(error => values.GetValueOrDefault(error)).FirstOrDefault(static value => value is not null);
+        if (first is not null && values.Count == ParseResult.Errors.Count && optionLike.Length == 0)
+        {
+            return new(problems, first.Mistake, first.Parameter, ValuesOnly: true);
+        }
+
+        string? unknownOption = ParseResult.UnmatchedTokens.Concat(optionLike).FirstOrDefault(static token => token.StartsWith('-'));
+        Option? missing = MissingOptions().FirstOrDefault();
+        Mistake? mistake = unknownOption is not null ? UnknownOptionMistake(unknownOption)
+            : StrayArgumentMistake() ?? first?.Mistake
+            ?? (problems.Length == 1 && missing is not null && OptionCompletions.Read(missing) is { Count: > 0 } allowed
+                ? Mistake.Of(string.Empty, allowed)
+                : null);
+        string? parameter = unknownOption ?? missing?.Name ?? MissingArguments().FirstOrDefault()?.Name ?? first?.Parameter;
+        return new(problems, mistake, parameter, ValuesOnly: false);
     }
+
+    /// <summary>
+    /// The name of an argument written in place of its value beside the value itself, such as
+    /// <c>words read file a.docx</c>, as a usage line reads: the name is taken as the value and
+    /// the value is left over. The command line without the name is parsed again: when it
+    /// parses it is the correction, ready to run; otherwise its own problems are reported beside
+    /// the name. Null when no argument holds its own name while a token is left over.
+    /// </summary>
+    private Refusal? Placeholder()
+    {
+        if (ParseResult.UnmatchedTokens.Count == 0)
+        {
+            return null;
+        }
+
+        foreach (ArgumentResult result in ParseResult.CommandResult.Children.OfType<ArgumentResult>())
+        {
+            string name = result.Argument.Name;
+            if (result.Tokens.FirstOrDefault(token => string.Equals(token.Value, name, StringComparison.OrdinalIgnoreCase)
+                || token.Value == $"<{name}>") is not { } placeholder)
+            {
+                continue;
+            }
+
+            string[] values = [.. ParseResult.Tokens.Select(static item => item.Value)];
+            int index = Array.IndexOf(values, placeholder.Value);
+            string[] corrected = [.. values[..index], .. values[(index + 1)..]];
+            Refusal? rest = new ParsedInvocation(ParseResult.RootCommandResult.Command.Parse(corrected, InvocationParser.Configuration), _globals).Problems();
+            return new(
+                [$"'{placeholder.Value}' stands for the <{name}> argument, whose value follows it.", .. rest?.Problems ?? []],
+                rest?.Mistake,
+                name,
+                ValuesOnly: false,
+                Corrected: rest is null ? corrected : null);
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// <paramref name="problems"/> with the suggestions of <paramref name="mistake"/> named beside
+    /// the first problem that quotes it, such as <c>... '--patern' (did you mean '--pattern'?).</c>
+    /// </summary>
+    private static string[] WithAside(string[] problems, Mistake? mistake)
+    {
+        if (mistake is not { Suggestions.Count: > 0 })
+        {
+            return problems;
+        }
+
+        string quoted = $"'{mistake.Requested}'";
+        int index = Array.FindIndex(problems, problem => problem.Contains(quoted, StringComparison.Ordinal));
+        if (index < 0)
+        {
+            return problems;
+        }
+
+        string[] marked = [.. problems];
+        marked[index] = marked[index].TrimEnd().TrimEnd('.') + mistake.Aside() + ".";
+        return marked;
+    }
+
+    /// <summary>What fails a command line; see <see cref="Problems"/>. <c>Corrected</c> is the command line that fixes it, when one is known.</summary>
+    private sealed record Refusal(string[] Problems, Mistake? Mistake, string? Parameter, bool ValuesOnly, IReadOnlyList<string>? Corrected = null);
+
+    /// <summary>A value the command refused: the sentence that states it, its option or argument, and the mistake when it has a list of values.</summary>
+    private sealed record RefusedValue(string Problem, string Parameter, Mistake? Mistake);
+
+    /// <summary>The command as the caller typed it, such as <c>aspose-cli cells</c>.</summary>
+    private string Path() => string.Join(' ', [DistributionInfo.CommandName, .. CommandPath.Select(static command => command.Name)]);
+
+    /// <summary>The required options of the command the command line does not give, in declared order.</summary>
+    private IEnumerable<Option> MissingOptions() =>
+        Command.Options.Where(option => option.Required && ParseResult.GetResult(option) is not { Tokens.Count: > 0 });
+
+    /// <summary>The arguments of the command that need a value and were given none, in declared order.</summary>
+    private IEnumerable<Argument> MissingArguments() =>
+        Command.Arguments.Where(argument => argument.Arity.MinimumNumberOfValues > 0
+            && ParseResult.GetResult(argument) is not { Tokens.Count: > 0 });
 
     /// <summary>The names of the commands the command groups, as help lists them.</summary>
     private string[] VisibleCommands() =>
@@ -159,7 +283,7 @@ internal sealed class ParsedInvocation
     /// name, it is the correction, ready to run; otherwise its own problems are reported beside
     /// the name, so one error states everything to fix.
     /// </summary>
-    private (string Problem, Mistake Mistake, IReadOnlyList<string> Corrected, string[]? Others)? MistakenName()
+    private (string Problem, Mistake Mistake, IReadOnlyList<string>? Corrected, string[] Others)? MistakenName()
     {
         if (CommandPath.Count == 0)
         {
@@ -183,16 +307,16 @@ internal sealed class ParsedInvocation
         int index = Array.IndexOf(values, token);
         string[] corrected = [.. values[..index], .. values[(index + 1)..]];
         var rest = new ParsedInvocation(ParseResult.RootCommandResult.Command.Parse(corrected, InvocationParser.Configuration), _globals);
-        string[]? problems = rest.Problems()?.Problems;
-        if (problems is null && !Declares(Command, token))
-        {
-            problems = [];
-        }
+        // The rest's own mistake, such as a mistyped option, is named beside its problem, so one
+        // error corrects both.
+        Refusal? others = rest.Problems();
+        string[] problems = others is null ? [] : WithAside(others.Problems, others.Mistake);
+        IReadOnlyList<string>? correction = !Declares(Command, token) ? null : others is null ? corrected : others.Corrected;
 
         return (
             $"'{token}' is not a command of '{string.Join(' ', [DistributionInfo.CommandName, .. parentPath])}'.",
             Mistake.Of(token, siblings.Select(Sibling), meant, keyOf: static name => name[(name.LastIndexOf(' ') + 1)..]),
-            corrected,
+            correction,
             problems);
 
         static bool Declares(Command command, string token) => command.MistakenNames().Contains(token, StringComparer.Ordinal);
@@ -211,71 +335,135 @@ internal sealed class ParsedInvocation
             return null;
         }
 
-        string parent = string.Join(' ', [DistributionInfo.CommandName, .. CommandPath.Select(static command => command.Name)]);
         string meant = token == "help" ? Below("--help") : "--version";
-        return ($"'{token}' is not a command of '{parent}'.", Mistake.Of(token, [meant], meant));
+        return ($"'{token}' is not a command of '{Path()}'; {token} is the {meant.Split(' ')[^1]} option.", Mistake.Of(token, [], meant));
     }
 
     /// <summary>
-    /// The first unknown option among the options the command accepts: its own, the recursive
-    /// ones of its parents and the root's, compared without their dashes, with the options that
-    /// declare it a common mistake for them first; null when there is none. Without one, a stray
-    /// argument beside a missing required option that a bare argument may stand for, such as
-    /// <c>search deck.pptx speaker</c> for <c>--pattern speaker</c>, suggests that option.
+    /// <paramref name="unknown"/>, an option the command does not accept, among the options it
+    /// does: its own, the recursive ones of its parents and the root's, compared without their
+    /// dashes, with the options that declare it a common mistake for them first. A single letter,
+    /// such as <c>-o</c>, most likely abbreviates the options that start with it, and <c>-?</c>
+    /// asks for help.
     /// </summary>
-    private Mistake? UnknownOption()
+    private Mistake UnknownOptionMistake(string unknown)
     {
-        Option[] options =
-        [
-            .. Command.Options
-                .Concat(CommandPath.SelectMany(static command => command.Options.Where(static option => option.Recursive)))
-                .Concat(ParseResult.RootCommandResult.Command.Options.Where(static option => option.Recursive))
-                .Where(static option => !option.Hidden)
-                .DistinctBy(static option => option.Name, StringComparer.Ordinal),
-        ];
+        Option[] options = AcceptedOptions();
         string[] names = [.. options.Select(static option => option.Name)];
-        if (ParseResult.UnmatchedTokens.Concat(OptionLikeArguments())
-            .FirstOrDefault(static token => token.StartsWith('-')) is { } unknown)
-        {
-            string[] meant = [.. options.Where(option => option.MistakenNames().Contains(unknown, StringComparer.Ordinal)).Select(static option => option.Name)];
-            return Mistake.Of(unknown, names, meant, keyOf: static name => name.TrimStart('-'));
-        }
+        string[] meant =
+        [
+            .. options.Where(option => option.MistakenNames().Contains(unknown, StringComparer.Ordinal)).Select(static option => option.Name),
+            .. unknown switch
+            {
+                "-?" or "/?" => ["--help"],
+                ['-', var letter] when char.IsAsciiLetter(letter) =>
+                    names.Where(name => name.StartsWith("--" + letter, StringComparison.Ordinal)),
+                _ => [],
+            },
+        ];
+        return Mistake.Of(unknown, names, meant, keyOf: static name => name.TrimStart('-'));
+    }
 
+    /// <summary>
+    /// A stray argument beside a missing required option that a bare argument may stand for,
+    /// such as <c>search deck.pptx speaker</c> for <c>--pattern speaker</c>: it suggests that
+    /// option; null otherwise.
+    /// </summary>
+    private Mistake? StrayArgumentMistake()
+    {
+        Option[] options = AcceptedOptions();
         return ParseResult.UnmatchedTokens.FirstOrDefault() is { } stray
             && options.FirstOrDefault(option => option.IsMistakenForArgument() && ParseResult.GetResult(option) is not OptionResult { IdentifierToken: not null }) is { } missing
-            ? Mistake.Of(stray, names, missing.Name, keyOf: static name => name.TrimStart('-'))
+            ? Mistake.Of(stray, [.. options.Select(static option => option.Name)], missing.Name, keyOf: static name => name.TrimStart('-'))
             : null;
     }
 
+    /// <summary>The options the command accepts: its own, the recursive ones of its parents and the root's, visible ones once each.</summary>
+    private Option[] AcceptedOptions() =>
+    [
+        .. Command.Options
+            .Concat(CommandPath.SelectMany(static command => command.Options.Where(static option => option.Recursive)))
+            .Concat(ParseResult.RootCommandResult.Command.Options.Where(static option => option.Recursive))
+            .Where(static option => !option.Hidden)
+            .DistinctBy(static option => option.Name, StringComparer.Ordinal),
+    ];
+
     /// <summary>
-    /// The first value the parser refused that its option or argument declares a list of values
-    /// for, such as a mistyped <c>--detail</c>: the error, the one-line problem that replaces the
-    /// parser's message, which lists the values on lines of their own, and the mistake; null when
-    /// no refused value has such a list.
+    /// The first token beside <c>--version</c> that the parser leaves over, such as
+    /// <c>--version --bogus</c>: the version is a terminating option, so the parser runs it
+    /// without reporting the token; null when there is none.
     /// </summary>
-    private (ParseError Error, string Problem, Mistake Mistake)? UnknownValue()
+    private string? VersionWithOthers() =>
+        CommandPath.Count == 0
+        && ParseResult.RootCommandResult.Children.OfType<OptionResult>().Any(static result => result.Option is VersionOption)
+            ? ParseResult.UnmatchedTokens.FirstOrDefault()
+            : null;
+
+    /// <summary>
+    /// <paramref name="error"/> when it refuses a value given to an option or argument, rather
+    /// than a missing value or more values than it takes: a value outside its list, such as a
+    /// mistyped <c>--detail</c>, whose problem replaces the parser's message, which lists the
+    /// values on lines of their own; a number that does not parse; or a value a validator
+    /// refused. Null for any other error.
+    /// </summary>
+    private RefusedValue? Refused(ParseError error)
     {
-        foreach (ParseError error in ParseResult.Errors)
+        (Option? option, Argument? argument, IReadOnlyList<Token> tokens) = error.SymbolResult switch
         {
-            (Option? option, string name, IReadOnlyList<string> allowed, IReadOnlyList<Token> tokens) = error.SymbolResult switch
-            {
-                OptionResult result => (result.Option, result.Option.Name, OptionCompletions.Read(result.Option), result.Tokens),
-                ArgumentResult { Parent: OptionResult result } argument => (result.Option, result.Option.Name, OptionCompletions.Read(result.Option), argument.Tokens),
-                ArgumentResult argument => (null, $"<{argument.Argument.Name}>", OptionCompletions.Read(argument.Argument), argument.Tokens),
-                _ => (null, string.Empty, [], []),
-            };
-            if (allowed.Count > 0
-                && tokens.Select(static token => token.Value).LastOrDefault(value => !allowed.Contains(value, StringComparer.Ordinal)) is { } value)
-            {
-                return (
-                    error,
-                    $"'{value}' is not a value of {name}.",
-                    Mistake.Of(value, allowed, meant: option?.Name == GlobalOptionNames.OutputFormat ? TargetFormat(value) : null));
-            }
+            OptionResult result => (result.Option, null, result.Tokens),
+            ArgumentResult { Parent: OptionResult result } argumentResult => (result.Option, null, argumentResult.Tokens),
+            ArgumentResult argumentResult => (null, argumentResult.Argument, argumentResult.Tokens),
+            _ => ((Option?)null, (Argument?)null, (IReadOnlyList<Token>)[]),
+        };
+        if (option is null && argument is null)
+        {
+            return null;
         }
 
-        return null;
+        ArgumentArity arity = option?.Arity ?? argument!.Arity;
+        if (tokens.Count == 0 || tokens.Count > arity.MaximumNumberOfValues)
+        {
+            return null;
+        }
+
+        string parameter = option?.Name ?? argument!.Name;
+        string name = option?.Name ?? $"<{argument!.Name}>";
+        IReadOnlyList<string> allowed = option is not null ? OptionCompletions.Read(option) : OptionCompletions.Read(argument!);
+        if (allowed.Count > 0
+            && tokens.Select(static token => token.Value).LastOrDefault(value => !allowed.Contains(value, StringComparer.Ordinal)) is { } value)
+        {
+            return new($"'{value}' is not a value of {name}.", parameter, Mistake.Of(value, allowed, MeantValue(option, value, allowed)));
+        }
+
+        Type type = option?.ValueType ?? argument!.ValueType;
+        type = Nullable.GetUnderlyingType(type) ?? type;
+        string? number = Type.GetTypeCode(type) switch
+        {
+            TypeCode.Byte or TypeCode.SByte or TypeCode.Int16 or TypeCode.UInt16 or TypeCode.Int32
+                or TypeCode.UInt32 or TypeCode.Int64 or TypeCode.UInt64 => "a whole number",
+            TypeCode.Single or TypeCode.Double or TypeCode.Decimal => "a number",
+            _ => null,
+        };
+        return number is not null && error.Message.StartsWith("Cannot parse argument", StringComparison.Ordinal)
+            ? new($"'{tokens[^1].Value}' is not {number}, which {name} takes.", parameter, null)
+            : new(error.Message, parameter, null);
     }
+
+    /// <summary>
+    /// The value a refused one most likely stands for: <c>--to</c> with a file format given to
+    /// <c>--output-format</c>, the value the option declares the refused one stands for, such
+    /// as <c>md</c> for <c>--to markdown</c>, or, for <c>all</c> given to an option that takes
+    /// several values, every value at once; null otherwise.
+    /// </summary>
+    private string? MeantValue(Option? option, string value, IReadOnlyList<string> allowed) => option switch
+    {
+        null => null,
+        { Name: GlobalOptionNames.OutputFormat } => TargetFormat(value),
+        _ when option.MeantValue(value) is { } meant => meant,
+        { Arity.MaximumNumberOfValues: > 1 } when string.Equals(value, "all", StringComparison.OrdinalIgnoreCase)
+            => $"{option.Name} {string.Join(' ', allowed)}",
+        _ => null,
+    };
 
     /// <summary>
     /// A file format given to <c>--output-format</c>, which selects how results are printed:

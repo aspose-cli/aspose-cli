@@ -84,6 +84,8 @@ public sealed class CliContractTests : IDisposable
     [InlineData("--version", "--output-format", "text")]
     [InlineData("--version", "--output-format", "json", "--workdir", ".")]
     [InlineData("--version", "--output-format", "json", "doctor")]
+    [InlineData("--version", "--bogus")]
+    [InlineData("-f", "json", "--version")]
     public void VersionWithAnotherOption_StaysAUsageError(params string[] args)
     {
         CliResult result = _workspace.Run(args);
@@ -826,14 +828,14 @@ public sealed class CliContractTests : IDisposable
     [Theory]
     [InlineData("cells inspect a.xlsx --detail cahrts", "charts")]
     [InlineData("--license-mode autoo cells inspect a.xlsx", "auto")]
-    [InlineData("skill install --host calude-code", "claude-code")]
+    [InlineData("skill install aspose-cli-platform --host calude-code", "claude-code")]
     public void UnknownValue_ListsTheAllowedValuesAndSuggestsTheClosest(string commandLine, string suggestion)
     {
         CliResult result = _workspace.Run([.. commandLine.Split(' '), "--output-format", "json"]);
 
         Assert.Equal(2, result.ExitCode);
         JsonNode error = Parse(result.StdErr)["error"]!;
-        Assert.Equal("USAGE_ERROR", error["code"]!.GetValue<string>());
+        Assert.Equal("OPTION_INVALID", error["code"]!.GetValue<string>());
         Assert.Contains(suggestion, error["details"]!["available"]!.AsArray().Select(static item => item!.GetValue<string>()));
         Assert.Equal(suggestion, error["details"]!["suggestions"]![0]!.GetValue<string>());
         Assert.StartsWith($"Did you mean '{suggestion}'?", error["hint"]!.GetValue<string>(), StringComparison.Ordinal);
@@ -867,7 +869,7 @@ public sealed class CliContractTests : IDisposable
 
         Assert.Equal(2, result.ExitCode);
         JsonNode error = Parse(result.StdErr)["error"]!;
-        Assert.Equal("USAGE_ERROR", error["code"]!.GetValue<string>());
+        Assert.Equal("OPTION_INVALID", error["code"]!.GetValue<string>());
         Assert.Equal($"--to {format}", error["details"]!["suggestions"]![0]!.GetValue<string>());
         Assert.StartsWith($"Did you mean '--to {format}'?", error["hint"]!.GetValue<string>(), StringComparison.Ordinal);
     }

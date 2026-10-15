@@ -11,7 +11,7 @@
       "args": ["cells", "convert", "book.xlsx", "--to", "csv", "--out", "cells-out"],
       "expect": {
         "exitCode": 2,
-        "error": "USAGE_ERROR",
+        "error": "OPTION_INVALID",
         "json": [
           { "path": "error.message", "contains": "--out" },
           { "path": "error.message", "contains": ".csv" }
@@ -23,7 +23,7 @@
       "args": ["pdf", "convert", "input.pdf", "--to", "docx", "--out", "pdf-out"],
       "expect": {
         "exitCode": 2,
-        "error": "USAGE_ERROR",
+        "error": "OPTION_INVALID",
         "json": [
           { "path": "error.message", "contains": "--out" },
           { "path": "error.message", "contains": ".docx" }
@@ -35,7 +35,7 @@
       "args": ["slides", "convert", "deck.pptx", "--to", "pdf", "--out", "slides-out"],
       "expect": {
         "exitCode": 2,
-        "error": "USAGE_ERROR",
+        "error": "OPTION_INVALID",
         "json": [
           { "path": "error.message", "contains": "--out" },
           { "path": "error.message", "contains": ".pdf" }
@@ -47,7 +47,7 @@
       "args": ["words", "convert", "doc.docx", "--to", "pdf", "--out", "words-out"],
       "expect": {
         "exitCode": 2,
-        "error": "USAGE_ERROR",
+        "error": "OPTION_INVALID",
         "json": [
           { "path": "error.message", "contains": "--out" },
           { "path": "error.message", "contains": ".pdf" }
