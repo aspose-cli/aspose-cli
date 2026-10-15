@@ -160,6 +160,11 @@ internal sealed partial class SlidesMutationHandlers
 
         SlidesChartUpdate.Update(chart, operation);
         ApplyDataDrivenPresentation(chart, chart.Type, SlidesChartUpdate.Values(chart));
+        if (operation.Categories is { } labels && chart.Type is ChartType.ClusteredColumn or ChartType.LineWithMarkers)
+        {
+            SlantCrowdedLabels(chart, chart.Axes.HorizontalAxis, labels);
+        }
+
         return default;
     }
 
@@ -303,7 +308,7 @@ internal sealed partial class SlidesMutationHandlers
     }
 
     /// <summary>
-    /// Slants the labels of a new chart's horizontal category axis when the widest one, with a
+    /// Slants the labels of a new or updated chart's horizontal category axis when the widest one, with a
     /// gap of one em, is wider than its share of the plot: the renderer draws labels that just
     /// fit edge to edge, so they read as one run of text. Widths are estimated at the chart's
     /// text size, a CJK character one em wide and any other character a little over half.

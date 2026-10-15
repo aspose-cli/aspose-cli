@@ -128,7 +128,13 @@ internal sealed class SlidesEditModel : IOperationModel<SlidesOp>
         SlidesReplaceTextOp replace when _truncated.Contains(operation) => new NoEffect(NoEffectReasons.EvaluationTruncated,
             $"Operation {operation.Id} (replace_text) replaced nothing: evaluation mode read text in scope '{replace.Scope}' cut short, and text it cut is left as it is.")
         {
-            Hint = "Apply an Aspose.Slides license and run the edit again; a search in evaluation mode reads the same cut text.",
+            Hint = "Apply an Aspose.Slides license and run the edit again; a search in evaluation mode reads the same cut text. "
+                + replace.Scope switch
+                {
+                    SlidesSearchScopes.Notes => "Without one, set_notes replaces a slide's whole speaker notes without reading them.",
+                    SlidesSearchScopes.Shapes => "Without one, set_text replaces a shape's whole text without reading it.",
+                    _ => "Without one, set_text replaces a shape's whole text and set_notes a slide's whole speaker notes without reading them.",
+                },
         },
         SlidesReplaceTextOp replace => new NoEffect(NoEffectReasons.NoMatch,
             $"Operation {operation.Id} (replace_text) matched no text in scope '{replace.Scope}', so nothing was replaced.")

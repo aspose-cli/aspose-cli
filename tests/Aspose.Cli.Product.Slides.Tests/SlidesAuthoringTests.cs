@@ -107,13 +107,14 @@ public sealed class SlidesAuthoringTests
             """,
             "fallback"));
 
-        // In \\| the pipe closes the cell; \| stays a literal pipe; other pairs stay as written.
+        // In \\| the pipe closes the cell and \\ is one backslash; \| stays a literal pipe; other
+        // pairs stay as written.
         MarkdownTable table = Assert.IsType<MarkdownTable>(slide.Table);
         Assert.Equal(
             [
                 ["Path", "Note"],
-                [@"C:\\", @"a|b \*"],
-                [@"C:\\", ""],
+                [@"C:\", @"a|b \*"],
+                [@"C:\", ""],
             ],
             table.Rows.Select(static row => row.Select(static cell => string.Concat(cell.Select(static run => run.Text))).ToArray()));
     }

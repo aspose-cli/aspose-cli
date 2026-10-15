@@ -474,4 +474,53 @@ public sealed class SlidesChartPresentationTests
         using Stream content = entry.Open();
         return XDocument.Load(content).Root!;
     }
+
+    [Fact]
+    public void SetChartData_SlantsCategoryLabelsThatNoLongerFit()
+    {
+        using var fixture = new SlidesEngineFixture();
+        string input = fixture.File("roomy.pptx");
+        SlidesEdit.Run(fixture.Session, new SlidesEditRequest
+        {
+            Input = fixture.CreatePresentation("roomy-seed.pptx"),
+            Batch = new SlidesOpsBatch
+            {
+                Ops = [new InsertChartOp
+                {
+                    Slide = 1,
+                    Kind = "column",
+                    Rect = new SlidesRectInput { X = 40, Y = 95, Width = 330, Height = 270 },
+                    Categories = ["A", "B"],
+                    Series = [new SlidesChartSeriesInput { Name = "Revenue", Values = [1, 2] }],
+                }],
+            },
+            Output = TestOutput.At(input),
+        });
+        long chartId;
+        using (var seeded = new Presentation(input))
+        {
+            Assert.NotEqual(-45, Chart(seeded).Axes.HorizontalAxis.TextFormat.TextBlockFormat.RotationAngle);
+            chartId = Chart(seeded).OfficeInteropShapeId;
+        }
+
+        string output = fixture.File("crowded.pptx");
+        SlidesEdit.Run(fixture.Session, new SlidesEditRequest
+        {
+            Input = input,
+            Batch = new SlidesOpsBatch
+            {
+                Ops = [new SetChartDataOp
+                {
+                    Slide = 1,
+                    ShapeId = chartId,
+                    Categories = ["Q4 2025", "Q1 2026", "Q2 2026", "Q3 2026"],
+                    Series = [new SlidesChartSeriesInput { Name = "Revenue", Values = [10850, 11200, 11960, 12800] }],
+                }],
+            },
+            Output = TestOutput.At(output),
+        });
+
+        using var reopened = new Presentation(output);
+        Assert.Equal(-45, Chart(reopened).Axes.HorizontalAxis.TextFormat.TextBlockFormat.RotationAngle);
+    }
 }

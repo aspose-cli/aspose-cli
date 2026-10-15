@@ -219,4 +219,32 @@ public sealed class SlidesShapeStyleTests
         deck.Slides[0].Shapes.OfType<IAutoShape>()
             .Single(shape => shape.Name.StartsWith(namePrefix, StringComparison.Ordinal))
             .TextFrame.Paragraphs[0].Portions[0].PortionFormat;
+
+    [Fact]
+    public void SetSlideSize_ThatScalesShapes_TargetsTheShapes()
+    {
+        using var fixture = new SlidesEngineFixture();
+        string input = fixture.CreatePresentation("scaled.pptx", slides: 2);
+        long[] ids;
+        using (var source = new Presentation(input))
+        {
+            ids = [.. source.Slides.Select(static slide => slide.Shapes.Single(static shape => shape.Placeholder is null && shape.Name.StartsWith("Title", StringComparison.Ordinal)).OfficeInteropShapeId)];
+        }
+
+        SlidesEditResult result = SlidesEdit.Run(fixture.Session, new SlidesEditRequest
+        {
+            Input = input,
+            Batch = new SlidesOpsBatch
+            {
+                Ops = [new SetSlideSizeOp { SlideSize = new SlidesSlideSizeInput { Preset = "16x9" }, ScaleContent = true }],
+            },
+            Output = TestOutput.At(fixture.File("scaled.out.pptx")),
+        });
+
+        IReadOnlyList<string> targets = result.Applied[0].Targets;
+        Assert.Contains("presentation/slide-size", targets);
+        Assert.Contains($"slide/1/shape/{ids[0]}", targets);
+        Assert.Contains($"slide/2/shape/{ids[1]}", targets);
+        Assert.Equal(targets.Count, result.Applied[0].ItemsAffected);
+    }
 }
