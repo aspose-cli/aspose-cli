@@ -132,6 +132,41 @@ public sealed class SlidesHardeningTests
     }
 
     [Fact]
+    public void MediaExtraction_CopiesTheStoredBytesAndIsNotDisclosedAsEvaluationOutput()
+    {
+        using var fixture = new SlidesEngineFixture();
+        string input = fixture.File("media.pptx");
+        using (var presentation = new Aspose.Slides.Presentation())
+        {
+            Aspose.Slides.IPPImage image = presentation.Images.AddImage(SlidesEngineFixture.Png(16));
+            presentation.Slides[0].Shapes.AddPictureFrame(Aspose.Slides.ShapeType.Rectangle, 10, 10, 50, 50, image);
+            presentation.Save(input, Aspose.Slides.Export.SaveFormat.Pptx);
+        }
+
+        byte[] stored;
+        using (System.IO.Compression.ZipArchive package = System.IO.Compression.ZipFile.OpenRead(input))
+        {
+            System.IO.Compression.ZipArchiveEntry entry = Assert.Single(package.Entries,
+                static entry => entry.FullName.StartsWith("ppt/media/", StringComparison.Ordinal));
+            using Stream stream = entry.Open();
+            using var copy = new MemoryStream();
+            stream.CopyTo(copy);
+            stored = copy.ToArray();
+        }
+
+        SlidesExtractResult result = fixture.Disclosed(session => SlidesExtract.Run(session, new SlidesExtractRequest
+        {
+            Input = input,
+            Output = new ResolvedDirectory(fixture.File("media")),
+            What = SlidesExtractKinds.Media,
+        }));
+
+        SlidesExtractedItem item = Assert.Single(result.Items);
+        Assert.Equal(stored, File.ReadAllBytes(item.Path));
+        Assert.DoesNotContain(result.Warnings ?? [], static warning => warning.Code == WarningCodes.EvaluationMode);
+    }
+
+    [Fact]
     public void UnboundedHighDpiBatch_IsRejectedBeforeWriting()
     {
         using var fixture = new SlidesEngineFixture();

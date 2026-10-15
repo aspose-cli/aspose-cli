@@ -17,7 +17,11 @@ internal static class SlidesExtract
         IReadOnlyList<int> slides = request.Slides is null
             ? Enumerable.Range(1, loaded.Presentation.Slides.Count).ToArray()
             : ResolveSlideRange(request.Slides, loaded.Presentation.Slides.Count);
-        using ExtractionGuard guard = session.Outputs.BeginExtraction(request.Output.Path, request.Output.Overwrite);
+        // Media is copied as the presentation stores it; notes and text are what the engine reads.
+        using ExtractionGuard guard = session.Outputs.BeginExtraction(
+            request.Output.Path,
+            request.Output.Overwrite,
+            request.What == SlidesExtractKinds.Media ? ExtractionContent.EmbeddedFiles : ExtractionContent.Derived);
         var items = new List<SlidesExtractedItem>();
 
         if (request.What == SlidesExtractKinds.Media)

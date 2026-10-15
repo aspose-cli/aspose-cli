@@ -649,6 +649,13 @@ internal static class InvariantCases
             // file rather than its input, and a compare writes its redline.
             invocation.Add("--out", "output." + ScenarioFixtures.PrimaryFormat(product));
         }
+        if (command.Options.FirstOrDefault(static option => option.Name == "--what") is { } what
+            && what.AllowedValues.Contains("text"))
+        {
+            // Files a document embeds, copied byte for byte, are no engine output and are not
+            // disclosed (D6), so an extraction discloses the text the engine reads.
+            invocation.Args[invocation.Args.IndexOf("--what") + 1] = "text";
+        }
         yield return Case(EvaluationDisclosed, $"{command}", product, slow: false, invocation, new ScenarioExpectation
         {
             ExitCode = [0],
