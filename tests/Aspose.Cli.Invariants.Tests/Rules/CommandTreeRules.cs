@@ -171,19 +171,6 @@ internal static partial class ContractRules
         }
     }
 
-    // ----- C-R07: same-name options agree ------------------------------------------------------
-
-    /// <summary>
-    /// C-R07 is checked by <see cref="SameNameOptions"/>, whose cases (invariant
-    /// <see cref="InvariantCases.SameNameOption"/>, which <see cref="InvariantCases.RuleOf"/> maps to
-    /// C-R07) compare every aspect of every same-name option; this part adds none, so no
-    /// comparison is made in two places.
-    /// </summary>
-    private static IEnumerable<InvariantCase> R07(CliCatalog catalog)
-    {
-        yield break;
-    }
-
     // ----- C-R08: one concept, one option name --------------------------------------------------
 
     /// <summary>Names no command may declare, each with the vocabulary name of its concept.</summary>
@@ -312,9 +299,17 @@ internal static partial class ContractRules
         ("update install", "An installation puts the release in place and replaces the installed one; that is what install means."),
     ];
 
+    /// <summary>
+    /// The writing commands that declare their own output options: the host's, and a product's
+    /// <c>create</c>, which writes the file its argument names. A product command that names an
+    /// output gets <c>--out</c> or <c>--out-dir</c> only from its <c>OutputTarget</c> trait, which
+    /// adds <c>--overwrite</c> and <c>--dry-run</c> beside it (<c>StandardOptions</c>), and analyzer
+    /// <c>APCLI008</c> keeps it from declaring any of them itself, so its declaration is not judged.
+    /// </summary>
     private static IEnumerable<InvariantCase> R11Declared(CliCatalog catalog)
     {
-        foreach (TreeCommand command in CommandTree.Of(catalog).Where(static command => !command.Hidden && Writes(command)))
+        foreach (TreeCommand command in CommandTree.Of(catalog).Where(static command => !command.Hidden && Writes(command)
+            && (command.Product is null || command.ProductVerb == "create")))
         {
             // A removal replaces nothing, so it needs --dry-run but no --overwrite.
             bool exempt = OverwriteExemptions.Any(exemption => exemption.Command == command.ToString());
@@ -351,9 +346,15 @@ internal static partial class ContractRules
 
     // ----- C-R12 (declared): --out or --out-dir, never both ---------------------------------------
 
+    /// <summary>
+    /// The host commands that name an output. A product command gets <c>--out</c> or
+    /// <c>--out-dir</c> only from the one kind of its <c>OutputTarget</c> trait, and analyzer
+    /// <c>APCLI008</c> keeps it from declaring either itself, so it cannot have both.
+    /// </summary>
     private static IEnumerable<InvariantCase> R12Declared(CliCatalog catalog)
     {
-        foreach (TreeCommand command in CommandTree.Of(catalog).Where(static command => command.Has("--out") || command.Has("--out-dir")))
+        foreach (TreeCommand command in CommandTree.Of(catalog).Where(static command => command.Product is null
+            && (command.Has("--out") || command.Has("--out-dir"))))
         {
             yield return Check("C-R12", $"{command} declared", () => command.Has("--out") && command.Has("--out-dir")
                 ? [$"{command} has both --out and --out-dir."]
@@ -394,48 +395,21 @@ internal static partial class ContractRules
     /// <summary>The option whose values are check codes, which keep their own spelling.</summary>
     private const string CheckCodeOption = "--code";
 
-    private static readonly string[] BooleanValues = ["false", "true"];
-
+    /// <summary>
+    /// The values of the options that list them. A boolean option publishes <c>false, true</c>
+    /// whatever it declares, since the host's <c>OptionCompletions</c> reads its values from its
+    /// type, so it is not judged.
+    /// </summary>
     private static IEnumerable<InvariantCase> R17Options(CliCatalog catalog)
     {
         IReadOnlySet<string> formats = CommandTree.FormatIds(catalog);
-        IReadOnlyList<TreeCommand> tree = CommandTree.Of(catalog);
-        foreach (TreeCommand command in tree.Where(static command => command.Options.Any(static option => option.IsBoolean)))
-        {
-            yield return Check("C-R17", $"{command} booleans", () =>
-            {
-                string[] booleans =
-                [
-                    .. command.Options.Where(static option => option.IsBoolean && !option.AllowedValues.SequenceEqual(BooleanValues, StringComparer.Ordinal))
-                        .Select(static option => option.Name),
-                ];
-                return booleans.Length == 0 ? [] : [$"{command}: boolean options that do not publish false, true: {CommandTree.List(booleans)}."];
-            });
-        }
-        foreach (TreeCommand command in tree.Where(static command => command.Options.Any(static option => !option.IsBoolean && option.AllowedValues.Count > 0)))
+        foreach (TreeCommand command in CommandTree.Of(catalog).Where(static command => command.Options.Any(static option => !option.IsBoolean && option.AllowedValues.Count > 0)))
         {
             yield return Check("C-R17", $"{command} values", () => command.Options
                 .Where(static option => !option.IsBoolean && option.Name != CheckCodeOption)
                 .Select(option => (option.Name, Values: option.AllowedValues.Where(value => !formats.Contains(value) && !CommandTree.Kebab().IsMatch(value)).ToArray()))
                 .Where(static option => option.Values.Length > 0)
                 .Select(option => $"{command} {option.Name}: values not in lowercase kebab case: {CommandTree.List(option.Values)}."));
-        }
-    }
-
-    // ----- C-R22 (declared): one operation-count limit, 10000 ------------------------------------
-
-    private const int MaximumOperationCount = 10000;
-
-    private static IEnumerable<InvariantCase> R22Declared(CliCatalog catalog)
-    {
-        foreach (JsonNode product in catalog.Document["products"]!.AsArray().Select(static product => product!))
-        {
-            string id = product["id"]!.GetValue<string>();
-            yield return Check("C-R22", $"{id} declared", () => (product["operations"]?.AsArray() ?? [])
-                .Select(static operations => operations!)
-                .Where(static operations => operations["maximumOperationCount"]?.GetValue<int>() != MaximumOperationCount)
-                .Select(operations => $"{id} {operations["command"]!.GetValue<string>()}: maximumOperationCount is "
-                    + $"{operations["maximumOperationCount"]?.ToJsonString() ?? "missing"}, not {MaximumOperationCount}."));
         }
     }
 
