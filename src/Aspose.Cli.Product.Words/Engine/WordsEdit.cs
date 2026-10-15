@@ -360,7 +360,18 @@ internal static class WordsEdit
 
         using LoadedDocument reopened = session.Loader.OpenPublishedCandidate(candidatePath, outputPassword);
         WordsSavedState found = WordsReadBack.Saved(reopened.Document);
-        Compare(WordsDiagnostics.FieldCountChanged, "Field count", expected.FieldCount, found.FieldCount, "fields", WordsFormats.WordIds);
+        if (found.FieldCount > expected.FieldCount)
+        {
+            // Some formats store content as fields, such as RTF a linked picture as INCLUDEPICTURE.
+            issues.Add(VerificationIssues.Of(
+                WordsDiagnostics.FieldCountChanged,
+                $"Field count changed during save/reopen: expected {expected.FieldCount}, found {found.FieldCount}.",
+                hint: GainedFieldsHint(format)));
+        }
+        else
+        {
+            Compare(WordsDiagnostics.FieldCountChanged, "Field count", expected.FieldCount, found.FieldCount, "fields", WordsFormats.WordIds);
+        }
         Compare(WordsDiagnostics.RevisionCountChanged, "Revision count", expected.RevisionCount, found.RevisionCount, "tracked revisions", WordsFormats.RevisionIds);
         Compare(WordsDiagnostics.ProtectionChanged, "Protection", expected.Protection ?? "none", found.Protection ?? "none", "protection", WordsFormats.WordIds);
 
@@ -403,6 +414,11 @@ internal static class WordsEdit
         keepingFormats.Contains(format, StringComparer.Ordinal)
             ? $"The {state} did not survive save and reopen in {format}; check the output with 'aspose-cli words inspect' before relying on it."
             : $"{format} may not keep {state}; save to docx or another Word format and verify again.";
+
+    /// <summary>The hint for a reopened output with more fields than the edited document had: the format wrote content as fields.</summary>
+    internal static string GainedFieldsHint(string format) =>
+        $"Saving to {format} stored content as fields the edited document did not have, such as a linked picture as an INCLUDEPICTURE field; "
+            + "the fields are kept, not lost. Check them with 'aspose-cli words inspect --detail fields' before relying on the output.";
 
     private static IReadOnlyList<Warning>? MutationWarnings(
         Document document,

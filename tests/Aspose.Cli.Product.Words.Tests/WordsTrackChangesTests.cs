@@ -264,8 +264,8 @@ public sealed class WordsTrackChangesTests
                 new WordsRevisionData { Revision = 2, Kind = "moving", Author = "Ann", Date = AnnDate, Scope = "body", Block = 3, Text = "Alpha beta gamma." },
                 new WordsRevisionData { Revision = 3, Kind = "insertion", Author = "Bob", Date = BobDate, Scope = "body", Block = 4 },
                 new WordsRevisionData { Revision = 4, Kind = "deletion", Author = "Bob", Date = BobDate, Scope = "body", Block = 5 },
-                new WordsRevisionData { Revision = 5, Kind = "moving", Author = "Ann", Date = AnnDate, Scope = "body", Block = 7, Text = "Whole para\rSecond" },
-                new WordsRevisionData { Revision = 6, Kind = "moving", Author = "Ann", Date = AnnDate, Scope = "body", Block = 10, Text = "Whole para\rSecond" },
+                new WordsRevisionData { Revision = 5, Kind = "moving", Author = "Ann", Date = AnnDate, Scope = "body", Block = 7, Text = "Whole para\nSecond" },
+                new WordsRevisionData { Revision = 6, Kind = "moving", Author = "Ann", Date = AnnDate, Scope = "body", Block = 10, Text = "Whole para\nSecond" },
             ],
             info.Revisions);
     }
