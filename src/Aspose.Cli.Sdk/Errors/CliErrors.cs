@@ -175,19 +175,23 @@ public static partial class CliErrors
     /// <summary>
     /// An encrypted file opened without a password. <paramref name="operationField"/> names the
     /// operation field that supplies the password of a file an operation reads; without it the
-    /// hint names the command's password option.
+    /// hint names <paramref name="passwordEnvironmentOption"/>, the option that supplies this
+    /// file's password, such as <c>--certificate-password-env</c>, by default <c>--password-env</c>.
     /// </summary>
-    public static CliException PasswordRequired(string path, string? operationField = null) => CliException.Create(
+    public static CliException PasswordRequired(string path, string? operationField = null, string? passwordEnvironmentOption = null) => CliException.Create(
         ErrorCodes.PasswordRequired,
         $"File is encrypted and requires a password: {path}",
-        hint: PasswordHint(ErrorCodes.PasswordRequired, operationField),
+        hint: PasswordHint(ErrorCodes.PasswordRequired, operationField, passwordEnvironmentOption),
         details: new JsonObject { ["path"] = path });
 
-    /// <summary>A password that does not open the file; <paramref name="operationField"/> as for <see cref="PasswordRequired"/>.</summary>
-    public static CliException PasswordInvalid(string path, string? operationField = null) => CliException.Create(
+    /// <summary>
+    /// A password that does not open the file, such as a certificate's; <paramref name="operationField"/>
+    /// and <paramref name="passwordEnvironmentOption"/> as for <see cref="PasswordRequired"/>.
+    /// </summary>
+    public static CliException PasswordInvalid(string path, string? operationField = null, string? passwordEnvironmentOption = null) => CliException.Create(
         ErrorCodes.PasswordInvalid,
         $"The provided password does not open the file: {path}",
-        hint: PasswordHint(ErrorCodes.PasswordInvalid, operationField),
+        hint: PasswordHint(ErrorCodes.PasswordInvalid, operationField, passwordEnvironmentOption),
         details: new JsonObject { ["path"] = path });
 
     /// <summary>

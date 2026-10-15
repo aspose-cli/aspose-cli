@@ -16,6 +16,22 @@ public sealed class PasswordErrorTests
         Assert.Contains("--password-env", CliErrors.PasswordInvalid("in.pdf").Hint, StringComparison.Ordinal);
     }
 
+    /// <summary>A file another option supplies the password of, such as a signing certificate, names that option.</summary>
+    [Fact]
+    public void APasswordErrorOfAnotherFile_NamesItsOwnOption()
+    {
+        CliException invalid = CliErrors.PasswordInvalid("cert.pfx", passwordEnvironmentOption: "--certificate-password-env");
+        CliException required = CliErrors.PasswordRequired("cert.pfx", passwordEnvironmentOption: "--certificate-password-env");
+
+        Assert.Equal((ErrorCodes.PasswordInvalid, ErrorCodes.PasswordRequired), (invalid.Code, required.Code));
+        Assert.All([invalid, required], error =>
+        {
+            Assert.Equal("cert.pfx", error.Details!["path"]!.GetValue<string>());
+            Assert.Contains("retry with --certificate-password-env <NAME>.", error.Hint, StringComparison.Ordinal);
+            Assert.DoesNotContain(" --password-env", error.Hint, StringComparison.Ordinal);
+        });
+    }
+
     [Fact]
     public void ForOperationSource_RestatesTheErrorForTheOperationField()
     {
