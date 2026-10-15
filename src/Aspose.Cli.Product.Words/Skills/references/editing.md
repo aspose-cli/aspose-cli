@@ -247,7 +247,7 @@ one should restart.
 the Word formats (`doc`, `dot`, `docx`, `docm`, `dotx`, `dotm`, and Flat OPC
 or WordML `.xml`), `rtf`, `odt` and `ott`. Any other output, such as
 `--out report.pdf` or `notes.md`, or an in-place edit of such an input, is
-refused with `USAGE_ERROR` before anything is read; the hint names the
+refused with `OPTION_INVALID` before anything is read; the hint names the
 convert to run on the edited copy:
 
 ```powershell

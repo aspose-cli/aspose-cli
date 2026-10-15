@@ -56,6 +56,12 @@ A PDF that prints a chart across two or more pages warns
 with `set_page_setup` (`fitToWidth` 1 and `fitToHeight` 0, or `orientation`
 landscape), or move or resize the chart, and convert again.
 
+A JSON output of a sheet whose data is a single row, which the engine takes
+for the header, would not be valid JSON (CELLS-JSON-HEADER-ONLY), so `cells
+convert --to json` refuses it with `FEATURE_UNSUPPORTED` (`details.reason`
+`engine-defect`) naming the sheets, before it writes anything: add a data row
+below the header, delete the sheet, or convert to csv.
+
 `RENDER_EMPTY` means the selected sheet has no content; `cells inspect` lists
 each sheet's used range. When a render of several sheets cannot render some of
 them it warns `SHEETS_SKIPPED`; render one alone with `--sheets` for its error.
@@ -150,7 +156,7 @@ handle these effects:
   says where: CSV and TSV gain an `Evaluation Only. ...` last
   row after the data, Markdown a closing `# Evaluation Only. ...` heading, and
   JSON a `{"watermark": ...}` record after the records of each sheet with data
-  rows, plus the warning sheets. Remove it before anything reads the output as data;
+  rows; a JSON output leaves the warning sheets out. Remove it before anything reads the output as data;
   until then `cells inspect` warns `TEXT_TABLE_LAYOUT` and `review` reports
   `CELLS_EVALUATION_NOTICE` on the CSV or TSV notice row.
 - A whole-workbook PDF, XPS, HTML or MHTML export prints the warning sheets an
