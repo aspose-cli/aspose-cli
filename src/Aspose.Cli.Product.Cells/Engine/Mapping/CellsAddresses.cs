@@ -14,6 +14,18 @@ internal static class CellsAddresses
 {
     private const char SheetEnd = '!';
 
+    /// <summary>
+    /// The units whose addresses begin with the name of the sheet that holds the object, as
+    /// <see cref="At"/>, <see cref="OfSheet"/>, <see cref="Indexed"/> and <see cref="Pivot"/>
+    /// write them. A table and a defined name are addressed by their own names.
+    /// </summary>
+    internal static IReadOnlyCollection<string> SheetUnits { get; } =
+    [
+        "sheet", "cell", "row", "column", "merge", "comment", "hyperlink", "validation", "chart", "image",
+        "conditional-format", "sparkline-group", "pivot", "autofilter", "freeze-panes", "page-setup",
+        "print-area", "protection", "sheet-view", "tab-color",
+    ];
+
     /// <summary>An object of a sheet at a cell or a range, such as <c>cell/Sales!B2</c> or <c>merge/Sales!A1:C1</c>.</summary>
     internal static string At(string unit, string sheet, string where) => $"{unit}/{TargetName.Escape(sheet, SheetEnd)}!{where}";
 

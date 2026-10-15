@@ -58,6 +58,24 @@ public sealed class CellsOutcomeTests : IClassFixture<CellsFixture>
         Assert.Single(result.Warnings ?? [], static warning => warning.Code.Name == "OP_NO_EFFECT");
     }
 
+    [Fact]
+    public void ASheetRenamedLaterInTheBatch_NamesEarlierTargetsByItsNewName()
+    {
+        string path = _fixture.CreateSalesWorkbook($"renamed-{Guid.NewGuid():N}.xlsx");
+
+        CellsEditResult result = Apply(path, """
+            {"ops":[
+              {"op":"set_values","sheet":"Data","range":"A20","values":[[1]]},
+              {"op":"set_tab_color","sheet":"Data","color":"#FF0000"},
+              {"op":"rename_sheet","sheet":"Data","name":"Q3 Data"}
+            ]}
+            """);
+
+        Assert.Equal(["cell/Q3 Data!A20"], result.Applied[0].Targets);
+        Assert.Equal(["tab-color/Q3 Data"], result.Applied[1].Targets);
+        Assert.Equal(["sheet/Q3 Data"], result.Applied[2].Targets);
+    }
+
     [Theory]
     [InlineData("clear_autofilter")]
     [InlineData("clear_tab_color")]
