@@ -348,7 +348,7 @@ public sealed record AddHyperlinkOp : PdfOp
 public sealed record RedactTextOp : PdfOp
 {
     /// <summary>
-    /// The text to find, matched case-sensitively. Literal text also matches with up to two
+    /// The text to find. Literal text also matches with up to two
     /// spaces, never a line break, where an East Asian character meets a character that is not
     /// East Asian, such as a digit or Latin letter, as extracted text can hold there.
     /// </summary>
@@ -359,6 +359,11 @@ public sealed record RedactTextOp : PdfOp
     /// <summary>Whether find is a .NET regular expression rather than literal text.</summary>
     [NotState]
     public bool Regex { get; init; }
+
+    /// <summary>Whether find matches only text in the same case.</summary>
+    [MistakenFor("matchCase")]
+    [NotState]
+    public bool CaseSensitive { get; init; } = true;
 
     /// <summary>The pages to search; every page when omitted.</summary>
     [PageRange] public string? Pages { get; init; }
@@ -374,7 +379,7 @@ public sealed record RedactTextOp : PdfOp
             System.Text.RegularExpressions.Regex expression;
             try
             {
-                expression = SafeRegex.Create(Find, caseSensitive: true);
+                expression = SafeRegex.Create(Find, CaseSensitive);
             }
             catch (ArgumentException exception)
             {
@@ -422,8 +427,9 @@ public sealed record SetPropertiesOp : PdfOp
 
     /// <summary>
     /// Custom document information entries by name, which <c>pdf inspect --detail properties</c>
-    /// reports under the same names. A name must not be one of the standard entries, which the
-    /// fields above or the engine set, in any case, nor start with <c>info:</c> or <c>xmp:</c>.
+    /// reports under the same names. A name must not be empty, hold characters beyond Latin-1,
+    /// be one of the standard entries, which the fields above or the engine set, in any case, nor
+    /// start with <c>info:</c> or <c>xmp:</c>.
     /// </summary>
     [ReadBack("inspect-result.schema.json#/properties/properties/additionalProperties")]
     public IReadOnlyDictionary<string, string>? Custom { get; init; }
@@ -433,6 +439,17 @@ public sealed record SetPropertiesOp : PdfOp
     {
         foreach (string key in Custom?.Keys ?? [])
         {
+            OperationInvalidException.Require(
+                key.Length > 0,
+                "custom must not have an empty name",
+                "Give each custom entry a name.");
+
+            // PDF-INFO-KEY-BEYOND-LATIN1: the engine writes such a name garbled.
+            OperationInvalidException.Require(
+                key.All(static character => character <= 'ÿ'),
+                $"custom must not name '{key}': a name with characters beyond Latin-1 is written garbled",
+                "Name the custom entry with Latin-1 characters, such as ASCII letters; its value may hold any text.");
+
             if (PdfPropertyNames.Standard(key) is { } standard)
             {
                 throw new OperationInvalidException(

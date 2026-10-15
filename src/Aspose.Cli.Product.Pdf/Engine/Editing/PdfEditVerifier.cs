@@ -79,7 +79,7 @@ internal sealed class PdfEditVerifier : IEditVerifier<PdfOp>
             case RedactTextOp redact:
                 _redactions.Add(new RedactionExpectation(
                     id,
-                    TextPattern(redact.Find, redact.Regex, caseSensitive: true),
+                    TextPattern(redact.Find, redact.Regex, redact.CaseSensitive),
                     redact.Pages is null ? null : PdfMutationSupport.Resolve(document, redact.Pages)));
                 break;
             case SetPropertiesOp metadata:

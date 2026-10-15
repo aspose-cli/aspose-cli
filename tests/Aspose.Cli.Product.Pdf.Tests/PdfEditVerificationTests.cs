@@ -43,6 +43,30 @@ public sealed class PdfEditVerificationTests
     }
 
     [Fact]
+    public void RedactText_MatchesAnyCaseOnlyWhenCaseSensitiveIsFalse()
+    {
+        using var fixture = new PdfEngineFixture();
+        string input = CreateDocument(fixture);
+
+        PdfEditResult exact = PdfEdit.Run(fixture.Session, Request(fixture, input, new PdfOpsBatch
+        {
+            Ops = [new RedactTextOp { Find = "SECRET" }],
+        }, "exact.pdf"));
+        PdfEditResult anyCase = PdfEdit.Run(fixture.Session, Request(fixture, input, new PdfOpsBatch
+        {
+            Ops = [new RedactTextOp { Find = "SECRET", CaseSensitive = false }],
+        }, "any-case.pdf"));
+
+        Assert.Equal(0, Assert.Single(exact.Applied).ItemsAffected);
+        Assert.Equal(["page/1"], Assert.Single(anyCase.Applied).Targets);
+        Assert.True(anyCase.Verification!.Ok, string.Join("; ", anyCase.Verification.Issues.Select(static issue => issue.Message)));
+        using var redacted = new Document(fixture.File("any-case.pdf"));
+        var absorber = new TextAbsorber();
+        redacted.Pages[1].Accept(absorber);
+        Assert.DoesNotContain("Secret", absorber.Text, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void Verify_ListsOnlyOperationsWhoseEveryEffectWasReadBack()
     {
         using var fixture = new PdfEngineFixture();

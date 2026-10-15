@@ -42,7 +42,7 @@
         "command": "edit",
         "inputSchema": "v2/pdf/ops",
         "operationSchema": "aspose-cli schema v2/pdf/ops --operation <op>",
-        "contractFingerprint": "sha256:0950f854543fef55e9c637a6c5b4b605feaaaa6ac7afb0b453c67653e7324225",
+        "contractFingerprint": "sha256:eda757faf48df7fd386715f27ac0defebd28afccde9424d7450f829962f6202e",
         "maximumOperationCount": 10000,
         "ops": [
           "add_attachment",
@@ -4879,7 +4879,7 @@
               "const": "redact_text"
             },
             "find": {
-              "description": "The text to find, matched case-sensitively. Literal text also matches with up to two spaces, never a line break, where an East Asian character meets a character that is not East Asian, such as a digit or Latin letter, as extracted text can hold there.",
+              "description": "The text to find. Literal text also matches with up to two spaces, never a line break, where an East Asian character meets a character that is not East Asian, such as a digit or Latin letter, as extracted text can hold there.",
               "type": "string",
               "minLength": 1,
               "x-readBack": "not-state"
@@ -4888,6 +4888,12 @@
               "description": "Whether find is a .NET regular expression rather than literal text.",
               "type": "boolean",
               "default": false,
+              "x-readBack": "not-state"
+            },
+            "caseSensitive": {
+              "description": "Whether find matches only text in the same case.",
+              "type": "boolean",
+              "default": true,
               "x-readBack": "not-state"
             },
             "pages": {
@@ -5050,7 +5056,7 @@
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/pdf/inspect-result.schema.json#/properties/properties/additionalProperties"
             },
             "custom": {
-              "description": "Custom document information entries by name, which pdf inspect --detail properties reports under the same names. A name must not be one of the standard entries, which the fields above or the engine set, in any case, nor start with info: or xmp:.",
+              "description": "Custom document information entries by name, which pdf inspect --detail properties reports under the same names. A name must not be empty, hold characters beyond Latin-1, be one of the standard entries, which the fields above or the engine set, in any case, nor start with info: or xmp:.",
               "type": "object",
               "additionalProperties": {
                 "type": "string"
