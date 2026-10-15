@@ -37,7 +37,7 @@
         "command": "edit",
         "inputSchema": "v2/slides/ops",
         "operationSchema": "aspose-cli schema v2/slides/ops --operation <op>",
-        "contractFingerprint": "sha256:56d229b2505d9fb39e4ca801722df68757eb6fceba0d1ca65832216c4a82a47d",
+        "contractFingerprint": "sha256:c925ae62f34a5319de434fe1fede533d5cf2a9a4dd4bb5a7e90482b3d4fdca02",
         "maximumOperationCount": 10000,
         "ops": [
           "copy_slide",
@@ -3478,6 +3478,7 @@
               "const": "delete_slides"
             },
             "slides": {
+              "description": "The slides to delete.",
               "$ref": "#/$defs/pages",
               "x-readBack": "not-state"
             }
@@ -3536,6 +3537,7 @@
               "x-readBack": "not-state"
             },
             "style": {
+              "description": "The styling to apply; each field left out keeps the shape's current value.",
               "$ref": "#/$defs/slidesShapeStyleInput"
             }
           },
@@ -3647,6 +3649,7 @@
               "x-readBack": "not-state"
             },
             "kind": {
+              "description": "The chart type: column has vertical bars, bar horizontal ones.",
               "type": "string",
               "enum": [
                 "bar",
@@ -3658,10 +3661,12 @@
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/slides/read-result.schema.json#/$defs/slidesChartData/properties/kind"
             },
             "rect": {
+              "description": "Where the chart goes and its size.",
               "$ref": "#/$defs/slidesRectInput",
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/slides/read-result.schema.json#/$defs/slidesShapeData/properties/rect"
             },
             "categories": {
+              "description": "The category labels in order: the axis labels, or a pie's slice names.",
               "type": "array",
               "minItems": 1,
               "maxItems": 1000,
@@ -3671,6 +3676,7 @@
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/slides/read-result.schema.json#/$defs/slidesChartData/properties/categories"
             },
             "series": {
+              "description": "The data series, each with one value per category.",
               "type": "array",
               "minItems": 1,
               "maxItems": 50,
@@ -3680,6 +3686,7 @@
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/slides/read-result.schema.json#/$defs/slidesChartData/properties/series"
             },
             "title": {
+              "description": "The chart title; no title when omitted.",
               "type": "string",
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/slides/read-result.schema.json#/$defs/slidesChartData/properties/title"
             }
@@ -3780,6 +3787,7 @@
               "const": "insert_section"
             },
             "name": {
+              "description": "The section name, unique among the presentation's sections.",
               "type": "string",
               "pattern": "\\S",
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/slides/inspect-result.schema.json#/$defs/slidesSectionInfo/properties/name"
@@ -3833,14 +3841,17 @@
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/slides/read-result.schema.json#/$defs/slidesShapeData/properties/geometry"
             },
             "rect": {
+              "description": "Where the shape goes and its size.",
               "$ref": "#/$defs/slidesRectInput",
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/slides/read-result.schema.json#/$defs/slidesShapeData/properties/rect"
             },
             "text": {
+              "description": "The text inside the shape; none when omitted.",
               "type": "string",
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/slides/read-result.schema.json#/$defs/slidesShapeData/properties/text"
             },
             "style": {
+              "description": "The fill, outline and text styling; the theme's shape style when omitted.",
               "$ref": "#/$defs/slidesShapeStyleInput"
             }
           },
@@ -3919,16 +3930,19 @@
               "x-readBack": "not-state"
             },
             "rect": {
+              "description": "Where the table goes and its size, which its rows and columns share equally.",
               "$ref": "#/$defs/slidesRectInput",
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/slides/read-result.schema.json#/$defs/slidesShapeData/properties/rect"
             },
             "rowCount": {
+              "description": "The number of rows.",
               "type": "integer",
               "minimum": 1,
               "maximum": 100,
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/slides/read-result.schema.json#/$defs/slidesShapeData/properties/rowCount"
             },
             "columnCount": {
+              "description": "The number of columns.",
               "type": "integer",
               "minimum": 1,
               "maximum": 50,
@@ -4031,6 +4045,7 @@
               "const": "replace_text"
             },
             "find": {
+              "description": "The text to find, or the pattern when regex is true; a match does not cross paragraphs.",
               "type": "string",
               "minLength": 1,
               "x-readBack": "not-state"
@@ -4059,6 +4074,7 @@
               "x-readBack": "not-state"
             },
             "scope": {
+              "description": "Where text is replaced: shapes on the slides, speaker notes, or all of both.",
               "type": "string",
               "enum": [
                 "shapes",
@@ -4096,6 +4112,7 @@
               "x-readBack": "not-state"
             },
             "color": {
+              "description": "The solid background color.",
               "$ref": "#/$defs/color",
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/slides/read-result.schema.json#/$defs/slidesBackgroundData/properties/color"
             },
@@ -4152,6 +4169,7 @@
               "x-readBack": "not-state"
             },
             "paragraphs": {
+              "description": "The new paragraphs in order, which replace every paragraph of the placeholder.",
               "type": "array",
               "minItems": 1,
               "items": {
@@ -4228,6 +4246,7 @@
               "x-readBack": "not-state"
             },
             "categories": {
+              "description": "The new category labels, which replace every category; unchanged when omitted.",
               "type": "array",
               "minItems": 1,
               "maxItems": 1000,
@@ -4237,6 +4256,7 @@
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/slides/read-result.schema.json#/$defs/slidesChartData/properties/categories"
             },
             "series": {
+              "description": "The new data series, which replace every series; unchanged when omitted.",
               "type": "array",
               "minItems": 1,
               "maxItems": 50,
@@ -4316,14 +4336,17 @@
               "x-readBack": "not-state"
             },
             "text": {
+              "description": "The footer text, which also shows the footer; unchanged when omitted.",
               "type": "string",
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/slides/read-result.schema.json#/$defs/slidesFooterData/properties/text"
             },
             "showNumber": {
+              "description": "Whether the slide number shows; unchanged when omitted.",
               "type": "boolean",
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/slides/read-result.schema.json#/$defs/slidesFooterData/properties/showNumber"
             },
             "showDate": {
+              "description": "Whether the date shows; unchanged when omitted.",
               "type": "boolean",
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/slides/read-result.schema.json#/$defs/slidesFooterData/properties/showDate"
             }
@@ -4367,6 +4390,7 @@
               "const": "set_layout"
             },
             "slides": {
+              "description": "The slides that take the layout.",
               "$ref": "#/$defs/pages",
               "x-readBack": "not-state"
             },
@@ -4406,6 +4430,7 @@
               "x-readBack": "not-state"
             },
             "text": {
+              "description": "The new speaker-note text, which replaces the slide's notes.",
               "type": "string",
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/slides/read-result.schema.json#/$defs/slidesNotesData/properties/text"
             }
@@ -4442,22 +4467,27 @@
               "const": "set_properties"
             },
             "title": {
+              "description": "The document title.",
               "type": "string",
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/slides/inspect-result.schema.json#/properties/properties/additionalProperties"
             },
             "author": {
+              "description": "The document author.",
               "type": "string",
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/slides/inspect-result.schema.json#/properties/properties/additionalProperties"
             },
             "subject": {
+              "description": "The document subject.",
               "type": "string",
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/slides/inspect-result.schema.json#/properties/properties/additionalProperties"
             },
             "keywords": {
+              "description": "The document keywords, as one text such as \"budget, 2026\".",
               "type": "string",
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/slides/inspect-result.schema.json#/properties/properties/additionalProperties"
             },
             "company": {
+              "description": "The company the document belongs to.",
               "type": "string",
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/slides/inspect-result.schema.json#/properties/properties/additionalProperties"
             }
@@ -4546,21 +4576,25 @@
               "x-readBack": "not-state"
             },
             "x": {
+              "description": "The new distance from the slide's left edge to the shape's left side.",
               "type": "number",
               "minimum": 0,
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/slides/read-result.schema.json#/$defs/slidesRect/properties/x"
             },
             "y": {
+              "description": "The new distance from the slide's top edge to the shape's top side.",
               "type": "number",
               "minimum": 0,
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/slides/read-result.schema.json#/$defs/slidesRect/properties/y"
             },
             "width": {
+              "description": "The new width.",
               "type": "number",
               "exclusiveMinimum": 0,
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/slides/read-result.schema.json#/$defs/slidesRect/properties/width"
             },
             "height": {
+              "description": "The new height.",
               "type": "number",
               "exclusiveMinimum": 0,
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/slides/read-result.schema.json#/$defs/slidesRect/properties/height"
@@ -4643,10 +4677,12 @@
               "const": "set_slide_hidden"
             },
             "slides": {
+              "description": "The slides to hide or show.",
               "$ref": "#/$defs/pages",
               "x-readBack": "not-state"
             },
             "hidden": {
+              "description": "Whether the slides are skipped in a slide show; false shows them again.",
               "type": "boolean",
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/slides/inspect-result.schema.json#/$defs/slidesSlideInfo/properties/hidden"
             }
@@ -4747,6 +4783,7 @@
               "x-readBack": "not-state"
             },
             "text": {
+              "description": "The new cell text, which replaces the cell's text.",
               "type": "string",
               "x-readBack": "position"
             }
@@ -4840,6 +4877,7 @@
               "x-readBack": "not-state"
             },
             "text": {
+              "description": "The new text, which replaces all of the shape's text.",
               "type": "string",
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/slides/read-result.schema.json#/$defs/slidesShapeData/properties/text"
             }
@@ -4908,6 +4946,7 @@
               "x-readBack": "not-state"
             },
             "text": {
+              "description": "The new title text, which replaces the placeholder's text.",
               "type": "string",
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/slides/read-result.schema.json#/$defs/slidesShapeData/properties/text"
             }
@@ -4945,10 +4984,12 @@
               "const": "set_transition"
             },
             "slides": {
+              "description": "The slides whose entrance transition changes.",
               "$ref": "#/$defs/pages",
               "x-readBack": "not-state"
             },
             "kind": {
+              "description": "The transition effect, or none to remove it; unchanged when omitted.",
               "type": "string",
               "enum": [
                 "none",
@@ -5004,9 +5045,11 @@
           "additionalProperties": false,
           "properties": {
             "name": {
+              "description": "The series name, which the legend shows.",
               "type": "string"
             },
             "values": {
+              "description": "The series values, one per category in category order; for a scatter series, the y values.",
               "type": "array",
               "minItems": 1,
               "maxItems": 1000,
@@ -5059,6 +5102,7 @@
           "additionalProperties": false,
           "properties": {
             "text": {
+              "description": "The paragraph text.",
               "type": "string",
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/slides/read-result.schema.json#/$defs/slidesParagraphData/properties/text"
             },
@@ -5080,18 +5124,22 @@
           "additionalProperties": false,
           "properties": {
             "x": {
+              "description": "The distance from the slide's left edge to the left side.",
               "type": "number",
               "minimum": 0
             },
             "y": {
+              "description": "The distance from the slide's top edge to the top side.",
               "type": "number",
               "minimum": 0
             },
             "width": {
+              "description": "The width, to the right of x.",
               "type": "number",
               "exclusiveMinimum": 0
             },
             "height": {
+              "description": "The height, down from y.",
               "type": "number",
               "exclusiveMinimum": 0
             }
@@ -5143,6 +5191,7 @@
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/slides/read-result.schema.json#/$defs/slidesTextRunData/properties/color"
             },
             "bold": {
+              "description": "Whether the text is bold; false removes bold.",
               "type": "boolean",
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/slides/read-result.schema.json#/$defs/slidesTextRunData/properties/bold"
             }
