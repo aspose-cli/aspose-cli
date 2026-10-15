@@ -61,7 +61,7 @@ internal sealed class PdfEditModel : IOperationModel<PdfOp>
     /// </summary>
     internal IReadOnlyList<string> TextMoved => _textMoved;
 
-    public OperationSnapshot Snapshot(PdfOp operation) => PdfMutationHandlers.Engine(() => operation.Accept(_snapshots));
+    public OperationSnapshot Snapshot(PdfOp operation) => PdfMutationHandlers.Engine(() => operation.Accept(_snapshots).Take());
 
     public void Apply(PdfOp operation)
     {
@@ -95,7 +95,7 @@ internal sealed class PdfEditModel : IOperationModel<PdfOp>
         }
     }
 
-    public IReadOnlyList<string> AttemptedTargets(PdfOp operation) => operation.Accept(PdfAttemptedTargets.Instance);
+    public IReadOnlyList<string> AttemptedTargets(PdfOp operation) => operation.Accept(_snapshots).Targets;
 
     public NoEffect? Explain(PdfOp operation) => operation switch
     {
