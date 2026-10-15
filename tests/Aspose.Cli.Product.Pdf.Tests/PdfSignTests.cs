@@ -169,6 +169,54 @@ public sealed class PdfSignTests
         Assert.False(File.Exists(output));
     }
 
+    /// <summary>A certificate the system cannot read, or cannot sign with now, is an invalid certificate, not a wrong password.</summary>
+    [Theory]
+    [InlineData("garbage", "not a PKCS#12 file")]
+    [InlineData("truncated", "not a PKCS#12 file")]
+    [InlineData("no-key", "no private key")]
+    [InlineData("expired", "valid only from")]
+    public void Sign_UnusableCertificateIsSignCertInvalid(string kind, string reason)
+    {
+        using var fixture = new PdfEngineFixture();
+        string input = fixture.CreateDocument("unsigned.pdf", pages: 1);
+        string certificate = fixture.File(kind + ".pfx");
+        byte[] valid = File.ReadAllBytes(fixture.CreateCertificate("pw", "valid.pfx"));
+        File.WriteAllBytes(certificate, kind switch
+        {
+            "garbage" => System.Text.Encoding.ASCII.GetBytes("this is not a certificate"),
+            "truncated" => valid[..(valid.Length / 2)],
+            "no-key" => PublicOnly(valid),
+            _ => Expired(),
+        });
+
+        var exception = Assert.Throws<Sdk.Errors.CliException>(() => PdfSign.Run(fixture.Session, new PdfSignRequest
+        {
+            Input = input,
+            Output = TestOutput.At(fixture.File("unsigned.signed.pdf")),
+            CertificatePath = certificate,
+            CertificatePassword = new Secret("pw"),
+        }));
+
+        Assert.Equal("SIGN_CERT_INVALID", exception.Code.Name);
+        Assert.Contains(reason, exception.Message, StringComparison.Ordinal);
+
+        static byte[] PublicOnly(byte[] pfx)
+        {
+            using var full = System.Security.Cryptography.X509Certificates.X509CertificateLoader.LoadPkcs12(pfx, "pw");
+            using var bare = System.Security.Cryptography.X509Certificates.X509CertificateLoader.LoadCertificate(full.RawData);
+            return bare.Export(System.Security.Cryptography.X509Certificates.X509ContentType.Pkcs12, "pw");
+        }
+
+        static byte[] Expired()
+        {
+            using var key = System.Security.Cryptography.RSA.Create(2048);
+            var request = new System.Security.Cryptography.X509Certificates.CertificateRequest(
+                "CN=Expired", key, System.Security.Cryptography.HashAlgorithmName.SHA256, System.Security.Cryptography.RSASignaturePadding.Pkcs1);
+            using var old = request.CreateSelfSigned(DateTimeOffset.UtcNow.AddDays(-10), DateTimeOffset.UtcNow.AddDays(-1));
+            return old.Export(System.Security.Cryptography.X509Certificates.X509ContentType.Pfx, "pw");
+        }
+    }
+
     [Fact]
     public void Sign_WrongCertificatePasswordWritesNoOutput()
     {
@@ -185,6 +233,8 @@ public sealed class PdfSignTests
             CertificatePassword = new Secret("wrong-password"),
         }));
         Assert.Equal("SIGN_CERT_INVALID", exception.Code.Name);
+        Assert.Contains("password does not open the PKCS#12 certificate", exception.Message, StringComparison.Ordinal);
+        Assert.Contains("--certificate-password-env", exception.Hint, StringComparison.Ordinal);
         Assert.False(File.Exists(output));
     }
 
