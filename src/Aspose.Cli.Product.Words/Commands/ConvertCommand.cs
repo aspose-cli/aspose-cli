@@ -29,7 +29,7 @@ internal static class ConvertCommand
                 string? pageText = pages.Read(parse);
                 if (pageText is not null && !WordsFormats.FixedPageFormats.Contains(format, StringComparer.Ordinal))
                 {
-                    throw CliErrors.OptionInvalid(pages.Name, $"'{format}' is a flow format", $"Use {pages.Name} only with PDF, XPS, OpenXPS, PS or PCL.");
+                    throw CliErrors.OptionInvalid(pages.Name, $"a '{format}' output holds the whole document", $"Use {pages.Name} only with PDF, XPS, OpenXPS, PS or PCL.");
                 }
 
                 Secret? encryptPassword = standard.EncryptPassword();
@@ -58,5 +58,6 @@ internal static class ConvertCommand
     }
 
     internal static void Table(WordsConvertResult result, TableSurface surface) =>
-        ResultText.Produced(surface, result.Output, result.Pages is null ? null : $"pages {result.Pages}");
+        ResultText.Files(surface, "wrote", "file", [.. result.Outputs.Select(output =>
+            new ProducedFile(null, output.Path, output.Format, output.SizeBytes, result.Pages is null ? null : $"pages {result.Pages}"))]);
 }
