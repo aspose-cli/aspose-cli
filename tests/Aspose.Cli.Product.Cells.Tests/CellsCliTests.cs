@@ -663,7 +663,7 @@ public sealed class CellsCliTests : IDisposable
             "cells", "convert", "sales.csv", "--to", "pdf", "--encrypt-env", "ASPOSE_CLI_TEST_UNSET", "--output-format", "json");
 
         Assert.True(converted.ExitCode == 0, converted.StdErr);
-        Assert.True(JsonNode.Parse(converted.StdOut)!["output"]!["encrypted"]!.GetValue<bool>());
+        Assert.True(JsonNode.Parse(converted.StdOut)!["outputs"]![0]!["encrypted"]!.GetValue<bool>());
         Assert.Equal("PASSWORD_REQUIRED", JsonNode.Parse(locked.StdErr)!["error"]!["code"]!.GetValue<string>());
         Assert.True(opened.ExitCode == 0, opened.StdErr);
         Assert.True(JsonNode.Parse(opened.StdOut)!["input"]!["encrypted"]!.GetValue<bool>());

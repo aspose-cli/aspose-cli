@@ -85,7 +85,7 @@ public sealed class WordsOutputFormatTests
         string[] converting = convert.Replace("<that file>", "kept.docx", StringComparison.Ordinal).Split(' ')[1..];
         CliResult converted = workspace.Run([.. converting, "--out", output, "--output-format", "json"]);
         Assert.True(converted.ExitCode == 0, converted.StdErr);
-        Assert.Equal(format, JsonNode.Parse(converted.StdOut)!["output"]!["format"]!.GetValue<string>());
+        Assert.Equal(format, JsonNode.Parse(converted.StdOut)!["outputs"]![0]!["format"]!.GetValue<string>());
     }
 
     [Fact]
@@ -148,7 +148,7 @@ public sealed class WordsOutputFormatTests
         CliResult converted = workspace.Run("words", "convert", "source.docx", "--to", "md", "--out", "notes.markdown", "--output-format", "json");
 
         Assert.True(converted.ExitCode == 0, converted.StdErr);
-        Assert.Equal("md", System.Text.Json.Nodes.JsonNode.Parse(converted.StdOut)!["output"]!["format"]!.GetValue<string>());
+        Assert.Equal("md", System.Text.Json.Nodes.JsonNode.Parse(converted.StdOut)!["outputs"]![0]!["format"]!.GetValue<string>());
         string[] lines = File.ReadAllLines(workspace.File("notes.markdown"));
         Assert.Contains(lines, static line => line.StartsWith("# ", StringComparison.Ordinal) && line.Contains("Quarterly review", StringComparison.Ordinal));
         Assert.Contains("Clause one.", lines);

@@ -55,7 +55,7 @@ public sealed class CellsOutputFormatTests : IClassFixture<CellsFixture>
             Output = TestOutput.At(output, format: "xltx", overwrite: true),
         });
 
-        Assert.Equal("xltx", result.Output.Format);
+        Assert.Equal("xltx", Assert.Single(result.Outputs).Format);
         Assert.Equal(FileFormatType.Xltx, FileFormatUtil.DetectFileFormat(output).FileFormatType);
 
         using ZipArchive package = ZipFile.OpenRead(output);
@@ -128,7 +128,7 @@ public sealed class CellsOutputFormatTests : IClassFixture<CellsFixture>
         string[] converting = convert.Replace("<that file>", "book.xlsx", StringComparison.Ordinal).Split(' ')[1..];
         CliResult converted = workspace.Run([.. converting, "--out", path, "--output-format", "json"]);
         Assert.True(converted.ExitCode == 0, converted.StdErr);
-        Assert.Equal(format, System.Text.Json.Nodes.JsonNode.Parse(converted.StdOut)!["output"]!["format"]!.GetValue<string>());
+        Assert.Equal(format, System.Text.Json.Nodes.JsonNode.Parse(converted.StdOut)!["outputs"]![0]!["format"]!.GetValue<string>());
     }
 
     private CellsEditResult Apply(string source, string output) =>

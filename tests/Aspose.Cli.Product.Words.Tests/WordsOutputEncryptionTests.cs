@@ -42,7 +42,7 @@ public sealed class WordsOutputEncryptionTests : IDisposable
     {
         JsonNode result = Succeeds(Run("words", "convert", "locked.docx", "--password-env", "WORDS_PASSWORD", "--to", "odt", "--out", "locked.odt"));
 
-        Assert.True(result["output"]!["encrypted"]!.GetValue<bool>());
+        Assert.True(result["outputs"]![0]!["encrypted"]!.GetValue<bool>());
         Assert.True(FileFormatUtil.DetectFileFormat(_workspace.File("locked.odt")).IsEncrypted);
         Assert.DoesNotContain("ENCRYPTION_REMOVED", Codes(result));
     }

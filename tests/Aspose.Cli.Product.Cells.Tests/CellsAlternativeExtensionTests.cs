@@ -23,7 +23,7 @@ public sealed class CellsAlternativeExtensionTests : IDisposable
         CliResult converted = _workspace.Run("cells", "convert", "rows.csv", "--to", format, "--out", "data.txt", "--output-format", "json");
 
         Assert.True(converted.ExitCode == 0, converted.StdErr);
-        JsonNode output = JsonNode.Parse(converted.StdOut)!["output"]!;
+        JsonNode output = Assert.Single(JsonNode.Parse(converted.StdOut)!["outputs"]!.AsArray())!;
         Assert.Equal(format, output["format"]!.GetValue<string>());
         Assert.Equal(_workspace.File("data.txt"), output["path"]!.GetValue<string>());
         Assert.Contains(row, File.ReadAllLines(_workspace.File("data.txt")));

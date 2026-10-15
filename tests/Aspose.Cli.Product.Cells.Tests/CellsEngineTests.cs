@@ -640,9 +640,9 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
             Output = TestOutput.At(output, format: "pdf"),
         });
 
-        Assert.Equal(output, result.Output.Path);
+        Assert.Equal(output, Assert.Single(result.Outputs).Path);
         Assert.True(HasHeader(output, [0x25, 0x50, 0x44, 0x46]));
-        Assert.Equal(new FileInfo(output).Length, result.Output.SizeBytes);
+        Assert.Equal(new FileInfo(output).Length, result.Outputs[0].SizeBytes);
     }
 
     [Fact]
@@ -660,7 +660,7 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
         });
 
         Assert.Equal("csv", result.Input.Format);
-        Assert.Equal("xlsx", result.Output.Format);
+        Assert.Equal("xlsx", Assert.Single(result.Outputs).Format);
     }
 
     [Fact]
@@ -727,13 +727,13 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
         Assert.Equal("ACTIVE_SHEET_SKIPPED", skipped.Code.Name);
         Assert.Equal("Evaluation Warning", skipped.Location);
         Assert.Contains(csv.Warnings!, static warning => warning.Code.Name == "ACTIVE_SHEET_SKIPPED");
-        Assert.StartsWith("data", File.ReadAllText(csv.Output.Path), StringComparison.Ordinal);
+        Assert.StartsWith("data", File.ReadAllText(csv.Outputs[0].Path), StringComparison.Ordinal);
         Assert.Null(copied.Warnings);
-        using var copy = new Aspose.Cells.Workbook(copied.Output.Path);
+        using var copy = new Aspose.Cells.Workbook(copied.Outputs[0].Path);
         Assert.Equal(["Data", "Evaluation Warning"], copy.Worksheets.Cast<Aspose.Cells.Worksheet>().Select(static sheet => sheet.Name));
         // Skipping changes the default only: whole-workbook saves keep the input's active sheet
         // unless the batch chose one.
-        Assert.Equal("Evaluation Warning", ActiveSheet(copied.Output.Path));
+        Assert.Equal("Evaluation Warning", ActiveSheet(copied.Outputs[0].Path));
         Assert.Contains(edited.Warnings!, static warning => warning.Code.Name == "ACTIVE_SHEET_SKIPPED");
         Assert.Equal("Evaluation Warning", ActiveSheet(edited.Output!.Path));
         using (var editedBook = new Aspose.Cells.Workbook(edited.Output.Path))
