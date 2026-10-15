@@ -75,17 +75,9 @@ internal static partial class ContractRules
         {
             var names = new List<MistakenName>();
             var problems = new List<string>();
-            IEnumerable<string> files = Directory.EnumerateFiles(sources, "*.cs", SearchOption.AllDirectories)
-                .Where(file => !Path.GetRelativePath(sources, file).Split(Path.DirectorySeparatorChar).Any(static part => part is "bin" or "obj"))
-                .Order(StringComparer.Ordinal);
-            foreach (string file in files)
+            foreach ((string file, string relative) in SourceFiles(sources, "*.cs"))
             {
-                string relative = Path.GetRelativePath(sources, file).Replace('\\', '/');
-                string project = relative.Split('/')[0];
-                string? product = project.StartsWith(ProductProject, StringComparison.Ordinal)
-                    ? project[ProductProject.Length..].ToLowerInvariant()
-                    : null;
-                names.AddRange(ReadFile(product, "src/" + relative, File.ReadAllText(file), problems));
+                names.AddRange(ReadFile(ProductOf(relative.Split('/')[0]), "src/" + relative, File.ReadAllText(file), problems));
             }
             return new MistakenNames(names, problems);
         }
@@ -312,7 +304,7 @@ internal static partial class ContractRules
                 // reported as an operation name already; the JSON adds the names of one word and
                 // another product's operations.
                 string? meant = mistaken.Operation(product, op);
-                if (!SnakeName().IsMatch(op) || (fields.Owners(null, op).Length > 0 && meant is null))
+                if (!LowerSnake().IsMatch(op) || (fields.Owners(null, op).Length > 0 && meant is null))
                 {
                     string owner = product is null ? "any product" : product;
                     yield return meant is null
@@ -606,9 +598,6 @@ internal static partial class ContractRules
 
     [GeneratedRegex(@"(?<![\w.])JsonPropertyName\(\s*""(?<name>[^""]+)""\s*\)")]
     private static partial Regex JsonNameAttribute();
-
-    [GeneratedRegex(@"^[a-z][a-z0-9]*(?:_[a-z0-9]+)+$")]
-    private static partial Regex SnakeName();
 
     [GeneratedRegex(@"""(?<text>(?:[^""\\]|\\.)*)""")]
     private static partial Regex Literal();

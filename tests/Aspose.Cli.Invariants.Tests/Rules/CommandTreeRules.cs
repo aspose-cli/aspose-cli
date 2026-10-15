@@ -88,7 +88,7 @@ internal static partial class ContractRules
         foreach (string hidden in tree.SelectMany(static command => command.Options).Where(static option => option.Hidden)
             .Select(static option => option.Name).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal))
         {
-            var mention = new Regex($@"(?<![\w-]){Regex.Escape(hidden)}(?![\w-])", RegexOptions.CultureInvariant);
+            Regex mention = OptionMention(hidden);
             yield return Check("C-R04", hidden, () => PublicTexts(catalog, tree)
                 .Where(text => mention.IsMatch(text.Text))
                 .Select(text => $"{text.Where} names the hidden option {hidden}.")

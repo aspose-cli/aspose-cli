@@ -9,7 +9,6 @@ namespace Aspose.Cli.Invariants.Tests;
 // schema, so that a contract change to one command or operation clears its own cases.
 internal static partial class ContractRules
 {
-    private static readonly Regex KebabValue = new("^[a-z0-9]+(-[a-z0-9]+)*$", RegexOptions.CultureInvariant);
     private static readonly Regex CamelCaseName = new("^[a-z][a-zA-Z0-9]*$", RegexOptions.CultureInvariant);
     private static readonly Regex NameWords = new("[A-Z]?[a-z0-9]+|[A-Z]+(?![a-z])", RegexOptions.CultureInvariant);
 
@@ -116,7 +115,7 @@ internal static partial class ContractRules
                 from node in subject.Nodes()
                 let values = PublishedSchema.Enum(node.Node)
                 where values is not null
-                let bad = values.Where(value => !KebabValue.IsMatch(value) && !exempt.Contains(value)).ToArray()
+                let bad = values.Where(value => !CommandTree.Kebab().IsMatch(value) && !exempt.Contains(value)).ToArray()
                 where bad.Length > 0
                 select $"{Located(node.Path)}: enum values {string.Join(", ", bad)} are not lowercase kebab-case");
         }
