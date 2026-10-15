@@ -120,6 +120,7 @@
             "protect_workbook",
             "refresh_pivot",
             "rename_sheet",
+            "replace_text",
             "resize_columns",
             "resize_rows",
             "set_active_sheet",

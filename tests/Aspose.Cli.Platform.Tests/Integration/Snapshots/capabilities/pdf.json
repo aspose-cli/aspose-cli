@@ -42,7 +42,7 @@
         "command": "edit",
         "inputSchema": "v2/pdf/ops",
         "operationSchema": "aspose-cli schema v2/pdf/ops --operation <op>",
-        "contractFingerprint": "sha256:b1378d43120827044486364e0d5b5a28dcc96c1b65be827387ef41d424d151d1",
+        "contractFingerprint": "sha256:930c281aff5a829484e2c3498ac4f6a1e50d3d4ca56494d8fd6c28dcb6d00f8a",
         "maximumOperationCount": 10000,
         "ops": [
           "add_attachment",
@@ -1863,7 +1863,7 @@
             "allowedValues": [],
             "secret": false,
             "valueSource": "command-line",
-            "description": "Output path; several pages write <stem>.<page>.<ext> beside it."
+            "description": "Output path. Default: the input path with the image extension. Several pages write <stem>.<page>.<ext> beside it."
           },
           {
             "name": "--overwrite",
@@ -5146,7 +5146,7 @@
         },
         "pages": {
           "type": "string",
-          "description": "1-based pages and ranges separated by commas, such as 1-3,7,9-; a range with no end runs to the last page, and a range must not end before it starts.",
+          "description": "1-based numbers and ranges separated by commas, such as 1-3,7,9-; a range with no end runs to the last one, and a range must not end before it starts.",
           "pattern": "^\\s*0*[1-9][0-9]*(-(0*[1-9][0-9]*)?)?(\\s*,\\s*0*[1-9][0-9]*(-(0*[1-9][0-9]*)?)?)*\\s*$"
         },
         "pdfPageLabelRange": {
