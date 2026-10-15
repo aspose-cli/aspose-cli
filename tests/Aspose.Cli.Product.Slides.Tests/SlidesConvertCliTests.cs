@@ -1,0 +1,169 @@
+using System.Text.Json.Nodes;
+using Aspose.Cli.TestKit.Scenarios;
+using Aspose.Slides;
+using Aspose.Slides.Export;
+using Xunit;
+
+namespace Aspose.Cli.Product.Slides.Tests;
+
+/// <summary>
+/// What <c>slides convert</c> writes and says through the CLI: hidden slides, which an export of
+/// every slide leaves out with a warning and a selection converts; the slide numbers of selected
+/// slides; the evaluation marks of the slides an output shows; and what an ODP output loses.
+/// </summary>
+public sealed class SlidesConvertCliTests : IDisposable
+{
+    private readonly TempWorkspace _workspace = new();
+
+    public SlidesConvertCliTests()
+    {
+        ScenarioLicense.Project(_workspace.Path);
+        File.WriteAllText(_workspace.File("deck.md"), "# One\n\nFirst\n\n# Two\n\nSecond\n\n# Three\n\nThird\n\n# Four\n\nFourth\n");
+    }
+
+    public void Dispose() => _workspace.Dispose();
+
+    /// <summary>
+    /// An export of every slide leaves the hidden slide out, as PowerPoint's export does, and
+    /// names it in a warning whose hint selects it; a presentation format keeps it, hidden.
+    /// </summary>
+    [Theory]
+    [InlineData("pdf", 3)]
+    [InlineData("md", 3)]
+    [InlineData("png", 3)]
+    [InlineData("html", 3)]
+    [InlineData("pptx", 4)]
+    public void EveryHiddenSlide_IsLeftOutOfAnExportWithAWarning(string format, int shown)
+    {
+        HiddenSecondSlide();
+
+        JsonNode result = Run("slides", "convert", "deck.pptx", "--to", format, "--out", $"all.{format}");
+
+        Assert.Equal(shown, ShownSlides(result, format));
+        JsonNode? warning = (result["warnings"] as JsonArray ?? []).SingleOrDefault(static warning => warning!["code"]!.GetValue<string>() == "HIDDEN_SLIDES_SKIPPED");
+        if (shown == 4)
+        {
+            Assert.Null(warning);
+            return;
+        }
+
+        Assert.NotNull(warning);
+        Assert.Contains("hidden slide(s) 2,", warning["message"]!.GetValue<string>(), StringComparison.Ordinal);
+        Assert.Contains("--slides 1-4", warning["hint"]!.GetValue<string>(), StringComparison.Ordinal);
+    }
+
+    /// <summary>A hidden slide that --slides selects is converted, whatever the export format.</summary>
+    [Theory]
+    [InlineData("pdf")]
+    [InlineData("md")]
+    [InlineData("html")]
+    [InlineData("html5")]
+    [InlineData("png")]
+    public void SelectedHiddenSlide_IsConverted(string format)
+    {
+        HiddenSecondSlide();
+        string output = format == "html5" ? "two.html" : $"two.{format}";
+
+        JsonNode result = Run("slides", "convert", "deck.pptx", "--to", format, "--slides", "2", "--out", output);
+
+        Assert.DoesNotContain(result["warnings"] as JsonArray ?? [], static warning => warning!["code"]!.GetValue<string>() == "HIDDEN_SLIDES_SKIPPED");
+        if (format == "pdf")
+        {
+            Assert.Equal(1, Run("pdf", "inspect", output)["pdf"]!["pageCount"]!.GetValue<int>());
+        }
+        else if (format == "png")
+        {
+            Assert.Equal(2, Assert.Single(result["outputs"]!.AsArray())!["slide"]!.GetValue<int>());
+        }
+        else
+        {
+            Assert.Contains("Two", File.ReadAllText(_workspace.File(output)), StringComparison.Ordinal);
+        }
+    }
+
+    /// <summary>The slide numbers of selected slides converted to Markdown are their numbers in the deck.</summary>
+    [Fact]
+    public void SelectedSlidesInMarkdown_KeepTheirSlideNumbers()
+    {
+        using (var fixture = new SlidesEngineFixture())
+        using (var deck = new Presentation())
+        {
+            for (int slide = 1; slide < 4; slide++)
+            {
+                deck.Slides.AddEmptySlide(deck.Slides[0].LayoutSlide);
+            }
+
+            deck.HeaderFooterManager.SetAllSlideNumbersVisibility(true);
+            deck.Save(_workspace.File("numbered.pptx"), SaveFormat.Pptx);
+        }
+
+        Run("slides", "convert", "numbered.pptx", "--to", "md", "--slides", "3-4", "--out", "numbered.md");
+
+        string[] numbers = [.. File.ReadAllLines(_workspace.File("numbered.md")).Select(static line => line.Trim()).Where(static line => line is "1" or "2" or "3" or "4")];
+        Assert.Equal(["3", "4"], numbers);
+    }
+
+    /// <summary>
+    /// A licensed export of selected slides discloses only the evaluation marks those slides
+    /// carry: a slide an evaluation save marked is disclosed, an unmarked one is not.
+    /// </summary>
+    [LicensedFact]
+    public void SelectedSlides_DiscloseOnlyTheirOwnEvaluationMarks()
+    {
+        File.WriteAllText(_workspace.File("one.md"), "# One\n\nFirst\n");
+        Run("slides", "create", "marked.pptx", "--from-markdown", "one.md", "--license-mode", "evaluation");
+        Run("slides", "edit", "marked.pptx", "--in-place", "--ops", """[{"op":"insert_slide"}]""");
+
+        Assert.Contains("EVALUATION_INPUT_MARKED", Codes(Run("slides", "convert", "marked.pptx", "--slides", "1", "--out", "first.pdf")));
+        Assert.DoesNotContain("EVALUATION_INPUT_MARKED", Codes(Run("slides", "convert", "marked.pptx", "--slides", "2", "--out", "second.pdf")));
+    }
+
+    /// <summary>An ODP output names the native charts, transitions and sections it does not keep.</summary>
+    [Fact]
+    public void OdpOutput_NamesTheChartsTransitionsAndSectionsItLoses()
+    {
+        Run("slides", "create", "deck.pptx", "--from-markdown", "deck.md");
+        Run("slides", "edit", "deck.pptx", "--in-place", "--ops", """
+            [{"op":"set_transition","slides":"1","kind":"fade"},
+             {"op":"insert_section","name":"Part","at":2},
+             {"op":"insert_chart","slide":2,"kind":"column","rect":{"x":50,"y":100,"width":300,"height":200},"categories":["a","b"],"series":[{"name":"S","values":[1,2]}]}]
+            """);
+
+        JsonNode result = Run("slides", "convert", "deck.pptx", "--out", "deck.odp");
+
+        string message = Assert.Single(result["warnings"] as JsonArray ?? [], static warning => warning!["code"]!.GetValue<string>() == "LOSSY_CONVERSION")!["message"]!.GetValue<string>();
+        Assert.Contains("native charts of slide(s) 2", message, StringComparison.Ordinal);
+        Assert.Contains("transitions of slide(s) 1", message, StringComparison.Ordinal);
+        Assert.Contains("section(s)", message, StringComparison.Ordinal);
+    }
+
+    // deck.pptx: four slides, the second hidden.
+    private void HiddenSecondSlide()
+    {
+        Run("slides", "create", "deck.pptx", "--from-markdown", "deck.md");
+        Run("slides", "edit", "deck.pptx", "--in-place", "--ops", """[{"op":"set_slide_hidden","slides":"2","hidden":true}]""");
+    }
+
+    // The slides an output shows: its pages, its slide headings, or its images.
+    private int ShownSlides(JsonNode result, string format)
+    {
+        string path = result["outputs"]![0]!["path"]!.GetValue<string>();
+        return format switch
+        {
+            "pdf" => Run("pdf", "inspect", path)["pdf"]!["pageCount"]!.GetValue<int>(),
+            "png" => result["outputs"]!.AsArray().Count,
+            "pptx" => Run("slides", "inspect", path)["presentation"]!["slideCount"]!.GetValue<int>(),
+            _ => new[] { "One", "Two", "Three", "Four" }.Count(title => File.ReadAllText(path).Contains(title, StringComparison.Ordinal)),
+        };
+    }
+
+    private JsonNode Run(params string[] args)
+    {
+        CliResult result = _workspace.Run([.. args, "--output-format", "json"]);
+        Assert.True(result.ExitCode == 0, result.StdErr);
+        return JsonNode.Parse(result.StdOut)!;
+    }
+
+    private static string[] Codes(JsonNode result) =>
+        [.. (result["warnings"] as JsonArray ?? []).Select(static warning => warning!["code"]!.GetValue<string>())];
+}

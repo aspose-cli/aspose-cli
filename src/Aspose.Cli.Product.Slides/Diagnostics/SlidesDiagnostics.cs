@@ -17,6 +17,9 @@ internal static class SlidesDiagnostics
     /// <summary>An authored table is taller than the area it was placed in.</summary>
     internal static readonly WarningCode TableOverflow = new("TABLE_OVERFLOW");
 
+    /// <summary>A conversion of every slide to an export format left the hidden slides out.</summary>
+    internal static readonly WarningCode HiddenSlidesSkipped = new("HIDDEN_SLIDES_SKIPPED");
+
     /// <summary>A slide that took another design lost its own background.</summary>
     internal static readonly WarningCode SlideBackgroundReset = new("SLIDE_BACKGROUND_RESET");
 
@@ -39,6 +42,7 @@ internal static class SlidesDiagnostics
         DiagnosticDescriptor.Warning(ChartTitleOverlaid),
         DiagnosticDescriptor.Warning(TableOverflow),
         DiagnosticDescriptor.Warning(SlideBackgroundReset),
+        DiagnosticDescriptor.Warning(HiddenSlidesSkipped),
         SlideOrderMismatch,
         SlideContentMismatch,
         PresentationSettingMismatch,
