@@ -3,13 +3,15 @@ namespace Aspose.Cli.Product.Words.Engine;
 /// <summary>
 /// Bounded deterministic facts from the real Words page-layout model, the number of paragraphs
 /// that hold text evaluation mode saved into the file, and whether the file holds the notice
-/// that evaluation mode cut it short; the last two are read only with a license.
+/// that evaluation mode cut it short, which are read only with a license, and in evaluation
+/// mode how many laid-out body lines the layout facts leave out as evaluation marks.
 /// </summary>
 internal sealed record WordsReviewLayout(
     IReadOnlyList<WordsReviewPageLayout> Pages,
     IReadOnlyList<WordsReviewHeadingLayout> OrphanedHeadings,
     int EvaluationMarks,
-    bool EvaluationTruncated);
+    bool EvaluationTruncated,
+    int? ExcludedEvaluationMarks);
 
 /// <summary>Layout facts for one rendered page.</summary>
 internal sealed record WordsReviewPageLayout

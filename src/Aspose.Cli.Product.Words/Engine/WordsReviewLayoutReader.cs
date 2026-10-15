@@ -1,3 +1,4 @@
+using System.Text;
 using Aspose.Cli.Product.Words.Engine.Mapping;
 using Aspose.Words;
 using Aspose.Words.Drawing;
@@ -32,7 +33,7 @@ internal static class WordsReviewLayoutReader
             .ToArray();
         var collector = new LayoutCollector(document);
         bool evaluation = loaded.Evaluation;
-        CollectLayoutEntities(document, pages, evaluation);
+        int excluded = CollectLayoutEntities(document, pages, evaluation);
         CollectNodeFacts(document, collector, pages, evaluation);
         IReadOnlyList<WordsReviewHeadingLayout> headings = OrphanedHeadings(
             document,
@@ -48,43 +49,54 @@ internal static class WordsReviewLayoutReader
             pages.Select(static page => page.ToContract()).ToArray(),
             headings,
             evaluationMarks,
-            !evaluation && WordsEvaluation.IsTruncated(document));
+            !evaluation && WordsEvaluation.IsTruncated(document),
+            evaluation ? excluded : null);
     }
 
-    private static void CollectLayoutEntities(
+    /// <summary>
+    /// Collects the laid-out content of the pages. In evaluation mode it leaves out the body
+    /// lines of the paragraphs evaluation mode adds, such as its banner, and returns how many.
+    /// </summary>
+    private static int CollectLayoutEntities(
         Document document,
         IReadOnlyList<MutablePage> pages,
         bool evaluation)
     {
+        var marks = new EvaluationLines(evaluation);
         if (pages.Count == 0)
         {
-            return;
+            return marks.Excluded;
         }
         var enumerator = new LayoutEnumerator(document);
         enumerator.Reset();
         do
         {
-            Visit(enumerator, pages, excludedStory: false, evaluation);
+            Visit(enumerator, pages, excludedStory: false, marks);
         }
         while (enumerator.MoveNext());
+        return marks.Excluded;
     }
 
     private static void Visit(
         LayoutEnumerator enumerator,
         IReadOnlyList<MutablePage> pages,
         bool excludedStory,
-        bool evaluation)
+        EvaluationLines marks)
     {
         LayoutEntityType type = enumerator.Type;
         bool excluded = excludedStory
             || type is LayoutEntityType.HeaderFooter or LayoutEntityType.Comment;
         int page = enumerator.PageIndex;
+        if (!excluded && type == LayoutEntityType.Line && marks.Excludes(enumerator))
+        {
+            return;
+        }
+
         if (!excluded && page >= 1 && page <= pages.Count)
         {
             if (type == LayoutEntityType.Span
                 && !string.IsNullOrWhiteSpace(enumerator.Text)
-                && !string.Equals(enumerator.Kind, "PAGE", StringComparison.Ordinal)
-                && !(evaluation && WordsEvaluation.IsLayoutMark(enumerator.Text)))
+                && !string.Equals(enumerator.Kind, "PAGE", StringComparison.Ordinal))
             {
                 int visibleCharacters = enumerator.Text.Count(static character =>
                     !char.IsControl(character) && !char.IsWhiteSpace(character));
@@ -107,10 +119,49 @@ internal static class WordsReviewLayoutReader
         }
         do
         {
-            Visit(enumerator, pages, excluded, evaluation);
+            Visit(enumerator, pages, excluded, marks);
         }
         while (enumerator.MoveNext());
         _ = enumerator.MoveParent();
+    }
+
+    /// <summary>
+    /// The body lines of evaluation mode's own paragraphs, which only evaluation mode leaves out:
+    /// a line whose text is an evaluation mark, and the lines that continue its paragraph.
+    /// </summary>
+    private sealed class EvaluationLines(bool evaluation)
+    {
+        private bool _inMark;
+
+        /// <summary>How many lines were left out.</summary>
+        internal int Excluded { get; private set; }
+
+        /// <summary>Whether the line the enumerator is on is left out; counts it when it is.</summary>
+        internal bool Excludes(LayoutEnumerator line)
+        {
+            if (!evaluation || !line.MoveFirstChild())
+            {
+                return false;
+            }
+
+            var text = new StringBuilder();
+            bool endsParagraph = false;
+            do
+            {
+                if (line.Type == LayoutEntityType.Span)
+                {
+                    text.Append(line.Text);
+                    endsParagraph = string.Equals(line.Kind, "PARAGRAPH", StringComparison.Ordinal);
+                }
+            }
+            while (line.MoveNext());
+            _ = line.MoveParent();
+
+            bool mark = _inMark || WordsEvaluation.IsLayoutMark(text.ToString());
+            _inMark = mark && !endsParagraph;
+            Excluded += mark ? 1 : 0;
+            return mark;
+        }
     }
 
     private static void CollectNodeFacts(
