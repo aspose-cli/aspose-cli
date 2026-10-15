@@ -13,8 +13,9 @@ namespace Aspose.Cli.Product.Pdf.Engine.Mapping;
 /// import, every file the importer could read must be an ordinary file beneath the Markdown
 /// file's directory: Markdown
 /// images, the resources raw HTML and CSS name, and the resources named inside the
-/// stylesheets, SVG and HTML files those load. A Markdown image, and an image that HTML or SVG
-/// markup embeds, must also be an intact image (<see cref="ImageInput"/>), checked before the
+/// stylesheets, SVG and HTML files those load. A Markdown image, an image that HTML or SVG
+/// markup embeds, and an image a stylesheet names, must also be an intact image
+/// (<see cref="ImageInput"/>), checked before the
 /// importer sees it. As the importer does, the Markdown's own
 /// references resolve against the working directory and a loaded file's references against
 /// that file. Every decoding the importer might apply is checked, so a reference that cannot
@@ -136,7 +137,7 @@ internal sealed class MarkdownImportResources : IDisposable
     {
         if (_files.TryGetValue(file, out (VerifiedReadLease Lease, bool Scanned) held))
         {
-            if (reference.Image)
+            if (reference.Image || NamesAnImage(reference, file, held.Lease))
             {
                 CheckImage(file, held.Lease);
             }
@@ -161,7 +162,7 @@ internal sealed class MarkdownImportResources : IDisposable
                 $"resolves to '{file}', which is not an ordinary file: it is a link, a junction, a directory, a device or a file with several names");
         _files.Add(file, (lease, false));
         _budgets.Consume(ResourceBudgetKinds.InputBytes, lease.Length, "bytes", "markdown-resource");
-        if (reference.Image)
+        if (reference.Image || NamesAnImage(reference, file, lease))
         {
             CheckImage(file, lease);
         }
@@ -187,6 +188,29 @@ internal sealed class MarkdownImportResources : IDisposable
         lease.Position = 0;
         lease.ReadExactly(content);
         ImageInput.Check(_budgets.Inputs, content, file);
+    }
+
+    /// <summary>
+    /// Whether a reference that names neither a document nor, by its markup, an image, such as a
+    /// stylesheet's url(), names an image the importer embeds: a file that is not a font and
+    /// has an image's signature or an image's name. A url() names a font as often as an image,
+    /// so the file's own first bytes tell them apart.
+    /// </summary>
+    private static bool NamesAnImage(Reference reference, string file, VerifiedReadLease lease)
+    {
+        if (reference.Image || reference.Document)
+        {
+            return false;
+        }
+
+        Span<byte> head = stackalloc byte[16];
+        lease.Position = 0;
+        head = head[..lease.ReadAtLeast(head, head.Length, throwOnEndOfStream: false)];
+        bool font = head.StartsWith((ReadOnlySpan<byte>)[0x00, 0x01, 0x00, 0x00])
+            || head.StartsWith("OTTO"u8) || head.StartsWith("true"u8) || head.StartsWith("ttcf"u8)
+            || head.StartsWith("wOFF"u8) || head.StartsWith("wOF2"u8);
+        return !font && (NetworkReferenceGuard.IsSelfContained(head)
+            || Path.GetExtension(file).ToLowerInvariant() is ".png" or ".jpg" or ".jpeg" or ".gif" or ".bmp" or ".webp" or ".tif" or ".tiff" or ".ico");
     }
 
     private static bool IsSelfContained(VerifiedReadLease lease)

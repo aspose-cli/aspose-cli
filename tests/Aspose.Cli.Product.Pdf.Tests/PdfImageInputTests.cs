@@ -108,6 +108,40 @@ public sealed class PdfImageInputTests
         Assert.False(File.Exists(workspace.File("report.pdf")));
     }
 
+    /// <summary>
+    /// An image a stylesheet's url() names is checked like any image the importer embeds: a file
+    /// with an image's signature or name that is not an intact image is refused, and a font a
+    /// stylesheet names is not taken for one.
+    /// </summary>
+    [Theory]
+    [InlineData("<div style=\"background-image:url(chart.png); height:40px\">Band</div>", "cut")]
+    [InlineData("<style>body { background: url('chart.png') }</style>", "cut")]
+    [InlineData("<div style=\"background-image:url(chart.png); height:40px\">Band</div>", "text")]
+    public void CreateFromMarkdown_RefusesAStylesheetImageThatIsNotAnIntactImage(string reference, string kind)
+    {
+        using var workspace = new TempWorkspace();
+        string bad = Write(workspace, "chart.png", kind == "text" ? Encoding.UTF8.GetBytes("not an image") : CutPng);
+        Write(workspace, "report.md", Encoding.UTF8.GetBytes("# Report\n\n" + reference + "\n"));
+
+        CliResult created = workspace.Run("pdf", "create", "report.pdf", "--from-text", "report.md", "--output-format", "json");
+
+        AssertCorruptImage(created, bad);
+        Assert.False(File.Exists(workspace.File("report.pdf")));
+    }
+
+    [Fact]
+    public void CreateFromMarkdown_TakesAFontAStylesheetNamesForNoImage()
+    {
+        using var workspace = new TempWorkspace();
+        Write(workspace, "brand.woff", [.. "wOFF"u8, 0, 1, 0, 0, 0, 0, 0, 0]);
+        Write(workspace, "report.md", Encoding.UTF8.GetBytes(
+            "<style>@font-face { font-family: Brand; src: url(brand.woff) } h1 { font-family: Brand }</style>\n\n# Report\n"));
+
+        CliResult created = workspace.Run("pdf", "create", "report.pdf", "--from-text", "report.md", "--output-format", "json");
+
+        Assert.True(created.ExitCode == 0, created.StdErr);
+    }
+
     // The engine embeds a streamed image by the type the check recognized, not by the file's name.
     [Fact]
     public void FileTypeOf_NamesTheTypesOfSvgAndDicomFromTheirContent()
