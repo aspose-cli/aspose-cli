@@ -77,7 +77,7 @@ public sealed class WordsOutputFormatTests
             error["details"]!["available"]!.AsArray().Select(static extension => extension!.GetValue<string>()));
         Assert.False(File.Exists(workspace.File(output)));
         string convert = $"aspose-cli words convert <that file> --to {format}";
-        Assert.Equal($"Give {(verb == "edit" ? "--out" : "file")} one of these extensions, then run '{convert}' for {format}.", error["hint"]!.GetValue<string>());
+        Assert.Equal($"Give {(verb == "edit" ? "--out" : "the file")} one of these extensions, then run '{convert}' for {format}.", error["hint"]!.GetValue<string>());
 
         // The hint works as written: the same command to a .docx, then the convert it names.
         CliResult kept = workspace.Run([.. Command(verb, "kept.docx"), "--output-format", "json"]);

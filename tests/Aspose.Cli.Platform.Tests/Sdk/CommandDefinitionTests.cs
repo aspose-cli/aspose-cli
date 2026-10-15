@@ -448,14 +448,14 @@ public sealed class CommandDefinitionTests : IDisposable
 
         CliException producer = Refused("new.pdf");
         Assert.Equal(ErrorCodes.OptionInvalid, producer.Code);
-        Assert.Equal("file 'new.pdf' has the .pdf extension of pdf, which aspose-cli test create does not write. Must be one of: .tst, .test, .tsx.", producer.Message);
-        Assert.Equal("Give file one of these extensions, then run 'aspose-cli test convert <that file> --to pdf' for pdf.", producer.Hint);
+        Assert.Equal("The file 'new.pdf' has the .pdf extension of pdf, which aspose-cli test create does not write. Must be one of: .tst, .test, .tsx.", producer.Message);
+        Assert.Equal("Give the file one of these extensions, then run 'aspose-cli test convert <that file> --to pdf' for pdf.", producer.Hint);
         Assert.Equal("file", producer.Details!["argument"]!.GetValue<string>());
         foreach (string file in new[] { "new.foo", "new" })
         {
             CliException refused = Refused(file);
             Assert.Equal(ErrorCodes.OptionInvalid, refused.Code);
-            Assert.Equal("Give file one of these extensions.", refused.Hint);
+            Assert.Equal("Give the file one of these extensions.", refused.Hint);
         }
     }
 
