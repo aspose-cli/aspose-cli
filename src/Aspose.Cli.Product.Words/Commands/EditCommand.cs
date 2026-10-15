@@ -73,7 +73,9 @@ internal static class EditCommand
             [
                 CommandHelpLink.Docs(WordsModule.Manifest, "editing", "addressing and operation recipes"),
                 CommandHelpLink.Schema<WordsOp>("the exact edit-batch contract"),
-            ]);
+            ],
+            // Appending documents is the import_sections operation of an edit.
+            mistakenFor: ["merge"]);
     }
 
     internal static void Table(WordsEditResult result, TableSurface surface)
