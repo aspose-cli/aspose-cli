@@ -114,6 +114,62 @@ public sealed class PdfEvaluationMarkTests
         Assert.True(signed.Signature.Valid);
     }
 
+    /// <summary>
+    /// The signing facade saves the signed file, so the marks evaluation mode printed are read
+    /// from that file: the disclosure names them, with a license or without.
+    /// </summary>
+    [Fact]
+    public void Signing_DisclosesTheMarksTheSignedFileCarries()
+    {
+        using var fixture = new PdfEngineFixture();
+        const string certificatePassword = "test-certificate-password";
+        // Without a license the input is written by hand, so only the signed file carries a notice.
+        string input = fixture.LicenseState == Sdk.Licensing.LicenseState.Licensed
+            ? MarkedOnFirstPage(fixture)
+            : fixture.CreateRawDocument("clean.pdf", pages: 2);
+        string certificate = fixture.CreateCertificate(certificatePassword);
+
+        PdfSignResult signed = fixture.Disclosed(session => PdfSign.Run(session, new PdfSignRequest
+        {
+            Input = input,
+            Output = TestOutput.At(fixture.File("signed-marks.pdf")),
+            CertificatePath = certificate,
+            CertificatePassword = new Secret(certificatePassword),
+            Page = 1,
+        }));
+
+        Warning disclosure = Assert.Single(signed.Warnings!, static warning =>
+            warning.Code == WarningCodes.EvaluationInputMarked || warning.Code == WarningCodes.EvaluationMode);
+        Assert.Contains("the evaluation notice '... Created with Aspose.PDF", disclosure.Message, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// Every part of a split carries the notice, printed by evaluation mode or by the earlier
+    /// save of a marked input, and the disclosure names each part.
+    /// </summary>
+    [Fact]
+    public void Split_NamesEveryPartThatCarriesTheNotice()
+    {
+        using var fixture = new PdfEngineFixture();
+        bool licensed = fixture.LicenseState == Sdk.Licensing.LicenseState.Licensed;
+        string input = licensed
+            ? Marked(fixture, "parts.pdf", pages: 2, markedPages: 2)
+            : fixture.CreateRawDocument("parts.pdf", pages: 2);
+
+        PdfSplitResult split = fixture.Disclosed(session => PdfSplit.Run(session, new PdfSplitRequest
+        {
+            Input = input,
+            Plan = new Sdk.Addressing.SplitPlan(Sdk.Addressing.SplitBy.Pages, null, [PageRange.Parse("1"), PageRange.Parse("2")], null),
+            Output = new ResolvedDirectory(fixture.File("parts")),
+        }));
+
+        Warning disclosure = Assert.Single(split.Warnings!, warning =>
+            warning.Code == (licensed ? WarningCodes.EvaluationInputMarked : WarningCodes.EvaluationMode));
+        Assert.All(split.Outputs, output =>
+            Assert.Contains($"'{Path.GetFileName(output.Path)}'", disclosure.Message, StringComparison.Ordinal));
+        Assert.Contains("the evaluation notice '... Created with Aspose.PDF", disclosure.Message, StringComparison.Ordinal);
+    }
+
     private static Warning Disclosure(ResultEnvelope result) =>
         Assert.Single(result.Warnings!, static warning => warning.Code == WarningCodes.EvaluationInputMarked);
 
