@@ -1,5 +1,6 @@
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using Aspose.Cli.Host.Catalog;
 using Aspose.Cli.Host.Invocation;
 using Aspose.Cli.Host.Licensing;
@@ -139,18 +140,65 @@ internal static class ViewRenderWorker
         }
         catch (Exception exception)
         {
+            CliException? cli = exception as CliException;
             return new RenderWorkerResponse
             {
                 Id = request.Id,
                 Ok = false,
-                Code = exception is CliException cli ? cli.Code.Name : ErrorCodes.Internal.Name,
-                Exit = (int)(exception is CliException failure ? failure.Code.ExitCode : ExitCode.Internal),
-                Message = Sanitize(exception.Message, request.Source),
+                Code = cli?.Code.Name ?? ErrorCodes.Internal.Name,
+                Exit = (int)(cli?.Code.ExitCode ?? ExitCode.Internal),
+                Message = Shown(exception.Message, request),
+                Hint = cli?.Hint is { } hint ? Shown(hint, request) : null,
+                Details = cli?.Details is { } details ? Shown(details, request) : null,
+                Docs = cli?.Docs,
             };
         }
     }
 
-    /// <summary>The service owns the rendered copy; its path is never the user's.</summary>
-    private static string Sanitize(string message, string source) =>
-        message.Replace(source, Path.GetFileName(source), StringComparison.OrdinalIgnoreCase);
+    /// <summary>
+    /// The service renders its own copy of the document, so an error names the copy; the person
+    /// previewed the original, which the error names instead, or its file name without one.
+    /// </summary>
+    private static string Shown(string text, RenderWorkerRequest request) =>
+        text.Replace(request.Source, request.SourceOrigin ?? Path.GetFileName(request.Source), StringComparison.OrdinalIgnoreCase);
+
+    private static JsonObject Shown(JsonObject details, RenderWorkerRequest request)
+    {
+        JsonObject shown = details.DeepClone().AsObject();
+        Replace(shown);
+        return shown;
+
+        void Replace(JsonNode? node)
+        {
+            switch (node)
+            {
+                case JsonObject members:
+                    foreach (string name in members.Select(static member => member.Key).ToArray())
+                    {
+                        if (members[name] is JsonValue value && value.TryGetValue(out string? text))
+                        {
+                            members[name] = Shown(text, request);
+                        }
+                        else
+                        {
+                            Replace(members[name]);
+                        }
+                    }
+                    break;
+                case JsonArray items:
+                    for (int index = 0; index < items.Count; index++)
+                    {
+                        if (items[index] is JsonValue value && value.TryGetValue(out string? text))
+                        {
+                            items[index] = Shown(text, request);
+                        }
+                        else
+                        {
+                            Replace(items[index]);
+                        }
+                    }
+                    break;
+            }
+        }
+    }
 }

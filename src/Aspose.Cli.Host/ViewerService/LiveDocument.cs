@@ -339,9 +339,10 @@ internal sealed class LiveDocument : IDisposable
                     _ => ErrorCodes.FileNotFound.Name,
                 };
                 Report(revision, code, exception.Message);
+                CliException? failure = exception as CliException;
                 return new RenderWorkerResponse { Id = 0, Ok = false, Code = code,
-                    Exit = (int)(exception is CliException failure ? failure.ExitCode : ExitCode.InputError),
-                    Message = exception.Message };
+                    Exit = (int)(failure?.ExitCode ?? ExitCode.InputError),
+                    Message = exception.Message, Hint = failure?.Hint, Details = failure?.Details, Docs = failure?.Docs };
             }
             finally
             {

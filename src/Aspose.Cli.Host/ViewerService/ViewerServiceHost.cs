@@ -376,6 +376,12 @@ internal sealed class ViewerServiceHost : IDisposable
             Ok: false,
             Message: exception.Message,
             Result: JsonSerializer.SerializeToElement(
-                new ViewerFailure(exception.Code.Name, (int)exception.Code.ExitCode, exception.Message),
+                new ViewerFailure(
+                    exception.Code.Name,
+                    (int)exception.Code.ExitCode,
+                    exception.Message,
+                    exception.Hint,
+                    exception.Details,
+                    exception.Docs),
                 ViewerServiceJsonContext.Default.ViewerFailure));
 }

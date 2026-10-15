@@ -284,7 +284,12 @@ internal sealed class AppCliGateway
                     name,
                     (ExitCode)exitCode,
                     text,
-                    hint: failure.TryGetProperty("hint", out JsonElement hint) ? hint.GetString() : null);
+                    hint: failure.TryGetProperty("hint", out JsonElement hint) ? hint.GetString() : null,
+                    details: failure.TryGetProperty("details", out JsonElement details)
+                        && details.ValueKind == JsonValueKind.Object
+                            ? System.Text.Json.Nodes.JsonNode.Parse(details.GetRawText())?.AsObject()
+                            : null,
+                    docs: failure.TryGetProperty("docs", out JsonElement docs) ? docs.GetString() : null);
             }
         }
         catch (JsonException)
