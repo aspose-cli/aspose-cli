@@ -86,7 +86,7 @@ public sealed record DeleteSheetOp : CellsSheetOp;
 public sealed record SetSheetVisibilityOp : CellsSheetOp
 {
     /// <summary>
-    /// visible shows the tab; hidden hides it, and Excel's Unhide shows it again; veryHidden hides
+    /// visible shows the tab; hidden hides it, and Excel's Unhide shows it again; very-hidden hides
     /// it from Excel's Unhide too.
     /// </summary>
     [MistakenFor("hidden", "visible")]
@@ -99,7 +99,7 @@ public static class CellsSheetVisibilities
 {
     public const string Visible = "visible";
     public const string Hidden = "hidden";
-    public const string VeryHidden = "veryHidden";
+    public const string VeryHidden = "very-hidden";
 }
 
 /// <summary>
