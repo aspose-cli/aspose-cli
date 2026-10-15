@@ -798,8 +798,8 @@ public static partial class CliErrors
             : $"'{file}' has the {Path.GetExtension(path)} extension of a {declaredProduct} document, "
                 + "but its content does not look like one.";
         string hint = detectedProducts.Count == 0
-            ? "Check what the file really is, or run the intended product's command on it explicitly. "
-                + "The product is never chosen from the extension alone."
+            ? "Check what the file really is, or select its product explicitly: --product <id> where the command "
+                + "offers it, or that product's commands. The product is never chosen from the extension alone."
             : $"The content looks like {LooksLike(detectedProducts)}. " + ProductChoiceHint(detectedProducts);
         return CliException.Create(
             ErrorCodes.FormatMismatch,
