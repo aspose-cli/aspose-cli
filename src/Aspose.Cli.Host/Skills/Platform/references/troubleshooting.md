@@ -48,7 +48,8 @@ Branch on the exit code first, then on the code in the envelope:
   `doctor` check. Read the result; it says what failed.
 - 130: the command was cancelled with Ctrl+C, with or without --timeout. The
   work stops, nothing is published, its staging is removed and no error is
-  written.
+  written. A second Ctrl+C ends the process at once; the next command that
+  writes into the same directory removes the staging it left.
 - Any other non-zero exit comes with an error envelope; its code's category
   and exit code are listed in `capabilities`. Usage errors (exit 2) are fixed
   on the command line, input errors (exit 3) in the input file or its

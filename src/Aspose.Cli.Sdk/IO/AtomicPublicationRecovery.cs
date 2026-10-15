@@ -139,6 +139,10 @@ internal sealed class AtomicPublicationRecovery(AtomicPublicationPlan plan)
                     phase: "recovery");
             }
         }
+        if (scope is null)
+        {
+            RemoveAbandonedCandidates(root, lease, invocationDeadline, deadline);
+        }
         return recovered;
     }
 
@@ -471,13 +475,81 @@ internal sealed class AtomicPublicationRecovery(AtomicPublicationPlan plan)
         return true;
     }
 
-    private static bool IsLiveCreation(string directory)
+    private static bool IsLiveCreation(string directory) =>
+        TryParseCreation(directory, out int pid, out long ticks) && IsCreatorAlive(pid, ticks);
+
+    /// <summary>Reads the creating process from a transaction name this CLI gives.</summary>
+    private static bool TryParseCreation(string directory, out int pid, out long ticks)
     {
         string[] parts = Path.GetFileName(directory).Split('-');
-        if (parts.Length != 5 || parts[0] != ".aspose" || parts[1] != "publication"
-            || !int.TryParse(parts[2], out int pid) || pid <= 0
-            || !long.TryParse(parts[3], out long ticks) || ticks <= 0
-            || !Guid.TryParseExact(parts[4], "N", out _)) { return false; }
+        ticks = 0;
+        pid = 0;
+        return parts.Length == 5 && parts[0] == ".aspose" && parts[1] == "publication"
+            && int.TryParse(parts[2], out pid) && pid > 0
+            && long.TryParse(parts[3], out ticks) && ticks > 0
+            && Guid.TryParseExact(parts[4], "N", out _);
+    }
+
+    /// <summary>
+    /// Removes the transactions a process of this CLI created and never journaled before it
+    /// ended at once, killed or stopped by a second Ctrl+C. Without a durable journal nothing
+    /// of the user's moved into one, so it holds only the candidates it staged: debris, removed
+    /// within the recovery budgets and never a reason to fail the caller's publication.
+    /// </summary>
+    private static void RemoveAbandonedCandidates(
+        string root,
+        PublicationDirectoryLease? suppliedLease,
+        OperationDeadline? invocationDeadline,
+        long deadline)
+    {
+        PublicationDirectoryLease? ownedLease = null;
+        try
+        {
+            int removed = 0;
+            foreach (string directory in Directory.EnumerateDirectories(root, ".aspose-publication-*"))
+            {
+                if (removed >= MaximumTransactionDirectories || Stopwatch.GetTimestamp() > deadline)
+                {
+                    return;
+                }
+                if (!IsAbandonedCreation(directory))
+                {
+                    continue;
+                }
+                ValidateTransactionDirectory(root, directory);
+                ownedLease ??= suppliedLease is null
+                    ? PublicationDirectoryLease.Acquire(root, [root], invocationDeadline)
+                    : null;
+                if (!(suppliedLease ?? ownedLease!).CoversDirectories([root]))
+                {
+                    return;
+                }
+                if (IsAbandonedCreation(directory) && UserStorage.TryDeleteTree(directory))
+                {
+                    removed++;
+                }
+            }
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException
+            or InvalidDataException or CliException)
+        {
+            // Debris that cannot be removed now is left for a later publication.
+        }
+        finally
+        {
+            ownedLease?.Dispose();
+        }
+    }
+
+    private static bool IsAbandonedCreation(string directory) =>
+        TryParseCreation(directory, out int pid, out long ticks)
+        && !File.GetAttributes(directory).HasFlag(FileAttributes.ReparsePoint)
+        && IsOwnedByCurrentUser(directory)
+        && !File.Exists(Path.Combine(directory, AtomicPublicationPlan.JournalName))
+        && !IsCreatorAlive(pid, ticks);
+
+    private static bool IsCreatorAlive(int pid, long ticks)
+    {
         try
         {
             using Process process = Process.GetProcessById(pid);

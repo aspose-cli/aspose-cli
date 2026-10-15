@@ -337,6 +337,48 @@ public sealed class PublicationBoundaryTests
         Assert.Equal(34, Directory.EnumerateFiles(temp.Path, "*.tmp", SearchOption.AllDirectories).Count());
     }
 
+    [Fact]
+    public void CandidatesOfAnEndedProcessThatNeverPublishedAreRemovedByTheNextPublication()
+    {
+        // A process ended at once, by a second Ctrl+C or a kill, leaves the candidates it staged
+        // before its first journal; nothing of the user's moved, so they are only debris.
+        using var temp = new TempDirectory();
+        int ended = EndedProcessId();
+        for (int index = 0; index < 34; index++)
+        {
+            string transaction = temp.File($".aspose-publication-{ended}-{index + 1}-{Guid.NewGuid():N}");
+            string candidate = Path.Combine(transaction, "output-000001", "report.xlsx");
+            Directory.CreateDirectory(Path.GetDirectoryName(candidate)!);
+            File.WriteAllText(candidate, "partial candidate");
+        }
+        string live = temp.File(
+            $".aspose-publication-{Environment.ProcessId}-{PublicationJournal.CurrentProcessStartUtcTicks}-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(Path.Combine(live, "output-000001"));
+        File.WriteAllText(Path.Combine(live, "output-000001", "report.xlsx"), "candidate in use");
+        // A directory whose name does not say which process made it is never taken for debris.
+        string unknown = temp.File(".aspose-publication-unknown-producer");
+        Directory.CreateDirectory(Path.Combine(unknown, "output-000001"));
+        File.WriteAllText(Path.Combine(unknown, "output-000001", "report.xlsx"), "preserve");
+
+        TestBudgets.Writer().Write(temp.File("next.txt"), false, path => File.WriteAllText(path, "next"));
+
+        Assert.Equal("next", File.ReadAllText(temp.File("next.txt")));
+        Assert.Equal(
+            new[] { live, unknown }.Order(StringComparer.Ordinal),
+            Directory.GetDirectories(temp.Path, ".aspose-publication-*").Order(StringComparer.Ordinal));
+        Assert.Equal("candidate in use", File.ReadAllText(Path.Combine(live, "output-000001", "report.xlsx")));
+        Assert.Equal("preserve", File.ReadAllText(Path.Combine(unknown, "output-000001", "report.xlsx")));
+    }
+
+    private static int EndedProcessId()
+    {
+        using var process = System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(
+            Path.Combine(Environment.SystemDirectory, "whoami.exe"))
+        { UseShellExecute = false, CreateNoWindow = true, RedirectStandardOutput = true })!;
+        process.WaitForExit();
+        return process.Id;
+    }
+
     [Category(TestCategory.Slow)]
     [Fact]
     public void ExtractionSupportsOneThousandFiles()
