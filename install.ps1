@@ -1073,10 +1073,14 @@ function Get-SkillTransactionPaths {
         throw 'The Skill transaction identity is invalid.'
     }
     $parent = Get-SkillParent $TargetName $CustomRoot
+    # A host loads every directory under its Skills root, so the backup stays beside the root,
+    # on the same volume for the move, where no host reads it as a duplicate Skill.
+    $backupParent = Split-Path -Parent $parent
+    if ([string]::IsNullOrEmpty($backupParent)) { throw "The Skills root '$parent' has no parent directory for its backups." }
     return [pscustomobject]@{
         Parent = $parent
         Target = Assert-LocalAbsolutePath (Join-Path $parent $Skill) "Skill '$Skill' target"
-        Backup = Assert-LocalAbsolutePath (Join-Path $parent ".aspose-skill-install-backup-$TransactionId-$Skill") "Skill '$Skill' backup"
+        Backup = Assert-LocalAbsolutePath (Join-Path $backupParent ".aspose-skill-install-backup-$TransactionId-$Skill") "Skill '$Skill' backup"
     }
 }
 
@@ -1507,7 +1511,7 @@ function Invoke-TestFault {
 
 function Get-InvalidJournalMessage {
     param([string] $JournalPath, [string] $Reason)
-    return "The installer journal '$JournalPath' is damaged or was written by a different installer version ($Reason). It was preserved and nothing was changed. Compare it with the sibling .$($script:ProductId)-stage-*, .$($script:ProductId)-backup-* and .aspose-skill-install-backup-* directories, keep what you need, move the journal aside, then retry."
+    return "The installer journal '$JournalPath' is damaged or was written by a different installer version ($Reason). It was preserved and nothing was changed. Compare it with the sibling .$($script:ProductId)-stage-* and .$($script:ProductId)-backup-* directories and the .aspose-skill-install-backup-* directories beside the Skills roots, keep what you need, move the journal aside, then retry."
 }
 
 function Recover-PendingTransaction {
