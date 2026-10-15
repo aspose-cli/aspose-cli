@@ -146,6 +146,39 @@ public sealed class PdfSignTests
         Assert.True(rect.Width > 0 && rect.Height > 0);
     }
 
+    /// <summary>
+    /// PDF-SIGN-FULL-FONT: a signature whose appearance text is Latin-1 draws it in a standard
+    /// font, so signing does not embed a whole font program into the file.
+    /// </summary>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Sign_WithLatinTextAddsNoWholeFont(bool visible)
+    {
+        using var fixture = new PdfEngineFixture();
+        string input = fixture.CreateDocument("small.pdf", pages: 1);
+        string certificate = fixture.CreateCertificate("pw");
+        string output = fixture.File("small.signed.pdf");
+
+        PdfSign.Run(fixture.Session, new PdfSignRequest
+        {
+            Input = input,
+            Output = TestOutput.At(output),
+            CertificatePath = certificate,
+            CertificatePassword = new Secret("pw"),
+            Visible = visible,
+            Reason = "Approved",
+            Location = "Zurich",
+        });
+
+        long growth = new FileInfo(output).Length - new FileInfo(input).Length;
+        Assert.True(growth < 200_000, $"signing added {growth} bytes");
+        using var signed = new Aspose.Pdf.Document(output);
+        Assert.DoesNotContain(signed.FontUtilities.GetAllFonts(), static font => font.IsEmbedded && !font.IsSubset);
+        var verify = new Aspose.Pdf.Facades.PdfFileSignature(signed);
+        Assert.All(verify.GetSignatureNames(), name => Assert.True(verify.VerifySignature(name)));
+    }
+
     [Fact]
     public void Sign_RectangleBeyondThePageIsAnInvalidRectOption()
     {
