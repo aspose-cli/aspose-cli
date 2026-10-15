@@ -668,10 +668,26 @@ public sealed class PdfMutateTests
         });
 
         Assert.Equal(ErrorCodes.OpsInvalid, error.Code);
+        Assert.Contains("the subject '采购申请' has characters beyond Latin-1", error.Message, StringComparison.Ordinal);
         Assert.Contains("encrypt_document", error.Hint, StringComparison.Ordinal);
+        Assert.Contains("--encrypt-env", error.Hint, StringComparison.Ordinal);
+        Assert.Contains("decrypt_document", error.Hint, StringComparison.Ordinal);
         using var reopened = new Document(output, "owner");
         Assert.True(reopened.IsEncrypted);
         Assert.Equal("采购申请", reopened.Info.Subject);
+
+        // The hint's other way: decrypting first saves the text without encryption.
+        string plain = fixture.File("secured.plain.pdf");
+        PdfEdit.Run(fixture.Session, new PdfEditRequest
+        {
+            Input = input,
+            Batch = new PdfOpsBatch { Ops = [new DecryptDocumentOp(), new SetPropertiesOp { Subject = "采购申请" }] },
+            Output = TestOutput.At(plain),
+            Password = new Secret("owner"),
+        });
+        using var decrypted = new Document(plain);
+        Assert.False(decrypted.IsEncrypted);
+        Assert.Equal("采购申请", decrypted.Info.Subject);
     }
 
     [Theory]
