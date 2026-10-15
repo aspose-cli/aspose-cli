@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text;
 using System.Text.RegularExpressions;
 using Aspose.Cli.Sdk.Errors;
@@ -40,8 +41,9 @@ internal static class PdfCreate
         LicenseState state = session.Outputs.License;
         using HtmlImportResources? resources = request.HtmlPath is { } htmlPath
             ? new HtmlImportResources(htmlPath, session.Budgets, request.AllowNetworkResources) : null;
+        var warnings = new List<Warning>();
         using Document document = request.ImagePaths is { Count: > 0 } images
-            ? CreateFromImages(images, imageContents, request)
+            ? CreateFromImages(images, imageContents, request, warnings)
             : request.HtmlPath is not null
                 ? CreateFromHtml(request.HtmlPath, request, resources!)
                 : CreateFromText(request.TextPath!, fromMarkdown, request);
@@ -62,7 +64,6 @@ internal static class PdfCreate
             try { PdfOutputEncryption.Save(document, path, passwords); }
             finally { resources?.ThrowIfFailed(); }
         }, encrypted: encrypted);
-        var warnings = new List<Warning>();
         warnings.AddRange(resources?.Warnings ?? []);
         if (html is not null && FormLosses(document, html) is { } losses)
         {
@@ -87,7 +88,7 @@ internal static class PdfCreate
     /// save.
     /// </summary>
     private static Document CreateFromImages(
-        IReadOnlyList<string> paths, IReadOnlyList<byte[]> contents, PdfCreateRequest request)
+        IReadOnlyList<string> paths, IReadOnlyList<byte[]> contents, PdfCreateRequest request, List<Warning> warnings)
     {
         var document = new Document();
         try
@@ -107,6 +108,11 @@ internal static class PdfCreate
                 double boxWidth = width - margins.Left - margins.Right;
                 double boxHeight = height - margins.Top - margins.Bottom;
                 double scale = Math.Min(boxWidth / imageWidth, boxHeight / imageHeight);
+                if (Blurred(path, content, Math.Max(imageWidth, imageHeight) * scale, index + 1) is { } blurred)
+                {
+                    warnings.Add(blurred);
+                }
+
                 double left = margins.Left + Math.Max(0, boxWidth - imageWidth * scale) / 2;
                 double top = margins.Top + Math.Max(0, boxHeight - imageHeight * scale) / 2;
 
@@ -135,6 +141,47 @@ internal static class PdfCreate
             document.Dispose();
             throw;
         }
+    }
+
+    /// <summary>
+    /// The pixels per inch below which an image drawn on a page shows blurred: 96, the pixels a
+    /// screen shows an inch of a page at 100% zoom, so the image is enlarged beyond its own size.
+    /// </summary>
+    private const double SharpPixelsPerInch = 96;
+
+    /// <summary>
+    /// A warning for a raster image whose longer side, drawn <paramref name="longerSidePoints"/>
+    /// long, has fewer than <see cref="SharpPixelsPerInch"/> pixels per inch; null for a sharp
+    /// or vector image.
+    /// </summary>
+    private static Warning? Blurred(string path, byte[] content, double longerSidePoints, int page)
+    {
+        if (ImageInput.EngineFormatOf(content) == EngineImageFormat.Svg)
+        {
+            return null;
+        }
+
+        using SkiaSharp.SKCodec? codec = SkiaSharp.SKCodec.Create(new MemoryStream(content, writable: false));
+        if (codec is null)
+        {
+            return null;
+        }
+
+        int longer = Math.Max(codec.Info.Width, codec.Info.Height);
+        double perInch = longer / (longerSidePoints / 72);
+        if (perInch >= SharpPixelsPerInch)
+        {
+            return null;
+        }
+
+        int needed = (int)Math.Ceiling(SharpPixelsPerInch * longerSidePoints / 72);
+        return new Warning(PdfDiagnostics.ImageResolutionLow, string.Create(CultureInfo.InvariantCulture,
+            $"Image '{Path.GetFileName(path)}' ({codec.Info.Width} x {codec.Info.Height} pixels) is drawn on page {page} at {perInch:0} pixels per inch, enlarged beyond its own size, so it shows blurred."))
+        {
+            Location = string.Create(CultureInfo.InvariantCulture, $"page {page}"),
+            Hint = string.Create(CultureInfo.InvariantCulture,
+                $"Use an image with at least {needed} pixels on its longer side, or a smaller --page-size or wider --margins."),
+        };
     }
 
     /// <summary>

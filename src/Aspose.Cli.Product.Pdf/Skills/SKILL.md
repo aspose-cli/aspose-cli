@@ -62,7 +62,9 @@ Markdown has no author or subject until a `set_properties` edit sets them.
 turned to landscape for an image wider than it is tall. The image keeps its
 aspect ratio: it fills the space inside `--margins` in one dimension and is
 centred in the other. A photo's EXIF orientation counts, and an SVG without
-both a width and a height takes the proportions of its viewBox.
+both a width and a height takes the proportions of its viewBox. A raster image
+enlarged to fewer than 96 pixels per inch warns `IMAGE_RESOLUTION_LOW` with the
+page and the pixels it needs: it shows blurred.
 
 ## Preview and licensing
 

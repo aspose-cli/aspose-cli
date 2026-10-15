@@ -167,6 +167,35 @@ public sealed class PdfEngineTests
         }
     }
 
+    /// <summary>
+    /// A raster image enlarged to fewer than 96 of its pixels per inch of the page warns that it
+    /// shows blurred, naming its page and size; an image with pixels enough, or a vector image,
+    /// does not.
+    /// </summary>
+    [Fact]
+    public void Create_FromImages_WarnsOfAnImageEnlargedBeyondItsResolution()
+    {
+        using var fixture = new PdfEngineFixture();
+        string small = fixture.File("icon.bmp");
+        File.WriteAllBytes(small, Bitmap(40, 30));
+        string large = fixture.File("scan.bmp");
+        File.WriteAllBytes(large, Bitmap(1200, 900));
+        string vector = fixture.File("chart.svg");
+        File.WriteAllText(vector, """<svg xmlns="http://www.w3.org/2000/svg" width="40" height="30"><rect width="40" height="30" fill="#246"/></svg>""");
+
+        PdfCreateResult result = PdfCreate.Run(fixture.Session, new PdfCreateRequest
+        {
+            Output = TestOutput.At(fixture.File("mixed-resolution.pdf")),
+            ImagePaths = [large, small, vector],
+        });
+
+        Warning warning = Assert.Single(result.Warnings!);
+        Assert.Equal("IMAGE_RESOLUTION_LOW", warning.Code.Name);
+        Assert.Equal("page 2", warning.Location);
+        Assert.Contains("icon.bmp", warning.Message, StringComparison.Ordinal);
+        Assert.Contains("40 x 30 pixels", warning.Message, StringComparison.Ordinal);
+    }
+
     [Fact]
     public void Create_FromImages_ChecksTheMarginsForTheOrientationOfEachPage()
     {

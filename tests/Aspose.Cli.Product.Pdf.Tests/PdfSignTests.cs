@@ -179,6 +179,39 @@ public sealed class PdfSignTests
         Assert.All(verify.GetSignatureNames(), name => Assert.True(verify.VerifySignature(name)));
     }
 
+    /// <summary>
+    /// PDF-SIGN-FULL-FONT: appearance text beyond ASCII makes the engine embed a whole font, which
+    /// a warning discloses with the growth; ASCII text warns of nothing.
+    /// </summary>
+    [Theory]
+    [InlineData("Zürich", true)]
+    [InlineData("上海", true)]
+    [InlineData("Zurich", false)]
+    public void Sign_WarnsWhenTheAppearanceEmbedsAWholeFont(string location, bool warns)
+    {
+        using var fixture = new PdfEngineFixture();
+        string input = fixture.CreateDocument("located.pdf", pages: 1);
+        string certificate = fixture.CreateCertificate("pw");
+
+        PdfSignResult result = PdfSign.Run(fixture.Session, new PdfSignRequest
+        {
+            Input = input,
+            Output = TestOutput.At(fixture.File("located.signed.pdf")),
+            CertificatePath = certificate,
+            CertificatePassword = new Secret("pw"),
+            Reason = "Approved",
+            Location = location,
+        });
+
+        Warning? warning = result.Warnings?.SingleOrDefault(static item => item.Code.Name == "SIGNATURE_FONT_EMBEDDED");
+        Assert.Equal(warns, warning is not null);
+        if (warning is not null)
+        {
+            Assert.Contains("--location", warning.Message, StringComparison.Ordinal);
+            Assert.Contains("ASCII", warning.Hint, StringComparison.Ordinal);
+        }
+    }
+
     [Fact]
     public void Sign_RectangleBeyondThePageIsAnInvalidRectOption()
     {
