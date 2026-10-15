@@ -48,6 +48,27 @@ public sealed class PdfTargetNameTests
     }
 
     [Fact]
+    public void Attachments_WithTheSameContentAreTargetedByTheirOwnName()
+    {
+        using var fixture = new PdfEngineFixture();
+        string input = fixture.CreateDocument("same-content.pdf", pages: 1);
+        string b = fixture.File("b.txt");
+        string a = fixture.File("a.txt");
+        File.WriteAllText(b, "same");
+        File.WriteAllText(a, "same");
+
+        PdfEditResult result = PdfEdit.Run(fixture.Session, new PdfEditRequest
+        {
+            Input = input,
+            Batch = new PdfOpsBatch { Ops = [new AddAttachmentOp { Path = b }, new AddAttachmentOp { Path = a }] },
+            Output = TestOutput.At(fixture.File("same-content.out.pdf")),
+        });
+
+        Assert.Equal(["attachment/b.txt"], result.Applied[0].Targets);
+        Assert.Equal(["attachment/a.txt"], result.Applied[1].Targets);
+    }
+
+    [Fact]
     public void FormFields_EscapeTheirNameInTheTargetsOfAppliedAndFailedOperations()
     {
         using var fixture = new PdfEngineFixture();
