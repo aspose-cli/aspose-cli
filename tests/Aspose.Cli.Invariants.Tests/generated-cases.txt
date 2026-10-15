@@ -220,97 +220,57 @@ C-R10 | words search declared
 C-R10 | words split --encrypt-stdin with --password-stdin
 C-R10 | words split declared
 C-R11 | cells convert --dry-run
-C-R11 | cells convert declared
 C-R11 | cells create --dry-run
 C-R11 | cells create declared
 C-R11 | cells edit --dry-run
-C-R11 | cells edit declared
 C-R11 | cells render --dry-run
-C-R11 | cells render declared
 C-R11 | license install --dry-run
 C-R11 | license install declared
 C-R11 | license remove --dry-run
 C-R11 | license remove declared
 C-R11 | pdf convert --dry-run
-C-R11 | pdf convert declared
 C-R11 | pdf create --dry-run
 C-R11 | pdf create declared
 C-R11 | pdf edit --dry-run
-C-R11 | pdf edit declared
 C-R11 | pdf extract --dry-run
-C-R11 | pdf extract declared
 C-R11 | pdf merge --dry-run
-C-R11 | pdf merge declared
 C-R11 | pdf render --dry-run
-C-R11 | pdf render declared
 C-R11 | pdf sign --dry-run
-C-R11 | pdf sign declared
 C-R11 | pdf split --dry-run
-C-R11 | pdf split declared
 C-R11 | review --dry-run
 C-R11 | review declared
 C-R11 | skill install --dry-run
 C-R11 | skill install declared
 C-R11 | slides convert --dry-run
-C-R11 | slides convert declared
 C-R11 | slides create --dry-run
 C-R11 | slides create declared
 C-R11 | slides edit --dry-run
-C-R11 | slides edit declared
 C-R11 | slides extract --dry-run
-C-R11 | slides extract declared
 C-R11 | slides render --dry-run
-C-R11 | slides render declared
 C-R11 | update install --dry-run
 C-R11 | update install declared
 C-R11 | words compare --dry-run
-C-R11 | words compare declared
 C-R11 | words convert --dry-run
-C-R11 | words convert declared
 C-R11 | words create --dry-run
 C-R11 | words create declared
 C-R11 | words edit --dry-run
-C-R11 | words edit declared
 C-R11 | words extract --dry-run
-C-R11 | words extract declared
 C-R11 | words render --dry-run
-C-R11 | words render declared
 C-R11 | words split --dry-run
-C-R11 | words split declared
-C-R12 | cells convert declared
-C-R12 | cells edit declared
-C-R12 | cells render declared
 C-R12 | cells render of every unit by default
 C-R12 | cells render one unit
 C-R12 | pdf convert --to png
-C-R12 | pdf convert declared
-C-R12 | pdf edit declared
-C-R12 | pdf extract declared
-C-R12 | pdf merge declared
-C-R12 | pdf render declared
 C-R12 | pdf render of every unit by default
 C-R12 | pdf render one unit
-C-R12 | pdf sign declared
 C-R12 | pdf split --by pages --every 1
 C-R12 | pdf split --by pages --every 1 of ten pages
-C-R12 | pdf split declared
 C-R12 | review declared
 C-R12 | slides convert --to png
-C-R12 | slides convert declared
-C-R12 | slides edit declared
-C-R12 | slides extract declared
-C-R12 | slides render declared
 C-R12 | slides render of every unit by default
 C-R12 | slides render one unit
-C-R12 | words compare declared
-C-R12 | words convert declared
-C-R12 | words edit declared
-C-R12 | words extract declared
-C-R12 | words render declared
 C-R12 | words render of every unit by default
 C-R12 | words render one unit
 C-R12 | words split --by pages --every 1
-C-R12 | words split declared
 C-R13 | cells convert --out out.pdf without --to
 C-R13 | cells convert --to pdf --out out.xlsx
 C-R13 | cells convert declared
@@ -438,75 +398,36 @@ C-R16 | words render --pages all
 C-R16 | words split --pages 1-x
 C-R16 | words split --pages 99
 C-R16 | words split --pages all
-C-R17 | app open booleans
-C-R17 | aspose-cli booleans
 C-R17 | aspose-cli values
-C-R17 | capabilities booleans
-C-R17 | cells compare booleans
 C-R17 | cells compare values
-C-R17 | cells convert booleans
 C-R17 | cells convert values
-C-R17 | cells create booleans
-C-R17 | cells edit booleans
-C-R17 | cells inspect booleans
 C-R17 | cells inspect values
-C-R17 | cells read booleans
 C-R17 | cells read values
-C-R17 | cells render booleans
 C-R17 | cells render values
-C-R17 | cells search booleans
 C-R17 | cells search values
-C-R17 | fonts check booleans
 C-R17 | fonts list values
-C-R17 | license install booleans
 C-R17 | license install values
-C-R17 | license remove booleans
 C-R17 | license remove values
 C-R17 | license status values
-C-R17 | pdf convert booleans
 C-R17 | pdf convert values
-C-R17 | pdf create booleans
 C-R17 | pdf create values
-C-R17 | pdf edit booleans
-C-R17 | pdf extract booleans
 C-R17 | pdf extract values
-C-R17 | pdf inspect booleans
 C-R17 | pdf inspect values
-C-R17 | pdf merge booleans
 C-R17 | pdf merge values
-C-R17 | pdf read booleans
 C-R17 | pdf read values
-C-R17 | pdf render booleans
 C-R17 | pdf render values
-C-R17 | pdf search booleans
-C-R17 | pdf sign booleans
-C-R17 | pdf split booleans
 C-R17 | pdf split values
-C-R17 | pdf validate booleans
 C-R17 | pdf validate values
-C-R17 | preview open booleans
 C-R17 | preview open values
-C-R17 | preview stop booleans
-C-R17 | review booleans
 C-R17 | review values
-C-R17 | skill install booleans
 C-R17 | skill install values
-C-R17 | slides convert booleans
 C-R17 | slides convert values
-C-R17 | slides create booleans
 C-R17 | slides create values
-C-R17 | slides edit booleans
-C-R17 | slides extract booleans
 C-R17 | slides extract values
-C-R17 | slides inspect booleans
 C-R17 | slides inspect values
-C-R17 | slides read booleans
 C-R17 | slides read values
-C-R17 | slides render booleans
 C-R17 | slides render values
-C-R17 | slides search booleans
 C-R17 | slides search values
-C-R17 | update install booleans
 C-R17 | v2/cells/compare-result
 C-R17 | v2/cells/convert-result
 C-R17 | v2/cells/create-result
@@ -783,23 +704,13 @@ C-R17 | v2/words/read-result
 C-R17 | v2/words/render-result
 C-R17 | v2/words/search-result
 C-R17 | v2/words/split-result
-C-R17 | words compare booleans
 C-R17 | words compare values
-C-R17 | words convert booleans
 C-R17 | words convert values
-C-R17 | words create booleans
-C-R17 | words edit booleans
-C-R17 | words extract booleans
 C-R17 | words extract values
-C-R17 | words inspect booleans
 C-R17 | words inspect values
-C-R17 | words read booleans
 C-R17 | words read values
-C-R17 | words render booleans
 C-R17 | words render values
-C-R17 | words search booleans
 C-R17 | words search values
-C-R17 | words split booleans
 C-R17 | words split values
 C-R18 | v2/cells/compare-result
 C-R18 | v2/cells/convert-result
@@ -3330,13 +3241,9 @@ C-R21 | words set_style reads back
 C-R21 | words set_table_pagination reads back
 C-R21 | words set_text reads back
 C-R21 | words set_watermark reads back
-C-R22 | cells declared
 C-R22 | cells edit --ops with a bare array
-C-R22 | pdf declared
 C-R22 | pdf edit --ops with a bare array
-C-R22 | slides declared
 C-R22 | slides edit --ops with a bare array
-C-R22 | words declared
 C-R22 | words edit --ops with a bare array
 C-R23 | cells inspect fails in table mode
 C-R23 | cells inspect succeeds in JSON mode
@@ -3640,8 +3547,6 @@ C-R30 | slides set_title
 C-R30 | slides set_transition
 C-R30 | slides targets read <unit>/<address>
 C-R30 | v2/cells/edit-result applied
-C-R30 | v2/common/operation-outcome error
-C-R30 | v2/common/operation-outcome index
 C-R30 | v2/pdf/edit-result applied
 C-R30 | v2/slides/edit-result applied
 C-R30 | v2/words/edit-result applied

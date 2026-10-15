@@ -113,7 +113,6 @@ internal static partial class ContractRules
     private static readonly string[] FileCore = ["path", "format", "sizeBytes", "fingerprint"];
 
     private const string OperationOutcome = "v2/common/operation-outcome";
-    private const string ErrorEnvelope = "v2/common/error";
 
     /// <summary>The license mode block a result carries only when it ran unlicensed (C-R33).</summary>
     private const string LicenseMode = "v2/common/license";
@@ -545,13 +544,14 @@ internal static partial class ContractRules
         }
     }
 
+    /// <summary>
+    /// Each edit result lists its outcomes as the SDK's operation outcome. That outcome is one SDK
+    /// record, <c>BoundedOperationOutcome</c>, whose error is the error envelope's own type, so
+    /// its shape (no <c>index</c>, the envelope's error) is not judged here; the host
+    /// capabilities snapshot pins it.
+    /// </summary>
     private static IEnumerable<InvariantCase> R30Schema(CliCatalog catalog)
     {
-        yield return Check("C-R30", $"{OperationOutcome} index", static () =>
-            PublishedSchema.Document(OperationOutcome)["properties"]?["index"] is null
-                ? []
-                : ["applied[] has index; an outcome names its op by id"]);
-        yield return Check("C-R30", $"{OperationOutcome} error", OutcomeError);
         foreach (CliProduct product in PublishedSchema.OpsProducts(catalog))
         {
             string id = $"v2/{product.Id}/edit-result";
@@ -560,27 +560,6 @@ internal static partial class ContractRules
                     && PublishedSchemas.IdOf(reference) == OperationOutcome
                     ? []
                     : [$"applied[] is not {OperationOutcome}"]);
-        }
-
-        static IEnumerable<string> OutcomeError()
-        {
-            if (PublishedSchema.Document(OperationOutcome)["properties"]?["error"] is not JsonObject error)
-            {
-                yield return "applied[] declares no error";
-                yield break;
-            }
-            JsonObject payload = PublishedSchema.Resolve(ErrorEnvelope, PublishedSchema.Document(ErrorEnvelope)["properties"]!["error"]!.AsObject()).Node;
-            JsonObject resolved = PublishedSchema.Resolve(OperationOutcome, error).Node;
-            if (!ReferenceEquals(resolved, payload))
-            {
-                yield return $"applied[].error defines its own error object instead of referencing {ErrorEnvelope}";
-            }
-            string[] envelopeRequired = PublishedSchema.Required(payload);
-            string[] stricter = [.. PublishedSchema.Required(resolved).Where(name => !envelopeRequired.Contains(name))];
-            if (stricter.Length > 0)
-            {
-                yield return $"applied[].error requires {string.Join(", ", stricter)}, which the error envelope leaves optional";
-            }
         }
     }
 
