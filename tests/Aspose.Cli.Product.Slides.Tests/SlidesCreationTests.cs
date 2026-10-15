@@ -375,4 +375,27 @@ public sealed class SlidesCreationTests
         Assert.Equal(reported ? 1 : 0, overflow.Length);
         Assert.All(overflow, static warning => Assert.Equal("slide 2", warning.Location));
     }
+
+    [Fact]
+    public void Markdown_TableCellEscapes_AreUnescaped()
+    {
+        using var fixture = new SlidesEngineFixture();
+        string markdown = fixture.File("escapes.md");
+        File.WriteAllText(
+            markdown,
+            """
+            ## T
+            | a | b |
+            |--|--|
+            | x\\y | \| |
+            """);
+        string output = fixture.File("escapes.pptx");
+
+        SlidesCreate.Run(fixture.Session, new SlidesCreateRequest { Output = TestOutput.At(output), MarkdownPath = markdown });
+
+        using var deck = new Presentation(output);
+        ITable table = Assert.Single(deck.Slides[0].Shapes.OfType<ITable>());
+        Assert.Equal("x\\y", table[0, 1].TextFrame.Text);
+        Assert.Equal("|", table[1, 1].TextFrame.Text);
+    }
 }

@@ -83,8 +83,8 @@ internal static partial class SlidesMarkdownBuilder
 
     /// <summary>
     /// Splits a line at its unescaped pipes. A backslash escapes only the next character:
-    /// <c>\|</c> is a literal pipe, and in <c>\\|</c> the pipe still ends the cell. Other
-    /// escaped pairs stay in the text as written.
+    /// <c>\|</c> is a literal pipe and <c>\\</c> a literal backslash, so in <c>\\|</c> the pipe
+    /// still ends the cell. Other escaped pairs stay in the text as written.
     /// </summary>
     private static List<string> Split(string line)
     {
@@ -95,7 +95,7 @@ internal static partial class SlidesMarkdownBuilder
             if (line[i] == '\\' && i + 1 < line.Length)
             {
                 i++;
-                if (line[i] != '|')
+                if (line[i] is not ('|' or '\\'))
                 {
                     cell.Append('\\');
                 }

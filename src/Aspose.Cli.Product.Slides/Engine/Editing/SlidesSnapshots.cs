@@ -110,10 +110,19 @@ internal sealed class SlidesSnapshots(Presentation presentation, SlidesMutationH
         return snapshot;
     }
 
-    public OperationSnapshot Apply(SetSlideSizeOp operation) =>
-        new OperationSnapshot().Add(SlideSizeAddress, SlideSize(presentation) is var size
+    /// <summary>The slide size and every slide's top-level shapes, which scaling the content moves and resizes.</summary>
+    public OperationSnapshot Apply(SetSlideSizeOp operation)
+    {
+        var snapshot = new OperationSnapshot().Add(SlideSizeAddress, SlideSize(presentation) is var size
             ? string.Create(CultureInfo.InvariantCulture, $"{size.Width:R}x{size.Height:R}")
             : string.Empty);
+        for (int number = 1; number <= presentation.Slides.Count; number++)
+        {
+            AddShapes(snapshot, presentation.Slides[number - 1], number);
+        }
+
+        return snapshot;
+    }
 
     private ISlide Slide => target.Slide!;
 

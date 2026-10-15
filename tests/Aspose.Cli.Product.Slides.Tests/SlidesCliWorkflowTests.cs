@@ -344,4 +344,28 @@ public sealed class SlidesCliWorkflowTests : IDisposable
         Assert.True(inspect.ExitCode == 0, inspect.StdOut + inspect.StdErr);
         Assert.Contains(JsonNode.Parse(inspect.StdOut)!["layouts"]!.AsArray(), static layout => layout!["name"] is null);
     }
+
+    [Theory]
+    [InlineData("notes", "set_notes")]
+    [InlineData("shapes", "set_text")]
+    public void EvaluationReplaceOverCutText_HintsTheOperationThatWritesWithoutReading(string scope, string operation)
+    {
+        using (var presentation = new Presentation())
+        {
+            ISlide slide = presentation.Slides[0];
+            slide.Shapes.AddAutoShape(ShapeType.Rectangle, 50, 50, 400, 80).TextFrame.Text = "Speaker text long enough to be cut short.";
+            slide.NotesSlideManager.AddNotesSlide().NotesTextFrame.Text = "Speaker notes long enough to be cut short.";
+            presentation.Save(_workspace.File("cut.pptx"), SaveFormat.Pptx);
+        }
+
+        File.WriteAllText(_workspace.File("ops.json"), $$"""{"ops":[{"op":"replace_text","find":"Speaker","replace":"Talk","scope":"{{scope}}"}]}""");
+
+        CliResult edit = _workspace.Run(
+            "slides", "edit", "cut.pptx", "--ops", "ops.json", "--out", "out.pptx", "--license-mode", "evaluation", "--output-format", "json");
+
+        Assert.True(edit.ExitCode == 0, edit.StdOut + edit.StdErr);
+        JsonNode warning = JsonNode.Parse(edit.StdOut)!["warnings"]!.AsArray()
+            .Single(static warning => warning!["code"]!.GetValue<string>() == "OP_NO_EFFECT")!;
+        Assert.Contains(operation, warning["hint"]!.GetValue<string>(), StringComparison.Ordinal);
+    }
 }
