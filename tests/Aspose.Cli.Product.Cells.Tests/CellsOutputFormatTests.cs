@@ -95,7 +95,7 @@ public sealed class CellsOutputFormatTests : IClassFixture<CellsFixture>
         CliResult refused = workspace.Run("cells", "create", path, "--output-format", "json");
 
         Assert.Equal(2, refused.ExitCode);
-        Assert.Contains("\"USAGE_ERROR\"", refused.StdErr, StringComparison.Ordinal);
+        Assert.Contains("\"OPTION_INVALID\"", refused.StdErr, StringComparison.Ordinal);
         Assert.Contains(".xlsx", refused.StdErr, StringComparison.Ordinal);
         Assert.Empty(Directory.GetFileSystemEntries(workspace.Path));
     }
@@ -113,7 +113,7 @@ public sealed class CellsOutputFormatTests : IClassFixture<CellsFixture>
 
         Assert.Equal(2, refused.ExitCode);
         System.Text.Json.Nodes.JsonNode error = System.Text.Json.Nodes.JsonNode.Parse(refused.StdErr)!["error"]!;
-        Assert.Equal("USAGE_ERROR", error["code"]!.GetValue<string>());
+        Assert.Equal("OPTION_INVALID", error["code"]!.GetValue<string>());
         Assert.Equal(format, error["details"]!["format"]!.GetValue<string>());
         Assert.Equal(
             [".xlsx", ".xltx", ".xlsm", ".xltm", ".xlsb", ".xls", ".ods", ".csv", ".txt", ".tsv", ".html", ".htm", ".mhtml"],
