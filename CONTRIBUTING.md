@@ -23,6 +23,9 @@ Run `-Scope Full` before a release and after an SDK update; `-CiLike` reproduces
 locally. After a catalog, identity or dependency change, run `scripts/sync.ps1`. After an intended
 change to help, capabilities or schemas, rerun `CliContractTests` with
 `ASPOSE_CLI_TEST_UPDATE_SNAPSHOTS=1` and review the snapshot diff.
+The invariant tests run their command lines in warm `aspose-cli` worker processes;
+`ASPOSE_CLI_TEST_WORKERS=0` runs each as a child process instead, and `ASPOSE_CLI_TEST_WORKERS=n`
+sets the number of workers.
 `scripts/install-local.ps1` installs a development build.
 
 A test that a change adds or edits must fail without the change's `src/` code.

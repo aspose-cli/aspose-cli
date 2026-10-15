@@ -6,7 +6,9 @@ namespace Aspose.Cli.TestKit;
 /// <summary>
 /// Runs the `aspose-cli` executable as a child process, the way a user or an agent
 /// would. The binary path and isolated evaluation environment are configurable
-/// for current development-build tests.
+/// for current development-build tests. In a test project that enables
+/// <see cref="CliWorkers"/>, a warm worker of the same executable runs each
+/// command line it can run as a child process would.
 /// </summary>
 public sealed class CliProcess
 {
@@ -64,6 +66,11 @@ public sealed class CliProcess
         }
 
         _environment.Apply(startInfo.Environment);
+        if (CliWorkers.LaneOf(_exePath, workingDirectory, args, standardInput, startInfo.Environment) is { } lane)
+        {
+            return CliWorkers.Run(lane, _exePath, Path.GetFullPath(workingDirectory), args, startInfo.Environment, _timeout);
+        }
+
         using var process = Process.Start(startInfo)
             ?? throw new InvalidOperationException($"Failed to start {_exePath}");
 
