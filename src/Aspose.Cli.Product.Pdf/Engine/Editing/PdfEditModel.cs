@@ -129,11 +129,16 @@ internal sealed class PdfEditModel : IOperationModel<PdfOp>
     /// </summary>
     private static void RefuseTextTheEncryptionGarbles(SetPropertiesOp metadata)
     {
-        if (PdfPropertyNames.Written(metadata).Any(static entry => entry.Value.Any(static character => character > '\u00FF')))
+        foreach ((string key, string value) in PdfPropertyNames.Written(metadata))
         {
-            throw new OperationInvalidException(
-                "the input stays encrypted, and the PDF engine garbles document information with characters beyond Latin-1 that it writes into an encrypted file",
-                "Add an encrypt_document operation after set_properties in the same batch: the batch then encrypts a copy that keeps the text.");
+            if (value.Any(static character => character > '\u00FF'))
+            {
+                string name = PdfPropertyNames.Standard(key)?.Name ?? key;
+                throw new OperationInvalidException(
+                    $"the {name} '{value}' has characters beyond Latin-1, which the PDF engine writes garbled into an encrypted file, and the input stays encrypted",
+                    "Add encrypt_document after set_properties in the same batch, or pass --encrypt-env: the edit then encrypts a copy that keeps the text. "
+                    + "Or add decrypt_document before set_properties to save the output without encryption, or use Latin-1 text.");
+            }
         }
     }
 }
