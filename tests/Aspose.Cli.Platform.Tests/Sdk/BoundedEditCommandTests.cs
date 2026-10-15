@@ -209,14 +209,14 @@ public sealed class BoundedEditCommandTests : IDisposable
     }
 
     [Theory]
-    [InlineData("""{"ops":[{"op":"sett","value":1}]}""", "unknown op 'sett'")]
-    [InlineData("""{"ops":[5]}""", "every op must be an object")]
-    public void Read_NamesOnlyTheIdOfAnEntryWithoutAKnownOperation(string document, string reason)
+    [InlineData("""{"ops":[{"op":"sett","value":1}]}""", "unknown op 'sett'", "sett")]
+    [InlineData("""{"ops":[5]}""", "every op must be an object", null)]
+    public void Read_NamesAnEntryWithoutAKnownOperationByItsIdAndTheOpItWrote(string document, string reason, string? op)
     {
         CliException error = Assert.Throws<CliException>(() => Read(Plain(), "--ops", document));
 
         Assert.Equal("op-0001", error.Details!["id"]!.GetValue<string>());
-        Assert.Null(error.Details["op"]);
+        Assert.Equal(op, error.Details["op"]?.GetValue<string>());
         Assert.StartsWith(reason, error.Details["reason"]!.GetValue<string>(), StringComparison.Ordinal);
     }
 

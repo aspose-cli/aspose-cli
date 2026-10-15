@@ -192,12 +192,13 @@ public sealed class BoundedEditCommand<TOp, TBatch>
             ? directives.Select(grammar.Parse).ToArray()
             : [];
         TBatch batch = Compose(source is null ? null : ParseDocument(source, paths, standard.Inputs), compiled);
-        // Every [InputPath] member resolves against the invocation directory and must exist;
-        // the edit never publishes over a file an operation reads.
+        // Every [InputPath] member resolves against the invocation directory; the edit never
+        // publishes over a file an operation reads. A file that does not exist fails the
+        // operation that reads it, which the runner numbers and --best-effort skips.
         var read = new List<string>();
         string ResolveInput(string path)
         {
-            string resolved = paths.ResolveInput(path);
+            string resolved = paths.ResolveOutput(path);
             read.Add(resolved);
             return resolved;
         }

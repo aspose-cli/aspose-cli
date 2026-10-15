@@ -50,9 +50,16 @@ public sealed class OperationJsonConverter<TOp> : JsonConverter<TOp>
         }
 
         using var payload = new MemoryStream();
+        var unknown = new List<AllowedFieldsException>();
         using (var writer = new Utf8JsonWriter(payload))
         {
-            WriteMembers(writer, root, record, string.Empty, isOperation: true);
+            WriteMembers(writer, root, record, string.Empty, isOperation: true, unknown);
+        }
+
+        // Every unknown field of the entry is reported at once, so one run corrects them all.
+        if (unknown.Count > 0)
+        {
+            throw unknown.Count == 1 ? unknown[0] : new UnknownFieldsException(unknown);
         }
 
         JsonSerializerOptions strict = Strict(options);
@@ -109,8 +116,10 @@ public sealed class OperationJsonConverter<TOp> : JsonConverter<TOp>
     /// every omitted member that has a default. Values of nested records, arrays and maps are
     /// completed the same way; so is an object default such as <c>{}</c>.
     /// </summary>
-    private static void WriteMembers(Utf8JsonWriter writer, JsonElement value, OperationRecord record, string path, bool isOperation)
+    private static void WriteMembers(
+        Utf8JsonWriter writer, JsonElement value, OperationRecord record, string path, bool isOperation, List<AllowedFieldsException> unknown)
     {
+        int unknownBefore = unknown.Count;
         writer.WriteStartObject();
         foreach (JsonProperty member in value.EnumerateObject())
         {
@@ -136,7 +145,8 @@ public sealed class OperationJsonConverter<TOp> : JsonConverter<TOp>
             {
                 if (!(isOperation && member.NameEquals("id")))
                 {
-                    throw UnknownField(value, record, path, member.Name, isOperation);
+                    unknown.Add(UnknownField(value, record, path, member.Name, isOperation));
+                    continue;
                 }
 
                 member.WriteTo(writer);
@@ -144,12 +154,13 @@ public sealed class OperationJsonConverter<TOp> : JsonConverter<TOp>
             }
 
             writer.WritePropertyName(member.Name);
-            WriteValue(writer, member.Value, property.Value, Join(path, property.Name));
+            WriteValue(writer, member.Value, property.Value, Join(path, property.Name), unknown);
         }
 
         foreach (OperationProperty property in record.Properties)
         {
-            if (property.Required && !value.TryGetProperty(property.Name, out _))
+            // An unknown field of this object most likely is the missing one, and its error says so.
+            if (property.Required && !value.TryGetProperty(property.Name, out _) && unknown.Count == unknownBefore)
             {
                 throw JsonContractDiagnostics.MissingField(
                     Join(path, property.Name),
@@ -160,7 +171,7 @@ public sealed class OperationJsonConverter<TOp> : JsonConverter<TOp>
             {
                 using JsonDocument fallback = JsonDocument.Parse(property.Default);
                 writer.WritePropertyName(property.Name);
-                WriteValue(writer, fallback.RootElement, property.Value, Join(path, property.Name));
+                WriteValue(writer, fallback.RootElement, property.Value, Join(path, property.Name), unknown);
             }
         }
 
@@ -184,19 +195,19 @@ public sealed class OperationJsonConverter<TOp> : JsonConverter<TOp>
         return AllowedFieldsException.UnknownField(path, name, allowed, missing, meant);
     }
 
-    private static void WriteValue(Utf8JsonWriter writer, JsonElement value, OperationValue shape, string path)
+    private static void WriteValue(Utf8JsonWriter writer, JsonElement value, OperationValue shape, string path, List<AllowedFieldsException> unknown)
     {
         switch (shape.Kind, value.ValueKind)
         {
             case (OperationValueKind.Record, JsonValueKind.Object):
-                WriteMembers(writer, value, shape.Record!, path, isOperation: false);
+                WriteMembers(writer, value, shape.Record!, path, isOperation: false, unknown);
                 break;
             case (OperationValueKind.Array, JsonValueKind.Array):
                 writer.WriteStartArray();
                 int index = 0;
                 foreach (JsonElement item in value.EnumerateArray())
                 {
-                    WriteItem(writer, item, shape.Items!, $"{path}[{index++}]");
+                    WriteItem(writer, item, shape.Items!, $"{path}[{index++}]", unknown);
                 }
 
                 writer.WriteEndArray();
@@ -206,7 +217,7 @@ public sealed class OperationJsonConverter<TOp> : JsonConverter<TOp>
                 foreach (JsonProperty entry in value.EnumerateObject())
                 {
                     writer.WritePropertyName(entry.Name);
-                    WriteItem(writer, entry.Value, shape.Items!, Join(path, entry.Name));
+                    WriteItem(writer, entry.Value, shape.Items!, Join(path, entry.Name), unknown);
                 }
 
                 writer.WriteEndObject();
@@ -220,14 +231,14 @@ public sealed class OperationJsonConverter<TOp> : JsonConverter<TOp>
     }
 
     /// <summary>Writes an array item or map value, which may be null only when its type admits null.</summary>
-    private static void WriteItem(Utf8JsonWriter writer, JsonElement value, OperationValue shape, string path)
+    private static void WriteItem(Utf8JsonWriter writer, JsonElement value, OperationValue shape, string path, List<AllowedFieldsException> unknown)
     {
         if (value.ValueKind == JsonValueKind.Null && !shape.Nullable && shape.Kind != OperationValueKind.Any)
         {
             throw new JsonException($"{path} must not be null");
         }
 
-        WriteValue(writer, value, shape, path);
+        WriteValue(writer, value, shape, path, unknown);
     }
 
     private static string Join(string path, string name) => path.Length == 0 ? name : $"{path}.{name}";

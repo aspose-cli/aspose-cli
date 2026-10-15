@@ -418,6 +418,11 @@ public sealed class OperationCatalog<TOp>
                 {
                     operation = (TOp)ops[current].Deserialize(info)!;
                 }
+                catch (UnknownFieldsException unknown)
+                {
+                    failures.AddRange(unknown.Fields.Select(field => InvalidAt(ops, ids, current, field)));
+                    continue;
+                }
                 catch (Exception failure) when (IsRejection(failure))
                 {
                     failures.Add(InvalidAt(ops, ids, current, failure as JsonException
