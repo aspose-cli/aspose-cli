@@ -68,8 +68,9 @@ per unit that covers them, such as `page/1-150`.
 Aspose.PDF writes `creator`, `producer` and `modificationDate` into every PDF
 it saves, so no operation removes or sets them: `clear_properties` leaves them
 out of its `targets` and warns `METADATA_REWRITTEN`. A `set_properties` `custom`
-key must not name a standard entry, in any case, nor start with `info:` or `xmp:`; a
-custom entry reads back under its own key.
+key must not be empty, hold characters beyond Latin-1 (Aspose.PDF writes such a
+name garbled; the value may hold any text), name a standard entry, in any case, nor
+start with `info:` or `xmp:`; a custom entry reads back under its own key.
 
 Rectangles must lie within the visible page box. Reinspect geometry and review
 after changing crop, size or rotation, because later rectangles follow the new
@@ -105,7 +106,8 @@ before adding navigation, then follow the destination checks in
 
 Redaction is destructive: keep the baseline, apply `redact_text` or
 `redact_area`, then verify with `pdf search` and `review`. `redact_text`
-works on extractable text and performs no OCR. A black rectangle or zero search
+works on extractable text and performs no OCR; it matches case unless
+`caseSensitive` is `false`. A black rectangle or zero search
 hits alone is not proof that all sensitive content was removed; a raw-byte
 absence check for a known literal is additional evidence only, because PDF text
 can be encoded or compressed. An `OP_NO_EFFECT` warning names each

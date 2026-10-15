@@ -398,6 +398,28 @@ public sealed class PdfKnownIssueTests
     }
 
     [LicensedFact]
+    public void Save_GarblesADocumentInformationNameBeyondLatin1()
+    {
+        using var fixture = new PdfEngineFixture();
+        string output = fixture.File("names.pdf");
+        using (var document = new Document())
+        {
+            document.Pages.Add();
+            document.Info["项目编号"] = "A-1";
+            document.Info["Café"] = "B-2";
+            document.Save(output);
+        }
+
+        using var reopened = new Document(output);
+        string[] keys = [.. reopened.Info.Keys];
+
+        KnownIssue.Reproduces(
+            "PDF-INFO-KEY-BEYOND-LATIN1",
+            !keys.Contains("项目编号") && keys.Contains("Café"),
+            $"the names read back as {string.Join(", ", keys.Select(static key => $"'{key}'"))}");
+    }
+
+    [LicensedFact]
     public void Rendering_LeavesOutThinGlyphStrokesBelow300Dpi()
     {
         using var fixture = new PdfEngineFixture();

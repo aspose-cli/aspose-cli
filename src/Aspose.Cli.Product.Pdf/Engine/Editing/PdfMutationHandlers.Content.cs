@@ -123,7 +123,7 @@ internal sealed partial class PdfMutationHandlers
             Page page = _document.Pages[number];
             Unrotated(page, () =>
             {
-                TextFragmentCollection fragments = MatchText(page, operation.Find, operation.Regex, caseSensitive: true,
+                TextFragmentCollection fragments = MatchText(page, operation.Find, operation.Regex, operation.CaseSensitive,
                     static reason => new OperationInvalidException(reason));
                 if (fragments.Count == 0)
                 {

@@ -322,6 +322,16 @@ fails, delete the issue's section, the code that names it and the test, then upd
 - **Workaround:** add `encrypt_document` after `set_properties` in the same batch, or pass `--encrypt-env`.
 - **Reproduction:** [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownIssueTests.cs)
 
+### PDF-INFO-KEY-BEYOND-LATIN1
+
+- **Defect:** a document information entry whose name has a character beyond Latin-1, such as
+  `项目编号`, is saved under a name written from each character's code as if it were one byte,
+  so the name reads back garbled while its value is kept. Names within Latin-1 are kept.
+- **CLI behavior:** `set_properties` refuses a `custom` name with a character beyond Latin-1 with
+  `OPS_INVALID`; the value of an entry may hold any text.
+- **Workaround:** name the entry in Latin-1, such as ASCII letters, and put the text in its value.
+- **Reproduction:** [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownIssueTests.cs)
+
 ### PDF-RENDER-THIN-GLYPH
 
 - **Defect:** `PngDevice` and the other raster devices leave out thin glyph strokes, such as

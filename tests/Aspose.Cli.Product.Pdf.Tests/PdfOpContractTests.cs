@@ -244,6 +244,39 @@ public sealed class PdfOpContractTests
         Assert.Contains(hint, error.Hint, StringComparison.Ordinal);
     }
 
+    [Theory]
+    [InlineData("", "empty name", "Give each custom entry a name.")]
+    [InlineData("项目编号", "beyond Latin-1", "its value may hold any text")]
+    [InlineData("Projekt Ā", "beyond Latin-1", "its value may hold any text")]
+    public void SetProperties_RefusesAnEmptyCustomNameOrOneTheEngineWritesGarbled(string key, string message, string hint)
+    {
+        CliException error = Assert.Throws<CliException>(() => Parse(
+            $$$"""{"ops":[{"op":"set_properties","custom":{"{{{key}}}":"value"}}]}"""));
+
+        Assert.Equal(ErrorCodes.OpsInvalid, error.Code);
+        Assert.Contains(message, error.Message, StringComparison.Ordinal);
+        Assert.Contains(hint, error.Hint, StringComparison.Ordinal);
+        Assert.Equal("set_properties", error.Details!["op"]!.GetValue<string>());
+    }
+
+    [Fact]
+    public void SetProperties_AcceptsALatin1CustomNameAndAnyValue()
+    {
+        var operation = (SetPropertiesOp)Assert.Single(Parse(
+            """{"ops":[{"op":"set_properties","custom":{"Café":"项目编号 A-1"}}]}""").Ops);
+
+        Assert.Equal("项目编号 A-1", operation.Custom!["Café"]);
+    }
+
+    [Fact]
+    public void RedactText_TakesCaseSensitiveAndMatchesCaseByDefault()
+    {
+        var both = Parse("""{"ops":[{"op":"redact_text","find":"secret"},{"op":"redact_text","find":"secret","caseSensitive":false}]}""").Ops;
+
+        Assert.True(Assert.IsType<RedactTextOp>(both[0]).CaseSensitive);
+        Assert.False(Assert.IsType<RedactTextOp>(both[1]).CaseSensitive);
+    }
+
     private static PdfOpsBatch Parse(string json) =>
         PdfOp.Catalog.Parse<PdfOpsBatch>(json, Aspose.Cli.Generated.ProductJsonContext.Definition);
 }
