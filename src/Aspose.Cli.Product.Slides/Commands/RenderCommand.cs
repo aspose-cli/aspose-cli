@@ -20,7 +20,8 @@ internal static class RenderCommand
             new CommandTraits
             {
                 Input = SlidesInputs.Presentation,
-                Output = OutputTarget.File("Output path; several slides write <stem>.<slide>.<ext> beside it."),
+                Output = OutputTarget.File("Output path. Default: the input path with the image extension. "
+                    + "Several slides write <stem>.<slide>.<ext> beside it."),
                 UsesFonts = true,
                 Target = TargetFormat.Render(SlidesFormats.Definitions),
             },

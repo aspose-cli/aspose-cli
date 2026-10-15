@@ -16,7 +16,7 @@ internal static class CompareCommand
             DefaultValueFactory = _ => WordsCompareRequest.DefaultGranularity,
         }.WithInput(InputKind.None);
         granularity.AcceptOnlyFromAmong("word", "char");
-        var author = new Option<string?>("--author") { Description = "Author of the redline's revisions; default: Aspose CLI." }.WithInput(InputKind.None);
+        var author = new Option<string?>("--author") { Description = "Author of the redline's revisions. Default: Aspose CLI." }.WithInput(InputKind.None);
         return new(
             "compare",
             "Semantically compare two documents and optionally save a redline.",
