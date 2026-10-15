@@ -19,7 +19,12 @@ namespace Aspose.Cli.Product.Slides.Engine.Editing;
 /// </summary>
 /// <param name="presentation">The presentation being edited.</param>
 /// <param name="target">The operation's targets, resolved just before it runs.</param>
-internal sealed class SlidesSnapshots(Presentation presentation, SlidesMutationHandlers.ResolvedSlidesOp target)
+/// <param name="evaluation">
+/// Whether the engine runs in evaluation mode, whose save puts back the watermark boxes it adds, so
+/// an operation that moves or scales them changes nothing a read of the output shows; the shapes
+/// leave them out.
+/// </param>
+internal sealed class SlidesSnapshots(Presentation presentation, SlidesMutationHandlers.ResolvedSlidesOp target, bool evaluation)
     : ISlidesOpHandler<OperationSnapshot>
 {
     public OperationSnapshot Apply(InsertSlideOp operation) => SlideOrder();
@@ -151,9 +156,9 @@ internal sealed class SlidesSnapshots(Presentation presentation, SlidesMutationH
         return snapshot;
     }
 
-    private static void AddShapes(OperationSnapshot snapshot, ISlide slide, int number)
+    private void AddShapes(OperationSnapshot snapshot, ISlide slide, int number)
     {
-        foreach (IShape shape in slide.Shapes)
+        foreach (IShape shape in slide.Shapes.Where(shape => !evaluation || !IsEvaluationWatermark(shape)))
         {
             snapshot.Add(ShapeAddress(number, shape.OfficeInteropShapeId), ShapeState(shape));
         }
