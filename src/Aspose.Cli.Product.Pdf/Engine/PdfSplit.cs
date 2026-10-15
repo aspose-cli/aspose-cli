@@ -39,7 +39,8 @@ internal static class PdfSplit
             bool encrypted = PdfOutputEncryption.Encrypted(selected, passwords);
             writer.Stage(target, request.Output.Overwrite, selected, staged =>
             {
-                CopyPageLabels(source, selected, pages);
+                CopyInformation(source, selected);
+                CopyPageLabels(source, selected, pages, offset: 0);
                 // Each part carries every attachment of the source; a part starts with none, so none is left out.
                 CopyAttachments(source, selected);
                 // A part keeps the bookmarks of its pages; what leads elsewhere is counted.
@@ -125,43 +126,6 @@ internal static class PdfSplit
             return new SplitPart(bookmarkIndexOffset + index + 1, pages);
         }));
         return parts;
-    }
-
-    /// <summary>
-    /// Labels each page of a part as it was labelled in the source. A label range starts at the
-    /// part's first page and wherever a page does not follow the previous one in the same source
-    /// range; a source page before the first range is numbered as the reader shows it.
-    /// </summary>
-    private static void CopyPageLabels(Document source, Document part, IReadOnlyList<int> pages)
-    {
-        int[] starts = [.. source.PageLabels.GetPages().Order()];
-        if (starts.Length == 0)
-        {
-            return;
-        }
-
-        int previous = -2;
-        int previousStart = -1;
-        for (int index = 0; index < pages.Count; index++)
-        {
-            int page = pages[index] - 1;
-            int start = starts.LastOrDefault(candidate => candidate <= page, -1);
-            if (start != previousStart || page != previous + 1)
-            {
-                PageLabel label = start < 0
-                    ? new PageLabel { NumberingStyle = NumberingStyle.NumeralsArabic }
-                    : source.PageLabels.GetLabel(start);
-                part.PageLabels.UpdateLabel(index, new PageLabel
-                {
-                    Prefix = label.Prefix,
-                    NumberingStyle = label.NumberingStyle,
-                    StartingValue = label.StartingValue + page - Math.Max(start, 0),
-                });
-            }
-
-            previous = page;
-            previousStart = start;
-        }
     }
 
     private sealed record SplitPart(int Index, IReadOnlyList<int> Pages);

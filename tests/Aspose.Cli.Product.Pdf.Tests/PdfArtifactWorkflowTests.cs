@@ -194,6 +194,80 @@ public sealed class PdfArtifactWorkflowTests
         Assert.StartsWith("1 bookmark(s), 0 link(s) and 0 named destination(s)", degraded.Message, StringComparison.Ordinal);
     }
 
+    /// <summary>
+    /// A merged document keeps the document information of its first input and numbers each
+    /// input's pages as that input did: an input without labels by its own page numbers.
+    /// </summary>
+    [Fact]
+    public void Merge_KeepsTheFirstInputsInformationAndEachInputsPageLabels()
+    {
+        using var fixture = new PdfEngineFixture();
+        string first = fixture.CreateDocument("front.pdf", pages: 1);
+        using (var document = new Document(first))
+        {
+            document.Info.Title = "Quarterly report";
+            document.Info.Author = "Finance";
+            document.Info["Department"] = "Sales";
+            document.PageLabels.UpdateLabel(0, new PageLabel { NumberingStyle = NumberingStyle.NumeralsRomanLowercase, StartingValue = 1 });
+            document.Save(first);
+        }
+
+        string unlabelled = fixture.CreateDocument("body.pdf", pages: 1);
+        string appendix = fixture.CreateDocument("appendix.pdf", pages: 1);
+        using (var document = new Document(appendix))
+        {
+            document.Info.Title = "Appendix";
+            document.PageLabels.UpdateLabel(0, new PageLabel { Prefix = "A-", NumberingStyle = NumberingStyle.NumeralsArabic, StartingValue = 1 });
+            document.Save(appendix);
+        }
+
+        string merged = fixture.File("merged.pdf");
+        PdfMerge.Run(fixture.Session, new PdfMergeRequest { Output = TestOutput.At(merged), InputPaths = [first, unlabelled, appendix] });
+
+        using var result = new Document(merged);
+        Assert.Equal("Quarterly report", result.Info.Title);
+        Assert.Equal("Finance", result.Info.Author);
+        Assert.Equal("Sales", result.Info["Department"]);
+        Assert.Equal(
+            ["1:NumeralsRomanLowercase::1", "2:NumeralsArabic::1", "3:NumeralsArabic:A-:1"],
+            result.PageLabels.GetPages().Order().Select(index =>
+            {
+                PageLabel label = result.PageLabels.GetLabel(index);
+                return $"{index + 1}:{label.NumberingStyle}:{label.Prefix}:{label.StartingValue}";
+            }));
+    }
+
+    /// <summary>Each part keeps the document information of the input.</summary>
+    [Fact]
+    public void Split_KeepsTheInputsInformationInEachPart()
+    {
+        using var fixture = new PdfEngineFixture();
+        string input = fixture.CreateDocument("titled.pdf", pages: 2);
+        using (var document = new Document(input))
+        {
+            document.Info.Title = "Quarterly report";
+            document.Info.Author = "Finance";
+            document.Info["Department"] = "Sales";
+            document.Save(input);
+        }
+
+        PdfSplitResult split = PdfSplit.Run(fixture.Session, new PdfSplitRequest
+        {
+            Input = input,
+            Output = new ResolvedDirectory(fixture.File("titled-parts")),
+            Plan = new Sdk.Addressing.SplitPlan(Sdk.Addressing.SplitBy.Pages, 1, null, null),
+        });
+
+        Assert.Equal(2, split.Outputs.Count);
+        Assert.All(split.Outputs, part =>
+        {
+            using var document = new Document(part.Path);
+            Assert.Equal("Quarterly report", document.Info.Title);
+            Assert.Equal("Finance", document.Info.Author);
+            Assert.Equal("Sales", document.Info["Department"]);
+        });
+    }
+
     /// <summary>Each part numbers its pages with the labels they had in the input.</summary>
     [Fact]
     public void Split_KeepsThePageLabelsOfEachPart()
