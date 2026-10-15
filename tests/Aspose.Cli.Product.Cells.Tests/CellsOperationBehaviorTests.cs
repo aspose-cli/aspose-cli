@@ -63,6 +63,25 @@ public sealed class CellsOperationBehaviorTests : IClassFixture<CellsFixture>
                 Assert.Equal("Region", header.StringValue);
                 Assert.False(header.GetStyle().Font.IsBold);
             }),
+        ["replace_text"] = (
+            """
+            { "op": "set_values", "sheet": "Data", "range": "D1", "values": [["east side"], ["Eastern"], ["EAST"]] },
+            { "op": "replace_text", "sheet": "Data", "find": "east", "replace": "West", "wholeWord": true },
+            { "op": "replace_text", "sheet": "Data", "range": "D2:D3", "find": "E(a)st", "replace": "W$1st", "regex": true, "caseSensitive": true, "maxReplacementCount": 1 }
+            """,
+            static workbook =>
+            {
+                Aspose.Cells.Cells cells = workbook.Worksheets["Data"].Cells;
+                // Whole words without case: East, east side and EAST, not Eastern.
+                Assert.Equal("West", cells["A2"].StringValue);
+                Assert.Equal("West side", cells["D1"].StringValue);
+                Assert.Equal("West", cells["D3"].StringValue);
+                // A regex with case and a limit of one: only Eastern, with its substitution.
+                Assert.Equal("Wastern", cells["D2"].StringValue);
+                // Formulas and numbers are never touched.
+                Assert.Equal("=SUM(B2:B2)", cells["B3"].Formula);
+                Assert.Equal(1200d, cells["B2"].DoubleValue);
+            }),
         ["copy_range"] = (
             """{ "op": "copy_range", "sheet": "Data", "from": "A1:C2", "to": "Second!B5" }""",
             static workbook =>
@@ -137,7 +156,7 @@ public sealed class CellsOperationBehaviorTests : IClassFixture<CellsFixture>
             """{ "op": "delete_sheet", "sheet": "Second" }""",
             static workbook => Assert.Equal(["Data", "Backstage"], SheetNames(workbook))),
         ["set_sheet_visibility"] = (
-            """{ "op": "set_sheet_visibility", "sheet": "Backstage", "hidden": false }, { "op": "set_sheet_visibility", "sheet": "Second", "hidden": true }""",
+            """{ "op": "set_sheet_visibility", "sheet": "Backstage", "visibility": "visible" }, { "op": "set_sheet_visibility", "sheet": "Second", "visibility": "hidden" }""",
             static workbook =>
             {
                 Assert.True(workbook.Worksheets["Backstage"].IsVisible);

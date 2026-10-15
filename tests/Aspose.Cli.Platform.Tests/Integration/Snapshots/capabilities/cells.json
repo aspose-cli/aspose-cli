@@ -38,7 +38,7 @@
         "command": "edit",
         "inputSchema": "v2/cells/ops",
         "operationSchema": "aspose-cli schema v2/cells/ops --operation <op>",
-        "contractFingerprint": "sha256:4c41a7e3736216f948d83374f46c314272de2d4a89e4e03adfb57a6be2f90462",
+        "contractFingerprint": "sha256:a76152b20d2905d401cfd60aef9a6ac3749d54ab2cb72945d435f85b462ec7fb",
         "maximumOperationCount": 10000,
         "ops": [
           "add_comment",
@@ -79,6 +79,7 @@
           "protect_workbook",
           "refresh_pivot",
           "rename_sheet",
+          "replace_text",
           "resize_columns",
           "resize_rows",
           "set_active_sheet",
@@ -4132,7 +4133,7 @@
             "position",
             "rowCount",
             "columnCount",
-            "hidden",
+            "visibility",
             "protected",
             "passwordProtected",
             "chartCount",
@@ -4163,9 +4164,14 @@
               "type": "integer",
               "minimum": 0
             },
-            "hidden": {
-              "description": "true when the sheet is hidden.",
-              "type": "boolean"
+            "visibility": {
+              "description": "visible, hidden (Excel's Unhide shows it) or veryHidden (hidden from Excel's Unhide too); review and preview show only visible sheets.",
+              "type": "string",
+              "enum": [
+                "visible",
+                "hidden",
+                "veryHidden"
+              ]
             },
             "protected": {
               "description": "true when the sheet is protected: Excel then lets users change only unlocked cells and the actions the protection allows. Edits are not held to it; see PROTECTION_NOT_ENFORCED.",
@@ -4800,6 +4806,9 @@
                 "$ref": "#/$defs/rename_sheet"
               },
               {
+                "$ref": "#/$defs/replace_text"
+              },
+              {
                 "$ref": "#/$defs/resize_columns"
               },
               {
@@ -5324,7 +5333,7 @@
           ]
         },
         "delete_columns": {
-          "description": "Deletes columns starting at a column.",
+          "description": "Deletes columns starting at a column, up to the sheet's last column, XFD.",
           "type": "object",
           "required": [
             "op",
@@ -5475,7 +5484,7 @@
           }
         },
         "delete_rows": {
-          "description": "Deletes rows starting at a row.",
+          "description": "Deletes rows starting at a row, up to the sheet's last row, 1048576.",
           "type": "object",
           "required": [
             "op",
@@ -5498,6 +5507,7 @@
               "description": "The 1-based first row to delete.",
               "type": "integer",
               "minimum": 1,
+              "maximum": 1048576,
               "x-readBack": "not-state"
             },
             "count": {
@@ -5862,7 +5872,7 @@
           }
         },
         "insert_columns": {
-          "description": "Inserts columns before a column.",
+          "description": "Inserts columns before a column. The columns inserted end at the sheet's last column, XFD, at the latest, and the columns they push right must not hold data past it.",
           "type": "object",
           "required": [
             "op",
@@ -5928,13 +5938,13 @@
               "x-readBack": "not-state"
             },
             "width": {
-              "description": "The width in points; the image's natural width when omitted.",
+              "description": "The width in points. When omitted, the image's natural width, or with height alone the width that keeps the image's proportions.",
               "type": "number",
               "exclusiveMinimum": 0,
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsImageInfo/properties/width"
             },
             "height": {
-              "description": "The height in points; the image's natural height when omitted.",
+              "description": "The height in points. When omitted, the image's natural height, or with width alone the height that keeps the image's proportions.",
               "type": "number",
               "exclusiveMinimum": 0,
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsImageInfo/properties/height"
@@ -6019,7 +6029,7 @@
           }
         },
         "insert_rows": {
-          "description": "Inserts rows before a row.",
+          "description": "Inserts rows before a row. The rows inserted end at the sheet's last row, 1048576, at the latest, and the rows they push down must not hold data past it.",
           "type": "object",
           "required": [
             "op",
@@ -6042,6 +6052,7 @@
               "description": "The 1-based row to insert before.",
               "type": "integer",
               "minimum": 1,
+              "maximum": 1048576,
               "x-readBack": "not-state"
             },
             "count": {
@@ -6282,6 +6293,67 @@
               ]
             }
           ]
+        },
+        "replace_text": {
+          "description": "Replaces literal or regular-expression text within the text values of a sheet's cells, in address order, row by row. Formulas, numbers, dates and Booleans are never changed; a cell's whole text is matched, not the text its number format shows.",
+          "type": "object",
+          "required": [
+            "op",
+            "find",
+            "replace"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "$ref": "#/$defs/id"
+            },
+            "op": {
+              "const": "replace_text"
+            },
+            "sheet": {
+              "description": "The target sheet; the active sheet when omitted.",
+              "type": "string",
+              "x-readBack": "not-state"
+            },
+            "range": {
+              "description": "The range to replace in, such as A1:D20; every cell of the sheet when omitted.",
+              "$ref": "#/$defs/range",
+              "x-readBack": "not-state"
+            },
+            "find": {
+              "type": "string",
+              "minLength": 1,
+              "x-readBack": "not-state"
+            },
+            "replace": {
+              "description": "With regex, .NET substitutions such as $1 and ${name} apply; write $$ for a literal $.",
+              "type": "string",
+              "x-readBack": "not-state"
+            },
+            "regex": {
+              "description": "Whether find is a .NET regular expression rather than literal text.",
+              "type": "boolean",
+              "default": false,
+              "x-readBack": "not-state"
+            },
+            "caseSensitive": {
+              "type": "boolean",
+              "default": false,
+              "x-readBack": "not-state"
+            },
+            "wholeWord": {
+              "description": "Whether a match must not have a letter, digit or underscore just before or after it.",
+              "type": "boolean",
+              "default": false,
+              "x-readBack": "not-state"
+            },
+            "maxReplacementCount": {
+              "description": "The most matches replaced; every match when omitted.",
+              "type": "integer",
+              "minimum": 1,
+              "x-readBack": "not-state"
+            }
+          }
         },
         "resize_columns": {
           "description": "Sets the width of a span of columns, or auto-fits them when widthChars is omitted.",
@@ -7025,11 +7097,11 @@
           ]
         },
         "set_sheet_visibility": {
-          "description": "Hides or shows the sheet the operation's sheet field names.",
+          "description": "Shows or hides the sheet the operation's sheet field names. Showing a sheet leaves the active sheet as it was; hiding the active sheet makes the next visible sheet active, and the last visible sheet cannot be hidden.",
           "type": "object",
           "required": [
             "op",
-            "hidden"
+            "visibility"
           ],
           "additionalProperties": false,
           "properties": {
@@ -7044,10 +7116,15 @@
               "type": "string",
               "x-readBack": "not-state"
             },
-            "hidden": {
-              "description": "Whether the sheet is hidden.",
-              "type": "boolean",
-              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsSheetInfo/properties/hidden"
+            "visibility": {
+              "description": "visible shows the tab; hidden hides it, and Excel's Unhide shows it again; veryHidden hides it from Excel's Unhide too.",
+              "type": "string",
+              "enum": [
+                "visible",
+                "hidden",
+                "veryHidden"
+              ],
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsSheetInfo/properties/visibility"
             }
           },
           "allOf": [
@@ -7853,7 +7930,7 @@
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/read-result.schema.json#/$defs/cellsStyleData/properties/strikethrough"
             },
             "indent": {
-              "description": "The indent level; 0 removes the indent.",
+              "description": "The indent level; 0 removes the indent. An indent applies to text aligned left or right, and puts centered text on the left.",
               "type": "integer",
               "minimum": 0,
               "maximum": 250,
@@ -8267,7 +8344,7 @@
               "type": "boolean"
             },
             "indent": {
-              "description": "The indent level; 0 removes the indent.",
+              "description": "The indent level; 0 removes the indent. An indent applies to text aligned left or right, and puts centered text on the left.",
               "type": "integer",
               "minimum": 0,
               "maximum": 250

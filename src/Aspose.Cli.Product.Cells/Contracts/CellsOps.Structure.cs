@@ -4,29 +4,41 @@ namespace Aspose.Cli.Product.Cells.Contracts;
 
 // Ops that change the row and column structure of a sheet.
 
-/// <summary>Inserts rows before a row.</summary>
+/// <summary>
+/// Inserts rows before a row. The rows inserted end at the sheet's last row, 1048576, at the
+/// latest, and the rows they push down must not hold data past it.
+/// </summary>
 [Operation("insert_rows")]
 public sealed record InsertRowsOp : CellsSheetOp
 {
     /// <summary>The 1-based row to insert before.</summary>
-    [Minimum(1)] public required int At { get; init; }
+    [Minimum(1), Maximum(A1.MaxRows)] public required int At { get; init; }
 
     [NotState]
     [Minimum(1)] public int Count { get; init; } = 1;
+
+    /// <inheritdoc />
+    protected override BoundedOperation Validated() => LineSpan.Rows(this, At, Count);
 }
 
-/// <summary>Deletes rows starting at a row.</summary>
+/// <summary>Deletes rows starting at a row, up to the sheet's last row, 1048576.</summary>
 [Operation("delete_rows")]
 public sealed record DeleteRowsOp : CellsSheetOp
 {
     /// <summary>The 1-based first row to delete.</summary>
-    [Minimum(1)] public required int At { get; init; }
+    [Minimum(1), Maximum(A1.MaxRows)] public required int At { get; init; }
 
     [NotState]
     [Minimum(1)] public int Count { get; init; } = 1;
+
+    /// <inheritdoc />
+    protected override BoundedOperation Validated() => LineSpan.Rows(this, At, Count);
 }
 
-/// <summary>Inserts columns before a column.</summary>
+/// <summary>
+/// Inserts columns before a column. The columns inserted end at the sheet's last column, XFD, at
+/// the latest, and the columns they push right must not hold data past it.
+/// </summary>
 [Operation("insert_columns")]
 public sealed record InsertColumnsOp : CellsSheetOp
 {
@@ -35,9 +47,12 @@ public sealed record InsertColumnsOp : CellsSheetOp
 
     [NotState]
     [Minimum(1)] public int Count { get; init; } = 1;
+
+    /// <inheritdoc />
+    protected override BoundedOperation Validated() => LineSpan.Columns(this, At, Count);
 }
 
-/// <summary>Deletes columns starting at a column.</summary>
+/// <summary>Deletes columns starting at a column, up to the sheet's last column, XFD.</summary>
 [Operation("delete_columns")]
 public sealed record DeleteColumnsOp : CellsSheetOp
 {
@@ -46,6 +61,32 @@ public sealed record DeleteColumnsOp : CellsSheetOp
 
     [NotState]
     [Minimum(1)] public int Count { get; init; } = 1;
+
+    /// <inheritdoc />
+    protected override BoundedOperation Validated() => LineSpan.Columns(this, At, Count);
+}
+
+/// <summary>The rule of the rows or columns an operation inserts or deletes: they lie within the sheet.</summary>
+internal static class LineSpan
+{
+    public static CellsOp Rows(CellsOp operation, int at, int count)
+    {
+        long last = (long)at + count - 1;
+        OperationInvalidException.Require(last <= A1.MaxRows,
+            $"rows {at}-{last} run past the sheet's last row, {A1.MaxRows}",
+            $"Lower count to at most {A1.MaxRows - at + 1}.");
+        return operation;
+    }
+
+    public static CellsOp Columns(CellsOp operation, string at, int count)
+    {
+        int first = A1.ParseColumn(at);
+        long last = (long)first + count - 1;
+        OperationInvalidException.Require(last < A1.MaxColumns,
+            $"{count} columns from {A1.ColumnName(first)} run past the sheet's last column, {A1.ColumnName(A1.MaxColumns - 1)}",
+            $"Lower count to at most {A1.MaxColumns - first}.");
+        return operation;
+    }
 }
 
 /// <summary>Sets the height of a span of rows, or auto-fits them when height is omitted.</summary>

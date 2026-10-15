@@ -75,7 +75,7 @@ internal static class InspectCommand
             $"sheets: {workbook.SheetCount}   macros: {TableText.YesNo(workbook.HasMacros)}   defined names: {workbook.DefinedNameCount}   encrypted: {TableText.YesNo(info.Input.Encrypted == true)}   structure protected: {TableText.YesNo(workbook.StructureProtected)}");
         surface.Out.WriteLine();
 
-        var table = new TextTable("name", "position", "used range", "rows", "columns", "hidden", "protected", "charts", "pivots");
+        var table = new TextTable("name", "position", "used range", "rows", "columns", "visibility", "protected", "charts", "pivots");
         foreach (CellsSheetInfo sheet in workbook.Sheets)
         {
             table.AddRow(
@@ -84,7 +84,7 @@ internal static class InspectCommand
                 sheet.UsedRange,
                 TableText.Int(sheet.RowCount),
                 TableText.Int(sheet.ColumnCount),
-                TableText.YesNo(sheet.Hidden),
+                sheet.Visibility,
                 TableText.YesNo(sheet.Protected),
                 TableText.Int(sheet.ChartCount),
                 TableText.Int(sheet.PivotTableCount));

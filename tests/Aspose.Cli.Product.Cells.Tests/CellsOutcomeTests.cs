@@ -2,6 +2,7 @@ using Aspose.Cells;
 using Aspose.Cells.Charts;
 using Aspose.Cli.Product.Cells.Contracts;
 using Aspose.Cli.Sdk.Contracts;
+using Aspose.Cli.Sdk.Errors;
 using Xunit;
 
 namespace Aspose.Cli.Product.Cells.Tests;
@@ -568,5 +569,200 @@ public sealed class CellsOutcomeTests : IClassFixture<CellsFixture>
         {
             Assert.Equal(("E2:F2,E5:F5", "G2,G5"), (after[0].DataRange, after[0].At));
         }
+    }
+
+    [Fact]
+    public void ShowingAHiddenSheet_ChangesItsVisibilityAndLeavesTheActiveSheet()
+    {
+        string path = _fixture.CreateSalesWorkbook($"show-sheet-{Guid.NewGuid():N}.xlsx");
+
+        // The second operation names no sheet, so it writes to the sheet active after the first.
+        CellsEditResult result = Apply(path, """
+            {"ops":[
+              {"op":"set_sheet_visibility","sheet":"Backstage","visibility":"visible"},
+              {"op":"set_values","range":"A9","values":[["after"]]}
+            ]}
+            """);
+
+        Assert.Equal([["sheet/Backstage"], ["cell/Data!A9"]], result.Applied.Select(static outcome => outcome.Targets));
+    }
+
+    [Fact]
+    public void HidingTheActiveSheet_NamesTheActiveSheetItMovesOn()
+    {
+        string path = _fixture.CreateSalesWorkbook($"hide-active-{Guid.NewGuid():N}.xlsx");
+
+        CellsEditResult result = Apply(path, """{"ops":[{"op":"set_sheet_visibility","sheet":"Data","visibility":"hidden"}]}""");
+
+        BoundedOperationOutcome outcome = Assert.Single(result.Applied);
+        Assert.Equal(["sheet/Data", "workbook/active-sheet"], outcome.Targets);
+        Assert.Equal(2, outcome.ItemsAffected);
+    }
+
+    [Theory]
+    [InlineData("Second", "veryHidden")]
+    [InlineData("Second", "hidden")]
+    [InlineData("Backstage", "visible")]
+    public void SheetVisibility_ReadsBackAsWritten(string sheet, string visibility)
+    {
+        string path = _fixture.CreateSalesWorkbook($"visibility-{Guid.NewGuid():N}.xlsx");
+
+        CellsEditResult result = Apply(path, $$"""{"ops":[{"op":"set_sheet_visibility","sheet":"{{sheet}}","visibility":"{{visibility}}"}]}""");
+
+        CellsInspectResult read = CellsInfo.Run(_fixture.Session, new CellsInspectRequest { Input = result.Output!.Path });
+        Assert.Equal(visibility, read.Workbook.Sheets.Single(info => info.Name == sheet).Visibility);
+    }
+
+    [Fact]
+    public void HidingTheLastVisibleSheet_IsRefused()
+    {
+        string path = _fixture.CreateSalesWorkbook($"hide-last-{Guid.NewGuid():N}.xlsx");
+
+        CliException error = Assert.Throws<CliException>(() => Apply(path, """
+            {"ops":[
+              {"op":"set_sheet_visibility","sheet":"Second","visibility":"hidden"},
+              {"op":"set_sheet_visibility","sheet":"Data","visibility":"veryHidden"}
+            ]}
+            """));
+
+        Assert.Equal("OPS_INVALID", error.Code.Name);
+        Assert.Contains("only visible sheet", error.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void TheBooleanHiddenField_SuggestsVisibility()
+    {
+        CliException error = Assert.Throws<CliException>(() => CellsOp.Catalog.Parse<CellsOpsBatch>(
+            """{"ops":[{"op":"set_sheet_visibility","sheet":"Second","hidden":true}]}""", Aspose.Cli.Generated.ProductJsonContext.Definition));
+
+        Assert.Equal("OPS_INVALID", error.Code.Name);
+        Assert.Contains("visibility", error.Hint ?? error.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void ReplacingText_CountsTheCellsItChangedAndExplainsNoMatch()
+    {
+        string path = _fixture.CreateSalesWorkbook($"replace-{Guid.NewGuid():N}.xlsx");
+
+        CellsEditResult result = Apply(path, """
+            {"ops":[
+              {"op":"set_values","sheet":"Data","range":"E1","values":[["Total due"]]},
+              {"op":"replace_text","sheet":"Data","find":"total","replace":"Sum"},
+              {"op":"replace_text","sheet":"Data","range":"A1:A2","find":"Sum","replace":"Total"}
+            ]}
+            """, verify: true);
+
+        Assert.Equal([["cell/Data!E1"], ["cell/Data!E1", "cell/Data!A3"], []], result.Applied.Select(static outcome => outcome.Targets));
+        Assert.Equal(0, result.Applied[2].ItemsAffected);
+        Warning noMatch = Assert.Single(result.Warnings ?? [], static warning => warning.Code.Name == "OP_NO_EFFECT");
+        Assert.Equal("no-match", noMatch.Details!["reason"]!.ToString());
+        Assert.DoesNotContain("Sum", noMatch.Message, StringComparison.Ordinal);
+        Assert.Contains("op-0002", result.Verification!.CheckedOps);
+    }
+
+    [Fact]
+    public void ReplacingWithAnInvalidRegex_IsRefusedBeforeAnythingRuns()
+    {
+        CliException error = Assert.Throws<CliException>(() => CellsOp.Catalog.Parse<CellsOpsBatch>(
+            """{"ops":[{"op":"replace_text","find":"(open","replace":"x","regex":true}]}""", Aspose.Cli.Generated.ProductJsonContext.Definition));
+
+        Assert.Equal("OPS_INVALID", error.Code.Name);
+        Assert.Contains("regular expression", error.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void DrawingABorderOnARange_NamesTheNeighborsThatShareIt()
+    {
+        string path = _fixture.CreateSalesWorkbook($"shared-border-{Guid.NewGuid():N}.xlsx");
+
+        CellsEditResult result = Apply(path, """
+            {"ops":[{"op":"format_range","sheet":"Data","range":"A2:B2","style":{"borders":[{"side":"bottom","lineStyle":"thin","color":"#000000"}]}}]}
+            """);
+
+        BoundedOperationOutcome outcome = Assert.Single(result.Applied);
+        Assert.Equal(["cell/Data!A2", "cell/Data!B2", "cell/Data!A3", "cell/Data!B3"], outcome.Targets);
+        // A read reports the line as the top border of the cells below.
+        CellsReadResult read = CellsRead.Run(_fixture.Session, new CellsReadRequest
+        {
+            Input = result.Output!.Path, SheetName = "Data", Range = A1.ParseRange("A3:B3").Range, Content = CellsReadContents.Styles,
+        });
+        Assert.All(read.Sheet.Cells![0], cell =>
+            Assert.Contains(read.Styles![cell.StyleId!].Borders!, static border => border.Side == "top"));
+    }
+
+    [Fact]
+    public void CenteringWithAnIndent_IsRefusedWithWhatToChange()
+    {
+        CliException error = Assert.Throws<CliException>(() => CellsOp.Catalog.Parse<CellsOpsBatch>(
+            """{"ops":[{"op":"format_range","range":"A1","style":{"alignment":"center","indent":1}}]}""", Aspose.Cli.Generated.ProductJsonContext.Definition));
+
+        Assert.Equal("OPS_INVALID", error.Code.Name);
+        Assert.Contains("left or right", error.Hint, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void ACommonNameForTheNumberFormat_SuggestsNumberFormat()
+    {
+        CliException error = Assert.Throws<CliException>(() => CellsOp.Catalog.Parse<CellsOpsBatch>(
+            """{"ops":[{"op":"format_range","range":"A1","style":{"numFmt":"0.00"}}]}""", Aspose.Cli.Generated.ProductJsonContext.Definition));
+
+        Assert.Equal("OPS_INVALID", error.Code.Name);
+        Assert.Contains("numberFormat", error.Hint, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void HidingDeletingResizingAndCharting_CountWhatTheyChanged()
+    {
+        string path = _fixture.CreateSalesWorkbook($"c-b01-{Guid.NewGuid():N}.xlsx");
+
+        CellsEditResult result = Apply(path, """
+            {"ops":[
+              {"op":"set_sheet_visibility","sheet":"Second","visibility":"hidden"},
+              {"op":"delete_sheet","sheet":"Backstage"},
+              {"op":"resize_columns","sheet":"Data","first":"A","last":"B","widthChars":20},
+              {"op":"insert_chart","sheet":"Data","kind":"column","dataRange":"A1:C2","at":"E2:K12"}
+            ]}
+            """);
+
+        Assert.Equal(
+            [(1L, (IReadOnlyList<string>)["sheet/Second"]), (1L, ["sheet/Backstage"]), (2L, ["column/Data!A", "column/Data!B"]), (1L, ["chart/Data/1"])],
+            result.Applied.Select(static outcome => (outcome.ItemsAffected, outcome.Targets)));
+    }
+
+    [Theory]
+    [InlineData("""{"op":"insert_rows","sheet":"Data","at":1048575,"count":5}""", "rows 1048575-1048579 run past the sheet's last row")]
+    [InlineData("""{"op":"delete_rows","sheet":"Data","at":1048575,"count":5}""", "rows 1048575-1048579 run past the sheet's last row")]
+    [InlineData("""{"op":"insert_rows","sheet":"Data","at":1048577}""", "at must be at most 1048576")]
+    [InlineData("""{"op":"insert_columns","sheet":"Data","at":"XFD","count":5}""", "5 columns from XFD run past the sheet's last column")]
+    [InlineData("""{"op":"delete_columns","sheet":"Data","at":"XFC","count":3}""", "3 columns from XFC run past the sheet's last column")]
+    public void LinesPastTheSheetsEnd_AreAnInvalidOperation(string operation, string reason)
+    {
+        CliException error = Assert.Throws<CliException>(() => CellsOp.Catalog.Parse<CellsOpsBatch>(
+            $$"""{"ops":[{{operation}}]}""", Aspose.Cli.Generated.ProductJsonContext.Definition));
+
+        Assert.Equal("OPS_INVALID", error.Code.Name);
+        Assert.Contains(reason, error.Message, StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData("""{"op":"set_values","sheet":"Data","range":"A1048576","values":[[1]]},{"op":"insert_rows","sheet":"Data","at":3,"count":2}""", "push the data in row 1048576 past")]
+    [InlineData("""{"op":"set_values","sheet":"Data","range":"XFD1","values":[[1]]},{"op":"insert_columns","sheet":"Data","at":"B"}""", "push the data in column XFD past")]
+    public void InsertingLinesThatPushDataOffTheSheet_IsAnInvalidOperationTheBatchCanSkip(string operations, string reason)
+    {
+        string path = _fixture.CreateSalesWorkbook($"push-off-{Guid.NewGuid():N}.xlsx");
+
+        CellsEditResult result = CellsEdit.Run(_fixture.Session, new CellsEditRequest
+        {
+            Input = path,
+            Batch = CellsOp.Catalog.Parse<CellsOpsBatch>($$"""{"ops":[{{operations}}]}""", Aspose.Cli.Generated.ProductJsonContext.Definition),
+            Output = TestOutput.At(_fixture.Temp.File($"push-off-{Guid.NewGuid():N}.xlsx")),
+            Options = new EditCommandOptions { BestEffort = true },
+        });
+
+        BoundedOperationOutcome refused = result.Applied[1];
+        Assert.Equal(OpStatuses.Failed, refused.Status);
+        Assert.Equal("OPS_INVALID", refused.Error!.Code);
+        Assert.Contains(reason, refused.Error.Message, StringComparison.Ordinal);
+        Assert.Equal(OpStatuses.Ok, result.Applied[0].Status);
     }
 }

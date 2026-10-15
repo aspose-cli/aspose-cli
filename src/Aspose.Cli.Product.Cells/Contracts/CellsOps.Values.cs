@@ -100,6 +100,16 @@ public sealed record FormatRangeOp : CellsSheetOp
     [A1Range] public required string Range { get; init; }
 
     public required CellsStyleData Style { get; init; }
+
+    /// <inheritdoc />
+    protected override BoundedOperation Validated()
+    {
+        // Excel indents only text aligned left or right: an indent puts centered text on the left.
+        OperationInvalidException.Require(Style is not { Alignment: CellsHorizontalAlignments.Center, Indent: > 0 },
+            "an indent applies only to text aligned left or right, so centered text with an indent stays on the left",
+            "Drop indent, or set alignment to left or right.");
+        return this;
+    }
 }
 
 /// <summary>Merges a range into one cell.</summary>
@@ -116,4 +126,60 @@ public sealed record UnmergeCellsOp : CellsSheetOp
 {
     /// <summary>The merged range to split, such as A1:C1.</summary>
     [A1Range] public required string Range { get; init; }
+}
+
+/// <summary>
+/// Replaces literal or regular-expression text within the text values of a sheet's cells, in
+/// address order, row by row. Formulas, numbers, dates and Booleans are never changed; a cell's
+/// whole text is matched, not the text its number format shows.
+/// </summary>
+[Operation("replace_text")]
+[MistakenFor("find_replace", "replace")]
+public sealed record ReplaceTextOp : CellsSheetOp
+{
+    /// <summary>The range to replace in, such as A1:D20; every cell of the sheet when omitted.</summary>
+    [A1Range] public string? Range { get; init; }
+
+    [NotState]
+    [MinLength(1)] public required string Find { get; init; }
+
+    /// <summary>With regex, .NET substitutions such as $1 and ${name} apply; write $$ for a literal $.</summary>
+    [MistakenFor("replacement", "replaceWith")]
+    [NotState]
+    public required string Replace { get; init; }
+
+    /// <summary>Whether find is a .NET regular expression rather than literal text.</summary>
+    [NotState]
+    public bool Regex { get; init; }
+
+    [MistakenFor("matchCase")]
+    [NotState]
+    public bool CaseSensitive { get; init; }
+
+    /// <summary>Whether a match must not have a letter, digit or underscore just before or after it.</summary>
+    [NotState]
+    public bool WholeWord { get; init; }
+
+    /// <summary>The most matches replaced; every match when omitted.</summary>
+    [NotState]
+    [Minimum(1)] public int? MaxReplacementCount { get; init; }
+
+    /// <inheritdoc />
+    protected override BoundedOperation Validated()
+    {
+        if (Regex)
+        {
+            try
+            {
+                _ = new System.Text.RegularExpressions.Regex(Find, System.Text.RegularExpressions.RegexOptions.CultureInvariant);
+            }
+            catch (ArgumentException exception)
+            {
+                throw new OperationInvalidException($"find is not a valid .NET regular expression: {exception.Message}",
+                    "Escape the characters . $ ^ { [ ( | ) * + ? \\ with a backslash, or set regex to false for literal text.");
+            }
+        }
+
+        return this;
+    }
 }

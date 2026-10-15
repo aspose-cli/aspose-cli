@@ -57,7 +57,7 @@ internal sealed class CellsEditModel : IOperationModel<CellsOp>
         ProtectedChange protectedTarget = CellsProtectionTracker.Observe(_workbook, operation);
         _applied.Add(operation);
         _handlers.Run(operation);
-        _protection.Record(protectedTarget);
+        _protection.Record(protectedTarget == default ? CellsProtectionTracker.Spilled(_workbook, operation) : protectedTarget);
     }
 
     /// <summary>What a failed operation addressed: its range or cell, its sheet, or the part of the workbook it changes.</summary>
@@ -79,6 +79,12 @@ internal sealed class CellsEditModel : IOperationModel<CellsOp>
             $"Operation {operation.Id} ({CellsOp.Catalog.NameOf(operation)}) changed nothing: the range held nothing to clear."),
         ClearAutoFilterOp or ClearPrintAreaOp or ClearTabColorOp or UnfreezePanesOp => new NoEffect(NoEffectReasons.NoChange,
             $"Operation {operation.Id} ({CellsOp.Catalog.NameOf(operation)}) changed nothing: the sheet had nothing to remove."),
+        // Like a verification issue, it never repeats the find text.
+        ReplaceTextOp replace when _handlers.Replaced.GetValueOrDefault(replace) == 0 => new NoEffect(NoEffectReasons.NoMatch,
+            $"Operation {operation.Id} (replace_text) matched no text in {(replace.Range is null ? "the sheet" : "the range")}, so nothing was replaced.")
+        {
+            Hint = "Search with 'aspose-cli cells search' and the same pattern; replace_text changes text values only, never formulas, numbers or dates.",
+        },
         _ => null,
     };
 

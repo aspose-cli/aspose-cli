@@ -104,9 +104,9 @@ internal static class ReviewLayoutProjection
 
     /// <summary>
     /// Finds values wider than their column. Excel shows cut off text whose right-hand neighbor is
-    /// filled (so it cannot spill over), and numbers, which it shows as #### or rounded; other
-    /// text spills over the empty cells to its right. Only values whose length, scaled by their
-    /// font size, could exceed the column are measured.
+    /// filled (so it cannot spill over), and numbers and dates, which it shows as #### or rounded,
+    /// as the engine's display text tells; other text spills over the empty cells to its right.
+    /// Only values whose length, scaled by their font size, could exceed the column are measured.
     /// </summary>
     private static (CellsReviewCellSet Clipped, CellsReviewCellSet Overflowing) InspectWideValues(Worksheet sheet)
     {
@@ -139,8 +139,22 @@ internal static class ReviewLayoutProjection
             // Fullwidth characters take two.
             double units = TextWidth.Of(cell.StringValue);
             double columnWidth = cells.GetColumnWidth(cell.Column);
-            if (units * largestFontScale <= columnWidth)
+            // A number needs room for the cell's padding too: with less than two characters to
+            // spare, the engine's own display text says whether it shows in full.
+            if (units * largestFontScale + (number ? 2 : 0) <= columnWidth)
             {
+                continue;
+            }
+
+            if (number)
+            {
+                if (!string.Equals(cell.GetStringValue(CellValueFormatStrategy.DisplayString),
+                        cell.GetStringValue(CellValueFormatStrategy.CellStyle), StringComparison.Ordinal)
+                    && !cell.GetStyle().ShrinkToFit)
+                {
+                    clipped.Add(cell.Name, eastAsian: false);
+                }
+
                 continue;
             }
 
@@ -152,10 +166,10 @@ internal static class ReviewLayoutProjection
                 continue;
             }
 
-            bool spills = !number && cells.CheckCell(cell.Row, cell.Column + 1) is not { Value: not (null or "") };
+            bool spills = cells.CheckCell(cell.Row, cell.Column + 1) is not { Value: not (null or "") };
             if (!spills)
             {
-                clipped.Add(cell.Name, !number && cell.StringValue.Any(IsEastAsian));
+                clipped.Add(cell.Name, cell.StringValue.Any(IsEastAsian));
             }
             else if (EndsNearColumnEdge(cells, cell))
             {

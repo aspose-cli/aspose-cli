@@ -33,13 +33,15 @@ internal enum TextTableFindingKind
 /// <param name="Rows">The rows the finding concerns.</param>
 /// <param name="Labels">The distinct total labels of those rows; empty for other findings.</param>
 /// <param name="NumberColumn">For total rows, the column the first one holds a number in, or null.</param>
+/// <param name="DataEnd">For total rows, the last data row before them.</param>
 internal sealed record TextTableFinding(
     TextTableFindingKind Kind,
     int HeaderRow,
     int LastRow,
     IReadOnlyList<int> Rows,
     IReadOnlyList<string> Labels,
-    int? NumberColumn = null);
+    int? NumberColumn = null,
+    int? DataEnd = null);
 
 /// <summary>
 /// Warns when a delimited text input is not a plain table that starts at row 1: a title or
@@ -129,21 +131,28 @@ internal static class TextTableLayout
                 [.. Enumerable.Range(0, header.Row)], []));
         }
 
-        int[] blanks = [.. head.Where(shape => shape.Filled == 0 && shape.Row > header.Row && shape.Row < lastRow)
+        TextRowShape[] totals = [.. filled.Where(shape => shape.Row > header.Row).TakeLast(3)
+            .Where(static shape => IsTotalLabel(shape.FirstText))];
+
+        // The data ends before the first total row: an empty row there is not inside the data,
+        // and the whole table to address ends where the total rows' finding says the data does.
+        int dataEnd = totals.Length > 0
+            ? filled.LastOrDefault(shape => shape.Row > header.Row && shape.Row < totals[0].Row) is { Filled: > 0 } lastData ? lastData.Row : header.Row
+            : lastRow;
+        int[] blanks = [.. head.Where(shape => shape.Filled == 0 && shape.Row > header.Row && shape.Row < dataEnd)
             .Select(static shape => shape.Row)];
         if (blanks.Length > 0)
         {
-            findings.Add(new TextTableFinding(TextTableFindingKind.BlankRows, header.Row, lastRow, blanks, []));
+            findings.Add(new TextTableFinding(TextTableFindingKind.BlankRows, header.Row, dataEnd, blanks, []));
         }
 
-        TextRowShape[] totals = [.. filled.Where(shape => shape.Row > header.Row).TakeLast(3)
-            .Where(static shape => IsTotalLabel(shape.FirstText))];
         if (totals.Length > 0)
         {
             findings.Add(new TextTableFinding(TextTableFindingKind.TotalRows, header.Row, lastRow,
                 [.. totals.Select(static shape => shape.Row)],
                 [.. totals.Select(static shape => shape.FirstText!).Distinct(StringComparer.Ordinal)],
-                totals[0].NumberColumn));
+                totals[0].NumberColumn,
+                dataEnd));
         }
 
         if (notice is not null)
@@ -157,9 +166,11 @@ internal static class TextTableLayout
     /// <summary>
     /// Moves the header past the blocks of notes an export writes before its table, such as an
     /// "export time, query" row of several values: a block that ends in an empty row is notes when
-    /// the first row after the empty rows is wider than every row of the block, wide enough for a
+    /// it holds a title, a row of one value, or a row that starts with a "label:" note, and the
+    /// first row after the empty rows is wider than every row of the block, wide enough for a
     /// header, and holds no number, as a header does. A block of data rows split by an empty row
-    /// fails the test, because its rows are as wide as the rows after it or hold numbers.
+    /// fails the test, because its rows are as wide as the rows after it or hold numbers, and so
+    /// does a header narrower than its data rows, which holds labels only.
     /// </summary>
     private static TextRowShape SkipPreambleBlocks(
         IReadOnlyList<TextRowShape> head, TextRowShape[] filled, TextRowShape header, int width)
@@ -172,8 +183,10 @@ internal static class TextTableLayout
                 blockEnd++;
             }
 
-            int blockWidth = filled.Where(shape => shape.Row >= header.Row && shape.Row <= blockEnd).Max(static shape => shape.Filled);
+            TextRowShape[] block = [.. filled.Where(shape => shape.Row >= header.Row && shape.Row <= blockEnd)];
+            int blockWidth = block.Max(static shape => shape.Filled);
             if (blockEnd + 1 >= head.Count
+                || !block.Any(static shape => shape.Filled == 1 || shape.FirstText?.IndexOfAny([':', '：']) >= 0)
                 || filled.FirstOrDefault(shape => shape.Row > blockEnd) is not { Filled: > 0 } next
                 || next.Row > MaxPreambleRows
                 || next.NumberColumn is not null
@@ -242,6 +255,7 @@ internal static class TextTableLayout
     private static Warning TotalRows(TextTableFinding finding)
     {
         int first = finding.Rows[0] + 1;
+        int end = (finding.DataEnd ?? finding.Rows[0] - 1) + 1;
         string labels = string.Join("', '", finding.Labels);
         string subject = finding.Rows.Count == 1
             ? $"Row {first} is a total row ('{labels}')"
@@ -249,12 +263,12 @@ internal static class TextTableLayout
         int dataStart = finding.HeaderRow + 2;
         // The example sums a column the total row holds a number in, so it is never a text column.
         string example = finding.NumberColumn is int column
-            ? $", for example =SUM({A1.ColumnName(column)}{dataStart}:{A1.ColumnName(column)}{first - 1}) for column {A1.ColumnName(column)}"
+            ? $", for example =SUM({A1.ColumnName(column)}{dataStart}:{A1.ColumnName(column)}{end}) for column {A1.ColumnName(column)}"
             : string.Empty;
         return Build(
             $"{subject}; a sum or formula over a column that includes it counts the data twice, and sorts, pivots and charts take it for data.",
-            first > dataStart
-                ? $"End data ranges at row {first - 1}{example}, and leave row {first} out of sorts, pivots and charts."
+            end >= dataStart
+                ? $"End data ranges at row {end}{example}, and leave row {first} out of sorts, pivots and charts."
                 : $"Leave row {first} out of formulas, sorts, pivots and charts.",
             string.Join(",", finding.Rows.Select(static row => RowReference(row + 1, row + 1))));
     }

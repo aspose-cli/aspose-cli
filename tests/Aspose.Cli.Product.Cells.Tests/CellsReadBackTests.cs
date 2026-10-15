@@ -140,6 +140,24 @@ public sealed class CellsReadBackTests : IClassFixture<CellsFixture>
         return $$"""{"ops":[{{fields.ToJsonString()}}]}""";
     }
 
+    [Theory]
+    [InlineData("""{"op":"delete_rows","sheet":"Data","at":10}""", "C2:C9,E5:F5")]
+    [InlineData("""{"op":"delete_rows","sheet":"Data","at":9,"count":3}""", "C2:C8,E5:F5")]
+    [InlineData("""{"op":"delete_rows","sheet":"Data","at":5}""", "C2:C9")]
+    [InlineData("""{"op":"delete_columns","sheet":"Data","at":"F"}""", "C2:C10,E5")]
+    [InlineData("""{"op":"delete_columns","sheet":"Data","at":"E","count":2}""", "C2:C10")]
+    public void DeletingTheEndOfAValidation_ShrinksItAsExcelDoes(string delete, string range)
+    {
+        CellsWorkbookSummary workbook = EditAndInspect($$"""
+            {"ops":[
+              {"op":"set_validation","sheet":"Data","range":"C2:C10,E5:F5","kind":"whole-number","operator":"between","value1":"0","value2":"10"},
+              {{delete}}
+            ]}
+            """, CellsInspectDetails.Validation);
+
+        Assert.Equal(range, Assert.Single(workbook.Validations!).Range);
+    }
+
     [Fact]
     public void AValidationOverSeveralAreas_ReadsBackAsOneAndWritesBackAsTheSame()
     {
@@ -264,6 +282,37 @@ public sealed class CellsReadBackTests : IClassFixture<CellsFixture>
         Assert.Equal(("E5", 120d, 90d), (picture.At, picture.Width, picture.Height));
         CellsTableInfo table = Assert.Single(workbook.Tables!);
         Assert.Equal(("TableStyleLight9", false), (table.TableStyle, table.TotalsRow));
+    }
+
+    [Theory]
+    [InlineData("\"width\":120", 120d, 60d)]
+    [InlineData("\"height\":45", 90d, 45d)]
+    public void AnImageGivenOneSide_KeepsItsProportions(string side, double width, double height)
+    {
+        // A 40 x 20 pixel image, 30 x 15 points.
+        string image = _fixture.Temp.File($"wide-{Guid.NewGuid():N}.png");
+        File.WriteAllBytes(image, Convert.FromBase64String(
+            "iVBORw0KGgoAAAANSUhEUgAAACgAAAAUCAIAAABwJOjsAAAAJElEQVR4nO3NMQ0AAAACIPuX1hg+bPykycVnFYvFYrFYLO4jHn36HQ4oCLQGAAAAAElFTkSuQmCC"));
+
+        CellsWorkbookSummary workbook = EditAndInspect($$"""
+            {"ops":[{"op":"insert_image","sheet":"Data","path":{{System.Text.Json.JsonSerializer.Serialize(image)}},"at":"E5",{{side}}}]}
+            """, CellsInspectDetails.Images);
+
+        CellsImageInfo picture = Assert.Single(workbook.Images!);
+        Assert.Equal((width, height), (picture.Width, picture.Height));
+    }
+
+    [Fact]
+    public void ProtectingAProtectedSheetAgain_AllowsExactlyTheListedActions()
+    {
+        CellsWorkbookSummary workbook = EditAndInspect("""
+            {"ops":[
+              {"op":"protect_sheet","sheet":"Data","allow":["format-cells","sort"]},
+              {"op":"protect_sheet","sheet":"Data","allow":["insert-rows","sort"]}
+            ]}
+            """, CellsInspectDetails.Layout);
+
+        Assert.Equal(["insert-rows", "sort"], workbook.Layouts!.Single(static item => item.Sheet == "Data").Protection!.Allow);
     }
 
     [Fact]

@@ -90,7 +90,7 @@ internal static class A1
         if (SplitList(spec) is { Count: > 1 } items)
         {
             throw CellsErrors.RangeInvalid(spec,
-                $"it lists {items.Count} ranges separated by commas, but takes one range: give each range its own operation");
+                $"it lists {items.Count} ranges separated by commas, but takes one range: give one range at a time");
         }
     }
 

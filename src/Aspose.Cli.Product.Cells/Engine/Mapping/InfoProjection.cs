@@ -86,7 +86,7 @@ internal static class InfoProjection
             UsedRange = usedRange is { } range ? A1.FormatRange(range) : null,
             RowCount = usedRange?.RowCount ?? 0,
             ColumnCount = usedRange?.ColumnCount ?? 0,
-            Hidden = !sheet.IsVisible,
+            Visibility = Sheets.Visibility(sheet),
             Protected = sheet.IsProtected,
             PasswordProtected = PasswordProtected(sheet),
             ChartCount = sheet.Charts.Count,

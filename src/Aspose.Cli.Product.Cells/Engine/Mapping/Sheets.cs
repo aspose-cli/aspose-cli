@@ -150,4 +150,21 @@ internal static class Sheets
             ? new RangeRef(new CellRef(0, 0), new CellRef(maxDataRow, maxDataColumn))
             : null;
     }
+
+    /// <summary>The engine visibility of a <see cref="CellsSheetVisibilities"/> value; the parser guarantees a known one.</summary>
+    internal static VisibilityType Visibility(string visibility) => visibility switch
+    {
+        CellsSheetVisibilities.Visible => VisibilityType.Visible,
+        CellsSheetVisibilities.Hidden => VisibilityType.Hidden,
+        CellsSheetVisibilities.VeryHidden => VisibilityType.VeryHidden,
+        _ => throw new ArgumentOutOfRangeException(nameof(visibility), visibility, "Sheet visibility is missing from the engine mapper."),
+    };
+
+    /// <summary>The <see cref="CellsSheetVisibilities"/> value a read reports for a sheet.</summary>
+    internal static string Visibility(Worksheet sheet) => sheet.VisibilityType switch
+    {
+        VisibilityType.Hidden => CellsSheetVisibilities.Hidden,
+        VisibilityType.VeryHidden => CellsSheetVisibilities.VeryHidden,
+        _ => CellsSheetVisibilities.Visible,
+    };
 }

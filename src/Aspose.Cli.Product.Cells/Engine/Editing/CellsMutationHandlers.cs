@@ -401,6 +401,15 @@ internal sealed class CellsMutationHandlers : ICellsOpHandler<ValueTuple>
         return default;
     }
 
+    /// <summary>How many matches each replace_text operation applied so far replaced.</summary>
+    internal Dictionary<ReplaceTextOp, long> Replaced { get; } = new(ReferenceEqualityComparer.Instance);
+
+    public ValueTuple Apply(ReplaceTextOp operation)
+    {
+        Replaced[operation] = TextReplaceOps.Replace(Sheet(operation), operation);
+        return default;
+    }
+
     public ValueTuple Apply(SetValuesOp operation)
     {
         CellOps.SetValues(Sheet(operation), operation);

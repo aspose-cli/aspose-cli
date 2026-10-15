@@ -50,6 +50,50 @@ internal sealed class CellsProtectionTracker
         }
     }
 
+    /// <summary>
+    /// What a set_formula that wrote only unlocked cells of a protected sheet changed there once
+    /// it ran: a formula whose result is an array spills into the cells below and beside it, and
+    /// a spill over a locked cell changes it as much as a write would.
+    /// </summary>
+    internal static ProtectedChange Spilled(Workbook workbook, CellsOp op)
+    {
+        if (op is not SetFormulaOp formula || ChangedSheet(workbook, op) is not { IsProtected: true } sheet)
+        {
+            return default;
+        }
+
+        RangeRef range = A1.ParseRange(formula.Range).Range;
+        for (int row = range.Start.Row; row <= range.End.Row; row++)
+        {
+            for (int column = range.Start.Column; column <= range.End.Column; column++)
+            {
+                if (sheet.Cells.CheckCell(row, column) is { IsDynamicArrayFormula: true } anchor
+                    && LocksAny(sheet, anchor.GetArrayRange()))
+                {
+                    return new ProtectedChange(sheet.Name, Structure: false, KeptPassword: false);
+                }
+            }
+        }
+
+        return default;
+    }
+
+    private static bool LocksAny(Worksheet sheet, CellArea area)
+    {
+        for (int row = area.StartRow; row <= area.EndRow; row++)
+        {
+            for (int column = area.StartColumn; column <= area.EndColumn; column++)
+            {
+                if (sheet.Cells.GetCellStyle(row, column).IsLocked)
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
     /// <summary>Records what a successful operation changed under protection.</summary>
     internal void Record(ProtectedChange observed)
     {

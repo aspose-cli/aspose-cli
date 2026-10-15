@@ -1,4 +1,5 @@
 using Aspose.Cli.Sdk.Extensibility;
+using Aspose.Cli.Sdk.Licensing;
 using Aspose.Cli.Sdk.Views;
 
 namespace Aspose.Cli.Product.Cells;
@@ -47,16 +48,22 @@ internal sealed class CellsViewAdapter : IProductViewAdapter<CellsSession>
         });
         CellsReviewLayout layout = CellsView.Layout(session, filePath, request.Password);
         CellsSheetInfo[] visible = info.Workbook.Sheets
-            .Where(static sheet => !sheet.Hidden)
+            .Where(static sheet => sheet.Visibility == CellsSheetVisibilities.Visible)
             .ToArray();
         var warnings = new List<Warning>(info.Warnings ?? []);
         warnings.AddRange(layout.Warnings ?? []);
 
+        // In evaluation mode the warning sheets an evaluation save added are the evaluation's
+        // marks, not the workbook's layout: their layout is not checked, and the coverage counts
+        // them. With a license a review checks every sheet.
+        bool evaluation = session.Outputs.License == LicenseState.Evaluation;
+        int excludedMarks = evaluation ? layout.Sheets.Count(static sheet => sheet.IsEvaluationWarning) : 0;
         List<ReviewFinding> findings = Findings(
             info,
             layout,
             visible,
-            rendered.Parts.Count);
+            rendered.Parts.Count,
+            checkMarks: !evaluation);
         long usedCells = info.Workbook.Sheets.Sum(static sheet =>
             checked((long)sheet.RowCount * sheet.ColumnCount));
         long populatedCells = layout.Sheets.Sum(static sheet => sheet.PopulatedCells);
@@ -82,6 +89,7 @@ internal sealed class CellsViewAdapter : IProductViewAdapter<CellsSession>
                 ReviewCoverageMetric.Of("charts", layout.Sheets.Sum(static sheet => sheet.Charts.Count), "charts"),
                 ReviewCoverageMetric.Of("sheetsWithPrintArea", layout.Sheets.Count(static sheet => sheet.PrintArea is not null), "sheets"),
                 ReviewCoverageMetric.Of("formulaErrors", info.Workbook.FormulaErrors?.Count ?? 0, "cells"),
+                .. evaluation ? [ReviewCoverageMetric.Of("excludedEvaluationMarks", excludedMarks, "sheets")] : Array.Empty<ReviewCoverageMetric>(),
             ],
             // Complete says whether every check ran; an error finding is a result, which the
             // review weighs after any --code filter.
@@ -93,25 +101,28 @@ internal sealed class CellsViewAdapter : IProductViewAdapter<CellsSession>
         CellsInspectResult info,
         CellsReviewLayout layout,
         IReadOnlyList<CellsSheetInfo> visible,
-        int renderedCount)
+        int renderedCount,
+        bool checkMarks)
     {
         var findings = new List<ReviewFinding>();
         IReadOnlyDictionary<string, CellsReviewSheetLayout> layoutBySheet =
             layout.Sheets.ToDictionary(static sheet => sheet.Name, StringComparer.Ordinal);
-        foreach (CellsSheetInfo sheet in info.Workbook.Sheets.Where(static sheet => sheet.Hidden))
+        foreach (CellsSheetInfo sheet in info.Workbook.Sheets.Where(static sheet => sheet.Visibility != CellsSheetVisibilities.Visible))
         {
             findings.Add(SheetFinding(CellsReviewChecks.SheetHidden, sheet.Name,
                 $"Hidden worksheet '{sheet.Name}' is excluded from visual evidence."));
         }
         foreach (CellsSheetInfo sheet in visible.Where(sheet =>
                      sheet.UsedRange is null
-                     && !layoutBySheet[sheet.Name].HasVisualObjects))
+                     && !layoutBySheet[sheet.Name].HasVisualObjects
+                     && (checkMarks || !layoutBySheet[sheet.Name].IsEvaluationWarning)))
         {
             findings.Add(SheetFinding(CellsReviewChecks.SheetEmpty, sheet.Name,
                 $"Visible worksheet '{sheet.Name}' is empty; its PNG is a blank placeholder."));
         }
         foreach (CellsReviewSheetLayout sheet in layout.Sheets.Where(sheet =>
-                     visible.Any(visibleSheet =>
+                     (checkMarks || !sheet.IsEvaluationWarning)
+                     && visible.Any(visibleSheet =>
                          string.Equals(visibleSheet.Name, sheet.Name, StringComparison.Ordinal))))
         {
             AddLayoutFindings(findings, sheet);

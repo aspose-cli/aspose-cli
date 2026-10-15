@@ -23,10 +23,12 @@ internal static class ProtectOps
             sheet.Protect(ProtectionType.All, password, oldPassword: null);
         }
 
+        // The actions allowed are exactly the ones listed: protecting a protected sheet again
+        // replaces what it allowed, as a read reports it, rather than adding to it.
         Protection protection = sheet.Protection;
-        foreach (string action in op.Allow)
+        foreach ((string action, _, Action<Protection, bool> set) in Actions)
         {
-            Allow(protection, action);
+            set(protection, op.Allow.Contains(action, StringComparer.Ordinal));
         }
     }
 
@@ -78,22 +80,18 @@ internal static class ProtectOps
     /// Each protect_sheet action with the protection flag that allows it, in the order the
     /// vocabulary lists them: protect_sheet sets the flags, a read lists the actions set.
     /// </summary>
-    private static readonly (string Action, Func<Protection, bool> Get, Action<Protection> Set)[] Actions =
+    private static readonly (string Action, Func<Protection, bool> Get, Action<Protection, bool> Set)[] Actions =
     [
-        (CellsProtectActions.FormatCells, static p => p.AllowFormattingCell, static p => p.AllowFormattingCell = true),
-        (CellsProtectActions.InsertRows, static p => p.AllowInsertingRow, static p => p.AllowInsertingRow = true),
-        (CellsProtectActions.InsertColumns, static p => p.AllowInsertingColumn, static p => p.AllowInsertingColumn = true),
-        (CellsProtectActions.DeleteRows, static p => p.AllowDeletingRow, static p => p.AllowDeletingRow = true),
-        (CellsProtectActions.DeleteColumns, static p => p.AllowDeletingColumn, static p => p.AllowDeletingColumn = true),
-        (CellsProtectActions.Sort, static p => p.AllowSorting, static p => p.AllowSorting = true),
-        (CellsProtectActions.AutoFilter, static p => p.AllowFiltering, static p => p.AllowFiltering = true),
+        (CellsProtectActions.FormatCells, static p => p.AllowFormattingCell, static (p, allowed) => p.AllowFormattingCell = allowed),
+        (CellsProtectActions.InsertRows, static p => p.AllowInsertingRow, static (p, allowed) => p.AllowInsertingRow = allowed),
+        (CellsProtectActions.InsertColumns, static p => p.AllowInsertingColumn, static (p, allowed) => p.AllowInsertingColumn = allowed),
+        (CellsProtectActions.DeleteRows, static p => p.AllowDeletingRow, static (p, allowed) => p.AllowDeletingRow = allowed),
+        (CellsProtectActions.DeleteColumns, static p => p.AllowDeletingColumn, static (p, allowed) => p.AllowDeletingColumn = allowed),
+        (CellsProtectActions.Sort, static p => p.AllowSorting, static (p, allowed) => p.AllowSorting = allowed),
+        (CellsProtectActions.AutoFilter, static p => p.AllowFiltering, static (p, allowed) => p.AllowFiltering = allowed),
     ];
 
     /// <summary>The protect_sheet actions a protection allows, in the order the vocabulary lists them.</summary>
     internal static IReadOnlyList<string> Allowed(Protection protection) =>
         [.. Actions.Where(item => item.Get(protection)).Select(static item => item.Action)];
-
-    // The parser guarantees a known action.
-    private static void Allow(Protection protection, string action) =>
-        Actions.Single(item => item.Action == action).Set(protection);
 }

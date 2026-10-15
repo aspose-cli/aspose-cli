@@ -65,6 +65,12 @@ public sealed class CellsProtectionTests(CellsProtectionTests.ProtectedBook book
         // A locked cell, or a change other than contents, still goes through protection.
         _ = Unenforced(EditForm("locked.xlsx", """{"op":"set_values","sheet":"Data","range":"A2","values":[[1],[2]]}"""));
         _ = Unenforced(EditForm("formatted.xlsx", """{"op":"format_range","sheet":"Data","range":"A1","style":{"bold":true}}"""));
+        // A formula in an unlocked cell whose array result spills into locked cells changes them;
+        // one that spills only into unlocked cells does not go through protection.
+        _ = Unenforced(EditForm("spilled.xlsx", """{"op":"set_formula","sheet":"Data","range":"A1","formula":"=SEQUENCE(3)"}"""));
+        Assert.DoesNotContain(
+            Warnings(EditForm("spilled-unlocked.xlsx", """{"op":"set_formula","sheet":"Data","range":"A1","formula":"=SEQUENCE(2)"}""")),
+            static warning => Code(warning) == "PROTECTION_NOT_ENFORCED");
     }
 
     [Fact]

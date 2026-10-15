@@ -85,10 +85,23 @@ public sealed class CellsOpContractTests : IClassFixture<CellsFixture>
         Assert.DoesNotContain("separator", error.Message, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void AListOfManyCells_IsRefusedWithoutRepeatingIt()
+    {
+        string cells = string.Join(",", Enumerable.Range(1, 40).Select(static row => $"A{row * 2}"));
+
+        CliException error = Assert.Throws<CliException>(() => Parse($$"""{"ops":[{"op":"clear_range","range":"{{cells}}"}]}"""));
+
+        Assert.Equal(ErrorCodes.OpsInvalid, error.Code);
+        Assert.Contains("lists 40 ranges separated by commas, but takes one range: give one range at a time", error.Message, StringComparison.Ordinal);
+        Assert.DoesNotContain("A4,A6", error.Message, StringComparison.Ordinal);
+        Assert.DoesNotContain("operation", error.Message[error.Message.IndexOf("lists", StringComparison.Ordinal)..], StringComparison.Ordinal);
+    }
+
     [Theory]
     [InlineData("""{"op":"rename_sheet","sheet":"Data","name":"Archive"}""")]
     [InlineData("""{"op":"group_rows","first":2,"last":4,"collapsed":true}""")]
-    [InlineData("""{"op":"format_range","range":"A1","style":{"fontSize":10.5,"alignment":"center","indent":2}}""")]
+    [InlineData("""{"op":"format_range","range":"A1","style":{"fontSize":10.5,"alignment":"right","indent":2}}""")]
     [InlineData("""{"op":"add_conditional_format","range":"A1:A9","rule":{"kind":"duplicates"},"matchStyle":{"bold":true,"italic":true,"underline":true,"strikethrough":true,"color":"#C00000","fillColor":"#FFC7CE","numberFormat":"0.0"}}""")]
     [InlineData("""{"op":"set_print_area","range":"A1:C3","titleRows":"$1:$2","titleColumns":"A"}""")]
     [InlineData("""{"op":"clear_autofilter"}""")]

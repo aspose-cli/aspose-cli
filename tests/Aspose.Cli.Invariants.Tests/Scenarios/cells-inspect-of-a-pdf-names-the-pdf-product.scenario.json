@@ -1,0 +1,17 @@
+{
+  "name": "cells inspect of a PDF under its own .pdf extension, a format cells only writes, is FORMAT_MISMATCH naming the pdf product",
+  "files": {
+    "report.pdf": { "fixture": "cells.pdf" }
+  },
+  "steps": [
+    {
+      "args": ["cells", "inspect", "report.pdf"],
+      "expect": {
+        "exitCode": 6,
+        "error": "FORMAT_MISMATCH",
+        "json": [{ "path": "error.details.detected", "contains": "pdf" }, { "path": "error.hint", "contains": "aspose-cli pdf inspect" }],
+        "files": { "nothingWritten": true }
+      }
+    }
+  ]
+}

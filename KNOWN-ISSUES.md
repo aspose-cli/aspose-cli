@@ -113,6 +113,17 @@ fails, delete the issue's section, the code that names it and the test, then upd
   grand-total row reads `总计`, or summarize with `SUMIFS` formulas.
 - **Reproduction:** [CellsKnownIssueTests](tests/Aspose.Cli.Product.Cells.Tests/CellsKnownIssueTests.cs)
 
+### CELLS-VALIDATION-DELETE-END
+
+- **Defect:** `Cells.DeleteRows` and `Cells.DeleteColumns` leave a data validation area whose
+  last rows or columns they delete one line too long: deleting row 10 of `C2:C10` leaves
+  `C2:C10`, and rows 9-11 leave `C2:C9`, while a conditional format over the same cells becomes
+  `C2:C9` and `C2:C8`. Deleting lines in the middle of the area shrinks it correctly, and a
+  validation whose every area is deleted stays in the sheet with no area.
+- **CLI behavior:** `delete_rows` and `delete_columns` set each validation to the areas it
+  covers after the delete, as Excel does, and remove a validation left with no area.
+- **Reproduction:** [CellsKnownIssueTests](tests/Aspose.Cli.Product.Cells.Tests/CellsKnownIssueTests.cs)
+
 ## Aspose.PDF.Drawing 26.8.0
 
 ### PDF-HTML-EGRESS

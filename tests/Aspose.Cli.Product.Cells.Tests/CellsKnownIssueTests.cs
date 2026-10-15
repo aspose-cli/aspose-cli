@@ -279,6 +279,28 @@ public sealed class CellsKnownIssueTests
             $"the grand-total columns read [{string.Join(", ", labels)}]");
     }
 
+    [LicensedFact]
+    public void DeletingTheLastRowOfAValidationArea_LeavesTheAreaOneRowTooLong()
+    {
+        using var fixture = new CellsFixture();
+        using var workbook = new Workbook();
+        Worksheet sheet = workbook.Worksheets[0];
+        int index = sheet.Validations.Add(CellArea.CreateCellArea("C2", "C10"));
+        Validation validation = sheet.Validations[index];
+        validation.Type = ValidationType.WholeNumber;
+        validation.Operator = OperatorType.Between;
+        validation.Formula1 = "0";
+        validation.Formula2 = "10";
+
+        sheet.Cells.DeleteRows(9, 1, updateReference: true);
+
+        CellArea area = Assert.Single(sheet.Validations[0].Areas);
+        KnownIssue.Reproduces(
+            "CELLS-VALIDATION-DELETE-END",
+            area.EndRow == 9,
+            $"deleting row 10 of C2:C10 left the validation ending at row {area.EndRow + 1}");
+    }
+
     private sealed class ChineseTotals : GlobalizationSettings
     {
         public ChineseTotals() => PivotSettings = new ChinesePivotTotals();
