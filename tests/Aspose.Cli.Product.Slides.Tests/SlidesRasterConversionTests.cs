@@ -87,7 +87,7 @@ public sealed class SlidesRasterConversionTests(SlidesRasterConversionTests.Crea
 
         Assert.Equal(2, refused.ExitCode);
         JsonNode error = JsonNode.Parse(refused.StdErr)!["error"]!;
-        Assert.Equal("USAGE_ERROR", error["code"]!.GetValue<string>());
+        Assert.Equal("OPTION_INVALID", error["code"]!.GetValue<string>());
         Assert.Equal(
             $"Give --out the .png extension, as in png.png, or name a file inside the png folder, as in {Path.Combine("png", "page.png")}; "
                 + "an output of several parts is written beside that file as numbered files.",

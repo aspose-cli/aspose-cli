@@ -899,7 +899,7 @@ public sealed class PdfEngineTests
         CliResult refused = workspace.Run("pdf", command, "input.pdf", "--to", "png", "--out", "pages", "--output-format", "json");
 
         Assert.Equal(2, refused.ExitCode);
-        Assert.Contains("\"USAGE_ERROR\"", refused.StdErr, StringComparison.Ordinal);
+        Assert.Contains("\"OPTION_INVALID\"", refused.StdErr, StringComparison.Ordinal);
         Assert.Contains(".png", refused.StdErr, StringComparison.Ordinal);
         Assert.Equal(["input.pdf"], Directory.GetFileSystemEntries(workspace.Path).Select(Path.GetFileName));
     }

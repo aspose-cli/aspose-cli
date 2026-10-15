@@ -636,7 +636,7 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
         CliResult refused = workspace.Run("words", "render", "report.docx", "--to", "png", "--out", "pages", "--output-format", "json");
 
         Assert.Equal(2, refused.ExitCode);
-        Assert.Equal("USAGE_ERROR", System.Text.Json.Nodes.JsonNode.Parse(refused.StdErr)!["error"]!["code"]!.GetValue<string>());
+        Assert.Equal("OPTION_INVALID", System.Text.Json.Nodes.JsonNode.Parse(refused.StdErr)!["error"]!["code"]!.GetValue<string>());
         Assert.Contains(".png", refused.StdErr, StringComparison.Ordinal);
         Assert.False(Path.Exists(workspace.File("pages")));
     }

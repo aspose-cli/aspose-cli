@@ -70,7 +70,7 @@ public sealed class WordsOutputFormatTests
 
         Assert.Equal(2, refused.ExitCode);
         JsonNode error = JsonNode.Parse(refused.StdErr)!["error"]!;
-        Assert.Equal("USAGE_ERROR", error["code"]!.GetValue<string>());
+        Assert.Equal("OPTION_INVALID", error["code"]!.GetValue<string>());
         Assert.Equal(format, error["details"]!["format"]!.GetValue<string>());
         Assert.Equal(
             [".doc", ".dot", ".docx", ".docm", ".dotx", ".dotm", ".xml", ".rtf", ".odt", ".ott"],
@@ -99,7 +99,7 @@ public sealed class WordsOutputFormatTests
 
         Assert.Equal(2, refused.ExitCode);
         JsonNode error = JsonNode.Parse(refused.StdErr)!["error"]!;
-        Assert.Equal("USAGE_ERROR", error["code"]!.GetValue<string>());
+        Assert.Equal("OPTION_INVALID", error["code"]!.GetValue<string>());
         Assert.Equal("Name the output with --out and one of these extensions, then run 'aspose-cli words convert <that file> --to md' for md.", error["hint"]!.GetValue<string>());
         Assert.Equal(Notes, File.ReadAllText(workspace.File("notes.md")));
         CliResult copied = workspace.Run("words", "edit", "notes.md", "--ops", RefreshFields, "--out", "notes.docx", "--output-format", "json");

@@ -688,18 +688,22 @@ public sealed class CellsCliTests : IDisposable
     }
 
     [Fact]
-    public void Edit_ResolvesOperationFilesLikeEveryInputBeforeEditing()
+    public void Edit_FailsOnlyTheOperationWhoseFileIsMissing()
     {
         Assert.Equal(0, _workspace.Run("cells", "create", "images.xlsx", "--sheets", "Data").ExitCode);
 
         CliResult missing = _workspace.Run(
             "cells", "edit", "images.xlsx", "--out", "images.out.xlsx", "--best-effort", "--output-format", "json",
-            "--ops", """{"ops":[{"op":"insert_image","sheet":"Data","at":"B2","path":"missing.png"}]}""");
+            "--ops", """{"ops":[{"op":"insert_image","sheet":"Data","at":"B2","path":"missing.png"},{"op":"set_values","sheet":"Data","range":"A1","values":[[1]]}]}""");
 
-        JsonNode error = JsonNode.Parse(missing.StdErr)!["error"]!;
+        JsonArray applied = JsonNode.Parse(missing.StdOut)!["applied"]!.AsArray();
+        Assert.Equal("failed", applied[0]!["status"]!.GetValue<string>());
+        JsonNode error = applied[0]!["error"]!;
         Assert.Equal("FILE_NOT_FOUND", error["code"]!.GetValue<string>());
-        Assert.Contains("missing.png", error["message"]!.GetValue<string>(), StringComparison.OrdinalIgnoreCase);
-        Assert.False(File.Exists(_workspace.File("images.out.xlsx")));
+        Assert.Equal("op-0001", error["details"]!["id"]!.GetValue<string>());
+        Assert.EndsWith("missing.png", error["details"]!["path"]!.GetValue<string>(), StringComparison.OrdinalIgnoreCase);
+        Assert.Equal("ok", applied[1]!["status"]!.GetValue<string>());
+        Assert.True(File.Exists(_workspace.File("images.out.xlsx")));
     }
 
     [Fact]
