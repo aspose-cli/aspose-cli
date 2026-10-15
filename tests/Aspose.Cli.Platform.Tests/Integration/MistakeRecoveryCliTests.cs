@@ -120,7 +120,8 @@ public sealed class MistakeRecoveryCliTests : IDisposable
         Assert.Equal("OPTION_INVALID", error["code"]!.GetValue<string>());
         // A positional argument such as file is details.argument; an option is details.option.
         Assert.Equal(option, error["details"]![option.StartsWith('-') ? "option" : "argument"]!.GetValue<string>());
-        Assert.StartsWith($"{option} '", error["message"]!.GetValue<string>(), StringComparison.Ordinal);
+        // An option starts the message as written; a positional argument by its name, as in "The file".
+        Assert.StartsWith($"{(option.StartsWith('-') ? option : "The " + option)} '", error["message"]!.GetValue<string>(), StringComparison.Ordinal);
         Assert.Contains($"which aspose-cli {arguments[0]} {arguments[1]} does not write. {writes}", error["message"]!.GetValue<string>(), StringComparison.Ordinal);
         // The extension names a format another command writes, so it is no mistake to correct.
         Assert.NotNull(error["details"]!["format"]);

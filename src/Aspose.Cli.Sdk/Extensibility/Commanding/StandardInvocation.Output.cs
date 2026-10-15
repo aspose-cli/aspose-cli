@@ -366,9 +366,11 @@ public partial class StandardInvocation
             _ => $"has no extension, which names the format {command} writes",
         };
         string[] extensions = [.. writes.SelectMany(static format => format.Extensions).Distinct(StringComparer.OrdinalIgnoreCase)];
+        // An option is named as written; a positional argument by its name, as in "the file".
+        bool option = parameter.StartsWith('-');
         string fix = derived
             ? $"Name the output with {parameter} and one of these extensions"
-            : $"Give {parameter} one of these extensions";
+            : $"Give {(option ? parameter : "the " + parameter)} one of these extensions";
         string hint = producer switch
         {
             { } line when images && !derived => $"{fix}, or run '{line.Command}' for {line.Format}.",
@@ -378,7 +380,7 @@ public partial class StandardInvocation
         return CliErrors.OutputExtensionInvalid(
             parameter,
             output,
-            derived ? $"The input '{output}', whose name the output keeps without {parameter}," : $"{parameter} '{output}'",
+            derived ? $"The input '{output}', whose name the output keeps without {parameter}," : $"{(option ? parameter : "The " + parameter)} '{output}'",
             problem,
             extensions,
             mistyped: extension.Length > 1 && producer is null && !inputs,
