@@ -148,7 +148,7 @@ internal static class CellsView
             }
 
             window ??= CellsRender.PrintAreasLeftOut(sheet, render, input);
-            CellsRender.EnsureRenderable(budgets, render, dpi);
+            CellsRender.EnsureRenderable(budgets, render, dpi, sheet, printArea: null);
             float[] inches = render.GetPageSizeInch(0);
             artifacts.Write(file, stream => render.ToImage(0, stream));
             return (
