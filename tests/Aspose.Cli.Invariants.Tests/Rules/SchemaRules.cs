@@ -52,15 +52,10 @@ internal static partial class ContractRules
     private static readonly HashSet<string> AbbreviatedNames = new(StringComparer.Ordinal) { "hAlign", "vAlign" };
 
     /// <summary>
-    /// C-R20's fixed names: a font size is <c>fontSize</c>, a page size <c>pageSize</c> (a slide
-    /// size <c>slideSize</c>, as the slides option names it), a fill <c>fillColor</c>. A <c>size</c>
-    /// beside font fields is a font size; the page-size fields and the fill names are listed here.
+    /// C-R20's fixed names: a font size is <c>fontSize</c> and a fill <c>fillColor</c>. A
+    /// <c>size</c> beside font fields is a font size; the fill names are listed here.
     /// </summary>
     private static readonly HashSet<string> FontFieldNames = new(StringComparer.Ordinal) { "font", "latinFont", "eastAsianFont", "bold", "italic" };
-
-    private static readonly Dictionary<(string Schema, string Definition, string Field), string> PageSizeFields = new()
-    {
-    };
 
     private static readonly HashSet<string> FillNames = new(StringComparer.Ordinal) { "bg", "bgColor", "background", "backgroundColor", "fill", "fillColour" };
 
@@ -97,15 +92,6 @@ internal static partial class ContractRules
 
     /// <summary>C-R33: boolean names that say "contains" or a state without has&lt;Noun&gt; or an adjective.</summary>
     private static readonly Regex BannedBooleanName = new("^is[A-Z]|.(Present|Exists)$", RegexOptions.CultureInvariant);
-
-    /// <summary>
-    /// C-R33: one fact, one boolean name across products. Each entry maps a name a schema must not
-    /// use to the name the other products give the same fact.
-    /// </summary>
-    private static readonly Dictionary<string, string> BooleanSynonyms = new(StringComparer.Ordinal)
-    {
-        ["hasVba"] = "hasMacros",
-    };
 
     /// <summary>C-R33: names of timestamps, which are ISO-8601 strings with <c>format: date-time</c>.</summary>
     private static readonly Regex DateName = new("^(date|time|timestamp)$|[a-z](Date|Time|Utc|At|Timestamp)$", RegexOptions.CultureInvariant);
@@ -249,11 +235,6 @@ internal static partial class ContractRules
             {
                 yield return (NameAspect.FixedNames, $"{property.Path}: a fill is named fillColor");
             }
-            if (subject.Definition is { } owner && property.OwnerPath.Length == 0
-                && PageSizeFields.TryGetValue((subject.SchemaId, owner, name), out string? pageSize))
-            {
-                yield return (NameAspect.FixedNames, $"{property.Path}: a page size is named {pageSize}");
-            }
             if (name == "type" && IsVariant(subject.SchemaId, property.Schema))
             {
                 yield return (NameAspect.Variants, $"{property.Path}: a variant named type, not kind");
@@ -282,17 +263,6 @@ internal static partial class ContractRules
         {
             yield return (NameAspect.Ranges, "from and to: listed as a source and a destination but no longer declared; update the list");
         }
-        if (subject.Definition is { } definition)
-        {
-            JsonNode? declared = PublishedSchema.Definition(subject.SchemaId, definition)["properties"];
-            foreach ((string schema, string owner, string field) in PageSizeFields.Keys)
-            {
-                if (schema == subject.SchemaId && owner == definition && declared?[field] is null)
-                {
-                    yield return (NameAspect.FixedNames, $"{field}: listed as a page size but no longer declared; update the list");
-                }
-            }
-        }
         if (subject.SchemaId == CellsReadSchema && !compactCellSeen)
         {
             yield return (NameAspect.Spelling, "the compact-cell exemption (v, t, f) no longer matches; remove it");
@@ -315,7 +285,7 @@ internal static partial class ContractRules
         /// <summary>camelCase and no abbreviation.</summary>
         Spelling,
 
-        /// <summary>fontSize, pageSize and fillColor.</summary>
+        /// <summary>fontSize and fillColor.</summary>
         FixedNames,
 
         /// <summary>A variant is named kind, not type.</summary>
@@ -568,7 +538,6 @@ internal static partial class ContractRules
         foreach (string id in PublishedSchema.ResultIds(catalog))
         {
             var subject = new SchemaSubject(id, null);
-            yield return Check("C-R31", $"{id} names", () => FileObjects(subject, FileAspect.Names));
             yield return Check("C-R31", $"{id} fields", () => FileObjects(subject, FileAspect.Fields));
             yield return Check("C-R31", $"{id} outputs", () => FileObjects(subject, FileAspect.Outputs));
         }
@@ -585,9 +554,6 @@ internal static partial class ContractRules
     /// <summary>What one C-R31 case judges of a result's file objects, each a fix of its own.</summary>
     private enum FileAspect
     {
-        /// <summary>A read file named <c>source</c>.</summary>
-        Names,
-
         /// <summary>The fields of every input, compared side and output.</summary>
         Fields,
 
@@ -605,10 +571,7 @@ internal static partial class ContractRules
             {
                 "outputs" => aspect == FileAspect.Outputs ? Outputs(subject.SchemaId, property) : [],
                 _ when aspect == FileAspect.Outputs => [],
-                "source" when IsFileObject(subject.SchemaId, property.Schema) => aspect == FileAspect.Names
-                    ? [$"{property.Path}: the read file is named source, not input"]
-                    : FileObject(subject.SchemaId, property, producedFile: false),
-                _ when aspect == FileAspect.Names => [],
+                "source" when IsFileObject(subject.SchemaId, property.Schema) => FileObject(subject.SchemaId, property, producedFile: false),
                 "input" => FileObject(subject.SchemaId, property, producedFile: false),
                 "left" or "right" when compare && IsFileObject(subject.SchemaId, property.Schema) => FileObject(subject.SchemaId, property, producedFile: false),
                 "output" => FileObject(subject.SchemaId, property, producedFile: true),
@@ -876,8 +839,8 @@ internal static partial class ContractRules
     }
 
     /// <summary>
-    /// C-R33: no boolean is named <c>is*</c>, <c>*Present</c> or <c>*Exists</c>, or by a synonym of
-    /// another product's name for the same fact; a timestamp is a <c>date-time</c> string.
+    /// C-R33: no boolean is named <c>is*</c>, <c>*Present</c> or <c>*Exists</c>; a timestamp is a
+    /// <c>date-time</c> string.
     /// </summary>
     private static IEnumerable<string> ValueNames(SchemaSubject subject)
     {
@@ -887,10 +850,6 @@ internal static partial class ContractRules
             if (types.Contains("boolean") && BannedBooleanName.IsMatch(property.Name))
             {
                 yield return $"{property.Path}: a boolean says \"contains\" as has<Noun> and a state as an adjective";
-            }
-            if (types.Contains("boolean") && BooleanSynonyms.TryGetValue(property.Name, out string? canonical))
-            {
-                yield return $"{property.Path}: the other products name this fact {canonical}";
             }
             if (types.Contains("string") && DateName.IsMatch(property.Name) && property.Schema["format"]?.GetValue<string>() != "date-time")
             {

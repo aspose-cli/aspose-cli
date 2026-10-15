@@ -173,21 +173,14 @@ internal static partial class ContractRules
 
     // ----- C-R08: one concept, one option name --------------------------------------------------
 
-    /// <summary>Names no command may declare, each with the vocabulary name of its concept.</summary>
-    private static readonly (string Name, bool Prefix, string Instead)[] BannedNames =
+    /// <summary>
+    /// Name families no command may declare, each with the vocabulary name of its concept; a
+    /// single name that a past rename removed is not listed, since no command declares it.
+    /// </summary>
+    private static readonly (string Prefix, string Instead)[] BannedPrefixes =
     [
-        ("--output", false, "the output format is --output-format, one output file --out"),
-        ("--mode", false, "name what the value chooses: --content, --scope or --detail"),
-        ("--compare", false, "what a compare compares is --content"),
-        ("--preview", true, "a sample is --sample or --sample-rows"),
-        ("--all-", true, "a selection takes the value all, such as --pages all"),
-        ("--markdown", false, "content read from another file is --from-<format>"),
-        ("--text", false, "content read from another file is --from-<format>"),
-        ("--blank", false, "a create without --from-<format> or --template is blank"),
-        ("--size", false, "a page size is --page-size, a slide size --slide-size"),
-        ("--by-bookmarks", false, "a split strategy is --by"),
-        ("--open", false, "a boolean option has a positive name for its default (C-R09)"),
-        ("--name-template", false, "output names follow C-R12"),
+        ("--preview", "a sample is --sample or --sample-rows"),
+        ("--all-", "a selection takes the value all, such as --pages all"),
     ];
 
     /// <summary>
@@ -204,15 +197,13 @@ internal static partial class ContractRules
                     ? [$"aspose-cli --output-format: the output format has no short name, not {CommandTree.List(format.Aliases)}."]
                     : []),
         ("output file", static command => command.Options
-            .Where(static option => option.Name.StartsWith("--out", StringComparison.Ordinal) && option.Name is not ("--out" or "--out-dir" or "--output-format")
-                && !IsBanned(option.Name))
+            .Where(static option => option.Name.StartsWith("--out", StringComparison.Ordinal) && option.Name is not ("--out" or "--out-dir" or "--output-format"))
             .Select(option => $"{command} {option.Name}: one output file is --out (-o), an output directory --out-dir.")),
         ("target format", static command => command.ProductVerb is "convert" or "render" && !command.Has("--to")
             ? [$"{command}: the target format is --to."]
             : []),
         ("content from a file", static command => command.ProductVerb != "create" ? [] : command.Options
-            .Where(static option => option.InputKind == "file" && option.Name != "--template" && !option.Name.StartsWith("--from-", StringComparison.Ordinal)
-                && !IsBanned(option.Name))
+            .Where(static option => option.InputKind == "file" && option.Name != "--template" && !option.Name.StartsWith("--from-", StringComparison.Ordinal))
             .Select(option => $"{command} {option.Name}: content read from another file is --from-<format>, a template --template.")),
         ("inspect sections", static command => command.ProductVerb == "inspect" && !command.Has("--detail")
             ? [$"{command}: the sections an inspect adds are --detail."]
@@ -222,18 +213,14 @@ internal static partial class ContractRules
             : []),
     ];
 
-    /// <summary>Whether a name is banned; a concept does not report a banned name twice.</summary>
-    private static bool IsBanned(string name) =>
-        BannedNames.Any(banned => banned.Prefix ? name.StartsWith(banned.Name, StringComparison.Ordinal) : name == banned.Name);
-
     private static IEnumerable<InvariantCase> R08(CliCatalog catalog)
     {
         foreach (TreeCommand command in CommandTree.Of(catalog).Where(static command => command.Options.Count > 0))
         {
             yield return Check("C-R08", command.ToString(), () =>
             [
-                .. command.Options.SelectMany(option => BannedNames
-                    .Where(banned => banned.Prefix ? option.Name.StartsWith(banned.Name, StringComparison.Ordinal) : option.Name == banned.Name)
+                .. command.Options.SelectMany(option => BannedPrefixes
+                    .Where(banned => option.Name.StartsWith(banned.Prefix, StringComparison.Ordinal))
                     .Select(banned => $"{command} {option.Name}: a banned name; {banned.Instead}.")),
                 .. Concepts.SelectMany(concept => concept.Violations(command)),
             ]);
