@@ -8,7 +8,7 @@ internal static class ReadCommand
 {
     public static CommandDefinition<WordsReadRequest, WordsReadResult> Create()
     {
-        var blocks = new Option<string?>("--blocks") { Description = "1-based block range, e.g. 1-20,25." }.WithInput(InputKind.None);
+        var blocks = new Option<string?>("--blocks") { Description = "Blocks to process: 1-based numbers and ranges such as 1-3,7,9-, or all. Default: every block." }.WithInput(InputKind.None);
         var section = new Option<int?>("--section") { Description = "Read one 1-based section; with --blocks, only its blocks in that range." };
         var content = new Option<string>("--content")
         {

@@ -22,7 +22,8 @@ internal static class RenderCommand
             new CommandTraits
             {
                 Input = PdfInputs.Document,
-                Output = OutputTarget.File("Output path; several pages write <stem>.<page>.<ext> beside it."),
+                Output = OutputTarget.File("Output path. Default: the input path with the image extension. "
+                    + "Several pages write <stem>.<page>.<ext> beside it."),
                 UsesFonts = true,
                 Target = TargetFormat.Render(PdfFormats.Definitions),
             },
