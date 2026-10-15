@@ -23,6 +23,17 @@ public sealed class WordsCliTests : IDisposable
         Assert.False(File.Exists(_workspace.File("contract.html")));
     }
 
+    [Fact]
+    public void Merge_IsRefusedWithEditAsTheSuggestion()
+    {
+        CliResult refused = _workspace.Run("words", "merge", "a.docx", "b.docx", "--output-format", "json");
+
+        Assert.Equal(2, refused.ExitCode);
+        JsonNode error = JsonNode.Parse(refused.StdErr)!["error"]!;
+        Assert.Equal("USAGE_ERROR", error["code"]!.GetValue<string>());
+        Assert.Equal("words edit", error["details"]!["suggestions"]![0]!.GetValue<string>());
+    }
+
     [Category(TestCategory.Slow)]
     [Fact]
     public void CreateEditAndQuery_RoundTripsThroughTheBuiltCli()
