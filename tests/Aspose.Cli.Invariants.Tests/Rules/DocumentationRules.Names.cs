@@ -62,10 +62,6 @@ internal static partial class ContractRules
         ["words"] = "words of text",
     };
 
-    /// <summary>The product verbs of C-R02, which start a command path after any product id.</summary>
-    private static readonly string[] ContractVerbs =
-        ["inspect", "read", "search", "create", "edit", "convert", "render", "compare", "extract", "split", "merge", "sign", "validate"];
-
     /// <summary>Text that reads like a command, after a noun product id or as a whole C# text, but is prose, with where.</summary>
     private static readonly Dictionary<string, string> ProsePhrases = new(StringComparer.Ordinal)
     {
@@ -415,7 +411,7 @@ internal static partial class ContractRules
             string roots = string.Join('|', catalog.Command(string.Empty).Subcommands.Select(Regex.Escape));
             _products = [.. catalog.Products.Select(static product => product.Id)];
             _schemas = [.. PublishedSchema.Ids(catalog)];
-            _commandWords = [.. ContractVerbs, .. catalog.Commands.SelectMany(static command => command.Tokens)];
+            _commandWords = [.. CommandTree.ProductVerbs, .. catalog.Commands.SelectMany(static command => command.Tokens)];
             string products = string.Join('|', _products.Select(Regex.Escape));
             _bare = new Regex($@"(?<![\w./\\-])(?<product>{products}) (?<verb>[a-z]+)(?: (?<next>[a-z]+))?\b", RegexOptions.CultureInvariant);
             // Inside one kind of quote, the other kinds may quote a value: 'cells render --sheet "Sales"'.
