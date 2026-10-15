@@ -231,6 +231,37 @@ public sealed class WordsSnapshotOutcomeTests
         Assert.Equal("Tester", properties["author"]);
     }
 
+    /// <summary>
+    /// Refreshing a table of contents replaces its paragraphs: a removed paragraph and the new one
+    /// in its place share a block number, so the targets list that number once while
+    /// itemsAffected counts both, as the Words Skill says.
+    /// </summary>
+    [Fact]
+    public void RefreshFields_OfATableOfContents_ListsASharedNumberOnceAndCountsBoth()
+    {
+        using var fixture = new WordsFixture();
+        var source = new Document();
+        var builder = new DocumentBuilder(source);
+        builder.ParagraphFormat.StyleIdentifier = StyleIdentifier.Heading1;
+        builder.Writeln("First");
+        builder.ParagraphFormat.StyleIdentifier = StyleIdentifier.Normal;
+        builder.Writeln("Text");
+        builder.ParagraphFormat.StyleIdentifier = StyleIdentifier.Heading1;
+        builder.Writeln("Second");
+        builder.ParagraphFormat.StyleIdentifier = StyleIdentifier.Normal;
+        builder.Write("More");
+        string input = fixture.Temp.File("headings.docx");
+        source.Save(input, SaveFormat.Docx);
+        WordsEditResult inserted = Edit(fixture, input, new InsertTocOp { At = new WordsTarget { Block = 1 }, Position = "before" });
+        string withToc = fixture.Temp.File("with-toc.docx");
+        File.Copy(inserted.Output!.Path, withToc);
+
+        BoundedOperationOutcome outcome = Assert.Single(Edit(fixture, withToc, new RefreshFieldsOp()).Applied);
+
+        Assert.Equal(outcome.Targets.Count, outcome.Targets.Distinct(StringComparer.Ordinal).Count());
+        Assert.True(outcome.ItemsAffected > outcome.Targets.Count, $"{outcome.ItemsAffected} items, targets {string.Join(", ", outcome.Targets)}");
+    }
+
     private static WordsEditResult Edit(WordsFixture fixture, string input, params WordsOp[] ops) =>
         Edit(fixture, input, bestEffort: false, ops);
 
