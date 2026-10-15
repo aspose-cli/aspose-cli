@@ -5,24 +5,22 @@ supported platform. `eng/products.json` is the only product roster and `eng/dist
 the fixed distribution identity; the generated projections and the solution come from
 `scripts/sync.ps1` and are never hand-edited. How to build and test is in
 [CONTRIBUTING.md](CONTRIBUTING.md); the security boundary is in [SECURITY.md](SECURITY.md).
+This guide holds only what the code and its checks cannot tell you; where a check owns a rule,
+the check is its authority.
 
 ## Boundaries
 
-- Launcher -> Host -> SDK; launcher -> active Products; Products -> SDK. Products never
-  reference another Product.
-- SDK types from a document engine stay inside its matching Product Engine adapter, in
-  signatures and method bodies alike; analyzers and architecture tests enforce this.
-- Host carries no product-specific branch. Product ids come from the catalog, and
-  distribution metadata identifies this executable.
-- Each Product owns its Contracts, Engine (a session and the static handlers its commands run),
-  Commands (options, binding and table output per command), view adapter, Presenter, Skills
-  and module definition, whose command menu pairs each command with its handler; its
-  definitions are pure and deterministic. Its result and operation schemas are generated from its
-  records and their documentation comments; nothing hand-writes a schema.
-  Skill names begin with `aspose-cli-`, their executable examples must match this build's
-  capabilities, and package-relative documentation links must resolve. What every product
-  shares lives once, in the Host's `aspose-cli-platform` Skill; a product Skill holds only
-  product knowledge and points to the generated schema instead of restating it.
+- Launcher -> Host -> SDK; launcher -> active Products; Products -> SDK, never another Product.
+  SDK types of a document engine stay inside its Product's Engine adapter. Enforced by
+  `CommercialDependencyRulesTests`, `RepositoryProjectGraphTests`, `DependencyRulesTests`,
+  `EngineSdkIsolationTests` and analyzers `APCLI006`, `APCLI009` and `APCLI010`.
+- Host carries no product-specific branch: product ids come from the catalog, and distribution
+  metadata identifies this executable (`DependencyRulesTests`, `HostCatalogIsolationTests`).
+- A Product's module definitions are pure and deterministic (`APCLI007`). Its schemas are
+  generated from its records and their documentation comments; nothing hand-writes a schema.
+- What every product shares lives once, in the Host's `aspose-cli-platform` Skill; a product
+  Skill holds only product knowledge and points to the generated schema instead of restating it
+  (`PlatformSkillPointerTests`).
 - Source, project references, build imports, tests and publishing tools stay inside this
   project. Never reference a parent workspace or another CLI project.
 
@@ -37,12 +35,10 @@ the fixed distribution identity; the generated projections and the solution come
   loading, reflection scanning or dependency-injection containers. Commands are written by hand:
   no command source generator, runtime reflection binding, reflection-based JSON, or generic
   session type in the SDK.
-- A command lives in three places, the Contracts request and result, the Commands options,
-  binding and table, and the Engine handler, paired in one line of the product menu. The command
-  tree built from the menus is the registry: capabilities, help, schemas and documentation checks
-  are projections of it, so keep no separate registration data. A product session holds only
-  the write pipeline, the resource budgets and the loader; a product-specific concern that wraps
-  every handler is a `.Guard` on the module.
+- The command tree built from the product menus is the registry: capabilities, help, schemas and
+  documentation checks are projections of it, so keep no separate registration data. A product
+  session holds only the write pipeline, the resource budgets and the loader; a product-specific
+  concern that wraps every handler is a `.Guard` on the module.
 - Do not adopt string property bags with regex dispatch, parallel dispatch paths, in-memory
   sessions with deferred writes, partially successful batches, ambiguous exit codes, raw XML or
   XPath write layers, whole-document export as a replayable batch, self-update or
@@ -59,105 +55,72 @@ the fixed distribution identity; the generated projections and the solution come
 
 | # | Decision | Owner | Enforced by |
 |---|---|---|---|
-| D1 | Output: path, written format, overwrite, encryption, part names, staging, the file objects a result reports | The SDK resolves a `ResolvedOutput` for the product; the format is resolved once: the format `--to` names, else the one among the command's writable formats that the `--out` extension declares, else the edited input's format, the `--to` default or the command's only format. SDK `FileObjects` alone builds the `input` and `output` objects: absolute path, size and fingerprint from the file or its publication. The SDK write pipeline alone warns `ENCRYPTION_REMOVED`, comparing the encryption of the documents a product's loader opened with that of the copies it published; a declared image format (`FormatDescriptor.Image`, every render format) is never a copy | `DecisionOwnershipTests` D1: no raw output path string in requests, no format from an extension, no product-built `FORMAT_UNSUPPORTED`, resolver, protectable-format list or file object, and no `ENCRYPTION_REMOVED` outside the write pipeline |
-| D2 | Format capabilities | Each product declares its formats once in its Contracts `*Formats.Definitions`, passed to `.Formats(...)` on the module; its `*EngineFormats` maps every declared id to the engine | `CellsEngineFormatTests`, `PdfEngineFormatTests`, `SlidesEngineFormatsTests`, `WordsEngineFormatsTests`: every declared format has an engine mapping; `DecisionOwnershipTests` D2 |
-| D3 | Mistake suggestions | SDK `Mistake` alone writes `details.suggestions[]` and the "did you mean" text | `DecisionOwnershipTests` D3; invariants |
-| D4 | Error construction | SDK error factories alone build shared codes | `DecisionOwnershipTests` D4; `FreeTextErrorFactoryTests` |
-| D5 | Secrets | SDK `Secret`: redacted when printed, revealed only in an engine adapter | `DecisionOwnershipTests` D5: products read no environment variable; passwords outside the engine are `Secret`; `HostSecretTests`: the Host holds no password as a string and no Host record holds a token as a string; its local-service frames and files carry both as a redacted `WireSecret` |
-| D6 | Evaluation detection and disclosure | The SDK write pipeline resolves the license once and derives disclosure by comparing input and output marks; a product supplies only its evaluation-mark recognizer and, for an extraction, the kind of content it writes: an extraction that copies embedded files byte for byte (`ExtractionContent.EmbeddedFiles`) writes nothing the engine produced and is not disclosed | `EvaluationOwnershipTests`, which lists the extractions that declare embedded files; the evaluation invariant |
-| D7 | Truthful results: affected counts, targets, pages, no match | The SDK runner applies a batch through the product's `IOperationModel`: it snapshots the objects each operation can change before and after it and derives `itemsAffected`, `targets`, the pages touched and `OP_NO_EFFECT` for zero; with `--verify` it records each applied operation through the product's `IEditVerifier` and builds the verification core from the product's read-back (`AppliedBatch.Verified`). Every product applies its batches this way and supplies only snapshots: `AppliedOperation` has an internal constructor, so only the SDK constructs it | `OperationSnapshotTests`, `BoundedOperationModelTests`; invariant C-R30: `itemsAffected` is 0 exactly when the result warns `OP_NO_EFFECT`, and above 0 only when the output changed |
+| D1 | Output: path, format, overwrite, encryption, part names, staging, reported file objects | The SDK resolves a `ResolvedOutput`; SDK `FileObjects` builds the `input` and `output` objects; only the SDK write pipeline warns `ENCRYPTION_REMOVED` | `DecisionOwnershipTests` D1 |
+| D2 | Format capabilities | Each product's Contracts `*Formats.Definitions`, mapped to the engine by its `*EngineFormats` | `CellsEngineFormatTests`, `PdfEngineFormatTests`, `SlidesEngineFormatsTests`, `WordsEngineFormatsTests`; `DecisionOwnershipTests` D2 |
+| D3 | Mistake suggestions | SDK `Mistake` | `DecisionOwnershipTests` D3; invariants |
+| D4 | Error construction | SDK error factories | `DecisionOwnershipTests` D4; `FreeTextErrorFactoryTests` |
+| D5 | Secrets | SDK `Secret`, revealed only in an engine adapter; the Host's frames and files carry `WireSecret` | `DecisionOwnershipTests` D5; `HostSecretTests` |
+| D6 | Evaluation detection and disclosure | The SDK write pipeline; a product supplies only its evaluation-mark recognizer and, for an extraction, its `ExtractionContent` | `EvaluationOwnershipTests`; the evaluation invariant |
+| D7 | Truthful results: affected counts, targets, pages, no match | The SDK runner, from the snapshots of the product's `IOperationModel` and, with `--verify`, its `IEditVerifier`; only the SDK constructs `AppliedOperation` | `OperationSnapshotTests`, `BoundedOperationModelTests`; invariant C-R30 |
 | D8 | Input loading: recognition, passwords, corruption | The SDK load result and error translation; a product supplies the engine call and an exception classifier | `InputLoadingOwnershipTests` |
-| D9 | Read and write vocabulary | Each operation field declares whether it is state and where a read result reports it (`[ReadBack]`, `[NotReadBack]`, `[ReadBackByPosition]`, `[NotState]`, or the vocabulary's `Addresses`); the ops schema publishes it as the field's `x-readBack`. Planned: one object model per product, where the fields an operation writes are a subset of the read result with the same names and meanings | The operation generator (`APCLI012`) refuses an unclassified field; invariant C-R21 checks each declared read path's name and value domain and reads back what each sample wrote |
-| D10 | Human-readable output | SDK `ResultText`: sections, produced files, touched parts and the verification; a missing value is `-` | `ResultTextTests`, the product renderer golden tests, `TableRendererCoverageTests`, `ProductRendererCoverageTests` |
-| D11 | Structure | Three places per command paired on the menu; acyclic SDK layers; one-way product layers | `SdkLayeringTests` (SDK); analyzer `APCLI009` (product layers); `ContractFileLayoutTests` (one request and one result per command, each in a file named after it; a type several commands use in its own file; contract types named `<Product>…`) |
+| D9 | Read and write vocabulary | Each operation field's read-back declaration, published as `x-readBack`. Planned: one object model per product, where the fields an operation writes are a subset of the read result with the same names and meanings | `APCLI012`; invariants C-R21, C-R39 |
+| D10 | Human-readable output | SDK `ResultText` | `ResultTextTests`, the product renderer golden tests, `TableRendererCoverageTests`, `ProductRendererCoverageTests` |
+| D11 | Structure | Three places per command (Contracts, Commands, Engine handler) paired on the product menu; acyclic SDK layers; one-way product layers | `SdkLayeringTests`, `APCLI009`, `ContractFileLayoutTests`, `ProductMenuCompletenessTests` |
 
 ## Gates
 
 They judge a change without a reviewer reading it. Fix the product or the code to pass them; never
 weaken a check or remove a supported operation to make a test pass.
 
-- **Scenarios and invariants.** `tests/Aspose.Cli.TestKit/Scenarios` runs declarative
-  `*.scenario.json` files (format in its README); add a reproduction or example to
-  `tests/Aspose.Cli.Invariants.Tests/Scenarios`. The `*InvariantTests` generate cases
-  from `capabilities` and each ops schema and check what every command keeps: no internal error,
-  one valid error envelope, suggestions for mistakes, refused unwritable outputs, read-only
-  commands and dry runs that write nothing, outputs that reopen, hidden secrets, and evaluation
-  writes that warn `EVALUATION_MODE`.
+- **Scenarios and invariants.** Add a reproduction or example as a `*.scenario.json` in
+  `tests/Aspose.Cli.Invariants.Tests/Scenarios` (format in
+  `tests/Aspose.Cli.TestKit/Scenarios/README.md`). The `*InvariantTests` generate their cases from
+  `capabilities` and each ops schema.
 - **Known violations.** `tests/Aspose.Cli.Invariants.Tests/known-violations.json` lists today's
-  product defects by `cause`, per license mode (`modes`). A case passes only when its violations
-  and their text match its entries, so a new, changed or fixed violation fails; delete an entry
-  when its defect is fixed. Adding an entry or widening `modes` needs the owner's `quality-exception` label.
-  `generated-cases.txt` beside it lists every generated case id; deleting an id from it, so that a
-  case stops running, needs the same label.
+  product defects, and `generated-cases.txt` beside it every generated case id
+  (`KnownViolationsTests`, `GeneratedCaseListTests`). Delete an entry when its defect is fixed.
+  Adding an entry, widening its `modes`, or deleting a case id needs the owner's
+  `quality-exception` label.
 - **Analyzers.** Production code builds with the analyzers in the `[src/**.cs]` section of
-  `.editorconfig` as errors; fix a violation rather than suppressing it. `src` projects write a
-  documentation file, so documentation comments must be well formed.
-- **Skill operations.** Every operation a product Skill shows must parse and match the product's
-  ops schema, and every JSON document a Skill or the README shows matches the schema the CLI
-  serves.
+  `.editorconfig` as errors; fix a violation rather than suppressing it.
 
 ## Contracts
 
 - **Operations** are records with `[Operation("name")]` under the product's
-  `[OperationVocabulary]` base, listed in the product's ops JSON context, with the handler method
-  `I{Base}Handler` requires. The record is the contract: `required` members, initializers for
-  defaults, `[InputPath]`, `[SecretEnv]`, constraint attributes and record rules
-  (`[ExactlyOneOf]`, `[AtLeastOneOf]`, `[DependentRequired]`, `[PresentWhen]`, `[MinProperties]`),
-  and a `Validated()` override, stated in its summary, for the rest. Summaries are the schema's
-  descriptions. Every field states its read-back (D9): `[ReadBack("<schema id>#<definition>/<property>")]`
-  for state a read reports, `[NotReadBack]` for state none reports yet, `[ReadBackByPosition]`,
-  or `[NotState]` for a selector, a source or a parameter, including the drawing parameters of an
-  operation that draws content into the page and leaves no object the file can be read back by;
-  the vocabulary's `Addresses` names the address fields, and a record field may classify the
-  fields of its record instead.
-  `APCLI012` rejects an incomplete contract.
-- **Results** are records passing their relative schema id and version to `ResultEnvelope`,
-  `EngineResultEnvelope` (adds `license`) or `WindowedResultEnvelope` (adds `window`), listed in
-  the assembly's JSON context; a shared block publishes itself with `[SchemaId]`. Ids are relative
-  to the owner: `v2/common/` for the SDK and Host, `v2/<product>/` for a product. `required`,
-  nullability, `[OneOfBy]` and `[OpenEnum]` state the shape. `APCLI013` rejects
-  a record it cannot describe. An edit's `verification` derives from the SDK `EditVerification`
-  core (`ok`, `issues`, `checkedOps`) and declares only the product's evidence; a
-  `VerificationIssue` is built only from a warning or a verification diagnostic.
+  `[OperationVocabulary]` base. The record is the contract: attributes state its constraints, and
+  a `Validated()` override, stated in its summary, the rest. Summaries are the schema's
+  descriptions. Every field declares its read-back (D9); a selector, a source or a parameter is
+  `[NotState]`, and so are the drawing parameters of an operation that leaves no object the file
+  can be read back by. `APCLI012` rejects an incomplete contract.
+- **Results** pass their relative schema id and version to a result envelope; ids are
+  `v2/common/` for the SDK and Host, `v2/<product>/` for a product. `APCLI013` rejects a record it
+  cannot describe. An edit's `verification` derives from the SDK `EditVerification` core and
+  declares only the product's evidence.
 - **JSON input** defaults are tested through the production source-generated serializer,
   including omitted fields and explicit `false`, `0` and `null`. It
   [does not preserve init-only initializers](https://github.com/dotnet/runtime/issues/84484), so an
   input record outside an operation vocabulary takes scalar defaults as optional constructor
   parameters.
-- **Error codes** shared by products or the Host are declared once in the SDK's `ErrorCodes` and
-  built only by SDK error factories; a product declares its own in its `*Diagnostics` class. A
-  missing target uses an `ErrorCode.NotFound` code built with `CliErrors.NotFound` (named
-  targets) or `CliErrors.NotFoundAt` (numbered targets); a name several targets share is refused.
-- **Command parameters** declare their input role with `WithInput` and their value sources and
-  secret handling on the symbol; the Host reads only these declarations. `GlobalOptionNames` and
-  `StandardOptionNames` are the reserved names (`APCLI008`). Products define commands with
-  `CommandDefinition` or `EditDefinition`, paired with their handlers on the product menu
-  (`APCLI011` forbids `StandardOptions`). An SDK option type (`PartRangeOption`,
+- **Error codes** shared by products or the Host are declared once in the SDK's `ErrorCodes`; a
+  product declares its own in its `*Diagnostics` class (`ProductDiagnosticDeclarationTests`). A
+  missing target is built with `CliErrors.NotFound` or `CliErrors.NotFoundAt`; a name several
+  targets share is refused.
+- **Command parameters** declare their input role, value sources and secret handling on the
+  symbol; the Host reads only these declarations. Reserved names are checked by `APCLI008`, and
+  `APCLI011` keeps products off `StandardOptions`. An SDK option type (`PartRangeOption`,
   `SampleOption`, `DetailOption`, the render options) exists only for options with the same name
-  and meaning across commands; any other option is a plain `new Option<T>`, and `SameNameOptions`
-  checks that same-named options agree. A description does not restate a default the parser
-  applies, nor the values its label lists; a bounded integer option declares its bounds with
-  `InRange`, which states them as `Range: MIN-MAX.`, and is read with `GetInRange`.
-- **Targets** in an operation outcome are `<unit>/<address>` addresses, capped at
-  `BoundedOperationOutcome.MaximumTargets`. An operation that lists more reports a degenerate
-  form instead: one range per unit that covers them all, such as `page/1-150` (`<unit>/all` for
-  named objects). The SDK derives targets and counts from the snapshots of the product's
-  `IOperationModel` and is the only constructor of `AppliedOperation`; a product counts nothing. Objects a
-  product snapshots with `OperationSnapshot.AddObjects` are compared by the instance the engine
-  keeps them as (an instance the engine replaced with one of the same state did not change) and
-  named by their number in the output of the whole batch, or in its input when the batch removed
-  them (`IOperationModel.Positions`). Targets are grouped by unit in the order each unit first
-  appears and numbered addresses ascend within a unit; named objects such as `style/` and
-  `property/` keep the snapshot's order. A removed object and a changed one can share a number,
-  one in the input and one in the output, and then the targets list one address fewer than
-  `itemsAffected` counts. A name in an address escapes only what would break the address: `/`,
-  `%`, control characters and leading and trailing white space, each as the `%XX` of its UTF-8
-  bytes; every other character, such as Chinese text or a space inside the name, stays as it is
-  (`section/业绩回顾 Results`, `section/%20Q3 %2F plan 100%25%20`), and an empty name is `%00`,
-  so the address always names something. Every product escapes this way through the SDK's
-  `TargetName.Escape`, PDF attachment, field and property addresses included. In a Cells address
-  that puts a sheet before a `!`, such as `cell/Sheet!A1`, the sheet name's own `!` is `%21` too,
-  so the first `!` ends the sheet.
+  and meaning across commands; any other option is a plain `new Option<T>`. Same-named options
+  agree (`SameNameOptions`, C-R07), a bounded integer option uses `InRange` and `GetInRange`
+  (`OptionRangeHelpTests`), and a description does not restate a default the parser applies.
+- **Targets** in an operation outcome are `<unit>/<address>` addresses, at most
+  `BoundedOperationOutcome.MaximumTargets`; beyond that an outcome reports one range per unit that
+  covers them all, such as `page/1-150` (`<unit>/all` for named objects). The SDK derives targets
+  and counts from the product's snapshots; a product counts nothing. An object is numbered by its
+  position in the output of the whole batch, or in its input when the batch removed it, so a
+  removed object and a changed one can share an address and the targets list one fewer than
+  `itemsAffected`. Names in addresses are escaped only by `TargetName.Escape`
+  (`TargetNameOwnershipTests`): just `/`, `%`, control characters and leading and trailing white
+  space, an empty name is `%00`, and in a Cells `cell/Sheet!A1` the sheet's own `!` is `%21`.
 
 ## Contract conventions
 
@@ -169,41 +132,33 @@ parts are checked by `tests/Aspose.Cli.Invariants.Tests/Rules`, which is their a
 today's violations are entries in `known-violations.json` until a contract change clears them.
 This section holds only what a test cannot judge.
 
-- **Verbs mean one thing (C-R02).** A product verb does the same kind of work in every product:
-  `inspect` reports structure and the sections `--detail` selects, `read` a bounded content window,
-  and so on. A missing verb is a gap to fill, never a reason to give another verb a second meaning.
+- **Verbs mean one thing (C-R02).** A product verb does the same kind of work in every product.
+  A missing verb is a gap to fill, never a reason to give another verb a second meaning.
 - **Plural nouns (C-R19).** An operation whose noun is plural (`delete_rows`) acts on a set;
   a singular noun acts on one object.
 - **Units in names (C-R20).** A field or option measured in anything but points names its unit
   (`widthChars`, `scalePercent`, `durationMs`, `dpi`).
-- **One name, one shape (C-R20).** A field name has one type within a product's ops and across
-  products, except a field that takes the shape of the object it names: `at`, `to`, `first`,
-  `last` and `values` (a sheet position or a cell anchor, a row number or a column letter, a
-  section number or a block address, a table's grid or a chart series' array). Such an exception,
-  within a product or across products, lists exactly the definitions that declare the field and
-  fails once the schemas no longer match it (`ShapedByTheirObject` and its cross-product lists in
-  `SchemaRules`), so giving one of these names a new shape is a decision, not a default.
+- **One name, one shape (C-R20).** A field name has one type within and across products, except
+  a field that takes the shape of the object it names (`ShapedByTheirObject` in `SchemaRules`);
+  adding a name to those exceptions is a decision, not a default.
 - **One fact, one code (C-R28).** Two codes never name the same fact, and one code never covers
-  two. `ANCHOR_NOT_FOUND` (a heading or text that a search did not find) and `BLOCK_NOT_FOUND` (a
-  block number beyond the document) are different facts and stay separate.
-- **Skills claim only what is tested (C-R38).** What a Skill says about a result's meaning, such
-  as when `itemsAffected` is zero, has a behavior check behind it. A product Skill need not show
-  every command: help and capabilities list them all, and a Skill holds the product knowledge
-  they cannot give, so no check requires each command to appear in a Skill.
+  two: `ANCHOR_NOT_FOUND` (a search found nothing) and `BLOCK_NOT_FOUND` (a block number beyond
+  the document) stay separate.
+- **Skills claim only what is tested (C-R38).** What a Skill says about a result's meaning has a
+  behavior check behind it. A product Skill need not show every command.
 
 Kept on purpose:
 
-- Commands are product first, `aspose-cli <product> <verb>`; the top level holds only the commands
-  that serve every product (C-R01).
+- Commands are product first, `aspose-cli <product> <verb>`, not verb first: each product owns its
+  verbs, options and formats, and the top level holds only the commands that serve every product
+  (C-R01 checks it).
 - `capabilities`, `schema` and `docs` stay three self-description entry points: the command tree,
   the JSON Schemas and the guides (C-R01).
 - The positional argument of `create` is the file to create (C-R05).
 - `--set` keeps one address syntax per product, `SHEET!CELL=VALUE` in Cells and
-  `bookmark:NAME=TEXT` in Words, since each addresses that product's own model (C-R07).
-- `--author` means the same in both of its places, and `--port` keeps the two descriptions of its
-  two commands (C-R07).
-- The values of `--detail` and `--what` differ by product, and Slides `media` includes audio and
-  video where PDF and Words have `images`; the C-R07 exemptions state why.
+  `bookmark:NAME=TEXT` in Words; `--author` means the same in both of its places, and `--port`
+  keeps the two descriptions of its two commands (C-R07). The other per-product differences are
+  the exemptions in `SameNameOptions`, each with its reason.
 - `--grid` is PDF only and `--width` Slides only; which commands take `--font-dir` is decided by
   `FontDirectoryOptionsTests` (C-R08).
 - `--timeout` takes seconds without a unit in its name, as command-line timeouts do (C-R20).
@@ -211,8 +166,8 @@ Kept on purpose:
 - In JSON mode warnings are part of the stdout envelope, and redirected output defaults to JSON
   (C-R23).
 - `compare` exits 0 when the files differ; the differences are its result (C-R24).
-- Help and the version are `--help` and `--version` only; no `help` or `version` subcommand, and a
-  mistyped one gets a suggestion (C-R35, C-B14).
+- Help and the version are `--help` and `--version` only; no `help` or `version` subcommand
+  (C-R35).
 - `capabilities` lists no `examples[]` or `errorDetailsKeys[]`: examples belong to help (C-R34),
   and the error `details` keys are described once, in the error envelope schema (C-R25).
 - On an encrypted PDF input, `set_properties` with text beyond Latin-1 and no later `encrypt_document` or
@@ -221,20 +176,13 @@ Kept on purpose:
 
 ## Tests
 
-- xUnit v3 with real engines and CLI child processes. A test longer than the slow-test limit of
-  `scripts/test.ps1`, which reports every uncategorized one, carries
-  `[Category(TestCategory.Slow)]`; installer and Playwright tests carry `Installer` and
-  `Browser`.
-- Tests call handlers directly with real requests, whose `Input` is `required`; production code
-  carries no test shims. Generated schemas are not committed; the contract snapshots in
-  `Integration/Snapshots` are split per product.
+- Tests call handlers directly with real requests; production code carries no test shims.
 - A test that changes process-wide state joins its serial collection in
   `tests/TestAssemblyFixture.cs`. A test project that reads a repository file outside the
-  projects lists it as a `RepositoryInput` item; the build rejects an item that is missing,
-  outside the repository or inside its own project, and `RepositoryInputTests` requires one for
-  every documentation file a test names.
-- Runs never read `%APPDATA%\aspose-cli`, project `.aspose` files or `ASPOSE_*` settings; only
-  `ASPOSE_CLI_TEST_*` variables pass through. Keep license contents out of logs and fixtures.
+  projects lists it as a `RepositoryInput` item (`RepositoryInputTests`).
+- Slow, installer and browser tests carry their category; `scripts/test.ps1` reports an
+  uncategorized test over its slow-test limit.
+- Keep license contents out of logs and fixtures.
 
 ## Must not break
 
