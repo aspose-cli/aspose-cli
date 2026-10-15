@@ -1,4 +1,5 @@
 using Aspose.Cli.Sdk.Errors;
+using Aspose.Cli.Sdk.IO;
 
 namespace Aspose.Cli.Host.Catalog;
 
@@ -20,6 +21,10 @@ internal static class ProductCatalogRouting
             .Select(static extension => extension.TrimStart('.'))
             .ToArray();
 
+    /// <summary>
+    /// The product that opens an existing file. A file the system will not let it read is the
+    /// input error a product command reports for it, such as <c>FILE_LOCKED</c>.
+    /// </summary>
     public static ProductDefinition ResolveExistingFile(
         this ProductCatalog catalog,
         string path,
@@ -27,18 +32,29 @@ internal static class ProductCatalogRouting
         string operation = "open",
         CancellationToken cancellationToken = default)
     {
-        return new ProductFileRouter(catalog)
-            .ResolveAsync(
-                new FileRouteRequest(path)
-                {
-                    ExplicitProductId = productId,
-                    Operation = operation,
-                },
-                cancellationToken)
-            .AsTask()
-            .GetAwaiter()
-            .GetResult()
-            .Product;
+        try
+        {
+            return new ProductFileRouter(catalog)
+                .ResolveAsync(
+                    new FileRouteRequest(path)
+                    {
+                        ExplicitProductId = productId,
+                        Operation = operation,
+                    },
+                    cancellationToken)
+                .AsTask()
+                .GetAwaiter()
+                .GetResult()
+                .Product;
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+        {
+            if (InputFailures.FromAccess(exception, Path.GetFullPath(path)) is { } access)
+            {
+                throw access;
+            }
+            throw;
+        }
     }
 
     public static ProductDefinition ResolveById(
