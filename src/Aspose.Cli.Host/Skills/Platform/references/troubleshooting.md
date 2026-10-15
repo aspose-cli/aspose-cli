@@ -142,6 +142,22 @@ aspose-cli capabilities --output-format json
 - Evaluation codes (`EVALUATION_LIMIT` and the `EVALUATION_*` warnings): see
   `aspose-cli docs licensing`.
 
+**Updating.** `update check` and `update install` read a release feed: the
+latest published release by default, or a `RELEASE-MANIFEST.json` URL, file
+or downloaded release directory.
+
+- `RELEASE_FEED_UNAVAILABLE`: the feed could not be read, and nothing was
+  checked or installed. `details.feed` names it and the hint says whether the
+  network or the address is the cause.
+- `RELEASE_VERIFICATION_FAILED`: the release did not match its manifest, or
+  is older than this build; nothing was installed. Never work around it.
+- `UPDATE_IN_PROGRESS` (warning): the installer of an earlier
+  `update install` is still running; wait, then check `aspose-cli --version`.
+- `UPDATE_FAILED` (warning): the installer of an earlier `update install`
+  failed or stopped. Its message gives the reason and the hint the installer
+  log; close the programs that use this installation, including agents
+  running `aspose-cli mcp serve`, then run `update install` again.
+
 ## Windows PowerShell
 
 How PowerShell hands an `--ops` document to `aspose-cli` depends on its version
