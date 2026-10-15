@@ -271,6 +271,59 @@ public sealed class SlidesCliWorkflowTests : IDisposable
             static warning => warning!["code"]!.GetValue<string>() == "EVALUATION_INPUT_TRUNCATED");
     }
 
+    [Fact]
+    public void EvaluationReview_LeavesTheWatermarkOutOfTheOtherChecksAndCountsIt()
+    {
+        WatermarkedDeck(_workspace.File("marked.pptx"));
+
+        CliResult review = _workspace.Run("review", "marked.pptx", "--license-mode", "evaluation", "--output-format", "json");
+
+        Assert.True(review.ExitCode is 0 or 8, review.StdErr);
+        JsonNode result = JsonNode.Parse(review.StdOut)!;
+        Assert.Equal(["SLIDES_EVALUATION_WATERMARK"], FindingCodes(result));
+        Assert.True(Metric(result, "excludedEvaluationMarks") >= 1);
+        Assert.Null(Metric(result, "excludedEvaluationWatermarks"));
+    }
+
+    [Fact]
+    public void LicensedReview_ChecksTheWatermarkLikeAnyShapeAndReportsNoExcludedMarks()
+    {
+        TestLicense.Require("Evaluation mode leaves the watermark out of the checks.");
+        Aspose.Cli.TestKit.Scenarios.ScenarioLicense.Project(_workspace.Path);
+        WatermarkedDeck(_workspace.File("marked.pptx"));
+
+        CliResult review = _workspace.Run("review", "marked.pptx", "--output-format", "json");
+
+        Assert.True(review.ExitCode is 0 or 8, review.StdErr);
+        JsonNode result = JsonNode.Parse(review.StdOut)!;
+        Assert.Null(result["license"]);
+        Assert.Contains("SLIDES_EVALUATION_WATERMARK", FindingCodes(result));
+        Assert.Contains(FindingCodes(result), static code => code != "SLIDES_EVALUATION_WATERMARK");
+        Assert.Null(Metric(result, "excludedEvaluationMarks"));
+    }
+
+    /// <summary>A deck with a box shaped like the evaluation watermark over a table.</summary>
+    private static void WatermarkedDeck(string path)
+    {
+        using var presentation = new Presentation();
+        ISlide slide = presentation.Slides[0];
+        IAutoShape box = slide.Shapes.AddAutoShape(ShapeType.Rectangle, 100, 100, 400, 80);
+        box.FillFormat.FillType = FillType.NoFill;
+        box.TextFrame.Text = "Evaluation only.";
+        box.TextFrame.Paragraphs.Add(new Paragraph { Text = "Created with Aspose.Slides." });
+        box.ShapeLock.SelectLocked = true;
+        box.ShapeLock.PositionLocked = true;
+        slide.Shapes.AddTable(100, 100, [200, 200], [100, 100]);
+        presentation.Save(path, SaveFormat.Pptx);
+    }
+
+    private static string[] FindingCodes(JsonNode result) =>
+        [.. result["findings"]!.AsArray().Select(static finding => finding!["code"]!.GetValue<string>()).Distinct()];
+
+    private static long? Metric(JsonNode result, string name) =>
+        result["coverage"]!["metrics"]!.AsArray()
+            .FirstOrDefault(metric => metric!["name"]!.GetValue<string>() == name)?["value"]!.GetValue<long>();
+
     public void Dispose() => _workspace.Dispose();
 
     private static string[] WarningCodes(JsonNode result) =>

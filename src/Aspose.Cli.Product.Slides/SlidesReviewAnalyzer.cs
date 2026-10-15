@@ -21,16 +21,20 @@ internal static class SlidesReviewAnalyzer
 
     /// <summary>
     /// Analyzes the slides. The watermark text boxes that evaluation saves add are reported once
-    /// per slide, in any license mode, and left out of the other checks and counted.
+    /// per slide in any license mode; only in evaluation mode, whose own saves add them, are they
+    /// left out of the other checks and counted.
     /// </summary>
     public static SlidesReviewAnalysis Analyze(
         IReadOnlyList<SlidesSlideData> slides,
         double slideWidth,
-        double slideHeight)
+        double slideHeight,
+        bool evaluation = false)
     {
         var result = new SlidesReviewAnalysis
         {
-            ExcludedEvaluationWatermarks = slides.Sum(static slide => slide.Shapes.Count(static shape => shape.EvaluationWatermark)),
+            ExcludedEvaluationMarks = evaluation
+                ? slides.Sum(static slide => slide.Shapes.Count(static shape => shape.EvaluationWatermark))
+                : null,
         };
         foreach (SlidesSlideData slide in slides.Where(static slide => slide.Shapes.Any(static shape => shape.EvaluationWatermark)))
         {
@@ -38,9 +42,13 @@ internal static class SlidesReviewAnalyzer
                 $"Slide {slide.Slide} carries the evaluation watermark text box an Aspose.Slides save without a license added; a license does not remove it, so rebuild the deck with a license."));
         }
 
-        slides = slides
-            .Select(static slide => slide with { Shapes = slide.Shapes.Where(static shape => !shape.EvaluationWatermark).ToArray() })
-            .ToArray();
+        if (evaluation)
+        {
+            slides = slides
+                .Select(static slide => slide with { Shapes = slide.Shapes.Where(static shape => !shape.EvaluationWatermark).ToArray() })
+                .ToArray();
+        }
+
         AnalyzeDuplicates(slides, result);
         double slideArea = Math.Max(1, slideWidth * slideHeight);
         foreach (SlidesSlideData slide in slides)
@@ -498,5 +506,7 @@ internal sealed class SlidesReviewAnalysis
     public int TextOverflows { get; set; }
     public int EmptyPlaceholders { get; set; }
     public int LowContrastTexts { get; set; }
-    public int ExcludedEvaluationWatermarks { get; init; }
+
+    /// <summary>The watermark text boxes left out of the checks, in evaluation mode only; null with a license.</summary>
+    public int? ExcludedEvaluationMarks { get; init; }
 }

@@ -368,10 +368,11 @@ public sealed class SlidesReviewCheckTests
     }
 
     [Fact]
-    public void EvaluationWatermarkOverATable_IsReportedAndLeftOutOfTheOtherChecks()
+    public void EvaluationWatermarkOverATable_IsReported_AndLeftOutOfTheOtherChecksOnlyInEvaluationMode()
     {
         // A box shaped like the watermark an evaluation save adds, which an evaluation save adds
-        // once more: every review reports the watermark and leaves it out of the other checks.
+        // once more: every review reports the watermark; evaluation mode alone leaves it out of
+        // the other checks and counts it.
         using var fixture = new SlidesEngineFixture();
         string deck = fixture.File("watermarked.pptx");
         using (var presentation = new Presentation())
@@ -390,9 +391,18 @@ public sealed class SlidesReviewCheckTests
 
         SlidesReviewAnalysis analysis = Review(fixture, deck);
 
-        Assert.Equal(fixture.LicenseState == Sdk.Licensing.LicenseState.Licensed ? 1 : 2, analysis.ExcludedEvaluationWatermarks);
-        ReviewFinding finding = Assert.Single(analysis.Findings);
-        Assert.Equal("SLIDES_EVALUATION_WATERMARK", finding.Code);
+        if (fixture.LicenseState == Sdk.Licensing.LicenseState.Licensed)
+        {
+            Assert.Null(analysis.ExcludedEvaluationMarks);
+            Assert.Contains(analysis.Findings, static finding => finding.Code == "SLIDES_EVALUATION_WATERMARK");
+            Assert.Contains(analysis.Findings, static finding => finding.Code != "SLIDES_EVALUATION_WATERMARK");
+        }
+        else
+        {
+            Assert.Equal(2, analysis.ExcludedEvaluationMarks);
+            ReviewFinding finding = Assert.Single(analysis.Findings);
+            Assert.Equal("SLIDES_EVALUATION_WATERMARK", finding.Code);
+        }
     }
 
     [Fact]
@@ -414,14 +424,15 @@ public sealed class SlidesReviewCheckTests
         SlidesReviewAnalysis analysis = Review(fixture, deck);
 
         // An evaluation save of the test deck adds the one real watermark.
-        Assert.Equal(fixture.LicenseState == Sdk.Licensing.LicenseState.Licensed ? 0 : 1, analysis.ExcludedEvaluationWatermarks);
+        Assert.Equal(fixture.LicenseState == Sdk.Licensing.LicenseState.Licensed ? null : 1, analysis.ExcludedEvaluationMarks);
     }
 
     private static SlidesReviewAnalysis Review(SlidesEngineFixture fixture, string path)
     {
         SlidesPresentationSummary info = SlidesInfo.Run(fixture.Session, new SlidesInspectRequest { Input = path }).Presentation;
         SlidesReadResult read = SlidesRead.Run(fixture.Session, new SlidesReadRequest { Input = path, Content = SlidesReadContents.Full });
-        return SlidesReviewAnalyzer.Analyze(read.Slides, info.SlideSize.Width, info.SlideSize.Height);
+        return SlidesReviewAnalyzer.Analyze(
+            read.Slides, info.SlideSize.Width, info.SlideSize.Height, fixture.LicenseState == Sdk.Licensing.LicenseState.Evaluation);
     }
 
     private static SlidesShapeData TitleWithLines(long id, Rect frame, Rect lines) =>
