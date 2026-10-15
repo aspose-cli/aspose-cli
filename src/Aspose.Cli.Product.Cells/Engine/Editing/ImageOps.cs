@@ -24,14 +24,23 @@ internal static class ImageOps
         Picture picture = sheet.Pictures[index];
 
         // The contract measures in points; the engine sizes a picture in pixels at 96 per inch.
-        if (op.Width is { } width)
+        // One side given scales the other by the image's own proportions.
+        int naturalWidth = picture.Width;
+        int naturalHeight = picture.Height;
+        switch (op.Width, op.Height)
         {
-            picture.Width = Pixels(width);
-        }
-
-        if (op.Height is { } height)
-        {
-            picture.Height = Pixels(height);
+            case ({ } width, { } height):
+                picture.Width = Pixels(width);
+                picture.Height = Pixels(height);
+                break;
+            case ({ } width, null):
+                picture.Width = Pixels(width);
+                picture.Height = Math.Max(1, (int)Math.Round((double)picture.Width * naturalHeight / Math.Max(naturalWidth, 1)));
+                break;
+            case (null, { } height):
+                picture.Height = Pixels(height);
+                picture.Width = Math.Max(1, (int)Math.Round((double)picture.Height * naturalWidth / Math.Max(naturalHeight, 1)));
+                break;
         }
     }
 

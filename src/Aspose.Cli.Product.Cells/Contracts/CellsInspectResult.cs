@@ -130,8 +130,12 @@ public sealed record CellsSheetInfo
     [Minimum(0)]
     public required int ColumnCount { get; init; }
 
-    /// <summary><c>true</c> when the sheet is hidden.</summary>
-    public required bool Hidden { get; init; }
+    /// <summary>
+    /// visible, hidden (Excel's Unhide shows it) or veryHidden (hidden from Excel's Unhide too);
+    /// review and preview show only visible sheets.
+    /// </summary>
+    [AllowedValues(typeof(CellsSheetVisibilities))]
+    public required string Visibility { get; init; }
 
     /// <summary>
     /// <c>true</c> when the sheet is protected: Excel then lets users change only unlocked cells

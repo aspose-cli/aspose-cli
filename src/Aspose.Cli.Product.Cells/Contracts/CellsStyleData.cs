@@ -36,6 +36,7 @@ public sealed record CellsStyleData
     [HexColor] public string? FillColor { get; init; }
 
     /// <summary>The number format code, such as 0.0%.</summary>
+    [MistakenFor("numFmt", "numberFmt", "format", "formatCode")]
     [ReadBack("read-result.schema.json#/$defs/cellsStyleData/properties/numberFormat")]
     [MinLength(1)] public string? NumberFormat { get; init; }
 
@@ -61,7 +62,10 @@ public sealed record CellsStyleData
     [ReadBack("read-result.schema.json#/$defs/cellsStyleData/properties/strikethrough")]
     public bool? Strikethrough { get; init; }
 
-    /// <summary>The indent level; 0 removes the indent.</summary>
+    /// <summary>
+    /// The indent level; 0 removes the indent. An indent applies to text aligned left or right,
+    /// and puts centered text on the left.
+    /// </summary>
     [ReadBack("read-result.schema.json#/$defs/cellsStyleData/properties/indent")]
     [Minimum(0), Maximum(250)] public int? Indent { get; init; }
 

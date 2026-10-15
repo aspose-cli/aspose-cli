@@ -367,10 +367,10 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
         Assert.Equal("A1:C3", data.UsedRange);
         Assert.Equal(3, data.RowCount);
         Assert.Equal(3, data.ColumnCount);
-        Assert.False(data.Hidden);
+        Assert.Equal("visible", data.Visibility);
         Assert.Null(data.Preview);
 
-        Assert.True(FindSheet(result, "Backstage").Hidden);
+        Assert.Equal("hidden", FindSheet(result, "Backstage").Visibility);
         Assert.False(result.Workbook.HasMacros);
     }
 

@@ -82,6 +82,7 @@ public abstract record CellsSheetOp : CellsOp
 [JsonSerializable(typeof(SetPrintAreaOp))]
 [JsonSerializable(typeof(SetSheetViewOp))]
 [JsonSerializable(typeof(SetSheetVisibilityOp))]
+[JsonSerializable(typeof(ReplaceTextOp))]
 [JsonSerializable(typeof(SetTabColorOp))]
 [JsonSerializable(typeof(SetValidationOp))]
 [JsonSerializable(typeof(SetValuesOp))]

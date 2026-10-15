@@ -1,14 +1,14 @@
 {
-  "name": "cells refuses a .json input, which it does not declare, even when its content would import as delimited text",
+  "name": "cells refuses a .json input, which it does not declare, even when its content would import as delimited text, and says what to give instead",
   "files": {
     "comma.json": { "text": "Item,Amount\nFirst,1\nSecond,2\n" },
     "tab.json": { "text": "Item\tAmount\nFirst\t1\nSecond\t2\n" },
     "records.json": { "text": "[{\"Item\":\"First\",\"Amount\":1},{\"Item\":\"Second\",\"Amount\":2}]" }
   },
   "steps": [
-    { "args": ["cells", "inspect", "comma.json"], "expect": { "error": ["FILE_CORRUPT", "FORMAT_UNSUPPORTED"], "files": { "nothingWritten": true } } },
+    { "args": ["cells", "inspect", "comma.json"], "expect": { "error": ["FILE_CORRUPT", "FORMAT_UNSUPPORTED"], "json": [{ "path": "error.hint", "contains": "does not read them" }], "files": { "nothingWritten": true } } },
     { "args": ["cells", "inspect", "tab.json"], "expect": { "error": ["FILE_CORRUPT", "FORMAT_UNSUPPORTED"], "files": { "nothingWritten": true } } },
-    { "args": ["cells", "inspect", "records.json"], "expect": { "error": ["FILE_CORRUPT", "FORMAT_UNSUPPORTED"], "files": { "nothingWritten": true } } },
+    { "args": ["cells", "inspect", "records.json"], "expect": { "error": ["FILE_CORRUPT", "FORMAT_UNSUPPORTED"], "json": [{ "path": "error.hint", "contains": "does not read them" }], "files": { "nothingWritten": true } } },
     { "args": ["cells", "convert", "comma.json", "--to", "xlsx", "--out", "out.xlsx"], "expect": { "error": ["FILE_CORRUPT", "FORMAT_UNSUPPORTED"], "files": { "nothingWritten": true } } },
     { "args": ["cells", "read", "comma.json", "--range", "A1:B3"], "expect": { "error": ["FILE_CORRUPT", "FORMAT_UNSUPPORTED"], "files": { "nothingWritten": true } } }
   ]

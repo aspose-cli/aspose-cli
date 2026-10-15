@@ -65,9 +65,24 @@ internal sealed class CellsSnapshots(Workbook workbook, Func<CellsOp, bool> appl
         return snapshot;
     }
 
-    public OperationSnapshot Apply(FormatRangeOp operation) => Cells(operation, operation.Range);
+    // A border a cell shares with its neighbor is the neighbor's too: a bottom line drawn on A1 is
+    // the top line a read reports for A2.
+    public OperationSnapshot Apply(FormatRangeOp operation) =>
+        Cells(operation, operation.Style.Borders is null ? operation.Range : WithNeighbors(operation.Range));
 
-    public OperationSnapshot Apply(SetBordersOp operation) => Cells(operation, operation.Range);
+    public OperationSnapshot Apply(ReplaceTextOp operation) =>
+        Cells(operation, operation.Range ?? A1.FormatRange(new RangeRef(new CellRef(0, 0), new CellRef(A1.MaxRows - 1, A1.MaxColumns - 1))));
+
+    public OperationSnapshot Apply(SetBordersOp operation) => Cells(operation, WithNeighbors(operation.Range));
+
+    /// <summary>The range and the cells around it, whose borders it shares.</summary>
+    private static string WithNeighbors(string range)
+    {
+        RangeRef area = A1.ParseRange(range).Range;
+        return A1.FormatRange(new RangeRef(
+            new CellRef(Math.Max(area.Start.Row - 1, 0), Math.Max(area.Start.Column - 1, 0)),
+            new CellRef(Math.Min(area.End.Row + 1, A1.MaxRows - 1), Math.Min(area.End.Column + 1, A1.MaxColumns - 1))));
+    }
 
     public OperationSnapshot Apply(SortRangeOp operation) => Cells(operation, operation.Range);
 
@@ -147,9 +162,10 @@ internal sealed class CellsSnapshots(Workbook workbook, Func<CellsOp, bool> appl
 
     public OperationSnapshot Apply(MoveSheetOp operation) => SheetOrder();
 
-    // A read reports a sheet hidden or not; very hidden is a state of its own.
+    // Hiding the active sheet activates another one.
     public OperationSnapshot Apply(SetSheetVisibilityOp operation) =>
-        Of(operation, "sheet", static sheet => sheet.VisibilityType.ToString());
+        Of(operation, "sheet", static sheet => Sheets.Visibility(sheet))
+            .Add("workbook/active-sheet", workbook.Worksheets[workbook.Worksheets.ActiveSheetIndex].Name);
 
     // A read does not report the active sheet.
     public OperationSnapshot Apply(SetActiveSheetOp operation) =>

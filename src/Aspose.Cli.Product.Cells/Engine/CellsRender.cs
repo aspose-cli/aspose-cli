@@ -41,13 +41,14 @@ internal static class CellsRender
         using OutputSet<Workbook> transaction = session.Outputs.BeginSet([request.Output.Directory], "cells-render");
         var rendered = new List<CellsSheetOutput>();
         var skipped = new List<string>();
+        var leftOut = new List<Warning>();
         CliException? firstSkip = null;
         for (int i = 0; i < sheets.Count; i++)
         {
             Worksheet sheet = sheets[i];
             try
             {
-                StagedOutput staged = StageSheet(session.Budgets, transaction, sheet, request, renderedRange, outputPaths[i]);
+                StagedOutput staged = StageSheet(session.Budgets, transaction, sheet, request, renderedRange, outputPaths[i], leftOut);
                 rendered.Add(new CellsSheetOutput(FileObjects.Output(staged.Published, request.Output.Format, encrypted: false))
                 {
                     Sheet = sheet.Name,
@@ -80,7 +81,7 @@ internal static class CellsRender
             Range = renderedRange,
             Dpi = CellsEngineFormats.IsRaster(request.Output.Format.Id) ? request.Dpi : null,
             License = EnvelopeParts.License(licenseState),
-            Warnings = loaded.Warnings(loaded.SkippedSheetWarning(defaulted, "Pass --sheets with the sheet's position from inspect to render another sheet."), sheetsSkipped),
+            Warnings = loaded.Warnings([loaded.SkippedSheetWarning(defaulted, "Pass --sheets with the sheet's position from inspect to render another sheet."), sheetsSkipped, .. leftOut]),
         };
     }
 
@@ -182,7 +183,7 @@ internal static class CellsRender
     /// an engine rasterization crash into <c>RENDER_FAILED</c>. Both the
     /// single-sheet path and a render of several sheets run through it.
     /// </summary>
-    private static StagedOutput StageSheet(ResourceBudgetLedger budgets, OutputSet<Workbook> transaction, Worksheet sheet, CellsRenderRequest request, string? printArea, string outputPath)
+    private static StagedOutput StageSheet(ResourceBudgetLedger budgets, OutputSet<Workbook> transaction, Worksheet sheet, CellsRenderRequest request, string? printArea, string outputPath, List<Warning> warnings)
     {
         bool isRaster = CellsEngineFormats.IsRaster(request.Output.Format.Id);
 
@@ -215,6 +216,11 @@ internal static class CellsRender
         if (render.PageCount == 0)
         {
             throw Empty(sheet);
+        }
+
+        if (printArea is null && PrintAreasLeftOut(sheet, render, request.Input) is { } leftOut)
+        {
+            warnings.Add(leftOut);
         }
 
         try
@@ -321,6 +327,32 @@ internal static class CellsRender
         }
 
         return builder.Length == 0 ? "_" : builder.ToString();
+    }
+
+    /// <summary>
+    /// The warning for a sheet whose print area lists several areas: the engine draws one image
+    /// per area, and a sheet's image shows the first only. Null for one area or none.
+    /// </summary>
+    /// <param name="sheet">The sheet drawn.</param>
+    /// <param name="render">Its one-page-per-sheet render.</param>
+    /// <param name="input">The workbook path, for the commands that draw the rest.</param>
+    internal static Warning? PrintAreasLeftOut(Worksheet sheet, SheetRender render, string input)
+    {
+        if (render.PageCount < 2 || SheetLayoutProjection.PrintArea(sheet.PageSetup)?.Range is not { } printArea)
+        {
+            return null;
+        }
+
+        IReadOnlyList<string> areas = A1.SplitList(printArea);
+        string rest = string.Join("; ", areas.Skip(1).Select(area =>
+            $"aspose-cli cells render \"{input}\" --range \"{Sheets.QuotedName(sheet.Name)}!{area}\""));
+        return new Warning(CellsDiagnostics.SheetPartiallyRendered,
+            $"Worksheet '{sheet.Name}' prints {areas.Count} areas, {printArea}; its image shows only the first, {areas[0]}.")
+        {
+            Hint = $"Draw each other area on its own: {rest}",
+            Location = sheet.Name,
+            AffectsCompleteness = true,
+        };
     }
 
     /// <summary>Rejects raster output whose bitmap would exceed the shared pixel budget.</summary>

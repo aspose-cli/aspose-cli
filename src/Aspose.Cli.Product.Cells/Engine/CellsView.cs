@@ -69,7 +69,7 @@ internal static class CellsView
             string file = string.Create(
                 System.Globalization.CultureInfo.InvariantCulture,
                 $"sheet-{sheet.Index + 1:0000}.png");
-            (int width, int height, Warning? window) = RenderSheetPart(session.Budgets, sheet, RenderPixelGuard.DefaultDpi, file, artifacts);
+            (int width, int height, Warning? window) = RenderSheetPart(session.Budgets, sheet, RenderPixelGuard.DefaultDpi, file, artifacts, filePath);
             if (window is not null)
             {
                 partial.Add(window);
@@ -108,7 +108,8 @@ internal static class CellsView
         Worksheet sheet,
         int dpi,
         string file,
-        IViewArtifactSink artifacts)
+        IViewArtifactSink artifacts,
+        string input)
     {
         var options = new ImageOrPrintOptions
         {
@@ -146,6 +147,7 @@ internal static class CellsView
                 };
             }
 
+            window ??= CellsRender.PrintAreasLeftOut(sheet, render, input);
             CellsRender.EnsureRenderable(budgets, render, dpi);
             float[] inches = render.GetPageSizeInch(0);
             artifacts.Write(file, stream => render.ToImage(0, stream));

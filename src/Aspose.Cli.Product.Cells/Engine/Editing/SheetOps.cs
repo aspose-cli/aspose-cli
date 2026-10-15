@@ -1,5 +1,6 @@
 using Aspose.Cli.Sdk.Operations;
 using Aspose.Cells;
+using Aspose.Cli.Product.Cells.Engine.Mapping;
 
 namespace Aspose.Cli.Product.Cells.Engine.Editing;
 
@@ -32,7 +33,23 @@ internal static class SheetOps
 
     public static void SetVisibility(Worksheet sheet, SetSheetVisibilityOp op)
     {
-        sheet.IsVisible = !op.Hidden;
+        WorksheetCollection sheets = sheet.Workbook.Worksheets;
+        VisibilityType visibility = Sheets.Visibility(op.Visibility);
+        OperationInvalidException.Require(
+            visibility == VisibilityType.Visible
+                || sheets.Cast<Worksheet>().Any(other => other.Index != sheet.Index && other.IsVisible),
+            $"sheet '{sheet.Name}' is the only visible sheet, and a workbook keeps at least one visible",
+            "Show another sheet with set_sheet_visibility first, in the same batch.");
+
+        // The engine, as Excel's Unhide does, activates a sheet it shows; the operation changes
+        // the sheet's visibility alone, so the active sheet stays. Hiding the active sheet moves
+        // the activation on, as it must.
+        int active = sheets.ActiveSheetIndex;
+        sheet.VisibilityType = visibility;
+        if (visibility == VisibilityType.Visible && sheets[active].IsVisible)
+        {
+            sheets.ActiveSheetIndex = active;
+        }
     }
 
     public static void SetActiveSheet(Workbook workbook, Worksheet sheet)

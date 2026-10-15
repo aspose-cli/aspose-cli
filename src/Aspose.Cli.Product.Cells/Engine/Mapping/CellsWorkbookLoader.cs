@@ -32,9 +32,20 @@ internal sealed class CellsWorkbookLoader(ResourceBudgetLedger resourceBudgets, 
     internal static readonly InputLoading Loading = new(
         "spreadsheet",
         "Verify the file opens in a spreadsheet application and is one of the supported input formats.",
-        static exception => exception is CellsException { Code: ExceptionType.IncorrectPassword or ExceptionType.Permission }
+        Classify);
+
+    private static LoadFailureKind Classify(Exception exception) =>
+        exception is CellsException { Code: ExceptionType.IncorrectPassword or ExceptionType.Permission }
             ? LoadFailureKind.Password
-            : LoadFailureKind.Corrupt);
+            : LoadFailureKind.Corrupt;
+
+    // An input named as a format cells only writes, such as report.json: what to give instead.
+    private static readonly InputLoading WrittenOnly = new(
+        "spreadsheet",
+        $"cells writes {string.Join(", ", CellsFormats.Definitions.Where(static format => !format.Uses.HasFlag(FormatUse.Input) && format.Uses.HasFlag(FormatUse.Convert)).Select(static format => format.Id))} "
+            + "with convert but does not read them; give it a workbook (xlsx, xls, xlsb, ods), delimited text (csv, tsv, txt) "
+            + "or html instead, such as the file the export was made from.",
+        Classify);
 
     private static readonly HashSet<FileFormatType> OpenableFormats =
     [
@@ -271,19 +282,31 @@ internal sealed class CellsWorkbookLoader(ResourceBudgetLedger resourceBudgets, 
 
         if (detected != FileFormatType.Unknown)
         {
-            throw Loading.Unloadable(path, detected.ToString());
+            throw For(path).Unloadable(path, detected.ToString());
         }
 
-        throw Loading.Unreadable(path, ContainerSignatures.IsZip(ContainerSignatures.ReadPrefix(path, ContainerSignatures.ZipLocalFileHeader.Length))
+        throw For(path).Unreadable(path, ContainerSignatures.IsZip(ContainerSignatures.ReadPrefix(path, ContainerSignatures.ZipLocalFileHeader.Length))
             ? "it is an incomplete or damaged ZIP container, as an interrupted download or copy leaves it; ask for the file again"
             : "content does not match any supported spreadsheet format");
     }
+
+    /// <summary>How a file that does not load is reported: with what to give instead when its extension names a format cells only writes.</summary>
+    private static InputLoading For(string path) =>
+        WrittenOnlyExtensions.Contains(Path.GetExtension(path).ToLowerInvariant()) ? WrittenOnly : Loading;
+
+    // The extensions of the formats convert writes and no input declares.
+    private static readonly HashSet<string> WrittenOnlyExtensions =
+        [.. CellsFormats.Definitions
+            .Where(static format => format.Uses.HasFlag(FormatUse.Convert) && !format.Uses.HasFlag(FormatUse.Input))
+            .SelectMany(static format => format.Extensions)
+            .Select(static extension => extension.ToLowerInvariant())
+            .Except(InputExtensions)];
 
     private static CliException NotNamedAsInput(string path)
     {
         string extension = Path.GetExtension(path);
         string named = extension.Length > 1 ? $"its {extension} extension names no" : "it has no extension that names a";
-        return Loading.Unreadable(
+        return For(path).Unreadable(
             path,
             $"its content is delimited text, but {named} spreadsheet input; "
                 + $"give it a {string.Join(", ", TextExtensions)} extension to import it as text");

@@ -21,9 +21,9 @@ public sealed class CellsRendererGoldenTests
             C:\data\report.xlsx (xlsx, 1,234,567 bytes)
             sheets: 2   macros: no   defined names: 1   encrypted: yes   structure protected: yes
 
-            name         position  used range  rows  columns  hidden  protected  charts  pivots
-            Data         1         A1:C9       9     3        no      yes        1       0
-            Empty sheet  2         -           0     0        yes     no         0       0
+            name         position  used range  rows  columns  visibility  protected  charts  pivots
+            Data         1         A1:C9       9     3        visible     yes        1       0
+            Empty sheet  2         -           0     0        hidden      no         0       0
 
             preview Data:
               Region | Sales | -
@@ -71,10 +71,10 @@ public sealed class CellsRendererGoldenTests
             C:\data\report.xlsx (xlsx, 1,234,567 bytes)
             sheets: 2   macros: no   defined names: 1   encrypted: yes   structure protected: yes
 
-            | name | position | used range | rows | columns | hidden | protected | charts | pivots |
+            | name | position | used range | rows | columns | visibility | protected | charts | pivots |
             | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-            | Data | 1 | A1:C9 | 9 | 3 | no | yes | 1 | 0 |
-            | Empty sheet | 2 | - | 0 | 0 | yes | no | 0 | 0 |
+            | Data | 1 | A1:C9 | 9 | 3 | visible | yes | 1 | 0 |
+            | Empty sheet | 2 | - | 0 | 0 | hidden | no | 0 | 0 |
 
             preview Data:
               Region | Sales | -
@@ -143,9 +143,9 @@ public sealed class CellsRendererGoldenTests
             C:\data\report.xlsx (xlsx, 1,234,567 bytes)
             sheets: 2   macros: no   defined names: 1   encrypted: no   structure protected: yes
 
-            name         position  used range  rows  columns  hidden  protected  charts  pivots
-            Data         1         A1:C9       9     3        no      yes        1       0
-            Empty sheet  2         -           0     0        yes     no         0       0
+            name         position  used range  rows  columns  visibility  protected  charts  pivots
+            Data         1         A1:C9       9     3        visible     yes        1       0
+            Empty sheet  2         -           0     0        hidden      no         0       0
 
             preview Data:
               Region | Sales | -
@@ -188,9 +188,9 @@ public sealed class CellsRendererGoldenTests
             C:\data\report.xlsx (xlsx, 1,234,567 bytes)
             sheets: 2   macros: no   defined names: 1   encrypted: no   structure protected: yes
 
-            name         position  used range  rows  columns  hidden  protected  charts  pivots
-            Data         1         A1:C9       9     3        no      yes        1       0
-            Empty sheet  2         -           0     0        yes     no         0       0
+            name         position  used range  rows  columns  visibility  protected  charts  pivots
+            Data         1         A1:C9       9     3        visible     yes        1       0
+            Empty sheet  2         -           0     0        hidden      no         0       0
 
             preview Data:
               Region | Sales | -
@@ -329,13 +329,13 @@ public sealed class CellsRendererGoldenTests
             [
                 new CellsSheetInfo
                 {
-                    Name = "Data", Position = 1, UsedRange = "A1:C9", RowCount = 9, ColumnCount = 3, Hidden = false,
+                    Name = "Data", Position = 1, UsedRange = "A1:C9", RowCount = 9, ColumnCount = 3, Visibility = "visible",
                     Protected = true, PasswordProtected = false, ChartCount = 1, PivotTableCount = 0,
                     Preview = [["Region", "Sales", null], ["North", "1,200", "x"]],
                 },
                 new CellsSheetInfo
                 {
-                    Name = "Empty sheet", Position = 2, RowCount = 0, ColumnCount = 0, Hidden = true,
+                    Name = "Empty sheet", Position = 2, RowCount = 0, ColumnCount = 0, Visibility = "hidden",
                     Protected = false, PasswordProtected = false, ChartCount = 0, PivotTableCount = 0,
                 },
             ],

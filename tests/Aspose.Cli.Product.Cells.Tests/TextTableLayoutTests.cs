@@ -140,6 +140,28 @@ public sealed class TextTableLayoutTests : IDisposable
     }
 
     [Fact]
+    public void Detect_KeepsAHeaderNarrowerThanItsDataWhenAnEmptyRowFollowsIt()
+    {
+        TextTableFinding finding = Assert.Single(TextTableLayout.Detect(
+            Shapes((2, "Name"), (0, null), (5, "Ann"), (5, "Bob")), []));
+
+        Assert.Equal(TextTableFindingKind.BlankRows, finding.Kind);
+        Assert.Equal(0, finding.HeaderRow);
+    }
+
+    [Fact]
+    public void Describe_EndsTheTableToAddressWhereTheTotalRowsSayTheDataEnds()
+    {
+        IReadOnlyList<Warning> warnings = TextTableLayout.Describe(TextTableLayout.Detect(
+            Shapes((3, "Region"), (3, "North"), (0, null), (3, "South"), (0, null), (2, "Total")), []), "Data", 2, capped: false);
+
+        Assert.Equal(2, warnings.Count);
+        Assert.Contains("(A1:C4)", warnings[0].Hint, StringComparison.Ordinal);
+        Assert.StartsWith("Row 3 is empty inside the table", warnings[0].Message, StringComparison.Ordinal);
+        Assert.StartsWith("End data ranges at row 4", warnings[1].Hint, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void Detect_ReportsNoPreambleForASingleColumn()
     {
         Assert.Empty(TextTableLayout.Detect(Shapes((1, "Name"), (1, "Ann"), (1, "Bob")), []));

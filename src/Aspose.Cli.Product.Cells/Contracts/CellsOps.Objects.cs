@@ -202,11 +202,17 @@ public sealed record InsertImageOp : CellsSheetOp
     /// <summary>The top-left anchor cell, such as E2.</summary>
     [A1Cell] public required string At { get; init; }
 
-    /// <summary>The width in points; the image's natural width when omitted.</summary>
+    /// <summary>
+    /// The width in points. When omitted, the image's natural width, or with height alone the
+    /// width that keeps the image's proportions.
+    /// </summary>
     [ReadBack("inspect-result.schema.json#/$defs/cellsImageInfo/properties/width")]
     [ExclusiveMinimum(0)] public double? Width { get; init; }
 
-    /// <summary>The height in points; the image's natural height when omitted.</summary>
+    /// <summary>
+    /// The height in points. When omitted, the image's natural height, or with width alone the
+    /// height that keeps the image's proportions.
+    /// </summary>
     [ReadBack("inspect-result.schema.json#/$defs/cellsImageInfo/properties/height")]
     [ExclusiveMinimum(0)] public double? Height { get; init; }
 }

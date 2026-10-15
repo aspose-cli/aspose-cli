@@ -15,7 +15,7 @@ Cells semantics, ordering rules and recipes.
 
 | task | operations |
 |------|------------|
-| Cell data | `set_values` writes a matrix; `set_formula` fills a formula over a range; `clear_range`; `copy_range` within the workbook |
+| Cell data | `set_values` writes a matrix; `set_formula` fills a formula over a range; `clear_range`; `copy_range` within the workbook; `replace_text` replaces text in text values, never in formulas or numbers |
 | Other workbooks | `import_range` copies a range from another file; `import_sheet` copies a whole sheet |
 | Formatting | `format_range` sets only the style fields given; `set_borders` |
 | Rows and columns | `insert_rows`, `delete_rows`, `insert_columns`, `delete_columns`, `resize_rows`, `resize_columns`, `merge_cells`, `unmerge_cells`, `group_rows`, `ungroup_rows`, `group_columns`, `ungroup_columns`, `freeze_panes`, `unfreeze_panes` |

@@ -76,14 +76,30 @@ public static class CellsSheetNames
 [AtLeastOneOf("sheet")]
 public sealed record DeleteSheetOp : CellsSheetOp;
 
-/// <summary>Hides or shows the sheet the operation's sheet field names.</summary>
+/// <summary>
+/// Shows or hides the sheet the operation's sheet field names. Showing a sheet leaves the active
+/// sheet as it was; hiding the active sheet makes the next visible sheet active, and the last
+/// visible sheet cannot be hidden.
+/// </summary>
 [Operation("set_sheet_visibility")]
 [AtLeastOneOf("sheet")]
 public sealed record SetSheetVisibilityOp : CellsSheetOp
 {
-    /// <summary>Whether the sheet is hidden.</summary>
-    [ReadBack("inspect-result.schema.json#/$defs/cellsSheetInfo/properties/hidden")]
-    public required bool Hidden { get; init; }
+    /// <summary>
+    /// visible shows the tab; hidden hides it, and Excel's Unhide shows it again; veryHidden hides
+    /// it from Excel's Unhide too.
+    /// </summary>
+    [MistakenFor("hidden", "visible")]
+    [ReadBack("inspect-result.schema.json#/$defs/cellsSheetInfo/properties/visibility")]
+    [AllowedValues(typeof(CellsSheetVisibilities))] public required string Visibility { get; init; }
+}
+
+/// <summary>Accepted values of <see cref="SetSheetVisibilityOp.Visibility"/>, as inspect reports a sheet's visibility.</summary>
+public static class CellsSheetVisibilities
+{
+    public const string Visible = "visible";
+    public const string Hidden = "hidden";
+    public const string VeryHidden = "veryHidden";
 }
 
 /// <summary>

@@ -97,7 +97,7 @@ internal static class OpsFootprint
 
     /// <summary>Whether the verification diff, which compares cell values, formulas and sheets, sees what the operation does.</summary>
     private static bool Diffed(CellsOp op) =>
-        op is SetValuesOp or SetFormulaOp or ClearRangeOp or SortRangeOp or DeleteDuplicatesOp
+        op is SetValuesOp or SetFormulaOp or ClearRangeOp or ReplaceTextOp or SortRangeOp or DeleteDuplicatesOp
             or CopyRangeOp or ImportRangeOp or InsertRowsOp or DeleteRowsOp or InsertColumnsOp or DeleteColumnsOp
             or InsertSheetOp or ImportSheetOp or RenameSheetOp or DeleteSheetOp;
 
@@ -119,7 +119,7 @@ internal static class OpsFootprint
             or UnmergeCellsOp or SortRangeOp or SetValidationOp or ClearValidationOp
             or DeleteDuplicatesOp or DefineTableOp or AddConditionalFormatOp
             or ClearConditionalFormatsOp or SetBordersOp or SetAutoFilterOp or SetPrintAreaOp
-            or AddSparklineOp => RangeTarget(op),
+            or AddSparklineOp or ReplaceTextOp => RangeTarget(op),
         CopyRangeOp or ImportRangeOp or AddCommentOp or SetCommentOp or DeleteCommentOp or SetHyperlinkOp
             or DeleteHyperlinkOp or InsertRowsOp or DeleteRowsOp or InsertColumnsOp or DeleteColumnsOp
             or ResizeRowsOp or ResizeColumnsOp or GroupRowsOp or UngroupRowsOp
@@ -139,6 +139,8 @@ internal static class OpsFootprint
         SetValuesOp o => new CellsEditTarget(o.Sheet, MatrixRange(o.Range, o.Values)),
         SetFormulaOp o => new CellsEditTarget(o.Sheet, o.Range),
         ClearRangeOp o => new CellsEditTarget(o.Sheet, o.Range),
+        // Without a range it replaces anywhere in the sheet.
+        ReplaceTextOp o => new CellsEditTarget(o.Sheet, o.Range),
         FormatRangeOp o => new CellsEditTarget(o.Sheet, o.Range),
         MergeCellsOp o => new CellsEditTarget(o.Sheet, o.Range),
         UnmergeCellsOp o => new CellsEditTarget(o.Sheet, o.Range),

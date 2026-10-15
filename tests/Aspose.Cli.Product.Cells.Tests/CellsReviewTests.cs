@@ -1,6 +1,7 @@
 using Aspose.Cells;
 using Aspose.Cells.Charts;
 using Aspose.Cells.Rendering;
+using System.Text.Json.Nodes;
 using Aspose.Cli.Sdk.Extensibility;
 using Aspose.Cli.Sdk.Views;
 using Aspose.Cli.TestKit;
@@ -193,6 +194,110 @@ public sealed class CellsReviewTests
         ReviewFinding notice = Assert.Single(Review(fixture, workspace.File("marked.csv")), static finding => finding.Code == "CELLS_EVALUATION_NOTICE");
         Assert.Equal("marked!A4", notice.Location);
         Assert.DoesNotContain(Review(fixture, workspace.File("plain.csv")), static finding => finding.Code == "CELLS_EVALUATION_NOTICE");
+    }
+
+    /// <summary>
+    /// A date or number too wide for its column shows as #### or rounded, as the engine's display
+    /// text says; review reports it like cut off text. A date that fits is not reported.
+    /// </summary>
+    [Fact]
+    public void Review_ReportsADateThatShowsAsHashes()
+    {
+        Requires.Windows();
+        using var fixture = new CellsFixture();
+        string input = fixture.Temp.File("dates.xlsx");
+        using (var workbook = new Workbook())
+        {
+            Worksheet sheet = workbook.Worksheets[0];
+            sheet.Name = "Dates";
+            sheet.Cells["A2"].Formula = "=DATE(2026,3,1)";
+            sheet.Cells["C2"].PutValue(new DateTime(2026, 3, 1));
+            foreach (string cell in new[] { "A2", "C2" })
+            {
+                Style style = sheet.Cells[cell].GetStyle();
+                style.Custom = "yyyy-mm-dd";
+                sheet.Cells[cell].SetStyle(style);
+            }
+            sheet.Cells.SetColumnWidth(2, 14);
+            workbook.CalculateFormula();
+            workbook.Save(input);
+        }
+
+        ReviewFinding clipped = Assert.Single(Review(fixture, input), static finding => finding.Code == "CELLS_VALUES_CLIPPED");
+
+        Assert.StartsWith("1 cell value(s) are wider than their columns; sample: A2.", clipped.Message, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// A print area of several areas draws one image per area, and a sheet's image holds the
+    /// first: review and render say so, as incomplete evidence, with the command for each other area.
+    /// </summary>
+    [Fact]
+    public void ASheetWithSeveralPrintAreas_SaysItsImageShowsTheFirstOnly()
+    {
+        Requires.Windows();
+        using var workspace = new TempWorkspace();
+        Assert.Equal(0, workspace.Run("cells", "create", "areas.xlsx", "--sheets", "Data").ExitCode);
+        File.WriteAllText(workspace.File("ops.json"), """
+            {"ops":[
+              {"op":"set_values","sheet":"Data","range":"A1","values":[["Left",1],["Rows",2]]},
+              {"op":"set_values","sheet":"Data","range":"E1","values":[["Right",3],["Rows",4]]},
+              {"op":"set_print_area","sheet":"Data","range":"A1:B2,E1:F2"}
+            ]}
+            """);
+        Assert.Equal(0, workspace.Run("cells", "edit", "areas.xlsx", "--ops", "ops.json", "--in-place").ExitCode);
+
+        CliResult reviewed = workspace.Run("review", "areas.xlsx", "--out", "areas-review", "--output-format", "json");
+        CliResult rendered = workspace.Run("cells", "render", "areas.xlsx", "--out", "areas.png", "--output-format", "json");
+
+        // Incomplete evidence is review's own exit code.
+        Assert.True(reviewed.ExitCode == 8, reviewed.StdErr);
+        Assert.True(rendered.ExitCode == 0, rendered.StdErr);
+        JsonNode review = JsonNode.Parse(reviewed.StdOut)!;
+        Assert.False(review["coverage"]!["complete"]!.GetValue<bool>());
+        foreach (JsonNode result in new[] { review, JsonNode.Parse(rendered.StdOut)! })
+        {
+            JsonNode warning = Assert.Single(result["warnings"]!.AsArray(), static warning => warning!["code"]!.GetValue<string>() == "SHEET_PARTIALLY_RENDERED")!;
+            Assert.Contains("shows only the first, A1:B2", warning["message"]!.GetValue<string>(), StringComparison.Ordinal);
+            Assert.Contains("--range \"'Data'!E1:F2\"", warning["hint"]!.GetValue<string>(), StringComparison.Ordinal);
+        }
+    }
+
+    /// <summary>
+    /// The warning sheets an evaluation save added are the evaluation's marks: an evaluation
+    /// review leaves their layout unchecked and counts them; a licensed review checks every sheet.
+    /// </summary>
+    [Fact]
+    public void Review_ExcludesEvaluationWarningSheetsFromLayoutChecksOnlyInEvaluationMode()
+    {
+        Requires.Windows();
+        using var workspace = new TempWorkspace();
+        Assert.Equal(0, workspace.Run("cells", "create", "marked.xlsx", "--sheets", "Data", "--license-mode", "evaluation").ExitCode);
+        Assert.Equal(0, workspace.Run("cells", "edit", "marked.xlsx", "--set", "Data!A1=7", "--in-place", "--license-mode", "evaluation").ExitCode);
+
+        JsonNode evaluation = ReviewJson(workspace, "evaluation", "--license-mode", "evaluation");
+
+        Assert.Equal(2, Metric(evaluation, "excludedEvaluationMarks"));
+        Assert.All(Findings(evaluation), static finding => Assert.Equal("CELLS_EVALUATION_SHEET", finding.Code));
+        if (TestLicense.Path is not null)
+        {
+            JsonNode licensed = ReviewJson(workspace, "licensed", "--license", TestLicense.Path);
+            Assert.Null(Metric(licensed, "excludedEvaluationMarks"));
+            Assert.Contains(Findings(licensed), static finding => finding.Code != "CELLS_EVALUATION_SHEET" && finding.Location!.StartsWith("Evaluation Warning", StringComparison.Ordinal));
+        }
+
+        static JsonNode ReviewJson(TempWorkspace workspace, string name, params string[] mode)
+        {
+            CliResult result = workspace.Run(["review", "marked.xlsx", "--out", $"{name}-review", "--output-format", "json", .. mode]);
+            Assert.True(result.ExitCode == 0, result.StdErr);
+            return JsonNode.Parse(result.StdOut)!;
+        }
+
+        static long? Metric(JsonNode review, string name) =>
+            review["coverage"]!["metrics"]!.AsArray().FirstOrDefault(metric => metric!["name"]!.GetValue<string>() == name)?["value"]!.GetValue<long>();
+
+        static IEnumerable<(string Code, string? Location)> Findings(JsonNode review) =>
+            review["findings"]!.AsArray().Select(static finding => (finding!["code"]!.GetValue<string>(), finding["location"]?.GetValue<string>()));
     }
 
     [Fact]
