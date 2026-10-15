@@ -207,30 +207,46 @@ internal static class PdfCreate
         RegexOptions.IgnoreCase | RegexOptions.CultureInvariant,
         TimeSpan.FromSeconds(1));
 
+    /// <summary>An element's id attribute, which the HTML importer names some fields after (PDF-HTML-FORM-NAMES).</summary>
+    private static readonly Regex IdAttribute = new(
+        """\sid\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))""",
+        RegexOptions.IgnoreCase | RegexOptions.CultureInvariant,
+        TimeSpan.FromSeconds(1));
+
     /// <summary>An HTML comment, whose inputs the importer does not see.</summary>
     private static readonly Regex HtmlComment = new("<!--.*?-->", RegexOptions.Singleline, TimeSpan.FromSeconds(1));
 
     /// <summary>
     /// The HTML importer keeps the name of a single-line text input only; it names every other
-    /// control itself and drops its HTML value (PDF-HTML-FORM-NAMES), and it drops some input
+    /// control after its id attribute, or itself when it has none or is a radio button, and
+    /// drops its HTML value (PDF-HTML-FORM-NAMES), and it drops some input
     /// types entirely (PDF-HTML-FORM-INPUTS), which the HTML shows. Both are disclosed, so the
     /// fields are matched to their labels by position before filling.
     /// </summary>
     private static Warning? FormLosses(Document document, byte[] html)
     {
-        string[] names = document.Form.Fields
+        string markup = HtmlComment.Replace(Encoding.UTF8.GetString(html), string.Empty);
+        var ids = new HashSet<string>(
+            IdAttribute.Matches(markup).Select(static match => match.Groups.Cast<System.Text.RegularExpressions.Group>().Skip(1).First(static group => group.Success).Value),
+            StringComparer.Ordinal);
+        ILookup<bool, string> names = document.Form.Fields
             .Where(static field => field is not Aspose.Pdf.Forms.TextBoxField { Multiline: false })
-            .Select(static field => $"'{field.FullName}'")
+            .Select(static field => field.FullName)
             .Distinct(StringComparer.Ordinal)
             .Order(StringComparer.Ordinal)
-            .ToArray();
-        string[] dropped = DroppedInput.Matches(HtmlComment.Replace(Encoding.UTF8.GetString(html), string.Empty))
+            .ToLookup(name => ids.Contains(name));
+        string[] dropped = DroppedInput.Matches(markup)
             .Select(static match => match.Groups[1].Value.ToLowerInvariant())
             .ToArray();
-        var losses = new List<string>(2);
-        if (names.Length > 0)
+        var losses = new List<string>(3);
+        if (names[true].Any())
         {
-            losses.Add($"these form fields have generated names and lost their HTML values: {string.Join(", ", names)}");
+            losses.Add($"these form fields are named after their HTML id attribute and lost their HTML values: {string.Join(", ", names[true].Select(static name => $"'{name}'"))}");
+        }
+
+        if (names[false].Any())
+        {
+            losses.Add($"these form fields have generated names and lost their HTML values: {string.Join(", ", names[false].Select(static name => $"'{name}'"))}");
         }
 
         if (dropped.Length > 0)

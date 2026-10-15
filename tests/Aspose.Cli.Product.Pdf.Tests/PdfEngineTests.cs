@@ -97,6 +97,26 @@ public sealed class PdfEngineTests
     }
 
     [Fact]
+    public void Create_FromHtml_SaysWhichFieldsAreNamedAfterTheirIdAndWhichHaveGeneratedNames()
+    {
+        using var fixture = new PdfEngineFixture();
+        string input = fixture.File("agree.html");
+        File.WriteAllText(input, """
+            <html><body><form>
+            <p><input type="checkbox" id="agree" name="agree" value="yes"/> I agree</p>
+            <textarea id="notes-box" name="notes"></textarea>
+            <p><input type="radio" name="kind" value="a"/> A <input type="radio" name="kind" value="b"/> B</p>
+            </form></body></html>
+            """);
+
+        PdfCreateResult result = PdfCreate.Run(fixture.Session, new PdfCreateRequest { Output = TestOutput.At(fixture.File("agree.pdf")), HtmlPath = input });
+
+        string message = Assert.Single(result.Warnings!, static warning => warning.Code == WarningCodes.LossyConversion).Message;
+        Assert.Contains("named after their HTML id attribute and lost their HTML values: 'agree', 'notes-box'", message, StringComparison.Ordinal);
+        Assert.Contains("have generated names and lost their HTML values: 'radio'", message, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void Create_FromMarkdown_InventsNoMetadata()
     {
         using var fixture = new PdfEngineFixture();
