@@ -108,6 +108,23 @@ public sealed class UpdateClientStatusTests : IDisposable
         Assert.False(string.IsNullOrWhiteSpace(error["hint"]?.GetValue<string>()));
     }
 
+    [Fact]
+    public void MissingLocalFeed_IsAFeedErrorThatNamesThePath()
+    {
+        using var workspace = new TempWorkspace();
+        string missing = workspace.File(Path.Combine("releases", "RELEASE-MANIFEST.json"));
+
+        CliResult result = workspace.Run("update", "check", missing, "--output-format", "json");
+
+        Assert.Equal(5, result.ExitCode);
+        JsonNode error = JsonNode.Parse(result.StdErr)!["error"]!;
+        Assert.Equal("RELEASE_FEED_UNAVAILABLE", error["code"]!.GetValue<string>());
+        Assert.Equal(missing, error["details"]!["feed"]!.GetValue<string>());
+        string hint = error["hint"]!.GetValue<string>();
+        Assert.Contains("release directory", hint, StringComparison.Ordinal);
+        Assert.DoesNotContain("network", hint, StringComparison.OrdinalIgnoreCase);
+    }
+
     private static void Write(string path, JsonObject status) => File.WriteAllText(path, status.ToJsonString());
 
     private static int ExitedProcessId()

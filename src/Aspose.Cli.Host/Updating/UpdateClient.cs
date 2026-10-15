@@ -375,7 +375,7 @@ internal static class UpdateClient
                 using var response = client.GetAsync(uri, HttpCompletionOption.ResponseHeadersRead, deadline.Token).GetAwaiter().GetResult();
                 if (response.StatusCode != HttpStatusCode.OK)
                 {
-                    throw HostDiagnostics.ReleaseFeedUnavailable(uri, $"the feed answered HTTP {(int)response.StatusCode}");
+                    throw HostDiagnostics.ReleaseFeedAnswered(uri, response.StatusCode);
                 }
                 if (response.Content.Headers.ContentLength is > 0 and var length && length > maximum)
                 {
@@ -456,7 +456,7 @@ internal static class UpdateClient
             }
             if (!File.Exists(full))
             {
-                throw HostDiagnostics.ReleaseVerificationFailed($"feed file not found: {full}");
+                throw HostDiagnostics.ReleaseFeedNotFound(full);
             }
         }
     }
