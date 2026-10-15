@@ -2916,13 +2916,12 @@
           "description": "One layout and its direct slide usage.",
           "type": "object",
           "required": [
-            "name",
             "slideCount"
           ],
           "additionalProperties": false,
           "properties": {
             "name": {
-              "description": "The layout's name, which insert_slide and set_layout accept as layout.",
+              "description": "The layout's name, which insert_slide and set_layout accept as layout; omitted when it has none.",
               "type": "string"
             },
             "master": {
@@ -3139,7 +3138,7 @@
               "type": "string"
             },
             "title": {
-              "description": "The slide's title text; only with --sample, and omitted when the slide has no title.",
+              "description": "The text of the slide's title placeholder, or on a slide without one the text of its first shape with text; only with --sample, and omitted when there is none.",
               "type": "string"
             },
             "previewText": {
@@ -5635,7 +5634,7 @@
               "type": "string"
             },
             "title": {
-              "description": "The slide's title text; omitted when the slide has no title.",
+              "description": "The text of the slide's title placeholder, or on a slide without one the text of its first shape with text; omitted when there is none, such as an empty title placeholder.",
               "type": "string"
             },
             "text": {

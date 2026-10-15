@@ -192,4 +192,52 @@ public sealed class SlidesReadBackTests
         SlidesCreate.Run(fixture.Session, new SlidesCreateRequest { Output = TestOutput.At(path), MarkdownPath = markdown });
         return path;
     }
+
+    [Fact]
+    public void AltText_CountsTowardTheCharacterBudget()
+    {
+        using var fixture = new SlidesEngineFixture();
+        string input = fixture.File("alt.pptx");
+        using (var presentation = new Presentation())
+        {
+            // A one-character title, read as the title and as its shape's text, so an evaluation
+            // watermark is never taken for the title.
+            ISlide slide = presentation.Slides.AddEmptySlide(presentation.LayoutSlides.GetByType(SlideLayoutType.Title));
+            presentation.Slides.RemoveAt(0);
+            slide.Shapes.OfType<IAutoShape>().First(static shape => shape.Placeholder?.Type is PlaceholderType.Title or PlaceholderType.CenteredTitle).TextFrame.Text = "T";
+            slide.Shapes.AddAutoShape(ShapeType.Rectangle, 10, 10, 100, 50).AlternativeText = "Chart";
+            presentation.Save(input, SaveFormat.Pptx);
+        }
+
+        SlidesReadResult read = SlidesRead.Run(fixture.Session, new SlidesReadRequest
+        {
+            Input = input,
+            Content = SlidesReadContents.Shapes,
+            MaxCharacters = 5,
+        });
+
+        SlidesShapeData shape = Assert.Single(read.Slides[0].Shapes, static shape => shape.AltText is not null);
+        Assert.Equal("Cha", shape.AltText);
+        Assert.True(read.Slides[0].ContentTruncated);
+        Assert.True(read.Window.Truncated);
+    }
+
+    [Fact]
+    public void EmptyTitlePlaceholder_ReadsAsNoTitle()
+    {
+        using var fixture = new SlidesEngineFixture();
+        string input = fixture.File("untitled.pptx");
+        using (var presentation = new Presentation())
+        {
+            ISlide slide = presentation.Slides.AddEmptySlide(presentation.LayoutSlides.GetByType(SlideLayoutType.Title));
+            presentation.Slides.RemoveAt(0);
+            Assert.Contains(slide.Shapes, static shape => shape.Placeholder?.Type is PlaceholderType.Title or PlaceholderType.CenteredTitle);
+            slide.Shapes.AddAutoShape(ShapeType.Rectangle, 10, 400, 100, 50).TextFrame.Text = "Box";
+            presentation.Save(input, SaveFormat.Pptx);
+        }
+
+        SlidesReadResult read = SlidesRead.Run(fixture.Session, new SlidesReadRequest { Input = input, Content = SlidesReadContents.Shapes });
+
+        Assert.Null(read.Slides[0].Title);
+    }
 }

@@ -66,7 +66,8 @@ internal static class SlidesStateProjection
     /// <summary>
     /// One top-level shape as <c>slides read</c> reports it, with the <paramref name="text"/> the
     /// caller read; with <paramref name="full"/> also its runs, paragraphs, fill, outline, table
-    /// and chart, as <c>--content full</c> reports them.
+    /// and chart, as <c>--content full</c> reports them. Its alternative text counts toward the
+    /// character budget as its text does.
     /// </summary>
     internal static SlidesShapeData Shape(IShape shape, string? text, bool full, ref int remaining, ref bool truncated) => new()
     {
@@ -75,7 +76,7 @@ internal static class SlidesStateProjection
         Kind = SlidesEngineSupport.ShapeKind(shape),
         Placeholder = SlidesPlaceholders.Role(shape.Placeholder?.Type),
         Geometry = SlidesEngineSupport.Geometry(shape),
-        AltText = SlidesEngineSupport.EmptyToNull(shape.AlternativeText),
+        AltText = SlidesEngineSupport.EmptyToNull(SlidesEngineSupport.Take(shape.AlternativeText, ref remaining, ref truncated)),
         Text = text,
         Runs = full ? SlidesEngineSupport.Runs(shape, ref remaining, ref truncated) : null,
         Paragraphs = full ? Paragraphs(shape, ref remaining, ref truncated) : null,
