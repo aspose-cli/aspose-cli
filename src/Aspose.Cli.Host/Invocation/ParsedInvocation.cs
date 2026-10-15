@@ -218,23 +218,33 @@ internal sealed class ParsedInvocation
 
     /// <summary>
     /// The first unknown option among the options the command accepts: its own, the recursive
-    /// ones of its parents and the root's, compared without their dashes; null when there is none.
+    /// ones of its parents and the root's, compared without their dashes, with the options that
+    /// declare it a common mistake for them first; null when there is none. Without one, a stray
+    /// argument beside a missing required option that a bare argument may stand for, such as
+    /// <c>search deck.pptx speaker</c> for <c>--pattern speaker</c>, suggests that option.
     /// </summary>
     private Mistake? UnknownOption()
     {
+        Option[] options =
+        [
+            .. Command.Options
+                .Concat(CommandPath.SelectMany(static command => command.Options.Where(static option => option.Recursive)))
+                .Concat(ParseResult.RootCommandResult.Command.Options.Where(static option => option.Recursive))
+                .Where(static option => !option.Hidden)
+                .DistinctBy(static option => option.Name, StringComparer.Ordinal),
+        ];
+        string[] names = [.. options.Select(static option => option.Name)];
         if (ParseResult.UnmatchedTokens.Concat(OptionLikeArguments())
-            .FirstOrDefault(static token => token.StartsWith('-')) is not { } unknown)
+            .FirstOrDefault(static token => token.StartsWith('-')) is { } unknown)
         {
-            return null;
+            string[] meant = [.. options.Where(option => option.MistakenNames().Contains(unknown, StringComparer.Ordinal)).Select(static option => option.Name)];
+            return Mistake.Of(unknown, names, meant, keyOf: static name => name.TrimStart('-'));
         }
 
-        IEnumerable<string> options = Command.Options
-            .Concat(CommandPath.SelectMany(static command => command.Options.Where(static option => option.Recursive)))
-            .Concat(ParseResult.RootCommandResult.Command.Options.Where(static option => option.Recursive))
-            .Where(static option => !option.Hidden)
-            .Select(static option => option.Name)
-            .Distinct(StringComparer.Ordinal);
-        return Mistake.Of(unknown, options, keyOf: static name => name.TrimStart('-'));
+        return ParseResult.UnmatchedTokens.FirstOrDefault() is { } stray
+            && options.FirstOrDefault(option => option.IsMistakenForArgument() && ParseResult.GetResult(option) is not OptionResult { IdentifierToken: not null }) is { } missing
+            ? Mistake.Of(stray, names, missing.Name, keyOf: static name => name.TrimStart('-'))
+            : null;
     }
 
     /// <summary>

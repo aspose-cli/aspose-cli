@@ -1,0 +1,38 @@
+{
+  "name": "every product's search suggests --pattern for --text, and slides for a bare search text",
+  "files": {
+    "book.xlsx": { "fixture": "cells.xlsx" },
+    "doc.pdf": { "fixture": "pdf.pdf" },
+    "deck.pptx": { "fixture": "slides.pptx" },
+    "doc.docx": { "fixture": "words.docx" }
+  },
+  "steps": [
+    {
+      "args": ["cells", "search", "book.xlsx", "--text", "invariant"],
+      "expect": { "exitCode": 2, "error": "USAGE_ERROR", "json": [{ "path": "error.details.suggestions[0]", "equals": "--pattern" }] }
+    },
+    {
+      "args": ["pdf", "search", "doc.pdf", "--text", "invariant"],
+      "expect": { "exitCode": 2, "error": "USAGE_ERROR", "json": [{ "path": "error.details.suggestions[0]", "equals": "--pattern" }] }
+    },
+    {
+      "args": ["slides", "search", "deck.pptx", "--text", "invariant"],
+      "expect": { "exitCode": 2, "error": "USAGE_ERROR", "json": [{ "path": "error.details.suggestions[0]", "equals": "--pattern" }] }
+    },
+    {
+      "args": ["words", "search", "doc.docx", "--text", "invariant"],
+      "expect": { "exitCode": 2, "error": "USAGE_ERROR", "json": [{ "path": "error.details.suggestions[0]", "equals": "--pattern" }] }
+    },
+    {
+      "args": ["slides", "search", "deck.pptx", "invariant"],
+      "expect": {
+        "exitCode": 2,
+        "error": "USAGE_ERROR",
+        "json": [
+          { "path": "error.details.suggestions[0]", "equals": "--pattern" },
+          { "path": "error.hint", "contains": "--pattern" }
+        ]
+      }
+    }
+  ]
+}
