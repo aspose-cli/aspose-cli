@@ -77,4 +77,21 @@ public sealed class SlidesTargetNameTests
         Assert.Equal([string.Empty, "Results"], reopened.Sections.Select(static section => section.Name));
         Assert.Equal("section/%00", SlidesStateProjection.SectionAddress(string.Empty));
     }
+
+    [Fact]
+    public void InsertSection_IntoADeckWithoutSections_TargetsTheNewSection()
+    {
+        using var fixture = new SlidesEngineFixture();
+        string input = fixture.CreatePresentation("sectionless.pptx");
+        string output = fixture.File("sectioned.pptx");
+
+        SlidesEditResult result = SlidesEdit.Run(fixture.Session, new SlidesEditRequest
+        {
+            Input = input,
+            Batch = new SlidesOpsBatch { Ops = [new InsertSectionOp { Name = "Results", At = 2 }] },
+            Output = TestOutput.At(output),
+        });
+
+        Assert.Contains("section/Results", result.Applied[0].Targets);
+    }
 }

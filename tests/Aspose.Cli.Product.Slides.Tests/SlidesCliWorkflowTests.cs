@@ -416,4 +416,21 @@ public sealed class SlidesCliWorkflowTests : IDisposable
         CliResult review = _workspace.Run("review", "deck.odp", "--out", "odp-review", "--output-format", "json");
         Assert.True(review.ExitCode is 0 or 8, review.StdOut + review.StdErr);
     }
+
+    [Fact]
+    public void EvaluationReview_LaysOutTheWholeTextRatherThanTheCutText()
+    {
+        // Evaluation mode reads each line as its first characters, which would fit the box.
+        using (var presentation = new Presentation())
+        {
+            presentation.Slides[0].Shapes.AddAutoShape(ShapeType.Rectangle, 40, 300, 300, 40).TextFrame.Text =
+                string.Join("\n", Enumerable.Range(1, 6).Select(static line => $"Line {line} of a long text"));
+            presentation.Save(_workspace.File("tall.pptx"), SaveFormat.Pptx);
+        }
+
+        CliResult review = _workspace.Run("review", "tall.pptx", "--out", "tall-review", "--license-mode", "evaluation", "--output-format", "json");
+
+        Assert.True(review.ExitCode is 0 or 8, review.StdOut + review.StdErr);
+        Assert.Contains("SLIDES_TEXT_OVERFLOWS_SHAPE", FindingCodes(JsonNode.Parse(review.StdOut)!));
+    }
 }

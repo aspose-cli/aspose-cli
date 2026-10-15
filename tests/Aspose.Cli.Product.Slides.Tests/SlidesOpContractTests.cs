@@ -99,6 +99,8 @@ public sealed class SlidesOpContractTests
     [InlineData("""{"op":"set_slide_size","size":"16x9"}""", "slideSize")]
     [InlineData("""{"op":"format_shape","slide":1,"shapeId":2,"style":{"fill":"#FFFFFF"}}""", "fillColor")]
     [InlineData("""{"op":"format_shape","slide":1,"shapeId":2,"style":{"size":12}}""", "fontSize")]
+    [InlineData("""{"op":"insert_chart","slide":1,"type":"bar","rect":{"x":0,"y":0,"width":10,"height":10},"categories":["a"],"series":[{"name":"s","values":[1]}]}""", "kind")]
+    [InlineData("""{"op":"insert_chart","slide":1,"kind":"bar","box":{"x":0,"y":0,"width":10,"height":10},"categories":["a"],"series":[{"name":"s","values":[1]}]}""", "rect")]
     public void RenamedField_IsRefusedWithItsNewName(string operation, string renamed)
     {
         CliException error = Assert.Throws<CliException>(() => Parse($$"""{"ops":[{{operation}}]}"""));
