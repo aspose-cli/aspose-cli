@@ -53,15 +53,100 @@ internal sealed partial class WordsMutationHandlers
     public ValueTuple Apply(SetStyleOp operation)
     {
         Style style = GetStyle(_document, operation.Style);
-        long count = 0;
         foreach (Paragraph paragraph in Nodes.SelectMany(Paragraphs))
         {
+            Run[] runs = [.. paragraph.GetChildNodes(NodeType.Run, true).Cast<Run>().Where(run => run.ParentParagraph == paragraph)];
+            // What a run sets itself is where it differs from a run of its character style alone.
+            object?[][] own = [.. runs.Select(run => DirectSettings(paragraph, run))];
+            string[] characterStyles = [.. runs.Select(static run => run.Font.StyleName)];
             paragraph.ParagraphFormat.Style = style;
-            count++;
+            for (int index = 0; index < runs.Length; index++)
+            {
+                // The run inherits again; its own settings come back but its typeface, size and color.
+                runs[index].Font.ClearFormatting();
+                runs[index].Font.StyleName = characterStyles[index];
+                for (int setting = 0; setting < KeptSettings.Length; setting++)
+                {
+                    if (own[index][setting] is { } value)
+                    {
+                        KeptSettings[setting].Set(runs[index].Font, value);
+                    }
+                }
+            }
         }
 
         return default;
     }
+
+    /// <summary>
+    /// The settings a run sets itself, of those set_style keeps, in <see cref="KeptSettings"/>
+    /// order: each where the run differs from a probe run of its character style, else null.
+    /// </summary>
+    private static object?[] DirectSettings(Paragraph paragraph, Run run)
+    {
+        var probe = new Run(paragraph.Document, string.Empty);
+        probe.Font.StyleName = run.Font.StyleName;
+        paragraph.AppendChild(probe);
+        try
+        {
+            return [.. KeptSettings.Select(setting =>
+                setting.Get(run.Font) is var value && !Equals(value, setting.Get(probe.Font)) ? value : null)];
+        }
+        finally
+        {
+            probe.Remove();
+        }
+    }
+
+    /// <summary>
+    /// The writable character settings a run keeps through set_style beside its character
+    /// style, which a probe of the same style shares: every one but its
+    /// typeface, size and color (the font names, theme fonts, sizes, color, theme color and
+    /// tint), which give way to the style. A color reads as its ARGB value.
+    /// </summary>
+    private static readonly (Func<Aspose.Words.Font, object> Get, Action<Aspose.Words.Font, object> Set)[] KeptSettings =
+    [
+        (static font => font.Bold, static (font, value) => font.Bold = (bool)value),
+        (static font => font.BoldBi, static (font, value) => font.BoldBi = (bool)value),
+        (static font => font.Italic, static (font, value) => font.Italic = (bool)value),
+        (static font => font.ItalicBi, static (font, value) => font.ItalicBi = (bool)value),
+        (static font => font.StrikeThrough, static (font, value) => font.StrikeThrough = (bool)value),
+        (static font => font.DoubleStrikeThrough, static (font, value) => font.DoubleStrikeThrough = (bool)value),
+        (static font => font.Shadow, static (font, value) => font.Shadow = (bool)value),
+        (static font => font.Outline, static (font, value) => font.Outline = (bool)value),
+        (static font => font.Emboss, static (font, value) => font.Emboss = (bool)value),
+        (static font => font.Engrave, static (font, value) => font.Engrave = (bool)value),
+        (static font => font.Superscript, static (font, value) => font.Superscript = (bool)value),
+        (static font => font.Subscript, static (font, value) => font.Subscript = (bool)value),
+        (static font => font.SmallCaps, static (font, value) => font.SmallCaps = (bool)value),
+        (static font => font.AllCaps, static (font, value) => font.AllCaps = (bool)value),
+        (static font => font.Hidden, static (font, value) => font.Hidden = (bool)value),
+        (static font => font.Underline, static (font, value) => font.Underline = (Underline)value),
+        (static font => font.UnderlineColor.ToArgb(), static (font, value) => font.UnderlineColor = System.Drawing.Color.FromArgb((int)value)),
+        (static font => font.NumberSpacing, static (font, value) => font.NumberSpacing = (NumSpacing)value),
+        (static font => font.Scaling, static (font, value) => font.Scaling = (int)value),
+        (static font => font.Spacing, static (font, value) => font.Spacing = (double)value),
+        (static font => font.Position, static (font, value) => font.Position = (double)value),
+        (static font => font.Kerning, static (font, value) => font.Kerning = (double)value),
+        (static font => font.HighlightColor.ToArgb(), static (font, value) => font.HighlightColor = System.Drawing.Color.FromArgb((int)value)),
+        (static font => font.TextEffect, static (font, value) => font.TextEffect = (TextEffect)value),
+        (static font => font.Bidi, static (font, value) => font.Bidi = (bool)value),
+        (static font => font.ComplexScript, static (font, value) => font.ComplexScript = (bool)value),
+        (static font => font.NoProofing, static (font, value) => font.NoProofing = (bool)value),
+        (static font => font.LocaleId, static (font, value) => font.LocaleId = (int)value),
+        (static font => font.LocaleIdBi, static (font, value) => font.LocaleIdBi = (int)value),
+        (static font => font.LocaleIdFarEast, static (font, value) => font.LocaleIdFarEast = (int)value),
+        (static font => font.SnapToGrid, static (font, value) => font.SnapToGrid = (bool)value),
+        (static font => font.EmphasisMark, static (font, value) => font.EmphasisMark = (EmphasisMark)value),
+        (static font => font.Border.Color.ToArgb(), static (font, value) => font.Border.Color = System.Drawing.Color.FromArgb((int)value)),
+        (static font => font.Border.LineStyle, static (font, value) => font.Border.LineStyle = (LineStyle)value),
+        (static font => font.Border.LineWidth, static (font, value) => font.Border.LineWidth = (double)value),
+        (static font => font.Border.DistanceFromText, static (font, value) => font.Border.DistanceFromText = (double)value),
+        (static font => font.Border.Shadow, static (font, value) => font.Border.Shadow = (bool)value),
+        (static font => font.Shading.BackgroundPatternColor.ToArgb(), static (font, value) => font.Shading.BackgroundPatternColor = System.Drawing.Color.FromArgb((int)value)),
+        (static font => font.Shading.ForegroundPatternColor.ToArgb(), static (font, value) => font.Shading.ForegroundPatternColor = System.Drawing.Color.FromArgb((int)value)),
+        (static font => font.Shading.Texture, static (font, value) => font.Shading.Texture = (TextureIndex)value),
+    ];
 
     public ValueTuple Apply(DefineStyleOp operation)
     {

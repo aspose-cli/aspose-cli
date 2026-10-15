@@ -542,7 +542,7 @@ public sealed record FormatTextOp : WordsOp
     [AllowedValues(typeof(WordsHighlightColors))] public string? Highlight { get; init; }
 }
 
-/// <summary>Applies an existing paragraph style to target blocks.</summary>
+/// <summary>Applies an existing paragraph style to target blocks: the typeface, size and color set on their runs give way to the style, while emphasis such as bold, italic or underline set on a run stays.</summary>
 [Operation("set_style")]
 public sealed record SetStyleOp : WordsOp
 {
