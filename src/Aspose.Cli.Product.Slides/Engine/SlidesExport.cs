@@ -102,6 +102,11 @@ internal static class SlidesExport
         IReadOnlyList<OutputInfo> written = session.Outputs.Write(request.Output, presentation, encrypted, temp =>
         {
             Save(temp);
+            if (format == SaveFormat.Odp)
+            {
+                SlidesOdfPackage.PutMimeTypeFirst(temp);
+            }
+
             loaded.Resources.ThrowIfFailed();
         });
         return [.. written.Select(static file => new SlidesSlideOutput(file))];
