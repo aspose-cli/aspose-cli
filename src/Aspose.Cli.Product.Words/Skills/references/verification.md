@@ -16,7 +16,10 @@ accept or reject revisions, and with `--track-changes` every applied
 operation; one left out of `checkedOps` was not checked. A count or
 protection mismatch is an issue, usually because the output format (such as
 `txt` or `html`) does not keep that state; save to a Word format and verify
-again.
+again. A count that grew instead means the format stored content as fields,
+such as a linked picture in RTF. In evaluation mode, an output that ends with
+the engine's truncation notice is the issue `OUTPUT_TRUNCATED`: the content
+after it is missing.
 
 `--verify` cannot be combined with `--dry-run`.
 

@@ -75,6 +75,35 @@ public sealed class WordsDisclosureTests
         Assert.Contains(edited.Warnings!, static warning => warning.Code == WarningCodes.EvaluationMode);
     }
 
+    /// <summary>
+    /// In evaluation mode a verified edit whose output ends with the truncation notice reports
+    /// OUTPUT_TRUNCATED, whether this run or an earlier save cut the document short.
+    /// </summary>
+    [Fact]
+    public void Verify_InEvaluationMode_ReportsAnOutputCutShort()
+    {
+        using var fixture = new WordsFixture();
+        var source = new Document();
+        var builder = new DocumentBuilder(source);
+        builder.Writeln("Clause one.");
+        builder.Write("This document was truncated here because it was created in the Evaluation Mode.");
+        string input = fixture.Temp.File("cut.docx");
+        source.Save(input, SaveFormat.Docx);
+        ResourceBudgetLedger budgets = ProductTestBudgets.Create<WordsModule>();
+        var outputs = new OutputPipeline<Document>(new FixedGate(LicenseState.Evaluation), new WordsEvaluationProfile(), new SafeFileWriter(budgets));
+
+        var edited = (WordsEditResult)outputs.Disclose(WordsEdit.Run(WordsActivation.Session(outputs, budgets), new WordsEditRequest
+        {
+            Input = input,
+            Batch = new WordsOpsBatch { Ops = [new ReplaceTextOp { Find = "one", Replace = "two" }] },
+            Output = TestOutput.At(fixture.Temp.File("cut-edited.docx")),
+            Verify = true,
+        }));
+
+        Assert.False(edited.Verification!.Ok);
+        Assert.Contains(edited.Verification.Issues, static issue => issue.Code == "OUTPUT_TRUNCATED");
+    }
+
     [Fact]
     public void EditingARestrictedDocument_DisclosesThatTheRestrictionWasNotEnforced()
     {

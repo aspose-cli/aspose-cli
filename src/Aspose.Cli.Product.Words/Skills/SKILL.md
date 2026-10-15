@@ -161,6 +161,7 @@ document was loaded. When the edited document grows past what evaluation mode
 lays out and saves (about 200 paragraphs, as with a mail merge of many
 records), the output keeps only its first sections and ends with the engine's
 truncation notice, which the `EVALUATION_MODE` message names. Either way the
+output ends with that notice, `--verify` reports `OUTPUT_TRUNCATED`, and the
 result is incomplete whatever `itemsAffected` says. Evaluation marks saved
 into a file are reported by a licensed `review` as `WORDS_EVALUATION_MARKS`
 ([verification](references/verification.md)) and, when a licensed command's
