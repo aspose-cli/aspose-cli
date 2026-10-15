@@ -179,6 +179,44 @@ public sealed class OutputPipelineTests
         Assert.Equal(disclosed ? [EnvelopeParts.EvaluationWatermark] : null, pipeline.Disclosure());
     }
 
+    /// <summary>Of several outputs, the disclosure names the files that carry the marks.</summary>
+    [Theory]
+    [InlineData(LicenseState.Evaluation, "The outputs 'b.doc' and 'c.doc' carry the banner.")]
+    [InlineData(LicenseState.Licensed, "The outputs 'b.doc' and 'c.doc' keep the evaluation marks")]
+    public void SeveralOutputs_NameTheFilesThatCarryTheMarks(LicenseState state, string sentence)
+    {
+        using var temp = new TempDirectory();
+        OutputPipeline<Document> pipeline = Pipeline(state);
+
+        using (OutputSet<Document> set = pipeline.BeginSet([temp.Path], "test"))
+        {
+            foreach ((string name, string[] marks) in new[] { ("a.doc", Array.Empty<string>()), ("b.doc", ["the banner"]), ("c.doc", ["the banner"]) })
+            {
+                set.Stage(temp.File(name), false, new Document(marks), path => File.WriteAllText(path, name));
+            }
+
+            set.Commit();
+        }
+
+        Assert.Contains(sentence, Assert.Single(pipeline.Disclosure()!).Message, StringComparison.Ordinal);
+    }
+
+    /// <summary>An output saved through something other than its document is inspected as the file holds it.</summary>
+    [Fact]
+    public void AnOutputSavedApart_IsInspectedFromItsFile()
+    {
+        using var temp = new TempDirectory();
+        OutputPipeline<Document> pipeline = Pipeline(LicenseState.Evaluation);
+
+        using (OutputSet<Document> set = pipeline.BeginSet([temp.Path], "test"))
+        {
+            set.Stage(temp.File("signed.doc"), false, new Document([]), path => File.WriteAllText(path, "mark:the signing notice"), saved: true);
+            set.Commit();
+        }
+
+        Assert.EndsWith("The output carries the signing notice.", Assert.Single(pipeline.Disclosure()!).Message, StringComparison.Ordinal);
+    }
+
     [Fact]
     public void Neutralize_RunsOnlyInEvaluationMode()
     {
@@ -208,6 +246,10 @@ public sealed class OutputPipelineTests
         public string Engine => "Aspose.Test";
 
         public EvaluationMarks Inspect(Document document) => new([.. document.Marks], document.Truncated);
+
+        /// <summary>A file whose text starts with <c>mark:</c> carries the mark it names.</summary>
+        public EvaluationMarks? InspectSaved(string path, string format) =>
+            File.ReadAllText(path) is var text && text.StartsWith("mark:", StringComparison.Ordinal) ? new([text[5..]]) : EvaluationMarks.None;
 
         public void Neutralize(Document document) => document.Marks.Clear();
     }

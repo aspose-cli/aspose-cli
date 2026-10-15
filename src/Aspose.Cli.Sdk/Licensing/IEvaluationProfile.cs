@@ -62,6 +62,16 @@ public interface IEvaluationProfile<in TDocument>
     EvaluationMarks Inspect(TDocument document, string format, IReadOnlyCollection<int> pages) => Inspect(document, format);
 
     /// <summary>
+    /// The evaluation marks of an output as the file holds it, read from <paramref name="path"/>,
+    /// for an output the product saves through something other than the document it hands the
+    /// pipeline, such as a facade that signs it, so the document does not show what the file
+    /// carries. Null when the profile reads no file, and by default.
+    /// </summary>
+    /// <param name="path">The staged output file.</param>
+    /// <param name="format">The output format id, such as <c>pdf</c>.</param>
+    EvaluationMarks? InspectSaved(string path, string format) => null;
+
+    /// <summary>
     /// Removes from a document the marks evaluation mode added when it opened it, where they
     /// would stand as content once the document becomes part of another, such as the banner of
     /// a document appended to another. Called only in evaluation mode; by default it does nothing.
