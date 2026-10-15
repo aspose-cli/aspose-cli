@@ -116,6 +116,32 @@ public sealed class PdfEngineTests
         Assert.Contains("have generated names and lost their HTML values: 'radio'", message, StringComparison.Ordinal);
     }
 
+    /// <summary>
+    /// A Markdown line that ends in two spaces breaks the line (a hard break, PDF-8); a line
+    /// without them joins the next one, as CommonMark reads a soft break.
+    /// </summary>
+    [Fact]
+    public void Create_FromMarkdown_BreaksALineThatEndsInTwoSpaces()
+    {
+        using var fixture = new PdfEngineFixture();
+        string input = fixture.File("breaks.md");
+        File.WriteAllText(input, "编制：销售运营部 / Sales Operations  \n日期：2026-10-12\n\nSoft first\nsoft second\n");
+
+        PdfCreateResult created = PdfCreate.Run(fixture.Session, new PdfCreateRequest { Output = TestOutput.At(fixture.File("breaks.pdf")), TextPath = input });
+
+        // Measured by where the words lie, which an evaluation notice drawn over them leaves alone.
+        using var document = new Document(created.Output.Path);
+        Assert.True(Top(document, "Operations") - Top(document, "2026-10-12") > 5, "the hard break joined the lines");
+        Assert.Equal(Top(document, "first"), Top(document, "second"), 1d);
+
+        static double Top(Document document, string word)
+        {
+            var absorber = new TextFragmentAbsorber(word);
+            document.Pages[1].Accept(absorber);
+            return absorber.TextFragments[1].Rectangle.URY;
+        }
+    }
+
     [Fact]
     public void Create_FromMarkdown_InventsNoMetadata()
     {
