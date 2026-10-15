@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using Aspose.Cli.Sdk.Errors;
@@ -193,23 +194,38 @@ internal static class PdfSign
                 password.Reveal(),
                 X509KeyStorageFlags.EphemeralKeySet);
             DateTimeOffset now = DateTimeOffset.UtcNow;
-            if (!certificate.HasPrivateKey
-                || now < certificate.NotBefore.ToUniversalTime()
-                || now > certificate.NotAfter.ToUniversalTime())
+            if (!certificate.HasPrivateKey)
             {
-                throw SignCertificateInvalid();
+                throw SignCertificateInvalid("it holds no private key to sign with");
             }
+
+            if (now < certificate.NotBefore.ToUniversalTime() || now > certificate.NotAfter.ToUniversalTime())
+            {
+                throw SignCertificateInvalid(string.Create(CultureInfo.InvariantCulture,
+                    $"it is valid only from {certificate.NotBefore.ToUniversalTime():yyyy-MM-dd} to {certificate.NotAfter.ToUniversalTime():yyyy-MM-dd} (UTC)"));
+            }
+        }
+        catch (CryptographicException exception) when (exception.HResult == WrongPassword)
+        {
+            throw new CliException(
+                PdfDiagnostics.SignCertInvalid,
+                "The certificate password does not open the PKCS#12 certificate.",
+                hint: "Pass the certificate's own password with --certificate-password-env or --certificate-password-stdin; it is not the PDF's password.",
+                innerException: exception);
         }
         catch (CryptographicException exception)
         {
-            throw SignCertificateInvalid(exception);
+            throw SignCertificateInvalid("it is not a PKCS#12 file the system can read", exception);
         }
     }
 
-    private static CliException SignCertificateInvalid(Exception? innerException = null) =>
+    /// <summary>The error Windows reports for a PKCS#12 password that does not open the file (ERROR_INVALID_PASSWORD).</summary>
+    private const int WrongPassword = unchecked((int)0x80070056);
+
+    private static CliException SignCertificateInvalid(string reason, Exception? innerException = null) =>
         new(
             PdfDiagnostics.SignCertInvalid,
-            "The PKCS#12 signing certificate could not be used.",
-            hint: "Verify the certificate file and password, then use a currently valid certificate with a private key.",
+            $"The PKCS#12 signing certificate could not be used: {reason}.",
+            hint: "Use a currently valid PKCS#12 certificate (.pfx or .p12) with a private key.",
             innerException: innerException);
 }
