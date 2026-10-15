@@ -15,6 +15,7 @@ internal static class SplitCommand
             {
                 Input = WordsInputs.Document,
                 Output = OutputTarget.Directory("Directory that receives the parts, named <stem>.<n>.docx.", WordsFormats.SplitParts),
+                Encrypt = new EncryptedOutput("every part"),
                 UsesFonts = true,
             },
             [.. split.Options],
@@ -24,6 +25,7 @@ internal static class SplitCommand
                 Plan = split.Read(parse),
                 Output = standard.DirectoryOutput,
                 Password = standard.InputPassword,
+                EncryptPassword = standard.EncryptPassword(),
             },
             Table)
         {

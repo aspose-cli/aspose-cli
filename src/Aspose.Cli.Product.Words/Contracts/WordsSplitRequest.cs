@@ -12,4 +12,6 @@ public sealed record WordsSplitRequest
     /// <summary>The resolved directory that receives the files.</summary>
     public required ResolvedDirectory Output { get; init; }
     public Secret? Password { get; init; }
+    /// <summary>The password every part opens with, in place of the input's.</summary>
+    public Secret? EncryptPassword { get; init; }
 }

@@ -47,6 +47,19 @@ public sealed class WordsOutputEncryptionTests : IDisposable
         Assert.DoesNotContain("ENCRYPTION_REMOVED", Codes(result));
     }
 
+    /// <summary>X-03: split encrypts every part with --encrypt-env, as pdf split does.</summary>
+    [Fact]
+    public void SplitWithEncryptEnv_EncryptsEveryPart()
+    {
+        JsonNode result = Succeeds(Run("words", "split", "plain.docx", "--by", "heading1", "--out-dir", "sealed", "--encrypt-env", "WORDS_PASSWORD"));
+
+        string[] parts = Directory.GetFiles(_workspace.File("sealed"));
+        Assert.NotEmpty(parts);
+        Assert.All(parts, part => Assert.True(FileFormatUtil.DetectFileFormat(part).IsEncrypted));
+        Assert.All(parts, part => Assert.NotNull(new Document(part, new Aspose.Words.Loading.LoadOptions { Password = Password })));
+        Assert.All(PartsEncrypted(result), Assert.True);
+    }
+
     [Category(TestCategory.Slow)]
     [Fact]
     public void SplitOfAnEncryptedDocument_KeepsThePasswordInEveryPart()

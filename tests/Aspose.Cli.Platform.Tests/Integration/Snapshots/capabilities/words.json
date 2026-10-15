@@ -2675,6 +2675,54 @@
             "description": "Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds."
           },
           {
+            "name": "--encrypt",
+            "aliases": [],
+            "type": "string",
+            "minimumArity": 1,
+            "maximumArity": 1,
+            "required": false,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": false,
+            "allowedValues": [],
+            "secret": true,
+            "valueSource": "command-line",
+            "description": "Password for every part. Discouraged: visible in the process list; prefer --encrypt-env."
+          },
+          {
+            "name": "--encrypt-env",
+            "aliases": [],
+            "type": "string",
+            "minimumArity": 1,
+            "maximumArity": 1,
+            "required": false,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": false,
+            "allowedValues": [],
+            "secret": true,
+            "valueSource": "environment-variable-name",
+            "description": "Name of an environment variable holding the password for every part."
+          },
+          {
+            "name": "--encrypt-stdin",
+            "aliases": [],
+            "type": "boolean",
+            "minimumArity": 0,
+            "maximumArity": 1,
+            "required": false,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": true,
+            "allowedValues": [
+              "false",
+              "true"
+            ],
+            "secret": true,
+            "valueSource": "stdin",
+            "description": "Read the password for every part from the first line of stdin."
+          },
+          {
             "name": "--every",
             "aliases": [],
             "type": "integer",
