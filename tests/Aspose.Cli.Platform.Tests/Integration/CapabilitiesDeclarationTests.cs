@@ -97,7 +97,9 @@ public sealed partial class CapabilitiesDeclarationTests : IDisposable
                 }
                 bool same = shown.Count is { } count
                     ? count == declared.Length
-                    : declared.SequenceEqual(shown.Values.Order(StringComparer.Ordinal), StringComparer.Ordinal);
+                    : shown.Description is { } description && declared.Length > 0
+                        ? declared.All(value => NamesValue(description, value))
+                        : declared.SequenceEqual(shown.Values.Order(StringComparer.Ordinal), StringComparer.Ordinal);
                 if (!same)
                 {
                     problems.Add($"{path} {name}: capabilities [{string.Join(", ", declared)}], help "
@@ -150,7 +152,11 @@ public sealed partial class CapabilitiesDeclarationTests : IDisposable
         Section(help, "Commands").Select(static line => line.TrimStart().Split([' ', ','], 2)[0]);
 
     /// <summary>The values help shows for an option: listed, or only counted when there are too many.</summary>
-    private sealed record HelpValues(IReadOnlyList<string> Values, int? Count);
+    /// <summary>
+    /// The values help shows for an option: listed after "Values:" or in its label, counted, or,
+    /// when its description already explains each value, that description (<see cref="Description"/>).
+    /// </summary>
+    private sealed record HelpValues(IReadOnlyList<string> Values, int? Count, string? Description = null);
 
     private static Dictionary<string, HelpValues> HelpOptions(string help)
     {
@@ -179,6 +185,11 @@ public sealed partial class CapabilitiesDeclarationTests : IDisposable
             {
                 values = new HelpValues(placeholder.Groups["text"].Value.Split('|'), null);
             }
+            else
+            {
+                // A long list moved out of the label is not repeated after a description that names each value.
+                values = new HelpValues([], null, description);
+            }
             foreach (string name in names)
             {
                 options[name] = values;
@@ -186,6 +197,10 @@ public sealed partial class CapabilitiesDeclarationTests : IDisposable
         }
         return options;
     }
+
+    /// <summary>Whether <paramref name="description"/> names <paramref name="value"/> as a word of its own.</summary>
+    private static bool NamesValue(string description, string value) =>
+        Regex.IsMatch(description, $@"(?<![A-Za-z0-9-]){Regex.Escape(value)}(?![A-Za-z0-9-])", RegexOptions.CultureInvariant);
 
     [GeneratedRegex(@"^  (?<label>\S.*?)\s{2,}(?<description>.*)$")]
     private static partial Regex OptionRow();
