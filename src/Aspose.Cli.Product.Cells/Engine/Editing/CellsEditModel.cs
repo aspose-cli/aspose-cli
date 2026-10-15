@@ -60,6 +60,15 @@ internal sealed class CellsEditModel : IOperationModel<CellsOp>
         _protection.Record(protectedTarget == default ? CellsProtectionTracker.Spilled(_workbook, operation) : protectedTarget);
     }
 
+    /// <summary>
+    /// The worksheets, whose names begin the addresses of everything a sheet holds, so a target an
+    /// operation reported before a later <c>rename_sheet</c> carries the name the output has.
+    /// Tables and defined names are addressed by their own names and are left out.
+    /// </summary>
+    public NamedScopes Scopes() => new(
+        CellsAddresses.SheetUnits,
+        [.. _workbook.Worksheets.Select(static sheet => ((object)sheet, sheet.Name))]);
+
     /// <summary>What a failed operation addressed: its range or cell, its sheet, or the part of the workbook it changes.</summary>
     public IReadOnlyList<string> AttemptedTargets(CellsOp operation)
     {
