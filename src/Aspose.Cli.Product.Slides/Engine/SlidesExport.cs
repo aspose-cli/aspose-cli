@@ -15,11 +15,25 @@ internal static class SlidesExport
     {
         LicenseState state = session.Outputs.License;
         using LoadedPresentation loaded = session.Loader.Open(request.Input, request.Password);
+        Presentation presentation = loaded.Presentation;
+        string formatId = request.Output.Format.Id;
+        // A slide selection converts every slide it names, hidden or not. Without one, an export
+        // leaves the hidden slides out, as PowerPoint's own export does, unless nothing would be
+        // left; a presentation format keeps them, hidden as they were.
         IReadOnlyList<int>? slides = request.Slides is null
             ? null
-            : ResolveSlideRange(request.Slides, loaded.Presentation.Slides.Count);
-        IReadOnlyList<SlidesSlideOutput> outputs = ConvertOutputs(session, loaded, request, slides);
-        List<Warning> warnings = BuildConvertWarnings(loaded, request.Output.Format.Id);
+            : ResolveSlideRange(request.Slides, presentation.Slides.Count);
+        int[] skipped = slides is null && !KeepsHiddenSlides(SlidesEngineFormats.IsSlideImage(formatId) ? null : SlidesEngineFormats.SaveFormatOf(formatId))
+            ? [.. AllSlides(presentation.Slides.Count).Where(number => presentation.Slides[number - 1].Hidden)]
+            : [];
+        if (skipped.Length == presentation.Slides.Count)
+        {
+            skipped = [];
+        }
+
+        IReadOnlyList<int>? selection = skipped.Length == 0 ? slides : [.. AllSlides(presentation.Slides.Count).Except(skipped)];
+        IReadOnlyList<SlidesSlideOutput> outputs = ConvertOutputs(session, loaded, request, selection);
+        List<Warning> warnings = BuildConvertWarnings(loaded, formatId, skipped);
         return new SlidesConvertResult
         {
             Input = Source(request.Input, loaded),
@@ -29,6 +43,11 @@ internal static class SlidesExport
             Warnings = warnings.Count == 0 ? null : warnings,
         };
     }
+
+    // Whether a conversion to the format keeps the hidden slides: a presentation format carries
+    // them hidden, while an export, images included (null), shows only what a slide show shows.
+    private static bool KeepsHiddenSlides(SaveFormat? format) =>
+        format is SaveFormat.Ppt or SaveFormat.Pptx or SaveFormat.Pptm or SaveFormat.Odp;
 
     private static IReadOnlyList<SlidesSlideOutput> ConvertOutputs(
         SlidesSession session,
@@ -47,55 +66,99 @@ internal static class SlidesExport
                     selected,
                     "slides-convert");
         }
-        else
+
+        SaveFormat format = SlidesEngineFormats.SaveFormatOf(request.Output.Format.Id);
+        // A format that can carry a password keeps the source's encryption unless --encrypt
+        // replaces it; any other is written without it, which the write pipeline discloses.
+        bool protectable = request.Output.Format.Protectable;
+        bool encrypted = protectable && (request.EncryptPassword is not null || presentation.ProtectionManager.IsEncrypted);
+        if (!protectable && presentation.ProtectionManager.IsEncrypted)
         {
-            SaveFormat format = SlidesEngineFormats.SaveFormatOf(request.Output.Format.Id);
-            // A format that can carry a password keeps the source's encryption unless --encrypt
-            // replaces it; any other is written without it, which the write pipeline discloses.
-            bool protectable = request.Output.Format.Protectable;
-            bool encrypted = protectable && (request.EncryptPassword is not null || presentation.ProtectionManager.IsEncrypted);
-            if (!protectable && presentation.ProtectionManager.IsEncrypted)
+            presentation.ProtectionManager.RemoveEncryption();
+        }
+
+        if (slides is not null && Exports(format))
+        {
+            // A selected slide is converted even when it is hidden; every export but HTML5 and
+            // GIF could show it by option, so it is shown in this private copy for all of them.
+            foreach (int number in slides)
             {
-                presentation.ProtectionManager.RemoveEncryption();
+                presentation.Slides[number - 1].Hidden = false;
             }
 
-            IReadOnlyList<OutputInfo> written = session.Outputs.Write(request.Output, presentation, encrypted, temp =>
+            if (!request.Output.Format.CompanionFiles)
             {
-                Save(temp);
-                loaded.Resources.ThrowIfFailed();
-            });
-            return [.. written.Select(static file => new SlidesSlideOutput(file))];
+                // An export of selected slides shows those slides alone, numbered as in the deck,
+                // so only their evaluation marks are its own.
+                PublishedFile file = session.Outputs.Write(request.Output.Path, request.Output.Overwrite, presentation, temp =>
+                {
+                    presentation.Save(temp, [.. slides], format);
+                    loaded.Resources.ThrowIfFailed();
+                }, pages: slides, encrypted: encrypted);
+                return [new SlidesSlideOutput(FileObjects.Output(file, request.Output.Format, encrypted))];
+            }
+        }
 
-            void Save(string temp)
+        IReadOnlyList<OutputInfo> written = session.Outputs.Write(request.Output, presentation, encrypted, temp =>
+        {
+            Save(temp);
+            loaded.Resources.ThrowIfFailed();
+        });
+        return [.. written.Select(static file => new SlidesSlideOutput(file))];
+
+        void Save(string temp)
+        {
+            if (slides is null)
             {
-                if (slides is null)
-                {
-                    Encrypt(presentation, request.EncryptPassword);
-                    presentation.Save(temp, format);
-                    return;
-                }
-
-                if (format is SaveFormat.Pdf or SaveFormat.Xps or SaveFormat.Html
-                    or SaveFormat.Html5 or SaveFormat.Tiff or SaveFormat.Gif)
-                {
-                    presentation.Save(temp, slides.ToArray(), format);
-                    return;
-                }
-
-                // Editable formats keep the source's size, properties, masters and protection:
-                // the unselected slides leave this private loaded copy instead of cloning into a new deck.
-                RemoveUnselectedSlides(presentation, slides);
                 Encrypt(presentation, request.EncryptPassword);
                 presentation.Save(temp, format);
+                return;
             }
+
+            if (Exports(format))
+            {
+                presentation.Save(temp, [.. slides], format);
+                return;
+            }
+
+            // Editable formats keep the source's size, properties, masters and protection:
+            // the unselected slides leave this private loaded copy instead of cloning into a new deck.
+            RemoveUnselectedSlides(presentation, slides);
+            Encrypt(presentation, request.EncryptPassword);
+            presentation.Save(temp, format);
         }
     }
 
+    // Whether the format is an export, which can show selected slides alone; a presentation
+    // format keeps them by removing the others.
+    private static bool Exports(SaveFormat format) =>
+        format is SaveFormat.Pdf or SaveFormat.Xps or SaveFormat.Html or SaveFormat.Html5
+            or SaveFormat.Tiff or SaveFormat.Gif or SaveFormat.Md;
+
     private static List<Warning> BuildConvertWarnings(
         LoadedPresentation loaded,
-        string targetFormatId)
+        string targetFormatId,
+        IReadOnlyList<int> skipped)
     {
         var warnings = WrittenWarnings(loaded)?.ToList() ?? [];
+        if (skipped.Count > 0)
+        {
+            string numbers = string.Join(", ", skipped);
+            warnings.Add(new Warning(SlidesDiagnostics.HiddenSlidesSkipped,
+                $"The {targetFormatId} output leaves out the hidden slide(s) {numbers}, as a slide show and PowerPoint's export do.")
+            {
+                Hint = $"To include them, name every slide to convert with --slides, such as --slides 1-{loaded.Presentation.Slides.Count}; a selected hidden slide is converted.",
+            });
+        }
+
+        if (targetFormatId == "odp" && OdpLosses(loaded.Presentation) is { } losses)
+        {
+            warnings.Add(new Warning(WarningCodes.LossyConversion, $"The odp output does not keep {losses}, though its slides look as in the deck.")
+            {
+                Hint = "Keep the source deck for further edits; to keep the charts editable, the transitions and the sections, convert to pptx instead.",
+            });
+        }
+
         if (targetFormatId is "html" or "html5" or "md")
         {
             warnings.Add(new Warning(WarningCodes.LossyConversion, $"Slides conversion to {targetFormatId} may not preserve every presentation feature.")
@@ -105,6 +168,25 @@ internal static class SlidesExport
         }
 
         return warnings;
+    }
+
+    // What an ODP save of the presentation does not keep (SLIDES-ODP-NATIVE-CONTENT): its native charts, which become
+    // pictures, the slide transitions and the sections; null when it has none of them.
+    private static string? OdpLosses(Presentation presentation)
+    {
+        int[] charts = [.. AllSlides(presentation.Slides.Count).Where(number => HasChart(presentation.Slides[number - 1].Shapes))];
+        int[] transitions = [.. AllSlides(presentation.Slides.Count)
+            .Where(number => presentation.Slides[number - 1].SlideShowTransition.Type != Aspose.Slides.SlideShow.TransitionType.None)];
+        string[] lost =
+        [
+            .. charts.Length == 0 ? [] : new[] { $"the native charts of slide(s) {string.Join(", ", charts)}, which become pictures" },
+            .. transitions.Length == 0 ? [] : new[] { $"the transitions of slide(s) {string.Join(", ", transitions)}" },
+            .. presentation.Sections.Count == 0 ? [] : new[] { $"the {presentation.Sections.Count} section(s)" },
+        ];
+        return lost.Length == 0 ? null : string.Join("; ", lost);
+
+        static bool HasChart(IShapeCollection shapes) =>
+            shapes.Any(static shape => shape is Aspose.Slides.Charts.IChart || (shape is IGroupShape group && HasChart(group.Shapes)));
     }
 
     internal static SlidesRenderResult Render(SlidesSession session, SlidesRenderRequest request)

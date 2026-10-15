@@ -31,9 +31,14 @@ internal sealed class SlidesEvaluationProfile : IEvaluationProfile<Presentation>
     public EvaluationMarks Inspect(Presentation presentation, string format) =>
         format == "md" ? Inspect(presentation) : Inspect(presentation) with { IsTruncated = false };
 
-    /// <summary>The marks images of some slides show: the watermark boxes on those slides.</summary>
+    /// <summary>
+    /// The marks of an output that shows some slides, as images or an export of selected slides
+    /// do: the watermark boxes on those slides, and, in Markdown, the text cut short.
+    /// </summary>
     public EvaluationMarks Inspect(Presentation presentation, string format, IReadOnlyCollection<int> pages) =>
-        new(pages.Any(number => presentation.Slides[number - 1].Shapes.Any(IsEvaluationWatermark)) ? [Watermark] : []);
+        new(
+            pages.Any(number => presentation.Slides[number - 1].Shapes.Any(IsEvaluationWatermark)) ? [Watermark] : [],
+            format == "md" && EvaluationInputTruncated(presentation));
 
     private const string Watermark = "the evaluation watermark text box 'Evaluation only. Created with Aspose.Slides' on its slides";
 }

@@ -426,6 +426,15 @@ fails, delete the issue's section, the code that names it and the test, then upd
 - **Workaround:** remove the named values; Windows writes only string values there.
 - **Reproduction:** [SlidesKnownIssueTests](tests/Aspose.Cli.Product.Slides.Tests/SlidesKnownIssueTests.cs)
 
+### SLIDES-ODP-NATIVE-CONTENT
+
+- **Defect:** saving a presentation as ODP writes each native chart as a picture and drops the
+  slide transitions and the sections, although OpenDocument presentations can hold all three.
+- **CLI behavior:** `slides convert` to ODP warns `LOSSY_CONVERSION`, naming the slides whose
+  charts become pictures, the slides whose transitions are dropped and the number of sections.
+- **Workaround:** keep the PPTX for further edits.
+- **Reproduction:** [SlidesConvertKnownIssueTests](tests/Aspose.Cli.Product.Slides.Tests/SlidesConvertKnownIssueTests.cs)
+
 ## Aspose.Words 26.9.0
 
 ### WORDS-TEXT-COMMENTS
