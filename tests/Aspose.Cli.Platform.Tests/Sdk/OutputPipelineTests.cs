@@ -1,4 +1,5 @@
 using Aspose.Cli.Sdk.Contracts;
+using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Licensing;
 using Aspose.Cli.Sdk.Results;
 using Aspose.Cli.TestKit;
@@ -154,6 +155,28 @@ public sealed class OutputPipelineTests
         Assert.StartsWith("The rendered source carries the evaluation marks", disclosure.Message, StringComparison.Ordinal);
         Assert.Contains("the watermark", disclosure.Message, StringComparison.Ordinal);
         Assert.DoesNotContain("The output keeps", disclosure.Message, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// An extraction of what the engine derives is disclosed in evaluation mode; one of files the
+    /// documents embed, copied as stored, is not.
+    /// </summary>
+    [Theory]
+    [InlineData(ExtractionContent.Derived, true)]
+    [InlineData(ExtractionContent.EmbeddedFiles, false)]
+    public void Extraction_IsDisclosedUnlessItCopiesEmbeddedFiles(ExtractionContent content, bool disclosed)
+    {
+        using var temp = new TempDirectory();
+        OutputPipeline<Document> pipeline = Pipeline(LicenseState.Evaluation);
+
+        using (ExtractionGuard guard = pipeline.BeginExtraction(temp.File("out"), overwrite: false, content))
+        {
+            guard.WriteAllBytes("picture.png", [1, 2, 3]);
+            guard.Commit();
+        }
+
+        Assert.True(File.Exists(temp.File(Path.Combine("out", "picture.png"))));
+        Assert.Equal(disclosed ? [EnvelopeParts.EvaluationWatermark] : null, pipeline.Disclosure());
     }
 
     [Fact]

@@ -97,6 +97,36 @@ public sealed partial class EvaluationOwnershipTests
             + string.Join(", ", products.Except(implementing, StringComparer.Ordinal)));
     }
 
+    /// <summary>
+    /// The product extractions that declare they copy embedded files byte for byte
+    /// (<c>ExtractionContent.EmbeddedFiles</c>), which the write pipeline does not disclose, by
+    /// their source file relative to <c>src</c>. Each is a decision: the extraction writes only
+    /// bytes the document stores, never bytes the engine produced, so evaluation mode adds nothing.
+    /// </summary>
+    private static readonly string[] EmbeddedFileExtractions = [];
+
+    /// <summary>
+    /// A product declares an extraction of embedded files only in an extraction it is listed for,
+    /// and only as the content of <c>BeginExtraction</c>, so the declaration never silences the
+    /// disclosure of another output.
+    /// </summary>
+    [Fact]
+    public void D6_OnlyListedExtractionsDeclareEmbeddedFiles()
+    {
+        IEnumerable<string> violations = OwnershipSourceFiles.Products.SelectMany(file => file.Root.DescendantNodes()
+            .OfType<MemberAccessExpressionSyntax>()
+            .Where(static access => access.Name.Identifier.ValueText == "EmbeddedFiles"
+                && access.Expression.ToString().EndsWith("ExtractionContent", StringComparison.Ordinal))
+            .Where(access => !EmbeddedFileExtractions.Contains(file.Relative.Replace('\\', '/'), StringComparer.Ordinal)
+                || access.FirstAncestorOrSelf<InvocationExpressionSyntax>() is not { } call
+                || OwnershipSourceFiles.InvokedName(call) != "BeginExtraction")
+            .Select(access => file.At(access, access.ToString())));
+
+        OwnershipSourceFiles.AssertNone(violations,
+            "Only the extractions EvaluationOwnershipTests lists copy embedded files without disclosure, "
+            + "and only through BeginExtraction; list a new one only when it writes no byte the engine produced:");
+    }
+
     [Fact]
     public void D6_Products_DeclareNoEvaluationCode()
     {
