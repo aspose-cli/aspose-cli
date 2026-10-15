@@ -2821,7 +2821,7 @@
         "schema",
         "schemaVersion",
         "input",
-        "output"
+        "outputs"
       ],
       "additionalProperties": false,
       "properties": {
@@ -2837,9 +2837,13 @@
           "description": "The converted input file.",
           "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/input.schema.json"
         },
-        "output": {
-          "description": "The produced output file.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/output.schema.json"
+        "outputs": {
+          "description": "The written files: the one file the workbook was converted to.",
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/cellsConvertOutput"
+          }
         },
         "sheets": {
           "description": "The sheets the conversion was limited to, in workbook order, when --sheets selected some.",
@@ -2858,6 +2862,42 @@
           "type": "array",
           "items": {
             "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/warning.schema.json"
+          }
+        }
+      },
+      "$defs": {
+        "cellsConvertOutput": {
+          "description": "The file a workbook was converted to.",
+          "type": "object",
+          "required": [
+            "path",
+            "format",
+            "sizeBytes",
+            "fingerprint"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "path": {
+              "description": "Absolute path of the produced file.",
+              "type": "string"
+            },
+            "format": {
+              "description": "Format id of the produced file, e.g. png.",
+              "type": "string"
+            },
+            "sizeBytes": {
+              "description": "File size in bytes.",
+              "type": "integer",
+              "minimum": 0
+            },
+            "fingerprint": {
+              "description": "SHA-256 identity of the published file.",
+              "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/file-fingerprint.schema.json"
+            },
+            "encrypted": {
+              "description": "true when the produced file is encrypted and opens only with its password; omitted when its format cannot carry a password.",
+              "type": "boolean"
+            }
           }
         }
       }
@@ -8530,7 +8570,8 @@
           "required": [
             "sheet",
             "cell",
-            "text"
+            "text",
+            "context"
           ],
           "additionalProperties": false,
           "properties": {
@@ -8543,7 +8584,11 @@
               "type": "string"
             },
             "text": {
-              "description": "Display value of the cell (truncated for long text).",
+              "description": "The match itself: the first one in the cell's value as read reports it, else in its display text, else in its formula.",
+              "type": "string"
+            },
+            "context": {
+              "description": "The text that holds the match around it, up to 40 characters on each side, with line breaks as spaces and an ellipsis where it is cut.",
               "type": "string"
             },
             "formula": {

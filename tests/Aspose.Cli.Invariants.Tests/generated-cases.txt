@@ -217,6 +217,7 @@ C-R10 | words inspect declared
 C-R10 | words read declared
 C-R10 | words render declared
 C-R10 | words search declared
+C-R10 | words split --encrypt-stdin with --password-stdin
 C-R10 | words split declared
 C-R11 | cells convert --dry-run
 C-R11 | cells convert declared
@@ -567,6 +568,7 @@ C-R17 | v2/cells/ops#range
 C-R17 | v2/cells/ops#reference
 C-R17 | v2/cells/ops#refresh_pivot
 C-R17 | v2/cells/ops#rename_sheet
+C-R17 | v2/cells/ops#replace_text
 C-R17 | v2/cells/ops#resize_columns
 C-R17 | v2/cells/ops#resize_rows
 C-R17 | v2/cells/ops#set_active_sheet
@@ -860,6 +862,7 @@ C-R18 | v2/cells/ops#range
 C-R18 | v2/cells/ops#reference
 C-R18 | v2/cells/ops#refresh_pivot
 C-R18 | v2/cells/ops#rename_sheet
+C-R18 | v2/cells/ops#replace_text
 C-R18 | v2/cells/ops#resize_columns
 C-R18 | v2/cells/ops#resize_rows
 C-R18 | v2/cells/ops#set_active_sheet
@@ -1156,6 +1159,7 @@ C-R19 | v2/cells/ops#protect_sheet
 C-R19 | v2/cells/ops#protect_workbook
 C-R19 | v2/cells/ops#refresh_pivot
 C-R19 | v2/cells/ops#rename_sheet
+C-R19 | v2/cells/ops#replace_text
 C-R19 | v2/cells/ops#resize_columns
 C-R19 | v2/cells/ops#resize_rows
 C-R19 | v2/cells/ops#set_active_sheet
@@ -1301,7 +1305,6 @@ C-R20 | ops field font across products
 C-R20 | ops field fontSize across products
 C-R20 | ops field formatting across products
 C-R20 | ops field height across products
-C-R20 | ops field hidden across products
 C-R20 | ops field italic across products
 C-R20 | ops field keywords across products
 C-R20 | ops field kind across products
@@ -1310,6 +1313,7 @@ C-R20 | ops field left across products
 C-R20 | ops field level across products
 C-R20 | ops field list across products
 C-R20 | ops field margins across products
+C-R20 | ops field maxReplacementCount across products
 C-R20 | ops field name across products
 C-R20 | ops field numberStyle across products
 C-R20 | ops field orientation across products
@@ -1341,6 +1345,7 @@ C-R20 | ops field url across products
 C-R20 | ops field value across products
 C-R20 | ops field values across products
 C-R20 | ops field what across products
+C-R20 | ops field wholeWord across products
 C-R20 | ops field width across products
 C-R20 | ops field x across products
 C-R20 | ops field y across products
@@ -1371,6 +1376,7 @@ C-R20 | v2/cells/ops field borders
 C-R20 | v2/cells/ops field bottom
 C-R20 | v2/cells/ops field by
 C-R20 | v2/cells/ops field captions
+C-R20 | v2/cells/ops field caseSensitive
 C-R20 | v2/cells/ops field category
 C-R20 | v2/cells/ops field cell
 C-R20 | v2/cells/ops field collapsed
@@ -1386,6 +1392,7 @@ C-R20 | v2/cells/ops field edges
 C-R20 | v2/cells/ops field errorMessage
 C-R20 | v2/cells/ops field field
 C-R20 | v2/cells/ops field fillColor
+C-R20 | v2/cells/ops field find
 C-R20 | v2/cells/ops field first
 C-R20 | v2/cells/ops field fitToHeight
 C-R20 | v2/cells/ops field fitToWidth
@@ -1403,7 +1410,6 @@ C-R20 | v2/cells/ops field headerCenter
 C-R20 | v2/cells/ops field headerMargin
 C-R20 | v2/cells/ops field headings
 C-R20 | v2/cells/ops field height
-C-R20 | v2/cells/ops field hidden
 C-R20 | v2/cells/ops field iconSet
 C-R20 | v2/cells/ops field indent
 C-R20 | v2/cells/ops field index
@@ -1421,6 +1427,7 @@ C-R20 | v2/cells/ops field locked
 C-R20 | v2/cells/ops field margins
 C-R20 | v2/cells/ops field matchStyle
 C-R20 | v2/cells/ops field maxColor
+C-R20 | v2/cells/ops field maxReplacementCount
 C-R20 | v2/cells/ops field midColor
 C-R20 | v2/cells/ops field minColor
 C-R20 | v2/cells/ops field name
@@ -1437,6 +1444,8 @@ C-R20 | v2/cells/ops field preset
 C-R20 | v2/cells/ops field range
 C-R20 | v2/cells/ops field rank
 C-R20 | v2/cells/ops field refersTo
+C-R20 | v2/cells/ops field regex
+C-R20 | v2/cells/ops field replace
 C-R20 | v2/cells/ops field right
 C-R20 | v2/cells/ops field rows
 C-R20 | v2/cells/ops field rule
@@ -1466,8 +1475,10 @@ C-R20 | v2/cells/ops field value1
 C-R20 | v2/cells/ops field value2
 C-R20 | v2/cells/ops field values
 C-R20 | v2/cells/ops field verticalAlignment
+C-R20 | v2/cells/ops field visibility
 C-R20 | v2/cells/ops field visible
 C-R20 | v2/cells/ops field what
+C-R20 | v2/cells/ops field wholeWord
 C-R20 | v2/cells/ops field width
 C-R20 | v2/cells/ops field widthChars
 C-R20 | v2/cells/ops field wrap
@@ -1755,6 +1766,11 @@ C-R20 | v2/cells/ops#rename_sheet ranges
 C-R20 | v2/cells/ops#rename_sheet secrets
 C-R20 | v2/cells/ops#rename_sheet spelling
 C-R20 | v2/cells/ops#rename_sheet variants
+C-R20 | v2/cells/ops#replace_text fixednames
+C-R20 | v2/cells/ops#replace_text ranges
+C-R20 | v2/cells/ops#replace_text secrets
+C-R20 | v2/cells/ops#replace_text spelling
+C-R20 | v2/cells/ops#replace_text variants
 C-R20 | v2/cells/ops#resize_columns fixednames
 C-R20 | v2/cells/ops#resize_columns ranges
 C-R20 | v2/cells/ops#resize_columns secrets
@@ -2014,6 +2030,7 @@ C-R20 | v2/pdf/ops field at
 C-R20 | v2/pdf/ops field author
 C-R20 | v2/pdf/ops field bookmarks
 C-R20 | v2/pdf/ops field box
+C-R20 | v2/pdf/ops field caseSensitive
 C-R20 | v2/pdf/ops field color
 C-R20 | v2/pdf/ops field compressStreams
 C-R20 | v2/pdf/ops field copy
@@ -2320,6 +2337,7 @@ C-R20 | v2/slides/ops field layout
 C-R20 | v2/slides/ops field level
 C-R20 | v2/slides/ops field line
 C-R20 | v2/slides/ops field list
+C-R20 | v2/slides/ops field maxReplacementCount
 C-R20 | v2/slides/ops field name
 C-R20 | v2/slides/ops field paragraphs
 C-R20 | v2/slides/ops field path
@@ -2348,6 +2366,7 @@ C-R20 | v2/slides/ops field text
 C-R20 | v2/slides/ops field title
 C-R20 | v2/slides/ops field to
 C-R20 | v2/slides/ops field values
+C-R20 | v2/slides/ops field wholeWord
 C-R20 | v2/slides/ops field width
 C-R20 | v2/slides/ops field x
 C-R20 | v2/slides/ops field xValues
@@ -3052,6 +3071,8 @@ C-R21 | v2/cells/ops#refresh_pivot
 C-R21 | v2/cells/ops#refresh_pivot unclassified
 C-R21 | v2/cells/ops#rename_sheet
 C-R21 | v2/cells/ops#rename_sheet unclassified
+C-R21 | v2/cells/ops#replace_text
+C-R21 | v2/cells/ops#replace_text unclassified
 C-R21 | v2/cells/ops#resize_columns
 C-R21 | v2/cells/ops#resize_columns unclassified
 C-R21 | v2/cells/ops#resize_rows
@@ -3525,6 +3546,7 @@ C-R30 | cells protect_sheet
 C-R30 | cells protect_workbook
 C-R30 | cells refresh_pivot
 C-R30 | cells rename_sheet
+C-R30 | cells replace_text
 C-R30 | cells resize_columns
 C-R30 | cells resize_rows
 C-R30 | cells set_active_sheet
@@ -3591,6 +3613,7 @@ C-R30 | slides copy_slide
 C-R30 | slides delete_shape
 C-R30 | slides delete_slides
 C-R30 | slides format_shape
+C-R30 | slides format_shape on with a Latin font of its own
 C-R30 | slides import_slides
 C-R30 | slides insert_chart
 C-R30 | slides insert_image
@@ -4030,6 +4053,8 @@ C-R33 | v2/cells/ops#refresh_pivot names
 C-R33 | v2/cells/ops#refresh_pivot none
 C-R33 | v2/cells/ops#rename_sheet names
 C-R33 | v2/cells/ops#rename_sheet none
+C-R33 | v2/cells/ops#replace_text names
+C-R33 | v2/cells/ops#replace_text none
 C-R33 | v2/cells/ops#resize_columns names
 C-R33 | v2/cells/ops#resize_columns none
 C-R33 | v2/cells/ops#resize_rows names
@@ -5462,6 +5487,9 @@ secret-hidden | words search --password-env
 secret-hidden | words search --password-env with a wrong password
 secret-hidden | words search --password-stdin
 secret-hidden | words search --password-stdin with a wrong password
+secret-hidden | words split --encrypt
+secret-hidden | words split --encrypt-env
+secret-hidden | words split --encrypt-stdin
 secret-hidden | words split --password
 secret-hidden | words split --password with a wrong password
 secret-hidden | words split --password-env
@@ -5576,6 +5604,7 @@ unknown-field | cells protect_sheet.sheet as sheett
 unknown-field | cells protect_workbook.passwordEnv as psaswordEnv
 unknown-field | cells refresh_pivot.sheet as sheett
 unknown-field | cells rename_sheet.sheet as sheett
+unknown-field | cells replace_text.sheet as sheett
 unknown-field | cells resize_columns.sheet as sheett
 unknown-field | cells resize_rows.sheet as sheett
 unknown-field | cells set_active_sheet.sheet as sheett
@@ -5729,6 +5758,7 @@ unknown-op | cells protect_sheet as portect_sheet
 unknown-op | cells protect_workbook as portect_workbook
 unknown-op | cells refresh_pivot as rferesh_pivot
 unknown-op | cells rename_sheet as rneame_sheet
+unknown-op | cells replace_text as rpelace_text
 unknown-op | cells resize_columns as rseize_columns
 unknown-op | cells resize_rows as rseize_rows
 unknown-op | cells set_active_sheet as ste_active_sheet
@@ -6274,6 +6304,9 @@ unknown-option | words search --scope as --scopee
 unknown-option | words search --skip as --skipp
 unknown-option | words split --by as --byy
 unknown-option | words split --dry-run as --dyr-run
+unknown-option | words split --encrypt as --ecnrypt
+unknown-option | words split --encrypt-env as --ecnrypt-env
+unknown-option | words split --encrypt-stdin as --ecnrypt-stdin
 unknown-option | words split --every as --everyy
 unknown-option | words split --font-dir as --fnot-dir
 unknown-option | words split --out-dir as --otu-dir
