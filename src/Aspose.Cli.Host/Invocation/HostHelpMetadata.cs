@@ -14,15 +14,16 @@ internal static class HostHelpMetadata
     private static readonly CommandHelpLink Licensing = new("aspose-cli docs licensing", "license sources, installation and evaluation mode");
     private static readonly CommandHelpLink Verification = new("aspose-cli docs verification", "the delivery checklist, the review protocol and font checks");
     private static readonly CommandHelpLink Troubleshooting = new("aspose-cli docs troubleshooting", "recovering from errors and environment problems");
-    private static readonly CommandHelpLink Capabilities = new("aspose-cli capabilities --output-format json", "verbs, formats and operations as data");
+    private static readonly CommandHelpLink Capabilities = new("aspose-cli capabilities --summary", "each product's commands, formats and operations");
     private static readonly CommandHelpLink Schemas = new("aspose-cli schema", "the available JSON Schema identifiers");
 
-    public static void Attach(RootCommand root)
+    public static void Attach(RootCommand root, ProductCatalog catalog)
     {
+        string[] narrowCapabilities = NarrowCapabilities(root, catalog);
         root.WithExamples(
             [
                 "app open",
-                "capabilities --output-format json",
+                .. narrowCapabilities.TakeLast(1),
                 "review report.docx --max-items 50",
                 "schema",
             ],
@@ -86,8 +87,8 @@ internal static class HostHelpMetadata
         Find(root, "schema").WithExamples(["schema", "schema v2/common/error"], [Capabilities]);
         Find(root, "capabilities").WithExamples(
             [
-                "capabilities --output-format json",
                 "capabilities --summary",
+                .. narrowCapabilities,
             ],
             [Schemas, Overview]);
         Command skill = Find(root, "skill").WithExamples(
@@ -111,6 +112,21 @@ internal static class HostHelpMetadata
             Find(update, "check").WithExamples(["update check", "update check RELEASE-MANIFEST.json --output-format json"], [Troubleshooting]);
             Find(update, "install").WithExamples(["update install --dry-run", "update install"], [Troubleshooting]);
         }
+    }
+
+    // Narrowing capabilities to one product, and to its edit command, keeps the answer small.
+    private static string[] NarrowCapabilities(RootCommand root, ProductCatalog catalog)
+    {
+        if (catalog.Products.FirstOrDefault() is not { } product)
+        {
+            return [];
+        }
+
+        string id = product.Manifest.Id;
+        string whole = $"capabilities {id} --output-format json";
+        return FindOptional(Find(root, id), "edit") is null
+            ? [whole]
+            : [whole, $"capabilities {id} edit --output-format json"];
     }
 
     private static Command Find(Command parent, string name) =>

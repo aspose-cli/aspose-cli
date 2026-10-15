@@ -37,14 +37,14 @@ Commands:
 
 Examples:
   aspose-cli app open
-  aspose-cli capabilities --output-format json
+  aspose-cli capabilities cells edit --output-format json
   aspose-cli review report.docx --max-items 50
   aspose-cli schema
 
 Learn more:
-  aspose-cli docs                               offline documentation bundled in this binary
-  aspose-cli schema                             the available JSON Schema identifiers
-  aspose-cli capabilities --output-format json  verbs, formats and operations as data
+  aspose-cli docs                    offline documentation bundled in this binary
+  aspose-cli schema                  the available JSON Schema identifiers
+  aspose-cli capabilities --summary  each product's commands, formats and operations
 
 
 ## aspose-cli __render-worker --help
@@ -156,8 +156,8 @@ Usage:
   aspose-cli capabilities [<product> [<command>]] [options]
 
 Arguments:
-  <product>  Optional product id to select.
-  <command>  Optional product-relative command path to select.
+  <product>  Product id, such as pdf: describe only that product.
+  <command>  Product-relative command path, such as edit: describe only that command.
 
 Options:
   --summary  List only each product's commands, formats and edit operation names.
@@ -166,8 +166,9 @@ Global options:
   -h/--help, --output-format, -q/--quiet, -v/--verbose, --license, --license-mode, --workdir, --timeout, --max-input-bytes (see aspose-cli --help)
 
 Examples:
-  aspose-cli capabilities --output-format json
   aspose-cli capabilities --summary
+  aspose-cli capabilities cells --output-format json
+  aspose-cli capabilities cells edit --output-format json
 
 Learn more:
   aspose-cli schema  the available JSON Schema identifiers
@@ -561,7 +562,7 @@ Examples:
   aspose-cli schema v2/common/error
 
 Learn more:
-  aspose-cli capabilities --output-format json  verbs, formats and operations as data
+  aspose-cli capabilities --summary  each product's commands, formats and operations
 
 
 ## aspose-cli skill --help
