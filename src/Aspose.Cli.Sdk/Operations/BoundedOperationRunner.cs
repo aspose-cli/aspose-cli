@@ -271,17 +271,18 @@ public static class BoundedOperationRunner
             }
             catch (EngineOpException failure)
             {
-                throw OperationErrors.EngineFailedAt(id, name, failure);
+                rejection = DeclaredFileFailure(failure.InnerException, catalog.InputPaths(operation)) is { } file
+                    ? OperationErrors.FailedAt(id, name, file)
+                    : throw OperationErrors.EngineFailedAt(id, name, failure);
             }
             catch (Exception failure) when (failure is IOException or UnauthorizedAccessException)
             {
-                // A file the operation declares that does not exist is that file's error, and the
-                // operation changed nothing; any other I/O failure the engine raised can occur
-                // mid-change. One the CLI raised propagates.
-                if (failure is FileNotFoundException { FileName: { Length: > 0 } file }
-                    && Declares(catalog.InputPaths(operation), file))
+                // A file the operation declares that is missing, locked or denied is that file's
+                // error, with its code, and the operation changed nothing; any other I/O failure
+                // the engine raised can occur mid-change. One the CLI raised propagates.
+                if (DeclaredFileFailure(failure, catalog.InputPaths(operation)) is { } file)
                 {
-                    rejection = OperationErrors.FailedAt(id, name, CliErrors.FileNotFound(file));
+                    rejection = OperationErrors.FailedAt(id, name, file);
                 }
                 else if (ExceptionOrigin.IsThirdParty(failure, own))
                 {
@@ -325,6 +326,34 @@ public static class BoundedOperationRunner
         }
 
         return outcomes;
+    }
+
+    /// <summary>
+    /// The error of a file the operation declares that could not be opened: missing, denied or
+    /// held by another program, by the code the CLI gives that failure of any input. Only a
+    /// failure that names the declared file counts: by its file name, or by its whole path quoted
+    /// in the message, as .NET writes it ('C:\in\a.png'). A failure of any other file, such as
+    /// a temporary one the engine writes, is not the declared file's and keeps its own handling,
+    /// since it can occur mid-change. Null for any other failure.
+    /// </summary>
+    private static CliException? DeclaredFileFailure(Exception? failure, IReadOnlyList<string> inputs)
+    {
+        if (failure is null || inputs.Count == 0)
+        {
+            return null;
+        }
+
+        string? path = failure is FileNotFoundException { FileName: { Length: > 0 } named }
+            ? (Declares(inputs, named) ? named : null)
+            : inputs.FirstOrDefault(input => PathResolver.TryResolve(Environment.CurrentDirectory, input) is { } full
+                && failure.Message.Contains($"'{full}'", StringComparison.OrdinalIgnoreCase));
+        return path is null ? null : failure switch
+        {
+            FileNotFoundException or DirectoryNotFoundException => CliErrors.FileNotFound(path),
+            UnauthorizedAccessException => CliErrors.FileAccessDenied(path),
+            IOException io when FileAccessProbe.IsSharingViolation(io) => CliErrors.FileLocked(path),
+            _ => null,
+        };
     }
 
     private static bool Declares(IReadOnlyList<string> inputs, string file)
