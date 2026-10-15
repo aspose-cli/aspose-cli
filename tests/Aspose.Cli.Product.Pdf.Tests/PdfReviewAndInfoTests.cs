@@ -230,6 +230,51 @@ public sealed class PdfReviewAndInfoTests
     }
 
     /// <summary>
+    /// Text is measured against the page as it is displayed on every rotation: text within a
+    /// rotated or rotated and cropped page is not beyond its edge, and text left of the page
+    /// still is.
+    /// </summary>
+    [Fact]
+    public void Review_MeasuresTextAgainstTheDisplayedPageOnEveryRotation()
+    {
+        using var fixture = new PdfEngineFixture();
+        using var workspace = new TempWorkspace();
+        string input = fixture.File("rotated.pdf");
+        using (var document = new Document())
+        {
+            foreach (Rotation rotation in new[] { Rotation.on90, Rotation.on180, Rotation.on270 })
+            {
+                Page page = document.Pages.Add();
+                Write(page, 40, 40, "Bottom left text that runs most of the way across the page width");
+                Write(page, 300, 780, "Top right text");
+                page.Rotate = rotation;
+            }
+
+            Page cropped = document.Pages[1];
+            cropped.CropBox = new Rectangle(20, 30, 580, 820);
+            Page beyond = document.Pages.Add();
+            Write(beyond, -150, 600, "Text that starts left of the page edge");
+            beyond.Rotate = Rotation.on90;
+            document.Save(input);
+        }
+
+        JsonNode review = Review(workspace, input);
+
+        Assert.Equal(
+            ["page 4"],
+            review["findings"]!.AsArray()
+                .Where(static item => item!["code"]!.GetValue<string>() == "PDF_TEXT_OUTSIDE_PAGE")
+                .Select(static item => item!["location"]!.GetValue<string>()));
+
+        static void Write(Page page, double x, double y, string text)
+        {
+            var fragment = new Aspose.Pdf.Text.TextFragment(text) { Position = new Aspose.Pdf.Text.Position(x, y) };
+            fragment.TextState.FontSize = 14;
+            new Aspose.Pdf.Text.TextBuilder(page).AppendText(fragment);
+        }
+    }
+
+    /// <summary>
     /// PDF-RENDER-THIN-GLYPH: the engine drops the thin underscores of SimSun at some positions
     /// below about 300 DPI. Review evidence keeps its size and still shows them.
     /// </summary>

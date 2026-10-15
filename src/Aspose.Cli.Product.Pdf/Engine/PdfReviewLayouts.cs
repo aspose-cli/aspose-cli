@@ -41,7 +41,7 @@ internal static class PdfReviewLayouts
             displayed.Height,
             // The evaluation finding covers a notice an engine prints beyond the page edge, as
             // Aspose.Cells prints it across the evaluation warning sheet it adds.
-            text.Where((_, index) => !notice[index]).Count(fragment => IsOutsidePage(fragment, page.Rect)),
+            text.Where((_, index) => !notice[index]).Count(fragment => IsOutsidePage(PdfEngineSupport.ToContractTextRect(page, fragment), displayed)),
             ImageCoverage(page),
             text.Length == 0 ? 0 : CoveredFragments(page),
             product);
@@ -172,9 +172,13 @@ internal static class PdfReviewLayouts
         return Math.Min(1d, area / Math.Max(1d, page.Rect.Width * page.Rect.Height));
     }
 
-    private static bool IsOutsidePage(Rectangle text, Rectangle page) =>
-        text.LLX < page.LLX - PageBoundaryTolerance
-        || text.LLY < page.LLY - PageBoundaryTolerance
-        || text.URX > page.URX + PageBoundaryTolerance
-        || text.URY > page.URY + PageBoundaryTolerance;
+    /// <summary>
+    /// Whether text, measured from the top-left corner of the visible page as a search reports
+    /// it on every rotation, extends beyond that page.
+    /// </summary>
+    private static bool IsOutsidePage(Contracts.PdfRect text, Rectangle displayed) =>
+        text.X < -PageBoundaryTolerance
+        || text.Y < -PageBoundaryTolerance
+        || text.X + text.Width > displayed.Width + PageBoundaryTolerance
+        || text.Y + text.Height > displayed.Height + PageBoundaryTolerance;
 }
