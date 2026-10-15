@@ -39,6 +39,9 @@ internal sealed class AppCliGateway
     /// <summary>How long a failed font read answers the status polls before it is asked again.</summary>
     internal static readonly TimeSpan FontFailureRetryInterval = TimeSpan.FromSeconds(30);
 
+    /// <summary>How long a font list answers before it is asked again, so fonts installed meanwhile show.</summary>
+    internal static readonly TimeSpan FontAnswerLifetime = TimeSpan.FromMinutes(5);
+
     public AppCliGateway(ProductCatalog catalog, GlobalValues globals, string configDirectory)
         : this(catalog, globals, configDirectory, run: null)
     {
@@ -127,10 +130,11 @@ internal sealed class AppCliGateway
 
     /// <summary>
     /// The font sources one product renders with. Fonts change far more
-    /// rarely than licences, so an answer is kept until a licence change,
-    /// which font discovery depends on. A failure answers the status polls
-    /// for <see cref="FontFailureRetryInterval"/> only, so a transient one
-    /// (a timeout) is asked again when Settings is reopened.
+    /// rarely than licences, so an answer is kept for
+    /// <see cref="FontAnswerLifetime"/> or until a licence change, which font
+    /// discovery depends on. A failure answers the status polls for
+    /// <see cref="FontFailureRetryInterval"/> only, so a transient one (a
+    /// timeout) is asked again when Settings is reopened.
     /// </summary>
     public ProductFonts Fonts(string productId)
     {
@@ -138,7 +142,7 @@ internal sealed class AppCliGateway
         lock (_gate)
         {
             if (_fonts.TryGetValue(productId, out FontAnswer? cached)
-                && (cached.Result is not null || _clock.GetUtcNow() - cached.At < FontFailureRetryInterval))
+                && _clock.GetUtcNow() - cached.At < (cached.Result is null ? FontFailureRetryInterval : FontAnswerLifetime))
             {
                 return cached.Result ?? throw cached.Failure!;
             }
