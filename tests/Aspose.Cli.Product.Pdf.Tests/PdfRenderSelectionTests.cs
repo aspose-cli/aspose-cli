@@ -93,7 +93,7 @@ public sealed class PdfRenderSelectionTests
             Dpi = 36,
         }));
 
-        Assert.Equal(ErrorCodes.UsageError, error.Code);
+        Assert.Equal(ErrorCodes.OptionInvalid, error.Code);
         Assert.Equal("--pages", error.Details!["option"]!.GetValue<string>());
         Assert.Equal(20, error.Details["limit"]!.GetValue<int>());
         Assert.Equal(21, error.Details["actual"]!.GetValue<int>());

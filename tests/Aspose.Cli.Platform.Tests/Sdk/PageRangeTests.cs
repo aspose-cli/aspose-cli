@@ -84,14 +84,14 @@ public sealed class PageRangeTests
         Assert.Equal([1, 2, 3], RenderSelection.Resolve(null, 3, ErrorCodes.PageNotFound, "page"));
 
     [Fact]
-    public void RenderSelection_RefusesMoreThanTwentyPartsAsAUsageMistake()
+    public void RenderSelection_RefusesMoreThanTwentyPartsAsAnInvalidOption()
     {
         Assert.Equal(20, RenderSelection.Resolve(null, 20, ErrorCodes.PageNotFound, "page").Count);
 
         CliException error = Assert.Throws<CliException>(
             () => RenderSelection.Resolve(PageRange.Parse("2-"), 22, ErrorCodes.PageNotFound, "slide"));
 
-        Assert.Equal(ErrorCodes.UsageError, error.Code);
+        Assert.Equal(ErrorCodes.OptionInvalid, error.Code);
         Assert.Equal(ExitCode.Usage, error.Code.ExitCode);
         Assert.Equal("--slides", error.Details!["option"]!.GetValue<string>());
         Assert.Equal(20, error.Details["limit"]!.GetValue<int>());
