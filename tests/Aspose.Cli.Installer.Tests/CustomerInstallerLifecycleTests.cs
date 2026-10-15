@@ -214,6 +214,10 @@ public sealed partial class CustomerInstallerPowerShellTests
         PowerShellResult interrupted = RunUninstaller(install,
             new Dictionary<string, string?> { ["ASPOSE_CLI_INSTALL_CRASH"] = "skillUpdated" });
         Assert.Equal(97, interrupted.ExitCode);
+        // A host loads every directory under its Skills root, so a Skill backup kept there
+        // would read as a duplicate Skill while the transaction is open or interrupted.
+        Assert.Empty(Directory.GetDirectories(skills, ".aspose-skill-install-backup-*"));
+        Assert.Single(Directory.GetDirectories(_root, ".aspose-skill-install-backup-*"));
 
         PowerShellResult finished = RunUninstaller(install);
         Assert.True(finished.ExitCode == 0, finished.StdErr + finished.StdOut);
