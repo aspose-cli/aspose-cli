@@ -50,12 +50,20 @@ public abstract class OutputPipeline : ILicenseState
     private protected SafeFileWriter Writer { get; }
 
     /// <summary>
-    /// Starts an extraction into <paramref name="root"/>, published when the guard commits.
+    /// Starts an extraction into <paramref name="root"/>, published when the guard commits. What
+    /// the engine derives from the documents, such as their text or tables, is an output of this
+    /// invocation and disclosed as one. Files the documents embed, copied byte for byte as the
+    /// document stores them (<see cref="ExtractionContent.EmbeddedFiles"/>), are no output of the
+    /// engine and carry nothing evaluation mode adds, so they are not disclosed.
     /// </summary>
     /// <param name="root">The extraction directory, which may not exist yet.</param>
     /// <param name="overwrite">Whether an existing file in the directory may be replaced (<c>--overwrite</c>).</param>
-    public ExtractionGuard BeginExtraction(string root, bool overwrite) =>
-        new(Writer.ResourceBudgets, root, overwrite) { Committed = () => Record(null) };
+    /// <param name="content">What the extraction writes.</param>
+    public ExtractionGuard BeginExtraction(string root, bool overwrite, ExtractionContent content = ExtractionContent.Derived) =>
+        new(Writer.ResourceBudgets, root, overwrite)
+        {
+            Committed = content == ExtractionContent.EmbeddedFiles ? null : () => Record(null),
+        };
 
     /// <summary>
     /// Publishes one file an extraction writes, such as exported form data, which holds parts
@@ -770,4 +778,17 @@ public sealed class OutputSet<TDocument> : IDisposable
 
     /// <inheritdoc />
     public void Dispose() => _transaction.Dispose();
+}
+
+/// <summary>What an extraction writes, which decides whether the write pipeline discloses it.</summary>
+public enum ExtractionContent
+{
+    /// <summary>Content the engine derives from the documents, such as text, tables or comments.</summary>
+    Derived,
+
+    /// <summary>
+    /// Files the documents embed, such as images, media or attachments, copied byte for byte as
+    /// the document stores them; the engine writes none of their bytes.
+    /// </summary>
+    EmbeddedFiles,
 }
