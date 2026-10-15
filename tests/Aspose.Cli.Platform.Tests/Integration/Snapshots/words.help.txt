@@ -360,6 +360,9 @@ Options:
   --password <password>                      Password for the document. Discouraged: visible in the process list; prefer --password-env.
   --password-env <password-env>              Name of an environment variable holding the password for the document.
   --password-stdin                           Read the password for the document from the first line of stdin.
+  --encrypt <encrypt>                        Password for every part. Discouraged: visible in the process list; prefer --encrypt-env.
+  --encrypt-env <encrypt-env>                Name of an environment variable holding the password for every part.
+  --encrypt-stdin                            Read the password for every part from the first line of stdin.
   --font-dir <font-dir>                      Local font directory searched in addition to the system fonts; repeat for more.
 
 Global options:

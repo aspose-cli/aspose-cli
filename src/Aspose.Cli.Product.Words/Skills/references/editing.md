@@ -236,7 +236,7 @@ one should restart.
   it as `input.encrypted`. Its edited or converted output, the parts of a
   split and the redline of a comparison of it (as the original) keep the
   password when the output format supports encryption; `--encrypt-env`
-  replaces it on `edit` and `convert`. A format that cannot be encrypted produces
+  replaces it on `edit`, `convert` and `split`. A format that cannot be encrypted produces
   `ENCRYPTION_REMOVED`, and `--encrypt-env` with such a format is
   `OPTION_INVALID`. A read password for a plaintext input does not encrypt the
   output. A dry run does not report removed encryption.
