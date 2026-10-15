@@ -191,6 +191,8 @@ public sealed class PdfOpContractTests
 
     [Theory]
     [InlineData("add_link", "add_hyperlink")]
+    [InlineData("add_image_stamp", "add_stamp_image")]
+    [InlineData("add_image_watermark", "add_watermark_image")]
     [InlineData("decrypt", "decrypt_document")]
     [InlineData("encrypt", "encrypt_document")]
     [InlineData("optimize", "optimize_document")]

@@ -197,13 +197,7 @@ internal static class PdfInfoProjection
     {
         Rectangle media = page.RotationMatrix.Transform(page.MediaBox);
         Rectangle seen = page.RotationMatrix.Transform(box);
-        return new PdfRect
-        {
-            X = Round(seen.LLX - media.LLX),
-            Y = Round(media.URY - seen.URY),
-            Width = Round(seen.Width),
-            Height = Round(seen.Height),
-        };
+        return PdfEngineSupport.Rect(seen.LLX - media.LLX, media.URY - seen.URY, seen.Width, seen.Height);
     }
 
     private static double Round(double value) => Math.Round(value, 3, MidpointRounding.AwayFromZero);

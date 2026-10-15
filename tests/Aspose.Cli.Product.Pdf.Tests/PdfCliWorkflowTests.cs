@@ -498,5 +498,21 @@ public sealed class PdfCliWorkflowTests : IDisposable
         Assert.StartsWith("Invalid use of --bom:", error["message"]!.GetValue<string>(), StringComparison.Ordinal);
     }
 
+    [Theory]
+    [InlineData("a5", 419.53, 595.28)]
+    [InlineData("tabloid", 792.0, 1224.0)]
+    public void Create_TakesEveryPageSizePresetTheOperationsTake(string preset, double width, double height)
+    {
+        File.WriteAllText(_workspace.File("notes.md"), "# Notes\n");
+
+        CliResult created = _workspace.Run(
+            "pdf", "create", "notes.pdf", "--from-text", "notes.md", "--page-size", preset, "--output-format", "json");
+
+        Assert.True(created.ExitCode == 0, created.StdErr);
+        using var document = new Document(_workspace.File("notes.pdf"));
+        Assert.Equal(width, document.Pages[1].Rect.Width, 0.5);
+        Assert.Equal(height, document.Pages[1].Rect.Height, 0.5);
+    }
+
     public void Dispose() => _workspace.Dispose();
 }

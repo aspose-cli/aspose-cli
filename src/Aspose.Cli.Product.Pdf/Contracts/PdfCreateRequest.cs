@@ -6,7 +6,8 @@ namespace Aspose.Cli.Product.Pdf.Contracts;
 public sealed record PdfCreateRequest
 {
     /// <summary>The page size presets <c>pdf create --page-size</c> accepts.</summary>
-    public static IReadOnlyList<string> PageSizes { get; } = [PageSizePresets.A3, PageSizePresets.A4, PageSizePresets.Letter, PageSizePresets.Legal];
+    public static IReadOnlyList<string> PageSizes { get; } =
+        [PageSizePresets.A3, PageSizePresets.A4, PageSizePresets.A5, PageSizePresets.Letter, PageSizePresets.Legal, PageSizePresets.Tabloid];
 
     /// <summary>The resolved output: its format, path and overwrite permission.</summary>
     public required ResolvedOutput Output { get; init; }

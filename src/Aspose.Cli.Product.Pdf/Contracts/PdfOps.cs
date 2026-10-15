@@ -230,6 +230,7 @@ public sealed record AddWatermarkTextOp : PdfOp
 
 /// <summary>Stamps an image across the middle of pages.</summary>
 [Operation("add_watermark_image")]
+[MistakenFor("add_image_watermark")]
 public sealed record AddWatermarkImageOp : PdfOp
 {
     /// <summary>The pages to stamp; every page when omitted.</summary>
@@ -315,6 +316,7 @@ public sealed record AddFooterTextOp : PdfOp
 
 /// <summary>Stamps an image into a rectangle of one page.</summary>
 [Operation("add_stamp_image")]
+[MistakenFor("add_image_stamp")]
 public sealed record AddStampImageOp : PdfOp
 {
     [Minimum(1)] public required int Page { get; init; }

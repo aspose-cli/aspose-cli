@@ -117,11 +117,11 @@ internal static class PdfSign
         {
             placed = ToPdfRect(page, new PdfRectInput { X = rect.X, Y = rect.Y, Width = rect.Width, Height = rect.Height });
         }
-        catch (InvalidOperationException)
+        catch (OperationInvalidException exception)
         {
             throw CliErrors.OptionInvalid(
                 "--rect",
-                "the rectangle lies outside the page",
+                exception.Message,
                 "Use x,y,width,height in PDF points from the page's top-left corner that fit on the page; 'pdf inspect --sample' reports its size.");
         }
 

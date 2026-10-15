@@ -266,7 +266,9 @@ internal static class PdfEngineSupport
         Rectangle box = page.GetPageRect(considerRotation: true);
         if (rect.X < 0 || rect.Y < 0 || rect.X + rect.Width > box.Width || rect.Y + rect.Height > box.Height)
         {
-            throw new InvalidOperationException("Rectangle lies outside the page bounds.");
+            throw new OperationInvalidException(
+                string.Create(CultureInfo.InvariantCulture, $"rect lies outside the visible page, which is {box.Width:0.##} x {box.Height:0.##} points"),
+                "Measure rect in points from the top-left corner of the visible page; 'pdf inspect' reports each page's size.");
         }
         return FromContractRect(page, rect.X, rect.Y, rect.Width, rect.Height);
     }
@@ -278,14 +280,22 @@ internal static class PdfEngineSupport
     internal static PdfRect ToContractTextRect(Page page, Rectangle rect)
     {
         (double left, double top) = TextOrigin(page);
-        return new PdfRect
-        {
-            X = rect.LLX - left,
-            Y = top - rect.URY,
-            Width = rect.Width,
-            Height = rect.Height,
-        };
+        return Rect(rect.LLX - left, top - rect.URY, rect.Width, rect.Height);
     }
+
+    /// <summary>
+    /// A rectangle as results report it: each value rounded to a hundredth of a point, which
+    /// drops the engine's floating-point noise and keeps more precision than a page shows.
+    /// </summary>
+    internal static PdfRect Rect(double x, double y, double width, double height) => new()
+    {
+        X = Hundredth(x),
+        Y = Hundredth(y),
+        Width = Hundredth(width),
+        Height = Hundredth(height),
+    };
+
+    private static double Hundredth(double value) => Math.Round(value, 2, MidpointRounding.AwayFromZero);
 
     /// <summary>
     /// Where the visible page's left and top edges lie in the space the engine reports text in,
@@ -316,13 +326,7 @@ internal static class PdfEngineSupport
     {
         Rectangle box = page.GetPageRect(considerRotation: true);
         Rectangle visible = page.RotationMatrix.Transform(rect);
-        return new PdfRect
-        {
-            X = visible.LLX - box.LLX,
-            Y = box.URY - visible.URY,
-            Width = visible.Width,
-            Height = visible.Height,
-        };
+        return Rect(visible.LLX - box.LLX, box.URY - visible.URY, visible.Width, visible.Height);
     }
 
     /// <summary>

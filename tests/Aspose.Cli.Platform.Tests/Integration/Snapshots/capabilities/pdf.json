@@ -823,8 +823,10 @@
             "allowedValues": [
               "a3",
               "a4",
+              "a5",
               "legal",
-              "letter"
+              "letter",
+              "tabloid"
             ],
             "secret": false,
             "valueSource": "command-line",
