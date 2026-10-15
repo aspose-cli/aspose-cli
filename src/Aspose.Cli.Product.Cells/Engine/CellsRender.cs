@@ -227,7 +227,7 @@ internal static class CellsRender
         {
             if (isRaster)
             {
-                EnsureRenderable(budgets, render, request.Dpi);
+                EnsureRenderable(budgets, render, request.Dpi, sheet, printArea);
                 if (Large(sheet, render, request, printArea) is { } large)
                 {
                     warnings.Add(large);
@@ -376,31 +376,44 @@ internal static class CellsRender
             return null;
         }
 
-        // A window the size of one image's worth of the sheet's rows, by its share of the height.
-        RangeRef drawn = printArea is not null ? A1.ParseRange(printArea).Range
-            : Sheets.UsedRange(sheet) ?? new RangeRef(new CellRef(0, 0), new CellRef(0, 0));
-        int rows = Math.Max(1, (int)(drawn.RowCount * Math.Min(1d, (double)LargeImageSide / height)));
-        int columns = Math.Max(1, (int)(drawn.ColumnCount * Math.Min(1d, (double)LargeImageSide / width)));
-        string window = A1.FormatRange(new RangeRef(drawn.Start,
-            new CellRef(drawn.Start.Row + rows - 1, drawn.Start.Column + columns - 1)));
         return new Warning(CellsDiagnostics.RenderImageLarge,
             $"The image of worksheet '{sheet.Name}' is {width} x {height} pixels, more than {LargeImageSide} on a side, which image viewers and models scale down or cut.")
         {
-            Hint = $"Render the sheet in windows with a sheet-qualified --range, such as aspose-cli cells render \"{request.Input}\" --range \"{Sheets.QuotedName(sheet.Name)}!{window}\", or lower --dpi.",
+            Hint = $"Render the sheet in windows with a sheet-qualified --range, such as aspose-cli cells render \"{request.Input}\" --range \"{Window(sheet, printArea, width, height)}\", or lower --dpi.",
             Location = sheet.Name,
         };
     }
 
-    /// <summary>Rejects raster output whose bitmap would exceed the shared pixel budget.</summary>
-    internal static void EnsureRenderable(ResourceBudgetLedger budgets, SheetRender render, int dpi)
+    /// <summary>
+    /// The first window of the sheet's drawn cells, sheet-qualified, that renders within
+    /// <see cref="LargeImageSide"/> on a side: one image's worth of its rows and columns, by their
+    /// share of the image's height and width.
+    /// </summary>
+    private static string Window(Worksheet sheet, string? printArea, long width, long height)
+    {
+        RangeRef drawn = printArea is not null ? A1.ParseRange(printArea).Range
+            : Sheets.UsedRange(sheet) ?? new RangeRef(new CellRef(0, 0), new CellRef(0, 0));
+        int rows = Math.Max(1, (int)(drawn.RowCount * Math.Min(1d, (double)LargeImageSide / height)));
+        int columns = Math.Max(1, (int)(drawn.ColumnCount * Math.Min(1d, (double)LargeImageSide / width)));
+        return $"{Sheets.QuotedName(sheet.Name)}!" + A1.FormatRange(new RangeRef(drawn.Start,
+            new CellRef(drawn.Start.Row + rows - 1, drawn.Start.Column + columns - 1)));
+    }
+
+    /// <summary>
+    /// Rejects raster output whose bitmap would exceed the shared pixel budget, with the first
+    /// sheet-qualified window of <paramref name="sheet"/> to render instead.
+    /// </summary>
+    internal static void EnsureRenderable(ResourceBudgetLedger budgets, SheetRender render, int dpi, Worksheet sheet, string? printArea)
     {
         float[] inches = render.GetPageSizeInch(0);
+        long width = (long)Math.Ceiling(inches[0] * dpi);
+        long height = (long)Math.Ceiling(inches[1] * dpi);
         RenderPixelGuard.EnsureFits(
             budgets,
-            (long)Math.Ceiling(inches[0] * dpi),
-            (long)Math.Ceiling(inches[1] * dpi),
+            width,
+            height,
             dpi,
-            "Render a window of the sheet with --range (e.g. --range A1:H50), or lower --dpi.");
+            $"Render a window of the sheet with a sheet-qualified --range, such as --range \"{Window(sheet, printArea, width, height)}\", or lower --dpi.");
     }
 
 

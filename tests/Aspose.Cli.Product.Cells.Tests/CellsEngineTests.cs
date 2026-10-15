@@ -1013,6 +1013,36 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
     }
 
     [Fact]
+    public void Render_TooLargeForTheBudget_HintsASheetQualifiedWindow()
+    {
+        string path = _fixture.Temp.File($"too-large-{Guid.NewGuid():N}.xlsx");
+        using (var workbook = new Aspose.Cells.Workbook())
+        {
+            Aspose.Cells.Worksheet sheet = workbook.Worksheets[0];
+            sheet.Name = "Big Data";
+            for (int row = 0; row < 3000; row++)
+            {
+                for (int column = 0; column < 30; column++)
+                {
+                    sheet.Cells[row, column].PutValue(row + column);
+                }
+            }
+
+            workbook.Save(path);
+        }
+
+        CliException error = Assert.Throws<CliException>(() => CellsRender.Run(_fixture.Session, new CellsRenderRequest
+        {
+            Input = path,
+            Output = TestOutput.At(_fixture.Temp.File($"too-large-{Guid.NewGuid():N}.png"), format: "png"),
+            Dpi = 1200,
+        }));
+
+        Assert.Equal("RENDER_TOO_LARGE", error.Code.Name);
+        Assert.Contains("--range \"'Big Data'!A1:", error.Hint, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void Render_ToPng_ProducesAPngImage()
     {
         string path = _fixture.CreateSalesWorkbook("render.xlsx");

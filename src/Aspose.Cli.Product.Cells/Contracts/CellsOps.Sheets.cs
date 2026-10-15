@@ -82,6 +82,7 @@ public sealed record DeleteSheetOp : CellsSheetOp;
 /// visible sheet cannot be hidden.
 /// </summary>
 [Operation("set_sheet_visibility")]
+[MistakenFor("hide_sheet", "unhide_sheet", "show_sheet")]
 [AtLeastOneOf("sheet")]
 public sealed record SetSheetVisibilityOp : CellsSheetOp
 {

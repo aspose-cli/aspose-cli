@@ -647,6 +647,19 @@ public sealed class CellsOutcomeTests : IClassFixture<CellsFixture>
         Assert.Contains("only visible sheet", error.Message, StringComparison.Ordinal);
     }
 
+    [Theory]
+    [InlineData("hide_sheet")]
+    [InlineData("unhide_sheet")]
+    [InlineData("show_sheet")]
+    public void AHideOrShowSheetOperation_SuggestsSetSheetVisibility(string op)
+    {
+        CliException error = Assert.Throws<CliException>(() => CellsOp.Catalog.Parse<CellsOpsBatch>(
+            $$"""{"ops":[{"op":"{{op}}","sheet":"Second"}]}""", Aspose.Cli.Generated.ProductJsonContext.Definition));
+
+        Assert.Equal("OPS_INVALID", error.Code.Name);
+        Assert.Equal("set_sheet_visibility", error.Details!["suggestions"]![0]!.GetValue<string>());
+    }
+
     [Fact]
     public void ACamelCaseVisibility_SuggestsTheKebabCaseValueFirst()
     {
