@@ -397,6 +397,7 @@ public sealed class SlidesCliWorkflowTests : IDisposable
 
         JsonNode error = JsonNode.Parse(merge.StdErr)!["error"]!;
         Assert.Equal("slides edit", error["details"]!["suggestions"]!.AsArray()[0]!.GetValue<string>());
+        Assert.Contains("import_slides", error["hint"]!.GetValue<string>(), StringComparison.Ordinal);
     }
 
     [Fact]

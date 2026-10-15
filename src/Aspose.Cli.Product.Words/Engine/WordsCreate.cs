@@ -41,7 +41,7 @@ internal static class WordsCreate
         {
             throw CliErrors.WithoutPassword(error,
                 "'words create' cannot open an encrypted template. Ask the user for an unencrypted copy of the template, "
-                + "or decrypt it first, then pass that copy to --template.");
+                + "then pass that copy to --template.");
         }
     }
 

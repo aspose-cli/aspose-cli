@@ -12,11 +12,15 @@ namespace Aspose.Cli.Sdk.Extensibility;
 public static class CommandMistakes
 {
     private static readonly ConditionalWeakTable<Command, IReadOnlyList<string>> Declared = [];
+    private static readonly ConditionalWeakTable<Command, string> Hints = [];
     private static readonly ConditionalWeakTable<Option, Func<string, string?>> MeantValues = [];
     private static readonly ConditionalWeakTable<Command, IReadOnlyList<RefusedOption>> RefusedOptions = [];
 
-    /// <summary>Declares the names <paramref name="command"/> is mistaken for.</summary>
-    internal static void Declare(Command command, IReadOnlyList<string> names)
+    /// <summary>
+    /// Declares the names <paramref name="command"/> is mistaken for, and the hint that says how it
+    /// does what they name, or null for the advice to read help.
+    /// </summary>
+    internal static void Declare(Command command, IReadOnlyList<string> names, string? hint = null)
     {
         ArgumentNullException.ThrowIfNull(names);
         foreach (string name in names)
@@ -31,6 +35,24 @@ public static class CommandMistakes
         {
             Declared.AddOrUpdate(command, [.. names]);
         }
+
+        if (hint is not null)
+        {
+            Hints.AddOrUpdate(command, names.Count > 0
+                ? hint
+                : throw new InvalidOperationException($"Command '{command.Name}' declares a hint for mistaken names but no name."));
+        }
+    }
+
+    /// <summary>
+    /// The hint <paramref name="command"/> declares for the names it is mistaken for, such as the
+    /// operation of an edit that does what <c>merge</c> names; null when it declares none.
+    /// </summary>
+    /// <param name="command">The command a mistaken name stands for.</param>
+    public static string? MistakenNameHint(this Command command)
+    {
+        ArgumentNullException.ThrowIfNull(command);
+        return Hints.TryGetValue(command, out string? hint) ? hint : null;
     }
 
     /// <summary>The names a caller may mistake for <paramref name="command"/>; empty when it declares none.</summary>
