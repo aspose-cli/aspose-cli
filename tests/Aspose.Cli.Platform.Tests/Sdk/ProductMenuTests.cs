@@ -85,8 +85,22 @@ public sealed class ProductMenuTests : IDisposable
         Command product = Menu().Build().CreateCommand(_hosts.Run);
 
         Assert.Equal(
-            [[], ["query"], ["query"], []],
+            [[], ["query"], ["query"], ["merge"]],
             product.Subcommands.Select(static command => command.MistakenNames()));
+    }
+
+    /// <summary>A name an edit declares through <see cref="EditDefinition"/> is refused and suggests the edit.</summary>
+    [Fact]
+    public void EditMistakenFor_SuggestsTheEdit()
+    {
+        var root = new RootCommand();
+        root.Subcommands.Add(Menu().Build().CreateCommand(_hosts.Run));
+
+        ParsedInvocation invocation = new InvocationParser(root, new GlobalOptions()).Parse(["menu", "merge", "doc.test"]);
+        CliException error = Assert.Throws<CliException>(invocation.EnsureValid);
+
+        Assert.Equal(ErrorCodes.UsageError, error.Code);
+        Assert.Equal("menu edit", error.Details!["suggestions"]![0]!.GetValue<string>());
     }
 
     [Fact]
@@ -533,6 +547,7 @@ public sealed class ProductMenuTests : IDisposable
                 [strict],
                 static (_, batch, _) => new EditRequest(batch.Batch.Ops.Count, batch.Options.DryRun),
                 TestTables.Edited,
+                mistakenFor: ["merge"],
                 checkUsage: parse =>
                 {
                     if (parse.GetValue(strict))
