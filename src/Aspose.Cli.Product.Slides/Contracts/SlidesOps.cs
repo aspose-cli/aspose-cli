@@ -47,12 +47,16 @@ public abstract record ShapeTargetOp : SlideTargetOp
 /// <summary>A rectangle in presentation points from the top-left origin.</summary>
 public sealed record SlidesRectInput
 {
+    /// <summary>The distance from the slide's left edge to the left side.</summary>
     [Minimum(0)] public required double X { get; init; }
 
+    /// <summary>The distance from the slide's top edge to the top side.</summary>
     [Minimum(0)] public required double Y { get; init; }
 
+    /// <summary>The width, to the right of x.</summary>
     [ExclusiveMinimum(0)] public required double Width { get; init; }
 
+    /// <summary>The height, down from y.</summary>
     [ExclusiveMinimum(0)] public required double Height { get; init; }
 }
 
@@ -78,6 +82,7 @@ public sealed record SlidesSlideSizeInput
 /// <summary>One body paragraph; its spacing comes from the placeholder's level.</summary>
 public sealed record SlidesParagraphInput
 {
+    /// <summary>The paragraph text.</summary>
     [ReadBack("read-result.schema.json#/$defs/slidesParagraphData/properties/text")]
     public required string Text { get; init; }
 
@@ -149,6 +154,7 @@ public sealed record SlidesShapeStyleInput
     [ReadBack("read-result.schema.json#/$defs/slidesTextRunData/properties/color")]
     [HexColor] public string? Color { get; init; }
 
+    /// <summary>Whether the text is bold; false removes bold.</summary>
     [ReadBack("read-result.schema.json#/$defs/slidesTextRunData/properties/bold")]
     public bool? Bold { get; init; }
 }
@@ -156,8 +162,10 @@ public sealed record SlidesShapeStyleInput
 /// <summary>One chart series.</summary>
 public sealed record SlidesChartSeriesInput
 {
+    /// <summary>The series name, which the legend shows.</summary>
     public required string Name { get; init; }
 
+    /// <summary>The series values, one per category in category order; for a scatter series, the y values.</summary>
     [MinItems(1), MaxItems(1000)] public required IReadOnlyList<double> Values { get; init; }
 
     /// <summary>The x value of each point of a scatter series, one per value.</summary>
@@ -186,6 +194,7 @@ public sealed record InsertSlideOp : SlidesOp
 [Operation("delete_slides")]
 public sealed record DeleteSlidesOp : SlidesOp
 {
+    /// <summary>The slides to delete.</summary>
     [PageRange] public required string Slides { get; init; }
 }
 
@@ -211,8 +220,10 @@ public sealed record CopySlideOp : SlideTargetOp
 [Operation("set_slide_hidden")]
 public sealed record SetSlideHiddenOp : SlidesOp
 {
+    /// <summary>The slides to hide or show.</summary>
     [PageRange] public required string Slides { get; init; }
 
+    /// <summary>Whether the slides are skipped in a slide show; false shows them again.</summary>
     [ReadBack("inspect-result.schema.json#/$defs/slidesSlideInfo/properties/hidden")]
     public required bool Hidden { get; init; }
 }
@@ -222,6 +233,7 @@ public sealed record SetSlideHiddenOp : SlidesOp
 [MistakenFor("apply_layout")]
 public sealed record SetLayoutOp : SlidesOp
 {
+    /// <summary>The slides that take the layout.</summary>
     [PageRange] public required string Slides { get; init; }
 
     /// <summary>The layout name, matched case-insensitively.</summary>
@@ -237,6 +249,7 @@ public sealed record SetBackgroundOp : SlidesOp
     /// <summary>The slides to change; every slide when omitted.</summary>
     [PageRange] public string? Slides { get; init; }
 
+    /// <summary>The solid background color.</summary>
     [ReadBack("read-result.schema.json#/$defs/slidesBackgroundData/properties/color")]
     [HexColor] public string? Color { get; init; }
 
@@ -250,6 +263,7 @@ public sealed record SetBackgroundOp : SlidesOp
 [MistakenFor("add_section")]
 public sealed record InsertSectionOp : SlidesOp
 {
+    /// <summary>The section name, unique among the presentation's sections.</summary>
     [ReadBack("inspect-result.schema.json#/$defs/slidesSectionInfo/properties/name")]
     [Pattern(@"\S")] public required string Name { get; init; }
 
@@ -284,6 +298,7 @@ public sealed record ImportSlidesOp : SlidesOp
 [Operation("set_title")]
 public sealed record SetTitleOp : SlideTargetOp
 {
+    /// <summary>The new title text, which replaces the placeholder's text.</summary>
     [ReadBack("read-result.schema.json#/$defs/slidesShapeData/properties/text")]
     public required string Text { get; init; }
 }
@@ -292,6 +307,7 @@ public sealed record SetTitleOp : SlideTargetOp
 [Operation("set_body")]
 public sealed record SetBodyOp : SlideTargetOp
 {
+    /// <summary>The new paragraphs in order, which replace every paragraph of the placeholder.</summary>
     [MinItems(1)] public required IReadOnlyList<SlidesParagraphInput> Paragraphs { get; init; }
 }
 
@@ -299,6 +315,7 @@ public sealed record SetBodyOp : SlideTargetOp
 [Operation("set_text")]
 public sealed record SetTextOp : ShapeTargetOp
 {
+    /// <summary>The new text, which replaces all of the shape's text.</summary>
     [ReadBack("read-result.schema.json#/$defs/slidesShapeData/properties/text")]
     public required string Text { get; init; }
 }
@@ -311,6 +328,7 @@ public sealed record SetTextOp : ShapeTargetOp
 [Operation("replace_text")]
 public sealed record SlidesReplaceTextOp : SlidesOp
 {
+    /// <summary>The text to find, or the pattern when regex is true; a match does not cross paragraphs.</summary>
     [NotState]
     [MinLength(1)] public required string Find { get; init; }
 
@@ -332,6 +350,7 @@ public sealed record SlidesReplaceTextOp : SlidesOp
     [NotState]
     public bool WholeWord { get; init; }
 
+    /// <summary>Where text is replaced: shapes on the slides, speaker notes, or all of both.</summary>
     [NotState]
     [AllowedValues(typeof(SlidesSearchScopes))] public string Scope { get; init; } = SlidesSearchScopes.All;
 
@@ -362,6 +381,7 @@ public sealed record SlidesReplaceTextOp : SlidesOp
 [Operation("set_notes")]
 public sealed record SetNotesOp : SlideTargetOp
 {
+    /// <summary>The new speaker-note text, which replaces the slide's notes.</summary>
     [ReadBack("read-result.schema.json#/$defs/slidesNotesData/properties/text")]
     public required string Text { get; init; }
 }
@@ -391,13 +411,16 @@ public sealed record InsertShapeOp : SlideTargetOp
     [ReadBack("read-result.schema.json#/$defs/slidesShapeData/properties/geometry")]
     [AllowedValues(typeof(SlidesShapeGeometries))] public required string Geometry { get; init; }
 
+    /// <summary>Where the shape goes and its size.</summary>
     [MistakenFor("box", "bounds")]
     [ReadBack("read-result.schema.json#/$defs/slidesShapeData/properties/rect")]
     public required SlidesRectInput Rect { get; init; }
 
+    /// <summary>The text inside the shape; none when omitted.</summary>
     [ReadBack("read-result.schema.json#/$defs/slidesShapeData/properties/text")]
     public string? Text { get; init; }
 
+    /// <summary>The fill, outline and text styling; the theme's shape style when omitted.</summary>
     public SlidesShapeStyleInput? Style { get; init; }
 }
 
@@ -411,12 +434,15 @@ public sealed record SlidesInsertTableOp : SlideTargetOp
     /// <summary>The most columns a slide table holds, shared by Markdown tables.</summary>
     internal const int MaxCols = 50;
 
+    /// <summary>Where the table goes and its size, which its rows and columns share equally.</summary>
     [ReadBack("read-result.schema.json#/$defs/slidesShapeData/properties/rect")]
     public required SlidesRectInput Rect { get; init; }
 
+    /// <summary>The number of rows.</summary>
     [ReadBack("read-result.schema.json#/$defs/slidesShapeData/properties/rowCount")]
     [Minimum(1), Maximum(MaxRows)] public required int RowCount { get; init; }
 
+    /// <summary>The number of columns.</summary>
     [ReadBack("read-result.schema.json#/$defs/slidesShapeData/properties/columnCount")]
     [Minimum(1), Maximum(MaxCols)] public required int ColumnCount { get; init; }
 
@@ -446,6 +472,7 @@ public sealed record SlidesSetTableCellOp : ShapeTargetOp
     [NotState]
     [Minimum(1)] public required int Column { get; init; }
 
+    /// <summary>The new cell text, which replaces the cell's text.</summary>
     [ReadBackByPosition]
     public required string Text { get; init; }
 }
@@ -457,20 +484,25 @@ public sealed record SlidesSetTableCellOp : ShapeTargetOp
 [Operation("insert_chart")]
 public sealed record InsertChartOp : SlideTargetOp
 {
+    /// <summary>The chart type: column has vertical bars, bar horizontal ones.</summary>
     [MistakenFor("type", "chartType")]
     [ReadBack("read-result.schema.json#/$defs/slidesChartData/properties/kind")]
     [AllowedValues(typeof(SlidesChartKinds))] public required string Kind { get; init; }
 
+    /// <summary>Where the chart goes and its size.</summary>
     [MistakenFor("box", "bounds")]
     [ReadBack("read-result.schema.json#/$defs/slidesShapeData/properties/rect")]
     public required SlidesRectInput Rect { get; init; }
 
+    /// <summary>The category labels in order: the axis labels, or a pie's slice names.</summary>
     [ReadBack("read-result.schema.json#/$defs/slidesChartData/properties/categories")]
     [MinItems(1), MaxItems(1000)] public required IReadOnlyList<string> Categories { get; init; }
 
+    /// <summary>The data series, each with one value per category.</summary>
     [ReadBack("read-result.schema.json#/$defs/slidesChartData/properties/series")]
     [MinItems(1), MaxItems(50)] public required IReadOnlyList<SlidesChartSeriesInput> Series { get; init; }
 
+    /// <summary>The chart title; no title when omitted.</summary>
     [ReadBack("read-result.schema.json#/$defs/slidesChartData/properties/title")]
     public string? Title { get; init; }
 
@@ -493,9 +525,11 @@ public sealed record InsertChartOp : SlideTargetOp
 [AtLeastOneOf("categories", "series")]
 public sealed record SetChartDataOp : ShapeTargetOp
 {
+    /// <summary>The new category labels, which replace every category; unchanged when omitted.</summary>
     [ReadBack("read-result.schema.json#/$defs/slidesChartData/properties/categories")]
     [MinItems(1), MaxItems(1000)] public IReadOnlyList<string>? Categories { get; init; }
 
+    /// <summary>The new data series, which replace every series; unchanged when omitted.</summary>
     [ReadBack("read-result.schema.json#/$defs/slidesChartData/properties/series")]
     [MinItems(1), MaxItems(50)] public IReadOnlyList<SlidesChartSeriesInput>? Series { get; init; }
 
@@ -520,6 +554,7 @@ public sealed record DeleteShapeOp : ShapeTargetOp;
 [MistakenFor("set_shape_style")]
 public sealed record FormatShapeOp : ShapeTargetOp
 {
+    /// <summary>The styling to apply; each field left out keeps the shape's current value.</summary>
     public required SlidesShapeStyleInput Style { get; init; }
 }
 
@@ -531,15 +566,19 @@ public sealed record FormatShapeOp : ShapeTargetOp
 [AtLeastOneOf("x", "y", "width", "height")]
 public sealed record SetShapeBoundsOp : ShapeTargetOp
 {
+    /// <summary>The new distance from the slide's left edge to the shape's left side.</summary>
     [ReadBack("read-result.schema.json#/$defs/slidesRect/properties/x")]
     [Minimum(0)] public double? X { get; init; }
 
+    /// <summary>The new distance from the slide's top edge to the shape's top side.</summary>
     [ReadBack("read-result.schema.json#/$defs/slidesRect/properties/y")]
     [Minimum(0)] public double? Y { get; init; }
 
+    /// <summary>The new width.</summary>
     [ReadBack("read-result.schema.json#/$defs/slidesRect/properties/width")]
     [ExclusiveMinimum(0)] public double? Width { get; init; }
 
+    /// <summary>The new height.</summary>
     [ReadBack("read-result.schema.json#/$defs/slidesRect/properties/height")]
     [ExclusiveMinimum(0)] public double? Height { get; init; }
 }
@@ -555,12 +594,15 @@ public sealed record SetFooterOp : SlidesOp
     /// <summary>The slides to change; every slide when omitted.</summary>
     [PageRange] public string? Slides { get; init; }
 
+    /// <summary>The footer text, which also shows the footer; unchanged when omitted.</summary>
     [ReadBack("read-result.schema.json#/$defs/slidesFooterData/properties/text")]
     public string? Text { get; init; }
 
+    /// <summary>Whether the slide number shows; unchanged when omitted.</summary>
     [ReadBack("read-result.schema.json#/$defs/slidesFooterData/properties/showNumber")]
     public bool? ShowNumber { get; init; }
 
+    /// <summary>Whether the date shows; unchanged when omitted.</summary>
     [ReadBack("read-result.schema.json#/$defs/slidesFooterData/properties/showDate")]
     public bool? ShowDate { get; init; }
 }
@@ -570,8 +612,10 @@ public sealed record SetFooterOp : SlidesOp
 [AtLeastOneOf("kind", "durationMs")]
 public sealed record SetTransitionOp : SlidesOp
 {
+    /// <summary>The slides whose entrance transition changes.</summary>
     [PageRange] public required string Slides { get; init; }
 
+    /// <summary>The transition effect, or none to remove it; unchanged when omitted.</summary>
     [ReadBack("read-result.schema.json#/$defs/slidesTransitionData/properties/kind")]
     [AllowedValues(typeof(SlidesTransitionKinds))] public string? Kind { get; init; }
 
@@ -585,18 +629,23 @@ public sealed record SetTransitionOp : SlidesOp
 [AtLeastOneOf("title", "author", "subject", "keywords", "company")]
 public sealed record SlidesSetPropertiesOp : SlidesOp
 {
+    /// <summary>The document title.</summary>
     [ReadBack("inspect-result.schema.json#/properties/properties/additionalProperties")]
     public string? Title { get; init; }
 
+    /// <summary>The document author.</summary>
     [ReadBack("inspect-result.schema.json#/properties/properties/additionalProperties")]
     public string? Author { get; init; }
 
+    /// <summary>The document subject.</summary>
     [ReadBack("inspect-result.schema.json#/properties/properties/additionalProperties")]
     public string? Subject { get; init; }
 
+    /// <summary>The document keywords, as one text such as "budget, 2026".</summary>
     [ReadBack("inspect-result.schema.json#/properties/properties/additionalProperties")]
     public string? Keywords { get; init; }
 
+    /// <summary>The company the document belongs to.</summary>
     [ReadBack("inspect-result.schema.json#/properties/properties/additionalProperties")]
     public string? Company { get; init; }
 }
