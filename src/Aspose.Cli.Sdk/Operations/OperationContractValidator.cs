@@ -72,6 +72,9 @@ internal static class OperationContractValidator
         }
     }
 
+    /// <summary>A value without its word separators, so <c>very-hidden</c> and <c>veryHidden</c> compare alike.</summary>
+    private static string Bare(string value) => value.Replace("-", string.Empty, StringComparison.Ordinal).Replace("_", string.Empty, StringComparison.Ordinal);
+
     private static void CheckValue(OperationValue shape, IReadOnlyList<PlacedConstraint> constraints, object value, string path)
     {
         (IReadOnlyList<ValueConstraintAttribute> here, IReadOnlyList<PlacedConstraint> items) = Place(shape, constraints, path);
@@ -80,9 +83,14 @@ internal static class OperationContractValidator
             if (constraint.Check(value) is { } reason)
             {
                 // A name among fixed values is a mistake: the operation error lists the values
-                // once, in details.available and the message, so the reason leaves them out.
+                // once, in details.available and the message, so the reason leaves them out. A
+                // value spelled with other case or separators, such as veryHidden for
+                // very-hidden, is meant first.
                 throw constraint is AllowedValuesAttribute allowed && value is string text
-                    ? new OperationInvalidException($"{path} does not accept '{text}'", mistake: Mistake.Of(text, allowed.Spelled))
+                    ? new OperationInvalidException($"{path} does not accept '{text}'", mistake: Mistake.Of(
+                        text,
+                        allowed.Spelled,
+                        [.. allowed.Spelled.Where(spelled => string.Equals(Bare(spelled), Bare(text), StringComparison.OrdinalIgnoreCase))]))
                     : new OperationInvalidException($"{path} {reason}");
             }
         }

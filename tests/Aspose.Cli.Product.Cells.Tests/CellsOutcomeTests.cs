@@ -618,7 +618,7 @@ public sealed class CellsOutcomeTests : IClassFixture<CellsFixture>
     }
 
     [Theory]
-    [InlineData("Second", "veryHidden")]
+    [InlineData("Second", "very-hidden")]
     [InlineData("Second", "hidden")]
     [InlineData("Backstage", "visible")]
     public void SheetVisibility_ReadsBackAsWritten(string sheet, string visibility)
@@ -639,12 +639,23 @@ public sealed class CellsOutcomeTests : IClassFixture<CellsFixture>
         CliException error = Assert.Throws<CliException>(() => Apply(path, """
             {"ops":[
               {"op":"set_sheet_visibility","sheet":"Second","visibility":"hidden"},
-              {"op":"set_sheet_visibility","sheet":"Data","visibility":"veryHidden"}
+              {"op":"set_sheet_visibility","sheet":"Data","visibility":"very-hidden"}
             ]}
             """));
 
         Assert.Equal("OPS_INVALID", error.Code.Name);
         Assert.Contains("only visible sheet", error.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void ACamelCaseVisibility_SuggestsTheKebabCaseValueFirst()
+    {
+        CliException error = Assert.Throws<CliException>(() => Apply(
+            _fixture.CreateSalesWorkbook($"camel-{Guid.NewGuid():N}.xlsx"),
+            """{"ops":[{"op":"set_sheet_visibility","sheet":"Second","visibility":"veryHidden"}]}"""));
+
+        Assert.Equal("OPS_INVALID", error.Code.Name);
+        Assert.Equal("very-hidden", error.Details!["suggestions"]![0]!.GetValue<string>());
     }
 
     [Fact]
