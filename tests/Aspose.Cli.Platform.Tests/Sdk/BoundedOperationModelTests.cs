@@ -266,6 +266,95 @@ public sealed class BoundedOperationModelTests
             applied.Changed.Select(static item => (item.Address, item.InOutput)));
     }
 
+    /// <summary>A workbook of named sheets, each a scope whose name begins the addresses of its cells.</summary>
+    private sealed class SheetModel(Action<TestOp, List<Sheet>> apply) : IOperationModel<TestOp>
+    {
+        public List<Sheet> Sheets { get; } = [new("Old"), new("Other")];
+
+        public OperationSnapshot Snapshot(TestOp operation)
+        {
+            var snapshot = new OperationSnapshot();
+            foreach (Sheet sheet in Sheets)
+            {
+                snapshot.Add($"sheet/{sheet.Name}", "sheet");
+                snapshot.Add($"cell/{sheet.Name}!A1", sheet.A1);
+            }
+
+            return snapshot;
+        }
+
+        public void Apply(TestOp operation) => apply(operation, Sheets);
+
+        public IReadOnlyList<string> AttemptedTargets(TestOp operation) => ["sheet/all"];
+
+        public NamedScopes Scopes() => new(["sheet", "cell"], [.. Sheets.Select(static sheet => ((object)sheet, sheet.Name))]);
+    }
+
+    private sealed class Sheet(string name)
+    {
+        public string Name { get; set; } = name;
+
+        public string A1 { get; set; } = "";
+    }
+
+    /// <summary>
+    /// An address an operation reported under a sheet name that a later operation changed is
+    /// reported under the output's name; a later sheet that takes the old name keeps its own.
+    /// </summary>
+    [Fact]
+    public void Run_NamesTheScopeOfAnAddressAsTheOutputNamesIt()
+    {
+        var model = new SheetModel(static (op, sheets) =>
+        {
+            switch (((SetOp)op).Value)
+            {
+                case 1:
+                    sheets[0].A1 = "x";
+                    break;
+                case 2:
+                    sheets[0].Name = "New";
+                    break;
+                case 3:
+                    sheets.Add(new Sheet("Old") { A1 = "y" });
+                    break;
+                case 4:
+                    sheets.RemoveAt(0);
+                    break;
+            }
+        });
+
+        AppliedBatch applied = BoundedOperationRunner.Run(
+            Catalog, Batch(new SetOp { Value = 1 }, new SetOp { Value = 2 }, new SetOp { Value = 3 }), bestEffort: false, deadline: null, model);
+
+        Assert.Equal(["cell/New!A1"], applied.Outcomes[0].Targets);
+        Assert.Contains("sheet/New", applied.Outcomes[1].Targets);
+        Assert.Equal(["sheet/Old", "cell/Old!A1"], applied.Outcomes[2].Targets);
+    }
+
+    /// <summary>A sheet the batch renames and then removes is named as the input names it, in every target.</summary>
+    [Fact]
+    public void Run_NamesARenamedScopeTheBatchRemovedAsTheInputNamesIt()
+    {
+        var model = new SheetModel(static (op, sheets) =>
+        {
+            switch (((SetOp)op).Value)
+            {
+                case 2:
+                    sheets[0].Name = "New";
+                    break;
+                case 4:
+                    sheets.RemoveAt(0);
+                    break;
+            }
+        });
+
+        AppliedBatch applied = BoundedOperationRunner.Run(
+            Catalog, Batch(new SetOp { Value = 2 }, new SetOp { Value = 4 }), bestEffort: false, deadline: null, model);
+
+        Assert.All(applied.Outcomes.SelectMany(static outcome => outcome.Targets), target => Assert.DoesNotContain("New", target, StringComparison.Ordinal));
+        Assert.Equal(["sheet/Old", "cell/Old!A1"], applied.Outcomes[1].Targets);
+    }
+
     [Fact]
     public void Run_AnObjectWhoseInstanceTheEngineReplacedWithTheSameState_ChangedNothing()
     {

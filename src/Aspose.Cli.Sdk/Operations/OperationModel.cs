@@ -42,7 +42,27 @@ public interface IOperationModel<in TOp>
     /// that adds no such sequence.
     /// </summary>
     IReadOnlyDictionary<string, IReadOnlyList<object>> Positions() => new Dictionary<string, IReadOnlyList<object>>(StringComparer.Ordinal);
+
+    /// <summary>
+    /// The objects whose names begin the addresses of the objects they hold, such as the
+    /// worksheets of <c>cell/Sales!B2</c>, by the instances the engine keeps them as. The SDK reads
+    /// them before the first operation and after each, so an address an operation reported under a
+    /// name a later operation changed is reported under the name the output has, or, for an object
+    /// the batch removed, the name the input had. Null for a product whose addresses no renamed
+    /// object begins.
+    /// </summary>
+    NamedScopes? Scopes() => null;
 }
+
+/// <summary>
+/// The objects whose names begin the addresses of the objects they hold (<see cref="IOperationModel{TOp}.Scopes"/>).
+/// An address of one of <paramref name="Units"/> begins with such a name when its part after the
+/// unit is the escaped name (<see cref="Addressing.TargetName.Escape"/>), or starts with it and a
+/// <c>/</c>, or with the name escaped together with <c>!</c> and a <c>!</c>, as in <c>cell/Sales!B2</c>.
+/// </summary>
+/// <param name="Units">The units whose addresses begin with a scope's name, such as <c>sheet</c> and <c>cell</c>.</param>
+/// <param name="Names">Each scope's instance and its current name.</param>
+public sealed record NamedScopes(IReadOnlyCollection<string> Units, IReadOnlyList<(object Identity, string Name)> Names);
 
 /// <summary>One object a batch changed.</summary>
 /// <param name="Address">
