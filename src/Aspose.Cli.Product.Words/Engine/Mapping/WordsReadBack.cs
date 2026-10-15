@@ -209,7 +209,6 @@ internal static class WordsReadBack
             ? CustomPrefix + name
             : name;
 
-    /// <summary>A color as #RRGGBB, or null for an automatic or empty one.</summary>
     /// <summary>The colors of Word's highlight palette by their names (<see cref="WordsHighlightColors"/>).</summary>
     private static readonly (string Name, int Rgb)[] HighlightPalette =
     [
@@ -252,6 +251,7 @@ internal static class WordsReadBack
         return (red * red) + (green * green) + (blue * blue);
     }).Name;
 
+    /// <summary>A color as #RRGGBB, or null for an automatic or empty one.</summary>
     internal static string? Hex(System.Drawing.Color color) =>
         color.IsEmpty || color.A == 0 ? null : $"#{color.ToArgb() & 0xffffff:X6}";
 }
