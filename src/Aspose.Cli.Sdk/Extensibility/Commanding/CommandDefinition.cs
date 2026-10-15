@@ -109,6 +109,13 @@ public sealed class CommandDefinition<TRequest, TResult>
     public IReadOnlyList<string> MistakenFor { get; init; } = [];
 
     /// <summary>
+    /// How this command does what <see cref="MistakenFor"/> names, such as the operation of an edit
+    /// that merges documents; the error that refuses such a name gives it as its hint. Null for the
+    /// advice to read help.
+    /// </summary>
+    public string? MistakenForHint { get; init; }
+
+    /// <summary>
     /// Options the command does not have that a caller may reach for, such as <c>--encrypt</c> on a
     /// command that never encrypts, each with the hint that names what does it instead. The
     /// parser refuses them as any unknown option, with that hint; help and capabilities do not
@@ -161,7 +168,7 @@ public sealed class CommandDefinition<TRequest, TResult>
         var options = new StandardOptions(_traits);
         Command command = options.CreateCommand(Name, Description, _parameters);
         command.SetAction(parse => context.Run(parse, scope => Execute(options, parse, scope, context, handler)));
-        CommandMistakes.Declare(command, MistakenFor);
+        CommandMistakes.Declare(command, MistakenFor, MistakenForHint);
         CommandMistakes.DeclareRefused(command, RefusedOptions);
         if (EncryptingDocument is { } encrypting)
         {
@@ -249,6 +256,7 @@ public static class EditDefinition
     /// <c>merge</c> for an edit that imports another document (see
     /// <see cref="CommandDefinition{TRequest, TResult}.MistakenFor"/>).
     /// </param>
+    /// <param name="mistakenForHint">How the edit does what <paramref name="mistakenFor"/> names (<see cref="CommandDefinition{TRequest, TResult}.MistakenForHint"/>).</param>
     public static CommandDefinition<TRequest, TResult> Create<TOp, TBatch, TRequest, TResult>(
         BoundedEditCommand<TOp, TBatch> edit,
         string description,
@@ -260,7 +268,8 @@ public static class EditDefinition
         string name = "edit",
         IReadOnlyList<string>? examples = null,
         IReadOnlyList<CommandHelpLink>? links = null,
-        IReadOnlyList<string>? mistakenFor = null)
+        IReadOnlyList<string>? mistakenFor = null,
+        string? mistakenForHint = null)
         where TOp : BoundedOperation, IOperationVocabulary<TOp>
         where TBatch : BoundedOperationEnvelope<TOp>
         where TResult : ResultEnvelope
@@ -283,6 +292,7 @@ public static class EditDefinition
             Examples = examples ?? [],
             Links = links ?? [],
             MistakenFor = mistakenFor ?? [],
+            MistakenForHint = mistakenForHint,
             Operations = TOp.Catalog.Describe,
             EncryptingDocument = TOp.Catalog.EncryptingDocument,
         };

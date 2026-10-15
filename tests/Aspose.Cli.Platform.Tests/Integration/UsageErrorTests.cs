@@ -143,7 +143,17 @@ public sealed class UsageErrorTests : IDisposable
     {
         JsonNode error = Refused("words help edit", "USAGE_ERROR");
 
-        Assert.Equal("'help' is not a command of 'aspose-cli words edit'; help is the --help option.", error["message"]!.GetValue<string>());
+        Assert.Equal("'help' is not a command of 'aspose-cli words'; help is the --help option.", error["message"]!.GetValue<string>());
+        Assert.Equal("words edit --help", error["details"]!["suggestions"]![0]!.GetValue<string>());
+    }
+
+    [Fact]
+    public void AnOptionBesideTheVersion_ListsOnlyTheOptionTheVersionTakes()
+    {
+        JsonNode error = Refused("--version --bogus", "USAGE_ERROR");
+
+        Assert.Equal(["--output-format"], error["details"]!["available"]!.AsArray().Select(static name => name!.GetValue<string>()));
+        Assert.EndsWith("Must be one of: --output-format", error["message"]!.GetValue<string>().TrimEnd('.'), StringComparison.Ordinal);
     }
 
     private JsonNode Refused(string commandLine, string code)

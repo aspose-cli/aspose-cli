@@ -32,6 +32,7 @@ public sealed class WordsCliTests : IDisposable
         JsonNode error = JsonNode.Parse(refused.StdErr)!["error"]!;
         Assert.Equal("USAGE_ERROR", error["code"]!.GetValue<string>());
         Assert.Equal("words edit", error["details"]!["suggestions"]![0]!.GetValue<string>());
+        Assert.Contains("import_sections", error["hint"]!.GetValue<string>(), StringComparison.Ordinal);
     }
 
     [Category(TestCategory.Slow)]
@@ -245,6 +246,9 @@ public sealed class WordsCliTests : IDisposable
         string hint = error["hint"]!.GetValue<string>();
         Assert.Contains("encrypted template", hint, StringComparison.Ordinal);
         Assert.DoesNotContain("--password-env", hint, StringComparison.Ordinal);
+        // No words command writes an unencrypted copy of it, so the hint asks the user for one.
+        Assert.DoesNotContain("decrypt", hint, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("Ask the user for an unencrypted copy", hint, StringComparison.Ordinal);
         Assert.False(File.Exists(_workspace.File("letter.docx")));
     }
 

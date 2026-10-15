@@ -66,13 +66,15 @@ internal sealed class ParsedInvocation
         // Before help: a mistaken name beside --help would otherwise show the help as if it were right.
         if (MistakenName() is { } mistaken)
         {
-            throw CliErrors.Usage([mistaken.Problem, .. mistaken.Others], mistaken.Mistake, mistaken.Corrected);
+            throw CliErrors.Usage([mistaken.Problem, .. mistaken.Others], mistaken.Mistake, mistaken.Corrected, hint: mistaken.Hint);
         }
 
         if (VersionWithOthers() is { } version)
         {
-            throw CliErrors.Usage([$"'{version}' is not an option of --version, which takes only --output-format."],
-                UnknownOptionMistake(version), parameter: version);
+            // The version takes only the output format, so that is the one option the error lists.
+            string[] taken = [GlobalOptionNames.OutputFormat];
+            throw CliErrors.Usage([$"'{version}' is not an option of --version, which takes only {taken[0]}."],
+                Mistake.Of(version, taken, keyOf: static name => name.TrimStart('-')), parameter: version);
         }
 
         if (Problems() is { } refused)
@@ -98,7 +100,7 @@ internal sealed class ParsedInvocation
 
         if ((UnknownCommand() ?? HelpOrVersionWord()) is { } unknown)
         {
-            return new([unknown.Problem], unknown.Mistake, null, ValuesOnly: false);
+            return new([unknown.Problem], unknown.Mistake, null, ValuesOnly: false) { Hint = unknown.Hint };
         }
 
         if (Placeholder() is { } placeholder)
@@ -257,7 +259,7 @@ internal sealed class ParsedInvocation
     /// <c>--help</c> and <c>--version</c>; a name commands declare they are mistaken for, such as
     /// a command that no longer exists, suggests those commands first.
     /// </summary>
-    private (string Problem, Mistake Mistake)? UnknownCommand()
+    private (string Problem, Mistake Mistake, string? Hint)? UnknownCommand()
     {
         string[] commands = VisibleCommands();
         if (commands.Length == 0
@@ -267,18 +269,18 @@ internal sealed class ParsedInvocation
         }
 
         string parent = string.Join(' ', [DistributionInfo.CommandName, .. CommandPath.Select(static command => command.Name)]);
+        Command[] declaring = [.. Command.Subcommands
+            .Where(command => !command.Hidden && command.MistakenNames().Contains(token, StringComparer.Ordinal))];
         string[] meant = token switch
         {
             "help" => [Below("--help")],
             "version" when CommandPath.Count == 0 => ["--version"],
-            _ => [.. Command.Subcommands
-                .Where(command => !command.Hidden && command.MistakenNames().Contains(token, StringComparer.Ordinal))
-                .Select(static command => command.Name)
-                .Select(Below)],
+            _ => [.. declaring.Select(static command => command.Name).Select(Below)],
         };
         return (
             $"'{token}' is not a command of '{parent}'.",
-            Mistake.Of(token, commands.Select(Below), meant, keyOf: static name => name[(name.LastIndexOf(' ') + 1)..]));
+            Mistake.Of(token, commands.Select(Below), meant, keyOf: static name => name[(name.LastIndexOf(' ') + 1)..]),
+            declaring.Select(static command => command.MistakenNameHint()).FirstOrDefault(static hint => hint is not null));
     }
 
     /// <summary>
@@ -290,7 +292,7 @@ internal sealed class ParsedInvocation
     /// name, it is the correction, ready to run; otherwise its own problems are reported beside
     /// the name, so one error states everything to fix.
     /// </summary>
-    private (string Problem, Mistake Mistake, IReadOnlyList<string>? Corrected, string[] Others)? MistakenName()
+    private (string Problem, Mistake Mistake, IReadOnlyList<string>? Corrected, string[] Others, string? Hint)? MistakenName()
     {
         if (CommandPath.Count == 0)
         {
@@ -324,7 +326,8 @@ internal sealed class ParsedInvocation
             $"'{token}' is not a command of '{string.Join(' ', [DistributionInfo.CommandName, .. parentPath])}'.",
             Mistake.Of(token, siblings.Select(Sibling), meant, keyOf: static name => name[(name.LastIndexOf(' ') + 1)..]),
             correction,
-            problems);
+            problems,
+            siblings.First(command => Declares(command, token)).MistakenNameHint());
 
         static bool Declares(Command command, string token) => command.MistakenNames().Contains(token, StringComparer.Ordinal);
     }
@@ -335,7 +338,7 @@ internal sealed class ParsedInvocation
     /// or <c>--version</c> is suggested, and the problems the stray word caused, such as a missing
     /// argument, are not reported on their own.
     /// </summary>
-    private (string Problem, Mistake Mistake)? HelpOrVersionWord()
+    private (string Problem, Mistake Mistake, string? Hint)? HelpOrVersionWord()
     {
         if (ParseResult.UnmatchedTokens.FirstOrDefault(static token => token is "help" or "version") is not { } token)
         {
@@ -343,7 +346,10 @@ internal sealed class ParsedInvocation
         }
 
         string meant = token == "help" ? Below("--help") : "--version";
-        return ($"'{token}' is not a command of '{Path()}'; {token} is the {meant.Split(' ')[^1]} option.", Mistake.Of(token, [], meant));
+        // The word belongs to the command typed before it, as in 'words help edit'.
+        int before = ParseResult.Tokens.TakeWhile(item => item.Value != token).Count(static item => item.Type == TokenType.Command);
+        string path = string.Join(' ', [DistributionInfo.CommandName, .. CommandPath.Take(before).Select(static command => command.Name)]);
+        return ($"'{token}' is not a command of '{path}'; {token} is the {meant.Split(' ')[^1]} option.", Mistake.Of(token, [], meant), null);
     }
 
     /// <summary>

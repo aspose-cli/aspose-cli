@@ -75,7 +75,8 @@ internal static class EditCommand
                 CommandHelpLink.Schema<WordsOp>("the exact edit-batch contract"),
             ],
             // Appending documents is the import_sections operation of an edit.
-            mistakenFor: ["merge"]);
+            mistakenFor: ["merge"],
+            mistakenForHint: "To merge documents, run 'words edit' on the first with an import_sections operation for each other document.");
     }
 
     internal static void Table(WordsEditResult result, TableSurface surface)
