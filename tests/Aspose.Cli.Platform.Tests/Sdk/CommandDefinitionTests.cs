@@ -351,13 +351,13 @@ public sealed class CommandDefinitionTests : IDisposable
         foreach (string[] arguments in new[] { new[] { "report.test", "--out", "page.doc" }, new[] { "report.test", "--out", "page" } })
         {
             CliException foreign = RunFailing(command, arguments);
-            Assert.Equal(ErrorCodes.UsageError, foreign.Code);
+            Assert.Equal(ErrorCodes.OptionInvalid, foreign.Code);
             Assert.Equal("--out", foreign.Details!["option"]!.GetValue<string>());
             Assert.EndsWith(". Must be one of: .png, .jpg, .jpeg, .svg.", foreign.Message, StringComparison.Ordinal);
         }
 
         CliException conflict = RunFailing(command, "report.test", "--to", "png", "--out", "page.svg");
-        Assert.Equal(ErrorCodes.UsageError, conflict.Code);
+        Assert.Equal(ErrorCodes.OptionInvalid, conflict.Code);
         Assert.Equal("--to png contradicts --out 'page.svg': its .svg extension is not a png extension. Must be one of: .png.", conflict.Message);
         Assert.Equal("Give --out the .png extension, as in page.png, or pass --to svg to write svg.", conflict.Hint);
 
@@ -406,7 +406,7 @@ public sealed class CommandDefinitionTests : IDisposable
         foreach (string output in new[] { "page.docx", "page.png", "page.mdown", "page" })
         {
             CliException conflict = RunFailing(command, "report.test", "--to", "md", "--out", output);
-            Assert.Equal(ErrorCodes.UsageError, conflict.Code);
+            Assert.Equal(ErrorCodes.OptionInvalid, conflict.Code);
             Assert.StartsWith($"--to md contradicts --out '{output}': ", conflict.Message, StringComparison.Ordinal);
             Assert.EndsWith(". Must be one of: .md, .markdown.", conflict.Message, StringComparison.Ordinal);
             Assert.Equal("md", conflict.Details!["format"]!.GetValue<string>());
@@ -447,14 +447,14 @@ public sealed class CommandDefinitionTests : IDisposable
         Assert.Contains("Protect only tst outputs", unprotectable.Hint, StringComparison.Ordinal);
 
         CliException producer = Refused("new.pdf");
-        Assert.Equal(ErrorCodes.UsageError, producer.Code);
+        Assert.Equal(ErrorCodes.OptionInvalid, producer.Code);
         Assert.Equal("file 'new.pdf' has the .pdf extension of pdf, which aspose-cli test create does not write. Must be one of: .tst, .test, .tsx.", producer.Message);
         Assert.Equal("Give file one of these extensions, then run 'aspose-cli test convert <that file> --to pdf' for pdf.", producer.Hint);
         Assert.Equal("file", producer.Details!["argument"]!.GetValue<string>());
         foreach (string file in new[] { "new.foo", "new" })
         {
             CliException refused = Refused(file);
-            Assert.Equal(ErrorCodes.UsageError, refused.Code);
+            Assert.Equal(ErrorCodes.OptionInvalid, refused.Code);
             Assert.Equal("Give file one of these extensions.", refused.Hint);
         }
     }
@@ -480,7 +480,7 @@ public sealed class CommandDefinitionTests : IDisposable
         Assert.Equal("tst|old|True|report.test", Run(edit, "report.test", "--in-place"));
         Assert.Equal("tsx|tsx|False|copy.tsx", Run(edit, "report.test", "--out", "copy.tsx"));
         CliException input = RunFailing(edit, "report.foo");
-        Assert.Equal(ErrorCodes.UsageError, input.Code);
+        Assert.Equal(ErrorCodes.OptionInvalid, input.Code);
         Assert.Equal("--out", input.Details!["option"]!.GetValue<string>());
         Assert.StartsWith("The input 'report.foo', whose name the output keeps without --out, has the .foo extension", input.Message, StringComparison.Ordinal);
         Assert.Equal("--out", RunFailing(edit, "report.test", "--out", "copy.foo").Details!["option"]!.GetValue<string>());
@@ -496,7 +496,7 @@ public sealed class CommandDefinitionTests : IDisposable
 
         Assert.Equal("report.signed.pdf", Run(sign, "report.test"));
         Assert.Equal("copy.pdf", Run(sign, "report.test", "--out", "copy.pdf"));
-        Assert.Equal(ErrorCodes.UsageError, RunFailing(sign, "report.test", "--out", "copy.png").Code);
+        Assert.Equal(ErrorCodes.OptionInvalid, RunFailing(sign, "report.test", "--out", "copy.png").Code);
     }
 
     [Fact]

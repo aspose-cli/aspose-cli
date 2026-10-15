@@ -275,7 +275,7 @@ public partial class StandardInvocation
 
         string[] ids = [.. writes.Select(static format => format.Id)];
         throw CliErrors.Usage([$"Name the output format: give {StandardOptionNames.To} ({string.Join(", ", ids)}), "
-            + $"or an {StandardOptionNames.Out} whose extension names one of them."]);
+            + $"or an {StandardOptionNames.Out} whose extension names one of them."], parameter: StandardOptionNames.To);
     }
 
     // The formats among those written that declare the file's extension, in declared order.

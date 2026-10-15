@@ -1,5 +1,5 @@
 {
-  "name": "a mistyped --to value is a usage error that suggests the format",
+  "name": "a mistyped --to value is an invalid option value that suggests the format",
   "files": {
     "book.xlsx": { "fixture": "cells.xlsx" }
   },
@@ -8,7 +8,7 @@
       "args": ["cells", "convert", "book.xlsx", "--to", "csvv", "--out", "out.csv"],
       "expect": {
         "exitCode": 2,
-        "error": "USAGE_ERROR",
+        "error": "OPTION_INVALID",
         "json": [{ "path": "error.details.suggestions", "contains": "csv" }],
         "files": { "absent": ["out.csv"], "nothingWritten": true }
       }

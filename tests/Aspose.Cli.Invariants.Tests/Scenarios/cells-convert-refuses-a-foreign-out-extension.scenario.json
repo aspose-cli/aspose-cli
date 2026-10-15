@@ -8,7 +8,7 @@
       "args": ["cells", "convert", "book.xlsx", "--to", "csv", "--out", "out.doc"],
       "expect": {
         "exitCode": 2,
-        "error": "USAGE_ERROR",
+        "error": "OPTION_INVALID",
         "json": [
           { "path": "error.message", "contains": "--out" },
           { "path": "error.message", "contains": ".csv" }

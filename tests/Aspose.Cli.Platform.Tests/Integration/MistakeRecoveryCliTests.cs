@@ -81,7 +81,7 @@ public sealed class MistakeRecoveryCliTests : IDisposable
 
         Assert.Equal(2, result.ExitCode);
         JsonNode error = JsonNode.Parse(result.StdErr)!["error"]!;
-        Assert.Equal("USAGE_ERROR", error["code"]!.GetValue<string>());
+        Assert.Equal("OPTION_INVALID", error["code"]!.GetValue<string>());
         // A positional argument such as file is details.argument; an option is details.option.
         Assert.Equal(option, error["details"]![option.StartsWith('-') ? "option" : "argument"]!.GetValue<string>());
         Assert.StartsWith($"{option} '", error["message"]!.GetValue<string>(), StringComparison.Ordinal);
@@ -106,7 +106,7 @@ public sealed class MistakeRecoveryCliTests : IDisposable
 
         Assert.Equal(2, result.ExitCode);
         JsonNode error = JsonNode.Parse(result.StdErr)!["error"]!;
-        Assert.Equal("USAGE_ERROR", error["code"]!.GetValue<string>());
+        Assert.Equal("OPTION_INVALID", error["code"]!.GetValue<string>());
         string message = error["message"]!.GetValue<string>();
         Assert.Contains("extension of its input, which already is that file", message, StringComparison.Ordinal);
         Assert.Contains($"aspose-cli {arguments[0]} render writes only images. Must be one of: .png,", message, StringComparison.Ordinal);
@@ -124,7 +124,7 @@ public sealed class MistakeRecoveryCliTests : IDisposable
 
         Assert.Equal(2, result.ExitCode);
         JsonNode error = JsonNode.Parse(result.StdErr)!["error"]!;
-        Assert.Equal("USAGE_ERROR", error["code"]!.GetValue<string>());
+        Assert.Equal("OPTION_INVALID", error["code"]!.GetValue<string>());
         Assert.Equal(
             [".xlsx", ".xltx", ".xlsm", ".xltm", ".xlsb", ".xls", ".ods", ".csv", ".txt", ".tsv", ".html", ".htm", ".mhtml"],
             error["details"]!["available"]!.AsArray().Select(static extension => extension!.GetValue<string>()));
@@ -168,7 +168,7 @@ public sealed class MistakeRecoveryCliTests : IDisposable
 
         Assert.Equal(2, result.ExitCode);
         JsonNode error = JsonNode.Parse(result.StdErr)!["error"]!;
-        Assert.Equal("USAGE_ERROR", error["code"]!.GetValue<string>());
+        Assert.Equal("OPTION_INVALID", error["code"]!.GetValue<string>());
         Assert.Contains(suggestion, error["details"]!["suggestions"]!.AsArray().Select(static extension => extension!.GetValue<string>()));
         Assert.Contains(suggestion, error["details"]!["available"]!.AsArray().Select(static extension => extension!.GetValue<string>()));
         Assert.StartsWith("Did you mean ", error["hint"]!.GetValue<string>(), StringComparison.Ordinal);
@@ -182,7 +182,7 @@ public sealed class MistakeRecoveryCliTests : IDisposable
     [InlineData("slides create dotonly. --from-markdown deck.md", "dotonly")]
     [InlineData("words edit a.docx --ops words.json --out noext", "noext")]
     [InlineData("words create noext --from-markdown deck.md", "noext")]
-    public void OutputWithoutExtension_IsAUsageError(string commandLine, string output)
+    public void OutputWithoutExtension_IsAnInvalidOption(string commandLine, string output)
     {
         File.WriteAllText(_workspace.File("a.pptx"), "not a document");
         File.WriteAllText(_workspace.File("a.docx"), "not a document");
@@ -194,7 +194,7 @@ public sealed class MistakeRecoveryCliTests : IDisposable
 
         Assert.Equal(2, result.ExitCode);
         JsonNode error = JsonNode.Parse(result.StdErr)!["error"]!;
-        Assert.Equal("USAGE_ERROR", error["code"]!.GetValue<string>());
+        Assert.Equal("OPTION_INVALID", error["code"]!.GetValue<string>());
         Assert.Contains("has no extension", error["message"]!.GetValue<string>(), StringComparison.Ordinal);
         Assert.Null(error["details"]!["suggestions"]);
         Assert.NotEmpty(error["details"]!["available"]!.AsArray());

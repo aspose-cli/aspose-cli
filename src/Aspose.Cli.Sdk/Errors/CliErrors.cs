@@ -28,10 +28,23 @@ public static partial class CliErrors
     /// The arguments of the command line without the mistake, when that alone corrects it: the
     /// hint ends with the command line they make, ready to run, in place of the advice to read help.
     /// </param>
-    public static CliException Usage(IReadOnlyList<string> problems, Mistake? mistake = null, IReadOnlyList<string>? corrected = null)
+    /// <param name="parameter">
+    /// The option or argument the first problem is about, such as an unknown or missing option,
+    /// stated in <c>details.option</c> or <c>details.argument</c>; null when it is about none.
+    /// </param>
+    public static CliException Usage(
+        IReadOnlyList<string> problems,
+        Mistake? mistake = null,
+        IReadOnlyList<string>? corrected = null,
+        string? parameter = null)
     {
         ArgumentNullException.ThrowIfNull(problems);
         var details = new JsonObject();
+        if (parameter is not null)
+        {
+            details[ParameterKey(parameter)] = parameter;
+        }
+
         if (problems.Count > 1)
         {
             details["errors"] = Strings(problems);
@@ -39,7 +52,7 @@ public static partial class CliErrors
 
         mistake?.WriteTo(details);
         string message = string.Join(" ", problems.Select(static problem => Sentence(problem)));
-        if (mistake is not null)
+        if (mistake is { Available.Count: > 0 })
         {
             message = $"{message} {mistake.MustBeOneOf()}";
         }
@@ -49,22 +62,69 @@ public static partial class CliErrors
     }
 
     /// <summary>
+    /// A command line whose options and arguments all parse but whose values the command refuses,
+    /// such as a value outside an option's list or a number that does not parse:
+    /// <c>OPTION_INVALID</c> naming the first refused <paramref name="parameter"/> in
+    /// <c>details.option</c> or <c>details.argument</c>. <paramref name="mistake"/>, when the value
+    /// has a list of values, ends the message with them and leads the hint with the closest ones.
+    /// </summary>
+    /// <param name="problems">Each refused value, one sentence each.</param>
+    /// <param name="parameter">The option or argument of the first refused value.</param>
+    /// <param name="mistake">The first refused value among a list of values, if any.</param>
+    public static CliException OptionValuesRefused(IReadOnlyList<string> problems, string parameter, Mistake? mistake = null)
+    {
+        ArgumentNullException.ThrowIfNull(problems);
+        ArgumentException.ThrowIfNullOrWhiteSpace(parameter);
+        var details = new JsonObject { [ParameterKey(parameter)] = parameter };
+        if (problems.Count > 1)
+        {
+            details["errors"] = Strings(problems);
+        }
+
+        mistake?.WriteTo(details);
+        string message = string.Join(" ", problems.Select(static problem => Sentence(problem)));
+        if (mistake is { Available.Count: > 0 })
+        {
+            message = $"{message} {mistake.MustBeOneOf()}";
+        }
+
+        return CliException.Create(ErrorCodes.OptionInvalid, message, mistake?.Hint(UsageHint) ?? UsageHint, details);
+    }
+
+    /// <summary>
     /// A command that only groups other commands, run without one: it does nothing on its own, so
     /// the error lists its commands in <c>details.available</c> by their path below the root.
+    /// Options it does not know, such as <c>cells --bogus</c>, are problems before the missing
+    /// command; the first one is stated in <c>details.option</c> and the options closest to it
+    /// lead the suggestions.
     /// </summary>
     /// <param name="command">The group as the caller typed it, such as <c>aspose-cli cells</c>.</param>
     /// <param name="commands">Its visible commands by their path below the root, such as <c>cells inspect</c>.</param>
-    public static CliException CommandRequired(string command, IReadOnlyList<string> commands)
+    /// <param name="unknownOptions">The tokens given to the group that name none of its options, in order.</param>
+    /// <param name="meantOptions">The options the first unknown one most likely meant, best first.</param>
+    public static CliException CommandRequired(
+        string command,
+        IReadOnlyList<string> commands,
+        IReadOnlyList<string>? unknownOptions = null,
+        IReadOnlyList<string>? meantOptions = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(command);
         ArgumentNullException.ThrowIfNull(commands);
-        var mistake = Mistake.Of(string.Empty, commands);
+        unknownOptions ??= [];
+        // Only the options are compared with the unknown one; the commands are what the group needs.
+        var mistake = Mistake.Of(string.Empty, commands, meantOptions ?? []);
         var details = new JsonObject();
+        if (unknownOptions.Count > 0)
+        {
+            details["option"] = unknownOptions[0];
+        }
+
         mistake.WriteTo(details);
+        string unknown = string.Concat(unknownOptions.Select(token => $"'{token}' is not an option of '{command}'. "));
         return CliException.Create(
             ErrorCodes.UsageError,
-            $"'{command}' needs a command. {mistake.MustBeOneOf()}",
-            $"Run '{command} <command>'; '{command} --help' describes each one.",
+            $"{unknown}'{command}' needs a command. {mistake.MustBeOneOf()}",
+            mistake.Hint($"Run '{command} <command>'; '{command} --help' describes each one."),
             details);
     }
 
@@ -715,7 +775,7 @@ public static partial class CliErrors
         facts["extension"] = extension;
         mistake.WriteTo(facts);
         return CliException.Create(
-            ErrorCodes.UsageError,
+            ErrorCodes.OptionInvalid,
             $"{subject} {problem}. {mistake.MustBeOneOf()}.",
             mistake.Hint(hint),
             details: facts);
