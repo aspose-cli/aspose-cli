@@ -33,7 +33,10 @@ internal static class RenderCommand
                 int? pixelWidth = parse.GetInRange(width);
                 if (explicitDpi && pixelWidth is not null)
                 {
-                    throw CliErrors.Usage(["Choose --dpi or --width, not both."]);
+                    throw CliErrors.OptionInvalid(
+                        "--width",
+                        "cannot be combined with --dpi",
+                        "Drop --dpi to render at an exact pixel width, or drop --width to render at a DPI.");
                 }
 
                 ResolvedOutput output = standard.Output;
