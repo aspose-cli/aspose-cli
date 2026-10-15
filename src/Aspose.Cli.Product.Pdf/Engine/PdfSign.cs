@@ -23,7 +23,7 @@ internal static class PdfSign
         // The certificate is read once, through the SDK, which reports a file it cannot open; the
         // signer gets the same bytes that were validated.
         byte[] certificate = session.Budgets.Inputs.ReadAllBytes(request.CertificatePath);
-        ValidateCertificate(certificate, request.CertificatePassword);
+        string signer = ValidateCertificate(certificate, request.CertificatePassword);
         LicenseState state = session.Outputs.License;
         using LoadedPdf loaded = session.Loader.Open(filePath, request.Password);
         Page signedPage = PageAt(loaded.Document, request.Page);
@@ -62,6 +62,14 @@ internal static class PdfSign
                 Location = request.Location,
                 ContactInfo = request.Contact,
             };
+            // PDF-SIGN-FULL-FONT: the engine embeds the whole font program its appearance
+            // draws in. ASCII text is drawn in Helvetica, which is not embedded; PDF/A requires
+            // embedded fonts, so its documents keep the engine's choice.
+            if (!loaded.Document.IsPdfaCompliant && new[] { signer, request.Reason, request.Location, request.Contact }.All(StandardFontShows))
+            {
+                signature.CustomAppearance = new SignatureCustomAppearance { FontFamilyName = "Helvetica" };
+            }
+
             facade.Sign(request.Page, request.Visible, rectangle, signature);
             facade.Save(temp);
         }, encrypted: encrypted);
@@ -185,7 +193,15 @@ internal static class PdfSign
         InputSizeGuard.Ensure(resourceBudgets, path);
     }
 
-    private static void ValidateCertificate(byte[] pkcs12, Secret password)
+    /// <summary>
+    /// Whether the appearance can draw the text in Helvetica without the engine embedding a font:
+    /// printable ASCII. With other characters, even Latin-1 ones, it embeds a whole font again.
+    /// </summary>
+    private static bool StandardFontShows(string? text) =>
+        text is null || text.All(static character => character is >= ' ' and <= '~');
+
+    /// <summary>Checks that the certificate opens and can sign now; returns the signer's name, which the appearance shows.</summary>
+    private static string ValidateCertificate(byte[] pkcs12, Secret password)
     {
         try
         {
@@ -204,6 +220,8 @@ internal static class PdfSign
                 throw SignCertificateInvalid(string.Create(CultureInfo.InvariantCulture,
                     $"it is valid only from {certificate.NotBefore.ToUniversalTime():yyyy-MM-dd} to {certificate.NotAfter.ToUniversalTime():yyyy-MM-dd} (UTC)"));
             }
+
+            return certificate.GetNameInfo(X509NameType.SimpleName, forIssuer: false);
         }
         catch (CryptographicException exception) when (exception.HResult == WrongPassword)
         {

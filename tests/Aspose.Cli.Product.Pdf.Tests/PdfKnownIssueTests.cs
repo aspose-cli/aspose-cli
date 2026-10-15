@@ -420,6 +420,31 @@ public sealed class PdfKnownIssueTests
     }
 
     [LicensedFact]
+    public void Signing_EmbedsTheWholeFontOfTheSignatureAppearance()
+    {
+        using var fixture = new PdfEngineFixture();
+        string input = fixture.CreateDocument("unsigned.pdf", pages: 1);
+        string certificate = fixture.CreateCertificate("pw");
+        string output = fixture.File("signed.pdf");
+        using (var document = new Document(input))
+        using (var facade = new Aspose.Pdf.Facades.PdfFileSignature(document))
+        {
+            facade.Sign(1, false, new System.Drawing.Rectangle(0, 0, 0, 0),
+                new Aspose.Pdf.Forms.PKCS7(certificate, "pw") { Reason = "Approved", Location = "Shanghai" });
+            facade.Save(output);
+        }
+
+        long growth = new FileInfo(output).Length - new FileInfo(input).Length;
+        using var signed = new Document(output);
+        string[] whole = [.. signed.FontUtilities.GetAllFonts().Where(static font => font.IsEmbedded && !font.IsSubset).Select(static font => font.FontName)];
+
+        KnownIssue.Reproduces(
+            "PDF-SIGN-FULL-FONT",
+            whole.Length > 0 && growth > 200_000,
+            $"an invisible signature added {growth} bytes and embedded the whole font(s) {string.Join(", ", whole)}");
+    }
+
+    [LicensedFact]
     public void Rendering_LeavesOutThinGlyphStrokesBelow300Dpi()
     {
         using var fixture = new PdfEngineFixture();

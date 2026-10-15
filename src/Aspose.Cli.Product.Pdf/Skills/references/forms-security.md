@@ -104,6 +104,9 @@ aspose-cli pdf inspect report.signed.pdf --detail signatures --output-format jso
 Omit `--visible` for an invisible signature; `--rect` requires `--visible` and
 measures from the page's top-left corner, as `redact_area` and `pdf render --grid` do.
 Signature rectangle values are rounded to whole points, so review the placement.
+Keep `--reason`, `--location`, `--contact` and the certificate's subject name in
+ASCII: other text makes the engine embed a whole font into the file, even for an
+invisible signature, which for Chinese text adds megabytes.
 The command reopens the saved file and reports `signature.valid`, which may be
 true, false or unavailable. Require `valid: true` and inspect every signature
 field, especially when the input was already signed. The CLI does not validate

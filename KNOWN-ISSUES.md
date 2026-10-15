@@ -334,6 +334,19 @@ fails, delete the issue's section, the code that names it and the test, then upd
 - **Workaround:** name the entry in Latin-1, such as ASCII letters, and put the text in its value.
 - **Reproduction:** [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownIssueTests.cs)
 
+### PDF-SIGN-FULL-FONT
+
+- **Defect:** `PdfFileSignature.Sign` embeds the whole font program the signature appearance
+  draws in, visible or not: Arial (about 560 KB) by default, a complete CJK font such as SimSun
+  (about 10 MB) for a reason, location, contact or signer name in Chinese. Helvetica, which is not
+  embedded, keeps printable ASCII without a font; any other character embeds a whole font again.
+- **CLI behavior:** `pdf sign` draws an appearance whose texts are all printable ASCII in
+  Helvetica, except in a PDF/A document, which needs embedded fonts; other signatures keep the
+  engine's font and grow the file by its size.
+- **Workaround:** keep `--reason`, `--location` and `--contact` in ASCII, and use a certificate
+  whose subject name is ASCII.
+- **Reproduction:** [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownIssueTests.cs)
+
 ### PDF-RENDER-THIN-GLYPH
 
 - **Defect:** `PngDevice` and the other raster devices leave out thin glyph strokes, such as
