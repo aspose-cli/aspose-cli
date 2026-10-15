@@ -177,7 +177,7 @@ public sealed class SlidesCliWorkflowTests : IDisposable
         static string[] Hits(JsonNode result) =>
         [
             .. result["hits"]!.AsArray().Select(static hit =>
-                $"{hit!["slide"]}:{hit["shapeId"]}:{hit["start"]}"),
+                $"{hit!["slide"]}:{hit["shapeId"]}:{hit["context"]}"),
         ];
     }
 

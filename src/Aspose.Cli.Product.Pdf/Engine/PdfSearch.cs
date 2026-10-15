@@ -12,9 +12,6 @@ namespace Aspose.Cli.Product.Pdf.Engine;
 /// <summary>Searches page text and returns page rectangles: <c>pdf search</c>.</summary>
 internal static class PdfSearch
 {
-    /// <summary>The most characters a search hit's context shows on each side of the match.</summary>
-    private const int ContextRadius = 40;
-
     internal static PdfSearchResult Run(PdfSession session, PdfSearchRequest request)
     {
         string filePath = request.Input;
@@ -52,7 +49,7 @@ internal static class PdfSearch
 
                 (int start, int length) = (found[index].Index, found[index].Length);
                 return string.Equals(pageText.Substring(start, length), snippet, StringComparison.OrdinalIgnoreCase)
-                    ? TextSearch.Preview(pageText, start, length, ContextRadius).ReplaceLineEndings(" ")
+                    ? TextSearch.Context(pageText, start, length)
                     : null;
             }
 

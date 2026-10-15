@@ -91,20 +91,22 @@ public sealed class TextSearch
         return text.Length <= length ? text : text[..length] + "\u2026";
     }
 
-    /// <summary>Builds a bounded context excerpt around one match.</summary>
-    public static string Preview(
-        string text,
-        int start,
-        int length,
-        int radius,
-        string ellipsis = "…")
+    /// <summary>The most characters a hit's <see cref="Context"/> shows on each side of the match.</summary>
+    public const int ContextRadius = 40;
+
+    /// <summary>
+    /// The context every product search reports beside a hit: the text around the match, up to
+    /// <see cref="ContextRadius"/> characters on each side, on one line (line breaks and other
+    /// control characters become spaces), with an ellipsis where the text is cut.
+    /// </summary>
+    /// <param name="text">The text that holds the match, such as a paragraph, a cell value or a page.</param>
+    /// <param name="start">Where the match starts in <paramref name="text"/>.</param>
+    /// <param name="length">How many characters the match spans.</param>
+    public static string Context(string text, int start, int length)
     {
         ArgumentNullException.ThrowIfNull(text);
         ArgumentOutOfRangeException.ThrowIfNegative(start);
         ArgumentOutOfRangeException.ThrowIfNegative(length);
-        ArgumentOutOfRangeException.ThrowIfNegative(radius);
-        ArgumentNullException.ThrowIfNull(ellipsis);
-
         if (start > text.Length || length > text.Length - start)
         {
             throw new ArgumentOutOfRangeException(
@@ -112,11 +114,13 @@ public sealed class TextSearch
                 "The match must be inside the source text.");
         }
 
-        int from = Math.Max(0, start - radius);
-        int to = Math.Min(text.Length, start + length + radius);
-        return (from > 0 ? ellipsis : string.Empty)
-            + text[from..to]
-            + (to < text.Length ? ellipsis : string.Empty);
+        int from = Math.Max(0, start - ContextRadius);
+        int to = Math.Min(text.Length, start + length + ContextRadius);
+        string excerpt = string.Concat(text[from..to].ReplaceLineEndings(" ")
+            .Select(static character => char.IsControl(character) ? ' ' : character));
+        return (from > 0 ? "…" : string.Empty)
+            + excerpt
+            + (to < text.Length ? "…" : string.Empty);
     }
 
     private IEnumerable<(int Start, int Length)> Matches(string text)

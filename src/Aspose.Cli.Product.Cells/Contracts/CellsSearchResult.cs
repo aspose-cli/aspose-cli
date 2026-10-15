@@ -32,8 +32,17 @@ public sealed record CellsSearchHit
     /// <summary>Cell address, e.g. <c>B7</c>.</summary>
     public required string Cell { get; init; }
 
-    /// <summary>Display value of the cell (truncated for long text).</summary>
+    /// <summary>
+    /// The match itself: the first one in the cell's value as read reports it, else in its
+    /// display text, else in its formula.
+    /// </summary>
     public required string Text { get; init; }
+
+    /// <summary>
+    /// The text that holds the match around it, up to 40 characters on each side, with line
+    /// breaks as spaces and an ellipsis where it is cut.
+    /// </summary>
+    public required string Context { get; init; }
 
     /// <summary>Formula, when the cell has one.</summary>
     public string? Formula { get; init; }

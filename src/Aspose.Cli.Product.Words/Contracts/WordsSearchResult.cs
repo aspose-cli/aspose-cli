@@ -21,7 +21,7 @@ public sealed record WordsSearchResult() : WindowedResultEnvelope("search-result
     public required IReadOnlyList<WordsSearchHit> Hits { get; init; }
 }
 
-/// <summary>One search hit.</summary>
+/// <summary>One search hit: each match is one, so a paragraph that holds two matches gives two.</summary>
 public sealed record WordsSearchHit
 {
     /// <summary>The body block that holds the hit; absent in headers and footers.</summary>
@@ -44,9 +44,12 @@ public sealed record WordsSearchHit
     [AllowedValues(typeof(WordsHeaderFooterKinds))]
     public string? Kind { get; init; }
 
-    /// <summary>
-    /// The text of the paragraph, comment or note that holds the hit, cut to 300 characters and
-    /// an ellipsis.
-    /// </summary>
+    /// <summary>The match itself.</summary>
     public required string Text { get; init; }
+
+    /// <summary>
+    /// The text of the paragraph, comment or note around the match, up to 40 characters on each
+    /// side, with line breaks as spaces and an ellipsis where it is cut.
+    /// </summary>
+    public required string Context { get; init; }
 }

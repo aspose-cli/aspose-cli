@@ -58,7 +58,7 @@ internal static class SearchCommand
                 WordsText.Block(hit.Block),
                 TableText.Int(hit.Section),
                 hit.Location is { } location ? $"{hit.Scope} ({location}, {hit.Kind})" : hit.Scope,
-                hit.Text);
+                hit.Context);
         }
 
         table.WriteTo(surface.Out, surface.Format);

@@ -1,0 +1,16 @@
+{
+  "name": "slides search in evaluation mode finds no hit in the engine's truncation notice",
+  "files": { "deck.pptx": { "fixture": "slides.pptx" } },
+  "steps": [
+    {
+      "args": ["slides", "search", "deck.pptx", "--pattern", "evaluation version", "--license-mode", "evaluation"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "window.returned", "equals": 0 },
+          { "path": "warnings[0].code", "equals": "EVALUATION_INPUT_TRUNCATED" }
+        ]
+      }
+    }
+  ]
+}

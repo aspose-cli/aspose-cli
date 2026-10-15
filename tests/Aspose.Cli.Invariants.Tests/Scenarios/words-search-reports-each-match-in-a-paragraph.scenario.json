@@ -1,0 +1,20 @@
+{
+  "name": "words search reports each match, so a paragraph that holds two gives two hits",
+  "files": { "doc.docx": { "fixture": "words.docx" } },
+  "steps": [
+    {
+      "args": ["words", "search", "doc.docx", "--pattern", "\\bthe\\b", "--regex"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "window.returned", "equals": 2 },
+          { "path": "hits[0].block", "equals": 2 },
+          { "path": "hits[0].text", "equals": "The" },
+          { "path": "hits[1].block", "equals": 2 },
+          { "path": "hits[1].text", "equals": "the" },
+          { "path": "hits[1].context", "equals": "The first paragraph of the seed document." }
+        ]
+      }
+    }
+  ]
+}

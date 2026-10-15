@@ -42,14 +42,12 @@ public sealed record SlidesSearchHit
     /// <summary>The name of the matched shape; omitted for the notes and for a shape without a name.</summary>
     public string? ShapeName { get; init; }
 
-    /// <summary>The match with up to 100 characters of context on each side.</summary>
+    /// <summary>The match itself.</summary>
     public required string Text { get; init; }
 
-    /// <summary>Where the match starts in the shape's or the notes' text, as a 0-based character offset.</summary>
-    [Minimum(0)]
-    public required int Start { get; init; }
-
-    /// <summary>How many characters the match spans.</summary>
-    [Minimum(1)]
-    public required int Length { get; init; }
+    /// <summary>
+    /// The shape's or the notes' text around the match, up to 40 characters on each side, with
+    /// line breaks as spaces and an ellipsis where it is cut.
+    /// </summary>
+    public required string Context { get; init; }
 }

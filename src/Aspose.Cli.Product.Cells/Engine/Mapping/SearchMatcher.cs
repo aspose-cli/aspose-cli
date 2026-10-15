@@ -11,8 +11,6 @@ namespace Aspose.Cli.Product.Cells.Engine.Mapping;
 /// </summary>
 internal static class SearchMatcher
 {
-    private const int MaxValueLength = 200;
-
     /// <summary>Searches every sheet, or only the already resolved <paramref name="sheetIndex"/>.</summary>
     public static SearchHits<CellsSearchHit> Find(
         ResourceBudgetLedger budgets, Workbook workbook, CellsSearchRequest request, int? sheetIndex)
@@ -35,15 +33,16 @@ internal static class SearchMatcher
                 string display = cell.StringValue ?? string.Empty;
                 string? formula = cell.IsFormula ? cell.Formula : null;
 
-                // Match the display text AND the raw value read reports, so a
-                // caller searching for 13.75572 finds the cell that shows 13.76.
+                // Match the raw value read reports AND the display text, so a caller searching
+                // for 13.75572 finds the cell that shows 13.76. The raw value comes first: it is
+                // the invariant text read reports (ISO date, raw number), the same on every
+                // machine, never Aspose's current-culture display.
                 string? rawValue = CellMapper.RawValueString(cell);
-                bool valueMatched = inValues
-                    && (query.IsMatch(display)
-                        || (rawValue is not null && query.IsMatch(rawValue)));
-                bool matched = valueMatched
-                    || (inFormulas && formula is not null && query.IsMatch(formula));
-                if (!matched)
+                if (FirstMatch(
+                        query,
+                        inValues ? rawValue ?? display : null,
+                        inValues ? display : null,
+                        inFormulas ? formula : null) is not { } match)
                 {
                     continue;
                 }
@@ -52,12 +51,8 @@ internal static class SearchMatcher
                 {
                     Sheet = sheet.Name,
                     Cell = A1.FormatCell(new CellRef(cell.Row, cell.Column)),
-                    // Emit the invariant value read reports (ISO date, raw
-                    // number), not Aspose's current-culture display — so a
-                    // date hit is "2023-05-31" on every machine, deterministic
-                    // and agreeing with read/convert, never using the
-                    // zh month name the matching already normalized past).
-                    Text = TextSearch.Truncate(rawValue ?? display, MaxValueLength),
+                    Text = match.Source.Substring(match.Start, match.Length),
+                    Context = TextSearch.Context(match.Source, match.Start, match.Length),
                     Formula = formula,
                 });
                 if (!kept)
@@ -68,5 +63,19 @@ internal static class SearchMatcher
         }
 
         return hits;
+    }
+
+    /// <summary>The first match in the first searched text that holds one; null when none does.</summary>
+    private static (string Source, int Start, int Length)? FirstMatch(TextSearch query, params string?[] sources)
+    {
+        foreach (string? source in sources)
+        {
+            if (source is not null && query.Find(source) is [var (start, length), ..])
+            {
+                return (source, start, length);
+            }
+        }
+
+        return null;
     }
 }
