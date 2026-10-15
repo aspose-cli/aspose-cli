@@ -47,6 +47,12 @@ public sealed class WordsModuleTests
                 ["docm"] = OpenXml(),
                 ["dotx"] = OpenXml(),
                 ["dotm"] = OpenXml(),
+                ["flatopc"] = ProductRoutingContract.Utf8(
+                    "<?xml version=\"1.0\"?><?mso-application progid=\"Word.Document\"?>"
+                    + "<pkg:package xmlns:pkg=\"http://schemas.microsoft.com/office/2006/xmlPackage\">"
+                    + "<pkg:part pkg:name=\"/word/document.xml\"/></pkg:package>"),
+                ["wordml"] = ProductRoutingContract.Utf8(
+                    "<?xml version=\"1.0\"?><w:wordDocument xmlns:w=\"http://schemas.microsoft.com/office/word/2003/wordml\"/>"),
                 ["rtf"] = ProductRoutingContract.Utf8(@"{\rtf1\ansi sample}"),
                 ["odt"] = OpenDocument(),
                 ["ott"] = OpenDocument(),
