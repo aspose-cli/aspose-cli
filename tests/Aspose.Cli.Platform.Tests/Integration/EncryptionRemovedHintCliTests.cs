@@ -9,7 +9,7 @@ namespace Aspose.Cli.IntegrationTests;
 /// <summary>
 /// The hint of <c>ENCRYPTION_REMOVED</c> names only what this build can do for the product and
 /// format at hand: the protectable formats of the command, the command line of another product's
-/// edit that encrypts the format written, which runs as given, or that no command encrypts it.
+/// edit or conversion that encrypts the format written, which runs as given, or that no command encrypts it.
 /// </summary>
 public sealed class EncryptionRemovedHintCliTests : IDisposable
 {
@@ -66,6 +66,71 @@ public sealed class EncryptionRemovedHintCliTests : IDisposable
         Assert.True(encrypted.ExitCode == 0, encrypted.StdErr);
         Assert.Equal("PASSWORD_REQUIRED", JsonNode.Parse(Run("pdf", "inspect", "plain.pdf").StdErr)!["error"]!["code"]!.GetValue<string>());
         Assert.Equal(0, Run("pdf", "inspect", "plain.pdf", "--password-env", Variable).ExitCode);
+    }
+
+    /// <summary>
+    /// A PDF converted to an Office format no edit can encrypt: the hint names the conversion of
+    /// that product that writes an encrypted copy, with the output's own path, and it runs as given.
+    /// </summary>
+    [Category(TestCategory.Slow)]
+    [Theory]
+    [InlineData("docx", "words")]
+    [InlineData("xlsx", "cells")]
+    [InlineData("pptx", "slides")]
+    public void PdfConvertedToAnOfficeFormat_HintNamesTheConversionThatEncryptsIt(string format, string product)
+    {
+        CreateEncryptedPdf();
+
+        CliResult result = Run("pdf", "convert", "locked.pdf", "--password-env", Variable, "--out", $"plain.{format}");
+
+        Assert.True(result.ExitCode == 0, result.StdErr);
+        string hint = Hint(result);
+        Assert.DoesNotContain("No command", hint, StringComparison.Ordinal);
+        Assert.DoesNotContain("<file>", hint, StringComparison.Ordinal);
+        Match line = Regex.Match(hint, "`aspose-cli ([^`]+)`");
+        Assert.True(line.Success, hint);
+        Assert.StartsWith($"{product} convert '{_workspace.File($"plain.{format}")}'", line.Groups[1].Value, StringComparison.Ordinal);
+        Assert.Contains($"--encrypt-env {Variable}", line.Value, StringComparison.Ordinal);
+        CliResult encrypted = Run(Tokens(line.Groups[1].Value));
+        Assert.True(encrypted.ExitCode == 0, encrypted.StdErr);
+        Assert.Equal("PASSWORD_REQUIRED", JsonNode.Parse(Run(product, "inspect", $"plain.encrypted.{format}").StdErr)!["error"]!["code"]!.GetValue<string>());
+        Assert.Equal(0, Run(product, "inspect", $"plain.encrypted.{format}", "--password-env", Variable).ExitCode);
+    }
+
+    /// <summary>
+    /// PDF/A forbids encryption: the hint of a conversion to PDF/A says the output cannot be
+    /// encrypted and stay PDF/A, and names the edit that writes an encrypted copy beside it, with
+    /// the output's own path, never one that would encrypt the PDF/A file itself.
+    /// </summary>
+    [Category(TestCategory.Slow)]
+    [Fact]
+    public void PdfConvertedToPdfA_HintKeepsTheArchiveAndEncryptsACopy()
+    {
+        CreateEncryptedPdf();
+
+        CliResult result = Run("pdf", "convert", "locked.pdf", "--password-env", Variable, "--to", "pdfa-2b", "--out", "archive.pdf");
+
+        Assert.True(result.ExitCode == 0, result.StdErr);
+        string hint = Hint(result);
+        Assert.StartsWith("A pdfa-2b file cannot be encrypted and stay pdfa-2b.", hint, StringComparison.Ordinal);
+        Assert.DoesNotContain("<file>", hint, StringComparison.Ordinal);
+        Assert.DoesNotContain("--in-place", hint, StringComparison.Ordinal);
+        Match line = Regex.Match(hint, "`aspose-cli ([^`]+)`");
+        Assert.True(line.Success, hint);
+        Assert.StartsWith($"pdf edit '{_workspace.File("archive.pdf")}' --out '{_workspace.File("archive.encrypted.pdf")}'", line.Groups[1].Value, StringComparison.Ordinal);
+        CliResult encrypted = Run(Tokens(line.Groups[1].Value));
+        Assert.True(encrypted.ExitCode == 0, encrypted.StdErr);
+        Assert.Equal("PASSWORD_REQUIRED", JsonNode.Parse(Run("pdf", "inspect", "archive.encrypted.pdf").StdErr)!["error"]!["code"]!.GetValue<string>());
+        Assert.Equal(0, Run("pdf", "inspect", "archive.encrypted.pdf", "--password-env", Variable).ExitCode);
+        Assert.Equal(0, Run("pdf", "inspect", "archive.pdf").ExitCode);
+    }
+
+    // locked.pdf: a PDF whose open password the variable holds.
+    private void CreateEncryptedPdf()
+    {
+        File.WriteAllText(_workspace.File("source.md"), "# One\n\nFirst part.\n");
+        CliResult created = Run("pdf", "create", "locked.pdf", "--from-text", "source.md", "--encrypt-env", Variable);
+        Assert.True(created.ExitCode == 0, created.StdErr);
     }
 
     /// <summary>

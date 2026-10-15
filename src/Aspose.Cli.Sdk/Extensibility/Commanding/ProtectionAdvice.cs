@@ -11,12 +11,14 @@ namespace Aspose.Cli.Sdk.Extensibility.Commanding;
 /// read from the command tree, so it names only what this build can do. The command itself may
 /// write a format that carries a password; an edit of any product whose vocabulary has an
 /// operation that encrypts (<see cref="Operations.EncryptsOutputAttribute"/>) may encrypt a file of
-/// the format written, with a command line that runs as given; otherwise no command of this build
-/// encrypts that format.
+/// the format written, or else a conversion that takes <c>--encrypt-env</c> may write an encrypted
+/// copy of it, each with a command line that runs as given and names the output's own path;
+/// otherwise no command of this build encrypts that format. An output in a variant of a format
+/// that cannot carry a password, such as PDF/A, is never encrypted itself: only a copy beside it.
 /// </summary>
 internal static class ProtectionAdvice
 {
-    private const string Placeholder = "<VARIABLE>";
+    private const string Placeholder = "<password-env>";
 
     // The edits that can encrypt the document they publish: the operation document that does it,
     // for a variable (null for a placeholder per field), whether the document is to need a
@@ -45,6 +47,8 @@ internal static class ProtectionAdvice
         string[] other = [.. loss.Formats.Except(kept, StringComparer.Ordinal)];
         var ways = new List<string>();
         var notes = new List<string>();
+        // What the output cannot be, said before the ways to protect it.
+        var limits = new List<string>();
         // A copy in a format the command protects lost its password to the command itself, such
         // as to an operation that decrypts, or came from an encrypted document it read.
         foreach (string format in kept)
@@ -57,9 +61,9 @@ internal static class ProtectionAdvice
                 continue;
             }
 
-            string file = output is not null && Is(output.Format, format) ? Quoted(output.Path) : "<file>";
+            string file = output is not null && Is(output.Format, format) ? output.Path : "<file>";
             // The input's own protection: its passwords as placeholders, one for each, and its restrictions.
-            string? line = EncryptingLine(commands, excluded: null, format, file, variable: null, loss.OpenPassword, loss.Restrictions);
+            string? line = EncryptingLine(commands, excluded: null, format, file, StandardOptionNames.InPlace, variable: null, loss.OpenPassword, loss.Restrictions);
             if (!loss.OpenPassword)
             {
                 if (line is not null)
@@ -96,12 +100,36 @@ internal static class ProtectionAdvice
         var unprotectable = new List<string>();
         foreach (string format in other)
         {
-            string file = output is not null && Is(output.Format, format) ? Quoted(output.Path) : "<file>";
-            if (EncryptingLine(commands, current, format, file, variable ?? Placeholder, openPassword: true, restrictions: null) is { } line)
+            // The output file is the copy when it is written in the format, or in a variant of it,
+            // such as PDF/A, that a file of the format names by the same extension.
+            bool written = output is not null
+                && (Is(output.Format, format) || ProtectableFormat(commands, format)?.Names(output.Path) == true);
+            string file = written ? output!.Path : "<file>";
+            string password = variable is null
+                ? $", with {Placeholder} naming an environment variable that holds the password"
+                : " with the input's password";
+            string variableName = variable ?? Placeholder;
+            // A variant that cannot carry a password, as PDF/A forbids encryption: encrypting the
+            // file would end the variant, so only a copy beside it may be encrypted.
+            if (written && !Is(output!.Format, format) && !output.Format.Protectable)
             {
-                ways.Add(variable is null
-                    ? $"encrypt the {format} file afterwards, with {Placeholder} naming an environment variable that holds the password: `{line}`"
-                    : $"encrypt the {format} file afterwards with the input's password: `{line}`");
+                limits.Add($"A {output.Format.Id} file cannot be encrypted and stay {output.Format.Id}.");
+                string copy = $"{StandardOptionNames.Out} '{EncryptedCopy(output.Path)}'";
+                if (EncryptingLine(commands, current, format, file, copy, variableName, openPassword: true, restrictions: null) is { } copyLine)
+                {
+                    ways.Add($"write an encrypted {format} copy beside it{password}: `{copyLine}`");
+                }
+
+                continue;
+            }
+
+            if (EncryptingLine(commands, current, format, file, StandardOptionNames.InPlace, variableName, openPassword: true, restrictions: null) is { } line)
+            {
+                ways.Add($"encrypt the {format} file afterwards{password}: `{line}`");
+            }
+            else if (ConvertingLine(commands, current, format, file, variableName) is { } converted)
+            {
+                ways.Add($"write an encrypted copy of the {format} file{password}: `{converted}`");
             }
             else
             {
@@ -115,7 +143,7 @@ internal static class ProtectionAdvice
         }
 
         string said = ways.Count == 0 ? string.Empty : $"If the output must stay protected, {string.Join(", or ", ways.Distinct(StringComparer.Ordinal))}.";
-        return string.Join(" ", notes.Prepend(said).Where(static part => part.Length > 0));
+        return string.Join(" ", limits.Append(said).Concat(notes).Where(static part => part.Length > 0));
     }
 
     // The name of the operation an edit of the format encrypts with, or null when no edit does.
@@ -126,15 +154,46 @@ internal static class ProtectionAdvice
             .Select(static document => JsonNode.Parse(document)?["ops"]?[0]?["op"]?.GetValue<string>())
             .FirstOrDefault(static name => name is not null);
 
-    // The command line of an edit, other than the one excluded, that encrypts a file of the format in place.
+    // The command line of an edit, other than the one excluded, that encrypts a file of the format
+    // where the destination options put it: --in-place, or an --out.
     private static string? EncryptingLine(
-        IEnumerable<(string Path, Command Command)> commands, Command? excluded, string format, string file, string? variable, bool openPassword, JsonObject? restrictions) =>
+        IEnumerable<(string Path, Command Command)> commands, Command? excluded, string format, string file, string destination, string? variable, bool openPassword, JsonObject? restrictions) =>
         Edits(commands, excluded, format)
             .Select(edit => (edit.Path, Ops: edit.Document(variable, openPassword, restrictions)))
             .Where(static edit => edit.Ops is not null)
             // Single quotes keep a Windows path whole in PowerShell and in POSIX shells alike.
-            .Select(edit => $"{edit.Path} '{file}' {StandardOptionNames.InPlace} {StandardOptionNames.Ops} '{edit.Ops}'")
+            .Select(edit => $"{edit.Path} '{file}' {destination} {StandardOptionNames.Ops} '{edit.Ops}'")
             .FirstOrDefault();
+
+    // The command line of a conversion, other than the one excluded, that writes an encrypted copy
+    // of a file of the format, in that format, beside it.
+    private static string? ConvertingLine(
+        IEnumerable<(string Path, Command Command)> commands, Command? excluded, string format, string file, string variable)
+    {
+        foreach ((string path, Command command) in commands)
+        {
+            if (command != excluded && !command.Hidden
+                && StandardOptions.Of(command) is { Input: not null, To: { } to, Encrypt: { } encrypt, OutputTarget.Kind: OutputKind.File } options
+                && options.Protects.FirstOrDefault(protectable => Is(protectable, format)) is { } protectable)
+            {
+                string copy = file == "<file>" ? "<encrypted copy>" : EncryptedCopy(file);
+                return $"{path} '{file}' {to.Name} {protectable.Id} {StandardOptionNames.Out} '{copy}' {encrypt.EnvironmentOption} {variable}";
+            }
+        }
+
+        return null;
+    }
+
+    // The format the id names among those a command of this build can encrypt, or null when none can.
+    private static FormatDescriptor? ProtectableFormat(IEnumerable<(string Path, Command Command)> commands, string format) =>
+        commands
+            .Select(static entry => StandardOptions.Of(entry.Command))
+            .SelectMany(static options => options?.Protects ?? [])
+            .FirstOrDefault(protectable => Is(protectable, format));
+
+    // The path of an encrypted copy beside a file: its name with '.encrypted' before the extension.
+    private static string EncryptedCopy(string path) =>
+        Path.Combine(Path.GetDirectoryName(path) ?? string.Empty, $"{Path.GetFileNameWithoutExtension(path)}.encrypted{Path.GetExtension(path)}");
 
     // The edits, other than the one excluded, that can encrypt a file of the format in place.
     private static IEnumerable<(string Path, Func<string?, bool, JsonObject?, string?> Document)> Edits(
@@ -153,9 +212,6 @@ internal static class ProtectionAdvice
     }
 
     private static bool Is(FormatDescriptor format, string id) => string.Equals(format.Id, id, StringComparison.OrdinalIgnoreCase);
-
-    // A path as a command line names it: quoted when it holds a space.
-    private static string Quoted(string path) => path.Contains(' ', StringComparison.Ordinal) ? $"\"{path}\"" : path;
 
     private static IEnumerable<(string Path, Command Command)> Commands(Command command, string path)
     {
