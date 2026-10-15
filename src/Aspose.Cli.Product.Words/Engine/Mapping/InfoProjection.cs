@@ -333,7 +333,8 @@ internal static class InfoProjection
     private static WordsRevisionData Entry(Revision revision, int number, string? text, DocumentBlockIndex index)
     {
         bool style = revision.RevisionType == RevisionType.StyleDefinitionChange;
-        text = text is null ? null : TextSearch.Truncate(WordsText.Clean(text), RevisionTextLimit);
+        // A paragraph mark inside the change is a line feed, as extracted text has it.
+        text = text is null ? null : TextSearch.Truncate(WordsText.Clean(text).Replace(ControlChar.ParagraphBreak, "\n", StringComparison.Ordinal), RevisionTextLimit);
         return new WordsRevisionData
         {
             Revision = number,

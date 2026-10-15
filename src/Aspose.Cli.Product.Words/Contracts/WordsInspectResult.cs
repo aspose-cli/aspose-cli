@@ -357,8 +357,9 @@ public sealed record WordsRevisionData
     public int? Block { get; init; }
 
     /// <summary>
-    /// The text an insertion adds, a deletion removes or a move relocates; a longer text is cut
-    /// to 300 characters and an ellipsis; absent for format and style definition changes.
+    /// The text an insertion adds, a deletion removes or a move relocates, each paragraph break
+    /// in it as a line feed; a longer text is cut to 300 characters and an ellipsis; absent for
+    /// format and style definition changes.
     /// </summary>
     public string? Text { get; init; }
 }

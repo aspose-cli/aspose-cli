@@ -1,5 +1,6 @@
 using System.Data;
 using Aspose.Cli.Product.Words.Engine.Mapping;
+using Aspose.Cli.Sdk.Errors;
 using Aspose.Words;
 using Aspose.Words.Fields;
 
@@ -285,7 +286,7 @@ internal sealed partial class WordsMutationHandlers
 
     public ValueTuple Apply(ImportSectionsOp operation)
     {
-        using LoadedDocument loaded = _loader.Open(operation.Path, OperationSecrets.Resolve(_secrets, operation.SourcePasswordEnv));
+        using LoadedDocument loaded = OpenSource(operation);
         _outputs.Neutralize(loaded.Document);
 
         ImportFormatMode mode = operation.Formatting == FormattingModes.UseDestination
@@ -293,6 +294,19 @@ internal sealed partial class WordsMutationHandlers
             : ImportFormatMode.KeepSourceFormatting;
         _document.AppendDocument(loaded.Document, mode);
         return default;
+    }
+
+    private LoadedDocument OpenSource(ImportSectionsOp operation)
+    {
+        try
+        {
+            return _loader.Open(operation.Path, OperationSecrets.Resolve(_secrets, operation.SourcePasswordEnv));
+        }
+        catch (CliException error) when (CliErrors.IsPasswordError(error))
+        {
+            // The loader names the command's password option; a source's comes from its operation.
+            throw CliErrors.ForOperationSource(error, "sourcePasswordEnv");
+        }
     }
 }
 

@@ -664,6 +664,13 @@ public sealed record SetPropertiesOp : WordsOp
     {
         foreach (string key in Custom?.Keys ?? [])
         {
+            if (string.IsNullOrWhiteSpace(key))
+            {
+                throw new OperationInvalidException(
+                    "custom must not name a property with a blank name",
+                    "Give every custom property a name.");
+            }
+
             if (new[] { "title", "author", "subject", "keywords" }.FirstOrDefault(name => string.Equals(name, key, StringComparison.OrdinalIgnoreCase)) is { } standard)
             {
                 throw new OperationInvalidException(

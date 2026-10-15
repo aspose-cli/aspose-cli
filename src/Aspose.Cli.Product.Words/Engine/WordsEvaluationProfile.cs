@@ -14,7 +14,7 @@ internal sealed class WordsEvaluationProfile : IEvaluationProfile<Document>
 {
     public string Engine => "Aspose.Words";
 
-    public string Truncation => "keeps only the start of a long document it opens and ends it with its truncation notice";
+    public string Truncation => "cuts a long document short at a truncation notice, which the document as read carries";
 
     private const string Banner = "the evaluation banner 'Created with an evaluation copy of Aspose.Words.'";
     private const string FooterSentence = "the footer sentence 'Evaluation Only. Created with Aspose.Words.'";
