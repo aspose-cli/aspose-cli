@@ -95,6 +95,32 @@ public sealed class AppCliGatewayTests
     }
 
     [Fact]
+    public void Fonts_AreAskedAgainOnceTheirAnswerIsOld()
+    {
+        using var workspace = new TempWorkspace();
+        byte[] fonts = Encoding.UTF8.GetBytes(
+            workspace.Run("fonts", "list", "--product", "words", "--output-format", "json").Succeeded().StdOut);
+        int fontRuns = 0;
+        var clock = new ManualClock();
+        AppCliGateway gateway = Gateway(workspace, license: null, _ =>
+        {
+            Interlocked.Increment(ref fontRuns);
+            return new ChildProcessResult(0, fonts, []);
+        }, clock);
+
+        gateway.Fonts("words");
+        // The App keeps a font list for five minutes.
+        clock.Advance(TimeSpan.FromMinutes(5) - TimeSpan.FromSeconds(1));
+        gateway.Fonts("words");
+        Assert.Equal(1, fontRuns);
+
+        // A font installed while the App runs shows once the kept answer is this old.
+        clock.Advance(TimeSpan.FromSeconds(1));
+        gateway.Fonts("words");
+        Assert.Equal(2, fontRuns);
+    }
+
+    [Fact]
     public void Fonts_ReadUnderAnOldLicenseAreNotKeptAfterItChanges()
     {
         using var workspace = new TempWorkspace();
