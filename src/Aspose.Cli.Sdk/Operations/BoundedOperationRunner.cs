@@ -84,6 +84,9 @@ public static class BoundedOperationRunner
         var recorded = new List<string>();
         var unrecorded = new HashSet<string>(StringComparer.Ordinal);
         Dictionary<string, Dictionary<object, int>> input = Index(model.Positions());
+        NamedScopes? firstScopes = model.Scopes();
+        var scopesBefore = new Dictionary<int, NamedScopes>();
+        var scopes = new Dictionary<int, NamedScopes>();
         var changed = new Dictionary<int, IReadOnlyList<ObjectChange>>();
         IReadOnlyList<BoundedOperationOutcome> outcomes = Execute(
             catalog,
@@ -94,6 +97,11 @@ public static class BoundedOperationRunner
             (operation, index) =>
             {
                 OperationSnapshot before = model.Snapshot(operation);
+                if (firstScopes is not null && model.Scopes() is { } prior)
+                {
+                    scopesBefore[index] = prior;
+                }
+
                 model.Apply(operation);
                 OperationSnapshot after;
                 try
@@ -113,6 +121,11 @@ public static class BoundedOperationRunner
 
                 IReadOnlyList<ObjectChange> changes = OperationSnapshot.Compare(before, after);
                 changed[index] = changes;
+                if (firstScopes is not null && model.Scopes() is { } current)
+                {
+                    scopes[index] = current;
+                }
+
                 if (pageUnit is not null)
                 {
                     pages.UnionWith(changes
@@ -149,16 +162,77 @@ public static class BoundedOperationRunner
                 }
             });
         Dictionary<string, Dictionary<object, int>> output = input.Count == 0 ? input : Index(model.Positions());
+        NamedScopes? lastScopes = firstScopes is null ? null : model.Scopes();
         var placed = new Dictionary<int, IReadOnlyList<ChangedObject>>();
         foreach ((int index, IReadOnlyList<ObjectChange> changes) in changed)
         {
-            placed[index] = [.. changes.Select(change => Place(change, input, output))];
+            // An object in the output is named after the operation; a removed one before it.
+            placed[index] = [.. changes.Select(change => Place(change, input, output))
+                .Select(item => (item.InOutput ? scopes : scopesBefore).TryGetValue(index, out NamedScopes? then)
+                    ? Renamed(item, then, lastScopes!, firstScopes!)
+                    : item)];
         }
 
         outcomes = [.. outcomes.Select((outcome, index) => outcome.Status == OpStatuses.Ok && placed.TryGetValue(index, out IReadOnlyList<ChangedObject>? objects)
             ? outcome with { Targets = Covered(InOrder(objects.Select(static item => item.Address))) }
             : outcome)];
         return new AppliedBatch(outcomes, warnings, [.. pages], Batch(placed), recorded, unrecorded);
+    }
+
+    /// <summary>
+    /// <paramref name="item"/> with the scope name that begins its address, as it was when its
+    /// operation applied (<paramref name="then"/>: after it for an object it left, before it for
+    /// one it removed), replaced by the name the same scope has in the output
+    /// (<paramref name="last"/>) when the object is in the output and the scope still is,
+    /// and otherwise by the name it had in the input (<paramref name="first"/>), so an object the
+    /// batch removed is named as the input names it, whichever operation renamed its scope. A
+    /// scope in neither keeps its name.
+    /// </summary>
+    private static ChangedObject Renamed(ChangedObject item, NamedScopes then, NamedScopes last, NamedScopes first)
+    {
+        int slash = item.Address.IndexOf('/', StringComparison.Ordinal);
+        if (slash < 0 || !then.Units.Contains(item.Address[..slash]))
+        {
+            return item;
+        }
+
+        Dictionary<object, string> output = Names(last);
+        Dictionary<object, string> input = Names(first);
+
+        string rest = item.Address[(slash + 1)..];
+        foreach ((object identity, string old) in then.Names)
+        {
+            string? current = item.InOutput && output.TryGetValue(identity, out string? kept) ? kept
+                : input.TryGetValue(identity, out string? original) ? original
+                : null;
+            if (current is null || current == old)
+            {
+                continue;
+            }
+
+            string? renamed = Addressing.TargetName.Escape(old) is var plain && (rest == plain || rest.StartsWith(plain + "/", StringComparison.Ordinal))
+                ? Addressing.TargetName.Escape(current) + rest[plain.Length..]
+                : Addressing.TargetName.Escape(old, '!') is var sheet && rest.StartsWith(sheet + "!", StringComparison.Ordinal)
+                    ? Addressing.TargetName.Escape(current, '!') + rest[sheet.Length..]
+                    : null;
+            if (renamed is not null)
+            {
+                return item with { Address = $"{item.Address[..slash]}/{renamed}" };
+            }
+        }
+
+        return item;
+
+        static Dictionary<object, string> Names(NamedScopes scopes)
+        {
+            var names = new Dictionary<object, string>(ReferenceEqualityComparer.Instance);
+            foreach ((object identity, string name) in scopes.Names)
+            {
+                names.TryAdd(identity, name);
+            }
+
+            return names;
+        }
     }
 
     /// <summary>Each unit's objects by instance, with their 0-based positions.</summary>
