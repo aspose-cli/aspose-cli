@@ -235,6 +235,11 @@ public static class EditDefinition
     /// <param name="name">The command name.</param>
     /// <param name="examples">The help examples.</param>
     /// <param name="links">The help's further-reading links.</param>
+    /// <param name="mistakenFor">
+    /// The names a caller may type for this edit that name no command of its product, such as
+    /// <c>merge</c> for an edit that imports another document (see
+    /// <see cref="CommandDefinition{TRequest, TResult}.MistakenFor"/>).
+    /// </param>
     public static CommandDefinition<TRequest, TResult> Create<TOp, TBatch, TRequest, TResult>(
         BoundedEditCommand<TOp, TBatch> edit,
         string description,
@@ -245,7 +250,8 @@ public static class EditDefinition
         Action<ParseResult>? checkUsage = null,
         string name = "edit",
         IReadOnlyList<string>? examples = null,
-        IReadOnlyList<CommandHelpLink>? links = null)
+        IReadOnlyList<CommandHelpLink>? links = null,
+        IReadOnlyList<string>? mistakenFor = null)
         where TOp : BoundedOperation, IOperationVocabulary<TOp>
         where TBatch : BoundedOperationEnvelope<TOp>
         where TResult : ResultEnvelope
@@ -267,6 +273,7 @@ public static class EditDefinition
         {
             Examples = examples ?? [],
             Links = links ?? [],
+            MistakenFor = mistakenFor ?? [],
             Operations = TOp.Catalog.Describe,
             EncryptingDocument = TOp.Catalog.EncryptingDocument,
         };
