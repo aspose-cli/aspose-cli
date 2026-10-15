@@ -120,6 +120,13 @@ internal static partial class ContractRules
         yield return HiddenInHintCase(catalog);
     }
 
+    /// <summary>The files of a directory by pattern, bin and obj left out, in order, with their path relative to it.</summary>
+    private static IEnumerable<(string File, string Where)> SourceFiles(string directory, string pattern) =>
+        Directory.EnumerateFiles(directory, pattern, SearchOption.AllDirectories)
+            .Select(file => (File: file, Where: Path.GetRelativePath(directory, file).Replace('\\', '/')))
+            .Where(static file => !file.Where.Split('/').Any(static part => part is "bin" or "obj"))
+            .OrderBy(static file => file.File, StringComparer.Ordinal);
+
     /// <summary>The product a source project belongs to, such as <c>cells</c>, or null for the platform.</summary>
     private static string? ProductOf(string project) =>
         Path.GetFileName(project) is { } name && name.StartsWith(ProductProject, StringComparison.Ordinal)
@@ -398,9 +405,7 @@ internal static partial class ContractRules
             _codes =
             [
                 .. catalog.Diagnostics.Keys,
-                .. catalog.Document["products"]!.AsArray()
-                    .SelectMany(static product => product!["review"]?["checks"]?.AsArray() ?? [])
-                    .Select(static check => check!["code"]!.GetValue<string>()),
+                .. catalog.Products.SelectMany(product => ReviewCodes(catalog, product.Id)),
             ];
             _operations =
             [
@@ -435,12 +440,12 @@ internal static partial class ContractRules
         /// <summary>The reading of one source project's C# files.</summary>
         public SourceFindings Of(string project) =>
             _findings.GetOrAdd(project, key => new Lazy<SourceFindings>(() => Read(
-                Files(key, "*.cs"), ProductOf(key), declares: true))).Value;
+                SourceFiles(key, "*.cs"), ProductOf(key), declares: true))).Value;
 
         /// <summary>The reading of a set of Markdown files.</summary>
         public SourceFindings Of(WrittenFiles document) =>
             _findings.GetOrAdd(document.Path, key => new Lazy<SourceFindings>(() => Read(
-                Directory.Exists(key) ? Files(key, "*.md") : [(key, Path.GetFileName(key))], document.Product, declares: false))).Value;
+                Directory.Exists(key) ? SourceFiles(key, "*.md") : [(key, Path.GetFileName(key))], document.Product, declares: false))).Value;
 
         /// <summary>The problems of one text, read as a C# text or as Markdown, for <see cref="WrittenMistakes"/>.</summary>
         public string[] CheckSample(string text, string? product, bool markdown)
@@ -450,13 +455,6 @@ internal static partial class ContractRules
             List<SourceText> texts = markdown ? ReadMarkdown(text) : [new SourceText(1, text)];
             return [.. texts.SelectMany(written => CheckText(written.Text, product, markdown, exempted, kinds, out _))];
         }
-
-        /// <summary>The files of a directory by pattern, bin and obj left out, with their path relative to it.</summary>
-        private static IEnumerable<(string File, string Where)> Files(string directory, string pattern) =>
-            Directory.EnumerateFiles(directory, pattern, SearchOption.AllDirectories)
-                .Where(file => !Path.GetRelativePath(directory, file).Split(Path.DirectorySeparatorChar).Any(static part => part is "bin" or "obj"))
-                .Order(StringComparer.Ordinal)
-                .Select(file => (file, Path.GetRelativePath(directory, file).Replace('\\', '/')));
 
         /// <summary>
         /// Reads files with the one reader of their kind. Each finding is reported once per file,
@@ -864,7 +862,9 @@ internal static partial class ContractRules
         [GeneratedRegex(@"^[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)+$")]
         private static partial Regex UpperSnake();
 
-        [GeneratedRegex(@"^[a-z][a-z0-9]*(?:_[a-z0-9]+)+$")]
-        private static partial Regex LowerSnake();
     }
+
+    /// <summary>A whole snake_case name, such as an operation's.</summary>
+    [GeneratedRegex(@"^[a-z][a-z0-9]*(?:_[a-z0-9]+)+$")]
+    private static partial Regex LowerSnake();
 }

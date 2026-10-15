@@ -40,24 +40,15 @@ internal sealed record TreeOption(JsonNode Node)
 
     public string Type => Node["type"]!.GetValue<string>();
 
-    public int MaximumArity => Node["maximumArity"]!.GetValue<int>();
-
     public bool Required => Node["required"]!.GetValue<bool>();
 
     public bool Recursive => Node["recursive"]!.GetValue<bool>();
 
     public bool Hidden => Node["hidden"]!.GetValue<bool>();
 
-    public bool HasDefault => Node["hasDefault"]!.GetValue<bool>();
-
-    /// <summary>The published default, or null when there is none or it is null.</summary>
-    public string? Default => HasDefault ? Node["default"]?.GetValue<string>() : null;
-
     public IReadOnlyList<string> AllowedValues => CommandTree.Strings(Node["allowedValues"]);
 
     public bool Secret => Node["secret"]!.GetValue<bool>();
-
-    public string ValueSource => Node["valueSource"]!.GetValue<string>();
 
     /// <summary>What the value names, <c>file</c> or <c>json-source</c>; null when it names nothing to read.</summary>
     public string? InputKind => Node["inputKind"]?.GetValue<string>();
