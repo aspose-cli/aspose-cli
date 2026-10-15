@@ -95,6 +95,26 @@ public sealed class SlidesRasterConversionTests(SlidesRasterConversionTests.Crea
         Assert.Equal(["deck.pptx"], Directory.GetFileSystemEntries(workspace.Path).Select(Path.GetFileName));
     }
 
+    [Theory]
+    [InlineData("--dpi", "96")]
+    [InlineData("--width", "640")]
+    public void Render_RefusesAPixelSizeForSvgAsAnInvalidOption(string option, string value)
+    {
+        using var fixture = new SlidesEngineFixture();
+        string input = fixture.CreatePresentation(slides: 1);
+        using var workspace = new TempWorkspace();
+        File.Copy(input, workspace.File("deck.pptx"));
+
+        CliResult refused = workspace.Run(
+            "slides", "render", "deck.pptx", option, value, "--out", "slide.svg", "--output-format", "json");
+
+        Assert.Equal(2, refused.ExitCode);
+        JsonNode error = JsonNode.Parse(refused.StdErr)!["error"]!;
+        Assert.Equal("OPTION_INVALID", error["code"]!.GetValue<string>());
+        Assert.Equal(option, error["details"]!["option"]!.GetValue<string>());
+        Assert.Equal(["deck.pptx"], Directory.GetFileSystemEntries(workspace.Path).Select(Path.GetFileName));
+    }
+
     [Fact]
     public void Render_RefusesWidthTogetherWithDpiAsAnInvalidWidth()
     {
