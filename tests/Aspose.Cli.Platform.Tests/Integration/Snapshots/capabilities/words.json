@@ -49,7 +49,7 @@
         "command": "edit",
         "inputSchema": "v2/words/ops",
         "operationSchema": "aspose-cli schema v2/words/ops --operation <op>",
-        "contractFingerprint": "sha256:05d2242220cdcd961aadd699ef42ac77bf736ae19fd1eab6973886ab3211da77",
+        "contractFingerprint": "sha256:a61a7be9825e88f7009159ff76d7b56efaed6afdf4660b429a2307826ca059d2",
         "maximumOperationCount": 10000,
         "ops": [
           "accept_revisions",
@@ -4693,15 +4693,18 @@
               "const": "add_comment"
             },
             "target": {
+              "description": "The paragraph block the comment is anchored to.",
               "$ref": "#/$defs/wordsTarget",
               "x-readBack": "not-state"
             },
             "author": {
+              "description": "The comment author's name.",
               "type": "string",
               "minLength": 1,
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/inspect-result.schema.json#/$defs/wordsCommentData/properties/author"
             },
             "text": {
+              "description": "The comment text.",
               "type": "string",
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/inspect-result.schema.json#/$defs/wordsCommentData/properties/text"
             }
@@ -4723,11 +4726,13 @@
               "const": "define_style"
             },
             "name": {
+              "description": "The style name; the style of that name is updated, or a new paragraph style created when there is none.",
               "type": "string",
               "minLength": 1,
               "x-readBack": "not-state"
             },
             "basedOn": {
+              "description": "The existing style this one inherits every setting it does not set from.",
               "type": "string",
               "minLength": 1,
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/inspect-result.schema.json#/$defs/wordsStyleData/properties/basedOn"
@@ -4757,6 +4762,7 @@
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/inspect-result.schema.json#/$defs/wordsStyleData/properties/fontSize"
             },
             "bold": {
+              "description": "Whether the style's text is bold.",
               "type": "boolean",
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/inspect-result.schema.json#/$defs/wordsStyleData/properties/bold"
             },
@@ -4795,6 +4801,7 @@
               "const": "delete_blocks"
             },
             "target": {
+              "description": "The blocks to delete.",
               "$ref": "#/$defs/wordsTarget",
               "x-readBack": "not-state"
             }
@@ -4838,6 +4845,7 @@
               "const": "delete_section"
             },
             "section": {
+              "description": "The 1-based section to delete, with its content.",
               "type": "integer",
               "minimum": 1,
               "x-readBack": "not-state"
@@ -4876,18 +4884,22 @@
               "const": "format_text"
             },
             "target": {
+              "description": "The blocks whose text runs are formatted.",
               "$ref": "#/$defs/wordsTarget",
               "x-readBack": "not-state"
             },
             "bold": {
+              "description": "Whether the text is bold; false removes bold.",
               "type": "boolean",
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/read-result.schema.json#/$defs/wordsRunData/properties/bold"
             },
             "italic": {
+              "description": "Whether the text is italic; false removes italic.",
               "type": "boolean",
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/read-result.schema.json#/$defs/wordsRunData/properties/italic"
             },
             "underline": {
+              "description": "Whether the text has a single underline; false removes any underline.",
               "type": "boolean",
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/read-result.schema.json#/$defs/wordsRunData/properties/underline"
             },
@@ -5003,10 +5015,12 @@
               "const": "insert_bookmark"
             },
             "at": {
+              "description": "The paragraph block whose visible text the bookmark encloses.",
               "$ref": "#/$defs/wordsTarget",
               "x-readBack": "not-state"
             },
             "name": {
+              "description": "The bookmark name.",
               "type": "string",
               "minLength": 1,
               "x-readBack": "position"
@@ -5031,14 +5045,17 @@
               "const": "insert_break"
             },
             "at": {
+              "description": "The block the new content goes next to.",
               "$ref": "#/$defs/wordsTarget",
               "x-readBack": "not-state"
             },
             "position": {
+              "description": "Whether the new content goes before or after the at block.",
               "$ref": "#/$defs/position",
               "x-readBack": "not-state"
             },
             "kind": {
+              "description": "page starts a new page; section splits the section there, the new section starting with the same page setup, headers and footers.",
               "type": "string",
               "enum": [
                 "page",
@@ -5066,10 +5083,12 @@
               "const": "insert_field"
             },
             "at": {
+              "description": "The block the new content goes next to.",
               "$ref": "#/$defs/wordsTarget",
               "x-readBack": "not-state"
             },
             "position": {
+              "description": "Whether the new content goes before or after the at block.",
               "$ref": "#/$defs/position",
               "x-readBack": "not-state"
             },
@@ -5100,18 +5119,22 @@
               "const": "insert_hyperlink"
             },
             "at": {
+              "description": "The block the new content goes next to.",
               "$ref": "#/$defs/wordsTarget",
               "x-readBack": "not-state"
             },
             "position": {
+              "description": "Whether the new content goes before or after the at block.",
               "$ref": "#/$defs/position",
               "x-readBack": "not-state"
             },
             "text": {
+              "description": "The link text shown in the document.",
               "type": "string",
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/read-result.schema.json#/$defs/wordsRunData/properties/text"
             },
             "url": {
+              "description": "The address a click opens.",
               "$ref": "#/$defs/webLink",
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/read-result.schema.json#/$defs/wordsRunData/properties/url"
             }
@@ -5135,10 +5158,12 @@
               "const": "insert_image"
             },
             "at": {
+              "description": "The block the new content goes next to.",
               "$ref": "#/$defs/wordsTarget",
               "x-readBack": "not-state"
             },
             "position": {
+              "description": "Whether the new content goes before or after the at block.",
               "$ref": "#/$defs/position",
               "x-readBack": "not-state"
             },
@@ -5187,14 +5212,17 @@
               "const": "insert_markdown"
             },
             "at": {
+              "description": "The block the new content goes next to.",
               "$ref": "#/$defs/wordsTarget",
               "x-readBack": "not-state"
             },
             "position": {
+              "description": "Whether the new content goes before or after the at block.",
               "$ref": "#/$defs/position",
               "x-readBack": "not-state"
             },
             "markdown": {
+              "description": "The Markdown to import; its paragraphs and tables take the document's styles.",
               "type": "string",
               "minLength": 1,
               "x-readBack": "not-state"
@@ -5219,14 +5247,17 @@
               "const": "insert_paragraphs"
             },
             "at": {
+              "description": "The block the new content goes next to.",
               "$ref": "#/$defs/wordsTarget",
               "x-readBack": "not-state"
             },
             "position": {
+              "description": "Whether the new content goes before or after the at block.",
               "$ref": "#/$defs/position",
               "x-readBack": "not-state"
             },
             "paragraphs": {
+              "description": "The paragraphs to insert, in order.",
               "type": "array",
               "minItems": 1,
               "items": {
@@ -5258,6 +5289,7 @@
               "x-readBack": "not-state"
             },
             "position": {
+              "description": "Whether the new section goes before or after section at.",
               "$ref": "#/$defs/position",
               "x-readBack": "not-state"
             },
@@ -5286,14 +5318,17 @@
               "const": "insert_table"
             },
             "at": {
+              "description": "The block the new content goes next to.",
               "$ref": "#/$defs/wordsTarget",
               "x-readBack": "not-state"
             },
             "position": {
+              "description": "Whether the new content goes before or after the at block.",
               "$ref": "#/$defs/position",
               "x-readBack": "not-state"
             },
             "rowCount": {
+              "description": "The row count.",
               "type": "integer",
               "minimum": 1,
               "maximum": 32767,
@@ -5342,10 +5377,12 @@
               "const": "insert_toc"
             },
             "at": {
+              "description": "The block the new content goes next to.",
               "$ref": "#/$defs/wordsTarget",
               "x-readBack": "not-state"
             },
             "position": {
+              "description": "Whether the new content goes before or after the at block.",
               "$ref": "#/$defs/position",
               "x-readBack": "not-state"
             },
@@ -5471,6 +5508,7 @@
               "const": "refresh_fields"
             },
             "what": {
+              "description": "toc refreshes the tables of contents; all refreshes every field and the page layout.",
               "type": "string",
               "enum": [
                 "all",
@@ -5529,6 +5567,7 @@
               "const": "repeat_table_row"
             },
             "at": {
+              "description": "The table block that holds the template row.",
               "$ref": "#/$defs/wordsTarget",
               "x-readBack": "not-state"
             },
@@ -5596,6 +5635,7 @@
               "const": "replace_text"
             },
             "find": {
+              "description": "The text to find, or the pattern when regex is true.",
               "type": "string",
               "minLength": 1,
               "x-readBack": "not-state"
@@ -5612,11 +5652,13 @@
               "x-readBack": "not-state"
             },
             "caseSensitive": {
+              "description": "Whether a match must have the same letter case as find.",
               "type": "boolean",
               "default": false,
               "x-readBack": "not-state"
             },
             "wholeWord": {
+              "description": "Whether a match must be a whole word, not part of a longer one.",
               "type": "boolean",
               "default": false,
               "x-readBack": "not-state"
@@ -5743,6 +5785,7 @@
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/inspect-result.schema.json#/$defs/wordsHeaderFooterData/properties/paragraphs"
             },
             "markdown": {
+              "description": "Markdown for the content instead of paragraphs; its paragraphs and tables take the document's styles.",
               "type": "string",
               "x-readBack": "not-state"
             }
@@ -5804,6 +5847,7 @@
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/inspect-result.schema.json#/$defs/wordsHeaderFooterData/properties/paragraphs"
             },
             "markdown": {
+              "description": "Markdown for the content instead of paragraphs; its paragraphs and tables take the document's styles.",
               "type": "string",
               "x-readBack": "not-state"
             }
@@ -5842,10 +5886,12 @@
               "const": "set_list"
             },
             "target": {
+              "description": "The blocks whose paragraphs become the list's items.",
               "$ref": "#/$defs/wordsTarget",
               "x-readBack": "not-state"
             },
             "kind": {
+              "description": "Whether the items show bullets or numbers.",
               "type": "string",
               "enum": [
                 "bullet",
@@ -5884,6 +5930,7 @@
               "x-readBack": "not-state"
             },
             "location": {
+              "description": "Whether the number goes in the primary header or the primary footer.",
               "type": "string",
               "enum": [
                 "header",
@@ -5893,6 +5940,7 @@
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/inspect-result.schema.json#/$defs/wordsPageNumbersData/properties/location"
             },
             "alignment": {
+              "description": "The alignment of the paragraph that holds the number.",
               "type": "string",
               "enum": [
                 "left",
@@ -5949,6 +5997,7 @@
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/inspect-result.schema.json#/$defs/wordsSectionData/properties/pageSize"
             },
             "orientation": {
+              "description": "Whether the pages are upright (portrait) or sideways (landscape).",
               "type": "string",
               "enum": [
                 "portrait",
@@ -5957,10 +6006,12 @@
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/inspect-result.schema.json#/$defs/wordsSectionData/properties/orientation"
             },
             "margins": {
+              "description": "The page margins; only the sides present change.",
               "$ref": "#/$defs/wordsMarginInput",
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/inspect-result.schema.json#/$defs/wordsSectionData/properties/margins"
             },
             "columnCount": {
+              "description": "The number of text columns on each page.",
               "type": "integer",
               "minimum": 1,
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/inspect-result.schema.json#/$defs/wordsSectionData/properties/columnCount"
@@ -6008,18 +6059,22 @@
               "const": "set_properties"
             },
             "title": {
+              "description": "The document title.",
               "type": "string",
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/inspect-result.schema.json#/properties/properties/additionalProperties"
             },
             "author": {
+              "description": "The document author.",
               "type": "string",
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/inspect-result.schema.json#/properties/properties/additionalProperties"
             },
             "subject": {
+              "description": "The document subject.",
               "type": "string",
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/inspect-result.schema.json#/properties/properties/additionalProperties"
             },
             "keywords": {
+              "description": "The document keywords, as one text such as \"budget, 2026\".",
               "type": "string",
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/inspect-result.schema.json#/properties/properties/additionalProperties"
             },
@@ -6053,10 +6108,12 @@
               "const": "set_style"
             },
             "target": {
+              "description": "The blocks that take the style.",
               "$ref": "#/$defs/wordsTarget",
               "x-readBack": "not-state"
             },
             "style": {
+              "description": "The name of an existing paragraph style, such as Heading 1.",
               "type": "string",
               "minLength": 1,
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/read-result.schema.json#/$defs/wordsBlockData/properties/style"
@@ -6082,20 +6139,24 @@
               "const": "set_table_cell"
             },
             "target": {
+              "description": "The table block.",
               "$ref": "#/$defs/wordsTarget",
               "x-readBack": "not-state"
             },
             "row": {
+              "description": "The 1-based row of the cell.",
               "type": "integer",
               "minimum": 1,
               "x-readBack": "not-state"
             },
             "column": {
+              "description": "The 1-based column of the cell.",
               "type": "integer",
               "minimum": 1,
               "x-readBack": "not-state"
             },
             "text": {
+              "description": "The new cell text, which replaces the cell's text.",
               "type": "string",
               "x-readBack": "position"
             }
@@ -6117,6 +6178,7 @@
               "const": "set_table_pagination"
             },
             "target": {
+              "description": "The table block.",
               "$ref": "#/$defs/wordsTarget",
               "x-readBack": "not-state"
             },
@@ -6186,10 +6248,12 @@
               "const": "set_text"
             },
             "target": {
+              "description": "The paragraph blocks, or the bookmark, whose text is replaced.",
               "$ref": "#/$defs/wordsTarget",
               "x-readBack": "not-state"
             },
             "text": {
+              "description": "The new text, in the font of the first text it replaces; a paragraph keeps its own format.",
               "type": "string",
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/read-result.schema.json#/$defs/wordsBlockData/properties/text"
             }
@@ -6408,18 +6472,22 @@
           "additionalProperties": false,
           "properties": {
             "top": {
+              "description": "The distance from the top edge of the page to the text.",
               "type": "number",
               "minimum": 0
             },
             "right": {
+              "description": "The distance from the right edge of the page to the text.",
               "type": "number",
               "minimum": 0
             },
             "bottom": {
+              "description": "The distance from the bottom edge of the page to the text.",
               "type": "number",
               "minimum": 0
             },
             "left": {
+              "description": "The distance from the left edge of the page to the text.",
               "type": "number",
               "minimum": 0
             }
@@ -6436,6 +6504,7 @@
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/inspect-result.schema.json#/$defs/wordsSectionData/properties/pageSize"
             },
             "orientation": {
+              "description": "Whether the pages are upright (portrait) or sideways (landscape).",
               "type": "string",
               "enum": [
                 "portrait",
@@ -6444,10 +6513,12 @@
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/inspect-result.schema.json#/$defs/wordsSectionData/properties/orientation"
             },
             "margins": {
+              "description": "The page margins; only the sides present change.",
               "$ref": "#/$defs/wordsMarginInput",
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/inspect-result.schema.json#/$defs/wordsSectionData/properties/margins"
             },
             "columnCount": {
+              "description": "The number of text columns on each page.",
               "type": "integer",
               "minimum": 1,
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/inspect-result.schema.json#/$defs/wordsSectionData/properties/columnCount"
@@ -6463,6 +6534,7 @@
           "additionalProperties": false,
           "properties": {
             "text": {
+              "description": "The paragraph text.",
               "type": "string",
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/read-result.schema.json#/$defs/wordsBlockData/properties/text"
             },

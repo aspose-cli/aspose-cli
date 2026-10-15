@@ -49,6 +49,7 @@ internal sealed class WordsPositionAttribute() : AllowedValuesAttribute("before"
 /// <summary>One paragraph supplied to an insertion operation.</summary>
 public sealed record WordsParagraphInput
 {
+    /// <summary>The paragraph text.</summary>
     [ReadBack("read-result.schema.json#/$defs/wordsBlockData/properties/text")]
     public required string Text { get; init; }
 
@@ -86,12 +87,15 @@ public sealed record WordsPageSetupInput
     [ReadBack("inspect-result.schema.json#/$defs/wordsSectionData/properties/pageSize")]
     public PageSizeInput? PageSize { get; init; }
 
+    /// <summary>Whether the pages are upright (portrait) or sideways (landscape).</summary>
     [ReadBack("inspect-result.schema.json#/$defs/wordsSectionData/properties/orientation")]
     [AllowedValues(typeof(WordsPageOrientations))] public string? Orientation { get; init; }
 
+    /// <summary>The page margins; only the sides present change.</summary>
     [ReadBack("inspect-result.schema.json#/$defs/wordsSectionData/properties/margins")]
     public WordsMarginInput? Margins { get; init; }
 
+    /// <summary>The number of text columns on each page.</summary>
     [ReadBack("inspect-result.schema.json#/$defs/wordsSectionData/properties/columnCount")]
     [Minimum(1)] public int? ColumnCount { get; init; }
 }
@@ -99,12 +103,16 @@ public sealed record WordsPageSetupInput
 /// <summary>Page margins in points; omitted margins keep their values.</summary>
 public sealed record WordsMarginInput
 {
+    /// <summary>The distance from the top edge of the page to the text.</summary>
     [Minimum(0)] public double? Top { get; init; }
 
+    /// <summary>The distance from the right edge of the page to the text.</summary>
     [Minimum(0)] public double? Right { get; init; }
 
+    /// <summary>The distance from the bottom edge of the page to the text.</summary>
     [Minimum(0)] public double? Bottom { get; init; }
 
+    /// <summary>The distance from the left edge of the page to the text.</summary>
     [Minimum(0)] public double? Left { get; init; }
 }
 
@@ -112,6 +120,7 @@ public sealed record WordsMarginInput
 [Operation("replace_text")]
 public sealed record ReplaceTextOp : WordsOp
 {
+    /// <summary>The text to find, or the pattern when regex is true.</summary>
     [NotState]
     [MinLength(1)] public required string Find { get; init; }
 
@@ -124,10 +133,12 @@ public sealed record ReplaceTextOp : WordsOp
     [NotState]
     public bool Regex { get; init; }
 
+    /// <summary>Whether a match must have the same letter case as find.</summary>
     [MistakenFor("matchCase")]
     [NotState]
     public bool CaseSensitive { get; init; }
 
+    /// <summary>Whether a match must be a whole word, not part of a longer one.</summary>
     [NotState]
     public bool WholeWord { get; init; }
 
@@ -147,9 +158,11 @@ public sealed record ReplaceTextOp : WordsOp
 [Operation("set_text")]
 public sealed record SetTextOp : WordsOp
 {
+    /// <summary>The paragraph blocks, or the bookmark, whose text is replaced.</summary>
     [MistakenFor("at")]
     public required WordsTarget Target { get; init; }
 
+    /// <summary>The new text, in the font of the first text it replaces; a paragraph keeps its own format.</summary>
     [ReadBack("read-result.schema.json#/$defs/wordsBlockData/properties/text")]
     public required string Text { get; init; }
 }
@@ -158,10 +171,13 @@ public sealed record SetTextOp : WordsOp
 [Operation("insert_paragraphs")]
 public sealed record InsertParagraphsOp : WordsOp
 {
+    /// <summary>The block the new content goes next to.</summary>
     public required WordsTarget At { get; init; }
 
+    /// <summary>Whether the new content goes before or after the at block.</summary>
     [WordsPosition] public required string Position { get; init; }
 
+    /// <summary>The paragraphs to insert, in order.</summary>
     [MinItems(1)] public required IReadOnlyList<WordsParagraphInput> Paragraphs { get; init; }
 }
 
@@ -169,10 +185,13 @@ public sealed record InsertParagraphsOp : WordsOp
 [Operation("insert_markdown")]
 public sealed record InsertMarkdownOp : WordsOp
 {
+    /// <summary>The block the new content goes next to.</summary>
     public required WordsTarget At { get; init; }
 
+    /// <summary>Whether the new content goes before or after the at block.</summary>
     [WordsPosition] public required string Position { get; init; }
 
+    /// <summary>The Markdown to import; its paragraphs and tables take the document's styles.</summary>
     [NotState]
     [MinLength(1)] public required string Markdown { get; init; }
 }
@@ -181,6 +200,7 @@ public sealed record InsertMarkdownOp : WordsOp
 [Operation("delete_blocks")]
 public sealed record DeleteBlocksOp : WordsOp
 {
+    /// <summary>The blocks to delete.</summary>
     public required WordsTarget Target { get; init; }
 }
 
@@ -188,10 +208,13 @@ public sealed record DeleteBlocksOp : WordsOp
 [Operation("insert_break")]
 public sealed record InsertBreakOp : WordsOp
 {
+    /// <summary>The block the new content goes next to.</summary>
     public required WordsTarget At { get; init; }
 
+    /// <summary>Whether the new content goes before or after the at block.</summary>
     [WordsPosition] public required string Position { get; init; }
 
+    /// <summary>page starts a new page; section splits the section there, the new section starting with the same page setup, headers and footers.</summary>
     [ReadBack("read-result.schema.json#/$defs/wordsBreakData/properties/kind")]
     [AllowedValues(typeof(WordsBreakKinds))] public required string Kind { get; init; }
 }
@@ -200,8 +223,10 @@ public sealed record InsertBreakOp : WordsOp
 [Operation("insert_image")]
 public sealed record InsertImageOp : WordsOp
 {
+    /// <summary>The block the new content goes next to.</summary>
     public required WordsTarget At { get; init; }
 
+    /// <summary>Whether the new content goes before or after the at block.</summary>
     [WordsPosition] public required string Position { get; init; }
 
     /// <summary>The image, relative to the working directory.</summary>
@@ -224,10 +249,13 @@ public sealed record InsertImageOp : WordsOp
 [Operation("insert_table")]
 public sealed record InsertTableOp : WordsOp
 {
+    /// <summary>The block the new content goes next to.</summary>
     public required WordsTarget At { get; init; }
 
+    /// <summary>Whether the new content goes before or after the at block.</summary>
     [WordsPosition] public required string Position { get; init; }
 
+    /// <summary>The row count.</summary>
     [ReadBack("read-result.schema.json#/$defs/wordsBlockData/properties/rowCount")]
     [Minimum(1), Maximum(32_767)] public required int RowCount { get; init; }
 
@@ -258,16 +286,20 @@ public sealed record InsertTableOp : WordsOp
 [Operation("set_table_cell")]
 public sealed record SetTableCellOp : WordsOp
 {
+    /// <summary>The table block.</summary>
     [MistakenFor("at")]
     public required WordsTarget Target { get; init; }
 
+    /// <summary>The 1-based row of the cell.</summary>
     [NotState]
     [Minimum(1)] public required int Row { get; init; }
 
+    /// <summary>The 1-based column of the cell.</summary>
     [MistakenFor("col")]
     [NotState]
     [Minimum(1)] public required int Column { get; init; }
 
+    /// <summary>The new cell text, which replaces the cell's text.</summary>
     [ReadBackByPosition] // Reads back as cells[row][column] of the table block.
     public required string Text { get; init; }
 }
@@ -282,6 +314,7 @@ public sealed record SetTableCellOp : WordsOp
 [ExactlyOneOf("items", "path")]
 public sealed record RepeatTableRowOp : WordsOp
 {
+    /// <summary>The table block that holds the template row.</summary>
     public required WordsTarget At { get; init; }
 
     /// <summary>The 1-based template row; when omitted, the table's one row that contains a <c>{{key}}</c> placeholder.</summary>
@@ -309,6 +342,7 @@ public sealed record RepeatTableRowOp : WordsOp
 [AtLeastOneOf("keepTogether", "allowRowBreakAcrossPages", "headerRowCount", "keepWithNext")]
 public sealed record SetTablePaginationOp : WordsOp
 {
+    /// <summary>The table block.</summary>
     [MistakenFor("at")]
     public required WordsTarget Target { get; init; }
 
@@ -346,8 +380,10 @@ public sealed record SetTablePaginationOp : WordsOp
 [Operation("insert_toc")]
 public sealed record InsertTocOp : WordsOp
 {
+    /// <summary>The block the new content goes next to.</summary>
     public required WordsTarget At { get; init; }
 
+    /// <summary>Whether the new content goes before or after the at block.</summary>
     [WordsPosition] public required string Position { get; init; }
 
     /// <summary>The deepest heading level listed.</summary>
@@ -359,8 +395,10 @@ public sealed record InsertTocOp : WordsOp
 [Operation("insert_bookmark")]
 public sealed record InsertBookmarkOp : WordsOp
 {
+    /// <summary>The paragraph block whose visible text the bookmark encloses.</summary>
     public required WordsTarget At { get; init; }
 
+    /// <summary>The bookmark name.</summary>
     [ReadBackByPosition] // Reads back as an entry of the document's bookmarks list.
     [MinLength(1)] public required string Name { get; init; }
 }
@@ -369,13 +407,17 @@ public sealed record InsertBookmarkOp : WordsOp
 [Operation("insert_hyperlink")]
 public sealed record InsertHyperlinkOp : WordsOp
 {
+    /// <summary>The block the new content goes next to.</summary>
     public required WordsTarget At { get; init; }
 
+    /// <summary>Whether the new content goes before or after the at block.</summary>
     [WordsPosition] public required string Position { get; init; }
 
+    /// <summary>The link text shown in the document.</summary>
     [ReadBack("read-result.schema.json#/$defs/wordsRunData/properties/text")]
     public required string Text { get; init; }
 
+    /// <summary>The address a click opens.</summary>
     [ReadBack("read-result.schema.json#/$defs/wordsRunData/properties/url")]
     [WebLink] public required string Url { get; init; }
 }
@@ -384,8 +426,10 @@ public sealed record InsertHyperlinkOp : WordsOp
 [Operation("insert_field")]
 public sealed record InsertFieldOp : WordsOp
 {
+    /// <summary>The block the new content goes next to.</summary>
     public required WordsTarget At { get; init; }
 
+    /// <summary>Whether the new content goes before or after the at block.</summary>
     [WordsPosition] public required string Position { get; init; }
 
     /// <summary>The field code, such as DATE.</summary>
@@ -402,6 +446,7 @@ public sealed record InsertSectionOp : WordsOp
     [MistakenFor("after")]
     [Minimum(1)] public required int At { get; init; }
 
+    /// <summary>Whether the new section goes before or after section at.</summary>
     [WordsPosition] public required string Position { get; init; }
 
     /// <summary>Page setup applied over the neighbouring section's.</summary>
@@ -412,6 +457,7 @@ public sealed record InsertSectionOp : WordsOp
 [Operation("delete_section")]
 public sealed record DeleteSectionOp : WordsOp
 {
+    /// <summary>The 1-based section to delete, with its content.</summary>
     [Minimum(1)] public required int Section { get; init; }
 }
 
@@ -428,12 +474,15 @@ public sealed record SetPageSetupOp : WordsOp
     [ReadBack("inspect-result.schema.json#/$defs/wordsSectionData/properties/pageSize")]
     public PageSizeInput? PageSize { get; init; }
 
+    /// <summary>Whether the pages are upright (portrait) or sideways (landscape).</summary>
     [ReadBack("inspect-result.schema.json#/$defs/wordsSectionData/properties/orientation")]
     [AllowedValues(typeof(WordsPageOrientations))] public string? Orientation { get; init; }
 
+    /// <summary>The page margins; only the sides present change.</summary>
     [ReadBack("inspect-result.schema.json#/$defs/wordsSectionData/properties/margins")]
     public WordsMarginInput? Margins { get; init; }
 
+    /// <summary>The number of text columns on each page.</summary>
     [ReadBack("inspect-result.schema.json#/$defs/wordsSectionData/properties/columnCount")]
     [Minimum(1)] public int? ColumnCount { get; init; }
 
@@ -456,6 +505,7 @@ public abstract record HeaderFooterOp : WordsOp
     [ReadBack("inspect-result.schema.json#/$defs/wordsHeaderFooterData/properties/paragraphs")]
     public IReadOnlyList<WordsParagraphInput>? Paragraphs { get; init; }
 
+    /// <summary>Markdown for the content instead of paragraphs; its paragraphs and tables take the document's styles.</summary>
     [NotState]
     public string? Markdown { get; init; }
 
@@ -485,9 +535,11 @@ public sealed record SetPageNumbersOp : WordsOp
     /// <summary>The 1-based section; every section when omitted.</summary>
     [Minimum(1)] public int? Section { get; init; }
 
+    /// <summary>Whether the number goes in the primary header or the primary footer.</summary>
     [ReadBack("inspect-result.schema.json#/$defs/wordsPageNumbersData/properties/location")]
     [AllowedValues(typeof(WordsHeaderFooterLocations))] public string Location { get; init; } = WordsHeaderFooterLocations.Footer;
 
+    /// <summary>The alignment of the paragraph that holds the number.</summary>
     [ReadBack("inspect-result.schema.json#/$defs/wordsPageNumbersData/properties/alignment")]
     [AllowedValues("left", "center", "right")] public string Alignment { get; init; } = "center";
 
@@ -505,14 +557,18 @@ public sealed record SetPageNumbersOp : WordsOp
 [Operation("format_text")]
 public sealed record FormatTextOp : WordsOp
 {
+    /// <summary>The blocks whose text runs are formatted.</summary>
     public required WordsTarget Target { get; init; }
 
+    /// <summary>Whether the text is bold; false removes bold.</summary>
     [ReadBack("read-result.schema.json#/$defs/wordsRunData/properties/bold")]
     public bool? Bold { get; init; }
 
+    /// <summary>Whether the text is italic; false removes italic.</summary>
     [ReadBack("read-result.schema.json#/$defs/wordsRunData/properties/italic")]
     public bool? Italic { get; init; }
 
+    /// <summary>Whether the text has a single underline; false removes any underline.</summary>
     [ReadBack("read-result.schema.json#/$defs/wordsRunData/properties/underline")]
     public bool? Underline { get; init; }
 
@@ -546,8 +602,10 @@ public sealed record FormatTextOp : WordsOp
 [Operation("set_style")]
 public sealed record SetStyleOp : WordsOp
 {
+    /// <summary>The blocks that take the style.</summary>
     public required WordsTarget Target { get; init; }
 
+    /// <summary>The name of an existing paragraph style, such as Heading 1.</summary>
     [ReadBack("read-result.schema.json#/$defs/wordsBlockData/properties/style")]
     [MinLength(1)] public required string Style { get; init; }
 }
@@ -556,9 +614,11 @@ public sealed record SetStyleOp : WordsOp
 [Operation("define_style")]
 public sealed record DefineStyleOp : WordsOp
 {
+    /// <summary>The style name; the style of that name is updated, or a new paragraph style created when there is none.</summary>
     [NotState]
     [MinLength(1)] public required string Name { get; init; }
 
+    /// <summary>The existing style this one inherits every setting it does not set from.</summary>
     [ReadBack("inspect-result.schema.json#/$defs/wordsStyleData/properties/basedOn")]
     [MinLength(1)] public string? BasedOn { get; init; }
 
@@ -579,6 +639,7 @@ public sealed record DefineStyleOp : WordsOp
     [ReadBack("inspect-result.schema.json#/$defs/wordsStyleData/properties/fontSize")]
     [ExclusiveMinimum(0)] public double? FontSize { get; init; }
 
+    /// <summary>Whether the style's text is bold.</summary>
     [ReadBack("inspect-result.schema.json#/$defs/wordsStyleData/properties/bold")]
     public bool? Bold { get; init; }
 
@@ -600,8 +661,10 @@ public sealed record DefineStyleOp : WordsOp
 [MistakenFor("apply_list")]
 public sealed record SetListOp : WordsOp
 {
+    /// <summary>The blocks whose paragraphs become the list's items.</summary>
     public required WordsTarget Target { get; init; }
 
+    /// <summary>Whether the items show bullets or numbers.</summary>
     [ReadBack("read-result.schema.json#/$defs/wordsListData/properties/kind")]
     [AllowedValues("bullet", "number")] public required string Kind { get; init; }
 
@@ -637,15 +700,19 @@ public sealed record SetDefaultFontOp : WordsOp
 [Operation("set_properties")]
 public sealed record SetPropertiesOp : WordsOp
 {
+    /// <summary>The document title.</summary>
     [ReadBack("inspect-result.schema.json#/properties/properties/additionalProperties")]
     public string? Title { get; init; }
 
+    /// <summary>The document author.</summary>
     [ReadBack("inspect-result.schema.json#/properties/properties/additionalProperties")]
     public string? Author { get; init; }
 
+    /// <summary>The document subject.</summary>
     [ReadBack("inspect-result.schema.json#/properties/properties/additionalProperties")]
     public string? Subject { get; init; }
 
+    /// <summary>The document keywords, as one text such as "budget, 2026".</summary>
     [ReadBack("inspect-result.schema.json#/properties/properties/additionalProperties")]
     public string? Keywords { get; init; }
 
@@ -788,12 +855,15 @@ public sealed record RejectRevisionsOp : RevisionDecisionOp;
 [Operation("add_comment")]
 public sealed record AddCommentOp : WordsOp
 {
+    /// <summary>The paragraph block the comment is anchored to.</summary>
     [MistakenFor("at")]
     public required WordsTarget Target { get; init; }
 
+    /// <summary>The comment author's name.</summary>
     [ReadBack("inspect-result.schema.json#/$defs/wordsCommentData/properties/author")]
     [MinLength(1)] public required string Author { get; init; }
 
+    /// <summary>The comment text.</summary>
     [ReadBack("inspect-result.schema.json#/$defs/wordsCommentData/properties/text")]
     public required string Text { get; init; }
 }
@@ -850,6 +920,7 @@ public sealed record MailMergeOp : WordsOp
 [MistakenFor("update_fields")]
 public sealed record RefreshFieldsOp : WordsOp
 {
+    /// <summary>toc refreshes the tables of contents; all refreshes every field and the page layout.</summary>
     [NotState]
     [AllowedValues("all", "toc")] public string What { get; init; } = "all";
 }
