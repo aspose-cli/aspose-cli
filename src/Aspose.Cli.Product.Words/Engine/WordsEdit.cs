@@ -372,6 +372,15 @@ internal static class WordsEdit
         {
             Compare(WordsDiagnostics.FieldCountChanged, "Field count", expected.FieldCount, found.FieldCount, "fields", WordsFormats.WordIds);
         }
+        // Evaluation mode cuts a long document short at its truncation notice, at this save or an earlier one.
+        if (reopened.Evaluation && WordsEvaluation.IsTruncated(reopened.Document))
+        {
+            issues.Add(VerificationIssues.Of(
+                WordsDiagnostics.OutputTruncated,
+                $"Evaluation mode cut the output short: it keeps only its first {reopened.Document.Sections.Count} section(s) and ends with the engine's truncation notice; the content after it is missing.",
+                hint: "Do not deliver this output as complete; apply an Aspose.Words license and run the edit again."));
+        }
+
         Compare(WordsDiagnostics.RevisionCountChanged, "Revision count", expected.RevisionCount, found.RevisionCount, "tracked revisions", WordsFormats.RevisionIds);
         Compare(WordsDiagnostics.ProtectionChanged, "Protection", expected.Protection ?? "none", found.Protection ?? "none", "protection", WordsFormats.WordIds);
 
