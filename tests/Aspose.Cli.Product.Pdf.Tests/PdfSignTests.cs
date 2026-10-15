@@ -147,6 +147,29 @@ public sealed class PdfSignTests
     }
 
     [Fact]
+    public void Sign_RectangleBeyondThePageIsAnInvalidRectOption()
+    {
+        using var fixture = new PdfEngineFixture();
+        string input = fixture.CreateDocument("outside.pdf", pages: 1);
+        string certificate = fixture.CreateCertificate("pw");
+        string output = fixture.File("outside.signed.pdf");
+
+        var exception = Assert.Throws<Sdk.Errors.CliException>(() => PdfSign.Run(fixture.Session, new PdfSignRequest
+        {
+            Input = input,
+            Output = TestOutput.At(output),
+            CertificatePath = certificate,
+            CertificatePassword = new Secret("pw"),
+            Visible = true,
+            Rect = new PdfSignatureRect(36, 900, 180, 60),
+        }));
+
+        Assert.Equal("OPTION_INVALID", exception.Code.Name);
+        Assert.Equal("--rect", exception.Details!["option"]!.GetValue<string>());
+        Assert.False(File.Exists(output));
+    }
+
+    [Fact]
     public void Sign_WrongCertificatePasswordWritesNoOutput()
     {
         using var fixture = new PdfEngineFixture();

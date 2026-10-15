@@ -2100,6 +2100,60 @@ public sealed class PdfMutateTests
         return bytes;
     }
 
+    [Theory]
+    [InlineData("redact_area")]
+    [InlineData("add_hyperlink")]
+    [InlineData("add_stamp_image")]
+    public void Rectangle_BeyondTheVisiblePageIsAnInvalidOperation(string operation)
+    {
+        using var fixture = new PdfEngineFixture();
+        string input = fixture.CreateDocument("plain.pdf", pages: 1);
+        string image = fixture.File("stamp.bmp");
+        File.WriteAllBytes(image, Bitmap(4, 4));
+        var rect = new PdfRectInput { X = 10, Y = 900, Width = 50, Height = 20 };
+        PdfOp op = operation switch
+        {
+            "redact_area" => new RedactAreaOp { Page = 1, Rect = rect },
+            "add_hyperlink" => new AddHyperlinkOp { Page = 1, Rect = rect, Url = "https://example.com" },
+            _ => new AddStampImageOp { Page = 1, Rect = rect, Path = image },
+        };
+
+        CliException error = Assert.Throws<CliException>(() => PdfEdit.Run(fixture.Session, new PdfEditRequest
+        {
+            Input = input,
+            Batch = new PdfOpsBatch { Ops = [op] },
+            Output = TestOutput.At(fixture.File("outside.pdf")),
+        }));
+
+        Assert.Equal(ErrorCodes.OpsInvalid, error.Code);
+        Assert.Equal("op-0001", error.Details!["id"]!.GetValue<string>());
+        Assert.Contains("595 x 842", error.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Search_ReportsRectanglesToTheHundredthOfAPoint()
+    {
+        using var fixture = new PdfEngineFixture();
+        string input = fixture.File("fractional.pdf");
+        using (var document = new Document())
+        {
+            Page page = document.Pages.Add();
+            for (int index = 0; index < 5; index++)
+            {
+                var stamp = new TextStamp($"Total {index}") { XIndent = 72.3 + index * 0.17, YIndent = 347.7 + index * 41.13 };
+                stamp.TextState.FontSize = 11.3f;
+                page.AddStamp(stamp);
+            }
+            document.Save(input);
+        }
+
+        IReadOnlyList<PdfSearchHit> hits = PdfSearch.Run(fixture.Session, Find(input, "Total")).Hits;
+
+        Assert.Equal(5, hits.Count);
+        Assert.All(hits.SelectMany(static hit => new[] { hit.Rect.X, hit.Rect.Y, hit.Rect.Width, hit.Rect.Height }),
+            static value => Assert.Equal(Math.Round(value, 2), value));
+    }
+
     private static PdfSearchRequest Find(string input, string pattern, bool regex = false, int maxHits = 100) => new()
     {
         Input = input,
