@@ -82,10 +82,20 @@ internal static class CellsConvert
             { throw CellsErrors.TextExportEvaluationLimit(request.Output.Format.Id, active.Name, first.Name); }
         }
 
+        if (request.Output.Format.Id is "json")
+        {
+            RefuseHeaderOnlySheets(workbook);
+        }
+
         Warning? chartsSplit = request.Output.Format.Id is "pdf" ? PrintedPages.SplitChartsWarning(workbook, selectedSheets) : null;
         int refsBefore = saver.CountRefFormulas(workbook);
         WorkbookSavePlan savePlan = WorkbookSavePlan.Create(request.Output.Format, licenseState,
             request.EncryptPassword, loaded.IsEncrypted ? request.Password : null, selectedSheets, request.ByteOrderMark);
+        if (request.Output.Format.Id is "json")
+        {
+            savePlan = savePlan with { Options = JsonOptions(workbook) };
+        }
+
         loaded.RestoreActiveSheet(savePlan);
         Warning? sheetsDropped = savePlan.DetectSheetLoss(workbook);
         PublishedFile written = saver.Write(request.Output.Path, request.Output.Overwrite, workbook, singleSheet: selectedSheets is not null,
@@ -110,5 +120,37 @@ internal static class CellsConvert
                     : "Pass --sheets with the sheet's position from inspect to convert another sheet."), sheetsDropped, dataTruncated, formulasBroken, chartsSplit,
                 .. textLayout]),
         };
+    }
+
+    /// <summary>
+    /// The JSON export of the workbook's own sheets: an evaluation warning sheet, whose one row
+    /// the engine would write as invalid JSON (CELLS-JSON-HEADER-ONLY), is no data of the
+    /// workbook and is left out.
+    /// </summary>
+    private static JsonSaveOptions JsonOptions(Workbook workbook)
+    {
+        int[] own = [.. workbook.Worksheets.Cast<Worksheet>().Where(static sheet => !CellsEvaluation.IsWarningSheet(sheet)).Select(static sheet => sheet.Index)];
+        return own.Length == 0 || own.Length == workbook.Worksheets.Count ? new JsonSaveOptions() : new JsonSaveOptions { SheetIndexes = own };
+    }
+
+    /// <summary>
+    /// Refuses a JSON export of a workbook with a sheet whose data is one row, which the engine
+    /// takes for a header and writes as invalid JSON (CELLS-JSON-HEADER-ONLY).
+    /// </summary>
+    private static void RefuseHeaderOnlySheets(Workbook workbook)
+    {
+        string[] headerOnly =
+        [
+            .. workbook.Worksheets.Cast<Worksheet>()
+                .Where(static sheet => !CellsEvaluation.IsWarningSheet(sheet)
+                    && sheet.Cells.MaxDataRow >= 0 && sheet.Cells.MinDataRow == sheet.Cells.MaxDataRow)
+                .Select(static sheet => sheet.Name),
+        ];
+        if (headerOnly.Length > 0)
+        {
+            throw CliErrors.EngineDefect(
+                $"Aspose.Cells writes invalid JSON for a sheet whose data is a single header row, as in {string.Join(", ", headerOnly.Select(static name => $"'{name}'"))}; nothing was written.",
+                "Add at least one data row below the header, delete the sheet, or convert to csv, which writes the header alone.");
+        }
     }
 }

@@ -52,11 +52,8 @@ internal sealed class CellsEvaluationProfile : IEvaluationProfile<Workbook>
     {
         "csv" or "tsv" => Notice(workbook, $"as the last row of the {format} output, after the data"),
         "md" => Notice(workbook, "as a heading after the table in the md output"),
-        "json" => new EvaluationMarks(
-            [
-                .. Notice(workbook, "in the json output, as a {\"watermark\": ...} record after the records of each sheet that has data rows").Marks,
-                .. WarningSheets(workbook, visibleOnly: false).Select(static sheet => $"the json entry of the evaluation warning sheet '{sheet.Name}'"),
-            ]),
+        // The json export leaves the evaluation warning sheets out (CellsConvert.JsonOptions).
+        "json" => Notice(workbook, "in the json output, as a {\"watermark\": ...} record after the records of each sheet that has data rows"),
         "pdf" or "xps" or "html" or "mhtml" or "png" or "jpeg" or "bmp" or "gif" or "tiff" or "svg" or "emf" =>
             new([.. WarningSheets(workbook, visibleOnly: true).Select(static sheet =>
                 $"the pages of the evaluation warning sheet '{sheet.Name}', which hold only the notice '{CellsEvaluation.Notice}...'")]),

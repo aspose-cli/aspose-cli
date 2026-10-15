@@ -354,8 +354,21 @@ public sealed class CellsCliTests : IDisposable
             Warning(result, "SHEETS_DROPPED")["message"]!.GetValue<string>(), StringComparison.Ordinal);
         Assert.StartsWith("Evaluation Only.", File.ReadAllLines(_workspace.File("first.csv"))[^1], StringComparison.Ordinal);
         Assert.Contains("as the last row of the csv output", Warning(result, "EVALUATION_MODE")["message"]!.GetValue<string>(), StringComparison.Ordinal);
-        CliResult json = _workspace.Run("cells", "convert", "book.xlsx", "--to", "json", "--out", "book.json", "--output-format", "json");
-        Assert.Contains("\"Evaluation Warning\"", File.ReadAllText(_workspace.File("book.json")), StringComparison.Ordinal);
+        // A json export leaves the evaluation warning sheets out and writes valid JSON with the
+        // notice as a record; sheets of one row the engine would write as invalid JSON are refused.
+        CliResult headerOnly = _workspace.Run("cells", "convert", "book.xlsx", "--to", "json", "--out", "book.json", "--output-format", "json");
+        Assert.Equal("engine-defect", JsonNode.Parse(headerOnly.StdErr)!["error"]!["details"]!["reason"]!.GetValue<string>());
+        Assert.False(File.Exists(_workspace.File("book.json")));
+        Assert.Equal(0, _workspace.Run("cells", "edit", "book.xlsx", "--out", "rows.xlsx",
+            "--set", "Dashboard!A2=1", "--set", "Detail!A2=SO-002").ExitCode);
+        CliResult json = _workspace.Run("cells", "convert", "rows.xlsx", "--to", "json", "--out", "rows.json", "--output-format", "json");
+        Assert.True(json.ExitCode == 0, json.StdErr);
+        string written = File.ReadAllText(_workspace.File("rows.json"));
+        using (System.Text.Json.JsonDocument.Parse(written))
+        {
+        }
+
+        Assert.DoesNotContain("\"Evaluation Warning\"", written, StringComparison.Ordinal);
         Assert.Contains("\"watermark\"", Warning(json.Json(), "EVALUATION_MODE")["message"]!.GetValue<string>(), StringComparison.Ordinal);
         CliResult edited = _workspace.Run("cells", "edit", "book.xlsx", "--out", "edited.tsv", "--set", "Dashboard!B1=1", "--output-format", "json");
         Assert.StartsWith("Evaluation Only.", File.ReadAllLines(_workspace.File("edited.tsv"))[^1], StringComparison.Ordinal);

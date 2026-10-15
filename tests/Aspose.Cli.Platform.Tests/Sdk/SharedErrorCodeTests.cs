@@ -46,6 +46,7 @@ public sealed class SharedErrorCodeTests
             (CliErrors.ResourceRefused("The input names a network address.", "Embed it."), "resource-refused"),
             (CliErrors.ContentUnsupported("The table is too large.", "Split it."), "content-too-large"),
             (CliErrors.EnvironmentUnsupported("The font registry is unreadable.", "Repair it."), "environment"),
+            (CliErrors.EngineDefect("The engine writes invalid JSON.", "Add a data row."), "engine-defect"),
         ];
 
         Assert.All(cases, static item =>
