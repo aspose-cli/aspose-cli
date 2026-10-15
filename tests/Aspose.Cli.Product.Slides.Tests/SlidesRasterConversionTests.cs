@@ -95,6 +95,28 @@ public sealed class SlidesRasterConversionTests(SlidesRasterConversionTests.Crea
         Assert.Equal(["deck.pptx"], Directory.GetFileSystemEntries(workspace.Path).Select(Path.GetFileName));
     }
 
+    [Fact]
+    public void Render_RefusesWidthTogetherWithDpiAsAnInvalidWidth()
+    {
+        using var fixture = new SlidesEngineFixture();
+        string input = fixture.CreatePresentation(slides: 1);
+        using var workspace = new TempWorkspace();
+        File.Copy(input, workspace.File("deck.pptx"));
+
+        CliResult refused = workspace.Run(
+            "slides", "render", "deck.pptx", "--dpi", "96", "--width", "640", "--out", "slide.png", "--output-format", "json");
+
+        Assert.Equal(2, refused.ExitCode);
+        JsonNode error = JsonNode.Parse(refused.StdErr)!["error"]!;
+        Assert.Equal("OPTION_INVALID", error["code"]!.GetValue<string>());
+        Assert.Equal("--width", error["details"]!["option"]!.GetValue<string>());
+        Assert.Contains("cannot be combined with --dpi", error["message"]!.GetValue<string>(), StringComparison.Ordinal);
+        Assert.Equal(
+            "Drop --dpi to render at an exact pixel width, or drop --width to render at a DPI.",
+            error["hint"]!.GetValue<string>());
+        Assert.Equal(["deck.pptx"], Directory.GetFileSystemEntries(workspace.Path).Select(Path.GetFileName));
+    }
+
     [Theory]
     [InlineData("png", false)]
     [InlineData("jpeg", false)]
