@@ -83,7 +83,10 @@ internal sealed record TreeArgument(JsonNode Node)
 /// <summary>The command tree of the capabilities document, read once per catalog.</summary>
 internal static partial class CommandTree
 {
-    /// <summary>The product verbs of C-R02, each with one meaning.</summary>
+    /// <summary>
+    /// The product verbs of C-R02, each with one meaning; C-R38 reads one after a product id as
+    /// the start of a command path.
+    /// </summary>
     public static readonly string[] ProductVerbs =
         ["inspect", "read", "search", "create", "edit", "convert", "render", "compare", "extract", "split", "merge", "sign", "validate"];
 
