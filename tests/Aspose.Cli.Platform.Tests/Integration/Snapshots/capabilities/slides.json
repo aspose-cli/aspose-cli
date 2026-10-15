@@ -37,7 +37,7 @@
         "command": "edit",
         "inputSchema": "v2/slides/ops",
         "operationSchema": "aspose-cli schema v2/slides/ops --operation <op>",
-        "contractFingerprint": "sha256:fecaac565bf5287660d5e628720570afdba1833bf867c8fab2a3004da33db90d",
+        "contractFingerprint": "sha256:d21db0c1140ef2a314f267b1d43500a470d16c86890037e4b2650fc51fdd1696",
         "maximumOperationCount": 10000,
         "ops": [
           "copy_slide",
@@ -5106,7 +5106,7 @@
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/slides/read-result.schema.json#/$defs/slidesShapeData/properties/line"
             },
             "font": {
-              "description": "A font name for Latin, East Asian and complex-script text.",
+              "description": "A font name for complex-script text, and for Latin and East Asian text where latinFont and eastAsianFont do not name another.",
               "type": "string",
               "pattern": "^[^+]",
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/slides/read-result.schema.json#/$defs/slidesTextRunData/properties/font"
@@ -5702,6 +5702,10 @@
             },
             "eastAsianFont": {
               "description": "The font of the run's Chinese, Japanese and Korean text.",
+              "type": "string"
+            },
+            "complexScriptFont": {
+              "description": "The font of the run's complex-script text, such as Arabic, Hebrew or Thai.",
               "type": "string"
             },
             "fontSize": {

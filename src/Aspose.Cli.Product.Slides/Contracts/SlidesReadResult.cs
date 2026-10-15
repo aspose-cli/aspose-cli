@@ -200,6 +200,9 @@ public sealed record SlidesTextRunData
     /// <summary>The font of the run's Chinese, Japanese and Korean text.</summary>
     public string? EastAsianFont { get; init; }
 
+    /// <summary>The font of the run's complex-script text, such as Arabic, Hebrew or Thai.</summary>
+    public string? ComplexScriptFont { get; init; }
+
     /// <summary>The font size in points.</summary>
     public double? FontSize { get; init; }
 

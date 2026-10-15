@@ -191,7 +191,10 @@ internal static class OperationSamples
         new("slides", """{"op":"set_notes","slide":1,"text":"Notes"}"""),
         new("slides", """{"op":"set_properties","title":"Edited","author":"Tester","subject":"Subj","keywords":"Keys","company":"Corp"}"""),
         new("slides", """{"op":"set_shape_bounds","slide":2,"shapeId":3,"x":50,"y":60,"width":600,"height":200}"""),
-        new("slides", """{"op":"format_shape","slide":2,"shapeId":3,"style":{"fillColor":"#FF0000","line":"#00FF00","bold":true,"color":"#123456","eastAsianFont":"SimSun","font":"Arial","latinFont":"Arial","fontSize":22}}"""),
+        // font reaches Latin text only where latinFont names no other font, so it is written apart
+        // from latinFont; SlidesShapeStyleTests pins what font changes beside both of the others.
+        new("slides", """{"op":"format_shape","slide":2,"shapeId":3,"style":{"fillColor":"#FF0000","line":"#00FF00","bold":true,"color":"#123456","eastAsianFont":"SimSun","font":"Arial","fontSize":22}}"""),
+        new("slides", """{"op":"format_shape","slide":2,"shapeId":3,"style":{"latinFont":"Arial"}}""", Label: "with a Latin font of its own"),
         new("slides", """{"op":"set_slide_hidden","slides":"2","hidden":true}"""),
         new("slides", """{"op":"set_slide_size","slideSize":{"preset":"4x3"}}"""),
         new("slides", """{"op":"set_table_cell","slide":2,"shapeId":4,"row":1,"column":1,"text":"X"}""", Setup: """[{"op":"insert_table","slide":2,"rect":{"x":72,"y":72,"width":144,"height":72},"rowCount":2,"columnCount":2}]""", Shape: "table"),
