@@ -48,6 +48,14 @@ public sealed class OperationContractTests
     public void Pattern_UsesEcma262WhiteSpaceAndLineTerminators(string pattern, string value, bool matches) =>
         Assert.Equal(matches, new PatternAttribute(pattern).Check(value) is null);
 
+    /// <summary>A pattern whose meaning is plain from its form states it without being told.</summary>
+    [Theory]
+    [InlineData(@"\S", " ", @"must not be blank (pattern \S)")]
+    [InlineData("^[^,\"]+$", "a,b", "must not be empty or contain a comma or double quote (pattern ^[^,\"]+$)")]
+    [InlineData("^[^/]*$", "a/b", "must not contain a slash (pattern ^[^/]*$)")]
+    public void Pattern_StatesTheMeaningOfAPlainForm(string pattern, string value, string reason) =>
+        Assert.Equal(reason, new PatternAttribute(pattern).Check(value));
+
     /// <summary>A pattern with a meaning explains a rejection in its own words; the schema still states only the pattern.</summary>
     [Fact]
     public void Pattern_StatesItsMeaningWhenItRejects()
@@ -143,7 +151,7 @@ public sealed class OperationContractTests
     [InlineData("""{"op":"place","pages":"1","path":null}""", "path must not be null")]
     [InlineData("""{"op":"note","text":""}""", "text must not be empty")]
     [InlineData("""{"op":"note"}""", "the operation must set at least one of: text, pinned")]
-    [InlineData("""{"op":"place","pages":"0","all":true}""", "pages must be a 1-based page range such as 1-3,7,9-: '0' is not a positive 1-based number")]
+    [InlineData("""{"op":"place","pages":"0","all":true}""", "pages must be a 1-based range list such as 1-3,7,9-: '0' is not a positive 1-based number")]
     [InlineData("""{"op":"link","path":" "}""", "path must not be blank")]
     [InlineData("""{"op":"shift"}""", "the operation must set to when mode is absolute")]
     [InlineData("""{"op":"shift","mode":"relative"}""", "the operation must set by when mode is relative")]

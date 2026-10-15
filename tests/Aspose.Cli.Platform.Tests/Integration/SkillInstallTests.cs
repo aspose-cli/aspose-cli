@@ -277,6 +277,18 @@ public sealed class SkillInstallTests : IDisposable
         Assert.False(Directory.Exists(_workspace.File("installed")));
     }
 
+    [Fact]
+    public void Install_RefusesADirectoryForTheUsersOwnSkills()
+    {
+        CliResult result = _workspace.Run(
+            "skill", "install", FirstSkill(), "--host", "codex", "--user", "--dir", "project", "--dry-run", "--output-format", "json");
+
+        Assert.Equal(2, result.ExitCode);
+        JsonNode error = Parse(result.StdErr)["error"]!;
+        Assert.Equal("OPTION_INVALID", error["code"]!.GetValue<string>());
+        Assert.Equal("--dir", error["details"]!["option"]!.GetValue<string>());
+    }
+
     private string FirstSkill()
     {
         CliResult result = _workspace.Run("skill", "list", "--output-format", "json");

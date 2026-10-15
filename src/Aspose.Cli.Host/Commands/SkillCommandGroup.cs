@@ -100,6 +100,12 @@ internal static class SkillCommandGroup
                 throw CliErrors.OptionInvalid("--target", "cannot be combined with --host", "Use the host convention or an explicit target, not both.");
             }
 
+            // --dir names the project and --user the user's own directory, so they never apply together.
+            if (parseResult.GetValue(userOption) && parseResult.GetValue(dirOption) is not null)
+            {
+                throw CliErrors.OptionInvalid("--dir", "cannot be combined with --user", "Drop --dir to install for the current user, or drop --user to install into the project at --dir.");
+            }
+
             string parent = explicitTarget is not null
                 ? context.Paths.ResolveOutput(explicitTarget)
                 : ResolveHostParent(

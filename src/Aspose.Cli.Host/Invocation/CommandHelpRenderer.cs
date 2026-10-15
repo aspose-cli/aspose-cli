@@ -179,8 +179,8 @@ internal static class CommandHelpRenderer
     /// The stock layout spells every accepted value into the option label, and the widest label
     /// sets the column for every row. For the duration of one help rendering, an option whose
     /// values exceed <see cref="MaximumLabelValuesLength"/> is labeled by its name and lists the
-    /// values in its description, or points to <c>capabilities</c> when they are too many.
-    /// Capabilities read the unchanged option. Each change adds its undo to
+    /// values in its description, unless the description names each already, or points to
+    /// <c>capabilities</c> when they are too many. Capabilities read the unchanged option. Each change adds its undo to
     /// <paramref name="restore"/> as it is made, so a failure part way is undone too.
     /// </summary>
     private static void MoveLongValueListsToDescriptions(CommandResult commandResult, List<Action> restore)
@@ -201,13 +201,35 @@ internal static class CommandHelpRenderer
                 ? $"Values: {listed}."
                 : $"Accepts {values.Count} values, listed in aspose-cli capabilities.";
             option.HelpName = option.Name.TrimStart('-');
-            option.Description = string.IsNullOrEmpty(description) ? summary : description + " " + summary;
+            // A description that already names every value, such as one that explains each, is not repeated.
+            option.Description = string.IsNullOrEmpty(description) ? summary
+                : values.All(value => Names(description, value)) ? description
+                : description + " " + summary;
             restore.Add(() =>
             {
                 option.HelpName = null;
                 option.Description = description;
             });
         }
+    }
+
+    /// <summary>Whether <paramref name="description"/> names <paramref name="value"/> as a word of its own, not inside another value such as <c>xlsx</c> in <c>xlsxm</c>.</summary>
+    private static bool Names(string description, string value)
+    {
+        for (int at = description.IndexOf(value, StringComparison.Ordinal); at >= 0;
+            at = description.IndexOf(value, at + 1, StringComparison.Ordinal))
+        {
+            int end = at + value.Length;
+            if ((at == 0 || !IsValueCharacter(description[at - 1]))
+                && (end == description.Length || !IsValueCharacter(description[end])))
+            {
+                return true;
+            }
+        }
+
+        return false;
+
+        static bool IsValueCharacter(char character) => char.IsAsciiLetterOrDigit(character) || character is '-' or '_';
     }
 
     /// <summary>The options help shows for a command: its own, then its ancestors' recursive ones.</summary>

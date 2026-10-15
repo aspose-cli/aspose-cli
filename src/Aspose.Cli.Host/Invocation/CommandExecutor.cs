@@ -1,6 +1,9 @@
 using System.CommandLine;
 using System.CommandLine.Parsing;
 using System.Diagnostics;
+using System.Text;
+using System.Text.Encodings.Web;
+using System.Text.Json;
 using Aspose.Cli.Host.Output;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Errors;
@@ -112,10 +115,16 @@ internal sealed class CommandExecutor
         }
     }
 
+    /// <summary>
+    /// Runs a command that prints a raw document rather than an envelope. A JSON document
+    /// prints on one line with <c>--output-format compact</c>, as an envelope does, and
+    /// indented otherwise.
+    /// </summary>
     public int RunRaw(
         ParseResult parseResult,
         GlobalOptions globalOptions,
-        Func<string> handler)
+        Func<string> handler,
+        bool json = false)
     {
         ArgumentNullException.ThrowIfNull(handler);
         return Execute(
@@ -127,9 +136,27 @@ internal sealed class CommandExecutor
             {
                 scope.Deadline.ThrowIfExpired("raw-start");
                 string result = handler();
+                if (json && scope.Globals.OutputFormat == OutputMode.Compact)
+                {
+                    result = Compact(result);
+                }
+
                 scope.Deadline.ThrowIfExpired("raw-complete");
                 return scope.Complete(() => Console.Out.WriteLine(result));
             });
+    }
+
+    /// <summary>A JSON document on one line, with the same values and the same characters unescaped.</summary>
+    private static string Compact(string document)
+    {
+        using JsonDocument parsed = JsonDocument.Parse(document);
+        using var buffer = new MemoryStream();
+        using (var writer = new Utf8JsonWriter(buffer, new JsonWriterOptions { Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping }))
+        {
+            parsed.WriteTo(writer);
+        }
+
+        return Encoding.UTF8.GetString(buffer.ToArray());
     }
 
     public int RunHosted(

@@ -28,6 +28,21 @@ public sealed class LicenseManagementTests
             product => Assert.Equal("evaluation", product!["mode"]!.GetValue<string>()));
     }
 
+    [Fact]
+    public void InstallOfAFileThatIsNoLicense_StatesTheReasonOnce()
+    {
+        using var workspace = new TempWorkspace();
+        File.WriteAllText(workspace.File("bad.lic"), "not a license");
+
+        CliResult result = workspace.Run("license", "install", "bad.lic", "--output-format", "json");
+
+        JsonNode error = JsonNode.Parse(result.StdErr)!["error"]!;
+        Assert.Equal("LICENSE_INVALID", error["code"]!.GetValue<string>());
+        string message = error["message"]!.GetValue<string>();
+        Assert.StartsWith("The license configured via file was rejected: it is not an Aspose license", message, StringComparison.Ordinal);
+        Assert.Equal(2, message.Split("was rejected").Length);
+    }
+
     [Theory]
     [InlineData("")]
     [InlineData(" ")]

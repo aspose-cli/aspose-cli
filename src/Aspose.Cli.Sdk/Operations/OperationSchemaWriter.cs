@@ -238,7 +238,7 @@ internal sealed class OperationSchemaWriter
         Value(schema, property.Value, PlacedConstraint.Declared(property.Constraints), path);
         if (property.Required && property.Value.Nullable)
         {
-            schema = AllowNull(schema);
+            schema = SchemaNull.Allow(schema);
         }
 
         if (property.Default is not null)
@@ -288,7 +288,7 @@ internal sealed class OperationSchemaWriter
             var item = new JsonObject();
             Value(item, value.Items!, items, path + "[]");
             schema[value.Kind == OperationValueKind.Array ? "items" : "additionalProperties"] =
-                value.Items!.Nullable ? AllowNull(item) : item;
+                value.Items!.Nullable ? SchemaNull.Allow(item) : item;
         }
     }
 
@@ -325,24 +325,6 @@ internal sealed class OperationSchemaWriter
 
         _shared[name] = definition;
         return name;
-    }
-
-    private static JsonObject AllowNull(JsonObject schema)
-    {
-        if (schema["type"] is JsonValue type)
-        {
-            schema["type"] = new JsonArray(type.GetValue<string>(), "null");
-            if (schema["enum"] is JsonArray values)
-            {
-                values.Add(null);
-            }
-
-            return schema;
-        }
-
-        return schema.ContainsKey("$ref")
-            ? new JsonObject { ["anyOf"] = new JsonArray(schema, new JsonObject { ["type"] = "null" }) }
-            : schema;
     }
 
     private static string? TypeName(OperationValueKind kind) => kind switch

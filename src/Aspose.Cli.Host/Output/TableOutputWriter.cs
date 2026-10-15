@@ -136,10 +136,15 @@ internal sealed class TableOutputWriter : IOutputWriter
             return;
         }
 
+        TextWriter output = _error ?? Console.Error;
         foreach (Warning warning in warnings)
         {
-            (_error ?? Console.Error).WriteLine(
-                $"warning {warning.Code}: {warning.Message}");
+            output.WriteLine($"warning {warning.Code}: {warning.Message}");
+            // A warning's hint is its next step, as an error's is.
+            if (warning.Hint is { } hint)
+            {
+                output.WriteLine($"  hint: {hint}");
+            }
         }
     }
 }

@@ -52,13 +52,16 @@ public abstract class ValueKindAttribute(string expected, string pattern, string
     protected abstract void Parse(string value);
 }
 
-/// <summary>A 1-based page range such as <c>1-3,7,9-</c>, the grammar of every page selection.</summary>
+/// <summary>
+/// A 1-based range list such as <c>1-3,7,9-</c>, the grammar of every selection of numbered
+/// parts: pages, slides or blocks, so its words name none of them.
+/// </summary>
 [AttributeUsage(AttributeTargets.Property)]
 public sealed class PageRangeAttribute() : ValueKindAttribute(
-    "must be a 1-based page range such as 1-3,7,9-",
+    "must be a 1-based range list such as 1-3,7,9-",
     @"^\s*0*[1-9][0-9]*(-(0*[1-9][0-9]*)?)?(\s*,\s*0*[1-9][0-9]*(-(0*[1-9][0-9]*)?)?)*\s*$",
     "pages",
-    "1-based pages and ranges separated by commas, such as 1-3,7,9-; a range with no end runs to the last page, and a range must not end before it starts.")
+    "1-based numbers and ranges separated by commas, such as 1-3,7,9-; a range with no end runs to the last one, and a range must not end before it starts.")
 {
     /// <inheritdoc />
     protected override void Parse(string value) => _ = Addressing.PageRange.Parse(value);

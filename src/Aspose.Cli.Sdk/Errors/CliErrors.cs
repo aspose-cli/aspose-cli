@@ -805,7 +805,8 @@ public static partial class CliErrors
     /// <summary>
     /// Restates a product's <c>FILE_CORRUPT</c> about a file whose content has the format of
     /// other products, such as a Word document renamed to <c>.pdf</c>, as the mismatch generic
-    /// routing reports for the same file. The product's message and details stay.
+    /// routing reports for the same file, with the same message. The product's details stay, so
+    /// <c>details.reason</c> still says why the product could not read it.
     /// </summary>
     /// <param name="corrupt">The product's <c>FILE_CORRUPT</c>.</param>
     /// <param name="path">The file, when the details do not name it already.</param>
@@ -829,9 +830,11 @@ public static partial class CliErrors
         details["path"] ??= path;
         details["declared"] = declaredProduct;
         details["detected"] = Strings(detectedProducts);
+        string file = details["path"]!.GetValue<string>();
         return CliException.Create(
             ErrorCodes.FormatMismatch,
-            corrupt.Message,
+            $"'{Path.GetFileName(file)}' has the {Path.GetExtension(file)} extension of a {declaredProduct} document, "
+                + $"but its content looks like {LooksLike(detectedProducts)}.",
             hint: hint,
             details: details,
             docs: corrupt.Docs,
@@ -872,14 +875,21 @@ public static partial class CliErrors
         var available = new JsonArray(
             candidates.Select(static value => JsonValue.Create(value)).ToArray());
         string file = Path.GetFileName(path);
-        string message = declaredProduct is null
-            ? $"The content of '{file}' does not show which product reads it."
-            : $"'{file}' has the {Path.GetExtension(path)} extension of a {declaredProduct} document, "
-                + "but its content does not look like one.";
+        // The message states what details.detected does, as the product's own mismatch does.
+        string message = (declaredProduct, detectedProducts.Count) switch
+        {
+            (null, _) => $"The content of '{file}' does not show which product reads it.",
+            (_, 0) => $"'{file}' has the {Path.GetExtension(path)} extension of a {declaredProduct} document, "
+                + "but its content does not look like one.",
+            _ => $"'{file}' has the {Path.GetExtension(path)} extension of a {declaredProduct} document, "
+                + $"but its content looks like {LooksLike(detectedProducts)}.",
+        };
         string hint = detectedProducts.Count == 0
             ? "Check what the file really is, or select its product explicitly: --product <id> where the command "
                 + "offers it, or that product's commands. The product is never chosen from the extension alone."
-            : $"The content looks like {LooksLike(detectedProducts)}. " + ProductChoiceHint(detectedProducts);
+            : declaredProduct is null
+                ? $"The content looks like {LooksLike(detectedProducts)}. " + ProductChoiceHint(detectedProducts)
+                : ProductChoiceHint(detectedProducts);
         return CliException.Create(
             ErrorCodes.FormatMismatch,
             message,
@@ -958,10 +968,16 @@ public static partial class CliErrors
     /// </summary>
     /// <param name="option">The option, such as <c>--password-env</c>.</param>
     /// <param name="variable">The variable it names.</param>
-    public static CliException SecretMissing(string option, string variable) => CliException.Create(
+    /// <param name="standardInputOption">
+    /// The option that reads the same secret from standard input, such as
+    /// <c>--password-stdin</c>, which the hint offers as the other source; null when there is none.
+    /// </param>
+    public static CliException SecretMissing(string option, string variable, string? standardInputOption = null) => CliException.Create(
         ErrorCodes.OptionInvalid,
         $"Invalid use of {option}: {SecretMissingReason(variable)}",
-        hint: SecretMissingHint(variable),
+        hint: standardInputOption is null
+            ? SecretMissingHint(variable)
+            : $"Set {variable} to the secret and run the command again, or pass the secret as the first line of standard input with {standardInputOption} instead of {option}.",
         details: new JsonObject { ["option"] = option, ["variable"] = variable });
 
     /// <summary>The reason of a <see cref="SecretMissing"/> mistake.</summary>
@@ -1218,7 +1234,7 @@ public static partial class CliErrors
 
         return CliException.Create(
             code,
-            $"No {subject} '{requested}' was found; {count} exist.",
+            count == 1 ? $"No {subject} '{requested}' was found; 1 exists." : $"No {subject} '{requested}' was found; {count} exist.",
             hint ?? (count == 0 ? $"The document has no {subject} to select." : $"Use a {subject} from 1 through {count}."),
             new JsonObject
             {
