@@ -128,6 +128,34 @@ public sealed class SkillInstallTests : IDisposable
     }
 
     [Fact]
+    public void Install_CreatesNothingButTheSkillInTheSkillsRoot()
+    {
+        string skill = FirstSkill();
+        string root = _workspace.File("skills-root");
+        Assert.Equal(0, _workspace.Run("skill", "install", skill, "--target", "skills-root").ExitCode);
+        var created = new System.Collections.Concurrent.ConcurrentQueue<string>();
+        using var watcher = new FileSystemWatcher(root)
+        {
+            NotifyFilter = NotifyFilters.DirectoryName,
+            IncludeSubdirectories = false,
+        };
+        watcher.Created += (_, e) => created.Enqueue(e.Name!);
+        watcher.Renamed += (_, e) => created.Enqueue(e.Name!);
+        watcher.EnableRaisingEvents = true;
+
+        // A host loads every directory under its Skills root, so a stage or a backup of the
+        // replaced Skill there reads as a duplicate Skill while the install runs or after a crash.
+        CliResult replaced = _workspace.Run("skill", "install", skill, "--target", "skills-root");
+
+        Assert.True(replaced.ExitCode == 0, replaced.StdErr);
+        // The published Skill is the last directory the install creates in the root.
+        DateTime until = DateTime.UtcNow.AddSeconds(30);
+        while (!created.Contains(skill) && DateTime.UtcNow < until) { Thread.Sleep(25); }
+        Assert.Equal([skill], created.Distinct());
+        Assert.Equal([skill], Directory.GetDirectories(root).Select(Path.GetFileName));
+    }
+
+    [Fact]
     public void Install_WritesOwnershipAndRefusesAnUnrecognizedManifestWithoutOverwritingIt()
     {
         string skill = FirstSkill();
