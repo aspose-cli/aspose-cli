@@ -29,5 +29,5 @@ public static class OperationImages
         ImageInput.Read(inputs, path, refuseNetworkReferences, Invalid);
 
     private static Exception Invalid(string path, string reason) =>
-        new OperationInvalidException($"image '{path}' is not a valid image: {reason}", ImageInput.Hint);
+        new OperationInvalidException($"image '{path}' is not a valid image: {reason}", ImageInput.Hint) { Path = path };
 }

@@ -35,6 +35,20 @@ public sealed class OperationInputFileTests : IDisposable
         Assert.False(File.Exists(_workspace.File("b.docx")));
     }
 
+    /// <summary>A file that is not an intact image names its path, as a missing one does.</summary>
+    [Fact]
+    public void ABrokenImage_NamesItsPath()
+    {
+        File.WriteAllText(_workspace.File("missing.png"), "not an image");
+
+        CliResult result = _workspace.Run("words", "edit", "a.docx", "--ops", "ops.json", "--out", "b.docx", "--output-format", "json");
+
+        JsonNode error = JsonNode.Parse(result.StdErr)!["error"]!;
+        Assert.Equal("OPS_INVALID", error["code"]!.GetValue<string>());
+        Assert.Equal("op-0002", error["details"]!["id"]!.GetValue<string>());
+        Assert.Equal(_workspace.File("missing.png"), error["details"]!["path"]!.GetValue<string>());
+    }
+
     [Fact]
     public void AMissingImage_WithBestEffort_KeepsTheOtherOperations()
     {

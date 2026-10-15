@@ -24,6 +24,9 @@ public sealed class OperationInvalidException : Exception
     /// <summary>A value that names none of the values it may take, with the closest ones; null otherwise.</summary>
     public Mistake? Mistake { get; }
 
+    /// <summary>The file the operation reads that the rejection is about, stated in <c>details.path</c>; null for none.</summary>
+    public string? Path { get; init; }
+
     /// <summary>Throws a rejection unless <paramref name="condition"/> holds.</summary>
     public static void Require(bool condition, string reason, string? hint = null)
     {
