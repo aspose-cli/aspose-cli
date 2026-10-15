@@ -210,6 +210,48 @@ internal static class WordsReadBack
             : name;
 
     /// <summary>A color as #RRGGBB, or null for an automatic or empty one.</summary>
+    /// <summary>The colors of Word's highlight palette by their names (<see cref="WordsHighlightColors"/>).</summary>
+    private static readonly (string Name, int Rgb)[] HighlightPalette =
+    [
+        (WordsHighlightColors.Yellow, 0xFFFF00),
+        (WordsHighlightColors.Green, 0x00FF00),
+        (WordsHighlightColors.Cyan, 0x00FFFF),
+        (WordsHighlightColors.Magenta, 0xFF00FF),
+        (WordsHighlightColors.Blue, 0x0000FF),
+        (WordsHighlightColors.Red, 0xFF0000),
+        (WordsHighlightColors.DarkBlue, 0x000080),
+        (WordsHighlightColors.DarkCyan, 0x008080),
+        (WordsHighlightColors.DarkGreen, 0x008000),
+        (WordsHighlightColors.DarkMagenta, 0x800080),
+        (WordsHighlightColors.DarkRed, 0x800000),
+        (WordsHighlightColors.DarkYellow, 0x808000),
+        (WordsHighlightColors.DarkGray, 0x808080),
+        (WordsHighlightColors.LightGray, 0xC0C0C0),
+        (WordsHighlightColors.Black, 0x000000),
+        (WordsHighlightColors.White, 0xFFFFFF),
+    ];
+
+    /// <summary>The color of a highlight palette name.</summary>
+    internal static System.Drawing.Color HighlightColor(string name) =>
+        System.Drawing.Color.FromArgb(unchecked((int)0xFF000000) | HighlightPalette.Single(entry => entry.Name == name).Rgb);
+
+    /// <summary>
+    /// The palette name of a run's highlight, or null without one. Word stores only palette
+    /// colors; a color another format brought in reads as the palette color nearest to it, as a
+    /// Word save stores it.
+    /// </summary>
+    internal static string? HighlightName(System.Drawing.Color color) =>
+        color.IsEmpty || color.A == 0 ? null : NearestHighlight(color.ToArgb() & 0xffffff);
+
+    /// <summary>The palette name nearest to an RGB color.</summary>
+    internal static string NearestHighlight(int rgb) => HighlightPalette.MinBy(entry =>
+    {
+        int red = ((entry.Rgb >> 16) & 0xff) - ((rgb >> 16) & 0xff);
+        int green = ((entry.Rgb >> 8) & 0xff) - ((rgb >> 8) & 0xff);
+        int blue = (entry.Rgb & 0xff) - (rgb & 0xff);
+        return (red * red) + (green * green) + (blue * blue);
+    }).Name;
+
     internal static string? Hex(System.Drawing.Color color) =>
         color.IsEmpty || color.A == 0 ? null : $"#{color.ToArgb() & 0xffffff:X6}";
 }

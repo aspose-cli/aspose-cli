@@ -1,3 +1,4 @@
+using Aspose.Cli.Product.Words.Engine.Mapping;
 using Aspose.Words;
 
 using static Aspose.Cli.Product.Words.Engine.Editing.WordsMutationSupport;
@@ -40,7 +41,7 @@ internal sealed partial class WordsMutationHandlers
 
             if (operation.Highlight is not null)
             {
-                run.Font.HighlightColor = ParseColor(operation.Highlight);
+                run.Font.HighlightColor = WordsReadBack.HighlightColor(operation.Highlight);
             }
 
             count++;

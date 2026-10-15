@@ -170,7 +170,7 @@ internal static class WordsOperationSample
                 Font = "Arial",
                 LatinFont = "Calibri",
                 EastAsianFont = "SimSun",
-                Highlight = "#FFFF00",
+                Highlight = "yellow",
             },
             new SetStyleOp
             {

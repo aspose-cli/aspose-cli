@@ -84,6 +84,18 @@ internal static partial class ContractRules
         ["words set_default_font font"] = new(RoundTripPart.OneChange, LatinFont),
     };
 
+    /// <summary>
+    /// The reads an operation changes only through the objects it changes, by
+    /// <c>&lt;product&gt; &lt;op&gt;</c>, with the reason: a change of such a place names no item of
+    /// its own, so the targets need not name it nor the count include it. An entry whose places no
+    /// change of the operation reaches fails.
+    /// </summary>
+    internal static IReadOnlyDictionary<string, (Regex Place, string Reason)> DerivedReads { get; } = new Dictionary<string, (Regex, string)>(StringComparer.Ordinal)
+    {
+        ["words set_default_font"] = (new Regex(@"^words read: blocks\[\d+\]\.runs\[\d+\]\.(font|latinFont|eastAsianFont|fontSize)$", RegexOptions.CultureInvariant),
+            "It changes the paragraph and character styles; a block's runs read the font their style gives them, which is derived from the styles, so the styles alone are its items."),
+    };
+
     private const RoundTripPart Both = RoundTripPart.SameValue | RoundTripPart.OneChange;
 
     private const string Adds = "Adds an object each time: written again, with the values read or one changed, it adds another instead of rewriting the first.";
@@ -306,6 +318,9 @@ internal static partial class ContractRules
             judged[content] = OperationRuns.Read(workspace, sample.Product, staged, open, content);
         }
         int number = 0;
+        Regex? derived = DerivedReads.TryGetValue($"{sample.Product} {sample.Op}", out (Regex Place, string Reason) derivation) ? derivation.Place : null;
+        bool derivedChanged = false;
+        bool judgedChange = false;
         foreach ((RoundTripValue value, string location) in located.DistinctBy(static item => item.Value.Field))
         {
             if (Changed(value, location, reads[value.SchemaId].Before) is not { } changedValue)
@@ -343,6 +358,12 @@ internal static partial class ContractRules
                 JsonArray after = ResolveStyles(now);
                 foreach (string change in Changes(before, after))
                 {
+                    judgedChange = true;
+                    if (derived?.IsMatch(change) == true)
+                    {
+                        derivedChanged = true;
+                        continue;
+                    }
                     if (RoundTripAddress(sample.Product, change, after, before) is { } addresses)
                     {
                         items.UnionWith(addresses);
@@ -368,6 +389,10 @@ internal static partial class ContractRules
                 yield return new(RoundTripPart.ReadBack, value.Field,
                     $"changing {subject}, {location} reads {(exists ? OperationRuns.Show(actual) : "nothing")}");
             }
+        }
+        if (derived is not null && judgedChange && !derivedChanged)
+        {
+            yield return new(null, null, "the derived reads of the operation no longer apply: no change reached them");
         }
     }
 

@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
+using Aspose.Cli.Product.Words.Engine.Mapping;
 using Aspose.Words;
 using Aspose.Words.Drawing;
 using Aspose.Words.Fields;
@@ -26,8 +27,12 @@ internal static class WordsDigest
         return Hash(text);
     }
 
-    /// <summary>The state of a section without its body: its page setup and its headers and footers.</summary>
-    internal static string OfSection(Section section)
+    /// <summary>
+    /// The state of a section without its body: its page setup and its headers and footers. In
+    /// <paramref name="evaluation"/> mode the marks evaluation mode writes into them, its footer
+    /// sentence and its watermark, are no state: it writes them again at every save.
+    /// </summary>
+    internal static string OfSection(Section section, bool evaluation)
     {
         var text = new StringBuilder();
         PageSetup setup = section.PageSetup;
@@ -38,7 +43,7 @@ internal static class WordsDigest
         foreach (HeaderFooter headerFooter in section.HeadersFooters.Cast<HeaderFooter>().OrderBy(static item => item.HeaderFooterType))
         {
             text.Append('[').Append(headerFooter.HeaderFooterType).Append(']');
-            Append(text, headerFooter);
+            Append(text, headerFooter, evaluation);
         }
 
         return Hash(text);
@@ -71,7 +76,7 @@ internal static class WordsDigest
 
     private static string Hash(StringBuilder text) => Hash(Encoding.UTF8.GetBytes(text.ToString()));
 
-    private static void Append(StringBuilder text, Node node)
+    private static void Append(StringBuilder text, Node node, bool evaluation = false)
     {
         text.Append('<').Append((int)node.NodeType);
         switch (node)
@@ -134,6 +139,11 @@ internal static class WordsDigest
             var runText = new StringBuilder();
             foreach (Node child in composite.GetChildNodes(NodeType.Any, false))
             {
+                if (evaluation && IsEvaluationMark(child))
+                {
+                    continue;
+                }
+
                 if (child is Run run)
                 {
                     string key = RunFormat(run);
@@ -153,7 +163,7 @@ internal static class WordsDigest
                     format = null;
                 }
 
-                Append(text, child);
+                Append(text, child, evaluation);
             }
 
             if (format is not null)
@@ -164,6 +174,13 @@ internal static class WordsDigest
 
         text.Append('>');
     }
+
+    private static bool IsEvaluationMark(Node node) => node switch
+    {
+        Paragraph paragraph => WordsEvaluation.IsMark(paragraph),
+        Shape shape => WordsEvaluation.IsWatermark(shape),
+        _ => false,
+    };
 
     private static void AppendRun(StringBuilder text, StringBuilder runText, string format)
     {
