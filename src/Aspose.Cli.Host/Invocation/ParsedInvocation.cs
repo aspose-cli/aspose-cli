@@ -40,7 +40,7 @@ internal sealed class ParsedInvocation
 
     /// <summary>
     /// Whether the command only groups other commands and was given none of them, such as
-    /// <c>aspose-cli cells</c> or <c>aspose-cli cells --bogus</c>: it does nothing on its own, so
+    /// <c>aspose-cli cells</c>, alone or with an option it does not take: it does nothing on its own, so
     /// its help is the answer. Options it does not know are reported beside the missing command.
     /// </summary>
     internal bool LacksCommand =>
@@ -186,7 +186,7 @@ internal sealed class ParsedInvocation
 
     /// <summary>
     /// <paramref name="problems"/> with the suggestions of <paramref name="mistake"/> named beside
-    /// the first problem that quotes it, such as <c>... '--patern' (did you mean '--pattern'?).</c>
+    /// the first problem that quotes it, such as <c>... '&lt;name&gt;' (did you mean '&lt;closest&gt;'?).</c>
     /// </summary>
     private static string[] WithAside(string[] problems, Mistake? mistake)
     {
@@ -396,8 +396,8 @@ internal sealed class ParsedInvocation
     ];
 
     /// <summary>
-    /// The first token beside <c>--version</c> that the parser leaves over, such as
-    /// <c>--version --bogus</c>: the version is a terminating option, so the parser runs it
+    /// The first token beside <c>--version</c> that the parser leaves over, such as an unknown
+    /// option after it: the version is a terminating option, so the parser runs it
     /// without reporting the token; null when there is none.
     /// </summary>
     private string? VersionWithOthers() =>

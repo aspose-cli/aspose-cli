@@ -99,7 +99,7 @@ public static partial class CliErrors
     /// <summary>
     /// A command that only groups other commands, run without one: it does nothing on its own, so
     /// the error lists its commands in <c>details.available</c> by their path below the root.
-    /// Options it does not know, such as <c>cells --bogus</c>, are problems before the missing
+    /// Options it does not know, given after the group, are problems before the missing
     /// command; the first one is stated in <c>details.option</c> and the options closest to it
     /// lead the suggestions.
     /// </summary>
