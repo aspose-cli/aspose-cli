@@ -49,7 +49,7 @@
         "command": "edit",
         "inputSchema": "v2/words/ops",
         "operationSchema": "aspose-cli schema v2/words/ops --operation <op>",
-        "contractFingerprint": "sha256:947b68032d9a0857717593d945b08625c06b87c493c211df0bd591d15ef74f5f",
+        "contractFingerprint": "sha256:53021544082d4fbf30d66a6dc6871c56158f52564343c0f94fcbf481b1db6654",
         "maximumOperationCount": 10000,
         "ops": [
           "accept_revisions",
@@ -5922,7 +5922,7 @@
           }
         },
         "set_style": {
-          "description": "Applies an existing paragraph style to target blocks.",
+          "description": "Applies an existing paragraph style to target blocks: the typeface, size and color set on their runs give way to the style, while emphasis such as bold, italic or underline set on a run stays.",
           "type": "object",
           "required": [
             "op",
