@@ -24,7 +24,7 @@ public sealed class OperationCatalog<TOp>
     private readonly string[] _common;
     private readonly GeneratedOperationSchema _schema;
 
-    // Writes an operation document for a command line: a placeholder such as <VARIABLE> stays as it is.
+    // Writes an operation document for a command line: a placeholder such as <password-env> stays as it is.
     private static readonly JsonSerializerOptions Readable = new() { Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping };
 
     /// <summary>
