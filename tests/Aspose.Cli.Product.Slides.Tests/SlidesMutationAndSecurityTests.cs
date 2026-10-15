@@ -352,7 +352,8 @@ public sealed class SlidesMutationAndSecurityTests
         SlidesReviewAnalysis review = SlidesReviewAnalyzer.Analyze(
             read.Slides,
             slideWidth,
-            slideHeight);
+            slideHeight,
+            fixture.LicenseState == Sdk.Licensing.LicenseState.Evaluation);
         Assert.DoesNotContain(
             review.Findings,
             static finding => finding.Code == SlidesReviewChecks.ShapeOutsideSlide.Code);

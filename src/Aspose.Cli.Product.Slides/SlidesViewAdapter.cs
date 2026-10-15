@@ -1,4 +1,5 @@
 using Aspose.Cli.Sdk.Extensibility;
+using Aspose.Cli.Sdk.Licensing;
 using Aspose.Cli.Sdk.Views;
 
 namespace Aspose.Cli.Product.Slides;
@@ -47,7 +48,8 @@ internal sealed class SlidesViewAdapter : IProductViewAdapter<SlidesSession>
         SlidesReviewAnalysis analysis = SlidesReviewAnalyzer.Analyze(
             read.Slides,
             info.Presentation.SlideSize.Width,
-            info.Presentation.SlideSize.Height);
+            info.Presentation.SlideSize.Height,
+            session.Outputs.License == LicenseState.Evaluation);
         return new ProductReviewAssessment
         {
             Findings = analysis.Findings,
@@ -68,7 +70,9 @@ internal sealed class SlidesViewAdapter : IProductViewAdapter<SlidesSession>
                 ReviewCoverageMetric.Of("textOverflows", analysis.TextOverflows, "shapes"),
                 ReviewCoverageMetric.Of("emptyPlaceholders", analysis.EmptyPlaceholders, "placeholders"),
                 ReviewCoverageMetric.Of("lowContrastTexts", analysis.LowContrastTexts, "shapes"),
-                ReviewCoverageMetric.Of("excludedEvaluationWatermarks", analysis.ExcludedEvaluationWatermarks, "shapes"),
+                .. analysis.ExcludedEvaluationMarks is int marks
+                    ? [ReviewCoverageMetric.Of("excludedEvaluationMarks", marks, "shapes")]
+                    : Array.Empty<ReviewCoverageMetric>(),
             ],
         };
     }
