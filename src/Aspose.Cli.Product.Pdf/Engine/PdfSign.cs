@@ -53,6 +53,14 @@ internal static class PdfSign
         using OutputSet<Document> transaction = session.Outputs.BeginSet([request.Output.Directory], "pdf-sign");
         // Signing saves the document with the encryption it was opened with.
         bool encrypted = PdfOutputEncryption.Encrypted(loaded.Document, passwords: null);
+        // PDF-SIGN-FULL-FONT: the engine embeds the whole font program its appearance draws in.
+        // ASCII text is drawn in Helvetica, which is not embedded; PDF/A requires embedded fonts,
+        // so its documents keep the engine's choice, and so does text beyond ASCII.
+        string[] beyondAscii = [.. new[] { ("--reason", request.Reason), ("--location", request.Location), ("--contact", request.Contact), ("the certificate's subject name", (string?)signer) }
+            .Where(static entry => !StandardFontShows(entry.Item2))
+            .Select(static entry => entry.Item1)];
+        bool pdfa = loaded.Document.IsPdfaCompliant;
+        bool standardFont = !pdfa && beyondAscii.Length == 0;
         StagedOutput write = transaction.Stage(request.Output.Path, request.Output.Overwrite, loaded.Document, temp =>
         {
             using var pkcs12 = new MemoryStream(certificate, writable: false);
@@ -62,10 +70,7 @@ internal static class PdfSign
                 Location = request.Location,
                 ContactInfo = request.Contact,
             };
-            // PDF-SIGN-FULL-FONT: the engine embeds the whole font program its appearance
-            // draws in. ASCII text is drawn in Helvetica, which is not embedded; PDF/A requires
-            // embedded fonts, so its documents keep the engine's choice.
-            if (!loaded.Document.IsPdfaCompliant && new[] { signer, request.Reason, request.Location, request.Contact }.All(StandardFontShows))
+            if (standardFont)
             {
                 signature.CustomAppearance = new SignatureCustomAppearance { FontFamilyName = "Helvetica" };
             }
@@ -79,10 +84,12 @@ internal static class PdfSign
         PdfSignatureInfo signed = write.Read(
             candidate => VerifySignedOutput(session.Loader, candidate, request.Password, alreadySigned));
         transaction.Commit();
+        InputInfo input = PdfInfoProjection.Source(filePath, loaded);
+        OutputInfo output = FileObjects.Output(write.Published, request.Output.Format, encrypted);
         return new PdfSignResult
         {
-            Input = PdfInfoProjection.Source(filePath, loaded),
-            Output = FileObjects.Output(write.Published, request.Output.Format, encrypted),
+            Input = input,
+            Output = output,
             Signature = signed,
             Visible = request.Visible,
             Page = request.Page,
@@ -96,8 +103,20 @@ internal static class PdfSign
                     Height = visibleRect.Height,
                 },
             License = EnvelopeParts.License(state),
+            Warnings = standardFont ? null : [FontEmbedded(beyondAscii, output.SizeBytes - input.SizeBytes)],
         };
     }
+
+    /// <summary>PDF-SIGN-FULL-FONT: the warning that the appearance embedded a whole font.</summary>
+    private static Warning FontEmbedded(string[] beyondAscii, long growth) =>
+        new(PdfDiagnostics.SignatureFontEmbedded, string.Create(CultureInfo.InvariantCulture,
+            $"The signature appearance draws {(beyondAscii.Length > 0 ? $"text beyond ASCII from {string.Join(", ", beyondAscii)}" : "its text in an embedded font, as PDF/A requires")}, "
+            + $"so Aspose.PDF embedded a whole font program: the file grew by {growth} bytes."))
+        {
+            Hint = beyondAscii.Length > 0
+                ? "Sign again with --reason, --location and --contact in ASCII, and a certificate whose subject name is ASCII, to keep the file small."
+                : "PDF/A requires embedded fonts, so a signature of this document grows it by a whole font whatever its text.",
+        };
 
     /// <summary>
     /// The default visible rectangle in the bottom-left corner of the visible page: 180 by 60

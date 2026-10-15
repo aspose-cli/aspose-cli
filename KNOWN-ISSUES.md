@@ -342,7 +342,7 @@ fails, delete the issue's section, the code that names it and the test, then upd
   embedded, keeps printable ASCII without a font; any other character embeds a whole font again.
 - **CLI behavior:** `pdf sign` draws an appearance whose texts are all printable ASCII in
   Helvetica, except in a PDF/A document, which needs embedded fonts; other signatures keep the
-  engine's font and grow the file by its size.
+  engine's font, grow the file by its size and warn `SIGNATURE_FONT_EMBEDDED` with the growth.
 - **Workaround:** keep `--reason`, `--location` and `--contact` in ASCII, and use a certificate
   whose subject name is ASCII.
 - **Reproduction:** [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownIssueTests.cs)

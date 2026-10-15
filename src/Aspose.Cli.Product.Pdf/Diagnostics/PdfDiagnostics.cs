@@ -37,6 +37,12 @@ internal static class PdfDiagnostics
     /// <summary>A redaction moved the text that followed what it removed.</summary>
     internal static readonly WarningCode RedactionTextMoved = new("REDACTION_TEXT_MOVED");
 
+    /// <summary>A raster image is drawn larger than its pixels allow, at fewer than 96 of them per inch, so it shows blurred.</summary>
+    internal static readonly WarningCode ImageResolutionLow = new("IMAGE_RESOLUTION_LOW");
+
+    /// <summary>The signature appearance made the engine embed a whole font, so the file grew by its size (PDF-SIGN-FULL-FONT).</summary>
+    internal static readonly WarningCode SignatureFontEmbedded = new("SIGNATURE_FONT_EMBEDDED");
+
     /// <summary>A form field of the output does not hold the value set_form_field set.</summary>
     internal static readonly DiagnosticDescriptor FieldValueMismatch = DiagnosticDescriptor.Verification("FIELD_VALUE_MISMATCH");
 
@@ -85,5 +91,7 @@ internal static class PdfDiagnostics
         DiagnosticDescriptor.Warning(NetworkResourcesRequested),
         DiagnosticDescriptor.Warning(RedactionTextMoved),
         DiagnosticDescriptor.Warning(MetadataRewritten),
+        DiagnosticDescriptor.Warning(ImageResolutionLow),
+        DiagnosticDescriptor.Warning(SignatureFontEmbedded),
     ];
 }
