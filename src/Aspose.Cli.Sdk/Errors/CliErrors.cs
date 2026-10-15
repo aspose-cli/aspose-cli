@@ -779,6 +779,25 @@ public static partial class CliErrors
     }
 
     /// <summary>
+    /// Creates the error for a file whose extension names a product but whose content no
+    /// product recognizes: a damaged file rather than a renamed one, <c>FILE_CORRUPT</c> as the
+    /// product itself reports it. <c>FORMAT_MISMATCH</c> is for content that looks like another
+    /// product's.
+    /// </summary>
+    /// <param name="path">The file.</param>
+    /// <param name="declaredProduct">The product its extension names.</param>
+    public static CliException ContentUnrecognized(string path, string declaredProduct)
+    {
+        string reason = $"its content is not a {declaredProduct} document of its {Path.GetExtension(path)} extension";
+        return CliException.Create(
+            ErrorCodes.FileCorrupt,
+            $"Input is not a readable {declaredProduct} document: {path} ({reason}).",
+            hint: "The file may be empty, truncated or damaged; renaming a file does not change its format. "
+                + "Ask for an intact copy of the document.",
+            details: new JsonObject { ["path"] = path, ["reason"] = reason });
+    }
+
+    /// <summary>
     /// Creates a fail-closed error when the file's content does not show which product reads
     /// it: it does not match the format its extension names, or no product recognizes it.
     /// </summary>

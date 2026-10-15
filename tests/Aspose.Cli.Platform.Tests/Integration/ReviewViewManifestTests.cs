@@ -119,13 +119,17 @@ public sealed class ReviewViewManifestTests
         Assert.Equal("words", JsonNode.Parse(reviewed.StdOut)!["product"]!.GetValue<string>());
     }
 
-    [Fact]
-    public void Review_OfContentNoProductRecognizes_PointsAtTheProductOption()
+    [Theory]
+    [InlineData("data.records", "<?xml version=\"1.0\"?><records><record/></records>")]
+    [InlineData("data.xml", "<?xml version=\"1.0\"?><records><record/></records>")]
+    [InlineData("book.xml", "<?xml version=\"1.0\"?><?mso-application progid=\"Excel.Sheet\"?><Workbook xmlns=\"urn:schemas-microsoft-com:office:spreadsheet\"/>")]
+    public void Review_OfContentNoProductRecognizes_PointsAtTheProductOption(string file, string content)
     {
+        // .xml is shared by many kinds of file: XML no product recognizes is not a damaged document.
         using var workspace = new TempWorkspace();
-        File.WriteAllText(workspace.File("data.xml"), "<?xml version=\"1.0\"?><records><record/></records>");
+        File.WriteAllText(workspace.File(file), content);
 
-        CliResult reviewed = workspace.Run("review", "data.xml", "--output-format", "json");
+        CliResult reviewed = workspace.Run("review", file, "--output-format", "json");
 
         JsonNode error = JsonNode.Parse(reviewed.StdErr)!["error"]!;
         Assert.Equal("FORMAT_MISMATCH", error["code"]!.GetValue<string>());

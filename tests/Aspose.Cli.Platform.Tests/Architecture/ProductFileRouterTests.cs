@@ -71,8 +71,10 @@ public sealed class ProductFileRouterTests
             CliException error = await Assert.ThrowsAsync<CliException>(
                 async () => await new ProductFileRouter(catalog).RouteAsync(path));
 
-            Assert.Equal(ErrorCodes.FormatMismatch, error.Code);
-            Assert.Contains("explicitly", error.Hint, StringComparison.Ordinal);
+            // Content no product recognizes under a product's extension is a damaged file.
+            Assert.Equal(ErrorCodes.FileCorrupt, error.Code);
+            Assert.Equal(path, error.Details!["path"]!.GetValue<string>());
+            Assert.NotNull(error.Details["reason"]);
         }
         finally
         {
@@ -540,6 +542,25 @@ public sealed class ProductFileRouterTests
         }
     }
 
+    [Fact]
+    public void SharedExtension_MustBeOneTheFormatDeclares()
+    {
+        ProductDefinitionBuilder<ITestSession> builder = ExtProduct.Define<ITestSession>(Manifest("shared"))
+            .Formats(
+            [
+                new FormatDescriptor("rows", FormatUse.Input, ".rows")
+                {
+                    SharedExtensions = [".xml"],
+                },
+            ]);
+        Complete(builder, "shared");
+
+        InvalidOperationException error = Assert.Throws<InvalidOperationException>(() =>
+            ProductCatalog.Build([new StaticModule(builder.Build())]));
+
+        Assert.Contains("marks an extension shared that it does not declare", error.Message, StringComparison.Ordinal);
+    }
+
     /// <summary>
     /// A format may read and write an extension another product owns, as delimited text may be
     /// named <c>data.txt</c>: the unrouted extension claims no generic route and its content is
@@ -643,7 +664,8 @@ public sealed class ProductFileRouterTests
         {
             CliException error = await Assert.ThrowsAsync<CliException>(
                 async () => await new ProductFileRouter(catalog).RouteAsync(path));
-            Assert.Equal(ErrorCodes.FormatMismatch, error.Code);
+            // Routing fails closed; no product recognizes the truncated package, so it is damaged.
+            Assert.Equal(ErrorCodes.FileCorrupt, error.Code);
         }
         finally
         {
@@ -718,7 +740,8 @@ public sealed class ProductFileRouterTests
                 async () => await new ProductFileRouter(
                         ProductCatalog.Build([new StaticModule(definition)]))
                     .RouteAsync(path));
-            Assert.Equal(ErrorCodes.FormatMismatch, error.Code);
+            // The out-of-range offset never matches, so routing fails closed on unrecognized content.
+            Assert.Equal(ErrorCodes.FileCorrupt, error.Code);
         }
         finally
         {

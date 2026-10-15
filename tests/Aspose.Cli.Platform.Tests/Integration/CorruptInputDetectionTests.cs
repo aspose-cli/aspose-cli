@@ -116,6 +116,28 @@ public sealed class CorruptInputDetectionTests
         Assert.Null(error["details"]?["detected"]);
     }
 
+    [Theory]
+    [InlineData("empty.docx", "")]
+    [InlineData("damaged.docx", "PK\u0003\u0004 truncated header")]
+    public void RoutedCommand_OnContentNoProductRecognizes_IsCorruptAsInTheProduct(string file, string content)
+    {
+        using var workspace = new TempWorkspace();
+        File.WriteAllText(workspace.File(file), content);
+
+        CliResult inspected = workspace.Run("words", "inspect", file, "--output-format", "json");
+        CliResult reviewed = workspace.Run("review", file, "--output-format", "json");
+
+        // The extension names words and no product recognizes the content: a damaged file, not a renamed one.
+        foreach (CliResult result in new[] { inspected, reviewed })
+        {
+            Assert.Equal(3, result.ExitCode);
+            JsonNode error = JsonNode.Parse(result.StdErr)!["error"]!;
+            Assert.Equal("FILE_CORRUPT", error["code"]!.GetValue<string>());
+            Assert.Equal(workspace.File(file), error["details"]!["path"]!.GetValue<string>());
+            Assert.False(string.IsNullOrWhiteSpace(error["details"]!["reason"]?.GetValue<string>()));
+        }
+    }
+
     // A Word document named renamed.pdf in the workspace.
     private static void WriteWordDocumentNamedPdf(TempWorkspace workspace)
     {

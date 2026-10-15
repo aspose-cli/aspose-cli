@@ -119,6 +119,13 @@ public sealed record FormatDescriptor
     /// </summary>
     public IReadOnlyList<string> UnroutedExtensions { get; init; } = [];
 
+    /// <summary>
+    /// Extensions among <see cref="Extensions"/> that many unrelated kinds of file share, as
+    /// <c>.xml</c> is. Content no product recognizes under such an extension is unrecognized,
+    /// not a damaged document of this format.
+    /// </summary>
+    public IReadOnlyList<string> SharedExtensions { get; init; } = [];
+
     /// <summary>The extensions this format claims for generic routing.</summary>
     internal IEnumerable<string> RoutedExtensions =>
         Extensions.Except(UnroutedExtensions, StringComparer.OrdinalIgnoreCase);

@@ -222,11 +222,16 @@ public sealed class ProductFileRouter
                 or FileRecognitionKind.Encrypted
                 or FileRecognitionKind.Failed)
         {
-            throw CliErrors.FormatUnrecognized(
-                fullPath,
-                extensionOwner.Manifest.Id,
-                Detected(recognitions, extensionOwner),
-                CandidateIds(candidates));
+            IReadOnlyList<string> detected = Detected(recognitions, extensionOwner);
+            // An extension many kinds of file share, such as .xml, names no product of its own.
+            bool shared = ExtensionIsShared(extensionOwner, Path.GetExtension(fullPath));
+            throw detected.Count == 0 && !shared
+                ? CliErrors.ContentUnrecognized(fullPath, extensionOwner.Manifest.Id)
+                : CliErrors.FormatUnrecognized(
+                    fullPath,
+                    shared ? null : extensionOwner.Manifest.Id,
+                    detected,
+                    CandidateIds(candidates));
         }
 
         RecognitionEntry[] competing = StrongMatches(recognitions)
@@ -247,6 +252,16 @@ public sealed class ProductFileRouter
             ownerRecognition,
             operation,
             explicitSelection: false);
+    }
+
+    private static bool ExtensionIsShared(ProductDefinition owner, string extension)
+    {
+        FormatDescriptor[] declaring = owner.Formats
+            .Where(format => format.Uses.HasFlag(FormatUse.Input)
+                && format.Extensions.Contains(extension, StringComparer.OrdinalIgnoreCase))
+            .ToArray();
+        return declaring.Length > 0
+            && declaring.All(format => format.SharedExtensions.Contains(extension, StringComparer.OrdinalIgnoreCase));
     }
 
     private static FileRouteResult ResolveUnowned(
