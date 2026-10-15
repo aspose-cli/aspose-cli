@@ -115,8 +115,8 @@ before adding navigation, then follow the destination checks in
 
 Redaction is destructive: keep the baseline, apply `redact_text` or
 `redact_area`, then verify with `pdf search` and `review`. `redact_text`
-works on extractable text and performs no OCR; it matches case unless
-`caseSensitive` is `false`. A black rectangle or zero search
+works on extractable text and performs no OCR; it matches any case unless
+`caseSensitive` is `true`. A black rectangle or zero search
 hits alone is not proof that all sensitive content was removed; a raw-byte
 absence check for a known literal is additional evidence only, because PDF text
 can be encoded or compressed. An `OP_NO_EFFECT` warning names each

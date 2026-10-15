@@ -42,7 +42,7 @@
         "command": "edit",
         "inputSchema": "v2/pdf/ops",
         "operationSchema": "aspose-cli schema v2/pdf/ops --operation <op>",
-        "contractFingerprint": "sha256:eda757faf48df7fd386715f27ac0defebd28afccde9424d7450f829962f6202e",
+        "contractFingerprint": "sha256:b1378d43120827044486364e0d5b5a28dcc96c1b65be827387ef41d424d151d1",
         "maximumOperationCount": 10000,
         "ops": [
           "add_attachment",
@@ -4893,9 +4893,9 @@
               "x-readBack": "not-state"
             },
             "caseSensitive": {
-              "description": "Whether find matches only text in the same case.",
+              "description": "Whether find matches only text in the same case; any case matches when omitted.",
               "type": "boolean",
-              "default": true,
+              "default": false,
               "x-readBack": "not-state"
             },
             "pages": {

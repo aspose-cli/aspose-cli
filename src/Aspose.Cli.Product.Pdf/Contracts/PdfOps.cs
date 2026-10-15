@@ -362,10 +362,10 @@ public sealed record RedactTextOp : PdfOp
     [NotState]
     public bool Regex { get; init; }
 
-    /// <summary>Whether find matches only text in the same case.</summary>
+    /// <summary>Whether find matches only text in the same case; any case matches when omitted.</summary>
     [MistakenFor("matchCase")]
     [NotState]
-    public bool CaseSensitive { get; init; } = true;
+    public bool CaseSensitive { get; init; }
 
     /// <summary>The pages to search; every page when omitted.</summary>
     [PageRange] public string? Pages { get; init; }

@@ -43,18 +43,18 @@ public sealed class PdfEditVerificationTests
     }
 
     [Fact]
-    public void RedactText_MatchesAnyCaseOnlyWhenCaseSensitiveIsFalse()
+    public void RedactText_MatchesOnlyTheSameCaseWhenCaseSensitiveIsTrue()
     {
         using var fixture = new PdfEngineFixture();
         string input = CreateDocument(fixture);
 
         PdfEditResult exact = PdfEdit.Run(fixture.Session, Request(fixture, input, new PdfOpsBatch
         {
-            Ops = [new RedactTextOp { Find = "SECRET" }],
+            Ops = [new RedactTextOp { Find = "SECRET", CaseSensitive = true }],
         }, "exact.pdf"));
         PdfEditResult anyCase = PdfEdit.Run(fixture.Session, Request(fixture, input, new PdfOpsBatch
         {
-            Ops = [new RedactTextOp { Find = "SECRET", CaseSensitive = false }],
+            Ops = [new RedactTextOp { Find = "SECRET" }],
         }, "any-case.pdf"));
 
         Assert.Equal(0, Assert.Single(exact.Applied).ItemsAffected);

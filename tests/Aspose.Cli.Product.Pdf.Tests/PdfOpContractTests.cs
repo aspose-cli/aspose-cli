@@ -271,12 +271,12 @@ public sealed class PdfOpContractTests
     }
 
     [Fact]
-    public void RedactText_TakesCaseSensitiveAndMatchesCaseByDefault()
+    public void RedactText_TakesCaseSensitiveAndMatchesAnyCaseByDefault()
     {
-        var both = Parse("""{"ops":[{"op":"redact_text","find":"secret"},{"op":"redact_text","find":"secret","caseSensitive":false}]}""").Ops;
+        var both = Parse("""{"ops":[{"op":"redact_text","find":"secret"},{"op":"redact_text","find":"secret","caseSensitive":true}]}""").Ops;
 
-        Assert.True(Assert.IsType<RedactTextOp>(both[0]).CaseSensitive);
-        Assert.False(Assert.IsType<RedactTextOp>(both[1]).CaseSensitive);
+        Assert.False(Assert.IsType<RedactTextOp>(both[0]).CaseSensitive);
+        Assert.True(Assert.IsType<RedactTextOp>(both[1]).CaseSensitive);
     }
 
     private static PdfOpsBatch Parse(string json) =>
