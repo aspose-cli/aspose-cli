@@ -33,6 +33,62 @@ internal static class PdfEngineSupport
     }
 
     /// <summary>
+    /// Labels the pages of a document assembled from copied pages, from its page
+    /// <paramref name="offset"/> + 1 on, as <paramref name="pages"/> were labelled in the source.
+    /// A label range starts at the first of them and wherever a page does not follow the previous
+    /// one in the same source range; a source page before the first range is numbered as the
+    /// reader shows it. Returns false, and labels nothing, for a source without labels.
+    /// </summary>
+    internal static bool CopyPageLabels(Document source, Document target, IReadOnlyList<int> pages, int offset)
+    {
+        int[] starts = [.. source.PageLabels.GetPages().Order()];
+        if (starts.Length == 0)
+        {
+            return false;
+        }
+
+        int previous = -2;
+        int previousStart = -1;
+        for (int index = 0; index < pages.Count; index++)
+        {
+            int page = pages[index] - 1;
+            int start = starts.LastOrDefault(candidate => candidate <= page, -1);
+            if (start != previousStart || page != previous + 1)
+            {
+                PageLabel label = start < 0
+                    ? new PageLabel { NumberingStyle = NumberingStyle.NumeralsArabic }
+                    : source.PageLabels.GetLabel(start);
+                target.PageLabels.UpdateLabel(offset + index, new PageLabel
+                {
+                    Prefix = label.Prefix,
+                    NumberingStyle = label.NumberingStyle,
+                    StartingValue = label.StartingValue + page - Math.Max(start, 0),
+                });
+            }
+
+            previous = page;
+            previousStart = start;
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    /// Copies the document information entries of a source into a document assembled from
+    /// copied pages, which carries none of them, except those the engine writes on every save.
+    /// </summary>
+    internal static void CopyInformation(Document source, Document target)
+    {
+        foreach (string key in source.Info.Keys)
+        {
+            if (!Editing.PdfSnapshots.SaveStamped.Contains(PdfPropertyNames.Standard(key)?.Name ?? key))
+            {
+                target.Info[key] = source.Info[key];
+            }
+        }
+    }
+
+    /// <summary>
     /// Copies the document-level attachments of a source into a document assembled from copied
     /// pages, which carries none of them, and returns the names it left out because an earlier
     /// source left an attachment of that name with other contents there. An attachment whose

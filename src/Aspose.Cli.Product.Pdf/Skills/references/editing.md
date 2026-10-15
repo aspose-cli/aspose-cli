@@ -95,7 +95,16 @@ points each copied bookmark at its page with Fit zoom (other locations and zooms
 are lost) and does not carry named destinations. `pdf split` does the same with
 the bookmarks of each part's pages; a bookmark whose parent opens a page of
 another part moves up in its place, and links to another part lead nowhere.
-Each part keeps the page labels its pages had, such as `South-1` to `South-3`.
+Each part keeps the page labels its pages had, such as `South-1` to `South-3`,
+the input's document information and every attachment of the input. A merge
+keeps the document information of the first input and the page labels of each
+input; once any input has labels, an input without them numbers its pages from 1.
+It keeps every attachment of each input, an attachment whose name and contents an
+earlier input already gave only once; an attachment named like one of an earlier
+input but with other contents is left out with a `LOSSY_CONVERSION` warning that
+names it: rename it in its input and merge again. `pdf inspect --detail attachments`
+lists two attachments of the same name as two entries, each with the `sizeBytes`,
+`mimeType` and `description` the file states for it.
 Each publishes its output with
 a `NAVIGATION_DEGRADED` warning that counts the entries that no longer lead where
 they did. Re-create them with `add_bookmark` and `add_hyperlink`, or reorder pages

@@ -25,6 +25,7 @@ internal static class PdfMerge
         int namedDestinations = 0;
         List<Warning> warnings = [];
         var security = new List<PdfInputSecurity>(request.InputPaths.Count);
+        var unlabelled = new List<int>();
         foreach (string path in request.InputPaths)
         {
             using LoadedPdf loaded = session.Loader.Open(path, request.Password);
@@ -38,6 +39,17 @@ internal static class PdfMerge
             foreach (Page page in source.Pages)
             {
                 merged.Pages.Add(page);
+            }
+
+            // The merged document is described as its first input is.
+            if (offset == 0)
+            {
+                CopyInformation(source, merged);
+            }
+
+            if (!CopyPageLabels(source, merged, [.. Enumerable.Range(1, source.Pages.Count)], offset) && offset > 0)
+            {
+                unlabelled.Add(offset);
             }
 
             if (request.PreserveBookmarks)
@@ -59,6 +71,16 @@ internal static class PdfMerge
             }
 
             inputs.Add(PdfInfoProjection.Source(path, loaded));
+        }
+
+        // Once any input labels its pages, an input without labels numbers its pages from 1 as
+        // it did on its own, rather than continuing the previous input's numbering.
+        if (merged.PageLabels.GetPages().Length > 0)
+        {
+            foreach (int offset in unlabelled)
+            {
+                merged.PageLabels.UpdateLabel(offset, new PageLabel { NumberingStyle = NumberingStyle.NumeralsArabic, StartingValue = 1 });
+            }
         }
 
         var navigation = new PdfNavigationCensus(
