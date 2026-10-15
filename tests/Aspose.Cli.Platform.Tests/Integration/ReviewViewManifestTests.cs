@@ -103,6 +103,35 @@ public sealed class ReviewViewManifestTests
         Assert.False(result.ContainsKey("sourceFormat"));
     }
 
+    [Theory]
+    [InlineData("flatopc")]
+    [InlineData("wordml")]
+    public void Review_ReadsTheWordXmlThisCliWrites(string format)
+    {
+        using var workspace = new TempWorkspace();
+        CreateSample(workspace, "doc.docx");
+        workspace.Run("words", "convert", "doc.docx", "--to", format, "--out", "doc.xml", "--output-format", "json")
+            .Succeeded();
+
+        CliResult reviewed = workspace.Run("review", "doc.xml", "--out", "evidence", "--output-format", "json");
+
+        Assert.True(reviewed.ExitCode == 0, reviewed.StdErr);
+        Assert.Equal("words", JsonNode.Parse(reviewed.StdOut)!["product"]!.GetValue<string>());
+    }
+
+    [Fact]
+    public void Review_OfContentNoProductRecognizes_PointsAtTheProductOption()
+    {
+        using var workspace = new TempWorkspace();
+        File.WriteAllText(workspace.File("data.xml"), "<?xml version=\"1.0\"?><records><record/></records>");
+
+        CliResult reviewed = workspace.Run("review", "data.xml", "--output-format", "json");
+
+        JsonNode error = JsonNode.Parse(reviewed.StdErr)!["error"]!;
+        Assert.Equal("FORMAT_MISMATCH", error["code"]!.GetValue<string>());
+        Assert.Contains("--product <id>", error["hint"]!.GetValue<string>(), StringComparison.Ordinal);
+    }
+
     [Fact]
     public void Review_RefusesAViewWithoutImages_AndPointsAtOneWithImages()
     {

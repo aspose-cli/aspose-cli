@@ -33,6 +33,24 @@ internal static class WordsFormatRecognition
             "bounded text validation",
             55);
 
+    // Word's single-file XML: a flat OPC package of a word-processing document, and Word 2003 XML.
+    private static readonly FileFormatRecognition FlatOpc =
+        FileFormatRecognition.Match(
+            FileProbePattern.All(
+                FileProbePattern.TextStartsIgnoringBomAndWhitespace("<"),
+                FileProbePattern.TextContains("schemas.microsoft.com/office/2006/xmlPackage"),
+                FileProbePattern.Any(
+                    FileProbePattern.TextContains("progid=\"Word.Document\""),
+                    FileProbePattern.TextContains("pkg:name=\"/word/"))),
+            "flat OPC word-processing package");
+
+    private static readonly FileFormatRecognition WordMl =
+        FileFormatRecognition.Match(
+            FileProbePattern.All(
+                FileProbePattern.TextStartsIgnoringBomAndWhitespace("<"),
+                FileProbePattern.TextContains("schemas.microsoft.com/office/word/2003/wordml")),
+            "Word 2003 XML namespace");
+
     private static readonly FileFormatRecognition Mobipocket =
         FileFormatRecognition.Match(
             FileProbePattern.AsciiBytesAt(60, "BOOKMOBI"),
@@ -49,6 +67,8 @@ internal static class WordsFormatRecognition
         ["docm"] = OpenXmlDocument,
         ["dotx"] = OpenXmlDocument,
         ["dotm"] = OpenXmlDocument,
+        ["flatopc"] = FlatOpc,
+        ["wordml"] = WordMl,
         ["rtf"] = FileFormatRecognition.Match(
             FileProbePattern.TextStartsIgnoringBomAndWhitespace(@"{\rtf"),
             "RTF header"),

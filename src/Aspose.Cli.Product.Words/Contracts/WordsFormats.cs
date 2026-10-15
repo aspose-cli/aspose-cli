@@ -17,9 +17,9 @@ public static class WordsFormats
         FormatDescriptor.Declare("dotm", FormatUse.Input | FormatUse.Convert, 5, 5, null, true, ".dotm") with { Protectable = true },
         // Flat OPC is plain XML: the engine encrypts it only by writing an encrypted package, which
         // is no longer the .xml document the caller named, so it carries no password.
-        FormatDescriptor.Declare("flatopc", FormatUse.Input | FormatUse.Convert, 6, 6, null, false, ".xml"),
+        FormatDescriptor.Declare("flatopc", FormatUse.Input | FormatUse.Convert, 6, 6, null, true, ".xml"),
         FormatDescriptor.Declare("rtf", FormatUse.Input | FormatUse.Convert, 7, 7, null, true, ".rtf"),
-        FormatDescriptor.Declare("wordml", FormatUse.Input | FormatUse.Convert, 8, 8, null, false, ".xml"),
+        FormatDescriptor.Declare("wordml", FormatUse.Input | FormatUse.Convert, 8, 8, null, true, ".xml"),
         FormatDescriptor.Declare("html", FormatUse.Input | FormatUse.Convert, 9, 15, null, false, ".html", ".htm"),
         FormatDescriptor.Declare("mhtml", FormatUse.Input | FormatUse.Convert, 10, 17, null, false, ".mhtml"),
         FormatDescriptor.Declare("odt", FormatUse.Input | FormatUse.Convert, 11, 21, null, true, ".odt") with { Protectable = true },
