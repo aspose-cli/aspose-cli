@@ -13,6 +13,7 @@ public static class CommandMistakes
 {
     private static readonly ConditionalWeakTable<Command, IReadOnlyList<string>> Declared = [];
     private static readonly ConditionalWeakTable<Option, Func<string, string?>> MeantValues = [];
+    private static readonly ConditionalWeakTable<Command, IReadOnlyList<RefusedOption>> RefusedOptions = [];
 
     /// <summary>Declares the names <paramref name="command"/> is mistaken for.</summary>
     internal static void Declare(Command command, IReadOnlyList<string> names)
@@ -38,6 +39,44 @@ public static class CommandMistakes
     {
         ArgumentNullException.ThrowIfNull(command);
         return Declared.TryGetValue(command, out IReadOnlyList<string>? names) ? names : [];
+    }
+
+    /// <summary>
+    /// Declares the options <paramref name="command"/> does not have that a caller may reach for,
+    /// each with the hint its refusal gives. A name must be an option name the command does not
+    /// accept, or the declaration would never apply.
+    /// </summary>
+    internal static void DeclareRefused(Command command, IReadOnlyList<RefusedOption> refused)
+    {
+        ArgumentNullException.ThrowIfNull(refused);
+        string[] accepted = [.. command.Options.SelectMany(static option => option.Aliases.Prepend(option.Name))];
+        foreach (string name in refused.SelectMany(static option => option.Names))
+        {
+            if (!name.StartsWith("--", StringComparison.Ordinal) || accepted.Contains(name, StringComparer.Ordinal))
+            {
+                throw new InvalidOperationException($"Command '{command.Name}' refuses '{name}', which is no option name or an option it accepts.");
+            }
+        }
+
+        if (refused.Count > 0)
+        {
+            RefusedOptions.AddOrUpdate(command, [.. refused]);
+        }
+    }
+
+    /// <summary>
+    /// The hint <paramref name="command"/> declares for <paramref name="option"/>, an option it
+    /// does not have (a command definition's <c>RefusedOptions</c>); null when it declares none.
+    /// </summary>
+    /// <param name="command">The command the option was given to.</param>
+    /// <param name="option">The option as the caller wrote it, such as <c>--encrypt-env</c>.</param>
+    public static string? RefusedOptionHint(this Command command, string option)
+    {
+        ArgumentNullException.ThrowIfNull(command);
+        ArgumentNullException.ThrowIfNull(option);
+        return RefusedOptions.TryGetValue(command, out IReadOnlyList<RefusedOption>? refused)
+            ? refused.FirstOrDefault(item => item.Names.Contains(option, StringComparer.Ordinal))?.Hint
+            : null;
     }
 
     /// <summary>

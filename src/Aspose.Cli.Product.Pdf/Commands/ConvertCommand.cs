@@ -33,6 +33,13 @@ internal static class ConvertCommand
             },
             Table)
         {
+            RefusedOptions =
+            [
+                new RefusedOption(
+                    ["--encrypt", "--encrypt-env", "--encrypt-stdin"],
+                    "'pdf convert' does not encrypt its output. To encrypt a PDF, run 'pdf edit --out --ops' on it "
+                        + "with an encrypt_document operation, which writes an encrypted copy."),
+            ],
             Examples =
             [
                 "pdf convert report.pdf --out report.docx",

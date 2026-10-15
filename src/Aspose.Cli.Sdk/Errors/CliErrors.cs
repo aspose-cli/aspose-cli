@@ -32,11 +32,16 @@ public static partial class CliErrors
     /// The option or argument the first problem is about, such as an unknown or missing option,
     /// stated in <c>details.option</c> or <c>details.argument</c>; null when it is about none.
     /// </param>
+    /// <param name="hint">
+    /// What to do instead, in place of the advice to read help, such as the command that does what
+    /// an option the command does not have would; null for that advice.
+    /// </param>
     public static CliException Usage(
         IReadOnlyList<string> problems,
         Mistake? mistake = null,
         IReadOnlyList<string>? corrected = null,
-        string? parameter = null)
+        string? parameter = null,
+        string? hint = null)
     {
         ArgumentNullException.ThrowIfNull(problems);
         var details = new JsonObject();
@@ -57,7 +62,7 @@ public static partial class CliErrors
             message = $"{message} {mistake.MustBeOneOf()}";
         }
 
-        string next = corrected is null ? UsageHint : $"Run '{CommandLineText.Of(corrected)}'.";
+        string next = corrected is not null ? $"Run '{CommandLineText.Of(corrected)}'." : hint ?? UsageHint;
         return CliException.Create(ErrorCodes.UsageError, message, mistake?.Hint(next) ?? next, details.Count == 0 ? null : details);
     }
 

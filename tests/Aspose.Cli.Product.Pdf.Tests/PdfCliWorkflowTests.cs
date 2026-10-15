@@ -514,5 +514,37 @@ public sealed class PdfCliWorkflowTests : IDisposable
         Assert.Equal(height, document.Pages[1].Rect.Height, 0.5);
     }
 
+    /// <summary>
+    /// pdf convert does not encrypt: an --encrypt option, which it does not have, is refused with
+    /// the edit that encrypts a copy, and its help does not list one.
+    /// </summary>
+    [Theory]
+    [InlineData("--encrypt", "secret")]
+    [InlineData("--encrypt-env", "PDF_PASSWORD")]
+    [InlineData("--encrypt-stdin")]
+    public void Convert_RefusesEncryptionWithTheEditThatEncryptsACopy(params string[] encryption)
+    {
+        using (var document = new Document())
+        {
+            document.Pages.Add().Paragraphs.Add(new TextFragment("Encrypt me"));
+            document.Save(_workspace.File("plain.pdf"));
+        }
+
+        CliResult refused = _workspace.Run(
+            ["pdf", "convert", "plain.pdf", "--to", "docx", .. encryption, "--output-format", "json"]);
+        CliResult help = _workspace.Run("pdf", "convert", "--help");
+
+        Assert.Equal(2, refused.ExitCode);
+        JsonNode error = JsonNode.Parse(refused.StdErr)!["error"]!;
+        Assert.Equal("USAGE_ERROR", error["code"]!.GetValue<string>());
+        Assert.Equal(encryption[0], error["details"]!["option"]!.GetValue<string>());
+        string hint = error["hint"]!.GetValue<string>();
+        Assert.Contains("'pdf convert' does not encrypt", hint, StringComparison.Ordinal);
+        Assert.Contains("'pdf edit --out --ops'", hint, StringComparison.Ordinal);
+        Assert.Contains("encrypt_document", hint, StringComparison.Ordinal);
+        Assert.False(File.Exists(_workspace.File("plain.docx")));
+        Assert.DoesNotContain("--encrypt", help.StdOut, StringComparison.Ordinal);
+    }
+
     public void Dispose() => _workspace.Dispose();
 }
