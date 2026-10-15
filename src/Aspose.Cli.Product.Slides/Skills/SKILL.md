@@ -71,6 +71,11 @@ Details: [design system](references/design-system.md).
   `edit` or `convert` output is `OPTION_INVALID`. Without it, a PPTX or PPTM output of an
   encrypted deck keeps its password, and any other document output is written without one and
   warns `ENCRYPTION_REMOVED`; slide images do not warn.
+- A `convert` without `--slides` to a format other than PPT, PPTX, PPTM or ODP leaves out the
+  hidden slides, as PowerPoint's export does, and warns `HIDDEN_SLIDES_SKIPPED` with their
+  numbers; the hidden slides `--slides` names are converted. An ODP output turns native charts
+  into pictures and drops slide transitions and sections, and warns `LOSSY_CONVERSION`
+  (SLIDES-ODP-NATIVE-CONTENT); keep the PPTX for further edits.
 - `slides read --content full` reports each table's cell `values` and each chart's data, and
   the state the operations write under their field names; `slides search` does not see chart
   text ([charts and tables](references/verification.md#charts-and-tables)).

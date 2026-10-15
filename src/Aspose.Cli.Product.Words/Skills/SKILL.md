@@ -42,7 +42,7 @@ shows no images.
   `set_page_numbers` take, with their `paragraphs`; a kind a section does not
   define continues from the previous section. A search hit in one names its
   `location` and `kind` too.
-- Block text, `--content full` runs, search hit text and `heading`/`find`
+- Block text, `--content full` runs, search hit `context` and `heading`/`find`
   addresses use the text a reader sees: field results rather than field codes, without text a tracked
   change deletes, and without the comments and footnotes a paragraph anchors.
   A header or footer field whose result changes from page to page (`PAGE`,
@@ -52,7 +52,7 @@ shows no images.
   ([revisions](references/revisions.md)).
 - A numbered list paragraph's number, such as `6.2`, is its block's
   `listLabel`, and its block `text` leaves it out. Everywhere else the text
-  starts with the number and a space: search hit text and patterns,
+  starts with the number and a space: search hit `context` and patterns,
   `find`/`heading` addresses, extracted text and table `values`. So
   `"find": "6.2 "` addresses clause 6.2, a search pattern anchored with `^`
   must allow for the number, and `replace_text` and `set_text` change only

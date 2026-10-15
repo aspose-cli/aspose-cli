@@ -69,7 +69,10 @@ with `next` keeps each result small.
 
 A search (`cells search`, `pdf search`, `slides search`, `words search`) returns at most its `--max-hits` budget of hits in document
 order. A truncated search's `window.next` repeats the search with `--skip`
-past the hits already returned.
+past the hits already returned. Each hit is one match: its `text` is the
+matched text itself, and its `context` is the text around it, at most 40
+characters on each side, on one line, with an ellipsis where it is cut. In
+Cells a hit is one cell, holding the first match in that cell.
 
 ## Capped lists
 
@@ -85,7 +88,9 @@ per-run cap that `--help` states; a larger selection is refused with a hint
 that names a smaller one, so render a long document in several runs. When a
 command writes several files, `--help` for its `--out` or `--out-dir` names
 them, such as `<stem>.<page>.<ext>` beside `--out`; take the written paths
-from the result's `outputs` instead of composing them.
+from the result's `outputs` instead of composing them. A `convert` result
+lists its files in `outputs[]` too, even when it writes one: read that file
+from `outputs[0]`; a convert result has no `output`.
 
 ## Limits
 

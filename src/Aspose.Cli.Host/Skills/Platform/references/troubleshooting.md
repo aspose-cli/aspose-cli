@@ -74,6 +74,12 @@ aspose-cli capabilities --output-format json
 
 **The command line.**
 
+- A command line that does not parse, with an unknown command or option or a
+  missing argument or option, is `USAGE_ERROR`. One that parses but gives a
+  value the command refuses, such as a value outside an option's list, an
+  extension no format declares, a number out of range or a range that does not
+  parse, is `OPTION_INVALID`. Both name the option in `details.option`, or the
+  positional argument in `details.argument`.
 - An unknown command, option, value, operation or field lists what exists in
   `details.available` and the closest names in `details.suggestions`; the
   hint names a command by its full path, such as `pdf inspect`. A command that

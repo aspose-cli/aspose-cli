@@ -66,6 +66,10 @@ A PDF batch, for example:
   entry in `applied[]` has `status: "failed"` and an `error` that has the shape
   of an error envelope's `error`. The command exits 8 when any operation
   failed. An invalid document or an engine failure still writes nothing.
+- A file an operation reads, such as an image, that is missing or locked fails
+  only that operation, with `FILE_NOT_FOUND` or `FILE_LOCKED` and its
+  `details.id`, like any failed operation: an atomic batch writes nothing,
+  and `--best-effort` keeps the other operations.
 - **`--dry-run`.** Checks the input, the output and the batch, applies the
   batch in memory and writes nothing. The result has `dryRun: true`, the
   `checked` list and the `applied[]` outcomes, with operation warnings such as

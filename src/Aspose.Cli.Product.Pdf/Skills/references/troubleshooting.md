@@ -51,4 +51,8 @@ An output that loses its input's encryption, as after a convert to a document or
 text format, a `decrypt_document`, or a merge or split of an input with only an
 owner password, warns `ENCRYPTION_REMOVED`; images and extracted files never warn.
 Pass `--encrypt-env` where the output must stay protected
-([encryption](forms-security.md#encryption)).
+([encryption](forms-security.md#encryption)). `pdf convert` does not encrypt and
+refuses `--encrypt-env`: to encrypt a PDF, run `pdf edit` with an
+`encrypt_document` operation, or with `--encrypt-env` beside its operations. PDF/A
+does not allow encryption, so an encrypted PDF/A file is no longer conformant:
+keep the PDF/A file and encrypt a copy.
