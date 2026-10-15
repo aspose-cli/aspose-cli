@@ -1,3 +1,4 @@
+using Aspose.Cli.Sdk.Licensing;
 using Aspose.Pdf;
 using Aspose.Pdf.Operators;
 using Aspose.Pdf.Text;
@@ -16,18 +17,19 @@ internal static class PdfReviewLayouts
         Secret? password,
         int maxPages)
     {
-        _ = session.Outputs.License;
+        // Only an evaluation-mode review leaves evaluation notices out of its text checks.
+        bool evaluation = session.Outputs.License == LicenseState.Evaluation;
         using LoadedPdf loaded = session.Loader.Open(filePath, password);
         int inspectedPages = Math.Min(loaded.Document.Pages.Count, maxPages);
         var pages = new List<PdfReviewPageLayout>(inspectedPages);
         for (int pageNumber = 1; pageNumber <= inspectedPages; pageNumber++)
         {
-            pages.Add(InspectPage(loaded.Document.Pages[pageNumber], pageNumber));
+            pages.Add(InspectPage(loaded.Document.Pages[pageNumber], pageNumber, evaluation));
         }
         return new PdfReviewLayout(pages);
     }
 
-    private static PdfReviewPageLayout InspectPage(Page page, int pageNumber)
+    private static PdfReviewPageLayout InspectPage(Page page, int pageNumber, bool evaluation)
     {
         var absorber = new TextFragmentAbsorber();
         page.Accept(absorber);
@@ -35,16 +37,18 @@ internal static class PdfReviewLayouts
         Rectangle[] text = [.. fragments.Select(static fragment => fragment.Rectangle)];
         Rectangle displayed = page.GetPageRect(considerRotation: true);
         (string? product, bool[] notice) = EvaluationNotices(fragments);
+        bool[] excluded = evaluation ? notice : new bool[notice.Length];
         return new PdfReviewPageLayout(
             pageNumber,
             displayed.Width,
             displayed.Height,
-            // The evaluation finding covers a notice an engine prints beyond the page edge, as
-            // Aspose.Cells prints it across the evaluation warning sheet it adds.
-            text.Where((_, index) => !notice[index]).Count(fragment => IsOutsidePage(PdfEngineSupport.ToContractTextRect(page, fragment), displayed)),
+            // In evaluation mode the evaluation finding covers a notice an engine prints beyond
+            // the page edge, as Aspose.Cells prints it across the evaluation warning sheet it adds.
+            text.Where((_, index) => !excluded[index]).Count(fragment => IsOutsidePage(PdfEngineSupport.ToContractTextRect(page, fragment), displayed)),
             ImageCoverage(page),
             text.Length == 0 ? 0 : CoveredFragments(page),
-            product);
+            product,
+            excluded.Count(static left => left));
     }
 
     /// <summary>

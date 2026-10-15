@@ -106,7 +106,9 @@ before delivery. The check matches the notice from "Created with Aspose.<product
 to its "Copyright … Aspose Pty Ltd" in the page text, in the order it is drawn,
 so a notice drawn over a title is found too; a PDF that `cells`, `words` or
 `slides` saved is flagged as well, and the finding names the product whose
-license is needed.
+license is needed. A review without a license leaves the notices out of its
+text-outside-page check and counts what it left out in the coverage metric
+`excludedEvaluationMarks`; with a license it checks them like any text.
 
 Text under an opaque box painted over it, such as the cover a redaction leaves,
 means the file holds text the page does not show; after a redaction it is the

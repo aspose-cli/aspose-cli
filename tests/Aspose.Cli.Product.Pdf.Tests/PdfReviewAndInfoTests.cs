@@ -230,15 +230,50 @@ public sealed class PdfReviewAndInfoTests
     }
 
     /// <summary>
-    /// An evaluation notice an engine prints beyond the page edge, as Aspose.Cells prints it on
-    /// the evaluation warning sheet it adds, is reported only as the evaluation watermark; other
-    /// text beyond the edge still is.
+    /// In evaluation mode, an evaluation notice an engine prints beyond the page edge, as
+    /// Aspose.Cells prints it on the evaluation warning sheet it adds, is reported only as the
+    /// evaluation watermark, and the coverage counts the notice fragments it left out; other text
+    /// beyond the edge still is reported.
     /// </summary>
     [Fact]
-    public void Review_ReportsOnlyTheWatermarkForAnEvaluationNoticeBeyondThePageEdge()
+    public void Review_InEvaluationModeLeavesOutAnEvaluationNoticeBeyondThePageEdge()
     {
         using var fixture = new PdfEngineFixture();
         using var workspace = new TempWorkspace();
+        JsonNode review = workspace.Run(["review", NoticeDocument(fixture), "--out", workspace.File("review"), "--license-mode", "evaluation", "--output-format", "json"]).Json();
+
+        JsonNode[] findings = [.. review["findings"]!.AsArray().Select(static item => item!)];
+        Assert.Equal(["page 2"], OutsidePages(findings));
+        Assert.Contains(findings, static item => item["code"]!.GetValue<string>() == "PDF_EVALUATION_WATERMARK"
+            && item["location"]!.GetValue<string>() == "page 1"
+            && item["message"]!.GetValue<string>().Contains("Aspose.Cells", StringComparison.Ordinal));
+        JsonNode excluded = review["coverage"]!["metrics"]!.AsArray()
+            .Single(static metric => metric!["name"]!.GetValue<string>() == "excludedEvaluationMarks")!;
+        Assert.True(excluded["value"]!.GetValue<int>() >= 2, excluded.ToJsonString());
+        Assert.Equal("fragments", excluded["unit"]!.GetValue<string>());
+    }
+
+    /// <summary>With a license, review leaves no evaluation notice out and reports no count of them.</summary>
+    [LicensedFact]
+    public void Review_WithALicenseChecksAnEvaluationNoticeLikeAnyText()
+    {
+        using var fixture = new PdfEngineFixture();
+        using var workspace = new TempWorkspace();
+        JsonNode review = workspace.Run(["review", NoticeDocument(fixture), "--out", workspace.File("review"), "--license", TestLicense.Path!, "--output-format", "json"]).Json();
+
+        JsonNode[] findings = [.. review["findings"]!.AsArray().Select(static item => item!)];
+        Assert.Equal(["page 1", "page 2"], OutsidePages(findings));
+        Assert.Contains(findings, static item => item["code"]!.GetValue<string>() == "PDF_EVALUATION_WATERMARK");
+        Assert.DoesNotContain(review["coverage"]!["metrics"]!.AsArray(),
+            static metric => metric!["name"]!.GetValue<string>() == "excludedEvaluationMarks");
+    }
+
+    private static string[] OutsidePages(JsonNode[] findings) =>
+        [.. findings.Where(static item => item["code"]!.GetValue<string>() == "PDF_TEXT_OUTSIDE_PAGE")
+            .Select(static item => item["location"]!.GetValue<string>())];
+
+    private static string NoticeDocument(PdfEngineFixture fixture)
+    {
         string input = fixture.File("notice.pdf");
         using (var document = new Document())
         {
@@ -251,16 +286,7 @@ public sealed class PdfReviewAndInfoTests
             document.Save(input);
         }
 
-        JsonNode review = Review(workspace, input);
-
-        JsonNode[] findings = [.. review["findings"]!.AsArray().Select(static item => item!)];
-        Assert.Equal(
-            ["page 2"],
-            findings.Where(static item => item["code"]!.GetValue<string>() == "PDF_TEXT_OUTSIDE_PAGE")
-                .Select(static item => item["location"]!.GetValue<string>()));
-        Assert.Contains(findings, static item => item["code"]!.GetValue<string>() == "PDF_EVALUATION_WATERMARK"
-            && item["location"]!.GetValue<string>() == "page 1"
-            && item["message"]!.GetValue<string>().Contains("Aspose.Cells", StringComparison.Ordinal));
+        return input;
 
         static void Write(Page page, double x, string text)
         {
