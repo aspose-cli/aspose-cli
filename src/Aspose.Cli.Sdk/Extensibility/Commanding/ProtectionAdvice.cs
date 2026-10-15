@@ -14,7 +14,8 @@ namespace Aspose.Cli.Sdk.Extensibility.Commanding;
 /// the format written, or else a conversion that takes <c>--encrypt-env</c> may write an encrypted
 /// copy of it, each with a command line that runs as given and names the output's own path;
 /// otherwise no command of this build encrypts that format. An output in a variant of a format
-/// that cannot carry a password, such as PDF/A, is never encrypted itself: only a copy beside it.
+/// that cannot carry a password, such as an archival variant whose standard forbids encryption, is
+/// never encrypted itself: only a copy beside it.
 /// </summary>
 internal static class ProtectionAdvice
 {
@@ -101,7 +102,7 @@ internal static class ProtectionAdvice
         foreach (string format in other)
         {
             // The output file is the copy when it is written in the format, or in a variant of it,
-            // such as PDF/A, that a file of the format names by the same extension.
+            // such as an archival one, that a file of the format names by the same extension.
             bool written = output is not null
                 && (Is(output.Format, format) || ProtectableFormat(commands, format)?.Names(output.Path) == true);
             string file = written ? output!.Path : "<file>";
@@ -109,7 +110,7 @@ internal static class ProtectionAdvice
                 ? $", with {Placeholder} naming an environment variable that holds the password"
                 : " with the input's password";
             string variableName = variable ?? Placeholder;
-            // A variant that cannot carry a password, as PDF/A forbids encryption: encrypting the
+            // A variant that cannot carry a password, as a standard that forbids encryption: encrypting the
             // file would end the variant, so only a copy beside it may be encrypted.
             if (written && !Is(output!.Format, format) && !output.Format.Protectable)
             {
