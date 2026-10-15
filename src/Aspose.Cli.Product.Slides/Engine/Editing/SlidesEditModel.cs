@@ -74,7 +74,7 @@ internal sealed class SlidesEditModel : IOperationModel<SlidesOp>
             SlidesMutationHandlers.EnsureResolved(target);
         }
 
-        return SlidesMutationHandlers.Engine(() => operation.Accept(new SlidesSnapshots(_presentation, target)));
+        return SlidesMutationHandlers.Engine(() => operation.Accept(new SlidesSnapshots(_presentation, target, _evaluation)));
     }
 
     public void Apply(SlidesOp operation)
