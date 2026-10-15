@@ -525,7 +525,7 @@ internal static class InvariantCases
     {
         if (option.Name.Contains("certificate", StringComparison.Ordinal))
         {
-            return "SIGN_CERT_INVALID"; // certificate.pfx is protected by the fixture password already.
+            return "PASSWORD_INVALID"; // certificate.pfx is protected by the fixture password already.
         }
         string target = invocation.Inputs[option.Name.StartsWith("--right-", StringComparison.Ordinal) ? 1 : 0];
         string fixture = invocation.Files[target].Fixture!;

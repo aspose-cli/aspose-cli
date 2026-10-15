@@ -265,8 +265,8 @@ public sealed class PdfSignTests
             CertificatePath = certificate,
             CertificatePassword = new Secret("wrong-password"),
         }));
-        Assert.Equal("SIGN_CERT_INVALID", exception.Code.Name);
-        Assert.Contains("password does not open the PKCS#12 certificate", exception.Message, StringComparison.Ordinal);
+        Assert.Equal("PASSWORD_INVALID", exception.Code.Name);
+        Assert.Equal(certificate, exception.Details!["path"]!.GetValue<string>(), ignoreCase: true);
         Assert.Contains("--certificate-password-env", exception.Hint, StringComparison.Ordinal);
         Assert.False(File.Exists(output));
     }

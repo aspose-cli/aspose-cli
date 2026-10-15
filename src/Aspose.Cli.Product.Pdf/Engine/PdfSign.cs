@@ -23,7 +23,7 @@ internal static class PdfSign
         // The certificate is read once, through the SDK, which reports a file it cannot open; the
         // signer gets the same bytes that were validated.
         byte[] certificate = session.Budgets.Inputs.ReadAllBytes(request.CertificatePath);
-        string signer = ValidateCertificate(certificate, request.CertificatePassword);
+        string signer = ValidateCertificate(request.CertificatePath, certificate, request.CertificatePassword);
         LicenseState state = session.Outputs.License;
         using LoadedPdf loaded = session.Loader.Open(filePath, request.Password);
         Page signedPage = PageAt(loaded.Document, request.Page);
@@ -201,7 +201,7 @@ internal static class PdfSign
         text is null || text.All(static character => character is >= ' ' and <= '~');
 
     /// <summary>Checks that the certificate opens and can sign now; returns the signer's name, which the appearance shows.</summary>
-    private static string ValidateCertificate(byte[] pkcs12, Secret password)
+    private static string ValidateCertificate(string path, byte[] pkcs12, Secret password)
     {
         try
         {
@@ -225,11 +225,7 @@ internal static class PdfSign
         }
         catch (CryptographicException exception) when (exception.HResult == WrongPassword)
         {
-            throw new CliException(
-                PdfDiagnostics.SignCertInvalid,
-                "The certificate password does not open the PKCS#12 certificate.",
-                hint: "Pass the certificate's own password with --certificate-password-env or --certificate-password-stdin; it is not the PDF's password.",
-                innerException: exception);
+            throw CliErrors.PasswordInvalid(Path.GetFullPath(path), passwordEnvironmentOption: "--certificate-password-env");
         }
         catch (CryptographicException exception)
         {
