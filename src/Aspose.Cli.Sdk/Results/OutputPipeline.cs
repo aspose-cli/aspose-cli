@@ -26,6 +26,7 @@ public abstract class OutputPipeline : ILicenseState
     private int _published;
     private EvaluationMarks _kept = EvaluationMarks.None;
     private EvaluationMarks _shown = EvaluationMarks.None;
+    private readonly List<string> _marked = [];
     private Warning? _inputTruncated;
     private Inspection? _view;
     private bool _encryptedInput;
@@ -259,16 +260,20 @@ public abstract class OutputPipeline : ILicenseState
         EvaluationMarks kept;
         EvaluationMarks shown;
         Warning? truncated;
+        string[] marked;
         lock (_sync)
         {
             (published, kept, shown, truncated) = (_published, _kept, _shown, _inputTruncated);
+            marked = [.. _marked];
         }
 
+        // With several outputs, the marks are named with the files that carry them.
+        string subject = published > 1 && marked.Length > 0 ? EvaluationDisclosure.Outputs(marked) : "The output";
         Warning? output = published == 0 ? null : License switch
         {
             LicenseState.Evaluation => EvaluationDisclosure.Output(
-                _licenseGate.Resolution.Kind == LicenseSourceKind.EvaluationRequested, kept, shown),
-            LicenseState.Licensed when kept.Any || shown.Any => EvaluationDisclosure.InputMarked(kept, shown),
+                _licenseGate.Resolution.Kind == LicenseSourceKind.EvaluationRequested, kept, shown, subject),
+            LicenseState.Licensed when kept.Any || shown.Any => EvaluationDisclosure.InputMarked(kept, shown, subject),
             _ => null,
         };
         Warning[] disclosure = [.. new[] { output, truncated }.OfType<Warning>()];
@@ -333,9 +338,10 @@ public abstract class OutputPipeline : ILicenseState
 
     /// <summary>
     /// Records one published output and, when it was inspected, its marks: those a saved copy
-    /// keeps, or those the source of a rendering carries.
+    /// keeps, or those the source of a rendering carries. The files of a copy that keeps marks,
+    /// <paramref name="paths"/>, are named in the disclosure when the invocation published others.
     /// </summary>
-    internal void Record(Inspection? inspection)
+    internal void Record(Inspection? inspection, IEnumerable<string>? paths = null)
     {
         lock (_sync)
         {
@@ -349,6 +355,11 @@ public abstract class OutputPipeline : ILicenseState
                 else
                 {
                     _kept = _kept.Union(marks);
+                    if (marks.Any)
+                    {
+                        _marked.AddRange((paths ?? []).Select(System.IO.Path.GetFileName).OfType<string>()
+                            .Where(name => !_marked.Contains(name, StringComparer.Ordinal)));
+                    }
                 }
             }
         }
@@ -372,13 +383,17 @@ internal static class EvaluationDisclosure
     /// <c>EVALUATION_MODE</c> for outputs evaluation mode produced, naming the marks the outputs keep
     /// and those the rendered sources carry.
     /// </summary>
-    internal static Warning Output(bool requested, EvaluationMarks kept, EvaluationMarks shown)
+    /// <param name="requested">Whether the caller asked for evaluation mode.</param>
+    /// <param name="kept">The marks the outputs keep.</param>
+    /// <param name="shown">The marks the rendered sources carry.</param>
+    /// <param name="subject">The outputs that keep the marks, such as <c>The outputs 'a.1.pdf' and 'a.2.pdf'</c>.</param>
+    internal static Warning Output(bool requested, EvaluationMarks kept, EvaluationMarks shown, string subject = "The output")
     {
         Warning disclosure = requested ? EnvelopeParts.RequestedEvaluationWatermark : EnvelopeParts.EvaluationWatermark;
         string message = disclosure.Message;
         if (kept.Any)
         {
-            message += $" The output carries {List(kept)}.";
+            message += $" {subject} {(subject.StartsWith("The outputs", StringComparison.Ordinal) ? "carry" : "carries")} {List(kept)}.";
         }
 
         if (Beyond(shown, kept) is { Any: true } source)
@@ -393,12 +408,16 @@ internal static class EvaluationDisclosure
     /// <c>EVALUATION_INPUT_MARKED</c> for licensed outputs that keep the evaluation marks of their
     /// input, or that render a source which carries them.
     /// </summary>
-    internal static Warning InputMarked(EvaluationMarks kept, EvaluationMarks shown)
+    /// <param name="kept">The marks the outputs keep.</param>
+    /// <param name="shown">The marks the rendered sources carry.</param>
+    /// <param name="subject">The outputs that keep the marks, as for <see cref="Output"/>.</param>
+    internal static Warning InputMarked(EvaluationMarks kept, EvaluationMarks shown, string subject = "The output")
     {
         var sentences = new List<string>();
         if (kept.Any)
         {
-            sentences.Add($"The output keeps the evaluation marks that an earlier save without a license wrote into its input: {List(kept)}.");
+            string verb = subject.StartsWith("The outputs", StringComparison.Ordinal) ? "keep" : "keeps";
+            sentences.Add($"{subject} {verb} the evaluation marks that an earlier save without a license wrote into its input: {List(kept)}.");
         }
 
         if (Beyond(shown, kept) is { Any: true } source)
@@ -430,6 +449,15 @@ internal static class EvaluationDisclosure
         // What a command covers stays complete, as a review's page images show the full content;
         // the warning says the content it read is not.
     };
+
+    /// <summary>The outputs named by their files, such as <c>The output 'a.2.pdf'</c> or <c>The outputs 'a.1.pdf' and 'a.2.pdf'</c>.</summary>
+    internal static string Outputs(IReadOnlyList<string> files)
+    {
+        string[] quoted = [.. files.Select(static file => $"'{file}'")];
+        return quoted.Length == 1
+            ? $"The output {quoted[0]}"
+            : $"The outputs {string.Join(", ", quoted[..^1])} and {quoted[^1]}";
+    }
 
     private static EvaluationMarks Beyond(EvaluationMarks shown, EvaluationMarks kept) =>
         new([.. shown.Marks.Except(kept.Marks, StringComparer.Ordinal)], shown.IsTruncated && !kept.IsTruncated);
@@ -542,7 +570,7 @@ public sealed class OutputPipeline<TDocument> : OutputPipeline
         var inspector = new Inspector(_profile, document, format, rendering);
         inspector.Shows(pages);
         PublishedFile published = Writer.Write(targetPath, overwrite, inspector.After(write));
-        Record(inspector.Result);
+        Record(inspector.Result, [targetPath]);
         RecordCopy(CopyAt(targetPath, encrypted));
         return published;
     }
@@ -560,7 +588,7 @@ public sealed class OutputPipeline<TDocument> : OutputPipeline
         ArgumentNullException.ThrowIfNull(output);
         var inspector = new Inspector(_profile, document, output.Format.Id, rendering: false);
         IReadOnlyList<OutputInfo> written = Writer.Write(output, encrypted, inspector.After(write));
-        Record(inspector.Result);
+        Record(inspector.Result, [output.Path]);
         RecordCopy(new Copy(output.Format.Id, output.Format.Image, encrypted));
         return written;
     }
@@ -598,7 +626,7 @@ public sealed class OutputPipeline<TDocument> : OutputPipeline
     /// Inspects one document once, right after the first save that writes it to an output of
     /// one format, while the product still holds it open.
     /// </summary>
-    internal sealed class Inspector(IEvaluationProfile<TDocument> profile, TDocument? document, string format, bool rendering)
+    internal sealed class Inspector(IEvaluationProfile<TDocument> profile, TDocument? document, string format, bool rendering, bool saved = false)
     {
         private readonly SortedSet<int> _pages = [];
         private bool _saved;
@@ -657,6 +685,13 @@ public sealed class OutputPipeline<TDocument> : OutputPipeline
             {
                 write(path);
                 _saved = true;
+                // An output saved through something other than the document is read from its
+                // file, when the profile reads files; the document stands in otherwise.
+                if (saved && document is not null && !_inspected && _pages.Count == 0 && InspectFile(path))
+                {
+                    return;
+                }
+
                 // A saved copy is inspected right after its save, before anything, such as a
                 // facade that closes the document, can change it.
                 if (document is not null && !_inspected && _pages.Count == 0)
@@ -664,6 +699,26 @@ public sealed class OutputPipeline<TDocument> : OutputPipeline
                     Inspect(document);
                 }
             };
+        }
+
+        /// <summary>Whether the profile read the marks from the staged file.</summary>
+        private bool InspectFile(string path)
+        {
+            try
+            {
+                if (profile.InspectSaved(path, format) is { } marks)
+                {
+                    (_inspected, _marks) = (true, marks);
+                    return true;
+                }
+            }
+            catch (Exception exception) when (exception is not OperationCanceledException)
+            {
+                (_inspected, _marks) = (true, null);
+                return true;
+            }
+
+            return false;
         }
 
         // The disclosure must never cost the user an output: an inspection that fails leaves
@@ -697,6 +752,7 @@ public sealed class OutputSet<TDocument> : IDisposable
     private readonly IEvaluationProfile<TDocument> _profile;
     private readonly AtomicOutputSetWriter _transaction;
     private readonly List<OutputPipeline<TDocument>.Inspector> _documents = [];
+    private readonly Dictionary<OutputPipeline<TDocument>.Inspector, List<string>> _paths = [];
     private readonly List<StagedOutput> _staged = [];
     private readonly List<OutputPipeline.Copy> _copies = [];
 
@@ -728,18 +784,28 @@ public sealed class OutputSet<TDocument> : IDisposable
     /// format is a copy of the documents the command opened, and an unencrypted copy of an
     /// encrypted one is disclosed; an image or a data file never is.
     /// </param>
+    /// <param name="saved">
+    /// Whether <paramref name="write"/> saves the file through something other than
+    /// <paramref name="document"/>, such as a facade that signs it, so its marks are read from the
+    /// file (<see cref="IEvaluationProfile{TDocument}.InspectSaved"/>) where the profile reads files.
+    /// </param>
     public StagedOutput Stage(string targetPath, bool overwrite, TDocument? document, Action<string> write,
         bool rendering = false, string? backupPath = null, FileWritePrecondition? inputPrecondition = null,
-        Action<string>? verify = null, IEnumerable<int>? pages = null, bool encrypted = false)
+        Action<string>? verify = null, IEnumerable<int>? pages = null, bool encrypted = false, bool saved = false)
     {
         string format = OutputPipeline<TDocument>.FormatOf(targetPath);
-        OutputPipeline<TDocument>.Inspector? inspector = document is null ? null
+        OutputPipeline<TDocument>.Inspector? inspector = document is null || saved ? null
             : _documents.Find(item => ReferenceEquals(item.Document, document) && item.Rendering == rendering
                 && string.Equals(item.Format, format, StringComparison.Ordinal));
         if (document is not null && inspector is null)
         {
-            inspector = new OutputPipeline<TDocument>.Inspector(_profile, document, format, rendering);
+            inspector = new OutputPipeline<TDocument>.Inspector(_profile, document, format, rendering, saved);
             _documents.Add(inspector);
+        }
+
+        if (inspector is not null)
+        {
+            (_paths.TryGetValue(inspector, out List<string>? paths) ? paths : _paths[inspector] = []).Add(targetPath);
         }
 
         inspector?.Shows(pages);
@@ -760,7 +826,7 @@ public sealed class OutputSet<TDocument> : IDisposable
         _ = _transaction.Commit();
         foreach (OutputPipeline<TDocument>.Inspector inspector in _documents)
         {
-            _pipeline.Record(inspector.Result);
+            _pipeline.Record(inspector.Result, _paths.GetValueOrDefault(inspector));
         }
 
         for (int index = _documents.Count; index < _staged.Count; index++)
