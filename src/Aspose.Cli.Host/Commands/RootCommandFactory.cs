@@ -86,7 +86,7 @@ internal static class RootCommandFactory
         root.Subcommands.Add(UpdateCommand.Create(host, executor, globals));
 
         root.ValidateParameters();
-        HostHelpMetadata.Attach(root);
+        HostHelpMetadata.Attach(root, catalog);
         CommandHelpRenderer.Attach(root);
 
         return root;

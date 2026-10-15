@@ -21,12 +21,12 @@ internal static class CapabilitiesCommand
             "Describe everything this build supports (products, verbs, formats), as data.");
         var product = new Argument<string?>("product")
         {
-            Description = "Optional product id to select.",
+            Description = "Product id, such as pdf: describe only that product.",
             Arity = ArgumentArity.ZeroOrOne,
         }.WithInput(InputKind.None);
         var command = new Argument<string?>("command")
         {
-            Description = "Optional product-relative command path to select.",
+            Description = "Product-relative command path, such as edit: describe only that command.",
             Arity = ArgumentArity.ZeroOrOne,
         }.WithInput(InputKind.None);
         var summary = new Option<bool>("--summary")

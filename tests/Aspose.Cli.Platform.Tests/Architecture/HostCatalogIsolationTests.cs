@@ -37,8 +37,8 @@ public sealed class HostCatalogIsolationTests
         Assert.True(capabilities.TryGetHelpMetadata(out CommandHelpMetadata? metadata));
         Assert.Equal(
         [
-            "aspose-cli capabilities --output-format json",
             "aspose-cli capabilities --summary",
+            "aspose-cli capabilities alpha --output-format json",
         ],
             metadata!.Examples);
 

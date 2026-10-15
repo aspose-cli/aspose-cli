@@ -4134,7 +4134,7 @@
           "required": false,
           "hasDefault": false,
           "allowedValues": [],
-          "description": "Optional product id to select."
+          "description": "Product id, such as pdf: describe only that product."
         },
         {
           "name": "command",
@@ -4146,7 +4146,7 @@
           "required": false,
           "hasDefault": false,
           "allowedValues": [],
-          "description": "Optional product-relative command path to select."
+          "description": "Product-relative command path, such as edit: describe only that command."
         }
       ]
     },
