@@ -49,7 +49,7 @@ public sealed class SearchOptions
         {
             Required = true,
             Description = "Text to find, or a regular expression with --regex.",
-        }.WithInput(InputKind.None);
+        }.WithInput(InputKind.None).MistakenFor("--text").MistakenForArgument();
         _regex = new Option<bool>(RegexOption)
         {
             Description = "Treat the pattern as a culture-invariant regular expression with a one-second budget.",
