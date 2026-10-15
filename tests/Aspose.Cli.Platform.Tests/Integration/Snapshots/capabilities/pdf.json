@@ -42,7 +42,7 @@
         "command": "edit",
         "inputSchema": "v2/pdf/ops",
         "operationSchema": "aspose-cli schema v2/pdf/ops --operation <op>",
-        "contractFingerprint": "sha256:930c281aff5a829484e2c3498ac4f6a1e50d3d4ca56494d8fd6c28dcb6d00f8a",
+        "contractFingerprint": "sha256:8c0419405501bec5fd2f4417cd4d2ab76b793e1c04db3fd32fc5ecfe14218297",
         "maximumOperationCount": 10000,
         "ops": [
           "add_attachment",
@@ -4118,6 +4118,7 @@
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/pdf/inspect-result.schema.json#/$defs/pdfAttachmentInfo/properties/name"
             },
             "description": {
+              "description": "A description of the attachment that viewers show beside its name; none when omitted.",
               "type": "string",
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/pdf/inspect-result.schema.json#/$defs/pdfAttachmentInfo/properties/description"
             },
@@ -4153,6 +4154,7 @@
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/pdf/inspect-result.schema.json#/$defs/pdfOutlineItem/properties/title"
             },
             "page": {
+              "description": "The 1-based page the bookmark opens.",
               "type": "integer",
               "minimum": 1,
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/pdf/inspect-result.schema.json#/$defs/pdfOutlineItem/properties/page"
@@ -4186,11 +4188,13 @@
               "x-readBack": "not-state"
             },
             "text": {
+              "description": "The footer text.",
               "type": "string",
               "minLength": 1,
               "x-readBack": "not-state"
             },
             "placement": {
+              "description": "Where in the bottom margin the text sits; a top placement puts it in the top margin instead.",
               "type": "string",
               "enum": [
                 "top-left",
@@ -4231,11 +4235,13 @@
               "x-readBack": "not-state"
             },
             "text": {
+              "description": "The header text.",
               "type": "string",
               "minLength": 1,
               "x-readBack": "not-state"
             },
             "placement": {
+              "description": "Where in the top margin the text sits; a bottom placement puts it in the bottom margin instead.",
               "type": "string",
               "enum": [
                 "top-left",
@@ -4273,15 +4279,18 @@
               "const": "add_hyperlink"
             },
             "page": {
+              "description": "The 1-based page that gets the link.",
               "type": "integer",
               "minimum": 1,
               "x-readBack": "not-state"
             },
             "rect": {
+              "description": "The clickable area.",
               "$ref": "#/$defs/pdfRectInput",
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/pdf/inspect-result.schema.json#/$defs/pdfLinkInfo/properties/rect"
             },
             "url": {
+              "description": "The address a click opens.",
               "$ref": "#/$defs/webLink",
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/pdf/inspect-result.schema.json#/$defs/pdfLinkInfo/properties/url"
             }
@@ -4313,6 +4322,7 @@
               "x-readBack": "not-state"
             },
             "placement": {
+              "description": "The margin corner or center the number sits in.",
               "type": "string",
               "enum": [
                 "top-left",
@@ -4357,6 +4367,7 @@
               "const": "add_stamp_image"
             },
             "page": {
+              "description": "The 1-based page to stamp.",
               "type": "integer",
               "minimum": 1,
               "x-readBack": "not-state"
@@ -4369,6 +4380,7 @@
               "x-readBack": "not-state"
             },
             "rect": {
+              "description": "The rectangle the image is drawn into.",
               "$ref": "#/$defs/pdfRectInput",
               "x-readBack": "not-state"
             }
@@ -4402,6 +4414,7 @@
               "x-readBack": "not-state"
             },
             "opacity": {
+              "description": "How opaque the watermark is, from 0 (invisible) to 1 (solid).",
               "type": "number",
               "minimum": 0,
               "maximum": 1,
@@ -4416,6 +4429,7 @@
               "x-readBack": "not-state"
             },
             "layer": {
+              "description": "Whether the watermark is drawn over the page content or under it, where opaque content hides it.",
               "type": "string",
               "enum": [
                 "over",
@@ -4447,6 +4461,7 @@
               "x-readBack": "not-state"
             },
             "text": {
+              "description": "The watermark text, such as CONFIDENTIAL.",
               "type": "string",
               "minLength": 1,
               "x-readBack": "not-state"
@@ -4464,11 +4479,13 @@
               "x-readBack": "not-state"
             },
             "color": {
+              "description": "The text color.",
               "$ref": "#/$defs/color",
               "default": "#808080",
               "x-readBack": "not-state"
             },
             "opacity": {
+              "description": "How opaque the watermark is, from 0 (invisible) to 1 (solid).",
               "type": "number",
               "minimum": 0,
               "maximum": 1,
@@ -4482,6 +4499,7 @@
               "x-readBack": "not-state"
             },
             "layer": {
+              "description": "Whether the watermark is drawn over the page content or under it, where opaque content hides it.",
               "type": "string",
               "enum": [
                 "over",
@@ -4537,6 +4555,7 @@
               "const": "crop_pages"
             },
             "pages": {
+              "description": "The pages to crop.",
               "$ref": "#/$defs/pages",
               "x-readBack": "not-state"
             },
@@ -4589,6 +4608,7 @@
               "const": "delete_attachment"
             },
             "name": {
+              "description": "The attachment name, as pdf inspect --detail attachments reports it.",
               "type": "string",
               "minLength": 1,
               "x-readBack": "not-state"
@@ -4637,6 +4657,7 @@
               "const": "delete_pages"
             },
             "pages": {
+              "description": "The pages to delete.",
               "$ref": "#/$defs/pages",
               "x-readBack": "not-state"
             }
@@ -4672,6 +4693,7 @@
               "x-readBack": "not-state"
             },
             "permissions": {
+              "description": "What a reader may do without the owner password; every permission is denied when omitted.",
               "$ref": "#/$defs/pdfPermissionsInput",
               "default": {}
             }
@@ -4791,6 +4813,7 @@
               "const": "move_pages"
             },
             "pages": {
+              "description": "The pages to move.",
               "$ref": "#/$defs/pages",
               "x-readBack": "not-state"
             },
@@ -4831,16 +4854,19 @@
               "x-readBack": "not-state"
             },
             "unembedFonts": {
+              "description": "Whether embedded fonts are removed, so a reader without them installed substitutes others.",
               "type": "boolean",
               "default": false,
               "x-readBack": "not-state"
             },
             "removeUnusedObjects": {
+              "description": "Whether objects and streams that nothing in the document references are removed.",
               "type": "boolean",
               "default": true,
               "x-readBack": "not-state"
             },
             "compressStreams": {
+              "description": "Whether content streams are compressed and objects packed into compressed object streams.",
               "type": "boolean",
               "default": true,
               "x-readBack": "not-state"
@@ -4864,15 +4890,18 @@
               "const": "redact_area"
             },
             "page": {
+              "description": "The 1-based page to redact.",
               "type": "integer",
               "minimum": 1,
               "x-readBack": "not-state"
             },
             "rect": {
+              "description": "The area whose content is removed.",
               "$ref": "#/$defs/pdfRectInput",
               "x-readBack": "not-state"
             },
             "fillColor": {
+              "description": "The color of the box that covers the redacted area.",
               "$ref": "#/$defs/color",
               "default": "#000000",
               "x-readBack": "not-state"
@@ -4918,6 +4947,7 @@
               "x-readBack": "not-state"
             },
             "fillColor": {
+              "description": "The color of the box that covers each redacted match.",
               "$ref": "#/$defs/color",
               "default": "#000000",
               "x-readBack": "not-state"
@@ -4941,6 +4971,7 @@
               "const": "rotate_pages"
             },
             "pages": {
+              "description": "The pages to rotate.",
               "$ref": "#/$defs/pages",
               "x-readBack": "not-state"
             },
@@ -4971,6 +5002,7 @@
               "const": "set_form_field"
             },
             "name": {
+              "description": "The field's full name, as pdf inspect --detail forms reports it, such as applicant.name.",
               "type": "string",
               "minLength": 1,
               "x-readBack": "not-state"
@@ -5001,6 +5033,7 @@
               "const": "set_page_labels"
             },
             "ranges": {
+              "description": "The label ranges, each applying from its start page until the next one starts.",
               "type": "array",
               "minItems": 1,
               "items": {
@@ -5026,10 +5059,12 @@
               "const": "set_page_size"
             },
             "pages": {
+              "description": "The pages to resize.",
               "$ref": "#/$defs/pages",
               "x-readBack": "not-state"
             },
             "pageSize": {
+              "description": "The new page size, a preset or a width and height in points.",
               "$ref": "#/$defs/pageSizeInput",
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/pdf/inspect-result.schema.json#/$defs/pdfPageInfo/properties/pageSize"
             },
@@ -5056,18 +5091,22 @@
               "const": "set_properties"
             },
             "title": {
+              "description": "The document title.",
               "type": "string",
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/pdf/inspect-result.schema.json#/properties/properties/additionalProperties"
             },
             "author": {
+              "description": "The document author.",
               "type": "string",
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/pdf/inspect-result.schema.json#/properties/properties/additionalProperties"
             },
             "subject": {
+              "description": "The document subject.",
               "type": "string",
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/pdf/inspect-result.schema.json#/properties/properties/additionalProperties"
             },
             "keywords": {
+              "description": "The document keywords, as one text such as \"budget, 2026\".",
               "type": "string",
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/pdf/inspect-result.schema.json#/properties/properties/additionalProperties"
             },
@@ -5197,41 +5236,49 @@
           "additionalProperties": false,
           "properties": {
             "print": {
+              "description": "Whether the document may be printed, at low resolution unless printHighResolution is also allowed.",
               "type": "boolean",
               "default": false,
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/pdf/inspect-result.schema.json#/$defs/pdfPermissionInfo/properties/print"
             },
             "copy": {
+              "description": "Whether text and images may be copied out of the document.",
               "type": "boolean",
               "default": false,
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/pdf/inspect-result.schema.json#/$defs/pdfPermissionInfo/properties/copy"
             },
             "modify": {
+              "description": "Whether the content may be changed, other than by annotate, fillForms or assemble.",
               "type": "boolean",
               "default": false,
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/pdf/inspect-result.schema.json#/$defs/pdfPermissionInfo/properties/modify"
             },
             "annotate": {
+              "description": "Whether comments and other annotations may be added or changed, and form fields filled.",
               "type": "boolean",
               "default": false,
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/pdf/inspect-result.schema.json#/$defs/pdfPermissionInfo/properties/annotate"
             },
             "fillForms": {
+              "description": "Whether existing form fields may be filled in and signed.",
               "type": "boolean",
               "default": false,
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/pdf/inspect-result.schema.json#/$defs/pdfPermissionInfo/properties/fillForms"
             },
             "extractAccessibility": {
+              "description": "Whether text and images may be extracted for accessibility, such as by a screen reader.",
               "type": "boolean",
               "default": false,
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/pdf/inspect-result.schema.json#/$defs/pdfPermissionInfo/properties/extractAccessibility"
             },
             "assemble": {
+              "description": "Whether pages may be inserted, deleted or rotated and bookmarks and thumbnails created.",
               "type": "boolean",
               "default": false,
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/pdf/inspect-result.schema.json#/$defs/pdfPermissionInfo/properties/assemble"
             },
             "printHighResolution": {
+              "description": "Whether the document may be printed at full quality; it takes effect only with print.",
               "type": "boolean",
               "default": false,
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/pdf/inspect-result.schema.json#/$defs/pdfPermissionInfo/properties/printHighResolution"
@@ -5260,10 +5307,12 @@
               "minimum": 0
             },
             "width": {
+              "description": "The width, to the right of x.",
               "type": "number",
               "exclusiveMinimum": 0
             },
             "height": {
+              "description": "The height, down from y.",
               "type": "number",
               "exclusiveMinimum": 0
             }
