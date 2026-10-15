@@ -279,16 +279,62 @@ internal sealed partial class WordsMutationHandlers
 
     public ValueTuple Apply(SetListOp operation)
     {
-        List list = _document.Lists.Add(operation.Kind == "bullet" ? ListTemplate.BulletDefault : ListTemplate.NumberDefault);
-        long count = 0;
-        foreach (Paragraph paragraph in Nodes.SelectMany(Paragraphs))
+        Paragraph[] paragraphs = [.. Nodes.SelectMany(Paragraphs)];
+        ListTemplate template = operation.Kind == "bullet" ? ListTemplate.BulletDefault : ListTemplate.NumberDefault;
+        if (IsAlreadyTheList(paragraphs, template, operation.Level - 1))
+        {
+            return default;
+        }
+
+        List list = _document.Lists.Add(template);
+        foreach (Paragraph paragraph in paragraphs)
         {
             paragraph.ListFormat.List = list;
             paragraph.ListFormat.ListLevelNumber = operation.Level - 1;
-            count++;
         }
 
         return default;
     }
+
+    /// <summary>
+    /// Whether the paragraphs already are the list set_list would make of them: all at the level
+    /// of one list that no other paragraph uses, which numbers that level as a new list from the
+    /// template does. Making them a new list again would change nothing a reader sees.
+    /// </summary>
+    private bool IsAlreadyTheList(Paragraph[] paragraphs, ListTemplate template, int level)
+    {
+        if (paragraphs.Length == 0 || !paragraphs[0].ListFormat.IsListItem)
+        {
+            return false;
+        }
+
+        int listId = paragraphs[0].ListFormat.List.ListId;
+        if (paragraphs.Any(paragraph => !paragraph.ListFormat.IsListItem
+            || paragraph.ListFormat.List.ListId != listId
+            || paragraph.ListFormat.ListLevelNumber != level))
+        {
+            return false;
+        }
+
+        var targets = new HashSet<Paragraph>(paragraphs, ReferenceEqualityComparer.Instance);
+        if (_document.GetChildNodes(NodeType.Paragraph, true).Cast<Paragraph>()
+            .Any(paragraph => paragraph.ListFormat.IsListItem && paragraph.ListFormat.List.ListId == listId && !targets.Contains(paragraph)))
+        {
+            return false;
+        }
+
+        (NumberStyle style, string format) = TemplateLevels.Value[template][level];
+        ListLevel current = paragraphs[0].ListFormat.List.ListLevels[level];
+        return current.NumberStyle == style && string.Equals(current.NumberFormat, format, StringComparison.Ordinal);
+    }
+
+    /// <summary>How a new list from each template set_list uses numbers each of its levels.</summary>
+    private static readonly Lazy<Dictionary<ListTemplate, (NumberStyle Style, string Format)[]>> TemplateLevels = new(static () =>
+    {
+        var scratch = new Document();
+        return new[] { ListTemplate.BulletDefault, ListTemplate.NumberDefault }.ToDictionary(
+            static template => template,
+            template => scratch.Lists.Add(template).ListLevels.Select(static level => (level.NumberStyle, level.NumberFormat)).ToArray());
+    });
 }
 

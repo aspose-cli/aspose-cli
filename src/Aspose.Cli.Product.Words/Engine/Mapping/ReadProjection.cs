@@ -109,7 +109,7 @@ internal static class ReadProjection
                         Italic = run.Font.Italic,
                         Color = $"#{run.Font.Color.ToArgb() & 0xffffff:X6}",
                         Underline = run.Font.Underline != Underline.None,
-                        Highlight = WordsReadBack.Hex(run.Font.HighlightColor),
+                        Highlight = WordsReadBack.HighlightName(run.Font.HighlightColor),
                         Url = links.GetValueOrDefault(run),
                     });
                 }

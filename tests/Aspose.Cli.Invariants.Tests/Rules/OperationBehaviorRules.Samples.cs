@@ -209,7 +209,7 @@ internal static class OperationSamples
         new("words", """{"op":"delete_blocks","target":{"block":2}}"""),
         new("words", """{"op":"delete_section","section":2}""", Setup: """[{"op":"insert_section","at":1,"position":"after"}]"""),
         new("words", """{"op":"set_table_pagination","target":{"block":3},"keepTogether":false,"allowRowBreakAcrossPages":false,"headerRowCount":1,"keepWithNext":true}""", Setup: """[{"op":"insert_table","at":{"block":2},"position":"after","rowCount":2,"columnCount":2}]"""),
-        new("words", """{"op":"format_text","target":{"block":2},"underline":true,"highlight":"#FFFF00","bold":true,"italic":true,"fontSize":14.5,"color":"#C00000","font":"Arial","latinFont":"Arial","eastAsianFont":"SimSun"}"""),
+        new("words", """{"op":"format_text","target":{"block":2},"underline":true,"highlight":"yellow","bold":true,"italic":true,"fontSize":14.5,"color":"#C00000","font":"Arial","latinFont":"Arial","eastAsianFont":"SimSun"}"""),
         new("words", """{"op":"insert_bookmark","at":{"block":2},"name":"Mark"}"""),
         new("words", """{"op":"insert_break","at":{"block":2},"position":"after","kind":"page"}"""),
         new("words", """{"op":"insert_field","at":{"block":2},"position":"after","code":"PAGE"}"""),

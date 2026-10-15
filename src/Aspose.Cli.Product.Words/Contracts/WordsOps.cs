@@ -537,9 +537,9 @@ public sealed record FormatTextOp : WordsOp
     [ReadBack("read-result.schema.json#/$defs/wordsRunData/properties/eastAsianFont")]
     [MinLength(1)] public string? EastAsianFont { get; init; }
 
-    /// <summary>The highlight color, as #RRGGBB.</summary>
+    /// <summary>The highlight, a color of Word's highlight palette, the only highlights a Word document stores.</summary>
     [ReadBack("read-result.schema.json#/$defs/wordsRunData/properties/highlight")]
-    [HexColor] public string? Highlight { get; init; }
+    [AllowedValues(typeof(WordsHighlightColors))] public string? Highlight { get; init; }
 }
 
 /// <summary>Applies an existing paragraph style to target blocks.</summary>

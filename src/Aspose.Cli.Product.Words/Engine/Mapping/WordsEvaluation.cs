@@ -1,4 +1,5 @@
 using Aspose.Words;
+using Aspose.Words.Drawing;
 using Aspose.Words.Tables;
 
 namespace Aspose.Cli.Product.Words.Engine.Mapping;
@@ -28,6 +29,44 @@ internal static class WordsEvaluation
     internal static bool IsMark(Paragraph paragraph) =>
         IsBanner(paragraph)
         || paragraph.GetText().TrimStart().StartsWith("Evaluation Only. Created with Aspose.Words.", StringComparison.Ordinal);
+
+    /// <summary>
+    /// Whether a shape is the watermark picture evaluation mode draws in the primary header of
+    /// every document it saves: a header picture with the very image evaluation mode draws, as a
+    /// small document it saves shows it. Only meaningful in evaluation mode, which draws it.
+    /// </summary>
+    internal static bool IsWatermark(Shape shape) =>
+        shape.HasImage
+        && shape.GetAncestor(NodeType.HeaderFooter) is not null
+        && WatermarkImage() is { } image
+        && shape.ImageData.ImageBytes.AsSpan().SequenceEqual(image);
+
+    private static byte[]? _watermarkImage;
+
+    /// <summary>The image of the watermark evaluation mode draws; null when this process saves without one.</summary>
+    private static byte[]? WatermarkImage()
+    {
+        if (Volatile.Read(ref _watermarkImage) is { } known)
+        {
+            return known;
+        }
+
+        // A document without content is saved without the marks.
+        var sample = new Document();
+        new DocumentBuilder(sample).Write("x");
+        using var stream = new MemoryStream();
+        sample.Save(stream, SaveFormat.Docx);
+        stream.Position = 0;
+        byte[]? image = new Document(stream).GetChildNodes(NodeType.Shape, true).Cast<Shape>()
+            .FirstOrDefault(static shape => shape.HasImage && shape.GetAncestor(NodeType.HeaderFooter) is not null)?.ImageData.ImageBytes;
+        // A licensed save draws none; only an image found is kept.
+        if (image is not null)
+        {
+            Volatile.Write(ref _watermarkImage, image);
+        }
+
+        return image;
+    }
 
     /// <summary>The paragraphs of a document that are <see cref="IsMark">evaluation marks</see>.</summary>
     internal static int MarkCount(Document document) =>

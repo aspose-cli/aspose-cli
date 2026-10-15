@@ -124,7 +124,7 @@ internal sealed partial class WordsSnapshots(LoadedDocument loaded) : IWordsOpHa
         snapshot.AddObjects(BlockUnit, Blocks(loaded).Select(block => ((object)block, State(block))));
 
     private OperationSnapshot AddSections(OperationSnapshot snapshot) =>
-        snapshot.AddObjects(SectionUnit, _document.Sections.Cast<Section>().Select(static section => ((object)section, WordsDigest.OfSection(section))));
+        snapshot.AddObjects(SectionUnit, _document.Sections.Cast<Section>().Select(section => ((object)section, WordsDigest.OfSection(section, loaded.Evaluation))));
 
     /// <summary>The body blocks in order, as <c>words read</c> numbers them.</summary>
     internal static IEnumerable<Node> Blocks(LoadedDocument loaded) =>

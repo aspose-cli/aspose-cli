@@ -218,7 +218,7 @@ public sealed class WordsModuleTests
 
     [Theory]
     [InlineData("""{"op":"format_text","target":{"block":1},"color":"red"}""")]
-    [InlineData("""{"op":"format_text","target":{"block":1},"highlight":"yellow"}""")]
+    [InlineData("""{"op":"format_text","target":{"block":1},"highlight":"#FFFF00"}""")]
     [InlineData("""{"op":"set_list","target":{"block":1},"kind":"bullet","level":0}""")]
     [InlineData("""{"op":"insert_paragraphs","at":{"block":1},"position":"after","paragraphs":[{"text":"a","list":{"level":0}}]}""")]
     [InlineData("""{"op":"set_header","paragraphs":[{"text":"a","list":{"level":1}}]}""")]

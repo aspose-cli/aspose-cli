@@ -220,6 +220,13 @@ internal sealed partial class WordsMutationHandlers
                 section.HeadersFooters.Add(container);
             }
 
+            // The page numbers move: their PAGE field leaves the other primary header or footer.
+            HeaderFooterType other = operation.Location == "header" ? HeaderFooterType.FooterPrimary : HeaderFooterType.HeaderPrimary;
+            if (section.HeadersFooters[other] is { } previous)
+            {
+                RemovePageFields(previous);
+            }
+
             Field? existingPage = container.Range.Fields.Cast<Field>()
                 .FirstOrDefault(static field => field.Type == FieldType.FieldPage);
             Paragraph paragraph;
@@ -260,6 +267,20 @@ internal sealed partial class WordsMutationHandlers
 
         _document.UpdatePageLayout();
         return default;
+    }
+
+    /// <summary>Removes the PAGE fields of a header or footer, and each paragraph one leaves empty that is not its last.</summary>
+    private static void RemovePageFields(HeaderFooter headerFooter)
+    {
+        foreach (Field field in headerFooter.Range.Fields.Cast<Field>().Where(static field => field.Type == FieldType.FieldPage).ToArray())
+        {
+            var paragraph = (Paragraph)field.Start.GetAncestor(NodeType.Paragraph);
+            field.Remove();
+            if (!paragraph.HasChildNodes && headerFooter.Paragraphs.Count > 1)
+            {
+                paragraph.Remove();
+            }
+        }
     }
 
     public ValueTuple Apply(ImportSectionsOp operation)

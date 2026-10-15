@@ -195,7 +195,8 @@ public sealed record WordsRunData
     /// <summary>Whether the run is underlined.</summary>
     public bool? Underline { get; init; }
 
-    /// <summary>The highlight color, as #RRGGBB; absent without a highlight.</summary>
+    /// <summary>The highlight, a color of Word's highlight palette; absent without a highlight.</summary>
+    [AllowedValues(typeof(WordsHighlightColors))]
     public string? Highlight { get; init; }
 
     /// <summary>The address of the hyperlink whose text the run is; absent elsewhere.</summary>
