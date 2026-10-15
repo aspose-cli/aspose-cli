@@ -176,5 +176,5 @@ public sealed class CellsTextImportTests : IClassFixture<CellsFixture>
         });
 
     private CellsReadResult ImportAndRead(string path, CellsTextImportOptions import) =>
-        CellsRead.Run(_fixture.Session, new CellsReadRequest { Input = ImportText(path, import).Output.Path });
+        CellsRead.Run(_fixture.Session, new CellsReadRequest { Input = ImportText(path, import).Outputs[0].Path });
 }

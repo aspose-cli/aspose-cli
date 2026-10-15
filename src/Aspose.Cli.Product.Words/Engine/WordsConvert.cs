@@ -30,7 +30,7 @@ internal static class WordsConvert
         return new WordsConvertResult
         {
             Input = InfoProjection.Source(request.Input, loaded),
-            Output = FileObjects.Output(written, request.Output.Format, encrypted: outputPassword is not null),
+            Outputs = [new(FileObjects.Output(written, request.Output.Format, encrypted: outputPassword is not null))],
             Pages = request.Pages?.Text,
             License = EnvelopeParts.License(state),
             Warnings = warnings,

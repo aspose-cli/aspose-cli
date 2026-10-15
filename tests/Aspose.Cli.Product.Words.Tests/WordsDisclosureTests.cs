@@ -463,7 +463,7 @@ public sealed class WordsDisclosureTests
         });
 
         Assert.DoesNotContain(converted.Warnings ?? [], static warning => warning.Code == WordsDiagnostics.MacrosDropped);
-        var reopened = new Document(converted.Output!.Path);
+        var reopened = new Document(converted.Outputs[0].Path);
         Assert.True(reopened.HasMacros);
         Assert.Contains("Sub Hello()", reopened.VbaProject.Modules["Module1"].SourceCode, StringComparison.Ordinal);
     }

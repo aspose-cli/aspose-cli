@@ -62,7 +62,7 @@ public sealed class ProductPublicationTests
         converted.Succeeded();
         pages.Succeeded();
         site.Succeeded();
-        AssertDescribesThePublishedFile(JsonNode.Parse(converted.StdOut)!["output"]!);
+        AssertDescribesThePublishedFile(Assert.Single(JsonNode.Parse(converted.StdOut)!["outputs"]!.AsArray())!);
         Assert.All(JsonNode.Parse(pages.StdOut)!["outputs"]!.AsArray(), static output => AssertDescribesThePublishedFile(output!));
         JsonArray files = JsonNode.Parse(site.StdOut)!["outputs"]!.AsArray();
         Assert.True(files.Count > 1, "The HTML5 deck is published with its companion files.");

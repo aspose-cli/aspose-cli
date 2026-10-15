@@ -103,5 +103,6 @@ internal static class ConvertCommand
     }
 
     internal static void Table(CellsConvertResult convert, TableSurface surface) =>
-        ResultText.Produced(surface, convert.Output, convert.Sheets is null ? null : $"sheets {string.Join(", ", convert.Sheets)}");
+        ResultText.Files(surface, "wrote", "file", [.. convert.Outputs.Select(output =>
+            new ProducedFile(null, output.Path, output.Format, output.SizeBytes, convert.Sheets is null ? null : $"sheets {string.Join(", ", convert.Sheets)}"))]);
 }

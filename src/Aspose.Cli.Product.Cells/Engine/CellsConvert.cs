@@ -98,7 +98,7 @@ internal static class CellsConvert
         return new CellsConvertResult
         {
             Input = input,
-            Output = FileObjects.Output(written, request.Output.Format, savePlan.Encrypts),
+            Outputs = [new(FileObjects.Output(written, request.Output.Format, savePlan.Encrypts))],
             Sheets = selected is null ? null : [.. selected.Select(static sheet => sheet.Name)],
             License = EnvelopeParts.License(licenseState),
             // Only a text export without --sheets writes one sheet chosen by default; the other
