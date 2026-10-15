@@ -97,6 +97,10 @@ internal sealed class WordsViewAdapter : IProductViewAdapter<WordsSession>
                 ReviewCoverageMetric.Of("lowUtilizationPages", layout.Pages.Count(IsExtremelyLowUtilization), "pages"),
                 ReviewCoverageMetric.Of("outsideObjects", layout.Pages.Sum(static page => page.OutsideObjects), "objects"),
                 ReviewCoverageMetric.Of("orphanedHeadings", layout.OrphanedHeadings.Count, "headings"),
+                // Only evaluation mode leaves its own marks out of the checks.
+                .. layout.ExcludedEvaluationMarks is int excluded
+                    ? [ReviewCoverageMetric.Of("excludedEvaluationMarks", excluded, "lines")]
+                    : Array.Empty<ReviewCoverageMetric>(),
             ],
         };
     }

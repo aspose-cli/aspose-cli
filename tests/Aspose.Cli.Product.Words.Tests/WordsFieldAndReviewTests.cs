@@ -70,6 +70,38 @@ public sealed class WordsFieldAndReviewTests
         }
     }
 
+    /// <summary>
+    /// Evaluation mode adds its banner and footer sentence to the document it opens, so its
+    /// review leaves them out of the layout checks and says how many it left out; with a
+    /// license nothing is left out and the metric is absent.
+    /// </summary>
+    [Fact]
+    public void Review_CountsTheEvaluationMarksItExcludesOnlyInEvaluationMode()
+    {
+        using var fixture = new WordsFixture();
+        var document = new Document();
+        new DocumentBuilder(document).Write("Clause one.");
+        string input = fixture.Temp.File("plain.docx");
+        document.Save(input);
+        var adapter = new WordsViewAdapter();
+        var request = new ViewRenderRequest { View = WordsViews.Pages, MaxPartCount = 4, Purpose = ViewPurpose.Evidence };
+        ViewManifest rendered = adapter.Render(fixture.Session, input, request, new MemoryArtifactSink());
+
+        ReviewCoverageMetric? excluded = adapter.Assess(fixture.Session, input, request, rendered).Coverage!
+            .SingleOrDefault(static metric => metric.Name == "excludedEvaluationMarks");
+
+        if (fixture.LicenseState == Aspose.Cli.Sdk.Licensing.LicenseState.Licensed)
+        {
+            Assert.Null(excluded);
+        }
+        else
+        {
+            Assert.NotNull(excluded);
+            Assert.True(excluded.Value > 0);
+            Assert.Equal("lines", excluded.Unit);
+        }
+    }
+
     /// <summary>The WORDS_EVALUATION_MARKS findings of a page review of an unencrypted document.</summary>
     private static ReviewFinding[] EvaluationFindings(WordsFixture fixture, string input)
     {
