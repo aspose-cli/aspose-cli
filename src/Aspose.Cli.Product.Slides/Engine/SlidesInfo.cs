@@ -60,7 +60,7 @@ internal static class SlidesInfo
             Layouts = Details(SlidesInspectDetails.Layouts)
                 ? presentation.LayoutSlides.Select(layout => new SlidesLayoutInfo
                 {
-                    Name = layout.Name,
+                    Name = EmptyToNull(layout.Name),
                     Master = EmptyToNull(layout.MasterSlide?.Name),
                     SlideCount = presentation.Slides.Count(slide => ReferenceEquals(slide.LayoutSlide, layout)),
                 }).OrderBy(static layout => layout.Name, StringComparer.Ordinal).ToArray()

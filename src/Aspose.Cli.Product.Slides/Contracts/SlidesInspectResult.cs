@@ -106,7 +106,10 @@ public sealed record SlidesSlideInfo
     /// <summary>The name of the slide's layout; omitted when it has none.</summary>
     public string? Layout { get; init; }
 
-    /// <summary>The slide's title text; only with <c>--sample</c>, and omitted when the slide has no title.</summary>
+    /// <summary>
+    /// The text of the slide's title placeholder, or on a slide without one the text of its first
+    /// shape with text; only with <c>--sample</c>, and omitted when there is none.
+    /// </summary>
     public string? Title { get; init; }
 
     /// <summary>
@@ -148,8 +151,8 @@ public sealed record SlidesMasterInfo
 /// <summary>One layout and its direct slide usage.</summary>
 public sealed record SlidesLayoutInfo
 {
-    /// <summary>The layout's name, which insert_slide and set_layout accept as layout.</summary>
-    public required string Name { get; init; }
+    /// <summary>The layout's name, which insert_slide and set_layout accept as layout; omitted when it has none.</summary>
+    public string? Name { get; init; }
 
     /// <summary>The name of the master the layout belongs to; omitted when it has none.</summary>
     public required string? Master { get; init; }

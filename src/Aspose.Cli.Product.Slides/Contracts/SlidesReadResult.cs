@@ -41,7 +41,10 @@ public sealed record SlidesSlideData
     /// <summary>The name of the slide's layout; omitted when it has none.</summary>
     public string? Layout { get; init; }
 
-    /// <summary>The slide's title text; omitted when the slide has no title.</summary>
+    /// <summary>
+    /// The text of the slide's title placeholder, or on a slide without one the text of its first
+    /// shape with text; omitted when there is none, such as an empty title placeholder.
+    /// </summary>
     public string? Title { get; init; }
 
     /// <summary>The text of each shape that has text, in shape order; only with <c>--content text</c>.</summary>

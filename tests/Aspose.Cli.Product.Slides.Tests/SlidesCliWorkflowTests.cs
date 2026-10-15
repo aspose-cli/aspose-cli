@@ -328,4 +328,20 @@ public sealed class SlidesCliWorkflowTests : IDisposable
 
     private static string[] WarningCodes(JsonNode result) =>
         [.. result["warnings"]?.AsArray().Select(static warning => warning!["code"]!.GetValue<string>()) ?? []];
+
+    [Fact]
+    public void InspectLayouts_OmitsTheNameOfAnUnnamedLayout()
+    {
+        using (var presentation = new Presentation())
+        {
+            presentation.LayoutSlides[0].Name = string.Empty;
+            presentation.Save(_workspace.File("unnamed.pptx"), SaveFormat.Pptx);
+        }
+
+        // The run checks the result against its schema, where a present name is a string.
+        CliResult inspect = _workspace.Run("slides", "inspect", "unnamed.pptx", "--detail", "layouts", "--output-format", "json");
+
+        Assert.True(inspect.ExitCode == 0, inspect.StdOut + inspect.StdErr);
+        Assert.Contains(JsonNode.Parse(inspect.StdOut)!["layouts"]!.AsArray(), static layout => layout!["name"] is null);
+    }
 }
