@@ -7,7 +7,7 @@ using Xunit;
 namespace Aspose.Cli.Product.Words.Tests;
 
 /// <summary>
-/// Blocks, search hit text and text addresses read the text a reader sees: field results
+/// Blocks, search hit context and text addresses read the text a reader sees: field results
 /// rather than codes, no text a tracked change deletes, and no comment or footnote text
 /// inside the paragraph that anchors it.
 /// </summary>
@@ -56,7 +56,10 @@ public sealed class WordsVisibleTextTests : IClassFixture<WordsFixture>
                 Output = TestOutput.At(_fixture.Temp.File("anchor.docx")),
             }));
 
-        Assert.Equal(Visible, Assert.Single(link.Hits).Text);
+        // A hit is the match; its context, the whole short paragraph here, is the visible text.
+        WordsSearchHit hit = Assert.Single(link.Hits);
+        Assert.Equal("link text", hit.Text);
+        Assert.Equal(Visible, hit.Context);
         Assert.Empty(code.Hits);
         Assert.Empty(deleted.Hits);
         Assert.Equal(WordsDiagnostics.AnchorNotFound, anchor.Code);
@@ -131,7 +134,9 @@ public sealed class WordsVisibleTextTests : IClassFixture<WordsFixture>
             What = "text",
         });
 
-        Assert.Equal("1.2 Second clause", Assert.Single(search.Hits).Text);
+        WordsSearchHit numbered = Assert.Single(search.Hits);
+        Assert.Equal("1.2", numbered.Text);
+        Assert.Equal("1.2 Second clause", numbered.Context);
         Assert.Equal("1. Scope\n1.1 First clause\n1.2 Changed clause", File.ReadAllText(Assert.Single(extracted.Items).Path));
     }
 
