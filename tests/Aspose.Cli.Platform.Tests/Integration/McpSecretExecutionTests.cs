@@ -30,9 +30,18 @@ public sealed class McpSecretExecutionTests
         Task<string> stderr = process.StandardError.ReadToEndAsync();
         try
         {
-            await process.StandardInput.WriteAsync("{");
-            await process.StandardInput.FlushAsync();
-            await process.WaitForExitAsync().WaitAsync(TimeSpan.FromSeconds(7));
+            try
+            {
+                await process.StandardInput.WriteAsync("{");
+                await process.StandardInput.FlushAsync();
+            }
+            catch (IOException)
+            {
+                // On a loaded machine the one-second timeout can end the command before the
+                // unfinished document reaches it; the pipe is closed and the outcome is the same.
+            }
+            // The deadline under test is the command's own second; this wait only bounds a hang.
+            await process.WaitForExitAsync().WaitAsync(TimeSpan.FromSeconds(60));
             Assert.Equal(9, process.ExitCode);
             Assert.Equal("", await stdout);
             Assert.Equal("OPERATION_TIMEOUT", JsonNode.Parse(await stderr)!["error"]!["code"]!.GetValue<string>());

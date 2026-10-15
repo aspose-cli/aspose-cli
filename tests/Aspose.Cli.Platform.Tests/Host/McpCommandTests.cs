@@ -279,10 +279,10 @@ public sealed class McpCommandTests
             execution = runner.RunAsync(["timeout-probe"], null, 1, cancellation.Token);
             McpCommandException error = await Assert.ThrowsAsync<McpCommandException>(() => execution);
             Assert.Contains("exceeded the 1-second timeout", error.Message);
-            // Far below the minute an unbounded wait would take; the slack covers starting and
-            // killing the interpreter while other test projects load the machine.
+            // Below the minute an unbounded wait would take; the slack covers starting and killing
+            // the interpreter while other test projects load the machine, which once took 15 s.
             Assert.True(stopwatch.Elapsed < TimeSpan.FromSeconds(1)
-                + ChildProcess.TerminationGrace + TimeSpan.FromSeconds(5), stopwatch.Elapsed.ToString());
+                + ChildProcess.TerminationGrace + TimeSpan.FromSeconds(30), stopwatch.Elapsed.ToString());
         }
         finally
         {

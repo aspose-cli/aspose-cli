@@ -35,7 +35,7 @@ public sealed class UpdateHandoffTests
             # Written beside the target and renamed, so the test never reads a half-written file.
             [IO.File]::WriteAllText('{{Quote(ready)}}.tmp', ($handoff | ConvertTo-Json -Compress))
             [IO.File]::Move('{{Quote(ready)}}.tmp', '{{Quote(ready)}}')
-            $stop = [DateTime]::UtcNow.AddSeconds(30)
+            $stop = [DateTime]::UtcNow.AddSeconds(300)
             while (-not [IO.File]::Exists('{{Quote(release)}}') -and [DateTime]::UtcNow -lt $stop) { Start-Sleep -Milliseconds 25 }
             [IO.File]::WriteAllText('{{Quote(complete)}}', 'completed')
             $full = [IO.Path]::GetFullPath($CleanupRoot)
@@ -54,8 +54,9 @@ public sealed class UpdateHandoffTests
             await cli.WaitForExitAsync().WaitAsync(TestDeadline.Hang);
             Assert.Equal(0, cli.ExitCode);
             // The installer deliberately stays alive until release; it must not retain CLI result pipes.
-            string output = await stdout.WaitAsync(TimeSpan.FromSeconds(5));
-            Assert.True(string.IsNullOrWhiteSpace(await stderr.WaitAsync(TimeSpan.FromSeconds(5))));
+            // Pipes it held would stay open for its whole wait, far beyond this bound for a loaded machine.
+            string output = await stdout.WaitAsync(TimeSpan.FromSeconds(30));
+            Assert.True(string.IsNullOrWhiteSpace(await stderr.WaitAsync(TimeSpan.FromSeconds(30))));
             JsonNode result = JsonNode.Parse(output)!;
             Assert.Equal("pending", result["status"]!.GetValue<string>());
             await WaitForFile(ready);
