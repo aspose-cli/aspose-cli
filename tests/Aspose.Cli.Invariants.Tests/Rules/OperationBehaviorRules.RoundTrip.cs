@@ -178,9 +178,25 @@ internal static partial class ContractRules
     private static bool Covers(RoundTripExemption? excuse, RoundTripPart part) =>
         excuse is not null && (excuse.Parts.HasFlag(part) || (part == RoundTripPart.ReadBack && excuse.Parts.HasFlag(RoundTripPart.OneChange)));
 
-    /// <summary>Every exemption names an operation of the product that still has a read path, and a field exemption one of its state fields.</summary>
+    /// <summary>
+    /// Every exemption, and every operation with derived reads, names an operation of the product
+    /// that still has a read path, and a field exemption one of its state fields.
+    /// </summary>
     private static IEnumerable<string> RoundTripExemptions(CliProduct product)
     {
+        foreach (string key in DerivedReads.Keys.Where(key => key.StartsWith(product.Id + " ", StringComparison.Ordinal)))
+        {
+            string op = key[(product.Id.Length + 1)..];
+            if (!product.Ops.Contains(op))
+            {
+                yield return $"the derived reads of {op} no longer apply: no such operation";
+            }
+            else if (!ReadPaths(product, op).Any())
+            {
+                yield return $"the derived reads of {op} no longer apply: it has no state field with a read path";
+            }
+        }
+
         foreach (string key in RoundTripExempt.Keys.Where(key => key.StartsWith(product.Id + " ", StringComparison.Ordinal)))
         {
             string[] parts = key.Split(' ', 3);

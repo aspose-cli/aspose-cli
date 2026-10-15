@@ -40,8 +40,8 @@ setup, headers or footers changed as `section/<n>`, a style as
 `style/<name>`, a document property as `property/<name>`, the watermark as
 `watermark/1` and the editing restriction as `protection/document`. A block
 the batch removed and a block it changed can share a number, one in the input
-and one in the output, as when `refresh_fields` or `insert_toc` rebuilds a
-table of contents: `targets` lists that number once and `itemsAffected` counts
+and one in the output, as when `refresh_fields` rebuilds a table of
+contents: `targets` lists that number once and `itemsAffected` counts
 both, so it can exceed the number of targets. More than
 100 of one kind shorten to one range, such as `block/1-150`. An operation
 that changed nothing warns `OP_NO_EFFECT`; act on it as Reading the outcome
