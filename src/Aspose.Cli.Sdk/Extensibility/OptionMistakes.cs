@@ -4,7 +4,7 @@ using System.Runtime.CompilerServices;
 namespace Aspose.Cli.Sdk.Extensibility;
 
 /// <summary>
-/// The names an option declares a caller may mistake for it, such as <c>--text</c> for a search's
+/// The names an option declares a caller may mistake for it, such as a text option for a search's
 /// <c>--pattern</c>, and whether a caller may give its value as a bare argument instead. They name
 /// no option: the parser refuses them, and the error suggests the option that declares them first.
 /// </summary>
@@ -14,7 +14,7 @@ public static class OptionMistakes
 
     /// <summary>
     /// Declares the option names <paramref name="option"/> is mistaken for, each written with its
-    /// dashes, such as <c>--text</c>.
+    /// two leading dashes.
     /// </summary>
     /// <param name="option">The option a caller means.</param>
     /// <param name="names">The option names written for it.</param>

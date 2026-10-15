@@ -252,7 +252,7 @@ internal static class PdfSign
         }
     }
 
-    /// <summary>The error Windows reports for a PKCS#12 password that does not open the file (ERROR_INVALID_PASSWORD).</summary>
+    /// <summary>The error Windows reports for a PKCS#12 password that does not open the file, the Win32 error 86 (0x56).</summary>
     private const int WrongPassword = unchecked((int)0x80070056);
 
     private static CliException SignCertificateInvalid(string reason, Exception? innerException = null) =>
