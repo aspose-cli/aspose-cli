@@ -11,9 +11,9 @@ namespace Aspose.Cli.Host.Invocation;
 /// Explains a <c>FILE_CORRUPT</c> from a product command: when the file's content looks like a
 /// format another product reads, such as a Word document renamed to <c>.pdf</c>, the error becomes
 /// the <c>FORMAT_MISMATCH</c> that generic routing reports for the same file, names that product in
-/// <c>details.detected</c>, and its hint points to that product's command. The product's own
-/// message stays; content no product recognizes, or in a format this product reads, leaves the
-/// error unchanged. A command with several inputs is explained only when the product names the
+/// <c>details.detected</c>, says so in its message, and its hint points to that product's
+/// command. The product's own details stay; content no product recognizes, or in a format this
+/// product reads, leaves the error unchanged. A command with several inputs is explained only when the product names the
 /// failing file in <c>details.path</c>.
 /// </summary>
 internal static class CorruptInputDetection

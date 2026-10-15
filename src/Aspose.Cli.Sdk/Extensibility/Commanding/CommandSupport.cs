@@ -476,7 +476,7 @@ public sealed class PasswordOptions
             string? value = readEnvironment(environmentName);
             return !string.IsNullOrEmpty(value)
                 ? new Secret(value)
-                : throw CliErrors.SecretMissing($"{_prefix}-env", environmentName);
+                : throw CliErrors.SecretMissing($"{_prefix}-env", environmentName, $"{_prefix}-stdin");
         }
 
         if (!fromStandardInput)

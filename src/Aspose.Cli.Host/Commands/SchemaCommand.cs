@@ -57,7 +57,8 @@ internal static class SchemaCommand
             return executor.RunRaw(
                 parseResult,
                 globals,
-                () => ReadRaw(schemas, id, operationId, available));
+                () => ReadRaw(schemas, id, operationId, available),
+                json: true);
         });
 
         return schema;

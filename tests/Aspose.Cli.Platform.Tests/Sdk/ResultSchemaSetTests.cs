@@ -226,6 +226,49 @@ public sealed class ResultSchemaSetTests
         }
     }
 
+    /// <summary>A nullable item accepts null whatever its schema: typed, untyped with a list of values, or an open enumeration.</summary>
+    [Fact]
+    public void NullableItems_AcceptNull()
+    {
+        ResultRecord root = new()
+        {
+            Type = typeof(SampleBlock),
+            SchemaId = "nullable",
+            Properties =
+            [
+                new()
+                {
+                    Name = "any",
+                    Description = "Values from a list, or null.",
+                    Value = new() { Kind = ResultValueKind.Array, Items = new() { Kind = ResultValueKind.Any, Nullable = true } },
+                    Constraints = [new AllowedValuesAttribute("a", "b") { Depth = 1 }],
+                },
+            ],
+        };
+        Assert.True(new ResultSchemaSet("test", [root], common: null).TryRead("v2/test/nullable", out string? document));
+        JsonSchema schema = JsonSchema.FromText(document);
+
+        Assert.True(schema.Evaluate(JsonDocument.Parse("""{"any":["a",null]}""").RootElement).IsValid, document);
+        Assert.False(schema.Evaluate(JsonDocument.Parse("""{"any":["c"]}""").RootElement).IsValid, document);
+    }
+
+    /// <summary>A nullable open enumeration lists null among its named values.</summary>
+    [Fact]
+    public void NullableOpenEnumeration_ListsNull()
+    {
+        JsonObject allowed = Aspose.Cli.Sdk.Contracts.SchemaNull.Allow(new JsonObject
+        {
+            ["type"] = "string",
+            ["anyOf"] = new JsonArray(new JsonObject { ["enum"] = new JsonArray("plain") }, new JsonObject { ["pattern"] = "^[a-z]+$" }),
+        });
+        JsonSchema open = JsonSchema.FromText(allowed.ToJsonString());
+
+        Assert.Contains(null, allowed["anyOf"]![0]!["enum"]!.AsArray());
+        Assert.True(open.Evaluate(JsonDocument.Parse("null").RootElement).IsValid);
+        Assert.True(open.Evaluate(JsonDocument.Parse("\"plain\"").RootElement).IsValid);
+        Assert.False(open.Evaluate(JsonDocument.Parse("\"Not-Matching\"").RootElement).IsValid);
+    }
+
     [Fact]
     public void PublishedRecordOfAnotherVersion_IsRefused()
     {

@@ -327,7 +327,7 @@ public sealed class ResultSchemaSet
         {
             var item = new JsonObject();
             Value(item, value.Items!, below, openPattern: null, definitions, defined);
-            schema[value.Kind == ResultValueKind.Array ? "items" : "additionalProperties"] = value.Items!.Nullable ? AllowNull(item) : item;
+            schema[value.Kind == ResultValueKind.Array ? "items" : "additionalProperties"] = value.Items!.Nullable ? SchemaNull.Allow(item) : item;
         }
         else if (below.Length > 0)
         {
@@ -378,24 +378,6 @@ public sealed class ResultSchemaSet
                 return (JsonNode)branch;
             }),
         ];
-
-    private static JsonObject AllowNull(JsonObject schema)
-    {
-        if (schema["type"] is JsonValue type)
-        {
-            schema["type"] = new JsonArray(type.GetValue<string>(), "null");
-            if (schema["enum"] is JsonArray values)
-            {
-                values.Add(null);
-            }
-
-            return schema;
-        }
-
-        return schema.ContainsKey("$ref")
-            ? new JsonObject { ["anyOf"] = new JsonArray(schema, new JsonObject { ["type"] = "null" }) }
-            : schema;
-    }
 
     private static string Serialize(JsonNode node)
     {

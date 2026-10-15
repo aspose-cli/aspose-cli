@@ -264,7 +264,7 @@ public sealed class UniqueItemsAttribute : ValueConstraintAttribute
 /// it comes from rather than only the expression; the schema publishes the pattern either way.
 /// </summary>
 [AttributeUsage(AttributeTargets.Property)]
-public sealed class PatternAttribute(string pattern) : ValueConstraintAttribute
+public sealed partial class PatternAttribute(string pattern) : ValueConstraintAttribute
 {
     // ECMA-262 WhiteSpace and LineTerminator, which \s matches.
     private const string Space = @"\t\n\v\f\r \u00A0\u1680\u2000-\u200A\u2028\u2029\u202F\u205F\u3000\uFEFF";
@@ -282,15 +282,51 @@ public sealed class PatternAttribute(string pattern) : ValueConstraintAttribute
     /// <summary>
     /// What a matching value is, phrased to follow the value's field path, such as
     /// <c>must be an identifier the inspect command reports, such as "a-1"</c>; null to state
-    /// only the pattern. The rejection appends the pattern to it.
+    /// only the pattern, or the meaning of a plain form: <c>\S</c> is <c>must not be blank</c>
+    /// and <c>^[^,"]+$</c> <c>must not be empty or contain a comma or double quote</c>. The
+    /// rejection appends the pattern to it.
     /// </summary>
     public string? Meaning { get; set; }
 
     /// <inheritdoc />
     public override string? Check(object value) =>
         (_regex ??= new Regex(_ecma262, RegexOptions.ECMAScript, TimeSpan.FromSeconds(1))).IsMatch((string)value) ? null
-        : Meaning is null ? $"must match the pattern {Pattern}"
-        : $"{Meaning} (pattern {Pattern})";
+        : (Meaning ?? PlainMeaning(Pattern)) is { } meaning ? $"{meaning} (pattern {Pattern})"
+        : $"must match the pattern {Pattern}";
+
+    /// <summary>
+    /// The meaning of a pattern whose form states it: <c>\S</c>, and a whole value of
+    /// characters outside a class of literal characters, such as <c>^[^,"]+$</c>; null otherwise.
+    /// </summary>
+    private static string? PlainMeaning(string pattern)
+    {
+        if (pattern == @"\S")
+        {
+            return "must not be blank";
+        }
+
+        if (ExcludedCharacters().Match(pattern) is not { Success: true } excluded)
+        {
+            return null;
+        }
+
+        string[] names = [.. excluded.Groups["characters"].Value.Select(static character => character switch
+        {
+            ',' => "comma",
+            '"' => "double quote",
+            '\'' => "single quote",
+            '/' => "slash",
+            ';' => "semicolon",
+            '|' => "vertical bar",
+            _ => $"'{character}'",
+        })];
+        string listed = string.Join(" or ", names);
+        string first = names[0][0] == '\'' ? listed : "a " + listed;
+        return excluded.Groups["count"].Value == "+" ? $"must not be empty or contain {first}" : $"must not contain {first}";
+    }
+
+    [GeneratedRegex(@"^\^\[\^(?<characters>[^\]\\\-^]+)\](?<count>[+*])\$$")]
+    private static partial Regex ExcludedCharacters();
 
     /// <inheritdoc />
     public override void Describe(JsonObject schema) => schema["pattern"] = Pattern;

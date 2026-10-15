@@ -66,6 +66,15 @@ public sealed class UsageErrorTests : IDisposable
     }
 
     [Fact]
+    public void AMissingSecretVariable_OffersStandardInput()
+    {
+        JsonNode error = Refused("words inspect a.docx --password-env ASPOSE_CLI_TEST_UNSET_SECRET", "OPTION_INVALID");
+
+        Assert.Equal("--password-env", error["details"]!["option"]!.GetValue<string>());
+        Assert.Contains("--password-stdin", error["hint"]!.GetValue<string>(), StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void ANumberThatDoesNotParse_SaysWhatTheOptionTakes()
     {
         JsonNode error = Refused("words render a.docx --dpi abc", "OPTION_INVALID");

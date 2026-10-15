@@ -74,6 +74,13 @@ public sealed class NotFoundErrorTests
         Assert.True(schema.Evaluate(details.RootElement).IsValid);
     }
 
+    [Theory]
+    [InlineData(1, "No page '4' was found; 1 exists.")]
+    [InlineData(3, "No page '4' was found; 3 exist.")]
+    [InlineData(0, "No page '4' was found; 0 exist.")]
+    public void NotFoundAt_CountsTheTargetsInAgreement(int count, string message) =>
+        Assert.Equal(message, CliErrors.NotFoundAt(ErrorCodes.PageNotFound, "page", "4", count).Message);
+
     [Fact]
     public void NotFound_AcceptsOnlyCodesDeclaredAsNotFoundAndPublishesTheirSchema()
     {
