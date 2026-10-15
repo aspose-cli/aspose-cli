@@ -247,4 +247,36 @@ public sealed class SlidesShapeStyleTests
         Assert.Contains($"slide/2/shape/{ids[1]}", targets);
         Assert.Equal(targets.Count, result.Applied[0].ItemsAffected);
     }
+
+    [Fact]
+    public void Font_BesideLatinAndEastAsianFonts_ChangesTheComplexScriptFont()
+    {
+        using var fixture = new SlidesEngineFixture();
+        string seed = fixture.CreatePresentation("fonts.pptx", slides: 1);
+        long shapeId;
+        using (var source = new Presentation(seed))
+        {
+            shapeId = source.Slides[0].Shapes.Single(static shape => shape.Placeholder is null && shape.Name == "Title 1").OfficeInteropShapeId;
+        }
+
+        SlidesShapeStyleInput fonts = new() { Font = "Arial", LatinFont = "Arial", EastAsianFont = "SimSun" };
+        string input = Style(fixture, seed, "fonts-arial.pptx", shapeId, fonts);
+        string output = fixture.File("fonts-calibri.pptx");
+        SlidesEditResult result = SlidesEdit.Run(fixture.Session, new SlidesEditRequest
+        {
+            Input = input,
+            Batch = new SlidesOpsBatch { Ops = [new FormatShapeOp { Slide = 1, ShapeId = shapeId, Style = fonts with { Font = "Calibri" } }] },
+            Output = TestOutput.At(output),
+        });
+
+        Assert.Equal(1, result.Applied[0].ItemsAffected);
+        SlidesTextRunData Run(string path) => Assert.Single(
+            SlidesRead.Run(fixture.Session, new SlidesReadRequest { Input = path, Content = SlidesReadContents.Full })
+                .Slides[0].Shapes.Single(shape => shape.ShapeId == shapeId).Runs!);
+        Assert.Equal("Arial", Run(input).ComplexScriptFont);
+        SlidesTextRunData changed = Run(output);
+        Assert.Equal("Calibri", changed.ComplexScriptFont);
+        Assert.Equal("Arial", changed.Font);
+        Assert.Equal("SimSun", changed.EastAsianFont);
+    }
 }

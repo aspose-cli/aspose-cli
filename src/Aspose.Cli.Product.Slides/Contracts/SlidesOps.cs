@@ -115,7 +115,10 @@ public sealed record SlidesShapeStyleInput
     [ReadBack("read-result.schema.json#/$defs/slidesShapeData/properties/line")]
     [HexColor] public string? Line { get; init; }
 
-    /// <summary>A font name for Latin, East Asian and complex-script text.</summary>
+    /// <summary>
+    /// A font name for complex-script text, and for Latin and East Asian text where latinFont
+    /// and eastAsianFont do not name another.
+    /// </summary>
     [Pattern(@"^[^+]", Meaning = "must be a font name; give theme fonts such as \"+mn-lt\" in latinFont and eastAsianFont")]
     [ReadBack("read-result.schema.json#/$defs/slidesTextRunData/properties/font")]
     public string? Font { get; init; }
