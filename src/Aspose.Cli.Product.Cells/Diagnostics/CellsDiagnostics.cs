@@ -22,6 +22,9 @@ internal static class CellsDiagnostics
     internal static readonly WarningCode FormulasBroken = new("FORMULAS_BROKEN");
     internal static readonly WarningCode FormulasCalculatedOnOpen = new("FORMULAS_CALCULATED_ON_OPEN");
     internal static readonly WarningCode SheetPartiallyRendered = new("SHEET_PARTIALLY_RENDERED");
+
+    /// <summary>A rendered image is longer on a side than an image viewer or a model reads in full.</summary>
+    internal static readonly WarningCode RenderImageLarge = new("RENDER_IMAGE_LARGE");
     /// <summary>The active sheet is an evaluation warning sheet, so a command that names no sheet used another one.</summary>
     internal static readonly WarningCode ActiveSheetSkipped = new("ACTIVE_SHEET_SKIPPED");
 
@@ -67,6 +70,7 @@ internal static class CellsDiagnostics
         DiagnosticDescriptor.Warning(FormulasBroken),
         DiagnosticDescriptor.Warning(FormulasCalculatedOnOpen),
         DiagnosticDescriptor.Warning(SheetPartiallyRendered),
+        DiagnosticDescriptor.Warning(RenderImageLarge),
         DiagnosticDescriptor.Warning(ActiveSheetSkipped),
         DiagnosticDescriptor.Warning(MhtmlResourceCoverageUnverified),
         DiagnosticDescriptor.Warning(TextTableLayout),

@@ -765,4 +765,19 @@ public sealed class CellsOutcomeTests : IClassFixture<CellsFixture>
         Assert.Contains(reason, refused.Error.Message, StringComparison.Ordinal);
         Assert.Equal(OpStatuses.Ok, result.Applied[0].Status);
     }
+
+    [Fact]
+    public void AnImageFileThatIsMissing_IsFileNotFoundNamingItsOperationAndPath()
+    {
+        string path = _fixture.CreateSalesWorkbook($"missing-image-{Guid.NewGuid():N}.xlsx");
+        string image = _fixture.Temp.File($"missing-{Guid.NewGuid():N}.png");
+
+        CliException error = Assert.Throws<CliException>(() => Apply(path,
+            $$"""{"ops":[{"id":"logo","op":"insert_image","sheet":"Data","at":"B2","path":{{System.Text.Json.JsonSerializer.Serialize(image)}}}]}"""));
+
+        Assert.Equal("FILE_NOT_FOUND", error.Code.Name);
+        Assert.Equal(image, error.Details!["path"]!.GetValue<string>());
+        Assert.Equal("logo", error.Details["id"]!.GetValue<string>());
+        Assert.Equal("insert_image", error.Details["op"]!.GetValue<string>());
+    }
 }

@@ -2519,6 +2519,13 @@
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
+      "code": "RENDER_IMAGE_LARGE",
+      "owner": "cells",
+      "severity": "warning",
+      "category": "warning",
+      "detailsSchemaId": "v2/common/diagnostic-details"
+    },
+    {
       "code": "ROWS_SHIFTED",
       "owner": "cells",
       "severity": "warning",

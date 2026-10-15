@@ -264,6 +264,31 @@ public sealed class CellsReviewTests
     }
 
     /// <summary>
+    /// A render taller than an image viewer or a model reads in full warns RENDER_IMAGE_LARGE with
+    /// a window of the sheet to render instead; a render of that window does not.
+    /// </summary>
+    [Fact]
+    public void Render_WarnsWhenItsImageIsTooLargeToReadAndNamesAWindow()
+    {
+        Requires.Windows();
+        using var workspace = new TempWorkspace();
+        Assert.Equal(0, workspace.Run("cells", "create", "long.xlsx", "--sheets", "Data").ExitCode);
+        string rows = string.Join(",", Enumerable.Range(1, 1200).Select(static row => $"[\"Item {row}\",{row}]"));
+        File.WriteAllText(workspace.File("ops.json"), $$"""{"ops":[{"op":"set_values","sheet":"Data","range":"A1","values":[{{rows}}]}]}""");
+        Assert.Equal(0, workspace.Run("cells", "edit", "long.xlsx", "--ops", "ops.json", "--in-place").ExitCode);
+
+        CliResult whole = workspace.Run("cells", "render", "long.xlsx", "--sheets", "1", "--out", "long.png", "--output-format", "json");
+        CliResult window = workspace.Run("cells", "render", "long.xlsx", "--range", "Data!A1:B200", "--out", "window.png", "--output-format", "json");
+
+        Assert.True(whole.ExitCode == 0, whole.StdErr);
+        JsonNode warning = Assert.Single(JsonNode.Parse(whole.StdOut)!["warnings"]!.AsArray(), static warning => warning!["code"]!.GetValue<string>() == "RENDER_IMAGE_LARGE")!;
+        Assert.Contains("more than 10000 on a side", warning["message"]!.GetValue<string>(), StringComparison.Ordinal);
+        Assert.Contains("--range \"'Data'!A1:B", warning["hint"]!.GetValue<string>(), StringComparison.Ordinal);
+        Assert.True(window.ExitCode == 0, window.StdErr);
+        Assert.DoesNotContain("RENDER_IMAGE_LARGE", window.StdOut, StringComparison.Ordinal);
+    }
+
+    /// <summary>
     /// The warning sheets an evaluation save added are the evaluation's marks: an evaluation
     /// review leaves their layout unchecked and counts them; a licensed review checks every sheet.
     /// </summary>

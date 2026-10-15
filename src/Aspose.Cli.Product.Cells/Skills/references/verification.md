@@ -58,7 +58,9 @@ rounded, measured with Excel's column widths). `CELLS_VALUES_CLIPPED` can miss E
 without East Asian glyphs (Calibri, Arial): judge those columns in the image,
 or use a font such as Microsoft YaHei. For a file a person opens, the look
 also grades the design checklist in `aspose-cli docs cells/design-system`,
-section 12. Render large sheets as windows with a sheet-qualified `--range`.
+section 12. Render large sheets as windows with a sheet-qualified `--range`;
+`cells render` warns `RENDER_IMAGE_LARGE` with such a window when an image is
+more than 10000 pixels on a side.
 
 ### Judge widths from a `--range` render
 
