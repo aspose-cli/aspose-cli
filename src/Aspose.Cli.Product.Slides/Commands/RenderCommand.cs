@@ -43,7 +43,10 @@ internal static class RenderCommand
                 ResolvedOutput output = standard.Output;
                 if (output.Format.Id == "svg" && (explicitDpi || pixelWidth is not null))
                 {
-                    throw CliErrors.Usage(["SVG is vector output; omit --dpi and --width."]);
+                    throw CliErrors.OptionInvalid(
+                        explicitDpi ? "--dpi" : "--width",
+                        "an SVG output is vector and has no pixel size",
+                        "Drop --dpi and --width to render SVG, or render png or jpeg at that size.");
                 }
 
                 return new SlidesRenderRequest
