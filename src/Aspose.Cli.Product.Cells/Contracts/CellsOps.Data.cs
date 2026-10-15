@@ -51,8 +51,10 @@ public sealed record SortRangeOp : CellsSheetOp
 /// <summary>One sort key of a sort_range operation.</summary>
 public sealed record CellsSortKey
 {
+    /// <summary>The column to sort by, such as C.</summary>
     [A1Column] public required string Column { get; init; }
 
+    /// <summary>The direction: asc puts the smallest value first, desc the largest.</summary>
     [AllowedValues(typeof(CellsSortOrders))] public string Order { get; init; } = CellsSortOrders.Asc;
 }
 
@@ -78,10 +80,15 @@ public sealed record SetValidationOp : CellsSheetOp
     /// </summary>
     [A1RangeList] public required string Range { get; init; }
 
+    /// <summary>
+    /// What a cell may hold: list a dropdown item; whole-number, decimal, date or text-length a
+    /// value (or length) compared by operator; custom any value its formula accepts.
+    /// </summary>
     [MistakenFor("type")]
     [ReadBack("inspect-result.schema.json#/$defs/cellsValidationInfo/properties/kind")]
     [AllowedValues(typeof(CellsValidationTypes))] public required string Kind { get; init; }
 
+    /// <summary>How a value compares with value1, and value2 for between and not-between; every kind but list and custom needs it.</summary>
     [ReadBack("inspect-result.schema.json#/$defs/cellsValidationInfo/properties/operator")]
     [AllowedValues(typeof(CellsValidationOperators))] public string? Operator { get; init; }
 

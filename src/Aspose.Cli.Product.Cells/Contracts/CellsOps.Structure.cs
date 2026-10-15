@@ -14,6 +14,7 @@ public sealed record InsertRowsOp : CellsSheetOp
     /// <summary>The 1-based row to insert before.</summary>
     [Minimum(1), Maximum(A1.MaxRows)] public required int At { get; init; }
 
+    /// <summary>How many rows to insert.</summary>
     [NotState]
     [Minimum(1)] public int Count { get; init; } = 1;
 
@@ -28,6 +29,7 @@ public sealed record DeleteRowsOp : CellsSheetOp
     /// <summary>The 1-based first row to delete.</summary>
     [Minimum(1), Maximum(A1.MaxRows)] public required int At { get; init; }
 
+    /// <summary>How many rows to delete.</summary>
     [NotState]
     [Minimum(1)] public int Count { get; init; } = 1;
 
@@ -45,6 +47,7 @@ public sealed record InsertColumnsOp : CellsSheetOp
     /// <summary>The column to insert before, such as C.</summary>
     [A1Column] public required string At { get; init; }
 
+    /// <summary>How many columns to insert.</summary>
     [NotState]
     [Minimum(1)] public int Count { get; init; } = 1;
 
@@ -59,6 +62,7 @@ public sealed record DeleteColumnsOp : CellsSheetOp
     /// <summary>The first column to delete, such as C.</summary>
     [A1Column] public required string At { get; init; }
 
+    /// <summary>How many columns to delete.</summary>
     [NotState]
     [Minimum(1)] public int Count { get; init; } = 1;
 

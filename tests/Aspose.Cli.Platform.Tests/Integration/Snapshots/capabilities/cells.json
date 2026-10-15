@@ -38,7 +38,7 @@
         "command": "edit",
         "inputSchema": "v2/cells/ops",
         "operationSchema": "aspose-cli schema v2/cells/ops --operation <op>",
-        "contractFingerprint": "sha256:954be78ec2f7c2f12ddf74effafc4bba28ec0f2439bc42c314bba97991632fcd",
+        "contractFingerprint": "sha256:9f67c1e64958be370fb73917cf6f07c91ad35422e69e4b63daf64b7174b328c7",
         "maximumOperationCount": 10000,
         "ops": [
           "add_comment",
@@ -4964,6 +4964,7 @@
               "x-readBack": "not-state"
             },
             "text": {
+              "description": "The comment text; on a cell that has a comment, the new paragraph.",
               "type": "string",
               "minLength": 1,
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsCommentInfo/properties/text"
@@ -5003,6 +5004,7 @@
               "x-readBack": "not-state"
             },
             "rule": {
+              "description": "The rule that decides which cells are formatted, or how they are shaded.",
               "$ref": "#/$defs/cellsConditionalRule",
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsConditionalFormatInfo/properties/rule"
             },
@@ -5405,6 +5407,7 @@
               "x-readBack": "not-state"
             },
             "count": {
+              "description": "How many columns to delete.",
               "type": "integer",
               "minimum": 1,
               "default": 1,
@@ -5524,6 +5527,7 @@
               "const": "delete_name"
             },
             "name": {
+              "description": "The name to remove, such as TaxRate.",
               "type": "string",
               "pattern": "\\S",
               "x-readBack": "not-state"
@@ -5558,6 +5562,7 @@
               "x-readBack": "not-state"
             },
             "count": {
+              "description": "How many rows to delete.",
               "type": "integer",
               "minimum": 1,
               "default": 1,
@@ -5624,6 +5629,7 @@
               "x-readBack": "not-state"
             },
             "style": {
+              "description": "The formatting to apply; each field left out keeps the cells' current value.",
               "$ref": "#/$defs/cellsStyleData"
             }
           }
@@ -5864,6 +5870,7 @@
               "x-readBack": "not-state"
             },
             "kind": {
+              "description": "The chart type: column has vertical bars, bar horizontal ones.",
               "type": "string",
               "enum": [
                 "column",
@@ -5886,6 +5893,7 @@
               "x-readBack": "not-state"
             },
             "title": {
+              "description": "The chart title; the engine's automatic title when omitted, which a read reports as no title.",
               "type": "string",
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsChartInfo/properties/title"
             },
@@ -5896,10 +5904,12 @@
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsChartInfo/properties/seriesInRows"
             },
             "legend": {
+              "description": "The legend's visibility and position; shown at the bottom when omitted.",
               "$ref": "#/$defs/cellsChartLegend",
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsChartInfo/properties/legend"
             },
             "axisTitles": {
+              "description": "The titles of the category and value axes; no axis titles when omitted.",
               "$ref": "#/$defs/cellsChartAxisTitles",
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsChartInfo/properties/axisTitles"
             },
@@ -5913,6 +5923,7 @@
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsChartInfo/properties/seriesColors"
             },
             "dataLabels": {
+              "description": "The point labels of every series; no labels when omitted.",
               "$ref": "#/$defs/cellsChartDataLabels",
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsChartInfo/properties/dataLabels"
             }
@@ -5944,6 +5955,7 @@
               "x-readBack": "not-state"
             },
             "count": {
+              "description": "How many columns to insert.",
               "type": "integer",
               "minimum": 1,
               "default": 1,
@@ -6103,6 +6115,7 @@
               "x-readBack": "not-state"
             },
             "count": {
+              "description": "How many rows to insert.",
               "type": "integer",
               "minimum": 1,
               "default": 1,
@@ -6368,6 +6381,7 @@
               "x-readBack": "not-state"
             },
             "find": {
+              "description": "The text to find, or the pattern when regex is true.",
               "type": "string",
               "minLength": 1,
               "x-readBack": "not-state"
@@ -6384,6 +6398,7 @@
               "x-readBack": "not-state"
             },
             "caseSensitive": {
+              "description": "Whether a match must have the same letter case as find.",
               "type": "boolean",
               "default": false,
               "x-readBack": "not-state"
@@ -6586,6 +6601,7 @@
               "x-readBack": "not-state"
             },
             "lineStyle": {
+              "description": "The line drawn on every named edge; hair is the thinnest line, which Excel draws finely dotted; thick is the heaviest single line.",
               "type": "string",
               "enum": [
                 "hair",
@@ -6600,6 +6616,7 @@
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/read-result.schema.json#/$defs/cellsBorderData/properties/lineStyle"
             },
             "color": {
+              "description": "The line color of every named edge.",
               "$ref": "#/$defs/color",
               "default": "#000000",
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/read-result.schema.json#/$defs/cellsBorderData/properties/color"
@@ -6638,6 +6655,7 @@
               "x-readBack": "not-state"
             },
             "title": {
+              "description": "The new chart title; unchanged when omitted.",
               "type": "string",
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsChartInfo/properties/title"
             },
@@ -6647,6 +6665,7 @@
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsChartInfo/properties/dataRange"
             },
             "kind": {
+              "description": "The new chart type; unchanged when omitted.",
               "type": "string",
               "enum": [
                 "column",
@@ -6664,10 +6683,12 @@
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsChartInfo/properties/seriesInRows"
             },
             "legend": {
+              "description": "The legend fields to change; the legend is unchanged when omitted.",
               "$ref": "#/$defs/cellsChartLegend",
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsChartInfo/properties/legend"
             },
             "axisTitles": {
+              "description": "The axis titles to change; the axis titles are unchanged when omitted.",
               "$ref": "#/$defs/cellsChartAxisTitles",
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsChartInfo/properties/axisTitles"
             },
@@ -6681,6 +6702,7 @@
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsChartInfo/properties/seriesColors"
             },
             "dataLabels": {
+              "description": "The data-label fields to change; the labels are unchanged when omitted.",
               "$ref": "#/$defs/cellsChartDataLabels",
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsChartInfo/properties/dataLabels"
             }
@@ -6929,6 +6951,7 @@
               "x-readBack": "not-state"
             },
             "orientation": {
+              "description": "Whether the page is printed upright (portrait) or sideways (landscape).",
               "type": "string",
               "enum": [
                 "portrait",
@@ -6961,6 +6984,7 @@
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsPageSetupInfo/properties/scalePercent"
             },
             "margins": {
+              "description": "The page margins; only the sides present change.",
               "$ref": "#/$defs/cellsMargins",
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsPageSetupInfo/properties/margins"
             },
@@ -7241,6 +7265,7 @@
               "x-readBack": "not-state"
             },
             "kind": {
+              "description": "What a cell may hold: list a dropdown item; whole-number, decimal, date or text-length a value (or length) compared by operator; custom any value its formula accepts.",
               "type": "string",
               "enum": [
                 "list",
@@ -7253,6 +7278,7 @@
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsValidationInfo/properties/kind"
             },
             "operator": {
+              "description": "How a value compares with value1, and value2 for between and not-between; every kind but list and custom needs it.",
               "type": "string",
               "enum": [
                 "between",
@@ -7885,9 +7911,11 @@
           "additionalProperties": false,
           "properties": {
             "column": {
+              "description": "The column to sort by, such as C.",
               "$ref": "#/$defs/column"
             },
             "order": {
+              "description": "The direction: asc puts the smallest value first, desc the largest.",
               "type": "string",
               "enum": [
                 "asc",
