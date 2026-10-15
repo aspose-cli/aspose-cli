@@ -96,8 +96,17 @@ internal sealed record RenderWorkerResponse
     /// <summary>Exit code the same failure would produce on the command line.</summary>
     public int Exit { get; init; }
 
-    /// <summary>Message for the person, already free of private paths.</summary>
+    /// <summary>Message for the person, naming the previewed document rather than its copy.</summary>
     public string? Message { get; init; }
+
+    /// <summary>The failure's hint, when it has one.</summary>
+    public string? Hint { get; init; }
+
+    /// <summary>The failure's details, naming the previewed document rather than its copy.</summary>
+    public System.Text.Json.Nodes.JsonObject? Details { get; init; }
+
+    /// <summary>The failure's documentation topic, when it has one.</summary>
+    public string? Docs { get; init; }
 
     /// <summary>
     /// Set when the worker is exiting because the license it applied no longer

@@ -132,6 +132,37 @@ public sealed class ViewerCommandLifecycleTests
         }
     }
 
+    [Category(TestCategory.Slow)]
+    [Fact]
+    public void Preview_ReportsAWrongPasswordAsTheCommandsDo()
+    {
+        using var workspace = new TempWorkspace();
+        CreateWorkbook(workspace, "plain.xlsx");
+        workspace.RunWithEnv(
+            new Dictionary<string, string?> { ["PW"] = "right-password" },
+            "cells", "convert", "plain.xlsx", "--out", "locked.xlsx", "--encrypt-env", "PW", "--output-format", "json")
+            .Succeeded();
+        var wrong = new Dictionary<string, string?> { ["PW"] = "wrong-password" };
+        try
+        {
+            CliResult review = workspace.RunWithEnv(
+                wrong, "review", "locked.xlsx", "--password-env", "PW", "--output-format", "json");
+            CliResult preview = workspace.RunWithEnv(
+                wrong, "preview", "open", "locked.xlsx", "--password-env", "PW", "--no-open", "--output-format", "json");
+
+            JsonNode expected = JsonNode.Parse(review.StdErr)!["error"]!;
+            JsonNode error = JsonNode.Parse(preview.StdErr)!["error"]!;
+            Assert.Equal(review.ExitCode, preview.ExitCode);
+            Assert.Equal("PASSWORD_INVALID", error["code"]!.GetValue<string>());
+            Assert.Equal(expected["hint"]!.GetValue<string>(), error["hint"]?.GetValue<string>());
+            Assert.Equal(workspace.File("locked.xlsx"), error["details"]?["path"]?.GetValue<string>());
+        }
+        finally
+        {
+            workspace.Run("preview", "stop", "--all", "--output-format", "json");
+        }
+    }
+
     private static JsonNode Start(TempWorkspace workspace, string file) =>
         workspace.Run("preview", "open", file, "--no-open", "--output-format", "json").Json();
 

@@ -146,7 +146,13 @@ internal sealed record ViewerAppResponse
 }
 
 /// <summary>Why the service refused a request, as the command would report it.</summary>
-internal sealed record ViewerFailure(string Code, int Exit, string Message);
+internal sealed record ViewerFailure(
+    string Code,
+    int Exit,
+    string Message,
+    string? Hint = null,
+    System.Text.Json.Nodes.JsonObject? Details = null,
+    string? Docs = null);
 
 /// <summary>Where the running viewer service can be found.</summary>
 internal sealed record ViewerServiceMarker(

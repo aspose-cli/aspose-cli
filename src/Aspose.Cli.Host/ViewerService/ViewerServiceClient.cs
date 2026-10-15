@@ -224,6 +224,7 @@ internal sealed class ViewerServiceClient
         }
         return failure is null
             ? CliErrors.Internal(response.Message ?? "The viewer service refused the request.")
-            : CliErrors.FromRemote(failure.Code, (ExitCode)failure.Exit, failure.Message);
+            : CliErrors.FromRemote(
+                failure.Code, (ExitCode)failure.Exit, failure.Message, failure.Hint, failure.Details, failure.Docs);
     }
 }

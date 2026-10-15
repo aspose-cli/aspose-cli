@@ -122,11 +122,11 @@ public sealed class AppCliGatewayTests
     }
 
     [Fact]
-    public void ChildFailure_KeepsTheChildsCodeAndExitCode()
+    public void ChildFailure_KeepsTheChildsWholeError()
     {
         using var workspace = new TempWorkspace();
         byte[] error = Encoding.UTF8.GetBytes(
-            """{"error":{"code":"FILE_NOT_FOUND","message":"File not found: missing.lic","hint":"Check the path."}}""");
+            """{"error":{"code":"FILE_NOT_FOUND","message":"File not found: missing.lic","details":{"path":"C:\\licenses\\missing.lic"},"hint":"Check the path.","docs":"licensing"}}""");
         AppCliGateway gateway = Gateway(
             workspace, license: null, _ => new ChildProcessResult((int)ExitCode.InputError, [], error));
 
@@ -134,6 +134,9 @@ public sealed class AppCliGatewayTests
 
         Assert.Equal(ErrorCodes.FileNotFound.Name, failure.Code.Name);
         Assert.Equal(ExitCode.InputError, failure.ExitCode);
+        Assert.Equal("Check the path.", failure.Hint);
+        Assert.Equal(@"C:\licenses\missing.lic", failure.Details?["path"]?.GetValue<string>());
+        Assert.Equal("licensing", failure.Docs);
     }
 
     [Fact]

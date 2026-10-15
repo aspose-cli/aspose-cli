@@ -12,7 +12,10 @@ internal static class ViewerErrors
         return CliErrors.FromRemote(
             response.Code ?? ErrorCodes.Internal.Name,
             (ExitCode)exit,
-            response.Message ?? $"The viewer could not render {Path.GetFileName(source)}.");
+            response.Message ?? $"The viewer could not render {Path.GetFileName(source)}.",
+            response.Hint,
+            response.Details,
+            response.Docs);
     }
 
     /// <summary>Rejects a view the product does not declare, naming the ones it does.</summary>
