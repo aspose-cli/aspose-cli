@@ -1,5 +1,6 @@
 using System.Globalization;
 using Aspose.Cli.Sdk.Extensibility;
+using Aspose.Cli.Sdk.Licensing;
 using Aspose.Cli.Sdk.Views;
 
 namespace Aspose.Cli.Product.Pdf;
@@ -94,6 +95,9 @@ internal sealed class PdfViewAdapter : IProductViewAdapter<PdfSession>
                 ReviewCoverageMetric.Of("unembeddedFonts", unembeddedFonts, "fonts"),
                 ReviewCoverageMetric.Of("formFields", forms.Fields, "fields"),
                 ReviewCoverageMetric.Of("formFieldsWithoutPage", forms.FieldsWithoutPage, "fields"),
+                .. session.Outputs.License == LicenseState.Evaluation
+                    ? [ReviewCoverageMetric.Of("excludedEvaluationMarks", layout.Pages.Sum(static page => page.ExcludedEvaluationMarks), "fragments")]
+                    : Array.Empty<ReviewCoverageMetric>(),
             ],
         };
     }
