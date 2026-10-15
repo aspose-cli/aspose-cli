@@ -229,6 +229,26 @@ public sealed class WordsCliTests : IDisposable
     }
 
     [Fact]
+    public void Create_FromAnEncryptedTemplate_AsksForAnUnencryptedOne()
+    {
+        var template = new Document();
+        new DocumentBuilder(template).Writeln("Letterhead.");
+        template.Save(_workspace.File("locked.dotx"), new Aspose.Words.Saving.OoxmlSaveOptions(SaveFormat.Dotx) { Password = "template-secret" });
+        File.WriteAllText(_workspace.File("body.txt"), "Dear customer,\n");
+
+        CliResult refused = _workspace.Run(
+            "words", "create", "letter.docx", "--template", "locked.dotx", "--from-text", "body.txt", "--output-format", "json");
+
+        Assert.Equal(3, refused.ExitCode);
+        JsonNode error = JsonNode.Parse(refused.StdErr)!["error"]!;
+        Assert.Equal("PASSWORD_REQUIRED", error["code"]!.GetValue<string>());
+        string hint = error["hint"]!.GetValue<string>();
+        Assert.Contains("encrypted template", hint, StringComparison.Ordinal);
+        Assert.DoesNotContain("--password-env", hint, StringComparison.Ordinal);
+        Assert.False(File.Exists(_workspace.File("letter.docx")));
+    }
+
+    [Fact]
     public void Create_RejectsTwoContentSources()
     {
         File.WriteAllText(_workspace.File("source.md"), "# Title\n");
