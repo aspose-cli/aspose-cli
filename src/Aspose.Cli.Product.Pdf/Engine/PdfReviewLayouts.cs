@@ -85,13 +85,13 @@ internal static class PdfReviewLayouts
 
     /// <summary>
     /// The text fragments whose centre lies under an opaque box drawn after them: a form XObject
-    /// that only fills one rectangle, as a redaction leaves. The text drawn before a box is the
-    /// text of the page with its content cut off at the box, so a copy of the page is cut from
-    /// the last box to the first.
+    /// that only fills one rectangle, as a redaction leaves, or one rectangle the page fills
+    /// itself. The text drawn before a box is the text of the page with its content cut off at
+    /// the box, so a copy of the page is cut from the last box to the first.
     /// </summary>
     private static int CoveredFragments(Page page)
     {
-        if (!page.Resources.Forms.Any(IsBox))
+        if (!page.Resources.Forms.Any(IsBox) && !FillsARectangle(page.Contents))
         {
             return 0;
         }
@@ -103,9 +103,13 @@ internal static class PdfReviewLayouts
         {
             graphics.Visit(cut);
             boxes = [.. graphics.Elements
-                .OfType<XFormPlacement>()
-                .Where(static placement => placement.Parent is null && IsBox(placement.XForm))
-                .Select(static placement => (placement.Operators[0].Index, placement.Rectangle))
+                .Where(static element => element.Parent is null && element switch
+                {
+                    XFormPlacement placement => IsBox(placement.XForm),
+                    SubPath path => IsBox(path.Operators),
+                    _ => false,
+                })
+                .Select(static element => (element.Operators[0].Index, element.Rectangle))
                 .OrderByDescending(static box => box.Index)];
         }
 
@@ -131,18 +135,40 @@ internal static class PdfReviewLayouts
         return covered.Count;
     }
 
-    private static bool IsBox(XForm form)
+    /// <summary>Whether the content fills a rectangle right after it draws one.</summary>
+    private static bool FillsARectangle(OperatorCollection contents)
+    {
+        bool rectangle = false;
+        foreach (Operator op in contents)
+        {
+            if (rectangle && IsFill(op))
+            {
+                return true;
+            }
+
+            rectangle = op is Re;
+        }
+
+        return false;
+    }
+
+    private static bool IsFill(Operator op) =>
+        op is Fill or EOFill or FillStroke or EOFillStroke or ClosePathFillStroke or ClosePathEOFillStroke;
+
+    private static bool IsBox(XForm form) => IsBox(form.Contents);
+
+    private static bool IsBox(IEnumerable<Operator> operators)
     {
         int rectangles = 0;
         int fills = 0;
-        foreach (Operator op in form.Contents)
+        foreach (Operator op in operators)
         {
             switch (op)
             {
                 case Re:
                     rectangles++;
                     break;
-                case Fill or EOFill or FillStroke or EOFillStroke or ClosePathFillStroke or ClosePathEOFillStroke:
+                case var fill when IsFill(fill):
                     fills++;
                     break;
                 case GSave or GRestore or SetColorOperator or SetLineWidth:

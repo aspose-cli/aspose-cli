@@ -189,6 +189,47 @@ public sealed class PdfReviewAndInfoTests
     }
 
     /// <summary>
+    /// A filled rectangle the page draws itself, not through a form, hides the text drawn before
+    /// it too; a shaded band drawn before its text, on another page, hides nothing.
+    /// </summary>
+    [Fact]
+    public void Review_CountsTextUnderABoxThePageDrawsItself()
+    {
+        using var fixture = new PdfEngineFixture();
+        using var workspace = new TempWorkspace();
+        string input = fixture.CreateRawDocument("drawn.pdf", pages: 2,
+            textContent: "BT /F1 12 Tf 72 720 Td (Visible text) Tj ET BT /F1 12 Tf 72 680 Td (Hidden 42) Tj ET");
+        string boxed = fixture.File("boxed.pdf");
+        using (var document = new Document(input))
+        {
+            // Page 1: a black box over the second line, drawn after it.
+            Page page = document.Pages[1];
+            page.Contents.Add(new Aspose.Pdf.Operators.GSave());
+            page.Contents.Add(new Aspose.Pdf.Operators.SetRGBColor(0, 0, 0));
+            page.Contents.Add(new Aspose.Pdf.Operators.Re(60, 670, 200, 30));
+            page.Contents.Add(new Aspose.Pdf.Operators.Fill());
+            page.Contents.Add(new Aspose.Pdf.Operators.GRestore());
+
+            // Page 2: the same box drawn before the text, as a background.
+            Page background = document.Pages[2];
+            background.Contents.Insert(1, new Aspose.Pdf.Operators.GSave());
+            background.Contents.Insert(2, new Aspose.Pdf.Operators.SetRGBColor(0.9, 0.9, 0.9));
+            background.Contents.Insert(3, new Aspose.Pdf.Operators.Re(60, 670, 200, 30));
+            background.Contents.Insert(4, new Aspose.Pdf.Operators.Fill());
+            background.Contents.Insert(5, new Aspose.Pdf.Operators.GRestore());
+            document.Save(boxed);
+        }
+
+        JsonNode review = Review(workspace, boxed);
+
+        JsonNode finding = Assert.Single(
+            review["findings"]!.AsArray(),
+            static item => item!["code"]!.GetValue<string>() == "PDF_TEXT_COVERED")!;
+        Assert.Equal("page 1", finding["location"]!.GetValue<string>());
+        Assert.StartsWith("1 text fragment(s)", finding["message"]!.GetValue<string>(), StringComparison.Ordinal);
+    }
+
+    /// <summary>
     /// An evaluation notice an engine prints beyond the page edge, as Aspose.Cells prints it on
     /// the evaluation warning sheet it adds, is reported only as the evaluation watermark; other
     /// text beyond the edge still is.
