@@ -8,13 +8,13 @@ namespace Aspose.Cli.Product.Slides.Tests;
 
 /// <summary>
 /// What <c>slides edit --verify</c> checks and what the snapshots around each operation see:
-/// expectations follow the slides an operation resolved before the batch, whatever earlier
-/// operations moved, and a read-back that differs fails the verification.
+/// expectations follow the slide an operation resolved when it ran, wherever later operations
+/// move it, and a read-back that differs fails the verification.
 /// </summary>
 public sealed class SlidesEditVerificationTests
 {
     [Fact]
-    public void Verify_ChecksEachTitleOnTheSlideItsOperationResolved_AfterAMove()
+    public void Verify_ChecksEachTitleOnTheSlideAtItsPositionAfterAMove()
     {
         using var fixture = new SlidesEngineFixture();
         string input = Outline(fixture, "moved.pptx");
@@ -33,8 +33,8 @@ public sealed class SlidesEditVerificationTests
                 Ops =
                 [
                     new MoveSlideOp { Id = "move", Slide = 3, To = 1 },
-                    new SetTitleOp { Id = "tA", Slide = 1, Text = "Z" },
-                    new SetTitleOp { Id = "tC", Slide = 3, Text = "Y" },
+                    new SetTitleOp { Id = "tA", Slide = 2, Text = "Z" },
+                    new SetTitleOp { Id = "tC", Slide = 1, Text = "Y" },
                 ],
             },
             Output = TestOutput.At(output),
@@ -61,7 +61,7 @@ public sealed class SlidesEditVerificationTests
         using var edited = new Presentation(input);
         using var output = new Presentation(input);
         var operation = new SetTitleOp { Id = "title", Slide = 1, Text = "Changed" };
-        SlidesMutationHandlers.ResolvedSlidesOp target = Assert.Single(SlidesMutationHandlers.ResolveBatch(edited, [operation]));
+        SlidesMutationHandlers.ResolvedSlidesOp target = SlidesMutationHandlers.ResolveTarget(edited, operation);
         var verifier = new SlidesEditVerifier(edited, _ => target, evaluation: false);
         SlidesAuthoring.Title(edited.Slides[0]).TextFrame.Text = "Changed";
 

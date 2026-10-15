@@ -11,7 +11,7 @@ public sealed class SlidesTargetLivenessTests
     [InlineData(true, false)]
     [InlineData(false, true)]
     [InlineData(true, true)]
-    public void DeletedSlide_CannotReceiveLaterContent(bool bestEffort, bool dryRun)
+    public void SlideNumberADeletionLeftPastTheEnd_FailsTheOperation(bool bestEffort, bool dryRun)
     {
         using var fixture = new SlidesEngineFixture();
         string input = fixture.CreatePresentation();
@@ -22,7 +22,7 @@ public sealed class SlidesTargetLivenessTests
             Ops =
             [
                 new DeleteSlidesOp { Slides = "1" },
-                new SetTitleOp { Slide = 1, Text = "Lost" },
+                new SetTitleOp { Slide = 3, Text = "Lost" },
                 new SetNotesOp { Slide = 2, Text = "Safe" },
             ],
         };
@@ -38,13 +38,13 @@ public sealed class SlidesTargetLivenessTests
             SlidesEditResult result = SlidesEdit.Run(fixture.Session, request);
             Assert.Equal(["ok", "failed", "ok"], result.Applied.Select(operation => operation.Status));
             Assert.Equal(0, result.Applied[1].ItemsAffected);
-            Assert.Equal(result.Applied[0].Targets, result.Applied[1].Targets);
+            Assert.Equal(["slide/3"], result.Applied[1].Targets);
             Assert.Equal(!dryRun, File.Exists(output));
             if (!dryRun)
             {
                 using var reopened = new Presentation(output);
                 Assert.Equal(2, reopened.Slides.Count);
-                Assert.Contains("Safe", reopened.Slides[0].NotesSlideManager.NotesSlide!.NotesTextFrame!.Text, StringComparison.Ordinal);
+                Assert.Contains("Safe", reopened.Slides[1].NotesSlideManager.NotesSlide!.NotesTextFrame!.Text, StringComparison.Ordinal);
             }
         }
         else
@@ -66,7 +66,7 @@ public sealed class SlidesTargetLivenessTests
             Input = input,
             Batch = new SlidesOpsBatch
             {
-                Ops = [new DeleteSlidesOp { Slides = "2" }, new SetSlideHiddenOp { Slides = "1-2", Hidden = true }],
+                Ops = [new DeleteSlidesOp { Slides = "2" }, new SetSlideHiddenOp { Slides = "1-3", Hidden = true }],
             },
             Output = TestOutput.At(output),
             Options = new EditCommandOptions { BestEffort = true },
@@ -113,24 +113,59 @@ public sealed class SlidesTargetLivenessTests
     }
 
     [Fact]
-    public void MovingSlides_PreservesOriginalTargetsForSubsequentOperations()
+    public void InsertedSlide_CanBeTargetedByALaterOperationOfTheSameBatch()
     {
         using var fixture = new SlidesEngineFixture();
         string input = fixture.CreatePresentation();
-        uint originalId;
-        using (var source = new Presentation(input)) { originalId = source.Slides[0].SlideId; }
+        string output = fixture.File("inserted.pptx");
+        SlidesEditResult result = SlidesEdit.Run(fixture.Session, new SlidesEditRequest
+        {
+            Input = input,
+            Batch = new SlidesOpsBatch
+            {
+                Ops = [new InsertSlideOp(), new SetTextOp { Slide = 4, Placeholder = "title", Text = "Added" }],
+            },
+            Output = TestOutput.At(output),
+        });
+
+        Assert.Equal(["ok", "ok"], result.Applied.Select(operation => operation.Status));
+        Assert.Equal(["slide/4"], result.Applied[0].Targets);
+        using var reopened = new Presentation(output);
+        Assert.Equal(4, reopened.Slides.Count);
+        IAutoShape title = reopened.Slides[3].Shapes.OfType<IAutoShape>()
+            .Single(shape => shape.Placeholder?.Type is PlaceholderType.Title or PlaceholderType.CenteredTitle);
+        Assert.Equal("Added", title.TextFrame.Text);
+        Assert.Equal(1, result.Applied[1].ItemsAffected);
+        Assert.Equal([$"slide/4/shape/{title.OfficeInteropShapeId}"], result.Applied[1].Targets);
+    }
+
+    [Fact]
+    public void MovedSlide_IsAddressedByItsPositionAfterTheMove()
+    {
+        using var fixture = new SlidesEngineFixture();
+        string input = fixture.CreatePresentation();
+        uint movedId;
+        uint secondId;
+        using (var source = new Presentation(input))
+        {
+            movedId = source.Slides[0].SlideId;
+            secondId = source.Slides[1].SlideId;
+        }
+
         string output = fixture.File("moved.pptx");
         SlidesEdit.Run(fixture.Session, new SlidesEditRequest
         {
             Input = input,
             Batch = new SlidesOpsBatch
             {
-                Ops = [new MoveSlideOp { Slide = 1, To = 3 }, new SetNotesOp { Slide = 1, Text = "Safe" }],
+                Ops = [new MoveSlideOp { Slide = 1, To = 3 }, new SetNotesOp { Slide = 3, Text = "Moved" }, new SetNotesOp { Slide = 1, Text = "One" }],
             },
             Output = TestOutput.At(output),
         });
         using var reopened = new Presentation(output);
-        Assert.Equal(originalId, reopened.Slides[2].SlideId);
-        Assert.Contains("Safe", reopened.Slides[2].NotesSlideManager.NotesSlide!.NotesTextFrame!.Text, StringComparison.Ordinal);
+        Assert.Equal(movedId, reopened.Slides[2].SlideId);
+        Assert.Equal(secondId, reopened.Slides[0].SlideId);
+        Assert.Contains("Moved", reopened.Slides[2].NotesSlideManager.NotesSlide!.NotesTextFrame!.Text, StringComparison.Ordinal);
+        Assert.Contains("One", reopened.Slides[0].NotesSlideManager.NotesSlide!.NotesTextFrame!.Text, StringComparison.Ordinal);
     }
 }

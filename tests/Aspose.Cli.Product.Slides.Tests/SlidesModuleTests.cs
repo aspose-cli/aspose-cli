@@ -147,6 +147,7 @@ public sealed class SlidesModuleTests
     [Theory]
     [InlineData("""{"op":"import_slides","path":"other.pptx"}""", """{"formatting":"keep-source"}""")]
     [InlineData("""{"op":"replace_text","find":"a","replace":"b"}""", """{"scope":"all"}""")]
+    [InlineData("""{"op":"replace_text","find":"a","replace":"b","wholeWord":true,"maxReplacementCount":2}""", """{"wholeWord":true,"maxReplacementCount":2}""")]
     [InlineData("""{"op":"set_slide_size","slideSize":{"width":800,"height":600}}""", """{"scaleContent":true}""")]
     [InlineData("""{"op":"set_slide_size","slideSize":{"width":800,"height":600},"scaleContent":false}""", """{"scaleContent":false}""")]
     public void OperationFields_PreserveDefaultsAndExplicitValues(string input, string expected) =>

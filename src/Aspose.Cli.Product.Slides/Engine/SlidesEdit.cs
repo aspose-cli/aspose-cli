@@ -31,7 +31,6 @@ internal static class SlidesEdit
             session.Budgets.Inputs,
             session.Loader,
             presentation,
-            batch.Ops,
             evaluation,
             request.OpSecrets,
             () => session.Outputs.ReadInput(presentation));

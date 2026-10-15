@@ -16,7 +16,7 @@ namespace Aspose.Cli.Product.Slides.Engine.Editing;
 /// with their levels and bullets, speaker notes, layouts, hidden slides, footers, transitions,
 /// sections, document properties, the slide size and, for replace_text, how often its find and
 /// replacement text occur in its scope, each as the operation left it in the edited
-/// presentation, on the slides it resolved before the batch. The batch is checked as a whole:
+/// presentation, on the slides it resolved when it ran. The batch is checked as a whole:
 /// an expectation that a later operation changes or removes is dropped and its operation stays
 /// unchecked, except that the slide order and the sections a later operation changes again carry
 /// the earlier operations into its expectation. An operation counts as checked only when every
@@ -38,7 +38,7 @@ internal sealed class SlidesEditVerifier : IEditVerifier<SlidesOp>
     private readonly HashSet<string> _recorded = new(StringComparer.Ordinal);
 
     /// <param name="presentation">The presentation the batch edits, which each record reads as the operation left it.</param>
-    /// <param name="targets">Each operation's targets as resolved before the batch, which earlier operations may have moved.</param>
+    /// <param name="targets">Each operation's targets as resolved when it ran, which later operations may move.</param>
     /// <param name="evaluation">Whether the engine runs in evaluation mode, which cuts read text short.</param>
     internal SlidesEditVerifier(Presentation presentation, Func<SlidesOp, SlidesMutationHandlers.ResolvedSlidesOp> targets, bool evaluation)
     {
@@ -166,7 +166,7 @@ internal sealed class SlidesEditVerifier : IEditVerifier<SlidesOp>
         ExpectSlide(id, part, subject, slideId, read);
     }
 
-    /// <summary>Expects what <paramref name="read"/> reads on each slide a multi-slide operation selected before the batch.</summary>
+    /// <summary>Expects what <paramref name="read"/> reads on each slide a multi-slide operation selected when it ran.</summary>
     private void ExpectSlides(string id, SlidesOp operation, string part, string subject, Func<ISlide, string?> read)
     {
         foreach (ISlide selected in _targets(operation).Slides ?? [])
@@ -211,7 +211,7 @@ internal sealed class SlidesEditVerifier : IEditVerifier<SlidesOp>
         _incomplete.UnionWith(expectation.Ops);
     }
 
-    /// <summary>The id of the slide a slide operation addressed, resolved before the batch.</summary>
+    /// <summary>The id of the slide a slide operation addressed, resolved when it ran.</summary>
     private uint? TargetSlideId(SlideTargetOp operation) => _targets(operation).Slide?.SlideId;
 
     /// <summary>

@@ -200,7 +200,7 @@ public sealed class SlidesStateGrainTests
         using var output = new Presentation(input);
         edit(edited);
         write(output);
-        SlidesMutationHandlers.ResolvedSlidesOp target = Assert.Single(SlidesMutationHandlers.ResolveBatch(edited, [operation]));
+        SlidesMutationHandlers.ResolvedSlidesOp target = SlidesMutationHandlers.ResolveTarget(edited, operation);
         var verifier = new SlidesEditVerifier(edited, _ => target, evaluation: false);
         verifier.Record(operation, AppliedOperations.Changed(SlidesOp.Catalog, operation, 1));
         return verifier.Verify(output);
