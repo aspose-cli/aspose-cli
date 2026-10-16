@@ -431,6 +431,27 @@ public sealed class WordsCliTests : IDisposable
     }
 
     /// <summary>
+    /// A replace_text that matches nothing says so with a hint the caller can follow as written,
+    /// which the run's hint check verifies: the wider scope is the op's own field.
+    /// </summary>
+    [Category(TestCategory.Slow)]
+    [Fact]
+    public void ReplaceText_WithNoMatch_HintsAtTheOpsScope()
+    {
+        File.WriteAllText(_workspace.File("source.md"), "Party A pays.\n");
+        Assert.Equal(0, _workspace.Run("words", "create", "contract.docx", "--from-markdown", "source.md").ExitCode);
+
+        CliResult edited = _workspace.RunWithInput(
+            """{ "ops": [ { "op": "replace_text", "find": "Party Z", "replace": "Party Y" } ] }""",
+            "words", "edit", "contract.docx", "--ops", "-", "--out", "edited.docx", "--output-format", "json");
+
+        Assert.True(edited.ExitCode == 0, edited.StdErr);
+        JsonNode warning = JsonNode.Parse(edited.StdOut)!["warnings"]!.AsArray()
+            .Single(static item => item!["code"]!.GetValue<string>() == "OP_NO_EFFECT")!;
+        Assert.Contains("\"scope\": \"all\"", warning["hint"]!.GetValue<string>(), StringComparison.Ordinal);
+    }
+
+    /// <summary>
     /// A replace_text regex that anchors with ^, $, \A, \Z, \z or \G is refused before the edit
     /// runs: the engine reads those anchors at the edges of the whole scope, so it would replace
     /// fewer paragraphs than words search finds.
