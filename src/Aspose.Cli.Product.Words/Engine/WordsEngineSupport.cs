@@ -17,8 +17,20 @@ internal static class WordsEngineSupport
             warnings.Add(omitted);
         }
 
+        if (loaded.FixedPageHtml)
+        {
+            warnings.Add(FixedPageHtmlReflowed);
+        }
+
         return warnings.Count == 0 ? null : warnings;
     }
+
+    // The SDK reads no fixed-layout format: an html-fixed page rendition loads as flowing HTML,
+    // and its absolutely positioned page containers break apart.
+    private static Warning FixedPageHtmlReflowed { get; } = new(WarningCodes.LossyConversion, "The input is an html-fixed page rendition, which loads as flowing HTML: its pages are reflowed, so the page count, tables, headers, footers and layout differ from the delivered file.")
+    {
+        Hint = "Review and edit the source document the html-fixed file was converted from, such as its .docx, instead of the html-fixed file.",
+    };
 
     /// <summary>
     /// The warnings for writing a loaded document to a format; the write pipeline adds the

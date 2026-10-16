@@ -71,6 +71,11 @@ not a check: look for it on the rendered pages. Fix it with
 table) rather than a page break, then run `review` again
 ([editing](editing.md)).
 
+An `html-fixed` output cannot be reviewed as delivered: Words reads it as
+flowing HTML, so its pages are reflowed and the review reports
+`LOSSY_CONVERSION`. Review the source document (the `.docx`) it was converted
+from instead.
+
 No operation moves a floating image or shape, so when one crosses the page
 edge (`WORDS_OBJECT_OUTSIDE_PAGE`), open the rendered page and tell the user
 what is cut off instead of delivering the page as right.

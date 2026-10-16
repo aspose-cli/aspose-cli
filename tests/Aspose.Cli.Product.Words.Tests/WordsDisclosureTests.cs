@@ -269,6 +269,49 @@ public sealed class WordsDisclosureTests
         Assert.Contains("has a space wherever a line ended", lossy[1].Message, StringComparison.Ordinal);
     }
 
+    /// <summary>
+    /// A review of an html-fixed page rendition warns that it was reflowed as flowing HTML and
+    /// points to the source document; a review of ordinary HTML does not.
+    /// </summary>
+    [Theory]
+    [InlineData("html-fixed", true)]
+    [InlineData("html", false)]
+    public void ReviewingAnHtmlFixedRendition_DisclosesThatItIsReflowed(string format, bool disclosed)
+    {
+        using var fixture = new WordsFixture();
+        var source = new Document();
+        var builder = new DocumentBuilder(source);
+        builder.Writeln("Clause one.");
+        builder.StartTable();
+        builder.InsertCell();
+        builder.Write("Cell");
+        builder.EndRow();
+        builder.EndTable();
+        string docx = fixture.Temp.File("rendition.docx");
+        source.Save(docx, SaveFormat.Docx);
+        string html = fixture.Temp.File($"rendition-{format}.html");
+        WordsConvert.Run(fixture.Session, new WordsConvertRequest { Input = docx, Output = TestOutput.At(html, format: format) });
+        var adapter = new WordsViewAdapter();
+        var request = new Sdk.Views.ViewRenderRequest { View = WordsViews.Pages, MaxPartCount = 4, Purpose = Sdk.Views.ViewPurpose.Evidence };
+
+        Sdk.Views.ViewManifest rendered = adapter.Render(fixture.Session, html, request, new MemoryArtifactSink());
+        var assessment =adapter.Assess(fixture.Session, html, request, rendered);
+
+        Warning[] lossy = [.. EnvelopeParts.CombineWarnings(rendered.Warnings, assessment.Warnings) ?? []];
+        lossy = [.. lossy.Where(static warning => warning.Code == WarningCodes.LossyConversion)];
+        if (!disclosed)
+        {
+            Assert.Empty(lossy);
+            return;
+        }
+
+        Warning reflowed = Assert.Single(lossy);
+        Assert.Contains("loads as flowing HTML", reflowed.Message, StringComparison.Ordinal);
+        Assert.Contains("page count", reflowed.Message, StringComparison.Ordinal);
+        Assert.Contains("source document", reflowed.Hint, StringComparison.Ordinal);
+        Assert.Contains(".docx", reflowed.Hint, StringComparison.Ordinal);
+    }
+
     [Theory]
     [InlineData(true, "docx", false)]
     [InlineData(false, "docx", true)]
