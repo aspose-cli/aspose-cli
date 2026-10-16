@@ -27,6 +27,7 @@ public abstract class OutputPipeline : ILicenseState
     private EvaluationMarks _kept = EvaluationMarks.None;
     private EvaluationMarks _shown = EvaluationMarks.None;
     private readonly List<string> _marked = [];
+    private bool _watermarked;
     private Warning? _inputTruncated;
     private Inspection? _view;
     private bool _encryptedInput;
@@ -261,9 +262,10 @@ public abstract class OutputPipeline : ILicenseState
         EvaluationMarks shown;
         Warning? truncated;
         string[] marked;
+        bool watermarked;
         lock (_sync)
         {
-            (published, kept, shown, truncated) = (_published, _kept, _shown, _inputTruncated);
+            (published, kept, shown, truncated, watermarked) = (_published, _kept, _shown, _inputTruncated, _watermarked);
             marked = [.. _marked];
         }
 
@@ -272,7 +274,7 @@ public abstract class OutputPipeline : ILicenseState
         Warning? output = published == 0 ? null : License switch
         {
             LicenseState.Evaluation => EvaluationDisclosure.Output(
-                _licenseGate.Resolution.Kind == LicenseSourceKind.EvaluationRequested, kept, shown, subject),
+                _licenseGate.Resolution.Kind == LicenseSourceKind.EvaluationRequested, kept, shown, subject, watermarked),
             LicenseState.Licensed when kept.Any || shown.Any => EvaluationDisclosure.InputMarked(kept, shown, subject),
             _ => null,
         };
@@ -383,6 +385,8 @@ public abstract class OutputPipeline : ILicenseState
         lock (_sync)
         {
             _published++;
+            // An output whose format is not known to take no watermark is disclosed as watermarked.
+            _watermarked |= inspection?.Watermarked ?? true;
             if (inspection?.Marks is { } marks)
             {
                 if (inspection.Rendering)
@@ -405,9 +409,11 @@ public abstract class OutputPipeline : ILicenseState
     /// <summary>
     /// The marks of one published document, or null when inspecting it failed and its marks are
     /// unknown; <see cref="Rendering"/> says the output shows the document rather than keeping
-    /// a copy of it, as page images and extracted page text do.
+    /// a copy of it, as page images and extracted page text do; <see cref="Watermarked"/> says
+    /// evaluation mode writes its watermark into the output's format
+    /// (<see cref="IEvaluationProfile{TDocument}.WritesWatermark"/>).
     /// </summary>
-    internal sealed record Inspection(EvaluationMarks? Marks, bool Rendering);
+    internal sealed record Inspection(EvaluationMarks? Marks, bool Rendering, bool Watermarked = true);
 
     /// <summary>A published file: its format id, whether that format is an image, and whether the file is encrypted.</summary>
     internal sealed record Copy(string Format, bool Image, bool Encrypted);
@@ -424,9 +430,26 @@ internal static class EvaluationDisclosure
     /// <param name="kept">The marks the outputs keep.</param>
     /// <param name="shown">The marks the rendered sources carry.</param>
     /// <param name="subject">The outputs that keep the marks, such as <c>The outputs 'a.1.pdf' and 'a.2.pdf'</c>.</param>
-    internal static Warning Output(bool requested, EvaluationMarks kept, EvaluationMarks shown, string subject = "The output")
+    /// <param name="watermarked">
+    /// Whether an output is in a format evaluation mode watermarks; when none is, the warning
+    /// claims no watermark and says only that evaluation mode limits the command.
+    /// </param>
+    internal static Warning Output(bool requested, EvaluationMarks kept, EvaluationMarks shown, string subject = "The output", bool watermarked = true)
     {
-        Warning disclosure = requested ? EnvelopeParts.RequestedEvaluationWatermark : EnvelopeParts.EvaluationWatermark;
+        Warning disclosure = (requested, watermarked) switch
+        {
+            (true, true) => EnvelopeParts.RequestedEvaluationWatermark,
+            (false, true) => EnvelopeParts.EvaluationWatermark,
+            (true, false) => EnvelopeParts.RequestedEvaluationWatermark with
+            {
+                Message = "Evaluation mode, requested with --license-mode evaluation: some operations are limited.",
+            },
+            (false, false) => EnvelopeParts.EvaluationWatermark with
+            {
+                Message = "Evaluation mode: some operations are limited.",
+                Hint = "Tell the user the output is limited. A license lifts the limits: set ASPOSE_LICENSE_PATH or pass --license.",
+            },
+        };
         string message = disclosure.Message;
         if (kept.Any)
         {
@@ -695,7 +718,7 @@ public sealed class OutputPipeline<TDocument> : OutputPipeline
                     Inspect(document);
                 }
 
-                return new Inspection(_marks, rendering);
+                return new Inspection(_marks, rendering, profile.WritesWatermark(format));
             }
         }
 
