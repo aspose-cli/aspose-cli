@@ -120,9 +120,10 @@ public sealed class ReviewEvidenceWriterTests
         {
             Findings =
             [
-                check.Finding("Second page.", "page 2", part: "part-1"),
+                check.Finding("Second page.", "page 2", parts: ["part-1"]),
                 check.Finding("Whole document."),
-                check.Finding("Unrendered page.", "page 3", part: "part-2"),
+                check.Finding("Unrendered page.", "page 3", parts: ["part-2"]),
+                check.Finding("Third page repeats the first.", "page 3", parts: ["part-0", "part-2"]),
             ],
         };
 
@@ -131,6 +132,7 @@ public sealed class ReviewEvidenceWriterTests
         Assert.Equal(["artifacts/page-2.png"], result.Findings[0].Evidence);
         Assert.Equal(["artifacts/page-1.png", "artifacts/page-2.png"], result.Findings[1].Evidence);
         Assert.Equal(["artifacts/view.json"], result.Findings[2].Evidence);
+        Assert.Equal(["artifacts/page-1.png", "artifacts/view.json"], result.Findings[3].Evidence);
         JsonObject manifest = JsonNode.Parse(File.ReadAllText(result.Manifest))!.AsObject();
         Assert.Null(manifest["findings"]![0]!["part"]);
     }

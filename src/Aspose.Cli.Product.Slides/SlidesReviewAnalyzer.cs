@@ -62,7 +62,7 @@ internal static class SlidesReviewAnalyzer
         IReadOnlyList<SlidesSlideData> slides,
         SlidesReviewAnalysis result)
     {
-        var firstByFingerprint = new Dictionary<string, int>(StringComparer.Ordinal);
+        var firstByFingerprint = new Dictionary<string, SlidesSlideData>(StringComparer.Ordinal);
         foreach (SlidesSlideData slide in slides)
         {
             string? fingerprint = Fingerprint(slide);
@@ -70,18 +70,20 @@ internal static class SlidesReviewAnalyzer
             {
                 continue;
             }
-            if (firstByFingerprint.TryGetValue(fingerprint, out int first))
+            if (firstByFingerprint.TryGetValue(fingerprint, out SlidesSlideData? first))
             {
                 result.DuplicateSlides++;
-                // A duplicate concerns two slides, so it names no single part and keeps every image as evidence.
+                // A duplicate concerns two slides, so both images are its evidence.
                 result.Findings.Add(SlidesReviewChecks.SlideDuplicate.Finding(
-                    $"Slide {slide.Slide} has the same meaningful content and geometry as slide {first}; inspect both before removing either one.",
+                    $"Slide {slide.Slide} has the same meaningful content and geometry as slide {first.Slide}; inspect both before removing either one.",
                     Location(slide.Slide),
-                    Hint));
+                    Hint,
+                    SlidesViews.PartId(first.SlideId),
+                    SlidesViews.PartId(slide.SlideId)));
             }
             else
             {
-                firstByFingerprint.Add(fingerprint, slide.Slide);
+                firstByFingerprint.Add(fingerprint, slide);
             }
         }
     }

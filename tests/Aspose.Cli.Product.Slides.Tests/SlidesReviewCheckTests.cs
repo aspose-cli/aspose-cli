@@ -49,12 +49,12 @@ public sealed class SlidesReviewCheckTests
             SlidesReviewChecks.All.Select(static check => check.Code).Order(StringComparer.Ordinal),
             analysis.Findings.Select(static finding => finding.Code).Distinct().Order(StringComparer.Ordinal));
         // A finding names the view part of its slide, so its evidence is that slide's image; a
-        // duplicate concerns two slides and names none.
+        // duplicate names both slides.
         Assert.All(analysis.Findings, static finding => Assert.Equal(
             finding.Code == SlidesReviewChecks.SlideDuplicate.Code
-                ? null
-                : $"slide-{255 + int.Parse(finding.Location!["slide ".Length..], System.Globalization.CultureInfo.InvariantCulture)}",
-            finding.Part));
+                ? ["slide-256", "slide-257"]
+                : [$"slide-{255 + int.Parse(finding.Location!["slide ".Length..], System.Globalization.CultureInfo.InvariantCulture)}"],
+            finding.Parts!));
     }
 
     [Fact]
