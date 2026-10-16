@@ -36,7 +36,7 @@ public sealed class WordsDefectHintTests
             Verify = true,
         });
 
-        VerificationIssue issue = Assert.Single(result.Verification!.Issues, static issue => issue.Code == "FIELD_COUNT_CHANGED");
+        VerificationIssue issue = Assert.Single(result.Verification!.Issues, static issue => issue.Code == "FIELD_COUNT_MISMATCH");
         System.Text.RegularExpressions.Match counts = System.Text.RegularExpressions.Regex.Match(issue.Message, @"expected (\d+), found (\d+)");
         Assert.True(int.Parse(counts.Groups[2].Value, CultureInfo.InvariantCulture) > int.Parse(counts.Groups[1].Value, CultureInfo.InvariantCulture), issue.Message);
         Assert.DoesNotContain("may not keep", issue.Hint, StringComparison.Ordinal);

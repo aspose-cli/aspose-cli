@@ -27,7 +27,7 @@ public sealed class WordsVerificationIssueTests
         Assert.False(result.Verification!.Ok);
         Assert.True(result.HasFailures);
         VerificationIssue issue = Assert.Single(result.Verification.Issues);
-        Assert.Equal("PROTECTION_CHANGED", issue.Code);
+        Assert.Equal("PROTECTION_MISMATCH", issue.Code);
         Assert.Contains("expected read-only, found none", issue.Message, StringComparison.Ordinal);
         Assert.Equal("odt may not keep protection; save to docx or another Word format and verify again.", issue.Hint);
     }
@@ -98,7 +98,7 @@ public sealed class WordsVerificationIssueTests
     [Fact]
     public void VerificationCodes_AreDeclaredVerificationDiagnostics()
     {
-        foreach (string code in new[] { "FIELD_COUNT_CHANGED", "REVISION_COUNT_CHANGED", "PROTECTION_CHANGED" })
+        foreach (string code in new[] { "FIELD_COUNT_MISMATCH", "REVISION_COUNT_MISMATCH", "PROTECTION_MISMATCH" })
         {
             Assert.Contains(WordsDiagnostics.All, descriptor =>
                 descriptor.Code == code && descriptor.Category == "verification");
