@@ -605,6 +605,31 @@ public sealed class CellsOutcomeTests : IClassFixture<CellsFixture>
         Assert.Equal([["sheet/Backstage"], ["cell/Data!A9"]], result.Applied.Select(static outcome => outcome.Targets));
     }
 
+    [Theory]
+    [InlineData("C", 2, "A,C,B")]
+    [InlineData("A", 2, "B,A,C")]
+    [InlineData("A", 3, "B,C,A")]
+    public void MovingASheet_NamesTheMovedSheet(string sheet, int to, string order)
+    {
+        string path = _fixture.Temp.File($"move-sheet-{Guid.NewGuid():N}.xlsx");
+        using (var workbook = new Workbook())
+        {
+            workbook.Worksheets[0].Name = "A";
+            workbook.Worksheets.Add("B");
+            workbook.Worksheets.Add("C");
+            workbook.Save(path);
+        }
+
+        CellsEditResult result = Apply(path, $$"""{"ops":[{"op":"move_sheet","sheet":"{{sheet}}","to":{{to}}}]}""");
+
+        BoundedOperationOutcome outcome = Assert.Single(result.Applied);
+        Assert.Equal([$"sheet/{sheet}"], outcome.Targets);
+        Assert.Equal(1, outcome.ItemsAffected);
+        using var saved = new Workbook(result.Output!.Path);
+        // Evaluation mode adds a sheet of its own.
+        Assert.Equal(order, string.Join(",", saved.Worksheets.Cast<Worksheet>().Select(static item => item.Name).Where(static name => name.Length == 1)));
+    }
+
     [Fact]
     public void HidingTheActiveSheet_NamesTheActiveSheetItMovesOn()
     {

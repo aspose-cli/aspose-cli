@@ -139,6 +139,36 @@ public sealed class SlidesTargetLivenessTests
         Assert.Equal([$"slide/4/shape/{title.OfficeInteropShapeId}"], result.Applied[1].Targets);
     }
 
+    [Theory]
+    [InlineData(4, 3)]
+    [InlineData(5, 4)]
+    [InlineData(3, 4)]
+    [InlineData(4, 2)]
+    public void MovedSlide_IsTheOneTheOutcomeReports(int from, int to)
+    {
+        using var fixture = new SlidesEngineFixture();
+        string input = fixture.CreatePresentation(slides: 5);
+        uint movedId;
+        using (var source = new Presentation(input))
+        {
+            movedId = source.Slides[from - 1].SlideId;
+        }
+
+        string output = fixture.File("moved-one.pptx");
+        SlidesEditResult result = SlidesEdit.Run(fixture.Session, new SlidesEditRequest
+        {
+            Input = input,
+            Batch = new SlidesOpsBatch { Ops = [new MoveSlideOp { Slide = from, To = to }] },
+            Output = TestOutput.At(output),
+        });
+
+        Assert.Equal(1, result.Applied[0].ItemsAffected);
+        Assert.Equal([$"slide/{to}"], result.Applied[0].Targets);
+        Assert.Equal([to], result.SlidesTouched);
+        using var reopened = new Presentation(output);
+        Assert.Equal(movedId, reopened.Slides[to - 1].SlideId);
+    }
+
     [Fact]
     public void MovedSlide_IsAddressedByItsPositionAfterTheMove()
     {

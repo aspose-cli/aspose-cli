@@ -40,6 +40,40 @@ public sealed class OperationSnapshotTests
     }
 
     [Fact]
+    public void Compare_ANamedMovedPageCountsAtItsNewAddressWhenItSwapsWithANeighbor()
+    {
+        OperationSnapshot before = new OperationSnapshot().AddSequence("page", ["a", "b", "c", "d", "e"], moved: ["d"]);
+
+        Assert.Equal([new ObjectChange("page/3", true)], Compare(before, Pages("a", "b", "d", "c", "e")));
+    }
+
+    [Fact]
+    public void Compare_NamedMovedPagesCountEachAtItsNewAddress()
+    {
+        OperationSnapshot before = new OperationSnapshot().AddSequence("page", ["a", "b", "c", "d", "e"], moved: ["d", "e"]);
+
+        Assert.Equal(
+            [new ObjectChange("page/3", true), new ObjectChange("page/4", true)],
+            Compare(before, Pages("a", "b", "d", "e", "c")));
+    }
+
+    [Fact]
+    public void Compare_ANamedMovedPageThatKeptItsPlaceChangesNothing()
+    {
+        OperationSnapshot before = new OperationSnapshot().AddSequence("page", ["a", "b", "c"], moved: ["b"]);
+
+        Assert.Empty(Compare(before, Pages("a", "b", "c")));
+    }
+
+    [Fact]
+    public void Compare_OnlyTheSnapshotBeforeTheOperationNamesTheMovedPages()
+    {
+        OperationSnapshot after = new OperationSnapshot().AddSequence("page", ["a", "c", "b"], moved: ["c"]);
+
+        Assert.Equal([new ObjectChange("page/3", true)], Compare(Pages("a", "b", "c"), after));
+    }
+
+    [Fact]
     public void Compare_APageChangedInPlaceCountsOnce()
     {
         Assert.Equal([new ObjectChange("page/2", true)], Compare(Pages("a", "b", "c"), Pages("a", "B", "c")));
