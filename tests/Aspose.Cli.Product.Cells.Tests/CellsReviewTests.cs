@@ -73,7 +73,7 @@ public sealed class CellsReviewTests
                 "CELLS_SHEET_HIDDEN" => "Secret",
                 _ => "Data",
             },
-            finding.Part));
+            Assert.Single(finding.Parts!)));
         ReviewFinding hiddenColumns = Assert.Single(
             findings,
             static finding => finding.Code == "CELLS_POPULATED_COLUMNS_HIDDEN");

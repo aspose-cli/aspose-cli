@@ -202,9 +202,9 @@ internal static class ReviewEvidenceWriter
         };
     }
 
-    // A finding about one part points at that part's rendering, or at the view entry when the
-    // coverage limit left the part unrendered; one about the whole document points at every
-    // rendering (or, with none, at the view entry).
+    // A finding about parts points at each part's rendering, or at the view entry for a part the
+    // coverage limit left unrendered; one about the whole document points at every rendering
+    // (or, with none, at the view entry).
     private static IReadOnlyList<ReviewFinding> AssociateEvidence(
         IReadOnlyList<ReviewFinding> findings,
         IReadOnlyList<ReviewArtifact> artifacts,
@@ -237,9 +237,10 @@ internal static class ReviewEvidenceWriter
                 ? finding
                 : finding with
                 {
-                    Evidence = finding.Part is not { } id ? evidence
-                        : partEvidence.TryGetValue(id, out string? path) ? [path]
-                        : entry,
+                    Evidence = finding.Parts is not { } ids ? evidence
+                        : ids.SelectMany(id => partEvidence.TryGetValue(id, out string? path) ? [path] : entry)
+                            .Distinct(StringComparer.Ordinal)
+                            .ToArray(),
                 })
             .ToArray();
     }

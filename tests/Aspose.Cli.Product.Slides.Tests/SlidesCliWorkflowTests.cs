@@ -78,6 +78,38 @@ public sealed class SlidesCliWorkflowTests : IDisposable
     }
 
     [Fact]
+    public void Review_DuplicateSlide_HasBothSlidesImagesAsEvidence()
+    {
+        // Short titles and a table keep the duplicate visible in evaluation mode, which cuts longer text.
+        using (var presentation = new Presentation())
+        {
+            for (int index = 1; index <= 10; index++)
+            {
+                ISlide slide = index == 1
+                    ? presentation.Slides[0]
+                    : presentation.Slides.AddEmptySlide(presentation.LayoutSlides[0]);
+                int title = index == 7 ? 3 : index;
+                slide.Shapes.AddAutoShape(ShapeType.Rectangle, 40, 30, 600, 70).TextFrame.Text = $"S{title}";
+                if (title == 3)
+                {
+                    slide.Shapes.AddTable(100, 150, [200, 200], [60, 60]);
+                }
+            }
+            presentation.Save(_workspace.File("deck.pptx"), SaveFormat.Pptx);
+        }
+
+        CliResult review = _workspace.Run(
+            "review", "deck.pptx", "--out", "evidence", "--code", "SLIDES_SLIDE_DUPLICATE", "--output-format", "json");
+
+        Assert.True(review.ExitCode == 0, review.StdOut + review.StdErr);
+        JsonNode finding = Assert.Single(JsonNode.Parse(review.StdOut)!["findings"]!.AsArray())!;
+        Assert.Equal("slide 7", finding["location"]!.GetValue<string>());
+        Assert.Equal(
+            ["artifacts/slide-0003.png", "artifacts/slide-0007.png"],
+            finding["evidence"]!.AsArray().Select(static path => path!.GetValue<string>()));
+    }
+
+    [Fact]
     public void Review_OfAPasswordEncryptedPresentation_RendersWithItsPassword()
     {
         // An encrypted Open XML presentation is an OLE compound file, not a ZIP package.

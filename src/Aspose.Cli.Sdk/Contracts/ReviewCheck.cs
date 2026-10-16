@@ -51,8 +51,12 @@ public sealed partial record ReviewCheck
     /// <param name="message">What was found.</param>
     /// <param name="location">Where, in words people read, for example <c>page 3</c>.</param>
     /// <param name="hint">How to resolve it.</param>
-    /// <param name="part">Id of the view part that shows it; see <see cref="ReviewFinding.Part"/>.</param>
-    public ReviewFinding Finding(string message, string? location = null, string? hint = null, string? part = null)
+    /// <param name="parts">Ids of the view parts that show it; see <see cref="ReviewFinding.Parts"/>.</param>
+    public ReviewFinding Finding(
+        string message,
+        string? location = null,
+        string? hint = null,
+        params IReadOnlyList<string> parts)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(message);
         return new ReviewFinding
@@ -62,7 +66,7 @@ public sealed partial record ReviewCheck
             Message = message,
             Location = location,
             Hint = hint,
-            Part = part,
+            Parts = parts.Count > 0 ? parts : null,
         };
     }
 

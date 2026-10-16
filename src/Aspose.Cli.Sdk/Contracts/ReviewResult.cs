@@ -136,11 +136,12 @@ public sealed record ReviewFinding
     public IReadOnlyList<string>? Evidence { get; init; }
 
     /// <summary>
-    /// Id of the view part the finding is about, for example <c>page-3</c>; the review writer
-    /// turns it into <see cref="Evidence"/>. Without one, the finding concerns the whole document.
+    /// Ids of the view parts the finding is about, for example <c>page-3</c>; the review writer
+    /// turns each into its rendering in <see cref="Evidence"/>. Without any, the finding concerns
+    /// the whole document.
     /// </summary>
     [JsonIgnore]
-    public string? Part { get; init; }
+    public IReadOnlyList<string>? Parts { get; init; }
 }
 
 /// <summary>One deterministic product-owned coverage measurement.</summary>

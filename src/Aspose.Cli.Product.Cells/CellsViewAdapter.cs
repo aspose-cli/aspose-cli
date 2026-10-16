@@ -317,5 +317,5 @@ internal sealed class CellsViewAdapter : IProductViewAdapter<CellsSession>
 
     /// <summary>A finding on one worksheet, shown with that sheet's image; it is located at the sheet unless <paramref name="location"/> says otherwise.</summary>
     private static ReviewFinding SheetFinding(ReviewCheck check, string sheet, string message, string? location = null, string hint = Hint) =>
-        check.Finding(message, location ?? sheet, hint, part: sheet);
+        check.Finding(message, location ?? sheet, hint, sheet);
 }
