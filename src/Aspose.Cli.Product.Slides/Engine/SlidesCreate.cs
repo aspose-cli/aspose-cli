@@ -1,3 +1,4 @@
+using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Licensing;
 using Aspose.Cli.Sdk.Results;
@@ -9,6 +10,21 @@ namespace Aspose.Cli.Product.Slides.Engine;
 /// <summary>Creates a blank, template-based or Markdown-authored presentation.</summary>
 internal static class SlidesCreate
 {
+    /// <summary>A template, which opens without a password: an encrypted one is refused with that advice.</summary>
+    private static LoadedPresentation OpenTemplate(SlidesSession session, string path)
+    {
+        try
+        {
+            return session.Loader.Open(path, password: null);
+        }
+        catch (CliException error) when (CliErrors.IsPasswordError(error))
+        {
+            throw CliErrors.WithoutPassword(error,
+                "'slides create' cannot open an encrypted template. Ask the user for an unencrypted copy of the template, "
+                + "then pass that copy to --template.");
+        }
+    }
+
     internal static SlidesCreateResult Run(SlidesSession session, SlidesCreateRequest request)
     {
         LicenseState state = session.Outputs.License;
@@ -16,7 +32,7 @@ internal static class SlidesCreate
 
         using LoadedPresentation template = request.TemplatePath is null
             ? SlidesPresentationLoader.OpenDefaultTemplate()
-            : session.Loader.Open(request.TemplatePath, password: null);
+            : OpenTemplate(session, request.TemplatePath);
         Presentation presentation = template.Presentation;
         ApplySlideSize(presentation, request.SlideSize);
         IReadOnlyList<Warning> authoring = [];
