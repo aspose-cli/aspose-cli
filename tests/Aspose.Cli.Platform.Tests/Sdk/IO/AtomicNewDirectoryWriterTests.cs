@@ -400,10 +400,114 @@ public sealed class AtomicNewDirectoryWriterTests
         finally { UserStorage.TryDeleteTree(workerRoot); }
     }
 
-    // A directory an earlier publication left at the target: a file and a nested one.
-    private static string Existing(TempDirectory temp)
+    [Fact]
+    public void Commit_WithATransactionParentStagesNothingInTheTargetsParent()
     {
-        string target = temp.File("result");
+        using var temp = new TempDirectory();
+        string root = temp.File("root");
+        string target = Existing(Path.Combine(root, "result"));
+        var faults = new Faults(point =>
+        {
+            if (point is { Kind: PublicationFaultKind.Publish, EntryIndex: 0 })
+            {
+                Assert.Equal(["result"], Directory.EnumerateFileSystemEntries(root).Select(Path.GetFileName));
+                Assert.Single(Directory.EnumerateDirectories(temp.Path, ".aspose-publication-*"));
+            }
+        });
+        using (var output = new AtomicNewDirectoryWriter(TestBudgets.Create(), target, "test", faults, replace: true, transactionParent: temp.Path))
+        {
+            Write(output, "data.txt", "replacement");
+            output.Commit();
+        }
+        Assert.Equal("replacement", File.ReadAllText(Path.Combine(target, "data.txt")));
+        Assert.Equal(["result"], Directory.EnumerateFileSystemEntries(root).Select(Path.GetFileName));
+        Assert.Empty(Directory.EnumerateDirectories(temp.Path, ".aspose-publication-*"));
+    }
+
+    [Fact]
+    public void Constructor_RefusesATransactionParentThatIsNotAnAncestorOfTheTarget()
+    {
+        using var temp = new TempDirectory();
+        string target = temp.File(Path.Combine("root", "result"));
+        Assert.Throws<ArgumentException>(() => new AtomicNewDirectoryWriter(
+            TestBudgets.Create(), target, "test", transactionParent: temp.File("elsewhere")));
+        Assert.Throws<ArgumentException>(() => new AtomicNewDirectoryWriter(
+            TestBudgets.Create(), target, "test", transactionParent: target));
+        Assert.Empty(Directory.EnumerateFileSystemEntries(temp.Path));
+    }
+
+    [Fact]
+    public void RecoverPendingHierarchy_PutsBackAPreviousDirectoryThatAnInterruptedReplaceLeftInAnAncestor()
+    {
+        using var temp = new TempDirectory();
+        string root = temp.File("root");
+        string target = Existing(Path.Combine(root, "result"));
+        // Another owner takes the emptied target, so the publication stops with the previous
+        // directory displaced into its transaction, which is in the target's grandparent.
+        var faults = new Faults(point =>
+        {
+            if (point is { Kind: PublicationFaultKind.Publish, EntryIndex: 1 }) { Directory.CreateDirectory(target); }
+        });
+        string transaction;
+        using (var output = new AtomicNewDirectoryWriter(TestBudgets.Create(), target, "test", faults, replace: true, transactionParent: temp.Path))
+        {
+            Write(output, "data.txt", "replacement");
+            Assert.Throws<IOException>(output.Commit);
+            transaction = Path.GetDirectoryName(output.StagingDirectory)!;
+        }
+        Assert.Equal(temp.Path, Path.GetDirectoryName(transaction));
+        Assert.True(Directory.Exists(Path.Combine(transaction, "previous")));
+        Directory.Delete(target);
+        AbandonJournal(transaction, PublicationTransactionState.Publishing);
+
+        // The next publication into the target's parent recovers the target's ancestors first.
+        Assert.Equal(1, AtomicPublicationRecovery.RecoverPendingHierarchy(root, deadline: null));
+        AssertPrevious(target);
+        Assert.False(Directory.Exists(transaction));
+        Assert.Equal(["result"], Directory.EnumerateFileSystemEntries(root).Select(Path.GetFileName));
+    }
+
+    [Fact]
+    public void Worker_ReplaceThroughATransactionParentIsCarriedOutThereByTheParent()
+    {
+        using var temp = new TempDirectory();
+        string root = temp.File("root");
+        string target = Existing(Path.Combine(root, "result"));
+        string workerRoot = UserStorage.CreateTemporaryDirectory("worker");
+        try
+        {
+            string manifest = Path.Combine(workerRoot, WorkerOutputSession.ManifestName);
+            var worker = new WorkerOutputSession(workerRoot, manifest);
+            using OperationDeadline deadline = OperationDeadline.Start(null);
+            using (var output = new AtomicNewDirectoryWriter(new ResourceBudgetLedger(deadline, outputSession: worker), target, "test",
+                replace: true, transactionParent: temp.Path))
+            {
+                Write(output, "data.txt", "replacement");
+                output.Commit();
+            }
+            worker.SealForPublication();
+            AssertPrevious(target);
+            var faults = new Faults(point =>
+            {
+                if (point is { Kind: PublicationFaultKind.Publish, EntryIndex: 0 })
+                {
+                    Assert.Equal(["result"], Directory.EnumerateFileSystemEntries(root).Select(Path.GetFileName));
+                    Assert.Single(Directory.EnumerateDirectories(temp.Path, ".aspose-publication-*"));
+                }
+            });
+            WorkerOutputPublisher.Publish(WorkerManifestStore.ReadAndValidate(manifest), TestBudgets.Create(), faults);
+            Assert.Equal("replacement", File.ReadAllText(Path.Combine(target, "data.txt")));
+            Assert.Equal(["result"], Directory.EnumerateFileSystemEntries(root).Select(Path.GetFileName));
+            Assert.Empty(Directory.EnumerateDirectories(temp.Path, ".aspose-publication-*"));
+        }
+        finally { UserStorage.TryDeleteTree(workerRoot); }
+    }
+
+    // A directory an earlier publication left at the target: a file and a nested one.
+    private static string Existing(TempDirectory temp) => Existing(temp.File("result"));
+
+    private static string Existing(string target)
+    {
         Directory.CreateDirectory(Path.Combine(target, "parts"));
         File.WriteAllText(Path.Combine(target, "old.txt"), "old");
         File.WriteAllText(Path.Combine(target, "parts", "page.txt"), "old page");
