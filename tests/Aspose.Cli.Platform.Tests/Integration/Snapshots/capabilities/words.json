@@ -3156,6 +3156,13 @@
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
+      "code": "FONTS_EMBEDDED",
+      "owner": "words",
+      "severity": "warning",
+      "category": "warning",
+      "detailsSchemaId": "v2/common/diagnostic-details"
+    },
+    {
       "code": "LAYOUT_MAY_DIFFER",
       "owner": "words",
       "severity": "warning",

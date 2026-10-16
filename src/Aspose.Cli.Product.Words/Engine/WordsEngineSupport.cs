@@ -59,16 +59,34 @@ internal static class WordsEngineSupport
     }
 
     /// <summary>
-    /// The warnings for what a saved copy of a loaded document loses: the macros the format
-    /// drops, unless the output is a page render.
+    /// The warnings for what a saved copy of a loaded document loses or gains, unless the output
+    /// is a page render: the macros the format drops, and the fonts the save embeds because the
+    /// input asks for them (PDF-DOCX-EMBED-FONTS).
     /// </summary>
     internal static IEnumerable<Warning> SaveWarnings(LoadedDocument loaded, string format, bool rendered = false)
     {
-        if (!rendered && MacrosDropped(loaded, format) is { } macros)
+        if (rendered)
+        {
+            yield break;
+        }
+
+        if (MacrosDropped(loaded, format) is { } macros)
         {
             yield return macros;
         }
+
+        if (WordsSavePipeline.EmbedsFontsTheInputLacks(loaded.Document, format))
+        {
+            yield return FontsEmbedded;
+        }
     }
+
+    // PDF-DOCX-EMBED-FONTS: Aspose.PDF writes a docx that asks to embed its fonts but embeds
+    // few or none; the SDK honours the request, which the CLI keeps and discloses rather than rewrites.
+    private static Warning FontsEmbedded { get; } = new(WordsDiagnostics.FontsEmbedded, "The input's settings ask every save to embed its TrueType and system fonts, and the input does not embed every font its text uses, so this output embeds the missing fonts and can be megabytes larger than the input.")
+    {
+        Hint = "No option turns the setting off, so a saved copy stays this large and shows its fonts the same on every computer. To keep it small, deliver the input as it is; when 'pdf convert --to docx' wrote it, write the docx with 'aspose-cli words convert <pdf> --to docx' instead, which asks for no embedded fonts.",
+    };
 
     /// <summary>
     /// The warnings for a document saved from a PDF input, or null. PDF loading rebuilds the
@@ -91,7 +109,7 @@ internal static class WordsEngineSupport
     };
 
     /// <summary>The warning for a source with macros saved to a format that drops them, or null.</summary>
-    internal static Warning? MacrosDropped(LoadedDocument source, string format) =>
+    private static Warning? MacrosDropped(LoadedDocument source, string format) =>
         source.Format.HasMacros && !WordsFormats.KeepsMacros(format)
             ? new Warning(WordsDiagnostics.MacrosDropped, "The source contains macros which the target format does not preserve.") { Hint = "Save to docm or dotm to preserve macros." }
             : null;

@@ -18,6 +18,7 @@ internal static class WordsDiagnostics
     internal static readonly WarningCode LayoutMayDiffer = new("LAYOUT_MAY_DIFFER");
     internal static readonly WarningCode LinkedImagesSkipped = new("LINKED_IMAGES_SKIPPED");
     internal static readonly WarningCode MergeValueMissing = new("MERGE_VALUE_MISSING");
+    internal static readonly WarningCode FontsEmbedded = new("FONTS_EMBEDDED");
 
     internal static readonly DiagnosticDescriptor FieldCountChanged = DiagnosticDescriptor.Verification("FIELD_COUNT_CHANGED");
     internal static readonly DiagnosticDescriptor RevisionCountChanged = DiagnosticDescriptor.Verification("REVISION_COUNT_CHANGED");
@@ -37,6 +38,7 @@ internal static class WordsDiagnostics
         DiagnosticDescriptor.Warning(LayoutMayDiffer),
         DiagnosticDescriptor.Warning(LinkedImagesSkipped),
         DiagnosticDescriptor.Warning(MergeValueMissing),
+        DiagnosticDescriptor.Warning(FontsEmbedded),
         FieldCountChanged,
         RevisionCountChanged,
         ProtectionChanged,

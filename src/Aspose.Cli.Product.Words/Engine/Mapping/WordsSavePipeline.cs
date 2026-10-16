@@ -1,5 +1,6 @@
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Words;
+using Aspose.Words.Fonts;
 using Aspose.Words.Saving;
 
 namespace Aspose.Cli.Product.Words.Engine.Mapping;
@@ -19,6 +20,32 @@ internal static class WordsSavePipeline
             document.RemoveMacros();
         }
     }
+
+    /// <summary>
+    /// Whether saving a document in a format embeds fonts its input did not carry: the document
+    /// asks every save to embed its TrueType fonts, system fonts included; a font its text uses
+    /// is not embedded yet; and the format is one the SDK embeds fonts in (DOC, DOCX and RTF and
+    /// their variants). Aspose.PDF writes such a docx (PDF-DOCX-EMBED-FONTS), at most with the
+    /// fonts the PDF itself embedded, and the next save embeds the rest. With system fonts left
+    /// out, a save may embed nothing, so only both flags together are taken as a promise of
+    /// growth.
+    /// </summary>
+    public static bool EmbedsFontsTheInputLacks(Document document, string formatId)
+    {
+        FontInfoCollection fonts = document.FontInfos;
+        return fonts.EmbedTrueTypeFonts && fonts.EmbedSystemFonts
+            && WordsEngineFormats.Save(formatId) is SaveFormat.Doc or SaveFormat.Dot or SaveFormat.Docx or SaveFormat.Docm
+                or SaveFormat.Dotx or SaveFormat.Dotm or SaveFormat.FlatOpc or SaveFormat.Rtf
+            && WordsFonts.Used(document).Any(name => fonts[name] is not { } font || !Embeds(font));
+    }
+
+    private static bool Embeds(FontInfo font) =>
+        EmbeddedFontStyles.Any(style =>
+            font.GetEmbeddedFont(EmbeddedFontFormat.OpenType, style) is not null
+            || font.GetEmbeddedFont(EmbeddedFontFormat.EmbeddedOpenType, style) is not null);
+
+    private static readonly EmbeddedFontStyle[] EmbeddedFontStyles =
+        [EmbeddedFontStyle.Regular, EmbeddedFontStyle.Bold, EmbeddedFontStyle.Italic, EmbeddedFontStyle.BoldItalic];
 
     public static SaveOptions Options(string formatId, Secret? password = null, IReadOnlyList<int>? pages = null, int? dpi = null)
     {

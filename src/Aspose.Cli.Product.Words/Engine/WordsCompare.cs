@@ -79,7 +79,7 @@ internal static class WordsCompare
             License = EnvelopeParts.License(state),
             Warnings = EnvelopeParts.CombineWarnings(
                 CompareWarnings(leftLoaded, rightLoaded),
-                format is not null && MacrosDropped(leftLoaded, format) is { } macros ? [macros] : null,
+                format is null ? null : [.. SaveWarnings(leftLoaded, format)],
                 revisions.Length > SampleLimit
                     ? [EnvelopeParts.ListTruncated("samples", SampleLimit, revisions.Length, "Write the redline with --out to review every revision.")]
                     : null),

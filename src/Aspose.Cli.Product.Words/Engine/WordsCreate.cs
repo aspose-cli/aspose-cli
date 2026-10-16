@@ -126,9 +126,10 @@ internal static class WordsCreate
             extra.Add(omitted);
         }
 
-        if (created.HasMacros && !WordsFormats.KeepsMacros(format))
+        // The created document is the template's, so its save loses and gains what saving the template would.
+        if (created.Template is { } template)
         {
-            extra.Add(new Warning(WordsDiagnostics.MacrosDropped, "The source template contains macros which the target format does not preserve.") { Hint = "Create a docm or dotm output to preserve macros." });
+            extra.AddRange(WordsEngineSupport.SaveWarnings(template, format));
         }
 
         if (created.WasSigned)
@@ -145,7 +146,6 @@ internal static class WordsCreate
         IReadOnlyList<LoadedDocument> Sources) : IDisposable
     {
         internal int RemoteResourcesBlocked => Sources.Sum(static source => source.RemoteResourcesBlocked);
-        internal bool HasMacros => Template?.Format.HasMacros ?? false;
         internal bool WasSigned => Template?.Format.HasDigitalSignature ?? false;
 
         internal void Save(string path, SaveOptions options)
