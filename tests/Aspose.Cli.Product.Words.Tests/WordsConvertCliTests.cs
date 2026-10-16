@@ -12,6 +12,32 @@ public sealed class WordsConvertCliTests : IDisposable
 
     public void Dispose() => _workspace.Dispose();
 
+    /// <summary>
+    /// A Markdown input is read under every extension the md format declares, so
+    /// <c>.markdown</c> converts as <c>.md</c> does: its heading becomes a heading paragraph.
+    /// </summary>
+    [Category(TestCategory.Slow)]
+    [Fact]
+    public void MarkdownInput_ConvertsUnderEitherDeclaredExtension()
+    {
+        const string Markdown = "# Quarterly report\n\nRevenue grew.\n";
+        string[] Headings(string input, string output)
+        {
+            File.WriteAllText(_workspace.File(input), Markdown);
+            CliResult converted = _workspace.Run("words", "convert", input, "--to", "docx", "--out", output, "--output-format", "json");
+            Assert.True(converted.ExitCode == 0, converted.StdErr);
+            Assert.Equal("md", JsonNode.Parse(converted.StdOut)!["input"]!["format"]!.GetValue<string>());
+            return [.. new Document(_workspace.File(output)).GetChildNodes(NodeType.Paragraph, true).Cast<Paragraph>()
+                .Where(static paragraph => paragraph.ParagraphFormat.StyleIdentifier == StyleIdentifier.Heading1)
+                .Select(static paragraph => paragraph.GetText().Trim())];
+        }
+
+        string[] fromMd = Headings("notes.md", "md.docx");
+
+        Assert.Equal(["Quarterly report"], fromMd);
+        Assert.Equal(fromMd, Headings("notes.markdown", "markdown.docx"));
+    }
+
     /// <summary>--pages with a format that writes the whole document is refused for that reason.</summary>
     [Theory]
     [InlineData("docx", "page.docx")]
