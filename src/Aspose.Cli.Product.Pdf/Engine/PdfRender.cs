@@ -46,7 +46,7 @@ internal static class PdfRender
             {
                 Page = item.Page,
             }).ToArray(),
-            Dpi = PdfEngineFormats.IsRaster(request.Output.Format.Id) ? request.Dpi : null,
+            Dpi = request.Output.Format.Raster ? request.Dpi : null,
             Grid = grid,
             License = EnvelopeParts.License(state),
         };
@@ -60,7 +60,7 @@ internal static class PdfRender
             return null;
         }
 
-        if (!PdfEngineFormats.IsRaster(request.Output.Format.Id))
+        if (!request.Output.Format.Raster)
         {
             throw CliErrors.OptionInvalid(
                 "--grid",

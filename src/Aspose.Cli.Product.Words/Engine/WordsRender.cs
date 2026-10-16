@@ -46,7 +46,7 @@ internal static class WordsRender
         {
             Input = InfoProjection.Source(request.Input, loaded),
             Outputs = outputs,
-            Dpi = request.Output.Format.Id == "svg" ? null : request.Dpi,
+            Dpi = request.Output.Format.Raster ? request.Dpi : null,
             License = EnvelopeParts.License(state),
             Warnings = WrittenWarnings(loaded, request.Output.Format.Id, rendered: true),
         };

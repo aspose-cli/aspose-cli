@@ -38,7 +38,7 @@ internal static class RenderCommand
             (parse, standard) =>
             {
                 ResolvedOutput output = standard.Output;
-                int resolution = dpi.Read(parse);
+                int resolution = dpi.Read(parse, output.Format);
                 (PageRange? selection, string? text) = CellsInputs.SheetSelection(sheets, parse);
                 RangeSpec? range = SheetRangeInput.Parse(parse.GetValue(rangeOption));
                 if (range?.SheetName is not null && selection is not null)

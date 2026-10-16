@@ -148,16 +148,23 @@ public sealed record FormatDescriptor
     /// <summary>
     /// Whether a file of this format is an image, which shows a document rather than keeping a
     /// copy of it, so the write pipeline never discloses it as one that lost the encryption of
-    /// its input. Every render format is an image; a product declares it for an image format it
-    /// only converts to, such as <c>tiff</c>.
+    /// its input. Every render format and every <see cref="Raster"/> format is an image; a
+    /// product declares it for any other image format it only converts to.
     /// </summary>
     public bool Image
     {
-        get => _image || Uses.HasFlag(FormatUse.Render);
+        get => _image || Raster || Uses.HasFlag(FormatUse.Render);
         init => _image = value;
     }
 
     private readonly bool _image;
+
+    /// <summary>
+    /// Whether the format is a bitmap, whose pixel size a resolution sets, as png and jpeg are.
+    /// Any other image, such as svg, is vector: a command refuses a resolution or a pixel size
+    /// for it (<c>--dpi</c>).
+    /// </summary>
+    public bool Raster { get; init; }
 
     /// <summary>
     /// Whether the engine writes companion files, such as scripts and style sheets, beside an

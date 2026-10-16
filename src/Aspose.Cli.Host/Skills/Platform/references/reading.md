@@ -92,6 +92,11 @@ from the result's `outputs` instead of composing them. A `convert` result
 lists its files in `outputs[]` too, even when it writes one: read that file
 from `outputs[0]`; a convert result has no `output`.
 
+`--dpi` sets the resolution of a raster image such as png or jpeg. An svg is
+vector and has no pixel size, so `render --to svg` refuses `--dpi`, and any
+other pixel-size option, with `OPTION_INVALID` and writes nothing; drop the
+option, or render png at that size.
+
 ## Limits
 
 `--max-input-bytes` bounds the input size for every command; `capabilities`

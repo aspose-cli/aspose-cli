@@ -21,9 +21,9 @@ public static class PdfFormats
         FormatDescriptor.Routed("pdfa-1b", FormatUse.Convert, null, 8, null, ".pdf") with { ChosenByExtension = false },
         FormatDescriptor.Routed("pdfa-2b", FormatUse.Convert, null, 9, null, ".pdf") with { ChosenByExtension = false },
         FormatDescriptor.Routed("pdfa-3b", FormatUse.Convert, null, 10, null, ".pdf") with { ChosenByExtension = false },
-        FormatDescriptor.Routed("tiff", FormatUse.Convert, null, 11, null, ".tiff", ".tif") with { Image = true },
-        FormatDescriptor.Routed("png", FormatUse.Render, null, null, 0, ".png"),
-        FormatDescriptor.Routed("jpeg", FormatUse.Render, null, null, 1, ".jpg", ".jpeg"),
+        FormatDescriptor.Routed("tiff", FormatUse.Convert, null, 11, null, ".tiff", ".tif") with { Raster = true },
+        FormatDescriptor.Routed("png", FormatUse.Render, null, null, 0, ".png") with { Raster = true },
+        FormatDescriptor.Routed("jpeg", FormatUse.Render, null, null, 1, ".jpg", ".jpeg") with { Raster = true },
         FormatDescriptor.Routed("svg", FormatUse.Render, null, null, 2, ".svg"),
     ], PdfFormatRecognition.Rules);
 

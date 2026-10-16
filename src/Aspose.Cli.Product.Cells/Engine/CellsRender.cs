@@ -79,7 +79,7 @@ internal static class CellsRender
             Input = input,
             Outputs = rendered,
             Range = renderedRange,
-            Dpi = CellsEngineFormats.IsRaster(request.Output.Format.Id) ? request.Dpi : null,
+            Dpi = request.Output.Format.Raster ? request.Dpi : null,
             License = EnvelopeParts.License(licenseState),
             Warnings = loaded.Warnings([loaded.SkippedSheetWarning(defaulted, "Pass --sheets with the sheet's position from inspect to render another sheet."), sheetsSkipped, .. leftOut]),
         };
@@ -185,7 +185,7 @@ internal static class CellsRender
     /// </summary>
     private static StagedOutput StageSheet(ResourceBudgetLedger budgets, OutputSet<Workbook> transaction, Worksheet sheet, CellsRenderRequest request, string? printArea, string outputPath, List<Warning> warnings)
     {
-        bool isRaster = CellsEngineFormats.IsRaster(request.Output.Format.Id);
+        bool isRaster = request.Output.Format.Raster;
 
         var imageOptions = new ImageOrPrintOptions
         {

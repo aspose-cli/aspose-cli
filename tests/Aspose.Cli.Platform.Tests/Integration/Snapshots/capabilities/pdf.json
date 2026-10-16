@@ -1804,7 +1804,7 @@
             "allowedValues": [],
             "secret": false,
             "valueSource": "command-line",
-            "description": "Raster resolution; ignored for vector formats. Range: 36-1200."
+            "description": "Raster resolution; refused for vector output such as svg. Range: 36-1200."
           },
           {
             "name": "--dry-run",

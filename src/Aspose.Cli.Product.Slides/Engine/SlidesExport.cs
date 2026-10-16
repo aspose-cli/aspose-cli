@@ -323,10 +323,10 @@ internal static partial class SlidesExport
         {
             Input = Source(request.Input, loaded),
             Outputs = outputs,
-            Dpi = request.Output.Format.Id == "svg" || request.Width is not null
+            Dpi = !request.Output.Format.Raster || request.Width is not null
                 ? null
                 : request.Dpi ?? RenderPixelGuard.DefaultDpi,
-            Width = request.Output.Format.Id == "svg" ? null : request.Width,
+            Width = request.Output.Format.Raster ? request.Width : null,
             License = EnvelopeParts.License(state),
             Warnings = WrittenWarnings(loaded),
         };
@@ -340,7 +340,7 @@ internal static partial class SlidesExport
     {
         Presentation presentation = loaded.Presentation;
         float scale = RenderScale(presentation, request);
-        if (request.Output.Format.Id != "svg")
+        if (request.Output.Format.Raster)
         {
             long width = (long)Math.Ceiling(presentation.SlideSize.Size.Width * scale);
             long height = (long)Math.Ceiling(presentation.SlideSize.Size.Height * scale);

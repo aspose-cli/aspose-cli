@@ -36,8 +36,8 @@ public static class WordsFormats
         FormatDescriptor.Declare("ps", FormatUse.Convert, null, 12, null, false, ".ps"),
         FormatDescriptor.Declare("pcl", FormatUse.Convert, null, 13, null, false, ".pcl"),
         FormatDescriptor.Declare("html-fixed", FormatUse.Convert, null, 16, null, false, ".html", ".htm"),
-        FormatDescriptor.Declare("png", FormatUse.Render, null, null, 0, false, ".png"),
-        FormatDescriptor.Declare("jpeg", FormatUse.Render, null, null, 1, false, ".jpg", ".jpeg"),
+        FormatDescriptor.Declare("png", FormatUse.Render, null, null, 0, false, ".png") with { Raster = true },
+        FormatDescriptor.Declare("jpeg", FormatUse.Render, null, null, 1, false, ".jpg", ".jpeg") with { Raster = true },
         FormatDescriptor.Declare("svg", FormatUse.Render, null, null, 2, false, ".svg"),
     ], WordsFormatRecognition.Rules);
 
