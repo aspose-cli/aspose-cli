@@ -1,0 +1,20 @@
+{
+  "name": "cells resize_table of a table the sheet does not have is TABLE_NOT_FOUND, with a hint that runs",
+  "files": {
+    "input.xlsx": { "fixture": "cells.xlsx" },
+    "ops.json": { "text": "{\"ops\":[{\"op\":\"define_table\",\"sheet\":\"Sheet1\",\"range\":\"A1:B3\",\"name\":\"Items\"},{\"op\":\"resize_table\",\"sheet\":\"Sheet1\",\"name\":\"Orders\",\"range\":\"A1:B4\"}]}" }
+  },
+  "steps": [
+    {
+      "args": ["cells", "edit", "input.xlsx", "--ops", "ops.json", "--out", "edited.xlsx"],
+      "expect": {
+        "error": "TABLE_NOT_FOUND",
+        "json": [
+          { "path": "error.message", "contains": "Items" },
+          { "path": "error.hint", "contains": "--detail tables" }
+        ],
+        "files": { "nothingWritten": true }
+      }
+    }
+  ]
+}

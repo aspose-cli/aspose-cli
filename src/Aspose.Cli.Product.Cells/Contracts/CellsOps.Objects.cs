@@ -322,6 +322,29 @@ public sealed record DefineTableOp : CellsSheetOp
 }
 
 /// <summary>
+/// Moves the last row of an existing table, as Excel's Resize Table does, such as to take in rows
+/// written below it. The header row and the columns stay as they are; calculated columns fill the
+/// rows taken in, and a totals row moves to the new last row. A table with a totals row only
+/// grows.
+/// </summary>
+[Operation("resize_table")]
+[MistakenFor("extend_table", "expand_table")]
+public sealed record ResizeTableOp : CellsSheetOp
+{
+    /// <summary>The name of the table, as inspect lists it.</summary>
+    [NotState]
+    [MinLength(1), MaxLength(255)] public required string Name { get; init; }
+
+    /// <summary>
+    /// The new range of the table, including its header row and any totals row: the table's
+    /// columns from its top-left cell with at least one data row, such as A1:D25 for a table at
+    /// A1:D20.
+    /// </summary>
+    [ReadBack("inspect-result.schema.json#/$defs/cellsTableInfo/properties/range")]
+    [A1Range] public required string Range { get; init; }
+}
+
+/// <summary>
 /// Updates an existing chart, identified by exactly one of index and name, with at least one of
 /// title, dataRange, kind, legend, axisTitles, seriesColors and dataLabels. seriesInRows applies
 /// only together with dataRange; legend, axisTitles and dataLabels each set at least one field.

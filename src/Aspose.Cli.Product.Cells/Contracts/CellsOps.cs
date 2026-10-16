@@ -72,6 +72,7 @@ public abstract record CellsSheetOp : CellsOp
 [JsonSerializable(typeof(RenameSheetOp))]
 [JsonSerializable(typeof(ResizeColumnsOp))]
 [JsonSerializable(typeof(ResizeRowsOp))]
+[JsonSerializable(typeof(ResizeTableOp))]
 [JsonSerializable(typeof(SetActiveSheetOp))]
 [JsonSerializable(typeof(SetAutoFilterOp))]
 [JsonSerializable(typeof(SetBordersOp))]

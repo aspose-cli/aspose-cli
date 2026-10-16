@@ -9,6 +9,7 @@ internal static class CellsDiagnostics
     internal static readonly ErrorCode NameNotFound = ErrorCode.NotFound("NAME_NOT_FOUND");
     internal static readonly ErrorCode ChartNotFound = ErrorCode.NotFound("CHART_NOT_FOUND");
     internal static readonly ErrorCode PivotNotFound = ErrorCode.NotFound("PIVOT_NOT_FOUND");
+    internal static readonly ErrorCode TableNotFound = ErrorCode.NotFound("TABLE_NOT_FOUND");
     internal static readonly ErrorCode CommentNotFound = ErrorCode.NotFound("COMMENT_NOT_FOUND");
     internal static readonly ErrorCode HyperlinkNotFound = ErrorCode.NotFound("HYPERLINK_NOT_FOUND");
     /// <summary>The selected sheet has no content to render.</summary>
@@ -64,6 +65,7 @@ internal static class CellsDiagnostics
         DiagnosticDescriptor.Error(NameNotFound),
         DiagnosticDescriptor.Error(ChartNotFound),
         DiagnosticDescriptor.Error(PivotNotFound),
+        DiagnosticDescriptor.Error(TableNotFound),
         DiagnosticDescriptor.Error(CommentNotFound),
         DiagnosticDescriptor.Error(HyperlinkNotFound),
         DiagnosticDescriptor.Error(RenderEmpty),

@@ -75,6 +75,7 @@ internal static class CellsOpsSample
             new InsertImageOp { Sheet = "Sales", Path = "assets/logo.png", At = "H1", Width = 135, Height = 45 },
             new RefreshPivotOp { Sheet = "Summary", Name = "PivotTable1" },
             new DefineTableOp { Sheet = "Sales", Range = "A1:D20", Name = "SalesTable", TableStyle = "TableStyleMedium2", TotalsRow = true },
+            new ResizeTableOp { Sheet = "Sales", Name = "SalesTable", Range = "A1:D25" },
             new SetAutoFilterOp { Sheet = "Sales", Range = "A1:D20" },
             new SortRangeOp
             {

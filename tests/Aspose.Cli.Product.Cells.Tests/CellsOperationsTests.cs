@@ -444,6 +444,195 @@ public sealed class CellsOperationsTests : IClassFixture<CellsFixture>
         Assert.Equal("50", ReadValueAxisMinimum(output));
     }
 
+    [Fact]
+    public void ResizeTable_TakesInTheRowsWrittenBelowIt()
+    {
+        string source = CreateTableWorkbook("resize-table.xlsx");
+        CellsEditResult result = CellsEdit.Run(_fixture.Session,
+            new CellsEditRequest
+            {
+                Input = source,
+                Batch = ParseOps("""
+                    { "ops": [
+                      { "op": "set_print_area", "sheet": "Data", "range": "A1:D3" },
+                      { "op": "set_values", "sheet": "Data", "range": "A4", "values": [["North", 5, 6], ["South", 7, 8]] },
+                      { "op": "resize_table", "sheet": "Data", "name": "Sales", "range": "A1:D5" }
+                    ] }
+                    """),
+                Output = TestOutput.At(_fixture.Temp.File("resize-table.out.xlsx"), overwrite: true),
+                Verify = true,
+            });
+
+        Assert.True(result.Verification!.Ok);
+        // The table's calculated Total column fills the rows it takes in, so those cells count too.
+        Assert.Equal(["cell/Data!D4", "cell/Data!D5", "table/Sales"], result.Applied[2].Targets.Order(StringComparer.Ordinal));
+        Assert.Equal(3, result.Applied[2].ItemsAffected);
+        CellsInspectResult read = CellsInfo.Run(_fixture.Session,
+            new CellsInspectRequest { Input = result.Output!.Path, Details = [CellsInspectDetails.Tables, CellsInspectDetails.Layout] });
+        CellsTableInfo table = Assert.Single(read.Workbook.Tables!);
+        Assert.Equal(("Sales", "A1:D5", "TableStyleMedium2"), (table.Name, table.Range, table.TableStyle));
+        // As in Excel, a print area set as cell addresses stays where it was.
+        Assert.Equal("A1:D3", Assert.Single(read.Workbook.Layouts!).PrintArea!.Range);
+        using var reopened = new Workbook(result.Output!.Path);
+        Cell total = reopened.Worksheets["Data"].Cells["D5"];
+        Assert.Equal(("=[Q1]+[Q2]", 15d), (total.Formula, total.DoubleValue));
+    }
+
+    [Fact]
+    public void ResizeTable_MovesTheTotalsRowToTheNewLastRow()
+    {
+        string source = CreateTableWorkbook("resize-table-totals.xlsx", totalsRow: true);
+        CellsEditResult result = Apply(source,
+            """{ "ops": [ { "op": "resize_table", "sheet": "Data", "name": "Sales", "range": "A1:D6" } ] }""",
+            "resize-table-totals.out.xlsx");
+
+        // The totals row leaves row 4, which takes the calculated column, for row 6.
+        Assert.Equal(["cell/Data!A4", "cell/Data!A6", "cell/Data!D4", "cell/Data!D5", "cell/Data!D6", "table/Sales"],
+            result.Applied[0].Targets.Order(StringComparer.Ordinal));
+        Assert.Equal(6, result.Applied[0].ItemsAffected);
+        using var workbook = new Workbook(result.Output!.Path);
+        Aspose.Cells.Tables.ListObject table = workbook.Worksheets["Data"].ListObjects[0];
+        Assert.Equal((5, true), (table.EndRow, table.ShowTotals));
+        Assert.StartsWith("=SUBTOTAL(", workbook.Worksheets["Data"].Cells["D6"].Formula, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void ResizeTable_RefusesToShrinkATableWithATotalsRow()
+    {
+        string source = CreateTableWorkbook("resize-table-totals-shrink.xlsx", totalsRow: true);
+        string output = _fixture.Temp.File("resize-table-totals-shrink.out.xlsx");
+
+        CliException error = Assert.Throws<CliException>(() => Apply(source,
+            """{ "ops": [ { "op": "resize_table", "sheet": "Data", "name": "Sales", "range": "A1:D3" } ] }""",
+            "resize-table-totals-shrink.out.xlsx"));
+
+        Assert.Equal(ErrorCodes.OpsInvalid, error.Code);
+        Assert.Contains("totals row", error.Message, StringComparison.Ordinal);
+        Assert.Contains("A1:D5", error.Hint, StringComparison.Ordinal);
+        Assert.Contains("cannot shrink a table with a totals row", error.Hint, StringComparison.Ordinal);
+        Assert.False(File.Exists(output));
+    }
+
+    [Fact]
+    public void ResizeTable_RefusesToWriteTheTotalsRowOverValues()
+    {
+        string source = CreateTableWorkbook("resize-table-totals-over.xlsx", totalsRow: true);
+        string output = _fixture.Temp.File("resize-table-totals-over.out.xlsx");
+
+        // The totals row is row 4; rows 5 and 6 hold data the table should take in.
+        CliException error = Assert.Throws<CliException>(() => Apply(source,
+            """
+            { "ops": [
+              { "op": "set_values", "sheet": "Data", "range": "A5", "values": [["North", 5, 6], ["South", 7, 8]] },
+              { "op": "resize_table", "sheet": "Data", "name": "Sales", "range": "A1:D6" }
+            ] }
+            """,
+            "resize-table-totals-over.out.xlsx"));
+
+        Assert.Equal(ErrorCodes.OpsInvalid, error.Code);
+        Assert.Contains("row 6", error.Message, StringComparison.Ordinal);
+        Assert.Contains("such as A1:D7", error.Hint, StringComparison.Ordinal);
+        Assert.Contains("old row 4 becomes an empty data row", error.Hint, StringComparison.Ordinal);
+        Assert.False(File.Exists(output));
+    }
+
+    [Fact]
+    public void ResizeTable_MovesTheTotalsRowOntoAnEmptyRowBelowNewData()
+    {
+        string source = CreateTableWorkbook("resize-table-totals-below.xlsx", totalsRow: true);
+        string output = Apply(source,
+            """
+            { "ops": [
+              { "op": "set_values", "sheet": "Data", "range": "A5", "values": [["North", 5, 6], ["South", 7, 8]] },
+              { "op": "resize_table", "sheet": "Data", "name": "Sales", "range": "A1:D7" }
+            ] }
+            """,
+            "resize-table-totals-below.out.xlsx").Output!.Path;
+
+        using var workbook = new Workbook(output);
+        Aspose.Cells.Cells cells = workbook.Worksheets["Data"].Cells;
+        Assert.Equal((6, true), (workbook.Worksheets["Data"].ListObjects[0].EndRow, workbook.Worksheets["Data"].ListObjects[0].ShowTotals));
+        Assert.Equal(("South", 7d, 8d), (cells["A6"].StringValue, cells["B6"].DoubleValue, cells["C6"].DoubleValue));
+        Assert.StartsWith("=SUBTOTAL(", cells["D7"].Formula, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void ResizeTable_CountsTheRowsItLeavesOut()
+    {
+        string source = CreateTableWorkbook("resize-table-shrink.xlsx");
+        CellsEditResult result = Apply(source,
+            """{ "ops": [ { "op": "resize_table", "sheet": "Data", "name": "Sales", "range": "A1:D2" } ] }""",
+            "resize-table-shrink.out.xlsx");
+
+        // The engine rewrites the calculated formula of the row it leaves out to name the table.
+        Assert.Equal(["cell/Data!D3", "table/Sales"], result.Applied[0].Targets.Order(StringComparer.Ordinal));
+        Assert.Equal(2, result.Applied[0].ItemsAffected);
+    }
+
+    [Fact]
+    public void ResizeTable_ToTheRangeItHasChangesNothing()
+    {
+        string source = CreateTableWorkbook("resize-table-same.xlsx");
+        CellsEditResult result = Apply(source,
+            """{ "ops": [ { "op": "resize_table", "sheet": "Data", "name": "Sales", "range": "A1:D3" } ] }""",
+            "resize-table-same.out.xlsx");
+
+        Assert.Equal(0, result.Applied[0].ItemsAffected);
+        Assert.Contains(result.Warnings ?? [], static warning => warning.Code.Name == "OP_NO_EFFECT");
+    }
+
+    [Theory]
+    [InlineData("B1:D5", false, "A1:D5")]
+    [InlineData("A2:D5", false, "A1:D5")]
+    [InlineData("A1:E5", false, "A1:D5")]
+    [InlineData("A1:C3", false, "A1:D3")]
+    [InlineData("A1:D1", false, "A1:D2")]
+    [InlineData("B1:D2", true, "A1:D4")]
+    public void ResizeTable_RefusesARangeThatChangesTheHeaderRowOrLeavesNoDataRow(string range, bool totalsRow, string suggested)
+    {
+        string name = $"resize-table-{range.Replace(':', '-')}-{totalsRow}";
+        string source = CreateTableWorkbook($"{name}.xlsx", totalsRow);
+
+        CliException error = Assert.Throws<CliException>(() => Apply(source,
+            $$"""{ "ops": [ { "op": "resize_table", "sheet": "Data", "name": "Sales", "range": "{{range}}" } ] }""",
+            $"{name}.out.xlsx"));
+
+        Assert.Equal(ErrorCodes.OpsInvalid, error.Code);
+        Assert.Contains(totalsRow ? "the table covers A1:D4" : "the table covers A1:D3", error.Message, StringComparison.Ordinal);
+        Assert.EndsWith($"such as {suggested}.", error.Hint, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void ResizeTable_NamesTheTablesOfTheSheetWhenTheNameIsUnknown()
+    {
+        string source = CreateTableWorkbook("resize-table-missing.xlsx");
+
+        CliException error = Assert.Throws<CliException>(() => Apply(source,
+            """{ "ops": [ { "op": "resize_table", "sheet": "Data", "name": "Orders", "range": "A1:D5" } ] }""",
+            "resize-table-missing.out.xlsx"));
+
+        Assert.Equal("TABLE_NOT_FOUND", error.Code.Name);
+        Assert.Contains("Sales", error.Message, StringComparison.Ordinal);
+        Assert.Contains("'aspose-cli cells inspect <file> --detail tables'", error.Hint, StringComparison.Ordinal);
+    }
+
+    /// <summary>Data!A1:D3 as the styled table Sales, with a Total column that adds Q1 and Q2, and optionally a totals row below.</summary>
+    private string CreateTableWorkbook(string fileName, bool totalsRow = false)
+    {
+        string path = _fixture.Temp.File(fileName);
+        using var workbook = new Workbook();
+        Worksheet sheet = workbook.Worksheets[0];
+        sheet.Name = "Data";
+        sheet.Cells.ImportTwoDimensionArray(new object[,] { { "Region", "Q1", "Q2", "Total" }, { "East", 1, 2, "" }, { "West", 3, 4, "" } }, 0, 0);
+        Aspose.Cells.Tables.ListObject table = sheet.ListObjects[sheet.ListObjects.Add(0, 0, 2, 3, hasHeaders: true)];
+        table.DisplayName = "Sales";
+        table.TableStyleType = Aspose.Cells.Tables.TableStyleType.TableStyleMedium2;
+        table.ListColumns[3].Formula = "=[Q1]+[Q2]";
+        table.ShowTotals = totalsRow;
+        workbook.Save(path);
+        return path;
+    }
+
     private static string? ReadValueAxisMinimum(string workbookPath)
     {
         using ZipArchive package = ZipFile.OpenRead(workbookPath);

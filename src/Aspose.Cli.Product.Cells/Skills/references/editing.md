@@ -23,7 +23,7 @@ Cells semantics, ordering rules and recipes.
 | Workbook look | `set_default_font`, `set_tab_color`, `clear_tab_color`, `set_sheet_view` |
 | Charts and sparklines | `insert_chart`, `set_chart`, `delete_chart`, `add_sparkline`; `clear_range` with `what` `all` removes the sparklines in its range |
 | Pivot tables | `insert_pivot`, `refresh_pivot` |
-| Tables, filtering, sorting | `define_table`, `set_autofilter`, `clear_autofilter`, `sort_range`, `delete_duplicates` |
+| Tables, filtering, sorting | `define_table`, `resize_table`, `set_autofilter`, `clear_autofilter`, `sort_range`, `delete_duplicates` |
 | Input rules | `set_validation`, `clear_validation`, `add_conditional_format`, `clear_conditional_formats` |
 | Names, notes, links | `define_name`, `delete_name`, `add_comment`, `set_comment`, `delete_comment`, `set_hyperlink`, `delete_hyperlink` |
 | Pictures | `insert_image` |
@@ -271,6 +271,14 @@ show in renders and reads; give the sparkline column a header.
 - `define_table` brings its own filter dropdowns and banding: never add
   `set_autofilter` or a painted header over the same range. An unknown style
   name fails with `STYLE_NOT_FOUND`.
+- Values an edit writes just below a table stay outside it. Take them in
+  with `resize_table` and the table's new range, such as `A1:D25` for a
+  table at `A1:D20`: it keeps the header row and the columns, so the range
+  starts at the table's top-left cell and ends in its last column, or the
+  operation fails with `OPS_INVALID`. Calculated columns fill the new rows,
+  and a totals row moves down to the new last row, which must be empty; a
+  table with a totals row only grows. A print area set as cell addresses
+  does not follow; `define_table` again fails, because the name is taken.
 - Validation constrains a person typing in Excel, not the CLI: an ops batch or
   `--set` writes any value into a validated cell and exits 0. Verify your own
   writes.

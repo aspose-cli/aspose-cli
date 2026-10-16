@@ -113,6 +113,7 @@ internal static class OperationSamples
         new("cells", """{"op":"replace_text","sheet":"Sheet1","range":"A1:B3","find":"row","replace":"line","wholeWord":true,"maxReplacementCount":1}"""),
         new("cells", """{"op":"resize_columns","sheet":"Sheet1","first":"A","widthChars":30}"""),
         new("cells", """{"op":"resize_rows","sheet":"Sheet1","first":1,"height":30}"""),
+        new("cells", """{"op":"resize_table","sheet":"Sheet1","name":"Items","range":"A1:B4"}""", Setup: """[{"op":"define_table","sheet":"Sheet1","range":"A1:B3","name":"Items"},{"op":"set_values","sheet":"Sheet1","range":"A4","values":[["Third row",3]]}]"""),
         new("cells", """{"op":"set_active_sheet","sheet":"Extra"}""", Setup: """[{"op":"insert_sheet","name":"Extra"}]"""),
         new("cells", """{"op":"set_autofilter","sheet":"Sheet1","range":"A1:B3"}"""),
         new("cells", """{"op":"set_borders","sheet":"Sheet1","range":"A1:B3","edges":["all"],"lineStyle":"medium","color":"#FF0000"}"""),

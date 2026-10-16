@@ -38,7 +38,7 @@
         "command": "edit",
         "inputSchema": "v2/cells/ops",
         "operationSchema": "aspose-cli schema v2/cells/ops --operation <op>",
-        "contractFingerprint": "sha256:23d33f1543266c03140aa206c9d23e863fe4e3d4128ceb029742a3fdddf7619b",
+        "contractFingerprint": "sha256:208e042504f16c3367a7dbfafb8d25003fff973309ee5ba851ff062097cba974",
         "maximumOperationCount": 10000,
         "ops": [
           "add_comment",
@@ -82,6 +82,7 @@
           "replace_text",
           "resize_columns",
           "resize_rows",
+          "resize_table",
           "set_active_sheet",
           "set_autofilter",
           "set_borders",
@@ -2562,6 +2563,14 @@
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
+      "code": "TABLE_NOT_FOUND",
+      "owner": "cells",
+      "severity": "error",
+      "exitCode": 4,
+      "category": "validation",
+      "detailsSchemaId": "v2/common/not-found-details"
+    },
+    {
       "code": "TEXT_TABLE_LAYOUT",
       "owner": "cells",
       "severity": "warning",
@@ -4862,6 +4871,9 @@
                 "$ref": "#/$defs/resize_rows"
               },
               {
+                "$ref": "#/$defs/resize_table"
+              },
+              {
                 "$ref": "#/$defs/set_active_sheet"
               },
               {
@@ -6492,6 +6504,41 @@
               "type": "number",
               "minimum": 0,
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsRowHeightInfo/properties/height"
+            }
+          }
+        },
+        "resize_table": {
+          "description": "Moves the last row of an existing table, as Excel's Resize Table does, such as to take in rows written below it. The header row and the columns stay as they are; calculated columns fill the rows taken in, and a totals row moves to the new last row. A table with a totals row only grows.",
+          "type": "object",
+          "required": [
+            "op",
+            "name",
+            "range"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "$ref": "#/$defs/id"
+            },
+            "op": {
+              "const": "resize_table"
+            },
+            "sheet": {
+              "description": "The target sheet; the active sheet when omitted.",
+              "type": "string",
+              "x-readBack": "not-state"
+            },
+            "name": {
+              "description": "The name of the table, as inspect lists it.",
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 255,
+              "x-readBack": "not-state"
+            },
+            "range": {
+              "description": "The new range of the table, including its header row and any totals row: the table's columns from its top-left cell with at least one data row, such as A1:D25 for a table at A1:D20.",
+              "$ref": "#/$defs/range",
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsTableInfo/properties/range"
             }
           }
         },
