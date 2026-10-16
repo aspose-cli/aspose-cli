@@ -229,27 +229,45 @@ public sealed class WordsCliTests : IDisposable
         Assert.Equal("PASSWORD_REQUIRED", JsonNode.Parse(locked.StdErr)!["error"]!["code"]!.GetValue<string>());
     }
 
+    /// <summary>
+    /// An encrypted template is refused with the convert that writes an unencrypted Flat OPC
+    /// copy of it, and that copy, run as the hint says, serves as the template with its styles.
+    /// </summary>
     [Fact]
-    public void Create_FromAnEncryptedTemplate_AsksForAnUnencryptedOne()
+    public void Create_FromAnEncryptedTemplate_PointsToAnUnencryptedCopyThatServesAsTheTemplate()
     {
         var template = new Document();
+        Style brand = template.Styles.Add(StyleType.Paragraph, "Brand Heading");
+        brand.Font.Size = 31;
         new DocumentBuilder(template).Writeln("Letterhead.");
-        template.Save(_workspace.File("locked.dotx"), new Aspose.Words.Saving.OoxmlSaveOptions(SaveFormat.Dotx) { Password = "template-secret" });
+        template.Save(_workspace.File("locked.docx"), new Aspose.Words.Saving.OoxmlSaveOptions(SaveFormat.Docx) { Password = "template-secret" });
         File.WriteAllText(_workspace.File("body.txt"), "Dear customer,\n");
 
         CliResult refused = _workspace.Run(
-            "words", "create", "letter.docx", "--template", "locked.dotx", "--from-text", "body.txt", "--output-format", "json");
+            "words", "create", "letter.docx", "--template", "locked.docx", "--from-text", "body.txt", "--output-format", "json");
 
         Assert.Equal(3, refused.ExitCode);
         JsonNode error = JsonNode.Parse(refused.StdErr)!["error"]!;
         Assert.Equal("PASSWORD_REQUIRED", error["code"]!.GetValue<string>());
         string hint = error["hint"]!.GetValue<string>();
         Assert.Contains("encrypted template", hint, StringComparison.Ordinal);
-        Assert.DoesNotContain("--password-env", hint, StringComparison.Ordinal);
-        // No words command writes an unencrypted copy of it, so the hint asks the user for one.
-        Assert.DoesNotContain("decrypt", hint, StringComparison.OrdinalIgnoreCase);
-        Assert.Contains("Ask the user for an unencrypted copy", hint, StringComparison.Ordinal);
+        Assert.Contains("ask the user for an unencrypted copy", hint, StringComparison.Ordinal);
         Assert.False(File.Exists(_workspace.File("letter.docx")));
+
+        // Run the convert the hint names, with the password in the variable it leaves to fill.
+        string command = System.Text.RegularExpressions.Regex.Match(hint, "'aspose-cli (words convert [^']+)'").Groups[1].Value;
+        string[] convert = [.. command.Replace("<password-env>", "TEMPLATE_PASSWORD", StringComparison.Ordinal).Split(' ')];
+        CliResult copied = _workspace.RunWithEnv(
+            new Dictionary<string, string?> { ["TEMPLATE_PASSWORD"] = "template-secret" }, [.. convert, "--output-format", "json"]);
+        Assert.True(copied.ExitCode == 0, copied.StdErr);
+        string copy = convert[Array.IndexOf(convert, "--out") + 1];
+
+        CliResult created = _workspace.Run(
+            "words", "create", "letter.docx", "--template", copy, "--from-text", "body.txt", "--output-format", "json");
+
+        Assert.True(created.ExitCode == 0, created.StdErr);
+        Style kept = new Document(_workspace.File("letter.docx")).Styles["Brand Heading"]!;
+        Assert.Equal(31, kept.Font.Size);
     }
 
     [Fact]
