@@ -26,8 +26,7 @@ row: a data file holding only a CSV header or `[]` fails the op with
     { "op": "mail_merge", "items": [
       { "FirstName": "Ava", "Balance": "125.00" },
       { "FirstName": "Noah", "Balance": "80.00" }
-    ] },
-    { "op": "refresh_fields", "what": "all" }
+    ] }
   ]
 }
 ```
