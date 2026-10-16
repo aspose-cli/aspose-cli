@@ -11,6 +11,9 @@ namespace Aspose.Cli.Platform.Tests.Sdk;
 
 public sealed class RenderPixelGuardTests
 {
+    private static readonly FormatDescriptor Png =
+        FormatDescriptor.Declare("png", FormatUse.Render, null, null, 0, false, ".png") with { Raster = true };
+
     [Theory]
     [InlineData("36", 36)]
     [InlineData("1200", 1_200)]
@@ -18,7 +21,7 @@ public sealed class RenderPixelGuardTests
     {
         (DpiOption dpi, ParseResult parse) = ParseDpi("--dpi", value);
 
-        Assert.Equal(expected, dpi.Read(parse));
+        Assert.Equal(expected, dpi.Read(parse, Png));
         Assert.True(dpi.IsExplicit(parse));
     }
 
@@ -30,7 +33,7 @@ public sealed class RenderPixelGuardTests
     {
         (DpiOption dpi, ParseResult parse) = ParseDpi("--dpi", value);
 
-        CliException error = Assert.Throws<CliException>(() => dpi.Read(parse));
+        CliException error = Assert.Throws<CliException>(() => dpi.Read(parse, Png));
 
         Assert.Equal(ErrorCodes.OptionInvalid, error.Code);
     }
@@ -40,7 +43,7 @@ public sealed class RenderPixelGuardTests
     {
         (DpiOption dpi, ParseResult parse) = ParseDpi();
 
-        Assert.Equal(RenderPixelGuard.DefaultDpi, dpi.Read(parse));
+        Assert.Equal(RenderPixelGuard.DefaultDpi, dpi.Read(parse, Png));
         Assert.False(dpi.IsExplicit(parse));
     }
 

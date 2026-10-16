@@ -29,8 +29,8 @@ internal static class CellsEngineFormats
         new("xps") { Save = SaveFormat.Xps, Paginated = true },
         new("json") { Detected = FileFormatType.Json, Save = SaveFormat.Json },
         new("md") { Save = SaveFormat.Markdown },
-        new("png") { Image = ImageType.Png, Raster = true },
-        new("jpeg") { Image = ImageType.Jpeg, Raster = true },
+        new("png") { Image = ImageType.Png },
+        new("jpeg") { Image = ImageType.Jpeg },
         new("svg") { Image = ImageType.Svg },
     ];
 
@@ -41,10 +41,6 @@ internal static class CellsEngineFormats
     /// <summary>The engine image type of a render format id.</summary>
     public static ImageType Image(string formatId) =>
         Find(formatId).Image ?? throw Missing(formatId);
-
-    /// <summary><c>true</c> for raster render formats where DPI applies.</summary>
-    public static bool IsRaster(string formatId) =>
-        All.Any(format => format.Raster && string.Equals(format.Id, formatId, StringComparison.Ordinal));
 
     /// <summary><c>true</c> for convert formats that lay each sheet out on its printed pages.</summary>
     public static bool IsPaginated(string formatId) => Find(formatId).Paginated;
@@ -78,9 +74,6 @@ internal sealed record CellsEngineFormat(string Id)
 
     /// <summary>The image type a sheet renders to; null when it is not a render format.</summary>
     public ImageType? Image { get; init; }
-
-    /// <summary>Whether the image is a bitmap whose resolution the DPI sets.</summary>
-    public bool Raster { get; init; }
 
     /// <summary>
     /// Whether the output lays each sheet out on its printed pages, as printing does, so a chart

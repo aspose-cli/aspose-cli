@@ -251,7 +251,7 @@ Options:
   --to <jpeg|png|svg>            Image format. Default: the --out extension's format, else png.
   --sheets <sheets>              Sheets to process: 1-based numbers and ranges such as 1-3,7,9-, or all. Default: every visible sheet, at most 20 per run.
   --range <range>                Render only this range of one sheet, e.g. A1:G20 or Sales!A1:G20, or all.
-  --dpi <dpi>                    Raster resolution; ignored for vector formats. Range: 36-1200. [default: 192]
+  --dpi <dpi>                    Raster resolution; refused for vector output such as svg. Range: 36-1200. [default: 192]
   -o, --out <out>                Output path. Default: the input path with the image extension. Several sheets write <stem>.<sheet>.<ext> beside it.
   --overwrite                    Replace the output file if it already exists.
   --dry-run                      Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds.

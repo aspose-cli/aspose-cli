@@ -34,7 +34,7 @@ public sealed record CellsRenderRequest
     /// <summary>Restrict rendering to this range of one sheet; whole sheets when null.</summary>
     public RangeRef? Range { get; init; }
 
-    /// <summary>Raster resolution in dots per inch (ignored for vector formats).</summary>
+    /// <summary>Raster resolution in dots per inch; unused for a vector format.</summary>
     public int Dpi { get; init; } = RenderPixelGuard.DefaultDpi;
 
     /// <summary>Password for encrypted files.</summary>

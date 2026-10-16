@@ -31,7 +31,7 @@ internal static class RenderCommand
             (parse, standard) =>
             {
                 PageRange? selection = pages.Read(parse);
-                int resolution = dpi.Read(parse);
+                int resolution = dpi.Read(parse, standard.Output.Format);
                 ResolvedOutput output = standard.Output;
                 return new PdfRenderRequest
                 {

@@ -43,9 +43,6 @@ internal static class PdfEngineFormats
     /// <summary>The PDF/A profile of an archive format id; null when the id is not one.</summary>
     public static PdfFormat? Archive(string formatId) => Find(formatId)?.Archive;
 
-    /// <summary><c>true</c> for page images that are bitmaps, where DPI applies.</summary>
-    public static bool IsRaster(string formatId) => Find(formatId)?.Device is not null;
-
     private static PdfEngineFormat? Find(string formatId) =>
         All.FirstOrDefault(format => string.Equals(format.Id, formatId, StringComparison.Ordinal));
 

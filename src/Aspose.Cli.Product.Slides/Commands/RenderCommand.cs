@@ -12,8 +12,11 @@ internal static class RenderCommand
     public static CommandDefinition<SlidesRenderRequest, SlidesRenderResult> Create()
     {
         var slides = new PartSelectionOptions("slide");
-        var dpi = new DpiOption();
-        var width = new Option<int?>("--width") { Description = "Exact raster width in pixels; replaces --dpi." }.InRange(64, 20_000);
+        var width = new Option<int?>("--width")
+        {
+            Description = "Exact raster width in pixels; replaces --dpi and is refused for vector output such as svg.",
+        }.InRange(64, 20_000);
+        var dpi = new DpiOption(width);
         return new(
             "render",
             "Render one or more slides for visual verification.",
@@ -29,7 +32,8 @@ internal static class RenderCommand
             (parse, standard) =>
             {
                 PageRange? selection = slides.Read(parse);
-                int resolution = dpi.Read(parse);
+                ResolvedOutput output = standard.Output;
+                int resolution = dpi.Read(parse, output.Format);
                 bool explicitDpi = dpi.IsExplicit(parse);
                 int? pixelWidth = parse.GetInRange(width);
                 if (explicitDpi && pixelWidth is not null)
@@ -38,15 +42,6 @@ internal static class RenderCommand
                         "--width",
                         "cannot be combined with --dpi",
                         "Drop --dpi to render at an exact pixel width, or drop --width to render at a DPI.");
-                }
-
-                ResolvedOutput output = standard.Output;
-                if (output.Format.Id == "svg" && (explicitDpi || pixelWidth is not null))
-                {
-                    throw CliErrors.OptionInvalid(
-                        explicitDpi ? "--dpi" : "--width",
-                        "an SVG output is vector and has no pixel size",
-                        "Drop --dpi and --width to render SVG, or render png or jpeg at that size.");
                 }
 
                 return new SlidesRenderRequest

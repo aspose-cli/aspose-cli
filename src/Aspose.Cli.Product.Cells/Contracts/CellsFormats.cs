@@ -30,8 +30,8 @@ public static class CellsFormats
         FormatDescriptor.Declare("xps", FormatUse.Convert, null, 12, null, false, ".xps"),
         FormatDescriptor.Declare("json", FormatUse.Convert, null, 13, null, false, ".json"),
         FormatDescriptor.Declare("md", FormatUse.Convert, null, 14, null, false, ".md", ".markdown"),
-        FormatDescriptor.Declare("png", FormatUse.Render, null, null, 0, false, ".png"),
-        FormatDescriptor.Declare("jpeg", FormatUse.Render, null, null, 1, false, ".jpg", ".jpeg"),
+        FormatDescriptor.Declare("png", FormatUse.Render, null, null, 0, false, ".png") with { Raster = true },
+        FormatDescriptor.Declare("jpeg", FormatUse.Render, null, null, 1, false, ".jpg", ".jpeg") with { Raster = true },
         FormatDescriptor.Declare("svg", FormatUse.Render, null, null, 2, false, ".svg"),
     ], CellsFormatRecognition.Rules);
 
