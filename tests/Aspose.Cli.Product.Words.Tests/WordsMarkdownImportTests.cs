@@ -313,6 +313,78 @@ public sealed class WordsMarkdownImportTests
         }
     }
 
+    /// <summary>
+    /// A Markdown ordered list inserted after a numbered list of the document, with a plain
+    /// paragraph between them, keeps the start number and delimiter the Markdown wrote instead
+    /// of continuing the document's list.
+    /// </summary>
+    [Theory]
+    [InlineData(".")]
+    [InlineData(")")]
+    public void InsertMarkdown_OrderedList_KeepsTheStartNumberTheMarkdownWrote(string delimiter)
+    {
+        using var fixture = new WordsFixture();
+        string markdown = fixture.Temp.File("terms.md");
+        File.WriteAllText(markdown, "# Terms\n\n1. Delivery\n2. Acceptance\n3. Payment\n\nThe following continue item 4.\n");
+        string input = fixture.Temp.File("terms.docx");
+        WordsCreate.Run(fixture.Session, new WordsCreateRequest { Output = TestOutput.At(input), MarkdownPath = markdown });
+        string output = fixture.Temp.File("terms-inserted.docx");
+
+        WordsEdit.Run(fixture.Session, new WordsEditRequest
+        {
+            Input = input,
+            Batch = new WordsOpsBatch
+            {
+                Ops =
+                [
+                    new InsertMarkdownOp
+                    {
+                        At = new WordsTarget { Find = "The following continue" },
+                        Position = "after",
+                        Markdown = $"5{delimiter} Supplement\n6{delimiter} Invoice\n",
+                    },
+                    new SetHeaderOp { Markdown = $"7{delimiter} Header item\n" },
+                ],
+            },
+            Output = TestOutput.At(output),
+        });
+
+        Assert.Equal(["1.", "2.", "3.", $"5{delimiter}", $"6{delimiter}"], ListLabels(output));
+        var document = new Document(output);
+        document.UpdateListLabels();
+        Paragraph header = WordsFixture.FirstAuthoredParagraph(document.FirstSection.HeadersFooters[HeaderFooterType.HeaderPrimary]);
+        Assert.Equal($"7{delimiter}", header.ListLabel.LabelString);
+    }
+
+    /// <summary>
+    /// <c>create --template</c> with a template that has a numbered list keeps the start number
+    /// of the Markdown's ordered list.
+    /// </summary>
+    [Fact]
+    public void Create_WithATemplateThatHasANumberedList_KeepsTheStartNumberTheMarkdownWrote()
+    {
+        using var fixture = new WordsFixture();
+        string templateMarkdown = fixture.Temp.File("template.md");
+        File.WriteAllText(templateMarkdown, "1. Delivery\n2. Acceptance\n3. Payment\n");
+        string template = fixture.Temp.File("template.docx");
+        WordsCreate.Run(fixture.Session, new WordsCreateRequest { Output = TestOutput.At(template), MarkdownPath = templateMarkdown });
+        string markdown = fixture.Temp.File("supplement.md");
+        File.WriteAllText(markdown, "5. Supplement\n6. Invoice\n");
+        string output = fixture.Temp.File("supplement.docx");
+
+        WordsCreate.Run(fixture.Session, new WordsCreateRequest { Output = TestOutput.At(output), MarkdownPath = markdown, TemplatePath = template });
+
+        Assert.Equal(["5.", "6."], ListLabels(output));
+    }
+
+    private static string[] ListLabels(string path)
+    {
+        var document = new Document(path);
+        document.UpdateListLabels();
+        return [.. Body(document).Where(static paragraph => paragraph.IsListItem)
+            .Select(static paragraph => paragraph.ListLabel.LabelString)];
+    }
+
     private static IEnumerable<Paragraph> Body(Document document) =>
         document.FirstSection.Body.Paragraphs.Cast<Paragraph>();
 }

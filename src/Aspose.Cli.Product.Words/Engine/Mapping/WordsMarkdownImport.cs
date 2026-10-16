@@ -17,7 +17,11 @@ internal static class WordsMarkdownImport
     {
         KeepOnlyExpressedEmphasis(markdown);
         FitImages(markdown, destination);
-        var importer = new NodeImporter(markdown, destination, ImportFormatMode.UseDestinationStyles);
+        // The Markdown's lists keep their own numbering. Without the options the importer merges
+        // a Markdown list into the destination list that has the same list id, which drops the
+        // start number the Markdown wrote and continues that list's numbering.
+        var importer = new NodeImporter(markdown, destination, ImportFormatMode.UseDestinationStyles,
+            new ImportFormatOptions { KeepSourceNumbering = true });
         return markdown.Sections.Cast<Section>()
             .SelectMany(static section => section.Body.GetChildNodes(NodeType.Any, false).Cast<Node>())
             .Where(static node => node is Paragraph or Table)
