@@ -643,10 +643,16 @@ public sealed class OutputPipeline<TDocument> : OutputPipeline
     /// <param name="document">The document the output holds.</param>
     /// <param name="encrypted">Whether the written output carries a password.</param>
     /// <param name="write">Writes the staged output.</param>
-    public IReadOnlyList<OutputInfo> Write(ResolvedOutput output, TDocument document, bool encrypted, Action<string> write)
+    /// <param name="pages">
+    /// The pages (or slides) of <paramref name="document"/> the output shows alone, numbered from
+    /// 1, such as an export of selected slides; null when it holds all of them.
+    /// </param>
+    public IReadOnlyList<OutputInfo> Write(ResolvedOutput output, TDocument document, bool encrypted, Action<string> write,
+        IEnumerable<int>? pages = null)
     {
         ArgumentNullException.ThrowIfNull(output);
         var inspector = new Inspector(_profile, document, output.Format.Id, rendering: false);
+        inspector.Shows(pages);
         IReadOnlyList<OutputInfo> written = Writer.Write(output, encrypted, inspector.After(write));
         Record(inspector.Result, [output.Path]);
         RecordCopy(new Copy(output.Format.Id, output.Format.Image, encrypted));

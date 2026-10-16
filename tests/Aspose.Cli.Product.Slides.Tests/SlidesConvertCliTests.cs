@@ -142,6 +142,24 @@ public sealed class SlidesConvertCliTests : IDisposable
     }
 
     /// <summary>
+    /// A .markdown output is the md format: an evaluation conversion of selected slides to it
+    /// states the same cut text, and the same absence of a watermark, as one to .md.
+    /// </summary>
+    [Fact]
+    public void EvaluationMode_SelectedSlidesToDotMarkdown_AreDisclosedAsMarkdown()
+    {
+        File.WriteAllText(_workspace.File("long.md"), "# Quarterly results\n\nRevenue grew strongly this quarter\n");
+        Run("slides", "create", "long.pptx", "--from-markdown", "long.md");
+
+        string[] messages = [.. new[] { "long.out.md", "long.out.markdown" }.Select(output => Assert.Single(
+            Run("slides", "convert", "long.pptx", "--to", "md", "--slides", "1", "--out", output, "--license-mode", "evaluation")["warnings"] as JsonArray ?? [],
+            static warning => warning!["code"]!.GetValue<string>() == "EVALUATION_MODE")!["message"]!.GetValue<string>())];
+
+        Assert.Contains("cut the content short", messages[0], StringComparison.Ordinal);
+        Assert.Equal(messages[0], messages[1]);
+    }
+
+    /// <summary>
     /// A Markdown conversion writes only its output: nothing appears in the working directory,
     /// for every slide or for a selection.
     /// </summary>
