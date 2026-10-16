@@ -128,7 +128,7 @@ public sealed class SlidesCreationTests
             new SlidesRenderRequest { Input = input, Output = TestOutput.At(fixture.File("all.png"), format: "png") }));
         CliException convert = Assert.Throws<CliException>(() => SlidesExport.Convert(
             fixture.Session,
-            new SlidesConvertRequest { Input = input, Output = TestOutput.At(fixture.File("converted.png"), format: "png") }));
+            new SlidesConvertRequest { Input = input, Output = TestOutput.At(fixture.File("converted.pdf"), format: "pdf"), Slides = PageRange.Parse("1") }));
         CliException read = Assert.Throws<CliException>(() => SlidesRead.Run(
             fixture.Session,
             new SlidesReadRequest { Input = input, Slides = PageRange.Parse("1") }));
@@ -137,6 +137,7 @@ public sealed class SlidesCreationTests
             new[] { render, all, convert, read },
             static error => Assert.Equal(SlidesDiagnostics.SlideNotFound, error.Code));
         Assert.Empty(Directory.GetFiles(fixture.Temp.Path, "*.png"));
+        Assert.Empty(Directory.GetFiles(fixture.Temp.Path, "*.pdf"));
     }
 
     [Fact]
