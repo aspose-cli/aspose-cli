@@ -75,7 +75,8 @@ page and the pixels it needs: it shows blurred.
 `aspose-cli preview open report.pdf` shows the `pages` view: pages, thumbnails,
 the size of the page in view, zoom and a mark on what a change touched
 (`aspose-cli docs preview`). Without a PDF license, output is watermarked and
-results carry `EVALUATION_MODE`; `review` reports such pages as
+results carry `EVALUATION_MODE`, except `extract --what attachments`, which copies
+each attached file as the PDF stores it; `review` reports such pages as
 `PDF_EVALUATION_WATERMARK` ([verification](references/verification.md)), and a
 licensed command whose output keeps such a notice on one of its first 4 pages
 warns `EVALUATION_INPUT_MARKED`.
