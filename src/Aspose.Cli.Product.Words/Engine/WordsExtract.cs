@@ -21,7 +21,7 @@ internal static class WordsExtract
         using LoadedDocument loaded = session.Loader.Open(request.Input, request.Password);
         using ExtractionGuard guard = session.Outputs.BeginExtraction(request.Output.Path, request.Output.Overwrite);
         var index = new DocumentBlockIndex(loaded.Document, loaded.Evaluation);
-        var items = new List<WordsExtractedItem>();
+        var outputs = new List<WordsExtractedOutput>();
         var warnings = new List<Warning>();
         if (request.What == WordsExtractTargets.Images)
         {
@@ -38,8 +38,8 @@ internal static class WordsExtract
 
                 byte[] bytes = shape.ImageData.ImageBytes;
                 string extension = FileFormatUtil.ImageTypeToExtension(shape.ImageData.ImageType);
-                string path = guard.WriteAllBytes($"image-{++number:000}{extension}", bytes);
-                items.Add(new WordsExtractedItem { Path = path, Kind = "image", SizeBytes = bytes.LongLength, Block = index.FindBlock(shape) });
+                PublishedFile file = guard.StageAllBytes($"image-{++number:000}{extension}", bytes);
+                outputs.Add(new WordsExtractedOutput(FileObjects.Companion(file)) { Block = index.FindBlock(shape) });
             }
 
             if (linked > 0)
@@ -59,14 +59,14 @@ internal static class WordsExtract
                 comments,
                 ProductJsonContext.Definition.LocalOptions);
             byte[] bytes = System.Text.Encoding.UTF8.GetBytes(json);
-            string path = guard.WriteAllBytes("comments.json", bytes);
-            items.Add(new WordsExtractedItem { Path = path, Kind = "comments", SizeBytes = bytes.LongLength });
+            PublishedFile file = guard.StageAllBytes("comments.json", bytes);
+            outputs.Add(new WordsExtractedOutput(FileObjects.Companion(file)));
         }
         else if (request.What == WordsExtractTargets.Text)
         {
             byte[] bytes = System.Text.Encoding.UTF8.GetBytes(WordsText.Lines(index.Entries.Select(static entry => entry.Node)));
-            string path = guard.WriteAllBytes("document.txt", bytes);
-            items.Add(new WordsExtractedItem { Path = path, Kind = "text", SizeBytes = bytes.LongLength });
+            PublishedFile file = guard.StageAllBytes("document.txt", bytes);
+            outputs.Add(new WordsExtractedOutput(FileObjects.Companion(file)));
         }
         else if (request.What == WordsExtractTargets.Tables)
         {
@@ -74,8 +74,8 @@ internal static class WordsExtract
             foreach (BlockEntry entry in index.Entries.Where(static entry => entry.Node is Table))
             {
                 byte[] bytes = Csv((Table)entry.Node, request.ByteOrderMark);
-                string path = guard.WriteAllBytes($"table-{++number:000}.csv", bytes);
-                items.Add(new WordsExtractedItem { Path = path, Kind = "table", SizeBytes = bytes.LongLength, Block = entry.Index });
+                PublishedFile file = guard.StageAllBytes($"table-{++number:000}.csv", bytes);
+                outputs.Add(new WordsExtractedOutput(FileObjects.Companion(file)) { Block = entry.Index });
             }
         }
         else
@@ -88,7 +88,7 @@ internal static class WordsExtract
         {
             Input = InfoProjection.Source(request.Input, loaded),
             What = request.What,
-            Items = items,
+            Outputs = outputs,
             License = EnvelopeParts.License(state),
             Warnings = EnvelopeParts.CombineWarnings(InputWarnings(loaded), warnings),
         };

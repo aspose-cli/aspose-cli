@@ -3651,7 +3651,7 @@
         "schemaVersion",
         "input",
         "what",
-        "items"
+        "outputs"
       ],
       "additionalProperties": false,
       "properties": {
@@ -3677,11 +3677,11 @@
             "tables"
           ]
         },
-        "items": {
-          "description": "The written files.",
+        "outputs": {
+          "description": "Each file written into the output directory, in document order.",
           "type": "array",
           "items": {
-            "$ref": "#/$defs/wordsExtractedItem"
+            "$ref": "#/$defs/wordsExtractedOutput"
           }
         },
         "license": {
@@ -3697,37 +3697,40 @@
         }
       },
       "$defs": {
-        "wordsExtractedItem": {
-          "description": "One extracted file.",
+        "wordsExtractedOutput": {
+          "description": "One extracted file and the block it comes from when it holds one image or table.",
           "type": "object",
           "required": [
             "path",
-            "kind",
-            "sizeBytes"
+            "format",
+            "sizeBytes",
+            "fingerprint"
           ],
           "additionalProperties": false,
           "properties": {
             "path": {
-              "description": "The written file's path.",
+              "description": "Absolute path of the produced file.",
               "type": "string"
             },
-            "kind": {
-              "description": "What the file holds.",
-              "type": "string",
-              "enum": [
-                "image",
-                "comments",
-                "text",
-                "table"
-              ]
+            "format": {
+              "description": "Format id of the produced file, e.g. png.",
+              "type": "string"
             },
             "sizeBytes": {
-              "description": "The file's size in bytes.",
+              "description": "File size in bytes.",
               "type": "integer",
               "minimum": 0
             },
+            "fingerprint": {
+              "description": "SHA-256 identity of the published file.",
+              "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/file-fingerprint.schema.json"
+            },
+            "encrypted": {
+              "description": "true when the produced file is encrypted and opens only with its password; omitted when its format cannot carry a password.",
+              "type": "boolean"
+            },
             "block": {
-              "description": "The 1-based block the image or table comes from.",
+              "description": "The 1-based block the image or table comes from; absent for the comments or text of the whole document.",
               "type": "integer",
               "minimum": 1
             }

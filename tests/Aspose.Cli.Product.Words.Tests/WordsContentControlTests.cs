@@ -41,7 +41,7 @@ public sealed class WordsContentControlTests : IClassFixture<WordsFixture>
             What = "text",
         });
 
-        Assert.Equal(string.Join('\n', Blocks), File.ReadAllText(Assert.Single(result.Items).Path));
+        Assert.Equal(string.Join('\n', Blocks), File.ReadAllText(Assert.Single(result.Outputs).Path));
     }
 
     [Fact]

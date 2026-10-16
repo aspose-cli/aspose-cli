@@ -33,9 +33,9 @@ public sealed class WordsSplitExtractCliTests : IDisposable
 
     [Category(TestCategory.Slow)]
     [Theory]
-    [InlineData("images", "image")]
-    [InlineData("tables", "table")]
-    public void Extract_WritesEveryItemOfTheKind(string what, string kind)
+    [InlineData("images", "png")]
+    [InlineData("tables", "csv")]
+    public void Extract_ReportsEachFileAsAnOutput(string what, string format)
     {
         WriteDocument();
 
@@ -44,13 +44,18 @@ public sealed class WordsSplitExtractCliTests : IDisposable
         Assert.True(extracted.ExitCode == 0, extracted.StdErr);
         JsonObject result = JsonNode.Parse(extracted.StdOut)!.AsObject();
         Assert.Equal(what, result["what"]!.GetValue<string>());
-        JsonArray items = result["items"]!.AsArray();
-        Assert.All(items, item =>
+        Assert.False(result.ContainsKey("items"));
+        JsonArray outputs = result["outputs"]!.AsArray();
+        Assert.All(outputs, output =>
         {
-            Assert.Equal(kind, item!["kind"]!.GetValue<string>());
-            Assert.True(File.Exists(item["path"]!.GetValue<string>()));
+            string path = output!["path"]!.GetValue<string>();
+            Assert.False(output.AsObject().ContainsKey("kind"));
+            Assert.Equal(new FileInfo(path).Length, output["sizeBytes"]!.GetValue<long>());
+            Assert.Equal(
+                Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(File.ReadAllBytes(path))),
+                output["fingerprint"]!["sha256"]!.GetValue<string>());
         });
-        Assert.Contains(items, static item => item!["block"]?.GetValue<int>() >= 1);
+        Assert.Contains(outputs, output => output!["format"]!.GetValue<string>() == format && output["block"]?.GetValue<int>() >= 1);
     }
 
     [Fact]

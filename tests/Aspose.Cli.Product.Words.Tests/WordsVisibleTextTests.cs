@@ -77,7 +77,7 @@ public sealed class WordsVisibleTextTests : IClassFixture<WordsFixture>
             What = "text",
         });
 
-        Assert.Equal(Visible, File.ReadAllText(Assert.Single(result.Items).Path));
+        Assert.Equal(Visible, File.ReadAllText(Assert.Single(result.Outputs).Path));
     }
 
     [Fact]
@@ -137,7 +137,7 @@ public sealed class WordsVisibleTextTests : IClassFixture<WordsFixture>
         WordsSearchHit numbered = Assert.Single(search.Hits);
         Assert.Equal("1.2", numbered.Text);
         Assert.Equal("1.2 Second clause", numbered.Context);
-        Assert.Equal("1. Scope\n1.1 First clause\n1.2 Changed clause", File.ReadAllText(Assert.Single(extracted.Items).Path));
+        Assert.Equal("1. Scope\n1.1 First clause\n1.2 Changed clause", File.ReadAllText(Assert.Single(extracted.Outputs).Path));
     }
 
     /// <summary>A heading numbered 1. and two clauses numbered 1.1 and 1.2 below it.</summary>

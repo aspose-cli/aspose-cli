@@ -10,25 +10,21 @@ public sealed record WordsExtractResult() : EngineResultEnvelope("extract-result
     [AllowedValues(typeof(WordsExtractTargets))]
     public required string What { get; init; }
 
-    /// <summary>The written files.</summary>
-    public required IReadOnlyList<WordsExtractedItem> Items { get; init; }
+    /// <summary>Each file written into the output directory, in document order.</summary>
+    public required IReadOnlyList<WordsExtractedOutput> Outputs { get; init; }
 }
 
-/// <summary>One extracted file.</summary>
-public sealed record WordsExtractedItem
+/// <summary>One extracted file and the block it comes from when it holds one image or table.</summary>
+public sealed record WordsExtractedOutput : OutputItem
 {
-    /// <summary>The written file's path.</summary>
-    public required string Path { get; init; }
+    /// <summary>Describes the extracted <paramref name="file"/>.</summary>
+    /// <param name="file">The published file, as <c>FileObjects.Companion</c> describes it.</param>
+    public WordsExtractedOutput(OutputInfo file)
+        : base(file)
+    {
+    }
 
-    /// <summary>What the file holds.</summary>
-    [AllowedValues("image", "comments", "text", "table")]
-    public required string Kind { get; init; }
-
-    /// <summary>The file's size in bytes.</summary>
-    [Minimum(0)]
-    public required long SizeBytes { get; init; }
-
-    /// <summary>The 1-based block the image or table comes from.</summary>
+    /// <summary>The 1-based block the image or table comes from; absent for the comments or text of the whole document.</summary>
     [Minimum(1)]
     public int? Block { get; init; }
 }
