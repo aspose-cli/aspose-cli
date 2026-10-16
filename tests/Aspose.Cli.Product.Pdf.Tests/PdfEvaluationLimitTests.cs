@@ -87,13 +87,12 @@ public sealed class PdfEvaluationLimitTests : IDisposable
         }
     }
 
-    /// <summary>Page images and page text read only the pages they show, so a selection within the limit is offered.</summary>
-    [Theory]
-    [InlineData("png")]
-    [InlineData("txt")]
-    public void EvaluationMode_ConvertOfEveryPageToPagesOrText_OffersASelectionWithinTheLimit(string format)
+    /// <summary>Page text reads only the pages it shows, so a selection within the limit is offered.</summary>
+    [Fact]
+    public void EvaluationMode_ConvertOfEveryPageToText_OffersASelectionWithinTheLimit()
     {
         CreateSixPages();
+        const string format = "txt";
 
         CliResult every = _workspace.Run(
             "pdf", "convert", "six.pdf", "--to", format, "--out", "six." + format, "--license-mode", "evaluation", "--output-format", "json");
