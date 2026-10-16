@@ -232,6 +232,121 @@ public sealed class SlidesReviewCheckTests
     }
 
     [Fact]
+    public void TextWhoseCharactersReachAFewPointsPastItsShape_IsReported()
+    {
+        // Four lines of 14 pt text, 67.2 pt of lines, in a 60 pt box: the first and last lines
+        // run 3.6 pt past its top and bottom edges, and the last line's characters onto its
+        // outline; at the top, the room above the tallest Latin letters is not counted.
+        using var fixture = new SlidesEngineFixture();
+        string deck = fixture.File("note.pptx");
+        SlidesEdit.Run(fixture.Session, new SlidesEditRequest
+        {
+            Input = fixture.CreatePresentation("blank.pptx", slides: 1),
+            Batch = new SlidesOpsBatch
+            {
+                Ops =
+                [
+                    new InsertShapeOp
+                    {
+                        Slide = 1,
+                        Geometry = SlidesShapeGeometries.Rectangle,
+                        Rect = new SlidesRectInput { X = 460, Y = 110, Width = 220, Height = 60 },
+                        Text = "备注 Note：华北 North 区整改率偏低，主要原因是 2026 年 Q2 组织架构调整 reorg 导致负责人变更，预计 Q4 末追平 catch up。",
+                        Style = new SlidesShapeStyleInput { FillColor = "#FFFFFF", Color = "#333333", FontSize = 14 },
+                    },
+                ],
+            },
+            Output = TestOutput.At(deck),
+        });
+
+        SlidesReviewAnalysis analysis = Review(fixture, deck);
+
+        ReviewFinding finding = Assert.Single(analysis.Findings, static finding => finding.Code == SlidesReviewChecks.TextOverflowsShape.Code);
+        Assert.Contains("rectangle", finding.Message, StringComparison.Ordinal);
+        Assert.Contains("of the bottom of its shape", finding.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void LineThatFillsATightBoxWithItsCharactersInside_IsNotReported()
+    {
+        // A 14 pt line is 16.8 pt high; in a 15 pt box without margins its line spacing reaches
+        // 0.9 pt past the top and bottom edges while its characters stay inside.
+        using var fixture = new SlidesEngineFixture();
+        string deck = fixture.File("tight.pptx");
+        using (var presentation = new Presentation())
+        {
+            IAutoShape box = presentation.Slides[0].Shapes.AddAutoShape(ShapeType.Rectangle, 100, 200, 300, 15);
+            box.TextFrame.Text = "Q3 up";
+            ITextFrameFormat format = box.TextFrame.TextFrameFormat;
+            format.AutofitType = TextAutofitType.None;
+            format.AnchoringType = TextAnchorType.Center;
+            format.MarginTop = 0;
+            format.MarginBottom = 0;
+            box.TextFrame.Paragraphs[0].Portions[0].PortionFormat.FontHeight = 14;
+            presentation.Save(deck, SaveFormat.Pptx);
+        }
+
+        SlidesReadResult read = SlidesRead.Run(fixture.Session, new SlidesReadRequest { Input = deck, Content = SlidesReadContents.Full });
+        SlidesShapeData shape = Assert.Single(read.Slides[0].Shapes, static shape => shape.Text == "Q3 up");
+        SlidesRect lines = Assert.IsType<SlidesRect>(shape.TextRect);
+        Assert.True(lines.Y < shape.Rect.Y && lines.Y + lines.Height > shape.Rect.Y + shape.Rect.Height, "The line spacing reaches past the box.");
+
+        Assert.DoesNotContain(Review(fixture, deck).Findings, static finding => finding.Code.StartsWith("SLIDES_TEXT_O", StringComparison.Ordinal));
+    }
+
+    /// <summary>
+    /// Three lines in one paragraph whose line rectangles reach past a box without margins while
+    /// their rendered characters stay inside it, as rendered at 8x and measured, are not
+    /// reported: a 28 pt word on the middle line of 14 pt lines, whose rectangles misstate the
+    /// lines, in a 65.6 pt box; and 14 pt lines at 90% line spacing in a box 2 pt shorter than
+    /// their rectangles.
+    /// </summary>
+    [Theory]
+    [InlineData(28f, 100f, 65.6f)]
+    [InlineData(14f, 90f, 0f)]
+    public void LinesWhoseRectanglesAloneLeaveATightBox_AreNotReported(float middleWordSize, float lineSpacing, float boxHeight)
+    {
+        using var fixture = new SlidesEngineFixture();
+        string deck = fixture.File("spacing.pptx");
+        using (var presentation = new Presentation())
+        {
+            IAutoShape box = presentation.Slides[0].Shapes.AddAutoShape(ShapeType.Rectangle, 100, 100, 200, 300);
+            box.FillFormat.FillType = FillType.NoFill;
+            box.LineFormat.FillFormat.FillType = FillType.NoFill;
+            ITextFrameFormat format = box.TextFrame.TextFrameFormat;
+            format.AutofitType = TextAutofitType.None;
+            format.AnchoringType = TextAnchorType.Center;
+            format.MarginTop = 0;
+            format.MarginBottom = 0;
+            IParagraph paragraph = box.TextFrame.Paragraphs[0];
+            paragraph.Portions.Clear();
+            paragraph.ParagraphFormat.SpaceWithin = lineSpacing;
+            // Soft line breaks keep the three lines in one paragraph.
+            foreach ((string text, float size) in new[] { ("Fjgy line\v", 14f), ("Bjg", middleWordSize), ("\vLjgy line", 14f) })
+            {
+                var portion = new Portion(text);
+                portion.PortionFormat.FontHeight = size;
+                portion.PortionFormat.FillFormat.FillType = FillType.Solid;
+                portion.PortionFormat.FillFormat.SolidFillColor.Color = System.Drawing.Color.Black;
+                paragraph.Portions.Add(portion);
+            }
+
+            Assert.Equal(3, paragraph.GetLinesCount());
+            box.Height = boxHeight > 0 ? boxHeight : (float)Engine.Mapping.SlidesReviewProjection.TextRect(box)!.Height - 2;
+            box.Y = 250 - (box.Height / 2);
+            presentation.Save(deck, SaveFormat.Pptx);
+        }
+
+        SlidesReadResult read = SlidesRead.Run(fixture.Session, new SlidesReadRequest { Input = deck, Content = SlidesReadContents.Full });
+        SlidesShapeData shape = Assert.Single(read.Slides[0].Shapes, static shape => shape.TextRect is not null && !shape.EvaluationWatermark);
+        SlidesRect lines = shape.TextRect!;
+        double past = Math.Max(shape.Rect.Y - lines.Y, lines.Y + lines.Height - (shape.Rect.Y + shape.Rect.Height));
+        Assert.InRange(past, 0.5, 4);
+
+        Assert.DoesNotContain(Review(fixture, deck).Findings, static finding => finding.Code.StartsWith("SLIDES_TEXT_O", StringComparison.Ordinal));
+    }
+
+    [Fact]
     public void BodyThatShrinksTextOnOverflow_IsNotReportedAsOverflowing()
     {
         // Markdown bodies shrink their text on overflow, so rendering fits it to the frame.

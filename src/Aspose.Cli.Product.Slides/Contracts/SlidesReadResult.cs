@@ -169,6 +169,9 @@ public sealed record SlidesShapeData
     /// <summary>Where the shape's text is laid out, in slide points; null for a shape without text.</summary>
     internal SlidesRect? TextRect { get; init; }
 
+    /// <summary>Where the characters of the shape's text are drawn, inside <see cref="TextRect"/>; null when the lines do not tell.</summary>
+    internal SlidesRect? TextGlyphRect { get; init; }
+
     /// <summary>Whether the shape resizes to fit its text or shrinks its text on overflow, so text beyond its stored frame is not an overflow.</summary>
     internal bool TextAutofits { get; init; }
 
