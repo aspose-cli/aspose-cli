@@ -24,6 +24,12 @@ internal sealed class SlidesEvaluationProfile : IEvaluationProfile<Presentation>
             EvaluationInputTruncated(presentation));
 
     /// <summary>
+    /// Evaluation mode draws its watermark into every output but Markdown, whose export holds
+    /// only the slides' text, cut short.
+    /// </summary>
+    public bool WritesWatermark(string format) => format != "md";
+
+    /// <summary>
     /// The marks of an output: the watermark boxes, and the text evaluation mode cut short only
     /// where the output holds text the CLI read, as Markdown does; presentations, PDFs and images
     /// the engine saves keep the full text.

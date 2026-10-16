@@ -118,6 +118,29 @@ public sealed class SlidesConvertCliTests : IDisposable
         Assert.DoesNotContain("EVALUATION_INPUT_MARKED", Codes(Run("slides", "convert", "marked.pptx", "--slides", "2", "--out", "second.pdf")));
     }
 
+    /// <summary>
+    /// Evaluation mode writes no watermark into a Markdown conversion but cuts its longer text
+    /// short: the <c>EVALUATION_MODE</c> message states the cut text and claims no watermark. A
+    /// deck an unlicensed create saved carries watermark boxes of its own, which the message
+    /// names as the output's content.
+    /// </summary>
+    [Fact]
+    public void EvaluationMode_MarkdownConversion_StatesTheCutTextAndNoWatermark()
+    {
+        File.WriteAllText(_workspace.File("long.md"), "# Quarterly results\n\nRevenue grew strongly this quarter\n");
+        Run("slides", "create", "long.pptx", "--from-markdown", "long.md");
+
+        JsonNode result = Run("slides", "convert", "long.pptx", "--to", "md", "--out", "long.out.md", "--license-mode", "evaluation");
+
+        string message = Assert.Single(result["warnings"] as JsonArray ?? [], static warning => warning!["code"]!.GetValue<string>() == "EVALUATION_MODE")!["message"]!.GetValue<string>();
+        Assert.StartsWith("Evaluation mode, requested with --license-mode evaluation: some operations are limited.", message, StringComparison.Ordinal);
+        Assert.Contains("cut the content short", message, StringComparison.Ordinal);
+        if (TestLicense.Path is not null)
+        {
+            Assert.DoesNotContain("watermark", message, StringComparison.OrdinalIgnoreCase);
+        }
+    }
+
     /// <summary>An ODP output names the native charts, transitions and sections it does not keep.</summary>
     [Fact]
     public void OdpOutput_NamesTheChartsTransitionsAndSectionsItLoses()

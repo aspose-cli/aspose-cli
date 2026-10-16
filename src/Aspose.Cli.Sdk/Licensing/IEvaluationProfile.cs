@@ -52,6 +52,15 @@ public interface IEvaluationProfile<in TDocument>
     EvaluationMarks Inspect(TDocument document, string format) => Inspect(document);
 
     /// <summary>
+    /// Whether evaluation mode writes its watermark into an output in <paramref name="format"/>:
+    /// by default it does. A product whose evaluation mode leaves a format's outputs without one,
+    /// such as a text export it only cuts short, says so here, and the <c>EVALUATION_MODE</c>
+    /// warning of outputs that all take none claims no watermark.
+    /// </summary>
+    /// <param name="format">The output format id, such as <c>md</c>.</param>
+    bool WritesWatermark(string format) => true;
+
+    /// <summary>
     /// The evaluation marks a rendering of some pages of the document shows, such as page images
     /// or the text of a page range: by default those of an output in <paramref name="format"/>. A
     /// product whose marks belong to pages or slides inspects only those.

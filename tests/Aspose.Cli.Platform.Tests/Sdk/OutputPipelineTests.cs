@@ -54,6 +54,32 @@ public sealed class OutputPipelineTests
         Assert.Equal([EnvelopeParts.RequestedEvaluationWatermark], pipeline.Disclosure());
     }
 
+    /// <summary>
+    /// Outputs only in formats the profile says take no watermark, as a text export, are
+    /// disclosed without one, with what evaluation mode cut short; one watermarked output among
+    /// them keeps the watermark sentence.
+    /// </summary>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void EvaluationOutputsWithoutAWatermark_ClaimNone(bool requested)
+    {
+        using var temp = new TempDirectory();
+        OutputPipeline<Document> pipeline = Pipeline(LicenseState.Evaluation, requested ? LicenseResolution.EvaluationRequested : null);
+        var cut = new Document([]) { Truncated = true };
+
+        pipeline.Write(temp.File("out.txt"), false, cut, path => File.WriteAllText(path, "text"));
+        Warning text = Assert.Single(pipeline.Disclosure()!);
+        pipeline.Write(temp.File("out.doc"), false, new Document([]), path => File.WriteAllText(path, "doc"));
+        Warning both = Assert.Single(pipeline.Disclosure()!);
+
+        Assert.Equal(WarningCodes.EvaluationMode, text.Code);
+        Assert.DoesNotContain("watermark", text.Message + text.Hint, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("cut the content short", text.Message, StringComparison.Ordinal);
+        Assert.Equal(requested, text.Message.Contains("--license-mode evaluation", StringComparison.Ordinal));
+        Assert.Contains("watermark", both.Message, StringComparison.Ordinal);
+    }
+
     [Fact]
     public void LicensedOutput_DisclosesTheMarksItKeeps()
     {
@@ -252,6 +278,9 @@ public sealed class OutputPipelineTests
             File.ReadAllText(path) is var text && text.StartsWith("mark:", StringComparison.Ordinal) ? new([text[5..]]) : EvaluationMarks.None;
 
         public void Neutralize(Document document) => document.Marks.Clear();
+
+        /// <summary>A text output takes no watermark.</summary>
+        public bool WritesWatermark(string format) => format != "txt";
     }
 
     private sealed class ThrowingProfile : IEvaluationProfile<Document>
