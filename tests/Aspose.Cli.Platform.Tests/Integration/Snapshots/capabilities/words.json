@@ -3149,7 +3149,7 @@
       "detailsSchemaId": "v2/common/not-found-details"
     },
     {
-      "code": "FIELD_COUNT_CHANGED",
+      "code": "FIELD_COUNT_MISMATCH",
       "owner": "words",
       "severity": "warning",
       "category": "verification",
@@ -3206,7 +3206,7 @@
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
-      "code": "PROTECTION_CHANGED",
+      "code": "PROTECTION_MISMATCH",
       "owner": "words",
       "severity": "warning",
       "category": "verification",
@@ -3221,7 +3221,7 @@
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
-      "code": "REVISION_COUNT_CHANGED",
+      "code": "REVISION_COUNT_MISMATCH",
       "owner": "words",
       "severity": "warning",
       "category": "verification",

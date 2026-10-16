@@ -20,9 +20,9 @@ internal static class WordsDiagnostics
     internal static readonly WarningCode MergeValueMissing = new("MERGE_VALUE_MISSING");
     internal static readonly WarningCode FontsEmbedded = new("FONTS_EMBEDDED");
 
-    internal static readonly DiagnosticDescriptor FieldCountChanged = DiagnosticDescriptor.Verification("FIELD_COUNT_CHANGED");
-    internal static readonly DiagnosticDescriptor RevisionCountChanged = DiagnosticDescriptor.Verification("REVISION_COUNT_CHANGED");
-    internal static readonly DiagnosticDescriptor ProtectionChanged = DiagnosticDescriptor.Verification("PROTECTION_CHANGED");
+    internal static readonly DiagnosticDescriptor FieldCountMismatch = DiagnosticDescriptor.Verification("FIELD_COUNT_MISMATCH");
+    internal static readonly DiagnosticDescriptor RevisionCountMismatch = DiagnosticDescriptor.Verification("REVISION_COUNT_MISMATCH");
+    internal static readonly DiagnosticDescriptor ProtectionMismatch = DiagnosticDescriptor.Verification("PROTECTION_MISMATCH");
     internal static readonly DiagnosticDescriptor OutputTruncated = DiagnosticDescriptor.Verification("OUTPUT_TRUNCATED");
 
     internal static IReadOnlyList<DiagnosticDescriptor> All { get; } =
@@ -39,9 +39,9 @@ internal static class WordsDiagnostics
         DiagnosticDescriptor.Warning(LinkedImagesSkipped),
         DiagnosticDescriptor.Warning(MergeValueMissing),
         DiagnosticDescriptor.Warning(FontsEmbedded),
-        FieldCountChanged,
-        RevisionCountChanged,
-        ProtectionChanged,
+        FieldCountMismatch,
+        RevisionCountMismatch,
+        ProtectionMismatch,
         OutputTruncated,
     ];
 

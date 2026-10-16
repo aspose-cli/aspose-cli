@@ -364,13 +364,13 @@ internal static class WordsEdit
         {
             // Some formats store content as fields, such as RTF a linked picture as INCLUDEPICTURE.
             issues.Add(VerificationIssues.Of(
-                WordsDiagnostics.FieldCountChanged,
+                WordsDiagnostics.FieldCountMismatch,
                 $"Field count changed during save/reopen: expected {expected.FieldCount}, found {found.FieldCount}.",
                 hint: GainedFieldsHint(format)));
         }
         else
         {
-            Compare(WordsDiagnostics.FieldCountChanged, "Field count", expected.FieldCount, found.FieldCount, "fields", WordsFormats.WordIds);
+            Compare(WordsDiagnostics.FieldCountMismatch, "Field count", expected.FieldCount, found.FieldCount, "fields", WordsFormats.WordIds);
         }
         // Evaluation mode cuts a long document short at its truncation notice, at this save or an earlier one.
         if (reopened.Evaluation && WordsEvaluation.IsTruncated(reopened.Document))
@@ -381,8 +381,8 @@ internal static class WordsEdit
                 hint: "Do not deliver this output as complete; apply an Aspose.Words license and run the edit again."));
         }
 
-        Compare(WordsDiagnostics.RevisionCountChanged, "Revision count", expected.RevisionCount, found.RevisionCount, "tracked revisions", WordsFormats.RevisionIds);
-        Compare(WordsDiagnostics.ProtectionChanged, "Protection", expected.Protection ?? "none", found.Protection ?? "none", "protection", WordsFormats.WordIds);
+        Compare(WordsDiagnostics.RevisionCountMismatch, "Revision count", expected.RevisionCount, found.RevisionCount, "tracked revisions", WordsFormats.RevisionIds);
+        Compare(WordsDiagnostics.ProtectionMismatch, "Protection", expected.Protection ?? "none", found.Protection ?? "none", "protection", WordsFormats.WordIds);
 
         Document comparisonBaseline = baseline.Clone();
         Document comparisonOutput = reopened.Document.Clone();
