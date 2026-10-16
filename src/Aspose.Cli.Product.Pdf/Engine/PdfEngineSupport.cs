@@ -131,7 +131,14 @@ internal static class PdfEngineSupport
                 free = string.Create(CultureInfo.InvariantCulture, $"{key}-{suffix}");
             }
 
+            // PDF-ATTACHMENT-COPY-TYPE: adding a specification of another document loses its media
+            // type, so it is read before the copy and written back to the copy.
+            string? mediaType = file.MIMEType;
             target.EmbeddedFiles.Add(free, file);
+            if (!string.IsNullOrEmpty(mediaType))
+            {
+                target.EmbeddedFiles[free].MIMEType = mediaType;
+            }
         }
 
         return skipped;

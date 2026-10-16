@@ -301,7 +301,65 @@ public sealed class PdfAttachmentCarryTests : IDisposable
         Assert.All(split.Outputs, part => Assert.Equal([Entry("a.csv", First)], Attachments(part.Path, "open-sesame")));
     }
 
+    /// <summary>
+    /// Merge and split keep the media type of every attachment they copy, so a later PDF/A-3b
+    /// archive still names each one's type (PDF-ATTACHMENT-COPY-TYPE).
+    /// </summary>
+    [Fact]
+    public void MergeAndSplit_KeepEachAttachmentsMediaTypeThroughAPdfA3bArchive()
+    {
+        using var fixture = new PdfEngineFixture();
+        string input = fixture.File("typed.pdf");
+        using (var document = new Document())
+        {
+            document.Pages.Add().Paragraphs.Add(new TextFragment("Page 1"));
+            document.Pages.Add().Paragraphs.Add(new TextFragment("Page 2"));
+            document.EmbeddedFiles.Add("data.xml", Typed("data.xml", First, "application/xml"));
+            document.EmbeddedFiles.Add("logo.png", Typed("logo.png", Second, "image/png"));
+            document.Save(input);
+        }
+
+        string plain = fixture.CreateDocument("plain.pdf", pages: 1);
+        string merged = fixture.File("merged.pdf");
+        string[] expected = ["data.xml=application/xml", "logo.png=image/png"];
+        Assert.Equal(expected, MediaTypes(input));
+
+        PdfMerge.Run(fixture.Session, new PdfMergeRequest
+        {
+            Output = TestOutput.At(merged),
+            InputPaths = [plain, input],
+        });
+        PdfSplitResult split = PdfSplit.Run(fixture.Session, new PdfSplitRequest
+        {
+            Input = input,
+            Output = new ResolvedDirectory(fixture.File("parts")),
+            Plan = new Sdk.Addressing.SplitPlan(Sdk.Addressing.SplitBy.Pages, 1, null, null),
+        });
+
+        Assert.Equal(expected, MediaTypes(merged));
+        Assert.All(split.Outputs, part => Assert.Equal(expected, MediaTypes(part.Path)));
+        foreach (string produced in split.Outputs.Select(static part => part.Path).Prepend(merged))
+        {
+            string archive = Path.ChangeExtension(produced, ".a3b.pdf");
+            PdfConvert.Run(fixture.Session, new PdfConvertRequest { Input = produced, Output = TestOutput.At(archive, format: "pdfa-3b") });
+            Assert.Equal(expected, MediaTypes(archive));
+        }
+    }
+
     public void Dispose() => _workspace.Dispose();
+
+    private static FileSpecification Typed(string name, byte[] content, string mediaType) =>
+        new(new MemoryStream(content), name, name) { UnicodeName = name, MIMEType = mediaType };
+
+    /// <summary>The attachments of a document as name and media type, in name order.</summary>
+    private static List<string> MediaTypes(string path)
+    {
+        using var document = new Document(path);
+        return document.EmbeddedFiles
+            .Select(static file => $"{file.UnicodeName ?? file.Name}={file.MIMEType}")
+            .Order(StringComparer.Ordinal)
+            .ToList();
+    }
 
     private static string WriteDocument(string path, int pages, params (string Name, byte[] Content)[] attachments)
     {
