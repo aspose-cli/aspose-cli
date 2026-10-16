@@ -47,8 +47,7 @@ internal sealed class OutputDirectoryOption
             return null;
         }
 
-        OutputFileOption.RefuseStandardStream(value, Name, directory: true);
-        string path = paths.ResolveOutput(value);
+        string path = OutputDirectories.Resolve(parse, paths, value, Name);
         return File.Exists(path)
             ? throw CliErrors.OptionInvalid(Name, $"a file already exists at '{path}'", "Pass a directory path.")
             : path;
@@ -58,4 +57,60 @@ internal sealed class OutputDirectoryOption
     public string ResolveRequired(ParseResult parse, PathResolver paths) =>
         Resolve(parse, paths)
             ?? throw CliErrors.OptionInvalid(Name, "is required", "Pass the directory that receives the files.");
+}
+
+/// <summary>
+/// The one decision on the name of a directory output, <c>--out-dir</c> and the evidence
+/// directory of <c>review --out</c> alike: it is never <c>-</c>, and a directory to be created is
+/// never named like a file of a format some command of the tree writes, such as
+/// <c>parts.html</c>, which is most likely a file name given where a directory belongs.
+/// </summary>
+public static class OutputDirectories
+{
+    /// <summary>
+    /// Resolves the directory <paramref name="value"/> names against the invocation directory.
+    /// An existing directory is taken as it is named; a file there is the command's to refuse.
+    /// </summary>
+    /// <param name="parse">The parsed command line, whose command tree declares the formats.</param>
+    /// <param name="paths">The resolver of the invocation directory.</param>
+    /// <param name="value">The directory as given.</param>
+    /// <param name="parameter">The option that names it, such as <c>--out-dir</c>.</param>
+    /// <exception cref="CliException">
+    /// <c>OPTION_INVALID</c> for <c>-</c>, and for a path where nothing exists yet whose
+    /// extension is that of a format a command writes.
+    /// </exception>
+    public static string Resolve(ParseResult parse, PathResolver paths, string value, string parameter)
+    {
+        ArgumentNullException.ThrowIfNull(parse);
+        ArgumentNullException.ThrowIfNull(paths);
+        ArgumentNullException.ThrowIfNull(value);
+        ArgumentException.ThrowIfNullOrWhiteSpace(parameter);
+        OutputFileOption.RefuseStandardStream(value, parameter, directory: true);
+        string path = paths.ResolveOutput(value);
+        string trimmed = value.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+        string extension = Path.GetExtension(trimmed);
+        if (extension.Length > 1 && !Directory.Exists(path) && !File.Exists(path)
+            && Written(parse.RootCommandResult.Command, extension) is { } format)
+        {
+            throw CliErrors.OptionInvalid(
+                parameter,
+                $"'{value}' names a directory, but its {extension} extension is that of a {format.Id} file",
+                $"{parameter} names the directory that receives the files; name it without the file extension, "
+                    + $"as in {parameter} {trimmed[..^extension.Length]}.");
+        }
+
+        return path;
+    }
+
+    // The first format, in tree order, that a command of the tree writes through its --to under the extension.
+    private static FormatDescriptor? Written(Command root, string extension) =>
+        Commands(root)
+            .SelectMany(static command => command.Options)
+            .Select(StandardOptions.TargetOf)
+            .OfType<TargetFormat>()
+            .Select(target => target.Offered.DeclaringExtension(extension).FirstOrDefault())
+            .FirstOrDefault(static format => format is not null);
+
+    private static IEnumerable<Command> Commands(Command command) =>
+        command.Subcommands.SelectMany(Commands).Prepend(command);
 }
