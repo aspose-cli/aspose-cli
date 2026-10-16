@@ -147,17 +147,28 @@ public sealed class PdfKnownIssueTests
             created.Save(input);
         }
 
-        using var source = new Document(input);
-        string? sourceType = source.EmbeddedFiles[1].MIMEType;
         using var target = new Document();
         target.Pages.Add();
-        target.EmbeddedFiles.Add("schedule.xml", source.EmbeddedFiles[1]);
-        string? addedType = target.EmbeddedFiles[1].MIMEType;
+        // The same attachment, added once untouched and once after reading its type.
+        using var untouchedSource = new Document(input);
+        FileSpecification untouched = untouchedSource.EmbeddedFiles[1];
+        target.EmbeddedFiles.Add("untouched.xml", untouched);
+        using var readSource = new Document(input);
+        FileSpecification read = readSource.EmbeddedFiles[1];
+        string? sourceType = read.MIMEType;
+        target.EmbeddedFiles.Add("read.xml", read);
+
+        string? untouchedAfter = untouched.MIMEType;
+        string? readAfter = read.MIMEType;
+        string? untouchedAdded = target.EmbeddedFiles["untouched.xml"].MIMEType;
+        string? readAdded = target.EmbeddedFiles["read.xml"].MIMEType;
 
         KnownIssue.Reproduces(
             "PDF-ATTACHMENT-COPY-TYPE",
-            sourceType == "application/xml" && string.IsNullOrEmpty(addedType),
-            $"an attachment typed '{sourceType}' in its document is typed '{addedType}' once added to another");
+            sourceType == "application/xml" && readAfter == sourceType && string.IsNullOrEmpty(untouchedAfter)
+                && string.IsNullOrEmpty(untouchedAdded) && string.IsNullOrEmpty(readAdded),
+            $"an attachment typed '{sourceType}' is typed '{untouchedAdded}' and '{readAdded}' once added to another document; "
+            + $"afterwards the source's specification reads '{untouchedAfter}' when its type was not read before the add, and '{readAfter}' when it was");
     }
 
     [LicensedFact]
@@ -496,6 +507,48 @@ public sealed class PdfKnownIssueTests
             "PDF-SIGN-FULL-FONT",
             whole.Length > 0 && growth > 200_000,
             $"an invisible signature added {growth} bytes and embedded the whole font(s) {string.Join(", ", whole)}");
+    }
+
+    [LicensedFact]
+    public void Signing_LeavesOutAChineseSignerNameWhenNoOtherTextIsChinese()
+    {
+        using var fixture = new PdfEngineFixture();
+        _ = fixture.LicenseState;
+        string input = fixture.CreateDocument("unsigned.pdf", pages: 1);
+        using var key = System.Security.Cryptography.RSA.Create(2048);
+        var request = new System.Security.Cryptography.X509Certificates.CertificateRequest(
+            "CN=张伟", key, System.Security.Cryptography.HashAlgorithmName.SHA256, System.Security.Cryptography.RSASignaturePadding.Pkcs1);
+        using (var created = request.CreateSelfSigned(DateTimeOffset.UtcNow.AddMinutes(-5), DateTimeOffset.UtcNow.AddDays(2)))
+        {
+            File.WriteAllBytes(fixture.File("signer.pfx"), created.Export(System.Security.Cryptography.X509Certificates.X509ContentType.Pfx, "pw"));
+        }
+
+        (string latinLine, string latinFont) = SignerLine("Café");
+        (string chineseLine, string chineseFont) = SignerLine("采购申请");
+
+        KnownIssue.Reproduces(
+            "PDF-SIGN-CJK-SIGNER-FONT",
+            latinLine == "Digitally signed by 'CN='" && chineseLine == "Digitally signed by 'CN=张伟'",
+            $"with the reason 'Café' the signer line reads \"{latinLine}\" in {latinFont}; with '采购申请' it reads \"{chineseLine}\" in {chineseFont}");
+
+        (string Line, string Font) SignerLine(string reason)
+        {
+            string output = fixture.File($"signed-{reason.Length}.pdf");
+            using (var document = new Document(input))
+            using (var facade = new Aspose.Pdf.Facades.PdfFileSignature(document))
+            {
+                facade.Sign(1, true, new System.Drawing.Rectangle(100, 500, 300, 80),
+                    new Aspose.Pdf.Forms.PKCS7(fixture.File("signer.pfx"), "pw") { Reason = reason });
+                facade.Save(output);
+            }
+
+            using var signed = new Document(output);
+            signed.Form.Flatten();
+            var absorber = new Aspose.Pdf.Text.TextFragmentAbsorber();
+            signed.Pages[1].Accept(absorber);
+            Aspose.Pdf.Text.TextFragment line = absorber.TextFragments.First(static fragment => fragment.Text.StartsWith("Digitally signed by", StringComparison.Ordinal));
+            return (line.Text, line.TextState.Font.FontName);
+        }
     }
 
     [LicensedFact]
