@@ -1,0 +1,9 @@
+{
+  "name": "review of an xps, which aspose-cli writes but no product reads, is FORMAT_MISMATCH whose hint points to a PDF of the same content, not to --product",
+  "files": {
+    "sales.xps": { "fixture": "cells.xps" }
+  },
+  "steps": [
+    { "args": ["review", "sales.xps", "--out", "review"], "expect": { "exitCode": 6, "error": "FORMAT_MISMATCH", "json": [{ "path": "error.hint", "contains": "convert <document> --to pdf" }], "files": { "nothingWritten": true } } }
+  ]
+}

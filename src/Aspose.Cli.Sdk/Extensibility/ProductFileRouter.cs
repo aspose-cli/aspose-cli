@@ -203,7 +203,42 @@ public sealed class ProductFileRouter
             session.FullPath,
             operation,
             candidates,
-            recognitions);
+            recognitions,
+            OnlyWritten(extension),
+            PdfWriter(extension));
+    }
+
+    /// <summary>
+    /// The first product that writes files of <paramref name="extension"/> with its convert and
+    /// converts to PDF too, which writes the same content in a format a product reads; null for none.
+    /// </summary>
+    private string? PdfWriter(string extension) =>
+        _catalog.Products.FirstOrDefault(product =>
+            product.Formats.Any(format => format.Uses.HasFlag(FormatUse.Convert) && format.Extensions.Any(candidate => string.Equals(
+                ProductCatalog.NormalizeExtension(candidate), extension, StringComparison.Ordinal)))
+            && product.Formats.Any(static format => format.Id == "pdf" && format.Uses.HasFlag(FormatUse.Convert)))?.Manifest.Id;
+
+    /// <summary>
+    /// The commands that write files of <paramref name="extension"/> when no product reads that
+    /// extension, such as <c>cells convert</c> for <c>.xps</c>, as <c>product verb</c> in catalog
+    /// order; empty when a product reads it or none writes it.
+    /// </summary>
+    private IReadOnlyList<string> OnlyWritten(string extension)
+    {
+        bool Declares(FormatDescriptor format) => format.Extensions.Any(candidate => string.Equals(
+            ProductCatalog.NormalizeExtension(candidate), extension, StringComparison.Ordinal));
+        if (_catalog.Products.Any(product => product.Formats.Any(format => format.Uses.HasFlag(FormatUse.Input) && Declares(format))))
+        {
+            return [];
+        }
+
+        return [.. _catalog.Products.SelectMany(product => product.Formats
+                .Where(Declares)
+                .SelectMany(static format => (string[])[
+                    .. format.Uses.HasFlag(FormatUse.Convert) ? ["convert"] : Array.Empty<string>(),
+                    .. format.Uses.HasFlag(FormatUse.Render) ? ["render"] : Array.Empty<string>()])
+                .Select(verb => $"{product.Manifest.Id} {verb}"))
+            .Distinct(StringComparer.Ordinal)];
     }
 
     private static FileRouteResult ResolveOwned(
@@ -268,7 +303,9 @@ public sealed class ProductFileRouter
         string fullPath,
         string operation,
         IReadOnlyList<ProductDefinition> candidates,
-        IReadOnlyList<RecognitionEntry> recognitions)
+        IReadOnlyList<RecognitionEntry> recognitions,
+        IReadOnlyList<string> writers,
+        string? pdfWriter)
     {
         RecognitionEntry[] matches = StrongMatches(recognitions);
         if (matches.Length > 0)
@@ -291,11 +328,14 @@ public sealed class ProductFileRouter
                     .ToArray());
         }
 
-        throw CliErrors.FormatUnrecognized(
-            fullPath,
-            declaredProduct: null,
-            Detected(recognitions, except: null),
-            CandidateIds(candidates));
+        IReadOnlyList<string> detected = Detected(recognitions, except: null);
+        throw detected.Count == 0 && writers.Count > 0
+            ? CliErrors.FormatOnlyWritten(fullPath, writers, pdfWriter, operation, CandidateIds(candidates))
+            : CliErrors.FormatUnrecognized(
+                fullPath,
+                declaredProduct: null,
+                detected,
+                CandidateIds(candidates));
     }
 
     private async ValueTask<FileRouteResult> ValidateExplicitAsync(

@@ -897,6 +897,49 @@ public static partial class CliErrors
     }
 
     /// <summary>
+    /// Creates the error for a file in a format this CLI only writes, such as the <c>.xps</c> a
+    /// convert wrote: <c>FORMAT_MISMATCH</c>, as for content no product recognizes, but the hint
+    /// names the commands that write the format and, for <c>review</c>, the PDF of the same
+    /// content to review instead, since naming a product cannot help.
+    /// </summary>
+    /// <param name="path">The file.</param>
+    /// <param name="writers">The commands that write the format, as <c>product verb</c>.</param>
+    /// <param name="pdfWriter">A product whose convert writes both the format and PDF; null for none.</param>
+    /// <param name="operation">The generic operation that tried to read it, such as <c>review</c>.</param>
+    /// <param name="candidates">The products that take part in the operation.</param>
+    public static CliException FormatOnlyWritten(
+        string path,
+        IReadOnlyList<string> writers,
+        string? pdfWriter,
+        string operation,
+        IReadOnlyList<string> candidates)
+    {
+        ArgumentNullException.ThrowIfNull(writers);
+        if (writers.Count == 0)
+        {
+            throw new ArgumentException("A format only written has a command that writes it.", nameof(writers));
+        }
+
+        string extension = Path.GetExtension(path);
+        string listed = string.Join(", ", writers.Select(static writer => $"'{DistributionInfo.CommandName} {writer}'"));
+        string next = operation == "review" && pdfWriter is not null
+            ? $" Review the same content as a PDF instead: write it from the source document, as with '{DistributionInfo.CommandName} {pdfWriter} convert <document> --to pdf', "
+                + $"then run '{DistributionInfo.CommandName} review' on that PDF."
+            : " Use the source document, or the same content in a format a product reads, such as PDF.";
+        return CliException.Create(
+            ErrorCodes.FormatMismatch,
+            $"No product reads '{Path.GetFileName(path)}': {DistributionInfo.CommandName} writes {extension} files but reads none.",
+            hint: $"{extension} files are only written, by {listed}.{next}",
+            details: new JsonObject
+            {
+                ["path"] = path,
+                ["declared"] = null,
+                ["detected"] = new JsonArray(),
+                ["available"] = new JsonArray(candidates.Select(static value => JsonValue.Create(value)).ToArray()),
+            });
+    }
+
+    /// <summary>
     /// Creates a fail-closed error when the file's content does not show which product reads
     /// it: it does not match the format its extension names, or no product recognizes it.
     /// </summary>
