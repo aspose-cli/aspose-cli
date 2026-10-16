@@ -9,7 +9,9 @@ internal static class ConvertCommand
 {
     public static CommandDefinition<WordsConvertRequest, WordsConvertResult> Create()
     {
-        var pages = new PartRangeOption("page", "every page", onlyWith: "fixed-page targets");
+        IReadOnlyList<string> fixedPage = WordsFormats.FixedPageFormats;
+        string fixedPageTargets = $"--to {string.Join(", ", fixedPage.Take(fixedPage.Count - 1))} or {fixedPage[^1]}";
+        var pages = new PartRangeOption("page", "every page", onlyWith: fixedPageTargets);
         return new(
             "convert",
             "Convert a document using the detected input format.",
@@ -29,7 +31,7 @@ internal static class ConvertCommand
                 string? pageText = pages.Read(parse);
                 if (pageText is not null && !WordsFormats.FixedPageFormats.Contains(format, StringComparer.Ordinal))
                 {
-                    throw CliErrors.OptionInvalid(pages.Name, $"a '{format}' output holds the whole document", $"Use {pages.Name} only with PDF, XPS, OpenXPS, PS or PCL.");
+                    throw CliErrors.OptionInvalid(pages.Name, $"a '{format}' output holds the whole document", $"Use {pages.Name} only with {fixedPageTargets}.");
                 }
 
                 Secret? encryptPassword = standard.EncryptPassword();

@@ -44,7 +44,8 @@ public static class WordsFormats
     public static IReadOnlyList<string> LoadIds { get; } =
         Definitions.IdsFor(FormatUse.Input);
 
-    public static IReadOnlyList<string> FixedPageFormats { get; } = ["pdf", "xps", "openxps", "ps", "pcl"];
+    /// <summary>The fixed-page convert formats, which can hold a selection of the pages.</summary>
+    public static IReadOnlyList<string> FixedPageFormats { get; } = ["pdf", "xps", "openxps", "ps", "pcl", "html-fixed"];
 
     /// <summary>Microsoft Word formats, which keep fields, revisions and protection.</summary>
     public static IReadOnlyList<string> WordIds { get; } =
