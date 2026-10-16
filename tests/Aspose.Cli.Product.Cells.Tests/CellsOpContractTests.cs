@@ -262,6 +262,7 @@ public sealed class CellsOpContractTests : IClassFixture<CellsFixture>
     [InlineData("add_table", "define_table")]
     [InlineData("add_image", "insert_image")]
     [InlineData("add_name", "define_name")]
+    [InlineData("extend_table", "resize_table")]
     public void ARenamedOperation_IsRefusedAndSuggestsItsNewName(string old, string renamed)
     {
         CliException error = Assert.Throws<CliException>(() => Parse($$"""{"ops":[{"op":"{{old}}"}]}"""));

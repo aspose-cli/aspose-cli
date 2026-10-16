@@ -163,6 +163,12 @@ internal sealed class CellsMutationHandlers : ICellsOpHandler<ValueTuple>
         return default;
     }
 
+    public ValueTuple Apply(ResizeTableOp operation)
+    {
+        TableOps.ResizeTable(Sheet(operation), operation);
+        return default;
+    }
+
     public ValueTuple Apply(DefineNameOp operation)
     {
         NameOps.DefineName(_workbook, operation);

@@ -117,7 +117,7 @@ internal static class OpsFootprint
     {
         SetValuesOp or SetFormulaOp or ClearRangeOp or FormatRangeOp or MergeCellsOp
             or UnmergeCellsOp or SortRangeOp or SetValidationOp or ClearValidationOp
-            or DeleteDuplicatesOp or DefineTableOp or AddConditionalFormatOp
+            or DeleteDuplicatesOp or DefineTableOp or ResizeTableOp or AddConditionalFormatOp
             or ClearConditionalFormatsOp or SetBordersOp or SetAutoFilterOp or SetPrintAreaOp
             or AddSparklineOp or ReplaceTextOp => RangeTarget(op),
         CopyRangeOp or ImportRangeOp or AddCommentOp or SetCommentOp or DeleteCommentOp or SetHyperlinkOp
@@ -149,6 +149,7 @@ internal static class OpsFootprint
         ClearValidationOp o => new CellsEditTarget(o.Sheet, Bounds(o.Range)),
         DeleteDuplicatesOp o => new CellsEditTarget(o.Sheet, o.Range),
         DefineTableOp o => new CellsEditTarget(o.Sheet, o.Range),
+        ResizeTableOp o => new CellsEditTarget(o.Sheet, o.Range),
         AddConditionalFormatOp o => new CellsEditTarget(o.Sheet, Bounds(o.Range)),
         ClearConditionalFormatsOp o => new CellsEditTarget(o.Sheet, Bounds(o.Range)),
         SetBordersOp o => new CellsEditTarget(o.Sheet, o.Range),

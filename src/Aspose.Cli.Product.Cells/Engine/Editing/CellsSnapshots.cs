@@ -227,10 +227,34 @@ internal sealed class CellsSnapshots(Workbook workbook, Func<CellsOp, bool> appl
 
     public OperationSnapshot Apply(AddSparklineOp operation) => AddSparklineGroups(new OperationSnapshot(), Sheet(operation));
 
-    public OperationSnapshot Apply(DefineTableOp operation)
+    public OperationSnapshot Apply(DefineTableOp operation) => Tables(operation, new OperationSnapshot());
+
+    // The engine fills a table's calculated columns into the rows it takes in and moves its totals
+    // row, so the cells of the rows the table had or has count too: the snapshot before the
+    // operation keeps the last of them for the one after it.
+    public OperationSnapshot Apply(ResizeTableOp operation)
+    {
+        RangeRef range = A1.ParseRange(operation.Range).Range;
+        if (!applied(operation))
+        {
+            int lastRow = TableOps.Find(Sheet(operation), operation.Name) is { } table ? Math.Max(table.EndRow, range.End.Row) : range.End.Row;
+            _resized = (operation, lastRow);
+        }
+        else if (_resized is not { } resized || !ReferenceEquals(resized.Operation, operation))
+        {
+            throw new InvalidOperationException("The snapshot after an operation is taken after the snapshot before it.");
+        }
+
+        var rows = new RangeRef(range.Start, new CellRef(_resized.Value.LastRow, range.End.Column));
+        return Tables(operation, Cells(operation, A1.FormatRange(rows)));
+    }
+
+    // The resize_table being snapshot and the last row of the table before it or after it.
+    private (CellsOp Operation, int LastRow)? _resized;
+
+    private OperationSnapshot Tables(CellsSheetOp operation, OperationSnapshot snapshot)
     {
         Worksheet sheet = Sheet(operation);
-        var snapshot = new OperationSnapshot();
         foreach (ListObject table in sheet.ListObjects)
         {
             CellsTableInfo read = ObjectProjection.Table(sheet, table);

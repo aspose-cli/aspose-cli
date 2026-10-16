@@ -492,6 +492,7 @@ C-R17 | v2/cells/ops#rename_sheet
 C-R17 | v2/cells/ops#replace_text
 C-R17 | v2/cells/ops#resize_columns
 C-R17 | v2/cells/ops#resize_rows
+C-R17 | v2/cells/ops#resize_table
 C-R17 | v2/cells/ops#set_active_sheet
 C-R17 | v2/cells/ops#set_autofilter
 C-R17 | v2/cells/ops#set_borders
@@ -777,6 +778,7 @@ C-R18 | v2/cells/ops#rename_sheet
 C-R18 | v2/cells/ops#replace_text
 C-R18 | v2/cells/ops#resize_columns
 C-R18 | v2/cells/ops#resize_rows
+C-R18 | v2/cells/ops#resize_table
 C-R18 | v2/cells/ops#set_active_sheet
 C-R18 | v2/cells/ops#set_autofilter
 C-R18 | v2/cells/ops#set_borders
@@ -1075,6 +1077,7 @@ C-R19 | v2/cells/ops#rename_sheet
 C-R19 | v2/cells/ops#replace_text
 C-R19 | v2/cells/ops#resize_columns
 C-R19 | v2/cells/ops#resize_rows
+C-R19 | v2/cells/ops#resize_table
 C-R19 | v2/cells/ops#set_active_sheet
 C-R19 | v2/cells/ops#set_autofilter
 C-R19 | v2/cells/ops#set_borders
@@ -1697,6 +1700,11 @@ C-R20 | v2/cells/ops#resize_rows secrets
 C-R20 | v2/cells/ops#resize_rows spelling
 C-R20 | v2/cells/ops#resize_rows units
 C-R20 | v2/cells/ops#resize_rows variants
+C-R20 | v2/cells/ops#resize_table fixednames
+C-R20 | v2/cells/ops#resize_table ranges
+C-R20 | v2/cells/ops#resize_table secrets
+C-R20 | v2/cells/ops#resize_table spelling
+C-R20 | v2/cells/ops#resize_table variants
 C-R20 | v2/cells/ops#set_active_sheet fixednames
 C-R20 | v2/cells/ops#set_active_sheet ranges
 C-R20 | v2/cells/ops#set_active_sheet secrets
@@ -2873,6 +2881,7 @@ C-R21 | cells protect_sheet reads back
 C-R21 | cells rename_sheet reads back
 C-R21 | cells resize_columns reads back
 C-R21 | cells resize_rows reads back
+C-R21 | cells resize_table reads back
 C-R21 | cells set_autofilter reads back
 C-R21 | cells set_borders reads back
 C-R21 | cells set_chart reads back
@@ -2997,6 +3006,8 @@ C-R21 | v2/cells/ops#resize_columns
 C-R21 | v2/cells/ops#resize_columns unclassified
 C-R21 | v2/cells/ops#resize_rows
 C-R21 | v2/cells/ops#resize_rows unclassified
+C-R21 | v2/cells/ops#resize_table
+C-R21 | v2/cells/ops#resize_table unclassified
 C-R21 | v2/cells/ops#set_active_sheet
 C-R21 | v2/cells/ops#set_active_sheet unclassified
 C-R21 | v2/cells/ops#set_autofilter
@@ -3467,6 +3478,7 @@ C-R30 | cells rename_sheet
 C-R30 | cells replace_text
 C-R30 | cells resize_columns
 C-R30 | cells resize_rows
+C-R30 | cells resize_table
 C-R30 | cells set_active_sheet
 C-R30 | cells set_autofilter
 C-R30 | cells set_borders
@@ -3907,6 +3919,8 @@ C-R33 | v2/cells/ops#resize_columns names
 C-R33 | v2/cells/ops#resize_columns none
 C-R33 | v2/cells/ops#resize_rows names
 C-R33 | v2/cells/ops#resize_rows none
+C-R33 | v2/cells/ops#resize_table names
+C-R33 | v2/cells/ops#resize_table none
 C-R33 | v2/cells/ops#set_active_sheet names
 C-R33 | v2/cells/ops#set_active_sheet none
 C-R33 | v2/cells/ops#set_autofilter names
@@ -4598,6 +4612,7 @@ C-R39 | cells protect_sheet round trip
 C-R39 | cells rename_sheet round trip
 C-R39 | cells resize_columns round trip
 C-R39 | cells resize_rows round trip
+C-R39 | cells resize_table round trip
 C-R39 | cells round-trip exemptions
 C-R39 | cells set_autofilter round trip
 C-R39 | cells set_borders round trip
@@ -5457,6 +5472,7 @@ unknown-field | cells rename_sheet.sheet as sheett
 unknown-field | cells replace_text.sheet as sheett
 unknown-field | cells resize_columns.sheet as sheett
 unknown-field | cells resize_rows.sheet as sheett
+unknown-field | cells resize_table.sheet as sheett
 unknown-field | cells set_active_sheet.sheet as sheett
 unknown-field | cells set_autofilter.sheet as sheett
 unknown-field | cells set_borders.sheet as sheett
@@ -5612,6 +5628,7 @@ unknown-op | cells rename_sheet as rneame_sheet
 unknown-op | cells replace_text as rpelace_text
 unknown-op | cells resize_columns as rseize_columns
 unknown-op | cells resize_rows as rseize_rows
+unknown-op | cells resize_table as rseize_table
 unknown-op | cells set_active_sheet as ste_active_sheet
 unknown-op | cells set_autofilter as ste_autofilter
 unknown-op | cells set_borders as ste_borders

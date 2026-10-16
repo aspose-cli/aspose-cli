@@ -123,6 +123,7 @@
             "replace_text",
             "resize_columns",
             "resize_rows",
+            "resize_table",
             "set_active_sheet",
             "set_autofilter",
             "set_borders",
