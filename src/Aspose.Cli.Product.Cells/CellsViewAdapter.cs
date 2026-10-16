@@ -59,6 +59,7 @@ internal sealed class CellsViewAdapter : IProductViewAdapter<CellsSession>
         bool evaluation = session.Outputs.License == LicenseState.Evaluation;
         int excludedMarks = evaluation ? layout.Sheets.Count(static sheet => sheet.IsEvaluationWarning) : 0;
         List<ReviewFinding> findings = Findings(
+            filePath,
             info,
             layout,
             visible,
@@ -98,6 +99,7 @@ internal sealed class CellsViewAdapter : IProductViewAdapter<CellsSession>
     }
 
     private static List<ReviewFinding> Findings(
+        string filePath,
         CellsInspectResult info,
         CellsReviewLayout layout,
         IReadOnlyList<CellsSheetInfo> visible,
@@ -110,7 +112,8 @@ internal sealed class CellsViewAdapter : IProductViewAdapter<CellsSession>
         foreach (CellsSheetInfo sheet in info.Workbook.Sheets.Where(static sheet => sheet.Visibility != CellsSheetVisibilities.Visible))
         {
             findings.Add(SheetFinding(CellsReviewChecks.SheetHidden, sheet.Name,
-                $"Hidden worksheet '{sheet.Name}' is excluded from visual evidence."));
+                $"Hidden worksheet '{sheet.Name}' is excluded from visual evidence.",
+                hint: $"If it should be seen, render it on its own: aspose-cli cells render \"{filePath}\" --sheets {sheet.Position}"));
         }
         foreach (CellsSheetInfo sheet in visible.Where(sheet =>
                      sheet.UsedRange is null

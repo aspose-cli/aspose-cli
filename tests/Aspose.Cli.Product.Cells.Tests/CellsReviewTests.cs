@@ -84,6 +84,37 @@ public sealed class CellsReviewTests
         Assert.Equal("1 populated row(s) are hidden; sample: 2.", hiddenRows.Message);
     }
 
+    /// <summary>
+    /// A hidden sheet's finding gives the command that renders it on its own, not the advice to
+    /// adjust a layout that every other finding gives.
+    /// </summary>
+    [Fact]
+    public void Review_HiddenSheet_GivesTheCommandThatRendersIt()
+    {
+        Requires.Windows();
+        using var fixture = new CellsFixture();
+        string input = fixture.Temp.File("hidden.xlsx");
+        using (var workbook = new Workbook())
+        {
+            workbook.Worksheets[0].Name = "Data";
+            workbook.Worksheets[0].Cells["A1"].PutValue("Visible");
+            Worksheet secret = workbook.Worksheets[workbook.Worksheets.Add()];
+            secret.Name = "透视 Pivot";
+            secret.Cells["A1"].PutValue("Hidden");
+            secret.IsVisible = false;
+            workbook.Save(input);
+        }
+
+        var adapter = new CellsViewAdapter();
+        var request = new ViewRenderRequest { View = CellsViews.Sheets, MaxPartCount = 10, Purpose = ViewPurpose.Evidence };
+        ViewManifest rendered = adapter.Render(fixture.Session, input, request, new MemoryArtifactSink());
+        ProductReviewAssessment assessment = adapter.Assess(fixture.Session, input, request, rendered);
+
+        ReviewFinding hidden = Assert.Single(assessment.Findings!, static finding => finding.Code == "CELLS_SHEET_HIDDEN");
+        Assert.Contains($"aspose-cli cells render \"{input}\" --sheets 2", hidden.Hint, StringComparison.Ordinal);
+        Assert.DoesNotContain("Adjust only", hidden.Hint, StringComparison.Ordinal);
+    }
+
     [Fact]
     public void Review_ClippedEastAsianText_AlsoSuggestsAnExplicitWidth()
     {
