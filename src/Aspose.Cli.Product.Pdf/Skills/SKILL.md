@@ -75,6 +75,13 @@ results carry `EVALUATION_MODE`; `review` reports such pages as
 `PDF_EVALUATION_WATERMARK` ([verification](references/verification.md)), and a
 licensed command whose output keeps such a notice on one of its first 4 pages
 warns `EVALUATION_INPUT_MARKED`.
+Each evaluation save prints the notice once, and an encrypted output is saved
+once, with two exceptions that encrypt a saved copy to keep text beyond Latin-1,
+such as a Chinese title, readable, and so carry the notice twice: `--encrypt-env`
+when the output's document information holds such text, whether set now or
+taken from an input; and a `pdf edit` batch with `set_properties` and
+`encrypt_document` when the information holds such text. `encrypt_document`
+without `set_properties` saves once, whatever the title.
 Evaluation mode also reads only the first 4 pages of a document. `inspect` of a
 longer PDF warns `EVALUATION_INPUT_TRUNCATED` and still lists every bookmark and
 attachment and counts every form field; `--detail forms` lists the fields but

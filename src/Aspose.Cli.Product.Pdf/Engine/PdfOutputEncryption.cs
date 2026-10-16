@@ -88,10 +88,11 @@ internal static class PdfOutputEncryption
     /// Saves <paramref name="document"/> to <paramref name="path"/>, encrypted with
     /// <paramref name="passwords"/> when given, in place of any encryption the document carries.
     /// PDF-ENCRYPTED-INFO-TEXT: the engine garbles document information beyond Latin-1 that it
-    /// writes into an encrypted file, so the passwords are put on a copy reopened from an
-    /// unencrypted save, which keeps the text.
+    /// writes into an encrypted file, so when the information holds such text the passwords are
+    /// put on a copy reopened from an unencrypted save, which keeps the text. Otherwise the
+    /// document is encrypted and saved once, which in evaluation mode prints one notice.
     /// </summary>
-    /// <param name="document">The document to save; with passwords it is left decrypted.</param>
+    /// <param name="document">The document to save; with passwords its own encryption is replaced.</param>
     /// <param name="path">The file to write.</param>
     /// <param name="passwords">The passwords and permissions of the file; null to save the document as it is.</param>
     internal static void Save(Document document, string path, PdfOutputPasswords? passwords)
@@ -107,21 +108,39 @@ internal static class PdfOutputEncryption
             document.Decrypt();
         }
 
+        if (!InformationBeyondLatin1(document))
+        {
+            Encrypt(document, passwords);
+            document.Save(path);
+            return;
+        }
+
         using var plain = new MemoryStream();
         document.Save(plain);
         using var copy = new Document(plain);
+        Encrypt(copy, passwords);
+        copy.Save(path);
+    }
+
+    /// <summary>
+    /// Whether the document information holds a character beyond Latin-1, which the engine
+    /// writes garbled into an encrypted file (PDF-ENCRYPTED-INFO-TEXT).
+    /// </summary>
+    internal static bool InformationBeyondLatin1(Document document) =>
+        document.Info.Any(static entry => entry.Value is { } value && value.Any(static character => character > 'ÿ'));
+
+    private static void Encrypt(Document document, PdfOutputPasswords passwords)
+    {
         string user = passwords.User.Reveal();
         string owner = passwords.Owner.Reveal();
         if (passwords.Permissions is { } permissions)
         {
-            copy.Encrypt(user, owner, permissions, CryptoAlgorithm.AESx256);
+            document.Encrypt(user, owner, permissions, CryptoAlgorithm.AESx256);
         }
         else
         {
-            copy.Encrypt(user, owner, DocumentPrivilege.AllowAll, CryptoAlgorithm.AESx256, usePdf20: false);
+            document.Encrypt(user, owner, DocumentPrivilege.AllowAll, CryptoAlgorithm.AESx256, usePdf20: false);
         }
-
-        copy.Save(path);
     }
 }
 

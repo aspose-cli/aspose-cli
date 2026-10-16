@@ -629,6 +629,40 @@ public sealed class PdfMutateTests
     }
 
     /// <summary>
+    /// Latin-1 text the PDFDocEncoding gives other characters, such as a no-break space, a C1
+    /// control or a soft hyphen, is saved once with the encryption and still reads back as set.
+    /// </summary>
+    [Theory]
+    [InlineData("A B")]
+    [InlineData("A\u0080B\u0093C")]
+    [InlineData("A­B")]
+    [InlineData("A\u0018B")]
+    public void Edit_KeepsLatin1MetadataThatPdfDocEncodingMapsElsewhereInABatchThatEncrypts(string title)
+    {
+        using var fixture = new PdfEngineFixture();
+        string input = fixture.CreateDocument("plain.pdf", pages: 1);
+        string output = fixture.File("secured.pdf");
+
+        PdfEdit.Run(fixture.Session, new PdfEditRequest
+        {
+            Input = input,
+            Batch = new PdfOpsBatch
+            {
+                Ops =
+                [
+                    new SetPropertiesOp { Title = title },
+                    new EncryptDocumentOp { OwnerPasswordEnv = "PDF_OWNER" },
+                ],
+            },
+            Output = TestOutput.At(output),
+            OpSecrets = new Dictionary<string, Secret> { ["PDF_OWNER"] = new("owner") },
+        });
+
+        using var reopened = new Document(output, "owner");
+        Assert.Equal(title, reopened.Info.Title);
+    }
+
+    /// <summary>
     /// An input that stays encrypted cannot take document information beyond Latin-1
     /// (PDF-ENCRYPTED-INFO-TEXT); a batch that encrypts after setting it, with or without
     /// decrypting first, can.
