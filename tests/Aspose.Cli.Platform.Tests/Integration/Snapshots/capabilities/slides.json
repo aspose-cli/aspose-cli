@@ -2682,7 +2682,7 @@
         "schemaVersion",
         "input",
         "what",
-        "items"
+        "outputs"
       ],
       "additionalProperties": false,
       "properties": {
@@ -2707,11 +2707,11 @@
             "text"
           ]
         },
-        "items": {
+        "outputs": {
           "description": "The written files: media in presentation order, or one text file per slide that has text.",
           "type": "array",
           "items": {
-            "$ref": "#/$defs/slidesExtractedItem"
+            "$ref": "#/$defs/slidesExtractedOutput"
           }
         },
         "license": {
@@ -2727,43 +2727,40 @@
         }
       },
       "$defs": {
-        "slidesExtractedItem": {
-          "description": "One extracted file.",
+        "slidesExtractedOutput": {
+          "description": "One extracted file, and the media item or slide it holds: a media file names its index, a file of slide text or notes its slide.",
           "type": "object",
           "required": [
             "path",
-            "kind",
-            "sizeBytes"
+            "format",
+            "sizeBytes",
+            "fingerprint"
           ],
           "additionalProperties": false,
           "properties": {
             "path": {
-              "description": "Absolute path of the written file.",
+              "description": "Absolute path of the produced file.",
               "type": "string"
             },
-            "kind": {
-              "description": "What the file holds: a media kind, or the speaker notes or text of one slide.",
-              "type": "string",
-              "enum": [
-                "image",
-                "audio",
-                "video",
-                "notes",
-                "text"
-              ]
+            "format": {
+              "description": "Format id of the produced file, e.g. png.",
+              "type": "string"
             },
             "sizeBytes": {
-              "description": "The file's size in bytes.",
+              "description": "File size in bytes.",
               "type": "integer",
               "minimum": 0
             },
+            "fingerprint": {
+              "description": "SHA-256 identity of the published file.",
+              "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/file-fingerprint.schema.json"
+            },
+            "encrypted": {
+              "description": "true when the produced file is encrypted and opens only with its password; omitted when its format cannot carry a password.",
+              "type": "boolean"
+            },
             "slide": {
               "description": "The 1-based slide number of slide text or notes; omitted for media.",
-              "type": "integer",
-              "minimum": 1
-            },
-            "slideId": {
-              "description": "The stable slide id of slide text or notes; omitted for media.",
               "type": "integer",
               "minimum": 1
             },
@@ -2771,14 +2768,6 @@
               "description": "The media item's 1-based position among all images, then audio, then video, as inspect reports it; omitted for text and notes.",
               "type": "integer",
               "minimum": 1
-            },
-            "name": {
-              "description": "The slide's name for slide text or notes; omitted when it has none.",
-              "type": "string"
-            },
-            "contentType": {
-              "description": "The MIME type of the file; omitted when the presentation states none for a media item.",
-              "type": "string"
             }
           }
         }

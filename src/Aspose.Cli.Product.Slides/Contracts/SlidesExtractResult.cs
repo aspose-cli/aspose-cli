@@ -14,30 +14,25 @@ public sealed record SlidesExtractResult() : EngineResultEnvelope("extract-resul
     public required string What { get; init; }
 
     /// <summary>The written files: media in presentation order, or one text file per slide that has text.</summary>
-    public required IReadOnlyList<SlidesExtractedItem> Items { get; init; }
+    public required IReadOnlyList<SlidesExtractedOutput> Outputs { get; init; }
 }
 
-/// <summary>One extracted file.</summary>
-public sealed record SlidesExtractedItem
+/// <summary>
+/// One extracted file, and the media item or slide it holds: a media file names its
+/// <c>index</c>, a file of slide text or notes its <c>slide</c>.
+/// </summary>
+public sealed record SlidesExtractedOutput : OutputItem
 {
-    /// <summary>Absolute path of the written file.</summary>
-    public required string Path { get; init; }
-
-    /// <summary>What the file holds: a media kind, or the speaker notes or text of one slide.</summary>
-    [AllowedValues("image", "audio", "video", "notes", "text")]
-    public required string Kind { get; init; }
-
-    /// <summary>The file's size in bytes.</summary>
-    [Minimum(0)]
-    public required long SizeBytes { get; init; }
+    /// <summary>Describes a file written for one media item or one slide's text or notes.</summary>
+    /// <param name="file">The published file, as <c>FileObjects.Companion</c> describes it.</param>
+    internal SlidesExtractedOutput(OutputInfo file)
+        : base(file)
+    {
+    }
 
     /// <summary>The 1-based slide number of slide text or notes; omitted for media.</summary>
     [Minimum(1)]
     public int? Slide { get; init; }
-
-    /// <summary>The stable slide id of slide text or notes; omitted for media.</summary>
-    [Minimum(1)]
-    public uint? SlideId { get; init; }
 
     /// <summary>
     /// The media item's 1-based position among all images, then audio, then video, as inspect
@@ -45,10 +40,4 @@ public sealed record SlidesExtractedItem
     /// </summary>
     [Minimum(1)]
     public int? Index { get; init; }
-
-    /// <summary>The slide's name for slide text or notes; omitted when it has none.</summary>
-    public string? Name { get; init; }
-
-    /// <summary>The MIME type of the file; omitted when the presentation states none for a media item.</summary>
-    public string? ContentType { get; init; }
 }

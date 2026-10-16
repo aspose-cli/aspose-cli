@@ -3623,6 +3623,7 @@ C-R31 | pdf edit paths
 C-R31 | pdf inspect paths
 C-R31 | pdf render paths
 C-R31 | slides edit paths
+C-R31 | slides extract units
 C-R31 | slides inspect paths
 C-R31 | slides render paths
 C-R31 | v2/cells/compare-result fields

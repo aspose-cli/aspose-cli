@@ -544,7 +544,7 @@ internal static partial class ContractRules
         {
             yield return sample;
         }
-        foreach (InvariantCase sample in SplitUnits(catalog))
+        foreach (InvariantCase sample in ChosenUnits(catalog))
         {
             yield return sample;
         }
@@ -669,7 +669,7 @@ internal static partial class ContractRules
         {
             yield return $"{property.Path}[]: not flat ({string.Join(", ", nested)})";
         }
-        if (UnitsARunChooses.TryGetValue((id, property.Path), out (string[] Units, string Reason) exception))
+        if (UnitsARunChooses.TryGetValue((id, property.Path), out UnitChoice? exception))
         {
             // The listed units are optional and exactly these, or the exception no longer matches.
             string[] declaredUnits = [.. extra.Order(StringComparer.Ordinal)];
@@ -685,15 +685,30 @@ internal static partial class ContractRules
     }
 
     /// <summary>
-    /// The outputs lists whose items name one of several units, the one a run chooses; every item
-    /// of a run names the same one. The generated schemas cannot state that the units exclude each
-    /// other, so the run sample <c>SplitUnits</c> checks it.
+    /// The outputs lists whose items name one of several units, the one a run chooses with an
+    /// option of the command; every item of a run names the same one. The generated schemas cannot
+    /// state that the units exclude each other, so the run sample <c>ChosenUnits</c> checks it.
     /// </summary>
-    private static readonly Dictionary<(string Schema, string Path), (string[] Units, string Reason)> UnitsARunChooses = new()
+    private static readonly Dictionary<(string Schema, string Path), UnitChoice> UnitsARunChooses = new()
     {
-        [("v2/words/split-result", "outputs")] = (["section", "pages", "blocks"],
+        [("v2/words/split-result", "outputs")] = new("words split", "--by", ["section", "pages", "blocks"],
             "words split divides by sections, pages or Heading 1 paragraphs, and each part names the section, pages or blocks it holds (user decision 2026-10-12)"),
+        [("v2/slides/extract-result", "outputs")] = new("slides extract", "--what", ["index", "slide"],
+            "slides extract names each media item by its inspect index and each slide's text or notes by its slide number; --what chooses which (prerelease A12, 2026-10-15)")
+        {
+            Fixture = "slides.media",
+        },
     };
+
+    /// <summary>
+    /// The units an outputs list may name, the command whose option chooses one for a run, and why;
+    /// <see cref="Fixture"/> names the input its runs read when the product's own sample lacks
+    /// what some value writes, such as media.
+    /// </summary>
+    private sealed record UnitChoice(string Command, string Option, string[] Units, string Reason)
+    {
+        public string? Fixture { get; init; }
+    }
 
     private static IEnumerable<InvariantCase> R32(CliCatalog catalog)
     {

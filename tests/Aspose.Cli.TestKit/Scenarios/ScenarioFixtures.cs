@@ -89,6 +89,7 @@ public static class ScenarioFixtures
         {
             "ops" => Encoding.UTF8.GetBytes(Operations[product]),
             "encrypted" => Encrypt(product, primary),
+            "media" when product == "slides" => SlidesWithMedia(primary),
             _ when format == primary => CreateDocument(product, primary),
             _ => Convert(product, primary, format),
         };
@@ -120,6 +121,24 @@ public static class ScenarioFixtures
                 break;
         }
         return File.ReadAllBytes(workspace.File(file));
+    }
+
+    /// <summary>
+    /// The primary presentation with a picture and speaker notes on its first slide, so that
+    /// extracting media, notes or text each writes a file: the picture is the slide itself,
+    /// rendered small.
+    /// </summary>
+    private static byte[] SlidesWithMedia(string primary)
+    {
+        using var workspace = new TempWorkspace();
+        ScenarioLicense.Project(workspace.Path);
+        string source = "seed." + primary;
+        File.WriteAllBytes(workspace.File(source), Read($"slides.{primary}"));
+        Require(workspace.Run("slides", "render", source, "--slides", "1", "--width", "64", "--out", "picture.png", "--output-format", "json"));
+        File.WriteAllText(workspace.File("ops.json"),
+            """{"ops":[{"op":"insert_image","slide":1,"path":"picture.png"},{"op":"set_notes","slide":1,"text":"Speaker notes of the seed slide."}]}""");
+        Require(workspace.Run("slides", "edit", source, "--ops", "ops.json", "--in-place", "--output-format", "json"));
+        return File.ReadAllBytes(workspace.File(source));
     }
 
     private static byte[] Convert(string product, string primary, string format)

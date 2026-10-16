@@ -30,36 +30,57 @@ internal static partial class ContractRules
     }
 
     /// <summary>
-    /// The words split run of each <c>--by</c>: every item of its <c>outputs</c> names exactly one
-    /// unit beside the file fields and <c>encrypted</c>, the same in every item, as the schema check cannot tell.
+    /// The run of each value of the option that chooses an outputs list's unit
+    /// (<see cref="UnitsARunChooses"/>): every item of its <c>outputs</c> names exactly one unit
+    /// beside the file fields and <c>encrypted</c>, the same in every item, as the schema check
+    /// cannot tell. Every value must write some, or that value was not judged.
     /// </summary>
-    private static IEnumerable<InvariantCase> SplitUnits(CliCatalog catalog)
+    private static IEnumerable<InvariantCase> ChosenUnits(CliCatalog catalog)
     {
-        if (catalog.Commands.FirstOrDefault(static item => item.Words == "words split") is not { } command
-            || command.Option("--by") is not { AllowedValues.Count: > 0 } by)
+        foreach (UnitChoice choice in UnitsARunChooses.Values)
         {
-            yield break;
-        }
-
-        yield return Check("C-R31", $"{command} units", () => by.AllowedValues.SelectMany(value =>
-        {
-            Invocation invocation = Invocation.For(command, omit: "--by").Add("--by", value);
-            if (RunSample(invocation, out string? failure) is not { } document)
+            if (catalog.Commands.FirstOrDefault(item => item.Words == choice.Command) is not { } command
+                || command.Option(choice.Option) is not { AllowedValues.Count: > 0 } option)
             {
-                return [$"--by {value}: {failure}"];
+                continue;
             }
-            string[][] units =
-            [
-                .. (document["outputs"] as JsonArray ?? []).Select(static item =>
-                    item is JsonObject output ? output.Select(static pair => pair.Key).Where(static name => !FileCore.Contains(name) && name != "encrypted").ToArray() : []),
-            ];
-            string[] distinct = [.. units.SelectMany(static names => names).Distinct(StringComparer.Ordinal)];
-            return units.Length == 0
-                ? [$"--by {value}: no outputs"]
-                : units.Any(static names => names.Length != 1) || distinct.Length != 1
-                    ? [$"--by {value}: outputs[] name {string.Join(", ", distinct)}, not one unit the same in every item"]
-                    : (IEnumerable<string>)[];
-        }), shard: InvariantCases.ShardOf(command));
+
+            yield return Check("C-R31", $"{command} units", () =>
+            {
+                var problems = new List<string>();
+                foreach (string value in option.AllowedValues)
+                {
+                    Invocation invocation = Invocation.For(command, omit: choice.Option).Add(choice.Option, value);
+                    if (choice.Fixture is { } fixture)
+                    {
+                        foreach (string input in invocation.Inputs)
+                        {
+                            invocation.Files[input] = new ScenarioFile { Fixture = fixture };
+                        }
+                    }
+                    if (RunSample(invocation, out string? failure) is not { } document)
+                    {
+                        problems.Add($"{choice.Option} {value}: {failure}");
+                        continue;
+                    }
+                    string[][] units =
+                    [
+                        .. (document["outputs"] as JsonArray ?? []).Select(static item =>
+                            item is JsonObject output ? output.Select(static pair => pair.Key).Where(static name => !FileCore.Contains(name) && name != "encrypted").ToArray() : []),
+                    ];
+                    string[] distinct = [.. units.SelectMany(static names => names).Distinct(StringComparer.Ordinal)];
+                    if (units.Length == 0)
+                    {
+                        problems.Add($"{choice.Option} {value}: no outputs");
+                    }
+                    else if (units.Any(static names => names.Length != 1) || distinct.Length != 1)
+                    {
+                        problems.Add($"{choice.Option} {value}: outputs[] name {string.Join(", ", distinct)}, not one unit the same in every item");
+                    }
+                }
+                return problems;
+            }, shard: InvariantCases.ShardOf(command));
+        }
     }
 
     /// <summary>Runs one invocation in a fresh workspace under the run's license mode and returns its result, or null with why.</summary>

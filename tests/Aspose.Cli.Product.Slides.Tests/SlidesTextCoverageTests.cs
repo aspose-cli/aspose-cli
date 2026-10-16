@@ -150,7 +150,7 @@ public sealed class SlidesTextCoverageTests
         Assert.Contains(shapes, static shape => shape.Text == "sq");
         Assert.Contains(shapes, static shape => shape.Kind == "table" && shape.Runs?.Count == 2);
         Assert.Equal(3, search.Hits.Count);
-        string text = File.ReadAllText(Assert.Single(extract.Items).Path);
+        string text = File.ReadAllText(Assert.Single(extract.Outputs).Path);
         Assert.Contains("tq", text, StringComparison.Ordinal);
         Assert.Contains("gq", text, StringComparison.Ordinal);
         Assert.Contains("sq", text, StringComparison.Ordinal);
@@ -176,7 +176,7 @@ public sealed class SlidesTextCoverageTests
             fixture.Session,
             new SlidesSearchRequest { Input = input, Query = new SearchQuery(TextSearch.Create("cd", regex: false, caseSensitive: true), 100, SlidesSearchScopes.Shapes) });
 
-        string text = File.ReadAllText(Assert.Single(extract.Items).Path);
+        string text = File.ReadAllText(Assert.Single(extract.Outputs).Path);
         Assert.DoesNotContain('\r', text);
         Assert.Contains("ab\ncd\nef", text, StringComparison.Ordinal);
         Assert.Equal("ab cd", Assert.Single(search.Hits).Context);
