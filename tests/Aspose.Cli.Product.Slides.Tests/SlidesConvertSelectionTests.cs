@@ -92,6 +92,45 @@ public sealed partial class SlidesConvertSelectionTests
         string[] parts = SlideMarker().Split(markdown);
         Assert.All(expected.Select((slide, index) => (slide, text: parts[(2 * index) + 2])), part =>
             Assert.Contains($"T{part.slide}", part.text, StringComparison.Ordinal));
+        // Every slide but the first is a separator line, its marker and its content: no separator
+        // follows a marker, where it would part the marker from its slide.
+        string[] lines = [.. markdown.ReplaceLineEndings("\n").Split('\n').Select(static line => line.Trim())];
+        int[] markers = [.. lines.Select((line, index) => (line, index)).Where(static line => SlideMarker().IsMatch(line.line)).Select(static line => line.index)];
+        Assert.All(markers, marker => Assert.NotEqual("---", lines[marker + 1]));
+        Assert.All(markers.Skip(1), marker => Assert.Equal("---", lines[..marker].Last(static line => line.Length > 0)));
+    }
+
+    /// <summary>
+    /// Markdown writes a subtitle of two paragraphs as one second-level heading that keeps both
+    /// lines, not as one heading for each.
+    /// </summary>
+    [Fact]
+    public void Markdown_WritesASubtitleOfSeveralParagraphsAsOneHeading()
+    {
+        using var fixture = new SlidesEngineFixture();
+        string input = fixture.File("subtitle.pptx");
+        using (var presentation = new Presentation())
+        {
+            ISlide slide = presentation.Slides.AddEmptySlide(presentation.LayoutSlides.GetByType(SlideLayoutType.Title));
+            presentation.Slides.RemoveAt(0);
+            slide.Shapes.OfType<IAutoShape>().First(static shape => shape.Placeholder?.Type is PlaceholderType.CenteredTitle or PlaceholderType.Title).TextFrame.Text = "Deck";
+            ITextFrame subtitle = slide.Shapes.OfType<IAutoShape>().First(static shape => shape.Placeholder?.Type == PlaceholderType.Subtitle).TextFrame;
+            subtitle.Paragraphs[0].Text = "East";
+            var date = new Paragraph();
+            date.Portions.Add(new Portion("Q3"));
+            subtitle.Paragraphs.Add(date);
+            presentation.Save(input, SaveFormat.Pptx);
+        }
+
+        string output = fixture.File("subtitle.md");
+        SlidesExport.Convert(fixture.Session, new SlidesConvertRequest { Input = input, Output = TestOutput.At(output, format: "md") });
+
+        string heading = Assert.Single(File.ReadAllLines(output), static line => line.StartsWith("## ", StringComparison.Ordinal));
+        if (fixture.LicenseState == Sdk.Licensing.LicenseState.Licensed)
+        {
+            Assert.Contains("East", heading, StringComparison.Ordinal);
+            Assert.Contains("Q3", heading, StringComparison.Ordinal);
+        }
     }
 
     [GeneratedRegex(@"<!-- slide (\d+) -->")]

@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Licensing;
 using Aspose.Cli.Sdk.Rendering;
@@ -9,7 +10,7 @@ using static Aspose.Cli.Product.Slides.Engine.SlidesEngineSupport;
 namespace Aspose.Cli.Product.Slides.Engine;
 
 /// <summary>Conversion and rendering of a presentation or selected slides.</summary>
-internal static class SlidesExport
+internal static partial class SlidesExport
 {
     internal static SlidesConvertResult Convert(SlidesSession session, SlidesConvertRequest request)
     {
@@ -79,7 +80,9 @@ internal static class SlidesExport
 
         if (format == SaveFormat.Md)
         {
-            StateInheritedBullets(presentation, slides ?? AllSlides(presentation.Slides.Count));
+            IReadOnlyList<int> shown = slides ?? AllSlides(presentation.Slides.Count);
+            StateInheritedBullets(presentation, shown);
+            JoinHeadingLines(presentation, shown);
         }
 
         if (slides is not null && Exports(format))
@@ -216,7 +219,48 @@ internal static class SlidesExport
         if (markdown.StartsWith("---", StringComparison.Ordinal))
         {
             int lineEnd = markdown.IndexOf('\n', StringComparison.Ordinal);
-            File.WriteAllText(temp, lineEnd < 0 ? string.Empty : markdown[(lineEnd + 1)..], new System.Text.UTF8Encoding(false));
+            markdown = lineEnd < 0 ? string.Empty : markdown[(lineEnd + 1)..];
+        }
+
+        File.WriteAllText(temp, SeparatorAfterMarker().Replace(markdown, "$1"), new System.Text.UTF8Encoding(false));
+    }
+
+    // The export also puts a separator line after every slide's comment, parting the comment
+    // from its slide; without it each slide after the first is a separator, its comment and its
+    // content.
+    [GeneratedRegex(@"^(<!-- slide \d+ -->\r?\n)---[ \t]*\r?\n", RegexOptions.Multiline)]
+    private static partial Regex SeparatorAfterMarker();
+
+    /// <summary>
+    /// Writes the lines of each title and subtitle as one paragraph, its lines joined by " / ",
+    /// in this private loaded copy: the Markdown export writes each paragraph of one as a
+    /// heading of its own and runs the lines of a paragraph together where they break.
+    /// </summary>
+    private static void JoinHeadingLines(Presentation presentation, IReadOnlyList<int> slides)
+    {
+        foreach (int number in slides)
+        {
+            foreach (ITextFrame frame in presentation.Slides[number - 1].Shapes.OfType<IAutoShape>()
+                .Where(static shape => shape.Placeholder?.Type is PlaceholderType.Title or PlaceholderType.CenteredTitle or PlaceholderType.Subtitle)
+                .Select(static shape => shape.TextFrame)
+                .OfType<ITextFrame>())
+            {
+                string[] lines = [.. frame.Paragraphs
+                    .SelectMany(static paragraph => paragraph.Text.Split('\v'))
+                    .Select(static line => line.Trim())
+                    .Where(static line => line.Length > 0)];
+                IParagraph? first = frame.Paragraphs.FirstOrDefault(static paragraph => !string.IsNullOrWhiteSpace(paragraph.Text));
+                if (lines.Length < 2 || first is null)
+                {
+                    continue;
+                }
+
+                first.Text = string.Join(" / ", lines);
+                foreach (IParagraph other in frame.Paragraphs.Where(paragraph => !ReferenceEquals(paragraph, first)).ToArray())
+                {
+                    frame.Paragraphs.Remove(other);
+                }
+            }
         }
     }
 
