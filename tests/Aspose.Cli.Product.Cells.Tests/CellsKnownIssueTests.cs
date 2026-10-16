@@ -461,12 +461,13 @@ public sealed class CellsKnownIssueTests
     }
 
     /// <summary>
-    /// A formula that names the destination workbook's own file: set directly it becomes a
-    /// reference inside the workbook, but copied in from another workbook it keeps an external
-    /// link to the destination itself, which reads as 0 once calculated.
+    /// A formula that names the destination workbook's own file through a link stored relative to
+    /// the source, as Excel stores one to a workbook beside it: set directly it becomes a reference
+    /// inside the workbook, but copied in from the source, by a range copy or a sheet copy, it
+    /// keeps an external link to the destination itself, which reads as 0 once calculated.
     /// </summary>
     [LicensedFact]
-    public void RangeCopy_KeepsALinkToTheDestinationWorkbookItself()
+    public void RangeAndSheetCopy_KeepALinkToTheDestinationWorkbookItself()
     {
         using var fixture = new CellsFixture();
         _ = fixture.LicenseState;
@@ -486,21 +487,33 @@ public sealed class CellsKnownIssueTests
             created.Save(feedPath, SaveFormat.Xlsx);
         }
 
+        string stored;
+        using (var package = System.IO.Compression.ZipFile.OpenRead(feedPath))
+        {
+            using var reader = new StreamReader(package.GetEntry("xl/externalLinks/_rels/externalLink1.xml.rels")!.Open());
+            stored = System.Xml.Linq.XDocument.Parse(reader.ReadToEnd()).Root!.Elements().Single().Attribute("Target")!.Value;
+        }
+
         using var feed = new Workbook(feedPath);
         using var budget = new Workbook(budgetPath);
         Aspose.Cells.Cells cells = budget.Worksheets[0].Cells;
         cells["B20"].Formula = formula;
         cells.CreateRange("B9").Copy(feed.Worksheets[0].Cells.CreateRange("B1"), new PasteOptions { PasteType = PasteType.All });
+        Worksheet sheet = budget.Worksheets[budget.Worksheets.Add()];
+        sheet.Copy(feed.Worksheets[0], new CopyOptions());
         budget.CalculateFormula();
         string[] links = [.. budget.Worksheets.ExternalLinks.Cast<ExternalLink>().Select(static link => link.DataSource)];
+        Cell range = cells["B9"];
+        Cell copied = sheet.Cells["B1"];
 
         KnownIssue.Reproduces(
             "CELLS-COPY-SELF-LINK",
-            cells["B20"].Formula == "=Budget!$D$6" && cells["B9"].Formula.Contains('[', StringComparison.Ordinal)
-                && links.Any(static link => Path.GetFileName(link).Equals("budget.xlsx", StringComparison.OrdinalIgnoreCase))
-                && !Equals(cells["B9"].Value, 305170),
-            $"the set formula reads {cells["B20"].Formula}, the copied one {cells["B9"].Formula} = {cells["B9"].Value}, "
-            + $"with the links [{string.Join(", ", links)}]");
+            stored == "budget.xlsx" && cells["B20"].Formula == "=Budget!$D$6"
+                && range.Formula.Contains('[', StringComparison.Ordinal) && !Equals(range.Value, 305170)
+                && copied.Formula.Contains('[', StringComparison.Ordinal) && !Equals(copied.Value, 305170)
+                && links.Any(static link => Path.GetFileName(link).Equals("budget.xlsx", StringComparison.OrdinalIgnoreCase)),
+            $"with the link stored as '{stored}', the set formula reads {cells["B20"].Formula}, the range copy {range.Formula} = {range.Value} "
+            + $"and the sheet copy {copied.Formula} = {copied.Value}, with the links [{string.Join(", ", links)}]");
     }
 
     private sealed class ChineseTotals : GlobalizationSettings

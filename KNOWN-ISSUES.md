@@ -144,10 +144,11 @@ fails, delete the issue's section, the code that names it and the test, then upd
 
 ### CELLS-COPY-SELF-LINK
 
-- **Defect:** `Range.Copy` from another workbook keeps a formula that reads the destination
-  workbook by its own file name, such as `='[budget.xlsx]Budget'!$D$6` copied into
-  `budget.xlsx`, as an external link to the destination itself, which reads as 0 once
-  calculated. Setting the same formula with `Cell.Formula` gives the reference inside the
+- **Defect:** `Range.Copy` and `Worksheet.Copy` from another workbook keep a formula that reads
+  the destination workbook through a link stored relative to the source, as Excel stores a link
+  to a workbook in the same folder, such as `='[budget.xlsx]Budget'!$D$6` copied from a source
+  beside `budget.xlsx` into it, as an external link to the destination itself, which reads as 0
+  once calculated. Setting the same formula with `Cell.Formula` gives the reference inside the
   workbook, `=Budget!$D$6`.
 - **CLI behavior:** `import_range` and `import_sheet` turn such a link into references inside
   the workbook, as `set_formula` gives.
@@ -159,10 +160,12 @@ fails, delete the issue's section, the code that names it and the test, then upd
   header, writes the header's names as members of an array, such as `["Name": null]`, which is
   not JSON; no `JsonSaveOptions` setting writes it as an empty list of records.
 - **CLI behavior:** `cells convert --to json` leaves out the evaluation warning sheets, whose
-  notice is such a row, and refuses a workbook with any other such sheet with
-  `FEATURE_UNSUPPORTED` (`details.reason` `engine-defect`), naming the sheets, before it writes
-  anything.
-- **Workaround:** add a data row below the header, delete the sheet, or convert to csv.
+  notice is such a row, and the sheets that hold only a header row, which it names in
+  `SHEETS_DROPPED`. A workbook whose own sheets all hold only a header row is refused with
+  `FEATURE_UNSUPPORTED` (`details.reason` `engine-defect`), naming the sheets, before anything
+  is written.
+- **Workaround:** add a data row below the header, or convert the sheet to csv with `--sheets`,
+  which writes the header alone.
 - **Reproduction:** [CellsConvertKnownIssueTests](tests/Aspose.Cli.Product.Cells.Tests/CellsConvertKnownIssueTests.cs)
 
 ## Aspose.PDF.Drawing 26.8.0
@@ -206,9 +209,11 @@ fails, delete the issue's section, the code that names it and the test, then upd
 
 - **Defect:** `EmbeddedFiles.Add` with the `FileSpecification` of another document's attachment
   gives the added attachment no media type (an empty `MIMEType`); its name, description and
-  contents are kept.
-- **CLI behavior:** none visible; `pdf merge` and `pdf split` set each copied attachment's media
-  type again after adding it.
+  contents are kept. The type is read from the file only when first asked for, and a
+  specification whose `MIMEType` was not read before the add reads empty afterwards as well, so
+  the type is lost unless it is read first.
+- **CLI behavior:** none visible; `pdf merge` and `pdf split` read each attachment's media type
+  before adding it and set it on the added attachment.
 - **Reproduction:** [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownIssueTests.cs)
 
 ### PDF-OUTLINE-DELETE-TITLE
@@ -356,9 +361,11 @@ fails, delete the issue's section, the code that names it and the test, then upd
   set in a session whose save encrypts the file is written with only the low byte of each
   character, so text beyond Latin-1, such as `采购申请`, reads back garbled. Entries read from the
   file and entries written to a file saved without encryption are kept.
-- **CLI behavior:** a `pdf edit` batch that has `set_properties` and `encrypt_document` saves the edited
-  document without encryption, reopens it and encrypts that copy; so does every PDF command
-  given `--encrypt-env`. On an encrypted input, `set_properties` with text beyond Latin-1 that
+- **CLI behavior:** a PDF command given `--encrypt-env` whose output's document information
+  holds text beyond Latin-1 (past U+00FF) saves the document without encryption, reopens it and
+  encrypts that copy; otherwise it encrypts and saves once. A `pdf edit` batch does the same
+  when it has both `set_properties` and `encrypt_document` and the document information holds
+  such text. On an encrypted input, `set_properties` with text beyond Latin-1 that
   neither a later `encrypt_document` nor `--encrypt-env` follows is refused with `OPS_INVALID`, because
   the CLI cannot encrypt a copy with passwords it does not all know.
 - **Workaround:** add `encrypt_document` after `set_properties` in the same batch, or pass `--encrypt-env`.
@@ -385,6 +392,20 @@ fails, delete the issue's section, the code that names it and the test, then upd
   engine's font, grow the file by its size and warn `SIGNATURE_FONT_EMBEDDED` with the growth.
 - **Workaround:** keep `--reason`, `--location` and `--contact` in ASCII, and use a certificate
   whose subject name is ASCII.
+- **Reproduction:** [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownIssueTests.cs)
+
+### PDF-SIGN-CJK-SIGNER-FONT
+
+- **Defect:** `PdfFileSignature.Sign` chooses the font of a visible signature's appearance from
+  its reason, location and contact alone. When none of them has Chinese text, it draws in Arial,
+  and a signer name in Chinese is left out: the first line reads `Digitally signed by 'CN='`.
+  Japanese text, such as `批准`, gives a Japanese font, MS Gothic, which leaves out a simplified
+  Chinese name such as `张伟`. Naming a Chinese font, such as SimSun, through
+  `SignatureCustomAppearance.FontFamilyName` shows the name.
+- **CLI behavior:** `pdf sign --visible` with a certificate whose subject name is in Chinese and
+  a `--reason`, `--location` and `--contact` without Chinese text shows no signer name.
+- **Workaround:** give `--reason`, `--location` or `--contact` in Chinese, or sign with a
+  certificate whose subject name is in Latin letters.
 - **Reproduction:** [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownIssueTests.cs)
 
 ### PDF-RENDER-THIN-GLYPH
