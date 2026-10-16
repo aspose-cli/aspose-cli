@@ -950,6 +950,7 @@ public sealed record DeleteCommentsOp : WordsOp
 public sealed record ImportSectionsOp : WordsOp
 {
     /// <summary>The document, relative to the working directory.</summary>
+    [MistakenFor("source")]
     [InputPath] public required string Path { get; init; }
 
     /// <summary>Which definition a style both documents name takes: the imported document's (keep-source) or this document's (use-destination). Headers and footers are not styles and come with their sections either way.</summary>

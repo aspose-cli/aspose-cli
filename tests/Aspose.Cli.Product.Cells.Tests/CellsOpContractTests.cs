@@ -309,6 +309,21 @@ public sealed class CellsOpContractTests : IClassFixture<CellsFixture>
         Assert.Contains(remover, error.Hint, StringComparison.Ordinal);
     }
 
+    /// <summary>
+    /// An import that names its file with source, as other tools do, is refused with path as the
+    /// first suggestion and a hint that names it.
+    /// </summary>
+    [Theory]
+    [InlineData("""{"op":"import_range","source":"a.xlsx","from":"Sheet1!A1","to":"Sheet1!B1"}""")]
+    [InlineData("""{"op":"import_sheet","source":"a.xlsx"}""")]
+    public void AnImportThatNamesItsFileSource_SuggestsPath(string operation)
+    {
+        CliException error = Assert.Throws<CliException>(() => Parse($$"""{"ops":[{{operation}}]}"""));
+
+        Assert.Equal("path", error.Details!["suggestions"]!.AsArray()[0]!.GetValue<string>());
+        Assert.StartsWith("Did you mean 'path'", error.Hint, StringComparison.Ordinal);
+    }
+
     private static CellsOpsBatch Parse(string json) =>
         CellsOp.Catalog.Parse<CellsOpsBatch>(json, Aspose.Cli.Generated.ProductJsonContext.Definition);
 

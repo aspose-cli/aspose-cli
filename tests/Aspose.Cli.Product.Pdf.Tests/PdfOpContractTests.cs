@@ -279,6 +279,20 @@ public sealed class PdfOpContractTests
         Assert.True(Assert.IsType<RedactTextOp>(both[1]).CaseSensitive);
     }
 
+    /// <summary>
+    /// An import that names its file with source, as other tools do, is refused with path as the
+    /// first suggestion and a hint that names it.
+    /// </summary>
+    [Theory]
+    [InlineData("""{"op":"import_pages","source":"a.pdf","at":1}""")]
+    public void AnImportThatNamesItsFileSource_SuggestsPath(string operation)
+    {
+        CliException error = Assert.Throws<CliException>(() => Parse($$"""{"ops":[{{operation}}]}"""));
+
+        Assert.Equal("path", error.Details!["suggestions"]!.AsArray()[0]!.GetValue<string>());
+        Assert.StartsWith("Did you mean 'path'", error.Hint, StringComparison.Ordinal);
+    }
+
     private static PdfOpsBatch Parse(string json) =>
         PdfOp.Catalog.Parse<PdfOpsBatch>(json, Aspose.Cli.Generated.ProductJsonContext.Definition);
 }

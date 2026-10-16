@@ -278,6 +278,7 @@ public sealed record InsertSectionOp : SlidesOp
 public sealed record ImportSlidesOp : SlidesOp
 {
     /// <summary>The source presentation, relative to the working directory.</summary>
+    [MistakenFor("source")]
     [InputPath] public required string Path { get; init; }
 
     /// <summary>
