@@ -31,7 +31,14 @@ internal static class WordsCreate
         };
     }
 
-    /// <summary>A template, which opens without a password: an encrypted one is refused with that advice.</summary>
+    // A path as a command line names it: quoted when it holds a space.
+    private static string Quoted(string path) => path.Contains(' ', StringComparison.Ordinal) ? $"\"{path}\"" : path;
+
+    /// <summary>
+    /// A template, which opens without a password: an encrypted one is refused with the convert
+    /// that writes an unencrypted copy of it, Flat OPC, which carries no password but keeps
+    /// everything a template supplies, or else the advice to ask for an unencrypted copy.
+    /// </summary>
     private static LoadedDocument OpenTemplate(WordsSession session, string path)
     {
         try
@@ -40,9 +47,11 @@ internal static class WordsCreate
         }
         catch (CliException error) when (CliErrors.IsPasswordError(error))
         {
+            string copy = Path.Combine(Path.GetDirectoryName(path) ?? string.Empty, Path.GetFileNameWithoutExtension(path) + ".unencrypted.xml");
             throw CliErrors.WithoutPassword(error,
-                "'words create' cannot open an encrypted template. Ask the user for an unencrypted copy of the template, "
-                + "then pass that copy to --template.");
+                "'words create' cannot open an encrypted template. With its password, write an unencrypted copy: "
+                + $"'aspose-cli words convert {Quoted(path)} --to flatopc --out {Quoted(copy)} --password-env <password-env>', "
+                + "then pass that copy to --template. Without the password, ask the user for an unencrypted copy of the template.");
         }
     }
 
