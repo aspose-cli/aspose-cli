@@ -483,6 +483,7 @@
           "ops": [
             "accept_revisions",
             "add_comment",
+            "clear_list",
             "define_style",
             "delete_blocks",
             "delete_comments",

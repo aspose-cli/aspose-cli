@@ -88,6 +88,8 @@ internal sealed partial class WordsSnapshots(LoadedDocument loaded) : IWordsOpHa
 
     public OperationSnapshot Apply(SetListOp operation) => Blocks();
 
+    public OperationSnapshot Apply(ClearListOp operation) => Blocks();
+
     public OperationSnapshot Apply(SetDefaultFontOp operation) => Styles();
 
     public OperationSnapshot Apply(SetPropertiesOp operation) => Properties();

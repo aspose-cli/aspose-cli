@@ -70,7 +70,7 @@ public sealed record WordsBlockData
     /// <summary>The images in a paragraph.</summary>
     public IReadOnlyList<WordsBlockImageData>? Images { get; init; }
 
-    /// <summary>A list paragraph's list: bullets or numbers, and its 1-based level.</summary>
+    /// <summary>A list paragraph's list: bullets or numbers, its 1-based level and, for numbers, their style and first number.</summary>
     public WordsListData? List { get; init; }
 
     /// <summary>

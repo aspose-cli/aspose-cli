@@ -208,6 +208,8 @@ internal static class OperationSamples
         new("words", """{"op":"set_watermark","text":"DRAFT","faded":false,"color":"#C00000","font":"Arial"}"""),
         new("words", """{"op":"import_sections","path":"other.docx"}"""),
         new("words", """{"op":"set_list","target":{"block":2},"kind":"number","level":2}"""),
+        new("words", """{"op":"set_list","target":{"block":2},"kind":"number","numberStyle":"roman-lower","start":3}""", Label: "a number style and a first number"),
+        new("words", """{"op":"clear_list","target":{"block":2}}""", Setup: """[{"op":"set_list","target":{"block":2},"kind":"bullet"}]"""),
         new("words", """{"op":"define_style","name":"Callout","basedOn":"Normal","font":"Arial","latinFont":"Arial","eastAsianFont":"SimSun","fontSize":14,"bold":true,"color":"#C00000","spaceBefore":6,"spaceAfter":12}"""),
         new("words", """{"op":"delete_blocks","target":{"block":2}}"""),
         new("words", """{"op":"delete_section","section":2}""", Setup: """[{"op":"insert_section","at":1,"position":"after"}]"""),

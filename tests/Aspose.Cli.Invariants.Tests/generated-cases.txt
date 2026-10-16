@@ -388,7 +388,7 @@ C-R16 | slides render --slides all
 C-R16 | words convert --pages 1-x
 C-R16 | words convert --pages 99
 C-R16 | words convert --pages all
-C-R16 | words op delete_blocks with a malformed selection
+C-R16 | words op clear_list with a malformed selection
 C-R16 | words read --blocks 1-x
 C-R16 | words read --blocks 99
 C-R16 | words read --blocks all
@@ -653,6 +653,7 @@ C-R17 | v2/words/inspect-result
 C-R17 | v2/words/ops
 C-R17 | v2/words/ops#accept_revisions
 C-R17 | v2/words/ops#add_comment
+C-R17 | v2/words/ops#clear_list
 C-R17 | v2/words/ops#color
 C-R17 | v2/words/ops#define_style
 C-R17 | v2/words/ops#delete_blocks
@@ -937,6 +938,7 @@ C-R18 | v2/words/inspect-result
 C-R18 | v2/words/ops
 C-R18 | v2/words/ops#accept_revisions
 C-R18 | v2/words/ops#add_comment
+C-R18 | v2/words/ops#clear_list
 C-R18 | v2/words/ops#color
 C-R18 | v2/words/ops#define_style
 C-R18 | v2/words/ops#delete_blocks
@@ -1152,6 +1154,7 @@ C-R19 | v2/slides/ops#set_title
 C-R19 | v2/slides/ops#set_transition
 C-R19 | v2/words/ops#accept_revisions
 C-R19 | v2/words/ops#add_comment
+C-R19 | v2/words/ops#clear_list
 C-R19 | v2/words/ops#define_style
 C-R19 | v2/words/ops#delete_blocks
 C-R19 | v2/words/ops#delete_comments
@@ -2595,6 +2598,11 @@ C-R20 | v2/words/ops#add_comment ranges
 C-R20 | v2/words/ops#add_comment secrets
 C-R20 | v2/words/ops#add_comment spelling
 C-R20 | v2/words/ops#add_comment variants
+C-R20 | v2/words/ops#clear_list fixednames
+C-R20 | v2/words/ops#clear_list ranges
+C-R20 | v2/words/ops#clear_list secrets
+C-R20 | v2/words/ops#clear_list spelling
+C-R20 | v2/words/ops#clear_list variants
 C-R20 | v2/words/ops#color fixednames
 C-R20 | v2/words/ops#color ranges
 C-R20 | v2/words/ops#color secrets
@@ -3147,6 +3155,8 @@ C-R21 | v2/words/ops#accept_revisions
 C-R21 | v2/words/ops#accept_revisions unclassified
 C-R21 | v2/words/ops#add_comment
 C-R21 | v2/words/ops#add_comment unclassified
+C-R21 | v2/words/ops#clear_list
+C-R21 | v2/words/ops#clear_list unclassified
 C-R21 | v2/words/ops#define_style
 C-R21 | v2/words/ops#define_style unclassified
 C-R21 | v2/words/ops#delete_blocks
@@ -3554,6 +3564,7 @@ C-R30 | v2/words/edit-result applied
 C-R30 | words accept_revisions
 C-R30 | words add_comment
 C-R30 | words applied[] has no index
+C-R30 | words clear_list
 C-R30 | words define_style
 C-R30 | words delete_blocks
 C-R30 | words delete_comments
@@ -3583,6 +3594,7 @@ C-R30 | words set_default_font
 C-R30 | words set_footer
 C-R30 | words set_header
 C-R30 | words set_list
+C-R30 | words set_list on a number style and a first number
 C-R30 | words set_page_numbers
 C-R30 | words set_page_setup
 C-R30 | words set_properties
@@ -4278,6 +4290,8 @@ C-R33 | v2/words/ops#accept_revisions names
 C-R33 | v2/words/ops#accept_revisions none
 C-R33 | v2/words/ops#add_comment names
 C-R33 | v2/words/ops#add_comment none
+C-R33 | v2/words/ops#clear_list names
+C-R33 | v2/words/ops#clear_list none
 C-R33 | v2/words/ops#color names
 C-R33 | v2/words/ops#color none
 C-R33 | v2/words/ops#define_style names
@@ -5521,6 +5535,7 @@ unknown-field | slides set_title.slide as slidee
 unknown-field | slides set_transition.slides as sildes
 unknown-field | words accept_revisions.author as atuhor
 unknown-field | words add_comment.target as traget
+unknown-field | words clear_list.target as traget
 unknown-field | words define_style.name as namee
 unknown-field | words delete_blocks.target as traget
 unknown-field | words delete_comments.author as atuhor
@@ -5676,6 +5691,7 @@ unknown-op | slides set_title as ste_title
 unknown-op | slides set_transition as ste_transition
 unknown-op | words accept_revisions as accept_revisionss
 unknown-op | words add_comment as add_commentt
+unknown-op | words clear_list as celar_list
 unknown-op | words define_style as dfeine_style
 unknown-op | words delete_blocks as dleete_blocks
 unknown-op | words delete_comments as dleete_comments

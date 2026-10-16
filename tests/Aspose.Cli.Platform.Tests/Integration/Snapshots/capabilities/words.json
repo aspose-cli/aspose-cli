@@ -49,11 +49,12 @@
         "command": "edit",
         "inputSchema": "v2/words/ops",
         "operationSchema": "aspose-cli schema v2/words/ops --operation <op>",
-        "contractFingerprint": "sha256:b6bc4997557e764313c547801c9132b4b7205c1832ec1c7795832c8100c2cddb",
+        "contractFingerprint": "sha256:efb16b4812006cd1c999f31d63b9dfb33ed74eb50634cbe2be1168d9ef9c2f40",
         "maximumOperationCount": 10000,
         "ops": [
           "accept_revisions",
           "add_comment",
+          "clear_list",
           "define_style",
           "delete_blocks",
           "delete_comments",
@@ -4108,6 +4109,22 @@
               "description": "The paragraph's 1-based level in the list.",
               "type": "integer",
               "minimum": 1
+            },
+            "numberStyle": {
+              "description": "How a numbered list numbers the paragraph's level; absent for bullets and for a style set_list does not name.",
+              "type": "string",
+              "enum": [
+                "decimal",
+                "roman-upper",
+                "roman-lower",
+                "letters-upper",
+                "letters-lower"
+              ]
+            },
+            "start": {
+              "description": "The number of the first item at the paragraph's level of a numbered list; absent for bullets.",
+              "type": "integer",
+              "minimum": 0
             }
           }
         },
@@ -4526,6 +4543,9 @@
                 "$ref": "#/$defs/add_comment"
               },
               {
+                "$ref": "#/$defs/clear_list"
+              },
+              {
                 "$ref": "#/$defs/define_style"
               },
               {
@@ -4707,6 +4727,28 @@
               "description": "The comment text.",
               "type": "string",
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/inspect-result.schema.json#/$defs/wordsCommentData/properties/text"
+            }
+          }
+        },
+        "clear_list": {
+          "description": "Takes the paragraphs of target blocks out of their lists; they keep their text and style.",
+          "type": "object",
+          "required": [
+            "op",
+            "target"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "$ref": "#/$defs/id"
+            },
+            "op": {
+              "const": "clear_list"
+            },
+            "target": {
+              "description": "The blocks whose paragraphs leave their lists.",
+              "$ref": "#/$defs/wordsTarget",
+              "x-readBack": "not-state"
             }
           }
         },
@@ -5894,7 +5936,7 @@
           ]
         },
         "set_list": {
-          "description": "Makes the paragraphs of target blocks one new bullet or numbered list.",
+          "description": "Makes the paragraphs of target blocks one new bullet or numbered list; numberStyle and start need kind number.",
           "type": "object",
           "required": [
             "op",
@@ -5930,6 +5972,24 @@
               "maximum": 9,
               "default": 1,
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/read-result.schema.json#/$defs/wordsListData/properties/level"
+            },
+            "numberStyle": {
+              "description": "How the items are numbered, such as letters-lower for a., b., c.; decimal when omitted.",
+              "type": "string",
+              "enum": [
+                "decimal",
+                "roman-upper",
+                "roman-lower",
+                "letters-upper",
+                "letters-lower"
+              ],
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/read-result.schema.json#/$defs/wordsListData/properties/numberStyle"
+            },
+            "start": {
+              "description": "The number of the first item; 1 when omitted.",
+              "type": "integer",
+              "minimum": 0,
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/read-result.schema.json#/$defs/wordsListData/properties/start"
             }
           }
         },
@@ -6774,7 +6834,7 @@
               }
             },
             "list": {
-              "description": "A list paragraph's list: bullets or numbers, and its 1-based level.",
+              "description": "A list paragraph's list: bullets or numbers, its 1-based level and, for numbers, their style and first number.",
               "$ref": "#/$defs/wordsListData"
             },
             "break": {
@@ -6882,6 +6942,22 @@
               "description": "The paragraph's 1-based level in the list.",
               "type": "integer",
               "minimum": 1
+            },
+            "numberStyle": {
+              "description": "How a numbered list numbers the paragraph's level; absent for bullets and for a style set_list does not name.",
+              "type": "string",
+              "enum": [
+                "decimal",
+                "roman-upper",
+                "roman-lower",
+                "letters-upper",
+                "letters-lower"
+              ]
+            },
+            "start": {
+              "description": "The number of the first item at the paragraph's level of a numbered list; absent for bullets.",
+              "type": "integer",
+              "minimum": 0
             }
           }
         },

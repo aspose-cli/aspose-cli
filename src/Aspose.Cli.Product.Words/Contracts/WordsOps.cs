@@ -692,7 +692,10 @@ public sealed record DefineStyleOp : WordsOp
     [Minimum(0)] public double? SpaceAfter { get; init; }
 }
 
-/// <summary>Makes the paragraphs of target blocks one new bullet or numbered list.</summary>
+/// <summary>
+/// Makes the paragraphs of target blocks one new bullet or numbered list; numberStyle and start
+/// need kind number.
+/// </summary>
 [Operation("set_list")]
 [MistakenFor("apply_list")]
 public sealed record SetListOp : WordsOp
@@ -707,6 +710,33 @@ public sealed record SetListOp : WordsOp
     /// <summary>The 1-based list level.</summary>
     [ReadBack("read-result.schema.json#/$defs/wordsListData/properties/level")]
     [Minimum(1), Maximum(9)] public int Level { get; init; } = 1;
+
+    /// <summary>How the items are numbered, such as letters-lower for a., b., c.; decimal when omitted.</summary>
+    [MistakenFor("format")]
+    [ReadBack("read-result.schema.json#/$defs/wordsListData/properties/numberStyle")]
+    [AllowedValues(typeof(WordsListNumberStyles))] public string? NumberStyle { get; init; }
+
+    /// <summary>The number of the first item; 1 when omitted.</summary>
+    [ReadBack("read-result.schema.json#/$defs/wordsListData/properties/start")]
+    [Minimum(0)] public int? Start { get; init; }
+
+    protected override BoundedOperation Validated()
+    {
+        OperationInvalidException.Require(
+            Kind == "number" || (NumberStyle is null && Start is null),
+            "numberStyle and start number a list, and a bullet list shows no numbers",
+            "Give kind number, or drop numberStyle and start.");
+        return this;
+    }
+}
+
+/// <summary>Takes the paragraphs of target blocks out of their lists; they keep their text and style.</summary>
+[Operation("clear_list")]
+[MistakenFor("remove_list")]
+public sealed record ClearListOp : WordsOp
+{
+    /// <summary>The blocks whose paragraphs leave their lists.</summary>
+    public required WordsTarget Target { get; init; }
 }
 
 /// <summary>Sets the font of every paragraph and character style.</summary>
@@ -969,6 +999,7 @@ public sealed record RefreshFieldsOp : WordsOp
 [JsonSerializable(typeof(SetWatermarkOp))]
 [JsonSerializable(typeof(ImportSectionsOp))]
 [JsonSerializable(typeof(SetListOp))]
+[JsonSerializable(typeof(ClearListOp))]
 [JsonSerializable(typeof(DefineStyleOp))]
 [JsonSerializable(typeof(DeleteBlocksOp))]
 [JsonSerializable(typeof(DeleteSectionOp))]
