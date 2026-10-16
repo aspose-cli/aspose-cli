@@ -9,9 +9,12 @@ namespace Aspose.Cli.Product.Cells.Contracts;
 /// file the Cells loader opens, including CSV and TSV, and is only read; it may be the edited file
 /// itself, read as it is on disk before the edit. A reference in an imported formula to another
 /// sheet of the source points at the sheet of that name in this workbook, or becomes #REF! when
-/// this workbook has none. A reference to the edited workbook itself becomes a reference inside
-/// it. A reference to a third workbook keeps its link and is not read through it, so
-/// recalculation uses the values the link cached.
+/// this workbook has none; one that names the copied sheet itself shifts with the copy onto the
+/// destination sheet, as one that names no sheet does, except when the source also has a sheet of
+/// the destination sheet's name: that sheet's references then take the destination, and the copied
+/// sheet's follow the rule for another sheet. A reference to the edited workbook itself becomes a
+/// reference inside it. A reference to a third workbook keeps its link and is not read
+/// through it, so recalculation uses the values the link cached.
 /// </summary>
 [Operation("import_range")]
 public sealed record ImportRangeOp : CellsSheetOp

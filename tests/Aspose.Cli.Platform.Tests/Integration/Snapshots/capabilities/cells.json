@@ -38,7 +38,7 @@
         "command": "edit",
         "inputSchema": "v2/cells/ops",
         "operationSchema": "aspose-cli schema v2/cells/ops --operation <op>",
-        "contractFingerprint": "sha256:94b12910cca56f163dae2775dd59247c5612ea599ece392da09beccd9ec4b573",
+        "contractFingerprint": "sha256:23d33f1543266c03140aa206c9d23e863fe4e3d4128ceb029742a3fdddf7619b",
         "maximumOperationCount": 10000,
         "ops": [
           "add_comment",
@@ -5740,7 +5740,7 @@
           }
         },
         "import_range": {
-          "description": "Copies a range from another workbook file into this one at an anchor cell. The source is any file the Cells loader opens, including CSV and TSV, and is only read; it may be the edited file itself, read as it is on disk before the edit. A reference in an imported formula to another sheet of the source points at the sheet of that name in this workbook, or becomes #REF! when this workbook has none. A reference to the edited workbook itself becomes a reference inside it. A reference to a third workbook keeps its link and is not read through it, so recalculation uses the values the link cached.",
+          "description": "Copies a range from another workbook file into this one at an anchor cell. The source is any file the Cells loader opens, including CSV and TSV, and is only read; it may be the edited file itself, read as it is on disk before the edit. A reference in an imported formula to another sheet of the source points at the sheet of that name in this workbook, or becomes #REF! when this workbook has none; one that names the copied sheet itself shifts with the copy onto the destination sheet, as one that names no sheet does, except when the source also has a sheet of the destination sheet's name: that sheet's references then take the destination, and the copied sheet's follow the rule for another sheet. A reference to the edited workbook itself becomes a reference inside it. A reference to a third workbook keeps its link and is not read through it, so recalculation uses the values the link cached.",
           "type": "object",
           "required": [
             "op",

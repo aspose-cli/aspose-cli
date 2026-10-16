@@ -80,7 +80,7 @@ internal static class ImportOps
         CellsRange destination = toSheet.Cells.CreateRange(
             to.Start.Row, to.Start.Column, from.RowCount, from.ColumnCount);
         bool everything = op.Content == CellsImportContents.Everything;
-        using (new SourceLinks(toSheet.Workbook, source))
+        using (new SourceLinks(toSheet.Workbook, source, new CopiedSheet(fromSheet, toSheet)))
         {
             destination.Copy(origin, new PasteOptions
             {
@@ -259,6 +259,49 @@ internal static class ImportOps
             && string.Equals(area.SheetName, sheet.Name, StringComparison.OrdinalIgnoreCase));
 
     /// <summary>
+    /// The source sheet a range is copied from and the sheet of this workbook it is copied to. A
+    /// copied reference that names the source sheet itself shifts with the copy, as one that names
+    /// no sheet does, so it means the destination sheet rather than a sheet of that name here.
+    /// </summary>
+    private sealed record CopiedSheet(Worksheet From, Worksheet To)
+    {
+        /// <summary>
+        /// Gives the destination the source sheet's name while the copy's links are made local, so
+        /// the references that name the source sheet land on it, then restores the names; the
+        /// references follow the sheets, not the names. A sheet of this workbook with the source
+        /// sheet's name steps aside meanwhile. Nothing is renamed when the names already match, or
+        /// when the source has another sheet with the destination's name, whose references point
+        /// at the destination by that name.
+        /// </summary>
+        internal IDisposable? NameDestinationAsSource()
+        {
+            string original = To.Name;
+            string name = From.Name;
+            if (string.Equals(original, name, StringComparison.OrdinalIgnoreCase)
+                || From.Workbook.Worksheets[original] is not null)
+            {
+                return null;
+            }
+
+            // The lookup ignores case, as sheet names do.
+            Worksheet? aside = To.Workbook.Worksheets[name];
+            string? asideName = aside?.Name;
+            aside?.Name = "~" + Guid.NewGuid().ToString("N")[..24];
+            To.Name = name;
+            return new Restore(() =>
+            {
+                To.Name = original;
+                aside?.Name = asideName!;
+            });
+        }
+
+        private sealed class Restore(Action restore) : IDisposable
+        {
+            public void Dispose() => restore();
+        }
+    }
+
+    /// <summary>
     /// Copying from another workbook turns a reference to a source sheet into a link to the
     /// source file. Disposing removes the links the copy added and makes their references local:
     /// they point at the sheet of the same name in this workbook, or become #REF!. A link the copy
@@ -272,21 +315,44 @@ internal static class ImportOps
         private readonly int _existing;
         private readonly string _source;
         private readonly string? _edited;
+        private readonly CopiedSheet? _copied;
 
-        internal SourceLinks(Workbook workbook, Workbook source)
+        internal SourceLinks(Workbook workbook, Workbook source, CopiedSheet? copied = null)
         {
             _links = workbook.Worksheets.ExternalLinks;
             _existing = _links.Count;
             _source = source.FileName;
             _edited = FullPath(workbook.FileName, null);
+            _copied = copied;
         }
 
         public void Dispose()
         {
+            // The links back to the edited workbook name its sheets as they are, so they are made
+            // local before the destination takes the source sheet's name.
+            var toSource = new List<int>();
             for (int index = _links.Count - 1; index >= _existing; index--)
             {
                 string target = _links[index].DataSource;
-                if (string.Equals(target, _source, StringComparison.OrdinalIgnoreCase) || LinksToEdited(target))
+                if (string.Equals(target, _source, StringComparison.OrdinalIgnoreCase))
+                {
+                    toSource.Add(index);
+                }
+                else if (LinksToEdited(target))
+                {
+                    _links.RemoveAt(index, updateReferencesAsLocal: true);
+                    toSource = [.. toSource.Select(static later => later - 1)];
+                }
+            }
+
+            if (toSource.Count == 0)
+            {
+                return;
+            }
+
+            using (_copied?.NameDestinationAsSource())
+            {
+                foreach (int index in toSource)
                 {
                     _links.RemoveAt(index, updateReferencesAsLocal: true);
                 }

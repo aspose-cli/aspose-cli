@@ -547,6 +547,74 @@ public sealed class CellsImportTests : IClassFixture<CellsFixture>
         Assert.Equal(1, result.Worksheets.ExternalLinks.Count);
     }
 
+    /// <summary>
+    /// A source formula that names the copied sheet itself shifts with the copy like one that
+    /// names no sheet, onto the destination sheet, also when this workbook has a sheet of the
+    /// source sheet's name, in any case. When the source also has a sheet of the destination's
+    /// name, the reference follows the rule for another source sheet instead.
+    /// </summary>
+    [Theory]
+    [InlineData(null, false)]
+    [InlineData("汇率 Rates", false)]
+    [InlineData("汇率 RATES", false)]
+    [InlineData(null, true)]
+    public void ImportRange_AReferenceThatNamesTheCopiedSheetShiftsOntoTheDestinationSheet(string? targetSheet, bool sourceHasTheDestinationName)
+    {
+        string label = $"{targetSheet?.Length ?? 0}-{(targetSheet == "汇率 RATES" ? "upper" : "same")}-{sourceHasTheDestinationName}";
+        string source = _fixture.Temp.File($"fx-{label}.xlsx");
+        using (var workbook = new Workbook())
+        {
+            Worksheet rates = workbook.Worksheets[0];
+            rates.Name = "汇率 Rates";
+            if (sourceHasTheDestinationName)
+            {
+                workbook.Worksheets.Add("预算 Budget");
+            }
+
+            rates.Cells["B2"].PutValue(7);
+            rates.Cells["B3"].PutValue(8);
+            rates.Cells["C2"].Formula = "='汇率 Rates'!B2*100";
+            rates.Cells["C3"].Formula = "=B3*100";
+            workbook.Save(source, SaveFormat.Xlsx);
+        }
+
+        string target = _fixture.Temp.File($"fx-target-{label}.xlsx");
+        using (var workbook = new Workbook())
+        {
+            workbook.Worksheets[0].Name = "预算 Budget";
+            if (targetSheet is not null)
+            {
+                Worksheet same = workbook.Worksheets.Add(targetSheet);
+                same.Cells["G2"].PutValue(1);
+                workbook.Worksheets[0].Cells["A1"].Formula = $"='{targetSheet}'!G2";
+            }
+
+            workbook.Save(target, SaveFormat.Xlsx);
+        }
+
+        using Workbook result = Apply(
+            target,
+            $$"""{ "op": "import_range", "sheet": "预算 Budget", "path": {{Json(source)}}, "from": "'汇率 Rates'!B2:C3", "to": "G2", "content": "all" }""");
+
+        Aspose.Cells.Cells cells = result.Worksheets["预算 Budget"].Cells;
+        Assert.Equal(sourceHasTheDestinationName ? "=#REF!*100" : "='预算 Budget'!G2*100", cells["H2"].Formula);
+        if (!sourceHasTheDestinationName)
+        {
+            Assert.Equal(700d, cells["H2"].DoubleValue);
+        }
+
+        Assert.Equal("=G3*100", cells["H3"].Formula);
+        Assert.Equal(800d, cells["H3"].DoubleValue);
+        Assert.Equal(0, result.Worksheets.ExternalLinks.Count);
+        if (targetSheet is not null)
+        {
+            // The workbook's own sheet of that name keeps its name and the references to it.
+            Assert.Equal(targetSheet, result.Worksheets[1].Name);
+            Assert.Equal($"='{targetSheet}'!G2", cells["A1"].Formula);
+            Assert.Equal(1d, cells["A1"].DoubleValue);
+        }
+    }
+
     private static readonly (byte R, byte G, byte B) FillColor = (0xFF, 0xF2, 0xCC);
 
     /// <summary>
