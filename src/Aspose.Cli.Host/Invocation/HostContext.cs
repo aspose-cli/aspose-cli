@@ -14,7 +14,7 @@ internal sealed class HostContext
         _parser = new Lazy<InvocationParser>(() =>
         {
             var root = Commands.RootCommandFactory.Create(this, out GlobalOptions globals);
-            return new InvocationParser(root, globals);
+            return new InvocationParser(root, globals, catalog);
         });
         ContractJson = new ContractJsonSerializer(catalog.JsonDefinitions);
         Schemas = new Aspose.Cli.Host.Commands.HostSchemaCatalog(catalog);

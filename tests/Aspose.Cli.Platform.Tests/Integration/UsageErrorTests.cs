@@ -39,6 +39,34 @@ public sealed class UsageErrorTests : IDisposable
         Assert.Equal("words inspect", error["details"]!["suggestions"]![0]!.GetValue<string>());
     }
 
+    /// <summary>
+    /// A product's command written without its product, such as <c>read a.docx</c>, suggests the
+    /// command of the product whose format the file's extension names, ready to run.
+    /// </summary>
+    [Theory]
+    [InlineData("read file a.docx", "words read", "Run 'aspose-cli words read a.docx ")]
+    [InlineData("read a.docx", "words read", "Run 'aspose-cli words read a.docx ")]
+    [InlineData("inspect b.xlsx", "cells inspect", "Run 'aspose-cli cells inspect b.xlsx ")]
+    public void AProductCommandWithoutItsProduct_SuggestsTheProductOfItsFile(string commandLine, string suggestion, string run)
+    {
+        Assert.Equal(0, _workspace.Run("cells", "create", "b.xlsx", "--output-format", "json").ExitCode);
+
+        JsonNode error = Refused(commandLine, "USAGE_ERROR");
+
+        Assert.Equal(suggestion, error["details"]!["suggestions"]![0]!.GetValue<string>());
+        Assert.Contains(run, error["hint"]!.GetValue<string>(), StringComparison.Ordinal);
+    }
+
+    /// <summary>A file whose extension no product claims suggests no product's command.</summary>
+    [Fact]
+    public void AProductCommandWithoutItsProduct_SuggestsNoProductForAnUnknownExtension()
+    {
+        JsonNode error = Refused("read a.zzq", "USAGE_ERROR");
+
+        Assert.Null(error["details"]!["suggestions"]);
+        Assert.DoesNotContain("read", error["hint"]!.GetValue<string>(), StringComparison.Ordinal);
+    }
+
     [Theory]
     [InlineData("words inspect a.docx --detail bogus", "--detail")]
     [InlineData("words convert a.docx --to docx --out a.foo", "--out")]
