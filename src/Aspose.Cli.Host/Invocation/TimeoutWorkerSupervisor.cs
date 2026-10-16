@@ -67,7 +67,8 @@ internal static class TimeoutWorkerSupervisor
         Func<ProcessStartInfo> startInfoFactory, GlobalValues? inherited = null,
         bool redirectInput = false, string? stdin = null)
     {
-        string root = UserStorage.CreateTemporaryDirectory("worker");
+        WorkerOutputSession.RemoveAbandonedRoots();
+        string root = WorkerOutputSession.CreateRoot();
         string manifest = Path.Combine(root, WorkerOutputSession.ManifestName);
         bool safeToClean = true;
         try

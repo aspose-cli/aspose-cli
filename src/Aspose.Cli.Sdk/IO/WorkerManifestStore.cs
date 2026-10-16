@@ -70,13 +70,27 @@ internal static class WorkerManifestStore
         return contents;
     }
 
+    internal const string RootCategory = "worker";
+
+    /// <summary>Reads the owning process from a worker root name, <c>pid-startTicks-guid</c>.</summary>
+    internal static bool TryParseRootOwner(string name, out int pid, out long ticks)
+    {
+        string[] parts = name.Split('-');
+        ticks = 0;
+        pid = 0;
+        return parts.Length == 3
+            && int.TryParse(parts[0], System.Globalization.NumberStyles.None, System.Globalization.CultureInfo.InvariantCulture, out pid) && pid > 0
+            && long.TryParse(parts[1], System.Globalization.NumberStyles.None, System.Globalization.CultureInfo.InvariantCulture, out ticks) && ticks > 0
+            && Guid.TryParseExact(parts[2], "N", out _);
+    }
+
     internal static (string Root, string Manifest) ValidateSessionPaths(string root, string manifestPath)
     {
         string fullRoot = Canonical(root);
         string path = Canonical(manifestPath);
-        string category = Path.Combine(UserStorage.TemporaryRoot(), "worker");
+        string category = Path.Combine(UserStorage.TemporaryRoot(), RootCategory);
         if (!PathComparer.Equals(Path.GetDirectoryName(fullRoot), category)
-            || !Guid.TryParseExact(Path.GetFileName(fullRoot), "N", out _)
+            || !TryParseRootOwner(Path.GetFileName(fullRoot), out _, out _)
             || !PathComparer.Equals(Path.GetDirectoryName(path), fullRoot)
             || Path.GetFileName(path) != WorkerOutputSession.ManifestName)
         {

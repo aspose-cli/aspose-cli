@@ -158,6 +158,47 @@ public sealed class ProductPublicationTests
             Directory.GetFiles(tree, "*", SearchOption.AllDirectories).Length);
     }
 
+    // A CLI killed with its worker leaves the worker's private staging, which can hold decrypted
+    // copies, in the user's temporary directory; the next supervised command removes it.
+    [Fact]
+    public void ATimeoutCommandRemovesOnlyTheWorkerRootsOfOwnersThatHaveExited()
+    {
+        using var workspace = new TempWorkspace();
+        string workers = Directory.CreateDirectory(
+            Path.Combine(Aspose.Cli.Sdk.IO.UserStorage.TemporaryRoot(), "worker")).FullName;
+        using var self = System.Diagnostics.Process.GetCurrentProcess();
+        long started = self.StartTime.ToUniversalTime().Ticks;
+        // The owner's identity is its process id and start time, so a start time this process
+        // never had names an owner that has exited.
+        string exited = Root(workers, $"{Environment.ProcessId}-1-{Guid.NewGuid():N}");
+        string live = Root(workers, $"{Environment.ProcessId}-{started}-{Guid.NewGuid():N}");
+        string other = Root(workers, $"not-a-worker-{Guid.NewGuid():N}");
+        try
+        {
+            workspace.Run(["skill", "install", "aspose-cli-pdf", "--target", workspace.File("skills"),
+                "--output-format", "json", "--timeout", TestDeadline.CliTimeout]).Succeeded();
+
+            Assert.False(Directory.Exists(exited));
+            Assert.True(File.Exists(Path.Combine(live, "copy.bin")));
+            Assert.True(File.Exists(Path.Combine(other, "copy.bin")));
+        }
+        finally
+        {
+            foreach (string root in new[] { exited, live, other })
+            {
+                if (Directory.Exists(root)) { Directory.Delete(root, recursive: true); }
+            }
+        }
+
+        static string Root(string workers, string name)
+        {
+            string root = Directory.CreateDirectory(Path.Combine(workers, name, "000001-scratch")).Parent!.FullName;
+            File.WriteAllText(Path.Combine(root, "copy.bin"), "decrypted");
+            File.WriteAllText(Path.Combine(root, "000001-scratch", "part.bin"), "decrypted");
+            return root;
+        }
+    }
+
     private static string CreateCertificate(TempWorkspace workspace, string password)
     {
         using RSA key = RSA.Create(2048);

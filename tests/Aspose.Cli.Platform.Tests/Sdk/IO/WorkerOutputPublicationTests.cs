@@ -10,7 +10,7 @@ public sealed class WorkerOutputPublicationTests : IDisposable
 {
     private readonly TempDirectory _temp = new();
     private readonly string _workerRoot =
-        UserStorage.CreateTemporaryDirectory("worker");
+        WorkerOutputSession.CreateRoot();
 
     private string ManifestPath =>
         Path.Combine(_workerRoot, WorkerOutputSession.ManifestName);

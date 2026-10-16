@@ -24,6 +24,46 @@ public sealed class WorkerOutputSession
         (_root, _manifestPath) = WorkerManifestStore.ValidateSessionPaths(root, manifestPath);
     }
 
+    /// <summary>
+    /// Creates a worker's private root, named for the process that owns it, so a later
+    /// invocation can tell when that owner has exited (<see cref="RemoveAbandonedRoots"/>).
+    /// </summary>
+    public static string CreateRoot() => UserStorage.CreateTemporaryDirectory(
+        WorkerManifestStore.RootCategory, $"{Environment.ProcessId}-{PublicationJournal.CurrentProcessStartUtcTicks}");
+
+    /// <summary>
+    /// Removes the worker roots whose owners exited without reclaiming them, such as a CLI
+    /// killed with its worker, since they can hold decrypted copies. It lists only the worker
+    /// category, leaves every root whose owner is alive or whose name is not one this CLI gives,
+    /// follows no link, and keeps what it cannot delete for a later invocation.
+    /// </summary>
+    public static int RemoveAbandonedRoots()
+    {
+        int removed = 0;
+        try
+        {
+            string category = Path.Combine(UserStorage.TemporaryRoot(), WorkerManifestStore.RootCategory);
+            if (!Directory.Exists(category)) { return 0; }
+            foreach (string root in Directory.EnumerateDirectories(category))
+            {
+                if (removed >= MaximumAbandonedRootsPerSweep) { break; }
+                if (!WorkerManifestStore.TryParseRootOwner(Path.GetFileName(root), out int pid, out long ticks)
+                    || AtomicPublicationRecovery.IsCreatorAlive(pid, ticks))
+                { continue; }
+                try
+                {
+                    if (UserStorage.TryDeleteTree(root)) { removed++; }
+                }
+                catch (Exception error) when (error is IOException or UnauthorizedAccessException) { }
+            }
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException) { }
+        return removed;
+    }
+
+    // Bounds the work one invocation spends on another's debris; the rest waits for the next.
+    private const int MaximumAbandonedRootsPerSweep = 16;
+
     /// <summary>Creates scratch storage reclaimed with this worker, including after forced termination.</summary>
     public string CreateDirectory(string operation)
     {

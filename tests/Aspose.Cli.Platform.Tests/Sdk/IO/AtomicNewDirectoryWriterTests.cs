@@ -113,7 +113,7 @@ public sealed class AtomicNewDirectoryWriterTests
     public void Worker_RetainsCandidateUntilParentPublishesAndThenReclaimsItsStorage()
     {
         using var temp = new TempDirectory();
-        string workerRoot = UserStorage.CreateTemporaryDirectory("worker");
+        string workerRoot = WorkerOutputSession.CreateRoot();
         try
         {
             string manifest = Path.Combine(workerRoot, WorkerOutputSession.ManifestName);
@@ -141,7 +141,7 @@ public sealed class AtomicNewDirectoryWriterTests
     public void Worker_RejectsChangedOrExtraCandidateFiles(bool extra)
     {
         using var temp = new TempDirectory();
-        string workerRoot = UserStorage.CreateTemporaryDirectory("worker");
+        string workerRoot = WorkerOutputSession.CreateRoot();
         try
         {
             string manifest = Path.Combine(workerRoot, WorkerOutputSession.ManifestName);
@@ -163,7 +163,7 @@ public sealed class AtomicNewDirectoryWriterTests
     public void Worker_RejectsMixedDirectoryAndFileOutputSets()
     {
         using var temp = new TempDirectory();
-        string workerRoot = UserStorage.CreateTemporaryDirectory("worker");
+        string workerRoot = WorkerOutputSession.CreateRoot();
         try
         {
             var worker = new WorkerOutputSession(workerRoot, Path.Combine(workerRoot, WorkerOutputSession.ManifestName));
@@ -226,7 +226,7 @@ public sealed class AtomicNewDirectoryWriterTests
         using var temp = new TempDirectory();
         string parent = temp.File("parent");
         Directory.CreateDirectory(parent);
-        string workerRoot = UserStorage.CreateTemporaryDirectory("worker");
+        string workerRoot = WorkerOutputSession.CreateRoot();
         try
         {
             string manifest = Path.Combine(workerRoot, WorkerOutputSession.ManifestName);
@@ -414,7 +414,7 @@ public sealed class AtomicNewDirectoryWriterTests
     {
         using var temp = new TempDirectory();
         string target = Existing(temp);
-        string workerRoot = UserStorage.CreateTemporaryDirectory("worker");
+        string workerRoot = WorkerOutputSession.CreateRoot();
         try
         {
             string manifest = Path.Combine(workerRoot, WorkerOutputSession.ManifestName);
@@ -508,7 +508,7 @@ public sealed class AtomicNewDirectoryWriterTests
         using var temp = new TempDirectory();
         string root = temp.File("root");
         string target = Existing(Path.Combine(root, "result"));
-        string workerRoot = UserStorage.CreateTemporaryDirectory("worker");
+        string workerRoot = WorkerOutputSession.CreateRoot();
         try
         {
             string manifest = Path.Combine(workerRoot, WorkerOutputSession.ManifestName);

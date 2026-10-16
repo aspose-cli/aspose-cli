@@ -252,7 +252,7 @@ public sealed class LicenseInstallerTests
         string installed = Path.Combine(directory, "installed.lic");
         string deleted = Path.Combine(temp.Path, "license.lic");
         WriteFile(deleted, "old license");
-        string workerRoot = UserStorage.CreateTemporaryDirectory("worker");
+        string workerRoot = WorkerOutputSession.CreateRoot();
         string manifestPath = Path.Combine(workerRoot, WorkerOutputSession.ManifestName);
         var worker = new WorkerOutputSession(workerRoot, manifestPath);
         using var deadline = OperationDeadline.Start(null);

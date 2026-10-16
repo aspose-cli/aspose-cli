@@ -299,7 +299,7 @@ public sealed class ReviewEvidenceWriterTests
     public void Write_WorkerOwnsAllReviewCandidatesUntilParentPublication()
     {
         using var temp = new TempDirectory();
-        string workerRoot = Aspose.Cli.Sdk.IO.UserStorage.CreateTemporaryDirectory("worker");
+        string workerRoot = Aspose.Cli.Sdk.IO.WorkerOutputSession.CreateRoot();
         try
         {
             string manifest = Path.Combine(workerRoot, Aspose.Cli.Sdk.IO.WorkerOutputSession.ManifestName);

@@ -548,7 +548,8 @@ internal sealed class AtomicPublicationRecovery(AtomicPublicationPlan plan)
         && !File.Exists(Path.Combine(directory, AtomicPublicationPlan.JournalName))
         && !IsCreatorAlive(pid, ticks);
 
-    private static bool IsCreatorAlive(int pid, long ticks)
+    /// <summary>Whether the process with this id and start time still runs; unknown counts as alive.</summary>
+    internal static bool IsCreatorAlive(int pid, long ticks)
     {
         try
         {
