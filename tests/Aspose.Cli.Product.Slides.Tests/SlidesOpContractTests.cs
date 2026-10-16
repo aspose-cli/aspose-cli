@@ -115,6 +115,20 @@ public sealed class SlidesOpContractTests
         return Schema.Value.Evaluate(document.RootElement).IsValid;
     }
 
+    /// <summary>
+    /// An import that names its file with source, as other tools do, is refused with path as the
+    /// first suggestion and a hint that names it.
+    /// </summary>
+    [Theory]
+    [InlineData("""{"op":"import_slides","source":"a.pptx"}""")]
+    public void AnImportThatNamesItsFileSource_SuggestsPath(string operation)
+    {
+        CliException error = Assert.Throws<CliException>(() => Parse($$"""{"ops":[{{operation}}]}"""));
+
+        Assert.Equal("path", error.Details!["suggestions"]!.AsArray()[0]!.GetValue<string>());
+        Assert.StartsWith("Did you mean 'path'", error.Hint, StringComparison.Ordinal);
+    }
+
     private static SlidesOpsBatch Parse(string json) =>
         SlidesOp.Catalog.Parse<SlidesOpsBatch>(json, Aspose.Cli.Generated.ProductJsonContext.Definition);
 }

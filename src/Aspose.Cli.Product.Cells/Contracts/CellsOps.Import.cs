@@ -20,6 +20,7 @@ namespace Aspose.Cli.Product.Cells.Contracts;
 public sealed record ImportRangeOp : CellsSheetOp
 {
     /// <summary>The source workbook file, relative to the working directory.</summary>
+    [MistakenFor("source")]
     [InputPath, Pattern(@"\S")] public required string Path { get; init; }
 
     /// <summary>The source range; it may name a source sheet, such as Sheet1!A1:D20, and otherwise lies on the source's first sheet.</summary>
@@ -76,6 +77,7 @@ public sealed record ImportSheetOp : CellsOp
     [Pattern(@"\S")] public string? SourceSheet { get; init; }
 
     /// <summary>The source workbook file, relative to the working directory.</summary>
+    [MistakenFor("source")]
     [InputPath, Pattern(@"\S")] public required string Path { get; init; }
 
     /// <summary>

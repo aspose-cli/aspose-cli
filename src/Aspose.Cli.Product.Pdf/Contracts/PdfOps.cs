@@ -147,6 +147,7 @@ public sealed record MovePagesOp : PdfOp
 public sealed record ImportPagesOp : PdfOp
 {
     /// <summary>The source PDF, relative to the working directory.</summary>
+    [MistakenFor("source")]
     [InputPath] public required string Path { get; init; }
 
     /// <summary>The source pages; every page when omitted.</summary>

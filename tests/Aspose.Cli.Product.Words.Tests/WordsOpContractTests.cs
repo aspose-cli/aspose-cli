@@ -129,6 +129,20 @@ public sealed class WordsOpContractTests
         return Schema.Value.Evaluate(document.RootElement).IsValid;
     }
 
+    /// <summary>
+    /// An import that names its file with source, as other tools do, is refused with path as the
+    /// first suggestion and a hint that names it.
+    /// </summary>
+    [Theory]
+    [InlineData("""{"op":"import_sections","source":"a.docx"}""")]
+    public void AnImportThatNamesItsFileSource_SuggestsPath(string operation)
+    {
+        CliException error = Assert.Throws<CliException>(() => Parse($$"""{"ops":[{{operation}}]}"""));
+
+        Assert.Equal("path", error.Details!["suggestions"]!.AsArray()[0]!.GetValue<string>());
+        Assert.StartsWith("Did you mean 'path'", error.Hint, StringComparison.Ordinal);
+    }
+
     private static WordsOpsBatch Parse(string json) =>
         WordsOp.Catalog.Parse<WordsOpsBatch>(json, Aspose.Cli.Generated.ProductJsonContext.Definition);
 }
