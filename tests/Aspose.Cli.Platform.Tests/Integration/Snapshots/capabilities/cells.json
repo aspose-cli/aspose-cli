@@ -38,7 +38,7 @@
         "command": "edit",
         "inputSchema": "v2/cells/ops",
         "operationSchema": "aspose-cli schema v2/cells/ops --operation <op>",
-        "contractFingerprint": "sha256:9f67c1e64958be370fb73917cf6f07c91ad35422e69e4b63daf64b7174b328c7",
+        "contractFingerprint": "sha256:94b12910cca56f163dae2775dd59247c5612ea599ece392da09beccd9ec4b573",
         "maximumOperationCount": 10000,
         "ops": [
           "add_comment",
@@ -5740,7 +5740,7 @@
           }
         },
         "import_range": {
-          "description": "Copies a range from another workbook file into this one at an anchor cell. The source is any file the Cells loader opens, including CSV and TSV, and is only read; it may be the edited file itself, read as it is on disk before the edit. A reference in an imported formula to another sheet of the source points at the sheet of that name in this workbook, or becomes #REF! when this workbook has none. A reference to a third workbook keeps its link and is not read through it, so recalculation uses the values the link cached.",
+          "description": "Copies a range from another workbook file into this one at an anchor cell. The source is any file the Cells loader opens, including CSV and TSV, and is only read; it may be the edited file itself, read as it is on disk before the edit. A reference in an imported formula to another sheet of the source points at the sheet of that name in this workbook, or becomes #REF! when this workbook has none. A reference to the edited workbook itself becomes a reference inside it. A reference to a third workbook keeps its link and is not read through it, so recalculation uses the values the link cached.",
           "type": "object",
           "required": [
             "op",
@@ -5798,7 +5798,7 @@
           }
         },
         "import_sheet": {
-          "description": "Copies a whole sheet from another workbook file into this one as a new sheet, with its values, formulas, formatting, merged cells, column widths, tables, charts, pivot tables, comments, hyperlinks, validation and conditional formatting. The source is only read and may be the edited file itself, read as it is on disk before the edit. A reference to another sheet of the source points at the sheet of that name in this workbook, or becomes #REF! when this workbook has none, and the defined names the sheet refers to come along. A source that defines a workbook-level name this workbook also defines differently is refused unless the name refers only to the imported sheet. A reference to a third workbook keeps its link and is not read through it, so recalculation uses the values the link cached.",
+          "description": "Copies a whole sheet from another workbook file into this one as a new sheet, with its values, formulas, formatting, merged cells, column widths, tables, charts, pivot tables, comments, hyperlinks, validation and conditional formatting. The source is only read and may be the edited file itself, read as it is on disk before the edit. A reference to another sheet of the source points at the sheet of that name in this workbook, or becomes #REF! when this workbook has none, and the defined names the sheet refers to come along. A source that defines a workbook-level name this workbook also defines differently is refused unless the name refers only to the imported sheet. A reference to the edited workbook itself becomes a reference inside it. A reference to a third workbook keeps its link and is not read through it, so recalculation uses the values the link cached.",
           "type": "object",
           "required": [
             "op",

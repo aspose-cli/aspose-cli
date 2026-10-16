@@ -150,6 +150,9 @@ cells:
   imported formulas use come along unless this workbook defines them;
   `import_sheet` refuses a source whose workbook-level name this workbook
   defines differently.
+- A reference back to the edited workbook itself, such as
+  `='[budget.xlsx]Budget'!$D$6` in a source beside `budget.xlsx`, becomes an
+  internal reference (`='Budget'!$D$6`), as `set_formula` makes it.
 - A reference to a third workbook keeps its link and is not read through it, so
   recalculation uses the values the link cached. A link that caches no values
   shows `#REF!` in the source but reads as empty, usually 0, once imported;
