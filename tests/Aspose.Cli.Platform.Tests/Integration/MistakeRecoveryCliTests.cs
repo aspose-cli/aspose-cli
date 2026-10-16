@@ -212,6 +212,33 @@ public sealed class MistakeRecoveryCliTests : IDisposable
         Assert.Contains($"'{suggestion}'", error["hint"]!.GetValue<string>(), StringComparison.Ordinal);
     }
 
+    /// <summary>
+    /// An extension close to none the command writes but to one a sibling command writes, such as
+    /// <c>.pfd</c> beside the <c>.pdf</c> of convert, suggests that extension and the sibling
+    /// that writes it, as the extension itself would.
+    /// </summary>
+    [Theory]
+    [InlineData("words edit a.docx --ops words.json --out x.pfd", ".pdf", "then run 'aspose-cli words convert <that file> --to pdf' for pdf")]
+    [InlineData("cells edit a.xlsx --set Sheet1!A1=5 --out x.pfd", ".pdf", "then run 'aspose-cli cells convert <that file> --to pdf' for pdf")]
+    public void MistypedExtensionOfASiblingsFormat_SuggestsItAndTheSibling(string commandLine, string suggestion, string producer)
+    {
+        File.WriteAllText(_workspace.File("a.docx"), "not a document");
+        File.WriteAllText(_workspace.File("a.xlsx"), "not a document");
+        File.WriteAllText(_workspace.File("words.json"), """{"ops":[{"op":"set_properties","title":"x"}]}""");
+
+        CliResult result = _workspace.Run([.. commandLine.Split(' '), "--output-format", "json"]);
+
+        Assert.Equal(2, result.ExitCode);
+        JsonNode error = JsonNode.Parse(result.StdErr)!["error"]!;
+        Assert.Equal("OPTION_INVALID", error["code"]!.GetValue<string>());
+        Assert.Equal([suggestion], error["details"]!["suggestions"]!.AsArray().Select(static extension => extension!.GetValue<string>()));
+        Assert.Equal("pdf", error["details"]!["format"]!.GetValue<string>());
+        string hint = error["hint"]!.GetValue<string>();
+        Assert.StartsWith($"Did you mean '{suggestion}'?", hint, StringComparison.Ordinal);
+        Assert.Contains(producer, hint, StringComparison.Ordinal);
+        Assert.False(File.Exists(_workspace.File("x.pfd")));
+    }
+
     [Theory]
     [InlineData("slides edit a.pptx --ops ops.json --out noext", "noext")]
     [InlineData("slides edit a.pptx --ops ops.json --out dotonly.", "dotonly")]

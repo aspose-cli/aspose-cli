@@ -357,15 +357,28 @@ public partial class StandardInvocation
         bool inputs = images && !derived && extension.Length > 1 && _options.Input is { } input
             && _parse.GetValue(input) is { } given
             && string.Equals(Path.GetExtension(given), extension, StringComparison.OrdinalIgnoreCase);
-        (string Format, string Command)? producer = extension.Length > 1 && !inputs ? Producer(extension, images && !derived ? output : null) : null;
+        string[] extensions = [.. writes.SelectMany(static format => format.Extensions).Distinct(StringComparer.OrdinalIgnoreCase)];
+        string? producerOutput = images && !derived ? output : null;
+        (string Format, string Command)? producer = extension.Length > 1 && !inputs ? Producer(extension, producerOutput) : null;
+        // A mistyped extension close to none the command writes may stand for one a sibling
+        // writes, as .htlm stands for the .html of convert: that extension is answered as itself.
+        string? meant = extension.Length > 1 && !inputs && producer is null
+            && Mistake.Of(extension, extensions, keyOf: ExtensionKey).Suggestions.Count == 0
+            ? Mistake.Of(extension, SiblingExtensions(), keyOf: ExtensionKey).Suggestions.FirstOrDefault()
+            : null;
+        if (meant is not null)
+        {
+            producer = Producer(meant, producerOutput is null ? null : Path.ChangeExtension(producerOutput, meant));
+        }
+
         string problem = (extension.Length > 1, producer) switch
         {
             _ when inputs => $"has the {extension} extension of its input, which already is that file; {command} writes only images",
+            (true, { } other) when meant is not null => $"has the {extension} extension, which names no format; the closest, {meant}, names {other.Format}, which {command} does not write",
             (true, { } other) => $"has the {extension} extension of {other.Format}, which {command} does not write",
             (true, null) => $"has the {extension} extension, which names no format {command} writes",
             _ => $"has no extension, which names the format {command} writes",
         };
-        string[] extensions = [.. writes.SelectMany(static format => format.Extensions).Distinct(StringComparer.OrdinalIgnoreCase)];
         // An option is named as written; a positional argument by its name, as in "the file".
         bool option = parameter.StartsWith('-');
         string fix = derived
@@ -385,8 +398,30 @@ public partial class StandardInvocation
             extensions,
             mistyped: extension.Length > 1 && producer is null && !inputs,
             hint,
-            producer is { } named ? new JsonObject { ["format"] = named.Format } : []);
+            producer is { } named ? new JsonObject { ["format"] = named.Format } : [],
+            meant);
     }
+
+    // An extension as a mistake compares it: without its dot, ignoring case.
+    private static string ExtensionKey(string extension) => extension.TrimStart('.').ToLowerInvariant();
+
+    // The visible commands beside this one, with the formats each writes through its --to.
+    private IEnumerable<(string Command, TargetFormat Target)> SiblingTargets() =>
+        _parse.CommandResult.Parent is not CommandResult parent
+            ? []
+            : parent.Command.Subcommands
+                .Where(command => !command.Hidden && command != _parse.CommandResult.Command)
+                .SelectMany(static command => command.Options
+                    .Select(StandardOptions.TargetOf)
+                    .OfType<TargetFormat>()
+                    .Select(target => (command.Name, target)));
+
+    // The extensions of the formats the commands beside this one write, in declared order.
+    private string[] SiblingExtensions() =>
+        [.. SiblingTargets()
+            .SelectMany(static sibling => sibling.Target.Offered)
+            .SelectMany(static format => format.Extensions)
+            .Distinct(StringComparer.OrdinalIgnoreCase)];
 
     /// <summary>
     /// The format an extension names among those the commands beside this one write through
@@ -397,22 +432,12 @@ public partial class StandardInvocation
     /// <param name="output">The output as the caller gave it, for a command whose output is not a document to convert; otherwise null.</param>
     private (string Format, string Command)? Producer(string extension, string? output)
     {
-        if (_parse.CommandResult.Parent is not CommandResult parent)
-        {
-            return null;
-        }
-
         string[] path = CommandPath();
         string[] source = output is not null && _options.Input is { } input && _parse.GetValue(input) is { } given
             ? [Quoted(given)]
             : ["<that file>"];
         string[] target = output is null ? [] : [StandardOptionNames.Out, Quoted(output)];
-        return parent.Command.Subcommands
-            .Where(command => !command.Hidden && command != _parse.CommandResult.Command)
-            .SelectMany(static command => command.Options
-                .Select(StandardOptions.TargetOf)
-                .OfType<TargetFormat>()
-                .Select(target => (Command: command.Name, Target: target)))
+        return SiblingTargets()
             .Select(sibling => sibling.Target.Offered.DeclaringExtension(extension) is [var format, ..]
                 ? ((string Format, string Command)?)(format.Id, string.Join(' ',
                     [DistributionInfo.CommandName, .. path[..^1], sibling.Command, .. source, StandardOptionNames.To, format.Id, .. target]))

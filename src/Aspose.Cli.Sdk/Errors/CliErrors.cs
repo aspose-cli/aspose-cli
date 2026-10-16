@@ -786,6 +786,11 @@ public static partial class CliErrors
     /// </param>
     /// <param name="hint">How to fix the command line.</param>
     /// <param name="facts">The format that decided <paramref name="extensions"/>, or the one the extension names.</param>
+    /// <param name="meant">
+    /// The extension a mistyped one stands for when it is none of <paramref name="extensions"/>
+    /// but that of a format another command writes, such as <c>.pdf</c> for <c>.pfd</c>; it is
+    /// the suggestion. Null otherwise.
+    /// </param>
     internal static CliException OutputExtensionInvalid(
         string parameter,
         string output,
@@ -794,11 +799,13 @@ public static partial class CliErrors
         IReadOnlyList<string> extensions,
         bool mistyped,
         string hint,
-        JsonObject facts)
+        JsonObject facts,
+        string? meant = null)
     {
         string extension = Path.GetExtension(output);
         // Only a mistyped extension is compared; an empty request is close to nothing.
-        var mistake = Mistake.Of(mistyped ? extension : string.Empty, extensions, keyOf: static name => name.TrimStart('.').ToLowerInvariant());
+        var mistake = Mistake.Of(mistyped || meant is not null ? extension : string.Empty, extensions, meant,
+            keyOf: static name => name.TrimStart('.').ToLowerInvariant());
         facts[ParameterKey(parameter)] = parameter;
         facts["extension"] = extension;
         mistake.WriteTo(facts);
