@@ -82,7 +82,7 @@ internal sealed class ParsedInvocation
         if (Problems() is { } refused)
         {
             throw refused.ValuesOnly
-                ? CliErrors.OptionValuesRefused(refused.Problems, refused.Parameter!, refused.Mistake)
+                ? CliErrors.OptionValuesRefused(refused.Problems, refused.Parameter!, refused.Mistake, refused.Hint)
                 : CliErrors.Usage(refused.Problems, refused.Mistake, refused.Corrected, refused.Parameter, refused.Hint);
         }
     }
@@ -133,7 +133,7 @@ internal sealed class ParsedInvocation
         RefusedValue? first = ParseResult.Errors.Select(error => values.GetValueOrDefault(error)).FirstOrDefault(static value => value is not null);
         if (first is not null && values.Count == ParseResult.Errors.Count && optionLike.Length == 0)
         {
-            return new(problems, first.Mistake, first.Parameter, ValuesOnly: true);
+            return new(problems, first.Mistake, first.Parameter, ValuesOnly: true) { Hint = first.Hint };
         }
 
         string? unknownOption = ParseResult.UnmatchedTokens.Concat(optionLike).FirstOrDefault(static token => token.StartsWith('-'));
@@ -223,7 +223,11 @@ internal sealed class ParsedInvocation
     }
 
     /// <summary>A value the command refused: the sentence that states it, its option or argument, and the mistake when it has a list of values.</summary>
-    private sealed record RefusedValue(string Problem, string Parameter, Mistake? Mistake);
+    private sealed record RefusedValue(string Problem, string Parameter, Mistake? Mistake)
+    {
+        /// <summary>The advice to run another command that takes the value, in place of the advice to read help.</summary>
+        public string? Hint { get; init; }
+    }
 
     /// <summary>The command as the caller typed it, such as <c>aspose-cli cells</c>.</summary>
     private string Path() => string.Join(' ', [DistributionInfo.CommandName, .. CommandPath.Select(static command => command.Name)]);
@@ -485,7 +489,10 @@ internal sealed class ParsedInvocation
         if (allowed.Count > 0
             && tokens.Select(static token => token.Value).LastOrDefault(value => !allowed.Contains(value, StringComparer.Ordinal)) is { } value)
         {
-            return new($"'{value}' is not a value of {name}.", parameter, Mistake.Of(value, allowed, MeantValue(option, value, allowed)));
+            return new($"'{value}' is not a value of {name}.", parameter, Mistake.Of(value, allowed, MeantValue(option, value, allowed)))
+            {
+                Hint = option is null ? null : SiblingTarget(option, value),
+            };
         }
 
         Type type = option?.ValueType ?? argument!.ValueType;
@@ -517,6 +524,35 @@ internal sealed class ParsedInvocation
             => $"{option.Name} {string.Join(' ', allowed)}",
         _ => null,
     };
+
+    /// <summary>
+    /// A format given to <c>--to</c> that the command does not write but a command beside it
+    /// writes through its own <c>--to</c>, as <c>png</c> given to a convert that leaves images to
+    /// render: the advice to run that command on the same input; null otherwise.
+    /// </summary>
+    private string? SiblingTarget(Option option, string value)
+    {
+        if (option.Name != "--to" || CommandPath.Count < 2)
+        {
+            return null;
+        }
+
+        Command? writer = CommandPath[^2].Subcommands.FirstOrDefault(command => !command.Hidden
+            && command != Command
+            && command.Options.FirstOrDefault(static candidate => candidate.Name == "--to") is { } to
+            && OptionCompletions.Read(to).Contains(value, StringComparer.Ordinal));
+        if (writer is null)
+        {
+            return null;
+        }
+
+        string input = Command.Arguments.FirstOrDefault() is { } argument
+            && ParseResult.GetResult(argument) is { Tokens: [var token, ..] }
+            ? (token.Value.Contains(' ', StringComparison.Ordinal) ? $"\"{token.Value}\"" : token.Value)
+            : "<file>";
+        string[] group = [DistributionInfo.CommandName, .. CommandPath.SkipLast(1).Select(static command => command.Name)];
+        return $"Run '{string.Join(' ', [.. group, writer.Name, input, "--to", value])}' for {value}.";
+    }
 
     /// <summary>
     /// A file format given to <c>--output-format</c>, which selects how results are printed:

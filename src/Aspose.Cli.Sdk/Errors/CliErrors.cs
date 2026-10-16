@@ -76,7 +76,8 @@ public static partial class CliErrors
     /// <param name="problems">Each refused value, one sentence each.</param>
     /// <param name="parameter">The option or argument of the first refused value.</param>
     /// <param name="mistake">The first refused value among a list of values, if any.</param>
-    public static CliException OptionValuesRefused(IReadOnlyList<string> problems, string parameter, Mistake? mistake = null)
+    /// <param name="hint">The advice to run another command that takes the value, in place of the closest values and the advice to read help; null for none.</param>
+    public static CliException OptionValuesRefused(IReadOnlyList<string> problems, string parameter, Mistake? mistake = null, string? hint = null)
     {
         ArgumentNullException.ThrowIfNull(problems);
         ArgumentException.ThrowIfNullOrWhiteSpace(parameter);
@@ -93,7 +94,7 @@ public static partial class CliErrors
             message = $"{message} {mistake.MustBeOneOf()}";
         }
 
-        return CliException.Create(ErrorCodes.OptionInvalid, message, mistake?.Hint(UsageHint) ?? UsageHint, details);
+        return CliException.Create(ErrorCodes.OptionInvalid, message, hint ?? mistake?.Hint(UsageHint) ?? UsageHint, details);
     }
 
     /// <summary>
