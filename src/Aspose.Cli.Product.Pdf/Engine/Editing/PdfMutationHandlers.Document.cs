@@ -153,6 +153,7 @@ internal sealed partial class PdfMutationHandlers
     {
         EnsureAcroForm(_document);
         Field field = FormField(_document, operation.Name);
+        RequireValueField(field);
         if (operation.Value is not null && RejectedFieldValue(field, operation.Value) is { } rejected)
         {
             throw new OperationInvalidException(rejected);

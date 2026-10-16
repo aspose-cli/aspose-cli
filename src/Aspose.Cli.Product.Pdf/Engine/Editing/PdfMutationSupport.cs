@@ -189,4 +189,24 @@ internal static class PdfMutationSupport
 
         return null;
     }
+
+    /// <summary>
+    /// Refuses to set or clear a field that holds no value: the engine draws a push button's
+    /// value as its caption, and a signature field is filled only by signing.
+    /// </summary>
+    internal static void RequireValueField(Field field)
+    {
+        string? kind = field switch
+        {
+            ButtonField => "push button",
+            SignatureField => "signature field",
+            _ => null,
+        };
+        if (kind is not null)
+        {
+            throw new OperationInvalidException(
+                $"{kind} '{field.FullName}' holds no value",
+                "To place an image on the form, use add_stamp_image with the field's page and rect from 'pdf inspect --detail forms'; a signature field is filled by 'pdf sign'.");
+        }
+    }
 }
