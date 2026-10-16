@@ -157,7 +157,7 @@
         {
           "code": "CELLS_CHART_SPLIT_ACROSS_PAGES",
           "severity": "warning",
-          "summary": "A chart reaches more than one printed page, so printing and PDF export split it."
+          "summary": "A chart reaches more than one printed page, so printing and PDF or XPS export split it."
         },
         {
           "code": "CELLS_CHART_TOO_SMALL",

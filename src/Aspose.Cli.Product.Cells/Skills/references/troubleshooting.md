@@ -51,7 +51,7 @@ grid smaller than the data, such as xls with 65,536 rows, warns
 `DATA_TRUNCATED`, and formulas that referenced the lost cells become `#REF!`
 with `FORMULAS_BROKEN`: save to xlsx, xlsb or ods instead.
 
-A PDF that prints a chart across two or more pages warns
+A PDF or XPS that prints a chart across two or more pages warns
 `CHART_SPLIT_ACROSS_PAGES` with each chart and its page count. Fit the sheet
 with `set_page_setup` (`fitToWidth` 1 and `fitToHeight` 0, or `orientation`
 landscape), or move or resize the chart, and convert again.

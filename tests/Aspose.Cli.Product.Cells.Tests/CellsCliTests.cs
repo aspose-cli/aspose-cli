@@ -404,22 +404,30 @@ public sealed class CellsCliTests : IDisposable
         Assert.Contains("as the last row of the tsv output", Warning(edited.Json(), "EVALUATION_MODE")["message"]!.GetValue<string>(), StringComparison.Ordinal);
     }
 
-    [Fact]
-    public void ConvertAndReview_ReportAChartAPdfSplitsAcrossPages()
+    [Theory]
+    [InlineData("pdf")]
+    [InlineData("xps")]
+    public void Convert_ReportsAChartItsPrintedPagesSplit(string format)
     {
         CellsReviewTests.CreateWideChartWorkbook(_workspace.File("split.xlsx"), fitToOnePageWide: false);
         CellsReviewTests.CreateWideChartWorkbook(_workspace.File("fitted.xlsx"), fitToOnePageWide: true);
 
-        JsonNode split = _workspace.Run("cells", "convert", "split.xlsx", "--to", "pdf", "--out", "split.pdf", "--output-format", "json").Json();
-        JsonNode fitted = _workspace.Run("cells", "convert", "fitted.xlsx", "--to", "pdf", "--out", "fitted.pdf", "--output-format", "json").Json();
+        JsonNode split = _workspace.Run("cells", "convert", "split.xlsx", "--to", format, "--out", "split." + format, "--output-format", "json").Json();
+        JsonNode fitted = _workspace.Run("cells", "convert", "fitted.xlsx", "--to", format, "--out", "fitted." + format, "--output-format", "json").Json();
 
         JsonNode warning = Warning(split, "CHART_SPLIT_ACROSS_PAGES");
         Assert.Equal("'Data'", warning["location"]!.GetValue<string>());
         Assert.Contains("'Wide' on sheet 'Data' (2 pages)", warning["message"]!.GetValue<string>(), StringComparison.Ordinal);
         Assert.DoesNotContain(fitted["warnings"]?.AsArray() ?? [],
             static warning => warning!["code"]!.GetValue<string>() == "CHART_SPLIT_ACROSS_PAGES");
+    }
 
-        // Review reports it too, with the image of that sheet alone as evidence.
+    [Fact]
+    public void Review_ReportsAChartSplitAcrossPrintedPages()
+    {
+        CellsReviewTests.CreateWideChartWorkbook(_workspace.File("split.xlsx"), fitToOnePageWide: false);
+
+        // The image of that sheet alone is the evidence.
         CliResult review = _workspace.Run("review", "split.xlsx", "--out", _workspace.File("review"), "--output-format", "json");
         Assert.True(review.ExitCode == 0, review.StdErr);
         JsonNode finding = Assert.Single(JsonNode.Parse(review.StdOut)!["findings"]!.AsArray(),
