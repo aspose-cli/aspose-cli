@@ -165,6 +165,13 @@ public sealed record FormatDescriptor
     /// </summary>
     public bool CompanionFiles { get; init; }
 
+    /// <summary>
+    /// Whether an output's extension alone chooses this format when no <c>--to</c> names one.
+    /// A format that changes what the file keeps, as a PDF/A profile drops what the profile
+    /// forbids, declares false: under an extension it shares, only <c>--to</c> chooses it.
+    /// </summary>
+    public bool ChosenByExtension { get; init; } = true;
+
     /// <summary>Whether a file name carries one of this format's extensions, ignoring case.</summary>
     internal bool Names(string path) =>
         Path.GetExtension(path) is { Length: > 1 } extension
