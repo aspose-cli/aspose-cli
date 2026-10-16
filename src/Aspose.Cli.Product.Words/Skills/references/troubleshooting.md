@@ -1,7 +1,7 @@
 # Words troubleshooting
 
 `aspose-cli capabilities words --output-format json` lists every error and
-warning code Words reports, with its exit code and meaning; the error
+warning code Words reports, with its severity and category and an error's exit code; the error
 envelope, the `details` keys and general diagnosis are in
 `aspose-cli docs troubleshooting`, and not-found details in
 `aspose-cli docs editing`. This page covers the Words situations whose fix
