@@ -70,11 +70,13 @@ internal static class SlidesEngineSupport
             }
             if (includeShapes)
             {
+                var textArea = full ? SlidesReviewProjection.TextArea(shape) : null;
                 shapes.Add(SlidesStateProjection.Shape(shape, text, full, ref remaining, ref contentTruncated) with
                 {
                     ZOrder = zOrder++,
                     HasOpaqueFill = SlidesReviewProjection.HasOpaqueFill(shape),
-                    TextRect = full ? SlidesReviewProjection.TextRect(shape) : null,
+                    TextRect = textArea?.Lines,
+                    TextGlyphRect = textArea?.Glyphs,
                     TextAutofits = full && SlidesReviewProjection.TextAutofits(shape),
                     Backdrop = full ? SlidesReviewProjection.Backdrop(slide, shape) : null,
                     ChartTextColor = full ? SlidesReviewProjection.ChartTextColor(shape) : null,

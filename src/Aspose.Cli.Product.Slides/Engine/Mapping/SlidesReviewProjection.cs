@@ -9,6 +9,10 @@ internal static class SlidesReviewProjection
     // A nearly opaque solid fill still hides what is behind it; a more transparent one lets it show.
     private const byte OpaqueAlpha = 230;
 
+    // The share of the font size between the top of a line's characters and its tallest Latin
+    // letters, which stay below it; Chinese, Japanese and Korean characters may fill it.
+    private const float LatinHeadroom = 0.15f;
+
     internal static bool HasOpaqueFill(IShape shape)
     {
         if (shape is IChart or ITable)
@@ -33,7 +37,18 @@ internal static class SlidesReviewProjection
     /// relative to the unrotated frame, so text in a rotated shape or in vertical text is not
     /// projected.
     /// </summary>
-    internal static SlidesRect? TextRect(IShape shape)
+    internal static SlidesRect? TextRect(IShape shape) => TextArea(shape)?.Lines;
+
+    /// <summary>
+    /// The text's laid-out lines, as <see cref="TextRect"/>, and where its characters are drawn,
+    /// so text whose characters reach past a frame is told from text whose line spacing alone
+    /// does. A line keeps half of its spacing below its characters, and that much and the room a
+    /// font leaves above its tallest Latin letters above them. The glyphs are measured only where
+    /// the lines say where they are: in paragraphs of single line spacing whose characters are all
+    /// of one size. Otherwise, with a larger character on one line or tighter spacing, the line
+    /// rectangles misstate the lines and the glyphs are null.
+    /// </summary>
+    internal static (SlidesRect Lines, SlidesRect? Glyphs)? TextArea(IShape shape)
     {
         if (shape is not IAutoShape { TextFrame: { } frame }
             || string.IsNullOrWhiteSpace(frame.Text)
@@ -44,19 +59,48 @@ internal static class SlidesReviewProjection
             return null;
         }
 
-        System.Drawing.RectangleF? bounds = null;
-        foreach (IPortion portion in frame.Paragraphs.SelectMany(static paragraph => paragraph.Portions))
+        System.Drawing.RectangleF? lines = null;
+        System.Drawing.RectangleF? glyphs = null;
+        bool measured = true;
+        foreach (IParagraph paragraph in frame.Paragraphs)
         {
-            System.Drawing.RectangleF rect = portion.GetRect();
-            if (rect.Width > 0 && rect.Height > 0)
+            System.Drawing.RectangleF? area = null;
+            float? size = null;
+            foreach (IPortion portion in paragraph.Portions)
             {
-                bounds = bounds is { } union ? System.Drawing.RectangleF.Union(union, rect) : rect;
+                System.Drawing.RectangleF rect = portion.GetRect();
+                if (rect.Width > 0 && rect.Height > 0)
+                {
+                    area = area is { } union ? System.Drawing.RectangleF.Union(union, rect) : rect;
+                    float height = portion.PortionFormat.GetEffective().FontHeight;
+                    measured &= size is null || size == height;
+                    size = height;
+                }
+            }
+
+            if (area is not { } laid)
+            {
+                continue;
+            }
+
+            lines = lines is { } allLines ? System.Drawing.RectangleF.Union(allLines, laid) : laid;
+            float lineHeight = laid.Height / Math.Max(1, paragraph.GetLinesCount());
+            float spacing = (lineHeight - size!.Value) / 2;
+            measured &= paragraph.ParagraphFormat.GetEffective().SpaceWithin == 100 && spacing >= 0;
+            if (measured)
+            {
+                float above = spacing + (LatinHeadroom * size.Value);
+                var drawn = System.Drawing.RectangleF.FromLTRB(laid.Left, laid.Top + above, laid.Right, laid.Bottom - spacing);
+                glyphs = glyphs is { } allGlyphs ? System.Drawing.RectangleF.Union(allGlyphs, drawn) : drawn;
             }
         }
 
-        return bounds is { } area
-            ? new SlidesRect { X = shape.X + area.X, Y = shape.Y + area.Y, Width = area.Width, Height = area.Height }
+        return lines is { } text
+            ? (OnSlide(shape, text), measured && glyphs is { } drawnText ? OnSlide(shape, drawnText) : null)
             : null;
+
+        static SlidesRect OnSlide(IShape shape, System.Drawing.RectangleF area) =>
+            new() { X = shape.X + area.X, Y = shape.Y + area.Y, Width = area.Width, Height = area.Height };
     }
 
     /// <summary>

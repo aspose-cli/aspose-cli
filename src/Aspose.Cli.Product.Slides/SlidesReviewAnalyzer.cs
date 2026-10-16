@@ -268,7 +268,12 @@ internal static class SlidesReviewAnalyzer
             return;
         }
 
-        if (!shape.TextAutofits && Overshoot(text, shape.Rect, TextShapeTolerance) is { } spill)
+        // Characters, not the line spacing around them, that reach past the frame overflow it;
+        // where they could not be measured, lines past it by more than their spacing do.
+        if (!shape.TextAutofits
+            && (shape.TextGlyphRect is { } glyphs
+                ? Overshoot(glyphs, shape.Rect, GeometryTolerance)
+                : Overshoot(text, shape.Rect, TextShapeTolerance)) is { } spill)
         {
             result.TextOverflows++;
             result.Findings.Add(Finding(
