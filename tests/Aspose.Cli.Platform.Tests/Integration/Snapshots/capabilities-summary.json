@@ -293,11 +293,8 @@
         "xps",
         "html",
         "html5",
-        "png",
-        "jpeg",
         "tiff",
         "gif",
-        "svg",
         "md"
       ],
       "renderFormats": [

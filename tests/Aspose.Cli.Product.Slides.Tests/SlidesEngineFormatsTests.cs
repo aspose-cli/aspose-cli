@@ -8,9 +8,9 @@ public sealed class SlidesEngineFormatsTests
     public static TheoryData<string> Readable() =>
         [.. SlidesFormats.Definitions.Where(static format => format.Uses.HasFlag(FormatUse.Input)).Select(static format => format.Id)];
 
-    public static TheoryData<string> Writable() =>
+    public static TheoryData<string> Converted() =>
         [.. SlidesFormats.Definitions
-            .Where(static format => format.Uses.HasFlag(FormatUse.Convert) || format.Uses.HasFlag(FormatUse.Render))
+            .Where(static format => format.Uses.HasFlag(FormatUse.Convert))
             .Select(static format => format.Id)];
 
     [Theory]
@@ -19,15 +19,9 @@ public sealed class SlidesEngineFormatsTests
         Assert.True(Engine(id)?.Loads.Length > 0, $"'{id}' is declared readable but has no Aspose.Slides load format.");
 
     [Theory]
-    [MemberData(nameof(Writable))]
-    public void EveryWriteFormat_IsSavedOrRenderedPerSlide(string id) =>
-        Assert.True(Engine(id) is { } format && (format.Save is not null || format.SlideImage), $"'{id}' is declared writable but Aspose.Slides neither saves nor renders it.");
-
-    [Fact]
-    public void RenderFormats_AreWrittenOneImagePerSlide() =>
-        Assert.All(
-            SlidesFormats.Definitions.Where(static format => format.Uses.HasFlag(FormatUse.Render)),
-            static format => Assert.True(SlidesEngineFormats.IsSlideImage(format.Id), format.Id));
+    [MemberData(nameof(Converted))]
+    public void EveryConvertFormat_HasAnEngineSaveFormat(string id) =>
+        Assert.True(Engine(id)?.Save is not null, $"'{id}' is declared a convert format but Aspose.Slides does not save it.");
 
     [Fact]
     public void CreateAndEditFormats_SaveTheWholePresentation() =>

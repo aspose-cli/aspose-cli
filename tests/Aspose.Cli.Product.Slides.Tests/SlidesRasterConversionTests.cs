@@ -1,6 +1,4 @@
 using System.Text.Json.Nodes;
-using Aspose.Cli.Sdk.Errors;
-using Aspose.Cli.Sdk.Extensibility;
 using Aspose.Slides.Export;
 using Aspose.Slides;
 using Xunit;
@@ -9,81 +7,19 @@ namespace Aspose.Cli.Product.Slides.Tests;
 
 public sealed class SlidesRasterConversionTests(SlidesRasterConversionTests.CreatedDeck created) : IClassFixture<SlidesRasterConversionTests.CreatedDeck>
 {
-    [Theory]
-    [InlineData("png")]
-    [InlineData("jpeg")]
-    public void ConvertImages_UsesPresentationDimensionsAtDefaultRenderResolution(string format)
-    {
-        using var fixture = new SlidesEngineFixture();
-        string input = fixture.CreatePresentation();
-        using (var source = new Presentation(input))
-        {
-            source.SlideSize.SetSize(720, 405, SlideSizeScaleType.DoNotScale);
-            source.Save(input, SaveFormat.Pptx);
-        }
-        byte[] original = File.ReadAllBytes(input);
-        SlidesConvertResult result = SlidesExport.Convert(fixture.Session, new SlidesConvertRequest
-        {
-            Input = input,
-            Output = TestOutput.At(fixture.File("converted" + SlidesFormats.Definitions.ExtensionFor(format)), format: format),
-            Slides = PageRange.Parse("1,3"),
-        });
-
-        Assert.Equal(2, result.Outputs.Count);
-        Assert.All(result.Outputs, output =>
-        {
-            using IImage image = Images.FromFile(output.Path);
-            Assert.Equal(1920, image.Width);
-            Assert.Equal(1080, image.Height);
-            byte[] encoded = File.ReadAllBytes(output.Path);
-            Assert.True(format == "png"
-                ? encoded.AsSpan().StartsWith(new byte[] { 0x89, 0x50, 0x4e, 0x47 })
-                : encoded.AsSpan().StartsWith(new byte[] { 0xff, 0xd8 }));
-        });
-        Assert.Equal(original, File.ReadAllBytes(input));
-    }
-
-    [Theory]
-    [InlineData("png")]
-    [InlineData("jpeg")]
-    public void ConvertImages_RejectsAnOversizedSlideBeforePublishingAnyPart(string format)
-    {
-        using var fixture = new SlidesEngineFixture();
-        string input = fixture.CreatePresentation(slides: 8);
-        using (var source = new Presentation(input))
-        {
-            // 7000 pt at the 192 DPI of convert is 18667 px square, above the 256 MiP image budget.
-            source.SlideSize.SetSize(7000, 7000, SlideSizeScaleType.DoNotScale);
-            source.Save(input, SaveFormat.Pptx);
-        }
-        string output = fixture.File("oversized" + SlidesFormats.Definitions.ExtensionFor(format));
-
-        CliException error = Assert.Throws<CliException>(() => SlidesExport.Convert(fixture.Session, new SlidesConvertRequest
-        {
-            Input = input,
-            Output = TestOutput.At(output, format: format),
-        }));
-
-        Assert.Equal(ErrorCodes.RenderTooLarge, error.Code);
-        Assert.False(File.Exists(output));
-        Assert.Empty(Directory.GetFiles(fixture.Temp.Path, "oversized.s*"));
-    }
-
     /// <summary>
     /// An image output without an extension, such as deliver\png that reads as a folder, is
     /// refused before anything is read or written.
     /// </summary>
-    [Theory]
-    [InlineData("render")]
-    [InlineData("convert")]
-    public void ImageOutput_WithoutAnExtensionIsRefused(string command)
+    [Fact]
+    public void ImageOutput_WithoutAnExtensionIsRefused()
     {
         using var fixture = new SlidesEngineFixture();
         string input = fixture.CreatePresentation(slides: 2);
         using var workspace = new TempWorkspace();
         File.Copy(input, workspace.File("deck.pptx"));
 
-        CliResult refused = workspace.Run("slides", command, "deck.pptx", "--to", "png", "--out", "png", "--output-format", "json");
+        CliResult refused = workspace.Run("slides", "render", "deck.pptx", "--to", "png", "--out", "png", "--output-format", "json");
 
         Assert.Equal(2, refused.ExitCode);
         JsonNode error = JsonNode.Parse(refused.StdErr)!["error"]!;
@@ -138,11 +74,9 @@ public sealed class SlidesRasterConversionTests(SlidesRasterConversionTests.Crea
     }
 
     [Theory]
-    [InlineData("png", false)]
-    [InlineData("jpeg", false)]
-    [InlineData("png", true)]
-    [InlineData("jpeg", true)]
-    public void RasterOutput_UsesManagedStreamsForLongPublicationPaths(string format, bool convert)
+    [InlineData("png")]
+    [InlineData("jpeg")]
+    public void RasterOutput_UsesManagedStreamsForLongPublicationPaths(string format)
     {
         using var fixture = new SlidesEngineFixture();
         string input = fixture.CreatePresentation(slides: 1);
@@ -151,22 +85,11 @@ public sealed class SlidesRasterConversionTests(SlidesRasterConversionTests.Crea
         string output = Path.Combine(directory, "slide" + SlidesFormats.Definitions.ExtensionFor(format));
         Assert.True(output.Length > 260);
 
-        if (convert)
+        SlidesExport.Render(fixture.Session, new SlidesRenderRequest
         {
-            SlidesExport.Convert(fixture.Session, new SlidesConvertRequest
-            {
-                Input = input,
-                Output = TestOutput.At(output, format: format),
-            });
-        }
-        else
-        {
-            SlidesExport.Render(fixture.Session, new SlidesRenderRequest
-            {
-                Input = input,
-                Output = TestOutput.At(output, format: format),
-            });
-        }
+            Input = input,
+            Output = TestOutput.At(output, format: format),
+        });
 
         using FileStream stream = File.OpenRead(output);
         using IImage image = Images.FromStream(stream);
@@ -210,21 +133,6 @@ public sealed class SlidesRasterConversionTests(SlidesRasterConversionTests.Crea
         Assert.Equal(1600, image.Width);
         Assert.Equal(900, image.Height);
     }
-    // The encoders and their dimensions are covered in-process; this proves the CLI route once.
-    [Fact]
-    public void ConvertImages_ProducesUsefulDimensionsThroughRealCli()
-    {
-        const string format = "png";
-        using var workspace = new TempWorkspace();
-        created.CopyTo(workspace.File("deck.pptx"));
-        string output = "slide" + SlidesFormats.Definitions.ExtensionFor(format);
-        CliResult converted = workspace.Run("slides", "convert", "deck.pptx", "--to", format, "--out", output, "--output-format", "json");
-        Assert.True(converted.ExitCode == 0, converted.StdErr);
-        using IImage image = Images.FromFile(workspace.File(output));
-        Assert.Equal(1920, image.Width);
-        Assert.Equal(1080, image.Height);
-    }
-
     /// <summary>
     /// The deck the real-CLI tests start from, created once through the built CLI from a
     /// Markdown outline; each test works on its own copy.

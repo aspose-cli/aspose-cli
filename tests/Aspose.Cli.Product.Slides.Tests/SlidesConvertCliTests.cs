@@ -30,7 +30,6 @@ public sealed class SlidesConvertCliTests : IDisposable
     [Theory]
     [InlineData("pdf", 3)]
     [InlineData("md", 3)]
-    [InlineData("png", 3)]
     [InlineData("html", 3)]
     [InlineData("pptx", 4)]
     public void EveryHiddenSlide_IsLeftOutOfAnExportWithAWarning(string format, int shown)
@@ -58,7 +57,6 @@ public sealed class SlidesConvertCliTests : IDisposable
     [InlineData("md")]
     [InlineData("html")]
     [InlineData("html5")]
-    [InlineData("png")]
     public void SelectedHiddenSlide_IsConverted(string format)
     {
         HiddenSecondSlide();
@@ -70,10 +68,6 @@ public sealed class SlidesConvertCliTests : IDisposable
         if (format == "pdf")
         {
             Assert.Equal(1, Run("pdf", "inspect", output)["pdf"]!["pageCount"]!.GetValue<int>());
-        }
-        else if (format == "png")
-        {
-            Assert.Equal(2, Assert.Single(result["outputs"]!.AsArray())!["slide"]!.GetValue<int>());
         }
         else
         {
@@ -225,14 +219,13 @@ public sealed class SlidesConvertCliTests : IDisposable
         Run("slides", "edit", "deck.pptx", "--in-place", "--ops", """[{"op":"set_slide_hidden","slides":"2","hidden":true}]""");
     }
 
-    // The slides an output shows: its pages, its slide headings, or its images.
+    // The slides an output shows: its pages or its slide headings.
     private int ShownSlides(JsonNode result, string format)
     {
         string path = result["outputs"]![0]!["path"]!.GetValue<string>();
         return format switch
         {
             "pdf" => Run("pdf", "inspect", path)["pdf"]!["pageCount"]!.GetValue<int>(),
-            "png" => result["outputs"]!.AsArray().Count,
             "pptx" => Run("slides", "inspect", path)["presentation"]!["slideCount"]!.GetValue<int>(),
             _ => new[] { "One", "Two", "Three", "Four" }.Count(title => File.ReadAllText(path).Contains(title, StringComparison.Ordinal)),
         };

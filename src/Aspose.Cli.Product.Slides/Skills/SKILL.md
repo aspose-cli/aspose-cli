@@ -74,7 +74,7 @@ Details: [design system](references/design-system.md).
 - Only PPTX and PPTM outputs can carry a password; `--encrypt-env` with any other `create`,
   `edit` or `convert` output is `OPTION_INVALID`. Without it, a PPTX or PPTM output of an
   encrypted deck keeps its password, and any other document output is written without one and
-  warns `ENCRYPTION_REMOVED`; slide images do not warn.
+  warns `ENCRYPTION_REMOVED`; the slide images `render` writes do not warn.
 - A `convert` without `--slides` to a format other than PPT, PPTX, PPTM or ODP leaves out the
   hidden slides, as PowerPoint's export does, and warns `HIDDEN_SLIDES_SKIPPED` with their
   numbers; the hidden slides `--slides` names are converted. An ODP output turns native charts

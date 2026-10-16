@@ -2,7 +2,6 @@ using Aspose.Cli.Sdk.Extensibility;
 using Aspose.Cli.Sdk.Extensibility.Commanding;
 using Aspose.Cli.Sdk.Extensibility.Output;
 using Aspose.Cli.Sdk.IO;
-using Aspose.Cli.Sdk.Rendering;
 
 namespace Aspose.Cli.Product.Slides.Commands;
 
@@ -17,10 +16,10 @@ internal static class ConvertCommand
             new CommandTraits
             {
                 Input = SlidesInputs.Presentation,
-                Output = OutputTarget.File("Output path; defaults to a sibling using the target extension; several slides as images write <stem>.<slide>.<ext> beside it."),
+                Output = OutputTarget.File("Output path; defaults to a sibling using the target extension."),
                 Encrypt = SlidesInputs.EncryptedPresentation,
                 UsesFonts = true,
-                Target = TargetFormat.Convert($"Target presentation export format. PNG and JPEG use {RenderPixelGuard.DefaultDpi} DPI; use 'slides render' for custom dimensions.", SlidesFormats.Definitions),
+                Target = TargetFormat.Convert("Target presentation export format; 'slides render' writes slide images.", SlidesFormats.Definitions),
             },
             [.. slides.Options],
             (parse, standard) =>
@@ -42,7 +41,7 @@ internal static class ConvertCommand
             [
                 "slides convert deck.pptx --out deck.pdf",
                 "slides convert deck.pptx --slides 1-3 --out handout.pdf",
-                "slides convert deck.pptx --to png --slides 2 --out slide.png",
+                "slides convert deck.pptx --to html5 --out site/deck.html",
             ],
             Links =
             [
@@ -55,7 +54,7 @@ internal static class ConvertCommand
     {
         ResultText.Files(surface, "wrote", "file", [.. result.Outputs.Select(output =>
             new ProducedFile(
-                output.Slide is { } slide ? $"slide {slide}" : null,
+                null,
                 output.Path,
                 output.Format,
                 output.SizeBytes,
