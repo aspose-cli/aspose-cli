@@ -147,7 +147,7 @@ internal sealed class WordsEditModel : IOperationModel<WordsOp>
         ReplaceTextOp replace when _matched.GetValueOrDefault(operation) == 0 => new NoEffect(NoEffectReasons.NoMatch,
             $"Operation {operation.Id} (replace_text) matched no text in scope '{replace.Scope}', so nothing was replaced.")
         {
-            Hint = "Search with 'words search' and the same pattern and scope, or --scope all for headers, footers, "
+            Hint = "Search with 'words search' and the same pattern and scope, or set \"scope\": \"all\" on the op for headers, footers, "
                 + "footnotes and comments. Field codes and text a tracked change deletes are never matched.",
         },
         FormatTextOp { Match: not null } when _matched.GetValueOrDefault(operation) == 0 => new NoEffect(NoEffectReasons.NoMatch,
