@@ -110,6 +110,7 @@ internal sealed class WordsDocumentLoader
             throw InputLoading.PasswordRefused(path, password);
         }
 
+        bool fixedPages = id == "html" && IsFixedPageHtml(input);
         var resources = new LocalDocumentResourceLoader(path, _resourceBudgets);
         try
         {
@@ -118,7 +119,10 @@ internal sealed class WordsDocumentLoader
             // A stream carries no name; FILENAME fields name the file, as a path load does.
             document.FieldOptions.FileName = path;
             return new LoadedDocument(document, detected, id, resources,
-                _outputs?.IsEvaluation == true);
+                _outputs?.IsEvaluation == true)
+            {
+                FixedPageHtml = fixedPages,
+            };
         }
         catch
         {
@@ -243,6 +247,39 @@ internal sealed class WordsDocumentLoader
             : !string.Equals(extension, ".md", StringComparison.OrdinalIgnoreCase);
     }
 
+    // The page container html-fixed output gives each page; the SDK has no reader for it.
+    private const string FixedPageMarker = "class=\"awdiv awpage\"";
+
+    /// <summary>
+    /// Whether an HTML input is an html-fixed page rendition, which the SDK detects and loads as
+    /// flowing HTML. The text is scanned in chunks, since embedded fonts can make it large, and
+    /// the stream is left at its start.
+    /// </summary>
+    private static bool IsFixedPageHtml(Stream input)
+    {
+        try
+        {
+            using var reader = new StreamReader(input, Encoding.UTF8, detectEncodingFromByteOrderMarks: true, bufferSize: 81920, leaveOpen: true);
+            char[] buffer = new char[81920 + FixedPageMarker.Length];
+            int kept = 0;
+            int read;
+            while ((read = reader.Read(buffer, kept, buffer.Length - kept)) > 0)
+            {
+                int length = kept + read;
+                if (buffer.AsSpan(0, length).IndexOf(FixedPageMarker, StringComparison.Ordinal) >= 0)
+                {
+                    return true;
+                }
+
+                kept = Math.Min(FixedPageMarker.Length - 1, length);
+                buffer.AsSpan(length - kept, kept).CopyTo(buffer);
+            }
+
+            return false;
+        }
+        finally { input.Position = 0; }
+    }
+
     /// <summary>Whether a file begins with the PDF header; false when it cannot be read.</summary>
     private static bool StartsAsPdf(string path) =>
         ContainerSignatures.StartsWithPdfHeader(ContainerSignatures.ReadPrefix(path, ContainerSignatures.PdfHeader.Length));
@@ -290,6 +327,9 @@ internal sealed record LoadedDocument(
     bool Evaluation) : IDisposable
 {
     private readonly List<Document> _imports = [];
+
+    /// <summary>Whether the input is an html-fixed page rendition loaded as flowing HTML.</summary>
+    public bool FixedPageHtml { get; init; }
 
     internal void Retain(Document document) => _imports.Add(document);
 
