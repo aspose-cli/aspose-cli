@@ -23,7 +23,6 @@ internal sealed class VocabularyWriter(
     private readonly INamedTypeSymbol? _inputPath = compilation.GetTypeByMetadataName(OperationContractGenerator.Operations + "InputPathAttribute");
     private readonly INamedTypeSymbol? _secretEnv = compilation.GetTypeByMetadataName(OperationContractGenerator.Operations + "SecretEnvAttribute");
     private readonly INamedTypeSymbol? _minProperties = compilation.GetTypeByMetadataName(OperationContractGenerator.Operations + "MinPropertiesAttribute");
-    private readonly INamedTypeSymbol? _presentWhen = compilation.GetTypeByMetadataName(OperationContractGenerator.Operations + "PresentWhenAttribute");
     private readonly INamedTypeSymbol? _readBack = compilation.GetTypeByMetadataName(OperationContractGenerator.Operations + "ReadBackAttribute");
     private readonly INamedTypeSymbol? _notReadBack = compilation.GetTypeByMetadataName(OperationContractGenerator.Operations + "NotReadBackAttribute");
     private readonly INamedTypeSymbol? _byPosition = compilation.GetTypeByMetadataName(OperationContractGenerator.Operations + "ReadBackByPositionAttribute");
@@ -226,7 +225,7 @@ internal sealed class VocabularyWriter(
     /// ones, or all when it names none) must be unset exactly when the JSON omits it, because
     /// defaults are written before the rule counts: a nullable member without a default, or
     /// for a member count a Boolean that defaults to false, which the schema states as
-    /// <c>const: true</c>. <c>[PresentWhen]</c> counts only its member; <c>[MinProperties]</c>
+    /// <c>const: true</c>. <c>[MinProperties]</c>
     /// fits nested records only, because an operation's schema also counts <c>op</c> and <c>id</c>.
     /// </summary>
     private void CheckRule(INamedTypeSymbol type, List<Member> members, AttributeData attribute, INamedTypeSymbol owner, bool isOperation)
@@ -244,18 +243,14 @@ internal sealed class VocabularyWriter(
         }
 
         bool countsBooleans = Derives(attribute.AttributeClass!, _memberCount);
-        bool presentWhen = SymbolEqualityComparer.Default.Equals(attribute.AttributeClass, _presentWhen);
-        string[] names = presentWhen
-            ? [.. attribute.ConstructorArguments.Take(2).Select(static argument => argument.Value).OfType<string>()]
-            : [.. attribute.ConstructorArguments.SelectMany(static argument =>
-                argument.Kind == TypedConstantKind.Array ? argument.Values : [argument]).Select(static value => value.Value).OfType<string>()];
+        string[] names = [.. attribute.ConstructorArguments.SelectMany(static argument =>
+            argument.Kind == TypedConstantKind.Array ? argument.Values : [argument]).Select(static value => value.Value).OfType<string>()];
         foreach (string name in names.Where(name => members.All(member => member.Wire != name)))
         {
             Report(location, $"Record rule on '{owner.Name}' names '{name}', which is not a member of '{type.Name}'.");
         }
 
-        string[] counted = presentWhen ? [.. names.Take(1)] : names;
-        foreach (Member member in members.Where(member => counted.Length == 0 || counted.Contains(member.Wire)))
+        foreach (Member member in members.Where(member => names.Length == 0 || names.Contains(member.Wire)))
         {
             bool unsetWhenOmitted = member.Nullable ? member.Default is null : countsBooleans && member.IsBoolean && member.Default == "false";
             if (!unsetWhenOmitted)
@@ -263,20 +258,6 @@ internal sealed class VocabularyWriter(
                 Report(
                     location,
                     $"Record rule on '{owner.Name}' counts '{member.Wire}', which must be nullable without a default{(countsBooleans ? " or a Boolean that defaults to false" : string.Empty)}.");
-            }
-        }
-
-        if (presentWhen)
-        {
-            object? value = attribute.ConstructorArguments.ElementAtOrDefault(2).Value;
-            Member? condition = members.FirstOrDefault(member => member.Wire == names.ElementAtOrDefault(1));
-            if (JsonLiteral(value) is null)
-            {
-                Report(location, $"[PresentWhen] on '{owner.Name}' must compare with a string, finite number or Boolean constant.");
-            }
-            else if (condition is { IsBoolean: true, Nullable: false } && value is false)
-            {
-                Report(location, $"[PresentWhen] on '{owner.Name}' compares '{condition.Wire}' with false, but a Boolean that is not nullable is set only when true; compare it with true.");
             }
         }
     }

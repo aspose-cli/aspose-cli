@@ -39,7 +39,6 @@ internal static class ReadCommand
             },
             Table)
         {
-            MistakenFor = ["query"],
             Examples =
             [
                 "slides read deck.pptx --slides 1-5 --output-format json",

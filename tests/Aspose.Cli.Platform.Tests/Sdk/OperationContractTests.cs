@@ -153,9 +153,6 @@ public sealed class OperationContractTests
     [InlineData("""{"op":"note"}""", "the operation must set at least one of: text, pinned")]
     [InlineData("""{"op":"place","pages":"0","all":true}""", "pages must be a 1-based range list such as 1-3,7,9-: '0' is not a positive 1-based number")]
     [InlineData("""{"op":"link","path":" "}""", "path must not be blank")]
-    [InlineData("""{"op":"shift"}""", "the operation must set to when mode is absolute")]
-    [InlineData("""{"op":"shift","mode":"relative"}""", "the operation must set by when mode is relative")]
-    [InlineData("""{"op":"shift","to":1,"by":2}""", "the operation must not set by unless mode is relative")]
     [InlineData("""{"op":"set"}""", "the required field 'value' is missing")]
     [InlineData("""{"op":"paint"}""", "the required field 'shades' is missing; it takes: light, dark")]
     public void Parse_RejectsABrokenRuleByItsWirePath(string operation, string reason) =>
@@ -169,23 +166,6 @@ public sealed class OperationContractTests
         // A Boolean that is not nullable is set only when true; a nullable one whenever present.
         Assert.Equal("1-3,5", place["pages"]!.GetValue<string>());
         Assert.False(JsonNode.Parse(Parse("""{"op":"note","pinned":false}"""))!["pinned"]!.GetValue<bool>());
-    }
-
-    /// <summary>The schema's conditional of a present-when rule accepts exactly what the parser accepts, defaults included.</summary>
-    [Theory]
-    [InlineData("""{"op":"shift","to":1}""", true)]
-    [InlineData("""{"op":"shift","mode":"relative","by":2}""", true)]
-    [InlineData("""{"op":"shift","mode":"absolute","to":1}""", true)]
-    [InlineData("""{"op":"shift"}""", false)]
-    [InlineData("""{"op":"shift","mode":"relative"}""", false)]
-    [InlineData("""{"op":"shift","mode":"relative","by":2,"to":1}""", false)]
-    [InlineData("""{"op":"shift","to":1,"by":2}""", false)]
-    public void PresentWhen_ParserAndSchemaAgree(string operation, bool valid)
-    {
-        using JsonDocument document = JsonDocument.Parse($$"""{"ops":[{{operation}}]}""");
-
-        Assert.Equal(valid, !Parse(operation).StartsWith("error: ", StringComparison.Ordinal));
-        Assert.Equal(valid, Published.Value.Evaluate(document.RootElement).IsValid);
     }
 
     /// <summary>A required member whose type admits null must be present and may be null; an optional one is omitted, never null.</summary>
@@ -225,11 +205,6 @@ public sealed class OperationContractTests
             place["allOf"]!.ToJsonString());
         Assert.Equal("""[{"anyOf":[{"required":["text"]},{"required":["pinned"]}]}]""", Schema()["$defs"]!["note"]!["allOf"]!.ToJsonString());
         Assert.Equal("""[{"minProperties":1},{"dependentRequired":{"size":["font"]}}]""", Schema()["$defs"]!["style"]!["allOf"]!.ToJsonString());
-        // The default of mode meets the second condition, so only the first requires mode.
-        Assert.Equal(
-            """[{"if":{"properties":{"mode":{"const":"relative"}},"required":["mode"]},"then":{"required":["by"]},"else":{"not":{"required":["by"]}}},"""
-            + """{"if":{"properties":{"mode":{"const":"absolute"}}},"then":{"required":["to"]},"else":{"not":{"required":["to"]}}}]""",
-            Schema()["$defs"]!["shift"]!["allOf"]!.ToJsonString());
         Assert.Equal("""{"type":"string","minLength":1,"pattern":"\\S","x-readBack":"not-state"}""", Schema()["$defs"]!["link"]!["properties"]!["path"]!.ToJsonString());
         string description = Schema()["description"]!.GetValue<string>();
         Assert.StartsWith("Test operations. Operations apply in order. Without --best-effort the batch is atomic", description, StringComparison.Ordinal);

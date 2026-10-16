@@ -35,7 +35,6 @@ internal static class ReadCommand
             },
             Table)
         {
-            MistakenFor = ["query"],
             Finish = (_, request, result, standard) =>
                 result with { Window = result.Window with { Next = Next(standard.Continuation(), pages.Name, request, result) } },
             Examples =

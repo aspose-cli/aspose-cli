@@ -17,7 +17,7 @@ public static class Shades
 
 /// <summary>Test operations.</summary>
 // The test vocabulary has no read results, so none of its fields is state.
-[OperationVocabulary("ops", JsonContext = typeof(TestOpsJsonContext), Addresses = new[] { "all", "box", "by", "cells", "colors", "count", "image", "labels", "mode", "pages", "passwordEnv", "path", "pinned", "rows", "shade", "shades", "style", "tags", "text", "to", "value" })]
+[OperationVocabulary("ops", JsonContext = typeof(TestOpsJsonContext), Addresses = new[] { "all", "box", "cells", "colors", "count", "image", "labels", "mode", "pages", "passwordEnv", "path", "pinned", "rows", "shade", "shades", "style", "tags", "text", "value" })]
 [JsonConverter(typeof(OperationJsonConverter<TestOp>))]
 public abstract partial record TestOp : BoundedOperation;
 
@@ -79,19 +79,6 @@ public sealed record NoteOp : TestOp
     [MinLength(1)] public string? Text { get; init; }
 
     public bool? Pinned { get; init; }
-}
-
-/// <summary>Moves by an offset or to a position.</summary>
-[Operation("shift")]
-[PresentWhen("by", "mode", "relative")]
-[PresentWhen("to", "mode", "absolute")]
-public sealed record ShiftOp : TestOp
-{
-    [AllowedValues("absolute", "relative")] public string Mode { get; init; } = "absolute";
-
-    public int? By { get; init; }
-
-    public int? To { get; init; }
 }
 
 [Operation("set")]
@@ -174,7 +161,6 @@ public sealed record TestBatch : BoundedOperationEnvelope<TestOp>;
 [JsonSerializable(typeof(ProbeOp))]
 [JsonSerializable(typeof(SecretOp))]
 [JsonSerializable(typeof(SetOp))]
-[JsonSerializable(typeof(ShiftOp))]
 [JsonSerializable(typeof(SizePagesOp))]
 [JsonSerializable(typeof(StampImageOp))]
 [JsonSerializable(typeof(StampTextOp))]
