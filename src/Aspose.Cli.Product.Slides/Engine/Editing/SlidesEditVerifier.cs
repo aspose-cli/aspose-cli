@@ -19,8 +19,8 @@ namespace Aspose.Cli.Product.Slides.Engine.Editing;
 /// presentation, on the slides it resolved when it ran. The batch is checked as a whole:
 /// an expectation that a later operation changes or removes is dropped and its operation stays
 /// unchecked, except that the slide order and the sections a later operation changes again carry
-/// the earlier operations into its expectation. An operation counts as checked only when every
-/// effect it recorded was read back. Evaluation mode reads longer text cut short, so it records
+/// the earlier operations into its expectation. An operation counts as checked when every effect
+/// it recorded was read back, whether or not the output holds it. Evaluation mode reads longer text cut short, so it records
 /// no text, and an operation that sets or replaces text is then left unchecked. Each effect is
 /// read as the read projection reports it (<see cref="SlidesStateProjection"/>).
 /// </summary>
@@ -131,14 +131,12 @@ internal sealed class SlidesEditVerifier : IEditVerifier<SlidesOp>
     internal VerificationFacts Verify(Presentation output)
     {
         var issues = new List<VerificationIssue>();
-        var failed = new HashSet<string>(StringComparer.Ordinal);
         var covered = new HashSet<string>(StringComparer.Ordinal);
         foreach (Expectation expectation in _expected.Values)
         {
             covered.UnionWith(expectation.Ops);
             if (expectation.Read(output) is var found && found != expectation.Value)
             {
-                failed.UnionWith(expectation.Ops);
                 string location = expectation.SlideId is uint slideId
                     && output.Slides.FirstOrDefault(slide => slide.SlideId == slideId) is { } slide
                     ? string.Create(CultureInfo.InvariantCulture, $"slide {output.Slides.IndexOf(slide) + 1}")
@@ -151,7 +149,9 @@ internal sealed class SlidesEditVerifier : IEditVerifier<SlidesOp>
             }
         }
 
-        string[] checkedOps = [.. _recorded.Where(id => covered.Contains(id) && !failed.Contains(id) && !_incomplete.Contains(id))];
+        // An operation whose effect was read back is checked whether or not the output holds it;
+        // an issue reports each effect it does not hold.
+        string[] checkedOps = [.. _recorded.Where(id => covered.Contains(id) && !_incomplete.Contains(id))];
         return new VerificationFacts(issues, checkedOps);
     }
 
