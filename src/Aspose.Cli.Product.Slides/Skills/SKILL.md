@@ -61,7 +61,10 @@ Details: [design system](references/design-system.md).
   mode reads text longer than five characters cut short, so reads, reviews and `extract` of text
   or notes warn `EVALUATION_INPUT_TRUNCATED`, and a Markdown conversion holds a truncation notice
   in place of the cut text, which its `EVALUATION_MODE` message says without naming that text;
-  the presentations, PDFs and images it saves keep the full text. Each evaluation save adds another watermark text box to every slide, which
+  the presentations, PDFs and images it saves keep the full text. An edit that writes text
+  (`set_title`, `set_body`, `set_text`, `set_table_cell`, `set_notes`) where the text then reads cut
+  short counts it as changed and warns `EVALUATION_INPUT_TRUNCATED`, even when it wrote the same
+  text again, since the cut read cannot show the difference. Each evaluation save adds another watermark text box to every slide, which
   reads list as content. A review reports each slide that carries one as
   `SLIDES_EVALUATION_WATERMARK`, licensed or not; only in evaluation mode does it leave the boxes
   out of its other checks and count them in its `excludedEvaluationMarks` coverage metric

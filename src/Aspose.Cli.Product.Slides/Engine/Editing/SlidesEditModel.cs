@@ -74,7 +74,9 @@ internal sealed class SlidesEditModel : IOperationModel<SlidesOp>
             SlidesMutationHandlers.EnsureResolved(target);
         }
 
-        return SlidesMutationHandlers.Engine(() => operation.Accept(new SlidesSnapshots(_presentation, target, _evaluation)));
+        // After the operation, evaluation mode may read the text it wrote cut short.
+        Action? readCut = _evaluation && ReferenceEquals(operation, _applied) ? _readInput : null;
+        return SlidesMutationHandlers.Engine(() => operation.Accept(new SlidesSnapshots(_presentation, target, _evaluation, readCut)));
     }
 
     public void Apply(SlidesOp operation)

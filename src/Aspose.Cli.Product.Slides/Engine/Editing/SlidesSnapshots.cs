@@ -24,9 +24,20 @@ namespace Aspose.Cli.Product.Slides.Engine.Editing;
 /// an operation that moves or scales them changes nothing a read of the output shows; the shapes
 /// leave them out.
 /// </param>
-internal sealed class SlidesSnapshots(Presentation presentation, SlidesMutationHandlers.ResolvedSlidesOp target, bool evaluation)
+/// <param name="readCut">
+/// Set only for the snapshot taken after the operation in evaluation mode: the text the
+/// operation wrote reads cut short there, as its first characters and a notice, so its state
+/// cannot show whether it changed. The object then counts as changed, and this is called to
+/// disclose the cut read.
+/// </param>
+internal sealed class SlidesSnapshots(
+    Presentation presentation, SlidesMutationHandlers.ResolvedSlidesOp target, bool evaluation, Action? readCut = null)
     : ISlidesOpHandler<OperationSnapshot>
 {
+    // What the state of written text that reads cut short ends with after the operation, which
+    // no state before it has.
+    private const string CutWritten = "|written-unread";
+
     public OperationSnapshot Apply(InsertSlideOp operation) => SlideOrder();
 
     public OperationSnapshot Apply(DeleteSlidesOp operation) => SlideOrder();
@@ -52,11 +63,11 @@ internal sealed class SlidesSnapshots(Presentation presentation, SlidesMutationH
     /// <summary>The sections, each by the id of its first slide; a new section splits nothing else.</summary>
     public OperationSnapshot Apply(InsertSectionOp operation) => new OperationSnapshot().AddSequence("section", Sections(presentation));
 
-    public OperationSnapshot Apply(SetTitleOp operation) => Shapes();
+    public OperationSnapshot Apply(SetTitleOp operation) => Shapes(() => Whole(SlidesAuthoring.Title(Slide)));
 
-    public OperationSnapshot Apply(SetBodyOp operation) => Shapes();
+    public OperationSnapshot Apply(SetBodyOp operation) => Shapes(() => Whole(SlidesAuthoring.Body(Slide)));
 
-    public OperationSnapshot Apply(SetTextOp operation) => Shapes();
+    public OperationSnapshot Apply(SetTextOp operation) => Shapes(() => Whole(target.Shape!));
 
     /// <summary>Every shape and every slide's notes the operation's scope reaches.</summary>
     public OperationSnapshot Apply(SlidesReplaceTextOp operation)
@@ -84,7 +95,8 @@ internal sealed class SlidesSnapshots(Presentation presentation, SlidesMutationH
     public OperationSnapshot Apply(SetNotesOp operation)
     {
         int number = Number(Slide);
-        return new OperationSnapshot().Add(NotesAddress(number), Notes(Slide) ?? string.Empty);
+        string? notes = Notes(Slide);
+        return new OperationSnapshot().Add(NotesAddress(number), (notes ?? string.Empty) + (Unread(notes) ? CutWritten : string.Empty));
     }
 
     public OperationSnapshot Apply(SlidesInsertImageOp operation) => Shapes();
@@ -93,7 +105,9 @@ internal sealed class SlidesSnapshots(Presentation presentation, SlidesMutationH
 
     public OperationSnapshot Apply(SlidesInsertTableOp operation) => Shapes();
 
-    public OperationSnapshot Apply(SlidesSetTableCellOp operation) => Shapes();
+    public OperationSnapshot Apply(SlidesSetTableCellOp operation) => Shapes(() => target.Shape is ITable table
+        ? (table, table[operation.Column - 1, operation.Row - 1].TextFrame.Text)
+        : Whole(target.Shape!));
 
     public OperationSnapshot Apply(InsertChartOp operation) => Shapes();
 
@@ -150,20 +164,41 @@ internal sealed class SlidesSnapshots(Presentation presentation, SlidesMutationH
         return snapshot;
     }
 
-    /// <summary>The top-level shapes of the operation's slide, each by its id.</summary>
-    private OperationSnapshot Shapes()
+    /// <summary>
+    /// The top-level shapes of the operation's slide, each by its id.
+    /// </summary>
+    /// <param name="written">
+    /// The shape the operation writes text into, with the text it wrote, asked for only after
+    /// the operation, when the shape exists: one whose text reads cut short then counts as changed.
+    /// </param>
+    private OperationSnapshot Shapes(Func<(IShape Shape, string? Text)>? written = null)
     {
         var snapshot = new OperationSnapshot();
-        AddShapes(snapshot, Slide, Number(Slide));
+        IShape? cut = readCut is not null && written?.Invoke() is var (shape, text) && Unread(text) ? shape : null;
+        AddShapes(snapshot, Slide, Number(Slide), cut);
         return snapshot;
     }
 
-    private void AddShapes(OperationSnapshot snapshot, ISlide slide, int number)
+    private static (IShape Shape, string? Text) Whole(IShape shape) => (shape, ShapeText(shape));
+
+    private void AddShapes(OperationSnapshot snapshot, ISlide slide, int number, IShape? cut = null)
     {
         foreach (IShape shape in slide.Shapes.Where(shape => !evaluation || !IsEvaluationWatermark(shape)))
         {
-            snapshot.Add(ShapeAddress(number, shape.OfficeInteropShapeId), ShapeState(shape));
+            snapshot.Add(ShapeAddress(number, shape.OfficeInteropShapeId), ShapeState(shape) + (ReferenceEquals(shape, cut) ? CutWritten : string.Empty));
         }
+    }
+
+    // Whether text the operation wrote reads cut short after it; disclosed when it does.
+    private bool Unread(string? text)
+    {
+        if (readCut is null || !CutByEvaluation(text))
+        {
+            return false;
+        }
+
+        readCut();
+        return true;
     }
 
     private int Number(ISlide slide) => presentation.Slides.IndexOf(slide) + 1;
