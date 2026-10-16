@@ -234,18 +234,14 @@ internal sealed class WordsDocumentLoader
     /// <summary>The translation for an input: a file that starts as a PDF is named as one.</summary>
     private static InputLoading For(string path) => StartsAsPdf(path) ? PdfLoading : Loading;
 
-    private static bool IsTextFallbackForNonTextPath(string formatId, string path)
-    {
-        if (formatId is not ("txt" or "md"))
-        {
-            return false;
-        }
-
-        string extension = Path.GetExtension(path);
-        return formatId == "txt"
-            ? !string.Equals(extension, ".txt", StringComparison.OrdinalIgnoreCase)
-            : !string.Equals(extension, ".md", StringComparison.OrdinalIgnoreCase);
-    }
+    /// <summary>
+    /// Whether bytes detected as plain text or Markdown come under a name no extension of that
+    /// format declares, as a damaged document container's do.
+    /// </summary>
+    private static bool IsTextFallbackForNonTextPath(string formatId, string path) =>
+        formatId is "txt" or "md"
+        && !WordsFormats.Definitions.Named(FormatUse.Input, formatId)!.Extensions
+            .Contains(Path.GetExtension(path), StringComparer.OrdinalIgnoreCase);
 
     // The page container html-fixed output gives each page; the SDK has no reader for it.
     private const string FixedPageMarker = "class=\"awdiv awpage\"";
