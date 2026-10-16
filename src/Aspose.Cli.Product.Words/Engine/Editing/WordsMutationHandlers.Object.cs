@@ -567,6 +567,11 @@ internal sealed partial class WordsMutationHandlers
                 throw MergeDataInvalid("the CSV has no header row", MergeDataShape);
             }
 
+            if (lines[0].GroupBy(static name => name, StringComparer.Ordinal).FirstOrDefault(static names => names.Count() > 1) is { } repeated)
+            {
+                throw MergeDataInvalid($"the CSV header names the column '{repeated.Key}' more than once", "Give each column of the CSV header row its own name.");
+            }
+
             return lines.Skip(1).Select(row => (IReadOnlyDictionary<string, string?>)lines[0]
                 .Select((name, index) => (name, value: index < row.Length && row[index].Length > 0 ? row[index] : null))
                 .ToDictionary(static pair => pair.name, static pair => pair.value, StringComparer.Ordinal)).ToArray();
@@ -682,10 +687,16 @@ internal sealed partial class WordsMutationHandlers
             throw MergeDataInvalid("each merge row must be an object", MergeDataShape);
         }
 
-        return element.EnumerateObject().ToDictionary(
-            static property => property.Name,
-            static property => MergeValue(property.Value),
-            StringComparer.Ordinal);
+        var row = new Dictionary<string, string?>(StringComparer.Ordinal);
+        foreach (JsonProperty property in element.EnumerateObject())
+        {
+            if (!row.TryAdd(property.Name, MergeValue(property.Value)))
+            {
+                throw MergeDataInvalid($"a merge row names the property '{property.Name}' more than once", "Give each property of a merge row its own name.");
+            }
+        }
+
+        return row;
     }
 
     /// <summary>Reads inline rows as the rows of a JSON data file.</summary>
