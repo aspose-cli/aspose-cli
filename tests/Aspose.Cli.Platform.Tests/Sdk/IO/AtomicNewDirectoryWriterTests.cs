@@ -265,6 +265,41 @@ public sealed class AtomicNewDirectoryWriterTests
     }
 
     [Fact]
+    public void Commit_ReplaceOfADirectoryWithAReadOnlyFileCleansUpItsTransaction()
+    {
+        Requires.Windows();
+        using var temp = new TempDirectory();
+        string target = Existing(temp);
+        string readOnly = Path.Combine(target, "parts", "page.txt");
+        File.SetAttributes(readOnly, File.GetAttributes(readOnly) | FileAttributes.ReadOnly);
+        try
+        {
+            using (var output = new AtomicNewDirectoryWriter(TestBudgets.Create(), target, "test", replace: true))
+            {
+                Write(output, "data.txt", "replacement");
+                output.Commit();
+            }
+            // The replaced tree, read-only file included, goes with its transaction, so no
+            // committed transaction is left for the next publication's recovery to finish.
+            Assert.Equal(["result"], Directory.EnumerateFileSystemEntries(temp.Path).Select(Path.GetFileName));
+            using (var output = new AtomicNewDirectoryWriter(TestBudgets.Create(), target, "test", replace: true))
+            {
+                Write(output, "data.txt", "again");
+                output.Commit();
+            }
+            Assert.Equal("again", File.ReadAllText(Path.Combine(target, "data.txt")));
+            Assert.Equal(["result"], Directory.EnumerateFileSystemEntries(temp.Path).Select(Path.GetFileName));
+        }
+        finally
+        {
+            foreach (string file in Directory.EnumerateFiles(temp.Path, "*", SearchOption.AllDirectories))
+            {
+                File.SetAttributes(file, File.GetAttributes(file) & ~FileAttributes.ReadOnly);
+            }
+        }
+    }
+
+    [Fact]
     public void Commit_ReplaceOfAnAbsentTargetPublishesANewDirectory()
     {
         using var temp = new TempDirectory();

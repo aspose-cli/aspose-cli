@@ -15,9 +15,17 @@ internal static class FilePublicationOwnedDelete
     private const uint OpenExisting = 3;
     private const uint FileFlagOpenReparsePoint = 0x00200000;
     private const uint FileFlagBackupSemantics = 0x02000000;
+    private const uint FileWriteAttributes = 0x00000100;
+    private const int FileBasicInfoClass = 0;
     private const int FileDispositionInfoClass = 4;
 
-    public static bool TryDelete(string path, FilePublicationSnapshot expected)
+    /// <summary>
+    /// Deletes the file at <paramref name="path"/> when it is still the one
+    /// <paramref name="expected"/> admitted. With <paramref name="clearReadOnly"/>, which only a
+    /// publication passes for a tree its transaction owns, a read-only attribute of the admitted
+    /// file is cleared first, through the same handle, so it does not keep the file.
+    /// </summary>
+    public static bool TryDelete(string path, FilePublicationSnapshot expected, bool clearReadOnly = false)
     {
         ArgumentException.ThrowIfNullOrEmpty(path);
         ArgumentNullException.ThrowIfNull(expected);
@@ -44,7 +52,7 @@ internal static class FilePublicationOwnedDelete
             return true;
         }
 
-        return TryDeleteWindows(path, expected);
+        return TryDeleteWindows(path, expected, clearReadOnly);
     }
 
     public static bool TryDelete(string path, FilePhysicalIdentity expectedIdentity)
@@ -193,7 +201,8 @@ internal static class FilePublicationOwnedDelete
 
     private static bool TryDeleteWindows(
         string path,
-        FilePublicationSnapshot expected)
+        FilePublicationSnapshot expected,
+        bool clearReadOnly)
     {
         if (expected.PhysicalIdentity is not { } expectedIdentity)
         {
@@ -210,7 +219,7 @@ internal static class FilePublicationOwnedDelete
                 FileAccess.Read,
                 FileShare.Read | FileShare.Delete,
                 FileOptions.SequentialScan);
-            deleteHandle = OpenDeleteHandle(path);
+            deleteHandle = OpenDeleteHandle(path, clearReadOnly ? FileWriteAttributes : 0);
             if (deleteHandle.IsInvalid)
             {
                 return false;
@@ -240,12 +249,22 @@ internal static class FilePublicationOwnedDelete
                 return false;
             }
 
+            FileAttributes? attributes = clearReadOnly
+                ? OpenedFileBoundary.GetInformation(deleteHandle)?.Attributes : null;
+            bool cleared = attributes is { } readOnly && readOnly.HasFlag(FileAttributes.ReadOnly)
+                && SetAttributes(deleteHandle, readOnly & ~FileAttributes.ReadOnly);
             var disposition = new FileDispositionInfo { DeleteFile = true };
-            return SetFileInformationByHandle(
+            if (SetFileInformationByHandle(
                 deleteHandle,
                 FileDispositionInfoClass,
                 ref disposition,
-                Marshal.SizeOf<FileDispositionInfo>());
+                Marshal.SizeOf<FileDispositionInfo>()))
+            {
+                return true;
+            }
+            // A file that stays keeps the attribute it had.
+            if (cleared) { SetAttributes(deleteHandle, attributes!.Value); }
+            return false;
         }
         catch (FileNotFoundException)
         {
@@ -270,10 +289,20 @@ internal static class FilePublicationOwnedDelete
         }
     }
 
-    private static SafeFileHandle OpenDeleteHandle(string path) =>
+    // Zero times leave the file's times unchanged; zero attributes would too, so none is Normal.
+    private static bool SetAttributes(SafeFileHandle handle, FileAttributes attributes)
+    {
+        var info = new FileBasicInfo
+        {
+            FileAttributes = attributes == 0 ? (uint)FileAttributes.Normal : (uint)attributes,
+        };
+        return SetFileInformationByHandle(handle, FileBasicInfoClass, ref info, Marshal.SizeOf<FileBasicInfo>());
+    }
+
+    private static SafeFileHandle OpenDeleteHandle(string path, uint additionalAccess = 0) =>
         CreateFile(
             ToWin32Path(path),
-            DeleteAccess | FileReadAttributes,
+            DeleteAccess | FileReadAttributes | additionalAccess,
             FileShareRead,
             IntPtr.Zero,
             OpenExisting,
@@ -309,6 +338,24 @@ internal static class FilePublicationOwnedDelete
         int informationClass,
         ref FileDispositionInfo information,
         int bufferSize);
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool SetFileInformationByHandle(
+        SafeFileHandle file,
+        int informationClass,
+        ref FileBasicInfo information,
+        int bufferSize);
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct FileBasicInfo
+    {
+        public long CreationTime;
+        public long LastAccessTime;
+        public long LastWriteTime;
+        public long ChangeTime;
+        public uint FileAttributes;
+    }
 
     [StructLayout(LayoutKind.Sequential)]
     private struct FileDispositionInfo

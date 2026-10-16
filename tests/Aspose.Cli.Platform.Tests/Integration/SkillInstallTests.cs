@@ -180,6 +180,37 @@ public sealed class SkillInstallTests : IDisposable
         Assert.Empty(Directory.EnumerateDirectories(_workspace.Path, ".aspose-publication-*"));
     }
 
+    [Fact]
+    public void Install_OverASkillWithAReadOnlyFile_SucceedsEachTime()
+    {
+        string skill = FirstSkill();
+        Assert.Equal(0, _workspace.Run("skill", "install", skill, "--target", "skills-root").ExitCode);
+        string installed = _workspace.File(Path.Combine("skills-root", skill));
+        string readOnly = Path.Combine(installed, "SKILL.md");
+        File.SetAttributes(readOnly, File.GetAttributes(readOnly) | FileAttributes.ReadOnly);
+        string[] before = Tree(installed);
+        try
+        {
+            // The replaced Skill is deleted with its read-only file, so nothing is left for the
+            // next install to recover.
+            for (int pass = 0; pass < 2; pass++)
+            {
+                CliResult replaced = _workspace.Run(
+                    "skill", "install", skill, "--target", "skills-root", "--output-format", "json");
+                Assert.True(replaced.ExitCode == 0, replaced.StdErr);
+                Assert.Equal(before, Tree(installed));
+            }
+            Assert.Empty(Directory.EnumerateDirectories(_workspace.Path, ".aspose-publication-*"));
+        }
+        finally
+        {
+            foreach (string file in Directory.EnumerateFiles(_workspace.Path, "*", SearchOption.AllDirectories))
+            {
+                File.SetAttributes(file, File.GetAttributes(file) & ~FileAttributes.ReadOnly);
+            }
+        }
+    }
+
     /// <summary>Every file below a directory with its content hash.</summary>
     private static string[] Tree(string directory) =>
         Directory.EnumerateFiles(directory, "*", SearchOption.AllDirectories)
