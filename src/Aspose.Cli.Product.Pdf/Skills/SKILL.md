@@ -52,9 +52,9 @@ and its remedy, including `--allow-network-resources` for trusted HTML.
 HTML form controls become AcroForm fields. A single-line text `<input>` keeps
 its `name`; other controls get generated names and lose their `value`s, and
 inputs of type `email`, `tel`, `url`, `time`, `datetime-local`, `month`, `week`,
-`color`, `range` or `file` are dropped;
+`color`, `range`, `file`, `image` or `hidden` are dropped;
 `LOSSY_CONVERSION` lists both. Use `type="text"` for an input that must stay a
-field, read the fields with `pdf inspect --detail forms` and match each field's `rect` to
+field, place the picture of an image input with `add_stamp_image`, read the fields with `pdf inspect --detail forms` and match each field's `rect` to
 its label before filling. The HTML `<title>` becomes the PDF title; a PDF made from HTML or
 Markdown has no author or subject until a `set_properties` edit sets them.
 

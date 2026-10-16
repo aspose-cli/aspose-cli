@@ -248,9 +248,12 @@ internal static class PdfCreate
         }
     }
 
-    /// <summary>The input types the HTML importer drops without a field (PDF-HTML-FORM-INPUTS).</summary>
+    /// <summary>
+    /// The input types the HTML importer drops without a field (PDF-HTML-FORM-INPUTS); a hidden
+    /// input shows nothing, but its value does not reach the PDF either.
+    /// </summary>
     private static readonly Regex DroppedInput = new(
-        """<input\b[^>]*?\stype\s*=\s*["']?(email|tel|url|time|datetime-local|month|week|color|range|file)\b""",
+        """<input\b[^>]*?\stype\s*=\s*["']?(email|tel|url|time|datetime-local|month|week|color|range|file|image|hidden)\b""",
         RegexOptions.IgnoreCase | RegexOptions.CultureInvariant,
         TimeSpan.FromSeconds(1));
 
@@ -303,7 +306,7 @@ internal static class PdfCreate
 
         return losses.Count == 0 ? null : new Warning(WarningCodes.LossyConversion, $"The HTML importer keeps the name and value of single-line text inputs only: {string.Join("; ", losses)}.")
         {
-            Hint = "Read the fields with 'pdf inspect --detail forms' and match each field's page and rect to the label beside it before filling; give a dropped input type=\"text\" to keep it as a field.",
+            Hint = "Read the fields with 'pdf inspect --detail forms' and match each field's page and rect to the label beside it before filling; give a dropped input type=\"text\" to keep it as a field, and place the picture of an image input with add_stamp_image.",
         };
     }
 

@@ -117,6 +117,33 @@ public sealed class PdfEngineTests
     }
 
     /// <summary>
+    /// The importer drops image and hidden inputs without a field (PDF-HTML-FORM-INPUTS); the
+    /// warning names both types and says how to place the image.
+    /// </summary>
+    [Fact]
+    public void Create_FromHtml_NamesTheDroppedImageAndHiddenInputs()
+    {
+        using var fixture = new PdfEngineFixture();
+        string input = fixture.File("onboarding.html");
+        File.WriteAllText(input, """
+            <html><body><form>
+            <input type="text" name="employee"/>
+            <input type="image" name="photo" src="photo.png" alt="Photo"/>
+            <input type="hidden" name="employee_id" value="E-1024"/>
+            </form></body></html>
+            """);
+        string output = fixture.File("onboarding.pdf");
+
+        PdfCreateResult result = PdfCreate.Run(fixture.Session, new PdfCreateRequest { Output = TestOutput.At(output), HtmlPath = input });
+
+        Warning lossy = Assert.Single(result.Warnings!, static warning => warning.Code == WarningCodes.LossyConversion);
+        Assert.Contains("dropped 2 input(s) of type image, hidden", lossy.Message, StringComparison.Ordinal);
+        Assert.Contains("add_stamp_image", lossy.Hint, StringComparison.Ordinal);
+        using var created = new Document(output);
+        Assert.Equal(["employee"], created.Form.Fields.Select(static field => field.FullName));
+    }
+
+    /// <summary>
     /// A Markdown line that ends in two spaces breaks the line (a hard break, PDF-8); a line
     /// without them joins the next one, as CommonMark reads a soft break.
     /// </summary>
