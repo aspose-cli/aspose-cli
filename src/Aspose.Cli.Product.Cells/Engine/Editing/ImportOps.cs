@@ -176,12 +176,15 @@ internal static class ImportOps
                 continue;
             }
 
-            string[] linked = (cell.GetPrecedents()?.Cast<ReferredArea>() ?? [])
-                .Where(static precedent => precedent.IsExternalLink)
-                .Select(static precedent => Path.GetFileName(precedent.ExternalFileName))
-                .ToArray();
-            if (linked.Length == 0
+            if (!LinkedFiles(cell).Any()
                 || to.Cells.CheckCell(cell.Row + rowOffset, cell.Column + columnOffset) is not { IsFormula: true } copied)
+            {
+                continue;
+            }
+
+            // A link back to the edited workbook is internal once copied (CELLS-COPY-SELF-LINK).
+            string[] linked = [.. LinkedFiles(copied)];
+            if (linked.Length == 0)
             {
                 continue;
             }
@@ -214,6 +217,11 @@ internal static class ImportOps
             Location = sheet + "!" + changed[0],
         });
     }
+
+    private static IEnumerable<string> LinkedFiles(Cell cell) =>
+        (cell.GetPrecedents()?.Cast<ReferredArea>() ?? [])
+            .Where(static precedent => precedent.IsExternalLink)
+            .Select(static precedent => Path.GetFileName(precedent.ExternalFileName));
 
     /// <summary>
     /// Refuses a source that defines a workbook-level name this workbook defines differently.
@@ -253,29 +261,64 @@ internal static class ImportOps
     /// <summary>
     /// Copying from another workbook turns a reference to a source sheet into a link to the
     /// source file. Disposing removes the links the copy added and makes their references local:
-    /// they point at the sheet of the same name in this workbook, or become #REF!.
+    /// they point at the sheet of the same name in this workbook, or become #REF!. A link the copy
+    /// added back to the edited workbook itself is made local too: the copy keeps it as a link
+    /// that reads nothing, while a formula written with the same reference becomes an internal
+    /// one (known issue CELLS-COPY-SELF-LINK, KNOWN-ISSUES.md).
     /// </summary>
     private readonly struct SourceLinks : IDisposable
     {
         private readonly ExternalLinkCollection _links;
         private readonly int _existing;
         private readonly string _source;
+        private readonly string? _edited;
 
         internal SourceLinks(Workbook workbook, Workbook source)
         {
             _links = workbook.Worksheets.ExternalLinks;
             _existing = _links.Count;
             _source = source.FileName;
+            _edited = FullPath(workbook.FileName, null);
         }
 
         public void Dispose()
         {
             for (int index = _links.Count - 1; index >= _existing; index--)
             {
-                if (string.Equals(_links[index].DataSource, _source, StringComparison.OrdinalIgnoreCase))
+                string target = _links[index].DataSource;
+                if (string.Equals(target, _source, StringComparison.OrdinalIgnoreCase) || LinksToEdited(target))
                 {
                     _links.RemoveAt(index, updateReferencesAsLocal: true);
                 }
+            }
+        }
+
+        // CELLS-COPY-SELF-LINK: a link stored relative to the source's folder, as Excel stores
+        // one to a workbook beside it, names the file it has from that folder. The paths are
+        // compared as text only: a link target comes from the document, and touching the file
+        // it names, such as one on a network share, would let the document cause a request.
+        private bool LinksToEdited(string target) =>
+            _edited is not null
+            && FullPath(target, Path.GetDirectoryName(FullPath(_source, null))) is { } linked
+            && string.Equals(
+                Path.TrimEndingDirectorySeparator(linked),
+                Path.TrimEndingDirectorySeparator(_edited),
+                OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal);
+
+        private static string? FullPath(string? path, string? folder)
+        {
+            if (string.IsNullOrEmpty(path) || path.Contains("://", StringComparison.Ordinal))
+            {
+                return null;
+            }
+
+            try
+            {
+                return folder is null || Path.IsPathRooted(path) ? Path.GetFullPath(path) : Path.GetFullPath(path, folder);
+            }
+            catch (Exception error) when (error is ArgumentException or NotSupportedException or PathTooLongException)
+            {
+                return null;
             }
         }
     }

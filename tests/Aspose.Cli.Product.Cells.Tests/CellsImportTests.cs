@@ -430,6 +430,123 @@ public sealed class CellsImportTests : IClassFixture<CellsFixture>
         Assert.Contains($"[{Path.GetFileName(source)}]Rates'!A1", result.Worksheets["Data"].Cells["E1"].Formula, StringComparison.Ordinal);
     }
 
+    /// <summary>
+    /// A source formula that links back to the edited workbook itself, as a feed beside it stores
+    /// the link (a file name relative to the source's folder), becomes a reference inside this
+    /// workbook, as set_formula and Excel make it, and reads the edited workbook's own value.
+    /// </summary>
+    [Theory]
+    [InlineData("import_range")]
+    [InlineData("import_sheet")]
+    public void Import_ALinkBackToTheEditedWorkbookBecomesAnInternalReference(string op)
+    {
+        string directory = _fixture.Temp.File($"self-link-{op}");
+        Directory.CreateDirectory(directory);
+        string budget = Path.Combine(directory, "budget.xlsx");
+        string feed = Path.Combine(directory, "feed.xlsx");
+        using (var workbook = new Workbook())
+        {
+            workbook.Worksheets[0].Name = "预算 Budget";
+            workbook.Worksheets[0].Cells["D6"].PutValue(305170);
+            workbook.Save(budget, SaveFormat.Xlsx);
+        }
+
+        using (var workbook = new Workbook())
+        {
+            Worksheet sheet = workbook.Worksheets[0];
+            sheet.Name = "Feed";
+            sheet.Cells["A1"].PutValue("Total");
+            sheet.Cells["B1"].Formula = "='[budget.xlsx]预算 Budget'!$D$6";
+            sheet.Cells["B2"].Formula = "=B1*2";
+            workbook.Save(feed, SaveFormat.Xlsx);
+        }
+
+        CellsEditResult result = ApplyResult(budget, op == "import_range"
+            ? $$"""{ "op": "import_range", "sheet": "预算 Budget", "path": {{Json(feed)}}, "from": "Feed!A1:B2", "to": "A9", "content": "all" }"""
+            : $$"""{ "op": "import_sheet", "sourceSheet": "Feed", "path": {{Json(feed)}} }""");
+        using var output = new Workbook(result.Output!.Path);
+
+        Aspose.Cells.Cells cells = op == "import_range" ? output.Worksheets["预算 Budget"].Cells : output.Worksheets["Feed"].Cells;
+        Cell linked = op == "import_range" ? cells["B9"] : cells["B1"];
+        Cell doubled = op == "import_range" ? cells["B10"] : cells["B2"];
+        Assert.Equal("='预算 Budget'!$D$6", linked.Formula);
+        Assert.Equal(305170d, linked.DoubleValue);
+        Assert.Equal(610340d, doubled.DoubleValue);
+        Assert.Equal(0, output.Worksheets.ExternalLinks.Count);
+        Assert.DoesNotContain(result.Warnings ?? [], static warning => warning.Code.Name.StartsWith("EXTERNAL_LINK_", StringComparison.Ordinal));
+    }
+
+    /// <summary>
+    /// A link to a workbook that only shares the edited workbook's file name, beside the source in
+    /// another folder, is a third workbook: it keeps its link.
+    /// </summary>
+    [Fact]
+    public void ImportRange_ALinkToAnotherFileOfTheEditedWorkbooksNameKeepsItsLink()
+    {
+        string sourceFolder = _fixture.Temp.File("same-name-source");
+        string editedFolder = _fixture.Temp.File("same-name-edited");
+        Directory.CreateDirectory(sourceFolder);
+        Directory.CreateDirectory(editedFolder);
+        string feed = Path.Combine(sourceFolder, "feed.xlsx");
+        string budget = Path.Combine(editedFolder, "budget.xlsx");
+        foreach (string path in new[] { Path.Combine(sourceFolder, "budget.xlsx"), budget })
+        {
+            using var workbook = new Workbook();
+            workbook.Worksheets[0].Name = "预算 Budget";
+            workbook.Worksheets[0].Cells["D6"].PutValue(305170);
+            workbook.Save(path, SaveFormat.Xlsx);
+        }
+
+        using (var workbook = new Workbook())
+        {
+            workbook.Worksheets[0].Name = "Feed";
+            workbook.Worksheets[0].Cells["B1"].Formula = "='[budget.xlsx]预算 Budget'!$D$6";
+            workbook.Save(feed, SaveFormat.Xlsx);
+        }
+
+        using Workbook result = Apply(budget,
+            $$"""{ "op": "import_range", "sheet": "预算 Budget", "path": {{Json(feed)}}, "from": "Feed!B1", "to": "B9", "content": "all" }""");
+
+        Assert.Contains("[budget.xlsx]预算 Budget'!$D$6", result.Worksheets["预算 Budget"].Cells["B9"].Formula, StringComparison.Ordinal);
+        Assert.Equal(1, result.Worksheets.ExternalLinks.Count);
+    }
+
+    /// <summary>
+    /// Whether a link names the edited workbook is decided from the paths as text, never by
+    /// opening the file a link names: a link to the edited workbook itself through a network
+    /// share (the machine's own administrative share) keeps its link, as a link to any other
+    /// share does, because finding out that it is the same file would need a network request.
+    /// </summary>
+    [Fact]
+    public void ImportRange_ALinkThroughANetworkShareKeepsItsLinkWithoutOpeningTheShare()
+    {
+        string directory = _fixture.Temp.File("unc-link");
+        Directory.CreateDirectory(directory);
+        string budget = Path.Combine(directory, "budget.xlsx");
+        string feed = Path.Combine(directory, "feed.xlsx");
+        string full = Path.GetFullPath(directory);
+        string share = $@"\\localhost\{full[0]}${full[2..]}";
+        using (var workbook = new Workbook())
+        {
+            workbook.Worksheets[0].Name = "预算 Budget";
+            workbook.Worksheets[0].Cells["D6"].PutValue(305170);
+            workbook.Save(budget, SaveFormat.Xlsx);
+        }
+
+        using (var workbook = new Workbook())
+        {
+            workbook.Worksheets[0].Name = "Feed";
+            workbook.Worksheets[0].Cells["B1"].Formula = $"='{share}{Path.DirectorySeparatorChar}[budget.xlsx]预算 Budget'!$D$6";
+            workbook.Save(feed, SaveFormat.Xlsx);
+        }
+
+        using Workbook result = Apply(budget,
+            $$"""{ "op": "import_range", "sheet": "预算 Budget", "path": {{Json(feed)}}, "from": "Feed!B1", "to": "B9", "content": "all" }""");
+
+        Assert.Contains("localhost", result.Worksheets["预算 Budget"].Cells["B9"].Formula, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal(1, result.Worksheets.ExternalLinks.Count);
+    }
+
     private static readonly (byte R, byte G, byte B) FillColor = (0xFF, 0xF2, 0xCC);
 
     /// <summary>
