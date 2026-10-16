@@ -1,7 +1,6 @@
 using System.Data;
 using System.Text.RegularExpressions;
 using Aspose.Cli.Product.Words.Engine.Mapping;
-using Aspose.Cli.Sdk.Text;
 using Aspose.Words;
 using Aspose.Words.Lists;
 using Aspose.Words.Replacing;
@@ -31,9 +30,7 @@ internal sealed partial class WordsMutationHandlers
             IgnoreDeleted = true,
             ReplacingCallback = callback,
         };
-        Regex pattern = operation.Regex
-            ? SafeRegex.Create(operation.Find, operation.CaseSensitive)
-            : new Regex(Regex.Escape(operation.Find), operation.CaseSensitive ? RegexOptions.CultureInvariant : RegexOptions.IgnoreCase | RegexOptions.CultureInvariant, SafeRegex.DefaultTimeout);
+        Regex pattern = FindPattern(operation.Find, operation.Regex, operation.CaseSensitive);
 
         long replaced = 0;
         foreach ((CompositeNode story, _) in WordsStories.In(_document, operation.Scope).ToArray())

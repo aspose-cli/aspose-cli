@@ -553,13 +553,39 @@ public sealed record SetPageNumbersOp : WordsOp
     [Minimum(0)] public int? Start { get; init; }
 }
 
-/// <summary>Applies character formatting to the runs of target blocks; omitted settings keep their values.</summary>
+/// <summary>
+/// Applies character formatting to the text of target blocks, or with match only to the text it
+/// matches there; omitted settings keep their values. Regex, caseSensitive and wholeWord true need match.
+/// </summary>
 [Operation("format_text")]
 [MistakenFor("highlight_text")]
 public sealed record FormatTextOp : WordsOp
 {
-    /// <summary>The blocks whose text runs are formatted.</summary>
+    /// <summary>The blocks whose text is formatted.</summary>
     public required WordsTarget Target { get; init; }
+
+    /// <summary>
+    /// The text to format within the target blocks, or the pattern when regex is true, matched in
+    /// the visible text 'aspose-cli words search' reads, each paragraph with the text boxes it anchors; every
+    /// match within the text of its runs is formatted and the rest of the text keeps its format.
+    /// Without it, all the text of the target blocks is formatted. Field codes and text a tracked
+    /// change deletes are never matched.
+    /// </summary>
+    [NotState]
+    [MinLength(1)] public string? Match { get; init; }
+
+    /// <summary>Whether match is a .NET regular expression rather than literal text.</summary>
+    [NotState]
+    public bool Regex { get; init; }
+
+    /// <summary>Whether a match must have the same letter case as match.</summary>
+    [MistakenFor("matchCase")]
+    [NotState]
+    public bool CaseSensitive { get; init; }
+
+    /// <summary>Whether a match must be a whole word, not part of a longer one.</summary>
+    [NotState]
+    public bool WholeWord { get; init; }
 
     /// <summary>Whether the text is bold; false removes bold.</summary>
     [ReadBack("read-result.schema.json#/$defs/wordsRunData/properties/bold")]
@@ -597,6 +623,15 @@ public sealed record FormatTextOp : WordsOp
     /// <summary>The highlight, a color of Word's highlight palette, the only highlights a Word document stores.</summary>
     [ReadBack("read-result.schema.json#/$defs/wordsRunData/properties/highlight")]
     [AllowedValues(typeof(WordsHighlightColors))] public string? Highlight { get; init; }
+
+    protected override BoundedOperation Validated()
+    {
+        OperationInvalidException.Require(
+            Match is not null || !(Regex || CaseSensitive || WholeWord),
+            "regex, caseSensitive and wholeWord true need match, the text to match",
+            "Give match the text or pattern, or drop regex, caseSensitive and wholeWord.");
+        return this;
+    }
 }
 
 /// <summary>Applies an existing paragraph style to target blocks: the typeface, size and color set on their runs give way to the style, while emphasis such as bold, italic or underline set on a run stays.</summary>
