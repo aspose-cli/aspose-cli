@@ -39,6 +39,34 @@ public sealed class WordsRenderSelectionTests : IDisposable
     private string[] Names(string directory) =>
         [.. Directory.GetFiles(_fixture.Temp.File(directory)).Select(Path.GetFileName).Order(StringComparer.Ordinal)!];
 
+    /// <summary>
+    /// The pixel budget bounds a raster image only: an svg page has no pixels, so a page that
+    /// exceeds the budget at the resolution renders as svg and is refused only as png.
+    /// </summary>
+    [Fact]
+    public void Render_ChecksThePixelBudgetForRasterOutputOnly()
+    {
+        string input = CreatePages("budget.docx", 1);
+        WordsSession Session() => ProductTestBudgets.StartEngine<WordsModule, WordsSession>(
+            (budgets, writer) => WordsActivation.Session(_fixture.Outputs(writer), budgets),
+            new Dictionary<string, long> { [ResourceBudgetKinds.RasterPixels] = 1_000 });
+
+        WordsRenderResult svg = WordsRender.Run(Session(), new WordsRenderRequest
+        {
+            Input = input,
+            Output = TestOutput.At(_fixture.Temp.File("svg/page.svg"), format: "svg"),
+        });
+        CliException png = Assert.Throws<CliException>(() => WordsRender.Run(Session(), new WordsRenderRequest
+        {
+            Input = input,
+            Output = TestOutput.At(_fixture.Temp.File("png/page.png"), format: "png"),
+        }));
+
+        Assert.True(File.Exists(Assert.Single(svg.Outputs).Path));
+        Assert.Null(svg.Dpi);
+        Assert.Equal(ErrorCodes.RenderTooLarge, png.Code);
+    }
+
     [Fact]
     public void Render_WritesEveryPageByDefaultPaddedToTheHighestNumber()
     {
