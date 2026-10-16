@@ -105,7 +105,8 @@ internal sealed class CellsEditModel : IOperationModel<CellsOp>
         ProtectWorkbookOp or UnprotectWorkbookOp => "workbook/protection",
         InsertSheetOp insert => CellsAddresses.OfSheet("sheet", insert.Name),
         ImportSheetOp import => CellsAddresses.OfSheet("sheet", import.Name ?? import.SourceSheet ?? Path.GetFileNameWithoutExtension(import.Path)),
-        _ => "workbook/all",
+        // Every other operation names a sheet, so AttemptedTargets never asks for its address.
+        _ => throw new System.Diagnostics.UnreachableException($"{operation.GetType().Name} names no sheet and has no workbook address."),
     };
 
     /// <summary>Calls Aspose.Cells; a failure inside it becomes an engine failure.</summary>

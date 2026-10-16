@@ -1,6 +1,7 @@
 using Aspose.Cells;
 using Aspose.Cells.Charts;
 using Aspose.Cli.Product.Cells.Contracts;
+using Aspose.Cli.Product.Cells.Engine.Mapping;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Errors;
 using Xunit;
@@ -846,5 +847,40 @@ public sealed class CellsOutcomeTests : IClassFixture<CellsFixture>
         Assert.Equal(image, error.Details!["path"]!.GetValue<string>());
         Assert.Equal("logo", error.Details["id"]!.GetValue<string>());
         Assert.Equal("insert_image", error.Details["op"]!.GetValue<string>());
+    }
+
+    /// <summary>
+    /// The units an outcome's targets use, as the code writes them: the sheet units, tables, defined
+    /// names and the workbook's own settings.
+    /// </summary>
+    private static readonly string[] TargetUnits =
+    [
+        .. CellsAddresses.SheetUnits, "table", "name", "workbook/default-font", "workbook/active-sheet", "workbook/protection",
+    ];
+
+    [Fact]
+    public void ReadingTheOutcome_ListsEveryTargetUnitAndNoOther()
+    {
+        string editing = SkillReference("editing.md");
+        int start = editing.IndexOf("## Reading the outcome", StringComparison.Ordinal);
+        int end = editing.IndexOf("\n## ", start + 1, StringComparison.Ordinal);
+        string section = editing[start..(end < 0 ? editing.Length : end)];
+        string flat = System.Text.RegularExpressions.Regex.Replace(section, @"\s+", " ");
+
+        string[] documented = [.. System.Text.RegularExpressions.Regex.Matches(flat, @"`([a-z-]+)/([a-z-]+(?=`))?")
+            .Select(static match => match.Groups[1].Value + (match.Groups[1].Value == "workbook" ? "/" + match.Groups[2].Value : string.Empty))
+            .Distinct(StringComparer.Ordinal)];
+
+        Assert.Empty(TargetUnits.Except(documented, StringComparer.Ordinal));
+        Assert.Empty(documented.Except(TargetUnits, StringComparer.Ordinal));
+    }
+
+    private static string SkillReference(string fileName)
+    {
+        System.Reflection.Assembly assembly = typeof(CellsEdit).Assembly;
+        string resource = assembly.GetManifestResourceNames().Single(name =>
+            name.Replace('\\', '/').EndsWith("/references/" + fileName, StringComparison.Ordinal));
+        using var reader = new StreamReader(assembly.GetManifestResourceStream(resource)!);
+        return reader.ReadToEnd();
     }
 }

@@ -328,8 +328,12 @@ Each applied operation's `itemsAffected` counts the objects it changed, and
 `targets` names them as `<unit>/<address>`: `cell/Sales!B2` (more than 100
 cells read `cell/all`), `sheet/Sales`, `row/Sales!5`, `column/Sales!C`,
 `merge/Sales!A1:C1`, `comment/Sales!B2`, `hyperlink/Sales!B2`,
-`chart/Sales/1`, `image/Sales/1`, `validation/Sales!B2:B9`, `table/SalesTable`,
-`pivot/Sales/PivotTable1`, `name/TaxRate` or `workbook/default-font`. A sheet
+`chart/Sales/1`, `image/Sales/1`, `validation/Sales!B2:B9`,
+`conditional-format/Sales/1`, `sparkline-group/Sales/1`, `table/SalesTable`,
+`pivot/Sales/PivotTable1`, `autofilter/Sales`, `freeze-panes/Sales`,
+`page-setup/Sales`, `print-area/Sales`, `protection/Sales`, `sheet-view/Sales`,
+`tab-color/Sales`, `name/TaxRate`, `workbook/default-font`,
+`workbook/active-sheet` or `workbook/protection`. A sheet
 or object name keeps its spelling, apostrophes and `!` included, except that
 `/`, `%`, control characters and leading or trailing spaces are written as
 `%XX` of their UTF-8 bytes: a sheet named ` Q3 100%` is `sheet/%20Q3 100%25`.
