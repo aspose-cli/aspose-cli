@@ -23,7 +23,7 @@ internal static class PdfSign
         // The certificate is read once, through the SDK, which reports a file it cannot open; the
         // signer gets the same bytes that were validated.
         byte[] certificate = session.Budgets.Inputs.ReadAllBytes(request.CertificatePath);
-        string signer = ValidateCertificate(request.CertificatePath, certificate, request.CertificatePassword);
+        PdfSigner signer = ValidateCertificate(request.CertificatePath, certificate, request.CertificatePassword);
         LicenseState state = session.Outputs.License;
         using LoadedPdf loaded = session.Loader.Open(filePath, request.Password);
         Page signedPage = PageAt(loaded.Document, request.Page);
@@ -56,11 +56,12 @@ internal static class PdfSign
         // PDF-SIGN-FULL-FONT: the engine embeds the whole font program its appearance draws in.
         // ASCII text is drawn in Helvetica, which is not embedded; PDF/A requires embedded fonts,
         // so its documents keep the engine's choice, and so does text beyond ASCII.
-        string[] beyondAscii = [.. new[] { ("--reason", request.Reason), ("--location", request.Location), ("--contact", request.Contact), ("the certificate's subject name", (string?)signer) }
+        string[] beyondAscii = [.. new[] { ("--reason", request.Reason), ("--location", request.Location), ("--contact", request.Contact), ("the certificate's subject name", (string?)signer.Shown) }
             .Where(static entry => !StandardFontShows(entry.Item2))
             .Select(static entry => entry.Item1)];
         bool pdfa = loaded.Document.IsPdfaCompliant;
         bool standardFont = !pdfa && beyondAscii.Length == 0;
+        (SignatureCustomAppearance appearance, bool clipped) = Appearance(request, signer, standardFont, visibleRect);
         StagedOutput write = transaction.Stage(request.Output.Path, request.Output.Overwrite, loaded.Document, temp =>
         {
             using var pkcs12 = new MemoryStream(certificate, writable: false);
@@ -69,11 +70,8 @@ internal static class PdfSign
                 Reason = request.Reason,
                 Location = request.Location,
                 ContactInfo = request.Contact,
+                CustomAppearance = appearance,
             };
-            if (standardFont)
-            {
-                signature.CustomAppearance = new SignatureCustomAppearance { FontFamilyName = "Helvetica" };
-            }
 
             facade.Sign(request.Page, request.Visible, rectangle, signature);
             facade.Save(temp);
@@ -103,9 +101,137 @@ internal static class PdfSign
                     Height = visibleRect.Height,
                 },
             License = EnvelopeParts.License(state),
-            Warnings = standardFont ? null : [FontEmbedded(beyondAscii, output.SizeBytes - input.SizeBytes)],
+            Warnings = Warnings(
+                standardFont ? null : FontEmbedded(beyondAscii, output.SizeBytes - input.SizeBytes),
+                clipped ? TextClipped(visibleRect!) : null),
         };
     }
+
+    private static List<Warning>? Warnings(params Warning?[] warnings) =>
+        warnings.OfType<Warning>().ToList() is { Count: > 0 } raised ? raised : null;
+
+    /// <summary>The font size the appearance draws its text in when the rectangle is wide enough, the engine's default.</summary>
+    private const double AppearanceFontSize = 10;
+
+    /// <summary>The smallest font size the appearance shrinks its text to, to fit the rectangle's width.</summary>
+    private const double SmallestFontSize = 6;
+
+    /// <summary>The distance between the appearance's lines, which the engine keeps whatever the font size.</summary>
+    private const double LinePitch = 12;
+
+    /// <summary>
+    /// The appearance of the signature: one line names the signer by the common name of the
+    /// certificate's subject, or by the whole subject when it has none, one states the date, and
+    /// one each the reason, location and contact the command was given. On a visible signature the
+    /// engine draws each line in one font size without wrapping and cuts off what leaves the
+    /// rectangle, so the size shrinks from 10 points until the widest line fits, down to 6 points;
+    /// past that, or with more lines than the rectangle's height holds, the text is clipped.
+    /// PDF-SIGN-FULL-FONT: only ASCII text outside PDF/A is drawn in Helvetica.
+    /// </summary>
+    private static (SignatureCustomAppearance Appearance, bool Clipped) Appearance(
+        PdfSignRequest request, PdfSigner signer, bool standardFont, PdfSignatureRect? rect)
+    {
+        var appearance = new SignatureCustomAppearance
+        {
+            ShowReason = !string.IsNullOrEmpty(request.Reason),
+            ShowLocation = !string.IsNullOrEmpty(request.Location),
+            ShowContactInfo = !string.IsNullOrEmpty(request.Contact),
+        };
+        if (signer.CommonName is not null)
+        {
+            appearance.UseDigitalSubjectFormat = true;
+            appearance.DigitalSubjectFormat = [SubjectNameElements.CN];
+        }
+
+        if (standardFont)
+        {
+            appearance.FontFamilyName = "Helvetica";
+        }
+
+        if (rect is null)
+        {
+            return (appearance, false);
+        }
+
+        List<string> lines =
+        [
+            $"{appearance.DigitalSignedLabel} '{signer.Shown}'",
+            // Every date the engine writes has the width of this one.
+            $"{appearance.DateSignedAtLabel}: 2000.01.01 00:00:00 +00:00",
+        ];
+        if (appearance.ShowReason)
+        {
+            lines.Add($"{appearance.ReasonLabel}: {request.Reason}");
+        }
+
+        if (appearance.ShowLocation)
+        {
+            lines.Add($"{appearance.LocationLabel}: {request.Location}");
+        }
+
+        if (appearance.ShowContactInfo)
+        {
+            lines.Add($"{appearance.ContactInfoLabel}: {request.Contact}");
+        }
+
+        double widest = WidestLine(lines, AppearanceFontSize);
+        double size = Math.Min(AppearanceFontSize, Math.Floor(rect.Width / widest * AppearanceFontSize * 2) / 2);
+        appearance.FontSize = Math.Max(size, SmallestFontSize);
+        return (appearance, size < SmallestFontSize || lines.Count * LinePitch > rect.Height);
+    }
+
+    /// <summary>
+    /// The width of the widest line at a font size, erring wide so a clipped line is not missed.
+    /// The engine draws in Helvetica, or in Arial, which has the same widths and also Cyrillic
+    /// and Greek letters; text with East Asian characters it draws in an East Asian font, where
+    /// those take a full em and no other character less than half of one. Each character is
+    /// measured in Arial, falling back to Helvetica where Arial is not installed; one the
+    /// measuring font has no glyph for counts a full em.
+    /// </summary>
+    private static double WidestLine(IReadOnlyList<string> lines, double size)
+    {
+        Aspose.Pdf.Text.Font font = MeasuringFont();
+        bool eastAsian = lines.Any(static line => line.Any(IsEastAsian));
+        return lines.Max(line => line.Sum(character => CharacterWidth(font, character, size, eastAsian)));
+    }
+
+    private static double CharacterWidth(Aspose.Pdf.Text.Font font, char character, double size, bool eastAsianFont)
+    {
+        if (IsEastAsian(character))
+        {
+            return size;
+        }
+
+        double measured = font.MeasureString(character.ToString(), (float)size);
+        if (measured <= 0)
+        {
+            return size;
+        }
+
+        return eastAsianFont ? Math.Max(measured, size / 2) : measured;
+    }
+
+    private static Aspose.Pdf.Text.Font MeasuringFont()
+    {
+        try
+        {
+            return Aspose.Pdf.Text.FontRepository.FindFont("Arial");
+        }
+        catch (FontNotFoundException)
+        {
+            return Aspose.Pdf.Text.FontRepository.FindFont("Helvetica");
+        }
+    }
+
+    private static bool IsEastAsian(char character) => character >= '\u2E80';
+
+    /// <summary>The warning that the visible signature's rectangle cannot hold its text.</summary>
+    private static Warning TextClipped(PdfSignatureRect rect) =>
+        new(PdfDiagnostics.SignatureTextClipped, string.Create(CultureInfo.InvariantCulture,
+            $"The signature appearance cannot show all its text in the {rect.Width:0.##} by {rect.Height:0.##} point rectangle, even in {SmallestFontSize}-point type, so the end of its longest line or its last lines are cut off."))
+        {
+            Hint = "Sign again with a larger --rect, wide enough for the longest line and 12 points high for each line, or with a shorter --reason, --location or --contact.",
+        };
 
     /// <summary>PDF-SIGN-FULL-FONT: the warning that the appearance embedded a whole font.</summary>
     private static Warning FontEmbedded(string[] beyondAscii, long growth) =>
@@ -219,8 +345,8 @@ internal static class PdfSign
     private static bool StandardFontShows(string? text) =>
         text is null || text.All(static character => character is >= ' ' and <= '~');
 
-    /// <summary>Checks that the certificate opens and can sign now; returns the signer's name, which the appearance shows.</summary>
-    private static string ValidateCertificate(string path, byte[] pkcs12, Secret password)
+    /// <summary>Checks that the certificate opens and can sign now; returns the signer's subject, which the appearance shows.</summary>
+    private static PdfSigner ValidateCertificate(string path, byte[] pkcs12, Secret password)
     {
         try
         {
@@ -240,7 +366,11 @@ internal static class PdfSign
                     $"it is valid only from {certificate.NotBefore.ToUniversalTime():yyyy-MM-dd} to {certificate.NotAfter.ToUniversalTime():yyyy-MM-dd} (UTC)"));
             }
 
-            return certificate.GetNameInfo(X509NameType.SimpleName, forIssuer: false);
+            string? commonName = certificate.SubjectName.EnumerateRelativeDistinguishedNames()
+                .Where(static name => !name.HasMultipleElements && name.GetSingleElementType().Value == CommonNameOid)
+                .Select(static name => name.GetSingleElementValue())
+                .FirstOrDefault(static name => !string.IsNullOrEmpty(name));
+            return new PdfSigner(commonName, certificate.Subject);
         }
         catch (CryptographicException exception) when (exception.HResult == WrongPassword)
         {
@@ -252,6 +382,9 @@ internal static class PdfSign
         }
     }
 
+    /// <summary>The object identifier of the common name (CN) attribute of a distinguished name.</summary>
+    private const string CommonNameOid = "2.5.4.3";
+
     /// <summary>The error Windows reports for a PKCS#12 password that does not open the file, the Win32 error 86 (0x56).</summary>
     private const int WrongPassword = unchecked((int)0x80070056);
 
@@ -261,4 +394,11 @@ internal static class PdfSign
             $"The PKCS#12 signing certificate could not be used: {reason}.",
             hint: "Use a currently valid PKCS#12 certificate (.pfx or .p12) with a private key.",
             innerException: innerException);
+}
+
+/// <summary>The subject of a signing certificate: its common name, if it has one, and its whole distinguished name.</summary>
+internal sealed record PdfSigner(string? CommonName, string Subject)
+{
+    /// <summary>The subject as the signature appearance shows it: the common name alone when there is one.</summary>
+    internal string Shown => CommonName is null ? Subject : $"CN={CommonName}";
 }

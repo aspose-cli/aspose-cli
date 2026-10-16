@@ -108,6 +108,13 @@ aspose-cli pdf inspect report.signed.pdf --detail signatures --output-format jso
 Omit `--visible` for an invisible signature; `--rect` requires `--visible` and
 measures from the page's top-left corner, as `redact_area` and `pdf render --grid` do.
 Signature rectangle values are rounded to whole points, so review the placement.
+A visible signature names the signer by the common name (CN) of the certificate's
+subject, or by the whole subject when it has none, then the date and one line
+each for the `--reason`, `--location` and `--contact` given; an option left out
+draws no line. Lines are not wrapped: the type shrinks from 10 to 6 points so the
+longest line fits the rectangle's width, and each line takes 12 points of its
+height. Text that still does not fit is cut off and the result warns
+`SIGNATURE_TEXT_CLIPPED`; sign again with a larger `--rect` or shorter text.
 Keep `--reason`, `--location`, `--contact` and the certificate's subject name in
 ASCII: other text makes the engine embed a whole font into the file, even for an
 invisible signature, which for Chinese text adds megabytes; the result then warns
