@@ -1,3 +1,6 @@
+using System.Text.Json;
+using System.Text.Json.Nodes;
+using Aspose.Cli.Generated;
 using Aspose.Cli.Product.Slides.Commands;
 using Aspose.Cli.Sdk.Extensibility.Output;
 using Aspose.Slides;
@@ -182,6 +185,46 @@ public sealed class SlidesReadBackTests
         SlidesParagraphData paragraph = Assert.Single(
             read.Slides[0].Shapes.Where(static shape => !shape.EvaluationWatermark && shape.Paragraphs is not null).SelectMany(static shape => shape.Paragraphs!));
         Assert.Equal(("bullet", 1), (paragraph.List!.Kind, paragraph.List.Level));
+    }
+
+    /// <summary>
+    /// The font of the style that format_shape and insert_shape share reads back where the
+    /// editing reference says: in font when it is given alone, and in complexScriptFont when
+    /// latinFont and eastAsianFont name other fonts.
+    /// </summary>
+    [Theory]
+    [InlineData(null, null, "font")]
+    [InlineData("Georgia", "SimSun", "complexScriptFont")]
+    public void ShapeStyle_Font_ReadsBackWhereTheEditingReferenceSays(string? latinFont, string? eastAsianFont, string property)
+    {
+        using var fixture = new SlidesEngineFixture();
+        string output = fixture.File("font.out.pptx");
+        SlidesEdit.Run(fixture.Session, new SlidesEditRequest
+        {
+            Input = fixture.CreatePresentation("font.pptx", slides: 1),
+            Batch = new SlidesOpsBatch
+            {
+                Ops =
+                [
+                    new InsertShapeOp
+                    {
+                        Slide = 1,
+                        Geometry = SlidesShapeGeometries.Rectangle,
+                        Rect = new SlidesRectInput { X = 20, Y = 300, Width = 300, Height = 60 },
+                        Text = "Box",
+                        Style = new SlidesShapeStyleInput { Font = "Times New Roman", LatinFont = latinFont, EastAsianFont = eastAsianFont },
+                    },
+                ],
+            },
+            Output = TestOutput.At(output),
+        });
+
+        SlidesReadResult read = SlidesRead.Run(fixture.Session, new SlidesReadRequest { Input = output, Content = SlidesReadContents.Full });
+
+        SlidesShapeData shape = Assert.Single(read.Slides[0].Shapes, static shape => shape.Text == "Box");
+        JsonNode run = JsonSerializer.SerializeToNode(Assert.Single(shape.Runs!), ProductJsonContext.Default.SlidesTextRunData)!;
+        Assert.Equal("Times New Roman", run[property]?.GetValue<string>());
+        Assert.Equal(latinFont ?? "Times New Roman", run["font"]?.GetValue<string>());
     }
 
     private static string Outline(SlidesEngineFixture fixture, string name)
