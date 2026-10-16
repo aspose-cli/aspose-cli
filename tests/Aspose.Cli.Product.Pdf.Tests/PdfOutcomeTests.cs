@@ -31,6 +31,24 @@ public sealed class PdfOutcomeTests
         Assert.Equal([1], result.PagesTouched);
     }
 
+    // Four pages, the most evaluation mode reads.
+    [Theory]
+    [InlineData("4", 3, new[] { "page/3" }, new[] { 3 })]
+    [InlineData("3-4", 2, new[] { "page/2", "page/3" }, new[] { 2, 3 })]
+    [InlineData("2", 5, new[] { "page/4" }, new[] { 4 })]
+    public void MovePages_CountsEachMovedPageWhereItLandsWhenItPassesFewerPages(string pages, int to, string[] targets, int[] touched)
+    {
+        using var fixture = new PdfEngineFixture();
+        string input = fixture.CreateDocument(pages: 4);
+
+        PdfEditResult result = Edit(fixture, input, new MovePagesOp { Pages = pages, To = to });
+
+        BoundedOperationOutcome outcome = Assert.Single(result.Applied);
+        Assert.Equal(targets.Length, outcome.ItemsAffected);
+        Assert.Equal(targets, outcome.Targets);
+        Assert.Equal(touched, result.PagesTouched);
+    }
+
     public static TheoryData<string> Stamps =>
         ["add_watermark_text", "add_watermark_image", "add_page_numbers", "add_header_text", "add_footer_text", "add_stamp_image", "add_hyperlink"];
 

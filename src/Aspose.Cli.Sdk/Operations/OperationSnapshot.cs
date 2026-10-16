@@ -19,7 +19,9 @@ namespace Aspose.Cli.Sdk.Operations;
 /// sequence: an object that the operation inserted, deleted or moved shifts the positions of
 /// the others, so a sequence is compared by state in order, and an object that kept its state
 /// but moved counts once, at its new address. Their state must then identify the object, not
-/// only its content, wherever the product can tell objects apart. A product whose engine keeps
+/// only its content, wherever the product can tell objects apart. An operation that moves
+/// objects names them (<c>moved</c>), since the states alone cannot tell which objects moved:
+/// when two neighbors swap places, either one could have moved. A product whose engine keeps
 /// each object as one instance adds the sequence with <see cref="AddObjects"/> instead: the
 /// objects are then compared by that instance, so one that only moved never counts, and the
 /// batch reports each changed one at its position in the output
@@ -29,7 +31,7 @@ public sealed partial class OperationSnapshot
 {
     private readonly List<(string Address, string State)> _objects = [];
     private readonly HashSet<string> _addresses = new(StringComparer.Ordinal);
-    private readonly List<(string Name, IReadOnlyList<(string Address, string State)> Items, IReadOnlyList<object>? Identities)> _sequences = [];
+    private readonly List<Sequence> _sequences = [];
 
     /// <summary>Adds an object addressed by a name, which keeps its address across the operation.</summary>
     /// <param name="address">The object's <c>&lt;unit&gt;/&lt;address&gt;</c> address, unique in the snapshot.</param>
@@ -54,7 +56,14 @@ public sealed partial class OperationSnapshot
     /// </summary>
     /// <param name="name">The sequence's name, which matches it with the same sequence of the other snapshot.</param>
     /// <param name="items">The objects in order: each <c>&lt;unit&gt;/&lt;address&gt;</c> address and state.</param>
-    public OperationSnapshot AddSequence(string name, IEnumerable<(string Address, string State)> items)
+    /// <param name="moved">
+    /// The states of the objects the operation moves, as the snapshot taken before it finds
+    /// them; the SDK reads them only from that snapshot, since a position the operation names may
+    /// hold another object after it. Each of them whose position changed counts once, at its
+    /// address in the output, and the others count only when their order among themselves
+    /// changed. Null when the operation names no object it moves.
+    /// </param>
+    public OperationSnapshot AddSequence(string name, IEnumerable<(string Address, string State)> items, IEnumerable<string>? moved = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
         ArgumentNullException.ThrowIfNull(items);
@@ -70,7 +79,7 @@ public sealed partial class OperationSnapshot
             ArgumentNullException.ThrowIfNull(state);
         }
 
-        _sequences.Add((name, list, null));
+        _sequences.Add(new Sequence(name, list, null, moved?.ToHashSet(StringComparer.Ordinal)));
         return this;
     }
 
@@ -86,7 +95,7 @@ public sealed partial class OperationSnapshot
         ArgumentNullException.ThrowIfNull(objects);
         (object Identity, string State)[] list = [.. objects];
         AddSequence(unit, list.Select(static item => item.State));
-        _sequences[^1] = (_sequences[^1].Name, _sequences[^1].Items, [.. list.Select(static item => item.Identity)]);
+        _sequences[^1] = _sequences[^1] with { Identities = [.. list.Select(static item => item.Identity)] };
         return this;
     }
 
@@ -96,11 +105,12 @@ public sealed partial class OperationSnapshot
     /// </summary>
     /// <param name="unit">The unit, which also names the sequence.</param>
     /// <param name="states">Each object's state, in order.</param>
-    public OperationSnapshot AddSequence(string unit, IEnumerable<string> states)
+    /// <param name="moved">The states of the objects the operation moves, as the other overload describes them.</param>
+    public OperationSnapshot AddSequence(string unit, IEnumerable<string> states, IEnumerable<string>? moved = null)
     {
         ArgumentNullException.ThrowIfNull(states);
         return AddSequence(unit, states.Select((state, index) =>
-            (string.Create(CultureInfo.InvariantCulture, $"{unit}/{index + 1}"), state)));
+            (string.Create(CultureInfo.InvariantCulture, $"{unit}/{index + 1}"), state)), moved);
     }
 
     /// <summary>Whether an address is <c>&lt;unit&gt;/&lt;address&gt;</c>: a lowercase kebab-case unit, a slash and the address.</summary>
@@ -129,11 +139,13 @@ public sealed partial class OperationSnapshot
             .Concat(after._sequences.Select(static sequence => sequence.Name))
             .Distinct(StringComparer.Ordinal))
         {
-            (IReadOnlyList<(string Address, string State)> items, IReadOnlyList<object>? identities) first = Sequence(before, name);
-            (IReadOnlyList<(string Address, string State)> items, IReadOnlyList<object>? identities) second = Sequence(after, name);
-            changes.AddRange(first.identities is not null && second.identities is not null
+            Sequence first = Find(before, name);
+            Sequence second = Find(after, name);
+            changes.AddRange(first.Identities is not null && second.Identities is not null
                 ? ObjectChanges(first, second)
-                : SequenceChanges(first.items, second.items));
+                : first.Moved is { } moved
+                    ? MovedChanges(first.Items, second.Items, moved)
+                    : SequenceChanges(first.Items, second.Items));
         }
 
         return changes;
@@ -147,9 +159,7 @@ public sealed partial class OperationSnapshot
     /// and one paired with a removed one at the same position counts once, at its address in the
     /// output.
     /// </summary>
-    private static IEnumerable<ObjectChange> ObjectChanges(
-        (IReadOnlyList<(string Address, string State)> Items, IReadOnlyList<object>? Identities) before,
-        (IReadOnlyList<(string Address, string State)> Items, IReadOnlyList<object>? Identities) after)
+    private static IEnumerable<ObjectChange> ObjectChanges(Sequence before, Sequence after)
     {
         var earlier = new Dictionary<object, int>(ReferenceEqualityComparer.Instance);
         for (int index = 0; index < before.Items.Count; index++)
@@ -236,10 +246,54 @@ public sealed partial class OperationSnapshot
         }
     }
 
-    private static (IReadOnlyList<(string Address, string State)> Items, IReadOnlyList<object>? Identities) Sequence(OperationSnapshot snapshot, string name) =>
-        snapshot._sequences.FirstOrDefault(sequence => sequence.Name == name) is { Items: not null } sequence
-            ? (sequence.Items, sequence.Identities)
-            : ([], null);
+    /// <summary>
+    /// The changed objects of one sequence whose moved objects the operation named: the other
+    /// objects are compared among themselves (<see cref="SequenceChanges"/>), and each moved one
+    /// counts once when its position changed, at its address in the output, or in the input when
+    /// the operation removed it.
+    /// </summary>
+    private static IEnumerable<ObjectChange> MovedChanges(
+        IReadOnlyList<(string Address, string State)> before,
+        IReadOnlyList<(string Address, string State)> after,
+        IReadOnlySet<string> moved)
+    {
+        foreach (ObjectChange change in SequenceChanges(
+            [.. before.Where(item => !moved.Contains(item.State))],
+            [.. after.Where(item => !moved.Contains(item.State))]))
+        {
+            yield return change;
+        }
+
+        var unpaired = Enumerable.Range(0, before.Count).Where(index => moved.Contains(before[index].State)).ToList();
+        for (int index = 0; index < after.Count; index++)
+        {
+            if (!moved.Contains(after[index].State))
+            {
+                continue;
+            }
+
+            int pair = unpaired.FindIndex(previous => before[previous].State == after[index].State);
+            if (pair >= 0)
+            {
+                int previous = unpaired[pair];
+                unpaired.RemoveAt(pair);
+                if (previous == index)
+                {
+                    continue;
+                }
+            }
+
+            yield return new ObjectChange(after[index].Address, InOutput: true);
+        }
+
+        foreach (int index in unpaired)
+        {
+            yield return new ObjectChange(before[index].Address, InOutput: false);
+        }
+    }
+
+    private static Sequence Find(OperationSnapshot snapshot, string name) =>
+        snapshot._sequences.FirstOrDefault(sequence => sequence.Name == name) ?? new Sequence(name, [], null, null);
 
     /// <summary>
     /// Shortens more than <see cref="BoundedOperationOutcome.MaximumTargets"/> addresses to one per
@@ -279,6 +333,13 @@ public sealed partial class OperationSnapshot
 
     [GeneratedRegex(@"^[a-z]+(?:-[a-z]+)*/\S")]
     private static partial Regex Address();
+
+    /// <summary>One sequence of a snapshot: its objects, the instances of a sequence added with <see cref="AddObjects"/>, and the states of the objects the operation moves.</summary>
+    private sealed record Sequence(
+        string Name,
+        IReadOnlyList<(string Address, string State)> Items,
+        IReadOnlyList<object>? Identities,
+        IReadOnlySet<string>? Moved);
 }
 
 /// <summary>One object an operation changed.</summary>

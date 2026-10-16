@@ -160,7 +160,8 @@ internal sealed class CellsSnapshots(Workbook workbook, Func<CellsOp, bool> appl
 
     public OperationSnapshot Apply(DeleteSheetOp operation) => SheetOrder();
 
-    public OperationSnapshot Apply(MoveSheetOp operation) => SheetOrder();
+    // The moved sheet counts once, at its new place.
+    public OperationSnapshot Apply(MoveSheetOp operation) => SheetOrder(Sheet(operation));
 
     // Hiding the active sheet activates another one.
     public OperationSnapshot Apply(SetSheetVisibilityOp operation) =>
@@ -653,10 +654,13 @@ internal sealed class CellsSnapshots(Workbook workbook, Func<CellsOp, bool> appl
     private OperationSnapshot Columns(CellsSheetOp operation, string first, string? last) =>
         Lines(operation, rows: false, A1.ParseColumn(first), A1.ParseColumn(last ?? first));
 
-    /// <summary>The sheets in tab order, each by its identity and name.</summary>
-    private OperationSnapshot SheetOrder() =>
-        new OperationSnapshot().AddSequence("sheet", workbook.Worksheets.Cast<Worksheet>()
-            .Select(sheet => (CellsAddresses.OfSheet("sheet", sheet.Name), Join(Identity(sheet), sheet.Name))));
+    /// <summary>The sheets in tab order, each by its identity and name, naming the sheet the operation moves.</summary>
+    private OperationSnapshot SheetOrder(Worksheet? moved = null)
+    {
+        static string State(Worksheet sheet) => Join(Identity(sheet), sheet.Name);
+        return new OperationSnapshot().AddSequence("sheet", workbook.Worksheets.Cast<Worksheet>()
+            .Select(sheet => (CellsAddresses.OfSheet("sheet", sheet.Name), State(sheet))), moved is null ? null : [State(moved)]);
+    }
 
     // The color with its transparency, which a read leaves out.
     private OperationSnapshot TabColor(CellsSheetOp operation) =>

@@ -74,7 +74,9 @@ internal sealed class PdfSnapshots(Document document, PdfPageIdentities pages, F
 
     public Scope Apply(DeletePagesOp operation) => PageOrder(Selection(operation.Pages));
 
-    public Scope Apply(MovePagesOp operation) => PageOrder(Selection(operation.Pages));
+    /// <summary>The page order, naming the moved pages, each of which counts once at its new number.</summary>
+    public Scope Apply(MovePagesOp operation) => new(Selection(operation.Pages), () => PageIdentities(
+        [.. Resolve(document, operation.Pages).Select(number => pages.Of(document.Pages[number]))]));
 
     public Scope Apply(ImportPagesOp operation) => PageOrder(Numbered(operation.At));
 
@@ -225,8 +227,12 @@ internal sealed class PdfSnapshots(Document document, PdfPageIdentities pages, F
     private OperationSnapshot SinglePage(int number, bool content) =>
         new OperationSnapshot().Add(Address(PageUnit, number), State(PageAt(document, number), content));
 
-    private OperationSnapshot PageIdentities() =>
-        new OperationSnapshot().AddSequence(PageUnit, Enumerable.Range(1, document.Pages.Count).Select(number => pages.Of(document.Pages[number])));
+    private OperationSnapshot PageIdentities() => PageIdentities(moved: null);
+
+    // The SDK reads the moved pages from the snapshot before the operation, when the selection
+    // still names them.
+    private OperationSnapshot PageIdentities(IReadOnlyList<string>? moved) =>
+        new OperationSnapshot().AddSequence(PageUnit, Enumerable.Range(1, document.Pages.Count).Select(number => pages.Of(document.Pages[number])), moved);
 
     /// <summary>
     /// The document information and XMP entries as the output will hold them, by their stored

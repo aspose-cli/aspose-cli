@@ -31,7 +31,9 @@ internal sealed class SlidesSnapshots(Presentation presentation, SlidesMutationH
 
     public OperationSnapshot Apply(DeleteSlidesOp operation) => SlideOrder();
 
-    public OperationSnapshot Apply(MoveSlideOp operation) => SlideOrder();
+    /// <summary>The slide order, naming the moved slide, which counts once at its new number.</summary>
+    public OperationSnapshot Apply(MoveSlideOp operation) =>
+        new OperationSnapshot().AddSequence(SlideUnit, SlideIds(presentation), moved: [Slide.SlideId.ToString(CultureInfo.InvariantCulture)]);
 
     public OperationSnapshot Apply(CopySlideOp operation) => SlideOrder();
 
