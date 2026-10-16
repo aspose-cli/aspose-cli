@@ -56,8 +56,10 @@ data-label text. A picture has no text, so a text style on it fails with `OPS_IN
 - `set_title`, `set_body` and `set_text` fill placeholders the layout already styles; prefer
   them to `format_shape`, which overrides every run of one shape.
 - `format_shape` `font` names one font for Latin, East Asian and complex-script text;
-  `latinFont` and `eastAsianFont` set the font of their script in its place. To return text to
-  the template's fonts, see [design system](design-system.md).
+  `latinFont` and `eastAsianFont` set the font of their script in its place. `slides read
+  --content full` reports a `font` given alone as each run's `font`; given with `latinFont`, it
+  reads back as `complexScriptFont`, while `font` reports the Latin font. To return text to the
+  template's fonts, see [design system](design-system.md).
 - A `set_body` paragraph with a `list` is an item at the list's `level`, with the bullet the
   placeholder gives that level (a bullet of its own where the level has none), or numbered with
   `"kind": "number"`; a paragraph without `list` is
