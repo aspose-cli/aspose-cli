@@ -146,7 +146,12 @@ cells:
   comments, validation and conditional formats.
 - Imported formulas keep their sheet names: a reference to another source
   sheet points at the sheet of that name in this workbook, or becomes `#REF!`.
-  Import the referenced sheets first, or import `values`. Defined names that
+  Import the referenced sheets first, or import `values`. In `import_range`, a
+  reference that names the copied sheet itself (`='Rates'!B2` copied from
+  `Rates`) shifts onto the destination sheet like one that names no sheet,
+  unless the source also has a sheet of the destination sheet's name: that
+  sheet's references take the destination, and those to the copied sheet follow
+  the rule for another source sheet. Defined names that
   imported formulas use come along unless this workbook defines them;
   `import_sheet` refuses a source whose workbook-level name this workbook
   defines differently.
