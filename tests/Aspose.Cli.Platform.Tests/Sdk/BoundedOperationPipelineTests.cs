@@ -198,6 +198,44 @@ public sealed class BoundedOperationPipelineTests
         Assert.DoesNotContain("LineNumber", reason, StringComparison.Ordinal);
     }
 
+    /// <summary>
+    /// A document that is not JSON names no operation, so its hint points at the syntax error's
+    /// position, and a backslash a JSON string cannot hold, as in a regular expression, is shown
+    /// written as two.
+    /// </summary>
+    [Theory]
+    [InlineData("{\"ops\":[{\"op\":\"note\",\"text\":\"(\\+86 *)?1[3-9]\\\\d{9}\"}]}", true)]
+    [InlineData("{\"ops\":[{\"op\":\"note\" \"text\":\"a\"}]}", false)]
+    public void Parse_HintsAtTheJsonSyntaxRatherThanAnOperation(string document, bool escape)
+    {
+        CliException error = Assert.Throws<CliException>(() => Catalog.Parse<TestBatch>(document, TestContracts.Json));
+
+        Assert.Equal(ErrorCodes.OpsInvalid, error.Code);
+        Assert.DoesNotContain("named operation", error.Hint, StringComparison.Ordinal);
+        Assert.Contains("JSON syntax", error.Hint, StringComparison.Ordinal);
+        Assert.Contains("line", error.Hint, StringComparison.Ordinal);
+        Assert.Equal(escape, error.Hint!.Contains("\"\\\\+\"", StringComparison.Ordinal));
+    }
+
+    /// <summary>
+    /// A trailing comma is explained in the document's terms, at its position: the comma before
+    /// the closing bracket or brace is deleted; nothing speaks of the JSON reader's options.
+    /// </summary>
+    [Theory]
+    [InlineData("{\"ops\":[{\"op\":\"note\",\"text\":\"a\"},]}")]
+    [InlineData("{\"ops\":[{\"op\":\"note\",\"text\":\"a\",}]}")]
+    public void Parse_ExplainsATrailingCommaWithoutTheReadersOptions(string document)
+    {
+        CliException error = Assert.Throws<CliException>(() => Catalog.Parse<TestBatch>(document, TestContracts.Json));
+
+        Assert.Equal(ErrorCodes.OpsInvalid, error.Code);
+        Assert.DoesNotContain("reader options", error.Message + error.Hint, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("in this mode", error.Message + error.Hint, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("delete the comma", error.Message, StringComparison.Ordinal);
+        Assert.Contains("delete the comma", error.Hint, StringComparison.Ordinal);
+        Assert.Matches(@"\(line 1, byte \d+\)$", error.Details!["reason"]!.GetValue<string>());
+    }
+
     [Fact]
     public void Parse_StatesOnlyWhereADocumentThatMustNotBeQuotedBreaks()
     {
