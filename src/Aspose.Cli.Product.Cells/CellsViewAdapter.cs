@@ -180,7 +180,12 @@ internal sealed class CellsViewAdapter : IProductViewAdapter<CellsSession>
                     + "Widen the columns (resize_columns without a width auto-fits) or wrap the text."
                     + (sheet.ClippedCells.SamplesHaveEastAsianText
                         ? " East Asian text in a font without East Asian glyphs is measured unreliably, so check those values in the sheet image; if one is cut off after auto-fit, give its column an explicit width."
-                        : string.Empty)));
+                        : string.Empty),
+                hint: sheet.ClippedCells.SamplesHavePivotLabels
+                    // Auto-fit leaves out the indent the engine draws these labels with
+                    // (known issue CELLS-PIVOT-LABEL-INDENT, KNOWN-ISSUES.md).
+                    ? "Some are pivot table column labels, which auto-fit leaves cut off: give their columns an explicit width with resize_columns and widthChars, a few characters wider than the label."
+                    : Hint));
         }
         if (sheet.OverflowingCells.Count > 0)
         {

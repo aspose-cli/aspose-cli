@@ -1,6 +1,7 @@
 using Aspose.Cells;
 using Aspose.Cells.Charts;
 using Aspose.Cells.Drawing;
+using Aspose.Cells.Pivot;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Extensibility.Output;
 
@@ -14,6 +15,12 @@ internal static class ReviewLayoutProjection
     private const double WideColumnWidth = 80;
     private const double ShortRowHeight = 8;
     private const double TallRowHeight = 120;
+
+    // The indent the engine draws a pivot table's outer column item labels with, in pixels at
+    // 96 DPI (CELLS-PIVOT-LABEL-INDENT), and in characters of the default font rounded up (about
+    // 2.3 in Arial 10), so the character pre-checks never skip a label the pixel check reports.
+    private const int PivotLabelIndentPixels = 16;
+    private const double PivotLabelIndentUnits = 3;
 
     public static CellsReviewLayout Inspect(Workbook workbook)
     {
@@ -117,6 +124,7 @@ internal static class ReviewLayoutProjection
             .Select(index => workbook.GetStyleInPool(index).Font.Size).DefaultIfEmpty(0).Max() / standardFontSize);
         var clipped = new CellSetBuilder();
         var overflowing = new CellSetBuilder();
+        HashSet<(int Row, int Column)> pivotLabels = IndentedPivotLabels(sheet);
         foreach (Cell cell in cells)
         {
             if (cell.Value is null or "" || cell.IsMerged || cells.IsColumnHidden(cell.Column))
@@ -137,7 +145,8 @@ internal static class ReviewLayoutProjection
             // such text.
             // Column widths are measured in characters of the default font; East Asian Wide and
             // Fullwidth characters take two.
-            double units = TextWidth.Of(cell.StringValue);
+            bool pivotLabel = pivotLabels.Contains((cell.Row, cell.Column));
+            double units = TextWidth.Of(cell.StringValue) + (pivotLabel ? PivotLabelIndentUnits : 0);
             double columnWidth = cells.GetColumnWidth(cell.Column);
             // A number needs room for the cell's padding too: with less than two characters to
             // spare, the engine's own display text says whether it shows in full.
@@ -161,15 +170,15 @@ internal static class ReviewLayoutProjection
             Style style = cell.GetStyle();
             if (style.IsTextWrapped || style.ShrinkToFit
                 || units * Math.Max(1, style.Font.Size / standardFontSize) <= columnWidth
-                || cell.GetWidthOfValue() <= cells.GetColumnWidthPixel(cell.Column))
+                || cell.GetWidthOfValue() + (pivotLabel ? PivotLabelIndentPixels : 0) <= cells.GetColumnWidthPixel(cell.Column))
             {
                 continue;
             }
 
-            bool spills = cells.CheckCell(cell.Row, cell.Column + 1) is not { Value: not (null or "") };
+            bool spills = !pivotLabel && cells.CheckCell(cell.Row, cell.Column + 1) is not { Value: not (null or "") };
             if (!spills)
             {
-                clipped.Add(cell.Name, cell.StringValue.Any(IsEastAsian));
+                clipped.Add(cell.Name, cell.StringValue.Any(IsEastAsian), pivotLabel);
             }
             else if (EndsNearColumnEdge(cells, cell))
             {
@@ -178,6 +187,45 @@ internal static class ReviewLayoutProjection
         }
 
         return (clipped.Build(), overflowing.Build());
+    }
+
+    /// <summary>
+    /// The cells of the item labels of each pivot table column field but the innermost, such as
+    /// regions over products. The engine draws such a label indented and cuts it off at its own
+    /// column's edge, though the cells to its right are empty, and auto-fit leaves the indent out
+    /// (known issue CELLS-PIVOT-LABEL-INDENT, KNOWN-ISSUES.md), so the label is measured with the
+    /// indent and never counts as spilling. The value field captions, the subtotal and grand total
+    /// labels and the innermost field's items are drawn like any cell. The last row of a pivot
+    /// table's column range holds the innermost field's items, the rows above it the outer fields'.
+    /// </summary>
+    private static HashSet<(int Row, int Column)> IndentedPivotLabels(Worksheet sheet)
+    {
+        var labels = new HashSet<(int Row, int Column)>();
+        foreach (PivotTable pivot in sheet.PivotTables)
+        {
+            PivotFieldCollection fields = pivot.ColumnFields;
+            CellArea columns = pivot.ColumnRange;
+            for (int index = 0; index < fields.Count - 1; index++)
+            {
+                PivotField field = fields[index];
+                if (field.IsValuesField)
+                {
+                    continue;
+                }
+
+                var items = new HashSet<string>(field.Items ?? [], StringComparer.Ordinal);
+                int row = columns.EndRow - (fields.Count - 1 - index);
+                for (int column = columns.StartColumn; column <= columns.EndColumn; column++)
+                {
+                    if (sheet.Cells.CheckCell(row, column) is { Type: CellValueType.IsString } cell && items.Contains(cell.StringValue))
+                    {
+                        labels.Add((row, column));
+                    }
+                }
+            }
+        }
+
+        return labels;
     }
 
     /// <summary>
@@ -211,18 +259,20 @@ internal static class ReviewLayoutProjection
         private readonly List<string> _samples = [];
         private int _count;
         private bool _eastAsian;
+        private bool _pivotLabels;
 
-        internal void Add(string name, bool eastAsian)
+        internal void Add(string name, bool eastAsian, bool pivotLabel = false)
         {
             _count++;
             if (_samples.Count < MaxDimensionSamples)
             {
                 _samples.Add(name);
                 _eastAsian |= eastAsian;
+                _pivotLabels |= pivotLabel;
             }
         }
 
-        internal CellsReviewCellSet Build() => new(_count, _samples, _eastAsian);
+        internal CellsReviewCellSet Build() => new(_count, _samples, _eastAsian, _pivotLabels);
     }
 
     // Any character from the CJK radicals on, halfwidth forms included, which a Latin default

@@ -64,13 +64,14 @@ internal sealed record CellsReviewDimensionSet(
     IReadOnlyList<int> Samples);
 
 /// <summary>
-/// Cells in one layout condition: how many there are, the A1 names of the first few, and whether
-/// one of those holds East Asian text.
+/// Cells in one layout condition: how many there are, the A1 names of the first few, whether
+/// one of those holds East Asian text, and whether one is a pivot table column label.
 /// </summary>
 internal sealed record CellsReviewCellSet(
     int Count,
     IReadOnlyList<string> Samples,
-    bool SamplesHaveEastAsianText = false);
+    bool SamplesHaveEastAsianText = false,
+    bool SamplesHavePivotLabels = false);
 
 /// <summary>Layout facts for one chart on a worksheet.</summary>
 internal sealed record CellsReviewChartLayout

@@ -59,7 +59,10 @@ Cells checks report codes such as `CELLS_FORMULA_ERROR`,
 the next cell, or a number or date too wide to show in full, as `####` or
 rounded, measured with Excel's column widths). `CELLS_VALUES_CLIPPED` can miss East Asian text in a font
 without East Asian glyphs (Calibri, Arial): judge those columns in the image,
-or use a font such as Microsoft YaHei. For a file a person opens, the look
+or use a font such as Microsoft YaHei. It does report the indented column
+labels of a pivot table, which the engine cuts off at their column's edge and
+`resize_columns` without `widthChars` leaves as they are: give those columns an
+explicit `widthChars`. For a file a person opens, the look
 also grades the design checklist in `aspose-cli docs cells/design-system`,
 section 12. Render large sheets as windows with a sheet-qualified `--range`;
 `cells render` warns `RENDER_IMAGE_LARGE` with such a window when an image is

@@ -302,9 +302,12 @@ public sealed class CellsKnownIssueTests
     }
 
     /// <summary>
-    /// A pivot with a column field and two value fields, the values in the column area: the
-    /// column item label above the value captions is rendered further right than the same text in
-    /// a plain cell of the same auto-fitted width, and cut at the column edge.
+    /// In pivots whose column area holds more than one field, the item labels of a column field
+    /// other than the innermost are drawn about 16 pixels at 96 DPI further right than the same
+    /// text in a plain cell of the same width: the products over the value fields, and the regions
+    /// over the products. The value field captions, also when they are the outer field, the
+    /// subtotal and grand total labels and the innermost field's items are not. Auto-fit gives the
+    /// indented label's column the width of the text alone, and the label is cut at its edge.
     /// </summary>
     [LicensedFact]
     public void PivotColumnItemLabels_RenderAnIndentAutoFitLeavesOut()
@@ -312,57 +315,131 @@ public sealed class CellsKnownIssueTests
         Requires.Windows();
         using var fixture = new CellsFixture();
         _ = fixture.LicenseState;
-        using var workbook = new Workbook();
-        Style normal = workbook.DefaultStyle;
-        normal.Font.Name = "Arial";
-        normal.Font.Size = 10;
-        workbook.DefaultStyle = normal;
-        Worksheet data = workbook.Worksheets[0];
-        data.Name = "Src";
-        object[][] rows = [["Region", "Product", "Amount", "Qty"], ["East", "Laptop computer", 10, 1], ["West", "Monitor", 20, 2]];
-        for (int row = 0; row < rows.Length; row++)
+        // Each probe: the layout, a label cell, its text, and whether the engine indents it.
+        (string Layout, string Cell, string Text, bool Indented)[] probes =
+        [
+            ("products-over-values", "B4", "Laptop computer", true),
+            ("products-over-values", "F4", "Total Sum of Amount", false),
+            ("products-over-values", "B5", "Sum of Amount", false),
+            ("regions-over-products", "B4", "East", true),
+            ("regions-over-products", "D4", "East Total", false),
+            ("regions-over-products", "H4", "Grand Total", false),
+            ("regions-over-products", "B5", "Laptop computer", false),
+            ("values-over-products", "B4", "Sum of Amount", false),
+            ("values-over-products", "B5", "Laptop computer", false),
+        ];
+        var measured = new List<string>();
+        bool reproduced = true;
+        foreach ((string layout, string address, string text, bool indented) in probes)
         {
-            for (int column = 0; column < 4; column++)
+            using Workbook workbook = PivotWorkbook(layout);
+            Worksheet sheet = workbook.Worksheets["Pivot"];
+            Cell label = sheet.Cells[address];
+            Assert.Equal(text, label.StringValue);
+            for (int column = 0; column < 12; column++)
             {
-                data.Cells[row, column].PutValue(rows[row][column]);
+                sheet.Cells.SetColumnWidth(column, 30);
             }
+
+            Worksheet plain = workbook.Worksheets.Add("Plain");
+            plain.Cells[address].PutValue(text);
+            plain.Cells.SetColumnWidth(label.Column, 30);
+            // Ink positions at 192 DPI, halved to pixels at 96 DPI.
+            double indent = (Ink(fixture, sheet, address).Left - Ink(fixture, plain, address).Left) / 2d;
+            measured.Add($"{layout} {address} '{text}' {indent:0.#}px");
+            reproduced &= indented ? indent is >= 14 and <= 18 : Math.Abs(indent) <= 2;
         }
 
-        Worksheet sheet = workbook.Worksheets.Add("Pivot");
-        Aspose.Cells.Pivot.PivotTable pivot = sheet.PivotTables[sheet.PivotTables.Add("=Src!A1:D3", "A3", "P")];
-        pivot.AddFieldToArea(Aspose.Cells.Pivot.PivotFieldType.Row, "Region");
-        pivot.AddFieldToArea(Aspose.Cells.Pivot.PivotFieldType.Column, "Product");
-        pivot.AddFieldToArea(Aspose.Cells.Pivot.PivotFieldType.Data, "Amount");
-        pivot.AddFieldToArea(Aspose.Cells.Pivot.PivotFieldType.Data, "Qty");
-        pivot.AddFieldToArea(Aspose.Cells.Pivot.PivotFieldType.Column, pivot.ValuesField);
-        pivot.CalculateData();
-        sheet.AutoFitColumns();
-        Cell label = sheet.Cells.Cast<Cell>().First(static cell => cell.StringValue == "Laptop computer");
+        // Auto-fit leaves the indent out: the label's column is as wide as for the text in a plain
+        // cell, and the label is drawn cut.
+        using (Workbook workbook = PivotWorkbook("products-over-values"))
+        {
+            Worksheet sheet = workbook.Worksheets["Pivot"];
+            sheet.AutoFitColumns();
+            Worksheet plain = workbook.Worksheets.Add("Plain");
+            plain.Cells["B4"].PutValue("Laptop computer");
+            plain.AutoFitColumns();
+            int pivotWidth = sheet.Cells.GetColumnWidthPixel(1);
+            int plainWidth = plain.Cells.GetColumnWidthPixel(1);
+            (int Left, int Right) inPivot = Ink(fixture, sheet, "B4");
+            (int Left, int Right) inPlain = Ink(fixture, plain, "B4");
+            measured.Add($"auto-fitted to {pivotWidth}px in the pivot and {plainWidth}px in a plain cell, the label's ink spans "
+                + $"{inPivot.Left}..{inPivot.Right} in the pivot and {inPlain.Left}..{inPlain.Right} in the plain cell");
+            reproduced &= pivotWidth == plainWidth && inPivot.Right - inPivot.Left < inPlain.Right - inPlain.Left - 10;
+        }
 
-        Worksheet plain = workbook.Worksheets.Add("Plain");
-        plain.Cells[label.Row, label.Column].PutValue(label.StringValue);
-        plain.AutoFitColumns();
-        int pivotWidth = sheet.Cells.GetColumnWidthPixel(label.Column);
-        int plainWidth = plain.Cells.GetColumnWidthPixel(label.Column);
-        (int Left, int Right) inPivot = Ink(sheet, label.Name, "pivot");
-        (int Left, int Right) inPlain = Ink(plain, label.Name, "plain");
+        KnownIssue.Reproduces("CELLS-PIVOT-LABEL-INDENT", reproduced, string.Join("; ", measured));
 
-        KnownIssue.Reproduces(
-            "CELLS-PIVOT-LABEL-INDENT",
-            pivotWidth == plainWidth && inPivot.Left - inPlain.Left >= 10
-                && inPivot.Right - inPivot.Left < inPlain.Right - inPlain.Left - 5,
-            $"auto-fitted to {pivotWidth}px in the pivot and {plainWidth}px in a plain cell, the label's ink spans "
-            + $"{inPivot.Left}..{inPivot.Right} in the pivot and {inPlain.Left}..{inPlain.Right} in the plain cell");
+        static Workbook PivotWorkbook(string layout)
+        {
+            var workbook = new Workbook();
+            Style normal = workbook.DefaultStyle;
+            normal.Font.Name = "Arial";
+            normal.Font.Size = 10;
+            workbook.DefaultStyle = normal;
+            Worksheet data = workbook.Worksheets[0];
+            data.Name = "Src";
+            object[][] rows =
+            [
+                ["Region", "Product", "Amount", "Qty", "Channel"],
+                ["East", "Laptop computer", 10, 1, "Online"],
+                ["East", "Monitor", 20, 2, "Store"],
+                ["West", "Laptop computer", 30, 3, "Online"],
+                ["West", "Monitor", 40, 4, "Store"],
+            ];
+            for (int row = 0; row < rows.Length; row++)
+            {
+                for (int column = 0; column < rows[row].Length; column++)
+                {
+                    data.Cells[row, column].PutValue(rows[row][column]);
+                }
+            }
 
-        (int Left, int Right) Ink(Worksheet rendered, string cell, string name)
+            Worksheet sheet = workbook.Worksheets.Add("Pivot");
+            Aspose.Cells.Pivot.PivotTable pivot = sheet.PivotTables[sheet.PivotTables.Add("=Src!A1:E5", "A3", "P")];
+            const Aspose.Cells.Pivot.PivotFieldType Row = Aspose.Cells.Pivot.PivotFieldType.Row;
+            const Aspose.Cells.Pivot.PivotFieldType Column = Aspose.Cells.Pivot.PivotFieldType.Column;
+            const Aspose.Cells.Pivot.PivotFieldType Data = Aspose.Cells.Pivot.PivotFieldType.Data;
+            switch (layout)
+            {
+                case "regions-over-products":
+                    pivot.AddFieldToArea(Row, "Channel");
+                    pivot.AddFieldToArea(Column, "Region");
+                    pivot.AddFieldToArea(Column, "Product");
+                    pivot.AddFieldToArea(Data, "Amount");
+                    break;
+                case "values-over-products":
+                    pivot.AddFieldToArea(Row, "Region");
+                    pivot.AddFieldToArea(Data, "Amount");
+                    pivot.AddFieldToArea(Data, "Qty");
+                    pivot.AddFieldToArea(Column, pivot.ValuesField);
+                    pivot.AddFieldToArea(Column, "Product");
+                    break;
+                default:
+                    pivot.AddFieldToArea(Row, "Region");
+                    pivot.AddFieldToArea(Column, "Product");
+                    pivot.AddFieldToArea(Data, "Amount");
+                    pivot.AddFieldToArea(Data, "Qty");
+                    pivot.AddFieldToArea(Column, pivot.ValuesField);
+                    break;
+            }
+
+            pivot.CalculateData();
+            return workbook;
+        }
+
+        // The left and right ink of the text in one cell drawn alone at 192 DPI.
+        static (int Left, int Right) Ink(CellsFixture fixture, Worksheet rendered, string cell)
         {
             rendered.PageSetup.PrintArea = cell;
-            string path = fixture.Temp.File($"pivot-label-{name}.png");
+            string path = fixture.Temp.File($"pivot-label-{Guid.NewGuid():N}.png");
             new Aspose.Cells.Rendering.SheetRender(rendered, new Aspose.Cells.Rendering.ImageOrPrintOptions
             {
                 ImageType = Aspose.Cells.Drawing.ImageType.Png,
                 OnePagePerSheet = true,
                 OnlyArea = true,
+                HorizontalResolution = 192,
+                VerticalResolution = 192,
             }).ToImage(0, path);
             using SkiaSharp.SKBitmap image = SkiaSharp.SKBitmap.Decode(path);
             int left = int.MaxValue;
@@ -378,6 +455,7 @@ public sealed class CellsKnownIssueTests
                     right = Math.Max(right, pixel % image.Width);
                 }
             }
+
             return (left, right);
         }
     }
