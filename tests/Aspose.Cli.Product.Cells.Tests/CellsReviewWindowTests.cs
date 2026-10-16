@@ -1,4 +1,8 @@
+using System.Buffers.Binary;
+using System.Text.Json.Nodes;
+using System.Text.RegularExpressions;
 using Aspose.Cli.Product.Cells.Contracts;
+using Aspose.Cli.Sdk.Extensibility;
 using Aspose.Cli.Sdk.Views;
 using Aspose.Cli.TestKit;
 using Xunit;
@@ -7,7 +11,9 @@ namespace Aspose.Cli.Product.Cells.Tests;
 
 /// <summary>
 /// A worksheet too large for one review image contributes its first rows, and the review still
-/// renders every other sheet, instead of failing with RENDER_TOO_LARGE.
+/// renders every other sheet, instead of failing with RENDER_TOO_LARGE. A review image stays
+/// within the 10000 pixels on a side that a model reads in full, and the warning gives the
+/// command that renders the next window.
 /// </summary>
 public sealed class CellsReviewWindowTests : IClassFixture<CellsFixture>
 {
@@ -81,5 +87,90 @@ public sealed class CellsReviewWindowTests : IClassFixture<CellsFixture>
         var window = Assert.Single(manifest.Warnings ?? [], static warning => warning.Code.Name == "SHEET_PARTIALLY_RENDERED");
         Assert.Equal("Detail", window.Location);
         Assert.True(window.AffectsCompleteness);
+    }
+
+    /// <summary>
+    /// A sheet far taller than a readable image, though well within the pixel budget, shows its
+    /// first rows within 10000 pixels, and the warning's command renders the rows after them.
+    /// </summary>
+    [Fact]
+    public void TallSheet_ShowsAReadableWindowAndTheCommandForTheNext()
+    {
+        using var workspace = new TempWorkspace();
+        string path = workspace.File("tall.xlsx");
+        using (var workbook = new Aspose.Cells.Workbook())
+        {
+            Aspose.Cells.Worksheet detail = workbook.Worksheets[0];
+            detail.Name = "Detail";
+            for (int row = 0; row < 2_000; row++)
+            {
+                for (int column = 0; column < 6; column++)
+                {
+                    detail.Cells[row, column].PutValue(row * 10 + column);
+                }
+            }
+
+            workbook.Worksheets[workbook.Worksheets.Add()].Cells["A1"].PutValue("Total");
+            workbook.Save(path);
+        }
+
+        AssertReadableWindowAndNext(workspace, path, "Detail", nextRows: true);
+    }
+
+    /// <summary>
+    /// A sheet of 16000 columns, over the pixel budget, shows its first columns instead of
+    /// failing the review with RENDER_TOO_LARGE, and the command renders the columns after them.
+    /// </summary>
+    [Fact]
+    public void WideSheet_ShowsAReadableWindowInsteadOfFailingTheReview()
+    {
+        using var workspace = new TempWorkspace();
+        string path = workspace.File("wide.xlsx");
+        using (var workbook = new Aspose.Cells.Workbook())
+        {
+            Aspose.Cells.Worksheet wide = workbook.Worksheets[0];
+            wide.Name = "Wide";
+            for (int column = 0; column < 16_000; column++)
+            {
+                for (int row = 0; row < 3; row++)
+                {
+                    wide.Cells[row, column].PutValue(column);
+                }
+            }
+
+            workbook.Worksheets[workbook.Worksheets.Add()].Cells["A1"].PutValue("Total");
+            workbook.Save(path);
+        }
+
+        AssertReadableWindowAndNext(workspace, path, "Wide", nextRows: false);
+    }
+
+    private void AssertReadableWindowAndNext(TempWorkspace workspace, string path, string sheet, bool nextRows)
+    {
+        var sink = new MemoryArtifactSink();
+        ViewManifest manifest = CellsView.Render(_fixture.Session, path,
+            new ViewRenderRequest { View = CellsViews.Sheets, MaxPartCount = 8, Purpose = ViewPurpose.Evidence },
+            sink);
+
+        Assert.Equal(2, manifest.Parts.Count);
+        byte[] png = sink.Bytes(manifest.Parts[0].File);
+        int width = BinaryPrimitives.ReadInt32BigEndian(png.AsSpan(16, 4));
+        int height = BinaryPrimitives.ReadInt32BigEndian(png.AsSpan(20, 4));
+        Assert.True(Math.Max(width, height) <= 10_000, $"The review image is {width} x {height} pixels.");
+        Warning window = Assert.Single(manifest.Warnings ?? [], static warning => warning.Code.Name == "SHEET_PARTIALLY_RENDERED");
+        Assert.Equal(sheet, window.Location);
+        Assert.True(window.AffectsCompleteness);
+
+        Match command = Regex.Match(window.Hint ?? string.Empty, "aspose-cli cells render \"[^\"]+\" --range \"'" + sheet + "'!([A-Z]+)([0-9]+):[A-Z]+[0-9]+\"");
+        Assert.True(command.Success, window.Hint);
+        // The next window starts below the rows shown, or right of the columns shown.
+        (string column, string row) = (command.Groups[1].Value, command.Groups[2].Value);
+        Assert.Equal(nextRows ? "A" : "1", nextRows ? column : row);
+        Assert.NotEqual(nextRows ? "1" : "A", nextRows ? row : column);
+
+        CliResult next = workspace.RunCommandLine(command.Value + " --out next.png --output-format json");
+        Assert.True(next.ExitCode == 0, next.StdErr);
+        JsonNode result = JsonNode.Parse(next.StdOut)!;
+        Assert.DoesNotContain(result["warnings"]?.AsArray() ?? [], static warning => warning!["code"]!.GetValue<string>() == "RENDER_IMAGE_LARGE");
     }
 }
