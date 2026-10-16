@@ -18,7 +18,8 @@ internal static class SheetRangeInput
     /// <exception cref="CliException"><c>OPTION_INVALID</c> when the value is not A1 notation.</exception>
     public static RangeSpec? Parse(string? text, string option = RangeOption)
     {
-        if (text is null || string.Equals(text.Trim(), PageRange.AllText, StringComparison.OrdinalIgnoreCase))
+        // all is lowercase, the rule of the SDK's selection keyword (PageRange) for every option.
+        if (text is null || string.Equals(text.Trim(), PageRange.AllText, StringComparison.Ordinal))
         {
             return null;
         }

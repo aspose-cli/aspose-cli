@@ -258,6 +258,29 @@ public sealed class CellsCliTests : IDisposable
         Assert.True(lower.ExitCode == 0, lower.StdErr);
     }
 
+    [Theory]
+    [InlineData("read", "--range")]
+    [InlineData("read", "--scan-range")]
+    [InlineData("render", "--range")]
+    public void TheAllRange_IsLowercaseAsEverySelectionsAll(string verb, string option)
+    {
+        Assert.Equal(0, _workspace.Run("cells", "create", "every.xlsx", "--sheets", "Budget,Lists").ExitCode);
+        Assert.Equal(0, _workspace.Run("cells", "edit", "every.xlsx", "--set", "Budget!A1=1", "--in-place").ExitCode);
+        Assert.Equal(0, _workspace.Run("cells", "convert", "every.xlsx", "--to", "pdf", "--out", "every.pdf").ExitCode);
+        string[] output = verb == "render" ? ["--out", "every.png", "--overwrite"] : [];
+
+        CliResult upper = _workspace.Run(["cells", verb, "every.xlsx", option, "ALL", .. output, "--output-format", "json"]);
+        CliResult pages = _workspace.Run("pdf", "render", "every.pdf", "--pages", "ALL", "--out", "page.png", "--output-format", "json");
+        CliResult lower = _workspace.Run(["cells", verb, "every.xlsx", option, "all", .. output, "--output-format", "json"]);
+
+        Assert.Equal(2, pages.ExitCode);
+        Assert.Equal(pages.ExitCode, upper.ExitCode);
+        Assert.Equal(
+            JsonNode.Parse(pages.StdErr)!["error"]!["code"]!.GetValue<string>(),
+            JsonNode.Parse(upper.StdErr)!["error"]!["code"]!.GetValue<string>());
+        Assert.True(lower.ExitCode == 0, lower.StdErr);
+    }
+
     [Fact]
     public void Inspect_SampleRowsWithoutSample_IsAnOptionError()
     {
