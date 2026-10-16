@@ -185,6 +185,7 @@ public sealed class WordsModuleTests
     [InlineData("add_watermark", "set_watermark")]
     [InlineData("update_fields", "refresh_fields")]
     [InlineData("format_table", "set_table_pagination")]
+    [InlineData("highlight_text", "format_text")]
     public void RenamedOperation_IsRefusedWithItsNewName(string old, string renamed)
     {
         CliException error = Assert.Throws<CliException>(() => Parse($$"""{"ops":[{"op":"{{old}}"}]}"""));
