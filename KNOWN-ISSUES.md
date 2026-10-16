@@ -419,7 +419,7 @@ fails, delete the issue's section, the code that names it and the test, then upd
   drawn at all, not even as grey. Paths of the same thickness are drawn.
 - **CLI behavior:** `review` renders its 150 DPI evidence at 300 DPI and scales it down, so such
   a line shows as grey; a page whose 300 DPI raster exceeds the pixel budget is rendered at
-  150 DPI. `pdf render`, `pdf convert` to images and the `preview` pages draw at the resolution
+  150 DPI. `pdf render`, `pdf convert --to tiff` and the `preview` pages draw at the resolution
   they use.
 - **Workaround:** render the page with `pdf render --dpi 300` or higher.
 - **Reproduction:** [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownIssueTests.cs)

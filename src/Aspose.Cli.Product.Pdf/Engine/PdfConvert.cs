@@ -23,7 +23,6 @@ internal static class PdfConvert
         PdfEngineFormat target = PdfEngineFormats.Of(request.Output.Format.Id);
         IReadOnlyList<PdfPageOutput> outputs = target.Write switch
         {
-            PdfEngineWrite.PageImage => ConvertPages(session, loaded.Document, pages, request),
             PdfEngineWrite.Tiff => [new(ConvertTiff(session, loaded.Document, pages, request))],
             PdfEngineWrite.Text => [new(ConvertText(session, loaded.Document, pages, request))],
             PdfEngineWrite.Archive => [new(ConvertPdfa(session, loaded.Document, pages, request, warnings))],
@@ -278,27 +277,6 @@ internal static class PdfConvert
         "pdfa-2b" => "PDF/A-2 allows only attachments that are PDF/A documents",
         _ => $"the engine could not make it conform to {profile}",
     };
-
-    private static IReadOnlyList<PdfPageOutput> ConvertPages(
-        PdfSession session,
-        Document document,
-        IReadOnlyList<int> pages,
-        PdfConvertRequest request)
-    {
-        string outputDirectory = request.Output.Directory;
-        using OutputSet<Document> writer = session.Outputs.BeginSet([outputDirectory], "pdf-convert");
-        IReadOnlyList<string> paths = request.Output.Parts(pages);
-        foreach ((int pageNumber, string path) in pages.Zip(paths))
-        {
-            writer.Stage(path, request.Output.Overwrite, document, temp =>
-            {
-                using FileStream stream = File.Create(temp);
-                PdfRaster.RenderPage(session.Budgets, document, pageNumber, request.Output.Format.Id, RenderPixelGuard.DefaultDpi, stream);
-            }, rendering: true, pages: [pageNumber]);
-        }
-
-        return [.. writer.Commit().Zip(pages, (file, page) => new PdfPageOutput(FileObjects.Output(file, request.Output.Format, encrypted: false)) { Page = page })];
-    }
 
     private static OutputInfo ConvertTiff(
         PdfSession session,

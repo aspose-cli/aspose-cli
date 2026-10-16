@@ -167,13 +167,10 @@
         "epub",
         "txt",
         "md",
-        "svg",
         "xps",
         "pdfa-1b",
         "pdfa-2b",
         "pdfa-3b",
-        "png",
-        "jpeg",
         "tiff"
       ],
       "renderFormats": [

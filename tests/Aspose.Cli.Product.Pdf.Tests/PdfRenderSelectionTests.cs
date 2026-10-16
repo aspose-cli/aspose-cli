@@ -8,7 +8,7 @@ using Xunit;
 namespace Aspose.Cli.Product.Pdf.Tests;
 
 /// <summary>
-/// What <c>pdf render</c>, page-image <c>convert</c> and <c>split</c> write: every page by default,
+/// What <c>pdf render</c> and <c>split</c> write: every page by default,
 /// at most 20 per render, as <c>&lt;stem&gt;.&lt;n&gt;.&lt;ext&gt;</c> numbered by page or part and padded
 /// to the digits of the highest number, and a single page as the output itself.
 /// </summary>
@@ -99,21 +99,6 @@ public sealed class PdfRenderSelectionTests
         Assert.Equal(21, error.Details["actual"]!.GetValue<int>());
         Assert.Contains("--pages 1-20", error.Hint, StringComparison.Ordinal);
         Assert.Empty(Directory.GetFiles(fixture.File("out")));
-    }
-
-    [Fact]
-    public void ConvertToImages_NumbersEachPage()
-    {
-        using var fixture = new PdfEngineFixture();
-        string input = fixture.CreateDocument("two.pdf", pages: 2);
-
-        PdfConvert.Run(fixture.Session, new PdfConvertRequest
-        {
-            Input = input,
-            Output = TestOutput.At(fixture.File("out/page.png"), format: "png"),
-        });
-
-        Assert.Equal(["page.1.png", "page.2.png"], Names(Directory.GetFiles(fixture.File("out"))));
     }
 
     [Fact]

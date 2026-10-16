@@ -49,10 +49,10 @@ declares, as `pdf.pdfaProfile`; a declaration is not a check.
 ## Other formats
 
 `aspose-cli capabilities` lists the PDF `convertFormats` and `renderFormats`.
-`--pages` selects physical pages. PNG, JPEG and SVG exports write one file per
-selected page and TIFF one multipage file; read the result's `outputs` for the
-actual paths. `pdf render` writes PNG, JPEG or SVG; use `pdf convert --to tiff`
-for TIFF.
+`--pages` selects physical pages. Page images come from `pdf render`, which
+writes PNG, JPEG or SVG, one file per selected page; `pdf convert` refuses those
+formats. `pdf convert --to tiff` writes the selected pages as one multipage TIFF.
+Read the result's `outputs` for the actual paths.
 
 Conversions to document, text and HTML formats are structurally lossy, because
 PDF has fixed pages; review the results. Raster outputs keep no selectable text

@@ -192,7 +192,7 @@ public sealed class PdfOutputEncryptionTests : IDisposable
         Parallel.Invoke(
             () => results[0] = Succeeds(Run("pdf", "extract", "locked-form.pdf", "--password-env", "PDF_USER", "--what", "forms", "--form-format", "json", "--out-dir", "fields")),
             () => results[1] = Succeeds(Run("pdf", "extract", "locked.pdf", "--password-env", "PDF_USER", "--what", "text", "--out-dir", "text")),
-            () => results[2] = Succeeds(Run("pdf", "convert", "locked.pdf", "--password-env", "PDF_USER", "--to", "png", "--out", "page.png")),
+            () => results[2] = Succeeds(Run("pdf", "convert", "locked.pdf", "--password-env", "PDF_USER", "--to", "tiff", "--out", "pages.tiff")),
             () => results[3] = Succeeds(Run("pdf", "render", "locked.pdf", "--password-env", "PDF_USER", "--out", "render.png")));
 
         Assert.All(results, result => Assert.DoesNotContain("ENCRYPTION_REMOVED", Codes(result)));
