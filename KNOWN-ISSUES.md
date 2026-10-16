@@ -124,6 +124,31 @@ fails, delete the issue's section, the code that names it and the test, then upd
   covers after the delete, as Excel does, and remove a validation left with no area.
 - **Reproduction:** [CellsKnownIssueTests](tests/Aspose.Cli.Product.Cells.Tests/CellsKnownIssueTests.cs)
 
+### CELLS-PIVOT-LABEL-INDENT
+
+- **Defect:** in a pivot whose column area holds a field and the value fields, rendering draws
+  each column item label, the row above the value captions, about 16 pixels at 96 DPI further
+  right than the same text in a plain cell, although its style has no indent, and cuts it at the
+  column edge even when the next cell is empty. `AutoFitColumns` leaves this indent out, so an
+  auto-fitted column is as wide as for the text alone and the label is cut.
+- **CLI behavior:** review reports such a label that does not fit with the indent as
+  `CELLS_VALUES_CLIPPED`; `resize_columns` without `widthChars` cannot widen the column, and the
+  Skill says to give pivot columns `widthChars`.
+- **Workaround:** set the column width with `resize_columns` and `widthChars`, a few characters
+  wider than the label.
+- **Reproduction:** [CellsKnownIssueTests](tests/Aspose.Cli.Product.Cells.Tests/CellsKnownIssueTests.cs)
+
+### CELLS-COPY-SELF-LINK
+
+- **Defect:** `Range.Copy` from another workbook keeps a formula that reads the destination
+  workbook by its own file name, such as `='[budget.xlsx]Budget'!$D$6` copied into
+  `budget.xlsx`, as an external link to the destination itself, which reads as 0 once
+  calculated. Setting the same formula with `Cell.Formula` gives the reference inside the
+  workbook, `=Budget!$D$6`.
+- **CLI behavior:** `import_range` and `import_sheet` turn such a link into references inside
+  the workbook, as `set_formula` gives.
+- **Reproduction:** [CellsKnownIssueTests](tests/Aspose.Cli.Product.Cells.Tests/CellsKnownIssueTests.cs)
+
 ### CELLS-JSON-HEADER-ONLY
 
 - **Defect:** saving as JSON a sheet whose data is a single row, which the engine takes for the
@@ -171,6 +196,15 @@ fails, delete the issue's section, the code that names it and the test, then upd
   type `application/pdf`, whatever its content.
 - **CLI behavior:** `pdf convert --to pdfa-3b` labels such an attachment
   `application/octet-stream` unless its content is a PDF; a declared type is kept.
+- **Reproduction:** [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownIssueTests.cs)
+
+### PDF-ATTACHMENT-COPY-TYPE
+
+- **Defect:** `EmbeddedFiles.Add` with the `FileSpecification` of another document's attachment
+  gives the added attachment no media type (an empty `MIMEType`); its name, description and
+  contents are kept.
+- **CLI behavior:** none visible; `pdf merge` and `pdf split` set each copied attachment's media
+  type again after adding it.
 - **Reproduction:** [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownIssueTests.cs)
 
 ### PDF-OUTLINE-DELETE-TITLE
@@ -227,10 +261,12 @@ fails, delete the issue's section, the code that names it and the test, then upd
 ### PDF-HTML-FORM-INPUTS
 
 - **Defect:** the HTML importer drops inputs of type `email`, `tel`, `url`, `time`,
-  `datetime-local`, `month`, `week`, `color`, `range` and `file`: they become no form field.
+  `datetime-local`, `month`, `week`, `color`, `range`, `file`, `image` and `hidden`: they become
+  no form field, and the value of a hidden input is lost.
 - **CLI behavior:** `pdf create --from-html` counts such `<input>` tags in the HTML and names
   their types in its `LOSSY_CONVERSION` warning.
-- **Workaround:** give those inputs `type="text"`.
+- **Workaround:** give text-like inputs `type="text"`; place the picture of an image input with
+  `add_stamp_image`.
 - **Reproduction:** [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownIssueTests.cs)
 
 ### PDF-HTML-CHECKBOX-BOX
@@ -410,6 +446,18 @@ fails, delete the issue's section, the code that names it and the test, then upd
   matched counts only the pages it removed text from.
 - **Reproduction:** [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownIssueTests.cs)
 
+### PDF-DOCX-EMBED-FONTS
+
+- **Defect:** saving as docx writes `w:embedTrueTypeFonts` and `w:embedSystemFonts` into
+  `word/settings.xml` but embeds at most the few font subsets the PDF itself embeds, and none of
+  the fonts it does not, so the next save by Aspose.Words or Word embeds every other font the
+  document uses in full: a one-page document in a standard PDF font grows from about 7 KB to
+  about 3 MB.
+  `DocSaveOptions` has no setting for these flags.
+- **CLI behavior:** a Words command that saves such a document discloses with a warning the
+  fonts the save embeds.
+- **Reproduction:** [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownIssueTests.cs)
+
 ## Aspose.Slides.NET6.CrossPlatform 26.9.0
 
 ### SLIDES-AUTOFIT-RECT
@@ -470,6 +518,17 @@ fails, delete the issue's section, the code that names it and the test, then upd
 - **CLI behavior:** `slides convert` to ODP warns `LOSSY_CONVERSION`, naming the slides whose
   charts become pictures, the slides whose transitions are dropped and the number of sections.
 - **Workaround:** keep the PPTX for further edits.
+- **Reproduction:** [SlidesConvertKnownIssueTests](tests/Aspose.Cli.Product.Slides.Tests/SlidesConvertKnownIssueTests.cs)
+
+### SLIDES-MD-INHERITED-BULLETS
+
+- **Defect:** Markdown export writes a paragraph as a list item only when the paragraph itself
+  sets its bullet. Paragraphs whose bullets come from the layout or master, as in a body
+  placeholder, are written as plain lines without their level; no `MarkdownSaveOptions`
+  setting changes this.
+- **CLI behavior:** `slides convert --to md` first writes each paragraph's effective bullet into
+  it as an explicit value, in its private copy of the presentation, so the Markdown keeps the
+  list items and their levels.
 - **Reproduction:** [SlidesConvertKnownIssueTests](tests/Aspose.Cli.Product.Slides.Tests/SlidesConvertKnownIssueTests.cs)
 
 ## Aspose.Words 26.9.0

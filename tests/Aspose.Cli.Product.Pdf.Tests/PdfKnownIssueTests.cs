@@ -132,6 +132,60 @@ public sealed class PdfKnownIssueTests
     }
 
     [LicensedFact]
+    public void EmbeddedFilesAdd_DropsTheMediaTypeOfAnotherDocumentsAttachment()
+    {
+        using var fixture = new PdfEngineFixture();
+        _ = fixture.LicenseState;
+        string input = fixture.File("typed.pdf");
+        using (var created = new Document())
+        {
+            created.Pages.Add();
+            created.EmbeddedFiles.Add("schedule.xml", new FileSpecification(new MemoryStream("<x/>"u8.ToArray()), "schedule.xml", "Schedule")
+            {
+                MIMEType = "application/xml",
+            });
+            created.Save(input);
+        }
+
+        using var source = new Document(input);
+        string? sourceType = source.EmbeddedFiles[1].MIMEType;
+        using var target = new Document();
+        target.Pages.Add();
+        target.EmbeddedFiles.Add("schedule.xml", source.EmbeddedFiles[1]);
+        string? addedType = target.EmbeddedFiles[1].MIMEType;
+
+        KnownIssue.Reproduces(
+            "PDF-ATTACHMENT-COPY-TYPE",
+            sourceType == "application/xml" && string.IsNullOrEmpty(addedType),
+            $"an attachment typed '{sourceType}' in its document is typed '{addedType}' once added to another");
+    }
+
+    [LicensedFact]
+    public void DocxSave_AsksForEmbeddedFontsItDoesNotEmbed()
+    {
+        using var fixture = new PdfEngineFixture();
+        _ = fixture.LicenseState;
+        string docx = fixture.File("record.docx");
+        using (var document = new Document())
+        {
+            document.Pages.Add().Paragraphs.Add(new Aspose.Pdf.Text.TextFragment("Employee record"));
+            document.Save(docx, SaveFormat.DocX);
+        }
+
+        using var package = System.IO.Compression.ZipFile.OpenRead(docx);
+        using var reader = new StreamReader(package.GetEntry("word/settings.xml")!.Open());
+        string settings = reader.ReadToEnd();
+        bool trueType = settings.Contains("<w:embedTrueTypeFonts", StringComparison.Ordinal);
+        bool system = settings.Contains("<w:embedSystemFonts", StringComparison.Ordinal);
+        int fonts = package.Entries.Count(static entry => entry.FullName.StartsWith("word/fonts/", StringComparison.Ordinal));
+
+        KnownIssue.Reproduces(
+            "PDF-DOCX-EMBED-FONTS",
+            trueType && system && fonts == 0,
+            $"the saved docx asks to embed TrueType fonts: {trueType}, system fonts: {system}, and embeds {fonts} font part(s)");
+    }
+
+    [LicensedFact]
     public void NamedDestinations_ThrowForANameTreeWithoutDests()
     {
         using var fixture = new PdfEngineFixture();
@@ -229,7 +283,7 @@ public sealed class PdfKnownIssueTests
     {
         using var fixture = new PdfEngineFixture();
         string html = fixture.File("contact.html");
-        string[] types = ["email", "tel", "url", "time", "datetime-local", "month", "week", "color", "range", "file"];
+        string[] types = ["email", "tel", "url", "time", "datetime-local", "month", "week", "color", "range", "file", "image", "hidden"];
         File.WriteAllText(html, "<html><body><form><p><input type=\"text\" name=\"company\"/></p>"
             + string.Concat(types.Select(static type => $"<p><input type=\"{type}\" name=\"{type}\" value=\"x\"/></p>"))
             + "</form></body></html>");
