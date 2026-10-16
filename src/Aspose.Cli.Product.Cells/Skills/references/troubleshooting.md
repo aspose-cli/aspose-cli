@@ -126,6 +126,14 @@ CSV import keeps every row, so `cells inspect` and `cells convert` warn
 The check reads the first 10,000 rows and the last rows of a longer sheet; a
 message says when empty rows were looked for only in the first 10,000.
 
+`cells convert --to json` runs the same check on every sheet it writes, of any
+input: the JSON takes its keys from a sheet's first used row and writes every
+row below it as a record, so a title row makes the real header a record, an
+empty row a `null` record and a total row a record a sum counts twice. Each
+`TEXT_TABLE_LAYOUT` names the sheet and rows; convert a copy without them
+(`delete_rows` in `cells edit` with `--out`), or leave those records out
+downstream.
+
 ## Evaluation mode in workbooks
 
 Without a Cells license, every saved workbook gains an "Evaluation Warning"

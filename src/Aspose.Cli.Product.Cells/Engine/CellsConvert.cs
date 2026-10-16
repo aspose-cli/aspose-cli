@@ -29,8 +29,6 @@ internal static class CellsConvert
         // Capture before saving: Workbook.FileFormat mutates to the target
         // format once the workbook is saved.
         InputInfo input = BuildSource(request.Input, loaded);
-        // The imported rows come over as they are; say which of them are not table data.
-        IReadOnlyList<Warning> textLayout = TextTableLayout.Warnings(loaded, session.Budgets);
 
         SaveFormat saveFormat = CellsEngineFormats.Save(request.Output.Format.Id);
         IReadOnlyList<Worksheet>? selected = request.Sheets is { } selection
@@ -88,6 +86,12 @@ internal static class CellsConvert
         {
             (jsonSheets, headerOnlySkipped) = JsonSheets(workbook);
         }
+
+        // Say which rows are not table data: the rows a text input brought over as they are, or,
+        // in a JSON output, the rows each sheet writes as records.
+        IReadOnlyList<Warning> textLayout = request.Output.Format.Id is "json"
+            ? TextTableLayout.JsonWarnings(jsonSheets, session.Budgets)
+            : TextTableLayout.Warnings(loaded, session.Budgets);
 
         Warning? chartsSplit = request.Output.Format.Id is "pdf" ? PrintedPages.SplitChartsWarning(workbook, selectedSheets) : null;
         int refsBefore = saver.CountRefFormulas(workbook);
