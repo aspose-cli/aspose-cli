@@ -326,6 +326,69 @@ public sealed class SlidesCliWorkflowTests : IDisposable
 
     public void Dispose() => _workspace.Dispose();
 
+    /// <summary>
+    /// Evaluation mode reads longer text as its first characters and a notice, so new text that
+    /// starts like the old reads the same before and after: the operation counts the object it
+    /// wrote, as changed, and discloses that the read was cut.
+    /// </summary>
+    [Theory]
+    [InlineData("""{"op":"set_title","slide":1,"text":"业绩概览 Performance (draft)"}""", "slide/1/shape/")]
+    [InlineData("""{"op":"set_body","slide":1,"paragraphs":[{"text":"Revenue grew in every region (draft)"}]}""", "slide/1/shape/")]
+    [InlineData("""{"op":"set_text","slide":1,"shapeName":"Box","text":"Speaker text long enough (draft)"}""", "slide/1/shape/")]
+    [InlineData("""{"op":"set_table_cell","slide":1,"shapeName":"Grid","row":1,"column":1,"text":"Quarterly total (draft)"}""", "slide/1/shape/")]
+    [InlineData("""{"op":"set_notes","slide":1,"text":"Speaker notes long enough to be cut (draft)"}""", "slide/1/notes")]
+    public void Evaluation_TextThatReadsTheSameCutShort_CountsAsWritten(string operation, string target)
+    {
+        CreateCutDeck(_workspace.File("cut.pptx"), "业绩概览 Performance");
+        File.WriteAllText(_workspace.File("ops.json"), $$"""{"ops":[{{operation}}]}""");
+
+        CliResult edit = _workspace.Run(
+            "slides", "edit", "cut.pptx", "--ops", "ops.json", "--out", "out.pptx", "--license-mode", "evaluation", "--output-format", "json");
+
+        Assert.True(edit.ExitCode == 0, edit.StdOut + edit.StdErr);
+        JsonNode result = JsonNode.Parse(edit.StdOut)!;
+        Assert.Equal(1, result["applied"]![0]!["itemsAffected"]!.GetValue<long>());
+        string written = Assert.Single(result["applied"]![0]!["targets"]!.AsArray())!.GetValue<string>();
+        Assert.StartsWith(target, written, StringComparison.Ordinal);
+        Assert.DoesNotContain("OP_NO_EFFECT", WarningCodes(result));
+        Assert.Contains("EVALUATION_INPUT_TRUNCATED", WarningCodes(result));
+    }
+
+    [Fact]
+    public void Evaluation_ShortTextWrittenAgain_ChangesNothing()
+    {
+        CreateCutDeck(_workspace.File("short.pptx"), "Q3");
+        File.WriteAllText(_workspace.File("ops.json"), """{"ops":[{"op":"set_title","slide":1,"text":"Q3"}]}""");
+
+        CliResult edit = _workspace.Run(
+            "slides", "edit", "short.pptx", "--ops", "ops.json", "--out", "out.pptx", "--license-mode", "evaluation", "--output-format", "json");
+
+        Assert.True(edit.ExitCode == 0, edit.StdOut + edit.StdErr);
+        JsonNode result = JsonNode.Parse(edit.StdOut)!;
+        Assert.Equal(0, result["applied"]![0]!["itemsAffected"]!.GetValue<long>());
+        Assert.Contains("OP_NO_EFFECT", WarningCodes(result));
+    }
+
+    /// <summary>A title-and-content slide whose body, text box, table cell and notes are long enough for evaluation mode to cut.</summary>
+    private static void CreateCutDeck(string path, string title)
+    {
+        using var presentation = new Presentation();
+        ISlide slide = presentation.Slides.AddEmptySlide(presentation.LayoutSlides.GetByType(SlideLayoutType.TitleAndObject));
+        presentation.Slides.RemoveAt(0);
+        IAutoShape[] placeholders = [.. slide.Shapes.OfType<IAutoShape>().Where(static shape => shape.Placeholder is not null)];
+        placeholders.First(static shape => shape.Placeholder!.Type is PlaceholderType.Title or PlaceholderType.CenteredTitle).TextFrame.Text = title;
+        placeholders.First(static shape => shape.Placeholder!.Type is PlaceholderType.Body or PlaceholderType.Object).TextFrame.Text =
+            "Revenue grew in every region";
+        IAutoShape box = slide.Shapes.AddAutoShape(ShapeType.Rectangle, 50, 300, 300, 60);
+        box.Name = "Box";
+        box.TextFrame.Text = "Speaker text long enough";
+        ITable grid = slide.Shapes.AddTable(400, 300, [150, 150], [40, 40]);
+        grid.Name = "Grid";
+        grid[0, 0].TextFrame.Text = "Quarterly total";
+        slide.NotesSlideManager.AddNotesSlide().NotesTextFrame.Text = "Speaker notes long enough to be cut";
+        presentation.Save(path, SaveFormat.Pptx);
+    }
+
     private static string[] WarningCodes(JsonNode result) =>
         [.. result["warnings"]?.AsArray().Select(static warning => warning!["code"]!.GetValue<string>()) ?? []];
 
