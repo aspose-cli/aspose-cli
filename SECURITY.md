@@ -12,7 +12,8 @@ reproduction. Do not attach customer documents, passwords, tokens or license con
   them. Their pages send `object-src 'none'` and `Cross-Origin-Resource-Policy: same-origin`; the
   App shell cannot be framed (`frame-ancestors 'none'`, `X-Frame-Options: DENY`) and the viewer
   only by its own origin (`frame-ancestors 'self'`, `SAMEORIGIN`). Rendered document parts run no
-  scripts. The App control endpoint is one per user, whatever configuration directory is chosen.
+  scripts. The App control endpoint is one per configuration directory: a user who runs two
+  configuration directories gets two services, each with its own endpoint.
 - **MCP.** `capabilities` is read-only. `execute` runs product commands and only the host
   commands that read or publish new outputs; it cannot install, update, change licenses or start
   and stop services.

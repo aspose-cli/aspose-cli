@@ -367,6 +367,51 @@ public sealed class LocalServiceRuntimeTests
         using LocalServiceOperationLock next = LocalServiceOperationLock.Acquire("contract", key, TimeSpan.FromSeconds(2));
     }
 
+    // SECURITY.md: the App control endpoint is one per configuration directory. A client finds
+    // the running service through the marker in the configuration directory, and the service's
+    // instance and start locks carry that directory, so one user with two configuration
+    // directories runs two services, each with its own control endpoint.
+    [Fact]
+    public void ViewerService_IsOnePerConfigurationDirectory()
+    {
+        string name = Aspose.Cli.Sdk.Configuration.ConfigurationPaths.EnvironmentVariableName;
+        string? original = Environment.GetEnvironmentVariable(name);
+        using var configurations = new TempDirectory();
+        string first = configurations.File("first");
+        string second = configurations.File("second");
+        try
+        {
+            (string Instance, string Start, string Markers) Service(string configuration)
+            {
+                Environment.SetEnvironmentVariable(name, configuration);
+                return (Aspose.Cli.Host.ViewerService.ViewerServiceCommands.LockKey("instance"),
+                    Aspose.Cli.Host.ViewerService.ViewerServiceCommands.LockKey("start"),
+                    Aspose.Cli.Host.ViewerService.ViewerServiceStore.DirectoryPath);
+            }
+
+            var one = Service(first);
+            var other = Service(second);
+            Assert.NotEqual(one.Instance, other.Instance);
+            Assert.NotEqual(one.Start, other.Start);
+            Assert.NotEqual(one.Markers, other.Markers, StringComparer.OrdinalIgnoreCase);
+            Assert.Equal(one, Service(first));
+
+            string service = Aspose.Cli.Host.ViewerService.ViewerServiceCommands.Service;
+            using (LocalServiceOperationLock.Acquire(service, one.Instance, TimeSpan.FromSeconds(2)))
+            {
+                // The other configuration's service starts beside the running one ...
+                using (LocalServiceOperationLock.Acquire(service, other.Instance, TimeSpan.FromSeconds(2))) { }
+                // ... and a second service for the same configuration does not.
+                Assert.Throws<TimeoutException>(() =>
+                    LocalServiceOperationLock.Acquire(service, Service(first).Instance, TimeSpan.FromMilliseconds(200)));
+            }
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable(name, original);
+        }
+    }
+
     [Fact]
     public void ViewerService_WhileAnotherInstanceHoldsItsLock_IsBusy()
     {
