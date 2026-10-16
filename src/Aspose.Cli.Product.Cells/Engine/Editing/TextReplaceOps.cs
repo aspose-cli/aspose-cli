@@ -1,6 +1,5 @@
 using System.Text.RegularExpressions;
 using Aspose.Cells;
-using Aspose.Cli.Sdk.Operations;
 using Aspose.Cli.Sdk.Text;
 
 namespace Aspose.Cli.Product.Cells.Engine.Editing;
@@ -27,41 +26,32 @@ internal static class TextReplaceOps
         RangeRef? range = op.Range is { } text ? A1.ParseRange(text).Range : null;
         long left = op.MaxReplacementCount ?? long.MaxValue;
         long replaced = 0;
-        try
+        foreach (Cell cell in TextCells(sheet, range))
         {
-            foreach (Cell cell in TextCells(sheet, range))
+            string before = cell.StringValue;
+            int matches = 0;
+            string after = find.Replace(before, match =>
             {
-                string before = cell.StringValue;
-                int matches = 0;
-                string after = find.Replace(before, match =>
+                if (matches >= left)
                 {
-                    if (matches >= left)
-                    {
-                        return match.Value;
-                    }
-
-                    matches++;
-                    return match.Result(replacement);
-                });
-                if (matches == 0)
-                {
-                    continue;
+                    return match.Value;
                 }
 
-                cell.PutValue(after);
-                replaced += matches;
-                left -= matches;
-                if (left == 0)
-                {
-                    break;
-                }
+                matches++;
+                return match.Result(replacement);
+            });
+            if (matches == 0)
+            {
+                continue;
             }
-        }
-        catch (RegexMatchTimeoutException)
-        {
-            throw new OperationInvalidException(
-                $"find took longer than {SafeRegex.DefaultTimeout.TotalSeconds:0} second to match a cell's text",
-                "Simplify the regular expression, for example by removing nested repetition such as (a+)+.");
+
+            cell.PutValue(after);
+            replaced += matches;
+            left -= matches;
+            if (left == 0)
+            {
+                break;
+            }
         }
 
         return replaced;
