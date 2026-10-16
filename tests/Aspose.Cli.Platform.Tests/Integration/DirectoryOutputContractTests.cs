@@ -60,6 +60,51 @@ public sealed class DirectoryOutputContractTests
         Assert.All(published, static file => Assert.NotEqual("kept", File.ReadAllText(file)));
     }
 
+    /// <summary>
+    /// A directory output named like a file of a format some command writes, such as
+    /// <c>parts.pdf</c> or <c>evidence.png</c>, is refused before anything is created, with the
+    /// name without that extension as the fix; a directory name with a dot in it that names no
+    /// format still works.
+    /// </summary>
+    [Theory]
+    [InlineData("pdf split input.pdf --by pages --out-dir parts.pdf", "--out-dir", "parts.pdf", "--out-dir parts")]
+    [InlineData("pdf extract input.pdf --what images --out-dir images.png", "--out-dir", "images.png", "--out-dir images")]
+    [InlineData("review input.pdf --out evidence.png", "--out", "evidence.png", "--out evidence")]
+    public void ADirectoryNamedLikeAFile_IsRefused(string commandLine, string option, string directory, string fix)
+    {
+        using var workspace = new TempWorkspace();
+        File.WriteAllText(workspace.File("content.txt"), "Directory output fixture");
+        CliResult created = workspace.Run("pdf", "create", "input.pdf", "--from-text", "content.txt", "--output-format", "json");
+        Assert.True(created.ExitCode == 0, created.StdErr);
+
+        CliResult result = workspace.Run([.. commandLine.Split(' '), "--output-format", "json"]);
+
+        Assert.Equal(2, result.ExitCode);
+        JsonNode error = JsonNode.Parse(result.StdErr)!["error"]!;
+        Assert.Equal("OPTION_INVALID", error["code"]!.GetValue<string>());
+        Assert.Equal(option, error["details"]!["option"]!.GetValue<string>());
+        string hint = error["hint"]!.GetValue<string>();
+        Assert.Contains("directory", hint, StringComparison.Ordinal);
+        Assert.Contains($"as in {fix}", hint, StringComparison.Ordinal);
+        Assert.False(Directory.Exists(workspace.File(directory)));
+        Assert.False(File.Exists(workspace.File(directory)));
+    }
+
+    [Theory]
+    [InlineData("pdf split input.pdf --by pages --out-dir parts.v1 --dry-run")]
+    [InlineData("review input.pdf --out input.review-1 --dry-run")]
+    public void ADirectoryNameWithADotNamingNoFormat_IsAccepted(string commandLine)
+    {
+        using var workspace = new TempWorkspace();
+        File.WriteAllText(workspace.File("content.txt"), "Directory output fixture");
+        CliResult created = workspace.Run("pdf", "create", "input.pdf", "--from-text", "content.txt", "--output-format", "json");
+        Assert.True(created.ExitCode == 0, created.StdErr);
+
+        CliResult result = workspace.Run([.. commandLine.Split(' '), "--output-format", "json"]);
+
+        Assert.True(result.ExitCode == 0, result.StdErr);
+    }
+
     private static readonly Dictionary<string, (string[] Create, string[] Publish)> MultiFileCases = new(StringComparer.Ordinal)
     {
         ["words split"] = (["words", "create", "input.docx", "--from-markdown", "content.md"],

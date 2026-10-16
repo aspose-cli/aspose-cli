@@ -82,11 +82,9 @@ internal static class ReviewCommand
         {
             StandardInvocation invocation = standard.Bind(
                 parse, context.Paths, context.ResourceBudgets.Inputs, context.ReadEnvironment);
-            string? requestedOutput = parse.GetValue(output);
-            if (requestedOutput == "-")
-            {
-                throw CliErrors.OutputIsStandardStream("--out", directory: true);
-            }
+            string? requestedOutput = parse.GetValue(output) is { } named
+                ? OutputDirectories.Resolve(parse, context.Paths, named, "--out")
+                : null;
 
             int maximum = parse.GetInRange(maxItems);
             string input = invocation.Input;
@@ -116,9 +114,7 @@ internal static class ReviewCommand
                     $"Use {string.Join(", ", views.ReviewViews)}.");
             }
             IReadOnlyList<string>? selectedCodes = SelectedCodes(parse.GetValue(codes), definition);
-            string target = requestedOutput is not null
-                ? context.Paths.ResolveOutput(requestedOutput)
-                : input + ".review";
+            string target = requestedOutput ?? input + ".review";
             bool replace = parse.GetValue(overwrite);
             ReviewEvidenceWriter.EnsureTarget(target, replace, input);
             if (parse.GetValue(dryRun))
