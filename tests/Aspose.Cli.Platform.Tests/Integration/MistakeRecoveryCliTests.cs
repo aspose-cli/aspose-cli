@@ -102,6 +102,9 @@ public sealed class MistakeRecoveryCliTests : IDisposable
     [InlineData("words create x.md --from-markdown deck.md", "file", "Must be one of: .doc,", "then run 'aspose-cli words convert <that file> --to md' for md")]
     [InlineData("cells render a.xlsx --out x.pdf", "--out", "Must be one of: .png,", "or run 'aspose-cli cells convert a.xlsx --to pdf --out x.pdf' for pdf")]
     [InlineData("slides render a.pptx --out x.pdf", "--out", "Must be one of: .png,", "or run 'aspose-cli slides convert a.pptx --to pdf --out x.pdf' for pdf")]
+    [InlineData("cells convert a.xlsx --out x.png", "--out", "Must be one of: .xlsx,", "or run 'aspose-cli cells render a.xlsx --to png --out x.png' for png")]
+    [InlineData("slides convert a.pptx --out x.png", "--out", "Must be one of: .pptx,", "or run 'aspose-cli slides render a.pptx --to png --out x.png' for png")]
+    [InlineData("pdf convert a.pdf --out x.png", "--out", "Must be one of: .docx,", "or run 'aspose-cli pdf render a.pdf --to png --out x.png' for png")]
     public void OutputFormatTheCommandCannotWrite_PointsToTheCommandThatWritesIt(
         string commandLine, string option, string writes, string producer)
     {
