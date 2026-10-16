@@ -116,9 +116,14 @@ public sealed record WordsMarginInput
     [Minimum(0)] public double? Left { get; init; }
 }
 
-/// <summary>Replaces literal or regular-expression text within a document scope.</summary>
+/// <summary>
+/// Replaces literal or regular-expression text within a document scope. A regex find may not use
+/// the anchors ^, $, \A, \Z, \z or \G outside a character class: the engine reads them at the
+/// edges of the whole scope, not of each paragraph as <c>words search</c> does. Nor may it use a
+/// (?#...) comment or the x option, which can hide an anchor.
+/// </summary>
 [Operation("replace_text")]
-public sealed record ReplaceTextOp : WordsOp
+public sealed partial record ReplaceTextOp : WordsOp
 {
     /// <summary>The text to find, or the pattern when regex is true.</summary>
     [NotState]
@@ -152,6 +157,71 @@ public sealed record ReplaceTextOp : WordsOp
     /// <summary>The most matches replaced; every match when omitted.</summary>
     [NotState]
     [Minimum(1)] public int? MaxReplacementCount { get; init; }
+
+    /// <inheritdoc/>
+    protected override BoundedOperation Validated()
+    {
+        // WORDS-REGEX-ANCHORS: the engine anchors these at the scope's edges only. A comment or
+        // the x option can hide an anchor from the scan, so a find with either is refused too.
+        OperationInvalidException.Require(
+            !Regex || !HidesItsAnchors().IsMatch(Find),
+            "find uses a (?#...) comment or the x option, which replace_text does not read, since they can hide an anchor",
+            "Drop the comment and the x option, writing the pattern without the white space and comments they allow.");
+        string? anchor = Regex ? RegexAnchor(Find) : null;
+        OperationInvalidException.Require(
+            anchor is null,
+            $"find uses the anchor {anchor}, which replace_text cannot honor at each paragraph as 'words search' does",
+            "Drop the anchor and pin the match with the text next to it, such as the space after a number; "
+                + "or find the paragraphs with 'words search' and rewrite each with set_text.");
+        return this;
+    }
+
+    /// <summary>A comment group, or an inline option group that names the x option, such as (?x), (?ix) or (?-i+x:...).</summary>
+    [System.Text.RegularExpressions.GeneratedRegex(@"\(\?(#|[A-Za-z+-]*x[A-Za-z+-]*[:)])")]
+    private static partial System.Text.RegularExpressions.Regex HidesItsAnchors();
+
+    /// <summary>The first anchor of <paramref name="pattern"/> outside a character class, or null when it has none.</summary>
+    private static string? RegexAnchor(string pattern)
+    {
+        bool inClass = false;
+        for (int index = 0; index < pattern.Length; index++)
+        {
+            char current = pattern[index];
+            if (current == '\\')
+            {
+                if (index + 1 < pattern.Length && !inClass && pattern[index + 1] is 'A' or 'Z' or 'z' or 'G')
+                {
+                    return "\\" + pattern[index + 1];
+                }
+
+                index++;
+            }
+            else if (inClass)
+            {
+                inClass = current != ']';
+            }
+            else if (current == '[')
+            {
+                inClass = true;
+                // A leading ^ negates the class, and a ] right after the opening is a literal.
+                if (index + 1 < pattern.Length && pattern[index + 1] == '^')
+                {
+                    index++;
+                }
+
+                if (index + 1 < pattern.Length && pattern[index + 1] == ']')
+                {
+                    index++;
+                }
+            }
+            else if (current is '^' or '$')
+            {
+                return current.ToString();
+            }
+        }
+
+        return null;
+    }
 }
 
 /// <summary>Replaces the inline content of paragraph blocks, or the text a bookmark encloses.</summary>

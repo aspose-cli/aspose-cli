@@ -659,3 +659,16 @@ fails, delete the issue's section, the code that names it and the test, then upd
   tracked change deletes), and an expression that runs past the budget fails with
   `OPERATION_TIMEOUT` before the engine replaces anything.
 - **Reproduction:** [WordsKnownIssueTests](tests/Aspose.Cli.Product.Words.Tests/WordsKnownIssueTests.cs)
+
+### WORDS-REGEX-ANCHORS
+
+- **Defect:** `Range.Replace(Regex, string, FindReplaceOptions)` matches `^` only at the start of
+  the range, even with `(?m)`, and `$` at no paragraph end, even in the range of one paragraph,
+  so an expression anchored at each paragraph replaces at most the first one.
+- **CLI behavior:** `replace_text` refuses a regex `find` that uses `^`, `$`, `\A`, `\Z`, `\z` or
+  `\G` outside a character class with `OPS_INVALID`, before the edit runs, and so a `find` with
+  a `(?#...)` comment or the `x` option, which can hide an anchor; `words search` reads those
+  anchors at each paragraph.
+- **Workaround:** drop the anchor and pin the match with the text next to it, or find the
+  paragraphs with `words search` and rewrite each with `set_text`.
+- **Reproduction:** [WordsKnownIssueTests](tests/Aspose.Cli.Product.Words.Tests/WordsKnownIssueTests.cs)
