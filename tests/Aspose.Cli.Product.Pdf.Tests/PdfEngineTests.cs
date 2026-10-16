@@ -880,13 +880,10 @@ public sealed class PdfEngineTests
     [InlineData("epub")]
     [InlineData("txt")]
     [InlineData("md")]
-    [InlineData("svg")]
     [InlineData("xps")]
     [InlineData("pdfa-1b")]
     [InlineData("pdfa-2b")]
     [InlineData("pdfa-3b")]
-    [InlineData("png")]
-    [InlineData("jpeg")]
     [InlineData("tiff")]
     public void Convert_ProducesEveryFrozenM1Target(string format)
     {
@@ -914,20 +911,20 @@ public sealed class PdfEngineTests
 
     /// <summary>An image output without an extension is refused before anything is read or written.</summary>
     [Theory]
-    [InlineData("render")]
-    [InlineData("convert")]
-    public void ImageOutput_WithoutAnExtensionIsRefused(string command)
+    [InlineData("render", "png")]
+    [InlineData("convert", "tiff")]
+    public void ImageOutput_WithoutAnExtensionIsRefused(string command, string format)
     {
         using var fixture = new PdfEngineFixture();
         string input = fixture.CreateDocument(pages: 2);
         using var workspace = new TempWorkspace();
         File.Copy(input, workspace.File("input.pdf"));
 
-        CliResult refused = workspace.Run("pdf", command, "input.pdf", "--to", "png", "--out", "pages", "--output-format", "json");
+        CliResult refused = workspace.Run("pdf", command, "input.pdf", "--to", format, "--out", "pages", "--output-format", "json");
 
         Assert.Equal(2, refused.ExitCode);
         Assert.Contains("\"OPTION_INVALID\"", refused.StdErr, StringComparison.Ordinal);
-        Assert.Contains(".png", refused.StdErr, StringComparison.Ordinal);
+        Assert.Contains("." + format, refused.StdErr, StringComparison.Ordinal);
         Assert.Equal(["input.pdf"], Directory.GetFileSystemEntries(workspace.Path).Select(Path.GetFileName));
     }
 }

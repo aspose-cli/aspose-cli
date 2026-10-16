@@ -23,13 +23,10 @@
       "epub",
       "txt",
       "md",
-      "svg",
       "xps",
       "pdfa-1b",
       "pdfa-2b",
       "pdfa-3b",
-      "png",
-      "jpeg",
       "tiff"
     ],
     "renderFormats": [
@@ -217,7 +214,6 @@
         ],
         "aliases": [],
         "uses": [
-          "convert",
           "render"
         ],
         "operations": [],
@@ -322,7 +318,6 @@
         ],
         "aliases": [],
         "uses": [
-          "convert",
           "render"
         ],
         "operations": [],
@@ -352,7 +347,6 @@
         ],
         "aliases": [],
         "uses": [
-          "convert",
           "render"
         ],
         "operations": [],
@@ -584,14 +578,11 @@
               "docx",
               "epub",
               "html",
-              "jpeg",
               "md",
               "pdfa-1b",
               "pdfa-2b",
               "pdfa-3b",
-              "png",
               "pptx",
-              "svg",
               "tiff",
               "txt",
               "xlsx",

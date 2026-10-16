@@ -54,7 +54,7 @@ public sealed class ProductPublicationTests
 
         CliResult converted = workspace.Run(["words", "convert", document, "--to", "pdf", "--out", workspace.File("converted.pdf"),
             "--output-format", "json", .. timeout]);
-        CliResult pages = workspace.Run(["pdf", "convert", workspace.File("converted.pdf"), "--to", "png", "--out", workspace.File("page.png"),
+        CliResult pages = workspace.Run(["pdf", "render", workspace.File("converted.pdf"), "--out", workspace.File("page.png"),
             "--output-format", "json", .. timeout]);
         CliResult site = workspace.Run(["slides", "convert", deck, "--to", "html5", "--out", workspace.File(Path.Combine("site", "deck.html")),
             "--output-format", "json", .. timeout]);

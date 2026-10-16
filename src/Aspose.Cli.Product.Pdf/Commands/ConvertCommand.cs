@@ -58,7 +58,7 @@ internal static class ConvertCommand
     {
         ResultText.Files(surface, "wrote", "file", [.. result.Outputs.Select(output =>
             new ProducedFile(
-                output.Page is { } page ? $"page {page}" : null,
+                null,
                 output.Path,
                 output.Format,
                 output.SizeBytes,

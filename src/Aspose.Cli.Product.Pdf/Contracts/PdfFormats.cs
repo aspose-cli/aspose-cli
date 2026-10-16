@@ -17,14 +17,14 @@ public static class PdfFormats
         FormatDescriptor.Routed("epub", FormatUse.Convert, null, 4, null, ".epub"),
         FormatDescriptor.Routed("txt", FormatUse.Convert, null, 5, null, ".txt"),
         FormatDescriptor.Routed("md", FormatUse.Convert, null, 6, null, ".md", ".markdown"),
-        FormatDescriptor.Routed("svg", FormatUse.Convert | FormatUse.Render, null, 7, 2, ".svg"),
-        FormatDescriptor.Routed("xps", FormatUse.Convert, null, 8, null, ".xps"),
-        FormatDescriptor.Routed("pdfa-1b", FormatUse.Convert, null, 9, null, ".pdf") with { ChosenByExtension = false },
-        FormatDescriptor.Routed("pdfa-2b", FormatUse.Convert, null, 10, null, ".pdf") with { ChosenByExtension = false },
-        FormatDescriptor.Routed("pdfa-3b", FormatUse.Convert, null, 11, null, ".pdf") with { ChosenByExtension = false },
-        FormatDescriptor.Routed("png", FormatUse.Convert | FormatUse.Render, null, 12, 0, ".png"),
-        FormatDescriptor.Routed("jpeg", FormatUse.Convert | FormatUse.Render, null, 13, 1, ".jpg", ".jpeg"),
-        FormatDescriptor.Routed("tiff", FormatUse.Convert, null, 14, null, ".tiff", ".tif") with { Image = true },
+        FormatDescriptor.Routed("xps", FormatUse.Convert, null, 7, null, ".xps"),
+        FormatDescriptor.Routed("pdfa-1b", FormatUse.Convert, null, 8, null, ".pdf") with { ChosenByExtension = false },
+        FormatDescriptor.Routed("pdfa-2b", FormatUse.Convert, null, 9, null, ".pdf") with { ChosenByExtension = false },
+        FormatDescriptor.Routed("pdfa-3b", FormatUse.Convert, null, 10, null, ".pdf") with { ChosenByExtension = false },
+        FormatDescriptor.Routed("tiff", FormatUse.Convert, null, 11, null, ".tiff", ".tif") with { Image = true },
+        FormatDescriptor.Routed("png", FormatUse.Render, null, null, 0, ".png"),
+        FormatDescriptor.Routed("jpeg", FormatUse.Render, null, null, 1, ".jpg", ".jpeg"),
+        FormatDescriptor.Routed("svg", FormatUse.Render, null, null, 2, ".svg"),
     ], PdfFormatRecognition.Rules);
 
     /// <summary>

@@ -259,7 +259,6 @@ C-R11 | words render --dry-run
 C-R11 | words split --dry-run
 C-R12 | cells render of every unit by default
 C-R12 | cells render one unit
-C-R12 | pdf convert --to png
 C-R12 | pdf render of every unit by default
 C-R12 | pdf render one unit
 C-R12 | pdf split --by pages --every 1
@@ -4881,14 +4880,11 @@ output-reopens | cells render xlsx -> svg
 output-reopens | pdf convert pdf -> docx
 output-reopens | pdf convert pdf -> epub
 output-reopens | pdf convert pdf -> html
-output-reopens | pdf convert pdf -> jpeg
 output-reopens | pdf convert pdf -> md
 output-reopens | pdf convert pdf -> pdfa-1b
 output-reopens | pdf convert pdf -> pdfa-2b
 output-reopens | pdf convert pdf -> pdfa-3b
-output-reopens | pdf convert pdf -> png
 output-reopens | pdf convert pdf -> pptx
-output-reopens | pdf convert pdf -> svg
 output-reopens | pdf convert pdf -> tiff
 output-reopens | pdf convert pdf -> txt
 output-reopens | pdf convert pdf -> xlsx
@@ -6208,14 +6204,11 @@ unwritable-output | pdf convert --to docx --out out.ppt
 unwritable-output | pdf convert --to docx --out out.xltx
 unwritable-output | pdf convert --to epub --out out.xltx
 unwritable-output | pdf convert --to html --out out.xltx
-unwritable-output | pdf convert --to jpeg --out out.xltx
 unwritable-output | pdf convert --to md --out out.xltx
 unwritable-output | pdf convert --to pdfa-1b --out out.xltx
 unwritable-output | pdf convert --to pdfa-2b --out out.xltx
 unwritable-output | pdf convert --to pdfa-3b --out out.xltx
-unwritable-output | pdf convert --to png --out out.xltx
 unwritable-output | pdf convert --to pptx --out out.xltx
-unwritable-output | pdf convert --to svg --out out.xltx
 unwritable-output | pdf convert --to tiff --out out.xltx
 unwritable-output | pdf convert --to txt --out out.xltx
 unwritable-output | pdf convert --to xlsx --out out.xltx

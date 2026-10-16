@@ -66,12 +66,6 @@ public sealed class PdfEvaluationMarkTests
             Output = TestOutput.At(fixture.File("page6.png"), format: "png"),
             Pages = PageRange.Parse("6"),
         }));
-        PdfConvertResult cleanConvert = fixture.Disclosed(session => PdfConvert.Run(session, new PdfConvertRequest
-        {
-            Input = input,
-            Output = TestOutput.At(fixture.File("page6-convert.png"), format: "png"),
-            Pages = PageRange.Parse("6"),
-        }));
         PdfConvertResult cleanText = fixture.Disclosed(session => PdfConvert.Run(session, new PdfConvertRequest
         {
             Input = input,
@@ -86,7 +80,6 @@ public sealed class PdfEvaluationMarkTests
         }));
 
         Assert.DoesNotContain(cleanRender.Warnings ?? [], static warning => warning.Code == WarningCodes.EvaluationInputMarked);
-        Assert.DoesNotContain(cleanConvert.Warnings ?? [], static warning => warning.Code == WarningCodes.EvaluationInputMarked);
         Assert.DoesNotContain(cleanText.Warnings ?? [], static warning => warning.Code == WarningCodes.EvaluationInputMarked);
         Assert.StartsWith("The rendered source carries the evaluation marks", Disclosure(markedRender).Message, StringComparison.Ordinal);
     }

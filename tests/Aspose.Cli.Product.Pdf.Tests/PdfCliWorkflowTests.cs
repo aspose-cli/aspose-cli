@@ -546,5 +546,82 @@ public sealed class PdfCliWorkflowTests : IDisposable
         Assert.DoesNotContain("--encrypt", help.StdOut, StringComparison.Ordinal);
     }
 
+    /// <summary>
+    /// Page images come from pdf render alone: pdf convert refuses an image target, whether
+    /// --to or the --out extension names it, the extension with a hint that runs pdf render,
+    /// and capabilities does not list it as a convert format.
+    /// </summary>
+    [Theory]
+    [InlineData("png", "page.png")]
+    [InlineData("jpeg", "page.jpg")]
+    [InlineData("svg", "page.svg")]
+    public void Convert_RefusesAPageImageTargetWithTheRenderThatWritesIt(string format, string output)
+    {
+        using (var document = new Document())
+        {
+            document.Pages.Add().Paragraphs.Add(new TextFragment("Render me"));
+            document.Save(_workspace.File("plain.pdf"));
+        }
+
+        CliResult named = _workspace.Run(
+            "pdf", "convert", "plain.pdf", "--to", format, "--out", output, "--output-format", "json");
+        CliResult byExtension = _workspace.Run(
+            "pdf", "convert", "plain.pdf", "--out", output, "--output-format", "json");
+        CliResult capabilities = _workspace.Run("capabilities", "--output-format", "json");
+
+        foreach (CliResult refused in new[] { named, byExtension })
+        {
+            Assert.True(refused.ExitCode == 2, refused.StdErr);
+            Assert.Equal("OPTION_INVALID", JsonNode.Parse(refused.StdErr)!["error"]!["code"]!.GetValue<string>());
+        }
+
+        Assert.Contains("pdf render", JsonNode.Parse(byExtension.StdErr)!["error"]!["hint"]!.GetValue<string>(), StringComparison.Ordinal);
+
+        Assert.False(File.Exists(_workspace.File(output)));
+        JsonNode pdf = JsonNode.Parse(capabilities.StdOut)!["products"]!.AsArray()
+            .Single(product => product!["id"]!.GetValue<string>() == "pdf")!;
+        string[] convertFormats = [.. pdf["convertFormats"]!.AsArray().Select(static id => id!.GetValue<string>())];
+        Assert.DoesNotContain(format, convertFormats);
+        Assert.Contains("tiff", convertFormats);
+        Assert.Contains(format, pdf["renderFormats"]!.AsArray().Select(static id => id!.GetValue<string>()));
+    }
+
+    /// <summary>A multi-page TIFF is one export of the selected pages, which pdf convert keeps.</summary>
+    [Fact]
+    public void Convert_WritesTheSelectedPagesAsOneMultiPageTiff()
+    {
+        using (var fixture = new PdfEngineFixture())
+        {
+            File.Copy(fixture.CreateRawDocument("three.pdf", pages: 3), _workspace.File("three.pdf"));
+        }
+
+        CliResult convert = _workspace.Run(
+            "pdf", "convert", "three.pdf", "--to", "tiff", "--out", "three.tiff", "--output-format", "json");
+
+        Assert.True(convert.ExitCode == 0, convert.StdErr);
+        JsonNode output = Assert.Single(JsonNode.Parse(convert.StdOut)!["outputs"]!.AsArray())!;
+        Assert.Equal("tiff", output["format"]!.GetValue<string>());
+        Assert.Equal(3, TiffPageCount(File.ReadAllBytes(_workspace.File("three.tiff"))));
+    }
+
+    // The number of image file directories in a TIFF, one per page.
+    private static int TiffPageCount(byte[] tiff)
+    {
+        bool little = tiff[0] == (byte)'I';
+        uint Read32(long at) => little
+            ? System.Buffers.Binary.BinaryPrimitives.ReadUInt32LittleEndian(tiff.AsSpan((int)at))
+            : System.Buffers.Binary.BinaryPrimitives.ReadUInt32BigEndian(tiff.AsSpan((int)at));
+        int Read16(long at) => little
+            ? System.Buffers.Binary.BinaryPrimitives.ReadUInt16LittleEndian(tiff.AsSpan((int)at))
+            : System.Buffers.Binary.BinaryPrimitives.ReadUInt16BigEndian(tiff.AsSpan((int)at));
+        int count = 0;
+        for (long offset = Read32(4); offset != 0; offset = Read32(offset + 2 + (12L * Read16(offset))))
+        {
+            count++;
+        }
+
+        return count;
+    }
+
     public void Dispose() => _workspace.Dispose();
 }
