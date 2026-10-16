@@ -27,6 +27,9 @@ internal sealed record LiveDocumentOptions
     /// <summary>True for <c>--license-mode evaluation</c>: no license source is read.</summary>
     public bool EvaluationRequested { get; init; }
 
+    /// <summary>The license context of the opening command, or null when it names its license.</summary>
+    public RequesterLicense? RequesterLicense { get; init; }
+
     /// <summary>Explicit font directories, or null for the ambient environment.</summary>
     public IReadOnlyList<string>? FontDirectories { get; init; }
 
@@ -180,6 +183,7 @@ internal sealed class LiveDocument : IDisposable
             && Equals(_options.Password, options.Password)
             && _options.License == options.License
             && _options.EvaluationRequested == options.EvaluationRequested
+            && RequesterLicense.Same(_options.RequesterLicense, options.RequesterLicense)
             && _options.MaxInputBytes == options.MaxInputBytes
             && (_options.FontDirectories ?? []).SequenceEqual(options.FontDirectories ?? []);
     }
@@ -305,6 +309,7 @@ internal sealed class LiveDocument : IDisposable
                     Password = _options.Password,
                     License = _options.License,
                     EvaluationRequested = _options.EvaluationRequested,
+                    RequesterLicense = _options.RequesterLicense,
                     FontDirectories = _options.FontDirectories,
                     Presentation = Presentation is null,
                 }, cancellation.Token);

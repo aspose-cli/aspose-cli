@@ -144,11 +144,66 @@ public sealed class PreviewLicenseLifecycleTests : IDisposable
         Assert.Equal("evaluation", requested["license"]!["mode"]!.GetValue<string>());
     }
 
+    [Category(TestCategory.Slow)]
+    [LicensedFact]
+    public void ProjectLicense_OfTheRequestingDirectoryRendersItsDocument()
+    {
+        JsonNode evaluation = Start();
+        string project = Directory.CreateDirectory(_workspace.File(Path.Combine("project", ".aspose"))).Parent!.FullName;
+        File.Copy(TestLicense.Path!, Path.Combine(project, ".aspose", "license.lic"));
+        _workspace.Run("cells", "create", "second.xlsx", "--sheets", "Data", "--output-format", "json").Succeeded();
+
+        // The service started where no project license is; this command runs where one is.
+        JsonNode requested = RunInShell(new Dictionary<string, string>(), project,
+            "preview", "open", _workspace.File("second.xlsx"), "--no-open", "--output-format", "json");
+
+        Assert.Equal("evaluation", evaluation["license"]!["mode"]!.GetValue<string>());
+        Assert.Equal(evaluation["pid"]!.GetValue<int>(), requested["pid"]!.GetValue<int>());
+        Assert.Null(requested["license"]);
+    }
+
+    [Category(TestCategory.Slow)]
+    [LicensedFact]
+    public void LicenseContent_FromTheRequestingShellIsWrittenNowhere()
+    {
+        string content = Convert.ToBase64String(File.ReadAllBytes(TestLicense.Path!));
+        JsonNode licensed = RunInShell(new Dictionary<string, string> { ["ASPOSE_LICENSE_B64"] = content }, null,
+            "preview", "open", "book.xlsx", "--no-open", "--output-format", "json");
+        JsonNode status = _workspace.Run("preview", "status", "--output-format", "json").Json();
+
+        Assert.Null(licensed["license"]);
+        Assert.DoesNotContain(content, status.ToJsonString(), StringComparison.Ordinal);
+        string probe = content[..Math.Min(64, content.Length)];
+        string temporary = UserStorage.TemporaryRoot();
+        string[] written = new[]
+            {
+                _workspace.ConfigDirectory,
+                Path.Combine(temporary, "preview"),
+                Path.Combine(temporary, "services"),
+            }
+            .Where(Directory.Exists)
+            .SelectMany(static root => Directory.EnumerateFiles(root, "*", SearchOption.AllDirectories))
+            .Where(file => Contains(file, probe))
+            .ToArray();
+        Assert.Empty(written);
+
+        static bool Contains(string file, string text)
+        {
+            try { return System.Text.Encoding.Latin1.GetString(File.ReadAllBytes(file)).Contains(text, StringComparison.Ordinal); }
+            catch (IOException) { return false; }
+            catch (UnauthorizedAccessException) { return false; }
+        }
+    }
+
     // A shell whose environment names the license file; the workspace runs strip license sources.
-    private JsonNode RunInLicensedShell(string license, params string[] args)
+    private JsonNode RunInLicensedShell(string license, params string[] args) =>
+        RunInShell(new Dictionary<string, string> { ["ASPOSE_LICENSE_PATH"] = license }, null, args);
+
+    private JsonNode RunInShell(IReadOnlyDictionary<string, string> variables, string? workingDirectory, params string[] args)
     {
         System.Diagnostics.ProcessStartInfo start = _workspace.StartInfo();
-        start.Environment["ASPOSE_LICENSE_PATH"] = license;
+        foreach ((string name, string value) in variables) { start.Environment[name] = value; }
+        if (workingDirectory is not null) { start.WorkingDirectory = workingDirectory; }
         start.RedirectStandardOutput = start.RedirectStandardError = true;
         start.StandardOutputEncoding = start.StandardErrorEncoding = System.Text.Encoding.UTF8;
         foreach (string arg in args) { start.ArgumentList.Add(arg); }

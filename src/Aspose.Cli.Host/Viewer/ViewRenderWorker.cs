@@ -73,13 +73,16 @@ internal static class ViewRenderWorker
             using var deadline = request.ExpiresAtTick is { } expires
                 ? OperationDeadline.FromAbsoluteTick(budget, expires) : OperationDeadline.Start(budget);
             deadline.ThrowIfExpired("render-admission");
+            // Each document carries the license context of the command that opened it; the
+            // environment and working directory the service started with never make one.
+            RequesterLicense? requester = request.RequesterLicense;
             CommandContext context = CompositionRoot.Create(catalog, globals with
             {
-                // Each document carries its own request; the worker's default never makes one.
-                LicensePath = request.EvaluationRequested ? null : request.License ?? globals.LicensePath,
+                LicensePath = request.EvaluationRequested ? null : request.License,
                 EvaluationRequested = request.EvaluationRequested,
                 MaxInputBytes = request.MaxInputBytes,
-            }, deadline);
+                WorkDir = requester?.WorkDirectory ?? globals.WorkDir,
+            }, deadline, licenseEnvironment: name => requester?.Read(name));
             if (request.SourceOrigin is { } origin)
             {
                 context.ResourceBudgets.Inputs.SetSnapshotOrigin(request.Source, origin);
