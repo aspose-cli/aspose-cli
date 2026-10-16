@@ -130,6 +130,26 @@ public sealed class MistakeRecoveryCliTests : IDisposable
         Assert.False(File.Exists(_workspace.File(arguments[1] == "create" ? arguments[2] : arguments[Array.IndexOf(arguments, "--out") + 1])));
     }
 
+    /// <summary>A <c>--to</c> format the command does not write but a command beside it does points to that command.</summary>
+    [Theory]
+    [InlineData("cells convert a.xlsx --to png", "Run 'aspose-cli cells render a.xlsx --to png' for png.")]
+    [InlineData("pdf convert a.pdf --to png", "Run 'aspose-cli pdf render a.pdf --to png' for png.")]
+    public void TargetFormatAnotherCommandWrites_PointsToThatCommand(string commandLine, string producer)
+    {
+        File.WriteAllText(_workspace.File("a.xlsx"), "not a document");
+        File.WriteAllText(_workspace.File("a.pptx"), "not a document");
+        File.WriteAllText(_workspace.File("a.pdf"), "not a document");
+        string[] arguments = commandLine.Split(' ');
+
+        CliResult result = _workspace.Run([.. arguments, "--output-format", "json"]);
+
+        Assert.Equal(2, result.ExitCode);
+        JsonNode error = JsonNode.Parse(result.StdErr)!["error"]!;
+        Assert.Equal("OPTION_INVALID", error["code"]!.GetValue<string>());
+        Assert.Equal("--to", error["details"]!["option"]!.GetValue<string>());
+        Assert.Contains(producer, error["hint"]!.GetValue<string>(), StringComparison.Ordinal);
+    }
+
     [Theory]
     [InlineData("pdf render a.pdf --out x.pdf")]
     [InlineData("cells render a.xlsx --out x.xlsx")]
