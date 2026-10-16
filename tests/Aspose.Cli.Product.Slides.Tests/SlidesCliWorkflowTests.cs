@@ -132,6 +132,29 @@ public sealed class SlidesCliWorkflowTests : IDisposable
     }
 
     [Fact]
+    public void Create_FromAnEncryptedTemplate_AsksForAnUnencryptedOne()
+    {
+        using (var template = new Presentation())
+        {
+            template.ProtectionManager.Encrypt("template-secret");
+            template.Save(_workspace.File("locked.potx"), SaveFormat.Potx);
+        }
+
+        CliResult refused = _workspace.Run(
+            "slides", "create", "deck.pptx", "--template", "locked.potx", "--output-format", "json");
+
+        Assert.Equal(3, refused.ExitCode);
+        JsonNode error = JsonNode.Parse(refused.StdErr)!["error"]!;
+        Assert.Equal("PASSWORD_REQUIRED", error["code"]!.GetValue<string>());
+        string hint = error["hint"]!.GetValue<string>();
+        Assert.Contains("encrypted template", hint, StringComparison.Ordinal);
+        Assert.DoesNotContain("--password-env", hint, StringComparison.Ordinal);
+        // No command decrypts the template, so the hint asks only for an unencrypted copy.
+        Assert.DoesNotContain("decrypt", hint, StringComparison.OrdinalIgnoreCase);
+        Assert.False(File.Exists(_workspace.File("deck.pptx")));
+    }
+
+    [Fact]
     public void QuerySlides_NextSpellsRemainingSlidesAsRangesAndRereadsACutSlide()
     {
         using (var presentation = new Presentation())
