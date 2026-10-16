@@ -240,16 +240,22 @@ public sealed class CellsCliTests : IDisposable
         Assert.Contains("--sheets 3", error["hint"]!.GetValue<string>(), StringComparison.Ordinal);
     }
 
-    [Theory]
-    [InlineData("ALL")]
-    [InlineData(" All ")]
-    public void TheAllKeyword_SelectsEverySheetInAnyCase(string all)
+    [Fact]
+    public void TheAllKeyword_IsLowercaseAsInEveryProduct()
     {
         Assert.Equal(0, _workspace.Run("cells", "create", "every.xlsx", "--sheets", "Budget,Lists").ExitCode);
+        Assert.Equal(0, _workspace.Run("cells", "convert", "every.xlsx", "--to", "pdf", "--out", "every.pdf").ExitCode);
 
-        CliResult result = _workspace.Run("cells", "convert", "every.xlsx", "--sheets", all, "--out", "every.pdf", "--output-format", "json");
+        CliResult upper = _workspace.Run("cells", "convert", "every.xlsx", "--sheets", "ALL", "--out", "upper.pdf", "--output-format", "json");
+        CliResult pages = _workspace.Run("pdf", "render", "every.pdf", "--pages", "ALL", "--out", "page.png", "--output-format", "json");
+        CliResult lower = _workspace.Run("cells", "convert", "every.xlsx", "--sheets", " all ", "--out", "lower.pdf", "--output-format", "json");
 
-        Assert.True(result.ExitCode == 0, result.StdErr);
+        Assert.Equal(2, pages.ExitCode);
+        Assert.Equal(pages.ExitCode, upper.ExitCode);
+        Assert.Equal(
+            JsonNode.Parse(pages.StdErr)!["error"]!["code"]!.GetValue<string>(),
+            JsonNode.Parse(upper.StdErr)!["error"]!["code"]!.GetValue<string>());
+        Assert.True(lower.ExitCode == 0, lower.StdErr);
     }
 
     [Fact]
