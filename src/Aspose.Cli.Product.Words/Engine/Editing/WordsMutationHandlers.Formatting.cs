@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using Aspose.Cli.Product.Words.Engine.Mapping;
 using Aspose.Words;
 
@@ -10,44 +11,116 @@ internal sealed partial class WordsMutationHandlers
 {
     public ValueTuple Apply(FormatTextOp operation)
     {
-        long count = 0;
-        foreach (Run run in Nodes.SelectMany(Descendants<Run>))
+        if (operation.Match is not { } match)
         {
-            if (operation.Bold is not null)
+            foreach (Run run in Nodes.SelectMany(Descendants<Run>))
             {
-                run.Font.Bold = operation.Bold.Value;
+                SetFormat(run.Font, operation);
             }
 
-            if (operation.Italic is not null)
-            {
-                run.Font.Italic = operation.Italic.Value;
-            }
-
-            if (operation.Underline is not null)
-            {
-                run.Font.Underline = operation.Underline.Value ? Underline.Single : Underline.None;
-            }
-
-            if (operation.FontSize is not null)
-            {
-                run.Font.Size = operation.FontSize.Value;
-            }
-
-            SetFonts(run.Font, operation.Font, operation.LatinFont, operation.EastAsianFont);
-            if (operation.Color is not null)
-            {
-                run.Font.Color = ParseColor(operation.Color);
-            }
-
-            if (operation.Highlight is not null)
-            {
-                run.Font.HighlightColor = WordsReadBack.HighlightColor(operation.Highlight);
-            }
-
-            count++;
+            return default;
         }
 
+        // Each match is found in the visible text words search reads, per paragraph with the text
+        // boxes it anchors; its runs are split from the text around it and formatted in place, so
+        // they keep their other settings and no text is rewritten.
+        Regex pattern = FindPattern(match, operation.Regex, operation.CaseSensitive);
+        long matched = 0;
+        foreach (Node unit in Nodes.SelectMany(static node => node is CompositeNode and not Paragraph ? WordsStories.Units((CompositeNode)node) : [node]))
+        {
+            (string text, IReadOnlyList<(Run Run, int At)> runs) = WordsText.Located(unit);
+            // Last match first: splitting a run keeps its first part, where an earlier match lies.
+            foreach (Match found in pattern.Matches(text).Reverse())
+            {
+                if (found.Length == 0 || (operation.WholeWord && !IsWholeWord(text, found)))
+                {
+                    continue;
+                }
+
+                (Run Run, int From, int To)[] pieces =
+                [
+                    .. runs.Select(item => (item.Run, From: Math.Max(found.Index, item.At), To: Math.Min(found.Index + found.Length, item.At + item.Run.Text.Length)))
+                        .Where(static piece => piece.From < piece.To),
+                ];
+                // A match that takes in a list number, a paragraph mark or a page field's
+                // placeholder is no text of runs alone, so it formats nothing.
+                if (pieces.Sum(static piece => piece.To - piece.From) != found.Length)
+                {
+                    continue;
+                }
+
+                foreach ((Run run, int from, int to) in pieces)
+                {
+                    int at = runs.First(item => ReferenceEquals(item.Run, run)).At;
+                    if (to - at < run.Text.Length)
+                    {
+                        SplitRun(run, to - at);
+                    }
+
+                    SetFormat((from > at ? SplitRun(run, from - at) : run).Font, operation);
+                }
+
+                matched++;
+            }
+        }
+
+        Matched = matched;
         return default;
+    }
+
+    /// <summary>Whether a match is a whole word: no letter, digit or underscore touches it on either side.</summary>
+    private static bool IsWholeWord(string text, Match found)
+    {
+        int end = found.Index + found.Length;
+        return (found.Index == 0 || !IsWordCharacter(text[found.Index - 1]))
+            && (end == text.Length || !IsWordCharacter(text[end]));
+
+        static bool IsWordCharacter(char c) => char.IsLetterOrDigit(c) || c == '_';
+    }
+
+    // Splits a run at a position of its text and returns the run that holds the rest.
+    private static Run SplitRun(Run run, int position)
+    {
+        var rest = (Run)run.Clone(true);
+        rest.Text = run.Text[position..];
+        run.Text = run.Text[..position];
+        run.ParentNode.InsertAfter(rest, run);
+        return rest;
+    }
+
+    /// <summary>Sets the character settings format_text names on a run's font.</summary>
+    private static void SetFormat(Aspose.Words.Font font, FormatTextOp operation)
+    {
+        if (operation.Bold is not null)
+        {
+            font.Bold = operation.Bold.Value;
+        }
+
+        if (operation.Italic is not null)
+        {
+            font.Italic = operation.Italic.Value;
+        }
+
+        if (operation.Underline is not null)
+        {
+            font.Underline = operation.Underline.Value ? Underline.Single : Underline.None;
+        }
+
+        if (operation.FontSize is not null)
+        {
+            font.Size = operation.FontSize.Value;
+        }
+
+        SetFonts(font, operation.Font, operation.LatinFont, operation.EastAsianFont);
+        if (operation.Color is not null)
+        {
+            font.Color = ParseColor(operation.Color);
+        }
+
+        if (operation.Highlight is not null)
+        {
+            font.HighlightColor = WordsReadBack.HighlightColor(operation.Highlight);
+        }
     }
 
     public ValueTuple Apply(SetStyleOp operation)

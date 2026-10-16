@@ -62,7 +62,7 @@ internal sealed partial class WordsMutationHandlers : IWordsOpHandler<ValueTuple
         _pageFields = pageFields;
     }
 
-    /// <summary>How many matches a replace_text replaced; the model explains an operation that changed nothing by it.</summary>
+    /// <summary>How many matches a replace_text replaced or a format_text with match formatted; the model explains an operation that changed nothing by it.</summary>
     internal long Matched { get; private set; }
 
     /// <summary>The operation's target blocks.</summary>

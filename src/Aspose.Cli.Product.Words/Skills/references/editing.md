@@ -24,6 +24,13 @@ aspose-cli schema v2/words/ops --operation insert_table
   before using them.
 - Insertions take `position: before|after` at a block boundary; there is no
   character-offset addressing.
+- `format_text` with `match` formats only the text it matches inside its
+  target blocks, in the text `words search` reads there, text boxes included;
+  the rest keeps its format. `regex`, `caseSensitive` and `wholeWord` match as
+  they do in `replace_text`. With `"regex": true`
+  a pattern picks one match among several, such as `(?<=and )Party B` for the
+  second "Party B" of "Party A pays Party B, and Party B signs.". A `words
+  search` hit's `occurrence` numbers it among the matches of the document.
 - A block-level content control is a container: its paragraphs and tables are
   blocks, content inserted beside one of them stays inside the control,
   deleting all of them removes the control, and a section break cannot be
@@ -91,7 +98,7 @@ aspose-cli schema v2/words/ops --operation insert_table
 | Change text | `replace_text` (literal or regex, by scope), `set_text` (paragraph or bookmark text), `set_table_cell` (one 1-based cell), `repeat_table_row` (one copy of a `{{key}}` template row per item) |
 | Add content | `insert_paragraphs` (styled paragraphs, list items), `insert_markdown`, `insert_table`, `insert_image`, `insert_hyperlink`, `insert_field` (inserts and updates the field), `insert_toc`, `insert_bookmark` (a paragraph's visible text), `import_sections` |
 | Remove content | `delete_blocks` |
-| Styles and formatting | `set_style` (apply an existing style; the typeface, size and color set on the runs give way to it, emphasis such as italic stays), `define_style` (create or update one), `format_text` (runs of target blocks), `set_table_pagination` (how one table breaks across pages), `set_list` (one new bullet or numbered list), `set_default_font` |
+| Styles and formatting | `set_style` (apply an existing style; the typeface, size and color set on the runs give way to it, emphasis such as italic stays), `define_style` (create or update one), `format_text` (the text of target blocks, or only what `match` matches there), `set_table_pagination` (how one table breaks across pages), `set_list` (one new bullet or numbered list), `set_default_font` |
 | Sections and pages | `insert_break` (page break, or split the section), `insert_section`, `delete_section` (never the last one), `set_page_setup`, `set_header`, `set_footer`, `set_page_numbers`, `set_watermark` (text in `font`; East Asian text otherwise in the default East Asian font of a Chinese, Japanese or Korean document, or else Microsoft YaHei), `delete_watermark` |
 | Review annotations | `add_comment`, `delete_comments`, `accept_revisions`, `reject_revisions` |
 | Fields and data | `refresh_fields` (tables of contents, or every field and the layout), `mail_merge` ([mail merge](mail-merge.md)) |

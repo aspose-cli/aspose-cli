@@ -150,6 +150,11 @@ internal sealed class WordsEditModel : IOperationModel<WordsOp>
             Hint = "Search with 'words search' and the same pattern and scope, or --scope all for headers, footers, "
                 + "footnotes and comments. Field codes and text a tracked change deletes are never matched.",
         },
+        FormatTextOp { Match: not null } when _matched.GetValueOrDefault(operation) == 0 => new NoEffect(NoEffectReasons.NoMatch,
+            $"Operation {operation.Id} (format_text) matched no text in its target blocks, so nothing was formatted.")
+        {
+            Hint = "Read the target blocks with 'words read' to check their text; field codes and text a tracked change deletes are never matched.",
+        },
         RevisionDecisionOp { Author: { } author } => AuthorNoMatch(operation, author, "tracked revision", _authors.GetValueOrDefault(operation) ?? []),
         DeleteCommentsOp { Author: { } author } => AuthorNoMatch(operation, author, "comment", _authors.GetValueOrDefault(operation) ?? []),
         DeleteWatermarkOp => new NoEffect(NoEffectReasons.NoChange,

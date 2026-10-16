@@ -162,6 +162,10 @@ internal static class WordsOperationSample
             new FormatTextOp
             {
                 Target = new WordsTarget { Blocks = "1-2" },
+                Match = "report",
+                Regex = true,
+                CaseSensitive = true,
+                WholeWord = true,
                 Bold = true,
                 Italic = false,
                 Underline = true,

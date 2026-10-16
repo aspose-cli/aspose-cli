@@ -19,12 +19,28 @@ internal static class WordsText
     /// The visible text of a node; nested paragraphs are separated by a paragraph mark. Without
     /// <paramref name="listNumbers"/>, a paragraph's text is its runs' text alone.
     /// </summary>
-    internal static string Of(Node node, bool listNumbers = true)
+    internal static string Of(Node node, bool listNumbers = true) => Clean(Project(node, listNumbers, runs: null));
+
+    /// <summary>
+    /// The visible text of a node as <see cref="Of"/> reads it up to its trailing marks, with
+    /// where the text of each run it reads starts in it.
+    /// </summary>
+    internal static (string Text, IReadOnlyList<(Run Run, int At)> Runs) Located(Node node)
+    {
+        var runs = new List<(Run Run, int At)>();
+        return (TrimMarks(Project(node, listNumbers: true, runs)), runs);
+    }
+
+    private static string Project(Node node, bool listNumbers, List<(Run Run, int At)>? runs)
     {
         var text = new StringBuilder();
         Walk(
             node,
-            run => text.Append(run.Text),
+            run =>
+            {
+                runs?.Add((run, text.Length));
+                text.Append(run.Text);
+            },
             paragraphStart: paragraph =>
             {
                 // A nested paragraph, such as a text box's, starts on a line of its own.
@@ -40,7 +56,7 @@ internal static class WordsText
             },
             paragraphEnd: () => text.Append(ControlChar.ParagraphBreakChar),
             placeholder: name => text.Append('{').Append(name).Append('}'));
-        return Clean(text.ToString());
+        return text.ToString();
     }
 
     /// <summary>
@@ -186,9 +202,12 @@ internal static class WordsText
         .Replace(ControlChar.LineBreak, with, StringComparison.Ordinal)
         .Replace(ControlChar.PageBreak, with, StringComparison.Ordinal);
 
+    // Drops the trailing paragraph, cell and page marks; the text before them keeps its positions.
+    private static string TrimMarks(string value) => value.TrimEnd('\r', '\a', '\f');
+
     /// <summary>Drops the trailing paragraph, cell and page marks and the cell marks inside raw SDK text.</summary>
     internal static string Clean(string value) =>
-        value.TrimEnd('\r', '\a', '\f').Replace("\a", string.Empty, StringComparison.Ordinal);
+        TrimMarks(value).Replace("\a", string.Empty, StringComparison.Ordinal);
 
     /// <summary>
     /// The fields open at a point of a walk through text, each in its code or in its result.
