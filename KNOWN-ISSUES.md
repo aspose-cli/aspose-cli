@@ -648,3 +648,14 @@ fails, delete the issue's section, the code that names it and the test, then upd
   copy, from the paragraph before the insertion point or from the replaced text, with tracking
   paused, and the run's insertion is then tracked as usual.
 - **Reproduction:** [WordsKnownIssueTests](tests/Aspose.Cli.Product.Words.Tests/WordsKnownIssueTests.cs)
+
+### WORDS-REGEX-TIMEOUT
+
+- **Defect:** `Range.Replace(Regex, string, FindReplaceOptions)` ignores the expression's
+  `MatchTimeout`: an expression that backtracks catastrophically, such as `(a+)+$` on a run of
+  `a` that ends in another character, runs until it finishes, which can take hours.
+- **CLI behavior:** `replace_text` with `regex` first runs the expression, under its execution
+  budget, on the text the replace searches (each story's text without field codes or text a
+  tracked change deletes), and an expression that runs past the budget fails with
+  `OPERATION_TIMEOUT` before the engine replaces anything.
+- **Reproduction:** [WordsKnownIssueTests](tests/Aspose.Cli.Product.Words.Tests/WordsKnownIssueTests.cs)
