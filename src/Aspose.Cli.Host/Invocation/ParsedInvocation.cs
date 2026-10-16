@@ -10,11 +10,13 @@ namespace Aspose.Cli.Host.Invocation;
 internal sealed class ParsedInvocation
 {
     private readonly GlobalOptions _globals;
+    private readonly ProductCatalog? _catalog;
 
-    internal ParsedInvocation(ParseResult parse, GlobalOptions globals, GlobalValues? inherited = null)
+    internal ParsedInvocation(ParseResult parse, GlobalOptions globals, GlobalValues? inherited = null, ProductCatalog? catalog = null)
     {
         ParseResult = parse;
         _globals = globals;
+        _catalog = catalog;
         GlobalValues = parse.Errors.Count == 0 ? globals.Resolve(parse, inherited) : null;
         var path = new List<Command>();
         for (CommandResult? current = parse.CommandResult; current?.Parent is not null;
@@ -100,7 +102,7 @@ internal sealed class ParsedInvocation
 
         if ((UnknownCommand() ?? HelpOrVersionWord()) is { } unknown)
         {
-            return new([unknown.Problem], unknown.Mistake, null, ValuesOnly: false) { Hint = unknown.Hint };
+            return new([unknown.Problem], unknown.Mistake, null, ValuesOnly: false, unknown.Corrected) { Hint = unknown.Hint };
         }
 
         if (Placeholder() is { } placeholder)
@@ -174,7 +176,7 @@ internal sealed class ParsedInvocation
             string[] values = [.. ParseResult.Tokens.Select(static item => item.Value)];
             int index = Array.IndexOf(values, placeholder.Value);
             string[] corrected = [.. values[..index], .. values[(index + 1)..]];
-            Refusal? rest = new ParsedInvocation(ParseResult.RootCommandResult.Command.Parse(corrected, InvocationParser.Configuration), _globals).Problems();
+            Refusal? rest = Reparsed(corrected).Problems();
             return new(
                 [$"'{placeholder.Value}' stands for the <{name}> argument, whose value follows it.", .. rest?.Problems ?? []],
                 rest?.Mistake,
@@ -185,6 +187,10 @@ internal sealed class ParsedInvocation
 
         return null;
     }
+
+    /// <summary>Another command line, parsed by the same command tree.</summary>
+    private ParsedInvocation Reparsed(IReadOnlyList<string> tokens) =>
+        new(ParseResult.RootCommandResult.Command.Parse(tokens, InvocationParser.Configuration), _globals, catalog: _catalog);
 
     /// <summary>
     /// <paramref name="problems"/> with the suggestions of <paramref name="mistake"/> named beside
@@ -257,9 +263,11 @@ internal sealed class ParsedInvocation
     /// the closest commands are suggested by their full path, as unknown options are. Help and
     /// the version are options, not commands, so <c>help</c> and <c>version</c> suggest
     /// <c>--help</c> and <c>--version</c>; a name commands declare they are mistaken for, such as
-    /// a command that no longer exists, suggests those commands first.
+    /// a command that no longer exists, suggests those commands first. A product's command written
+    /// without its product, such as <c>read a.docx</c>, suggests that command of the product whose
+    /// format the file's extension names, with the command line that runs it.
     /// </summary>
-    private (string Problem, Mistake Mistake, string? Hint)? UnknownCommand()
+    private (string Problem, Mistake Mistake, string? Hint, IReadOnlyList<string>? Corrected)? UnknownCommand()
     {
         string[] commands = VisibleCommands();
         if (commands.Length == 0
@@ -271,16 +279,48 @@ internal sealed class ParsedInvocation
         string parent = string.Join(' ', [DistributionInfo.CommandName, .. CommandPath.Select(static command => command.Name)]);
         Command[] declaring = [.. Command.Subcommands
             .Where(command => !command.Hidden && command.MistakenNames().Contains(token, StringComparer.Ordinal))];
+        (string Path, IReadOnlyList<string>? Corrected)? product = token is "help" or "version" ? null : ProductCommand(token);
         string[] meant = token switch
         {
             "help" => [Below("--help")],
             "version" when CommandPath.Count == 0 => ["--version"],
-            _ => [.. declaring.Select(static command => command.Name).Select(Below)],
+            _ => [.. product is { } command ? [command.Path] : Array.Empty<string>(), .. declaring.Select(static command => command.Name).Select(Below)],
         };
         return (
             $"'{token}' is not a command of '{parent}'.",
             Mistake.Of(token, commands.Select(Below), meant, keyOf: static name => name[(name.LastIndexOf(' ') + 1)..]),
-            declaring.Select(static command => command.MistakenNameHint()).FirstOrDefault(static hint => hint is not null));
+            declaring.Select(static command => command.MistakenNameHint()).FirstOrDefault(static hint => hint is not null),
+            product?.Corrected);
+    }
+
+    /// <summary>
+    /// The product command <paramref name="token"/>, typed at the root, stands for: the command of
+    /// that name of the product whose format the extension of the first file after it names, as
+    /// the catalog routes the file, and the command line with the product written before it when
+    /// that line parses, or reads once the name of an argument written before its value is
+    /// dropped. Null below the root, without a file, or for an extension no product with that
+    /// command claims.
+    /// </summary>
+    private (string Path, IReadOnlyList<string>? Corrected)? ProductCommand(string token)
+    {
+        if (CommandPath.Count > 0 || _catalog is null
+            || ParseResult.UnmatchedTokens.Skip(1).FirstOrDefault(static value => !value.StartsWith('-') && System.IO.Path.GetExtension(value).Length > 1) is not { } file
+            || !_catalog.TryGetDefaultOwner(System.IO.Path.GetExtension(file), out ProductDefinition? owner))
+        {
+            return null;
+        }
+
+        if (Command.Subcommands.FirstOrDefault(command => command.Policy().ProductId == owner!.Manifest.Id) is not { } group
+            || !group.Subcommands.Any(command => !command.Hidden && command.Name == token))
+        {
+            return null;
+        }
+
+        string[] values = [.. ParseResult.Tokens.Select(static item => item.Value)];
+        int index = Array.IndexOf(values, token);
+        string[] corrected = [.. values[..index], group.Name, .. values[index..]];
+        Refusal? rest = Reparsed(corrected).Problems();
+        return ($"{group.Name} {token}", rest is null ? corrected : rest.Corrected);
     }
 
     /// <summary>
@@ -315,7 +355,7 @@ internal sealed class ParsedInvocation
         string[] values = [.. ParseResult.Tokens.Select(static item => item.Value)];
         int index = Array.IndexOf(values, token);
         string[] corrected = [.. values[..index], .. values[(index + 1)..]];
-        var rest = new ParsedInvocation(ParseResult.RootCommandResult.Command.Parse(corrected, InvocationParser.Configuration), _globals);
+        ParsedInvocation rest = Reparsed(corrected);
         // The rest's own mistake, such as a mistyped option, is named beside its problem, so one
         // error corrects both.
         Refusal? others = rest.Problems();
@@ -338,7 +378,7 @@ internal sealed class ParsedInvocation
     /// or <c>--version</c> is suggested, and the problems the stray word caused, such as a missing
     /// argument, are not reported on their own.
     /// </summary>
-    private (string Problem, Mistake Mistake, string? Hint)? HelpOrVersionWord()
+    private (string Problem, Mistake Mistake, string? Hint, IReadOnlyList<string>? Corrected)? HelpOrVersionWord()
     {
         if (ParseResult.UnmatchedTokens.FirstOrDefault(static token => token is "help" or "version") is not { } token)
         {
@@ -349,7 +389,7 @@ internal sealed class ParsedInvocation
         // The word belongs to the command typed before it, as in 'words help edit'.
         int before = ParseResult.Tokens.TakeWhile(item => item.Value != token).Count(static item => item.Type == TokenType.Command);
         string path = string.Join(' ', [DistributionInfo.CommandName, .. CommandPath.Take(before).Select(static command => command.Name)]);
-        return ($"'{token}' is not a command of '{path}'; {token} is the {meant.Split(' ')[^1]} option.", Mistake.Of(token, [], meant), null);
+        return ($"'{token}' is not a command of '{path}'; {token} is the {meant.Split(' ')[^1]} option.", Mistake.Of(token, [], meant), null, null);
     }
 
     /// <summary>
@@ -490,7 +530,10 @@ internal sealed class ParsedInvocation
 }
 
 /// <summary>One command tree for CLI execution, supervision and MCP authorization.</summary>
-internal sealed class InvocationParser(RootCommand root, GlobalOptions globals)
+/// <param name="root">The command tree.</param>
+/// <param name="globals">The global options of the tree.</param>
+/// <param name="catalog">The product catalog, whose formats name the product of a file a mistaken command line names; null for none.</param>
+internal sealed class InvocationParser(RootCommand root, GlobalOptions globals, ProductCatalog? catalog = null)
 {
     // Tokens are always literal. Response-file expansion would read a file relative to
     // whichever process parses, so a supervisor, worker or MCP child could each resolve
@@ -499,7 +542,7 @@ internal sealed class InvocationParser(RootCommand root, GlobalOptions globals)
     internal static readonly ParserConfiguration Configuration = new() { ResponseFileTokenReplacer = null };
 
     internal ParsedInvocation Parse(string[] args, GlobalValues? inherited = null) =>
-        new(root.Parse(args, Configuration), globals, inherited);
+        new(root.Parse(args, Configuration), globals, inherited, catalog);
 
     internal (OutputMode OutputFormat, bool Quiet) ResolveErrorOutput(IReadOnlyList<string> args) =>
         globals.ResolveForErrorReporting(root.Parse(args, Configuration));
