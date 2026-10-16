@@ -232,14 +232,86 @@ public sealed class WordsSnapshotOutcomeTests
     }
 
     /// <summary>
-    /// Refreshing a table of contents replaces its paragraphs: a removed paragraph and the new one
-    /// in its place share a block number, so the targets list that number once while
-    /// itemsAffected counts both, as the Words Skill says.
+    /// Accepting tracked changes removes a deleted paragraph and changes the one after it, which
+    /// takes its block number: the removed paragraph and the changed one share that number, so the
+    /// targets list it once while itemsAffected counts both, as the Words Skill says.
     /// </summary>
     [Fact]
-    public void RefreshFields_OfATableOfContents_ListsASharedNumberOnceAndCountsBoth()
+    public void AcceptRevisions_OfARemovedParagraphAndTheNextOne_ListsASharedNumberOnceAndCountsBoth()
     {
         using var fixture = new WordsFixture();
+        var source = new Document();
+        var builder = new DocumentBuilder(source);
+        builder.Writeln("Keep");
+        builder.Writeln("Gone");
+        builder.Write("Edited");
+        source.StartTrackRevisions("Ann", DateTime.UnixEpoch);
+        Paragraph[] paragraphs = [.. source.FirstSection.Body.Paragraphs.Cast<Paragraph>()];
+        paragraphs[1].Remove();
+        builder.MoveTo(paragraphs[2].Runs[0]);
+        builder.Write("Newly ");
+        source.StopTrackRevisions();
+        string input = fixture.Temp.File("tracked.docx");
+        source.Save(input, SaveFormat.Docx);
+
+        BoundedOperationOutcome outcome = Assert.Single(Edit(fixture, input, new AcceptRevisionsOp()).Applied);
+
+        Assert.Equal(["block/2"], outcome.Targets);
+        Assert.True(outcome.ItemsAffected > outcome.Targets.Count, $"{outcome.ItemsAffected} items, targets {string.Join(", ", outcome.Targets)}");
+    }
+
+    [Theory]
+    [InlineData("toc")]
+    [InlineData("all")]
+    public void RefreshFields_OfAnUpToDateTableOfContents_ChangesNothingAndWarnsOpNoEffect(string what)
+    {
+        using var fixture = new WordsFixture();
+        string current = CurrentToc(fixture);
+
+        WordsEditResult result = fixture.Disclosed(session => WordsEdit.Run(session, new WordsEditRequest
+        {
+            Input = current,
+            Batch = new WordsOpsBatch { Ops = [new RefreshFieldsOp { What = what }] },
+            Output = TestOutput.At(fixture.Temp.File($"refreshed-{Guid.NewGuid():N}.docx")),
+            Verify = true,
+        }));
+
+        BoundedOperationOutcome outcome = Assert.Single(result.Applied);
+        Assert.Equal((0L, 0), (outcome.ItemsAffected, outcome.Targets.Count));
+        Assert.Contains(result.Warnings ?? [], static warning => warning.Code.Name == "OP_NO_EFFECT");
+        Assert.False(result.Verification!.SemanticChangesDetected);
+    }
+
+    [Fact]
+    public void RefreshFields_AfterAHeadingChanged_CountsOnlyTheEntryThatChanged()
+    {
+        using var fixture = new WordsFixture();
+        string current = CurrentToc(fixture);
+        var document = new Document(current);
+        Paragraph heading = document.GetChildNodes(NodeType.Paragraph, true).Cast<Paragraph>()
+            .Single(static paragraph => paragraph.ParagraphFormat.StyleIdentifier == StyleIdentifier.Heading1 && paragraph.GetText().Trim() == "Second");
+        heading.Runs[0].Text = "Second part";
+        string stale = fixture.Temp.File("stale-toc.docx");
+        document.Save(stale, SaveFormat.Docx);
+
+        WordsEditResult result = Edit(fixture, stale, new RefreshFieldsOp { What = "toc" });
+
+        BoundedOperationOutcome outcome = Assert.Single(result.Applied);
+        Assert.Equal(1L, outcome.ItemsAffected);
+        string target = Assert.Single(outcome.Targets);
+        Assert.StartsWith("block/", target, StringComparison.Ordinal);
+        int block = int.Parse(target["block/".Length..], System.Globalization.CultureInfo.InvariantCulture);
+        WordsReadResult read = WordsRead.Run(fixture.Session, new WordsReadRequest { Input = result.Output!.Path, Content = "text" });
+        Assert.StartsWith("Second part", read.Blocks.Single(item => item.Block == block).Text, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// Two headings and a table of contents that lists them as they are. Each update of a table of
+    /// contents in a process names the hidden bookmarks it adds to the headings anew, so the table
+    /// is updated once, by insert_toc.
+    /// </summary>
+    private static string CurrentToc(WordsFixture fixture)
+    {
         var source = new Document();
         var builder = new DocumentBuilder(source);
         builder.ParagraphFormat.StyleIdentifier = StyleIdentifier.Heading1;
@@ -250,16 +322,10 @@ public sealed class WordsSnapshotOutcomeTests
         builder.Writeln("Second");
         builder.ParagraphFormat.StyleIdentifier = StyleIdentifier.Normal;
         builder.Write("More");
-        string input = fixture.Temp.File("headings.docx");
+        string input = fixture.Temp.File($"headings-{Guid.NewGuid():N}.docx");
         source.Save(input, SaveFormat.Docx);
         WordsEditResult inserted = Edit(fixture, input, new InsertTocOp { At = new WordsTarget { Block = 1 }, Position = "before" });
-        string withToc = fixture.Temp.File("with-toc.docx");
-        File.Copy(inserted.Output!.Path, withToc);
-
-        BoundedOperationOutcome outcome = Assert.Single(Edit(fixture, withToc, new RefreshFieldsOp()).Applied);
-
-        Assert.Equal(outcome.Targets.Count, outcome.Targets.Distinct(StringComparer.Ordinal).Count());
-        Assert.True(outcome.ItemsAffected > outcome.Targets.Count, $"{outcome.ItemsAffected} items, targets {string.Join(", ", outcome.Targets)}");
+        return inserted.Output!.Path;
     }
 
     private static WordsEditResult Edit(WordsFixture fixture, string input, params WordsOp[] ops) =>

@@ -90,12 +90,18 @@ public sealed partial class OperationSnapshot
     /// </summary>
     /// <param name="unit">The unit, which also names the sequence.</param>
     /// <param name="objects">Each object's instance and state, in order.</param>
-    public OperationSnapshot AddObjects(string unit, IEnumerable<(object Identity, string State)> objects)
+    /// <param name="reused">
+    /// Whether the operation may rebuild objects on instances that held others, as a field
+    /// update rebuilds its result, so an instance no longer identifies one object: the objects are
+    /// then compared by state in order, as a sequence of <see cref="AddSequence(string, IEnumerable{string}, IEnumerable{string}?)"/>
+    /// is, and each changed one the output holds is still reported where the output holds its instance.
+    /// </param>
+    public OperationSnapshot AddObjects(string unit, IEnumerable<(object Identity, string State)> objects, bool reused = false)
     {
         ArgumentNullException.ThrowIfNull(objects);
         (object Identity, string State)[] list = [.. objects];
         AddSequence(unit, list.Select(static item => item.State));
-        _sequences[^1] = _sequences[^1] with { Identities = [.. list.Select(static item => item.Identity)] };
+        _sequences[^1] = _sequences[^1] with { Identities = [.. list.Select(static item => item.Identity)], Reused = reused };
         return this;
     }
 
@@ -141,11 +147,11 @@ public sealed partial class OperationSnapshot
         {
             Sequence first = Find(before, name);
             Sequence second = Find(after, name);
-            changes.AddRange(first.Identities is not null && second.Identities is not null
+            changes.AddRange(first.Identities is not null && second.Identities is not null && !first.Reused && !second.Reused
                 ? ObjectChanges(first, second)
                 : first.Moved is { } moved
                     ? MovedChanges(first.Items, second.Items, moved)
-                    : SequenceChanges(first.Items, second.Items));
+                    : SequenceChanges(first.Items, second.Items, first.Identities, second.Identities));
         }
 
         return changes;
@@ -214,12 +220,19 @@ public sealed partial class OperationSnapshot
     /// <summary>
     /// The changed objects of one sequence: the shortest edit script by state, then an inserted
     /// object paired with a deleted one of the same state (a move) or of the same address (an
-    /// object changed in place) counts once, at its address in the output.
+    /// object changed in place) counts once, at its address in the output. With the instances of
+    /// both snapshots, an object counts with its instance: an inserted one with the instance the
+    /// output holds, and a removed one with the instance it had, unless the output holds that
+    /// instance as another object.
     /// </summary>
     private static IEnumerable<ObjectChange> SequenceChanges(
         IReadOnlyList<(string Address, string State)> before,
-        IReadOnlyList<(string Address, string State)> after)
+        IReadOnlyList<(string Address, string State)> after,
+        IReadOnlyList<object>? beforeIdentities = null,
+        IReadOnlyList<object>? afterIdentities = null)
     {
+        bool identified = beforeIdentities is not null && afterIdentities is not null;
+        var kept = new HashSet<object>(afterIdentities ?? [], ReferenceEqualityComparer.Instance);
         (List<int> deleted, List<int> inserted) = SequenceDiff.Edits(
             before.Select(static item => item.State).ToArray(),
             after.Select(static item => item.State).ToArray());
@@ -237,12 +250,13 @@ public sealed partial class OperationSnapshot
                 unpaired.RemoveAt(pair);
             }
 
-            yield return new ObjectChange(after[index].Address, InOutput: true);
+            yield return new ObjectChange(after[index].Address, InOutput: true, identified ? afterIdentities![index] : null);
         }
 
         foreach (int index in unpaired)
         {
-            yield return new ObjectChange(before[index].Address, InOutput: false);
+            yield return new ObjectChange(before[index].Address, InOutput: false,
+                identified && !kept.Contains(beforeIdentities![index]) ? beforeIdentities[index] : null);
         }
     }
 
@@ -339,7 +353,11 @@ public sealed partial class OperationSnapshot
         string Name,
         IReadOnlyList<(string Address, string State)> Items,
         IReadOnlyList<object>? Identities,
-        IReadOnlySet<string>? Moved);
+        IReadOnlySet<string>? Moved)
+    {
+        /// <summary>Whether the engine may rebuild objects on instances that held others (<see cref="AddObjects"/>).</summary>
+        public bool Reused { get; init; }
+    }
 }
 
 /// <summary>One object an operation changed.</summary>

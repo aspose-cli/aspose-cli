@@ -112,7 +112,12 @@ internal sealed partial class WordsSnapshots(LoadedDocument loaded) : IWordsOpHa
 
     public OperationSnapshot Apply(MailMergeOp operation) => BlocksAndSections();
 
-    public OperationSnapshot Apply(RefreshFieldsOp operation) => BlocksAndSections();
+    /// <summary>
+    /// The blocks by their content in order, and the sections: updating a field rebuilds its
+    /// result and may keep a paragraph of the old result as another one of the new, so a block's
+    /// node does not identify it across the update.
+    /// </summary>
+    public OperationSnapshot Apply(RefreshFieldsOp operation) => AddSections(AddBlocks(new OperationSnapshot(), reused: true));
 
     private OperationSnapshot Blocks() => AddBlocks(new OperationSnapshot());
 
@@ -120,8 +125,8 @@ internal sealed partial class WordsSnapshots(LoadedDocument loaded) : IWordsOpHa
 
     private OperationSnapshot BlocksAndSections() => AddSections(AddBlocks(new OperationSnapshot()));
 
-    private OperationSnapshot AddBlocks(OperationSnapshot snapshot) =>
-        snapshot.AddObjects(BlockUnit, Blocks(loaded).Select(block => ((object)block, State(block))));
+    private OperationSnapshot AddBlocks(OperationSnapshot snapshot, bool reused = false) =>
+        snapshot.AddObjects(BlockUnit, Blocks(loaded).Select(block => ((object)block, State(block))), reused);
 
     private OperationSnapshot AddSections(OperationSnapshot snapshot) =>
         snapshot.AddObjects(SectionUnit, _document.Sections.Cast<Section>().Select(section => ((object)section, WordsDigest.OfSection(section, loaded.Evaluation))));
