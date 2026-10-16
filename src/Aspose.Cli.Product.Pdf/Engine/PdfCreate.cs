@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Globalization;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -15,40 +16,26 @@ internal static class PdfCreate
 {
     internal static PdfCreateResult Run(PdfSession session, PdfCreateRequest request)
     {
-        int sources = request.ImagePaths is { Count: > 0 } ? 1 : 0;
-        sources += request.HtmlPath is null ? 0 : 1;
-        sources += request.TextPath is null ? 0 : 1;
-        if (sources != 1)
-        {
-            throw CliErrors.Usage(["Choose exactly one image list, HTML file, text file or Markdown file."]);
-        }
-
-        if (request.AllowNetworkResources && request.HtmlPath is null)
-        {
-            throw CliErrors.OptionInvalid(
-                "--allow-network-resources",
-                "it applies only to --from-html",
-                "The Markdown importer follows local file references inside fetched resources without any resource hook, so network resources stay refused for Markdown; convert the Markdown to HTML first.");
-        }
-
-        (byte[]? html, IReadOnlyList<byte[]> imageContents) = EnsureCreationInputs(session.Budgets, request);
+        PdfCreateSource source = request.Source;
+        (byte[]? html, IReadOnlyList<byte[]> imageContents) = EnsureCreationInputs(session.Budgets, source);
         // The Markdown importer resolves the Markdown's relative references against the
         // working directory and reads files itself; the check holds them until the save.
-        bool fromMarkdown = request.TextPath is { } textPath
-            && string.Equals(Path.GetExtension(textPath), ".md", StringComparison.OrdinalIgnoreCase);
-        using MarkdownImportResources? markdown = fromMarkdown && request.TextPath is { } markdownPath
+        using MarkdownImportResources? markdown = source is PdfMarkdownSource { Path: var markdownPath }
             ? new MarkdownImportResources(markdownPath, session.Budgets, Environment.CurrentDirectory) : null;
         LicenseState state = session.Outputs.License;
-        using HtmlImportResources? resources = request.HtmlPath is { } htmlPath
-            ? new HtmlImportResources(htmlPath, session.Budgets, request.AllowNetworkResources) : null;
+        using HtmlImportResources? resources = source is PdfHtmlSource { Path: var htmlPath, AllowNetworkResources: var allowNetwork }
+            ? new HtmlImportResources(htmlPath, session.Budgets, allowNetwork) : null;
         var warnings = new List<Warning>();
-        using Document document = request.ImagePaths is { Count: > 0 } images
-            ? CreateFromImages(images, imageContents, request, warnings)
-            : request.HtmlPath is not null
-                ? CreateFromHtml(request.HtmlPath, request, resources!)
-                : CreateFromText(request.TextPath!, fromMarkdown, request);
+        using Document document = source switch
+        {
+            PdfImageSource images => CreateFromImages(images.Paths, imageContents, request, warnings),
+            PdfHtmlSource page => CreateFromHtml(page.Path, request, resources!),
+            PdfMarkdownSource notes => CreateFromText(notes.Path, markdown: true, request),
+            PdfTextSource text => CreateFromText(text.Path, markdown: false, request),
+            _ => throw new UnreachableException(),
+        };
         resources?.ThrowIfFailed();
-        if (request.HtmlPath is not null || fromMarkdown)
+        if (source is PdfHtmlSource or PdfMarkdownSource)
         {
             // Both importers set the title, author and subject to a placeholder
             // (PDF-IMPORT-INFO-PLACEHOLDER); keep only the title the HTML states.
@@ -73,7 +60,7 @@ internal static class PdfCreate
         return new PdfCreateResult
         {
             Output = FileObjects.Output(written, request.Output.Format, encrypted),
-            Inputs = CreationInputs(request),
+            Inputs = CreationInputs(source),
             License = EnvelopeParts.License(state),
             Warnings = warnings.Count == 0 ? null : warnings,
         };
@@ -409,20 +396,35 @@ internal static class PdfCreate
         }
     }
 
-    private static IReadOnlyList<InputInfo> CreationInputs(PdfCreateRequest request)
+    /// <summary>
+    /// The source files, each with the id of the format it was read as: an image by its file,
+    /// the others by the option that named them.
+    /// </summary>
+    private static IReadOnlyList<InputInfo> CreationInputs(PdfCreateSource source) => source switch
     {
-        IEnumerable<string> paths = request.ImagePaths
-            ?? (request.HtmlPath is not null ? [request.HtmlPath] : [request.TextPath!]);
-        return paths.Select(static path => FileObjects.Input(path, Path.GetExtension(path).TrimStart('.').ToLowerInvariant(), encrypted: false)).ToArray();
-    }
+        PdfImageSource images => [.. images.Paths.Select(static path => FileObjects.Input(path, Path.GetExtension(path).TrimStart('.').ToLowerInvariant(), encrypted: false))],
+        PdfHtmlSource html => [FileObjects.Input(html.Path, "html", encrypted: false)],
+        PdfMarkdownSource markdown => [FileObjects.Input(markdown.Path, "md", encrypted: false)],
+        PdfTextSource text => [FileObjects.Input(text.Path, "txt", encrypted: false)],
+        _ => throw new UnreachableException(),
+    };
+
+    /// <summary>The files of a source.</summary>
+    private static IReadOnlyList<string> Paths(PdfCreateSource source) => source switch
+    {
+        PdfImageSource images => images.Paths,
+        PdfHtmlSource html => [html.Path],
+        PdfMarkdownSource markdown => [markdown.Path],
+        PdfTextSource text => [text.Path],
+        _ => throw new UnreachableException(),
+    };
 
     /// <summary>Checks every creation input and returns the HTML input's bytes, if any, and the images' bytes.</summary>
     private static (byte[]? Html, IReadOnlyList<byte[]> Images) EnsureCreationInputs(
         ResourceBudgetLedger resourceBudgets,
-        PdfCreateRequest request)
+        PdfCreateSource source)
     {
-        IReadOnlyList<string> paths = request.ImagePaths
-            ?? (request.HtmlPath is not null ? [request.HtmlPath] : [request.TextPath!]);
+        IReadOnlyList<string> paths = Paths(source);
         if (paths.Count > 1000)
         {
             throw CliErrors.OptionInvalid(
@@ -439,13 +441,13 @@ internal static class PdfCreate
         // The engine decodes each image only when the document is saved, and a damaged one fails
         // there or is embedded as it is; refuse it first.
         var images = new List<byte[]>();
-        foreach (string image in request.ImagePaths ?? [])
+        foreach (string image in source is PdfImageSource imageSource ? imageSource.Paths : [])
         {
             using InputResourceScope scope = resourceBudgets.Inputs.CreateScope();
             images.Add(ImageInput.Read(scope, image, refuseNetworkReferences: true));
         }
 
-        if (request.HtmlPath is not { } html)
+        if (source is not PdfHtmlSource { Path: var html, AllowNetworkResources: var allowNetwork })
         {
             return (null, images);
         }
@@ -453,7 +455,7 @@ internal static class PdfCreate
         // The HTML importer reaches the network before any resource policy applies; refuse
         // first unless the caller allowed it. Markdown is checked with its local references.
         byte[] bytes = resourceBudgets.Inputs.ReadAllBytes(html);
-        if (!request.AllowNetworkResources)
+        if (!allowNetwork)
         {
             NetworkReferenceGuard.EnsureNone(bytes, "HTML input", html, optIn: "--allow-network-resources");
         }

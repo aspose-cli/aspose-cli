@@ -26,7 +26,7 @@ public sealed class ConvertOutputsContractTests : IDisposable
         CliResult created = product switch
         {
             "cells" => _workspace.Run("cells", "create", input),
-            "pdf" => _workspace.Run("pdf", "create", input, "--from-text", "source.md"),
+            "pdf" => _workspace.Run("pdf", "create", input, "--from-markdown", "source.md"),
             _ => _workspace.Run(product, "create", input, "--from-markdown", "source.md"),
         };
         Assert.True(created.ExitCode == 0, created.StdErr);

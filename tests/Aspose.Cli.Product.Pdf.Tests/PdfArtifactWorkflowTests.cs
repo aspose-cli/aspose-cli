@@ -41,7 +41,7 @@ public sealed class PdfArtifactWorkflowTests
         PdfCreate.Run(fixture.Session, new PdfCreateRequest
         {
             Output = TestOutput.At(output),
-            TextPath = markdown,
+            Source = new PdfMarkdownSource(markdown),
             PageSize = "letter",
             Margins = new PdfMargins(72, 54, 60, 90),
         });
@@ -68,7 +68,7 @@ public sealed class PdfArtifactWorkflowTests
         PdfCreate.Run(fixture.Session, new PdfCreateRequest
         {
             Output = TestOutput.At(output),
-            TextPath = text,
+            Source = new PdfTextSource(text),
             PageSize = "letter",
             Margins = new PdfMargins(72, 54, 60, 90),
         });
@@ -100,7 +100,7 @@ public sealed class PdfArtifactWorkflowTests
         PdfCreate.Run(fixture.Session, new PdfCreateRequest
         {
             Output = TestOutput.At(created),
-            TextPath = text,
+            Source = new PdfTextSource(text),
         });
         using (var document = new Document(created))
         {

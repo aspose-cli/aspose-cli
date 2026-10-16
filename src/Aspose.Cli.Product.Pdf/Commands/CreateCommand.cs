@@ -21,7 +21,11 @@ internal static class CreateCommand
         {
             Description = "Let the HTML importer request the network resources trusted --from-html input names; the result lists every address. Local references stay beneath the HTML directory.",
         };
-        var text = new Option<string?>("--from-text") { Description = "UTF-8 text or Markdown input file." }.WithInput(InputKind.File);
+        var markdown = new Option<string?>("--from-markdown") { Description = "UTF-8 Markdown input file." }.WithInput(InputKind.File);
+        var text = new Option<string?>("--from-text")
+        {
+            Description = "UTF-8 text input file, laid out line by line as plain text; Markdown uses --from-markdown.",
+        }.WithInput(InputKind.File);
         var pageSize = new Option<string>("--page-size") { DefaultValueFactory = _ => PageSizePresets.A4, Description = "Page size of the new PDF." }.WithInput(InputKind.None);
         pageSize.AcceptOnlyFromAmong([.. PdfCreateRequest.PageSizes]);
         var margins = new Option<string>("--margins") { DefaultValueFactory = _ => "36", Description = "One value or top,right,bottom,left in points." }.WithInput(InputKind.None);
@@ -34,33 +38,17 @@ internal static class CreateCommand
                 Encrypt = PdfInputs.EncryptedPdf,
                 UsesFonts = true,
             },
-            [images, html, allowNetwork, text, pageSize, margins],
+            [images, html, allowNetwork, markdown, text, pageSize, margins],
             (parse, standard) =>
             {
-                string[] imageValues = parse.GetValue(images) ?? [];
-                string? htmlValue = parse.GetValue(html);
-                string? textValue = parse.GetValue(text);
-                int sources = imageValues.Length > 0 ? 1 : 0;
-                sources += htmlValue is null ? 0 : 1;
-                sources += textValue is null ? 0 : 1;
-                if (sources != 1)
-                {
-                    throw CliErrors.Usage(["Choose exactly one of --from-images, --from-html or --from-text."]);
-                }
-
-                string[]? imagePaths = imageValues.Length == 0 ? null : standard.InputFiles(images);
-                string? htmlPath = standard.InputFile(html);
-                string? textPath = standard.InputFile(text);
+                PdfCreateSource source = Source(parse, standard, images, html, parse.GetValue(allowNetwork), markdown, text);
                 ResolvedOutput output = standard.Output;
                 Secret? encryptPassword = standard.EncryptPassword();
                 return new PdfCreateRequest
                 {
                     Output = output,
                     EncryptPassword = encryptPassword,
-                    ImagePaths = imagePaths,
-                    HtmlPath = htmlPath,
-                    AllowNetworkResources = parse.GetValue(allowNetwork),
-                    TextPath = textPath,
+                    Source = source,
                     PageSize = parse.GetValue(pageSize) ?? PageSizePresets.A4,
                     Margins = ParseMargins(parse.GetValue(margins) ?? "36"),
                 };
@@ -70,7 +58,7 @@ internal static class CreateCommand
             Examples =
             [
                 "pdf create scans.pdf --from-images page1.png page2.png",
-                "pdf create notes.pdf --from-text notes.md --page-size letter --margins 54",
+                "pdf create notes.pdf --from-markdown notes.md --page-size letter --margins 54",
             ],
             Links =
             [
@@ -78,6 +66,44 @@ internal static class CreateCommand
                 CommandHelpLink.Docs(PdfModule.Manifest, "overview", "what each PDF command is for"),
             ],
         };
+    }
+
+    /// <summary>
+    /// The one source option given, read as that option names it; --allow-network-resources
+    /// applies to the HTML importer alone.
+    /// </summary>
+    private static PdfCreateSource Source(
+        ParseResult parse,
+        StandardInvocation standard,
+        Option<string[]> images,
+        Option<string?> html,
+        bool allowNetwork,
+        Option<string?> markdown,
+        Option<string?> text)
+    {
+        int given = (parse.GetValue(images) is { Length: > 0 } ? 1 : 0)
+            + (parse.GetValue(html) is null ? 0 : 1)
+            + (parse.GetValue(markdown) is null ? 0 : 1)
+            + (parse.GetValue(text) is null ? 0 : 1);
+        if (given != 1)
+        {
+            throw CliErrors.Usage(["Choose exactly one of --from-images, --from-html, --from-markdown or --from-text."]);
+        }
+
+        PdfCreateSource source = standard.InputFile(html) is { } htmlPath ? new PdfHtmlSource(htmlPath, allowNetwork)
+            : standard.InputFile(markdown) is { } markdownPath ? new PdfMarkdownSource(markdownPath)
+            : standard.InputFile(text) is { } textPath ? new PdfTextSource(textPath)
+            : new PdfImageSource(standard.InputFiles(images));
+
+        if (allowNetwork && source is not PdfHtmlSource)
+        {
+            throw CliErrors.OptionInvalid(
+                "--allow-network-resources",
+                "it applies only to --from-html",
+                "The Markdown importer follows local file references inside fetched resources without any resource hook, so network resources stay refused for Markdown; convert the Markdown to HTML first.");
+        }
+
+        return source;
     }
 
     private static PdfMargins ParseMargins(string text)

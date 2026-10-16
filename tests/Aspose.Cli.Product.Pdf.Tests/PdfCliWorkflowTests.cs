@@ -498,6 +498,73 @@ public sealed class PdfCliWorkflowTests : IDisposable
         Assert.StartsWith("Invalid use of --bom:", error["message"]!.GetValue<string>(), StringComparison.Ordinal);
     }
 
+    /// <summary>
+    /// The option names how a source is read, whatever its extension: --from-markdown lays out
+    /// Markdown under either Markdown extension, with a heading for each # line, and
+    /// --from-text lays out the same file as plain text, # and all. Each input is reported
+    /// with the declared id of the format it was read as.
+    /// </summary>
+    [Theory]
+    [InlineData("--from-markdown", "notes.md", "md")]
+    [InlineData("--from-markdown", "notes.markdown", "md")]
+    [InlineData("--from-text", "notes.md", "txt")]
+    [InlineData("--from-text", "notes.text", "txt")]
+    public void Create_ReadsTheSourceAsItsOptionNamesWhateverItsExtension(string option, string source, string format)
+    {
+        File.WriteAllText(_workspace.File(source), "# Quarterly results\n\nRevenue grew in every region.\n");
+
+        CliResult created = _workspace.Run(
+            "pdf", "create", "notes.pdf", option, source, "--output-format", "json");
+
+        Assert.True(created.ExitCode == 0, created.StdErr);
+        JsonNode input = Assert.Single(JsonNode.Parse(created.StdOut)!["inputs"]!.AsArray())!;
+        Assert.Equal(format, input["format"]!.GetValue<string>());
+        Assert.Equal(_workspace.File(source), input["path"]!.GetValue<string>(), ignoreCase: true);
+        using var document = new Document(_workspace.File("notes.pdf"));
+        var absorber = new TextFragmentAbsorber();
+        document.Pages.Accept(absorber);
+        TextFragment[] fragments = [.. absorber.TextFragments];
+        string text = string.Concat(fragments.Select(static fragment => fragment.Text));
+        TextFragment heading = fragments.First(static fragment => fragment.Text.Contains("Quarterly", StringComparison.Ordinal));
+        TextFragment body = fragments.First(static fragment => fragment.Text.Contains("Revenue", StringComparison.Ordinal));
+        if (format == "md")
+        {
+            Assert.DoesNotContain("#", text, StringComparison.Ordinal);
+            Assert.True(heading.TextState.FontSize > body.TextState.FontSize, $"{heading.TextState.FontSize} <= {body.TextState.FontSize}");
+        }
+        else
+        {
+            Assert.Contains("# Quarterly results", text, StringComparison.Ordinal);
+            Assert.Equal(body.TextState.FontSize, heading.TextState.FontSize);
+        }
+    }
+
+    /// <summary>
+    /// A PDF is created from exactly one source, and --allow-network-resources applies to the
+    /// HTML importer alone, so Markdown with it is refused before anything is read.
+    /// </summary>
+    [Fact]
+    public void Create_RefusesTwoSourcesAndNetworkResourcesForMarkdown()
+    {
+        File.WriteAllText(_workspace.File("notes.md"), "# Notes\n");
+        File.WriteAllText(_workspace.File("notes.txt"), "Notes\n");
+
+        CliResult twoSources = _workspace.Run(
+            "pdf", "create", "notes.pdf", "--from-markdown", "notes.md", "--from-text", "notes.txt", "--output-format", "json");
+        CliResult network = _workspace.Run(
+            "pdf", "create", "notes.pdf", "--from-markdown", "notes.md", "--allow-network-resources", "--output-format", "json");
+
+        Assert.True(twoSources.ExitCode == 2, twoSources.StdErr);
+        JsonNode usage = JsonNode.Parse(twoSources.StdErr)!["error"]!;
+        Assert.Equal("USAGE_ERROR", usage["code"]!.GetValue<string>());
+        Assert.Contains("--from-markdown", usage["message"]!.GetValue<string>(), StringComparison.Ordinal);
+        Assert.True(network.ExitCode == 2, network.StdErr);
+        JsonNode invalid = JsonNode.Parse(network.StdErr)!["error"]!;
+        Assert.Equal("OPTION_INVALID", invalid["code"]!.GetValue<string>());
+        Assert.Equal("--allow-network-resources", invalid["details"]!["option"]!.GetValue<string>());
+        Assert.False(File.Exists(_workspace.File("notes.pdf")));
+    }
+
     [Theory]
     [InlineData("a5", 419.53, 595.28)]
     [InlineData("tabloid", 792.0, 1224.0)]
@@ -506,7 +573,7 @@ public sealed class PdfCliWorkflowTests : IDisposable
         File.WriteAllText(_workspace.File("notes.md"), "# Notes\n");
 
         CliResult created = _workspace.Run(
-            "pdf", "create", "notes.pdf", "--from-text", "notes.md", "--page-size", preset, "--output-format", "json");
+            "pdf", "create", "notes.pdf", "--from-markdown", "notes.md", "--page-size", preset, "--output-format", "json");
 
         Assert.True(created.ExitCode == 0, created.StdErr);
         using var document = new Document(_workspace.File("notes.pdf"));

@@ -5864,6 +5864,7 @@ unknown-option | pdf create --encrypt-stdin as --ecnrypt-stdin
 unknown-option | pdf create --font-dir as --fnot-dir
 unknown-option | pdf create --from-html as --form-html
 unknown-option | pdf create --from-images as --form-images
+unknown-option | pdf create --from-markdown as --form-markdown
 unknown-option | pdf create --from-text as --form-text
 unknown-option | pdf create --margins as --mragins
 unknown-option | pdf create --overwrite as --oevrwrite
