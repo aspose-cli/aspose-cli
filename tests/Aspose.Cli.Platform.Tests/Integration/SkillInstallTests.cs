@@ -156,6 +156,38 @@ public sealed class SkillInstallTests : IDisposable
     }
 
     [Fact]
+    public void Install_ThatFailsWhileReplacingTheSkill_LeavesTheInstalledSkill()
+    {
+        Requires.Windows();
+        string skill = FirstSkill();
+        Assert.Equal(0, _workspace.Run("skill", "install", skill, "--target", "skills-root").ExitCode);
+        string root = _workspace.File("skills-root");
+        string installed = Path.Combine(root, skill);
+        string[] before = Tree(installed);
+
+        // Another program holds a file of the installed Skill open without sharing its deletion,
+        // so the install's publication cannot move the installed tree aside and fails there.
+        CliResult failed;
+        using (new FileStream(Path.Combine(installed, "SKILL.md"), FileMode.Open, FileAccess.Read, FileShare.Read))
+        {
+            failed = _workspace.Run("skill", "install", skill, "--target", "skills-root", "--output-format", "json");
+        }
+
+        Assert.True(failed.ExitCode != 0, failed.StdOut);
+        Assert.Equal("OUTPUT_UNWRITABLE", Parse(failed.StdErr)["error"]!["code"]!.GetValue<string>());
+        Assert.Equal(before, Tree(installed));
+        Assert.Equal([skill], Directory.EnumerateFileSystemEntries(root).Select(Path.GetFileName));
+        Assert.Empty(Directory.EnumerateDirectories(_workspace.Path, ".aspose-publication-*"));
+    }
+
+    /// <summary>Every file below a directory with its content hash.</summary>
+    private static string[] Tree(string directory) =>
+        Directory.EnumerateFiles(directory, "*", SearchOption.AllDirectories)
+            .Select(path => Path.GetRelativePath(directory, path) + ":" + FileHashes.Sha256(path))
+            .Order(StringComparer.Ordinal)
+            .ToArray();
+
+    [Fact]
     public void Install_WritesOwnershipAndRefusesAnUnrecognizedManifestWithoutOverwritingIt()
     {
         string skill = FirstSkill();
