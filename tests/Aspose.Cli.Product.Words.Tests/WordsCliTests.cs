@@ -434,6 +434,31 @@ public sealed class WordsCliTests : IDisposable
             .Select(static hit => $"{hit!["block"]!.GetValue<int>()}:{hit["occurrence"]?.GetValue<int>()}");
     }
 
+    /// <summary>
+    /// Merge data that names one column or property twice cannot say which value a field takes,
+    /// so the merge refuses it as invalid data.
+    /// </summary>
+    [Category(TestCategory.Slow)]
+    [Theory]
+    [InlineData("data.csv", "Name,Name\nAva,Noah\n")]
+    [InlineData("data.json", """[{"Name":"Ava","Name":"Noah"}]""")]
+    public void MailMerge_RefusesDataThatNamesAFieldTwice(string dataName, string data)
+    {
+        var template = new Document();
+        new DocumentBuilder(template).InsertField("MERGEFIELD Name");
+        template.Save(_workspace.File("letter.docx"));
+        File.WriteAllText(_workspace.File(dataName), data);
+
+        CliResult result = _workspace.RunWithInput(
+            $$"""{ "ops": [ { "op": "mail_merge", "path": "{{dataName}}" } ] }""",
+            "words", "edit", "letter.docx", "--ops", "-", "--out", "letters.docx", "--output-format", "json");
+
+        JsonNode error = JsonNode.Parse(result.StdErr)!["error"]!;
+        Assert.Equal("MERGE_DATA_INVALID", error["code"]!.GetValue<string>());
+        Assert.Contains("'Name'", error["message"]!.GetValue<string>(), StringComparison.Ordinal);
+        Assert.False(File.Exists(_workspace.File("letters.docx")));
+    }
+
     public void Dispose() => _workspace.Dispose();
 
     private static IEnumerable<string> HitTexts(JsonNode result) =>
