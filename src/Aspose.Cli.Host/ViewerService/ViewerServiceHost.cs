@@ -249,6 +249,7 @@ internal sealed class ViewerServiceHost : IDisposable
             Password = request.Password,
             License = request.License,
             EvaluationRequested = request.EvaluationRequested,
+            RequesterLicense = request.RequesterLicense,
             FontDirectories = request.FontDirectories,
             MaxInputBytes = request.MaxInputBytes,
         }, ViewerDocuments.PreviewHolder, deadline);
@@ -332,9 +333,9 @@ internal sealed class ViewerServiceHost : IDisposable
     };
 
     /// <summary>
-    /// The worker receives the service's working directory, configuration and
-    /// license selection, so it resolves exactly what the command would, while
-    /// the process itself runs in the service directory.
+    /// The worker receives the service's working directory and configuration,
+    /// while the process itself runs in the service directory; each render
+    /// request carries the license context of the command that asked for it.
     /// </summary>
     private static ProcessStartInfo WorkerProcess(GlobalValues globals, ServiceStartSecrets? secrets)
     {
@@ -345,11 +346,6 @@ internal sealed class ViewerServiceHost : IDisposable
         start.ArgumentList.Add("--workdir");
         start.ArgumentList.Add(Path.GetFullPath(
             secrets?.WorkDirectory ?? globals.WorkDir ?? Directory.GetCurrentDirectory()));
-        if ((secrets?.LicensePath ?? globals.LicensePath) is { } license)
-        {
-            start.ArgumentList.Add("--license");
-            start.ArgumentList.Add(license);
-        }
         start.ArgumentList.Add("--quiet");
         return start;
     }

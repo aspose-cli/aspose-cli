@@ -56,6 +56,9 @@ internal sealed record RenderWorkerRequest(long MaxInputBytes = Aspose.Cli.Sdk.I
     /// <summary>True for <c>--license-mode evaluation</c>: no license source is read.</summary>
     public bool EvaluationRequested { get; init; }
 
+    /// <summary>The license context of the opening command, or null when it names its license.</summary>
+    public RequesterLicense? RequesterLicense { get; init; }
+
     /// <summary>Explicit font directories, or null for the ambient environment.</summary>
     public IReadOnlyList<string>? FontDirectories { get; init; }
 

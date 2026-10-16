@@ -81,6 +81,13 @@ internal static class PreviewCommand
                     ? Path.GetFullPath(license, context.Paths.BaseDirectory)
                     : null,
                 EvaluationRequested = context.Globals.EvaluationRequested,
+                // The service renders under the license this command would use, not its starter's.
+                RequesterLicense = context.Globals.LicensePath is null && !context.Globals.EvaluationRequested
+                    ? RequesterLicense.Capture(
+                        context.Paths.BaseDirectory,
+                        InvocationEnvironment.LicenseVariables(context.Catalog),
+                        context.ReadEnvironment)
+                    : null,
                 FontDirectories = fonts.IsAmbient ? null : fonts.Directories,
             },
             port,

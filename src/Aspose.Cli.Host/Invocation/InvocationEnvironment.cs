@@ -26,6 +26,16 @@ internal static class InvocationEnvironment
                 .OfType<string>()))
             .Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
 
+    /// <summary>The environment variables a license is resolved from: the shared ones and each product's.</summary>
+    internal static IReadOnlyList<string> LicenseVariables(ProductCatalog catalog) =>
+        new[] { LicenseResolver.EnvPathName, LicenseResolver.EnvBase64Name }
+            .Concat(catalog.Products.SelectMany(static product => new[]
+            {
+                LicenseResolver.ProductEnvPathName(product.Manifest.Id),
+                LicenseResolver.ProductEnvBase64Name(product.Manifest.Id),
+            }))
+            .Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
+
     internal static Func<string, string?> CreateSecretReader(ResourceBudgetLedger budgets)
     {
         InvocationInputs? inputs = InvocationInputs.Current;
