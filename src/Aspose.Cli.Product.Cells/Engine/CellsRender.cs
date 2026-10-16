@@ -393,10 +393,23 @@ internal static class CellsRender
     {
         RangeRef drawn = printArea is not null ? A1.ParseRange(printArea).Range
             : Sheets.UsedRange(sheet) ?? new RangeRef(new CellRef(0, 0), new CellRef(0, 0));
-        int rows = Math.Max(1, (int)(drawn.RowCount * Math.Min(1d, (double)LargeImageSide / height)));
-        int columns = Math.Max(1, (int)(drawn.ColumnCount * Math.Min(1d, (double)LargeImageSide / width)));
-        return $"{Sheets.QuotedName(sheet.Name)}!" + A1.FormatRange(new RangeRef(drawn.Start,
-            new CellRef(drawn.Start.Row + rows - 1, drawn.Start.Column + columns - 1)));
+        return Qualified(sheet, FirstWindow(drawn, width, height, LargeImageSide));
+    }
+
+    /// <summary>A window of <paramref name="sheet"/> as a sheet-qualified <c>--range</c>, such as <c>'Data'!A1:F200</c>.</summary>
+    internal static string Qualified(Worksheet sheet, RangeRef window) =>
+        $"{Sheets.QuotedName(sheet.Name)}!" + A1.FormatRange(window);
+
+    /// <summary>
+    /// The first rows and columns of <paramref name="drawn"/>, by their share of an image of
+    /// <paramref name="width"/> by <paramref name="height"/> pixels, that draw within
+    /// <paramref name="side"/> pixels on a side; at least one row and one column.
+    /// </summary>
+    internal static RangeRef FirstWindow(RangeRef drawn, long width, long height, double side)
+    {
+        int rows = Math.Max(1, (int)(drawn.RowCount * Math.Min(1d, side / height)));
+        int columns = Math.Max(1, (int)(drawn.ColumnCount * Math.Min(1d, side / width)));
+        return new RangeRef(drawn.Start, new CellRef(drawn.Start.Row + rows - 1, drawn.Start.Column + columns - 1));
     }
 
     /// <summary>

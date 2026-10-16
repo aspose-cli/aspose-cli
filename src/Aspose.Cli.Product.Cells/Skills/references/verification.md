@@ -45,10 +45,13 @@ aspose-cli cells render book.xlsx --range Sales!A1:G20 --out zoom.png
 ```
 
 `review` renders one 192 DPI image per visible sheet; hidden sheets are not
-reviewed. A sheet too large for one image contributes its first rows, and the
-`SHEET_PARTIALLY_RENDERED` warning names how many; a sheet whose print area
-lists several areas contributes its first area, and the same warning gives the
-command that renders each other one; the other sheets are still reviewed.
+reviewed. A sheet more than 10000 pixels on a side contributes its first
+window of rows and columns, and the `SHEET_PARTIALLY_RENDERED` warning names the
+window and gives the `cells render` command, with a sheet-qualified `--range`,
+for the next one;
+a sheet whose print area lists several areas contributes its first area, and the
+same warning gives the command that renders each other one; the other sheets are
+still reviewed.
 In evaluation mode the warning sheets an evaluation save added are not
 layout-checked, and the coverage metric `excludedEvaluationMarks` counts them.
 Cells checks report codes such as `CELLS_FORMULA_ERROR`,

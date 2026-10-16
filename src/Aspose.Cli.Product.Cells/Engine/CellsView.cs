@@ -127,24 +127,27 @@ internal static class CellsView
 
         try
         {
-            // A review shows every sheet, so a sheet too large for one image contributes its
-            // first rows rather than failing the review; the workbook is never saved here.
+            // A review shows every sheet, and a model reads each image in full: a sheet longer
+            // than CellsRender.LargeImageSide on a side, or over the pixel budget, contributes its
+            // first window of rows and columns rather than an unreadable image or a failed
+            // review. The print area only limits this in-memory render; the workbook is never saved.
             Warning? window = null;
-            float[] whole = render.GetPageSizeInch(0);
-            double pixels = Math.Ceiling(whole[0] * dpi) * Math.Ceiling(whole[1] * dpi);
-            long maxPixels = budgets.Limit(ResourceBudgetKinds.RasterPixels);
-            int lastRow = sheet.Cells.MaxDataRow;
-            if (pixels > maxPixels && lastRow > 0)
+            (long width, long height) = Pixels(render, dpi);
+            double side = Math.Min(CellsRender.LargeImageSide, Math.Sqrt(budgets.Limit(ResourceBudgetKinds.RasterPixels)));
+            if (Math.Max(width, height) > side && Drawn(sheet) is { } drawn)
             {
-                int rows = Math.Clamp((int)(0.9 * (lastRow + 1) * maxPixels / pixels), 1, lastRow);
-                sheet.PageSetup.PrintArea = "A1:" + CellsHelper.CellIndexToName(rows - 1, Math.Max(0, sheet.Cells.MaxDataColumn));
-                render = new SheetRender(sheet, options);
-                window = new Warning(CellsDiagnostics.SheetPartiallyRendered, $"Worksheet '{sheet.Name}' is too large for one review image; only rows 1-{rows} of {lastRow + 1} were rendered.")
+                RangeRef shown = drawn;
+                // The window is sized by its share of the image; a row or column larger than the
+                // rest takes another, smaller pass.
+                for (int pass = 0; pass < 8 && Math.Max(width, height) > side; pass++)
                 {
-                    Hint = $"Check the rest with 'cells render --range' windows of the sheet, or trust 'cells read' for the data.",
-                    Location = sheet.Name,
-                    AffectsCompleteness = true,
-                };
+                    shown = CellsRender.FirstWindow(shown, width, height, 0.9 * side);
+                    sheet.PageSetup.PrintArea = A1.FormatRange(shown);
+                    render = new SheetRender(sheet, options);
+                    (width, height) = Pixels(render, dpi);
+                }
+
+                window = shown == drawn ? null : WindowShown(sheet, drawn, shown, input);
             }
 
             window ??= CellsRender.PrintAreasLeftOut(sheet, render, input);
@@ -160,6 +163,54 @@ internal static class CellsView
         {
             throw CellsErrors.RenderFailed(sheet.Name, exception.Message);
         }
+    }
+
+    private static (long Width, long Height) Pixels(SheetRender render, int dpi)
+    {
+        float[] inches = render.GetPageSizeInch(0);
+        return ((long)Math.Ceiling(inches[0] * dpi), (long)Math.Ceiling(inches[1] * dpi));
+    }
+
+    /// <summary>The cells a sheet image draws: the first area of its print area, or its used range.</summary>
+    private static RangeRef? Drawn(Worksheet sheet)
+    {
+        if (SheetLayoutProjection.PrintArea(sheet.PageSetup)?.Range is { } printArea)
+        {
+            try
+            {
+                return A1.ParseRange(A1.SplitList(printArea)[0]).Range;
+            }
+            catch (CliException)
+            {
+                // A print area that is no bounded range draws as the engine reads it; the used
+                // range bounds the window instead.
+            }
+        }
+
+        return Sheets.UsedRange(sheet);
+    }
+
+    /// <summary>
+    /// <c>SHEET_PARTIALLY_RENDERED</c> for a sheet whose image shows the window
+    /// <paramref name="shown"/> of <paramref name="drawn"/>, with the command that renders the
+    /// next window: the rows below it, or once the rows are all shown, the columns to its right.
+    /// </summary>
+    private static Warning WindowShown(Worksheet sheet, RangeRef drawn, RangeRef shown, string input)
+    {
+        RangeRef next = shown.End.Row < drawn.End.Row
+            ? new RangeRef(
+                new CellRef(shown.End.Row + 1, shown.Start.Column),
+                new CellRef(Math.Min(drawn.End.Row, shown.End.Row + shown.RowCount), shown.End.Column))
+            : new RangeRef(
+                new CellRef(shown.Start.Row, shown.End.Column + 1),
+                new CellRef(shown.End.Row, Math.Min(drawn.End.Column, shown.End.Column + shown.ColumnCount)));
+        return new Warning(CellsDiagnostics.SheetPartiallyRendered,
+            $"Worksheet '{sheet.Name}' is too large for one readable review image; it shows {A1.FormatRange(shown)} of {A1.FormatRange(drawn)}.")
+        {
+            Hint = $"Render the next window, then the ones after it the same way: aspose-cli cells render \"{input}\" --range \"{CellsRender.Qualified(sheet, next)}\"; or trust 'cells read' for the data.",
+            Location = sheet.Name,
+            AffectsCompleteness = true,
+        };
     }
 
     // A valid one-pixel white PNG for a worksheet without printable content.
