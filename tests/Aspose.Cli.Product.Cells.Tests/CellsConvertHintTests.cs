@@ -75,4 +75,30 @@ public sealed class CellsConvertHintTests : IDisposable
         Assert.True(converted.ExitCode == 0, converted.StdErr);
         using System.Text.Json.JsonDocument rows = System.Text.Json.JsonDocument.Parse(File.ReadAllText(_workspace.File("rows.json")));
     }
+
+    /// <summary>
+    /// A JSON export of a workbook with a header-only sheet among sheets with data leaves that
+    /// sheet out (CELLS-JSON-HEADER-ONLY), keeps one member per sheet, and names it in
+    /// <c>SHEETS_DROPPED</c>.
+    /// </summary>
+    [Fact]
+    public void JsonExport_SkipsAHeaderOnlySheetAndNamesIt()
+    {
+        Assert.Equal(0, _workspace.Run("cells", "create", "book.xlsx", "--sheets", "Data,Returns").ExitCode);
+        CliResult filled = _workspace.Run("cells", "edit", "book.xlsx", "--in-place", "--ops", """
+            [{"op":"set_values","sheet":"Data","range":"A1","values":[["Name","Qty"],["alpha",3]]},
+             {"op":"set_values","sheet":"Returns","range":"A1","values":[["Name","Qty"]]}]
+            """);
+        Assert.True(filled.ExitCode == 0, filled.StdErr);
+
+        CliResult converted = _workspace.Run("cells", "convert", "book.xlsx", "--to", "json", "--out", "book.json", "--output-format", "json");
+
+        Assert.True(converted.ExitCode == 0, converted.StdErr);
+        JsonObject written = JsonNode.Parse(File.ReadAllText(_workspace.File("book.json")))!.AsObject();
+        Assert.Equal(["Data"], written.Select(static member => member.Key));
+        Assert.Equal("alpha", written["Data"]![0]!["Name"]!.GetValue<string>());
+        JsonNode dropped = Assert.Single(JsonNode.Parse(converted.StdOut)!["warnings"]!.AsArray(), static warning => warning!["code"]!.GetValue<string>() == "SHEETS_DROPPED")!;
+        Assert.Contains("'Returns'", dropped["message"]!.GetValue<string>(), StringComparison.Ordinal);
+        Assert.DoesNotContain("'Data'", dropped["message"]!.GetValue<string>(), StringComparison.Ordinal);
+    }
 }

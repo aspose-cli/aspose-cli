@@ -58,9 +58,11 @@ landscape), or move or resize the chart, and convert again.
 
 A JSON output of a sheet whose data is a single row, which the engine takes
 for the header, would not be valid JSON (CELLS-JSON-HEADER-ONLY), so `cells
-convert --to json` refuses it with `FEATURE_UNSUPPORTED` (`details.reason`
-`engine-defect`) naming the sheets, before it writes anything: add a data row
-below the header, delete the sheet, or convert to csv.
+convert --to json` leaves such a sheet out, writes the other sheets as usual,
+still one member per sheet, and warns `SHEETS_DROPPED` naming the sheets left
+out. A workbook with no other sheet is refused with `FEATURE_UNSUPPORTED`
+(`details.reason` `engine-defect`) before anything is written: add a data row
+below the header, or convert to csv.
 
 `RENDER_EMPTY` means the selected sheet has no content; `cells inspect` lists
 each sheet's used range. When a render of several sheets cannot render some of

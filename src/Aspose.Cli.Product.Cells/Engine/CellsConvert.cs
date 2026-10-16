@@ -82,9 +82,11 @@ internal static class CellsConvert
             { throw CellsErrors.TextExportEvaluationLimit(request.Output.Format.Id, active.Name, first.Name); }
         }
 
+        Warning? headerOnlySkipped = null;
+        IReadOnlyList<Worksheet> jsonSheets = [];
         if (request.Output.Format.Id is "json")
         {
-            RefuseHeaderOnlySheets(workbook);
+            (jsonSheets, headerOnlySkipped) = JsonSheets(workbook);
         }
 
         Warning? chartsSplit = request.Output.Format.Id is "pdf" ? PrintedPages.SplitChartsWarning(workbook, selectedSheets) : null;
@@ -93,7 +95,7 @@ internal static class CellsConvert
             request.EncryptPassword, loaded.IsEncrypted ? request.Password : null, selectedSheets, request.ByteOrderMark);
         if (request.Output.Format.Id is "json")
         {
-            savePlan = savePlan with { Options = JsonOptions(workbook) };
+            savePlan = savePlan with { Options = JsonOptions(workbook, jsonSheets) };
         }
 
         loaded.RestoreActiveSheet(savePlan);
@@ -117,40 +119,54 @@ internal static class CellsConvert
                 loaded.SkippedSheetWarning(selected is null && savePlan.WritesActiveSheetOnly, licenseState == LicenseState.Evaluation
                     // The evaluation SDK writes only the first sheet to a text format.
                     ? $"Evaluation mode exports only the first sheet to {request.Output.Format.Id}; converting another sheet needs an Aspose.Cells license, then --sheets with the sheet's position from inspect."
-                    : "Pass --sheets with the sheet's position from inspect to convert another sheet."), sheetsDropped, dataTruncated, formulasBroken, chartsSplit,
+                    : "Pass --sheets with the sheet's position from inspect to convert another sheet."), sheetsDropped, headerOnlySkipped, dataTruncated, formulasBroken, chartsSplit,
                 .. textLayout]),
         };
     }
 
     /// <summary>
-    /// The JSON export of the workbook's own sheets: an evaluation warning sheet, whose one row
-    /// the engine would write as invalid JSON (CELLS-JSON-HEADER-ONLY), is no data of the
-    /// workbook and is left out.
+    /// The JSON export of the sheets <see cref="JsonSheets"/> chose. It keeps one member per sheet
+    /// whenever the workbook has more than one sheet of its own, even when only one is written.
     /// </summary>
-    private static JsonSaveOptions JsonOptions(Workbook workbook)
+    private static JsonSaveOptions JsonOptions(Workbook workbook, IReadOnlyList<Worksheet> written)
     {
-        int[] own = [.. workbook.Worksheets.Cast<Worksheet>().Where(static sheet => !CellsEvaluation.IsWarningSheet(sheet)).Select(static sheet => sheet.Index)];
-        return own.Length == 0 || own.Length == workbook.Worksheets.Count ? new JsonSaveOptions() : new JsonSaveOptions { SheetIndexes = own };
+        int own = workbook.Worksheets.Cast<Worksheet>().Count(static sheet => !CellsEvaluation.IsWarningSheet(sheet));
+        var options = new JsonSaveOptions { AlwaysExportAsJsonObject = own > 1 };
+        if (written.Count > 0 && written.Count < workbook.Worksheets.Count)
+        {
+            options.SheetIndexes = [.. written.Select(static sheet => sheet.Index)];
+        }
+
+        return options;
     }
 
     /// <summary>
-    /// Refuses a JSON export of a workbook with a sheet whose data is one row, which the engine
-    /// takes for a header and writes as invalid JSON (CELLS-JSON-HEADER-ONLY).
+    /// The sheets a JSON export writes: the workbook's own sheets, without the evaluation warning
+    /// sheets, which are no data of the workbook, and without a sheet whose data is one row, which
+    /// the engine takes for a header and writes as invalid JSON (CELLS-JSON-HEADER-ONLY). Such a
+    /// sheet has no records to write and is named in the warning; a workbook with no other sheet
+    /// is refused before anything is written.
     /// </summary>
-    private static void RefuseHeaderOnlySheets(Workbook workbook)
+    private static (IReadOnlyList<Worksheet> Written, Warning? Skipped) JsonSheets(Workbook workbook)
     {
-        string[] headerOnly =
-        [
-            .. workbook.Worksheets.Cast<Worksheet>()
-                .Where(static sheet => !CellsEvaluation.IsWarningSheet(sheet)
-                    && sheet.Cells.MaxDataRow >= 0 && sheet.Cells.MinDataRow == sheet.Cells.MaxDataRow)
-                .Select(static sheet => sheet.Name),
-        ];
-        if (headerOnly.Length > 0)
+        Worksheet[] own = [.. workbook.Worksheets.Cast<Worksheet>().Where(static sheet => !CellsEvaluation.IsWarningSheet(sheet))];
+        Worksheet[] headerOnly = [.. own.Where(static sheet => sheet.Cells.MaxDataRow >= 0 && sheet.Cells.MinDataRow == sheet.Cells.MaxDataRow)];
+        string names = string.Join(", ", headerOnly.Select(static sheet => $"'{sheet.Name}'"));
+        if (headerOnly.Length > 0 && headerOnly.Length == own.Length)
         {
             throw CliErrors.EngineDefect(
-                $"Aspose.Cells writes invalid JSON for a sheet whose data is a single header row, as in {string.Join(", ", headerOnly.Select(static name => $"'{name}'"))}; nothing was written.",
-                "Add at least one data row below the header, delete the sheet, or convert to csv, which writes the header alone.");
+                $"Aspose.Cells writes invalid JSON for a sheet whose data is a single header row, as in {names}, and the workbook has no other sheet to write; nothing was written.",
+                "Add at least one data row below the header, or convert to csv, which writes the header alone.");
         }
+
+        bool one = headerOnly.Length == 1;
+        Warning? skipped = headerOnly.Length == 0 ? null : new Warning(CellsDiagnostics.SheetsDropped,
+            $"{(one ? "Worksheet" : "Worksheets")} {names} {(one ? "was" : "were")} not exported: {(one ? "it holds" : "each holds")} "
+            + "only a header row and no records, which Aspose.Cells cannot write as JSON.")
+        {
+            Hint = "Convert the sheet to csv with --sheets and its position from inspect to keep its column names, or add data rows below its header.",
+            AffectsCompleteness = true,
+        };
+        return ([.. own.Except(headerOnly)], skipped);
     }
 }
