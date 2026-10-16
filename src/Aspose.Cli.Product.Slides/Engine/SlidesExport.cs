@@ -77,6 +77,11 @@ internal static class SlidesExport
             presentation.ProtectionManager.RemoveEncryption();
         }
 
+        if (format == SaveFormat.Md)
+        {
+            StateInheritedBullets(presentation, slides ?? AllSlides(presentation.Slides.Count));
+        }
+
         if (slides is not null && Exports(format))
         {
             // A selected slide is converted even when it is hidden; every export but HTML5 and
@@ -149,6 +154,38 @@ internal static class SlidesExport
         }
 
         presentation.Save(temp, [.. slides], format);
+    }
+
+    /// <summary>
+    /// Writes the bullet each paragraph inherits from its layout or master as its own, in this
+    /// private loaded copy, because the Markdown export lists only a paragraph's own bullet and
+    /// would write a placeholder's inherited list as plain lines (SLIDES-MD-INHERITED-BULLETS).
+    /// </summary>
+    private static void StateInheritedBullets(Presentation presentation, IReadOnlyList<int> slides)
+    {
+        foreach (int number in slides)
+        {
+            foreach (IParagraph paragraph in presentation.Slides[number - 1].Shapes
+                .SelectMany(TextFrames)
+                .SelectMany(static frame => frame.Paragraphs)
+                .Where(static paragraph => paragraph.ParagraphFormat.Bullet.Type == BulletType.NotDefined && !string.IsNullOrWhiteSpace(paragraph.Text)))
+            {
+                IBulletFormatEffectiveData inherited = paragraph.ParagraphFormat.GetEffective().Bullet;
+                IBulletFormat bullet = paragraph.ParagraphFormat.Bullet;
+                switch (inherited.Type)
+                {
+                    case BulletType.Symbol:
+                        bullet.Type = BulletType.Symbol;
+                        bullet.Char = inherited.Char;
+                        break;
+                    case BulletType.Numbered:
+                        bullet.Type = BulletType.Numbered;
+                        bullet.NumberedBulletStyle = inherited.NumberedBulletStyle;
+                        bullet.NumberedBulletStartWith = inherited.NumberedBulletStartWith;
+                        break;
+                }
+            }
+        }
     }
 
     /// <summary>
