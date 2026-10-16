@@ -682,7 +682,7 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
         Assert.Equal(
             evaluation,
             rendered.Warnings?.Any(warning => warning.Code == WarningCodes.EvaluationMode) == true);
-        Assert.Contains("Quarterly report", File.ReadAllText(extracted.Items[0].Path), StringComparison.Ordinal);
+        Assert.Contains("Quarterly report", File.ReadAllText(extracted.Outputs[0].Path), StringComparison.Ordinal);
     }
 
     [Fact]
@@ -1255,7 +1255,7 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
             What = "comments",
         });
 
-        string json = File.ReadAllText(Assert.Single(extracted.Items).Path);
+        string json = File.ReadAllText(Assert.Single(extracted.Outputs).Path);
         Assert.Contains("\"Reviewer\"", json, StringComparison.Ordinal);
         Assert.Contains("Please confirm the term.", json, StringComparison.Ordinal);
     }
@@ -1277,7 +1277,7 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
             What = "images",
         });
 
-        Assert.Empty(extracted.Items);
+        Assert.Empty(extracted.Outputs);
         Assert.Contains(extracted.Warnings!, warning => warning.Code.Name == "LINKED_IMAGES_SKIPPED");
     }
 
@@ -1308,7 +1308,7 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
             Input = input,
             Output = new ResolvedDirectory(directory, overwrite: true),
             What = "text",
-        }).Items).Path;
+        }).Outputs).Path;
         Assert.Equal(existing, replaced);
         Assert.Contains("Extracted text", File.ReadAllText(existing), StringComparison.Ordinal);
     }
@@ -1333,7 +1333,7 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
             Input = input,
             Output = new ResolvedDirectory(directory),
             What = "text",
-        }).Items).Path;
+        }).Outputs).Path;
 
         string[] converted = File.ReadAllLines(txt);
         Assert.Contains(converted, static line => line.Contains("Revenue", StringComparison.Ordinal) && line.Contains("120", StringComparison.Ordinal));
@@ -1363,12 +1363,11 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
             What = "tables",
         });
 
-        Assert.Equal(["table-001.csv:2", "table-002.csv:4"], result.Items.Select(static item => $"{Path.GetFileName(item.Path)}:{item.Block}"));
-        Assert.All(result.Items, static item => Assert.Equal("table", item.Kind));
+        Assert.Equal(["table-001.csv:2", "table-002.csv:4"], result.Outputs.Select(static item => $"{Path.GetFileName(item.Path)}:{item.Block}"));
         // UTF-8 without a byte order mark unless one is asked for.
         const string First = "岗位,\"人数, 备注\"\r\n\"Engineer \"\"senior\"\"\",3\r\n";
-        Assert.Equal(System.Text.Encoding.UTF8.GetBytes(First), File.ReadAllBytes(result.Items[0].Path));
-        Assert.Equal("\"Line one\nLine two\nLine three\"\r\n", File.ReadAllText(result.Items[1].Path));
+        Assert.Equal(System.Text.Encoding.UTF8.GetBytes(First), File.ReadAllBytes(result.Outputs[0].Path));
+        Assert.Equal("\"Line one\nLine two\nLine three\"\r\n", File.ReadAllText(result.Outputs[1].Path));
 
         WordsExtractResult marked = WordsExtract.Run(_fixture.Session, new WordsExtractRequest
         {
@@ -1378,8 +1377,8 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
             ByteOrderMark = true,
         });
 
-        Assert.All(marked.Items, static item => Assert.Equal([0xEF, 0xBB, 0xBF], File.ReadAllBytes(item.Path)[..3]));
-        Assert.Equal(First, File.ReadAllText(marked.Items[0].Path));
+        Assert.All(marked.Outputs, static item => Assert.Equal([0xEF, 0xBB, 0xBF], File.ReadAllBytes(item.Path)[..3]));
+        Assert.Equal(First, File.ReadAllText(marked.Outputs[0].Path));
     }
 
     /// <summary>Writes a table of one row per item of <paramref name="rows"/>, each cell its text.</summary>

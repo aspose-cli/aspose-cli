@@ -61,7 +61,7 @@ internal static class ExtractCommand
 
     internal static void Table(WordsExtractResult result, TableSurface surface)
     {
-        ResultText.Files(surface, "extracted", $"{result.What} item", [.. result.Items.Select(static item =>
-            new ProducedFile(null, item.Path, null, item.SizeBytes))]);
+        ResultText.Files(surface, "extracted", $"{result.What} item", [.. result.Outputs.Select(static item =>
+            new ProducedFile(item.Block is { } block ? $"block {block}" : null, item.Path, item.Format, item.SizeBytes))]);
     }
 }
