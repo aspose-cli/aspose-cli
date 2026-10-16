@@ -20,9 +20,10 @@ internal static class WordsSearch
         SearchHits<WordsSearchHit> hits = query.Collect<WordsSearchHit>();
         IEnumerable<(Node Node, string Scope)> units = WordsStories.In(loaded.Document, query.Scope ?? WordsTextScopes.Body)
             .SelectMany(static story => WordsStories.Units(story.Story).Select(unit => (unit, story.Scope)));
+        int occurrence = 0;
         foreach ((Node node, string scope) in units)
         {
-            if (!OfferEach(hits, query.Text, index, node, scope))
+            if (!OfferEach(hits, query.Text, index, node, scope, ref occurrence))
             {
                 break;
             }
@@ -39,13 +40,17 @@ internal static class WordsSearch
         };
     }
 
-    /// <summary>Offers every match in one paragraph, comment or note; false once the hit window is full.</summary>
-    private static bool OfferEach(SearchHits<WordsSearchHit> hits, TextSearch query, DocumentBlockIndex index, Node node, string scope)
+    /// <summary>
+    /// Offers every match in one paragraph, comment or note, counting each in
+    /// <paramref name="occurrence"/>, the matches of the document so far; false once the hit window is full.
+    /// </summary>
+    private static bool OfferEach(SearchHits<WordsSearchHit> hits, TextSearch query, DocumentBlockIndex index, Node node, string scope, ref int occurrence)
     {
         string text = WordsText.Of(node);
         foreach ((int start, int length) in query.Find(text))
         {
-            if (!hits.Offer(() => Hit(index, node, scope, text, start, length)))
+            int current = ++occurrence;
+            if (!hits.Offer(() => Hit(index, node, scope, text, start, length, current)))
             {
                 return false;
             }
@@ -54,7 +59,7 @@ internal static class WordsSearch
         return true;
     }
 
-    private static WordsSearchHit Hit(DocumentBlockIndex index, Node node, string scope, string text, int start, int length)
+    private static WordsSearchHit Hit(DocumentBlockIndex index, Node node, string scope, string text, int start, int length, int occurrence)
     {
         (string Location, string Kind)? place = scope == WordsTextScopes.HeadersFooters && node.GetAncestor(NodeType.HeaderFooter) is HeaderFooter headerFooter
             ? WordsStories.PlaceOf(headerFooter)
@@ -68,6 +73,7 @@ internal static class WordsSearch
             Kind = place?.Kind,
             Text = text.Substring(start, length),
             Context = TextSearch.Context(text, start, length),
+            Occurrence = occurrence,
         };
     }
 }
