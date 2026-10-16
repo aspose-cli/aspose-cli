@@ -74,6 +74,26 @@ public sealed class OperationSnapshotTests
     }
 
     [Fact]
+    public void Compare_ReusedInstancesWithTheSameStatesChangeNothing()
+    {
+        object first = new(), second = new(), third = new(), fresh = new();
+        OperationSnapshot before = new OperationSnapshot().AddObjects("block", [(first, "a"), (second, "b"), (third, "c")], reused: true);
+        OperationSnapshot after = new OperationSnapshot().AddObjects("block", [(third, "a"), (fresh, "b"), (second, "c")], reused: true);
+
+        Assert.Empty(Compare(before, after));
+    }
+
+    [Fact]
+    public void Compare_AReusedInstanceWhoseStateChangedCountsOnceWithTheInstanceTheOutputHolds()
+    {
+        object first = new(), second = new(), third = new();
+        OperationSnapshot before = new OperationSnapshot().AddObjects("block", [(first, "a"), (second, "b"), (third, "c")], reused: true);
+        OperationSnapshot after = new OperationSnapshot().AddObjects("block", [(third, "a"), (first, "B"), (second, "c")], reused: true);
+
+        Assert.Equal([new ObjectChange("block/2", true, first)], Compare(before, after));
+    }
+
+    [Fact]
     public void Compare_APageChangedInPlaceCountsOnce()
     {
         Assert.Equal([new ObjectChange("page/2", true)], Compare(Pages("a", "b", "c"), Pages("a", "B", "c")));
