@@ -43,6 +43,9 @@ internal static class PdfDiagnostics
     /// <summary>The signature appearance made the engine embed a whole font, so the file grew by its size (PDF-SIGN-FULL-FONT).</summary>
     internal static readonly WarningCode SignatureFontEmbedded = new("SIGNATURE_FONT_EMBEDDED");
 
+    /// <summary>The visible signature's rectangle cannot hold its text at the smallest font size, so the appearance clips it.</summary>
+    internal static readonly WarningCode SignatureTextClipped = new("SIGNATURE_TEXT_CLIPPED");
+
     /// <summary>A form field of the output does not hold the value set_form_field set.</summary>
     internal static readonly DiagnosticDescriptor FieldValueMismatch = DiagnosticDescriptor.Verification("FIELD_VALUE_MISMATCH");
 
@@ -93,5 +96,6 @@ internal static class PdfDiagnostics
         DiagnosticDescriptor.Warning(MetadataRewritten),
         DiagnosticDescriptor.Warning(ImageResolutionLow),
         DiagnosticDescriptor.Warning(SignatureFontEmbedded),
+        DiagnosticDescriptor.Warning(SignatureTextClipped),
     ];
 }

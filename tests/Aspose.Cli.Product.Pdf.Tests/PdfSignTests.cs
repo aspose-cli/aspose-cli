@@ -305,6 +305,125 @@ public sealed class PdfSignTests
     }
 
     /// <summary>
+    /// The visible appearance names the signer by the common name of the certificate's subject,
+    /// in a font size small enough for the rectangle's width, and draws no line for contact
+    /// information the command was not given.
+    /// </summary>
+    [Fact]
+    public void Sign_ShowsTheWholeCommonNameOfALongSubjectAndNoEmptyContactLine()
+    {
+        using var fixture = new PdfEngineFixture();
+        string input = fixture.CreateDocument("unsigned.pdf", pages: 1);
+        string certificate = Certificate(fixture, "CN=Zhang Wei (Chief Financial Officer), OU=Finance, O=Contoso Holdings Limited, L=Shanghai, C=CN");
+        string output = fixture.File("signed.pdf");
+
+        PdfSignResult result = PdfSign.Run(fixture.Session, new PdfSignRequest
+        {
+            Input = input,
+            Output = TestOutput.At(output),
+            CertificatePath = certificate,
+            CertificatePassword = new Secret("pw"),
+            Visible = true,
+            Rect = new PdfSignatureRect(330, 600, 220, 80),
+            Reason = "Approved",
+            Location = "Shanghai",
+        });
+
+        (Aspose.Pdf.Rectangle box, List<Aspose.Pdf.Text.TextFragment> lines) = AppearanceLines(output);
+        Aspose.Pdf.Text.TextFragment subject = Assert.Single(lines, static line => line.Text.StartsWith("Digitally signed by", StringComparison.Ordinal));
+        Assert.Contains("Zhang Wei (Chief Financial Officer)", subject.Text, StringComparison.Ordinal);
+        Assert.DoesNotContain("OU=Finance", subject.Text, StringComparison.Ordinal);
+        Assert.All(lines, line => Assert.True(line.Rectangle.URX <= box.URX + 0.5, $"'{line.Text}' ends at {line.Rectangle.URX}, beyond {box.URX}"));
+        Assert.Contains(lines, static line => line.Text == "Reason: Approved");
+        Assert.DoesNotContain(lines, static line => line.Text.StartsWith("Contact", StringComparison.Ordinal));
+        Assert.DoesNotContain(result.Warnings ?? [], static warning => warning.Code.Name == "SIGNATURE_TEXT_CLIPPED");
+    }
+
+    /// <summary>
+    /// A line too long for the rectangle's width at the smallest font size, in Latin, Cyrillic or
+    /// Chinese text, or more lines than its height holds at 12 points each, is clipped, and a
+    /// warning says so.
+    /// </summary>
+    [Theory]
+    [InlineData("CN=Procurement Approval Authority Procurement Approval Authority Procurement Approval Authority Procurement Approval Authority", "Approved", 180, 60)]
+    [InlineData("CN=Procurement Approval Authority", "Approved", 180, 30)]
+    [InlineData("CN=Иван Петрович Сидоров", "Approved", 120, 60)]
+    [InlineData("CN=Signer", "批准采购申请批准采购申请批准采购申请批准", 120, 60)]
+    public void Sign_WarnsWhenTheAppearanceTextCannotFitTheRectangle(string subject, string reason, double width, double height)
+    {
+        using var fixture = new PdfEngineFixture();
+        string input = fixture.CreateDocument("unsigned.pdf", pages: 1);
+        string certificate = Certificate(fixture, subject);
+
+        PdfSignResult result = PdfSign.Run(fixture.Session, new PdfSignRequest
+        {
+            Input = input,
+            Output = TestOutput.At(fixture.File("clipped.pdf")),
+            CertificatePath = certificate,
+            CertificatePassword = new Secret("pw"),
+            Visible = true,
+            Rect = new PdfSignatureRect(36, 36, width, height),
+            Reason = reason,
+            Location = "Shanghai",
+        });
+
+        Warning clipped = Assert.Single(result.Warnings!, static warning => warning.Code.Name == "SIGNATURE_TEXT_CLIPPED");
+        Assert.Contains("--rect", clipped.Hint, StringComparison.Ordinal);
+    }
+
+    /// <summary>A certificate whose subject has no common name is named by its whole subject.</summary>
+    [Fact]
+    public void Sign_ShowsTheWholeSubjectOfACertificateWithoutACommonName()
+    {
+        using var fixture = new PdfEngineFixture();
+        string input = fixture.CreateDocument("unsigned.pdf", pages: 1);
+        string certificate = Certificate(fixture, "O=Contoso Holdings, C=CN");
+        string output = fixture.File("signed.pdf");
+
+        PdfSign.Run(fixture.Session, new PdfSignRequest
+        {
+            Input = input,
+            Output = TestOutput.At(output),
+            CertificatePath = certificate,
+            CertificatePassword = new Secret("pw"),
+            Visible = true,
+            Rect = new PdfSignatureRect(330, 600, 220, 80),
+            Reason = "Approved",
+        });
+
+        (_, List<Aspose.Pdf.Text.TextFragment> lines) = AppearanceLines(output);
+        Aspose.Pdf.Text.TextFragment subject = Assert.Single(lines, static line => line.Text.StartsWith("Digitally signed by", StringComparison.Ordinal));
+        Assert.Contains("O=Contoso Holdings", subject.Text, StringComparison.Ordinal);
+        Assert.Contains("C=CN", subject.Text, StringComparison.Ordinal);
+    }
+
+    /// <summary>A PKCS#12 certificate with the password "pw" whose subject is <paramref name="subject"/>.</summary>
+    private static string Certificate(PdfEngineFixture fixture, string subject)
+    {
+        using var key = System.Security.Cryptography.RSA.Create(2048);
+        var request = new System.Security.Cryptography.X509Certificates.CertificateRequest(
+            subject, key, System.Security.Cryptography.HashAlgorithmName.SHA256, System.Security.Cryptography.RSASignaturePadding.Pkcs1);
+        using var certificate = request.CreateSelfSigned(DateTimeOffset.UtcNow.AddMinutes(-5), DateTimeOffset.UtcNow.AddDays(2));
+        string path = fixture.File("subject.pfx");
+        File.WriteAllBytes(path, certificate.Export(System.Security.Cryptography.X509Certificates.X509ContentType.Pfx, "pw"));
+        return path;
+    }
+
+    /// <summary>The signature field's rectangle and the lines of text its appearance draws, read from a flattened copy.</summary>
+    private static (Aspose.Pdf.Rectangle Box, List<Aspose.Pdf.Text.TextFragment> Lines) AppearanceLines(string path)
+    {
+        using var document = new Aspose.Pdf.Document(path);
+        Aspose.Pdf.Rectangle box = Assert.Single(document.Form.Fields.OfType<Aspose.Pdf.Forms.SignatureField>()).Rect;
+        document.Form.Flatten();
+        var absorber = new Aspose.Pdf.Text.TextFragmentAbsorber();
+        document.Pages[1].Accept(absorber);
+        List<Aspose.Pdf.Text.TextFragment> lines = [.. absorber.TextFragments.Where(fragment =>
+            fragment.Rectangle.LLY >= box.LLY - 12 && fragment.Rectangle.URY <= box.URY + 12 && fragment.Rectangle.LLX >= box.LLX - 0.5)];
+        Assert.NotEmpty(lines);
+        return (box, lines);
+    }
+
+    /// <summary>
     /// A certificate another program holds is reported as the locked file it is, read once through
     /// the SDK, not as an invalid certificate.
     /// </summary>
