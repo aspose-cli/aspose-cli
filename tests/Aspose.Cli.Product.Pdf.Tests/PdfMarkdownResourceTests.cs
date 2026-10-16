@@ -218,8 +218,8 @@ public sealed class PdfMarkdownResourceTests
             File.WriteAllText(workspace.File("report.md"), "# Report\n\n![chart](chart.png)\n");
             File.WriteAllText(workspace.File("escape.md"), $"# Report\n\n![secret](../{Path.GetFileName(outside)}/secret.png)\n");
 
-            CliResult accepted = workspace.Run(["pdf", "create", "report.pdf", "--from-text", "report.md", "--output-format", "json"]);
-            CliResult refused = workspace.Run(["pdf", "create", "escape.pdf", "--from-text", "escape.md", "--output-format", "json"]);
+            CliResult accepted = workspace.Run(["pdf", "create", "report.pdf", "--from-markdown", "report.md", "--output-format", "json"]);
+            CliResult refused = workspace.Run(["pdf", "create", "escape.pdf", "--from-markdown", "escape.md", "--output-format", "json"]);
 
             Assert.True(accepted.ExitCode == 0, accepted.StdErr);
             using (var document = new Document(workspace.File("report.pdf")))

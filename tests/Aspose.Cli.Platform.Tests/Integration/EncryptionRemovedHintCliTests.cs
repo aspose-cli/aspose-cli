@@ -129,7 +129,7 @@ public sealed class EncryptionRemovedHintCliTests : IDisposable
     private void CreateEncryptedPdf()
     {
         File.WriteAllText(_workspace.File("source.md"), "# One\n\nFirst part.\n");
-        CliResult created = Run("pdf", "create", "locked.pdf", "--from-text", "source.md", "--encrypt-env", Variable);
+        CliResult created = Run("pdf", "create", "locked.pdf", "--from-markdown", "source.md", "--encrypt-env", Variable);
         Assert.True(created.ExitCode == 0, created.StdErr);
     }
 
@@ -197,7 +197,7 @@ public sealed class EncryptionRemovedHintCliTests : IDisposable
     public void RestrictedPdf_HintNamesAnOwnerPasswordOnly()
     {
         File.WriteAllText(_workspace.File("source.md"), "# One\n\nFirst part.\n");
-        Assert.Equal(0, Run("pdf", "create", "plain.pdf", "--from-text", "source.md").ExitCode);
+        Assert.Equal(0, Run("pdf", "create", "plain.pdf", "--from-markdown", "source.md").ExitCode);
         // Readers may print and copy without the owner password.
         Assert.Equal(0, Run(
             "pdf", "edit", "plain.pdf", "--ops",
@@ -230,7 +230,7 @@ public sealed class EncryptionRemovedHintCliTests : IDisposable
     private void CreateProtected()
     {
         File.WriteAllText(_workspace.File("source.md"), "# One\n\nFirst part.\n\n# Two\n\nSecond part.\n");
-        Assert.Equal(0, Run("pdf", "create", "plain.pdf", "--from-text", "source.md").ExitCode);
+        Assert.Equal(0, Run("pdf", "create", "plain.pdf", "--from-markdown", "source.md").ExitCode);
         CliResult encrypted = Run(
             "pdf", "edit", "plain.pdf", "--ops",
             $$$"""[{"op":"encrypt_document","userPasswordEnv":"{{{UserVariable}}}","ownerPasswordEnv":"{{{OwnerVariable}}}","permissions":{"print":true}}]""",

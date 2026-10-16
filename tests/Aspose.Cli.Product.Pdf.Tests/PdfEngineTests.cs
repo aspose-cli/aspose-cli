@@ -67,7 +67,7 @@ public sealed class PdfEngineTests
             <body><h1>Report</h1></body></html>
             """);
 
-        PdfCreateResult result = PdfCreate.Run(fixture.Session, new PdfCreateRequest { Output = TestOutput.At(fixture.File("report.pdf")), HtmlPath = input });
+        PdfCreateResult result = PdfCreate.Run(fixture.Session, new PdfCreateRequest { Output = TestOutput.At(fixture.File("report.pdf")), Source = new PdfHtmlSource(input, AllowNetworkResources: false) });
 
         PdfInspectResult info = PdfInfo.Run(fixture.Session, new PdfInspectRequest { Input = result.Output.Path, Details = ["properties"] });
         Assert.Equal("2026 Q3 运营报告 & East", info.Properties!["title"]);
@@ -87,7 +87,7 @@ public sealed class PdfEngineTests
             </form></body></html>
             """);
 
-        PdfCreateResult result = PdfCreate.Run(fixture.Session, new PdfCreateRequest { Output = TestOutput.At(fixture.File("form.pdf")), HtmlPath = input });
+        PdfCreateResult result = PdfCreate.Run(fixture.Session, new PdfCreateRequest { Output = TestOutput.At(fixture.File("form.pdf")), Source = new PdfHtmlSource(input, AllowNetworkResources: false) });
 
         using var document = new Document(result.Output.Path);
         CheckboxField[] boxes = [.. document.Form.Fields.OfType<CheckboxField>()];
@@ -109,7 +109,7 @@ public sealed class PdfEngineTests
             </form></body></html>
             """);
 
-        PdfCreateResult result = PdfCreate.Run(fixture.Session, new PdfCreateRequest { Output = TestOutput.At(fixture.File("agree.pdf")), HtmlPath = input });
+        PdfCreateResult result = PdfCreate.Run(fixture.Session, new PdfCreateRequest { Output = TestOutput.At(fixture.File("agree.pdf")), Source = new PdfHtmlSource(input, AllowNetworkResources: false) });
 
         string message = Assert.Single(result.Warnings!, static warning => warning.Code == WarningCodes.LossyConversion).Message;
         Assert.Contains("named after their HTML id attribute and lost their HTML values: 'agree', 'notes-box'", message, StringComparison.Ordinal);
@@ -134,7 +134,7 @@ public sealed class PdfEngineTests
             """);
         string output = fixture.File("onboarding.pdf");
 
-        PdfCreateResult result = PdfCreate.Run(fixture.Session, new PdfCreateRequest { Output = TestOutput.At(output), HtmlPath = input });
+        PdfCreateResult result = PdfCreate.Run(fixture.Session, new PdfCreateRequest { Output = TestOutput.At(output), Source = new PdfHtmlSource(input, AllowNetworkResources: false) });
 
         Warning lossy = Assert.Single(result.Warnings!, static warning => warning.Code == WarningCodes.LossyConversion);
         Assert.Contains("dropped 2 input(s) of type image, hidden", lossy.Message, StringComparison.Ordinal);
@@ -154,7 +154,7 @@ public sealed class PdfEngineTests
         string input = fixture.File("breaks.md");
         File.WriteAllText(input, "编制：销售运营部 / Sales Operations  \n日期：2026-10-12\n\nSoft first\nsoft second\n");
 
-        PdfCreateResult created = PdfCreate.Run(fixture.Session, new PdfCreateRequest { Output = TestOutput.At(fixture.File("breaks.pdf")), TextPath = input });
+        PdfCreateResult created = PdfCreate.Run(fixture.Session, new PdfCreateRequest { Output = TestOutput.At(fixture.File("breaks.pdf")), Source = new PdfMarkdownSource(input) });
 
         // Measured by where the words lie, which an evaluation notice drawn over them leaves alone.
         using var document = new Document(created.Output.Path);
@@ -176,7 +176,7 @@ public sealed class PdfEngineTests
         string input = fixture.File("notes.md");
         File.WriteAllText(input, "# Notes\n\nBody text.\n");
 
-        PdfCreateResult result = PdfCreate.Run(fixture.Session, new PdfCreateRequest { Output = TestOutput.At(fixture.File("notes.pdf")), TextPath = input });
+        PdfCreateResult result = PdfCreate.Run(fixture.Session, new PdfCreateRequest { Output = TestOutput.At(fixture.File("notes.pdf")), Source = new PdfMarkdownSource(input) });
 
         PdfInspectResult info = PdfInfo.Run(fixture.Session, new PdfInspectRequest { Input = result.Output.Path, Details = ["properties"] });
         Assert.Null(info.Properties!["title"]);
@@ -196,7 +196,7 @@ public sealed class PdfEngineTests
         PdfCreateResult result = PdfCreate.Run(fixture.Session, new PdfCreateRequest
         {
             Output = TestOutput.At(fixture.File("images.pdf")),
-            ImagePaths = [landscape, portrait],
+            Source = new PdfImageSource([landscape, portrait]),
             Margins = new PdfMargins(36, 36, 36, 36),
         });
 
@@ -239,7 +239,7 @@ public sealed class PdfEngineTests
         PdfCreateResult result = PdfCreate.Run(fixture.Session, new PdfCreateRequest
         {
             Output = TestOutput.At(fixture.File("mixed-resolution.pdf")),
-            ImagePaths = [large, small, vector],
+            Source = new PdfImageSource([large, small, vector]),
         });
 
         Warning warning = Assert.Single(result.Warnings!);
@@ -263,13 +263,13 @@ public sealed class PdfEngineTests
         PdfCreateResult created = PdfCreate.Run(fixture.Session, new PdfCreateRequest
         {
             Output = TestOutput.At(fixture.File("portrait.pdf")),
-            ImagePaths = [portrait],
+            Source = new PdfImageSource([portrait]),
             Margins = margins,
         });
         CliException refused = Assert.Throws<CliException>(() => PdfCreate.Run(fixture.Session, new PdfCreateRequest
         {
             Output = TestOutput.At(fixture.File("mixed.pdf")),
-            ImagePaths = [portrait, landscape],
+            Source = new PdfImageSource([portrait, landscape]),
             Margins = margins,
         }));
 
@@ -338,7 +338,7 @@ public sealed class PdfEngineTests
         string image = fixture.File("image.svg");
         File.WriteAllText(image, svg);
 
-        PdfCreateResult result = PdfCreate.Run(fixture.Session, new PdfCreateRequest { Output = TestOutput.At(fixture.File("svg.pdf")), ImagePaths = [image] });
+        PdfCreateResult result = PdfCreate.Run(fixture.Session, new PdfCreateRequest { Output = TestOutput.At(fixture.File("svg.pdf")), Source = new PdfImageSource([image]) });
 
         using var document = new Document(result.Output.Path);
         Page page = document.Pages[1];
@@ -358,7 +358,7 @@ public sealed class PdfEngineTests
         string photo = fixture.File("photo.jpg");
         File.WriteAllBytes(photo, OrientedJpeg(200, 100, orientation: 6));
 
-        PdfCreateResult result = PdfCreate.Run(fixture.Session, new PdfCreateRequest { Output = TestOutput.At(fixture.File("photo.pdf")), ImagePaths = [photo] });
+        PdfCreateResult result = PdfCreate.Run(fixture.Session, new PdfCreateRequest { Output = TestOutput.At(fixture.File("photo.pdf")), Source = new PdfImageSource([photo]) });
 
         using var document = new Document(result.Output.Path);
         Page page = document.Pages[1];
@@ -381,7 +381,7 @@ public sealed class PdfEngineTests
         File.WriteAllBytes(images[1], Bitmap(300, 100));
         File.WriteAllBytes(images[2], Bitmap(100, 100));
         File.WriteAllBytes(images[3], Bitmap(100, 300));
-        PdfCreateResult created = PdfCreate.Run(fixture.Session, new PdfCreateRequest { Output = TestOutput.At(fixture.File("scans.pdf")), ImagePaths = images });
+        PdfCreateResult created = PdfCreate.Run(fixture.Session, new PdfCreateRequest { Output = TestOutput.At(fixture.File("scans.pdf")), Source = new PdfImageSource(images) });
 
         PdfReadResult read = PdfRead.Run(fixture.Session, new PdfReadRequest { Input = created.Output.Path });
         CliResult review = workspace.Run(["review", created.Output.Path, "--out", workspace.File("review"), "--output-format", "json"]);

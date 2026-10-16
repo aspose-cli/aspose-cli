@@ -102,7 +102,7 @@ public sealed class PdfImageInputTests
         Write(workspace, "logo.png", ResourceHttpServer.Image);
         Write(workspace, "report.md", Encoding.UTF8.GetBytes("# Report\n\n" + reference + "\n"));
 
-        CliResult created = workspace.Run("pdf", "create", "report.pdf", "--from-text", "report.md", "--output-format", "json");
+        CliResult created = workspace.Run("pdf", "create", "report.pdf", "--from-markdown", "report.md", "--output-format", "json");
 
         AssertCorruptImage(created, bad);
         Assert.False(File.Exists(workspace.File("report.pdf")));
@@ -123,7 +123,7 @@ public sealed class PdfImageInputTests
         string bad = Write(workspace, "chart.png", kind == "text" ? Encoding.UTF8.GetBytes("not an image") : CutPng);
         Write(workspace, "report.md", Encoding.UTF8.GetBytes("# Report\n\n" + reference + "\n"));
 
-        CliResult created = workspace.Run("pdf", "create", "report.pdf", "--from-text", "report.md", "--output-format", "json");
+        CliResult created = workspace.Run("pdf", "create", "report.pdf", "--from-markdown", "report.md", "--output-format", "json");
 
         AssertCorruptImage(created, bad);
         Assert.False(File.Exists(workspace.File("report.pdf")));
@@ -137,7 +137,7 @@ public sealed class PdfImageInputTests
         Write(workspace, "report.md", Encoding.UTF8.GetBytes(
             "<style>@font-face { font-family: Brand; src: url(brand.woff) } h1 { font-family: Brand }</style>\n\n# Report\n"));
 
-        CliResult created = workspace.Run("pdf", "create", "report.pdf", "--from-text", "report.md", "--output-format", "json");
+        CliResult created = workspace.Run("pdf", "create", "report.pdf", "--from-markdown", "report.md", "--output-format", "json");
 
         Assert.True(created.ExitCode == 0, created.StdErr);
     }

@@ -250,7 +250,7 @@ fails, delete the issue's section, the code that names it and the test, then upd
 - **Defect:** the HTML and Markdown importers set the document title, author and subject to
   `Aspose`, whatever the source states; the HTML `title` element is ignored.
 - **CLI behavior:** `pdf create --from-html` takes the title from the HTML `title` element and
-  `--from-text` Markdown leaves it empty; both leave the author and subject empty.
+  `--from-markdown` leaves it empty; both leave the author and subject empty.
 - **Workaround:** set the other fields with a `set_properties` edit.
 - **Reproduction:** [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownIssueTests.cs)
 

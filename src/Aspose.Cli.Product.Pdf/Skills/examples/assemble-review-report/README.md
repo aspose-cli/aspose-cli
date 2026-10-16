@@ -12,7 +12,7 @@ it and reviews it.
 
 ```powershell
 aspose-cli pdf create cover.pdf --from-html cover.html --output-format json
-aspose-cli pdf create body.pdf --from-text body.md --output-format json
+aspose-cli pdf create body.pdf --from-markdown body.md --output-format json
 aspose-cli pdf inspect cover.pdf --detail forms --output-format json
 aspose-cli pdf merge cover.pdf body.pdf --out assembled.pdf --output-format json
 aspose-cli pdf edit assembled.pdf --ops assemble-ops.json --out review.pdf --output-format json

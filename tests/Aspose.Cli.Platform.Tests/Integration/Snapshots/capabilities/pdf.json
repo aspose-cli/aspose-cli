@@ -750,6 +750,22 @@
             "description": "One or more image files, one per page in the image's orientation, scaled without distortion."
           },
           {
+            "name": "--from-markdown",
+            "aliases": [],
+            "type": "string",
+            "minimumArity": 1,
+            "maximumArity": 1,
+            "required": false,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": false,
+            "allowedValues": [],
+            "secret": false,
+            "valueSource": "command-line",
+            "inputKind": "file",
+            "description": "UTF-8 Markdown input file."
+          },
+          {
             "name": "--from-text",
             "aliases": [],
             "type": "string",
@@ -763,7 +779,7 @@
             "secret": false,
             "valueSource": "command-line",
             "inputKind": "file",
-            "description": "UTF-8 text or Markdown input file."
+            "description": "UTF-8 text input file, laid out line by line as plain text; Markdown uses --from-markdown."
           },
           {
             "name": "--margins",

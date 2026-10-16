@@ -45,7 +45,7 @@ HTML, Markdown and SVG inputs are refused with `FEATURE_UNSUPPORTED` when they n
 network address or contain script, and Markdown also when it references a file
 outside its own directory, because the PDF engine would fetch or read it before any
 policy applies. Keep resources beside the input and
-reference them by relative path, and run `pdf create --from-text` from the Markdown
+reference them by relative path, and run `pdf create --from-markdown` from the Markdown
 file's directory. [Troubleshooting](references/troubleshooting.md) lists each refusal
 and its remedy, including `--allow-network-resources` for trusted HTML.
 
@@ -57,6 +57,10 @@ inputs of type `email`, `tel`, `url`, `time`, `datetime-local`, `month`, `week`,
 field, place the picture of an image input with `add_stamp_image`, read the fields with `pdf inspect --detail forms` and match each field's `rect` to
 its label before filling. The HTML `<title>` becomes the PDF title; a PDF made from HTML or
 Markdown has no author or subject until a `set_properties` edit sets them.
+
+`pdf create` reads its one source as the option names it, whatever the file's
+extension: `--from-markdown` lays out Markdown, a `#` line as a heading, and
+`--from-text` lays out plain text line by line, `#` and all.
 
 `pdf create --from-images` puts each image on its own page of `--page-size`,
 turned to landscape for an image wider than it is tall. The image keeps its
