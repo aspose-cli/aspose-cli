@@ -48,7 +48,7 @@ internal static class ExtractCommand
 
     internal static void Table(SlidesExtractResult result, TableSurface surface)
     {
-        ResultText.Files(surface, "extracted", $"{result.What} item", [.. result.Items.Select(static item =>
-            new ProducedFile(null, item.Path, item.Kind, item.SizeBytes))]);
+        ResultText.Files(surface, "extracted", $"{result.What} item", [.. result.Outputs.Select(static item =>
+            new ProducedFile(item.Slide is { } slide ? $"slide {slide}" : $"media {item.Index}", item.Path, item.Format, item.SizeBytes))]);
     }
 }

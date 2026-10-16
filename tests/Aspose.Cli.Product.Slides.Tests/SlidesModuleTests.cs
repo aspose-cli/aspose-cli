@@ -14,7 +14,6 @@ public sealed class SlidesModuleTests
     protected override IReadOnlyDictionary<(string Schema, string Pointer), string> Homonyms { get; } =
         new Dictionary<(string Schema, string Pointer), string>
         {
-            [("v2/slides/extract-result", "#/$defs/slidesExtractedItem/properties/kind")] = "An extracted item's kind names what was extracted, not a shape, chart or transition kind.",
             [("v2/slides/inspect-result", "#/$defs/slidesMediaInfo/properties/kind")] = "A media item's kind says whether it is audio, an image or a video, not a chart, list or transition kind.",
             [("v2/slides/read-result", "#/$defs/slidesShapeData/properties/kind")] = "A read shape's kind says what the shape is, such as a chart, group, table or placeholder, not a chart, list or transition kind an operation sets.",
             [("v2/slides/read-result", "#/$defs/slidesSlideData/properties/text")] = "A read slide's text lists the text of each of its shapes, while an operation's text is one shape's or paragraph's text.",

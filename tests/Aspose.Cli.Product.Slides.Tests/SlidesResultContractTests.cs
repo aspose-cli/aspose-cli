@@ -67,10 +67,10 @@ public sealed class SlidesResultContractTests : IDisposable
     }
 
     [Theory]
-    [InlineData("media", "image")]
-    [InlineData("notes", "notes")]
-    [InlineData("text", "text")]
-    public void Extract_ReportsEachWrittenFile(string what, string kind)
+    [InlineData("media", "index")]
+    [InlineData("notes", "slide")]
+    [InlineData("text", "slide")]
+    public void Extract_ReportsEachWrittenFile(string what, string unit)
     {
         CreateDeck(_workspace.File("deck.pptx"));
 
@@ -78,9 +78,19 @@ public sealed class SlidesResultContractTests : IDisposable
             "slides", "extract", "deck.pptx", "--what", what, "--out-dir", what, "--output-format", "json"));
 
         Assert.Equal(what, extracted["what"]!.GetValue<string>());
-        JsonNode item = extracted["items"]![0]!;
-        Assert.Equal(kind, item["kind"]!.GetValue<string>());
-        Assert.True(File.Exists(item["path"]!.GetValue<string>()));
+        Assert.Null(extracted["items"]);
+        JsonNode item = extracted["outputs"]![0]!;
+        // Each file names the one unit it holds beside its file fields: a media item or a slide.
+        Assert.Equal(
+            new[] { "path", "format", "sizeBytes", "fingerprint", unit }.Order(StringComparer.Ordinal),
+            item.AsObject().Select(static pair => pair.Key).Order(StringComparer.Ordinal));
+        Assert.Equal(1, item[unit]!.GetValue<int>());
+        string path = item["path"]!.GetValue<string>();
+        Assert.Equal(Path.GetExtension(path).TrimStart('.'), item["format"]!.GetValue<string>());
+        Assert.Equal(new FileInfo(path).Length, item["sizeBytes"]!.GetValue<long>());
+        Assert.Equal(
+            Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(File.ReadAllBytes(path))),
+            item["fingerprint"]!["sha256"]!.GetValue<string>());
     }
 
     private static JsonNode Succeeds(CliResult result)

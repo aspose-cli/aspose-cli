@@ -114,14 +114,14 @@ public sealed class SlidesCoreWorkflowTests
                 Output = new ResolvedDirectory(fixture.File("text")),
                 What = SlidesExtractKinds.Text,
             });
-        Assert.NotEmpty(extracted.Items);
-        Assert.All(extracted.Items, item =>
+        Assert.NotEmpty(extracted.Outputs);
+        Assert.All(extracted.Outputs, item =>
         {
-            Assert.Equal("text", item.Kind);
+            Assert.NotNull(item.Slide);
             Assert.True(File.Exists(item.Path));
         });
         Assert.Contains(
-            extracted.Items,
+            extracted.Outputs,
             item => File.ReadAllText(item.Path).Contains("Slide", StringComparison.Ordinal));
     }
 

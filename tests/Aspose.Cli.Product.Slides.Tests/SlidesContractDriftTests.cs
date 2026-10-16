@@ -96,10 +96,10 @@ public sealed class SlidesContractDriftTests
             Slides = PageRange.Parse("2"),
         });
 
-        Assert.Equal(2, all.Items.Count);
-        SlidesExtractedItem item = Assert.Single(selected.Items);
+        Assert.Equal(2, all.Outputs.Count);
+        SlidesExtractedOutput item = Assert.Single(selected.Outputs);
         Assert.Equal(2, item.Index);
-        Assert.Equal(File.ReadAllBytes(all.Items[1].Path), File.ReadAllBytes(item.Path));
+        Assert.Equal(File.ReadAllBytes(all.Outputs[1].Path), File.ReadAllBytes(item.Path));
     }
 
     [Fact]

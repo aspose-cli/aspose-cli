@@ -161,7 +161,7 @@ public sealed class SlidesHardeningTests
             What = SlidesExtractKinds.Media,
         }));
 
-        SlidesExtractedItem item = Assert.Single(result.Items);
+        SlidesExtractedOutput item = Assert.Single(result.Outputs);
         Assert.Equal(stored, File.ReadAllBytes(item.Path));
         Assert.DoesNotContain(result.Warnings ?? [], static warning => warning.Code == WarningCodes.EvaluationMode);
     }

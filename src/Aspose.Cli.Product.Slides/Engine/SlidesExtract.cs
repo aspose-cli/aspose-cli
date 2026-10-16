@@ -22,7 +22,7 @@ internal static class SlidesExtract
             request.Output.Path,
             request.Output.Overwrite,
             request.What == SlidesExtractKinds.Media ? ExtractionContent.EmbeddedFiles : ExtractionContent.Derived);
-        var items = new List<SlidesExtractedItem>();
+        var items = new List<SlidesExtractedOutput>();
 
         if (request.What == SlidesExtractKinds.Media)
         {
@@ -46,15 +46,9 @@ internal static class SlidesExtract
 
                 string suffix = request.What == SlidesExtractKinds.Notes ? "notes" : "text";
                 byte[] bytes = Encoding.UTF8.GetBytes(text);
-                items.Add(new SlidesExtractedItem
+                items.Add(new SlidesExtractedOutput(FileObjects.Companion(guard.StageAllBytes($"slide.s{number}.{suffix}.txt", bytes)))
                 {
-                    Path = guard.WriteAllBytes($"slide.s{number}.{suffix}.txt", bytes),
-                    Kind = suffix,
-                    SizeBytes = bytes.LongLength,
                     Slide = number,
-                    SlideId = slide.SlideId,
-                    Name = EmptyToNull(slide.Name),
-                    ContentType = "text/plain",
                 });
             }
         }
@@ -65,7 +59,7 @@ internal static class SlidesExtract
         {
             Input = Source(request.Input, loaded),
             What = request.What,
-            Items = items,
+            Outputs = items,
             License = EnvelopeParts.License(state),
             Warnings = WrittenWarnings(loaded),
         };
@@ -80,7 +74,7 @@ internal static class SlidesExtract
         Presentation presentation,
         IReadOnlyList<int>? slides,
         ExtractionGuard guard,
-        List<SlidesExtractedItem> items)
+        List<SlidesExtractedOutput> items)
     {
         HashSet<object>? shown = slides is null ? null : ShownMedia(presentation, slides);
         int index = 0;
@@ -93,13 +87,9 @@ internal static class SlidesExtract
             }
 
             byte[] bytes = read();
-            items.Add(new SlidesExtractedItem
+            items.Add(new SlidesExtractedOutput(FileObjects.Companion(guard.StageAllBytes($"media.{kind}.{index}{ContentExtension(contentType, ".bin")}", bytes)))
             {
-                Path = guard.WriteAllBytes($"media.{kind}.{index}{ContentExtension(contentType, ".bin")}", bytes),
-                Kind = kind,
-                SizeBytes = bytes.LongLength,
                 Index = index,
-                ContentType = EmptyToNull(contentType),
             });
         }
 
