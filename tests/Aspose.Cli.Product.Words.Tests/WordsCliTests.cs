@@ -459,6 +459,76 @@ public sealed class WordsCliTests : IDisposable
         Assert.False(File.Exists(_workspace.File("letters.docx")));
     }
 
+    /// <summary>
+    /// A replace_text expression that backtracks catastrophically stops at its execution budget
+    /// and writes nothing, although the engine's replace ignores the budget. The budget judges the
+    /// text the replace searches: text a tracked change deletes is not there, so the forty letters
+    /// around a deleted one are one run of letters.
+    /// </summary>
+    [Category(TestCategory.Slow)]
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void ReplaceText_StopsARegexThatRunsPastItsBudget(bool deletedLetterBetween)
+    {
+        var document = new Document();
+        var builder = new DocumentBuilder(document);
+        builder.Write(new string('a', 20));
+        builder.Write(deletedLetterBetween ? "x" : string.Empty);
+        builder.Write(new string('a', 20) + "!");
+        if (deletedLetterBetween)
+        {
+            document.StartTrackRevisions("Ann", new DateTime(2026, 9, 1));
+            document.Range.Replace("x", string.Empty);
+            document.StopTrackRevisions();
+        }
+
+        document.Save(_workspace.File("runaway.docx"));
+
+        CliResult result = ReplaceRunaway();
+
+        Assert.Equal(9, result.ExitCode);
+        JsonNode error = JsonNode.Parse(result.StdErr)!["error"]!;
+        Assert.Equal("OPERATION_TIMEOUT", error["code"]!.GetValue<string>());
+        Assert.Equal("regex", error["details"]!["phase"]!.GetValue<string>());
+        Assert.False(File.Exists(_workspace.File("replaced.docx")));
+    }
+
+    /// <summary>
+    /// A field's code is not text the replace searches, so letters that would run past the
+    /// budget in a hyperlink's address do not stop an edit whose text they are not.
+    /// </summary>
+    [Category(TestCategory.Slow)]
+    [Fact]
+    public void ReplaceText_DoesNotJudgeTheBudgetOnAFieldCode()
+    {
+        // The address alone runs the expression past its budget; the shown text "ab" matches it.
+        const string Find = "(a+)+b";
+        string address = "https://example.com/" + new string('a', 40) + "!";
+        Assert.Throws<System.Text.RegularExpressions.RegexMatchTimeoutException>(
+            () => Aspose.Cli.Sdk.Text.SafeRegex.Create(Find, caseSensitive: true).IsMatch(address));
+        var document = new Document();
+        new DocumentBuilder(document).InsertHyperlink("ab", address, false);
+        document.Save(_workspace.File("runaway.docx"));
+
+        CliResult result = ReplaceRunaway(Find);
+
+        Assert.True(result.ExitCode == 0, result.StdErr);
+        Assert.True(File.Exists(_workspace.File("replaced.docx")));
+    }
+
+    // Runs the expression over runaway.docx; it must end well within the regex budget's reach.
+    private CliResult ReplaceRunaway(string find = "(a+)+$")
+    {
+        var clock = System.Diagnostics.Stopwatch.StartNew();
+        CliResult result = _workspace.RunWithInput(
+            $$"""{ "ops": [ { "op": "replace_text", "find": "{{find}}", "replace": "b", "regex": true } ] }""",
+            "words", "edit", "runaway.docx", "--ops", "-", "--out", "replaced.docx", "--output-format", "json");
+        clock.Stop();
+        Assert.True(clock.Elapsed < TimeSpan.FromSeconds(60), $"took {clock.Elapsed}");
+        return result;
+    }
+
     public void Dispose() => _workspace.Dispose();
 
     private static IEnumerable<string> HitTexts(JsonNode result) =>

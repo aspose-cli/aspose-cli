@@ -13,6 +13,29 @@ namespace Aspose.Cli.Product.Words.Tests;
 public sealed class WordsKnownIssueTests
 {
     [Fact]
+    public void RegexReplace_IgnoresTheMatchTimeout()
+    {
+        using var fixture = new WordsFixture();
+        // Catastrophic backtracking: each further 'a' doubles the work, so this text runs far
+        // past the expression's 50 ms budget yet ends in seconds.
+        string text = new string('a', 24) + "!";
+        var pattern = new System.Text.RegularExpressions.Regex(
+            "(a+)+$", System.Text.RegularExpressions.RegexOptions.None, TimeSpan.FromMilliseconds(50));
+        Assert.Throws<System.Text.RegularExpressions.RegexMatchTimeoutException>(() => pattern.IsMatch(text));
+        var document = new Document();
+        new DocumentBuilder(document).Write(text);
+
+        var clock = System.Diagnostics.Stopwatch.StartNew();
+        Exception? thrown = Record.Exception(() => document.Range.Replace(pattern, "b", new Aspose.Words.Replacing.FindReplaceOptions()));
+        clock.Stop();
+
+        KnownIssue.Reproduces(
+            "WORDS-REGEX-TIMEOUT",
+            thrown is null && clock.Elapsed > pattern.MatchTimeout,
+            $"Range.Replace {(thrown is null ? "returned" : "threw " + thrown.GetType().Name)} after {clock.ElapsedMilliseconds} ms");
+    }
+
+    [Fact]
     public void TextSave_WritesCommentTextIntoTheBody()
     {
         using var fixture = new WordsFixture();

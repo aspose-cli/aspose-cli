@@ -17,7 +17,7 @@ public sealed class RegexTimeoutTests
     private static readonly string Text = new string('a', 40) + "!";
 
     /// <summary>The products' text edits that take a regular expression, each over a document holding <see cref="Text"/>.</summary>
-    public static TheoryData<string> Products() => ["cells", "pdf", "slides"];
+    public static TheoryData<string> Products() => ["cells", "pdf", "slides", "words"];
 
     [Theory]
     [MemberData(nameof(Products))]
@@ -36,6 +36,8 @@ public sealed class RegexTimeoutTests
                 new JsonObject { ["op"] = "redact_text", ["find"] = Pattern, ["regex"] = true }),
             "slides" => ("text.pptx", new JsonObject { ["title.md"] = Source("# " + Text + "\n") },
                 new JsonArray("slides", "create", "text.pptx", "--from-markdown", "title.md"), ReplaceText()),
+            "words" => ("text.docx", new JsonObject { ["text.txt"] = Source(Text + "\n") },
+                new JsonArray("words", "create", "text.docx", "--from-text", "text.txt"), ReplaceText()),
             _ => throw new ArgumentOutOfRangeException(nameof(product), product, null),
         };
         string output = Path.GetFileNameWithoutExtension(document) + ".out" + Path.GetExtension(document);

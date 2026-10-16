@@ -1,6 +1,7 @@
 using System.Data;
 using System.Text.RegularExpressions;
 using Aspose.Cli.Product.Words.Engine.Mapping;
+using Aspose.Cli.Sdk.Errors;
 using Aspose.Words;
 using Aspose.Words.Lists;
 using Aspose.Words.Replacing;
@@ -31,9 +32,14 @@ internal sealed partial class WordsMutationHandlers
             ReplacingCallback = callback,
         };
         Regex pattern = FindPattern(operation.Find, operation.Regex, operation.CaseSensitive);
+        CompositeNode[] stories = [.. WordsStories.In(_document, operation.Scope).Select(static item => item.Story)];
+        if (operation.Regex)
+        {
+            EnsureMatchesInTime(pattern, stories);
+        }
 
         long replaced = 0;
-        foreach ((CompositeNode story, _) in WordsStories.In(_document, operation.Scope).ToArray())
+        foreach (CompositeNode story in stories)
         {
             callback.Story = story;
             replaced += story.Range.Replace(pattern, operation.Replace, options);
@@ -45,6 +51,35 @@ internal sealed partial class WordsMutationHandlers
 
         Matched = replaced;
         return default;
+    }
+
+    /// <summary>
+    /// Runs a caller's expression under its match timeout, which <c>Range.Replace</c> ignores
+    /// (WORDS-REGEX-TIMEOUT), over the text the replace searches, so an expression that would run
+    /// past its budget fails before the engine runs it. That text is each story's visible text,
+    /// without field codes or text a tracked change deletes, as the replace ignores both, and the
+    /// text of each comment and footnote in it, which the story's range also holds.
+    /// </summary>
+    private static void EnsureMatchesInTime(Regex pattern, IEnumerable<CompositeNode> stories)
+    {
+        try
+        {
+            foreach (CompositeNode story in stories)
+            {
+                IEnumerable<Node> notes = story.GetChildNodes(NodeType.Comment, true).Cast<Node>()
+                    .Concat(story.GetChildNodes(NodeType.Footnote, true).Cast<Node>());
+                foreach (Node searched in notes.Prepend(story))
+                {
+                    for (Match match = pattern.Match(WordsText.Of(searched, listNumbers: false)); match.Success; match = match.NextMatch())
+                    {
+                    }
+                }
+            }
+        }
+        catch (RegexMatchTimeoutException exception)
+        {
+            throw CliErrors.RegexTimeout(exception);
+        }
     }
 
     private sealed class ScopedReplacingCallback(int? maximum) : IReplacingCallback
