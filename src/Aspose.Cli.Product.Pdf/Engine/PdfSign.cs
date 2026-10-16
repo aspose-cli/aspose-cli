@@ -16,7 +16,11 @@ namespace Aspose.Cli.Product.Pdf.Engine;
 /// <summary>Applies one PKCS#7 signature and verifies the saved field: <c>pdf sign</c>.</summary>
 internal static class PdfSign
 {
-    internal static PdfSignResult Run(PdfSession session, PdfSignRequest request)
+    internal static PdfSignResult Run(PdfSession session, PdfSignRequest request) =>
+        Sign(session, request, FontInstalled);
+
+    /// <summary>Signs as <see cref="Run"/> does, with <paramref name="fontInstalled"/> telling which font families can be found.</summary>
+    internal static PdfSignResult Sign(PdfSession session, PdfSignRequest request, Func<string, bool> fontInstalled)
     {
         string filePath = request.Input;
         EnsureCertificate(session.Budgets, request.CertificatePath);
@@ -62,6 +66,22 @@ internal static class PdfSign
         bool pdfa = loaded.Document.IsPdfaCompliant;
         bool standardFont = !pdfa && beyondAscii.Length == 0;
         (SignatureCustomAppearance appearance, bool clipped) = Appearance(request, signer, standardFont, visibleRect);
+        // PDF-SIGN-CJK-SIGNER-FONT: the engine picks the appearance's font from the reason,
+        // location and contact alone, so with none of them East Asian it draws in Arial and leaves
+        // a Chinese signer name out; the appearance then names a font that draws Chinese.
+        bool signerUnshown = false;
+        if (visibleRect is not null
+            && signer.Shown.Any(IsEastAsian)
+            && !new[] { request.Reason, request.Location, request.Contact }.Any(static text => text?.Any(IsEastAsian) == true))
+        {
+            string? chineseFont = ChineseFontFamilies.FirstOrDefault(fontInstalled);
+            signerUnshown = chineseFont is null;
+            if (chineseFont is not null)
+            {
+                appearance.FontFamilyName = chineseFont;
+            }
+        }
+
         StagedOutput write = transaction.Stage(request.Output.Path, request.Output.Overwrite, loaded.Document, temp =>
         {
             using var pkcs12 = new MemoryStream(certificate, writable: false);
@@ -103,7 +123,7 @@ internal static class PdfSign
             License = EnvelopeParts.License(state),
             Warnings = Warnings(
                 standardFont ? null : FontEmbedded(beyondAscii, output.SizeBytes - input.SizeBytes),
-                clipped ? TextClipped(visibleRect!) : null),
+                clipped || signerUnshown ? TextClipped(visibleRect!, clipped, signerUnshown ? signer.Shown : null) : null),
         };
     }
 
@@ -225,13 +245,45 @@ internal static class PdfSign
 
     private static bool IsEastAsian(char character) => character >= '\u2E80';
 
-    /// <summary>The warning that the visible signature's rectangle cannot hold its text.</summary>
-    private static Warning TextClipped(PdfSignatureRect rect) =>
-        new(PdfDiagnostics.SignatureTextClipped, string.Create(CultureInfo.InvariantCulture,
-            $"The signature appearance cannot show all its text in the {rect.Width:0.##} by {rect.Height:0.##} point rectangle, even in {SmallestFontSize}-point type, so the end of its longest line or its last lines are cut off."))
+    /// <summary>PDF-SIGN-CJK-SIGNER-FONT: the font families tried, in order, to draw a Chinese signer name.</summary>
+    private static readonly string[] ChineseFontFamilies = ["SimSun", "Microsoft YaHei"];
+
+    private static bool FontInstalled(string family)
+    {
+        try
         {
-            Hint = "Sign again with a larger --rect, wide enough for the longest line and 12 points high for each line, or with a shorter --reason, --location or --contact.",
-        };
+            _ = Aspose.Pdf.Text.FontRepository.FindFont(family);
+            return true;
+        }
+        catch (FontNotFoundException)
+        {
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// The warning that the visible signature cannot show all its text: the rectangle cannot hold
+    /// it, or, PDF-SIGN-CJK-SIGNER-FONT, no font that draws Chinese is found for the signer name.
+    /// </summary>
+    private static Warning TextClipped(PdfSignatureRect rect, bool clipped, string? unshownSigner)
+    {
+        List<string> message = [];
+        List<string> hint = [];
+        if (unshownSigner is not null)
+        {
+            message.Add($"The signature appearance cannot show the signer name '{unshownSigner}': neither {string.Join(" nor ", ChineseFontFamilies)} is installed to draw its Chinese text, so the name is left out.");
+            hint.Add($"Install {string.Join(" or ", ChineseFontFamilies)} and sign again, or sign with a certificate whose subject name is in Latin letters.");
+        }
+
+        if (clipped)
+        {
+            message.Add(string.Create(CultureInfo.InvariantCulture,
+                $"The signature appearance cannot show all its text in the {rect.Width:0.##} by {rect.Height:0.##} point rectangle, even in {SmallestFontSize}-point type, so the end of its longest line or its last lines are cut off."));
+            hint.Add("Sign again with a larger --rect, wide enough for the longest line and 12 points high for each line, or with a shorter --reason, --location or --contact.");
+        }
+
+        return new(PdfDiagnostics.SignatureTextClipped, string.Join(" ", message)) { Hint = string.Join(" ", hint) };
+    }
 
     /// <summary>PDF-SIGN-FULL-FONT: the warning that the appearance embedded a whole font.</summary>
     private static Warning FontEmbedded(string[] beyondAscii, long growth) =>

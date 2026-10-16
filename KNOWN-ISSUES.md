@@ -402,9 +402,13 @@ fails, delete the issue's section, the code that names it and the test, then upd
   Japanese text, such as `批准`, gives a Japanese font, MS Gothic, which leaves out a simplified
   Chinese name such as `张伟`. Naming a Chinese font, such as SimSun, through
   `SignatureCustomAppearance.FontFamilyName` shows the name.
-- **CLI behavior:** `pdf sign --visible` with a certificate whose subject name is in Chinese and
-  a `--reason`, `--location` and `--contact` without Chinese text shows no signer name.
-- **Workaround:** give `--reason`, `--location` or `--contact` in Chinese, or sign with a
+- **CLI behavior:** `pdf sign --visible` draws a signer name with East Asian characters (U+2E80
+  and above) in SimSun or, failing that, Microsoft YaHei when `--reason`, `--location` and
+  `--contact` have none; with neither font installed the name is left out and the result warns
+  `SIGNATURE_TEXT_CLIPPED`. When one of them has East Asian text the engine's choice stands, so
+  a Chinese name can still be left out without a warning, as with `批准` in MS Gothic. A Korean
+  signer name is left out in SimSun, also without a warning.
+- **Workaround:** give `--reason` in simplified Chinese, such as `采购申请`, or sign with a
   certificate whose subject name is in Latin letters.
 - **Reproduction:** [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownIssueTests.cs)
 
