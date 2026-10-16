@@ -6,8 +6,8 @@ using Aspose.Cells.Rendering;
 namespace Aspose.Cli.Product.Cells.Engine.Mapping;
 
 /// <summary>
-/// How a worksheet's charts fall on its printed pages: the page areas printing and PDF export
-/// lay out, and the charts whose cells reach into more than one of them, which the output
+/// How a worksheet's charts fall on its printed pages: the page areas printing and the paginated
+/// outputs, PDF and XPS, lay out, and the charts whose cells reach into more than one of them, which the output
 /// splits across pages.
 /// </summary>
 internal static class PrintedPages
@@ -42,10 +42,14 @@ internal static class PrintedPages
     private static int LastCell(int first, int last, int offset) => offset == 0 && last > first ? last - 1 : last;
 
     /// <summary>
-    /// Warns about the visible charts a PDF of <paramref name="workbook"/> splits across pages:
-    /// those of the sheets <paramref name="selectedSheets"/> holds, or of every visible sheet; null when none.
+    /// Warns about the visible charts a paginated output of <paramref name="workbook"/> splits
+    /// across pages: those of the sheets <paramref name="selectedSheets"/> holds, or of every
+    /// visible sheet; null when none.
     /// </summary>
-    internal static Warning? SplitChartsWarning(Workbook workbook, IReadOnlyList<int>? selectedSheets)
+    /// <param name="workbook">The workbook converted.</param>
+    /// <param name="formatId">The id of the paginated output format, such as <c>pdf</c>.</param>
+    /// <param name="selectedSheets">The sheets the output holds, or null for every visible sheet.</param>
+    internal static Warning? SplitChartsWarning(Workbook workbook, string formatId, IReadOnlyList<int>? selectedSheets)
     {
         var split = new List<string>();
         var sheets = new HashSet<string>(StringComparer.Ordinal);
@@ -66,7 +70,7 @@ internal static class PrintedPages
             }
         }
 
-        return split.Count == 0 ? null : new Warning(CellsDiagnostics.ChartSplitAcrossPages, $"The PDF splits {(split.Count == 1 ? "chart" : "charts")} {string.Join(", ", split)} across pages.")
+        return split.Count == 0 ? null : new Warning(CellsDiagnostics.ChartSplitAcrossPages, $"The {formatId.ToUpperInvariant()} output splits {(split.Count == 1 ? "chart" : "charts")} {string.Join(", ", split)} across pages.")
         {
             Hint = $"Fit the sheet on fewer pages with the set_page_setup operation of 'cells edit' {CellsDiagnostics.ChartSplitRemedy}, then convert again.",
             Location = sheets.Count == 1 ? Sheets.QuotedName(sheets.Single()) : null,

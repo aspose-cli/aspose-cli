@@ -81,7 +81,7 @@ internal static class CellsReviewChecks
     public static ReviewCheck ChartSplitAcrossPages { get; } = new(
         "CELLS_CHART_SPLIT_ACROSS_PAGES",
         ReviewSeverities.Warning,
-        "A chart reaches more than one printed page, so printing and PDF export split it.");
+        "A chart reaches more than one printed page, so printing and PDF or XPS export split it.");
 
     public static ReviewCheck ChartHidden { get; } = new(
         "CELLS_CHART_HIDDEN",

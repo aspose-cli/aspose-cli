@@ -93,7 +93,9 @@ internal static class CellsConvert
             ? TextTableLayout.JsonWarnings(jsonSheets, session.Budgets)
             : TextTableLayout.Warnings(loaded, session.Budgets);
 
-        Warning? chartsSplit = request.Output.Format.Id is "pdf" ? PrintedPages.SplitChartsWarning(workbook, selectedSheets) : null;
+        Warning? chartsSplit = CellsEngineFormats.IsPaginated(request.Output.Format.Id)
+            ? PrintedPages.SplitChartsWarning(workbook, request.Output.Format.Id, selectedSheets)
+            : null;
         int refsBefore = saver.CountRefFormulas(workbook);
         WorkbookSavePlan savePlan = WorkbookSavePlan.Create(request.Output.Format, licenseState,
             request.EncryptPassword, loaded.IsEncrypted ? request.Password : null, selectedSheets, request.ByteOrderMark);

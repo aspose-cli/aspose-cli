@@ -1,3 +1,5 @@
+using System.IO.Compression;
+using Aspose.Cells;
 using Xunit;
 
 namespace Aspose.Cli.Product.Cells.Tests;
@@ -43,6 +45,46 @@ public sealed class CellsEngineFormatTests
         Assert.Equal(
             CellsEngineFormats.All.Count,
             CellsEngineFormats.All.Select(static entry => entry.Id).Distinct(StringComparer.Ordinal).Count());
+    }
+
+    /// <summary>
+    /// The SDK alone: an XPS lays a sheet out on its printed pages as a PDF does, so a chart
+    /// reaching two of them is drawn on both, and on one once the sheet fits one page wide.
+    /// </summary>
+    [Fact]
+    public void Xps_DrawsAChartOnEachPrintedPageItReaches()
+    {
+        using var fixture = new CellsFixture();
+        string split = fixture.Temp.File("split.xlsx");
+        string fitted = fixture.Temp.File("fitted.xlsx");
+        CellsReviewTests.CreateWideChartWorkbook(split, fitToOnePageWide: false);
+        CellsReviewTests.CreateWideChartWorkbook(fitted, fitToOnePageWide: true);
+
+        // Data's pages, then Notes'; evaluation mode appends the pages of its warning sheet.
+        Assert.Equal([true, true, false], PagesDrawingShapes(split)[..3]);
+        Assert.Equal([true, false], PagesDrawingShapes(fitted)[..2]);
+    }
+
+    // Whether each page of the workbook saved as XPS draws a vector shape; the cells of the
+    // fixture are text, so a shape is the chart.
+    private static bool[] PagesDrawingShapes(string path)
+    {
+        using var workbook = new Workbook(path);
+        using var xps = new MemoryStream();
+        workbook.Save(xps, SaveFormat.Xps);
+        xps.Position = 0;
+        using var package = new ZipArchive(xps);
+        return
+        [
+            .. package.Entries
+                .Where(static entry => entry.FullName.EndsWith(".fpage", StringComparison.Ordinal))
+                .OrderBy(static entry => int.Parse(Path.GetFileNameWithoutExtension(entry.Name), System.Globalization.CultureInfo.InvariantCulture))
+                .Select(static entry =>
+                {
+                    using var reader = new StreamReader(entry.Open());
+                    return reader.ReadToEnd().Contains("<Path", StringComparison.Ordinal);
+                }),
+        ];
     }
 
     [Theory]

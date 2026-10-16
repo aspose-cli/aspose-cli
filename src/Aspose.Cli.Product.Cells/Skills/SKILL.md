@@ -124,8 +124,8 @@ new workbooks made from it in Excel start with its sheets, styles and protection
 `cells convert` takes `--sheets` (positions from `cells inspect`): one sheet
 for csv, tsv and md, any for pdf. CSV and TSV output is
 UTF-8 without a byte order mark; add `--bom` when a person will open the file in
-Excel, which otherwise misreads non-English text. A PDF that splits a
-chart across pages warns `CHART_SPLIT_ACROSS_PAGES` (review reports
+Excel, which otherwise misreads non-English text. A PDF or XPS that splits
+a chart across pages warns `CHART_SPLIT_ACROSS_PAGES` (review reports
 `CELLS_CHART_SPLIT_ACROSS_PAGES`); fit the sheet with `set_page_setup`
 (`fitToWidth` 1, `fitToHeight` 0, or landscape) first. `cells render`
 writes png, jpeg or svg, taken from `--to` or the `--out` extension.
