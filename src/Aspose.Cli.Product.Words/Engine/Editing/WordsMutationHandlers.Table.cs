@@ -281,16 +281,35 @@ internal sealed partial class WordsMutationHandlers
     {
         Paragraph[] paragraphs = [.. Nodes.SelectMany(Paragraphs)];
         ListTemplate template = operation.Kind == "bullet" ? ListTemplate.BulletDefault : ListTemplate.NumberDefault;
-        if (IsAlreadyTheList(paragraphs, template, operation.Level - 1))
+        int level = operation.Level - 1;
+        ListNumbering numbering = TemplateLevels.Value[template][level];
+        numbering = numbering with
+        {
+            Style = operation.NumberStyle is { } name ? WordsReadBack.NumberStyleOf(name) : numbering.Style,
+            Start = operation.Start ?? numbering.Start,
+        };
+        if (IsAlreadyTheList(paragraphs, level, numbering))
         {
             return default;
         }
 
         List list = _document.Lists.Add(template);
+        list.ListLevels[level].NumberStyle = numbering.Style;
+        list.ListLevels[level].StartAt = numbering.Start;
         foreach (Paragraph paragraph in paragraphs)
         {
             paragraph.ListFormat.List = list;
-            paragraph.ListFormat.ListLevelNumber = operation.Level - 1;
+            paragraph.ListFormat.ListLevelNumber = level;
+        }
+
+        return default;
+    }
+
+    public ValueTuple Apply(ClearListOp operation)
+    {
+        foreach (Paragraph paragraph in Nodes.SelectMany(Paragraphs))
+        {
+            paragraph.ListFormat.RemoveNumbers();
         }
 
         return default;
@@ -298,10 +317,11 @@ internal sealed partial class WordsMutationHandlers
 
     /// <summary>
     /// Whether the paragraphs already are the list set_list would make of them: all at the level
-    /// of one list that no other paragraph uses, which numbers that level as a new list from the
-    /// template does. Making them a new list again would change nothing a reader sees.
+    /// of one list that no other paragraph uses, which numbers that level as
+    /// <paramref name="numbering"/> does. Making them a new list again would change nothing a
+    /// reader sees.
     /// </summary>
-    private bool IsAlreadyTheList(Paragraph[] paragraphs, ListTemplate template, int level)
+    private bool IsAlreadyTheList(Paragraph[] paragraphs, int level, ListNumbering numbering)
     {
         if (paragraphs.Length == 0 || !paragraphs[0].ListFormat.IsListItem)
         {
@@ -323,18 +343,20 @@ internal sealed partial class WordsMutationHandlers
             return false;
         }
 
-        (NumberStyle style, string format) = TemplateLevels.Value[template][level];
         ListLevel current = paragraphs[0].ListFormat.List.ListLevels[level];
-        return current.NumberStyle == style && string.Equals(current.NumberFormat, format, StringComparison.Ordinal);
+        return numbering == new ListNumbering(current.NumberStyle, current.NumberFormat, current.StartAt);
     }
 
+    /// <summary>How a list level numbers its items: its number style, its number format and its first number.</summary>
+    private readonly record struct ListNumbering(NumberStyle Style, string Format, int Start);
+
     /// <summary>How a new list from each template set_list uses numbers each of its levels.</summary>
-    private static readonly Lazy<Dictionary<ListTemplate, (NumberStyle Style, string Format)[]>> TemplateLevels = new(static () =>
+    private static readonly Lazy<Dictionary<ListTemplate, ListNumbering[]>> TemplateLevels = new(static () =>
     {
         var scratch = new Document();
         return new[] { ListTemplate.BulletDefault, ListTemplate.NumberDefault }.ToDictionary(
             static template => template,
-            template => scratch.Lists.Add(template).ListLevels.Select(static level => (level.NumberStyle, level.NumberFormat)).ToArray());
+            template => scratch.Lists.Add(template).ListLevels.Select(static level => new ListNumbering(level.NumberStyle, level.NumberFormat, level.StartAt)).ToArray());
     });
 }
 

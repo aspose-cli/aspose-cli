@@ -186,6 +186,7 @@ public sealed class WordsModuleTests
     [InlineData("update_fields", "refresh_fields")]
     [InlineData("format_table", "set_table_pagination")]
     [InlineData("highlight_text", "format_text")]
+    [InlineData("remove_list", "clear_list")]
     public void RenamedOperation_IsRefusedWithItsNewName(string old, string renamed)
     {
         CliException error = Assert.Throws<CliException>(() => Parse($$"""{"ops":[{"op":"{{old}}"}]}"""));
@@ -239,6 +240,19 @@ public sealed class WordsModuleTests
         CliException error = Assert.Throws<CliException>(() => Parse($$"""{"ops":[{{operation}}]}"""));
 
         Assert.Equal(ErrorCodes.OpsInvalid, error.Code);
+    }
+
+    [Theory]
+    [InlineData("""{"op":"set_list","target":{"block":1},"kind":"bullet","numberStyle":"letters-lower"}""", "numberStyle and start number a list")]
+    [InlineData("""{"op":"set_list","target":{"block":1},"kind":"bullet","start":5}""", "numberStyle and start number a list")]
+    [InlineData("""{"op":"format_text","target":{"block":1},"regex":true,"bold":true}""", "true need match")]
+    [InlineData("""{"op":"format_text","target":{"block":1},"caseSensitive":true,"bold":true}""", "true need match")]
+    public void SettingWithoutWhatItNeeds_IsAnInvalidOperation(string operation, string reason)
+    {
+        CliException error = Assert.Throws<CliException>(() => Parse($$"""{"ops":[{{operation}}]}"""));
+
+        Assert.Equal(ErrorCodes.OpsInvalid, error.Code);
+        Assert.Contains(reason, error.Message, StringComparison.Ordinal);
     }
 
     private static WordsOpsBatch Parse(string json) =>

@@ -1,6 +1,7 @@
 using Aspose.Words;
 using Aspose.Words.Drawing;
 using Aspose.Words.Fields;
+using Aspose.Words.Lists;
 using Aspose.Words.Properties;
 using Aspose.Words.Tables;
 
@@ -102,16 +103,7 @@ internal static class WordsReadBack
         {
             Location = location,
             Alignment = alignment,
-            NumberStyle = setup.PageNumberStyle switch
-            {
-                NumberStyle.Arabic => PageNumberStyles.Decimal,
-                NumberStyle.UppercaseRoman => PageNumberStyles.RomanUpper,
-                NumberStyle.LowercaseRoman => PageNumberStyles.RomanLower,
-                NumberStyle.UppercaseLetter => PageNumberStyles.LettersUpper,
-                NumberStyle.LowercaseLetter => PageNumberStyles.LettersLower,
-                NumberStyle.None => PageNumberStyles.None,
-                _ => null,
-            },
+            NumberStyle = NumberStyleName(setup.PageNumberStyle),
             Start = setup.RestartPageNumbering ? setup.PageStartingNumber : null,
         };
     }
@@ -138,14 +130,41 @@ internal static class WordsReadBack
     }
 
     /// <summary>A list paragraph's list, or null for a paragraph in none.</summary>
-    internal static WordsListData? List(Paragraph paragraph) =>
-        paragraph.ListFormat.IsListItem
-            ? new WordsListData
-            {
-                Kind = paragraph.ListFormat.ListLevel.NumberStyle == NumberStyle.Bullet ? "bullet" : "number",
-                Level = paragraph.ListFormat.ListLevelNumber + 1,
-            }
-            : null;
+    internal static WordsListData? List(Paragraph paragraph)
+    {
+        if (!paragraph.ListFormat.IsListItem)
+        {
+            return null;
+        }
+
+        ListLevel level = paragraph.ListFormat.ListLevel;
+        bool bullet = level.NumberStyle == NumberStyle.Bullet;
+        return new WordsListData
+        {
+            Kind = bullet ? "bullet" : "number",
+            Level = paragraph.ListFormat.ListLevelNumber + 1,
+            NumberStyle = bullet || level.NumberStyle == NumberStyle.None ? null : NumberStyleName(level.NumberStyle),
+            Start = bullet ? null : level.StartAt,
+        };
+    }
+
+    /// <summary>The number styles of page numbers and numbered lists, by their names (<see cref="PageNumberStyles"/>).</summary>
+    private static readonly (string Name, NumberStyle Style)[] NumberStyles =
+    [
+        (PageNumberStyles.Decimal, NumberStyle.Arabic),
+        (PageNumberStyles.RomanUpper, NumberStyle.UppercaseRoman),
+        (PageNumberStyles.RomanLower, NumberStyle.LowercaseRoman),
+        (PageNumberStyles.LettersUpper, NumberStyle.UppercaseLetter),
+        (PageNumberStyles.LettersLower, NumberStyle.LowercaseLetter),
+        (PageNumberStyles.None, NumberStyle.None),
+    ];
+
+    /// <summary>The engine's number style of a number style name.</summary>
+    internal static NumberStyle NumberStyleOf(string name) => NumberStyles.Single(entry => entry.Name == name).Style;
+
+    /// <summary>The name of an engine number style, or null for one no name stands for.</summary>
+    internal static string? NumberStyleName(NumberStyle style) =>
+        NumberStyles.FirstOrDefault(entry => entry.Style == style).Name;
 
     /// <summary>The address of the hyperlink each run of a paragraph is the text of.</summary>
     internal static IReadOnlyDictionary<Run, string> Hyperlinks(Paragraph paragraph)

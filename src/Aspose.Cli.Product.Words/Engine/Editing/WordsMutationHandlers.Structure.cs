@@ -253,16 +253,7 @@ internal sealed partial class WordsMutationHandlers
 
             if (operation.NumberStyle is not null)
             {
-                section.PageSetup.PageNumberStyle = operation.NumberStyle switch
-                {
-                    PageNumberStyles.Decimal => NumberStyle.Arabic,
-                    PageNumberStyles.RomanUpper => NumberStyle.UppercaseRoman,
-                    PageNumberStyles.RomanLower => NumberStyle.LowercaseRoman,
-                    PageNumberStyles.LettersUpper => NumberStyle.UppercaseLetter,
-                    PageNumberStyles.LettersLower => NumberStyle.LowercaseLetter,
-                    PageNumberStyles.None => NumberStyle.None,
-                    _ => throw Invalid($"unknown page number style '{operation.NumberStyle}'"),
-                };
+                section.PageSetup.PageNumberStyle = WordsReadBack.NumberStyleOf(operation.NumberStyle);
             }
         }
 

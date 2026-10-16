@@ -259,6 +259,7 @@ internal static class WordsAnchorResolver
         FormatTextOp value => value.Target,
         SetStyleOp value => value.Target,
         SetListOp value => value.Target,
+        ClearListOp value => value.Target,
         AddCommentOp value => value.Target,
         _ => null,
     };

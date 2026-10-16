@@ -199,7 +199,10 @@ internal static class WordsOperationSample
                 Target = new WordsTarget { Blocks = "7-9" },
                 Kind = "number",
                 Level = 1,
+                NumberStyle = "letters-lower",
+                Start = 3,
             },
+            new ClearListOp { Target = new WordsTarget { Blocks = "7-9" } },
             new SetDefaultFontOp { Font = "Arial", LatinFont = "Calibri", EastAsianFont = "SimSun", FontSize = 11 },
             new SetPropertiesOp
             {
