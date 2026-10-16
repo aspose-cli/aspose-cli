@@ -587,7 +587,7 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
         string markdown = _fixture.Temp.File("banner-source.md");
         File.WriteAllText(markdown, "Contents\n\n# One\n\nSee [the source](https://example.com/source).\n");
         string input = _fixture.Temp.File("banner-source.docx");
-        WordsCreate.Run(_fixture.Session, new WordsCreateRequest { Output = TestOutput.At(input), MarkdownPath = markdown });
+        WordsCreate.Run(_fixture.Session, new WordsCreateRequest { Output = TestOutput.At(input), Markdown = new SourceFile("--from-markdown", markdown) });
         string[] original = BlockTexts(input);
         string appended = _fixture.Temp.File("banner-appended.docx");
         string merged = _fixture.Temp.File("banner-merged.docx");

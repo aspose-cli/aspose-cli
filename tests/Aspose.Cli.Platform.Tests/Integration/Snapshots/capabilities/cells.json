@@ -2920,6 +2920,7 @@
         "schema",
         "schemaVersion",
         "output",
+        "inputs",
         "sheets"
       ],
       "additionalProperties": false,
@@ -2935,6 +2936,14 @@
         "output": {
           "description": "The produced file.",
           "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/output.schema.json"
+        },
+        "inputs": {
+          "description": "The files the workbook was created from: none, since a workbook is created blank.",
+          "type": "array",
+          "maxItems": 0,
+          "items": {
+            "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/source-input.schema.json"
+          }
         },
         "sheets": {
           "description": "Sheet names of a newly created workbook.",

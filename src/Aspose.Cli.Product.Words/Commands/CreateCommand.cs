@@ -31,17 +31,17 @@ internal static class CreateCommand
                     throw CliErrors.Usage(["Choose at most one of --from-markdown or --from-text; without either the document is blank or the template's."]);
                 }
 
-                string? markdownPath = standard.InputFile(markdown);
-                string? textPath = standard.InputFile(text);
-                string? templatePath = standard.InputFile(template);
+                SourceFile? markdownFile = standard.Source(markdown);
+                SourceFile? textFile = standard.Source(text);
+                SourceFile? templateFile = standard.Source(template);
                 ResolvedOutput output = standard.Output;
                 Secret? encryptPassword = standard.EncryptPassword();
                 return new WordsCreateRequest
                 {
                     Output = output,
-                    MarkdownPath = markdownPath,
-                    TextPath = textPath,
-                    TemplatePath = templatePath,
+                    Markdown = markdownFile,
+                    Text = textFile,
+                    Template = templateFile,
                     Title = parse.GetValue(title),
                     EncryptPassword = encryptPassword,
                 };

@@ -169,7 +169,7 @@ public sealed class PdfMutateTests
         string text = fixture.File("contacts.txt");
         File.WriteAllLines(text, ["Shanghai: Zhang 13812345678", "Hangzhou: Wang 13998765432", "Nanjing: Li 13700001111"]);
         string created = fixture.File($"contacts-{angle}.created.pdf");
-        PdfCreate.Run(fixture.Session, new PdfCreateRequest { Output = TestOutput.At(created), Source = new PdfTextSource(text) });
+        PdfCreate.Run(fixture.Session, new PdfCreateRequest { Output = TestOutput.At(created), Source = new PdfTextSource(new SourceFile("--from-text", text)) });
         string input = fixture.File($"contacts-{angle}.pdf");
         PdfEdit.Run(fixture.Session, new PdfEditRequest
         {

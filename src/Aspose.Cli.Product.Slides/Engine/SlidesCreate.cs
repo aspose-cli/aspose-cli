@@ -30,18 +30,18 @@ internal static class SlidesCreate
         LicenseState state = session.Outputs.License;
         string format = request.Output.Format.Id;
 
-        using LoadedPresentation template = request.TemplatePath is null
+        using LoadedPresentation template = request.Template is null
             ? SlidesPresentationLoader.OpenDefaultTemplate()
-            : OpenTemplate(session, request.TemplatePath);
+            : OpenTemplate(session, request.Template.Path);
         Presentation presentation = template.Presentation;
         ApplySlideSize(presentation, request.SlideSize);
         IReadOnlyList<Warning> authoring = [];
-        if (request.MarkdownPath is not null)
+        if (request.Markdown is not null)
         {
             authoring = SlidesMarkdownBuilder.Build(
                 session.Budgets,
                 presentation,
-                request.MarkdownPath);
+                request.Markdown.Path);
         }
         else if (presentation.Slides.Count == 0)
         {
@@ -64,12 +64,9 @@ internal static class SlidesCreate
         {
             Output = FileObjects.Output(written, request.Output.Format, presentation.ProtectionManager.IsEncrypted),
             SlideCount = presentation.Slides.Count,
-            Template = request.TemplatePath is null
-                ? null
-                : Source(request.TemplatePath, template),
-            Markdown = request.MarkdownPath is null
-                ? null
-                : FileObjects.Input(request.MarkdownPath, "md", encrypted: false),
+            Inputs = FileObjects.Sources(
+                (request.Template, template.FormatId, template.Encrypted),
+                (request.Markdown, "md", false)),
             License = EnvelopeParts.License(state),
             Warnings = authoring.Count == 0
                 ? WrittenWarnings(template)

@@ -35,19 +35,19 @@ public abstract record PdfCreateSource
 }
 
 /// <summary>Image files, one per page (<c>--from-images</c>).</summary>
-public sealed record PdfImageSource(IReadOnlyList<string> Paths) : PdfCreateSource;
+public sealed record PdfImageSource(IReadOnlyList<SourceFile> Files) : PdfCreateSource;
 
 /// <summary>
 /// An HTML file (<c>--from-html</c>); <paramref name="AllowNetworkResources"/> lets the
 /// importer request the network resources the HTML names, each of which is disclosed.
 /// </summary>
-public sealed record PdfHtmlSource(string Path, bool AllowNetworkResources) : PdfCreateSource;
+public sealed record PdfHtmlSource(SourceFile File, bool AllowNetworkResources) : PdfCreateSource;
 
 /// <summary>A UTF-8 text file laid out line by line (<c>--from-text</c>).</summary>
-public sealed record PdfTextSource(string Path) : PdfCreateSource;
+public sealed record PdfTextSource(SourceFile File) : PdfCreateSource;
 
 /// <summary>A UTF-8 Markdown file (<c>--from-markdown</c>).</summary>
-public sealed record PdfMarkdownSource(string Path) : PdfCreateSource;
+public sealed record PdfMarkdownSource(SourceFile File) : PdfCreateSource;
 
 /// <summary>Page margins in PDF points.</summary>
 public sealed record PdfMargins(double Top, double Right, double Bottom, double Left)

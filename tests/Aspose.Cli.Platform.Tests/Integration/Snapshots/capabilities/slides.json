@@ -2498,7 +2498,8 @@
         "schema",
         "schemaVersion",
         "output",
-        "slideCount"
+        "slideCount",
+        "inputs"
       ],
       "additionalProperties": false,
       "properties": {
@@ -2519,13 +2520,12 @@
           "type": "integer",
           "minimum": 1
         },
-        "template": {
-          "description": "The template the presentation was built from; omitted without --template.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/input.schema.json"
-        },
-        "markdown": {
-          "description": "The Markdown outline the slides were filled from; omitted without --from-markdown.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/input.schema.json"
+        "inputs": {
+          "description": "The files the presentation was built from, the template and the Markdown outline, in command-line order; empty for a blank presentation.",
+          "type": "array",
+          "items": {
+            "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/source-input.schema.json"
+          }
         },
         "license": {
           "description": "License mode the engine ran under; omitted when it ran licensed.",

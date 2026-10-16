@@ -246,7 +246,7 @@ public sealed class SlidesEditVerificationTests
         string markdown = fixture.File(name + ".md");
         File.WriteAllText(markdown, "# A\n\n## B\n\n- one\n\n## C\n\n- two\n");
         string path = fixture.File(name);
-        SlidesCreate.Run(fixture.Session, new SlidesCreateRequest { Output = TestOutput.At(path), MarkdownPath = markdown });
+        SlidesCreate.Run(fixture.Session, new SlidesCreateRequest { Output = TestOutput.At(path), Markdown = new SourceFile("--from-markdown", markdown) });
         return path;
     }
 

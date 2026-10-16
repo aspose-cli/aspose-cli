@@ -15,7 +15,7 @@ public sealed class WordsMarkdownImportTests
         string markdown = fixture.Temp.File("bid.md");
         File.WriteAllText(markdown, "# Chapter one\n\nBody text.\n");
         string created = fixture.Temp.File("bid.docx");
-        WordsCreate.Run(fixture.Session, new WordsCreateRequest { Output = TestOutput.At(created), MarkdownPath = markdown });
+        WordsCreate.Run(fixture.Session, new WordsCreateRequest { Output = TestOutput.At(created), Markdown = new SourceFile("--from-markdown", markdown) });
         string output = fixture.Temp.File("bid-toc.docx");
 
         WordsEdit.Run(fixture.Session, new WordsEditRequest
@@ -55,7 +55,7 @@ public sealed class WordsMarkdownImportTests
         File.WriteAllText(markdown, "施行。~~原《守则》~~同时废止。\n\n施行。<del>原《守则》</del>同时废止。\n");
         string output = fixture.Temp.File("struck.docx");
 
-        WordsCreate.Run(fixture.Session, new WordsCreateRequest { Output = TestOutput.At(output), MarkdownPath = markdown });
+        WordsCreate.Run(fixture.Session, new WordsCreateRequest { Output = TestOutput.At(output), Markdown = new SourceFile("--from-markdown", markdown) });
 
         Paragraph[] paragraphs = [.. new Document(output).FirstSection.Body.Paragraphs.Cast<Paragraph>().TakeLast(2)];
         Assert.Equal("施行。~~原《守则》~~同时废止。", paragraphs[0].GetText().TrimEnd('\r'));
@@ -71,7 +71,7 @@ public sealed class WordsMarkdownImportTests
         File.WriteAllText(markdown, string.Concat(Enumerable.Repeat("甲，乙。", 120)) + "\n");
         string output = fixture.Temp.File("clauses.docx");
 
-        WordsCreate.Run(fixture.Session, new WordsCreateRequest { Output = TestOutput.At(output), MarkdownPath = markdown });
+        WordsCreate.Run(fixture.Session, new WordsCreateRequest { Output = TestOutput.At(output), Markdown = new SourceFile("--from-markdown", markdown) });
 
         IReadOnlyList<string> lines = WordsFixture.LayoutLines(new Document(output));
         Assert.True(lines.Count > 4, string.Join(" | ", lines));
@@ -86,7 +86,7 @@ public sealed class WordsMarkdownImportTests
         File.WriteAllText(markdown, "# Brief\n\nPlain **bold** and `code`.\n");
         string output = fixture.Temp.File("brief.docx");
 
-        WordsCreate.Run(fixture.Session, new WordsCreateRequest { Output = TestOutput.At(output), MarkdownPath = markdown });
+        WordsCreate.Run(fixture.Session, new WordsCreateRequest { Output = TestOutput.At(output), Markdown = new SourceFile("--from-markdown", markdown) });
 
         var document = new Document(output);
         Section section = Assert.Single(document.Sections.Cast<Section>());
@@ -122,7 +122,7 @@ public sealed class WordsMarkdownImportTests
         File.WriteAllText(markdown, "# Report\n\n![Completion](chart.png)\n");
         string output = fixture.Temp.File("report.docx");
 
-        WordsCreate.Run(fixture.Session, new WordsCreateRequest { Output = TestOutput.At(output), MarkdownPath = markdown });
+        WordsCreate.Run(fixture.Session, new WordsCreateRequest { Output = TestOutput.At(output), Markdown = new SourceFile("--from-markdown", markdown) });
 
         var document = new Document(output);
         PageSetup page = document.FirstSection.PageSetup;
@@ -138,7 +138,7 @@ public sealed class WordsMarkdownImportTests
         string markdown = fixture.Temp.File("fonts.md");
         File.WriteAllText(markdown, "# Title\n\nHello 你好\n");
         string output = fixture.Temp.File("fonts.docx");
-        WordsCreate.Run(fixture.Session, new WordsCreateRequest { Output = TestOutput.At(output), MarkdownPath = markdown });
+        WordsCreate.Run(fixture.Session, new WordsCreateRequest { Output = TestOutput.At(output), Markdown = new SourceFile("--from-markdown", markdown) });
 
         WordsInspectResult info = WordsInspect.Run(fixture.Session, new WordsInspectRequest { Input = output, Details = ["fonts"] });
 
@@ -327,7 +327,7 @@ public sealed class WordsMarkdownImportTests
         string markdown = fixture.Temp.File("terms.md");
         File.WriteAllText(markdown, "# Terms\n\n1. Delivery\n2. Acceptance\n3. Payment\n\nThe following continue item 4.\n");
         string input = fixture.Temp.File("terms.docx");
-        WordsCreate.Run(fixture.Session, new WordsCreateRequest { Output = TestOutput.At(input), MarkdownPath = markdown });
+        WordsCreate.Run(fixture.Session, new WordsCreateRequest { Output = TestOutput.At(input), Markdown = new SourceFile("--from-markdown", markdown) });
         string output = fixture.Temp.File("terms-inserted.docx");
 
         WordsEdit.Run(fixture.Session, new WordsEditRequest
@@ -367,12 +367,12 @@ public sealed class WordsMarkdownImportTests
         string templateMarkdown = fixture.Temp.File("template.md");
         File.WriteAllText(templateMarkdown, "1. Delivery\n2. Acceptance\n3. Payment\n");
         string template = fixture.Temp.File("template.docx");
-        WordsCreate.Run(fixture.Session, new WordsCreateRequest { Output = TestOutput.At(template), MarkdownPath = templateMarkdown });
+        WordsCreate.Run(fixture.Session, new WordsCreateRequest { Output = TestOutput.At(template), Markdown = new SourceFile("--from-markdown", templateMarkdown) });
         string markdown = fixture.Temp.File("supplement.md");
         File.WriteAllText(markdown, "5. Supplement\n6. Invoice\n");
         string output = fixture.Temp.File("supplement.docx");
 
-        WordsCreate.Run(fixture.Session, new WordsCreateRequest { Output = TestOutput.At(output), MarkdownPath = markdown, TemplatePath = template });
+        WordsCreate.Run(fixture.Session, new WordsCreateRequest { Output = TestOutput.At(output), Markdown = new SourceFile("--from-markdown", markdown), Template = new SourceFile("--template", template) });
 
         Assert.Equal(["5.", "6."], ListLabels(output));
     }

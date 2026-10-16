@@ -26,15 +26,15 @@ internal static class CreateCommand
             [markdown, template, slideSize],
             (parse, standard) =>
             {
-                string? markdownPath = standard.InputFile(markdown);
-                string? templatePath = standard.InputFile(template);
+                SourceFile? markdownFile = standard.Source(markdown);
+                SourceFile? templateFile = standard.Source(template);
                 ResolvedOutput output = standard.Output;
                 Secret? encryptPassword = standard.EncryptPassword();
                 return new SlidesCreateRequest
                 {
                     Output = output,
-                    MarkdownPath = markdownPath,
-                    TemplatePath = templatePath,
+                    Markdown = markdownFile,
+                    Template = templateFile,
                     SlideSize = parse.GetValue(slideSize),
                     EncryptPassword = encryptPassword,
                 };

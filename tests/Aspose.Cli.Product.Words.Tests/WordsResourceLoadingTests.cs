@@ -23,7 +23,7 @@ public sealed class WordsResourceLoadingTests
         var created = WordsCreate.Run(fixture.Session, new WordsCreateRequest
         {
             Output = TestOutput.At(output),
-            TemplatePath = input,
+            Template = new SourceFile("--template", input),
             Title = "Resource owner",
         });
         Assert.Contains(created.Warnings!, warning => warning.Code == WarningCodes.RemoteResourcesBlocked);

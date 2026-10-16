@@ -31,6 +31,7 @@ internal static class CellsCreate
         return new CellsCreateResult
         {
             Output = saved.Output,
+            Inputs = [],
             Sheets = request.SheetNames,
             License = EnvelopeParts.License(licenseState),
             Warnings = EnvelopeParts.CombineWarnings(saved.Truncated, saved.FormulasBroken, saved.SheetsDropped),

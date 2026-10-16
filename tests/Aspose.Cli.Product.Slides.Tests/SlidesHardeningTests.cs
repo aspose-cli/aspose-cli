@@ -119,7 +119,7 @@ public sealed class SlidesHardeningTests
         Assert.Equal(evaluation, markdownOutput?.Any(static warning => warning.Code == WarningCodes.EvaluationMode
             && warning.Message.Contains("cut the content short", StringComparison.Ordinal)) == true);
         Assert.False(CutShort(fixture.Disclosed(session => SlidesExport.Convert(session, new SlidesConvertRequest { Input = input, Output = TestOutput.At(fixture.File("cut-short.pdf"), format: "pdf") })).Warnings));
-        Assert.False(CutShort(fixture.Disclosed(session => SlidesCreate.Run(session, new SlidesCreateRequest { Output = TestOutput.At(fixture.File("created.pptx")), MarkdownPath = markdown })).Warnings));
+        Assert.False(CutShort(fixture.Disclosed(session => SlidesCreate.Run(session, new SlidesCreateRequest { Output = TestOutput.At(fixture.File("created.pptx")), Markdown = new SourceFile("--from-markdown", markdown) })).Warnings));
         Assert.False(CutShort(fixture.Disclosed(session => SlidesEdit.Run(session, new SlidesEditRequest
         {
             Input = input,

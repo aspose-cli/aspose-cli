@@ -136,7 +136,7 @@ public sealed partial class DecisionOwnershipTests
         AssertNone(violations,
             "The input and output file objects a result reports come only from the SDK's FileObjects factory, which makes paths absolute and fingerprints every file:");
 
-        static bool IsFileObject(TypeSyntax type) => LastIdentifier(type) is "InputInfo" or "OutputInfo";
+        static bool IsFileObject(TypeSyntax type) => LastIdentifier(type) is "InputInfo" or "SourceInput" or "OutputInfo";
 
         // The type a target-typed new() creates, where the declaration beside it names it.
         static TypeSyntax? CreatedType(ImplicitObjectCreationExpressionSyntax creation) => creation.Parent switch
