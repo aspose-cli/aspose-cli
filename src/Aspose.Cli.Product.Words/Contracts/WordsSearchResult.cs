@@ -52,4 +52,8 @@ public sealed record WordsSearchHit
     /// side, with line breaks as spaces and an ellipsis where it is cut.
     /// </summary>
     public required string Context { get; init; }
+
+    /// <summary>The match's 1-based position among the matches of the document.</summary>
+    [Minimum(1)]
+    public required int Occurrence { get; init; }
 }

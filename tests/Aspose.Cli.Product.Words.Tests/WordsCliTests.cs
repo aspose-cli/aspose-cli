@@ -412,6 +412,28 @@ public sealed class WordsCliTests : IDisposable
                 .Select(static sample => $"{sample!["kind"]!.GetValue<string>()}:{sample["text"]?.GetValue<string>()}")));
     }
 
+    /// <summary>
+    /// Each hit carries its 1-based occurrence among the matches of the document, as a PDF search
+    /// hit does, so two hits in one paragraph are told apart; a later window keeps the numbers.
+    /// </summary>
+    [Fact]
+    public void Search_NumbersEachMatchOfTheDocument()
+    {
+        File.WriteAllText(_workspace.File("source.md"), "Party A pays Party B, and Party B signs.\n\nParty B keeps a copy.\n");
+        Assert.Equal(0, _workspace.Run("words", "create", "contract.docx", "--from-markdown", "source.md").ExitCode);
+
+        CliResult all = _workspace.Run("words", "search", "contract.docx", "--pattern", "Party B", "--output-format", "json");
+        CliResult later = _workspace.Run("words", "search", "contract.docx", "--pattern", "Party B", "--skip", "1", "--output-format", "json");
+
+        Assert.True(all.ExitCode == 0, all.StdErr);
+        Assert.Equal(["1:1", "1:2", "2:3"], Occurrences(JsonNode.Parse(all.StdOut)!));
+        Assert.True(later.ExitCode == 0, later.StdErr);
+        Assert.Equal(["1:2", "2:3"], Occurrences(JsonNode.Parse(later.StdOut)!));
+
+        static IEnumerable<string> Occurrences(JsonNode result) => result["hits"]!.AsArray()
+            .Select(static hit => $"{hit!["block"]!.GetValue<int>()}:{hit["occurrence"]?.GetValue<int>()}");
+    }
+
     public void Dispose() => _workspace.Dispose();
 
     private static IEnumerable<string> HitTexts(JsonNode result) =>

@@ -7145,7 +7145,8 @@
             "section",
             "scope",
             "text",
-            "context"
+            "context",
+            "occurrence"
           ],
           "additionalProperties": false,
           "properties": {
@@ -7193,6 +7194,11 @@
             "context": {
               "description": "The text of the paragraph, comment or note around the match, up to 40 characters on each side, with line breaks as spaces and an ellipsis where it is cut.",
               "type": "string"
+            },
+            "occurrence": {
+              "description": "The match's 1-based position among the matches of the document.",
+              "type": "integer",
+              "minimum": 1
             }
           }
         }

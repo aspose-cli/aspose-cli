@@ -51,13 +51,14 @@ internal static class SearchCommand
     internal static void Table(WordsSearchResult result, TableSurface surface)
     {
         surface.Out.WriteLine($"{result.Hits.Count} hit(s) for '{result.Pattern}'");
-        var table = new TextTable("block", "section", "scope", "text");
+        var table = new TextTable("block", "section", "scope", "occurrence", "text");
         foreach (WordsSearchHit hit in result.Hits)
         {
             table.AddRow(
                 WordsText.Block(hit.Block),
                 TableText.Int(hit.Section),
                 hit.Location is { } location ? $"{hit.Scope} ({location}, {hit.Kind})" : hit.Scope,
+                TableText.Int(hit.Occurrence),
                 hit.Context);
         }
 
