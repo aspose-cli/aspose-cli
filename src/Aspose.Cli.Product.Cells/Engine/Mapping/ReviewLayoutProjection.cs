@@ -10,6 +10,12 @@ namespace Aspose.Cli.Product.Cells.Engine.Mapping;
 /// <summary>Builds bounded, SDK-neutral layout facts for visual review.</summary>
 internal static class ReviewLayoutProjection
 {
+    /// <summary>The cells a print area holds before it can be excessive, however small the content.</summary>
+    internal const int ExcessivePrintAreaMinimumCells = 1000;
+
+    /// <summary>How many times the cells of the populated content's bounds an excessive print area holds.</summary>
+    internal const int ExcessivePrintAreaContentFactor = 20;
+
     private const int MaxDimensionSamples = 5;
     private const double NarrowColumnWidth = 3;
     private const double WideColumnWidth = 80;
@@ -350,7 +356,7 @@ internal static class ReviewLayoutProjection
         long printAreaCells = printRanges.Sum(static area =>
             checked((long)area.RowCount * area.ColumnCount));
         bool excessivePrintArea = contentAreaCells > 0
-            && printAreaCells > Math.Max(1_000, checked(contentAreaCells * 20));
+            && printAreaCells > Math.Max(ExcessivePrintAreaMinimumCells, checked(contentAreaCells * ExcessivePrintAreaContentFactor));
         return new PrintAreaScan(
             printArea,
             printRanges,

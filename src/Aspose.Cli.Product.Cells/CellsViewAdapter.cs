@@ -1,3 +1,4 @@
+using Aspose.Cli.Product.Cells.Engine.Mapping;
 using Aspose.Cli.Sdk.Extensibility;
 using Aspose.Cli.Sdk.Licensing;
 using Aspose.Cli.Sdk.Views;
@@ -262,7 +263,8 @@ internal sealed class CellsViewAdapter : IProductViewAdapter<CellsSession>
         if (sheet.PrintAreaExcessive)
         {
             findings.Add(SheetFinding(CellsReviewChecks.PrintAreaExcessive, sheet.Name,
-                $"The print area '{sheet.PrintArea}' is more than 20 times the populated content bounds ({sheet.ContentRange})."));
+                $"The print area '{sheet.PrintArea}' is more than {ReviewLayoutProjection.ExcessivePrintAreaContentFactor} times "
+                + $"the populated content bounds ({sheet.ContentRange}) and more than {ReviewLayoutProjection.ExcessivePrintAreaMinimumCells} cells."));
         }
     }
 
