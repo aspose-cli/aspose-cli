@@ -555,6 +555,7 @@ public sealed record SetPageNumbersOp : WordsOp
 
 /// <summary>Applies character formatting to the runs of target blocks; omitted settings keep their values.</summary>
 [Operation("format_text")]
+[MistakenFor("highlight_text")]
 public sealed record FormatTextOp : WordsOp
 {
     /// <summary>The blocks whose text runs are formatted.</summary>
