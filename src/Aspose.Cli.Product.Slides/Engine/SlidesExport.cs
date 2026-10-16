@@ -90,20 +90,10 @@ internal static class SlidesExport
             {
                 presentation.Slides[number - 1].Hidden = false;
             }
-
-            if (!request.Output.Format.CompanionFiles)
-            {
-                // An export of selected slides shows those slides alone, numbered as in the deck,
-                // so only their evaluation marks are its own.
-                PublishedFile file = session.Outputs.Write(request.Output.Path, request.Output.Overwrite, presentation, temp =>
-                {
-                    SaveSlides(presentation, temp, slides, format);
-                    loaded.Resources.ThrowIfFailed();
-                }, pages: slides, encrypted: encrypted);
-                return [new SlidesSlideOutput(FileObjects.Output(file, request.Output.Format, encrypted))];
-            }
         }
 
+        // An export of selected slides shows those slides alone, numbered as in the deck, so only
+        // their evaluation marks are its own.
         IReadOnlyList<OutputInfo> written = session.Outputs.Write(request.Output, presentation, encrypted, temp =>
         {
             Save(temp);
@@ -113,7 +103,7 @@ internal static class SlidesExport
             }
 
             loaded.Resources.ThrowIfFailed();
-        });
+        }, pages: slides is not null && Exports(format) ? slides : null);
         return [.. written.Select(static file => new SlidesSlideOutput(file))];
 
         void Save(string temp)
