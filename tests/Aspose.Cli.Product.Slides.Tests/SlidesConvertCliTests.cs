@@ -141,6 +141,27 @@ public sealed class SlidesConvertCliTests : IDisposable
         }
     }
 
+    /// <summary>
+    /// Markdown keeps the bullets and levels a body placeholder inherits from its layout and
+    /// master: a first-level item is a list item, and a second-level item one indented under it.
+    /// </summary>
+    [Fact]
+    public void BodyPlaceholderBullets_BecomeANestedMarkdownList()
+    {
+        File.WriteAllText(_workspace.File("list.md"), "# Deck\n\n## Plan\n\n- Up\n  - Sub\n- Go\n");
+        Run("slides", "create", "list.pptx", "--from-markdown", "list.md");
+
+        Run("slides", "convert", "list.pptx", "--to", "md", "--slides", "2", "--out", "list.out.md");
+
+        string[] lines = File.ReadAllLines(_workspace.File("list.out.md"));
+        string first = Assert.Single(lines, static line => line.TrimStart().StartsWith("- Up", StringComparison.Ordinal));
+        string second = Assert.Single(lines, static line => line.TrimStart().StartsWith("- Sub", StringComparison.Ordinal));
+        Assert.Single(lines, static line => line.TrimStart().StartsWith("- Go", StringComparison.Ordinal));
+        Assert.True(Indent(second) > Indent(first), string.Join(Environment.NewLine, lines));
+
+        static int Indent(string line) => line.Length - line.TrimStart().Length;
+    }
+
     /// <summary>An ODP output names the native charts, transitions and sections it does not keep.</summary>
     [Fact]
     public void OdpOutput_NamesTheChartsTransitionsAndSectionsItLoses()
