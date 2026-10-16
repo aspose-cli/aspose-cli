@@ -59,6 +59,9 @@ aspose-cli cells search book.xlsx --pattern "Total" --output-format json
   TSV is not a plain table from row 1: title or query-condition rows before the
   header, empty rows inside the table, or a total row (`合计`, `Total`) at its
   end. Take the header row and data rows from the message, not from row 1.
+  `cells convert --to json` warns the same for each sheet it writes, since the
+  JSON takes its keys from a sheet's first used row and writes every row below
+  as a record: a title above the header, an empty row or a total row.
 
 ## Editing
 

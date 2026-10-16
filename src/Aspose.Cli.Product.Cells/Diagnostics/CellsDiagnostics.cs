@@ -28,7 +28,10 @@ internal static class CellsDiagnostics
     /// <summary>The active sheet is an evaluation warning sheet, so a command that names no sheet used another one.</summary>
     internal static readonly WarningCode ActiveSheetSkipped = new("ACTIVE_SHEET_SKIPPED");
 
-    /// <summary>A delimited text input has a preamble before its header, empty rows or a total row.</summary>
+    /// <summary>
+    /// A delimited text input, or a sheet a JSON export writes, is not a plain table that starts
+    /// at its first row: it has a title before its header, empty rows or a total row.
+    /// </summary>
     internal static readonly WarningCode TextTableLayout = new("TEXT_TABLE_LAYOUT");
 
     /// <summary>A PDF export splits a chart across pages.</summary>

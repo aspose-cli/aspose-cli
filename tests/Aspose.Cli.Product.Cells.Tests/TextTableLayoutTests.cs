@@ -71,6 +71,10 @@ public sealed class TextTableLayoutTests : IDisposable
     [InlineData(" GRAND TOTAL: ")]
     [InlineData("Subtotal")]
     [InlineData("sum")]
+    [InlineData("合计 Total")]
+    [InlineData("合计Total")]
+    [InlineData("总计（Grand Total）")]
+    [InlineData("Grand Total")]
     public void Detect_FindsATrailingTotalRowByItsLabel(string label)
     {
         TextTableFinding finding = Assert.Single(TextTableLayout.Detect(
@@ -113,6 +117,43 @@ public sealed class TextTableLayoutTests : IDisposable
             TextTableLayout.Detect(Shapes((3, "Region"), (3, "North"), (3, "South"), (1, "Total")), []), "Data", 2, capped: false));
 
         Assert.StartsWith("End data ranges at row 3, and leave", warning.Hint, StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData("Totalizer")]
+    [InlineData("Grand")]
+    [InlineData("Total Solutions Ltd")]
+    [InlineData("合计单位")]
+    public void Detect_TakesNoLabelWithAWordBesidesTotalWordsForATotal(string label)
+    {
+        Assert.Empty(TextTableLayout.Detect(Shapes((3, "Region"), (3, "North"), (3, "South"), (3, label)), []));
+    }
+
+    /// <summary>
+    /// A bilingual total label, as Chinese reports write it, is a total row in a CSV input and in
+    /// each sheet a JSON export writes; a product name that only starts with "Total" is not.
+    /// </summary>
+    [Fact]
+    public void Inspect_AndJsonExport_FindABilingualTotalRow()
+    {
+        File.WriteAllText(_workspace.File("tot.csv"),
+            "日期,数量,金额\n2026-09-01,5,120\n2026-09-02,7,180\n合计 Total,12,300\n",
+            new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
+        Assert.Equal(0, _workspace.Run("cells", "create", "tot.xlsx", "--sheets", "Bilingual,Grand,Meters").ExitCode);
+        CliResult filled = _workspace.Run("cells", "edit", "tot.xlsx", "--in-place", "--ops", """
+            [{"op":"set_values","sheet":"Bilingual","range":"A1","values":[["Date","Units"],["a",5],["b",7],["合计 Total",12]]},
+             {"op":"set_values","sheet":"Grand","range":"A1","values":[["Date","Units"],["a",5],["b",7],["Grand Total",12]]},
+             {"op":"set_values","sheet":"Meters","range":"A1","values":[["Model","Units"],["Meter",5],["Gauge",7],["Totalizer",12]]}]
+            """);
+        Assert.True(filled.ExitCode == 0, filled.StdErr);
+
+        JsonNode[] inspected = LayoutWarnings(_workspace.Run("cells", "inspect", "tot.csv", "--output-format", "json").Json());
+        JsonNode[] exported = LayoutWarnings(_workspace.Run("cells", "convert", "tot.xlsx", "--to", "json", "--out", "tot.json", "--output-format", "json").Json());
+
+        Assert.Contains("Row 4 is a total row ('合计 Total')", Text(Assert.Single(inspected), "message"), StringComparison.Ordinal);
+        Assert.Equal(2, exported.Length);
+        Assert.Contains(exported, static warning => Text(warning, "message").Contains("sheet 'Bilingual' is a total row ('合计 Total')", StringComparison.Ordinal));
+        Assert.Contains(exported, static warning => Text(warning, "message").Contains("sheet 'Grand' is a total row ('Grand Total')", StringComparison.Ordinal));
     }
 
     [Fact]

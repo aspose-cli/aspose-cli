@@ -101,4 +101,32 @@ public sealed class CellsConvertHintTests : IDisposable
         Assert.Contains("'Returns'", dropped["message"]!.GetValue<string>(), StringComparison.Ordinal);
         Assert.DoesNotContain("'Data'", dropped["message"]!.GetValue<string>(), StringComparison.Ordinal);
     }
+
+    /// <summary>
+    /// A JSON export takes each sheet's first used row for the keys and writes every row below
+    /// it as a record, so a sheet whose first used row is a title, or whose last row is a total,
+    /// is reported with <c>TEXT_TABLE_LAYOUT</c>; a plain table is not.
+    /// </summary>
+    [Fact]
+    public void JsonExport_ReportsASheetThatIsNotAPlainTable()
+    {
+        Assert.Equal(0, _workspace.Run("cells", "create", "report.xlsx", "--sheets", "Titled,Totals,Plain").ExitCode);
+        CliResult filled = _workspace.Run("cells", "edit", "report.xlsx", "--in-place", "--ops", """
+            [{"op":"set_values","sheet":"Titled","range":"A1","values":[["Monthly sales by region",null,null],["Region","Units","Amount"],["North",5,120],["South",7,180]]},
+             {"op":"set_values","sheet":"Totals","range":"A1","values":[["Date","Units","Amount"],["2026-09-01",5,120],["2026-09-02",7,180],["Total",12,300]]},
+             {"op":"set_values","sheet":"Plain","range":"A1","values":[["Region","Units","Amount"],["North",5,120],["South",7,180]]}]
+            """);
+        Assert.True(filled.ExitCode == 0, filled.StdErr);
+
+        CliResult converted = _workspace.Run("cells", "convert", "report.xlsx", "--to", "json", "--out", "report.json", "--output-format", "json");
+
+        Assert.True(converted.ExitCode == 0, converted.StdErr);
+        string[] layout = [.. JsonNode.Parse(converted.StdOut)!["warnings"]?.AsArray()
+            .Where(static warning => warning!["code"]!.GetValue<string>() == "TEXT_TABLE_LAYOUT")
+            .Select(static warning => warning!["message"]!.GetValue<string>() + " | " + warning["location"]?.GetValue<string>()) ?? []];
+        Assert.Equal(2, layout.Length);
+        Assert.Contains(layout, static warning => warning.Contains("'Titled'", StringComparison.Ordinal) && warning.Contains("row 2", StringComparison.Ordinal));
+        Assert.Contains(layout, static warning => warning.Contains("'Totals'", StringComparison.Ordinal) && warning.Contains("Row 4", StringComparison.Ordinal));
+        Assert.DoesNotContain(layout, static warning => warning.Contains("Plain", StringComparison.Ordinal));
+    }
 }
