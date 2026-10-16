@@ -74,19 +74,43 @@ public sealed class CrossProcessLockTests
         Assert.Equal(0, workspace.Run("skill", "install", Skill, "--target", reference, "--output-format", "json").ExitCode);
         string installed = Path.GetFullPath(Path.Combine(target, Skill));
 
+        Directory.CreateDirectory(target);
+
         CliResult refused;
-        using (LocalServiceOperationLock.Acquire("skill-install",
-            OperatingSystem.IsWindows() ? installed.ToUpperInvariant() : installed, TimeSpan.FromSeconds(5)))
+        using (PublicationDirectoryLease.Acquire(target))
         {
-            refused = workspace.Run("skill", "install", Skill, "--target", target, "--output-format", "json");
+            refused = workspace.Run("skill", "install", Skill, "--target", target, "--output-format", "json", "--timeout", "3");
         }
 
-        Assert.Equal("OUTPUT_EXISTS", ErrorCode(refused));
+        Assert.Equal("OPERATION_TIMEOUT", ErrorCode(refused));
         Assert.False(Directory.Exists(installed));
         CliResult accepted = workspace.Run("skill", "install", Skill, "--target", target, "--output-format", "json");
         Assert.True(accepted.ExitCode == 0, accepted.StdErr);
         Assert.Equal(Tree(Path.Combine(reference, Skill)), Tree(installed));
         // The released lock leaves no lock file beside the installed Skill.
+        Assert.Equal([Skill], Entries(target));
+    }
+
+    [Fact]
+    public void SkillInstall_WhoseTimeoutEndsBeforeItPublishes_LeavesTheInstalledSkill()
+    {
+        using var workspace = new TempWorkspace();
+        string target = workspace.File("skills");
+        Assert.Equal(0, workspace.Run("skill", "install", Skill, "--target", target, "--output-format", "json").ExitCode);
+        string installed = Path.Combine(target, Skill);
+        string[] before = Tree(installed);
+
+        // Under --timeout the install runs in a worker that may only stage; the timeout ends it
+        // while the publication waits for the Skills root, so the installed Skill is untouched.
+        CliResult timedOut;
+        using (PublicationDirectoryLease.Acquire(target))
+        {
+            timedOut = workspace.Run("skill", "install", Skill, "--target", target, "--output-format", "json", "--timeout", "3");
+        }
+
+        Assert.Equal(9, timedOut.ExitCode);
+        Assert.Equal("OPERATION_TIMEOUT", ErrorCode(timedOut));
+        Assert.Equal(before, Tree(installed));
         Assert.Equal([Skill], Entries(target));
     }
 
