@@ -25,6 +25,7 @@ internal static class WordsCreate
         return new WordsCreateResult
         {
             Output = FileObjects.Output(written, request.Output.Format, encrypted: request.EncryptPassword is not null),
+            Inputs = created.Inputs,
             License = EnvelopeParts.License(state),
             Warnings = CreationWarnings(created, formatId),
         };
@@ -55,22 +56,23 @@ internal static class WordsCreate
         var sources = new List<LoadedDocument>();
         try
         {
-            LoadedDocument? template = request.TemplatePath is null ? null : OpenTemplate(session, request.TemplatePath);
+            LoadedDocument? template = request.Template is null ? null : OpenTemplate(session, request.Template.Path);
             if (template is not null)
             {
                 sources.Add(template);
             }
 
             Document document = template?.Document ?? WordsDocumentLoader.OpenDefaultTemplate();
-            if (request.MarkdownPath is not null)
+            LoadedDocument? markdown = null;
+            if (request.Markdown is not null)
             {
-                LoadedDocument markdown = session.Loader.Open(request.MarkdownPath, null);
+                markdown = session.Loader.Open(request.Markdown.Path, null);
                 sources.Add(markdown);
                 ReplaceBody(document, WordsMarkdownImport.Blocks(document, markdown.Document));
             }
-            else if (request.TextPath is not null)
+            else if (request.Text is not null)
             {
-                ReplaceBody(document, session.Budgets.Inputs.ReadTextFile(request.TextPath)
+                ReplaceBody(document, session.Budgets.Inputs.ReadTextFile(request.Text.Path)
                     .Split(["\r\n", "\n", "\r"], StringSplitOptions.None)
                     .Select(line =>
                     {
@@ -82,7 +84,11 @@ internal static class WordsCreate
             }
 
             ApplyTitle(document, request.Title);
-            return new CreatedDocument(document, template, sources);
+            IReadOnlyList<SourceInput> inputs = FileObjects.Sources(
+                (request.Template, template?.FormatId ?? string.Empty, template?.Format.IsEncrypted ?? false),
+                (request.Markdown, markdown?.FormatId ?? string.Empty, markdown?.Format.IsEncrypted ?? false),
+                (request.Text, "txt", false));
+            return new CreatedDocument(document, template, sources, inputs);
         }
         catch
         {
@@ -143,7 +149,8 @@ internal static class WordsCreate
     private sealed record CreatedDocument(
         Document Document,
         LoadedDocument? Template,
-        IReadOnlyList<LoadedDocument> Sources) : IDisposable
+        IReadOnlyList<LoadedDocument> Sources,
+        IReadOnlyList<SourceInput> Inputs) : IDisposable
     {
         internal int RemoteResourcesBlocked => Sources.Sum(static source => source.RemoteResourcesBlocked);
         internal bool WasSigned => Template?.Format.HasDigitalSignature ?? false;

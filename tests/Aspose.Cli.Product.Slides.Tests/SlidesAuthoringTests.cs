@@ -186,7 +186,7 @@ public sealed class SlidesAuthoringTests
         File.WriteAllText(markdown, "# Proposal\n\n## Next steps\n\n- Confirm the pilot site\n");
         string deck = fixture.File("deck.pptx");
         string edited = fixture.File("deck.titled.pptx");
-        SlidesCreate.Run(fixture.Session, new SlidesCreateRequest { Output = TestOutput.At(deck), MarkdownPath = markdown });
+        SlidesCreate.Run(fixture.Session, new SlidesCreateRequest { Output = TestOutput.At(deck), Markdown = new SourceFile("--from-markdown", markdown) });
         SlidesEdit.Run(fixture.Session, new SlidesEditRequest
         {
             Input = deck,
@@ -288,7 +288,7 @@ public sealed class SlidesAuthoringTests
         string markdown = fixture.File("outline.md");
         File.WriteAllText(markdown, "## Results\n- Draft\n");
         string input = fixture.File("outline.pptx");
-        SlidesCreate.Run(fixture.Session, new SlidesCreateRequest { Output = TestOutput.At(input), MarkdownPath = markdown });
+        SlidesCreate.Run(fixture.Session, new SlidesCreateRequest { Output = TestOutput.At(input), Markdown = new SourceFile("--from-markdown", markdown) });
         string filled = fixture.File("filled.pptx");
         SlidesEdit.Run(fixture.Session, new SlidesEditRequest
         {

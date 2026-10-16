@@ -3465,12 +3465,13 @@
     "v2/words/create-result": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
       "$id": "https://schemas.aspose.com/aspose-cli/v2/words/create-result.schema.json",
-      "description": "Result of words create: the document written.",
+      "description": "Result of words create: the document written and what it was created from.",
       "type": "object",
       "required": [
         "schema",
         "schemaVersion",
-        "output"
+        "output",
+        "inputs"
       ],
       "additionalProperties": false,
       "properties": {
@@ -3485,6 +3486,13 @@
         "output": {
           "description": "The created document.",
           "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/output.schema.json"
+        },
+        "inputs": {
+          "description": "The files the document was created from, the template and the Markdown or text, in command-line order; empty for a blank document.",
+          "type": "array",
+          "items": {
+            "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/source-input.schema.json"
+          }
         },
         "license": {
           "description": "License mode the engine ran under; omitted when it ran licensed.",

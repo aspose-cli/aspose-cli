@@ -90,10 +90,10 @@ internal static class CreateCommand
             throw CliErrors.Usage(["Choose exactly one of --from-images, --from-html, --from-markdown or --from-text."]);
         }
 
-        PdfCreateSource source = standard.InputFile(html) is { } htmlPath ? new PdfHtmlSource(htmlPath, allowNetwork)
-            : standard.InputFile(markdown) is { } markdownPath ? new PdfMarkdownSource(markdownPath)
-            : standard.InputFile(text) is { } textPath ? new PdfTextSource(textPath)
-            : new PdfImageSource(standard.InputFiles(images));
+        PdfCreateSource source = standard.Source(html) is { } htmlFile ? new PdfHtmlSource(htmlFile, allowNetwork)
+            : standard.Source(markdown) is { } markdownFile ? new PdfMarkdownSource(markdownFile)
+            : standard.Source(text) is { } textFile ? new PdfTextSource(textFile)
+            : new PdfImageSource(standard.Sources(images));
 
         if (allowNetwork && source is not PdfHtmlSource)
         {

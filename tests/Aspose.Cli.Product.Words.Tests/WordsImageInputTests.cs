@@ -88,7 +88,7 @@ public sealed class WordsImageInputTests
         string output = fixture.Temp.File("report.docx");
 
         CliException error = Assert.Throws<CliException>(() => WordsCreate.Run(fixture.Session,
-            new WordsCreateRequest { Output = TestOutput.At(output), MarkdownPath = markdown }));
+            new WordsCreateRequest { Output = TestOutput.At(output), Markdown = new SourceFile("--from-markdown", markdown) }));
 
         Assert.Equal(ErrorCodes.FileCorrupt, error.Code);
         Assert.Equal(image, error.Details!["path"]!.GetValue<string>(), ignoreCase: true);

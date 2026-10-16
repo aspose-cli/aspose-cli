@@ -156,7 +156,7 @@ public sealed class WordsContractGapTests
         string markdown = fixture.Temp.File("nested.md");
         File.WriteAllText(markdown, "# T\n\n1. First\n    1. Sub A\n    2. Sub B\n2. Second\n    1. Sub C\n");
         string input = fixture.Temp.File("nested.docx");
-        WordsCreate.Run(fixture.Session, new WordsCreateRequest { Output = TestOutput.At(input), MarkdownPath = markdown });
+        WordsCreate.Run(fixture.Session, new WordsCreateRequest { Output = TestOutput.At(input), Markdown = new SourceFile("--from-markdown", markdown) });
         string output = fixture.Temp.File("nested-out.docx");
 
         WordsEdit.Run(fixture.Session, new WordsEditRequest
@@ -227,7 +227,7 @@ public sealed class WordsContractGapTests
         string markdown = fixture.Temp.File("flat.md");
         File.WriteAllText(markdown, "1. First\n2. Second\n");
         string input = fixture.Temp.File("flat.docx");
-        WordsCreate.Run(fixture.Session, new WordsCreateRequest { Output = TestOutput.At(input), MarkdownPath = markdown });
+        WordsCreate.Run(fixture.Session, new WordsCreateRequest { Output = TestOutput.At(input), Markdown = new SourceFile("--from-markdown", markdown) });
         string output = fixture.Temp.File("flat-out.docx");
 
         WordsEdit.Run(fixture.Session, new WordsEditRequest
@@ -318,7 +318,7 @@ public sealed class WordsContractGapTests
         {
             string source = fixture.Temp.File("items.md");
             File.WriteAllText(source, "1. **First**\n2. Second\n");
-            WordsCreate.Run(fixture.Session, new WordsCreateRequest { Output = TestOutput.At(input), MarkdownPath = source });
+            WordsCreate.Run(fixture.Session, new WordsCreateRequest { Output = TestOutput.At(input), Markdown = new SourceFile("--from-markdown", source) });
         }
         else
         {

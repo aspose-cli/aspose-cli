@@ -203,7 +203,7 @@ public sealed class SlidesReviewCheckTests
         File.WriteAllText(markdown, "# Proposal\n\nSales team\n\n## Next steps\n\n- Confirm the pilot site\n- Sign the letter of intent\n");
         string deck = fixture.File("deck.pptx");
         string edited = fixture.File("deck.long-title.pptx");
-        SlidesCreate.Run(fixture.Session, new SlidesCreateRequest { Output = TestOutput.At(deck), MarkdownPath = markdown });
+        SlidesCreate.Run(fixture.Session, new SlidesCreateRequest { Output = TestOutput.At(deck), Markdown = new SourceFile("--from-markdown", markdown) });
         SlidesEdit.Run(fixture.Session, new SlidesEditRequest
         {
             Input = deck,
@@ -355,7 +355,7 @@ public sealed class SlidesReviewCheckTests
         File.WriteAllText(markdown, "## Short title\n\n" + string.Concat(Enumerable.Range(1, 12).Select(static item =>
             $"- 培训 Training {item}：每季度一次线下集训，线上课程全年开放 on-demand courses for every partner\n")));
         string deck = fixture.File("long-bullets.pptx");
-        SlidesCreate.Run(fixture.Session, new SlidesCreateRequest { Output = TestOutput.At(deck), MarkdownPath = markdown });
+        SlidesCreate.Run(fixture.Session, new SlidesCreateRequest { Output = TestOutput.At(deck), Markdown = new SourceFile("--from-markdown", markdown) });
 
         Assert.DoesNotContain(Review(fixture, deck).Findings, static finding => finding.Code == SlidesReviewChecks.TextOverflowsShape.Code);
     }
@@ -370,7 +370,7 @@ public sealed class SlidesReviewCheckTests
         File.WriteAllText(markdown, "## 风险清单 Risk Register\n\n" + string.Concat(Enumerable.Range(1, 10).Select(static item =>
             $"- 风险 {item}：跨市场数据合规要求不一致导致项目延期 Risk {item}: inconsistent cross-market data compliance delays delivery\n")));
         string deck = fixture.File("bilingual-risks.pptx");
-        SlidesCreate.Run(fixture.Session, new SlidesCreateRequest { Output = TestOutput.At(deck), MarkdownPath = markdown });
+        SlidesCreate.Run(fixture.Session, new SlidesCreateRequest { Output = TestOutput.At(deck), Markdown = new SourceFile("--from-markdown", markdown) });
 
         SlidesReadResult read = SlidesRead.Run(fixture.Session, new SlidesReadRequest { Input = deck, Content = SlidesReadContents.Full });
         SlidesShapeData body = Assert.Single(read.Slides[0].Shapes, static shape => shape.Placeholder == "body");

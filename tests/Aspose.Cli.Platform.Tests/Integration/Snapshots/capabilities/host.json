@@ -3306,6 +3306,49 @@
         }
       }
     },
+    "v2/common/source-input": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "$id": "https://schemas.aspose.com/aspose-cli/v2/common/source-input.schema.json",
+      "description": "Describes a file a command read as the value of one of its options, such as the template or the content a file is created from: the facts of an InputInfo and the option.",
+      "type": "object",
+      "required": [
+        "path",
+        "format",
+        "sizeBytes",
+        "fingerprint",
+        "encrypted",
+        "option"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "description": "Absolute path of the file.",
+          "type": "string"
+        },
+        "format": {
+          "description": "Format id the file was read as, e.g. md.",
+          "type": "string"
+        },
+        "sizeBytes": {
+          "description": "File size in bytes.",
+          "type": "integer",
+          "minimum": 0
+        },
+        "fingerprint": {
+          "description": "SHA-256 identity of the file as it was read.",
+          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/file-fingerprint.schema.json"
+        },
+        "encrypted": {
+          "description": "true when the file is encrypted and opens only with its password.",
+          "type": "boolean"
+        },
+        "option": {
+          "description": "The option that named the file, e.g. --template.",
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
     "v2/common/update-result": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
       "$id": "https://schemas.aspose.com/aspose-cli/v2/common/update-result.schema.json",

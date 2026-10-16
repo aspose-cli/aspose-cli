@@ -3083,10 +3083,11 @@
           "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/output.schema.json"
         },
         "inputs": {
-          "description": "The source files the PDF was created from, in order.",
+          "description": "The source files the PDF was created from, in command-line order: each image of --from-images, or the one HTML, Markdown or text file.",
           "type": "array",
+          "minItems": 1,
           "items": {
-            "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/input.schema.json"
+            "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/source-input.schema.json"
           }
         },
         "license": {

@@ -88,7 +88,7 @@ public sealed class SlidesCoreWorkflowTests
         SlidesCreateResult created = SlidesCreate.Run(fixture.Session, new SlidesCreateRequest
         {
             Output = TestOutput.At(presentation),
-            MarkdownPath = markdown,
+            Markdown = new SourceFile("--from-markdown", markdown),
         });
 
         Assert.True(File.Exists(presentation));

@@ -46,7 +46,7 @@ public sealed class PdfHardeningTests
         using (new FileStream(source, FileMode.Open, FileAccess.Read,
                    FileShare.ReadWrite | FileShare.Delete, 1, FileOptions.DeleteOnClose))
         {
-            PdfCreate.Run(fixture.Session, new PdfCreateRequest { Output = TestOutput.At(output), Source = markdown ? new PdfMarkdownSource(source) : new PdfTextSource(source) });
+            PdfCreate.Run(fixture.Session, new PdfCreateRequest { Output = TestOutput.At(output), Source = markdown ? new PdfMarkdownSource(new SourceFile("--from-markdown", source)) : new PdfTextSource(new SourceFile("--from-text", source)) });
         }
 
         using var created = new Document(output);

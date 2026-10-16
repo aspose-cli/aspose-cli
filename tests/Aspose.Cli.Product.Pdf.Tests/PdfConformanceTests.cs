@@ -114,7 +114,7 @@ public sealed class PdfConformanceTests
             <input type="checkbox" name="urgent"/> Urgent
             </form></body></html>
             """);
-        string form = PdfCreate.Run(fixture.Session, new PdfCreateRequest { Output = TestOutput.At(fixture.File("form.pdf")), Source = new PdfHtmlSource(html, AllowNetworkResources: false) }).Output.Path;
+        string form = PdfCreate.Run(fixture.Session, new PdfCreateRequest { Output = TestOutput.At(fixture.File("form.pdf")), Source = new PdfHtmlSource(new SourceFile("--from-html", html), AllowNetworkResources: false) }).Output.Path;
         string output = fixture.File("form.pdfa.pdf");
 
         CliException error = Assert.Throws<CliException>(() => PdfConvert.Run(fixture.Session, new PdfConvertRequest

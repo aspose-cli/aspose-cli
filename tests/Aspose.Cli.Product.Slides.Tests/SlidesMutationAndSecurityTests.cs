@@ -85,7 +85,7 @@ public sealed class SlidesMutationAndSecurityTests
             SlidesCreate.Run(fixture.Session, new SlidesCreateRequest
             {
                 Output = TestOutput.At(output),
-                MarkdownPath = markdown,
+                Markdown = new SourceFile("--from-markdown", markdown),
             }));
 
         Assert.Equal(ErrorCodes.FeatureUnsupported, error.Code);

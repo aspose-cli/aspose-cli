@@ -13,9 +13,6 @@ public sealed record SlidesCreateResult() : EngineResultEnvelope("create-result"
     [Minimum(1)]
     public required int SlideCount { get; init; }
 
-    /// <summary>The template the presentation was built from; omitted without <c>--template</c>.</summary>
-    public InputInfo? Template { get; init; }
-
-    /// <summary>The Markdown outline the slides were filled from; omitted without <c>--from-markdown</c>.</summary>
-    public InputInfo? Markdown { get; init; }
+    /// <summary>The files the presentation was built from, the template and the Markdown outline, in command-line order; empty for a blank presentation.</summary>
+    public required IReadOnlyList<SourceInput> Inputs { get; init; }
 }

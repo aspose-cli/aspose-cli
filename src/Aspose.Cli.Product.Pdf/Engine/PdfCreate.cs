@@ -20,18 +20,18 @@ internal static class PdfCreate
         (byte[]? html, IReadOnlyList<byte[]> imageContents) = EnsureCreationInputs(session.Budgets, source);
         // The Markdown importer resolves the Markdown's relative references against the
         // working directory and reads files itself; the check holds them until the save.
-        using MarkdownImportResources? markdown = source is PdfMarkdownSource { Path: var markdownPath }
+        using MarkdownImportResources? markdown = source is PdfMarkdownSource { File.Path: var markdownPath }
             ? new MarkdownImportResources(markdownPath, session.Budgets, Environment.CurrentDirectory) : null;
         LicenseState state = session.Outputs.License;
-        using HtmlImportResources? resources = source is PdfHtmlSource { Path: var htmlPath, AllowNetworkResources: var allowNetwork }
+        using HtmlImportResources? resources = source is PdfHtmlSource { File.Path: var htmlPath, AllowNetworkResources: var allowNetwork }
             ? new HtmlImportResources(htmlPath, session.Budgets, allowNetwork) : null;
         var warnings = new List<Warning>();
         using Document document = source switch
         {
-            PdfImageSource images => CreateFromImages(images.Paths, imageContents, request, warnings),
-            PdfHtmlSource page => CreateFromHtml(page.Path, request, resources!),
-            PdfMarkdownSource notes => CreateFromText(notes.Path, markdown: true, request),
-            PdfTextSource text => CreateFromText(text.Path, markdown: false, request),
+            PdfImageSource images => CreateFromImages([.. images.Files.Select(static file => file.Path)], imageContents, request, warnings),
+            PdfHtmlSource page => CreateFromHtml(page.File.Path, request, resources!),
+            PdfMarkdownSource notes => CreateFromText(notes.File.Path, markdown: true, request),
+            PdfTextSource text => CreateFromText(text.File.Path, markdown: false, request),
             _ => throw new UnreachableException(),
         };
         resources?.ThrowIfFailed();
@@ -397,25 +397,26 @@ internal static class PdfCreate
     }
 
     /// <summary>
-    /// The source files, each with the id of the format it was read as: an image by its file,
-    /// the others by the option that named them.
+    /// The source files, each with the option that named it and the id of the format it was
+    /// read as: an image by its file, the others by the option that named them.
     /// </summary>
-    private static IReadOnlyList<InputInfo> CreationInputs(PdfCreateSource source) => source switch
+    private static IReadOnlyList<SourceInput> CreationInputs(PdfCreateSource source) => source switch
     {
-        PdfImageSource images => [.. images.Paths.Select(static path => FileObjects.Input(path, Path.GetExtension(path).TrimStart('.').ToLowerInvariant(), encrypted: false))],
-        PdfHtmlSource html => [FileObjects.Input(html.Path, "html", encrypted: false)],
-        PdfMarkdownSource markdown => [FileObjects.Input(markdown.Path, "md", encrypted: false)],
-        PdfTextSource text => [FileObjects.Input(text.Path, "txt", encrypted: false)],
+        PdfImageSource images => FileObjects.Sources([.. images.Files.Select(static file =>
+            ((SourceFile?)file, Path.GetExtension(file.Path).TrimStart('.').ToLowerInvariant(), false))]),
+        PdfHtmlSource html => FileObjects.Sources((html.File, "html", false)),
+        PdfMarkdownSource markdown => FileObjects.Sources((markdown.File, "md", false)),
+        PdfTextSource text => FileObjects.Sources((text.File, "txt", false)),
         _ => throw new UnreachableException(),
     };
 
     /// <summary>The files of a source.</summary>
     private static IReadOnlyList<string> Paths(PdfCreateSource source) => source switch
     {
-        PdfImageSource images => images.Paths,
-        PdfHtmlSource html => [html.Path],
-        PdfMarkdownSource markdown => [markdown.Path],
-        PdfTextSource text => [text.Path],
+        PdfImageSource images => [.. images.Files.Select(static file => file.Path)],
+        PdfHtmlSource html => [html.File.Path],
+        PdfMarkdownSource markdown => [markdown.File.Path],
+        PdfTextSource text => [text.File.Path],
         _ => throw new UnreachableException(),
     };
 
@@ -441,13 +442,13 @@ internal static class PdfCreate
         // The engine decodes each image only when the document is saved, and a damaged one fails
         // there or is embedded as it is; refuse it first.
         var images = new List<byte[]>();
-        foreach (string image in source is PdfImageSource imageSource ? imageSource.Paths : [])
+        foreach (string image in source is PdfImageSource imageSource ? imageSource.Files.Select(static file => file.Path) : [])
         {
             using InputResourceScope scope = resourceBudgets.Inputs.CreateScope();
             images.Add(ImageInput.Read(scope, image, refuseNetworkReferences: true));
         }
 
-        if (source is not PdfHtmlSource { Path: var html, AllowNetworkResources: var allowNetwork })
+        if (source is not PdfHtmlSource { File.Path: var html, AllowNetworkResources: var allowNetwork })
         {
             return (null, images);
         }

@@ -728,6 +728,25 @@ public partial class StandardInvocation
     /// <exception cref="CliException">The file does not exist.</exception>
     public string? InputFile(Option<string?> option) => InputFileValues(option).SingleOrDefault();
 
+    /// <summary>
+    /// The resolved file named by one of the command's own <see cref="InputKind.File"/> options,
+    /// with the option and where it stands on the command line, or null when it was omitted.
+    /// </summary>
+    /// <exception cref="CliException">The file does not exist.</exception>
+    public SourceFile? Source(Option<string?> option) =>
+        InputFile(option) is { } path ? new SourceFile(option.Name, path) { Position = Position(option) } : null;
+
+    /// <summary>
+    /// The resolved files named by one of the command's own <see cref="InputKind.File"/> options,
+    /// in the order it lists them, each with the option and where it stands on the command line.
+    /// </summary>
+    /// <exception cref="CliException">A file does not exist.</exception>
+    public IReadOnlyList<SourceFile> Sources(Option<string[]> option)
+    {
+        int position = Position(option);
+        return [.. InputFiles(option).Select(path => new SourceFile(option.Name, path) { Position = position })];
+    }
+
     /// <summary>The resolved file named by one of the command's own required <see cref="InputKind.File"/> options.</summary>
     /// <exception cref="CliException">The file does not exist.</exception>
     public string RequiredInputFile(Option<string> option)
@@ -859,6 +878,12 @@ public partial class StandardInvocation
         _inputChecked = true;
         return Paths.ResolveInput(_parse.GetRequiredValue(argument));
     }
+
+    // The index of the token that names the option on the command line; -1 when it was omitted.
+    private int Position(Option option) =>
+        _parse.GetResult(option) is OptionResult { IdentifierToken: { } token }
+            ? _parse.Tokens.ToList().FindIndex(item => ReferenceEquals(item, token))
+            : -1;
 
     private string[] InputFileValues(Symbol parameter)
     {
