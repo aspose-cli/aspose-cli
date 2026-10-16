@@ -5,10 +5,6 @@
     {
       "op": "mail_merge",
       "path": "recipients.csv"
-    },
-    {
-      "op": "refresh_fields",
-      "what": "all"
     }
   ]
 }

@@ -1,3 +1,4 @@
+using System.Text.Json.Nodes;
 using Aspose.Words;
 using Aspose.Words.Fields;
 using Aspose.Words.Tables;
@@ -49,7 +50,13 @@ public sealed class WordsSkillExampleTests
     public void MailMergeExampleFillsBothRecipientsAndRemovesMergeFields()
     {
         using var workspace = new TempWorkspace();
-        string directory = InstalledSkillExample.Run(workspace, "aspose-cli-words", "mail-merge-letters").Directory;
+        InstalledSkillExampleResult run = InstalledSkillExample.Run(workspace, "aspose-cli-words", "mail-merge-letters");
+        string directory = run.Directory;
+        // Copied as it stands, the merge batch draws no warning that an op did nothing.
+        JsonNode edit = run.Outputs.Single(static output => output["applied"] is not null);
+        Assert.DoesNotContain(
+            (edit["warnings"]?.AsArray() ?? []).Select(static warning => warning!["code"]!.GetValue<string>()),
+            static code => code == "OP_NO_EFFECT");
         var template = new Document(Path.Combine(directory, "letter-template.docx"));
         var letters = new Document(Path.Combine(directory, "letters.docx"));
 
