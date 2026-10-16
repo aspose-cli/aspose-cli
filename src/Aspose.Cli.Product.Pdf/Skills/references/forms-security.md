@@ -115,6 +115,14 @@ draws no line. Lines are not wrapped: the type shrinks from 10 to 6 points so th
 longest line fits the rectangle's width, and each line takes 12 points of its
 height. Text that still does not fit is cut off and the result warns
 `SIGNATURE_TEXT_CLIPPED`; sign again with a larger `--rect` or shorter text.
+A signer name with East Asian characters is drawn in SimSun or Microsoft YaHei
+when `--reason`, `--location` and `--contact` have none; with neither font
+installed the name is left out and the result warns `SIGNATURE_TEXT_CLIPPED`.
+When one of them has East Asian text, the engine picks the font from it, and a
+Chinese name can still be left out without a warning: Japanese kanji such as
+`批准` give MS Gothic. A Korean signer name is left out in SimSun, also without
+a warning. Give `--reason` in simplified Chinese, or sign with a certificate
+whose subject name is in Latin letters, and review the signature.
 Keep `--reason`, `--location`, `--contact` and the certificate's subject name in
 ASCII: other text makes the engine embed a whole font into the file, even for an
 invisible signature, which for Chinese text adds megabytes; the result then warns

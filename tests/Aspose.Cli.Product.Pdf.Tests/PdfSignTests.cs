@@ -397,6 +397,72 @@ public sealed class PdfSignTests
         Assert.Contains("C=CN", subject.Text, StringComparison.Ordinal);
     }
 
+    /// <summary>
+    /// PDF-SIGN-CJK-SIGNER-FONT: a signer name in Chinese is drawn although the reason has no
+    /// Chinese text, which would otherwise leave the engine drawing in Arial, without the name.
+    /// </summary>
+    [Theory]
+    [InlineData("Approved")]
+    [InlineData("Café")]
+    public void Sign_ShowsAChineseSignerNameWhenNoOtherTextIsChinese(string reason)
+    {
+        using var fixture = new PdfEngineFixture();
+        string input = fixture.CreateDocument("unsigned.pdf", pages: 1);
+        string certificate = Certificate(fixture, "CN=张伟");
+        string output = fixture.File("signed.pdf");
+
+        PdfSignResult result = PdfSign.Run(fixture.Session, new PdfSignRequest
+        {
+            Input = input,
+            Output = TestOutput.At(output),
+            CertificatePath = certificate,
+            CertificatePassword = new Secret("pw"),
+            Visible = true,
+            Rect = new PdfSignatureRect(330, 600, 220, 80),
+            Reason = reason,
+        });
+
+        (_, List<Aspose.Pdf.Text.TextFragment> lines) = AppearanceLines(output);
+        Aspose.Pdf.Text.TextFragment subject = Assert.Single(lines, static line => line.Text.StartsWith("Digitally signed by", StringComparison.Ordinal));
+        Assert.Contains("张伟", subject.Text, StringComparison.Ordinal);
+        Assert.Contains(lines, line => line.Text == $"Reason: {reason}");
+        Assert.Contains(result.Warnings ?? [], static warning => warning.Code.Name == "SIGNATURE_FONT_EMBEDDED");
+        Assert.DoesNotContain(result.Warnings ?? [], static warning => warning.Code.Name == "SIGNATURE_TEXT_CLIPPED");
+    }
+
+    /// <summary>
+    /// PDF-SIGN-CJK-SIGNER-FONT: without a font that draws Chinese, a Chinese signer name cannot
+    /// be shown, and the clipped-text warning says so.
+    /// </summary>
+    [Fact]
+    public void Sign_WarnsThatAChineseSignerNameIsNotShownWithoutAChineseFont()
+    {
+        using var fixture = new PdfEngineFixture();
+        string input = fixture.CreateDocument("unsigned.pdf", pages: 1);
+        string certificate = Certificate(fixture, "CN=张伟");
+        List<string> probed = [];
+
+        PdfSignResult result = PdfSign.Sign(fixture.Session, new PdfSignRequest
+        {
+            Input = input,
+            Output = TestOutput.At(fixture.File("signed.pdf")),
+            CertificatePath = certificate,
+            CertificatePassword = new Secret("pw"),
+            Visible = true,
+            Rect = new PdfSignatureRect(330, 600, 220, 80),
+            Reason = "Approved",
+        }, family =>
+        {
+            probed.Add(family);
+            return false;
+        });
+
+        Assert.Equal(["SimSun", "Microsoft YaHei"], probed);
+        Warning clipped = Assert.Single(result.Warnings!, static warning => warning.Code.Name == "SIGNATURE_TEXT_CLIPPED");
+        Assert.Contains("signer name 'CN=张伟'", clipped.Message, StringComparison.Ordinal);
+        Assert.DoesNotContain("--rect", clipped.Hint, StringComparison.Ordinal);
+    }
+
     /// <summary>A PKCS#12 certificate with the password "pw" whose subject is <paramref name="subject"/>.</summary>
     private static string Certificate(PdfEngineFixture fixture, string subject)
     {
