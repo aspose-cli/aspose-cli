@@ -213,7 +213,7 @@ public sealed partial class KnownViolationsTests
     [Fact]
     public void EveryNumberedContractRuleHasCases()
     {
-        string[] numbered = [.. Enumerable.Range(1, 39).Select(static number => $"C-R{number:00}")];
+        string[] numbered = [.. Enumerable.Range(1, 40).Select(static number => $"C-R{number:00}")];
         // A rule whose cases another generator owns (C-R07: SameNameOptions) has no entry of its own.
         string[] registered = [.. ContractRules.All.Select(static rule => rule.Id)];
         Assert.Equal(numbered.Intersect(registered), registered);
