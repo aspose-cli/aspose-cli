@@ -70,8 +70,11 @@ data-label text. A picture has no text, so a text style on it fails with `OPS_IN
   own line; lines are separated by line feeds.
 - `replace_text` matches within one paragraph at a time, in shapes and speaker notes. Only the
   matched characters change: the replacement takes the formatting of the first matched
-  character, and other runs keep theirs. In evaluation mode a paragraph that evaluation mode
-  cut short is left as it is, and the result warns `EVALUATION_INPUT_TRUNCATED`.
+  character, and other runs keep theirs. Its `itemsAffected` counts the shapes and notes whose
+  text changed, not the replacements made in them. To check the replacements, run the edit
+  with `--verify`, which compares how often the find text and the replacement occur in the
+  output with what the operation did. In evaluation mode a paragraph that evaluation mode cut
+  short is left as it is, and the result warns `EVALUATION_INPUT_TRUNCATED`.
 - `set_notes` replaces speaker-note text. `inspect --detail notes` reports only presence and
   character counts; read note text with `slides read --notes` or `extract --what notes`.
 - `set_footer` uses the layout's own footer, number and date placeholders; their position and
