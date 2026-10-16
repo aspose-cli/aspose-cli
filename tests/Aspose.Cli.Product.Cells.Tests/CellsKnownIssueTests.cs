@@ -301,6 +301,130 @@ public sealed class CellsKnownIssueTests
             $"deleting row 10 of C2:C10 left the validation ending at row {area.EndRow + 1}");
     }
 
+    /// <summary>
+    /// A pivot with a column field and two value fields, the values in the column area: the
+    /// column item label above the value captions is rendered further right than the same text in
+    /// a plain cell of the same auto-fitted width, and cut at the column edge.
+    /// </summary>
+    [LicensedFact]
+    public void PivotColumnItemLabels_RenderAnIndentAutoFitLeavesOut()
+    {
+        Requires.Windows();
+        using var fixture = new CellsFixture();
+        _ = fixture.LicenseState;
+        using var workbook = new Workbook();
+        Style normal = workbook.DefaultStyle;
+        normal.Font.Name = "Arial";
+        normal.Font.Size = 10;
+        workbook.DefaultStyle = normal;
+        Worksheet data = workbook.Worksheets[0];
+        data.Name = "Src";
+        object[][] rows = [["Region", "Product", "Amount", "Qty"], ["East", "Laptop computer", 10, 1], ["West", "Monitor", 20, 2]];
+        for (int row = 0; row < rows.Length; row++)
+        {
+            for (int column = 0; column < 4; column++)
+            {
+                data.Cells[row, column].PutValue(rows[row][column]);
+            }
+        }
+
+        Worksheet sheet = workbook.Worksheets.Add("Pivot");
+        Aspose.Cells.Pivot.PivotTable pivot = sheet.PivotTables[sheet.PivotTables.Add("=Src!A1:D3", "A3", "P")];
+        pivot.AddFieldToArea(Aspose.Cells.Pivot.PivotFieldType.Row, "Region");
+        pivot.AddFieldToArea(Aspose.Cells.Pivot.PivotFieldType.Column, "Product");
+        pivot.AddFieldToArea(Aspose.Cells.Pivot.PivotFieldType.Data, "Amount");
+        pivot.AddFieldToArea(Aspose.Cells.Pivot.PivotFieldType.Data, "Qty");
+        pivot.AddFieldToArea(Aspose.Cells.Pivot.PivotFieldType.Column, pivot.ValuesField);
+        pivot.CalculateData();
+        sheet.AutoFitColumns();
+        Cell label = sheet.Cells.Cast<Cell>().First(static cell => cell.StringValue == "Laptop computer");
+
+        Worksheet plain = workbook.Worksheets.Add("Plain");
+        plain.Cells[label.Row, label.Column].PutValue(label.StringValue);
+        plain.AutoFitColumns();
+        int pivotWidth = sheet.Cells.GetColumnWidthPixel(label.Column);
+        int plainWidth = plain.Cells.GetColumnWidthPixel(label.Column);
+        (int Left, int Right) inPivot = Ink(sheet, label.Name, "pivot");
+        (int Left, int Right) inPlain = Ink(plain, label.Name, "plain");
+
+        KnownIssue.Reproduces(
+            "CELLS-PIVOT-LABEL-INDENT",
+            pivotWidth == plainWidth && inPivot.Left - inPlain.Left >= 10
+                && inPivot.Right - inPivot.Left < inPlain.Right - inPlain.Left - 5,
+            $"auto-fitted to {pivotWidth}px in the pivot and {plainWidth}px in a plain cell, the label's ink spans "
+            + $"{inPivot.Left}..{inPivot.Right} in the pivot and {inPlain.Left}..{inPlain.Right} in the plain cell");
+
+        (int Left, int Right) Ink(Worksheet rendered, string cell, string name)
+        {
+            rendered.PageSetup.PrintArea = cell;
+            string path = fixture.Temp.File($"pivot-label-{name}.png");
+            new Aspose.Cells.Rendering.SheetRender(rendered, new Aspose.Cells.Rendering.ImageOrPrintOptions
+            {
+                ImageType = Aspose.Cells.Drawing.ImageType.Png,
+                OnePagePerSheet = true,
+                OnlyArea = true,
+            }).ToImage(0, path);
+            using SkiaSharp.SKBitmap image = SkiaSharp.SKBitmap.Decode(path);
+            int left = int.MaxValue;
+            int right = -1;
+            SkiaSharp.SKColor[] pixels = image.Pixels;
+            for (int pixel = 0; pixel < pixels.Length; pixel++)
+            {
+                SkiaSharp.SKColor color = pixels[pixel];
+                // Text only: the pivot's cell borders are light grey.
+                if (color.Red < 100 && color.Green < 100 && color.Blue < 100)
+                {
+                    left = Math.Min(left, pixel % image.Width);
+                    right = Math.Max(right, pixel % image.Width);
+                }
+            }
+            return (left, right);
+        }
+    }
+
+    /// <summary>
+    /// A formula that names the destination workbook's own file: set directly it becomes a
+    /// reference inside the workbook, but copied in from another workbook it keeps an external
+    /// link to the destination itself, which reads as 0 once calculated.
+    /// </summary>
+    [LicensedFact]
+    public void RangeCopy_KeepsALinkToTheDestinationWorkbookItself()
+    {
+        using var fixture = new CellsFixture();
+        _ = fixture.LicenseState;
+        string budgetPath = fixture.Temp.File(Path.Combine("self", "budget.xlsx"));
+        string feedPath = fixture.Temp.File(Path.Combine("self", "feed.xlsx"));
+        Directory.CreateDirectory(Path.GetDirectoryName(budgetPath)!);
+        const string formula = "='[budget.xlsx]Budget'!$D$6";
+        using (var created = new Workbook())
+        {
+            created.Worksheets[0].Name = "Budget";
+            created.Worksheets[0].Cells["D6"].PutValue(305170);
+            created.Save(budgetPath, SaveFormat.Xlsx);
+        }
+        using (var created = new Workbook())
+        {
+            created.Worksheets[0].Cells["B1"].Formula = formula;
+            created.Save(feedPath, SaveFormat.Xlsx);
+        }
+
+        using var feed = new Workbook(feedPath);
+        using var budget = new Workbook(budgetPath);
+        Aspose.Cells.Cells cells = budget.Worksheets[0].Cells;
+        cells["B20"].Formula = formula;
+        cells.CreateRange("B9").Copy(feed.Worksheets[0].Cells.CreateRange("B1"), new PasteOptions { PasteType = PasteType.All });
+        budget.CalculateFormula();
+        string[] links = [.. budget.Worksheets.ExternalLinks.Cast<ExternalLink>().Select(static link => link.DataSource)];
+
+        KnownIssue.Reproduces(
+            "CELLS-COPY-SELF-LINK",
+            cells["B20"].Formula == "=Budget!$D$6" && cells["B9"].Formula.Contains('[', StringComparison.Ordinal)
+                && links.Any(static link => Path.GetFileName(link).Equals("budget.xlsx", StringComparison.OrdinalIgnoreCase))
+                && !Equals(cells["B9"].Value, 305170),
+            $"the set formula reads {cells["B20"].Formula}, the copied one {cells["B9"].Formula} = {cells["B9"].Value}, "
+            + $"with the links [{string.Join(", ", links)}]");
+    }
+
     private sealed class ChineseTotals : GlobalizationSettings
     {
         public ChineseTotals() => PivotSettings = new ChinesePivotTotals();
