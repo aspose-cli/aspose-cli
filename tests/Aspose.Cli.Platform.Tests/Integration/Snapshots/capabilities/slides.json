@@ -20,11 +20,8 @@
       "xps",
       "html",
       "html5",
-      "png",
-      "jpeg",
       "tiff",
       "gif",
-      "svg",
       "md"
     ],
     "renderFormats": [
@@ -259,7 +256,6 @@
         ],
         "aliases": [],
         "uses": [
-          "convert",
           "render"
         ],
         "operations": [],
@@ -352,7 +348,6 @@
         ],
         "aliases": [],
         "uses": [
-          "convert",
           "render"
         ],
         "operations": [],
@@ -577,7 +572,6 @@
         ],
         "aliases": [],
         "uses": [
-          "convert",
           "render"
         ],
         "operations": [],
@@ -729,7 +723,7 @@
             "allowedValues": [],
             "secret": false,
             "valueSource": "command-line",
-            "description": "Output path; defaults to a sibling using the target extension; several slides as images write <stem>.<slide>.<ext> beside it."
+            "description": "Output path; defaults to a sibling using the target extension."
           },
           {
             "name": "--overwrite",
@@ -827,21 +821,18 @@
               "gif",
               "html",
               "html5",
-              "jpeg",
               "md",
               "odp",
               "pdf",
-              "png",
               "ppt",
               "pptm",
               "pptx",
-              "svg",
               "tiff",
               "xps"
             ],
             "secret": false,
             "valueSource": "command-line",
-            "description": "Target presentation export format. PNG and JPEG use 192 DPI; use 'slides render' for custom dimensions. Default: the --out extension's format."
+            "description": "Target presentation export format; 'slides render' writes slide images. Default: the --out extension's format."
           }
         ],
         "arguments": [
@@ -2414,7 +2405,7 @@
     "v2/slides/convert-result": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
       "$id": "https://schemas.aspose.com/aspose-cli/v2/slides/convert-result.schema.json",
-      "description": "Result of slides convert: the files a presentation or its selected slides were converted to. PNG and JPEG use the default 192 DPI render geometry and pixel budgets.",
+      "description": "Result of slides convert: the file a presentation or its selected slides were converted to.",
       "type": "object",
       "required": [
         "schema",
@@ -2437,11 +2428,11 @@
           "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/input.schema.json"
         },
         "outputs": {
-          "description": "The written files: one per slide, each with its slide, for an image format; otherwise one, with any companion files the format needs.",
+          "description": "The written files: the one file the presentation was converted to, then any companion files its format needs, as HTML5's scripts.",
           "type": "array",
           "minItems": 1,
           "items": {
-            "$ref": "#/$defs/slidesSlideOutput"
+            "$ref": "#/$defs/slidesConvertOutput"
           }
         },
         "slides": {
@@ -2462,8 +2453,8 @@
         }
       },
       "$defs": {
-        "slidesSlideOutput": {
-          "description": "One file a command wrote, and the slide it holds when it holds one.",
+        "slidesConvertOutput": {
+          "description": "A file a presentation was converted to, or a companion file its format writes beside it.",
           "type": "object",
           "required": [
             "path",
@@ -2493,11 +2484,6 @@
             "encrypted": {
               "description": "true when the produced file is encrypted and opens only with its password; omitted when its format cannot carry a password.",
               "type": "boolean"
-            },
-            "slide": {
-              "description": "The 1-based slide the file holds; absent when it holds no single slide, as a whole-deck file or a companion file the format writes beside it does.",
-              "type": "integer",
-              "minimum": 1
             }
           }
         }
@@ -5857,7 +5843,7 @@
       },
       "$defs": {
         "slidesSlideOutput": {
-          "description": "One file a command wrote, and the slide it holds when it holds one.",
+          "description": "One slide image render wrote, and the slide it shows.",
           "type": "object",
           "required": [
             "path",
@@ -5889,7 +5875,7 @@
               "type": "boolean"
             },
             "slide": {
-              "description": "The 1-based slide the file holds; absent when it holds no single slide, as a whole-deck file or a companion file the format writes beside it does.",
+              "description": "The 1-based slide the image shows.",
               "type": "integer",
               "minimum": 1
             }

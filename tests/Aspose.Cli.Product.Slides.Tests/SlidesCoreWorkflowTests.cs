@@ -128,7 +128,7 @@ public sealed class SlidesCoreWorkflowTests
     [Theory]
     [InlineData("pptx")]
     [InlineData("pdf")]
-    [InlineData("svg")]
+    [InlineData("gif")]
     [InlineData("md")]
     public void Convert_ProducesOneRepresentativeFromEachExporterFamily(string format)
     {
@@ -145,7 +145,7 @@ public sealed class SlidesCoreWorkflowTests
                 Slides = PageRange.Parse("1"),
             }));
 
-        SlidesSlideOutput artifact = Assert.Single(result.Outputs);
+        SlidesConvertOutput artifact = Assert.Single(result.Outputs);
         Assert.Equal(format, artifact.Format);
         Assert.True(File.Exists(artifact.Path));
         Assert.True(artifact.SizeBytes > 0);

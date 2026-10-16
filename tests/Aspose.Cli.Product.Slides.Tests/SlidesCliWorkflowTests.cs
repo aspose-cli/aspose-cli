@@ -11,19 +11,19 @@ public sealed class SlidesCliWorkflowTests : IDisposable
     private readonly TempWorkspace _workspace = new();
 
     [Fact]
-    public void InspectQueryAndConvert_RoundTripsThroughTheBuiltCli()
+    public void InspectQueryAndRender_RoundTripsThroughTheBuiltCli()
     {
         CreateDeck(_workspace.File("deck.pptx"));
 
         // The three commands only read the deck, so they run at once.
-        CliResult info = null!, read = null!, convert = null!;
+        CliResult info = null!, read = null!, render = null!;
         Parallel.Invoke(
             () => info = _workspace.Run(
                 "slides", "inspect", "deck.pptx", "--output-format", "json"),
             () => read = _workspace.Run(
                 "slides", "read", "deck.pptx", "--slides", "1", "--output-format", "json"),
-            () => convert = _workspace.Run(
-                "slides", "convert", "deck.pptx", "--to", "png",
+            () => render = _workspace.Run(
+                "slides", "render", "deck.pptx",
                 "--slides", "1", "--out", "slide.png", "--output-format", "json"));
 
         Assert.True(info.ExitCode == 0, info.StdErr);
@@ -32,8 +32,8 @@ public sealed class SlidesCliWorkflowTests : IDisposable
         JsonArray slides = JsonNode.Parse(read.StdOut)!["slides"]!.AsArray();
         Assert.Single(slides);
         Assert.Equal(1, slides[0]!["slide"]!.GetValue<int>());
-        Assert.True(convert.ExitCode == 0, convert.StdErr);
-        Assert.Single(JsonNode.Parse(convert.StdOut)!["outputs"]!.AsArray());
+        Assert.True(render.ExitCode == 0, render.StdErr);
+        Assert.Single(JsonNode.Parse(render.StdOut)!["outputs"]!.AsArray());
         Assert.True(File.Exists(_workspace.File("slide.png")));
     }
 

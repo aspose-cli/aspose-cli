@@ -134,6 +134,9 @@ public sealed class MistakeRecoveryCliTests : IDisposable
     [Theory]
     [InlineData("cells convert a.xlsx --to png", "Run 'aspose-cli cells render a.xlsx --to png' for png.")]
     [InlineData("pdf convert a.pdf --to png", "Run 'aspose-cli pdf render a.pdf --to png' for png.")]
+    [InlineData("slides convert a.pptx --to png", "Run 'aspose-cli slides render a.pptx --to png' for png.")]
+    [InlineData("slides convert a.pptx --to jpeg", "Run 'aspose-cli slides render a.pptx --to jpeg' for jpeg.")]
+    [InlineData("slides convert a.pptx --to svg", "Run 'aspose-cli slides render a.pptx --to svg' for svg.")]
     public void TargetFormatAnotherCommandWrites_PointsToThatCommand(string commandLine, string producer)
     {
         File.WriteAllText(_workspace.File("a.xlsx"), "not a document");

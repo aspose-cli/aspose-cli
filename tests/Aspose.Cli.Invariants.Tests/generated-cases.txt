@@ -264,7 +264,6 @@ C-R12 | pdf render one unit
 C-R12 | pdf split --by pages --every 1
 C-R12 | pdf split --by pages --every 1 of ten pages
 C-R12 | review declared
-C-R12 | slides convert --to png
 C-R12 | slides render of every unit by default
 C-R12 | slides render one unit
 C-R12 | words render of every unit by default
@@ -4902,15 +4901,12 @@ output-reopens | slides convert pptm -> pptx
 output-reopens | slides convert pptx -> gif
 output-reopens | slides convert pptx -> html
 output-reopens | slides convert pptx -> html5
-output-reopens | slides convert pptx -> jpeg
 output-reopens | slides convert pptx -> md
 output-reopens | slides convert pptx -> odp
 output-reopens | slides convert pptx -> pdf
-output-reopens | slides convert pptx -> png
 output-reopens | slides convert pptx -> ppt
 output-reopens | slides convert pptx -> pptm
 output-reopens | slides convert pptx -> pptx
-output-reopens | slides convert pptx -> svg
 output-reopens | slides convert pptx -> tiff
 output-reopens | slides convert pptx -> xps
 output-reopens | slides render pptx -> jpeg
@@ -6221,16 +6217,13 @@ unwritable-output | pdf render --to jpeg --out out.xltx
 unwritable-output | slides convert --to gif --out out.xlsx
 unwritable-output | slides convert --to html --out out.xlsx
 unwritable-output | slides convert --to html5 --out out.xlsx
-unwritable-output | slides convert --to jpeg --out out.xlsx
 unwritable-output | slides convert --to md --out out.xlsx
 unwritable-output | slides convert --to odp --out out.xlsx
 unwritable-output | slides convert --to pdf --out out.xlsx
-unwritable-output | slides convert --to png --out out.xlsx
 unwritable-output | slides convert --to ppt --out out.xlsx
 unwritable-output | slides convert --to pptm --out out.xlsx
 unwritable-output | slides convert --to pptx --out out.doc
 unwritable-output | slides convert --to pptx --out out.xlsx
-unwritable-output | slides convert --to svg --out out.xlsx
 unwritable-output | slides convert --to tiff --out out.xlsx
 unwritable-output | slides convert --to xps --out out.xlsx
 unwritable-output | slides create out.xlsx

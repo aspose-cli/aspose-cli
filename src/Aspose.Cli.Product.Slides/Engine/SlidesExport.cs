@@ -24,7 +24,7 @@ internal static partial class SlidesExport
         IReadOnlyList<int>? slides = request.Slides is null
             ? null
             : ResolveSlideRange(request.Slides, presentation.Slides.Count);
-        int[] skipped = slides is null && !KeepsHiddenSlides(SlidesEngineFormats.IsSlideImage(formatId) ? null : SlidesEngineFormats.SaveFormatOf(formatId))
+        int[] skipped = slides is null && !KeepsHiddenSlides(SlidesEngineFormats.SaveFormatOf(formatId))
             ? [.. AllSlides(presentation.Slides.Count).Where(number => presentation.Slides[number - 1].Hidden)]
             : [];
         if (skipped.Length == presentation.Slides.Count)
@@ -33,7 +33,7 @@ internal static partial class SlidesExport
         }
 
         IReadOnlyList<int>? selection = skipped.Length == 0 ? slides : [.. AllSlides(presentation.Slides.Count).Except(skipped)];
-        IReadOnlyList<SlidesSlideOutput> outputs = ConvertOutputs(session, loaded, request, selection);
+        IReadOnlyList<SlidesConvertOutput> outputs = ConvertOutputs(session, loaded, request, selection);
         List<Warning> warnings = BuildConvertWarnings(loaded, formatId, skipped);
         return new SlidesConvertResult
         {
@@ -46,28 +46,17 @@ internal static partial class SlidesExport
     }
 
     // Whether a conversion to the format keeps the hidden slides: a presentation format carries
-    // them hidden, while an export, images included (null), shows only what a slide show shows.
-    private static bool KeepsHiddenSlides(SaveFormat? format) =>
+    // them hidden, while an export shows only what a slide show shows.
+    private static bool KeepsHiddenSlides(SaveFormat format) =>
         format is SaveFormat.Ppt or SaveFormat.Pptx or SaveFormat.Pptm or SaveFormat.Odp;
 
-    private static IReadOnlyList<SlidesSlideOutput> ConvertOutputs(
+    private static IReadOnlyList<SlidesConvertOutput> ConvertOutputs(
         SlidesSession session,
         LoadedPresentation loaded,
         SlidesConvertRequest request,
         IReadOnlyList<int>? slides)
     {
         Presentation presentation = loaded.Presentation;
-        if (SlidesEngineFormats.IsSlideImage(request.Output.Format.Id))
-        {
-            IReadOnlyList<int> selected = slides ?? AllSlides(presentation.Slides.Count);
-            return RenderImages(
-                    session,
-                    loaded,
-                    new SlidesRenderRequest { Input = request.Input, Output = request.Output },
-                    selected,
-                    "slides-convert");
-        }
-
         SaveFormat format = SlidesEngineFormats.SaveFormatOf(request.Output.Format.Id);
         // A format that can carry a password keeps the source's encryption unless --encrypt
         // replaces it; any other is written without it, which the write pipeline discloses.
@@ -107,7 +96,7 @@ internal static partial class SlidesExport
 
             loaded.Resources.ThrowIfFailed();
         }, pages: slides is not null && Exports(format) ? slides : null);
-        return [.. written.Select(static file => new SlidesSlideOutput(file))];
+        return [.. written.Select(static file => new SlidesConvertOutput(file))];
 
         void Save(string temp)
         {
@@ -329,7 +318,7 @@ internal static partial class SlidesExport
         LicenseState state = session.Outputs.License;
         using LoadedPresentation loaded = session.Loader.Open(request.Input, request.Password);
         IReadOnlyList<int> slides = RenderSelection.Resolve(request.Slides, loaded.Presentation.Slides.Count, SlidesDiagnostics.SlideNotFound, "slide");
-        IReadOnlyList<SlidesSlideOutput> outputs = RenderImages(session, loaded, request, slides, "slides-render");
+        IReadOnlyList<SlidesSlideOutput> outputs = RenderImages(session, loaded, request, slides);
         return new SlidesRenderResult
         {
             Input = Source(request.Input, loaded),
@@ -347,8 +336,7 @@ internal static partial class SlidesExport
         SlidesSession session,
         LoadedPresentation loaded,
         SlidesRenderRequest request,
-        IReadOnlyList<int> slides,
-        string transactionName)
+        IReadOnlyList<int> slides)
     {
         Presentation presentation = loaded.Presentation;
         float scale = RenderScale(presentation, request);
@@ -364,7 +352,7 @@ internal static partial class SlidesExport
         }
 
         string directory = request.Output.Directory;
-        using OutputSet<Presentation> transaction = session.Outputs.BeginSet([directory], transactionName);
+        using OutputSet<Presentation> transaction = session.Outputs.BeginSet([directory], "slides-render");
         var targets = new List<int>(slides.Count);
         foreach ((int number, string path) in slides.Zip(request.Output.Parts(slides)))
         {

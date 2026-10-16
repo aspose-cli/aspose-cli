@@ -25,12 +25,12 @@ public static class SlidesFormats
         FormatDescriptor.Routed("xps", FormatUse.Convert, null, 5, null, ".xps"),
         FormatDescriptor.Routed("html", FormatUse.Convert, null, 6, null, ".html", ".htm"),
         FormatDescriptor.Routed("html5", FormatUse.Convert, null, 7, null, ".html", ".htm") with { CompanionFiles = true },
-        FormatDescriptor.Routed("png", FormatUse.Convert | FormatUse.Render, null, 8, 0, ".png"),
-        FormatDescriptor.Routed("jpeg", FormatUse.Convert | FormatUse.Render, null, 9, 1, ".jpg", ".jpeg"),
-        FormatDescriptor.Routed("tiff", FormatUse.Convert, null, 10, null, ".tiff", ".tif") with { Image = true },
-        FormatDescriptor.Routed("gif", FormatUse.Convert, null, 11, null, ".gif") with { Image = true },
-        FormatDescriptor.Routed("svg", FormatUse.Convert | FormatUse.Render, null, 12, 2, ".svg"),
-        FormatDescriptor.Routed("md", FormatUse.Convert, null, 13, null, ".md", ".markdown"),
+        FormatDescriptor.Routed("png", FormatUse.Render, null, null, 0, ".png"),
+        FormatDescriptor.Routed("jpeg", FormatUse.Render, null, null, 1, ".jpg", ".jpeg"),
+        FormatDescriptor.Routed("tiff", FormatUse.Convert, null, 8, null, ".tiff", ".tif") with { Image = true },
+        FormatDescriptor.Routed("gif", FormatUse.Convert, null, 9, null, ".gif") with { Image = true },
+        FormatDescriptor.Routed("svg", FormatUse.Render, null, null, 2, ".svg"),
+        FormatDescriptor.Routed("md", FormatUse.Convert, null, 10, null, ".md", ".markdown"),
     ], SlidesFormatRecognition.Rules);
 
     public static IReadOnlyList<string> LoadIds { get; } =

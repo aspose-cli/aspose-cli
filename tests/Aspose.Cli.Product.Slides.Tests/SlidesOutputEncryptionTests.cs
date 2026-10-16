@@ -121,12 +121,12 @@ public sealed class SlidesOutputEncryptionTests : IDisposable
 
     [Category(TestCategory.Slow)]
     [Fact]
-    public void ConvertToImages_DisclosesNothing()
+    public void RenderToImages_DisclosesNothing()
     {
-        JsonNode result = Succeeds(Run("slides", "convert", "locked.pptx", "--password-env", "SLIDES_PASSWORD", "--to", "png", "--out", "slide.png"));
+        JsonNode result = Succeeds(Run("slides", "render", "locked.pptx", "--password-env", "SLIDES_PASSWORD", "--to", "png", "--out", "slide.png"));
 
         Assert.DoesNotContain("ENCRYPTION_REMOVED", Codes(result));
-        // Each image names its slide, as a render's does, and a PNG reports no encryption.
+        // Each image names its slide, and a PNG reports no encryption.
         JsonArray outputs = result["outputs"]!.AsArray();
         Assert.Equal(Enumerable.Range(1, outputs.Count), outputs.Select(static output => output!["slide"]!.GetValue<int>()));
         Assert.All(outputs, output => Assert.Null(output!["encrypted"]));
