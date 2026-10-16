@@ -103,6 +103,26 @@ public sealed class WordsOpContractTests
         Assert.Contains("position", error.Hint, StringComparison.Ordinal);
     }
 
+    /// <summary>
+    /// A highlight is a color of Word's palette, so a #RRGGBB highlight suggests the palette
+    /// color closest to it, the same one for an exact match, and the hint names the field that
+    /// takes any #RRGGBB.
+    /// </summary>
+    [Theory]
+    [InlineData("#FFFF00", "yellow")]
+    [InlineData("#FFC000", "yellow")]
+    [InlineData("#000081", "dark-blue")]
+    [InlineData("#c0c0c0", "light-gray")]
+    public void FormatText_HexHighlight_SuggestsTheClosestPaletteColorAndNamesColor(string highlight, string closest)
+    {
+        CliException error = Assert.Throws<CliException>(() => Parse(
+            $$"""{"ops":[{"op":"format_text","target":{"block":1},"highlight":"{{highlight}}"}]}"""));
+
+        Assert.Equal(ErrorCodes.OpsInvalid, error.Code);
+        Assert.Equal(closest, error.Details!["suggestions"]![0]!.GetValue<string>());
+        Assert.Contains("'color'", error.Hint, StringComparison.Ordinal);
+    }
+
     private static bool IsSchemaValid(string json)
     {
         using JsonDocument document = JsonDocument.Parse(json);

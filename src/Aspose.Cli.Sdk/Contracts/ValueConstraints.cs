@@ -418,6 +418,73 @@ public class AllowedValuesAttribute : ValueConstraintAttribute
     /// <summary>The allowed values as messages spell them, in published order.</summary>
     public IEnumerable<string> Spelled => Values.Select(Spell);
 
+    /// <summary>
+    /// For a <c>#RRGGBB</c> <paramref name="value"/>, the allowed value that names the closest
+    /// color of the standard 16-color palette, such as <c>yellow</c> for <c>#FFC000</c>; null
+    /// when the value is no <c>#RRGGBB</c> color or when the allowed values are not all names of
+    /// that palette, written in any case and with or without separators (<c>dark-blue</c>,
+    /// <c>darkBlue</c>), as Word's highlight colors are.
+    /// </summary>
+    /// <param name="value">The value the constraint rejected.</param>
+    public string? ClosestColor(string value)
+    {
+        ArgumentNullException.ThrowIfNull(value);
+        if (value is not { Length: 7 } || value[0] != '#'
+            || !int.TryParse(value.AsSpan(1), NumberStyles.AllowHexSpecifier, CultureInfo.InvariantCulture, out int rgb))
+        {
+            return null;
+        }
+
+        var named = new List<(string Name, int Rgb)>();
+        foreach (object allowed in Values)
+        {
+            if (allowed is not string name || !PaletteColors.TryGetValue(PaletteKey(name), out int color))
+            {
+                return null;
+            }
+
+            named.Add((name, color));
+        }
+
+        return named.Count == 0 ? null : named.MinBy(color => Distance(color.Rgb, rgb)).Name;
+    }
+
+    /// <summary>The colors of the standard 16-color palette by name, without separators, in any case.</summary>
+    private static readonly Dictionary<string, int> PaletteColors = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ["black"] = 0x000000,
+        ["white"] = 0xFFFFFF,
+        ["red"] = 0xFF0000,
+        ["green"] = 0x00FF00,
+        ["blue"] = 0x0000FF,
+        ["yellow"] = 0xFFFF00,
+        ["cyan"] = 0x00FFFF,
+        ["magenta"] = 0xFF00FF,
+        ["darkred"] = 0x800000,
+        ["darkgreen"] = 0x008000,
+        ["darkblue"] = 0x000080,
+        ["darkyellow"] = 0x808000,
+        ["darkcyan"] = 0x008080,
+        ["darkmagenta"] = 0x800080,
+        ["darkgray"] = 0x808080,
+        ["darkgrey"] = 0x808080,
+        ["lightgray"] = 0xC0C0C0,
+        ["lightgrey"] = 0xC0C0C0,
+    };
+
+    private static string PaletteKey(string name) =>
+        name.Replace("-", string.Empty, StringComparison.Ordinal).Replace("_", string.Empty, StringComparison.Ordinal)
+            .Replace(" ", string.Empty, StringComparison.Ordinal);
+
+    /// <summary>The squared distance of two colors in RGB space.</summary>
+    private static int Distance(int first, int second)
+    {
+        int red = ((first >> 16) & 0xFF) - ((second >> 16) & 0xFF);
+        int green = ((first >> 8) & 0xFF) - ((second >> 8) & 0xFF);
+        int blue = (first & 0xFF) - (second & 0xFF);
+        return (red * red) + (green * green) + (blue * blue);
+    }
+
     /// <inheritdoc />
     public override void Describe(JsonObject schema) =>
         schema["enum"] = new JsonArray([.. Values.Select(Json)]);
