@@ -116,26 +116,47 @@ public sealed class PdfHardeningTests
         Assert.Contains("empty string", error.Message, StringComparison.Ordinal);
         Assert.False(File.Exists(output));
     }
-    [Theory]
-    [InlineData("png")]
-    [InlineData("jpeg")]
-    [InlineData("tiff")]
-    public void ConvertToRaster_RejectsAnOversizedPageBeforePublishing(string format)
+    [Fact]
+    public void ConvertToTiff_RejectsAnOversizedPageBeforePublishing()
     {
         using var fixture = new PdfEngineFixture();
-        string input = fixture.File("poster.pdf");
-        using (var document = new Document())
-        {
-            // 200 inches square: 38400 pixels per side at the 192 DPI of convert.
-            document.Pages.Add().SetPageSize(14_400, 14_400);
-            document.Save(input);
-        }
+        string input = Poster(fixture);
 
-        string output = fixture.File("poster" + PdfFormats.Definitions.ExtensionFor(format));
-        CliException error = Assert.Throws<CliException>(() => PdfConvert.Run(fixture.Session, new PdfConvertRequest { Input = input, Output = TestOutput.At(output, format: format) }));
+        string output = fixture.File("poster.tiff");
+        CliException error = Assert.Throws<CliException>(() => PdfConvert.Run(fixture.Session, new PdfConvertRequest { Input = input, Output = TestOutput.At(output, format: "tiff") }));
 
         Assert.Equal(ErrorCodes.RenderTooLarge, error.Code);
         Assert.False(File.Exists(output));
+    }
+
+    [Theory]
+    [InlineData("png")]
+    [InlineData("jpeg")]
+    public void RenderToRaster_RejectsAnOversizedPageBeforePublishing(string format)
+    {
+        using var fixture = new PdfEngineFixture();
+        string input = Poster(fixture);
+        string extension = PdfFormats.Definitions.ExtensionFor(format);
+
+        CliException error = Assert.Throws<CliException>(() => PdfRender.Run(fixture.Session, new PdfRenderRequest
+        {
+            Input = input,
+            Output = TestOutput.At(fixture.File("poster" + extension), format: format),
+            Dpi = 192,
+        }));
+
+        Assert.Equal(ErrorCodes.RenderTooLarge, error.Code);
+        Assert.Empty(Directory.GetFiles(fixture.Temp.Path, "*" + extension));
+    }
+
+    // 200 inches square: 38400 pixels per side at 192 DPI.
+    private static string Poster(PdfEngineFixture fixture)
+    {
+        string input = fixture.File("poster.pdf");
+        using var document = new Document();
+        document.Pages.Add().SetPageSize(14_400, 14_400);
+        document.Save(input);
+        return input;
     }
 
     [Fact]
