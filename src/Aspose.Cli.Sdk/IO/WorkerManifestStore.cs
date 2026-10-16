@@ -87,17 +87,23 @@ internal static class WorkerManifestStore
 
     private static void Validate(string root, WorkerOutputManifest manifest)
     {
-        if (manifest.Version != 5 || !manifest.Sealed || manifest.Entries is null || manifest.Directories is null
+        if (manifest.Version != 6 || !manifest.Sealed || manifest.Entries is null || manifest.Directories is null
             || manifest.Entries.Count > MaximumEntries || manifest.Directories.Count > MaximumDirectories)
         {
             throw new InvalidDataException("The worker manifest violates its bounded contract.");
         }
+        if (manifest.DirectoryOutput is null && manifest.DirectoryTransactionParent is not null)
+        { throw new InvalidDataException("A transaction parent needs a new-directory output."); }
         if (manifest.DirectoryOutput is { } output)
         {
             if (manifest.Entries.Count != 0 || manifest.Directories.Count != 0)
             { throw new InvalidDataException("A new-directory output cannot overlap another output set."); }
             NewDirectoryPublication.ValidateDescriptor(output);
             EnsureOutsideRoot(root, output.Target);
+            if (manifest.DirectoryTransactionParent is { } transactionParent
+                && (!Path.IsPathFullyQualified(transactionParent)
+                    || NewDirectoryPublication.Escapes(Path.GetRelativePath(transactionParent, Path.GetDirectoryName(output.Target)!))))
+            { throw new InvalidDataException("A directory transaction parent is not an ancestor of its target."); }
             if (!PathComparer.Equals(Path.GetDirectoryName(Path.GetDirectoryName(output.Staged)!), root)
                 || Path.GetFileName(output.Staged) != "directory")
             { throw new InvalidDataException("A staged directory is outside the worker layout."); }

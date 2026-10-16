@@ -17,6 +17,7 @@ public sealed class WorkerOutputSession
     private int _nextId;
     private bool _sealed;
     private NewDirectoryOutput? _directoryOutput;
+    private string? _directoryTransactionParent;
 
     public WorkerOutputSession(string root, string manifestPath)
     {
@@ -115,7 +116,7 @@ public sealed class WorkerOutputSession
         }
     }
 
-    internal void RegisterDirectory(NewDirectoryOutput output, OperationDeadline deadline)
+    internal void RegisterDirectory(NewDirectoryOutput output, string? transactionParent, OperationDeadline deadline)
     {
         lock (_gate)
         {
@@ -127,8 +128,10 @@ public sealed class WorkerOutputSession
                 || Path.GetFileName(output.Staged) != "directory")
             { throw new IOException("The directory candidate is outside its worker's storage."); }
             deadline.ThrowIfExpired("directory-handoff");
-            WorkerManifestStore.CheckCapacity(new WorkerOutputManifest { DirectoryOutput = output, Sealed = true });
+            WorkerManifestStore.CheckCapacity(new WorkerOutputManifest
+            { DirectoryOutput = output, DirectoryTransactionParent = transactionParent, Sealed = true });
             _directoryOutput = output;
+            _directoryTransactionParent = transactionParent;
         }
     }
     private static void AddDirectory(Dictionary<string, WorkerDirectoryEntry> directories, string target)
@@ -161,7 +164,10 @@ public sealed class WorkerOutputSession
     }
 
     private WorkerOutputManifest Snapshot() => new()
-    { Entries = _entries.ToArray(), Directories = _directories.Values.ToArray(), DirectoryOutput = _directoryOutput };
+    {
+        Entries = _entries.ToArray(), Directories = _directories.Values.ToArray(), DirectoryOutput = _directoryOutput,
+        DirectoryTransactionParent = _directoryTransactionParent,
+    };
 
     private void EnsureMutable()
     {
@@ -171,11 +177,14 @@ public sealed class WorkerOutputSession
 
 internal sealed record WorkerOutputManifest
 {
-    public int Version { get; init; } = 5;
+    public int Version { get; init; } = 6;
     public bool Sealed { get; init; }
     public IReadOnlyList<WorkerOutputEntry> Entries { get; init; } = [];
     public IReadOnlyList<WorkerDirectoryEntry> Directories { get; init; } = [];
     public NewDirectoryOutput? DirectoryOutput { get; init; }
+
+    /// <summary>Where the parent places the transaction of <see cref="DirectoryOutput"/> when not in the target's parent.</summary>
+    public string? DirectoryTransactionParent { get; init; }
 }
 
 internal sealed record WorkerOutputEntry

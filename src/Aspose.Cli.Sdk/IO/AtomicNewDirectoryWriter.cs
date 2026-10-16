@@ -24,6 +24,7 @@ public sealed class AtomicNewDirectoryWriter : IDisposable
     private readonly FilePhysicalIdentity? _anchorIdentity;
     private readonly PublicationJournal _journal;
     private readonly bool _replace;
+    private readonly string? _transactionParent;
     private NewDirectoryOutput? _output;
     private bool _completed;
     private bool _disposed;
@@ -37,11 +38,17 @@ public sealed class AtomicNewDirectoryWriter : IDisposable
     /// otherwise an existing target is refused with <c>OUTPUT_EXISTS</c>. A file at the target is
     /// refused either way.
     /// </param>
-    public AtomicNewDirectoryWriter(ResourceBudgetLedger budgets, string targetDirectory, string operation, bool replace = false)
-        : this(budgets, targetDirectory, operation, NoPublicationFaultInjector.Instance, replace) { }
+    /// <param name="transactionParent">
+    /// The directory that holds the publication's transaction: by default the target's parent, or
+    /// a farther ancestor of the target on the same volume, for a parent whose readers treat every
+    /// directory in it as content.
+    /// </param>
+    public AtomicNewDirectoryWriter(ResourceBudgetLedger budgets, string targetDirectory, string operation, bool replace = false,
+        string? transactionParent = null)
+        : this(budgets, targetDirectory, operation, NoPublicationFaultInjector.Instance, replace, transactionParent) { }
 
     internal AtomicNewDirectoryWriter(ResourceBudgetLedger budgets, string targetDirectory, string operation,
-        IPublicationFaultInjector faults, bool replace = false)
+        IPublicationFaultInjector faults, bool replace = false, string? transactionParent = null)
     {
         _budgets = budgets ?? throw new ArgumentNullException(nameof(budgets));
         ArgumentException.ThrowIfNullOrWhiteSpace(operation);
@@ -55,6 +62,7 @@ public sealed class AtomicNewDirectoryWriter : IDisposable
         else { NewDirectoryPublication.EnsureAbsent(TargetDirectory); }
         string parent = Path.GetDirectoryName(TargetDirectory)
             ?? throw CliErrors.OutputUnwritable(TargetDirectory, "the directory has no parent");
+        _transactionParent = transactionParent is null ? null : TransactionParent(parent, transactionParent);
         _anchor = parent;
         while (!Directory.Exists(_anchor)) { _anchor = Path.GetDirectoryName(_anchor)!; }
         _anchorIdentity = FilePublicationOwnedDelete.TryGetDirectoryIdentity(_anchor);
@@ -64,7 +72,7 @@ public sealed class AtomicNewDirectoryWriter : IDisposable
         if (budgets.OutputSession is null) { AtomicPublicationRecovery.RecoverPendingHierarchy(parent, budgets.Deadline); }
         _parents.Ensure(parent);
         _transaction = budgets.OutputSession?.CreateDirectory("directory")
-            ?? PublicationTransactionDirectory.Create(Path.Combine(parent,
+            ?? PublicationTransactionDirectory.Create(Path.Combine(_transactionParent ?? parent,
                 $".aspose-publication-{Environment.ProcessId}-{PublicationJournal.CurrentProcessStartUtcTicks}-{Guid.NewGuid():N}"));
         _transactionIdentity = FilePublicationOwnedDelete.TryGetDirectoryIdentity(_transaction);
         StagingDirectory = Directory.CreateDirectory(Path.Combine(_transaction, "directory")).FullName;
@@ -73,6 +81,20 @@ public sealed class AtomicNewDirectoryWriter : IDisposable
 
     public string TargetDirectory { get; }
     public string StagingDirectory { get; }
+
+    // An ancestor of the target's parent on the same volume, so the renames between it and the
+    // target stay on one volume and recovery, which scans the target's ancestors, finds it.
+    private static string TransactionParent(string parent, string transactionParent)
+    {
+        string full = Path.TrimEndingDirectorySeparator(Path.GetFullPath(transactionParent));
+        if (NewDirectoryPublication.Escapes(Path.GetRelativePath(full, parent))
+            || !string.Equals(Path.GetPathRoot(full), Path.GetPathRoot(parent), StringComparison.OrdinalIgnoreCase))
+        {
+            throw new ArgumentException("The transaction parent must be an ancestor of the target on its volume.", nameof(transactionParent));
+        }
+        OutputPathValidator.EnsureSafeDirectory(full);
+        return full;
+    }
 
     // Where a replaced directory waits, inside the transaction, until the replacement commits.
     private string PreviousDirectory => NewDirectoryPublication.PreviousPath(_transaction);
@@ -96,7 +118,7 @@ public sealed class AtomicNewDirectoryWriter : IDisposable
             _journal.EnsureLifecycleCapacity(JournalPath), "bytes", "directory-seal");
         if (_budgets.OutputSession is { } worker)
         {
-            worker.RegisterDirectory(_output, _budgets.Deadline);
+            worker.RegisterDirectory(_output, _transactionParent, _budgets.Deadline);
             _completed = true;
             return;
         }
@@ -346,7 +368,7 @@ internal static class NewDirectoryPublication
             && path.Split([Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar]).All(segment =>
                 segment.Length > 0 && segment is not "." and not ".." && !ExtractionPathValidator.IsUnsafeSegment(segment)));
 
-    private static bool Escapes(string relative) => Path.IsPathRooted(relative) || relative == ".."
+    internal static bool Escapes(string relative) => Path.IsPathRooted(relative) || relative == ".."
         || relative.StartsWith(".." + Path.DirectorySeparatorChar, StringComparison.Ordinal);
 
     internal static void EnsureAnchor(string anchor, FilePhysicalIdentity? identity)
@@ -449,12 +471,15 @@ internal static class NewDirectoryPublication
     {
         NewDirectoryOutput output = journal.DirectoryOutput!;
         ValidateDescriptor(output);
-        if (!Enum.IsDefined(journal.State) || journal.Entries.Count != 0 || !Comparer.Equals(Path.GetDirectoryName(output.Target), root)
+        // The transaction is in the target's parent or, when its writer chose one, a farther
+        // ancestor; recovery holds the parent's lease, as the writer did.
+        string parent = Path.GetDirectoryName(output.Target)!;
+        if (!Enum.IsDefined(journal.State) || journal.Entries.Count != 0 || Escapes(Path.GetRelativePath(root, parent))
             || !Comparer.Equals(output.Staged, Path.Combine(transaction, "directory")))
         { throw new InvalidDataException("The directory publication journal is outside its transaction."); }
         using PublicationDirectoryLease? owned = suppliedLease is null
-            ? PublicationDirectoryLease.Acquire(root, [root], deadline) : null;
-        if (!(suppliedLease ?? owned!).CoversDirectories([root])) { throw new PublicationLeaseExpansionException(); }
+            ? PublicationDirectoryLease.Acquire(parent, [parent], deadline) : null;
+        if (!(suppliedLease ?? owned!).CoversDirectories([parent])) { throw new PublicationLeaseExpansionException(); }
         NewDirectoryOutput current = PublicationJournal.Read(Path.Combine(transaction, AtomicPublicationPlan.JournalName), deadline: deadline).DirectoryOutput
             ?? throw new InvalidDataException("The directory publication journal changed.");
         if (!string.Equals(JsonSerializer.Serialize(output), JsonSerializer.Serialize(current), StringComparison.Ordinal))

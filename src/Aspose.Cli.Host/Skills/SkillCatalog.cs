@@ -5,7 +5,6 @@ using System.Text.Json;
 using Aspose.Cli.Sdk;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Errors;
-using Aspose.Cli.Host.LocalServices;
 using Aspose.Cli.Sdk.IO;
 
 namespace Aspose.Cli.Host.Skills;
@@ -77,20 +76,13 @@ internal sealed record BundledSkill(
 {
     private const string ManifestName = ".aspose-skill-manifest.json";
     private const string ManifestProductId = DistributionInfo.SkillManifestProductId;
-    private static readonly TimeSpan InstallLockTimeout = TimeSpan.FromSeconds(5);
 
     /// <summary>
-    /// Materialises the package into a staging tree beside the target, so the
-    /// publishing rename stays on one volume. The tree is scratch, not a published
-    /// output: <see cref="InstallInto"/> publishes it with a single directory rename. Writing it through the output publication
-    /// transaction would hand it to a supervising parent instead of to disk, leaving
-    /// the rename nothing to publish.
+    /// Materialises the package into the staging directory of the publication that
+    /// <see cref="InstallInto"/> commits, which accounts its bytes against the output budget.
     /// </summary>
-    private int ExtractTo(
-        ResourceBudgetLedger resourceBudgets,
-        string directory)
+    private int ExtractTo(string directory)
     {
-        ArgumentNullException.ThrowIfNull(resourceBudgets);
         ArgumentException.ThrowIfNullOrEmpty(directory);
         string prefix = $"skill/{Name}/";
         string root = Path.GetFullPath(directory);
@@ -117,28 +109,22 @@ internal sealed record BundledSkill(
                 relative,
                 content.Length,
                 Convert.ToHexString(SHA256.HashData(bytes)).ToLowerInvariant()));
-            Stage(resourceBudgets, root, relative, bytes);
+            Stage(root, relative, bytes);
         }
 
         byte[] manifest = InstallManifest(
             files,
             Convert.ToHexString(contentHash.GetHashAndReset()).ToLowerInvariant());
-        Stage(resourceBudgets, root, ManifestName, manifest);
+        Stage(root, ManifestName, manifest);
         return files.Count + 1;
     }
 
-    /// <summary>
-    /// Writes one staged file, consuming the invocation's output budget so the
-    /// extraction stays bounded, and refusing to follow a link out of the tree.
-    /// </summary>
+    /// <summary>Writes one staged file, refusing to follow a link out of the tree.</summary>
     private static void Stage(
-        ResourceBudgetLedger resourceBudgets,
         string root,
         string relative,
         ReadOnlySpan<byte> content)
     {
-        resourceBudgets.Consume(
-            ResourceBudgetKinds.OutputBytes, content.Length, "bytes", "skill-stage");
         string path = Path.Combine(root, relative.Replace('/', Path.DirectorySeparatorChar));
         Directory.CreateDirectory(Path.GetDirectoryName(path)!);
         EnsureNoReparsePoint(path);
@@ -214,110 +200,34 @@ internal sealed record BundledSkill(
         return target;
     }
 
+    /// <summary>
+    /// Publishes the Skill at <paramref name="directory"/>, replacing a Skill this CLI installed
+    /// there, as one directory publication: under <c>--timeout</c> the worker only stages it, and
+    /// a replacement that fails or is interrupted puts the installed Skill back.
+    /// </summary>
     public SkillInstallResult InstallInto(
         ResourceBudgetLedger resourceBudgets,
         string directory)
     {
         ArgumentNullException.ThrowIfNull(resourceBudgets);
-        ArgumentException.ThrowIfNullOrEmpty(directory);
-        string target = Path.GetFullPath(directory);
-        string parent = Path.GetDirectoryName(target)
-            ?? throw ManagedSkillConflict(target, "the target has no parent directory");
-        Directory.CreateDirectory(parent);
-        EnsureNoReparsePoint(parent);
-
-        // One resource-keyed interprocess lock per target. Its file lives in the
-        // private service lock directory and is never deleted, so two installers
-        // can never hold locks on different files for the same target.
-        LocalServiceOperationLock installLock;
-        try
-        {
-            installLock = LocalServiceOperationLock.Acquire("skill-install", LockKey(target), InstallLockTimeout);
-        }
-        catch (TimeoutException exception)
-        {
-            throw ManagedSkillConflict(
-                target,
-                "another Skill installation is already using this target",
-                exception);
-        }
-
-        // A host loads every directory under its Skills root, so the stage and the backup stay
-        // beside the root, on the same volume for the moves, where no host reads them as Skills.
-        string transactionParent = Path.GetDirectoryName(parent)
+        string target = CheckInstallTarget(directory);
+        // A host loads every directory under its Skills root, so the publication's transaction
+        // stays beside the root, on the same volume, where no host reads it as a Skill.
+        string transactionParent = Path.GetDirectoryName(Path.GetDirectoryName(target)!)
             ?? throw ManagedSkillConflict(target, "the Skills root has no parent directory for the installation's staging");
-        string transaction = Guid.NewGuid().ToString("N");
-        string stage = Path.Combine(transactionParent, $".aspose-skill-stage-{transaction}");
-        string backup = Path.Combine(transactionParent, $".aspose-skill-backup-{transaction}");
         int files;
-        bool oldMoved = false;
-        bool newPublished = false;
         try
         {
+            using var publication = new AtomicNewDirectoryWriter(
+                resourceBudgets, target, "skill-install", replace: true, transactionParent);
+            files = ExtractTo(publication.StagingDirectory);
+            ValidateManagedTarget(publication.StagingDirectory);
             ValidateExistingTarget(target);
-            files = ExtractTo(resourceBudgets, stage);
-            ValidateManagedTarget(stage);
-
-            if (Directory.Exists(target))
-            {
-                Directory.Move(target, backup);
-                oldMoved = true;
-            }
-            else if (File.Exists(target))
-            {
-                throw ManagedSkillConflict(target, "the target is an existing file");
-            }
-
-            Directory.Move(stage, target);
-            newPublished = true;
-            ValidateManagedTarget(target);
-
-            if (oldMoved)
-            {
-                ValidateExistingTarget(backup);
-                Directory.Delete(backup, recursive: true);
-                oldMoved = false;
-            }
+            publication.Commit();
         }
-        catch
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
         {
-            if (newPublished && Directory.Exists(target))
-            {
-                try
-                {
-                    ValidateManagedTarget(target);
-                    Directory.Move(target, stage);
-                    newPublished = false;
-                }
-                catch
-                {
-                    // Preserve both trees for manual recovery if the new tree changed externally.
-                }
-            }
-
-            if (oldMoved && !Directory.Exists(target) && Directory.Exists(backup))
-            {
-                ValidateExistingTarget(backup);
-                Directory.Move(backup, target);
-                oldMoved = false;
-            }
-            throw;
-        }
-        finally
-        {
-            installLock.Dispose();
-            if (Directory.Exists(stage))
-            {
-                try
-                {
-                    ValidateManagedTarget(stage);
-                    Directory.Delete(stage, recursive: true);
-                }
-                catch
-                {
-                    // A changed recovery tree is intentionally retained.
-                }
-            }
+            throw CliErrors.OutputUnwritable(target, "the Skill could not be installed", exception);
         }
 
         return new SkillInstallResult
@@ -661,9 +571,6 @@ internal sealed record BundledSkill(
         using FileStream input = File.OpenRead(path);
         return Convert.ToHexString(SHA256.HashData(input)).ToLowerInvariant();
     }
-
-    private static string LockKey(string target) =>
-        OperatingSystem.IsWindows() ? target.ToUpperInvariant() : target;
 
     private static void EnsureNoReparsePoint(string path)
     {

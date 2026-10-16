@@ -263,6 +263,46 @@ public sealed class WorkerOutputPublicationTests : IDisposable
         Assert.Equal("published", File.ReadAllText(target));
     }
 
+    [Theory]
+    [InlineData("not-an-ancestor")]
+    [InlineData("relative")]
+    [InlineData("without-a-directory-output")]
+    public void ReadAndValidate_RefusesAnAlteredDirectoryTransactionParent(string alteration)
+    {
+        string target = _temp.File(Path.Combine("root", "result"));
+        WorkerOutputManifest manifest;
+        if (alteration == "without-a-directory-output")
+        {
+            manifest = Manifest(Entry(_temp.File("report.txt"), "published")) with { DirectoryTransactionParent = _temp.Path };
+        }
+        else
+        {
+            var worker = new WorkerOutputSession(_workerRoot, ManifestPath);
+            using OperationDeadline deadline = OperationDeadline.Start(null);
+            using (var output = new AtomicNewDirectoryWriter(new ResourceBudgetLedger(deadline, outputSession: worker), target, "test",
+                transactionParent: _temp.Path))
+            {
+                File.WriteAllText(Path.Combine(output.StagingDirectory, "data.txt"), "candidate");
+                output.Commit();
+            }
+            worker.SealForPublication();
+            // The manifest the worker sealed is valid; only the alteration makes it invalid.
+            manifest = WorkerManifestStore.ReadAndValidate(ManifestPath);
+            Assert.Equal(_temp.Path, manifest.DirectoryTransactionParent);
+            manifest = manifest with
+            {
+                DirectoryTransactionParent = alteration == "relative" ? "root" : _temp.File("elsewhere"),
+            };
+        }
+        WorkerManifestStore.Write(ManifestPath, manifest);
+
+        CliException error = Assert.Throws<CliException>(() => WorkerManifestStore.ReadAndValidate(ManifestPath));
+
+        Assert.Equal(ErrorCodes.OutputUnwritable, error.Code);
+        Assert.Equal("worker-manifest", error.Details!["phase"]!.GetValue<string>());
+        Assert.False(Directory.Exists(target));
+    }
+
     private sealed class Callback(Action<PublicationFaultPoint> action) : IPublicationFaultInjector
     {
         public void Hit(PublicationFaultPoint point) => action(point);
