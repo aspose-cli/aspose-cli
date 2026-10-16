@@ -92,7 +92,7 @@ internal static class SlidesExport
                 // so only their evaluation marks are its own.
                 PublishedFile file = session.Outputs.Write(request.Output.Path, request.Output.Overwrite, presentation, temp =>
                 {
-                    presentation.Save(temp, [.. slides], format);
+                    SaveSlides(presentation, temp, slides, format);
                     loaded.Resources.ThrowIfFailed();
                 }, pages: slides, encrypted: encrypted);
                 return [new SlidesSlideOutput(FileObjects.Output(file, request.Output.Format, encrypted))];
@@ -116,13 +116,19 @@ internal static class SlidesExport
             if (slides is null)
             {
                 Encrypt(presentation, request.EncryptPassword);
+                if (format == SaveFormat.Md)
+                {
+                    SaveMarkdown(presentation, temp, null);
+                    return;
+                }
+
                 presentation.Save(temp, format);
                 return;
             }
 
             if (Exports(format))
             {
-                presentation.Save(temp, [.. slides], format);
+                SaveSlides(presentation, temp, slides, format);
                 return;
             }
 
@@ -131,6 +137,48 @@ internal static class SlidesExport
             RemoveUnselectedSlides(presentation, slides);
             Encrypt(presentation, request.EncryptPassword);
             presentation.Save(temp, format);
+        }
+    }
+
+    private static void SaveSlides(Presentation presentation, string temp, IReadOnlyList<int> slides, SaveFormat format)
+    {
+        if (format == SaveFormat.Md)
+        {
+            SaveMarkdown(presentation, temp, slides);
+            return;
+        }
+
+        presentation.Save(temp, [.. slides], format);
+    }
+
+    /// <summary>
+    /// Saves Markdown that starts each slide with a comment naming its number in the deck,
+    /// selected or not; a comment stays out of the rendered text and is not taken for the
+    /// slide's heading. The export puts a separator line before every slide's comment; the one
+    /// that would open the file goes, since many Markdown tools take a file that opens with
+    /// "---" for YAML front matter and hide the first slide's comment in it.
+    /// </summary>
+    private static void SaveMarkdown(Presentation presentation, string temp, IReadOnlyList<int>? slides)
+    {
+        var options = new MarkdownSaveOptions
+        {
+            ShowSlideNumber = true,
+            SlideNumberFormat = "<!-- slide {0} -->",
+        };
+        if (slides is null)
+        {
+            presentation.Save(temp, SaveFormat.Md, options);
+        }
+        else
+        {
+            presentation.Save(temp, [.. slides], SaveFormat.Md, options);
+        }
+
+        string markdown = File.ReadAllText(temp).TrimStart();
+        if (markdown.StartsWith("---", StringComparison.Ordinal))
+        {
+            int lineEnd = markdown.IndexOf('\n', StringComparison.Ordinal);
+            File.WriteAllText(temp, lineEnd < 0 ? string.Empty : markdown[(lineEnd + 1)..], new System.Text.UTF8Encoding(false));
         }
     }
 

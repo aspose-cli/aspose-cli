@@ -38,7 +38,8 @@ by row, and each chart's `chart` with its kind, title, categories and series val
 the names `insert_table`, `set_table_cell`, `insert_chart` and `set_chart_data` write; the
 read schema (`aspose-cli schema v2/slides/read-result`) describes every field. A Markdown
 conversion reads both back too, each table as a Markdown table and each chart as a table of
-its values:
+its values. Each slide starts with `<!-- slide N -->`, where N is the slide's number in the
+deck, also for a `--slides` selection:
 
 ```powershell
 aspose-cli slides convert deck.revised.pptx --to md --slides 4-6 --out deck.revised.md --output-format json
