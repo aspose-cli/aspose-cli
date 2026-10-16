@@ -92,7 +92,7 @@ public sealed class PublicationBoundaryTests
     public void UnfinishedWorkerCannotPublishEvenAfterAnOutputSetWasStaged()
     {
         using var temp = new TempDirectory();
-        string root = UserStorage.CreateTemporaryDirectory("worker");
+        string root = WorkerOutputSession.CreateRoot();
         try
         {
             string manifest = Path.Combine(root, WorkerOutputSession.ManifestName);
@@ -110,7 +110,7 @@ public sealed class PublicationBoundaryTests
     public void FailedWorkerBatchDoesNotRetainAnEarlierEntry()
     {
         using var temp = new TempDirectory();
-        string root = UserStorage.CreateTemporaryDirectory("worker");
+        string root = WorkerOutputSession.CreateRoot();
         try
         {
             string manifest = Path.Combine(root, WorkerOutputSession.ManifestName);
