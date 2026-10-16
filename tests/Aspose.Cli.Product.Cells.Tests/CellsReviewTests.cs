@@ -378,6 +378,39 @@ public sealed class CellsReviewTests
         Assert.Equal(4, pages[1].Pages);
     }
 
+    /// <summary>
+    /// A print area is excessive past both bounds its check states: 20 times the cells of the
+    /// populated content and 1000 cells, so one cell printed with 1000 cells is not, and with
+    /// 1010 is; the check's summary and the finding say both.
+    /// </summary>
+    [Fact]
+    public void Review_ReportsAPrintAreaPastBothItsBounds()
+    {
+        Requires.Windows();
+        using var fixture = new CellsFixture();
+
+        Assert.DoesNotContain(Review(fixture, OneCellPrinting(fixture, "A1:J100")),
+            static finding => finding.Code == "CELLS_PRINT_AREA_EXCESSIVE");
+        ReviewFinding excessive = Assert.Single(Review(fixture, OneCellPrinting(fixture, "A1:J101")),
+            static finding => finding.Code == "CELLS_PRINT_AREA_EXCESSIVE");
+        foreach (string text in new[] { CellsReviewChecks.PrintAreaExcessive.Summary, excessive.Message })
+        {
+            Assert.Contains("20 times", text, StringComparison.Ordinal);
+            Assert.Contains("1000 cells", text, StringComparison.Ordinal);
+        }
+    }
+
+    private static string OneCellPrinting(CellsFixture fixture, string printArea)
+    {
+        string path = fixture.Temp.File($"print-{printArea.Replace(':', '-')}.xlsx");
+        using var workbook = new Workbook();
+        Worksheet data = workbook.Worksheets[0];
+        data.Cells["A1"].PutValue("Total");
+        data.PageSetup.PrintArea = printArea;
+        workbook.Save(path);
+        return path;
+    }
+
     [Fact]
     public void Review_ReportsAChartThatPrintingSplitsAcrossPages()
     {

@@ -222,7 +222,7 @@
         {
           "code": "CELLS_PRINT_AREA_EXCESSIVE",
           "severity": "warning",
-          "summary": "A print area is more than 20 times the bounds of the populated content."
+          "summary": "A print area is more than 20 times the bounds of the populated content and more than 1000 cells."
         },
         {
           "code": "CELLS_PRINT_AREA_EXCLUDES_CHART",

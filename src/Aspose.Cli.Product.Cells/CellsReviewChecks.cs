@@ -1,3 +1,5 @@
+using Aspose.Cli.Product.Cells.Engine.Mapping;
+
 namespace Aspose.Cli.Product.Cells;
 
 /// <summary>Every check the Cells review can report; findings are built only from these.</summary>
@@ -71,7 +73,8 @@ internal static class CellsReviewChecks
     public static ReviewCheck PrintAreaExcessive { get; } = new(
         "CELLS_PRINT_AREA_EXCESSIVE",
         ReviewSeverities.Warning,
-        "A print area is more than 20 times the bounds of the populated content.");
+        $"A print area is more than {ReviewLayoutProjection.ExcessivePrintAreaContentFactor} times the bounds of the populated content "
+            + $"and more than {ReviewLayoutProjection.ExcessivePrintAreaMinimumCells} cells.");
 
     public static ReviewCheck PrintAreaExcludesChart { get; } = new(
         "CELLS_PRINT_AREA_EXCLUDES_CHART",
