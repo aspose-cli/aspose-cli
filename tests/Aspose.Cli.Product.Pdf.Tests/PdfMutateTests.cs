@@ -1654,6 +1654,43 @@ public sealed class PdfMutateTests
         Assert.False(File.Exists(fixture.File("choices.invalid.pdf")));
     }
 
+    /// <summary>
+    /// A push button holds no value: the engine would draw the value as its caption. A signature
+    /// field is filled by signing. Both refuse a value and point to the operation that fills them.
+    /// </summary>
+    [Theory]
+    [InlineData("photo_btn", "D:/inputs/stamp-a.png")]
+    [InlineData("photo_btn", null)]
+    [InlineData("approval", "Signed")]
+    public void SetFormField_OnAPushButtonOrASignatureField_IsRefusedAndNamesAddStampImage(string name, string? value)
+    {
+        using var fixture = new PdfEngineFixture();
+        string input = fixture.File("buttons.pdf");
+        using (var document = new Document())
+        {
+            Page page = document.Pages.Add();
+            document.Form.Add(new ButtonField(page, new Rectangle(72, 600, 200, 640)) { PartialName = "photo_btn" });
+            document.Form.Add(new SignatureField(page, new Rectangle(72, 500, 200, 540)) { PartialName = "approval" });
+            document.Save(input);
+        }
+
+        byte[] before = File.ReadAllBytes(input);
+        string output = fixture.File("buttons.invalid.pdf");
+        CliException error = Assert.Throws<CliException>(() => PdfEdit.Run(fixture.Session, new PdfEditRequest
+        {
+            Input = input,
+            Batch = new PdfOpsBatch { Ops = [new SetFormFieldOp { Name = name, Value = value }] },
+            Output = TestOutput.At(output),
+        }));
+
+        Assert.Equal(ErrorCodes.OpsInvalid, error.Code);
+        Assert.Contains($"'{name}'", error.Message, StringComparison.Ordinal);
+        Assert.Contains("add_stamp_image", error.Hint, StringComparison.Ordinal);
+        Assert.Contains("pdf inspect --detail forms", error.Hint, StringComparison.Ordinal);
+        Assert.False(File.Exists(output));
+        Assert.Equal(before, File.ReadAllBytes(input));
+    }
+
     [Fact]
     public void SetFormField_ClearsEveryFieldKindWithANullValue()
     {

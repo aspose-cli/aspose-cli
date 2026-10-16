@@ -29,8 +29,12 @@ first 500 fields by name; a `LIST_TRUNCATED` warning says when there are more.
 A field with `options` accepts only those values. A check box lists its states,
 `Off` first: set another state to check it and `Off` to clear it. A radio group
 is one field with the group's selection as its `value` and its buttons' values
-as its `options`; it has no `page` of its own. Any other value is refused. A `value` of `null` clears any field: a radio group selects no
+as its `options`; it has no `page` of its own. Any other value is refused. A `value` of `null` clears a field: a radio group selects no
 button, a check box is unchecked and any other field is emptied.
+A `button` or `signature` field holds no value, so `set_form_field` refuses it
+with `OPS_INVALID`. To put a picture where a form has a photo or image button,
+use `add_stamp_image` with that field's `page` and `rect` from
+`pdf inspect --detail forms`; a signature field is filled by `pdf sign`.
 Fields are counted by name: `fieldCount` of `pdf inspect --detail forms` and the
 count `review` reports take a radio group as one field.
 

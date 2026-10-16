@@ -698,7 +698,10 @@ public sealed record SetPageLabelsOp : PdfOp
     }
 }
 
-/// <summary>Sets the value of one form field, named by its full name.</summary>
+/// <summary>
+/// Sets the value of one form field, named by its full name. A push button or a signature field
+/// holds no value and is refused: place an image with add_stamp_image, and sign with 'aspose-cli pdf sign'.
+/// </summary>
 [Operation("set_form_field")]
 public sealed record SetFormFieldOp : PdfOp
 {
