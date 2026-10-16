@@ -434,12 +434,14 @@ internal static class NewDirectoryPublication
         ValidateTree(output.Staged, output.Tree, budgets.Deadline);
     }
 
+    // Deletes a candidate or replaced tree that the publication's transaction owns; a read-only
+    // file in it, admitted by the snapshot, goes too.
     internal static void DeleteTree(string root, DirectoryTreeSnapshot tree)
     {
         ValidateTree(root, tree);
         foreach (DirectoryOutputFile file in tree.Files)
         {
-            if (!FilePublicationOwnedDelete.TryDelete(Path.Combine(root, file.Path), file.Snapshot))
+            if (!FilePublicationOwnedDelete.TryDelete(Path.Combine(root, file.Path), file.Snapshot, clearReadOnly: true))
             { throw new IOException("A changed directory output file was preserved."); }
         }
         foreach (DirectoryOutputDirectory directory in tree.Directories.OrderByDescending(directory => directory.Path == "." ? -1 : directory.Path.Length))
