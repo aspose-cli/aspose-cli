@@ -103,7 +103,11 @@ public sealed partial class EvaluationOwnershipTests
     /// their source file relative to <c>src</c>. Each is a decision: the extraction writes only
     /// bytes the document stores, never bytes the engine produced, so evaluation mode adds nothing.
     /// </summary>
-    private static readonly string[] EmbeddedFileExtractions = ["Aspose.Cli.Product.Slides/Engine/SlidesExtract.cs"];
+    private static readonly string[] EmbeddedFileExtractions =
+    [
+        "Aspose.Cli.Product.Pdf/Engine/PdfExtract.cs",
+        "Aspose.Cli.Product.Slides/Engine/SlidesExtract.cs",
+    ];
 
     /// <summary>
     /// A product declares an extraction of embedded files only in an extraction it is listed for,

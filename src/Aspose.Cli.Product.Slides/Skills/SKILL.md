@@ -57,7 +57,9 @@ Details: [design system](references/design-system.md).
 ## Slides-specific rules
 
 - The license product id is `slides`: `aspose-cli license install Aspose.Slides.lic --product slides`.
-  Evaluation output other than Markdown is watermarked (`aspose-cli docs licensing`). Evaluation
+  Evaluation output other than Markdown is watermarked (`aspose-cli docs licensing`), except the
+  media `extract --what media` copies as the deck stores them, which carry no mark and no
+  `EVALUATION_MODE`. Evaluation
   mode reads text longer than five characters cut short, so reads, reviews and `extract` of text
   or notes warn `EVALUATION_INPUT_TRUNCATED`, and a Markdown conversion holds a truncation notice
   in place of the cut text, which its `EVALUATION_MODE` message says without naming that text;

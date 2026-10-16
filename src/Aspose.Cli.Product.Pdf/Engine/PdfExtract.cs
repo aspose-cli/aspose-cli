@@ -23,7 +23,9 @@ internal static class PdfExtract
         using LoadedPdf loaded = session.Loader.Open(filePath, request.Password);
         IReadOnlyList<int> pages = request.Pages?.Resolve(loaded.Document.Pages.Count)
             ?? Enumerable.Range(1, loaded.Document.Pages.Count).ToArray();
-        using ExtractionGuard guard = session.Outputs.BeginExtraction(request.Output.Path, request.Output.Overwrite);
+        // An attachment is copied as the PDF stores it, so it carries nothing evaluation mode adds.
+        using ExtractionGuard guard = session.Outputs.BeginExtraction(request.Output.Path, request.Output.Overwrite,
+            request.What == PdfExtractKinds.Attachments ? ExtractionContent.EmbeddedFiles : ExtractionContent.Derived);
         IReadOnlyList<(PublishedFile File, int? Page)> files = request.What switch
         {
             PdfExtractKinds.Images => ExtractImages(loaded.Document, pages, guard, session.Budgets),
