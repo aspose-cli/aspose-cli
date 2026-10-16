@@ -303,7 +303,9 @@ public abstract class OutputPipeline : ILicenseState
     /// the one place that translates an engine's evaluation exception; the error keeps it as its
     /// inner exception. Its hint offers a selection only when <paramref name="selection"/> names
     /// one the command takes over the limit's unit, which keeps the engine from reading the
-    /// parts it leaves out.
+    /// parts it leaves out. When the caller asked for evaluation mode, the hint of every
+    /// <c>EVALUATION_LIMIT</c>, the product's own refusals included, ends by saying how to
+    /// apply the configured license instead (<see cref="DropRequestedEvaluation"/>).
     /// </summary>
     /// <param name="run">The handler or view call.</param>
     /// <param name="selection">
@@ -317,15 +319,50 @@ public abstract class OutputPipeline : ILicenseState
         {
             return run();
         }
-        catch (Exception exception) when (exception is not CliException and not OperationCanceledException
+        catch (Exception exception) when (exception is not OperationCanceledException
             && EvaluationLimitOf(exception, selection) is { } limit)
         {
             throw limit;
         }
     }
 
+    /// <summary>
+    /// The sentence that ends the hint of an <c>EVALUATION_LIMIT</c> when the caller asked for
+    /// evaluation mode with <c>--license-mode evaluation</c>.
+    /// </summary>
+    internal const string DropRequestedEvaluation =
+        "Evaluation mode was requested: drop --license-mode evaluation to apply the configured license.";
+
+    /// <summary>
+    /// The <c>EVALUATION_LIMIT</c> error to report for <paramref name="exception"/>: the engine's
+    /// limit its profile recognizes, or a product's own refusal with the request named, or null
+    /// to let the exception through unchanged.
+    /// </summary>
+    private CliException? EvaluationLimitOf(Exception exception, Func<string, string?>? selection)
+    {
+        bool requested = _licenseGate.Resolution.Kind == LicenseSourceKind.EvaluationRequested;
+        CliException? limit = exception switch
+        {
+            CliException { Code: var code } refusal when code == ErrorCodes.EvaluationLimit => requested ? refusal : null,
+            CliException => null,
+            _ => EngineEvaluationLimitOf(exception, selection),
+        };
+        if (limit is null || !requested || limit.Hint?.EndsWith(DropRequestedEvaluation, StringComparison.Ordinal) == true)
+        {
+            return limit;
+        }
+
+        return CliException.Create(
+            limit.Code,
+            limit.Message,
+            limit.Hint is null ? DropRequestedEvaluation : $"{limit.Hint} {DropRequestedEvaluation}",
+            limit.Details,
+            limit.Docs,
+            limit.InnerException);
+    }
+
     /// <summary>The <c>EVALUATION_LIMIT</c> error for an engine exception, or null when it reports no evaluation limit.</summary>
-    private protected abstract CliException? EvaluationLimitOf(Exception exception, Func<string, string?>? selection);
+    private protected abstract CliException? EngineEvaluationLimitOf(Exception exception, Func<string, string?>? selection);
 
     /// <summary>Keeps the <c>EVALUATION_INPUT_TRUNCATED</c> warning, once, for <see cref="Disclose"/>.</summary>
     private protected void RecordInputTruncated(Warning warning)
@@ -515,7 +552,7 @@ public sealed class OutputPipeline<TDocument> : OutputPipeline
         }
     }
 
-    private protected override CliException? EvaluationLimitOf(Exception exception, Func<string, string?>? selection)
+    private protected override CliException? EngineEvaluationLimitOf(Exception exception, Func<string, string?>? selection)
     {
         if (_profile.RecognizeLimit(exception) is not { } limit || !IsEvaluation)
         {

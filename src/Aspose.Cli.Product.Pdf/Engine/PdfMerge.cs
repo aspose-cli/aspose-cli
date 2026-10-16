@@ -1,3 +1,4 @@
+using System.Text.Json.Nodes;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Licensing;
@@ -18,6 +19,11 @@ internal static class PdfMerge
         }
 
         LicenseState state = session.Outputs.License;
+        if (state == LicenseState.Evaluation)
+        {
+            RefuseMoreThanEvaluationReads(session, request);
+        }
+
         var inputs = new List<InputInfo>(request.InputPaths.Count);
         using var merged = new Document();
         int bookmarks = 0;
@@ -110,5 +116,34 @@ internal static class PdfMerge
             License = EnvelopeParts.License(state),
             Warnings = warnings.Count == 0 ? null : warnings,
         };
+    }
+
+    /// <summary>
+    /// Refuses, before the engine reads past them, inputs that hold more pages in total than
+    /// evaluation mode reads (<see cref="PdfEvaluation.VisiblePages"/>): the merged document
+    /// would hold them all. The error states the pages the inputs hold and offers a merge of
+    /// fewer; its details are those of the engine's own page limit.
+    /// </summary>
+    private static void RefuseMoreThanEvaluationReads(PdfSession session, PdfMergeRequest request)
+    {
+        int total = 0;
+        foreach (string path in request.InputPaths)
+        {
+            using LoadedPdf loaded = session.Loader.Open(path, request.Password);
+            total += loaded.Document.Pages.Count;
+        }
+
+        if (total <= PdfEvaluation.VisiblePages)
+        {
+            return;
+        }
+
+        const int limit = PdfEvaluation.VisiblePages;
+        IFormatProvider invariant = System.Globalization.CultureInfo.InvariantCulture;
+        throw CliErrors.EvaluationLimit(
+            string.Create(invariant, $"Aspose.PDF evaluation mode reads only the first {limit} pages of a document, and the inputs hold {total} pages in total, so the merge stopped and wrote nothing."),
+            "Aspose.PDF",
+            string.Create(invariant, $"merge inputs of at most {limit} pages in total; these hold {total} pages"),
+            new JsonObject { ["limit"] = PdfEvaluation.VisiblePages, ["unit"] = "pages" });
     }
 }
