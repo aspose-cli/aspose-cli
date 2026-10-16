@@ -364,7 +364,7 @@ public sealed class OperationCatalog<TOp>
     internal IEnumerable<string?> SecretVariables(TOp operation) =>
         DescriptorOf(operation).SecretVariables?.Invoke(operation) ?? [];
 
-    private JsonDocument ParseJson(string json, bool quotesContent)
+    private static JsonDocument ParseJson(string json, bool quotesContent)
     {
         try
         {
@@ -372,8 +372,44 @@ public sealed class OperationCatalog<TOp>
         }
         catch (JsonException exception)
         {
-            throw Invalid($"the document is not valid JSON{SyntaxError(exception, quotesContent)}");
+            throw OperationErrors.Invalid($"the document is not valid JSON{SyntaxError(exception, quotesContent)}", SyntaxHint(exception));
         }
+    }
+
+    /// <summary>
+    /// The hint for a document that is not JSON, which names no operation: fix the syntax where
+    /// the reason says, and, where a string holds a backslash JSON cannot hold, as a regular
+    /// expression often does, write the backslash as two.
+    /// </summary>
+    private static string SyntaxHint(JsonException exception) =>
+        exception.Message.Contains("escap", StringComparison.OrdinalIgnoreCase)
+            ? "Fix the JSON syntax at the line and byte the reason names: inside a JSON string a backslash is written \\\\, "
+                + "so the regular expression \\d is written \"\\\\d\" and \\+ is written \"\\\\+\"."
+            : TrailingComma(exception)
+                ? $"Fix the JSON syntax at the line and byte the reason names: {DeleteTrailingComma}."
+                : "Fix the JSON syntax at the line and byte the reason names.";
+
+    private const string DeleteTrailingComma = "delete the comma before the closing ']' or '}'";
+
+    private static bool TrailingComma(JsonException exception) =>
+        exception.Message.Contains("trailing comma", StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// The reader's explanation in the document's terms: a trailing comma says which comma to
+    /// delete, and no sentence speaks of the reader's own options or modes, which the caller
+    /// cannot change.
+    /// </summary>
+    private static string SyntaxReason(JsonException exception, string reason)
+    {
+        if (TrailingComma(exception))
+        {
+            return $"a comma ends a list or an object; {DeleteTrailingComma}";
+        }
+
+        string[] sentences = [.. reason.Split(". ", StringSplitOptions.RemoveEmptyEntries)
+            .Where(static sentence => !sentence.Contains("option", StringComparison.OrdinalIgnoreCase)
+                && !sentence.Contains("in this mode", StringComparison.OrdinalIgnoreCase))];
+        return sentences.Length == 0 ? "the JSON syntax is invalid" : string.Join(". ", sentences);
     }
 
     /// <summary>
@@ -389,7 +425,7 @@ public sealed class OperationCatalog<TOp>
         string position = exception is { LineNumber: long line, BytePositionInLine: long column }
             ? $" (line {line + 1}, byte {column + 1})"
             : string.Empty;
-        return quotesContent ? $": {reason}{position}" : position;
+        return quotesContent ? $": {SyntaxReason(exception, reason)}{position}" : position;
     }
 
     /// <summary>
