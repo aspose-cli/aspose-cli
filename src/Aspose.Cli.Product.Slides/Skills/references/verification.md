@@ -13,7 +13,8 @@ transitions, sections, document properties, the slide size, and for `replace_tex
 its find text and replacement occur in its scope. `format_shape`, `set_shape_bounds`,
 `set_background`, `delete_shape`, the inserted pictures, shapes, tables and charts,
 `set_table_cell` and `set_chart_data` are not read back: check them with the content reads and
-the review below. `checkedOps` lists only the operations whose effect was read back, and an
+the review below. `checkedOps` lists only the operations whose effect was read back, whether or not the output
+holds it (each effect it does not hold is an issue), and an
 operation a later one of the batch changed again is left out, except for the slide order and
 the sections: their expectations build on each other, so an earlier `insert_slide`,
 `import_slides`, `move_slide` or `insert_section` is checked with the latest one. An empty list with `ok: true`

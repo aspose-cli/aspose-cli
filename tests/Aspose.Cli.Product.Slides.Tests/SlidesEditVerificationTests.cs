@@ -72,7 +72,8 @@ public sealed class SlidesEditVerificationTests
         VerificationIssue issue = Assert.Single(facts.Issues);
         Assert.Equal("SLIDE_CONTENT_MISMATCH", issue.Code);
         Assert.Equal("slide 1", issue.Location);
-        Assert.DoesNotContain("title", facts.Checked);
+        // The title was read back and compared, so it counts as checked although it differs.
+        Assert.Contains("title", facts.Checked);
         SlidesEditResult failed = new()
         {
             Input = new InputInfo { Path = input, Format = "pptx", SizeBytes = 1, Fingerprint = new FileFingerprint { Sha256 = new string('0', 64) }, Encrypted = false },
@@ -81,6 +82,47 @@ public sealed class SlidesEditVerificationTests
             Verification = new SlidesEditVerification { Ok = false, Issues = facts.Issues, CheckedOps = [] },
         };
         Assert.True(failed.HasFailures);
+    }
+
+    [Fact]
+    public void Verify_CountsAHiddenSlideReadBackThatDiffersAsChecked()
+    {
+        using var fixture = new SlidesEngineFixture();
+        string input = Outline(fixture, "hidden.pptx");
+        using var edited = new Presentation(input);
+        using var output = new Presentation(input);
+        var operation = new SetSlideHiddenOp { Id = "hide", Slides = "1", Hidden = true };
+        SlidesMutationHandlers.ResolvedSlidesOp target = SlidesMutationHandlers.ResolveTarget(edited, operation);
+        var verifier = new SlidesEditVerifier(edited, _ => target, evaluation: fixture.LicenseState != LicenseState.Licensed);
+        edited.Slides[0].Hidden = true;
+
+        verifier.Record(operation, AppliedOperations.Changed(SlidesOp.Catalog, operation, 1));
+        // The output read back still shows the slide.
+        VerificationFacts facts = verifier.Verify(output);
+
+        Assert.Equal("SLIDE_CONTENT_MISMATCH", Assert.Single(facts.Issues).Code);
+        Assert.Contains("hide", facts.Checked);
+    }
+
+    [Fact]
+    public void Verify_LeavesAnOperationWithoutReadBackUnchecked_WithoutAnIssue()
+    {
+        using var fixture = new SlidesEngineFixture();
+        string input = fixture.CreatePresentation("unread.pptx", slides: 1);
+        string picture = fixture.File("unread.bmp");
+        File.WriteAllBytes(picture, Bitmap(0x40));
+
+        SlidesEditResult result = SlidesEdit.Run(fixture.Session, new SlidesEditRequest
+        {
+            Input = input,
+            Batch = new SlidesOpsBatch { Ops = [new SetBackgroundOp { Id = "background", Slides = "1", Path = picture }] },
+            Output = TestOutput.At(fixture.File("unread.out.pptx")),
+            Verify = true,
+        });
+
+        Assert.True(result.Verification!.Ok);
+        Assert.Empty(result.Verification.Issues);
+        Assert.DoesNotContain("background", result.Verification.CheckedOps);
     }
 
     [Fact]
