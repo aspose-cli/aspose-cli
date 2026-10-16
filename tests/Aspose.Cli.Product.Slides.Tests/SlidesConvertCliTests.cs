@@ -142,6 +142,25 @@ public sealed class SlidesConvertCliTests : IDisposable
     }
 
     /// <summary>
+    /// A Markdown conversion writes only its output: nothing appears in the working directory,
+    /// for every slide or for a selection.
+    /// </summary>
+    [Theory]
+    [InlineData(null)]
+    [InlineData("1")]
+    public void Markdown_WritesNothingIntoTheWorkingDirectory(string? slides)
+    {
+        Run("slides", "create", "deck.pptx", "--from-markdown", "deck.md");
+        Directory.CreateDirectory(_workspace.File("out"));
+        string[] before = [.. Directory.EnumerateFileSystemEntries(_workspace.Path).Order(StringComparer.Ordinal)];
+
+        Run(["slides", "convert", "deck.pptx", "--to", "md", "--out", Path.Combine("out", "deck.md"), .. slides is null ? Array.Empty<string>() : ["--slides", slides]]);
+
+        Assert.Equal(before, Directory.EnumerateFileSystemEntries(_workspace.Path).Order(StringComparer.Ordinal));
+        Assert.Equal([_workspace.File(Path.Combine("out", "deck.md"))], Directory.EnumerateFileSystemEntries(_workspace.File("out")));
+    }
+
+    /// <summary>
     /// Markdown keeps the bullets and levels a body placeholder inherits from its layout and
     /// master: a first-level item is a list item, and a second-level item one indented under it.
     /// </summary>

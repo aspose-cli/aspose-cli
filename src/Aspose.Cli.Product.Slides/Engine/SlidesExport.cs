@@ -197,18 +197,29 @@ internal static class SlidesExport
     /// </summary>
     private static void SaveMarkdown(Presentation presentation, string temp, IReadOnlyList<int>? slides)
     {
-        var options = new MarkdownSaveOptions
+        // The export makes its image folder under BasePath, the process's working directory
+        // unless set, even when it writes no image; a private folder keeps it out of there.
+        DirectoryInfo scratch = Directory.CreateTempSubdirectory("aspose-cli-md-");
+        try
         {
-            ShowSlideNumber = true,
-            SlideNumberFormat = "<!-- slide {0} -->",
-        };
-        if (slides is null)
-        {
-            presentation.Save(temp, SaveFormat.Md, options);
+            var options = new MarkdownSaveOptions
+            {
+                ShowSlideNumber = true,
+                SlideNumberFormat = "<!-- slide {0} -->",
+                BasePath = scratch.FullName,
+            };
+            if (slides is null)
+            {
+                presentation.Save(temp, SaveFormat.Md, options);
+            }
+            else
+            {
+                presentation.Save(temp, [.. slides], SaveFormat.Md, options);
+            }
         }
-        else
+        finally
         {
-            presentation.Save(temp, [.. slides], SaveFormat.Md, options);
+            scratch.Delete(recursive: true);
         }
 
         string markdown = File.ReadAllText(temp).TrimStart();
