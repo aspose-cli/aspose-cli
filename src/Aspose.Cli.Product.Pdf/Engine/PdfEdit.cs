@@ -40,9 +40,10 @@ internal static class PdfEdit
             session.Outputs.Decrypted();
         }
 
-        // PDF-ENCRYPTED-INFO-TEXT: document information set in this batch survives only an
-        // encryption applied to a reopened copy.
-        EncryptDocumentOp? encryptCopy = batch.Ops.Any(static op => op is SetPropertiesOp) ? model.Encryption : null;
+        // PDF-ENCRYPTED-INFO-TEXT: document information beyond Latin-1 set in this batch survives
+        // only an encryption applied to a reopened copy.
+        EncryptDocumentOp? encryptCopy = batch.Ops.Any(static op => op is SetPropertiesOp)
+            && PdfOutputEncryption.InformationBeyondLatin1(loaded.Document) ? model.Encryption : null;
         PdfNavigationCensus navigation = PdfNavigationCensus.Degraded(
             navigationBefore, PdfNavigationCensus.Unresolved(loaded.Document));
         Publication publication;

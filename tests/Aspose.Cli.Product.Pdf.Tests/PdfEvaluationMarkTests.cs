@@ -170,6 +170,72 @@ public sealed class PdfEvaluationMarkTests
         Assert.Contains("the evaluation notice '... Created with Aspose.PDF", disclosure.Message, StringComparison.Ordinal);
     }
 
+    /// <summary>
+    /// An evaluation edit that encrypts saves once, so its output carries one evaluation notice,
+    /// unless the document information holds text beyond Latin-1: that is encrypted on a copy
+    /// reopened from a first save (PDF-ENCRYPTED-INFO-TEXT), and still reads back as written.
+    /// </summary>
+    [Category(TestCategory.Slow)]
+    [Fact]
+    public void EvaluationEditThatEncrypts_PrintsOneNoticeUnlessTheInformationIsBeyondLatin1()
+    {
+        using var fixture = new PdfEngineFixture();
+        using var workspace = new TempWorkspace();
+        string input = fixture.CreateRawDocument("plain.pdf", pages: 1);
+        var passwords = new Dictionary<string, string?>(StringComparer.Ordinal) { ["PDF_OWNER"] = "owner-secret", ["PDF_NEW"] = "new-secret" };
+        const string encrypt = """{"op":"encrypt_document","ownerPasswordEnv":"PDF_OWNER","userPasswordEnv":"PDF_NEW"}""";
+        File.WriteAllText(workspace.File("latin.json"), $$"""{"ops":[{"op":"set_properties","title":"Quarterly Résumé"},{{encrypt}}]}""");
+        File.WriteAllText(workspace.File("rotate.json"), """{"ops":[{"op":"rotate_pages","pages":"1","rotation":90}]}""");
+        File.WriteAllText(workspace.File("chinese.json"), $$"""{"ops":[{"op":"set_properties","title":"采购申请"},{{encrypt}}]}""");
+        File.WriteAllText(workspace.File("chinese-title.json"), """{"ops":[{"op":"set_properties","title":"采购申请"}]}""");
+
+        CliResult latin = workspace.RunWithEnv(passwords,
+            ["pdf", "edit", input, "--ops", "latin.json", "--out", "latin.pdf", "--license-mode", "evaluation", "--output-format", "json"]);
+        CliResult rotated = workspace.RunWithEnv(passwords,
+            ["pdf", "edit", input, "--ops", "rotate.json", "--out", "rotated.pdf", "--encrypt-env", "PDF_NEW", "--license-mode", "evaluation", "--output-format", "json"]);
+        CliResult chinese = workspace.RunWithEnv(passwords,
+            ["pdf", "edit", input, "--ops", "chinese.json", "--out", "chinese.pdf", "--license-mode", "evaluation", "--output-format", "json"]);
+
+        Assert.True(latin.ExitCode == 0, latin.StdErr);
+        Assert.True(rotated.ExitCode == 0, rotated.StdErr);
+        Assert.True(chinese.ExitCode == 0, chinese.StdErr);
+        Assert.Equal(1, Notices(workspace.File("latin.pdf"), "new-secret"));
+        Assert.Equal(1, Notices(workspace.File("rotated.pdf"), "new-secret"));
+        Assert.Equal(2, Notices(workspace.File("chinese.pdf"), "new-secret"));
+        using var reopened = new Document(workspace.File("chinese.pdf"), "new-secret");
+        Assert.Equal("采购申请", reopened.Info.Title);
+        using var latinReopened = new Document(workspace.File("latin.pdf"), "new-secret");
+        Assert.Equal("Quarterly Résumé", latinReopened.Info.Title);
+
+        // An input that already has a Chinese title: encrypt_document alone saves once, while
+        // --encrypt-env encrypts a saved copy that keeps the title.
+        File.WriteAllText(workspace.File("encrypt.json"), $$"""{"ops":[{{encrypt}}]}""");
+        CliResult titled = workspace.RunWithEnv(passwords,
+            ["pdf", "edit", input, "--ops", "chinese-title.json", "--out", "titled.pdf", "--output-format", "json"]);
+        Assert.True(titled.ExitCode == 0, titled.StdErr);
+        int before = Notices(workspace.File("titled.pdf"), password: null);
+        CliResult encrypted = workspace.RunWithEnv(passwords,
+            ["pdf", "edit", "titled.pdf", "--ops", "encrypt.json", "--out", "titled.encrypted.pdf", "--license-mode", "evaluation", "--output-format", "json"]);
+        CliResult protectedCopy = workspace.RunWithEnv(passwords,
+            ["pdf", "edit", "titled.pdf", "--ops", "rotate.json", "--out", "titled.protected.pdf", "--encrypt-env", "PDF_NEW", "--license-mode", "evaluation", "--output-format", "json"]);
+        Assert.True(encrypted.ExitCode == 0, encrypted.StdErr);
+        Assert.True(protectedCopy.ExitCode == 0, protectedCopy.StdErr);
+        Assert.Equal(before + 1, Notices(workspace.File("titled.encrypted.pdf"), "new-secret"));
+        Assert.Equal(before + 2, Notices(workspace.File("titled.protected.pdf"), "new-secret"));
+        using var protectedReopened = new Document(workspace.File("titled.protected.pdf"), "new-secret");
+        Assert.Equal("采购申请", protectedReopened.Info.Title);
+    }
+
+    /// <summary>How many evaluation notices the first page of a file shows.</summary>
+    private static int Notices(string path, string? password)
+    {
+        using var document = password is null ? new Document(path) : new Document(path, password);
+        // Each save prints the notice at the same place, so the copies are counted as fragments.
+        var absorber = new TextFragmentAbsorber("Evaluation Only");
+        document.Pages[1].Accept(absorber);
+        return absorber.TextFragments.Count;
+    }
+
     private static Warning Disclosure(ResultEnvelope result) =>
         Assert.Single(result.Warnings!, static warning => warning.Code == WarningCodes.EvaluationInputMarked);
 
