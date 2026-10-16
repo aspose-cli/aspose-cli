@@ -4,7 +4,9 @@
 
 `pdf convert --to pdfa-1b|pdfa-2b|pdfa-3b` produces an archival candidate; then
 run `pdf validate --profile` on that output and require `valid: true`, because a
-completed validation can return `valid: false`.
+completed validation can return `valid: false`. Name the profile with `--to`:
+a `.pdf` output alone chooses none, so a convert to a `.pdf` `--out` without
+`--to` is a `USAGE_ERROR` that lists the profiles.
 
 ```powershell
 aspose-cli pdf convert report.pdf --to pdfa-2b --out report.archive.pdf --output-format json

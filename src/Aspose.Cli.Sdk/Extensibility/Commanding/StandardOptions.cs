@@ -78,14 +78,22 @@ public sealed class TargetFormat
     /// <summary>
     /// An optional <c>--to</c> among the product's convert formats; when it is omitted, the
     /// <c>--out</c> extension names the format, and a convert that names neither is a usage
-    /// error. Its help ends with the standard wording of that default.
+    /// error. Its help ends with the standard wording of that default, naming the formats that
+    /// only <c>--to</c> chooses (<see cref="FormatDescriptor.ChosenByExtension"/>).
     /// </summary>
     /// <param name="description">Help for <c>--to</c>, without its default.</param>
     /// <param name="formats">The product's format declarations; those with the convert use are offered.</param>
     public static TargetFormat Convert(string description, IReadOnlyList<FormatDescriptor> formats)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(description);
-        return new(FormatUse.Convert, $"{description} Default: the {StandardOptionNames.Out} extension's format.",
+        ArgumentNullException.ThrowIfNull(formats);
+        string[] named = [.. formats
+            .Where(static format => format.Uses.HasFlag(FormatUse.Convert) && !format.ChosenByExtension)
+            .Select(static format => format.Id)];
+        string except = named.Length > 0
+            ? $", except {string.Join(", ", named)}, which only {StandardOptionNames.To} chooses"
+            : string.Empty;
+        return new(FormatUse.Convert, $"{description} Default: the {StandardOptionNames.Out} extension's format{except}.",
             formats, defaultFormat: null, required: false);
     }
 

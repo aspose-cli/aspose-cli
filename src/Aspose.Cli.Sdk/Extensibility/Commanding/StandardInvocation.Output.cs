@@ -16,13 +16,15 @@ public partial class StandardInvocation
     /// <summary>
     /// The file the command publishes, resolved once. Its format is the one <c>--to</c> names
     /// when the command has a <c>--to</c>; otherwise the format among those the command writes
-    /// that the named output's extension declares; otherwise the edited input's format, the
-    /// <c>--to</c> default or the command's only format. The output's extension must be one of
-    /// that format's: a missing or foreign extension is refused before any input is read.
+    /// that the named output's extension chooses (<see cref="FormatDescriptor.ChosenByExtension"/>);
+    /// otherwise the edited input's format, the <c>--to</c> default or the command's only format.
+    /// The output's extension must be one of that format's: a missing or foreign extension is
+    /// refused before any input is read.
     /// </summary>
     /// <exception cref="CliException">
     /// <c>OPTION_INVALID</c> for an output that names an input, a contradictory edit mode or
-    /// a format nothing names; <c>USAGE_ERROR</c> for an extension that is not the format's;
+    /// a format nothing names; <c>USAGE_ERROR</c> for an extension that is not the format's or
+    /// that only formats <c>--to</c> alone chooses declare;
     /// <c>FILE_NOT_FOUND</c> for a missing input an output is derived from.
     /// </exception>
     public ResolvedOutput Output => _output ??= ResolveOutput();
@@ -250,7 +252,7 @@ public partial class StandardInvocation
 
         if (named is var (option, output))
         {
-            return Writing(writes, output) is [var first, ..] alternatives
+            return ChosenBy(writes, option, output) is [var first, ..] alternatives
                 ? (first, alternatives)
                 : throw NamesNoFormatWritten(option, output, writes, derived: false);
         }
@@ -282,6 +284,33 @@ public partial class StandardInvocation
     private static FormatDescriptor[] Writing(IReadOnlyList<FormatDescriptor> writes, string file) =>
         [.. writes.Where(format => format.Names(file))];
 
+    // The formats among those written that the named output's extension chooses, in declared
+    // order. An extension that only formats --to alone chooses declare is refused, naming them.
+    private static FormatDescriptor[] ChosenBy(IReadOnlyList<FormatDescriptor> writes, string parameter, string output)
+    {
+        FormatDescriptor[] declaring = Writing(writes, output);
+        FormatDescriptor[] chosen = [.. declaring.Where(static format => format.ChosenByExtension)];
+        if (chosen.Length > 0 || declaring.Length == 0)
+        {
+            return chosen;
+        }
+
+        string option = parameter.StartsWith('-') ? parameter : "the " + parameter;
+        throw CliErrors.Usage(
+            [$"Name the output format: the {Path.GetExtension(output)} extension of {option} '{output}' is shared by "
+                + $"{Listed(declaring, conjunction: "and")}, which only {StandardOptionNames.To} chooses."],
+            parameter: StandardOptionNames.To,
+            hint: $"Pass {Listed(declaring, StandardOptionNames.To + " ")} with {option} '{output}'.");
+    }
+
+    // Format ids as a sentence lists them, as in "a-1, a-2 or a-3", each after a prefix.
+    private static string Listed(IReadOnlyList<FormatDescriptor> formats, string prefix = "", string conjunction = "or") =>
+        Listed([.. formats.Select(format => prefix + format.Id)], conjunction);
+
+    // Items as a sentence lists them, as in "a, b or c".
+    private static string Listed(string[] items, string conjunction = "or") =>
+        items.Length == 1 ? items[0] : $"{string.Join(", ", items[..^1])} {conjunction} {items[^1]}";
+
     /// <summary>The format an explicit <c>--to</c> names, or null when it was not given.</summary>
     private FormatDescriptor? RequestedTarget()
     {
@@ -305,17 +334,20 @@ public partial class StandardInvocation
         string problem = extension.Length > 1
             ? $"its {extension} extension is not a {format.Id} extension"
             : $"it has no extension, and a {format.Id} output needs one";
-        FormatDescriptor? named = Writing(writes, output) is [var first, ..] ? first : null;
-        string other = named is not null
-            ? $", or pass {StandardOptionNames.To} {named.Id} to write {named.Id}"
-            : string.Empty;
+        FormatDescriptor[] named = Writing(writes, output);
+        string other = named switch
+        {
+            [var only] => $", or pass {StandardOptionNames.To} {only.Id} to write {only.Id}",
+            [_, ..] => $", or pass {Listed(named, StandardOptionNames.To + " ")} to write one of those formats",
+            _ => string.Empty,
+        };
         return CliErrors.OutputExtensionInvalid(
             parameter,
             output,
             $"{StandardOptionNames.To} {format.Id} contradicts {parameter} '{output}':",
             problem,
             format.Extensions,
-            mistyped: extension.Length > 1 && named is null,
+            mistyped: extension.Length > 1 && named.Length == 0,
             $"Give {parameter} the {string.Join(" or ", format.Extensions)} extension, {CorrectedPaths(output, format)}{other}.",
             new JsonObject { ["format"] = format.Id });
     }
@@ -359,7 +391,7 @@ public partial class StandardInvocation
             && string.Equals(Path.GetExtension(given), extension, StringComparison.OrdinalIgnoreCase);
         string[] extensions = [.. writes.SelectMany(static format => format.Extensions).Distinct(StringComparer.OrdinalIgnoreCase)];
         string? producerOutput = images && !derived ? output : null;
-        (string Format, string Command)? producer = extension.Length > 1 && !inputs ? Producer(extension, producerOutput) : null;
+        (IReadOnlyList<FormatDescriptor> Formats, IReadOnlyList<string> Commands)? producer = extension.Length > 1 && !inputs ? Producer(extension, producerOutput) : null;
         // A mistyped extension close to none the command writes may stand for one a sibling
         // writes, as .htlm stands for the .html of convert: that extension is answered as itself.
         string? meant = extension.Length > 1 && !inputs && producer is null
@@ -374,8 +406,8 @@ public partial class StandardInvocation
         string problem = (extension.Length > 1, producer) switch
         {
             _ when inputs => $"has the {extension} extension of its input, which already is that file; {command} writes only images",
-            (true, { } other) when meant is not null => $"has the {extension} extension, which names no format; the closest, {meant}, names {other.Format}, which {command} does not write",
-            (true, { } other) => $"has the {extension} extension of {other.Format}, which {command} does not write",
+            (true, { } other) when meant is not null => $"has the {extension} extension, which names no format; the closest, {meant}, names {Listed(other.Formats, conjunction: "and")}, which {command} does not write",
+            (true, { } other) => $"has the {extension} extension of {Listed(other.Formats, conjunction: "and")}, which {command} does not write",
             (true, null) => $"has the {extension} extension, which names no format {command} writes",
             _ => $"has no extension, which names the format {command} writes",
         };
@@ -386,8 +418,8 @@ public partial class StandardInvocation
             : $"Give {(option ? parameter : "the " + parameter)} one of these extensions";
         string hint = producer switch
         {
-            { } line when images && !derived => $"{fix}, or run '{line.Command}' for {line.Format}.",
-            { } line => $"{fix}, then run '{line.Command}' for {line.Format}.",
+            { } line when images && !derived => $"{fix}, or run {Run(line.Commands)} for {Listed(line.Formats)}.",
+            { } line => $"{fix}, then run {Run(line.Commands)} for {Listed(line.Formats)}.",
             _ => fix + ".",
         };
         return CliErrors.OutputExtensionInvalid(
@@ -398,7 +430,7 @@ public partial class StandardInvocation
             extensions,
             mistyped: extension.Length > 1 && producer is null && !inputs,
             hint,
-            producer is { } named ? new JsonObject { ["format"] = named.Format } : [],
+            producer is { Formats: [var named] } ? new JsonObject { ["format"] = named.Id } : [],
             meant);
     }
 
@@ -424,13 +456,15 @@ public partial class StandardInvocation
             .Distinct(StringComparer.OrdinalIgnoreCase)];
 
     /// <summary>
-    /// The format an extension names among those the commands beside this one write through
-    /// their <c>--to</c>, and the command line that writes it: from this command's output, or,
-    /// when <paramref name="output"/> is given, from this command's input straight to that output.
+    /// The format an extension chooses among those the commands beside this one write through
+    /// their <c>--to</c>, or every format it names when only <c>--to</c> chooses them, as
+    /// an archive extension may name several archival profiles, and the command line that writes each: from this
+    /// command's output, or, when <paramref name="output"/> is given, from this command's input
+    /// straight to that output.
     /// </summary>
     /// <param name="extension">The extension the output was given.</param>
     /// <param name="output">The output as the caller gave it, for a command whose output is not a document to convert; otherwise null.</param>
-    private (string Format, string Command)? Producer(string extension, string? output)
+    private (IReadOnlyList<FormatDescriptor> Formats, IReadOnlyList<string> Commands)? Producer(string extension, string? output)
     {
         string[] path = CommandPath();
         string[] source = output is not null && _options.Input is { } input && _parse.GetValue(input) is { } given
@@ -438,12 +472,20 @@ public partial class StandardInvocation
             : ["<that file>"];
         string[] target = output is null ? [] : [StandardOptionNames.Out, Quoted(output)];
         return SiblingTargets()
-            .Select(sibling => sibling.Target.Offered.DeclaringExtension(extension) is [var format, ..]
-                ? ((string Format, string Command)?)(format.Id, string.Join(' ',
-                    [DistributionInfo.CommandName, .. path[..^1], sibling.Command, .. source, StandardOptionNames.To, format.Id, .. target]))
+            .Select(sibling => Named(sibling.Target.Offered.DeclaringExtension(extension)) is { Length: > 0 } formats
+                ? ((IReadOnlyList<FormatDescriptor> Formats, IReadOnlyList<string> Commands)?)(formats, [.. formats.Select(format => string.Join(' ',
+                    [DistributionInfo.CommandName, .. path[..^1], sibling.Command, .. source, StandardOptionNames.To, format.Id, .. target]))])
                 : null)
             .FirstOrDefault(static line => line is not null);
     }
+
+    // The first format an extension chooses among those that declare it, or all of them when
+    // only --to chooses them.
+    private static FormatDescriptor[] Named(IReadOnlyList<FormatDescriptor> declaring) =>
+        declaring.FirstOrDefault(static format => format.ChosenByExtension) is { } chosen ? [chosen] : [.. declaring];
+
+    // Command lines as a hint quotes them, one or several to choose from.
+    private static string Run(IReadOnlyList<string> commands) => Listed([.. commands.Select(static line => $"'{line}'")]);
 
     // A path as a command line names it: quoted when it holds a space.
     private static string Quoted(string path) => path.Contains(' ', StringComparison.Ordinal) ? $"\"{path}\"" : path;

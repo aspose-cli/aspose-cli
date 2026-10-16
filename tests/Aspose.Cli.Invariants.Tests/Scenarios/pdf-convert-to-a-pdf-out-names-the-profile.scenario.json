@@ -1,0 +1,40 @@
+{
+  "name": "pdf convert writes PDF/A to a .pdf --out only when --to names the profile, and a mistyped .pfd lists every profile",
+  "files": {
+    "input.pdf": { "fixture": "pdf.pdf" }
+  },
+  "steps": [
+    {
+      "args": ["pdf", "convert", "input.pdf", "--out", "archive.pdf"],
+      "expect": {
+        "exitCode": 2,
+        "error": "USAGE_ERROR",
+        "json": [
+          { "path": "error.message", "contains": "pdfa-1b, pdfa-2b and pdfa-3b" },
+          { "path": "error.hint", "contains": "--to pdfa-1b, --to pdfa-2b or --to pdfa-3b" }
+        ],
+        "files": { "absent": ["archive.pdf"], "unchanged": ["input.pdf"], "nothingWritten": true }
+      }
+    },
+    {
+      "args": ["pdf", "render", "input.pdf", "--out", "archive.pfd"],
+      "expect": {
+        "exitCode": 2,
+        "error": "OPTION_INVALID",
+        "json": [
+          { "path": "error.details.suggestions", "contains": ".pdf" },
+          { "path": "error.hint", "contains": "--to pdfa-1b --out archive.pdf', 'aspose-cli pdf convert input.pdf --to pdfa-2b --out archive.pdf' or 'aspose-cli pdf convert input.pdf --to pdfa-3b --out archive.pdf' for pdfa-1b, pdfa-2b or pdfa-3b." }
+        ],
+        "files": { "absent": ["archive.pfd", "archive.pdf"], "nothingWritten": true }
+      }
+    },
+    {
+      "args": ["pdf", "convert", "input.pdf", "--to", "pdfa-3b", "--out", "archive.pdf"],
+      "expect": {
+        "exitCode": 0,
+        "json": [{ "path": "outputs[0].format", "equals": "pdfa-3b" }],
+        "files": { "present": ["archive.pdf"] }
+      }
+    }
+  ]
+}
