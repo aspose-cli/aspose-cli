@@ -4691,6 +4691,17 @@ C-R39 | words set_style round trip
 C-R39 | words set_table_pagination round trip
 C-R39 | words set_text round trip
 C-R39 | words set_watermark round trip
+C-R40 | compare file shape
+C-R40 | convert file shape
+C-R40 | create file shape
+C-R40 | edit file shape
+C-R40 | extract file shape
+C-R40 | historical shapes
+C-R40 | inspect file shape
+C-R40 | read file shape
+C-R40 | render file shape
+C-R40 | search file shape
+C-R40 | split file shape
 corrupt-input | cells compare
 corrupt-input | cells convert
 corrupt-input | cells edit
