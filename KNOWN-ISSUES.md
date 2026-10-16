@@ -483,8 +483,8 @@ fails, delete the issue's section, the code that names it and the test, then upd
   document uses in full: a one-page document in a standard PDF font grows from about 7 KB to
   about 3 MB.
   `DocSaveOptions` has no setting for these flags.
-- **CLI behavior:** a Words command that saves such a document discloses with a warning the
-  fonts the save embeds.
+- **CLI behavior:** a Words command that saves such a document discloses with a
+  `FONTS_EMBEDDED` warning the fonts the save embeds.
 - **Reproduction:** [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownIssueTests.cs)
 
 ## Aspose.Slides.NET6.CrossPlatform 26.9.0

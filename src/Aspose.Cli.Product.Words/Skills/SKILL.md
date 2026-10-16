@@ -157,7 +157,9 @@ Besides the shared disclosures, tell the user about tracked changes and
 comments left in the output, invalidated signatures (`SIGNATURE_INVALIDATED`),
 dropped macros (`MACROS_DROPPED`; `inspect` reports `document.hasMacros`
 before any conversion), removed encryption
-(`ENCRYPTION_REMOVED`) and lossy conversion. In evaluation mode,
+(`ENCRYPTION_REMOVED`), fonts embedded because the input's settings ask every
+save to embed them (`FONTS_EMBEDDED`: the output can be megabytes larger, as
+with a docx written by `pdf convert`) and lossy conversion. In evaluation mode,
 `EVALUATION_INPUT_TRUNCATED` means only part of an input, template or appended
 document was loaded. When the edited document grows past what evaluation mode
 lays out and saves (about 200 paragraphs, as with a mail merge of many
