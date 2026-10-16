@@ -224,7 +224,7 @@ internal static partial class ContractRules
             (null, "capabilities --sumary", "capabilities --summary", "'capabilities' has no option '--sumary'"),
             (null, "cells inspect book.xlsx --version", "cells inspect book.xlsx --verbose", "'cells inspect' has no option '--version'"),
             (null, "license status extra", "license status --product pdf", "'license status' has no command 'extra'"),
-            (null, "cells query book.xlsx", "cells read book.xlsx", "'cells' has no command 'query'; it is a mistaken name of 'cells read' or 'cells search'"),
+            (null, "words merge a.docx", "words edit a.docx --ops ops.json --in-place", "'words' has no command 'merge'; it is a mistaken name of 'words edit'"),
         ];
         // A declaration added to a product's sources joins the table: on an operation and on a
         // field as an attribute, on a command as the initializer of its definition. A method named

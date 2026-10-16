@@ -146,15 +146,6 @@ public sealed class UsageErrorTests : IDisposable
         Assert.Equal(0, _workspace.Run("words", "read", "a.docx", "--output-format", "json").ExitCode);
     }
 
-    [Fact]
-    public void ARemovedGroupBeforeAMistypedOption_SuggestsBothInOneError()
-    {
-        JsonNode error = Refused("words query search a.docx --patern x", "USAGE_ERROR");
-
-        Assert.Contains("'--patern' (did you mean '--pattern'?)", error["message"]!.GetValue<string>(), StringComparison.Ordinal);
-        Assert.Equal("words search", error["details"]!["suggestions"]![0]!.GetValue<string>());
-    }
-
     [Theory]
     [InlineData("words convert a.docx --to markdown", "md")]
     [InlineData("words inspect a.docx --detail all", "--detail bookmarks comments fields fonts images outline properties revisions sections styles tables")]

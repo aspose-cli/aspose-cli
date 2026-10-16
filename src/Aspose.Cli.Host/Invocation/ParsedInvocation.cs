@@ -65,12 +65,6 @@ internal sealed class ParsedInvocation
                 unknown.Length > 0 ? UnknownOptionMistake(unknown[0]).Suggestions : null);
         }
 
-        // Before help: a mistaken name beside --help would otherwise show the help as if it were right.
-        if (MistakenName() is { } mistaken)
-        {
-            throw CliErrors.Usage([mistaken.Problem, .. mistaken.Others], mistaken.Mistake, mistaken.Corrected, hint: mistaken.Hint);
-        }
-
         if (VersionWithOthers() is { } version)
         {
             // The version takes only the output format, so that is the one option the error lists.
@@ -192,29 +186,6 @@ internal sealed class ParsedInvocation
     private ParsedInvocation Reparsed(IReadOnlyList<string> tokens) =>
         new(ParseResult.RootCommandResult.Command.Parse(tokens, InvocationParser.Configuration), _globals, catalog: _catalog);
 
-    /// <summary>
-    /// <paramref name="problems"/> with the suggestions of <paramref name="mistake"/> named beside
-    /// the first problem that quotes it, such as <c>... '&lt;name&gt;' (did you mean '&lt;closest&gt;'?).</c>
-    /// </summary>
-    private static string[] WithAside(string[] problems, Mistake? mistake)
-    {
-        if (mistake is not { Suggestions.Count: > 0 })
-        {
-            return problems;
-        }
-
-        string quoted = $"'{mistake.Requested}'";
-        int index = Array.FindIndex(problems, problem => problem.Contains(quoted, StringComparison.Ordinal));
-        if (index < 0)
-        {
-            return problems;
-        }
-
-        string[] marked = [.. problems];
-        marked[index] = marked[index].TrimEnd().TrimEnd('.') + mistake.Aside() + ".";
-        return marked;
-    }
-
     /// <summary>What fails a command line; see <see cref="Problems"/>. <c>Corrected</c> is the command line that fixes it, when one is known.</summary>
     private sealed record Refusal(string[] Problems, Mistake? Mistake, string? Parameter, bool ValuesOnly, IReadOnlyList<string>? Corrected = null)
     {
@@ -325,55 +296,6 @@ internal sealed class ParsedInvocation
         string[] corrected = [.. values[..index], group.Name, .. values[index..]];
         Refusal? rest = Reparsed(corrected).Problems();
         return ($"{group.Name} {token}", rest is null ? corrected : rest.Corrected);
-    }
-
-    /// <summary>
-    /// A name the command or one of its siblings declares it is mistaken for, left over beside
-    /// the command, such as the name of a removed command group written before the command it
-    /// held: it names no command, so it is refused even with <c>--help</c>. The
-    /// commands that declare it are suggested first, the command itself before its siblings. The
-    /// command line without the name is parsed again: when it parses and the command declares the
-    /// name, it is the correction, ready to run; otherwise its own problems are reported beside
-    /// the name, so one error states everything to fix.
-    /// </summary>
-    private (string Problem, Mistake Mistake, IReadOnlyList<string>? Corrected, string[] Others, string? Hint)? MistakenName()
-    {
-        if (CommandPath.Count == 0)
-        {
-            return null;
-        }
-
-        Command[] siblings =
-        [
-            .. (CommandPath.Count > 1 ? CommandPath[^2] : ParseResult.RootCommandResult.Command).Subcommands
-                .Where(static command => !command.Hidden),
-        ];
-        if (ParseResult.UnmatchedTokens.FirstOrDefault(token => siblings.Any(command => Declares(command, token))) is not { } token)
-        {
-            return null;
-        }
-
-        string[] parentPath = [.. CommandPath.Take(CommandPath.Count - 1).Select(static command => command.Name)];
-        string Sibling(Command command) => string.Join(' ', [.. parentPath, command.Name]);
-        string[] meant = [.. siblings.Where(command => Declares(command, token)).OrderBy(command => command == Command ? 0 : 1).Select(Sibling)];
-        string[] values = [.. ParseResult.Tokens.Select(static item => item.Value)];
-        int index = Array.IndexOf(values, token);
-        string[] corrected = [.. values[..index], .. values[(index + 1)..]];
-        ParsedInvocation rest = Reparsed(corrected);
-        // The rest's own mistake, such as a mistyped option, is named beside its problem, so one
-        // error corrects both.
-        Refusal? others = rest.Problems();
-        string[] problems = others is null ? [] : WithAside(others.Problems, others.Mistake);
-        IReadOnlyList<string>? correction = !Declares(Command, token) ? null : others is null ? corrected : others.Corrected;
-
-        return (
-            $"'{token}' is not a command of '{string.Join(' ', [DistributionInfo.CommandName, .. parentPath])}'.",
-            Mistake.Of(token, siblings.Select(Sibling), meant, keyOf: static name => name[(name.LastIndexOf(' ') + 1)..]),
-            correction,
-            problems,
-            siblings.First(command => Declares(command, token)).MistakenNameHint());
-
-        static bool Declares(Command command, string token) => command.MistakenNames().Contains(token, StringComparer.Ordinal);
     }
 
     /// <summary>

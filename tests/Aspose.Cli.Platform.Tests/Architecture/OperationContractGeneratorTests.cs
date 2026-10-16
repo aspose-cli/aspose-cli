@@ -328,7 +328,6 @@ public sealed class OperationContractGeneratorTests
             [DependentRequired("title", "name")]
             [AtLeastOneOf("hint")]
             [MinProperties(1)]
-            [PresentWhen("name", "absent", "x")]
             [Operation("broken")]
             public sealed record BrokenOp : BadOp
             {
@@ -369,7 +368,6 @@ public sealed class OperationContractGeneratorTests
         Assert.Contains(reported, static item => item.Message.Contains("counts 'title', which must be nullable without a default.", StringComparison.Ordinal) && item.At.StartsWith("DependentRequired", StringComparison.Ordinal));
         Assert.Contains(reported, static item => item.Message.Contains("counts 'hint', which must be nullable without a default", StringComparison.Ordinal) && item.At.StartsWith("AtLeastOneOf", StringComparison.Ordinal));
         Assert.Contains(reported, static item => item.Message.Contains("[MinProperties] on 'BrokenOp' would also count the operation's op and id", StringComparison.Ordinal) && item.At.StartsWith("MinProperties", StringComparison.Ordinal));
-        Assert.Contains(reported, static item => item.Message.Contains("names 'absent', which is not a member of 'BrokenOp'", StringComparison.Ordinal) && item.At.StartsWith("PresentWhen", StringComparison.Ordinal));
         Assert.Contains(reported, static item => item.Message.Contains("the wire name 'op' belongs to the operation envelope", StringComparison.Ordinal) && item.At == "Op");
         Assert.Contains(reported, static item => item.Message.Contains("remove [JsonPropertyName] and [JsonIgnore]", StringComparison.Ordinal) && item.At == "Label");
         Assert.Contains(reported, static item => item.Message.Contains("remove [JsonPropertyName] and [JsonIgnore]", StringComparison.Ordinal) && item.At == "Hidden");

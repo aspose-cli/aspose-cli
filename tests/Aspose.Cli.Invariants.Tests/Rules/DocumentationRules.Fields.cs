@@ -91,7 +91,8 @@ internal static partial class ContractRules
         /// camel-cased name. Every such attribute of the text must be read, so a declaration this
         /// reading cannot place is a problem rather than a name silently left out. A
         /// <c>MistakenFor = [...]</c> initializer belongs to the command definition the nearest
-        /// <c>new(</c> before it creates, named by its first string, under the product.
+        /// <c>new(</c> before it creates, named by its first string, under the product; a
+        /// <c>mistakenFor: [...]</c> argument, to the edit command <c>EditDefinition.Create</c> defines.
         /// </summary>
         public static IEnumerable<MistakenName> ReadFile(string? product, string where, string source, List<string> problems)
         {
@@ -169,13 +170,15 @@ internal static partial class ContractRules
             foreach (Match initializer in MistakenInitializer().Matches(source))
             {
                 string[] declaredNames = [.. Literal().Matches(initializer.Groups["names"].Value).Select(static literal => literal.Groups["text"].Value)];
-                Match? created = DefinitionCreation().Matches(source[..initializer.Index]).LastOrDefault();
+                Match? created = initializer.Groups["edit"].Success
+                    ? EditCreation().Matches(source[..initializer.Index]).LastOrDefault()
+                    : DefinitionCreation().Matches(source[..initializer.Index]).LastOrDefault();
                 if (product is null || created is null)
                 {
-                    problems.Add($"{where}: MistakenFor = [{string.Join(", ", declaredNames)}] initializes no command definition of a product");
+                    problems.Add($"{where}: {initializer.Value} initializes no command definition of a product");
                     continue;
                 }
-                string command = $"{product} {created.Groups["name"].Value}";
+                string command = $"{product} {(initializer.Groups["edit"].Success ? "edit" : created.Groups["name"].Value)}";
                 names.AddRange(declaredNames.Select(name => new MistakenName(product, name, command, MistakenKind.Command, where)));
             }
             return names;
@@ -585,9 +588,13 @@ internal static partial class ContractRules
     [GeneratedRegex(@"\[\s*(?:[\w.]+(?:\([^()]*\))?\s*,\s*)*MistakenFor\(")]
     private static partial Regex MistakenAttributeInSource();
 
-    /// <summary>A <c>MistakenFor = [...]</c> property initializer and its name literals.</summary>
-    [GeneratedRegex(@"(?<![\w.])MistakenFor\s*=\s*\[(?<names>[^\]]*)\]")]
+    /// <summary>A <c>MistakenFor = [...]</c> property initializer or a <c>mistakenFor: [...]</c> argument of an edit definition, and its name literals.</summary>
+    [GeneratedRegex(@"(?<![\w.])(?:MistakenFor\s*=|(?<edit>mistakenFor\s*:))\s*\[(?<names>[^\]]*)\]")]
     private static partial Regex MistakenInitializer();
+
+    /// <summary>The creation of an edit command definition, <c>EditDefinition.Create&lt;...&gt;(</c>.</summary>
+    [GeneratedRegex(@"\bEditDefinition\.Create<")]
+    private static partial Regex EditCreation();
 
     /// <summary>The creation of a command definition, <c>new(</c> or <c>new CommandDefinition&lt;...&gt;(</c>, and the command name it starts with.</summary>
     [GeneratedRegex(@"\bnew(?:\s+\w+(?:<[^>]*>)?)?\(\s*""(?<name>[a-z][a-z0-9-]*)""")]
