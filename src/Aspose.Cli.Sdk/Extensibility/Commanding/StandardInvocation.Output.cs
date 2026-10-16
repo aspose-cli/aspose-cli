@@ -382,15 +382,17 @@ public partial class StandardInvocation
     {
         string command = string.Join(' ', [DistributionInfo.CommandName, .. CommandPath()]);
         string extension = Path.GetExtension(output);
-        // A command that writes only images shows its input rather than keeping a copy of it, so
-        // another format is written from the input; any other output is a document to convert after.
+        // A command that writes only images shows its input rather than keeping a copy of it, and
+        // a conversion writes its input in another format, so another format is written from the
+        // input; any other output, as an edit's, is a document to convert after.
         bool images = writes.All(static format => format.Image);
+        bool fromInput = images || _options.Target is not null;
         // An image command given its input's own extension was asked for what the input already is.
         bool inputs = images && !derived && extension.Length > 1 && _options.Input is { } input
             && _parse.GetValue(input) is { } given
             && string.Equals(Path.GetExtension(given), extension, StringComparison.OrdinalIgnoreCase);
         string[] extensions = [.. writes.SelectMany(static format => format.Extensions).Distinct(StringComparer.OrdinalIgnoreCase)];
-        string? producerOutput = images && !derived ? output : null;
+        string? producerOutput = fromInput && !derived ? output : null;
         (IReadOnlyList<FormatDescriptor> Formats, IReadOnlyList<string> Commands)? producer = extension.Length > 1 && !inputs ? Producer(extension, producerOutput) : null;
         // A mistyped extension close to none the command writes may stand for one a sibling
         // writes, as .htlm stands for the .html of convert: that extension is answered as itself.
@@ -418,7 +420,7 @@ public partial class StandardInvocation
             : $"Give {(option ? parameter : "the " + parameter)} one of these extensions";
         string hint = producer switch
         {
-            { } line when images && !derived => $"{fix}, or run {Run(line.Commands)} for {Listed(line.Formats)}.",
+            { } line when fromInput && !derived => $"{fix}, or run {Run(line.Commands)} for {Listed(line.Formats)}.",
             { } line => $"{fix}, then run {Run(line.Commands)} for {Listed(line.Formats)}.",
             _ => fix + ".",
         };
