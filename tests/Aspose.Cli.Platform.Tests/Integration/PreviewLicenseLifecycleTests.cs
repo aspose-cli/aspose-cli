@@ -110,6 +110,60 @@ public sealed class PreviewLicenseLifecycleTests : IDisposable
         Assert.Null(relicensed["license"]);
     }
 
+    // The service outlives the shell that started it; a document is rendered under the license
+    // environment of the shell that opens it, not of that first shell.
+    [Category(TestCategory.Slow)]
+    [LicensedFact]
+    public void EnvironmentLicense_OfTheRequestingShellRendersItsDocument()
+    {
+        using var license = new PrivateLicense();
+        JsonNode evaluation = Start();
+        _workspace.Run("cells", "create", "second.xlsx", "--sheets", "Data", "--output-format", "json").Succeeded();
+
+        JsonNode requested = RunInLicensedShell(license.Path, "preview", "open", "second.xlsx", "--no-open", "--output-format", "json");
+
+        Assert.Equal("evaluation", evaluation["license"]!["mode"]!.GetValue<string>());
+        Assert.Equal(evaluation["pid"]!.GetValue<int>(), requested["pid"]!.GetValue<int>());
+        // A licensed result omits its license block.
+        Assert.Null(requested["license"]);
+    }
+
+    [Category(TestCategory.Slow)]
+    [LicensedFact]
+    public void ShellWithoutALicense_RendersInEvaluationInAServiceALicensedShellStarted()
+    {
+        using var license = new PrivateLicense();
+        JsonNode started = RunInLicensedShell(license.Path, "preview", "open", "book.xlsx", "--no-open", "--output-format", "json");
+        _workspace.Run("cells", "create", "second.xlsx", "--sheets", "Data", "--output-format", "json").Succeeded();
+
+        JsonNode requested = _workspace.Run(
+            "preview", "open", "second.xlsx", "--no-open", "--output-format", "json").Json();
+
+        Assert.Null(started["license"]);
+        Assert.Equal(started["pid"]!.GetValue<int>(), requested["pid"]!.GetValue<int>());
+        Assert.Equal("evaluation", requested["license"]!["mode"]!.GetValue<string>());
+    }
+
+    // A shell whose environment names the license file; the workspace runs strip license sources.
+    private JsonNode RunInLicensedShell(string license, params string[] args)
+    {
+        System.Diagnostics.ProcessStartInfo start = _workspace.StartInfo();
+        start.Environment["ASPOSE_LICENSE_PATH"] = license;
+        start.RedirectStandardOutput = start.RedirectStandardError = true;
+        start.StandardOutputEncoding = start.StandardErrorEncoding = System.Text.Encoding.UTF8;
+        foreach (string arg in args) { start.ArgumentList.Add(arg); }
+        using var process = System.Diagnostics.Process.Start(start)!;
+        Task<string> output = process.StandardOutput.ReadToEndAsync();
+        Task<string> error = process.StandardError.ReadToEndAsync();
+        if (!process.WaitForExit(TimeSpan.FromSeconds(120)))
+        {
+            process.Kill(entireProcessTree: true);
+            throw new TimeoutException($"aspose-cli {string.Join(' ', args)} did not finish.");
+        }
+        Assert.True(process.ExitCode == 0, error.Result);
+        return JsonNode.Parse(output.Result)!;
+    }
+
     private JsonNode Start() =>
         _workspace.Run("preview", "open", "book.xlsx", "--no-open", "--output-format", "json").Json();
 
