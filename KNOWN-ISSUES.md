@@ -126,14 +126,18 @@ fails, delete the issue's section, the code that names it and the test, then upd
 
 ### CELLS-PIVOT-LABEL-INDENT
 
-- **Defect:** in a pivot whose column area holds a field and the value fields, rendering draws
-  each column item label, the row above the value captions, about 16 pixels at 96 DPI further
-  right than the same text in a plain cell, although its style has no indent, and cuts it at the
-  column edge even when the next cell is empty. `AutoFitColumns` leaves this indent out, so an
-  auto-fitted column is as wide as for the text alone and the label is cut.
-- **CLI behavior:** review reports such a label that does not fit with the indent as
-  `CELLS_VALUES_CLIPPED`; `resize_columns` without `widthChars` cannot widen the column, and the
-  Skill says to give pivot columns `widthChars`.
+- **Defect:** in a pivot whose column area holds more than one field, rendering draws each item
+  label of a column field other than the innermost one, such as the products over the value
+  fields or the regions over the products, about 16 pixels at 96 DPI further right than the same
+  text in a plain cell, although its style has no indent, and cuts it at its column's edge even
+  when the next cell is empty. The value field captions, also as the outer field, the subtotal
+  and grand total labels and the innermost field's items are drawn like plain cells.
+  `AutoFitColumns` leaves the indent out, so an auto-fitted column is as wide as for the text
+  alone and the label is cut.
+- **CLI behavior:** review measures those labels with the indent and reports one that does not
+  fit as `CELLS_VALUES_CLIPPED`, with a hint to give its column `widthChars`;
+  `resize_columns` without `widthChars` cannot widen the column, and the Cells verification
+  guide says to give such columns `widthChars`.
 - **Workaround:** set the column width with `resize_columns` and `widthChars`, a few characters
   wider than the label.
 - **Reproduction:** [CellsKnownIssueTests](tests/Aspose.Cli.Product.Cells.Tests/CellsKnownIssueTests.cs)

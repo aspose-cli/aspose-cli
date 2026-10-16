@@ -55,6 +55,140 @@ public sealed class CellsReviewWindowTests : IClassFixture<CellsFixture>
         Assert.Equal(["A1", "A2", "D5"], sheet.ClippedCells.Samples);
     }
 
+    /// <summary>
+    /// The engine draws the item labels of a pivot table's outer column fields indented and cuts
+    /// them off at their own column's edge, though the cell to their right is empty, and auto-fit
+    /// leaves the indent out (CELLS-PIVOT-LABEL-INDENT): after auto-fit, review counts exactly
+    /// those labels as clipped and points to widthChars. Value field captions, subtotal and grand
+    /// total labels and the innermost field's items are drawn like any cell, and review leaves
+    /// merged labels unmeasured.
+    /// </summary>
+    [Theory]
+    [InlineData("products-over-values", "B4,D4,F4,H4")]
+    [InlineData("regions-over-products", "B4,G4")]
+    [InlineData("values-over-products", "")]
+    [InlineData("merged-labels", "")]
+    public void PivotColumnLabels_AfterAutoFit_AreClippedOnlyWhereTheEngineIndentsThem(string layout, string clipped)
+    {
+        string path = _fixture.Temp.File($"pivot-{layout}.xlsx");
+        SavePivot(path, layout, widthChars: null);
+
+        (CellsReviewSheetLayout sheet, ReviewFinding? finding) = ReviewPivot(path);
+
+        string[] expected = clipped.Length == 0 ? [] : clipped.Split(',');
+        Assert.Equal(expected, sheet.ClippedCells.Samples);
+        Assert.Equal(expected.Length, sheet.ClippedCells.Count);
+        if (expected.Length > 0)
+        {
+            Assert.Contains("widthChars", finding!.Hint, StringComparison.Ordinal);
+        }
+    }
+
+    /// <summary>
+    /// The same pivot labels with their columns widened by an explicit width show in full, and
+    /// review no longer reports them.
+    /// </summary>
+    [Fact]
+    public void PivotColumnLabels_InWidenedColumns_AreNotClipped()
+    {
+        string path = _fixture.Temp.File("pivot-widened.xlsx");
+        SavePivot(path, "products-over-values", widthChars: 16);
+
+        (CellsReviewSheetLayout sheet, ReviewFinding? finding) = ReviewPivot(path);
+
+        Assert.Equal(0, sheet.ClippedCells.Count);
+        Assert.Null(finding);
+    }
+
+    private (CellsReviewSheetLayout Sheet, ReviewFinding? Finding) ReviewPivot(string path)
+    {
+        var adapter = new CellsViewAdapter();
+        var request = new ViewRenderRequest { View = CellsViews.Sheets, MaxPartCount = 8, Purpose = ViewPurpose.Evidence };
+        ViewManifest rendered = adapter.Render(_fixture.Session, path, request, new MemoryArtifactSink());
+        ProductReviewAssessment assessment = adapter.Assess(_fixture.Session, path, request, rendered);
+        CellsReviewSheetLayout sheet = Assert.Single(
+            CellsView.Layout(_fixture.Session, path, null).Sheets,
+            static sheet => sheet.Name == "Pivot");
+        ReviewFinding? finding = assessment.Findings!.SingleOrDefault(static finding =>
+            finding.Code == "CELLS_VALUES_CLIPPED" && finding.Location == "Pivot");
+        return (sheet, finding);
+    }
+
+    /// <summary>
+    /// A Chinese sales pivot as the UAT built it, in Arial, its columns auto-fitted, or widened to
+    /// <paramref name="widthChars"/> from B on.
+    /// </summary>
+    private static void SavePivot(string path, string layout, double? widthChars)
+    {
+        using var workbook = new Aspose.Cells.Workbook();
+        Aspose.Cells.Style standard = workbook.DefaultStyle;
+        standard.Font.Name = "Arial";
+        standard.Font.Size = 10;
+        workbook.DefaultStyle = standard;
+        Aspose.Cells.Worksheet source = workbook.Worksheets[0];
+        source.Name = "Src";
+        string[] headers = ["区域", "产品", "金额", "数量"];
+        for (int column = 0; column < headers.Length; column++)
+        {
+            source.Cells[0, column].PutValue(headers[column]);
+        }
+
+        int row = 1;
+        foreach (string region in new[] { "Eastern Region", "Southern Region" })
+        {
+            foreach (string product in new[] { "笔记本 Laptop", "显示器 Monitor", "耳机 Headset", "键盘 Keyboard" })
+            {
+                source.Cells[row, 0].PutValue(region);
+                source.Cells[row, 1].PutValue(product);
+                source.Cells[row, 2].PutValue(1000 + row);
+                source.Cells[row, 3].PutValue(row);
+                row++;
+            }
+        }
+
+        Aspose.Cells.Worksheet sheet = workbook.Worksheets[workbook.Worksheets.Add()];
+        sheet.Name = "Pivot";
+        Aspose.Cells.Pivot.PivotTable pivot = sheet.PivotTables[sheet.PivotTables.Add($"=Src!A1:D{row}", "A3", "Sales")];
+        const Aspose.Cells.Pivot.PivotFieldType Row = Aspose.Cells.Pivot.PivotFieldType.Row;
+        const Aspose.Cells.Pivot.PivotFieldType Column = Aspose.Cells.Pivot.PivotFieldType.Column;
+        const Aspose.Cells.Pivot.PivotFieldType Data = Aspose.Cells.Pivot.PivotFieldType.Data;
+        switch (layout)
+        {
+            case "regions-over-products":
+                pivot.AddFieldToArea(Column, "区域");
+                pivot.AddFieldToArea(Column, "产品");
+                pivot.AddFieldToArea(Data, "金额");
+                break;
+            case "values-over-products":
+                pivot.AddFieldToArea(Row, "区域");
+                pivot.AddFieldToArea(Data, "金额");
+                pivot.AddFieldToArea(Data, "数量");
+                pivot.AddFieldToArea(Column, pivot.ValuesField);
+                pivot.AddFieldToArea(Column, "产品");
+                break;
+            default:
+                pivot.AddFieldToArea(Row, "区域");
+                pivot.AddFieldToArea(Column, "产品");
+                pivot.AddFieldToArea(Data, "金额");
+                pivot.AddFieldToArea(Data, "数量");
+                pivot.AddFieldToArea(Column, pivot.ValuesField);
+                pivot.MergeLabels = layout == "merged-labels";
+                break;
+        }
+
+        pivot.CalculateData();
+        sheet.AutoFitColumns(0, 15);
+        if (widthChars is { } width)
+        {
+            for (int column = 1; column <= 15; column++)
+            {
+                sheet.Cells.SetColumnWidth(column, width);
+            }
+        }
+
+        workbook.Save(path);
+    }
+
     [Category(TestCategory.Slow)]
     [Fact]
     public void OversizedSheet_RendersItsFirstRowsAndTheOtherSheets()
