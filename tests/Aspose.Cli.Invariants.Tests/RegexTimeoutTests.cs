@@ -13,6 +13,9 @@ public sealed class RegexTimeoutTests
 {
     private const string Pattern = "(a+)+$";
 
+    // Words refuses a replace_text anchor (WORDS-REGEX-ANCHORS), so its expression fails at a letter instead.
+    private const string UnanchoredPattern = "(a+)+b";
+
     // Nested repetition over forty letters and a mismatch backtracks far beyond the one-second budget.
     private static readonly string Text = new string('a', 40) + "!";
 
@@ -37,7 +40,7 @@ public sealed class RegexTimeoutTests
             "slides" => ("text.pptx", new JsonObject { ["title.md"] = Source("# " + Text + "\n") },
                 new JsonArray("slides", "create", "text.pptx", "--from-markdown", "title.md"), ReplaceText()),
             "words" => ("text.docx", new JsonObject { ["text.txt"] = Source(Text + "\n") },
-                new JsonArray("words", "create", "text.docx", "--from-text", "text.txt"), ReplaceText()),
+                new JsonArray("words", "create", "text.docx", "--from-text", "text.txt"), ReplaceText(UnanchoredPattern)),
             _ => throw new ArgumentOutOfRangeException(nameof(product), product, null),
         };
         string output = Path.GetFileNameWithoutExtension(document) + ".out" + Path.GetExtension(document);
@@ -70,6 +73,6 @@ public sealed class RegexTimeoutTests
 
     private static JsonObject Source(string text) => new() { ["text"] = text };
 
-    private static JsonObject ReplaceText() =>
-        new() { ["op"] = "replace_text", ["find"] = Pattern, ["replace"] = "b", ["regex"] = true };
+    private static JsonObject ReplaceText(string pattern = Pattern) =>
+        new() { ["op"] = "replace_text", ["find"] = pattern, ["replace"] = "b", ["regex"] = true };
 }

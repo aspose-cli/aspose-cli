@@ -49,7 +49,7 @@
         "command": "edit",
         "inputSchema": "v2/words/ops",
         "operationSchema": "aspose-cli schema v2/words/ops --operation <op>",
-        "contractFingerprint": "sha256:efb16b4812006cd1c999f31d63b9dfb33ed74eb50634cbe2be1168d9ef9c2f40",
+        "contractFingerprint": "sha256:1e8f3bf62d42059b06865dcfbde1ed06e2aae7a41cfad9dfd7c1dac3bba94118",
         "maximumOperationCount": 10000,
         "ops": [
           "accept_revisions",
@@ -5703,7 +5703,7 @@
           ]
         },
         "replace_text": {
-          "description": "Replaces literal or regular-expression text within a document scope.",
+          "description": "Replaces literal or regular-expression text within a document scope. A regex find may not use the anchors ^, $, \\A, \\Z, \\z or \\G outside a character class: the engine reads them at the edges of the whole scope, not of each paragraph as words search does. Nor may it use a (?#...) comment or the x option, which can hide an anchor.",
           "type": "object",
           "required": [
             "op",

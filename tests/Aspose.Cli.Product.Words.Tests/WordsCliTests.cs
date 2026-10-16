@@ -431,6 +431,97 @@ public sealed class WordsCliTests : IDisposable
     }
 
     /// <summary>
+    /// A replace_text regex that anchors with ^, $, \A, \Z, \z or \G is refused before the edit
+    /// runs: the engine reads those anchors at the edges of the whole scope, so it would replace
+    /// fewer paragraphs than words search finds.
+    /// </summary>
+    [Category(TestCategory.Slow)]
+    [Theory]
+    [InlineData(@"^(\d)\.(\d) ", "^")]
+    [InlineData(@"(?m)^1\.2 ", "^")]
+    [InlineData(@"later$", "$")]
+    [InlineData(@"\A1", @"\A")]
+    [InlineData(@"later\z", @"\z")]
+    [InlineData(@"[a-z]+\Z", @"\Z")]
+    [InlineData(@"\G1", @"\G")]
+    public void ReplaceText_RefusesARegexAnchor(string find, string anchor)
+    {
+        WriteNumberedClauses();
+
+        CliResult edited = EditWith(new JsonObject { ["op"] = "replace_text", ["find"] = find, ["replace"] = "x", ["regex"] = true });
+
+        Assert.Equal(4, edited.ExitCode);
+        JsonNode error = JsonNode.Parse(edited.StdErr)!["error"]!;
+        Assert.Equal("OPS_INVALID", error["code"]!.GetValue<string>());
+        Assert.Equal("replace_text", error["details"]!["op"]!.GetValue<string>());
+        Assert.Contains($"find uses the anchor {anchor},", error["details"]!["reason"]!.GetValue<string>(), StringComparison.Ordinal);
+        Assert.False(File.Exists(_workspace.File("edited.docx")));
+    }
+
+    /// <summary>
+    /// A comment or the x option can hide an anchor from the check, such as the [ of a comment
+    /// that seems to open a class, so a replace_text regex with either is refused as well.
+    /// </summary>
+    [Category(TestCategory.Slow)]
+    [Theory]
+    [InlineData("(?#[)$")]
+    [InlineData("(?#[)^ab]")]
+    [InlineData("(?x)#[\n^ab")]
+    [InlineData("(?ix)ab")]
+    [InlineData("(?-i+x:ab)")]
+    public void ReplaceText_RefusesAPatternThatCanHideAnAnchor(string find)
+    {
+        WriteNumberedClauses();
+
+        CliResult edited = EditWith(new JsonObject { ["op"] = "replace_text", ["find"] = find, ["replace"] = "x", ["regex"] = true });
+
+        Assert.Equal(4, edited.ExitCode);
+        JsonNode error = JsonNode.Parse(edited.StdErr)!["error"]!;
+        Assert.Equal("OPS_INVALID", error["code"]!.GetValue<string>());
+        Assert.Contains("comment or the x option", error["details"]!["reason"]!.GetValue<string>(), StringComparison.Ordinal);
+        Assert.False(File.Exists(_workspace.File("edited.docx")));
+    }
+
+    /// <summary>
+    /// An escaped ^ or $, a negated class and a $ inside a class are no anchors, and a literal
+    /// find is never read as a pattern, so each replaces what it matches.
+    /// </summary>
+    [Category(TestCategory.Slow)]
+    [Theory]
+    [InlineData(@"\^2", true, "Cost x and $5 [a]")]
+    [InlineData(@"\$5", true, "Cost ^2 and x [a]")]
+    [InlineData(@"[$]5", true, "Cost ^2 and x [a]")]
+    [InlineData(@"\[[^b]\]", true, "Cost ^2 and $5 x")]
+    [InlineData("^2", false, "Cost x and $5 [a]")]
+    [InlineData("(?i)COST", true, "x ^2 and $5 [a]")]
+    [InlineData("(?i:COST)", true, "x ^2 and $5 [a]")]
+    public void ReplaceText_AcceptsCharactersThatAreNoAnchor(string find, bool regex, string expected)
+    {
+        File.WriteAllText(_workspace.File("source.txt"), "Cost ^2 and $5 [a]\n");
+        Assert.Equal(0, _workspace.Run("words", "create", "contract.docx", "--from-text", "source.txt").ExitCode);
+
+        CliResult edited = EditWith(new JsonObject { ["op"] = "replace_text", ["find"] = find, ["replace"] = "x", ["regex"] = regex });
+
+        Assert.True(edited.ExitCode == 0, edited.StdErr);
+        CliResult read = _workspace.Run("words", "read", "edited.docx", "--output-format", "json");
+        Assert.Contains(
+            JsonNode.Parse(read.StdOut)!["blocks"]!.AsArray().Select(static block => block!["text"]!.GetValue<string>()),
+            text => text == expected);
+    }
+
+    private void WriteNumberedClauses()
+    {
+        File.WriteAllText(_workspace.File("source.md"), "1.1 Scope\n\n1.2 Terms\n\nSee 1.3 later\n");
+        Assert.Equal(0, _workspace.Run("words", "create", "contract.docx", "--from-markdown", "source.md").ExitCode);
+    }
+
+    private CliResult EditWith(JsonObject op)
+    {
+        File.WriteAllText(_workspace.File("ops.json"), new JsonObject { ["ops"] = new JsonArray(op) }.ToJsonString());
+        return _workspace.Run("words", "edit", "contract.docx", "--ops", "ops.json", "--out", "edited.docx", "--output-format", "json");
+    }
+
+    /// <summary>
     /// Each hit carries its 1-based occurrence among the matches of the document, as a PDF search
     /// hit does, so two hits in one paragraph are told apart; a later window keeps the numbers.
     /// </summary>
@@ -536,7 +627,7 @@ public sealed class WordsCliTests : IDisposable
     }
 
     // Runs the expression over runaway.docx; it must end well within the regex budget's reach.
-    private CliResult ReplaceRunaway(string find = "(a+)+$")
+    private CliResult ReplaceRunaway(string find = "(a+)+b")
     {
         var clock = System.Diagnostics.Stopwatch.StartNew();
         CliResult result = _workspace.RunWithInput(

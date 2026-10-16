@@ -13,6 +13,27 @@ namespace Aspose.Cli.Product.Words.Tests;
 public sealed class WordsKnownIssueTests
 {
     [Fact]
+    public void RegexReplace_AnchorsOnlyAtTheStartOfTheRange()
+    {
+        using var fixture = new WordsFixture();
+        var document = new Document();
+        var builder = new DocumentBuilder(document);
+        builder.Writeln("1.1 Scope");
+        builder.Writeln("1.2 Terms");
+        builder.Write("See 1.3 later");
+
+        int starts = document.Range.Replace(new System.Text.RegularExpressions.Regex(@"^(\d)\.(\d) "), "x ", new Aspose.Words.Replacing.FindReplaceOptions());
+        int multilineStarts = document.Range.Replace(new System.Text.RegularExpressions.Regex(@"(?m)^1\.2 "), "x ", new Aspose.Words.Replacing.FindReplaceOptions());
+        int ends = document.Range.Replace(new System.Text.RegularExpressions.Regex("(Scope|Terms|later)$"), "x", new Aspose.Words.Replacing.FindReplaceOptions());
+        int paragraphEnds = document.FirstSection.Body.LastParagraph.Range.Replace(new System.Text.RegularExpressions.Regex("later$"), "x", new Aspose.Words.Replacing.FindReplaceOptions());
+
+        KnownIssue.Reproduces(
+            "WORDS-REGEX-ANCHORS",
+            starts == 1 && multilineStarts == 0 && ends == 0 && paragraphEnds == 0,
+            $"^ replaced {starts} of 2 paragraph starts, (?m)^ {multilineStarts} of 1, $ {ends} of 3 paragraph ends and {paragraphEnds} in the last paragraph's own range");
+    }
+
+    [Fact]
     public void RegexReplace_IgnoresTheMatchTimeout()
     {
         using var fixture = new WordsFixture();

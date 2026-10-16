@@ -111,6 +111,69 @@ public sealed class WordsTextScopeTests : IClassFixture<WordsFixture>
         Assert.Equal(["block/1", "section/1"], edit.Applied[0].Targets);
     }
 
+    /// <summary>
+    /// A replace takes each match the engine finds from left to right, without overlaps, so a
+    /// run of spaces or letters loses half of itself in one pass.
+    /// </summary>
+    [Theory]
+    [InlineData("a    b", "  ", " ", false, "a  b")]
+    [InlineData("aaaa", "aa", "a", false, "aa")]
+    [InlineData("Year 1999", @"\d\d", "XX", true, "Year XXXX")]
+    public void ReplaceText_TakesMatchesLeftToRightWithoutOverlap(string text, string find, string replace, bool regex, string expected)
+    {
+        var document = new Document();
+        new DocumentBuilder(document).Write(text);
+        string name = Guid.NewGuid().ToString("N");
+        string input = _fixture.Temp.File($"overlap-{name}.docx");
+        document.Save(input);
+        string output = _fixture.Temp.File($"overlap-{name}-out.docx");
+
+        WordsEdit.Run(
+            _fixture.Session,
+            new WordsEditRequest
+            {
+                Input = input,
+                Batch = new WordsOpsBatch { Ops = [new ReplaceTextOp { Find = find, Replace = replace, Regex = regex }] },
+                Output = TestOutput.At(output),
+            });
+
+        Assert.Contains(
+            new Document(output).FirstSection.Body.Paragraphs.Cast<Paragraph>().Select(static paragraph => paragraph.GetText().Trim()),
+            paragraph => paragraph == expected);
+    }
+
+    /// <summary>
+    /// A whole-word, case-insensitive replace takes only the words themselves, in document order,
+    /// up to maxReplacementCount.
+    /// </summary>
+    [Theory]
+    [InlineData(null, "dog dog catalog dog.|dog's tail")]
+    [InlineData(2, "dog dog catalog cat.|cat's tail")]
+    public void ReplaceText_TakesWholeWordsInOrder(int? maximum, string expected)
+    {
+        var document = new Document();
+        var builder = new DocumentBuilder(document);
+        builder.Writeln("Cat cat catalog cat.");
+        builder.Write("cat's tail");
+        string input = _fixture.Temp.File($"words-{maximum}.docx");
+        document.Save(input);
+        string output = _fixture.Temp.File($"words-{maximum}-out.docx");
+
+        WordsEdit.Run(
+            _fixture.Session,
+            new WordsEditRequest
+            {
+                Input = input,
+                Batch = new WordsOpsBatch { Ops = [new ReplaceTextOp { Find = "cat", Replace = "dog", WholeWord = true, MaxReplacementCount = maximum }] },
+                Output = TestOutput.At(output),
+            });
+
+        Assert.Equal(
+            expected,
+            string.Join('|', new Document(output).FirstSection.Body.Paragraphs.Cast<Paragraph>().Select(static paragraph => paragraph.GetText().Trim())
+                .Where(static text => text.Length > 0 && !text.Contains("Aspose", StringComparison.Ordinal))));
+    }
+
     [Theory]
     [InlineData("body", new[] { "Body pin", "Box pin" })]
     [InlineData("headers-footers", new[] { "Header pin", "Footer pin" })]
