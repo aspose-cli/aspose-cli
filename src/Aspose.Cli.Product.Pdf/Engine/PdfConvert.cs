@@ -21,7 +21,7 @@ internal static class PdfConvert
             ?? Enumerable.Range(1, loaded.Document.Pages.Count).ToArray();
         List<Warning> warnings = [];
         PdfEngineFormat target = PdfEngineFormats.Of(request.Output.Format.Id);
-        IReadOnlyList<PdfPageOutput> outputs = target.Write switch
+        IReadOnlyList<PdfConvertOutput> outputs = target.Write switch
         {
             PdfEngineWrite.Tiff => [new(ConvertTiff(session, loaded.Document, pages, request))],
             PdfEngineWrite.Text => [new(ConvertText(session, loaded.Document, pages, request))],

@@ -43,4 +43,21 @@ public sealed class ConvertOutputsContractTests : IDisposable
         Assert.Equal(64, item["fingerprint"]!["sha256"]!.GetValue<string>().Length);
         Assert.All(item.Select(static pair => pair.Key), key => Assert.Contains(key, FileFields));
     }
+
+    /// <summary>A convert writes one document, never one file per unit, so its outputs items declare no unit.</summary>
+    [Theory]
+    [InlineData("cells")]
+    [InlineData("pdf")]
+    [InlineData("slides")]
+    [InlineData("words")]
+    public void ConvertResultSchema_OutputsItemsDeclareOnlyFileFields(string product)
+    {
+        CliResult schema = _workspace.Run("schema", $"v2/{product}/convert-result");
+
+        Assert.True(schema.ExitCode == 0, schema.StdErr);
+        JsonObject document = JsonNode.Parse(schema.StdOut)!.AsObject();
+        string reference = document["properties"]!["outputs"]!["items"]!["$ref"]!.GetValue<string>();
+        JsonObject item = document["$defs"]![reference["#/$defs/".Length..]]!.AsObject();
+        Assert.Equal(FileFields, item["properties"]!.AsObject().Select(static pair => pair.Key));
+    }
 }

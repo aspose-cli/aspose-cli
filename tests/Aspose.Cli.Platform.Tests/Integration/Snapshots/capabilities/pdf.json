@@ -2974,7 +2974,7 @@
     "v2/pdf/convert-result": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
       "$id": "https://schemas.aspose.com/aspose-cli/v2/pdf/convert-result.schema.json",
-      "description": "Result of pdf convert.",
+      "description": "Result of pdf convert: the file a PDF or its selected pages were converted to.",
       "type": "object",
       "required": [
         "schema",
@@ -2997,11 +2997,11 @@
           "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/input.schema.json"
         },
         "outputs": {
-          "description": "The files written: one, or one per page for an image format, each with its page.",
+          "description": "The written file: the one file the PDF or its selected pages were converted to; tiff holds every page in one multi-page file.",
           "type": "array",
           "minItems": 1,
           "items": {
-            "$ref": "#/$defs/pdfPageOutput"
+            "$ref": "#/$defs/pdfConvertOutput"
           }
         },
         "pages": {
@@ -3021,8 +3021,8 @@
         }
       },
       "$defs": {
-        "pdfPageOutput": {
-          "description": "One file a command wrote, and the page of the PDF it holds when it holds one.",
+        "pdfConvertOutput": {
+          "description": "The file a PDF was converted to.",
           "type": "object",
           "required": [
             "path",
@@ -3052,11 +3052,6 @@
             "encrypted": {
               "description": "true when the produced file is encrypted and opens only with its password; omitted when its format cannot carry a password.",
               "type": "boolean"
-            },
-            "page": {
-              "description": "The 1-based page the file holds or comes from; absent when it holds no single page, as a whole-document file, an attachment or form data does.",
-              "type": "integer",
-              "minimum": 1
             }
           }
         }
