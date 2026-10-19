@@ -1,0 +1,33 @@
+{
+  "name": "a malformed ZIP named docx is a corrupt input to words, supervised or not, and keeps an existing output",
+  "files": {
+    "malformed.docx": { "base64": "UEsDBGludmFsaWQgc3ludGhldGljIGRvY3g=" },
+    "retained.pdf": { "text": "Unrelated existing output" }
+  },
+  "steps": [
+    {
+      "args": ["words", "inspect", "malformed.docx"],
+      "expect": { "exitCode": 3, "error": "FILE_CORRUPT", "files": { "nothingWritten": true } }
+    },
+    {
+      "args": ["words", "convert", "malformed.docx", "--to", "pdf", "--out", "retained.pdf", "--overwrite"],
+      "expect": {
+        "exitCode": 3,
+        "error": "FILE_CORRUPT",
+        "files": { "unchanged": ["malformed.docx", "retained.pdf"], "nothingWritten": true }
+      }
+    },
+    {
+      "args": ["words", "inspect", "malformed.docx", "--timeout", "100"],
+      "expect": { "exitCode": 3, "error": "FILE_CORRUPT", "files": { "nothingWritten": true } }
+    },
+    {
+      "args": ["words", "convert", "malformed.docx", "--to", "pdf", "--out", "retained.pdf", "--overwrite", "--timeout", "100"],
+      "expect": {
+        "exitCode": 3,
+        "error": "FILE_CORRUPT",
+        "files": { "unchanged": ["malformed.docx", "retained.pdf"], "nothingWritten": true }
+      }
+    }
+  ]
+}

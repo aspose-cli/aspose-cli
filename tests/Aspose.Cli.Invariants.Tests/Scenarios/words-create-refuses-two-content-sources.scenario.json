@@ -1,0 +1,17 @@
+{
+  "name": "words create refuses two content sources",
+  "files": {
+    "source.md": { "text": "# Title\n" },
+    "source.txt": { "text": "Title\n" }
+  },
+  "steps": [
+    {
+      "args": ["words", "create", "out.docx", "--from-markdown", "source.md", "--from-text", "source.txt"],
+      "expect": {
+        "exitCode": 2,
+        "error": "USAGE_ERROR",
+        "files": { "absent": ["out.docx"], "nothingWritten": true }
+      }
+    }
+  ]
+}

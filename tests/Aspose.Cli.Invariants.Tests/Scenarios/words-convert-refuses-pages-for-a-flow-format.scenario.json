@@ -1,0 +1,16 @@
+{
+  "name": "words convert refuses --pages for a format that is not fixed-page",
+  "files": { "source.md": { "text": "# Contract\n\nClause.\n" } },
+  "steps": [
+    { "args": ["words", "create", "contract.docx", "--from-markdown", "source.md"], "expect": { "exitCode": 0 } },
+    {
+      "args": ["words", "convert", "contract.docx", "--to", "html", "--pages", "1", "--out", "contract.html"],
+      "expect": {
+        "exitCode": 2,
+        "error": "OPTION_INVALID",
+        "json": [{ "path": "error.message", "contains": "--pages" }],
+        "files": { "absent": ["contract.html"], "nothingWritten": true }
+      }
+    }
+  ]
+}
