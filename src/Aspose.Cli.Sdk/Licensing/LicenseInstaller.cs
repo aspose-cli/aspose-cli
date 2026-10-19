@@ -72,10 +72,7 @@ public static class LicenseInstaller
             }
             VerifySnapshot(resourceBudgets, snapshot, contents);
             string directory = CommonDirectory(destinations);
-            StringComparison comparison = OperatingSystem.IsWindows()
-                ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
-            if (string.Equals(directory, snapshotDirectory, comparison)
-                || directory.StartsWith(snapshotDirectory + Path.DirectorySeparatorChar, comparison))
+            if (IsInsideSnapshot(snapshotDirectory, directory))
             {
                 throw new ArgumentException("A license destination cannot be inside its temporary snapshot.");
             }
@@ -211,6 +208,15 @@ public static class LicenseInstaller
         {
             throw CliErrors.LicenseInvalid("file", "the license snapshot changed during validation");
         }
+    }
+
+    /// <summary>Whether the license destinations' directory is the temporary snapshot's or inside it.</summary>
+    internal static bool IsInsideSnapshot(string snapshotDirectory, string directory)
+    {
+        StringComparison comparison = OperatingSystem.IsWindows()
+            ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
+        return string.Equals(directory, snapshotDirectory, comparison)
+            || directory.StartsWith(snapshotDirectory + Path.DirectorySeparatorChar, comparison);
     }
 
     private static string[] NormalizePaths(IEnumerable<string> paths)

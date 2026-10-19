@@ -181,7 +181,7 @@ internal static class WorkerManifestStore
         }
     }
 
-    private static void EnsureOutsideRoot(string root, string target)
+    internal static void EnsureOutsideRoot(string root, string target)
     {
         if (PathComparer.Equals(root, target) || target.StartsWith(root + Path.DirectorySeparatorChar,
             OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal))
