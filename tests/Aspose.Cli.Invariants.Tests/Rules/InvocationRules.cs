@@ -29,9 +29,10 @@ internal static partial class ContractRules
 
     /// <summary>
     /// Every group command run without a subcommand: in table mode it exits 2 and prints its help
-    /// to stderr, and in JSON mode its error lists the visible subcommands in
-    /// <c>details.available</c>. A group with its own options or arguments runs an action of its
-    /// own (<c>app</c> starts the app service), which C-R03's declared part reports instead.
+    /// to stderr, and in JSON mode its <c>USAGE_ERROR</c> lists the visible subcommands in
+    /// <c>details.available</c> and no <c>details.errors</c>. A group other than the root with
+    /// options or arguments of its own would run an action of its own, which C-R03's declared
+    /// part reports instead.
     /// </summary>
     private static IEnumerable<InvariantCase> R03Run(CliCatalog catalog)
     {
@@ -53,7 +54,7 @@ internal static partial class ContractRules
         {
             yield return $"table mode exits {table.ExitCode}, expected 2";
         }
-        if (table.StdOut.Trim().Length > 0)
+        if (table.StdOut.Length > 0)
         {
             yield return $"table mode writes to stdout: {Excerpt(table.StdOut)}";
         }
@@ -66,7 +67,17 @@ internal static partial class ContractRules
         {
             yield return $"JSON mode exits {json.ExitCode}, expected 2";
         }
-        JsonNode? details = ParseJson(json.StdErr)?["error"]?["details"];
+        JsonNode? error = ParseJson(json.StdErr)?["error"];
+        if (error?["code"]?.GetValue<string>() is not "USAGE_ERROR")
+        {
+            yield return $"JSON mode fails with {error?["code"]?.ToJsonString() ?? "no error"}, expected USAGE_ERROR";
+        }
+        JsonNode? details = error?["details"];
+        // The missing subcommand is one problem, which the message states; details.errors lists several.
+        if (details?["errors"] is { } errors)
+        {
+            yield return $"the error lists details.errors for one problem: {Excerpt(errors.ToJsonString())}";
+        }
         if (Strings(details?["available"]) is not { } available)
         {
             yield return $"the error has no details.available; its details: {Excerpt(details?.ToJsonString() ?? "none")}";
