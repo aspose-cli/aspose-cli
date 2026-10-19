@@ -9,11 +9,6 @@ internal static class WindowsPowerShell
     /// <summary>Returns the verified system executable, or null when it is unavailable.</summary>
     internal static string? TryResolve()
     {
-        if (!OperatingSystem.IsWindows())
-        {
-            return null;
-        }
-
         string systemDirectory = Path.GetFullPath(Environment.SystemDirectory);
         string executable = Path.GetFullPath(Path.Combine(
             systemDirectory,

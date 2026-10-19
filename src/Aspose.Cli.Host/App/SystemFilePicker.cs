@@ -14,49 +14,17 @@ internal static class SystemFilePicker
         IReadOnlyList<string> supportedExtensions)
     {
         ArgumentNullException.ThrowIfNull(supportedExtensions);
-        string semicolonPatterns = string.Join(
+        string patterns = string.Join(
             ';', supportedExtensions.Select(static extension => "*" + extension));
-        string spacePatterns = semicolonPatterns.Replace(';', ' ');
-        if (OperatingSystem.IsWindows())
-        {
-            string? powerShell = WindowsPowerShell.TryResolve();
-            string script =
-                "Add-Type -AssemblyName System.Windows.Forms; "
-                + "$d=[System.Windows.Forms.OpenFileDialog]::new(); "
-                + "$d.Title='Open a document'; "
-                + $"$d.Filter='Supported files|{semicolonPatterns}|All files|*.*'; "
-                + "if($d.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK){[Console]::Out.Write($d.FileName)}";
-            return Run(
-                powerShell ?? string.Empty, ["-NoProfile", "-STA", "-Command", script], available: powerShell is not null);
-        }
-
-        if (OperatingSystem.IsMacOS())
-        {
-            const string script = "POSIX path of (choose file with prompt \"Open a document\")";
-            return Run(
-                "/usr/bin/osascript", ["-e", script], available: File.Exists("/usr/bin/osascript"));
-        }
-
-        string? zenity = FindOnPath("zenity");
-        if (zenity is not null)
-        {
-            return Run(
-                zenity,
-                ["--file-selection", "--title=Open a document", $"--file-filter=Supported files | {spacePatterns}"],
-                available: true);
-        }
-
-        string? kdialog = FindOnPath("kdialog");
-        return kdialog is null
-            ? new FilePickerResult(false, null)
-            : Run(
-                kdialog,
-                [
-                    "--getopenfilename",
-                    Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
-                    $"Supported files ({spacePatterns})",
-                ],
-                available: true);
+        string? powerShell = WindowsPowerShell.TryResolve();
+        string script =
+            "Add-Type -AssemblyName System.Windows.Forms; "
+            + "$d=[System.Windows.Forms.OpenFileDialog]::new(); "
+            + "$d.Title='Open a document'; "
+            + $"$d.Filter='Supported files|{patterns}|All files|*.*'; "
+            + "if($d.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK){[Console]::Out.Write($d.FileName)}";
+        return Run(
+            powerShell ?? string.Empty, ["-NoProfile", "-STA", "-Command", script], available: powerShell is not null);
     }
 
     private static FilePickerResult Run(
@@ -105,33 +73,5 @@ internal static class SystemFilePicker
         {
             return new FilePickerResult(false, null);
         }
-    }
-
-    private static string? FindOnPath(string executable)
-    {
-        string? path = Environment.GetEnvironmentVariable("PATH");
-        if (string.IsNullOrEmpty(path))
-        {
-            return null;
-        }
-
-        foreach (string directory in path.Split(
-            Path.PathSeparator, StringSplitOptions.RemoveEmptyEntries))
-        {
-            try
-            {
-                string candidate = Path.Combine(directory, executable);
-                if (File.Exists(candidate))
-                {
-                    return candidate;
-                }
-            }
-            catch (Exception exception) when (
-                exception is ArgumentException or NotSupportedException)
-            {
-            }
-        }
-
-        return null;
     }
 }
