@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.IO.Pipes;
 using System.Runtime.InteropServices;
+using Aspose.Cli.Host.Invocation;
 using Aspose.Cli.Sdk;
 
 namespace Aspose.Cli.Host.LocalServices;
@@ -20,7 +21,11 @@ internal static class ServiceStartSecretChannel
 
     public static ServiceStartSecrets? Current => CurrentValue.Value;
 
-    public static Process Start(
+    /// <summary>
+    /// Starts the service without a kill-on-close job, since it outlives its launcher, and
+    /// stops it again when its secrets cannot be handed over.
+    /// </summary>
+    public static OwnedProcess Start(
         ProcessStartInfo start,
         ServiceStartSecrets secrets)
     {
@@ -33,26 +38,19 @@ internal static class ServiceStartSecretChannel
         start.Environment[HandleVariable] =
             server.GetClientHandleAsString();
         PreventStandardHandleInheritance();
-        Process? process = null;
+        OwnedProcess? owned = null;
         try
         {
-            process = Process.Start(start)
-                ?? throw new InvalidOperationException(
-                    "The service process could not be started.");
+            owned = OwnedProcess.Start(start, killOnClose: false);
             server.DisposeLocalCopyOfClientHandle();
             ProcessPipeMessages.WriteAsync(server, secrets, CancellationToken.None)
                 .GetAwaiter().GetResult();
 
-            return process;
+            return owned;
         }
-        catch
+        catch when (owned is not null)
         {
-            if (process is { HasExited: false })
-            {
-                process.Kill(entireProcessTree: true);
-            }
-
-            process?.Dispose();
+            using (owned) { owned.Stop(); }
             throw;
         }
         finally

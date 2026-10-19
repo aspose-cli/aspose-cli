@@ -47,25 +47,20 @@ internal sealed class CommandExecutor
                     resourceBudgets: scope.Budgets)),
             detectPartial: true);
 
-    /// <summary>The handler owns its final deadline check and commits an external process handoff.</summary>
+    /// <summary>
+    /// The handler owns its final deadline check and commits an external process handoff, so a
+    /// second Ctrl+C does not interrupt the commit.
+    /// </summary>
     public int RunHandoff(ParseResult parseResult, GlobalOptions globalOptions,
-        Func<CommandContext, ResultEnvelope> handler)
-    {
-        using var cancellation = new CancellationTokenSource();
-        ConsoleCancelEventHandler onCancel = (_, e) => { e.Cancel = true; cancellation.Cancel(); };
-        Console.CancelKeyPress += onCancel;
-        try
-        {
-            return Execute(parseResult, globalOptions, admitInputs: true, cancellation.Token, scope =>
+        Func<CommandContext, ResultEnvelope> handler) =>
+        ConsoleInterrupt.Run(cancellationToken =>
+            Execute(parseResult, globalOptions, admitInputs: true, cancellationToken, scope =>
             {
                 scope.Deadline.ThrowIfExpired("handoff-start");
                 ResultEnvelope result = handler(CompositionRoot.Create(_host.Catalog, scope.Globals,
                     resourceBudgets: scope.Budgets));
                 return scope.Complete(result, detectPartial: false);
-            });
-        }
-        finally { Console.CancelKeyPress -= onCancel; }
-    }
+            }), SecondPress.Ignore);
 
     /// <summary>
     /// Runs a command that answers with one result. Ctrl+C cancels it as the caller's own
@@ -80,39 +75,20 @@ internal sealed class CommandExecutor
         bool detectPartial)
     {
         ArgumentNullException.ThrowIfNull(handler);
-        using var cancellation = new CancellationTokenSource();
-        ConsoleCancelEventHandler onCancel = (_, e) =>
-        {
-            try
-            {
-                e.Cancel = !cancellation.IsCancellationRequested;
-                cancellation.Cancel();
-            }
-            catch (ObjectDisposedException)
-            {
-                // The command already ended.
-            }
-        };
-        Console.CancelKeyPress += onCancel;
-        try
-        {
-            return Execute(
+        return ConsoleInterrupt.Run(
+            cancellationToken => Execute(
                 parseResult,
                 globalOptions,
                 admitInputs: true,
-                cancellation.Token,
+                cancellationToken,
                 scope =>
                 {
                     scope.Deadline.ThrowIfExpired("command-start");
                     ResultEnvelope result = handler(scope);
                     if (!scope.Budgets.HasCommittedOutputs) { scope.Deadline.ThrowIfExpired("command-complete"); }
                     return scope.Complete(result, detectPartial);
-                });
-        }
-        finally
-        {
-            Console.CancelKeyPress -= onCancel;
-        }
+                }),
+            SecondPress.EndProcess);
     }
 
     /// <summary>
@@ -191,10 +167,12 @@ internal sealed class CommandExecutor
                     int exitCode = scope.Complete(start.Startup, detectPartial: false);
                     Console.Out.Flush();
 
-                    WaitOutcome outcome = WaitForShutdownSignal(
+                    // The shutdown below always runs, so a second Ctrl+C waits for it too.
+                    WaitOutcome outcome = ConsoleInterrupt.Run(
                         cancellationToken => start.Wait(
                             scope.Deadline.Remaining,
-                            cancellationToken));
+                            cancellationToken),
+                        SecondPress.Ignore);
                     if (outcome == WaitOutcome.DeadlineExpired
                         && scope.Deadline.OriginalBudget is { } budget)
                     {
@@ -265,33 +243,6 @@ internal sealed class CommandExecutor
         finally
         {
             scope?.Dispose();
-        }
-    }
-
-    private static WaitOutcome WaitForShutdownSignal(
-        Func<CancellationToken, WaitOutcome> wait)
-    {
-        using var cancellation = new CancellationTokenSource();
-        ConsoleCancelEventHandler onCancel = (_, eventArgs) =>
-        {
-            eventArgs.Cancel = true;
-            try
-            {
-                cancellation.Cancel();
-            }
-            catch (ObjectDisposedException)
-            {
-                // Another exit condition already completed the wait.
-            }
-        };
-        Console.CancelKeyPress += onCancel;
-        try
-        {
-            return wait(cancellation.Token);
-        }
-        finally
-        {
-            Console.CancelKeyPress -= onCancel;
         }
     }
 

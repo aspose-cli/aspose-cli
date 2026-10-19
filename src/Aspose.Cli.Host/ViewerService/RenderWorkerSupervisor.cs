@@ -17,7 +17,8 @@ namespace Aspose.Cli.Host.ViewerService;
 /// </summary>
 internal sealed class RenderWorkerSupervisor : IDisposable
 {
-    private static readonly TimeSpan TerminationGrace = TimeSpan.FromSeconds(2);
+    /// <summary>How long a worker whose input was closed may take to exit on its own before it is killed.</summary>
+    private static readonly TimeSpan NaturalExit = TimeSpan.FromSeconds(2);
     private const int StderrTailBytes = 8 * 1024;
 
     private readonly SemaphoreSlim _gate = new(1, 1);
@@ -54,7 +55,7 @@ internal sealed class RenderWorkerSupervisor : IDisposable
         get
         {
             _gate.Wait();
-            try { return _worker?.Process.Id; }
+            try { return _worker?.Owned.Process.Id; }
             finally { _gate.Release(); }
         }
     }
@@ -136,10 +137,8 @@ internal sealed class RenderWorkerSupervisor : IDisposable
         start.RedirectStandardInput = true;
         start.RedirectStandardOutput = true;
         start.RedirectStandardError = true;
-        var process = new Process { StartInfo = start };
-        process.Start();
-        var worker = new Worker(process, WindowsProcessJob.TryAttach(process));
-        worker.Errors = DrainAsync(process.StandardError);
+        var worker = new Worker(OwnedProcess.Start(start, killOnClose: true));
+        worker.Errors = DrainAsync(worker.Owned.Process.StandardError);
         return worker;
     }
 
@@ -156,7 +155,7 @@ internal sealed class RenderWorkerSupervisor : IDisposable
         }
         try
         {
-            worker.Dispose(TerminationGrace, _diagnostic);
+            worker.Dispose(_diagnostic);
             _worker = null;
             _terminationFailure = null;
         }
@@ -193,41 +192,25 @@ internal sealed class RenderWorkerSupervisor : IDisposable
     private static RenderWorkerResponse Failure(RenderWorkerRequest request, ErrorCode code, string message) =>
         new() { Id = request.Id, Ok = false, Code = code.Name, Exit = (int)code.ExitCode, Message = message };
 
-    private sealed record Worker(Process Process, IDisposable? Job)
+    private sealed record Worker(OwnedProcess Owned)
     {
-        public Stream Input => Process.StandardInput.BaseStream;
+        public Stream Input => Owned.Process.StandardInput.BaseStream;
 
-        public Stream Output => Process.StandardOutput.BaseStream;
+        public Stream Output => Owned.Process.StandardOutput.BaseStream;
 
         public Task<string>? Errors { get; set; }
 
         /// <summary>
         /// Ends the worker: closing its input asks it to exit, and anything
-        /// still alive after the grace period is killed with its children.
+        /// still alive after <see cref="NaturalExit"/> is killed with its children.
+        /// A worker whose exit is not confirmed is kept, so a later render reports it.
         /// </summary>
-        public void Dispose(TimeSpan grace, Action<string>? diagnostic)
+        public void Dispose(Action<string>? diagnostic)
         {
-            bool stopped = false;
-            try
-            {
-                try { Process.StandardInput.Close(); } catch (IOException) { }
-                stopped = Process.WaitForExit((int)grace.TotalMilliseconds);
-                if (!stopped)
-                {
-                    try { Process.Kill(entireProcessTree: true); }
-                    catch (Exception exception) when (exception is InvalidOperationException
-                        or System.ComponentModel.Win32Exception or NotSupportedException) { }
-                    Job?.Dispose();
-                    stopped = Process.WaitForExit((int)grace.TotalMilliseconds);
-                }
-                if (!stopped) { throw CliErrors.WorkerTerminationFailed(Process.Id); }
-                if (Errors is { IsCompletedSuccessfully: true, Result.Length: > 0 } errors)
-                { diagnostic?.Invoke("render worker: " + errors.Result); }
-            }
-            finally
-            {
-                if (stopped) { Job?.Dispose(); Process.Dispose(); }
-            }
+            Owned.Stop(NaturalExit);
+            if (Errors is { IsCompletedSuccessfully: true, Result.Length: > 0 } errors)
+            { diagnostic?.Invoke("render worker: " + errors.Result); }
+            Owned.Dispose();
         }
     }
 }
