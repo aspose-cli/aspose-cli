@@ -1,4 +1,5 @@
 using System.Text.Json.Nodes;
+using Aspose.Cli.IntegrationTests;
 using Aspose.Cli.TestKit;
 using Aspose.Cli.TestKit.Scenarios;
 using Xunit;
@@ -21,10 +22,7 @@ public sealed class StartupLicenseNoticeTests
     }
 
     [Theory]
-    [InlineData("cells")]
-    [InlineData("pdf")]
-    [InlineData("slides")]
-    [InlineData("words")]
+    [MemberData(nameof(CliContractTests.ProductIds), MemberType = typeof(CliContractTests))]
     public void ProductHelp_ReportsOnlyTheSelectedNativeEngine(string product)
     {
         using var workspace = new TempWorkspace();
@@ -176,8 +174,9 @@ public sealed class StartupLicenseNoticeTests
     {
         string notice = Assert.Single(Lines(stderr));
         Assert.StartsWith("license: ", notice);
-        Assert.Equal(4, notice["license: ".Length..].Split("; ").Length);
-        foreach (string product in new[] { "cells", "pdf", "slides", "words" })
+        string[] products = [.. CliCatalog.Current.Products.Select(static product => product.Id)];
+        Assert.Equal(products.Length, notice["license: ".Length..].Split("; ").Length);
+        foreach (string product in products)
         {
             Assert.Contains($"{product}=evaluation", notice);
         }
