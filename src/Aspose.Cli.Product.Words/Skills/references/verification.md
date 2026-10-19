@@ -34,9 +34,9 @@ aspose-cli words compare baseline.docx output.docx --output-format json
 Read the blocks the batch reported in `applied[].targets`, and blocks that
 follow insertions. In `--content full`, compare an inserted paragraph's `runs`
 fonts and `paragraphFormat` (indents, spacing, alignment) with its neighbours'.
-`applied[].itemsAffected` counts the objects the operation changed, compared
-before and after it, and `targets` names them in document order, where the
-output of the whole batch holds them: a body block as `block/<n>`, numbered as
+`itemsAffected`, `targets` and `OP_NO_EFFECT` work as Reading the outcome in
+`aspose-cli docs editing` says. Words names targets in document order, where
+the output of the whole batch holds them: a body block as `block/<n>`, numbered as
 `words read` numbers the output even when a later operation moved it, and a
 block the batch removed by its number in the input; a section whose page
 setup, headers or footers changed as `section/<n>`, a style as
@@ -45,10 +45,7 @@ setup, headers or footers changed as `section/<n>`, a style as
 the batch removed and a block it changed can share a number, one in the input
 and one in the output, as when `accept_revisions` removes a deleted
 paragraph and changes the one after it: `targets` lists that number once and `itemsAffected` counts
-both, so it can exceed the number of targets. More than
-100 of one kind shorten to one range, such as `block/1-150`. An operation
-that changed nothing warns `OP_NO_EFFECT`; act on it as Reading the outcome
-in `aspose-cli docs editing` says. `pagesTouched` lists the output pages that
+both, so it can exceed the number of targets. `pagesTouched` lists the output pages that
 hold what the batch changed: the pages of each changed block, and for a
 removed block the page of the content that took its place; every page of a
 section whose page setup, headers or footers changed; every page for the

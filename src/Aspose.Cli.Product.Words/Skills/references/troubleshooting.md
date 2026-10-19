@@ -43,7 +43,30 @@ the revisions with `words inspect --detail revisions` and decide them first
 ([revisions](revisions.md)). `unprotect_document` with a wrong `passwordEnv`
 password fails ([editing](editing.md#protection-and-encryption)).
 
+## A PDF input
+
+A PDF input is rebuilt as flowing text, and `convert`, `split` and `edit`
+report `LOSSY_CONVERSION` for what may have changed. Its headers and footers
+are guessed (known SDK issue `WORDS-PDF-HEADER-FOOTER`): they may become body
+text, or real headers and footers in which a number, such as the "1" of a
+version "第 1 版", becomes a page-number field that counts up on later pages;
+the layout may also add pages. Check the output with `inspect --detail
+sections fields` and correct it with `set_header`, `set_footer`,
+`set_page_numbers` or `delete_blocks`. Chinese, Japanese or Korean text also
+gets a space wherever a line ended on the PDF page, and the lines of a heading
+and the clause after it may share one paragraph (`WORDS-PDF-CJK-LINE-END`):
+read the blocks before editing, and find phrases with a regex that allows that
+space, such as `甲 ?乙双方`.
+
 ## What a warning asks you to disclose
+
+Besides the shared disclosures (`aspose-cli docs verification`), tell the
+user about tracked changes and comments left in the output, invalidated
+signatures (`SIGNATURE_INVALIDATED`), dropped macros (`MACROS_DROPPED`;
+`inspect` reports `document.hasMacros` before any conversion) and fonts
+embedded because the input's settings ask every save to embed them
+(`FONTS_EMBEDDED`: the output can be megabytes larger, as with a docx written
+by `pdf convert`).
 
 Editing a restricted document succeeds and keeps the restriction
 ([editing](editing.md#protection-and-encryption)); tracked changes the input
@@ -56,3 +79,16 @@ in the output, and the warning lists them; regenerate the document from its
 original inputs with the license. `words split --by pages` can reflow complex
 layouts slightly, so review the split pages. Linked images store no bytes in
 the document, so `extract --what images` cannot write them.
+
+## Evaluation mode
+
+What every product discloses is in `aspose-cli docs licensing`. In Words, an
+`extract --what images` copy also leaves out the watermark picture evaluation
+mode draws into the header. When the edited document grows past what
+evaluation mode lays out and saves (about 200 paragraphs, as with a mail merge
+of many records), the output keeps only its first sections and ends with the
+engine's truncation notice, which the `EVALUATION_MODE` message names;
+`--verify` then reports `OUTPUT_TRUNCATED`, and the result is incomplete
+whatever `itemsAffected` says. A licensed `review` reports marks an earlier
+unlicensed save left in a file as `WORDS_EVALUATION_MARKS`
+([verification](verification.md#visual-review)).
