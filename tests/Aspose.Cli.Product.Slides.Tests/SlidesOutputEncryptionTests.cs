@@ -1,5 +1,7 @@
 using System.Text.Json.Nodes;
+using Aspose.Cli.Product.Slides.Contracts;
 using Aspose.Cli.Sdk.Errors;
+using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.TestKit;
 using Xunit;
 
@@ -87,6 +89,28 @@ public sealed class SlidesOutputEncryptionTests : IDisposable
         Assert.True(result["output"]!["encrypted"]!.GetValue<bool>());
         Assert.DoesNotContain("ENCRYPTION_REMOVED", Codes(result));
         Assert.Equal("PASSWORD_REQUIRED", JsonNode.Parse(Run("slides", "inspect", "edited.pptx").StdErr)!["error"]!["code"]!.GetValue<string>());
+    }
+
+    /// <summary>
+    /// An edit keeps the input's encryption in the presentation it saves, which is right only
+    /// for a format that carries a password: every format edit writes is one, and an edit to
+    /// any other presentation or export format is refused before anything is written.
+    /// </summary>
+    [Category(TestCategory.Slow)]
+    [Fact]
+    public void EditWritesOnlyFormatsThatCarryAPassword()
+    {
+        Assert.All(SlidesFormats.Writable, static format => Assert.True(format.Protectable, format.Id));
+        File.WriteAllText(_workspace.File("ops.json"), """{"ops":[{"op":"set_title","slide":1,"text":"Locked"}]}""");
+
+        foreach (FormatDescriptor format in SlidesFormats.Definitions.Where(static format => format.Uses.HasFlag(FormatUse.Convert) && !format.Protectable))
+        {
+            string output = "edited" + format.Extensions[0];
+            CliResult result = Run("slides", "edit", "locked.pptx", "--password-env", "SLIDES_PASSWORD", "--ops", "ops.json", "--out", output);
+
+            Assert.True(result.ExitCode != 0, $"{format.Id}: {result.StdOut}");
+            Assert.False(File.Exists(_workspace.File(output)), format.Id);
+        }
     }
 
     [Category(TestCategory.Slow)]
