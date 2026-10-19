@@ -174,7 +174,7 @@ internal sealed class ViewBundleManifest
                 normalized.Replace(
                     '/',
                     Path.DirectorySeparatorChar)));
-        if (!full.StartsWith(Root + Path.DirectorySeparatorChar, FilePaths.Comparison))
+        if (!FilePaths.IsWithin(Root, full, allowEqual: false))
         {
             return null;
         }
