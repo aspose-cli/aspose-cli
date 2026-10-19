@@ -20,7 +20,9 @@ namespace Aspose.Cli.Product.Pdf.Engine.Editing;
 /// (<c>field/name</c>), the encryption (<c>security/encryption</c>) and, for optimize, the
 /// images and fonts of every page (<c>page/1/image/1</c>, <c>page/1/font/1</c>). What a read
 /// reports of these objects is the state <see cref="PdfInfoProjection"/> reads, and an object
-/// with a name is addressed by <see cref="PdfInfoProjection.Address"/>.
+/// with a name is addressed by <see cref="PdfInfoProjection.Address"/>. A page, and an image or
+/// font on it, names the page's identity as its owner, so the batch numbers it where its output
+/// holds the page (<see cref="PdfEditModel.Positions"/>).
 /// </summary>
 internal sealed class PdfSnapshots(Document document, PdfPageIdentities pages, Func<string?> encryption) : IPdfOpHandler<PdfSnapshots.Scope>
 {
@@ -76,7 +78,7 @@ internal sealed class PdfSnapshots(Document document, PdfPageIdentities pages, F
 
     /// <summary>The page order, naming the moved pages, each of which counts once at its new number.</summary>
     public Scope Apply(MovePagesOp operation) => new(Selection(operation.Pages), () => PageIdentities(
-        [.. Resolve(document, operation.Pages).Select(number => pages.Of(document.Pages[number]))]));
+        [.. Resolve(document, operation.Pages).Select(number => pages.Of(document.Pages[number]).Name)]));
 
     public Scope Apply(ImportPagesOp operation) => PageOrder(Numbered(operation.At));
 
@@ -178,6 +180,7 @@ internal sealed class PdfSnapshots(Document document, PdfPageIdentities pages, F
         {
             int images = 0;
             int fonts = 0;
+            PdfPageIdentity owner = pages.Of(document.Pages[number]);
             Add(document.Pages[number].Resources, depth: 0);
 
             void Add(Resources? resources, int depth)
@@ -193,14 +196,16 @@ internal sealed class PdfSnapshots(Document document, PdfPageIdentities pages, F
                     snapshot.Add(
                         string.Create(CultureInfo.InvariantCulture, $"page/{number}/image/{++images}"),
                         string.Create(CultureInfo.InvariantCulture,
-                            $"{image.Width}x{image.Height}|{image.FilterType}|{ImageDigest(image)}"));
+                            $"{image.Width}x{image.Height}|{image.FilterType}|{ImageDigest(image)}"),
+                        owner);
                 }
 
                 foreach (Aspose.Pdf.Text.Font font in (IEnumerable<Aspose.Pdf.Text.Font>?)resources.Fonts ?? [])
                 {
                     snapshot.Add(
                         string.Create(CultureInfo.InvariantCulture, $"page/{number}/font/{++fonts}"),
-                        $"{font.FontName}|{font.IsEmbedded}|{font.IsSubset}");
+                        $"{font.FontName}|{font.IsEmbedded}|{font.IsSubset}",
+                        owner);
                 }
 
                 foreach (XForm form in (IEnumerable<XForm>?)resources.Forms ?? [])
@@ -218,21 +223,27 @@ internal sealed class PdfSnapshots(Document document, PdfPageIdentities pages, F
         var snapshot = new OperationSnapshot();
         foreach (int number in ResolveOptional(document, selection))
         {
-            snapshot.Add(Address(PageUnit, number), State(document.Pages[number], content));
+            snapshot.Add(Address(PageUnit, number), State(document.Pages[number], content), pages.Of(document.Pages[number]));
         }
 
         return snapshot;
     }
 
-    private OperationSnapshot SinglePage(int number, bool content) =>
-        new OperationSnapshot().Add(Address(PageUnit, number), State(PageAt(document, number), content));
+    private OperationSnapshot SinglePage(int number, bool content)
+    {
+        Page page = PageAt(document, number);
+        return new OperationSnapshot().Add(Address(PageUnit, number), State(page, content), pages.Of(page));
+    }
 
     private OperationSnapshot PageIdentities() => PageIdentities(moved: null);
 
     // The SDK reads the moved pages from the snapshot before the operation, when the selection
     // still names them.
-    private OperationSnapshot PageIdentities(IReadOnlyList<string>? moved) =>
-        new OperationSnapshot().AddSequence(PageUnit, Enumerable.Range(1, document.Pages.Count).Select(number => pages.Of(document.Pages[number])), moved);
+    private OperationSnapshot PageIdentities(IReadOnlyList<string>? moved)
+    {
+        PdfPageIdentity[] order = pages.Order(document);
+        return new OperationSnapshot().AddSequence(PageUnit, order.Select(static page => page.Name), moved, order);
+    }
 
     /// <summary>
     /// The document information and XMP entries as the output will hold them, by their stored
@@ -350,13 +361,23 @@ internal sealed class PdfSnapshots(Document document, PdfPageIdentities pages, F
 /// </summary>
 internal sealed class PdfPageIdentities
 {
-    private readonly ConditionalWeakTable<Page, string> _identities = [];
+    private readonly ConditionalWeakTable<Page, PdfPageIdentity> _identities = [];
     private int _next;
 
     /// <summary>The page's identity, given on first sight.</summary>
-    internal string Of(Page page) =>
-        _identities.GetValue(page, _ => "p" + (++_next).ToString(CultureInfo.InvariantCulture));
+    internal PdfPageIdentity Of(Page page) =>
+        _identities.GetValue(page, _ => new PdfPageIdentity("p" + (++_next).ToString(CultureInfo.InvariantCulture)));
+
+    /// <summary>The identity of each page of <paramref name="document"/>, in page order.</summary>
+    internal PdfPageIdentity[] Order(Document document) =>
+        [.. Enumerable.Range(1, document.Pages.Count).Select(number => Of(document.Pages[number]))];
 
     /// <summary>Gives <paramref name="copy"/> the identity of <paramref name="original"/>.</summary>
     internal void Carry(Page original, Page copy) => _identities.AddOrUpdate(copy, Of(original));
+}
+
+/// <summary>One page's identity: the same instance wherever the editor moves the page, and a name that tells it from the others.</summary>
+internal sealed class PdfPageIdentity(string name)
+{
+    internal string Name { get; } = name;
 }
