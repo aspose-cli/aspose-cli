@@ -1,4 +1,5 @@
 using System.Text.Json.Nodes;
+using System.Text.RegularExpressions;
 using Aspose.Cli.TestKit;
 using Aspose.Pdf;
 using Aspose.Pdf.Forms;
@@ -688,6 +689,32 @@ public sealed class PdfCliWorkflowTests : IDisposable
         }
 
         return count;
+    }
+
+    /// <summary>
+    /// PDF-2: the headings of a PDF created from Markdown are not bookmarks, so a split by
+    /// bookmarks is refused with a hint that names add_bookmark in an operation that runs as
+    /// given, after which the split succeeds.
+    /// </summary>
+    [Fact]
+    public void MarkdownHeadings_MakeNoBookmarks_SoSplitByBookmarksNeedsAddBookmark()
+    {
+        File.WriteAllText(_workspace.File("notes.md"), "# One\n\nFirst part.\n\n# Two\n\nSecond part.\n");
+        Assert.Equal(0, _workspace.Run("pdf", "create", "notes.pdf", "--from-markdown", "notes.md").ExitCode);
+
+        JsonNode inspected = _workspace.Run("pdf", "inspect", "notes.pdf", "--detail", "outline", "--output-format", "json").Json();
+        CliResult refused = _workspace.Run("pdf", "split", "notes.pdf", "--by", "bookmarks", "--out-dir", "parts", "--output-format", "json");
+
+        Assert.Empty(inspected["outline"]?.AsArray() ?? []);
+        Assert.Equal(2, refused.ExitCode);
+        string hint = JsonNode.Parse(refused.StdErr)!["error"]!["hint"]!.GetValue<string>();
+        Assert.Contains("pdf edit", hint, StringComparison.Ordinal);
+        Match operation = Regex.Match(hint, "\\{\"op\":\"add_bookmark\"[^}]*\\}");
+        Assert.True(operation.Success, hint);
+        CliResult edited = _workspace.Run("pdf", "edit", "notes.pdf", "--ops", $"{{\"ops\":[{operation.Value}]}}", "--out", "marked.pdf");
+        Assert.True(edited.ExitCode == 0, edited.StdErr);
+        CliResult split = _workspace.Run("pdf", "split", "marked.pdf", "--by", "bookmarks", "--out-dir", "parts", "--output-format", "json");
+        Assert.True(split.ExitCode == 0, split.StdErr);
     }
 
     public void Dispose() => _workspace.Dispose();
