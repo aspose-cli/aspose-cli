@@ -39,7 +39,7 @@
         "command": "edit",
         "inputSchema": "v2/pdf/ops",
         "operationSchema": "aspose-cli schema v2/pdf/ops --operation <op>",
-        "contractFingerprint": "sha256:a6c9f648b43aa2dbe27c01b99ffebab9aad8ccee51712368ececa081535b8d78",
+        "contractFingerprint": "sha256:c1e072c16fda62ad729bb6e12a9c897cdef2c579317ca46ec2f2af5913769e96",
         "maximumOperationCount": 10000,
         "ops": [
           "add_attachment",
@@ -4870,7 +4870,7 @@
               "x-readBack": "not-state"
             },
             "removeUnusedObjects": {
-              "description": "Whether objects and streams that nothing in the document references are removed.",
+              "description": "Whether resources, such as images, that a page lists but its content never draws are removed. Every edit leaves out the objects that nothing in the document references.",
               "type": "boolean",
               "default": true,
               "x-readBack": "not-state"

@@ -103,6 +103,7 @@ internal static class PdfEdit
         if (!request.Options.DryRun)
         {
             using OutputSet<Document> transaction = session.Outputs.BeginSet([request.Output.Directory], "pdf-edit");
+            RemoveUnreferencedObjects(document);
             PdfOutputPasswords? passwords = PdfOutputEncryption.Requested(request.EncryptPassword);
             bool encrypted = PdfOutputEncryption.Encrypted(document, passwords);
             StagedOutput write = transaction.Stage(
@@ -143,6 +144,25 @@ internal static class PdfEdit
 
         return new Publication(output, backup, verification);
     }
+
+    /// <summary>
+    /// The engine writes every object the input held, including those an operation stopped
+    /// referencing: a flattened field with its name and value, a deleted attachment's content.
+    /// Removing them keeps what an edit took out of the document out of the file's bytes.
+    /// </summary>
+    private static void RemoveUnreferencedObjects(Document document) =>
+        document.OptimizeResources(new Aspose.Pdf.Optimization.OptimizationOptions
+        {
+            RemoveUnusedObjects = true,
+            RemoveUnusedStreams = false,
+            LinkDuplicateStreams = false,
+            AllowReusePageContent = false,
+            CompressObjects = false,
+            CompressAllContentStreams = false,
+            UnembedFonts = false,
+            SubsetFonts = false,
+            RemovePrivateInfo = false,
+        });
 
     /// <summary>
     /// Saves the edited document. PDF-ENCRYPTED-INFO-TEXT: with an encryption to apply to a
