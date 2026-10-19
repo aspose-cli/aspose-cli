@@ -63,18 +63,17 @@ internal static class WordsEdit
         session.Loader.EnsureWithinBudgets(loaded.Document, loaded.Resources);
         WordsSavePipeline.RemoveMacrosUnlessKept(loaded.Document, format);
 
-        (OutputInfo? output, BackupInfo? backup, WordsEditVerification? verification) =
-            Persist(
-                session,
-                loaded.Document,
-                request,
-                baseline,
-                VerifiedOps(outcomes, request.TrackChanges),
-                precondition,
-                loaded.Resources,
-                written,
-                saveOptions,
-                protection);
+        EditPublication<WordsEditVerification> publication = Persist(
+            session,
+            loaded.Document,
+            request,
+            baseline,
+            VerifiedOps(outcomes, request.TrackChanges),
+            precondition,
+            loaded.Resources,
+            written,
+            saveOptions,
+            protection);
         baseline?.Cleanup();
         var outputWarnings = new List<Warning>();
         outputWarnings.AddRange(SaveWarnings(loaded, format));
@@ -82,15 +81,15 @@ internal static class WordsEdit
         return new WordsEditResult
         {
             Input = input,
-            Output = output,
+            Output = publication.Output,
             DryRun = request.Options.DryRun,
             Checked = request.Options.Checked,
             Applied = outcomes,
-            Backup = backup,
+            Backup = publication.Backup,
             PagesTouched = pagesTouched.Count == 0 ? null : pagesTouched,
-            Verification = verification,
+            Verification = publication.Verification,
             License = EnvelopeParts.License(state),
-            Warnings = EnvelopeParts.CombineWarnings(outputWarnings, EnvelopeParts.BackupWarnings(backup), operationWarnings, PdfInputWarnings(loaded), MutationWarnings(
+            Warnings = EnvelopeParts.CombineWarnings(outputWarnings, publication.BackupWarnings, operationWarnings, PdfInputWarnings(loaded), MutationWarnings(
                 loaded.Document,
                 format,
                 // The input's revisions are disclosed while the output still contains revisions;
@@ -164,10 +163,7 @@ internal static class WordsEdit
     /// a long document it lays out or saves in evaluation mode and ends it with its truncation
     /// notice; the write pipeline finds the notice in the saved output and discloses it.
     /// </summary>
-    private static (
-        OutputInfo? Output,
-        BackupInfo? Backup,
-        WordsEditVerification? Verification) Persist(
+    private static EditPublication<WordsEditVerification> Persist(
         WordsSession session,
         Document document,
         WordsEditRequest request,
@@ -179,42 +175,27 @@ internal static class WordsEdit
         SaveOptions saveOptions,
         OutputProtection protection)
     {
-        string format = written.Id;
-        OutputInfo? output = null;
-        BackupInfo? backup = null;
-        WordsEditVerification? verification = null;
-        if (!request.Options.DryRun)
-        {
-            using OutputSet<Document> transaction = session.Outputs.BeginSet([request.Output.Directory], "words-edit");
-            StagedOutput write = transaction.Stage(
-                request.Output.Path,
-                request.Output.Overwrite,
-                document,
-                temp =>
-                {
-                    try { document.Save(temp, saveOptions); }
-                    finally { resources.ThrowIfFailed(); }
-                    // Every format edit writes is one the product loads (WordsFormats.Editable).
-                    if (!request.Verify)
-                    {
-                        using LoadedDocument reopened = session.Loader.OpenPublishedCandidate(temp, protection.Password);
-                    }
-                },
-                backupPath: request.Output.BackupPath,
-                inputPrecondition: precondition,
-                encrypted: protection.Encrypted);
-            backup = write.Backup;
-
-            if (request.Verify)
+        ResolvedOutput output = request.Output;
+        return session.Outputs.PublishEdit<WordsEditVerification>(
+            new ResolvedOutput(written, output.Path, output.Overwrite, output.InPlace, output.BackupPath),
+            document,
+            precondition,
+            request.Options.DryRun,
+            protection.Encrypted,
+            temp =>
             {
-                WordsSavedState expected = WordsReadBack.Saved(document);
-                verification = write.Read(
-                    candidate => Verify(session, candidate, format, protection.Password, baseline!, expected, checkedOps));
-            }
-            transaction.Commit();
-            output = FileObjects.Output(write.Published, written, encrypted: protection.Encrypted);
-        }
-        return (output, backup, verification);
+                try { document.Save(temp, saveOptions); }
+                finally { resources.ThrowIfFailed(); }
+                // Every format edit writes is one the product loads (WordsFormats.Editable).
+                if (!request.Verify)
+                {
+                    using LoadedDocument reopened = session.Loader.OpenPublishedCandidate(temp, protection.Password);
+                }
+            },
+            request.Verify
+                ? candidate => Verify(session, candidate, written.Id, protection.Password, baseline!, WordsReadBack.Saved(document), checkedOps)
+                : null,
+            "words-edit");
     }
 
     /// <summary>
