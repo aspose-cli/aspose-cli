@@ -125,7 +125,7 @@ internal sealed class AppDocumentSession : IDisposable
         lock (_gate)
         {
             // One tab per file: a different view of the same file replaces it.
-            replaced = _open.FirstOrDefault(lease => SamePath(lease.Path, full));
+            replaced = _open.FirstOrDefault(lease => FilePaths.Same(lease.Path, full));
             if (replaced is not null)
             {
                 _open.Remove(replaced);
@@ -386,12 +386,10 @@ internal sealed class AppDocumentSession : IDisposable
     {
         AppLicenseContext license = _license();
         return _open.FirstOrDefault(lease =>
-            SamePath(lease.Path, path)
+            FilePaths.Same(lease.Path, path)
                 && string.Equals(lease.View, view, StringComparison.Ordinal)
                 && AppLicenseContext.Same(lease.License, license));
     }
-
-    private static bool SamePath(string left, string right) => FilePaths.Same(left, right);
 
     public void RefreshPreferences(string productId, string desiredView)
     {

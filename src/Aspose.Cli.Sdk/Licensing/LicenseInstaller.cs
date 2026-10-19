@@ -226,19 +226,18 @@ public static class LicenseInstaller
     private static string CommonDirectory(IReadOnlyList<string> paths)
     {
         string directory = Path.GetDirectoryName(paths[0])!;
-        StringComparison comparison = FilePaths.Comparison;
         foreach (string path in paths.Skip(1))
         {
             string parent = Path.GetDirectoryName(path)!;
-            while (!string.Equals(parent, directory, comparison)
+            while (!FilePaths.Same(parent, directory)
                 && !parent.StartsWith(Path.TrimEndingDirectorySeparator(directory)
-                    + Path.DirectorySeparatorChar, comparison))
+                    + Path.DirectorySeparatorChar, FilePaths.Comparison))
             {
                 directory = Path.GetDirectoryName(directory)
                     ?? throw new ArgumentException("License destinations must share a filesystem root.", nameof(paths));
             }
         }
-        if (string.Equals(directory, Path.GetPathRoot(directory), comparison))
+        if (FilePaths.Same(directory, Path.GetPathRoot(directory)))
         {
             throw new ArgumentException("License storage must be below the filesystem root.", nameof(paths));
         }

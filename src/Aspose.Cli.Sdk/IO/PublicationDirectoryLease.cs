@@ -10,7 +10,6 @@ namespace Aspose.Cli.Sdk.IO;
 internal sealed class PublicationDirectoryLease : IDisposable
 {
     private static readonly TimeSpan DefaultWait = TimeSpan.FromSeconds(30);
-    private static StringComparer Comparer => FilePaths.Comparer;
     private readonly List<FileStream> _handles;
     private readonly string[] _exclusive;
     private readonly FilePhysicalIdentity? _directoryIdentity;
@@ -31,10 +30,10 @@ internal sealed class PublicationDirectoryLease : IDisposable
     {
         string root = Normalize(directory);
         OutputPathValidator.EnsureSafeDirectory(root);
-        string[] requested = outputDirectories.Select(Normalize).Distinct(Comparer).ToArray();
+        string[] requested = outputDirectories.Select(Normalize).Distinct(FilePaths.Comparer).ToArray();
         if (requested.Length == 0) { requested = [root]; }
-        string[] exclusive = requested.Where(path => !requested.Any(other => !Comparer.Equals(path, other) && IsWithin(other, path))).ToArray();
-        var requests = new Dictionary<string, bool>(Comparer);
+        string[] exclusive = requested.Where(path => !requested.Any(other => !FilePaths.Same(path, other) && FilePaths.IsWithin(other, path, allowEqual: true))).ToArray();
+        var requests = new Dictionary<string, bool>(FilePaths.Comparer);
         var volumes = new SortedSet<string>(StringComparer.Ordinal);
         foreach (string path in exclusive)
         {
@@ -46,7 +45,7 @@ internal sealed class PublicationDirectoryLease : IDisposable
             volumes.Add(OperatingSystem.IsWindows() ? $"volume:{identity!.Value.VolumeSerialNumber:X8}" : Path.GetPathRoot(path)!);
             for (string? current = path; current is not null; current = Path.GetDirectoryName(current))
             {
-                bool write = Comparer.Equals(current, path);
+                bool write = FilePaths.Same(current, path);
                 requests[current] = write || requests.GetValueOrDefault(current);
             }
         }
@@ -60,7 +59,7 @@ internal sealed class PublicationDirectoryLease : IDisposable
             // Every lease holds the volume key shared, so it waits for any publisher that locks
             // the whole volume exclusively.
             foreach (string volume in volumes) { handles.Add(AcquireFile(lockRoot, volume, exclusive: false, wait)); }
-            foreach ((string path, bool write) in requests.OrderBy(item => item.Key, Comparer))
+            foreach ((string path, bool write) in requests.OrderBy(item => item.Key, FilePaths.Comparer))
             {
                 handles.Add(AcquireFile(lockRoot, "directory:" + (OperatingSystem.IsWindows() ? path.ToUpperInvariant() : path), write, wait));
             }
@@ -74,14 +73,14 @@ internal sealed class PublicationDirectoryLease : IDisposable
     }
 
     internal bool CoversDirectories(IEnumerable<string> directories) =>
-        directories.All(path => _exclusive.Any(root => IsWithin(root, Normalize(path))));
+        directories.All(path => _exclusive.Any(root => FilePaths.IsWithin(root, Normalize(path), allowEqual: true)));
 
     public void EnsureCovers(string path)
     {
         OutputPathValidator.EnsureSafeFile(path);
         EnsureDirectoryUnchanged();
         string parent = Path.GetDirectoryName(Path.GetFullPath(path))!;
-        if (!IsWithin(Directory, parent) || !CoversDirectories([parent]))
+        if (!FilePaths.IsWithin(Directory, parent, allowEqual: true) || !CoversDirectories([parent]))
         {
             throw new IOException($"Publication target '{path}' is outside the leased resources.");
         }
@@ -137,7 +136,6 @@ internal sealed class PublicationDirectoryLease : IDisposable
     }
 
     private static string Normalize(string path) => Path.TrimEndingDirectorySeparator(Path.GetFullPath(path));
-    private static bool IsWithin(string parent, string path) => FilePaths.IsWithin(parent, path, allowEqual: true);
 
     [DllImport("libc", EntryPoint = "flock", SetLastError = true)]
     private static extern int Flock(int descriptor, int operation);

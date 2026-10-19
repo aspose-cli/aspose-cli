@@ -318,8 +318,6 @@ internal sealed record AdmittedDirectoryPrevious(DirectoryTreeSnapshot? Tree);
 internal static class NewDirectoryPublication
 {
     internal const int MaximumFiles = PublicationLimits.MaximumDirectoryFiles;
-    private static StringComparer Comparer => FilePaths.Comparer;
-
     /// <summary>Where a replaced directory waits inside its publication transaction.</summary>
     internal static string PreviousPath(string transaction) => Path.Combine(transaction, "previous");
 
@@ -368,8 +366,8 @@ internal static class NewDirectoryPublication
                 files.Add(new DirectoryOutputFile(Path.GetRelativePath(root, file.FullName), snapshot));
             }
         }
-        return new DirectoryTreeSnapshot(files.OrderBy(file => file.Path, Comparer).ToArray(),
-            directories.OrderBy(directory => directory.Path, Comparer).ToArray());
+        return new DirectoryTreeSnapshot(files.OrderBy(file => file.Path, FilePaths.Comparer).ToArray(),
+            directories.OrderBy(directory => directory.Path, FilePaths.Comparer).ToArray());
     }
 
     internal static void ValidateDescriptor(NewDirectoryOutput output)
@@ -379,7 +377,7 @@ internal static class NewDirectoryPublication
         { throw new InvalidDataException("Invalid bounded directory output."); }
         foreach (string path in new[] { output.Target, output.Staged, output.ParentAnchor })
         {
-            if (string.IsNullOrWhiteSpace(path) || !Path.IsPathFullyQualified(path) || !Comparer.Equals(path, Path.GetFullPath(path)))
+            if (string.IsNullOrWhiteSpace(path) || !Path.IsPathFullyQualified(path) || !FilePaths.Same(path, Path.GetFullPath(path)))
             { throw new InvalidDataException("Directory output paths must be canonical and absolute."); }
             OutputPathValidator.EnsureSafeDirectory(path);
         }
@@ -387,8 +385,8 @@ internal static class NewDirectoryPublication
         if (Escapes(relative) || OperatingSystem.IsWindows() && (output.ParentIdentity is null || output.TransactionIdentity is null))
         { throw new InvalidDataException("Invalid directory output parent boundary."); }
         EnsureAnchor(Path.GetDirectoryName(output.Staged)!, output.TransactionIdentity);
-        var paths = new HashSet<string>(Comparer);
-        var dirs = new HashSet<string>(Comparer);
+        var paths = new HashSet<string>(FilePaths.Comparer);
+        var dirs = new HashSet<string>(FilePaths.Comparer);
         foreach (DirectoryOutputDirectory directory in output.Tree.Directories)
         {
             if (directory is null || !SafeRelative(directory.Path, allowRoot: true) || !paths.Add(directory.Path)
@@ -446,8 +444,8 @@ internal static class NewDirectoryPublication
         DirectoryTreeSnapshot actual = Capture(root, deadline: deadline ?? owned!);
         if (actual.Files.Count != expected.Files.Count || actual.Directories.Count != expected.Directories.Count)
         { throw new IOException("The directory output tree changed after sealing."); }
-        var files = expected.Files.ToDictionary(file => file.Path, Comparer);
-        var dirs = expected.Directories.ToDictionary(directory => directory.Path, Comparer);
+        var files = expected.Files.ToDictionary(file => file.Path, FilePaths.Comparer);
+        var dirs = expected.Directories.ToDictionary(directory => directory.Path, FilePaths.Comparer);
         if (actual.Files.Any(file => !files.TryGetValue(file.Path, out DirectoryOutputFile? was)
                 || !was.Snapshot.VersionEquals(file.Snapshot) || !was.Snapshot.Metadata!.Matches(Path.Combine(root, file.Path)))
             || actual.Directories.Any(directory => !dirs.TryGetValue(directory.Path, out DirectoryOutputDirectory? was)
@@ -531,7 +529,7 @@ internal static class NewDirectoryPublication
         // ancestor; recovery holds the parent's lease, as the writer did.
         string parent = Path.GetDirectoryName(output.Target)!;
         if (!Enum.IsDefined(journal.State) || journal.Entries.Count != 0 || Escapes(Path.GetRelativePath(root, parent))
-            || !Comparer.Equals(output.Staged, Path.Combine(transaction, "directory")))
+            || !FilePaths.Same(output.Staged, Path.Combine(transaction, "directory")))
         { throw new InvalidDataException("The directory publication journal is outside its transaction."); }
         using PublicationDirectoryLease? owned = suppliedLease is null
             ? PublicationDirectoryLease.Acquire(parent, [parent], deadline) : null;

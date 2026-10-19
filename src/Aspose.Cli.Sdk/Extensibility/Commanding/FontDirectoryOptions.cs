@@ -73,7 +73,7 @@ internal sealed class FontDirectoryOptions
         {
             throw Invalid(value, "is not a valid local path");
         }
-        if (IsNetworkOrDevicePath(value) || IsNetworkOrDevicePath(fullPath))
+        if (FilePaths.IsRemoteOrDevice(value) || FilePaths.IsRemoteOrDevice(fullPath))
         {
             throw Invalid(value, "must be a local path");
         }
@@ -98,8 +98,6 @@ internal sealed class FontDirectoryOptions
         }
         return fullPath;
     }
-
-    private static bool IsNetworkOrDevicePath(string path) => FilePaths.IsRemoteOrDevice(path);
 
     private static CliException Invalid(string value, string reason) =>
         CliErrors.OptionInvalid(

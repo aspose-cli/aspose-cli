@@ -147,13 +147,12 @@ internal sealed class AtomicPublicationStaging(
 
     private void EnsureUnique(string target, string? backup = null)
     {
-        StringComparer comparer = FilePaths.Comparer;
         if (plan.Journal.Entries.Any(
-                item => comparer.Equals(item.Target, target)
-                    || item.RequestedBackup is not null && comparer.Equals(item.RequestedBackup, target)
-                    || backup is not null && (comparer.Equals(item.Target, backup)
-                        || item.RequestedBackup is not null && comparer.Equals(item.RequestedBackup, backup)))
-            || backup is not null && comparer.Equals(target, backup))
+                item => FilePaths.Same(item.Target, target)
+                    || item.RequestedBackup is not null && FilePaths.Same(item.RequestedBackup, target)
+                    || backup is not null && (FilePaths.Same(item.Target, backup)
+                        || item.RequestedBackup is not null && FilePaths.Same(item.RequestedBackup, backup)))
+            || backup is not null && FilePaths.Same(target, backup))
         {
             throw CliErrors.DuplicateOutput(target);
         }
