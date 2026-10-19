@@ -20,9 +20,7 @@ internal static class BrowserLauncher
         }
         try
         {
-            using Process? browser = OperatingSystem.IsWindows()
-                ? Process.Start(new ProcessStartInfo(url) { UseShellExecute = true })
-                : Process.Start(OperatingSystem.IsMacOS() ? "open" : "xdg-open", url);
+            using Process? browser = Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
         }
         catch (Exception exception) when (
             exception is InvalidOperationException or System.ComponentModel.Win32Exception)

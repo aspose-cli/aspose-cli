@@ -1,5 +1,4 @@
 using System.IO.Pipes;
-using System.Net.Sockets;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.IO;
 
@@ -31,7 +30,7 @@ internal static class LocalServiceControlClient
             for (int attempt = 0; ; attempt++)
             {
                 try { connected = ConnectAsync(endpoint, frame.Token).GetAwaiter().GetResult(); break; }
-                catch (Exception exception) when (attempt == 0 && exception is IOException or SocketException)
+                catch (Exception exception) when (attempt == 0 && exception is IOException)
                 { if (deadline.Token.WaitHandle.WaitOne(25)) { deadline.ThrowIfExpired("control-connect"); } }
             }
             using Stream stream = connected;
@@ -80,43 +79,22 @@ internal static class LocalServiceControlClient
         LocalServiceControlEndpoint endpoint,
         CancellationToken cancellationToken)
     {
-        if (OperatingSystem.IsWindows())
-        {
-            // CurrentUserOnly makes the client verify the server's owner before it sends
-            // the control token and any document password.
-            var pipe = new NamedPipeClientStream(
-                ".",
-                endpoint.PipeName,
-                PipeDirection.InOut,
-                PipeOptions.Asynchronous | PipeOptions.CurrentUserOnly);
-            try
-            {
-                await pipe.ConnectAsync(
-                    cancellationToken).ConfigureAwait(false);
-                return pipe;
-            }
-            catch
-            {
-                pipe.Dispose();
-                throw;
-            }
-        }
-
-        var socket = new Socket(
-            AddressFamily.Unix,
-            SocketType.Stream,
-            ProtocolType.Unspecified);
+        // CurrentUserOnly makes the client verify the server's owner before it sends
+        // the control token and any document password.
+        var pipe = new NamedPipeClientStream(
+            ".",
+            endpoint.PipeName,
+            PipeDirection.InOut,
+            PipeOptions.Asynchronous | PipeOptions.CurrentUserOnly);
         try
         {
-            await socket.ConnectAsync(
-                new UnixDomainSocketEndPoint(
-                    endpoint.UnixSocketPath),
+            await pipe.ConnectAsync(
                 cancellationToken).ConfigureAwait(false);
-            return new NetworkStream(socket, ownsSocket: true);
+            return pipe;
         }
         catch
         {
-            socket.Dispose();
+            pipe.Dispose();
             throw;
         }
     }
