@@ -81,6 +81,10 @@ public sealed class SlidesOpContractTests
     [InlineData("set_shape_style", "format_shape")]
     [InlineData("update_chart_data", "set_chart_data")]
     [InlineData("add_section", "insert_section")]
+    [InlineData("hide_slide", "set_slide_hidden")]
+    [InlineData("hide_slides", "set_slide_hidden")]
+    [InlineData("unhide_slide", "set_slide_hidden")]
+    [InlineData("show_slide", "set_slide_hidden")]
     public void RenamedOperation_IsRefusedWithItsNewName(string old, string renamed)
     {
         CliException error = Assert.Throws<CliException>(() => Parse($$"""{"ops":[{"op":"{{old}}"}]}"""));

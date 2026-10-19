@@ -218,6 +218,7 @@ public sealed record CopySlideOp : SlideTargetOp
 
 /// <summary>Hides or shows slides in a slide show.</summary>
 [Operation("set_slide_hidden")]
+[MistakenFor("hide_slide", "hide_slides", "unhide_slide", "show_slide")]
 public sealed record SetSlideHiddenOp : SlidesOp
 {
     /// <summary>The slides to hide or show.</summary>
