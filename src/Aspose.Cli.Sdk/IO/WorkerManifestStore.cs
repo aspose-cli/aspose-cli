@@ -101,18 +101,22 @@ internal static class WorkerManifestStore
 
     private static void Validate(string root, WorkerOutputManifest manifest)
     {
-        if (manifest.Version != 6 || !manifest.Sealed || manifest.Entries is null || manifest.Directories is null
+        if (manifest.Version != 7 || !manifest.Sealed || manifest.Entries is null || manifest.Directories is null
             || manifest.Entries.Count > MaximumEntries || manifest.Directories.Count > MaximumDirectories)
         {
             throw new InvalidDataException("The worker manifest violates its bounded contract.");
         }
         if (manifest.DirectoryOutput is null && manifest.DirectoryTransactionParent is not null)
         { throw new InvalidDataException("A transaction parent needs a new-directory output."); }
+        if (manifest.DirectoryOutput is null && manifest.DirectoryAdmittedPrevious is not null)
+        { throw new InvalidDataException("An admitted target needs a new-directory output."); }
         if (manifest.DirectoryOutput is { } output)
         {
             if (manifest.Entries.Count != 0 || manifest.Directories.Count != 0)
             { throw new InvalidDataException("A new-directory output cannot overlap another output set."); }
             NewDirectoryPublication.ValidateDescriptor(output);
+            if (manifest.DirectoryAdmittedPrevious?.Tree is { } admitted)
+            { NewDirectoryPublication.ValidateDescriptor(output with { Previous = admitted }); }
             EnsureOutsideRoot(root, output.Target);
             if (manifest.DirectoryTransactionParent is { } transactionParent
                 && (!Path.IsPathFullyQualified(transactionParent)
