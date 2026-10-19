@@ -30,6 +30,11 @@ internal sealed class MarkdownImportResources : IDisposable
 
     private static readonly TimeSpan MatchTimeout = TimeSpan.FromSeconds(10);
 
+    // The extensions of the bitmap image formats, by which a url() names an image.
+    private static readonly HashSet<string> RasterExtensions = new(
+        ImageInput.Formats.Where(static format => format.Raster).SelectMany(static format => format.Extensions),
+        StringComparer.OrdinalIgnoreCase);
+
     // A reference definition, which only applies when an image uses its label.
     private static readonly Regex Definition = new(
         @"^[ \t]*\[(?<label>(?:[^\[\]\\\n]|\\[^\n])+)\]:[ \t]*\n?[ \t]*(?:<(?<destination>[^<>\n]*)>|(?<destination>[^\s<]\S*))",
@@ -210,7 +215,7 @@ internal sealed class MarkdownImportResources : IDisposable
             || head.StartsWith("OTTO"u8) || head.StartsWith("true"u8) || head.StartsWith("ttcf"u8)
             || head.StartsWith("wOFF"u8) || head.StartsWith("wOF2"u8);
         return !font && (NetworkReferenceGuard.IsSelfContained(head)
-            || Path.GetExtension(file).ToLowerInvariant() is ".png" or ".jpg" or ".jpeg" or ".gif" or ".bmp" or ".webp" or ".tif" or ".tiff" or ".ico");
+            || RasterExtensions.Contains(Path.GetExtension(file)));
     }
 
     private static bool IsSelfContained(VerifiedReadLease lease)
