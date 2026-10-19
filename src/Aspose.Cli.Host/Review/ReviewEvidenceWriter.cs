@@ -214,7 +214,7 @@ internal static class ReviewEvidenceWriter
         foreach (ViewPart part in parts)
         {
             string path = ArtifactsBase + part.File;
-            if (IsVisualEvidence(path))
+            if (MediaTypes.IsVisual(path))
             {
                 partEvidence.TryAdd(part.Id, path);
             }
@@ -226,7 +226,7 @@ internal static class ReviewEvidenceWriter
             .ToArray();
         string[] evidence = artifacts
             .Where(static artifact => artifact.Role == "evidence"
-                && IsVisualEvidence(artifact.Path))
+                && MediaTypes.IsVisual(artifact.Path))
             .Select(static artifact => artifact.Path)
             .ToArray();
         if (evidence.Length == 0)
@@ -244,11 +244,6 @@ internal static class ReviewEvidenceWriter
                 })
             .ToArray();
     }
-
-    private static bool IsVisualEvidence(string path) =>
-        Path.GetExtension(path).ToLowerInvariant() is
-            ".svg" or ".png" or ".jpg" or ".jpeg"
-            or ".gif" or ".webp" or ".pdf";
 
     private static ReviewArtifact CreateArtifact(
         string evidenceDirectory,
@@ -270,7 +265,7 @@ internal static class ReviewEvidenceWriter
             Sequence = sequence,
             Path = ArtifactsBase + part.File,
             Role = "evidence",
-            MediaType = MediaType(part.File),
+            MediaType = MediaTypes.Of(part.File),
             Scope = view,
             Label = part.Label.Length == 0 ? Path.GetFileName(part.File) : part.Label,
             Width = width,
@@ -310,23 +305,6 @@ internal static class ReviewEvidenceWriter
                 : $"<p><a href=\"{path}\">{label}</a></p>";
         }))
         + "</div></div>";
-
-    private static string MediaType(string path) =>
-        Path.GetExtension(path).ToLowerInvariant() switch
-        {
-            ".html" or ".htm" => "text/html",
-            ".css" => "text/css",
-            ".js" => "text/javascript",
-            ".json" => "application/json",
-            ".svg" => "image/svg+xml",
-            ".png" => "image/png",
-            ".jpg" or ".jpeg" => "image/jpeg",
-            ".gif" => "image/gif",
-            ".webp" => "image/webp",
-            ".pdf" => "application/pdf",
-            ".txt" => "text/plain",
-            _ => "application/octet-stream",
-        };
 
     /// <summary>
     /// Refuses an evidence directory the review may not publish at <paramref name="target"/>:
