@@ -315,13 +315,9 @@ internal sealed record FilePublicationSnapshot(
     public bool VersionEquals(FilePublicationSnapshot other) =>
         ContentEquals(other)
         && (!Exists
-            || (OperatingSystem.IsWindows()
-                ? PhysicalIdentity is not null
-                    && other.PhysicalIdentity is not null
-                    && PhysicalIdentity.Value == other.PhysicalIdentity.Value
-                : PhysicalIdentity is null
-                    || other.PhysicalIdentity is null
-                    || PhysicalIdentity.Value == other.PhysicalIdentity.Value));
+            || (PhysicalIdentity is not null
+                && other.PhysicalIdentity is not null
+                && PhysicalIdentity.Value == other.PhysicalIdentity.Value));
 
     public bool IsStructurallyValid() =>
         Exists
@@ -330,7 +326,7 @@ internal sealed record FilePublicationSnapshot(
                 && Sha256 is { Length: 64 }
                 && Sha256.All(Uri.IsHexDigit)
                 && Metadata is not null
-                && (!OperatingSystem.IsWindows() || PhysicalIdentity is not null)
+                && PhysicalIdentity is not null
             : Length == 0
                 && LastWriteUtcTicks == 0
                 && Sha256 is null
@@ -479,7 +475,7 @@ internal sealed class PublicationJournal
         return largest with
         {
             Length = long.MaxValue, LastWriteUtcTicks = long.MaxValue,
-            PhysicalIdentity = OperatingSystem.IsWindows() ? new FilePhysicalIdentity(uint.MaxValue, ulong.MaxValue) : null,
+            PhysicalIdentity = new FilePhysicalIdentity(uint.MaxValue, ulong.MaxValue),
         };
     }
 
