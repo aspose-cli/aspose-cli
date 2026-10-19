@@ -338,6 +338,27 @@ public sealed partial class DecisionOwnershipTests
         Assert.DoesNotContain(SecretSentinel, json ?? string.Empty, StringComparison.Ordinal);
     }
 
+    // -- D13 Process liveness ----------------------------------------------------------------
+
+    [Fact]
+    public void D13_ProcessLiveness_HasOneSdkOwner()
+    {
+        string owner = Path.Combine(SdkRoot, "IO", "ProcessIdentity.cs");
+        // Temporary: the optimize slice a2 rewrites the launcher and moves its start-time read
+        // to ProcessIdentity.StartUtcTicksOf; remove this exception with it.
+        string launcher = Path.Combine(HostRoot, "LocalServices", "SelfProcessLauncher.cs");
+        string[] violations = [.. Sources.Value
+            .Where(file => !string.Equals(file.Path, owner, StringComparison.OrdinalIgnoreCase)
+                && !string.Equals(file.Path, launcher, StringComparison.OrdinalIgnoreCase))
+            .SelectMany(file => file.Root.DescendantNodes()
+                .OfType<MemberAccessExpressionSyntax>()
+                .Where(static access => access.Name.Identifier.ValueText is "GetProcessById" or "StartTime")
+                .Select(access => file.At(access, access.ToString())))];
+
+        AssertNone(violations,
+            "A process is identified by its id and start time only in the SDK's ProcessIdentity, which also decides whether it still runs:");
+    }
+
     // -- Support -----------------------------------------------------------------------------
 
     private static object CreateSecret(Type secret, string text)
