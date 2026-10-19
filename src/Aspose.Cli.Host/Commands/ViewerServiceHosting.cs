@@ -39,7 +39,7 @@ internal static class ViewerServiceHosting
                 stop));
         if (page is not null && mounted is { } app)
         {
-            AppResult opened = app.Open(page.Route, page.File);
+            AppResult opened = app.Open(page.Route, page.File, AppLicenseContext.Of(page));
             if (openBrowser && opened.Url is { } url)
             {
                 BrowserLauncher.Open(url);

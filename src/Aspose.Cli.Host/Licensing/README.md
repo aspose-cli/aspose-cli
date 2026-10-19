@@ -24,6 +24,12 @@ lifetime, identity and atomic storage. Each product Engine retains only its own
   runs `license status`, `license install` and `license remove` as bounded CLI child
   processes (`AppCliGateway`), keeps the status until `LicenseFingerprint` reports a
   change, and re-raises a child's error with the child's own code and exit code.
+- The service outlives the shell that started it, so it never resolves a license from its
+  own environment for a requester. A document opened with `preview open` renders under the
+  license context of that command; the App follows the context of the last `app open`
+  (`AppLicenseContext`: `--license`, license variables and working directory). Its CLI
+  children run with that context alone, and the documents it opens render under it;
+  until an `app open` arrives, the App follows the service's starter.
 - The render worker applies licenses for the viewer. It asks to be recycled when the
   `LicenseFingerprint` of a product changes, because an engine cannot swap a license.
   A fingerprint identifies license content carried in a variable by its SHA-256 hash, so

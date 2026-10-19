@@ -16,7 +16,9 @@ namespace Aspose.Cli.Host.App;
 /// loads an engine and pins it to the process that did it; the service must
 /// stay free of both, so that work happens somewhere it can end. The child
 /// also keeps the answers honest: what Settings shows is exactly what
-/// <c>aspose-cli license status</c> would tell the person at a prompt.
+/// <c>aspose-cli license status</c> would tell the person at the prompt whose
+/// <c>app open</c> reached the App last: the child runs with that command's
+/// <c>--license</c>, license variables and working directory.
 /// </summary>
 internal sealed class AppCliGateway
 {
@@ -26,9 +28,8 @@ internal sealed class AppCliGateway
     private readonly object _gate = new();
     private readonly object _licenseRefresh = new();
     private readonly ProductCatalog _catalog;
-    private readonly GlobalValues _globals;
     private readonly string _configDirectory;
-    private readonly string _workDirectory;
+    private AppLicenseContext _requester;
     private LicenseStatusResult? _license;
     private string? _licenseFingerprint;
     private readonly Dictionary<string, FontAnswer> _fonts = new(StringComparer.Ordinal);
@@ -42,29 +43,53 @@ internal sealed class AppCliGateway
     /// <summary>How long a font list answers before it is asked again, so fonts installed meanwhile show.</summary>
     internal static readonly TimeSpan FontAnswerLifetime = TimeSpan.FromMinutes(5);
 
-    public AppCliGateway(ProductCatalog catalog, GlobalValues globals, string configDirectory)
-        : this(catalog, globals, configDirectory, run: null)
+    public AppCliGateway(ProductCatalog catalog, AppLicenseContext requester, string configDirectory)
+        : this(catalog, requester, configDirectory, run: null)
     {
     }
 
     /// <param name="catalog">The products the commands run against.</param>
-    /// <param name="globals">The global options every command inherits.</param>
+    /// <param name="requester">The license context the commands run under until <see cref="Use"/>.</param>
     /// <param name="configDirectory">The user configuration directory.</param>
     /// <param name="run">Runs one CLI command; tests replace the child process.</param>
     /// <param name="clock">Times a kept font failure; tests replace the system clock.</param>
     internal AppCliGateway(
         ProductCatalog catalog,
-        GlobalValues globals,
+        AppLicenseContext requester,
         string configDirectory,
         Func<IReadOnlyList<string>, ChildProcessResult>? run,
         TimeProvider? clock = null)
     {
         _clock = clock ?? TimeProvider.System;
         _catalog = catalog ?? throw new ArgumentNullException(nameof(catalog));
-        _globals = globals ?? throw new ArgumentNullException(nameof(globals));
+        _requester = requester ?? throw new ArgumentNullException(nameof(requester));
         _configDirectory = configDirectory;
-        _workDirectory = Path.GetFullPath(globals.WorkDir ?? Directory.GetCurrentDirectory());
         _run = run ?? RunChild;
+    }
+
+    /// <summary>
+    /// Runs the commands under another command's license context from now on.
+    /// A different context is asked afresh, fonts included.
+    /// </summary>
+    public void Use(AppLicenseContext requester)
+    {
+        ArgumentNullException.ThrowIfNull(requester);
+        lock (_gate)
+        {
+            if (AppLicenseContext.Same(_requester, requester))
+            {
+                return;
+            }
+            _requester = requester;
+            _license = null;
+            _licenseFingerprint = null;
+            ClearFonts();
+        }
+    }
+
+    private AppLicenseContext Requester
+    {
+        get { lock (_gate) { return _requester; } }
     }
 
     /// <summary>
@@ -77,8 +102,9 @@ internal sealed class AppCliGateway
     {
         lock (_licenseRefresh)
         {
+            AppLicenseContext requester = Requester;
             string fingerprint = LicenseFingerprint.Of(
-                _catalog, _globals.LicensePath, _workDirectory, _configDirectory);
+                _catalog, requester.License, requester.WorkDirectory, _configDirectory, requester.Read);
             lock (_gate)
             {
                 if (_license is { } cached && _licenseFingerprint == fingerprint)
@@ -235,14 +261,26 @@ internal sealed class AppCliGateway
 
     private ChildProcessResult RunChild(IReadOnlyList<string> arguments)
     {
+        AppLicenseContext requester = Requester;
         ProcessStartInfo start = SelfProcessLauncher.CreateBackground(
             arguments[0],
             "Run the published 'aspose-cli' executable directly.");
         start.WorkingDirectory = SelfProcessLauncher.ServiceWorkingDirectory;
         start.Environment[Aspose.Cli.Sdk.Configuration.ConfigurationPaths.EnvironmentVariableName] =
             _configDirectory;
-        start.ArgumentList.Add("--workdir");
-        start.ArgumentList.Add(_workDirectory);
+        // The service's own license variables are its starter's; the child sees the requester's alone.
+        foreach (string name in InvocationEnvironment.LicenseVariables(_catalog))
+        {
+            if (requester.Read(name) is { } value) { start.Environment[name] = value; }
+            else { start.Environment.Remove(name); }
+        }
+        start.ArgumentList.Add(GlobalOptionNames.WorkDir);
+        start.ArgumentList.Add(requester.WorkDirectory);
+        if (requester.License is { } license)
+        {
+            start.ArgumentList.Add(GlobalOptionNames.License);
+            start.ArgumentList.Add(license);
+        }
         foreach (string argument in arguments)
         {
             start.ArgumentList.Add(argument);

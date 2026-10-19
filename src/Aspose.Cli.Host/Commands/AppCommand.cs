@@ -1,4 +1,5 @@
 using System.CommandLine;
+using Aspose.Cli.Host.App;
 using Aspose.Cli.Host.Invocation;
 using Aspose.Cli.Host.LocalServices;
 using Aspose.Cli.Host.ViewerService;
@@ -74,12 +75,16 @@ internal static class AppCommand
                     port,
                     catalog,
                     capabilities,
-                    page(values),
+                    AppLicenseContext.Of(catalog, values, CompositionRoot.Create(catalog, values).ReadEnvironment)
+                        .ApplyTo(page(values)),
                     openBrowser));
         }
         return executor.RunLightweight(parseResult, globals, (values, budgets) =>
         {
-            ViewerAppRequest request = page(values);
+            // The service outlives the shell that started it; the App follows this command's license.
+            ViewerAppRequest request = AppLicenseContext
+                .Of(catalog, values, InvocationEnvironment.CreateSecretReader(budgets))
+                .ApplyTo(page(values));
             var client = new ViewerServiceClient();
             bool reused = client.Status(budgets.Deadline) is not null;
             ViewerAppResponse opened = client.App(values, request, port, budgets.Deadline);

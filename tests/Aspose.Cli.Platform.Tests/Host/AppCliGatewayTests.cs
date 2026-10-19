@@ -38,6 +38,35 @@ public sealed class AppCliGatewayTests
     }
 
     [Fact]
+    public void LicenseStatus_IsReadAfreshForARequesterWithAnotherLicense()
+    {
+        using var workspace = new TempWorkspace();
+        byte[] status = Encoding.UTF8.GetBytes(workspace.Run("license", "status", "--output-format", "json").StdOut);
+        int runs = 0;
+        AppCliGateway gateway = Gateway(workspace, license: null, _ =>
+        {
+            Interlocked.Increment(ref runs);
+            return new ChildProcessResult(0, status, []);
+        });
+        var first = new Dictionary<string, string> { ["ASPOSE_LICENSE_B64"] = "Zmlyc3Q=" };
+
+        gateway.LicenseStatus();
+        gateway.Use(Requester(workspace, license: null));
+        gateway.LicenseStatus();
+        Assert.Equal(1, runs);
+
+        gateway.Use(Requester(workspace, license: null, first));
+        gateway.LicenseStatus();
+        gateway.Use(Requester(workspace, license: null, first));
+        gateway.LicenseStatus();
+        Assert.Equal(2, runs);
+
+        gateway.Use(Requester(workspace, license: null, new Dictionary<string, string> { ["ASPOSE_LICENSE_B64"] = "c2Vjb25k" }));
+        gateway.LicenseStatus();
+        Assert.Equal(3, runs);
+    }
+
+    [Fact]
     public void Fonts_AreReadOnceAndAskedAfreshAfterTheLicenseChanges()
     {
         using var workspace = new TempWorkspace();
@@ -185,11 +214,18 @@ public sealed class AppCliGatewayTests
         TimeProvider? clock = null) =>
         new(
             ActualCommandTree.Host.Catalog,
-            new GlobalValues(OutputMode.Json, Quiet: true, Verbose: false, license, workspace.Path,
-                TimeoutSeconds: null, MaxInputBytes: 1024 * 1024),
+            Requester(workspace, license),
             workspace.ConfigDirectory,
             run,
             clock);
+
+    private static AppLicenseContext Requester(
+        TempWorkspace workspace, string? license, IReadOnlyDictionary<string, string>? variables = null) =>
+        AppLicenseContext.Of(
+            ActualCommandTree.Host.Catalog,
+            new GlobalValues(OutputMode.Json, Quiet: true, Verbose: false, license, workspace.Path,
+                TimeoutSeconds: null, MaxInputBytes: 1024 * 1024),
+            name => variables?.GetValueOrDefault(name));
 
     private sealed class ManualClock : TimeProvider
     {

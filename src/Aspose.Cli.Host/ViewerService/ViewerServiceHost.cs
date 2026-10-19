@@ -273,7 +273,7 @@ internal sealed class ViewerServiceHost : IDisposable
             ? throw new InvalidDataException("The app request carries no page.")
             : JsonSerializer.Deserialize(payload, ViewerServiceJsonContext.Default.ViewerAppRequest)
                 ?? throw new InvalidDataException("The app request is empty.");
-        AppResult opened = app.Open(request.Route, request.File, deadline);
+        AppResult opened = app.Open(request.Route, request.File, AppLicenseContext.Of(request), deadline);
         RecordActivity();
         return new ViewerAppResponse
         {

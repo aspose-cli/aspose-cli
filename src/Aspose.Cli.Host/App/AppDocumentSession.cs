@@ -24,6 +24,7 @@ internal sealed class AppDocumentSession : IDisposable
     private bool _disposed;
     private readonly ProductCatalog _catalog;
     private readonly Func<CommandContext> _createContext;
+    private readonly Func<AppLicenseContext> _license;
     private readonly AppPreferencesStore _preferences;
     private readonly AppLog _log;
     private readonly ViewerDocuments _documents;
@@ -38,6 +39,7 @@ internal sealed class AppDocumentSession : IDisposable
     public AppDocumentSession(
         ProductCatalog catalog,
         Func<CommandContext> createContext,
+        Func<AppLicenseContext> license,
         AppPreferencesStore preferences,
         AppLog log,
         ViewerDocuments documents,
@@ -46,6 +48,7 @@ internal sealed class AppDocumentSession : IDisposable
     {
         _catalog = catalog ?? throw new ArgumentNullException(nameof(catalog));
         _createContext = createContext;
+        _license = license ?? throw new ArgumentNullException(nameof(license));
         _preferences = preferences;
         _log = log;
         _documents = documents ?? throw new ArgumentNullException(nameof(documents));
@@ -378,9 +381,15 @@ internal sealed class AppDocumentSession : IDisposable
         "that document is not open in the App",
         "Open the file again from the workspace.");
 
-    private DocumentLease? Match(string path, string view) =>
-        _open.FirstOrDefault(lease =>
-            SamePath(lease.Path, path) && string.Equals(lease.View, view, StringComparison.Ordinal));
+    // A tab opened under another license context renders again under the current one.
+    private DocumentLease? Match(string path, string view)
+    {
+        AppLicenseContext license = _license();
+        return _open.FirstOrDefault(lease =>
+            SamePath(lease.Path, path)
+                && string.Equals(lease.View, view, StringComparison.Ordinal)
+                && AppLicenseContext.Same(lease.License, license));
+    }
 
     private static bool SamePath(string left, string right) =>
         string.Equals(
@@ -505,10 +514,14 @@ internal sealed class AppDocumentSession : IDisposable
         try
         {
             var holder = new object();
+            // The document renders under the license of the command the App follows.
+            AppLicenseContext license = _license();
             LiveDocument opened = _documents.Open(path, new LiveDocumentOptions
             {
                 Product = product.Manifest.Id,
                 View = view,
+                License = license.License,
+                RequesterLicense = license.Requester,
                 MaxInputBytes = context.Globals.MaxInputBytes,
             }, holder, deadline);
             Activity?.Invoke();
@@ -524,7 +537,8 @@ internal sealed class AppDocumentSession : IDisposable
                 opened.Id,
                 holder,
                 input,
-                _documents);
+                _documents,
+                license);
         }
         catch
         {
@@ -556,7 +570,8 @@ internal sealed class AppDocumentSession : IDisposable
         string DocumentId,
         object Holder,
         IDisposable? Upload,
-        ViewerDocuments Documents) : IDisposable
+        ViewerDocuments Documents,
+        AppLicenseContext License) : IDisposable
     {
         public string FileName => State.FileName;
         public bool UploadedCopy => State.UploadedCopy;
