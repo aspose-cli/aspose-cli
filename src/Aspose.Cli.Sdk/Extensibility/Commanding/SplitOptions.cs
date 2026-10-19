@@ -11,7 +11,8 @@ namespace Aspose.Cli.Sdk.Extensibility.Commanding;
 /// </summary>
 public sealed class SplitOptions
 {
-    private const string ByOption = "--by";
+    /// <summary>The option that chooses the division, for an error about it.</summary>
+    public const string ByOption = "--by";
     private const string EveryOption = "--every";
     private const string GroupsOption = "--groups";
 
