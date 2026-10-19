@@ -1,10 +1,8 @@
 using System.Data;
-using System.Text.RegularExpressions;
 using Aspose.Cli.Product.Words.Engine.Mapping;
-using Aspose.Cli.Sdk.Errors;
+using Aspose.Cli.Sdk.Text;
 using Aspose.Words;
 using Aspose.Words.Lists;
-using Aspose.Words.Replacing;
 
 using static Aspose.Cli.Product.Words.Engine.Editing.WordsMutationSupport;
 
@@ -14,36 +12,44 @@ namespace Aspose.Cli.Product.Words.Engine.Editing;
 internal sealed partial class WordsMutationHandlers
 {
     /// <summary>
-    /// Replaces matches in the stories of the op's scope, as search reads them: field codes
-    /// and text a tracked change deletes are not text, and a match in a comment or footnote
-    /// belongs to that note's scope, not to the body or header that anchors it.
+    /// Replaces matches in the stories of the op's scope where <c>words search</c> finds them
+    /// (see <see cref="WordsTextMatches"/>): field codes and text a tracked change deletes are
+    /// not text, and a match in a comment or footnote belongs to that note's scope, not to the
+    /// body or header that anchors it. The matches count in the order search numbers its hits.
     /// </summary>
     public ValueTuple Apply(ReplaceTextOp operation)
     {
-        var callback = new ScopedReplacingCallback(operation.MaxReplacementCount);
-        var options = new FindReplaceOptions
-        {
-            MatchCase = operation.CaseSensitive,
-            FindWholeWordsOnly = operation.WholeWord,
-            // A regex replacement honors $1 and ${name}; a literal one is inserted verbatim.
-            UseSubstitutions = operation.Regex,
-            IgnoreFieldCodes = true,
-            IgnoreDeleted = true,
-            ReplacingCallback = callback,
-        };
-        Regex pattern = FindPattern(operation.Find, operation.Regex, operation.CaseSensitive);
-        CompositeNode[] stories = [.. WordsStories.In(_document, operation.Scope).Select(static item => item.Story)];
-        if (operation.Regex)
-        {
-            EnsureMatchesInTime(pattern, stories);
-        }
-
+        TextReplacement replacement = TextReplacement.Create(operation.Find, operation.Replace, operation.Regex, operation.CaseSensitive, operation.WholeWord);
+        int remaining = operation.MaxReplacementCount ?? int.MaxValue;
         long replaced = 0;
-        foreach (CompositeNode story in stories)
+        foreach (Node unit in WordsStories.In(_document, operation.Scope).SelectMany(static story => WordsStories.Units(story.Story)))
         {
-            callback.Story = story;
-            replaced += story.Range.Replace(pattern, operation.Replace, options);
-            if (callback.LimitReached)
+            IReadOnlyList<WordsTextMatches.TextMatch> matches = WordsTextMatches.In(unit, replacement, remaining);
+            if (matches.Count == 0)
+            {
+                continue;
+            }
+
+            // The runs split from the text around a match are no change of their own.
+            _tracking?.Stop();
+            IReadOnlyList<IReadOnlyList<Run>> isolated;
+            try
+            {
+                isolated = WordsTextMatches.Isolate(matches);
+            }
+            finally
+            {
+                _tracking?.Start();
+            }
+
+            for (int index = 0; index < matches.Count; index++)
+            {
+                Replace(isolated[index], matches[index].Replacement);
+            }
+
+            replaced += matches.Count;
+            remaining -= matches.Count;
+            if (remaining == 0)
             {
                 break;
             }
@@ -54,81 +60,85 @@ internal sealed partial class WordsMutationHandlers
     }
 
     /// <summary>
-    /// Runs a caller's expression under its match timeout, which <c>Range.Replace</c> ignores
-    /// (WORDS-REGEX-TIMEOUT), over the text the replace searches, so an expression that would run
-    /// past its budget fails before the engine runs it. That text is each story's visible text,
-    /// without field codes or text a tracked change deletes, as the replace ignores both, and the
-    /// text of each comment and footnote in it, which the story's range also holds.
+    /// Replaces the text of a match's runs, as typing over it in Word does: the new text, in the
+    /// format of the text where the match starts, is written there and the matched text is
+    /// removed. It follows the matched runs that sit side by side with the first, so a tracked
+    /// replace reads as a deletion and then an insertion, but never enters a field result, a
+    /// content control or another container the match only ends in. The new text is inserted as
+    /// it is: no &amp; or ^ code, such as &amp;p, stands for a break.
     /// </summary>
-    private static void EnsureMatchesInTime(Regex pattern, IEnumerable<CompositeNode> stories)
+    private void Replace(IReadOnlyList<Run> matched, string replacement)
     {
-        try
+        if (replacement.Length > 0)
         {
-            foreach (CompositeNode story in stories)
+            Run start = matched[0];
+            // Another author's tracked change on the matched text is no part of the new text.
+            Run run = IsRevised(start) ? FontLike(start, replacement) : TextLike(start, replacement);
+            KeepEastAsianFont(run, start, replacement);
+            Run after = start;
+            for (int index = 1; index < matched.Count && ReferenceEquals(matched[index].PreviousSibling, after); index++)
             {
-                IEnumerable<Node> notes = story.GetChildNodes(NodeType.Comment, true).Cast<Node>()
-                    .Concat(story.GetChildNodes(NodeType.Footnote, true).Cast<Node>());
-                foreach (Node searched in notes.Prepend(story))
-                {
-                    for (Match match = pattern.Match(WordsText.Of(searched, listNumbers: false)); match.Success; match = match.NextMatch())
-                    {
-                    }
-                }
+                after = matched[index];
             }
+
+            after.ParentNode.InsertAfter(run, after);
         }
-        catch (RegexMatchTimeoutException exception)
+
+        foreach (Run piece in matched)
         {
-            throw CliErrors.RegexTimeout(exception);
+            piece.Remove();
         }
     }
 
-    private sealed class ScopedReplacingCallback(int? maximum) : IReplacingCallback
+    /// <summary>
+    /// A detached run of <paramref name="text"/> in the font of <paramref name="format"/>, its
+    /// character style, typefaces, sizes, color and the settings set_style keeps, without the
+    /// revision a copy of the run would carry.
+    /// </summary>
+    private Run FontLike(Run format, string text)
     {
-        private int _accepted;
-
-        public CompositeNode? Story { get; set; }
-
-        public bool LimitReached => _accepted >= maximum;
-
-        public ReplaceAction Replacing(ReplacingArgs args)
+        var run = new Run(_document, text);
+        Aspose.Words.Font from = format.Font;
+        Aspose.Words.Font to = run.Font;
+        _tracking?.Stop();
+        try
         {
-            ArgumentNullException.ThrowIfNull(args);
-            if (_accepted >= maximum || !ReferenceEquals(WordsStories.Of(args.MatchNode), Story))
+            to.StyleName = from.StyleName;
+            (to.NameAscii, to.NameOther, to.NameFarEast, to.NameBi) = (from.NameAscii, from.NameOther, from.NameFarEast, from.NameBi);
+            (to.Size, to.SizeBi, to.Color) = (from.Size, from.SizeBi, from.Color);
+            foreach ((Func<Aspose.Words.Font, object> get, Action<Aspose.Words.Font, object> set) in KeptSettings)
             {
-                return ReplaceAction.Skip;
+                set(to, get(from));
             }
-
-            _accepted++;
-            if (args.MatchNode is Run run)
-            {
-                KeepEastAsianFont(run, args.Replacement);
-            }
-
-            return ReplaceAction.Replace;
+        }
+        finally
+        {
+            _tracking?.Start();
         }
 
-        /// <summary>
-        /// The SDK writes a replacement in the format of the run where the match starts. When that
-        /// run holds no East Asian text, its East Asian font may be a Latin one, as in the digits
-        /// of a loaded PDF, so East Asian text of the replacement takes the East Asian font of the
-        /// nearest East Asian text in the paragraph, after the match first. The run's own text is
-        /// unchanged, since it has no character that font draws.
-        /// </summary>
-        private static void KeepEastAsianFont(Run run, string replacement)
-        {
-            if (!WordsFonts.HasEastAsian(replacement) || WordsFonts.HasEastAsian(run.Text) || run.ParentParagraph is not { } paragraph)
-            {
-                return;
-            }
+        return run;
+    }
 
-            Run[] runs = [.. paragraph.GetChildNodes(NodeType.Run, true).Cast<Run>()];
-            int at = Array.IndexOf(runs, run);
-            Run? source = runs.Skip(at + 1).Concat(runs.Take(at).Reverse())
-                .FirstOrDefault(static candidate => WordsFonts.HasEastAsian(candidate.Text));
-            if (source is not null)
-            {
-                run.Font.NameFarEast = source.Font.NameFarEast;
-            }
+    /// <summary>
+    /// New text takes the format of the text where the match starts. When that text holds no East
+    /// Asian text, its East Asian font may be a Latin one, as in the digits of a loaded PDF, so
+    /// East Asian text of the replacement takes the East Asian font of the nearest East Asian text
+    /// in the paragraph, after the match first.
+    /// </summary>
+    private static void KeepEastAsianFont(Run run, Run start, string replacement)
+    {
+        if (!WordsFonts.HasEastAsian(replacement) || WordsFonts.HasEastAsian(start.Text) || start.ParentParagraph is not { } paragraph)
+        {
+            return;
+        }
+
+        Run[] runs = [.. paragraph.GetChildNodes(NodeType.Run, true).Cast<Run>()];
+        int at = Array.IndexOf(runs, start);
+        Run? source = runs.Skip(at + 1).Concat(runs.Take(at).Reverse())
+            .FirstOrDefault(static candidate => WordsFonts.HasEastAsian(candidate.Text));
+        if (source is not null)
+        {
+            run.Font.NameFarEast = source.Font.NameFarEast;
         }
     }
 

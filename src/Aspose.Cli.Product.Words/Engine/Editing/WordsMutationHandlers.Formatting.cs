@@ -1,5 +1,5 @@
-using System.Text.RegularExpressions;
 using Aspose.Cli.Product.Words.Engine.Mapping;
+using Aspose.Cli.Sdk.Text;
 using Aspose.Words;
 
 using static Aspose.Cli.Product.Words.Engine.Editing.WordsMutationSupport;
@@ -21,71 +21,24 @@ internal sealed partial class WordsMutationHandlers
             return default;
         }
 
-        // Each match is found in the visible text words search reads, per paragraph with the text
-        // boxes it anchors; its runs are split from the text around it and formatted in place, so
-        // they keep their other settings and no text is rewritten.
-        Regex pattern = FindPattern(match, operation.Regex, operation.CaseSensitive);
+        // Each match is found where words search finds it (see WordsTextMatches); its runs are
+        // split from the text around them and formatted in place, so they keep their other
+        // settings and no text is rewritten.
+        TextReplacement found = TextReplacement.Create(match, string.Empty, operation.Regex, operation.CaseSensitive, operation.WholeWord);
         long matched = 0;
         foreach (Node unit in Nodes.SelectMany(static node => node is CompositeNode and not Paragraph ? WordsStories.Units((CompositeNode)node) : [node]))
         {
-            (string text, IReadOnlyList<(Run Run, int At)> runs) = WordsText.Located(unit);
-            // Last match first: splitting a run keeps its first part, where an earlier match lies.
-            foreach (Match found in pattern.Matches(text).Reverse())
+            IReadOnlyList<IReadOnlyList<Run>> matches = WordsTextMatches.Isolate(WordsTextMatches.In(unit, found, int.MaxValue));
+            foreach (Run run in matches.SelectMany(static runs => runs))
             {
-                if (found.Length == 0 || (operation.WholeWord && !IsWholeWord(text, found)))
-                {
-                    continue;
-                }
-
-                (Run Run, int From, int To)[] pieces =
-                [
-                    .. runs.Select(item => (item.Run, From: Math.Max(found.Index, item.At), To: Math.Min(found.Index + found.Length, item.At + item.Run.Text.Length)))
-                        .Where(static piece => piece.From < piece.To),
-                ];
-                // A match that takes in a list number, a paragraph mark or a page field's
-                // placeholder is no text of runs alone, so it formats nothing.
-                if (pieces.Sum(static piece => piece.To - piece.From) != found.Length)
-                {
-                    continue;
-                }
-
-                foreach ((Run run, int from, int to) in pieces)
-                {
-                    int at = runs.First(item => ReferenceEquals(item.Run, run)).At;
-                    if (to - at < run.Text.Length)
-                    {
-                        SplitRun(run, to - at);
-                    }
-
-                    SetFormat((from > at ? SplitRun(run, from - at) : run).Font, operation);
-                }
-
-                matched++;
+                SetFormat(run.Font, operation);
             }
+
+            matched += matches.Count;
         }
 
         Matched = matched;
         return default;
-    }
-
-    /// <summary>Whether a match is a whole word: no letter, digit or underscore touches it on either side.</summary>
-    private static bool IsWholeWord(string text, Match found)
-    {
-        int end = found.Index + found.Length;
-        return (found.Index == 0 || !IsWordCharacter(text[found.Index - 1]))
-            && (end == text.Length || !IsWordCharacter(text[end]));
-
-        static bool IsWordCharacter(char c) => char.IsLetterOrDigit(c) || c == '_';
-    }
-
-    // Splits a run at a position of its text and returns the run that holds the rest.
-    private static Run SplitRun(Run run, int position)
-    {
-        var rest = (Run)run.Clone(true);
-        rest.Text = run.Text[position..];
-        run.Text = run.Text[..position];
-        run.ParentNode.InsertAfter(rest, run);
-        return rest;
     }
 
     /// <summary>Sets the character settings format_text names on a run's font.</summary>
