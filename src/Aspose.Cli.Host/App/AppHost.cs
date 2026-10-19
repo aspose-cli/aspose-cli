@@ -26,6 +26,7 @@ internal sealed partial class AppHost : IDisposable
     private readonly GlobalValues _globals;
     private readonly int _port;
     private string _route = AppRoutes.Home;
+    private AppLicenseContext _license;
     private bool _disposed;
     private int _warming;
 
@@ -47,11 +48,13 @@ internal sealed partial class AppHost : IDisposable
         _touch = touch ?? throw new ArgumentNullException(nameof(touch));
         _stop = stop ?? throw new ArgumentNullException(nameof(stop));
         _preferences = new AppPreferencesStore(catalog, AppPaths.Preferences);
-        _cli = new AppCliGateway(catalog, globals, AppPaths.ConfigDirectory);
+        _license = AppLicenseContext.Of(catalog, globals);
+        _cli = new AppCliGateway(catalog, _license, AppPaths.ConfigDirectory);
         _log = new AppLog(AppPaths.Log);
         _sessions = new AppDocumentSession(
             catalog,
             CreateCommandContext,
+            () => Volatile.Read(ref _license),
             _preferences,
             _log,
             documents,
@@ -84,10 +87,19 @@ internal sealed partial class AppHost : IDisposable
 
     /// <summary>
     /// Points the App at the page a command asked for, and opens the file it
-    /// named. The service is already listening, so nothing starts here.
+    /// named. The service is already listening, so nothing starts here. From
+    /// now on the App reports and renders under that command's license
+    /// context.
     /// </summary>
-    public AppResult Open(string route, string? filePath, OperationDeadline? deadline = null) => Mutate(() =>
+    public AppResult Open(
+        string route,
+        string? filePath,
+        AppLicenseContext license,
+        OperationDeadline? deadline = null) => Mutate(() =>
     {
+        ArgumentNullException.ThrowIfNull(license);
+        Volatile.Write(ref _license, license);
+        _cli.Use(license);
         _route = NormalizeRoute(route);
         if (filePath is not null)
         {

@@ -35,7 +35,10 @@ A license file is validated before it is installed for this user. A Total
 license is installed for every compatible product; product licenses install
 and remove independently. The App follows the CLI's source precedence, so an
 explicit or environment source keeps priority over a file installed here
-(`aspose-cli docs licensing`). The App holds no engine: after a license change
+(`aspose-cli docs licensing`). The viewer service outlives the shell that
+started it, so the App reports and renders under the shell of the last
+`app open`: its license environment, `--license` and working directory. The
+App holds no engine: after a license change
 the viewer service recycles its renderer and the next render applies it.
 
 ## Lifecycle

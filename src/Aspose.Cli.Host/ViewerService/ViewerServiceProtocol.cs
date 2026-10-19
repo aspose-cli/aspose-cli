@@ -169,6 +169,15 @@ internal sealed record ViewerAppRequest
 
     /// <summary>Absolute path of a file to open, or null to leave the App as it is.</summary>
     public string? File { get; init; }
+
+    /// <summary>Explicit license file of the command, or null for the configured sources.</summary>
+    public string? License { get; init; }
+
+    /// <summary>
+    /// The license context of the command. The App reports and renders under the context of the
+    /// command that reached it last.
+    /// </summary>
+    public RequesterLicense? RequesterLicense { get; init; }
 }
 
 /// <summary>Where the App is, and what it is showing.</summary>
