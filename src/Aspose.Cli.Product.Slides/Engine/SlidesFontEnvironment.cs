@@ -1,4 +1,3 @@
-using System.Runtime.Versioning;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Licensing;
@@ -39,9 +38,8 @@ internal sealed class SlidesFontEnvironment : IFontEnvironment
     /// </remarks>
     public IDisposable UseFonts(FontSearchProfile profile)
     {
-        if (OperatingSystem.IsWindows())
+        using (RegistryKey? fonts = Registry.CurrentUser.OpenSubKey(FontsKey))
         {
-            using RegistryKey? fonts = Registry.CurrentUser.OpenSubKey(FontsKey);
             EnsureReadable(fonts);
         }
 
@@ -58,7 +56,6 @@ internal sealed class SlidesFontEnvironment : IFontEnvironment
     /// Refuses, before the engine starts, a per-user Fonts key holding a value the engine cannot
     /// read (known issue SLIDES-FONT-REGISTRY in KNOWN-ISSUES.md): it reads every value as a string.
     /// </summary>
-    [SupportedOSPlatform("windows")]
     internal static void EnsureReadable(RegistryKey? fonts)
     {
         if (fonts is null)
