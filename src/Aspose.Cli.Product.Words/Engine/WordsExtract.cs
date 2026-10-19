@@ -20,7 +20,11 @@ internal static class WordsExtract
     {
         LicenseState state = session.Outputs.License;
         using LoadedDocument loaded = session.Loader.Open(request.Input, request.Password);
-        using ExtractionGuard guard = session.Outputs.BeginExtraction(request.Output.Path, request.Output.Overwrite);
+        // Images are copied as the document stores them, once the evaluation watermark is skipped.
+        using ExtractionGuard guard = session.Outputs.BeginExtraction(
+            request.Output.Path,
+            request.Output.Overwrite,
+            request.What == WordsExtractTargets.Images ? ExtractionContent.EmbeddedFiles : ExtractionContent.Derived);
         var index = new DocumentBlockIndex(loaded.Document, loaded.Evaluation);
         var outputs = new List<WordsExtractedOutput>();
         var warnings = new List<Warning>();
@@ -34,6 +38,12 @@ internal static class WordsExtract
                 if (shape.ImageData.IsLinkOnly)
                 {
                     linked++;
+                    continue;
+                }
+
+                // The watermark picture an evaluation save draws is no image of the document.
+                if (loaded.Evaluation && WordsEvaluation.IsWatermark(shape))
+                {
                     continue;
                 }
 
