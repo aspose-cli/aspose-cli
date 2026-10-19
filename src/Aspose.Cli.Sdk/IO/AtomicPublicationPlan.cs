@@ -55,9 +55,6 @@ internal sealed class AtomicPublicationPlan
 
     public string StagedPath(string target, int index) => StagedPath(StagingDirectory, target, index);
 
-    public string BackupPath(int index) =>
-        Path.Combine(StagingDirectory, "backups", $"{index + 1:000000}.backup");
-
     public string DisplacedPath(int index) =>
         Path.Combine(StagingDirectory, "backups", $"{index + 1:000000}.displaced");
 
@@ -271,10 +268,6 @@ internal sealed class AtomicPublicationPlan
             foreach (PublicationJournalEntry entry in Journal.Entries)
             {
                 DeleteKnownFile(entry.Staged, entry.StagedSnapshot);
-                if (entry.Backup is not null)
-                {
-                    DeleteKnownFile(entry.Backup, entry.BackupSnapshot);
-                }
                 if (entry.Displaced is not null)
                 {
                     DeleteKnownFile(
@@ -319,7 +312,7 @@ internal sealed class AtomicPublicationPlan
         foreach (PublicationJournalEntry entry in Journal.Entries)
         {
             allowedDirectories.Add(Path.GetDirectoryName(entry.Staged)!);
-            foreach (string? file in new[] { entry.Staged, entry.Backup, entry.Displaced })
+            foreach (string? file in new[] { entry.Staged, entry.Displaced })
             {
                 if (file is not null) { allowedFiles.Add(Path.GetFullPath(file)); }
             }
