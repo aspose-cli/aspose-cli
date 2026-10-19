@@ -136,7 +136,7 @@ public sealed class PdfHardeningTests
     {
         using var fixture = new PdfEngineFixture();
         string input = Poster(fixture);
-        string extension = PdfFormats.Definitions.ExtensionFor(format);
+        string extension = PdfFormats.Definitions.ExtensionOf(format);
 
         CliException error = Assert.Throws<CliException>(() => PdfRender.Run(fixture.Session, new PdfRenderRequest
         {

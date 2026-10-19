@@ -280,25 +280,6 @@ public static class FormatDescriptorExtensions
             .ThenBy(static format => format.Id, StringComparer.Ordinal);
     }
 
-    /// <summary>Returns the preferred output extension for one format id.</summary>
-    public static string ExtensionFor(
-        this IEnumerable<FormatDescriptor> descriptors,
-        string formatId)
-    {
-        ArgumentNullException.ThrowIfNull(descriptors);
-        ArgumentException.ThrowIfNullOrWhiteSpace(formatId);
-        FormatDescriptor descriptor = descriptors.SingleOrDefault(format =>
-                string.Equals(
-                    format.Id,
-                    formatId,
-                    StringComparison.OrdinalIgnoreCase))
-            ?? throw new KeyNotFoundException(
-                $"Format '{formatId}' is not declared.");
-        return descriptor.PreferredExtension
-            ?? throw new InvalidOperationException(
-                $"Format '{descriptor.Id}' has no associated extension.");
-    }
-
     private static int Order(FormatDescriptor format, FormatUse use) =>
         use switch
         {
