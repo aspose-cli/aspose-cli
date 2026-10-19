@@ -460,6 +460,42 @@ public sealed class AtomicNewDirectoryWriterTests
     }
 
     [Fact]
+    public void Commit_WhoseAdmittedTargetChangesBeforeTheReplace_IsRefusedAndKeepsTheChange()
+    {
+        using var temp = new TempDirectory();
+        string target = Existing(temp);
+        using (var output = new AtomicNewDirectoryWriter(TestBudgets.Create(), target, "test", replace: true))
+        {
+            Write(output, "data.txt", "replacement");
+            // The admission runs after the replaced tree is captured, so a change it lets in is seen.
+            Assert.ThrowsAny<IOException>(() => output.Commit(admitted =>
+            {
+                Assert.Equal(target, admitted);
+                File.WriteAllText(Path.Combine(admitted, "added.txt"), "added");
+            }));
+        }
+        Assert.Equal("added", File.ReadAllText(Path.Combine(target, "added.txt")));
+        AssertPrevious(target);
+        Assert.Empty(Directory.EnumerateDirectories(temp.Path, ".aspose-publication-*"));
+    }
+
+    [Fact]
+    public void Commit_WhoseAdmissionRefusesTheTarget_KeepsIt()
+    {
+        using var temp = new TempDirectory();
+        string target = Existing(temp);
+        using (var output = new AtomicNewDirectoryWriter(TestBudgets.Create(), target, "test", replace: true))
+        {
+            Write(output, "data.txt", "replacement");
+            InvalidOperationException error = Assert.Throws<InvalidOperationException>(
+                () => output.Commit(_ => throw new InvalidOperationException("not ours")));
+            Assert.Equal("not ours", error.Message);
+        }
+        AssertPrevious(target);
+        Assert.Empty(Directory.EnumerateDirectories(temp.Path, ".aspose-publication-*"));
+    }
+
+    [Fact]
     public void CandidatesAnEndedProcessLeftInTheTransactionParent_AreRemovedByTheNextInstall()
     {
         // A process killed before its first journal leaves its candidate in the transaction
