@@ -37,15 +37,32 @@ public static class ImageInput
     // The most a decode's output buffer holds, whatever the image's size.
     private const long OutputBytes = 1L << 20;
 
-    private static readonly HashSet<SKEncodedImageFormat> Decoded =
+    // Every image format the check accepts, once: the bitmaps the CLI decodes, by the decoder
+    // that recognizes them; TIFF, a bitmap the engines decode, and the formats the engines alone
+    // read, by their signature (EngineFormatOf).
+    private static readonly ImageFormat[] Table =
     [
-        SKEncodedImageFormat.Png,
-        SKEncodedImageFormat.Jpeg,
-        SKEncodedImageFormat.Gif,
-        SKEncodedImageFormat.Bmp,
-        SKEncodedImageFormat.Webp,
-        SKEncodedImageFormat.Ico,
+        new(Raster("png", ".png"), SKEncodedImageFormat.Png),
+        new(Raster("jpeg", ".jpg", ".jpeg"), SKEncodedImageFormat.Jpeg),
+        new(Raster("gif", ".gif"), SKEncodedImageFormat.Gif),
+        new(Raster("bmp", ".bmp"), SKEncodedImageFormat.Bmp),
+        new(Raster("webp", ".webp"), SKEncodedImageFormat.Webp),
+        new(Raster("ico", ".ico"), SKEncodedImageFormat.Ico),
+        new(Raster("tiff", ".tif", ".tiff"), Signature: EngineImageFormat.Tiff),
+        new(Other("svg", ".svg"), Signature: EngineImageFormat.Svg),
+        new(Other("emf", ".emf"), Signature: EngineImageFormat.Emf),
+        new(Other("wmf", ".wmf"), Signature: EngineImageFormat.Wmf),
+        new(Other("jpeg2000", ".jp2", ".j2k"), Signature: EngineImageFormat.Jpeg2000),
+        new(Other("pict", ".pct", ".pict"), Signature: EngineImageFormat.Pict),
+        new(Other("dicom", ".dcm"), Signature: EngineImageFormat.Dicom),
     ];
+
+    /// <summary>
+    /// Every image format the check accepts, by its long id: the bitmaps (<see cref="FormatDescriptor.Raster"/>)
+    /// the CLI decodes, and TIFF, which the engines decode; then the vector and other formats the
+    /// engines alone read. <see cref="FormatOf"/> names an image's format from its content.
+    /// </summary>
+    public static IReadOnlyList<FormatDescriptor> Formats { get; } = [.. Table.Select(static row => row.Format)];
 
     // The root element of an SVG document, with or without a namespace prefix.
     private static readonly Regex SvgRoot = new(
@@ -154,7 +171,7 @@ public static class ImageInput
         using (SKData data = SKData.CreateCopy(content))
         using (SKCodec? codec = SKCodec.Create(data))
         {
-            if (codec is not null && Decoded.Contains(codec.EncodedFormat))
+            if (Decoded(codec) is not null)
             {
                 return Decode(codec, budgets, HasInterlacedPng(content) || IsProgressiveJpeg(content));
             }
@@ -338,6 +355,48 @@ public static class ImageInput
         try { return decode(pinned.AddrOfPinnedObject()); }
         finally { pinned.Free(); }
     }
+
+    /// <summary>
+    /// The format of an image the check accepts, from its content whatever its file is named:
+    /// as the check does, a format the CLI decodes by its decoder first, any other by its
+    /// signature; null when the bytes are no image of <see cref="Formats"/>.
+    /// </summary>
+    /// <param name="content">The image's bytes.</param>
+    public static FormatDescriptor? FormatOf(ReadOnlySpan<byte> content)
+    {
+        if (content.IsEmpty)
+        {
+            return null;
+        }
+
+        using (SKData data = SKData.CreateCopy(content))
+        using (SKCodec? codec = SKCodec.Create(data))
+        {
+            if (Decoded(codec) is { } decoded)
+            {
+                return decoded.Format;
+            }
+        }
+
+        EngineImageFormat signature = EngineFormatOf(content);
+        return signature == EngineImageFormat.None ? null : Table.First(row => row.Signature == signature).Format;
+    }
+
+    // The format the CLI decodes that the decoder recognized, or null.
+    private static ImageFormat? Decoded(SKCodec? codec) =>
+        codec is null ? null : Array.Find(Table, row => row.Decoder == codec.EncodedFormat);
+
+    private static FormatDescriptor Raster(string id, params string[] extensions) =>
+        new(id, FormatUse.Input, extensions) { Raster = true };
+
+    private static FormatDescriptor Other(string id, params string[] extensions) =>
+        new(id, FormatUse.Input, extensions) { Image = true };
+
+    /// <summary>One accepted image format, with how the check recognizes it.</summary>
+    private sealed record ImageFormat(
+        FormatDescriptor Format,
+        SKEncodedImageFormat? Decoder = null,
+        EngineImageFormat Signature = EngineImageFormat.None);
 
     /// <summary>
     /// The format that only the document engines read, recognized from the bytes' signature:
