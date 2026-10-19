@@ -375,7 +375,7 @@ public sealed class PdfArtifactWorkflowTests
         ResourceBudgetLedger budgets = ProductTestBudgets.Create<PdfModule>();
         budgets.Consume(ResourceBudgetKinds.OutputBytes,
             budgets.Remaining(ResourceBudgetKinds.OutputBytes) - 2, "bytes", "test-reservation");
-        var session = new PdfSession(fixture.Outputs(new SafeFileWriter(budgets)), budgets, new PdfDocumentLoader(budgets));
+        var session = PdfActivation.Session(fixture.Outputs(new SafeFileWriter(budgets)), budgets);
         string output = fixture.File("extracted");
         Directory.CreateDirectory(output);
         string unrelated = Path.Combine(output, "keep.txt");
