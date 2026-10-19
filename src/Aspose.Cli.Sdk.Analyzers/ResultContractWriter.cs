@@ -12,16 +12,14 @@ namespace Aspose.Cli.Sdk.Analyzers;
 /// constant relative schema id, or when it declares <c>[SchemaId]</c>; the records it inherits
 /// from and the records its members hold are described with it.
 /// </summary>
-internal sealed class ResultContractWriter(Compilation compilation, Action<Location, string> report)
+internal sealed class ResultContractWriter(
+    Compilation compilation,
+    IReadOnlyDictionary<string, INamedTypeSymbol> symbols,
+    Func<ISymbol, bool> resolved,
+    Action<Location, string> report)
 {
-    private const string Contracts = OperationContractGenerator.Contracts;
-    private const string Sdk = "global::" + Contracts;
-    private const string ResultEnvelope = Contracts + "ResultEnvelope";
-    private const string OutputItem = Contracts + "OutputItem";
-    private const string EditVerification = Contracts + "EditVerification";
-    private const string Json = "System.Text.Json.Serialization.";
+    private const string Sdk = "global::" + SdkMetadataNames.ContractsNamespace + ".";
     private static readonly string[] CaseTypes = ["null", "string", "number", "integer", "boolean"];
-    private readonly INamedTypeSymbol? _constraint = compilation.GetTypeByMetadataName(Contracts + "ValueConstraintAttribute");
     private readonly Dictionary<INamedTypeSymbol, (string? SchemaId, int Version)> _published = new(SymbolEqualityComparer.Default);
     private readonly List<INamedTypeSymbol> _order = [];
     private readonly Dictionary<INamedTypeSymbol, string> _code = new(SymbolEqualityComparer.Default);
@@ -54,7 +52,7 @@ internal sealed class ResultContractWriter(Compilation compilation, Action<Locat
             Enqueue(type);
         }
 
-        if (ids.Count == 0)
+        if (ids.Count == 0 || !resolved(ids.Values.First()))
         {
             return [];
         }
@@ -71,8 +69,8 @@ internal sealed class ResultContractWriter(Compilation compilation, Action<Locat
             Describe(_pending.Dequeue());
         }
 
-        INamedTypeSymbol[] contexts = [.. declared.Where(type => AnalyzerTypes.Inherits(type, Json + "JsonSerializerContext")
-            && type.GetAttributes().Any(attribute => attribute.AttributeClass?.ToDisplayString() == Json + "JsonSerializableAttribute"
+        INamedTypeSymbol[] contexts = [.. declared.Where(type => AnalyzerTypes.Inherits(type, SdkMetadataNames.Json.SerializerContext)
+            && type.GetAttributes().Any(attribute => attribute.AttributeClass?.ToDisplayString() == SdkMetadataNames.Json.SerializableAttribute
                 && attribute.ConstructorArguments.FirstOrDefault().Value is INamedTypeSymbol listed
                 && _published.ContainsKey(listed)))];
         if (contexts.Length == 0)
@@ -93,10 +91,10 @@ internal sealed class ResultContractWriter(Compilation compilation, Action<Locat
     /// <summary>The relative id and version a record publishes, or null when it publishes none.</summary>
     private (string SchemaId, int Version)? Published(INamedTypeSymbol type)
     {
-        if (Find(type, Contracts + "SchemaIdAttribute") is { } attribute)
+        if (Find(type, SdkMetadataNames.SchemaIdAttribute) is { } attribute)
         {
             if (attribute.ConstructorArguments.FirstOrDefault().Value is not string id || !RelativeId.IsMatch(id)
-                || AnalyzerTypes.Inherits(type, ResultEnvelope))
+                || AnalyzerTypes.Inherits(type, SdkMetadataNames.ResultEnvelope))
             {
                 Report(type, $"[SchemaId] on '{type.Name}' must name a relative id such as 'backup', on a record that is not a ResultEnvelope; a result states its id to the ResultEnvelope constructor.");
                 return null;
@@ -143,15 +141,15 @@ internal sealed class ResultContractWriter(Compilation compilation, Action<Locat
     /// record of the SDK's contracts that derives from it.
     /// </summary>
     private static bool IsEnvelope(INamedTypeSymbol type) =>
-        type.IsAbstract && type.ContainingNamespace.ToDisplayString() + "." == Contracts
-        && (type.ToDisplayString() == ResultEnvelope || AnalyzerTypes.Inherits(type, ResultEnvelope));
+        type.IsAbstract && type.ContainingNamespace.ToDisplayString() == SdkMetadataNames.ContractsNamespace
+        && (type.ToDisplayString() == SdkMetadataNames.ResultEnvelope || AnalyzerTypes.Inherits(type, SdkMetadataNames.ResultEnvelope));
 
     /// <summary>
     /// Whether records of another assembly may derive from <paramref name="type"/>: an SDK envelope
     /// base, the SDK's output item or the SDK's edit verification core.
     /// </summary>
     private static bool IsInheritable(INamedTypeSymbol type) =>
-        IsEnvelope(type) || (type.IsAbstract && type.ToDisplayString() is OutputItem or EditVerification);
+        IsEnvelope(type) || (type.IsAbstract && type.ToDisplayString() is SdkMetadataNames.OutputItem or SdkMetadataNames.EditVerification);
 
     private void Enqueue(INamedTypeSymbol type)
     {
@@ -219,11 +217,11 @@ internal sealed class ResultContractWriter(Compilation compilation, Action<Locat
 
     /// <summary>Whether a member is extension data, which writes members its record does not declare.</summary>
     private static bool IsExtension(IPropertySymbol property) =>
-        Find(property, Json + "JsonExtensionDataAttribute") is not null;
+        Find(property, SdkMetadataNames.Json.ExtensionDataAttribute) is not null;
 
     /// <summary>The <c>[JsonIgnore]</c> condition of a property, or null when it has none.</summary>
     private static string? IgnoreCondition(IPropertySymbol property) =>
-        Find(property, Json + "JsonIgnoreAttribute") is not { } ignore ? null
+        Find(property, SdkMetadataNames.Json.IgnoreAttribute) is not { } ignore ? null
         : Named(ignore, "Condition") switch
         {
             null or 1 => "Always",
@@ -278,7 +276,7 @@ internal sealed class ResultContractWriter(Compilation compilation, Action<Locat
             code.Append(", Const = ").Append(Literal(constant));
         }
 
-        if (Find(property, Json + "JsonPropertyOrderAttribute")?.ConstructorArguments.FirstOrDefault().Value is int order && order != 0)
+        if (Find(property, SdkMetadataNames.Json.PropertyOrderAttribute)?.ConstructorArguments.FirstOrDefault().Value is int order && order != 0)
         {
             code.Append(", Order = ").Append(order);
         }
@@ -289,7 +287,7 @@ internal sealed class ResultContractWriter(Compilation compilation, Action<Locat
             attribute, property, ContractTypes.Place(attribute, levels, property, Report), Report))];
         if (IsUnsigned(Scalar(type)))
         {
-            constraints.Insert(0, $"new {Sdk}MinimumAttribute(0)" + DepthOf(levels.Count - 1));
+            constraints.Insert(0, $"new global::{SdkMetadataNames.MinimumAttribute}(0)" + DepthOf(levels.Count - 1));
         }
 
         if (constraints.Count > 0)
@@ -297,9 +295,9 @@ internal sealed class ResultContractWriter(Compilation compilation, Action<Locat
             code.Append(", Constraints = [").Append(string.Join(", ", constraints)).Append(']');
         }
 
-        if (Find(property, Contracts + "OpenEnumAttribute") is { } open)
+        if (Find(property, SdkMetadataNames.OpenEnumAttribute) is { } open)
         {
-            if (levels.Count != 1 || levels[0] != "String" || !declared.Any(static attribute => attribute.AttributeClass?.Name == "AllowedValuesAttribute"))
+            if (levels.Count != 1 || levels[0] != "String" || !declared.Any(static attribute => attribute.AttributeClass?.ToDisplayString() == SdkMetadataNames.AllowedValuesAttribute))
             {
                 Invalid(property, "[OpenEnum] extends the [AllowedValues] of a string member");
             }
@@ -307,7 +305,7 @@ internal sealed class ResultContractWriter(Compilation compilation, Action<Locat
             code.Append(", OpenPattern = ").Append(Literal(open.ConstructorArguments[0].Value as string ?? string.Empty));
         }
 
-        AttributeData[] cases = [.. property.GetAttributes().Where(static attribute => attribute.AttributeClass?.ToDisplayString() == Contracts + "OneOfByAttribute")];
+        AttributeData[] cases = [.. property.GetAttributes().Where(static attribute => attribute.AttributeClass?.ToDisplayString() == SdkMetadataNames.OneOfByAttribute)];
         if (cases.Length > 0)
         {
             CheckCases(owner, property, cases);
@@ -369,7 +367,7 @@ internal sealed class ResultContractWriter(Compilation compilation, Action<Locat
             {
                 Enqueue(record);
             }
-            else if (Find(record, Contracts + "SchemaIdAttribute") is null && !AnalyzerTypes.Inherits(record, ResultEnvelope))
+            else if (Find(record, SdkMetadataNames.SchemaIdAttribute) is null && !AnalyzerTypes.Inherits(record, SdkMetadataNames.ResultEnvelope))
             {
                 Invalid(property, $"'{record.Name}' of another assembly is not a published result schema; a member may hold a record of another assembly only when it declares [SchemaId] or is a result");
                 return null;
@@ -387,8 +385,8 @@ internal sealed class ResultContractWriter(Compilation compilation, Action<Locat
         type.WithNullableAnnotation(NullableAnnotation.NotAnnotated).ToDisplayString() switch
         {
             "System.DateTimeOffset" or "System.DateTime" => ("String", "date-time"),
-            "System.Text.Json.Nodes.JsonObject" => ("Object", null),
-            "System.Text.Json.Nodes.JsonNode" => ("Any", null),
+            SdkMetadataNames.Json.JsonObject => ("Object", null),
+            SdkMetadataNames.Json.JsonNode => ("Any", null),
             _ when type.TypeKind == TypeKind.Enum => null,
             _ => ScalarKind(type) is { } kind ? (kind, null) : null,
         };
@@ -400,7 +398,7 @@ internal sealed class ResultContractWriter(Compilation compilation, Action<Locat
     private void CheckCases(INamedTypeSymbol owner, IPropertySymbol property, AttributeData[] cases)
     {
         if (AllProperties(owner).Count(static candidate => candidate.GetAttributes().Any(static attribute =>
-                attribute.AttributeClass?.ToDisplayString() == Contracts + "OneOfByAttribute")) > 1)
+                attribute.AttributeClass?.ToDisplayString() == SdkMetadataNames.OneOfByAttribute)) > 1)
         {
             Invalid(property, "only one member of a record may depend on a discriminator");
         }
@@ -409,7 +407,7 @@ internal sealed class ResultContractWriter(Compilation compilation, Action<Locat
         IPropertySymbol? discriminator = discriminators.Length == 1
             ? Properties(owner).FirstOrDefault(candidate => CamelCase(candidate.Name) == discriminators[0])
             : null;
-        AttributeData? allowed = discriminator?.GetAttributes().FirstOrDefault(static attribute => attribute.AttributeClass?.Name == "AllowedValuesAttribute");
+        AttributeData? allowed = discriminator?.GetAttributes().FirstOrDefault(static attribute => attribute.AttributeClass?.ToDisplayString() == SdkMetadataNames.AllowedValuesAttribute);
         string[]? values = allowed is null ? null : AllowedStrings(allowed);
         if (values is null)
         {
@@ -445,7 +443,7 @@ internal sealed class ResultContractWriter(Compilation compilation, Action<Locat
     }
 
     private bool IsConstraint(AttributeData attribute) =>
-        attribute.AttributeClass is { } type && BaseTypes(type).Any(current => SymbolEqualityComparer.Default.Equals(current, _constraint));
+        attribute.AttributeClass is { } type && BaseTypes(type).Any(current => SymbolEqualityComparer.Default.Equals(current, symbols[SdkMetadataNames.ValueConstraintAttribute]));
 
     private static bool IsAccessible(INamedTypeSymbol type)
     {

@@ -7,27 +7,26 @@ namespace Aspose.Cli.Sdk.Analyzers;
 /// <summary>Writes the generated source of one operation vocabulary and reports its contract errors.</summary>
 internal sealed class VocabularyWriter(
     Compilation compilation,
+    IReadOnlyDictionary<string, INamedTypeSymbol> symbols,
     INamedTypeSymbol vocabulary,
     List<(string Name, INamedTypeSymbol Type)> operations,
     Action<Location, string> report)
 {
-    private const string Sdk = "global::Aspose.Cli.Sdk.Operations.";
-    private const string BoundedOperation = "Aspose.Cli.Sdk.Contracts.BoundedOperation";
-    private const string Json = "System.Text.Json.Serialization.";
+    private const string Sdk = "global::" + SdkMetadataNames.OperationsNamespace + ".";
     private readonly Dictionary<INamedTypeSymbol, string?> _nestedLocals = new(SymbolEqualityComparer.Default);
     private readonly Dictionary<string, INamedTypeSymbol> _definitions = new(StringComparer.Ordinal);
     private readonly StringBuilder _nested = new();
-    private readonly INamedTypeSymbol? _constraint = compilation.GetTypeByMetadataName(OperationContractGenerator.Contracts + "ValueConstraintAttribute");
-    private readonly INamedTypeSymbol? _recordRule = compilation.GetTypeByMetadataName(OperationContractGenerator.Operations + "RecordRuleAttribute");
-    private readonly INamedTypeSymbol? _memberCount = compilation.GetTypeByMetadataName(OperationContractGenerator.Operations + "MemberCountAttribute");
-    private readonly INamedTypeSymbol? _inputPath = compilation.GetTypeByMetadataName(OperationContractGenerator.Operations + "InputPathAttribute");
-    private readonly INamedTypeSymbol? _secretEnv = compilation.GetTypeByMetadataName(OperationContractGenerator.Operations + "SecretEnvAttribute");
-    private readonly INamedTypeSymbol? _minProperties = compilation.GetTypeByMetadataName(OperationContractGenerator.Operations + "MinPropertiesAttribute");
-    private readonly INamedTypeSymbol? _readBack = compilation.GetTypeByMetadataName(OperationContractGenerator.Operations + "ReadBackAttribute");
-    private readonly INamedTypeSymbol? _notReadBack = compilation.GetTypeByMetadataName(OperationContractGenerator.Operations + "NotReadBackAttribute");
-    private readonly INamedTypeSymbol? _byPosition = compilation.GetTypeByMetadataName(OperationContractGenerator.Operations + "ReadBackByPositionAttribute");
-    private readonly INamedTypeSymbol? _notState = compilation.GetTypeByMetadataName(OperationContractGenerator.Operations + "NotStateAttribute");
-    private readonly INamedTypeSymbol? _operationInput = compilation.GetTypeByMetadataName(OperationContractGenerator.Operations + "OperationInputAttribute");
+    private readonly INamedTypeSymbol _constraint = symbols[SdkMetadataNames.ValueConstraintAttribute];
+    private readonly INamedTypeSymbol _recordRule = symbols[SdkMetadataNames.RecordRuleAttribute];
+    private readonly INamedTypeSymbol _memberCount = symbols[SdkMetadataNames.MemberCountAttribute];
+    private readonly INamedTypeSymbol _inputPath = symbols[SdkMetadataNames.InputPathAttribute];
+    private readonly INamedTypeSymbol _secretEnv = symbols[SdkMetadataNames.SecretEnvAttribute];
+    private readonly INamedTypeSymbol _minProperties = symbols[SdkMetadataNames.MinPropertiesAttribute];
+    private readonly INamedTypeSymbol _readBack = symbols[SdkMetadataNames.ReadBackAttribute];
+    private readonly INamedTypeSymbol _notReadBack = symbols[SdkMetadataNames.NotReadBackAttribute];
+    private readonly INamedTypeSymbol _byPosition = symbols[SdkMetadataNames.ReadBackByPositionAttribute];
+    private readonly INamedTypeSymbol _notState = symbols[SdkMetadataNames.NotStateAttribute];
+    private readonly INamedTypeSymbol _operationInput = symbols[SdkMetadataNames.OperationInputAttribute];
     private readonly Dictionary<INamedTypeSymbol, bool> _classifiedRecords = new(SymbolEqualityComparer.Default);
     private HashSet<string> _addresses = new(StringComparer.Ordinal);
     private bool _failed;
@@ -41,7 +40,7 @@ internal sealed class VocabularyWriter(
     /// <summary>Returns the generated source, or null when the contract has errors.</summary>
     public string? Write()
     {
-        AttributeData declaration = Find(vocabulary, OperationContractGenerator.Operations + "OperationVocabularyAttribute")!;
+        AttributeData declaration = Find(vocabulary, SdkMetadataNames.OperationVocabularyAttribute)!;
         string schemaId = SchemaId(declaration);
         INamedTypeSymbol? context = Named(declaration, "JsonContext") as INamedTypeSymbol;
         _addresses = new HashSet<string>(
@@ -50,7 +49,7 @@ internal sealed class VocabularyWriter(
                 : [],
             StringComparer.Ordinal);
         if (!vocabulary.IsAbstract || !vocabulary.IsRecord || vocabulary.ContainingType is not null
-            || !BaseTypes(vocabulary).Any(static type => type.ToDisplayString() == BoundedOperation)
+            || !BaseTypes(vocabulary).Any(static type => type.ToDisplayString() == SdkMetadataNames.BoundedOperation)
             || vocabulary.DeclaringSyntaxReferences.Any(static reference =>
                 reference.GetSyntax() is TypeDeclarationSyntax syntax
                 && !syntax.Modifiers.Any(static modifier => modifier.ValueText == "partial")))
@@ -88,14 +87,14 @@ internal sealed class VocabularyWriter(
 
     private void CheckJsonContext(INamedTypeSymbol? context)
     {
-        if (context is null || !BaseTypes(context).Any(static type => type.ToDisplayString() == Json + "JsonSerializerContext"))
+        if (context is null || !BaseTypes(context).Any(static type => type.ToDisplayString() == SdkMetadataNames.Json.SerializerContext))
         {
             Report(vocabulary, $"Vocabulary '{vocabulary.Name}' must name its source-generated JsonSerializerContext as JsonContext.");
             return;
         }
 
         // JsonKnownNamingPolicy.CamelCase and JsonSerializerDefaults.Web are both 1.
-        AttributeData? options = Find(context, Json + "JsonSourceGenerationOptionsAttribute");
+        AttributeData? options = Find(context, SdkMetadataNames.Json.SourceGenerationOptionsAttribute);
         object? policy = options is null ? null : Named(options, "PropertyNamingPolicy") ?? options.ConstructorArguments.FirstOrDefault().Value;
         if (policy is not 1)
         {
@@ -104,7 +103,7 @@ internal sealed class VocabularyWriter(
 
         var listed = new HashSet<ITypeSymbol>(
             context.GetAttributes()
-                .Where(static attribute => attribute.AttributeClass?.ToDisplayString() == Json + "JsonSerializableAttribute")
+                .Where(static attribute => attribute.AttributeClass?.ToDisplayString() == SdkMetadataNames.Json.SerializableAttribute)
                 .Select(static attribute => attribute.ConstructorArguments.FirstOrDefault().Value)
                 .OfType<ITypeSymbol>(),
             SymbolEqualityComparer.Default);
@@ -178,7 +177,7 @@ internal sealed class VocabularyWriter(
             code.Append(", Description = ").Append(Literal(description));
         }
 
-        if (Find(type, OperationContractGenerator.Operations + "MistakenForAttribute") is { } mistaken)
+        if (Find(type, SdkMetadataNames.MistakenForAttribute) is { } mistaken)
         {
             if (isOperation)
             {
@@ -190,7 +189,7 @@ internal sealed class VocabularyWriter(
             }
         }
 
-        if (Find(type, OperationContractGenerator.Operations + "EncryptsOutputAttribute") is not null)
+        if (Find(type, SdkMetadataNames.EncryptsOutputAttribute) is not null)
         {
             if (isOperation)
             {
@@ -265,7 +264,7 @@ internal sealed class VocabularyWriter(
     /// <summary>The record's own and inherited contract types, base first, below BoundedOperation.</summary>
     private static IEnumerable<INamedTypeSymbol> Chain(INamedTypeSymbol type) =>
         BaseTypes(type)
-            .TakeWhile(static current => current.ToDisplayString() is not (BoundedOperation or "object"))
+            .TakeWhile(static current => current.ToDisplayString() is not (SdkMetadataNames.BoundedOperation or "object"))
             .Reverse()
             .Append(type);
 
@@ -330,7 +329,7 @@ internal sealed class VocabularyWriter(
             Invalid(property, "an input path or secret variable must be a string member of an operation");
         }
 
-        if (Find(property, Json + "JsonPropertyNameAttribute") is not null || Find(property, Json + "JsonIgnoreAttribute") is not null)
+        if (Find(property, SdkMetadataNames.Json.PropertyNameAttribute) is not null || Find(property, SdkMetadataNames.Json.IgnoreAttribute) is not null)
         {
             Invalid(property, "a contract member always takes part under its camelCase name; remove [JsonPropertyName] and [JsonIgnore]");
         }
@@ -359,7 +358,7 @@ internal sealed class VocabularyWriter(
             .Select(attribute => Constraint(attribute, property, Place(attribute, levels, property)))];
         if (IsUnsigned(Scalar(property.Type)))
         {
-            constraints.Insert(0, $"new global::{OperationContractGenerator.Contracts}MinimumAttribute(0)" + DepthOf(levels.Count - 1));
+            constraints.Insert(0, $"new global::{SdkMetadataNames.MinimumAttribute}(0)" + DepthOf(levels.Count - 1));
         }
 
         if (constraints.Count > 0)
@@ -367,7 +366,7 @@ internal sealed class VocabularyWriter(
             code.Append(", Constraints = [").Append(string.Join(", ", constraints)).Append(']');
         }
 
-        if (Find(property, OperationContractGenerator.Operations + "MistakenForAttribute") is { } mistaken)
+        if (Find(property, SdkMetadataNames.MistakenForAttribute) is { } mistaken)
         {
             code.Append(", MistakenFor = ").Append(MistakenNames(mistaken));
         }
@@ -399,7 +398,7 @@ internal sealed class VocabularyWriter(
     /// </summary>
     private string? ReadBackOf(IPropertySymbol property, bool isOperation)
     {
-        if (Find(property, OperationContractGenerator.Operations + "ReadBackAttribute") is { } readBack)
+        if (Find(property, SdkMetadataNames.ReadBackAttribute) is { } readBack)
         {
             return readBack.ConstructorArguments.FirstOrDefault().Value is string path && ReadPath.IsMatch(path)
                 ? path
