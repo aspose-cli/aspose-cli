@@ -133,9 +133,9 @@ public sealed class UpdateClientSecurityTests
     public void ExpiredHandoff_DoesNotStartAnInstallerAndCleansItsOwnedPackage()
     {
         Requires.Windows();
-        string root = Aspose.Cli.Sdk.IO.UserStorage.CreateTemporaryDirectory("update-test");
+        string root = Aspose.Cli.Sdk.IO.Paths.UserStorage.CreateTemporaryDirectory("update-test");
         File.WriteAllText(Path.Combine(root, "install.ps1"), "throw 'This installer must never start.'");
-        using var deadline = Aspose.Cli.Sdk.IO.OperationDeadline.FromAbsoluteTick(
+        using var deadline = Aspose.Cli.Sdk.IO.Budgets.OperationDeadline.FromAbsoluteTick(
             TimeSpan.FromSeconds(1), Environment.TickCount64 - 1);
         CliException error = Assert.Throws<CliException>(() => UpdateClient.HandoffToInstaller(
             WindowsPowerShell.TryResolve()!, root, Path.Combine(root, "install"), Path.Combine(root, "status.json"), deadline));
@@ -146,7 +146,7 @@ public sealed class UpdateClientSecurityTests
     [Fact]
     public void FailedInstallerStart_RemovesTheExtractedRoot()
     {
-        string root = Aspose.Cli.Sdk.IO.UserStorage.CreateTemporaryDirectory("update-test");
+        string root = Aspose.Cli.Sdk.IO.Paths.UserStorage.CreateTemporaryDirectory("update-test");
         File.WriteAllText(Path.Combine(root, "install.ps1"), string.Empty);
 
         Assert.ThrowsAny<Exception>(() => UpdateClient.HandoffToInstaller(

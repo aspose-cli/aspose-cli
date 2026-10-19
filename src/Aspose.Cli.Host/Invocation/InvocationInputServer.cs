@@ -1,7 +1,7 @@
 using System.Diagnostics;
 using System.IO.Pipes;
 using Aspose.Cli.Host.LocalServices;
-using Aspose.Cli.Sdk.IO;
+using Aspose.Cli.Sdk.IO.Budgets;
 
 namespace Aspose.Cli.Host.Invocation;
 

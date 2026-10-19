@@ -1,5 +1,5 @@
 using System.Text.RegularExpressions;
-using Aspose.Cli.Sdk.IO;
+using Aspose.Cli.Sdk.IO.Output;
 using Aspose.Cli.Sdk.Licensing;
 using Aspose.Cli.Sdk.Rendering;
 using Aspose.Cli.Sdk.Results;

@@ -1,4 +1,6 @@
-using Aspose.Cli.Sdk.IO;
+using Aspose.Cli.Sdk.IO.Files;
+using Aspose.Cli.Sdk.IO.Paths;
+using Aspose.Cli.Sdk.IO.Publication;
 using Aspose.Cli.TestKit;
 using Xunit;
 

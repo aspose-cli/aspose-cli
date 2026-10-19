@@ -1,7 +1,7 @@
 using System.Diagnostics;
 using System.Security.Cryptography;
 using System.Text;
-using Aspose.Cli.Sdk.IO;
+using Aspose.Cli.Sdk.IO.Paths;
 
 namespace Aspose.Cli.Host.LocalServices;
 

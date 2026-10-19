@@ -1,7 +1,7 @@
 using Aspose.Cli.Product.Pdf.Engine;
 using Aspose.Cli.Sdk.Addressing;
 using Aspose.Cli.Sdk.Errors;
-using Aspose.Cli.Sdk.IO;
+using Aspose.Cli.Sdk.IO.Output;
 using Aspose.Cli.TestKit;
 using Xunit;
 

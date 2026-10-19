@@ -1,6 +1,6 @@
 using System.Globalization;
 using System.Xml;
-using Aspose.Cli.Sdk.IO;
+using Aspose.Cli.Sdk.IO.Input;
 using Aspose.Pdf;
 using SkiaSharp;
 

@@ -1,7 +1,8 @@
 using System.Diagnostics;
 using System.Text.Json;
 using Aspose.Cli.Product.Words.Engine.Mapping;
-using Aspose.Cli.Sdk.IO;
+using Aspose.Cli.Sdk.IO.Extraction;
+using Aspose.Cli.Sdk.IO.Output;
 using Aspose.Cli.Sdk.Licensing;
 using Aspose.Cli.Sdk.Results;
 using Aspose.Cli.Sdk.Text;

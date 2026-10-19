@@ -6,7 +6,7 @@ using Aspose.Cells.Drawing;
 using Aspose.Cells.Pivot;
 using Aspose.Cells.Tables;
 using Aspose.Cli.Sdk.Errors;
-using Aspose.Cli.Sdk.IO;
+using Aspose.Cli.Sdk.IO.Budgets;
 
 namespace Aspose.Cli.Product.Cells.Engine.Mapping;
 

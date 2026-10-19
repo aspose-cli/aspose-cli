@@ -3,7 +3,7 @@ using System.CommandLine.Parsing;
 using System.Runtime.CompilerServices;
 using System.Text.Json.Nodes;
 using Aspose.Cli.Sdk.Formats;
-using Aspose.Cli.Sdk.IO;
+using Aspose.Cli.Sdk.IO.Output;
 using Aspose.Cli.Sdk.Results;
 
 namespace Aspose.Cli.Sdk.Extensibility.Commanding;

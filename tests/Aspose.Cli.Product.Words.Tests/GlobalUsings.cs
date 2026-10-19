@@ -1,7 +1,10 @@
 global using Aspose.Cli.Product.Words.Contracts;
 global using Aspose.Cli.Product.Words.Engine;
 global using Aspose.Cli.Sdk.Formats;
+global using Aspose.Cli.Sdk.IO.Budgets;
+global using Aspose.Cli.Sdk.IO.Input;
+global using Aspose.Cli.Sdk.IO.Output;
+global using Aspose.Cli.Sdk.IO.Publication;
 global using Aspose.Cli.Sdk.Operations;
 global using Aspose.Cli.Sdk.Addressing;
 global using Aspose.Cli.Sdk.Contracts;
-global using Aspose.Cli.Sdk.IO;

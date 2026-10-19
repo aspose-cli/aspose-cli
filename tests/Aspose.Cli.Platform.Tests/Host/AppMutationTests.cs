@@ -4,7 +4,7 @@ using System.Net.Sockets;
 using System.Text;
 using System.Text.Json.Nodes;
 using Aspose.Cli.Host.LocalServices;
-using Aspose.Cli.Sdk.IO;
+using Aspose.Cli.Sdk.IO.Paths;
 using Aspose.Cli.TestKit;
 using Xunit;
 

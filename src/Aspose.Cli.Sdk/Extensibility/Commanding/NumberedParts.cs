@@ -4,8 +4,8 @@ using System.Runtime.CompilerServices;
 namespace Aspose.Cli.Sdk.Extensibility.Commanding;
 
 /// <summary>
-/// The commands that write their output as numbered parts (<see cref="IO.ResolvedOutput.Parts"/>,
-/// <see cref="IO.ResolvedDirectory.Parts"/>), known by the option that selects the parts, so a
+/// The commands that write their output as numbered parts (<see cref="IO.Output.ResolvedOutput.Parts"/>,
+/// <see cref="IO.Output.ResolvedDirectory.Parts"/>), known by the option that selects the parts, so a
 /// dry run can name the files the run writes without reading the document.
 /// </summary>
 internal static class NumberedParts

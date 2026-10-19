@@ -3,7 +3,7 @@ using Aspose.Cli.Host.Invocation;
 using Aspose.Cli.Host.Tests;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Extensibility.Commanding;
-using Aspose.Cli.Sdk.IO;
+using Aspose.Cli.Sdk.IO.Paths;
 using Aspose.Cli.Sdk.Rendering;
 using Aspose.Cli.TestKit;
 using Xunit;

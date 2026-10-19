@@ -1,5 +1,6 @@
 using Aspose.Cli.Product.Words.Engine.Mapping;
-using Aspose.Cli.Sdk.IO;
+using Aspose.Cli.Sdk.IO.Input;
+using Aspose.Cli.Sdk.IO.Output;
 using Aspose.Cli.Sdk.Licensing;
 using Aspose.Cli.Sdk.Results;
 using Aspose.Words;

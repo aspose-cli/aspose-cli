@@ -1,4 +1,4 @@
-using Aspose.Cli.Sdk.IO;
+using Aspose.Cli.Sdk.IO.Input;
 using Aspose.Pdf;
 using static Aspose.Cli.Product.Pdf.Engine.Editing.PdfMutationSupport;
 using static Aspose.Cli.Product.Pdf.Engine.PdfAssembly;

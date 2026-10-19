@@ -1,6 +1,6 @@
 using Aspose.Cli.Product.Pdf.Contracts;
 using Aspose.Cli.Sdk.Contracts;
-using Aspose.Cli.Sdk.IO;
+using Aspose.Cli.Sdk.IO.Output;
 using Aspose.Cli.TestKit;
 using Aspose.Pdf;
 using Aspose.Pdf.Text;

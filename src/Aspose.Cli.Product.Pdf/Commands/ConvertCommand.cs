@@ -1,6 +1,6 @@
 using Aspose.Cli.Sdk.Extensibility;
 using Aspose.Cli.Sdk.Extensibility.Output;
-using Aspose.Cli.Sdk.IO;
+using Aspose.Cli.Sdk.IO.Output;
 
 namespace Aspose.Cli.Product.Pdf.Commands;
 

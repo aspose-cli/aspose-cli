@@ -1,7 +1,7 @@
 using Aspose.Cli.Host.Contracts;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Formats;
-using Aspose.Cli.Sdk.IO;
+using Aspose.Cli.Sdk.IO.Extraction;
 using Aspose.Cli.Sdk.Licensing;
 using Aspose.Cli.Sdk.Results;
 using Aspose.Cli.TestKit;

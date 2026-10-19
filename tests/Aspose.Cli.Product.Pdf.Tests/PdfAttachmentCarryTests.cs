@@ -1,6 +1,6 @@
 using System.Text;
 using System.Text.Json.Nodes;
-using Aspose.Cli.Sdk.IO;
+using Aspose.Cli.Sdk.IO.Output;
 using Aspose.Cli.TestKit;
 using Aspose.Pdf;
 using Aspose.Pdf.Annotations;

@@ -1,5 +1,6 @@
 using Aspose.Cli.Sdk.Errors;
-using Aspose.Cli.Sdk.IO;
+using Aspose.Cli.Sdk.IO.Budgets;
+using Aspose.Cli.Sdk.IO.Input;
 using Aspose.Pdf;
 
 namespace Aspose.Cli.Product.Pdf.Engine.Mapping;

@@ -1,6 +1,6 @@
 using System.Runtime.ExceptionServices;
 using Aspose.Cli.Sdk.Errors;
-using Aspose.Cli.Sdk.IO;
+using Aspose.Cli.Sdk.IO.Input;
 using Aspose.Slides;
 using static Aspose.Cli.Product.Slides.Engine.Editing.SlidesMutationSupport;
 

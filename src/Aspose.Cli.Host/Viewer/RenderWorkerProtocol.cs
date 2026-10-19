@@ -18,7 +18,7 @@ internal static class RenderWorkerProtocol
 }
 
 /// <summary>One render the service asks the warm worker for.</summary>
-internal sealed record RenderWorkerRequest(long MaxInputBytes = Aspose.Cli.Sdk.IO.ResourceBudgetDefaults.DefaultInputBytes)
+internal sealed record RenderWorkerRequest(long MaxInputBytes = Aspose.Cli.Sdk.IO.Budgets.ResourceBudgetDefaults.DefaultInputBytes)
 {
     /// <summary>Correlates the response; unique for the life of the service.</summary>
     public required int Id { get; init; }

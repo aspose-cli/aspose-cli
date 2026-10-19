@@ -1,6 +1,8 @@
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Errors;
-using Aspose.Cli.Sdk.IO;
+using Aspose.Cli.Sdk.IO.Files;
+using Aspose.Cli.Sdk.IO.Input;
+using Aspose.Cli.Sdk.IO.Output;
 using Aspose.Cli.TestKit;
 using Xunit;
 
