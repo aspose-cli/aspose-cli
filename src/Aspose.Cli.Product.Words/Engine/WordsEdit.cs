@@ -43,9 +43,7 @@ internal static class WordsEdit
         string format = written.Id;
         OutputProtection protection = OutputProtection.For(written, request.EncryptPassword, loaded.Protection, request.Password);
         SaveOptions saveOptions = WordsSavePipeline.Options(format, protection.Password);
-        InputInfo input = InfoProjection.Source(request.Input, loaded);
-        FileFingerprints.EnsureUnchanged(request.Input, precondition.Fingerprint, input.Fingerprint);
-        FileFingerprints.EnsureMatch(request.Input, request.Options.IfMatch, input.Fingerprint);
+        InputInfo input = precondition.Admit(loaded.FormatId, loaded.Protection, request.Options.IfMatch);
         Node[] blocksBefore = BodyBlocks(loaded.Document).ToArray();
         var blocks = new DocumentBlockIndex(loaded.Document, loaded.Evaluation);
         IReadOnlyList<ResolvedWordsOp> resolved = WordsAnchorResolver.Resolve(loaded.Document, blocks, batch);

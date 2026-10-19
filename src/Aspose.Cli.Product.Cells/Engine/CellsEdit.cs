@@ -6,7 +6,6 @@ using Aspose.Cli.Sdk.Operations;
 using Aspose.Cli.Sdk.Results;
 using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Errors;
-using static Aspose.Cli.Product.Cells.Engine.CellsEngineSupport;
 
 namespace Aspose.Cli.Product.Cells.Engine;
 
@@ -33,12 +32,8 @@ internal static class CellsEdit
         // The edit recalculates after its operations, or was told not to calculate at all.
         using LoadedWorkbook loaded = session.Loader.Open(filePath, request.Password, calculateOnOpen: false);
         Workbook workbook = loaded.Workbook;
-        InputInfo input = BuildSource(filePath, loaded);
-        FileFingerprints.EnsureUnchanged(filePath, precondition.Fingerprint, input.Fingerprint!);
-        FileFingerprints.EnsureMatch(
-            filePath,
-            request.Options.IfMatch,
-            input.Fingerprint!);
+        InputInfo input = precondition.Admit(
+            CellsEngineFormats.IdOf(loaded.SourceFormat), loaded.Protection, request.Options.IfMatch);
 
         using CellsEditBaseline? baseline = request.Verify
             ? CellsEditBaseline.Capture(filePath, precondition, session.Budgets) : null;

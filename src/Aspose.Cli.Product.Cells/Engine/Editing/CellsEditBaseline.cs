@@ -19,7 +19,7 @@ internal sealed class CellsEditBaseline(string directory, OwnedTemporaryFile fil
             using (var destination = new FileStream(file.Path, FileMode.Truncate, FileAccess.Write, FileShare.None))
             { source.CopyTo(destination); destination.Flush(flushToDisk: true); }
             file.BindProducedFile();
-            FileFingerprints.EnsureUnchanged(sourcePath, precondition.Fingerprint, FileFingerprints.Capture(file.Path));
+            precondition.EnsureCopyMatches(file.Path);
             return new CellsEditBaseline(directory, file);
         }
         catch
