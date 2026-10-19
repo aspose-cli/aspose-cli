@@ -267,15 +267,15 @@ internal static partial class SlidesExport
             });
         }
 
-        if (targetFormatId == "odp" && OdpLosses(loaded.Presentation) is { } losses)
+        if (SlidesEngineFormats.LosesNativeContent(targetFormatId) && NativeContentLosses(loaded.Presentation) is { } losses)
         {
-            warnings.Add(new Warning(WarningCodes.LossyConversion, $"The odp output does not keep {losses}, though its slides look as in the deck.")
+            warnings.Add(new Warning(WarningCodes.LossyConversion, $"The {targetFormatId} output does not keep {losses}, though its slides look as in the deck.")
             {
                 Hint = "Keep the source deck for further edits; to keep the charts editable, the transitions and the sections, convert to pptx instead.",
             });
         }
 
-        if (targetFormatId is "html" or "html5" or "md")
+        if (SlidesEngineFormats.IsLossy(targetFormatId))
         {
             warnings.Add(new Warning(WarningCodes.LossyConversion, $"Slides conversion to {targetFormatId} may not preserve every presentation feature.")
             {
@@ -288,7 +288,7 @@ internal static partial class SlidesExport
 
     // What an ODP save of the presentation does not keep (SLIDES-ODP-NATIVE-CONTENT): its native charts, which become
     // pictures, the slide transitions and the sections; null when it has none of them.
-    private static string? OdpLosses(Presentation presentation)
+    private static string? NativeContentLosses(Presentation presentation)
     {
         int[] charts = [.. AllSlides(presentation.Slides.Count).Where(number => HasChart(presentation.Slides[number - 1].Shapes))];
         int[] transitions = [.. AllSlides(presentation.Slides.Count)
@@ -362,25 +362,23 @@ internal static partial class SlidesExport
         string directory = request.Output.Directory;
         using OutputSet<Presentation> transaction = session.Outputs.BeginSet([directory], "slides-render");
         var targets = new List<int>(slides.Count);
+        ImageFormat? image = SlidesEngineFormats.SlideImageOf(request.Output.Format.Id);
         foreach ((int number, string path) in slides.Zip(request.Output.Parts(slides)))
         {
             ISlide slide = presentation.Slides[number - 1];
             targets.Add(number);
             transaction.Stage(path, request.Output.Overwrite, presentation, temp =>
             {
-                if (request.Output.Format.Id == "svg")
+                if (image is not { } bitmap)
                 {
                     using FileStream stream = File.Create(temp);
                     slide.WriteAsSvg(stream);
                     return;
                 }
 
-                using IImage image = slide.GetImage(scale, scale);
+                using IImage drawn = slide.GetImage(scale, scale);
                 using FileStream outputStream = File.Create(temp);
-                image.Save(
-                    outputStream,
-                    request.Output.Format.Id == "png" ? ImageFormat.Png : ImageFormat.Jpeg,
-                    quality: 92);
+                drawn.Save(outputStream, bitmap, quality: 92);
             }, rendering: true, pages: [number]);
         }
 
