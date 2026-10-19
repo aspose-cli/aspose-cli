@@ -1,6 +1,7 @@
 name: Pull request
 # Checks the branch name, the title and every commit subject against CONTRIBUTING.md, and that a
-# new known invariant violation or a dropped generated invariant case carries the owner's approval.
+# new known invariant violation or rule exemption, or a dropped generated invariant case, carries the
+# owner's approval.
 # It reruns when the title is edited or a label changes, which do not rerun CI.
 on:
   pull_request:
@@ -53,79 +54,13 @@ jobs:
             check "Commit subject" "$line"
           done <<< "$subjects"
           exit $status
-      - name: Require approval to add a known violation
+      - name: Require approval to loosen a gate
         # Runs when an earlier check failed too, so every approval the change needs shows at once.
+        # A new or wider known violation or rule exemption, or a dropped generated invariant case,
+        # needs the 'quality-exception' label (scripts/require-approval.ps1).
         if: ${{ !cancelled() }}
+        shell: pwsh
         env:
           HEAD: ${{ github.event.pull_request.head.sha }}
           APPROVED: ${{ contains(github.event.pull_request.labels.*.name, 'quality-exception') }}
-        run: |
-          file=tests/Aspose.Cli.Invariants.Tests/known-violations.json
-          base=$(git merge-base "origin/$GITHUB_BASE_REF" "$HEAD")
-          # entries COMMIT OUT: the list at a commit, or an empty one where the file is missing.
-          entries() { git show "$1:$file" > "$2" 2>/dev/null || echo '{"violations":[]}' > "$2"; }
-          entries "$base" "$RUNNER_TEMP/base.json"
-          entries "$HEAD" "$RUNNER_TEMP/head.json"
-          # An entry is keyed by its case and invariant. A new key or wider modes (omitted modes
-          # mean both) accepts a violation the base did not; removing an entry, narrowing its
-          # modes or changing its cause needs no approval. A reworded actual text is shown to the
-          # owner as a notice.
-          jq -r --slurpfile base "$RUNNER_TEMP/base.json" '
-            ($base[0].violations | map({key: "\(.case) / \(.invariant)", value: .actual}) | from_entries) as $was
-            | .violations[]
-            | "\(.case) / \(.invariant)" as $key
-            | select($was[$key] != null and $was[$key] != .actual)
-            | "::notice::'"$file"' reworded \($key): \(.actual)"' "$RUNNER_TEMP/head.json"
-          widened=$(jq -r --slurpfile base "$RUNNER_TEMP/base.json" '
-            ($base[0].violations | map({key: "\(.case) / \(.invariant)", value: .}) | from_entries) as $was
-            | .violations[]
-            | "\(.case) / \(.invariant)" as $key
-            | $was[$key] as $before
-            | if $before == null then "added \($key)"
-              elif $before.modes != null and (.modes == null or (.modes - $before.modes | length) > 0) then "widened the modes of \($key)"
-              else empty end' "$RUNNER_TEMP/head.json")
-          if [ -z "$widened" ]; then
-            echo "No known violation was added or widened."
-            exit 0
-          fi
-          level=error
-          if [ "$APPROVED" = true ]; then
-            level=notice
-          fi
-          while IFS= read -r line; do
-            echo "::$level::$file $line"
-          done <<< "$widened"
-          if [ "$APPROVED" != true ]; then
-            echo "::error::Fix the product instead. Accepting a new or wider known violation takes the owner's approval: the 'quality-exception' label on this pull request (AGENTS.md#gates)."
-            exit 1
-          fi
-      - name: Require approval to drop a generated invariant case
-        # Runs when an earlier check failed too, so every approval the change needs shows at once.
-        if: ${{ !cancelled() }}
-        env:
-          HEAD: ${{ github.event.pull_request.head.sha }}
-          APPROVED: ${{ contains(github.event.pull_request.labels.*.name, 'quality-exception') }}
-        run: |
-          file=tests/Aspose.Cli.Invariants.Tests/generated-cases.txt
-          base=$(git merge-base "origin/$GITHUB_BASE_REF" "$HEAD")
-          # cases COMMIT OUT: the listed case ids at a commit, or none where the file is missing.
-          cases() { git show "$1:$file" 2>/dev/null | tr -d '\r' | LC_ALL=C sort > "$2" || true; }
-          cases "$base" "$RUNNER_TEMP/base-cases.txt"
-          cases "$HEAD" "$RUNNER_TEMP/head-cases.txt"
-          # A case the base listed and the head does not stopped running; adding cases needs no approval.
-          dropped=$(LC_ALL=C comm -23 "$RUNNER_TEMP/base-cases.txt" "$RUNNER_TEMP/head-cases.txt")
-          if [ -z "$dropped" ]; then
-            echo "No generated invariant case was dropped."
-            exit 0
-          fi
-          level=error
-          if [ "$APPROVED" = true ]; then
-            level=notice
-          fi
-          while IFS= read -r line; do
-            echo "::$level::$file dropped $line"
-          done <<< "$dropped"
-          if [ "$APPROVED" != true ]; then
-            echo "::error::Restore what generated these cases. Dropping a generated case takes the owner's approval: the 'quality-exception' label on this pull request (AGENTS.md#gates)."
-            exit 1
-          fi
+        run: ./scripts/require-approval.ps1 -Base "origin/$env:GITHUB_BASE_REF" -Head $env:HEAD -Approved:($env:APPROVED -eq 'true')

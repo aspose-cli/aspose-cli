@@ -18,6 +18,7 @@
     <RepositoryInput Include="..\..\.github\workflows\pull-request.yml" />
     <RepositoryInput Include="..\..\scripts\documentation-paths.json" />
     <RepositoryInput Include="..\..\scripts\documentation-paths.ps1" />
+    <RepositoryInput Include="..\..\scripts\require-approval.ps1" />
   </ItemGroup>
 
 </Project>
