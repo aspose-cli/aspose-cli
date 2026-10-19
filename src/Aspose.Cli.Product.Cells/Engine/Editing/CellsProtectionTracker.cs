@@ -28,26 +28,17 @@ internal sealed class CellsProtectionTracker
     /// </summary>
     internal static ProtectedChange Observe(Workbook workbook, CellsOp op)
     {
-        switch (op)
+        CellsOpTraits traits = CellsOpFootprints.Of(op);
+        return traits.Protection switch
         {
-            // Unprotecting checks the password.
-            case UnprotectSheetOp or UnprotectWorkbookOp:
-            // Workbook-level definitions and views and print settings, which Excel leaves open
-            // on a protected sheet.
-            case DefineNameOp or DeleteNameOp or SetDefaultFontOp or SetActiveSheetOp or SetSheetViewOp
-                or FreezePanesOp or SetPageSetupOp or SetPrintAreaOp:
-                return default;
-            // Structure protection covers adding, removing, renaming, moving and hiding sheets,
-            // and protecting the structure again.
-            case InsertSheetOp or ImportSheetOp or DeleteSheetOp or RenameSheetOp or MoveSheetOp
-                or SetSheetVisibilityOp or SetTabColorOp or ProtectWorkbookOp:
-                return new ProtectedChange(null, Sheets.StructureProtected(workbook), KeptPassword: false);
-            default:
-                return ChangedSheet(workbook, op) is { IsProtected: true } sheet && !WritesUnlockedCellsOnly(sheet, op)
-                    ? new ProtectedChange(sheet.Name, Structure: false,
-                        KeptPassword: op is ProtectSheetOp && sheet.Protection.IsProtectedWithPassword)
-                    : default;
-        }
+            CellsProtectionScope.None => default,
+            CellsProtectionScope.Structure => new ProtectedChange(null, Sheets.StructureProtected(workbook), KeptPassword: false),
+            CellsProtectionScope.Sheet => ChangedSheet(workbook, op) is { IsProtected: true } sheet && !WritesUnlockedCellsOnly(sheet, traits)
+                ? new ProtectedChange(sheet.Name, Structure: false,
+                    KeptPassword: op is ProtectSheetOp && sheet.Protection.IsProtectedWithPassword)
+                : default,
+            _ => throw new System.Diagnostics.UnreachableException($"Protection scope {traits.Protection} is not handled."),
+        };
     }
 
     /// <summary>
@@ -146,10 +137,9 @@ internal sealed class CellsProtectionTracker
     }
 
     /// <summary>Whether the operation changes only the contents of cells Excel leaves unlocked on a protected sheet.</summary>
-    private static bool WritesUnlockedCellsOnly(Worksheet sheet, CellsOp op)
+    private static bool WritesUnlockedCellsOnly(Worksheet sheet, CellsOpTraits traits)
     {
-        if (op is not (SetValuesOp or SetFormulaOp or ClearRangeOp { What: CellsClearTargets.Contents })
-            || OpsFootprint.TargetOf(op)?.Range is not { } target)
+        if (!traits.WritesContents || traits.Target?.Range is not { } target)
         {
             return false;
         }
