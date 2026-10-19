@@ -397,6 +397,13 @@ file and exit 8 with `verification.ok: false`; each issue's code is one that
 `#NAME?` usually means a localized or misspelled function name, which
 `FORMULA_FUNCTION_UNKNOWN` names with or without `--verify`.
 
+The report sorts the changed cells into `directChanges`, inside an operation's
+target, `formulaResultChanges`, formulas whose text stayed the same while their
+result changed, and `otherChanges`. After changing input values, read
+`verification.formulaResultChanges` for the totals and other results the change
+moved, each with its `left` (before) and `right` (after) side, and report those
+instead of working them out.
+
 A formula error whose input cell had the same formula and the same error
 carries `preexisting: true`; it still fails verification, so fix it or tell
 the user it predates the edit. An edit that changes more than 1000 cells,
