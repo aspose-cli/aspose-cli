@@ -2,6 +2,7 @@ using System.Text;
 using Aspose.Cells;
 using Aspose.Cells.Rendering;
 using Aspose.Cli.Product.Cells.Engine.Mapping;
+using Aspose.Cli.Sdk;
 using Aspose.Cli.Sdk.Addressing;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.IO;
@@ -277,7 +278,7 @@ internal static class CellsRender
         }
 
         var paths = new string[sheets.Count];
-        var taken = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var taken = new HashSet<string>(FilePaths.Comparer);
         for (int i = 0; i < sheets.Count; i++)
         {
             string label = SanitizeFileNamePart(sheets[i].Name);
