@@ -255,6 +255,11 @@ public sealed class CellsCliTests : IDisposable
         Assert.Equal(
             JsonNode.Parse(pages.StdErr)!["error"]!["code"]!.GetValue<string>(),
             JsonNode.Parse(upper.StdErr)!["error"]!["code"]!.GetValue<string>());
+        string sheetsMessage = JsonNode.Parse(upper.StdErr)!["error"]!["message"]!.GetValue<string>();
+        string pagesMessage = JsonNode.Parse(pages.StdErr)!["error"]!["message"]!.GetValue<string>();
+        Assert.DoesNotContain("names a sheet", sheetsMessage, StringComparison.Ordinal);
+        Assert.Contains("lowercase", sheetsMessage, StringComparison.Ordinal);
+        Assert.Contains("lowercase", pagesMessage, StringComparison.Ordinal);
         Assert.True(lower.ExitCode == 0, lower.StdErr);
     }
 
