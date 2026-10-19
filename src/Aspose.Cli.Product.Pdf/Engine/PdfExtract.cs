@@ -3,6 +3,7 @@ using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Licensing;
 using Aspose.Cli.Sdk.Rendering;
 using Aspose.Cli.Sdk.Results;
+using Aspose.Cli.Sdk.Text;
 using Aspose.Pdf;
 using Aspose.Pdf.Text;
 using static Aspose.Cli.Product.Pdf.Engine.PdfEngineSupport;
@@ -122,29 +123,14 @@ internal static class PdfExtract
             absorber.Visit(page);
             foreach (AbsorbedTable table in absorber.TableList)
             {
-                var csv = new StringBuilder();
-                foreach (AbsorbedRow row in table.RowList)
-                {
-                    csv.AppendLine(string.Join(
-                        ",",
-                        row.CellList.Select(static cell => Csv(string.Concat(
-                            cell.TextFragments.Select(static fragment => fragment.Text))))));
-                }
-
-                byte[] bytes = [.. byteOrderMark ? Encoding.UTF8.Preamble : [], .. Encoding.UTF8.GetBytes(csv.ToString())];
+                byte[] bytes = CsvText.Encode(
+                    table.RowList.Select(static row => row.CellList.Select(static cell => string.Concat(
+                        cell.TextFragments.Select(static fragment => fragment.Text)))),
+                    byteOrderMark);
                 items.Add((guard.StageAllBytes($"table-{++number:000}.csv", bytes), pageNumber));
             }
         }
 
         return items;
-    }
-
-    private static string Csv(string value)
-    {
-        string normalized = value.Replace("\r\n", "\n", StringComparison.Ordinal)
-            .Replace('\r', '\n');
-        return normalized.IndexOfAny([',', '"', '\n']) >= 0
-            ? "\"" + normalized.Replace("\"", "\"\"", StringComparison.Ordinal) + "\""
-            : normalized;
     }
 }
