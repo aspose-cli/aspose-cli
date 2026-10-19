@@ -131,7 +131,7 @@ internal static class CorruptInputDetection
             .SelectMany(static parameter => parameter.TextValues())
             .Where(static value => !string.IsNullOrWhiteSpace(value) && value != "-")
             .Select(paths.ResolveOutput)
-            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Distinct(FilePaths.Comparer)
             .ToArray();
         return inputs.Length == 1 && File.Exists(inputs[0]) ? inputs[0] : null;
     }

@@ -488,7 +488,7 @@ internal sealed record BundledSkill(
     {
         if (string.IsNullOrWhiteSpace(path)
             || Path.IsPathRooted(path)
-            || path.StartsWith("\\\\", StringComparison.Ordinal)
+            || FilePaths.IsRemoteOrDevice(path)
             || path.Contains(':', StringComparison.Ordinal))
         {
             throw new InvalidDataException($"unsafe Skill path '{path}'");

@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.Text.Json.Nodes;
 using Aspose.Cli.Host.LocalServices;
+using Aspose.Cli.Sdk;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Host.Viewer;
 using Aspose.Cli.Sdk.IO;
@@ -443,7 +444,7 @@ internal sealed class LiveDocument : IDisposable
         {
             ["revision"] = revision,
             ["code"] = code,
-            ["message"] = Flatten(message.Replace(_source, FileName, StringComparison.OrdinalIgnoreCase)),
+            ["message"] = Flatten(message.Replace(_source, FileName, FilePaths.Comparison)),
         });
 
     private void Broadcast(string name, JsonObject payload) =>

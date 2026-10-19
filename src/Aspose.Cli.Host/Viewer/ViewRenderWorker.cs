@@ -6,6 +6,7 @@ using Aspose.Cli.Host.Invocation;
 using Aspose.Cli.Host.Licensing;
 using Aspose.Cli.Host.LocalServices;
 using Aspose.Cli.Host.ViewerService;
+using Aspose.Cli.Sdk;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Licensing;
@@ -166,7 +167,7 @@ internal static class ViewRenderWorker
     /// previewed the original, which the error names instead, or its file name without one.
     /// </summary>
     private static string Shown(string text, RenderWorkerRequest request) =>
-        text.Replace(request.Source, request.SourceOrigin ?? Path.GetFileName(request.Source), StringComparison.OrdinalIgnoreCase);
+        text.Replace(request.Source, request.SourceOrigin ?? Path.GetFileName(request.Source), FilePaths.Comparison);
 
     private static JsonObject Shown(JsonObject details, RenderWorkerRequest request)
     {
