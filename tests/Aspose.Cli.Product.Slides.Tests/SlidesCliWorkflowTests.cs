@@ -154,6 +154,85 @@ public sealed class SlidesCliWorkflowTests : IDisposable
         Assert.False(File.Exists(_workspace.File("deck.pptx")));
     }
 
+    [Theory]
+    [InlineData("ppt")]
+    [InlineData("pot")]
+    public void Create_FromABinaryPptTemplate_FillsItsLayouts(string format)
+    {
+        string template = CreateBinaryDeck(format);
+
+        CliResult created = _workspace.Run(
+            "slides", "create", "deck.pptx", "--from-markdown", "min.md", "--template", template, "--output-format", "json");
+
+        Assert.True(created.ExitCode == 0, created.StdErr);
+        using var deck = new Presentation(_workspace.File("deck.pptx"));
+        Assert.Equal(["Title Slide", "Title and Content"], deck.Slides.Select(static slide => slide.LayoutSlide.Name));
+    }
+
+    [Theory]
+    [InlineData("ppt")]
+    [InlineData("pps")]
+    public void Edit_OfABinaryPptInput_InsertsSlidesOnItsLayouts(string format)
+    {
+        string input = CreateBinaryDeck(format);
+        File.WriteAllText(
+            _workspace.File("insert.json"),
+            """{"ops":[{"op":"insert_slide","layout":"Title Slide"},{"op":"insert_slide","layout":"Section Header"},{"op":"insert_slide"}]}""");
+
+        CliResult edited = _workspace.Run(
+            "slides", "edit", input, "--ops", "insert.json", "--out", "edited.pptx", "--output-format", "json");
+
+        Assert.True(edited.ExitCode == 0, edited.StdErr);
+        using var deck = new Presentation(_workspace.File("edited.pptx"));
+        Assert.Equal(
+            ["Title Slide", "Title and Content", "Title Slide", "Section Header", "Title Slide"],
+            deck.Slides.Select(static slide => slide.LayoutSlide.Name));
+    }
+
+    [Fact]
+    public void EvaluationEdit_OfAPptInput_HasTheWatermarksOfTheSamePptxInput()
+    {
+        string ppt = CreateBinaryDeck("ppt");
+        File.WriteAllText(_workspace.File("insert.json"), """{"ops":[{"op":"insert_slide","layout":"Title and Content"}]}""");
+
+        int[] Watermarks(string input, string output)
+        {
+            CliResult edited = _workspace.Run(
+                "slides", "edit", input, "--ops", "insert.json", "--out", output, "--license-mode", "evaluation", "--output-format", "json");
+            Assert.True(edited.ExitCode == 0, edited.StdErr);
+            using var deck = new Presentation(_workspace.File(output));
+            return [.. deck.Slides.Select(static slide => slide.Shapes.Count(SlidesEngineSupport.IsEvaluationWatermark))];
+        }
+
+        int[] fromPptx = Watermarks("blank.pptx", "from-pptx.pptx");
+        int[] fromPpt = Watermarks(ppt, "from-ppt.pptx");
+
+        Assert.All(fromPptx, static count => Assert.True(count > 0));
+        Assert.Equal(fromPptx, fromPpt);
+    }
+
+    /// <summary>
+    /// The min.md outline, blank.pptx authored from it on the CLI's own design, and that deck as a
+    /// PowerPoint 97-2003 binary file of the format: the CLI converts to PPT, the engine saves the rest.
+    /// </summary>
+    private string CreateBinaryDeck(string format)
+    {
+        File.WriteAllText(_workspace.File("min.md"), "# Title\n\n## Slide two\n\n- point\n");
+        Assert.Equal(0, _workspace.Run("slides", "create", "blank.pptx", "--from-markdown", "min.md").ExitCode);
+        string binary = $"blank.{format}";
+        if (format == "ppt")
+        {
+            Assert.Equal(0, _workspace.Run("slides", "convert", "blank.pptx", "--out", binary).ExitCode);
+        }
+        else
+        {
+            using var source = new Presentation(_workspace.File("blank.pptx"));
+            source.Save(_workspace.File(binary), format == "pot" ? SaveFormat.Pot : SaveFormat.Pps);
+        }
+
+        return binary;
+    }
+
     [Fact]
     public void QuerySlides_NextSpellsRemainingSlidesAsRangesAndRereadsACutSlide()
     {

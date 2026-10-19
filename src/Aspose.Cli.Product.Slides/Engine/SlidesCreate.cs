@@ -10,12 +10,15 @@ namespace Aspose.Cli.Product.Slides.Engine;
 /// <summary>Creates a blank, template-based or Markdown-authored presentation.</summary>
 internal static class SlidesCreate
 {
-    /// <summary>A template, which opens without a password: an encrypted one is refused with that advice.</summary>
+    /// <summary>
+    /// A template, which opens without a password: an encrypted one is refused with that advice.
+    /// New slides go on its layouts, so it opens to be written (SLIDES-PPT-TEMPLATE-LAYOUTS).
+    /// </summary>
     private static LoadedPresentation OpenTemplate(SlidesSession session, string path)
     {
         try
         {
-            return session.Loader.Open(path, password: null);
+            return session.Loader.OpenToWrite(path, password: null);
         }
         catch (CliException error) when (CliErrors.IsPasswordError(error))
         {

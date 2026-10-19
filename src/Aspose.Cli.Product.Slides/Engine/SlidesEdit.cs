@@ -21,7 +21,7 @@ internal static class SlidesEdit
 
         LicenseState state = session.Outputs.License;
         FileWritePrecondition precondition = FileWritePrecondition.Capture(filePath);
-        using LoadedPresentation loaded = session.Loader.Open(filePath, request.Password);
+        using LoadedPresentation loaded = session.Loader.OpenToWrite(filePath, request.Password);
         InputInfo input = Source(filePath, loaded);
         FileFingerprints.EnsureUnchanged(filePath, precondition.Fingerprint, input.Fingerprint);
         FileFingerprints.EnsureMatch(filePath, request.Options.IfMatch, input.Fingerprint);
