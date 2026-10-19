@@ -21,17 +21,7 @@ internal static class EditCommand
                 UsesFonts = true,
             },
             [],
-            static (_, edit, standard) => new PdfEditRequest
-            {
-                Input = standard.Input,
-                Batch = edit.Batch,
-                Output = standard.Output,
-                Options = edit.Options,
-                Password = standard.InputPassword,
-                Verify = edit.Verify,
-                OpSecrets = edit.Secrets,
-                EncryptPassword = standard.EncryptPassword(),
-            },
+            static (_, edit, _) => new PdfEditRequest(edit),
             Table,
             examples:
             [

@@ -35,23 +35,10 @@ internal static class EditCommand
                 UsesFonts = true,
             },
             [trackChanges, author],
-            (parse, edit, standard) =>
+            (parse, edit, _) => new WordsEditRequest(edit)
             {
-                // The edit keeps its input's format, which the product's format detector tells.
-                Secret? encryptPassword = standard.EncryptPassword();
-                return new WordsEditRequest
-                {
-                    Input = standard.Input,
-                    Batch = edit.Batch,
-                    Output = standard.Output,
-                    Options = edit.Options,
-                    Verify = edit.Verify,
-                    TrackChanges = parse.GetValue(trackChanges),
-                    Author = parse.GetValue(author),
-                    Password = standard.InputPassword,
-                    EncryptPassword = encryptPassword,
-                    OpSecrets = edit.Secrets,
-                };
+                TrackChanges = parse.GetValue(trackChanges),
+                Author = parse.GetValue(author),
             },
             Table,
             checkUsage: parse =>

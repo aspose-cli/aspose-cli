@@ -44,6 +44,7 @@ public sealed record BoundedEditDefinition<TOp, TBatch>
 }
 
 /// <summary>One fully resolved bounded-edit invocation, ready for the product request.</summary>
+/// <param name="Input">The edited document.</param>
 /// <param name="Batch">The validated, identified and path-normalized operation document.</param>
 /// <param name="Output">Where, how and in which format the result is published.</param>
 /// <param name="Options">Precondition, dry-run and best-effort semantics.</param>
@@ -52,12 +53,20 @@ public sealed record BoundedEditDefinition<TOp, TBatch>
 /// The operations' secrets by environment variable name; a missing or empty variable is absent,
 /// and the operation that names it fails through <see cref="OperationSecrets.Resolve"/>.
 /// </param>
+/// <param name="Password">The password that opens the edited document, or null when none was given.</param>
+/// <param name="EncryptPassword">
+/// The password the output opens with (<c>--encrypt</c>), or null when none was given or the
+/// edit declares no output password.
+/// </param>
 public sealed record BoundedEditInvocation<TBatch>(
+    string Input,
     TBatch Batch,
     ResolvedOutput Output,
     EditCommandOptions Options,
     bool Verify,
-    IReadOnlyDictionary<string, Secret> Secrets);
+    IReadOnlyDictionary<string, Secret> Secrets,
+    Secret? Password,
+    Secret? EncryptPassword);
 
 /// <summary>
 /// The one command skeleton of every bounded, atomic product edit. It owns the operation
@@ -160,12 +169,13 @@ public sealed class BoundedEditCommand<TOp, TBatch>
 
     /// <summary>
     /// Validates the option combination, then reads and composes the operation document and
-    /// resolves its secrets. Every check that needs no input runs before <c>--ops -</c>
-    /// consumes standard input.
+    /// resolves its secrets, then the output password and the input password. Every check that
+    /// needs no input runs before <c>--ops -</c> consumes standard input.
     /// </summary>
     /// <param name="parse">The parsed command line.</param>
     /// <param name="standard">The invocation's common values.</param>
-    internal BoundedEditInvocation<TBatch> Read(ParseResult parse, StandardInvocation standard)
+    /// <param name="encrypts">Whether the edit declares an output password.</param>
+    internal BoundedEditInvocation<TBatch> Read(ParseResult parse, StandardInvocation standard, bool encrypts)
     {
         string? source = parse.GetValue(_ops);
         string[] directives = _set is null ? [] : parse.GetValue(_set) ?? [];
@@ -214,17 +224,16 @@ public sealed class BoundedEditCommand<TOp, TBatch>
             OutputFileOption.EnsureNotInput(output.Path, StandardOptionNames.Out, inPlaceAvailable: true, read);
         }
 
+        var options = new EditCommandOptions
+        {
+            IfMatch = ReconcileIfMatch(parse.GetValue(_ifMatch), batch.IfMatch),
+            DryRun = dryRun,
+            BestEffort = parse.GetValue(_bestEffort),
+        };
+        IReadOnlyDictionary<string, Secret> secrets = ResolveSecrets(batch, standard.ReadEnvironment);
+        Secret? encryptPassword = encrypts ? standard.EncryptPassword() : null;
         return new BoundedEditInvocation<TBatch>(
-            batch,
-            output,
-            new EditCommandOptions
-            {
-                IfMatch = ReconcileIfMatch(parse.GetValue(_ifMatch), batch.IfMatch),
-                DryRun = dryRun,
-                BestEffort = parse.GetValue(_bestEffort),
-            },
-            verify,
-            ResolveSecrets(batch, standard.ReadEnvironment));
+            standard.Input, batch, output, options, verify, secrets, standard.InputPassword, encryptPassword);
     }
 
     private static IReadOnlyDictionary<string, Secret> ResolveSecrets(TBatch batch, Func<string, string?> readEnvironment)

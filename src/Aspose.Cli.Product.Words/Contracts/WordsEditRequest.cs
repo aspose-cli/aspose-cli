@@ -1,21 +1,22 @@
-using Aspose.Cli.Sdk.IO;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Aspose.Cli.Product.Words.Contracts;
 
 /// <summary>Options for an atomic Words edit batch.</summary>
-public sealed record WordsEditRequest
+public sealed record WordsEditRequest : BoundedEditRequest<WordsOpsBatch>
 {
-    /// <summary>The document to edit.</summary>
-    public required string Input { get; init; }
-    /// <summary>The validated operation batch.</summary>
-    public required WordsOpsBatch Batch { get; init; }
-    /// <summary>The resolved output: its format, path, overwrite permission and in-place backup.</summary>
-    public required ResolvedOutput Output { get; init; }
-    public EditCommandOptions Options { get; init; } = new();
-    public bool Verify { get; init; }
+    /// <summary>Creates a request whose fields an object initializer sets.</summary>
+    public WordsEditRequest()
+    {
+    }
+
+    /// <summary>Creates the request of one resolved edit invocation.</summary>
+    [SetsRequiredMembers]
+    public WordsEditRequest(BoundedEditInvocation<WordsOpsBatch> edit)
+        : base(edit)
+    {
+    }
+
     public bool TrackChanges { get; init; }
     public string? Author { get; init; }
-    public Secret? Password { get; init; }
-    public Secret? EncryptPassword { get; init; }
-    public IReadOnlyDictionary<string, Secret>? OpSecrets { get; init; }
 }

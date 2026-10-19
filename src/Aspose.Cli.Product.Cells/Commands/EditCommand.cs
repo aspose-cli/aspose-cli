@@ -39,22 +39,7 @@ internal static class EditCommand
                 UsesFonts = true,
             },
             [noRecalc],
-            (parse, batch, standard) =>
-            {
-                Secret? encryptPassword = standard.EncryptPassword();
-                return new CellsEditRequest
-                {
-                    Input = standard.Input,
-                    Batch = batch.Batch,
-                    Output = standard.Output,
-                    Options = batch.Options,
-                    Recalculate = !parse.GetValue(noRecalc),
-                    OpSecrets = batch.Secrets,
-                    Password = standard.InputPassword,
-                    EncryptPassword = encryptPassword,
-                    Verify = batch.Verify,
-                };
-            },
+            (parse, edit, _) => new CellsEditRequest(edit) { Recalculate = !parse.GetValue(noRecalc) },
             Table,
             checkUsage: parse =>
             {
