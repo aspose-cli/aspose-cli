@@ -81,7 +81,7 @@ internal static class UpdateInstaller
     // The platform the customer updater supports and the PowerShell it hands the install to.
     private static string TrustedPowerShell()
     {
-        if (!OperatingSystem.IsWindows() || RuntimeInformation.RuntimeIdentifier != "win-x64")
+        if (RuntimeInformation.RuntimeIdentifier != "win-x64")
         {
             throw CliErrors.OptionInvalid("update install", "the customer updater currently supports Windows x64 only",
                 "Run the win-x64 distribution on Windows, or use update check for feed verification.");

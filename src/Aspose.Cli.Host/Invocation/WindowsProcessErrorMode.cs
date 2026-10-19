@@ -21,11 +21,6 @@ internal static class WindowsProcessErrorMode
     /// <summary>Best-effort process-wide suppression of native Windows error UI.</summary>
     internal static void SuppressNativeErrorUi()
     {
-        if (!OperatingSystem.IsWindows())
-        {
-            return;
-        }
-
         try
         {
             uint current = GetErrorMode();

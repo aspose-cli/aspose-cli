@@ -16,14 +16,9 @@ internal sealed class WindowsProcessJob : IDisposable
         _handle = handle;
     }
 
-    public static IDisposable? TryAttach(Process process)
+    public static WindowsProcessJob Attach(Process process)
     {
         ArgumentNullException.ThrowIfNull(process);
-        if (!OperatingSystem.IsWindows())
-        {
-            return null;
-        }
-
         SafeFileHandle handle = CreateJobObject(IntPtr.Zero, null);
         if (handle.IsInvalid)
         {

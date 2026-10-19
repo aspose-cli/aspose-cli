@@ -8,8 +8,7 @@ internal sealed class EnvironmentSecrets(Func<string, string?> source, ResourceB
 {
     private readonly Func<string, string?> _source = source ?? throw new ArgumentNullException(nameof(source));
     private readonly ResourceBudgetLedger _budgets = budgets ?? throw new ArgumentNullException(nameof(budgets));
-    private readonly Dictionary<string, string?> _values = new(
-        OperatingSystem.IsWindows() ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal);
+    private readonly Dictionary<string, string?> _values = new(StringComparer.OrdinalIgnoreCase);
     private readonly object _gate = new();
 
     /// <summary>Returns a named value once per invocation; missing and empty values remain distinct.</summary>

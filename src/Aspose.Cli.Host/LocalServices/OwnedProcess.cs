@@ -46,7 +46,7 @@ internal sealed class OwnedProcess : IDisposable
         if (!killOnClose) { return owned; }
         try
         {
-            owned._job = WindowsProcessJob.TryAttach(process);
+            owned._job = WindowsProcessJob.Attach(process);
             return owned;
         }
         catch
