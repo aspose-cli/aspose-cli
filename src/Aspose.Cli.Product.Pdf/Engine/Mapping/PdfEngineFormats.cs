@@ -38,9 +38,9 @@ internal static class PdfEngineFormats
         new("md") { Write = PdfEngineWrite.Document, Save = SaveFormat.Markdown, Lossy = true },
         new("xps") { Write = PdfEngineWrite.Document, Save = SaveFormat.Xps },
         new("txt") { Write = PdfEngineWrite.Text, Lossy = true },
-        new("pdfa-1b") { Write = PdfEngineWrite.Archive, Archive = PdfFormat.PDF_A_1B, AttachmentRule = "PDF/A-1 does not allow attachments" },
-        new("pdfa-2b") { Write = PdfEngineWrite.Archive, Archive = PdfFormat.PDF_A_2B, AttachmentRule = "PDF/A-2 allows only attachments that are PDF/A documents" },
-        new("pdfa-3b") { Write = PdfEngineWrite.Archive, Archive = PdfFormat.PDF_A_3B },
+        new("pdfa-1b") { Write = PdfEngineWrite.Archive, Archive = PdfFormat.PDF_A_1B, AppearanceClause = "6.5.3", AttachmentRule = "PDF/A-1 does not allow attachments" },
+        new("pdfa-2b") { Write = PdfEngineWrite.Archive, Archive = PdfFormat.PDF_A_2B, AppearanceClause = "6.3.3", AttachmentRule = "PDF/A-2 allows only attachments that are PDF/A documents" },
+        new("pdfa-3b") { Write = PdfEngineWrite.Archive, Archive = PdfFormat.PDF_A_3B, AppearanceClause = "6.3.3" },
         PageRaster("png", SKEncodedImageFormat.Png, 100, static (resolution, _) => new PngDevice(resolution)),
         PageRaster("jpeg", SKEncodedImageFormat.Jpeg, 95, static (resolution, quality) => new JpegDevice(resolution, quality)),
         new("svg") { Write = PdfEngineWrite.PageImage, Save = SaveFormat.Svg },
@@ -121,6 +121,12 @@ internal sealed record PdfEngineFormat(string Id)
 
     /// <summary>The PDF/A profile an archive conforms to.</summary>
     public PdfFormat? Archive { get; init; }
+
+    /// <summary>
+    /// The clause of an archive profile on annotation appearances, under which validation reports
+    /// a button field with one appearance for all its states; each part of PDF/A numbers it its own way.
+    /// </summary>
+    public string? AppearanceClause { get; init; }
 
     /// <summary>The device that rasterises one page at a resolution; null when not a bitmap.</summary>
     public Func<Resolution, ImageDevice>? Device { get; init; }

@@ -291,8 +291,9 @@ fails, delete the issue's section, the code that names it and the test, then upd
 
 - **Defect:** the HTML importer writes a radio group's field into its page's annotations with an
   appearance stream of its own. `Document.Convert` to PDF/A returns success and leaves it, and
-  validation of the saved file then fails clause 6.3.3 (the appearance of a button field must be
-  a subdictionary of states).
+  validation of the saved file then fails the clause on annotation appearances, 6.3.3 in PDF/A-2
+  and PDF/A-3 and 6.5.3 in PDF/A-1 (the appearance of a button field must be a subdictionary of
+  states).
 - **CLI behavior:** `pdf convert --to pdfa-*` validates the file it converted and fails with
   `PDFA_CONVERSION_FAILED` when it does not conform, naming in the hint the check boxes and radio
   groups on the pages of appearance problems that have one appearance for all their states.
