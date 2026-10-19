@@ -69,15 +69,17 @@ aspose-cli schema v2/words/ops --operation insert_table
   remain, the new text takes the format of the bookmark's first run, and a
   bookmark spanning several paragraphs becomes one paragraph.
 - `replace_text` changes the text a reader sees: field results but never field
-  codes, and never text a tracked change deletes. The new text takes the
-  format of the text where the match starts; when that text has no Chinese,
-  Japanese or Korean characters, such as an amount in digits, East Asian
-  characters of the new text take the East Asian font of the nearest East
-  Asian text in the paragraph. A regex `find` cannot anchor with `^`, `$`,
-  `\A`, `\Z`, `\z` or `\G` (the op fails with `OPS_INVALID`): pin the match
-  with the text next to it instead, or find the paragraphs with
-  `words search` and rewrite each with `set_text`. It cannot use a `(?#...)`
-  comment or the `x` option either.
+  codes, and never text a tracked change deletes. It replaces the matches
+  `words search` finds with the same pattern and scope, so a regex `^` or `$`
+  anchors at each paragraph, comment and note; a match that takes in a list
+  number, a paragraph mark or a header or footer placeholder such as `{PAGE}`
+  is left alone and not counted. The new text is inserted as
+  text, so `^p` or `&p` adds no break, and takes the format of the text where
+  the match starts; when that text has no Chinese, Japanese or Korean
+  characters, such as an amount in digits, East Asian characters of the new
+  text take the East Asian font of the nearest East Asian text in the
+  paragraph. With `--track-changes` each match reads as a deletion followed
+  by an insertion.
 - `repeat_table_row` expands a template row of the table `at` addresses (such
   as `{"find":"{{code}}"}`): one copy per item, in order, in place of the
   template row. Without `row`, the template is the table's one row with a
