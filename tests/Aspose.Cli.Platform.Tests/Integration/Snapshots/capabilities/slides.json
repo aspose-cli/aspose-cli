@@ -2327,6 +2327,13 @@
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
+      "code": "HIDDEN_SLIDES_RENDERED",
+      "owner": "slides",
+      "severity": "warning",
+      "category": "warning",
+      "detailsSchemaId": "v2/common/diagnostic-details"
+    },
+    {
       "code": "HIDDEN_SLIDES_SKIPPED",
       "owner": "slides",
       "severity": "warning",

@@ -79,8 +79,10 @@ Details: [design system](references/design-system.md).
   warns `ENCRYPTION_REMOVED`; the slide images `render` writes do not warn.
 - A `convert` without `--slides` to a format other than PPT, PPTX, PPTM or ODP leaves out the
   hidden slides, as PowerPoint's export does, and warns `HIDDEN_SLIDES_SKIPPED` with their
-  numbers; the hidden slides `--slides` names are converted. An ODP output turns native charts
-  into pictures and drops slide transitions and sections, and warns `LOSSY_CONVERSION`
+  numbers; the hidden slides `--slides` names are converted. `render` and `review` draw hidden
+  slides and warn `HIDDEN_SLIDES_RENDERED` with their numbers: unhide them with
+  `set_slide_hidden`, or leave them out of what you report as the deck. An ODP output turns
+  native charts into pictures and drops slide transitions and sections, and warns `LOSSY_CONVERSION`
   (SLIDES-ODP-NATIVE-CONTENT); keep the PPTX for further edits.
 - `slides read --content full` reports each table's cell `values` and each chart's data, and
   the state the operations write under their field names; `slides search` does not see chart

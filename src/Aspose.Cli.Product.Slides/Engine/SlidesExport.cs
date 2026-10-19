@@ -328,8 +328,24 @@ internal static partial class SlidesExport
                 : request.Dpi ?? RenderPixelGuard.DefaultDpi,
             Width = request.Output.Format.Raster ? request.Width : null,
             License = EnvelopeParts.License(state),
-            Warnings = WrittenWarnings(loaded),
+            Warnings = EnvelopeParts.CombineWarnings(WrittenWarnings(loaded), HiddenRendered(loaded.Presentation, slides)),
         };
+    }
+
+    /// <summary>
+    /// The warning that a render or review drew hidden slides, which a slide show and a
+    /// conversion of every slide leave out; null when none of the drawn slides is hidden.
+    /// </summary>
+    internal static IReadOnlyList<Warning>? HiddenRendered(Presentation presentation, IEnumerable<int> slides)
+    {
+        int[] hidden = [.. slides.Where(number => presentation.Slides[number - 1].Hidden)];
+        return hidden.Length == 0
+            ? null
+            : [new Warning(SlidesDiagnostics.HiddenSlidesRendered,
+                $"The rendered slide(s) {string.Join(", ", hidden)} are hidden: a slide show and a convert of every slide leave them out.")
+            {
+                Hint = $$"""To show them in the deck, edit it with {"op":"set_slide_hidden","slides":"{{string.Join(",", hidden)}}","hidden":false}; otherwise leave them out of what you report as the deck's content.""",
+            }];
     }
 
     private static IReadOnlyList<SlidesSlideOutput> RenderImages(

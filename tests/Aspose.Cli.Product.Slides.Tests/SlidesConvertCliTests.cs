@@ -75,6 +75,52 @@ public sealed class SlidesConvertCliTests : IDisposable
         }
     }
 
+    /// <summary>
+    /// A render draws a hidden slide, which a slide show and convert leave out, and names it in a
+    /// warning, whether it renders every slide or --slides selects the hidden one.
+    /// </summary>
+    [Theory]
+    [InlineData(null, 4)]
+    [InlineData("2", 1)]
+    public void Render_DrawsAHiddenSlideAndWarns(string? slides, int drawn)
+    {
+        HiddenSecondSlide();
+        string[] selection = slides is null ? [] : ["--slides", slides];
+
+        JsonNode result = Run(["slides", "render", "deck.pptx", .. selection, "--out", "slide.png"]);
+
+        Assert.Equal(drawn, result["outputs"]!.AsArray().Count);
+        JsonNode warning = Assert.Single(result["warnings"] as JsonArray ?? [], static warning => warning!["code"]!.GetValue<string>() == "HIDDEN_SLIDES_RENDERED")!;
+        Assert.Contains("slide(s) 2 are hidden", warning["message"]!.GetValue<string>(), StringComparison.Ordinal);
+        Assert.Contains("""{"op":"set_slide_hidden","slides":"2","hidden":false}""", warning["hint"]!.GetValue<string>(), StringComparison.Ordinal);
+    }
+
+    /// <summary>A render of slides none of which is hidden does not warn.</summary>
+    [Fact]
+    public void Render_OfShownSlidesDoesNotWarn()
+    {
+        HiddenSecondSlide();
+
+        JsonNode result = Run("slides", "render", "deck.pptx", "--slides", "1,3", "--out", "slide.png");
+
+        Assert.DoesNotContain("HIDDEN_SLIDES_RENDERED", Codes(result));
+    }
+
+    /// <summary>A review draws a hidden slide and names it in a warning, so its evidence is not read as the show.</summary>
+    [Fact]
+    public void Review_DrawsAHiddenSlideAndWarns()
+    {
+        HiddenSecondSlide();
+
+        CliResult review = _workspace.Run("review", "deck.pptx", "--out", "evidence", "--output-format", "json");
+
+        Assert.True(review.ExitCode is 0 or 8, review.StdErr);
+        JsonNode result = JsonNode.Parse(review.StdOut)!;
+        JsonNode warning = Assert.Single(result["warnings"] as JsonArray ?? [], static warning => warning!["code"]!.GetValue<string>() == "HIDDEN_SLIDES_RENDERED")!;
+        Assert.Contains("slide(s) 2 are hidden", warning["message"]!.GetValue<string>(), StringComparison.Ordinal);
+        Assert.Contains("""{"op":"set_slide_hidden","slides":"2","hidden":false}""", warning["hint"]!.GetValue<string>(), StringComparison.Ordinal);
+    }
+
     /// <summary>The slide numbers of selected slides converted to Markdown are their numbers in the deck.</summary>
     [Fact]
     public void SelectedSlidesInMarkdown_KeepTheirSlideNumbers()
