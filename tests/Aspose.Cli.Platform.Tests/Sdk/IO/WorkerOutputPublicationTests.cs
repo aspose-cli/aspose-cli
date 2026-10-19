@@ -1,3 +1,4 @@
+using System.Text.Json.Nodes;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Execution;
 using Aspose.Cli.Sdk.IO;
@@ -222,6 +223,188 @@ public sealed class WorkerOutputPublicationTests : IDisposable
         Assert.False(File.Exists(target));
     }
 
+    // Each field of a sealed manifest, altered after the worker sealed it, is refused: while the
+    // manifest is validated, or before publication changes a target.
+    [Theory]
+    [InlineData("version", true)]
+    [InlineData("sealed", true)]
+    [InlineData("entries", true)]
+    [InlineData("directories", true)]
+    [InlineData("directoryOutput", true)]
+    [InlineData("directoryTransactionParent", true)]
+    [InlineData("directoryAdmittedPrevious", true)]
+    [InlineData("entry.target", true)]
+    [InlineData("entry.staged", true)]
+    [InlineData("entry.overwrite", true)]
+    [InlineData("entry.deleteTarget", true)]
+    [InlineData("entry.backup", true)]
+    [InlineData("entry.backupOriginal", true)]
+    [InlineData("entry.inputPath", true)]
+    [InlineData("entry.inputSnapshot", true)]
+    [InlineData("entry.original", true)]
+    [InlineData("entry.stagedSnapshot", true)]
+    [InlineData("entry.targetParentIdentity", false)]
+    [InlineData("entry.backupParentIdentity", false)]
+    [InlineData("directory.target", true)]
+    [InlineData("directory.existed", false)]
+    [InlineData("directory.originalIdentity", true)]
+    public void Publish_AnAlteredManifestField_IsRefusedAndKeepsTheTargets(string field, bool atValidation)
+    {
+        string target = _temp.File("report.txt");
+        string backup = _temp.File("report.backup.txt");
+        string input = _temp.File("source.txt");
+        string created = _temp.File("created");
+        string nested = Path.Combine(created, "nested.txt");
+        File.WriteAllText(target, "original");
+        File.WriteAllText(input, "source");
+        WorkerOutputEntry entry = Entry(target, "published", backup) with
+        {
+            InputPath = input,
+            InputSnapshot = FilePublicationSnapshot.Capture(input),
+            BackupParentIdentity = FilePublicationOwnedDelete.TryGetDirectoryIdentity(_temp.Path),
+        };
+        WorkerOutputManifest manifest = Manifest(entry, Entry(nested, "nested")) with
+        {
+            Directories = [new WorkerDirectoryEntry(created, false, null)],
+        };
+        WorkerManifestStore.Write(ManifestPath, manifest);
+        Assert.Equal(2, WorkerManifestStore.ReadAndValidate(ManifestPath).Entries.Count);
+        JsonObject json = JsonNode.Parse(File.ReadAllText(ManifestPath))!.AsObject();
+        JsonObject first = json["entries"]![0]!.AsObject();
+        JsonObject directory = json["directories"]![0]!.AsObject();
+        string inside = Path.Combine(_workerRoot, "inside.txt");
+        switch (field)
+        {
+            case "version": json["version"] = manifest.Version - 1; break;
+            case "sealed": json["sealed"] = false; break;
+            case "entries": json["entries"] = null; break;
+            case "directories": json["directories"]!.AsArray().Add(new JsonObject { ["target"] = _workerRoot, ["existed"] = true }); break;
+            case "directoryOutput": json["directoryOutput"] = new JsonObject(); break;
+            case "directoryTransactionParent": json["directoryTransactionParent"] = _temp.Path; break;
+            case "directoryAdmittedPrevious": json["directoryAdmittedPrevious"] = new JsonObject(); break;
+            case "entry.target": first["target"] = "report.txt"; break;
+            case "entry.staged":
+                string elsewhere = Path.Combine(_workerRoot, "elsewhere.stage");
+                File.Copy(first["staged"]!.GetValue<string>(), elsewhere);
+                first["staged"] = elsewhere;
+                break;
+            case "entry.overwrite": first["overwrite"] = false; break;
+            case "entry.deleteTarget": first["deleteTarget"] = true; break;
+            case "entry.backup": first[BackupField] = inside; break;
+            case "entry.backupOriginal": first.Remove(BackupOriginalField); break;
+            case "entry.inputPath": first.Remove("inputPath"); break;
+            case "entry.inputSnapshot": first["inputSnapshot"]!["exists"] = false; break;
+            case "entry.original": first["original"]!["sha256"] = "not-a-hash"; break;
+            case "entry.stagedSnapshot": first["stagedSnapshot"]!["sha256"] = new string('0', 64); break;
+            case "entry.targetParentIdentity": Alter(first["targetParentIdentity"]!); break;
+            case "entry.backupParentIdentity": Alter(first[BackupParentField]!); break;
+            case "directory.target": directory["target"] = _workerRoot; break;
+            case "directory.existed": directory["existed"] = true; break;
+            case "directory.originalIdentity":
+                directory["originalIdentity"] = new JsonObject { ["volumeSerialNumber"] = 1, ["fileIndex"] = 1 };
+                break;
+            default: throw new ArgumentOutOfRangeException(nameof(field));
+        }
+        File.WriteAllText(ManifestPath, json.ToJsonString());
+
+        CliException error = Assert.Throws<CliException>(
+            () => WorkerOutputPublisher.Publish(ManifestPath, TestBudgets.Create()));
+
+        if (atValidation)
+        {
+            Assert.Equal(ErrorCodes.OutputUnwritable, error.Code);
+            Assert.Equal("worker-manifest", error.Details!["phase"]!.GetValue<string>());
+        }
+        Assert.Equal("original", File.ReadAllText(target));
+        Assert.False(File.Exists(backup));
+        Assert.False(Directory.Exists(created));
+
+        static void Alter(JsonNode identity) => identity["fileIndex"] = identity["fileIndex"]!.GetValue<ulong>() + 1;
+    }
+
+    // The staged file is the content the worker sealed: replaced or extended later, it is refused.
+    [Theory]
+    [InlineData("append")]
+    [InlineData("replace")]
+    public void Publish_AStagedFileChangedAfterHandoff_IsRefused(string change)
+    {
+        string target = _temp.File("report.txt");
+        File.WriteAllText(target, "original");
+        WorkerOutputManifest manifest = Manifest(Entry(target, "published"));
+        WorkerManifestStore.Write(ManifestPath, manifest);
+        string staged = manifest.Entries[0].Staged;
+        if (change == "append") { File.AppendAllText(staged, " and more"); }
+        else
+        {
+            string replacement = Path.Combine(Path.GetDirectoryName(staged)!, "replacement.tmp");
+            File.WriteAllText(replacement, "other");
+            File.Move(replacement, staged, overwrite: true);
+        }
+
+        CliException error = Assert.Throws<CliException>(
+            () => WorkerOutputPublisher.Publish(ManifestPath, TestBudgets.Create()));
+
+        Assert.Equal(ErrorCodes.OutputUnwritable, error.Code);
+        Assert.Equal("original", File.ReadAllText(target));
+    }
+
+    // The worker hands off the file it produced, not a copy: its root then holds one copy of it.
+    [Fact]
+    public void Handoff_KeepsTheProducedFileAsTheOnlyCopyInTheWorkerRoot()
+    {
+        string target = _temp.File("report.txt");
+        var worker = new WorkerOutputSession(_workerRoot, ManifestPath);
+        FilePhysicalIdentity? produced;
+        using (OperationDeadline deadline = OperationDeadline.Start(null))
+        using (var outputs = new AtomicOutputSetWriter(
+            new SafeFileWriter(new ResourceBudgetLedger(deadline, outputSession: worker)), _temp.Path, "handoff"))
+        {
+            produced = outputs.Stage(target, false, file => File.WriteAllText(file, "candidate")).Snapshot.PhysicalIdentity;
+            outputs.Commit();
+        }
+        worker.SealForPublication();
+
+        string handedOff = WorkerManifestStore.ReadAndValidate(ManifestPath).Entries.Single().Staged;
+        Assert.NotNull(produced);
+        Assert.Equal(produced, FilePublicationSnapshot.Capture(handedOff).PhysicalIdentity);
+        Assert.Equal([handedOff], Directory.EnumerateFiles(_workerRoot, "*", SearchOption.AllDirectories)
+            .Where(file => !FilePaths.Same(file, ManifestPath)));
+        WorkerOutputPublisher.Publish(ManifestPath, TestBudgets.Create());
+        Assert.Equal("candidate", File.ReadAllText(target));
+    }
+
+    // A device spelling (\\?\) of a target is refused, so it cannot hide that the target is in
+    // the private root.
+    [Fact]
+    public void ReadAndValidate_RefusesADeviceSpelledTarget()
+    {
+        string target = Path.Combine(_workerRoot, "report.txt");
+        WorkerManifestStore.Write(ManifestPath, Manifest(Entry(_temp.File("report.txt"), "published") with
+        { Target = @"\\?\" + target }));
+
+        CliException error = Assert.Throws<CliException>(() => WorkerManifestStore.ReadAndValidate(ManifestPath));
+
+        Assert.Equal(ErrorCodes.OutputUnwritable, error.Code);
+        Assert.Equal("worker-manifest", error.Details!["phase"]!.GetValue<string>());
+        Assert.False(File.Exists(target));
+    }
+
+    // An input is only compared with its snapshot, so a UNC or device spelling the user gave is
+    // accepted as without --timeout.
+    [Theory]
+    [InlineData(@"\\server\share\source.txt")]
+    [InlineData(@"\\?\")]
+    public void ReadAndValidate_AcceptsARemoteOrDeviceSpelledInput(string spelling)
+    {
+        string input = _temp.File("source.txt");
+        File.WriteAllText(input, "source");
+        string inputPath = spelling == @"\\?\" ? spelling + input : spelling;
+        WorkerManifestStore.Write(ManifestPath, Manifest(Entry(_temp.File("report.txt"), "published") with
+        { InputPath = inputPath, InputSnapshot = FilePublicationSnapshot.Capture(input) }));
+
+        Assert.Equal(inputPath, WorkerManifestStore.ReadAndValidate(ManifestPath).Entries.Single().InputPath);
+    }
+
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
@@ -339,6 +522,10 @@ public sealed class WorkerOutputPublicationTests : IDisposable
         Assert.Equal("keep", File.ReadAllText(Path.Combine(target, "own", "notes.txt")));
         Assert.Empty(Directory.EnumerateDirectories(_temp.Path, ".aspose-publication-*"));
     }
+
+    private const string BackupField = "backupPath";
+    private const string BackupOriginalField = "backupOriginal";
+    private const string BackupParentField = "backupParentIdentity";
 
     private sealed class Callback(Action<PublicationFaultPoint> action) : IPublicationFaultInjector
     {
