@@ -93,12 +93,8 @@ internal static class ImportOps
         Workbook source = sources.Open(op.Path, op.SourcePasswordEnv);
         Worksheet origin = op.SourceSheet is { } sheetName ? Sheets.Resolve(source, sheetName) : source.Worksheets[0];
         string name = op.Name ?? origin.Name;
-        if (Sheets.Names(workbook).FirstOrDefault(existing => string.Equals(existing, name, StringComparison.OrdinalIgnoreCase)) is { } taken)
-        {
-            throw new OperationInvalidException(
-                $"the workbook already has a sheet named '{taken}'",
-                "Give the imported sheet another name with \"name\", or rename or delete the existing sheet first.");
-        }
+        SheetOps.RequireUnusedName(
+            workbook, name, "Give the imported sheet another name with \"name\", or rename or delete the existing sheet first.");
 
         RefuseConflictingNames(workbook, origin);
         // The source was checked once when it opened; each import adds its sheet again.
