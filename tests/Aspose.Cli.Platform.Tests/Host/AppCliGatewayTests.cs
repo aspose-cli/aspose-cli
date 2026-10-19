@@ -1,10 +1,13 @@
 using System.Text;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 using Aspose.Cli.Host.App;
 using Aspose.Cli.Host.Invocation;
 using Aspose.Cli.Host.LocalServices;
 using Aspose.Cli.Host.Output;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Errors;
+using Aspose.Cli.Sdk.Serialization;
 using Aspose.Cli.TestKit;
 using Xunit;
 
@@ -73,8 +76,10 @@ public sealed class AppCliGatewayTests
         string license = workspace.File("selected.lic");
         File.WriteAllText(license, "<License/>");
         byte[] status = Encoding.UTF8.GetBytes(workspace.Run("license", "status", "--output-format", "json").StdOut);
-        byte[] error = Encoding.UTF8.GetBytes(
-            """{"error":{"code":"LICENSE_INVALID","message":"The license is invalid.","hint":"Repair it."}}""");
+        byte[] error = Envelope(new ErrorPayload
+        {
+            Code = "LICENSE_INVALID", Message = "The license is invalid.", Hint = "Repair it.",
+        });
         int fontRuns = 0;
         AppCliGateway gateway = Gateway(workspace, license, arguments =>
         {
@@ -102,8 +107,7 @@ public sealed class AppCliGatewayTests
     public void FontFailure_IsAskedAgainAfterAShortInterval()
     {
         using var workspace = new TempWorkspace();
-        byte[] error = Encoding.UTF8.GetBytes(
-            """{"error":{"code":"OPERATION_TIMEOUT","message":"Timed out.","hint":"Retry."}}""");
+        byte[] error = Envelope(new ErrorPayload { Code = "OPERATION_TIMEOUT", Message = "Timed out.", Hint = "Retry." });
         int fontRuns = 0;
         var clock = new ManualClock();
         AppCliGateway gateway = Gateway(workspace, license: null, _ =>
@@ -154,8 +158,10 @@ public sealed class AppCliGatewayTests
     {
         using var workspace = new TempWorkspace();
         byte[] status = Encoding.UTF8.GetBytes(workspace.Run("license", "status", "--output-format", "json").StdOut);
-        byte[] error = Encoding.UTF8.GetBytes(
-            """{"error":{"code":"LICENSE_INVALID","message":"The license is invalid.","hint":"Repair it."}}""");
+        byte[] error = Envelope(new ErrorPayload
+        {
+            Code = "LICENSE_INVALID", Message = "The license is invalid.", Hint = "Repair it.",
+        });
         int fontRuns = 0;
         AppCliGateway? gateway = null;
         gateway = Gateway(workspace, license: null, arguments =>
@@ -180,8 +186,14 @@ public sealed class AppCliGatewayTests
     public void ChildFailure_KeepsTheChildsWholeError()
     {
         using var workspace = new TempWorkspace();
-        byte[] error = Encoding.UTF8.GetBytes(
-            """{"error":{"code":"FILE_NOT_FOUND","message":"File not found: missing.lic","details":{"path":"C:\\licenses\\missing.lic"},"hint":"Check the path.","docs":"licensing"}}""");
+        byte[] error = Envelope(new ErrorPayload
+        {
+            Code = "FILE_NOT_FOUND",
+            Message = "File not found: missing.lic",
+            Details = new JsonObject { ["path"] = @"C:\licenses\missing.lic" },
+            Hint = "Check the path.",
+            Docs = "licensing",
+        });
         AppCliGateway gateway = Gateway(
             workspace, license: null, _ => new ChildProcessResult((int)ExitCode.InputError, [], error));
 
@@ -193,6 +205,29 @@ public sealed class AppCliGatewayTests
         Assert.Equal(@"C:\licenses\missing.lic", failure.Details?["path"]?.GetValue<string>());
         Assert.Equal("licensing", failure.Docs);
     }
+
+    [Fact]
+    public void ChildFailure_KeepsSuggestions()
+    {
+        using var workspace = new TempWorkspace();
+        byte[] error = Envelope(new ErrorPayload
+        {
+            Code = "PRODUCT_NOT_FOUND",
+            Message = "No product 'wrods'.",
+            Details = new JsonObject { ["requested"] = "wrods", ["suggestions"] = new JsonArray("words", "slides") },
+        });
+        AppCliGateway gateway = Gateway(
+            workspace, license: null, _ => new ChildProcessResult((int)ExitCode.InputError, [], error));
+
+        CliException failure = Assert.Throws<CliException>(() => gateway.RemoveLicense(productId: null));
+
+        Assert.Equal("PRODUCT_NOT_FOUND", failure.Code.Name);
+        Assert.Equal(["words", "slides"], failure.Details?["suggestions"]?.AsArray().Select(item => item!.GetValue<string>()));
+    }
+
+    /// <summary>The stderr of a failed child: the error envelope every command writes.</summary>
+    private static byte[] Envelope(ErrorPayload error) =>
+        Encoding.UTF8.GetBytes(JsonSerializer.Serialize(new ErrorEnvelope { Error = error }, SdkJsonContext.Default.ErrorEnvelope));
 
     [Fact]
     public void ErrorMessages_NameTheInstalledProductsAndMatchCodesByName()
