@@ -1,6 +1,6 @@
 using Aspose.Cli.Sdk;
 
-namespace Aspose.Cli.Host;
+namespace Aspose.Cli.Host.LocalServices;
 
 /// <summary>
 /// Locates the inbox Windows PowerShell by absolute path. A bare "powershell.exe" would let
