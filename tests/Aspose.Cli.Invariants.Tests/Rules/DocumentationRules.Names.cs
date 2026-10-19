@@ -20,7 +20,8 @@ namespace Aspose.Cli.Invariants.Tests;
 /// as a help example or a Markdown code span (<c>cells convert book.csv --to xlsx</c>). Its path
 /// must be a command, the options written after it that command's or global ones, and the value
 /// of an option that lists its values one of them. An operation written as JSON names its
-/// fields, which must be that operation's (DocumentationRules.Fields.cs). A product command
+/// fields, which must be that operation's (DocumentationRules.Fields.cs), and so does prose that
+/// writes a field after its operation's name (<c>import_range.from</c>). A product command
 /// written bare in a sentence (<c>use slides render for</c>) is reported, since quoting is the
 /// convention, and its path is still checked: after a product id the next words are command
 /// words, so <c>pdf frobnicate</c> has no command; after a product id that prose uses as a noun
@@ -240,6 +241,15 @@ internal static partial class ContractRules
             (null, "license status extra", "license status --product pdf", "'license status' has no command 'extra'"),
             (null, "words merge a.docx", "words edit a.docx --ops ops.json --in-place", "'words' has no command 'merge'; it is a mistaken name of 'words edit'"),
         ];
+        // A field named in prose after its operation, which is no JSON and no command, so it has no
+        // fenced form.
+        (string? Product, string Wrong, string Right, string Problem)[] prose =
+        [
+            ("cells", "import_sheet.sheet", "import_sheet.sourceSheet",
+                "'import_sheet' has no field 'sheet'; it is a mistaken name of 'sourceSheet'"),
+            ("slides", "set_body.paragraphs.level", "set_body.paragraphs.list.level",
+                "'set_body' has no field 'paragraphs.level'; it is a mistaken name of 'list'"),
+        ];
         // A declaration added to a product's sources joins the table: on an operation and on a
         // field as an attribute, on a command as the initializer of its definition. A method named
         // MistakenFor, declared or called, declares nothing.
@@ -318,11 +328,13 @@ internal static partial class ContractRules
             yield return $"the [MistakenFor] reading of a sample reads [{string.Join(", ", declared)}] with [{string.Join("; ", declarationProblems)}], not [{string.Join(", ", expected)}]";
         }
 
-        foreach ((string? product, string wrong, string right, string problem) in samples)
+        foreach ((string? product, string wrong, string right, string problem, bool fenced) in samples
+            .Select(static sample => (sample.Product, sample.Wrong, sample.Right, sample.Problem, true))
+            .Concat(prose.Select(static sample => (sample.Product, sample.Wrong, sample.Right, sample.Problem, false))))
         {
             // In a C# text, in a Markdown code span, and in a fenced block: JSON in a json block, a
             // command in a block labeled text, which is read because it writes aspose-cli.
-            foreach (string way in new[] { "C# text", "Markdown code span", "Markdown fenced block" })
+            foreach (string way in fenced ? ["C# text", "Markdown code span", "Markdown fenced block"] : new[] { "C# text", "Markdown code span" })
             {
                 bool markdown = way != "C# text";
                 string Written(string text) => way switch
@@ -658,6 +670,7 @@ internal static partial class ContractRules
                 }
             }
             problems.AddRange(CheckOperationJson(text, product, _fields, _mistaken, kinds));
+            problems.AddRange(CheckDottedFields(text, product, _fields, _mistaken, kinds));
             return problems;
         }
 
