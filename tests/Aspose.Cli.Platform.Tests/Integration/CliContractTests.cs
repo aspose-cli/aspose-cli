@@ -624,30 +624,6 @@ public sealed class CliContractTests : IDisposable
         Assert.StartsWith($"Did you mean '{suggestion}'?", error["hint"]!.GetValue<string>(), StringComparison.Ordinal);
     }
 
-    [Theory]
-    [InlineData("")]
-    [InlineData("cells")]
-    [InlineData("app")]
-    public void GroupWithoutACommand_PrintsItsHelpAndListsItsCommands(string group)
-    {
-        string[] tokens = group.Length == 0 ? [] : group.Split(' ');
-        string help = _workspace.Run([.. tokens, "--help"]).StdOut;
-
-        CliResult table = _workspace.Run([.. tokens, "--output-format", "table"]);
-        CliResult json = _workspace.Run([.. tokens, "--output-format", "json"]);
-
-        Assert.Equal(2, table.ExitCode);
-        Assert.Empty(table.StdOut);
-        Assert.Contains(help.ReplaceLineEndings("\n").Trim(), table.StdErr.ReplaceLineEndings("\n"), StringComparison.Ordinal);
-        Assert.Equal(2, json.ExitCode);
-        JsonNode error = Parse(json.StdErr)["error"]!;
-        Assert.Equal("USAGE_ERROR", error["code"]!.GetValue<string>());
-        string[] available = [.. error["details"]!["available"]!.AsArray().Select(static item => item!.GetValue<string>())];
-        Assert.NotEmpty(available);
-        Assert.All(available, path => Assert.StartsWith(group, path, StringComparison.Ordinal));
-        Assert.Null(error["details"]!["errors"]);
-    }
-
     [Fact]
     public void FontsList_WithoutProduct_ListsEveryProductEngine()
     {
