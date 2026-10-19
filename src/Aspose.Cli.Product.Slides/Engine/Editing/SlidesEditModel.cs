@@ -124,6 +124,10 @@ internal sealed class SlidesEditModel : IOperationModel<SlidesOp>
         };
     }
 
+    /// <summary>The slides in order, which number what the batch changed on each.</summary>
+    public IReadOnlyDictionary<string, IReadOnlyList<object>> Positions() =>
+        new Dictionary<string, IReadOnlyList<object>>(StringComparer.Ordinal) { [SlidesStateProjection.SlideUnit] = [.. _presentation.Slides] };
+
     public NoEffect? Explain(SlidesOp operation) => operation switch
     {
         // Like a verification issue, it never repeats the find text.
