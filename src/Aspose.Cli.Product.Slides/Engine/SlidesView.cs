@@ -1,4 +1,5 @@
 using System.Globalization;
+using Aspose.Cli.Sdk.Results;
 using Aspose.Cli.Sdk.Views;
 using Aspose.Slides;
 using static Aspose.Cli.Product.Slides.Engine.SlidesEngineSupport;
@@ -72,7 +73,9 @@ internal static class SlidesView
             SourceEncrypted = presentation.ProtectionManager.IsEncrypted,
             TotalPartCount = total,
             Parts = parts,
-            Warnings = InputWarnings(loaded),
+            Warnings = request.Purpose == ViewPurpose.Evidence
+                ? EnvelopeParts.CombineWarnings(InputWarnings(loaded), SlidesExport.HiddenRendered(presentation, Enumerable.Range(1, count)))
+                : InputWarnings(loaded),
         };
     }
 }
