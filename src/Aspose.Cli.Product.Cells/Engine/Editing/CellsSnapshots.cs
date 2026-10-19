@@ -166,11 +166,11 @@ internal sealed class CellsSnapshots(Workbook workbook, Func<CellsOp, bool> appl
     // Hiding the active sheet activates another one.
     public OperationSnapshot Apply(SetSheetVisibilityOp operation) =>
         Of(operation, "sheet", static sheet => Sheets.Visibility(sheet))
-            .Add("workbook/active-sheet", workbook.Worksheets[workbook.Worksheets.ActiveSheetIndex].Name);
+            .Add(CellsAddresses.ActiveSheet, workbook.Worksheets[workbook.Worksheets.ActiveSheetIndex].Name);
 
     // A read does not report the active sheet.
     public OperationSnapshot Apply(SetActiveSheetOp operation) =>
-        One("workbook/active-sheet", workbook.Worksheets[workbook.Worksheets.ActiveSheetIndex].Name);
+        One(CellsAddresses.ActiveSheet, workbook.Worksheets[workbook.Worksheets.ActiveSheetIndex].Name);
 
     public OperationSnapshot Apply(SetTabColorOp operation) => TabColor(operation);
 
@@ -209,7 +209,7 @@ internal sealed class CellsSnapshots(Workbook workbook, Func<CellsOp, bool> appl
     public OperationSnapshot Apply(UnprotectWorkbookOp operation) => WorkbookProtection();
 
     public OperationSnapshot Apply(SetDefaultFontOp operation) =>
-        One("workbook/default-font", Read(InfoProjection.DefaultFont(workbook), Json.CellsDefaultFontInfo));
+        One(CellsAddresses.DefaultFont, Read(InfoProjection.DefaultFont(workbook), Json.CellsDefaultFontInfo));
 
     // ----- names and objects ---------------------------------------------------------------------
 
@@ -711,7 +711,7 @@ internal sealed class CellsSnapshots(Workbook workbook, Func<CellsOp, bool> appl
 
     // The kind of protection and its password as the engine keeps them: a read reports the structure's only.
     private OperationSnapshot WorkbookProtection() =>
-        One("workbook/protection", Join(Sheets.StructureProtected(workbook), Sheets.StructurePasswordProtected(workbook),
+        One(CellsAddresses.WorkbookProtection, Join(Sheets.StructureProtected(workbook), Sheets.StructurePasswordProtected(workbook),
             workbook.Settings.ProtectionType, workbook.IsWorkbookProtectedWithPassword));
 
     private OperationSnapshot Names()

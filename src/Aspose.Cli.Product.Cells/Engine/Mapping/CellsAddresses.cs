@@ -14,6 +14,15 @@ internal static class CellsAddresses
 {
     private const char SheetEnd = '!';
 
+    /// <summary>The workbook's active sheet.</summary>
+    internal const string ActiveSheet = "workbook/active-sheet";
+
+    /// <summary>The workbook's default font.</summary>
+    internal const string DefaultFont = "workbook/default-font";
+
+    /// <summary>The protection of the workbook's structure.</summary>
+    internal const string WorkbookProtection = "workbook/protection";
+
     /// <summary>
     /// The units whose addresses begin with the name of the sheet that holds the object, as
     /// <see cref="At"/>, <see cref="OfSheet"/>, <see cref="Indexed"/> and <see cref="Pivot"/>
