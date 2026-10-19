@@ -72,13 +72,15 @@ internal sealed class CellsEditModel : IOperationModel<CellsOp>
     /// <summary>What a failed operation addressed: its range or cell, its sheet, or the part of the workbook it changes.</summary>
     public IReadOnlyList<string> AttemptedTargets(CellsOp operation)
     {
-        CellsEditTarget? target = OpsFootprint.TargetOf(operation);
-        string? sheet = target?.Sheet ?? (operation is CellsSheetOp ? _workbook.Worksheets[_workbook.Worksheets.ActiveSheetIndex].Name : null);
-        return (sheet, target?.Range) switch
+        CellsOpTraits traits = CellsOpFootprints.Of(operation);
+        string? sheet = traits.Target?.Sheet ?? (operation is CellsSheetOp ? _workbook.Worksheets[_workbook.Worksheets.ActiveSheetIndex].Name : null);
+        return (sheet, traits.Target?.Range) switch
         {
             ({ } name, { } range) => [CellsAddresses.At("cell", name, range)],
             ({ } name, null) => [CellsAddresses.OfSheet("sheet", name)],
-            _ => [WorkbookAddress(operation)],
+            // Every other operation names a sheet, so only a workbook-level one gets here.
+            _ => [traits.WorkbookAddress ?? throw new System.Diagnostics.UnreachableException(
+                $"{operation.GetType().Name} names no sheet and has no workbook address.")],
         };
     }
 
@@ -95,18 +97,6 @@ internal sealed class CellsEditModel : IOperationModel<CellsOp>
             Hint = "Search with 'aspose-cli cells search' and the same pattern; replace_text changes text values only, never formulas, numbers or dates.",
         },
         _ => null,
-    };
-
-    private static string WorkbookAddress(CellsOp operation) => operation switch
-    {
-        DefineNameOp define => CellsAddresses.Name(define.Name),
-        DeleteNameOp delete => CellsAddresses.Name(delete.Name),
-        SetDefaultFontOp => "workbook/default-font",
-        ProtectWorkbookOp or UnprotectWorkbookOp => "workbook/protection",
-        InsertSheetOp insert => CellsAddresses.OfSheet("sheet", insert.Name),
-        ImportSheetOp import => CellsAddresses.OfSheet("sheet", import.Name ?? import.SourceSheet ?? Path.GetFileNameWithoutExtension(import.Path)),
-        // Every other operation names a sheet, so AttemptedTargets never asks for its address.
-        _ => throw new System.Diagnostics.UnreachableException($"{operation.GetType().Name} names no sheet and has no workbook address."),
     };
 
     /// <summary>Calls Aspose.Cells; a failure inside it becomes an engine failure.</summary>
