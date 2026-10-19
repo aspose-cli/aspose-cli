@@ -140,7 +140,7 @@ internal sealed class SlidesEditModel : IOperationModel<SlidesOp>
             $"Operation {operation.Id} (replace_text) matched no text in scope '{replace.Scope}', so nothing was replaced.")
         {
             Hint = "Search with 'slides search' and the same pattern and scope"
-                + (replace.Scope == SlidesSearchScopes.All ? ". " : ", or set \"scope\": \"all\" on the op to cover both shape text and speaker notes.")
+                + (replace.Scope == SlidesSearchScopes.All ? ". " : ", or set \"scope\": \"all\" on the op to cover both shape text and speaker notes. ")
                 + "Chart text and alternative text are never matched.",
         },
         _ => null,

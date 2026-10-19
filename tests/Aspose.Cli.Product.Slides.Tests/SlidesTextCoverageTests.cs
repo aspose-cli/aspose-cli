@@ -91,7 +91,11 @@ public sealed class SlidesTextCoverageTests
         Assert.Equal(NoEffectReasons.NoMatch, warning.Details["reason"]!.GetValue<string>());
         Assert.Contains("'notes'", warning.Message, StringComparison.Ordinal);
         Assert.DoesNotContain("bc", warning.Message, StringComparison.Ordinal);
-        Assert.Contains("slides search", warning.Hint, StringComparison.Ordinal);
+        // SLD-3: the sentences of the hint are joined with a space.
+        Assert.Equal(
+            "Search with 'slides search' and the same pattern and scope, or set \"scope\": \"all\" on the op to cover both shape text and speaker notes. "
+                + "Chart text and alternative text are never matched.",
+            warning.Hint);
     }
 
     [Fact]
