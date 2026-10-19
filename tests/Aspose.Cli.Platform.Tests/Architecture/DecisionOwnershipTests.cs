@@ -389,7 +389,37 @@ public sealed partial class DecisionOwnershipTests
         Assert.DoesNotContain(SecretSentinel, json ?? string.Empty, StringComparison.Ordinal);
     }
 
-    // -- D13 Process liveness ----------------------------------------------------------------
+    // -- D12 Path case ----------------------------------------------------------------------
+
+    /// <summary>
+    /// The lock keys and the license identity derived from a path, as <c>file#member</c>. Their
+    /// bytes are shared with older versions and other Aspose CLI distributions, so they move to
+    /// <c>FilePaths</c> on their own, with a test that fixes those bytes; until then each one is
+    /// named here and must still be found.
+    /// </summary>
+    private static readonly string[] PathKeysNotYetOwned =
+    [
+        @"Aspose.Cli.Host\LocalServices\LocalServiceMarkerFiles.cs#LocalServiceMarkerFiles",
+        @"Aspose.Cli.Host\Updating\UpdateStatus.cs#PathFor",
+        @"Aspose.Cli.Sdk\IO\PublicationDirectoryLease.cs#Acquire",
+        @"Aspose.Cli.Sdk\IO\PublicationJournalLock.cs#Open",
+        @"Aspose.Cli.Sdk\Licensing\LicenseGate.cs#Apply",
+    ];
+
+    [Fact]
+    public void D12_PathCase_HasOneSdkOwner()
+    {
+        string owner = Path.Combine(SdkRoot, "FilePaths.cs");
+        (string Key, string At)[] found = [.. Sources.Value
+            .Where(file => !string.Equals(file.Path, owner, StringComparison.OrdinalIgnoreCase))
+            .SelectMany(file => PathCaseDecisions(file.Root)
+                .Select(node => ($"{Relative(file.Path)}#{EnclosingMember(node)}", file.At(node, node.ToString()))))];
+
+        AssertNone([.. found.Where(item => !PathKeysNotYetOwned.Contains(item.Key, StringComparer.Ordinal)).Select(static item => item.At)],
+            "Local paths are compared, collected and checked for a UNC or device prefix only through the SDK's FilePaths:");
+        AssertNone([.. PathKeysNotYetOwned.Where(key => !found.Any(item => item.Key == key))],
+            "These path keys no longer decide case themselves; delete their exceptions:");
+    }
 
     [Fact]
     public void D13_ProcessLiveness_HasOneSdkOwner()
@@ -414,6 +444,150 @@ public sealed partial class DecisionOwnershipTests
     }
 
     // -- Support -----------------------------------------------------------------------------
+
+    /// <summary>
+    /// The places that decide how local paths compare (decision D12): a case rule chosen on
+    /// <c>OperatingSystem.IsWindows()</c>, a path folded to upper case, a case-insensitive
+    /// comparison or collection of paths, and a UNC prefix check. What a comparison compares or
+    /// collects is a path when it is built with <c>Path</c> or a member named for a path, when
+    /// it is a variable or collection that holds such values, or when the member that compares
+    /// is named for a path. An ordering decides no equality and is left alone, and so is a
+    /// comparison of extensions, which the format tables own.
+    /// </summary>
+    private static IEnumerable<SyntaxNode> PathCaseDecisions(SyntaxNode root) =>
+        root.DescendantNodes().Where(node => node switch
+        {
+            ConditionalExpressionSyntax conditional => IsWindowsCheck(conditional.Condition)
+                && (IsCaseRule(conditional.WhenTrue) || IsCaseRule(conditional.WhenFalse)),
+            IfStatementSyntax statement => IsWindowsCheck(statement.Condition)
+                && statement.Statement.DescendantNodes().OfType<InvocationExpressionSyntax>().Any(IsCaseRule),
+            InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax { Name.Identifier.ValueText: "ToUpperInvariant" } folded }
+                => !InWindowsBranch(node) && NamesAPath(root, folded.Expression, follow: false),
+            MemberAccessExpressionSyntax access => LastIdentifier(access.Expression) is "StringComparer" or "StringComparison"
+                && access.Name.Identifier.ValueText.EndsWith("IgnoreCase", StringComparison.Ordinal)
+                && !InWindowsBranch(node) && ComparesPaths(root, access),
+            LiteralExpressionSyntax literal => literal.IsKind(SyntaxKind.StringLiteralExpression) && literal.Token.ValueText == @"\\"
+                && literal.Parent?.Parent?.Parent is InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax { Name.Identifier.ValueText: "StartsWith" } },
+            _ => false,
+        });
+
+    private static bool IsWindowsCheck(ExpressionSyntax condition) =>
+        condition.DescendantNodesAndSelf().OfType<InvocationExpressionSyntax>()
+            .Any(static invocation => invocation.Expression is MemberAccessExpressionSyntax { Name.Identifier.ValueText: "IsWindows" });
+
+    /// <summary>A <c>StringComparer</c> or <c>StringComparison</c> value, or a fold to one case.</summary>
+    private static bool IsCaseRule(ExpressionSyntax expression) => expression switch
+    {
+        ParenthesizedExpressionSyntax parenthesized => IsCaseRule(parenthesized.Expression),
+        MemberAccessExpressionSyntax access => LastIdentifier(access.Expression) is "StringComparer" or "StringComparison",
+        InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax { Name.Identifier.ValueText: "ToUpperInvariant" or "ToLowerInvariant" } } => true,
+        _ => false,
+    };
+
+    /// <summary>Inside a branch on <c>OperatingSystem.IsWindows()</c>, which is reported itself.</summary>
+    private static bool InWindowsBranch(SyntaxNode node) =>
+        node.Ancestors().Any(static ancestor => ancestor switch
+        {
+            ConditionalExpressionSyntax conditional => IsWindowsCheck(conditional.Condition),
+            IfStatementSyntax statement => IsWindowsCheck(statement.Condition),
+            _ => false,
+        });
+
+    private static bool ComparesPaths(SyntaxNode root, MemberAccessExpressionSyntax comparison)
+    {
+        SyntaxNode[]? compared = Compared(root, comparison);
+        if (compared is null
+            || compared.Any(static node => node.DescendantNodesAndSelf().OfType<IdentifierNameSyntax>()
+                .Any(static name => name.Identifier.ValueText.Contains("extension", StringComparison.OrdinalIgnoreCase))))
+        {
+            return false;
+        }
+        return PathName().IsMatch(EnclosingMember(comparison)) || compared.Any(node => NamesAPath(root, node, follow: true));
+    }
+
+    /// <summary>
+    /// What a comparison compares, or what a comparer's collection holds: the other arguments
+    /// and the receiver of the call, or the collection's name and what code puts in it; null for
+    /// an ordering.
+    /// </summary>
+    private static SyntaxNode[]? Compared(SyntaxNode root, MemberAccessExpressionSyntax comparison)
+    {
+        if (comparison.Ancestors().OfType<ArgumentSyntax>().FirstOrDefault() is not { Parent: ArgumentListSyntax { Parent: { } owner } } argument)
+        {
+            return [];
+        }
+        IEnumerable<SyntaxNode> others = ((BaseArgumentListSyntax)argument.Parent).Arguments
+            .Where(other => other != argument).Select(static other => (SyntaxNode)other.Expression);
+        return owner switch
+        {
+            InvocationExpressionSyntax invocation when InvokedName(invocation) is "Order" or "OrderBy" or "OrderByDescending"
+                or "OrderDescending" or "ThenBy" or "ThenByDescending" or "Sort" => null,
+            InvocationExpressionSyntax invocation =>
+                [.. others, .. invocation.Expression is MemberAccessExpressionSyntax receiver ? [receiver.Expression] : Array.Empty<SyntaxNode>()],
+            BaseObjectCreationExpressionSyntax creation => DeclaredName(creation) is { } name
+                ? [.. others, SyntaxFactory.IdentifierName(name), .. CollectionUses(root, name)]
+                : [.. others],
+            _ => [],
+        };
+    }
+
+    /// <summary>
+    /// Whether an expression is a path: it names a member or variable like a path, such as
+    /// <c>Path.GetFullPath</c>, <c>file.Path</c> or <c>_root</c>; with <paramref name="follow"/>,
+    /// also a variable whose assigned values, or a collection whose members or keys, are.
+    /// </summary>
+    private static bool NamesAPath(SyntaxNode root, SyntaxNode expression, bool follow)
+    {
+        if (expression.DescendantNodesAndSelf().OfType<IdentifierNameSyntax>().Any(static name => PathName().IsMatch(name.Identifier.ValueText)))
+        {
+            return true;
+        }
+        string? variable = expression switch
+        {
+            IdentifierNameSyntax name => name.Identifier.ValueText,
+            MemberAccessExpressionSyntax { Expression: IdentifierNameSyntax name, Name.Identifier.ValueText: "Keys" or "Values" } => name.Identifier.ValueText,
+            _ => null,
+        };
+        return follow && variable is not null
+            && AssignedValues(root, variable).Concat(CollectionUses(root, variable)).Any(value => NamesAPath(root, value, follow: false));
+    }
+
+    private static IEnumerable<SyntaxNode> AssignedValues(SyntaxNode root, string name) =>
+        root.DescendantNodes().SelectMany(node => node switch
+        {
+            VariableDeclaratorSyntax { Initializer.Value: var value } declarator when declarator.Identifier.ValueText == name => [value],
+            AssignmentExpressionSyntax assignment when LastIdentifier(assignment.Left) == name => [assignment.Right],
+            _ => Array.Empty<SyntaxNode>(),
+        });
+
+    /// <summary>What code adds to, looks up in or removes from the collection with this name.</summary>
+    private static IEnumerable<SyntaxNode> CollectionUses(SyntaxNode root, string name) =>
+        root.DescendantNodes().SelectMany(node => node switch
+        {
+            InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax { Name.Identifier.ValueText: "Add" or "TryAdd" or "Contains"
+                or "ContainsKey" or "Remove" or "TryRemove" or "TryGetValue" or "UnionWith" or "SetEquals" or "GetValueOrDefault" or "GetOrAdd" } access } invocation
+                when LastIdentifier(access.Expression) == name => invocation.ArgumentList.Arguments.Select(static argument => (SyntaxNode)argument.Expression),
+            ElementAccessExpressionSyntax access when LastIdentifier(access.Expression) == name
+                => access.ArgumentList.Arguments.Select(static argument => (SyntaxNode)argument.Expression),
+            _ => [],
+        });
+
+    private static string? DeclaredName(SyntaxNode creation) => creation.Parent switch
+    {
+        EqualsValueClauseSyntax { Parent: VariableDeclaratorSyntax declarator } => declarator.Identifier.ValueText,
+        EqualsValueClauseSyntax { Parent: PropertyDeclarationSyntax property } => property.Identifier.ValueText,
+        AssignmentExpressionSyntax assignment => LastIdentifier(assignment.Left),
+        _ => null,
+    };
+
+    private static string EnclosingMember(SyntaxNode node) => node.Ancestors().Select(static ancestor => ancestor switch
+    {
+        MethodDeclarationSyntax method => method.Identifier.ValueText,
+        ConstructorDeclarationSyntax constructor => constructor.Identifier.ValueText,
+        PropertyDeclarationSyntax property => property.Identifier.ValueText,
+        FieldDeclarationSyntax field => field.Declaration.Variables[0].Identifier.ValueText,
+        _ => null,
+    }).FirstOrDefault(static name => name is not null) ?? string.Empty;
 
     private static object CreateSecret(Type secret, string text)
     {
@@ -555,6 +729,10 @@ public sealed partial class DecisionOwnershipTests
     /// <summary>A string member that names an output location rather than a resolved output.</summary>
     [GeneratedRegex("^(out|\\w*(output|out)\\w*(path|paths|directory|dir|file|folder))$", RegexOptions.IgnoreCase)]
     private static partial Regex OutputPathName();
+
+    /// <summary>A name for a path, a directory or a file, such as <c>fullPath</c>, <c>_root</c> or <c>PathResolver</c>.</summary>
+    [GeneratedRegex("^_?(\\w*(path|paths|dir|dirs|directory|directories|folder|folders|root|roots)|full|fullname|file|files|filename|path\\w*)$", RegexOptions.IgnoreCase)]
+    private static partial Regex PathName();
 
     [GeneratedRegex("Load|Input|Certificate")]
     private static partial Regex InputSide();

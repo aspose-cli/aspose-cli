@@ -298,6 +298,42 @@ public sealed class PathCaseTests : IDisposable
         Assert.Equal(_temp.Path, OutputSetPaths.CommonDirectory([_temp.File(@"a\x"), _temp.File(@"ab\y")]));
     }
 
+    [Theory]
+    [InlineData(@"C:\", @"C:\x", false, true)]
+    [InlineData(@"C:\", @"C:\", true, true)]
+    [InlineData(@"C:\", @"C:\", false, false)]
+    [InlineData(@"C:\a", @"C:\a\b", false, true)]
+    [InlineData(@"C:\a\", @"C:\a\b", false, true)]
+    [InlineData(@"C:\a", @"c:\A\b", false, true)]
+    [InlineData(@"C:\a", @"C:\A", true, true)]
+    [InlineData(@"C:\a", @"C:\a", false, false)]
+    [InlineData(@"C:\a", @"C:\ab", true, false)]
+    [InlineData(@"C:\a", @"C:\ab\x", true, false)]
+    [InlineData(@"C:\a", @"C:\", true, false)]
+    [InlineData(@"C:\a\", @"C:\a", true, false)]
+    public void FilePaths_IsWithin_TreatsTheRootTheSeparatorAndCaseAsTheBoundariesDo(string root, string path, bool allowEqual, bool within) =>
+        Assert.Equal(within, FilePaths.IsWithin(root, path, allowEqual));
+
+    [Theory]
+    [InlineData(@"\\server\share\a.txt", true)]
+    [InlineData("//server/share/a.txt", true)]
+    [InlineData(@"\\?\C:\a.txt", true)]
+    [InlineData(@"\\.\PhysicalDrive0", true)]
+    [InlineData(@"C:\a.txt", false)]
+    [InlineData(@"\a.txt", false)]
+    [InlineData("a.txt", false)]
+    public void FilePaths_IsRemoteOrDevice_RecognisesUncAndDevicePaths(string path, bool remote) =>
+        Assert.Equal(remote, FilePaths.IsRemoteOrDevice(path));
+
+    [Fact]
+    public void FilePaths_TwoSpellingsOfOnePath_AreTheSamePath()
+    {
+        Assert.True(FilePaths.Same(@"C:\Data\Book.xlsx", @"c:\data\BOOK.XLSX"));
+        Assert.False(FilePaths.Same(@"C:\Data\Book.xlsx", @"C:\Data\Book.xls"));
+        Assert.True(FilePaths.Comparer.Equals(@"C:\Data", @"c:\DATA"));
+        Assert.Equal(StringComparison.OrdinalIgnoreCase, FilePaths.Comparison);
+    }
+
     private WorkerOutputEntry WorkerEntry(string target)
     {
         string fullTarget = Path.GetFullPath(target);
