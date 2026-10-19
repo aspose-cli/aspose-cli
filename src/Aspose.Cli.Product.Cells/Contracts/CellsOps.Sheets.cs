@@ -182,7 +182,7 @@ public sealed record SetPageSetupOp : CellsSheetOp
     /// <summary>The zoom percentage; ignored when the printout fits to pages.</summary>
     [MistakenFor("scale")]
     [ReadBack("inspect-result.schema.json#/$defs/cellsPageSetupInfo/properties/scalePercent")]
-    [Minimum(10), Maximum(400)] public int? ScalePercent { get; init; }
+    [Measured(MeasureUnit.Percent), Minimum(10), Maximum(400)] public int? ScalePercent { get; init; }
 
     /// <summary>The page margins; only the sides present change.</summary>
     [ReadBack("inspect-result.schema.json#/$defs/cellsPageSetupInfo/properties/margins")]
@@ -190,11 +190,11 @@ public sealed record SetPageSetupOp : CellsSheetOp
 
     /// <summary>The distance in points from the top of the page to the header.</summary>
     [ReadBack("inspect-result.schema.json#/$defs/cellsPageSetupInfo/properties/headerMargin")]
-    [Minimum(0)] public double? HeaderMargin { get; init; }
+    [Measured(MeasureUnit.Points), Minimum(0)] public double? HeaderMargin { get; init; }
 
     /// <summary>The distance in points from the bottom of the page to the footer.</summary>
     [ReadBack("inspect-result.schema.json#/$defs/cellsPageSetupInfo/properties/footerMargin")]
-    [Minimum(0)] public double? FooterMargin { get; init; }
+    [Measured(MeasureUnit.Points), Minimum(0)] public double? FooterMargin { get; init; }
 
     /// <summary>The center header text, with Excel codes such as &amp;P (page) and &amp;N (pages).</summary>
     [MistakenFor("header")]

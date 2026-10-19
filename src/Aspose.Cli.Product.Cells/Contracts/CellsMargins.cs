@@ -10,14 +10,14 @@ namespace Aspose.Cli.Product.Cells.Contracts;
 public sealed record CellsMargins
 {
     /// <summary>The top margin.</summary>
-    [Minimum(0)] public double? Top { get; init; }
+    [Measured(MeasureUnit.Points), Minimum(0)] public double? Top { get; init; }
 
     /// <summary>The bottom margin.</summary>
-    [Minimum(0)] public double? Bottom { get; init; }
+    [Measured(MeasureUnit.Points), Minimum(0)] public double? Bottom { get; init; }
 
     /// <summary>The left margin.</summary>
-    [Minimum(0)] public double? Left { get; init; }
+    [Measured(MeasureUnit.Points), Minimum(0)] public double? Left { get; init; }
 
     /// <summary>The right margin.</summary>
-    [Minimum(0)] public double? Right { get; init; }
+    [Measured(MeasureUnit.Points), Minimum(0)] public double? Right { get; init; }
 }

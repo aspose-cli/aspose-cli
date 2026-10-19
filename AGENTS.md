@@ -158,7 +158,8 @@ This section holds only what a test cannot judge.
 - **Plural nouns (C-R19).** An operation whose noun is plural (`delete_rows`) acts on a set;
   a singular noun acts on one object.
 - **Units in names (C-R20).** A field or option measured in anything but points names its unit
-  (`widthChars`, `scalePercent`, `durationMs`, `dpi`).
+  (`widthChars`, `scalePercent`, `durationMs`, `dpi`). A measured op field declares its unit with
+  `[Measured]`, which the rule reads and the schema does not publish.
 - **One name, one shape (C-R20).** A field name has one type within and across products, except
   a field that takes the shape of the object it names (`ShapedByTheirObject` in `SchemaRules`);
   adding a name to those exceptions is a decision, not a default.
