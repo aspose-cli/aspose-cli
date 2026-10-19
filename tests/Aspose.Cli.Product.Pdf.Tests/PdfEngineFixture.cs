@@ -23,7 +23,7 @@ public sealed class PdfEngineFixture : IDisposable
     /// <summary>A new session, as one invocation's activation creates it.</summary>
     internal PdfSession Session =>
         ProductTestBudgets.StartEngine<PdfModule, PdfSession>(
-            (budgets, writer) => new PdfSession(Outputs(writer), budgets, new PdfDocumentLoader(budgets)));
+            (budgets, writer) => PdfActivation.Session(Outputs(writer), budgets));
 
     /// <summary>The write pipeline of one invocation, as the product binding creates it.</summary>
     internal OutputPipeline<Document> Outputs(SafeFileWriter writer) => new(Gate, new PdfEvaluationProfile(), writer);

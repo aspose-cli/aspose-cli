@@ -95,8 +95,7 @@ public sealed class PdfBudgetTests
         {
             ProductTestInvocation invocation = ProductTestBudgets.Start<PdfModule>();
             long before = invocation.ResourceBudgets.Remaining(ResourceBudgetKinds.InputBytes);
-            var session = new PdfSession(
-                owner.Outputs(invocation.Writer), invocation.ResourceBudgets, new PdfDocumentLoader(invocation.ResourceBudgets));
+            var session = PdfActivation.Session(owner.Outputs(invocation.Writer), invocation.ResourceBudgets);
             PdfEdit.Run(session, new PdfEditRequest
             {
                 Input = path,
