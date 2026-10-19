@@ -367,6 +367,59 @@ public sealed class SlidesReviewCheckTests
     }
 
     [Fact]
+    public void TextShrunkBelow12PtToFitItsShape_HintsToSplitTheSlideRatherThanEnlargeIt()
+    {
+        // SLD-2: fourteen long bullets shrink below 12 pt; a larger size would only shrink again.
+        using var fixture = new SlidesEngineFixture();
+        string markdown = fixture.File("crowded.md");
+        File.WriteAllText(markdown, "## Q4 Plan\n\n" + string.Concat(Enumerable.Range(1, 14).Select(static item =>
+            $"- Initiative {item}: expand the partner programme into two new regions, with quarterly reviews, shared targets and a monthly report to the board\n")));
+        string deck = fixture.File("crowded.pptx");
+        SlidesCreate.Run(fixture.Session, new SlidesCreateRequest { Output = TestOutput.At(deck), Markdown = new SourceFile("--from-markdown", markdown) });
+
+        ReviewFinding finding = Assert.Single(fixture.Review(deck).Findings!, static finding => finding.Code == SlidesReviewChecks.TextTooSmall.Code);
+        Assert.Contains("shrinks", finding.Message, StringComparison.Ordinal);
+        Assert.Contains("split", finding.Hint, StringComparison.Ordinal);
+        Assert.Contains("across slides", finding.Hint, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void ShortBodySetBelow12PtThatFits_HintsToEnlargeItThoughTheBodyCouldShrinkIt()
+    {
+        // A Markdown body shrinks text on overflow, but text set to 10 pt that fits is not shrunk.
+        using var fixture = new SlidesEngineFixture();
+        string markdown = fixture.File("short.md");
+        File.WriteAllText(markdown, "## Short\n\n- One point\n- Two points\n");
+        string deck = fixture.File("short.pptx");
+        SlidesCreate.Run(fixture.Session, new SlidesCreateRequest { Output = TestOutput.At(deck), Markdown = new SourceFile("--from-markdown", markdown) });
+        string small = fixture.File("short-10pt.pptx");
+        SlidesEdit.Run(fixture.Session, new SlidesEditRequest
+        {
+            Input = deck,
+            Batch = new SlidesOpsBatch { Ops = [new FormatShapeOp { Slide = 1, ShapeName = "Body", Style = new SlidesShapeStyleInput { FontSize = 10 } }] },
+            Output = TestOutput.At(small),
+        });
+
+        ReviewFinding finding = Assert.Single(fixture.Review(small).Findings!, static finding => finding.Code == SlidesReviewChecks.TextTooSmall.Code);
+        Assert.DoesNotContain("shrinks", finding.Message, StringComparison.Ordinal);
+        Assert.Contains("Enlarge the text to at least 12 pt", finding.Hint, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void SmallTextInAShapeThatDoesNotShrinkIt_HintsToEnlargeItOrSplitTheSlide()
+    {
+        SlidesReviewAnalysis analysis = SlidesReviewAnalyzer.Analyze(
+            [Slide(1, Shape(1, new(60, 100, 400, 60), "Small") with { Runs = [new SlidesReviewRun { FontSize = 10 }] })],
+            Width,
+            Height);
+
+        ReviewFinding finding = Assert.Single(analysis.Findings, static finding => finding.Code == SlidesReviewChecks.TextTooSmall.Code);
+        Assert.DoesNotContain("shrinks", finding.Message, StringComparison.Ordinal);
+        Assert.Contains("12 pt", finding.Hint, StringComparison.Ordinal);
+        Assert.Contains("across slides", finding.Hint, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void BodyThatShrinksLongLinesToFit_IsMeasuredWhereItIsDrawn()
     {
         // The engine shrinks these lines to fit the frame; its paragraph rectangles end past the

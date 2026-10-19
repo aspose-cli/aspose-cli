@@ -51,16 +51,32 @@ internal static class SlidesReviewLayout
         };
     }
 
-    /// <summary>Each run of the shape's text that shows any, with its effective size and color.</summary>
+    /// <summary>
+    /// Each run of the shape's text that shows any, with its effective size and color. The
+    /// effective size is the one a shape that shrinks its text on overflow draws it at; the size
+    /// before shrinking is the run's own, else its paragraph's default, which no shrink scales.
+    /// </summary>
     private static IReadOnlyList<SlidesReviewRun> Runs(IShape shape) =>
     [
         .. TextFrames(shape)
             .SelectMany(static frame => frame.Paragraphs)
-            .SelectMany(static paragraph => paragraph.Portions)
-            .Where(static portion => !string.IsNullOrWhiteSpace(portion.Text))
-            .Select(static portion => portion.PortionFormat.GetEffective().AsIBasePortionFormatEffectiveData)
-            .Select(static effective => new SlidesReviewRun { FontSize = effective.FontHeight, Color = RunColor(effective) }),
+            .SelectMany(static paragraph => paragraph.Portions
+                .Where(static portion => !string.IsNullOrWhiteSpace(portion.Text))
+                .Select(portion => Run(portion, paragraph))),
     ];
+
+    private static SlidesReviewRun Run(IPortion portion, IParagraph paragraph)
+    {
+        IBasePortionFormatEffectiveData effective = portion.PortionFormat.GetEffective().AsIBasePortionFormatEffectiveData;
+        float own = portion.PortionFormat.FontHeight;
+        float unshrunk = float.IsNaN(own) ? paragraph.ParagraphFormat.GetEffective().DefaultPortionFormat.FontHeight : own;
+        return new SlidesReviewRun
+        {
+            FontSize = effective.FontHeight,
+            UnshrunkFontSize = unshrunk is > 0 ? unshrunk : null,
+            Color = RunColor(effective),
+        };
+    }
 }
 
 /// <summary>The slides a review checks and the presentation's slide count and size, in points.</summary>
@@ -140,8 +156,14 @@ internal sealed record SlidesReviewShape
 /// <summary>One run of a shape's text that shows any.</summary>
 internal sealed record SlidesReviewRun
 {
-    /// <summary>The effective font size in points.</summary>
+    /// <summary>The effective font size in points, as drawn after any shrink on overflow.</summary>
     public double? FontSize { get; init; }
+
+    /// <summary>The font size in points before the shape shrinks its text on overflow; null when unknown.</summary>
+    public double? UnshrunkFontSize { get; init; }
+
+    /// <summary>Whether the shape shrank this run below the size it states or inherits.</summary>
+    public bool Shrunk => FontSize is { } drawn && UnshrunkFontSize is { } stated && drawn < stated - 0.05;
 
     /// <summary>The solid color the text is drawn in, as #RRGGBB; null for text without a solid fill.</summary>
     public string? Color { get; init; }

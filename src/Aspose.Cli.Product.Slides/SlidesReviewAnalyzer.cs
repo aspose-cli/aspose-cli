@@ -232,11 +232,19 @@ internal static class SlidesReviewAnalyzer
             .Min();
         if (minimum is > 0 and < 12)
         {
+            // Text the shape shrank below its stated size to fit would only shrink again at a
+            // larger size: the slide holds too much for the shape.
+            bool shrunk = shape.Runs.Any(static run => run.FontSize is > 0 and < 12 && run.Shrunk);
             result.SmallTextShapes++;
-            result.Findings.Add(Finding(
-                SlidesReviewChecks.TextTooSmall,
-                slide,
-                $"Shape {Label(shape)} contains text below 12 pt."));
+            result.Findings.Add(SlidesReviewChecks.TextTooSmall.Finding(
+                shrunk
+                    ? $"Shape {Label(shape)} shrinks its text to fit and shows text below 12 pt."
+                    : $"Shape {Label(shape)} contains text below 12 pt.",
+                Location(slide.Slide),
+                shrunk
+                    ? "The shape shrinks text that overflows it, so a larger font size shrinks again; split the content across slides or shorten it, save, and review again."
+                    : "Enlarge the text to at least 12 pt; if it then no longer fits its shape, split the content across slides or shorten it. Save and review again.",
+                SlidesViews.PartId(slide.SlideId)));
         }
     }
 
