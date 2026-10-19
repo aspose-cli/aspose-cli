@@ -1,0 +1,32 @@
+{
+  "name": "cells edit names the accepted fields of an unknown field and the likely one when there is one",
+  "steps": [
+    { "args": ["cells", "create", "book.xlsx", "--sheets", "Data"], "expect": { "exitCode": 0 } },
+    {
+      "args": ["cells", "edit", "book.xlsx", "--in-place", "--ops", "{\"ops\":[{\"op\":\"rename_sheet\",\"sheet\":\"Data\",\"to\":\"Sales\"}]}"],
+      "expect": {
+        "exitCode": 4,
+        "error": "OPS_INVALID",
+        "json": [
+          { "path": "error.details.reason", "equals": "unknown field 'to'" },
+          { "path": "error.details.available", "equals": ["op", "id", "sheet", "name"] },
+          { "path": "error.details.suggestions", "equals": ["name"] }
+        ],
+        "files": { "nothingWritten": true }
+      }
+    },
+    {
+      "args": ["cells", "edit", "book.xlsx", "--in-place", "--ops", "{\"ops\":[{\"op\":\"sort_range\",\"sheet\":\"Data\",\"range\":\"A1:B4\",\"by\":[{\"column\":\"A\",\"direction\":\"desc\"}]}]}"],
+      "expect": {
+        "exitCode": 4,
+        "error": "OPS_INVALID",
+        "json": [
+          { "path": "error.details.reason", "equals": "unknown field 'by[0].direction'" },
+          { "path": "error.details.available", "equals": ["column", "order"] },
+          { "path": "error.details.suggestions", "exists": false }
+        ],
+        "files": { "nothingWritten": true }
+      }
+    }
+  ]
+}
