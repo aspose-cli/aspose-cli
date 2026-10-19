@@ -1,0 +1,17 @@
+{
+  "name": "a damaged PDF that words reads is its own corrupt input, not a renamed file",
+  "files": {
+    "broken.pdf": { "text": "%PDF-1.7\n1 0 obj\n<< /Type /Catalog /Pages" }
+  },
+  "steps": [
+    {
+      "args": ["words", "convert", "broken.pdf", "--to", "docx", "--out", "out.docx"],
+      "expect": {
+        "exitCode": 3,
+        "error": "FILE_CORRUPT",
+        "json": [{ "path": "error.details.detected", "exists": false }],
+        "files": { "absent": ["out.docx"], "unchanged": ["broken.pdf"] }
+      }
+    }
+  ]
+}

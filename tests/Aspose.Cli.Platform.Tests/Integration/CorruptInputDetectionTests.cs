@@ -90,22 +90,6 @@ public sealed class CorruptInputDetectionTests
         Assert.Equal("words", Assert.Single(explained.Details!["detected"]!.AsArray())!.GetValue<string>());
     }
 
-    [Fact]
-    public void ProductCommand_OnADamagedFileOfAFormatItReads_KeepsItsOwnError()
-    {
-        using var workspace = new TempWorkspace();
-        File.WriteAllText(workspace.File("broken.pdf"), "%PDF-1.7\n1 0 obj\n<< /Type /Catalog /Pages");
-
-        CliResult converted = workspace.Run(
-            "words", "convert", "broken.pdf", "--to", "docx", "--out", "out.docx", "--output-format", "json");
-
-        // Words reads PDF, so a damaged PDF is its own corrupt input, not a renamed file.
-        Assert.Equal(3, converted.ExitCode);
-        JsonNode error = JsonNode.Parse(converted.StdErr)!["error"]!;
-        Assert.Equal("FILE_CORRUPT", error["code"]!.GetValue<string>());
-        Assert.Null(error["details"]?["detected"]);
-    }
-
     [Theory]
     [InlineData("empty.docx", "")]
     [InlineData("damaged.docx", "PK\u0003\u0004 truncated header")]
