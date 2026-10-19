@@ -99,47 +99,18 @@ internal sealed class WordsEditModel : IOperationModel<WordsOp>
             return [.. blocks, .. sections];
         }
 
-        if (Named(operation) is { } named)
-        {
-            return [named];
-        }
-
-        return operation switch
-        {
-            SetPropertiesOp => ["property/all"],
-            DefineStyleOp define => [WordsReadBack.StyleAddress(define.Name)],
-            SetDefaultFontOp => ["style/all"],
-            SetWatermarkOp or DeleteWatermarkOp => [WordsSnapshots.WatermarkAddress],
-            ProtectDocumentOp or UnprotectDocumentOp => [WordsSnapshots.ProtectionAddress],
-            SetPageSetupOp or SetHeaderOp or SetFooterOp or SetPageNumbersOp or InsertSectionOp or DeleteSectionOp => ["section/all"],
-            _ => ["block/all"],
-        };
+        WordsOpTraits traits = WordsOpAddresses.Of(operation);
+        return [Named(traits) ?? traits.Fallback];
     }
 
     /// <summary>The block number or range, or the section number, an operation names, or null when it names none.</summary>
-    private static string? Named(WordsOp operation)
+    private static string? Named(WordsOpTraits traits) => traits switch
     {
-        if (WordsAnchorResolver.TargetOf(operation) is { } target)
-        {
-            return target switch
-            {
-                { Block: int block } => string.Create(CultureInfo.InvariantCulture, $"{WordsSnapshots.BlockUnit}/{block}"),
-                { Blocks: { } range } => $"{WordsSnapshots.BlockUnit}/{range}",
-                _ => null,
-            };
-        }
-
-        int? section = operation switch
-        {
-            InsertSectionOp insert => insert.At,
-            DeleteSectionOp delete => delete.Section,
-            SetPageSetupOp setup => setup.Section,
-            HeaderFooterOp part => part.Section,
-            SetPageNumbersOp numbers => numbers.Section,
-            _ => null,
-        };
-        return section is int number ? string.Create(CultureInfo.InvariantCulture, $"{WordsSnapshots.SectionUnit}/{number}") : null;
-    }
+        { Target.Block: int block } => string.Create(CultureInfo.InvariantCulture, $"{WordsSnapshots.BlockUnit}/{block}"),
+        { Target.Blocks: { } range } => $"{WordsSnapshots.BlockUnit}/{range}",
+        { Section: int number } => string.Create(CultureInfo.InvariantCulture, $"{WordsSnapshots.SectionUnit}/{number}"),
+        _ => null,
+    };
 
     public NoEffect? Explain(WordsOp operation) => operation switch
     {

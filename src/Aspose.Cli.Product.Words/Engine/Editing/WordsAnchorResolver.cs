@@ -36,11 +36,11 @@ internal static class WordsAnchorResolver
                     continue;
                 }
 
-                WordsTarget? target = TargetOf(op);
-                IReadOnlyList<Node> nodes = target is null
-                    ? []
-                    : ResolveTarget(document, index, target);
-                resolved.Add(new ResolvedWordsOp(op, nodes, ResolveSections(document, op), Targets(index, nodes)));
+                WordsOpTraits traits = WordsOpAddresses.Of(op);
+                IReadOnlyList<Node> nodes = traits.Target is { } target
+                    ? ResolveTarget(document, index, target)
+                    : [];
+                resolved.Add(new ResolvedWordsOp(op, nodes, ResolveSections(document, traits), Targets(index, nodes)));
             }
             catch (Exception failure) when (failure is CliException or OperationInvalidException)
             {
@@ -94,19 +94,13 @@ internal static class WordsAnchorResolver
         return [.. wanted.Select(number => changes[number - 1])];
     }
 
-    private static IReadOnlyList<Section> ResolveSections(Document document, WordsOp op) => op switch
+    // The section an operation names, or every section for one that addresses sections and names none.
+    private static IReadOnlyList<Section> ResolveSections(Document document, WordsOpTraits traits) => traits switch
     {
-        InsertSectionOp value => [WordsSections.Get(document, value.At)],
-        DeleteSectionOp value => [WordsSections.Get(document, value.Section)],
-        SetPageSetupOp value => SelectSections(document, value.Section),
-        SetHeaderOp value => SelectSections(document, value.Section),
-        SetFooterOp value => SelectSections(document, value.Section),
-        SetPageNumbersOp value => SelectSections(document, value.Section),
-        _ => [],
+        { AddressesSections: false } => [],
+        { Section: int number } => [WordsSections.Get(document, number)],
+        _ => document.Sections.Cast<Section>().ToArray(),
     };
-
-    private static IReadOnlyList<Section> SelectSections(Document document, int? section) =>
-        section is int number ? [WordsSections.Get(document, number)] : document.Sections.Cast<Section>().ToArray();
 
     internal static void EnsureAttached(Document document, ResolvedWordsOp operation)
     {
@@ -238,31 +232,6 @@ internal static class WordsAnchorResolver
     /// <summary>The addresses of the original blocks that hold <paramref name="nodes"/>, as <c>block/{n}</c>.</summary>
     internal static IReadOnlyList<string> Targets(DocumentBlockIndex index, IReadOnlyList<Node> nodes) =>
         [.. nodes.Select(index.FindBlock).OfType<int>().Distinct().Order().Select(static block => $"block/{block}")];
-
-    /// <summary>The block address an operation names, or null for one that names none.</summary>
-    internal static WordsTarget? TargetOf(WordsOp op) => op switch
-    {
-        SetTextOp value => value.Target,
-        InsertParagraphsOp value => value.At,
-        InsertMarkdownOp value => value.At,
-        DeleteBlocksOp value => value.Target,
-        InsertBreakOp value => value.At,
-        InsertImageOp value => value.At,
-        InsertTableOp value => value.At,
-        SetTableCellOp value => value.Target,
-        RepeatTableRowOp value => value.At,
-        SetTablePaginationOp value => value.Target,
-        InsertTocOp value => value.At,
-        InsertBookmarkOp value => value.At,
-        InsertHyperlinkOp value => value.At,
-        InsertFieldOp value => value.At,
-        FormatTextOp value => value.Target,
-        SetStyleOp value => value.Target,
-        SetListOp value => value.Target,
-        ClearListOp value => value.Target,
-        AddCommentOp value => value.Target,
-        _ => null,
-    };
 
     private const string DeleteConflictHint = "Split conflicting deletes and dependent edits into separate batches.";
 }
