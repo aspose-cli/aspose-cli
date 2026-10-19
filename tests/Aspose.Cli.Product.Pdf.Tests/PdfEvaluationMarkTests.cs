@@ -229,6 +229,23 @@ public sealed class PdfEvaluationMarkTests
         return absorber.TextFragments.Count;
     }
 
+    /// <summary>
+    /// Only a saved PDF is reopened to read its notice; a file of any other format is left to the
+    /// document it was written from.
+    /// </summary>
+    [Fact]
+    public void InspectSaved_ReopensOnlyAPdf()
+    {
+        using var fixture = new PdfEngineFixture();
+        string input = MarkedOnFirstPage(fixture);
+        var profile = new PdfEvaluationProfile();
+
+        Assert.True(profile.InspectSaved(input, "pdf")?.Any);
+        Assert.Null(profile.InspectSaved(input, "pdfa-1b"));
+        Assert.Null(profile.InspectSaved(input, "docx"));
+        Assert.Null(profile.InspectSaved(input, "png"));
+    }
+
     private static Warning Disclosure(ResultEnvelope result) =>
         Assert.Single(result.Warnings!, static warning => warning.Code == WarningCodes.EvaluationInputMarked);
 

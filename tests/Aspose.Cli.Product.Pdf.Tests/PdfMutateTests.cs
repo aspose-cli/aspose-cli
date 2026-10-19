@@ -2155,6 +2155,30 @@ public sealed class PdfMutateTests
         return colours;
     }
 
+    [Theory]
+    [InlineData("json", "form.json", "\"Customer\"")]
+    [InlineData("fdf", "form.fdf", "%FDF")]
+    [InlineData("xfdf", "form.xfdf", "<xfdf")]
+    public void Forms_ExportInEachFormDataFormat(string format, string fileName, string marker)
+    {
+        using var fixture = new PdfEngineFixture();
+        string input = FormDocument(fixture);
+
+        PdfExtractResult exported = PdfExtract.Run(fixture.Session, new PdfExtractRequest
+        {
+            Input = input,
+            What = PdfExtractKinds.Forms,
+            Output = new ResolvedDirectory(fixture.File("form-data")),
+            FormFormat = PdfFormats.FormData.Single(candidate => candidate.Id == format),
+        });
+
+        PdfPageOutput data = Assert.Single(exported.Outputs);
+        Assert.Equal(fileName, Path.GetFileName(data.Path));
+        string text = File.ReadAllText(data.Path);
+        Assert.Contains(marker, text, StringComparison.Ordinal);
+        Assert.Contains("Initial", text, StringComparison.Ordinal);
+    }
+
     private static string FormDocument(PdfEngineFixture fixture)
     {
         string path = fixture.File("form.pdf");
