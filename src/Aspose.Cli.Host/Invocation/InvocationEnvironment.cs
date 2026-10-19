@@ -45,7 +45,7 @@ internal static class InvocationEnvironment
             EnvironmentValueReply reply = inputs.ReadEnvironment(name,
                 budgets.Limit(ResourceBudgetKinds.SecretCharacters), budgets.Deadline.Token,
                 bytes => budgets.Consume(ResourceBudgetKinds.MemoryBufferBytes, bytes, "bytes", "process-input"));
-            if (reply.OversizedCharacters is { } oversized)
+            if (reply.OversizedCharacterCount is { } oversized)
             {
                 budgets.Consume(ResourceBudgetKinds.SecretCharacters, oversized, "characters", "environment-secret");
                 throw new InvalidDataException("The environment reply has an invalid size.");
