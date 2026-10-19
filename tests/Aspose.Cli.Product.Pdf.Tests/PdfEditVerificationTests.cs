@@ -345,6 +345,170 @@ public sealed class PdfEditVerificationTests
         Assert.Equal(["op-0002"], result.Verification.CheckedOps);
     }
 
+    /// <summary>Deleting pages may delete a field, so a value set before it is left unchecked.</summary>
+    [Fact]
+    public void Verify_LeavesAFieldValueUncheckedAfterDeletedPages()
+    {
+        using var fixture = new PdfEngineFixture();
+        string input = CreateDocument(fixture);
+
+        PdfEditResult result = PdfEdit.Run(fixture.Session, Request(fixture, input, new PdfOpsBatch
+        {
+            Ops = [new SetFormFieldOp { Name = "Customer", Value = "Contoso" }, new DeletePagesOp { Pages = "2" }],
+        }, "deleted.pdf"));
+
+        Assert.True(result.Verification!.Ok, string.Join("; ", result.Verification.Issues.Select(static issue => issue.Message)));
+        Assert.Equal(["op-0002"], result.Verification.CheckedOps);
+    }
+
+    /// <summary>Clearing the document information supersedes the properties set before it.</summary>
+    [Fact]
+    public void Verify_DropsPropertiesThatClearPropertiesRemoved()
+    {
+        using var fixture = new PdfEngineFixture();
+        string input = CreateDocument(fixture);
+
+        PdfEditResult result = PdfEdit.Run(fixture.Session, Request(fixture, input, new PdfOpsBatch
+        {
+            Ops = [new SetPropertiesOp { Title = "Quarterly" }, new ClearPropertiesOp()],
+        }, "cleared.pdf"));
+
+        Assert.True(result.Verification!.Ok, string.Join("; ", result.Verification.Issues.Select(static issue => issue.Message)));
+        Assert.Empty(result.Verification.CheckedOps);
+    }
+
+    /// <summary>An attachment added again under the name a batch deleted supersedes the deletion.</summary>
+    [Fact]
+    public void Verify_ChecksAnAttachmentAddedAgainAfterItsDeletion()
+    {
+        using var fixture = new PdfEngineFixture();
+        string input = CreateDocument(fixture);
+        string attachment = fixture.File("old.txt");
+        File.WriteAllText(attachment, "new");
+
+        PdfEditResult result = PdfEdit.Run(fixture.Session, Request(fixture, input, new PdfOpsBatch
+        {
+            Ops = [new DeleteAttachmentOp { Name = "old.txt" }, new AddAttachmentOp { Path = attachment }],
+        }, "readded.pdf"));
+
+        Assert.True(result.Verification!.Ok, string.Join("; ", result.Verification.Issues.Select(static issue => issue.Message)));
+        Assert.Equal(["op-0002"], result.Verification.CheckedOps);
+    }
+
+    private static readonly PdfRectInput Area = new() { X = 10, Y = 10, Width = 20, Height = 20 };
+
+    /// <summary>The operations whose effect has no reliable read-back.</summary>
+    public static TheoryData<string> Unread =>
+    [
+        "rotate_pages",
+        "crop_pages",
+        "set_page_size",
+        "add_watermark_text",
+        "add_watermark_image",
+        "add_page_numbers",
+        "add_header_text",
+        "add_footer_text",
+        "add_stamp_image",
+        "add_hyperlink",
+        "redact_area",
+        "set_page_labels",
+        "encrypt_document",
+        "decrypt_document",
+        "optimize_document",
+    ];
+
+    /// <summary>Every operation is either read back or listed as unread, and none is both.</summary>
+    [Fact]
+    public void EveryOperationIsReadBackOrListedAsUnread()
+    {
+        string[] readBack = [.. Unapplied.Select(static row => row.Data), "import_pages", "move_pages", "clear_properties"];
+        string[] unread = [.. Unread.Select(static row => row.Data)];
+
+        Assert.Empty(readBack.Intersect(unread));
+        Assert.Equal(PdfOp.Catalog.Names.Order(StringComparer.Ordinal), readBack.Concat(unread).Order(StringComparer.Ordinal));
+    }
+
+    /// <summary>
+    /// An operation without a reliable read-back records nothing: it is not checked, and the
+    /// expectations recorded before it are still read back.
+    /// </summary>
+    [Theory]
+    [MemberData(nameof(Unread))]
+    public void Verify_ChecksNothingOfAnUnreadOperationAndKeepsEarlierExpectations(string operation)
+    {
+        using var fixture = new PdfEngineFixture();
+        using var document = new Document(CreateDocument(fixture));
+        PdfOp unread = (operation switch
+        {
+            "rotate_pages" => (PdfOp)new RotatePagesOp { Pages = "1", Rotation = 90 },
+            "crop_pages" => new CropPagesOp { Pages = "1", Rect = Area },
+            "set_page_size" => new SetPageSizeOp { Pages = "1", PageSize = new PageSizeInput { Preset = PageSizePresets.A4 } },
+            "add_watermark_text" => new AddWatermarkTextOp { Text = "DRAFT" },
+            "add_watermark_image" => new AddWatermarkImageOp { Path = "logo.png" },
+            "add_page_numbers" => new AddPageNumbersOp(),
+            "add_header_text" => new AddHeaderTextOp { Text = "Header" },
+            "add_footer_text" => new AddFooterTextOp { Text = "Footer" },
+            "add_stamp_image" => new AddStampImageOp { Page = 1, Path = "logo.png", Rect = Area },
+            "add_hyperlink" => new AddHyperlinkOp { Page = 1, Rect = Area, Url = "https://example.com" },
+            "redact_area" => new RedactAreaOp { Page = 1, Rect = Area },
+            "set_page_labels" => new SetPageLabelsOp { Ranges = [new PdfPageLabelRange { StartPage = 1, Prefix = "A-" }] },
+            "encrypt_document" => new EncryptDocumentOp { OwnerPasswordEnv = "OWNER_PASSWORD" },
+            "decrypt_document" => new DecryptDocumentOp(),
+            "optimize_document" => new OptimizeDocumentOp(),
+            _ => throw new ArgumentOutOfRangeException(nameof(operation)),
+        }) with { Id = "op-0003" };
+
+        // Both hold in the unchanged document, so each is read back as met.
+        PdfOp[] earlier =
+        [
+            new SetFormFieldOp { Id = "op-0001", Name = "Customer", Value = "Draft" },
+            new DeleteAttachmentOp { Id = "op-0002", Name = "missing.txt" },
+        ];
+        var verifier = new PdfEditVerifier(document);
+        foreach (PdfOp op in earlier.Append(unread))
+        {
+            verifier.Record(op, AppliedOperations.Changed(PdfOp.Catalog, op, 1));
+        }
+
+        VerificationFacts verification = verifier.Verify(document, fixture.LicenseState, deadline: null);
+
+        Assert.Empty(verification.Issues);
+        Assert.Equal(["op-0001", "op-0002"], verification.Checked.Order(StringComparer.Ordinal));
+    }
+
+    /// <summary>
+    /// A page operation renumbers the pages, so a redaction limited to pages and a bookmark's
+    /// page recorded before it are left unchecked, and only the page operation is checked.
+    /// </summary>
+    [Theory]
+    [InlineData("insert_page")]
+    [InlineData("import_pages")]
+    [InlineData("delete_pages")]
+    [InlineData("move_pages")]
+    public void Verify_LeavesPagedRedactionsAndBookmarksUncheckedAfterAPageOperation(string operation)
+    {
+        using var fixture = new PdfEngineFixture();
+        string input = CreateDocument(fixture);
+        string source = fixture.File("source.pdf");
+        File.Copy(input, source);
+        PdfOp pages = operation switch
+        {
+            "insert_page" => new InsertPageOp { At = 3 },
+            "import_pages" => new ImportPagesOp { Path = source, Pages = "2", At = 3 },
+            "delete_pages" => new DeletePagesOp { Pages = "2" },
+            "move_pages" => new MovePagesOp { Pages = "2", To = 1 },
+            _ => throw new ArgumentOutOfRangeException(nameof(operation)),
+        };
+
+        PdfEditResult result = PdfEdit.Run(fixture.Session, Request(fixture, input, new PdfOpsBatch
+        {
+            Ops = [new RedactTextOp { Find = "Secret", Pages = "1" }, new AddBookmarkOp { Title = "Appendix", Page = 1 }, pages],
+        }, "renumbered.pdf"));
+
+        Assert.True(result.Verification!.Ok, string.Join("; ", result.Verification.Issues.Select(static issue => issue.Message)));
+        Assert.Equal(["op-0003"], result.Verification.CheckedOps);
+    }
+
     [Fact]
     public void Edit_WithoutVerify_ReportsNoVerification()
     {
