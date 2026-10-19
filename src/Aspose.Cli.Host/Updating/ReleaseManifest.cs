@@ -1,7 +1,6 @@
 using System.Text.Json;
 using Aspose.Cli.Host.Invocation;
 using Aspose.Cli.Sdk;
-using Aspose.Cli.Sdk.Contracts;
 
 namespace Aspose.Cli.Host.Updating;
 

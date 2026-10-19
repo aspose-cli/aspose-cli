@@ -974,7 +974,7 @@ public sealed class CliContractTests : IDisposable
 
     private static void AssertConformsTo(string schemaId, string json)
     {
-        JsonSchema schema = SchemaTestRegistry.CreateOptions().SchemaRegistry
+        JsonSchema schema = Aspose.Cli.Architecture.Tests.TestSupport.HostCommonSchemas.CreateOptions().SchemaRegistry
             .Get(new Uri(schemaId)) as JsonSchema
             ?? throw new InvalidOperationException($"Schema {schemaId} is not registered.");
         using JsonDocument document = JsonDocument.Parse(json);

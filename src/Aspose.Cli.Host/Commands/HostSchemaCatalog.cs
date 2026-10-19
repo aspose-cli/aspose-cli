@@ -10,8 +10,17 @@ namespace Aspose.Cli.Host.Commands;
 internal sealed class HostSchemaCatalog
 {
     /// <summary>The schemas the host itself publishes under <c>v2/common</c>, such as the App status.</summary>
-    private static readonly ResultSchemaSet HostSchemas =
-        new("common", SdkSchemaCatalog.ResultRecordsOf(AppJsonContext.Default), SdkSchemaCatalog.Schemas);
+    private static readonly ResultSchemaSet HostSchemas = new(
+        "common",
+        [
+            .. SdkSchemaCatalog.ResultRecordsOf(HostResultJsonContext.Default),
+            .. SdkSchemaCatalog.ResultRecordsOf(AppJsonContext.Default),
+        ],
+        SdkSchemaCatalog.Schemas);
+
+    /// <summary>Every <c>v2/common</c> schema id, the SDK's and the host's, in ordinal order.</summary>
+    internal static IReadOnlyList<string> CommonIds { get; } =
+        [.. SdkSchemaCatalog.Ids.Concat(HostSchemas.Ids).Order(StringComparer.Ordinal)];
 
     private readonly Aspose.Cli.Sdk.Extensibility.ProductCatalog _catalog;
 
@@ -19,7 +28,7 @@ internal sealed class HostSchemaCatalog
         Aspose.Cli.Sdk.Extensibility.ProductCatalog catalog)
     {
         _catalog = catalog ?? throw new ArgumentNullException(nameof(catalog));
-        string[] ids = [.. SdkSchemaCatalog.Ids.Concat(HostSchemas.Ids).Concat(catalog.Resources.SchemaIds).Order(StringComparer.Ordinal)];
+        string[] ids = [.. CommonIds.Concat(catalog.Resources.SchemaIds).Order(StringComparer.Ordinal)];
         // The SDK, the host and the products publish disjoint ids, so no schema shadows another.
         if (ids.Zip(ids.Skip(1)).FirstOrDefault(static pair => pair.First == pair.Second).First is { } shared)
         {
@@ -34,9 +43,13 @@ internal sealed class HostSchemaCatalog
     public bool TryRead(
         string id,
         [NotNullWhen(true)] out string? document) =>
-        _catalog.Resources.TryRead(id, out document)
-        || SdkSchemaCatalog.TryRead(id, out document)
-        || HostSchemas.TryRead(id, out document);
+        _catalog.Resources.TryRead(id, out document) || TryReadCommon(id, out document);
+
+    /// <summary>Reads a <c>v2/common</c> schema, the SDK's or the host's.</summary>
+    internal static bool TryReadCommon(
+        string id,
+        [NotNullWhen(true)] out string? document) =>
+        SdkSchemaCatalog.TryRead(id, out document) || HostSchemas.TryRead(id, out document);
 
     public IReadOnlyList<string> GetOperations(string schemaId) =>
         _catalog.Resources.GetOperations(schemaId);

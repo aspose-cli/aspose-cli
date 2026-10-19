@@ -1,4 +1,6 @@
-namespace Aspose.Cli.Sdk.Contracts;
+using Aspose.Cli.Sdk.Contracts;
+
+namespace Aspose.Cli.Host.Contracts;
 
 /// <summary>Result of <c>aspose-cli schema</c> without a schema id.</summary>
 public sealed record SchemaListResult() : ResultEnvelope("schema-list", 2)

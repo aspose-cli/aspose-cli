@@ -2,6 +2,7 @@ using System.CommandLine;
 using System.Globalization;
 using System.Text.Json.Nodes;
 using Aspose.Cli.Host.Commands;
+using Aspose.Cli.Host.Contracts;
 using Aspose.Cli.Host.Invocation;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Errors;

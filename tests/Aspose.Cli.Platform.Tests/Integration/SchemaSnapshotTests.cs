@@ -30,7 +30,7 @@ public sealed class SchemaSnapshotTests
     [Fact]
     public void EveryCommonSample_SerializesToItsSnapshot()
     {
-        ContractJsonSerializer serializer = new([]);
+        ContractJsonSerializer serializer = new([], Aspose.Cli.Host.Contracts.HostResultJsonContext.Default);
         IEnumerable<string> lines = CommonSchemaSamples.All
             .Select((sample, index) => Sha256(serializer.Serialize(sample.Value)) + "  " + index.ToString("D2", System.Globalization.CultureInfo.InvariantCulture) + " " + sample.Value.GetType().Name);
 

@@ -65,12 +65,20 @@ public sealed class ContractJsonSerializer
     private readonly JsonSerializerOptions _compactOptions;
 
     /// <summary>Creates a serializer for the supplied product contributions.</summary>
+    /// <param name="products">The products' JSON contributions.</param>
+    /// <param name="host">The metadata of the results only the host writes, if any.</param>
     public ContractJsonSerializer(
-        IEnumerable<ProductJsonDefinition> products)
+        IEnumerable<ProductJsonDefinition> products,
+        IJsonTypeInfoResolver? host = null)
     {
         ArgumentNullException.ThrowIfNull(products);
         ProductJsonDefinition[] definitions = products.ToArray();
         var resolvers = new List<IJsonTypeInfoResolver> { SdkJsonContext.Default };
+        if (host is not null)
+        {
+            resolvers.Add(host);
+        }
+
         resolvers.AddRange(definitions.Select(static definition => definition.Resolver));
 
         JsonConverter[] converters = definitions

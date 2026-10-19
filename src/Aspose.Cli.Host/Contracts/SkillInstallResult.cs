@@ -1,6 +1,7 @@
 using System.Text.Json.Serialization;
+using Aspose.Cli.Sdk.Contracts;
 
-namespace Aspose.Cli.Sdk.Contracts;
+namespace Aspose.Cli.Host.Contracts;
 
 /// <summary>
 /// Result of <c>aspose-cli skill install</c>: the agent skill bundled inside the

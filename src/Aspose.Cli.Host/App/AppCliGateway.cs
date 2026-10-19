@@ -114,7 +114,7 @@ internal sealed class AppCliGateway
             }
             LicenseStatusResult status = Read(
                 ["license", "status"],
-                SdkJsonContext.Default.LicenseStatusResult);
+                HostResultJsonContext.Default.LicenseStatusResult);
             lock (_gate)
             {
                 // Font discovery depends on the license: a changed one is asked afresh too.
@@ -134,7 +134,7 @@ internal sealed class AppCliGateway
             : ["license", "install", sourcePath, "--product", productId];
         LicenseStatusResult installed = Read(
             arguments,
-            SdkJsonContext.Default.LicenseStatusResult);
+            HostResultJsonContext.Default.LicenseStatusResult);
         Invalidate();
         return installed.Products
             .Where(static product => product.Mode == LicenseModes.Licensed)
@@ -150,7 +150,7 @@ internal sealed class AppCliGateway
             : ["license", "remove", "--product", productId];
         _ = Read(
             arguments,
-            SdkJsonContext.Default.LicenseStatusResult);
+            HostResultJsonContext.Default.LicenseStatusResult);
         Invalidate();
     }
 
