@@ -21,6 +21,8 @@ public sealed class TextReplacementTests
         ["literal-case-sensitive"] = new("category cat cat_x Cat", Op("Cat", caseSensitive: true), "category cat cat_x QQ"),
         ["whole-word-literal"] = new("category cat cat_x Cat", Op("cat", wholeWord: true), "category QQ cat_x QQ"),
         ["whole-word-no-match"] = new("category", Op("cat", wholeWord: true), null),
+        // A whole-word expression keeps the matches that are whole words; it does not retry an alternative.
+        ["whole-word-regex-alternation"] = new("category", Op("cat|category", regex: true, wholeWord: true), null),
         ["regex-substitution"] = new("pages 10-20 and 3-4", Op(@"(\d+)-(\d+)", Marker + "$2-$1", regex: true), "pages QQ20-10 and QQ4-3"),
         ["literal-dollar-verbatim"] = new("the price is", Op("price", Marker + "$1"), "the QQ$1 is"),
         ["maximum-count"] = new("z1 z2 z3", Op("z", maximum: 2), "QQ1 QQ2 z3"),
@@ -41,6 +43,9 @@ public sealed class TextReplacementTests
 
         return data;
     }
+
+    /// <summary>The products whose replace_text refuses an expression that matches an empty string, as search does.</summary>
+    public static TheoryData<string> EmptyMatchProducts() => ["cells", "slides"];
 
     [Theory]
     [MemberData(nameof(ProductCases))]
@@ -89,6 +94,26 @@ public sealed class TextReplacementTests
         }
 
         Run($"{product} replace_text {name}", files, steps);
+    }
+
+    [Theory]
+    [MemberData(nameof(EmptyMatchProducts))]
+    public void ReplaceText_RefusesAnExpressionThatMatchesAnEmptyString(string product)
+    {
+        RequireFullText(product);
+        (string document, JsonObject files, JsonArray? create) = Document(product, "ab");
+        var steps = new JsonArray();
+        if (create is not null)
+        {
+            steps.Add(new JsonObject { ["args"] = create, ["expect"] = new JsonObject { ["exitCode"] = 0 } });
+        }
+
+        steps.Add(new JsonObject
+        {
+            ["args"] = new JsonArray(product, "edit", document, "--ops", new JsonArray(Op("x*", regex: true)).ToJsonString(), "--out", "out" + Path.GetExtension(document)),
+            ["expect"] = new JsonObject { ["exitCode"] = 4, ["error"] = "OPS_INVALID" },
+        });
+        Run($"{product} replace_text refuses an empty match", files, steps);
     }
 
     private static void RequireFullText(string product)
