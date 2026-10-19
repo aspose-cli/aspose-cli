@@ -316,7 +316,7 @@ internal sealed class LiveDocument : IDisposable
                 if (!response.Ok)
                 {
                     LocalFileCleanup.DeleteDirectory(directory);
-                    Report(revision, response.Code ?? ErrorCodes.Internal.Name, response.Message ?? "the render failed");
+                    Report(revision, response.Error?.Code ?? ErrorCodes.Internal.Name, response.Error?.Message ?? "the render failed");
                     return response;
                 }
 
@@ -344,10 +344,9 @@ internal sealed class LiveDocument : IDisposable
                     _ => ErrorCodes.FileNotFound.Name,
                 };
                 Report(revision, code, exception.Message);
-                CliException? failure = exception as CliException;
-                return new RenderWorkerResponse { Id = 0, Ok = false, Code = code,
-                    Exit = (int)(failure?.ExitCode ?? ExitCode.InputError),
-                    Message = exception.Message, Hint = failure?.Hint, Details = failure?.Details, Docs = failure?.Docs };
+                return new RenderWorkerResponse { Id = 0, Ok = false, Error = exception is CliException failure
+                    ? WireError.From(failure)
+                    : new WireError(code, (int)ExitCode.InputError, exception.Message) };
             }
             finally
             {

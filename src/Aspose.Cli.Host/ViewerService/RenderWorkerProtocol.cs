@@ -93,23 +93,8 @@ internal sealed record RenderWorkerResponse
     /// <summary>Product presenter stylesheet, when it ships one.</summary>
     public string? PresenterStylesheet { get; init; }
 
-    /// <summary>Stable CLI error code when the render failed.</summary>
-    public string? Code { get; init; }
-
-    /// <summary>Exit code the same failure would produce on the command line.</summary>
-    public int Exit { get; init; }
-
-    /// <summary>Message for the person, naming the previewed document rather than its copy.</summary>
-    public string? Message { get; init; }
-
-    /// <summary>The failure's hint, when it has one.</summary>
-    public string? Hint { get; init; }
-
-    /// <summary>The failure's details, naming the previewed document rather than its copy.</summary>
-    public System.Text.Json.Nodes.JsonObject? Details { get; init; }
-
-    /// <summary>The failure's documentation topic, when it has one.</summary>
-    public string? Docs { get; init; }
+    /// <summary>Why the render failed, naming the previewed document rather than its copy.</summary>
+    public WireError? Error { get; init; }
 
     /// <summary>
     /// Set when the worker is exiting because the license it applied no longer
@@ -118,3 +103,11 @@ internal sealed record RenderWorkerResponse
     /// </summary>
     public bool Recycle { get; init; }
 }
+
+/// <summary>The frames of the render worker, in the Host's process frame format.</summary>
+[System.Text.Json.Serialization.JsonSourceGenerationOptions(
+    System.Text.Json.JsonSerializerDefaults.Web,
+    DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+[System.Text.Json.Serialization.JsonSerializable(typeof(RenderWorkerRequest))]
+[System.Text.Json.Serialization.JsonSerializable(typeof(RenderWorkerResponse))]
+internal sealed partial class RenderWorkerJsonContext : System.Text.Json.Serialization.JsonSerializerContext;

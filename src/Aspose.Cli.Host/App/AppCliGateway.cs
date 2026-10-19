@@ -311,33 +311,8 @@ internal sealed class AppCliGateway
     /// reports what the command reported: an invalid licence file stays
     /// LICENSE_INVALID, and a missing file stays an input error.
     /// </summary>
-    private static CliException Failure(IReadOnlyList<string> arguments, int exitCode, byte[] error)
-    {
-        try
-        {
-            using JsonDocument document = JsonDocument.Parse(error, new JsonDocumentOptions { MaxDepth = 16 });
-            if (document.RootElement.TryGetProperty("error", out JsonElement failure)
-                && failure.TryGetProperty("code", out JsonElement code)
-                && code.GetString() is { Length: > 0 } name
-                && failure.TryGetProperty("message", out JsonElement message)
-                && message.GetString() is { Length: > 0 } text)
-            {
-                return CliErrors.FromRemote(
-                    name,
-                    (ExitCode)exitCode,
-                    text,
-                    hint: failure.TryGetProperty("hint", out JsonElement hint) ? hint.GetString() : null,
-                    details: failure.TryGetProperty("details", out JsonElement details)
-                        && details.ValueKind == JsonValueKind.Object
-                            ? System.Text.Json.Nodes.JsonNode.Parse(details.GetRawText())?.AsObject()
-                            : null,
-                    docs: failure.TryGetProperty("docs", out JsonElement docs) ? docs.GetString() : null);
-            }
-        }
-        catch (JsonException)
-        {
+    private static CliException Failure(IReadOnlyList<string> arguments, int exitCode, byte[] error) =>
+        WireError.FromEnvelope(error, exitCode)?.ToException()
             // The child did not answer in the envelope; report it as our own.
-        }
-        return CliErrors.Internal($"The CLI could not complete '{string.Join(' ', arguments)}'.");
-    }
+            ?? CliErrors.Internal($"The CLI could not complete '{string.Join(' ', arguments)}'.");
 }

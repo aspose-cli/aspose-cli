@@ -38,11 +38,11 @@ public sealed class RenderWorkerTests : IDisposable
         int worker = supervisor.ProcessId!.Value;
         (RenderWorkerResponse workbook, _) = Render(supervisor, "book.xlsx");
 
-        Assert.True(document.Ok, document.Message);
+        Assert.True(document.Ok, document.Error?.Message);
         Assert.Equal("words", document.Product);
         Assert.Equal("pages", document.View);
         Assert.Contains("definePresenter", document.PresenterScript!, StringComparison.Ordinal);
-        Assert.True(workbook.Ok, workbook.Message);
+        Assert.True(workbook.Ok, workbook.Error?.Message);
         Assert.Equal("cells", workbook.Product);
         Assert.Null(workbook.PresenterScript);
         Assert.Equal(worker, supervisor.ProcessId);
@@ -82,7 +82,7 @@ public sealed class RenderWorkerTests : IDisposable
         File.WriteAllText(_workspace.File("relative.md"), "# Relative image\n\n![local](local.png)");
         using var supervisor = new RenderWorkerSupervisor(() => _workspace.StartInfo(), RenderTimeout);
         var direct = Render(supervisor, "relative.md");
-        Assert.True(direct.Response.Ok, direct.Response.Message);
+        Assert.True(direct.Response.Ok, direct.Response.Error?.Message);
         using var documents = new ViewerDocuments(supervisor, ViewerStorage.Create(), LocalServiceResourceLimits.Resolve());
         LiveDocument snapshot = documents.Open(_workspace.File("relative.md"), new LiveDocumentOptions(), ViewerDocuments.PreviewHolder);
         JsonNode manifest = JsonNode.Parse(File.ReadAllText(Path.Combine(direct.Output, "view.json")))!;
@@ -99,8 +99,8 @@ public sealed class RenderWorkerTests : IDisposable
         (RenderWorkerResponse response, string output) = Render(supervisor, "broken.docx");
 
         Assert.False(response.Ok);
-        Assert.NotNull(response.Code);
-        Assert.DoesNotContain(output, response.Message ?? string.Empty, StringComparison.OrdinalIgnoreCase);
+        Assert.NotNull(response.Error?.Code);
+        Assert.DoesNotContain(output, response.Error?.Message ?? string.Empty, StringComparison.OrdinalIgnoreCase);
         Assert.NotNull(supervisor.ProcessId);
     }
 
@@ -118,7 +118,7 @@ public sealed class RenderWorkerTests : IDisposable
 
         Assert.NotEqual(evaluationWorker, supervisor.ProcessId);
         Assert.False(response.Ok);
-        Assert.Equal(ErrorCodes.LicenseInvalid.Name, response.Code);
+        Assert.Equal(ErrorCodes.LicenseInvalid.Name, response.Error?.Code);
     }
 
     [Category(TestCategory.Slow)]
@@ -134,7 +134,7 @@ public sealed class RenderWorkerTests : IDisposable
         for (int render = 2; render <= 105; render++)
         {
             RenderWorkerResponse response = Render(supervisor, "book.xlsx").Response;
-            Assert.True(response.Ok, $"render {render}: {response.Code} {response.Message}");
+            Assert.True(response.Ok, $"render {render}: {response.Error?.Code} {response.Error?.Message}");
         }
 
         Assert.NotEqual(first, supervisor.ProcessId);
@@ -149,7 +149,7 @@ public sealed class RenderWorkerTests : IDisposable
         (RenderWorkerResponse response, _) = Render(supervisor, "report.docx");
 
         Assert.False(response.Ok);
-        Assert.Equal(ErrorCodes.OperationTimeout.Name, response.Code);
+        Assert.Equal(ErrorCodes.OperationTimeout.Name, response.Error?.Code);
         Assert.Null(supervisor.ProcessId);
     }
 
@@ -176,7 +176,7 @@ public sealed class RenderWorkerTests : IDisposable
 
     private static string PartDigest((RenderWorkerResponse Response, string Output) rendered)
     {
-        Assert.True(rendered.Response.Ok, rendered.Response.Message);
+        Assert.True(rendered.Response.Ok, rendered.Response.Error?.Message);
         JsonNode view = JsonNode.Parse(File.ReadAllText(Path.Combine(rendered.Output, "view.json")))!;
         return view["parts"]![0]!["digest"]!.GetValue<string>();
     }

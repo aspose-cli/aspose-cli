@@ -362,7 +362,7 @@ internal sealed class ViewerServiceHost : IDisposable
             Ok: true,
             Result: JsonSerializer.SerializeToElement(result, type));
 
-    private static LocalServiceControlResponse Failure(CliException exception) =>
+    internal static LocalServiceControlResponse Failure(CliException exception) =>
         new(
             0,
             string.Empty,
@@ -372,12 +372,6 @@ internal sealed class ViewerServiceHost : IDisposable
             Ok: false,
             Message: exception.Message,
             Result: JsonSerializer.SerializeToElement(
-                new ViewerFailure(
-                    exception.Code.Name,
-                    (int)exception.Code.ExitCode,
-                    exception.Message,
-                    exception.Hint,
-                    exception.Details,
-                    exception.Docs),
-                ViewerServiceJsonContext.Default.ViewerFailure));
+                WireError.From(exception),
+                ViewerServiceJsonContext.Default.WireError));
 }

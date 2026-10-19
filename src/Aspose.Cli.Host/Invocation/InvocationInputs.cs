@@ -63,8 +63,8 @@ internal sealed class InvocationInputs : IDisposable
             requests = new AnonymousPipeClientStream(PipeDirection.Out, requestHandle);
             ProcessPipeHandles.PreventInheritance(replies);
             ProcessPipeHandles.PreventInheritance(requests);
-            InvocationStartMessage message = ProcessPipeMessages.ReadAsync<InvocationStartMessage>(
-                replies, CancellationToken.None, MaximumMessageBytes).GetAwaiter().GetResult();
+            InvocationStartMessage message = ProcessFrames.ReadAsync(
+                replies, InvocationJsonContext.Default.InvocationStartMessage, CancellationToken.None, MaximumMessageBytes).GetAwaiter().GetResult();
             return new InvocationInputs(message, replies, requests);
         }
         catch
@@ -81,11 +81,12 @@ internal sealed class InvocationInputs : IDisposable
         _gate.Wait(cancellationToken);
         try
         {
-            ProcessPipeMessages.WriteAsync(_requests,
-                new EnvironmentValueRequest(name, maximumCharacters), cancellationToken, MaximumMessageBytes)
+            ProcessFrames.WriteAsync(_requests,
+                new EnvironmentValueRequest(name, maximumCharacters), InvocationJsonContext.Default.EnvironmentValueRequest,
+                cancellationToken, MaximumMessageBytes)
                 .WaitAsync(cancellationToken).GetAwaiter().GetResult();
-            return ProcessPipeMessages.ReadAsync<EnvironmentValueReply>(
-                _replies, cancellationToken, MaximumMessageBytes, reserve)
+            return ProcessFrames.ReadAsync(
+                _replies, InvocationJsonContext.Default.EnvironmentValueReply, cancellationToken, MaximumMessageBytes, reserve)
                 .WaitAsync(cancellationToken).GetAwaiter().GetResult();
         }
         finally { _gate.Release(); }
@@ -105,3 +106,11 @@ internal sealed record InvocationStartMessage(
     bool EvaluationRequested = false);
 internal sealed record EnvironmentValueRequest(string Name, long MaximumCharacters);
 internal sealed record EnvironmentValueReply(string? Value, long? OversizedCharacters = null);
+
+[System.Text.Json.Serialization.JsonSourceGenerationOptions(
+    System.Text.Json.JsonSerializerDefaults.Web,
+    DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+[System.Text.Json.Serialization.JsonSerializable(typeof(InvocationStartMessage))]
+[System.Text.Json.Serialization.JsonSerializable(typeof(EnvironmentValueRequest))]
+[System.Text.Json.Serialization.JsonSerializable(typeof(EnvironmentValueReply))]
+internal sealed partial class InvocationJsonContext : System.Text.Json.Serialization.JsonSerializerContext;

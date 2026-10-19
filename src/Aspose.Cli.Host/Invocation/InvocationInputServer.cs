@@ -29,14 +29,14 @@ internal sealed class InvocationInputServer : IDisposable
     {
         _replies.DisposeLocalCopyOfClientHandle();
         _requests.DisposeLocalCopyOfClientHandle();
-        await ProcessPipeMessages.WriteAsync(_replies, new InvocationStartMessage(
+        await ProcessFrames.WriteAsync(_replies, new InvocationStartMessage(
             1, inherited?.WorkDir, inherited?.LicensePath, inherited?.MaxInputBytes,
             inherited?.EvaluationRequested == true),
-            cancellationToken, InvocationInputs.MaximumMessageBytes).ConfigureAwait(false);
+            InvocationJsonContext.Default.InvocationStartMessage, cancellationToken, InvocationInputs.MaximumMessageBytes).ConfigureAwait(false);
         while (true)
         {
-            EnvironmentValueRequest? request = await ProcessPipeMessages.ReadOrEndAsync<EnvironmentValueRequest>(
-                _requests, cancellationToken, InvocationInputs.MaximumMessageBytes).ConfigureAwait(false);
+            EnvironmentValueRequest? request = await ProcessFrames.ReadOrEndAsync(
+                _requests, InvocationJsonContext.Default.EnvironmentValueRequest, cancellationToken, InvocationInputs.MaximumMessageBytes).ConfigureAwait(false);
             if (request is null) { return; }
             if (string.IsNullOrEmpty(request.Name) || request.Name.IndexOfAny(['\0', '=']) >= 0
                 || request.MaximumCharacters is < 0 or > ResourceBudgetDefaults.MaximumSecretCharacters)
@@ -55,7 +55,7 @@ internal sealed class InvocationInputServer : IDisposable
                     ? new EnvironmentValueReply(null, value.Length)
                     : new EnvironmentValueReply(value);
             }
-            await ProcessPipeMessages.WriteAsync(_replies, reply,
+            await ProcessFrames.WriteAsync(_replies, reply, InvocationJsonContext.Default.EnvironmentValueReply,
                 cancellationToken, InvocationInputs.MaximumMessageBytes).ConfigureAwait(false);
         }
     }

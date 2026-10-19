@@ -8,4 +8,5 @@ namespace Aspose.Cli.Host.LocalServices;
     DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull)]
 [JsonSerializable(typeof(LocalServiceControlRequest))]
 [JsonSerializable(typeof(LocalServiceControlResponse))]
+[JsonSerializable(typeof(ServiceStartSecrets))]
 internal sealed partial class LocalServiceJsonContext : JsonSerializerContext;

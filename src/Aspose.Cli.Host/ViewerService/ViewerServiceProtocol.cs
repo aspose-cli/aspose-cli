@@ -195,15 +195,6 @@ internal sealed record ViewerAppResponse
     public string? File { get; init; }
 }
 
-/// <summary>Why the service refused a request, as the command would report it.</summary>
-internal sealed record ViewerFailure(
-    string Code,
-    int Exit,
-    string Message,
-    string? Hint = null,
-    System.Text.Json.Nodes.JsonObject? Details = null,
-    string? Docs = null);
-
 /// <summary>Where the running viewer service can be found.</summary>
 internal sealed record ViewerServiceMarker(
     string Id,
@@ -227,7 +218,7 @@ internal sealed record ViewerServiceSecrets(WireSecret Token);
 [JsonSerializable(typeof(ViewerStopResponse))]
 [JsonSerializable(typeof(ViewerAppRequest))]
 [JsonSerializable(typeof(ViewerAppResponse))]
-[JsonSerializable(typeof(ViewerFailure))]
+[JsonSerializable(typeof(WireError))]
 [JsonSerializable(typeof(ViewerServiceMarker))]
 [JsonSerializable(typeof(ViewerServiceSecrets))]
 internal sealed partial class ViewerServiceJsonContext : System.Text.Json.Serialization.JsonSerializerContext;

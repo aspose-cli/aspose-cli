@@ -121,9 +121,9 @@ internal sealed class RenderWorkerSupervisor : IDisposable
     private static async Task<RenderWorkerResponse?> ExchangeAsync(
         Worker worker, RenderWorkerRequest request, CancellationToken token)
     {
-        await ProcessPipeMessages.WriteAsync(worker.Input, request, token).ConfigureAwait(false);
-        RenderWorkerResponse? response = await ProcessPipeMessages
-            .ReadOrEndAsync<RenderWorkerResponse>(worker.Output, token).ConfigureAwait(false);
+        await ProcessFrames.WriteAsync(worker.Input, request, RenderWorkerJsonContext.Default.RenderWorkerRequest, token).ConfigureAwait(false);
+        RenderWorkerResponse? response = await ProcessFrames
+            .ReadOrEndAsync(worker.Output, RenderWorkerJsonContext.Default.RenderWorkerResponse, token).ConfigureAwait(false);
         if (response is not null && response.Id != request.Id)
         { throw new InvalidDataException("The render worker returned a mismatched response."); }
         return response;
@@ -189,7 +189,7 @@ internal sealed class RenderWorkerSupervisor : IDisposable
         requested > 0 ? Math.Min(requested, (int)_timeout.TotalMilliseconds) : (int)_timeout.TotalMilliseconds;
 
     private static RenderWorkerResponse Failure(RenderWorkerRequest request, ErrorCode code, string message) =>
-        new() { Id = request.Id, Ok = false, Code = code.Name, Exit = (int)code.ExitCode, Message = message };
+        new() { Id = request.Id, Ok = false, Error = new WireError(code.Name, (int)code.ExitCode, message) };
 
     private sealed record Worker(OwnedProcess Owned)
     {

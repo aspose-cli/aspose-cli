@@ -1,22 +1,23 @@
 using System.Buffers.Binary;
 using System.Security.Cryptography;
 using System.Text.Json;
-using System.Text.Json.Serialization;
+using System.Text.Json.Serialization.Metadata;
 
 namespace Aspose.Cli.Host.LocalServices;
 
-/// <summary>Length-prefixed, bounded private process messages. Payload buffers are cleared after use.</summary>
-internal static class ProcessPipeMessages
+/// <summary>
+/// The one frame format the Host's own processes exchange: a little-endian length, then that
+/// many bytes of JSON written by a source-generated context. Lengths are bounded before a
+/// payload is read, and payload buffers are cleared after use because frames carry secrets.
+/// </summary>
+internal static class ProcessFrames
 {
     internal const int MaximumBytes = 64 * 1024;
-    private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web)
-    {
-        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
-    };
 
-    internal static async Task WriteAsync<T>(Stream stream, T value, CancellationToken cancellationToken, int maximumBytes = MaximumBytes)
+    internal static async Task WriteAsync<T>(
+        Stream stream, T value, JsonTypeInfo<T> type, CancellationToken cancellationToken, int maximumBytes = MaximumBytes)
     {
-        byte[] payload = JsonSerializer.SerializeToUtf8Bytes(value, JsonOptions);
+        byte[] payload = JsonSerializer.SerializeToUtf8Bytes(value, type);
         try
         {
             if (payload.Length <= 0 || payload.Length > maximumBytes)
@@ -32,12 +33,13 @@ internal static class ProcessPipeMessages
         finally { CryptographicOperations.ZeroMemory(payload); }
     }
 
-    internal static async Task<T> ReadAsync<T>(Stream stream, CancellationToken cancellationToken,
+    internal static async Task<T> ReadAsync<T>(Stream stream, JsonTypeInfo<T> type, CancellationToken cancellationToken,
         int maximumBytes = MaximumBytes, Action<int>? reserve = null) where T : class =>
-        await ReadOrEndAsync<T>(stream, cancellationToken, maximumBytes, reserve).ConfigureAwait(false)
+        await ReadOrEndAsync(stream, type, cancellationToken, maximumBytes, reserve).ConfigureAwait(false)
             ?? throw new EndOfStreamException("The private process channel ended before its next message.");
 
-    internal static async Task<T?> ReadOrEndAsync<T>(Stream stream, CancellationToken cancellationToken,
+    /// <summary>Reads the next frame, or returns null when the channel ends between frames.</summary>
+    internal static async Task<T?> ReadOrEndAsync<T>(Stream stream, JsonTypeInfo<T> type, CancellationToken cancellationToken,
         int maximumBytes = MaximumBytes, Action<int>? reserve = null) where T : class
     {
         byte[] header = new byte[sizeof(int)];
@@ -53,7 +55,7 @@ internal static class ProcessPipeMessages
         try
         {
             await stream.ReadExactlyAsync(payload, cancellationToken).ConfigureAwait(false);
-            return JsonSerializer.Deserialize<T>(payload, JsonOptions)
+            return JsonSerializer.Deserialize(payload, type)
                 ?? throw new InvalidDataException("The private process message is empty.");
         }
         finally { CryptographicOperations.ZeroMemory(payload); }

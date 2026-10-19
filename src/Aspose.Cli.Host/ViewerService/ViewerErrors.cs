@@ -8,14 +8,8 @@ internal static class ViewerErrors
     public static CliException FromWorker(RenderWorkerResponse response, string source)
     {
         ArgumentNullException.ThrowIfNull(response);
-        int exit = response.Exit > 0 ? response.Exit : (int)ExitCode.Internal;
-        return CliErrors.FromRemote(
-            response.Code ?? ErrorCodes.Internal.Name,
-            (ExitCode)exit,
-            response.Message ?? $"The viewer could not render {Path.GetFileName(source)}.",
-            response.Hint,
-            response.Details,
-            response.Docs);
+        return response.Error?.ToException()
+            ?? CliErrors.Internal($"The viewer could not render {Path.GetFileName(source)}.");
     }
 
     /// <summary>Rejects a view the product does not declare, naming the ones it does.</summary>

@@ -11,7 +11,7 @@ using Xunit;
 
 namespace Aspose.Cli.Host.Tests;
 
-public sealed class ProcessFramesTests
+public sealed partial class ProcessFramesTests
 {
     [Theory]
     [InlineData("", ResourceBudgetDefaults.DefaultInputBytes)]
@@ -33,14 +33,14 @@ public sealed class ProcessFramesTests
     [Theory]
     [InlineData(-1)]
     [InlineData(0)]
-    [InlineData(ProcessPipeMessages.MaximumBytes + 1)]
+    [InlineData(ProcessFrames.MaximumBytes + 1)]
     public async Task Read_RejectsLengthBeforeReadingPayload(int length)
     {
         byte[] header = new byte[4];
         BinaryPrimitives.WriteInt32LittleEndian(header, length);
         using var input = new MemoryStream(header);
         await Assert.ThrowsAsync<InvalidDataException>(() =>
-            ProcessPipeMessages.ReadAsync<string>(input, CancellationToken.None));
+            ProcessFrames.ReadAsync(input, TestFrameContext.Default.String, CancellationToken.None));
     }
 
     [Fact]
@@ -48,7 +48,7 @@ public sealed class ProcessFramesTests
     {
         using var input = new MemoryStream([10, 0, 0, 0, 123]);
         await Assert.ThrowsAsync<EndOfStreamException>(() =>
-            ProcessPipeMessages.ReadAsync<string>(input, CancellationToken.None));
+            ProcessFrames.ReadAsync(input, TestFrameContext.Default.String, CancellationToken.None));
     }
 
     [Fact]
@@ -56,7 +56,8 @@ public sealed class ProcessFramesTests
     {
         using var output = new MemoryStream();
         await Assert.ThrowsAsync<InvalidDataException>(() =>
-            ProcessPipeMessages.WriteAsync(output, new string('x', ProcessPipeMessages.MaximumBytes), CancellationToken.None));
+            ProcessFrames.WriteAsync(output, new string('x', ProcessFrames.MaximumBytes), TestFrameContext.Default.String,
+                CancellationToken.None));
         Assert.Equal(0, output.Length);
     }
 
@@ -67,12 +68,12 @@ public sealed class ProcessFramesTests
         string?[] expected = [null, "", "arbitrary \" \u03bb \u4e2d\nvalue"];
         foreach (string? value in expected)
         {
-            await ProcessPipeMessages.WriteAsync(pipe, new Message(value), CancellationToken.None);
+            await ProcessFrames.WriteAsync(pipe, new FrameMessage(value), TestFrameContext.Default.FrameMessage, CancellationToken.None);
         }
         pipe.Position = 0;
         foreach (string? value in expected)
         {
-            Assert.Equal(value, (await ProcessPipeMessages.ReadAsync<Message>(pipe, CancellationToken.None)).Value);
+            Assert.Equal(value, (await ProcessFrames.ReadAsync(pipe, TestFrameContext.Default.FrameMessage, CancellationToken.None)).Value);
         }
         Assert.Equal(pipe.Length, pipe.Position);
     }
@@ -82,7 +83,7 @@ public sealed class ProcessFramesTests
     {
         using var input = new MemoryStream([12, 0, 0, 0]);
         await Assert.ThrowsAsync<OutOfMemoryException>(() =>
-            ProcessPipeMessages.ReadAsync<Message>(input, CancellationToken.None,
+            ProcessFrames.ReadAsync(input, TestFrameContext.Default.FrameMessage, CancellationToken.None,
                 reserve: _ => throw new OutOfMemoryException("Synthetic budget refusal.")));
         Assert.Equal(4, input.Position);
     }
@@ -91,10 +92,10 @@ public sealed class ProcessFramesTests
     public async Task EndOfStream_IsAllowedOnlyBetweenFrames()
     {
         using var empty = new MemoryStream();
-        Assert.Null(await ProcessPipeMessages.ReadOrEndAsync<Message>(empty, CancellationToken.None));
+        Assert.Null(await ProcessFrames.ReadOrEndAsync(empty, TestFrameContext.Default.FrameMessage, CancellationToken.None));
         using var truncated = new MemoryStream([10, 0]);
         await Assert.ThrowsAsync<EndOfStreamException>(() =>
-            ProcessPipeMessages.ReadOrEndAsync<Message>(truncated, CancellationToken.None));
+            ProcessFrames.ReadOrEndAsync(truncated, TestFrameContext.Default.FrameMessage, CancellationToken.None));
     }
 
     /// <summary>
@@ -125,41 +126,38 @@ public sealed class ProcessFramesTests
             FontDirectories = [@"C:\fonts", "λ"],
             Presentation = true,
         };
-        await AssertFrame(request, (stream, value) => ProcessPipeMessages.WriteAsync(stream, value, CancellationToken.None));
+        await AssertFrame(request, (stream, value) => ProcessFrames.WriteAsync(stream, value, RenderWorkerJsonContext.Default.RenderWorkerRequest, CancellationToken.None));
         await AssertFrame(new RenderWorkerRequest { Id = 1, Source = "a", Output = "b", MaxPartCount = 1, TimeoutMs = 1 },
-            (stream, value) => ProcessPipeMessages.WriteAsync(stream, value, CancellationToken.None));
+            (stream, value) => ProcessFrames.WriteAsync(stream, value, RenderWorkerJsonContext.Default.RenderWorkerRequest, CancellationToken.None));
         await AssertFrame(new InvocationStartMessage(1, @"C:\work", null, 123, EvaluationRequested: true),
-            (stream, value) => ProcessPipeMessages.WriteAsync(stream, value, CancellationToken.None));
+            (stream, value) => ProcessFrames.WriteAsync(stream, value, InvocationJsonContext.Default.InvocationStartMessage, CancellationToken.None));
         await AssertFrame(new InvocationStartMessage(1, null, @"C:\l.lic", null),
-            (stream, value) => ProcessPipeMessages.WriteAsync(stream, value, CancellationToken.None));
+            (stream, value) => ProcessFrames.WriteAsync(stream, value, InvocationJsonContext.Default.InvocationStartMessage, CancellationToken.None));
         await AssertFrame(new EnvironmentValueRequest("ASPOSE_PASSWORD", 1024),
-            (stream, value) => ProcessPipeMessages.WriteAsync(stream, value, CancellationToken.None));
+            (stream, value) => ProcessFrames.WriteAsync(stream, value, InvocationJsonContext.Default.EnvironmentValueRequest, CancellationToken.None));
         await AssertFrame(new EnvironmentValueReply("välue \"<&>\""),
-            (stream, value) => ProcessPipeMessages.WriteAsync(stream, value, CancellationToken.None));
+            (stream, value) => ProcessFrames.WriteAsync(stream, value, InvocationJsonContext.Default.EnvironmentValueReply, CancellationToken.None));
         await AssertFrame(new EnvironmentValueReply(null, 70_000),
-            (stream, value) => ProcessPipeMessages.WriteAsync(stream, value, CancellationToken.None));
+            (stream, value) => ProcessFrames.WriteAsync(stream, value, InvocationJsonContext.Default.EnvironmentValueReply, CancellationToken.None));
         await AssertFrame(new ServiceStartSecrets
         {
             WorkDirectory = @"C:\work",
             LicensePath = @"C:\l.lic",
             ServiceToken = secret,
             ServiceNonce = "nonce",
-        }, (stream, value) => ProcessPipeMessages.WriteAsync(stream, value, CancellationToken.None));
+        }, (stream, value) => ProcessFrames.WriteAsync(stream, value, LocalServiceJsonContext.Default.ServiceStartSecrets, CancellationToken.None));
         await AssertFrame(
             new LocalServiceControlRequest(1, "request", "viewer", "instance", "nonce", secret, "open",
                 Path: @"C:\docs\report é.docx", Payload: "{\"file\":\"a\"}", ExpiresAtTick: 42),
-            (stream, value) => LocalServiceControlCodec.WriteFrameAsync(
-                stream, LocalServiceControlCodec.Serialize(value), CancellationToken.None));
+            (stream, value) => LocalServiceControlCodec.WriteAsync(stream, value, CancellationToken.None));
         await AssertFrame(
             new LocalServiceControlResponse(1, "request", "viewer", "instance", "nonce", Ok: false, Message: "No <file>.",
                 Result: JsonSerializer.SerializeToElement(new JsonObject { ["code"] = "X", ["details"] = new JsonObject { ["suggestions"] = new JsonArray("a", "é") } })),
-            (stream, value) => LocalServiceControlCodec.WriteFrameAsync(
-                stream, LocalServiceControlCodec.Serialize(value), CancellationToken.None));
+            (stream, value) => LocalServiceControlCodec.WriteAsync(stream, value, CancellationToken.None));
         await AssertFrame(
             new LocalServiceControlResponse(1, "request", "viewer", "instance", "nonce", Ok: true,
                 Result: JsonSerializer.SerializeToElement(new JsonObject { ["pid"] = 42, ["url"] = "http://127.0.0.1:1/" })),
-            (stream, value) => LocalServiceControlCodec.WriteFrameAsync(
-                stream, LocalServiceControlCodec.Serialize(value), CancellationToken.None));
+            (stream, value) => LocalServiceControlCodec.WriteAsync(stream, value, CancellationToken.None));
 
         // A running viewer service may be older than the CLI asking it: its failure result is the
         // one payload that crosses versions, so its bytes stay fixed.
@@ -172,19 +170,18 @@ public sealed class ProcessFramesTests
         await AssertFrame(
             new LocalServiceControlResponse(1, "request", "viewer", "instance", "nonce", Ok: false,
                 Message: "No sheet Salez.", Result: failure),
-            (stream, value) => LocalServiceControlCodec.WriteFrameAsync(
-                stream, LocalServiceControlCodec.Serialize(value), CancellationToken.None));
+            (stream, value) => LocalServiceControlCodec.WriteAsync(stream, value, CancellationToken.None));
     }
 
     private static JsonElement ViewerFailureResult() => JsonSerializer.SerializeToElement(
-        new ViewerFailure(
+        new WireError(
             "SHEET_NOT_FOUND",
             (int)Aspose.Cli.Sdk.Errors.ExitCode.InputError,
             "No sheet Salez.",
             "Use one of details.suggestions.",
             new JsonObject { ["requested"] = "Salez", ["suggestions"] = new JsonArray("Sales", "Sale") },
             "cells/sheets"),
-        ViewerServiceJsonContext.Default.ViewerFailure);
+        ViewerServiceJsonContext.Default.WireError);
 
     /// <summary>A frame reads its property names in any case and its numbers from strings.</summary>
     [Fact]
@@ -196,7 +193,8 @@ public sealed class ProcessFramesTests
         input.Write(json);
         input.Position = 0;
 
-        RenderWorkerRequest request = await ProcessPipeMessages.ReadAsync<RenderWorkerRequest>(input, CancellationToken.None);
+        RenderWorkerRequest request = await ProcessFrames.ReadAsync(
+            input, RenderWorkerJsonContext.Default.RenderWorkerRequest, CancellationToken.None);
 
         Assert.Equal((3, "a", "b", 8, 100, 12L),
             (request.Id, request.Source, request.Output, request.MaxPartCount, request.TimeoutMs, request.MaxInputBytes));
@@ -217,5 +215,10 @@ public sealed class ProcessFramesTests
         Assert.Equal(Convert.ToHexString(expected), Convert.ToHexString(actual.ToArray()));
     }
 
-    private sealed record Message(string? Value);
+    private sealed record FrameMessage(string? Value);
+
+    [JsonSourceGenerationOptions(JsonSerializerDefaults.Web, DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonSerializable(typeof(FrameMessage))]
+    [JsonSerializable(typeof(string))]
+    private sealed partial class TestFrameContext : JsonSerializerContext;
 }

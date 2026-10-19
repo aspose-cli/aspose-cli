@@ -47,9 +47,11 @@ public sealed class HostSecretTests : IDisposable
     public async Task RenderWorkerRequest_CarriesThePasswordToTheWorker()
     {
         using var frames = new MemoryStream();
-        await ProcessPipeMessages.WriteAsync(frames, RenderRequest(Sentinel), CancellationToken.None);
+        await ProcessFrames.WriteAsync(
+            frames, RenderRequest(Sentinel), RenderWorkerJsonContext.Default.RenderWorkerRequest, CancellationToken.None);
         frames.Position = 0;
-        RenderWorkerRequest received = await ProcessPipeMessages.ReadAsync<RenderWorkerRequest>(frames, CancellationToken.None);
+        RenderWorkerRequest received = await ProcessFrames.ReadAsync(
+            frames, RenderWorkerJsonContext.Default.RenderWorkerRequest, CancellationToken.None);
 
         Assert.Equal(Sentinel, received.Password?.ToSecret().Reveal());
     }
@@ -69,8 +71,8 @@ public sealed class HostSecretTests : IDisposable
         RenderWorkerResponse opened = supervisor.Render(RenderRequest(Sentinel, _workspace.File("secret.docx"), Output()));
 
         Assert.False(locked.Ok);
-        Assert.Equal(ErrorCodes.PasswordRequired.Name, locked.Code);
-        Assert.True(opened.Ok, $"{opened.Code} {opened.Message}");
+        Assert.Equal(ErrorCodes.PasswordRequired.Name, locked.Error?.Code);
+        Assert.True(opened.Ok, $"{opened.Error?.Code} {opened.Error?.Message}");
     }
 
     [Fact]
@@ -103,18 +105,19 @@ public sealed class HostSecretTests : IDisposable
     public async Task LocalServiceFrames_KeepTheTokenAsAJsonString()
     {
         var request = new LocalServiceControlRequest(1, "request", "viewer", "instance", "nonce", Token(Sentinel), "ping");
-        byte[] payload = LocalServiceControlCodec.Serialize(request);
+        byte[] payload = JsonSerializer.SerializeToUtf8Bytes(request, LocalServiceJsonContext.Default.LocalServiceControlRequest);
         Assert.Equal(Sentinel, JsonNode.Parse(payload)!["token"]!.GetValue<string>());
         LocalServiceControlRequest received = JsonSerializer.Deserialize(payload, LocalServiceJsonContext.Default.LocalServiceControlRequest)!;
         Assert.Equal(Sentinel, Reveal(received.Token));
 
         using var frames = new MemoryStream();
-        await ProcessPipeMessages.WriteAsync(
+        await ProcessFrames.WriteAsync(
             frames, new ServiceStartSecrets { WorkDirectory = "work", ServiceToken = Token(Sentinel), ServiceNonce = "nonce" },
-            CancellationToken.None);
+            LocalServiceJsonContext.Default.ServiceStartSecrets, CancellationToken.None);
         Assert.Equal(Sentinel, JsonNode.Parse(frames.ToArray().AsSpan(sizeof(int)))!["serviceToken"]!.GetValue<string>());
         frames.Position = 0;
-        ServiceStartSecrets start = await ProcessPipeMessages.ReadAsync<ServiceStartSecrets>(frames, CancellationToken.None);
+        ServiceStartSecrets start = await ProcessFrames.ReadAsync(
+            frames, LocalServiceJsonContext.Default.ServiceStartSecrets, CancellationToken.None);
         Assert.Equal(Sentinel, Reveal(start.ServiceToken));
     }
 
