@@ -97,9 +97,7 @@ internal sealed partial class WordsMutationHandlers
         }
 
         Row template = TemplateRow(table, operation.Row);
-        IReadOnlyList<IReadOnlyDictionary<string, string?>> items = operation.Items is { } inline
-            ? MergeRows(inline)
-            : ReadMergeRows(operation.Path!, _inputs);
+        IReadOnlyList<IReadOnlyDictionary<string, string?>> items = WordsMergeData.Rows(operation.Items, operation.Path, _inputs);
         string[] keys = Placeholder.Matches(WordsText.Of(template))
             .Select(static match => match.Groups[1].Value)
             .Distinct(StringComparer.Ordinal)
