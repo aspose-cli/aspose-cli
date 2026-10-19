@@ -1,5 +1,4 @@
 ﻿using Aspose.Cli.Sdk.Extensibility;
-using Aspose.Cli.Sdk.Views;
 using Aspose.Cli.TestKit;
 using Aspose.Slides;
 using Aspose.Slides.Charts;
@@ -147,7 +146,7 @@ public sealed class SlidesReviewCheckTests
         box.TextFrame.Text = "A summary line";
         box.TextFrame.TextFrameFormat.AnchoringType = Aspose.Slides.TextAnchorType.Top;
 
-        SlidesRect rect = Assert.IsType<SlidesRect>(Engine.Mapping.SlidesReviewProjection.TextRect(box));
+        SlidesRect rect = Assert.IsType<SlidesRect>(SlidesReviewProjection.TextRect(box));
 
         Assert.InRange(rect.Y, 150, 170);
         Assert.InRange(rect.Height, 10, 60);
@@ -224,14 +223,14 @@ public sealed class SlidesReviewCheckTests
             Output = TestOutput.At(edited),
         });
 
-        SlidesReviewAnalysis before = Review(fixture, deck);
-        SlidesReviewAnalysis after = Review(fixture, edited);
+        ProductReviewAssessment before = fixture.Review(deck);
+        ProductReviewAssessment after = fixture.Review(edited);
 
-        Assert.DoesNotContain(before.Findings, static finding => finding.Code.StartsWith("SLIDES_TEXT_O", StringComparison.Ordinal));
-        ReviewFinding finding = Assert.Single(after.Findings, static finding => finding.Code == SlidesReviewChecks.TextOutsideSlide.Code);
+        Assert.DoesNotContain(before.Findings!, static finding => finding.Code.StartsWith("SLIDES_TEXT_O", StringComparison.Ordinal));
+        ReviewFinding finding = Assert.Single(after.Findings!, static finding => finding.Code == SlidesReviewChecks.TextOutsideSlide.Code);
         Assert.Equal("slide 2", finding.Location);
         Assert.Contains("top edge", finding.Message, StringComparison.Ordinal);
-        Assert.DoesNotContain(after.Findings, static finding => finding.Code == SlidesReviewChecks.ShapeOutsideSlide.Code);
+        Assert.DoesNotContain(after.Findings!, static finding => finding.Code == SlidesReviewChecks.ShapeOutsideSlide.Code);
     }
 
     [Fact]
@@ -262,9 +261,9 @@ public sealed class SlidesReviewCheckTests
             Output = TestOutput.At(deck),
         });
 
-        SlidesReviewAnalysis analysis = Review(fixture, deck);
+        ProductReviewAssessment review = fixture.Review(deck);
 
-        ReviewFinding finding = Assert.Single(analysis.Findings, static finding => finding.Code == SlidesReviewChecks.TextOverflowsShape.Code);
+        ReviewFinding finding = Assert.Single(review.Findings!, static finding => finding.Code == SlidesReviewChecks.TextOverflowsShape.Code);
         Assert.Contains("rectangle", finding.Message, StringComparison.Ordinal);
         Assert.Contains("of the bottom of its shape", finding.Message, StringComparison.Ordinal);
     }
@@ -289,12 +288,14 @@ public sealed class SlidesReviewCheckTests
             presentation.Save(deck, SaveFormat.Pptx);
         }
 
-        SlidesReadResult read = SlidesRead.Run(fixture.Session, new SlidesReadRequest { Input = deck, Content = SlidesReadContents.Full });
-        SlidesShapeData shape = Assert.Single(read.Slides[0].Shapes, static shape => shape.Text == "Q3 up");
-        SlidesRect lines = Assert.IsType<SlidesRect>(shape.TextRect);
-        Assert.True(lines.Y < shape.Rect.Y && lines.Y + lines.Height > shape.Rect.Y + shape.Rect.Height, "The line spacing reaches past the box.");
+        using (var saved = new Presentation(deck))
+        {
+            IShape shape = saved.Slides[0].Shapes[0];
+            SlidesRect lines = Assert.IsType<SlidesRect>(SlidesReviewProjection.TextRect(shape));
+            Assert.True(lines.Y < shape.Y && lines.Y + lines.Height > shape.Y + shape.Height, "The line spacing reaches past the box.");
+        }
 
-        Assert.DoesNotContain(Review(fixture, deck).Findings, static finding => finding.Code.StartsWith("SLIDES_TEXT_O", StringComparison.Ordinal));
+        Assert.DoesNotContain(fixture.Review(deck).Findings!, static finding => finding.Code.StartsWith("SLIDES_TEXT_O", StringComparison.Ordinal));
     }
 
     /// <summary>
@@ -335,18 +336,20 @@ public sealed class SlidesReviewCheckTests
             }
 
             Assert.Equal(3, paragraph.GetLinesCount());
-            box.Height = boxHeight > 0 ? boxHeight : (float)Engine.Mapping.SlidesReviewProjection.TextRect(box)!.Height - 2;
+            box.Height = boxHeight > 0 ? boxHeight : (float)SlidesReviewProjection.TextRect(box)!.Height - 2;
             box.Y = 250 - (box.Height / 2);
             presentation.Save(deck, SaveFormat.Pptx);
         }
 
-        SlidesReadResult read = SlidesRead.Run(fixture.Session, new SlidesReadRequest { Input = deck, Content = SlidesReadContents.Full });
-        SlidesShapeData shape = Assert.Single(read.Slides[0].Shapes, static shape => shape.TextRect is not null && !shape.EvaluationWatermark);
-        SlidesRect lines = shape.TextRect!;
-        double past = Math.Max(shape.Rect.Y - lines.Y, lines.Y + lines.Height - (shape.Rect.Y + shape.Rect.Height));
-        Assert.InRange(past, 0.5, 4);
+        using (var saved = new Presentation(deck))
+        {
+            IShape shape = saved.Slides[0].Shapes[0];
+            SlidesRect lines = Assert.IsType<SlidesRect>(SlidesReviewProjection.TextRect(shape));
+            double past = Math.Max(shape.Y - lines.Y, lines.Y + lines.Height - (shape.Y + shape.Height));
+            Assert.InRange(past, 0.5, 4);
+        }
 
-        Assert.DoesNotContain(Review(fixture, deck).Findings, static finding => finding.Code.StartsWith("SLIDES_TEXT_O", StringComparison.Ordinal));
+        Assert.DoesNotContain(fixture.Review(deck).Findings!, static finding => finding.Code.StartsWith("SLIDES_TEXT_O", StringComparison.Ordinal));
     }
 
     [Fact]
@@ -360,7 +363,7 @@ public sealed class SlidesReviewCheckTests
         string deck = fixture.File("long-bullets.pptx");
         SlidesCreate.Run(fixture.Session, new SlidesCreateRequest { Output = TestOutput.At(deck), Markdown = new SourceFile("--from-markdown", markdown) });
 
-        Assert.DoesNotContain(Review(fixture, deck).Findings, static finding => finding.Code == SlidesReviewChecks.TextOverflowsShape.Code);
+        Assert.DoesNotContain(fixture.Review(deck).Findings!, static finding => finding.Code == SlidesReviewChecks.TextOverflowsShape.Code);
     }
 
     [Fact]
@@ -375,12 +378,14 @@ public sealed class SlidesReviewCheckTests
         string deck = fixture.File("bilingual-risks.pptx");
         SlidesCreate.Run(fixture.Session, new SlidesCreateRequest { Output = TestOutput.At(deck), Markdown = new SourceFile("--from-markdown", markdown) });
 
-        SlidesReadResult read = SlidesRead.Run(fixture.Session, new SlidesReadRequest { Input = deck, Content = SlidesReadContents.Full });
-        SlidesShapeData body = Assert.Single(read.Slides[0].Shapes, static shape => shape.Placeholder == "body");
-        SlidesRect text = Assert.IsType<SlidesRect>(body.TextRect);
+        using (var saved = new Presentation(deck))
+        {
+            IShape body = Assert.Single(saved.Slides[0].Shapes, static shape => SlidesPlaceholders.Role(shape.Placeholder?.Type) == "body");
+            SlidesRect text = Assert.IsType<SlidesRect>(SlidesReviewProjection.TextRect(body));
+            Assert.InRange(text.X + text.Width, body.X, body.X + body.Width);
+        }
 
-        Assert.InRange(text.X + text.Width, body.Rect.X, body.Rect.X + body.Rect.Width);
-        Assert.DoesNotContain(Review(fixture, deck).Findings, static finding => finding.Code.StartsWith("SLIDES_TEXT_O", StringComparison.Ordinal));
+        Assert.DoesNotContain(fixture.Review(deck).Findings!, static finding => finding.Code.StartsWith("SLIDES_TEXT_O", StringComparison.Ordinal));
     }
 
     [Fact]
@@ -419,13 +424,13 @@ public sealed class SlidesReviewCheckTests
             presentation.Save(deck, SaveFormat.Pptx);
         }
 
-        SlidesReviewAnalysis analysis = Review(fixture, deck);
+        ProductReviewAssessment review = fixture.Review(deck);
 
-        ReviewFinding[] findings = [.. analysis.Findings.Where(static finding => finding.Code == SlidesReviewChecks.TextLowContrast.Code)];
+        ReviewFinding[] findings = [.. review.Findings!.Where(static finding => finding.Code == SlidesReviewChecks.TextLowContrast.Code)];
         Assert.Equal(["slide 1", "slide 2", "slide 6"], findings.Select(static finding => finding.Location));
         Assert.Contains("#000000 on #1B2A41", findings[0].Message, StringComparison.Ordinal);
         Assert.Contains("shapeId ", findings[1].Message, StringComparison.Ordinal);
-        Assert.Equal(3, analysis.LowContrastTexts);
+        Assert.Equal(3, SlidesEngineFixture.Metric(review, "lowContrastTexts"));
     }
 
     [Fact]
@@ -464,11 +469,11 @@ public sealed class SlidesReviewCheckTests
             }
         }
 
-        SlidesReviewAnalysis analysis = Review(fixture, deck);
+        ProductReviewAssessment review = fixture.Review(deck);
 
         Assert.Equal(
             ["slide 4"],
-            analysis.Findings.Where(static finding => finding.Code == SlidesReviewChecks.TextLowContrast.Code).Select(static finding => finding.Location));
+            review.Findings!.Where(static finding => finding.Code == SlidesReviewChecks.TextLowContrast.Code).Select(static finding => finding.Location));
     }
 
     private static IAutoShape TextBox(ISlide slide, string text, System.Drawing.Color? color = null)
@@ -507,18 +512,18 @@ public sealed class SlidesReviewCheckTests
             presentation.Save(deck, SaveFormat.Pptx);
         }
 
-        SlidesReviewAnalysis analysis = Review(fixture, deck);
+        ProductReviewAssessment review = fixture.Review(deck);
 
         if (fixture.LicenseState == Sdk.Licensing.LicenseState.Licensed)
         {
-            Assert.Null(analysis.ExcludedEvaluationMarks);
-            Assert.Contains(analysis.Findings, static finding => finding.Code == "SLIDES_EVALUATION_WATERMARK");
-            Assert.Contains(analysis.Findings, static finding => finding.Code != "SLIDES_EVALUATION_WATERMARK");
+            Assert.Null(SlidesEngineFixture.Metric(review, "excludedEvaluationMarks"));
+            Assert.Contains(review.Findings!, static finding => finding.Code == "SLIDES_EVALUATION_WATERMARK");
+            Assert.Contains(review.Findings!, static finding => finding.Code != "SLIDES_EVALUATION_WATERMARK");
         }
         else
         {
-            Assert.Equal(2, analysis.ExcludedEvaluationMarks);
-            ReviewFinding finding = Assert.Single(analysis.Findings);
+            Assert.Equal(2, SlidesEngineFixture.Metric(review, "excludedEvaluationMarks"));
+            ReviewFinding finding = Assert.Single(review.Findings!);
             Assert.Equal("SLIDES_EVALUATION_WATERMARK", finding.Code);
         }
     }
@@ -539,10 +544,10 @@ public sealed class SlidesReviewCheckTests
             presentation.Save(deck, SaveFormat.Pptx);
         }
 
-        SlidesReviewAnalysis analysis = Review(fixture, deck);
+        ProductReviewAssessment review = fixture.Review(deck);
 
         // An evaluation save of the test deck adds the one real watermark.
-        Assert.Equal(fixture.LicenseState == Sdk.Licensing.LicenseState.Licensed ? null : 1, analysis.ExcludedEvaluationMarks);
+        Assert.Equal(fixture.LicenseState == Sdk.Licensing.LicenseState.Licensed ? null : 1, SlidesEngineFixture.Metric(review, "excludedEvaluationMarks"));
     }
 
     /// <summary>
@@ -611,7 +616,7 @@ public sealed class SlidesReviewCheckTests
             presentation.Save(deck, SaveFormat.Pptx);
         }
 
-        ProductReviewAssessment assessment = Assess(fixture, deck);
+        ProductReviewAssessment assessment = fixture.Review(deck);
 
         string actual = string.Join(
             "\n",
@@ -625,36 +630,6 @@ public sealed class SlidesReviewCheckTests
             "Assets",
             license == Sdk.Licensing.LicenseState.Licensed ? "review-fixed-deck.licensed.txt" : "review-fixed-deck.evaluation.txt"));
         Assert.Equal(expected.ReplaceLineEndings("\n").TrimEnd('\n'), actual);
-    }
-
-    /// <summary>Reviews a deck through the view adapter, as the review command does.</summary>
-    private static ProductReviewAssessment Assess(SlidesEngineFixture fixture, string path)
-    {
-        var adapter = new SlidesViewAdapter();
-        var request = new ViewRenderRequest { View = SlidesViews.Slides, MaxPartCount = 100, Purpose = ViewPurpose.Evidence };
-        ViewManifest rendered = adapter.Render(fixture.Session, path, request, new DiscardedArtifacts());
-        return adapter.Assess(fixture.Session, path, request, rendered);
-    }
-
-    private sealed class DiscardedArtifacts : IViewArtifactSink
-    {
-        public void Write(string relativePath, Action<Stream> contentWriter)
-        {
-            using var stream = new MemoryStream();
-            contentWriter(stream);
-        }
-
-        public void WriteText(string relativePath, string content)
-        {
-        }
-    }
-
-    private static SlidesReviewAnalysis Review(SlidesEngineFixture fixture, string path)
-    {
-        SlidesPresentationSummary info = SlidesInfo.Run(fixture.Session, new SlidesInspectRequest { Input = path }).Presentation;
-        SlidesReadResult read = SlidesRead.Run(fixture.Session, new SlidesReadRequest { Input = path, Content = SlidesReadContents.Full });
-        return SlidesReviewAnalyzer.Analyze(
-            read.Slides, info.SlideSize.Width, info.SlideSize.Height, fixture.LicenseState == Sdk.Licensing.LicenseState.Evaluation);
     }
 
     private static SlidesShapeData TitleWithLines(long id, Rect frame, Rect lines) =>

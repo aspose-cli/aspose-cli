@@ -56,7 +56,7 @@ public sealed class SlidesTextCoverageTests
             Query = new Sdk.Text.SearchQuery(Sdk.Text.TextSearch.Create("q", regex: false, caseSensitive: false), 10, SlidesSearchScopes.Shapes),
         });
 
-        SlidesShapeData shape = Assert.Single(read.Slides[0].Shapes, static shape => !shape.EvaluationWatermark);
+        SlidesShapeData shape = Assert.Single(read.Slides[0].Shapes, static shape => !SlidesEngineFixture.IsEvaluationWatermark(shape.Text));
         Assert.Equal("q\nx y", shape.Text);
         Assert.Equal("q x y", Assert.Single(search.Hits).Context);
     }
@@ -237,7 +237,7 @@ public sealed class SlidesTextCoverageTests
 
         Assert.Equal(
             ["#1B2A41", "#000000"],
-            read.Slides[0].Shapes.Where(static shape => !shape.EvaluationWatermark).Select(static shape => Assert.Single(shape.Runs!).Color));
+            read.Slides[0].Shapes.Where(static shape => !SlidesEngineFixture.IsEvaluationWatermark(shape.Text)).Select(static shape => Assert.Single(shape.Runs!).Color));
     }
 
     [Fact]
@@ -257,7 +257,7 @@ public sealed class SlidesTextCoverageTests
 
         SlidesReadResult read = SlidesRead.Run(fixture.Session, new SlidesReadRequest { Input = input, Content = SlidesReadContents.Full });
 
-        SlidesTextRunData run = Assert.Single(read.Slides[0].Shapes.Single(static shape => !shape.EvaluationWatermark).Runs!);
+        SlidesTextRunData run = Assert.Single(read.Slides[0].Shapes.Single(static shape => !SlidesEngineFixture.IsEvaluationWatermark(shape.Text)).Runs!);
         Assert.Equal("Calibri", run.Font);
         Assert.Equal("SimSun", run.EastAsianFont);
     }

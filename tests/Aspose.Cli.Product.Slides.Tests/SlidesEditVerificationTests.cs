@@ -65,8 +65,9 @@ public sealed class SlidesEditVerificationTests
             result.Verification.CheckedOps);
         using var edited = new Presentation(output);
         Assert.Equal([ids[2], ids[0], ids[1]], edited.Slides.Select(static slide => slide.SlideId));
-        Assert.Equal("Z", SlidesEngineSupport.Title(edited.Slides.Single(slide => slide.SlideId == ids[0])));
-        Assert.Equal("Y", SlidesEngineSupport.Title(edited.Slides.Single(slide => slide.SlideId == ids[2])));
+        SlidesReadResult read = SlidesRead.Run(fixture.Session, new SlidesReadRequest { Input = output });
+        Assert.Equal("Z", read.Slides.Single(slide => slide.SlideId == ids[0]).Title);
+        Assert.Equal("Y", read.Slides.Single(slide => slide.SlideId == ids[2]).Title);
     }
 
     [Fact]

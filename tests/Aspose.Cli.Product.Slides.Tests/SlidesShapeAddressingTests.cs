@@ -302,7 +302,7 @@ public sealed class SlidesShapeAddressingTests
         Assert.Equal(
             ["rectangle", "rectangle", "picture", "table", "chart"],
             read.Slides[0].Shapes!
-                .Where(static shape => shape.ShapeName != "Title 1" && !shape.EvaluationWatermark)
+                .Where(static shape => shape.ShapeName != "Title 1" && !SlidesEngineFixture.IsEvaluationWatermark(shape.Text))
                 .Select(static shape =>
                 {
                     string name = Assert.IsType<string>(shape.ShapeName);
