@@ -44,6 +44,7 @@ internal static partial class ContractRules
 
     // ----- C-R03 (declared): a command group has no arguments and no options of its own --------
 
+    // rule-exemptions: begin
     /// <summary>
     /// The options a command group may declare besides the global ones every command inherits,
     /// each with its reason.
@@ -52,6 +53,7 @@ internal static partial class ContractRules
     [
         ("aspose-cli", "--version", "C-R35 requires the root's --version: one line, or the version schema with JSON output."),
     ];
+    // rule-exemptions: end
 
     private static IEnumerable<InvariantCase> R03Declared(CliCatalog catalog)
     {
@@ -278,6 +280,7 @@ internal static partial class ContractRules
 
     // ----- C-R11 (declared): every command that writes files has --overwrite and --dry-run --------
 
+    // rule-exemptions: begin
     /// <summary>The writing commands that have no <c>--overwrite</c>, each with its reason.</summary>
     private static readonly (string Command, string Reason)[] OverwriteExemptions =
     [
@@ -285,6 +288,7 @@ internal static partial class ContractRules
         ("skill install", "An installation puts the Skill in place and replaces the version this CLI installed; that is what install means."),
         ("update install", "An installation puts the release in place and replaces the installed one; that is what install means."),
     ];
+    // rule-exemptions: end
 
     /// <summary>
     /// The writing commands that declare their own output options: the host's, and a product's

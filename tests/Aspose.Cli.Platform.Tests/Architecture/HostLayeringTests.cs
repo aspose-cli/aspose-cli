@@ -56,6 +56,7 @@ public sealed class HostLayeringTests
         [$"{Root}.Commands"],
     ];
 
+    // rule-exemptions: begin
     /// <summary>
     /// The references allowed against the layering, each by the type that holds it and the
     /// namespace it reaches, with the reason it cannot point down.
@@ -68,6 +69,7 @@ public sealed class HostLayeringTests
             "The composition root builds the command tree and the schema catalog that every "
                 + "lower subsystem reaches through it."),
     ];
+    // rule-exemptions: end
 
     private static readonly Lazy<NamespaceGraph> Graph = new(BuildGraph);
 

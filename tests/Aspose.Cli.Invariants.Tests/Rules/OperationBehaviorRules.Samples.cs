@@ -54,11 +54,13 @@ internal sealed record OperationSample(
 
 internal static class OperationSamples
 {
+    // rule-exemptions: begin
     /// <summary>
     /// Operations of the catalog that have no sample, each with the reason; an entry whose
     /// operation has a sample, or is gone, fails the coverage case.
     /// </summary>
     public static IReadOnlyDictionary<string, string> Exempt { get; } = new Dictionary<string, string>(StringComparer.Ordinal);
+    // rule-exemptions: end
 
     /// <summary>One sample per operation of every product, and a labeled one for each case a rule names.</summary>
     public static IReadOnlyList<OperationSample> All { get; } =

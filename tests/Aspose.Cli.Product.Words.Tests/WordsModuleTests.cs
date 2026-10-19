@@ -13,6 +13,7 @@ public sealed class WordsModuleTests
     protected override IReadOnlyList<ProductSchemaSample> CanonicalInputs { get; } =
         [new(WordsOp.Catalog.SchemaId, WordsOperationSample.Batch)];
 
+    // rule-exemptions: begin
     protected override IReadOnlyDictionary<(string Schema, string Pointer), string> Homonyms { get; } =
         new Dictionary<(string Schema, string Pointer), string>
         {
@@ -21,6 +22,7 @@ public sealed class WordsModuleTests
             [("v2/words/inspect-result", "#/$defs/wordsRevisionData/properties/kind")] = "A revision's kind (insertion, deletion, move or format change), not a list, break or header kind.",
             [("v2/words/read-result", "#/$defs/wordsBlockData/properties/kind")] = "A read block's kind says whether it is a paragraph or a table, not a list, break or header kind.",
         };
+    // rule-exemptions: end
 
     [Fact]
     public void OperationBatch_RejectsNullOperations()

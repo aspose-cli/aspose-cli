@@ -1,5 +1,14 @@
 # Changes to the gates that judge every change need the owner's review.
 /tests/Aspose.Cli.Invariants.Tests/ @gordonge
 /tests/Aspose.Cli.TestKit/Scenarios/ @gordonge
+/tests/Aspose.Cli.Platform.Tests/Architecture/ @gordonge
+/tests/Aspose.Cli.Tests/Architecture/ @gordonge
+/src/Aspose.Cli.Sdk.Analyzers/ @gordonge
 /.editorconfig @gordonge
 /.github/workflows/ @gordonge
+# Rule exemptions outside those directories (scripts/require-approval.ps1 requires an owner for each).
+/tests/Aspose.Cli.Product.Cells.Tests/CellsModuleTests.cs @gordonge
+/tests/Aspose.Cli.Product.Slides.Tests/SlidesModuleTests.cs @gordonge
+/tests/Aspose.Cli.Product.Words.Tests/WordsModuleTests.cs @gordonge
+/scripts/require-approval.ps1 @gordonge
+/.github/CODEOWNERS @gordonge
