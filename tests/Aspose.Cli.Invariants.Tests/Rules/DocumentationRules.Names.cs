@@ -150,19 +150,22 @@ internal static partial class ContractRules
         {
             yield return $"the reading finds no mistaken name of a {kind.ToString().ToLowerInvariant()}, so it stopped matching";
         }
-        foreach (IGrouping<(string? Product, string Name), MistakenName> typed in mistaken.Names
+        // A mistaken name is typed where the command it stands for is: under that command's parent,
+        // a product, a group or the top level.
+        foreach (IGrouping<(string Parent, string Name), MistakenName> typed in mistaken.Names
             .Where(static name => name.Kind == MistakenKind.Command)
-            .GroupBy(static name => (name.Product, name.Name)))
+            .GroupBy(static name => (MistakenNames.ParentCommand(name.Meant), name.Name)))
         {
             string[] meant = [.. typed.Select(static name => name.Meant).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal)];
             using var workspace = new TempWorkspace();
-            CliResult result = workspace.Run(typed.Key.Product!, typed.Key.Name, "--output-format", "json");
+            string typedPath = typed.Key.Parent.Length == 0 ? typed.Key.Name : $"{typed.Key.Parent} {typed.Key.Name}";
+            CliResult result = workspace.Run([.. typedPath.Split(' '), "--output-format", "json"]);
             string[] suggested = JsonNode.Parse(result.StdErr.Length > 0 ? result.StdErr : result.StdOut)?["error"]?["details"]?["suggestions"] is JsonArray suggestions
                 ? [.. suggestions.Select(static suggestion => suggestion!.GetValue<string>())]
                 : [];
             if (!suggested.Take(meant.Length).Order(StringComparer.Ordinal).SequenceEqual(meant, StringComparer.Ordinal))
             {
-                yield return $"'aspose-cli {typed.Key.Product} {typed.Key.Name}' suggests [{string.Join(", ", suggested)}] first, but the table reads it as standing for [{string.Join(", ", meant)}]";
+                yield return $"'aspose-cli {typedPath}' suggests [{string.Join(", ", suggested)}] first, but the table reads it as standing for [{string.Join(", ", meant)}]";
             }
         }
         var fields = new Dictionary<string, HashSet<string>>(StringComparer.Ordinal);
@@ -256,14 +259,48 @@ internal static partial class ContractRules
 
                 public static IReadOnlyList<string> MistakenFor(this Command command) => command.MistakenFor();
             }
+
+            internal static class SheetCommands
+            {
+                public static Command Create()
+                {
+                    var sheet = new Command("sheet", "Work with sheets.");
+                    var list = new CommandDefinition<ListRequest, ListResult>("list", "List the sheets.", new CommandTraits(), [], Bind, Table)
+                    {
+                        MistakenFor = ["ls"],
+                    };
+                    sheet.Subcommands.Add(list.Create());
+                    return sheet;
+                }
+            }
+            """;
+        // A platform command is named by its path from the top level, through the groups that add it.
+        const string Platform = """
+            internal static class ToolCommandGroup
+            {
+                public static Command Create()
+                {
+                    var tool = new Command("tool", "Run tools.");
+                    tool.Subcommands.Add(CreateRun());
+                    return tool;
+                }
+
+                private static Command CreateRun() =>
+                    new CommandDefinition<RunRequest, RunResult>("run", "Run a tool.", new CommandTraits(), [], Bind, Table)
+                    {
+                        MistakenFor = ["exec"],
+                    }.Create();
+            }
             """;
         var declarationProblems = new List<string>();
         string[] declared = [.. MistakenNames.ReadFile("sample", "Sample.cs", Declared, declarationProblems)
+            .Concat(MistakenNames.ReadFile(null, "Platform.cs", Platform, declarationProblems))
             .Select(static name => $"{name.Name}>{name.Meant}:{name.Kind.ToString().ToLowerInvariant()}")];
         string[] expected =
         [
             "old_sample>set_sample:operation", "oldName>newName:field", "otherName>newName:field",
-            "find>sample lookup:command", "seek>sample lookup:command",
+            "find>sample lookup:command", "seek>sample lookup:command", "ls>sample sheet list:command",
+            "exec>tool run:command",
         ];
         if (!declared.SequenceEqual(expected, StringComparer.Ordinal) || declarationProblems.Count > 0)
         {

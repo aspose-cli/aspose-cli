@@ -61,12 +61,16 @@ internal static partial class ContractRules
                 .Select(static mistaken => mistaken.Meant)
                 .Distinct(StringComparer.Ordinal);
 
-        /// <summary>The commands below <paramref name="parent"/>, such as <c>cells</c>, that a mistaken command name stands for.</summary>
+        /// <summary>The commands of <paramref name="parent"/>, such as <c>cells</c>, that a mistaken command name stands for.</summary>
         public IEnumerable<string> Commands(string parent, string name) =>
             Names.Where(mistaken => mistaken.Kind == MistakenKind.Command && mistaken.Name == name
-                    && mistaken.Meant.StartsWith(parent + " ", StringComparison.Ordinal))
+                    && ParentCommand(mistaken.Meant) == parent)
                 .Select(static mistaken => mistaken.Meant)
                 .Distinct(StringComparer.Ordinal);
+
+        /// <summary>The path of the command a command path is below, such as <c>license</c> of <c>license status</c>; empty at the top level.</summary>
+        public static string ParentCommand(string path) =>
+            path.LastIndexOf(' ') is var space and >= 0 ? path[..space] : string.Empty;
 
         private static bool Same(string? declared, string? product) => product is null || declared is null || declared == product;
 
@@ -91,7 +95,9 @@ internal static partial class ContractRules
         /// camel-cased name. Every such attribute of the text must be read, so a declaration this
         /// reading cannot place is a problem rather than a name silently left out. A
         /// <c>MistakenFor = [...]</c> initializer belongs to the command definition the nearest
-        /// <c>new(</c> before it creates, named by its first string, under the product; a
+        /// <c>new(</c> before it creates, named by its full command path: its first string under
+        /// the names of the commands that add it with <c>Subcommands.Add</c>, under the product, or
+        /// from the top level for a platform command, which has no product; a
         /// <c>mistakenFor: [...]</c> argument, to the edit command <c>EditDefinition.Create</c> defines.
         /// </summary>
         public static IEnumerable<MistakenName> ReadFile(string? product, string where, string source, List<string> problems)
@@ -170,19 +176,74 @@ internal static partial class ContractRules
             foreach (Match initializer in MistakenInitializer().Matches(source))
             {
                 string[] declaredNames = [.. Literal().Matches(initializer.Groups["names"].Value).Select(static literal => literal.Groups["text"].Value)];
-                Match? created = initializer.Groups["edit"].Success
-                    ? EditCreation().Matches(source[..initializer.Index]).LastOrDefault()
-                    : DefinitionCreation().Matches(source[..initializer.Index]).LastOrDefault();
-                if (product is null || created is null)
+                string? command = initializer.Groups["edit"].Success
+                    ? product is not null && EditCreation().Matches(source[..initializer.Index]).Count > 0 ? $"{product} edit" : null
+                    : CommandPath(product, source, initializer.Index);
+                if (command is null)
                 {
-                    problems.Add($"{where}: {initializer.Value} initializes no command definition of a product");
+                    problems.Add($"{where}: {initializer.Value} initializes no command definition");
                     continue;
                 }
-                string command = $"{product} {(initializer.Groups["edit"].Success ? "edit" : created.Groups["name"].Value)}";
                 names.AddRange(declaredNames.Select(name => new MistakenName(product, name, command, MistakenKind.Command, where)));
             }
             return names;
         }
+
+        /// <summary>
+        /// The path of the command whose definition the nearest <c>new(</c> before
+        /// <paramref name="index"/> creates: its name under the name of each command that adds it
+        /// with <c>Subcommands.Add</c>, by the variable it is assigned to or the method that creates
+        /// it, under the product, or from the top level for a platform command; null when no
+        /// definition comes before the index.
+        /// </summary>
+        private static string? CommandPath(string? product, string source, int index)
+        {
+            Method[] methods = [.. MethodDeclaration().Matches(source).Select(static match => new Method(match.Index, match.Groups["method"].Value))];
+            Method? MethodAt(int at) => methods.LastOrDefault(method => method.Index < at);
+            Creation[] creations =
+            [
+                .. DefinitionCreation().Matches(source).Select(match => new Creation(
+                    match.Index, match.Groups["name"].Value, match.Groups["variable"].Success ? match.Groups["variable"].Value : null, MethodAt(match.Index))),
+            ];
+            Creation? current = creations.LastOrDefault(creation => creation.Index < index);
+            if (current is null)
+            {
+                return null;
+            }
+            (string Parent, string Child, bool Call, Method? Method, int Index)[] additions =
+            [
+                .. SubcommandAddition().Matches(source).Select(match => (match.Groups["parent"].Value, match.Groups["child"].Value,
+                    match.Groups["call"].Success, MethodAt(match.Index), match.Index)),
+            ];
+            var path = new List<string> { current.Name };
+            var seen = new HashSet<Creation> { current };
+            while (true)
+            {
+                Creation child = current;
+                // The first command a method creates is the one it returns to its callers.
+                bool returned = child.Method is not null && creations.First(creation => creation.Method == child.Method) == child;
+                Creation? parent = additions
+                    .Where(addition => addition.Call
+                        ? returned && addition.Child == child.Method!.Name
+                        : addition.Child == child.Variable && addition.Method == child.Method)
+                    .Select(addition => creations.LastOrDefault(creation =>
+                        creation.Variable == addition.Parent && creation.Method == addition.Method && creation.Index < addition.Index))
+                    .FirstOrDefault(static parent => parent is not null);
+                if (parent is null || !seen.Add(parent))
+                {
+                    break;
+                }
+                path.Insert(0, parent.Name);
+                current = parent;
+            }
+            return string.Join(' ', product is null ? path : path.Prepend(product));
+        }
+
+        /// <summary>A method declaration: where it starts and its name.</summary>
+        private sealed record Method(int Index, string Name);
+
+        /// <summary>A command creation: where it starts, its name, the variable it is assigned to and the method it is in.</summary>
+        private sealed record Creation(int Index, string Name, string? Variable, Method? Method);
 
         /// <summary>The index of the bracket that closes the attribute list at the start of <paramref name="text"/>, or -1.</summary>
         private static int AttributeEnd(string text)
@@ -596,9 +657,21 @@ internal static partial class ContractRules
     [GeneratedRegex(@"\bEditDefinition\.Create<")]
     private static partial Regex EditCreation();
 
-    /// <summary>The creation of a command definition, <c>new(</c> or <c>new CommandDefinition&lt;...&gt;(</c>, and the command name it starts with.</summary>
-    [GeneratedRegex(@"\bnew(?:\s+\w+(?:<[^>]*>)?)?\(\s*""(?<name>[a-z][a-z0-9-]*)""")]
+    /// <summary>
+    /// The creation of a command or its definition, <c>new(</c>, <c>new Command(</c> or
+    /// <c>new CommandDefinition&lt;...&gt;(</c>, the command name it starts with and the variable
+    /// it is assigned to.
+    /// </summary>
+    [GeneratedRegex(@"(?:\b(?<variable>\w+)\s*=\s*)?\bnew(?:\s+\w+(?:<[^>]*>)?)?\(\s*""(?<name>[a-z][a-z0-9-]*)""")]
     private static partial Regex DefinitionCreation();
+
+    /// <summary>A method declaration with its modifiers, and the method's name.</summary>
+    [GeneratedRegex(@"(?:\b(?:public|private|internal|protected|static)\s+)+[\w<>\[\],.?\s]*?\b(?<method>[A-Z]\w*)\s*\(")]
+    private static partial Regex MethodDeclaration();
+
+    /// <summary>A <c>parent.Subcommands.Add(child</c> that adds a variable's command, or a method's when a call follows.</summary>
+    [GeneratedRegex(@"\b(?<parent>\w+)\.Subcommands\.Add\(\s*(?<child>\w+)(?<call>\s*\()?")]
+    private static partial Regex SubcommandAddition();
 
     [GeneratedRegex(@"(?<![\w.])Operation\(\s*""(?<name>[^""]+)""\s*\)")]
     private static partial Regex OperationAttribute();
