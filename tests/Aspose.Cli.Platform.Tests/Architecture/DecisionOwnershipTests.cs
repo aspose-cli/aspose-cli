@@ -344,12 +344,8 @@ public sealed partial class DecisionOwnershipTests
     public void D13_ProcessLiveness_HasOneSdkOwner()
     {
         string owner = Path.Combine(SdkRoot, "IO", "ProcessIdentity.cs");
-        // Temporary: the optimize slice a2 rewrites the launcher and moves its start-time read
-        // to ProcessIdentity.StartUtcTicksOf; remove this exception with it.
-        string launcher = Path.Combine(HostRoot, "LocalServices", "SelfProcessLauncher.cs");
         string[] violations = [.. Sources.Value
-            .Where(file => !string.Equals(file.Path, owner, StringComparison.OrdinalIgnoreCase)
-                && !string.Equals(file.Path, launcher, StringComparison.OrdinalIgnoreCase))
+            .Where(file => !string.Equals(file.Path, owner, StringComparison.OrdinalIgnoreCase))
             .SelectMany(file => file.Root.DescendantNodes()
                 .Where(static node => node switch
                 {

@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Reflection;
 using Aspose.Cli.Host.Invocation;
 using Aspose.Cli.Sdk.Errors;
+using Aspose.Cli.Sdk.IO;
 
 namespace Aspose.Cli.Host.LocalServices;
 
@@ -121,7 +122,7 @@ internal static class SelfProcessLauncher
             return new LocalServiceChild(
                 owned,
                 secrets.ServiceNonce,
-                owned.Process.StartTime.ToUniversalTime().Ticks);
+                ProcessIdentity.StartUtcTicksOf(owned.Process));
         }
         catch
         {
