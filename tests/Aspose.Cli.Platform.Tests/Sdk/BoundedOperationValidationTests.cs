@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Aspose.Cli.Host.Contracts;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Operations;
 using Xunit;

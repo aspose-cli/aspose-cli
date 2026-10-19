@@ -3,6 +3,7 @@ using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Aspose.Cli.Architecture.Tests.TestSupport;
+using Aspose.Cli.Host.Contracts;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Extensibility;
 using Aspose.Cli.Sdk.Extensibility.Commanding;
@@ -24,8 +25,8 @@ public sealed class CommonSchemaContractTests
     private const string UriPrefix = "https://schemas.aspose.com/aspose-cli/";
     private static readonly ProductCatalog CommonCatalog = CreateCatalog();
 
-    private static readonly ContractJsonSerializer CommonSerializer = new(CommonCatalog.JsonDefinitions);
-    private static readonly BuildOptions CommonSchemas = SchemaTestRegistry.CreateOptions();
+    private static readonly ContractJsonSerializer CommonSerializer = new(CommonCatalog.JsonDefinitions, Aspose.Cli.Host.Contracts.HostResultJsonContext.Default);
+    private static readonly BuildOptions CommonSchemas = HostCommonSchemas.CreateOptions();
 
     [Fact]
     public void EveryCommonCanonicalResult_ConformsToItsDeclaredSchema()
@@ -62,11 +63,12 @@ public sealed class CommonSchemaContractTests
     [Fact]
     public void EveryCommonSchema_ParsesAndHasCanonicalIdentity()
     {
-        Assert.Contains("v2/common/error", SdkSchemaCatalog.Ids);
-        foreach (string id in SdkSchemaCatalog.Ids)
+        Assert.Contains("v2/common/error", HostCommonSchemas.Ids);
+        Assert.Contains("v2/common/doctor", HostCommonSchemas.Ids);
+        foreach (string id in HostCommonSchemas.Ids)
         {
             Assert.StartsWith("v2/common/", id, StringComparison.Ordinal);
-            string text = SdkSchemaCatalog.Read(id);
+            string text = HostCommonSchemas.Read(id);
             Assert.NotNull(CommonSchema(UriPrefix + id + ".schema.json"));
             JsonObject document = JsonNode.Parse(text)!.AsObject();
             Assert.Equal(
@@ -212,7 +214,7 @@ public sealed class CommonSchemaContractTests
 
         foreach (string id in results)
         {
-            JsonObject document = JsonNode.Parse(SdkSchemaCatalog.Read("v2/common/" + id))!.AsObject();
+            JsonObject document = JsonNode.Parse(HostCommonSchemas.Read("v2/common/" + id))!.AsObject();
             Assert.Equal(WarningUri, document["properties"]!["warnings"]!["items"]!["$ref"]!.GetValue<string>());
         }
 

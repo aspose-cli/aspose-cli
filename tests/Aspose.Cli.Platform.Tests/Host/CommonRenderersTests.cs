@@ -1,3 +1,4 @@
+using Aspose.Cli.Host.Contracts;
 using Aspose.Cli.Host.Output.Rendering;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.TestKit;

@@ -1,6 +1,5 @@
 using System.CommandLine;
 using Aspose.Cli.Host.Invocation;
-using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Errors;
 
 namespace Aspose.Cli.Host.Commands;

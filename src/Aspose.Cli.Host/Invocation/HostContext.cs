@@ -16,7 +16,7 @@ internal sealed class HostContext
             var root = Commands.RootCommandFactory.Create(this, out GlobalOptions globals);
             return new InvocationParser(root, globals, catalog);
         });
-        ContractJson = new ContractJsonSerializer(catalog.JsonDefinitions);
+        ContractJson = new ContractJsonSerializer(catalog.JsonDefinitions, HostResultJsonContext.Default);
         Schemas = new Aspose.Cli.Host.Commands.HostSchemaCatalog(catalog);
         Skills = new SkillCatalog(catalog);
         Docs = new DocsCatalog(Skills);

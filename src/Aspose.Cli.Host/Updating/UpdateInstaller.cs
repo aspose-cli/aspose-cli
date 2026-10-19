@@ -6,7 +6,6 @@ using Aspose.Cli.Sdk;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.IO;
-using Aspose.Cli.Sdk.Serialization;
 
 namespace Aspose.Cli.Host.Updating;
 
@@ -55,7 +54,7 @@ internal static class UpdateInstaller
                     ?? HostDiagnostics.ReleaseVerificationFailed("the update preparation worker failed");
             }
             ownsPackage = Directory.Exists(target);
-            UpdateResult prepared = JsonSerializer.Deserialize(process.Stdout, SdkJsonContext.Default.UpdateResult)
+            UpdateResult prepared = JsonSerializer.Deserialize(process.Stdout, HostResultJsonContext.Default.UpdateResult)
                 ?? throw HostDiagnostics.ReleaseVerificationFailed("the preparation worker returned no result");
             if (prepared.CurrentVersion != VersionInfo.ArtifactVersion
                 || prepared.Feed != source || prepared.ProcessId is not null

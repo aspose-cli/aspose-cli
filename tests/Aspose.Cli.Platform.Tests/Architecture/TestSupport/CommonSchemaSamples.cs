@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using Aspose.Cli.Host.Contracts;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Operations;
 

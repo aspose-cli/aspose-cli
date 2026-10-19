@@ -1,4 +1,6 @@
-namespace Aspose.Cli.Sdk.Contracts;
+using Aspose.Cli.Sdk.Contracts;
+
+namespace Aspose.Cli.Host.Contracts;
 
 /// <summary>Result of <c>aspose-cli update</c>: an update check, or an install handed to the installer.</summary>
 public sealed record UpdateResult() : ResultEnvelope("update-result", 2)

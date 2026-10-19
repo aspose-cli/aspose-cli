@@ -1,6 +1,7 @@
 using System.Text.Json.Serialization;
+using Aspose.Cli.Sdk.Contracts;
 
-namespace Aspose.Cli.Sdk.Contracts;
+namespace Aspose.Cli.Host.Contracts;
 
 /// <summary>Result of starting or reusing a product preview session.</summary>
 public sealed record ProductPreviewStartResult()

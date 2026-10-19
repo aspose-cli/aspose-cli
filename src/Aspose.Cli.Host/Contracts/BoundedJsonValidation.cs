@@ -1,6 +1,6 @@
 using System.Text.Json;
 
-namespace Aspose.Cli.Sdk.Contracts;
+namespace Aspose.Cli.Host.Contracts;
 
 /// <summary>Shared structural checks for bounded JSON inputs.</summary>
 public static class BoundedJsonValidation
