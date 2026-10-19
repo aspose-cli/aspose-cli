@@ -41,7 +41,7 @@ internal static class WordsMergeData
             throw CliErrors.FileNotFound(path);
         }
 
-        return Path.GetExtension(path).Equals(".csv", StringComparison.OrdinalIgnoreCase)
+        return WordsFormats.MergeData.NamedBy(path).Contains(WordsFormats.CsvMergeData)
             ? CsvRows(ReadCsv(inputs.ReadTextFile(path)))
             : JsonRows(inputs.ReadTextFile(path));
     }

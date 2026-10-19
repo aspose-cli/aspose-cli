@@ -126,6 +126,15 @@ public static class WordsFormats
     /// <summary>The format split writes every part in: docx.</summary>
     internal static IReadOnlyList<FormatDescriptor> SplitParts { get; } = [.. Definitions.Where(static format => format.Id == "docx")];
 
+    /// <summary>A CSV merge data file, whose header row names the columns.</summary>
+    internal static FormatDescriptor CsvMergeData { get; } = new("csv", FormatUse.Input, ".csv");
+
+    /// <summary>
+    /// The files mail_merge and repeat_table_row read rows from: CSV, or else JSON, an array of
+    /// flat objects.
+    /// </summary>
+    internal static IReadOnlyList<FormatDescriptor> MergeData { get; } = [CsvMergeData, new("json", FormatUse.Input, ".json")];
+
     /// <summary>The traits of a format id, or null when the product declares no such format.</summary>
     private static WordsFormatTraits? Of(string id) => TraitsById.GetValueOrDefault(id);
 }
