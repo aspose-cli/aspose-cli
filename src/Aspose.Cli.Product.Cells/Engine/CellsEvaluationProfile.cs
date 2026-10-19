@@ -57,8 +57,9 @@ internal sealed class CellsEvaluationProfile : IEvaluationProfile<Workbook>
         CellsEvaluationMarkKind.Pages =>
             new([.. WarningSheets(workbook, visibleOnly: true).Select(static sheet =>
                 $"the pages of the evaluation warning sheet '{sheet.Name}', which hold only the notice '{CellsEvaluation.Notice}...'")]),
-        // A workbook format, and an id the product does not declare.
-        _ => Inspect(workbook),
+        CellsEvaluationMarkKind.Workbook => Inspect(workbook),
+        // The write pipeline passes the declared id of every output (OutputPipeline.Write).
+        _ => throw new InvalidOperationException($"The Cells evaluation profile has no marks for the format id '{format}'."),
     };
 
     private static IEnumerable<Worksheet> WarningSheets(Workbook workbook, bool visibleOnly) =>
