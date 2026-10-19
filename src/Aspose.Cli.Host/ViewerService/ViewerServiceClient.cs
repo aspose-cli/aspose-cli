@@ -211,20 +211,18 @@ internal sealed class ViewerServiceClient
     }
 
     /// <summary>Raises the service's failure as the command's own.</summary>
-    private static CliException Failure(LocalServiceControlResponse response)
+    internal static CliException Failure(LocalServiceControlResponse response)
     {
-        ViewerFailure? failure = null;
+        WireError? failure = null;
         try
         {
-            failure = response.Result?.Deserialize(ViewerServiceJsonContext.Default.ViewerFailure);
+            failure = response.Result?.Deserialize(ViewerServiceJsonContext.Default.WireError);
         }
         catch (JsonException)
         {
             // The message below still says what happened.
         }
-        return failure is null
-            ? CliErrors.Internal(response.Message ?? "The viewer service refused the request.")
-            : CliErrors.FromRemote(
-                failure.Code, (ExitCode)failure.Exit, failure.Message, failure.Hint, failure.Details, failure.Docs);
+        return failure?.ToException()
+            ?? CliErrors.Internal(response.Message ?? "The viewer service refused the request.");
     }
 }

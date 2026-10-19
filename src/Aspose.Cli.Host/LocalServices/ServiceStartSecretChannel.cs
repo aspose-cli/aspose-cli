@@ -42,7 +42,7 @@ internal static class ServiceStartSecretChannel
         {
             owned = OwnedProcess.Start(start, killOnClose: false);
             server.DisposeLocalCopyOfClientHandle();
-            ProcessPipeMessages.WriteAsync(server, secrets, CancellationToken.None)
+            ProcessFrames.WriteAsync(server, secrets, LocalServiceJsonContext.Default.ServiceStartSecrets, CancellationToken.None)
                 .GetAwaiter().GetResult();
 
             return owned;
@@ -71,8 +71,8 @@ internal static class ServiceStartSecretChannel
         using var client = new AnonymousPipeClientStream(
             PipeDirection.In,
             handle);
-        ServiceStartSecrets secrets = ProcessPipeMessages.ReadAsync<ServiceStartSecrets>(
-            client, CancellationToken.None).GetAwaiter().GetResult();
+        ServiceStartSecrets secrets = ProcessFrames.ReadAsync(
+            client, LocalServiceJsonContext.Default.ServiceStartSecrets, CancellationToken.None).GetAwaiter().GetResult();
         if (secrets.Version != 1)
         {
             throw new InvalidDataException($"Unsupported service-start contract version {secrets.Version}.");

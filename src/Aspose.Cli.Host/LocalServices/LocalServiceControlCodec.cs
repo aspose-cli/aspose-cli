@@ -1,101 +1,50 @@
-using System.Buffers.Binary;
-using System.Security.Cryptography;
-using System.Text.Json;
-
 namespace Aspose.Cli.Host.LocalServices;
 
-/// <summary>Encodes, bounds, and decodes local-service protocol frames.</summary>
+/// <summary>Reads and writes local-service control frames, in the Host's one process frame format.</summary>
 internal static class LocalServiceControlCodec
 {
     internal const int ProtocolVersion = 1;
-    internal const int MaximumPayloadBytes = 64 * 1024;
+    internal const int MaximumPayloadBytes = ProcessFrames.MaximumBytes;
     internal static readonly TimeSpan DefaultStageTimeout =
         TimeSpan.FromSeconds(5);
 
-    public static byte[] Serialize(
-        LocalServiceControlRequest request) =>
-        JsonSerializer.SerializeToUtf8Bytes(
+    public static Task WriteAsync(
+        Stream stream,
+        LocalServiceControlRequest request,
+        CancellationToken cancellationToken) =>
+        ProcessFrames.WriteAsync(
+            stream,
             request,
-            LocalServiceJsonContext.Default
-                .LocalServiceControlRequest);
+            LocalServiceJsonContext.Default.LocalServiceControlRequest,
+            cancellationToken,
+            MaximumPayloadBytes);
 
-    public static byte[] Serialize(
-        LocalServiceControlResponse response) =>
-        JsonSerializer.SerializeToUtf8Bytes(
+    public static Task WriteAsync(
+        Stream stream,
+        LocalServiceControlResponse response,
+        CancellationToken cancellationToken) =>
+        ProcessFrames.WriteAsync(
+            stream,
             response,
-            LocalServiceJsonContext.Default
-                .LocalServiceControlResponse);
+            LocalServiceJsonContext.Default.LocalServiceControlResponse,
+            cancellationToken,
+            MaximumPayloadBytes);
 
-    public static LocalServiceControlRequest? DeserializeRequest(
-        byte[] payload) =>
-        JsonSerializer.Deserialize(
-            payload,
-            LocalServiceJsonContext.Default
-                .LocalServiceControlRequest);
-
-    public static LocalServiceControlResponse DeserializeResponse(
-        byte[] payload) =>
-        JsonSerializer.Deserialize(
-            payload,
-            LocalServiceJsonContext.Default
-                .LocalServiceControlResponse)
-        ?? throw new InvalidDataException(
-            "The local service returned an empty control response.");
-
-    public static async Task<byte[]> ReadFrameAsync(
+    public static Task<LocalServiceControlRequest> ReadRequestAsync(
         Stream stream,
-        CancellationToken cancellationToken)
-    {
-        byte[] header = new byte[sizeof(int)];
-        await stream.ReadExactlyAsync(
-            header,
-            cancellationToken).ConfigureAwait(false);
-        int length = BinaryPrimitives.ReadInt32LittleEndian(header);
-        if (length is <= 0 or > MaximumPayloadBytes)
-        {
-            throw new InvalidDataException(
-                "The local-service control frame length is invalid.");
-        }
+        CancellationToken cancellationToken) =>
+        ProcessFrames.ReadAsync(
+            stream,
+            LocalServiceJsonContext.Default.LocalServiceControlRequest,
+            cancellationToken,
+            MaximumPayloadBytes);
 
-        byte[] payload =
-            GC.AllocateUninitializedArray<byte>(length);
-        try
-        {
-            await stream.ReadExactlyAsync(
-                payload,
-                cancellationToken).ConfigureAwait(false);
-            return payload;
-        }
-        catch
-        {
-            CryptographicOperations.ZeroMemory(payload);
-            throw;
-        }
-    }
-
-    public static async Task WriteFrameAsync(
+    public static Task<LocalServiceControlResponse> ReadResponseAsync(
         Stream stream,
-        byte[] payload,
-        CancellationToken cancellationToken)
-    {
-        if (payload.Length is <= 0 or > MaximumPayloadBytes)
-        {
-            throw new InvalidDataException(
-                "The local-service control frame payload is invalid.");
-        }
-
-        byte[] header = new byte[sizeof(int)];
-        BinaryPrimitives.WriteInt32LittleEndian(
-            header,
-            payload.Length);
-        await stream.WriteAsync(
-            header,
-            cancellationToken).ConfigureAwait(false);
-        await stream.WriteAsync(
-            payload,
-            cancellationToken).ConfigureAwait(false);
-        await stream.FlushAsync(
-            cancellationToken).ConfigureAwait(false);
-    }
-
+        CancellationToken cancellationToken) =>
+        ProcessFrames.ReadAsync(
+            stream,
+            LocalServiceJsonContext.Default.LocalServiceControlResponse,
+            cancellationToken,
+            MaximumPayloadBytes);
 }

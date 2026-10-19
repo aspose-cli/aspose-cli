@@ -1,6 +1,5 @@
 using System.IO.Pipes;
 using System.Net.Sockets;
-using System.Security.Cryptography;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.IO;
 
@@ -48,18 +47,10 @@ internal static class LocalServiceControlClient
                 path,
                 payload,
                 deadline.ExpiresAtTick);
-            byte[] requestPayload = LocalServiceControlCodec.Serialize(request);
-            try
-            {
-                LocalServiceControlCodec.WriteFrameAsync(
-                    stream,
-                    requestPayload,
-                    frame.Token).GetAwaiter().GetResult();
-            }
-            finally
-            {
-                CryptographicOperations.ZeroMemory(requestPayload);
-            }
+            LocalServiceControlCodec.WriteAsync(
+                stream,
+                request,
+                frame.Token).GetAwaiter().GetResult();
 
             // The operation owns its deadline. Allow bounded termination and its final reply.
             using var responseCancellation = new CancellationTokenSource(
@@ -69,24 +60,14 @@ internal static class LocalServiceControlClient
                 // Expiration allows the server to finish cancellation; an explicit caller cancellation closes the connection.
                 if (!deadline.IsExpired) { responseCancellation.Cancel(); }
             });
-            byte[] responsePayload = LocalServiceControlCodec.ReadFrameAsync(
+            LocalServiceControlResponse response = LocalServiceControlCodec.ReadResponseAsync(
                 stream, responseCancellation.Token).GetAwaiter().GetResult();
-            try
-            {
-                LocalServiceControlResponse response =
-                    LocalServiceControlCodec.DeserializeResponse(
-                        responsePayload);
-                LocalServiceControlIdentity.ValidateResponse(
-                    endpoint,
-                    nonce,
-                    requestId,
-                    response);
-                return response;
-            }
-            finally
-            {
-                CryptographicOperations.ZeroMemory(responsePayload);
-            }
+            LocalServiceControlIdentity.ValidateResponse(
+                endpoint,
+                nonce,
+                requestId,
+                response);
+            return response;
         }
         catch (OperationCanceledException)
         {

@@ -286,13 +286,12 @@ internal sealed class LocalServiceControlServer : IDisposable
         Stream stream,
         CancellationToken serverCancellation)
     {
-        LocalServiceControlRequest? request = null;
         try
         {
             using var stage = CancellationTokenSource
                 .CreateLinkedTokenSource(serverCancellation);
             stage.CancelAfter(_stageTimeout);
-            request = await ReadRequestAsync(
+            LocalServiceControlRequest request = await LocalServiceControlCodec.ReadRequestAsync(
                 stream,
                 stage.Token).ConfigureAwait(false);
             bool authorized = _identity.IsAuthorized(request);
@@ -302,17 +301,17 @@ internal sealed class LocalServiceControlServer : IDisposable
             Task connection = WatchDisconnectAsync(stream, disconnected, monitor.Token);
             long ceiling = checked(Environment.TickCount64 + (long)_operationTimeout.TotalMilliseconds);
             using var deadline = OperationDeadline.FromAbsoluteTick(_operationTimeout,
-                Math.Min(request?.ExpiresAtTick ?? ceiling, ceiling), disconnected.Token);
+                Math.Min(request.ExpiresAtTick ?? ceiling, ceiling), disconnected.Token);
             LocalServiceControlResponse response;
             try { response = Dispatch(request, authorized, deadline); }
             finally { monitor.Cancel(); await connection.ConfigureAwait(false); }
             // A fresh frame budget allows a timed-out operation to report its failure after cleanup.
             using var reply = CancellationTokenSource.CreateLinkedTokenSource(serverCancellation);
             reply.CancelAfter(_stageTimeout);
-            await WriteResponseAsync(stream, response, reply.Token).ConfigureAwait(false);
+            await LocalServiceControlCodec.WriteAsync(stream, response, reply.Token).ConfigureAwait(false);
             if (authorized && response.Ok)
             {
-                _afterResponse?.Invoke(request!);
+                _afterResponse?.Invoke(request);
             }
         }
         catch (Exception exception) when (
@@ -337,7 +336,7 @@ internal sealed class LocalServiceControlServer : IDisposable
     }
 
     private LocalServiceControlResponse Dispatch(
-        LocalServiceControlRequest? request,
+        LocalServiceControlRequest request,
         bool authorized,
         OperationDeadline deadline)
     {
@@ -349,7 +348,7 @@ internal sealed class LocalServiceControlServer : IDisposable
                 "The local-service control identity or token is invalid.");
         }
         if (string.Equals(
-                request!.Command,
+                request.Command,
                 "ping",
                 StringComparison.Ordinal))
         {
@@ -367,45 +366,6 @@ internal sealed class LocalServiceControlServer : IDisposable
             try { message = _describeFailure?.Invoke(exception) ?? message; }
             catch { /* Failure reporting must not terminate the control endpoint. */ }
             return _identity.Response(request, ok: false, message);
-        }
-    }
-
-    private static async Task<LocalServiceControlRequest?> ReadRequestAsync(
-        Stream stream,
-        CancellationToken cancellationToken)
-    {
-        byte[] payload =
-            await LocalServiceControlCodec.ReadFrameAsync(
-                stream,
-                cancellationToken).ConfigureAwait(false);
-        try
-        {
-            return LocalServiceControlCodec.DeserializeRequest(
-                payload);
-        }
-        finally
-        {
-            CryptographicOperations.ZeroMemory(payload);
-        }
-    }
-
-    private static async Task WriteResponseAsync(
-        Stream stream,
-        LocalServiceControlResponse response,
-        CancellationToken cancellationToken)
-    {
-        byte[] payload = LocalServiceControlCodec.Serialize(
-            response);
-        try
-        {
-            await LocalServiceControlCodec.WriteFrameAsync(
-                stream,
-                payload,
-                cancellationToken).ConfigureAwait(false);
-        }
-        finally
-        {
-            CryptographicOperations.ZeroMemory(payload);
         }
     }
 

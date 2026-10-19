@@ -40,8 +40,8 @@ internal static class ViewRenderWorker
         bool served = false;
         while (true)
         {
-            RenderWorkerRequest? request = ProcessPipeMessages
-                .ReadOrEndAsync<RenderWorkerRequest>(input, CancellationToken.None)
+            RenderWorkerRequest? request = ProcessFrames
+                .ReadOrEndAsync(input, RenderWorkerJsonContext.Default.RenderWorkerRequest, CancellationToken.None)
                 .GetAwaiter().GetResult();
             if (request is null)
             {
@@ -50,7 +50,7 @@ internal static class ViewRenderWorker
 
             RenderWorkerResponse response = Serve(catalog, globals, limits, licenses, request, served);
             served = true;
-            ProcessPipeMessages.WriteAsync(output, response, CancellationToken.None)
+            ProcessFrames.WriteAsync(output, response, RenderWorkerJsonContext.Default.RenderWorkerResponse, CancellationToken.None)
                 .GetAwaiter().GetResult();
             if (response.Recycle)
             {
@@ -144,17 +144,19 @@ internal static class ViewRenderWorker
         }
         catch (Exception exception)
         {
-            CliException? cli = exception as CliException;
+            WireError error = exception is CliException cli
+                ? WireError.From(cli)
+                : new WireError(ErrorCodes.Internal.Name, (int)ExitCode.Internal, exception.Message);
             return new RenderWorkerResponse
             {
                 Id = request.Id,
                 Ok = false,
-                Code = cli?.Code.Name ?? ErrorCodes.Internal.Name,
-                Exit = (int)(cli?.Code.ExitCode ?? ExitCode.Internal),
-                Message = Shown(exception.Message, request),
-                Hint = cli?.Hint is { } hint ? Shown(hint, request) : null,
-                Details = cli?.Details is { } details ? Shown(details, request) : null,
-                Docs = cli?.Docs,
+                Error = error with
+                {
+                    Message = Shown(error.Message, request),
+                    Hint = error.Hint is { } hint ? Shown(hint, request) : null,
+                    Details = error.Details is { } details ? Shown(details, request) : null,
+                },
             };
         }
     }
