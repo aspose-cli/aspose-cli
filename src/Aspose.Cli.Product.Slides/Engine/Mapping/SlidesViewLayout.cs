@@ -4,7 +4,8 @@ using System.Text;
 using Aspose.Cli.Sdk.Views;
 using Aspose.Slides;
 using Aspose.Slides.Charts;
-using static Aspose.Cli.Product.Slides.Engine.SlidesEngineSupport;
+using static Aspose.Cli.Product.Slides.Engine.Mapping.SlidesStateProjection;
+using static Aspose.Cli.Product.Slides.Engine.SlidesShapeText;
 
 namespace Aspose.Cli.Product.Slides.Engine.Mapping;
 

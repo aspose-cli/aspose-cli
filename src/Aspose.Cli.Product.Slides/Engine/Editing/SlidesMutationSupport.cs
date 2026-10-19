@@ -3,7 +3,7 @@ using System.Globalization;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Slides;
 using Aspose.Slides.Charts;
-using static Aspose.Cli.Product.Slides.Engine.SlidesEngineSupport;
+using static Aspose.Cli.Product.Slides.Engine.SlidesSlideSelection;
 
 namespace Aspose.Cli.Product.Slides.Engine.Editing;
 

@@ -2,7 +2,7 @@ using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Licensing;
 using Aspose.Cli.Sdk.Results;
 using Aspose.Slides;
-using static Aspose.Cli.Product.Slides.Engine.SlidesEngineSupport;
+using static Aspose.Cli.Product.Slides.Engine.SlidesResultParts;
 
 namespace Aspose.Cli.Product.Slides.Engine;
 
@@ -68,5 +68,21 @@ internal static class SlidesCreate
                 ? WrittenWarnings(template)
                 : [.. WrittenWarnings(template) ?? [], .. authoring],
         };
+    }
+
+    /// <summary>
+    /// Resizes the canvas and scales masters, layouts and slides with it, so inherited
+    /// placeholder geometry (footers, slide numbers, dates) stays inside the new canvas.
+    /// </summary>
+    private static void ApplySlideSize(Presentation presentation, string? preset)
+    {
+        if (preset is null)
+        {
+            return;
+        }
+
+        presentation.SlideSize.SetSize(
+            preset == SlidesSlideSizePresets.Widescreen ? SlideSizeType.OnScreen16x9 : SlideSizeType.OnScreen,
+            SlideSizeScaleType.EnsureFit);
     }
 }

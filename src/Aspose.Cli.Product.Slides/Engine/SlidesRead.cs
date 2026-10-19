@@ -1,7 +1,10 @@
 using Aspose.Cli.Sdk.Licensing;
 using Aspose.Cli.Sdk.Results;
 using Aspose.Slides;
-using static Aspose.Cli.Product.Slides.Engine.SlidesEngineSupport;
+using static Aspose.Cli.Product.Slides.Engine.Mapping.SlidesStateProjection;
+using static Aspose.Cli.Product.Slides.Engine.SlidesResultParts;
+using static Aspose.Cli.Product.Slides.Engine.SlidesShapeText;
+using static Aspose.Cli.Product.Slides.Engine.SlidesSlideSelection;
 
 namespace Aspose.Cli.Product.Slides.Engine;
 
@@ -58,5 +61,93 @@ internal static class SlidesRead
             License = EnvelopeParts.License(state),
             Warnings = InputWarnings(loaded),
         };
+    }
+
+    private static SlidesSlideData ProjectSlide(
+        ISlide slide,
+        int number,
+        string content,
+        bool includeNotes,
+        IReadOnlyList<IComment> comments,
+        ref int remaining)
+    {
+        bool includeShapes = content is SlidesReadContents.Shapes or SlidesReadContents.Full;
+        bool contentTruncated = false;
+        string? title = Take(Title(slide), ref remaining, ref contentTruncated);
+        var textBlocks = content == SlidesReadContents.Text ? new List<string>() : null;
+        var shapes = new List<SlidesShapeData>();
+        bool full = content == SlidesReadContents.Full;
+        foreach (IShape shape in slide.Shapes)
+        {
+            string? sourceText = ShapeText(shape);
+            if (remaining == 0 && (includeShapes || !string.IsNullOrWhiteSpace(sourceText)))
+            {
+                contentTruncated = true;
+                break;
+            }
+            string? text = Take(sourceText, ref remaining, ref contentTruncated);
+            if (textBlocks is not null && !string.IsNullOrEmpty(text))
+            {
+                textBlocks.Add(text);
+            }
+            if (includeShapes)
+            {
+                shapes.Add(Shape(shape, text, full, ref remaining, ref contentTruncated));
+            }
+        }
+        string? notes = full || includeNotes ? Take(Notes(slide), ref remaining, ref contentTruncated) : null;
+        var read = new SlidesSlideData
+        {
+            Slide = number,
+            SlideId = slide.SlideId,
+            Name = EmptyToNull(slide.Name),
+            Layout = EmptyToNull(slide.LayoutSlide?.Name),
+            Title = title,
+            Text = textBlocks,
+            Shapes = shapes,
+            Notes = notes is null ? null : new SlidesNotesData { Text = notes },
+            ContentTruncated = contentTruncated,
+        };
+        if (!full)
+        {
+            return read;
+        }
+
+        // --content full also reports the comments, footer, background and transition.
+        IReadOnlyList<SlidesCommentData> slideComments = SlideComments(slide, comments, ref remaining, ref contentTruncated);
+        SlidesFooterData footer = Footer(slide, ref remaining, ref contentTruncated);
+        return read with
+        {
+            Comments = slideComments,
+            Footer = footer,
+            Background = Background(slide),
+            Transition = Transition(slide),
+            ContentTruncated = contentTruncated,
+        };
+    }
+
+    private static List<SlidesCommentData> SlideComments(
+        ISlide slide,
+        IReadOnlyList<IComment> comments,
+        ref int remaining,
+        ref bool truncated)
+    {
+        var projected = new List<SlidesCommentData>();
+        foreach (IComment comment in comments.Where(comment => ReferenceEquals(comment.Slide, slide)))
+        {
+            if (remaining == 0 && !string.IsNullOrWhiteSpace(comment.Text))
+            {
+                truncated = true;
+                break;
+            }
+
+            projected.Add(new SlidesCommentData
+            {
+                Author = comment.Author.Name,
+                Text = Take(comment.Text, ref remaining, ref truncated) ?? string.Empty,
+            });
+        }
+
+        return projected;
     }
 }

@@ -1,7 +1,8 @@
 using System.Text;
 using Aspose.Cli.Sdk.Text;
 using Aspose.Slides;
-using static Aspose.Cli.Product.Slides.Engine.SlidesEngineSupport;
+using static Aspose.Cli.Product.Slides.Engine.SlidesEvaluationMarks;
+using static Aspose.Cli.Product.Slides.Engine.SlidesShapeText;
 
 namespace Aspose.Cli.Product.Slides.Engine.Editing;
 

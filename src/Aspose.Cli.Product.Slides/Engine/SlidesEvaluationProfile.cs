@@ -1,12 +1,12 @@
 using Aspose.Cli.Sdk.Licensing;
 using Aspose.Slides;
-using static Aspose.Cli.Product.Slides.Engine.SlidesEngineSupport;
+using static Aspose.Cli.Product.Slides.Engine.SlidesEvaluationMarks;
 
 namespace Aspose.Cli.Product.Slides.Engine;
 
 /// <summary>
 /// Recognizes what Aspose.Slides evaluation mode writes into a presentation: the locked
-/// watermark text box on each slide it saves (<see cref="SlidesEngineSupport.IsEvaluationWatermark"/>),
+/// watermark text box on each slide it saves (<see cref="IsEvaluationWatermark"/>),
 /// licensed or not. Evaluation mode also cuts longer text short where it reads it; the saved
 /// presentation keeps the full text, but whatever reads the text sees only its start.
 /// </summary>

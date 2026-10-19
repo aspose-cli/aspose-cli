@@ -2,7 +2,9 @@ using System.Globalization;
 using Aspose.Cli.Sdk.Results;
 using Aspose.Cli.Sdk.Views;
 using Aspose.Slides;
-using static Aspose.Cli.Product.Slides.Engine.SlidesEngineSupport;
+using static Aspose.Cli.Product.Slides.Engine.SlidesRenderSizing;
+using static Aspose.Cli.Product.Slides.Engine.SlidesResultParts;
+using static Aspose.Cli.Product.Slides.Engine.SlidesShapeText;
 
 namespace Aspose.Cli.Product.Slides.Engine;
 

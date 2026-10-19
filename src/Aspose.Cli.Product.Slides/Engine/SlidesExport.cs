@@ -5,7 +5,10 @@ using Aspose.Cli.Sdk.Rendering;
 using Aspose.Cli.Sdk.Results;
 using Aspose.Slides;
 using Aspose.Slides.Export;
-using static Aspose.Cli.Product.Slides.Engine.SlidesEngineSupport;
+using static Aspose.Cli.Product.Slides.Engine.SlidesRenderSizing;
+using static Aspose.Cli.Product.Slides.Engine.SlidesResultParts;
+using static Aspose.Cli.Product.Slides.Engine.SlidesShapeText;
+using static Aspose.Cli.Product.Slides.Engine.SlidesSlideSelection;
 
 namespace Aspose.Cli.Product.Slides.Engine;
 

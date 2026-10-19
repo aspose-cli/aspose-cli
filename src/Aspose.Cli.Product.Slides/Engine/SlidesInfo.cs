@@ -1,7 +1,9 @@
 using Aspose.Cli.Sdk.Licensing;
 using Aspose.Cli.Sdk.Results;
 using Aspose.Slides;
-using static Aspose.Cli.Product.Slides.Engine.SlidesEngineSupport;
+using static Aspose.Cli.Product.Slides.Engine.Mapping.SlidesStateProjection;
+using static Aspose.Cli.Product.Slides.Engine.SlidesResultParts;
+using static Aspose.Cli.Product.Slides.Engine.SlidesShapeText;
 
 namespace Aspose.Cli.Product.Slides.Engine;
 
@@ -22,7 +24,7 @@ internal static class SlidesInfo
         SlidesSlideInfo[] slides = presentation.Slides
             .Select((slide, index) => ProjectInfo(slide, index + 1, comments, request.IncludePreview))
             .ToArray();
-        SlidesSlideSizeInfo size = SlidesStateProjection.SlideSize(presentation);
+        SlidesSlideSizeInfo size = SlideSize(presentation);
         IReadOnlyList<SlidesMediaInfo>? media = Details(SlidesInspectDetails.Media) ? Media(presentation) : null;
 
         return new SlidesInspectResult
@@ -104,5 +106,75 @@ internal static class SlidesInfo
                     ]
                     : null),
         };
+    }
+
+    private static SlidesSlideInfo ProjectInfo(ISlide slide, int number, IReadOnlyList<IComment> comments, bool preview)
+    {
+        string? title = preview ? Title(slide) : null;
+        return new SlidesSlideInfo
+        {
+            Slide = number,
+            SlideId = slide.SlideId,
+            Name = EmptyToNull(slide.Name),
+            Layout = EmptyToNull(slide.LayoutSlide?.Name),
+            Title = title,
+            PreviewText = preview ? PreviewText(slide) : null,
+            ShapeCount = slide.Shapes.Count,
+            Hidden = slide.Hidden,
+            HasNotes = !string.IsNullOrWhiteSpace(Notes(slide)),
+            CommentCount = comments.Count(comment => ReferenceEquals(comment.Slide, slide)),
+        };
+    }
+
+    private static IReadOnlyList<SlidesMediaInfo> Media(Presentation presentation)
+    {
+        var media = new List<SlidesMediaInfo>();
+        foreach (IPPImage image in presentation.Images)
+        {
+            media.Add(new SlidesMediaInfo
+            {
+                Index = media.Count + 1,
+                Kind = "image",
+                ContentType = EmptyToNull(image.ContentType),
+                SizeBytes = image.BinaryData.LongLength,
+            });
+        }
+
+        foreach (IAudio audio in presentation.Audios)
+        {
+            media.Add(new SlidesMediaInfo
+            {
+                Index = media.Count + 1,
+                Kind = "audio",
+                ContentType = EmptyToNull(audio.ContentType),
+                SizeBytes = audio.BinaryData.LongLength,
+            });
+        }
+
+        foreach (IVideo video in presentation.Videos)
+        {
+            media.Add(new SlidesMediaInfo
+            {
+                Index = media.Count + 1,
+                Kind = "video",
+                ContentType = EmptyToNull(video.ContentType),
+                SizeBytes = video.BinaryData.LongLength,
+            });
+        }
+
+        return media;
+    }
+
+    private static int FindSlideNumber(Presentation presentation, ISlide slide)
+    {
+        for (int index = 0; index < presentation.Slides.Count; index++)
+        {
+            if (ReferenceEquals(presentation.Slides[index], slide))
+            {
+                return index + 1;
+            }
+        }
+
+        return 0;
     }
 }

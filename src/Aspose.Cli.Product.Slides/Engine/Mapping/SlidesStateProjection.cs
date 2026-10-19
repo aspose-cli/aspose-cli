@@ -4,6 +4,7 @@ using Aspose.Cli.Product.Slides.Engine.Editing;
 using Aspose.Slides;
 using Aspose.Slides.Charts;
 using Aspose.Slides.SlideShow;
+using static Aspose.Cli.Product.Slides.Engine.SlidesShapeText;
 
 namespace Aspose.Cli.Product.Slides.Engine.Mapping;
 
@@ -72,13 +73,13 @@ internal static class SlidesStateProjection
     internal static SlidesShapeData Shape(IShape shape, string? text, bool full, ref int remaining, ref bool truncated) => new()
     {
         ShapeId = shape.OfficeInteropShapeId,
-        ShapeName = SlidesEngineSupport.EmptyToNull(shape.Name),
-        Kind = SlidesEngineSupport.ShapeKind(shape),
+        ShapeName = EmptyToNull(shape.Name),
+        Kind = SlidesStateProjection.ShapeKind(shape),
         Placeholder = SlidesPlaceholders.Role(shape.Placeholder?.Type),
-        Geometry = SlidesEngineSupport.Geometry(shape),
-        AltText = SlidesEngineSupport.EmptyToNull(SlidesEngineSupport.Take(shape.AlternativeText, ref remaining, ref truncated)),
+        Geometry = SlidesStateProjection.Geometry(shape),
+        AltText = EmptyToNull(Take(shape.AlternativeText, ref remaining, ref truncated)),
         Text = text,
-        Runs = full ? SlidesEngineSupport.Runs(shape, ref remaining, ref truncated) : null,
+        Runs = full ? SlidesStateProjection.Runs(shape, ref remaining, ref truncated) : null,
         Paragraphs = full ? Paragraphs(shape, ref remaining, ref truncated) : null,
         FillColor = full ? FillColor(shape) : null,
         Line = full ? Line(shape) : null,
@@ -111,7 +112,7 @@ internal static class SlidesStateProjection
             IParagraphFormatEffectiveData format = paragraph.ParagraphFormat.GetEffective();
             paragraphs.Add(new SlidesParagraphData
             {
-                Text = SlidesEngineSupport.Take(paragraph.Text, ref remaining, ref truncated) ?? string.Empty,
+                Text = Take(paragraph.Text, ref remaining, ref truncated) ?? string.Empty,
                 List = format.Bullet.Type switch
                 {
                     BulletType.None or BulletType.NotDefined => null,
@@ -133,7 +134,7 @@ internal static class SlidesStateProjection
             var cells = new string[table.Columns.Count];
             for (int column = 0; column < table.Columns.Count; column++)
             {
-                cells[column] = SlidesEngineSupport.Take(table[column, row].TextFrame?.Text, ref remaining, ref truncated) ?? string.Empty;
+                cells[column] = Take(table[column, row].TextFrame?.Text, ref remaining, ref truncated) ?? string.Empty;
             }
 
             rows.Add(cells);
@@ -149,7 +150,7 @@ internal static class SlidesStateProjection
         var categories = new List<string>();
         foreach (IChartCategory category in chart.ChartData.Categories)
         {
-            categories.Add(SlidesEngineSupport.Take(Text(category.Value), ref remaining, ref truncated) ?? string.Empty);
+            categories.Add(Take(Text(category.Value), ref remaining, ref truncated) ?? string.Empty);
         }
 
         var series = new List<SlidesChartSeriesData>();
@@ -157,7 +158,7 @@ internal static class SlidesStateProjection
         {
             series.Add(new SlidesChartSeriesData
             {
-                Name = SlidesEngineSupport.Take(Text(item.Name.AsCells.FirstOrDefault()?.Value), ref remaining, ref truncated) ?? string.Empty,
+                Name = Take(Text(item.Name.AsCells.FirstOrDefault()?.Value), ref remaining, ref truncated) ?? string.Empty,
                 Values = [.. item.DataPoints.Select(point => SlidesChartUpdate.Number(scatter ? point.YValue.Data : point.Value.Data))],
                 XValues = scatter ? [.. item.DataPoints.Select(static point => SlidesChartUpdate.Number(point.XValue.Data))] : null,
             });
@@ -175,7 +176,7 @@ internal static class SlidesStateProjection
                 _ => null,
             },
             Title = chart.HasTitle
-                ? SlidesEngineSupport.Take(chart.ChartTitle.TextFrameForOverriding?.Text, ref remaining, ref truncated)
+                ? Take(chart.ChartTitle.TextFrameForOverriding?.Text, ref remaining, ref truncated)
                 : null,
             Categories = categories,
             Series = series,
@@ -218,7 +219,7 @@ internal static class SlidesStateProjection
             .FirstOrDefault(static value => !string.IsNullOrWhiteSpace(value));
         return new SlidesFooterData
         {
-            Text = SlidesEngineSupport.Take(text, ref remaining, ref truncated),
+            Text = Take(text, ref remaining, ref truncated),
             ShowNumber = slide.HeaderFooterManager.IsSlideNumberVisible,
             ShowDate = slide.HeaderFooterManager.IsDateTimeVisible,
         };
@@ -243,7 +244,7 @@ internal static class SlidesStateProjection
             yield return $"line|{line.FillType}|{Color(line.FillType, line.SolidFillColor.Color)}";
         }
 
-        foreach (IParagraph paragraph in SlidesEngineSupport.TextFrames(shape).SelectMany(static frame => frame.Paragraphs))
+        foreach (IParagraph paragraph in TextFrames(shape).SelectMany(static frame => frame.Paragraphs))
         {
             yield return string.Create(CultureInfo.InvariantCulture, $"paragraph|{paragraph.ParagraphFormat.Depth}|{paragraph.ParagraphFormat.Bullet.Type}");
             foreach (IPortion portion in paragraph.Portions)
@@ -304,7 +305,7 @@ internal static class SlidesStateProjection
 
     /// <summary>Each paragraph's text as stored in a slide's shapes, but the evaluation watermark, and notes.</summary>
     internal static IEnumerable<string> ParagraphTexts(ISlide slide, bool shapes, bool notes) =>
-        (shapes ? slide.Shapes.Where(static shape => !SlidesEngineSupport.IsEvaluationWatermark(shape)).SelectMany(SlidesEngineSupport.TextFrames) : [])
+        (shapes ? slide.Shapes.Where(static shape => !SlidesEvaluationMarks.IsEvaluationWatermark(shape)).SelectMany(TextFrames) : [])
             .Concat(notes && slide.NotesSlideManager.NotesSlide?.NotesTextFrame is { } frame ? [frame] : [])
             .SelectMany(static frame => frame.Paragraphs)
             .Select(static paragraph => paragraph.Text)
@@ -331,4 +332,89 @@ internal static class SlidesStateProjection
     }
 
     private static string? Text(object? value) => Convert.ToString(value, CultureInfo.InvariantCulture);
+
+    internal static IReadOnlyList<SlidesTextRunData>? Runs(
+        IShape shape,
+        ref int remaining,
+        ref bool truncated)
+    {
+        var runs = new List<SlidesTextRunData>();
+        foreach (IParagraph paragraph in TextFrames(shape).SelectMany(static frame => frame.Paragraphs))
+        {
+            foreach (IPortion portion in paragraph.Portions)
+            {
+                if (remaining == 0 && !string.IsNullOrWhiteSpace(portion.Text))
+                {
+                    truncated = true;
+                    return runs;
+                }
+                string? text = Take(portion.Text, ref remaining, ref truncated);
+                if (text is null)
+                {
+                    continue;
+                }
+
+                IBasePortionFormatEffectiveData effective =
+                    portion.PortionFormat.GetEffective().AsIBasePortionFormatEffectiveData;
+                runs.Add(new SlidesTextRunData
+                {
+                    Text = text,
+                    Font = EmptyToNull(effective.LatinFont?.FontName),
+                    EastAsianFont = EmptyToNull(effective.EastAsianFont?.FontName),
+                    ComplexScriptFont = EmptyToNull(effective.ComplexScriptFont?.FontName),
+                    LatinFont = EmptyToNull(portion.PortionFormat.LatinFont?.FontName),
+                    FontSize = effective.FontHeight,
+                    Bold = effective.FontBold,
+                    Italic = effective.FontItalic,
+                    Color = RunColor(effective),
+                });
+            }
+        }
+
+        return runs.Count == 0 ? null : runs;
+    }
+
+    /// <summary>The solid color a run's text is drawn in, stated or inherited, as #RRGGBB; null for text without a solid fill.</summary>
+    internal static string? RunColor(IBasePortionFormatEffectiveData effective) =>
+        effective.FillFormat.FillType == FillType.Solid ? SlidesContrast.Hex(effective.FillFormat.SolidFillColor) : null;
+
+    /// <summary>The geometry of an autoshape that insert_shape draws, or null.</summary>
+    internal static string? Geometry(IShape shape) => shape is IAutoShape auto && auto.Placeholder is null
+        ? auto.ShapeType switch
+        {
+            ShapeType.Rectangle => SlidesShapeGeometries.Rectangle,
+            ShapeType.RoundCornerRectangle => SlidesShapeGeometries.RoundedRectangle,
+            ShapeType.Ellipse => SlidesShapeGeometries.Ellipse,
+            ShapeType.Line => SlidesShapeGeometries.Line,
+            ShapeType.Chevron => SlidesShapeGeometries.Chevron,
+            _ => null,
+        }
+        : null;
+
+    internal static string ShapeKind(IShape shape) => shape switch
+    {
+        _ when shape.Placeholder is not null => "placeholder",
+        IChart => "chart",
+        ITable => "table",
+        IAudioFrame => "audio",
+        IVideoFrame => "video",
+        IPictureFrame => "image",
+        IGroupShape => "group",
+        _ => "shape",
+    };
+
+    internal static IComment[] Comments(Presentation presentation) =>
+        presentation.CommentAuthors
+            .SelectMany(static author => author.Comments.Cast<IComment>())
+            .ToArray();
+
+    internal static IReadOnlyDictionary<string, string?> Properties(IDocumentProperties properties) =>
+        new SortedDictionary<string, string?>(StringComparer.Ordinal)
+        {
+            ["author"] = EmptyToNull(properties.Author),
+            ["company"] = EmptyToNull(properties.Company),
+            ["keywords"] = EmptyToNull(properties.Keywords),
+            ["subject"] = EmptyToNull(properties.Subject),
+            ["title"] = EmptyToNull(properties.Title),
+        };
 }

@@ -85,7 +85,7 @@ public sealed class SlidesSkillExampleTests
         if (actual.Contains(expected, StringComparison.Ordinal)) { return; }
         Assert.True(evaluation, "Licensed example output must preserve the complete text.");
         Assert.Contains(expected[..Math.Min(5, expected.Length)], actual, StringComparison.Ordinal);
-        Assert.Contains(SlidesEngineSupport.EvaluationTruncationMarker, actual, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains(SlidesEvaluationMarks.EvaluationTruncationMarker, actual, StringComparison.OrdinalIgnoreCase);
     }
 
     private static string Text(ISlide slide) => string.Join("\n",

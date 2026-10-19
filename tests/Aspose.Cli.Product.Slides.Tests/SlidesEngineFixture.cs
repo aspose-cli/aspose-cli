@@ -44,7 +44,7 @@ public sealed class SlidesEngineFixture : IDisposable
     /// </summary>
     internal static bool IsEvaluationWatermark(string? text) =>
         text?.StartsWith("Evalu...", StringComparison.Ordinal) == true
-        && text.Contains(SlidesEngineSupport.EvaluationTruncationMarker, StringComparison.OrdinalIgnoreCase);
+        && text.Contains(SlidesEvaluationMarks.EvaluationTruncationMarker, StringComparison.OrdinalIgnoreCase);
 
     /// <summary>A blank PNG <paramref name="size"/> pixels square; different sizes give different images.</summary>
     internal static byte[] Png(int size)

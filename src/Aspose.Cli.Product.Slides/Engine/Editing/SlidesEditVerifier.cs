@@ -4,7 +4,7 @@ using Aspose.Cli.Sdk.Diagnostics;
 using Aspose.Cli.Sdk.Text;
 using Aspose.Slides;
 using static Aspose.Cli.Product.Slides.Engine.Mapping.SlidesStateProjection;
-using static Aspose.Cli.Product.Slides.Engine.SlidesEngineSupport;
+using static Aspose.Cli.Product.Slides.Engine.SlidesShapeText;
 
 namespace Aspose.Cli.Product.Slides.Engine.Editing;
 
