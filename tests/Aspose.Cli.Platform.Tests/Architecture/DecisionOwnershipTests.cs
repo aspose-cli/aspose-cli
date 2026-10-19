@@ -59,39 +59,23 @@ public sealed partial class DecisionOwnershipTests
     /// <summary>
     /// A file's extension is read only by the SDK, which matches it against a product's format
     /// declarations (<c>FormatDescriptorExtensions.NamedBy</c>, the SDK error factories, an
-    /// <c>OwnedTemporaryFile</c> named like its source). <see cref="ExtensionReaders"/> are the
-    /// named exceptions, each still in use.
+    /// <c>OwnedTemporaryFile</c> named like its source). No source file of a product, in any
+    /// folder, reads one.
     /// </summary>
     [Fact]
     public void D1_Products_DeriveNoFormatFromAnExtension()
     {
-        var reads = ProductFiles("Commands", "Contracts", "Engine")
-            .SelectMany(static file => file.Root.DescendantNodes()
-                .OfType<InvocationExpressionSyntax>()
-                .Where(static invocation => InvokedName(invocation) is "GetExtension" or "ChangeExtension" or "HasExtension"
-                    || (InvokedName(invocation) == "EndsWith"
-                        && invocation.ArgumentList.Arguments.FirstOrDefault()?.Expression is LiteralExpressionSyntax literal
-                        && literal.Token.ValueText.StartsWith('.')))
-                .Select(invocation => (Reader: (File: Relative(file.Path), Member: EnclosingMember(invocation)), At: file.At(invocation, invocation.ToString()))))
-            .ToArray();
-
-        string[] violations = [.. reads.Where(static read => !ExtensionReaders.Any(read.Reader.Equals)).Select(static read => read.At)];
-        string[] unused = [.. ExtensionReaders.Where(reader => !reads.Any(read => read.Reader.Equals(reader))).Select(static reader => $"{reader.File}: {reader.Member}")];
+        string[] violations = [.. ProductFiles().SelectMany(static file => file.Root.DescendantNodes()
+            .OfType<InvocationExpressionSyntax>()
+            .Where(static invocation => InvokedName(invocation) is "GetExtension" or "ChangeExtension" or "HasExtension"
+                || (InvokedName(invocation) == "EndsWith"
+                    && invocation.ArgumentList.Arguments.FirstOrDefault()?.Expression is LiteralExpressionSyntax literal
+                    && literal.Token.ValueText.StartsWith('.')))
+            .Select(invocation => file.At(invocation, invocation.ToString())))];
 
         AssertNone(violations,
-            "Products read no file extension; the SDK matches a path against the product's format declarations:");
-        AssertNone(unused, "A named exception to the extension rule is no longer used; remove it:");
+            "No product source file reads a file extension; the SDK matches a path against the product's format declarations:");
     }
-
-    /// <summary>
-    /// Product members that read an extension for something other than a format. Temporary:
-    /// <c>SheetTypo</c> tells a mistyped sheet name from a workbook file name by whether it has
-    /// an extension, and moves once the Cells edit refactoring that owns its file lands.
-    /// </summary>
-    private static readonly (string File, string Member)[] ExtensionReaders =
-    [
-        (Path.Combine("Aspose.Cli.Product.Cells", "Engine", "CellsEdit.cs"), "SheetTypo"),
-    ];
 
     [Fact]
     public void D1_Products_NeverRefuseAnOutputFormatThemselves()
