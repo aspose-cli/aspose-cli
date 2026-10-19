@@ -76,13 +76,14 @@ internal static class ViewRenderWorker
             // Each document carries the license context of the command that opened it; the
             // environment and working directory the service started with never make one.
             RequesterLicense? requester = request.RequesterLicense;
+            Func<string, string?> environment = name => requester?.Read(name);
             CommandContext context = CompositionRoot.Create(catalog, globals with
             {
                 LicensePath = request.EvaluationRequested ? null : request.License,
                 EvaluationRequested = request.EvaluationRequested,
                 MaxInputBytes = request.MaxInputBytes,
                 WorkDir = requester?.WorkDirectory ?? globals.WorkDir,
-            }, deadline, licenseEnvironment: name => requester?.Read(name));
+            }, deadline, licenseEnvironment: environment);
             if (request.SourceOrigin is { } origin)
             {
                 context.ResourceBudgets.Inputs.SetSnapshotOrigin(request.Source, origin);
@@ -96,7 +97,7 @@ internal static class ViewRenderWorker
             string product = definition.Manifest.Id;
             using IDisposable fontScope = binding.UseFonts(
                 FontSearchProfile.Explicit(request.FontDirectories ?? []));
-            string license = LicenseFingerprint.Of(binding.LicenseGate.Resolution);
+            string license = LicenseFingerprint.Of(binding.LicenseGate.Resolution, environment);
             if (licenses.TryGetValue(product, out string? applied) && applied != license)
             {
                 return new RenderWorkerResponse { Id = request.Id, Ok = false, Recycle = true };

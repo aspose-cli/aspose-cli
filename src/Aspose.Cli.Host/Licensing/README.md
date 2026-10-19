@@ -26,6 +26,8 @@ lifetime, identity and atomic storage. Each product Engine retains only its own
   change, and re-raises a child's error with the child's own code and exit code.
 - The render worker applies licenses for the viewer. It asks to be recycled when the
   `LicenseFingerprint` of a product changes, because an engine cannot swap a license.
+  A fingerprint identifies license content carried in a variable by its SHA-256 hash, so
+  requesters with different content get different fingerprints; the content never enters one.
 - Human startup messages are emitted once at the outer CLI boundary. JSON, MCP,
   verbose JSONL and internal protocols remain parseable.
 
