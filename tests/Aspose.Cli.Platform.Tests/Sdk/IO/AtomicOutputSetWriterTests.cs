@@ -1211,6 +1211,114 @@ public sealed class AtomicOutputSetWriterTests
     }
 
     [Fact]
+    public void AtomicPublish_RestoresTheOriginalWhenStageChangesImmediatelyBeforeSwap()
+    {
+        using var temp = new TempDirectory();
+        string target = temp.File("target.txt");
+        File.WriteAllText(target, "original");
+        FilePublicationSnapshot original = FilePublicationSnapshot.Capture(target);
+        string? transaction = null;
+        var faults = new SelectiveFaultInjector(point =>
+        {
+            if (point.Kind == PublicationFaultKind.Publish)
+            {
+                ReplaceFile(AtomicPublicationPlan.StagedPath(transaction!, target, index: 0), "replacement");
+            }
+            return null;
+        });
+        var set = new AtomicOutputSetWriter(TestBudgets.Writer(), temp.Path, "stage-before-swap", faults);
+        set.Stage(target, overwrite: true, staged => File.WriteAllText(staged, "verified"));
+        transaction = Assert.Single(Directory.GetDirectories(temp.Path));
+
+        CliException error = Assert.Throws<CliException>(() => set.Commit());
+        set.Dispose();
+
+        Assert.Equal(ErrorCodes.OutputPublicationFailed, error.Code);
+        Assert.True(error.Details!["recoveryComplete"]!.GetValue<bool>());
+        AssertSwapNeverStarted(error);
+        Assert.Equal("original", File.ReadAllText(target));
+        Assert.True(original.VersionEquals(FilePublicationSnapshot.Capture(target)));
+        Assert.Equal("replacement", File.ReadAllText(AtomicPublicationPlan.StagedPath(transaction, target, index: 0)));
+        AssertNoSwapResidue(temp.Path);
+    }
+
+    [Fact]
+    public void AtomicPublish_RejectsAStageReplacedAfterVerification()
+    {
+        using var temp = new TempDirectory();
+        string target = temp.File("target.txt");
+        string? transaction = null;
+        var faults = new SelectiveFaultInjector(point =>
+        {
+            if (point.Kind == PublicationFaultKind.Publish)
+            {
+                ReplaceFile(AtomicPublicationPlan.StagedPath(transaction!, target, index: 0), "replacement");
+            }
+            return null;
+        });
+        var set = new AtomicOutputSetWriter(TestBudgets.Writer(), temp.Path, "new-stage-before-swap", faults);
+        set.Stage(target, overwrite: false, staged => File.WriteAllText(staged, "verified"));
+        transaction = Assert.Single(Directory.GetDirectories(temp.Path));
+
+        CliException error = Assert.Throws<CliException>(() => set.Commit());
+        set.Dispose();
+
+        Assert.Equal(ErrorCodes.OutputPublicationFailed, error.Code);
+        AssertSwapNeverStarted(error);
+        Assert.False(File.Exists(target));
+        Assert.Equal("replacement", File.ReadAllText(AtomicPublicationPlan.StagedPath(transaction, target, index: 0)));
+        AssertNoSwapResidue(temp.Path);
+    }
+
+    [Fact]
+    public void AtomicPublish_KeepsASameContentExternalReplacementByIdentity()
+    {
+        Requires.Windows();
+
+        using var temp = new TempDirectory();
+        string target = temp.File("target.txt");
+        File.WriteAllText(target, "same-content");
+        FilePublicationSnapshot? external = null;
+        var faults = new SelectiveFaultInjector(point =>
+        {
+            if (point.Kind == PublicationFaultKind.Publish)
+            {
+                ReplaceFile(target, "same-content");
+                external = FilePublicationSnapshot.Capture(target);
+            }
+            return null;
+        });
+        var set = new AtomicOutputSetWriter(TestBudgets.Writer(), temp.Path, "external-before-swap", faults);
+        set.Stage(target, overwrite: true, staged => File.WriteAllText(staged, "published-content"));
+
+        CliException error = Assert.Throws<CliException>(() => set.Commit());
+        set.Dispose();
+
+        Assert.Equal(ErrorCodes.OutputPublicationPartial, error.Code);
+        Assert.True(external!.VersionEquals(FilePublicationSnapshot.Capture(target)));
+        Assert.Equal("same-content", File.ReadAllText(target));
+        AssertNoSwapResidue(temp.Path);
+    }
+
+    private static void ReplaceFile(string path, string content)
+    {
+        string replacement = path + ".external";
+        File.WriteAllText(replacement, content);
+        File.Move(replacement, path, overwrite: true);
+    }
+
+    private static void AssertSwapNeverStarted(CliException error)
+    {
+        IOException failure = Assert.IsType<IOException>(error.InnerException);
+        Assert.Contains("changed after verification", failure.Message, StringComparison.Ordinal);
+    }
+
+    private static void AssertNoSwapResidue(string root) =>
+        Assert.DoesNotContain(
+            Directory.EnumerateFiles(root, "*", SearchOption.AllDirectories),
+            path => path.EndsWith(".displaced", StringComparison.Ordinal));
+
+    [Fact]
     public void AtomicSwapRestoresSameContentExternalReplacementByIdentity()
     {
         Requires.Windows();
