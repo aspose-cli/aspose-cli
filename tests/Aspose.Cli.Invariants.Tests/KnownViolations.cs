@@ -59,17 +59,7 @@ internal static class KnownViolations
     public static void Verify(string id)
     {
         InvariantCase item = InvariantCases.All[id];
-        IReadOnlyList<ScenarioProblem> problems;
-        try
-        {
-            problems = item.Check is { } check
-                ? RuleWorkspace.CollectHintProblems(item.Invariant, check)
-                : ScenarioRunner.Run(item.Scenario!).Problems;
-        }
-        catch (InvalidOperationException exception) when (exception.Message.StartsWith("A scenario fixture", StringComparison.Ordinal))
-        {
-            problems = [new ScenarioProblem(0, "seed", exception.Message)];
-        }
+        IReadOnlyList<ScenarioProblem> problems = Problems(item);
         Dictionary<string, string> actual = problems
             .GroupBy(problem => InvariantOf(item, problem.Check), StringComparer.Ordinal)
             .ToDictionary(
@@ -119,6 +109,25 @@ internal static class KnownViolations
             message.AppendLine($"'{id}' now holds in {mode} mode for {string.Join(", ", stale)}; delete those entries from {FileName}.");
         }
         Assert.Fail(message.ToString());
+    }
+
+    /// <summary>
+    /// Runs one case: a rule case's check, with the hints of its runs as problems of its invariant
+    /// (<see cref="RuleWorkspace.CollectHintProblems"/>), or a scenario; a fixture that cannot be
+    /// built is a problem of its own.
+    /// </summary>
+    internal static IReadOnlyList<ScenarioProblem> Problems(InvariantCase item)
+    {
+        try
+        {
+            return item.Check is { } check
+                ? RuleWorkspace.CollectHintProblems(item.Invariant, check)
+                : ScenarioRunner.Run(item.Scenario!).Problems;
+        }
+        catch (InvalidOperationException exception) when (exception.Message.StartsWith("A scenario fixture", StringComparison.Ordinal))
+        {
+            return [new ScenarioProblem(0, "seed", exception.Message)];
+        }
     }
 
     /// <summary>The invariant a problem breaks: a contract check names its own, an expectation the case's.</summary>

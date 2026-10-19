@@ -119,6 +119,70 @@ public sealed class ExecutableHintTests : IDisposable
         Assert.Contains("fails with OPTION_INVALID", Assert.Single(ErrorHint(Hint)), StringComparison.Ordinal);
     }
 
+    /// <summary>
+    /// A hint that runs on the invocation's file is judged on that file's content: the same file
+    /// name in another workspace, holding another workbook, is run again, not answered from the
+    /// first one's outcome.
+    /// </summary>
+    [Fact]
+    public void SameFileNameWithOtherContent_IsJudgedAgain()
+    {
+        const string Hint = """Apply {"op":"set_active_sheet","sheet":"SameName"} to show that sheet first.""";
+        using TempWorkspace visible = WorkbookWithSheet("visible");
+        using TempWorkspace hidden = WorkbookWithSheet("hidden");
+
+        // A visible sheet can be made active.
+        Assert.Empty(ExecutableHints.Problems(InspectRun(visible), Warning(Hint)));
+        // A hidden one cannot, so the CLI refuses the operation as written.
+        Assert.Contains("fails with OPS_INVALID", Assert.Single(ExecutableHints.Problems(InspectRun(hidden), Warning(Hint))), StringComparison.Ordinal);
+
+        TempWorkspace WorkbookWithSheet(string visibility)
+        {
+            var workspace = new TempWorkspace();
+            ScenarioLicense.Project(workspace.Path);
+            File.Copy(_workspace.File("book.xlsx"), workspace.File("book.xlsx"));
+            string ops = $$"""{"ops":[{"op":"insert_sheet","name":"SameName"},{"op":"set_sheet_visibility","sheet":"SameName","visibility":"{{visibility}}"}]}""";
+            Assert.Equal(0, workspace.Run("cells", "edit", "book.xlsx", "--in-place", "--ops", ops).ExitCode);
+            return workspace;
+        }
+
+        static HintRun InspectRun(TempWorkspace workspace) =>
+            new(["cells", "inspect", "book.xlsx", "--output-format", "json"], workspace.Path, Path.GetDirectoryName(workspace.ConfigDirectory)!, Variables: null);
+    }
+
+    /// <summary>
+    /// The known-violations check runs a case with a check through the hint collector, so a hint
+    /// of the check's runs that does not run is a problem of the case's invariant.
+    /// </summary>
+    [Fact]
+    public void KnownViolations_RunsARuleCaseWithItsHints()
+    {
+        string envelope = new JsonObject
+        {
+            ["schema"] = "https://schemas.aspose.com/aspose-cli/v2/common/error.schema.json",
+            ["schemaVersion"] = 2,
+            ["error"] = new JsonObject { ["code"] = "RENDER_EMPTY", ["message"] = "Synthetic.", ["hint"] = "List the sheets with 'aspose-cli cells inspect --nope-known'." },
+        }.ToJsonString();
+        var item = new InvariantCase("C-R99 | synthetic", "C-R99", "cells", Slow: false, Scenario: null, Check: () =>
+        {
+            using var workspace = new RuleWorkspace();
+            workspace.Seed("book.xlsx", ScenarioFixtures.Read("cells.xlsx"));
+            Assert.Equal("RENDER_EMPTY", workspace.Json("cells", "inspect", "book.xlsx").Error);
+            return [];
+        });
+
+        IReadOnlyList<ScenarioProblem> problems;
+        using (RuleWorkspace.RewriteResults(_ => new CliResult(2, string.Empty, envelope)))
+        {
+            problems = KnownViolations.Problems(item);
+        }
+
+        ScenarioProblem hint = Assert.Single(problems);
+        Assert.Equal("C-R99", KnownViolations.InvariantOf(item, hint.Check));
+        Assert.StartsWith(ExecutableHints.Check + ": the RENDER_EMPTY hint 'aspose-cli cells inspect --nope-known'", hint.Message, StringComparison.Ordinal);
+        Assert.Contains("fails with USAGE_ERROR", hint.Message, StringComparison.Ordinal);
+    }
+
     [Fact]
     public void RuleCase_ReportsTheHintsOfItsRunsUnderItsInvariant()
     {
