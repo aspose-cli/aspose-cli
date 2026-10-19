@@ -268,6 +268,20 @@ public static class FormatDescriptorExtensions
             .ToArray());
     }
 
+    /// <summary>
+    /// Returns the formats among <paramref name="descriptors"/> whose extensions the file name
+    /// <paramref name="path"/> carries, ignoring case, in declaration order; none for a name
+    /// without an extension. A product asks this rather than reading the extension itself.
+    /// </summary>
+    public static IReadOnlyList<FormatDescriptor> NamedBy(
+        this IEnumerable<FormatDescriptor> descriptors,
+        string path)
+    {
+        ArgumentNullException.ThrowIfNull(descriptors);
+        ArgumentNullException.ThrowIfNull(path);
+        return Array.AsReadOnly(descriptors.Where(format => format.Names(path)).ToArray());
+    }
+
     private static IEnumerable<FormatDescriptor> Ordered(
         IEnumerable<FormatDescriptor> descriptors,
         FormatUse use)
