@@ -185,7 +185,7 @@ internal static class PdfConvert
             using LoadedPdf saved = session.Loader.OpenPublishedCandidate(temp, password: null);
             using var validation = new MemoryStream();
             PdfComplianceLog.EnsureConformant(
-                saved.Document.Validate(validation, format), validation, profile, page => ButtonFields(saved.Document, page));
+                saved.Document.Validate(validation, format), validation, profile, target.AppearanceClause, page => ButtonFields(saved.Document, page));
         });
 
         foreach (string removed in attachments.Except(AttachmentNames(document), StringComparer.Ordinal))
@@ -227,7 +227,7 @@ internal static class PdfConvert
 
     /// <summary>
     /// The full names of the check boxes and radio groups on a page whose normal appearance is
-    /// one stream rather than one per state, which clause 6.3.3 rejects; the form lists a radio
+    /// one stream rather than one per state, which the profile's appearance clause rejects; the form lists a radio
     /// group as its buttons. The SDK names an appearance per state <c>N.&lt;state&gt;</c>.
     /// </summary>
     private static IEnumerable<string> ButtonFields(Document document, int page) => document.Form.Fields

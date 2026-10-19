@@ -84,10 +84,11 @@ internal static class PdfComplianceLog
     /// <summary>
     /// Rejects a converted document that validation of its saved file finds not conforming,
     /// although the conversion reported success (known issue PDF-PDFA-RADIO-APPEARANCE in
-    /// KNOWN-ISSUES.md). Annotation appearance problems (clause 6.3.3) name the button fields on
-    /// their pages that have one appearance for all their states, which flattening removes.
+    /// KNOWN-ISSUES.md). Annotation appearance problems (the profile's
+    /// <paramref name="appearanceClause"/>) name the button fields on their pages that have one
+    /// appearance for all their states, which flattening removes.
     /// </summary>
-    internal static void EnsureConformant(bool valid, MemoryStream log, string profile, Func<int, IEnumerable<string>> buttonFieldsOnPage)
+    internal static void EnsureConformant(bool valid, MemoryStream log, string profile, string? appearanceClause, Func<int, IEnumerable<string>> buttonFieldsOnPage)
     {
         if (valid)
         {
@@ -96,7 +97,7 @@ internal static class PdfComplianceLog
 
         PdfComplianceProblem[] problems = [.. Parse(log)];
         string[] fields = [.. problems
-            .Where(static problem => problem.Clause == "6.3.3" && problem.Page is not null)
+            .Where(problem => appearanceClause is not null && problem.Clause == appearanceClause && problem.Page is not null)
             .SelectMany(problem => buttonFieldsOnPage(problem.Page!.Value))
             .Distinct(StringComparer.Ordinal)
             .Select(static name => $"'{name}'")];
