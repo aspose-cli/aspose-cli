@@ -250,8 +250,7 @@ internal sealed class WordsDocumentLoader
     /// </summary>
     private static bool IsTextFallbackForNonTextPath(string formatId, string path) =>
         WordsEngineFormats.Has(formatId, static format => format.PlainText)
-        && !WordsFormats.Definitions.Named(FormatUse.Input, formatId)!.Extensions
-            .Contains(Path.GetExtension(path), StringComparer.OrdinalIgnoreCase);
+        && new[] { WordsFormats.Definitions.Named(FormatUse.Input, formatId)! }.NamedBy(path).Count == 0;
 
     // The page container html-fixed output gives each page; the SDK has no reader for it.
     private const string FixedPageMarker = "class=\"awdiv awpage\"";
