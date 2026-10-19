@@ -83,24 +83,17 @@ internal static partial class ContractRules
         }
     }
 
-    /// <summary>Runs one invocation in a fresh workspace under the run's license mode and returns its result, or null with why.</summary>
+    /// <summary>
+    /// Runs one invocation in a fresh <see cref="RuleWorkspace"/> and returns its result, or null
+    /// with why; the hints of the result must run as written.
+    /// </summary>
     private static JsonObject? RunSample(Invocation invocation, out string? failure)
     {
-        using var workspace = new TempWorkspace();
-        ScenarioLicense.Project(workspace.Path);
-        foreach ((string relative, ScenarioFile file) in invocation.Files)
+        using var workspace = new RuleWorkspace(invocation);
+        RuleRun run = workspace.Json([.. invocation.Args]);
+        if (run.ExitCode != 0 || run.Document is not JsonObject document)
         {
-            string target = workspace.File(relative);
-            Directory.CreateDirectory(Path.GetDirectoryName(target)!);
-            File.WriteAllBytes(target, ScenarioFixtures.Read(file.Fixture!));
-        }
-        Dictionary<string, string?> variables = invocation.Env.ToDictionary(static pair => pair.Key, static pair => (string?)pair.Value);
-        var environment = CliEnvironment.Evaluation(Path.GetDirectoryName(workspace.ConfigDirectory)!, variables);
-        CliResult result = new CliProcess(CliRunner.ExecutablePath, environment)
-            .Run(workspace.Path, string.Empty, [.. invocation.Args, "--output-format", "json"]);
-        if (result.ExitCode != 0 || JsonNode.Parse(result.StdOut) is not JsonObject document)
-        {
-            failure = $"the sample exited {result.ExitCode} without a result";
+            failure = $"the sample exited {run.ExitCode} without a result";
             return null;
         }
         failure = null;
