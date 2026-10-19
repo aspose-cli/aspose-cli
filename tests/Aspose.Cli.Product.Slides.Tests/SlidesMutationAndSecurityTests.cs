@@ -346,16 +346,8 @@ public sealed class SlidesMutationAndSecurityTests
             }
         }
 
-        SlidesReadResult read = SlidesRead.Run(
-            fixture.Session,
-            new SlidesReadRequest { Input = output, Content = SlidesReadContents.Full });
-        SlidesReviewAnalysis review = SlidesReviewAnalyzer.Analyze(
-            read.Slides,
-            slideWidth,
-            slideHeight,
-            fixture.LicenseState == Sdk.Licensing.LicenseState.Evaluation);
         Assert.DoesNotContain(
-            review.Findings,
+            fixture.Review(output).Findings!,
             static finding => finding.Code == SlidesReviewChecks.ShapeOutsideSlide.Code);
     }
 

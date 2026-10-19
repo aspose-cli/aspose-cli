@@ -44,7 +44,7 @@ public sealed class SlidesReadBackTests
 
         SlidesReadResult read = SlidesRead.Run(fixture.Session, new SlidesReadRequest { Input = output, Content = SlidesReadContents.Full });
 
-        SlidesShapeData[] shapes = [.. read.Slides[0].Shapes.Where(static shape => !shape.EvaluationWatermark)];
+        SlidesShapeData[] shapes = [.. read.Slides[0].Shapes.Where(static shape => !SlidesEngineFixture.IsEvaluationWatermark(shape.Text))];
         Assert.Equal(geometries, shapes.Where(static shape => shape.Placeholder is null).Select(static shape => shape.Geometry));
         SlidesShapeData[] placeholders = [.. shapes.Where(static shape => shape.Placeholder is not null)];
         Assert.NotEmpty(placeholders);
@@ -183,7 +183,7 @@ public sealed class SlidesReadBackTests
         SlidesReadResult read = SlidesRead.Run(fixture.Session, new SlidesReadRequest { Input = output, Content = SlidesReadContents.Full });
 
         SlidesParagraphData paragraph = Assert.Single(
-            read.Slides[0].Shapes.Where(static shape => !shape.EvaluationWatermark && shape.Paragraphs is not null).SelectMany(static shape => shape.Paragraphs!));
+            read.Slides[0].Shapes.Where(static shape => !SlidesEngineFixture.IsEvaluationWatermark(shape.Text) && shape.Paragraphs is not null).SelectMany(static shape => shape.Paragraphs!));
         Assert.Equal(("bullet", 1), (paragraph.List!.Kind, paragraph.List.Level));
     }
 
