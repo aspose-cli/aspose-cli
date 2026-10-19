@@ -22,11 +22,7 @@ internal static class ExtractCommand
             Description = "Form data format; required with --what forms, and only with it.",
         }.WithInput(InputKind.None);
         formFormat.AcceptOnlyFromAmong([.. PdfFormats.FormData.Select(static format => format.Id)]);
-        var bom = new Option<bool>("--bom")
-        {
-            Description = "Start each table's CSV with a UTF-8 byte order mark, so Excel reads its non-English text "
-                + "correctly; only with --what tables. Default: UTF-8 without one.",
-        };
+        var bom = new BomOption("each table's CSV", onlyWith: "--what tables");
         return new(
             "extract",
             "Extract bounded PDF assets, text, tables or form data.",
@@ -35,17 +31,13 @@ internal static class ExtractCommand
                 Input = PdfInputs.Document,
                 Output = OutputTarget.Directory("Safe extraction directory."),
             },
-            [what, formFormat, .. pages.Options, bom],
+            [what, formFormat, .. pages.Options, .. bom.Options],
             (parse, standard) =>
             {
                 // Every usage check runs before the input is resolved or read.
                 string kind = parse.GetRequiredValue(what);
                 string? pageText = pages.Read(parse);
-                bool byteOrderMark = parse.GetValue(bom);
-                if (byteOrderMark && kind != PdfExtractKinds.Tables)
-                {
-                    throw CliErrors.OptionInvalid("--bom", $"--what {kind} writes no CSV tables", "Drop --bom.");
-                }
+                bool byteOrderMark = bom.Read(parse, kind == PdfExtractKinds.Tables ? null : $"--what {kind} writes no CSV tables");
 
                 FormatDescriptor? format = parse.GetValue(formFormat) is { } id
                     ? PdfFormats.FormData.Single(candidate => candidate.Id == id)
