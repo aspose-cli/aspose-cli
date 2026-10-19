@@ -95,13 +95,14 @@ internal sealed class SlidesEditModel : IOperationModel<SlidesOp>
     /// </summary>
     public IReadOnlyList<string> AttemptedTargets(SlidesOp operation)
     {
-        SlidesMutationHandlers.ResolvedSlidesOp target = Target(operation);
-        int Number(ISlide slide) => _presentation.Slides.IndexOf(slide) + 1;
-        if (operation is InsertSectionOp section)
+        SlidesOpTarget named = SlidesOpTargets.Of(operation);
+        if (!named.ByResolution)
         {
-            return [SlidesStateProjection.SectionAddress(section.Name)];
+            return named.Written;
         }
 
+        SlidesMutationHandlers.ResolvedSlidesOp target = Target(operation);
+        int Number(ISlide slide) => _presentation.Slides.IndexOf(slide) + 1;
         if (target.Slide is { } slide && _presentation.Slides.Contains(slide))
         {
             return target.ShapeId is long shapeId
@@ -114,14 +115,7 @@ internal sealed class SlidesEditModel : IOperationModel<SlidesOp>
             return [.. slides.Select(item => SlidesStateProjection.SlideAddress(Number(item)))];
         }
 
-        return operation switch
-        {
-            ShapeTargetOp { Slide: int number, ShapeId: long shapeId } => [SlidesStateProjection.ShapeAddress(number, shapeId)],
-            SlideTargetOp { Slide: int number } => [SlidesStateProjection.SlideAddress(number)],
-            SlidesSetPropertiesOp => [SlidesStateProjection.AllAddress("property")],
-            SetSlideSizeOp => [SlidesStateProjection.SlideSizeAddress],
-            _ => [SlidesStateProjection.AllAddress(SlidesStateProjection.SlideUnit)],
-        };
+        return named.Written;
     }
 
     /// <summary>The slides in order, which number what the batch changed on each.</summary>
