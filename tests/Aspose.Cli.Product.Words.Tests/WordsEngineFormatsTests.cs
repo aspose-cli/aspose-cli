@@ -1,6 +1,8 @@
 using Aspose.Cli.Product.Words.Engine.Mapping;
+using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Results;
+using Aspose.Words.Saving;
 using Xunit;
 
 namespace Aspose.Cli.Product.Words.Tests;
@@ -144,6 +146,37 @@ public sealed class WordsEngineFormatsTests : IClassFixture<WordsFixture>
 
     private static FormatDescriptor Declared(string id) =>
         WordsFormats.Definitions.Single(format => string.Equals(format.Id, id, StringComparison.Ordinal));
+
+    /// <summary>
+    /// The save options take a password exactly for the formats declared to carry one; a
+    /// password for any other format is a defect of the caller, never an option the user passed.
+    /// </summary>
+    [Fact]
+    public void EveryProtectableFormatTakesAPasswordAndNoOtherDoes()
+    {
+        var password = new Secret("words-secret");
+        foreach (FormatDescriptor format in WordsFormats.Definitions
+            .Where(static format => format.Uses.HasFlag(FormatUse.Convert) || format.Uses.HasFlag(FormatUse.Render)))
+        {
+            if (format.Protectable)
+            {
+                SaveOptions options = WordsSavePipeline.Options(format.Id, password);
+                string? set = options switch
+                {
+                    OoxmlSaveOptions ooxml => ooxml.Password,
+                    DocSaveOptions doc => doc.Password,
+                    OdtSaveOptions odt => odt.Password,
+                    _ => null,
+                };
+                Assert.True(set == password.Reveal(), $"{format.Id} does not take the password.");
+            }
+            else
+            {
+                Exception? refused = Record.Exception(() => WordsSavePipeline.Options(format.Id, password));
+                Assert.True(refused is InvalidOperationException, $"{format.Id}: {refused?.GetType().Name ?? "took the password"}");
+            }
+        }
+    }
 
     private static WordsEngineFormat? Engine(string id) =>
         WordsEngineFormats.All.SingleOrDefault(entry => string.Equals(entry.Id, id, StringComparison.Ordinal));
