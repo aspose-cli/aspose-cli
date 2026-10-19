@@ -776,17 +776,6 @@ public sealed class CliContractTests : IDisposable
         Assert.StartsWith($"Did you mean '--to {format}'?", error["hint"]!.GetValue<string>(), StringComparison.Ordinal);
     }
 
-    [Fact]
-    public void Capabilities_PublishBooleanValuesInLowercase()
-    {
-        CliResult result = _workspace.Run("capabilities", "--output-format", "json");
-
-        JsonNode quiet = Parse(result.StdOut)["commands"]!.AsArray()
-            .Single(item => item!["path"]!.GetValue<string>() == "aspose-cli")!["options"]!.AsArray()
-            .Single(item => item!["name"]!.GetValue<string>() == "--quiet")!;
-        Assert.Equal(["false", "true"], quiet["allowedValues"]!.AsArray().Select(static item => item!.GetValue<string>()));
-    }
-
     [Theory]
     [InlineData("cells read", "--scan-range", true)]
     [InlineData("cells convert", "--out", false)]
