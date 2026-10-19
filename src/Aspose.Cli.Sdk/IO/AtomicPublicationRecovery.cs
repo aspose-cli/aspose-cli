@@ -278,16 +278,23 @@ internal sealed class AtomicPublicationRecovery(AtomicPublicationPlan plan)
 
     /// <summary>
     /// Every swap first moves the target to its displaced path or moves the staged file onto
-    /// the target. A staged file that is still the admitted one, with no displaced file and a
-    /// target that does not hold the staged content, proves the target was never touched by
-    /// this transaction. The content check keeps a copying move that was interrupted before
-    /// it removed its source from passing for an untouched target.
+    /// the target. With no displaced file and the staged path still occupied, the target was
+    /// never touched by this transaction when it is still the original file (as when the swap
+    /// refused a replaced stage), or when the staged file is still the admitted one and the
+    /// target does not hold its content. That content check keeps a copying move that was
+    /// interrupted before it removed its source from passing for an untouched target.
     /// </summary>
-    private static bool SwapNeverStarted(PublicationJournalEntry entry, FilePublicationSnapshot current) =>
-        (entry.Displaced is null || FilePublicationOwnedDelete.TryGetAttributesNoFollow(entry.Displaced) is null)
-        && File.Exists(entry.Staged)
-        && entry.StagedSnapshot.VersionEquals(FilePublicationSnapshot.Capture(entry.Staged))
-        && !entry.StagedSnapshot.ContentEquals(current);
+    private static bool SwapNeverStarted(PublicationJournalEntry entry, FilePublicationSnapshot current)
+    {
+        if ((entry.Displaced is not null && FilePublicationOwnedDelete.TryGetAttributesNoFollow(entry.Displaced) is not null)
+            || !File.Exists(entry.Staged))
+        {
+            return false;
+        }
+        return entry.Original.VersionEquals(current)
+            || (entry.StagedSnapshot.VersionEquals(FilePublicationSnapshot.Capture(entry.Staged))
+                && !entry.StagedSnapshot.ContentEquals(current));
+    }
 
     private static FilePublicationSnapshot RecognizeInterruptedPublication(
         PublicationJournalEntry entry,
