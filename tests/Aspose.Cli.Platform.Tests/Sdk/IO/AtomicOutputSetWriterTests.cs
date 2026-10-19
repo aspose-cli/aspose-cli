@@ -370,34 +370,6 @@ public sealed class AtomicOutputSetWriterTests
     }
 
     [Fact]
-    public void BackupFailureOccursBeforeAnyTargetIsPublished()
-    {
-        using var temp = new TempDirectory();
-        string first = temp.File("first.txt");
-        string second = temp.File("second.txt");
-        File.WriteAllText(first, "original-one");
-        File.WriteAllText(second, "original-two");
-        var faults = new SelectiveFaultInjector(
-            point => point.Kind == PublicationFaultKind.Backup && point.EntryIndex == 1
-                ? new IOException("backup fault")
-                : null);
-        using var set = new AtomicOutputSetWriter(
-            TestBudgets.Writer(),
-            temp.Path,
-            "test",
-            faults);
-        set.Stage(first, overwrite: true, staged => File.WriteAllText(staged, "replacement-one"));
-        set.Stage(second, overwrite: true, staged => File.WriteAllText(staged, "replacement-two"));
-
-        CliException error = Assert.Throws<CliException>(() => set.Commit());
-
-        Assert.Equal(ErrorCodes.OutputPublicationFailed, error.Code);
-        Assert.True(error.Details!["recoveryComplete"]!.GetValue<bool>());
-        Assert.Equal("original-one", File.ReadAllText(first));
-        Assert.Equal("original-two", File.ReadAllText(second));
-    }
-
-    [Fact]
     public void JournalFailureAfterPublicationStillTriggersVerifiedRecovery()
     {
         using var temp = new TempDirectory();
@@ -549,7 +521,6 @@ public sealed class AtomicOutputSetWriterTests
             target,
             index: 0);
         Directory.CreateDirectory(Path.GetDirectoryName(staged)!);
-        string backup = Path.Combine(backups, "000001.backup");
         string displaced = Path.Combine(backups, "000001.displaced");
         File.WriteAllText(target, "original");
         FilePublicationSnapshot original =
@@ -557,7 +528,6 @@ public sealed class AtomicOutputSetWriterTests
         File.WriteAllText(staged, "replacement");
         FilePublicationSnapshot stagedSnapshot =
             FilePublicationSnapshot.Capture(staged);
-        File.WriteAllText(backup, "original");
         File.Replace(staged, target, displaced);
         var journal = new PublicationJournal
         {
@@ -572,7 +542,6 @@ public sealed class AtomicOutputSetWriterTests
                     Index = 0,
                     Target = target,
                     Staged = staged,
-                    Backup = backup,
                     Displaced = displaced,
                     DisplacedSnapshot =
                         FilePublicationSnapshot.Capture(displaced),
@@ -612,13 +581,11 @@ public sealed class AtomicOutputSetWriterTests
             target,
             index: 0);
         Directory.CreateDirectory(Path.GetDirectoryName(staged)!);
-        string backup = Path.Combine(backups, "000001.backup");
         string displaced = Path.Combine(backups, "000001.displaced");
         File.WriteAllText(target, "original");
         FilePublicationSnapshot original =
             FilePublicationSnapshot.Capture(target);
         File.WriteAllBytes(staged, []);
-        File.WriteAllText(backup, "original");
         File.Move(target, displaced);
         var journal = new PublicationJournal
         {
@@ -633,8 +600,6 @@ public sealed class AtomicOutputSetWriterTests
                     Index = 0,
                     Target = target,
                     Staged = staged,
-                    Backup = backup,
-                    BackupSnapshot = FilePublicationSnapshot.Capture(backup),
                     Displaced = displaced,
                     Overwrite = true,
                     Original = original,
@@ -976,14 +941,14 @@ public sealed class AtomicOutputSetWriterTests
         PublicationJournal journal = PublicationJournal.Read(journalPath);
         journal.State = PublicationTransactionState.Partial;
         journal.Write(journalPath);
-        string backup = Assert.Single(journal.Entries).Backup!;
+        string displaced = Assert.Single(journal.Entries).Displaced!;
 
         CliException error = Assert.Throws<CliException>(() =>
             AtomicPublicationRecovery.RecoverPendingUnderLease(temp.Path, lease: null));
 
         Assert.Equal(ErrorCodes.OutputPublicationPartial, error.Code);
         Assert.True(File.Exists(journalPath));
-        Assert.True(File.Exists(backup));
+        Assert.True(File.Exists(displaced));
         Assert.True(Directory.Exists(transaction));
     }
 
@@ -1605,7 +1570,6 @@ public sealed class AtomicOutputSetWriterTests
             target,
             index: 0);
         Directory.CreateDirectory(Path.GetDirectoryName(staged)!);
-        string backup = Path.Combine(backups, "000001.backup");
         string displaced = Path.Combine(backups, "000001.displaced");
         File.WriteAllText(target, "original");
         FilePublicationSnapshot original =
@@ -1613,7 +1577,6 @@ public sealed class AtomicOutputSetWriterTests
         File.WriteAllText(staged, "replacement");
         FilePublicationSnapshot stagedSnapshot =
             FilePublicationSnapshot.Capture(staged);
-        File.WriteAllText(backup, "original");
         File.Replace(staged, target, displaced);
         var journal = new PublicationJournal
         {
@@ -1628,8 +1591,6 @@ public sealed class AtomicOutputSetWriterTests
                     Index = 0,
                     Target = target,
                     Staged = staged,
-                    Backup = backup,
-                    BackupSnapshot = FilePublicationSnapshot.Capture(backup),
                     Displaced = displaced,
                     Overwrite = true,
                     Original = original,
@@ -1664,7 +1625,6 @@ public sealed class AtomicOutputSetWriterTests
             target,
             index: 0);
         Directory.CreateDirectory(Path.GetDirectoryName(staged)!);
-        string backup = Path.Combine(backups, "000001.backup");
         string displaced = Path.Combine(backups, "000001.displaced");
         File.WriteAllText(target, original);
         FilePublicationSnapshot originalSnapshot =
@@ -1672,7 +1632,6 @@ public sealed class AtomicOutputSetWriterTests
         File.WriteAllText(staged, published);
         FilePublicationSnapshot stagedSnapshot =
             FilePublicationSnapshot.Capture(staged);
-        File.WriteAllText(backup, original);
         File.Replace(staged, target, displaced);
         var journal = new PublicationJournal
         {
@@ -1687,8 +1646,6 @@ public sealed class AtomicOutputSetWriterTests
                     Index = 0,
                     Target = target,
                     Staged = staged,
-                    Backup = backup,
-                    BackupSnapshot = FilePublicationSnapshot.Capture(backup),
                     Displaced = displaced,
                     DisplacedSnapshot =
                         FilePublicationSnapshot.Capture(displaced),

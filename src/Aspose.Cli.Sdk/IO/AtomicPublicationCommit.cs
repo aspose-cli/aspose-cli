@@ -3,7 +3,7 @@ using Microsoft.Win32.SafeHandles;
 
 namespace Aspose.Cli.Sdk.IO;
 
-/// <summary>Prepares backups and publishes every staged output in order.</summary>
+/// <summary>Prepares requested backups and publishes every staged output in order.</summary>
 internal sealed class AtomicPublicationCommit(AtomicPublicationPlan plan)
 {
     public IReadOnlyList<long> Execute(Action? beforeCommit = null)
@@ -93,41 +93,22 @@ internal sealed class AtomicPublicationCommit(AtomicPublicationPlan plan)
             }
             if (entry.Original.Exists)
             {
-                PrepareBackup(entry);
                 PrepareRequestedBackup(entry);
             }
 
-            // Backup paths were recorded when the set was sealed; recovery verifies a backup
-            // against the original, so one record after every backup exists is enough.
+            // The swap keeps each replaced target at its displaced path, the only copy of the
+            // original that recovery and, after a partial recovery, the user restore from.
             entry.State = PublicationEntryState.Prepared;
         }
 
         plan.Transition(PublicationTransactionState.Prepared);
     }
 
+    /// <summary>Creates the directory that receives the displaced targets.</summary>
     private void CreateBackupDirectory()
     {
         string backups = Path.Combine(plan.StagingDirectory, "backups");
         Directory.CreateDirectory(backups);
-    }
-
-    private void PrepareBackup(PublicationJournalEntry entry)
-    {
-        plan.Faults.Hit(new PublicationFaultPoint(
-            PublicationFaultKind.Backup,
-            entry.Index,
-            entry.Target));
-        string backup = entry.Backup
-            ?? throw new InvalidOperationException($"Publication entry '{entry.Target}' has no backup path.");
-        File.Copy(entry.Target, backup, overwrite: false);
-        DurableFile.Flush(backup);
-        entry.Original.Metadata?.Apply(backup);
-        if (!entry.Original.ContentMatches(backup))
-        {
-            throw new IOException(
-                $"Backup verification failed for '{entry.Target}'.");
-        }
-        entry.BackupSnapshot = FilePublicationSnapshot.Capture(backup);
     }
 
     private static void PrepareRequestedBackup(PublicationJournalEntry entry)

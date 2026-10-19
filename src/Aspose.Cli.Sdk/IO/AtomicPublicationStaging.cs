@@ -79,9 +79,6 @@ internal sealed class AtomicPublicationStaging(
             StagedSnapshot = stagedSnapshot,
             TargetParentIdentity = targetParentIdentity,
             RequestedBackupParentIdentity = requestedBackupParentIdentity,
-            Backup = original.Exists && !plan.WorkerStagingOnly
-                ? plan.BackupPath(index)
-                : null,
             Displaced = original.Exists && !plan.WorkerStagingOnly
                 ? plan.DisplacedPath(index)
                 : null,
@@ -137,7 +134,6 @@ internal sealed class AtomicPublicationStaging(
             Original = original,
             StagedSnapshot = stagedSnapshot,
             TargetParentIdentity = targetParentIdentity,
-            Backup = plan.BackupPath(index),
             Displaced = plan.DisplacedPath(index),
             DeleteTarget = true,
             Size = 0,

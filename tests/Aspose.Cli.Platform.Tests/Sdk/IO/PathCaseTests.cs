@@ -108,13 +108,11 @@ public sealed class PathCaseTests : IDisposable
         Directory.CreateDirectory(backups);
         string staged = AtomicPublicationPlan.StagedPath(transaction, target, index: 0);
         Directory.CreateDirectory(Path.GetDirectoryName(staged)!);
-        string backup = Path.Combine(backups, "000001.backup");
         string displaced = Path.Combine(backups, "000001.displaced");
         File.WriteAllText(target, "original");
         FilePublicationSnapshot original = FilePublicationSnapshot.Capture(target);
         File.WriteAllText(staged, "replacement");
         FilePublicationSnapshot stagedSnapshot = FilePublicationSnapshot.Capture(staged);
-        File.WriteAllText(backup, "original");
         File.Replace(staged, target, displaced);
         new PublicationJournal
         {
@@ -129,7 +127,6 @@ public sealed class PathCaseTests : IDisposable
                     Index = 0,
                     Target = spell(target),
                     Staged = spell(staged),
-                    Backup = spell(backup),
                     Displaced = spell(displaced),
                     DisplacedSnapshot = FilePublicationSnapshot.Capture(displaced),
                     Overwrite = true,

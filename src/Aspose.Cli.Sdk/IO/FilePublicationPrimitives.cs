@@ -37,7 +37,6 @@ internal enum PublicationFaultKind
     JournalWrite,
     JournalRead,
     JournalLockWait,
-    Backup,
     Publish,
     Access,
     Rollback,
@@ -352,7 +351,7 @@ internal static class DurableFile
 internal sealed class PublicationJournal
 {
     /// <summary>The journal format this build writes and recovers; any change to its fields raises it.</summary>
-    internal const int CurrentVersion = 1;
+    internal const int CurrentVersion = 2;
     internal const int MaximumBytes = PublicationLimits.MaximumMetadataBytes;
     internal const int MaximumEntries = PublicationLimits.MaximumEntries;
     internal static bool IsTemporaryPath(string path)
@@ -484,8 +483,6 @@ internal sealed class PublicationJournal
                 RequestedBackup = entry.RequestedBackup, RequestedBackupOriginal = entry.RequestedBackupOriginal,
                 TargetParentIdentity = entry.TargetParentIdentity,
                 RequestedBackupParentIdentity = entry.RequestedBackupParentIdentity,
-                Backup = entry.Original.Exists ? Path.Combine(Path.GetDirectoryName(path)!, "backups", $"{entry.Index + 1:000000}.backup") : null,
-                BackupSnapshot = entry.Original.Exists ? LargestSnapshot(entry) : null,
                 Displaced = entry.Original.Exists ? Path.Combine(Path.GetDirectoryName(path)!, "backups", $"{entry.Index + 1:000000}.displaced") : null,
                 DisplacedSnapshot = entry.Original.Exists ? LargestSnapshot(entry) : null,
                 PublishedSnapshot = LargestSnapshot(entry), State = PublicationEntryState.Unknown,
@@ -587,10 +584,6 @@ internal sealed class PublicationJournalEntry
     public required string Staged { get; init; }
 
     public required bool Overwrite { get; init; }
-
-    public string? Backup { get; set; }
-
-    public FilePublicationSnapshot? BackupSnapshot { get; set; }
 
     public string? Displaced { get; init; }
 

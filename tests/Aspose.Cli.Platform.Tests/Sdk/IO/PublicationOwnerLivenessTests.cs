@@ -66,7 +66,7 @@ public sealed class PublicationOwnerLivenessTests
             {
                 Index = 0, Target = target, Staged = staged, Overwrite = true,
                 Original = original, StagedSnapshot = candidate, Size = candidate.Length,
-                Backup = Path.Combine(backups, "000001.backup"), Displaced = displaced,
+                Displaced = displaced,
                 TargetParentIdentity = OutputPathValidator.CaptureParentIdentity(target),
                 State = PublicationEntryState.Publishing,
             }],

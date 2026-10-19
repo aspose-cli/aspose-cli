@@ -22,9 +22,7 @@ public sealed class PublicationBoundaryTests
         Directory.CreateDirectory(Path.GetDirectoryName(staged)!);
         File.WriteAllText(staged, "uncommitted");
         FilePublicationSnapshot candidate = FilePublicationSnapshot.Capture(staged);
-        string backup = Path.Combine(backups, "000001.backup");
         string displaced = Path.Combine(backups, "000001.displaced");
-        File.Copy(target, backup);
         File.Replace(staged, target, displaced);
         new PublicationJournal
         {
@@ -34,7 +32,6 @@ public sealed class PublicationBoundaryTests
             {
                 Index = 0, Target = target, Staged = staged, Overwrite = true,
                 Original = original, StagedSnapshot = candidate, Size = candidate.Length,
-                Backup = backup, BackupSnapshot = FilePublicationSnapshot.Capture(backup),
                 Displaced = displaced, DisplacedSnapshot = FilePublicationSnapshot.Capture(displaced),
                 PublishedSnapshot = FilePublicationSnapshot.Capture(target),
                 TargetParentIdentity = OutputPathValidator.CaptureParentIdentity(target),
@@ -69,7 +66,7 @@ public sealed class PublicationBoundaryTests
             {
                 Index = index, Target = target, Staged = staged, Overwrite = true,
                 Original = original, StagedSnapshot = candidate, Size = candidate.Length,
-                Backup = Path.Combine(backups, $"{index + 1:000000}.backup"), Displaced = displaced,
+                Displaced = displaced,
                 TargetParentIdentity = OutputPathValidator.CaptureParentIdentity(target),
                 State = PublicationEntryState.Publishing,
             };
@@ -308,8 +305,8 @@ public sealed class PublicationBoundaryTests
         }
         Assert.Equal("original", File.ReadAllText(target));
         string transaction = Assert.Single(Directory.GetDirectories(temp.Path, ".aspose-publication-*"));
-        Assert.True(File.Exists(Path.Combine(transaction, "backups", "000001.backup")));
         string journalPath = Path.Combine(transaction, AtomicPublicationPlan.JournalName);
+        Assert.True(File.Exists(journalPath));
         var journal = System.Text.Json.Nodes.JsonNode.Parse(File.ReadAllText(journalPath))!;
         journal["ownerProcessId"] = int.MaxValue;
         journal["ownerProcessStartUtcTicks"] = 1;

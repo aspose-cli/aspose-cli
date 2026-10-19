@@ -442,13 +442,6 @@ internal sealed class AtomicPublicationRecovery(AtomicPublicationPlan plan)
         var recovery = new AtomicPublicationRecovery(recoveryPlan);
         foreach (PublicationJournalEntry entry in journal.Entries)
         {
-            if (entry.Backup is not null
-                && entry.BackupSnapshot is null
-                && File.Exists(entry.Backup)
-                && entry.Original.ContentMatches(entry.Backup))
-            {
-                entry.BackupSnapshot = FilePublicationSnapshot.Capture(entry.Backup);
-            }
             if (entry.Displaced is not null
                 && entry.DisplacedSnapshot is null
                 && File.Exists(entry.Displaced)
@@ -637,11 +630,6 @@ internal sealed class AtomicPublicationRecovery(AtomicPublicationPlan plan)
                 transaction,
                 target,
                 entry.Index);
-            string? expectedBackup = entry.Backup is null
-                ? null
-                : Path.Combine(
-                    backupDirectory,
-                    $"{entry.Index + 1:000000}.backup");
             string? expectedDisplaced = entry.Displaced is null
                 ? null
                 : Path.Combine(
@@ -658,14 +646,6 @@ internal sealed class AtomicPublicationRecovery(AtomicPublicationPlan plan)
             {
                 throw new InvalidDataException(
                     $"Publication journal '{recoveryPlan.JournalPath}' contains an invalid entry.");
-            }
-            if (entry.Backup is not null
-                && !FilePaths.Same(
-                    Path.GetFullPath(entry.Backup),
-                    expectedBackup))
-            {
-                throw new InvalidDataException(
-                    $"Publication backup '{entry.Backup}' is outside its transaction directory.");
             }
             if (entry.Displaced is not null
                 && !FilePaths.Same(
@@ -693,10 +673,6 @@ internal sealed class AtomicPublicationRecovery(AtomicPublicationPlan plan)
                     entry.RequestedBackupParentIdentity);
             }
             ValidateStagedFileIfPresent(entry, staged);
-            if (entry.Backup is not null)
-            {
-                EnsureNotDirectory(entry.Backup);
-            }
             if (entry.Displaced is not null)
             {
                 ValidateDisplacedFileIfPresent(entry);
@@ -790,15 +766,6 @@ internal sealed class AtomicPublicationRecovery(AtomicPublicationPlan plan)
 
     internal static bool IsWithinRoot(string root, string path) =>
         FilePaths.IsWithin(Path.TrimEndingDirectorySeparator(Path.GetFullPath(root)), Path.GetFullPath(path), allowEqual: true);
-
-    private static void EnsureNotDirectory(string path)
-    {
-        if (Directory.Exists(path))
-        {
-            throw new InvalidDataException(
-                $"Publication file path '{path}' is occupied by a directory.");
-        }
-    }
 
     private static void ValidateStagedFileIfPresent(
         PublicationJournalEntry entry,
