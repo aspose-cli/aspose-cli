@@ -553,7 +553,7 @@ public sealed class ProductContractAnalyzerTests
 
         Assert.Equal(
             accepted.Order(StringComparer.Ordinal),
-            Aspose.Cli.Sdk.Extensibility.Commanding.GlobalOptionNames.Reserved.Order(StringComparer.Ordinal));
+            Aspose.Cli.Sdk.GlobalOptionNames.Reserved.Order(StringComparer.Ordinal));
     }
 
     [Fact]

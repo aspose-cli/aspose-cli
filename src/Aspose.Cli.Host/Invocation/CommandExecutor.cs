@@ -5,6 +5,7 @@ using System.Text;
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using Aspose.Cli.Host.Output;
+using Aspose.Cli.Sdk;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.IO;
@@ -338,7 +339,7 @@ internal sealed class CommandExecutor
         if (seconds <= 0)
         {
             throw CliErrors.OptionInvalid(
-                "--timeout",
+                GlobalOptionNames.Timeout,
                 "value must be a positive number of seconds",
                 "Pass a timeout like --timeout 30, or omit it to run unbounded.");
         }

@@ -2,6 +2,7 @@ using System.CommandLine;
 using System.CommandLine.Help;
 using Aspose.Cli.Host.LocalServices;
 using Aspose.Cli.Host.Output;
+using Aspose.Cli.Sdk;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.IO;
 
@@ -157,7 +158,7 @@ internal sealed class GlobalOptions
             "Use the default for ordinary files, or choose a positive byte limit within the advertised range.");
         if (inherited is not null && requestedInputBytes > inherited.MaxInputBytes)
         {
-            throw CliErrors.OptionInvalid("--max-input-bytes",
+            throw CliErrors.OptionInvalid(GlobalOptionNames.MaxInputBytes,
                 "the value exceeds the MCP host input budget",
                 "Choose a limit within the budget selected when the MCP server was started.");
         }

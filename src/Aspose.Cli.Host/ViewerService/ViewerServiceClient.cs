@@ -3,6 +3,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
 using Aspose.Cli.Host.Invocation;
 using Aspose.Cli.Host.LocalServices;
+using Aspose.Cli.Sdk;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.IO;
 
@@ -115,8 +116,8 @@ internal sealed class ViewerServiceClient
             start.ArgumentList.Add("--port");
             start.ArgumentList.Add(requestedPort.ToString(System.Globalization.CultureInfo.InvariantCulture));
         }
-        start.ArgumentList.Add("--quiet");
-        start.ArgumentList.Add("--output-format");
+        start.ArgumentList.Add(GlobalOptionNames.Quiet);
+        start.ArgumentList.Add(GlobalOptionNames.OutputFormat);
         start.ArgumentList.Add("json");
         start.WorkingDirectory = SelfProcessLauncher.ServiceWorkingDirectory;
         string workDirectory = Path.GetFullPath(globals.WorkDir ?? Directory.GetCurrentDirectory());

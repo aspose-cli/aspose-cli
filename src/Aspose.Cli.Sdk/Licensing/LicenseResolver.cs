@@ -50,7 +50,7 @@ public static class LicenseResolver
             ArgumentException.ThrowIfNullOrWhiteSpace(flagPath);
             return new LicenseResolution(
                 LicenseSourceKind.Flag,
-                ConfiguredFile(Path.GetFullPath(flagPath, workingDirectory), "--license"));
+                ConfiguredFile(Path.GetFullPath(flagPath, workingDirectory), GlobalOptionNames.License));
         }
 
         string base64Name = ProductEnvBase64Name(product);

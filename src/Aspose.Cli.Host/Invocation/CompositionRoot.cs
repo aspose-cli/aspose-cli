@@ -1,3 +1,4 @@
+using Aspose.Cli.Sdk;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.IO;
@@ -91,7 +92,7 @@ internal static class CompositionRoot
         return Directory.Exists(full)
             ? full
             : throw CliErrors.OptionInvalid(
-                "--workdir",
+                GlobalOptionNames.WorkDir,
                 $"directory does not exist: {full}",
                 "Pass an existing directory, or drop --workdir to use the current directory.");
     }

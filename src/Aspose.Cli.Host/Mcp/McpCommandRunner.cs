@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Text;
 using Aspose.Cli.Host.Invocation;
 using Aspose.Cli.Host.LocalServices;
+using Aspose.Cli.Sdk;
 using Aspose.Cli.Sdk.Errors;
 
 namespace Aspose.Cli.Host.Mcp;
@@ -43,8 +44,8 @@ internal sealed class McpCommandRunner
     public Task<McpExecutionResult> RunCapabilitiesAsync(
         CancellationToken cancellationToken) =>
         RunCoreAsync(
-            ["capabilities", "--output-format", "json"],
-            _parser.Parse(["capabilities", "--output-format", "json"], _inherited),
+            ["capabilities", GlobalOptionNames.OutputFormat, "json"],
+            _parser.Parse(["capabilities", GlobalOptionNames.OutputFormat, "json"], _inherited),
             stdin: null,
             DefaultTimeoutSeconds,
             cancellationToken);

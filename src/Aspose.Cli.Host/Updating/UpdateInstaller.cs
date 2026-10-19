@@ -38,7 +38,7 @@ internal static class UpdateInstaller
         string target = Path.Combine(parent, DistributionInfo.Id + "-update-" + Guid.NewGuid().ToString("N"));
         string source = !Path.IsPathRooted(feed) && Uri.TryCreate(feed, UriKind.Absolute, out _)
             ? feed : Path.GetFullPath(feed, context.Paths.BaseDirectory);
-        string[] args = ["update", PreparationCommand, source, target, "--output-format", "json", "--quiet"];
+        string[] args = ["update", PreparationCommand, source, target, GlobalOptionNames.OutputFormat, "json", GlobalOptionNames.Quiet];
         ParsedInvocation invocation = host.Parser.Parse(args);
         bool ownsPackage = false;
         bool handedOff = false;
