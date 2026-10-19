@@ -14,8 +14,10 @@ namespace Aspose.Cli.Product.Slides.Engine.Editing;
 /// of a slide (<c>slide/3/shape/7</c>, by shape id), a slide's speaker notes
 /// (<c>slide/3/notes</c>), the sections (<c>section/Intro</c>), the document properties
 /// (<c>property/title</c>) and the slide size (<c>presentation/slide-size</c>). A slide is
-/// addressed by its number in the presentation as the snapshot finds it. The state, as the engine
-/// stores it, and the addresses come from <see cref="SlidesStateProjection"/>.
+/// addressed by its number in the presentation as the snapshot finds it, and names the slide as
+/// its owner, so the batch numbers it where its output holds the slide
+/// (<see cref="SlidesEditModel.Positions"/>). The state, as the engine stores it, and the
+/// addresses come from <see cref="SlidesStateProjection"/>.
 /// </summary>
 /// <param name="presentation">The presentation being edited.</param>
 /// <param name="target">The operation's targets, resolved just before it runs.</param>
@@ -44,7 +46,7 @@ internal sealed class SlidesSnapshots(
 
     /// <summary>The slide order, naming the moved slide, which counts once at its new number.</summary>
     public OperationSnapshot Apply(MoveSlideOp operation) =>
-        new OperationSnapshot().AddSequence(SlideUnit, SlideIds(presentation), moved: [Slide.SlideId.ToString(CultureInfo.InvariantCulture)]);
+        new OperationSnapshot().AddSequence(SlideUnit, SlideIds(presentation), moved: [Slide.SlideId.ToString(CultureInfo.InvariantCulture)], owners: presentation.Slides);
 
     public OperationSnapshot Apply(CopySlideOp operation) => SlideOrder();
 
@@ -85,7 +87,7 @@ internal sealed class SlidesSnapshots(
 
             if (notes)
             {
-                snapshot.Add(NotesAddress(number), Notes(slide) ?? string.Empty);
+                snapshot.Add(NotesAddress(number), Notes(slide) ?? string.Empty, slide);
             }
         }
 
@@ -96,7 +98,7 @@ internal sealed class SlidesSnapshots(
     {
         int number = Number(Slide);
         string? notes = Notes(Slide);
-        return new OperationSnapshot().Add(NotesAddress(number), (notes ?? string.Empty) + (Unread(notes) ? CutWritten : string.Empty));
+        return new OperationSnapshot().Add(NotesAddress(number), (notes ?? string.Empty) + (Unread(notes) ? CutWritten : string.Empty), Slide);
     }
 
     public OperationSnapshot Apply(SlidesInsertImageOp operation) => Shapes();
@@ -149,7 +151,7 @@ internal sealed class SlidesSnapshots(
 
     /// <summary>The order of the slides, each by its id: inserting, deleting, copying or moving slides changes it.</summary>
     private OperationSnapshot SlideOrder() =>
-        new OperationSnapshot().AddSequence(SlideUnit, SlideIds(presentation));
+        new OperationSnapshot().AddSequence(SlideUnit, SlideIds(presentation), owners: presentation.Slides);
 
     /// <summary>The slides a multi-slide operation selects, each by everything it shows.</summary>
     private OperationSnapshot WholeSlides()
@@ -158,7 +160,7 @@ internal sealed class SlidesSnapshots(
         foreach (ISlide slide in target.Slides!.Where(presentation.Slides.Contains))
         {
             int number = Number(slide);
-            snapshot.Add(SlideAddress(number), SlideState(slide));
+            snapshot.Add(SlideAddress(number), SlideState(slide), slide);
         }
 
         return snapshot;
@@ -185,7 +187,7 @@ internal sealed class SlidesSnapshots(
     {
         foreach (IShape shape in slide.Shapes.Where(shape => !evaluation || !IsEvaluationWatermark(shape)))
         {
-            snapshot.Add(ShapeAddress(number, shape.OfficeInteropShapeId), ShapeState(shape) + (ReferenceEquals(shape, cut) ? CutWritten : string.Empty));
+            snapshot.Add(ShapeAddress(number, shape.OfficeInteropShapeId), ShapeState(shape) + (ReferenceEquals(shape, cut) ? CutWritten : string.Empty), slide);
         }
     }
 
