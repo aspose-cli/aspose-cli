@@ -201,6 +201,23 @@ public sealed class WordsEditSafetyTests
     }
 
     [Fact]
+    public void Edit_InPlaceBackupTwice_WarnsBackupPredatesEdit()
+    {
+        using var fixture = new WordsFixture();
+        string input = fixture.CreateReport();
+        string backup = fixture.Temp.File("report.backup.docx");
+        WordsEditResult Edit(string text) => WordsEdit.Run(fixture.Session, new WordsEditRequest
+        {
+            Input = input,
+            Batch = new WordsOpsBatch { Ops = [new SetTextOp { Target = new WordsTarget { Block = 1 }, Text = text }] },
+            Output = TestOutput.At(input, overwrite: true, backup: backup),
+        });
+
+        Assert.DoesNotContain(Edit("First").Warnings ?? [], static warning => warning.Code == WarningCodes.BackupPredatesEdit);
+        Assert.Contains(Edit("Second").Warnings ?? [], static warning => warning.Code == WarningCodes.BackupPredatesEdit);
+    }
+
+    [Fact]
     public void EncryptedDryRun_CreatesNeitherOutputNorBackup()
     {
         using var fixture = new WordsFixture();

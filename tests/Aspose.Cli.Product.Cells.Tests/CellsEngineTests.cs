@@ -53,6 +53,22 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
     }
 
     [Fact]
+    public void Edit_InPlaceBackupTwice_WarnsBackupPredatesEdit()
+    {
+        string source = _fixture.CreateSalesWorkbook("backup-twice.xlsx");
+        string backup = _fixture.Temp.File("backup-twice.backup.xlsx");
+        CellsEditResult Edit(int value) => CellsEdit.Run(_fixture.Session, new CellsEditRequest
+        {
+            Input = source,
+            Batch = ParseOps($$"""{"ops":[{"op":"set_values","sheet":"Data","range":"B2","values":[[{{value}}]]}]}"""),
+            Output = TestOutput.At(source, overwrite: true, backup: backup),
+        });
+
+        Assert.DoesNotContain(Edit(7).Warnings ?? [], static warning => warning.Code == WarningCodes.BackupPredatesEdit);
+        Assert.Contains(Edit(8).Warnings ?? [], static warning => warning.Code == WarningCodes.BackupPredatesEdit);
+    }
+
+    [Fact]
     public void DeleteDuplicates_CountsTheCellsItChanged()
     {
         string path = _fixture.CreateSalesWorkbook("dedupe-count.xlsx");

@@ -14,6 +14,23 @@ namespace Aspose.Cli.Product.Pdf.Tests;
 public sealed class PdfEditVerificationTests
 {
     [Fact]
+    public void Edit_InPlaceBackupTwice_WarnsBackupPredatesEdit()
+    {
+        using var fixture = new PdfEngineFixture();
+        string input = fixture.CreateDocument("backup-twice.pdf");
+        string backup = fixture.File("backup-twice.backup.pdf");
+        PdfEditResult Edit(string title) => PdfEdit.Run(fixture.Session, new PdfEditRequest
+        {
+            Input = input,
+            Batch = new PdfOpsBatch { Ops = [new SetPropertiesOp { Title = title }] },
+            Output = TestOutput.At(input, overwrite: true, backup: backup),
+        });
+
+        Assert.DoesNotContain(Edit("First").Warnings ?? [], static warning => warning.Code == WarningCodes.BackupPredatesEdit);
+        Assert.Contains(Edit("Second").Warnings ?? [], static warning => warning.Code == WarningCodes.BackupPredatesEdit);
+    }
+
+    [Fact]
     public void Verify_PassesForEveryCheckedOperationThatTookEffect()
     {
         using var fixture = new PdfEngineFixture();
