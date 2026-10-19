@@ -110,10 +110,11 @@ weaken a check or remove a supported operation to make a test pass.
 - **Command parameters** declare their input role, value sources and secret handling on the
   symbol; the Host reads only these declarations. Reserved names are checked by `APCLI008`, and
   `APCLI011` keeps products off `StandardOptions`. An SDK option type (`PartRangeOption`,
-  `SampleOption`, `DetailOption`, the render options) exists only for options with the same name
-  and meaning across commands; any other option is a plain `new Option<T>`. Same-named options
-  agree (`SameNameOptions`, C-R07), a bounded integer option uses `InRange` and `GetInRange`
-  (`OptionRangeHelpTests`), and a description does not restate a default the parser applies.
+  `SampleOption`, `DetailOption`, `BomOption`, the render options) exists only for options with
+  the same name and meaning across commands; any other option is a plain `new Option<T>`.
+  Same-named options agree (`SameNameOptions`, C-R07), a bounded integer option uses `InRange`
+  and `GetInRange` (`OptionRangeHelpTests`), and a description does not restate a default the
+  parser applies.
 - **Targets** in an operation outcome are `<unit>/<address>` addresses, at most
   `BoundedOperationOutcome.MaximumTargets`; beyond that an outcome reports one range per unit that
   covers them all, such as `page/1-150` (`<unit>/all` for named objects). The SDK derives targets
@@ -127,6 +128,9 @@ weaken a check or remove a supported operation to make a test pass.
   PDF bookmarks and page labels. Names in addresses are escaped only by `TargetName.Escape`
   (`TargetNameOwnershipTests`): just `/`, `%`, control characters and leading and trailing white
   space, an empty name is `%00`, and in a Cells `cell/Sheet!A1` the sheet's own `!` is `%21`.
+  A snapshot's state may hold what no read result reports, such as the PDF `Unreported`
+  properties: it only decides whether an object changed, enters no result, and so needs no
+  read-back.
 
 ## Contract conventions
 
