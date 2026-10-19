@@ -39,19 +39,19 @@ internal sealed class InvocationInputServer : IDisposable
                 _requests, InvocationJsonContext.Default.EnvironmentValueRequest, cancellationToken, InvocationInputs.MaximumMessageBytes).ConfigureAwait(false);
             if (request is null) { return; }
             if (string.IsNullOrEmpty(request.Name) || request.Name.IndexOfAny(['\0', '=']) >= 0
-                || request.MaximumCharacters is < 0 or > ResourceBudgetDefaults.MaximumSecretCharacters)
+                || request.MaximumCharacterCount is < 0 or > ResourceBudgetDefaults.MaximumSecretCharacters)
             {
                 throw new InvalidDataException("The environment value request is invalid.");
             }
             EnvironmentValueReply reply;
             if (_upstream is not null)
             {
-                reply = _upstream.ReadEnvironment(request.Name, request.MaximumCharacters, cancellationToken);
+                reply = _upstream.ReadEnvironment(request.Name, request.MaximumCharacterCount, cancellationToken);
             }
             else
             {
                 string? value = Environment.GetEnvironmentVariable(request.Name);
-                reply = value?.Length > request.MaximumCharacters
+                reply = value?.Length > request.MaximumCharacterCount
                     ? new EnvironmentValueReply(null, value.Length)
                     : new EnvironmentValueReply(value);
             }

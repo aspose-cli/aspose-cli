@@ -104,8 +104,8 @@ internal sealed class InvocationInputs : IDisposable
 internal sealed record InvocationStartMessage(
     int Version, string? WorkDirectory, string? LicensePath, long? MaxInputBytes,
     bool EvaluationRequested = false);
-internal sealed record EnvironmentValueRequest(string Name, long MaximumCharacters);
-internal sealed record EnvironmentValueReply(string? Value, long? OversizedCharacters = null);
+internal sealed record EnvironmentValueRequest(string Name, long MaximumCharacterCount);
+internal sealed record EnvironmentValueReply(string? Value, long? OversizedCharacterCount = null);
 
 [System.Text.Json.Serialization.JsonSourceGenerationOptions(
     System.Text.Json.JsonSerializerDefaults.Web,
