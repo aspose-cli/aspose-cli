@@ -47,7 +47,6 @@ internal static partial class ContractRules
         ["SCREAMING_SNAKE_CASE"] = "the name of a naming style",
         ["shift_jis"] = "a text encoding name that cells convert --encoding accepts",
         ["--certificate-password"] = "the prefix of the --certificate-password-env and -stdin option family, as a parameter describes it",
-        ["--file-filter"] = "an argument of the zenity file picker",
     };
 
     /// <summary>
