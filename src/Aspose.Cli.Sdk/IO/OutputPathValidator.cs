@@ -97,10 +97,7 @@ internal static class OutputPathValidator
         string phase = "path")
     {
         string full = Path.GetFullPath(path);
-        if (OperatingSystem.IsWindows()
-            && (full.StartsWith("\\\\", StringComparison.Ordinal)
-                || full.StartsWith("\\\\?\\", StringComparison.Ordinal)
-                || full.StartsWith("\\\\.\\", StringComparison.Ordinal)))
+        if (FilePaths.IsRemoteOrDevice(full))
         {
             throw Unsafe(full, "UNC and device paths are not accepted", phase);
         }

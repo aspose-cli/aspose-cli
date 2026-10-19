@@ -11,7 +11,6 @@ internal static class WorkerManifestStore
     internal const int MaximumEntries = PublicationLimits.MaximumEntries;
     internal const int MaximumDirectories = PublicationLimits.MaximumDirectories;
     private const int MaximumBytes = PublicationLimits.MaximumMetadataBytes;
-    internal static StringComparer PathComparer => OperatingSystem.IsWindows() ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal;
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
@@ -89,9 +88,9 @@ internal static class WorkerManifestStore
         string fullRoot = Canonical(root);
         string path = Canonical(manifestPath);
         string category = Path.Combine(UserStorage.TemporaryRoot(), RootCategory);
-        if (!PathComparer.Equals(Path.GetDirectoryName(fullRoot), category)
+        if (!FilePaths.Same(Path.GetDirectoryName(fullRoot), category)
             || !TryParseRootOwner(Path.GetFileName(fullRoot), out _, out _)
-            || !PathComparer.Equals(Path.GetDirectoryName(path), fullRoot)
+            || !FilePaths.Same(Path.GetDirectoryName(path), fullRoot)
             || Path.GetFileName(path) != WorkerOutputSession.ManifestName)
         {
             throw new InvalidDataException("Worker manifest is outside its worker root.");
@@ -122,13 +121,13 @@ internal static class WorkerManifestStore
                 && (!Path.IsPathFullyQualified(transactionParent)
                     || NewDirectoryPublication.Escapes(Path.GetRelativePath(transactionParent, Path.GetDirectoryName(output.Target)!))))
             { throw new InvalidDataException("A directory transaction parent is not an ancestor of its target."); }
-            if (!PathComparer.Equals(Path.GetDirectoryName(Path.GetDirectoryName(output.Staged)!), root)
+            if (!FilePaths.Same(Path.GetDirectoryName(Path.GetDirectoryName(output.Staged)!), root)
                 || Path.GetFileName(output.Staged) != "directory")
             { throw new InvalidDataException("A staged directory is outside the worker layout."); }
             NewDirectoryPublication.ValidateTree(output.Staged, output.Tree);
             return;
         }
-        var paths = new HashSet<string>(PathComparer);
+        var paths = new HashSet<string>(FilePaths.Comparer);
         foreach (WorkerOutputEntry entry in manifest.Entries)
         {
             if (entry is null || entry.Original is null || entry.StagedSnapshot is null
@@ -144,7 +143,7 @@ internal static class WorkerManifestStore
             if (!paths.Add(target)) { throw new InvalidDataException("Worker target paths overlap."); }
             string staged = Canonical(entry.Staged);
             string parent = Path.GetDirectoryName(staged)!;
-            if (!PathComparer.Equals(Path.GetDirectoryName(parent), root) || Path.GetFileName(staged) != "output.stage")
+            if (!FilePaths.Same(Path.GetDirectoryName(parent), root) || Path.GetFileName(staged) != "output.stage")
             {
                 throw new InvalidDataException("A staged file is outside the worker layout.");
             }
@@ -163,7 +162,7 @@ internal static class WorkerManifestStore
             { throw new InvalidDataException("The input precondition is incomplete."); }
             if (entry.InputPath is not null) { _ = Canonical(entry.InputPath); }
         }
-        var directories = new HashSet<string>(PathComparer);
+        var directories = new HashSet<string>(FilePaths.Comparer);
         foreach (WorkerDirectoryEntry directory in manifest.Directories)
         {
             if (directory is null || !paths.Add(Canonical(directory.Target)) || !directories.Add(directory.Target)
@@ -183,14 +182,13 @@ internal static class WorkerManifestStore
 
     internal static void EnsureOutsideRoot(string root, string target)
     {
-        if (PathComparer.Equals(root, target) || target.StartsWith(root + Path.DirectorySeparatorChar,
-            OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal))
+        if (FilePaths.Same(root, target) || target.StartsWith(root + Path.DirectorySeparatorChar, FilePaths.Comparison))
         { throw new InvalidDataException("Worker destinations cannot overlap their private transport storage."); }
     }
 
     private static string Canonical(string path)
     {
-        if (string.IsNullOrWhiteSpace(path) || !Path.IsPathFullyQualified(path) || !PathComparer.Equals(path, Path.GetFullPath(path)))
+        if (string.IsNullOrWhiteSpace(path) || !Path.IsPathFullyQualified(path) || !FilePaths.Same(path, Path.GetFullPath(path)))
         { throw new InvalidDataException("Worker paths must be canonical and absolute."); }
         return Path.GetFullPath(path);
     }

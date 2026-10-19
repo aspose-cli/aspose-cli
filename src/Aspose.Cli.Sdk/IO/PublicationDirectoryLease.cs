@@ -10,7 +10,7 @@ namespace Aspose.Cli.Sdk.IO;
 internal sealed class PublicationDirectoryLease : IDisposable
 {
     private static readonly TimeSpan DefaultWait = TimeSpan.FromSeconds(30);
-    private static StringComparer Comparer => OperatingSystem.IsWindows() ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal;
+    private static StringComparer Comparer => FilePaths.Comparer;
     private readonly List<FileStream> _handles;
     private readonly string[] _exclusive;
     private readonly FilePhysicalIdentity? _directoryIdentity;
@@ -137,9 +137,7 @@ internal sealed class PublicationDirectoryLease : IDisposable
     }
 
     private static string Normalize(string path) => Path.TrimEndingDirectorySeparator(Path.GetFullPath(path));
-    private static bool IsWithin(string parent, string path) => Comparer.Equals(parent, path)
-        || path.StartsWith(Path.EndsInDirectorySeparator(parent) ? parent : parent + Path.DirectorySeparatorChar,
-            OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal);
+    private static bool IsWithin(string parent, string path) => FilePaths.IsWithin(parent, path, allowEqual: true);
 
     [DllImport("libc", EntryPoint = "flock", SetLastError = true)]
     private static extern int Flock(int descriptor, int operation);

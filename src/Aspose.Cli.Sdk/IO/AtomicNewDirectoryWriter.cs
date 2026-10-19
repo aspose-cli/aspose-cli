@@ -72,7 +72,7 @@ public sealed class AtomicNewDirectoryWriter : IDisposable
         if (budgets.OutputSession is null)
         {
             AtomicPublicationRecovery.RecoverPendingHierarchy(parent, budgets.Deadline);
-            if (_transactionParent is not null && !WorkerManifestStore.PathComparer.Equals(_transactionParent, parent))
+            if (_transactionParent is not null && !FilePaths.Same(_transactionParent, parent))
             { AtomicPublicationRecovery.RemoveAbandonedCandidatesIn(_transactionParent, budgets.Deadline); }
         }
         _parents.Ensure(parent);
@@ -318,7 +318,7 @@ internal sealed record AdmittedDirectoryPrevious(DirectoryTreeSnapshot? Tree);
 internal static class NewDirectoryPublication
 {
     internal const int MaximumFiles = PublicationLimits.MaximumDirectoryFiles;
-    private static StringComparer Comparer => WorkerManifestStore.PathComparer;
+    private static StringComparer Comparer => FilePaths.Comparer;
 
     /// <summary>Where a replaced directory waits inside its publication transaction.</summary>
     internal static string PreviousPath(string transaction) => Path.Combine(transaction, "previous");

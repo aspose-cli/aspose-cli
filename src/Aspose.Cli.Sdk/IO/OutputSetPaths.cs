@@ -10,15 +10,13 @@ internal static class OutputSetPaths
         ArgumentNullException.ThrowIfNull(directories);
         string[] paths = directories.Select(path => Path.TrimEndingDirectorySeparator(Path.GetFullPath(path))).ToArray();
         if (paths.Length == 0) { throw new ArgumentException("At least one output directory is required.", nameof(directories)); }
-        StringComparison comparison = OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
         string root = paths[0];
         foreach (string path in paths)
         {
             OutputPathValidator.EnsureSafeDirectory(path);
-            if (!string.Equals(Path.GetPathRoot(root), Path.GetPathRoot(path), comparison))
+            if (!FilePaths.Same(Path.GetPathRoot(root), Path.GetPathRoot(path)))
             { throw CliErrors.OutputUnwritable(path, "all outputs in one transaction must share a filesystem root", phase: "output-set-admission"); }
-            while (!string.Equals(path, root, comparison) && !path.StartsWith(
-                Path.EndsInDirectorySeparator(root) ? root : root + Path.DirectorySeparatorChar, comparison))
+            while (!FilePaths.IsWithin(root, path, allowEqual: true))
             { root = Path.GetDirectoryName(root)!; }
         }
         return root;
