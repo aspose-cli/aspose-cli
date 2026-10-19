@@ -22,9 +22,7 @@ internal static class SlidesEdit
         LicenseState state = session.Outputs.License;
         FileWritePrecondition precondition = FileWritePrecondition.Capture(filePath);
         using LoadedPresentation loaded = session.Loader.OpenToWrite(filePath, request.Password);
-        InputInfo input = Source(filePath, loaded);
-        FileFingerprints.EnsureUnchanged(filePath, precondition.Fingerprint, input.Fingerprint);
-        FileFingerprints.EnsureMatch(filePath, request.Options.IfMatch, input.Fingerprint);
+        InputInfo input = precondition.Admit(loaded.FormatId, loaded.Protection, request.Options.IfMatch);
         Presentation presentation = loaded.Presentation;
         bool evaluation = state == LicenseState.Evaluation;
         var model = new SlidesEditModel(

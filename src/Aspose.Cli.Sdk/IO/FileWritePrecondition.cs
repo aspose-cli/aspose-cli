@@ -60,6 +60,29 @@ public sealed class FileWritePrecondition
         }
     }
 
+    /// <summary>
+    /// Admits the source a product engine has just loaded: describes it as it is now, refuses it
+    /// when it changed while the engine loaded it, and then when it does not have the
+    /// fingerprint <c>--if-match</c> names, or that value is not a SHA-256.
+    /// </summary>
+    /// <param name="format">The format id the product detected.</param>
+    /// <param name="protection">How the loaded document is protected.</param>
+    /// <param name="ifMatch">The value of <c>--if-match</c>, or null when it was not given.</param>
+    /// <returns>The <c>input</c> object the edit result reports.</returns>
+    public InputInfo Admit(string format, InputProtection protection, string? ifMatch)
+    {
+        ArgumentNullException.ThrowIfNull(protection);
+        InputInfo input = FileObjects.Input(Path, format, protection.Encrypted);
+        FileFingerprints.EnsureUnchanged(Path, Fingerprint, input.Fingerprint!);
+        FileFingerprints.EnsureMatch(Path, ifMatch, input.Fingerprint!);
+        return input;
+    }
+
+    /// <summary>Refuses a private copy of the source whose bytes are not the admitted ones.</summary>
+    /// <param name="copyPath">The copy, such as a verification baseline.</param>
+    public void EnsureCopyMatches(string copyPath) =>
+        FileFingerprints.EnsureUnchanged(Path, Fingerprint, FileFingerprints.Capture(copyPath));
+
     internal FilePublicationSnapshot Snapshot => _snapshot;
 
     internal static FileWritePrecondition FromSnapshot(string path, FilePublicationSnapshot snapshot) => new(path, snapshot);

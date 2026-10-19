@@ -21,9 +21,7 @@ internal static class PdfEdit
         FileWritePrecondition precondition = FileWritePrecondition.Capture(filePath);
         using InputResourceScope operationInputs = session.Budgets.Inputs.CreateScope();
         using LoadedPdf loaded = session.Loader.Open(filePath, request.Password);
-        InputInfo input = PdfInfoProjection.Source(filePath, loaded);
-        FileFingerprints.EnsureUnchanged(filePath, precondition.Fingerprint, input.Fingerprint!);
-        FileFingerprints.EnsureMatch(filePath, request.Options.IfMatch, input.Fingerprint!);
+        InputInfo input = precondition.Admit("pdf", loaded.Protection, request.Options.IfMatch);
         bool signatures = loaded.Document.Form.SignaturesExist;
         Permissions? userPermissions = loaded.PasswordType == PasswordType.User && loaded.Document.IsEncrypted
             ? (Permissions)loaded.Document.Permissions

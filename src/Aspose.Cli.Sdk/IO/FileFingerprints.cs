@@ -46,7 +46,7 @@ public static class FileFingerprints
     }
 
     /// <summary>Rejects a stale or malformed edit precondition.</summary>
-    public static void EnsureMatch(
+    internal static void EnsureMatch(
         string path,
         string? expectedSha256,
         FileFingerprint actual)
@@ -80,7 +80,7 @@ public static class FileFingerprints
     }
 
     /// <summary>Rejects a source that changed while its product engine loaded it.</summary>
-    public static void EnsureUnchanged(
+    internal static void EnsureUnchanged(
         string path,
         FileFingerprint before,
         FileFingerprint after)
