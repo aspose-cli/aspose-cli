@@ -165,6 +165,25 @@ public sealed class ImageInputTests : IDisposable
         Assert.Null(ImageInput.FormatOf([]));
     }
 
+    /// <summary>
+    /// An image the CLI decodes is named by its decoder before any signature: a PNG whose bytes
+    /// at offset 522 happen to read as a PICT opcode is a png.
+    /// </summary>
+    [Fact]
+    public void FormatOf_NamesADecodableImageByItsDecoderBeforeASignature()
+    {
+        byte[] png = WithChunkAfterHeader(Encode("png", 4, 4), "tEXt", 600, data =>
+        {
+            "Comment"u8.CopyTo(data); // a keyword, then the NUL the zeroed data already holds
+            data[522 - 41] = 0x11;
+            data[523 - 41] = 0x01;
+        });
+
+        Assert.Equal(EngineImageFormat.Pict, ImageInput.EngineFormatOf(png));
+        Assert.Null(ImageInput.Problem(png, Budgets()));
+        Assert.Equal("png", ImageInput.FormatOf(png)?.Id);
+    }
+
     [Fact]
     public void Read_DecodesALargeScanlineImageWithinASmallMemoryBudget()
     {
@@ -290,6 +309,18 @@ public sealed class ImageInputTests : IDisposable
         header[4] = 88;
         " EMF"u8.CopyTo(header.AsSpan(40));
         return header;
+    }
+
+    // The PNG with one more chunk right after its IHDR, at offset 33, whose data starts at 41.
+    private static byte[] WithChunkAfterHeader(byte[] png, string type, int length, Action<byte[]> fill)
+    {
+        byte[] data = new byte[length];
+        fill(data);
+        var stream = new MemoryStream();
+        stream.Write(png, 0, 33);
+        Chunk(stream, type, data);
+        stream.Write(png, 33, png.Length - 33);
+        return stream.ToArray();
     }
 
     // An icon holding one PNG.
