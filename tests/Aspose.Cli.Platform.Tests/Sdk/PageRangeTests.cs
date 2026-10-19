@@ -54,7 +54,8 @@ public sealed class PageRangeTests
     [InlineData("", "the selection is empty")]
     [InlineData("1,,2", "an empty segment was found")]
     [InlineData("4-2", "segment '4-2' ends before it starts")]
-    [InlineData("ALL", "'ALL' is not a positive 1-based number")]
+    [InlineData("ALL", "the keyword all is lowercase")]
+    [InlineData(" All ", "the keyword all is lowercase")]
     public void ParseOption_ReportsAMalformedValueAsAnOptionMistake(string text, string reason)
     {
         CliException error = Assert.Throws<CliException>(() => PageRange.ParseOption("--slides", text));

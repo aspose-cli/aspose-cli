@@ -12,7 +12,7 @@ internal static class CellsInputs
     /// a value that is no selection, or one like <c>2024</c> that is also a position past the
     /// last sheet.
     /// </summary>
-    /// <exception cref="Aspose.Cli.Sdk.Errors.CliException"><c>OPTION_INVALID</c> for a value of numbers that is not a selection.</exception>
+    /// <exception cref="Aspose.Cli.Sdk.Errors.CliException"><c>OPTION_INVALID</c> for a value of numbers that is not a selection, or for <c>all</c> not in lowercase.</exception>
     public static (PageRange? Selection, string? Text) SheetSelection(PartRangeOption sheets, ParseResult parse)
     {
         if (sheets.Read(parse) is not { } text)
@@ -26,7 +26,10 @@ internal static class CellsInputs
             return (range, ReferenceEquals(range, PageRange.All) ? null : text);
         }
 
+        // A value of numbers, or the keyword all in another case, is a selection written wrong
+        // rather than a sheet's name, so the selection's own error answers it.
         return text.All(static c => char.IsAsciiDigit(c) || c is '-' or ',' || char.IsWhiteSpace(c))
+            || string.Equals(text.Trim(), PageRange.AllText, StringComparison.OrdinalIgnoreCase)
             ? (sheets.ReadRange(parse), text)
             : (null, text);
     }
