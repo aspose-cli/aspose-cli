@@ -561,18 +561,14 @@ internal sealed class AtomicPublicationRecovery(AtomicPublicationPlan plan)
         && !File.Exists(Path.Combine(directory, AtomicPublicationPlan.JournalName))
         && !IsCreatorAlive(pid, ticks);
 
-    /// <summary>Whether the process with this id and start time still runs; unknown counts as alive.</summary>
-    internal static bool IsCreatorAlive(int pid, long ticks)
-    {
-        try
+    /// <summary>Whether the process with this id and start time still runs; one this user may not inspect counts as alive.</summary>
+    internal static bool IsCreatorAlive(int pid, long ticks) =>
+        ProcessIdentity.IsLive(pid, ticks, new ProcessLivenessPolicy
         {
-            using Process process = Process.GetProcessById(pid);
-            return process.StartTime.ToUniversalTime().Ticks == ticks;
-        }
-        catch (ArgumentException) { return false; }
-        catch (InvalidOperationException) { return false; }
-        catch (System.ComponentModel.Win32Exception) { return true; }
-    }
+            WhenDenied = ProcessLiveness.Alive,
+            WhenVanishing = ProcessLiveness.Dead,
+            ChecksExit = false,
+        });
 
     private static void ValidateTransactionDirectory(
         string root,
@@ -958,30 +954,15 @@ internal sealed class AtomicPublicationRecovery(AtomicPublicationPlan plan)
             metadataVerified,
             failure);
 
-    private static bool IsOwnerAlive(PublicationJournal journal)
-    {
-        try
+    // A reused PID that now belongs to a process this user may not inspect counts as the owner,
+    // like a creation's, rather than roll back its work.
+    private static bool IsOwnerAlive(PublicationJournal journal) =>
+        ProcessIdentity.IsLive(journal.OwnerProcessId, journal.OwnerProcessStartUtcTicks, new ProcessLivenessPolicy
         {
-            using Process process =
-                Process.GetProcessById(journal.OwnerProcessId);
-            return journal.OwnerProcessStartUtcTicks == 0
-                || process.StartTime.ToUniversalTime().Ticks
-                    == journal.OwnerProcessStartUtcTicks;
-        }
-        catch (ArgumentException)
-        {
-            return false;
-        }
-        catch (InvalidOperationException)
-        {
-            return false;
-        }
-        catch (System.ComponentModel.Win32Exception)
-        {
-            // A reused PID now belongs to a process this user may not inspect; like
-            // IsLiveCreation, treat the owner as alive rather than roll back its work.
-            return true;
-        }
-    }
+            WhenDenied = ProcessLiveness.Alive,
+            WhenVanishing = ProcessLiveness.Dead,
+            ChecksExit = false,
+            UnknownStartMatches = true,
+        });
 
 }
