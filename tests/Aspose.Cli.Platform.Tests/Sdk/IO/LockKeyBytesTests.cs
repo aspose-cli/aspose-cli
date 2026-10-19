@@ -149,6 +149,19 @@ public sealed class LockKeyBytesTests : IDisposable
         Assert.Equal(Path.Combine(UserStorage.TemporaryRoot(), "updates", "status-" + key + ".json"), UpdateStatus.PathFor(root));
     }
 
+    // Pins the lock key rule of both platforms wherever the tests run: it folds only on Windows,
+    // while the update status key folds on every platform.
+    [Theory]
+    [InlineData(@"c:\Users\Ünï\work\", false, @"c:\Users\Ünï\work\", @"C:\USERS\ÜNÏ\WORK\")]
+    [InlineData(@"c:\Users\Ünï\work\", true, @"C:\USERS\ÜNÏ\WORK\", @"C:\USERS\ÜNÏ\WORK\")]
+    [InlineData("/home/user/ßıσς", false, "/home/user/ßıσς", "/HOME/USER/ßıΣΣ")]
+    [InlineData("/home/user/ßıσς", true, "/HOME/USER/ßıΣΣ", "/HOME/USER/ßıΣΣ")]
+    public void LockKey_FoldsOnlyOnWindows_AndFoldedKeyFoldsEverywhere(string path, bool windows, string lockKey, string foldedKey)
+    {
+        Assert.Equal(lockKey, FilePaths.LockKey(path, windows));
+        Assert.Equal(foldedKey, FilePaths.FoldedKey(path));
+    }
+
     private static bool IsHeld(string path)
     {
         try
