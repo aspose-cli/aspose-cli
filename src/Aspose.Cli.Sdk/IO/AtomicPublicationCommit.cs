@@ -171,6 +171,7 @@ internal sealed class AtomicPublicationCommit(AtomicPublicationPlan plan)
             entry.Original,
             entry.Displaced,
             entry.StagedSnapshot);
+        plan.Faults.Hit(new PublicationFaultPoint(PublicationFaultKind.Access, entry.Index, entry.Target));
         // The replacement was staged in the private transaction directory: a new file takes the
         // folder's rules, a replaced file keeps the rules its owner had set.
         if (entry.Original.Exists) { FilePublicationInheritance.TryApplyAccess(entry.Target, originalAccess); }
