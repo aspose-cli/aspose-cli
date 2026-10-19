@@ -164,7 +164,7 @@ internal static class PdfConvert
         FileSpecification[] untyped = document.EmbeddedFiles
             .Where(static file => string.IsNullOrEmpty(file.MIMEType))
             .ToArray();
-        int bookmarks = Editing.PdfMutationSupport.CountOutline(document.Outlines);
+        int bookmarks = PdfOutlineAddresses.CountOutline(document.Outlines);
         int changed = 0;
         PublishedFile written = session.Outputs.Write(request.Output.Path, request.Output.Format, request.Output.Overwrite, document, temp =>
         {
@@ -198,7 +198,7 @@ internal static class PdfConvert
             });
         }
 
-        int lostBookmarks = bookmarks - Editing.PdfMutationSupport.CountOutline(document.Outlines);
+        int lostBookmarks = bookmarks - PdfOutlineAddresses.CountOutline(document.Outlines);
         if (lostBookmarks > 0)
         {
             warnings.Add(new Warning(WarningCodes.LossyConversion, $"{lostBookmarks} bookmark(s) were removed by the conversion to {profile}.")
