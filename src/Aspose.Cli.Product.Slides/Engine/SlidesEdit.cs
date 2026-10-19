@@ -35,7 +35,7 @@ internal static class SlidesEdit
         SlidesEditVerifier? verifier = request.Verify ? new SlidesEditVerifier(presentation, model.Target, evaluation) : null;
         AppliedBatch applied = BoundedOperationRunner.Run(
             SlidesOp.Catalog, batch.Ops, request.Options.BestEffort, deadline: null, model, verifier, SlidesStateProjection.SlideUnit);
-        EditPublication publication = Publish(session, loaded, request, format, precondition, verifier, applied);
+        EditPublication<SlidesEditVerification> publication = Publish(session, loaded, request, format, precondition, verifier, applied);
         IReadOnlyList<Warning> warnings = [.. model.Warnings, .. applied.Warnings];
 
         return new SlidesEditResult
@@ -51,11 +51,11 @@ internal static class SlidesEdit
             License = EnvelopeParts.License(state),
             Warnings = request.Options.DryRun
                 ? EnvelopeParts.CombineWarnings(InputWarnings(loaded), warnings)
-                : EnvelopeParts.CombineWarnings(WrittenWarnings(loaded), warnings, EnvelopeParts.BackupWarnings(publication.Backup)),
+                : EnvelopeParts.CombineWarnings(WrittenWarnings(loaded), warnings, publication.BackupWarnings),
         };
     }
 
-    private static EditPublication Publish(
+    private static EditPublication<SlidesEditVerification> Publish(
         SlidesSession session,
         LoadedPresentation loaded,
         SlidesEditRequest request,
@@ -64,53 +64,35 @@ internal static class SlidesEdit
         SlidesEditVerifier? verifier,
         AppliedBatch applied)
     {
-        OutputInfo? output = null;
-        BackupInfo? backup = null;
-        SlidesEditVerification? verification = null;
+        Presentation presentation = loaded.Presentation;
+        OutputProtection protection = OutputProtection.For(request.Output.Format, request.EncryptPassword, loaded.Protection, request.Password);
         if (!request.Options.DryRun)
         {
-            Presentation presentation = loaded.Presentation;
-            OutputProtection protection = OutputProtection.For(request.Output.Format, request.EncryptPassword, loaded.Protection, request.Password);
             SlidesOutputProtection.Protect(presentation, protection);
-            using OutputSet<Presentation> transaction = session.Outputs.BeginSet([request.Output.Directory], "slides-edit");
-            StagedOutput write = transaction.Stage(
-                request.Output.Path,
-                request.Output.Overwrite,
-                presentation,
-                temp =>
-                {
-                    presentation.Save(temp, SlidesEngineFormats.SaveFormatOf(format));
-                    loaded.Resources.ThrowIfFailed();
-                    using LoadedPresentation reopened = session.Loader.OpenPublishedCandidate(
-                        temp,
-                        protection.Password);
-                },
-                backupPath: request.Output.BackupPath,
-                inputPrecondition: precondition,
-                encrypted: protection.Encrypted);
-            backup = write.Backup;
-            if (verifier is not null)
-            {
-                // Issues are reported, not refused: the output is published and the command exits 8.
-                verification = write.Read(candidate =>
-                {
-                    using LoadedPresentation reopened = session.Loader.OpenPublishedCandidate(
-                        candidate,
-                        protection.Password);
-                    VerifiedBatch verified = applied.Verified(verifier.Verify(reopened.Presentation));
-                    return new SlidesEditVerification { Ok = verified.Ok, Issues = verified.Issues, CheckedOps = verified.CheckedOps };
-                });
-            }
-
-            transaction.Commit();
-            output = FileObjects.Output(write.Published, request.Output.Format, protection.Encrypted);
         }
 
-        return new EditPublication(output, backup, verification);
+        return session.Outputs.PublishEdit<SlidesEditVerification>(
+            request.Output,
+            presentation,
+            precondition,
+            request.Options.DryRun,
+            protection.Encrypted,
+            temp =>
+            {
+                presentation.Save(temp, SlidesEngineFormats.SaveFormatOf(format));
+                loaded.Resources.ThrowIfFailed();
+                using LoadedPresentation reopened = session.Loader.OpenPublishedCandidate(
+                    temp,
+                    protection.Password);
+            },
+            verifier is null ? null : candidate =>
+            {
+                using LoadedPresentation reopened = session.Loader.OpenPublishedCandidate(
+                    candidate,
+                    protection.Password);
+                VerifiedBatch verified = applied.Verified(verifier.Verify(reopened.Presentation));
+                return new SlidesEditVerification { Ok = verified.Ok, Issues = verified.Issues, CheckedOps = verified.CheckedOps };
+            },
+            "slides-edit");
     }
-
-    private sealed record EditPublication(
-        OutputInfo? Output,
-        BackupInfo? Backup,
-        SlidesEditVerification? Verification);
 }
