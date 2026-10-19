@@ -50,6 +50,11 @@ enlarge a shape. `insert_table` reports a table whose rows grow past its `rect` 
 lets a long table fit. The warning measures the table as `insert_table` left it, so it stays
 when a later operation of the same batch shrinks the text; review the slide instead. On a chart, `format_shape` styles the title, legend, axis and
 data-label text. A picture has no text, so a text style on it fails with `OPS_INVALID`.
+The `format_shape` `line` is only the solid outline color; no operation sets an outline's
+width, dash or transparency.
+
+No operation adds, changes or deletes comments: `slides read --content full` reports the
+comments a deck already has.
 
 ## Text and notes
 
@@ -60,7 +65,7 @@ data-label text. A picture has no text, so a text style on it fails with `OPS_IN
   --content full` reports a `font` given alone as each run's `font`; given with `latinFont`, it
   reads back as `complexScriptFont`, while `font` reports the Latin font. To return text to the
   template's fonts, see [design system](design-system.md).
-- A `set_body` paragraph with a `list` is an item at the list's `level`, with the bullet the
+- A `set_body` paragraph with a `list` is an item at the list's `level`, which starts at 1 for the top level, with the bullet the
   placeholder gives that level (a bullet of its own where the level has none), or numbered with
   `"kind": "number"`; a paragraph without `list` is
   plain, as a Markdown paragraph is. `slides read --content full` reports each paragraph's
