@@ -1034,13 +1034,34 @@ public sealed partial class CustomerInstallerPowerShellTests : IDisposable, ICla
 
     private static void AssertBundledSkills(string root)
     {
-        string[] expected = ["aspose-cli-cells", "aspose-cli-pdf", "aspose-cli-platform", "aspose-cli-slides", "aspose-cli-words"];
+        string[] expected = [.. SourceSkillNames()];
         Assert.Equal(expected, Directory.GetDirectories(root).Select(Path.GetFileName).Order(StringComparer.Ordinal));
         foreach (string skill in expected)
         {
             PowerShellResult result = RunSkillOwnershipValidation(Path.Combine(root, skill), skill);
             Assert.True(result.ExitCode == 0, result.StdErr);
         }
+    }
+
+    /// <summary>
+    /// The names the Skills under <c>src</c> declare in their front matter, in ordinal order: the
+    /// Host's platform Skill and the <c>Skills</c> directory of every product project, so a new
+    /// product's Skill is expected without changing this test.
+    /// </summary>
+    private static IEnumerable<string> SourceSkillNames()
+    {
+        string source = Path.Combine(RepositoryPaths.Root, "src");
+        string[] skills =
+        [
+            Path.Combine(source, "Aspose.Cli.Host", "Skills", "Platform"),
+            .. Directory.GetDirectories(source, "Aspose.Cli.Product.*").Select(static project => Path.Combine(project, "Skills")),
+        ];
+        return skills
+            .Select(static skill => File.ReadLines(Path.Combine(skill, "SKILL.md"))
+                .Skip(1)
+                .TakeWhile(static line => line != "---")
+                .Single(static line => line.StartsWith("name:", StringComparison.Ordinal))["name:".Length..].Trim())
+            .Order(StringComparer.Ordinal);
     }
 
     private static string AddManagedStaleFile(string root)
