@@ -4,7 +4,7 @@ using Aspose.Cli.Sdk.Licensing;
 using Aspose.Cli.Sdk.Results;
 using Aspose.Pdf;
 using Aspose.Pdf.Annotations;
-using static Aspose.Cli.Product.Pdf.Engine.PdfEngineSupport;
+using static Aspose.Cli.Product.Pdf.Engine.PdfAssembly;
 
 
 namespace Aspose.Cli.Product.Pdf.Engine;

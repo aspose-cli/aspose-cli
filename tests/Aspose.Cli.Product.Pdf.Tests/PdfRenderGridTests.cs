@@ -185,7 +185,7 @@ public sealed class PdfRenderGridTests
         page.Rotate = rotation;
         if (marker is not null)
         {
-            Rectangle area = PdfEngineSupport.ToPdfRect(page, marker);
+            Rectangle area = PdfGeometry.ToPdfRect(page, marker);
             page.Contents.Add(new GSave());
             page.Contents.Add(new SetRGBColor(0, 0, 0));
             page.Contents.Add(new Re(area.LLX, area.LLY, area.Width, area.Height));

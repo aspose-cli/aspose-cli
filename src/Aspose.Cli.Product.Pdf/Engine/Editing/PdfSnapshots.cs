@@ -5,8 +5,8 @@ using System.Text;
 using Aspose.Pdf;
 using Aspose.Pdf.Annotations;
 using Aspose.Pdf.Operators;
-using static Aspose.Cli.Product.Pdf.Engine.PdfEngineSupport;
 using static Aspose.Cli.Product.Pdf.Engine.Editing.PdfMutationSupport;
+using static Aspose.Cli.Product.Pdf.Engine.PdfPages;
 
 namespace Aspose.Cli.Product.Pdf.Engine.Editing;
 

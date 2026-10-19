@@ -2,8 +2,10 @@ using System.Globalization;
 using Aspose.Pdf;
 using Aspose.Pdf.Annotations;
 using Aspose.Pdf.Text;
-using static Aspose.Cli.Product.Pdf.Engine.PdfEngineSupport;
 using static Aspose.Cli.Product.Pdf.Engine.Editing.PdfMutationSupport;
+using static Aspose.Cli.Product.Pdf.Engine.PdfGeometry;
+using static Aspose.Cli.Product.Pdf.Engine.PdfPages;
+using static Aspose.Cli.Product.Pdf.Engine.PdfTextMatch;
 using PdfColor = Aspose.Pdf.Color;
 
 namespace Aspose.Cli.Product.Pdf.Engine.Editing;

@@ -8,7 +8,8 @@ using Aspose.Cli.Sdk.Results;
 using Aspose.Pdf;
 using Aspose.Pdf.Facades;
 using Aspose.Pdf.Forms;
-using static Aspose.Cli.Product.Pdf.Engine.PdfEngineSupport;
+using static Aspose.Cli.Product.Pdf.Engine.PdfGeometry;
+using static Aspose.Cli.Product.Pdf.Engine.PdfPages;
 using DrawingRectangle = System.Drawing.Rectangle;
 
 namespace Aspose.Cli.Product.Pdf.Engine;
