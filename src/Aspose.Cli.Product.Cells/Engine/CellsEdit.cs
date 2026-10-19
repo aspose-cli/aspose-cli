@@ -143,8 +143,19 @@ internal static class CellsEdit
 
     // A workbook file name has an extension; a mistyped sheet name has none.
     private static string SheetTypo(Workbook workbook, string source) =>
-        Path.GetExtension(source).Length == 0
+        HasNoExtension(source)
         && Mistake.Of(source, workbook.Worksheets.Cast<Worksheet>().Select(static sheet => sheet.Name)) is { Question: { } question }
             ? $"No sheet is named '{source}'. {question} Correct the formula's sheet name. "
             : string.Empty;
+
+    /// <summary>
+    /// Whether a link source names no file extension: no dot after its last folder separator,
+    /// or only a final one, as in <c>Sheet.</c>. This tells a sheet name from a file name; it
+    /// decides no format.
+    /// </summary>
+    internal static bool HasNoExtension(string source)
+    {
+        int dot = source.LastIndexOf('.');
+        return dot < 0 || dot == source.Length - 1 || source.IndexOfAny(['\\', '/'], dot) >= 0;
+    }
 }
