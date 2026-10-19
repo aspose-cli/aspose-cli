@@ -87,6 +87,34 @@ public sealed class CellsEngineFormatTests
         ];
     }
 
+    /// <summary>The formats the engine both writes and reads back, where a round trip shows what an output keeps.</summary>
+    public static TheoryData<string> LoadableFormats() =>
+        [.. CellsFormats.Definitions.Where(static format => format.Uses.HasFlag(FormatUse.Input | FormatUse.Convert)).Select(static format => format.Id)];
+
+    /// <summary>
+    /// The engine alone: a protected sheet saved in the format and read back is still protected
+    /// exactly when the format is declared to keep sheet protection, as the edit warning says.
+    /// </summary>
+    [Theory]
+    [MemberData(nameof(LoadableFormats))]
+    public void KeepsSheetProtection_IsWhatTheEngineKeeps(string formatId)
+    {
+        using var workbook = new Workbook();
+        Worksheet sheet = workbook.Worksheets[0];
+        sheet.Name = "Data";
+        sheet.Cells["A1"].PutValue("content");
+        sheet.Protect(ProtectionType.All);
+        SaveFormat save = CellsEngineFormats.Save(formatId);
+        using var saved = new MemoryStream();
+        workbook.Save(saved, save);
+        saved.Position = 0;
+
+        using var reopened = new Workbook(saved, new LoadOptions(FileFormatUtil.SaveFormatToLoadFormat(save)));
+        Worksheet read = reopened.Worksheets["Data"] ?? reopened.Worksheets[0];
+
+        Assert.Equal(CellsFormats.Definitions.Single(format => format.Id == formatId).Protectable, read.IsProtected);
+    }
+
     [Theory]
     [InlineData(Aspose.Cells.FileFormatType.Excel97To2003, "xls")]
     [InlineData(Aspose.Cells.FileFormatType.TabDelimited, "tsv")]
