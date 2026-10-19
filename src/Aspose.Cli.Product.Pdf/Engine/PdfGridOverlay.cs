@@ -23,14 +23,14 @@ internal static class PdfGridOverlay
         LabelSpacing = spacing * (spacing >= 100 ? 1 : spacing >= 25 ? 2 : 5),
     };
 
-    /// <summary>Decodes <paramref name="png"/>, draws the grid and encodes it as <paramref name="format"/>.</summary>
+    /// <summary>Decodes <paramref name="png"/>, draws the grid and encodes it with <paramref name="encoding"/>.</summary>
     internal static void Draw(
         Stream png,
         PdfRenderGrid grid,
         double pageWidthPoints,
         double pageHeightPoints,
         int dpi,
-        string format,
+        PdfRasterEncoding encoding,
         Stream output)
     {
         using SKBitmap bitmap = SKBitmap.Decode(png)
@@ -73,9 +73,7 @@ internal static class PdfGridOverlay
             }
         }
 
-        using SKData data = bitmap.Encode(
-            format == "jpeg" ? SKEncodedImageFormat.Jpeg : SKEncodedImageFormat.Png,
-            format == "jpeg" ? 95 : 100)
+        using SKData data = bitmap.Encode(encoding.Format, encoding.Quality)
             ?? throw new InvalidOperationException("The page image with its grid could not be encoded.");
         data.SaveTo(output);
     }

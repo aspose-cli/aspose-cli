@@ -62,10 +62,13 @@ internal static class PdfRender
 
         if (!request.Output.Format.Raster)
         {
+            string[] raster = [.. PdfFormats.Definitions
+                .Where(static format => format.Uses.HasFlag(FormatUse.Render) && format.Raster)
+                .Select(static format => format.Id)];
             throw CliErrors.OptionInvalid(
                 "--grid",
-                "applies only to png and jpeg output",
-                "Render the page with --to png or --to jpeg to draw a coordinate grid.");
+                $"applies only to {Listed(raster, "and")} output",
+                $"Render the page with {Listed([.. raster.Select(static id => "--to " + id)], "or")} to draw a coordinate grid.");
         }
 
         if (spacing is < PdfRenderRequest.MinimumGrid or > PdfRenderRequest.MaximumGrid)
@@ -80,4 +83,8 @@ internal static class PdfRender
 
         return PdfGridOverlay.Describe(spacing);
     }
+
+    // Items as a sentence lists them, as in "a, b and c".
+    private static string Listed(string[] items, string conjunction) =>
+        items.Length == 1 ? items[0] : $"{string.Join(", ", items[..^1])} {conjunction} {items[^1]}";
 }

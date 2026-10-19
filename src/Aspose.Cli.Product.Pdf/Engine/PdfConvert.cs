@@ -34,9 +34,7 @@ internal static class PdfConvert
         {
             warnings.Add(new Warning(WarningCodes.LossyConversion, $"PDF conversion to {request.Output.Format.Id} may not preserve every layout or interactive feature.")
             {
-                Hint = request.Output.Format.Id == "html"
-                    ? "Open the HTML in a browser and compare it with the PDF before relying on exact pagination, forms or annotations; review does not lay out HTML made from a PDF, so review the PDF itself."
-                    : "Inspect the produced file before relying on exact pagination, forms or annotations.",
+                Hint = target.LossyHint ?? "Inspect the produced file before relying on exact pagination, forms or annotations.",
             });
         }
 
@@ -68,21 +66,17 @@ internal static class PdfConvert
         }
 
         ReadEveryPage(document);
-        SaveFormat format = PdfEngineFormats.Save(request.Output.Format.Id);
+        PdfEngineFormat target = PdfEngineFormats.Of(request.Output.Format.Id);
+        SaveFormat format = PdfEngineFormats.Save(target.Id);
         PublishedFile written = session.Outputs.Write(
             request.Output.Path,
             request.Output.Overwrite,
             document,
             temp =>
             {
-                if (request.Output.Format.Id == "html")
+                if (target.Options is { } options)
                 {
-                    // The HTML writer leaves <title> empty unless it is given the PDF title.
-                    document.Save(temp, new HtmlSaveOptions
-                    {
-                        PartsEmbeddingMode = HtmlSaveOptions.PartsEmbeddingModes.EmbedAllIntoHtml,
-                        Title = document.Info.Title ?? string.Empty,
-                    });
+                    document.Save(temp, options(document));
                 }
                 else
                 {
@@ -149,7 +143,8 @@ internal static class PdfConvert
         List<Warning> warnings)
     {
         string profile = request.Output.Format.Id;
-        PdfFormat format = PdfEngineFormats.Archive(profile)
+        PdfEngineFormat target = PdfEngineFormats.Of(profile);
+        PdfFormat format = target.Archive
             ?? throw new InvalidOperationException($"'{profile}' is not a PDF/A profile.");
 
         // Navigation is counted around the page deletion alone; a bookmark the conversion
@@ -192,10 +187,10 @@ internal static class PdfConvert
 
         foreach (string removed in attachments.Except(AttachmentNames(document), StringComparer.Ordinal))
         {
-            warnings.Add(new Warning(WarningCodes.LossyConversion, $"Attachment '{removed}' was removed: {AttachmentRule(profile)}.")
+            warnings.Add(new Warning(WarningCodes.LossyConversion, $"Attachment '{removed}' was removed: {target.AttachmentRule ?? $"the engine could not make it conform to {profile}"}.")
             {
                 Location = $"attachment {removed}",
-                Hint = profile == "pdfa-3b"
+                Hint = target.AttachmentRule is null
                     ? "Deliver the file alongside the archive."
                     : "Convert to pdfa-3b to keep attachments, or deliver the file alongside the archive.",
             });
@@ -269,14 +264,6 @@ internal static class PdfConvert
 
         return ContainerSignatures.HasPdfHeader(ContainerSignatures.ReadPrefix(contents));
     }
-
-    /// <summary>Why the profile does not keep an attachment.</summary>
-    private static string AttachmentRule(string profile) => profile switch
-    {
-        "pdfa-1b" => "PDF/A-1 does not allow attachments",
-        "pdfa-2b" => "PDF/A-2 allows only attachments that are PDF/A documents",
-        _ => $"the engine could not make it conform to {profile}",
-    };
 
     private static OutputInfo ConvertTiff(
         PdfSession session,
