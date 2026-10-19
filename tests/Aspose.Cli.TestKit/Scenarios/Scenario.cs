@@ -174,6 +174,12 @@ public sealed record JsonAssertion
     /// <summary>The array must hold this value, or the string must contain this text.</summary>
     public JsonNode? Contains { get; init; }
 
+    /// <summary>The array must not hold this value, or the string must not contain this text; a missing value holds nothing, and any other value fails.</summary>
+    public JsonNode? NotContains { get; init; }
+
+    /// <summary>The string must start with this text.</summary>
+    public string? StartsWith { get; init; }
+
     /// <summary>Whether the value must exist (true) or be missing (false).</summary>
     public bool? Exists { get; init; }
 }

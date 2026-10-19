@@ -52,6 +52,41 @@ public sealed class ScenarioTests
         Assert.Contains("FILE_NOT_FOUND", outcome.Problems[0].Message, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void StartsWithAndNotContains_JudgeStringsAndArrays()
+    {
+        Scenario scenario = Scenario.Parse("""
+            {
+              "name": "prefix and absence assertions",
+              "steps": [
+                {
+                  "args": ["--vresion"],
+                  "expect": {
+                    "json": [
+                      { "path": "error.hint", "startsWith": "Did you mean '--version'?" },
+                      { "path": "error.details.suggestions", "notContains": "--verbose" },
+                      { "path": "error.message", "notContains": "--verbose" },
+                      { "path": "error.details.errors", "notContains": "anything" },
+                      { "path": "error.hint", "startsWith": "Run" },
+                      { "path": "error.details.suggestions", "notContains": "--version" },
+                      { "path": "error.message", "notContains": "vresion" },
+                      { "path": "error.details", "notContains": "--version" },
+                      { "path": "error.details.missing", "startsWith": "x" }
+                    ]
+                  }
+                }
+              ]
+            }
+            """);
+
+        ScenarioOutcome outcome = ScenarioRunner.Run(scenario);
+
+        Assert.Equal(
+            ["error.hint", "error.details.suggestions", "error.message", "error.details", "error.details.missing"],
+            outcome.Problems.Select(static problem => problem.Message.Split(' ')[0]));
+        Assert.All(outcome.Problems, static problem => Assert.Equal(ScenarioRunner.JsonCheck, problem.Check));
+    }
+
     [Theory]
     [InlineData("""{"name":"x","steps":[{"args":["doctor"],"expectation":{}}]}""")]
     [InlineData("""{"name":"x","files":{"a.txt":{"text":"a","base64":"YQ=="}},"steps":[{"args":["doctor"]}]}""")]

@@ -400,22 +400,37 @@ public static partial class ScenarioRunner
         {
             return $"{assertion.Path} is {(found ? Show(value) : "missing")}, expected {Show(expected)}";
         }
-        if (assertion.Contains is { } item)
+        if (assertion.Contains is { } item && !Holds(value, item))
         {
-            bool contains = value switch
+            return $"{assertion.Path} is {(found ? Show(value) : "missing")}, expected it to contain {Show(item)}";
+        }
+        if (assertion.NotContains is { } excluded && found)
+        {
+            if (value is not JsonArray && !(value is JsonValue text && text.TryGetValue(out string? _)))
             {
-                JsonArray array => array.Any(element => JsonNode.DeepEquals(element, item)),
-                JsonValue text when text.TryGetValue(out string? actual) && item is JsonValue part && part.TryGetValue(out string? wanted)
-                    => actual.Contains(wanted, StringComparison.Ordinal),
-                _ => false,
-            };
-            if (!contains)
-            {
-                return $"{assertion.Path} is {(found ? Show(value) : "missing")}, expected it to contain {Show(item)}";
+                return $"{assertion.Path} is {Show(value)}, expected an array or a string that does not contain {Show(excluded)}";
             }
+            if (Holds(value, excluded))
+            {
+                return $"{assertion.Path} is {Show(value)}, expected it not to contain {Show(excluded)}";
+            }
+        }
+        if (assertion.StartsWith is { } prefix
+            && !(value is JsonValue start && start.TryGetValue(out string? begins) && begins.StartsWith(prefix, StringComparison.Ordinal)))
+        {
+            return $"{assertion.Path} is {(found ? Show(value) : "missing")}, expected it to start with {Show(prefix)}";
         }
         return null;
     }
+
+    /// <summary>Whether an array holds the item or a string contains the text.</summary>
+    private static bool Holds(JsonNode? value, JsonNode item) => value switch
+    {
+        JsonArray array => array.Any(element => JsonNode.DeepEquals(element, item)),
+        JsonValue text when text.TryGetValue(out string? actual) && item is JsonValue part && part.TryGetValue(out string? wanted)
+            => actual.Contains(wanted, StringComparison.Ordinal),
+        _ => false,
+    };
 
     private static string Show(JsonNode? value) => ScenarioContract.Excerpt(value?.ToJsonString() ?? "null");
 
