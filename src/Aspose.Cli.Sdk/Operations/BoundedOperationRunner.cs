@@ -48,10 +48,10 @@ public static class BoundedOperationRunner
     /// snapshots the objects each operation can change before and after it, and an operation's
     /// <c>itemsAffected</c> is the number of objects that changed and its <c>targets</c> their
     /// addresses in order, where they are in the output, or in the input for removed ones: an
-    /// object the engine keeps by instance (<see cref="IOperationModel{TOp}.Positions"/>) is
-    /// placed where the output of the whole batch holds it, so a later operation that moved it
-    /// does not leave a stale address, and one a later operation removed has its address in the
-    /// input of the batch. More than
+    /// object the engine keeps by instance (<see cref="IOperationModel{TOp}.Positions"/>), or one
+    /// on such an object, such as a shape on a slide, is placed where the output of the whole
+    /// batch holds that instance, so a later operation that moved it does not leave a stale
+    /// address, and one a later operation removed has its address in the input of the batch. More than
     /// <see cref="BoundedOperationOutcome.MaximumTargets"/> addresses shorten to one per unit
     /// that covers them all, such as <c>page/1-150</c>. An operation that applied but changed
     /// nothing warns <c>OP_NO_EFFECT</c>.
@@ -66,7 +66,8 @@ public static class BoundedOperationRunner
     /// <param name="verifier">With <c>--verify</c>, records the effect of each operation that applied.</param>
     /// <param name="pageUnit">
     /// The unit whose numbered addresses, such as <c>page/3</c>, are the pages of the output;
-    /// the batch reports the ones it changed in <see cref="AppliedBatch.Pages"/>.
+    /// the batch reports the ones it changed in <see cref="AppliedBatch.Pages"/>, numbered as
+    /// its targets are.
     /// </param>
     public static AppliedBatch Run<TOp>(
         OperationCatalog<TOp> catalog,
@@ -126,14 +127,6 @@ public static class BoundedOperationRunner
                     scopes[index] = current;
                 }
 
-                if (pageUnit is not null)
-                {
-                    pages.UnionWith(changes
-                        .Where(change => change.InOutput && change.Address.StartsWith(pageUnit + "/", StringComparison.Ordinal))
-                        .Select(static change => OperationSnapshot.FirstNumber(change.Address))
-                        .OfType<int>());
-                }
-
                 return new AppliedOperation(changes.Count, [.. changes.Select(static change => change.Address).Distinct(StringComparer.Ordinal)]);
             },
             operation => Covered(model.AttemptedTargets(operation)),
@@ -171,6 +164,15 @@ public static class BoundedOperationRunner
                 .Select(item => (item.InOutput ? scopes : scopesBefore).TryGetValue(index, out NamedScopes? then)
                     ? Renamed(item, then, lastScopes!, firstScopes!)
                     : item)];
+        }
+
+        if (pageUnit is not null)
+        {
+            // Where the output of the whole batch holds what each operation changed.
+            pages.UnionWith(placed.Values.SelectMany(static objects => objects)
+                .Where(item => item.InOutput && item.Address.StartsWith(pageUnit + "/", StringComparison.Ordinal))
+                .Select(static item => OperationSnapshot.FirstNumber(item.Address))
+                .OfType<int>());
         }
 
         outcomes = [.. outcomes.Select((outcome, index) => outcome.Status == OpStatuses.Ok && placed.TryGetValue(index, out IReadOnlyList<ChangedObject>? objects)
@@ -252,22 +254,30 @@ public static class BoundedOperationRunner
             StringComparer.Ordinal);
 
     /// <summary>
-    /// A changed object at its address in the output, or in the input when the batch removed it;
-    /// one the batch both inserted and removed keeps the address its operation reported.
+    /// A changed object at its address in the output, or in the input when the batch removed it:
+    /// the number that begins its address is its owner's position, so <c>slide/3/shape/7</c> on a
+    /// slide the output holds fifth is <c>slide/5/shape/7</c>. One whose owner the batch both
+    /// inserted and removed keeps the address its operation reported.
     /// </summary>
     private static ChangedObject Place(ObjectChange change, Dictionary<string, Dictionary<object, int>> input, Dictionary<string, Dictionary<object, int>> output)
     {
-        if (change.Identity is not { } identity)
+        int slash = change.Address.IndexOf('/', StringComparison.Ordinal);
+        string unit = change.Address[..slash];
+        if (change.Owner is not { } owner || !output.TryGetValue(unit, out Dictionary<object, int>? now))
         {
-            return new ChangedObject(change.Address, null, change.InOutput);
+            return new ChangedObject(change.Address, change.Identity, change.InOutput);
         }
 
-        string unit = change.Address[..change.Address.IndexOf('/', StringComparison.Ordinal)];
-        return output.TryGetValue(unit, out Dictionary<object, int>? now) && now.TryGetValue(identity, out int position)
-            ? new ChangedObject($"{unit}/{(position + 1).ToString(System.Globalization.CultureInfo.InvariantCulture)}", identity, InOutput: true)
-            : input.TryGetValue(unit, out Dictionary<object, int>? before) && before.TryGetValue(identity, out position)
-                ? new ChangedObject($"{unit}/{(position + 1).ToString(System.Globalization.CultureInfo.InvariantCulture)}", identity, InOutput: false)
-                : new ChangedObject(change.Address, identity, InOutput: false);
+        int end = change.Address.IndexOf('/', slash + 1);
+        string rest = end < 0 ? string.Empty : change.Address[end..];
+        // An object its operation removed, such as a shape, is still gone when its owner is not.
+        return now.TryGetValue(owner, out int position)
+            ? new ChangedObject(Numbered(position), change.Identity, change.InOutput)
+            : input.TryGetValue(unit, out Dictionary<object, int>? before) && before.TryGetValue(owner, out position)
+                ? new ChangedObject(Numbered(position), change.Identity, InOutput: false)
+                : new ChangedObject(change.Address, change.Identity, InOutput: false);
+
+        string Numbered(int index) => string.Create(System.Globalization.CultureInfo.InvariantCulture, $"{unit}/{index + 1}{rest}");
     }
 
     /// <summary>Every object the batch changed once: by instance where it has one, else by address, which keeps whether its last change left it in the output.</summary>

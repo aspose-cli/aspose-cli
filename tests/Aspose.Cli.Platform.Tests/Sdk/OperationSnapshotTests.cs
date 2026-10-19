@@ -74,6 +74,35 @@ public sealed class OperationSnapshotTests
     }
 
     [Fact]
+    public void Compare_NamedMovedPagesWithOwnersStillCountByState_EachWithItsOwner()
+    {
+        object a = new(), b = new(), c = new(), d = new(), e = new();
+        OperationSnapshot before = new OperationSnapshot().AddSequence("page", ["a", "b", "c", "d", "e"], moved: ["d", "e"], owners: [a, b, c, d, e]);
+        OperationSnapshot after = new OperationSnapshot().AddSequence("page", ["a", "b", "d", "e", "c"], owners: [a, b, d, e, c]);
+
+        // A page that only moved counts, as without owners; the owners only travel with the changes.
+        Assert.Equal(
+            [new ObjectChange("page/3", true, Owner: d), new ObjectChange("page/4", true, Owner: e)],
+            Compare(before, after));
+    }
+
+    [Fact]
+    public void Compare_ADeletedPageWithAnOwnerCountsWithIt_AndANamedObjectWithItsOwner()
+    {
+        object a = new(), b = new(), c = new();
+        OperationSnapshot before = new OperationSnapshot()
+            .AddSequence("page", ["a", "b", "c"], owners: [a, b, c])
+            .Add("note/x", "1", owner: c);
+        OperationSnapshot after = new OperationSnapshot()
+            .AddSequence("page", ["a", "c"], owners: [a, c])
+            .Add("note/x", "2", owner: c);
+
+        Assert.Equal(
+            [new ObjectChange("note/x", true, Owner: c), new ObjectChange("page/2", false, Owner: b)],
+            Compare(before, after));
+    }
+
+    [Fact]
     public void Compare_ReusedInstancesWithTheSameStatesChangeNothing()
     {
         object first = new(), second = new(), third = new(), fresh = new();
@@ -90,7 +119,7 @@ public sealed class OperationSnapshotTests
         OperationSnapshot before = new OperationSnapshot().AddObjects("block", [(first, "a"), (second, "b"), (third, "c")], reused: true);
         OperationSnapshot after = new OperationSnapshot().AddObjects("block", [(third, "a"), (first, "B"), (second, "c")], reused: true);
 
-        Assert.Equal([new ObjectChange("block/2", true, first)], Compare(before, after));
+        Assert.Equal([new ObjectChange("block/2", true, first, first)], Compare(before, after));
     }
 
     [Fact]
