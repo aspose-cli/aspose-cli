@@ -1,5 +1,6 @@
 using System.Text.Json.Serialization;
 using Aspose.Cli.Host.LocalServices;
+using Aspose.Cli.Sdk;
 
 namespace Aspose.Cli.Host.ViewerService;
 
@@ -103,7 +104,7 @@ internal sealed record RequesterLicense
     public static bool Same(RequesterLicense? left, RequesterLicense? right) =>
         left is null || right is null
             ? left is null && right is null
-            : string.Equals(left.WorkDirectory, right.WorkDirectory, StringComparison.OrdinalIgnoreCase)
+            : FilePaths.Same(left.WorkDirectory, right.WorkDirectory)
                 && left.Variables.Count == right.Variables.Count
                 && left.Variables.All(pair => right.Read(pair.Key) is { } value && value == pair.Value.Reveal());
 }

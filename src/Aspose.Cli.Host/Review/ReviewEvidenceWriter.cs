@@ -3,6 +3,7 @@ using System.Text;
 using System.Text.Json;
 using Aspose.Cli.Host.LocalServices;
 using Aspose.Cli.Host.Viewer;
+using Aspose.Cli.Sdk;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.IO;
@@ -319,8 +320,7 @@ internal static class ReviewEvidenceWriter
     {
         string full = Path.TrimEndingDirectorySeparator(Path.GetFullPath(target));
         string source = Path.GetFullPath(input);
-        if (string.Equals(full, source, StringComparison.OrdinalIgnoreCase)
-            || source.StartsWith(full + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
+        if (FilePaths.Same(full, source) || source.StartsWith(full + Path.DirectorySeparatorChar, FilePaths.Comparison))
         {
             throw CliErrors.OptionInvalid(
                 "--out",

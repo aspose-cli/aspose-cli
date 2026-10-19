@@ -1,4 +1,5 @@
 using Aspose.Cli.Host.LocalServices;
+using Aspose.Cli.Sdk;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.IO;
 using System.Security.Cryptography;
@@ -174,11 +175,7 @@ internal sealed class ViewBundleManifest
                 normalized.Replace(
                     '/',
                     Path.DirectorySeparatorChar)));
-        if (!full.StartsWith(
-                Root + Path.DirectorySeparatorChar,
-                OperatingSystem.IsWindows()
-                    ? StringComparison.OrdinalIgnoreCase
-                    : StringComparison.Ordinal))
+        if (!full.StartsWith(Root + Path.DirectorySeparatorChar, FilePaths.Comparison))
         {
             return null;
         }

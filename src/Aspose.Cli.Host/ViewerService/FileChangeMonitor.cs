@@ -1,3 +1,5 @@
+using Aspose.Cli.Sdk;
+
 
 namespace Aspose.Cli.Host.ViewerService;
 
@@ -121,7 +123,7 @@ internal sealed class FileChangeMonitor : IDisposable
         // same-named sibling, whereas a case mismatch on Windows would mean
         // missing real changes.
         relativeName is not null
-            && string.Equals(Path.GetFileName(relativeName), _fileName, StringComparison.OrdinalIgnoreCase);
+            && FilePaths.Same(Path.GetFileName(relativeName), _fileName);
 
     private void RecordHit()
     {
