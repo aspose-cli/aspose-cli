@@ -22,6 +22,16 @@ correct a design paragraph by paragraph.
   none, so a cover title or a "Contents" caption in them stays out of the
   table of contents. A template's own Title may differ: check `inspect
   --detail outline`.
+- `--from-markdown`, `insert_markdown` and Markdown headers or footers import
+  into the document's styles: headings map to Heading 1-6, quotes to Quote,
+  lists to list paragraphs, and footnote references (`text[^1]` with a
+  `[^1]: note` line) to real footnotes. Put every footnote definition at the
+  end of the Markdown: a heading right after one joins the note (known SDK
+  issue `WORDS-MD-FOOTNOTE-HEADING`). As in CommonMark, a closing `**` or `~~`
+  right after punctuation, such as `》` or `）`, needs a space or punctuation
+  after it, so `~~原《守则》~~同时` stays literal; write `<del>`, `<strong>` or
+  `<em>` tags in Chinese text instead, and read the result back for leftover
+  markers.
 - Markdown has no Title syntax, and its `#` becomes Heading 1, which the table
   of contents lists. For a document title, write it as a plain first line,
   write the chapters as `#`, and restyle that line in the batch that inserts
@@ -50,10 +60,7 @@ missing CJK glyphs.
 
 Chinese, Japanese or Korean lines that start with "，", "。" or "：", or that
 end early before East Asian text following a space, come from the engine's
-layout (known SDK issue `WORDS-CJK-LINE-BREAK`): it applies the East Asian
-line-breaking rules only to text whose East Asian language is Chinese,
-Japanese or Korean, and, in a document older than Word 2013's compatibility
-mode, breaks East Asian text drawn in one font for all scripts, as a PDF
-input loads, only at spaces. The built-in design declares Chinese; a
-document created from another template or converted from another format
-keeps its own settings, so disclose such lines rather than adding breaks.
+layout (known SDK issue `WORDS-CJK-LINE-BREAK`). Documents created with the
+built-in design avoid it; one created from another template or converted
+from another format keeps its own settings, which no operation changes, so
+disclose such lines rather than adding breaks.

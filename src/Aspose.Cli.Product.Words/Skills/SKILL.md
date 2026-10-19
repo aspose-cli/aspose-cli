@@ -8,119 +8,38 @@ description: Create, inspect, edit, compare, convert and review Word documents w
 Use `aspose-cli words` for DOC/DOCX, RTF, ODT, HTML, Markdown, PDF and related
 word-processing documents. This Skill holds what is specific to Words; the
 session start, the rules every product shares and the delivery checklist are in
-`aspose-cli docs overview`.
-
-A PDF input is rebuilt as flowing text, and the engine guesses its headers
-and footers: they may become body text, or real headers and footers in which
-a number, such as the "1" of a version "第 1 版", becomes a page-number field
-that counts up on later pages; the layout may also add pages. `convert`,
-`split` and `edit` report this as `LOSSY_CONVERSION` (known SDK issue
-`WORDS-PDF-HEADER-FOOTER`). Check the output with `inspect --detail sections
-fields` and correct it with `set_header`, `set_footer`, `set_page_numbers` or
-`delete_blocks`. Chinese, Japanese or Korean text also gets a space wherever a
-line ended on the PDF page, and the lines of a heading and the clause after
-it may share one paragraph (`WORDS-PDF-CJK-LINE-END`): read the blocks before
-editing, and find phrases with a regex that allows that space, such as
-`甲 ?乙双方`.
-
-An `rtf` output stores each image once, in its own format such as PNG, without
-the uncompressed metafile copy for old readers that would make it many times
-larger; Word and LibreOffice read it, but a reader that knows only metafiles
-shows no images.
-
-## Document model
-
-- A **block** is a body paragraph or table, numbered from 1. The paragraphs and
-  tables inside a block-level content control, such as a table of contents,
-  are blocks too. Images, fields, hyperlinks and breaks belong to their
-  paragraph; `inspect` names the `scope` of each image, field and revision,
-  and `search` the `scope` and `section` of each hit; neither gives a
-  `block` in headers and footers. A **section** carries page setup, headers and footers, numbered
-  from 1. `inspect --detail sections` lists the headers and footers each
-  section defines, by the `location` (`header`, `footer`) and `kind`
-  (`primary`, `first`, `even`) that `set_header`, `set_footer` and
-  `set_page_numbers` take, with their `paragraphs`; a kind a section does not
-  define continues from the previous section. A search hit in one names its
-  `location` and `kind` too.
-- Block text, `--content full` runs, search hit `context` and `heading`/`find`
-  addresses use the text a reader sees: field results rather than field codes, without text a tracked
-  change deletes, and without the comments and footnotes a paragraph anchors.
-  A header or footer field whose result changes from page to page (`PAGE`,
-  `NUMPAGES`, `SECTIONPAGES`) reads as its placeholder, such as `{PAGE}`.
-  Read those with `inspect --detail comments` or `search --scope`, and
-  tracked changes themselves with `inspect --detail revisions`
-  ([revisions](references/revisions.md)).
-- A numbered list paragraph's number, such as `6.2`, is its block's
-  `listLabel`, and its block `text` leaves it out. Everywhere else the text
-  starts with the number and a space: search hit `context` and patterns,
-  `find`/`heading` addresses, extracted text and table `values`. So
-  `"find": "6.2 "` addresses clause 6.2, a search pattern anchored with `^`
-  must allow for the number, and `replace_text` and `set_text` change only
-  the text after it.
-- `search --scope` and the `replace_text` op share one scope vocabulary:
-  `body`, `headers-footers`, `footnotes` (with endnotes), `comments` and `all`.
-- Read fields use the edit vocabulary: a table block's `rowCount`,
-  `columnCount` and `values` and a paragraph's `text` and `style` can be
-  written back through `insert_table` and `insert_paragraphs` under the same
-  names.
-
-## Reading
-
-```powershell
-aspose-cli words inspect input.docx --detail outline sections fields bookmarks comments --output-format json
-aspose-cli words read input.docx --blocks 1- --max-blocks 30 --content full --output-format json
-aspose-cli words search input.docx --pattern "notice period" --scope all --output-format json
-```
-
-`--blocks 1- --max-blocks 30` reads the first 30 blocks, or all of a shorter
-document; a closed range such as `1-30` must lie inside the document, or it is
-`BLOCK_NOT_FOUND`. `--content outline|text|full` chooses how much of each block is projected.
-`--max-chars` bounds the sum of paragraph, table-cell and run text; addressing
-and formatting metadata do not count against it. Check `window.truncated` and
-each block's `contentTruncated`, and run `window.next` as given: it resumes at
-the block the budget cut short and doubles `--max-chars` when that block alone
-exceeded it. `--section` with `--blocks` reads only that section's blocks in
-the range; block numbers run through the whole document, so a range with none
-of them is `BLOCK_NOT_FOUND`, whose hint names the section's blocks. `extract --what text` writes the visible text of every block to one
-file, one line per paragraph and per table row, whose cells are separated by
-tabs. It holds the body only: no headers or footers, footnotes, endnotes or
-comments, and it does not say they were left out. `extract --what comments`
-writes the comments with their author and block;
-`search --pattern ".+" --regex --scope all` returns the text of every scope
-line by line, each hit naming its `scope`, within the `--max-hits` window;
-`--scope footnotes` (with endnotes) or `headers-footers` reads just those.
-`extract --what tables` writes each body table to its own CSV file
-(`table-001.csv` and on, UTF-8; add `--bom` for a byte order mark, so Excel
-reads Chinese text) and reports its `block`; a cell's paragraphs and line breaks become lines
-inside its field, and cells a merge covers stay as empty fields. Cell text is
-written as it is, so Excel evaluates a cell that starts with `=`, `+`, `-` or
-`@` as a formula; import such files as text when that matters. Windows, paging and compact output in general:
-`aspose-cli docs reading`.
+`aspose-cli docs overview`; page-level PDF work (fill, redact, sign) belongs
+to the PDF Skill. Options and defaults: `aspose-cli capabilities words`;
+operation fields: `aspose-cli schema v2/words/ops --operation <op>`.
 
 ## Workflow
 
-1. **New document:** write Markdown and create it inside a template (see
-   Design below).
+1. **New document:** write Markdown and create it inside a template (Design).
 
    ```powershell
    aspose-cli words create report.docx --from-markdown report.md --template brand.docx --title "Quarterly Report" --output-format json
    ```
 
 2. **Existing document:** inspect structure and revision state, then read only
-   the blocks you need (above).
-3. **Edit:** put all related changes in one `words edit` batch with `--verify`;
-   add `--track-changes --author "Name"` when the change must stay reviewable.
+   the blocks you need ([reading](references/editing.md#reading-the-document)).
+
+   ```powershell
+   aspose-cli words inspect input.docx --detail outline sections fields bookmarks comments --output-format json
+   aspose-cli words read input.docx --blocks 1- --max-blocks 30 --content full --output-format json
+   aspose-cli words search input.docx --pattern "notice period" --scope all --output-format json
+   ```
+
+3. **Edit:** put all related changes in one `words edit` batch with `--verify`
+   ([editing](references/editing.md)); add `--track-changes --author "Name"`
+   when the change must stay reviewable.
 
    ```powershell
    aspose-cli words edit input.docx --ops ops.json --out output.docx --verify --output-format json
    ```
 
-   Filling a template's `{{placeholder}}` text: `replace_text` covers only the
-   body unless it names `"scope": "all"`, and templates often keep the contract
-   number or date in a header. A table with one template row for a list of
-   items, such as products, takes `repeat_table_row`: it copies that row per
-   item with its formatting and column widths, so never rebuild such a table
-   with `insert_table`.
+   To fill a template, `replace_text` replaces `{{placeholder}}` text and
+   `repeat_table_row` copies a table's template row once per item, keeping its
+   formatting and column widths; never rebuild such a table with `insert_table`.
 
    ```json
    {"ops":[
@@ -131,70 +50,71 @@ written as it is, so Excel evaluates a cell that starts with `=`, `+`, `-` or
    ]}
    ```
 
-   Then confirm `words search output.docx --pattern "{{" --scope all`
-   finds nothing (the pattern is literal unless `--regex`).
+4. **Verify:** read the changed blocks back, confirm
+   `words search output.docx --pattern "{{" --scope all` finds nothing (the
+   pattern is literal unless `--regex`), then review every page ([verification](references/verification.md)).
 
-4. **Verify:** read the changed blocks back, then review every page
-   ([verification](references/verification.md)).
+## Document model
+
+- A **block** is a body paragraph or table, numbered from 1 through the whole
+  document; a **section** carries page setup, headers and footers. Images,
+  fields, hyperlinks and breaks belong to their paragraph.
+- Reads and `find`/`heading` addresses use the text a reader sees: field
+  results, without deleted tracked text, comments or footnotes.
+- A numbered paragraph's number, such as `6.2`, is its block's `listLabel`,
+  not part of its `text`; search, `find` addresses and extracted text start
+  with the number and a space, so `"find": "6.2 "` addresses clause 6.2.
 
 ## Design: the template owns the look
 
 - A template supplies styles, page setup, headers and footers; `--from-markdown`
-  or `--from-text` supplies the body. Markdown headings map to Heading 1-6, quotes to
-  Quote, lists to list paragraphs, and footnote references (`text[^1]` with a
-  `[^1]: note` line at the end of the Markdown, since a heading right after
-  one joins the note) to real footnotes; only bold, italic and strike-through from
-  the Markdown survive as direct formatting. As in CommonMark, a closing `**`
-  or `~~` right after punctuation, such as `》` or `）`, needs a space or
-  punctuation after it, so `~~原《守则》~~同时` stays literal; write
-  `<del>`, `<strong>` or `<em>` tags in Chinese text instead, and read the
-  result back for leftover markers.
-- Use the user's template when one exists; without `--template`,
-  `words create` uses the built-in A4 design. `insert_markdown` and Markdown
-  headers or footers import the same way, into the edited document's styles.
-- Markdown has no Title: a `#` line becomes Heading 1 and enters the table of
-  contents. Write the document title as a plain first line, chapters as `#`,
-  and `set_style` that line to `Title` in the batch that inserts the table of
-  contents ([document standards](references/document-standards.md)).
-- Structure with built-in Heading styles; they drive navigation and the table
-  of contents. Use `set_style`, `define_style`, `insert_toc` and
-  `set_page_numbers` rather than run-by-run formatting.
+  or `--from-text` supplies the body, with headings as Heading 1-6 and only
+  bold, italic and strike-through as direct formatting. Use the user's template
+  when one exists; without `--template`, `words create` uses the built-in A4 design.
+- Use built-in Heading styles, `set_style`, `define_style`, `insert_toc` and `set_page_numbers`
+  rather than run-by-run formatting ([document standards](references/document-standards.md)).
 
-More: [document standards](references/document-standards.md).
+## Common mistakes
 
-## Words disclosures
-
-Besides the shared disclosures, tell the user about tracked changes and
-comments left in the output, invalidated signatures (`SIGNATURE_INVALIDATED`),
-dropped macros (`MACROS_DROPPED`; `inspect` reports `document.hasMacros`
-before any conversion), removed encryption
-(`ENCRYPTION_REMOVED`), fonts embedded because the input's settings ask every
-save to embed them (`FONTS_EMBEDDED`: the output can be megabytes larger, as
-with a docx written by `pdf convert`) and lossy conversion. In evaluation mode,
-`extract --what images` copies each image as the document stores it, leaves out
-the watermark picture evaluation mode draws into the header, and does not warn
-`EVALUATION_MODE`; `EVALUATION_INPUT_TRUNCATED` means only part of an input, template or appended
-document was loaded. When the edited document grows past what evaluation mode
-lays out and saves (about 200 paragraphs, as with a mail merge of many
-records), the output keeps only its first sections and ends with the engine's
-truncation notice, which the `EVALUATION_MODE` message names. Either way the
-output ends with that notice, `--verify` reports `OUTPUT_TRUNCATED`, and the
-result is incomplete whatever `itemsAffected` says. Evaluation marks saved
-into a file are reported by a licensed `review` as `WORDS_EVALUATION_MARKS`
-([verification](references/verification.md)) and, when a licensed command's
-output keeps them, as `EVALUATION_INPUT_MARKED`
-([troubleshooting](references/troubleshooting.md)).
+- **Placeholders left in a header.** `replace_text` covers only the body
+  unless it names `"scope": "all"`, and templates often keep the contract
+  number or date in a header.
+- **A `#` title in the table of contents.** Markdown has no Title: write the
+  title as a plain first line, chapters as `#`, and `set_style` that line to
+  `Title` in the batch that inserts the table of contents.
+- **Markdown markers after CJK punctuation.** A closing `**` or `~~` right
+  after `》` or `）` stays literal; write `<strong>`, `<em>` or `<del>` tags.
+  Put footnote definitions (`[^1]: note`) at the end of the Markdown.
+- **Addresses after an insertion.** Every address resolves against the
+  document before the batch, and insertions at one anchor stack against it:
+  anchor them all `before` the block that follows
+  ([editing](references/editing.md#batch-semantics)).
+- **Untrackable operations in a tracked batch.** With `--track-changes`, any
+  operation other than content insertions, deletions and comments fails the
+  batch with `OPTION_INVALID` ([editing](references/editing.md#batch-semantics)).
+- **Editing straight to PDF or Markdown.** `edit` writes only formats that
+  reopen as the same document; edit to `.docx`, then `words convert`.
+- **Trusting a PDF input.** Its headers and footers are guessed and CJK lines
+  gain spaces; check `inspect --detail sections fields` and search with a
+  regex such as `甲 ?乙双方` ([troubleshooting](references/troubleshooting.md#a-pdf-input)).
+- **Fonts that differ from the template.** Styled text takes its style's font;
+  set the body font with `define_style` or `set_default_font` in the batch.
+- **Accepting revisions to clean up a review.** Disclose tracked changes and
+  comments and decide them only as the user says; `words compare` refuses
+  inputs that still have them (`REVISIONS_UNRESOLVED`).
+- **Unreported warnings.** Besides the shared disclosures, tell the user about
+  `SIGNATURE_INVALIDATED`, `MACROS_DROPPED` and `FONTS_EMBEDDED`
+  ([troubleshooting](references/troubleshooting.md#what-a-warning-asks-you-to-disclose)).
 
 ## References
 
-- [Editing: addressing, batch semantics and the operation index](references/editing.md)
-- [Document standards](references/document-standards.md)
-- [Revisions and comparison](references/revisions.md)
-- [Mail merge](references/mail-merge.md)
-- [Verification](references/verification.md)
-- [What the viewer shows](references/preview.md)
-- [Troubleshooting](references/troubleshooting.md)
+- [Editing](references/editing.md): reading, addresses, batches, operations, tables, headers, protection, saving.
+- [Document standards](references/document-standards.md): templates, the built-in design, Markdown, review.
+- [Revisions and comparison](references/revisions.md): tracked changes and `words compare`.
+- [Mail merge](references/mail-merge.md): merge data, regions, one file per record.
+- [Verification](references/verification.md): `--verify`, reading `applied[]` back, review findings.
+- [What the viewer shows](references/preview.md): the live preview.
+- [Troubleshooting](references/troubleshooting.md): failed addresses, no-effect operations, PDF inputs, warnings, evaluation mode.
 
 Examples: [report from Markdown](examples/report-from-markdown/README.md),
-[edit a contract safely](examples/edit-contract-safely/README.md),
-[mail-merge letters](examples/mail-merge-letters/README.md).
+[edit a contract safely](examples/edit-contract-safely/README.md), [mail-merge letters](examples/mail-merge-letters/README.md).

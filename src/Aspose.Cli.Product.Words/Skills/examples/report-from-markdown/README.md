@@ -10,7 +10,7 @@ aspose-cli words inspect report.docx --detail outline properties sections --outp
 aspose-cli review report.docx --out report.review --output-format json
 ```
 
-The document contains a Summary heading and a metrics table with a header
-row and two data rows, using the built-in design's styles and A4 page setup.
+The document contains a Summary heading and a three-row metrics table, a row
+of labels and two data rows, using the built-in design's styles and A4 page setup.
 Open every image listed by the review before delivery and disclose evaluation
 output when applicable.

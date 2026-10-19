@@ -9,12 +9,65 @@ generated schema:
 aspose-cli schema v2/words/ops --operation insert_table
 ```
 
+## Reading the document
+
+Windows, paging and compact output in general are in `aspose-cli docs
+reading`. What Words adds:
+
+- The paragraphs and tables inside a block-level content control, such as a
+  table of contents, are blocks too. `inspect` names the `scope` of each
+  image, field and revision, and `search` the `scope` and `section` of each
+  hit; neither gives a `block` in headers and footers.
+- `inspect --detail sections` lists the headers and footers each section
+  defines, by `location` (`header`, `footer`) and `kind` (`primary`, `first`,
+  `even`, the `kind` of `set_header` and `set_footer`), with their
+  `paragraphs`; a kind a section does not define continues from the previous
+  section. A search hit in one names its `location` and `kind` too.
+- A header or footer field whose result changes from page to page (`PAGE`,
+  `NUMPAGES`, `SECTIONPAGES`) reads as its placeholder, such as `{PAGE}`.
+  Read comments and footnotes with `inspect --detail comments` or
+  `search --scope`, and tracked changes with `inspect --detail revisions`
+  ([revisions](revisions.md)).
+- A numbered paragraph's block `text` leaves its number out, but search hit
+  `context` and patterns, `find`/`heading` addresses, extracted text and table
+  `values` start with it. A search pattern anchored with `^` must allow for
+  the number, and `replace_text` and `set_text` change only the text after it.
+- `search --scope` and `replace_text` share one scope vocabulary: `body`,
+  `headers-footers`, `footnotes` (with endnotes), `comments` and `all`.
+  `search --pattern ".+" --regex --scope all` returns the text of every scope
+  line by line, each hit naming its `scope`, within the `--max-hits` window.
+- A table block's `rowCount`, `columnCount` and `values` and a paragraph's
+  `text` and `style` are written back through `insert_table` and
+  `insert_paragraphs` under the same names.
+
+`words read --blocks 1- --max-blocks 30` reads the first 30 blocks, or all of
+a shorter document; a closed range such as `1-30` must lie inside the
+document, or it is `BLOCK_NOT_FOUND`. `--content outline|text|full` chooses
+how much of each block is projected. `--max-chars` bounds the sum of
+paragraph, table-cell and run text; addressing and formatting metadata do not
+count against it. Check `window.truncated` and each block's
+`contentTruncated`, and run `window.next` as given: it resumes at the block
+the budget cut short and doubles `--max-chars` when that block alone exceeded
+it. `--section` with `--blocks` reads only that section's blocks in the
+range; block numbers run through the whole document, so a range with none of
+them is `BLOCK_NOT_FOUND`, whose hint names the section's blocks.
+
+`extract --what text` writes the visible text of every block to one file, one
+line per paragraph and per table row, whose cells are separated by tabs. It
+holds the body only: no headers or footers, footnotes, endnotes or comments,
+and it does not say they were left out. `extract --what comments` writes the
+comments with their author and block. `extract --what tables` writes each
+body table to its own CSV file (`table-001.csv` and on, UTF-8; add `--bom`
+for a byte order mark, so Excel reads Chinese text) and reports its `block`;
+a cell's paragraphs and line breaks become lines inside its field, and cells
+a merge covers stay as empty fields. Cell text is written as it is, so Excel
+evaluates a cell that starts with `=`, `+`, `-` or `@` as a formula; import
+such files as text when that matters.
+
 ## Addresses
 
-- A block address (`at`, or `target` for `set_text`, `delete_blocks`,
-  `set_table_cell`, `set_table_pagination`, `format_text`, `set_style`,
-  `set_list`, `clear_list` and `add_comment`) is exactly one of `block`, `blocks`,
-  `bookmark`, `heading` or `find`. `find` matches blocks whose visible text
+- A block address (`at` or `target`, as the operation's schema names it) is
+  exactly one of `block`, `blocks`, `bookmark`, `heading` or `find`. `find` matches blocks whose visible text
   contains the given text, ignoring case, and `heading` does the same among
   heading paragraphs; `nth` picks the match (the first by default). When
   nothing matches, `ANCHOR_NOT_FOUND` suggests a close heading, or names the
@@ -100,22 +153,25 @@ aspose-cli schema v2/words/ops --operation insert_table
   Markdown's footnote syntax, a `[^id]` reference in the text and a
   `[^id]: note text` line in the same `markdown`, such as
   `"markdown": "Certified under ISO 9001[^iso].\n\n[^iso]: Certificate CN-2026-001."`.
-  `words create --from-markdown` reads the same syntax. Put every definition
-  at the end of the Markdown: a heading right after one becomes part of the
-  note (known SDK issue `WORDS-MD-FOOTNOTE-HEADING`). Read the notes back
+  `words create --from-markdown` reads the same syntax; put every definition
+  at the end of the Markdown ([document standards](document-standards.md)).
+  Read the notes back
   with `words search --pattern ".+" --regex --scope footnotes`.
 
 ## Operation index
 
+The operations grouped by task; each one's description and fields are in
+`aspose-cli schema v2/words/ops --operation <op>`.
+
 | Task | Operations |
 |---|---|
-| Change text | `replace_text` (literal or regex, by scope), `set_text` (paragraph or bookmark text), `set_table_cell` (one 1-based cell), `repeat_table_row` (one copy of a `{{key}}` template row per item) |
-| Add content | `insert_paragraphs` (styled paragraphs, list items), `insert_markdown` (also footnotes, see below), `insert_table`, `insert_image`, `insert_hyperlink`, `insert_field` (inserts and updates the field), `insert_toc`, `insert_bookmark` (a paragraph's visible text), `import_sections` |
+| Change text | `replace_text`, `set_text`, `set_table_cell`, `repeat_table_row` |
+| Add content | `insert_paragraphs`, `insert_markdown` (also footnotes, see below), `insert_table`, `insert_image`, `insert_hyperlink`, `insert_field`, `insert_toc`, `insert_bookmark`, `import_sections` |
 | Remove content | `delete_blocks` |
-| Styles and formatting | `set_style` (apply an existing style; the typeface, size and color set on the runs give way to it, emphasis such as italic stays), `define_style` (create or update one), `format_text` (the text of target blocks, or only what `match` matches there), `set_table_pagination` (how one table breaks across pages), `set_list` (one new bullet or numbered list, with `numberStyle`, `numberFormat` and `start` for numbers), `clear_list` (take paragraphs out of their lists), `set_default_font` |
-| Sections and pages | `insert_break` (page break, or split the section), `insert_section`, `delete_section` (never the last one), `set_page_setup`, `set_header`, `set_footer`, `set_page_numbers`, `set_watermark` (text in `font`; East Asian text otherwise in the default East Asian font of a Chinese, Japanese or Korean document, or else Microsoft YaHei), `delete_watermark` |
+| Styles and formatting | `set_style`, `define_style`, `format_text`, `set_table_pagination`, `set_list`, `clear_list`, `set_default_font` |
+| Sections and pages | `insert_break`, `insert_section`, `delete_section`, `set_page_setup`, `set_header`, `set_footer`, `set_page_numbers`, `set_watermark`, `delete_watermark` |
 | Review annotations | `add_comment`, `delete_comments`, `accept_revisions`, `reject_revisions` |
-| Fields and data | `refresh_fields` (tables of contents, or every field and the layout), `mail_merge` ([mail merge](mail-merge.md)) |
+| Fields and data | `refresh_fields`, `mail_merge` ([mail merge](mail-merge.md)) |
 | Document state | `set_properties`, `protect_document`, `unprotect_document` |
 
 ## Recipe: insert several pieces in reading order
@@ -289,7 +345,11 @@ aspose-cli words convert revised.docx --to pdf --out revised.pdf --output-format
 ```
 
 Every output is reopened before publication. An `rtf`, `odt` or `ott` output
-reports `LOSSY_CONVERSION` for the editing restrictions it cannot keep.
+reports `LOSSY_CONVERSION` for the editing restrictions it cannot keep. An
+`rtf` output stores each image once, in its own format such as PNG, without
+the uncompressed metafile copy for old readers that would make it many times
+larger; Word and LibreOffice read it, but a reader that knows only metafiles
+shows no images.
 `words convert` to `txt`, `md`, `html` or `html-fixed` reports
 `LOSSY_CONVERSION`: such a format cannot hold every Word feature, such as
 styles, headers or fields. A convert to any format other than those `edit`
