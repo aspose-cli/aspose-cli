@@ -1,5 +1,6 @@
 using Aspose.Cells;
 using Aspose.Cli.Product.Cells.Engine.Mapping;
+using Aspose.Cli.Sdk;
 using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Operations;
 using Aspose.Cli.Sdk.Results;
@@ -18,7 +19,7 @@ internal sealed class CellsImportSources(
     ResourceBudgetLedger budgets,
     IReadOnlyDictionary<string, Secret>? secrets) : IDisposable
 {
-    private readonly Dictionary<string, LoadedWorkbook> _opened = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, LoadedWorkbook> _opened = new(FilePaths.Comparer);
     private readonly List<Warning> _imports = [];
 
     internal ResourceBudgetLedger Budgets => budgets;
@@ -154,7 +155,7 @@ internal static class ImportOps
 
         var evaluation = new CalculationOptions { Recursive = false };
         var changed = new List<string>();
-        var files = new SortedSet<string>(StringComparer.OrdinalIgnoreCase);
+        var files = new SortedSet<string>(FilePaths.Comparer);
         long scanned = 0;
         foreach (Cell cell in copiedFrom)
         {
@@ -326,7 +327,7 @@ internal static class ImportOps
             for (int index = _links.Count - 1; index >= _existing; index--)
             {
                 string target = _links[index].DataSource;
-                if (string.Equals(target, _source, StringComparison.OrdinalIgnoreCase))
+                if (FilePaths.Same(target, _source))
                 {
                     toSource.Add(index);
                 }
@@ -358,10 +359,7 @@ internal static class ImportOps
         private bool LinksToEdited(string target) =>
             _edited is not null
             && FullPath(target, Path.GetDirectoryName(FullPath(_source, null))) is { } linked
-            && string.Equals(
-                Path.TrimEndingDirectorySeparator(linked),
-                Path.TrimEndingDirectorySeparator(_edited),
-                OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal);
+            && FilePaths.Same(Path.TrimEndingDirectorySeparator(linked), Path.TrimEndingDirectorySeparator(_edited));
 
         private static string? FullPath(string? path, string? folder)
         {
