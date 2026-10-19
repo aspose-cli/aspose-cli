@@ -11,6 +11,7 @@ public sealed class CellsModuleTests
     protected override IReadOnlyList<ProductSchemaSample> CanonicalInputs { get; } =
         [new(CellsOp.Catalog.SchemaId, CellsOpsSample.Batch)];
 
+    // rule-exemptions: begin
     protected override IReadOnlyDictionary<(string Schema, string Pointer), string> Homonyms { get; } =
         new Dictionary<(string Schema, string Pointer), string>
         {
@@ -22,6 +23,7 @@ public sealed class CellsModuleTests
             [("v2/cells/edit-result", "#/$defs/cellsVerificationOtherChange/properties/right")] = "another verified change's cell after the edit, not a page margin",
             [("v2/cells/inspect-result", "#/$defs/cellsSheetInfo/properties/position")] = "a sheet's place in the tab order, which insert_sheet and move_sheet take as at and to, not a legend placement",
         };
+    // rule-exemptions: end
 
     [Theory]
     [InlineData("cellsChartInfo", "insert_chart")]

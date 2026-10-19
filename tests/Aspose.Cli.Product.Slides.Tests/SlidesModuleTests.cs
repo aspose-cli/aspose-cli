@@ -11,6 +11,7 @@ public sealed class SlidesModuleTests
     protected override IReadOnlyList<ProductSchemaSample> CanonicalInputs { get; } =
         [new(SlidesOp.Catalog.SchemaId, CanonicalOps)];
 
+    // rule-exemptions: begin
     protected override IReadOnlyDictionary<(string Schema, string Pointer), string> Homonyms { get; } =
         new Dictionary<(string Schema, string Pointer), string>
         {
@@ -18,6 +19,7 @@ public sealed class SlidesModuleTests
             [("v2/slides/read-result", "#/$defs/slidesShapeData/properties/kind")] = "A read shape's kind says what the shape is, such as a chart, group, table or placeholder, not a chart, list or transition kind an operation sets.",
             [("v2/slides/read-result", "#/$defs/slidesSlideData/properties/text")] = "A read slide's text lists the text of each of its shapes, while an operation's text is one shape's or paragraph's text.",
         };
+    // rule-exemptions: end
 
     /// <summary>One operation document that uses every registered operation.</summary>
     private static SlidesOpsBatch CanonicalOps { get; } = new()

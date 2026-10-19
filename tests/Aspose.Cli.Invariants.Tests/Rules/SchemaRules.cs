@@ -61,6 +61,7 @@ internal static partial class ContractRules
     /// <summary>One-letter names that are not abbreviations: coordinates.</summary>
     private static readonly HashSet<string> CoordinateNames = new(StringComparer.Ordinal) { "x", "y" };
 
+    // rule-exemptions: begin
     /// <summary>
     /// Kept on purpose: the compact cell of a cells read, and the
     /// cell sides that edit and compare report in the same shape, name the value, type and formula
@@ -88,6 +89,7 @@ internal static partial class ContractRules
         [("v2/words/ops", "set_page_numbers.numberStyle")] = "a numberStyle of none numbers the pages without a visible number, a numbering style of its own as PageNumberStyles names it",
         [("v2/words/inspect-result", "wordsPageNumbersData.numberStyle")] = "reads back the numberStyle none that set_page_numbers writes",
     };
+    // rule-exemptions: end
 
     /// <summary>C-R33: boolean names that say "contains" or a state without has&lt;Noun&gt; or an adjective.</summary>
     private static readonly Regex BannedBooleanName = new("^is[A-Z]|.(Present|Exists)$", RegexOptions.CultureInvariant);
@@ -358,6 +360,7 @@ internal static partial class ContractRules
             : [.. shapes.Select(static shape => $"{shape.Key} in {string.Join(", ", shape.Value.Take(3))}{(shape.Value.Count > 3 ? $" and {shape.Value.Count - 3} more" : string.Empty)}")];
     }
 
+    // rule-exemptions: begin
     /// <summary>
     /// C-R20 exceptions to one type per field name within a product's ops: fields whose shape
     /// follows the object they name, by ops schema and field name, with exactly the definitions
@@ -415,6 +418,7 @@ internal static partial class ContractRules
             "style",
             "a Words paragraph names its paragraph style, which a slide paragraph has no model for; text and list are the same in both"),
     };
+    // rule-exemptions: end
 
     /// <summary>The products whose fields of one name agree among themselves but not with another product's; a product that disagrees with itself has its own case.</summary>
     private static IEnumerable<string> CrossProductFieldTypes(Dictionary<string, Dictionary<string, SortedDictionary<string, List<string>>>> shapes, string name)
@@ -684,6 +688,7 @@ internal static partial class ContractRules
         }
     }
 
+    // rule-exemptions: begin
     /// <summary>
     /// The outputs lists whose items name one of several units, the one a run chooses with an
     /// option of the command; every item of a run names the same one. The generated schemas cannot
@@ -699,6 +704,7 @@ internal static partial class ContractRules
             Fixture = "slides.media",
         },
     };
+    // rule-exemptions: end
 
     /// <summary>
     /// The units an outputs list may name, the command whose option chooses one for a run, and why;

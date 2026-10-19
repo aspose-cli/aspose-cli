@@ -35,6 +35,7 @@ internal sealed record RoundTripProblem(RoundTripPart? Part, string? Field, stri
 // the outcome the SDK runner derives from its snapshots (D7) against what the reads say changed.
 internal static partial class ContractRules
 {
+    // rule-exemptions: begin
     /// <summary>
     /// What cannot be generated or judged, by <c>&lt;product&gt; &lt;op&gt;</c> for the parts of a
     /// whole operation or <c>&lt;product&gt; &lt;op&gt; &lt;field&gt;</c> for the change of one
@@ -105,6 +106,7 @@ internal static partial class ContractRules
     private const string AddsAgain = "Adds an object each time: written again with the values read, it adds another; with one value changed, the new object alone differs, as it should.";
 
     private const string LatinFont = "The sample also writes latinFont, which takes precedence over font for Latin text, so font alone changes nothing.";
+    // rule-exemptions: end
 
     // ----- C-R39: the state a read reports round-trips through the operation that writes it -----
 

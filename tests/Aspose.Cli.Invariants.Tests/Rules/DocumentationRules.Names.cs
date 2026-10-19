@@ -34,6 +34,7 @@ namespace Aspose.Cli.Invariants.Tests;
 /// </summary>
 internal static partial class ContractRules
 {
+    // rule-exemptions: begin
     /// <summary>Words of the sources written like a code, operation or option that name something else, with why.</summary>
     private static readonly Dictionary<string, string> NotNames = new(StringComparer.Ordinal)
     {
@@ -68,6 +69,7 @@ internal static partial class ContractRules
         ["cells read"] = "\"table cells read it before the text\" in a Words result description",
         ["cells stop"] = "\"the listed cells stop at the diff budget\" in a Cells compare result description",
     };
+    // rule-exemptions: end
 
     /// <summary>The kinds of name the reading recognizes; each must be met somewhere, or its rule stopped matching.</summary>
     private static readonly string[] NameKinds = ["command", "option", "value", "argument", "code", "operation", "operation json", "field"];

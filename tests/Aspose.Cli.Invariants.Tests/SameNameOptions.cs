@@ -44,6 +44,7 @@ internal static class SameNameOptions
     public static IReadOnlySet<string> ProductValues { get; } =
         new HashSet<string>(["--to", "--detail", "--what", "--content", "--scope", "--by"], StringComparer.Ordinal);
 
+    // rule-exemptions: begin
     /// <summary>
     /// The differences C-R07 permits: the values of <see cref="ProductValues"/> and their defaults
     /// (a default is one of the values), and a required
@@ -72,6 +73,7 @@ internal static class SameNameOptions
             "C-R07: merge has no single input to name a default output after, so its --out is required.",
             "pdf merge"),
     ];
+    // rule-exemptions: end
 
     /// <summary>Whether C-R07 permits the difference an exemption allows.</summary>
     public static bool RulePermits(SameNameExemption exemption) => exemption.Aspects switch
