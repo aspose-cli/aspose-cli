@@ -51,7 +51,7 @@ internal static class WordsCompare
             OutputProtection protection = OutputProtection.For(written, encrypt: null, leftLoaded.Protection, request.LeftPassword);
             SaveOptions options = WordsSavePipeline.Options(format, protection.Password);
             WordsSavePipeline.RemoveMacrosUnlessKept(compared, format);
-            PublishedFile file = session.Outputs.Write(redline.Path, redline.Overwrite, compared, temp => compared.Save(temp, options),
+            PublishedFile file = session.Outputs.Write(redline.Path, written, redline.Overwrite, compared, temp => compared.Save(temp, options),
                 encrypted: protection.Encrypted);
             output = FileObjects.Output(file, written, encrypted: protection.Encrypted);
         }

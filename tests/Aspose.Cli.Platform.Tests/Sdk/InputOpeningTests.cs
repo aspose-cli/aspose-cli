@@ -116,12 +116,8 @@ public sealed class InputOpeningTests
 
     private static void Save(string path) => File.WriteAllText(path, "saved");
 
-    private static OutputPipeline<object> Pipeline()
-    {
-        var pipeline = new OutputPipeline<object>(new LicensedGate(), new NoMarks(), TestBudgets.Writer());
-        pipeline.Declare([new FormatDescriptor("txt", FormatUse.Convert, ".txt")]);
-        return pipeline;
-    }
+    private static OutputPipeline<object> Pipeline() =>
+        new(new LicensedGate(), new NoMarks(), TestBudgets.Writer());
 
     /// <summary>An opened input whose protection getter fails when it has none.</summary>
     private sealed class Input(InputProtection? protection) : IOpenedInput, IDisposable

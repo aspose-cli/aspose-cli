@@ -34,7 +34,7 @@ internal sealed class CellsSavePipeline(OutputPipeline<Workbook> outputs, CellsW
         Warning? truncated = DetectGridTruncation(workbook, plan.Format);
         Warning? sheetsDropped = plan.DetectSheetLoss(workbook);
         int refsBefore = CountRefFormulas(workbook);
-        StagedOutput candidate = transaction.Stage(output.Path, output.Overwrite, workbook,
+        StagedOutput candidate = transaction.Stage(output.Path, output.Format, output.Overwrite, workbook,
             path => Produce(workbook, plan, path),
             backupPath: output.BackupPath,
             inputPrecondition: inputPrecondition,
@@ -61,18 +61,17 @@ internal sealed class CellsSavePipeline(OutputPipeline<Workbook> outputs, CellsW
     }
 
     /// <summary>
-    /// Publishes a file saved from <paramref name="workbook"/>, or from the one sheet of it that
-    /// <paramref name="singleSheet"/> names, which carries no evaluation mark of the workbook's;
-    /// <paramref name="encrypted"/> says whether the file carries a password.
+    /// Publishes <paramref name="output"/> saved from <paramref name="workbook"/>, or from the one
+    /// sheet of it that <paramref name="singleSheet"/> names, which carries no evaluation mark of
+    /// the workbook's; <paramref name="encrypted"/> says whether the file carries a password.
     /// </summary>
     internal PublishedFile Write(
-        string outputPath,
-        bool overwrite,
+        ResolvedOutput output,
         Workbook workbook,
         bool singleSheet,
         bool encrypted,
         Action<string> save) =>
-        _outputs.Write(outputPath, overwrite, singleSheet ? null : workbook, save, encrypted: encrypted);
+        _outputs.Write(output.Path, output.Format, output.Overwrite, singleSheet ? null : workbook, save, encrypted: encrypted);
 
     internal void NormalizeDatesForTextExport(Worksheet sheet)
     {

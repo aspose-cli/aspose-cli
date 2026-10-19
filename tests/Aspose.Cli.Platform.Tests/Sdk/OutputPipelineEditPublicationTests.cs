@@ -148,12 +148,8 @@ public sealed class OutputPipelineEditPublicationTests
 
     private static void Save(string path) => File.WriteAllText(path, Edited);
 
-    private static OutputPipeline<object> Pipeline()
-    {
-        var pipeline = new OutputPipeline<object>(new LicensedGate(), new NoMarks(), TestBudgets.Writer());
-        pipeline.Declare([Pdf]);
-        return pipeline;
-    }
+    private static OutputPipeline<object> Pipeline() =>
+        new(new LicensedGate(), new NoMarks(), TestBudgets.Writer());
 
     private sealed class NoMarks : IEvaluationProfile<object>
     {

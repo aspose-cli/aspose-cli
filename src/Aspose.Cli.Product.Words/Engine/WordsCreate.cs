@@ -20,7 +20,7 @@ internal static class WordsCreate
         OutputProtection protection = OutputProtection.For(request.Output.Format, request.EncryptPassword, new InputProtection(Encrypted: false), inputPassword: null);
         SaveOptions options = WordsSavePipeline.Options(formatId, protection.Password);
         WordsSavePipeline.RemoveMacrosUnlessKept(created.Document, formatId);
-        PublishedFile written = session.Outputs.Write(request.Output.Path, request.Output.Overwrite, created.Document, temp => created.Save(temp, options),
+        PublishedFile written = session.Outputs.Write(request.Output.Path, request.Output.Format, request.Output.Overwrite, created.Document, temp => created.Save(temp, options),
             encrypted: protection.Encrypted);
 
         return new WordsCreateResult

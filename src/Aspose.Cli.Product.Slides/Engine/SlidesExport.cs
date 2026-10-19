@@ -367,7 +367,7 @@ internal static partial class SlidesExport
         {
             ISlide slide = presentation.Slides[number - 1];
             targets.Add(number);
-            transaction.Stage(path, request.Output.Overwrite, presentation, temp =>
+            transaction.Stage(path, request.Output.Format, request.Output.Overwrite, presentation, temp =>
             {
                 if (image is not { } bitmap)
                 {

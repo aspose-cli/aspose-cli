@@ -112,12 +112,16 @@ internal static class ProtectionAdvice
         }
 
         var unprotectable = new List<string>();
-        foreach (string format in other)
+        foreach (string lost in other)
         {
-            // The output file is the copy when it is written in the format, or in a variant of it,
-            // such as an archival one, that a file of the format names by the same extension.
-            bool written = output is not null
-                && (Is(output.Format, format) || ProtectableFormat(commands, format)?.Names(output.Path) == true);
+            // An output in a variant that cannot carry a password, such as an archival one, is a
+            // copy of the protectable format that names the same file by its extension.
+            string format = output is not null && Is(output.Format, lost) && !output.Format.Protectable
+                && ProtectableNaming(commands, output.Path) is { } protectable
+                    ? protectable.Id
+                    : lost;
+            // The output file is the copy when it is written in the lost format.
+            bool written = output is not null && Is(output.Format, lost);
             string file = written ? output!.Path : "<file>";
             string password = variable is null
                 ? $", with {Placeholder} naming an environment variable that holds the password"
@@ -225,12 +229,12 @@ internal static class ProtectionAdvice
             _ => true,
         });
 
-    // The format the id names among those a command of this build can encrypt, or null when none can.
-    private static FormatDescriptor? ProtectableFormat(IEnumerable<(string Path, Command Command)> commands, string format) =>
+    // The first format some command protects that names the file by its extension.
+    private static FormatDescriptor? ProtectableNaming(IEnumerable<(string Path, Command Command)> commands, string path) =>
         commands
             .Select(static entry => StandardOptions.Of(entry.Command))
             .SelectMany(static options => options?.Protects ?? [])
-            .FirstOrDefault(protectable => Is(protectable, format));
+            .FirstOrDefault(protectable => protectable.Names(path));
 
     // The path of an encrypted copy beside a file: its name with '.encrypted' before the extension.
     private static string EncryptedCopy(string path) =>

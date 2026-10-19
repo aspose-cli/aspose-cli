@@ -47,6 +47,7 @@ internal static class SlidesCreate
         SlidesOutputProtection.Protect(presentation, protection);
         PublishedFile written = session.Outputs.Write(
             request.Output.Path,
+            request.Output.Format,
             request.Output.Overwrite,
             presentation,
             temp =>

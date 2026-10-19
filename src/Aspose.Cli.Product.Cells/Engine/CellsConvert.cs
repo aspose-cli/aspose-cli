@@ -107,7 +107,7 @@ internal static class CellsConvert
 
         loaded.RestoreActiveSheet(savePlan);
         Warning? sheetsDropped = savePlan.DetectSheetLoss(workbook);
-        PublishedFile written = saver.Write(request.Output.Path, request.Output.Overwrite, workbook, singleSheet: selectedSheets is not null,
+        PublishedFile written = saver.Write(request.Output, workbook, singleSheet: selectedSheets is not null,
             savePlan.Encrypts, path => saver.Produce(workbook, savePlan, path));
         Warning? formulasBroken = saver.BuildBrokenFormulaWarning(
             refsBefore,

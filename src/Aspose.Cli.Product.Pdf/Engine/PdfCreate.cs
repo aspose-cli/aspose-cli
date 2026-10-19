@@ -46,7 +46,7 @@ internal static class PdfCreate
 
         PdfOutputPasswords? passwords = PdfOutputEncryption.Requested(request.EncryptPassword);
         bool encrypted = PdfOutputEncryption.Encrypted(document, passwords);
-        PublishedFile written = session.Outputs.Write(request.Output.Path, request.Output.Overwrite, document, path =>
+        PublishedFile written = session.Outputs.Write(request.Output.Path, request.Output.Format, request.Output.Overwrite, document, path =>
         {
             try { PdfOutputEncryption.Save(document, path, passwords); }
             finally { resources?.ThrowIfFailed(); }

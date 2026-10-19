@@ -40,7 +40,7 @@ internal static class WordsRender
             }
 
             SaveOptions options = WordsSavePipeline.Options(request.Output.Format.Id, pages: [page], dpi: request.Dpi);
-            StagedOutput staged = transaction.Stage(path, request.Output.Overwrite, loaded.Document, temp => loaded.Document.Save(temp, options), rendering: true, pages: [page]);
+            StagedOutput staged = transaction.Stage(path, request.Output.Format, request.Output.Overwrite, loaded.Document, temp => loaded.Document.Save(temp, options), rendering: true, pages: [page]);
             outputs.Add(new WordsPageOutput(FileObjects.Output(staged.Published, request.Output.Format, encrypted: false)) { Page = page });
         }
 

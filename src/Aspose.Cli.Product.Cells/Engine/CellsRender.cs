@@ -237,7 +237,7 @@ internal static class CellsRender
 
             // The image shows the one sheet, which carries evaluation marks only when it is a
             // warning sheet; it then renders the workbook's marks (CellsEvaluationProfile).
-            return transaction.Stage(outputPath, request.Output.Overwrite,
+            return transaction.Stage(outputPath, request.Output.Format, request.Output.Overwrite,
                 CellsEvaluation.IsWarningSheet(sheet) ? sheet.Workbook : null,
                 tempPath => render.ToImage(0, tempPath), rendering: true);
         }

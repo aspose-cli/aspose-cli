@@ -47,6 +47,7 @@ internal sealed class WordsSplitWriter : IDisposable
         WordsSavePipeline.RemoveMacrosUnlessKept(document, "docx");
         _transaction.Stage(
             target,
+            Docx,
             _output.Overwrite,
             document,
             staged => document.Save(staged, WordsSavePipeline.Options(Docx.Id, _protection.Password)),
