@@ -774,6 +774,35 @@ public sealed class AtomicOutputSetWriterTests
     }
 
     [Fact]
+    public void AnAbandonedTransactionNeedingAWiderLeaseThatAppearsDuringProductionIsRecoveredFirst()
+    {
+        using var temp = new TempDirectory();
+        string output = Directory.CreateDirectory(temp.File("output")).FullName;
+        string other = Directory.CreateDirectory(temp.File("other")).FullName;
+        string inside = Path.Combine(output, "abandoned.txt");
+        string outside = Path.Combine(other, "abandoned.txt");
+        string newTarget = Path.Combine(output, "new.txt");
+        string? transaction = null;
+
+        using (var set = new AtomicOutputSetWriter(TestBudgets.Writer(), output, "next"))
+        {
+            // The ancestor's transaction names a directory outside this publication's lease, so
+            // the scan under that lease cannot recover it.
+            set.Stage(newTarget, overwrite: false, staged =>
+            {
+                File.WriteAllText(staged, "new-output");
+                transaction = CreateAbandonedPublishingTransaction(temp.Path, [inside, outside]);
+            });
+            set.Commit();
+        }
+
+        Assert.Equal("original 0", File.ReadAllText(inside));
+        Assert.Equal("original 1", File.ReadAllText(outside));
+        Assert.Equal("new-output", File.ReadAllText(newTarget));
+        Assert.False(Directory.Exists(transaction));
+    }
+
+    [Fact]
     public void AbandonedRecoveryPreservesAnExternalTargetChange()
     {
         using var temp = new TempDirectory();
@@ -1593,6 +1622,45 @@ public sealed class AtomicOutputSetWriterTests
         journal.Write(Path.Combine(
             transaction,
             AtomicPublicationPlan.JournalName));
+        return transaction;
+    }
+
+    /// <summary>
+    /// Leaves the transaction of a process that ended after replacing every target: target
+    /// <c>i</c> held "original i" and now holds "published i".
+    /// </summary>
+    private static string CreateAbandonedPublishingTransaction(string root, IReadOnlyList<string> targets)
+    {
+        string transaction = Directory.CreateDirectory(
+            Path.Combine(root, $".aspose-publication-crashed-{Guid.NewGuid():N}")).FullName;
+        string backups = Directory.CreateDirectory(Path.Combine(transaction, "backups")).FullName;
+        var entries = new List<PublicationJournalEntry>();
+        for (int index = 0; index < targets.Count; index++)
+        {
+            string target = targets[index];
+            string staged = AtomicPublicationPlan.StagedPath(transaction, target, index);
+            string displaced = Path.Combine(backups, $"{index + 1:000000}.displaced");
+            Directory.CreateDirectory(Path.GetDirectoryName(staged)!);
+            File.WriteAllText(target, $"original {index}");
+            FilePublicationSnapshot original = FilePublicationSnapshot.Capture(target);
+            File.WriteAllText(staged, $"published {index}");
+            FilePublicationSnapshot candidate = FilePublicationSnapshot.Capture(staged);
+            File.Replace(staged, target, displaced);
+            entries.Add(new PublicationJournalEntry
+            {
+                Index = index, Target = target, Staged = staged, Overwrite = true,
+                Displaced = displaced, DisplacedSnapshot = FilePublicationSnapshot.Capture(displaced),
+                Original = original, StagedSnapshot = candidate,
+                TargetParentIdentity = OutputPathValidator.CaptureParentIdentity(target),
+                PublishedSnapshot = FilePublicationSnapshot.Capture(target),
+                State = PublicationEntryState.Published, Size = candidate.Length,
+            });
+        }
+        new PublicationJournal
+        {
+            Operation = "crashed", OwnerProcessId = int.MaxValue, OwnerProcessStartUtcTicks = 1,
+            State = PublicationTransactionState.Publishing, Entries = entries,
+        }.Write(Path.Combine(transaction, AtomicPublicationPlan.JournalName));
         return transaction;
     }
 }
