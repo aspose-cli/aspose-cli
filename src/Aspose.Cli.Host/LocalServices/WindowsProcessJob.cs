@@ -3,7 +3,7 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 using Microsoft.Win32.SafeHandles;
 
-namespace Aspose.Cli.Host.Invocation;
+namespace Aspose.Cli.Host.LocalServices;
 
 /// <summary>Kills an MCP-owned Windows process tree when its parent scope closes.</summary>
 internal sealed class WindowsProcessJob : IDisposable

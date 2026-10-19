@@ -1,5 +1,5 @@
 using System.Diagnostics;
-using Aspose.Cli.Host.Invocation;
+using Aspose.Cli.Host.LocalServices;
 
 namespace Aspose.Cli.Host.App;
 

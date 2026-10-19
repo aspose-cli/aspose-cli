@@ -2,7 +2,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using Aspose.Cli.Sdk.Errors;
 
-namespace Aspose.Cli.Host.Invocation;
+namespace Aspose.Cli.Host.LocalServices;
 
 /// <summary>
 /// The one way the host starts and ends a child process it owns. A child started with
