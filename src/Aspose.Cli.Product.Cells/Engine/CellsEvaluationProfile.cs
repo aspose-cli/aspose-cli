@@ -48,15 +48,16 @@ internal sealed class CellsEvaluationProfile : IEvaluationProfile<Workbook>
             ? $"the evaluation warning sheet '{sheet.Name}', which is the active sheet"
             : $"the evaluation warning sheet '{sheet.Name}'")]);
 
-    public EvaluationMarks Inspect(Workbook workbook, string format) => format switch
+    public EvaluationMarks Inspect(Workbook workbook, string format) => CellsEngineFormats.EvaluationMarksOf(format) switch
     {
-        "csv" or "tsv" => Notice(workbook, $"as the last row of the {format} output, after the data"),
-        "md" => Notice(workbook, "as a heading after the table in the md output"),
+        CellsEvaluationMarkKind.DataRow => Notice(workbook, $"as the last row of the {format} output, after the data"),
+        CellsEvaluationMarkKind.MarkdownHeading => Notice(workbook, $"as a heading after the table in the {format} output"),
         // The json export leaves the evaluation warning sheets out (CellsConvert.JsonOptions).
-        "json" => Notice(workbook, "in the json output, as a {\"watermark\": ...} record after the records of each sheet that has data rows"),
-        "pdf" or "xps" or "html" or "mhtml" or "png" or "jpeg" or "bmp" or "gif" or "tiff" or "svg" or "emf" =>
+        CellsEvaluationMarkKind.JsonRecord => Notice(workbook, $"in the {format} output, as a " + "{\"watermark\": ...} record after the records of each sheet that has data rows"),
+        CellsEvaluationMarkKind.Pages =>
             new([.. WarningSheets(workbook, visibleOnly: true).Select(static sheet =>
                 $"the pages of the evaluation warning sheet '{sheet.Name}', which hold only the notice '{CellsEvaluation.Notice}...'")]),
+        // A workbook format, and an id the product does not declare.
         _ => Inspect(workbook),
     };
 

@@ -59,7 +59,7 @@ internal static class CellsConvert
                 // Text formats export the active sheet.
                 workbook.Worksheets.ActiveSheetIndex = selected[0].Index;
             }
-            else if (request.Output.Format.Id is "pdf")
+            else if (CellsFormats.SheetScopeOf(request.Output.Format.Id) == CellsSheetScope.SheetSet)
             {
                 selectedSheets = [.. selected.Select(static sheet => sheet.Index)];
             }
@@ -82,14 +82,14 @@ internal static class CellsConvert
 
         Warning? headerOnlySkipped = null;
         IReadOnlyList<Worksheet> jsonSheets = [];
-        if (request.Output.Format.Id is "json")
+        if (CellsEngineFormats.WritesRecords(request.Output.Format.Id))
         {
             (jsonSheets, headerOnlySkipped) = JsonSheets(workbook);
         }
 
         // Say which rows are not table data: the rows a text input brought over as they are, or,
         // in a JSON output, the rows each sheet writes as records.
-        IReadOnlyList<Warning> textLayout = request.Output.Format.Id is "json"
+        IReadOnlyList<Warning> textLayout = CellsEngineFormats.WritesRecords(request.Output.Format.Id)
             ? TextTableLayout.JsonWarnings(jsonSheets, session.Budgets)
             : TextTableLayout.Warnings(loaded, session.Budgets);
 
@@ -100,7 +100,7 @@ internal static class CellsConvert
         WorkbookSavePlan savePlan = WorkbookSavePlan.Create(request.Output.Format, licenseState,
             OutputProtection.For(request.Output.Format, request.EncryptPassword, loaded.Protection, request.Password),
             selectedSheets, request.ByteOrderMark);
-        if (request.Output.Format.Id is "json")
+        if (CellsEngineFormats.WritesRecords(request.Output.Format.Id))
         {
             savePlan = savePlan with { Options = JsonOptions(workbook, jsonSheets) };
         }

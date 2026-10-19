@@ -151,6 +151,24 @@ public sealed partial class DecisionOwnershipTests
             node.DescendantNodesAndSelf().OfType<IdentifierNameSyntax>().Select(static name => name.Identifier.ValueText);
     }
 
+    /// <summary>
+    /// <c>FormatDescriptor.Protectable</c> says whether an output can carry a password, which
+    /// only <c>OutputProtection</c> decides; what else a format keeps, such as sheet protection,
+    /// is a trait of the product's engine format table.
+    /// </summary>
+    [Fact]
+    public void D1_ProductEngines_ReadNoProtectableFlag()
+    {
+        string[] violations = [.. ProductFiles("Engine")
+            .SelectMany(file => file.Root.DescendantNodes()
+                .OfType<MemberAccessExpressionSyntax>()
+                .Where(static access => access.Name.Identifier.ValueText == "Protectable")
+                .Select(access => file.At(access, access.ToString())))];
+
+        AssertNone(violations,
+            "A product engine leaves FormatDescriptor.Protectable to OutputProtection and reads what a format keeps from its engine format table:");
+    }
+
     [Fact]
     public void D1_FileObjects_ComeOnlyFromTheSdkFactory()
     {
