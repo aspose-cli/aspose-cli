@@ -1,10 +1,8 @@
-using System.Buffers;
 using System.Security.Cryptography;
 using System.Text;
-using System.Text.Encodings.Web;
-using System.Text.Json;
 using System.Text.Json.Nodes;
 using Aspose.Cli.Sdk.Contracts;
+using Aspose.Cli.Sdk.Serialization;
 
 namespace Aspose.Cli.Sdk.Operations;
 
@@ -75,14 +73,6 @@ internal sealed class OperationSchemaWriter
         + ReadBackKinds.Position + " for state a read reports by position rather than by name, such as cell values; "
         + ReadBackKinds.NotState + " for a selector, a source or a parameter of the action.";
 
-    private static readonly JsonWriterOptions WriterOptions = new()
-    {
-        Indented = true,
-        IndentSize = 2,
-        NewLine = "\n",
-        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
-    };
-
     private readonly SortedDictionary<string, JsonObject> _shared = new(StringComparer.Ordinal);
     private readonly Dictionary<string, Type> _records = new(StringComparer.Ordinal);
 
@@ -131,7 +121,7 @@ internal sealed class OperationSchemaWriter
 
         JsonObject root = Envelope(schemaId, description, operations.Select(static operation => operation.Name));
         root["$defs"] = definitions;
-        return Serialize(root);
+        return SchemaJson.Serialize(root);
     }
 
     /// <summary>Each operation's view of a written schema: the document narrowed to that operation.</summary>
@@ -141,7 +131,7 @@ internal sealed class OperationSchemaWriter
         var views = new SortedDictionary<string, string>(StringComparer.Ordinal);
         foreach (string operation in operations)
         {
-            views.Add(operation, Serialize(View(root, operation)));
+            views.Add(operation, SchemaJson.Serialize(View(root, operation)));
         }
 
         return views;
@@ -376,15 +366,4 @@ internal sealed class OperationSchemaWriter
         JsonArray items => items.SelectMany(static item => item is null ? [] : References(item)),
         _ => [],
     };
-
-    private static string Serialize(JsonNode node)
-    {
-        var buffer = new ArrayBufferWriter<byte>();
-        using (var writer = new Utf8JsonWriter(buffer, WriterOptions))
-        {
-            node.WriteTo(writer);
-        }
-
-        return Encoding.UTF8.GetString(buffer.WrittenSpan) + "\n";
-    }
 }
