@@ -93,7 +93,13 @@ weaken a check or remove a supported operation to make a test pass.
   a `Validated()` override, stated in its summary, the rest. Summaries are the schema's
   descriptions. Every field declares its read-back (D9); a selector, a source or a parameter is
   `[NotState]`, and so are the drawing parameters of an operation that leaves no object the file
-  can be read back by. `APCLI012` rejects an incomplete contract.
+  can be read back by. `APCLI012` rejects an incomplete contract. What every operation is
+  classified by — its address or targets, its footprint and protection scope, whether
+  `--track-changes` admits it, whether the verification compares its state — dispatches through
+  the generated `I{Vocabulary}Handler<T>` visitor with one method per operation and no default
+  branch, so a new operation does not compile until it is placed (`CellsOpFootprints`,
+  `WordsOpAddresses`, `PdfEditVerifier.Recording`). A no-effect explanation that only a few
+  operations have (`Explain`, the Words review authors) is not such a classification.
 - **Results** pass their relative schema id and version to a result envelope; ids are
   `v2/common/` for the SDK and Host, `v2/<product>/` for a product. `APCLI013` rejects a record it
   cannot describe. An edit's `verification` derives from the SDK `EditVerification` core and
