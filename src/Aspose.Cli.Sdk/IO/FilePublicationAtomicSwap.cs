@@ -41,17 +41,7 @@ internal static class FilePublicationAtomicSwap
             throw CliErrors.OutputExists(target);
         }
 
-        if (OperatingSystem.IsWindows())
-        {
-            return PublishWindows(
-                temporary,
-                target,
-                expectedTarget,
-                staged,
-                retainedDisplacedPath);
-        }
-
-        return PublishPortable(
+        return Replace(
             temporary,
             target,
             expectedTarget,
@@ -59,7 +49,7 @@ internal static class FilePublicationAtomicSwap
             retainedDisplacedPath);
     }
 
-    private static FilePublicationSnapshot PublishWindows(
+    private static FilePublicationSnapshot Replace(
         string temporary,
         string target,
         FilePublicationSnapshot expectedTarget,
@@ -88,7 +78,7 @@ internal static class FilePublicationAtomicSwap
         }
         catch (Exception verificationFailure)
         {
-            RestoreWindowsAfterVerificationFailure(
+            RestoreAfterVerificationFailure(
                 temporary,
                 target,
                 displacedPath,
@@ -139,71 +129,7 @@ internal static class FilePublicationAtomicSwap
         throw PublicationErrors.OutputConflict(target, expectedTarget, displaced);
     }
 
-    private static FilePublicationSnapshot PublishPortable(
-        string temporary,
-        string target,
-        FilePublicationSnapshot expectedTarget,
-        FilePublicationSnapshot staged,
-        string? retainedDisplacedPath)
-    {
-        string displacedPath = retainedDisplacedPath
-            ?? CreateSiblingPath(target, "displaced");
-        File.Move(target, displacedPath, overwrite: false);
-        FilePublicationSnapshot displaced = FilePublicationSnapshot.Capture(displacedPath);
-        if (!expectedTarget.VersionEquals(displaced))
-        {
-            RestorePortable(displacedPath, target);
-            throw PublicationErrors.OutputConflict(target, expectedTarget, displaced);
-        }
-
-        try
-        {
-            File.Move(temporary, target, overwrite: false);
-        }
-        catch
-        {
-            RestorePortable(displacedPath, target);
-            throw;
-        }
-
-        FilePublicationSnapshot published;
-        try
-        {
-            published = VerifyPublished(target, staged, displacedPath);
-        }
-        catch (Exception verificationFailure)
-        {
-            RestorePortableAfterVerificationFailure(
-                temporary,
-                target,
-                displacedPath,
-                retainedDisplacedPath,
-                verificationFailure);
-            throw;
-        }
-
-        if (retainedDisplacedPath is not null)
-        {
-            return published;
-        }
-
-        if (!FilePublicationOwnedDelete.TryDelete(displacedPath, displaced))
-        {
-            string publishedPath = CreateSiblingPath(target, "conflict");
-            File.Move(target, publishedPath, overwrite: false);
-            RestorePortable(displacedPath, target);
-            if (!FilePublicationOwnedDelete.TryDelete(publishedPath, staged))
-            {
-                throw new IOException(
-                    $"Published content was preserved at '{publishedPath}' after cleanup ownership changed.");
-            }
-            throw new IOException(
-                $"The displaced target '{displacedPath}' changed during publication cleanup.");
-        }
-        return published;
-    }
-
-    private static void RestoreWindowsAfterVerificationFailure(
+    private static void RestoreAfterVerificationFailure(
         string temporary,
         string target,
         string displacedPath,
@@ -249,49 +175,6 @@ internal static class FilePublicationAtomicSwap
             verificationFailure);
     }
 
-    private static void RestorePortableAfterVerificationFailure(
-        string temporary,
-        string target,
-        string displacedPath,
-        string? retainedDisplacedPath,
-        Exception verificationFailure)
-    {
-        FilePublicationSnapshot displaced =
-            FilePublicationSnapshot.Capture(displacedPath);
-        FilePublicationSnapshot unverified =
-            FilePublicationSnapshot.Capture(target);
-        string unverifiedPath = retainedDisplacedPath is null
-            ? CreateSiblingPath(target, "unverified")
-            : temporary;
-        try
-        {
-            File.Move(target, unverifiedPath, overwrite: false);
-            RestorePortable(displacedPath, target);
-        }
-        catch (Exception restoreFailure)
-        {
-            throw new IOException(
-                $"Published target '{target}' failed verification and rollback was incomplete.",
-                new AggregateException(verificationFailure, restoreFailure));
-        }
-        if (!displaced.VersionEquals(FilePublicationSnapshot.Capture(target)))
-        {
-            throw new IOException(
-                $"Published target '{target}' failed verification and rollback could not be verified.",
-                verificationFailure);
-        }
-        if (retainedDisplacedPath is null
-            && !FilePublicationOwnedDelete.TryDelete(unverifiedPath, unverified))
-        {
-            throw new IOException(
-                $"Published target '{target}' was restored, but unverified content was preserved at '{unverifiedPath}'.",
-                verificationFailure);
-        }
-        throw new IOException(
-            $"Published target '{target}' failed verification and was rolled back.",
-            verificationFailure);
-    }
-
     private static FilePublicationSnapshot VerifyPublished(
         string target,
         FilePublicationSnapshot staged,
@@ -308,16 +191,6 @@ internal static class FilePublicationAtomicSwap
                 $"Published target '{target}' changed before verification.{preserved}");
         }
         return published;
-    }
-
-    private static void RestorePortable(string displacedPath, string target)
-    {
-        if (File.Exists(target))
-        {
-            throw new IOException(
-                $"Target '{target}' was recreated while publication recovery was in progress. The prior file remains at '{displacedPath}'.");
-        }
-        File.Move(displacedPath, target, overwrite: false);
     }
 
     private static void DeleteOwnedOrThrow(
