@@ -84,6 +84,9 @@ Details: [design system](references/design-system.md).
   `set_slide_hidden`, or leave them out of what you report as the deck. An ODP output turns
   native charts into pictures and drops slide transitions and sections, and warns `LOSSY_CONVERSION`
   (SLIDES-ODP-NATIVE-CONTENT); keep the PPTX for further edits.
+- A PDF or other export holds the slides alone, with no handout or notes-page layout, so
+  speaker notes are not in it; read them with `slides read --notes` or
+  `slides extract --what notes`.
 - `slides read --content full` reports each table's cell `values` and each chart's data, and
   the state the operations write under their field names; `slides search` does not see chart
   text ([charts and tables](references/verification.md#charts-and-tables)).
