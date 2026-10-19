@@ -116,7 +116,7 @@ internal static class WordsEdit
         if (untracked.Length > 0)
         {
             throw CliErrors.OptionInvalid(
-                "--track-changes",
+                WordsOptionNames.TrackChanges,
                 $"{string.Join(", ", untracked)} cannot be recorded as tracked changes",
                 "Apply these operations in a separate batch without --track-changes; only content insertions and deletions are tracked.");
         }
