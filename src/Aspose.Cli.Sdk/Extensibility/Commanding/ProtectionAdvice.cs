@@ -1,4 +1,5 @@
 using System.CommandLine;
+using System.CommandLine.Parsing;
 using System.Runtime.CompilerServices;
 using System.Text.Json.Nodes;
 using Aspose.Cli.Sdk.IO;
@@ -13,7 +14,11 @@ namespace Aspose.Cli.Sdk.Extensibility.Commanding;
 /// operation that encrypts (<see cref="Operations.EncryptsOutputAttribute"/>) may encrypt a file of
 /// the format written, or else a conversion that takes <c>--encrypt-env</c> may write an encrypted
 /// copy of it, each with a command line that runs as given and names the output's own path;
-/// otherwise no command of this build encrypts that format. An output in a variant of a format
+/// otherwise no command of this build encrypts that format. When that conversion also reads the
+/// input's format, and the command was given none of its own options, such as a page selection,
+/// the copy is converted from the input once instead: saving the output again is a second
+/// conversion, which can change it, as a document that asks every save to embed its fonts embeds
+/// all of them in full when it is saved again. An output in a variant of a format
 /// that cannot carry a password, such as an archival variant whose standard forbids encryption, is
 /// never encrypted itself: only a copy beside it.
 /// </summary>
@@ -33,7 +38,8 @@ internal static class ProtectionAdvice
     /// <param name="parse">The invocation, whose command and command tree are read.</param>
     /// <param name="loss">The format ids of the unencrypted copies and how the input was protected.</param>
     /// <param name="output">The output file of the command, or null when it wrote none or several.</param>
-    internal static string Hint(ParseResult parse, EncryptionLoss loss, ResolvedOutput? output)
+    /// <param name="input">The command's input document, or null when it read none.</param>
+    internal static string Hint(ParseResult parse, EncryptionLoss loss, ResolvedOutput? output, string? input)
     {
         ArgumentNullException.ThrowIfNull(parse);
         ArgumentNullException.ThrowIfNull(loss);
@@ -44,6 +50,13 @@ internal static class ProtectionAdvice
         (string Path, Command Command)[] commands = [.. Commands(parse.RootCommandResult.Command, DistributionInfo.CommandName)];
         // The input's password, when an environment variable holds it, protects the copy as it did the input.
         string? variable = options?.InputPassword?.EnvironmentName(parse) ?? options?.OtherPassword?.EnvironmentName(parse);
+        // The input, when another conversion can write the encrypted copy from it directly: only a
+        // conversion given none of its own options, which that conversion might not take.
+        (string Path, FormatDescriptor Format)? source = input is not null && options is { Target: not null } && WholeConversion(parse, options)
+            && ProductReads.Of(current) is { } reads
+            && (reads.FirstOrDefault(format => format.Names(input)) ?? (reads.Count == 1 ? reads[0] : null)) is { } read
+                ? (input, read)
+                : null;
         string[] kept = [.. loss.Formats.Where(format => own.Any(protectable => Is(protectable, format)))];
         string[] other = [.. loss.Formats.Except(kept, StringComparer.Ordinal)];
         var ways = new List<string>();
@@ -128,7 +141,11 @@ internal static class ProtectionAdvice
             {
                 ways.Add($"encrypt the {format} file afterwards{password}: `{line}`");
             }
-            else if (ConvertingLine(commands, current, format, file, variableName) is { } converted)
+            else if (written && source is { } from && ConvertingLine(commands, current, format, file, variableName, from) is { } direct)
+            {
+                ways.Add($"write an encrypted {format} copy from the input directly{password}: `{direct}`");
+            }
+            else if (ConvertingLine(commands, current, format, file, variableName, source: null) is { } converted)
             {
                 ways.Add($"write an encrypted copy of the {format} file{password}: `{converted}`");
             }
@@ -167,9 +184,11 @@ internal static class ProtectionAdvice
             .FirstOrDefault();
 
     // The command line of a conversion, other than the one excluded, that writes an encrypted copy
-    // of a file of the format, in that format, beside it.
+    // of a file of the format, in that format, beside it: from that file, or, given a source, from
+    // the source with its password, by a conversion that reads the source's format.
     private static string? ConvertingLine(
-        IEnumerable<(string Path, Command Command)> commands, Command? excluded, string format, string file, string variable)
+        IEnumerable<(string Path, Command Command)> commands, Command? excluded, string format, string file, string variable,
+        (string Path, FormatDescriptor Format)? source)
     {
         foreach ((string path, Command command) in commands)
         {
@@ -178,12 +197,33 @@ internal static class ProtectionAdvice
                 && options.Protects.FirstOrDefault(protectable => Is(protectable, format)) is { } protectable)
             {
                 string copy = file == "<file>" ? "<encrypted copy>" : EncryptedCopy(file);
-                return $"{path} '{file}' {to.Name} {protectable.Id} {StandardOptionNames.Out} '{copy}' {encrypt.EnvironmentOption} {variable}";
+                string target = $"{to.Name} {protectable.Id} {StandardOptionNames.Out} '{copy}' {encrypt.EnvironmentOption} {variable}";
+                if (source is null)
+                {
+                    return $"{path} '{file}' {target}";
+                }
+
+                if (options.InputPassword is { } password
+                    && ProductReads.Of(command) is { } reads
+                    && reads.Any(read => Is(read, source.Value.Format.Id)))
+                {
+                    return $"{path} '{source.Value.Path}' {password.EnvironmentOption} {variable} {target}";
+                }
             }
         }
 
         return null;
     }
+
+    // Whether the invocation gave none of the command's own arguments and options, so that it needs
+    // no option that another product's conversion of its input might not take.
+    private static bool WholeConversion(ParseResult parse, StandardOptions options) =>
+        options.Own.All(parameter => parameter switch
+        {
+            Option option => parse.GetResult(option) is not OptionResult { Implicit: false },
+            Argument argument => parse.GetResult(argument) is not ArgumentResult { Tokens.Count: > 0 },
+            _ => true,
+        });
 
     // The format the id names among those a command of this build can encrypt, or null when none can.
     private static FormatDescriptor? ProtectableFormat(IEnumerable<(string Path, Command Command)> commands, string format) =>

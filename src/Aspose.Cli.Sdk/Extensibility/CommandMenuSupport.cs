@@ -1,4 +1,6 @@
 using System.CommandLine;
+using System.Runtime.CompilerServices;
+using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Operations;
 using Aspose.Cli.Sdk.Results;
 
@@ -45,6 +47,29 @@ internal sealed record MenuContext<TSession>(
                 ? handler(session, request)
                 : (TResult)Guard(session, () => handler(session, request))!,
             selection);
+}
+
+/// <summary>The formats each product reads as input documents, declared once on the product's command.</summary>
+internal static class ProductReads
+{
+    private static readonly ConditionalWeakTable<Command, IReadOnlyList<FormatDescriptor>> Reading = [];
+
+    /// <summary>Declares the formats the product whose command is <paramref name="product"/> reads.</summary>
+    internal static void Declare(Command product, IReadOnlyList<FormatDescriptor> formats) => Reading.AddOrUpdate(product, formats);
+
+    /// <summary>The formats the product of <paramref name="command"/> reads, or null when it declared none.</summary>
+    internal static IReadOnlyList<FormatDescriptor>? Of(Command command)
+    {
+        for (Command? symbol = command; symbol is not null; symbol = symbol.Parents.OfType<Command>().FirstOrDefault())
+        {
+            if (Reading.TryGetValue(symbol, out IReadOnlyList<FormatDescriptor>? reads))
+            {
+                return reads;
+            }
+        }
+
+        return null;
+    }
 }
 
 /// <summary>One line of a product menu: a command and the handler that serves it.</summary>
