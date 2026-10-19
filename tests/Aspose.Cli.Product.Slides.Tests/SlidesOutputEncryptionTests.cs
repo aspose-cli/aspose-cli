@@ -1,4 +1,5 @@
 using System.Text.Json.Nodes;
+using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.TestKit;
 using Xunit;
 
@@ -117,6 +118,29 @@ public sealed class SlidesOutputEncryptionTests : IDisposable
         Assert.Equal(2, Succeeds(Run("slides", "inspect", "with.pptx"))["presentation"]!["slideCount"]!.GetValue<int>());
         Assert.NotEqual(0, refused.ExitCode);
         Assert.Equal("PASSWORD_REQUIRED", JsonNode.Parse(refused.StdErr)!["error"]!["code"]!.GetValue<string>());
+    }
+
+    /// <summary>
+    /// An encrypted source an <c>import_slides</c> names without its variable is refused with a
+    /// hint that names the operation's own password field, not a command option.
+    /// </summary>
+    [Fact]
+    public void ImportSlides_WithoutItsVariable_HintNamesSourcePasswordEnv()
+    {
+        using var fixture = new SlidesEngineFixture();
+        string input = fixture.CreatePresentation("base.pptx", slides: 1);
+        string source = fixture.CreatePresentation("locked-source.pptx", slides: 1, password: "deck-secret");
+
+        CliException error = Assert.Throws<CliException>(() => SlidesEdit.Run(fixture.Session, new SlidesEditRequest
+        {
+            Input = input,
+            Batch = new SlidesOpsBatch { Ops = [new ImportSlidesOp { Path = source }] },
+            Output = TestOutput.At(fixture.File("imported.pptx")),
+        }));
+
+        Assert.Equal(ErrorCodes.PasswordRequired, error.Code);
+        Assert.Contains("\"sourcePasswordEnv\"", error.Hint, StringComparison.Ordinal);
+        Assert.DoesNotContain("--password-env", error.Hint, StringComparison.Ordinal);
     }
 
     /// <summary>
