@@ -303,6 +303,43 @@ public sealed class WorkerOutputPublicationTests : IDisposable
         Assert.False(Directory.Exists(target));
     }
 
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void Worker_ReplaceOfATargetThatChangedAfterTheWorkerSealed_IsRefusedAndKeepsIt(bool existed)
+    {
+        string target = _temp.File(Path.Combine("root", "result"));
+        Directory.CreateDirectory(Path.GetDirectoryName(target)!);
+        if (existed)
+        {
+            Directory.CreateDirectory(target);
+            File.WriteAllText(Path.Combine(target, "admitted.txt"), "admitted");
+        }
+        var admitted = new List<string>();
+        var worker = new WorkerOutputSession(_workerRoot, ManifestPath);
+        using (OperationDeadline deadline = OperationDeadline.Start(null))
+        using (var output = new AtomicNewDirectoryWriter(new ResourceBudgetLedger(deadline, outputSession: worker), target, "test",
+            replace: true, transactionParent: _temp.Path))
+        {
+            File.WriteAllText(Path.Combine(output.StagingDirectory, "data.txt"), "candidate");
+            output.Commit(admitted.Add);
+        }
+        worker.SealForPublication();
+        Assert.Equal([target], admitted);
+
+        // After the worker admitted the target, another program puts a tree of its own there.
+        if (existed) { Directory.Delete(target, recursive: true); }
+        Directory.CreateDirectory(Path.Combine(target, "own"));
+        File.WriteAllText(Path.Combine(target, "own", "notes.txt"), "keep");
+
+        CliException error = Assert.Throws<CliException>(() => WorkerOutputPublisher.Publish(ManifestPath, TestBudgets.Create()));
+
+        Assert.Equal(ErrorCodes.OutputUnwritable, error.Code);
+        Assert.Equal(["own"], Directory.EnumerateFileSystemEntries(target).Select(Path.GetFileName));
+        Assert.Equal("keep", File.ReadAllText(Path.Combine(target, "own", "notes.txt")));
+        Assert.Empty(Directory.EnumerateDirectories(_temp.Path, ".aspose-publication-*"));
+    }
+
     private sealed class Callback(Action<PublicationFaultPoint> action) : IPublicationFaultInjector
     {
         public void Hit(PublicationFaultPoint point) => action(point);
