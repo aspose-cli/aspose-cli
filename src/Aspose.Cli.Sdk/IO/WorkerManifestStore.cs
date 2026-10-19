@@ -118,8 +118,7 @@ internal static class WorkerManifestStore
             { NewDirectoryPublication.ValidateDescriptor(output with { Previous = admitted }); }
             EnsureOutsideRoot(root, output.Target);
             if (manifest.DirectoryTransactionParent is { } transactionParent
-                && (!Path.IsPathFullyQualified(transactionParent)
-                    || NewDirectoryPublication.Escapes(Path.GetRelativePath(transactionParent, Path.GetDirectoryName(output.Target)!))))
+                && NewDirectoryPublication.Escapes(Path.GetRelativePath(Canonical(transactionParent), Path.GetDirectoryName(output.Target)!)))
             { throw new InvalidDataException("A directory transaction parent is not an ancestor of its target."); }
             if (!FilePaths.Same(Path.GetDirectoryName(Path.GetDirectoryName(output.Staged)!), root)
                 || Path.GetFileName(output.Staged) != "directory")
@@ -153,7 +152,8 @@ internal static class WorkerManifestStore
                 OutputPathValidator.EnsureSafeFile(backup, "backup");
                 if (!paths.Add(backup)) { throw new InvalidDataException("Worker backup paths overlap."); }
             }
-            if (entry.InputPath is not null) { _ = Canonical(entry.InputPath); }
+            // An input is only compared with its snapshot, so it may be any path the user named.
+            if (entry.InputPath is not null) { _ = Absolute(entry.InputPath); }
         }
         var directories = new HashSet<string>(FilePaths.Comparer);
         foreach (WorkerDirectoryEntry directory in manifest.Directories)
@@ -179,7 +179,20 @@ internal static class WorkerManifestStore
         { throw new InvalidDataException("Worker destinations cannot overlap their private transport storage."); }
     }
 
+    /// <summary>
+    /// A path the worker wrote where this CLI puts its own files: <see cref="Absolute"/>, and
+    /// neither UNC nor a device spelling such as <c>\\?\C:\</c>, which
+    /// <see cref="EnsureOutsideRoot"/> could not compare with the root.
+    /// </summary>
     private static string Canonical(string path)
+    {
+        string full = Absolute(path);
+        if (FilePaths.IsRemoteOrDevice(full)) { throw new InvalidDataException("Worker paths must be local."); }
+        return full;
+    }
+
+    /// <summary>A path as the worker wrote it: absolute and already full.</summary>
+    private static string Absolute(string path)
     {
         if (string.IsNullOrWhiteSpace(path) || !Path.IsPathFullyQualified(path) || !FilePaths.Same(path, Path.GetFullPath(path)))
         { throw new InvalidDataException("Worker paths must be canonical and absolute."); }
