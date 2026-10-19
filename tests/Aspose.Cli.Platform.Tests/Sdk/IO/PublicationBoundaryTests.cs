@@ -89,6 +89,84 @@ public sealed class PublicationBoundaryTests
     }
 
     [Fact]
+    public void UnknownJournalVersion_IsPreservedAndReported()
+    {
+        using var temp = new TempDirectory();
+        string target = temp.File("document.txt");
+        File.WriteAllText(target, "original");
+        string transaction = WriteOtherVersionTransaction(temp.Path, target);
+        Dictionary<string, byte[]> before = TreeBytes(transaction);
+
+        CliException error = Assert.Throws<CliException>(() =>
+            TestBudgets.Writer().Write(temp.File("next.txt"), false, path => File.WriteAllText(path, "next")));
+
+        Assert.Equal(ErrorCodes.OutputUnwritable, error.Code);
+        Assert.Contains("written by another version", error.Message, StringComparison.Ordinal);
+        Assert.False(File.Exists(temp.File("next.txt")));
+        Assert.Equal("original", File.ReadAllText(target));
+        AssertSameTree(before, TreeBytes(transaction));
+    }
+
+    [Fact]
+    public void UnknownJournalVersionInAnAncestor_IsLeftUntouched()
+    {
+        using var temp = new TempDirectory();
+        string nested = Directory.CreateDirectory(temp.File("nested")).FullName;
+        string target = Path.Combine(nested, "document.txt");
+        File.WriteAllText(target, "original");
+        string transaction = WriteOtherVersionTransaction(temp.Path, target);
+        Dictionary<string, byte[]> before = TreeBytes(transaction);
+
+        TestBudgets.Writer().Write(Path.Combine(nested, "next.txt"), false, path => File.WriteAllText(path, "next"));
+
+        Assert.Equal("next", File.ReadAllText(Path.Combine(nested, "next.txt")));
+        Assert.Equal("original", File.ReadAllText(target));
+        AssertSameTree(before, TreeBytes(transaction));
+    }
+
+    /// <summary>
+    /// Leaves an abandoned transaction whose journal a later version of the CLI wrote: an
+    /// unknown version with a field this version does not know, naming a target it replaced.
+    /// </summary>
+    private static string WriteOtherVersionTransaction(string root, string target)
+    {
+        string transaction = Directory.CreateDirectory(Path.Combine(root, ".aspose-publication-other-version")).FullName;
+        string staged = AtomicPublicationPlan.StagedPath(transaction, target, 0);
+        Directory.CreateDirectory(Path.GetDirectoryName(staged)!);
+        File.WriteAllText(staged, "candidate");
+        string displaced = Directory.CreateDirectory(Path.Combine(transaction, "displaced")).FullName;
+        File.WriteAllText(Path.Combine(displaced, "000001"), "displaced original");
+        var journal = new System.Text.Json.Nodes.JsonObject
+        {
+            ["version"] = PublicationJournal.CurrentVersion + 1,
+            ["operation"] = "future-operation",
+            ["ownerProcessId"] = int.MaxValue,
+            ["ownerProcessStartUtcTicks"] = 1,
+            ["state"] = "publishing",
+            ["futureField"] = "unknown to this version",
+            ["entries"] = new System.Text.Json.Nodes.JsonArray(new System.Text.Json.Nodes.JsonObject
+            {
+                ["index"] = 0, ["target"] = target, ["staged"] = staged, ["overwrite"] = true,
+                ["futureEntryField"] = 1,
+            }),
+        };
+        File.WriteAllText(Path.Combine(transaction, AtomicPublicationPlan.JournalName), journal.ToJsonString());
+        return transaction;
+    }
+
+    private static Dictionary<string, byte[]> TreeBytes(string directory) =>
+        Directory.EnumerateFileSystemEntries(directory, "*", SearchOption.AllDirectories)
+            .ToDictionary(
+                path => Path.GetRelativePath(directory, path),
+                path => Directory.Exists(path) ? [] : File.ReadAllBytes(path));
+
+    private static void AssertSameTree(Dictionary<string, byte[]> expected, Dictionary<string, byte[]> actual)
+    {
+        Assert.Equal(expected.Keys.Order(StringComparer.Ordinal), actual.Keys.Order(StringComparer.Ordinal));
+        foreach ((string path, byte[] bytes) in expected) { Assert.Equal(bytes, actual[path]); }
+    }
+
+    [Fact]
     public void UnfinishedWorkerCannotPublishEvenAfterAnOutputSetWasStaged()
     {
         using var temp = new TempDirectory();

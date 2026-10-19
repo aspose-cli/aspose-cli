@@ -350,6 +350,8 @@ internal static class DurableFile
 
 internal sealed class PublicationJournal
 {
+    /// <summary>The journal format this build writes and recovers; any change to its fields raises it.</summary>
+    internal const int CurrentVersion = 1;
     internal const int MaximumBytes = PublicationLimits.MaximumMetadataBytes;
     internal const int MaximumEntries = PublicationLimits.MaximumEntries;
     internal static bool IsTemporaryPath(string path)
@@ -374,7 +376,7 @@ internal sealed class PublicationJournal
         UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow,
     };
 
-    public int Version { get; init; } = 1;
+    public int Version { get; init; } = CurrentVersion;
 
     public required string Operation { get; init; }
 
@@ -425,7 +427,7 @@ internal sealed class PublicationJournal
                 JsonOptions)
             ?? throw new InvalidDataException(
                 $"Publication journal '{path}' is empty.");
-        if (journal.Version != 1
+        if (journal.Version != CurrentVersion
             || string.IsNullOrWhiteSpace(journal.Operation)
             || journal.Operation.Length > 128
             || journal.OwnerProcessId <= 0
