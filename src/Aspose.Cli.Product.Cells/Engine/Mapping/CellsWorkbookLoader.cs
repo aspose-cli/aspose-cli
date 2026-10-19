@@ -86,23 +86,12 @@ internal sealed class CellsWorkbookLoader
         FileFormatType.MHtml,
     ];
 
-    // The extensions under which content no format recognizes is imported as delimited text.
-    private static readonly HashSet<string> TextExtensions =
-        new(StringComparer.Ordinal)
-        {
-            ".csv",
-            ".tsv",
-            ".txt",
-        };
-
-    // The extensions of every declared input: delimited text the engine detects imports under
-    // any of them, as a tab-separated "Excel" export named .xls does, but never under an
-    // extension no input declares, such as .json.
-    private static readonly HashSet<string> InputExtensions =
-        [.. CellsFormats.Definitions
-            .Where(static format => format.Uses.HasFlag(FormatUse.Input))
-            .SelectMany(static format => format.Extensions)
-            .Select(static extension => extension.ToLowerInvariant())];
+    // Every declared input: delimited text the engine detects imports under any of their
+    // extensions, as a tab-separated "Excel" export named .xls does, but never under an
+    // extension no input declares, such as .json. Content no format recognizes is imported as
+    // delimited text under an extension of CellsFormats.Delimited.
+    private static readonly IReadOnlyList<FormatDescriptor> Inputs =
+        [.. CellsFormats.Definitions.Where(static format => format.Uses.HasFlag(FormatUse.Input))];
 
     /// <summary>
     /// Opens a user input. A workbook that asks to be calculated when opened is calculated, as
@@ -273,7 +262,7 @@ internal sealed class CellsWorkbookLoader
         {
             if (detected is FileFormatType.Csv or FileFormatType.TabDelimited)
             {
-                if (!InputExtensions.Contains(Path.GetExtension(path).ToLowerInvariant()))
+                if (Inputs.NamedBy(path).Count == 0)
                 {
                     throw NotNamedAsInput(path);
                 }
@@ -295,8 +284,7 @@ internal sealed class CellsWorkbookLoader
 
         if (detected == FileFormatType.Unknown)
         {
-            string extension = Path.GetExtension(path).ToLowerInvariant();
-            if (TextExtensions.Contains(extension))
+            if (CellsFormats.Delimited.NamedBy(path).Count > 0)
             {
                 return new LoadPlan(null, DetectDelimiter(path) ?? ',');
             }
@@ -319,25 +307,15 @@ internal sealed class CellsWorkbookLoader
 
     /// <summary>How a file that does not load is reported: with what to give instead when its extension names a format cells only writes.</summary>
     private static InputLoading For(string path) =>
-        WrittenOnlyExtensions.Contains(Path.GetExtension(path).ToLowerInvariant()) ? WrittenOnly : Loading;
+        WrittenOnlyFormats.NamedBy(path).Count > 0 && Inputs.NamedBy(path).Count == 0 ? WrittenOnly : Loading;
 
-    // The extensions of the formats convert writes and no input declares.
-    private static readonly HashSet<string> WrittenOnlyExtensions =
+    // The formats convert writes and no input declares.
+    private static readonly IReadOnlyList<FormatDescriptor> WrittenOnlyFormats =
         [.. CellsFormats.Definitions
-            .Where(static format => format.Uses.HasFlag(FormatUse.Convert) && !format.Uses.HasFlag(FormatUse.Input))
-            .SelectMany(static format => format.Extensions)
-            .Select(static extension => extension.ToLowerInvariant())
-            .Except(InputExtensions)];
+            .Where(static format => format.Uses.HasFlag(FormatUse.Convert) && !format.Uses.HasFlag(FormatUse.Input))];
 
-    private static CliException NotNamedAsInput(string path)
-    {
-        string extension = Path.GetExtension(path);
-        string named = extension.Length > 1 ? $"its {extension} extension names no" : "it has no extension that names a";
-        return For(path).Unreadable(
-            path,
-            $"its content is delimited text, but {named} spreadsheet input; "
-                + $"give it a {string.Join(", ", TextExtensions)} extension to import it as text");
-    }
+    private static CliException NotNamedAsInput(string path) =>
+        For(path).NotNamedAsInput(path, "delimited text", CellsFormats.Delimited, "as text");
 
     private static char? DetectDelimiter(string path)
     {
