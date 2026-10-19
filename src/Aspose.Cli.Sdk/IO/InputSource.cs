@@ -21,9 +21,7 @@ public sealed class InputSource
     internal string ResourceOriginFor(string documentPath)
     {
         string full = Path.GetFullPath(documentPath);
-        return _snapshotOrigin is { } origin && string.Equals(full, origin.Snapshot,
-            OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal)
-                ? origin.Original : full;
+        return _snapshotOrigin is { } origin && FilePaths.Same(full, origin.Snapshot) ? origin.Original : full;
     }
 
     internal InputSource(ResourceBudgetLedger budgets)

@@ -87,13 +87,7 @@ public sealed class FileWritePrecondition
 
     internal static FileWritePrecondition FromSnapshot(string path, FilePublicationSnapshot snapshot) => new(path, snapshot);
 
-    internal bool Targets(string targetPath) =>
-        string.Equals(
-            Path,
-            System.IO.Path.GetFullPath(targetPath),
-            OperatingSystem.IsWindows()
-                ? StringComparison.OrdinalIgnoreCase
-                : StringComparison.Ordinal);
+    internal bool Targets(string targetPath) => FilePaths.Same(Path, System.IO.Path.GetFullPath(targetPath));
 
     internal void EnsureUnchanged()
     {

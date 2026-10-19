@@ -570,10 +570,7 @@ internal sealed class AtomicPublicationRecovery(AtomicPublicationPlan plan)
         string parent = Path.GetDirectoryName(fullDirectory)
             ?? throw new InvalidDataException(
                 $"Publication transaction '{directory}' has no parent directory.");
-        StringComparison comparison = OperatingSystem.IsWindows()
-            ? StringComparison.OrdinalIgnoreCase
-            : StringComparison.Ordinal;
-        if (!string.Equals(fullRoot, parent, comparison)
+        if (!FilePaths.Same(fullRoot, parent)
             || File.GetAttributes(fullDirectory).HasFlag(FileAttributes.ReparsePoint))
         {
             throw new InvalidDataException(
@@ -596,9 +593,7 @@ internal sealed class AtomicPublicationRecovery(AtomicPublicationPlan plan)
         string root,
         AtomicPublicationPlan recoveryPlan)
     {
-        StringComparer comparer = OperatingSystem.IsWindows()
-            ? StringComparer.OrdinalIgnoreCase
-            : StringComparer.Ordinal;
+        StringComparer comparer = FilePaths.Comparer;
         var targets = new HashSet<string>(comparer);
         var indexes = new HashSet<int>();
         string transaction = Path.GetFullPath(recoveryPlan.StagingDirectory);

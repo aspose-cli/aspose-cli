@@ -28,7 +28,7 @@ internal static class OutputPathValidator
     {
         string left = Path.TrimEndingDirectorySeparator(Path.GetFullPath(first));
         string right = Path.TrimEndingDirectorySeparator(Path.GetFullPath(second));
-        if (string.Equals(left, right, OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal))
+        if (FilePaths.Same(left, right))
         {
             return true;
         }
