@@ -714,7 +714,7 @@ public sealed class CellsImportTests : IClassFixture<CellsFixture>
             [CellsBudgetDomains.Sheets] = 10,
             [CellsBudgetDomains.Objects] = 3,
         });
-        using var sources = new CellsImportSources(new CellsWorkbookLoader(budgets), budgets, null);
+        using var sources = new CellsImportSources(CellsWorkbookLoader.ForFontInspection(budgets), budgets, null);
         using var workbook = new Workbook();
 
         ImportOps.ImportSheet(workbook, new ImportSheetOp { Path = source, Name = "One" }, sources);

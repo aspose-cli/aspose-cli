@@ -106,7 +106,7 @@ public sealed class WordsResourceLoadingTests
             <body><p>Local content</p><img src="local%20image.png">
             <img src="{server.Url}/image.png"></body></html>
             """);
-        var loader = new WordsDocumentLoader(ProductTestBudgets.Create<WordsModule>());
+        var loader = WordsDocumentLoader.ForFontInspection(ProductTestBudgets.Create<WordsModule>());
         using (LoadedDocument loaded = loader.Open(input, null))
         {
             Assert.Contains(loaded.Document.GetChildNodes(NodeType.Shape, true).Cast<Shape>(),

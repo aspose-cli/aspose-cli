@@ -13,7 +13,7 @@ public sealed class SlidesHardeningTests
         using var fixture = new SlidesEngineFixture();
         string input = fixture.CreatePresentation("loaded.pptx", slides: 1);
         string replacement = fixture.CreatePresentation("replacement.pptx", slides: 2);
-        var loader = new Engine.Mapping.SlidesPresentationLoader(ProductTestBudgets.Create<SlidesModule>());
+        var loader = Engine.Mapping.SlidesPresentationLoader.ForFontInspection(ProductTestBudgets.Create<SlidesModule>());
 
         // A concurrent in-place edit publishes by replacing the file the engine still reads.
         using (Engine.Mapping.LoadedPresentation loaded = loader.Open(input, password: null))

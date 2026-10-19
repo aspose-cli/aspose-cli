@@ -20,8 +20,8 @@ public sealed class OutputPipelineEncryptionTests
     {
         using var temp = new TempDirectory();
         OutputPipeline<object> pipeline = Pipeline();
-        pipeline.Opened(encrypted: false);
-        pipeline.Opened(encrypted: true);
+        pipeline.Opened(new InputProtection(false));
+        pipeline.Opened(new InputProtection(true));
 
         pipeline.Write(temp.File("out.txt"), false, null, Save);
         pipeline.Write(temp.File("other.txt"), false, null, Save);
@@ -36,7 +36,7 @@ public sealed class OutputPipelineEncryptionTests
     {
         using var temp = new TempDirectory();
         OutputPipeline<object> pipeline = Pipeline();
-        pipeline.Opened(encrypted: true);
+        pipeline.Opened(new InputProtection(true));
 
         using (OutputSet<object> set = pipeline.BeginSet([temp.Path], "test"))
         {
@@ -53,7 +53,7 @@ public sealed class OutputPipelineEncryptionTests
     {
         using var temp = new TempDirectory();
         OutputPipeline<object> pipeline = Pipeline();
-        pipeline.Opened(encrypted: true);
+        pipeline.Opened(new InputProtection(true));
 
         pipeline.Write(temp.File("pages.txt"), false, null, Save, rendering: true);
 
@@ -65,7 +65,7 @@ public sealed class OutputPipelineEncryptionTests
     {
         using var temp = new TempDirectory();
         OutputPipeline<object> encrypted = Pipeline();
-        encrypted.Opened(encrypted: true);
+        encrypted.Opened(new InputProtection(true));
         encrypted.Write(temp.File("kept.pdf"), false, null, Save, encrypted: true);
         encrypted.Write(temp.File("page.png"), false, null, Save, rendering: true);
         // Images saved without rendering, in a render format and in a declared image format, and
@@ -87,7 +87,7 @@ public sealed class OutputPipelineEncryptionTests
         }
 
         OutputPipeline<object> plain = Pipeline();
-        plain.Opened(encrypted: false);
+        plain.Opened(new InputProtection(false));
         plain.Write(temp.File("plain.pdf"), false, null, Save);
 
         Assert.Null(encrypted.EncryptionRemoved());
@@ -99,7 +99,7 @@ public sealed class OutputPipelineEncryptionTests
     {
         using var temp = new TempDirectory();
         OutputPipeline<object> pipeline = Pipeline();
-        pipeline.Opened(encrypted: true);
+        pipeline.Opened(new InputProtection(true));
 
         // Only the formats the product declares are known; gif is not among them.
         pipeline.Write(temp.File("slide.gif"), false, null, Save);
@@ -112,7 +112,7 @@ public sealed class OutputPipelineEncryptionTests
     {
         using var temp = new TempDirectory();
         OutputPipeline<object> pipeline = Pipeline();
-        pipeline.Opened(encrypted: true);
+        pipeline.Opened(new InputProtection(true));
         using (OutputSet<object> set = pipeline.BeginSet([temp.Path], "test"))
         {
             // A set that does not commit, as a failed or dry run leaves it, publishes nothing.

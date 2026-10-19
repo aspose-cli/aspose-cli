@@ -20,7 +20,7 @@ internal sealed class SlidesFontEnvironment : IFontEnvironment
         ResourceBudgetLedger resourceBudgets)
     {
         _license = license ?? throw new ArgumentNullException(nameof(license));
-        _loader = new SlidesPresentationLoader(resourceBudgets);
+        _loader = SlidesPresentationLoader.ForFontInspection(resourceBudgets);
     }
 
     /// <inheritdoc />

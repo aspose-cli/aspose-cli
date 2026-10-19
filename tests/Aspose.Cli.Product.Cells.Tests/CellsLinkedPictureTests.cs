@@ -79,8 +79,7 @@ public sealed class CellsLinkedPictureTests
         if (available) { File.WriteAllBytes(reference, ResourceHttpServer.Image); }
         string input = fixture.Temp.File("linked.xlsx");
         CreateWorkbook(fixture, input, reference, cached: false);
-        using LoadedWorkbook loaded = new CellsWorkbookLoader(
-            ProductTestBudgets.Create<CellsModule>()).Open(input, null);
+        using LoadedWorkbook loaded = CellsWorkbookLoader.ForFontInspection(ProductTestBudgets.Create<CellsModule>()).Open(input, null);
         if (available)
         {
             Picture picture = Assert.Single(loaded.Workbook.Worksheets[0].Pictures.Cast<Picture>());

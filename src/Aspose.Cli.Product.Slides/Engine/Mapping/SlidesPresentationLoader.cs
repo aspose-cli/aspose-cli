@@ -6,12 +6,27 @@ using Aspose.Slides.Export;
 
 namespace Aspose.Cli.Product.Slides.Engine.Mapping;
 
-/// <param name="resourceBudgets">The invocation's resource budgets.</param>
-/// <param name="outputs">The write pipeline, which learns whether each opened input is encrypted; none for font inspection.</param>
-internal sealed class SlidesPresentationLoader(
-    ResourceBudgetLedger resourceBudgets,
-    OutputPipeline? outputs = null)
+internal sealed class SlidesPresentationLoader
 {
+    private readonly ResourceBudgetLedger _resourceBudgets;
+    private readonly OutputPipeline? _outputs;
+
+    /// <param name="resourceBudgets">The invocation's resource budgets.</param>
+    /// <param name="outputs">The write pipeline, which learns whether each opened input is encrypted.</param>
+    internal SlidesPresentationLoader(ResourceBudgetLedger resourceBudgets, OutputPipeline outputs)
+        : this(resourceBudgets)
+    {
+        _outputs = outputs ?? throw new ArgumentNullException(nameof(outputs));
+    }
+
+    private SlidesPresentationLoader(ResourceBudgetLedger resourceBudgets)
+    {
+        _resourceBudgets = resourceBudgets ?? throw new ArgumentNullException(nameof(resourceBudgets));
+    }
+
+    /// <summary>A loader for font inspection, which publishes nothing.</summary>
+    internal static SlidesPresentationLoader ForFontInspection(ResourceBudgetLedger resourceBudgets) => new(resourceBudgets);
+
     /// <summary>
     /// How a presentation input that does not load is reported: Aspose.Slides raises
     /// <see cref="InvalidPasswordException"/> for a missing or wrong password, and its own
@@ -33,13 +48,8 @@ internal sealed class SlidesPresentationLoader(
         _ => LoadFailureKind.Other,
     };
 
-    public LoadedPresentation Open(string path, Secret? password)
-    {
-        InputSizeGuard.Ensure(resourceBudgets, path);
-        LoadedPresentation loaded = OpenCore(path, password);
-        outputs?.Opened(loaded.Encrypted);
-        return loaded;
-    }
+    public LoadedPresentation Open(string path, Secret? password) =>
+        InputOpening.Open(_outputs, _resourceBudgets, path, () => OpenCore(path, password));
 
     /// <summary>
     /// Opens a presentation that new slides are added to on its layouts. A PowerPoint 97-2003
@@ -47,16 +57,12 @@ internal sealed class SlidesPresentationLoader(
     /// (SLIDES-PPT-TEMPLATE-LAYOUTS): the engine lists layouts from such a file that a PPTX save
     /// cannot reference, and that save drops them, as <c>slides convert</c> to PPTX does.
     /// </summary>
-    public LoadedPresentation OpenToWrite(string path, Secret? password)
-    {
-        InputSizeGuard.Ensure(resourceBudgets, path);
-        LoadedPresentation loaded = OpenCore(path, password, throughPptx: true);
-        outputs?.Opened(loaded.Encrypted);
-        return loaded;
-    }
+    public LoadedPresentation OpenToWrite(string path, Secret? password) =>
+        InputOpening.Open(_outputs, _resourceBudgets, path, () => OpenCore(path, password, throughPptx: true));
 
     // Generated candidates are bounded by publication, not a second user-input admission.
-    internal LoadedPresentation OpenPublishedCandidate(string path, Secret? password) => OpenCore(path, password);
+    internal LoadedPresentation OpenPublishedCandidate(string path, Secret? password) =>
+        InputOpening.OpenPublished(() => OpenCore(path, password));
 
     /// <summary>
     /// Opens the built-in 16:9 design that new presentations use without a template. It has no
@@ -109,7 +115,7 @@ internal sealed class SlidesPresentationLoader(
 
             // Engine code creates presentations only here or from the default template: without a
             // resource policy, rendering or saving fetches linked media from any address.
-            var resources = SlidesResourcePolicy.Beside(path, resourceBudgets);
+            var resources = SlidesResourcePolicy.Beside(path, _resourceBudgets);
             Presentation presentation;
             try
             {
@@ -122,12 +128,12 @@ internal sealed class SlidesPresentationLoader(
             }
             try
             {
-                resourceBudgets.EnsureWithin(
+                _resourceBudgets.EnsureWithin(
                     SlidesBudgetDomains.Slides,
                     presentation.Slides.Count,
                     "items",
                     "post-load");
-                resourceBudgets.EnsureWithin(
+                _resourceBudgets.EnsureWithin(
                     SlidesBudgetDomains.Shapes,
                     presentation.Slides.Sum(
                         static slide => (long)slide.Shapes.Count),
@@ -253,10 +259,13 @@ internal sealed class SlidesPresentationLoader(
 }
 
 internal sealed record LoadedPresentation(Presentation Presentation, string FormatId, SlidesResourcePolicy Resources)
-    : IDisposable
+    : IOpenedInput, IDisposable
 {
     /// <summary>Whether the file is encrypted, as it was opened; a later encryption does not change it.</summary>
     public bool Encrypted { get; init; } = Presentation.ProtectionManager.IsEncrypted;
+
+    /// <inheritdoc />
+    public InputProtection Protection => new(Encrypted);
 
     /// <summary>The charts whose implicit automatic title an output draws over the plot.</summary>
     public IReadOnlyList<(int Slide, string Chart)> ImplicitTitleCharts { get; init; } = [];

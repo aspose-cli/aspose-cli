@@ -15,7 +15,7 @@ public sealed class PdfHardeningTests
         using var fixture = new PdfEngineFixture();
         string input = fixture.CreateDocument("shared.pdf", pages: 2);
         string replacement = fixture.CreateDocument("replacement.pdf", pages: 1);
-        var loader = new PdfDocumentLoader(ProductTestBudgets.Create<PdfModule>());
+        var loader = PdfDocumentLoader.ForFontInspection(ProductTestBudgets.Create<PdfModule>());
 
         using (LoadedPdf loaded = loader.Open(input, password: null))
         {
@@ -27,7 +27,7 @@ public sealed class PdfHardeningTests
         }
 
         // A new command admits the replaced input afresh.
-        using LoadedPdf reopened = new PdfDocumentLoader(ProductTestBudgets.Create<PdfModule>()).Open(input, password: null);
+        using LoadedPdf reopened = PdfDocumentLoader.ForFontInspection(ProductTestBudgets.Create<PdfModule>()).Open(input, password: null);
         Assert.Single(reopened.Document.Pages);
     }
 

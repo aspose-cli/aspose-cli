@@ -14,10 +14,27 @@ namespace Aspose.Cli.Product.Cells.Engine.Mapping;
 /// pipeline learns whether each opened input is encrypted; without one (font inspection) it
 /// opens as stored.
 /// </summary>
-/// <param name="resourceBudgets">The invocation's resource budgets.</param>
-/// <param name="outputs">The invocation's write pipeline, or none for font inspection.</param>
-internal sealed class CellsWorkbookLoader(ResourceBudgetLedger resourceBudgets, OutputPipeline? outputs = null)
+internal sealed class CellsWorkbookLoader
 {
+    private readonly ResourceBudgetLedger _resourceBudgets;
+    private readonly OutputPipeline? _outputs;
+
+    /// <param name="resourceBudgets">The invocation's resource budgets.</param>
+    /// <param name="outputs">The invocation's write pipeline.</param>
+    internal CellsWorkbookLoader(ResourceBudgetLedger resourceBudgets, OutputPipeline outputs)
+        : this(resourceBudgets)
+    {
+        _outputs = outputs ?? throw new ArgumentNullException(nameof(outputs));
+    }
+
+    private CellsWorkbookLoader(ResourceBudgetLedger resourceBudgets)
+    {
+        _resourceBudgets = resourceBudgets ?? throw new ArgumentNullException(nameof(resourceBudgets));
+    }
+
+    /// <summary>A loader for font inspection, which publishes nothing: workbooks open as stored.</summary>
+    internal static CellsWorkbookLoader ForFontInspection(ResourceBudgetLedger resourceBudgets) => new(resourceBudgets);
+
     // Excel's limit on the length of a sheet name.
     private const int MaxSheetNameLength = 31;
 
@@ -100,17 +117,15 @@ internal sealed class CellsWorkbookLoader(ResourceBudgetLedger resourceBudgets, 
         CellsTextImportOptions? textImport = null,
         bool calculateOnOpen = true)
     {
-        InputSizeGuard.Ensure(resourceBudgets, path);
-        LoadedWorkbook loaded = OpenCore(path, password, textImport, published: false, calculateOnOpen);
-        outputs?.Opened(loaded.IsEncrypted);
-        return loaded;
+        return InputOpening.Open(_outputs, _resourceBudgets, path,
+            () => OpenCore(path, password, textImport, published: false, calculateOnOpen));
     }
 
     // Derived output is already bounded by publication; it is not a new user input, and its
     // text was written with invariant formats, so its quoted text fields are not re-judged.
     // It is read as stored, since verification compares what was written.
     internal LoadedWorkbook OpenPublishedCandidate(string path, Secret? password, string? resourceSource = null) =>
-        OpenCore(path, password, textImport: null, published: true, calculateOnOpen: false, resourceSource);
+        InputOpening.OpenPublished(() => OpenCore(path, password, textImport: null, published: true, calculateOnOpen: false, resourceSource));
 
     private LoadedWorkbook OpenCore(
         string path,
@@ -127,7 +142,7 @@ internal sealed class CellsWorkbookLoader(ResourceBudgetLedger resourceBudgets, 
             throw InputLoading.PasswordRefused(path, password);
         }
 
-        var resources = new WorkbookResources(resourceSource ?? path, resourceBudgets, plan.Format == LoadFormat.MHtml);
+        var resources = new WorkbookResources(resourceSource ?? path, _resourceBudgets, plan.Format == LoadFormat.MHtml);
         Workbook? workbook = null;
         bool transferred = false;
         try
@@ -148,22 +163,22 @@ internal sealed class CellsWorkbookLoader(ResourceBudgetLedger resourceBudgets, 
             }
             resources.MaterializeLinkedPictures(workbook);
             resources.ThrowIfFailed();
-            resourceBudgets.EnsureWithin(CellsBudgetDomains.Sheets,
+            _resourceBudgets.EnsureWithin(CellsBudgetDomains.Sheets,
                 workbook.Worksheets.Count, "items", "post-load");
-            resourceBudgets.EnsureWithin(CellsBudgetDomains.Objects,
+            _resourceBudgets.EnsureWithin(CellsBudgetDomains.Objects,
                 workbook.Worksheets.Cast<Worksheet>().Sum(static sheet => (long)sheet.Shapes.Count),
                 "items", "post-load");
             if (workbook.FileFormat is FileFormatType.Html or FileFormatType.XHtml or FileFormatType.MHtml)
             {
                 foreach (Worksheet sheet in workbook.Worksheets)
                 {
-                    resourceBudgets.Deadline.ThrowIfExpired("post-load");
+                    _resourceBudgets.Deadline.ThrowIfExpired("post-load");
                     sheet.AutoFitColumns();
                 }
             }
             resources.ThrowIfFailed();
-            Warning? calculated = calculateOnOpen ? CellsOpenCalculation.Apply(workbook, resourceBudgets) : null;
-            CellsEvaluation.SkippedWarningSheet? skipped = published || outputs?.IsEvaluation != true
+            Warning? calculated = calculateOnOpen ? CellsOpenCalculation.Apply(workbook, _resourceBudgets) : null;
+            CellsEvaluation.SkippedWarningSheet? skipped = published || _outputs?.IsEvaluation != true
                 ? null
                 : CellsEvaluation.SkipActiveWarningSheet(workbook);
             transferred = true;
@@ -197,7 +212,7 @@ internal sealed class CellsWorkbookLoader(ResourceBudgetLedger resourceBudgets, 
     /// so it passes on to the SDK, which reports the evaluation limit; with a license it is.
     /// </summary>
     internal bool IsLoadFailure(Exception exception) =>
-        !(outputs?.IsEvaluation == true && CellsEvaluationProfile.IsOpenLimit(exception));
+        !(_outputs?.IsEvaluation == true && CellsEvaluationProfile.IsOpenLimit(exception));
 
     private LoadPlan ResolveLoadPlan(string path, CellsTextImportOptions? textImport, bool published)
     {
@@ -217,7 +232,7 @@ internal sealed class CellsWorkbookLoader(ResourceBudgetLedger resourceBudgets, 
 
         (Encoding encoding, CultureInfo culture) = published
             ? (new UTF8Encoding(encoderShouldEmitUTF8Identifier: false), CultureInfo.InvariantCulture)
-            : CellsTextImport.Resolve(path, separator, textImport, resourceBudgets);
+            : CellsTextImport.Resolve(path, separator, textImport, _resourceBudgets);
         return plan with { TextEncoding = encoding, TextCulture = culture };
     }
 

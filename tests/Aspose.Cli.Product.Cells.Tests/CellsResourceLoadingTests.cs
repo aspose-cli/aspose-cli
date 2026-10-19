@@ -22,7 +22,7 @@ public sealed class CellsResourceLoadingTests
         using var fixture = new CellsFixture();
         string input = fixture.Temp.File("book.csv");
         File.WriteAllText(input, "Region,Revenue\nEast,1\n");
-        var loader = new CellsWorkbookLoader(ProductTestBudgets.Create<CellsModule>());
+        var loader = CellsWorkbookLoader.ForFontInspection(ProductTestBudgets.Create<CellsModule>());
 
         using (new FileStream(input, FileMode.Open, FileAccess.Read,
                    FileShare.ReadWrite | FileShare.Delete, 1, FileOptions.DeleteOnClose))
@@ -48,7 +48,7 @@ public sealed class CellsResourceLoadingTests
         using var fixture = new CellsFixture();
         string input = fixture.Temp.File(name);
         File.WriteAllText(input, "Region,Revenue\nEast,1\n");
-        var loader = new CellsWorkbookLoader(ProductTestBudgets.Create<CellsModule>());
+        var loader = CellsWorkbookLoader.ForFontInspection(ProductTestBudgets.Create<CellsModule>());
 
         using LoadedWorkbook loaded = loader.Open(input, null);
 
@@ -72,7 +72,7 @@ public sealed class CellsResourceLoadingTests
             <td><img src="{server.Url}/image.png" width="20" height="20"></td></tr></table></body></html>
             """;
         File.WriteAllText(input, extension == "mht" ? Mhtml(html) : html);
-        var loader = new CellsWorkbookLoader(ProductTestBudgets.Create<CellsModule>());
+        var loader = CellsWorkbookLoader.ForFontInspection(ProductTestBudgets.Create<CellsModule>());
         using (LoadedWorkbook loaded = loader.Open(input, null))
         {
             Assert.True(loaded.Workbook.Worksheets.Cast<Worksheet>().Sum(sheet => sheet.Pictures.Count) > 0);
@@ -134,8 +134,7 @@ public sealed class CellsResourceLoadingTests
         string input = fixture.Temp.File("embedded.mht");
         File.WriteAllText(input, Mhtml("<html><body><table><tr><td>Embedded</td><td><img src='local.png'></td></tr></table></body></html>"));
         Assert.False(File.Exists(fixture.Temp.File("local.png")));
-        using LoadedWorkbook loaded = new CellsWorkbookLoader(
-            ProductTestBudgets.Create<CellsModule>()).Open(input, null);
+        using LoadedWorkbook loaded = CellsWorkbookLoader.ForFontInspection(ProductTestBudgets.Create<CellsModule>()).Open(input, null);
         Assert.Contains(loaded.Workbook.Worksheets.Cast<Worksheet>().SelectMany(
             sheet => sheet.Pictures.Cast<Aspose.Cells.Drawing.Picture>()),
             picture => picture.Data is { Length: > 0 } && picture.OriginalWidth == 1 && picture.OriginalHeight == 1);

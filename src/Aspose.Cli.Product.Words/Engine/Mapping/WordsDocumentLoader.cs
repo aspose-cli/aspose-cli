@@ -31,16 +31,23 @@ internal sealed class WordsDocumentLoader
     private readonly OutputPipeline<Document>? _outputs;
 
     /// <summary>
-    /// Creates a loader. With the write pipeline, loaded documents know whether evaluation mode
-    /// altered them, and the pipeline learns of each input the command read, which discloses
-    /// one evaluation mode cut short, and whether it is encrypted; without one (font
-    /// inspection) no evaluation artifacts are reported.
+    /// Creates a loader. Loaded documents know whether evaluation mode altered them, and the
+    /// write pipeline learns of each input the command read, which discloses one evaluation mode
+    /// cut short, and whether it is encrypted.
     /// </summary>
-    internal WordsDocumentLoader(ResourceBudgetLedger resourceBudgets, OutputPipeline<Document>? outputs = null)
+    internal WordsDocumentLoader(ResourceBudgetLedger resourceBudgets, OutputPipeline<Document> outputs)
+        : this(resourceBudgets)
+    {
+        _outputs = outputs ?? throw new ArgumentNullException(nameof(outputs));
+    }
+
+    private WordsDocumentLoader(ResourceBudgetLedger resourceBudgets)
     {
         _resourceBudgets = resourceBudgets ?? throw new ArgumentNullException(nameof(resourceBudgets));
-        _outputs = outputs;
     }
+
+    /// <summary>A loader for font inspection, which publishes nothing: no evaluation artifacts are reported.</summary>
+    internal static WordsDocumentLoader ForFontInspection(ResourceBudgetLedger resourceBudgets) => new(resourceBudgets);
 
     /// <summary>
     /// Opens the built-in A4 design that new documents use without a template. It is a
@@ -64,15 +71,14 @@ internal sealed class WordsDocumentLoader
     /// </summary>
     public LoadedDocument Open(string path, Secret? password, IWarningCallback? warnings = null)
     {
-        InputSizeGuard.Ensure(_resourceBudgets, path);
-        LoadedDocument loaded = OpenCore(path, password, warnings);
+        LoadedDocument loaded = InputOpening.Open(_outputs, _resourceBudgets, path, () => OpenCore(path, password, warnings));
         _outputs?.ReadInput(loaded.Document);
-        _outputs?.Opened(loaded.Format.IsEncrypted);
         return loaded;
     }
 
     // Generated candidates are bounded by publication, not a second user-input admission.
-    internal LoadedDocument OpenPublishedCandidate(string path, Secret? password) => OpenCore(path, password, warnings: null);
+    internal LoadedDocument OpenPublishedCandidate(string path, Secret? password) =>
+        InputOpening.OpenPublished(() => OpenCore(path, password, warnings: null));
 
     private LoadedDocument OpenCore(string path, Secret? password, IWarningCallback? warnings)
     {
@@ -320,8 +326,11 @@ internal sealed record LoadedDocument(
     FileFormatInfo Format,
     string FormatId,
     LocalDocumentResourceLoader Resources,
-    bool Evaluation) : IDisposable
+    bool Evaluation) : IOpenedInput, IDisposable
 {
+    /// <inheritdoc />
+    public InputProtection Protection => new(Format.IsEncrypted);
+
     private readonly List<Document> _imports = [];
 
     /// <summary>Whether the input is an html-fixed page rendition loaded as flowing HTML.</summary>
