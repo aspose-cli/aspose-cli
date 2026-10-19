@@ -155,7 +155,7 @@ internal static class CommonSchemaSamples
         Checks =
         [
             new DoctorCheck { Name = "cli", Status = "ok", Detail = "development build" },
-            new DoctorCheck { Name = "runtime", Status = "ok", Detail = $".NET {Environment.Version}" },
+            new DoctorCheck { Name = "runtime", Status = "ok", Detail = ".NET 10.0.0" },
             new DoctorCheck
             {
                 Name = "license",
