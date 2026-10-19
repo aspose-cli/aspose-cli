@@ -127,9 +127,9 @@ internal sealed class CellsProtectionTracker
         return new Warning(WarningCodes.ProtectionNotEnforced, $"The edit changed {string.Join(" and ", changed)}; protection only guides Excel, so the edit was applied through it." + passwords)
         {
             Hint = "Confirm the change is authorized: " + (_sheets.Count == 0
-                    ? "Excel adds, deletes, renames, moves and hides no sheets while the structure is protected. "
+                    ? "Excel adds, deletes, renames, moves, hides and recolors no sheets while the structure is protected. "
                     : _structure
-                        ? "Excel lets users change only unlocked cells and the actions a sheet's protection allows, and no sheets while the structure is protected. "
+                        ? "Excel lets users change only unlocked cells and the actions a sheet's protection allows, and no sheets or tab colors while the structure is protected. "
                         : "Excel lets users change only unlocked cells and the actions a sheet's protection allows. ")
                 + kept,
             Location = _sheets.Count == 1 && !_structure ? Sheets.QuotedName(_sheets[0]) : null,

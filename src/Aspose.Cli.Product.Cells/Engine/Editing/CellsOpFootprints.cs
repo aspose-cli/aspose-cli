@@ -156,13 +156,16 @@ internal sealed class CellsOpFootprints : ICellsOpHandler<CellsOpTraits>
 
     // ----- removals and embedded objects: their sheet when they name one ----------------------
 
-    public CellsOpTraits Apply(ClearTabColorOp operation) => NamedSheet(operation);
+    // Clearing goes through what setting does: set_tab_color, the structure.
+    public CellsOpTraits Apply(ClearTabColorOp operation) => NamedSheet(operation) with { Protection = CellsProtectionScope.Structure };
 
-    public CellsOpTraits Apply(UnfreezePanesOp operation) => NamedSheet(operation);
+    // Clearing goes through what setting does: freeze_panes, nothing.
+    public CellsOpTraits Apply(UnfreezePanesOp operation) => NamedSheet(operation) with { Protection = CellsProtectionScope.None };
 
     public CellsOpTraits Apply(ClearAutoFilterOp operation) => NamedSheet(operation);
 
-    public CellsOpTraits Apply(ClearPrintAreaOp operation) => NamedSheet(operation);
+    // Clearing goes through what setting does: set_print_area, nothing.
+    public CellsOpTraits Apply(ClearPrintAreaOp operation) => NamedSheet(operation) with { Protection = CellsProtectionScope.None };
 
     public CellsOpTraits Apply(InsertChartOp operation) => NamedSheet(operation);
 
