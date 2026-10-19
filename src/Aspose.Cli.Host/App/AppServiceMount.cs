@@ -13,7 +13,16 @@ internal sealed class AppServiceMount : IHostedApp
     public AppServiceMount(AppHost app)
     {
         _app = app ?? throw new ArgumentNullException(nameof(app));
-        _handler = new AppRequestHandler(app);
+        try
+        {
+            _handler = new AppRequestHandler(app);
+        }
+        catch
+        {
+            // The service never receives a mount that failed, so it cannot release the App.
+            app.Dispose();
+            throw;
+        }
     }
 
     public string Url => _app.Url;
