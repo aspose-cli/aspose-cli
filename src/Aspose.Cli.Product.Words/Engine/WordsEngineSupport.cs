@@ -94,7 +94,7 @@ internal static class WordsEngineSupport
     /// it ends each line of Chinese, Japanese or Korean text with a space (WORDS-PDF-CJK-LINE-END).
     /// </summary>
     internal static IReadOnlyList<Warning>? PdfInputWarnings(LoadedDocument loaded) =>
-        loaded.FormatId != "pdf" ? null
+        !WordsEngineFormats.Has(loaded.FormatId, static format => format.ReflowsOnLoad) ? null
         : WordsFonts.HasEastAsian(loaded.Document.GetText()) ? [PdfInputReflowed, PdfInputLineEnds]
         : [PdfInputReflowed];
 
@@ -132,8 +132,8 @@ internal static class WordsEngineSupport
     /// </summary>
     internal static IEnumerable<Warning> ConversionWarnings(Document document, string format)
     {
-        bool text = format is "txt" or "md";
-        if (format is "txt" or "md" or "html" or "html-fixed")
+        bool text = WordsEngineFormats.Has(format, static entry => entry.PlainText);
+        if (WordsEngineFormats.Has(format, static entry => entry.Lossy))
         {
             yield return new Warning(WarningCodes.LossyConversion, $"Conversion to {format} cannot preserve every Word feature.") { Hint = "Keep a DOCX copy when styles, headers, fields or revisions matter." };
         }

@@ -120,7 +120,7 @@ internal sealed class WordsDocumentLoader
             throw InputLoading.PasswordRefused(path, password);
         }
 
-        bool fixedPages = id == "html" && IsFixedPageHtml(input);
+        bool fixedPages = WordsEngineFormats.Has(id, static format => format.MayHoldFixedPages) && IsFixedPageHtml(input);
         var resources = new LocalDocumentResourceLoader(path, _resourceBudgets);
         try
         {
@@ -249,7 +249,7 @@ internal sealed class WordsDocumentLoader
     /// format declares, as a damaged document container's do.
     /// </summary>
     private static bool IsTextFallbackForNonTextPath(string formatId, string path) =>
-        formatId is "txt" or "md"
+        WordsEngineFormats.Has(formatId, static format => format.PlainText)
         && !WordsFormats.Definitions.Named(FormatUse.Input, formatId)!.Extensions
             .Contains(Path.GetExtension(path), StringComparer.OrdinalIgnoreCase);
 
