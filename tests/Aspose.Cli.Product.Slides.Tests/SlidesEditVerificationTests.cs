@@ -14,6 +14,23 @@ namespace Aspose.Cli.Product.Slides.Tests;
 public sealed class SlidesEditVerificationTests
 {
     [Fact]
+    public void Edit_InPlaceBackupTwice_WarnsBackupPredatesEdit()
+    {
+        using var fixture = new SlidesEngineFixture();
+        string input = fixture.CreatePresentation("backup-twice.pptx");
+        string backup = fixture.File("backup-twice.backup.pptx");
+        SlidesEditResult Edit(string title) => SlidesEdit.Run(fixture.Session, new SlidesEditRequest
+        {
+            Input = input,
+            Batch = new SlidesOpsBatch { Ops = [new SetTitleOp { Slide = 1, Text = title }] },
+            Output = TestOutput.At(input, overwrite: true, backup: backup),
+        });
+
+        Assert.DoesNotContain(Edit("First").Warnings ?? [], static warning => warning.Code == WarningCodes.BackupPredatesEdit);
+        Assert.Contains(Edit("Second").Warnings ?? [], static warning => warning.Code == WarningCodes.BackupPredatesEdit);
+    }
+
+    [Fact]
     public void Verify_ChecksEachTitleOnTheSlideAtItsPositionAfterAMove()
     {
         using var fixture = new SlidesEngineFixture();
