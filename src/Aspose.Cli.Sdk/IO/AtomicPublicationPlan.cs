@@ -197,7 +197,7 @@ internal sealed class AtomicPublicationPlan
             _lease = PublicationDirectoryLease.Acquire(TargetDirectory, ResourceDirectories(Journal), ResourceBudgets?.Deadline);
             try
             {
-                if (OperatingSystem.IsWindows() && _initialDirectoryIdentity != FilePublicationOwnedDelete.TryGetDirectoryIdentity(TargetDirectory))
+                if (_initialDirectoryIdentity != FilePublicationOwnedDelete.TryGetDirectoryIdentity(TargetDirectory))
                 {
                     throw new IOException("The publication root changed during production.");
                 }

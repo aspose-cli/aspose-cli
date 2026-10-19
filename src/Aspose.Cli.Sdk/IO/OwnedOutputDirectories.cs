@@ -48,19 +48,13 @@ internal sealed class OwnedOutputDirectories(bool deferred)
     {
         // Ensure accepts only normalized local paths. Use extended syntax at the native boundary
         // so directory ownership does not depend on the executable's long-path manifest.
-        bool created = OperatingSystem.IsWindows()
-            ? CreateDirectoryWindows(@"\\?\" + path, IntPtr.Zero)
-            : CreateDirectoryUnix(path, 511) == 0;
-        if (created) { return true; }
+        if (CreateDirectory(@"\\?\" + path, IntPtr.Zero)) { return true; }
         int error = Marshal.GetLastPInvokeError();
-        if (error == (OperatingSystem.IsWindows() ? 183 : 17) && Directory.Exists(path)) { return false; }
+        if (error == 183 && Directory.Exists(path)) { return false; }
         throw new IOException($"The output directory could not be created: '{path}'.", new Win32Exception(error));
     }
 
     [DllImport("kernel32.dll", EntryPoint = "CreateDirectoryW", CharSet = CharSet.Unicode, SetLastError = true)]
     [return: MarshalAs(UnmanagedType.Bool)]
-    private static extern bool CreateDirectoryWindows(string path, IntPtr securityAttributes);
-
-    [DllImport("libc", EntryPoint = "mkdir", SetLastError = true)]
-    private static extern int CreateDirectoryUnix(string path, uint mode);
+    private static extern bool CreateDirectory(string path, IntPtr securityAttributes);
 }

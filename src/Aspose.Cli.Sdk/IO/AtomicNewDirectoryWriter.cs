@@ -357,9 +357,8 @@ internal static class NewDirectoryPublication
                 OutputPathValidator.EnsureSafeFile(file.FullName);
                 FilePublicationSnapshot snapshot = FilePublicationSnapshot.Capture(file.FullName);
                 if (!snapshot.Exists) { throw new IOException("A directory output file disappeared."); }
-                if (OperatingSystem.IsWindows())
+                using (var handle = OpenedFileBoundary.OpenNoFollow(file.FullName, directory: false))
                 {
-                    using var handle = OpenedFileBoundary.OpenNoFollow(file.FullName, directory: false);
                     if (!OpenedFileBoundary.IsRegularSingleLinkFile(handle))
                     { throw new InvalidDataException("Directory output files must be regular single-link files."); }
                 }
@@ -382,7 +381,7 @@ internal static class NewDirectoryPublication
             OutputPathValidator.EnsureSafeDirectory(path);
         }
         string relative = Path.GetRelativePath(output.ParentAnchor, Path.GetDirectoryName(output.Target)!);
-        if (Escapes(relative) || OperatingSystem.IsWindows() && (output.ParentIdentity is null || output.TransactionIdentity is null))
+        if (Escapes(relative) || output.ParentIdentity is null || output.TransactionIdentity is null)
         { throw new InvalidDataException("Invalid directory output parent boundary."); }
         EnsureAnchor(Path.GetDirectoryName(output.Staged)!, output.TransactionIdentity);
         var paths = new HashSet<string>(FilePaths.Comparer);
@@ -390,7 +389,7 @@ internal static class NewDirectoryPublication
         foreach (DirectoryOutputDirectory directory in output.Tree.Directories)
         {
             if (directory is null || !SafeRelative(directory.Path, allowRoot: true) || !paths.Add(directory.Path)
-                || OperatingSystem.IsWindows() && directory.Identity is null)
+                || directory.Identity is null)
             { throw new InvalidDataException("Invalid directory output tree directories."); }
             dirs.Add(directory.Path);
         }
@@ -426,8 +425,8 @@ internal static class NewDirectoryPublication
     internal static void EnsureAnchor(string anchor, FilePhysicalIdentity? identity)
     {
         OutputPathValidator.EnsureSafeDirectory(anchor);
-        if (!Directory.Exists(anchor) || OperatingSystem.IsWindows()
-            && (identity is null || identity != FilePublicationOwnedDelete.TryGetDirectoryIdentity(anchor)))
+        if (!Directory.Exists(anchor)
+            || identity is null || identity != FilePublicationOwnedDelete.TryGetDirectoryIdentity(anchor))
         { throw new IOException("The directory output parent changed during production."); }
     }
 
@@ -449,7 +448,7 @@ internal static class NewDirectoryPublication
         if (actual.Files.Any(file => !files.TryGetValue(file.Path, out DirectoryOutputFile? was)
                 || !was.Snapshot.VersionEquals(file.Snapshot) || !was.Snapshot.Metadata!.Matches(Path.Combine(root, file.Path)))
             || actual.Directories.Any(directory => !dirs.TryGetValue(directory.Path, out DirectoryOutputDirectory? was)
-                || OperatingSystem.IsWindows() && was.Identity != directory.Identity))
+                || was.Identity != directory.Identity))
         { throw new IOException("The directory output tree changed after sealing."); }
         deadline?.ThrowIfExpired("directory-verification");
     }

@@ -1,5 +1,3 @@
-using System.ComponentModel;
-using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text;
 using Aspose.Cli.Sdk.Errors;
@@ -41,7 +39,7 @@ internal sealed class PublicationDirectoryLease : IDisposable
             string existing = path;
             while (!System.IO.Directory.Exists(existing)) { existing = Path.GetDirectoryName(existing)!; }
             FilePhysicalIdentity? identity = FilePublicationOwnedDelete.TryGetDirectoryIdentity(existing);
-            if (OperatingSystem.IsWindows() && identity is null) { throw CliErrors.OutputUnwritable(path, "the output volume identity could not be verified"); }
+            if (identity is null) { throw CliErrors.OutputUnwritable(path, "the output volume identity could not be verified"); }
             volumes.Add(OperatingSystem.IsWindows() ? $"volume:{identity!.Value.VolumeSerialNumber:X8}" : Path.GetPathRoot(path)!);
             for (string? current = path; current is not null; current = Path.GetDirectoryName(current))
             {
@@ -89,7 +87,7 @@ internal sealed class PublicationDirectoryLease : IDisposable
     internal void EnsureDirectoryUnchanged()
     {
         OutputPathValidator.EnsureSafeDirectory(Directory);
-        if (OperatingSystem.IsWindows() && _directoryIdentity != FilePublicationOwnedDelete.TryGetDirectoryIdentity(Directory))
+        if (_directoryIdentity != FilePublicationOwnedDelete.TryGetDirectoryIdentity(Directory))
         {
             throw CliErrors.OutputUnwritable(Directory, "the leased output directory changed during publication", phase: "path");
         }
@@ -112,33 +110,19 @@ internal sealed class PublicationDirectoryLease : IDisposable
         while (true)
         {
             deadline.ThrowIfExpired("publication-lock");
-            FileStream? stream = null;
             try
             {
-                stream = new FileStream(path, FileMode.Open, FileAccess.Read,
-                    OperatingSystem.IsWindows() ? (exclusive ? FileShare.None : FileShare.Read) : FileShare.ReadWrite,
-                    bufferSize: 1, FileOptions.None);
-                if (!OperatingSystem.IsWindows() && Flock(stream.SafeFileHandle.DangerousGetHandle().ToInt32(), (exclusive ? 2 : 1) | 4) != 0)
-                {
-                    int error = Marshal.GetLastPInvokeError();
-                    stream.Dispose();
-                    stream = null;
-                    if (error is not (11 or 35)) { throw new IOException("The publication lock could not be acquired.", new Win32Exception(error)); }
-                }
-                if (stream is not null) { return stream; }
+                return new FileStream(path, FileMode.Open, FileAccess.Read,
+                    exclusive ? FileShare.None : FileShare.Read, bufferSize: 1, FileOptions.None);
             }
-            catch (IOException exception) when (OperatingSystem.IsWindows() && (exception.HResult & 0xffff) is 32 or 33)
+            catch (IOException exception) when ((exception.HResult & 0xffff) is 32 or 33)
             {
-                stream?.Dispose();
             }
             if (deadline.Token.WaitHandle.WaitOne(25)) { deadline.ThrowIfExpired("publication-lock"); }
         }
     }
 
     private static string Normalize(string path) => Path.TrimEndingDirectorySeparator(Path.GetFullPath(path));
-
-    [DllImport("libc", EntryPoint = "flock", SetLastError = true)]
-    private static extern int Flock(int descriptor, int operation);
 }
 
 internal sealed class PublicationLeaseExpansionException : Exception;
