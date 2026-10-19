@@ -9,8 +9,10 @@ internal static class FilePublicationAtomicSwap
     /// Moves <paramref name="temporary"/> onto <paramref name="target"/>. A replaced target is
     /// kept at <paramref name="displacedPath"/>, which the caller owns; after a failed swap the
     /// path that held <paramref name="temporary"/> receives whatever the rollback moved aside.
+    /// Returns the verified snapshots of the published target and of the displaced file, which
+    /// is null when no target was replaced.
     /// </summary>
-    public static FilePublicationSnapshot Publish(
+    public static (FilePublicationSnapshot Published, FilePublicationSnapshot? Displaced) Publish(
         string temporary,
         string target,
         bool overwrite,
@@ -36,7 +38,7 @@ internal static class FilePublicationAtomicSwap
         if (!expectedTarget.Exists)
         {
             File.Move(temporary, target, overwrite: false);
-            return VerifyPublished(target, staged, displacedPath: null);
+            return (VerifyPublished(target, staged, displacedPath: null), null);
         }
 
         if (!overwrite)
@@ -53,7 +55,7 @@ internal static class FilePublicationAtomicSwap
             displacedPath);
     }
 
-    private static FilePublicationSnapshot Replace(
+    private static (FilePublicationSnapshot Published, FilePublicationSnapshot Displaced) Replace(
         string temporary,
         string target,
         FilePublicationSnapshot expectedTarget,
@@ -90,7 +92,7 @@ internal static class FilePublicationAtomicSwap
         FilePublicationSnapshot displaced = FilePublicationSnapshot.Capture(displacedPath);
         if (expectedTarget.VersionEquals(displaced))
         {
-            return published;
+            return (published, displaced);
         }
 
         try

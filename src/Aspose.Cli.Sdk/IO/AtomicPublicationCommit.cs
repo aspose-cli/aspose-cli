@@ -1,3 +1,5 @@
+using Aspose.Cli.Sdk.Errors;
+using Microsoft.Win32.SafeHandles;
 
 namespace Aspose.Cli.Sdk.IO;
 
@@ -64,14 +66,26 @@ internal sealed class AtomicPublicationCommit(AtomicPublicationPlan plan)
         CreateBackupDirectory();
         foreach (PublicationJournalEntry entry in plan.Journal.Entries)
         {
+            // An in-place edit's input is its target, so one snapshot serves both checks.
+            FilePublicationSnapshot? target = null;
             if (entry.InputPath is { } input && entry.InputSnapshot is { } expectedInput)
             {
+                string? actualInput;
+                if (FilePaths.Same(input, entry.Target))
+                {
+                    target = CaptureInPlaceInput(input);
+                    actualInput = target.Sha256;
+                }
+                else
+                {
+                    actualInput = FileFingerprints.Capture(input).Sha256;
+                }
                 FileFingerprints.EnsureUnchanged(input,
                     new Aspose.Cli.Sdk.Contracts.FileFingerprint { Sha256 = expectedInput.Sha256!.ToLowerInvariant() },
-                    FileFingerprints.Capture(input));
+                    new Aspose.Cli.Sdk.Contracts.FileFingerprint { Sha256 = actualInput!.ToLowerInvariant() });
             }
             plan.ResourceBudgets?.Deadline.ThrowIfExpired("publication-prepare");
-            EnsureTargetUnchanged(entry);
+            EnsureTargetUnchanged(entry, target);
             if (entry.RequestedBackup is { } backup && entry.RequestedBackupOriginal is { } expectedBackup)
             {
                 FilePublicationSnapshot current = FilePublicationSnapshot.Capture(backup);
@@ -163,7 +177,7 @@ internal sealed class AtomicPublicationCommit(AtomicPublicationPlan plan)
         byte[]? originalAccess = entry.Original.Exists
             ? FilePublicationInheritance.TryCaptureAccess(entry.Target)
             : null;
-        entry.PublishedSnapshot = FilePublicationAtomicSwap.Publish(
+        (FilePublicationSnapshot published, FilePublicationSnapshot? displaced) = FilePublicationAtomicSwap.Publish(
             entry.Staged,
             entry.Target,
             entry.Overwrite,
@@ -171,19 +185,16 @@ internal sealed class AtomicPublicationCommit(AtomicPublicationPlan plan)
             entry.Original,
             entry.Displaced,
             entry.StagedSnapshot);
+        // The swap verified both files, so their snapshots are recorded without reading them again.
+        entry.PublishedSnapshot = published;
+        if (displaced is not null) { entry.DisplacedSnapshot = displaced; }
         plan.Faults.Hit(new PublicationFaultPoint(PublicationFaultKind.Access, entry.Index, entry.Target));
         // The replacement was staged in the private transaction directory: a new file takes the
         // folder's rules, a replaced file keeps the rules its owner had set.
         if (entry.Original.Exists) { FilePublicationInheritance.TryApplyAccess(entry.Target, originalAccess); }
         else { FilePublicationInheritance.TryReset(entry.Target); }
-        entry.PublishedSnapshot = FilePublicationSnapshot.Capture(entry.Target);
+        EnsureStillPublished(entry, published);
         plan.ResourceBudgets?.RefreshAdmissionAfterPublication(entry.Target);
-        CaptureDisplaced(entry);
-        if (!entry.StagedSnapshot.ContentMatches(entry.Target))
-        {
-            throw new IOException(
-                $"Published target '{entry.Target}' did not match its staged content.");
-        }
 
         // Recorded durably with the commit; until then recovery recognizes the swap by evidence.
         entry.State = PublicationEntryState.Published;
@@ -230,29 +241,60 @@ internal sealed class AtomicPublicationCommit(AtomicPublicationPlan plan)
         entry.State = PublicationEntryState.Published;
     }
 
-    private static void CaptureDisplaced(PublicationJournalEntry entry)
+    /// <summary>
+    /// Restoring access rules changes neither content nor identity, so the file the swap verified
+    /// is still the target when it has the same identity and length; anything else replaced it.
+    /// </summary>
+    private static void EnsureStillPublished(PublicationJournalEntry entry, FilePublicationSnapshot published)
     {
-        if (entry.Displaced is null)
+        bool same;
+        try
         {
-            return;
+            using SafeFileHandle handle = File.OpenHandle(
+                entry.Target, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
+            same = FilePublicationOwnedDelete.TryGetIdentity(handle) == published.PhysicalIdentity
+                && RandomAccess.GetLength(handle) == published.Length;
         }
-        FilePublicationSnapshot displaced =
-            FilePublicationSnapshot.Capture(entry.Displaced);
-        if (!entry.Original.VersionEquals(displaced))
+        catch (Exception exception) when (exception is FileNotFoundException or DirectoryNotFoundException)
         {
+            same = false;
+        }
+        if (!same)
+        {
+            // Recovery then treats what took the target's place as this publication's to roll back.
+            entry.PublishedSnapshot = FilePublicationSnapshot.Capture(entry.Target);
             throw new IOException(
-                $"Displaced target verification failed for '{entry.Target}'.");
+                $"Published target '{entry.Target}' did not match its staged content.");
         }
-        entry.DisplacedSnapshot = displaced;
     }
 
-    private static void EnsureTargetUnchanged(PublicationJournalEntry entry)
+    /// <summary>Reads an in-place input once for both checks, with the errors an input read reports.</summary>
+    private static FilePublicationSnapshot CaptureInPlaceInput(string input)
+    {
+        try
+        {
+            FilePublicationSnapshot snapshot = FilePublicationSnapshot.Capture(input);
+            return snapshot.Exists ? snapshot : throw CliErrors.FileNotFound(input);
+        }
+        catch (UnauthorizedAccessException)
+        {
+            throw CliErrors.FileAccessDenied(input);
+        }
+        catch (IOException)
+        {
+            throw File.Exists(input)
+                ? CliErrors.FileLocked(input)
+                : CliErrors.FileNotFound(input);
+        }
+    }
+
+    private static void EnsureTargetUnchanged(PublicationJournalEntry entry, FilePublicationSnapshot? captured)
     {
         OutputPathValidator.EnsureParentUnchanged(
             entry.Target,
             entry.TargetParentIdentity);
         FilePublicationSnapshot actual =
-            FilePublicationSnapshot.Capture(entry.Target);
+            captured ?? FilePublicationSnapshot.Capture(entry.Target);
         if (!entry.Original.VersionEquals(actual))
         {
             throw PublicationErrors.OutputConflict(
