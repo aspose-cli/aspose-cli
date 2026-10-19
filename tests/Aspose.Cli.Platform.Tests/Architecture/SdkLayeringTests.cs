@@ -49,14 +49,13 @@ public sealed class SdkLayeringTests
     /// process identity that recovery checks, and the worker output session and manifest store
     /// that record a worker's outputs.</item>
     /// <item>IO.Extraction: the guard and budgets of an extraction's output files.</item>
-    /// <item>Execution (worker output publication, built on IO) and Rendering (font profiles
-    /// and pixel budgets).</item>
-    /// <item>Serialization: the shared JSON contexts and converters, and the result schemas
-    /// written from the contract descriptors. Converters for the operation vocabulary belong to
-    /// Operations.</item>
-    /// <item>Operations: the operation vocabulary, its catalog and its runner.</item>
-    /// <item>Services the products bind: licensing, diagnostics and font checks. They
-    /// take product data as values, never a Product* type from Extensibility.</item>
+    /// <item>Execution (worker output publication, built on IO), Rendering (font profiles
+    /// and pixel budgets) and Serialization: the shared JSON contexts and converters, and the
+    /// result schemas written from the contract descriptors. Converters for the operation
+    /// vocabulary belong to Operations.</item>
+    /// <item>Operations: the operation vocabulary, its catalog and its runner; and the
+    /// services the products bind: licensing, diagnostics and font checks. They take product
+    /// data as values, never a Product* type from Extensibility.</item>
     /// <item>Results: the write pipeline (OutputPipeline, OutputSet) and the envelope parts it fills.</item>
     /// <item>Extensibility: product modules, definitions and the catalog, which compose
     /// everything below.</item>
@@ -77,10 +76,8 @@ public sealed class SdkLayeringTests
         [$"{Root}.IO.Output"],
         [$"{Root}.IO.Publication"],
         [$"{Root}.IO.Extraction"],
-        [$"{Root}.Execution", $"{Root}.Rendering"],
-        [$"{Root}.Serialization"],
-        [$"{Root}.Operations"],
-        [$"{Root}.Licensing", $"{Root}.Diagnostics"],
+        [$"{Root}.Execution", $"{Root}.Rendering", $"{Root}.Serialization"],
+        [$"{Root}.Operations", $"{Root}.Licensing", $"{Root}.Diagnostics"],
         [$"{Root}.Results"],
         [$"{Root}.Extensibility"],
         [$"{Root}.Extensibility.Commanding"],
