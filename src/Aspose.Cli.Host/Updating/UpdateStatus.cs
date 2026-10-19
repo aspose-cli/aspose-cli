@@ -106,5 +106,8 @@ internal static class UpdateStatus
     // The status file records no start time, so a reused id that is another PowerShell process
     // still reads as the installer.
     private static bool IsInstallerRunning(int processId) =>
-        ProcessIdentity.IsRunningAs(processId, "powershell", whenUnknown: ProcessLiveness.Dead);
+        ProcessIdentity.IsRunningAs(processId, "powershell", InstallerWhenUnknown);
+
+    /// <summary>An installer process that cannot be inspected counts as ended.</summary>
+    internal const ProcessLiveness InstallerWhenUnknown = ProcessLiveness.Dead;
 }

@@ -223,16 +223,19 @@ internal sealed class ViewerStorage : IDisposable
             return false;
         }
 
-        // An inaccessible process is treated as live. Cleanup must fail
-        // safe and may leave a stale session directory rather than delete
-        // another process's active session.
-        return ProcessIdentity.IsLive(processId, processStart, new ProcessLivenessPolicy
-        {
-            WhenDenied = ProcessLiveness.Alive,
-            WhenVanishing = ProcessLiveness.Alive,
-            ChecksExit = true,
-        });
+        return ProcessIdentity.IsLive(processId, processStart, OwnerLiveness);
     }
+
+    /// <summary>
+    /// An inaccessible process is treated as live. Cleanup must fail safe and may leave a stale
+    /// session directory rather than delete another process's active session.
+    /// </summary>
+    internal static readonly ProcessLivenessPolicy OwnerLiveness = new()
+    {
+        WhenDenied = ProcessLiveness.Alive,
+        WhenVanishing = ProcessLiveness.Alive,
+        ChecksExit = true,
+    };
 
     private static bool IsReparsePoint(string path)
     {
