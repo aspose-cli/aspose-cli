@@ -200,8 +200,8 @@ public sealed class PathCaseTests : IDisposable
     }
 
     /// <summary>
-    /// The boundary checks as each one answers today, for a drive root, a trailing separator, a
-    /// sibling that shares the prefix (<c>a</c> and <c>ab</c>) and a case variant.
+    /// The boundary checks for a drive root, a trailing separator, a sibling that shares the
+    /// prefix (<c>a</c> and <c>ab</c>), a case variant, <c>..</c>, a UNC path and a device path.
     /// </summary>
     [Theory]
     [InlineData("a", @"a\x", true)]
@@ -209,7 +209,7 @@ public sealed class PathCaseTests : IDisposable
     [InlineData("a", @"a\b\x", true)]
     [InlineData("a", @"ab\x", false)]
     [InlineData("a", @"x", false)]
-    public void Boundaries_AnswerAsTheyDoToday_ForAPublicationTarget(string directory, string target, bool inside)
+    public void Boundaries_ForAPublicationTarget(string directory, string target, bool inside)
     {
         string transaction = Path.Combine(_temp.File(directory), ".aspose-publication-boundary");
         AtomicPublicationPlan plan = AtomicPublicationPlan.Open(transaction, new PublicationJournal { Operation = "boundary" });
@@ -220,15 +220,18 @@ public sealed class PathCaseTests : IDisposable
     }
 
     [Fact]
-    public void Boundaries_AnswerAsTheyDoToday_ForADriveRoot()
+    public void Boundaries_ForADriveRoot_HoldTheFilesBelowIt()
     {
         string drive = Path.GetPathRoot(_temp.Path)!;
 
         // A publication into the drive root holds its own files.
         AtomicPublicationPlan.Open(Path.Combine(drive, ".aspose-publication-boundary"), new PublicationJournal { Operation = "boundary" })
             .EnsureTarget(Path.Combine(drive, "x.txt"));
-        // An extraction rooted at the drive root refuses every entry: its root gains a second separator.
-        CliException refused = Assert.Throws<CliException>(() => new ExtractionPlan(drive).ReserveFile("x.txt", "x.txt"));
+        // So does an extraction rooted at the drive root, which still refuses a path on a share.
+        Assert.Equal(Path.Combine(drive, "x.txt"), new ExtractionPlan(drive).ReserveFile("x.txt", "x.txt"));
+        Assert.Equal(Path.Combine(drive, "d", "x.txt"), new ExtractionPlan(drive).ReserveFile(@"d\x.txt", "d/x.txt"));
+        CliException refused = Assert.Throws<CliException>(
+            () => new ExtractionPlan(drive).ReserveFile(@"\\server\share\x.txt", "x.txt"));
         Assert.Equal(ErrorCodes.ExtractBudgetExceeded, refused.Code);
     }
 
@@ -237,7 +240,10 @@ public sealed class PathCaseTests : IDisposable
     [InlineData(@"a\", "x.txt", true)]
     [InlineData("a", @"..\A\x.txt", true)]
     [InlineData("a", @"..\ab\x.txt", false)]
-    public void Boundaries_AnswerAsTheyDoToday_ForAnExtraction(string root, string entry, bool inside)
+    [InlineData("a", @"..\AB\x.txt", false)]
+    [InlineData("a", @"..\x.txt", false)]
+    [InlineData("a", @"\\server\share\a\x.txt", false)]
+    public void Boundaries_ForAnExtraction(string root, string entry, bool inside)
     {
         var plan = new ExtractionPlan(_temp.Path + Path.DirectorySeparatorChar + root);
 
@@ -246,16 +252,39 @@ public sealed class PathCaseTests : IDisposable
         Assert.Equal(inside, error is null);
     }
 
+    [Fact]
+    public void Boundaries_ForAnExtraction_RefuseTheDeviceSpellingOfAPathBelowTheRoot()
+    {
+        string root = _temp.File("a");
+
+        CliException refused = Assert.Throws<CliException>(
+            () => new ExtractionPlan(root).ReserveFile(@"\\?\" + Path.Combine(root, "x.txt"), "x.txt"));
+        Assert.Equal(ErrorCodes.ExtractBudgetExceeded, refused.Code);
+    }
+
     [Theory]
     [InlineData(@"evidence", @"evidence\book.docx", true)]
+    [InlineData(@"evidence\", @"evidence\book.docx", true)]
     [InlineData(@"evidence", @"EVIDENCE\book.docx", true)]
     [InlineData(@"book.docx", @"BOOK.DOCX", true)]
     [InlineData(@"evidence", @"evidence-2\book.docx", false)]
-    public void Boundaries_AnswerAsTheyDoToday_ForReviewEvidence(string target, string input, bool refused)
+    [InlineData(@"evidence", @"EVIDENCE-2\book.docx", false)]
+    public void Boundaries_ForReviewEvidence(string target, string input, bool refused)
     {
         Exception? error = Record.Exception(() => ReviewEvidenceWriter.EnsureTarget(_temp.File(target), overwrite: false, _temp.File(input)));
 
         Assert.Equal(refused, error is CliException cli && cli.Code == ErrorCodes.OptionInvalid);
+    }
+
+    [Fact]
+    public void Boundaries_ForReviewEvidence_RefuseADriveRootThatHoldsTheInput()
+    {
+        string drive = Path.GetPathRoot(_temp.Path)!;
+
+        CliException error = Assert.Throws<CliException>(
+            () => ReviewEvidenceWriter.EnsureTarget(drive, overwrite: false, _temp.File("book.docx")));
+
+        Assert.Equal(ErrorCodes.OptionInvalid, error.Code);
     }
 
     [Theory]
@@ -269,12 +298,12 @@ public sealed class PathCaseTests : IDisposable
     [InlineData(@"C:\a", @"c:\A\b", true)]
     [InlineData(@"C:\a", @"C:\ab", false)]
     [InlineData(@"C:\a", @"C:\", false)]
-    public void Boundaries_AnswerAsTheyDoToday_ForARecoveryRoot(string root, string path, bool within) =>
+    public void Boundaries_ForARecoveryRoot(string root, string path, bool within) =>
         Assert.Equal(within, AtomicPublicationRecovery.IsWithinRoot(root, path));
 
     /// <summary>
-    /// The worker's private root and the license snapshot add a separator to the root as it is,
-    /// so a drive root or a root that ends in a separator contains nothing but itself.
+    /// The worker's private root and the license snapshot hold every path below them, also when
+    /// the root is a drive root or ends in a separator.
     /// </summary>
     [Theory]
     [InlineData(@"C:\a", @"C:\a", true)]
@@ -283,17 +312,21 @@ public sealed class PathCaseTests : IDisposable
     [InlineData(@"C:\a", @"c:\a", true)]
     [InlineData(@"C:\a", @"C:\ab", false)]
     [InlineData(@"C:\a", @"C:\ab\x", false)]
-    [InlineData(@"C:\a\", @"C:\a\b", false)]
-    [InlineData(@"C:\", @"C:\x", false)]
+    [InlineData(@"C:\a", @"C:\AB\x", false)]
+    [InlineData(@"C:\a\", @"C:\a\b", true)]
+    [InlineData(@"C:\", @"C:\x", true)]
     [InlineData(@"C:\", @"C:\", true)]
-    public void Boundaries_AnswerAsTheyDoToday_ForTheWorkerRootAndTheLicenseSnapshot(string root, string path, bool overlaps)
+    [InlineData(@"C:\", @"D:\x", false)]
+    [InlineData(@"\\server\share\a", @"\\server\share\a\x", true)]
+    [InlineData(@"\\server\share\a", @"\\server\share\ab", false)]
+    public void Boundaries_ForTheWorkerRootAndTheLicenseSnapshot(string root, string path, bool overlaps)
     {
         Assert.Equal(overlaps, Record.Exception(() => WorkerManifestStore.EnsureOutsideRoot(root, path)) is InvalidDataException);
         Assert.Equal(overlaps, Aspose.Cli.Sdk.Licensing.LicenseInstaller.IsInsideSnapshot(root, path));
     }
 
     [Fact]
-    public void Boundaries_AnswerAsTheyDoToday_ForASiblingThatSharesThePrefix()
+    public void Boundaries_ForASiblingThatSharesThePrefix()
     {
         Assert.Equal(_temp.Path, OutputSetPaths.CommonDirectory([_temp.File(@"a\x"), _temp.File(@"ab\y")]));
     }
