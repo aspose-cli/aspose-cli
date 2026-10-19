@@ -182,7 +182,7 @@ internal static class WorkerManifestStore
 
     internal static void EnsureOutsideRoot(string root, string target)
     {
-        if (FilePaths.Same(root, target) || target.StartsWith(root + Path.DirectorySeparatorChar, FilePaths.Comparison))
+        if (FilePaths.IsWithin(root, target, allowEqual: true))
         { throw new InvalidDataException("Worker destinations cannot overlap their private transport storage."); }
     }
 
