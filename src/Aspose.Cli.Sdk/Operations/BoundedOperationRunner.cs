@@ -1,4 +1,5 @@
 using System.Reflection;
+using System.Text.RegularExpressions;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.IO;
@@ -352,6 +353,17 @@ public static class BoundedOperationRunner
             catch (CliException failure) when (!failure.IsInvocationFailure)
             {
                 rejection = OperationErrors.FailedAt(id, name, failure);
+            }
+            catch (CliException timeout) when (timeout.Code == ErrorCodes.OperationTimeout)
+            {
+                // Time running out stops the whole batch in every mode, but inside an operation it
+                // names that operation, so the caller knows which one to narrow. The check before an
+                // operation starts stays unnamed: that operation never ran.
+                throw OperationErrors.FailedAt(id, name, timeout);
+            }
+            catch (RegexMatchTimeoutException timeout)
+            {
+                throw OperationErrors.FailedAt(id, name, CliErrors.RegexTimeout(timeout));
             }
             catch (EngineOpException failure)
             {
