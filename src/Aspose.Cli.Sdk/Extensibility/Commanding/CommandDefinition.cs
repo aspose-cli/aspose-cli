@@ -219,7 +219,7 @@ public sealed class CommandDefinition<TRequest, TResult>
             }
 
             // The write pipeline discloses evaluation output for every product command alike.
-            return scope.Binding.Publishing.DiscloseWith(result, loss => ProtectionAdvice.Hint(parse, loss, invocation.ResolvedFile));
+            return scope.Binding.Publishing.DiscloseWith(result, loss => ProtectionAdvice.Hint(parse, loss, invocation.ResolvedFile, invocation.ResolvedInput));
         }
         catch (CliException error) when (invocation.ForPairedInput(error) is var restated && restated != error)
         {

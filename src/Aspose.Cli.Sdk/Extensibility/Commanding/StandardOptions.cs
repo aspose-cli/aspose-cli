@@ -377,6 +377,9 @@ public sealed class StandardOptions
 
     internal Argument<string>? Input { get; }
 
+    /// <summary>The command's own arguments and options, beside those the template adds.</summary>
+    internal IReadOnlyList<Symbol> Own { get; private set; } = [];
+
     internal Argument<string>? Other { get; }
 
     internal Argument<string>? CreatedFile { get; }
@@ -458,6 +461,7 @@ public sealed class StandardOptions
                 nameof(parameters));
         }
 
+        Own = [.. parameters];
         Created.AddOrUpdate(command, this);
         return command;
     }
@@ -663,6 +667,9 @@ public partial class StandardInvocation
     /// <summary>The resolved input document.</summary>
     /// <exception cref="CliException">The file does not exist.</exception>
     public string Input => _input ??= ResolveDocument(Declared(_options.Input, "input document"));
+
+    /// <summary>The input document once the command resolved it, or null.</summary>
+    internal string? ResolvedInput => _input;
 
     /// <summary>The resolved second input document.</summary>
     /// <exception cref="CliException">The file does not exist.</exception>

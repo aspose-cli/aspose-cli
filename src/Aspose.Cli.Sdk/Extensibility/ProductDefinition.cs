@@ -328,6 +328,7 @@ public sealed class ProductDefinitionBuilder<TSession>
         }
 
         CommandMistakes.EnsureUnclaimed(product);
+        ProductReads.Declare(product, [.. _formats.Where(static format => format.Uses.HasFlag(FormatUse.Input))]);
         return _help?.Invoke() is { } help ? product.WithExamples(help.Examples, help.Links) : product;
     }
 
