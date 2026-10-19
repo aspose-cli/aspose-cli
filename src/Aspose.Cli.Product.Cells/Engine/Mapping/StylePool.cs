@@ -93,8 +93,8 @@ internal sealed class StylePool
         var borders = new List<CellsBorderData>(4);
         foreach (string side in (string[])[CellsBorderSides.Top, CellsBorderSides.Bottom, CellsBorderSides.Left, CellsBorderSides.Right])
         {
-            Border border = style.Borders[Editing.BorderOps.ToBorderType(side)];
-            if (Editing.BorderOps.FromLineType(border.LineStyle) is { } line)
+            Border border = style.Borders[BorderVocabulary.ToBorderType(side)];
+            if (BorderVocabulary.FromLineType(border.LineStyle) is { } line)
             {
                 borders.Add(new CellsBorderData { Side = side, LineStyle = line, Color = ToHex(border.Color) ?? "#000000" });
             }

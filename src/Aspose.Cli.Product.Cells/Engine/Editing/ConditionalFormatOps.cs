@@ -1,4 +1,6 @@
 using Aspose.Cells;
+using Aspose.Cli.Product.Cells.Engine.Mapping;
+using static Aspose.Cli.Product.Cells.Engine.Mapping.ConditionalFormatVocabulary;
 
 namespace Aspose.Cli.Product.Cells.Engine.Editing;
 
@@ -25,7 +27,7 @@ internal static class ConditionalFormatOps
             case CellsConditionalRuleKinds.CellValue:
                 {
                     int condition = conditions.AddCondition(
-                        FormatConditionType.CellValue, ValidationOps.ToOperator(rule.Operator!), rule.Value1, rule.Value2);
+                        FormatConditionType.CellValue, ValidationVocabulary.ToOperator(rule.Operator!), rule.Value1, rule.Value2);
                     ApplyConditionStyle(conditions[condition], op.MatchStyle!);
                     break;
                 }
@@ -93,33 +95,6 @@ internal static class ConditionalFormatOps
                 }
         }
     }
-
-    /// <summary>
-    /// Wire name to the engine's <see cref="IconSetType"/>. The engine enum
-    /// carries digit suffixes and near-duplicates (<c>TrafficLights31</c> vs
-    /// <c>TrafficLights32</c>, <c>Symbols3</c> vs <c>Symbols32</c>); the wire
-    /// vocabulary picks the five canonical sets (probe-verified names).
-    /// </summary>
-    /// <summary>The wire name of an engine icon set, or null for one outside the vocabulary.</summary>
-    internal static string? FromIconSetType(IconSetType type) =>
-        IconSets.FirstOrDefault(name => ToIconSetType(name) == type);
-
-    private static readonly string[] IconSets =
-    [
-        CellsIconSetNames.Arrows3, CellsIconSetNames.TrafficLights3, CellsIconSetNames.Symbols3,
-        CellsIconSetNames.Rating4, CellsIconSetNames.Rating5,
-    ];
-
-    private static IconSetType ToIconSetType(string name) => name switch
-    {
-        CellsIconSetNames.Arrows3 => IconSetType.Arrows3,
-        CellsIconSetNames.TrafficLights3 => IconSetType.TrafficLights31,
-        CellsIconSetNames.Symbols3 => IconSetType.Symbols3,
-        CellsIconSetNames.Rating4 => IconSetType.Rating4,
-        CellsIconSetNames.Rating5 => IconSetType.Rating5,
-        _ => throw new ArgumentOutOfRangeException(
-            nameof(name), name, "Icon set is missing from the engine mapper."),
-    };
 
     /// <summary>
     /// A conditional format is a DIFFERENTIAL format: its dxf must carry only

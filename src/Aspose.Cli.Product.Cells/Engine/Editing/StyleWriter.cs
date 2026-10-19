@@ -1,6 +1,7 @@
 using System.Drawing;
 using System.Globalization;
 using Aspose.Cells;
+using Aspose.Cli.Product.Cells.Engine.Mapping;
 
 namespace Aspose.Cli.Product.Cells.Engine.Editing;
 
@@ -135,8 +136,8 @@ internal static class StyleWriter
 
         foreach (CellsBorderData border in data.Borders ?? [])
         {
-            BorderType side = BorderOps.ToBorderType(border.Side);
-            style.SetBorder(side, BorderOps.ToLineType(border.LineStyle), ParseHex(border.Color));
+            BorderType side = BorderVocabulary.ToBorderType(border.Side);
+            style.SetBorder(side, BorderVocabulary.ToLineType(border.LineStyle), ParseHex(border.Color));
             flag.TopBorder |= side == BorderType.TopBorder;
             flag.BottomBorder |= side == BorderType.BottomBorder;
             flag.LeftBorder |= side == BorderType.LeftBorder;

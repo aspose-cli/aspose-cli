@@ -707,7 +707,7 @@ internal sealed class CellsSnapshots(Workbook workbook, Func<CellsOp, bool> appl
     // The password and the actions allowed as the engine keeps them on an unprotected sheet too.
     private OperationSnapshot SheetProtection(CellsSheetOp operation) =>
         Of(operation, "protection", static sheet => Join(Read(SheetLayoutProjection.Protection(sheet), Json.CellsSheetProtectionInfo),
-            sheet.Protection.IsProtectedWithPassword, sheet.IsProtected ? null : string.Join(",", ProtectOps.Allowed(sheet.Protection))));
+            sheet.Protection.IsProtectedWithPassword, sheet.IsProtected ? null : string.Join(",", ProtectionVocabulary.Allowed(sheet.Protection))));
 
     // The kind of protection and its password as the engine keeps them: a read reports the structure's only.
     private OperationSnapshot WorkbookProtection() =>
@@ -786,7 +786,7 @@ internal sealed class CellsSnapshots(Workbook workbook, Func<CellsOp, bool> appl
     private static string ChartState(Worksheet sheet, int index)
     {
         Chart chart = sheet.Charts[index];
-        bool pie = ChartPivotOps.IsPieFamily(chart.Type);
+        bool pie = ChartPivotVocabulary.IsPieFamily(chart.Type);
         bool scatter = chart.Type.ToString().StartsWith("Scatter", StringComparison.Ordinal);
         // Markers are read on a scatter only: reading them on a line chart gives it markers (probed on 26.9.0).
         IEnumerable<string> series = chart.NSeries.Cast<Series>().Select(item => Join(item.Name, item.Values, item.XValues,

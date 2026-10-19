@@ -58,7 +58,7 @@ internal static class SheetLayoutProjection
         Reference(sheet.AutoFilter.Range) is { } filter ? new CellsAutofilterInfo { Range = filter } : null;
 
     internal static CellsSheetProtectionInfo? Protection(Worksheet sheet) =>
-        sheet.IsProtected ? new CellsSheetProtectionInfo { Allow = Editing.ProtectOps.Allowed(sheet.Protection) } : null;
+        sheet.IsProtected ? new CellsSheetProtectionInfo { Allow = ProtectionVocabulary.Allowed(sheet.Protection) } : null;
 
     internal static CellsPageSetupInfo PageSetup(PageSetup page)
     {
@@ -68,19 +68,19 @@ internal static class SheetLayoutProjection
             Orientation = page.Orientation == PageOrientationType.Landscape
                 ? CellsPageOrientations.Landscape
                 : CellsPageOrientations.Portrait,
-            PageSize = Editing.PageSetupOps.PageSize(page),
+            PageSize = PageSetupVocabulary.PageSize(page),
             FitToWidth = fitsToPages ? page.FitToPagesWide : null,
             FitToHeight = fitsToPages ? page.FitToPagesTall : null,
             ScalePercent = fitsToPages ? null : page.Zoom,
             Margins = new CellsMargins
             {
-                Top = Editing.PageSetupOps.Points(page.TopMargin),
-                Bottom = Editing.PageSetupOps.Points(page.BottomMargin),
-                Left = Editing.PageSetupOps.Points(page.LeftMargin),
-                Right = Editing.PageSetupOps.Points(page.RightMargin),
+                Top = PageSetupVocabulary.Points(page.TopMargin),
+                Bottom = PageSetupVocabulary.Points(page.BottomMargin),
+                Left = PageSetupVocabulary.Points(page.LeftMargin),
+                Right = PageSetupVocabulary.Points(page.RightMargin),
             },
-            HeaderMargin = Editing.PageSetupOps.Points(page.HeaderMargin),
-            FooterMargin = Editing.PageSetupOps.Points(page.FooterMargin),
+            HeaderMargin = PageSetupVocabulary.Points(page.HeaderMargin),
+            FooterMargin = PageSetupVocabulary.Points(page.FooterMargin),
             HeaderCenter = Text(page.GetHeader(1)),
             HeaderLeft = Text(page.GetHeader(0)),
             HeaderRight = Text(page.GetHeader(2)),
