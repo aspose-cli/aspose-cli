@@ -68,6 +68,11 @@ public sealed class SlidesOpTargetTests
         new SetTitleOp { Slide = 9, Text = "Title" },
         new SetTextOp { Slide = 1, ShapeId = 999, Text = "Text" },
         new SetTextOp { Slide = 9, ShapeId = 5, Text = "Text" },
+        new SlidesSetTableCellOp { Slide = 2, ShapeId = 999, Row = 1, Column = 1, Text = "Cell" },
+        new SetChartDataOp { Slide = 3, ShapeId = 999 },
+        new DeleteShapeOp { Slide = 1, ShapeId = 999 },
+        new FormatShapeOp { Slide = 1, ShapeId = 999, Style = new SlidesShapeStyleInput() },
+        new SetShapeBoundsOp { Slide = 1, ShapeId = 999, X = 5 },
         new FormatShapeOp { Slide = 2, ShapeName = "No such shape", Style = new SlidesShapeStyleInput() },
     ];
 
@@ -112,6 +117,11 @@ public sealed class SlidesOpTargetTests
         "set_title | slide/9",
         "set_text | slide/1/shape/999",
         "set_text | slide/9/shape/5",
+        "set_table_cell | slide/2/shape/999",
+        "set_chart_data | slide/3/shape/999",
+        "delete_shape | slide/1/shape/999",
+        "format_shape | slide/1/shape/999",
+        "set_shape_bounds | slide/1/shape/999",
         "format_shape | slide/2",
     ];
 
