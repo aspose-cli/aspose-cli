@@ -68,21 +68,6 @@ public abstract class OutputPipeline : ILicenseState
         };
 
     /// <summary>
-    /// Publishes one file an extraction writes, such as exported form data, which holds parts
-    /// of the opened documents rather than a copy of them, so it is never disclosed as one.
-    /// </summary>
-    /// <param name="targetPath">The output file.</param>
-    /// <param name="overwrite">Whether an existing file may be replaced.</param>
-    /// <param name="write">Writes the staged file.</param>
-    /// <returns>The facts of the published file.</returns>
-    public PublishedFile WriteExtracted(string targetPath, bool overwrite, Action<string> write)
-    {
-        PublishedFile published = Writer.Write(targetPath, overwrite, write);
-        Record(null);
-        return published;
-    }
-
-    /// <summary>
     /// Records the files the host is about to publish from this product's renders, such as
     /// review evidence, which show what the engine draws, its evaluation watermark included, and
     /// adds the disclosure to the result those files carry, so the files and the command's
