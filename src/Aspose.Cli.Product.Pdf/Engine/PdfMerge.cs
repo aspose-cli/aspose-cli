@@ -95,7 +95,7 @@ internal static class PdfMerge
             namedDestinations);
         (PdfOutputPasswords? passwords, Warning? kept) = PdfOutputEncryption.Kept(request.EncryptPassword, request.Password, security);
         bool encrypted = PdfOutputEncryption.Encrypted(merged, passwords);
-        PublishedFile written = session.Outputs.Write(request.Output.Path, request.Output.Overwrite, merged,
+        PublishedFile written = session.Outputs.Write(request.Output.Path, request.Output.Format, request.Output.Overwrite, merged,
             path => PdfOutputEncryption.Save(merged, path, passwords), encrypted: encrypted);
         if (kept is not null)
         {

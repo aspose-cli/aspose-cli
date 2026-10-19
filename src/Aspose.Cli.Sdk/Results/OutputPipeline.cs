@@ -35,7 +35,6 @@ public abstract class OutputPipeline : ILicenseState
     private bool _decrypted;
     private JsonObject? _restrictions;
     private readonly SortedSet<string> _plainCopies = new(StringComparer.Ordinal);
-    private IReadOnlyList<FormatDescriptor> _formats = [];
 
     private protected OutputPipeline(ILicenseGate licenseGate, SafeFileWriter writer)
     {
@@ -181,38 +180,6 @@ public abstract class OutputPipeline : ILicenseState
         {
             Hint = protection?.Invoke(new EncryptionLoss(formats, openPassword, decrypted, restrictions)) ?? "If the output must stay protected, write it in a format that can carry a password.",
         };
-    }
-
-    /// <summary>
-    /// Declares the formats the product writes, as its definition declares them once
-    /// (<see cref="FormatDescriptor.Image"/>), by which a published file is told to be an image
-    /// or a copy.
-    /// </summary>
-    internal void Declare(IReadOnlyList<FormatDescriptor> formats)
-    {
-        ArgumentNullException.ThrowIfNull(formats);
-        lock (_sync)
-        {
-            _formats = formats;
-        }
-    }
-
-    /// <summary>
-    /// The published file at <paramref name="path"/>: its format among those the product
-    /// declares, named by its id, or its extension when none declares it.
-    /// </summary>
-    internal Copy CopyAt(string path, bool encrypted)
-    {
-        IReadOnlyList<FormatDescriptor> formats;
-        lock (_sync)
-        {
-            formats = _formats;
-        }
-
-        FormatDescriptor[] named = [.. formats.Where(format => format.Names(path))];
-        return named.Length == 0
-            ? new Copy(Path.GetExtension(path).TrimStart('.').ToLowerInvariant(), Image: false, encrypted)
-            : new Copy(named[0].Id, named.All(static format => format.Image), encrypted);
     }
 
     /// <summary>
@@ -592,7 +559,12 @@ public sealed class OutputPipeline<TDocument> : OutputPipeline
     /// Publishes one file that <paramref name="write"/> saves from <paramref name="document"/>,
     /// or that holds no document when it is null, such as exported form data.
     /// </summary>
-    /// <param name="targetPath">The output file; its extension names the format the profile inspects.</param>
+    /// <param name="targetPath">The output file.</param>
+    /// <param name="format">
+    /// The format the file is written in, as the product declares it: the profile inspects its
+    /// id, and an image is never a copy. The file's extension never decides it, since one format
+    /// has several (<c>.jpg</c> for jpeg) and one extension serves several (<c>.txt</c> for csv).
+    /// </param>
     /// <param name="overwrite">Whether an existing file may be replaced.</param>
     /// <param name="document">The document the file holds or shows, or null.</param>
     /// <param name="write">Writes the staged file.</param>
@@ -604,15 +576,15 @@ public sealed class OutputPipeline<TDocument> : OutputPipeline
     /// encrypted one is disclosed; an image or a data file never is.
     /// </param>
     /// <returns>The facts of the published file.</returns>
-    public PublishedFile Write(string targetPath, bool overwrite, TDocument? document, Action<string> write, bool rendering = false,
-        IEnumerable<int>? pages = null, bool encrypted = false)
+    public PublishedFile Write(string targetPath, FormatDescriptor format, bool overwrite, TDocument? document, Action<string> write,
+        bool rendering = false, IEnumerable<int>? pages = null, bool encrypted = false)
     {
-        string format = FormatOf(targetPath);
-        var inspector = new Inspector(_profile, document, format, rendering);
+        ArgumentNullException.ThrowIfNull(format);
+        var inspector = new Inspector(_profile, document, format.Id, rendering);
         inspector.Shows(pages);
         PublishedFile published = Writer.Write(targetPath, overwrite, inspector.After(write));
         Record(inspector.Result, [targetPath]);
-        RecordCopy(CopyAt(targetPath, encrypted));
+        RecordCopy(new Copy(format.Id, format.Image, encrypted));
         return published;
     }
 
@@ -683,6 +655,7 @@ public sealed class OutputPipeline<TDocument> : OutputPipeline
         using OutputSet<TDocument> transaction = BeginSet([output.Directory], operation);
         StagedOutput staged = transaction.Stage(
             output.Path,
+            output.Format,
             output.Overwrite,
             document,
             save,
@@ -714,9 +687,6 @@ public sealed class OutputPipeline<TDocument> : OutputPipeline
         inspector.Shows(pages);
         RecordView(inspector.InspectNow());
     }
-
-    internal static string FormatOf(string targetPath) =>
-        Path.GetExtension(targetPath).TrimStart('.').ToLowerInvariant();
 
     /// <summary>
     /// Inspects one document once, right after the first save that writes it to an output of
@@ -866,7 +836,11 @@ public sealed class OutputSet<TDocument> : IDisposable
     /// Stages one output that <paramref name="write"/> saves from <paramref name="document"/>, or
     /// that holds no document when it is null.
     /// </summary>
-    /// <param name="targetPath">The output file; its extension names the format the profile inspects.</param>
+    /// <param name="targetPath">The output file.</param>
+    /// <param name="format">
+    /// The format the output is written in, as the product declares it: the profile inspects its
+    /// id, never one the file's extension suggests.
+    /// </param>
     /// <param name="overwrite">Whether an existing file may be replaced.</param>
     /// <param name="document">The document the output holds or shows, or null.</param>
     /// <param name="write">Writes the staged file.</param>
@@ -885,17 +859,17 @@ public sealed class OutputSet<TDocument> : IDisposable
     /// <paramref name="document"/>, such as a facade that signs it, so its marks are read from the
     /// file (<see cref="IEvaluationProfile{TDocument}.InspectSaved"/>) where the profile reads files.
     /// </param>
-    public StagedOutput Stage(string targetPath, bool overwrite, TDocument? document, Action<string> write,
+    public StagedOutput Stage(string targetPath, FormatDescriptor format, bool overwrite, TDocument? document, Action<string> write,
         bool rendering = false, string? backupPath = null, FileWritePrecondition? inputPrecondition = null,
         Action<string>? verify = null, IEnumerable<int>? pages = null, bool encrypted = false, bool saved = false)
     {
-        string format = OutputPipeline<TDocument>.FormatOf(targetPath);
+        ArgumentNullException.ThrowIfNull(format);
         OutputPipeline<TDocument>.Inspector? inspector = document is null || saved ? null
             : _documents.Find(item => ReferenceEquals(item.Document, document) && item.Rendering == rendering
-                && string.Equals(item.Format, format, StringComparison.Ordinal));
+                && string.Equals(item.Format, format.Id, StringComparison.Ordinal));
         if (document is not null && inspector is null)
         {
-            inspector = new OutputPipeline<TDocument>.Inspector(_profile, document, format, rendering, saved);
+            inspector = new OutputPipeline<TDocument>.Inspector(_profile, document, format.Id, rendering, saved);
             _documents.Add(inspector);
         }
 
@@ -909,7 +883,7 @@ public sealed class OutputSet<TDocument> : IDisposable
         StagedOutput staged = _transaction.Stage(targetPath, overwrite, backupPath, inputPrecondition,
             inspector?.After(write) ?? write, verify);
         _staged.Add(staged);
-        _copies.Add(_pipeline.CopyAt(targetPath, encrypted));
+        _copies.Add(new OutputPipeline.Copy(format.Id, format.Image, encrypted));
         return staged;
     }
 

@@ -24,8 +24,8 @@ public sealed class OutputPipelineEncryptionTests
         pipeline.Opened(new InputProtection(false));
         pipeline.Opened(new InputProtection(true));
 
-        pipeline.Write(temp.File("out.txt"), false, null, Save);
-        pipeline.Write(temp.File("other.txt"), false, null, Save);
+        pipeline.Write(temp.File("out.txt"), Txt, false, null, Save);
+        pipeline.Write(temp.File("other.txt"), Txt, false, null, Save);
         ResultEnvelope result = pipeline.Disclose(new SchemaListResult { Schemas = [], Warnings = [Other] });
 
         Assert.Equal([WarningCodes.EncryptionRemoved, Other.Code], result.Warnings!.Select(static warning => warning.Code));
@@ -41,8 +41,8 @@ public sealed class OutputPipelineEncryptionTests
 
         using (OutputSet<object> set = pipeline.BeginSet([temp.Path], "test"))
         {
-            set.Stage(temp.File("part.1.pdf"), false, null, Save, encrypted: true);
-            set.Stage(temp.File("part.2.pdf"), false, null, Save);
+            set.Stage(temp.File("part.1.pdf"), Pdf, false, null, Save, encrypted: true);
+            set.Stage(temp.File("part.2.pdf"), Pdf, false, null, Save);
             set.Commit();
         }
 
@@ -56,7 +56,7 @@ public sealed class OutputPipelineEncryptionTests
         OutputPipeline<object> pipeline = Pipeline();
         pipeline.Opened(new InputProtection(true));
 
-        pipeline.Write(temp.File("pages.txt"), false, null, Save, rendering: true);
+        pipeline.Write(temp.File("pages.txt"), Txt, false, null, Save, rendering: true);
 
         Assert.Equal(WarningCodes.EncryptionRemoved, pipeline.EncryptionRemoved()?.Code);
     }
@@ -67,13 +67,13 @@ public sealed class OutputPipelineEncryptionTests
         using var temp = new TempDirectory();
         OutputPipeline<object> encrypted = Pipeline();
         encrypted.Opened(new InputProtection(true));
-        encrypted.Write(temp.File("kept.pdf"), false, null, Save, encrypted: true);
-        encrypted.Write(temp.File("page.png"), false, null, Save, rendering: true);
-        // Images saved without rendering, in a render format and in a declared image format, and
-        // an extraction of what the engine derives.
-        encrypted.Write(temp.File("sheet.png"), false, null, Save);
-        encrypted.Write(temp.File("photo.JPG"), false, null, Save);
-        encrypted.Write(temp.File("pages.TIF"), false, null, Save);
+        encrypted.Write(temp.File("kept.pdf"), Pdf, false, null, Save, encrypted: true);
+        encrypted.Write(temp.File("page.png"), Png, false, null, Save, rendering: true);
+        // Images saved without rendering, in a render format and in a declared image format,
+        // whatever the case of their extension, and an extraction of what the engine derives.
+        encrypted.Write(temp.File("sheet.png"), Png, false, null, Save);
+        encrypted.Write(temp.File("photo.JPG"), Jpeg, false, null, Save);
+        encrypted.Write(temp.File("pages.TIF"), Tiff, false, null, Save);
         using (ExtractionGuard extraction = encrypted.BeginExtraction(temp.File("extracted"), overwrite: false))
         {
             extraction.WriteAllBytes("fields.json", [1]);
@@ -82,28 +82,28 @@ public sealed class OutputPipelineEncryptionTests
 
         using (OutputSet<object> set = encrypted.BeginSet([temp.Path], "test"))
         {
-            set.Stage(temp.File("page.2.png"), false, null, Save, rendering: true);
-            set.Stage(temp.File("page.3.tiff"), false, null, Save);
+            set.Stage(temp.File("page.2.png"), Png, false, null, Save, rendering: true);
+            set.Stage(temp.File("page.3.tiff"), Tiff, false, null, Save);
             set.Commit();
         }
 
         OutputPipeline<object> plain = Pipeline();
         plain.Opened(new InputProtection(false));
-        plain.Write(temp.File("plain.pdf"), false, null, Save);
+        plain.Write(temp.File("plain.pdf"), Pdf, false, null, Save);
 
         Assert.Null(encrypted.EncryptionRemoved());
         Assert.Null(plain.EncryptionRemoved());
     }
 
     [Fact]
-    public void AnUndeclaredImageExtension_IsACopy()
+    public void AFormatNotDeclaredAnImage_IsACopy()
     {
         using var temp = new TempDirectory();
         OutputPipeline<object> pipeline = Pipeline();
         pipeline.Opened(new InputProtection(true));
 
-        // Only the formats the product declares are known; gif is not among them.
-        pipeline.Write(temp.File("slide.gif"), false, null, Save);
+        // Only the format the product declares decides; this gif is not declared an image.
+        pipeline.Write(temp.File("slide.gif"), Gif, false, null, Save);
 
         Assert.Contains("'gif'", pipeline.EncryptionRemoved()?.Message, StringComparison.Ordinal);
     }
@@ -117,7 +117,7 @@ public sealed class OutputPipelineEncryptionTests
         using (OutputSet<object> set = pipeline.BeginSet([temp.Path], "test"))
         {
             // A set that does not commit, as a failed or dry run leaves it, publishes nothing.
-            set.Stage(temp.File("part.pdf"), false, null, Save);
+            set.Stage(temp.File("part.pdf"), Pdf, false, null, Save);
         }
 
         SchemaListResult result = new() { Schemas = [] };
@@ -128,19 +128,21 @@ public sealed class OutputPipelineEncryptionTests
 
     private static void Save(string path) => File.WriteAllText(path, "saved");
 
-    private static OutputPipeline<object> Pipeline()
-    {
-        var pipeline = new OutputPipeline<object>(new LicensedGate(), new NoMarks(), TestBudgets.Writer());
-        pipeline.Declare(
-        [
-            new FormatDescriptor("pdf", FormatUse.Input, ".pdf"),
-            new FormatDescriptor("txt", FormatUse.Convert, ".txt"),
-            new FormatDescriptor("png", FormatUse.Render, ".png"),
-            new FormatDescriptor("jpeg", FormatUse.Render, ".jpg", ".jpeg"),
-            new FormatDescriptor("tiff", FormatUse.Convert, ".tiff", ".tif") { Image = true },
-        ]);
-        return pipeline;
-    }
+    private static readonly FormatDescriptor Pdf = new("pdf", FormatUse.Input, ".pdf");
+
+    private static readonly FormatDescriptor Txt = new("txt", FormatUse.Convert, ".txt");
+
+    private static readonly FormatDescriptor Png = new("png", FormatUse.Render, ".png");
+
+    private static readonly FormatDescriptor Jpeg = new("jpeg", FormatUse.Render, ".jpg", ".jpeg");
+
+    private static readonly FormatDescriptor Tiff = new("tiff", FormatUse.Convert, ".tiff", ".tif") { Image = true };
+
+    // An image format a product converts to but does not declare an image.
+    private static readonly FormatDescriptor Gif = new("gif", FormatUse.Convert, ".gif");
+
+    private static OutputPipeline<object> Pipeline() =>
+        new(new LicensedGate(), new NoMarks(), TestBudgets.Writer());
 
     private sealed class NoMarks : IEvaluationProfile<object>
     {

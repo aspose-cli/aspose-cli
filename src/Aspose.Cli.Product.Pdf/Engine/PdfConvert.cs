@@ -70,6 +70,7 @@ internal static class PdfConvert
         SaveFormat format = PdfEngineFormats.Save(target.Id);
         PublishedFile written = session.Outputs.Write(
             request.Output.Path,
+            request.Output.Format,
             request.Output.Overwrite,
             document,
             temp =>
@@ -124,7 +125,7 @@ internal static class PdfConvert
 
     private static OutputInfo ConvertText(PdfSession session, Document source, IReadOnlyList<int> pages, PdfConvertRequest request)
     {
-        PublishedFile written = session.Outputs.Write(request.Output.Path, request.Output.Overwrite, source, temp =>
+        PublishedFile written = session.Outputs.Write(request.Output.Path, request.Output.Format, request.Output.Overwrite, source, temp =>
             File.WriteAllText(temp, DocumentText(source, pages), new UTF8Encoding(encoderShouldEmitUTF8Identifier: false)), rendering: true, pages: pages);
         return FileObjects.Output(written, request.Output.Format, encrypted: false);
     }
@@ -164,7 +165,7 @@ internal static class PdfConvert
             .ToArray();
         int bookmarks = Editing.PdfMutationSupport.CountOutline(document.Outlines);
         int changed = 0;
-        PublishedFile written = session.Outputs.Write(request.Output.Path, request.Output.Overwrite, document, temp =>
+        PublishedFile written = session.Outputs.Write(request.Output.Path, request.Output.Format, request.Output.Overwrite, document, temp =>
         {
             using var log = new MemoryStream();
             PdfComplianceLog.EnsureConverted(
@@ -277,7 +278,7 @@ internal static class PdfConvert
         }
 
         using Document selected = Select(source, pages);
-        PublishedFile written = session.Outputs.Write(request.Output.Path, request.Output.Overwrite, selected, temp =>
+        PublishedFile written = session.Outputs.Write(request.Output.Path, request.Output.Format, request.Output.Overwrite, selected, temp =>
         {
             using FileStream stream = File.Create(temp);
             var device = new TiffDevice(new Resolution(RenderPixelGuard.DefaultDpi), new TiffSettings());

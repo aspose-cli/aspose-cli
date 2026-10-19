@@ -37,7 +37,7 @@ internal static class PdfSplit
             // The part is the document the write pipeline inspects, so it lives until it is staged.
             using Document selected = Select(source, pages);
             bool encrypted = PdfOutputEncryption.Encrypted(selected, passwords);
-            writer.Stage(target, request.Output.Overwrite, selected, staged =>
+            writer.Stage(target, PdfFormats.Document[0], request.Output.Overwrite, selected, staged =>
             {
                 CopyInformation(source, selected);
                 CopyPageLabels(source, selected, pages, offset: 0);

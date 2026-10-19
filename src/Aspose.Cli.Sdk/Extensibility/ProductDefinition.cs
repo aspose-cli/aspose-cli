@@ -108,8 +108,6 @@ public sealed class ProductDefinition
                 $"Product '{Manifest.Id}' activated an incompatible binding.");
         }
 
-        // The write pipeline tells copies from images by the formats the product declares.
-        binding.Publishing.Declare(Formats);
         return binding;
     }
 

@@ -82,7 +82,7 @@ internal static class PdfSign
             }
         }
 
-        StagedOutput write = transaction.Stage(request.Output.Path, request.Output.Overwrite, loaded.Document, temp =>
+        StagedOutput write = transaction.Stage(request.Output.Path, request.Output.Format, request.Output.Overwrite, loaded.Document, temp =>
         {
             using var pkcs12 = new MemoryStream(certificate, writable: false);
             var signature = new PKCS7(pkcs12, request.CertificatePassword.Reveal())
