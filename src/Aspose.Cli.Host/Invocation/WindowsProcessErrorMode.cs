@@ -43,9 +43,6 @@ internal static class WindowsProcessErrorMode
         }
     }
 
-    internal static uint GetCurrentModeForTesting() =>
-        OperatingSystem.IsWindows() ? GetErrorMode() : 0;
-
     [DllImport("kernel32.dll", SetLastError = true)]
     private static extern uint GetErrorMode();
 

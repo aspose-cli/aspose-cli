@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.Json.Nodes;
 using Aspose.Cli.Host.Invocation;
@@ -38,7 +39,7 @@ public sealed class ProcessFailureBoundaryTests
         WindowsProcessErrorMode.SuppressNativeErrorUi();
         if (OperatingSystem.IsWindows())
         {
-            uint actual = WindowsProcessErrorMode.GetCurrentModeForTesting();
+            uint actual = GetErrorMode();
             Assert.Equal(
                 WindowsProcessErrorMode.SemFailCriticalErrors,
                 actual & WindowsProcessErrorMode.SemFailCriticalErrors);
@@ -301,4 +302,7 @@ public sealed class ProcessFailureBoundaryTests
 
         Assert.Equal(expected, string.Join(' ', path));
     }
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    private static extern uint GetErrorMode();
 }
