@@ -139,10 +139,11 @@ cells:
   `content` `values` (default) writes values, with formulas replaced by their
   results, and number formats; `all` keeps formulas as written and formatting,
   like `copy_range`.
-- `import_sheet` takes the source sheet from the operation's `sheet`, the
-  source's first sheet when omitted, and names the new sheet after it unless
-  `name` is given. A name the workbook already uses is refused; `at` is
-  1-based, appended when omitted. The sheet keeps its charts, tables, pivots,
+- `import_sheet.sourceSheet` names the source sheet, the source's first sheet
+  when omitted (`sheet` is not a field of `import_sheet`), and the new sheet
+  takes its name unless `name` is given. A name the workbook already uses is
+  refused, as by `insert_sheet` and `rename_sheet`; `at` is 1-based, appended
+  when omitted. The sheet keeps its charts, tables, pivots,
   comments, validation and conditional formats.
 - Imported formulas keep their sheet names: a reference to another source
   sheet points at the sheet of that name in this workbook, or becomes `#REF!`.
