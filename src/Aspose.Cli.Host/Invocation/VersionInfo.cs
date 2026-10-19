@@ -51,6 +51,6 @@ internal static class VersionInfo
                 Aspose.Cli.Sdk.DistributionInfo.CommandName,
                 StringComparison.Ordinal)
             ? entry!
-            : typeof(CliHost).Assembly;
+            : typeof(VersionInfo).Assembly;
     }
 }
