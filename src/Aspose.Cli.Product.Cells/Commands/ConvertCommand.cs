@@ -63,7 +63,7 @@ internal static class ConvertCommand
                 }
 
                 bool byteOrderMark = parse.GetValue(bom);
-                if (byteOrderMark && format is not ("csv" or "tsv"))
+                if (byteOrderMark && !CellsFormats.IsDelimited(format))
                 {
                     throw CliErrors.OptionInvalid("--bom", $"a '{format}' output is not CSV or TSV text", "Drop --bom.");
                 }

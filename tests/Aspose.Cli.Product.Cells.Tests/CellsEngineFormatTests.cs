@@ -112,7 +112,50 @@ public sealed class CellsEngineFormatTests
         using var reopened = new Workbook(saved, new LoadOptions(FileFormatUtil.SaveFormatToLoadFormat(save)));
         Worksheet read = reopened.Worksheets["Data"] ?? reopened.Worksheets[0];
 
+        Assert.Equal(CellsEngineFormats.KeepsSheetProtection(formatId), read.IsProtected);
+        // A format that keeps sheet protection can also carry a password, and only such a one.
         Assert.Equal(CellsFormats.Definitions.Single(format => format.Id == formatId).Protectable, read.IsProtected);
+    }
+
+    [Fact]
+    public void KeepsSheetProtection_OnlyForFormatsTheEngineReadsBack() =>
+        Assert.All(CellsEngineFormats.All.Where(static format => format.KeepsSheetProtection),
+            static format => Assert.True(format.Detected is not null && format.Save is not null, format.Id));
+
+    [Fact]
+    public void EveryConvertAndRenderFormat_DeclaresItsEvaluationMarks()
+    {
+        string[] written = [.. CellsFormats.Definitions
+            .Where(static format => format.Uses.HasFlag(FormatUse.Convert) || format.Uses.HasFlag(FormatUse.Render))
+            .Select(static format => format.Id)];
+
+        Assert.All(written, static id => Assert.True(CellsEngineFormats.EvaluationMarksOf(id) is not null, id));
+        Assert.Null(CellsEngineFormats.EvaluationMarksOf("docx"));
+    }
+
+    [Fact]
+    public void FormatTraits_HaveOneRowPerDeclaredFormat() =>
+        Assert.Equal(CellsFormats.Definitions.Select(static format => format.Id), CellsFormats.Traits.Select(static traits => traits.Id));
+
+    /// <summary>
+    /// A sheet scope other than the whole workbook, a delimited text format, the records of json
+    /// and the save options are declared only for convert formats, and the projections the
+    /// commands read list what they listed before.
+    /// </summary>
+    [Fact]
+    public void SheetScopeAndDelimited_AreDeclaredConvertFormats()
+    {
+        HashSet<string> convert = [.. CellsFormats.Definitions.Where(static format => format.Uses.HasFlag(FormatUse.Convert)).Select(static format => format.Id)];
+
+        Assert.All(CellsFormats.Traits.Where(static traits => traits.SheetScope != CellsSheetScope.Workbook || traits.Delimited),
+            traits => Assert.Contains(traits.Id, convert));
+        Assert.All(CellsEngineFormats.All.Where(static format => format.WritesRecords || format.Options is not null),
+            format => Assert.Contains(format.Id, convert));
+        Assert.Equal(["csv", "tsv", "md"], CellsFormats.ActiveSheetOnly);
+        Assert.Equal(["csv", "tsv", "md", "pdf"], CellsFormats.SheetScoped);
+        Assert.Equal(["csv", "tsv"], CellsFormats.Traits.Where(static traits => traits.Delimited).Select(static traits => traits.Id));
+        Assert.Equal(CellsSheetScope.SheetSet, CellsFormats.SheetScopeOf("pdf"));
+        Assert.Equal(CellsSheetScope.Workbook, CellsFormats.SheetScopeOf("docx"));
     }
 
     [Theory]

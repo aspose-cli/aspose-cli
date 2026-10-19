@@ -119,7 +119,7 @@ internal sealed class CellsProtectionTracker
             changed.Add("the protected workbook structure");
         }
 
-        string kept = format.Protectable
+        string kept = CellsEngineFormats.KeepsSheetProtection(format.Id)
             ? "The output keeps the protection unless the batch removed it with unprotect_sheet or unprotect_workbook."
             : $"A {format.Id} output does not keep the protection; save to xlsx or another workbook format to keep it.";
         string passwords = _keptPasswords.Count == 0 ? string.Empty

@@ -44,15 +44,52 @@ public static class CellsFormats
         [.. Definitions.Where(static format => format.Uses.HasFlag(FormatUse.Input | FormatUse.Convert))];
 
     /// <summary>
+    /// How the commands treat each declared format, one row per format id in declaration order.
+    /// A product test keeps the rows in step with <see cref="Definitions"/>.
+    /// </summary>
+    internal static IReadOnlyList<CellsFormatTraits> Traits { get; } =
+    [
+        new("xlsx"),
+        new("xltx"),
+        new("xlsm"),
+        new("xltm"),
+        new("xlsb"),
+        new("xls"),
+        new("ods"),
+        new("csv") { SheetScope = CellsSheetScope.ActiveSheet, Delimited = true },
+        new("tsv") { SheetScope = CellsSheetScope.ActiveSheet, Delimited = true },
+        new("html"),
+        new("mhtml"),
+        new("pdf") { SheetScope = CellsSheetScope.SheetSet },
+        new("xps"),
+        new("json"),
+        new("md") { SheetScope = CellsSheetScope.ActiveSheet },
+        new("png"),
+        new("jpeg"),
+        new("svg"),
+    ];
+
+    private static readonly Dictionary<string, CellsFormatTraits> TraitsById =
+        Traits.ToDictionary(static traits => traits.Id, StringComparer.Ordinal);
+
+    /// <summary>
     /// Convert formats that hold one worksheet by nature: they export the active sheet, so for
     /// them <c>--sheet</c> is the only way to reach any other one.
     /// </summary>
-    public static IReadOnlyList<string> ActiveSheetOnly { get; } = ["csv", "tsv", "md"];
+    public static IReadOnlyList<string> ActiveSheetOnly { get; } =
+        [.. Traits.Where(static traits => traits.SheetScope == CellsSheetScope.ActiveSheet).Select(static traits => traits.Id)];
 
     /// <summary>
     /// Convert formats that can be limited to a single sheet with <c>--sheet</c>: the
-    /// <see cref="ActiveSheetOnly"/> formats and pdf. Every other format always converts the
-    /// whole workbook.
+    /// <see cref="ActiveSheetOnly"/> formats, then those that hold a set of sheets (pdf). Every
+    /// other format always converts the whole workbook.
     /// </summary>
-    public static IReadOnlyList<string> SheetScoped { get; } = [.. ActiveSheetOnly, "pdf"];
+    public static IReadOnlyList<string> SheetScoped { get; } =
+        [.. Traits.Where(static traits => traits.SheetScope != CellsSheetScope.Workbook).OrderBy(static traits => traits.SheetScope).Select(static traits => traits.Id)];
+
+    /// <summary>Which sheets a convert output in <paramref name="id"/> holds; the whole workbook for an undeclared id.</summary>
+    internal static CellsSheetScope SheetScopeOf(string id) => TraitsById.GetValueOrDefault(id)?.SheetScope ?? CellsSheetScope.Workbook;
+
+    /// <summary>Whether <paramref name="id"/> is a delimited text format (CSV or TSV).</summary>
+    internal static bool IsDelimited(string id) => TraitsById.GetValueOrDefault(id)?.Delimited == true;
 }
