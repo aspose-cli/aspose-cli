@@ -25,7 +25,7 @@ public sealed class CommonSchemaContractTests
     private const string UriPrefix = "https://schemas.aspose.com/aspose-cli/";
     private static readonly ProductCatalog CommonCatalog = CreateCatalog();
 
-    private static readonly ContractJsonSerializer CommonSerializer = new(CommonCatalog.JsonDefinitions, Aspose.Cli.Host.Contracts.HostResultJsonContext.Default);
+    private static readonly ContractJsonSerializer CommonSerializer = new(CommonCatalog.JsonDefinitions, HostResultJsonContext.Default);
     private static readonly BuildOptions CommonSchemas = HostCommonSchemas.CreateOptions();
 
     [Fact]
