@@ -788,7 +788,7 @@ internal sealed class AtomicPublicationRecovery(AtomicPublicationPlan plan)
         return paths.Any(path => path is not null && (IsWithinRoot(scope, path) || IsWithinRoot(path, scope)));
     }
 
-    private static bool IsWithinRoot(string root, string path)
+    internal static bool IsWithinRoot(string root, string path)
     {
         string fullRoot = Path.GetFullPath(root).TrimEnd(
             Path.DirectorySeparatorChar,
