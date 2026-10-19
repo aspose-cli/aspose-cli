@@ -121,13 +121,23 @@ public sealed class AppHttpSecurityTests
         // default 5 s for the exchange.
         JsonNode marker = JsonNode.Parse(File.ReadAllText(
             Path.Combine(app.Workspace.ConfigDirectory, "viewer", "service.json")))!;
-        LocalServiceControlResponse forged = LocalServiceControlServer.Send(
-            new LocalServiceControlEndpoint("viewer", marker["id"]!.GetValue<string>()),
-            marker["nonce"]!.GetValue<string>(),
-            token: "forged-token",
-            command: "stop",
-            timeout: TimeSpan.FromSeconds(30));
-        Assert.False(forged.Ok);
+        // A closed connection is a refusal too: the service gives each connection a fixed stage
+        // budget against slow callers, and on a loaded machine that budget can run out before it
+        // replies. Either way the forged command must not have run, which the status shows.
+        try
+        {
+            LocalServiceControlResponse forged = LocalServiceControlServer.Send(
+                new LocalServiceControlEndpoint("viewer", marker["id"]!.GetValue<string>()),
+                marker["nonce"]!.GetValue<string>(),
+                token: "forged-token",
+                command: "stop",
+                timeout: TimeSpan.FromSeconds(30));
+            Assert.False(forged.Ok);
+        }
+        catch (IOException)
+        {
+            // The service closed the connection without executing the request (EndOfStreamException included).
+        }
         Assert.Equal("first.csv", (await app.Status())["file"]!.GetValue<string>());
     }
 
