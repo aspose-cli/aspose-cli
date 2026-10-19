@@ -32,31 +32,19 @@ internal sealed class SlidesViewAdapter : IProductViewAdapter<SlidesSession>
         ViewRenderRequest request,
         ViewManifest rendered)
     {
-        SlidesInspectResult info = SlidesInfo.Run(session, new SlidesInspectRequest
-        {
-            Input = filePath,
-            Password = request.Password,
-        });
         int inspected = rendered.Parts.Count;
-        SlidesReadResult read = SlidesRead.Run(session, new SlidesReadRequest
-        {
-            Input = filePath,
-            Slides = inspected == 0 ? null : PageRange.Parse($"1-{inspected}"),
-            Content = SlidesReadContents.Full,
-            MaxCharacters = 1_000_000,
-            Password = request.Password,
-        });
+        SlidesReviewDeck deck = SlidesView.ReviewLayout(session, filePath, request, inspected);
         SlidesReviewAnalysis analysis = SlidesReviewAnalyzer.Analyze(
-            read.Slides,
-            info.Presentation.SlideSize.Width,
-            info.Presentation.SlideSize.Height,
+            deck.Slides,
+            deck.SlideWidth,
+            deck.SlideHeight,
             session.Outputs.License == LicenseState.Evaluation);
         return new ProductReviewAssessment
         {
             Findings = analysis.Findings,
             Coverage =
             [
-                ReviewCoverageMetric.Of("slides", info.Presentation.SlideCount, "slides"),
+                ReviewCoverageMetric.Of("slides", deck.SlideCount, "slides"),
                 ReviewCoverageMetric.Of("inspectedSlides", inspected, "slides"),
                 ReviewCoverageMetric.Of("blankSlides", analysis.BlankSlides, "slides"),
                 ReviewCoverageMetric.Of("outsideShapes", analysis.OutsideShapes, "shapes"),

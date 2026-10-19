@@ -53,7 +53,6 @@ internal static class SlidesEngineSupport
         string? title = Take(Title(slide), ref remaining, ref contentTruncated);
         var textBlocks = content == SlidesReadContents.Text ? new List<string>() : null;
         var shapes = new List<SlidesShapeData>();
-        int zOrder = 0;
         bool full = content == SlidesReadContents.Full;
         foreach (IShape shape in slide.Shapes)
         {
@@ -70,42 +69,11 @@ internal static class SlidesEngineSupport
             }
             if (includeShapes)
             {
-                var textArea = full ? SlidesReviewProjection.TextArea(shape) : null;
-                shapes.Add(SlidesStateProjection.Shape(shape, text, full, ref remaining, ref contentTruncated) with
-                {
-                    ZOrder = zOrder++,
-                    HasOpaqueFill = SlidesReviewProjection.HasOpaqueFill(shape),
-                    TextRect = textArea?.Lines,
-                    TextGlyphRect = textArea?.Glyphs,
-                    TextAutofits = full && SlidesReviewProjection.TextAutofits(shape),
-                    Backdrop = full ? SlidesReviewProjection.Backdrop(slide, shape) : null,
-                    ChartTextColor = full ? SlidesReviewProjection.ChartTextColor(shape) : null,
-                    EvaluationWatermark = IsEvaluationWatermark(shape),
-                });
+                shapes.Add(SlidesStateProjection.Shape(shape, text, full, ref remaining, ref contentTruncated));
             }
         }
-        string? notes = content == SlidesReadContents.Full || includeNotes
-            ? Take(Notes(slide), ref remaining, ref contentTruncated)
-            : null;
-        var projectedComments = content == SlidesReadContents.Full ? new List<SlidesCommentData>() : null;
-        if (projectedComments is not null)
-        {
-            foreach (IComment comment in comments.Where(comment => ReferenceEquals(comment.Slide, slide)))
-            {
-                if (remaining == 0 && !string.IsNullOrWhiteSpace(comment.Text))
-                {
-                    contentTruncated = true;
-                    break;
-                }
-                projectedComments.Add(new SlidesCommentData
-                {
-                    Author = comment.Author.Name,
-                    Text = Take(comment.Text, ref remaining, ref contentTruncated) ?? string.Empty,
-                });
-            }
-        }
-        SlidesFooterData? footer = full ? SlidesStateProjection.Footer(slide, ref remaining, ref contentTruncated) : null;
-        return new SlidesSlideData
+        string? notes = full || includeNotes ? Take(Notes(slide), ref remaining, ref contentTruncated) : null;
+        var read = new SlidesSlideData
         {
             Slide = number,
             SlideId = slide.SlideId,
@@ -115,27 +83,58 @@ internal static class SlidesEngineSupport
             Text = textBlocks,
             Shapes = shapes,
             Notes = notes is null ? null : new SlidesNotesData { Text = notes },
-            Comments = projectedComments,
-            Background = full ? SlidesStateProjection.Background(slide) : null,
-            Transition = full ? SlidesStateProjection.Transition(slide) : null,
+            ContentTruncated = contentTruncated,
+        };
+        if (!full)
+        {
+            return read;
+        }
+
+        // --content full also reports the comments, footer, background and transition.
+        IReadOnlyList<SlidesCommentData> slideComments = SlideComments(slide, comments, ref remaining, ref contentTruncated);
+        SlidesFooterData footer = SlidesStateProjection.Footer(slide, ref remaining, ref contentTruncated);
+        return read with
+        {
+            Comments = slideComments,
             Footer = footer,
+            Background = SlidesStateProjection.Background(slide),
+            Transition = SlidesStateProjection.Transition(slide),
             ContentTruncated = contentTruncated,
         };
     }
 
+    private static List<SlidesCommentData> SlideComments(
+        ISlide slide,
+        IReadOnlyList<IComment> comments,
+        ref int remaining,
+        ref bool truncated)
+    {
+        var projected = new List<SlidesCommentData>();
+        foreach (IComment comment in comments.Where(comment => ReferenceEquals(comment.Slide, slide)))
+        {
+            if (remaining == 0 && !string.IsNullOrWhiteSpace(comment.Text))
+            {
+                truncated = true;
+                break;
+            }
+
+            projected.Add(new SlidesCommentData
+            {
+                Author = comment.Author.Name,
+                Text = Take(comment.Text, ref remaining, ref truncated) ?? string.Empty,
+            });
+        }
+
+        return projected;
+    }
+
     internal static string? Take(string? value, ref int remaining, ref bool truncated)
     {
-        if (string.IsNullOrWhiteSpace(value))
+        if (Clean(value) is not { } clean)
         {
             return null;
         }
 
-        // Each line keeps its words, one space apart; the lines stay apart, as inspect and search show them.
-        string clean = string.Join(
-            "\n",
-            value.Split('\n')
-                .Select(static line => string.Join(" ", line.Split(default(string[]), StringSplitOptions.RemoveEmptyEntries)))
-                .Where(static line => line.Length > 0));
         if (clean.Length <= remaining)
         {
             remaining -= clean.Length;
@@ -147,6 +146,19 @@ internal static class SlidesEngineSupport
         remaining = 0;
         return result;
     }
+
+    /// <summary>
+    /// Text as results report it: each line keeps its words, one space apart, and the lines stay
+    /// apart, as inspect and search show them; null for text that shows nothing.
+    /// </summary>
+    internal static string? Clean(string? value) =>
+        string.IsNullOrWhiteSpace(value)
+            ? null
+            : string.Join(
+                "\n",
+                value.Split('\n')
+                    .Select(static line => string.Join(" ", line.Split(default(string[]), StringSplitOptions.RemoveEmptyEntries)))
+                    .Where(static line => line.Length > 0));
 
     /// <summary>
     /// The text a shape shows: its own frame, table cells, group children and SmartArt nodes,
@@ -286,15 +298,17 @@ internal static class SlidesEngineSupport
                     FontSize = effective.FontHeight,
                     Bold = effective.FontBold,
                     Italic = effective.FontItalic,
-                    Color = effective.FillFormat.FillType == FillType.Solid
-                        ? SlidesContrast.Hex(effective.FillFormat.SolidFillColor)
-                        : null,
+                    Color = RunColor(effective),
                 });
             }
         }
 
         return runs.Count == 0 ? null : runs;
     }
+
+    /// <summary>The solid color a run's text is drawn in, stated or inherited, as #RRGGBB; null for text without a solid fill.</summary>
+    internal static string? RunColor(IBasePortionFormatEffectiveData effective) =>
+        effective.FillFormat.FillType == FillType.Solid ? SlidesContrast.Hex(effective.FillFormat.SolidFillColor) : null;
 
     /// <summary>The geometry of an autoshape that insert_shape draws, or null.</summary>
     internal static string? Geometry(IShape shape) => shape is IAutoShape auto && auto.Placeholder is null

@@ -19,15 +19,15 @@ public sealed class SlidesReviewCheckTests
     [Fact]
     public void Analyze_EmitsEveryDeclaredCheckAndNothingElse()
     {
-        SlidesShapeData repeated = Shape(1, new(50, 50, 300, 100), "Repeated content long enough to compare");
-        SlidesSlideData[] slides =
+        SlidesReviewShape repeated = Shape(1, new(50, 50, 300, 100), "Repeated content long enough to compare");
+        SlidesReviewSlide[] slides =
         [
             Slide(1, repeated),
             Slide(2, repeated),
             Slide(3),
             Slide(4, Shape(1, new(700, 50, 100, 50), "Hi") with
             {
-                Runs = [new SlidesTextRunData { Text = "Hi", FontSize = 10 }],
+                Runs = [new SlidesReviewRun { FontSize = 10 }],
             }),
             Slide(5, [.. Enumerable.Range(1, 18).Select(id => Shape(id, new(id * 30, 400, 20, 20), "Item"))]),
             Slide(6, Shape(1, new(0, 0, 10, 10), "a"), Shape(2, new(20, 0, 10, 10), "b"), Shape(3, new(0, 20, 10, 10), "c")),
@@ -39,7 +39,7 @@ public sealed class SlidesReviewCheckTests
             Slide(12, TitleWithLines(1, new(400, 100, 200, 40), new(410, 104, 180, 108))),
             Slide(13, Shape(1, new(60, 100, 400, 60), "White") with
             {
-                Runs = [new SlidesTextRunData { Text = "White", Color = "#FFFFFF" }],
+                Runs = [new SlidesReviewRun { Color = "#FFFFFF" }],
                 Backdrop = System.Drawing.Color.White,
             }),
             Slide(14, Shape(1, new(100, 100, 400, 80), "Evaluation only.") with { EvaluationWatermark = true }),
@@ -115,7 +115,7 @@ public sealed class SlidesReviewCheckTests
         // Evaluation mode replaces every text longer than five characters with its start and the
         // SDK's truncation marker, so a 25-cell table reads as about 1,500 characters.
         string cells = string.Join(' ', Enumerable.Repeat($"¥1,20... {SlidesEngineSupport.EvaluationTruncationMarker}.", 25));
-        SlidesSlideData slide = Slide(
+        SlidesReviewSlide slide = Slide(
             1,
             Shape(1, new(40, 22, 640, 58), $"投资与回报... {SlidesEngineSupport.EvaluationTruncationMarker}."),
             Shape(2, new(40, 100, 640, 144), cells, type: "table"));
@@ -632,7 +632,7 @@ public sealed class SlidesReviewCheckTests
         Assert.Equal(expected.ReplaceLineEndings("\n").TrimEnd('\n'), actual);
     }
 
-    private static SlidesShapeData TitleWithLines(long id, Rect frame, Rect lines) =>
+    private static SlidesReviewShape TitleWithLines(long id, Rect frame, Rect lines) =>
         Shape(id, frame, "A title long enough to wrap onto several lines") with
         {
             ShapeName = "Title",
@@ -640,22 +640,21 @@ public sealed class SlidesReviewCheckTests
             TextRect = new SlidesRect { X = lines.X, Y = lines.Y, Width = lines.Width, Height = lines.Height },
         };
 
-    private static SlidesShapeData BodyWithLines(long id, Rect lines) =>
+    private static SlidesReviewShape BodyWithLines(long id, Rect lines) =>
         Shape(id, new(lines.X, lines.Y, lines.Width, 350), "Two lines of summary text above the table") with
         {
             Placeholder = "body",
             TextRect = new SlidesRect { X = lines.X, Y = lines.Y, Width = lines.Width, Height = lines.Height },
         };
 
-    private static SlidesSlideData Slide(int number, params SlidesShapeData[] shapes) => new()
+    private static SlidesReviewSlide Slide(int number, params SlidesReviewShape[] shapes) => new()
     {
         Slide = number,
         SlideId = (uint)(255 + number),
         Shapes = shapes,
-        ContentTruncated = false,
     };
 
-    private static SlidesShapeData Shape(long id, Rect rect, string? text = null, string type = "shape") => new()
+    private static SlidesReviewShape Shape(long id, Rect rect, string? text = null, string type = "shape") => new()
     {
         ShapeId = id,
         ShapeName = $"Shape {id}",
@@ -665,7 +664,7 @@ public sealed class SlidesReviewCheckTests
         ZOrder = (int)id,
     };
 
-    private static SlidesShapeData Occluder(long id, Rect rect) => Shape(id, rect) with { HasOpaqueFill = true };
+    private static SlidesReviewShape Occluder(long id, Rect rect) => Shape(id, rect) with { HasOpaqueFill = true };
 
     private readonly record struct Rect(double X, double Y, double Width, double Height);
 
