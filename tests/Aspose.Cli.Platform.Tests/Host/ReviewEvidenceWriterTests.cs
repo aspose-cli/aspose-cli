@@ -137,6 +137,39 @@ public sealed class ReviewEvidenceWriterTests
         Assert.Null(manifest["findings"]![0]!["part"]);
     }
 
+    /// <summary>
+    /// The media type an evidence file is reported with, by its extension, and whether a finding
+    /// about its part points at it, as visual evidence, or at the view entry.
+    /// </summary>
+    [Theory]
+    [InlineData("part.html", "text/html", false)]
+    [InlineData("part.htm", "text/html", false)]
+    [InlineData("part.css", "text/css", false)]
+    [InlineData("part.js", "text/javascript", false)]
+    [InlineData("part.json", "application/json", false)]
+    [InlineData("part.svg", "image/svg+xml", true)]
+    [InlineData("part.png", "image/png", true)]
+    [InlineData("part.PNG", "image/png", true)]
+    [InlineData("part.jpg", "image/jpeg", true)]
+    [InlineData("part.jpeg", "image/jpeg", true)]
+    [InlineData("part.gif", "image/gif", true)]
+    [InlineData("part.webp", "image/webp", true)]
+    [InlineData("part.pdf", "application/pdf", true)]
+    [InlineData("part.txt", "text/plain", false)]
+    [InlineData("part.bin", "application/octet-stream", false)]
+    [InlineData("part", "application/octet-stream", false)]
+    public void Write_ReportsEachEvidenceFileWithItsMediaType(string file, string mediaType, bool visual)
+    {
+        using var temp = new TempDirectory();
+        var check = new ReviewCheck("TEST_PART_ODD", ReviewSeverities.Warning, "Flags a part.");
+        var assessment = new ProductReviewAssessment { Findings = [check.Finding("The part.", "part 1", parts: ["part-0"])] };
+
+        ReviewResult result = Write(temp, temp.File("review"), 1, 1, [file], assessment);
+
+        Assert.Equal(mediaType, result.Artifacts.Single(static artifact => artifact.Role == "evidence").MediaType);
+        Assert.Equal([visual ? "artifacts/" + file : "artifacts/view.json"], result.Findings[0].Evidence);
+    }
+
     [Fact]
     public void Write_PublishesTheViewManifestWithPartDigests()
     {
