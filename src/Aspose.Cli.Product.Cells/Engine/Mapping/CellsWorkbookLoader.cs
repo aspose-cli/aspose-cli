@@ -234,7 +234,7 @@ internal sealed class CellsWorkbookLoader
             if (textImport is { Encoding: not null } or { Culture: not null })
             {
                 throw CliErrors.OptionInvalid(
-                    textImport.Encoding is not null ? "--encoding" : "--culture",
+                    textImport.Encoding is not null ? CellsOptionNames.Encoding : CellsOptionNames.Culture,
                     "it applies only to delimited text input such as CSV or TSV",
                     "Drop --encoding and --culture for this input.");
             }

@@ -112,7 +112,7 @@ internal static class CellsRender
             if (one.Count != 1)
             {
                 throw CliErrors.OptionInvalid(
-                    "--sheets",
+                    CellsOptionNames.Sheets,
                     $"--range renders one sheet, but the selection holds {one.Count}",
                     "Select one sheet, such as --sheets 2, or qualify the range, such as Sales!A1:G20.");
             }
@@ -142,7 +142,7 @@ internal static class CellsRender
         if (visible.Count > RenderSelection.MaximumParts)
         {
             throw CliErrors.SelectionTooLarge(
-                "--sheets",
+                CellsOptionNames.Sheets,
                 "sheet",
                 visible.Count,
                 RenderSelection.MaximumParts,

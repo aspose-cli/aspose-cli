@@ -84,7 +84,7 @@ internal static class Sheets
             : 1;
         string example = names.Length == 0 ? "Summary" : names[position - 1];
         return CliErrors.OptionInvalid(
-            "--sheets",
+            CellsOptionNames.Sheets,
             $"'{text}' names a sheet, but --sheets selects sheets by position",
             $"Use the position of the sheet from details.available, the number before its name: --sheets {position}"
                 + (range ? $", or name one sheet with --range, such as --range {QuotedName(example)}!A1:H20." : "."),
