@@ -110,6 +110,116 @@ public sealed class WordsTrackChangesTests
         Assert.Equal(2, document.Revisions.Count);
     }
 
+    /// <summary>
+    /// A tracked replace_text whose matches span runs of different formats, one anchored at its
+    /// paragraph's start, records each as the deletion of the matched text and the insertion of
+    /// the new text, in the format of the text where the match starts: accepting gives the
+    /// replaced text, rejecting the original.
+    /// </summary>
+    [Fact]
+    public void TrackedReplaceText_RecordsADeletionAndAnInsertionPerMatch()
+    {
+        using var fixture = new WordsFixture();
+        var source = new Document();
+        var builder = new DocumentBuilder(source);
+        builder.Font.Bold = true;
+        builder.Write("Par");
+        builder.Font.Bold = false;
+        builder.Writeln("ty A pays Party A.");
+        builder.Write("Party A signs.");
+        string input = fixture.Temp.File("tracked-replace.docx");
+        source.Save(input);
+        string output = fixture.Temp.File("tracked-replace-out.docx");
+
+        WordsEdit.Run(
+            fixture.Session,
+            new WordsEditRequest
+            {
+                Input = input,
+                Batch = new WordsOpsBatch { Ops = [new ReplaceTextOp { Find = @"^Party A|A\.$", Regex = true, Replace = "Z" }] },
+                Output = TestOutput.At(output),
+                TrackChanges = true,
+                Author = "Reviewer",
+            });
+        WordsInspectResult info = WordsInspect.Run(fixture.Session, new WordsInspectRequest { Input = output, Details = ["revisions"] });
+
+        Assert.Equal(
+            ["deletion:Party A", "insertion:Z", "deletion:A.", "insertion:Z", "deletion:Party A", "insertion:Z"],
+            info.Revisions!.Select(static revision => $"{revision.Kind}:{revision.Text}"));
+        var accepted = new Document(output);
+        accepted.AcceptAllRevisions();
+        Assert.Equal(["Z pays Party Z", "Z signs."], Texts(accepted));
+        Run inserted = accepted.FirstSection.Body.Paragraphs.Cast<Paragraph>()
+            .First(static paragraph => paragraph.GetText().Contains("pays", StringComparison.Ordinal)).Runs.Cast<Run>().First(static run => run.Text.Length > 0);
+        Assert.Equal(("Z", true), (inserted.Text, inserted.Font.Bold));
+        var rejected = new Document(output);
+        rejected.Revisions.RejectAll();
+        Assert.Equal(["Party A pays Party A.", "Party A signs."], Texts(rejected));
+
+        static string[] Texts(Document document) =>
+        [
+            .. document.FirstSection.Body.Paragraphs.Cast<Paragraph>().Select(static paragraph => paragraph.GetText().Trim())
+                .Where(static text => text.Length > 0 && !text.Contains("Aspose", StringComparison.Ordinal)),
+        ];
+    }
+
+    /// <summary>
+    /// A replace_text match in text another author's tracked change inserted or formatted gives
+    /// the new text none of that author's revision: tracked, it is the edit author's insertion,
+    /// and untracked, no revision at all. It keeps the matched text's font.
+    /// </summary>
+    [Theory]
+    [InlineData("insertion", true)]
+    [InlineData("insertion", false)]
+    [InlineData("format", true)]
+    [InlineData("format", false)]
+    public void ReplaceText_InAnotherAuthorsRevision_LeavesTheNewTextOutOfIt(string revision, bool tracked)
+    {
+        using var fixture = new WordsFixture();
+        var source = new Document();
+        var builder = new DocumentBuilder(source);
+        builder.Write("Party ");
+        if (revision == "insertion")
+        {
+            source.StartTrackRevisions("Alice", DateTime.UtcNow);
+        }
+
+        builder.Font.Italic = true;
+        builder.Write("Alpha");
+        source.StopTrackRevisions();
+        builder.Font.Italic = false;
+        builder.Write(" pays.");
+        if (revision == "format")
+        {
+            source.StartTrackRevisions("Alice", DateTime.UtcNow);
+            source.FirstSection.Body.FirstParagraph.Runs[1].Font.Bold = true;
+            source.StopTrackRevisions();
+        }
+
+        string input = fixture.Temp.File($"alice-{revision}-{tracked}.docx");
+        source.Save(input);
+        string output = fixture.Temp.File($"alice-{revision}-{tracked}-out.docx");
+
+        WordsEdit.Run(
+            fixture.Session,
+            new WordsEditRequest
+            {
+                Input = input,
+                Batch = new WordsOpsBatch { Ops = [new ReplaceTextOp { Find = "Alpha", Replace = "Zed" }] },
+                Output = TestOutput.At(output),
+                TrackChanges = tracked,
+                Author = tracked ? "Reviewer" : null,
+            });
+
+        var document = new Document(output);
+        Run replaced = document.GetChildNodes(NodeType.Run, true).Cast<Run>().Single(static run => run.Text == "Zed");
+        Assert.Equal(
+            tracked ? ["Insertion:Reviewer"] : [],
+            document.Revisions.Where(item => ReferenceEquals(item.ParentNode, replaced)).Select(static item => $"{item.RevisionType}:{item.Author}"));
+        Assert.True(replaced.Font.Italic);
+        Assert.Equal(revision == "format", replaced.Font.Bold);
+    }
+
     [Fact]
     public void InspectRevisions_NamesTheStoryOfEachChange()
     {

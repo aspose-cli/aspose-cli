@@ -243,6 +243,121 @@ public sealed class WordsTextScopeTests : IClassFixture<WordsFixture>
         Assert.Contains("withdrawn needle", document.GetText(), StringComparison.Ordinal);
     }
 
+    /// <summary>
+    /// replace_text replaces exactly the matches words search reports for the same pattern and
+    /// scope, anchors included: each paragraph, comment and note is one text, as search reads it
+    /// (WORDS-REGEX-ANCHORS).
+    /// </summary>
+    [Theory]
+    [InlineData(@"^\w+")]
+    [InlineData(@"\w+$")]
+    [InlineData(@"(?m)^\w+ \w+")]
+    [InlineData(@"e\b")]
+    [InlineData(@"\Aneedle|needle\z")]
+    public void ReplaceText_ReplacesTheMatchesSearchFinds(string pattern)
+    {
+        string input = CreateStories();
+        string output = _fixture.Temp.File($"marked-{Guid.NewGuid():N}.docx");
+        WordsSearchResult found = WordsSearch.Run(_fixture.Session, Search(input, pattern));
+
+        WordsEdit.Run(
+            _fixture.Session,
+            new WordsEditRequest
+            {
+                Input = input,
+                Batch = new WordsOpsBatch { Ops = [new ReplaceTextOp { Scope = WordsTextScopes.All, Find = pattern, Regex = true, Replace = "<$0>" }] },
+                Output = TestOutput.At(output),
+            });
+        WordsSearchResult marked = WordsSearch.Run(_fixture.Session, Search(output, "<[^<>]+>"));
+
+        Assert.NotEmpty(found.Hits);
+        Assert.Equal(
+            found.Hits.Select(static hit => (hit.Scope, hit.Text)),
+            marked.Hits.Select(static hit => (hit.Scope, hit.Text[1..^1])));
+
+        static WordsSearchRequest Search(string input, string pattern) => new()
+        {
+            Input = input,
+            Query = new SearchQuery(TextSearch.Create(pattern, regex: true, caseSensitive: false), 100, WordsTextScopes.All),
+        };
+    }
+
+    /// <summary>
+    /// A match that starts before a hyperlink or a REF field and ends in its result puts the new
+    /// text where the match starts, outside the field, which stays and still updates.
+    /// </summary>
+    [Theory]
+    [InlineData("hyperlink", "get")]
+    [InlineData("ref", "Target")]
+    public void ReplaceText_IntoAFieldResult_WritesTheNewTextBeforeTheField(string kind, string updated)
+    {
+        var document = new Document();
+        var builder = new DocumentBuilder(document);
+        builder.StartBookmark("Clause");
+        builder.Write("Target");
+        builder.EndBookmark("Clause");
+        builder.Writeln();
+        builder.Write("See clause ");
+        Aspose.Words.Fields.Field inserted = kind == "ref" ? builder.InsertField("REF Clause") : builder.InsertHyperlink("Target", "https://example.com/", false);
+        builder.Write(" now.");
+        inserted.Update();
+        string input = _fixture.Temp.File($"field-{kind}-{Guid.NewGuid():N}.docx");
+        document.Save(input);
+        string output = _fixture.Temp.File($"field-{kind}-{Guid.NewGuid():N}-out.docx");
+
+        WordsEdit.Run(
+            _fixture.Session,
+            new WordsEditRequest
+            {
+                Input = input,
+                Batch = new WordsOpsBatch { Ops = [new ReplaceTextOp { Find = "clause Tar", Replace = "Zed" }] },
+                Output = TestOutput.At(output),
+            });
+
+        var edited = new Document(output);
+        Run replaced = edited.GetChildNodes(NodeType.Run, true).Cast<Run>().Single(static run => run.Text.Contains("Zed", StringComparison.Ordinal));
+        Paragraph paragraph = replaced.ParentParagraph;
+        // Evaluation mode adds a hyperlink of its own in another paragraph.
+        Aspose.Words.Fields.Field field = Assert.Single(paragraph.Range.Fields.Cast<Aspose.Words.Fields.Field>());
+        Assert.True(paragraph.IndexOf(replaced) < paragraph.IndexOf(field.Start), "The new text lies inside the field.");
+        field.Update();
+        Assert.Equal(updated, field.Result);
+    }
+
+    /// <summary>
+    /// The replacement is text: an ampersand or caret code such as &amp;p or ^p, and a line
+    /// feed, stay the characters they are and break no paragraph, section or page.
+    /// </summary>
+    [Theory]
+    [InlineData("A&pB")]
+    [InlineData("A&mB")]
+    [InlineData("A&bB")]
+    [InlineData("A&&B")]
+    [InlineData("A^pB")]
+    public void ReplaceText_InsertsTheReplacementAsText(string replace)
+    {
+        var document = new Document();
+        new DocumentBuilder(document).Write("Party X pays.");
+        string input = _fixture.Temp.File($"codes-{Guid.NewGuid():N}.docx");
+        document.Save(input);
+        string output = _fixture.Temp.File($"codes-{Guid.NewGuid():N}-out.docx");
+
+        WordsEdit.Run(
+            _fixture.Session,
+            new WordsEditRequest
+            {
+                Input = input,
+                Batch = new WordsOpsBatch { Ops = [new ReplaceTextOp { Find = "X", Replace = replace }] },
+                Output = TestOutput.At(output),
+            });
+
+        var edited = new Document(output);
+        Assert.Equal(1, edited.Sections.Count);
+        Assert.Contains(
+            edited.FirstSection.Body.Paragraphs.Cast<Paragraph>().Select(static paragraph => paragraph.GetText().TrimEnd('\r', '\f')),
+            text => text == $"Party {replace} pays.");
+    }
+
     [Fact]
     public void ReplaceText_DrawsNewEastAsianTextInTheEastAsianFontOfItsParagraph()
     {
