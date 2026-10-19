@@ -1,3 +1,4 @@
+using Aspose.Cli.Host.LocalServices;
 using Aspose.Cli.Host.Updating;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.TestKit;
