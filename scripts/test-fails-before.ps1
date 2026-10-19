@@ -26,8 +26,9 @@ change when at least one of its cases fails. Every term of the filter (each sele
 each rule id, or the whole -Filter) must select a test in at least one run. The script exits 0
 when every selected test failed, and otherwise exits 1 and names each test that passed or ran in
 neither mode and each filter term that selected nothing. A test project whose build fails only
-with compiler errors (CS) in files under tests/ fails before the change by construction: it is
-reported on its own and counts as failing. Any other build failure (a restore error, an error
+with compiler errors (CS) in files under tests/ is reported on its own and its tests count as
+failing, but a compiler error alone proves nothing about behavior: the script exits 0 only when
+at least one selected test in a project that builds also runs and fails. Any other build failure (a restore error, an error
 outside tests/, or the reverted src/ itself not building) leaves the change unjudged: the script
 exits 1 and asks for a -Base whose build works.
 
@@ -703,6 +704,7 @@ try {
     }
 
     $offending = [Collections.Generic.List[string]]::new()
+    $failedBefore = 0
     foreach ($method in $outcomes.Keys) {
         $entry = $outcomes[$method]
         $licensed = Get-ModeState $entry.licensed
@@ -720,7 +722,14 @@ try {
             $first = @(@($entry.licensed) + @($entry.unlicensed) | Where-Object Outcome -eq 'Failed')[0]
             $reason = if ($first.Reason.Length -gt 200) { $first.Reason.Substring(0, 200) + '...' } else { $first.Reason }
             Write-Host "FAILED-BEFORE [$($entry.Project)] $method ($states): $reason"
+            $failedBefore++
         }
+    }
+    if ($buildFailures.Count -ne 0 -and $failedBefore -eq 0) {
+        # A compiler error shows only that the tests name something the reverted src/ lacks, not
+        # that any assertion depends on the change's behavior: a renamed type or a new overload
+        # breaks the build just as well. A selected test must also run and fail.
+        $offending.Add("$($buildFailures.Count) test project(s) do not compile without the src/ change, and no selected test ran and failed; name a test that runs without the change with -Filter and -TestProject")
     }
     foreach ($term in @($terms | Where-Object { -not $buildFailures.Contains($_.Project) })) {
         $hit = $false
