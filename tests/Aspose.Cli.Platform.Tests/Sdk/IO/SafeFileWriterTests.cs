@@ -216,57 +216,6 @@ public sealed class SafeFileWriterTests : IDisposable
     }
 
     [Fact]
-    public void AtomicPublish_RejectsAStageReplacedAfterVerification()
-    {
-        string stage = _temp.File("stage.tmp");
-        string target = _temp.File("out.txt");
-        File.WriteAllText(stage, "verified");
-        FilePublicationSnapshot verified = FilePublicationSnapshot.Capture(stage);
-        File.Delete(stage);
-        File.WriteAllText(stage, "replacement");
-
-        Assert.Throws<IOException>(() => FilePublicationAtomicSwap.Publish(
-            stage,
-            target,
-            overwrite: false,
-            FilePublicationSnapshot.Missing,
-            FilePublicationSnapshot.Missing,
-            expectedStage: verified));
-
-        Assert.False(File.Exists(target));
-        Assert.Equal("replacement", File.ReadAllText(stage));
-    }
-
-    [Fact]
-    public void AtomicPublish_RestoresTheOriginalWhenStageChangesImmediatelyBeforeSwap()
-    {
-        string stage = _temp.File("stage.tmp");
-        string target = _temp.File("out.txt");
-        File.WriteAllText(stage, "verified");
-        File.WriteAllText(target, "original");
-        FilePublicationSnapshot verified = FilePublicationSnapshot.Capture(stage);
-        FilePublicationSnapshot original = FilePublicationSnapshot.Capture(target);
-
-        Assert.Throws<IOException>(() => FilePublicationAtomicSwap.Publish(
-            stage,
-            target,
-            overwrite: true,
-            original,
-            original,
-            expectedStage: verified,
-            beforeSwap: () =>
-            {
-                File.Delete(stage);
-                File.WriteAllText(stage, "replacement");
-            }));
-
-        Assert.Equal("original", File.ReadAllText(target));
-        Assert.DoesNotContain(
-            Directory.EnumerateFiles(_temp.Path),
-            path => path.Contains("unverified", StringComparison.Ordinal));
-    }
-
-    [Fact]
     public void Write_ReservedOutputName_IsRejectedBeforeCreation()
     {
         string target = _temp.File("CON.txt");

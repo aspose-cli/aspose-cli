@@ -375,7 +375,7 @@ internal sealed class AtomicPublicationRecovery(AtomicPublicationPlan plan)
             overwrite: true,
             expectedTarget: publishedTarget,
             metadataSource: entry.Original,
-            retainedDisplacedPath: entry.Staged,
+            displacedPath: entry.Staged,
             expectedStage: entry.Original);
     }
 

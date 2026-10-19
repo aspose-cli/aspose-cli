@@ -1271,7 +1271,7 @@ public sealed class AtomicOutputSetWriterTests
     }
 
     [Fact]
-    public void AtomicPublish_KeepsASameContentExternalReplacementByIdentity()
+    public void AtomicSwapRestoresSameContentExternalReplacementByIdentity()
     {
         Requires.Windows();
 
@@ -1317,40 +1317,6 @@ public sealed class AtomicOutputSetWriterTests
         Assert.DoesNotContain(
             Directory.EnumerateFiles(root, "*", SearchOption.AllDirectories),
             path => path.EndsWith(".displaced", StringComparison.Ordinal));
-
-    [Fact]
-    public void AtomicSwapRestoresSameContentExternalReplacementByIdentity()
-    {
-        Requires.Windows();
-
-        using var temp = new TempDirectory();
-        string target = temp.File("target.txt");
-        string staged = temp.File("staged.txt");
-        string external = temp.File("external.txt");
-        File.WriteAllText(target, "same-content");
-        FilePublicationSnapshot expected = FilePublicationSnapshot.Capture(target);
-        File.WriteAllText(external, "same-content");
-        File.Move(external, target, overwrite: true);
-        FilePublicationSnapshot externalSnapshot = FilePublicationSnapshot.Capture(target);
-        File.WriteAllText(staged, "published-content");
-
-        CliException error = Assert.Throws<CliException>(() =>
-            FilePublicationAtomicSwap.Publish(
-                staged,
-                target,
-                overwrite: true,
-                expected,
-                expected));
-
-        Assert.Equal(ErrorCodes.OutputConflict, error.Code);
-        Assert.True(externalSnapshot.VersionEquals(
-            FilePublicationSnapshot.Capture(target)));
-        Assert.Equal("same-content", File.ReadAllText(target));
-        Assert.DoesNotContain(
-            Directory.EnumerateFiles(temp.Path),
-            path => path.EndsWith(".displaced", StringComparison.Ordinal)
-                || path.EndsWith(".conflict", StringComparison.Ordinal));
-    }
 
     [Fact]
     public void SuccessfulCommitPublishesEveryStagedArtifact()
