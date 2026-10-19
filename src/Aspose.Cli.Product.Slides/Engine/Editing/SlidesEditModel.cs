@@ -145,7 +145,8 @@ internal sealed class SlidesEditModel : IOperationModel<SlidesOp>
         SlidesReplaceTextOp replace => new NoEffect(NoEffectReasons.NoMatch,
             $"Operation {operation.Id} (replace_text) matched no text in scope '{replace.Scope}', so nothing was replaced.")
         {
-            Hint = "Search with 'slides search' and the same pattern and scope; --scope all also covers speaker notes. "
+            Hint = "Search with 'slides search' and the same pattern and scope"
+                + (replace.Scope == SlidesSearchScopes.All ? ". " : ", or set \"scope\": \"all\" on the op to cover both shape text and speaker notes.")
                 + "Chart text and alternative text are never matched.",
         },
         _ => null,
