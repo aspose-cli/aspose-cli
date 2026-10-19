@@ -36,7 +36,7 @@ public static class WorkerOutputPublisher
             {
                 budgets.Deadline.ThrowIfExpired("worker-directory");
                 bool exists = Directory.Exists(directory.Target);
-                if (exists != directory.Existed || directory.Existed && OperatingSystem.IsWindows()
+                if (exists != directory.Existed || directory.Existed
                     && directory.OriginalIdentity != FilePublicationOwnedDelete.TryGetDirectoryIdentity(directory.Target))
                 { throw new IOException($"Worker output directory changed: '{directory.Target}'."); }
                 if (!exists)
