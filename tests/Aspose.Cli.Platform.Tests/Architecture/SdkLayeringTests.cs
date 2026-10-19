@@ -1,8 +1,5 @@
-using System.Collections.Immutable;
 using Aspose.Cli.TestKit;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Xunit;
 
 namespace Aspose.Cli.Architecture.Tests;
@@ -70,15 +67,15 @@ public sealed class SdkLayeringTests
         [$"{Root}.Extensibility.Commanding"],
     ];
 
-    private static readonly Lazy<DependencyGraph> Graph = new(BuildGraph);
+    private static readonly Lazy<NamespaceGraph> Graph = new(BuildGraph);
 
     [Fact]
     public void SdkNamespaces_HaveNoDependencyCycle()
     {
-        DependencyGraph graph = Graph.Value;
-        string[] cycles = StronglyConnectedComponents(graph)
+        NamespaceGraph graph = Graph.Value;
+        string[] cycles = graph.StronglyConnectedComponents()
             .Where(static component => component.Count > 1)
-            .Select(component => DescribeCycle(graph, component))
+            .Select(graph.DescribeCycle)
             .ToArray();
 
         Assert.True(
@@ -91,7 +88,7 @@ public sealed class SdkLayeringTests
     [Fact]
     public void SdkNamespaces_ReferenceOnlyLowerLayers()
     {
-        DependencyGraph graph = Graph.Value;
+        NamespaceGraph graph = Graph.Value;
         Dictionary<string, int> layerOf = Layers
             .SelectMany(static (layer, index) => layer.Select(name => (name, index)))
             .ToDictionary(static entry => entry.name, static entry => entry.index, StringComparer.Ordinal);
@@ -118,7 +115,7 @@ public sealed class SdkLayeringTests
             .ThenBy(static edge => edge.Key.To, StringComparer.Ordinal)
             .Select(edge =>
                 $"{Short(edge.Key.From)} (layer {layerOf[edge.Key.From] + 1}) -> {Short(edge.Key.To)} "
-                + $"(layer {layerOf[edge.Key.To] + 1}): {edge.Value}")
+                + $"(layer {layerOf[edge.Key.To] + 1}): {edge.Value[0]}")
             .ToArray();
 
         Assert.True(
@@ -131,7 +128,7 @@ public sealed class SdkLayeringTests
     [Fact]
     public void DependencyGraph_SeesTheWholeSdk()
     {
-        DependencyGraph graph = Graph.Value;
+        NamespaceGraph graph = Graph.Value;
 
         // A source the semantic model cannot bind would silently drop its edges.
         Assert.True(
@@ -145,235 +142,14 @@ public sealed class SdkLayeringTests
             static edge => edge.From == $"{Root}.Extensibility" && edge.To == $"{Root}.Contracts");
     }
 
-    private static DependencyGraph BuildGraph()
-    {
-        string source = Path.Combine(RepositoryPaths.Root, "src", Root);
-        string separator = Path.DirectorySeparatorChar.ToString();
-        CSharpParseOptions options = CSharpParseOptions.Default.WithLanguageVersion(LanguageVersion.Preview);
-        List<SyntaxTree> trees = Directory
-            .EnumerateFiles(source, "*.cs", SearchOption.AllDirectories)
-            .Where(path => !Path.GetRelativePath(source, path).Split(separator).Any(
-                static part => part is "bin" or "obj"))
-            .Append(Path.Combine(RepositoryPaths.Root, "eng", "generated", "DistributionInfo.g.cs"))
-            .Select(path => CSharpSyntaxTree.ParseText(File.ReadAllText(path), options, path))
-            .ToList();
-        // The project's implicit usings.
-        trees.Add(CSharpSyntaxTree.ParseText(
-            """
-            global using System;
-            global using System.Collections.Generic;
-            global using System.IO;
-            global using System.Linq;
-            global using System.Net.Http;
-            global using System.Threading;
-            global using System.Threading.Tasks;
-            """,
-            options,
-            "ImplicitUsings.g.cs"));
-
-        CSharpCompilation compilation = CSharpCompilation.Create(
+    private static NamespaceGraph BuildGraph() =>
+        NamespaceGraph.Build(
             Root,
-            trees,
+            NamespaceGraph.SourceFiles(Path.Combine(RepositoryPaths.Root, "src", Root))
+                .Append(Path.Combine(RepositoryPaths.Root, "eng", "generated", "DistributionInfo.g.cs")),
             RoslynTestSupport.PlatformReferences()
                 .Add(MetadataReference.CreateFromFile(typeof(System.CommandLine.Command).Assembly.Location))
-                .Add(MetadataReference.CreateFromFile(typeof(SkiaSharp.SKCodec).Assembly.Location)),
-            new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary, nullableContextOptions: NullableContextOptions.Enable));
+                .Add(MetadataReference.CreateFromFile(typeof(SkiaSharp.SKCodec).Assembly.Location)));
 
-        var namespaces = new HashSet<string>(StringComparer.Ordinal);
-        var edges = new Dictionary<(string From, string To), string>();
-        foreach (SyntaxTree tree in trees)
-        {
-            SemanticModel model = compilation.GetSemanticModel(tree);
-            SyntaxNode root = tree.GetRoot();
-            foreach (BaseTypeDeclarationSyntax declaration in root.DescendantNodes().OfType<BaseTypeDeclarationSyntax>())
-            {
-                if (model.GetDeclaredSymbol(declaration) is { } declared)
-                {
-                    namespaces.Add(declared.ContainingNamespace.ToDisplayString());
-                }
-            }
-
-            foreach (SimpleNameSyntax name in root.DescendantNodes().OfType<SimpleNameSyntax>())
-            {
-                if (ReferencedType(model, name) is not { } target
-                    || !SymbolEqualityComparer.Default.Equals(target.ContainingAssembly, compilation.Assembly)
-                    || model.GetEnclosingSymbol(name.SpanStart) is not { } enclosing
-                    || EnclosingType(enclosing) is not { } owner)
-                {
-                    continue;
-                }
-
-                string from = owner.ContainingNamespace.ToDisplayString();
-                string to = target.ContainingNamespace.ToDisplayString();
-                if (from == to || !from.StartsWith(Root, StringComparison.Ordinal))
-                {
-                    continue;
-                }
-
-                if (!edges.ContainsKey((from, to)))
-                {
-                    int line = name.GetLocation().GetLineSpan().StartLinePosition.Line + 1;
-                    edges[(from, to)] =
-                        $"{owner.Name} uses {target.Name} ({Path.GetRelativePath(RepositoryPaths.Root, tree.FilePath).Replace('\\', '/')}:{line})";
-                }
-            }
-        }
-
-        ImmutableArray<string> unbound = [.. compilation.GetDiagnostics()
-            .Where(diagnostic => diagnostic.Severity == DiagnosticSeverity.Error && !GeneratedMemberError(compilation, diagnostic))
-            .Select(static diagnostic => diagnostic.ToString())
-            .Take(20)];
-        return new DependencyGraph(namespaces, edges, unbound);
-    }
-
-    // The build's source generators implement the [GeneratedRegex] partial methods and the
-    // members of every JsonSerializerContext; without them only those members are missing.
-    private static bool GeneratedMemberError(Compilation compilation, Diagnostic diagnostic)
-    {
-        if (diagnostic.Id == "CS8795")
-        {
-            return true;
-        }
-
-        if (diagnostic.Location.SourceTree is not { } tree
-            || compilation.GetTypeByMetadataName("System.Text.Json.Serialization.JsonSerializerContext") is not { } context)
-        {
-            return false;
-        }
-
-        SemanticModel model = compilation.GetSemanticModel(tree);
-        SyntaxNode node = tree.GetRoot().FindNode(diagnostic.Location.SourceSpan);
-        INamedTypeSymbol? type = diagnostic.Id switch
-        {
-            "CS0534" or "CS7036" => node.AncestorsAndSelf().OfType<TypeDeclarationSyntax>().FirstOrDefault() is { } declaration
-                ? model.GetDeclaredSymbol(declaration)
-                : null,
-            "CS0117" or "CS1061" => node.AncestorsAndSelf().OfType<MemberAccessExpressionSyntax>().FirstOrDefault() is { } access
-                ? model.GetTypeInfo(access.Expression).Type as INamedTypeSymbol
-                    ?? model.GetSymbolInfo(access.Expression).Symbol as INamedTypeSymbol
-                : null,
-            _ => null,
-        };
-        for (INamedTypeSymbol? current = type; current is not null; current = current.BaseType)
-        {
-            if (SymbolEqualityComparer.Default.Equals(current, context))
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private static INamedTypeSymbol? ReferencedType(SemanticModel model, SimpleNameSyntax name)
-    {
-        SymbolInfo info = model.GetSymbolInfo(name);
-        ISymbol? symbol = info.Symbol ?? info.CandidateSymbols.FirstOrDefault();
-        INamedTypeSymbol? type = symbol switch
-        {
-            INamedTypeSymbol named => named,
-            IMethodSymbol { MethodKind: MethodKind.Constructor } constructor => constructor.ContainingType,
-            IMethodSymbol { ReducedFrom: { } extension } => extension.ContainingType,
-            IMethodSymbol method => method.ContainingType,
-            IPropertySymbol or IFieldSymbol or IEventSymbol => symbol.ContainingType,
-            _ => null,
-        };
-        return type is null ? null : Outermost(type.OriginalDefinition);
-    }
-
-    private static INamedTypeSymbol? EnclosingType(ISymbol symbol) =>
-        symbol as INamedTypeSymbol is { } type ? Outermost(type)
-        : symbol.ContainingType is { } containing ? Outermost(containing)
-        : null;
-
-    private static INamedTypeSymbol Outermost(INamedTypeSymbol type)
-    {
-        while (type.ContainingType is { } containing)
-        {
-            type = containing;
-        }
-
-        return type;
-    }
-
-    private static List<List<string>> StronglyConnectedComponents(DependencyGraph graph)
-    {
-        // Tarjan's algorithm over the namespaces in ordinal order, so the report is stable.
-        Dictionary<string, string[]> successors = graph.Namespaces
-            .ToDictionary(
-                static name => name,
-                name => graph.Edges.Keys.Where(edge => edge.From == name).Select(static edge => edge.To)
-                    .Order(StringComparer.Ordinal).ToArray(),
-                StringComparer.Ordinal);
-        var index = new Dictionary<string, int>(StringComparer.Ordinal);
-        var low = new Dictionary<string, int>(StringComparer.Ordinal);
-        var stack = new Stack<string>();
-        var onStack = new HashSet<string>(StringComparer.Ordinal);
-        var components = new List<List<string>>();
-
-        void Visit(string node)
-        {
-            index[node] = low[node] = index.Count;
-            stack.Push(node);
-            onStack.Add(node);
-            foreach (string next in successors.GetValueOrDefault(node, []))
-            {
-                if (!index.ContainsKey(next))
-                {
-                    Visit(next);
-                    low[node] = Math.Min(low[node], low[next]);
-                }
-                else if (onStack.Contains(next))
-                {
-                    low[node] = Math.Min(low[node], index[next]);
-                }
-            }
-
-            if (low[node] == index[node])
-            {
-                var component = new List<string>();
-                string member;
-                do
-                {
-                    member = stack.Pop();
-                    onStack.Remove(member);
-                    component.Add(member);
-                }
-                while (member != node);
-                component.Sort(StringComparer.Ordinal);
-                components.Add(component);
-            }
-        }
-
-        foreach (string node in successors.Keys.Order(StringComparer.Ordinal))
-        {
-            if (!index.ContainsKey(node))
-            {
-                Visit(node);
-            }
-        }
-
-        return components;
-    }
-
-    private static string DescribeCycle(DependencyGraph graph, List<string> component)
-    {
-        var members = new HashSet<string>(component, StringComparer.Ordinal);
-        IEnumerable<string> edges = graph.Edges
-            .Where(edge => members.Contains(edge.Key.From) && members.Contains(edge.Key.To))
-            .OrderBy(static edge => edge.Key.From, StringComparer.Ordinal)
-            .ThenBy(static edge => edge.Key.To, StringComparer.Ordinal)
-            .Select(static edge => $"  {Short(edge.Key.From)} -> {Short(edge.Key.To)}: {edge.Value}");
-        return $"cycle among {string.Join(", ", component.Select(Short))}:"
-            + Environment.NewLine
-            + string.Join(Environment.NewLine, edges);
-    }
-
-    private static string Short(string name) =>
-        name == Root ? "(root)" : name[(Root.Length + 1)..];
-
-    private sealed record DependencyGraph(
-        IReadOnlySet<string> Namespaces,
-        IReadOnlyDictionary<(string From, string To), string> Edges,
-        ImmutableArray<string> UnboundErrors);
+    private static string Short(string name) => Graph.Value.Short(name);
 }
