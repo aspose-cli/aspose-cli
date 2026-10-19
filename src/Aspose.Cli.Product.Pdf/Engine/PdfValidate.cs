@@ -1,4 +1,4 @@
-using Aspose.Cli.Sdk.Errors;
+using System.Diagnostics;
 using Aspose.Cli.Sdk.Licensing;
 using Aspose.Cli.Sdk.Results;
 using Aspose.Pdf;
@@ -15,7 +15,7 @@ internal static class PdfValidate
     {
         string filePath = request.Input;
         PdfFormat format = PdfEngineFormats.Archive(request.Profile.ToLowerInvariant())
-            ?? throw CliErrors.OptionInvalid("--profile", $"unknown profile '{request.Profile}'", "Use pdfa-1b, pdfa-2b or pdfa-3b.");
+            ?? throw new UnreachableException($"--profile {request.Profile} reached the engine, which ValidateCommand refuses.");
         LicenseState state = session.Outputs.License;
         using LoadedPdf loaded = session.Loader.Open(filePath, request.Password);
         using var log = new MemoryStream();

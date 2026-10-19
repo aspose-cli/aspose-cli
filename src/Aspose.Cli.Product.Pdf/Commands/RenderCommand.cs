@@ -11,7 +11,7 @@ internal static class RenderCommand
     {
         var pages = new PartSelectionOptions("page");
         var dpi = new DpiOption();
-        var grid = new Option<int?>("--grid")
+        var grid = new Option<int?>(PdfOptionNames.Grid)
         {
             Description = "Draw a labelled coordinate grid with a line every <grid> points on png or jpeg output, "
                 + "measured from the top-left corner as redact_area takes them.",
