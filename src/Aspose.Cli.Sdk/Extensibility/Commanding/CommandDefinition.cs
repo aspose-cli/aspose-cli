@@ -314,7 +314,7 @@ public static class EditDefinition
             (parse, standard) =>
             {
                 checkUsage?.Invoke(parse);
-                return bind(parse, edit.Read(parse, standard), standard);
+                return bind(parse, edit.Read(parse, standard, traits.Encrypt is not null), standard);
             },
             table)
         {

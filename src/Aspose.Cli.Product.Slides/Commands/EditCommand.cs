@@ -22,21 +22,7 @@ internal static class EditCommand
                 UsesFonts = true,
             },
             [],
-            (_, edit, standard) =>
-            {
-                Secret? encryptPassword = standard.EncryptPassword();
-                return new SlidesEditRequest
-                {
-                    Input = standard.Input,
-                    Batch = edit.Batch,
-                    Output = standard.Output,
-                    Options = edit.Options,
-                    Password = standard.InputPassword,
-                    EncryptPassword = encryptPassword,
-                    OpSecrets = edit.Secrets,
-                    Verify = edit.Verify,
-                };
-            },
+            static (_, edit, _) => new SlidesEditRequest(edit),
             Table,
             examples:
             [
