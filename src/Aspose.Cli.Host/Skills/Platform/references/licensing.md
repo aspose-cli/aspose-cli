@@ -70,8 +70,9 @@ Do not retry unchanged input.
   `convert` or `render`, warns `EVALUATION_MODE`, and what it writes carries evaluation watermarks or added evaluation content. The
   message names the marks the CLI recognizes in the output. The mark is in the
   file you deliver, so tell the user. An extraction that copies embedded files
-  as the document stores them, Slides `extract --what media` and PDF
-  `extract --what attachments`, writes no evaluation content and does not warn.
+  as the document stores them, Slides `extract --what media`, PDF
+  `extract --what attachments` and Words `extract --what images`, writes no
+  evaluation content and does not warn.
 - `EVALUATION_INPUT_TRUNCATED` means evaluation mode kept only part of an
   input the command read, so the result is incomplete; the message names the
   engine and what it left out. Text a read returns can then be the engine's

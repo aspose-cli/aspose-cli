@@ -107,6 +107,7 @@ public sealed partial class EvaluationOwnershipTests
     [
         "Aspose.Cli.Product.Pdf/Engine/PdfExtract.cs",
         "Aspose.Cli.Product.Slides/Engine/SlidesExtract.cs",
+        "Aspose.Cli.Product.Words/Engine/WordsExtract.cs",
     ];
 
     /// <summary>

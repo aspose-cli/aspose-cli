@@ -165,7 +165,9 @@ before any conversion), removed encryption
 (`ENCRYPTION_REMOVED`), fonts embedded because the input's settings ask every
 save to embed them (`FONTS_EMBEDDED`: the output can be megabytes larger, as
 with a docx written by `pdf convert`) and lossy conversion. In evaluation mode,
-`EVALUATION_INPUT_TRUNCATED` means only part of an input, template or appended
+`extract --what images` copies each image as the document stores it, leaves out
+the watermark picture evaluation mode draws into the header, and does not warn
+`EVALUATION_MODE`; `EVALUATION_INPUT_TRUNCATED` means only part of an input, template or appended
 document was loaded. When the edited document grows past what evaluation mode
 lays out and saves (about 200 paragraphs, as with a mail merge of many
 records), the output keeps only its first sections and ends with the engine's
