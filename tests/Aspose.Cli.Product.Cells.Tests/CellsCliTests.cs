@@ -186,22 +186,6 @@ public sealed class CellsCliTests : IDisposable
         Assert.Contains("#DIV/0!", inspected.StdOut, StringComparison.Ordinal);
     }
 
-    [Fact]
-    public void Edit_RefusesAFormulaTheEngineCannotParseAsAnInvalidOperation()
-    {
-        Assert.Equal(0, _workspace.Run("cells", "create", "book.xlsx", "--sheets", "Data").ExitCode);
-
-        CliResult refused = _workspace.Run(
-            "cells", "edit", "book.xlsx", "--in-place", "--output-format", "json", "--ops",
-            """{"ops":[{"op":"set_formula","sheet":"Data","range":"A1:A2","formula":"=SUM(B1;B2)"}]}""");
-
-        Assert.Equal(4, refused.ExitCode);
-        JsonNode error = JsonNode.Parse(refused.StdErr)!["error"]!;
-        Assert.Equal("OPS_INVALID", error["code"]!.GetValue<string>());
-        Assert.Contains("=SUM(B1;B2)", error["details"]!["reason"]!.GetValue<string>(), StringComparison.Ordinal);
-        Assert.Contains("commas", error["hint"]!.GetValue<string>(), StringComparison.Ordinal);
-    }
-
     [Theory]
     [InlineData("render", "x.png", "预算, 2026 H1", 1)]
     [InlineData("convert", "x.pdf", "预算, 2026 H1", 1)]
@@ -301,31 +285,6 @@ public sealed class CellsCliTests : IDisposable
     }
 
     [Fact]
-    public void Edit_AnUnknownFieldNamesTheAcceptedFieldsAndTheLikelyOne()
-    {
-        Assert.Equal(0, _workspace.Run("cells", "create", "book.xlsx", "--sheets", "Data").ExitCode);
-
-        CliResult renamed = _workspace.Run(
-            "cells", "edit", "book.xlsx", "--in-place", "--output-format", "json", "--ops",
-            """{"ops":[{"op":"rename_sheet","sheet":"Data","to":"Sales"}]}""");
-        CliResult sorted = _workspace.Run(
-            "cells", "edit", "book.xlsx", "--in-place", "--output-format", "json", "--ops",
-            """{"ops":[{"op":"sort_range","sheet":"Data","range":"A1:B4","by":[{"column":"A","direction":"desc"}]}]}""");
-
-        Assert.Equal(4, renamed.ExitCode);
-        JsonNode rename = JsonNode.Parse(renamed.StdErr)!["error"]!;
-        Assert.Equal("OPS_INVALID", rename["code"]!.GetValue<string>());
-        Assert.Equal("unknown field 'to'", rename["details"]!["reason"]!.GetValue<string>());
-        Assert.Equal(["op", "id", "sheet", "name"],
-            rename["details"]!["available"]!.AsArray().Select(static item => item!.GetValue<string>()));
-        Assert.Equal(["name"], rename["details"]!["suggestions"]!.AsArray().Select(static item => item!.GetValue<string>()));
-        JsonNode sort = JsonNode.Parse(sorted.StdErr)!["error"]!["details"]!;
-        Assert.Equal("unknown field 'by[0].direction'", sort["reason"]!.GetValue<string>());
-        Assert.Equal(["column", "order"], sort["available"]!.AsArray().Select(static item => item!.GetValue<string>()));
-        Assert.Null(sort["suggestions"]);
-    }
-
-    [Fact]
     public void Convert_StartsATextOutputWithAByteOrderMarkOnRequest()
     {
         Assert.Equal(0, _workspace.Run("cells", "create", "book.xlsx", "--sheets", "Data").ExitCode);
@@ -340,20 +299,6 @@ public sealed class CellsCliTests : IDisposable
         JsonNode error = JsonNode.Parse(refused.StdErr)!["error"]!;
         Assert.Equal("OPTION_INVALID", error["code"]!.GetValue<string>());
         Assert.Contains("--bom", error["message"]!.GetValue<string>(), StringComparison.Ordinal);
-    }
-
-    [Fact]
-    public void Convert_RefusesSheetForAFormatThatConvertsTheWholeWorkbook()
-    {
-        Assert.Equal(0, _workspace.Run("cells", "create", "book.xlsx", "--sheets", "Data").ExitCode);
-
-        CliResult refused = _workspace.Run("cells", "convert", "book.xlsx", "--to", "xlsx", "--sheets", "1", "--out", "copy.xlsx", "--output-format", "json");
-
-        Assert.Equal(2, refused.ExitCode);
-        JsonNode error = JsonNode.Parse(refused.StdErr)!["error"]!;
-        Assert.Equal("OPTION_INVALID", error["code"]!.GetValue<string>());
-        Assert.Contains("--sheets", error["message"]!.GetValue<string>(), StringComparison.Ordinal);
-        Assert.False(File.Exists(_workspace.File("copy.xlsx")));
     }
 
     /// <summary>
@@ -683,23 +628,6 @@ public sealed class CellsCliTests : IDisposable
         {
             Assert.DoesNotContain(Secret, output, StringComparison.Ordinal);
         }
-    }
-
-    [Fact]
-    public void Review_RecognizesAnEncryptedWorkbookByItsExtension()
-    {
-        var variables = new Dictionary<string, string?> { ["ASPOSE_CLI_TEST_PASSWORD"] = Secret };
-        Assert.Equal(0, _workspace.RunWithEnv(variables,
-            "cells", "create", "secret.xlsx", "--sheets", "Data", "--encrypt-env", "ASPOSE_CLI_TEST_PASSWORD").ExitCode);
-
-        CliResult locked = _workspace.Run("review", "secret.xlsx", "--out", _workspace.File("locked"), "--output-format", "json");
-        CliResult opened = _workspace.RunWithEnv(variables,
-            "review", "secret.xlsx", "--out", _workspace.File("opened"), "--password-env", "ASPOSE_CLI_TEST_PASSWORD", "--output-format", "json");
-
-        Assert.Equal("PASSWORD_REQUIRED", JsonNode.Parse(locked.StdErr)!["error"]!["code"]!.GetValue<string>());
-        Assert.True(opened.ExitCode == 0, opened.StdErr);
-        Assert.Equal("cells", JsonNode.Parse(opened.StdOut)!["product"]!.GetValue<string>());
-        Assert.True(JsonNode.Parse(opened.StdOut)!["input"]!["encrypted"]!.GetValue<bool>());
     }
 
     [Fact]

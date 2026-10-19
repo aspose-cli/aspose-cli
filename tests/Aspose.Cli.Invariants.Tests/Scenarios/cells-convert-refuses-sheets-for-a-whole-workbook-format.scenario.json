@@ -1,0 +1,15 @@
+{
+  "name": "cells convert refuses --sheets for a format that converts the whole workbook",
+  "steps": [
+    { "args": ["cells", "create", "book.xlsx", "--sheets", "Data"], "expect": { "exitCode": 0 } },
+    {
+      "args": ["cells", "convert", "book.xlsx", "--to", "xlsx", "--sheets", "1", "--out", "copy.xlsx"],
+      "expect": {
+        "exitCode": 2,
+        "error": "OPTION_INVALID",
+        "json": [{ "path": "error.message", "contains": "--sheets" }],
+        "files": { "absent": ["copy.xlsx"], "nothingWritten": true }
+      }
+    }
+  ]
+}
