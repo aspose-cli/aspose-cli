@@ -22,6 +22,18 @@ correct a design paragraph by paragraph.
   none, so a cover title or a "Contents" caption in them stays out of the
   table of contents. A template's own Title may differ: check `inspect
   --detail outline`.
+- Markdown has no Title syntax, and its `#` becomes Heading 1, which the table
+  of contents lists. For a document title, write it as a plain first line,
+  write the chapters as `#`, and restyle that line in the batch that inserts
+  the table of contents; check that `inspect --detail outline` no longer lists
+  it.
+
+  ```json
+  {"ops":[
+    {"op":"set_style","target":{"block":1},"style":"Title"},
+    {"op":"insert_toc","at":{"block":1},"position":"after"}
+  ]}
+  ```
 - Use real tables for tabular data; never align columns with spaces or tabs.
 - Keep one style per role; apply `set_style`, or create one with
   `define_style`, instead of `format_text` on individual runs.

@@ -96,13 +96,21 @@ aspose-cli schema v2/words/ops --operation insert_table
   each copy as a row insertion and the template row as a deletion.
 - Inline Markdown loads local resources under the edited document's directory;
   remote and escaping resources are omitted and reported.
+- Footnotes have no operation of their own: `insert_markdown` adds one from
+  Markdown's footnote syntax, a `[^id]` reference in the text and a
+  `[^id]: note text` line in the same `markdown`, such as
+  `"markdown": "Certified under ISO 9001[^iso].\n\n[^iso]: Certificate CN-2026-001."`.
+  `words create --from-markdown` reads the same syntax. Put every definition
+  at the end of the Markdown: a heading right after one becomes part of the
+  note (known SDK issue `WORDS-MD-FOOTNOTE-HEADING`). Read the notes back
+  with `words search --pattern ".+" --regex --scope footnotes`.
 
 ## Operation index
 
 | Task | Operations |
 |---|---|
 | Change text | `replace_text` (literal or regex, by scope), `set_text` (paragraph or bookmark text), `set_table_cell` (one 1-based cell), `repeat_table_row` (one copy of a `{{key}}` template row per item) |
-| Add content | `insert_paragraphs` (styled paragraphs, list items), `insert_markdown`, `insert_table`, `insert_image`, `insert_hyperlink`, `insert_field` (inserts and updates the field), `insert_toc`, `insert_bookmark` (a paragraph's visible text), `import_sections` |
+| Add content | `insert_paragraphs` (styled paragraphs, list items), `insert_markdown` (also footnotes, see below), `insert_table`, `insert_image`, `insert_hyperlink`, `insert_field` (inserts and updates the field), `insert_toc`, `insert_bookmark` (a paragraph's visible text), `import_sections` |
 | Remove content | `delete_blocks` |
 | Styles and formatting | `set_style` (apply an existing style; the typeface, size and color set on the runs give way to it, emphasis such as italic stays), `define_style` (create or update one), `format_text` (the text of target blocks, or only what `match` matches there), `set_table_pagination` (how one table breaks across pages), `set_list` (one new bullet or numbered list, with `numberStyle`, `numberFormat` and `start` for numbers), `clear_list` (take paragraphs out of their lists), `set_default_font` |
 | Sections and pages | `insert_break` (page break, or split the section), `insert_section`, `delete_section` (never the last one), `set_page_setup`, `set_header`, `set_footer`, `set_page_numbers`, `set_watermark` (text in `font`; East Asian text otherwise in the default East Asian font of a Chinese, Japanese or Korean document, or else Microsoft YaHei), `delete_watermark` |

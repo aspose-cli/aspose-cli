@@ -682,3 +682,16 @@ fails, delete the issue's section, the code that names it and the test, then upd
   `words search` finds, in the text of each paragraph, comment and note, so `^` and `$` anchor
   at each of them.
 - **Reproduction:** [WordsKnownIssueTests](tests/Aspose.Cli.Product.Words.Tests/WordsKnownIssueTests.cs)
+
+### WORDS-MD-FOOTNOTE-HEADING
+
+- **Defect:** loading Markdown takes a heading that follows a footnote definition after a blank
+  line, such as `# B` after `[^1]: Note one.`, into the footnote's text instead of starting a
+  new heading, although CommonMark ends the definition at that unindented line. A paragraph of
+  ordinary text after the definition ends it as expected.
+- **CLI behavior:** `words create --from-markdown`, `insert_markdown` and Markdown headers and
+  footers load the Markdown as written; the Words Skill tells authors to put footnote
+  definitions at the end of the Markdown.
+- **Workaround:** write every `[^id]: text` definition at the end of the Markdown, after the
+  last heading.
+- **Reproduction:** [WordsKnownIssueTests](tests/Aspose.Cli.Product.Words.Tests/WordsKnownIssueTests.cs)

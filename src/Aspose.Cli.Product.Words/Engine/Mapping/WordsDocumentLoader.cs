@@ -170,6 +170,8 @@ internal sealed class WordsDocumentLoader
         _resourceBudgets.Consume(ResourceBudgetKinds.MemoryBufferBytes,
             Encoding.UTF8.GetByteCount(markdown), "bytes", "markdown-buffer");
         using var input = new MemoryStream(Encoding.UTF8.GetBytes(markdown), writable: false);
+        // WORDS-MD-FOOTNOTE-HEADING: inline and file Markdown load as written; the Words Skill
+        // tells authors to put footnote definitions at the end.
         Document document = Load(options => new Document(input, options),
             LoadFormat.Markdown, owner.Resources, "inline Markdown", password: default, Loading, warnings: null, onDisk: false);
         owner.Retain(document);
