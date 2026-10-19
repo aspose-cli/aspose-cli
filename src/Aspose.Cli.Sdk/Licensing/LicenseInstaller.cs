@@ -219,7 +219,7 @@ public static class LicenseInstaller
     {
         ArgumentNullException.ThrowIfNull(paths);
         return paths.Select(Path.GetFullPath)
-            .Distinct(OperatingSystem.IsWindows() ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal)
+            .Distinct(FilePaths.Comparer)
             .ToArray();
     }
 

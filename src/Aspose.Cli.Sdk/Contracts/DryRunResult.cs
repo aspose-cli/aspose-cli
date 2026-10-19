@@ -59,7 +59,7 @@ public sealed record DryRunResult() : ResultEnvelope("dry-run-result", 2)
             throw new ArgumentException("A dry run checks at least one known item.", nameof(checks));
         }
 
-        string[] written = [.. paths.Select(static path => System.IO.Path.GetFullPath(path)).Distinct(StringComparer.OrdinalIgnoreCase)];
+        string[] written = [.. paths.Select(static path => System.IO.Path.GetFullPath(path)).Distinct(FilePaths.Comparer)];
         return new DryRunResult
         {
             DryRun = true,

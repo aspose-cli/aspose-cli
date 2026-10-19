@@ -442,7 +442,7 @@ public static class BoundedOperationRunner
         string? path = failure is FileNotFoundException { FileName: { Length: > 0 } named }
             ? (Declares(inputs, named) ? named : null)
             : inputs.FirstOrDefault(input => PathResolver.TryResolve(Environment.CurrentDirectory, input) is { } full
-                && failure.Message.Contains($"'{full}'", StringComparison.OrdinalIgnoreCase));
+                && failure.Message.Contains($"'{full}'", FilePaths.Comparison));
         return path is null ? null : failure switch
         {
             FileNotFoundException or DirectoryNotFoundException => CliErrors.FileNotFound(path),
@@ -456,6 +456,6 @@ public static class BoundedOperationRunner
     {
         string? missing = PathResolver.TryResolve(Environment.CurrentDirectory, file);
         return missing is not null && inputs.Any(input =>
-            string.Equals(PathResolver.TryResolve(Environment.CurrentDirectory, input), missing, StringComparison.OrdinalIgnoreCase));
+            FilePaths.Same(PathResolver.TryResolve(Environment.CurrentDirectory, input), missing));
     }
 }
