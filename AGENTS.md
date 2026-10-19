@@ -118,7 +118,11 @@ weaken a check or remove a supported operation to make a test pass.
   and counts from the product's snapshots; a product counts nothing. An object is numbered by its
   position in the output of the whole batch, or in its input when the batch removed it, so a
   removed object and a changed one can share an address and the targets list one fewer than
-  `itemsAffected`. Names in addresses are escaped only by `TargetName.Escape`
+  `itemsAffected`. The number comes from the instance the product names in `Positions()` (a Words
+  block or section, a PDF page, a Slides slide, which also numbers `slide/3/shape/7` and
+  `page/1/image/1`); numbered objects without one keep the number their operation saw: the Cells
+  objects numbered within a sheet (`chart/Sheet/2`, `image/…`, `conditional-format/…`) and the
+  PDF bookmarks and page labels. Names in addresses are escaped only by `TargetName.Escape`
   (`TargetNameOwnershipTests`): just `/`, `%`, control characters and leading and trailing white
   space, an empty name is `%00`, and in a Cells `cell/Sheet!A1` the sheet's own `!` is `%21`.
 
