@@ -88,6 +88,11 @@ weaken a check or remove a supported operation to make a test pass.
   (`KnownViolationsTests`, `GeneratedCaseListTests`). Delete an entry when its defect is fixed.
   Adding an entry, widening its `modes`, or deleting a case id needs the owner's
   `quality-exception` label.
+- **Rule exemptions.** A test's list of cases a rule excuses (such as `RoundTripExempt`,
+  `SameNameOptions.Exemptions` or a product's `Homonyms`) sits between
+  `// rule-exemptions: begin` and `// rule-exemptions: end` lines in a file `.github/CODEOWNERS`
+  names. Adding or editing an exemption, taking one out of its block, or removing or moving a
+  marker is adding a known violation and needs the same label; deleting an exemption does not. `scripts/require-approval.ps1` checks both lists for the pull request.
 - **Analyzers.** Production code builds with the analyzers in the `[src/**.cs]` section of
   `.editorconfig` as errors; fix a violation rather than suppressing it.
 
