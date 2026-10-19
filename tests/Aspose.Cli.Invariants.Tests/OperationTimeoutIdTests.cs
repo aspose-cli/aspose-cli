@@ -20,7 +20,8 @@ public sealed class OperationTimeoutIdTests
     // Nested repetition over forty letters and a mismatch backtracks far beyond the one-second budget.
     private static readonly string Text = new string('a', 40) + "!";
 
-    public static TheoryData<string> Products() => ["cells", "pdf", "slides", "words"];
+    /// <summary>Every product of the catalog, so a new product fails until its text edit is placed here.</summary>
+    public static TheoryData<string> Products() => [.. CliCatalog.Current.Products.Select(static product => product.Id)];
 
     [Theory]
     [MemberData(nameof(Products))]

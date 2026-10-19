@@ -21,9 +21,20 @@ public sealed class EngineAssemblyLoadingTests : IDisposable
 {
     private const string LogVariable = "ENGINE_LOAD_PROBE_LOG";
 
+    /// <summary>
+    /// An assembly of a product's document engine: the family its <c>engine</c> in
+    /// <c>eng/products.json</c> belongs to, such as <c>Aspose.PDF</c> for <c>Aspose.PDF.Drawing</c>,
+    /// or one below it, so a new product's engine is watched without changing this test.
+    /// </summary>
     private static readonly Regex EngineAssembly = new(
-        @"^Aspose\.(Pdf|Cells|Words|Slides)(\..+)?$",
+        $@"^({string.Join('|', EngineFamilies().Select(Regex.Escape))})(\..+)?$",
         RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+
+    private static IEnumerable<string> EngineFamilies() =>
+        JsonNode.Parse(File.ReadAllText(Path.Combine(RepositoryPaths.Root, "eng", "products.json")))!["products"]!
+            .AsArray()
+            .Select(static product => string.Join('.', product!["engine"]!.GetValue<string>().Split('.').Take(2)))
+            .Distinct(StringComparer.OrdinalIgnoreCase);
 
     private const string HookSource = """
         using System;

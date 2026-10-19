@@ -16,8 +16,11 @@ public sealed class RegexTimeoutTests
     // Nested repetition over forty letters and a mismatch backtracks far beyond the one-second budget.
     private static readonly string Text = new string('a', 40) + "!";
 
-    /// <summary>The products' text edits that take a regular expression, each over a document holding <see cref="Text"/>.</summary>
-    public static TheoryData<string> Products() => ["cells", "pdf", "slides", "words"];
+    /// <summary>
+    /// Every product of the catalog, each with its text edit that takes a regular expression over a
+    /// document holding <see cref="Text"/>, so a new product fails until its edit is placed here.
+    /// </summary>
+    public static TheoryData<string> Products() => [.. CliCatalog.Current.Products.Select(static product => product.Id)];
 
     [Theory]
     [MemberData(nameof(Products))]

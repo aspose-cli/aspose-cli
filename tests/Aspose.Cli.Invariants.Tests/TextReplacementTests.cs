@@ -34,7 +34,7 @@ public sealed class TextReplacementTests
     public static TheoryData<string, string> ProductCases()
     {
         var data = new TheoryData<string, string>();
-        foreach (string product in new[] { "cells", "slides", "words" })
+        foreach (string product in ReplacingProducts())
         {
             foreach (string name in Cases.Keys)
             {
@@ -45,8 +45,15 @@ public sealed class TextReplacementTests
         return data;
     }
 
-    /// <summary>The products whose replace_text refuses an expression that matches an empty string, as search does.</summary>
-    public static TheoryData<string> EmptyMatchProducts() => ["cells", "slides", "words"];
+    /// <summary>The products whose replace_text refuses an expression that matches an empty string, as search does: every product with replace_text.</summary>
+    public static TheoryData<string> EmptyMatchProducts() => [.. ReplacingProducts()];
+
+    /// <summary>
+    /// The products whose operations the catalog lists replace_text in, so a new product with it
+    /// fails until its document is placed in <see cref="Document"/>.
+    /// </summary>
+    private static IEnumerable<string> ReplacingProducts() =>
+        CliCatalog.Current.Products.Where(static product => product.Ops.Contains("replace_text")).Select(static product => product.Id);
 
     [Theory]
     [MemberData(nameof(ProductCases))]

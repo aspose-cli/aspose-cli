@@ -13,13 +13,18 @@ namespace Aspose.Cli.Platform.Tests.Integration;
 /// </summary>
 public sealed class InputLoadingAlikeTests
 {
-    /// <summary>A legacy binary document of another product, by the product that is given it.</summary>
+    /// <summary>The legacy binary fixture document of each product that has one.</summary>
+    private static readonly string[] LegacyFixtures = ["cells.xls", "slides.ppt", "words.doc"];
+
+    /// <summary>
+    /// Every product of the catalog, each given the legacy binary document of every other product,
+    /// so a new product is given them without changing this test.
+    /// </summary>
     private static readonly (string Product, string Fixture)[] LegacyInputs =
     [
-        ("cells", "words.doc"), ("cells", "slides.ppt"),
-        ("pdf", "words.doc"), ("pdf", "cells.xls"), ("pdf", "slides.ppt"),
-        ("slides", "words.doc"), ("slides", "cells.xls"),
-        ("words", "cells.xls"), ("words", "slides.ppt"),
+        .. CliCatalog.Current.Products.SelectMany(static product => LegacyFixtures
+            .Where(fixture => !fixture.StartsWith(product.Id + ".", StringComparison.Ordinal))
+            .Select(fixture => (product.Id, fixture))),
     ];
 
     [Fact]
