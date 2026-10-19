@@ -67,9 +67,10 @@ Do not retry unchanged input.
 ## Evaluation mode: what you must disclose
 
 - A command that writes files in evaluation mode, such as `create`, `edit`,
-  `convert` or `render`, warns `EVALUATION_MODE`, and what it writes carries evaluation watermarks or added evaluation content. The
-  message names the marks the CLI recognizes in the output. The mark is in the
-  file you deliver, so tell the user. An extraction that copies embedded files
+  `convert` or `render`, warns `EVALUATION_MODE`, and what it writes carries
+  evaluation watermarks or added evaluation content. The message names the
+  marks the CLI recognizes in the output. The mark is in the file you
+  deliver, so tell the user. An extraction that copies embedded files
   as the document stores them, Slides `extract --what media`, PDF
   `extract --what attachments` and Words `extract --what images`, writes no
   evaluation content and does not warn.

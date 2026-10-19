@@ -11,8 +11,8 @@ overview adds the checks specific to its documents.
     values came from the engine
 [ ] Edits: every OP_NO_EFFECT warning explained; no change reported that was
     not read back
-[ ] Leftovers: a search (`cells search`, `pdf search`, `slides search`,
-    `words search`) finds no TBD / TODO / {{...}} placeholders
+[ ] Leftovers: `<product> search` finds no TBD / TODO / {{...}}
+    placeholders
 [ ] Product checks: the semantic checks the product Skill names pass
 [ ] Visual: review ran into a new directory and every image it lists was
     opened; its coverage is complete, or the gap is reported
@@ -88,8 +88,8 @@ here and, when known, the font the engine draws instead; it exits 8 when a
 font is not available. It answers whether the declared font names are
 installed, not whether every glyph renders: non-Latin text in a font without
 those glyphs can still pass, so the visual pass remains the proof. `review`
-reports a missing or substituted font with the product's check, such as
-`PDF_FONTS_MISSING_OR_SUBSTITUTED`.
+reports a missing or substituted font with the product's
+`<PRODUCT>_FONTS_MISSING_OR_SUBSTITUTED` check.
 
 Fonts delivered beside the document reach the engine only through
 `--font-dir <dir>`, which adds to the system fonts and can repeat. Pass the

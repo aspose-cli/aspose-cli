@@ -17,8 +17,8 @@ diffed.
 | Rung | Command | Answers |
 |------|---------|---------|
 | 1. Structure | `<product> inspect` | Counts, names, ids, properties; `--detail` adds the sections you name and, where offered, `--sample` a bounded sample |
-| 2. Window | `cells read`, `pdf read`, `slides read`, `words read` | The content of a selected range, pages, slides or blocks |
-| 3. Search | `cells search`, `pdf search`, `slides search`, `words search` | Where a pattern occurs |
+| 2. Window | `<product> read` | The content of a selected range, pages, slides or blocks |
+| 3. Search | `<product> search` | Where a pattern occurs |
 | 4. Look | `review`, `<product> render` | What data cannot show: layout, clipping, overlap, charts |
 
 Take addresses (sheet names, page, slide and block numbers) from rung 1
@@ -67,9 +67,9 @@ with `next` keeps each result small.
 
 ## Search paging
 
-A search (`cells search`, `pdf search`, `slides search`, `words search`) returns at most its `--max-hits` budget of hits in document
-order. A truncated search's `window.next` repeats the search with `--skip`
-past the hits already returned. Each hit is one match: its `text` is the
+`<product> search` returns at most its `--max-hits` budget of hits in
+document order. A truncated search's `window.next` repeats the search with
+`--skip` past the hits already returned. Each hit is one match: its `text` is the
 matched text itself, and its `context` is the text around it, at most 40
 characters on each side, on one line, with an ellipsis where it is cut. In
 Cells a hit is one cell, holding the first match in that cell.

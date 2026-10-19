@@ -111,7 +111,7 @@ aspose-cli capabilities --output-format json
   and retry the same command; nothing was written.
 - A file that is not a readable document of its type (`FILE_CORRUPT`):
   renaming a file does not change its format. When the extension disagrees
-  with the content (`FORMAT_MISMATCH`), `details.detected` names the product
+  with the content (`FORMAT_MISMATCH`), `details.detected` names the products
   the content looks like and the hint names its command: use it, rename the
   file, or pass `--product <id>` to `review` or `preview open`. When several
   products or readings fit (`FORMAT_AMBIGUOUS`), pass what the hint names.
@@ -161,7 +161,7 @@ an earlier `update install` is still running means wait, then check
 `aspose-cli --version`. A warning that it failed or stopped gives the reason
 and names the installer log: close the programs that use this installation,
 including agents running `aspose-cli mcp serve`, then run `update install`
-again. `aspose-cli capabilities` lists every code with its exit code.
+again.
 
 ## Windows PowerShell
 

@@ -20,14 +20,10 @@ aspose-cli schema v2/pdf/ops
   types, defaults, allowed values and descriptions.
 - The whole schema states the optional top-level fields of the document, such
   as `ifMatch`, and its `description` says how the product resolves addresses
-  across a batch: against the original document or as the earlier operations
-  left it.
-- Each field's `x-readBack` says where a read reports what the field writes:
-  a read result's schema URI with a JSON Pointer to that property (a
-  dictionary's `additionalProperties` is the entry named after the field),
-  `unread` when no read reports it yet, `position` when a read reports it by
-  position rather than by name, and `not-state` for a selector, a source or a
-  parameter. Read a changed field back at that property before you report it.
+  across a batch (against the original document or as the earlier operations
+  left it) and what each field's `x-readBack` value means.
+- A field's `x-readBack` names the read result property that reports what
+  the field writes; read a changed field back there before you report it.
 
 The product's `aspose-cli docs <product>/editing` groups the operations by task
 and gives recipes and ordering rules the schema cannot state.
@@ -57,8 +53,8 @@ A PDF batch, for example:
 ## Atomic, best-effort and dry run
 
 - **Atomic (default).** If any operation fails, nothing is written. The error
-  names the failing operation in `details.id` and `details.op`, and why in
-  `details.reason`; a misspelled field, operation or value lists the valid
+  names the failing operation in `details.id` and `details.op`, and its
+  message and hint say why; a misspelled field, operation or value lists the valid
   ones in `details.available` and the likely ones in `details.suggestions`.
   When several entries fail the same check, `details.errors` lists each of
   them. Fix those entries and run the whole batch again.
