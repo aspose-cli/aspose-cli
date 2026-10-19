@@ -1,3 +1,4 @@
+using Aspose.Cli.Sdk.Errors;
 using Aspose.Words;
 using Aspose.Words.Markup;
 using Xunit;
@@ -201,6 +202,43 @@ public sealed class WordsFormatTextTests : IClassFixture<WordsFixture>
 
         AssertChangedAndVerified(result);
         Assert.Equal("Party B", HighlightedText(result));
+    }
+
+    /// <summary>
+    /// A pattern that matches an empty string, or that does not compile, is refused before the
+    /// edit, as replace_text and words search refuse it.
+    /// </summary>
+    [Theory]
+    [InlineData("x*")]
+    [InlineData("(")]
+    public void Regex_ThatMatchesAnEmptyStringOrDoesNotCompile_IsRefused(string pattern)
+    {
+        CliException error = Assert.Throws<CliException>(() => WordsOp.Catalog.Parse<WordsOpsBatch>(
+            $$"""{"ops":[{"op":"format_text","target":{"block":1},"match":{{System.Text.Json.JsonSerializer.Serialize(pattern)}},"regex":true,"bold":true}]}""",
+            Aspose.Cli.Generated.ProductJsonContext.Definition));
+
+        Assert.Equal(ErrorCodes.OpsInvalid, error.Code);
+    }
+
+    /// <summary>
+    /// format_text and replace_text take the same whole words: a letter, decimal digit or
+    /// underscore joins a word, while a superscript digit or a Roman numeral does not.
+    /// </summary>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void WholeWord_FormatsTheMatchesReplaceTextReplaces(bool regex)
+    {
+        const string Text = "x² xⅫ x_ x1 xé x";
+        string find = regex ? "[x]" : "x";
+        (WordsEditResult formatted, _) = FormatClause(
+            $$"""{"op":"format_text","target":{"block":1},"match":"{{find}}","regex":{{(regex ? "true" : "false")}},"wholeWord":true,"highlight":"yellow"}""", Text);
+        (WordsEditResult replaced, WordsBlockData block) = FormatClause(
+            $$"""{"op":"replace_text","find":"{{find}}","regex":{{(regex ? "true" : "false")}},"wholeWord":true,"replace":"Y"}""", Text);
+
+        Assert.Equal("xxx", HighlightedText(formatted));
+        Assert.True(replaced.Verification!.Ok);
+        Assert.Equal("Y² YⅫ x_ x1 xé Y", block.Text);
     }
 
     // The text of every highlighted run of the output, field codes included, in document order.

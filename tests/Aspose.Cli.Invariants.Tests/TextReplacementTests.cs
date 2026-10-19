@@ -21,6 +21,8 @@ public sealed class TextReplacementTests
         ["literal-case-sensitive"] = new("category cat cat_x Cat", Op("Cat", caseSensitive: true), "category cat cat_x QQ"),
         ["whole-word-literal"] = new("category cat cat_x Cat", Op("cat", wholeWord: true), "category QQ cat_x QQ"),
         ["whole-word-no-match"] = new("category", Op("cat", wholeWord: true), null),
+        // Only a letter, decimal digit or underscore joins a word: not a superscript digit or a Roman numeral.
+        ["whole-word-number-signs"] = new("x² xⅫ x1 x_ x", Op("x", wholeWord: true), "QQ² QQⅫ x1 x_ QQ"),
         // A whole-word expression keeps the matches that are whole words; it does not retry an alternative.
         ["whole-word-regex-alternation"] = new("category", Op("cat|category", regex: true, wholeWord: true), null),
         ["regex-substitution"] = new("pages 10-20 and 3-4", Op(@"(\d+)-(\d+)", Marker + "$2-$1", regex: true), "pages QQ20-10 and QQ4-3"),
@@ -45,7 +47,7 @@ public sealed class TextReplacementTests
     }
 
     /// <summary>The products whose replace_text refuses an expression that matches an empty string, as search does.</summary>
-    public static TheoryData<string> EmptyMatchProducts() => ["cells", "slides"];
+    public static TheoryData<string> EmptyMatchProducts() => ["cells", "slides", "words"];
 
     [Theory]
     [MemberData(nameof(ProductCases))]

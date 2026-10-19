@@ -462,55 +462,34 @@ public sealed class WordsCliTests : IClassFixture<WordsFixture>, IDisposable
     }
 
     /// <summary>
-    /// A replace_text regex that anchors with ^, $, \A, \Z, \z or \G is refused before the edit
-    /// runs: the engine reads those anchors at the edges of the whole scope, so it would replace
-    /// fewer paragraphs than words search finds.
+    /// A replace_text regex reads ^, $, \A, \z and the x option at each paragraph, as words
+    /// search does (WORDS-REGEX-ANCHORS), so it replaces every match search finds.
     /// </summary>
     [Category(TestCategory.Slow)]
     [Theory]
-    [InlineData(@"^(\d)\.(\d) ", "^")]
-    [InlineData(@"(?m)^1\.2 ", "^")]
-    [InlineData(@"later$", "$")]
-    [InlineData(@"\A1", @"\A")]
-    [InlineData(@"later\z", @"\z")]
-    [InlineData(@"[a-z]+\Z", @"\Z")]
-    [InlineData(@"\G1", @"\G")]
-    public void ReplaceText_RefusesARegexAnchor(string find, string anchor)
+    [InlineData(@"^(\d)\.(\d)", "x Scope|x Terms|x Notices|See 1.4 later")]
+    [InlineData(@"(?m)^1\.\d", "x Scope|x Terms|x Notices|See 1.4 later")]
+    [InlineData(@"(Scope|Terms|later)$", "1.1 x|1.2 x|1.3 Notices|See 1.4 x")]
+    [InlineData(@"\A1\.\d", "x Scope|x Terms|x Notices|See 1.4 later")]
+    [InlineData(@"(Notices|later)\z", "1.1 Scope|1.2 Terms|1.3 x|See 1.4 x")]
+    [InlineData(@"(?x) ^ 1 \. \d  # a clause number", "x Scope|x Terms|x Notices|See 1.4 later")]
+    public void ReplaceText_AnchorsAtEachParagraphAsSearchDoes(string find, string expected)
     {
-        WriteNumberedClauses();
+        File.WriteAllText(_workspace.File("source.md"), "1.1 Scope\n\n1.2 Terms\n\n1.3 Notices\n\nSee 1.4 later\n");
+        Assert.Equal(0, _workspace.Run("words", "create", "contract.docx", "--from-markdown", "source.md").ExitCode);
 
+        CliResult searched = _workspace.Run("words", "search", "contract.docx", "--pattern", find, "--regex", "--output-format", "json");
         CliResult edited = EditWith(new JsonObject { ["op"] = "replace_text", ["find"] = find, ["replace"] = "x", ["regex"] = true });
 
-        Assert.Equal(4, edited.ExitCode);
-        JsonNode error = JsonNode.Parse(edited.StdErr)!["error"]!;
-        Assert.Equal("OPS_INVALID", error["code"]!.GetValue<string>());
-        Assert.Equal("replace_text", error["details"]!["op"]!.GetValue<string>());
-        Assert.Contains($"find uses the anchor {anchor},", error["details"]!["reason"]!.GetValue<string>(), StringComparison.Ordinal);
-        Assert.False(File.Exists(_workspace.File("edited.docx")));
-    }
-
-    /// <summary>
-    /// A comment or the x option can hide an anchor from the check, such as the [ of a comment
-    /// that seems to open a class, so a replace_text regex with either is refused as well.
-    /// </summary>
-    [Category(TestCategory.Slow)]
-    [Theory]
-    [InlineData("(?#[)$")]
-    [InlineData("(?#[)^ab]")]
-    [InlineData("(?x)#[\n^ab")]
-    [InlineData("(?ix)ab")]
-    [InlineData("(?-i+x:ab)")]
-    public void ReplaceText_RefusesAPatternThatCanHideAnAnchor(string find)
-    {
-        WriteNumberedClauses();
-
-        CliResult edited = EditWith(new JsonObject { ["op"] = "replace_text", ["find"] = find, ["replace"] = "x", ["regex"] = true });
-
-        Assert.Equal(4, edited.ExitCode);
-        JsonNode error = JsonNode.Parse(edited.StdErr)!["error"]!;
-        Assert.Equal("OPS_INVALID", error["code"]!.GetValue<string>());
-        Assert.Contains("comment or the x option", error["details"]!["reason"]!.GetValue<string>(), StringComparison.Ordinal);
-        Assert.False(File.Exists(_workspace.File("edited.docx")));
+        Assert.True(searched.ExitCode == 0, searched.StdErr);
+        Assert.True(edited.ExitCode == 0, edited.StdErr);
+        int hits = JsonNode.Parse(searched.StdOut)!["hits"]!.AsArray().Count;
+        Assert.Equal(hits, JsonNode.Parse(edited.StdOut)!["applied"]![0]!["itemsAffected"]!.GetValue<int>());
+        CliResult read = _workspace.Run("words", "read", "edited.docx", "--output-format", "json");
+        Assert.Equal(
+            expected,
+            string.Join('|', JsonNode.Parse(read.StdOut)!["blocks"]!.AsArray().Select(static block => block!["text"]!.GetValue<string>())
+                .Where(static text => text.Length > 0 && !text.Contains("Aspose", StringComparison.Ordinal))));
     }
 
     /// <summary>
@@ -538,12 +517,6 @@ public sealed class WordsCliTests : IClassFixture<WordsFixture>, IDisposable
         Assert.Contains(
             JsonNode.Parse(read.StdOut)!["blocks"]!.AsArray().Select(static block => block!["text"]!.GetValue<string>()),
             text => text == expected);
-    }
-
-    private void WriteNumberedClauses()
-    {
-        File.WriteAllText(_workspace.File("source.md"), "1.1 Scope\n\n1.2 Terms\n\nSee 1.3 later\n");
-        Assert.Equal(0, _workspace.Run("words", "create", "contract.docx", "--from-markdown", "source.md").ExitCode);
     }
 
     private CliResult EditWith(JsonObject op)
