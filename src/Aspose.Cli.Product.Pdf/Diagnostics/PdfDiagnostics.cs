@@ -46,6 +46,9 @@ internal static class PdfDiagnostics
     /// <summary>The visible signature's rectangle cannot hold its text at the smallest font size, so the appearance clips it.</summary>
     internal static readonly WarningCode SignatureTextClipped = new("SIGNATURE_TEXT_CLIPPED");
 
+    /// <summary>A table extraction found no table on the selected pages.</summary>
+    internal static readonly WarningCode TablesNotFound = new("TABLES_NOT_FOUND");
+
     /// <summary>A form field of the output does not hold the value set_form_field set.</summary>
     internal static readonly DiagnosticDescriptor FieldValueMismatch = DiagnosticDescriptor.Verification("FIELD_VALUE_MISMATCH");
 
@@ -97,5 +100,6 @@ internal static class PdfDiagnostics
         DiagnosticDescriptor.Warning(ImageResolutionLow),
         DiagnosticDescriptor.Warning(SignatureFontEmbedded),
         DiagnosticDescriptor.Warning(SignatureTextClipped),
+        DiagnosticDescriptor.Warning(TablesNotFound),
     ];
 }

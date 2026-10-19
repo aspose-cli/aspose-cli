@@ -69,7 +69,10 @@ compare the pages.
 
 Table extraction is best effort: each extracted table names the page it comes
 from, and nothing scores how well it was recognized, so check the values against
-the source. Each table is a UTF-8 CSV file without a byte order mark; add `--bom` when a person will open it in Excel, which otherwise reads
+the source. Tables are recognized by their ruling lines: when none is
+recognized, `outputs` is empty and a `TABLES_NOT_FOUND` warning says so, which
+happens to a table drawn without lines, such as one laid out from Markdown; read
+it from `pdf extract --what text` or `review` instead. Each table is a UTF-8 CSV file without a byte order mark; add `--bom` when a person will open it in Excel, which otherwise reads
 non-English text in the system code page.
 
 The CLI does not linearize PDFs; `pdf inspect` reports an existing file's
