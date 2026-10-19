@@ -1,0 +1,17 @@
+{
+  "name": "several usage problems of one command line are each listed in details.errors",
+  "steps": [
+    {
+      "args": ["cells", "inspect", "--detail", "cahrts"],
+      "expect": {
+        "exitCode": 2,
+        "error": "USAGE_ERROR",
+        "json": [
+          { "path": "error.details.errors[1]", "exists": true },
+          { "path": "error.details.errors[2]", "exists": false }
+        ],
+        "files": { "nothingWritten": true }
+      }
+    }
+  ]
+}

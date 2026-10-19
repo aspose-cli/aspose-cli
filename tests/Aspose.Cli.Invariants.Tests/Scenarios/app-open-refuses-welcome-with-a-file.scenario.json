@@ -1,0 +1,17 @@
+{
+  "name": "app open refuses --welcome together with a file to open",
+  "files": {
+    "book.xlsx": { "text": "not opened" }
+  },
+  "steps": [
+    {
+      "args": ["app", "open", "book.xlsx", "--welcome", "--no-open"],
+      "expect": {
+        "exitCode": 2,
+        "error": "OPTION_INVALID",
+        "json": [{ "path": "error.details.option", "equals": "--welcome" }],
+        "files": { "unchanged": ["book.xlsx"], "nothingWritten": true }
+      }
+    }
+  ]
+}
