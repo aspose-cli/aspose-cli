@@ -92,6 +92,31 @@ public sealed class SlidesOutputEncryptionTests : IDisposable
     }
 
     /// <summary>
+    /// An encrypted PPT opens to be written through a PPTX round trip; the PPTX an edit writes
+    /// from it still opens only with the input's password, as the result reports.
+    /// </summary>
+    [Category(TestCategory.Slow)]
+    [Fact]
+    public void EditOfAnEncryptedPpt_KeepsTheInputPassword()
+    {
+        using (var source = new Aspose.Slides.Presentation())
+        {
+            source.ProtectionManager.Encrypt(Variables["SLIDES_PASSWORD"]!);
+            source.Save(_workspace.File("locked.ppt"), Aspose.Slides.Export.SaveFormat.Ppt);
+        }
+
+        File.WriteAllText(_workspace.File("ops.json"), """{"ops":[{"op":"set_title","slide":1,"text":"Locked"}]}""");
+        Assert.Equal("PASSWORD_REQUIRED", JsonNode.Parse(Run("slides", "inspect", "locked.ppt").StdErr)!["error"]!["code"]!.GetValue<string>());
+
+        JsonNode result = Succeeds(Run("slides", "edit", "locked.ppt", "--password-env", "SLIDES_PASSWORD", "--ops", "ops.json", "--out", "edited.pptx"));
+
+        Assert.True(result["output"]!["encrypted"]!.GetValue<bool>());
+        Assert.DoesNotContain("ENCRYPTION_REMOVED", Codes(result));
+        Assert.Equal("PASSWORD_REQUIRED", JsonNode.Parse(Run("slides", "inspect", "edited.pptx").StdErr)!["error"]!["code"]!.GetValue<string>());
+        Assert.True(Succeeds(Run("slides", "inspect", "edited.pptx", "--password-env", "SLIDES_PASSWORD"))["input"]!["encrypted"]!.GetValue<bool>());
+    }
+
+    /// <summary>
     /// An edit keeps the input's encryption in the presentation it saves, which is right only
     /// for a format that carries a password: every format edit writes is one, and an edit to
     /// any other presentation or export format is refused before anything is written.
