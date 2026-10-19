@@ -252,7 +252,6 @@ internal sealed partial class PdfMutationHandlers
     {
         var options = new OptimizationOptions
         {
-            RemoveUnusedObjects = operation.RemoveUnusedObjects,
             RemoveUnusedStreams = operation.RemoveUnusedObjects,
             CompressAllContentStreams = operation.CompressStreams,
             CompressObjects = operation.CompressStreams,

@@ -119,7 +119,9 @@ works on extractable text and performs no OCR; it matches any case unless
 `caseSensitive` is `true`. A black rectangle or zero search
 hits alone is not proof that all sensitive content was removed; a raw-byte
 absence check for a known literal is additional evidence only, because PDF text
-can be encoded or compressed. An `OP_NO_EFFECT` warning names each
+can be encoded or compressed. Every edit leaves out the objects that nothing in
+the document references, so a field `flatten_forms` flattened or an attachment
+`delete_attachment` deleted no longer holds its value in the file. An `OP_NO_EFFECT` warning names each
 `redact_text` operation that removed nothing: search for the text it targets
 with `pdf search`, and when it shows on the page but is not found, widen
 the pattern into a regular expression or cover the text with `redact_area`.
@@ -213,7 +215,8 @@ The grid exists only in the rendered image; the PDF is never changed.
 look at the affected pages. It always stores identical streams once, so a merge
 of files that each embed the same font keeps one copy; image settings do not
 shrink a file whose size is its fonts (`pdf inspect --detail fonts` shows
-`embedded` and `subset`). `unembedFonts` removes the fonts altogether, and the
+`embedded` and `subset`). `removeUnusedObjects` removes images a page lists but
+never draws. `unembedFonts` removes the fonts altogether, and the
 text then renders only where the reader has them installed (a CJK font on
 another operating system usually is not): tell the user before sending such a
 file outside. `add_attachment` stores the source file name, never

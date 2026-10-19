@@ -766,7 +766,10 @@ public sealed record OptimizeDocumentOp : PdfOp
     [NotState]
     public bool UnembedFonts { get; init; }
 
-    /// <summary>Whether objects and streams that nothing in the document references are removed.</summary>
+    /// <summary>
+    /// Whether resources, such as images, that a page lists but its content never draws are
+    /// removed. Every edit leaves out the objects that nothing in the document references.
+    /// </summary>
     [NotState]
     public bool RemoveUnusedObjects { get; init; } = true;
 
