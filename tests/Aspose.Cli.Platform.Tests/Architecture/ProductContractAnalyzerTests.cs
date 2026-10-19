@@ -676,6 +676,198 @@ public sealed class ProductContractAnalyzerTests
     }
 
     [Fact]
+    public async Task Apcli009_ReportsMappingCallIntoEditing()
+    {
+        string source = LayeredProductSource(
+            """
+            namespace Demo.Engine.Editing
+            {
+                internal static class BorderOps
+                {
+                    internal static int ToBorderType(string side) => side.Length;
+                }
+            }
+
+            namespace Demo.Engine.Mapping
+            {
+                internal static class StylePool
+                {
+                    internal static int Border(string side) => Demo.Engine.Editing.BorderOps.ToBorderType(side);
+                }
+            }
+            """);
+
+        Diagnostic diagnostic = Assert.Single(
+            await Analyze(source),
+            static item => item.Id == "APCLI009");
+
+        Assert.Contains("'Engine.Mapping'", diagnostic.GetMessage(), StringComparison.Ordinal);
+        Assert.Contains("'Engine.Editing'", diagnostic.GetMessage(), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Apcli009_ReportsMappingSignatureWithAnEditingType()
+    {
+        string source = LayeredProductSource(
+            """
+            namespace Demo.Engine.Editing
+            {
+                internal sealed class Snapshot { }
+            }
+
+            namespace Demo.Engine.Mapping
+            {
+                internal static class Projection
+                {
+                    internal static Demo.Engine.Editing.Snapshot[]? Last;
+                }
+            }
+            """);
+
+        Diagnostic diagnostic = Assert.Single(
+            await Analyze(source),
+            static item => item.Id == "APCLI009");
+
+        Assert.Contains("Snapshot", diagnostic.GetMessage(), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Apcli009_AllowsEditingAndTheEngineToUseMapping()
+    {
+        string source = LayeredProductSource(
+            """
+            namespace Demo.Engine.Mapping
+            {
+                internal static class BorderNames
+                {
+                    internal static int ToBorderType(string side) => side.Length;
+                }
+            }
+
+            namespace Demo.Engine.Editing
+            {
+                internal static class BorderOps
+                {
+                    internal static int Apply(string side) => Demo.Engine.Mapping.BorderNames.ToBorderType(side);
+                }
+            }
+
+            namespace Demo.Engine
+            {
+                internal static class DemoEdit
+                {
+                    internal static int Run(string side) =>
+                        Demo.Engine.Editing.BorderOps.Apply(side) + Demo.Engine.Mapping.BorderNames.ToBorderType(side);
+                }
+            }
+            """);
+
+        ImmutableArray<Diagnostic> diagnostics = await Analyze(source);
+
+        Assert.DoesNotContain(
+            diagnostics,
+            static item => item.Id == "APCLI009");
+    }
+
+    [Theory]
+    [InlineData("Demo.Contracts")]
+    [InlineData("Demo.Commands")]
+    [InlineData("Demo.Engine")]
+    [InlineData("Demo.Engine.Mapping")]
+    [InlineData("Demo.Engine.Editing")]
+    public async Task Apcli009_ReportsALayerThatReachesTheCompositionRoot(string layer)
+    {
+        string source = LayeredProductSource(
+            $$"""
+            namespace Demo
+            {
+                internal static class DemoReviewChecks
+                {
+                    internal static int Count() => 1;
+                }
+            }
+
+            namespace {{layer}}
+            {
+                internal static class Caller
+                {
+                    internal static int Run() => Demo.DemoReviewChecks.Count();
+                }
+            }
+            """);
+
+        Diagnostic diagnostic = Assert.Single(
+            await Analyze(source),
+            static item => item.Id == "APCLI009");
+
+        Assert.Contains("'Composition'", diagnostic.GetMessage(), StringComparison.Ordinal);
+        Assert.Contains("DemoReviewChecks", diagnostic.GetMessage(), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Apcli009_AllowsTheLayersTheirCompositionRootLeaves()
+    {
+        string source = LayeredProductSource(
+            """
+            namespace Demo
+            {
+                internal static class DemoDiagnostics
+                {
+                    internal const string Missing = "MISSING";
+                }
+
+                internal static class DemoBudgetDomains
+                {
+                    internal const string Pages = "demo.pages";
+                }
+
+                internal static class DemoFormatRecognition
+                {
+                    internal static string Rules => "rules";
+                }
+
+                internal static class DemoViewAdapter
+                {
+                    internal static string Render() =>
+                        Demo.Engine.Mapping.Loader.Domain() + Demo.Commands.EditCommand.Name();
+                }
+            }
+
+            namespace Demo.Contracts
+            {
+                internal static class DemoFormats
+                {
+                    internal static string Rules() => Demo.DemoFormatRecognition.Rules + Demo.DemoDiagnostics.Missing;
+                }
+            }
+
+            namespace Demo.Commands
+            {
+                internal static class EditCommand
+                {
+                    internal static string Name() => nameof(Demo.DemoModule) + Demo.DemoDiagnostics.Missing;
+
+                    internal static object Module() => new Demo.DemoModule();
+                }
+            }
+
+            namespace Demo.Engine.Mapping
+            {
+                internal static class Loader
+                {
+                    internal static string Domain() => Demo.DemoBudgetDomains.Pages + Demo.DemoDiagnostics.Missing;
+                }
+            }
+            """);
+
+        ImmutableArray<Diagnostic> diagnostics = await Analyze(source);
+
+        Assert.DoesNotContain(
+            diagnostics,
+            static item => item.Id == "APCLI009");
+    }
+
+    [Fact]
     public async Task Apcli010_ReportsPublicImplementationType()
     {
         string source = LayeredProductSource(
