@@ -27,7 +27,7 @@ internal sealed class SlidesEvaluationProfile : IEvaluationProfile<Presentation>
     /// Evaluation mode draws its watermark into every output but Markdown, whose export holds
     /// only the slides' text, cut short.
     /// </summary>
-    public bool WritesWatermark(string format) => format != "md";
+    public bool WritesWatermark(string format) => !SlidesEngineFormats.HoldsReadText(format);
 
     /// <summary>
     /// The marks of an output: the watermark boxes, and the text evaluation mode cut short only
@@ -35,7 +35,7 @@ internal sealed class SlidesEvaluationProfile : IEvaluationProfile<Presentation>
     /// the engine saves keep the full text.
     /// </summary>
     public EvaluationMarks Inspect(Presentation presentation, string format) =>
-        format == "md" ? Inspect(presentation) : Inspect(presentation) with { IsTruncated = false };
+        SlidesEngineFormats.HoldsReadText(format) ? Inspect(presentation) : Inspect(presentation) with { IsTruncated = false };
 
     /// <summary>
     /// The marks of an output that shows some slides, as images or an export of selected slides
@@ -44,7 +44,7 @@ internal sealed class SlidesEvaluationProfile : IEvaluationProfile<Presentation>
     public EvaluationMarks Inspect(Presentation presentation, string format, IReadOnlyCollection<int> pages) =>
         new(
             pages.Any(number => presentation.Slides[number - 1].Shapes.Any(IsEvaluationWatermark)) ? [Watermark] : [],
-            format == "md" && EvaluationInputTruncated(presentation));
+            SlidesEngineFormats.HoldsReadText(format) && EvaluationInputTruncated(presentation));
 
     private const string Watermark = "the evaluation watermark text box 'Evaluation only. Created with Aspose.Slides' on its slides";
 }
