@@ -421,14 +421,22 @@ internal sealed class PublicationJournal
             throw new InvalidDataException(
                 $"Publication journal '{path}' has an invalid bounded size.");
         }
+        byte[] contents = new byte[stream.Length];
+        stream.ReadExactly(contents);
+        // The version decides which fields are known, so it is read before the strict reading
+        // that would take another version's fields for damage.
+        int version = ReadVersion(path, contents);
+        if (version != CurrentVersion)
+        {
+            throw new PublicationJournalVersionException(path, version);
+        }
         PublicationJournal journal =
             JsonSerializer.Deserialize<PublicationJournal>(
-                stream,
+                contents,
                 JsonOptions)
             ?? throw new InvalidDataException(
                 $"Publication journal '{path}' is empty.");
-        if (journal.Version != CurrentVersion
-            || string.IsNullOrWhiteSpace(journal.Operation)
+        if (string.IsNullOrWhiteSpace(journal.Operation)
             || journal.Operation.Length > 128
             || journal.OwnerProcessId <= 0
             || journal.Entries is null
@@ -439,6 +447,22 @@ internal sealed class PublicationJournal
         }
         deadline?.ThrowIfExpired("publication-journal-read");
         return journal;
+    }
+
+    private static int ReadVersion(string path, byte[] contents)
+    {
+        using JsonDocument document = JsonDocument.Parse(
+            contents,
+            new JsonDocumentOptions { AllowDuplicateProperties = false });
+        if (document.RootElement.ValueKind != JsonValueKind.Object
+            || !document.RootElement.TryGetProperty("version", out JsonElement version)
+            || version.ValueKind != JsonValueKind.Number
+            || !version.TryGetInt32(out int value))
+        {
+            throw new InvalidDataException(
+                $"Publication journal '{path}' has no version.");
+        }
+        return value;
     }
 
     /// <summary>Checks a fully populated recovery record before any target can be changed.</summary>
@@ -545,6 +569,13 @@ internal sealed class PublicationJournal
         DurableFile.Flush(path);
     }
 }
+
+/// <summary>
+/// A journal written by another version of the CLI, which shares the publication area. This
+/// version cannot tell what its transaction did, so the transaction is left exactly as it is.
+/// </summary>
+internal sealed class PublicationJournalVersionException(string path, int version)
+    : IOException($"Publication journal '{path}' has version {version}; this build reads version {PublicationJournal.CurrentVersion}.");
 
 internal sealed class PublicationJournalEntry
 {
