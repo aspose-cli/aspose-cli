@@ -1,4 +1,6 @@
 using System.Text.Json.Nodes;
+using Aspose.Words;
+using Aspose.Words.Lists;
 using Xunit;
 
 namespace Aspose.Cli.Product.Words.Tests;
@@ -34,6 +36,62 @@ public sealed class WordsListTests : IDisposable
     }
 
     [Fact]
+    public void SetList_NumberFormat_WritesParenthesizedLetters()
+    {
+        JsonNode[] blocks = EditNumberedList("""{"op":"set_list","target":{"blocks":"1-3"},"kind":"number","numberStyle":"letters-lower","numberFormat":"(%1)"}""");
+
+        Assert.Equal(["(a)", "(b)", "(c)"], blocks.Select(static block => block["listLabel"]?.GetValue<string>()));
+        Assert.All(blocks, static block => Assert.Equal("(%1)", block["list"]?["numberFormat"]?.GetValue<string>()));
+        Assert.All(blocks, static block => Assert.Equal("letters-lower", block["list"]?["numberStyle"]?.GetValue<string>()));
+    }
+
+    [Fact]
+    public void SetList_NumberFormat_ShowsTheNumbersOfTheLevelsAbove()
+    {
+        JsonNode[] blocks = EditNumberedList("""{"op":"set_list","target":{"blocks":"1-3"},"kind":"number","level":2,"numberStyle":"decimal","numberFormat":"%1.%2"}""");
+
+        Assert.Equal(["1.1", "1.2", "1.3"], blocks.Select(static block => block["listLabel"]?.GetValue<string>()));
+        Assert.All(blocks, static block => Assert.Equal("%1.%2", block["list"]?["numberFormat"]?.GetValue<string>()));
+    }
+
+    /// <summary>
+    /// A number format another program wrote, with fixed text and a literal percent sign, reads
+    /// as a numberFormat that set_list writes back as the same list.
+    /// </summary>
+    [Theory]
+    [InlineData("Done 100%", "Done 100%%")]
+    [InlineData("\u0000 of 100%", "%1 of 100%%")]
+    public void SetList_NumberFormatItReads_WritesBackTheSameList(string engineFormat, string notation)
+    {
+        var document = new Document();
+        var builder = new DocumentBuilder(document);
+        Aspose.Words.Lists.List list = document.Lists.Add(ListTemplate.NumberDefault);
+        list.ListLevels[0].NumberFormat = engineFormat;
+        builder.ListFormat.List = list;
+        foreach (string text in new[] { "One", "Two", "Three" })
+        {
+            builder.Writeln(text);
+        }
+
+        builder.ListFormat.RemoveNumbers();
+        document.Save(_workspace.File("list.docx"), SaveFormat.Docx);
+
+        JsonNode[] items = ListItems("list.docx");
+        Assert.Equal(3, items.Length);
+        JsonNode read = items[0]["list"]!;
+        Assert.Equal(notation, read["numberFormat"]!.GetValue<string>());
+
+        string target = $"{items[0]["block"]}-{items[^1]["block"]}";
+        CliResult edited = _workspace.RunWithInput(
+            $$"""{"ops":[{"op":"set_list","target":{"blocks":"{{target}}"},"kind":{{read["kind"]!.ToJsonString()}},"level":{{read["level"]}},"numberStyle":{{read["numberStyle"]!.ToJsonString()}},"numberFormat":{{read["numberFormat"]!.ToJsonString()}},"start":{{read["start"]}}}]}""",
+            "words", "edit", "list.docx", "--ops", "-", "--out", "edited.docx", "--verify", "--output-format", "json");
+
+        Assert.True(edited.ExitCode == 0, edited.StdErr + edited.StdOut);
+        Assert.Equal(0, JsonNode.Parse(edited.StdOut)!["applied"]![0]!["itemsAffected"]!.GetValue<long>());
+        Assert.All(ListItems("edited.docx"), item => Assert.Equal(notation, item["list"]!["numberFormat"]!.GetValue<string>()));
+    }
+
+    [Fact]
     public void ClearList_LeavesParagraphsInNoList()
     {
         JsonNode[] blocks = EditNumberedList("""{"op":"clear_list","target":{"blocks":"1-3"}}""");
@@ -65,5 +123,13 @@ public sealed class WordsListTests : IDisposable
         CliResult read = _workspace.Run("words", "read", "edited.docx", "--content", "full", "--output-format", "json");
         Assert.True(read.ExitCode == 0, read.StdErr);
         return [.. JsonNode.Parse(read.StdOut)!["blocks"]!.AsArray().Select(static block => block!)];
+    }
+
+    /// <summary>The blocks of a document that a full read reports in a list.</summary>
+    private JsonNode[] ListItems(string file)
+    {
+        CliResult read = _workspace.Run("words", "read", file, "--content", "full", "--output-format", "json");
+        Assert.True(read.ExitCode == 0, read.StdErr);
+        return [.. JsonNode.Parse(read.StdOut)!["blocks"]!.AsArray().Select(static block => block!).Where(static block => block["list"] is not null)];
     }
 }

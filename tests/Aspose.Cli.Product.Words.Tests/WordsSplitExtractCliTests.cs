@@ -58,6 +58,65 @@ public sealed class WordsSplitExtractCliTests : IDisposable
         Assert.Contains(outputs, output => output!["format"]!.GetValue<string>() == format && output["block"]?.GetValue<int>() >= 1);
     }
 
+    [Category(TestCategory.Slow)]
+    [Fact]
+    public void SplitByHeading1_WithOneHeading_Warns()
+    {
+        WriteChapters(1);
+
+        CliResult split = _workspace.Run("words", "split", "book.docx", "--by", "heading1", "--out-dir", "parts", "--output-format", "json");
+
+        Assert.True(split.ExitCode == 0, split.StdErr + split.StdOut);
+        JsonNode result = JsonNode.Parse(split.StdOut)!;
+        Assert.Equal(2, result["outputs"]!.AsArray().Count);
+        JsonNode warning = Assert.Single(
+            result["warnings"]!.AsArray(),
+            static item => item!["code"]!.GetValue<string>() == "SPLIT_SINGLE_HEADING")!;
+        string hint = warning["hint"]!.GetValue<string>();
+        Assert.Contains("""{"op":"set_style","target":{"block":""", hint, StringComparison.Ordinal);
+        Assert.Contains("""style":"Heading 1"}""", hint, StringComparison.Ordinal);
+        Assert.Contains("--by sections", hint, StringComparison.Ordinal);
+    }
+
+    [Category(TestCategory.Slow)]
+    [Fact]
+    public void SplitByHeading1_WithTwoHeadings_DoesNotWarn()
+    {
+        WriteChapters(2);
+
+        CliResult split = _workspace.Run("words", "split", "book.docx", "--by", "heading1", "--out-dir", "parts", "--output-format", "json");
+
+        Assert.True(split.ExitCode == 0, split.StdErr + split.StdOut);
+        Assert.DoesNotContain("SPLIT_SINGLE_HEADING", split.StdOut, StringComparison.Ordinal);
+    }
+
+    [Category(TestCategory.Slow)]
+    [Fact]
+    public void ExtractImages_InEvaluationMode_SkipsTheWatermarkWithoutDisclosure()
+    {
+        // An evaluation save draws its watermark picture into the header beside the document's own image.
+        byte[] png = Convert.FromBase64String(Png);
+        File.WriteAllBytes(_workspace.File("image.png"), png);
+        File.WriteAllText(_workspace.File("source.md"), "# Title\n\nSome text.\n");
+        Assert.Equal(0, _workspace.Run("words", "create", "plain.docx", "--from-markdown", "source.md", "--license-mode", "evaluation").ExitCode);
+        Assert.Equal(0, _workspace.RunWithInput(
+            """{"ops":[{"op":"insert_image","at":{"block":1},"position":"after","path":"image.png"}]}""",
+            "words", "edit", "plain.docx", "--ops", "-", "--out", "image.docx", "--license-mode", "evaluation").ExitCode);
+        Assert.True(new Document(_workspace.File("image.docx")).GetChildNodes(NodeType.Shape, true).Cast<Aspose.Words.Drawing.Shape>()
+            .Count(static shape => shape.HasImage) >= 2);
+
+        CliResult extracted = _workspace.Run(
+            "words", "extract", "image.docx", "--what", "images", "--out-dir", "images", "--license-mode", "evaluation", "--output-format", "json");
+
+        Assert.True(extracted.ExitCode == 0, extracted.StdErr + extracted.StdOut);
+        JsonNode result = JsonNode.Parse(extracted.StdOut)!;
+        JsonNode output = Assert.Single(result["outputs"]!.AsArray())!;
+        Assert.EndsWith("image-001.png", output["path"]!.GetValue<string>(), StringComparison.Ordinal);
+        Assert.Equal(png, File.ReadAllBytes(output["path"]!.GetValue<string>()));
+        Assert.Equal("evaluation", result["license"]!["mode"]!.GetValue<string>());
+        Assert.DoesNotContain("EVALUATION_MODE", result["warnings"]?.ToJsonString() ?? string.Empty, StringComparison.Ordinal);
+    }
+
     [Fact]
     public void Extract_BomWithoutTables_IsAnInvalidOption()
     {
@@ -68,6 +127,23 @@ public sealed class WordsSplitExtractCliTests : IDisposable
         Assert.Equal(2, extracted.ExitCode);
         Assert.Equal("OPTION_INVALID", JsonNode.Parse(extracted.StdErr)!["error"]!["code"]!.GetValue<string>());
         Assert.False(Directory.Exists(_workspace.File("text")));
+    }
+
+    /// <summary>An introduction paragraph, then the given number of Heading 1 chapters with a paragraph each.</summary>
+    private void WriteChapters(int chapters)
+    {
+        var document = new Document();
+        var builder = new DocumentBuilder(document);
+        builder.Writeln("Introduction.");
+        for (int chapter = 1; chapter <= chapters; chapter++)
+        {
+            builder.ParagraphFormat.StyleIdentifier = StyleIdentifier.Heading1;
+            builder.Writeln($"Chapter {chapter}");
+            builder.ParagraphFormat.StyleIdentifier = StyleIdentifier.Normal;
+            builder.Writeln($"Body {chapter}.");
+        }
+
+        document.Save(_workspace.File("book.docx"), SaveFormat.Docx);
     }
 
     /// <summary>Two sections: a paragraph with an image, then a one-cell table.</summary>
