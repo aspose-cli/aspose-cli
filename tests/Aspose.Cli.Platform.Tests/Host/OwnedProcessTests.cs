@@ -46,14 +46,13 @@ public sealed class OwnedProcessTests
         Assert.Equal(keeps, ConsoleInterrupt.KeepsProcess(Enum.Parse<SecondPress>(secondPress), press));
 
     [Fact]
-    public void ConsoleInterrupt_Press_CancelsAndCountsEvenAfterTheWorkEnded()
+    public void ConsoleInterrupt_Press_CancelsTheWorkAndCountsThePresses()
     {
-        int presses = 0;
-        var cancellation = new CancellationTokenSource();
-        Assert.Equal(1, ConsoleInterrupt.Press(cancellation, ref presses));
-        Assert.True(cancellation.IsCancellationRequested);
-        cancellation.Dispose();
-        Assert.Equal(2, ConsoleInterrupt.Press(cancellation, ref presses));
+        var scope = new ConsoleInterrupt.Scope(SecondPress.EndProcess);
+        Assert.Equal(1, scope.Press());
+        Assert.True(scope.Cancellation.IsCancellationRequested);
+        Assert.Equal(2, scope.Press());
+        scope.Cancellation.Dispose();
     }
 
     [Fact]

@@ -3303,6 +3303,7 @@ C-R24 | slides exit codes follow their category
 C-R24 | timeouts exit 9
 C-R24 | unsupported format or content errors exit 6
 C-R24 | usage and option value errors exit 2
+C-R24 | words create --timeout interrupted by Ctrl+C twice
 C-R24 | words create interrupted by Ctrl+C
 C-R24 | words exit codes follow their category
 C-R25 | cells corrupt input error details
