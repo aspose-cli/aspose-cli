@@ -39,6 +39,7 @@ internal enum PublicationFaultKind
     JournalLockWait,
     Backup,
     Publish,
+    Access,
     Rollback,
     Metadata,
     Cleanup,

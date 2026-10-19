@@ -402,6 +402,42 @@ public sealed class SafeFileWriterTests : IDisposable
     }
 
     [Fact]
+    public void Write_InPlaceInputChangedDuringProduction_ReportsTheInputChange()
+    {
+        string input = _temp.File("input.txt");
+        File.WriteAllText(input, "admitted");
+        FileWritePrecondition precondition = FileWritePrecondition.Capture(input);
+
+        CliException error = Assert.Throws<CliException>(() =>
+            _writer.Write(input, overwrite: true, backupPath: null, precondition, temp =>
+            {
+                File.WriteAllText(temp, "derived-output");
+                File.WriteAllText(input, "external-update");
+            }));
+
+        Assert.Equal(ErrorCodes.InputChanged, error.Code);
+        Assert.Equal("external-update", File.ReadAllText(input));
+    }
+
+    [Fact]
+    public void Write_InPlaceInputDeletedDuringProduction_ReportsTheMissingInput()
+    {
+        string input = _temp.File("input.txt");
+        File.WriteAllText(input, "admitted");
+        FileWritePrecondition precondition = FileWritePrecondition.Capture(input);
+
+        CliException error = Assert.Throws<CliException>(() =>
+            _writer.Write(input, overwrite: true, backupPath: null, precondition, temp =>
+            {
+                File.WriteAllText(temp, "derived-output");
+                File.Delete(input);
+            }));
+
+        Assert.Equal(ErrorCodes.FileNotFound, error.Code);
+        Assert.False(File.Exists(input));
+    }
+
+    [Fact]
     public void Write_OverwritePreservesPortableMetadata()
     {
         string target = _temp.File("out.txt");

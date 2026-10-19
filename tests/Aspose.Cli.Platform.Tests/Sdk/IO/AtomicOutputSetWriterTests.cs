@@ -286,6 +286,32 @@ public sealed class AtomicOutputSetWriterTests
     }
 
     [Fact]
+    public void TargetReplacedRightAfterItsSwapFailsThePublicationAndKeepsTheReplacement()
+    {
+        using var temp = new TempDirectory();
+        string target = temp.File("target.txt");
+        File.WriteAllText(target, "original");
+        var faults = new SelectiveFaultInjector(point =>
+        {
+            if (point.Kind == PublicationFaultKind.Access)
+            {
+                string external = temp.File("external.txt");
+                File.WriteAllText(external, "external");
+                File.Move(external, target, overwrite: true);
+            }
+            return null;
+        });
+        using var set = new AtomicOutputSetWriter(TestBudgets.Writer(), temp.Path, "test", faults);
+        set.Stage(target, overwrite: true, staged => File.WriteAllText(staged, "replacement"));
+
+        Assert.Throws<CliException>(() => set.Commit());
+
+        Assert.Single(Directory.EnumerateFiles(temp.Path, "*", SearchOption.AllDirectories),
+            path => File.ReadAllText(path) == "external");
+        Assert.NotEqual("replacement", File.ReadAllText(target));
+    }
+
+    [Fact]
     public void BackupFailureOccursBeforeAnyTargetIsPublished()
     {
         using var temp = new TempDirectory();
