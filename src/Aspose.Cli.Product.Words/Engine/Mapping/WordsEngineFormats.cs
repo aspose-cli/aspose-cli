@@ -21,13 +21,13 @@ internal static class WordsEngineFormats
         new("flatopc") { Load = LoadFormat.FlatOpc, Save = SaveFormat.FlatOpc },
         new("rtf") { Load = LoadFormat.Rtf, Save = SaveFormat.Rtf },
         new("wordml") { Load = LoadFormat.WordML, Save = SaveFormat.WordML },
-        new("html") { Load = LoadFormat.Html, Save = SaveFormat.Html },
+        new("html") { Load = LoadFormat.Html, Save = SaveFormat.Html, Lossy = true, MayHoldFixedPages = true },
         new("mhtml") { Load = LoadFormat.Mhtml, Save = SaveFormat.Mhtml },
         new("odt") { Load = LoadFormat.Odt, Save = SaveFormat.Odt },
         new("ott") { Load = LoadFormat.Ott, Save = SaveFormat.Ott },
-        new("txt") { Load = LoadFormat.Text, Save = SaveFormat.Text },
-        new("md") { Load = LoadFormat.Markdown, Save = SaveFormat.Markdown },
-        new("pdf") { Load = LoadFormat.Pdf, Save = SaveFormat.Pdf },
+        new("txt") { Load = LoadFormat.Text, Save = SaveFormat.Text, Lossy = true, PlainText = true },
+        new("md") { Load = LoadFormat.Markdown, Save = SaveFormat.Markdown, Lossy = true, PlainText = true },
+        new("pdf") { Load = LoadFormat.Pdf, Save = SaveFormat.Pdf, ReflowsOnLoad = true },
         new("epub") { Load = LoadFormat.Epub, Save = SaveFormat.Epub },
         new("mobi") { Load = LoadFormat.Mobi, Save = SaveFormat.Mobi },
         new("azw3") { Load = LoadFormat.Azw3, Save = SaveFormat.Azw3 },
@@ -36,7 +36,7 @@ internal static class WordsEngineFormats
         new("openxps") { Save = SaveFormat.OpenXps },
         new("ps") { Save = SaveFormat.Ps },
         new("pcl") { Save = SaveFormat.Pcl },
-        new("html-fixed") { Save = SaveFormat.HtmlFixed },
+        new("html-fixed") { Save = SaveFormat.HtmlFixed, Lossy = true },
         new("png") { Save = SaveFormat.Png },
         new("jpeg") { Save = SaveFormat.Jpeg },
         new("svg") { Save = SaveFormat.Svg },
@@ -45,6 +45,10 @@ internal static class WordsEngineFormats
     /// <summary>The format id of a detected load format, or <c>unknown</c>.</summary>
     public static string IdOf(LoadFormat format) =>
         All.FirstOrDefault(entry => entry.Load == format)?.Id ?? "unknown";
+
+    /// <summary>Whether a format id has an engine trait; false for an id the engine does not map.</summary>
+    public static bool Has(string formatId, Func<WordsEngineFormat, bool> trait) =>
+        All.FirstOrDefault(entry => string.Equals(entry.Id, formatId, StringComparison.Ordinal)) is { } entry && trait(entry);
 
     /// <summary>The engine format that saves a format id.</summary>
     public static SaveFormat Save(string formatId) =>
@@ -61,4 +65,19 @@ internal sealed record WordsEngineFormat(string Id)
 
     /// <summary>The engine format that saves documents in this id; null when it is never written.</summary>
     public SaveFormat? Save { get; init; }
+
+    /// <summary>A save in this format cannot preserve every Word feature, which convert and edit disclose.</summary>
+    public bool Lossy { get; init; }
+
+    /// <summary>
+    /// Plain text the engine reads from any bytes it cannot place, and writes with comments and
+    /// deleted text mixed into the body.
+    /// </summary>
+    public bool PlainText { get; init; }
+
+    /// <summary>Loading rebuilds the fixed pages as flowing text and guesses the headers and footers.</summary>
+    public bool ReflowsOnLoad { get; init; }
+
+    /// <summary>An input of this id may be an html-fixed page rendition, which loads reflowed.</summary>
+    public bool MayHoldFixedPages { get; init; }
 }

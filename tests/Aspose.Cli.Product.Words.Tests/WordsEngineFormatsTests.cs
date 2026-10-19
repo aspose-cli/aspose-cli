@@ -67,6 +67,28 @@ public sealed class WordsEngineFormatsTests : IClassFixture<WordsFixture>
         });
     }
 
+    [Fact]
+    public void FormatTraits_CoverEveryDeclaredFormatOnce()
+    {
+        string[] declared = [.. WordsFormats.Definitions.Select(static format => format.Id)];
+
+        Assert.Equal(declared, WordsFormats.Traits.Select(static traits => traits.Id));
+        Assert.Equal(declared, WordsEngineFormats.All.Select(static entry => entry.Id));
+    }
+
+    [Fact]
+    public void TraitIds_AreDeclaredFormats()
+    {
+        Assert.All(WordsFormats.FixedPageFormats, static id => Assert.True(Declared(id).Uses.HasFlag(FormatUse.Convert), id));
+        Assert.All(WordsEngineFormats.All.Where(static entry => entry.ReflowsOnLoad || entry.MayHoldFixedPages),
+            static entry => Assert.NotNull(entry.Load));
+    }
+
+    /// <summary>Only a PDF input is rebuilt as flowing text, so no other input gets the reflow disclosure.</summary>
+    [Fact]
+    public void ReflowsOnLoad_IsOnlyPdf() =>
+        Assert.Equal(["pdf"], WordsEngineFormats.All.Where(static entry => entry.ReflowsOnLoad).Select(static entry => entry.Id));
+
     /// <summary>Every convert format the product declares.</summary>
     public static TheoryData<string> ConvertFormats() =>
         [.. WordsFormats.Definitions.Where(static format => format.Uses.HasFlag(FormatUse.Convert)).Select(static format => format.Id)];
@@ -119,6 +141,9 @@ public sealed class WordsEngineFormatsTests : IClassFixture<WordsFixture>
         WordsInspectResult inspected = WordsInspect.Run(_fixture.Session, new WordsInspectRequest { Input = input });
         Assert.Equal(format, inspected.Input.Format);
     }
+
+    private static FormatDescriptor Declared(string id) =>
+        WordsFormats.Definitions.Single(format => string.Equals(format.Id, id, StringComparison.Ordinal));
 
     private static WordsEngineFormat? Engine(string id) =>
         WordsEngineFormats.All.SingleOrDefault(entry => string.Equals(entry.Id, id, StringComparison.Ordinal));
