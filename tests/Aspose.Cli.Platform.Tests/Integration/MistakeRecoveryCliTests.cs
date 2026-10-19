@@ -72,24 +72,6 @@ public sealed class MistakeRecoveryCliTests : IDisposable
     }
 
     [Theory]
-    [InlineData("""{"op":"clear_rnage","range":"A1"}""", "clear_range")]
-    [InlineData("""{"op":"clear_range","range":"A1","waht":"all"}""", "what")]
-    [InlineData("""{"op":"clear_range","range":"A1","what":"contnets"}""", "contents")]
-    public void CellsOperationMistake_SuggestsAnArrayOfNames(string operation, string suggestion)
-    {
-        File.WriteAllText(_workspace.File("ops.json"), $$"""{"ops":[{{operation}}]}""");
-        CliResult created = _workspace.Run("cells", "create", "a.xlsx", "--output-format", "json");
-        Assert.Equal(0, created.ExitCode);
-
-        CliResult result = _workspace.Run("cells", "edit", "a.xlsx", "--ops", "ops.json", "--dry-run", "--output-format", "json");
-
-        JsonNode error = JsonNode.Parse(result.StdErr)!["error"]!;
-        Assert.Equal("OPS_INVALID", error["code"]!.GetValue<string>());
-        Assert.Equal(suggestion, error["details"]!["suggestions"]!.AsArray()[0]!.GetValue<string>());
-        Assert.Null(error["details"]!["suggestion"]);
-    }
-
-    [Theory]
     [InlineData("cells edit a.xlsx --set Sheet1!A1=5 --out x.pdf", "--out", "Must be one of: .xlsx,", "then run 'aspose-cli cells convert <that file> --to pdf' for pdf")]
     [InlineData("slides edit a.pptx --ops ops.json --out x.pdf", "--out", "Must be one of: .pptx,", "then run 'aspose-cli slides convert <that file> --to pdf' for pdf")]
     [InlineData("slides create x.ppt --from-markdown deck.md", "file", "Must be one of: .pptx,", "then run 'aspose-cli slides convert <that file> --to ppt' for ppt")]

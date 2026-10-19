@@ -6,6 +6,8 @@
     "op-name.json": { "text": "{\"ops\":[{\"op\":\"set_valuez\",\"sheet\":\"Sheet1\",\"range\":\"C1\",\"values\":[[\"x\"]]}]}" },
     "op-field.json": { "text": "{\"ops\":[{\"op\":\"set_values\",\"sheet\":\"Sheet1\",\"rnage\":\"C1\",\"values\":[[\"x\"]]}]}" },
     "op-value.json": { "text": "{\"ops\":[{\"op\":\"clear_range\",\"sheet\":\"Sheet1\",\"range\":\"C1\",\"what\":\"contnets\"}]}" },
+    "clear-name.json": { "text": "{\"ops\":[{\"op\":\"clear_rnage\",\"range\":\"A1\"}]}" },
+    "clear-field.json": { "text": "{\"ops\":[{\"op\":\"clear_range\",\"range\":\"A1\",\"waht\":\"all\"}]}" },
     "words-op-name.json": { "text": "{\"ops\":[{\"op\":\"set_watermrk\",\"text\":\"Draft\"}]}" }
   },
   "steps": [
@@ -14,7 +16,7 @@
       "expect": {
         "error": "OPS_INVALID",
         "json": [
-          { "path": "error.details.suggestions", "contains": "set_values" },
+          { "path": "error.details.suggestions[0]", "equals": "set_values" },
           { "path": "error.details.suggestion", "exists": false }
         ],
         "files": { "nothingWritten": true }
@@ -25,7 +27,7 @@
       "expect": {
         "error": "OPS_INVALID",
         "json": [
-          { "path": "error.details.suggestions", "contains": "range" },
+          { "path": "error.details.suggestions[0]", "equals": "range" },
           { "path": "error.details.suggestion", "exists": false }
         ],
         "files": { "nothingWritten": true }
@@ -36,7 +38,29 @@
       "expect": {
         "error": "OPS_INVALID",
         "json": [
-          { "path": "error.details.suggestions", "contains": "contents" },
+          { "path": "error.details.suggestions[0]", "equals": "contents" },
+          { "path": "error.details.suggestion", "exists": false }
+        ],
+        "files": { "nothingWritten": true }
+      }
+    },
+    {
+      "args": ["cells", "edit", "book.xlsx", "--ops", "clear-name.json", "--dry-run"],
+      "expect": {
+        "error": "OPS_INVALID",
+        "json": [
+          { "path": "error.details.suggestions[0]", "equals": "clear_range" },
+          { "path": "error.details.suggestion", "exists": false }
+        ],
+        "files": { "nothingWritten": true }
+      }
+    },
+    {
+      "args": ["cells", "edit", "book.xlsx", "--ops", "clear-field.json", "--dry-run"],
+      "expect": {
+        "error": "OPS_INVALID",
+        "json": [
+          { "path": "error.details.suggestions[0]", "equals": "what" },
           { "path": "error.details.suggestion", "exists": false }
         ],
         "files": { "nothingWritten": true }
