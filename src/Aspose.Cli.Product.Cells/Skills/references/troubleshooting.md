@@ -9,8 +9,8 @@ workbook task commonly meets.
 
 ## Inputs that do not open
 
-`FILE_CORRUPT` means the file is not a readable workbook: it is damaged or has
-no recognizable signature. Ask for an intact copy. Plain-text data imports as
+`FILE_CORRUPT` follows the shared rule (`aspose-cli docs troubleshooting`):
+ask for an intact copy. Plain-text data imports as
 text under a text extension (`.csv`, `.tsv`, `.txt`), or under another
 spreadsheet extension when its content is delimited text; an extension no
 input declares, such as `.json`, is refused.
@@ -28,11 +28,11 @@ comes from, which also reads its dates.
 
 ## Names and ranges
 
-A sheet, defined name, chart, pivot, comment, hyperlink or table style that an
-operation does not find is reported with what the workbook has in
-`details.available`. Sheet names match case-insensitively, as in Excel, and
-results report the stored spelling. A chart `index` past the last chart
-reports only `details.availableCount`.
+A sheet, defined name, chart, pivot, comment, hyperlink or table style that is
+not found follows the shared not-found rule (`aspose-cli docs editing`). Sheet
+names match case-insensitively, as in Excel, and results report the stored
+spelling. A chart `index` past the last chart reports only
+`details.availableCount`.
 
 A range that is not A1 notation is `OPTION_INVALID` in an option, `--set`
 included, and `OPS_INVALID` in an operation, with the reason in the message and
@@ -52,9 +52,13 @@ grid smaller than the data, such as xls with 65,536 rows, warns
 with `FORMULAS_BROKEN`: save to xlsx, xlsb or ods instead.
 
 A PDF or XPS that prints a chart across two or more pages warns
-`CHART_SPLIT_ACROSS_PAGES` with each chart and its page count. Fit the sheet
+`CHART_SPLIT_ACROSS_PAGES` with each chart and its page count, and `review`
+reports such a workbook as `CELLS_CHART_SPLIT_ACROSS_PAGES`. Fit the sheet
 with `set_page_setup` (`fitToWidth` 1 and `fitToHeight` 0, or `orientation`
-landscape), or move or resize the chart, and convert again.
+landscape), or move or resize the chart, and convert again. No product reads
+xps, so `review` cannot open an xps deliverable: review the PDF the same
+workbook converts to instead. `cells convert --to xltx` saves an Excel
+template (`xltm` keeps macros) that new workbooks made in Excel start from.
 
 A JSON output of a sheet whose data is a single row, which the engine takes
 for the header, would not be valid JSON (CELLS-JSON-HEADER-ONLY), so `cells

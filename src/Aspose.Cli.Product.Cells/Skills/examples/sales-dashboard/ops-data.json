@@ -1,6 +1,5 @@
 {"ops":[
   {"op":"define_table","sheet":"Data","range":"A1:I37","name":"Orders","tableStyle":"TableStyleMedium2"},
-  {"op":"format_range","sheet":"Data","range":"B2:B37","style":{"numberFormat":"yyyy-mm-dd"}},
   {"op":"format_range","sheet":"Data","range":"G2:H37","style":{"numberFormat":"#,##0;(#,##0);\"-\""}},
   {"op":"add_conditional_format","sheet":"Data","range":"H2:H37","rule":{"kind":"data-bar","barColor":"#4472C4"}},
   {"op":"resize_columns","sheet":"Data","first":"A","last":"I","widthChars":12},
