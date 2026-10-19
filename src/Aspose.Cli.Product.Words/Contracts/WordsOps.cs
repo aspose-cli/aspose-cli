@@ -521,6 +521,7 @@ public abstract record HeaderFooterOp : WordsOp
     [AllowedValues(typeof(WordsHeaderFooterKinds))] public string Kind { get; init; } = WordsHeaderFooterKinds.Primary;
 
     /// <summary>The paragraphs, one per item, in the paragraph and character format of the first paragraph they replace, such as its alignment, or in Word's Header or Footer style when there is none; a style given replaces that paragraph format.</summary>
+    [MistakenFor("text", "content")]
     [ReadBack("inspect-result.schema.json#/$defs/wordsHeaderFooterData/properties/paragraphs")]
     public IReadOnlyList<WordsParagraphInput>? Paragraphs { get; init; }
 
@@ -717,8 +718,9 @@ public sealed record DefineStyleOp : WordsOp
 }
 
 /// <summary>
-/// Makes the paragraphs of target blocks one new bullet or numbered list; numberStyle and start
-/// need kind number.
+/// Makes the paragraphs of target blocks one new bullet or numbered list; numberStyle,
+/// numberFormat and start need kind number, and numberFormat shows the number of no level deeper
+/// than its own.
 /// </summary>
 [Operation("set_list")]
 [MistakenFor("apply_list")]
@@ -740,6 +742,17 @@ public sealed record SetListOp : WordsOp
     [ReadBack("read-result.schema.json#/$defs/wordsListData/properties/numberStyle")]
     [AllowedValues(typeof(WordsListNumberStyles))] public string? NumberStyle { get; init; }
 
+    /// <summary>
+    /// The text each item's number shows, in which %1 to %9 stand for the current numbers of
+    /// levels 1 to 9 in their number styles, such as (%1) with numberStyle letters-lower for (a),
+    /// (b), (c), or %1.%2 with numberStyle decimal at level 2 for 1.1, 1.2, and %% for a percent
+    /// sign. It shows no level deeper than its own, and text without its own level's placeholder
+    /// is the same label on every item; %N. at level N when omitted.
+    /// </summary>
+    [ReadBack("read-result.schema.json#/$defs/wordsListData/properties/numberFormat")]
+    [Pattern(@"^(?:[^%\u0000-\u0008]|%[1-9%])*$", Meaning = "must be text in which % appears only in the level placeholders %1 to %9 and in %% for a percent sign, such as \"(%1)\"")]
+    public string? NumberFormat { get; init; }
+
     /// <summary>The number of the first item; 1 when omitted.</summary>
     [ReadBack("read-result.schema.json#/$defs/wordsListData/properties/start")]
     [Minimum(0)] public int? Start { get; init; }
@@ -747,9 +760,25 @@ public sealed record SetListOp : WordsOp
     protected override BoundedOperation Validated()
     {
         OperationInvalidException.Require(
-            Kind == "number" || (NumberStyle is null && Start is null),
-            "numberStyle and start number a list, and a bullet list shows no numbers",
-            "Give kind number, or drop numberStyle and start.");
+            Kind == "number" || (NumberStyle is null && NumberFormat is null && Start is null),
+            "numberStyle, numberFormat and start number a list, and a bullet list shows no numbers",
+            "Give kind number, or drop numberStyle, numberFormat and start.");
+        if (NumberFormat is { } format)
+        {
+            // The pattern has checked that each % starts %% or a placeholder %1 to %9.
+            for (int index = 0; index + 1 < format.Length; index++)
+            {
+                if (format[index] == '%')
+                {
+                    char next = format[++index];
+                    OperationInvalidException.Require(
+                        next == '%' || next - '0' <= Level,
+                        $"numberFormat shows %{next}, the number of a level deeper than level {Level}",
+                        $"Use only %1 to %{Level} at level {Level}, and %% for a percent sign.");
+                }
+            }
+        }
+
         return this;
     }
 }

@@ -19,6 +19,7 @@ internal static class WordsSplit
         // Every part keeps the input's password, as a converted copy does, unless --encrypt replaces it.
         using var writer = new WordsSplitWriter(session.Outputs, request.Output, request.Input,
             OutputProtection.For(WordsSplitWriter.Docx, request.EncryptPassword, loaded.Protection, request.Password));
+        Warning? singleHeading = null;
         switch (request.Plan.By)
         {
             case SplitBy.Sections:
@@ -51,7 +52,7 @@ internal static class WordsSplit
 
                 break;
             case SplitBy.Heading1:
-                SplitByHeading(loaded, writer);
+                singleHeading = SplitByHeading(loaded, writer);
                 break;
             default:
                 throw new InvalidOperationException($"words split does not divide by {request.Plan.By}.");
@@ -65,7 +66,7 @@ internal static class WordsSplit
             License = EnvelopeParts.License(state),
             Warnings = request.Plan.By == SplitBy.Pages
                 ? EnvelopeParts.CombineWarnings(WrittenWarnings(loaded, "docx"), [new Warning(WordsDiagnostics.LayoutMayDiffer, "Page extraction can slightly reflow complex layouts.") { Hint = "Visually inspect the split pages." }])
-                : WrittenWarnings(loaded, "docx"),
+                : EnvelopeParts.CombineWarnings(WrittenWarnings(loaded, "docx"), singleHeading is null ? null : [singleHeading]),
         };
     }
 
@@ -104,9 +105,10 @@ internal static class WordsSplit
     /// Writes one part per Heading 1, and a leading part for the blocks before the first one
     /// (a title page or table of contents), so no block is left out. Each part is a copy of
     /// the whole document with the other blocks removed, so it keeps its sections' page
-    /// setup, headers, footers and styles.
+    /// setup, headers, footers and styles. Returns the warning that the document has only one
+    /// Heading 1, which divides it into one chapter at most; null when it has more.
     /// </summary>
-    private static void SplitByHeading(LoadedDocument loaded, WordsSplitWriter writer)
+    private static Warning? SplitByHeading(LoadedDocument loaded, WordsSplitWriter writer)
     {
         var index = new DocumentBlockIndex(loaded.Document, loaded.Evaluation);
         List<int> starts = index.Entries.Where(static entry => entry.Node is Paragraph p && InfoProjection.HeadingLevel(p) == 1)
@@ -117,6 +119,12 @@ internal static class WordsSplit
                 "Use --by sections or --by pages, or apply Heading 1 styles first.");
         }
 
+        Warning? single = starts.Count == 1
+            ? new Warning(WordsDiagnostics.SplitSingleHeading, "The document has one Heading 1 paragraph, so it was split only where that heading starts.")
+            {
+                Hint = "Apply Heading 1 to each chapter's title with aspose-cli words edit, one op per title such as {\"op\":\"set_style\",\"target\":{\"block\":5},\"style\":\"Heading 1\"}, or split with --by sections or --by pages.",
+            }
+            : null;
         if (starts[0] > 1)
         {
             starts.Insert(0, 1);
@@ -148,5 +156,7 @@ internal static class WordsSplit
             writer.Stage(part, group + 1, file => new WordsPartOutput(file) { Blocks = blocks });
             part.Cleanup();
         }
+
+        return single;
     }
 }

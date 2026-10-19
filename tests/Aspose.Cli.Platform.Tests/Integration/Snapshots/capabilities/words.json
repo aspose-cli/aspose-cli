@@ -49,7 +49,7 @@
         "command": "edit",
         "inputSchema": "v2/words/ops",
         "operationSchema": "aspose-cli schema v2/words/ops --operation <op>",
-        "contractFingerprint": "sha256:4c09a88bd042a567b33c1e9662d0599f465230616071cd3d73d7b7d11b539724",
+        "contractFingerprint": "sha256:5e4910ff0c69103ab1516d6f9eeda943443f8d931cd9e961bb2a0060c97954d3",
         "maximumOperationCount": 10000,
         "ops": [
           "accept_revisions",
@@ -3244,6 +3244,13 @@
       "detailsSchemaId": "v2/common/not-found-details"
     },
     {
+      "code": "SPLIT_SINGLE_HEADING",
+      "owner": "words",
+      "severity": "warning",
+      "category": "warning",
+      "detailsSchemaId": "v2/common/diagnostic-details"
+    },
+    {
       "code": "TRACKED_CHANGES_PRESENT",
       "owner": "words",
       "severity": "warning",
@@ -4138,6 +4145,10 @@
                 "letters-upper",
                 "letters-lower"
               ]
+            },
+            "numberFormat": {
+              "description": "The text a numbered list's number shows at the paragraph's level, in which %1 to %9 stand for the numbers of levels 1 to 9 and %% for a percent sign, such as (%1); absent for bullets.",
+              "type": "string"
             },
             "start": {
               "description": "The number of the first item at the paragraph's level of a numbered list; absent for bullets.",
@@ -5954,7 +5965,7 @@
           ]
         },
         "set_list": {
-          "description": "Makes the paragraphs of target blocks one new bullet or numbered list; numberStyle and start need kind number.",
+          "description": "Makes the paragraphs of target blocks one new bullet or numbered list; numberStyle, numberFormat and start need kind number, and numberFormat shows the number of no level deeper than its own.",
           "type": "object",
           "required": [
             "op",
@@ -6002,6 +6013,12 @@
                 "letters-lower"
               ],
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/read-result.schema.json#/$defs/wordsListData/properties/numberStyle"
+            },
+            "numberFormat": {
+              "description": "The text each item's number shows, in which %1 to %9 stand for the current numbers of levels 1 to 9 in their number styles, such as (%1) with numberStyle letters-lower for (a), (b), (c), or %1.%2 with numberStyle decimal at level 2 for 1.1, 1.2, and %% for a percent sign. It shows no level deeper than its own, and text without its own level's placeholder is the same label on every item; %N. at level N when omitted.",
+              "type": "string",
+              "pattern": "^(?:[^%\\u0000-\\u0008]|%[1-9%])*$",
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/read-result.schema.json#/$defs/wordsListData/properties/numberFormat"
             },
             "start": {
               "description": "The number of the first item; 1 when omitted.",
@@ -6971,6 +6988,10 @@
                 "letters-upper",
                 "letters-lower"
               ]
+            },
+            "numberFormat": {
+              "description": "The text a numbered list's number shows at the paragraph's level, in which %1 to %9 stand for the numbers of levels 1 to 9 and %% for a percent sign, such as (%1); absent for bullets.",
+              "type": "string"
             },
             "start": {
               "description": "The number of the first item at the paragraph's level of a numbered list; absent for bullets.",

@@ -104,7 +104,7 @@ aspose-cli schema v2/words/ops --operation insert_table
 | Change text | `replace_text` (literal or regex, by scope), `set_text` (paragraph or bookmark text), `set_table_cell` (one 1-based cell), `repeat_table_row` (one copy of a `{{key}}` template row per item) |
 | Add content | `insert_paragraphs` (styled paragraphs, list items), `insert_markdown`, `insert_table`, `insert_image`, `insert_hyperlink`, `insert_field` (inserts and updates the field), `insert_toc`, `insert_bookmark` (a paragraph's visible text), `import_sections` |
 | Remove content | `delete_blocks` |
-| Styles and formatting | `set_style` (apply an existing style; the typeface, size and color set on the runs give way to it, emphasis such as italic stays), `define_style` (create or update one), `format_text` (the text of target blocks, or only what `match` matches there), `set_table_pagination` (how one table breaks across pages), `set_list` (one new bullet or numbered list, with `numberStyle` and `start` for numbers), `clear_list` (take paragraphs out of their lists), `set_default_font` |
+| Styles and formatting | `set_style` (apply an existing style; the typeface, size and color set on the runs give way to it, emphasis such as italic stays), `define_style` (create or update one), `format_text` (the text of target blocks, or only what `match` matches there), `set_table_pagination` (how one table breaks across pages), `set_list` (one new bullet or numbered list, with `numberStyle`, `numberFormat` and `start` for numbers), `clear_list` (take paragraphs out of their lists), `set_default_font` |
 | Sections and pages | `insert_break` (page break, or split the section), `insert_section`, `delete_section` (never the last one), `set_page_setup`, `set_header`, `set_footer`, `set_page_numbers`, `set_watermark` (text in `font`; East Asian text otherwise in the default East Asian font of a Chinese, Japanese or Korean document, or else Microsoft YaHei), `delete_watermark` |
 | Review annotations | `add_comment`, `delete_comments`, `accept_revisions`, `reject_revisions` |
 | Fields and data | `refresh_fields` (tables of contents, or every field and the layout), `mail_merge` ([mail merge](mail-merge.md)) |
@@ -162,9 +162,14 @@ neighbours'.
 
 `set_list` with `"kind": "number"` renumbers paragraphs as one new list:
 `numberStyle` (`decimal`, `roman-lower`, `roman-upper`, `letters-lower` or
-`letters-upper`) changes 1., 2., 3. into a., b., c., and `start`
-sets the first number, such as 5 for 5., 6., 7. A read reports both in each
-item's `list`, and `listLabel` shows the result. `clear_list` takes the target
+`letters-upper`) changes 1., 2., 3. into a., b., c., `numberFormat` sets the
+text around the number, in which `%1` to `%9` stand for the numbers of levels
+1 to 9, such as `"(%1)"` with `letters-lower` for (a), (b), (c) or `"%1.%2"`
+with `decimal` at `"level": 2` for 1.1, 1.2, and `%%` for a percent sign, and
+`start` sets the first number, such as 5 for 5., 6., 7. `numberFormat` shows no
+level deeper than its own; without its own level's placeholder every item shows
+the same label. A read reports all three in each item's `list`, and a
+`numberFormat` it reports writes back unchanged; `listLabel` shows the result. `clear_list` takes the target
 paragraphs out of their lists; their text and style stay.
 
 A paragraph with `style`, inserted Markdown and a table's text take their font

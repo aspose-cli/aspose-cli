@@ -15,6 +15,12 @@ public sealed record WordsListData
     [AllowedValues(typeof(WordsListNumberStyles))]
     public string? NumberStyle { get; init; }
 
+    /// <summary>
+    /// The text a numbered list's number shows at the paragraph's level, in which %1 to %9 stand
+    /// for the numbers of levels 1 to 9 and %% for a percent sign, such as (%1); absent for bullets.
+    /// </summary>
+    public string? NumberFormat { get; init; }
+
     /// <summary>The number of the first item at the paragraph's level of a numbered list; absent for bullets.</summary>
     [Minimum(0)]
     public int? Start { get; init; }

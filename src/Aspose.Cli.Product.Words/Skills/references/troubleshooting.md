@@ -14,7 +14,10 @@ before the batch: read them again with `words read --content outline` or
 `inspect --detail sections` right before the edit. A `heading` or `find`
 address matches visible text, ignoring case, and an `nth` past the matches
 fails the same way ([editing](editing.md#addresses)). `words split --by
-heading1` needs a Heading 1 paragraph. `define_style` creates a missing
+heading1` needs a Heading 1 paragraph, and warns `SPLIT_SINGLE_HEADING` when
+there is only one, which divides the document at that heading alone: apply
+Heading 1 to each chapter's title with `set_style`, or split `--by sections`
+or `--by pages`. `define_style` creates a missing
 style. A `revisions` number of `accept_revisions` or `reject_revisions`
 refers to the list `words inspect --detail revisions` gives of the input.
 
