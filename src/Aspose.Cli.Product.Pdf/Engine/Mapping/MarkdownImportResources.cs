@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Net;
 using System.Text;
 using System.Text.RegularExpressions;
+using Aspose.Cli.Sdk;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.IO;
 
@@ -70,9 +71,8 @@ internal sealed class MarkdownImportResources : IDisposable
     private readonly string _rootPrefix;
     private readonly VerifiedFileBoundary _boundary;
     private readonly ResourceBudgetLedger _budgets;
-    private readonly Dictionary<string, (VerifiedReadLease Lease, bool Scanned)> _files =
-        new(StringComparer.OrdinalIgnoreCase);
-    private readonly HashSet<string> _images = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, (VerifiedReadLease Lease, bool Scanned)> _files = new(FilePaths.Comparer);
+    private readonly HashSet<string> _images = new(FilePaths.Comparer);
 
     /// <summary>
     /// Refuses a Markdown file that names a network address or script, or references a file
@@ -271,13 +271,13 @@ internal sealed class MarkdownImportResources : IDisposable
             string full = PathResolver.TryResolve(baseDirectory, interpretation.Replace('/', '\\'))
                 ?? throw Refusal(reference, source, "is not a valid file path");
 
-            if (!full.StartsWith(_rootPrefix, StringComparison.OrdinalIgnoreCase))
+            if (!full.StartsWith(_rootPrefix, FilePaths.Comparison))
             {
                 throw Refusal(reference, source, $"resolves against '{baseDirectory}' to '{full}', outside the Markdown file's directory");
             }
 
             local = true;
-            if (Exists(full) && !files.Contains(full, StringComparer.OrdinalIgnoreCase))
+            if (Exists(full) && !files.Contains(full, FilePaths.Comparer))
             {
                 files.Add(full);
             }
