@@ -1,0 +1,27 @@
+{
+  "name": "words edit refuses a bad --set directive and --track-changes without --author before reading ops from stdin",
+  "files": { "source.md": { "text": "# Contract\n" } },
+  "steps": [
+    { "args": ["words", "create", "contract.docx", "--from-markdown", "source.md"], "expect": { "exitCode": 0 } },
+    {
+      "args": ["words", "edit", "contract.docx", "--ops", "-", "--set", "Client=Contoso"],
+      "stdin": "not json",
+      "expect": {
+        "exitCode": 2,
+        "error": "OPTION_INVALID",
+        "json": [{ "path": "error.message", "contains": "--set" }],
+        "files": { "unchanged": ["contract.docx"], "nothingWritten": true }
+      }
+    },
+    {
+      "args": ["words", "edit", "contract.docx", "--ops", "-", "--track-changes"],
+      "stdin": "not json",
+      "expect": {
+        "exitCode": 2,
+        "error": "OPTION_INVALID",
+        "json": [{ "path": "error.message", "contains": "--author" }],
+        "files": { "unchanged": ["contract.docx"], "nothingWritten": true }
+      }
+    }
+  ]
+}

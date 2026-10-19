@@ -1,0 +1,14 @@
+{
+  "name": "words create without a content source or template writes a blank document",
+  "steps": [
+    {
+      "args": ["words", "create", "blank.docx"],
+      "expect": {
+        "exitCode": 0,
+        "json": [{ "path": "output.format", "equals": "docx" }],
+        "files": { "present": ["blank.docx"] },
+        "reopens": ["blank.docx"]
+      }
+    }
+  ]
+}

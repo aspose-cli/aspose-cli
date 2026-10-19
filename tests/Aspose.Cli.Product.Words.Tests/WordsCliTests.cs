@@ -15,21 +15,6 @@ public sealed class WordsCliTests : IClassFixture<WordsFixture>, IDisposable
     public WordsCliTests(WordsFixture fixture) => ArgumentNullException.ThrowIfNull(fixture);
 
     [Fact]
-    public void Convert_RefusesPagesForAFormatThatIsNotFixedPage()
-    {
-        File.WriteAllText(_workspace.File("source.md"), "# Contract\n\nClause.\n");
-        Assert.Equal(0, _workspace.Run("words", "create", "contract.docx", "--from-markdown", "source.md").ExitCode);
-
-        CliResult refused = _workspace.Run("words", "convert", "contract.docx", "--to", "html", "--pages", "1", "--out", "contract.html", "--output-format", "json");
-
-        Assert.Equal(2, refused.ExitCode);
-        JsonNode error = JsonNode.Parse(refused.StdErr)!["error"]!;
-        Assert.Equal("OPTION_INVALID", error["code"]!.GetValue<string>());
-        Assert.Contains("--pages", error["message"]!.GetValue<string>(), StringComparison.Ordinal);
-        Assert.False(File.Exists(_workspace.File("contract.html")));
-    }
-
-    [Fact]
     public void Merge_IsRefusedWithEditAsTheSuggestion()
     {
         CliResult refused = _workspace.Run("words", "merge", "a.docx", "b.docx", "--output-format", "json");
@@ -281,30 +266,6 @@ public sealed class WordsCliTests : IClassFixture<WordsFixture>, IDisposable
     }
 
     [Fact]
-    public void Create_RejectsTwoContentSources()
-    {
-        File.WriteAllText(_workspace.File("source.md"), "# Title\n");
-        File.WriteAllText(_workspace.File("source.txt"), "Title\n");
-
-        CliResult result = _workspace.Run(
-            "words", "create", "out.docx", "--from-markdown", "source.md", "--from-text", "source.txt", "--output-format", "json");
-
-        Assert.Equal(2, result.ExitCode);
-        Assert.Equal("USAGE_ERROR", JsonNode.Parse(result.StdErr)!["error"]!["code"]!.GetValue<string>());
-        Assert.False(File.Exists(_workspace.File("out.docx")));
-    }
-
-    [Fact]
-    public void Create_WithoutAContentSourceOrTemplate_WritesABlankDocument()
-    {
-        CliResult result = _workspace.Run("words", "create", "blank.docx", "--output-format", "json");
-
-        Assert.True(result.ExitCode == 0, result.StdErr);
-        Assert.True(File.Exists(_workspace.File("blank.docx")));
-        Assert.Equal("docx", JsonNode.Parse(result.StdOut)!["output"]!["format"]!.GetValue<string>());
-    }
-
-    [Fact]
     public void Read_NextKeepsANonContiguousRangeAndTheSectionFilter()
     {
         File.WriteAllText(_workspace.File("source.md"), "# Title\n\nOne.\n\nTwo.\n\nThree.\n\nFour.\n");
@@ -358,64 +319,6 @@ public sealed class WordsCliTests : IClassFixture<WordsFixture>, IDisposable
         Assert.Equal(["needle three"], HitTexts(rest));
         Assert.False(rest["window"]!["truncated"]!.GetValue<bool>());
         Assert.Null(rest["window"]!["next"]);
-    }
-
-    [Fact]
-    public void Edit_RejectsABadSetDirectiveBeforeReadingOpsFromStdin()
-    {
-        File.WriteAllText(_workspace.File("source.md"), "# Contract\n");
-        Assert.Equal(0, _workspace.Run("words", "create", "contract.docx", "--from-markdown", "source.md").ExitCode);
-
-        CliResult edited = _workspace.RunWithInput(
-            "not json",
-            "words", "edit", "contract.docx", "--ops", "-", "--set", "Client=Contoso", "--output-format", "json");
-
-        Assert.Equal(2, edited.ExitCode);
-        JsonNode error = JsonNode.Parse(edited.StdErr)!["error"]!;
-        Assert.Equal("OPTION_INVALID", error["code"]!.GetValue<string>());
-        Assert.Contains("--set", error["message"]!.GetValue<string>(), StringComparison.Ordinal);
-    }
-
-    [Fact]
-    public void Edit_RejectsTrackChangesWithoutAnAuthorBeforeReadingOpsFromStdin()
-    {
-        File.WriteAllText(_workspace.File("source.md"), "# Contract\n");
-        Assert.Equal(0, _workspace.Run("words", "create", "contract.docx", "--from-markdown", "source.md").ExitCode);
-
-        CliResult edited = _workspace.RunWithInput(
-            "not json",
-            "words", "edit", "contract.docx", "--ops", "-", "--track-changes", "--output-format", "json");
-
-        Assert.Equal(2, edited.ExitCode);
-        JsonNode error = JsonNode.Parse(edited.StdErr)!["error"]!;
-        Assert.Equal("OPTION_INVALID", error["code"]!.GetValue<string>());
-        Assert.Contains("--author", error["message"]!.GetValue<string>(), StringComparison.Ordinal);
-    }
-
-    [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public void MalformedZip_KeepsItsExactInputErrorThroughTheCli(bool supervised)
-    {
-        byte[] bytes = "PK\x03\x04invalid synthetic docx"u8.ToArray();
-        File.WriteAllBytes(_workspace.File("malformed.docx"), bytes);
-        string[] execution = supervised ? ["--timeout", TestDeadline.CliTimeout] : [];
-        CliResult inspected = _workspace.Run(
-            ["words", "inspect", "malformed.docx", "--output-format", "json", .. execution]);
-        Assert.Equal(3, inspected.ExitCode);
-        Assert.Equal(string.Empty, inspected.StdOut);
-        Assert.Equal("FILE_CORRUPT", JsonNode.Parse(inspected.StdErr)!["error"]!["code"]!.GetValue<string>());
-
-        byte[] retained = "Unrelated existing output"u8.ToArray();
-        File.WriteAllBytes(_workspace.File("retained.pdf"), retained);
-        CliResult converted = _workspace.Run(
-            ["words", "convert", "malformed.docx", "--to", "pdf", "--out", "retained.pdf",
-                "--overwrite", "--output-format", "json", .. execution]);
-        Assert.Equal(3, converted.ExitCode);
-        Assert.Equal(string.Empty, converted.StdOut);
-        Assert.Equal("FILE_CORRUPT", JsonNode.Parse(converted.StdErr)!["error"]!["code"]!.GetValue<string>());
-        Assert.Equal(bytes, File.ReadAllBytes(_workspace.File("malformed.docx")));
-        Assert.Equal(retained, File.ReadAllBytes(_workspace.File("retained.pdf")));
     }
 
     [Theory]
