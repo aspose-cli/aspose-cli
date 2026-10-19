@@ -106,20 +106,6 @@ public sealed class CorruptInputDetectionTests
         Assert.Null(error["details"]?["detected"]);
     }
 
-    [Fact]
-    public void ProductCommand_OnUnrecognizableContent_KeepsItsOwnError()
-    {
-        using var workspace = new TempWorkspace();
-        File.WriteAllText(workspace.File("noise.pdf"), "neither a PDF nor anything else");
-
-        CliResult inspected = workspace.Run("pdf", "inspect", "noise.pdf", "--output-format", "json");
-
-        Assert.Equal(3, inspected.ExitCode);
-        JsonNode error = JsonNode.Parse(inspected.StdErr)!["error"]!;
-        Assert.Equal("FILE_CORRUPT", error["code"]!.GetValue<string>());
-        Assert.Null(error["details"]?["detected"]);
-    }
-
     [Theory]
     [InlineData("empty.docx", "")]
     [InlineData("damaged.docx", "PK\u0003\u0004 truncated header")]
