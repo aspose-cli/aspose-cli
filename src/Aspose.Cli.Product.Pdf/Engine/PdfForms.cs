@@ -135,16 +135,11 @@ internal static class PdfForms
     /// <summary>Exports the AcroForm data as one JSON, FDF or XFDF file of the extraction.</summary>
     internal static PublishedFile Export(Document document, FormatDescriptor format, ExtractionGuard guard)
     {
+        Action<Aspose.Pdf.Facades.Form, Stream> export = PdfEngineFormats.Of(format.Id).Export
+            ?? throw new InvalidOperationException($"'{format.Id}' is not a form data format.");
         EnsureAcroForm(document);
         using var data = new MemoryStream();
-        var facade = new Aspose.Pdf.Facades.Form(document);
-        switch (format.Id)
-        {
-            case "json": facade.ExportJson(data, indented: true); break;
-            case "fdf": facade.ExportFdf(data); break;
-            case "xfdf": facade.ExportXfdf(data); break;
-            default: throw new InvalidOperationException($"'{format.Id}' is not a form data format.");
-        }
+        export(new Aspose.Pdf.Facades.Form(document), data);
 
         return guard.StageAllBytes("form" + (format.OutputExtension ?? format.Extensions[0]), data.ToArray());
     }

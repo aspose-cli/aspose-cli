@@ -43,7 +43,9 @@ internal static class PdfRaster
             new PngDevice(new Resolution(dpi)).Process(page, raster);
             raster.Position = 0;
             Rectangle box = page.GetPageRect(considerRotation: true);
-            PdfGridOverlay.Draw(raster, grid, box.Width, box.Height, dpi, format, stream);
+            PdfRasterEncoding encoding = image.Encoded
+                ?? throw new InvalidOperationException($"'{format}' is not a bitmap page image.");
+            PdfGridOverlay.Draw(raster, grid, box.Width, box.Height, dpi, encoding, stream);
             return;
         }
 

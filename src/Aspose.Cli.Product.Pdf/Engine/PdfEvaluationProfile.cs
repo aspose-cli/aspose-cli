@@ -78,7 +78,7 @@ internal sealed class PdfEvaluationProfile : IEvaluationProfile<Document>
     /// </summary>
     public EvaluationMarks? InspectSaved(string path, string format)
     {
-        if (!string.Equals(format, "pdf", StringComparison.Ordinal))
+        if (PdfEngineFormats.Find(format)?.Reopens != true)
         {
             return null;
         }
