@@ -352,7 +352,7 @@ public sealed class PublicationBoundaryTests
             File.WriteAllText(candidate, "partial candidate");
         }
         string live = temp.File(
-            $".aspose-publication-{Environment.ProcessId}-{PublicationJournal.CurrentProcessStartUtcTicks}-{Guid.NewGuid():N}");
+            $".aspose-publication-{Environment.ProcessId}-{ProcessIdentity.CurrentStartUtcTicks}-{Guid.NewGuid():N}");
         Directory.CreateDirectory(Path.Combine(live, "output-000001"));
         File.WriteAllText(Path.Combine(live, "output-000001", "report.xlsx"), "candidate in use");
         // A directory whose name does not say which process made it is never taken for debris.

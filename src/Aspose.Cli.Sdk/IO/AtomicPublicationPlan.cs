@@ -382,7 +382,7 @@ internal sealed class AtomicPublicationPlan
     {
         string stagingDirectory = Path.Combine(
             root,
-            $".aspose-publication-{Environment.ProcessId}-{PublicationJournal.CurrentProcessStartUtcTicks}-{Guid.NewGuid():N}");
+            $".aspose-publication-{Environment.ProcessId}-{ProcessIdentity.CurrentStartUtcTicks}-{Guid.NewGuid():N}");
         return PublicationTransactionDirectory.Create(stagingDirectory);
     }
 }

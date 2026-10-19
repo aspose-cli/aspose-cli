@@ -392,8 +392,7 @@ internal sealed class PublicationJournal
 
     public int OwnerProcessId { get; init; } = Environment.ProcessId;
 
-    internal static long CurrentProcessStartUtcTicks => ProcessIdentity.CurrentStartUtcTicks;
-    public long OwnerProcessStartUtcTicks { get; init; } = CurrentProcessStartUtcTicks;
+    public long OwnerProcessStartUtcTicks { get; init; } = ProcessIdentity.CurrentStartUtcTicks;
 
     public PublicationTransactionState State { get; set; }
 

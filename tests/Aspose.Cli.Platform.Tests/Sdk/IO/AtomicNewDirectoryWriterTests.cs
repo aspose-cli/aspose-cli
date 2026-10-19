@@ -507,7 +507,7 @@ public sealed class AtomicNewDirectoryWriterTests
         Directory.CreateDirectory(Path.Combine(ended, "directory"));
         File.WriteAllText(Path.Combine(ended, "directory", "SKILL.md"), "partial candidate");
         string live = temp.File(
-            $".aspose-publication-{Environment.ProcessId}-{PublicationJournal.CurrentProcessStartUtcTicks}-{Guid.NewGuid():N}");
+            $".aspose-publication-{Environment.ProcessId}-{ProcessIdentity.CurrentStartUtcTicks}-{Guid.NewGuid():N}");
         Directory.CreateDirectory(Path.Combine(live, "directory"));
         File.WriteAllText(Path.Combine(live, "directory", "SKILL.md"), "candidate in use");
         // A directory whose name does not say which process made it is never taken for debris.
