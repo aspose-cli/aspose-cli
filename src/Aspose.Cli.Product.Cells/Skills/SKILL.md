@@ -93,7 +93,8 @@ aspose-cli schema v2/cells/ops --operation format_range
   with `import_range` or `import_sheet` (`aspose-cli docs cells/editing`,
   Combining workbooks).
 - `--verify` compares the staged output with the input before publishing and
-  reports cell changes and formula errors (exit 8 on findings). Use
+  reports cell changes and formula errors (exit 8 on findings); after changing
+  inputs, `verification.formulaResultChanges` lists the formula results they moved. Use
   `--in-place --backup --verify` for the first edit of a file you did not
   create, and diff against `book.backup.xlsx` at the end.
 - Operations by task, ordering rules, recipes and the field names most often
