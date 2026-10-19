@@ -5,18 +5,12 @@ description: Create, inspect, edit, convert and review PowerPoint presentations 
 
 # Aspose Slides
 
-Use `aspose-cli slides` for PPTX, PPT, ODP and related presentation formats. The shared
-workflow, batch semantics, review protocol, licensing and error envelope are in the platform
-Skill: start with `aspose-cli docs overview`.
-
-## Addressing
-
-- A slide is addressed by its 1-based `slide` number or its stable `slideId`.
-- A shape is addressed within its slide by `shapeId` (persistent, slide-scoped), by
-  case-sensitive `shapeName`, or by `placeholder` role (`title`, `body`, `subtitle`, `footer`,
-  `date`, `slide-number`), the roles `slides read` reports.
-- `slides read --content shapes` reports every one of these names exactly as the
-  operations accept them; `inspect` reports slide ids and shape counts, not shape ids.
+Use `aspose-cli slides` for PPTX, PPT, ODP and related presentation formats. The shared rules
+(session start, reading windows, operation batches, secrets, review protocol, licensing, errors)
+are in `aspose-cli docs overview`; this Skill adds only what is specific to presentations.
+`aspose-cli capabilities slides` lists the commands, formats, review checks and codes, and
+`aspose-cli schema v2/slides/ops --operation <op>` describes each operation's fields.
+A deck exported to PDF is a PDF: edit that file with the PDF Skill (`aspose-cli docs pdf/overview`).
 
 ## Workflow
 
@@ -45,8 +39,21 @@ Skill: start with `aspose-cli docs overview`.
    aspose-cli slides edit deck.pptx --ops deck-ops.json --out deck.revised.pptx --verify --output-format json
    ```
 
-5. Verify before delivery ([Slides verification](references/verification.md), then the
-   checklist in `aspose-cli docs verification`).
+5. Read the changes back and review every slide ([Slides verification](references/verification.md),
+   then the checklist in `aspose-cli docs verification`):
+
+   ```powershell
+   aspose-cli review deck.revised.pptx --out deck.review-1 --output-format json
+   ```
+
+## Addressing
+
+- A slide is addressed by its 1-based `slide` number or its stable `slideId`.
+- A shape is addressed within its slide by `shapeId` (persistent, slide-scoped), by
+  case-sensitive `shapeName`, or by `placeholder` role (`title`, `body`, `subtitle`, `footer`,
+  `date`, `slide-number`), the roles `slides read` reports.
+- `slides read --content shapes` reports every one of these names exactly as the
+  operations accept them; `inspect` reports slide ids and shape counts, not shape ids.
 
 ## Design: the template owns the look
 
@@ -54,49 +61,41 @@ Fonts, colors, backgrounds and placeholder geometry come from the template's the
 layouts. Fix a look by choosing or correcting the template, never by restyling text run by run.
 Details: [design system](references/design-system.md).
 
-## Slides-specific rules
+## Evaluation mode
 
-- The license product id is `slides`: `aspose-cli license install Aspose.Slides.lic --product slides`.
-  Evaluation output other than Markdown is watermarked (`aspose-cli docs licensing`), except the
-  media `extract --what media` copies as the deck stores them, which carry no mark and no
-  `EVALUATION_MODE`. Evaluation
-  mode reads text longer than five characters cut short, so reads, reviews and `extract` of text
-  or notes warn `EVALUATION_INPUT_TRUNCATED`, and a Markdown conversion holds a truncation notice
-  in place of the cut text, which its `EVALUATION_MODE` message says without naming that text;
-  the presentations, PDFs and images it saves keep the full text. An edit that writes text
-  (`set_title`, `set_body`, `set_text`, `set_table_cell`, `set_notes`) where the text then reads cut
-  short counts it as changed and warns `EVALUATION_INPUT_TRUNCATED`, even when it wrote the same
-  text again, since the cut read cannot show the difference. Each evaluation save adds another watermark text box to every slide, which
-  reads list as content. A review reports each slide that carries one as
-  `SLIDES_EVALUATION_WATERMARK`, licensed or not; a licensed command whose
-  output keeps them warns `EVALUATION_INPUT_MARKED`. A license does not remove them, so rebuild the deck
-  with a license.
-- Only PPTX and PPTM outputs can carry a password; `--encrypt-env` with any other `create`,
-  `edit` or `convert` output is `OPTION_INVALID`. Without it, a PPTX or PPTM output of an
-  encrypted deck keeps its password, and any other document output is written without one and
-  warns `ENCRYPTION_REMOVED`; the slide images `render` writes do not warn.
-- A `convert` without `--slides` to a format other than PPT, PPTX, PPTM or ODP leaves out the
-  hidden slides, as PowerPoint's export does, and warns `HIDDEN_SLIDES_SKIPPED` with their
-  numbers; the hidden slides `--slides` names are converted. `render` and `review` draw hidden
-  slides and warn `HIDDEN_SLIDES_RENDERED` with their numbers: unhide them with
-  `set_slide_hidden`, or leave them out of what you report as the deck. An ODP output turns
-  native charts into pictures and drops slide transitions and sections, and warns `LOSSY_CONVERSION`
-  (SLIDES-ODP-NATIVE-CONTENT); keep the PPTX for further edits.
-- A PDF or other export holds the slides alone, with no handout or notes-page layout, so
-  speaker notes are not in it; read them with `slides read --notes` or
-  `slides extract --what notes`.
-- `slides read --content full` reports each table's cell `values` and each chart's data, and
-  the state the operations write under their field names; `slides search` does not see chart
-  text ([charts and tables](references/verification.md#charts-and-tables)).
+Without a Slides license (`aspose-cli docs licensing`), reads return text longer than five
+characters cut short and warn `EVALUATION_INPUT_TRUNCATED`, while the presentations, PDFs and
+images it saves keep the full text. Each evaluation save adds another watermark text box to every slide, which `review`
+reports as `SLIDES_EVALUATION_WATERMARK`; a license does not remove them, so rebuild the deck
+with a license. Details: [evaluation mode](references/troubleshooting.md#evaluation-mode).
+
+## Common mistakes
+
+- Taking shape ids from `slides inspect`: read them with `slides read --content shapes`, and read
+  them again after copying or importing slides.
+- Restyling text with `format_shape` slide by slide instead of fixing the template once.
+- Splitting related changes over several edits; one batch can add a slide and fill it.
+- Trusting `--verify` alone: it does not read back formatting, geometry, inserted objects, table
+  cells or chart data; read those with `slides read --content full` and look at the review.
+- Using `slides search` for chart text or alternative text: it does not see them.
+- Expecting speaker notes in a PDF or other export: read them with `slides read --notes`.
+- Delivering a converted file without its warnings: `HIDDEN_SLIDES_SKIPPED`, `ENCRYPTION_REMOVED`
+  and `LOSSY_CONVERSION` change what the output holds
+  ([outputs](references/editing.md#outputs-and-conversion)).
+- Passing different `--font-dir` folders to `create`, `edit`, `convert`, `render` and `review`:
+  saving shrinks auto-fit text with the fonts it finds.
 
 ## References
 
-- [Slides editing](references/editing.md): addressing, operations by task, text, notes and chart semantics
-- [Outline authoring](references/outline-authoring.md): Markdown to layouts
-- [Design system](references/design-system.md): templates and content rules
-- [Slides verification](references/verification.md): content reads, review checks, chart fidelity
+- [Slides editing](references/editing.md): addressing in a batch, operations by task, text,
+  notes, charts, media, and what each output format keeps
+- [Outline authoring](references/outline-authoring.md): the Markdown grammar and how it maps to layouts
+- [Design system](references/design-system.md): choosing the template and content rules
+- [Slides verification](references/verification.md): what `--verify` reads back, content reads,
+  review checks, chart fidelity
 - [Slides preview](references/preview.md): what the viewer shows
-- [Slides troubleshooting](references/troubleshooting.md): what to do when a Slides edit fails or looks wrong
+- [Slides troubleshooting](references/troubleshooting.md): failed or odd-looking edits and
+  evaluation-mode output
 
 Examples: [deck from outline](examples/deck-from-outline/README.md),
 [edit a deck safely](examples/edit-deck-safely/README.md),

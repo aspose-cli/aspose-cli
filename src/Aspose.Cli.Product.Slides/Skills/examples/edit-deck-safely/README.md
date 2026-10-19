@@ -19,4 +19,5 @@ its speaker note is "Launch approved." Open every review image before delivery a
 evaluation output.
 
 For a user's existing deck, read its actual slide and shape addresses before editing. Use
-`--in-place --backup` only when replacing the source was requested.
+`--in-place --backup --if-match <sha256>` only when replacing the source was requested
+(`aspose-cli docs editing`).

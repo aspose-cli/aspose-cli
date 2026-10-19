@@ -6,20 +6,21 @@ This page covers what is specific to presentations.
 ## Read-back of an edit
 
 `slides edit --verify` reads the staged output back and reports `verification` for the slides
-each operation addressed when it ran. It reads back the slide order (`insert_slide`,
-`delete_slides`, `move_slide`, `copy_slide`, `import_slides`), titles, shape text, body
-paragraphs with their `list`, speaker notes, layouts, hidden slides, footers,
-transitions, sections, document properties, the slide size, and for `replace_text` how often
-its find text and replacement occur in its scope. `format_shape`, `set_shape_bounds`,
+each operation addressed when it ran; `--help` for `--verify` lists what it reads back, body
+paragraphs with their `list` included. The
+slide order covers `insert_slide`, `delete_slides`, `move_slide`, `copy_slide` and
+`import_slides`; for `replace_text` it compares how often the find text and the replacement
+occur in the operation's scope with what the operation did. `format_shape`, `set_shape_bounds`,
 `set_background`, `delete_shape`, the inserted pictures, shapes, tables and charts,
 `set_table_cell` and `set_chart_data` are not read back: check them with the content reads and
-the review below. `checkedOps` lists only the operations whose effect was read back, whether or not the output
-holds it (each effect it does not hold is an issue), and an
-operation a later one of the batch changed again is left out, except for the slide order and
-the sections: their expectations build on each other, so an earlier `insert_slide`,
-`import_slides`, `move_slide` or `insert_section` is checked with the latest one. An empty list with `ok: true`
-means nothing was read back, not that every operation was confirmed. In evaluation mode no text
-is read back.
+the review below.
+
+`checkedOps` lists only the operations whose effect was read back, whether or not the output
+holds it (each effect it does not hold is an issue). An operation a later one of the batch
+changed again is left out, except for the slide order and the sections: their expectations
+build on each other, so an earlier `insert_slide`, `import_slides`, `move_slide` or
+`insert_section` is checked with the latest one. An empty list with `ok: true` means nothing was
+read back, not that every operation was confirmed. In evaluation mode no text is read back.
 
 ## Content
 
@@ -28,9 +29,6 @@ aspose-cli slides inspect deck.revised.pptx --sample --detail layouts fonts note
 aspose-cli slides read deck.revised.pptx --slides 1- --content full --notes --output-format json
 aspose-cli slides search deck.revised.pptx --pattern TODO --scope all --output-format json
 ```
-
-`--max-chars` bounds all returned text, including paragraphs, table cells, chart labels and notes; addressing and
-formatting metadata do not count.
 
 ### Charts and tables
 
@@ -48,8 +46,7 @@ aspose-cli slides convert deck.revised.pptx --to md --slides 4-6 --out deck.revi
 
 Compare these values with the ones the batch wrote before you report them. In evaluation mode
 titles and table cells come back truncated; chart values stay whole. The review images remain
-the check for how a chart draws its values:
-axis ranges, labels and clipping.
+the check for how a chart draws its values: axis ranges, labels and clipping.
 
 ## Appearance
 
@@ -57,25 +54,23 @@ axis ranges, labels and clipping.
 aspose-cli review deck.revised.pptx --out deck.review-1 --output-format json
 ```
 
-The Slides checks (`SLIDES_*` in `capabilities` under `review.checks`) flag shapes outside the
-slide, text below 12 pt, overlapping shapes, covered charts, laid-out text running into a table
-or chart or hidden by an opaque shape in front of it, however small (`SLIDES_TEXT_OVERLAPS_OBJECT`, judged from where the text actually sits, not from its
-often much taller placeholder), laid-out text cut off by a slide edge (`SLIDES_TEXT_OUTSIDE_SLIDE`,
-for example a long title in a bottom-anchored placeholder that wraps upward off the slide) or
-spilling out of a shape that neither grows to fit it nor shrinks it on overflow
-(`SLIDES_TEXT_OVERFLOWS_SHAPE`), text whose color has a contrast below 3:1 with the one solid
-color behind it: the shape's own fill, a filled shape beneath it on the slide or in its
-layout's or master's art, or the slide background (`SLIDES_TEXT_LOW_CONTRAST`, for example a
-dark template title on a slide given a dark background, or white text merged onto a white
-slide; a chart is judged by the text color it states, and text over a picture, a gradient or
-a filled shape covering less than half of it is not judged), empty
-placeholders that PowerPoint shows as prompts while editing (`SLIDES_PLACEHOLDER_EMPTY`), blank or
-duplicate slides and content density (judged by object count alone on a slide whose text
-evaluation mode replaced), and a slide that carries the watermark text box of a save without a
-license (`SLIDES_EVALUATION_WATERMARK`, in any license mode; the box is left out of the other
-checks). Text in rotated shapes and vertical text is not measured. A
-finding names each shape with its `shapeId`, which edit operations address together with the
-slide in its `location`.
+`aspose-cli capabilities slides` lists the Slides checks under `review.checks`, each with its
+code, severity and summary. What the summaries do not say:
+
+- Text checks (`SLIDES_TEXT_OVERLAPS_OBJECT`, `SLIDES_TEXT_OUTSIDE_SLIDE`,
+  `SLIDES_TEXT_OVERFLOWS_SHAPE`) judge the text from where it actually sits, not from its often
+  much taller placeholder; a long title in a bottom-anchored placeholder that wraps upward off
+  the slide is cut off by its edge. Text in rotated shapes and vertical text is not measured.
+- `SLIDES_TEXT_LOW_CONTRAST` compares the text color with the one solid color behind it: the
+  shape's own fill, a filled shape beneath it on the slide or in its layout's or master's art,
+  or the slide background. A chart is judged by the text color it states; text over a picture,
+  a gradient or a filled shape covering less than half of it is not judged.
+- Content density is judged by object count alone on a slide whose text evaluation mode
+  replaced. `SLIDES_EVALUATION_WATERMARK` is reported in any license mode, and the watermark box
+  is left out of the other checks.
+- A finding names each shape with its `shapeId`, which edit operations address together with
+  the slide in its `location`.
+
 After fixing one kind of finding, a later round can focus on it while you still open every image:
 
 ```powershell
@@ -93,8 +88,8 @@ Saving shrinks text that auto-fits its shape using the fonts' metrics, so pass t
 
 ## Existing chart fidelity
 
-Every edit and conversion passes the presentation through the SDK. It turns a chart's implicit
-automatic title into one drawn over the plot, which enlarges the plot area and can change its
-automatic axis scale; a `CHART_TITLE_OVERLAID` warning locates each affected chart. Inspect
-those charts in PowerPoint before publishing a revised template; a successful reopen and
-complete review coverage do not establish unchanged appearance.
+Every edit and conversion passes the presentation through the SDK, which can change how a
+chart's automatic title sits over its plot (SLIDES-CHART-TITLE). A `CHART_TITLE_OVERLAID`
+warning locates each affected chart: inspect those charts in PowerPoint and restore their title
+layout there before publishing a revised template; a successful reopen and complete review
+coverage do not establish unchanged appearance.

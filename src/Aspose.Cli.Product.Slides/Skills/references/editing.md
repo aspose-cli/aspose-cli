@@ -22,10 +22,9 @@ aspose-cli schema v2/slides/ops --operation insert_chart
   addressed separately. A `shapeName` or `placeholder` role that several shapes on the slide
   share is refused; use the `shapeId`.
 
-Each operation's outcome says what it changed: `itemsAffected` counts the objects whose state
-changed and `targets` addresses them (`slide/3`, `slide/3/shape/7`, `slide/3/notes`,
-`section/Intro`, `property/title`, `presentation/slide-size`); an operation that changed
-nothing reports 0 with `OP_NO_EFFECT` and no target. `slidesTouched` lists the numbers of the
+An outcome's `targets` (`aspose-cli docs editing`) address slides, shapes, notes, sections,
+properties and the slide size: `slide/3`, `slide/3/shape/7`, `slide/3/notes`, `section/Intro`,
+`property/title`, `presentation/slide-size`. `slidesTouched` lists the numbers of the
 output's changed slides. A section's address is its name as `slides inspect --detail sections`
 reports it, with only a slash, a percent sign, a control character and white space at either
 end written as `%XX` of their UTF-8 bytes: `section/Q3 Results`, `section/业绩回顾`,
@@ -121,3 +120,20 @@ does not establish that every value is visible.
 This build cannot insert audio or video or render MP4. `extract --what media --slides 2-3`
 writes the media those slides show (pictures, picture fills, backgrounds, audio and video, not
 master or layout art); each item keeps its presentation-wide `index`.
+
+## Outputs and conversion
+
+- Only PPTX and PPTM outputs can carry a password; `--encrypt-env` with any other `create`,
+  `edit` or `convert` output is `OPTION_INVALID`. Without it, a PPTX or PPTM output of an
+  encrypted deck keeps its password, and any other document output is written without one and
+  warns `ENCRYPTION_REMOVED`; the slide images `render` writes do not warn.
+- A `convert` without `--slides` to a format other than PPT, PPTX, PPTM or ODP leaves out the
+  hidden slides, as PowerPoint's export does, and warns `HIDDEN_SLIDES_SKIPPED` with their
+  numbers; the hidden slides `--slides` names are converted. `render` and `review` draw hidden
+  slides and warn `HIDDEN_SLIDES_RENDERED` with their numbers: unhide them with
+  `set_slide_hidden`, or leave them out of what you report as the deck.
+- An ODP output turns native charts into pictures and drops slide transitions and sections, and
+  warns `LOSSY_CONVERSION` (SLIDES-ODP-NATIVE-CONTENT); keep the PPTX for further edits.
+- A PDF or other export holds the slides alone, with no handout or notes-page layout, so
+  speaker notes are not in it; read them with `slides read --notes` or
+  `slides extract --what notes`.
