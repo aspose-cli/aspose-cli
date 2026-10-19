@@ -14,7 +14,7 @@ internal sealed class CellsEditBaseline(string directory, OwnedTemporaryFile fil
         OwnedTemporaryFile? file = null;
         try
         {
-            file = OwnedTemporaryFile.Create(System.IO.Path.Combine(directory, "baseline" + System.IO.Path.GetExtension(sourcePath)));
+            file = OwnedTemporaryFile.CreateNamedLike(directory, "baseline", sourcePath);
             using (Stream source = budgets.Inputs.OpenFile(sourcePath))
             using (var destination = new FileStream(file.Path, FileMode.Truncate, FileAccess.Write, FileShare.None))
             { source.CopyTo(destination); destination.Flush(flushToDisk: true); }

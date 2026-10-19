@@ -92,4 +92,8 @@ public static class CellsFormats
 
     /// <summary>Whether <paramref name="id"/> is a delimited text format (CSV or TSV).</summary>
     internal static bool IsDelimited(string id) => TraitsById.GetValueOrDefault(id)?.Delimited == true;
+
+    /// <summary>The delimited text formats (CSV and TSV), in declaration order.</summary>
+    internal static IReadOnlyList<FormatDescriptor> Delimited { get; } =
+        [.. Definitions.Where(static format => IsDelimited(format.Id))];
 }
