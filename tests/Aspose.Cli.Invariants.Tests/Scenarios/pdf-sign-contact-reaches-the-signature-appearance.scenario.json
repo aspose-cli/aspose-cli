@@ -1,0 +1,32 @@
+{
+  "name": "pdf sign --contact is drawn in the visible signature: a contact beyond ASCII embeds a whole font, an ASCII one does not",
+  "files": {
+    "input.pdf": { "fixture": "pdf.pdf" },
+    "cert.pfx": { "fixture": "certificate.pfx" }
+  },
+  "steps": [
+    {
+      "args": ["pdf", "sign", "input.pdf", "--certificate", "cert.pfx", "--certificate-password-env", "SCENARIO_CERTIFICATE_PASSWORD", "--visible", "--page", "1", "--rect", "36,48,300,80", "--contact", "Zoë Müller", "--out", "accented.pdf"],
+      "env": { "SCENARIO_CERTIFICATE_PASSWORD": "Invariant-Secret-5f1c9e7a" },
+      "expect": {
+        "exitCode": 0,
+        "warnings": { "present": ["SIGNATURE_FONT_EMBEDDED"] },
+        "json": [
+          { "path": "signature.signed", "equals": true }
+        ],
+        "reopens": ["accented.pdf"],
+        "hidden": ["Invariant-Secret-5f1c9e7a"]
+      }
+    },
+    {
+      "args": ["pdf", "sign", "input.pdf", "--certificate", "cert.pfx", "--certificate-password-env", "SCENARIO_CERTIFICATE_PASSWORD", "--visible", "--page", "1", "--rect", "36,48,300,80", "--contact", "quality@example.invalid", "--out", "ascii.pdf"],
+      "env": { "SCENARIO_CERTIFICATE_PASSWORD": "Invariant-Secret-5f1c9e7a" },
+      "expect": {
+        "exitCode": 0,
+        "warnings": { "absent": ["SIGNATURE_FONT_EMBEDDED"] },
+        "json": [{ "path": "signature.signed", "equals": true }],
+        "reopens": ["ascii.pdf"]
+      }
+    }
+  ]
+}
