@@ -53,6 +53,31 @@ public sealed class AtomicOutputSetWriterTests
 
         Assert.Equal(ErrorCodes.OutputPublicationFailed, error.Code);
         Assert.Equal("original", File.ReadAllText(target));
+        // The swap refused the stage before it touched the target, so nothing was published.
+        JsonObject state = Assert.IsType<JsonObject>(Assert.Single(Assert.IsType<JsonArray>(error.Details!["targets"])));
+        Assert.Equal("unchanged", state["status"]!.GetValue<string>());
+        Assert.False(state["published"]!.GetValue<bool>());
+    }
+
+    [Fact]
+    public void Commit_ReportsANewTargetWhoseStageWasReplacedAsNotPublished()
+    {
+        using var temp = new TempDirectory();
+        string target = temp.File("target.txt");
+        using var set = new AtomicOutputSetWriter(TestBudgets.Writer(), temp.Path, "stage-identity");
+        set.Stage(target, overwrite: false, staged => File.WriteAllText(staged, "verified"));
+        string transaction = Assert.Single(Directory.GetDirectories(temp.Path));
+        string staged = AtomicPublicationPlan.StagedPath(transaction, target, index: 0);
+        File.Delete(staged);
+        File.WriteAllText(staged, "replacement");
+
+        CliException error = Assert.Throws<CliException>(() => set.Commit());
+
+        Assert.Equal(ErrorCodes.OutputPublicationFailed, error.Code);
+        Assert.False(File.Exists(target));
+        JsonObject state = Assert.IsType<JsonObject>(Assert.Single(Assert.IsType<JsonArray>(error.Details!["targets"])));
+        Assert.Equal("unchanged", state["status"]!.GetValue<string>());
+        Assert.False(state["published"]!.GetValue<bool>());
     }
 
     [Fact]
