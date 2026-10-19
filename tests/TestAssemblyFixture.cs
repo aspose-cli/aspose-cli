@@ -25,6 +25,16 @@ public sealed class ProcessRedirectionCollection
 }
 
 /// <summary>
+/// Tests that set a license variable in the process environment. They run alone, after the
+/// parallel tests, so no other test resolves a license while the variable changes.
+/// </summary>
+[Xunit.CollectionDefinition(Name, DisableParallelization = true)]
+public sealed class ProcessLicenseEnvironmentCollection
+{
+    public const string Name = "Process license environment";
+}
+
+/// <summary>
 /// Tests that read what a document engine writes into every document it saves, such as the PDF
 /// engine's modification date, which it leaves out of a document saved while other documents of
 /// the process are saved. They run alone, after the parallel tests.
