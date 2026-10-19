@@ -59,15 +59,13 @@ children. Later operations of the batch see the renumbered outline; put
 `add_bookmark` operations that name a parent before the deletion, or reinspect
 and edit in a second batch.
 
-Each applied operation's `itemsAffected` counts the objects it changed and its
-`targets` name them: pages as `page/<n>`, bookmarks as `bookmark/<address>`, and
+`itemsAffected` and `targets` work as `aspose-cli docs editing` describes. PDF
+targets name pages as `page/<n>`, bookmarks as `bookmark/<address>`, and
 `property/<key>`, `attachment/<name>`, `page-label/<start page>`,
 `field/<name>` and `security/encryption`. A deleted page or bookmark keeps the
 address it had before the deletion, and a deleted bookmark counts with each of
 its children. A page counts once however much changed on it, such as every
-match a redaction removed there. An operation that changed nothing reports 0
-and an `OP_NO_EFFECT` warning. Past 100 targets, an operation reports one range
-per unit that covers them, such as `page/1-150`.
+match a redaction removed there.
 
 Aspose.PDF writes `creator`, `producer` and `modificationDate` into every PDF
 it saves, so no operation removes or sets them: `clear_properties` leaves them

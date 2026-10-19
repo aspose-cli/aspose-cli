@@ -29,11 +29,8 @@ widening access, and review the incomplete output.
 
 ## Forms and archives
 
-XFA forms can be inspected but not filled, flattened or exported as AcroForm data
-(`FORM_XFA_UNSUPPORTED`). A PDF/A conversion that cannot make the document conform
-fails with `PDFA_CONVERSION_FAILED` and lists what it could not fix in
-`error.details.problems`; a font the document uses that is missing here also fails
-it ([PDF/A](pdf-standards.md)).
+`FORM_XFA_UNSUPPORTED` is in [forms](forms-security.md), and
+`PDFA_CONVERSION_FAILED` in [PDF/A](pdf-standards.md).
 
 ## Permissions and encryption
 
@@ -47,11 +44,8 @@ or `modify`; inserting, moving, rotating or deleting pages and adding bookmarks 
 change; the hint says which encryption the output carries. A merge or split that
 keeps an input's open password warns too.
 
-An output that loses its input's encryption, as after a convert to a document or
-text format, a `decrypt_document`, or a merge or split of an input with only an
-owner password, warns `ENCRYPTION_REMOVED`; images and extracted files never warn.
-Pass `--encrypt-env` where the output must stay protected
-([encryption](forms-security.md#encryption)). `pdf convert` does not encrypt and
+[Encryption](forms-security.md#encryption) says which outputs warn
+`ENCRYPTION_REMOVED` and how to keep them protected. `pdf convert` does not encrypt and
 refuses `--encrypt-env`: to encrypt a PDF, run `pdf edit` with an
 `encrypt_document` operation, or with `--encrypt-env` beside its operations. PDF/A
 does not allow encryption, so an encrypted PDF/A file is no longer conformant:

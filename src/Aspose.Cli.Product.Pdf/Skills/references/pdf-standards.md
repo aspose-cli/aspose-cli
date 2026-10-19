@@ -46,9 +46,19 @@ the file does not conform; `aspose-cli schema v2/pdf/validate-result` describes
 each issue, including whether a conversion to the profile can fix it. `pdf inspect` reports only the profile a file
 declares, as `pdf.pdfaProfile`; a declaration is not a check.
 
+## Images to PDF
+
+`pdf create --from-images` puts each image on its own page of `--page-size`,
+turned to landscape for an image wider than it is tall. The image keeps its
+aspect ratio: it fills the space inside `--margins` in one dimension and is
+centred in the other. A photo's EXIF orientation counts, and an SVG without
+both a width and a height takes the proportions of its viewBox. A raster image
+enlarged to fewer than 96 pixels per inch warns `IMAGE_RESOLUTION_LOW` with the
+page and the pixels it needs: it shows blurred.
+
 ## Other formats
 
-`aspose-cli capabilities` lists the PDF `convertFormats` and `renderFormats`.
+`aspose-cli capabilities pdf` lists the PDF `convertFormats` and `renderFormats`.
 `--pages` selects physical pages. Page images come from `pdf render`, which
 writes PNG, JPEG or SVG, one file per selected page; `pdf convert` refuses those
 formats. `pdf convert --to tiff` writes the selected pages as one multipage TIFF.

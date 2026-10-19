@@ -52,6 +52,16 @@ Flattening is the `flatten_forms` operation, for named fields or every field; us
 it only when those fields should no longer be editable. Naming a radio group
 flattens every button of that group.
 
+### Forms made from HTML
+
+`pdf create --from-html` turns HTML form controls into AcroForm fields. A
+single-line text `<input>` keeps its `name`; other controls get generated names
+and lose their `value`s, and inputs of type `email`, `tel`, `url`, `time`,
+`datetime-local`, `month`, `week`, `color`, `range`, `file`, `image` or `hidden`
+are dropped; `LOSSY_CONVERSION` lists both. Use `type="text"` for an input that
+must stay a field, place the picture of an image input with `add_stamp_image`,
+and match each field's `rect` to its label before filling.
+
 ## Encryption
 
 `encrypt_document` and `decrypt_document` are edit operations whose ops name environment
@@ -64,8 +74,8 @@ operations and replaces any encryption they leave:
 aspose-cli pdf merge a.pdf b.pdf --out merged.pdf --encrypt-env PDF_PASSWORD --output-format json
 ```
 
-`output.encrypted` states whether the written file is encrypted, a file with
-only an owner password included. Without `--encrypt-env`, an edit or signature
+`output.encrypted` counts a file with only an owner password as encrypted.
+Without `--encrypt-env`, an edit or signature
 keeps the input's encryption; a merge or split keeps the password the inputs
 were opened with as the output's open password and warns
 `PROTECTION_NOT_ENFORCED` with what became of the rest: opened with the user
@@ -74,9 +84,11 @@ no one knows; opened with the owner password, that password opens the output
 and grants every permission. An input whose open password is also its owner
 password, as `--encrypt-env` writes it, keeps that one password without a
 warning. An input with only an owner password has no open
-password to keep, and a convert writes formats that cannot carry one: any
-document or text output that does not keep the encryption of an encrypted input
-carries `ENCRYPTION_REMOVED`; images and what `extract` writes never do. Inspect protected
+password to keep, and a convert writes formats that cannot carry one: a convert
+to a document or text format, a `decrypt_document`, and a merge or split of an
+input with only an owner password warn `ENCRYPTION_REMOVED`
+(`aspose-cli docs editing`). Pass `--encrypt-env` where the output must stay
+protected. Inspect protected
 output with `pdf inspect --detail permissions`: `print`, `copy` and the other
 permission fields state what the file grants readers without the owner
 password, also when `--password-env` opened it with the owner password, and
@@ -91,6 +103,14 @@ password that both opens the file and is its owner password reports `owner`, wit
 reports these flags and adds no permission preflight beyond the engine's; opening
 a PDF or completing an edit is not proof of owner authorization, so perform only
 authorized changes.
+
+In evaluation mode each save prints the evaluation notice once, and an encrypted
+output is saved once, with two exceptions that encrypt a saved copy to keep text
+beyond Latin-1, such as a Chinese title, readable, and so carry the notice twice:
+`--encrypt-env` when the output's document information holds such text, whether
+set now or taken from an input; and a `pdf edit` batch with `set_properties` and
+`encrypt_document` when the information holds such text. `encrypt_document`
+without `set_properties` saves once, whatever the title.
 
 ## Signatures
 
