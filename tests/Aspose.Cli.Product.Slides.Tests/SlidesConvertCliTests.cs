@@ -274,6 +274,55 @@ public sealed class SlidesConvertCliTests : IDisposable
         Assert.Contains("section(s)", message, StringComparison.Ordinal);
     }
 
+    /// <summary>
+    /// An html, html5 or Markdown output warns that it may not keep every presentation feature;
+    /// a presentation or a PDF does not.
+    /// </summary>
+    [Theory]
+    [InlineData("html", "html", true)]
+    [InlineData("html5", "html", true)]
+    [InlineData("md", "md", true)]
+    [InlineData("pptx", "pptx", false)]
+    [InlineData("pdf", "pdf", false)]
+    public void Convert_ToHtmlHtml5OrMd_WarnsLossyConversion(string format, string extension, bool lossy)
+    {
+        Run("slides", "create", "deck.pptx", "--from-markdown", "deck.md");
+
+        JsonNode result = Run("slides", "convert", "deck.pptx", "--to", format, "--out", $"converted.{extension}");
+
+        JsonNode? warning = (result["warnings"] as JsonArray ?? [])
+            .SingleOrDefault(static warning => warning!["code"]!.GetValue<string>() == "LOSSY_CONVERSION");
+        if (!lossy)
+        {
+            Assert.Null(warning);
+            return;
+        }
+
+        Assert.NotNull(warning);
+        Assert.Equal($"Slides conversion to {format} may not preserve every presentation feature.", warning["message"]!.GetValue<string>());
+    }
+
+    /// <summary>Each render format writes its own kind of image: a PNG, a JPEG or an SVG document.</summary>
+    [Theory]
+    [InlineData("png", new byte[] { 0x89, 0x50, 0x4E, 0x47 })]
+    [InlineData("jpeg", new byte[] { 0xFF, 0xD8, 0xFF })]
+    [InlineData("svg", null)]
+    public void Render_WritesTheImageOfItsFormat(string format, byte[]? signature)
+    {
+        Run("slides", "create", "deck.pptx", "--from-markdown", "deck.md");
+
+        JsonNode result = Run("slides", "render", "deck.pptx", "--slides", "1", "--to", format, "--out", $"slide.{format}");
+
+        byte[] content = File.ReadAllBytes(result["outputs"]![0]!["path"]!.GetValue<string>());
+        if (signature is null)
+        {
+            Assert.Contains("<svg", System.Text.Encoding.UTF8.GetString(content), StringComparison.Ordinal);
+            return;
+        }
+
+        Assert.Equal(signature, content[..signature.Length]);
+    }
+
     // deck.pptx: four slides, the second hidden.
     private void HiddenSecondSlide()
     {
