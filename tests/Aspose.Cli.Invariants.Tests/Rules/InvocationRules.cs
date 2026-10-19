@@ -926,4 +926,42 @@ internal static partial class ContractRules
             yield return $"--verbose adds a stderr line that is not a JSON object: {Excerpt(added)}";
         }
     }
+
+    /// <summary>The option that names the fingerprint an edit expects its input to have.</summary>
+    private const string R41Option = "--if-match";
+
+    /// <summary>A well-formed SHA-256 that no fixture document has.</summary>
+    private static readonly string R41Stale = new('0', 64);
+
+    /// <summary>A value that is not 64 hexadecimal characters.</summary>
+    private const string R41Malformed = "not-a-sha256";
+
+    /// <summary>
+    /// Every command with <c>--if-match</c>: a well-formed fingerprint the input does not have is
+    /// <c>INPUT_CHANGED</c> (exit 3) naming the expected and observed SHA-256, and a value that
+    /// is not 64 hexadecimal characters is <c>OPTION_INVALID</c> (exit 2); neither writes a file.
+    /// </summary>
+    private static IEnumerable<InvariantCase> R41(CliCatalog catalog)
+    {
+        foreach (CliCommand command in catalog.Commands.Where(static command => !command.Hidden && command.Has(R41Option)))
+        {
+            string shard = InvariantCases.ShardOf(command);
+            yield return InvariantCases.Case("C-R41", $"{command} {R41Option} stale", shard, slow: false,
+                Invocation.For(command).Add(R41Option, R41Stale),
+                new ScenarioExpectation
+                {
+                    ExitCode = [3],
+                    Error = ["INPUT_CHANGED"],
+                    Json =
+                    [
+                        new JsonAssertion { Path = "error.details.expectedSha256", Value = JsonValue.Create(R41Stale) },
+                        new JsonAssertion { Path = "error.details.observedSha256", Exists = true },
+                    ],
+                    Files = new ScenarioFiles { NothingWritten = true },
+                });
+            yield return InvariantCases.Case("C-R41", $"{command} {R41Option} malformed", shard, slow: false,
+                Invocation.For(command).Add(R41Option, R41Malformed),
+                new ScenarioExpectation { ExitCode = [2], Error = ["OPTION_INVALID"], Files = new ScenarioFiles { NothingWritten = true } });
+        }
+    }
 }
