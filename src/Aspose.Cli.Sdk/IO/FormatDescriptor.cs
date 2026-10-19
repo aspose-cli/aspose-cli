@@ -134,6 +134,13 @@ public sealed record FormatDescriptor
     public IReadOnlyList<string> Aliases { get; init; } = [];
 
     /// <summary>
+    /// Words a caller may write for this format but that are not values of it, such as the
+    /// application name <c>word</c> for docx: a refused value among them suggests this format.
+    /// Unlike <see cref="Aliases"/>, they are never accepted.
+    /// </summary>
+    public IReadOnlyList<string> MistakenFor { get; init; } = [];
+
+    /// <summary>
     /// Preferred extension for newly produced files. The first associated
     /// extension is used when this value is not specified.
     /// </summary>

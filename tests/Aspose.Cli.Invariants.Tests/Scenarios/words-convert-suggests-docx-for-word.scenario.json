@@ -1,0 +1,17 @@
+{
+  "name": "--to word, an application name rather than a format, is an invalid option value that suggests docx",
+  "files": {
+    "report.docx": { "fixture": "words.docx" }
+  },
+  "steps": [
+    {
+      "args": ["words", "convert", "report.docx", "--to", "word", "--out", "out.doc"],
+      "expect": {
+        "exitCode": 2,
+        "error": "OPTION_INVALID",
+        "json": [{ "path": "error.details.suggestions", "contains": "docx" }],
+        "files": { "absent": ["out.doc"], "nothingWritten": true }
+      }
+    }
+  ]
+}

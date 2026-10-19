@@ -30,6 +30,9 @@ internal static partial class ContractRules
 
         /// <summary>A command, by its path such as <c>cells read</c>.</summary>
         Command,
+
+        /// <summary>A format a product converts to, by its id such as <c>docx</c>.</summary>
+        Format,
     }
 
     /// <summary>
@@ -94,10 +97,11 @@ internal static partial class ContractRules
         /// any other declaration a property whose JSON name is its <c>[JsonPropertyName]</c> or its
         /// camel-cased name. Every such attribute of the text must be read, so a declaration this
         /// reading cannot place is a problem rather than a name silently left out. A
-        /// <c>MistakenFor = [...]</c> initializer belongs to the command definition the nearest
-        /// <c>new(</c> before it creates, named by its full command path: its first string under
-        /// the names of the commands that add it with <c>Subcommands.Add</c>, under the product, or
-        /// from the top level for a platform command, which has no product; a
+        /// <c>MistakenFor = [...]</c> initializer belongs to the format that a <c>FormatDescriptor</c>
+        /// factory on its line declares, named by its first string, or else to the command definition
+        /// the nearest <c>new(</c> before it creates, named by its full command path: its first string
+        /// under the names of the commands that add it with <c>Subcommands.Add</c>, under the product,
+        /// or from the top level for a platform command, which has no product; a
         /// <c>mistakenFor: [...]</c> argument, to the edit command <c>EditDefinition.Create</c> defines.
         /// </summary>
         public static IEnumerable<MistakenName> ReadFile(string? product, string where, string source, List<string> problems)
@@ -176,7 +180,14 @@ internal static partial class ContractRules
             foreach (Match initializer in MistakenInitializer().Matches(source))
             {
                 string[] declaredNames = [.. Literal().Matches(initializer.Groups["names"].Value).Select(static literal => literal.Groups["text"].Value)];
-                string? command = initializer.Groups["edit"].Success
+                int lineStart = initializer.Index == 0 ? 0 : source.LastIndexOf('\n', initializer.Index - 1) + 1;
+                if (product is not null && !initializer.Groups["edit"].Success
+                    && FormatCreation().Match(source[lineStart..initializer.Index]) is { Success: true } format)
+                {
+                    names.AddRange(declaredNames.Select(name => new MistakenName(product, name, format.Groups["name"].Value, MistakenKind.Format, where)));
+                    continue;
+                }
+                                string? command = initializer.Groups["edit"].Success
                     ? product is not null && EditCreation().Matches(source[..initializer.Index]).Count > 0 ? $"{product} edit" : null
                     : CommandPath(product, source, initializer.Index);
                 if (command is null)
@@ -656,6 +667,10 @@ internal static partial class ContractRules
     /// <summary>The creation of an edit command definition, <c>EditDefinition.Create&lt;...&gt;(</c>.</summary>
     [GeneratedRegex(@"\bEditDefinition\.Create<")]
     private static partial Regex EditCreation();
+
+    /// <summary>The declaration of a format by a factory, <c>FormatDescriptor.Routed("docx"</c>, with its id.</summary>
+    [GeneratedRegex(@"\bFormatDescriptor\.\w+\(\s*""(?<name>[a-z][a-z0-9-]*)""")]
+    private static partial Regex FormatCreation();
 
     /// <summary>
     /// The creation of a command or its definition, <c>new(</c>, <c>new Command(</c> or

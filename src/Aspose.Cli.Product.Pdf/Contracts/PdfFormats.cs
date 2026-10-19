@@ -10,9 +10,9 @@ public static class PdfFormats
         FileFormatRecognition.AttachTo(
     [
         FormatDescriptor.Routed("pdf", FormatUse.Input, 0, null, null, ".pdf") with { Protectable = true },
-        FormatDescriptor.Routed("docx", FormatUse.Convert, null, 0, null, ".docx"),
-        FormatDescriptor.Routed("xlsx", FormatUse.Convert, null, 1, null, ".xlsx"),
-        FormatDescriptor.Routed("pptx", FormatUse.Convert, null, 2, null, ".pptx"),
+        FormatDescriptor.Routed("docx", FormatUse.Convert, null, 0, null, ".docx") with { MistakenFor = ["word"] },
+        FormatDescriptor.Routed("xlsx", FormatUse.Convert, null, 1, null, ".xlsx") with { MistakenFor = ["excel"] },
+        FormatDescriptor.Routed("pptx", FormatUse.Convert, null, 2, null, ".pptx") with { MistakenFor = ["powerpoint"] },
         FormatDescriptor.Routed("html", FormatUse.Convert, null, 3, null, ".html", ".htm"),
         FormatDescriptor.Routed("epub", FormatUse.Convert, null, 4, null, ".epub"),
         FormatDescriptor.Routed("txt", FormatUse.Convert, null, 5, null, ".txt"),
