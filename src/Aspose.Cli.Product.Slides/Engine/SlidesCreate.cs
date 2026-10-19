@@ -42,7 +42,9 @@ internal static class SlidesCreate
             presentation.Slides.AddEmptySlide(SlidesPlaceholders.Layout(presentation, SlideLayoutType.Title));
         }
 
-        Encrypt(presentation, request.EncryptPassword);
+        // A new presentation keeps no password of its template, which opens only without one.
+        OutputProtection protection = OutputProtection.For(request.Output.Format, request.EncryptPassword, new InputProtection(Encrypted: false), inputPassword: null);
+        SlidesOutputProtection.Protect(presentation, protection);
         PublishedFile written = session.Outputs.Write(
             request.Output.Path,
             request.Output.Overwrite,
@@ -52,10 +54,10 @@ internal static class SlidesCreate
                 presentation.Save(temp, SlidesEngineFormats.SaveFormatOf(format));
                 template.Resources.ThrowIfFailed();
             },
-            encrypted: presentation.ProtectionManager.IsEncrypted);
+            encrypted: protection.Encrypted);
         return new SlidesCreateResult
         {
-            Output = FileObjects.Output(written, request.Output.Format, presentation.ProtectionManager.IsEncrypted),
+            Output = FileObjects.Output(written, request.Output.Format, protection.Encrypted),
             SlideCount = presentation.Slides.Count,
             Inputs = FileObjects.Sources(
                 (request.Template, template.FormatId, template.Encrypted),

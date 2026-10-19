@@ -72,10 +72,8 @@ internal static class SlidesEdit
         if (!request.Options.DryRun)
         {
             Presentation presentation = loaded.Presentation;
-            // PPTX and PPTM, the formats an edit writes, keep the input's password unless
-            // --encrypt replaces it.
-            Encrypt(presentation, request.EncryptPassword);
-            bool encrypted = presentation.ProtectionManager.IsEncrypted;
+            OutputProtection protection = OutputProtection.For(request.Output.Format, request.EncryptPassword, loaded.Protection, request.Password);
+            SlidesOutputProtection.Protect(presentation, protection);
             using OutputSet<Presentation> transaction = session.Outputs.BeginSet([request.Output.Directory], "slides-edit");
             StagedOutput write = transaction.Stage(
                 request.Output.Path,
@@ -87,11 +85,11 @@ internal static class SlidesEdit
                     loaded.Resources.ThrowIfFailed();
                     using LoadedPresentation reopened = session.Loader.OpenPublishedCandidate(
                         temp,
-                        request.EncryptPassword ?? request.Password);
+                        protection.Password);
                 },
                 backupPath: request.Output.BackupPath,
                 inputPrecondition: precondition,
-                encrypted: encrypted);
+                encrypted: protection.Encrypted);
             backup = write.Backup;
             if (verifier is not null)
             {
@@ -100,14 +98,14 @@ internal static class SlidesEdit
                 {
                     using LoadedPresentation reopened = session.Loader.OpenPublishedCandidate(
                         candidate,
-                        request.EncryptPassword ?? request.Password);
+                        protection.Password);
                     VerifiedBatch verified = applied.Verified(verifier.Verify(reopened.Presentation));
                     return new SlidesEditVerification { Ok = verified.Ok, Issues = verified.Issues, CheckedOps = verified.CheckedOps };
                 });
             }
 
             transaction.Commit();
-            output = FileObjects.Output(write.Published, request.Output.Format, encrypted);
+            output = FileObjects.Output(write.Published, request.Output.Format, protection.Encrypted);
         }
 
         return new EditPublication(output, backup, verification);

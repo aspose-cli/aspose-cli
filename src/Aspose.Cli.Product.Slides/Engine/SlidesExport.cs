@@ -58,14 +58,8 @@ internal static partial class SlidesExport
     {
         Presentation presentation = loaded.Presentation;
         SaveFormat format = SlidesEngineFormats.SaveFormatOf(request.Output.Format.Id);
-        // A format that can carry a password keeps the source's encryption unless --encrypt
-        // replaces it; any other is written without it, which the write pipeline discloses.
-        bool protectable = request.Output.Format.Protectable;
-        bool encrypted = protectable && (request.EncryptPassword is not null || presentation.ProtectionManager.IsEncrypted);
-        if (!protectable && presentation.ProtectionManager.IsEncrypted)
-        {
-            presentation.ProtectionManager.RemoveEncryption();
-        }
+        OutputProtection protection = OutputProtection.For(request.Output.Format, request.EncryptPassword, loaded.Protection, request.Password);
+        SlidesOutputProtection.Protect(presentation, protection);
 
         if (format == SaveFormat.Md)
         {
@@ -86,7 +80,7 @@ internal static partial class SlidesExport
 
         // An export of selected slides shows those slides alone, numbered as in the deck, so only
         // their evaluation marks are its own.
-        IReadOnlyList<OutputInfo> written = session.Outputs.Write(request.Output, presentation, encrypted, temp =>
+        IReadOnlyList<OutputInfo> written = session.Outputs.Write(request.Output, presentation, protection.Encrypted, temp =>
         {
             Save(temp);
             if (format == SaveFormat.Odp)
@@ -102,7 +96,6 @@ internal static partial class SlidesExport
         {
             if (slides is null)
             {
-                Encrypt(presentation, request.EncryptPassword);
                 if (format == SaveFormat.Md)
                 {
                     SaveMarkdown(presentation, temp, null);
@@ -122,7 +115,6 @@ internal static partial class SlidesExport
             // Editable formats keep the source's size, properties, masters and protection:
             // the unselected slides leave this private loaded copy instead of cloning into a new deck.
             RemoveUnselectedSlides(presentation, slides);
-            Encrypt(presentation, request.EncryptPassword);
             presentation.Save(temp, format);
         }
     }
