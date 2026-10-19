@@ -1,3 +1,5 @@
+using System.Text.Json;
+using System.Text.Json.Nodes;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Results;
@@ -6,12 +8,27 @@ using Aspose.Pdf.Facades;
 
 namespace Aspose.Cli.Product.Pdf.Engine.Mapping;
 
-/// <param name="resourceBudgets">The invocation's resource budgets.</param>
-/// <param name="outputs">The write pipeline, which learns whether each opened input is encrypted; none for font inspection.</param>
-internal sealed class PdfDocumentLoader(
-    ResourceBudgetLedger resourceBudgets,
-    OutputPipeline? outputs = null)
+internal sealed class PdfDocumentLoader
 {
+    private readonly ResourceBudgetLedger _resourceBudgets;
+    private readonly OutputPipeline? _outputs;
+
+    /// <param name="resourceBudgets">The invocation's resource budgets.</param>
+    /// <param name="outputs">The write pipeline, which learns whether each opened input is encrypted.</param>
+    internal PdfDocumentLoader(ResourceBudgetLedger resourceBudgets, OutputPipeline outputs)
+        : this(resourceBudgets)
+    {
+        _outputs = outputs ?? throw new ArgumentNullException(nameof(outputs));
+    }
+
+    private PdfDocumentLoader(ResourceBudgetLedger resourceBudgets)
+    {
+        _resourceBudgets = resourceBudgets ?? throw new ArgumentNullException(nameof(resourceBudgets));
+    }
+
+    /// <summary>A loader for font inspection, which publishes nothing.</summary>
+    internal static PdfDocumentLoader ForFontInspection(ResourceBudgetLedger resourceBudgets) => new(resourceBudgets);
+
     /// <summary>
     /// How a PDF input that does not load is reported: Aspose.PDF raises
     /// <see cref="InvalidPasswordException"/> for a missing or wrong password, and any other
@@ -27,19 +44,14 @@ internal sealed class PdfDocumentLoader(
             _ => LoadFailureKind.Other,
         });
 
-    public LoadedPdf Open(string path, Secret? password)
-    {
-        InputSizeGuard.Ensure(resourceBudgets, path);
-        LoadedPdf loaded = OpenCore(path, password);
-        outputs?.Opened(loaded.Encrypted, loaded.HasOpenPassword, loaded.Encrypted ? Restrictions(loaded.Document) : null);
-        return loaded;
-    }
+    public LoadedPdf Open(string path, Secret? password) =>
+        InputOpening.Open(_outputs, _resourceBudgets, path, () => OpenCore(path, password));
 
     /// <summary>
     /// The <c>encrypt_document</c> fields that grant a copy what the document grants readers
     /// without the owner password, named as <c>pdf inspect --detail permissions</c> names them.
     /// </summary>
-    private static System.Text.Json.Nodes.JsonObject Restrictions(Document document)
+    private static JsonObject Restrictions(Document document)
     {
         var permissions = (Permissions)document.Permissions;
         var granted = new PdfPermissionsInput
@@ -53,16 +65,38 @@ internal sealed class PdfDocumentLoader(
             Assemble = permissions.HasFlag(Permissions.AssembleDocument),
             PrintHighResolution = permissions.HasFlag(Permissions.PrintingQuality),
         };
-        return new System.Text.Json.Nodes.JsonObject
+        return new JsonObject
         {
-            ["permissions"] = System.Text.Json.JsonSerializer.SerializeToNode(granted, PdfOpsJsonContext.Default.PdfPermissionsInput),
+            ["permissions"] = JsonSerializer.SerializeToNode(granted, PdfOpsJsonContext.Default.PdfPermissionsInput),
         };
     }
 
     // Generated candidates are bounded by publication, not a second user-input admission.
-    internal LoadedPdf OpenPublishedCandidate(string path, Secret? password) => OpenCore(path, password);
+    internal LoadedPdf OpenPublishedCandidate(string path, Secret? password) =>
+        InputOpening.OpenPublished(() => OpenCore(path, password));
 
+    // An encrypted file's restrictions are read once it has loaded, outside the translation of
+    // its load failures: an engine failure to read them is not a damaged input.
     private LoadedPdf OpenCore(string path, Secret? password)
+    {
+        LoadedPdf loaded = Load(path, password);
+        if (!loaded.Encrypted)
+        {
+            return loaded;
+        }
+
+        try
+        {
+            return loaded with { Restrictions = Restrictions(loaded.Document) };
+        }
+        catch
+        {
+            loaded.Dispose();
+            throw;
+        }
+    }
+
+    private LoadedPdf Load(string path, Secret? password)
     {
         EnsurePdfHeader(path);
 
@@ -77,7 +111,7 @@ internal sealed class PdfDocumentLoader(
                 : new Document(stream, password.Reveal());
             try
             {
-                resourceBudgets.EnsureWithin(
+                _resourceBudgets.EnsureWithin(
                     PdfBudgetDomains.Pages,
                     document.Pages.Count,
                     "items",
@@ -86,7 +120,7 @@ internal sealed class PdfDocumentLoader(
                 // belongs to the generator model and is always empty after a load.
                 long objects = document.Pages.Cast<Page>()
                     .Sum(static page => (long)page.Annotations.Count);
-                resourceBudgets.EnsureWithin(
+                _resourceBudgets.EnsureWithin(
                     PdfBudgetDomains.Objects,
                     objects,
                     "items",
@@ -152,10 +186,19 @@ internal sealed class PdfDocumentLoader(
 /// <param name="Source">The input stream the document reads from.</param>
 internal sealed record LoadedPdf(
     Document Document, PasswordType PasswordType, bool HasOpenPassword, bool HasOwnerPassword, bool OpenPasswordIsOwner, Stream Source)
-    : IDisposable
+    : IOpenedInput, IDisposable
 {
     /// <summary>Whether the file is encrypted, as it was opened; a later decryption does not change it.</summary>
     public bool Encrypted { get; } = Document.IsEncrypted;
+
+    /// <summary>
+    /// For an encrypted file, the <c>encrypt_document</c> fields that grant a copy what the file
+    /// grants readers without the owner password; null for a file that is not encrypted.
+    /// </summary>
+    public JsonObject? Restrictions { get; init; }
+
+    /// <inheritdoc />
+    public InputProtection Protection => new(Encrypted, HasOpenPassword, Restrictions);
 
     public void Dispose()
     {

@@ -24,7 +24,7 @@ internal sealed partial class WordsFontEnvironment : IFontEnvironment
         ResourceBudgetLedger resourceBudgets)
     {
         _license = license ?? throw new ArgumentNullException(nameof(license));
-        _loader = new WordsDocumentLoader(resourceBudgets);
+        _loader = WordsDocumentLoader.ForFontInspection(resourceBudgets);
     }
 
     /// <inheritdoc />

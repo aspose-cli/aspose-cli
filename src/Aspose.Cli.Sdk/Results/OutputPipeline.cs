@@ -15,7 +15,7 @@ namespace Aspose.Cli.Sdk.Results;
 /// mode produced an output, naming the evaluation marks it carries, and <c>EVALUATION_INPUT_MARKED</c>
 /// when a licensed output carries evaluation marks, which a licensed save never adds, so they come
 /// from its input. It is also the sole owner of the <c>ENCRYPTION_REMOVED</c> warning: a product
-/// tells it whether each document it opened is encrypted (<see cref="Opened"/>) and whether each
+/// tells it whether each document it opened is encrypted (<see cref="InputOpening"/>) and whether each
 /// copy it publishes is, and the pipeline compares the two. A command that publishes nothing,
 /// such as a dry run or a read, discloses nothing.
 /// </summary>
@@ -101,22 +101,18 @@ public abstract class OutputPipeline : ILicenseState
     /// from. When one of them is encrypted, every copy the command publishes without encryption
     /// is disclosed as <c>ENCRYPTION_REMOVED</c>.
     /// </summary>
-    /// <param name="encrypted">Whether the document is encrypted, including a PDF with only an owner password.</param>
-    /// <param name="openPassword">Whether an encrypted document needs a password to open, not only to change it.</param>
-    /// <param name="restrictions">
-    /// For an encrypted document, the fields of the operation that encrypts
-    /// (<see cref="Operations.EncryptsOutputAttribute"/>) that restrict a copy as the document is
-    /// restricted, such as the permissions it grants readers without the owner password.
-    /// </param>
-    public void Opened(bool encrypted, bool openPassword = true, JsonObject? restrictions = null)
+    /// <param name="protection">How the document is protected (<see cref="InputProtection"/>).</param>
+    /// <remarks>Only <see cref="InputOpening.Open"/> records it, so no loader can skip it.</remarks>
+    internal void Opened(InputProtection protection)
     {
+        ArgumentNullException.ThrowIfNull(protection);
         lock (_sync)
         {
-            _encryptedInput |= encrypted;
-            _openPassword |= encrypted && openPassword;
-            if (encrypted)
+            _encryptedInput |= protection.Encrypted;
+            _openPassword |= protection.Encrypted && protection.OpenPassword;
+            if (protection.Encrypted)
             {
-                _restrictions ??= restrictions;
+                _restrictions ??= protection.Restrictions;
             }
         }
     }

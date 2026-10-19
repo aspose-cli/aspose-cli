@@ -18,7 +18,7 @@ internal sealed class PdfFontEnvironment : IFontEnvironment
         ResourceBudgetLedger resourceBudgets)
     {
         _license = license ?? throw new ArgumentNullException(nameof(license));
-        _loader = new PdfDocumentLoader(resourceBudgets);
+        _loader = PdfDocumentLoader.ForFontInspection(resourceBudgets);
     }
 
     /// <inheritdoc />

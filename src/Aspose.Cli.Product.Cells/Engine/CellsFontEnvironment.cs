@@ -21,7 +21,7 @@ internal sealed class CellsFontEnvironment : IFontEnvironment
         ArgumentNullException.ThrowIfNull(license);
         ArgumentNullException.ThrowIfNull(resourceBudgets);
         _license = license;
-        _loader = new CellsWorkbookLoader(resourceBudgets);
+        _loader = CellsWorkbookLoader.ForFontInspection(resourceBudgets);
     }
 
     /// <inheritdoc />
