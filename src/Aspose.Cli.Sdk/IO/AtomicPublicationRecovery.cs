@@ -612,10 +612,8 @@ internal sealed class AtomicPublicationRecovery(AtomicPublicationPlan plan)
                     && !entry.PublishedSnapshot.IsStructurallyValid()
                 || entry.PublishedSnapshot is not null
                     && entry.DeleteTarget == entry.PublishedSnapshot.Exists
-                || OperatingSystem.IsWindows()
-                    && entry.TargetParentIdentity is null
+                || entry.TargetParentIdentity is null
                 || entry.RequestedBackup is not null
-                    && OperatingSystem.IsWindows()
                     && entry.RequestedBackupParentIdentity is null)
             {
                 throw new InvalidDataException(
@@ -742,7 +740,6 @@ internal sealed class AtomicPublicationRecovery(AtomicPublicationPlan plan)
     /// </summary>
     private static bool IsOwnedByCurrentUser(string directory)
     {
-        if (!OperatingSystem.IsWindows()) { return false; }
         try
         {
             IdentityReference? owner = new DirectoryInfo(directory)

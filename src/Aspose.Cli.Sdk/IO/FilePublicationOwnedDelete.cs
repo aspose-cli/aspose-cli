@@ -41,18 +41,7 @@ internal static class FilePublicationOwnedDelete
             return false;
         }
 
-        if (!OperatingSystem.IsWindows())
-        {
-            if (!expected.ContentMatches(path))
-            {
-                return false;
-            }
-
-            File.Delete(path);
-            return true;
-        }
-
-        return TryDeleteWindows(path, expected, clearReadOnly);
+        return TryDeleteVerified(path, expected, clearReadOnly);
     }
 
     public static bool TryDelete(string path, FilePhysicalIdentity expectedIdentity)
@@ -66,11 +55,6 @@ internal static class FilePublicationOwnedDelete
         if (attributes.Value.HasFlag(FileAttributes.Directory)
             || attributes.Value.HasFlag(FileAttributes.ReparsePoint)
             || !File.Exists(path))
-        {
-            return false;
-        }
-
-        if (!OperatingSystem.IsWindows())
         {
             return false;
         }
@@ -106,11 +90,6 @@ internal static class FilePublicationOwnedDelete
         {
             return false;
         }
-        if (!OperatingSystem.IsWindows())
-        {
-            Directory.Delete(path, recursive: false);
-            return true;
-        }
         if (expectedIdentity is null)
         {
             return false;
@@ -139,12 +118,6 @@ internal static class FilePublicationOwnedDelete
 
     public static SafeFileHandle OpenIdentityHandle(string path)
     {
-        if (!OperatingSystem.IsWindows())
-        {
-            throw new PlatformNotSupportedException(
-                "Physical file identity handles are available only on Windows.");
-        }
-
         return CreateFile(
             ToWin32Path(path),
             desiredAccess: 0,
@@ -162,11 +135,6 @@ internal static class FilePublicationOwnedDelete
 
     public static FilePhysicalIdentity? TryGetDirectoryIdentity(string path)
     {
-        if (!OperatingSystem.IsWindows())
-        {
-            return null;
-        }
-
         using SafeFileHandle handle = CreateFile(
             ToWin32Path(path),
             desiredAccess: 0,
@@ -181,13 +149,6 @@ internal static class FilePublicationOwnedDelete
     public static FileAttributes? TryGetAttributesNoFollow(string path)
     {
         ArgumentException.ThrowIfNullOrEmpty(path);
-        if (!OperatingSystem.IsWindows())
-        {
-            return File.Exists(path) || Directory.Exists(path)
-                ? File.GetAttributes(path)
-                : null;
-        }
-
         using SafeFileHandle handle = CreateFile(
             ToWin32Path(path),
             desiredAccess: 0,
@@ -199,7 +160,7 @@ internal static class FilePublicationOwnedDelete
         return OpenedFileBoundary.GetInformation(handle)?.Attributes;
     }
 
-    private static bool TryDeleteWindows(
+    private static bool TryDeleteVerified(
         string path,
         FilePublicationSnapshot expected,
         bool clearReadOnly)
