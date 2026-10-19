@@ -6,7 +6,7 @@ namespace Aspose.Cli.Sdk.Analyzers;
 public sealed class ProductContractAnalyzer : DiagnosticAnalyzer
 {
     private static readonly ImmutableHashSet<string> HostAliases =
-        ImmutableHashSet.Create(StringComparer.Ordinal, Aspose.Cli.Sdk.Extensibility.Commanding.GlobalOptionNames.Reserved);
+        ImmutableHashSet.Create(StringComparer.Ordinal, Aspose.Cli.Sdk.GlobalOptionNames.Reserved);
 
     private static readonly ImmutableHashSet<string> TemplateAliases =
         ImmutableHashSet.Create(StringComparer.Ordinal, Aspose.Cli.Sdk.Extensibility.Commanding.StandardOptionNames.Reserved);

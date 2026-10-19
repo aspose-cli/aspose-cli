@@ -4,6 +4,7 @@ using System.Text.Json;
 using Aspose.Cli.Host.Invocation;
 using Aspose.Cli.Host.Licensing;
 using Aspose.Cli.Host.LocalServices;
+using Aspose.Cli.Sdk;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Serialization;
@@ -285,9 +286,9 @@ internal sealed class AppCliGateway
         {
             start.ArgumentList.Add(argument);
         }
-        start.ArgumentList.Add("--output-format");
+        start.ArgumentList.Add(GlobalOptionNames.OutputFormat);
         start.ArgumentList.Add("json");
-        start.ArgumentList.Add("--quiet");
+        start.ArgumentList.Add(GlobalOptionNames.Quiet);
 
         using var cancellation = new CancellationTokenSource(Timeout);
         try

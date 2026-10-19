@@ -39,7 +39,7 @@ public static class ResourceBudgetDefaults
             MaximumInputBytes,
             "bytes",
             "pre-runtime-and-stream",
-            "--max-input-bytes",
+            GlobalOptionNames.MaxInputBytes,
             InputSizeGuard.BudgetVariable),
         ResourceBudgetCapabilities.Domain(
             ResourceBudgetKinds.MemoryBufferBytes,

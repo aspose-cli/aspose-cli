@@ -3,6 +3,7 @@ using System.Globalization;
 using System.Text.Json;
 using Aspose.Cli.Host.Invocation;
 using Aspose.Cli.Host.LocalServices;
+using Aspose.Cli.Sdk;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.IO;
 
@@ -332,10 +333,10 @@ internal sealed class ViewerServiceHost : IDisposable
             "preview",
             "Run the published 'aspose-cli' executable directly.");
         start.WorkingDirectory = SelfProcessLauncher.ServiceWorkingDirectory;
-        start.ArgumentList.Add("--workdir");
+        start.ArgumentList.Add(GlobalOptionNames.WorkDir);
         start.ArgumentList.Add(Path.GetFullPath(
             secrets?.WorkDirectory ?? globals.WorkDir ?? Directory.GetCurrentDirectory()));
-        start.ArgumentList.Add("--quiet");
+        start.ArgumentList.Add(GlobalOptionNames.Quiet);
         return start;
     }
 

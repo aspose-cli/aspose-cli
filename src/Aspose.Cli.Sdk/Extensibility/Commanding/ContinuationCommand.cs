@@ -64,5 +64,5 @@ public sealed class ContinuationCommand
     }
 
     /// <summary>Returns the command line, ending with <c>--output-format json</c>.</summary>
-    public override string ToString() => string.Join(' ', _tokens.Append("--output-format").Append("json"));
+    public override string ToString() => string.Join(' ', _tokens.Append(GlobalOptionNames.OutputFormat).Append("json"));
 }

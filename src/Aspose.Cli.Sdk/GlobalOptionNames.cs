@@ -1,4 +1,4 @@
-namespace Aspose.Cli.Sdk.Extensibility.Commanding;
+namespace Aspose.Cli.Sdk;
 
 /// <summary>
 /// The option names and aliases that every command already accepts: the host's global options

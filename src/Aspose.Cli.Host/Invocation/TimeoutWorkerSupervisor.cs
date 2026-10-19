@@ -3,6 +3,7 @@ using System.Globalization;
 using System.Text;
 using Aspose.Cli.Host.LocalServices;
 using Aspose.Cli.Host.Output;
+using Aspose.Cli.Sdk;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Execution;
 using Aspose.Cli.Sdk.IO;
@@ -48,7 +49,7 @@ internal static class TimeoutWorkerSupervisor
             {
                 result = ExecuteAsync(host, args, invocation,
                     TimeSpan.FromSeconds(invocation.GlobalValues.TimeoutSeconds.Value), cancellationToken,
-                    () => SelfProcessLauncher.CreateBackground("--timeout", "Run from the installed aspose-cli executable."),
+                    () => SelfProcessLauncher.CreateBackground(GlobalOptionNames.Timeout, "Run from the installed aspose-cli executable."),
                     InvocationInputs.Current?.Inherited).GetAwaiter().GetResult();
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { return (int)ExitCode.Cancelled; }
