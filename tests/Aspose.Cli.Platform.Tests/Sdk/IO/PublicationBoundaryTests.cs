@@ -370,7 +370,7 @@ public sealed class PublicationBoundaryTests
         Assert.Equal("preserve", File.ReadAllText(Path.Combine(unknown, "output-000001", "report.xlsx")));
     }
 
-    private static int EndedProcessId()
+    internal static int EndedProcessId()
     {
         using var process = System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(
             Path.Combine(Environment.SystemDirectory, "whoami.exe"))

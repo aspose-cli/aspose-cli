@@ -460,6 +460,40 @@ public sealed class AtomicNewDirectoryWriterTests
     }
 
     [Fact]
+    public void CandidatesAnEndedProcessLeftInTheTransactionParent_AreRemovedByTheNextInstall()
+    {
+        // A process killed before its first journal leaves its candidate in the transaction
+        // parent, which recovery otherwise reaches only as an ancestor of the target.
+        using var temp = new TempDirectory();
+        string root = temp.File("root");
+        string target = Existing(Path.Combine(root, "result"));
+        string ended = temp.File($".aspose-publication-{PublicationBoundaryTests.EndedProcessId()}-1-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(Path.Combine(ended, "directory"));
+        File.WriteAllText(Path.Combine(ended, "directory", "SKILL.md"), "partial candidate");
+        string live = temp.File(
+            $".aspose-publication-{Environment.ProcessId}-{PublicationJournal.CurrentProcessStartUtcTicks}-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(Path.Combine(live, "directory"));
+        File.WriteAllText(Path.Combine(live, "directory", "SKILL.md"), "candidate in use");
+        // A directory whose name does not say which process made it is never taken for debris.
+        string unknown = temp.File(".aspose-publication-unknown-producer");
+        Directory.CreateDirectory(Path.Combine(unknown, "directory"));
+        File.WriteAllText(Path.Combine(unknown, "directory", "SKILL.md"), "preserve");
+
+        using (var output = new AtomicNewDirectoryWriter(TestBudgets.Create(), target, "test", replace: true, transactionParent: temp.Path))
+        {
+            Write(output, "data.txt", "replacement");
+            output.Commit();
+        }
+
+        Assert.Equal("replacement", File.ReadAllText(Path.Combine(target, "data.txt")));
+        Assert.Equal(
+            new[] { live, unknown }.Order(StringComparer.Ordinal),
+            Directory.GetDirectories(temp.Path, ".aspose-publication-*").Order(StringComparer.Ordinal));
+        Assert.Equal("candidate in use", File.ReadAllText(Path.Combine(live, "directory", "SKILL.md")));
+        Assert.Equal("preserve", File.ReadAllText(Path.Combine(unknown, "directory", "SKILL.md")));
+    }
+
+    [Fact]
     public void Constructor_RefusesATransactionParentThatIsNotAnAncestorOfTheTarget()
     {
         using var temp = new TempDirectory();
