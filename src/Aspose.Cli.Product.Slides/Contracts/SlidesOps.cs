@@ -362,16 +362,9 @@ public sealed record SlidesReplaceTextOp : SlidesOp
     /// <inheritdoc />
     protected override BoundedOperation Validated()
     {
-        if (Regex)
+        if (TextReplacement.Problem(Find, Regex, CaseSensitive) is { } problem)
         {
-            try
-            {
-                _ = SafeRegex.Create(Find, CaseSensitive);
-            }
-            catch (ArgumentException exception)
-            {
-                throw new OperationInvalidException($"find is not a valid regular expression: {exception.Message}");
-            }
+            throw new OperationInvalidException(problem.Reason, problem.Hint);
         }
 
         return this;

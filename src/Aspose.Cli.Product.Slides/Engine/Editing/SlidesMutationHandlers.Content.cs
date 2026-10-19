@@ -1,5 +1,4 @@
 using System.Text;
-using System.Text.RegularExpressions;
 using Aspose.Cli.Sdk.Text;
 using Aspose.Slides;
 using static Aspose.Cli.Product.Slides.Engine.SlidesEngineSupport;
@@ -33,7 +32,8 @@ internal sealed partial class SlidesMutationHandlers
     /// </summary>
     public ValueTuple Apply(SlidesReplaceTextOp operation)
     {
-        Regex? regex = operation.Regex ? SafeRegex.Create(operation.Find, operation.CaseSensitive) : null;
+        TextReplacement replacement = TextReplacement.Create(
+            operation.Find, operation.Replace, operation.Regex, operation.CaseSensitive, operation.WholeWord);
         if (_evaluation && _presentation.Slides.SelectMany(slide => Frames(slide, operation.Scope)).Any(static frame => CutByEvaluation(frame.Text)))
         {
             _readInput();
@@ -51,7 +51,7 @@ internal sealed partial class SlidesMutationHandlers
                 break;
             }
 
-            remaining -= Replace(paragraph, operation, regex, remaining);
+            remaining -= Replace(paragraph, replacement, remaining);
         }
 
         return default;
@@ -69,7 +69,7 @@ internal sealed partial class SlidesMutationHandlers
             : shapes;
     }
 
-    private static int Replace(IParagraph paragraph, SlidesReplaceTextOp op, Regex? regex, int limit)
+    private static int Replace(IParagraph paragraph, TextReplacement replacement, int limit)
     {
         IPortion[] portions = paragraph.Portions.ToArray();
         if (portions.Length == 0)
@@ -79,7 +79,7 @@ internal sealed partial class SlidesMutationHandlers
 
         string[] original = portions.Select(static portion => portion.Text ?? string.Empty).ToArray();
         IReadOnlyList<(int Start, int Length, string Replacement)> matches =
-            Matches(string.Concat(original), op, regex, limit);
+            replacement.Matches(string.Concat(original), limit);
         if (matches.Count == 0)
         {
             return 0;
@@ -95,7 +95,7 @@ internal sealed partial class SlidesMutationHandlers
         StringBuilder[] edited = original.Select(static text => new StringBuilder(text)).ToArray();
         for (int match = matches.Count - 1; match >= 0; match--)
         {
-            (int start, int length, string replacement) = matches[match];
+            (int start, int length, string text) = matches[match];
             int end = start + length;
             for (int index = original.Length - 1; index >= 0; index--)
             {
@@ -107,15 +107,14 @@ internal sealed partial class SlidesMutationHandlers
                 }
             }
 
-            // The run holding the first matched character owns the replacement; an empty
-            // match at the paragraph end belongs to the last run.
+            // The run holding the first matched character owns the replacement.
             int owner = 0;
             while (owner < original.Length - 1 && start >= starts[owner] + original[owner].Length)
             {
                 owner++;
             }
 
-            edited[owner].Insert(start - starts[owner], replacement);
+            edited[owner].Insert(start - starts[owner], text);
         }
 
         for (int index = 0; index < portions.Length; index++)
@@ -133,48 +132,6 @@ internal sealed partial class SlidesMutationHandlers
 
         return matches.Count;
     }
-
-    /// <summary>The first <paramref name="limit"/> matches in a paragraph's text, each a whole word when the operation asks for it.</summary>
-    private static IReadOnlyList<(int Start, int Length, string Replacement)> Matches(
-        string text,
-        SlidesReplaceTextOp op,
-        Regex? regex,
-        int limit)
-    {
-        if (regex is not null)
-        {
-            return regex.Matches(text)
-                .Where(match => !op.WholeWord || IsWholeWord(text, match.Index, match.Length))
-                .Take(limit)
-                .Select(match => (match.Index, match.Length, match.Result(op.Replace)))
-                .ToArray();
-        }
-
-        StringComparison comparison = op.CaseSensitive
-            ? StringComparison.Ordinal
-            : StringComparison.OrdinalIgnoreCase;
-        var matches = new List<(int, int, string)>();
-        for (int found = text.IndexOf(op.Find, comparison); found >= 0 && matches.Count < limit;)
-        {
-            if (op.WholeWord && !IsWholeWord(text, found, op.Find.Length))
-            {
-                found = text.IndexOf(op.Find, found + 1, comparison);
-                continue;
-            }
-
-            matches.Add((found, op.Find.Length, op.Replace));
-            found = text.IndexOf(op.Find, found + op.Find.Length, comparison);
-        }
-
-        return matches;
-    }
-
-    /// <summary>Whether no letter, digit or underscore adjoins the text at <paramref name="start"/> on either side.</summary>
-    private static bool IsWholeWord(string text, int start, int length) =>
-        (start == 0 || !IsWordCharacter(text[start - 1]))
-        && (start + length >= text.Length || !IsWordCharacter(text[start + length]));
-
-    private static bool IsWordCharacter(char character) => char.IsLetterOrDigit(character) || character == '_';
 
     public ValueTuple Apply(SetNotesOp operation)
     {
