@@ -1,0 +1,17 @@
+{
+  "name": "--to word, a product name rather than a format, is an invalid option value that suggests docx",
+  "files": {
+    "report.pdf": { "fixture": "pdf.pdf" }
+  },
+  "steps": [
+    {
+      "args": ["pdf", "convert", "report.pdf", "--to", "word", "--out", "out.docx"],
+      "expect": {
+        "exitCode": 2,
+        "error": "OPTION_INVALID",
+        "json": [{ "path": "error.details.suggestions", "contains": "docx" }],
+        "files": { "absent": ["out.docx"], "nothingWritten": true }
+      }
+    }
+  ]
+}
