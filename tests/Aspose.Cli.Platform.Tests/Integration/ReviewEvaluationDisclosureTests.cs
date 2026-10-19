@@ -44,6 +44,32 @@ public sealed class ReviewEvaluationDisclosureTests : IDisposable
         Assert.Equal(expected, Message(reviewed, "EVALUATION_MODE"));
     }
 
+    /// <summary>
+    /// Every product's evaluation review counts the marks of its own evaluation save that it left
+    /// out of its checks in the one coverage metric, in the unit of what the product left out.
+    /// </summary>
+    [Theory]
+    [InlineData("cells", "marked.xlsx", "sheets", 1)]
+    [InlineData("pdf", "marked.pdf", "fragments", 1)]
+    [InlineData("slides", "marked.pptx", "shapes", 1)]
+    [InlineData("words", "marked.docx", "lines", 2)]
+    public void EvaluationReview_CountsTheMarksItLeftOutInOneCoverageMetric(string product, string file, string unit, long marks)
+    {
+        string[] create = product == "cells"
+            ? ["cells", "create", file, "--sheets", "Data"]
+            : [product, "create", file, "--from-markdown", "brief.md"];
+        Run([.. create, "--license-mode", "evaluation"]);
+
+        CliResult review = _workspace.Run("review", file, "--out", "review", "--license-mode", "evaluation", "--output-format", "json");
+
+        Assert.True(review.ExitCode is 0 or 8, review.StdErr);
+        JsonNode metric = Assert.Single(
+            JsonNode.Parse(review.StdOut)!["coverage"]!["metrics"]!.AsArray(),
+            static metric => metric!["name"]!.GetValue<string>() == "excludedEvaluationMarks")!;
+        Assert.Equal(unit, metric["unit"]!.GetValue<string>());
+        Assert.Equal(marks, metric["value"]!.GetValue<long>());
+    }
+
     [LicensedFact]
     public void LicensedReviewOfAMarkedDocument_WritesWhatItPrints()
     {
