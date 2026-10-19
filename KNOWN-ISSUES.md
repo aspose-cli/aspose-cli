@@ -2,13 +2,16 @@
 
 Confirmed defects in the commercial Aspose SDKs this CLI runs on, and how the CLI handles each.
 Each issue is recorded once under its id, below a heading with the SDK version `eng/products.json`
-pins. A test in its product's `<Product>KnownIssueTests` class reproduces it with the SDK alone
-through `KnownIssue.Reproduces`, and the code that handles it names the id in a comment;
+pins. One test in the `*KnownIssueTests` classes named under that heading reproduces it with the
+SDK alone through `KnownIssue.Reproduces`, and the code that handles it names the id in a comment;
 `KnownIssueCatalogTests` keeps this file true. To update an SDK, change its version in
 `eng/products.json`, run `scripts/sync.ps1` and the `Full` scope; for each reproduction that now
 fails, delete the issue's section, the code that names it and the test, then update the headings.
 
 ## Aspose.Cells 26.9.0
+
+Reproductions: [CellsKnownIssueTests](tests/Aspose.Cli.Product.Cells.Tests/CellsKnownIssueTests.cs),
+[CellsConvertKnownIssueTests](tests/Aspose.Cli.Product.Cells.Tests/CellsConvertKnownIssueTests.cs).
 
 ### CELLS-SVG-EGRESS
 
@@ -18,7 +21,6 @@ fails, delete the issue's section, the code that names it and the test, then upd
 - **CLI behavior:** `insert_image` refuses an SVG that names a network address, and a compressed
   SVG, with `FEATURE_UNSUPPORTED`.
 - **Workaround:** embed the SVG's images as `data:` URIs, or insert a raster image.
-- **Reproduction:** [CellsKnownIssueTests](tests/Aspose.Cli.Product.Cells.Tests/CellsKnownIssueTests.cs)
 
 ### CELLS-SPARKLINE-APOSTROPHE
 
@@ -26,7 +28,6 @@ fails, delete the issue's section, the code that names it and the test, then upd
   `Invalid "'"` for a data range on a sheet whose name has an apostrophe, however it is quoted.
 - **CLI behavior:** none visible; `add_sparkline` builds the group from its parts, with the same
   result.
-- **Reproduction:** [CellsKnownIssueTests](tests/Aspose.Cli.Product.Cells.Tests/CellsKnownIssueTests.cs)
 
 ### CELLS-COPY-NAME-SCOPE
 
@@ -40,7 +41,6 @@ fails, delete the issue's section, the code that names it and the test, then upd
   imported sheet.
 - **Workaround:** rename or delete the name in one of the workbooks, or import the cells with
   `import_range`.
-- **Reproduction:** [CellsKnownIssueTests](tests/Aspose.Cli.Product.Cells.Tests/CellsKnownIssueTests.cs)
 
 ### CELLS-COPY-EXTERNAL-CACHE
 
@@ -54,7 +54,6 @@ fails, delete the issue's section, the code that names it and the test, then upd
   `--verify` reports it as a verification issue, so the edit exits 8.
 - **Workaround:** replace those formulas with `set_formula` or `set_values`, or save the source
   in Excel with the linked workbook available so the link caches its values.
-- **Reproduction:** [CellsKnownIssueTests](tests/Aspose.Cli.Product.Cells.Tests/CellsKnownIssueTests.cs)
 
 ### CELLS-LINK-RELATIVE-TARGET
 
@@ -67,7 +66,6 @@ fails, delete the issue's section, the code that names it and the test, then upd
   batch adds a link whose target is a file name without a folder.
 - **Workaround:** keep the linked workbook in the output's folder, or bring its values in with
   `import_range` instead of a link.
-- **Reproduction:** [CellsKnownIssueTests](tests/Aspose.Cli.Product.Cells.Tests/CellsKnownIssueTests.cs)
 
 ### CELLS-WIDTH-EAST-ASIAN
 
@@ -82,7 +80,6 @@ fails, delete the issue's section, the code that names it and the test, then upd
   sheet image.
 - **Workaround:** give such text a font with East Asian glyphs (for example Microsoft YaHei),
   which all three measure alike, or set the column width explicitly.
-- **Reproduction:** [CellsKnownIssueTests](tests/Aspose.Cli.Product.Cells.Tests/CellsKnownIssueTests.cs)
 
 ### CELLS-OVERFLOW-EDGE
 
@@ -99,7 +96,6 @@ fails, delete the issue's section, the code that names it and the test, then upd
   edge, with the info finding `CELLS_TEXT_OVERFLOWS`, and asks to check its end in the image.
 - **Workaround:** widen the column the text starts in by one or two characters, or wrap the
   text.
-- **Reproduction:** [CellsKnownIssueTests](tests/Aspose.Cli.Product.Cells.Tests/CellsKnownIssueTests.cs)
 
 ### CELLS-PIVOT-TOTAL-CAPTION
 
@@ -111,7 +107,6 @@ fails, delete the issue's section, the code that names it and the test, then upd
   language; `aspose-cli docs cells/editing` says so.
 - **Workaround:** leave out the column field, so the value fields are the columns and the one
   grand-total row reads `总计`, or summarize with `SUMIFS` formulas.
-- **Reproduction:** [CellsKnownIssueTests](tests/Aspose.Cli.Product.Cells.Tests/CellsKnownIssueTests.cs)
 
 ### CELLS-VALIDATION-DELETE-END
 
@@ -122,7 +117,6 @@ fails, delete the issue's section, the code that names it and the test, then upd
   validation whose every area is deleted stays in the sheet with no area.
 - **CLI behavior:** `delete_rows` and `delete_columns` set each validation to the areas it
   covers after the delete, as Excel does, and remove a validation left with no area.
-- **Reproduction:** [CellsKnownIssueTests](tests/Aspose.Cli.Product.Cells.Tests/CellsKnownIssueTests.cs)
 
 ### CELLS-PIVOT-LABEL-INDENT
 
@@ -135,12 +129,10 @@ fails, delete the issue's section, the code that names it and the test, then upd
   `AutoFitColumns` leaves the indent out, so an auto-fitted column is as wide as for the text
   alone and the label is cut.
 - **CLI behavior:** review measures those labels with the indent and reports one that does not
-  fit as `CELLS_VALUES_CLIPPED`, with a hint to give its column `widthChars`;
-  `resize_columns` without `widthChars` cannot widen the column, and the Cells verification
-  guide says to give such columns `widthChars`.
+  fit as `CELLS_VALUES_CLIPPED`, with a hint to give its column an explicit width; auto-fit
+  (`resize_columns` without `widthChars`) leaves the label cut.
 - **Workaround:** set the column width with `resize_columns` and `widthChars`, a few characters
   wider than the label.
-- **Reproduction:** [CellsKnownIssueTests](tests/Aspose.Cli.Product.Cells.Tests/CellsKnownIssueTests.cs)
 
 ### CELLS-COPY-SELF-LINK
 
@@ -152,7 +144,6 @@ fails, delete the issue's section, the code that names it and the test, then upd
   workbook, `=Budget!$D$6`.
 - **CLI behavior:** `import_range` and `import_sheet` turn such a link into references inside
   the workbook, as `set_formula` gives.
-- **Reproduction:** [CellsKnownIssueTests](tests/Aspose.Cli.Product.Cells.Tests/CellsKnownIssueTests.cs)
 
 ### CELLS-JSON-HEADER-ONLY
 
@@ -166,9 +157,10 @@ fails, delete the issue's section, the code that names it and the test, then upd
   is written.
 - **Workaround:** add a data row below the header, or convert the sheet to csv with `--sheets`,
   which writes the header alone.
-- **Reproduction:** [CellsConvertKnownIssueTests](tests/Aspose.Cli.Product.Cells.Tests/CellsConvertKnownIssueTests.cs)
 
 ## Aspose.PDF.Drawing 26.8.0
+
+Reproductions: [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownIssueTests.cs).
 
 ### PDF-HTML-EGRESS
 
@@ -184,7 +176,6 @@ fails, delete the issue's section, the code that names it and the test, then upd
   address in `NETWORK_RESOURCES_REQUESTED`.
 - **Workaround:** keep resources beside the input and reference them by relative path, or
   convert HTML with `aspose-cli words convert`, which makes no network request.
-- **Reproduction:** [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownIssueTests.cs)
 
 ### PDF-MOVE-BOOKMARK
 
@@ -195,7 +186,6 @@ fails, delete the issue's section, the code that names it and the test, then upd
   a destination with a coordinate of 0, which it leaves without a target and counts in
   `NAVIGATION_DEGRADED`.
 - **Workaround:** re-create the counted bookmarks and links with `add_bookmark` and `add_hyperlink`.
-- **Reproduction:** [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownIssueTests.cs)
 
 ### PDF-PDFA-ATTACHMENT-TYPE
 
@@ -203,7 +193,6 @@ fails, delete the issue's section, the code that names it and the test, then upd
   type `application/pdf`, whatever its content.
 - **CLI behavior:** `pdf convert --to pdfa-3b` labels such an attachment
   `application/octet-stream` unless its content is a PDF; a declared type is kept.
-- **Reproduction:** [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownIssueTests.cs)
 
 ### PDF-ATTACHMENT-COPY-TYPE
 
@@ -214,7 +203,6 @@ fails, delete the issue's section, the code that names it and the test, then upd
   the type is lost unless it is read first.
 - **CLI behavior:** none visible; `pdf merge` and `pdf split` read each attachment's media type
   before adding it and set it on the added attachment.
-- **Reproduction:** [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownIssueTests.cs)
 
 ### PDF-OUTLINE-DELETE-TITLE
 
@@ -223,7 +211,6 @@ fails, delete the issue's section, the code that names it and the test, then upd
   different one, and when bookmarks at different levels share the title it can remove several.
 - **CLI behavior:** none visible; `delete_bookmarks` gives each selected bookmark a unique title
   before deleting it, so exactly the selected bookmarks and their children are removed.
-- **Reproduction:** [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownIssueTests.cs)
 
 ### PDF-NAMES-WITHOUT-DESTS
 
@@ -232,9 +219,8 @@ fails, delete the issue's section, the code that names it and the test, then upd
   `Dests` entry, for example a tree that holds only attachments, such as the one a merged document
   gets with the attachments of its inputs.
 - **CLI behavior:** none visible; such a document is read as having no named destinations, and a
-  name is looked up only when it is listed (`PdfNavigationCensus.NamedTarget`), so `pdf edit`,
-  `pdf merge`, `pdf split` and `pdf convert --to pdfa-*` accept it.
-- **Reproduction:** [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownIssueTests.cs)
+  name is looked up only when it is listed, so `pdf edit`, `pdf merge`, `pdf split` and
+  `pdf convert --to pdfa-*` accept it.
 
 ### PDF-TAGGED-CONTENT-WRITES
 
@@ -243,7 +229,6 @@ fails, delete the issue's section, the code that names it and the test, then upd
   and drops the PDF/A identification, so `IsPdfaCompliant` turns false.
 - **CLI behavior:** none visible; `pdf inspect` reads the structure tree after every other
   property and never saves the inspected document.
-- **Reproduction:** [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownIssueTests.cs)
 
 ### PDF-IMPORT-INFO-PLACEHOLDER
 
@@ -252,7 +237,6 @@ fails, delete the issue's section, the code that names it and the test, then upd
 - **CLI behavior:** `pdf create --from-html` takes the title from the HTML `title` element and
   `--from-markdown` leaves it empty; both leave the author and subject empty.
 - **Workaround:** set the other fields with a `set_properties` edit.
-- **Reproduction:** [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownIssueTests.cs)
 
 ### PDF-HTML-FORM-NAMES
 
@@ -265,7 +249,6 @@ fails, delete the issue's section, the code that names it and the test, then upd
   which come from an `id` attribute and which are generated;
   `pdf inspect --detail forms` gives each field's `page` and `rect`.
 - **Workaround:** match each generated field to the label beside it by its `rect` before filling.
-- **Reproduction:** [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownIssueTests.cs)
 
 ### PDF-HTML-FORM-INPUTS
 
@@ -276,7 +259,6 @@ fails, delete the issue's section, the code that names it and the test, then upd
   their types in its `LOSSY_CONVERSION` warning.
 - **Workaround:** give text-like inputs `type="text"`; place the picture of an image input with
   `add_stamp_image`.
-- **Reproduction:** [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownIssueTests.cs)
 
 ### PDF-HTML-CHECKBOX-BOX
 
@@ -285,7 +267,6 @@ fails, delete the issue's section, the code that names it and the test, then upd
   mark. Radio buttons get a black border.
 - **CLI behavior:** `pdf create --from-html` gives such a check box a black one-point border, so
   the engine draws its box.
-- **Reproduction:** [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownIssueTests.cs)
 
 ### PDF-PDFA-RADIO-APPEARANCE
 
@@ -295,10 +276,9 @@ fails, delete the issue's section, the code that names it and the test, then upd
   and PDF/A-3 and 6.5.3 in PDF/A-1 (the appearance of a button field must be a subdictionary of
   states).
 - **CLI behavior:** `pdf convert --to pdfa-*` validates the file it converted and fails with
-  `PDFA_CONVERSION_FAILED` when it does not conform, naming in the hint the check boxes and radio
-  groups on the pages of appearance problems that have one appearance for all their states.
+  `PDFA_CONVERSION_FAILED` when it does not conform; for appearance problems the hint names the
+  button fields on those pages that have one appearance for all their states.
 - **Workaround:** flatten the named fields (`flatten_forms`) before converting.
-- **Reproduction:** [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownIssueTests.cs)
 
 ### PDF-PDFA-LOG-REPEATS
 
@@ -308,7 +288,6 @@ fails, delete the issue's section, the code that names it and the test, then upd
   page, although converting to the profile embeds it.
 - **CLI behavior:** none visible: `pdf validate` and the PDF/A conversion errors list each
   problem once, as convertible when any of its entries says so.
-- **Reproduction:** [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownIssueTests.cs)
 
 ### PDF-TEXT-GAP-SPACE
 
@@ -318,13 +297,11 @@ fails, delete the issue's section, the code that names it and the test, then upd
   such a gap between East Asian text and digits or Latin letters (automatic spacing), so
   `2026年10月31日` in a Word-made PDF extracts as `2026年 10月 31日` (two spaces in the plain
   mode) and a search for it finds nothing.
-- **CLI behavior:** literal patterns of `pdf search` and `redact_text`, and the
-  `redact_text` verification, also match with up to two spaces, never a line break, wherever an
-  East Asian character meets a character that is not East Asian, such as a digit or Latin letter.
-  A `redact_text` operation that matches nothing
-  is named in an `OP_NO_EFFECT` warning.
+- **CLI behavior:** literal patterns of `pdf search` and `redact_text`, and the `redact_text`
+  verification, also match with up to two spaces, never a line break, wherever an East Asian
+  character meets one that is not, such as a digit or Latin letter. A `redact_text` operation
+  that still matches nothing is named in an `OP_NO_EFFECT` warning.
 - **Workaround:** in a regular expression, allow the gaps with ` *`.
-- **Reproduction:** [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownIssueTests.cs)
 
 ### PDF-ATTACHMENT-NAME-OPENS-FILE
 
@@ -333,7 +310,6 @@ fails, delete the issue's section, the code that names it and the test, then upd
   elsewhere, for example as the stream the specification was built from.
 - **CLI behavior:** none visible; `add_attachment` names the attachment through the
   `FileSpecification` constructor and never sets `Name`, so the working directory is not read.
-- **Reproduction:** [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownIssueTests.cs)
 
 ### PDF-REDACT-TEXT-SHIFT
 
@@ -354,7 +330,6 @@ fails, delete the issue's section, the code that names it and the test, then upd
   values can all be removed, with `redact_text` or with `redact_area` on search rectangles
   without a margin, the areas of a line from right to left, but the text that follows them on
   their lines stays hidden under the cover.
-- **Reproduction:** [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownIssueTests.cs)
 
 ### PDF-ENCRYPTED-INFO-TEXT
 
@@ -362,15 +337,15 @@ fails, delete the issue's section, the code that names it and the test, then upd
   set in a session whose save encrypts the file is written with only the low byte of each
   character, so text beyond Latin-1, such as `采购申请`, reads back garbled. Entries read from the
   file and entries written to a file saved without encryption are kept.
-- **CLI behavior:** a PDF command given `--encrypt-env` whose output's document information
-  holds text beyond Latin-1 (past U+00FF) saves the document without encryption, reopens it and
-  encrypts that copy; otherwise it encrypts and saves once. A `pdf edit` batch does the same
-  when it has both `set_properties` and `encrypt_document` and the document information holds
-  such text. On an encrypted input, `set_properties` with text beyond Latin-1 that
-  neither a later `encrypt_document` nor `--encrypt-env` follows is refused with `OPS_INVALID`, because
-  the CLI cannot encrypt a copy with passwords it does not all know.
-- **Workaround:** add `encrypt_document` after `set_properties` in the same batch, or pass `--encrypt-env`.
-- **Reproduction:** [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownIssueTests.cs)
+- **CLI behavior:** when the output's document information holds text beyond Latin-1 (past
+  U+00FF), a PDF command given `--encrypt-env`, and a `pdf edit` batch with both
+  `set_properties` and `encrypt_document`, save the document without encryption, reopen it and
+  encrypt that copy. On an encrypted input, `set_properties` with such text that neither a later
+  `encrypt_document` nor `--encrypt-env` follows is refused with `OPS_INVALID`, because the CLI
+  does not know all the input's passwords to encrypt a copy.
+- **Workaround:** add `encrypt_document` after `set_properties` in the same batch, or pass
+  `--encrypt-env`; or add `decrypt_document` before `set_properties` to save the output without
+  encryption.
 
 ### PDF-INFO-KEY-BEYOND-LATIN1
 
@@ -380,7 +355,6 @@ fails, delete the issue's section, the code that names it and the test, then upd
 - **CLI behavior:** `set_properties` refuses a `custom` name with a character beyond Latin-1 with
   `OPS_INVALID`; the value of an entry may hold any text.
 - **Workaround:** name the entry in Latin-1, such as ASCII letters, and put the text in its value.
-- **Reproduction:** [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownIssueTests.cs)
 
 ### PDF-SIGN-FULL-FONT
 
@@ -393,7 +367,6 @@ fails, delete the issue's section, the code that names it and the test, then upd
   engine's font, grow the file by its size and warn `SIGNATURE_FONT_EMBEDDED` with the growth.
 - **Workaround:** keep `--reason`, `--location` and `--contact` in ASCII, and use a certificate
   whose subject name is ASCII.
-- **Reproduction:** [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownIssueTests.cs)
 
 ### PDF-SIGN-CJK-SIGNER-FONT
 
@@ -411,7 +384,6 @@ fails, delete the issue's section, the code that names it and the test, then upd
   signer name is left out in SimSun, also without a warning.
 - **Workaround:** give `--reason` in simplified Chinese, such as `采购申请`, or sign with a
   certificate whose subject name is in Latin letters.
-- **Reproduction:** [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownIssueTests.cs)
 
 ### PDF-RENDER-THIN-GLYPH
 
@@ -423,7 +395,6 @@ fails, delete the issue's section, the code that names it and the test, then upd
   150 DPI. `pdf render`, `pdf convert --to tiff` and the `preview` pages draw at the resolution
   they use.
 - **Workaround:** render the page with `pdf render --dpi 300` or higher.
-- **Reproduction:** [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownIssueTests.cs)
 
 ### PDF-CONCURRENT-SAVE-MODDATE
 
@@ -431,9 +402,7 @@ fails, delete the issue's section, the code that names it and the test, then upd
   information of every PDF it saves, but leaves it out of documents saved while other documents
   of the same process are being saved.
 - **CLI behavior:** none visible: every command runs in its own process, and the MCP server and
-  the app run each command in a child process of its own. The tests that read the date run
-  alone, in the `Engine save stamps` collection.
-- **Reproduction:** [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownIssueTests.cs)
+  the app run each command in a child process of its own.
 
 ### PDF-SIGN-RECT-ROTATED
 
@@ -444,7 +413,6 @@ fails, delete the issue's section, the code that names it and the test, then upd
 - **CLI behavior:** `pdf sign --rect` measures from the top-left corner of the visible page, and
   the CLI swaps the rectangle back before it signs a page rotated by 90 or 270 degrees, so the
   signature lies where `--rect` names on every rotation.
-- **Reproduction:** [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownIssueTests.cs)
 
 ### PDF-TEXT-RECT-ROTATED-CROP
 
@@ -455,7 +423,6 @@ fails, delete the issue's section, the code that names it and the test, then upd
 - **CLI behavior:** none visible: `pdf search` takes each offset back out, so a match's `rect`
   is measured from the top-left corner of the visible page on every rotation and passes to
   `redact_area` as it is.
-- **Reproduction:** [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownIssueTests.cs)
 
 ### PDF-REDACT-ROTATED
 
@@ -464,7 +431,6 @@ fails, delete the issue's section, the code that names it and the test, then upd
   rotated page's space, so text under the cover stays in the file.
 - **CLI behavior:** none visible: `redact_text` and `redact_area` clear the page's rotation while
   they redact and set it again after.
-- **Reproduction:** [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownIssueTests.cs)
 
 ### PDF-TEXT-SEARCH-WRAPS-CONTENT
 
@@ -474,7 +440,6 @@ fails, delete the issue's section, the code that names it and the test, then upd
 - **CLI behavior:** none visible: an edit compares a page's content without its saved graphics
   states, so a `redact_text` that matched nothing reports 0 with `OP_NO_EFFECT`, and one that
   matched counts only the pages it removed text from.
-- **Reproduction:** [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownIssueTests.cs)
 
 ### PDF-DOCX-EMBED-FONTS
 
@@ -482,13 +447,16 @@ fails, delete the issue's section, the code that names it and the test, then upd
   `word/settings.xml` but embeds at most the few font subsets the PDF itself embeds, and none of
   the fonts it does not, so the next save by Aspose.Words or Word embeds every other font the
   document uses in full: a one-page document in a standard PDF font grows from about 7 KB to
-  about 3 MB.
-  `DocSaveOptions` has no setting for these flags.
-- **CLI behavior:** a Words command that saves such a document discloses with a
-  `FONTS_EMBEDDED` warning the fonts the save embeds.
-- **Reproduction:** [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownIssueTests.cs)
+  about 3 MB. `DocSaveOptions` has no setting for these flags.
+- **CLI behavior:** a Words command that saves such a document warns `FONTS_EMBEDDED` that the
+  save embeds the missing fonts.
+- **Workaround:** deliver the docx as `pdf convert` wrote it, or write it with
+  `aspose-cli words convert <pdf> --to docx`, which asks for no embedded fonts.
 
 ## Aspose.Slides.NET6.CrossPlatform 26.9.0
+
+Reproductions: [SlidesKnownIssueTests](tests/Aspose.Cli.Product.Slides.Tests/SlidesKnownIssueTests.cs),
+[SlidesConvertKnownIssueTests](tests/Aspose.Cli.Product.Slides.Tests/SlidesConvertKnownIssueTests.cs).
 
 ### SLIDES-AUTOFIT-RECT
 
@@ -498,7 +466,6 @@ fails, delete the issue's section, the code that names it and the test, then upd
   (`IPortion.GetRect`) follow the shrunk text as rendering draws it.
 - **CLI behavior:** none visible; `review` measures where text sits from the rectangles of its
   runs, so a body that shrinks its long lines is not reported as cut off by the slide edge.
-- **Reproduction:** [SlidesKnownIssueTests](tests/Aspose.Cli.Product.Slides.Tests/SlidesKnownIssueTests.cs)
 
 ### SLIDES-CHART-TITLE
 
@@ -508,7 +475,6 @@ fails, delete the issue's section, the code that names it and the test, then upd
 - **CLI behavior:** every edit, conversion and rendering of such a chart warns
   `CHART_TITLE_OVERLAID` with its slide.
 - **Workaround:** inspect those charts in PowerPoint and restore their title layout there.
-- **Reproduction:** [SlidesKnownIssueTests](tests/Aspose.Cli.Product.Slides.Tests/SlidesKnownIssueTests.cs)
 
 ### SLIDES-CJK-FALLBACK
 
@@ -521,7 +487,6 @@ fails, delete the issue's section, the code that names it and the test, then upd
   Traditional Chinese, otherwise Simplified Chinese); the engine uses the first installed one.
   The rules affect rendering only and are not saved.
 - **Workaround:** give the template's theme an East Asian font that has the glyphs.
-- **Reproduction:** [SlidesKnownIssueTests](tests/Aspose.Cli.Product.Slides.Tests/SlidesKnownIssueTests.cs)
 
 ### SLIDES-FALLBACK-STDOUT
 
@@ -529,17 +494,15 @@ fails, delete the issue's section, the code that names it and the test, then upd
   `Updating of Inner rules` to `Console.Out`.
 - **CLI behavior:** none visible; every Slides engine call runs with `Console.Out` muted, so the
   JSON result and the render worker's messages stay intact.
-- **Reproduction:** [SlidesKnownIssueTests](tests/Aspose.Cli.Product.Slides.Tests/SlidesKnownIssueTests.cs)
 
 ### SLIDES-FONT-REGISTRY
 
 - **Defect:** font initialization casts every value under
   `HKCU\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Fonts` to `string`, so a `REG_DWORD` or
   `REG_BINARY` value written by other software throws `InvalidCastException`.
-- **CLI behavior:** a Slides command that uses fonts fails with `FEATURE_UNSUPPORTED`, naming each
-  such value, before the engine starts.
+- **CLI behavior:** a Slides command that uses fonts fails with `FEATURE_UNSUPPORTED`
+  (`details.reason` `environment`), naming each such value, before the engine starts.
 - **Workaround:** remove the named values; Windows writes only string values there.
-- **Reproduction:** [SlidesKnownIssueTests](tests/Aspose.Cli.Product.Slides.Tests/SlidesKnownIssueTests.cs)
 
 ### SLIDES-ODP-NATIVE-CONTENT
 
@@ -548,19 +511,17 @@ fails, delete the issue's section, the code that names it and the test, then upd
 - **CLI behavior:** `slides convert` to ODP warns `LOSSY_CONVERSION`, naming the slides whose
   charts become pictures, the slides whose transitions are dropped and the number of sections.
 - **Workaround:** keep the PPTX for further edits.
-- **Reproduction:** [SlidesConvertKnownIssueTests](tests/Aspose.Cli.Product.Slides.Tests/SlidesConvertKnownIssueTests.cs)
 
 ### SLIDES-PPT-TEMPLATE-LAYOUTS
 
 - **Defect:** loading some PowerPoint 97-2003 binary files (PPT, PPS, POT) lists extra layouts
   in `LayoutSlides`, with the name and type of another layout (a second "Title Slide" and
-  "Section Header" for a design whose PPTX has one of each). They belong to the master like the others, but a slide added on one of them makes
-  the PPTX save throw `KeyNotFoundException` for `Aspose.Slides.LayoutSlide`. A PPTX save of
-  the loaded file without such a slide drops them.
+  "Section Header" for a design whose PPTX has one of each). They belong to the master like the
+  others, but a slide added on one of them makes the PPTX save throw `KeyNotFoundException` for
+  `Aspose.Slides.LayoutSlide`. A PPTX save of the loaded file without such a slide drops them.
 - **CLI behavior:** none visible; `slides create --template` and `slides edit` first save a PPT,
   PPS or POT file as PPTX in memory and use the reopened copy, so new slides take the layouts the
-  PPTX keeps. The evaluation watermark boxes that save adds are removed from the copy.
-- **Reproduction:** [SlidesKnownIssueTests](tests/Aspose.Cli.Product.Slides.Tests/SlidesKnownIssueTests.cs)
+  PPTX keeps.
 
 ### SLIDES-MD-INHERITED-BULLETS
 
@@ -571,9 +532,10 @@ fails, delete the issue's section, the code that names it and the test, then upd
 - **CLI behavior:** `slides convert --to md` first writes each paragraph's effective bullet into
   it as an explicit value, in its private copy of the presentation, so the Markdown keeps the
   list items and their levels.
-- **Reproduction:** [SlidesConvertKnownIssueTests](tests/Aspose.Cli.Product.Slides.Tests/SlidesConvertKnownIssueTests.cs)
 
 ## Aspose.Words 26.9.0
+
+Reproductions: [WordsKnownIssueTests](tests/Aspose.Cli.Product.Words.Tests/WordsKnownIssueTests.cs).
 
 ### WORDS-TEXT-COMMENTS
 
@@ -583,7 +545,6 @@ fails, delete the issue's section, the code that names it and the test, then upd
 - **CLI behavior:** `words convert` and `words edit` with a `txt` or `md` output warn
   `LOSSY_CONVERSION` with the number of comments written into the body.
 - **Workaround:** add `delete_comments` to a `words edit` batch whose `--out` is the text file.
-- **Reproduction:** [WordsKnownIssueTests](tests/Aspose.Cli.Product.Words.Tests/WordsKnownIssueTests.cs)
 
 ### WORDS-TEXT-DELETIONS
 
@@ -594,7 +555,6 @@ fails, delete the issue's section, the code that names it and the test, then upd
   `LOSSY_CONVERSION` when the saved document has tracked deletions or moves.
 - **Workaround:** add `accept_revisions` or `reject_revisions`, as the reviewer decides, to a
   `words edit` batch whose `--out` is the text file.
-- **Reproduction:** [WordsKnownIssueTests](tests/Aspose.Cli.Product.Words.Tests/WordsKnownIssueTests.cs)
 
 ### WORDS-PAGE-FIELD-LAYOUT
 
@@ -604,7 +564,6 @@ fails, delete the issue's section, the code that names it and the test, then upd
   `Document.UpdatePageLayout` rebuilds the layout.
 - **CLI behavior:** none visible; `insert_field` rebuilds the layout and updates such a field
   when it has no result.
-- **Reproduction:** [WordsKnownIssueTests](tests/Aspose.Cli.Product.Words.Tests/WordsKnownIssueTests.cs)
 
 ### WORDS-PDF-HEADER-FOOTER
 
@@ -622,7 +581,6 @@ fails, delete the issue's section, the code that names it and the test, then upd
 - **Workaround:** read the headers, footers and fields with `words inspect --detail sections
   fields`, then restore them with `set_header`, `set_footer` or `set_page_numbers` and remove
   body paragraphs that held them with `delete_blocks`.
-- **Reproduction:** [WordsKnownIssueTests](tests/Aspose.Cli.Product.Words.Tests/WordsKnownIssueTests.cs)
 
 ### WORDS-PDF-CJK-LINE-END
 
@@ -635,7 +593,6 @@ fails, delete the issue's section, the code that names it and the test, then upd
   holds East Asian characters warn `LOSSY_CONVERSION` about the spaces and merged paragraphs.
 - **Workaround:** read the blocks before editing; find a phrase with a regex that allows a space
   where a line may have ended, such as `甲 ?乙双方`, and remove a space only where it was read.
-- **Reproduction:** [WordsKnownIssueTests](tests/Aspose.Cli.Product.Words.Tests/WordsKnownIssueTests.cs)
 
 ### WORDS-CJK-LINE-BREAK
 
@@ -643,15 +600,14 @@ fails, delete the issue's section, the code that names it and the test, then upd
   turns on (`ParagraphFormat.FarEastLineBreakControl`). Text whose East Asian language is not
   Chinese, Japanese or Korean, such as the English that a new `Document` and many converted
   documents declare, may start a line with "，" or "。" while the process culture is Chinese,
-  as on a Chinese Windows. And in a document without Word 2013
-  compatibility mode, East Asian text drawn in one font for all scripts, as PDF loading writes
-  it, breaks only at spaces after Latin text, so "人民币 1,920,000.00 元（大写：…）" ends its
-  line after the number although the rest would fit in part.
+  as on a Chinese Windows. And in a document without Word 2013 compatibility mode, East Asian
+  text drawn in one font for all scripts, as PDF loading writes it, breaks only at spaces after
+  Latin text, so "人民币 1,920,000.00 元（大写：…）" ends its line after the number although the
+  rest would fit in part.
 - **CLI behavior:** the built-in design declares Chinese as its East Asian language, so
   documents created without `--template` follow the rules. Other documents keep their own
   language and compatibility settings, which no operation changes; the Words Skill tells
   reviewers to disclose such lines.
-- **Reproduction:** [WordsKnownIssueTests](tests/Aspose.Cli.Product.Words.Tests/WordsKnownIssueTests.cs)
 
 ### WORDS-TRACKED-DETACHED-TEXT
 
@@ -660,7 +616,6 @@ fails, delete the issue's section, the code that names it and the test, then upd
 - **CLI behavior:** none visible; `insert_paragraphs`, `set_text` and `replace_text` set the text
   of the run they copy, from the paragraph before the insertion point or from the replaced text,
   with tracking paused, and the run's insertion is then tracked as usual.
-- **Reproduction:** [WordsKnownIssueTests](tests/Aspose.Cli.Product.Words.Tests/WordsKnownIssueTests.cs)
 
 ### WORDS-REGEX-TIMEOUT
 
@@ -671,7 +626,6 @@ fails, delete the issue's section, the code that names it and the test, then upd
   expression's budget in the text `words search` reads and replaces them in place, so an
   expression that runs past the budget fails with `OPERATION_TIMEOUT` and the edit writes
   nothing.
-- **Reproduction:** [WordsKnownIssueTests](tests/Aspose.Cli.Product.Words.Tests/WordsKnownIssueTests.cs)
 
 ### WORDS-REGEX-ANCHORS
 
@@ -681,7 +635,6 @@ fails, delete the issue's section, the code that names it and the test, then upd
 - **CLI behavior:** `replace_text` does not call `Range.Replace`: it replaces the matches
   `words search` finds, in the text of each paragraph, comment and note, so `^` and `$` anchor
   at each of them.
-- **Reproduction:** [WordsKnownIssueTests](tests/Aspose.Cli.Product.Words.Tests/WordsKnownIssueTests.cs)
 
 ### WORDS-MD-FOOTNOTE-HEADING
 
@@ -690,8 +643,6 @@ fails, delete the issue's section, the code that names it and the test, then upd
   new heading, although CommonMark ends the definition at that unindented line. A paragraph of
   ordinary text after the definition ends it as expected.
 - **CLI behavior:** `words create --from-markdown`, `insert_markdown` and Markdown headers and
-  footers load the Markdown as written; the Words Skill tells authors to put footnote
-  definitions at the end of the Markdown.
+  footers load the Markdown as written; the Words Skill gives the workaround.
 - **Workaround:** write every `[^id]: text` definition at the end of the Markdown, after the
   last heading.
-- **Reproduction:** [WordsKnownIssueTests](tests/Aspose.Cli.Product.Words.Tests/WordsKnownIssueTests.cs)
