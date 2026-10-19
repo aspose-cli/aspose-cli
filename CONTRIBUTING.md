@@ -34,13 +34,17 @@ with `origin/master`, or `-Commit <sha>` against its parent): in a temporary wor
 `src/`, keeps the tests, and runs the `[Fact]` and `[Theory]` methods the diff touches with and
 without the license; it exits non-zero and names every test that still passes and every filter
 term that selects no test. A test project that fails to build only with compiler errors under
-`tests/` counts as failing; any other build failure, including the reverted `src/` itself, leaves
+`tests/` counts as failing, but only when another selected test also runs and fails, since a
+compiler error alone proves nothing about behavior; any other build failure, including the reverted `src/` itself, leaves
 the change unjudged and the script exits non-zero (pass a `-Base` whose build works). A rule id
 such as `C-R39` on a changed line of an invariant rule selects that rule's cases; any other change
 outside test methods (helpers, fixtures, snapshots) fails the check as unselected until `-Filter`
 and `-TestProject` name the tests that cover it (for example
 `-Filter 'DisplayName~C-R39' -TestProject Aspose.Cli.Invariants.Tests`). `-Plan` lists the
 selection without building; `-BuildParallelism` and `-TestThreads` bound the processor use.
+The script is for tests that pin a fix or new behavior. A refactor that must not change behavior
+commits its protective tests first, where they pass on the old code, and they still pass after
+the change; `scripts/test-fails-before.ps1` does not judge them.
 
 ## Pull requests
 
