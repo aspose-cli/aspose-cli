@@ -44,7 +44,7 @@ internal static class PdfEdit
             && PdfOutputEncryption.InformationBeyondLatin1(loaded.Document) ? model.Encryption : null;
         PdfNavigationCensus navigation = PdfNavigationCensus.Degraded(
             navigationBefore, PdfNavigationCensus.Unresolved(loaded.Document));
-        Publication publication;
+        EditPublication<PdfEditVerification> publication;
         // --encrypt replaces whatever encryption the operations leave.
         try { publication = Publish(session, loaded.Document, request, request.EncryptPassword ?? model.OutputPassword, encryptCopy, precondition, verifier, applied, state); }
         finally { operationInputs.ThrowIfFailed(); }
@@ -67,7 +67,7 @@ internal static class PdfEdit
             warnings.Add(degraded);
         }
 
-        warnings.AddRange(EnvelopeParts.BackupWarnings(publication.Backup) ?? []);
+        warnings.AddRange(publication.BackupWarnings ?? []);
 
         return new PdfEditResult
         {
@@ -84,7 +84,7 @@ internal static class PdfEdit
         };
     }
 
-    private static Publication Publish(
+    private static EditPublication<PdfEditVerification> Publish(
         PdfSession session,
         Document document,
         PdfEditRequest request,
@@ -95,52 +95,38 @@ internal static class PdfEdit
         AppliedBatch applied,
         LicenseState state)
     {
-        OutputInfo? output = null;
-        BackupInfo? backup = null;
-        PdfEditVerification? verification = null;
         if (!request.Options.DryRun)
         {
-            using OutputSet<Document> transaction = session.Outputs.BeginSet([request.Output.Directory], "pdf-edit");
             RemoveUnreferencedObjects(document);
-            PdfOutputPasswords? passwords = PdfOutputEncryption.Requested(request.EncryptPassword);
-            bool encrypted = PdfOutputEncryption.Encrypted(document, passwords);
-            StagedOutput write = transaction.Stage(
-                request.Output.Path,
-                request.Output.Overwrite,
-                document,
-                temp =>
-                {
-                    if (passwords is not null)
-                    {
-                        PdfOutputEncryption.Save(document, temp, passwords);
-                    }
-                    else
-                    {
-                        Save(document, temp, encryptCopy, request.OpSecrets);
-                    }
-
-                    using LoadedPdf reopened = session.Loader.OpenPublishedCandidate(temp, outputPassword);
-                },
-                backupPath: request.Output.BackupPath,
-                inputPrecondition: precondition,
-                encrypted: encrypted);
-            backup = write.Backup;
-            if (verifier is not null)
-            {
-                // Issues are reported, not refused: the output is published and the command exits 8.
-                verification = write.Read(candidate =>
-                {
-                    using LoadedPdf reopened = session.Loader.OpenPublishedCandidate(candidate, outputPassword);
-                    VerifiedBatch verified = applied.Verified(verifier.Verify(reopened.Document, state, session.Budgets.Deadline));
-                    return new PdfEditVerification { Ok = verified.Ok, Issues = verified.Issues, CheckedOps = verified.CheckedOps };
-                });
-            }
-
-            transaction.Commit();
-            output = FileObjects.Output(write.Published, request.Output.Format, encrypted);
         }
 
-        return new Publication(output, backup, verification);
+        PdfOutputPasswords? passwords = PdfOutputEncryption.Requested(request.EncryptPassword);
+        return session.Outputs.PublishEdit<PdfEditVerification>(
+            request.Output,
+            document,
+            precondition,
+            request.Options.DryRun,
+            PdfOutputEncryption.Encrypted(document, passwords),
+            temp =>
+            {
+                if (passwords is not null)
+                {
+                    PdfOutputEncryption.Save(document, temp, passwords);
+                }
+                else
+                {
+                    Save(document, temp, encryptCopy, request.OpSecrets);
+                }
+
+                using LoadedPdf reopened = session.Loader.OpenPublishedCandidate(temp, outputPassword);
+            },
+            verifier is null ? null : candidate =>
+            {
+                using LoadedPdf reopened = session.Loader.OpenPublishedCandidate(candidate, outputPassword);
+                VerifiedBatch verified = applied.Verified(verifier.Verify(reopened.Document, state, session.Budgets.Deadline));
+                return new PdfEditVerification { Ok = verified.Ok, Issues = verified.Issues, CheckedOps = verified.CheckedOps };
+            },
+            "pdf-edit");
     }
 
     /// <summary>
@@ -296,9 +282,4 @@ internal static class PdfEdit
             (granted & (Permissions.ModifyContent | Permissions.AssembleDocument)) != 0,
         _ => granted.HasFlag(Permissions.ModifyContent),
     };
-
-    private sealed record Publication(
-        OutputInfo? Output,
-        BackupInfo? Backup,
-        PdfEditVerification? Verification);
 }
