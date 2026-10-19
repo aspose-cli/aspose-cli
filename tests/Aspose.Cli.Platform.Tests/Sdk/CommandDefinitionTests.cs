@@ -299,7 +299,7 @@ public sealed class CommandDefinitionTests : IDisposable
             {
                 Input = Report,
                 Output = OutputTarget.Directory("Parts."),
-                Target = TargetFormat.Among("Form format.", [FormatDescriptor.Declare("form", FormatUse.Convert, null, 0, null, false, ".form", ".xfdf")]),
+                Target = TargetFormat.Convert("Form format.", [FormatDescriptor.Declare("form", FormatUse.Convert, null, 0, null, false, ".form", ".xfdf")]),
             },
             (_, _) => Result()));
 
