@@ -96,6 +96,44 @@ public static class ReadBackKinds
     public const string NotState = "not-state";
 }
 
+/// <summary>The unit an operation field's number is measured in (see <see cref="MeasuredAttribute"/>).</summary>
+public enum MeasureUnit
+{
+    /// <summary>Typographic points, 1/72 inch: the unit a field name need not state.</summary>
+    Points,
+
+    /// <summary>Characters, such as the width of the default font's digit 0.</summary>
+    Characters,
+
+    /// <summary>Dots per inch.</summary>
+    Dpi,
+
+    /// <summary>Inches.</summary>
+    Inches,
+
+    /// <summary>Milliseconds.</summary>
+    Milliseconds,
+
+    /// <summary>A percentage.</summary>
+    Percent,
+
+    /// <summary>Pixels.</summary>
+    Pixels,
+}
+
+/// <summary>
+/// Declares the unit an operation field is measured in, as its description or the engine states
+/// it. A field measured in anything but points names its unit (C-R20); the contract rules read
+/// this declaration to judge the name. The schema does not publish it.
+/// </summary>
+/// <param name="unit">The field's unit.</param>
+[AttributeUsage(AttributeTargets.Property)]
+public sealed class MeasuredAttribute(MeasureUnit unit) : Attribute
+{
+    /// <summary>The field's unit.</summary>
+    public MeasureUnit Unit { get; } = unit;
+}
+
 /// <summary>
 /// Marks a top-level partial record that the operations of several vocabularies take as a field,
 /// such as <see cref="PageSizeInput"/>. The operation generator describes it once, where it is

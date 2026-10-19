@@ -48,16 +48,16 @@ public abstract record ShapeTargetOp : SlideTargetOp
 public sealed record SlidesRectInput
 {
     /// <summary>The distance from the slide's left edge to the left side.</summary>
-    [Minimum(0)] public required double X { get; init; }
+    [Measured(MeasureUnit.Points), Minimum(0)] public required double X { get; init; }
 
     /// <summary>The distance from the slide's top edge to the top side.</summary>
-    [Minimum(0)] public required double Y { get; init; }
+    [Measured(MeasureUnit.Points), Minimum(0)] public required double Y { get; init; }
 
     /// <summary>The width, to the right of x.</summary>
-    [ExclusiveMinimum(0)] public required double Width { get; init; }
+    [Measured(MeasureUnit.Points), ExclusiveMinimum(0)] public required double Width { get; init; }
 
     /// <summary>The height, down from y.</summary>
-    [ExclusiveMinimum(0)] public required double Height { get; init; }
+    [Measured(MeasureUnit.Points), ExclusiveMinimum(0)] public required double Height { get; init; }
 }
 
 /// <summary>
@@ -73,10 +73,10 @@ public sealed record SlidesSlideSizeInput
     [AllowedValues(typeof(SlidesSlideSizePresets))] public string? Preset { get; init; }
 
     /// <summary>The slide width in points, given with the height instead of a preset.</summary>
-    [Minimum(SlidesSlideSizePresets.MinimumSide), Maximum(SlidesSlideSizePresets.MaximumSide)] public double? Width { get; init; }
+    [Measured(MeasureUnit.Points), Minimum(SlidesSlideSizePresets.MinimumSide), Maximum(SlidesSlideSizePresets.MaximumSide)] public double? Width { get; init; }
 
     /// <summary>The slide height in points, given with the width instead of a preset.</summary>
-    [Minimum(SlidesSlideSizePresets.MinimumSide), Maximum(SlidesSlideSizePresets.MaximumSide)] public double? Height { get; init; }
+    [Measured(MeasureUnit.Points), Minimum(SlidesSlideSizePresets.MinimumSide), Maximum(SlidesSlideSizePresets.MaximumSide)] public double? Height { get; init; }
 }
 
 /// <summary>One body paragraph; its spacing comes from the placeholder's level.</summary>
@@ -148,7 +148,7 @@ public sealed record SlidesShapeStyleInput
     /// <summary>The font size in points.</summary>
     [MistakenFor("size")]
     [ReadBack("read-result.schema.json#/$defs/slidesTextRunData/properties/fontSize")]
-    [ExclusiveMinimum(0), Maximum(400)] public double? FontSize { get; init; }
+    [Measured(MeasureUnit.Points), ExclusiveMinimum(0), Maximum(400)] public double? FontSize { get; init; }
 
     /// <summary>The text color.</summary>
     [ReadBack("read-result.schema.json#/$defs/slidesTextRunData/properties/color")]
@@ -563,19 +563,19 @@ public sealed record SetShapeBoundsOp : ShapeTargetOp
 {
     /// <summary>The new distance from the slide's left edge to the shape's left side.</summary>
     [ReadBack("read-result.schema.json#/$defs/slidesRect/properties/x")]
-    [Minimum(0)] public double? X { get; init; }
+    [Measured(MeasureUnit.Points), Minimum(0)] public double? X { get; init; }
 
     /// <summary>The new distance from the slide's top edge to the shape's top side.</summary>
     [ReadBack("read-result.schema.json#/$defs/slidesRect/properties/y")]
-    [Minimum(0)] public double? Y { get; init; }
+    [Measured(MeasureUnit.Points), Minimum(0)] public double? Y { get; init; }
 
     /// <summary>The new width.</summary>
     [ReadBack("read-result.schema.json#/$defs/slidesRect/properties/width")]
-    [ExclusiveMinimum(0)] public double? Width { get; init; }
+    [Measured(MeasureUnit.Points), ExclusiveMinimum(0)] public double? Width { get; init; }
 
     /// <summary>The new height.</summary>
     [ReadBack("read-result.schema.json#/$defs/slidesRect/properties/height")]
-    [ExclusiveMinimum(0)] public double? Height { get; init; }
+    [Measured(MeasureUnit.Points), ExclusiveMinimum(0)] public double? Height { get; init; }
 }
 
 /// <summary>
@@ -616,7 +616,7 @@ public sealed record SetTransitionOp : SlidesOp
 
     /// <summary>The transition duration in milliseconds.</summary>
     [ReadBack("read-result.schema.json#/$defs/slidesTransitionData/properties/durationMs")]
-    [Minimum(0), Maximum(60000)] public int? DurationMs { get; init; }
+    [Measured(MeasureUnit.Milliseconds), Minimum(0), Maximum(60000)] public int? DurationMs { get; init; }
 }
 
 /// <summary>Sets document properties; omitted properties keep their values.</summary>

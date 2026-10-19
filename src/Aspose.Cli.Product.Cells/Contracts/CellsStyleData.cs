@@ -16,7 +16,7 @@ public sealed record CellsStyleData
     /// <summary>The font size in points; fractional sizes such as 10.5 are kept.</summary>
     [MistakenFor("size")]
     [ReadBack("read-result.schema.json#/$defs/cellsStyleData/properties/fontSize")]
-    [Minimum(1), Maximum(409)] public double? FontSize { get; init; }
+    [Measured(MeasureUnit.Points), Minimum(1), Maximum(409)] public double? FontSize { get; init; }
 
     /// <summary>Whether the text is bold.</summary>
     [ReadBack("read-result.schema.json#/$defs/cellsStyleData/properties/bold")]

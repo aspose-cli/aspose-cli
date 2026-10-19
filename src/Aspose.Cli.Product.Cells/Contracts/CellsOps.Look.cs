@@ -20,7 +20,7 @@ public sealed record SetDefaultFontOp : CellsOp
     /// <summary>The font size in points; unchanged when omitted.</summary>
     [MistakenFor("size")]
     [ReadBack("inspect-result.schema.json#/$defs/cellsDefaultFontInfo/properties/fontSize")]
-    [Minimum(1), Maximum(409)] public double? FontSize { get; init; }
+    [Measured(MeasureUnit.Points), Minimum(1), Maximum(409)] public double? FontSize { get; init; }
 
     /// <inheritdoc />
     protected override BoundedOperation Validated() => this with { Font = Font.Trim() };
@@ -55,7 +55,7 @@ public sealed record SetSheetViewOp : CellsSheetOp
     /// <summary>The zoom percentage; unchanged when omitted.</summary>
     [MistakenFor("zoom")]
     [ReadBack("inspect-result.schema.json#/$defs/cellsSheetViewInfo/properties/zoomPercent")]
-    [Minimum(10), Maximum(400)] public int? ZoomPercent { get; init; }
+    [Measured(MeasureUnit.Percent), Minimum(10), Maximum(400)] public int? ZoomPercent { get; init; }
 
     /// <summary>Whether the row numbers and column letters show; unchanged when omitted.</summary>
     [ReadBack("inspect-result.schema.json#/$defs/cellsSheetViewInfo/properties/headings")]

@@ -107,7 +107,7 @@ public sealed record ResizeRowsOp : CellsSheetOp
 
     /// <summary>The height in points; omitted auto-fits.</summary>
     [ReadBack("inspect-result.schema.json#/$defs/cellsRowHeightInfo/properties/height")]
-    [Minimum(0)] public double? Height { get; init; }
+    [Measured(MeasureUnit.Points), Minimum(0)] public double? Height { get; init; }
 
     /// <inheritdoc />
     protected override BoundedOperation Validated() => RowSpan.Check(this, First, Last);
@@ -128,7 +128,7 @@ public sealed record ResizeColumnsOp : CellsSheetOp
     /// <summary>The width in characters of the default font's digit 0; omitted auto-fits.</summary>
     [MistakenFor("width")]
     [ReadBack("inspect-result.schema.json#/$defs/cellsColumnWidthInfo/properties/widthChars")]
-    [Minimum(0)] public double? WidthChars { get; init; }
+    [Measured(MeasureUnit.Characters), Minimum(0)] public double? WidthChars { get; init; }
 
     /// <inheritdoc />
     protected override BoundedOperation Validated() => ColumnSpan.Check(this, First, Last);

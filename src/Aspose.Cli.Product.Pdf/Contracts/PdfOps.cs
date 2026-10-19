@@ -20,16 +20,16 @@ public abstract partial record PdfOp : BoundedOperation;
 public sealed record PdfRectInput
 {
     /// <summary>Distance from the left edge.</summary>
-    [Minimum(0)] public required double X { get; init; }
+    [Measured(MeasureUnit.Points), Minimum(0)] public required double X { get; init; }
 
     /// <summary>Distance from the top edge.</summary>
-    [Minimum(0)] public required double Y { get; init; }
+    [Measured(MeasureUnit.Points), Minimum(0)] public required double Y { get; init; }
 
     /// <summary>The width, to the right of x.</summary>
-    [ExclusiveMinimum(0)] public required double Width { get; init; }
+    [Measured(MeasureUnit.Points), ExclusiveMinimum(0)] public required double Width { get; init; }
 
     /// <summary>The height, down from y.</summary>
-    [ExclusiveMinimum(0)] public required double Height { get; init; }
+    [Measured(MeasureUnit.Points), ExclusiveMinimum(0)] public required double Height { get; init; }
 }
 
 /// <summary>What a reader may do without the owner password; everything omitted is denied.</summary>
@@ -230,7 +230,7 @@ public sealed record AddWatermarkTextOp : PdfOp
     /// <summary>The font size in points.</summary>
     [NotState]
     [MistakenFor("size")]
-    [ExclusiveMinimum(0)] public double FontSize { get; init; } = 48;
+    [Measured(MeasureUnit.Points), ExclusiveMinimum(0)] public double FontSize { get; init; } = 48;
 
     /// <summary>The text color.</summary>
     [NotState]
@@ -756,7 +756,7 @@ public sealed record OptimizeDocumentOp : PdfOp
 {
     /// <summary>The largest image resolution kept, in dots per inch.</summary>
     [NotState]
-    [Minimum(36), Maximum(1200)] public int? DownsampleImagesDpi { get; init; }
+    [Measured(MeasureUnit.Dpi), Minimum(36), Maximum(1200)] public int? DownsampleImagesDpi { get; init; }
 
     /// <summary>The JPEG quality of recompressed images.</summary>
     [NotState]

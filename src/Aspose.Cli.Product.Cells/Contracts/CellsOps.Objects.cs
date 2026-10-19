@@ -212,14 +212,14 @@ public sealed record InsertImageOp : CellsSheetOp
     /// width that keeps the image's proportions.
     /// </summary>
     [ReadBack("inspect-result.schema.json#/$defs/cellsImageInfo/properties/width")]
-    [ExclusiveMinimum(0)] public double? Width { get; init; }
+    [Measured(MeasureUnit.Points), ExclusiveMinimum(0)] public double? Width { get; init; }
 
     /// <summary>
     /// The height in points. When omitted, the image's natural height, or with width alone the
     /// height that keeps the image's proportions.
     /// </summary>
     [ReadBack("inspect-result.schema.json#/$defs/cellsImageInfo/properties/height")]
-    [ExclusiveMinimum(0)] public double? Height { get; init; }
+    [Measured(MeasureUnit.Points), ExclusiveMinimum(0)] public double? Height { get; init; }
 }
 
 /// <summary>

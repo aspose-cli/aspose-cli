@@ -105,16 +105,16 @@ public sealed record WordsPageSetupInput
 public sealed record WordsMarginInput
 {
     /// <summary>The distance from the top edge of the page to the text.</summary>
-    [Minimum(0)] public double? Top { get; init; }
+    [Measured(MeasureUnit.Points), Minimum(0)] public double? Top { get; init; }
 
     /// <summary>The distance from the right edge of the page to the text.</summary>
-    [Minimum(0)] public double? Right { get; init; }
+    [Measured(MeasureUnit.Points), Minimum(0)] public double? Right { get; init; }
 
     /// <summary>The distance from the bottom edge of the page to the text.</summary>
-    [Minimum(0)] public double? Bottom { get; init; }
+    [Measured(MeasureUnit.Points), Minimum(0)] public double? Bottom { get; init; }
 
     /// <summary>The distance from the left edge of the page to the text.</summary>
-    [Minimum(0)] public double? Left { get; init; }
+    [Measured(MeasureUnit.Points), Minimum(0)] public double? Left { get; init; }
 }
 
 /// <summary>
@@ -253,11 +253,11 @@ public sealed record InsertImageOp : WordsOp
 
     /// <summary>The width in points; the image's own when omitted.</summary>
     [ReadBack("read-result.schema.json#/$defs/wordsBlockImageData/properties/width")]
-    [ExclusiveMinimum(0)] public double? Width { get; init; }
+    [Measured(MeasureUnit.Points), ExclusiveMinimum(0)] public double? Width { get; init; }
 
     /// <summary>The height in points; the image's own when omitted.</summary>
     [ReadBack("read-result.schema.json#/$defs/wordsBlockImageData/properties/height")]
-    [ExclusiveMinimum(0)] public double? Height { get; init; }
+    [Measured(MeasureUnit.Points), ExclusiveMinimum(0)] public double? Height { get; init; }
 
     /// <summary>Whether the image sits in the text line rather than floating with square wrapping.</summary>
     [ReadBack("read-result.schema.json#/$defs/wordsBlockImageData/properties/inline")]
@@ -622,7 +622,7 @@ public sealed record FormatTextOp : WordsOp
     /// <summary>The font size in points.</summary>
     [MistakenFor("size")]
     [ReadBack("read-result.schema.json#/$defs/wordsRunData/properties/fontSize")]
-    [ExclusiveMinimum(0)] public double? FontSize { get; init; }
+    [Measured(MeasureUnit.Points), ExclusiveMinimum(0)] public double? FontSize { get; init; }
 
     /// <summary>The text color, as #RRGGBB.</summary>
     [ReadBack("read-result.schema.json#/$defs/wordsRunData/properties/color")]
@@ -698,7 +698,7 @@ public sealed record DefineStyleOp : WordsOp
     /// <summary>The font size in points.</summary>
     [MistakenFor("size")]
     [ReadBack("inspect-result.schema.json#/$defs/wordsStyleData/properties/fontSize")]
-    [ExclusiveMinimum(0)] public double? FontSize { get; init; }
+    [Measured(MeasureUnit.Points), ExclusiveMinimum(0)] public double? FontSize { get; init; }
 
     /// <summary>Whether the style's text is bold.</summary>
     [ReadBack("inspect-result.schema.json#/$defs/wordsStyleData/properties/bold")]
@@ -710,11 +710,11 @@ public sealed record DefineStyleOp : WordsOp
 
     /// <summary>Space before the paragraph, in points.</summary>
     [ReadBack("inspect-result.schema.json#/$defs/wordsStyleData/properties/spaceBefore")]
-    [Minimum(0)] public double? SpaceBefore { get; init; }
+    [Measured(MeasureUnit.Points), Minimum(0)] public double? SpaceBefore { get; init; }
 
     /// <summary>Space after the paragraph, in points.</summary>
     [ReadBack("inspect-result.schema.json#/$defs/wordsStyleData/properties/spaceAfter")]
-    [Minimum(0)] public double? SpaceAfter { get; init; }
+    [Measured(MeasureUnit.Points), Minimum(0)] public double? SpaceAfter { get; init; }
 }
 
 /// <summary>
@@ -812,7 +812,7 @@ public sealed record SetDefaultFontOp : WordsOp
     /// <summary>The font size in points; sizes are kept when omitted.</summary>
     [MistakenFor("size")]
     [ReadBack("inspect-result.schema.json#/$defs/wordsStyleData/properties/fontSize")]
-    [ExclusiveMinimum(0)] public double? FontSize { get; init; }
+    [Measured(MeasureUnit.Points), ExclusiveMinimum(0)] public double? FontSize { get; init; }
 }
 
 /// <summary>Sets built-in and custom document properties; omitted properties keep their values.</summary>
