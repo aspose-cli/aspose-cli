@@ -1,7 +1,9 @@
 using System.Text.Json.Nodes;
+using System.Text.RegularExpressions;
 using Aspose.Cli.Sdk;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Errors;
+using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Operations;
 using Xunit;
 
@@ -538,6 +540,64 @@ public sealed class BoundedOperationPipelineTests
         Assert.Contains("close", error.Hint, StringComparison.Ordinal);
     }
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Run_NamesTheOperationWhoseDeadlineExpiredInsideIt(bool bestEffort)
+    {
+        TestBatch batch = Catalog.Prepare(new TestBatch { Ops = [Set(1), Note()] });
+        using OperationDeadline deadline = OperationDeadline.Start(TimeSpan.FromSeconds(1));
+
+        CliException error = Assert.Throws<CliException>(() => Run(batch, bestEffort, deadline, op =>
+        {
+            if (op is NoteOp)
+            {
+                deadline.Token.WaitHandle.WaitOne();
+                deadline.ThrowIfExpired("import");
+            }
+        }));
+
+        Assert.Equal(ErrorCodes.OperationTimeout, error.Code);
+        Assert.Equal("op-0002", error.Details!["id"]!.GetValue<string>());
+        Assert.Equal("note", error.Details["op"]!.GetValue<string>());
+        Assert.Equal("import", error.Details["phase"]!.GetValue<string>());
+        Assert.StartsWith("Operation op-0002 (note) failed: ", error.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Run_NamesTheOperationWhoseRegularExpressionRanOutOfTime()
+    {
+        TestBatch batch = Catalog.Prepare(new TestBatch { Ops = [Note()] });
+
+        CliException error = Assert.Throws<CliException>(() => Run(batch, bestEffort: true, static _ =>
+            throw new RegexMatchTimeoutException("aaaa!", "(a+)+$", TimeSpan.FromSeconds(1))));
+
+        Assert.Equal(ErrorCodes.OperationTimeout, error.Code);
+        Assert.Equal("op-0001", error.Details!["id"]!.GetValue<string>());
+        Assert.Equal("note", error.Details["op"]!.GetValue<string>());
+        Assert.Equal("regex", error.Details["phase"]!.GetValue<string>());
+    }
+
+    /// <summary>A deadline that expires between operations is no operation's failure, so it names none.</summary>
+    [Fact]
+    public void Run_NamesNoOperationWhenTheDeadlineExpiresBeforeOne()
+    {
+        TestBatch batch = Catalog.Prepare(new TestBatch { Ops = [Set(1), Note()] });
+        using OperationDeadline deadline = OperationDeadline.Start(TimeSpan.FromMilliseconds(200));
+
+        CliException error = Assert.Throws<CliException>(() => Run(batch, bestEffort: false, deadline, op =>
+        {
+            if (op is SetOp)
+            {
+                deadline.Token.WaitHandle.WaitOne();
+            }
+        }));
+
+        Assert.Equal(ErrorCodes.OperationTimeout, error.Code);
+        Assert.Null(error.Details!["id"]);
+        Assert.Equal("operations", error.Details["phase"]!.GetValue<string>());
+    }
+
     [Fact]
     public void Run_KeepsTheFeatureHintWhenTheEngineReadsTruncatedData()
     {
@@ -550,7 +610,10 @@ public sealed class BoundedOperationPipelineTests
     }
 
     private static IReadOnlyList<BoundedOperationOutcome> Run(TestBatch batch, bool bestEffort, Action<TestOp> apply) =>
-        BoundedOperationRunner.Run(Catalog, batch.Ops, bestEffort, deadline: null, new Model(apply)).Outcomes;
+        Run(batch, bestEffort, deadline: null, apply);
+
+    private static IReadOnlyList<BoundedOperationOutcome> Run(TestBatch batch, bool bestEffort, OperationDeadline? deadline, Action<TestOp> apply) =>
+        BoundedOperationRunner.Run(Catalog, batch.Ops, bestEffort, deadline, new Model(apply)).Outcomes;
 
     /// <summary>A document of one value that each operation that applies changes.</summary>
     private sealed class Model(Action<TestOp> apply) : IOperationModel<TestOp>
