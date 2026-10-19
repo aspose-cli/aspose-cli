@@ -505,7 +505,7 @@ public sealed class AtomicOutputSetWriterTests
         };
         journal.Write(Path.Combine(transaction, AtomicPublicationPlan.JournalName));
 
-        int recovered = AtomicOutputSetWriter.RecoverPending(temp.Path);
+        int recovered = AtomicPublicationRecovery.RecoverPendingUnderLease(temp.Path, lease: null);
 
         Assert.Equal(1, recovered);
         Assert.Equal("original", File.ReadAllText(target));
@@ -567,7 +567,7 @@ public sealed class AtomicOutputSetWriterTests
             transaction,
             AtomicPublicationPlan.JournalName));
 
-        int recovered = AtomicOutputSetWriter.RecoverPending(temp.Path);
+        int recovered = AtomicPublicationRecovery.RecoverPendingUnderLease(temp.Path, lease: null);
 
         Assert.Equal(1, recovered);
         Assert.Equal("original", File.ReadAllText(target));
@@ -582,7 +582,7 @@ public sealed class AtomicOutputSetWriterTests
         (string transaction, string staged, _) =
             CreateInterruptedReplacementTransaction(temp.Path, target);
 
-        int recovered = AtomicOutputSetWriter.RecoverPending(temp.Path);
+        int recovered = AtomicPublicationRecovery.RecoverPendingUnderLease(temp.Path, lease: null);
 
         Assert.Equal(1, recovered);
         Assert.Equal("original", File.ReadAllText(target));
@@ -599,7 +599,7 @@ public sealed class AtomicOutputSetWriterTests
             CreateInterruptedReplacementTransaction(temp.Path, target);
         File.Replace(displaced, target, staged);
 
-        int recovered = AtomicOutputSetWriter.RecoverPending(temp.Path);
+        int recovered = AtomicPublicationRecovery.RecoverPendingUnderLease(temp.Path, lease: null);
 
         Assert.Equal(1, recovered);
         Assert.Equal("original", File.ReadAllText(target));
@@ -652,7 +652,7 @@ public sealed class AtomicOutputSetWriterTests
             transaction,
             AtomicPublicationPlan.JournalName));
 
-        int recovered = AtomicOutputSetWriter.RecoverPending(temp.Path);
+        int recovered = AtomicPublicationRecovery.RecoverPendingUnderLease(temp.Path, lease: null);
 
         Assert.Equal(1, recovered);
         Assert.False(File.Exists(target));
@@ -671,7 +671,7 @@ public sealed class AtomicOutputSetWriterTests
             $".{AtomicPublicationPlan.JournalName}.{Guid.NewGuid():N}.tmp");
         File.WriteAllText(temporary, "partial journal");
 
-        int recovered = AtomicOutputSetWriter.RecoverPending(temp.Path);
+        int recovered = AtomicPublicationRecovery.RecoverPendingUnderLease(temp.Path, lease: null);
 
         Assert.Equal(1, recovered);
         Assert.False(Directory.Exists(transaction));
@@ -786,7 +786,7 @@ public sealed class AtomicOutputSetWriterTests
         File.WriteAllText(target, "external-change");
 
         CliException error = Assert.Throws<CliException>(
-            () => AtomicOutputSetWriter.RecoverPending(temp.Path));
+            () => AtomicPublicationRecovery.RecoverPendingUnderLease(temp.Path, lease: null));
 
         Assert.Equal(ErrorCodes.OutputPublicationPartial, error.Code);
         Assert.Equal("external-change", File.ReadAllText(target));
@@ -812,7 +812,7 @@ public sealed class AtomicOutputSetWriterTests
         File.Move(external, target, overwrite: true);
 
         CliException error = Assert.Throws<CliException>(
-            () => AtomicOutputSetWriter.RecoverPending(temp.Path));
+            () => AtomicPublicationRecovery.RecoverPendingUnderLease(temp.Path, lease: null));
 
         Assert.Equal(ErrorCodes.OutputPublicationPartial, error.Code);
         Assert.True(expectedExternal.VersionEquals(
@@ -866,7 +866,7 @@ public sealed class AtomicOutputSetWriterTests
         string backup = Assert.Single(journal.Entries).Backup!;
 
         CliException error = Assert.Throws<CliException>(() =>
-            AtomicOutputSetWriter.RecoverPending(temp.Path));
+            AtomicPublicationRecovery.RecoverPendingUnderLease(temp.Path, lease: null));
 
         Assert.Equal(ErrorCodes.OutputPublicationPartial, error.Code);
         Assert.True(File.Exists(journalPath));
@@ -890,7 +890,7 @@ public sealed class AtomicOutputSetWriterTests
             new byte[PublicationJournal.MaximumBytes + 1]);
 
         CliException error = Assert.Throws<CliException>(
-            () => AtomicOutputSetWriter.RecoverPending(temp.Path));
+            () => AtomicPublicationRecovery.RecoverPendingUnderLease(temp.Path, lease: null));
 
         Assert.Equal(ErrorCodes.OutputUnwritable, error.Code);
         Assert.Equal("recovery", error.Details!["phase"]!.GetValue<string>());
@@ -914,7 +914,7 @@ public sealed class AtomicOutputSetWriterTests
             """);
 
         CliException error = Assert.Throws<CliException>(
-            () => AtomicOutputSetWriter.RecoverPending(temp.Path));
+            () => AtomicPublicationRecovery.RecoverPendingUnderLease(temp.Path, lease: null));
 
         Assert.Equal(ErrorCodes.OutputUnwritable, error.Code);
         Assert.Equal("recovery", error.Details!["phase"]!.GetValue<string>());
@@ -938,7 +938,7 @@ public sealed class AtomicOutputSetWriterTests
             """);
 
         CliException error = Assert.Throws<CliException>(
-            () => AtomicOutputSetWriter.RecoverPending(temp.Path));
+            () => AtomicPublicationRecovery.RecoverPendingUnderLease(temp.Path, lease: null));
 
         Assert.Equal(ErrorCodes.OutputUnwritable, error.Code);
         Assert.Equal("recovery", error.Details!["phase"]!.GetValue<string>());
@@ -1032,7 +1032,7 @@ public sealed class AtomicOutputSetWriterTests
         Assert.Equal(administrators, OwnerOf(transaction));
         Assert.NotEqual(WindowsIdentity.GetCurrent().User, OwnerOf(transaction));
 
-        int recovered = AtomicOutputSetWriter.RecoverPending(temp.Path);
+        int recovered = AtomicPublicationRecovery.RecoverPendingUnderLease(temp.Path, lease: null);
 
         Assert.Equal(1, recovered);
         Assert.Equal("original", File.ReadAllText(target));
@@ -1118,7 +1118,7 @@ public sealed class AtomicOutputSetWriterTests
 
         Assert.Equal("content", File.ReadAllText(target));
         Assert.True(File.Exists(journal));
-        Assert.Throws<CliException>(() => AtomicOutputSetWriter.RecoverPending(temp.Path));
+        Assert.Throws<CliException>(() => AtomicPublicationRecovery.RecoverPendingUnderLease(temp.Path, lease: null));
     }
 
     [Fact]

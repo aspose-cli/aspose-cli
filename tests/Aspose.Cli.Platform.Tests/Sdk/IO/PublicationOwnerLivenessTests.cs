@@ -17,7 +17,7 @@ public sealed class PublicationOwnerLivenessTests
         using var temp = new TempDirectory();
         string transaction = InterruptedPublication(temp, Environment.ProcessId, ProcessIdentity.CurrentStartUtcTicks);
 
-        Assert.Equal(0, AtomicOutputSetWriter.RecoverPending(temp.Path));
+        Assert.Equal(0, AtomicPublicationRecovery.RecoverPendingUnderLease(temp.Path, lease: null));
         Assert.Equal("candidate", File.ReadAllText(temp.File("document.txt")));
         Assert.True(Directory.Exists(transaction));
     }
@@ -28,7 +28,7 @@ public sealed class PublicationOwnerLivenessTests
         using var temp = new TempDirectory();
         string transaction = InterruptedPublication(temp, Environment.ProcessId, ownerStartTicks: 1);
 
-        Assert.Equal(1, AtomicOutputSetWriter.RecoverPending(temp.Path));
+        Assert.Equal(1, AtomicPublicationRecovery.RecoverPendingUnderLease(temp.Path, lease: null));
         Assert.Equal("original", File.ReadAllText(temp.File("document.txt")));
         Assert.False(Directory.Exists(transaction));
     }
@@ -39,7 +39,7 @@ public sealed class PublicationOwnerLivenessTests
         using var temp = new TempDirectory();
         string transaction = InterruptedPublication(temp, Environment.ProcessId, ownerStartTicks: 0);
 
-        Assert.Equal(0, AtomicOutputSetWriter.RecoverPending(temp.Path));
+        Assert.Equal(0, AtomicPublicationRecovery.RecoverPendingUnderLease(temp.Path, lease: null));
         Assert.Equal("candidate", File.ReadAllText(temp.File("document.txt")));
         Assert.True(Directory.Exists(transaction));
     }
