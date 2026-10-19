@@ -1,4 +1,3 @@
-using System.Globalization;
 using Aspose.Slides.Charts;
 using static Aspose.Cli.Product.Slides.Engine.Editing.SlidesMutationSupport;
 
@@ -31,7 +30,7 @@ internal static class SlidesChartUpdate
     internal static IReadOnlyList<IReadOnlyList<double>> Values(IChart chart) =>
         chart.ChartData.Series
             .Select(series => (IReadOnlyList<double>)series.DataPoints
-                .Select(point => Number(IsScatter(chart) ? point.YValue.Data : point.Value.Data))
+                .Select(point => SlidesStateProjection.Number(IsScatter(chart) ? point.YValue.Data : point.Value.Data))
                 .ToArray())
             .ToArray();
 
@@ -355,15 +354,6 @@ internal static class SlidesChartUpdate
         left.ChartDataWorksheet.Index == right.ChartDataWorksheet.Index
         && left.Row == right.Row
         && left.Column == right.Column;
-
-    internal static double Number(object? value) =>
-        double.TryParse(
-            Convert.ToString(value, CultureInfo.InvariantCulture),
-            NumberStyles.Float,
-            CultureInfo.InvariantCulture,
-            out double parsed)
-            ? parsed
-            : 0;
 
     private static Aspose.Cli.Sdk.Errors.CliException Unsupported(string reason) =>
         ChartDataInvalid($"this chart cannot be updated in place: {reason}. Recreate it with insert_chart.");
