@@ -268,9 +268,10 @@ public sealed class McpCommandTests
     public async Task Execute_OneSecondTimeoutDoesNotRequireAReadyDescendant()
     {
         Requires.Windows();
-        string root = Path.Combine(Path.GetTempPath(), $"aspose-mcp-timeout-{Guid.NewGuid():N}");
-        Directory.CreateDirectory(root);
-        string script = Path.Combine(root, "single-worker.ps1");
+        // The killed interpreter can hold its script for a moment after the run ends, so the
+        // directory is removed on a best-effort basis.
+        using var directory = new TempDirectory();
+        string script = directory.File("single-worker.ps1");
         Task<McpExecutionResult>? execution = null;
         using var cancellation = new CancellationTokenSource();
         try
@@ -289,8 +290,7 @@ public sealed class McpCommandTests
         finally
         {
             cancellation.Cancel();
-            try { await ObserveCanceledExecutionAsync(execution); }
-            finally { Directory.Delete(root, recursive: true); }
+            await ObserveCanceledExecutionAsync(execution);
         }
     }
 
