@@ -1232,6 +1232,7 @@ C-R20 | ops field list across products
 C-R20 | ops field margins across products
 C-R20 | ops field maxReplacementCount across products
 C-R20 | ops field name across products
+C-R20 | ops field numberFormat across products
 C-R20 | ops field numberStyle across products
 C-R20 | ops field orientation across products
 C-R20 | ops field pageSize across products
@@ -2558,6 +2559,7 @@ C-R20 | v2/words/ops field maxLevel
 C-R20 | v2/words/ops field maxReplacementCount
 C-R20 | v2/words/ops field name
 C-R20 | v2/words/ops field nth
+C-R20 | v2/words/ops field numberFormat
 C-R20 | v2/words/ops field numberStyle
 C-R20 | v2/words/ops field orientation
 C-R20 | v2/words/ops field pageSetup
@@ -3611,6 +3613,7 @@ C-R30 | words set_footer
 C-R30 | words set_header
 C-R30 | words set_list
 C-R30 | words set_list on a number style and a first number
+C-R30 | words set_list on a parenthesized number format
 C-R30 | words set_page_numbers
 C-R30 | words set_page_setup
 C-R30 | words set_properties

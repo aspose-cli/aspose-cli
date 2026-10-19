@@ -144,8 +144,58 @@ internal static class WordsReadBack
             Kind = bullet ? "bullet" : "number",
             Level = paragraph.ListFormat.ListLevelNumber + 1,
             NumberStyle = bullet || level.NumberStyle == NumberStyle.None ? null : NumberStyleName(level.NumberStyle),
+            NumberFormat = bullet ? null : NumberFormatNotation(level.NumberFormat),
             Start = bullet ? null : level.StartAt,
         };
+    }
+
+    /// <summary>
+    /// The engine's number format of a numberFormat, whose %1 to %9 the engine stores as the
+    /// characters 0 to 8 that stand for the numbers of those levels, and whose %% is a percent sign.
+    /// </summary>
+    internal static string NumberFormatOf(string notation)
+    {
+        var format = new System.Text.StringBuilder(notation.Length);
+        for (int index = 0; index < notation.Length; index++)
+        {
+            if (notation[index] == '%' && index + 1 < notation.Length && notation[index + 1] is >= '1' and <= '9')
+            {
+                format.Append((char)(notation[++index] - '1'));
+            }
+            else if (notation[index] == '%' && index + 1 < notation.Length && notation[index + 1] == '%')
+            {
+                format.Append(notation[++index]);
+            }
+            else
+            {
+                format.Append(notation[index]);
+            }
+        }
+
+        return format.ToString();
+    }
+
+    /// <summary>The numberFormat of an engine number format: <see cref="NumberFormatOf"/> reversed.</summary>
+    internal static string NumberFormatNotation(string format)
+    {
+        var notation = new System.Text.StringBuilder(format.Length + 2);
+        foreach (char character in format)
+        {
+            if (character < (char)9)
+            {
+                notation.Append('%').Append((char)('1' + character));
+            }
+            else if (character == '%')
+            {
+                notation.Append("%%");
+            }
+            else
+            {
+                notation.Append(character);
+            }
+        }
+
+        return notation.ToString();
     }
 
     /// <summary>The number styles of page numbers and numbered lists, by their names (<see cref="PageNumberStyles"/>).</summary>

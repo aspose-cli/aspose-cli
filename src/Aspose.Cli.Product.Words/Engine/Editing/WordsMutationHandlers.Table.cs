@@ -284,6 +284,7 @@ internal sealed partial class WordsMutationHandlers
         numbering = numbering with
         {
             Style = operation.NumberStyle is { } name ? WordsReadBack.NumberStyleOf(name) : numbering.Style,
+            Format = operation.NumberFormat is { } format ? WordsReadBack.NumberFormatOf(format) : numbering.Format,
             Start = operation.Start ?? numbering.Start,
         };
         if (IsAlreadyTheList(paragraphs, level, numbering))
@@ -293,6 +294,7 @@ internal sealed partial class WordsMutationHandlers
 
         List list = _document.Lists.Add(template);
         list.ListLevels[level].NumberStyle = numbering.Style;
+        list.ListLevels[level].NumberFormat = numbering.Format;
         list.ListLevels[level].StartAt = numbering.Start;
         foreach (Paragraph paragraph in paragraphs)
         {

@@ -200,6 +200,7 @@ internal static class WordsOperationSample
                 Kind = "number",
                 Level = 1,
                 NumberStyle = "letters-lower",
+                NumberFormat = "(%1)",
                 Start = 3,
             },
             new ClearListOp { Target = new WordsTarget { Blocks = "7-9" } },
