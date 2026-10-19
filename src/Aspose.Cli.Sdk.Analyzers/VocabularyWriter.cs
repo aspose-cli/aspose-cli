@@ -10,7 +10,7 @@ internal sealed class VocabularyWriter(
     IReadOnlyDictionary<string, INamedTypeSymbol> symbols,
     INamedTypeSymbol vocabulary,
     List<(string Name, INamedTypeSymbol Type)> operations,
-    Action<Location, string> report)
+    Action<Location, string> report) : ContractReporter(report)
 {
     private const string Sdk = "global::" + SdkMetadataNames.OperationsNamespace + ".";
     private readonly Dictionary<INamedTypeSymbol, string?> _nestedLocals = new(SymbolEqualityComparer.Default);
@@ -29,7 +29,6 @@ internal sealed class VocabularyWriter(
     private readonly INamedTypeSymbol _operationInput = symbols[SdkMetadataNames.OperationInputAttribute];
     private readonly Dictionary<INamedTypeSymbol, bool> _classifiedRecords = new(SymbolEqualityComparer.Default);
     private HashSet<string> _addresses = new(StringComparer.Ordinal);
-    private bool _failed;
 
     /// <summary>
     /// Every record the vocabulary describes: its operations, the base records they inherit
@@ -76,7 +75,7 @@ internal sealed class VocabularyWriter(
         }
 
         string[] descriptors = [.. ordered.Select(operation => Operation(operation.Name, operation.Type))];
-        return _failed ? null : Source(schemaId, context!, ordered, descriptors);
+        return Failed ? null : Source(schemaId, context!, ordered, descriptors);
     }
 
     /// <summary>The relative schema id as a C# literal, or empty when the declaration names none.</summary>
@@ -598,7 +597,7 @@ internal sealed class VocabularyWriter(
             source.Append($"\nnamespace {input.ContainingNamespace.ToDisplayString()};\n");
         }
 
-        return _failed ? null : source
+        return Failed ? null : source
             .Append($"\npartial record {input.Name}\n{{\n")
             .Append("    /// <summary>The record's operation contract, generated from its declaration; vocabularies of every assembly refer to it.</summary>\n")
             .Append($"    public static {Sdk}OperationRecord Contract {{ get; }} = CreateContract();\n\n")
@@ -684,20 +683,6 @@ internal sealed class VocabularyWriter(
             .Append(string.Join("\n", descriptors))
             .Append("\n        ];\n    }\n}\n")
             .ToString();
-    }
-
-    private string Invalid(IPropertySymbol property, string reason)
-    {
-        Report(property, $"'{property.ContainingType.Name}.{property.Name}': {reason}.");
-        return string.Empty;
-    }
-
-    private void Report(ISymbol symbol, string message) => Report(SourceLocation(symbol), message);
-
-    private void Report(Location location, string message)
-    {
-        _failed = true;
-        report(location, message);
     }
 
     /// <summary>One described member of a contract record.</summary>
