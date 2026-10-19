@@ -496,6 +496,37 @@ public sealed class CellsOperationsTests : IClassFixture<CellsFixture>
         Assert.StartsWith("=SUBTOTAL(", workbook.Worksheets["Data"].Cells["D6"].Formula, StringComparison.Ordinal);
     }
 
+    [Theory]
+    [InlineData("""{ "op": "insert_sheet", "name": "second" }""", "insert-sheet-taken")]
+    [InlineData("""{ "op": "rename_sheet", "sheet": "Data", "name": "SECOND" }""", "rename-sheet-taken")]
+    public void SheetName_ANameTheWorkbookUsesIsRefusedAsTaken(string operation, string fileName)
+    {
+        string source = _fixture.CreateSalesWorkbook(fileName + ".xlsx");
+        string output = _fixture.Temp.File(fileName + ".out.xlsx");
+
+        CliException error = Assert.Throws<CliException>(() => Apply(source,
+            $$"""{ "ops": [ {{operation}} ] }""", fileName + ".out.xlsx"));
+
+        Assert.Equal(ErrorCodes.OpsInvalid, error.Code);
+        Assert.Contains("the workbook already has a sheet named 'Second'", error.Message, StringComparison.Ordinal);
+        Assert.Contains("another name", error.Hint, StringComparison.Ordinal);
+        Assert.Contains("rename or delete the existing sheet first", error.Hint, StringComparison.Ordinal);
+        Assert.False(File.Exists(output));
+    }
+
+    [Fact]
+    public void RenameSheet_MayChangeOnlyTheCaseOfItsOwnName()
+    {
+        string source = _fixture.CreateSalesWorkbook("rename-sheet-case.xlsx");
+
+        CellsEditResult result = Apply(source,
+            """{ "ops": [ { "op": "rename_sheet", "sheet": "Data", "name": "DATA" } ] }""",
+            "rename-sheet-case.out.xlsx");
+
+        using var workbook = new Workbook(result.Output!.Path);
+        Assert.Equal("DATA", workbook.Worksheets[0].Name);
+    }
+
     [Fact]
     public void ResizeTable_RefusesToShrinkATableWithATotalsRow()
     {
