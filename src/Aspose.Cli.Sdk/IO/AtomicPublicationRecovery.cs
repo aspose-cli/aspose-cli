@@ -107,6 +107,15 @@ internal sealed class AtomicPublicationRecovery(AtomicPublicationPlan plan)
             {
                 // A concurrent owner or recovery completed after directory discovery.
             }
+            catch (PublicationJournalVersionException exception)
+            {
+                // Recovery never touches what another version's transaction holds.
+                throw CliErrors.OutputUnwritable(
+                    root,
+                    "an abandoned publication journal was written by another version of Aspose CLI; its transaction directory was preserved",
+                    exception,
+                    phase: "recovery");
+            }
             catch (InvalidDataException exception)
             {
                 throw CliErrors.OutputUnwritable(
@@ -890,6 +899,10 @@ internal sealed class AtomicPublicationRecovery(AtomicPublicationPlan plan)
         {
             // A terminal transaction may finish cleanup between discovery and the read.
             return false;
+        }
+        catch (PublicationJournalVersionException)
+        {
+            throw;
         }
         catch (Exception exception) when (
             exception is IOException
