@@ -154,6 +154,23 @@ public sealed class CellsCliTests : IDisposable
     }
 
     [Theory]
+    [InlineData("""{"ops":[{"op":"insert_sheet","name":"rates"}]}""")]
+    [InlineData("""{"ops":[{"op":"rename_sheet","sheet":"Data","name":"RATES"}]}""")]
+    public void Edit_ASheetNameTheWorkbookUsesIsRefusedAsTakenWithoutWriting(string operations)
+    {
+        Assert.Equal(0, _workspace.Run("cells", "create", "book.xlsx", "--sheets", "Data,Rates").ExitCode);
+
+        CliResult taken = _workspace.Run(
+            "cells", "edit", "book.xlsx", "--out", "edited.xlsx", "--output-format", "json", "--ops", operations);
+
+        JsonNode error = JsonNode.Parse(taken.StdErr)!["error"]!;
+        Assert.Equal("OPS_INVALID", error["code"]!.GetValue<string>());
+        Assert.Contains("already has a sheet named 'Rates'", error["message"]!.GetValue<string>(), StringComparison.Ordinal);
+        Assert.Contains("another name", error["hint"]!.GetValue<string>(), StringComparison.Ordinal);
+        Assert.False(File.Exists(_workspace.File("edited.xlsx")));
+    }
+
+    [Theory]
     [InlineData("table")]
     [InlineData("markdown")]
     public void Inspect_HumanOutputShowsTheRequestedDetails(string format)
