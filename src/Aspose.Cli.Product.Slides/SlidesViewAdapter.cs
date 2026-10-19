@@ -1,5 +1,6 @@
 using Aspose.Cli.Sdk.Extensibility;
 using Aspose.Cli.Sdk.Licensing;
+using Aspose.Cli.Sdk.Results;
 using Aspose.Cli.Sdk.Views;
 
 namespace Aspose.Cli.Product.Slides;
@@ -70,9 +71,7 @@ internal sealed class SlidesViewAdapter : IProductViewAdapter<SlidesSession>
                 ReviewCoverageMetric.Of("textOverflows", analysis.TextOverflows, "shapes"),
                 ReviewCoverageMetric.Of("emptyPlaceholders", analysis.EmptyPlaceholders, "placeholders"),
                 ReviewCoverageMetric.Of("lowContrastTexts", analysis.LowContrastTexts, "shapes"),
-                .. analysis.ExcludedEvaluationMarks is int marks
-                    ? [ReviewCoverageMetric.Of("excludedEvaluationMarks", marks, "shapes")]
-                    : Array.Empty<ReviewCoverageMetric>(),
+                .. EnvelopeParts.ExcludedEvaluationMarks(session.Outputs.License, analysis.ExcludedEvaluationMarks ?? 0, "shapes"),
             ],
         };
     }

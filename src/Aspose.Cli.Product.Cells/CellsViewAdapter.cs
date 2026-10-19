@@ -1,6 +1,7 @@
 using Aspose.Cli.Product.Cells.Engine.Mapping;
 using Aspose.Cli.Sdk.Extensibility;
 using Aspose.Cli.Sdk.Licensing;
+using Aspose.Cli.Sdk.Results;
 using Aspose.Cli.Sdk.Views;
 
 namespace Aspose.Cli.Product.Cells;
@@ -91,7 +92,7 @@ internal sealed class CellsViewAdapter : IProductViewAdapter<CellsSession>
                 ReviewCoverageMetric.Of("charts", layout.Sheets.Sum(static sheet => sheet.Charts.Count), "charts"),
                 ReviewCoverageMetric.Of("sheetsWithPrintArea", layout.Sheets.Count(static sheet => sheet.PrintArea is not null), "sheets"),
                 ReviewCoverageMetric.Of("formulaErrors", info.Workbook.FormulaErrors?.Count ?? 0, "cells"),
-                .. evaluation ? [ReviewCoverageMetric.Of("excludedEvaluationMarks", excludedMarks, "sheets")] : Array.Empty<ReviewCoverageMetric>(),
+                .. EnvelopeParts.ExcludedEvaluationMarks(session.Outputs.License, excludedMarks, "sheets"),
             ],
             // Complete says whether every check ran; an error finding is a result, which the
             // review weighs after any --code filter.
