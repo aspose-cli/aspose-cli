@@ -69,11 +69,16 @@ public sealed class OutputPipelineEncryptionTests
         encrypted.Write(temp.File("kept.pdf"), false, null, Save, encrypted: true);
         encrypted.Write(temp.File("page.png"), false, null, Save, rendering: true);
         // Images saved without rendering, in a render format and in a declared image format, and
-        // extracted form data.
+        // an extraction of what the engine derives.
         encrypted.Write(temp.File("sheet.png"), false, null, Save);
         encrypted.Write(temp.File("photo.JPG"), false, null, Save);
         encrypted.Write(temp.File("pages.TIF"), false, null, Save);
-        encrypted.WriteExtracted(temp.File("fields.json"), false, Save);
+        using (ExtractionGuard extraction = encrypted.BeginExtraction(temp.File("extracted"), overwrite: false))
+        {
+            extraction.WriteAllBytes("fields.json", [1]);
+            extraction.Commit();
+        }
+
         using (OutputSet<object> set = encrypted.BeginSet([temp.Path], "test"))
         {
             set.Stage(temp.File("page.2.png"), false, null, Save, rendering: true);
