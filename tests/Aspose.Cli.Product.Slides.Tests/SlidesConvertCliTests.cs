@@ -121,6 +121,22 @@ public sealed class SlidesConvertCliTests : IDisposable
         Assert.Contains("""{"op":"set_slide_hidden","slides":"2","hidden":false}""", warning["hint"]!.GetValue<string>(), StringComparison.Ordinal);
     }
 
+    /// <summary>A PDF export holds the slides alone: the speaker notes are not in it.</summary>
+    [Fact]
+    public void PdfExport_LeavesSpeakerNotesOut()
+    {
+        Run("slides", "create", "deck.pptx", "--from-markdown", "deck.md");
+        Run("slides", "edit", "deck.pptx", "--in-place", "--ops", """[{"op":"set_notes","slide":1,"text":"Zq9x"}]""");
+
+        Run("slides", "convert", "deck.pptx", "--out", "deck.pdf");
+        CliResult read = _workspace.Run("pdf", "read", "deck.pdf", "--output-format", "json");
+
+        Assert.True(read.ExitCode is 0 or 8, read.StdErr);
+        Assert.Equal(4, Run("pdf", "inspect", "deck.pdf")["pdf"]!["pageCount"]!.GetValue<int>());
+        Assert.Contains("First", read.StdOut, StringComparison.Ordinal);
+        Assert.DoesNotContain("Zq9x", read.StdOut, StringComparison.Ordinal);
+    }
+
     /// <summary>The slide numbers of selected slides converted to Markdown are their numbers in the deck.</summary>
     [Fact]
     public void SelectedSlidesInMarkdown_KeepTheirSlideNumbers()
