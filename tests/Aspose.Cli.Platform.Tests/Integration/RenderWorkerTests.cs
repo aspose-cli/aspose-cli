@@ -1,4 +1,5 @@
 using System.Text.Json.Nodes;
+using Aspose.Cli.Host.Viewer;
 using Aspose.Cli.Host.ViewerService;
 using Aspose.Cli.Host.LocalServices;
 using Aspose.Cli.Sdk.Errors;

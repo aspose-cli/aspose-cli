@@ -1,6 +1,7 @@
 using System.CommandLine;
 using Aspose.Cli.Host.Invocation;
 using Aspose.Cli.Host.LocalServices;
+using Aspose.Cli.Host.Viewer;
 using Aspose.Cli.Host.ViewerService;
 using Aspose.Cli.Sdk;
 using Aspose.Cli.Sdk.Contracts;

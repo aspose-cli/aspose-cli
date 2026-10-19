@@ -1,3 +1,4 @@
+using Aspose.Cli.Host.Viewer;
 using Aspose.Cli.Sdk.Errors;
 
 namespace Aspose.Cli.Host.ViewerService;

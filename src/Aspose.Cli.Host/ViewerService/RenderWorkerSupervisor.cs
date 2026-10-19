@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using Aspose.Cli.Host.LocalServices;
+using Aspose.Cli.Host.Viewer;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.IO;
 
