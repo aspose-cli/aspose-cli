@@ -108,6 +108,23 @@ public sealed class PdfRenderGridTests
         Assert.Equal(expected.ToArray(), File.ReadAllBytes(output));
     }
 
+    [Fact]
+    public void Grid_OnVectorOutputNamesTheRasterRenderFormats()
+    {
+        using var fixture = new PdfEngineFixture();
+        string input = CreatePage(fixture, "blank.pdf", Rotation.None, marker: null);
+
+        CliException error = Assert.Throws<CliException>(() => PdfRender.Run(fixture.Session, new PdfRenderRequest
+        {
+            Input = input,
+            Output = TestOutput.At(fixture.File("refused.svg"), format: "svg"),
+            Grid = 50,
+        }));
+
+        Assert.Equal("Invalid use of --grid: applies only to png and jpeg output", error.Message);
+        Assert.Equal("Render the page with --to png or --to jpeg to draw a coordinate grid.", error.Hint);
+    }
+
     [Theory]
     [InlineData("svg", 50)]
     [InlineData("png", 9)]
