@@ -1,6 +1,5 @@
 using System.Globalization;
 using System.Security.Cryptography;
-using Aspose.Cli.Product.Slides.Engine.Editing;
 using Aspose.Slides;
 using Aspose.Slides.Charts;
 using Aspose.Slides.SlideShow;
@@ -92,11 +91,11 @@ internal static class SlidesStateProjection
 
     /// <summary>The one solid color every fill of a shape (each cell of a table) states, as #RRGGBB, or null.</summary>
     internal static string? FillColor(IShape shape) =>
-        OneColor(SlidesMutationHandlers.Fills(shape).Select(static fill => (fill.FillType, fill.SolidFillColor.Color)));
+        OneColor(SlidesShapeFormats.Fills(shape).Select(static fill => (fill.FillType, fill.SolidFillColor.Color)));
 
     /// <summary>The one solid color every outline of a shape (each cell border of a table) states, as #RRGGBB, or null.</summary>
     internal static string? Line(IShape shape) =>
-        OneColor(SlidesMutationHandlers.Lines(shape).Select(static line => (line.FillType, line.SolidFillColor.Color)));
+        OneColor(SlidesShapeFormats.Lines(shape).Select(static line => (line.FillType, line.SolidFillColor.Color)));
 
     /// <summary>The paragraphs of a shape's own text frame with the list, bullets or numbers at a 1-based level, each one belongs to.</summary>
     internal static IReadOnlyList<SlidesParagraphData>? Paragraphs(IShape shape, ref int remaining, ref bool truncated)
@@ -159,8 +158,8 @@ internal static class SlidesStateProjection
             series.Add(new SlidesChartSeriesData
             {
                 Name = Take(Text(item.Name.AsCells.FirstOrDefault()?.Value), ref remaining, ref truncated) ?? string.Empty,
-                Values = [.. item.DataPoints.Select(point => SlidesChartUpdate.Number(scatter ? point.YValue.Data : point.Value.Data))],
-                XValues = scatter ? [.. item.DataPoints.Select(static point => SlidesChartUpdate.Number(point.XValue.Data))] : null,
+                Values = [.. item.DataPoints.Select(point => Number(scatter ? point.YValue.Data : point.Value.Data))],
+                XValues = scatter ? [.. item.DataPoints.Select(static point => Number(point.XValue.Data))] : null,
             });
         }
 
@@ -182,6 +181,16 @@ internal static class SlidesStateProjection
             Series = series,
         };
     }
+
+    /// <summary>A chart data value as a number, 0 for one that is not.</summary>
+    internal static double Number(object? value) =>
+        double.TryParse(
+            Convert.ToString(value, CultureInfo.InvariantCulture),
+            NumberStyles.Float,
+            CultureInfo.InvariantCulture,
+            out double parsed)
+            ? parsed
+            : 0;
 
     /// <summary>A slide's own background, or null when it shows its layout's.</summary>
     internal static SlidesBackgroundData? Background(ISlide slide) =>
@@ -234,12 +243,12 @@ internal static class SlidesStateProjection
     {
         yield return string.Create(CultureInfo.InvariantCulture,
             $"{shape.GetType().Name}|{shape.Name}|{shape.AlternativeText}|{shape.X:R},{shape.Y:R},{shape.Width:R},{shape.Height:R}");
-        foreach (IFillFormat fill in SlidesMutationHandlers.Fills(shape))
+        foreach (IFillFormat fill in SlidesShapeFormats.Fills(shape))
         {
             yield return "fill|" + Fill(fill);
         }
 
-        foreach (ILineFillFormat line in SlidesMutationHandlers.Lines(shape))
+        foreach (ILineFillFormat line in SlidesShapeFormats.Lines(shape))
         {
             yield return $"line|{line.FillType}|{Color(line.FillType, line.SolidFillColor.Color)}";
         }
@@ -253,7 +262,7 @@ internal static class SlidesStateProjection
             }
         }
 
-        foreach (IBasePortionFormat format in SlidesMutationHandlers.TextFormats(shape) ?? [])
+        foreach (IBasePortionFormat format in SlidesShapeFormats.TextFormats(shape) ?? [])
         {
             yield return string.Create(CultureInfo.InvariantCulture,
                 $"format|{format.LatinFont?.FontName}|{format.EastAsianFont?.FontName}|{format.ComplexScriptFont?.FontName}|{format.FontHeight:R}|{format.FontBold}|{Fill(format.FillFormat)}");

@@ -1,7 +1,7 @@
 using System.Drawing;
 using System.Globalization;
 
-namespace Aspose.Cli.Product.Slides;
+namespace Aspose.Cli.Product.Slides.Engine.Mapping;
 
 /// <summary>How far apart two colors are to the eye, as WCAG measures it.</summary>
 internal static class SlidesContrast
