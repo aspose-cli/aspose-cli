@@ -102,9 +102,13 @@ public sealed class PdfConformanceTests
         Assert.True(File.Exists(Assert.Single(result.Outputs).Path));
     }
 
-    [Fact]
-    public void APdfaConversionWhoseOutputDoesNotValidate_NamesTheRadioGroupsAndIsNotPublished()
+    [Theory]
+    [InlineData("pdfa-1b", "6.5.3")]
+    [InlineData("pdfa-2b", "6.3.3")]
+    [InlineData("pdfa-3b", "6.3.3")]
+    public void APdfaConversionWhoseOutputDoesNotValidate_NamesTheRadioGroupsAndIsNotPublished(string profile, string clause)
     {
+        // Each profile numbers the clause on annotation appearances its own way.
         using var fixture = new PdfEngineFixture();
         string html = fixture.File("form.html");
         File.WriteAllText(html, """
@@ -120,11 +124,11 @@ public sealed class PdfConformanceTests
         CliException error = Assert.Throws<CliException>(() => PdfConvert.Run(fixture.Session, new PdfConvertRequest
         {
             Input = form,
-            Output = TestOutput.At(output, format: "pdfa-2b"),
+            Output = TestOutput.At(output, format: profile),
         }));
 
         Assert.Equal("PDFA_CONVERSION_FAILED", error.Code.Name);
-        Assert.Equal("6.3.3", Assert.Single(error.Details!["problems"]!.AsArray())!["clause"]!.GetValue<string>());
+        Assert.Equal(clause, Assert.Single(error.Details!["problems"]!.AsArray())!["clause"]!.GetValue<string>());
         Assert.Contains("'radio'", error.Hint, StringComparison.Ordinal);
         // Text fields and check boxes, whose appearances have a state each, conform as they are.
         Assert.DoesNotContain("'company'", error.Hint, StringComparison.Ordinal);
@@ -140,8 +144,8 @@ public sealed class PdfConformanceTests
             Batch = new PdfOpsBatch { Ops = [new FlattenFormsOp { Fields = ["radio"] }] },
             Output = TestOutput.At(flattened),
         });
-        PdfConvert.Run(fixture.Session, new PdfConvertRequest { Input = flattened, Output = TestOutput.At(output, format: "pdfa-2b") });
-        Assert.True(PdfValidate.Run(fixture.Session, new PdfValidateRequest { Input = output, Profile = "pdfa-2b" }).Valid);
+        PdfConvert.Run(fixture.Session, new PdfConvertRequest { Input = flattened, Output = TestOutput.At(output, format: profile) });
+        Assert.True(PdfValidate.Run(fixture.Session, new PdfValidateRequest { Input = output, Profile = profile }).Valid);
     }
 
     [Theory]
