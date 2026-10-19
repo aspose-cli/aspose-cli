@@ -1,5 +1,6 @@
 using System.Globalization;
 using Aspose.Cli.Host.LocalServices;
+using Aspose.Cli.Sdk;
 using Aspose.Cli.Sdk.IO;
 
 namespace Aspose.Cli.Host.ViewerService;
@@ -15,10 +16,7 @@ internal sealed class ViewerStorage : IDisposable
     internal const string RevisionsDirectory = "revisions";
     private const int DeleteAttempts = 4;
     private static readonly object Gate = new();
-    private static readonly HashSet<string> ActiveRoots = new(
-        OperatingSystem.IsWindows()
-            ? StringComparer.OrdinalIgnoreCase
-            : StringComparer.Ordinal);
+    private static readonly HashSet<string> ActiveRoots = new(FilePaths.Comparer);
     private static readonly long CurrentProcessStart = ProcessIdentity.CurrentStartUtcTicks;
 
     private readonly Func<string, bool> _deleteDirectory;
@@ -259,14 +257,8 @@ internal sealed class ViewerStorage : IDisposable
         {
             string full = Path.GetFullPath(candidate);
             string? parent = Path.GetDirectoryName(full);
-            StringComparison comparison = OperatingSystem.IsWindows()
-                ? StringComparison.OrdinalIgnoreCase
-                : StringComparison.Ordinal;
             return parent is not null
-                && string.Equals(
-                    Path.TrimEndingDirectorySeparator(parent),
-                    Path.TrimEndingDirectorySeparator(categoryRoot),
-                    comparison)
+                && FilePaths.Same(Path.TrimEndingDirectorySeparator(parent), Path.TrimEndingDirectorySeparator(categoryRoot))
                 && TryParseOwner(
                     Path.GetFileName(full),
                     out _,

@@ -183,7 +183,7 @@ internal static class UpdateClient
         {
             throw HostDiagnostics.ReleaseVerificationFailed("the update archive has an invalid entry count");
         }
-        var paths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var paths = new HashSet<string>(FilePaths.Comparer);
         long total = 0;
         foreach (var entry in zip.Entries)
         {
@@ -426,9 +426,7 @@ internal static class UpdateClient
         private static void EnsureLocal(string path)
         {
             string full = Path.GetFullPath(path);
-            if (full.StartsWith("\\\\", StringComparison.Ordinal)
-                || full.StartsWith("\\\\?\\", StringComparison.Ordinal)
-                || full.StartsWith("\\\\.\\", StringComparison.Ordinal))
+            if (FilePaths.IsRemoteOrDevice(full))
             {
                 throw CliErrors.OptionInvalid("feed", "UNC and device paths are not accepted", "Use a local fixed-disk feed path.");
             }

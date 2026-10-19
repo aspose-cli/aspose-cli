@@ -1,6 +1,7 @@
 using System.Runtime.ExceptionServices;
 using System.Text;
 using Aspose.Cli.Host.LocalServices;
+using Aspose.Cli.Sdk;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Views;
 
@@ -21,14 +22,8 @@ internal sealed class BoundedViewArtifactSink : IViewArtifactSink
     private readonly object _gate = new();
     private readonly string _root;
     private readonly LocalServiceResourceLimits _limits;
-    private readonly HashSet<string> _paths = new(
-        OperatingSystem.IsWindows()
-            ? StringComparer.OrdinalIgnoreCase
-            : StringComparer.Ordinal);
-    private readonly HashSet<string> _directories = new(
-        OperatingSystem.IsWindows()
-            ? StringComparer.OrdinalIgnoreCase
-            : StringComparer.Ordinal);
+    private readonly HashSet<string> _paths = new(FilePaths.Comparer);
+    private readonly HashSet<string> _directories = new(FilePaths.Comparer);
     private ExceptionDispatchInfo? _failure;
     private long _totalBytes;
 

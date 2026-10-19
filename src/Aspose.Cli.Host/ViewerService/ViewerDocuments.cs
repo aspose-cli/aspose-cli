@@ -1,5 +1,6 @@
 using System.Security.Cryptography;
 using Aspose.Cli.Host.LocalServices;
+using Aspose.Cli.Sdk;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.IO;
 
@@ -171,9 +172,5 @@ internal sealed class ViewerDocuments : IDisposable
 
     private LiveDocument? Find(string source, LiveDocumentOptions options) =>
         _byId.Values.FirstOrDefault(document =>
-            string.Equals(
-                document.SourcePath,
-                source,
-                OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal)
-            && document.Matches(options));
+            FilePaths.Same(document.SourcePath, source) && document.Matches(options));
 }

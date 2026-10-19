@@ -1,3 +1,5 @@
+using Aspose.Cli.Sdk;
+
 namespace Aspose.Cli.Host;
 
 /// <summary>
@@ -15,7 +17,7 @@ internal static class WindowsPowerShell
             "WindowsPowerShell",
             "v1.0",
             "powershell.exe"));
-        return executable.StartsWith(systemDirectory + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase)
+        return FilePaths.IsWithin(systemDirectory, executable, allowEqual: false)
             && File.Exists(executable)
             && (File.GetAttributes(executable) & FileAttributes.ReparsePoint) == 0
                 ? executable

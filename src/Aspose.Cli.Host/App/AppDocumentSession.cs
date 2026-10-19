@@ -2,6 +2,7 @@ using Aspose.Cli.Host.Catalog;
 using Aspose.Cli.Host.Invocation;
 using Aspose.Cli.Host.LocalServices;
 using Aspose.Cli.Host.ViewerService;
+using Aspose.Cli.Sdk;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.IO;
 
@@ -18,8 +19,7 @@ internal sealed class AppDocumentSession : IDisposable
 {
     private readonly object _gate = new();
     // AppHost serializes mutations; this gate protects short immutable-state reads only.
-    private readonly Dictionary<string, RetainedResource<OwnedTemporaryFile>> _uploads = new(
-        OperatingSystem.IsWindows() ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal);
+    private readonly Dictionary<string, RetainedResource<OwnedTemporaryFile>> _uploads = new(FilePaths.Comparer);
     private readonly List<Task> _retiredUploads = [];
     private bool _disposed;
     private readonly ProductCatalog _catalog;
@@ -391,11 +391,7 @@ internal sealed class AppDocumentSession : IDisposable
                 && AppLicenseContext.Same(lease.License, license));
     }
 
-    private static bool SamePath(string left, string right) =>
-        string.Equals(
-            left,
-            right,
-            OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal);
+    private static bool SamePath(string left, string right) => FilePaths.Same(left, right);
 
     public void RefreshPreferences(string productId, string desiredView)
     {

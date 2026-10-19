@@ -364,7 +364,7 @@ internal sealed record BundledSkill(
             throw new InvalidDataException("the ownership manifest is missing from the inventory");
         }
 
-        var expected = new Dictionary<string, SkillFileEntry>(StringComparer.OrdinalIgnoreCase);
+        var expected = new Dictionary<string, SkillFileEntry>(FilePaths.Comparer);
         foreach (JsonElement item in manifest.GetProperty("files").EnumerateArray())
         {
             RequireProperties(item, "path", "size", "sha256");
@@ -377,7 +377,7 @@ internal sealed record BundledSkill(
             }
         }
 
-        if (!expected.Keys.ToHashSet(StringComparer.OrdinalIgnoreCase)
+        if (!expected.Keys.ToHashSet(FilePaths.Comparer)
             .SetEquals(tree.Files.Keys))
         {
             throw ManagedSkillConflict(
@@ -414,8 +414,8 @@ internal sealed record BundledSkill(
     private static SkillTree ReadTree(string target)
     {
         EnsureNoReparsePoint(target);
-        var files = new Dictionary<string, FileInfo>(StringComparer.OrdinalIgnoreCase);
-        var directories = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var files = new Dictionary<string, FileInfo>(FilePaths.Comparer);
+        var directories = new HashSet<string>(FilePaths.Comparer);
         var pending = new Queue<DirectoryInfo>();
         pending.Enqueue(new DirectoryInfo(target));
         while (pending.Count != 0)
@@ -450,7 +450,7 @@ internal sealed record BundledSkill(
 
     private static HashSet<string> ExpectedDirectories(IEnumerable<string> files)
     {
-        var result = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var result = new HashSet<string>(FilePaths.Comparer);
         foreach (string file in files)
         {
             string? directory = Path.GetDirectoryName(file.Replace('/', Path.DirectorySeparatorChar));
@@ -574,10 +574,7 @@ internal sealed record BundledSkill(
     private static void EnsureNoReparsePoint(string path)
     {
         string fullPath = Path.GetFullPath(path);
-        if (OperatingSystem.IsWindows()
-            && (fullPath.StartsWith("\\\\", StringComparison.Ordinal)
-                || fullPath.StartsWith("\\\\?\\", StringComparison.Ordinal)
-                || fullPath.StartsWith("\\\\.\\", StringComparison.Ordinal)))
+        if (FilePaths.IsRemoteOrDevice(fullPath))
         {
             throw ManagedSkillConflict(fullPath, "remote and device paths are not allowed");
         }
@@ -595,7 +592,7 @@ internal sealed record BundledSkill(
             }
 
             string? parent = Path.GetDirectoryName(cursor);
-            if (string.Equals(parent, cursor, StringComparison.Ordinal))
+            if (FilePaths.Same(parent, cursor))
             {
                 break;
             }

@@ -1,3 +1,5 @@
+using Aspose.Cli.Sdk;
+
 namespace Aspose.Cli.Host.ViewerService;
 
 /// <summary>
@@ -81,13 +83,7 @@ internal static class OwnedDirectory
         && new DirectoryInfo(path).LinkTarget is null;
 
     private static bool DirectoriesEqual(string? left, string right) =>
-        left is not null
-        && string.Equals(
-            Normalize(left),
-            right,
-            OperatingSystem.IsWindows()
-                ? StringComparison.OrdinalIgnoreCase
-                : StringComparison.Ordinal);
+        left is not null && FilePaths.Same(Normalize(left), right);
 
     private static string Normalize(string path) =>
         Path.TrimEndingDirectorySeparator(Path.GetFullPath(path));
