@@ -8,9 +8,9 @@ public sealed class WorkerOutputSession
     public const string DeadlineEnvironmentVariable = DistributionInfo.EnvironmentVariablePrefix + "WORKER_DEADLINE_TICK";
     public const string BudgetEnvironmentVariable = DistributionInfo.EnvironmentVariablePrefix + "WORKER_BUDGET_MS";
     public const string WorkerEnvironmentVariable = DistributionInfo.EnvironmentVariablePrefix + "TIMEOUT_WORKER";
-    public const string ManifestName = "output-manifest.v5.json";
+    public const string ManifestName = "output-manifest.json";
     private readonly object _gate = new();
-    private readonly List<WorkerOutputEntry> _entries = [];
+    private readonly List<PlannedOutput> _entries = [];
     private readonly Dictionary<string, WorkerDirectoryEntry> _directories = new(FilePaths.Comparer);
     private readonly string _root;
     private readonly string _manifestPath;
@@ -83,8 +83,8 @@ public sealed class WorkerOutputSession
             if (_directoryOutput is not null) { throw new IOException("A new-directory output cannot be combined with file outputs."); }
             if (entries.Count > PublicationLimits.MaximumEntries - _entries.Count)
             { throw new IOException("The worker output entry budget was exceeded."); }
-            var paths = new HashSet<string>(_entries.SelectMany(entry => entry.BackupPath is null
-                ? new[] { entry.Target } : new[] { entry.Target, entry.BackupPath }), FilePaths.Comparer);
+            var paths = new HashSet<string>(_entries.SelectMany(entry => entry.RequestedBackup is null
+                ? new[] { entry.Target } : new[] { entry.Target, entry.RequestedBackup }), FilePaths.Comparer);
             var directories = new Dictionary<string, WorkerDirectoryEntry>(_directories, FilePaths.Comparer);
             foreach (string directory in outputDirectories) { AddDirectory(directories, directory); AddParents(directories, directory); }
             foreach (PublicationJournalEntry entry in entries)
@@ -94,66 +94,55 @@ public sealed class WorkerOutputSession
                 AddParents(directories, entry.Target);
                 if (entry.RequestedBackup is not null) { AddParents(directories, entry.RequestedBackup); }
             }
-            var additions = new List<WorkerOutputEntry>(entries.Count);
-            var retained = new List<OwnedTemporaryFile>(entries.Count);
+            var additions = new List<PlannedOutput>(entries.Count);
+            var moved = new List<(string Path, FilePublicationSnapshot Snapshot)>(entries.Count);
+            var created = new List<string>(entries.Count);
             bool accepted = false;
             try
             {
                 foreach (PublicationJournalEntry entry in entries)
                 {
                     deadline.ThrowIfExpired("worker-handoff");
-                    string path = Path.Combine(CreateDirectory("retained"), "output.stage");
-                    OwnedTemporaryFile temporary = OwnedTemporaryFile.Create(path);
-                    retained.Add(temporary);
-                    using (var source = new FileStream(entry.Staged, FileMode.Open, FileAccess.Read, FileShare.Read))
-                    using (var destination = new FileStream(path, FileMode.Truncate, FileAccess.Write, FileShare.None))
-                    {
-                        if (!entry.StagedSnapshot.VersionEquals(FilePublicationSnapshot.Capture(entry.Staged)))
-                        { throw new IOException("The produced output changed before handoff."); }
-                        byte[] buffer = new byte[81920];
-                        int count;
-                        while ((count = source.Read(buffer)) != 0)
-                        {
-                            deadline.ThrowIfExpired("worker-handoff-copy");
-                            destination.Write(buffer, 0, count);
-                        }
-                        destination.Flush(flushToDisk: true);
-                    }
-                    temporary.BindProducedFile();
-                    FilePublicationSnapshot snapshot = temporary.CaptureBoundSnapshot();
-                    if (!entry.StagedSnapshot.ContentEquals(snapshot))
-                    { throw new IOException("Worker handoff changed the output content."); }
-                    additions.Add(new WorkerOutputEntry
-                    {
-                        Target = entry.Target, Staged = path, StagedSnapshot = snapshot,
-                        Original = entry.Original, Overwrite = entry.Overwrite, DeleteTarget = entry.DeleteTarget,
-                        BackupPath = entry.RequestedBackup, BackupOriginal = entry.RequestedBackupOriginal,
-                        InputPath = entry.InputPath, InputSnapshot = entry.InputSnapshot,
-                        TargetParentIdentity = entry.TargetParentIdentity, BackupParentIdentity = entry.RequestedBackupParentIdentity,
-                    });
+                    string directory = CreateDirectory("retained");
+                    created.Add(directory);
+                    string path = Path.Combine(directory, "output.stage");
+                    // The staged file and the handoff share this root, so the file moves instead of
+                    // being copied; keeping its physical identity proves it is the file staging verified.
+                    AtomicFileRename.Move(entry.Staged, path, overwrite: false, deadline);
+                    moved.Add((path, entry.StagedSnapshot));
+                    if (!entry.StagedSnapshot.VersionEquals(FilePublicationSnapshot.Capture(path)))
+                    { throw new IOException("The produced output changed before handoff."); }
+                    additions.Add(entry.StagedAt(path));
                 }
-                WorkerOutputEntry[] next = [.. _entries, .. additions];
+                PlannedOutput[] next = [.. _entries, .. additions];
                 WorkerManifestStore.CheckCapacity(new WorkerOutputManifest
                 { Entries = next, Directories = directories.Values.ToArray(), Sealed = true });
                 deadline.ThrowIfExpired("worker-handoff-accept");
                 _entries.AddRange(additions);
                 _directories.Clear();
                 foreach ((string path, WorkerDirectoryEntry value) in directories) { _directories.Add(path, value); }
-                foreach (OwnedTemporaryFile temporary in retained) { temporary.MarkPublished(); }
                 accepted = true;
             }
             finally
             {
-                foreach (OwnedTemporaryFile temporary in retained)
-                {
-                    temporary.Dispose();
-                    if (!accepted)
-                    {
-                        try { Directory.Delete(Path.GetDirectoryName(temporary.Path)!, recursive: false); }
-                        catch (IOException) { }
-                    }
-                }
+                if (!accepted) { DiscardHandoff(moved, created); }
             }
+        }
+    }
+
+    // A refused batch leaves no output in the handoff; a file that is no longer the one staged is
+    // left for the removal of this root.
+    private static void DiscardHandoff(List<(string Path, FilePublicationSnapshot Snapshot)> moved, List<string> created)
+    {
+        foreach ((string path, FilePublicationSnapshot snapshot) in moved)
+        {
+            try { _ = FilePublicationOwnedDelete.TryDelete(path, snapshot); }
+            catch (Exception error) when (error is IOException or UnauthorizedAccessException) { }
+        }
+        foreach (string directory in created)
+        {
+            try { Directory.Delete(directory, recursive: false); }
+            catch (Exception error) when (error is IOException or UnauthorizedAccessException) { }
         }
     }
 
@@ -221,11 +210,17 @@ public sealed class WorkerOutputSession
     }
 }
 
+/// <summary>
+/// What a worker hands to its parent. The worker and its parent are one executable, so a
+/// manifest of another version is refused rather than read.
+/// </summary>
 internal sealed record WorkerOutputManifest
 {
-    public int Version { get; init; } = 7;
+    internal const int CurrentVersion = 8;
+
+    public int Version { get; init; } = CurrentVersion;
     public bool Sealed { get; init; }
-    public IReadOnlyList<WorkerOutputEntry> Entries { get; init; } = [];
+    public IReadOnlyList<PlannedOutput> Entries { get; init; } = [];
     public IReadOnlyList<WorkerDirectoryEntry> Directories { get; init; } = [];
     public NewDirectoryOutput? DirectoryOutput { get; init; }
 
@@ -237,22 +232,6 @@ internal sealed record WorkerOutputManifest
     /// publishes only while the target still holds it. Null when the worker admitted nothing.
     /// </summary>
     public AdmittedDirectoryPrevious? DirectoryAdmittedPrevious { get; init; }
-}
-
-internal sealed record WorkerOutputEntry
-{
-    public required string Target { get; init; }
-    public required string Staged { get; init; }
-    public required FilePublicationSnapshot Original { get; init; }
-    public required FilePublicationSnapshot StagedSnapshot { get; init; }
-    public bool Overwrite { get; init; }
-    public bool DeleteTarget { get; init; }
-    public string? BackupPath { get; init; }
-    public FilePublicationSnapshot? BackupOriginal { get; init; }
-    public string? InputPath { get; init; }
-    public FilePublicationSnapshot? InputSnapshot { get; init; }
-    public FilePhysicalIdentity? TargetParentIdentity { get; init; }
-    public FilePhysicalIdentity? BackupParentIdentity { get; init; }
 }
 
 internal sealed record WorkerDirectoryEntry(string Target, bool Existed, FilePhysicalIdentity? OriginalIdentity);

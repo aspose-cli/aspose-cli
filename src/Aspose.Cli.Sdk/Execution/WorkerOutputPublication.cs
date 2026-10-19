@@ -50,19 +50,19 @@ public static class WorkerOutputPublisher
             {
                 string root = CommonRoot(manifest.Entries);
                 using var transaction = new AtomicOutputSetWriter(new SafeFileWriter(budgets), root, "worker-publication", faults ?? NoPublicationFaultInjector.Instance);
-                foreach (WorkerOutputEntry entry in manifest.Entries)
+                foreach (PlannedOutput entry in manifest.Entries)
                 {
                     budgets.Deadline.ThrowIfExpired("worker-stage");
                     if (entry.TargetParentIdentity is not null) { OutputPathValidator.EnsureParentUnchanged(entry.Target, entry.TargetParentIdentity); }
-                    if (entry.BackupPath is { } backup && entry.BackupOriginal is { } expected)
+                    if (entry.RequestedBackup is { } backup && entry.RequestedBackupOriginal is { } expected)
                     {
                         if (!expected.VersionEquals(FilePublicationSnapshot.Capture(backup))) { throw PublicationErrors.OutputConflict(backup, expected, FilePublicationSnapshot.Capture(backup)); }
-                        if (entry.BackupParentIdentity is not null) { OutputPathValidator.EnsureParentUnchanged(backup, entry.BackupParentIdentity); }
+                        if (entry.RequestedBackupParentIdentity is not null) { OutputPathValidator.EnsureParentUnchanged(backup, entry.RequestedBackupParentIdentity); }
                     }
                     if (entry.DeleteTarget) { transaction.StageDeletionPrepared(entry.Target, entry.Original); }
                     else
                     {
-                        StagedOutput staged = transaction.StagePrepared(entry.Target, entry.Overwrite, entry.BackupPath, entry.Original,
+                        StagedOutput staged = transaction.StagePrepared(entry.Target, entry.Overwrite, entry.RequestedBackup, entry.Original,
                             path => CopyCandidate(entry, path, budgets),
                             entry.InputPath is null ? null : FileWritePrecondition.FromSnapshot(entry.InputPath, entry.InputSnapshot!));
                         if (!entry.StagedSnapshot.ContentEquals(staged.Snapshot)) { throw new IOException("The worker output changed during publication staging."); }
@@ -83,7 +83,7 @@ public static class WorkerOutputPublisher
         }
     }
 
-    private static void CopyCandidate(WorkerOutputEntry entry, string destination, ResourceBudgetLedger budgets)
+    private static void CopyCandidate(PlannedOutput entry, string destination, ResourceBudgetLedger budgets)
     {
         using var input = new FileStream(entry.Staged, FileMode.Open, FileAccess.Read, FileShare.Read);
         if (!entry.StagedSnapshot.VersionEquals(FilePublicationSnapshot.Capture(entry.Staged)))
@@ -100,8 +100,8 @@ public static class WorkerOutputPublisher
         { throw new IOException("The worker output changed during staging."); }
     }
 
-    private static string CommonRoot(IReadOnlyList<WorkerOutputEntry> entries) =>
-        OutputSetPaths.CommonDirectory(entries.SelectMany(entry => entry.BackupPath is null
+    private static string CommonRoot(IReadOnlyList<PlannedOutput> entries) =>
+        OutputSetPaths.CommonDirectory(entries.SelectMany(entry => entry.RequestedBackup is null
             ? new[] { Path.GetDirectoryName(entry.Target)! }
-            : new[] { Path.GetDirectoryName(entry.Target)!, Path.GetDirectoryName(entry.BackupPath)! }));
+            : new[] { Path.GetDirectoryName(entry.Target)!, Path.GetDirectoryName(entry.RequestedBackup)! }));
 }
