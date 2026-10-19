@@ -1,5 +1,4 @@
 using System.CommandLine;
-using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Extensibility;
 using Aspose.Cli.Sdk.Extensibility.Output;
 
@@ -11,11 +10,7 @@ internal static class ExtractCommand
     {
         var what = new Option<string>("--what") { Required = true, Description = "What to extract; tables writes one CSV file per body table." }.WithInput(InputKind.None);
         what.AcceptOnlyFromAmong([.. WordsExtractTargets.Names]);
-        var bom = new Option<bool>("--bom")
-        {
-            Description = "Start each table's CSV with a UTF-8 byte order mark, so Excel reads its non-English text "
-                + "correctly; only with --what tables. Default: UTF-8 without one.",
-        };
+        var bom = new BomOption("each table's CSV", onlyWith: "--what tables");
         return new(
             "extract",
             "Extract bounded document assets.",
@@ -24,16 +19,12 @@ internal static class ExtractCommand
                 Input = WordsInputs.Document,
                 Output = OutputTarget.Directory("Safe extraction directory."),
             },
-            [what, bom],
+            [what, .. bom.Options],
             (parse, standard) =>
             {
                 // The usage check runs before the input is resolved or read.
                 string kind = parse.GetRequiredValue(what);
-                bool byteOrderMark = parse.GetValue(bom);
-                if (byteOrderMark && kind != WordsExtractTargets.Tables)
-                {
-                    throw CliErrors.OptionInvalid("--bom", $"--what {kind} writes no CSV tables", "Drop --bom.");
-                }
+                bool byteOrderMark = bom.Read(parse, kind == WordsExtractTargets.Tables ? null : $"--what {kind} writes no CSV tables");
 
                 return new WordsExtractRequest
                 {
