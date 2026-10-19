@@ -156,6 +156,40 @@ public sealed class SlidesTextCoverageTests
         Assert.Contains("sq", text, StringComparison.Ordinal);
     }
 
+    /// <summary>
+    /// Extracted text holds neither a shape's alternative text nor a chart's text; a shapes read
+    /// reports the alternative text as the shape's <c>altText</c>.
+    /// </summary>
+    [Fact]
+    public void ExtractedText_LeavesAltTextAndChartTextOut()
+    {
+        using var fixture = new SlidesEngineFixture();
+        string input = fixture.File("alt.pptx");
+        using (var presentation = new Presentation())
+        {
+            ISlide slide = presentation.Slides[0];
+            IAutoShape box = slide.Shapes.AddAutoShape(ShapeType.Rectangle, 20, 20, 200, 80);
+            box.TextFrame.Text = "kq";
+            box.AlternativeText = "zalt";
+            slide.Shapes.AddChart(Aspose.Slides.Charts.ChartType.ClusteredColumn, 20, 120, 300, 200);
+            presentation.Save(input, SaveFormat.Pptx);
+        }
+
+        SlidesExtractResult extract = SlidesExtract.Run(
+            fixture.Session,
+            new SlidesExtractRequest { Input = input, Output = new ResolvedDirectory(fixture.File("text")), What = SlidesExtractKinds.Text });
+        SlidesReadResult read = SlidesRead.Run(
+            fixture.Session,
+            new SlidesReadRequest { Input = input, Content = SlidesReadContents.Shapes });
+
+        string text = File.ReadAllText(Assert.Single(extract.Outputs).Path);
+        Assert.Contains("kq", text, StringComparison.Ordinal);
+        Assert.DoesNotContain("zalt", text, StringComparison.Ordinal);
+        Assert.DoesNotContain("Categ", text, StringComparison.Ordinal);
+        Assert.DoesNotContain("Serie", text, StringComparison.Ordinal);
+        Assert.Contains(Assert.Single(read.Slides).Shapes, static shape => shape.Text == "kq" && shape.AltText == "zalt");
+    }
+
     [Fact]
     public void ExtractedTextAndSearchHits_EndEveryParagraphWithOneLineFeed()
     {
