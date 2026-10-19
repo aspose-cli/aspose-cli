@@ -1,6 +1,6 @@
 using Aspose.Cli.Host.LocalServices;
 
-namespace Aspose.Cli.Host.ViewerService;
+namespace Aspose.Cli.Host.Viewer;
 
 /// <summary>
 /// The frame contract between the viewer service and its warm render worker.

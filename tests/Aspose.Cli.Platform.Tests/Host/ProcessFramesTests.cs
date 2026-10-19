@@ -4,6 +4,7 @@ using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
 using Aspose.Cli.Host.Invocation;
+using Aspose.Cli.Host.Viewer;
 using Aspose.Cli.Host.ViewerService;
 using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Host.LocalServices;
