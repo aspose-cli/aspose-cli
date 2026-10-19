@@ -74,6 +74,39 @@ public sealed class CellsProtectionTests(CellsProtectionTests.ProtectedBook book
     }
 
     [Fact]
+    public void Edit_SettingAndClearingAPropertyGoThroughTheSameProtection()
+    {
+        int edit = 0;
+        // The tab color goes through the structure, set or cleared, even on the unprotected sheet 'Open'.
+        foreach (string op in (string[])[
+            """{"op":"set_tab_color","sheet":"Open","color":"#4472C4"}""",
+            """{"op":"clear_tab_color","sheet":"Open"}"""])
+        {
+            Warning structure = Unenforced(book.Edit($"tab-color-{++edit}.xlsx", op));
+            Assert.Null(structure.Location);
+            Assert.Contains("The edit changed the protected workbook structure;", structure.Message, StringComparison.Ordinal);
+            Assert.Contains("renames, moves, hides and recolors no sheets", structure.Hint, StringComparison.Ordinal);
+        }
+
+        // A batch through a protected sheet and the structure names both, tab colors among the structure's.
+        Warning both = Unenforced(book.Edit("sheet-and-tab-color.xlsx",
+            """{"op":"set_values","sheet":"Data","range":"A1","values":[[1]]},{"op":"set_tab_color","sheet":"Data","color":"#4472C4"}"""));
+        Assert.Null(both.Location);
+        Assert.Contains("protected sheet 'Data' and the protected workbook structure", both.Message, StringComparison.Ordinal);
+        Assert.Contains("and no sheets or tab colors while the structure is protected", both.Hint, StringComparison.Ordinal);
+
+        // The panes and the print area go through no protection, set or cleared, even on the protected sheet 'Data'.
+        foreach (string op in (string[])[
+            """{"op":"freeze_panes","sheet":"Data","cell":"B2"}""",
+            """{"op":"unfreeze_panes","sheet":"Data"}""",
+            """{"op":"set_print_area","sheet":"Data","range":"A1:B2"}""",
+            """{"op":"clear_print_area","sheet":"Data"}"""])
+        {
+            Assert.DoesNotContain(Warnings(book.Edit($"view-{++edit}.xlsx", op)), static warning => Code(warning) == "PROTECTION_NOT_ENFORCED");
+        }
+    }
+
+    [Fact]
     public void Protect_WarnsOnlyWhenItReprotectsWhatIsProtected()
     {
         Warning sheet = Unenforced(book.Edit("reprotected-sheet.xlsx",

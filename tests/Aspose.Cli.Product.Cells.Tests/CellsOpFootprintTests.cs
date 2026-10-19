@@ -290,10 +290,10 @@ public sealed class CellsOpFootprintTests
         "delete_sheet | structure",
         "set_sheet_visibility | structure",
         "freeze_panes | none",
-        "unfreeze_panes | sheet Sales",
+        "unfreeze_panes | none",
         "clear_autofilter | sheet Sales",
-        "clear_tab_color | sheet Sales",
-        "clear_print_area | sheet Sales",
+        "clear_tab_color | structure",
+        "clear_print_area | none",
         "insert_chart | sheet Sales",
         "insert_pivot | sheet Summary",
         "set_page_setup | none",
@@ -353,10 +353,10 @@ public sealed class CellsOpFootprintTests
         "insert_pivot | sheet Sheet1",
         "refresh_pivot | sheet Sheet1",
         "insert_image | sheet Sheet1",
-        "clear_tab_color | sheet Sheet1",
-        "unfreeze_panes | sheet Sheet1",
+        "clear_tab_color | structure",
+        "unfreeze_panes | none",
         "clear_autofilter | sheet Sheet1",
-        "clear_print_area | sheet Sheet1",
+        "clear_print_area | none",
         "group_rows | sheet Sheet1",
         "ungroup_rows | sheet Sheet1",
         "group_columns | sheet Sheet1",
@@ -398,6 +398,49 @@ public sealed class CellsOpFootprintTests
         "set_hyperlink | sheet Sales",
         "delete_hyperlink | sheet Sales",
     ];
+
+    /// <summary>
+    /// Why setting and clearing a sheet's tab color, panes and print area each go through the
+    /// same protection, from the engine alone. The engine refuses none of them under sheet or
+    /// structure protection, so Excel's protection decides. A sheet's protection has no
+    /// permission for any of them: they are not its contents. The print area is a workbook
+    /// defined name, as define_name writes, so it goes through no protection; the panes are
+    /// part of the sheet's view, as set_sheet_view writes, so they go through none either. The
+    /// tab color is part of the sheet's tab, which Excel's structure protection locks with
+    /// renaming, moving and hiding a sheet, so it goes through the structure.
+    /// </summary>
+    [Fact]
+    public void Engine_AppliesTabColorPanesAndPrintAreaThroughEitherProtection()
+    {
+        using var workbook = new Workbook();
+        Worksheet sheet = workbook.Worksheets[0];
+        sheet.Protect(ProtectionType.All);
+        workbook.Protect(ProtectionType.Structure, null);
+
+        sheet.TabColor = System.Drawing.Color.Red;
+        sheet.FreezePanes(1, 1, 1, 1);
+        sheet.PageSetup.PrintArea = "A1:B2";
+        Assert.False(sheet.TabColor.IsEmpty);
+        Assert.Equal(PaneStateType.Frozen, sheet.PaneState);
+        Name printArea = Assert.Single(workbook.Worksheets.Names.Cast<Name>());
+        Assert.Equal("Print_Area", printArea.Text);
+        Assert.Equal(1, printArea.SheetIndex);
+
+        sheet.TabColor = System.Drawing.Color.Empty;
+        sheet.UnFreezePanes();
+        sheet.PageSetup.PrintArea = string.Empty;
+        Assert.True(sheet.TabColor.IsEmpty);
+        Assert.NotEqual(PaneStateType.Frozen, sheet.PaneState);
+        Assert.True(string.IsNullOrEmpty(Assert.Single(workbook.Worksheets.Names.Cast<Name>()).RefersTo));
+
+        Assert.True(sheet.IsProtected);
+        Assert.Equal(ProtectionType.Structure, workbook.Settings.ProtectionType);
+        Assert.DoesNotContain(
+            typeof(Protection).GetProperties().Select(static property => property.Name),
+            static name => name.StartsWith("Allow", StringComparison.Ordinal)
+                && (name.Contains("TabColor", StringComparison.Ordinal) || name.Contains("Pane", StringComparison.Ordinal)
+                    || name.Contains("Freez", StringComparison.Ordinal) || name.Contains("Print", StringComparison.Ordinal)));
+    }
 
     private static string Observed(ProtectedChange change) =>
         change.Sheet is { } sheet ? $"sheet {sheet}{(change.KeptPassword ? " kept password" : string.Empty)}"
