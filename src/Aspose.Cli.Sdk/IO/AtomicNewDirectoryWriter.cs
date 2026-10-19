@@ -78,7 +78,7 @@ public sealed class AtomicNewDirectoryWriter : IDisposable
         _parents.Ensure(parent);
         _transaction = budgets.OutputSession?.CreateDirectory("directory")
             ?? PublicationTransactionDirectory.Create(Path.Combine(_transactionParent ?? parent,
-                $".aspose-publication-{Environment.ProcessId}-{PublicationJournal.CurrentProcessStartUtcTicks}-{Guid.NewGuid():N}"));
+                $".aspose-publication-{Environment.ProcessId}-{ProcessIdentity.CurrentStartUtcTicks}-{Guid.NewGuid():N}"));
         _transactionIdentity = FilePublicationOwnedDelete.TryGetDirectoryIdentity(_transaction);
         StagingDirectory = Directory.CreateDirectory(Path.Combine(_transaction, "directory")).FullName;
         _candidateIdentity = FilePublicationOwnedDelete.TryGetDirectoryIdentity(StagingDirectory);

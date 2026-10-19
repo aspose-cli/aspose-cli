@@ -15,7 +15,7 @@ public sealed class PublicationOwnerLivenessTests
     public void AJournalOfALiveOwner_IsNotRecovered()
     {
         using var temp = new TempDirectory();
-        string transaction = InterruptedPublication(temp, Environment.ProcessId, PublicationJournal.CurrentProcessStartUtcTicks);
+        string transaction = InterruptedPublication(temp, Environment.ProcessId, ProcessIdentity.CurrentStartUtcTicks);
 
         Assert.Equal(0, AtomicOutputSetWriter.RecoverPending(temp.Path));
         Assert.Equal("candidate", File.ReadAllText(temp.File("document.txt")));

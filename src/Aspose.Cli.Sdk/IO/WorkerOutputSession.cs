@@ -30,7 +30,7 @@ public sealed class WorkerOutputSession
     /// invocation can tell when that owner has exited (<see cref="RemoveAbandonedRoots"/>).
     /// </summary>
     public static string CreateRoot() => UserStorage.CreateTemporaryDirectory(
-        WorkerManifestStore.RootCategory, $"{Environment.ProcessId}-{PublicationJournal.CurrentProcessStartUtcTicks}");
+        WorkerManifestStore.RootCategory, $"{Environment.ProcessId}-{ProcessIdentity.CurrentStartUtcTicks}");
 
     /// <summary>
     /// Removes the worker roots whose owners exited without reclaiming them, such as a CLI

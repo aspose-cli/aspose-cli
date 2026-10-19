@@ -563,12 +563,15 @@ internal sealed class AtomicPublicationRecovery(AtomicPublicationPlan plan)
 
     /// <summary>Whether the process with this id and start time still runs; one this user may not inspect counts as alive.</summary>
     internal static bool IsCreatorAlive(int pid, long ticks) =>
-        ProcessIdentity.IsLive(pid, ticks, new ProcessLivenessPolicy
-        {
-            WhenDenied = ProcessLiveness.Alive,
-            WhenVanishing = ProcessLiveness.Dead,
-            ChecksExit = false,
-        });
+        ProcessIdentity.IsLive(pid, ticks, CreatorLiveness);
+
+    /// <summary>How recovery decides whether the process that created a transaction directory still runs.</summary>
+    internal static readonly ProcessLivenessPolicy CreatorLiveness = new()
+    {
+        WhenDenied = ProcessLiveness.Alive,
+        WhenVanishing = ProcessLiveness.Dead,
+        ChecksExit = false,
+    };
 
     private static void ValidateTransactionDirectory(
         string root,
@@ -954,15 +957,20 @@ internal sealed class AtomicPublicationRecovery(AtomicPublicationPlan plan)
             metadataVerified,
             failure);
 
-    // A reused PID that now belongs to a process this user may not inspect counts as the owner,
-    // like a creation's, rather than roll back its work.
     private static bool IsOwnerAlive(PublicationJournal journal) =>
-        ProcessIdentity.IsLive(journal.OwnerProcessId, journal.OwnerProcessStartUtcTicks, new ProcessLivenessPolicy
-        {
-            WhenDenied = ProcessLiveness.Alive,
-            WhenVanishing = ProcessLiveness.Dead,
-            ChecksExit = false,
-            UnknownStartMatches = true,
-        });
+        ProcessIdentity.IsLive(journal.OwnerProcessId, journal.OwnerProcessStartUtcTicks, OwnerLiveness);
+
+    /// <summary>
+    /// How recovery decides whether a journal's owner still runs. A reused PID that now belongs to
+    /// a process this user may not inspect counts as the owner, like a creation's, rather than
+    /// roll back its work.
+    /// </summary>
+    internal static readonly ProcessLivenessPolicy OwnerLiveness = new()
+    {
+        WhenDenied = ProcessLiveness.Alive,
+        WhenVanishing = ProcessLiveness.Dead,
+        ChecksExit = false,
+        UnknownStartMatches = true,
+    };
 
 }
