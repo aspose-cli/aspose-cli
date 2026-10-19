@@ -74,7 +74,7 @@ public sealed class InputLoadingTests
         File.WriteAllText(path, "x");
         using var holder = new FileStream(path, FileMode.Open, FileAccess.ReadWrite, FileShare.None);
 
-        CliException error = Assert.Throws<CliException>(() => Loading.Load(path, null, () => InputFiles.OpenRead(path)));
+        CliException error = Assert.Throws<CliException>(() => Loading.Load(path, default, () => InputFiles.OpenRead(path)));
 
         Assert.Equal(ErrorCodes.FileLocked, error.Code);
     }
@@ -95,7 +95,7 @@ public sealed class InputLoadingTests
         var original = new InvalidOperationException("engine defect");
 
         InvalidOperationException thrown = Assert.Throws<InvalidOperationException>(
-            () => Loading.Load<int>("any.doc", null, () => throw original));
+            () => Loading.Load<int>("any.doc", default, () => throw original));
 
         Assert.Same(original, thrown);
         Assert.Contains(nameof(AnUnclassifiedFailure_PropagatesWithItsStack), thrown.StackTrace, StringComparison.Ordinal);
@@ -106,8 +106,8 @@ public sealed class InputLoadingTests
     {
         CliException own = CliErrors.FileTooLarge(2, 1);
 
-        Assert.Same(own, Assert.Throws<CliException>(() => Loading.Load<int>("any.doc", null, () => throw own)));
-        Assert.Throws<OperationCanceledException>(() => Loading.Load<int>("any.doc", null, () => throw new OperationCanceledException()));
+        Assert.Same(own, Assert.Throws<CliException>(() => Loading.Load<int>("any.doc", default, () => throw own)));
+        Assert.Throws<OperationCanceledException>(() => Loading.Load<int>("any.doc", default, () => throw new OperationCanceledException()));
     }
 
     [Fact]
@@ -124,5 +124,5 @@ public sealed class InputLoadingTests
     }
 
     private static CliException Fail(string path, Secret? password, Exception exception) =>
-        Assert.Throws<CliException>(() => Loading.Load<int>(path, password, () => throw exception));
+        Assert.Throws<CliException>(() => Loading.Load<int>(path, PasswordSource.Option(password), () => throw exception));
 }

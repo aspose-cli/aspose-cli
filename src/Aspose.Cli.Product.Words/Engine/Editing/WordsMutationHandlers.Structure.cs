@@ -1,6 +1,6 @@
 using System.Data;
 using Aspose.Cli.Product.Words.Engine.Mapping;
-using Aspose.Cli.Sdk.Errors;
+using Aspose.Cli.Sdk.IO;
 using Aspose.Words;
 using Aspose.Words.Fields;
 
@@ -287,17 +287,8 @@ internal sealed partial class WordsMutationHandlers
         return default;
     }
 
-    private LoadedDocument OpenSource(ImportSectionsOp operation)
-    {
-        try
-        {
-            return _loader.Open(operation.Path, OperationSecrets.Resolve(_secrets, operation.SourcePasswordEnv));
-        }
-        catch (CliException error) when (CliErrors.IsPasswordError(error))
-        {
-            // The loader names the command's password option; a source's comes from its operation.
-            throw CliErrors.ForOperationSource(error, "sourcePasswordEnv");
-        }
-    }
+    private LoadedDocument OpenSource(ImportSectionsOp operation) =>
+        _loader.Open(operation.Path, PasswordSource.OperationField(
+            OperationSecrets.Resolve(_secrets, operation.SourcePasswordEnv), "sourcePasswordEnv"));
 }
 

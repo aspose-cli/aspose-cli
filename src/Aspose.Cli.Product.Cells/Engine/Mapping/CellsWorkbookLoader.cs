@@ -113,7 +113,7 @@ internal sealed class CellsWorkbookLoader
     /// </summary>
     internal LoadedWorkbook Open(
         string path,
-        Secret? password,
+        PasswordSource password,
         CellsTextImportOptions? textImport = null,
         bool calculateOnOpen = true)
     {
@@ -121,22 +121,34 @@ internal sealed class CellsWorkbookLoader
             () => OpenCore(path, password, textImport, published: false, calculateOnOpen));
     }
 
+    /// <inheritdoc cref="Open(string, PasswordSource, CellsTextImportOptions?, bool)"/>
+    /// <param name="path">The input file.</param>
+    /// <param name="password">The password from the command's <c>--password-env</c>, if any.</param>
+    /// <param name="textImport">How delimited text is imported.</param>
+    /// <param name="calculateOnOpen">Whether a workbook that asks to be calculated when opened is.</param>
+    internal LoadedWorkbook Open(
+        string path,
+        Secret? password,
+        CellsTextImportOptions? textImport = null,
+        bool calculateOnOpen = true) =>
+        Open(path, PasswordSource.Option(password), textImport, calculateOnOpen);
+
     // Derived output is already bounded by publication; it is not a new user input, and its
     // text was written with invariant formats, so its quoted text fields are not re-judged.
     // It is read as stored, since verification compares what was written.
     internal LoadedWorkbook OpenPublishedCandidate(string path, Secret? password, string? resourceSource = null) =>
-        InputOpening.OpenPublished(() => OpenCore(path, password, textImport: null, published: true, calculateOnOpen: false, resourceSource));
+        InputOpening.OpenPublished(() => OpenCore(path, PasswordSource.Option(password), textImport: null, published: true, calculateOnOpen: false, resourceSource));
 
     private LoadedWorkbook OpenCore(
         string path,
-        Secret? password,
+        PasswordSource password,
         CellsTextImportOptions? textImport,
         bool published,
         bool calculateOnOpen,
         string? resourceSource = null)
     {
         LoadPlan plan = ResolveLoadPlan(path, textImport, published);
-        if (plan.Encrypted && password is null)
+        if (plan.Encrypted && password.Password is null)
         {
             // Detection already knows the workbook is encrypted: refuse before the engine runs.
             throw InputLoading.PasswordRefused(path, password);
@@ -148,7 +160,7 @@ internal sealed class CellsWorkbookLoader
         try
         {
             LoadOptions options = plan.ToLoadOptions(resources);
-            options.Password = password?.Reveal();
+            options.Password = password.Password?.Reveal();
             using (FileStream input = InputFiles.OpenRead(path))
             {
                 workbook = new Workbook(input, options);
@@ -238,7 +250,7 @@ internal sealed class CellsWorkbookLoader
 
     private static LoadPlan ResolveFormatPlan(string path)
     {
-        FileFormatInfo detected = Loading.Load(path, password: null, () =>
+        FileFormatInfo detected = Loading.Load(path, password: default, () =>
         {
             using FileStream input = InputFiles.OpenRead(path);
             return FileFormatUtil.DetectFileFormat(input);

@@ -1,4 +1,4 @@
-using Aspose.Cli.Sdk.Errors;
+using Aspose.Cli.Sdk.IO;
 using Aspose.Pdf;
 using static Aspose.Cli.Product.Pdf.Engine.PdfEngineSupport;
 using static Aspose.Cli.Product.Pdf.Engine.Editing.PdfMutationSupport;
@@ -75,27 +75,14 @@ internal sealed partial class PdfMutationHandlers
     {
         EnsureInsertionPosition(_document, operation.At);
 
-        Secret? password = OperationSecrets.Resolve(_secrets, operation.SourcePasswordEnv);
-        using LoadedPdf source = OpenSource(operation.Path, password);
+        using LoadedPdf source = _loader.Open(operation.Path, PasswordSource.OperationField(
+            OperationSecrets.Resolve(_secrets, operation.SourcePasswordEnv), "sourcePasswordEnv"));
         IReadOnlyList<int> pages = operation.Pages is null
             ? Enumerable.Range(1, source.Document.Pages.Count).ToArray()
             : Resolve(source.Document, operation.Pages);
         using Document selected = Select(source.Document, pages);
         _document.Pages.Insert(operation.At, selected.Pages.ToArray());
         return default;
-    }
-
-    // The source's password comes from the operation's sourcePasswordEnv, not a command option.
-    private LoadedPdf OpenSource(string path, Secret? password)
-    {
-        try
-        {
-            return _loader.Open(path, password);
-        }
-        catch (CliException error) when (CliErrors.IsPasswordError(error))
-        {
-            throw CliErrors.ForOperationSource(error, "sourcePasswordEnv");
-        }
     }
 
     public ValueTuple Apply(InsertPageOp operation)

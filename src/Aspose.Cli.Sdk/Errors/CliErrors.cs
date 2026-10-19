@@ -227,40 +227,17 @@ public static partial class CliErrors
     }
 
     /// <summary>
-    /// Restates a password error raised while opening a file an operation reads, whose loader
-    /// cannot know where the password came from, for the operation's own password field.
+    /// An encrypted file the command opens with no password at all, such as a template:
+    /// <c>PASSWORD_REQUIRED</c> with <paramref name="hint"/> in place of the advice to retry with a
+    /// password.
     /// </summary>
-    public static CliException ForOperationSource(CliException error, string operationField)
-    {
-        ArgumentNullException.ThrowIfNull(error);
-        if (!IsPasswordError(error) || error.Details?["path"]?.GetValue<string>() is not { } path)
-        {
-            throw new ArgumentException($"{error.Code.Name} is not a password error of a file.", nameof(error));
-        }
-
-        return error.Code == ErrorCodes.PasswordRequired
-            ? PasswordRequired(path, operationField)
-            : PasswordInvalid(path, operationField);
-    }
-
-    /// <summary>
-    /// Restates a password error about a file the command opens with no password at all, such
-    /// as a template, with <paramref name="hint"/> in place of the advice to retry with a
-    /// password; the code and details stay.
-    /// </summary>
-    /// <param name="error">The <c>PASSWORD_REQUIRED</c> or <c>PASSWORD_INVALID</c> error the loader raised.</param>
+    /// <param name="path">The input file.</param>
     /// <param name="hint">What to do instead, such as using an unencrypted copy.</param>
-    public static CliException WithoutPassword(CliException error, string hint)
-    {
-        ArgumentNullException.ThrowIfNull(error);
-        ArgumentException.ThrowIfNullOrWhiteSpace(hint);
-        if (!IsPasswordError(error))
-        {
-            throw new ArgumentException($"{error.Code.Name} is not a password error.", nameof(error));
-        }
-
-        return CliException.Create(error.Code, error.Message, hint, error.Details?.DeepClone() as JsonObject, error.Docs, error);
-    }
+    public static CliException PasswordUnavailable(string path, string hint) => CliException.Create(
+        ErrorCodes.PasswordRequired,
+        $"File is encrypted and requires a password: {path}",
+        hint: hint,
+        details: new JsonObject { ["path"] = path });
 
     /// <summary>
     /// Restates a password error about one of the documents a command reads, naming the

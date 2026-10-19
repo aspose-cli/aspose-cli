@@ -1,5 +1,4 @@
 using Aspose.Cli.Product.Words.Engine.Mapping;
-using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Licensing;
 using Aspose.Cli.Sdk.Results;
@@ -41,18 +40,11 @@ internal static class WordsCreate
     /// </summary>
     private static LoadedDocument OpenTemplate(WordsSession session, string path)
     {
-        try
-        {
-            return session.Loader.Open(path, null);
-        }
-        catch (CliException error) when (CliErrors.IsPasswordError(error))
-        {
-            string copy = Path.Combine(Path.GetDirectoryName(path) ?? string.Empty, Path.GetFileNameWithoutExtension(path) + ".unencrypted.xml");
-            throw CliErrors.WithoutPassword(error,
-                "'words create' cannot open an encrypted template. With its password, write an unencrypted copy: "
-                + $"'aspose-cli words convert {Quoted(path)} --to flatopc --out {Quoted(copy)} --password-env <password-env>', "
-                + "then pass that copy to --template. Without the password, ask the user for an unencrypted copy of the template.");
-        }
+        string copy = Path.Combine(Path.GetDirectoryName(path) ?? string.Empty, Path.GetFileNameWithoutExtension(path) + ".unencrypted.xml");
+        return session.Loader.Open(path, PasswordSource.None(
+            "'words create' cannot open an encrypted template. With its password, write an unencrypted copy: "
+            + $"'aspose-cli words convert {Quoted(path)} --to flatopc --out {Quoted(copy)} --password-env <password-env>', "
+            + "then pass that copy to --template. Without the password, ask the user for an unencrypted copy of the template."));
     }
 
     /// <summary>
