@@ -43,6 +43,17 @@ public static class EnvelopeParts
         : new LicenseInfo { Mode = state.ToContractName() };
 
     /// <summary>
+    /// The review coverage metric <c>excludedEvaluationMarks</c>: in evaluation mode, the marks of
+    /// an evaluation save a review left out of its checks, such as warning sheets or watermark
+    /// text boxes; with a license a review checks them like any content and reports none.
+    /// </summary>
+    /// <param name="state">The license state the review ran in.</param>
+    /// <param name="marks">How many marks the review left out.</param>
+    /// <param name="unit">The unit of what was left out, e.g. <c>sheets</c>.</param>
+    public static IReadOnlyList<ReviewCoverageMetric> ExcludedEvaluationMarks(LicenseState state, long marks, string unit) =>
+        state == LicenseState.Evaluation ? [ReviewCoverageMetric.Of("excludedEvaluationMarks", marks, unit)] : [];
+
+    /// <summary>
     /// Discloses a list inside a result that holds only its first <paramref name="returned"/>
     /// of <paramref name="total"/> entries, so no result is cut short silently.
     /// </summary>
