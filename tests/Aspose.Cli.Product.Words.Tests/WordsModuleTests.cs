@@ -215,6 +215,8 @@ public sealed class WordsModuleTests
     [InlineData("""{"op":"set_page_setup","size":"a4"}""", "pageSize")]
     [InlineData("""{"op":"set_page_numbers","format":"decimal"}""", "numberStyle")]
     [InlineData("""{"op":"insert_paragraphs","at":{"block":1},"position":"after","paragraphs":[{"text":"a","listLevel":1}]}""", "list")]
+    [InlineData("""{"op":"set_header","text":"H"}""", "paragraphs")]
+    [InlineData("""{"op":"set_footer","content":"F"}""", "paragraphs")]
     public void RenamedField_IsRefusedWithItsNewName(string operation, string renamed)
     {
         CliException error = Assert.Throws<CliException>(() => Parse($$"""{"ops":[{{operation}}]}"""));
@@ -242,8 +244,11 @@ public sealed class WordsModuleTests
     }
 
     [Theory]
-    [InlineData("""{"op":"set_list","target":{"block":1},"kind":"bullet","numberStyle":"letters-lower"}""", "numberStyle and start number a list")]
-    [InlineData("""{"op":"set_list","target":{"block":1},"kind":"bullet","start":5}""", "numberStyle and start number a list")]
+    [InlineData("""{"op":"set_list","target":{"block":1},"kind":"bullet","numberStyle":"letters-lower"}""", "number a list")]
+    [InlineData("""{"op":"set_list","target":{"block":1},"kind":"bullet","start":5}""", "number a list")]
+    [InlineData("""{"op":"set_list","target":{"block":1},"kind":"bullet","numberFormat":"(%1)"}""", "number a list")]
+    [InlineData("""{"op":"set_list","target":{"block":1},"kind":"number","numberFormat":"%1.%2"}""", "%2")]
+    [InlineData("""{"op":"set_list","target":{"block":1},"kind":"number","numberFormat":"%1 of 50%"}""", "placeholders %1 to %9")]
     [InlineData("""{"op":"format_text","target":{"block":1},"regex":true,"bold":true}""", "true need match")]
     [InlineData("""{"op":"format_text","target":{"block":1},"caseSensitive":true,"bold":true}""", "true need match")]
     public void SettingWithoutWhatItNeeds_IsAnInvalidOperation(string operation, string reason)
@@ -253,6 +258,10 @@ public sealed class WordsModuleTests
         Assert.Equal(ErrorCodes.OpsInvalid, error.Code);
         Assert.Contains(reason, error.Message, StringComparison.Ordinal);
     }
+
+    [Fact]
+    public void NumberFormat_TakesFixedTextAndALiteralPercentSign() =>
+        Parse("""{"ops":[{"op":"set_list","target":{"block":1},"kind":"number","numberFormat":"Done 100%% %%2"}]}""");
 
     private static WordsOpsBatch Parse(string json) =>
         WordsOp.Catalog.Parse<WordsOpsBatch>(json, Aspose.Cli.Generated.ProductJsonContext.Definition);
