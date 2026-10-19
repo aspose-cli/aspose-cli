@@ -85,25 +85,28 @@ internal sealed class ParsedInvocation
     /// What makes the command line fail, other than a mistaken name: the problems, the first
     /// unknown command, option or value among it, the option or argument the first problem is
     /// about, and whether every problem is a value the command refused, so the command line
-    /// itself parses; null when nothing fails.
+    /// itself parses; null when nothing fails. Each kind of mistake is recognised by a method of
+    /// its own, tried in this order; the first that applies decides the refusal. The declarations
+    /// each one reads are listed on <c>CommandDefinition</c>.
     /// </summary>
-    private Refusal? Problems()
+    private Refusal? Problems() =>
+        MissingCommand()
+        ?? UnknownCommand()
+        ?? HelpOrVersionWord()
+        ?? Placeholder()
+        ?? ParseProblems();
+
+    /// <summary>A command that only groups others, given none of them (<see cref="LacksCommand"/>); null otherwise.</summary>
+    private Refusal? MissingCommand() =>
+        LacksCommand ? new([$"'{Path()}' needs a command."], null, null, ValuesOnly: false) : null;
+
+    /// <summary>
+    /// The parser's own errors and the options the arguments took: refused values alone
+    /// (<see cref="RefusedValues"/>), or else an unknown option or a stray argument
+    /// (<see cref="UnknownOptionOrArgument"/>); null when the command line parses.
+    /// </summary>
+    private Refusal? ParseProblems()
     {
-        if (LacksCommand)
-        {
-            return new([$"'{Path()}' needs a command."], null, null, ValuesOnly: false);
-        }
-
-        if ((UnknownCommand() ?? HelpOrVersionWord()) is { } unknown)
-        {
-            return new([unknown.Problem], unknown.Mistake, null, ValuesOnly: false, unknown.Corrected) { Hint = unknown.Hint };
-        }
-
-        if (Placeholder() is { } placeholder)
-        {
-            return placeholder;
-        }
-
         var values = new Dictionary<ParseError, RefusedValue>();
         foreach (ParseError error in ParseResult.Errors)
         {
@@ -125,11 +128,29 @@ internal sealed class ParsedInvocation
         }
 
         RefusedValue? first = ParseResult.Errors.Select(error => values.GetValueOrDefault(error)).FirstOrDefault(static value => value is not null);
-        if (first is not null && values.Count == ParseResult.Errors.Count && optionLike.Length == 0)
-        {
-            return new(problems, first.Mistake, first.Parameter, ValuesOnly: true) { Hint = first.Hint };
-        }
+        return RefusedValues(problems, first, values.Count, optionLike)
+            ?? UnknownOptionOrArgument(problems, first, optionLike);
+    }
 
+    /// <summary>
+    /// Every parse error is a value the command refused (<see cref="Refused"/>) and no argument
+    /// took an option: the command line itself parses, so the refusal is about the values alone,
+    /// with the first one's mistake and hint; null otherwise.
+    /// </summary>
+    private Refusal? RefusedValues(string[] problems, RefusedValue? first, int refused, string[] optionLike) =>
+        first is not null && refused == ParseResult.Errors.Count && optionLike.Length == 0
+            ? new(problems, first.Mistake, first.Parameter, ValuesOnly: true) { Hint = first.Hint }
+            : null;
+
+    /// <summary>
+    /// Any other failing command line: the first unknown option suggests the options closest to
+    /// it (<see cref="UnknownOptionMistake"/>) with the hint the command declares for it; without
+    /// one, a stray argument suggests the missing option it stands for
+    /// (<see cref="StrayArgumentMistake"/>), else the first refused value its own mistake, else a
+    /// single missing option its values.
+    /// </summary>
+    private Refusal UnknownOptionOrArgument(string[] problems, RefusedValue? first, string[] optionLike)
+    {
         string? unknownOption = ParseResult.UnmatchedTokens.Concat(optionLike).FirstOrDefault(static token => token.StartsWith('-'));
         Option? missing = MissingOptions().FirstOrDefault();
         Mistake? mistake = unknownOption is not null ? UnknownOptionMistake(unknownOption)
@@ -242,7 +263,7 @@ internal sealed class ParsedInvocation
     /// without its product, such as <c>read a.docx</c>, suggests that command of the product whose
     /// format the file's extension names, with the command line that runs it.
     /// </summary>
-    private (string Problem, Mistake Mistake, string? Hint, IReadOnlyList<string>? Corrected)? UnknownCommand()
+    private Refusal? UnknownCommand()
     {
         string[] commands = VisibleCommands();
         if (commands.Length == 0
@@ -257,15 +278,19 @@ internal sealed class ParsedInvocation
         (string Path, IReadOnlyList<string>? Corrected)? product = token is "help" or "version" ? null : ProductCommand(token);
         string[] meant = token switch
         {
-            "help" => [Below("--help")],
-            "version" when CommandPath.Count == 0 => ["--version"],
+            "help" => [Below(GlobalOptionNames.Help)],
+            "version" when CommandPath.Count == 0 => [GlobalOptionNames.Version],
             _ => [.. product is { } command ? [command.Path] : Array.Empty<string>(), .. declaring.Select(static command => command.Name).Select(Below)],
         };
-        return (
-            $"'{token}' is not a command of '{parent}'.",
+        return new(
+            [$"'{token}' is not a command of '{parent}'."],
             Mistake.Of(token, commands.Select(Below), meant, keyOf: static name => name[(name.LastIndexOf(' ') + 1)..]),
-            declaring.Select(static command => command.MistakenNameHint()).FirstOrDefault(static hint => hint is not null),
-            product?.Corrected);
+            null,
+            ValuesOnly: false,
+            product?.Corrected)
+        {
+            Hint = declaring.Select(static command => command.MistakenNameHint()).FirstOrDefault(static hint => hint is not null),
+        };
     }
 
     /// <summary>
@@ -304,18 +329,18 @@ internal sealed class ParsedInvocation
     /// or <c>--version</c> is suggested, and the problems the stray word caused, such as a missing
     /// argument, are not reported on their own.
     /// </summary>
-    private (string Problem, Mistake Mistake, string? Hint, IReadOnlyList<string>? Corrected)? HelpOrVersionWord()
+    private Refusal? HelpOrVersionWord()
     {
         if (ParseResult.UnmatchedTokens.FirstOrDefault(static token => token is "help" or "version") is not { } token)
         {
             return null;
         }
 
-        string meant = token == "help" ? Below("--help") : "--version";
+        string meant = token == "help" ? Below(GlobalOptionNames.Help) : GlobalOptionNames.Version;
         // The word belongs to the command typed before it, as in 'words help edit'.
         int before = ParseResult.Tokens.TakeWhile(item => item.Value != token).Count(static item => item.Type == TokenType.Command);
         string path = string.Join(' ', [DistributionInfo.CommandName, .. CommandPath.Take(before).Select(static command => command.Name)]);
-        return ($"'{token}' is not a command of '{path}'; {token} is the {meant.Split(' ')[^1]} option.", Mistake.Of(token, [], meant), null, null);
+        return new([$"'{token}' is not a command of '{path}'; {token} is the {meant.Split(' ')[^1]} option."], Mistake.Of(token, [], meant), null, ValuesOnly: false);
     }
 
     /// <summary>
@@ -334,7 +359,7 @@ internal sealed class ParsedInvocation
             .. options.Where(option => option.MistakenNames().Contains(unknown, StringComparer.Ordinal)).Select(static option => option.Name),
             .. unknown switch
             {
-                "-?" or "/?" => ["--help"],
+                "-?" or "/?" => [GlobalOptionNames.Help],
                 ['-', var letter] when char.IsAsciiLetter(letter) =>
                     names.Where(name => name.StartsWith("--" + letter, StringComparison.Ordinal)),
                 _ => [],
@@ -507,7 +532,7 @@ internal sealed class InvocationParser(RootCommand root, GlobalOptions globals, 
 
     /// <summary>Writes the help of the command <paramref name="args"/> name to <paramref name="output"/>, as <c>--help</c> prints it.</summary>
     internal void WriteHelp(IReadOnlyList<string> args, TextWriter output) =>
-        root.Parse([.. args, "--help"], Configuration).Invoke(new InvocationConfiguration
+        root.Parse([.. args, GlobalOptionNames.Help], Configuration).Invoke(new InvocationConfiguration
         {
             Output = output,
             EnableDefaultExceptionHandler = false,
