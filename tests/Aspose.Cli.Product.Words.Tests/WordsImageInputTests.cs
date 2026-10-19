@@ -35,7 +35,7 @@ public sealed class WordsImageInputTests
             Output = TestOutput.At(output),
         }));
 
-        AssertInvalidOperation(error, 1, "insert_image", image);
+        OperationErrors.AssertInvalid(error, 1, "insert_image", image);
         Assert.False(File.Exists(output));
     }
 
@@ -57,7 +57,7 @@ public sealed class WordsImageInputTests
             Output = TestOutput.At(output),
         }));
 
-        AssertInvalidOperation(error, 0, "set_watermark", image);
+        OperationErrors.AssertInvalid(error, 0, "set_watermark", image);
         Assert.False(File.Exists(output));
     }
 
@@ -177,14 +177,6 @@ public sealed class WordsImageInputTests
         }
 
         return compressed.ToArray();
-    }
-
-    private static void AssertInvalidOperation(CliException error, int index, string op, string image)
-    {
-        Assert.Equal(ErrorCodes.OpsInvalid, error.Code);
-        Assert.Equal($"op-{index + 1:D4}", error.Details!["id"]!.GetValue<string>());
-        Assert.Equal(op, error.Details["op"]!.GetValue<string>());
-        Assert.Contains(image, error.Message, StringComparison.Ordinal);
     }
 
     private static byte[] NoisyPng(int width, int height)

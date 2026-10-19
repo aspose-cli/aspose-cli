@@ -1,7 +1,5 @@
-using System.Text.Json;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Extensibility;
-using Json.Schema;
 using Xunit;
 
 namespace Aspose.Cli.Product.Slides.Tests;
@@ -9,10 +7,6 @@ namespace Aspose.Cli.Product.Slides.Tests;
 /// <summary>The Slides ops schema and the parser give the same answer, including the rules inherited from target bases.</summary>
 public sealed class SlidesOpContractTests
 {
-    private static readonly Lazy<JsonSchema> Schema = new(static () => JsonSchema.FromText(
-        ProductCatalog.Build([new SlidesModule()]).Resources.Read("v2/slides/ops"),
-        SchemaTestRegistry.CreateOptions()));
-
     [Theory]
     [InlineData("""{"op":"set_title","slide":1,"slideId":256,"text":"x"}""")]
     [InlineData("""{"op":"set_title","slideId":0,"text":"x"}""")]
@@ -42,7 +36,7 @@ public sealed class SlidesOpContractTests
         CliException error = Assert.Throws<CliException>(() => Parse(batch));
 
         Assert.Equal(ErrorCodes.OpsInvalid, error.Code);
-        Assert.False(IsSchemaValid(batch), "The schema accepted an operation the parser rejects.");
+        Assert.False(OpsSchema<SlidesModule>.Accepts(batch), "The schema accepted an operation the parser rejects.");
     }
 
     [Theory]
@@ -59,7 +53,7 @@ public sealed class SlidesOpContractTests
 
         _ = Parse(batch);
 
-        Assert.True(IsSchemaValid(batch), "The schema rejected an operation the parser accepts.");
+        Assert.True(OpsSchema<SlidesModule>.Accepts(batch), "The schema rejected an operation the parser accepts.");
     }
 
     [Theory]
@@ -111,12 +105,6 @@ public sealed class SlidesOpContractTests
 
         Assert.Equal(ErrorCodes.OpsInvalid, error.Code);
         Assert.Equal(renamed, (string?)error.Details!["suggestions"]![0]);
-    }
-
-    private static bool IsSchemaValid(string json)
-    {
-        using JsonDocument document = JsonDocument.Parse(json);
-        return Schema.Value.Evaluate(document.RootElement).IsValid;
     }
 
     /// <summary>

@@ -21,11 +21,11 @@ public sealed class SlidesResultContractTests : IDisposable
     {
         CreateDeck(_workspace.File("deck.pptx"));
 
-        JsonNode info = Succeeds(_workspace.Run(
+        JsonNode info = _workspace.Run(
             "slides", "inspect", "deck.pptx", "--sample",
             "--detail", "comments", "--detail", "fonts", "--detail", "layouts", "--detail", "masters",
             "--detail", "media", "--detail", "notes", "--detail", "properties", "--detail", "sections",
-            "--output-format", "json"));
+            "--output-format", "json").Json();
 
         Assert.Contains(info["sections"]!.AsArray(), static section => section!["name"]!.GetValue<string>() == "Results");
         Assert.Equal("image", Assert.Single(info["media"]!.AsArray())!["kind"]!.GetValue<string>());
@@ -39,8 +39,8 @@ public sealed class SlidesResultContractTests : IDisposable
     {
         CreateDeck(_workspace.File("deck.pptx"));
 
-        JsonNode read = Succeeds(_workspace.Run(
-            "slides", "read", "deck.pptx", "--content", "full", "--output-format", "json"));
+        JsonNode read = _workspace.Run(
+            "slides", "read", "deck.pptx", "--content", "full", "--output-format", "json").Json();
 
         JsonNode first = read["slides"]![0]!;
         // Evaluation mode cuts read text short, so only the presence of the notes is checked.
@@ -55,10 +55,10 @@ public sealed class SlidesResultContractTests : IDisposable
     {
         CreateDeck(_workspace.File("deck.pptx"));
 
-        JsonNode byDpi = Succeeds(_workspace.Run(
-            "slides", "render", "deck.pptx", "--slides", "1-2", "--dpi", "36", "--out", "dpi.png", "--output-format", "json"));
-        JsonNode byWidth = Succeeds(_workspace.Run(
-            "slides", "render", "deck.pptx", "--slides", "1", "--width", "64", "--out", "width.png", "--output-format", "json"));
+        JsonNode byDpi = _workspace.Run(
+            "slides", "render", "deck.pptx", "--slides", "1-2", "--dpi", "36", "--out", "dpi.png", "--output-format", "json").Json();
+        JsonNode byWidth = _workspace.Run(
+            "slides", "render", "deck.pptx", "--slides", "1", "--width", "64", "--out", "width.png", "--output-format", "json").Json();
 
         Assert.Equal(36, byDpi["dpi"]!.GetValue<int>());
         Assert.Equal(2, byDpi["outputs"]!.AsArray().Count);
@@ -74,8 +74,8 @@ public sealed class SlidesResultContractTests : IDisposable
     {
         CreateDeck(_workspace.File("deck.pptx"));
 
-        JsonNode extracted = Succeeds(_workspace.Run(
-            "slides", "extract", "deck.pptx", "--what", what, "--out-dir", what, "--output-format", "json"));
+        JsonNode extracted = _workspace.Run(
+            "slides", "extract", "deck.pptx", "--what", what, "--out-dir", what, "--output-format", "json").Json();
 
         Assert.Equal(what, extracted["what"]!.GetValue<string>());
         Assert.Null(extracted["items"]);
@@ -91,12 +91,6 @@ public sealed class SlidesResultContractTests : IDisposable
         Assert.Equal(
             Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(File.ReadAllBytes(path))),
             item["fingerprint"]!["sha256"]!.GetValue<string>());
-    }
-
-    private static JsonNode Succeeds(CliResult result)
-    {
-        Assert.True(result.ExitCode == 0, result.StdErr);
-        return JsonNode.Parse(result.StdOut)!;
     }
 
     private static void CreateDeck(string path)

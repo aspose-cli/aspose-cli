@@ -34,8 +34,8 @@ public sealed class PdfSourceEncryptedContractTests : IDisposable
         File.WriteAllText(
             _workspace.File("encrypt.json"),
             $$"""{"ops":[{"op":"encrypt_document","userPasswordEnv":"{{UserPassword}}","ownerPasswordEnv":"{{OwnerPassword}}"}]}""");
-        Succeeds(_workspace.Run("pdf", "create", "plain.pdf", "--from-text", "text.txt", "--license", license, "--output-format", "json"));
-        Succeeds(_workspace.RunWithEnv(passwords, "pdf", "edit", "plain.pdf", "--ops", "encrypt.json", "--out", "locked.pdf", "--license", license, "--output-format", "json"));
+        _workspace.Run("pdf", "create", "plain.pdf", "--from-text", "text.txt", "--license", license, "--output-format", "json").Succeeded();
+        _workspace.RunWithEnv(passwords, "pdf", "edit", "plain.pdf", "--ops", "encrypt.json", "--out", "locked.pdf", "--license", license, "--output-format", "json").Succeeded();
 
         // The runs are independent, so they run at once, beside the load of the published schemas.
         (string Name, bool Encrypted, CliResult Result)[] runs = [];
@@ -114,6 +114,4 @@ public sealed class PdfSourceEncryptedContractTests : IDisposable
         using JsonDocument instance = JsonDocument.Parse(copy.ToJsonString());
         return PublishedSchemas.Schema(id).Evaluate(instance.RootElement).IsValid;
     }
-
-    private static void Succeeds(CliResult result) => Assert.True(result.ExitCode == 0, result.StdErr);
 }

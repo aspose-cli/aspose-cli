@@ -60,12 +60,12 @@ public sealed class EvaluationMarkDisclosureTests
         Task.WaitAll(markedRun, fromCleanRun);
         JsonNode marked = markedRun.Result;
         JsonNode fromClean = fromCleanRun.Result;
-        Assert.Contains(EvaluationModeWarning, Codes(marked));
+        Assert.Contains(EvaluationModeWarning, ResultWarnings.Codes(marked));
 
         JsonNode fromMarked = Edit(workspace, product, "marked." + extension, "licensed-marked." + extension);
         Assert.Null(fromMarked["license"]);
-        Assert.DoesNotContain(EvaluationModeWarning, Codes(fromMarked));
-        return [.. Codes(fromMarked).Except(Codes(fromClean), StringComparer.Ordinal).Order(StringComparer.Ordinal)];
+        Assert.DoesNotContain(EvaluationModeWarning, ResultWarnings.Codes(fromMarked));
+        return [.. ResultWarnings.Codes(fromMarked).Except(ResultWarnings.Codes(fromClean), StringComparer.Ordinal).Order(StringComparer.Ordinal)];
     }
 
     /// <summary>
@@ -82,7 +82,4 @@ public sealed class EvaluationMarkDisclosureTests
 
     private static JsonNode Edit(TempWorkspace workspace, string product, string input, string output, params string[] extra) =>
         workspace.Run([product, "edit", input, "--ops", "ops.json", "--out", output, "--output-format", "json", .. extra]).Json();
-
-    private static string[] Codes(JsonNode result) =>
-        [.. (result["warnings"] as JsonArray ?? []).Select(static warning => warning?["code"]?.GetValue<string>()).OfType<string>()];
 }

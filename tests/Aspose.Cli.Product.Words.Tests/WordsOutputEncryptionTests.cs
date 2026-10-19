@@ -31,27 +31,27 @@ public sealed class WordsOutputEncryptionTests : IDisposable
     [Fact]
     public void ConvertToAFormatWithoutPasswords_DisclosesTheRemovedEncryption()
     {
-        JsonNode result = Succeeds(Run("words", "convert", "locked.docx", "--password-env", "WORDS_PASSWORD", "--to", "pdf", "--out", "locked.pdf"));
+        JsonNode result = Run("words", "convert", "locked.docx", "--password-env", "WORDS_PASSWORD", "--to", "pdf", "--out", "locked.pdf").Json();
 
-        Assert.Contains("ENCRYPTION_REMOVED", Codes(result));
+        Assert.Contains("ENCRYPTION_REMOVED", ResultWarnings.Codes(result));
     }
 
     [Category(TestCategory.Slow)]
     [Fact]
     public void ConvertToAFormatWithPasswords_KeepsTheEncryption()
     {
-        JsonNode result = Succeeds(Run("words", "convert", "locked.docx", "--password-env", "WORDS_PASSWORD", "--to", "odt", "--out", "locked.odt"));
+        JsonNode result = Run("words", "convert", "locked.docx", "--password-env", "WORDS_PASSWORD", "--to", "odt", "--out", "locked.odt").Json();
 
         Assert.True(result["outputs"]![0]!["encrypted"]!.GetValue<bool>());
         Assert.True(FileFormatUtil.DetectFileFormat(_workspace.File("locked.odt")).IsEncrypted);
-        Assert.DoesNotContain("ENCRYPTION_REMOVED", Codes(result));
+        Assert.DoesNotContain("ENCRYPTION_REMOVED", ResultWarnings.Codes(result));
     }
 
     /// <summary>X-03: split encrypts every part with --encrypt-env, as pdf split does.</summary>
     [Fact]
     public void SplitWithEncryptEnv_EncryptsEveryPart()
     {
-        JsonNode result = Succeeds(Run("words", "split", "plain.docx", "--by", "heading1", "--out-dir", "sealed", "--encrypt-env", "WORDS_PASSWORD"));
+        JsonNode result = Run("words", "split", "plain.docx", "--by", "heading1", "--out-dir", "sealed", "--encrypt-env", "WORDS_PASSWORD").Json();
 
         string[] parts = Directory.GetFiles(_workspace.File("sealed"));
         Assert.NotEmpty(parts);
@@ -64,20 +64,20 @@ public sealed class WordsOutputEncryptionTests : IDisposable
     [Fact]
     public void SplitOfAnEncryptedDocument_KeepsThePasswordInEveryPart()
     {
-        JsonNode result = Succeeds(Run("words", "split", "locked.docx", "--password-env", "WORDS_PASSWORD", "--by", "heading1", "--out-dir", "parts"));
+        JsonNode result = Run("words", "split", "locked.docx", "--password-env", "WORDS_PASSWORD", "--by", "heading1", "--out-dir", "parts").Json();
 
         string[] parts = Directory.GetFiles(_workspace.File("parts"));
         Assert.NotEmpty(parts);
         Assert.All(parts, part => Assert.True(FileFormatUtil.DetectFileFormat(part).IsEncrypted));
         Assert.Equal([true, true], PartsEncrypted(result));
-        Assert.DoesNotContain("ENCRYPTION_REMOVED", Codes(result));
+        Assert.DoesNotContain("ENCRYPTION_REMOVED", ResultWarnings.Codes(result));
     }
 
     [Category(TestCategory.Slow)]
     [Fact]
     public void SplitOfAPlainDocument_ReportsEveryPartUnencrypted()
     {
-        JsonNode result = Succeeds(Run("words", "split", "plain.docx", "--by", "heading1", "--out-dir", "parts"));
+        JsonNode result = Run("words", "split", "plain.docx", "--by", "heading1", "--out-dir", "parts").Json();
 
         Assert.All(Directory.GetFiles(_workspace.File("parts")), part => Assert.False(FileFormatUtil.DetectFileFormat(part).IsEncrypted));
         Assert.Equal([false, false], PartsEncrypted(result));
@@ -87,30 +87,30 @@ public sealed class WordsOutputEncryptionTests : IDisposable
     [Fact]
     public void CompareRedline_KeepsTheOriginalsPassword()
     {
-        JsonNode result = Succeeds(Run("words", "compare", "locked.docx", "plain.docx", "--left-password-env", "WORDS_PASSWORD", "--out", "redline.docx"));
+        JsonNode result = Run("words", "compare", "locked.docx", "plain.docx", "--left-password-env", "WORDS_PASSWORD", "--out", "redline.docx").Json();
 
         Assert.True(result["output"]!["encrypted"]!.GetValue<bool>());
         Assert.True(FileFormatUtil.DetectFileFormat(_workspace.File("redline.docx")).IsEncrypted);
-        Assert.DoesNotContain("ENCRYPTION_REMOVED", Codes(result));
+        Assert.DoesNotContain("ENCRYPTION_REMOVED", ResultWarnings.Codes(result));
     }
 
     [Category(TestCategory.Slow)]
     [Fact]
     public void CompareRedlineOfAnEncryptedChangedDocument_DisclosesTheRemovedEncryption()
     {
-        JsonNode result = Succeeds(Run("words", "compare", "plain.docx", "locked.docx", "--right-password-env", "WORDS_PASSWORD", "--out", "redline.docx"));
+        JsonNode result = Run("words", "compare", "plain.docx", "locked.docx", "--right-password-env", "WORDS_PASSWORD", "--out", "redline.docx").Json();
 
         Assert.False(FileFormatUtil.DetectFileFormat(_workspace.File("redline.docx")).IsEncrypted);
-        Assert.Contains("ENCRYPTION_REMOVED", Codes(result));
+        Assert.Contains("ENCRYPTION_REMOVED", ResultWarnings.Codes(result));
     }
 
     [Category(TestCategory.Slow)]
     [Fact]
     public void CompareWithoutAnOutput_DisclosesNothing()
     {
-        JsonNode result = Succeeds(Run("words", "compare", "locked.docx", "plain.docx", "--left-password-env", "WORDS_PASSWORD"));
+        JsonNode result = Run("words", "compare", "locked.docx", "plain.docx", "--left-password-env", "WORDS_PASSWORD").Json();
 
-        Assert.DoesNotContain("ENCRYPTION_REMOVED", Codes(result));
+        Assert.DoesNotContain("ENCRYPTION_REMOVED", ResultWarnings.Codes(result));
     }
 
     /// <summary>
@@ -123,7 +123,7 @@ public sealed class WordsOutputEncryptionTests : IDisposable
     {
         AskToEmbedFonts("plain.docx", "embedding.docx");
 
-        JsonNode result = Succeeds(Run("words", "convert", "embedding.docx", "--to", "docx", "--out", "sealed.docx", "--encrypt-env", "WORDS_PASSWORD"));
+        JsonNode result = Run("words", "convert", "embedding.docx", "--to", "docx", "--out", "sealed.docx", "--encrypt-env", "WORDS_PASSWORD").Json();
 
         JsonNode warning = Assert.Single(result["warnings"]?.AsArray() ?? [], static warning => warning!["code"]!.GetValue<string>() == "FONTS_EMBEDDED")!;
         Assert.Contains("larger", warning["message"]!.GetValue<string>(), StringComparison.Ordinal);
@@ -137,9 +137,9 @@ public sealed class WordsOutputEncryptionTests : IDisposable
         AskToEmbedFonts("plain.docx", "embedding.docx");
         File.WriteAllText(_workspace.File("ops.json"), """{"ops":[{"op":"set_text","target":{"block":1},"text":"Edited"}]}""");
 
-        JsonNode result = Succeeds(Run("words", "edit", "embedding.docx", "--ops", "ops.json", "--out", "edited.docx"));
+        JsonNode result = Run("words", "edit", "embedding.docx", "--ops", "ops.json", "--out", "edited.docx").Json();
 
-        Assert.Contains("FONTS_EMBEDDED", Codes(result));
+        Assert.Contains("FONTS_EMBEDDED", ResultWarnings.Codes(result));
     }
 
     [Category(TestCategory.Slow)]
@@ -148,9 +148,9 @@ public sealed class WordsOutputEncryptionTests : IDisposable
     {
         AskToEmbedFonts("plain.docx", "embedding.docx");
 
-        JsonNode result = Succeeds(Run("words", "create", "created.docx", "--template", "embedding.docx", "--from-markdown", "source.md"));
+        JsonNode result = Run("words", "create", "created.docx", "--template", "embedding.docx", "--from-markdown", "source.md").Json();
 
-        Assert.Contains("FONTS_EMBEDDED", Codes(result));
+        Assert.Contains("FONTS_EMBEDDED", ResultWarnings.Codes(result));
     }
 
     [Category(TestCategory.Slow)]
@@ -161,18 +161,18 @@ public sealed class WordsOutputEncryptionTests : IDisposable
         File.WriteAllText(_workspace.File("changed.md"), "# One\n\nFirst part changed.\n\n# Two\n\nSecond part.\n");
         Assert.Equal(0, _workspace.Run("words", "create", "changed.docx", "--from-markdown", "changed.md").ExitCode);
 
-        JsonNode result = Succeeds(Run("words", "compare", "embedding.docx", "changed.docx", "--out", "redline.docx"));
+        JsonNode result = Run("words", "compare", "embedding.docx", "changed.docx", "--out", "redline.docx").Json();
 
-        Assert.Contains("FONTS_EMBEDDED", Codes(result));
+        Assert.Contains("FONTS_EMBEDDED", ResultWarnings.Codes(result));
     }
 
     [Category(TestCategory.Slow)]
     [Fact]
     public void ConvertOfAPlainDocx_DisclosesNoEmbeddedFonts()
     {
-        JsonNode result = Succeeds(Run("words", "convert", "plain.docx", "--to", "docx", "--out", "sealed.docx", "--encrypt-env", "WORDS_PASSWORD"));
+        JsonNode result = Run("words", "convert", "plain.docx", "--to", "docx", "--out", "sealed.docx", "--encrypt-env", "WORDS_PASSWORD").Json();
 
-        Assert.DoesNotContain("FONTS_EMBEDDED", Codes(result));
+        Assert.DoesNotContain("FONTS_EMBEDDED", ResultWarnings.Codes(result));
     }
 
     /// <summary>
@@ -190,9 +190,9 @@ public sealed class WordsOutputEncryptionTests : IDisposable
         DropTheEmbeddedFont("embedded.docx", "partly.docx", "Times New Roman");
         File.WriteAllText(_workspace.File("ops.json"), """{"ops":[{"op":"set_text","target":{"block":2},"text":"Edited"}]}""");
 
-        JsonNode result = Succeeds(Run(["words", command, "partly.docx", .. options]));
+        JsonNode result = Run(["words", command, "partly.docx", .. options]).Json();
 
-        Assert.Contains("FONTS_EMBEDDED", Codes(result));
+        Assert.Contains("FONTS_EMBEDDED", ResultWarnings.Codes(result));
     }
 
     [Category(TestCategory.Slow)]
@@ -201,9 +201,9 @@ public sealed class WordsOutputEncryptionTests : IDisposable
     {
         CreateWithEmbeddedFonts("embedded.docx");
 
-        JsonNode result = Succeeds(Run("words", "convert", "embedded.docx", "--to", "docx", "--out", "converted.docx"));
+        JsonNode result = Run("words", "convert", "embedded.docx", "--to", "docx", "--out", "converted.docx").Json();
 
-        Assert.DoesNotContain("FONTS_EMBEDDED", Codes(result));
+        Assert.DoesNotContain("FONTS_EMBEDDED", ResultWarnings.Codes(result));
     }
 
     /// <summary>Copies a docx and adds the two font-embedding flags Aspose.PDF writes, without embedding a font.</summary>
@@ -283,16 +283,7 @@ public sealed class WordsOutputEncryptionTests : IDisposable
     private CliResult Run(params string[] arguments) =>
         _workspace.RunWithEnv(Variables, [.. arguments, "--output-format", "json"]);
 
-    private static JsonNode Succeeds(CliResult result)
-    {
-        Assert.True(result.ExitCode == 0, result.StdErr + result.StdOut);
-        return JsonNode.Parse(result.StdOut)!;
-    }
-
     /// <summary>The <c>encrypted</c> of each <c>outputs[]</c> item, which a DOCX part always reports.</summary>
     private static bool[] PartsEncrypted(JsonNode result) =>
         [.. result["outputs"]!.AsArray().Select(static output => output!["encrypted"]!.GetValue<bool>())];
-
-    private static string[] Codes(JsonNode result) =>
-        [.. result["warnings"]?.AsArray().Select(static warning => warning!["code"]!.GetValue<string>()) ?? []];
 }

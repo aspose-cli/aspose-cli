@@ -3,7 +3,6 @@ using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Extensibility;
 using Aspose.Pdf;
 using Aspose.Pdf.Forms;
-using Json.Schema;
 using Xunit;
 
 namespace Aspose.Cli.Product.Pdf.Tests;
@@ -11,10 +10,6 @@ namespace Aspose.Cli.Product.Pdf.Tests;
 /// <summary>The PDF ops schema and the op rules give the same answer, and form fields use product names.</summary>
 public sealed class PdfOpContractTests
 {
-    private static readonly Lazy<JsonSchema> Schema = new(static () => JsonSchema.FromText(
-        ProductCatalog.Build([new PdfModule()]).Resources.Read("v2/pdf/ops"),
-        SchemaTestRegistry.CreateOptions()));
-
     [Theory]
     [InlineData("""{"op":"insert_page","at":1,"pageSize":{"preset":"LETTER"}}""")]
     [InlineData("""{"op":"set_page_size","pages":"1","pageSize":{"preset":"A4"}}""")]
@@ -61,7 +56,7 @@ public sealed class PdfOpContractTests
         CliException error = Assert.Throws<CliException>(() => Parse(batch));
 
         Assert.Equal(ErrorCodes.OpsInvalid, error.Code);
-        Assert.False(IsSchemaValid(batch), "The schema accepted an operation the parser rejects.");
+        Assert.False(OpsSchema<PdfModule>.Accepts(batch), "The schema accepted an operation the parser rejects.");
     }
 
     [Theory]
@@ -79,7 +74,7 @@ public sealed class PdfOpContractTests
 
         _ = Parse(batch);
 
-        Assert.True(IsSchemaValid(batch), "The schema rejected an operation the parser accepts.");
+        Assert.True(OpsSchema<PdfModule>.Accepts(batch), "The schema rejected an operation the parser accepts.");
     }
 
     [Fact]
@@ -181,12 +176,6 @@ public sealed class PdfOpContractTests
         Assert.Equal(
             [("first", 72d, height - 640, 20d, 20d), ("second", 300d, height - 516, 16d, 16d)],
             form.Fields.Select(static field => (field.Name, field.Rect!.X, field.Rect.Y, field.Rect.Width, field.Rect.Height)));
-    }
-
-    private static bool IsSchemaValid(string json)
-    {
-        using JsonDocument document = JsonDocument.Parse(json);
-        return Schema.Value.Evaluate(document.RootElement).IsValid;
     }
 
     [Theory]
