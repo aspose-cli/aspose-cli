@@ -119,23 +119,22 @@ internal static partial class ContractRules
     /// </summary>
     private static IEnumerable<InvariantCase> R39Run(CliCatalog catalog)
     {
-        var first = new HashSet<string>(StringComparer.Ordinal);
         foreach (CliProduct product in catalog.Products.Where(static product => ScenarioFixtures.Products.Contains(product.Id)))
         {
-            foreach (string op in product.Ops)
+            (string Op, (string Field, string Path)[] Fields)[] ops = [.. product.Ops
+                .Select(op => (op, ((string Field, string Path)[])[.. ReadPaths(product, op)]))
+                .Where(static entry => entry.Item2.Length != 0)];
+            // The fast case is the op with the fewest read-back fields, the cheapest round trip.
+            string? fast = ops.Length == 0 ? null : ops.MinBy(static entry => entry.Fields.Length).Op;
+            foreach ((string op, (string Field, string Path)[] fields) in ops)
             {
-                (string Field, string Path)[] fields = [.. ReadPaths(product, op)];
-                if (fields.Length == 0)
-                {
-                    continue;
-                }
                 string key = $"{product.Id} {op}";
                 Dictionary<string, RoundTripExemption> exemptFields = RoundTripExempt
                     .Where(pair => pair.Key.StartsWith(key + " ", StringComparison.Ordinal))
                     .ToDictionary(pair => pair.Key[(key.Length + 1)..], static pair => pair.Value, StringComparer.Ordinal);
                 yield return Check("C-R39", $"{key} round trip",
                     () => Excused(RoundTrip(product, op, fields), RoundTripExempt.GetValueOrDefault(key), exemptFields),
-                    shard: product.Id, slow: !first.Add(product.Id));
+                    shard: product.Id, slow: op != fast);
             }
             yield return Check("C-R39", $"{product.Id} round-trip exemptions", () => RoundTripExemptions(product));
         }
