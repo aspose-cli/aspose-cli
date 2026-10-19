@@ -1,4 +1,5 @@
 using System.Security.Cryptography;
+using System.Text.Json.Nodes;
 using Aspose.Cli.Product.Pdf.Engine;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Pdf;
@@ -125,25 +126,42 @@ public sealed class PdfRenderGridTests
         Assert.Equal("Render the page with --to png or --to jpeg to draw a coordinate grid.", error.Hint);
     }
 
-    [Theory]
-    [InlineData("svg", 50)]
-    [InlineData("png", 9)]
-    [InlineData("png", 501)]
-    public void Grid_RefusesVectorOutputAndSpacingOutsideTheRange(string format, int spacing)
+    [Fact]
+    public void Grid_RefusesVectorOutputBeforeWriting()
     {
         using var fixture = new PdfEngineFixture();
         string input = CreatePage(fixture, "blank.pdf", Rotation.None, marker: null);
-        string output = fixture.File($"refused.{format}");
+        string output = fixture.File("refused.svg");
 
         CliException error = Assert.Throws<CliException>(() => PdfRender.Run(fixture.Session, new PdfRenderRequest
         {
             Input = input,
-            Output = TestOutput.At(output, format: format),
-            Grid = spacing,
+            Output = TestOutput.At(output, format: "svg"),
+            Grid = 50,
         }));
 
         Assert.Equal(ErrorCodes.OptionInvalid, error.Code);
         Assert.Contains("--grid", error.Message, StringComparison.Ordinal);
+        Assert.False(File.Exists(output));
+    }
+
+    /// <summary>The command refuses a spacing outside the range before the engine runs.</summary>
+    [Theory]
+    [InlineData("9")]
+    [InlineData("501")]
+    public void Grid_RefusesSpacingOutsideTheRange(string spacing)
+    {
+        using var fixture = new PdfEngineFixture();
+        string input = CreatePage(fixture, "blank.pdf", Rotation.None, marker: null);
+        string output = fixture.File("refused.png");
+        using var workspace = new TempWorkspace();
+
+        CliResult result = workspace.Run("pdf", "render", input, "--grid", spacing, "--out", output, "--output-format", "json");
+
+        Assert.Equal(2, result.ExitCode);
+        JsonNode error = JsonNode.Parse(result.StdErr)!["error"]!;
+        Assert.Equal("OPTION_INVALID", error["code"]!.GetValue<string>());
+        Assert.Contains("--grid", error["message"]!.GetValue<string>(), StringComparison.Ordinal);
         Assert.False(File.Exists(output));
     }
 
