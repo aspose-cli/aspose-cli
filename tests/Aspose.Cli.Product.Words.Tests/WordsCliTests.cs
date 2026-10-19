@@ -4,9 +4,15 @@ using Xunit;
 
 namespace Aspose.Cli.Product.Words.Tests;
 
-public sealed class WordsCliTests : IDisposable
+public sealed class WordsCliTests : IClassFixture<WordsFixture>, IDisposable
 {
     private readonly TempWorkspace _workspace = new();
+
+    /// <summary>
+    /// The fixture applies the Words license in a licensed run before a test builds its input with
+    /// the SDK, so an input is whole whichever test of the process runs first.
+    /// </summary>
+    public WordsCliTests(WordsFixture fixture) => ArgumentNullException.ThrowIfNull(fixture);
 
     [Fact]
     public void Convert_RefusesPagesForAFormatThatIsNotFixedPage()
