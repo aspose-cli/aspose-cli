@@ -97,6 +97,10 @@ internal sealed class PdfEditModel : IOperationModel<PdfOp>
 
     public IReadOnlyList<string> AttemptedTargets(PdfOp operation) => operation.Accept(_snapshots).Targets;
 
+    /// <summary>The identity of each page, in page order, which numbers what the batch changed on it.</summary>
+    public IReadOnlyDictionary<string, IReadOnlyList<object>> Positions() =>
+        new Dictionary<string, IReadOnlyList<object>>(StringComparer.Ordinal) { [PdfSnapshots.PageUnit] = _pages.Order(_document) };
+
     public NoEffect? Explain(PdfOp operation) => operation switch
     {
         // Like a verification issue, it never repeats the pattern.
