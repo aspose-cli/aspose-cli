@@ -26,11 +26,7 @@ internal static class ConvertCommand
             Description = "Culture whose number and date formats a CSV or TSV input uses, such as de-DE for '1.234,56'. "
                 + "Default: invariant formats (a decimal comma is refused).",
         }.WithInput(InputKind.None);
-        var bom = new Option<bool>("--bom")
-        {
-            Description = "Start a CSV or TSV output with a UTF-8 byte order mark, so Excel reads its non-English text "
-                + "correctly. Default: UTF-8 without one.",
-        };
+        var bom = new BomOption("a CSV or TSV output");
         return new(
             "convert",
             "Convert a workbook to another format.",
@@ -45,7 +41,7 @@ internal static class ConvertCommand
                     $"Target format: {string.Join(", ", CellsFormats.Definitions.IdsFor(FormatUse.Convert))}.",
                     CellsFormats.Definitions),
             },
-            [.. sheets.Options, encoding, culture, bom],
+            [.. sheets.Options, encoding, culture, .. bom.Options],
             (parse, standard) =>
             {
                 ResolvedOutput output = standard.Output;
@@ -62,11 +58,7 @@ internal static class ConvertCommand
                         $"Drop {sheets.Name}, or use one of: {string.Join(", ", CellsFormats.SheetScoped)}.");
                 }
 
-                bool byteOrderMark = parse.GetValue(bom);
-                if (byteOrderMark && !CellsFormats.IsDelimited(format))
-                {
-                    throw CliErrors.OptionInvalid("--bom", $"a '{format}' output is not CSV or TSV text", "Drop --bom.");
-                }
+                bool byteOrderMark = bom.Read(parse, CellsFormats.IsDelimited(format) ? null : $"a '{format}' output is not CSV or TSV text");
 
                 Secret? encryptPassword = standard.EncryptPassword();
                 return new CellsConvertRequest
