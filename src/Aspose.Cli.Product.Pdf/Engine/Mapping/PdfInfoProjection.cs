@@ -1,6 +1,5 @@
 using System.Globalization;
 using System.Text.RegularExpressions;
-using Aspose.Cli.Product.Pdf.Engine.Editing;
 using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Results;
 using Aspose.Pdf;
@@ -55,7 +54,7 @@ internal static class PdfInfoProjection
                 "'pdf.distinctPageSizes' counts the size of every page."));
         }
 
-        if (outline?.Length == PdfInspectResult.OutlineLimit && PdfMutationSupport.CountOutline(document.Outlines) is int total and > PdfInspectResult.OutlineLimit)
+        if (outline?.Length == PdfInspectResult.OutlineLimit && PdfOutlineAddresses.CountOutline(document.Outlines) is int total and > PdfInspectResult.OutlineLimit)
         {
             warnings.Add(EnvelopeParts.ListTruncated(
                 "outline",
@@ -228,7 +227,7 @@ internal static class PdfInfoProjection
                     return;
                 }
 
-                string index = PdfMutationSupport.OutlineIndex(above, ++position);
+                string index = PdfOutlineAddresses.OutlineIndex(above, ++position);
                 int destination = PdfNavigationCensus.DestinationPage(item);
                 results.Add((new PdfOutlineItem
                 {

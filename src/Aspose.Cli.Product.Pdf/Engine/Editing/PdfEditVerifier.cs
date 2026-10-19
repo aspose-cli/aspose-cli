@@ -51,7 +51,7 @@ internal sealed class PdfEditVerifier : IEditVerifier<PdfOp>
         _addedAttachments = new(_incomplete);
         _removedAttachments = new(_incomplete);
         _expectedPages = document.Pages.Count;
-        _expectedBookmarks = PdfMutationSupport.CountOutline(document.Outlines);
+        _expectedBookmarks = PdfOutlineAddresses.CountOutline(document.Outlines);
     }
 
     /// <summary>
@@ -235,7 +235,7 @@ internal sealed class PdfEditVerifier : IEditVerifier<PdfOp>
         }
 
         _checked.UnionWith(_bookmarkOps);
-        int count = PdfMutationSupport.CountOutline(output.Outlines);
+        int count = PdfOutlineAddresses.CountOutline(output.Outlines);
         if (count != _expectedBookmarks)
         {
             issues.Add(Issue(

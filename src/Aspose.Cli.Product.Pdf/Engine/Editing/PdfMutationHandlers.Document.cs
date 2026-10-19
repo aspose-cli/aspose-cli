@@ -4,6 +4,7 @@ using Aspose.Pdf.Annotations;
 using Aspose.Pdf.Forms;
 using Aspose.Pdf.Optimization;
 using static Aspose.Cli.Product.Pdf.Engine.Editing.PdfMutationSupport;
+using static Aspose.Cli.Product.Pdf.Engine.Mapping.PdfOutlineAddresses;
 using static Aspose.Cli.Product.Pdf.Engine.PdfAssembly;
 using static Aspose.Cli.Product.Pdf.Engine.PdfForms;
 using static Aspose.Cli.Product.Pdf.Engine.PdfPages;
