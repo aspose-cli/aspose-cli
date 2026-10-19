@@ -316,7 +316,7 @@ internal static class FilePublicationOwnedDelete
         {
             return full;
         }
-        return full.StartsWith("\\\\", StringComparison.Ordinal)
+        return FilePaths.IsRemoteOrDevice(full)
             ? "\\\\?\\UNC\\" + full[2..]
             : "\\\\?\\" + full;
     }

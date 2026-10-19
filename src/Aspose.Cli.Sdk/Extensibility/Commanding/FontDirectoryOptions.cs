@@ -99,9 +99,7 @@ internal sealed class FontDirectoryOptions
         return fullPath;
     }
 
-    private static bool IsNetworkOrDevicePath(string path) =>
-        path.StartsWith(@"\\", StringComparison.Ordinal)
-        || path.StartsWith("//", StringComparison.Ordinal);
+    private static bool IsNetworkOrDevicePath(string path) => FilePaths.IsRemoteOrDevice(path);
 
     private static CliException Invalid(string value, string reason) =>
         CliErrors.OptionInvalid(
