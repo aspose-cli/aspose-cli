@@ -36,8 +36,7 @@ public sealed class TextReplacementTests
         var data = new TheoryData<string, string>();
         foreach (string product in new[] { "cells", "slides", "words" })
         {
-            // The Slides no-match hint names an option, --scope, that slides edit does not have.
-            foreach (string name in Cases.Keys.Where(name => product != "slides" || Cases[name].Expected is not null))
+            foreach (string name in Cases.Keys)
             {
                 data.Add(product, name);
             }
