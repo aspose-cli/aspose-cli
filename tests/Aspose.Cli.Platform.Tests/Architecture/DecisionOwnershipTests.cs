@@ -391,34 +391,16 @@ public sealed partial class DecisionOwnershipTests
 
     // -- D12 Path case ----------------------------------------------------------------------
 
-    /// <summary>
-    /// The lock keys and the license identity derived from a path, as <c>file#member</c>. Their
-    /// bytes are shared with older versions and other Aspose CLI distributions, so they move to
-    /// <c>FilePaths</c> on their own, with a test that fixes those bytes; until then each one is
-    /// named here and must still be found.
-    /// </summary>
-    private static readonly string[] PathKeysNotYetOwned =
-    [
-        @"Aspose.Cli.Host\LocalServices\LocalServiceMarkerFiles.cs#LocalServiceMarkerFiles",
-        @"Aspose.Cli.Host\Updating\UpdateStatus.cs#PathFor",
-        @"Aspose.Cli.Sdk\IO\PublicationDirectoryLease.cs#Acquire",
-        @"Aspose.Cli.Sdk\IO\PublicationJournalLock.cs#Open",
-        @"Aspose.Cli.Sdk\Licensing\LicenseGate.cs#Apply",
-    ];
-
     [Fact]
     public void D12_PathCase_HasOneSdkOwner()
     {
         string owner = Path.Combine(SdkRoot, "FilePaths.cs");
-        (string Key, string At)[] found = [.. Sources.Value
+        string[] violations = [.. Sources.Value
             .Where(file => !string.Equals(file.Path, owner, StringComparison.OrdinalIgnoreCase))
-            .SelectMany(file => PathCaseDecisions(file.Root)
-                .Select(node => ($"{Relative(file.Path)}#{EnclosingMember(node)}", file.At(node, node.ToString()))))];
+            .SelectMany(file => PathCaseDecisions(file.Root).Select(node => file.At(node, node.ToString())))];
 
-        AssertNone([.. found.Where(item => !PathKeysNotYetOwned.Contains(item.Key, StringComparer.Ordinal)).Select(static item => item.At)],
-            "Local paths are compared, collected and checked for a UNC or device prefix only through the SDK's FilePaths:");
-        AssertNone([.. PathKeysNotYetOwned.Where(key => !found.Any(item => item.Key == key))],
-            "These path keys no longer decide case themselves; delete their exceptions:");
+        AssertNone(violations,
+            "Local paths are compared, collected, folded into lock keys and checked for a UNC or device prefix only through the SDK's FilePaths:");
     }
 
     [Fact]

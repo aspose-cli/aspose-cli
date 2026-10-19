@@ -61,7 +61,7 @@ internal sealed class PublicationDirectoryLease : IDisposable
             foreach (string volume in volumes) { handles.Add(AcquireFile(lockRoot, volume, exclusive: false, wait)); }
             foreach ((string path, bool write) in requests.OrderBy(item => item.Key, FilePaths.Comparer))
             {
-                handles.Add(AcquireFile(lockRoot, "directory:" + (OperatingSystem.IsWindows() ? path.ToUpperInvariant() : path), write, wait));
+                handles.Add(AcquireFile(lockRoot, "directory:" + FilePaths.LockKey(path), write, wait));
             }
             return new PublicationDirectoryLease(root, exclusive, handles);
         }

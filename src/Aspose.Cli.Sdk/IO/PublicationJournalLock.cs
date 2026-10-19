@@ -66,8 +66,7 @@ internal sealed class PublicationJournalLock : IDisposable
 
     private static Mutex Open(string path)
     {
-        string canonical = Path.GetFullPath(path);
-        if (OperatingSystem.IsWindows()) { canonical = canonical.ToUpperInvariant(); }
+        string canonical = FilePaths.LockKey(Path.GetFullPath(path));
         string name = "aspose-publication-journal-" + Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(canonical)));
         return new Mutex(false, name, new NamedWaitHandleOptions
         {
