@@ -10,16 +10,16 @@ namespace Aspose.Cli.Sdk.IO;
 /// </summary>
 public sealed class OwnedTemporaryFile : IDisposable
 {
-    private FilePhysicalIdentity? _identity;
-    private SafeFileHandle? _identityHandle;
+    private FilePhysicalIdentity _identity;
+    private SafeFileHandle _identityHandle;
     private bool _producedBound;
     private bool _published;
     private bool _disposed;
 
     private OwnedTemporaryFile(
         string path,
-        FilePhysicalIdentity? identity,
-        SafeFileHandle? identityHandle)
+        FilePhysicalIdentity identity,
+        SafeFileHandle identityHandle)
     {
         Path = path;
         _identity = identity;
@@ -41,14 +41,6 @@ public sealed class OwnedTemporaryFile : IDisposable
         {
         }
 
-        if (!OperatingSystem.IsWindows())
-        {
-            return new OwnedTemporaryFile(
-                path,
-                identity: null,
-                identityHandle: null);
-        }
-
         SafeFileHandle handle = FilePublicationOwnedDelete.OpenIdentityHandle(path);
         FilePhysicalIdentity? identity =
             FilePublicationOwnedDelete.TryGetIdentity(handle);
@@ -62,7 +54,7 @@ public sealed class OwnedTemporaryFile : IDisposable
 
         return new OwnedTemporaryFile(
             path,
-            identity,
+            identity.Value,
             handle);
     }
 
@@ -79,30 +71,27 @@ public sealed class OwnedTemporaryFile : IDisposable
                 $"The producer left a link or reparse point at '{Path}'.");
         }
 
-        if (OperatingSystem.IsWindows())
+        SafeFileHandle current =
+            FilePublicationOwnedDelete.OpenIdentityHandle(Path);
+        FilePhysicalIdentity? identity =
+            FilePublicationOwnedDelete.TryGetIdentity(current);
+        if (current.IsInvalid || identity is null)
         {
-            SafeFileHandle current =
-                FilePublicationOwnedDelete.OpenIdentityHandle(Path);
-            FilePhysicalIdentity? identity =
-                FilePublicationOwnedDelete.TryGetIdentity(current);
-            if (current.IsInvalid || identity is null)
-            {
-                current.Dispose();
-                throw new IOException(
-                    $"The produced temporary file '{Path}' has no verifiable physical identity.");
-            }
-
-            if (_producedBound && identity != _identity)
-            {
-                current.Dispose();
-                throw new IOException(
-                    $"The produced temporary file '{Path}' changed after ownership was bound.");
-            }
-
-            _identityHandle?.Dispose();
-            _identityHandle = current;
-            _identity = identity;
+            current.Dispose();
+            throw new IOException(
+                $"The produced temporary file '{Path}' has no verifiable physical identity.");
         }
+
+        if (_producedBound && identity != _identity)
+        {
+            current.Dispose();
+            throw new IOException(
+                $"The produced temporary file '{Path}' changed after ownership was bound.");
+        }
+
+        _identityHandle.Dispose();
+        _identityHandle = current;
+        _identity = identity.Value;
         _producedBound = true;
     }
 
@@ -151,8 +140,7 @@ public sealed class OwnedTemporaryFile : IDisposable
         {
             FilePublicationSnapshot snapshot =
                 FilePublicationSnapshot.Capture(Path);
-            if (OperatingSystem.IsWindows()
-                && snapshot.PhysicalIdentity != _identity)
+            if (snapshot.PhysicalIdentity != _identity)
             {
                 throw new IOException(
                     $"Temporary file '{Path}' changed before its verified snapshot was captured.");
@@ -163,7 +151,7 @@ public sealed class OwnedTemporaryFile : IDisposable
 
     private FileStream OpenBound(FileAccess access, FileShare share)
     {
-        if (_disposed || _identityHandle is null && OperatingSystem.IsWindows())
+        if (_disposed)
         {
             throw new ObjectDisposedException(nameof(OwnedTemporaryFile));
         }
@@ -175,11 +163,6 @@ public sealed class OwnedTemporaryFile : IDisposable
             share,
             bufferSize: 4096,
             FileOptions.RandomAccess);
-        if (!OperatingSystem.IsWindows())
-        {
-            return stream;
-        }
-
         FilePhysicalIdentity? identity =
             FilePublicationOwnedDelete.TryGetIdentity(stream.SafeFileHandle);
         if (identity is null || identity != _identity)
@@ -215,10 +198,7 @@ public sealed class OwnedTemporaryFile : IDisposable
         {
             if (!_published && File.Exists(Path))
             {
-                bool deleted = _identity is { } identity
-                    ? FilePublicationOwnedDelete.TryDelete(Path, identity)
-                    : TryDeletePortable();
-                if (!deleted)
+                if (!FilePublicationOwnedDelete.TryDelete(Path, _identity))
                 {
                     Trace.TraceWarning(
                         "Temporary output cleanup preserved '{0}' because ownership changed.",
@@ -236,13 +216,7 @@ public sealed class OwnedTemporaryFile : IDisposable
         }
         finally
         {
-            _identityHandle?.Dispose();
+            _identityHandle.Dispose();
         }
-    }
-
-    private bool TryDeletePortable()
-    {
-        File.Delete(Path);
-        return true;
     }
 }

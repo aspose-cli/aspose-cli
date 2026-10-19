@@ -1,4 +1,3 @@
-using System.Runtime.Versioning;
 using System.Security.AccessControl;
 using System.Security.Cryptography;
 using System.Security.Principal;
@@ -105,23 +104,19 @@ internal static class PublicationTransactionDirectory
 {
     public static string Create(string path)
     {
-        if (OperatingSystem.IsWindows())
+        try
         {
-            try
-            {
-                return CreateWindows(path).FullName;
-            }
-            catch (Exception exception) when (exception is UnauthorizedAccessException
-                or InvalidOperationException or NotSupportedException)
-            {
-                System.Diagnostics.Trace.TraceWarning(
-                    "A transaction directory kept its folder's access rules ({0}).", exception.GetType().Name);
-            }
+            return CreateWindows(path).FullName;
+        }
+        catch (Exception exception) when (exception is UnauthorizedAccessException
+            or InvalidOperationException or NotSupportedException)
+        {
+            System.Diagnostics.Trace.TraceWarning(
+                "A transaction directory kept its folder's access rules ({0}).", exception.GetType().Name);
         }
         return Directory.CreateDirectory(path).FullName;
     }
 
-    [SupportedOSPlatform("windows")]
     private static DirectoryInfo CreateWindows(string path)
     {
         using WindowsIdentity current = WindowsIdentity.GetCurrent();
@@ -157,7 +152,6 @@ internal static class FilePublicationInheritance
 {
     public static void TryReset(string path)
     {
-        if (!OperatingSystem.IsWindows()) { return; }
         try
         {
             if (Directory.Exists(path))
@@ -190,7 +184,6 @@ internal static class FilePublicationInheritance
     /// </summary>
     public static byte[]? TryCaptureAccess(string existingTarget)
     {
-        if (!OperatingSystem.IsWindows()) { return null; }
         try
         {
             return new FileInfo(existingTarget).GetAccessControl(AccessControlSections.Access)
@@ -210,7 +203,7 @@ internal static class FilePublicationInheritance
     /// </summary>
     public static void TryApplyAccess(string published, byte[]? access)
     {
-        if (!OperatingSystem.IsWindows() || access is null) { return; }
+        if (access is null) { return; }
         try
         {
             var security = new FileSecurity();
@@ -225,7 +218,6 @@ internal static class FilePublicationInheritance
         }
     }
 
-    [SupportedOSPlatform("windows")]
     private static void Unprotect(FileSystemSecurity security)
     {
         foreach (FileSystemAccessRule rule in security.GetAccessRules(
@@ -269,7 +261,7 @@ internal sealed record FilePublicationSnapshot(
                 FileOptions.SequentialScan);
             FilePhysicalIdentity? identity =
                 FilePublicationOwnedDelete.TryGetIdentity(handle);
-            if (OperatingSystem.IsWindows() && identity is null)
+            if (identity is null)
             {
                 throw new IOException(
                     $"Could not establish the physical identity of '{path}'.");

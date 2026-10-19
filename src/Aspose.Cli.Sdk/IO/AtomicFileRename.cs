@@ -42,9 +42,8 @@ public static class AtomicFileRename
     }
 
     private static bool IsTransientLock(Exception error) =>
-        OperatingSystem.IsWindows()
-        && (error is UnauthorizedAccessException
-            || error is IOException io && (io.HResult & 0xFFFF) is ErrorSharingViolation or ErrorLockViolation);
+        error is UnauthorizedAccessException
+        || error is IOException io && (io.HResult & 0xFFFF) is ErrorSharingViolation or ErrorLockViolation;
 
     private static bool CanWait(int delay, long stopAt, OperationDeadline? deadline) =>
         Environment.TickCount64 + delay < stopAt

@@ -33,7 +33,7 @@ internal static class OutputPathValidator
             return true;
         }
 
-        if (!OperatingSystem.IsWindows() || !File.Exists(left) || !File.Exists(right))
+        if (!File.Exists(left) || !File.Exists(right))
         {
             return false;
         }
@@ -74,7 +74,7 @@ internal static class OutputPathValidator
         EnsureSafeDirectory(parent);
         FilePhysicalIdentity? identity =
             FilePublicationOwnedDelete.TryGetDirectoryIdentity(parent);
-        if (OperatingSystem.IsWindows() && identity is null)
+        if (identity is null)
         {
             throw Unsafe(path, "the output directory identity could not be verified");
         }
@@ -86,7 +86,7 @@ internal static class OutputPathValidator
         FilePhysicalIdentity? expected)
     {
         FilePhysicalIdentity? current = CaptureParentIdentity(path);
-        if (OperatingSystem.IsWindows() && current != expected)
+        if (current != expected)
         {
             throw Unsafe(path, "the output directory changed during publication");
         }

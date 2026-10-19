@@ -25,7 +25,7 @@ internal static class OpenedFileBoundary
 
     internal static Information? GetInformation(SafeFileHandle handle)
     {
-        if (!OperatingSystem.IsWindows() || handle.IsInvalid
+        if (handle.IsInvalid
             || !GetFileInformationByHandle(handle, out ByHandleFileInformation info))
         {
             return null;
