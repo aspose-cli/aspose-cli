@@ -1,4 +1,3 @@
-using System.Collections.Frozen;
 using Aspose.Cli.Product.Words.Engine.Editing;
 using Aspose.Cli.Product.Words.Engine.Mapping;
 using Aspose.Cli.Sdk.Diagnostics;
@@ -21,12 +20,6 @@ namespace Aspose.Cli.Product.Words.Engine;
 /// </summary>
 internal static class WordsEdit
 {
-    /// <summary>The operations whose effect is a field, protection or revision count the verification compares.</summary>
-    private static readonly FrozenSet<string> StateOps = FrozenSet.Create(
-        StringComparer.Ordinal,
-        "insert_toc", "insert_hyperlink", "insert_field", "set_page_numbers", "refresh_fields", "mail_merge",
-        "protect_document", "unprotect_document", "accept_revisions", "reject_revisions");
-
     /// <summary>Applies a validated operation batch and commits it atomically.</summary>
     internal static WordsEditResult Run(WordsSession session, WordsEditRequest request)
     {
@@ -68,7 +61,7 @@ internal static class WordsEdit
             loaded.Document,
             request,
             baseline,
-            VerifiedOps(outcomes, request.TrackChanges),
+            VerifiedOps(outcomes, batch.Ops, request.TrackChanges),
             precondition,
             loaded.Resources,
             written,
@@ -109,7 +102,7 @@ internal static class WordsEdit
         }
 
         string[] untracked = batch.Ops
-            .Where(static op => !IsTrackable(op))
+            .Where(static op => !WordsOpAddresses.Of(op).Trackable)
             .Select(static op => WordsOp.Catalog.NameOf(op))
             .Distinct(StringComparer.Ordinal)
             .ToArray();
@@ -121,18 +114,6 @@ internal static class WordsEdit
                 "Apply these operations in a separate batch without --track-changes; only content insertions and deletions are tracked.");
         }
     }
-
-    /// <summary>
-    /// Whether Word can record the operation as tracked changes. Aspose.Words tracks the
-    /// insertion and deletion of content only; formatting, styles, lists, page setup,
-    /// properties, protection, merges, field updates, header replacement and section
-    /// structure would change silently, and resolving revisions is not itself an edit. Comments
-    /// are review annotations rather than revisions, so their operations apply untracked.
-    /// </summary>
-    private static bool IsTrackable(WordsOp op) => op is ReplaceTextOp or SetTextOp or InsertParagraphsOp
-        or InsertMarkdownOp or DeleteBlocksOp or InsertBreakOp { Kind: "page" } or InsertImageOp or InsertTableOp
-        or SetTableCellOp or RepeatTableRowOp or InsertTocOp or InsertBookmarkOp or InsertHyperlinkOp or InsertFieldOp
-        or AddCommentOp or DeleteCommentsOp or ImportSectionsOp;
 
     private static AppliedBatch ApplyOperations(
         WordsSession session,
@@ -455,10 +436,9 @@ internal static class WordsEdit
     /// set protection or accept and reject revisions, and with tracked changes every operation,
     /// whose revisions it counts.
     /// </summary>
-    private static IReadOnlyList<string> VerifiedOps(IReadOnlyList<BoundedOperationOutcome> outcomes, bool trackChanges) =>
-    [
-        .. outcomes
-            .Where(outcome => outcome.Status == OpStatuses.Ok && (trackChanges || StateOps.Contains(outcome.Op)))
-            .Select(static outcome => outcome.Id),
-    ];
+    private static IReadOnlyList<string> VerifiedOps(IReadOnlyList<BoundedOperationOutcome> outcomes, IReadOnlyList<WordsOp> ops, bool trackChanges)
+    {
+        HashSet<string> compared = [.. ops.Where(op => trackChanges || WordsOpAddresses.Of(op).StateCompared).Select(static op => op.Id!)];
+        return [.. outcomes.Where(outcome => outcome.Status == OpStatuses.Ok && compared.Contains(outcome.Id)).Select(static outcome => outcome.Id)];
+    }
 }
