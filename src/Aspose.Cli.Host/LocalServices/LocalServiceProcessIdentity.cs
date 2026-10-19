@@ -13,7 +13,7 @@ internal sealed record LocalServiceProcessIdentity(
 {
     // A service whose process cannot be inspected or has exited is gone: a stale lock must not
     // block the next start.
-    private static readonly ProcessLivenessPolicy Liveness = new()
+    internal static readonly ProcessLivenessPolicy Liveness = new()
     {
         WhenDenied = ProcessLiveness.Dead,
         WhenVanishing = ProcessLiveness.Dead,

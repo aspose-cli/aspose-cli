@@ -351,9 +351,16 @@ public sealed partial class DecisionOwnershipTests
             .Where(file => !string.Equals(file.Path, owner, StringComparison.OrdinalIgnoreCase)
                 && !string.Equals(file.Path, launcher, StringComparison.OrdinalIgnoreCase))
             .SelectMany(file => file.Root.DescendantNodes()
-                .OfType<MemberAccessExpressionSyntax>()
-                .Where(static access => access.Name.Identifier.ValueText is "GetProcessById" or "StartTime")
-                .Select(access => file.At(access, access.ToString())))];
+                .Where(static node => node switch
+                {
+                    // process.StartTime, Process.GetProcessById(...), process?.StartTime
+                    MemberAccessExpressionSyntax access => access.Name.Identifier.ValueText is "GetProcessById" or "StartTime",
+                    MemberBindingExpressionSyntax binding => binding.Name.Identifier.ValueText is "GetProcessById" or "StartTime",
+                    // GetProcessById(...) under using static System.Diagnostics.Process
+                    InvocationExpressionSyntax { Expression: IdentifierNameSyntax name } => name.Identifier.ValueText == "GetProcessById",
+                    _ => false,
+                })
+                .Select(node => file.At(node, node.ToString())))];
 
         AssertNone(violations,
             "A process is identified by its id and start time only in the SDK's ProcessIdentity, which also decides whether it still runs:");

@@ -113,25 +113,26 @@ public sealed class ProcessIdentityTests
 
     private static Func<int, IProcessView> Throwing(Exception exception, bool onExit = false) =>
         _ => new FakeProcess(Started) { Failure = exception, FailsOnExit = onExit };
+}
 
-    private sealed class FakeProcess(long startUtcTicks) : IProcessView
+/// <summary>A process view whose facts, or failures, a test sets.</summary>
+internal sealed class FakeProcess(long startUtcTicks) : IProcessView
+{
+    public Exception? Failure { get; init; }
+
+    public bool FailsOnExit { get; init; }
+
+    public bool HasExited
     {
-        public Exception? Failure { get; init; }
+        get => FailsOnExit && Failure is not null ? throw Failure : field;
+        init;
+    }
 
-        public bool FailsOnExit { get; init; }
+    public long StartUtcTicks => Failure is not null && !FailsOnExit ? throw Failure : startUtcTicks;
 
-        public bool HasExited
-        {
-            get => FailsOnExit && Failure is not null ? throw Failure : field;
-            init;
-        }
+    public string ProcessName => Failure is not null && !FailsOnExit ? throw Failure : "powershell";
 
-        public long StartUtcTicks => Failure is not null && !FailsOnExit ? throw Failure : startUtcTicks;
-
-        public string ProcessName => Failure is not null && !FailsOnExit ? throw Failure : "powershell";
-
-        public void Dispose()
-        {
-        }
+    public void Dispose()
+    {
     }
 }
