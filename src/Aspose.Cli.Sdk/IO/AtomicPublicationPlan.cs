@@ -193,7 +193,10 @@ internal sealed class AtomicPublicationPlan
         if (WorkerStagingOnly) { return; }
         for (int attempt = 0; attempt < 3; attempt++)
         {
-            AtomicPublicationRecovery.RecoverPendingHierarchy(TargetDirectory, ResourceBudgets?.Deadline);
+            // Create already recovered without a lease. A transaction that appeared since is
+            // recovered under the lease, unless it needs directories the lease does not cover;
+            // only then does a retry recover without the lease, which takes what it needs.
+            if (attempt > 0) { AtomicPublicationRecovery.RecoverPendingHierarchy(TargetDirectory, ResourceBudgets?.Deadline); }
             _lease = PublicationDirectoryLease.Acquire(TargetDirectory, ResourceDirectories(Journal), ResourceBudgets?.Deadline);
             try
             {
