@@ -17,3 +17,4 @@ APCLI010 | Aspose.Cli.ProductIsolation | Error | Commands and Engine implementat
 APCLI011 | Aspose.Cli.ProductIsolation | Error | Product code cannot build or bind commands through the host command seam StandardOptions.
 APCLI012 | Aspose.Cli.OperationContracts | Error | Operation records must be listed in their camelCase JSON context and describe every member with a supported type and a requirement or default.
 APCLI013 | Aspose.Cli.ResultContracts | Error | Result records must describe every serialized member with a summary and a supported type, and publish each relative schema id once.
+APCLI014 | Aspose.Cli.SdkMetadata | Error | The contract generator must resolve every SDK type it recognizes by metadata name.

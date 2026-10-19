@@ -13,9 +13,6 @@ namespace Aspose.Cli.Sdk.Analyzers;
 [Generator]
 public sealed class OperationContractGenerator : IIncrementalGenerator
 {
-    internal const string Operations = "Aspose.Cli.Sdk.Operations.";
-    internal const string Contracts = "Aspose.Cli.Sdk.Contracts.";
-
     internal static readonly DiagnosticDescriptor InvalidContract = new(
         "APCLI012",
         "Operation contract is invalid",
@@ -40,14 +37,26 @@ public sealed class OperationContractGenerator : IIncrementalGenerator
             + "has a documentation summary and a supported type, a published id is relative and used "
             + "once, and every constraint fits its member.");
 
+    internal static readonly DiagnosticDescriptor MissingSdkType = new(
+        "APCLI014",
+        "SDK type is missing",
+        "The contract generator cannot resolve the SDK type '{0}', so it describes no contract; reference Aspose.Cli.Sdk, or update SdkMetadataNames if the SDK renamed the type",
+        "Aspose.Cli.SdkMetadata",
+        DiagnosticSeverity.Error,
+        isEnabledByDefault: true,
+        description:
+            "The contract generator recognizes SDK types by their metadata names; a contract whose "
+            + "compilation cannot resolve one of them is reported rather than described without the "
+            + "rules that type carries.");
+
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
-        IncrementalValueProvider<ImmutableArray<INamedTypeSymbol>> vocabularies = Records(context, "OperationVocabularyAttribute");
-        IncrementalValueProvider<ImmutableArray<INamedTypeSymbol>> operations = Records(context, "OperationAttribute");
-        IncrementalValueProvider<ImmutableArray<INamedTypeSymbol>> inputs = Records(context, "OperationInputAttribute");
+        IncrementalValueProvider<ImmutableArray<INamedTypeSymbol>> vocabularies = Records(context, SdkMetadataNames.OperationVocabularyAttribute);
+        IncrementalValueProvider<ImmutableArray<INamedTypeSymbol>> operations = Records(context, SdkMetadataNames.OperationAttribute);
+        IncrementalValueProvider<ImmutableArray<INamedTypeSymbol>> inputs = Records(context, SdkMetadataNames.OperationInputAttribute);
         IncrementalValueProvider<ImmutableArray<(IPropertySymbol Property, Location Location)>> constantLists = context.SyntaxProvider
             .ForAttributeWithMetadataName(
-                Contracts + "AllowedValuesAttribute",
+                SdkMetadataNames.AllowedValuesAttribute,
                 static (node, _) => node is PropertyDeclarationSyntax,
                 static (attributed, _) => attributed.Attributes
                     .Where(static attribute => attribute.ConstructorArguments.FirstOrDefault().Kind == TypedConstantKind.Type)
@@ -64,7 +73,7 @@ public sealed class OperationContractGenerator : IIncrementalGenerator
     private static IncrementalValueProvider<ImmutableArray<INamedTypeSymbol>> Records(IncrementalGeneratorInitializationContext context, string attribute) =>
         context.SyntaxProvider
             .ForAttributeWithMetadataName(
-                Operations + attribute,
+                attribute,
                 static (node, _) => node is TypeDeclarationSyntax,
                 static (attributed, _) => (INamedTypeSymbol)attributed.TargetSymbol)
             .Collect();
@@ -94,6 +103,30 @@ public sealed class OperationContractGenerator : IIncrementalGenerator
             }
         }
 
+        var symbols = new Dictionary<string, INamedTypeSymbol>(StringComparer.Ordinal);
+        var missing = new List<string>();
+        foreach (string name in SdkMetadataNames.ContractSymbols)
+        {
+            if (compilation.GetTypeByMetadataName(name) is { } symbol)
+            {
+                symbols.Add(name, symbol);
+            }
+            else
+            {
+                missing.Add(name);
+            }
+        }
+
+        bool Resolved(ISymbol owner)
+        {
+            foreach (string name in missing)
+            {
+                production.ReportDiagnostic(Diagnostic.Create(MissingSdkType, ContractTypes.SourceLocation(owner), name));
+            }
+
+            return missing.Count == 0;
+        }
+
         var vocabularies = new Dictionary<INamedTypeSymbol, List<(string Name, INamedTypeSymbol Type)>>(SymbolEqualityComparer.Default);
         foreach (INamedTypeSymbol vocabulary in declaredVocabularies.Distinct<INamedTypeSymbol>(SymbolEqualityComparer.Default))
         {
@@ -104,7 +137,7 @@ public sealed class OperationContractGenerator : IIncrementalGenerator
         {
             INamedTypeSymbol? vocabulary = ContractTypes.BaseTypes(operation).FirstOrDefault(vocabularies.ContainsKey);
             if (vocabulary is null || operation.IsAbstract || !operation.IsRecord
-                || ContractTypes.Find(operation, Operations + "OperationAttribute")?.ConstructorArguments.FirstOrDefault().Value
+                || ContractTypes.Find(operation, SdkMetadataNames.OperationAttribute)?.ConstructorArguments.FirstOrDefault().Value
                     is not string { Length: > 0 } name)
             {
                 Report(
@@ -119,7 +152,12 @@ public sealed class OperationContractGenerator : IIncrementalGenerator
         var described = new HashSet<INamedTypeSymbol>(SymbolEqualityComparer.Default);
         foreach (INamedTypeSymbol input in declaredInputs.Distinct<INamedTypeSymbol>(SymbolEqualityComparer.Default))
         {
-            var writer = new VocabularyWriter(compilation, input, [], Report);
+            if (!Resolved(input))
+            {
+                continue;
+            }
+
+            var writer = new VocabularyWriter(compilation, symbols, input, [], Report);
             if (writer.WriteInput() is { } source)
             {
                 production.AddSource(input.Name + ".OperationInput.g.cs", SourceText.From(source, Encoding.UTF8));
@@ -130,7 +168,12 @@ public sealed class OperationContractGenerator : IIncrementalGenerator
 
         foreach (KeyValuePair<INamedTypeSymbol, List<(string Name, INamedTypeSymbol Type)>> vocabulary in vocabularies)
         {
-            var writer = new VocabularyWriter(compilation, vocabulary.Key, vocabulary.Value, Report);
+            if (!Resolved(vocabulary.Key))
+            {
+                continue;
+            }
+
+            var writer = new VocabularyWriter(compilation, symbols, vocabulary.Key, vocabulary.Value, Report);
             if (writer.Write() is { } source)
             {
                 production.AddSource(vocabulary.Key.Name + ".Operations.g.cs", SourceText.From(source, Encoding.UTF8));
@@ -139,14 +182,14 @@ public sealed class OperationContractGenerator : IIncrementalGenerator
             described.UnionWith(writer.Records);
         }
 
-        var results = new ResultContractWriter(compilation, ReportResult);
+        var results = new ResultContractWriter(compilation, symbols, Resolved, ReportResult);
         foreach ((string hintName, string source) in results.Write())
         {
             production.AddSource(hintName, SourceText.From(source, Encoding.UTF8));
         }
 
         described.UnionWith(results.Records);
-        foreach ((IPropertySymbol property, Location location) in constantLists)
+        foreach ((IPropertySymbol property, Location location) in missing.Count == 0 ? constantLists : [])
         {
             if (!described.Contains(property.ContainingType))
             {

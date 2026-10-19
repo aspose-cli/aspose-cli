@@ -3,11 +3,6 @@ namespace Aspose.Cli.Sdk.Analyzers;
 /// <summary>Walks one definition's local call graph and pure external APIs.</summary>
 internal sealed class DefinitionPurityWalker : OperationWalker
 {
-    private const string ModuleInterface =
-        "Aspose.Cli.Sdk.Extensibility.IProductModule";
-    private const string DefinitionBuilder =
-        "Aspose.Cli.Sdk.Extensibility.ProductDefinitionBuilder<TSession>";
-
     private static readonly ImmutableHashSet<string> RuntimeTypes =
         ImmutableHashSet.Create(
             StringComparer.Ordinal,
@@ -50,7 +45,7 @@ internal sealed class DefinitionPurityWalker : OperationWalker
             context.Compilation))
         {
             if (!type.AllInterfaces.Any(static contract =>
-                    contract.ToDisplayString() == ModuleInterface))
+                    contract.ToDisplayString() == SdkMetadataNames.ProductModuleInterface))
             {
                 continue;
             }
@@ -241,11 +236,12 @@ internal sealed class DefinitionPurityWalker : OperationWalker
             return true;
         }
 
-        string typeName = type.OriginalDefinition.ToDisplayString();
-        if (type.ContainingAssembly?.Name == "Aspose.Cli.Sdk")
+        if (type.ContainingAssembly?.Name == SdkMetadataNames.SdkAssembly)
         {
-            return IsPureSdk(symbol, typeName);
+            return IsPureSdk(symbol, AnalyzerTypes.MetadataName(type.OriginalDefinition));
         }
+
+        string typeName = type.OriginalDefinition.ToDisplayString();
         if (typeName == "System.Type"
             && symbol is IPropertySymbol { Name: "Assembly" })
         {
@@ -282,37 +278,35 @@ internal sealed class DefinitionPurityWalker : OperationWalker
         string typeName)
     {
         string member = symbol.Name;
-        if (typeName.StartsWith(
-                "Aspose.Cli.Sdk.Extensibility.ProductDefinitionBuilder<",
-                StringComparison.Ordinal))
+        if (typeName == SdkMetadataNames.ProductDefinitionBuilder)
         {
             return member is
                 "Activator" or "Build" or "Describe" or "DetectFormat"
                 or "Diagnostics" or "Formats" or "Guard" or "Json" or "View";
         }
-        if (typeName == "Aspose.Cli.Sdk.Extensibility.Commanding.ProductMenu")
+        if (typeName == SdkMetadataNames.ProductMenu)
         {
             return member == "Command";
         }
         return typeName switch
         {
-            "Aspose.Cli.Sdk.Extensibility.Product" => member == "Define",
-            "Aspose.Cli.Sdk.IO.FormatDescriptor" =>
+            SdkMetadataNames.Product => member == "Define",
+            SdkMetadataNames.FormatDescriptor =>
                 member is ".ctor" or "Declare" or "Input" or "Routed"
                     || IsDataMember(symbol),
-            "Aspose.Cli.Sdk.IO.FormatDescriptorExtensions" =>
+            SdkMetadataNames.FormatDescriptorExtensions =>
                 member == "IdsFor",
-            "Aspose.Cli.Sdk.IO.FileFormatRecognition" =>
+            SdkMetadataNames.FileFormatRecognition =>
                 member is "AttachTo" or "Match" or "FirstOf",
-            "Aspose.Cli.Sdk.IO.FileProbePattern" => true,
-            "Aspose.Cli.Sdk.Contracts.ResourceBudgetCapabilities" =>
+            SdkMetadataNames.FileProbePattern => true,
+            SdkMetadataNames.ResourceBudgetCapabilities =>
                 member == "Domain",
-            "Aspose.Cli.Sdk.Errors.ErrorCode" =>
+            SdkMetadataNames.ErrorCode =>
                 member == "NotFound" || IsDataMember(symbol),
-            "Aspose.Cli.Sdk.Contracts.WarningCode" => IsDataMember(symbol),
-            "Aspose.Cli.Sdk.Diagnostics.DiagnosticDescriptor" =>
+            SdkMetadataNames.WarningCode => IsDataMember(symbol),
+            SdkMetadataNames.DiagnosticDescriptor =>
                 member is "Error" or "Warning" or "Verification" || IsDataMember(symbol),
-            "Aspose.Cli.Sdk.Views.ViewPartKinds" =>
+            SdkMetadataNames.ViewPartKinds =>
                 symbol is IFieldSymbol { IsConst: true },
             _ => IsDefinitionValue(typeName) && IsDataMember(symbol),
         };
@@ -365,18 +359,18 @@ internal sealed class DefinitionPurityWalker : OperationWalker
     private static bool IsDeferred(
         IMethodSymbol method,
         IArgumentOperation argument)
-        => method.ContainingType.OriginalDefinition.ToDisplayString()
-            == DefinitionBuilder
+        => AnalyzerTypes.MetadataName(method.ContainingType.OriginalDefinition)
+            == SdkMetadataNames.ProductDefinitionBuilder
         && (argument.Parameter?.Ordinal, method.Name) is
             (0, "Activator" or "Guard")
             or (1, "Describe");
 
     private static bool IsDefinitionValue(string typeName) =>
         typeName is
-            "Aspose.Cli.Sdk.Extensibility.ProductManifest"
-            or "Aspose.Cli.Sdk.IO.RouteOwnership"
-            or "Aspose.Cli.Sdk.Views.ProductView"
-            or "Aspose.Cli.Sdk.Serialization.ProductJsonDefinition";
+            SdkMetadataNames.ProductManifest
+            or SdkMetadataNames.RouteOwnership
+            or SdkMetadataNames.ProductView
+            or SdkMetadataNames.ProductJsonDefinition;
 
     private static bool IsDataMember(ISymbol symbol) =>
         symbol is IMethodSymbol

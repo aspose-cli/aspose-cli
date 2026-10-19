@@ -4,15 +4,6 @@ namespace Aspose.Cli.Sdk.Analyzers;
 [Generator]
 public sealed class ProductJsonContextGenerator : IIncrementalGenerator
 {
-    private const string ResultEnvelope =
-        "Aspose.Cli.Sdk.Contracts.ResultEnvelope";
-    private const string RootAttribute =
-        "Aspose.Cli.Sdk.Serialization.ProductJsonRootAttribute";
-    private const string SerializableAttribute =
-        "System.Text.Json.Serialization.JsonSerializableAttribute";
-    private const string SerializerContext =
-        "System.Text.Json.Serialization.JsonSerializerContext";
-
     private static readonly DiagnosticDescriptor MissingMetadata = new(
         "APCLI003",
         "Product JSON root is missing source-generated metadata",
@@ -48,11 +39,11 @@ public sealed class ProductJsonContextGenerator : IIncrementalGenerator
         INamedTypeSymbol[] types =
             AnalyzerTypes.Declared(compilation).ToArray();
         ImmutableArray<ITypeSymbol> metadata = types
-            .Where(static type => DerivesFrom(type, SerializerContext))
+            .Where(static type => DerivesFrom(type, SdkMetadataNames.Json.SerializerContext))
             .SelectMany(static type => type.GetAttributes())
             .Where(static attribute =>
                 attribute.AttributeClass?.ToDisplayString()
-                    == SerializableAttribute
+                    == SdkMetadataNames.Json.SerializableAttribute
                 && attribute.ConstructorArguments.Length > 0)
             .Select(static attribute =>
                 attribute.ConstructorArguments[0].Value)
@@ -68,8 +59,8 @@ public sealed class ProductJsonContextGenerator : IIncrementalGenerator
     private static bool IsRoot(INamedTypeSymbol type) =>
         !type.IsAbstract
         && type.TypeKind is TypeKind.Class or TypeKind.Struct
-        && (DerivesFrom(type, ResultEnvelope)
-            || HasAttribute(type, RootAttribute));
+        && (DerivesFrom(type, SdkMetadataNames.ResultEnvelope)
+            || HasAttribute(type, SdkMetadataNames.ProductJsonRootAttribute));
 
     private static bool DerivesFrom(
         INamedTypeSymbol type,

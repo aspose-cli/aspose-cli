@@ -26,6 +26,17 @@ internal static class AnalyzerTypes
                 type.ContainingAssembly,
                 compilation.Assembly));
 
+    /// <summary>
+    /// The name <see cref="Compilation.GetTypeByMetadataName"/> takes for a type, as
+    /// <see cref="SdkMetadataNames"/> lists it: generic arity as <c>`1</c>, nested types after <c>+</c>.
+    /// </summary>
+    internal static string MetadataName(INamedTypeSymbol type) =>
+        type.ContainingType is { } outer
+            ? MetadataName(outer) + "+" + type.MetadataName
+            : type.ContainingNamespace is { IsGlobalNamespace: false } ns
+                ? ns.ToDisplayString() + "." + type.MetadataName
+                : type.MetadataName;
+
     internal static bool Inherits(
         INamedTypeSymbol type,
         string baseType)

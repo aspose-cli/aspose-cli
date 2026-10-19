@@ -5,12 +5,6 @@ namespace Aspose.Cli.Sdk.Analyzers;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class ProductContractAnalyzer : DiagnosticAnalyzer
 {
-    private const string ProductModuleAttribute =
-        "Aspose.Cli.Sdk.Extensibility.ProductModuleAttribute";
-
-    private const string CommandingNamespace =
-        "Aspose.Cli.Sdk.Extensibility.Commanding";
-
     private static readonly ImmutableHashSet<string> HostAliases =
         ImmutableHashSet.Create(StringComparer.Ordinal, Aspose.Cli.Sdk.Extensibility.Commanding.GlobalOptionNames.Reserved);
 
@@ -110,7 +104,7 @@ public sealed class ProductContractAnalyzer : DiagnosticAnalyzer
         AttributeData? export = context.Compilation.Assembly.GetAttributes()
             .FirstOrDefault(static attribute =>
                 attribute.AttributeClass?.ToDisplayString()
-                    == ProductModuleAttribute);
+                    == SdkMetadataNames.ProductModuleAttribute);
         if (export?.ConstructorArguments.FirstOrDefault().Value
             is not string)
         {
@@ -246,8 +240,8 @@ public sealed class ProductContractAnalyzer : DiagnosticAnalyzer
     }
 
     private static bool IsHostSeam(ITypeSymbol type) =>
-        type is INamedTypeSymbol { Name: "StandardOptions" } named
-        && named.ContainingNamespace.ToDisplayString() == CommandingNamespace;
+        type is INamedTypeSymbol named
+        && AnalyzerTypes.MetadataName(named.OriginalDefinition) == SdkMetadataNames.StandardOptions;
 
     private static void AnalyzeLayerSymbol(SymbolAnalysisContext context)
     {

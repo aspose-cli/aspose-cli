@@ -46,8 +46,7 @@ internal static class ContractTypes
     {
         for (INamedTypeSymbol? current = attribute; current is not null; current = current.BaseType)
         {
-            if (current.ContainingNamespace?.ToDisplayString() + "." is OperationContractGenerator.Operations or OperationContractGenerator.Contracts
-                && ConstraintKinds.TryGetValue(current.Name, out string[]? kinds))
+            if (ConstraintKinds.TryGetValue(AnalyzerTypes.MetadataName(current), out string[]? kinds))
             {
                 return kinds;
             }
@@ -59,22 +58,22 @@ internal static class ContractTypes
     /// <summary>The value kinds each constraint of the SDK applies to, by its type or base type.</summary>
     internal static readonly Dictionary<string, string[]> ConstraintKinds = new(StringComparer.Ordinal)
     {
-        ["MinItemsAttribute"] = ["Array"],
-        ["MaxItemsAttribute"] = ["Array"],
-        ["UniqueItemsAttribute"] = ["Array"],
-        ["MinimumAttribute"] = ["Integer", "Number"],
-        ["MaximumAttribute"] = ["Integer", "Number"],
-        ["ExclusiveMinimumAttribute"] = ["Integer", "Number"],
-        ["MultipleOfAttribute"] = ["Integer", "Number"],
-        ["AllowedValuesAttribute"] = ["String", "Integer", "Number", "Boolean"],
-        ["JsonScalarAttribute"] = ["Any"],
-        ["MinLengthAttribute"] = ["String"],
-        ["MaxLengthAttribute"] = ["String"],
-        ["PatternAttribute"] = ["String"],
-        ["HexColorAttribute"] = ["String"],
-        ["WebLinkAttribute"] = ["String"],
-        ["ValueKindAttribute"] = ["String"],
-        ["ErrorDetailsAttribute"] = ["Object"],
+        [SdkMetadataNames.MinItemsAttribute] = ["Array"],
+        [SdkMetadataNames.MaxItemsAttribute] = ["Array"],
+        [SdkMetadataNames.UniqueItemsAttribute] = ["Array"],
+        [SdkMetadataNames.MinimumAttribute] = ["Integer", "Number"],
+        [SdkMetadataNames.MaximumAttribute] = ["Integer", "Number"],
+        [SdkMetadataNames.ExclusiveMinimumAttribute] = ["Integer", "Number"],
+        [SdkMetadataNames.MultipleOfAttribute] = ["Integer", "Number"],
+        [SdkMetadataNames.AllowedValuesAttribute] = ["String", "Integer", "Number", "Boolean"],
+        [SdkMetadataNames.JsonScalarAttribute] = ["Any"],
+        [SdkMetadataNames.MinLengthAttribute] = ["String"],
+        [SdkMetadataNames.MaxLengthAttribute] = ["String"],
+        [SdkMetadataNames.PatternAttribute] = ["String"],
+        [SdkMetadataNames.HexColorAttribute] = ["String"],
+        [SdkMetadataNames.WebLinkAttribute] = ["String"],
+        [SdkMetadataNames.ValueKindAttribute] = ["String"],
+        [SdkMetadataNames.ErrorDetailsAttribute] = ["Object"],
     };
 
     /// <summary>
@@ -123,9 +122,9 @@ internal static class ContractTypes
         SpecialType.System_Object => "Any",
         _ => type.ToDisplayString() switch
         {
-            "System.Text.Json.JsonElement" => "Any",
+            SdkMetadataNames.Json.JsonElement => "Any",
             // A declared warning code is written as its code string.
-            "Aspose.Cli.Sdk.Contracts.WarningCode" => "String",
+            SdkMetadataNames.WarningCode => "String",
             _ => null,
         },
     };
@@ -234,7 +233,7 @@ internal static class ContractTypes
 
     /// <summary>The name a property is serialized under: its <c>[JsonPropertyName]</c>, else its camelCase name.</summary>
     internal static string WireName(IPropertySymbol property) =>
-        Find(property, "System.Text.Json.Serialization.JsonPropertyNameAttribute")?.ConstructorArguments.FirstOrDefault().Value as string
+        Find(property, SdkMetadataNames.Json.PropertyNameAttribute)?.ConstructorArguments.FirstOrDefault().Value as string
         ?? CamelCase(property.Name);
 
     /// <summary>

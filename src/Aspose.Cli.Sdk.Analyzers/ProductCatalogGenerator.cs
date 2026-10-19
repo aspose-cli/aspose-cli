@@ -13,12 +13,6 @@ namespace Aspose.Cli.Sdk.Analyzers;
 [Generator]
 public sealed class ProductCatalogGenerator : IIncrementalGenerator
 {
-    private const string AttributeName =
-        "Aspose.Cli.Sdk.Extensibility.ProductModuleAttribute";
-    private const string ModuleInterfaceName =
-        "Aspose.Cli.Sdk.Extensibility.IProductModule";
-    private const string SdkAssemblyName = "Aspose.Cli.Sdk";
-
     private const string Category = "Aspose.Cli.ProductDiscovery";
 
     private static readonly DiagnosticDescriptor DuplicateProductId = AnalyzerTypes.Rule(
@@ -69,7 +63,7 @@ public sealed class ProductCatalogGenerator : IIncrementalGenerator
             {
                 if (!string.Equals(
                         attribute.AttributeClass?.ToDisplayString(),
-                        AttributeName,
+                        SdkMetadataNames.ProductModuleAttribute,
                         StringComparison.Ordinal)
                     || attribute.ConstructorArguments.Length != 2
                     || attribute.ConstructorArguments[0].Value is not string productId
@@ -109,7 +103,7 @@ public sealed class ProductCatalogGenerator : IIncrementalGenerator
         }
 
         INamedTypeSymbol? moduleInterface =
-            compilation.GetTypeByMetadataName(ModuleInterfaceName);
+            compilation.GetTypeByMetadataName(SdkMetadataNames.ProductModuleInterface);
         string hostSdkVersion =
             moduleInterface?.ContainingAssembly.Identity.Version.ToString()
             ?? "0.0.0.0";
@@ -230,7 +224,7 @@ public sealed class ProductCatalogGenerator : IIncrementalGenerator
         moduleType.DeclaredAccessibility == Accessibility.Public
         && !moduleType.IsAbstract
         && moduleType.AllInterfaces.Any(static contract =>
-            contract.ToDisplayString() == ModuleInterfaceName)
+            contract.ToDisplayString() == SdkMetadataNames.ProductModuleInterface)
         && moduleType.InstanceConstructors.Any(static constructor =>
                 constructor.DeclaredAccessibility == Accessibility.Public
                 && constructor.Parameters.Length == 0);
@@ -240,7 +234,7 @@ public sealed class ProductCatalogGenerator : IIncrementalGenerator
             .SelectMany(static module =>
                 module.ReferencedAssemblySymbols)
             .FirstOrDefault(static reference =>
-                reference.Name == SdkAssemblyName)
+                reference.Name == SdkMetadataNames.SdkAssembly)
             ?.Identity.Version.ToString()
         ?? "0.0.0.0";
 

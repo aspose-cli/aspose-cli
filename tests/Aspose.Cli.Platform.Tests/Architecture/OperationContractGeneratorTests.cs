@@ -384,6 +384,62 @@ public sealed class OperationContractGeneratorTests
         Assert.Empty(Assert.Single(result.Results).GeneratedSources);
     }
 
+    /// <summary>
+    /// A vocabulary whose compilation lacks an SDK type the generator resolves, as after the SDK
+    /// renames one, is reported rather than described without the rules that type carries.
+    /// </summary>
+    [Fact]
+    public void MissingSdkType_IsReported()
+    {
+        // The SDK is replaced by the few types the vocabulary itself names.
+        const string source =
+            """
+            using System.Text.Json.Serialization;
+            namespace Aspose.Cli.Sdk.Contracts { public abstract record BoundedOperation; }
+            namespace Aspose.Cli.Sdk.Operations
+            {
+                [System.AttributeUsage(System.AttributeTargets.Class)]
+                public sealed class OperationVocabularyAttribute(string schemaId) : System.Attribute
+                {
+                    public string SchemaId { get; } = schemaId;
+                    public System.Type? JsonContext { get; set; }
+                }
+
+                [System.AttributeUsage(System.AttributeTargets.Class)]
+                public sealed class OperationAttribute(string name) : System.Attribute { public string Name { get; } = name; }
+            }
+
+            namespace Sample
+            {
+                using Aspose.Cli.Sdk.Operations;
+
+                [OperationVocabulary("ops", JsonContext = typeof(StubJsonContext))]
+                public abstract partial record StubOp : Aspose.Cli.Sdk.Contracts.BoundedOperation;
+
+                [Operation("noop")]
+                public sealed record NoopOp : StubOp;
+
+                [JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase)]
+                [JsonSerializable(typeof(NoopOp))]
+                public partial class StubJsonContext : JsonSerializerContext;
+            }
+            """;
+        CSharpCompilation compilation = CSharpCompilation.Create(
+            "Sample.Product",
+            [CSharpSyntaxTree.ParseText(source, new CSharpParseOptions(LanguageVersion.Preview))],
+            RoslynTestSupport.PlatformReferences(),
+            new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary, nullableContextOptions: NullableContextOptions.Enable));
+
+        GeneratorDriverRunResult result = CSharpGeneratorDriver.Create(new OperationContractGenerator()).RunGenerators(compilation).GetRunResult();
+
+        Diagnostic[] missing = [.. result.Diagnostics.Where(static diagnostic => diagnostic.Id == "APCLI014")];
+        Assert.Contains(missing, static diagnostic => diagnostic.Severity == DiagnosticSeverity.Error
+            && diagnostic.GetMessage().Contains("'Aspose.Cli.Sdk.Operations.RecordRuleAttribute'", StringComparison.Ordinal)
+            && diagnostic.Location.SourceTree!.GetText().ToString(diagnostic.Location.SourceSpan) == "StubOp");
+        Assert.Contains(missing, static diagnostic => diagnostic.GetMessage().Contains("'Aspose.Cli.Sdk.Contracts.ValueConstraintAttribute'", StringComparison.Ordinal));
+        Assert.Empty(Assert.Single(result.Results).GeneratedSources);
+    }
+
     private static GeneratorDriverRunResult Run(string source)
     {
         CSharpCompilation compilation = CSharpCompilation.Create(
