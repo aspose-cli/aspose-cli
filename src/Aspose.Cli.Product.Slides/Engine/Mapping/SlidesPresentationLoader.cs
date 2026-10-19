@@ -109,6 +109,13 @@ internal sealed class SlidesPresentationLoader
                 throw Loading.Unreadable(path, "its content is incomplete or damaged, so no presentation format can be read from it", exception);
             }
 
+            // Content the engine recognizes as no format at all, such as text or random bytes,
+            // is named so rather than by the engine's "Unknown".
+            if (info.LoadFormat == LoadFormat.Unknown)
+            {
+                throw Loading.Unreadable(path, "its content is not in any supported presentation format");
+            }
+
             source.Position = 0;
             string format = SlidesEngineFormats.IdOf(info.LoadFormat);
             if (!SlidesFormats.LoadIds.Contains(format, StringComparer.Ordinal))

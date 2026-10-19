@@ -237,6 +237,29 @@ public sealed class SlidesHardeningTests
         Assert.Equal(ErrorCodes.FileCorrupt, infoError.Code);
     }
 
+    [Theory]
+    [MemberData(nameof(UnrecognizedContents))]
+    public void UnrecognizedContentNamedAsAPresentation_SaysItIsInNoSupportedFormat(byte[] content)
+    {
+        // SLD-5: the engine names such content Unknown, which is no format to tell a user.
+        using var fixture = new SlidesEngineFixture();
+        string input = fixture.File("renamed.pptx");
+        File.WriteAllBytes(input, content);
+
+        CliException error = Assert.Throws<CliException>(() =>
+            SlidesInfo.Run(fixture.Session, new SlidesInspectRequest { Input = input }));
+
+        Assert.Equal(ErrorCodes.FileCorrupt, error.Code);
+        Assert.DoesNotContain("Unknown", error.Message, StringComparison.Ordinal);
+        Assert.Contains("(its content is not in any supported presentation format).", error.Message, StringComparison.Ordinal);
+    }
+
+    public static TheoryData<byte[]> UnrecognizedContents => new()
+    {
+        "# Quarterly review\n\n## Results\n\n- Revenue up 12%\n- Costs down 3%\n"u8.ToArray(),
+        Enumerable.Range(0, 4096).Select(static index => (byte)((index * 7919 + 13) % 251)).ToArray(),
+    };
+
     [Fact]
     public void MalformedConversion_WritesNoPartialOutput()
     {
