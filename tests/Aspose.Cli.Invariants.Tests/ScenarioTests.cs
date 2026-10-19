@@ -87,6 +87,34 @@ public sealed class ScenarioTests
         Assert.All(outcome.Problems, static problem => Assert.Equal(ScenarioRunner.JsonCheck, problem.Check));
     }
 
+    [Fact]
+    public void EqualsWorkspace_StandsForTheWorkspaceDirectory()
+    {
+        Scenario scenario = Scenario.Parse("""
+            {
+              "name": "a path under the workspace",
+              "steps": [
+                {
+                  "args": ["words", "inspect", "sub/missing.docx"],
+                  "expect": {
+                    "error": "FILE_NOT_FOUND",
+                    "json": [
+                      { "path": "error.details.path", "equals": "<workspace>/sub/missing.docx" },
+                      { "path": "error.details.path", "equals": "<workspace>/other.docx" }
+                    ]
+                  }
+                }
+              ]
+            }
+            """);
+
+        ScenarioOutcome outcome = ScenarioRunner.Run(scenario);
+
+        ScenarioProblem problem = Assert.Single(outcome.Problems);
+        Assert.Equal(ScenarioRunner.JsonCheck, problem.Check);
+        Assert.Contains("other.docx", problem.Message, StringComparison.Ordinal);
+    }
+
     [Theory]
     [InlineData("""{"name":"x","steps":[{"args":["doctor"],"expectation":{}}]}""")]
     [InlineData("""{"name":"x","files":{"a.txt":{"text":"a","base64":"YQ=="}},"steps":[{"args":["doctor"]}]}""")]
