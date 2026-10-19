@@ -1,4 +1,4 @@
-using Aspose.Cli.Sdk.IO;
+using Aspose.Cli.Sdk.IO.Output;
 using Aspose.Cli.Sdk.Rendering;
 
 namespace Aspose.Cli.Product.Words.Contracts;

@@ -6,7 +6,8 @@ namespace Aspose.Cli.Architecture.Tests;
 
 /// <summary>
 /// Reads the SDK source with the Roslyn semantic model and checks its namespace dependency graph:
-/// it has no cycles, and every reference points down the declared layering.
+/// apart from the listed exceptions it has no cycles, and every reference points down the
+/// declared layering. IO is checked by its sub-areas, each a namespace of its own.
 /// </summary>
 public sealed class SdkLayeringTests
 {
@@ -32,12 +33,22 @@ public sealed class SdkLayeringTests
     /// <item>Primitives built on errors: text search and name suggestions, cell and page
     /// addressing, configuration paths, view manifests and the human-readable output
     /// helpers.</item>
-    /// <item>IO.Files: the one open policy for reading an input file.</item>
+    /// <item>IO.Files: one file at a time: the open policy for reading an input file, the
+    /// sharing-violation probe, a file's physical identity, fingerprint and publication
+    /// snapshot, and the owned delete that removes only the file it captured.</item>
     /// <item>Formats: the format declarations and the byte-signature recognition of input
-    /// files, on which Extensibility builds products and their routes.</item>
-    /// <item>IO: files, outputs, backups and publication, the operation deadline they run
-    /// under, and the worker output session and manifest store that record a worker's
-    /// outputs.</item>
+    /// files, on which Extensibility builds products and their routes; and IO.Budgets: the
+    /// invocation's resource ledger, the operation deadline, the input-size and output-set
+    /// limits and the streams that charge the ledger.</item>
+    /// <item>IO.Paths: resolving and validating local paths, and the user storage roots.</item>
+    /// <item>IO.Input: opening and loading input files, their protection and passwords, and
+    /// the resources a document references.</item>
+    /// <item>IO.Output: what an output is (path, format, parts, protection, the write
+    /// precondition) and the file objects a result reports.</item>
+    /// <item>IO.Publication: staging, atomic publication, its journal and recovery, the
+    /// process identity that recovery checks, and the worker output session and manifest store
+    /// that record a worker's outputs.</item>
+    /// <item>IO.Extraction: the guard and budgets of an extraction's output files.</item>
     /// <item>Execution (worker output publication, built on IO) and Rendering (font profiles
     /// and pixel budgets).</item>
     /// <item>Serialization: the shared JSON contexts and converters, and the result schemas
@@ -60,8 +71,12 @@ public sealed class SdkLayeringTests
         [$"{Root}.Errors"],
         [$"{Root}.Text", $"{Root}.Addressing", $"{Root}.Configuration", $"{Root}.Views", $"{Root}.Extensibility.Output"],
         [$"{Root}.IO.Files"],
-        [$"{Root}.Formats"],
-        [$"{Root}.IO"],
+        [$"{Root}.Formats", $"{Root}.IO.Budgets"],
+        [$"{Root}.IO.Paths"],
+        [$"{Root}.IO.Input"],
+        [$"{Root}.IO.Output"],
+        [$"{Root}.IO.Publication"],
+        [$"{Root}.IO.Extraction"],
         [$"{Root}.Execution", $"{Root}.Rendering"],
         [$"{Root}.Serialization"],
         [$"{Root}.Operations"],
@@ -71,12 +86,30 @@ public sealed class SdkLayeringTests
         [$"{Root}.Extensibility.Commanding"],
     ];
 
+    // rule-exemptions: begin
+    /// <summary>
+    /// The references allowed against the layering, each by the type that holds it and the
+    /// namespace it reaches, with the reason it cannot point down.
+    /// </summary>
+    private static readonly (string Owner, string To, string Reason)[] Exceptions =
+    [
+        (
+            $"{Root}.IO.Budgets.ResourceBudgetLedger",
+            $"{Root}.IO.Input",
+            "The ledger owns the bounded input reads of its invocation (Inputs), which charge it."),
+        (
+            $"{Root}.IO.Budgets.ResourceBudgetLedger",
+            $"{Root}.IO.Publication",
+            "The ledger carries the worker output session its invocation publishes into (OutputSession)."),
+    ];
+    // rule-exemptions: end
+
     private static readonly Lazy<NamespaceGraph> Graph = new(BuildGraph);
 
     [Fact]
     public void SdkNamespaces_HaveNoDependencyCycle()
     {
-        NamespaceGraph graph = Graph.Value;
+        NamespaceGraph graph = Graph.Value.Without(Excepted);
         string[] cycles = graph.StronglyConnectedComponents()
             .Where(static component => component.Count > 1)
             .Select(graph.DescribeCycle)
@@ -84,7 +117,7 @@ public sealed class SdkLayeringTests
 
         Assert.True(
             cycles.Length == 0,
-            "The SDK namespace graph has cycles; each lists the edges among its namespaces with one example reference:"
+            "Without SdkLayeringTests.Exceptions the SDK namespace graph has cycles; each lists the edges among its namespaces with one example reference:"
             + Environment.NewLine
             + string.Join(Environment.NewLine + Environment.NewLine, cycles));
     }
@@ -113,7 +146,7 @@ public sealed class SdkLayeringTests
             stale.Length == 0,
             "SdkLayeringTests.Layers names namespaces the SDK no longer declares: " + string.Join(", ", stale));
 
-        string[] violations = graph.Edges
+        string[] violations = graph.Without(Excepted).Edges
             .Where(edge => layerOf[edge.Key.From] <= layerOf[edge.Key.To])
             .OrderBy(static edge => edge.Key.From, StringComparer.Ordinal)
             .ThenBy(static edge => edge.Key.To, StringComparer.Ordinal)
@@ -127,6 +160,22 @@ public sealed class SdkLayeringTests
             "These SDK references point up or across the declared layering:"
             + Environment.NewLine
             + string.Join(Environment.NewLine, violations));
+    }
+
+    [Fact]
+    public void LayeringExceptions_AreEachStillNeeded()
+    {
+        NamespaceGraph graph = Graph.Value;
+        string[] unused = Exceptions
+            .Where(exception => !graph.Edges.Values.SelectMany(static references => references).Any(
+                reference => reference.Owner.ToDisplayString() == exception.Owner
+                    && reference.Target.ContainingNamespace.ToDisplayString() == exception.To))
+            .Select(static exception => $"{exception.Owner} -> {exception.To}")
+            .ToArray();
+
+        Assert.True(
+            unused.Length == 0,
+            "Remove the SdkLayeringTests.Exceptions no reference needs any more: " + string.Join(", ", unused));
     }
 
     [Fact]
@@ -145,6 +194,11 @@ public sealed class SdkLayeringTests
             graph.Edges.Keys,
             static edge => edge.From == $"{Root}.Extensibility" && edge.To == $"{Root}.Contracts");
     }
+
+    private static bool Excepted(NamespaceReference reference) =>
+        Exceptions.Any(exception =>
+            reference.Owner.ToDisplayString() == exception.Owner
+            && reference.Target.ContainingNamespace.ToDisplayString() == exception.To);
 
     private static NamespaceGraph BuildGraph() =>
         NamespaceGraph.Build(

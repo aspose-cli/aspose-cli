@@ -1,5 +1,5 @@
 using System.Text;
-using Aspose.Cli.Sdk.IO;
+using Aspose.Cli.Sdk.IO.Output;
 using Aspose.Cli.Sdk.Results;
 using Aspose.Cli.Sdk.Text;
 using Aspose.Words;

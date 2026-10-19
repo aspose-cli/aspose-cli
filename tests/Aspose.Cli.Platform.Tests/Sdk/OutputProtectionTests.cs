@@ -1,6 +1,7 @@
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Formats;
-using Aspose.Cli.Sdk.IO;
+using Aspose.Cli.Sdk.IO.Input;
+using Aspose.Cli.Sdk.IO.Output;
 using Xunit;
 
 namespace Aspose.Cli.Sdk.Tests;

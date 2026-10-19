@@ -165,7 +165,7 @@ public sealed class ProductPublicationTests
     {
         using var workspace = new TempWorkspace();
         string workers = Directory.CreateDirectory(
-            Path.Combine(Aspose.Cli.Sdk.IO.UserStorage.TemporaryRoot(), "worker")).FullName;
+            Path.Combine(Aspose.Cli.Sdk.IO.Paths.UserStorage.TemporaryRoot(), "worker")).FullName;
         using var self = System.Diagnostics.Process.GetCurrentProcess();
         long started = self.StartTime.ToUniversalTime().Ticks;
         // The owner's identity is its process id and start time, so a start time this process

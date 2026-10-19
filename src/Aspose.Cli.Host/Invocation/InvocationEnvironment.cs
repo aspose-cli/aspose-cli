@@ -1,6 +1,6 @@
 using System.Diagnostics;
 using Aspose.Cli.Sdk.Errors;
-using Aspose.Cli.Sdk.IO;
+using Aspose.Cli.Sdk.IO.Budgets;
 using Aspose.Cli.Sdk.Licensing;
 
 namespace Aspose.Cli.Host.Invocation;

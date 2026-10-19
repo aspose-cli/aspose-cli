@@ -4,7 +4,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using Aspose.Cli.Sdk;
-using Aspose.Cli.Sdk.IO;
+using Aspose.Cli.Sdk.IO.Budgets;
 
 namespace Aspose.Cli.Host.LocalServices;
 

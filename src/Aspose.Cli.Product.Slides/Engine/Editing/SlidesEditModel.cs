@@ -1,4 +1,4 @@
-using Aspose.Cli.Sdk.IO;
+using Aspose.Cli.Sdk.IO.Input;
 using Aspose.Slides;
 
 namespace Aspose.Cli.Product.Slides.Engine.Editing;

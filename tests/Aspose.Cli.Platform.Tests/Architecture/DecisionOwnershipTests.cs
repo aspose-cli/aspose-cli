@@ -178,7 +178,7 @@ public sealed partial class DecisionOwnershipTests
     [Fact]
     public void D1_FileObjects_ComeOnlyFromTheSdkFactory()
     {
-        string factory = Path.Combine(SdkRoot, "IO", "FileObjects.cs");
+        string factory = Path.Combine(SdkRoot, "IO", "Output", "FileObjects.cs");
         string[] violations = [.. Sources.Value
             .Where(file => !string.Equals(file.Path, factory, StringComparison.OrdinalIgnoreCase))
             .SelectMany(file => file.Root.DescendantNodes()
@@ -482,7 +482,7 @@ public sealed partial class DecisionOwnershipTests
     [Fact]
     public void D13_ProcessLiveness_HasOneSdkOwner()
     {
-        string owner = Path.Combine(SdkRoot, "IO", "ProcessIdentity.cs");
+        string owner = Path.Combine(SdkRoot, "IO", "Publication", "ProcessIdentity.cs");
         string[] violations = [.. Sources.Value
             .Where(file => !string.Equals(file.Path, owner, StringComparison.OrdinalIgnoreCase))
             .SelectMany(file => file.Root.DescendantNodes()

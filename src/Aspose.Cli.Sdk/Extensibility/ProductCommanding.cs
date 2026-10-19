@@ -1,6 +1,7 @@
 using System.CommandLine;
 using Aspose.Cli.Sdk.Contracts;
-using Aspose.Cli.Sdk.IO;
+using Aspose.Cli.Sdk.IO.Input;
+using Aspose.Cli.Sdk.IO.Paths;
 
 namespace Aspose.Cli.Sdk.Extensibility;
 

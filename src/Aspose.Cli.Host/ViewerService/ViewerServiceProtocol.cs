@@ -42,7 +42,7 @@ internal static class ViewerServiceCommands
 }
 
 /// <summary>How a document should be opened.</summary>
-internal sealed record ViewerOpenRequest(long MaxInputBytes = Aspose.Cli.Sdk.IO.ResourceBudgetDefaults.DefaultInputBytes)
+internal sealed record ViewerOpenRequest(long MaxInputBytes = Aspose.Cli.Sdk.IO.Budgets.ResourceBudgetDefaults.DefaultInputBytes)
 {
     public required string File { get; init; }
 

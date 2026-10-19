@@ -1,5 +1,5 @@
 using Aspose.Cli.Product.Slides.Engine.Editing;
-using Aspose.Cli.Sdk.IO;
+using Aspose.Cli.Sdk.IO.Output;
 using Aspose.Cli.Sdk.Licensing;
 using Aspose.Cli.Sdk.Results;
 using Aspose.Slides;

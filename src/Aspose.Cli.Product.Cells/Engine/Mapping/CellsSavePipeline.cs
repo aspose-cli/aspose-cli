@@ -1,5 +1,6 @@
 using Aspose.Cells;
-using Aspose.Cli.Sdk.IO;
+using Aspose.Cli.Sdk.IO.Output;
+using Aspose.Cli.Sdk.IO.Publication;
 using Aspose.Cli.Sdk.Licensing;
 using Aspose.Cli.Sdk.Results;
 

@@ -1,6 +1,6 @@
 using System.Text.Json.Nodes;
 using Aspose.Cli.Sdk.Errors;
-using Aspose.Cli.Sdk.IO;
+using Aspose.Cli.Sdk.IO.Budgets;
 using Aspose.Cli.TestKit;
 using Aspose.Pdf;
 using Xunit;
@@ -196,7 +196,7 @@ public sealed class PdfMarkdownResourceTests
         string markdown = Path.Combine(directory, "input.md");
         File.WriteAllText(markdown, "# Report\n\n![a](large.png)\n");
         var budgets = new ResourceBudgetLedger(
-            Aspose.Cli.Sdk.IO.OperationDeadline.Start(null),
+            Aspose.Cli.Sdk.IO.Budgets.OperationDeadline.Start(null),
             new Dictionary<string, long> { [ResourceBudgetKinds.InputBytes] = 2048 });
 
         CliException exceeded = Assert.Throws<CliException>(() =>

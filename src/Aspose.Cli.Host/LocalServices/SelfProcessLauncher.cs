@@ -1,7 +1,7 @@
 using System.Diagnostics;
 using System.Reflection;
 using Aspose.Cli.Sdk.Errors;
-using Aspose.Cli.Sdk.IO;
+using Aspose.Cli.Sdk.IO.Publication;
 
 namespace Aspose.Cli.Host.LocalServices;
 
@@ -65,11 +65,11 @@ internal static class SelfProcessLauncher
         }
         foreach (string name in new[]
         {
-            Aspose.Cli.Sdk.IO.WorkerOutputSession.WorkerEnvironmentVariable,
-            Aspose.Cli.Sdk.IO.WorkerOutputSession.RootEnvironmentVariable,
-            Aspose.Cli.Sdk.IO.WorkerOutputSession.ManifestEnvironmentVariable,
-            Aspose.Cli.Sdk.IO.WorkerOutputSession.DeadlineEnvironmentVariable,
-            Aspose.Cli.Sdk.IO.WorkerOutputSession.BudgetEnvironmentVariable,
+            Aspose.Cli.Sdk.IO.Publication.WorkerOutputSession.WorkerEnvironmentVariable,
+            Aspose.Cli.Sdk.IO.Publication.WorkerOutputSession.RootEnvironmentVariable,
+            Aspose.Cli.Sdk.IO.Publication.WorkerOutputSession.ManifestEnvironmentVariable,
+            Aspose.Cli.Sdk.IO.Publication.WorkerOutputSession.DeadlineEnvironmentVariable,
+            Aspose.Cli.Sdk.IO.Publication.WorkerOutputSession.BudgetEnvironmentVariable,
         }) { start.Environment.Remove(name); }
         start.WindowStyle = ProcessWindowStyle.Hidden;
         return start;

@@ -1,5 +1,5 @@
 using Aspose.Cli.Host.LocalServices;
-using Aspose.Cli.Sdk.IO;
+using Aspose.Cli.Sdk.IO.Publication;
 using Aspose.Cli.TestKit;
 using Xunit;
 

@@ -1,6 +1,7 @@
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Formats;
-using Aspose.Cli.Sdk.IO;
+using Aspose.Cli.Sdk.IO.Extraction;
+using Aspose.Cli.Sdk.IO.Output;
 using Aspose.Pdf;
 using Aspose.Pdf.Forms;
 using static Aspose.Cli.Product.Pdf.Engine.PdfGeometry;

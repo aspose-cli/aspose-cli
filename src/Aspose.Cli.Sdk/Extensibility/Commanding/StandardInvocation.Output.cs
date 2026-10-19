@@ -4,7 +4,7 @@ using System.Text.RegularExpressions;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Formats;
-using Aspose.Cli.Sdk.IO;
+using Aspose.Cli.Sdk.IO.Output;
 
 namespace Aspose.Cli.Sdk.Extensibility.Commanding;
 

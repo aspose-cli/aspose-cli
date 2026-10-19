@@ -4,7 +4,7 @@ using System.Text.Json.Nodes;
 using Aspose.Cli.Sdk;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Formats;
-using Aspose.Cli.Sdk.IO;
+using Aspose.Cli.Sdk.IO.Paths;
 
 namespace Aspose.Cli.Host.Invocation;
 

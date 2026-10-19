@@ -1,6 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using Aspose.Cli.Sdk.Contracts;
-using Aspose.Cli.Sdk.IO;
+using Aspose.Cli.Sdk.IO.Output;
 
 namespace Aspose.Cli.Sdk.Extensibility.Commanding;
 

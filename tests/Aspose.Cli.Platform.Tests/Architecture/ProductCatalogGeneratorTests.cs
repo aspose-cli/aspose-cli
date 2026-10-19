@@ -230,7 +230,7 @@ public sealed class ProductCatalogGeneratorTests
             .Append(MetadataReference.CreateFromFile(
                 typeof(Aspose.Cli.Sdk.Contracts.ProductCapabilities).Assembly.Location))
             .Append(MetadataReference.CreateFromFile(
-                typeof(Aspose.Cli.Sdk.IO.SafeFileWriter).Assembly.Location));
+                typeof(Aspose.Cli.Sdk.IO.Publication.SafeFileWriter).Assembly.Location));
         CSharpCompilation compilation = CSharpCompilation.Create(
             productNamespace,
             [CSharpSyntaxTree.ParseText(source)],

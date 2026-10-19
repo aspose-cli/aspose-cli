@@ -2,7 +2,9 @@ using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Extensibility;
 using Aspose.Cli.Sdk.Formats;
-using Aspose.Cli.Sdk.IO;
+using Aspose.Cli.Sdk.IO.Files;
+using Aspose.Cli.Sdk.IO.Output;
+using Aspose.Cli.Sdk.IO.Publication;
 using Aspose.Cli.TestKit;
 using Xunit;
 

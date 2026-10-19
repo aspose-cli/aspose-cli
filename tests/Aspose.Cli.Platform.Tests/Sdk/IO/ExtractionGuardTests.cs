@@ -1,6 +1,8 @@
 using System.Text;
 using Aspose.Cli.Sdk.Errors;
-using Aspose.Cli.Sdk.IO;
+using Aspose.Cli.Sdk.IO.Extraction;
+using Aspose.Cli.Sdk.IO.Files;
+using Aspose.Cli.Sdk.IO.Paths;
 using Aspose.Cli.TestKit;
 using Xunit;
 

@@ -1,5 +1,5 @@
 using Aspose.Cli.Host.Skills;
-using Aspose.Cli.Sdk.IO;
+using Aspose.Cli.Sdk.IO.Publication;
 using Aspose.Cli.Sdk.Serialization;
 
 namespace Aspose.Cli.Host.Invocation;

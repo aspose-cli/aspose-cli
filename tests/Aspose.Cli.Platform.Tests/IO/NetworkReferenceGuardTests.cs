@@ -1,7 +1,7 @@
 using System.IO.Compression;
 using System.Text;
 using Aspose.Cli.Sdk.Errors;
-using Aspose.Cli.Sdk.IO;
+using Aspose.Cli.Sdk.IO.Input;
 using Xunit;
 
 namespace Aspose.Cli.Platform.Tests.IO;

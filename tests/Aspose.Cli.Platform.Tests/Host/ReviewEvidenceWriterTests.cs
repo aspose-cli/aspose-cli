@@ -332,13 +332,13 @@ public sealed class ReviewEvidenceWriterTests
     public void Write_WorkerOwnsAllReviewCandidatesUntilParentPublication()
     {
         using var temp = new TempDirectory();
-        string workerRoot = Aspose.Cli.Sdk.IO.WorkerOutputSession.CreateRoot();
+        string workerRoot = Aspose.Cli.Sdk.IO.Publication.WorkerOutputSession.CreateRoot();
         try
         {
-            string manifest = Path.Combine(workerRoot, Aspose.Cli.Sdk.IO.WorkerOutputSession.ManifestName);
-            var worker = new Aspose.Cli.Sdk.IO.WorkerOutputSession(workerRoot, manifest);
-            using var deadline = Aspose.Cli.Sdk.IO.OperationDeadline.Start(null);
-            var budgets = new Aspose.Cli.Sdk.IO.ResourceBudgetLedger(deadline, outputSession: worker);
+            string manifest = Path.Combine(workerRoot, Aspose.Cli.Sdk.IO.Publication.WorkerOutputSession.ManifestName);
+            var worker = new Aspose.Cli.Sdk.IO.Publication.WorkerOutputSession(workerRoot, manifest);
+            using var deadline = Aspose.Cli.Sdk.IO.Budgets.OperationDeadline.Start(null);
+            var budgets = new Aspose.Cli.Sdk.IO.Budgets.ResourceBudgetLedger(deadline, outputSession: worker);
             string target = temp.File("review");
             string source = Source(temp);
             ReviewEvidenceWriter.Write(source, "test", target, 1, true, Presentation,
@@ -351,7 +351,7 @@ public sealed class ReviewEvidenceWriterTests
             Assert.True(File.Exists(Path.Combine(target, "review.json")));
             Assert.True(File.Exists(Path.Combine(target, "artifacts", "page.png")));
         }
-        finally { Assert.True(Aspose.Cli.Sdk.IO.UserStorage.TryDeleteTree(workerRoot)); }
+        finally { Assert.True(Aspose.Cli.Sdk.IO.Paths.UserStorage.TryDeleteTree(workerRoot)); }
     }
 
     [Fact]
@@ -359,13 +359,13 @@ public sealed class ReviewEvidenceWriterTests
     {
         using var temp = new TempDirectory();
         using var cancellation = new CancellationTokenSource();
-        using var deadline = Aspose.Cli.Sdk.IO.OperationDeadline.Start(null, cancellation.Token);
+        using var deadline = Aspose.Cli.Sdk.IO.Budgets.OperationDeadline.Start(null, cancellation.Token);
         string source = Source(temp);
         Assert.Throws<OperationCanceledException>(() => ReviewEvidenceWriter.Write(
             source, "test", temp.File("review"), 1, true, Presentation,
             artifacts => { artifacts.Write("page.png", stream => stream.Write(PngHeader)); return Manifest(1, ["page.png"]); },
             _ => { cancellation.Cancel(); return new ProductReviewAssessment(); },
-            LicenseState.Licensed, new ContractJsonSerializer([]), new Aspose.Cli.Sdk.IO.ResourceBudgetLedger(deadline)));
+            LicenseState.Licensed, new ContractJsonSerializer([]), new Aspose.Cli.Sdk.IO.Budgets.ResourceBudgetLedger(deadline)));
         Assert.Equal([source], Directory.EnumerateFileSystemEntries(temp.Path));
     }
     private static JsonNode ViewerData(string html)

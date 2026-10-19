@@ -6,8 +6,8 @@ using System.Text.Json.Serialization.Metadata;
 using Aspose.Cli.Host.Invocation;
 using Aspose.Cli.Host.Viewer;
 using Aspose.Cli.Host.ViewerService;
-using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Host.LocalServices;
+using Aspose.Cli.Sdk.IO.Budgets;
 using Xunit;
 
 namespace Aspose.Cli.Host.Tests;

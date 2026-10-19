@@ -2,7 +2,7 @@ using System.ComponentModel;
 using Aspose.Cli.Host.LocalServices;
 using Aspose.Cli.Host.Updating;
 using Aspose.Cli.Host.ViewerService;
-using Aspose.Cli.Sdk.IO;
+using Aspose.Cli.Sdk.IO.Publication;
 using Xunit;
 
 namespace Aspose.Cli.Sdk.Tests.IO;

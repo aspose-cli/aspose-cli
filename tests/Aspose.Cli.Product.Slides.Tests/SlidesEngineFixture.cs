@@ -1,6 +1,6 @@
 using Aspose.Cli.Product.Slides.Contracts;
+using Aspose.Cli.Sdk.IO.Publication;
 using Aspose.Cli.TestKit;
-using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Extensibility;
 using Aspose.Cli.Sdk.Licensing;
 using Aspose.Cli.Sdk.Results;
