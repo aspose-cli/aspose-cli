@@ -25,7 +25,7 @@ public static class WorkerOutputPublisher
             using var directory = new AtomicNewDirectoryWriter(budgets, output.Target, "worker-directory-publication",
                 faults ?? NoPublicationFaultInjector.Instance, output.Replace, manifest.DirectoryTransactionParent);
             NewDirectoryPublication.Copy(output, directory.StagingDirectory, budgets);
-            directory.Commit();
+            directory.Commit(admitPrevious: null, manifest.DirectoryAdmittedPrevious);
             return output.Tree.Files.Select(file => file.Snapshot.Length).ToArray();
         }
         var created = new OwnedOutputDirectories(deferred: false);

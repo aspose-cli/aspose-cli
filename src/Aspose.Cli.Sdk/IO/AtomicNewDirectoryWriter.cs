@@ -100,7 +100,24 @@ public sealed class AtomicNewDirectoryWriter : IDisposable
     private string PreviousDirectory => NewDirectoryPublication.PreviousPath(_transaction);
 
     /// <summary>Seals the candidate and either retains it for the parent or publishes it once.</summary>
-    public void Commit()
+    public void Commit() => Commit(admitPrevious: null, admitted: null);
+
+    /// <summary>
+    /// Seals the candidate and either retains it for the parent or publishes it once, over a
+    /// target that <paramref name="admitPrevious"/> admits.
+    /// </summary>
+    /// <param name="admitPrevious">
+    /// Decides, given the target path, whether the publication may take the place of what the
+    /// target holds, and throws to refuse it. It runs under the publication's lease after the
+    /// directory to replace is captured, so the tree it admits is the one replaced. In a worker it
+    /// runs there, and the parent that publishes refuses a target that no longer holds the tree
+    /// it admitted.
+    /// </param>
+    public void Commit(Action<string> admitPrevious) =>
+        Commit(admitPrevious ?? throw new ArgumentNullException(nameof(admitPrevious)), admitted: null);
+
+    // The parent publishing a worker's candidate passes what the worker admitted.
+    internal void Commit(Action<string>? admitPrevious, AdmittedDirectoryPrevious? admitted)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
         if (_completed) { throw new InvalidOperationException("The directory output is already committed."); }
@@ -118,7 +135,9 @@ public sealed class AtomicNewDirectoryWriter : IDisposable
             _journal.EnsureLifecycleCapacity(JournalPath), "bytes", "directory-seal");
         if (_budgets.OutputSession is { } worker)
         {
-            worker.RegisterDirectory(_output, _transactionParent, _budgets.Deadline);
+            // The worker admits the target as it is now; the parent publishes only over that tree.
+            AdmittedDirectoryPrevious? admittedHere = admitPrevious is null ? null : new AdmittedDirectoryPrevious(Admit(admitPrevious));
+            worker.RegisterDirectory(_output, _transactionParent, admittedHere, _budgets.Deadline);
             _completed = true;
             return;
         }
@@ -128,8 +147,8 @@ public sealed class AtomicNewDirectoryWriter : IDisposable
             Path.GetDirectoryName(TargetDirectory)!, [Path.GetDirectoryName(TargetDirectory)!], _budgets.Deadline);
         NewDirectoryPublication.EnsureAnchor(_anchor, _anchorIdentity);
         lease.EnsureDirectoryUnchanged();
-        DirectoryTreeSnapshot? previous = _replace ? CapturePrevious() : null;
-        if (previous is null) { NewDirectoryPublication.EnsureAbsent(TargetDirectory); }
+        DirectoryTreeSnapshot? previous = Admit(admitPrevious);
+        if (admitted is not null) { EnsureAdmitted(admitted, previous); }
         NewDirectoryPublication.ValidateTree(StagingDirectory, tree, _budgets.Deadline);
         if (previous is not null)
         {
@@ -177,6 +196,30 @@ public sealed class AtomicNewDirectoryWriter : IDisposable
     }
 
     private string JournalPath => Path.Combine(_transaction, AtomicPublicationPlan.JournalName);
+
+    // Captures what the target holds, refuses what this publication may not take the place of, and
+    // returns the directory the candidate replaces, or null when the target does not exist.
+    private DirectoryTreeSnapshot? Admit(Action<string>? admitPrevious)
+    {
+        DirectoryTreeSnapshot? previous = _replace ? CapturePrevious() : null;
+        if (previous is null) { NewDirectoryPublication.EnsureAbsent(TargetDirectory); }
+        admitPrevious?.Invoke(TargetDirectory);
+        return previous;
+    }
+
+    // The target still holds what the worker admitted: the same tree, or still nothing.
+    private void EnsureAdmitted(AdmittedDirectoryPrevious admitted, DirectoryTreeSnapshot? previous)
+    {
+        try
+        {
+            if ((admitted.Tree is null) != (previous is null)) { throw new IOException("The target directory appeared or disappeared."); }
+            if (admitted.Tree is not null) { NewDirectoryPublication.ValidateTree(TargetDirectory, admitted.Tree, _budgets.Deadline); }
+        }
+        catch (IOException error)
+        {
+            throw new IOException("The target directory changed after the worker admitted it.", error);
+        }
+    }
 
     // The directory the candidate replaces, or null when the target does not exist.
     private DirectoryTreeSnapshot? CapturePrevious()
@@ -259,6 +302,12 @@ internal sealed record DirectoryTreeSnapshot(
 internal sealed record NewDirectoryOutput(string Target, string Staged, string ParentAnchor,
     FilePhysicalIdentity? ParentIdentity, FilePhysicalIdentity? TransactionIdentity, DirectoryTreeSnapshot Tree,
     bool Replace = false, DirectoryTreeSnapshot? Previous = null);
+
+/// <summary>
+/// What a worker admitted at the target of a directory replacement: the tree it held
+/// (<see cref="Tree"/>), or nothing when <see cref="Tree"/> is null.
+/// </summary>
+internal sealed record AdmittedDirectoryPrevious(DirectoryTreeSnapshot? Tree);
 
 /// <summary>Bounded tree validation shared by directory production, worker transport and recovery.</summary>
 internal static class NewDirectoryPublication
