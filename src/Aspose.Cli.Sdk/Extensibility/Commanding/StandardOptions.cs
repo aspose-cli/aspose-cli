@@ -46,15 +46,15 @@ public sealed record CommandTraits
 /// </summary>
 public sealed class TargetFormat
 {
-    private TargetFormat(FormatUse? use, string description, IReadOnlyList<FormatDescriptor> formats, string? defaultFormat, bool required)
+    private TargetFormat(FormatUse use, string description, IReadOnlyList<FormatDescriptor> formats, string? defaultFormat, bool required)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(description);
         ArgumentNullException.ThrowIfNull(formats);
         Description = description;
-        Offered = use is { } selected ? [.. formats.IdsFor(selected).Select(id => formats.Named(selected, id)!)] : formats;
+        Offered = [.. formats.IdsFor(use).Select(id => formats.Named(use, id)!)];
         if (Offered.Count == 0)
         {
-            throw new ArgumentException($"The product declares no {use.ToString()!.ToLowerInvariant()} format.", nameof(formats));
+            throw new ArgumentException($"The product declares no {use.ToString().ToLowerInvariant()} format.", nameof(formats));
         }
 
         if (defaultFormat is not null && Named(defaultFormat) is null)
@@ -117,13 +117,6 @@ public sealed class TargetFormat
             defaultFormat,
             required: false);
     }
-
-    /// <summary>
-    /// An optional <c>--to</c> among <paramref name="formats"/>, such as the formats a command
-    /// exports data in; when it is omitted, the <c>--out</c> extension names the format.
-    /// </summary>
-    public static TargetFormat Among(string description, IReadOnlyList<FormatDescriptor> formats) =>
-        new(use: null, description, formats, defaultFormat: null, required: false);
 
     /// <summary>The offered format whose id or alias is <paramref name="name"/>, ignoring case.</summary>
     internal FormatDescriptor? Named(string name) =>
@@ -784,11 +777,6 @@ public partial class StandardInvocation
                 Paths, _parse.GetRequiredValue(file), file.Name, DeclaredInputs());
         }
     }
-
-    /// <summary>The resolved <c>--out-dir</c>, or null when it was omitted.</summary>
-    /// <exception cref="CliException"><c>OPTION_INVALID</c> when a file occupies the path.</exception>
-    public string? RequestedOutputDirectory =>
-        Declared(_options.OutputDirectory, "output directory").Resolve(_parse, Paths);
 
     /// <summary>The font directories named by <c>--font-dir</c>; ambient when none was given.</summary>
     /// <exception cref="CliException"><c>OPTION_INVALID</c> for a directory that is not a local, existing one.</exception>
