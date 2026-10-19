@@ -1,6 +1,9 @@
+using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
 using Aspose.Cli.Architecture.Tests.TestSupport;
+using Aspose.Cli.Host.Contracts;
+using Aspose.Cli.Sdk;
 using Aspose.Cli.Sdk.Serialization;
 using Aspose.Cli.TestKit;
 using Xunit;
@@ -8,31 +11,21 @@ using Xunit;
 namespace Aspose.Cli.IntegrationTests;
 
 /// <summary>
-/// Pins the exact bytes of every published schema and of every canonical common result, so a
-/// change of who owns a contract cannot change what an agent reads.
+/// Pins the exact bytes of every canonical common result, so a change of who owns a contract
+/// cannot change what an agent reads. The published schemas are pinned by the capabilities
+/// snapshots.
 /// </summary>
 public sealed class SchemaSnapshotTests
 {
-    private const string UpdateSnapshotsVariable = Aspose.Cli.Sdk.DistributionInfo.EnvironmentVariablePrefix + "TEST_UPDATE_SNAPSHOTS";
-
-    /// <summary>Every schema <c>aspose-cli schema</c> lists prints the bytes it printed when the snapshot was taken.</summary>
-    [Fact]
-    public void EveryPublishedSchema_MatchesItsSnapshot()
-    {
-        IEnumerable<string> lines = PublishedSchemas.Ids
-            .Order(StringComparer.Ordinal)
-            .Select(static id => Sha256(PublishedSchemas.Text(id)) + "  " + id);
-
-        AssertSnapshot("schemas.sha256", lines);
-    }
+    private const string UpdateSnapshotsVariable = DistributionInfo.EnvironmentVariablePrefix + "TEST_UPDATE_SNAPSHOTS";
 
     /// <summary>Every canonical common result serializes to the bytes it serialized to when the snapshot was taken.</summary>
     [Fact]
     public void EveryCommonSample_SerializesToItsSnapshot()
     {
-        ContractJsonSerializer serializer = new([], Aspose.Cli.Host.Contracts.HostResultJsonContext.Default);
+        ContractJsonSerializer serializer = new([], HostResultJsonContext.Default);
         IEnumerable<string> lines = CommonSchemaSamples.All
-            .Select((sample, index) => Sha256(serializer.Serialize(sample.Value)) + "  " + index.ToString("D2", System.Globalization.CultureInfo.InvariantCulture) + " " + sample.Value.GetType().Name);
+            .Select((sample, index) => Sha256(serializer.Serialize(sample.Value)) + "  " + index.ToString("D2", CultureInfo.InvariantCulture) + " " + sample.Value.GetType().Name);
 
         AssertSnapshot("common-samples.sha256", lines);
     }
