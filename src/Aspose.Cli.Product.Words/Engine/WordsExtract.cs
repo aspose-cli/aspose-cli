@@ -4,6 +4,7 @@ using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Licensing;
 using Aspose.Cli.Sdk.Results;
+using Aspose.Cli.Sdk.Text;
 using Aspose.Words;
 using Aspose.Words.Drawing;
 using Aspose.Words.Tables;
@@ -101,19 +102,7 @@ internal static class WordsExtract
     /// a cell spanning columns can be one field, so rows can have different field counts, and a
     /// cell a merge covers is an empty field.
     /// </summary>
-    private static byte[] Csv(Table table, bool byteOrderMark)
-    {
-        var csv = new System.Text.StringBuilder();
-        foreach (Row row in table.Rows)
-        {
-            csv.AppendJoin(',', row.Cells.Select(static cell => Field(WordsText.LineBreaks(WordsText.Of(cell), "\n"))));
-            csv.Append("\r\n");
-        }
-
-        byte[] text = System.Text.Encoding.UTF8.GetBytes(csv.ToString());
-        return byteOrderMark ? [.. System.Text.Encoding.UTF8.GetPreamble(), .. text] : text;
-
-        static string Field(string text) =>
-            text.AsSpan().IndexOfAny(",\"\r\n") < 0 ? text : $"\"{text.Replace("\"", "\"\"", StringComparison.Ordinal)}\"";
-    }
+    private static byte[] Csv(Table table, bool byteOrderMark) => CsvText.Encode(
+        table.Rows.Cast<Row>().Select(static row => row.Cells.Select(static cell => WordsText.LineBreaks(WordsText.Of(cell), "\n"))),
+        byteOrderMark);
 }
