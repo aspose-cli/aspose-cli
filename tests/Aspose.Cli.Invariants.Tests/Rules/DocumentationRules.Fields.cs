@@ -395,6 +395,38 @@ internal static partial class ContractRules
         }
     }
 
+    /// <summary>
+    /// The fields a text names in prose as <c>operation.field</c> (<c>import_range.from</c>,
+    /// <c>set_body.paragraphs.list</c>), read as the JSON <c>{"op":"operation","field":...}</c>
+    /// would be: each name must be a field of the operation at its place. A dotted name whose
+    /// first part is no operation of the product, such as a file name, is not read.
+    /// </summary>
+    private static IEnumerable<string> CheckDottedFields(string text, string? product, OperationFields fields, MistakenNames mistaken, HashSet<string> kinds)
+    {
+        foreach (Match match in DottedField().Matches(text))
+        {
+            string op = match.Groups["op"].Value;
+            CliProduct[] owners = fields.Owners(product, op);
+            if (owners.Length == 0)
+            {
+                continue;
+            }
+            WrittenObject? written = null;
+            foreach (string key in match.Groups["path"].Value.Split('.').Reverse())
+            {
+                written = new WrittenObject([new WrittenMember(key, null, written is null ? [] : [written])]);
+            }
+            foreach (string problem in CheckMembers(written!, [], owners, op, fields, mistaken, kinds))
+            {
+                yield return problem;
+            }
+        }
+    }
+
+    /// <summary>An operation name and the field path after it, <c>import_range.from</c>, not part of a path or a longer name.</summary>
+    [GeneratedRegex(@"(?<![\w./\\{-])(?<op>[a-z][a-z0-9]*(?:_[a-z0-9]+)+)\.(?<path>[a-z][A-Za-z0-9]*(?:\.[a-z][A-Za-z0-9]*)*)(?![\w-]|\.\w)")]
+    private static partial Regex DottedField();
+
     private static IEnumerable<string> CheckMembers(
         WrittenObject written, List<string> path, CliProduct[] owners, string op, OperationFields fields, MistakenNames mistaken, HashSet<string> kinds)
     {
