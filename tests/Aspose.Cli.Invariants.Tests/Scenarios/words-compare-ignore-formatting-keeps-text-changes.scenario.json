@@ -1,0 +1,50 @@
+{
+  "name": "words compare --ignore-formatting drops a formatting-only change and keeps a text change",
+  "files": {
+    "plain.md": { "text": "The notice period is thirty days.\n" },
+    "bold.md": { "text": "The notice period is **thirty** days.\n" },
+    "changed.md": { "text": "The notice period is **sixty** days.\n" }
+  },
+  "steps": [
+    { "args": ["words", "create", "plain.docx", "--from-markdown", "plain.md"], "expect": { "exitCode": 0 } },
+    { "args": ["words", "create", "bold.docx", "--from-markdown", "bold.md"], "expect": { "exitCode": 0 } },
+    { "args": ["words", "create", "changed.docx", "--from-markdown", "changed.md"], "expect": { "exitCode": 0 } },
+    {
+      "args": ["words", "compare", "plain.docx", "bold.docx"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "identical", "equals": false },
+          { "path": "revisions.formatChangeCount", "equals": 1 },
+          { "path": "samples[0].kind", "equals": "format-change" }
+        ],
+        "files": { "nothingWritten": true }
+      }
+    },
+    {
+      "args": ["words", "compare", "plain.docx", "bold.docx", "--ignore-formatting"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "identical", "equals": true },
+          { "path": "revisions", "equals": { "insertionCount": 0, "deletionCount": 0, "formatChangeCount": 0, "moveCount": 0 } },
+          { "path": "samples", "equals": [] }
+        ],
+        "files": { "nothingWritten": true }
+      }
+    },
+    {
+      "args": ["words", "compare", "plain.docx", "changed.docx", "--ignore-formatting"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "identical", "equals": false },
+          { "path": "revisions.insertionCount", "equals": 1 },
+          { "path": "revisions.deletionCount", "equals": 1 },
+          { "path": "revisions.formatChangeCount", "equals": 0 }
+        ],
+        "files": { "nothingWritten": true }
+      }
+    }
+  ]
+}
