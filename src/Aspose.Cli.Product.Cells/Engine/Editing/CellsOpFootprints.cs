@@ -186,12 +186,12 @@ internal sealed class CellsOpFootprints : ICellsOpHandler<CellsOpTraits>
     public CellsOpTraits Apply(DeleteNameOp operation) => Workbook(CellsAddresses.Name(operation.Name), CellsProtectionScope.None);
 
     // set_default_font is workbook-scoped.
-    public CellsOpTraits Apply(SetDefaultFontOp operation) => Workbook("workbook/default-font", CellsProtectionScope.None);
+    public CellsOpTraits Apply(SetDefaultFontOp operation) => Workbook(CellsAddresses.DefaultFont, CellsProtectionScope.None);
 
     // Protecting the structure again replaces its protection.
-    public CellsOpTraits Apply(ProtectWorkbookOp operation) => Workbook("workbook/protection", CellsProtectionScope.Structure);
+    public CellsOpTraits Apply(ProtectWorkbookOp operation) => Workbook(CellsAddresses.WorkbookProtection, CellsProtectionScope.Structure);
 
-    public CellsOpTraits Apply(UnprotectWorkbookOp operation) => Workbook("workbook/protection", CellsProtectionScope.None);
+    public CellsOpTraits Apply(UnprotectWorkbookOp operation) => Workbook(CellsAddresses.WorkbookProtection, CellsProtectionScope.None);
 
     private static CellsOpTraits Diffed(string? sheet, string? range) =>
         new(new CellsEditTarget(sheet, range), Diffed: true, CellsProtectionScope.Sheet);
