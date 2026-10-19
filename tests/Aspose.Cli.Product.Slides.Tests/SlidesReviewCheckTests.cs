@@ -1,3 +1,6 @@
+﻿using Aspose.Cli.Sdk.Extensibility;
+using Aspose.Cli.Sdk.Views;
+using Aspose.Cli.TestKit;
 using Aspose.Slides;
 using Aspose.Slides.Charts;
 using Aspose.Slides.Export;
@@ -540,6 +543,110 @@ public sealed class SlidesReviewCheckTests
 
         // An evaluation save of the test deck adds the one real watermark.
         Assert.Equal(fixture.LicenseState == Sdk.Licensing.LicenseState.Licensed ? null : 1, analysis.ExcludedEvaluationMarks);
+    }
+
+    /// <summary>
+    /// A deck with one or more of each layout problem: the review's findings and metrics through
+    /// the view adapter, as they stood before review got its own layout projection.
+    /// </summary>
+    [Fact]
+    public void Review_OfAFixedDeck_ReportsTheSameFindingsAndMetrics()
+    {
+        using var fixture = new SlidesEngineFixture();
+        Sdk.Licensing.LicenseState license = fixture.LicenseState;
+        string deck = fixture.File("fixed.pptx");
+        using (var presentation = new Presentation())
+        {
+            ILayoutSlide blank = presentation.LayoutSlides.GetByType(SlideLayoutType.Blank);
+            ILayoutSlide content = presentation.LayoutSlides.GetByType(SlideLayoutType.TitleAndObject);
+            presentation.Slides.RemoveAt(0);
+
+            // 1: a headline, a 10 pt footnote and a box past the right edge; 2: a copy of it.
+            ISlide first = presentation.Slides.AddEmptySlide(blank);
+            TextBox(first, "Quarterly revenue grew in every region this year");
+            IAutoShape footnote = first.Shapes.AddAutoShape(ShapeType.Rectangle, 40, 470, 300, 30, createFromTemplate: false);
+            footnote.AddTextFrame("Source: internal finance data");
+            footnote.TextFrame.Paragraphs[0].Portions[0].PortionFormat.FontHeight = 10;
+            first.Shapes.AddAutoShape(ShapeType.Rectangle, 600, 300, 200, 100).TextFrame.Text = "Outside";
+            presentation.Slides.AddClone(first);
+
+            // 3: blank; 4: a chart under an opaque box, and text over a table.
+            presentation.Slides.AddEmptySlide(blank);
+            ISlide covered = presentation.Slides.AddEmptySlide(blank);
+            covered.Shapes.AddChart(ChartType.ClusteredColumn, 100, 40, 400, 300);
+            IAutoShape box = covered.Shapes.AddAutoShape(ShapeType.Rectangle, 100, 40, 300, 300);
+            box.FillFormat.FillType = FillType.Solid;
+            box.FillFormat.SolidFillColor.Color = System.Drawing.Color.Gray;
+            covered.Shapes.AddTable(60, 400, [300, 300], [40, 40]);
+            IAutoShape over = covered.Shapes.AddAutoShape(ShapeType.Rectangle, 60, 400, 400, 40, createFromTemplate: false);
+            over.AddTextFrame("Text laid over the table");
+            over.FillFormat.FillType = FillType.NoFill;
+
+            // 5: white text on white, and a box hidden under an opaque one; 6: a title with an empty body placeholder.
+            ISlide white = presentation.Slides.AddEmptySlide(blank);
+            TextBox(white, "Invisible white words", System.Drawing.Color.White);
+            white.Shapes.AddAutoShape(ShapeType.Rectangle, 100, 300, 200, 100).TextFrame.Text = "Hidden body";
+            IAutoShape lid = white.Shapes.AddAutoShape(ShapeType.Rectangle, 100, 300, 200, 100);
+            lid.FillFormat.FillType = FillType.Solid;
+            lid.FillFormat.SolidFillColor.Color = System.Drawing.Color.Gray;
+            ISlide agenda = presentation.Slides.AddEmptySlide(content);
+            agenda.Shapes.OfType<IAutoShape>().First(static shape => shape.Placeholder?.Type is PlaceholderType.Title or PlaceholderType.CenteredTitle).TextFrame.Text = "Agenda";
+
+            // 7: eighteen objects; 8: text spilling out of a fixed box; 9: three dots in a corner.
+            ISlide dense = presentation.Slides.AddEmptySlide(blank);
+            for (int item = 1; item <= 18; item++)
+            {
+                dense.Shapes.AddAutoShape(ShapeType.Rectangle, 20 + (item * 35), 300, 30, 30).TextFrame.Text = $"I{item}";
+            }
+
+            IAutoShape spill = presentation.Slides.AddEmptySlide(blank).Shapes.AddAutoShape(ShapeType.Rectangle, 100, 200, 200, 30);
+            spill.TextFrame.Text = "A sentence far too long to fit on one line of this narrow box, which wraps onto several.";
+            spill.TextFrame.TextFrameFormat.AutofitType = TextAutofitType.None;
+            ISlide corner = presentation.Slides.AddEmptySlide(blank);
+            foreach (int offset in new[] { 0, 15, 30 })
+            {
+                corner.Shapes.AddAutoShape(ShapeType.Rectangle, offset, 0, 10, 10).TextFrame.Text = "a";
+            }
+
+            presentation.Save(deck, SaveFormat.Pptx);
+        }
+
+        ProductReviewAssessment assessment = Assess(fixture, deck);
+
+        string actual = string.Join(
+            "\n",
+            assessment.Findings!.Select(static finding =>
+                $"{finding.Code}|{finding.Location}|{finding.Message}|{finding.Hint}|{string.Join(",", finding.Parts ?? [])}")
+                .Concat(assessment.Coverage!.Select(static metric => $"{metric.Name}={metric.Value} {metric.Unit}")));
+        string expected = File.ReadAllText(Path.Combine(
+            RepositoryPaths.Root,
+            "tests",
+            "Aspose.Cli.Product.Slides.Tests",
+            "Assets",
+            license == Sdk.Licensing.LicenseState.Licensed ? "review-fixed-deck.licensed.txt" : "review-fixed-deck.evaluation.txt"));
+        Assert.Equal(expected.ReplaceLineEndings("\n").TrimEnd('\n'), actual);
+    }
+
+    /// <summary>Reviews a deck through the view adapter, as the review command does.</summary>
+    private static ProductReviewAssessment Assess(SlidesEngineFixture fixture, string path)
+    {
+        var adapter = new SlidesViewAdapter();
+        var request = new ViewRenderRequest { View = SlidesViews.Slides, MaxPartCount = 100, Purpose = ViewPurpose.Evidence };
+        ViewManifest rendered = adapter.Render(fixture.Session, path, request, new DiscardedArtifacts());
+        return adapter.Assess(fixture.Session, path, request, rendered);
+    }
+
+    private sealed class DiscardedArtifacts : IViewArtifactSink
+    {
+        public void Write(string relativePath, Action<Stream> contentWriter)
+        {
+            using var stream = new MemoryStream();
+            contentWriter(stream);
+        }
+
+        public void WriteText(string relativePath, string content)
+        {
+        }
     }
 
     private static SlidesReviewAnalysis Review(SlidesEngineFixture fixture, string path)
