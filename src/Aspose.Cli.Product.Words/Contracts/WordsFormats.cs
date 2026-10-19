@@ -11,7 +11,7 @@ public static class WordsFormats
     [
         FormatDescriptor.Declare("doc", FormatUse.Input | FormatUse.Convert, 0, 0, null, true, ".doc") with { Protectable = true },
         FormatDescriptor.Declare("dot", FormatUse.Input | FormatUse.Convert, 1, 1, null, true, ".dot") with { Protectable = true },
-        FormatDescriptor.Declare("docx", FormatUse.Input | FormatUse.Convert, 2, 2, null, true, ".docx") with { Protectable = true },
+        FormatDescriptor.Declare("docx", FormatUse.Input | FormatUse.Convert, 2, 2, null, true, ".docx") with { Protectable = true, MistakenFor = ["word"] },
         FormatDescriptor.Declare("docm", FormatUse.Input | FormatUse.Convert, 3, 3, null, true, ".docm") with { Protectable = true },
         FormatDescriptor.Declare("dotx", FormatUse.Input | FormatUse.Convert, 4, 4, null, true, ".dotx") with { Protectable = true },
         FormatDescriptor.Declare("dotm", FormatUse.Input | FormatUse.Convert, 5, 5, null, true, ".dotm") with { Protectable = true },

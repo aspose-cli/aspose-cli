@@ -180,6 +180,16 @@ internal static partial class ContractRules
                 continue;
             }
             CliProduct? product = catalog.Products.FirstOrDefault(product => product.Id == name.Product);
+            if (name.Kind == MistakenKind.Format)
+            {
+                // A mistaken format name suggests a format the product converts to and is never one itself.
+                if (product is null || !product.ConvertFormats.Contains(name.Meant, StringComparer.Ordinal)
+                    || product.ConvertFormats.Contains(name.Name, StringComparer.OrdinalIgnoreCase))
+                {
+                    yield return $"{name.Where}: MistakenFor = [\"{name.Name}\"] reads as standing for the format '{name.Meant}', which is not a convert format of {name.Product}, or is itself one";
+                }
+                continue;
+            }
             if (product?.OpsSchemaId is null)
             {
                 yield return $"{name.Where}: [MistakenFor(\"{name.Name}\")] is in no product with operations";

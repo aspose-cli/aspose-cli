@@ -527,9 +527,11 @@ public sealed class StandardOptions
                 result.AddError($"Argument '{result.Tokens[^1].Value}' not recognized. Must be one of: {names}.");
             }
         });
-        // A file extension written for the format it names, such as --to markdown for md.
+        // A file extension written for the format it names, such as --to markdown for md, or a
+        // word the format declares it is mistaken for, such as the name of an application.
         CommandMistakes.DeclareValues(option, value => target.Offered.FirstOrDefault(format =>
-            format.Extensions.Contains("." + value.TrimStart('.'), StringComparer.OrdinalIgnoreCase))?.Id);
+            format.Extensions.Contains("." + value.TrimStart('.'), StringComparer.OrdinalIgnoreCase)
+            || format.MistakenFor.Contains(value, StringComparer.OrdinalIgnoreCase))?.Id);
         Targets.Add(option, target);
         return option;
     }
