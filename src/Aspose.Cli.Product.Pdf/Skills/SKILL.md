@@ -66,7 +66,9 @@ Markdown has no author or subject until a `set_properties` edit sets them.
 
 `pdf create` reads its one source as the option names it, whatever the file's
 extension: `--from-markdown` lays out Markdown, a `#` line as a heading, and
-`--from-text` lays out plain text line by line, `#` and all.
+`--from-text` lays out plain text line by line, `#` and all. Headings are not
+bookmarks: before `pdf split --by bookmarks`, bookmark the first page of each
+part with `add_bookmark` in a `pdf edit` batch.
 
 `pdf create --from-images` puts each image on its own page of `--page-size`,
 turned to landscape for an image wider than it is tall. The image keeps its
