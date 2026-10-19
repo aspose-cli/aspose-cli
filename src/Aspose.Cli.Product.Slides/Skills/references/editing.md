@@ -67,7 +67,9 @@ data-label text. A picture has no text, so a text style on it fails with `OPS_IN
   `list` the same way. `set_text` keeps the placeholder's bullets on every line.
 - A shape's text in `slides read`, `slides search` and `extract --what text` includes its table
   cells, group children and SmartArt nodes. Extracted text and notes put each paragraph on its
-  own line; lines are separated by line feeds.
+  own line; lines are separated by line feeds. `extract --what text` holds neither a shape's
+  alternative text nor a chart's text: `slides read --content shapes` reports alternative
+  text as each shape's `altText`, and `--content full` reports each chart's data.
 - `replace_text` matches within one paragraph at a time, in shapes and speaker notes. Only the
   matched characters change: the replacement takes the formatting of the first matched
   character, and other runs keep theirs. Its `itemsAffected` counts the shapes and notes whose
