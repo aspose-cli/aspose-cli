@@ -74,13 +74,16 @@ public sealed class EncryptionRemovedHintCliTests : IDisposable
     /// <summary>
     /// A PDF converted to an Office format no edit can encrypt: the hint names the conversion of
     /// that product that writes an encrypted copy, with the output's own path, and it runs as given.
+    /// When that conversion reads PDF itself, as words convert does, the hint converts the locked
+    /// input once with its password instead of saving the output again, a save that would embed
+    /// every font of a docx that pdf convert wrote (PDF-DOCX-EMBED-FONTS).
     /// </summary>
     [Category(TestCategory.Slow)]
     [Theory]
-    [InlineData("docx", "words")]
-    [InlineData("xlsx", "cells")]
-    [InlineData("pptx", "slides")]
-    public void PdfConvertedToAnOfficeFormat_HintNamesTheConversionThatEncryptsIt(string format, string product)
+    [InlineData("docx", "words", true)]
+    [InlineData("xlsx", "cells", false)]
+    [InlineData("pptx", "slides", false)]
+    public void PdfConvertedToAnOfficeFormat_HintNamesTheConversionThatEncryptsIt(string format, string product, bool readsPdf)
     {
         CreateEncryptedPdf();
 
@@ -92,10 +95,14 @@ public sealed class EncryptionRemovedHintCliTests : IDisposable
         Assert.DoesNotContain("<file>", hint, StringComparison.Ordinal);
         Match line = Regex.Match(hint, "`aspose-cli ([^`]+)`");
         Assert.True(line.Success, hint);
-        Assert.StartsWith($"{product} convert '{_workspace.File($"plain.{format}")}'", line.Groups[1].Value, StringComparison.Ordinal);
+        string source = readsPdf
+            ? $"'{_workspace.File("locked.pdf")}' --password-env {Variable}"
+            : $"'{_workspace.File($"plain.{format}")}'";
+        Assert.StartsWith($"{product} convert {source} --to {format} --out '{_workspace.File($"plain.encrypted.{format}")}'", line.Groups[1].Value, StringComparison.Ordinal);
         Assert.Contains($"--encrypt-env {Variable}", line.Value, StringComparison.Ordinal);
         CliResult encrypted = Run(Tokens(line.Groups[1].Value));
         Assert.True(encrypted.ExitCode == 0, encrypted.StdErr);
+        Assert.DoesNotContain("FONTS_EMBEDDED", encrypted.StdOut, StringComparison.Ordinal);
         Assert.Equal("PASSWORD_REQUIRED", JsonNode.Parse(Run(product, "inspect", $"plain.encrypted.{format}").StdErr)!["error"]!["code"]!.GetValue<string>());
         Assert.Equal(0, Run(product, "inspect", $"plain.encrypted.{format}", "--password-env", Variable).ExitCode);
     }
