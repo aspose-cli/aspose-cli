@@ -1,8 +1,5 @@
-using System.Buffers;
 using System.Collections.Frozen;
 using System.Diagnostics.CodeAnalysis;
-using System.Text;
-using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Aspose.Cli.Sdk.Contracts;
@@ -25,14 +22,6 @@ public sealed class ResultSchemaSet
 {
     private const string Draft = "https://json-schema.org/draft/2020-12/schema";
     private const string DefinitionPrefix = "#/$defs/";
-
-    private static readonly JsonWriterOptions WriterOptions = new()
-    {
-        Indented = true,
-        IndentSize = 2,
-        NewLine = "\n",
-        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
-    };
 
     private readonly ResultSchemaSet? _common;
     private readonly FrozenDictionary<Type, ResultRecord> _records;
@@ -153,7 +142,7 @@ public sealed class ResultSchemaSet
             document["$defs"] = new JsonObject([.. definitions.Select(static entry => KeyValuePair.Create(entry.Key, (JsonNode?)entry.Value))]);
         }
 
-        return Serialize(document);
+        return SchemaJson.Serialize(document);
     }
 
     /// <summary>The schema of a record's object, its inherited members first.</summary>
@@ -378,15 +367,4 @@ public sealed class ResultSchemaSet
                 return (JsonNode)branch;
             }),
         ];
-
-    private static string Serialize(JsonNode node)
-    {
-        var buffer = new ArrayBufferWriter<byte>();
-        using (var writer = new Utf8JsonWriter(buffer, WriterOptions))
-        {
-            node.WriteTo(writer);
-        }
-
-        return Encoding.UTF8.GetString(buffer.WrittenSpan) + "\n";
-    }
 }
