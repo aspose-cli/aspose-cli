@@ -3,7 +3,9 @@ using Aspose.Cli.Sdk.Licensing;
 using Aspose.Cli.Sdk.Results;
 using Aspose.Cli.Sdk.Text;
 using Aspose.Slides;
-using static Aspose.Cli.Product.Slides.Engine.SlidesEngineSupport;
+using static Aspose.Cli.Product.Slides.Engine.SlidesEvaluationMarks;
+using static Aspose.Cli.Product.Slides.Engine.SlidesResultParts;
+using static Aspose.Cli.Product.Slides.Engine.SlidesShapeText;
 
 namespace Aspose.Cli.Product.Slides.Engine;
 

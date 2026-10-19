@@ -197,7 +197,7 @@ internal sealed class SlidesPresentationLoader
             int[] watermarks;
             using (presentation)
             {
-                watermarks = [.. presentation.Slides.Select(static slide => slide.Shapes.Count(SlidesEngineSupport.IsEvaluationWatermark))];
+                watermarks = [.. presentation.Slides.Select(static slide => slide.Shapes.Count(SlidesEvaluationMarks.IsEvaluationWatermark))];
                 presentation.Save(pptx, SaveFormat.Pptx);
             }
 
@@ -208,7 +208,7 @@ internal sealed class SlidesPresentationLoader
                 for (int index = 0; index < reopened.Slides.Count; index++)
                 {
                     IShapeCollection shapes = reopened.Slides[index].Shapes;
-                    foreach (IShape added in shapes.Where(SlidesEngineSupport.IsEvaluationWatermark).Skip(watermarks[index]).ToArray())
+                    foreach (IShape added in shapes.Where(SlidesEvaluationMarks.IsEvaluationWatermark).Skip(watermarks[index]).ToArray())
                     {
                         shapes.Remove(added);
                     }

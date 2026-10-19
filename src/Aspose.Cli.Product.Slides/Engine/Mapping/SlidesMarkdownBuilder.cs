@@ -155,8 +155,8 @@ internal static partial class SlidesMarkdownBuilder
 
                 current.Image ??= new MarkdownImage(
                     image.Groups["path"].Value,
-                    SlidesEngineSupport.EmptyToNull(image.Groups["alt"].Value),
-                    SlidesEngineSupport.EmptyToNull(image.Groups["title"].Value));
+                    SlidesShapeText.EmptyToNull(image.Groups["alt"].Value),
+                    SlidesShapeText.EmptyToNull(image.Groups["title"].Value));
             }
             else if (trimmed.StartsWith('>'))
             {

@@ -201,7 +201,7 @@ public sealed class SlidesCliWorkflowTests : IDisposable
                 "slides", "edit", input, "--ops", "insert.json", "--out", output, "--license-mode", "evaluation", "--output-format", "json");
             Assert.True(edited.ExitCode == 0, edited.StdErr);
             using var deck = new Presentation(_workspace.File(output));
-            return [.. deck.Slides.Select(static slide => slide.Shapes.Count(SlidesEngineSupport.IsEvaluationWatermark))];
+            return [.. deck.Slides.Select(static slide => slide.Shapes.Count(SlidesEvaluationMarks.IsEvaluationWatermark))];
         }
 
         int[] fromPptx = Watermarks("blank.pptx", "from-pptx.pptx");

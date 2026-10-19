@@ -114,10 +114,10 @@ public sealed class SlidesReviewCheckTests
     {
         // Evaluation mode replaces every text longer than five characters with its start and the
         // SDK's truncation marker, so a 25-cell table reads as about 1,500 characters.
-        string cells = string.Join(' ', Enumerable.Repeat($"¥1,20... {SlidesEngineSupport.EvaluationTruncationMarker}.", 25));
+        string cells = string.Join(' ', Enumerable.Repeat($"¥1,20... {SlidesEvaluationMarks.EvaluationTruncationMarker}.", 25));
         SlidesReviewSlide slide = Slide(
             1,
-            Shape(1, new(40, 22, 640, 58), $"投资与回报... {SlidesEngineSupport.EvaluationTruncationMarker}."),
+            Shape(1, new(40, 22, 640, 58), $"投资与回报... {SlidesEvaluationMarks.EvaluationTruncationMarker}."),
             Shape(2, new(40, 100, 640, 144), cells, type: "table"));
         Assert.True(slide.Shapes.Sum(static shape => shape.Text!.Length) >= 1400);
 
@@ -131,7 +131,7 @@ public sealed class SlidesReviewCheckTests
     public void ManyObjects_MakeASlideDenseEvenWhenEvaluationModeReplacedTheirText()
     {
         SlidesReviewAnalysis analysis = SlidesReviewAnalyzer.Analyze(
-            [Slide(1, [.. Enumerable.Range(1, 18).Select(id => Shape(id, new(id * 30, 400, 20, 20), $"Item ... {SlidesEngineSupport.EvaluationTruncationMarker}."))])],
+            [Slide(1, [.. Enumerable.Range(1, 18).Select(id => Shape(id, new(id * 30, 400, 20, 20), $"Item ... {SlidesEvaluationMarks.EvaluationTruncationMarker}."))])],
             Width,
             Height);
 

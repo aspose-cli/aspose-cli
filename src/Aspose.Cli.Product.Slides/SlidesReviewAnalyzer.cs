@@ -453,7 +453,7 @@ internal static class SlidesReviewAnalyzer
     }
 
     private static bool TextReplacedByEvaluation(SlidesReviewSlide slide) =>
-        slide.Shapes.Any(static shape => SlidesEngineSupport.CutByEvaluation(shape.Text));
+        slide.Shapes.Any(static shape => SlidesEvaluationMarks.CutByEvaluation(shape.Text));
 
     private static string Normalize(string? text) => string.IsNullOrWhiteSpace(text)
         ? string.Empty
