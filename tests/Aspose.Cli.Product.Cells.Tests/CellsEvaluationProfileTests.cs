@@ -14,7 +14,7 @@ public sealed class CellsEvaluationProfileTests
     private const string Pages = "pages";
     private const string WholeWorkbook = "workbook";
 
-    /// <summary>The marks each output format names, one row per declared format id and one undeclared id.</summary>
+    /// <summary>The marks each output format names, one row per declared format id.</summary>
     private static readonly (string Format, string Marks)[] Table =
     [
         ("xlsx", WholeWorkbook),
@@ -35,8 +35,6 @@ public sealed class CellsEvaluationProfileTests
         ("png", Pages),
         ("jpeg", Pages),
         ("svg", Pages),
-        // An id the product does not declare is taken for a workbook.
-        ("docx", WholeWorkbook),
     ];
 
     public static TheoryData<string, string> MarksByFormat() => [.. Table];
@@ -67,7 +65,22 @@ public sealed class CellsEvaluationProfileTests
     public void MarksByFormat_CoversEveryDeclaredFormat() =>
         Assert.Equal(
             CellsFormats.Definitions.Select(static format => format.Id),
-            Table.Select(static row => row.Format).Where(static id => id != "docx"));
+            Table.Select(static row => row.Format));
+
+    /// <summary>
+    /// The write pipeline passes the declared format id of every output, so an id the product
+    /// does not declare is a defect of the caller, not a workbook.
+    /// </summary>
+    [Theory]
+    [InlineData("docx")]
+    [InlineData("jpg")]
+    [InlineData("txt")]
+    public void Inspect_AnUndeclaredFormat_Throws(string format)
+    {
+        using Workbook workbook = WorkbookWithWarningSheets();
+
+        Assert.Throws<InvalidOperationException>(() => new CellsEvaluationProfile().Inspect(workbook, format));
+    }
 
     // A content sheet, then a visible warning sheet that is active and a hidden one.
     private static Workbook WorkbookWithWarningSheets()

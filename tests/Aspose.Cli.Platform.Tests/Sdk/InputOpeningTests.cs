@@ -70,7 +70,7 @@ public sealed class InputOpeningTests
         OutputPipeline<object> pipeline = Pipeline();
 
         using Input input = InputOpening.Open(pipeline, TestBudgets.Create(), path, () => new Input(new InputProtection(encrypted)));
-        pipeline.Write(temp.File("out.txt"), false, null, Save);
+        pipeline.Write(temp.File("out.txt"), new FormatDescriptor("txt", FormatUse.Convert, ".txt"), false, null, Save);
 
         Assert.False(input.Disposed);
         Assert.Equal(expected, pipeline.EncryptionRemoved()?.Code.Name);
@@ -109,7 +109,7 @@ public sealed class InputOpeningTests
 
         // The candidate does not exist on disk: admission would refuse it.
         using Input input = InputOpening.OpenPublished(() => new Input(new InputProtection(true)));
-        pipeline.Write(temp.File("out.txt"), false, null, Save);
+        pipeline.Write(temp.File("out.txt"), new FormatDescriptor("txt", FormatUse.Convert, ".txt"), false, null, Save);
 
         Assert.Null(pipeline.EncryptionRemoved());
     }

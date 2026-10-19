@@ -128,6 +128,43 @@ public sealed class ImageInputTests : IDisposable
         Assert.Equal(EngineImageFormat.None, ImageInput.EngineFormatOf("<html/>"u8));
     }
 
+    /// <summary>
+    /// Every image the check accepts is named by its content, with the id of a format in the
+    /// image table: the long name, whatever the file's extension.
+    /// </summary>
+    [Fact]
+    public void FormatOf_NamesEveryAcceptedImage()
+    {
+        byte[] dicom = new byte[132];
+        "DICM"u8.CopyTo(dicom.AsSpan(128));
+        byte[] pict = new byte[530];
+        pict[522] = 0x00;
+        pict[523] = 0x11;
+        pict[524] = 0x02;
+        pict[525] = 0xFF;
+        (byte[] Content, string Format)[] images =
+        [
+            (Encode("png", 4, 4), "png"),
+            (Encode("jpeg", 4, 4), "jpeg"),
+            (Encode("gif", 1, 1), "gif"),
+            (Encode("bmp", 4, 4), "bmp"),
+            (Encode("webp", 4, 4), "webp"),
+            (Ico(Encode("png", 4, 4)), "ico"),
+            ([(byte)'I', (byte)'I', 0x2A, 0x00, 0x08, 0x00, 0x00, 0x00], "tiff"),
+            (Encoding.UTF8.GetBytes("<svg xmlns=\"http://www.w3.org/2000/svg\"/>"), "svg"),
+            (Emf(), "emf"),
+            ([0xD7, 0xCD, 0xC6, 0x9A, 0x00, 0x00], "wmf"),
+            ([0xFF, 0x4F, 0xFF, 0x51, 0x00, 0x00], "jpeg2000"),
+            (pict, "pict"),
+            (dicom, "dicom"),
+        ];
+
+        Assert.All(images, image => Assert.Equal(image.Format, ImageInput.FormatOf(image.Content)?.Id));
+        Assert.Equal(images.Select(static image => image.Format).Order(), ImageInput.Formats.Select(static format => format.Id).Order());
+        Assert.Null(ImageInput.FormatOf("<html/>"u8));
+        Assert.Null(ImageInput.FormatOf([]));
+    }
+
     [Fact]
     public void Read_DecodesALargeScanlineImageWithinASmallMemoryBudget()
     {
@@ -253,6 +290,26 @@ public sealed class ImageInputTests : IDisposable
         header[4] = 88;
         " EMF"u8.CopyTo(header.AsSpan(40));
         return header;
+    }
+
+    // An icon holding one PNG.
+    private static byte[] Ico(byte[] png)
+    {
+        var stream = new MemoryStream();
+        var writer = new BinaryWriter(stream);
+        writer.Write((ushort)0);
+        writer.Write((ushort)1);
+        writer.Write((ushort)1);
+        writer.Write((byte)4);
+        writer.Write((byte)4);
+        writer.Write((byte)0);
+        writer.Write((byte)0);
+        writer.Write((ushort)1);
+        writer.Write((ushort)32);
+        writer.Write(png.Length);
+        writer.Write(22);
+        writer.Write(png);
+        return stream.ToArray();
     }
 
     // An 8-bit grayscale PNG, Adam7-interlaced or not; Skia writes no interlaced PNG.

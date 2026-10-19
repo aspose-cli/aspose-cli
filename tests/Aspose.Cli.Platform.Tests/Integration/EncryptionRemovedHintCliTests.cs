@@ -123,6 +123,9 @@ public sealed class EncryptionRemovedHintCliTests : IDisposable
         Assert.True(result.ExitCode == 0, result.StdErr);
         string hint = Hint(result);
         Assert.StartsWith("A pdfa-2b file cannot be encrypted and stay pdfa-2b.", hint, StringComparison.Ordinal);
+        // The copy is named by the format it was written in, not by the extension pdf shares.
+        Assert.StartsWith("The 'pdfa-2b' output is not encrypted", JsonNode.Parse(result.StdOut)!["warnings"]!.AsArray()
+            .Single(static warning => warning!["code"]!.GetValue<string>() == "ENCRYPTION_REMOVED")!["message"]!.GetValue<string>(), StringComparison.Ordinal);
         Assert.DoesNotContain("<file>", hint, StringComparison.Ordinal);
         Assert.DoesNotContain("--in-place", hint, StringComparison.Ordinal);
         Match line = Regex.Match(hint, "`aspose-cli ([^`]+)`");

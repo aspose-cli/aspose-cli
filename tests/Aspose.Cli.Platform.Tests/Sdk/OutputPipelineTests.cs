@@ -33,7 +33,7 @@ public sealed class OutputPipelineTests
         OutputPipeline<Document> pipeline = Pipeline(LicenseState.Evaluation);
         var document = new Document(["the banner"]);
 
-        pipeline.Write(temp.File("out.doc"), false, document, path =>
+        pipeline.Write(temp.File("out.doc"), Doc, false, document, path =>
         {
             File.WriteAllText(path, "saved");
             document.Marks.Add("the warning sheet");
@@ -50,7 +50,7 @@ public sealed class OutputPipelineTests
         using var temp = new TempDirectory();
         OutputPipeline<Document> pipeline = Pipeline(LicenseState.Evaluation, LicenseResolution.EvaluationRequested);
 
-        pipeline.Write(temp.File("image.png"), false, null, path => File.WriteAllText(path, "image"));
+        pipeline.Write(temp.File("image.png"), Png, false, null, path => File.WriteAllText(path, "image"));
 
         Assert.Equal([EnvelopeParts.RequestedEvaluationWatermark], pipeline.Disclosure());
     }
@@ -69,9 +69,9 @@ public sealed class OutputPipelineTests
         OutputPipeline<Document> pipeline = Pipeline(LicenseState.Evaluation, requested ? LicenseResolution.EvaluationRequested : null);
         var cut = new Document([]) { Truncated = true };
 
-        pipeline.Write(temp.File("out.txt"), false, cut, path => File.WriteAllText(path, "text"));
+        pipeline.Write(temp.File("out.txt"), Txt, false, cut, path => File.WriteAllText(path, "text"));
         Warning text = Assert.Single(pipeline.Disclosure()!);
-        pipeline.Write(temp.File("out.doc"), false, new Document([]), path => File.WriteAllText(path, "doc"));
+        pipeline.Write(temp.File("out.doc"), Doc, false, new Document([]), path => File.WriteAllText(path, "doc"));
         Warning both = Assert.Single(pipeline.Disclosure()!);
 
         Assert.Equal(WarningCodes.EvaluationMode, text.Code);
@@ -91,9 +91,9 @@ public sealed class OutputPipelineTests
 
         using (OutputSet<Document> set = pipeline.BeginSet([temp.Path], "test"))
         {
-            set.Stage(temp.File("clean.doc"), false, clean, path => File.WriteAllText(path, "clean"));
+            set.Stage(temp.File("clean.doc"), Doc, false, clean, path => File.WriteAllText(path, "clean"));
             Assert.Null(pipeline.Disclosure());
-            set.Stage(temp.File("marked.doc"), false, marked, path => File.WriteAllText(path, "marked"));
+            set.Stage(temp.File("marked.doc"), Doc, false, marked, path => File.WriteAllText(path, "marked"));
             set.Commit();
         }
 
@@ -111,7 +111,7 @@ public sealed class OutputPipelineTests
         var document = new Document(["the watermark"]);
 
         // The edit removed the input's marks before the save.
-        pipeline.Write(temp.File("out.doc"), false, document, path =>
+        pipeline.Write(temp.File("out.doc"), Doc, false, document, path =>
         {
             document.Marks.Clear();
             File.WriteAllText(path, "saved");
@@ -128,7 +128,7 @@ public sealed class OutputPipelineTests
 
         using (OutputSet<Document> set = pipeline.BeginSet([temp.Path], "test"))
         {
-            set.Stage(temp.File("page.png"), false, null, path => File.WriteAllText(path, "page"));
+            set.Stage(temp.File("page.png"), Png, false, null, path => File.WriteAllText(path, "page"));
         }
 
         Assert.Null(pipeline.Disclosure());
@@ -144,10 +144,10 @@ public sealed class OutputPipelineTests
         var pipeline = new OutputPipeline<Document>(new FixedGate(state, LicenseResolution.None), new ThrowingProfile(), TestBudgets.Writer());
         var document = new Document(["the banner"]);
 
-        pipeline.Write(temp.File("one.doc"), false, document, path => File.WriteAllText(path, "one"));
+        pipeline.Write(temp.File("one.doc"), Doc, false, document, path => File.WriteAllText(path, "one"));
         using (OutputSet<Document> set = pipeline.BeginSet([temp.Path], "test"))
         {
-            set.Stage(temp.File("two.doc"), false, document, path => File.WriteAllText(path, "two"));
+            set.Stage(temp.File("two.doc"), Doc, false, document, path => File.WriteAllText(path, "two"));
             set.Commit();
         }
 
@@ -172,8 +172,8 @@ public sealed class OutputPipelineTests
 
         using (OutputSet<Document> set = pipeline.BeginSet([temp.Path], "test"))
         {
-            set.Stage(temp.File("p1.png"), false, source, path => File.WriteAllText(path, "1"), rendering: true);
-            set.Stage(temp.File("p2.png"), false, source, path => File.WriteAllText(path, "2"), rendering: true);
+            set.Stage(temp.File("p1.png"), Png, false, source, path => File.WriteAllText(path, "1"), rendering: true);
+            set.Stage(temp.File("p2.png"), Png, false, source, path => File.WriteAllText(path, "2"), rendering: true);
             set.Commit();
         }
 
@@ -219,7 +219,7 @@ public sealed class OutputPipelineTests
         {
             foreach ((string name, string[] marks) in new[] { ("a.doc", Array.Empty<string>()), ("b.doc", ["the banner"]), ("c.doc", ["the banner"]) })
             {
-                set.Stage(temp.File(name), false, new Document(marks), path => File.WriteAllText(path, name));
+                set.Stage(temp.File(name), Doc, false, new Document(marks), path => File.WriteAllText(path, name));
             }
 
             set.Commit();
@@ -237,11 +237,44 @@ public sealed class OutputPipelineTests
 
         using (OutputSet<Document> set = pipeline.BeginSet([temp.Path], "test"))
         {
-            set.Stage(temp.File("signed.doc"), false, new Document([]), path => File.WriteAllText(path, "mark:the signing notice"), saved: true);
+            set.Stage(temp.File("signed.doc"), Doc, false, new Document([]), path => File.WriteAllText(path, "mark:the signing notice"), saved: true);
             set.Commit();
         }
 
         Assert.EndsWith("The output carries the signing notice.", Assert.Single(pipeline.Disclosure()!).Message, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// The profile inspects the format the caller names, not the extension: a JPEG page named
+    /// <c>x.jpg</c> is a <c>jpeg</c> output, as the product declares it.
+    /// </summary>
+    [Fact]
+    public void Write_InspectsTheFormatItIsGivenNotTheExtensionAlias()
+    {
+        using var temp = new TempDirectory();
+        var profile = new Profile();
+        OutputPipeline<Document> pipeline = Pipeline(LicenseState.Evaluation, profile: profile);
+
+        pipeline.Write(temp.File("x.jpg"), Jpeg, false, new Document([]), path => File.WriteAllText(path, "page"), rendering: true);
+
+        Assert.Equal(["jpeg"], profile.Inspected);
+    }
+
+    /// <summary>A staged output, too, is inspected in the format the caller names.</summary>
+    [Fact]
+    public void Stage_InspectsTheFormatItIsGivenNotTheExtensionAlias()
+    {
+        using var temp = new TempDirectory();
+        var profile = new Profile();
+        OutputPipeline<Document> pipeline = Pipeline(LicenseState.Evaluation, profile: profile);
+
+        using (OutputSet<Document> set = pipeline.BeginSet([temp.Path], "test"))
+        {
+            set.Stage(temp.File("x.jpg"), Jpeg, false, new Document([]), path => File.WriteAllText(path, "page"), rendering: true);
+            set.Commit();
+        }
+
+        Assert.Equal(["jpeg"], profile.Inspected);
     }
 
     [Fact]
@@ -258,8 +291,16 @@ public sealed class OutputPipelineTests
 
     private static readonly Warning Other = new(WarningCodes.LossyConversion, "Other.");
 
-    private static OutputPipeline<Document> Pipeline(LicenseState state, LicenseResolution? resolution = null) =>
-        new(new FixedGate(state, resolution ?? LicenseResolution.None), new Profile(), TestBudgets.Writer());
+    private static readonly FormatDescriptor Doc = new("doc", FormatUse.Convert, ".doc");
+
+    private static readonly FormatDescriptor Txt = new("txt", FormatUse.Convert, ".txt");
+
+    private static readonly FormatDescriptor Png = new("png", FormatUse.Render, ".png") { Raster = true };
+
+    private static readonly FormatDescriptor Jpeg = new("jpeg", FormatUse.Render, ".jpg", ".jpeg") { Raster = true };
+
+    private static OutputPipeline<Document> Pipeline(LicenseState state, LicenseResolution? resolution = null, Profile? profile = null) =>
+        new(new FixedGate(state, resolution ?? LicenseResolution.None), profile ?? new Profile(), TestBudgets.Writer());
 
     private sealed class Document(IEnumerable<string> marks)
     {
@@ -272,7 +313,16 @@ public sealed class OutputPipelineTests
     {
         public string Engine => "Aspose.Test";
 
+        /// <summary>The format of each output inspected, in order.</summary>
+        public List<string> Inspected { get; } = [];
+
         public EvaluationMarks Inspect(Document document) => new([.. document.Marks], document.Truncated);
+
+        public EvaluationMarks Inspect(Document document, string format)
+        {
+            Inspected.Add(format);
+            return Inspect(document);
+        }
 
         /// <summary>A file whose text starts with <c>mark:</c> carries the mark it names.</summary>
         public EvaluationMarks? InspectSaved(string path, string format) =>

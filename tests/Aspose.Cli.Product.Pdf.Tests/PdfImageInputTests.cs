@@ -183,6 +183,32 @@ public sealed class PdfImageInputTests
         Assert.True(resources.Images.Count + resources.Forms.Count > 0, "The page holds no image.");
     }
 
+    /// <summary>
+    /// Each image input is reported by the id of the format its content is, from the image
+    /// table: a <c>.jpg</c> as jpeg, a <c>.tif</c> as tiff, and PNG content under any name as png.
+    /// </summary>
+    [Fact]
+    public void CreateFromImages_ReportsEachInputByItsDeclaredFormat()
+    {
+        using var workspace = new TempWorkspace();
+        using (SkiaSharp.SKBitmap bitmap = SkiaSharp.SKBitmap.Decode(ResourceHttpServer.Image))
+        using (SkiaSharp.SKData jpeg = bitmap.Encode(SkiaSharp.SKEncodedImageFormat.Jpeg, 90))
+        {
+            Write(workspace, "photo.jpg", jpeg.ToArray());
+        }
+
+        Write(workspace, "scan.tif", Tiff());
+        Write(workspace, "image.dat", ResourceHttpServer.Image);
+
+        CliResult created = workspace.Run(
+            "pdf", "create", "out.pdf", "--from-images", "photo.jpg", "scan.tif", "image.dat", "--output-format", "json");
+
+        Assert.True(created.ExitCode == 0, created.StdErr);
+        Assert.Equal(
+            ["jpeg", "tiff", "png"],
+            JsonNode.Parse(created.StdOut)!["inputs"]!.AsArray().Select(static input => input!["format"]!.GetValue<string>()));
+    }
+
     // A 2 x 2, 8-bit grayscale, uncompressed little-endian TIFF.
     private static byte[] Tiff()
     {
