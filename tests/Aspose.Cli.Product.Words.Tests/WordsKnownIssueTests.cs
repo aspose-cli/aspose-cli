@@ -13,6 +13,26 @@ namespace Aspose.Cli.Product.Words.Tests;
 public sealed class WordsKnownIssueTests
 {
     [Fact]
+    public void MarkdownLoad_TakesAHeadingAfterAFootnoteDefinitionIntoTheNote()
+    {
+        using var fixture = new WordsFixture();
+        // CommonMark ends a footnote definition at the first unindented line after a blank one.
+        string markdown = "# A\n\nText[^1].\n\n[^1]: Note one.\n\n# B\n\nMore.\n";
+        using var input = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(markdown), writable: false);
+
+        var document = new Document(input, new Aspose.Words.Loading.LoadOptions { LoadFormat = LoadFormat.Markdown });
+
+        string[] headings = [.. document.FirstSection.Body.Paragraphs.Cast<Paragraph>()
+            .Where(static paragraph => paragraph.ParagraphFormat.IsHeading)
+            .Select(static paragraph => paragraph.GetText().Trim())];
+        string note = Assert.Single(document.GetChildNodes(NodeType.Footnote, true).Cast<Aspose.Words.Notes.Footnote>()).ToString(SaveFormat.Text).Trim();
+        KnownIssue.Reproduces(
+            "WORDS-MD-FOOTNOTE-HEADING",
+            !headings.Contains("B") && note.Contains('B', StringComparison.Ordinal),
+            $"headings [{string.Join(", ", headings)}], note \"{note}\"");
+    }
+
+    [Fact]
     public void RegexReplace_AnchorsOnlyAtTheStartOfTheRange()
     {
         using var fixture = new WordsFixture();

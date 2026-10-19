@@ -141,7 +141,9 @@ written as it is, so Excel evaluates a cell that starts with `=`, `+`, `-` or
 
 - A template supplies styles, page setup, headers and footers; `--from-markdown`
   or `--from-text` supplies the body. Markdown headings map to Heading 1-6, quotes to
-  Quote, lists to list paragraphs; only bold, italic and strike-through from
+  Quote, lists to list paragraphs, and footnote references (`text[^1]` with a
+  `[^1]: note` line at the end of the Markdown, since a heading right after
+  one joins the note) to real footnotes; only bold, italic and strike-through from
   the Markdown survive as direct formatting. As in CommonMark, a closing `**`
   or `~~` right after punctuation, such as `》` or `）`, needs a space or
   punctuation after it, so `~~原《守则》~~同时` stays literal; write
@@ -150,6 +152,10 @@ written as it is, so Excel evaluates a cell that starts with `=`, `+`, `-` or
 - Use the user's template when one exists; without `--template`,
   `words create` uses the built-in A4 design. `insert_markdown` and Markdown
   headers or footers import the same way, into the edited document's styles.
+- Markdown has no Title: a `#` line becomes Heading 1 and enters the table of
+  contents. Write the document title as a plain first line, chapters as `#`,
+  and `set_style` that line to `Title` in the batch that inserts the table of
+  contents ([document standards](references/document-standards.md)).
 - Structure with built-in Heading styles; they drive navigation and the table
   of contents. Use `set_style`, `define_style`, `insert_toc` and
   `set_page_numbers` rather than run-by-run formatting.
