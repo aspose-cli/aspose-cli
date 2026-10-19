@@ -28,10 +28,11 @@ internal sealed class PdfEditVerifier : IEditVerifier<PdfOp>
     private readonly List<(string Id, string Op)> _recorded = [];
     private readonly HashSet<string> _incomplete = new(StringComparer.Ordinal);
     private readonly HashSet<string> _checked = new(StringComparer.Ordinal);
-    private readonly Dictionary<string, Expected<string>> _fields = new(StringComparer.Ordinal);
-    private readonly Dictionary<string, Expected<string>> _metadata = new(StringComparer.Ordinal);
-    private readonly Dictionary<string, Expected<long?>> _addedAttachments = new(StringComparer.Ordinal);
-    private readonly Dictionary<string, string> _removedAttachments = new(StringComparer.Ordinal);
+    private readonly Expectations<string> _fields;
+    private readonly Expectations<string> _metadata;
+    private readonly Expectations<long?> _addedAttachments;
+    // A deletion expects only that no attachment of its name is left, so it keeps no value.
+    private readonly Expectations<ValueTuple> _removedAttachments;
     private readonly List<Expected<IReadOnlyList<string>?>> _flattened = [];
     private readonly List<RedactionExpectation> _redactions = [];
     private readonly List<BookmarkExpectation> _bookmarks = [];
@@ -44,6 +45,10 @@ internal sealed class PdfEditVerifier : IEditVerifier<PdfOp>
     internal PdfEditVerifier(Document document)
     {
         _document = document;
+        _fields = new(_incomplete);
+        _metadata = new(_incomplete);
+        _addedAttachments = new(_incomplete);
+        _removedAttachments = new(_incomplete);
         _expectedPages = document.Pages.Count;
         _expectedBookmarks = PdfMutationSupport.CountOutline(document.Outlines);
     }
@@ -56,114 +61,27 @@ internal sealed class PdfEditVerifier : IEditVerifier<PdfOp>
     {
         string id = operation.Id!;
         _recorded.Add((id, PdfOp.Catalog.NameOf(operation)));
-        RecordEffect(operation, id, applied.ItemsAffected, _document);
+        operation.Accept(new Recording(this, id, applied.ItemsAffected));
     }
 
-    private void RecordEffect(PdfOp operation, string id, long affected, Document document)
+    /// <summary>
+    /// Counts the pages a page operation leaves. Page numbers recorded before it name other pages
+    /// now, so a redaction limited to pages and a bookmark's page can no longer be checked.
+    /// </summary>
+    private void InvalidatePositions(string id, int pages)
     {
-        switch (operation)
+        _expectedPages += pages;
+        _pageOps.Add(id);
+        foreach (RedactionExpectation redaction in _redactions.Where(static redaction => redaction.Pages is not null))
         {
-            case SetFormFieldOp field:
-                Replace(_fields, field.Name, new Expected<string>(
-                    id,
-                    field.Value ?? PdfMutationSupport.ClearedFieldValue(PdfMutationSupport.FormField(document, field.Name))));
-                break;
-            case FlattenFormsOp flatten:
-                foreach (string name in flatten.Fields ?? [.. _fields.Keys])
-                {
-                    Drop(_fields, name);
-                }
+            _incomplete.Add(redaction.Id);
+        }
 
-                _flattened.Add(new Expected<IReadOnlyList<string>?>(id, flatten.Fields));
-                break;
-            case RedactTextOp redact:
-                _redactions.Add(new RedactionExpectation(
-                    id,
-                    TextPattern(redact.Find, redact.Regex, redact.CaseSensitive),
-                    redact.Pages is null ? null : PdfMutationSupport.Resolve(document, redact.Pages)));
-                break;
-            case SetPropertiesOp metadata:
-                foreach ((string key, string value) in PdfPropertyNames.Written(metadata))
-                {
-                    Replace(_metadata, key, new Expected<string>(id, value));
-                }
-
-                break;
-            case ClearPropertiesOp { DocumentInfo: true }:
-                foreach (string key in _metadata.Keys.ToArray())
-                {
-                    Drop(_metadata, key);
-                }
-
-                break;
-            case AddAttachmentOp attachment:
-                string added = attachment.Name ?? Path.GetFileName(attachment.Path);
-                if (_removedAttachments.Remove(added, out string? removal))
-                {
-                    _incomplete.Add(removal);
-                }
-
-                // The stream the handler embedded, never the source file again.
-                Replace(_addedAttachments, added, new Expected<long?>(id, PdfInfoProjection.AttachmentEntries(document)
-                    .LastOrDefault(entry => entry.Info.Name == added).File is { } file ? PdfInfoProjection.Unreported.Length(file) : null));
-                break;
-            case DeleteAttachmentOp attachment:
-                Drop(_addedAttachments, attachment.Name);
-                _removedAttachments[attachment.Name] = id;
-                break;
-            case AddBookmarkOp bookmark:
-                _expectedBookmarks++;
-                _bookmarkOps.Add(id);
-                _bookmarks.Add(new BookmarkExpectation(id, NewBookmarkIndex(document, bookmark.Parent), bookmark.Title, bookmark.Page));
-                break;
-            case DeleteBookmarksOp:
-                _expectedBookmarks -= (int)affected;
-                _bookmarkOps.Add(id);
-                // The bookmarks after the deleted ones moved up.
-                _incomplete.UnionWith(_bookmarks.Select(static bookmark => bookmark.Id));
-                _bookmarks.Clear();
-                break;
-            case InsertPageOp:
-            case ImportPagesOp:
-            case DeletePagesOp:
-            case MovePagesOp:
-                _expectedPages += operation switch
-                {
-                    InsertPageOp => 1,
-                    ImportPagesOp => (int)affected,
-                    DeletePagesOp => -(int)affected,
-                    _ => 0,
-                };
-                _pageOps.Add(id);
-                // Page numbers recorded before name other pages now.
-                foreach (RedactionExpectation redaction in _redactions.Where(static redaction => redaction.Pages is not null))
-                {
-                    _incomplete.Add(redaction.Id);
-                }
-
-                _redactions.RemoveAll(static redaction => redaction.Pages is not null);
-                for (int index = 0; index < _bookmarks.Count; index++)
-                {
-                    _incomplete.Add(_bookmarks[index].Id);
-                    _bookmarks[index] = _bookmarks[index] with { Page = null };
-                }
-
-                if (operation is DeletePagesOp)
-                {
-                    foreach (string name in _fields.Keys.ToArray())
-                    {
-                        Drop(_fields, name);
-                    }
-                }
-
-                if (operation is ImportPagesOp)
-                {
-                    // The inserted pages may bring form fields of their own.
-                    _incomplete.UnionWith(_flattened.Select(static flatten => flatten.Id));
-                    _flattened.Clear();
-                }
-
-                break;
+        _redactions.RemoveAll(static redaction => redaction.Pages is not null);
+        for (int index = 0; index < _bookmarks.Count; index++)
+        {
+            _incomplete.Add(_bookmarks[index].Id);
+            _bookmarks[index] = _bookmarks[index] with { Page = null };
         }
     }
 
@@ -391,10 +309,10 @@ internal sealed class PdfEditVerifier : IEditVerifier<PdfOp>
             Report(name, expected.Id, problem);
         }
 
-        foreach ((string name, string id) in _removedAttachments)
+        foreach ((string name, Expected<ValueTuple> removal) in _removedAttachments)
         {
-            _checked.Add(id);
-            Report(name, id, present[name].Any() ? $"attachment '{name}' is still in the output" : null);
+            _checked.Add(removal.Id);
+            Report(name, removal.Id, present[name].Any() ? $"attachment '{name}' is still in the output" : null);
         }
 
         void Report(string name, string id, string? problem)
@@ -417,20 +335,6 @@ internal sealed class PdfEditVerifier : IEditVerifier<PdfOp>
         string operations = string.Join(", ", ids.Select(id => $"'{id}' ({_recorded.First(item => item.Id == id).Op})"));
         string subject = ids.Count == 1 ? $"Operation {operations}" : $"Operations {operations}";
         return VerificationIssues.Of(code, $"{subject}: {problem}.", location, hint);
-    }
-
-    private void Replace<T>(Dictionary<string, Expected<T>> expectations, string key, Expected<T> expected)
-    {
-        Drop(expectations, key);
-        expectations[key] = expected;
-    }
-
-    private void Drop<T>(Dictionary<string, Expected<T>> expectations, string key)
-    {
-        if (expectations.Remove(key, out Expected<T>? earlier))
-        {
-            _incomplete.Add(earlier.Id);
-        }
     }
 
     /// <summary>The index of the bookmark add_bookmark just appended below <paramref name="parent"/>.</summary>
@@ -461,4 +365,198 @@ internal sealed class PdfEditVerifier : IEditVerifier<PdfOp>
     private sealed record RedactionExpectation(string Id, Regex Pattern, IReadOnlyList<int>? Pages);
 
     private sealed record BookmarkExpectation(string Id, string Index, string Title, int? Page);
+
+    /// <summary>
+    /// The expectations of one kind, one per key: setting a key again, or dropping it, leaves the
+    /// operation that set it before unchecked.
+    /// </summary>
+    /// <param name="incomplete">The operations left unchecked.</param>
+    private sealed class Expectations<T>(HashSet<string> incomplete) : IEnumerable<KeyValuePair<string, Expected<T>>>
+    {
+        private readonly Dictionary<string, Expected<T>> _items = new(StringComparer.Ordinal);
+
+        public int Count => _items.Count;
+
+        public IReadOnlyCollection<string> Keys => _items.Keys;
+
+        public void Set(string key, string id, T value)
+        {
+            Drop(key);
+            _items[key] = new Expected<T>(id, value);
+        }
+
+        public void Drop(string key)
+        {
+            if (_items.Remove(key, out Expected<T>? earlier))
+            {
+                incomplete.Add(earlier.Id);
+            }
+        }
+
+        public void DropAll()
+        {
+            foreach (string key in _items.Keys.ToArray())
+            {
+                Drop(key);
+            }
+        }
+
+        public IEnumerator<KeyValuePair<string, Expected<T>>> GetEnumerator() => _items.GetEnumerator();
+
+        System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() => GetEnumerator();
+    }
+
+    /// <summary>
+    /// Records what one operation should leave in the output; an operation without a reliable
+    /// read-back records nothing.
+    /// </summary>
+    /// <param name="verifier">The verifier that keeps the expectations.</param>
+    /// <param name="id">The operation's id.</param>
+    /// <param name="affected">The items the operation affected, as its snapshots counted them.</param>
+    private sealed class Recording(PdfEditVerifier verifier, string id, long affected) : IPdfOpHandler<ValueTuple>
+    {
+        private Document Document => verifier._document;
+
+        public ValueTuple Apply(SetFormFieldOp operation)
+        {
+            verifier._fields.Set(operation.Name, id,
+                operation.Value ?? PdfMutationSupport.ClearedFieldValue(PdfMutationSupport.FormField(Document, operation.Name)));
+            return default;
+        }
+
+        public ValueTuple Apply(FlattenFormsOp operation)
+        {
+            foreach (string name in operation.Fields ?? [.. verifier._fields.Keys])
+            {
+                verifier._fields.Drop(name);
+            }
+
+            verifier._flattened.Add(new Expected<IReadOnlyList<string>?>(id, operation.Fields));
+            return default;
+        }
+
+        public ValueTuple Apply(RedactTextOp operation)
+        {
+            verifier._redactions.Add(new RedactionExpectation(
+                id,
+                TextPattern(operation.Find, operation.Regex, operation.CaseSensitive),
+                operation.Pages is null ? null : PdfMutationSupport.Resolve(Document, operation.Pages)));
+            return default;
+        }
+
+        public ValueTuple Apply(SetPropertiesOp operation)
+        {
+            foreach ((string key, string value) in PdfPropertyNames.Written(operation))
+            {
+                verifier._metadata.Set(key, id, value);
+            }
+
+            return default;
+        }
+
+        public ValueTuple Apply(ClearPropertiesOp operation)
+        {
+            if (operation.DocumentInfo)
+            {
+                verifier._metadata.DropAll();
+            }
+
+            return default;
+        }
+
+        public ValueTuple Apply(AddAttachmentOp operation)
+        {
+            string added = operation.Name ?? Path.GetFileName(operation.Path);
+            verifier._removedAttachments.Drop(added);
+
+            // The stream the handler embedded, never the source file again.
+            verifier._addedAttachments.Set(added, id, PdfInfoProjection.AttachmentEntries(Document)
+                .LastOrDefault(entry => entry.Info.Name == added).File is { } file ? PdfInfoProjection.Unreported.Length(file) : null);
+            return default;
+        }
+
+        public ValueTuple Apply(DeleteAttachmentOp operation)
+        {
+            verifier._addedAttachments.Drop(operation.Name);
+            verifier._removedAttachments.Set(operation.Name, id, default);
+            return default;
+        }
+
+        public ValueTuple Apply(AddBookmarkOp operation)
+        {
+            verifier._expectedBookmarks++;
+            verifier._bookmarkOps.Add(id);
+            verifier._bookmarks.Add(new BookmarkExpectation(id, NewBookmarkIndex(Document, operation.Parent), operation.Title, operation.Page));
+            return default;
+        }
+
+        public ValueTuple Apply(DeleteBookmarksOp operation)
+        {
+            verifier._expectedBookmarks -= (int)affected;
+            verifier._bookmarkOps.Add(id);
+            // The bookmarks after the deleted ones moved up.
+            verifier._incomplete.UnionWith(verifier._bookmarks.Select(static bookmark => bookmark.Id));
+            verifier._bookmarks.Clear();
+            return default;
+        }
+
+        public ValueTuple Apply(InsertPageOp operation)
+        {
+            verifier.InvalidatePositions(id, pages: 1);
+            return default;
+        }
+
+        public ValueTuple Apply(ImportPagesOp operation)
+        {
+            verifier.InvalidatePositions(id, pages: (int)affected);
+            // The inserted pages may bring form fields of their own.
+            verifier._incomplete.UnionWith(verifier._flattened.Select(static flatten => flatten.Id));
+            verifier._flattened.Clear();
+            return default;
+        }
+
+        public ValueTuple Apply(DeletePagesOp operation)
+        {
+            verifier.InvalidatePositions(id, pages: -(int)affected);
+            verifier._fields.DropAll();
+            return default;
+        }
+
+        public ValueTuple Apply(MovePagesOp operation)
+        {
+            verifier.InvalidatePositions(id, pages: 0);
+            return default;
+        }
+
+        // No reliable read-back: these record nothing and stay unchecked.
+        public ValueTuple Apply(RotatePagesOp operation) => default;
+
+        public ValueTuple Apply(CropPagesOp operation) => default;
+
+        public ValueTuple Apply(SetPageSizeOp operation) => default;
+
+        public ValueTuple Apply(AddWatermarkTextOp operation) => default;
+
+        public ValueTuple Apply(AddWatermarkImageOp operation) => default;
+
+        public ValueTuple Apply(AddPageNumbersOp operation) => default;
+
+        public ValueTuple Apply(AddHeaderTextOp operation) => default;
+
+        public ValueTuple Apply(AddFooterTextOp operation) => default;
+
+        public ValueTuple Apply(AddStampImageOp operation) => default;
+
+        public ValueTuple Apply(AddHyperlinkOp operation) => default;
+
+        public ValueTuple Apply(RedactAreaOp operation) => default;
+
+        public ValueTuple Apply(SetPageLabelsOp operation) => default;
+
+        public ValueTuple Apply(EncryptDocumentOp operation) => default;
+
+        public ValueTuple Apply(DecryptDocumentOp operation) => default;
+
+        public ValueTuple Apply(OptimizeDocumentOp operation) => default;
+    }
 }
