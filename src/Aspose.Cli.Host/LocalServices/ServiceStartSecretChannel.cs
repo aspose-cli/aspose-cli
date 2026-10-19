@@ -90,11 +90,6 @@ internal static class ServiceStartSecretChannel
 
     private static void PreventStandardHandleInheritance()
     {
-        if (!OperatingSystem.IsWindows())
-        {
-            return;
-        }
-
         foreach (int id in new[] { -10, -11, -12 })
         {
             nint handle = GetStdHandle(id);
