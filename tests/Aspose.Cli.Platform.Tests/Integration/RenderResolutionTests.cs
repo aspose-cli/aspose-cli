@@ -13,16 +13,21 @@ namespace Aspose.Cli.IntegrationTests;
 /// </summary>
 public sealed class RenderResolutionTests
 {
-    private static readonly string[] Products = ["cells", "pdf", "slides", "words"];
+    /// <summary>Every product of this build, so a new product is covered without changing this test.</summary>
+    private static string[] Products => [.. CliCatalog.Current.Products.Select(static product => product.Id)];
 
-    public static TheoryData<string, string, string> VectorPixelSizes { get; } = new()
+    /// <summary>Every product's <c>--dpi</c>, and Slides' <c>--width</c>.</summary>
+    public static TheoryData<string, string, string> VectorPixelSizes()
     {
-        { "cells", "--dpi", "150" },
-        { "pdf", "--dpi", "150" },
-        { "slides", "--dpi", "150" },
-        { "words", "--dpi", "150" },
-        { "slides", "--width", "640" },
-    };
+        var sizes = new TheoryData<string, string, string>();
+        foreach (string product in Products)
+        {
+            sizes.Add(product, "--dpi", "150");
+        }
+
+        sizes.Add("slides", "--width", "640");
+        return sizes;
+    }
 
     [Theory]
     [MemberData(nameof(VectorPixelSizes))]

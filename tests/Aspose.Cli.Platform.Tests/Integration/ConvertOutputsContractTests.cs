@@ -1,5 +1,6 @@
 using System.Text.Json.Nodes;
 using Aspose.Cli.TestKit;
+using Aspose.Cli.TestKit.Scenarios;
 using Xunit;
 
 namespace Aspose.Cli.IntegrationTests;
@@ -15,21 +16,19 @@ public sealed class ConvertOutputsContractTests : IDisposable
 
     public void Dispose() => _workspace.Dispose();
 
+    /// <summary>
+    /// Converts the product's own fixture document (<see cref="ScenarioFixtures"/>) to PDF, or to
+    /// DOCX when the fixture is a PDF.
+    /// </summary>
     [Theory]
-    [InlineData("cells", "book.xlsx", "book.csv", "csv")]
-    [InlineData("words", "doc.docx", "doc.pdf", "pdf")]
-    [InlineData("slides", "deck.pptx", "deck.pdf", "pdf")]
-    [InlineData("pdf", "doc.pdf", "doc.docx", "docx")]
-    public void SingleFileConvert_ReportsOneOutputsItem(string product, string input, string output, string format)
+    [MemberData(nameof(CliContractTests.ProductIds), MemberType = typeof(CliContractTests))]
+    public void SingleFileConvert_ReportsOneOutputsItem(string product)
     {
-        File.WriteAllText(_workspace.File("source.md"), "# One\n\nText.\n");
-        CliResult created = product switch
-        {
-            "cells" => _workspace.Run("cells", "create", input),
-            "pdf" => _workspace.Run("pdf", "create", input, "--from-markdown", "source.md"),
-            _ => _workspace.Run(product, "create", input, "--from-markdown", "source.md"),
-        };
-        Assert.True(created.ExitCode == 0, created.StdErr);
+        string primary = ScenarioFixtures.PrimaryFormat(product);
+        string format = primary == "pdf" ? "docx" : "pdf";
+        string input = "source." + primary;
+        string output = "converted." + format;
+        File.WriteAllBytes(_workspace.File(input), ScenarioFixtures.Read($"{product}.{primary}"));
 
         CliResult converted = _workspace.Run(product, "convert", input, "--out", output, "--output-format", "json");
 
@@ -46,10 +45,7 @@ public sealed class ConvertOutputsContractTests : IDisposable
 
     /// <summary>A convert writes one document, never one file per unit, so its outputs items declare no unit.</summary>
     [Theory]
-    [InlineData("cells")]
-    [InlineData("pdf")]
-    [InlineData("slides")]
-    [InlineData("words")]
+    [MemberData(nameof(CliContractTests.ProductIds), MemberType = typeof(CliContractTests))]
     public void ConvertResultSchema_OutputsItemsDeclareOnlyFileFields(string product)
     {
         CliResult schema = _workspace.Run("schema", $"v2/{product}/convert-result");

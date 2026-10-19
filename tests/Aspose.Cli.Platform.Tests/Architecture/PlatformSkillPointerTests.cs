@@ -19,20 +19,23 @@ public sealed partial class PlatformSkillPointerTests
     /// <summary>The fewest consecutive entries keyed by a contract name that make a catalog.</summary>
     private const int CatalogEntries = 4;
 
-    /// <summary>The Skills the rule covers: the platform's, and each product's once it points to capabilities and schemas.</summary>
-    public static TheoryData<string> Skills { get; } =
+    /// <summary>
+    /// The Skills the rule covers: the platform's and the <c>Skills</c> directory of every product
+    /// project under <c>src</c>, enumerated so a new product is covered without changing this test.
+    /// </summary>
+    public static TheoryData<string> Skills() =>
     [
         Path.Combine("src", "Aspose.Cli.Host", "Skills", "Platform"),
-        Path.Combine("src", "Aspose.Cli.Product.Pdf", "Skills"),
-        Path.Combine("src", "Aspose.Cli.Product.Slides", "Skills"),
-        Path.Combine("src", "Aspose.Cli.Product.Words", "Skills"),
-        Path.Combine("src", "Aspose.Cli.Product.Cells", "Skills"),
+        .. Directory.GetDirectories(Path.Combine(RepositoryPaths.Root, "src"), "Aspose.Cli.Product.*")
+            .Select(static project => Path.Combine("src", Path.GetFileName(project), "Skills"))
+            .Order(StringComparer.Ordinal),
     ];
 
     [Theory]
     [MemberData(nameof(Skills))]
     public void Skill_HoldsNoCatalogOfContractNames(string skill)
     {
+        Assert.True(Directory.Exists(Path.Combine(RepositoryPaths.Root, skill)), $"{skill} is missing: every product project ships a Skill.");
         string[] files = [.. Directory.EnumerateFiles(Path.Combine(RepositoryPaths.Root, skill), "*.md", SearchOption.AllDirectories).Order(StringComparer.Ordinal)];
         Assert.NotEmpty(files);
 

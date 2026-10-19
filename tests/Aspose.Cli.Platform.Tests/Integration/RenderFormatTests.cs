@@ -13,7 +13,8 @@ namespace Aspose.Cli.IntegrationTests;
 /// </summary>
 public sealed class RenderFormatTests
 {
-    private static readonly string[] Products = ["cells", "pdf", "slides", "words"];
+    /// <summary>Every product of this build, so a new product is covered without changing this test.</summary>
+    private static string[] Products => [.. CliCatalog.Current.Products.Select(static product => product.Id)];
 
     [Fact]
     public void RenderTo_DeclaresNoDefault()
