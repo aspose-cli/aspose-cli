@@ -14,6 +14,11 @@ the check is its authority.
   SDK types of a document engine stay inside its Product's Engine adapter. Enforced by
   `CommercialDependencyRulesTests`, `RepositoryProjectGraphTests`, `DependencyRulesTests`,
   `EngineSdkIsolationTests` and analyzers `APCLI006`, `APCLI009` and `APCLI010`.
+- Inside a Product, `APCLI009` keeps Contracts <- Commands and Contracts <- Engine, and inside
+  the Engine `Engine.Mapping` (loading, format and vocabulary names, read projections,
+  addresses) <- `Engine.Editing` (operation handlers, snapshots, verification): what both read
+  and write lives in Mapping. The module's namespace is the composition root; the layers reach
+  it only for its build metadata, diagnostics, budget domains, format recognition and manifest.
 - Host carries no product-specific branch: product ids come from the catalog, and distribution
   metadata identifies this executable (`DependencyRulesTests`, `HostCatalogIsolationTests`).
 - A Product's module definitions are pure and deterministic (`APCLI007`). Its schemas are

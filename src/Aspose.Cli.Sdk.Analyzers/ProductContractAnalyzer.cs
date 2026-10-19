@@ -11,16 +11,31 @@ public sealed class ProductContractAnalyzer : DiagnosticAnalyzer
     private static readonly ImmutableHashSet<string> TemplateAliases =
         ImmutableHashSet.Create(StringComparer.Ordinal, Aspose.Cli.Sdk.Extensibility.Commanding.StandardOptionNames.Reserved);
 
+    private const string Composition = "Composition";
+
+    private const string Engine = "Engine";
+
+    private const string Mapping = "Engine.Mapping";
+
+    private const string Editing = "Engine.Editing";
+
     private static readonly ImmutableHashSet<string> ProductLayers =
         ImmutableHashSet.Create(
             StringComparer.Ordinal,
-            "Contracts", "Commands", "Engine");
+            "Contracts", "Commands", Engine);
+
+    private static readonly ImmutableHashSet<string> EngineSublayers =
+        ImmutableHashSet.Create(StringComparer.Ordinal, "Mapping", "Editing");
 
     private static readonly ImmutableHashSet<string> ImplementationLayers =
         ImmutableHashSet.Create(
             StringComparer.Ordinal,
-            "Commands", "Engine");
+            "Commands", Engine, Mapping, Editing);
 
+    // Engine.Mapping loads, maps formats and vocabulary names, projects reads and addresses;
+    // Engine.Editing handles operations, snapshots and verification on top of it. The
+    // composition root, the namespace of the product module, composes every layer; the layers
+    // reach it only for the leaves in AllowedRootTypes.
     private static readonly ImmutableDictionary<string, ImmutableHashSet<string>>
         AllowedLayerDependencies =
             new Dictionary<string, ImmutableHashSet<string>>(StringComparer.Ordinal)
@@ -29,9 +44,42 @@ public sealed class ProductContractAnalyzer : DiagnosticAnalyzer
                 ["Commands"] = ImmutableHashSet.Create(
                     StringComparer.Ordinal,
                     "Contracts", "Commands"),
-                ["Engine"] = ImmutableHashSet.Create(
+                [Engine] = ImmutableHashSet.Create(
                     StringComparer.Ordinal,
-                    "Contracts", "Engine"),
+                    "Contracts", Engine, Mapping, Editing),
+                [Mapping] = ImmutableHashSet.Create(
+                    StringComparer.Ordinal,
+                    "Contracts", Engine, Mapping),
+                [Editing] = ImmutableHashSet.Create(
+                    StringComparer.Ordinal,
+                    "Contracts", Engine, Mapping, Editing),
+                [Composition] = ImmutableHashSet.Create(
+                    StringComparer.Ordinal,
+                    "Contracts", "Commands", Engine, Mapping, Editing, Composition),
+            }.ToImmutableDictionary(StringComparer.Ordinal);
+
+    // The composition-root types a layer may use, by the suffix after the product name: the
+    // generated product identity, the error and warning codes, the budget domain names, the
+    // format signatures the format table attaches, and the module whose manifest a help link names.
+    private static readonly ImmutableDictionary<string, ImmutableHashSet<string>>
+        AllowedRootTypes =
+            new Dictionary<string, ImmutableHashSet<string>>(StringComparer.Ordinal)
+            {
+                ["Contracts"] = ImmutableHashSet.Create(
+                    StringComparer.Ordinal,
+                    "BuildMetadata", "Diagnostics", "FormatRecognition"),
+                ["Commands"] = ImmutableHashSet.Create(
+                    StringComparer.Ordinal,
+                    "BuildMetadata", "Diagnostics", "Module"),
+                [Engine] = ImmutableHashSet.Create(
+                    StringComparer.Ordinal,
+                    "BuildMetadata", "Diagnostics", "BudgetDomains"),
+                [Mapping] = ImmutableHashSet.Create(
+                    StringComparer.Ordinal,
+                    "BuildMetadata", "Diagnostics", "BudgetDomains"),
+                [Editing] = ImmutableHashSet.Create(
+                    StringComparer.Ordinal,
+                    "BuildMetadata", "Diagnostics", "BudgetDomains"),
             }.ToImmutableDictionary(StringComparer.Ordinal);
 
     private const string Category = "Aspose.Cli.ProductIsolation";
@@ -63,7 +111,10 @@ public sealed class ProductContractAnalyzer : DiagnosticAnalyzer
         "APCLI009",
         "Product layer dependency is not allowed",
         "Product layer '{0}' references '{1}' in layer '{2}'; keep the product "
-            + "dependency direction Contracts <- Commands and Contracts <- Engine");
+            + "dependency direction Contracts <- Commands, Contracts <- Engine and "
+            + "Engine.Mapping <- Engine.Editing, and reach the composition root only "
+            + "for its build metadata, diagnostics, budget domains, format recognition and "
+            + "module manifest");
 
     private static readonly DiagnosticDescriptor ImplementationVisibility = AnalyzerTypes.Rule(
         Category,
@@ -125,8 +176,11 @@ public sealed class ProductContractAnalyzer : DiagnosticAnalyzer
             SymbolKind.Property,
             SymbolKind.Field,
             SymbolKind.Event);
+        string? compositionRoot =
+            (export.ConstructorArguments.ElementAtOrDefault(1).Value as INamedTypeSymbol)
+                ?.ContainingNamespace?.ToDisplayString();
         context.RegisterSymbolAction(
-            AnalyzeLayerSymbol,
+            symbol => AnalyzeLayerSymbol(symbol, compositionRoot),
             SymbolKind.NamedType,
             SymbolKind.Method,
             SymbolKind.Property,
@@ -143,7 +197,7 @@ public sealed class ProductContractAnalyzer : DiagnosticAnalyzer
                 operation.OperationBlocks,
                 (_, current) =>
                     current.AddRange(operation.OperationBlocks));
-            AnalyzeLayerOperations(operation);
+            AnalyzeLayerOperations(operation, compositionRoot);
             AnalyzeHostSeamOperations(operation);
         });
         context.RegisterCompilationEndAction(end =>
@@ -243,11 +297,11 @@ public sealed class ProductContractAnalyzer : DiagnosticAnalyzer
         type is INamedTypeSymbol named
         && AnalyzerTypes.MetadataName(named.OriginalDefinition) == SdkMetadataNames.StandardOptions;
 
-    private static void AnalyzeLayerSymbol(SymbolAnalysisContext context)
+    private static void AnalyzeLayerSymbol(SymbolAnalysisContext context, string? compositionRoot)
     {
         ISymbol symbol = context.Symbol;
         if (symbol.IsImplicitlyDeclared
-            || ProductLayer.TryCreate(symbol.ContainingNamespace) is not { } source)
+            || ProductLayer.TryCreate(symbol.ContainingNamespace, compositionRoot) is not { } source)
         {
             return;
         }
@@ -270,14 +324,16 @@ public sealed class ProductContractAnalyzer : DiagnosticAnalyzer
                 ContractTypes.SourceLocation(symbol),
                 source,
                 context.Compilation.Assembly,
+                compositionRoot,
                 exposed);
         }
     }
 
     private static void AnalyzeLayerOperations(
-        OperationBlockAnalysisContext context)
+        OperationBlockAnalysisContext context,
+        string? compositionRoot)
     {
-        if (ProductLayer.TryCreate(context.OwningSymbol.ContainingNamespace)
+        if (ProductLayer.TryCreate(context.OwningSymbol.ContainingNamespace, compositionRoot)
             is not { } source)
         {
             return;
@@ -290,10 +346,10 @@ public sealed class ProductContractAnalyzer : DiagnosticAnalyzer
             {
                 foreach (ITypeSymbol type in ReferencedTypes(operation).SelectMany(Flatten))
                 {
-                    ProductLayer? target = ProductLayer.TryCreate(type.ContainingNamespace);
+                    ProductLayer? target = ProductLayer.TryCreate(type.ContainingNamespace, compositionRoot);
                     if (target is null
                         || !IsRelevantTarget(type, context.Compilation.Assembly, target)
-                        || !IsForbidden(source, target)
+                        || !IsForbidden(source, target, type)
                         || !reported.Add(target.Root + ":" + target.Layer))
                     {
                         continue;
@@ -315,14 +371,15 @@ public sealed class ProductContractAnalyzer : DiagnosticAnalyzer
         Location location,
         ProductLayer source,
         IAssemblySymbol productAssembly,
+        string? compositionRoot,
         ITypeSymbol type)
     {
         foreach (ITypeSymbol referenced in Flatten(type))
         {
-            ProductLayer? target = ProductLayer.TryCreate(referenced.ContainingNamespace);
+            ProductLayer? target = ProductLayer.TryCreate(referenced.ContainingNamespace, compositionRoot);
             if (target is null
                 || !IsRelevantTarget(referenced, productAssembly, target)
-                || !IsForbidden(source, target))
+                || !IsForbidden(source, target, referenced))
             {
                 continue;
             }
@@ -393,9 +450,23 @@ public sealed class ProductContractAnalyzer : DiagnosticAnalyzer
         }
     }
 
-    private static bool IsForbidden(ProductLayer source, ProductLayer target) =>
+    private static bool IsForbidden(ProductLayer source, ProductLayer target, ITypeSymbol type) =>
         !string.Equals(source.Root, target.Root, StringComparison.Ordinal)
-        || !AllowedLayerDependencies[source.Layer].Contains(target.Layer);
+        || (target.Layer == Composition && source.Layer != Composition
+            ? !IsAllowedRootType(source.Layer, type)
+            : !AllowedLayerDependencies[source.Layer].Contains(target.Layer));
+
+    private static bool IsAllowedRootType(string sourceLayer, ITypeSymbol type)
+    {
+        ITypeSymbol outermost = type;
+        while (outermost.ContainingType is { } containing)
+        {
+            outermost = containing;
+        }
+        return AllowedRootTypes[sourceLayer].Any(suffix =>
+            outermost.Name.Length > suffix.Length
+            && outermost.Name.EndsWith(suffix, StringComparison.Ordinal));
+    }
 
     private static bool IsRelevantTarget(
         ITypeSymbol type,
@@ -588,17 +659,32 @@ public sealed class ProductContractAnalyzer : DiagnosticAnalyzer
 
         public string Layer { get; }
 
-        public static ProductLayer? TryCreate(INamespaceSymbol? productNamespace)
+        public static ProductLayer? TryCreate(
+            INamespaceSymbol? productNamespace,
+            string? compositionRoot)
         {
             string name = productNamespace?.ToDisplayString() ?? string.Empty;
+            if (compositionRoot is not null
+                && string.Equals(name, compositionRoot, StringComparison.Ordinal))
+            {
+                return new ProductLayer(name, Composition);
+            }
+
             string[] segments = name.Split('.');
             for (int index = 1; index < segments.Length; index++)
             {
                 if (ProductLayers.Contains(segments[index]))
                 {
+                    string layer = segments[index];
+                    if (layer == Engine
+                        && index + 1 < segments.Length
+                        && EngineSublayers.Contains(segments[index + 1]))
+                    {
+                        layer = Engine + "." + segments[index + 1];
+                    }
                     return new ProductLayer(
                         string.Join(".", segments.Take(index)),
-                        segments[index]);
+                        layer);
                 }
             }
             return null;
