@@ -2,6 +2,7 @@ using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Results;
 using Aspose.Slides;
+using Aspose.Slides.Export;
 
 namespace Aspose.Cli.Product.Slides.Engine.Mapping;
 
@@ -40,6 +41,20 @@ internal sealed class SlidesPresentationLoader(
         return loaded;
     }
 
+    /// <summary>
+    /// Opens a presentation that new slides are added to on its layouts. A PowerPoint 97-2003
+    /// binary file (PPT, PPS or POT) is first saved as PPTX in memory and reopened
+    /// (SLIDES-PPT-TEMPLATE-LAYOUTS): the engine lists layouts from such a file that a PPTX save
+    /// cannot reference, and that save drops them, as <c>slides convert</c> to PPTX does.
+    /// </summary>
+    public LoadedPresentation OpenToWrite(string path, Secret? password)
+    {
+        InputSizeGuard.Ensure(resourceBudgets, path);
+        LoadedPresentation loaded = OpenCore(path, password, throughPptx: true);
+        outputs?.Opened(loaded.Encrypted);
+        return loaded;
+    }
+
     // Generated candidates are bounded by publication, not a second user-input admission.
     internal LoadedPresentation OpenPublishedCandidate(string path, Secret? password) => OpenCore(path, password);
 
@@ -59,7 +74,7 @@ internal sealed class SlidesPresentationLoader(
 
     private const string DefaultTemplateResource = "Templates/default-16x9.pptx";
 
-    private LoadedPresentation OpenCore(string path, Secret? secret)
+    private LoadedPresentation OpenCore(string path, Secret? secret, bool throughPptx = false)
     {
         string? password = secret?.Reveal();
         FileStream? source = null;
@@ -125,14 +140,24 @@ internal sealed class SlidesPresentationLoader(
                 resources.Dispose();
                 throw;
             }
-            SlidesCjkFallback.Apply(presentation);
-            var loaded = new LoadedPresentation(presentation, format, resources)
+            bool encrypted = presentation.ProtectionManager.IsEncrypted;
+            Stream held = source;
+            if (throughPptx && SlidesEngineFormats.IsBinaryPpt(format))
             {
+                (presentation, held) = ThroughPptx(presentation, password, resources);
+            }
+            else
+            {
+                source = null;
+            }
+
+            SlidesCjkFallback.Apply(presentation);
+            return new LoadedPresentation(presentation, format, resources)
+            {
+                Encrypted = encrypted,
                 ImplicitTitleCharts = ImplicitTitleCharts(presentation),
-                Source = source,
+                Source = held,
             };
-            source = null;
-            return loaded;
         }
         catch (Exception exception) when (exception is not CliException and not OperationCanceledException)
         {
@@ -141,6 +166,55 @@ internal sealed class SlidesPresentationLoader(
         finally
         {
             source?.Dispose();
+        }
+    }
+
+    /// <summary>
+    /// The presentation saved as PPTX in memory and reopened from it (SLIDES-PPT-TEMPLATE-LAYOUTS),
+    /// with the stream it reads from. An evaluation save adds a watermark box to every slide; the
+    /// boxes beyond those the slide had are removed, so the copy holds what the file holds.
+    /// </summary>
+    private static (Presentation Presentation, Stream Source) ThroughPptx(
+        Presentation presentation,
+        string? password,
+        SlidesResourcePolicy resources)
+    {
+        var pptx = new MemoryStream();
+        try
+        {
+            int[] watermarks;
+            using (presentation)
+            {
+                watermarks = [.. presentation.Slides.Select(static slide => slide.Shapes.Count(SlidesEngineSupport.IsEvaluationWatermark))];
+                presentation.Save(pptx, SaveFormat.Pptx);
+            }
+
+            pptx.Position = 0;
+            var reopened = new Presentation(pptx, new LoadOptions { Password = password, ResourceLoadingCallback = resources });
+            try
+            {
+                for (int index = 0; index < reopened.Slides.Count; index++)
+                {
+                    IShapeCollection shapes = reopened.Slides[index].Shapes;
+                    foreach (IShape added in shapes.Where(SlidesEngineSupport.IsEvaluationWatermark).Skip(watermarks[index]).ToArray())
+                    {
+                        shapes.Remove(added);
+                    }
+                }
+            }
+            catch
+            {
+                reopened.Dispose();
+                throw;
+            }
+
+            return (reopened, pptx);
+        }
+        catch
+        {
+            pptx.Dispose();
+            resources.Dispose();
+            throw;
         }
     }
 
@@ -182,7 +256,7 @@ internal sealed record LoadedPresentation(Presentation Presentation, string Form
     : IDisposable
 {
     /// <summary>Whether the file is encrypted, as it was opened; a later encryption does not change it.</summary>
-    public bool Encrypted { get; } = Presentation.ProtectionManager.IsEncrypted;
+    public bool Encrypted { get; init; } = Presentation.ProtectionManager.IsEncrypted;
 
     /// <summary>The charts whose implicit automatic title an output draws over the plot.</summary>
     public IReadOnlyList<(int Slide, string Chart)> ImplicitTitleCharts { get; init; } = [];

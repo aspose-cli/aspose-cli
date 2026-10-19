@@ -549,6 +549,18 @@ fails, delete the issue's section, the code that names it and the test, then upd
 - **Workaround:** keep the PPTX for further edits.
 - **Reproduction:** [SlidesConvertKnownIssueTests](tests/Aspose.Cli.Product.Slides.Tests/SlidesConvertKnownIssueTests.cs)
 
+### SLIDES-PPT-TEMPLATE-LAYOUTS
+
+- **Defect:** loading some PowerPoint 97-2003 binary files (PPT, PPS, POT) lists extra layouts
+  in `LayoutSlides`, with the name and type of another layout (a second "Title Slide" and
+  "Section Header" for a design whose PPTX has one of each). They belong to the master like the others, but a slide added on one of them makes
+  the PPTX save throw `KeyNotFoundException` for `Aspose.Slides.LayoutSlide`. A PPTX save of
+  the loaded file without such a slide drops them.
+- **CLI behavior:** none visible; `slides create --template` and `slides edit` first save a PPT,
+  PPS or POT file as PPTX in memory and use the reopened copy, so new slides take the layouts the
+  PPTX keeps. The evaluation watermark boxes that save adds are removed from the copy.
+- **Reproduction:** [SlidesKnownIssueTests](tests/Aspose.Cli.Product.Slides.Tests/SlidesKnownIssueTests.cs)
+
 ### SLIDES-MD-INHERITED-BULLETS
 
 - **Defect:** Markdown export writes a paragraph as a list item only when the paragraph itself

@@ -112,6 +112,43 @@ public sealed class SlidesKnownIssueTests
     }
 
     [LicensedFact]
+    public void PptLoad_ListsLayoutsThatAPptxSaveCannotReference()
+    {
+        using var fixture = new SlidesEngineFixture();
+        using var ppt = new MemoryStream();
+        int pptxLayouts;
+        using (Stream design = typeof(SlidesPresentationLoader).Assembly.GetManifestResourceStream("Templates/default-16x9.pptx")!)
+        using (var source = new Presentation(design))
+        {
+            pptxLayouts = source.LayoutSlides.Count;
+            source.Save(ppt, SaveFormat.Ppt);
+        }
+
+        ppt.Position = 0;
+        using var loaded = new Presentation(ppt);
+        var unwritable = new List<string>();
+        for (int index = 0; index < loaded.LayoutSlides.Count; index++)
+        {
+            ppt.Position = 0;
+            using var deck = new Presentation(ppt);
+            deck.Slides.AddEmptySlide(deck.LayoutSlides[index]);
+            try
+            {
+                deck.Save(new MemoryStream(), SaveFormat.Pptx);
+            }
+            catch (KeyNotFoundException)
+            {
+                unwritable.Add($"{index}: {deck.LayoutSlides[index].Name}");
+            }
+        }
+
+        KnownIssue.Reproduces(
+            "SLIDES-PPT-TEMPLATE-LAYOUTS",
+            unwritable.Count > 0,
+            $"{pptxLayouts} layouts saved as PPT load as {loaded.LayoutSlides.Count}; a slide on layout [{string.Join(", ", unwritable)}] fails the PPTX save");
+    }
+
+    [LicensedFact]
     public void RenderingWithAFallbackRule_WritesToStandardOutput()
     {
         using var fixture = new SlidesEngineFixture();
