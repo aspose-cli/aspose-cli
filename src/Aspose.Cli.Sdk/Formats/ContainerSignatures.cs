@@ -1,4 +1,6 @@
-namespace Aspose.Cli.Sdk.IO;
+using Aspose.Cli.Sdk.IO.Files;
+
+namespace Aspose.Cli.Sdk.Formats;
 
 /// <summary>
 /// The container signatures that formats of several products share, spelled once: the OLE

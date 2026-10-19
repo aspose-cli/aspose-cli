@@ -1,4 +1,4 @@
-namespace Aspose.Cli.Sdk.IO;
+namespace Aspose.Cli.Sdk.IO.Files;
 
 /// <summary>The one open policy for reading an input file.</summary>
 public static class InputFiles

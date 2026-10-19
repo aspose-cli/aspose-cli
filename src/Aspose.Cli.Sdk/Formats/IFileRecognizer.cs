@@ -1,4 +1,4 @@
-namespace Aspose.Cli.Sdk.IO;
+namespace Aspose.Cli.Sdk.Formats;
 
 /// <summary>Performs bounded, side-effect-free content recognition for one product.</summary>
 public interface IFileRecognizer

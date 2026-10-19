@@ -7,7 +7,7 @@ using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Diagnostics;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Extensibility;
-using Aspose.Cli.Sdk.IO;
+using Aspose.Cli.Sdk.Formats;
 using Xunit;
 using ExtProduct = Aspose.Cli.Sdk.Extensibility.Product;
 

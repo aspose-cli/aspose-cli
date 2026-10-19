@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Text;
 using System.Text.Json;
 using Aspose.Cli.Sdk.Errors;
+using Aspose.Cli.Sdk.Formats;
 using Aspose.Cli.Sdk.IO;
 
 namespace Aspose.Cli.Product.Words.Engine.Editing;

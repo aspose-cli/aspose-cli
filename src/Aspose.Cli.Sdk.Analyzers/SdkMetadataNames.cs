@@ -24,11 +24,11 @@ internal static class SdkMetadataNames
     internal const string ProductManifest = "Aspose.Cli.Sdk.Extensibility.ProductManifest";
     internal const string ProductMenu = CommandingNamespace + ".ProductMenu";
     internal const string StandardOptions = CommandingNamespace + ".StandardOptions";
-    internal const string FormatDescriptor = "Aspose.Cli.Sdk.IO.FormatDescriptor";
-    internal const string FormatDescriptorExtensions = "Aspose.Cli.Sdk.IO.FormatDescriptorExtensions";
-    internal const string FileFormatRecognition = "Aspose.Cli.Sdk.IO.FileFormatRecognition";
-    internal const string FileProbePattern = "Aspose.Cli.Sdk.IO.FileProbePattern";
-    internal const string RouteOwnership = "Aspose.Cli.Sdk.IO.RouteOwnership";
+    internal const string FormatDescriptor = "Aspose.Cli.Sdk.Formats.FormatDescriptor";
+    internal const string FormatDescriptorExtensions = "Aspose.Cli.Sdk.Formats.FormatDescriptorExtensions";
+    internal const string FileFormatRecognition = "Aspose.Cli.Sdk.Formats.FileFormatRecognition";
+    internal const string FileProbePattern = "Aspose.Cli.Sdk.Formats.FileProbePattern";
+    internal const string RouteOwnership = "Aspose.Cli.Sdk.Formats.RouteOwnership";
     internal const string ResourceBudgetCapabilities = ContractsNamespace + ".ResourceBudgetCapabilities";
     internal const string ErrorCode = "Aspose.Cli.Sdk.Errors.ErrorCode";
     internal const string DiagnosticDescriptor = "Aspose.Cli.Sdk.Diagnostics.DiagnosticDescriptor";

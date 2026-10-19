@@ -4,6 +4,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using Aspose.Cli.Sdk;
 using Aspose.Cli.Sdk.Errors;
+using Aspose.Cli.Sdk.Formats;
 using Aspose.Cli.Sdk.IO;
 
 namespace Aspose.Cli.Product.Pdf.Engine.Mapping;
