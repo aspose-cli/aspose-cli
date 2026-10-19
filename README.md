@@ -34,8 +34,8 @@ project by default or for the user with `--user`.
   `--if-match` refuses a file that changed since it was read, and `--dry-run` writes nothing.
   No other command writes over one of its inputs.
 - **Verification.** `aspose-cli review <file>` writes an evidence directory with an image of
-  every sheet, slide or page and its layout findings; Cells, PDF and Words `edit --verify` report
-  semantic evidence before publication.
+  every sheet, slide or page and its layout findings; `edit --verify` reads the staged output back
+  and reports semantic evidence before publication.
 - **A stable contract.** In JSON mode a command writes one result to stdout or one error to
   stderr, with a stable code and exit code.
 - **Bounded work.** Inputs, rendering and extraction are held to the budgets that `capabilities`
@@ -78,8 +78,9 @@ powershell -ExecutionPolicy ByPass -c "irm https://github.com/aspose-cli/aspose-
 
 The installer downloads the latest [release](https://github.com/aspose-cli/aspose-cli/releases),
 verifies it ([SECURITY.md](SECURITY.md#releases)), then installs per user into
-`%LOCALAPPDATA%\Aspose\CLI` in one transaction. It adds the directory to the user PATH, installs the Agent Skills for the
-Codex, Claude Code and OpenCode setups it finds, and offers to install a license. Agents that run
+`%LOCALAPPDATA%\Aspose\CLI` in one transaction. It adds the directory to the user PATH, installs
+the Agent Skills for the Codex, Claude Code and OpenCode setups it finds, and offers to install a
+license. Agents that run
 commands need nothing more: the Skills teach them the CLI. It changes no agent's MCP
 configuration unless you ask with `-Mcp`, which also registers the `aspose-cli mcp serve` server
 with those hosts (a host it cannot register produces only a warning). To install without

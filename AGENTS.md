@@ -92,7 +92,8 @@ weaken a check or remove a supported operation to make a test pass.
   `SameNameOptions.Exemptions` or a product's `Homonyms`) sits between
   `// rule-exemptions: begin` and `// rule-exemptions: end` lines in a file `.github/CODEOWNERS`
   names. Adding or editing an exemption, taking one out of its block, or removing or moving a
-  marker is adding a known violation and needs the same label; deleting an exemption does not. `scripts/require-approval.ps1` checks both lists for the pull request.
+  marker is adding a known violation and needs the same label; deleting an exemption does not.
+  `scripts/require-approval.ps1` checks both lists for the pull request.
 - **Analyzers.** Production code builds with the analyzers in the `[src/**.cs]` section of
   `.editorconfig` as errors; fix a violation rather than suppressing it.
 
@@ -141,9 +142,8 @@ weaken a check or remove a supported operation to make a test pass.
   block or section, a PDF page, a Slides slide, which also numbers `slide/3/shape/7` and
   `page/1/image/1`); numbered objects without one keep the number their operation saw: the Cells
   objects numbered within a sheet (`chart/Sheet/2`, `image/…`, `conditional-format/…`) and the
-  PDF bookmarks and page labels. Names in addresses are escaped only by `TargetName.Escape`
-  (`TargetNameOwnershipTests`): just `/`, `%`, control characters and leading and trailing white
-  space, an empty name is `%00`, and in a Cells `cell/Sheet!A1` the sheet's own `!` is `%21`.
+  PDF bookmarks and page labels. Names in addresses are escaped only by `TargetName.Escape`,
+  whose summary states what it escapes (`TargetNameTests`, `TargetNameOwnershipTests`).
   A snapshot's state may hold what no read result reports, such as the PDF `Unreported`
   properties: it only decides whether an object changed, enters no result, and so needs no
   read-back.
@@ -197,9 +197,10 @@ Kept on purpose:
   (C-R35).
 - `capabilities` lists no `examples[]` or `errorDetailsKeys[]`: examples belong to help (C-R34),
   and the error `details` keys are described once, in the error envelope schema (C-R25).
-- On an encrypted PDF input, `set_properties` with text beyond Latin-1 and no later `encrypt_document` or
-  `--encrypt-env` is still refused rather than reported applied while the engine writes garbled text
-  ([PDF-ENCRYPTED-INFO-TEXT](KNOWN-ISSUES.md#pdf-encrypted-info-text), C-R30).
+- On an encrypted PDF input, `set_properties` with text beyond Latin-1 and no later
+  `encrypt_document` or `--encrypt-env` is still refused rather than reported applied while the
+  engine writes garbled text ([PDF-ENCRYPTED-INFO-TEXT](KNOWN-ISSUES.md#pdf-encrypted-info-text),
+  C-R30).
 
 ## Tests
 
