@@ -12,9 +12,10 @@ the fast feedback loop:
   composed launcher through the TestKit, so a change under src/ or to the TestKit reaches every
   test project, a change inside a test project reaches that project, a repository file that a
   test project lists as a RepositoryInput item (such as README.md) reaches that project, other
-  documentation and repository metadata (*.md, .github/, LICENSE*, .gitignore, .gitattributes)
-  reach nothing, and any other change (build inputs, .editorconfig, whose analyzer severities
-  are build input, eng/, scripts/, install.ps1) reaches every project. Pull-request CI uses it; master pushes run Fast.
+  documentation and repository metadata (*.md, .github/, LICENSE*, .gitignore, .gitattributes,
+  as scripts/documentation-paths.json lists them) reach nothing, and any other change (build
+  inputs, .editorconfig, whose analyzer severities are build input, eng/, scripts/, install.ps1)
+  reaches every project. Pull-request CI uses it; master pushes run Fast.
 - Affected adds the Browser and Slow tests of the projects a change reaches: a change under src/
   or to the TestKit adds them to every test project, a change inside a test project to that
   project, and a change to a RepositoryInput to the test projects that list it. Installer inputs
@@ -160,14 +161,13 @@ function Get-ChangedPaths {
     return @(@($tracked) + @($untracked) | Where-Object { $_ } | Sort-Object -Unique)
 }
 
-# Documentation and repository metadata outside the projects, which reach only the test projects
-# that list them as a RepositoryInput. .editorconfig is not among them: the compiler reads its
-# analyzer severities, so it is a build input.
-function Test-DocumentationPath {
-    param([Parameter(Mandatory)][string] $Path)
-    $name = $Path.Split('/')[-1]
-    return $Path -like '*.md' -or (Test-PathPrefix $Path @('.github/')) -or $name -like 'LICENSE*' -or
-        $name -in @('.gitignore', '.gitattributes')
+# The given paths that are documentation and repository metadata outside the projects, which reach
+# only the test projects that list them as a RepositoryInput (scripts/documentation-paths.json).
+function Get-DocumentationPaths {
+    param([string[]] $Paths)
+    $documentation = [Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
+    foreach ($path in @(& (Join-Path $PSScriptRoot 'documentation-paths.ps1') -Path $Paths)) { [void]$documentation.Add($path) }
+    return , $documentation
 }
 
 # The repository files outside the projects that each test project reads, from its RepositoryInput items.
@@ -204,13 +204,14 @@ switch ($Scope) {
         $inputs = Get-TestProjectInputs
         $projectDirectories = @($scopes.Values | ForEach-Object { $_ } | Sort-Object -Unique)
         $changed = Get-ChangedPaths
+        $documentation = Get-DocumentationPaths $changed
         $reached = [Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
         [void]$reached.Add($architectureTests)
         foreach ($path in $changed) {
             foreach ($project in $testProjects) {
                 if ((Test-PathPrefix $path $scopes[$project]) -or $inputs[$project].Contains($path)) { [void]$reached.Add($project) }
             }
-            if (-not (Test-PathPrefix $path $projectDirectories) -and -not (Test-DocumentationPath $path)) {
+            if (-not (Test-PathPrefix $path $projectDirectories) -and -not $documentation.Contains($path)) {
                 $reached.UnionWith([string[]]$testProjects)
             }
         }
@@ -225,6 +226,7 @@ switch ($Scope) {
         $inputs = Get-TestProjectInputs
         $projectDirectories = @($scopes.Values | ForEach-Object { $_ } | Sort-Object -Unique)
         $changed = Get-ChangedPaths
+        $documentation = Get-DocumentationPaths $changed
         foreach ($path in $changed) {
             $installerInput = Test-PathPrefix $path $installerInputs
             if ($installerInput) {
@@ -233,7 +235,7 @@ switch ($Scope) {
             foreach ($project in $testProjects) {
                 if ((Test-PathPrefix $path $scopes[$project]) -or $inputs[$project].Contains($path)) { $included[$project].UnionWith([string[]]@('Browser', 'Slow')) }
             }
-            if (-not (Test-PathPrefix $path $projectDirectories) -and -not $installerInput -and -not (Test-DocumentationPath $path)) {
+            if (-not (Test-PathPrefix $path $projectDirectories) -and -not $installerInput -and -not $documentation.Contains($path)) {
                 foreach ($project in $testProjects) { $included[$project].UnionWith([string[]]$categories) }
             }
         }

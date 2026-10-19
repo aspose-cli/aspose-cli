@@ -14,6 +14,8 @@
   <!-- Repository files outside the projects that these tests read; scripts/test.ps1 runs this project when one changes. -->
   <ItemGroup>
     <RepositoryInput Include="..\..\.github\workflows\ci.yml" />
+    <RepositoryInput Include="..\..\scripts\documentation-paths.json" />
+    <RepositoryInput Include="..\..\scripts\documentation-paths.ps1" />
   </ItemGroup>
 
 </Project>

@@ -72,20 +72,13 @@ public sealed partial class RepositoryInputTests
         Assert.True(undeclared.Count == 0, string.Join(Environment.NewLine, undeclared.Distinct(StringComparer.Ordinal)));
     }
 
-    // The tracked files scripts/test.ps1 (Test-DocumentationPath) treats as documentation and
-    // repository metadata: *.md, .github/, LICENSE*, .gitignore and .gitattributes outside src/
-    // and tests/. git lists them, so build output and untracked files never count.
+    // The tracked files outside src/ and tests/ that scripts/documentation-paths.json names as
+    // documentation and repository metadata. git lists them, so build output and untracked files
+    // never count.
     private static IEnumerable<string> DocumentationFiles() =>
         TrackedFiles()
             .Where(static path => !path.StartsWith("src/", StringComparison.Ordinal) && !path.StartsWith("tests/", StringComparison.Ordinal))
-            .Where(static path =>
-            {
-                string name = path.Split('/')[^1];
-                return path.EndsWith(".md", StringComparison.OrdinalIgnoreCase)
-                    || path.StartsWith(".github/", StringComparison.OrdinalIgnoreCase)
-                    || name.StartsWith("LICENSE", StringComparison.OrdinalIgnoreCase)
-                    || name is ".gitignore" or ".gitattributes";
-            })
+            .Where(DocumentationPaths.Contains)
             .Order(StringComparer.Ordinal);
 
     private static string[] TrackedFiles()
