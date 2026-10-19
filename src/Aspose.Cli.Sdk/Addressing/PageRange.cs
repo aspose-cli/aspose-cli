@@ -88,6 +88,12 @@ public sealed class PageRange
             return true;
         }
 
+        if (string.Equals(text.Trim(), AllText, StringComparison.OrdinalIgnoreCase))
+        {
+            reason = $"the keyword {AllText} is lowercase";
+            return false;
+        }
+
         var segments = new List<Segment>();
         foreach (string raw in text.Split(',', StringSplitOptions.TrimEntries))
         {
