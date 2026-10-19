@@ -457,15 +457,6 @@ internal static class SlidesEngineSupport
             SlideSizeScaleType.EnsureFit);
     }
 
-
-    internal static void Encrypt(Presentation presentation, Secret? password)
-    {
-        if (password is not null)
-        {
-            presentation.ProtectionManager.Encrypt(password.Reveal());
-        }
-    }
-
     /// <summary>
     /// The warnings of an output produced from the presentation; the write pipeline adds the
     /// evaluation disclosure. Evaluation mode cuts text short only where it is read: the
