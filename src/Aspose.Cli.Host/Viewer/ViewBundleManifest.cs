@@ -50,8 +50,7 @@ internal sealed class ViewBundleManifest
         }
         var boundary = new VerifiedFileBoundary(root);
         string entry = NormalizeRelative(entryFileName);
-        var files = new Dictionary<string, ArtifactRecord>(
-            StringComparer.OrdinalIgnoreCase);
+        var files = new Dictionary<string, ArtifactRecord>(FilePaths.Comparer);
         var pending = new Stack<string>();
         pending.Push(root);
         long total = 0;

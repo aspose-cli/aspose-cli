@@ -1,5 +1,6 @@
 using System.Security.Cryptography;
 using Aspose.Cli.Host.LocalServices;
+using Aspose.Cli.Sdk;
 using Aspose.Cli.Sdk.Views;
 
 namespace Aspose.Cli.Host.Viewer;
@@ -47,7 +48,7 @@ internal static class ViewRendering
             .ToArray();
         var named = manifest.Parts
             .Select(static part => part.File)
-            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+            .ToHashSet(FilePaths.Comparer);
         string? stray = written.FirstOrDefault(path => !named.Contains(path));
         if (stray is not null || written.Length != named.Count)
         {
