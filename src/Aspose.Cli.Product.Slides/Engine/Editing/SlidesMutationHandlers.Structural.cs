@@ -1,3 +1,4 @@
+using Aspose.Cli.Sdk.IO;
 using Aspose.Slides;
 using static Aspose.Cli.Product.Slides.Engine.Editing.SlidesMutationSupport;
 
@@ -150,7 +151,8 @@ internal sealed partial class SlidesMutationHandlers
 
     public ValueTuple Apply(ImportSlidesOp operation)
     {
-        using LoadedPresentation source = _loader.Open(operation.Path, OperationSecrets.Resolve(_secrets, operation.SourcePasswordEnv));
+        using LoadedPresentation source = _loader.Open(operation.Path, PasswordSource.OperationField(
+            OperationSecrets.Resolve(_secrets, operation.SourcePasswordEnv), "sourcePasswordEnv"));
         var clones = new List<ISlide>();
         foreach (ISlide slide in source.Presentation.Slides)
         {
