@@ -148,6 +148,18 @@ public sealed class ViewerServiceHttpTests : IDisposable
 
     [Category(TestCategory.Slow)]
     [Fact]
+    public void Opening_TheSameFileWithAnotherCase_ReusesTheOpenDocument()
+    {
+        LiveDocument first = OpenWorkbook();
+        LiveDocument again = _documents.Open(
+            _workspace.File("book.xlsx").ToUpperInvariant(), new LiveDocumentOptions(), ViewerDocuments.PreviewHolder);
+
+        Assert.Same(first, again);
+        Assert.Single(_documents.All);
+    }
+
+    [Category(TestCategory.Slow)]
+    [Fact]
     public void Release_ClosesADocumentOnlyWhenItsLastHolderLetsGo()
     {
         LiveDocument preview = OpenWorkbook();

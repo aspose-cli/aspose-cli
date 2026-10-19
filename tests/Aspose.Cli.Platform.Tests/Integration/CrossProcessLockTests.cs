@@ -65,8 +65,12 @@ public sealed class CrossProcessLockTests
             .Where(static entry => !entry.StartsWith(".aspose-publication-", StringComparison.Ordinal)));
     }
 
-    [Fact]
-    public void SkillInstall_WhileAnotherProcessHoldsTheTarget_IsRefusedWithoutTouchingIt()
+    // Windows file names ignore case: a lock held under one spelling of the target holds every spelling.
+    [Theory]
+    [InlineData(false, false)]
+    [InlineData(true, false)]
+    [InlineData(false, true)]
+    public void SkillInstall_WhileAnotherProcessHoldsTheTarget_IsRefusedWithoutTouchingIt(bool heldInUpperCase, bool installedInUpperCase)
     {
         using var workspace = new TempWorkspace();
         string target = workspace.File("skills");
@@ -77,9 +81,10 @@ public sealed class CrossProcessLockTests
         Directory.CreateDirectory(target);
 
         CliResult refused;
-        using (PublicationDirectoryLease.Acquire(target))
+        using (PublicationDirectoryLease.Acquire(heldInUpperCase ? target.ToUpperInvariant() : target))
         {
-            refused = workspace.Run("skill", "install", Skill, "--target", target, "--output-format", "json", "--timeout", "3");
+            refused = workspace.Run("skill", "install", Skill, "--target", installedInUpperCase ? target.ToUpperInvariant() : target,
+                "--output-format", "json", "--timeout", "3");
         }
 
         Assert.Equal("OPERATION_TIMEOUT", ErrorCode(refused));
