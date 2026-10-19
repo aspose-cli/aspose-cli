@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
@@ -104,17 +103,8 @@ internal static class UpdateStatus
             ? text
             : null;
 
-    private static bool IsInstallerRunning(int processId)
-    {
-        try
-        {
-            using Process process = Process.GetProcessById(processId);
-            return !process.HasExited
-                && string.Equals(process.ProcessName, "powershell", StringComparison.OrdinalIgnoreCase);
-        }
-        catch (Exception exception) when (exception is ArgumentException or InvalidOperationException or System.ComponentModel.Win32Exception)
-        {
-            return false;
-        }
-    }
+    // The status file records no start time, so a reused id that is another PowerShell process
+    // still reads as the installer.
+    private static bool IsInstallerRunning(int processId) =>
+        ProcessIdentity.IsRunningAs(processId, "powershell", whenUnknown: ProcessLiveness.Dead);
 }

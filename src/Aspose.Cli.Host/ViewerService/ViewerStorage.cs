@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.Globalization;
 using Aspose.Cli.Host.LocalServices;
 using Aspose.Cli.Sdk.IO;
@@ -20,7 +19,7 @@ internal sealed class ViewerStorage : IDisposable
         OperatingSystem.IsWindows()
             ? StringComparer.OrdinalIgnoreCase
             : StringComparer.Ordinal);
-    private static readonly long CurrentProcessStart = ReadCurrentProcessStart();
+    private static readonly long CurrentProcessStart = ProcessIdentity.CurrentStartUtcTicks;
 
     private readonly Func<string, bool> _deleteDirectory;
     private readonly string _categoryRoot;
@@ -224,32 +223,15 @@ internal sealed class ViewerStorage : IDisposable
             return false;
         }
 
-        try
+        // An inaccessible process is treated as live. Cleanup must fail
+        // safe and may leave a stale session directory rather than delete
+        // another process's active session.
+        return ProcessIdentity.IsLive(processId, processStart, new ProcessLivenessPolicy
         {
-            using Process process = Process.GetProcessById(processId);
-            return !process.HasExited
-                && process.StartTime.ToUniversalTime().Ticks == processStart;
-        }
-        catch (ArgumentException)
-        {
-            return false;
-        }
-        catch (Exception exception) when (
-            exception is InvalidOperationException
-                or System.ComponentModel.Win32Exception
-                or NotSupportedException)
-        {
-            // An inaccessible process is treated as live. Cleanup must fail
-            // safe and may leave a stale session directory rather than delete
-            // another process's active session.
-            return true;
-        }
-    }
-
-    private static long ReadCurrentProcessStart()
-    {
-        using Process process = Process.GetCurrentProcess();
-        return process.StartTime.ToUniversalTime().Ticks;
+            WhenDenied = ProcessLiveness.Alive,
+            WhenVanishing = ProcessLiveness.Alive,
+            ChecksExit = true,
+        });
     }
 
     private static bool IsReparsePoint(string path)

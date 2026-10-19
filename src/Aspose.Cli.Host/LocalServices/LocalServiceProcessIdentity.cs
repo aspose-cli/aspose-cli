@@ -1,4 +1,4 @@
-using System.Diagnostics;
+using Aspose.Cli.Sdk.IO;
 
 namespace Aspose.Cli.Host.LocalServices;
 
@@ -11,16 +11,22 @@ internal sealed record LocalServiceProcessIdentity(
     long StartTicksUtc,
     string Nonce)
 {
-    private static readonly long StartToleranceTicks =
-        TimeSpan.FromSeconds(1).Ticks;
+    // A service whose process cannot be inspected or has exited is gone: a stale lock must not
+    // block the next start.
+    private static readonly ProcessLivenessPolicy Liveness = new()
+    {
+        WhenDenied = ProcessLiveness.Dead,
+        WhenVanishing = ProcessLiveness.Dead,
+        ChecksExit = true,
+        StartTolerance = TimeSpan.FromSeconds(1),
+    };
 
     public static LocalServiceProcessIdentity Current(string nonce)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(nonce);
-        using Process process = Process.GetCurrentProcess();
         return new LocalServiceProcessIdentity(
             Environment.ProcessId,
-            process.StartTime.ToUniversalTime().Ticks,
+            ProcessIdentity.CurrentStartUtcTicks,
             nonce);
     }
 
@@ -36,27 +42,8 @@ internal sealed record LocalServiceProcessIdentity(
             nonce)
         .MatchesLiveProcess();
 
-    public bool MatchesLiveProcess()
-    {
-        if (Pid <= 0 || string.IsNullOrWhiteSpace(Nonce))
-        {
-            return false;
-        }
-
-        try
-        {
-            using Process process = Process.GetProcessById(Pid);
-            long observed = process.StartTime.ToUniversalTime().Ticks;
-            return !process.HasExited
-                && StartTicksUtc >= observed - StartToleranceTicks
-                && StartTicksUtc <= observed + StartToleranceTicks;
-        }
-        catch (Exception exception) when (
-            exception is ArgumentException
-                or InvalidOperationException
-                or System.ComponentModel.Win32Exception)
-        {
-            return false;
-        }
-    }
+    public bool MatchesLiveProcess() =>
+        Pid > 0
+        && !string.IsNullOrWhiteSpace(Nonce)
+        && ProcessIdentity.IsLive(Pid, StartTicksUtc, Liveness);
 }
