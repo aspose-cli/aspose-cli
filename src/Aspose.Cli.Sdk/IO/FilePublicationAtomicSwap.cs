@@ -5,30 +5,33 @@ namespace Aspose.Cli.Sdk.IO;
 /// <summary>Publishes one staged file while preserving the exact displaced target.</summary>
 internal static class FilePublicationAtomicSwap
 {
+    /// <summary>
+    /// Moves <paramref name="temporary"/> onto <paramref name="target"/>. A replaced target is
+    /// kept at <paramref name="displacedPath"/>, which the caller owns; after a failed swap the
+    /// path that held <paramref name="temporary"/> receives whatever the rollback moved aside.
+    /// </summary>
     public static FilePublicationSnapshot Publish(
         string temporary,
         string target,
         bool overwrite,
         FilePublicationSnapshot expectedTarget,
         FilePublicationSnapshot metadataSource,
-        string? retainedDisplacedPath = null,
-        FilePublicationSnapshot? expectedStage = null,
-        Action? beforeSwap = null)
+        string? displacedPath,
+        FilePublicationSnapshot expectedStage)
     {
         ArgumentException.ThrowIfNullOrEmpty(temporary);
         ArgumentException.ThrowIfNullOrEmpty(target);
         ArgumentNullException.ThrowIfNull(expectedTarget);
         ArgumentNullException.ThrowIfNull(metadataSource);
+        ArgumentNullException.ThrowIfNull(expectedStage);
         OutputPathValidator.EnsureSafeFile(target);
         metadataSource.Metadata?.Apply(temporary);
         FilePublicationSnapshot staged = FilePublicationSnapshot.Capture(temporary);
-        if (expectedStage is not null
-            && !expectedStage.VersionEquals(staged))
+        if (!expectedStage.VersionEquals(staged))
         {
             throw new IOException(
                 $"Staged file '{temporary}' changed after verification.");
         }
-        beforeSwap?.Invoke();
 
         if (!expectedTarget.Exists)
         {
@@ -41,12 +44,13 @@ internal static class FilePublicationAtomicSwap
             throw CliErrors.OutputExists(target);
         }
 
+        ArgumentException.ThrowIfNullOrEmpty(displacedPath);
         return Replace(
             temporary,
             target,
             expectedTarget,
             staged,
-            retainedDisplacedPath);
+            displacedPath);
     }
 
     private static FilePublicationSnapshot Replace(
@@ -54,10 +58,8 @@ internal static class FilePublicationAtomicSwap
         string target,
         FilePublicationSnapshot expectedTarget,
         FilePublicationSnapshot staged,
-        string? retainedDisplacedPath)
+        string displacedPath)
     {
-        string displacedPath = retainedDisplacedPath
-            ?? CreateSiblingPath(target, "displaced");
         try
         {
             File.Replace(
@@ -82,29 +84,21 @@ internal static class FilePublicationAtomicSwap
                 temporary,
                 target,
                 displacedPath,
-                retainedDisplacedPath,
                 verificationFailure);
             throw;
         }
         FilePublicationSnapshot displaced = FilePublicationSnapshot.Capture(displacedPath);
         if (expectedTarget.VersionEquals(displaced))
         {
-            if (retainedDisplacedPath is null)
-            {
-                DeleteOwnedOrThrow(displacedPath, displaced);
-            }
             return published;
         }
 
-        string publishedPath = retainedDisplacedPath is null
-            ? CreateSiblingPath(target, "conflict")
-            : temporary;
         try
         {
             File.Replace(
                 displacedPath,
                 target,
-                publishedPath,
+                temporary,
                 ignoreMetadataErrors: false);
         }
         catch (Exception restoreFailure)
@@ -120,10 +114,10 @@ internal static class FilePublicationAtomicSwap
                 $"Target '{target}' changed during conflict recovery. Files were preserved for manual recovery.");
         }
 
-        if (!FilePublicationOwnedDelete.TryDelete(publishedPath, staged))
+        if (!FilePublicationOwnedDelete.TryDelete(temporary, staged))
         {
             throw new IOException(
-                $"Target '{target}' changed during publication. Conflicting content was preserved at '{publishedPath}'.");
+                $"Target '{target}' changed during publication. Conflicting content was preserved at '{temporary}'.");
         }
 
         throw PublicationErrors.OutputConflict(target, expectedTarget, displaced);
@@ -133,22 +127,16 @@ internal static class FilePublicationAtomicSwap
         string temporary,
         string target,
         string displacedPath,
-        string? retainedDisplacedPath,
         Exception verificationFailure)
     {
         FilePublicationSnapshot displaced =
             FilePublicationSnapshot.Capture(displacedPath);
-        FilePublicationSnapshot unverified =
-            FilePublicationSnapshot.Capture(target);
-        string unverifiedPath = retainedDisplacedPath is null
-            ? CreateSiblingPath(target, "unverified")
-            : temporary;
         try
         {
             File.Replace(
                 displacedPath,
                 target,
-                unverifiedPath,
+                temporary,
                 ignoreMetadataErrors: false);
         }
         catch (Exception restoreFailure)
@@ -161,13 +149,6 @@ internal static class FilePublicationAtomicSwap
         {
             throw new IOException(
                 $"Published target '{target}' failed verification and rollback could not be verified.",
-                verificationFailure);
-        }
-        if (retainedDisplacedPath is null
-            && !FilePublicationOwnedDelete.TryDelete(unverifiedPath, unverified))
-        {
-            throw new IOException(
-                $"Published target '{target}' was restored, but unverified content was preserved at '{unverifiedPath}'.",
                 verificationFailure);
         }
         throw new IOException(
@@ -192,21 +173,4 @@ internal static class FilePublicationAtomicSwap
         }
         return published;
     }
-
-    private static void DeleteOwnedOrThrow(
-        string path,
-        FilePublicationSnapshot expected)
-    {
-        if (!FilePublicationOwnedDelete.TryDelete(path, expected))
-        {
-            throw new IOException(
-                $"A displaced publication file changed and was preserved at '{path}'.");
-        }
-    }
-
-    private static string CreateSiblingPath(string target, string kind) =>
-        Path.Combine(
-            Path.GetDirectoryName(target)
-                ?? throw new IOException($"Target '{target}' has no parent directory."),
-            $".{Path.GetFileName(target)}.{Guid.NewGuid():N}.{kind}");
 }
