@@ -31,12 +31,12 @@ public static class FilePaths
     }
 
     /// <summary>
-    /// Whether a full path is a UNC path (<c>\\server\share</c>) or a device path
-    /// (<c>\\?\</c>, <c>\\.\</c>): neither names a plain local file.
+    /// Whether a path is a UNC path (<c>\\server\share</c>, also written <c>//server/share</c>)
+    /// or a device path (<c>\\?\</c>, <c>\\.\</c>): neither names a plain local file.
     /// </summary>
-    public static bool IsRemoteOrDevice(string fullPath)
+    public static bool IsRemoteOrDevice(string path)
     {
-        ArgumentNullException.ThrowIfNull(fullPath);
-        return fullPath.StartsWith(@"\\", StringComparison.Ordinal);
+        ArgumentNullException.ThrowIfNull(path);
+        return path.StartsWith(@"\\", StringComparison.Ordinal) || path.StartsWith("//", StringComparison.Ordinal);
     }
 }

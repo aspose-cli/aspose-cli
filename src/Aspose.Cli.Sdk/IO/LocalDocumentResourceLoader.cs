@@ -173,8 +173,7 @@ public sealed class LocalDocumentResourceLoader : IDisposable
     {
         path = null;
         if (string.IsNullOrWhiteSpace(reference)
-            || reference.StartsWith("//", StringComparison.Ordinal)
-            || reference.StartsWith(@"\\", StringComparison.Ordinal))
+            || FilePaths.IsRemoteOrDevice(reference))
         {
             return false;
         }

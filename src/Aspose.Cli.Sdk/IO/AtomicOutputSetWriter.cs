@@ -90,7 +90,7 @@ public sealed class AtomicOutputSetWriter : IDisposable
         });
         string targetDirectory = Path.GetDirectoryName(main.TargetPath)!;
         string[] companions = [.. Directory.EnumerateFileSystemEntries(Path.GetDirectoryName(staged!)!)
-            .Where(entry => !string.Equals(entry, staged, StringComparison.OrdinalIgnoreCase))
+            .Where(entry => !FilePaths.Same(entry, staged))
             .Order(StringComparer.Ordinal)];
         var outputs = new List<StagedOutput> { main };
         try

@@ -93,7 +93,7 @@ public sealed class AtomicNewDirectoryWriter : IDisposable
     {
         string full = Path.TrimEndingDirectorySeparator(Path.GetFullPath(transactionParent));
         if (NewDirectoryPublication.Escapes(Path.GetRelativePath(full, parent))
-            || !string.Equals(Path.GetPathRoot(full), Path.GetPathRoot(parent), StringComparison.OrdinalIgnoreCase))
+            || !FilePaths.Same(Path.GetPathRoot(full), Path.GetPathRoot(parent)))
         {
             throw new ArgumentException("The transaction parent must be an ancestor of the target on its volume.", nameof(transactionParent));
         }

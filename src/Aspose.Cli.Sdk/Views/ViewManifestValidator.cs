@@ -22,7 +22,7 @@ public static partial class ViewManifestValidator
         }
 
         var ids = new HashSet<string>(StringComparer.Ordinal);
-        var files = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var files = new HashSet<string>(FilePaths.Comparer);
         foreach (ViewPart part in manifest.Parts)
         {
             if (string.IsNullOrWhiteSpace(part.Id) || !ids.Add(part.Id))
