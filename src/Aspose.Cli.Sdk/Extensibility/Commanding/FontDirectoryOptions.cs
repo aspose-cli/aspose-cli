@@ -93,21 +93,18 @@ internal sealed class FontDirectoryOptions
         {
             throw Invalid(value, "must not traverse a reparse point or use a reserved name");
         }
-        if (OperatingSystem.IsWindows())
+        string? root = Path.GetPathRoot(fullPath);
+        if (string.IsNullOrEmpty(root)
+            || new DriveInfo(root).DriveType != DriveType.Fixed)
         {
-            string? root = Path.GetPathRoot(fullPath);
-            if (string.IsNullOrEmpty(root)
-                || new DriveInfo(root).DriveType != DriveType.Fixed)
-            {
-                throw Invalid(value, "must be on a fixed local drive");
-            }
+            throw Invalid(value, "must be on a fixed local drive");
         }
         return fullPath;
     }
 
     private static bool IsNetworkOrDevicePath(string path) =>
         path.StartsWith(@"\\", StringComparison.Ordinal)
-        || (OperatingSystem.IsWindows() && path.StartsWith("//", StringComparison.Ordinal));
+        || path.StartsWith("//", StringComparison.Ordinal);
 
     private static CliException Invalid(string value, string reason) =>
         CliErrors.OptionInvalid(
