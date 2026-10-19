@@ -52,8 +52,7 @@ public sealed class VerifiedFileBoundary
         {
             ValidateLocalPath(path);
             string full = Path.GetFullPath(path);
-            if (!full.StartsWith(_prefix,
-                    StringComparison.OrdinalIgnoreCase))
+            if (!full.StartsWith(_prefix, FilePaths.Comparison))
             {
                 return null;
             }

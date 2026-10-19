@@ -7,8 +7,8 @@ namespace Aspose.Cli.Sdk.IO;
 /// </summary>
 internal sealed class ExtractionPlan(string root)
 {
-    private readonly HashSet<string> _reserved = new(StringComparer.OrdinalIgnoreCase);
-    private readonly HashSet<string> _directories = new(StringComparer.OrdinalIgnoreCase);
+    private readonly HashSet<string> _reserved = new(FilePaths.Comparer);
+    private readonly HashSet<string> _directories = new(FilePaths.Comparer);
     public IEnumerable<string> Directories => _directories;
 
     public string ReserveFile(string relativePath, string suggestedPath)
@@ -39,7 +39,7 @@ internal sealed class ExtractionPlan(string root)
 
     private void EnsureBelowRoot(string full, string suggestedPath)
     {
-        if (!full.StartsWith(Path.TrimEndingDirectorySeparator(root) + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
+        if (!full.StartsWith(Path.TrimEndingDirectorySeparator(root) + Path.DirectorySeparatorChar, FilePaths.Comparison))
         {
             throw ExtractionPathValidator.Refused($"unsafe extraction name '{suggestedPath}'");
         }

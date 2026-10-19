@@ -44,7 +44,7 @@ internal static class ExtractionPathValidator
             }
 
             string? parent = Path.GetDirectoryName(current);
-            if (string.Equals(parent, current, StringComparison.Ordinal))
+            if (FilePaths.Same(parent, current))
             {
                 break;
             }

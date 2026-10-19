@@ -143,9 +143,7 @@ internal sealed class AtomicPublicationPlan
     internal void EnsureTarget(string target)
     {
         string parent = Path.GetDirectoryName(Path.GetFullPath(target))!;
-        StringComparison comparison = OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
-        string prefix = Path.EndsInDirectorySeparator(TargetDirectory) ? TargetDirectory : TargetDirectory + Path.DirectorySeparatorChar;
-        if (!string.Equals(parent, TargetDirectory, comparison) && !parent.StartsWith(prefix, comparison))
+        if (!FilePaths.IsWithin(TargetDirectory, parent, allowEqual: true))
         {
             throw new IOException($"Publication target '{target}' is outside '{TargetDirectory}'.");
         }

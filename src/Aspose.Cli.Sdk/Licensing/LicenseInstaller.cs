@@ -211,13 +211,9 @@ public static class LicenseInstaller
     }
 
     /// <summary>Whether the license destinations' directory is the temporary snapshot's or inside it.</summary>
-    internal static bool IsInsideSnapshot(string snapshotDirectory, string directory)
-    {
-        StringComparison comparison = OperatingSystem.IsWindows()
-            ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
-        return string.Equals(directory, snapshotDirectory, comparison)
-            || directory.StartsWith(snapshotDirectory + Path.DirectorySeparatorChar, comparison);
-    }
+    internal static bool IsInsideSnapshot(string snapshotDirectory, string directory) =>
+        FilePaths.Same(directory, snapshotDirectory)
+            || directory.StartsWith(snapshotDirectory + Path.DirectorySeparatorChar, FilePaths.Comparison);
 
     private static string[] NormalizePaths(IEnumerable<string> paths)
     {
@@ -230,8 +226,7 @@ public static class LicenseInstaller
     private static string CommonDirectory(IReadOnlyList<string> paths)
     {
         string directory = Path.GetDirectoryName(paths[0])!;
-        StringComparison comparison = OperatingSystem.IsWindows()
-            ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
+        StringComparison comparison = FilePaths.Comparison;
         foreach (string path in paths.Skip(1))
         {
             string parent = Path.GetDirectoryName(path)!;

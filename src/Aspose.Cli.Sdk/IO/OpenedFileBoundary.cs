@@ -51,8 +51,7 @@ internal static class OpenedFileBoundary
         }
         string value = buffer.ToString();
         return value.StartsWith(@"\\?\", StringComparison.Ordinal)
-            && string.Equals(value[4..].TrimEnd('\\'), expected.TrimEnd('\\'),
-                StringComparison.OrdinalIgnoreCase);
+            && FilePaths.Same(value[4..].TrimEnd('\\'), expected.TrimEnd('\\'));
     }
 
     [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]

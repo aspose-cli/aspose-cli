@@ -11,7 +11,7 @@ public sealed class WorkerOutputSession
     public const string ManifestName = "output-manifest.v5.json";
     private readonly object _gate = new();
     private readonly List<WorkerOutputEntry> _entries = [];
-    private readonly Dictionary<string, WorkerDirectoryEntry> _directories = new(WorkerManifestStore.PathComparer);
+    private readonly Dictionary<string, WorkerDirectoryEntry> _directories = new(FilePaths.Comparer);
     private readonly string _root;
     private readonly string _manifestPath;
     private int _nextId;
@@ -84,8 +84,8 @@ public sealed class WorkerOutputSession
             if (entries.Count > PublicationLimits.MaximumEntries - _entries.Count)
             { throw new IOException("The worker output entry budget was exceeded."); }
             var paths = new HashSet<string>(_entries.SelectMany(entry => entry.BackupPath is null
-                ? new[] { entry.Target } : new[] { entry.Target, entry.BackupPath }), WorkerManifestStore.PathComparer);
-            var directories = new Dictionary<string, WorkerDirectoryEntry>(_directories, WorkerManifestStore.PathComparer);
+                ? new[] { entry.Target } : new[] { entry.Target, entry.BackupPath }), FilePaths.Comparer);
+            var directories = new Dictionary<string, WorkerDirectoryEntry>(_directories, FilePaths.Comparer);
             foreach (string directory in outputDirectories) { AddDirectory(directories, directory); AddParents(directories, directory); }
             foreach (PublicationJournalEntry entry in entries)
             {
@@ -166,7 +166,7 @@ public sealed class WorkerOutputSession
             if (_directoryOutput is not null || _entries.Count != 0 || _directories.Count != 0)
             { throw new IOException("A new-directory output must be the invocation's sole output set."); }
             NewDirectoryPublication.ValidateDescriptor(output);
-            if (!WorkerManifestStore.PathComparer.Equals(Path.GetDirectoryName(Path.GetDirectoryName(output.Staged)!), _root)
+            if (!FilePaths.Same(Path.GetDirectoryName(Path.GetDirectoryName(output.Staged)!), _root)
                 || Path.GetFileName(output.Staged) != "directory")
             { throw new IOException("The directory candidate is outside its worker's storage."); }
             deadline.ThrowIfExpired("directory-handoff");

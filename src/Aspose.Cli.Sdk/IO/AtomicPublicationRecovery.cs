@@ -783,20 +783,8 @@ internal sealed class AtomicPublicationRecovery(AtomicPublicationPlan plan)
         return paths.Any(path => path is not null && (IsWithinRoot(scope, path) || IsWithinRoot(path, scope)));
     }
 
-    internal static bool IsWithinRoot(string root, string path)
-    {
-        string fullRoot = Path.GetFullPath(root).TrimEnd(
-            Path.DirectorySeparatorChar,
-            Path.AltDirectorySeparatorChar);
-        string fullPath = Path.GetFullPath(path);
-        StringComparison comparison = OperatingSystem.IsWindows()
-            ? StringComparison.OrdinalIgnoreCase
-            : StringComparison.Ordinal;
-        return string.Equals(fullRoot, fullPath, comparison)
-            || fullPath.StartsWith(
-                fullRoot + Path.DirectorySeparatorChar,
-                comparison);
-    }
+    internal static bool IsWithinRoot(string root, string path) =>
+        FilePaths.IsWithin(Path.TrimEndingDirectorySeparator(Path.GetFullPath(root)), Path.GetFullPath(path), allowEqual: true);
 
     private static void EnsureNotDirectory(string path)
     {
