@@ -47,7 +47,7 @@ public sealed record HintRun(
 /// in snake case and starts with a verb some operation of the catalog starts with.</item>
 /// </list>
 /// An outcome is judged once per test process and keyed by what was judged: the command line that
-/// ran, with the invocation's files in it, and its product, or what the catalog check covered, so a
+/// ran, with the invocation's files in it, the content of those files, and its product, or what the catalog check covered, so a
 /// catalog check never stands in for a run.
 /// </summary>
 public static partial class ExecutableHints
@@ -308,7 +308,7 @@ public static partial class ExecutableHints
         {
             args.AddRange(["--output-format", "json"]);
         }
-        return Execution(run, invocation.Product, args);
+        return Execution(run, invocation, invocation.Product, args);
     }
 
     private static Judgement PlanOperations(CliCatalog catalog, HintRun run, Invocation invocation, string json)
@@ -334,7 +334,7 @@ public static partial class ExecutableHints
             }
             ops = Placeholder().Replace(ops, placeholder => NamesVariable(placeholder) ? variable : placeholder.Value);
         }
-        return Execution(run, product, [product, "edit", Logical(run, invocation.Files[0]), "--ops", ops, "--dry-run", "--output-format", "json"]);
+        return Execution(run, invocation, product, [product, "edit", Logical(run, invocation.Files[0]), "--ops", ops, "--dry-run", "--output-format", "json"]);
     }
 
     /// <summary>An option a hint names alone, such as <c>--dpi</c> or <c>--scope all</c>: the invocation's command must have it and allow the value.</summary>
@@ -352,9 +352,13 @@ public static partial class ExecutableHints
         return Judgement.Static($"option {line.Command.Words}{Separator}{string.Join(Separator, tokens)}", invocation.Product, problem);
     }
 
-    /// <summary>A command line to run in a copy of the invocation's workspace, keyed by the command line itself.</summary>
-    private static Judgement Execution(HintRun run, string? product, IReadOnlyList<string> args) =>
-        new($"run\n{product}\n{string.Join(Separator, args)}", () =>
+    /// <summary>
+    /// A command line to run in a copy of the invocation's workspace, keyed by the command line
+    /// itself and the content of the invocation's files, so the same file name in two workspaces
+    /// is judged on each one's content.
+    /// </summary>
+    private static Judgement Execution(HintRun run, Invocation invocation, string? product, IReadOnlyList<string> args) =>
+        new($"run\n{product}\n{ContentKey(run, invocation)}\n{string.Join(Separator, args)}", () =>
         {
             using var scratch = new Scratch(run);
             var resolved = new List<string>();
@@ -370,6 +374,12 @@ public static partial class ExecutableHints
             }
             return scratch.Run(resolved);
         });
+
+    /// <summary>The SHA-256 of each of the invocation's files that exists, in order; a missing one is empty.</summary>
+    private static string ContentKey(HintRun run, Invocation invocation) =>
+        string.Join(Separator, invocation.Files
+            .Select(file => Path.IsPathFullyQualified(file) ? file : Path.Combine(run.Workspace, file))
+            .Select(static path => File.Exists(path) ? FileHashes.Sha256(path) : string.Empty));
 
     /// <summary>A value with the invocation's workspace written as a marker, so the same command line on the same files has one key.</summary>
     private static string Logical(HintRun run, string value) =>
