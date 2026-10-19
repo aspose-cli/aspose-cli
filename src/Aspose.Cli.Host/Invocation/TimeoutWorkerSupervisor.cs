@@ -11,6 +11,13 @@ namespace Aspose.Cli.Host.Invocation;
 
 internal sealed record InvocationProcessResult(int ExitCode, string Stdout, string Stderr);
 
+/// <summary>The shape of <see cref="ChildProcess.RunAsync"/>.</summary>
+internal delegate Task<ChildProcessResult> ChildRunner(
+    ProcessStartInfo start,
+    int maximumOutputBytes,
+    CancellationToken cancellationToken,
+    Func<Process, CancellationToken, IReadOnlyList<Task>>? companions);
+
 /// <summary>CLI and MCP share one deadline, terminable producer and parent-owned publication.</summary>
 internal static class TimeoutWorkerSupervisor
 {
@@ -61,11 +68,14 @@ internal static class TimeoutWorkerSupervisor
             inherited, redirectInput, stdin).ConfigureAwait(false);
     }
 
-    /// <summary>Runs owned preparation against the caller's existing absolute deadline.</summary>
+    /// <summary>
+    /// Runs owned preparation against the caller's existing absolute deadline. The worker runs
+    /// through <see cref="ChildProcess.RunAsync"/> unless a test passes another runner.
+    /// </summary>
     internal static async Task<InvocationProcessResult> ExecuteAsync(
         HostContext host, string[] args, ParsedInvocation invocation, OperationDeadline deadline,
         Func<ProcessStartInfo> startInfoFactory, GlobalValues? inherited = null,
-        bool redirectInput = false, string? stdin = null)
+        bool redirectInput = false, string? stdin = null, ChildRunner? runChild = null)
     {
         WorkerOutputSession.RemoveAbandonedRoots();
         string root = WorkerOutputSession.CreateRoot();
@@ -95,7 +105,7 @@ internal static class TimeoutWorkerSupervisor
             ChildProcessResult child;
             try
             {
-                child = await ChildProcess.RunAsync(
+                child = await (runChild ?? ChildProcess.RunAsync)(
                     start,
                     MaximumOutputBytes,
                     deadline.Token,
