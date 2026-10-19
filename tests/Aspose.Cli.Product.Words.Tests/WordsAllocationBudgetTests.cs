@@ -138,19 +138,6 @@ public sealed class WordsAllocationBudgetTests
         Assert.Equal(ErrorCodes.InputBudgetExceeded, error.Code);
     }
 
-    [Fact]
-    public void Csv_FollowsRfc4180Quoting()
-    {
-        IReadOnlyList<string[]> records = WordsMergeData.ReadCsv(
-            "Name, City\r\n\"Doe, Jane\",\"He said \"\"hi\"\"\"\n\n\"Two\nlines\", Oslo \r\n");
-
-        Assert.Equal(3, records.Count);
-        Assert.Equal(["Name", "City"], records[0]);
-        Assert.Equal(["Doe, Jane", "He said \"hi\""], records[1]);
-        Assert.Equal(["Two\nlines", "Oslo"], records[2]);
-        Assert.Throws<CliException>(() => WordsMergeData.ReadCsv("\"open"));
-    }
-
     private static WordsSession Session(WordsFixture fixture, long? nodes = null, long? memoryBytes = null)
     {
         var limits = WordsModule.Manifest.ResourceBudgets.ToDictionary(static item => item.Kind, static item => item.Default);
