@@ -56,20 +56,42 @@ public sealed partial class DecisionOwnershipTests
             "Product request types receive the SDK's resolved output, never a raw output path string:");
     }
 
+    /// <summary>
+    /// A file's extension is read only by the SDK, which matches it against a product's format
+    /// declarations (<c>FormatDescriptorExtensions.NamedBy</c>, the SDK error factories, an
+    /// <c>OwnedTemporaryFile</c> named like its source). <see cref="ExtensionReaders"/> are the
+    /// named exceptions, each still in use.
+    /// </summary>
     [Fact]
-    public void D1_ProductCommandsAndContracts_DeriveNoFormatFromAnExtension()
+    public void D1_Products_DeriveNoFormatFromAnExtension()
     {
-        string[] violations = [.. ProductFiles("Commands", "Contracts").SelectMany(file => file.Root.DescendantNodes()
-            .OfType<InvocationExpressionSyntax>()
-            .Where(static invocation => InvokedName(invocation) is "GetExtension" or "ChangeExtension" or "HasExtension"
-                || (InvokedName(invocation) == "EndsWith"
-                    && invocation.ArgumentList.Arguments.FirstOrDefault()?.Expression is LiteralExpressionSyntax literal
-                    && literal.Token.ValueText.StartsWith('.')))
-            .Select(invocation => file.At(invocation, invocation.ToString())))];
+        var reads = ProductFiles("Commands", "Contracts", "Engine")
+            .SelectMany(static file => file.Root.DescendantNodes()
+                .OfType<InvocationExpressionSyntax>()
+                .Where(static invocation => InvokedName(invocation) is "GetExtension" or "ChangeExtension" or "HasExtension"
+                    || (InvokedName(invocation) == "EndsWith"
+                        && invocation.ArgumentList.Arguments.FirstOrDefault()?.Expression is LiteralExpressionSyntax literal
+                        && literal.Token.ValueText.StartsWith('.')))
+                .Select(invocation => (Reader: (File: Relative(file.Path), Member: EnclosingMember(invocation)), At: file.At(invocation, invocation.ToString()))))
+            .ToArray();
+
+        string[] violations = [.. reads.Where(static read => !ExtensionReaders.Any(read.Reader.Equals)).Select(static read => read.At)];
+        string[] unused = [.. ExtensionReaders.Where(reader => !reads.Any(read => read.Reader.Equals(reader))).Select(static reader => $"{reader.File}: {reader.Member}")];
 
         AssertNone(violations,
-            "Product commands and contracts read no file extension; the SDK resolves an output's format:");
+            "Products read no file extension; the SDK matches a path against the product's format declarations:");
+        AssertNone(unused, "A named exception to the extension rule is no longer used; remove it:");
     }
+
+    /// <summary>
+    /// Product members that read an extension for something other than a format. Temporary:
+    /// <c>SheetTypo</c> tells a mistyped sheet name from a workbook file name by whether it has
+    /// an extension, and moves once the Cells edit refactoring that owns its file lands.
+    /// </summary>
+    private static readonly (string File, string Member)[] ExtensionReaders =
+    [
+        (Path.Combine("Aspose.Cli.Product.Cells", "Engine", "CellsEdit.cs"), "SheetTypo"),
+    ];
 
     [Fact]
     public void D1_Products_NeverRefuseAnOutputFormatThemselves()
@@ -235,6 +257,76 @@ public sealed partial class DecisionOwnershipTests
     [InlineData("xps")]
     public void D2_Cells_DeclaresNoInputItCannotRead(string format) =>
         Assert.DoesNotContain(format, CliCatalog.Current.Product("cells").LoadFormats);
+
+    /// <summary>
+    /// A product compares no value with one of its declared format ids: what a format does is a
+    /// row of the product's format tables (its Contracts <c>FormatDescriptor</c> declarations and
+    /// the engine and trait tables keyed by them), never an <c>== "svg"</c>, an <c>is "csv"</c>
+    /// or a <c>case "pdf":</c> in a command or an engine.
+    /// </summary>
+    [Fact]
+    public void D2_ProductEnginesAndCommands_CompareNoFormatIdLiteral()
+    {
+        Dictionary<string, HashSet<string>> declared = DeclaredFormatIds();
+        string[] violations = [.. ProductFiles("Commands", "Engine")
+            .SelectMany(file => file.Root.DescendantNodes()
+                .OfType<LiteralExpressionSyntax>()
+                .Where(literal => literal.IsKind(SyntaxKind.StringLiteralExpression)
+                    && declared.TryGetValue(file.Product!, out HashSet<string>? ids) && ids.Contains(literal.Token.ValueText)
+                    && ComparedBy(literal) is not null)
+                .Select(literal => file.At(literal, ComparedBy(literal)!.ToString().Split('\n')[0].Trim())))
+            .Distinct(StringComparer.Ordinal)];
+
+        Assert.Equal(
+            ProductFiles().Select(static file => file.Product!).Distinct().Order(StringComparer.Ordinal),
+            declared.Keys.Order(StringComparer.Ordinal));
+        AssertNone(violations,
+            "A product command or engine compares no value with a declared format id; the format's row in its tables says what the format does:");
+
+        // The comparison a literal takes part in: == or !=, a pattern (is, a switch arm, a
+        // property pattern) or a case label; null for any other use.
+        static SyntaxNode? ComparedBy(LiteralExpressionSyntax literal)
+        {
+            SyntaxNode? parent = literal.Parent;
+            while (parent is ParenthesizedExpressionSyntax)
+            {
+                parent = parent.Parent;
+            }
+            return parent switch
+            {
+                BinaryExpressionSyntax binary when binary.IsKind(SyntaxKind.EqualsExpression) || binary.IsKind(SyntaxKind.NotEqualsExpression) => binary,
+                ConstantPatternSyntax pattern => pattern.Ancestors().FirstOrDefault(static ancestor => ancestor is IsPatternExpressionSyntax
+                    or SwitchExpressionArmSyntax or CasePatternSwitchLabelSyntax or SubpatternSyntax) ?? pattern,
+                CaseSwitchLabelSyntax label => label,
+                _ => null,
+            };
+        }
+    }
+
+    /// <summary>
+    /// The format ids each product declares in its Contracts, by product folder name such as
+    /// <c>Cells</c>: the first argument of every <c>FormatDescriptor</c> it creates, by
+    /// <c>FormatDescriptor.Declare</c> or <c>Routed</c>, <c>new FormatDescriptor(...)</c> or a
+    /// target-typed <c>new("id", FormatUse...)</c>.
+    /// </summary>
+    private static Dictionary<string, HashSet<string>> DeclaredFormatIds() =>
+        ProductFiles("Contracts")
+            .SelectMany(static file => file.Root.DescendantNodes()
+                .Select(static node => node switch
+                {
+                    InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax { Name.Identifier.ValueText: "Declare" or "Routed" } factory } invocation
+                        when LastIdentifier(factory.Expression) == "FormatDescriptor" => invocation.ArgumentList,
+                    ObjectCreationExpressionSyntax creation when LastIdentifier(creation.Type) == "FormatDescriptor" => creation.ArgumentList,
+                    ImplicitObjectCreationExpressionSyntax { ArgumentList.Arguments: [_, { Expression: var use }, ..] } creation
+                        when use.DescendantNodesAndSelf().OfType<IdentifierNameSyntax>().Any(static name => name.Identifier.ValueText == "FormatUse") => creation.ArgumentList,
+                    _ => null,
+                })
+                .Select(static arguments => arguments?.Arguments is [{ Expression: LiteralExpressionSyntax id }, ..]
+                    && id.IsKind(SyntaxKind.StringLiteralExpression) ? id.Token.ValueText : null)
+                .OfType<string>()
+                .Select(id => (Product: file.Product!, Id: id)))
+            .GroupBy(static pair => pair.Product, StringComparer.Ordinal)
+            .ToDictionary(static group => group.Key, static group => group.Select(static pair => pair.Id).ToHashSet(StringComparer.Ordinal), StringComparer.Ordinal);
 
     // -- D3 Mistakes -------------------------------------------------------------------------
 

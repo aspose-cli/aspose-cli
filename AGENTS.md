@@ -56,7 +56,7 @@ the check is its authority.
 | # | Decision | Owner | Enforced by |
 |---|---|---|---|
 | D1 | Output: path, format, overwrite, encryption, part names, staging, reported file objects | The SDK resolves a `ResolvedOutput`; SDK `OutputProtection` decides the password an output carries (PDF: `PdfOutputEncryption`); SDK `FileObjects` builds the `input` and `output` objects; SDK `FileWritePrecondition.Admit` admits an edit's loaded input (unchanged while loading, then `--if-match`); only the SDK write pipeline warns `ENCRYPTION_REMOVED` | `DecisionOwnershipTests` D1; invariant C-R41 and the compiler (`FileFingerprints.Ensure*` is internal) |
-| D2 | Format capabilities | Each product's Contracts `*Formats.Definitions`, mapped to the engine by its `*EngineFormats` | `CellsEngineFormatTests`, `PdfEngineFormatTests`, `SlidesEngineFormatsTests`, `WordsEngineFormatsTests`; `DecisionOwnershipTests` D2 |
+| D2 | Format capabilities | Each product's Contracts `*Formats` descriptor tables (`Definitions` and side tables such as `PdfFormats.Certificates`), mapped to the engine by its `*EngineFormats`; commands and engines compare no value with a format id, and only the SDK reads an extension (`FormatDescriptorExtensions.NamedBy`) | `CellsEngineFormatTests`, `PdfEngineFormatTests`, `SlidesEngineFormatsTests`, `WordsEngineFormatsTests`; `DecisionOwnershipTests` D2 |
 | D3 | Mistake suggestions | SDK `Mistake` | `DecisionOwnershipTests` D3; invariants |
 | D4 | Error construction | SDK error factories | `DecisionOwnershipTests` D4; `FreeTextErrorFactoryTests` |
 | D5 | Secrets | SDK `Secret`, revealed only in an engine adapter; the Host's frames and files carry `WireSecret` | `DecisionOwnershipTests` D5; `HostSecretTests` |
