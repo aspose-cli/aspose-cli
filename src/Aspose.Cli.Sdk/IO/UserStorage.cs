@@ -52,11 +52,6 @@ public static class UserStorage
 
     private static string CurrentUserSuffix()
     {
-        if (!OperatingSystem.IsWindows())
-        {
-            throw new PlatformNotSupportedException("Aspose CLI storage requires Windows.");
-        }
-
         using WindowsIdentity current = WindowsIdentity.GetCurrent();
         string identity = current.User!.Value;
         return Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(identity)).AsSpan(0, 8)).ToLowerInvariant();
@@ -96,10 +91,9 @@ public static class UserStorage
                 FilePhysicalIdentity? identity =
                     FilePublicationOwnedDelete.TryGetDirectoryIdentity(
                         directory);
-                if (OperatingSystem.IsWindows()
-                    && (identity is null
-                        || FilePublicationOwnedDelete.TryGetDirectoryIdentity(
-                            directory) != identity))
+                if (identity is null
+                    || FilePublicationOwnedDelete.TryGetDirectoryIdentity(
+                        directory) != identity)
                 {
                     return false;
                 }

@@ -4,7 +4,7 @@ namespace Aspose.Cli.Sdk.IO;
 
 /// <summary>
 /// An immutable authorization boundary identified by its physical directory chain.
-/// Unsupported platforms and unprovable boundaries deny reads.
+/// Unprovable boundaries deny reads.
 /// </summary>
 public sealed class VerifiedFileBoundary
 {
@@ -17,10 +17,6 @@ public sealed class VerifiedFileBoundary
         ArgumentException.ThrowIfNullOrWhiteSpace(rootDirectory);
         _root = Path.TrimEndingDirectorySeparator(Path.GetFullPath(rootDirectory));
         _prefix = Path.EndsInDirectorySeparator(_root) ? _root : _root + Path.DirectorySeparatorChar;
-        if (!OperatingSystem.IsWindows())
-        {
-            return;
-        }
         var handles = new List<SafeFileHandle>();
         try
         {
