@@ -51,4 +51,14 @@
     <AssemblyMetadata Include="BuildDirty" Value="$(BuildDirty)" />
   </ItemGroup>
 
+  <!--
+    The CLI ships only for Windows x64, so code needs no branch for another platform. The analyzer
+    runs inside the compiler on any build host and stays portable.
+  -->
+  <ItemGroup Condition="'$(MSBuildProjectName)' != 'Aspose.Cli.Sdk.Analyzers'">
+    <AssemblyAttribute Include="System.Runtime.Versioning.SupportedOSPlatformAttribute">
+      <_Parameter1>windows</_Parameter1>
+    </AssemblyAttribute>
+  </ItemGroup>
+
 </Project>
