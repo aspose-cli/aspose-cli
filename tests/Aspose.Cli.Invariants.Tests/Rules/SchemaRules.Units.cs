@@ -1,75 +1,41 @@
+using System.Reflection;
+using System.Text.Json.Serialization;
+using Aspose.Cli.Sdk.Extensibility;
+using Aspose.Cli.Sdk.Operations;
+using Aspose.Cli.TestKit;
+
 namespace Aspose.Cli.Invariants.Tests;
 
 // C-R20: a field measured in a unit other than points names its unit (widthChars, scalePercent,
-// durationMs, dpi). A schema does not say which number is a measure, so the measured op fields and
-// their units are listed here by hand; a field outside the list is not judged.
+// durationMs, dpi). A schema does not say which number is a measure, so each measured op field
+// declares its unit where it is declared, with [Measured]; the schema does not publish it, so the
+// rule reads the declarations from the product assemblies beside the CLI under test. A field that
+// declares no unit is judged only where its definition declares one for another field: a name that
+// ends in a unit, or one measured in another definition, there declares its unit too.
 internal static partial class ContractRules
 {
-    private const string Points = "points";
-
     /// <summary>The name ending each non-point unit requires.</summary>
-    private static readonly Dictionary<string, string> UnitSuffixes = new(StringComparer.Ordinal)
+    private static readonly Dictionary<MeasureUnit, string> UnitSuffixes = new()
     {
-        ["characters"] = "Chars",
-        ["dpi"] = "Dpi",
-        ["inches"] = "Inches",
-        ["milliseconds"] = "Ms",
-        ["percent"] = "Percent",
-        ["pixels"] = "Pixels",
+        [MeasureUnit.Characters] = "Chars",
+        [MeasureUnit.Dpi] = "Dpi",
+        [MeasureUnit.Inches] = "Inches",
+        [MeasureUnit.Milliseconds] = "Ms",
+        [MeasureUnit.Percent] = "Percent",
+        [MeasureUnit.Pixels] = "Pixels",
     };
 
-    /// <summary>Measured op fields by ops schema, definition and field, with their unit as the field's description or the engine states it.</summary>
-    private static readonly Dictionary<(string Schema, string Definition, string Field), string> MeasuredFields = new()
-    {
-        [("v2/cells/ops", "cellsMargins", "bottom")] = Points,
-        [("v2/cells/ops", "cellsMargins", "left")] = Points,
-        [("v2/cells/ops", "cellsMargins", "right")] = Points,
-        [("v2/cells/ops", "cellsMargins", "top")] = Points,
-        [("v2/cells/ops", "cellsStyleData", "fontSize")] = Points,
-        [("v2/cells/ops", "insert_image", "height")] = Points,
-        [("v2/cells/ops", "insert_image", "width")] = Points,
-        [("v2/cells/ops", "resize_columns", "widthChars")] = "characters",
-        [("v2/cells/ops", "resize_rows", "height")] = Points,
-        [("v2/cells/ops", "set_default_font", "fontSize")] = Points,
-        [("v2/cells/ops", "set_page_setup", "footerMargin")] = Points,
-        [("v2/cells/ops", "set_page_setup", "headerMargin")] = Points,
-        [("v2/cells/ops", "set_page_setup", "scalePercent")] = "percent",
-        [("v2/cells/ops", "set_sheet_view", "zoomPercent")] = "percent",
+    private static readonly Lazy<IReadOnlyDictionary<(string Schema, string Definition, string Field), MeasureUnit>> Measured =
+        new(ReadMeasuredFields);
 
-        [("v2/pdf/ops", "add_watermark_text", "fontSize")] = Points,
-        [("v2/pdf/ops", "optimize_document", "downsampleImagesDpi")] = "dpi",
-        [("v2/pdf/ops", "pdfRectInput", "height")] = Points,
-        [("v2/pdf/ops", "pdfRectInput", "width")] = Points,
-        [("v2/pdf/ops", "pdfRectInput", "x")] = Points,
-        [("v2/pdf/ops", "pdfRectInput", "y")] = Points,
+    /// <summary>The measured op fields by ops schema, definition and field, with the unit each declares.</summary>
+    private static IReadOnlyDictionary<(string Schema, string Definition, string Field), MeasureUnit> MeasuredFields => Measured.Value;
 
-        [("v2/slides/ops", "set_shape_bounds", "height")] = Points,
-        [("v2/slides/ops", "set_shape_bounds", "width")] = Points,
-        [("v2/slides/ops", "set_shape_bounds", "x")] = Points,
-        [("v2/slides/ops", "set_shape_bounds", "y")] = Points,
-        [("v2/slides/ops", "set_transition", "durationMs")] = "milliseconds",
-        [("v2/slides/ops", "slidesRectInput", "height")] = Points,
-        [("v2/slides/ops", "slidesRectInput", "width")] = Points,
-        [("v2/slides/ops", "slidesRectInput", "x")] = Points,
-        [("v2/slides/ops", "slidesRectInput", "y")] = Points,
-        [("v2/slides/ops", "slidesShapeStyleInput", "fontSize")] = Points,
-        [("v2/slides/ops", "slidesSlideSizeInput", "height")] = Points,
-        [("v2/slides/ops", "slidesSlideSizeInput", "width")] = Points,
-
-        [("v2/words/ops", "define_style", "fontSize")] = Points,
-        [("v2/words/ops", "define_style", "spaceAfter")] = Points,
-        [("v2/words/ops", "define_style", "spaceBefore")] = Points,
-        [("v2/words/ops", "format_text", "fontSize")] = Points,
-        [("v2/words/ops", "insert_image", "height")] = Points,
-        [("v2/words/ops", "insert_image", "width")] = Points,
-        [("v2/words/ops", "wordsMarginInput", "bottom")] = Points,
-        [("v2/words/ops", "wordsMarginInput", "left")] = Points,
-        [("v2/words/ops", "wordsMarginInput", "right")] = Points,
-        [("v2/words/ops", "wordsMarginInput", "top")] = Points,
-        [("v2/words/ops", "set_default_font", "fontSize")] = Points,
-    };
-
-    /// <summary>The measured fields of one ops definition that do not name their non-point unit, and listed fields it no longer has.</summary>
+    /// <summary>
+    /// The measured fields of one ops definition that do not name their non-point unit, declarations
+    /// the schema no longer has a field for, and fields of the definition that look measured but
+    /// declare no unit.
+    /// </summary>
     private static IEnumerable<string> UnitNames(string schemaId, string definition)
     {
         var declared = PublishedSchema.Definition(schemaId, definition)["properties"]?.AsObject();
@@ -81,14 +47,96 @@ internal static partial class ContractRules
             }
             if (declared?[field] is null)
             {
-                yield return $"{field}: listed as measured in {unit} but no longer declared; update the list";
+                yield return $"{field}: declared measured in {Unit(unit)} but the schema has no such field";
                 continue;
             }
-            if (unit != Points && !field.EndsWith(UnitSuffixes[unit], StringComparison.Ordinal)
+            if (unit != MeasureUnit.Points && !field.EndsWith(UnitSuffixes[unit], StringComparison.Ordinal)
                 && !string.Equals(field, UnitSuffixes[unit], StringComparison.OrdinalIgnoreCase))
             {
-                yield return $"{field}: measured in {unit}; name it *{UnitSuffixes[unit]}";
+                yield return $"{field}: measured in {Unit(unit)}; name it *{UnitSuffixes[unit]}";
+            }
+        }
+
+        foreach (string field in (declared ?? []).Select(static pair => pair.Key).Order(StringComparer.Ordinal))
+        {
+            if (MeasuredFields.ContainsKey((schemaId, definition, field)))
+            {
+                continue;
+            }
+            foreach ((MeasureUnit unit, string suffix) in UnitSuffixes)
+            {
+                if (field.EndsWith(suffix, StringComparison.Ordinal) || string.Equals(field, suffix, StringComparison.OrdinalIgnoreCase))
+                {
+                    yield return $"{field}: named for {Unit(unit)} but declares no unit; declare [Measured(MeasureUnit.{unit})]";
+                }
+            }
+            string[] elsewhere = [.. MeasuredFields.Keys.Where(key => key.Field == field)
+                .Select(static key => $"{key.Schema}#{key.Definition}").Order(StringComparer.Ordinal)];
+            if (elsewhere.Length != 0)
+            {
+                yield return $"{field}: declares no unit, though {string.Join(", ", elsewhere)} declares one for it; declare [Measured]";
             }
         }
     }
+
+    private static string Unit(MeasureUnit unit) => unit.ToString().ToLowerInvariant();
+
+    /// <summary>
+    /// The [Measured] declarations of every product assembly in the output of the CLI under test.
+    /// An operation is its <c>$defs</c> entry by its wire name and a nested record by its type's
+    /// camelCase name, as the operation generator names them; a field by its wire name.
+    /// </summary>
+    private static IReadOnlyDictionary<(string Schema, string Definition, string Field), MeasureUnit> ReadMeasuredFields()
+    {
+        string output = Path.GetDirectoryName(CliRunner.ExecutablePath)!;
+        var fields = new Dictionary<(string Schema, string Definition, string Field), MeasureUnit>();
+        string[] products = [.. Directory.GetFiles(output, "Aspose.Cli.Product.*.dll").Order(StringComparer.Ordinal)];
+        if (products.Length == 0)
+        {
+            throw new InvalidOperationException($"No product assembly lies beside {CliRunner.ExecutablePath}, so the C-R20 unit declarations cannot be read.");
+        }
+
+        foreach (string path in products)
+        {
+            Assembly assembly = Assembly.LoadFrom(path);
+            string product = assembly.GetCustomAttribute<ProductModuleAttribute>()?.ProductId
+                ?? throw new InvalidOperationException($"{Path.GetFileName(path)} declares no product module.");
+            Type[] types = Loadable(assembly);
+            string[] vocabularies = [.. types.Select(static type => type.GetCustomAttribute<OperationVocabularyAttribute>()?.SchemaId)
+                .OfType<string>().Distinct(StringComparer.Ordinal)];
+            foreach (Type type in types.Where(static type => type.IsClass && (!type.IsAbstract || type.IsDefined(typeof(OperationAttribute), false))))
+            {
+                foreach (PropertyInfo property in type.GetProperties(BindingFlags.Public | BindingFlags.Instance))
+                {
+                    if (property.GetCustomAttribute<MeasuredAttribute>() is not { } measured)
+                    {
+                        continue;
+                    }
+                    if (vocabularies.Length != 1)
+                    {
+                        throw new InvalidOperationException($"{type.FullName}.{property.Name} declares a unit, but {product} has {vocabularies.Length} operation vocabularies, so its schema is not known.");
+                    }
+                    string definition = type.GetCustomAttribute<OperationAttribute>(false)?.Name ?? CamelCase(type.Name);
+                    string field = property.GetCustomAttribute<JsonPropertyNameAttribute>()?.Name ?? CamelCase(property.Name);
+                    fields[($"v2/{product}/{vocabularies[0]}", definition, field)] = measured.Unit;
+                }
+            }
+        }
+
+        return fields;
+    }
+
+    private static Type[] Loadable(Assembly assembly)
+    {
+        try
+        {
+            return assembly.GetTypes();
+        }
+        catch (ReflectionTypeLoadException exception)
+        {
+            return [.. exception.Types.OfType<Type>()];
+        }
+    }
+
+    private static string CamelCase(string name) => char.ToLowerInvariant(name[0]) + name[1..];
 }
