@@ -68,9 +68,7 @@ Details: [design system](references/design-system.md).
   short counts it as changed and warns `EVALUATION_INPUT_TRUNCATED`, even when it wrote the same
   text again, since the cut read cannot show the difference. Each evaluation save adds another watermark text box to every slide, which
   reads list as content. A review reports each slide that carries one as
-  `SLIDES_EVALUATION_WATERMARK`, licensed or not; only in evaluation mode does it leave the boxes
-  out of its other checks and count them in its `excludedEvaluationMarks` coverage metric
-  (licensed, it checks them like any shape and omits the metric); a licensed command whose
+  `SLIDES_EVALUATION_WATERMARK`, licensed or not; a licensed command whose
   output keeps them warns `EVALUATION_INPUT_MARKED`. A license does not remove them, so rebuild the deck
   with a license.
 - Only PPTX and PPTM outputs can carry a password; `--encrypt-env` with any other `create`,

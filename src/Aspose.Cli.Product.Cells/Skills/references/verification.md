@@ -52,8 +52,6 @@ for the next one;
 a sheet whose print area lists several areas contributes its first area, and the
 same warning gives the command that renders each other one; the other sheets are
 still reviewed.
-In evaluation mode the warning sheets an evaluation save added are not
-layout-checked, and the coverage metric `excludedEvaluationMarks` counts them.
 Cells checks report codes such as `CELLS_FORMULA_ERROR`,
 `CELLS_POPULATED_COLUMNS_NARROW` and `CELLS_VALUES_CLIPPED` (text cut off by
 the next cell, or a number or date too wide to show in full, as `####` or

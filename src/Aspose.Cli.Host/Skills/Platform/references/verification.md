@@ -67,6 +67,13 @@ evidence incomplete whatever the filter. The result's `filter` says how many
 findings were left out. The images are still the full set: a filtered review
 narrows the findings, not the look.
 
+A run without a license saves its own marks into the file, such as warning
+sheets, page notices, watermark text boxes or banner lines. A review in
+evaluation mode leaves the marks of the input out of its layout checks and
+counts them in the coverage metric `excludedEvaluationMarks`, in the unit of
+what it left out; with a license it checks them like any content and omits the
+metric.
+
 ## Fonts
 
 Missing fonts are substituted silently and change text metrics, line breaks
