@@ -18,7 +18,7 @@ public sealed class SlidesEngineFixture : IDisposable
     /// <summary>A fresh session of one invocation, as the product activation creates it.</summary>
     internal SlidesSession Session =>
         ProductTestBudgets.StartEngine<SlidesModule, SlidesSession>(
-            (budgets, writer) => new SlidesSession(Outputs(writer), budgets, new SlidesPresentationLoader(budgets)));
+            (budgets, writer) => SlidesActivation.Session(Outputs(writer), budgets));
 
     /// <summary>The write pipeline of one invocation, as the product binding creates it.</summary>
     internal OutputPipeline<Presentation> Outputs(SafeFileWriter writer) => new(Gate, new SlidesEvaluationProfile(), writer);

@@ -1,4 +1,6 @@
 using Aspose.Cli.Sdk.Extensibility;
+using Aspose.Cli.Sdk.IO;
+using Aspose.Cli.Sdk.Results;
 
 namespace Aspose.Cli.Product.Slides.Engine;
 
@@ -11,11 +13,12 @@ internal static class SlidesActivation
             ProductBuildMetadata.ProductId,
             ApplyLicense,
             new SlidesEvaluationProfile(),
-            outputs => new SlidesSession(
-                outputs,
-                context.ResourceBudgets,
-                new SlidesPresentationLoader(context.ResourceBudgets, outputs)),
+            outputs => Session(outputs, context.ResourceBudgets),
             outputs => new SlidesFontEnvironment(outputs, context.ResourceBudgets));
+
+    /// <summary>The session of one invocation's write pipeline and budgets.</summary>
+    internal static SlidesSession Session(OutputPipeline<Aspose.Slides.Presentation> outputs, ResourceBudgetLedger budgets) =>
+        new(outputs, budgets, new SlidesPresentationLoader(budgets, outputs));
 
     /// <summary>Applies a license snapshot to Aspose.Slides.</summary>
     internal static void ApplyLicense(Stream stream) =>
