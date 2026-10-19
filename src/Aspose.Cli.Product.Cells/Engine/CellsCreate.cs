@@ -1,5 +1,6 @@
 using Aspose.Cells;
 using Aspose.Cli.Product.Cells.Engine.Mapping;
+using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Licensing;
 using Aspose.Cli.Sdk.Results;
 
@@ -26,7 +27,8 @@ internal static class CellsCreate
             workbook,
             request.Output,
             licenseState,
-            request.EncryptPassword);
+            // A new workbook has no input whose password it could keep.
+            OutputProtection.For(request.Output.Format, request.EncryptPassword, new InputProtection(Encrypted: false), inputPassword: null));
 
         return new CellsCreateResult
         {

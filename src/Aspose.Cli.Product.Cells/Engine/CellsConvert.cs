@@ -98,7 +98,8 @@ internal static class CellsConvert
             : null;
         int refsBefore = saver.CountRefFormulas(workbook);
         WorkbookSavePlan savePlan = WorkbookSavePlan.Create(request.Output.Format, licenseState,
-            request.EncryptPassword, loaded.IsEncrypted ? request.Password : null, selectedSheets, request.ByteOrderMark);
+            OutputProtection.For(request.Output.Format, request.EncryptPassword, loaded.Protection, request.Password),
+            selectedSheets, request.ByteOrderMark);
         if (request.Output.Format.Id is "json")
         {
             savePlan = savePlan with { Options = JsonOptions(workbook, jsonSheets) };

@@ -6,23 +6,16 @@ using Aspose.Cells.Rendering;
 
 namespace Aspose.Cli.Product.Cells.Engine.Mapping;
 
-/// <summary>Product-owned format and encryption decisions for one workbook output.</summary>
-internal sealed record WorkbookSavePlan(string FormatId, SaveFormat Format, SaveOptions? Options, Secret? OutputPassword, bool IsEvaluation)
+/// <summary>
+/// The engine save format and options of one workbook output, and the password it carries
+/// (<see cref="OutputProtection"/>).
+/// </summary>
+internal sealed record WorkbookSavePlan(string FormatId, SaveFormat Format, SaveOptions? Options, OutputProtection Protection, bool IsEvaluation)
 {
-    /// <remarks>
-    /// The commands reject an output password for a format that cannot carry one, naming the
-    /// option the caller passed (<see cref="Sdk.Extensibility.Commanding.StandardInvocation.EncryptPassword()"/>).
-    /// </remarks>
     internal static WorkbookSavePlan Create(FormatDescriptor output, LicenseState licenseState,
-        Secret? encryptPassword = null, Secret? inputPassword = null, IReadOnlyList<int>? selectedSheets = null, bool byteOrderMark = false)
+        OutputProtection protection, IReadOnlyList<int>? selectedSheets = null, bool byteOrderMark = false)
     {
         string formatId = output.Id;
-        bool encryptable = output.Protectable;
-        if (encryptPassword is not null && !encryptable)
-        {
-            throw new InvalidOperationException($"An output password reached the '{formatId}' format, which cannot carry one.");
-        }
-
         SaveFormat format = CellsEngineFormats.Save(formatId);
         SaveOptions? options = formatId switch
         {
@@ -36,8 +29,7 @@ internal sealed record WorkbookSavePlan(string FormatId, SaveFormat Format, Save
             "pdf" when selectedSheets is { } sheets => new PdfSaveOptions { SheetSet = new SheetSet([.. sheets]) },
             _ => null,
         };
-        Secret? password = encryptPassword ?? (encryptable ? inputPassword : null);
-        return new WorkbookSavePlan(formatId, format, options, password, licenseState == LicenseState.Evaluation);
+        return new WorkbookSavePlan(formatId, format, options, protection, licenseState == LicenseState.Evaluation);
     }
 
     /// <summary>True for the text formats (csv, tsv, md), which write only the active sheet.</summary>
@@ -47,7 +39,7 @@ internal sealed record WorkbookSavePlan(string FormatId, SaveFormat Format, Save
     internal bool WritesActiveSheetOnly => WritesActiveSheetOnlyFor(FormatId);
 
     /// <summary>Whether the output carries a password.</summary>
-    internal bool Encrypts => OutputPassword is not null;
+    internal bool Encrypts => Protection.Encrypted;
 
     internal Warning? DetectSheetLoss(Workbook workbook) =>
         WritesActiveSheetOnly && workbook.Worksheets.Count > 1 ? new Warning(CellsDiagnostics.SheetsDropped, $"Only worksheet '{TextSheet(workbook).Name}' was exported; the '{FormatId}' output holds one worksheet, so {workbook.Worksheets.Count - 1} other worksheet(s) were not written.")
@@ -61,7 +53,7 @@ internal sealed record WorkbookSavePlan(string FormatId, SaveFormat Format, Save
 
     internal void Save(Workbook workbook, string path)
     {
-        workbook.Settings.Password = OutputPassword?.Reveal() ?? string.Empty;
+        workbook.Settings.Password = Protection.Password?.Reveal() ?? string.Empty;
         if (Options is not null) { workbook.Save(path, Options); }
         else { workbook.Save(path, Format); }
     }

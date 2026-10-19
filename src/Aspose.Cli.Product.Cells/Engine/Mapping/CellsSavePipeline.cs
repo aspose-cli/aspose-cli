@@ -18,10 +18,10 @@ internal sealed class CellsSavePipeline(OutputPipeline<Workbook> outputs, CellsW
         _outputs.BeginSet(backupPath is null ? directories : directories.Append(Path.GetDirectoryName(backupPath)!), operation);
 
     internal WorkbookStagedSave Save(
-        Workbook workbook, ResolvedOutput output, LicenseState licenseState, Secret? encryptPassword = null,
-        FileWritePrecondition? inputPrecondition = null, bool verifyReopen = false, Secret? inputPassword = null)
+        Workbook workbook, ResolvedOutput output, LicenseState licenseState, OutputProtection protection,
+        FileWritePrecondition? inputPrecondition = null, bool verifyReopen = false)
     {
-        WorkbookSavePlan plan = WorkbookSavePlan.Create(output.Format, licenseState, encryptPassword, inputPassword);
+        WorkbookSavePlan plan = WorkbookSavePlan.Create(output.Format, licenseState, protection);
         using OutputSet<Workbook> transaction = CreateOutputSet([output.Directory], "cells-save", output.BackupPath);
         WorkbookStagedSave saved = Stage(transaction, workbook, plan, output, inputPrecondition, verifyReopen);
         transaction.Commit();
@@ -41,7 +41,7 @@ internal sealed class CellsSavePipeline(OutputPipeline<Workbook> outputs, CellsW
             encrypted: plan.Encrypts,
             verify: verifyReopen ? path =>
             {
-                using LoadedWorkbook reopened = loader.OpenPublishedCandidate(path, plan.OutputPassword);
+                using LoadedWorkbook reopened = loader.OpenPublishedCandidate(path, plan.Protection.Password);
                 _ = reopened.Workbook.Worksheets.Count;
             } : null);
         return new WorkbookStagedSave(candidate, output, truncated,

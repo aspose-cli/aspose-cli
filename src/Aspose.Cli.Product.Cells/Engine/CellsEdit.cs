@@ -42,8 +42,8 @@ internal static class CellsEdit
 
         using CellsEditBaseline? baseline = request.Verify
             ? CellsEditBaseline.Capture(filePath, precondition, session.Budgets) : null;
-        WorkbookSavePlan savePlan = WorkbookSavePlan.Create(output.Format, licenseState, request.EncryptPassword,
-            loaded.IsEncrypted ? request.Password : null);
+        WorkbookSavePlan savePlan = WorkbookSavePlan.Create(output.Format, licenseState,
+            OutputProtection.For(output.Format, request.EncryptPassword, loaded.Protection, request.Password));
         using var importSources = new CellsImportSources(session.Loader, session.Budgets, request.OpSecrets);
         var protection = new CellsProtectionTracker();
         string[] linksBefore = LinkSources(workbook);
@@ -90,7 +90,7 @@ internal static class CellsEdit
             {
                 // Verification reports the warnings that make the output incomplete as issues.
                 verification = new CellsEditVerifier(session.Loader, session.Budgets).Verify(saved!.Candidate, baseline!.Path, filePath,
-                    request.Password, savePlan.OutputPassword, batch, activeSheet, applied, warnings);
+                    request.Password, savePlan.Protection.Password, batch, activeSheet, applied, warnings);
             }
             transaction.Commit();
         }
