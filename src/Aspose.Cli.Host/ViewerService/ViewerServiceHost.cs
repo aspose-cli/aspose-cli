@@ -1,7 +1,6 @@
 using System.Diagnostics;
 using System.Globalization;
 using System.Text.Json;
-using Aspose.Cli.Host.App;
 using Aspose.Cli.Host.Invocation;
 using Aspose.Cli.Host.LocalServices;
 using Aspose.Cli.Sdk.Errors;
@@ -30,7 +29,7 @@ internal sealed class ViewerServiceHost : IDisposable
     private readonly ViewerDocuments _documents;
     private readonly ViewerHttpServer _http;
     private readonly LocalServiceControlServer _control;
-    private readonly AppHost _app;
+    private readonly IHostedApp _app;
     private readonly string _token;
     private readonly long _startedAt = Environment.TickCount64;
     private long _lastAppActivity = Environment.TickCount64;
@@ -41,7 +40,7 @@ internal sealed class ViewerServiceHost : IDisposable
         GlobalValues globals,
         ServiceStartSecrets? secrets,
         int requestedPort,
-        Func<ViewerDocuments, int, Action, Action, AppHost> app)
+        Func<ViewerDocuments, int, Action, Action, IHostedApp> app)
     {
         var host = new ViewerServiceHost(globals, secrets, requestedPort, app);
         return new HostedCommandLifecycle(
@@ -54,7 +53,7 @@ internal sealed class ViewerServiceHost : IDisposable
         GlobalValues globals,
         ServiceStartSecrets? secrets,
         int requestedPort,
-        Func<ViewerDocuments, int, Action, Action, AppHost> app)
+        Func<ViewerDocuments, int, Action, Action, IHostedApp> app)
     {
         ArgumentNullException.ThrowIfNull(globals);
         ArgumentNullException.ThrowIfNull(app);
@@ -85,16 +84,7 @@ internal sealed class ViewerServiceHost : IDisposable
             // The App is mounted on this origin, so the page that frames a
             // document and the document itself come from one address.
             _app = app(_documents, _http.Port, RecordActivity, _stop.Set);
-            var handler = new AppRequestHandler(_app);
-            _http.Mount((context, port) =>
-            {
-                if (!AppRequestHandler.Owns(context.Request.Url?.AbsolutePath ?? "/"))
-                {
-                    return false;
-                }
-                handler.Handle(context, port);
-                return true;
-            });
+            _http.Mount(_app.TryHandle);
             _control = new LocalServiceControlServer(
                 new LocalServiceControlEndpoint(ViewerServiceCommands.Service, id),
                 nonce,
@@ -267,12 +257,12 @@ internal sealed class ViewerServiceHost : IDisposable
     /// </summary>
     private ViewerAppResponse App(string? payload, OperationDeadline deadline)
     {
-        AppHost app = _app;
+        IHostedApp app = _app;
         ViewerAppRequest request = payload is null
             ? throw new InvalidDataException("The app request carries no page.")
             : JsonSerializer.Deserialize(payload, ViewerServiceJsonContext.Default.ViewerAppRequest)
                 ?? throw new InvalidDataException("The app request is empty.");
-        AppResult opened = app.Open(request.Route, request.File, AppLicenseContext.Of(request), deadline);
+        AppResult opened = app.Open(request, deadline);
         RecordActivity();
         return new ViewerAppResponse
         {

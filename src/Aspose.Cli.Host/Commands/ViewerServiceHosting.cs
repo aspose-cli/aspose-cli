@@ -29,14 +29,14 @@ internal static class ViewerServiceHosting
             globals,
             ServiceStartSecretChannel.Current,
             requestedPort,
-            (documents, port, touch, stop) => mounted = new AppHost(
+            (documents, port, touch, stop) => new AppServiceMount(mounted = new AppHost(
                 catalog,
                 capabilities,
                 globals,
                 documents,
                 port,
                 touch,
-                stop));
+                stop)));
         if (page is not null && mounted is { } app)
         {
             AppResult opened = app.Open(page.Route, page.File, AppLicenseContext.Of(page));
