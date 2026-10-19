@@ -1,6 +1,5 @@
 using System.Diagnostics;
 using System.IO.Pipes;
-using System.Net.Sockets;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
@@ -38,14 +37,6 @@ internal sealed record LocalServiceControlEndpoint(
     public string PipeName =>
         $"{DistributionInfo.Id}-{Service}-{Digest()}";
 
-    public string UnixSocketPath => Path.Combine(
-        Directory.CreateDirectory(Path.Combine(
-            UserStorage.TemporaryRoot(),
-            "services",
-            Service,
-            "ipc")).FullName,
-        Digest() + ".sock");
-
     private string Digest() => Convert.ToHexString(
             SHA256.HashData(
                     Encoding.UTF8.GetBytes(
@@ -55,7 +46,7 @@ internal sealed record LocalServiceControlEndpoint(
 }
 
 /// <summary>
-/// Owns the current-user named-pipe or Unix-socket listener lifecycle for one
+/// Owns the current-user named-pipe listener lifecycle for one
 /// versioned local-service control endpoint.
 /// </summary>
 internal sealed class LocalServiceControlServer : IDisposable
@@ -72,7 +63,6 @@ internal sealed class LocalServiceControlServer : IDisposable
     private readonly TimeSpan _stageTimeout;
     private readonly TimeSpan _operationTimeout;
     private readonly CancellationTokenSource _shutdown = new();
-    private Socket? _unixListener;
     private Task? _loop;
     private int _started;
     private int _disposed;
@@ -122,8 +112,7 @@ internal sealed class LocalServiceControlServer : IDisposable
                 "The local-service control server is already started.");
         }
 
-        if (OperatingSystem.IsWindows()) { StartWindows(); }
-        else { StartUnix(); }
+        StartListeners();
         _ = _loop!.ContinueWith(static task =>
             Trace.TraceWarning("The local-service control listener stopped unexpectedly ({0}).",
                 task.Exception!.GetBaseException().GetType().Name),
@@ -135,14 +124,9 @@ internal sealed class LocalServiceControlServer : IDisposable
     {
         if (Interlocked.Exchange(ref _disposed, 1) != 0) { return; }
         _shutdown.Cancel();
-        _unixListener?.Dispose();
-        WaitForLoop();
         try
         {
-            if (!OperatingSystem.IsWindows())
-            {
-                TryDeleteUnixSocket(_endpoint.UnixSocketPath);
-            }
+            WaitForLoop();
         }
         finally
         {
@@ -169,7 +153,7 @@ internal sealed class LocalServiceControlServer : IDisposable
             payload,
             deadline);
 
-    private void StartWindows()
+    private void StartListeners()
     {
         // Keep every instance bound while requests run, including one long render.
         var listeners = new List<NamedPipeServerStream>(ListenerCount);
@@ -181,37 +165,12 @@ internal sealed class LocalServiceControlServer : IDisposable
                     PipeTransmissionMode.Byte, PipeOptions.Asynchronous | PipeOptions.CurrentUserOnly));
             }
             CancellationToken token = _shutdown.Token;
-            _loop = Task.WhenAll(listeners.Select(pipe => Task.Run(() => ListenWindows(pipe, token))));
+            _loop = Task.WhenAll(listeners.Select(pipe => Task.Run(() => Listen(pipe, token))));
         }
         catch { foreach (var pipe in listeners) { pipe.Dispose(); } throw; }
     }
 
-    private void StartUnix()
-    {
-        string path = _endpoint.UnixSocketPath;
-        RemoveStaleUnixSocket(path);
-        var listener = new Socket(
-            AddressFamily.Unix,
-            SocketType.Stream,
-            ProtocolType.Unspecified);
-        try
-        {
-            listener.Bind(new UnixDomainSocketEndPoint(path));
-            listener.Listen(backlog: 8);
-            _unixListener = listener;
-            CancellationToken cancellationToken = _shutdown.Token;
-            _loop = Task.WhenAll(Enumerable.Range(0, ListenerCount)
-                .Select(_ => Task.Run(() => ListenUnix(listener, cancellationToken))));
-        }
-        catch
-        {
-            listener.Dispose();
-            TryDeleteUnixSocket(path);
-            throw;
-        }
-    }
-
-    private async Task ListenWindows(NamedPipeServerStream listener, CancellationToken cancellationToken)
+    private async Task Listen(NamedPipeServerStream listener, CancellationToken cancellationToken)
     {
         // Reuse the bound instance so another process cannot claim the name between requests.
         using (listener)
@@ -235,37 +194,6 @@ internal sealed class LocalServiceControlServer : IDisposable
         }
     }
 
-    private async Task ListenUnix(
-        Socket listener,
-        CancellationToken cancellationToken)
-    {
-        while (!cancellationToken.IsCancellationRequested)
-        {
-            try
-            {
-                using Socket socket = await listener.AcceptAsync(
-                    cancellationToken).ConfigureAwait(false);
-                using var stream = new NetworkStream(
-                    socket,
-                    ownsSocket: false);
-                await HandleAsync(
-                    stream,
-                    cancellationToken).ConfigureAwait(false);
-            }
-            catch (Exception exception) when (
-                exception is OperationCanceledException
-                    or SocketException
-                    or ObjectDisposedException
-                    or IOException)
-            {
-                if (cancellationToken.IsCancellationRequested)
-                {
-                    return;
-                }
-            }
-        }
-    }
-
     private void WaitForLoop()
     {
         try
@@ -276,7 +204,6 @@ internal sealed class LocalServiceControlServer : IDisposable
             when (exception.InnerExceptions.All(static inner =>
                 inner is OperationCanceledException
                     or IOException
-                    or SocketException
                     or ObjectDisposedException))
         {
         }
@@ -366,38 +293,6 @@ internal sealed class LocalServiceControlServer : IDisposable
             try { message = _describeFailure?.Invoke(exception) ?? message; }
             catch { /* Failure reporting must not terminate the control endpoint. */ }
             return _identity.Response(request, ok: false, message);
-        }
-    }
-
-    private static void RemoveStaleUnixSocket(string path)
-    {
-        if (!File.Exists(path))
-        {
-            return;
-        }
-        if ((File.GetAttributes(path)
-                & FileAttributes.ReparsePoint) != 0)
-        {
-            throw new UnauthorizedAccessException(
-                "The local-service socket path is linked.");
-        }
-
-        File.Delete(path);
-    }
-
-    private static void TryDeleteUnixSocket(string path)
-    {
-        try
-        {
-            if (File.Exists(path))
-            {
-                File.Delete(path);
-            }
-        }
-        catch (Exception exception) when (
-            exception is IOException
-                or UnauthorizedAccessException)
-        {
         }
     }
 }

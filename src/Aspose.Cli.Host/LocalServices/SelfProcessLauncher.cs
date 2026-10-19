@@ -22,8 +22,7 @@ internal static class SelfProcessLauncher
     /// caller could neither delete nor rename it; services therefore run in
     /// the system directory and receive the caller's directory explicitly.
     /// </summary>
-    public static string ServiceWorkingDirectory { get; } =
-        OperatingSystem.IsWindows() ? Environment.SystemDirectory : "/";
+    public static string ServiceWorkingDirectory { get; } = Environment.SystemDirectory;
 
     public static ProcessStartInfo CreateBackground(
         string optionName,
@@ -72,11 +71,7 @@ internal static class SelfProcessLauncher
             Aspose.Cli.Sdk.IO.WorkerOutputSession.DeadlineEnvironmentVariable,
             Aspose.Cli.Sdk.IO.WorkerOutputSession.BudgetEnvironmentVariable,
         }) { start.Environment.Remove(name); }
-        if (OperatingSystem.IsWindows())
-        {
-            start.WindowStyle = ProcessWindowStyle.Hidden;
-        }
-
+        start.WindowStyle = ProcessWindowStyle.Hidden;
         return start;
     }
 

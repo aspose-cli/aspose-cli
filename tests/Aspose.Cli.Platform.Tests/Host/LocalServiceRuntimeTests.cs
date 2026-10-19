@@ -1,6 +1,5 @@
 using System.Buffers.Binary;
 using System.IO.Pipes;
-using System.Net.Sockets;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Aspose.Cli.Host.LocalServices;
@@ -456,26 +455,14 @@ public sealed class LocalServiceRuntimeTests
     private static async Task<Stream> ConnectRaw(
         LocalServiceControlEndpoint endpoint)
     {
-        if (OperatingSystem.IsWindows())
-        {
-            var pipe = new NamedPipeClientStream(
-                ".",
-                endpoint.PipeName,
-                PipeDirection.InOut,
-                PipeOptions.Asynchronous);
-            await pipe.ConnectAsync(
-                new CancellationTokenSource(
-                    TimeSpan.FromSeconds(5)).Token);
-            return pipe;
-        }
-
-        var socket = new Socket(
-            AddressFamily.Unix,
-            SocketType.Stream,
-            ProtocolType.Unspecified);
-        await socket.ConnectAsync(
-            new UnixDomainSocketEndPoint(
-                endpoint.UnixSocketPath));
-        return new NetworkStream(socket, ownsSocket: true);
+        var pipe = new NamedPipeClientStream(
+            ".",
+            endpoint.PipeName,
+            PipeDirection.InOut,
+            PipeOptions.Asynchronous);
+        await pipe.ConnectAsync(
+            new CancellationTokenSource(
+                TimeSpan.FromSeconds(5)).Token);
+        return pipe;
     }
 }
