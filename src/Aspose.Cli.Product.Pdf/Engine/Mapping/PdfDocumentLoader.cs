@@ -44,8 +44,11 @@ internal sealed class PdfDocumentLoader
             _ => LoadFailureKind.Other,
         });
 
-    public LoadedPdf Open(string path, Secret? password) =>
+    public LoadedPdf Open(string path, PasswordSource password) =>
         InputOpening.Open(_outputs, _resourceBudgets, path, () => OpenCore(path, password));
+
+    /// <summary>Opens a user input with the password from the command's <c>--password-env</c>, if any.</summary>
+    public LoadedPdf Open(string path, Secret? password) => Open(path, PasswordSource.Option(password));
 
     /// <summary>
     /// The <c>encrypt_document</c> fields that grant a copy what the document grants readers
@@ -73,11 +76,11 @@ internal sealed class PdfDocumentLoader
 
     // Generated candidates are bounded by publication, not a second user-input admission.
     internal LoadedPdf OpenPublishedCandidate(string path, Secret? password) =>
-        InputOpening.OpenPublished(() => OpenCore(path, password));
+        InputOpening.OpenPublished(() => OpenCore(path, PasswordSource.Option(password)));
 
     // An encrypted file's restrictions are read once it has loaded, outside the translation of
     // its load failures: an engine failure to read them is not a damaged input.
-    private LoadedPdf OpenCore(string path, Secret? password)
+    private LoadedPdf OpenCore(string path, PasswordSource password)
     {
         LoadedPdf loaded = Load(path, password);
         if (!loaded.Encrypted)
@@ -96,7 +99,7 @@ internal sealed class PdfDocumentLoader
         }
     }
 
-    private LoadedPdf Load(string path, Secret? password)
+    private LoadedPdf Load(string path, PasswordSource password)
     {
         EnsurePdfHeader(path);
 
@@ -106,9 +109,9 @@ internal sealed class PdfDocumentLoader
             // The engine reads the document from the stream as it needs it, so the stream
             // stays open for the document's lifetime.
             stream = InputFiles.OpenRead(path);
-            var document = password is null
+            var document = password.Password is null
                 ? new Document(stream)
-                : new Document(stream, password.Reveal());
+                : new Document(stream, password.Password.Reveal());
             try
             {
                 _resourceBudgets.EnsureWithin(
@@ -157,7 +160,7 @@ internal sealed class PdfDocumentLoader
 
     private static void EnsurePdfHeader(string path)
     {
-        bool found = Loading.Load(path, password: null, () =>
+        bool found = Loading.Load(path, password: default, () =>
         {
             using FileStream stream = InputFiles.OpenRead(path);
             return ContainerSignatures.HasPdfHeader(ContainerSignatures.ReadPrefix(stream));

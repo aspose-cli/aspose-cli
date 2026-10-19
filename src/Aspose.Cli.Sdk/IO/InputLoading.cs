@@ -1,5 +1,4 @@
 using System.Runtime.ExceptionServices;
-using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Errors;
 
 namespace Aspose.Cli.Sdk.IO;
@@ -58,9 +57,9 @@ public sealed class InputLoading
     /// A <see cref="CliException"/> and a cancellation pass unchanged.
     /// </summary>
     /// <param name="path">The input file.</param>
-    /// <param name="password">The password the input was opened with, if any.</param>
+    /// <param name="password">The password the input was opened with and where it comes from.</param>
     /// <param name="load">The engine call.</param>
-    public T Load<T>(string path, Secret? password, Func<T> load)
+    public T Load<T>(string path, PasswordSource password, Func<T> load)
     {
         ArgumentNullException.ThrowIfNull(load);
         try
@@ -78,7 +77,7 @@ public sealed class InputLoading
     /// classifier calls <see cref="LoadFailureKind.Other"/> is rethrown with its stack intact,
     /// so the Host can still tell an engine failure from a defect of the CLI.
     /// </summary>
-    public CliException Failure(Exception exception, string path, Secret? password) =>
+    public CliException Failure(Exception exception, string path, PasswordSource password) =>
         Translate(exception, path, password, onDisk: true);
 
     /// <summary>
@@ -87,9 +86,9 @@ public sealed class InputLoading
     /// file; <paramref name="source"/> names the input in the error.
     /// </summary>
     public CliException InMemoryFailure(Exception exception, string source) =>
-        Translate(exception, source, password: null, onDisk: false);
+        Translate(exception, source, password: default, onDisk: false);
 
-    private CliException Translate(Exception exception, string path, Secret? password, bool onDisk)
+    private CliException Translate(Exception exception, string path, PasswordSource password, bool onDisk)
     {
         ArgumentNullException.ThrowIfNull(exception);
         ArgumentException.ThrowIfNullOrEmpty(path);
@@ -117,10 +116,10 @@ public sealed class InputLoading
 
     /// <summary>
     /// An encrypted input that <paramref name="password"/> does not open: <c>PASSWORD_REQUIRED</c>
-    /// without a password, <c>PASSWORD_INVALID</c> with one.
+    /// without a password, <c>PASSWORD_INVALID</c> with one, with the hint of where the password
+    /// comes from (<see cref="PasswordSource.Refused"/>).
     /// </summary>
-    public static CliException PasswordRefused(string path, Secret? password) =>
-        password is null ? CliErrors.PasswordRequired(path) : CliErrors.PasswordInvalid(path);
+    public static CliException PasswordRefused(string path, PasswordSource password) => password.Refused(path);
 
     /// <summary>A damaged input: <c>FILE_CORRUPT</c>, with why it is not a valid document.</summary>
     /// <param name="path">The input file.</param>

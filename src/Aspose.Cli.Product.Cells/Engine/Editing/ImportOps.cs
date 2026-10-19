@@ -1,6 +1,5 @@
 using Aspose.Cells;
 using Aspose.Cli.Product.Cells.Engine.Mapping;
-using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Operations;
 using Aspose.Cli.Sdk.Results;
@@ -37,15 +36,8 @@ internal sealed class CellsImportSources(
     {
         if (!_opened.TryGetValue(path, out LoadedWorkbook? loaded))
         {
-            try
-            {
-                loaded = loader.Open(path, OperationSecrets.Resolve(secrets, sourcePasswordEnv));
-            }
-            catch (CliException error) when (CliErrors.IsPasswordError(error))
-            {
-                // The loader names the command's password option; a source's comes from its operation.
-                throw CliErrors.ForOperationSource(error, "sourcePasswordEnv");
-            }
+            loaded = loader.Open(path, PasswordSource.OperationField(
+                OperationSecrets.Resolve(secrets, sourcePasswordEnv), "sourcePasswordEnv"));
 
             _opened.Add(path, loaded);
         }

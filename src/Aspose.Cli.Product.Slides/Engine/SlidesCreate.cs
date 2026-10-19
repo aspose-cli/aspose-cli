@@ -1,4 +1,3 @@
-using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Licensing;
 using Aspose.Cli.Sdk.Results;
@@ -14,19 +13,10 @@ internal static class SlidesCreate
     /// A template, which opens without a password: an encrypted one is refused with that advice.
     /// New slides go on its layouts, so it opens to be written (SLIDES-PPT-TEMPLATE-LAYOUTS).
     /// </summary>
-    private static LoadedPresentation OpenTemplate(SlidesSession session, string path)
-    {
-        try
-        {
-            return session.Loader.OpenToWrite(path, password: null);
-        }
-        catch (CliException error) when (CliErrors.IsPasswordError(error))
-        {
-            throw CliErrors.WithoutPassword(error,
-                "'slides create' cannot open an encrypted template. Ask the user for an unencrypted copy of the template, "
-                + "then pass that copy to --template.");
-        }
-    }
+    private static LoadedPresentation OpenTemplate(SlidesSession session, string path) =>
+        session.Loader.OpenToWrite(path, PasswordSource.None(
+            "'slides create' cannot open an encrypted template. Ask the user for an unencrypted copy of the template, "
+            + "then pass that copy to --template."));
 
     internal static SlidesCreateResult Run(SlidesSession session, SlidesCreateRequest request)
     {

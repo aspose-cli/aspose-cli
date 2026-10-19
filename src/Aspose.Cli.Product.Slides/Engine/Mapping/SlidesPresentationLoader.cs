@@ -48,8 +48,11 @@ internal sealed class SlidesPresentationLoader
         _ => LoadFailureKind.Other,
     };
 
-    public LoadedPresentation Open(string path, Secret? password) =>
+    public LoadedPresentation Open(string path, PasswordSource password) =>
         InputOpening.Open(_outputs, _resourceBudgets, path, () => OpenCore(path, password));
+
+    /// <summary>Opens a user input with the password from the command's <c>--password-env</c>, if any.</summary>
+    public LoadedPresentation Open(string path, Secret? password) => Open(path, PasswordSource.Option(password));
 
     /// <summary>
     /// Opens a presentation that new slides are added to on its layouts. A PowerPoint 97-2003
@@ -57,12 +60,15 @@ internal sealed class SlidesPresentationLoader
     /// (SLIDES-PPT-TEMPLATE-LAYOUTS): the engine lists layouts from such a file that a PPTX save
     /// cannot reference, and that save drops them, as <c>slides convert</c> to PPTX does.
     /// </summary>
-    public LoadedPresentation OpenToWrite(string path, Secret? password) =>
+    public LoadedPresentation OpenToWrite(string path, PasswordSource password) =>
         InputOpening.Open(_outputs, _resourceBudgets, path, () => OpenCore(path, password, throughPptx: true));
+
+    /// <summary>Opens a presentation to write, with the password from the command's <c>--password-env</c>, if any.</summary>
+    public LoadedPresentation OpenToWrite(string path, Secret? password) => OpenToWrite(path, PasswordSource.Option(password));
 
     // Generated candidates are bounded by publication, not a second user-input admission.
     internal LoadedPresentation OpenPublishedCandidate(string path, Secret? password) =>
-        InputOpening.OpenPublished(() => OpenCore(path, password));
+        InputOpening.OpenPublished(() => OpenCore(path, PasswordSource.Option(password)));
 
     /// <summary>
     /// Opens the built-in 16:9 design that new presentations use without a template. It has no
@@ -80,9 +86,9 @@ internal sealed class SlidesPresentationLoader
 
     private const string DefaultTemplateResource = "Templates/default-16x9.pptx";
 
-    private LoadedPresentation OpenCore(string path, Secret? secret, bool throughPptx = false)
+    private LoadedPresentation OpenCore(string path, PasswordSource passwordSource, bool throughPptx = false)
     {
-        string? password = secret?.Reveal();
+        string? password = passwordSource.Password?.Reveal();
         FileStream? source = null;
         try
         {
@@ -110,7 +116,7 @@ internal sealed class SlidesPresentationLoader
 
             if (info.IsPasswordProtected && (password is null || !info.CheckPassword(password)))
             {
-                throw InputLoading.PasswordRefused(path, secret);
+                throw InputLoading.PasswordRefused(path, passwordSource);
             }
 
             // Engine code creates presentations only here or from the default template: without a
@@ -167,7 +173,7 @@ internal sealed class SlidesPresentationLoader
         }
         catch (Exception exception) when (exception is not CliException and not OperationCanceledException)
         {
-            throw Loading.Failure(exception, path, secret);
+            throw Loading.Failure(exception, path, passwordSource);
         }
         finally
         {

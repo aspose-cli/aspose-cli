@@ -69,25 +69,29 @@ internal sealed class WordsDocumentLoader
     /// Opens an admitted input. <paramref name="warnings"/> receives what the SDK reports while
     /// it loads the document; font substitutions arrive only when the document is laid out.
     /// </summary>
-    public LoadedDocument Open(string path, Secret? password, IWarningCallback? warnings = null)
+    public LoadedDocument Open(string path, PasswordSource password, IWarningCallback? warnings = null)
     {
         LoadedDocument loaded = InputOpening.Open(_outputs, _resourceBudgets, path, () => OpenCore(path, password, warnings));
         _outputs?.ReadInput(loaded.Document);
         return loaded;
     }
 
+    /// <summary>Opens an admitted input with the password from the command's <c>--password-env</c>, if any.</summary>
+    public LoadedDocument Open(string path, Secret? password, IWarningCallback? warnings = null) =>
+        Open(path, PasswordSource.Option(password), warnings);
+
     // Generated candidates are bounded by publication, not a second user-input admission.
     internal LoadedDocument OpenPublishedCandidate(string path, Secret? password) =>
-        InputOpening.OpenPublished(() => OpenCore(path, password, warnings: null));
+        InputOpening.OpenPublished(() => OpenCore(path, PasswordSource.Option(password), warnings: null));
 
-    private LoadedDocument OpenCore(string path, Secret? password, IWarningCallback? warnings)
+    private LoadedDocument OpenCore(string path, PasswordSource password, IWarningCallback? warnings)
     {
         InputLoading loading = For(path);
         using FileStream input = loading.Load(path, password, () => InputFiles.OpenRead(path));
         return OpenCore(input, path, password, loading, warnings);
     }
 
-    private LoadedDocument OpenCore(FileStream input, string path, Secret? password, InputLoading loading, IWarningCallback? warnings)
+    private LoadedDocument OpenCore(FileStream input, string path, PasswordSource password, InputLoading loading, IWarningCallback? warnings)
     {
         FileFormatInfo detected = loading.Load(path, password, () =>
         {
@@ -111,7 +115,7 @@ internal sealed class WordsDocumentLoader
             throw loading.Unloadable(path, id);
         }
 
-        if (detected.IsEncrypted && password is null)
+        if (detected.IsEncrypted && password.Password is null)
         {
             throw InputLoading.PasswordRefused(path, password);
         }
@@ -164,7 +168,7 @@ internal sealed class WordsDocumentLoader
             Encoding.UTF8.GetByteCount(markdown), "bytes", "markdown-buffer");
         using var input = new MemoryStream(Encoding.UTF8.GetBytes(markdown), writable: false);
         Document document = Load(options => new Document(input, options),
-            LoadFormat.Markdown, owner.Resources, "inline Markdown", password: null, Loading, warnings: null, onDisk: false);
+            LoadFormat.Markdown, owner.Resources, "inline Markdown", password: default, Loading, warnings: null, onDisk: false);
         owner.Retain(document);
         _outputs?.ReadInput(document);
         return document;
@@ -197,7 +201,7 @@ internal sealed class WordsDocumentLoader
             "pre-allocation");
 
     private Document Load(Func<LoadOptions, Document> open, LoadFormat format,
-        LocalDocumentResourceLoader resources, string path, Secret? password, InputLoading loading, IWarningCallback? warnings,
+        LocalDocumentResourceLoader resources, string path, PasswordSource password, InputLoading loading, IWarningCallback? warnings,
         bool onDisk = true)
     {
         Document? document = null;
@@ -205,7 +209,7 @@ internal sealed class WordsDocumentLoader
         {
             document = open(new LoadOptions
             {
-                Password = password?.Reveal(),
+                Password = password.Password?.Reveal(),
                 LoadFormat = format,
                 BaseUri = resources.BaseUri,
                 ResourceLoadingCallback = new BlockingResourceCallback(resources, checksImages: format == LoadFormat.Markdown),
