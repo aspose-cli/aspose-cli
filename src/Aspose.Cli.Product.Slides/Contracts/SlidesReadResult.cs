@@ -159,30 +159,6 @@ public sealed record SlidesShapeData
 
     /// <summary>Where the shape is on the slide.</summary>
     public required SlidesRect Rect { get; init; }
-
-    // Product-internal review facts. These deliberately remain outside the
-    // frozen wire contract while preserving the shape order and effective fill
-    // semantics needed for conservative deterministic overlap checks.
-    internal int ZOrder { get; init; }
-    internal bool HasOpaqueFill { get; init; }
-
-    /// <summary>Where the shape's text is laid out, in slide points; null for a shape without text.</summary>
-    internal SlidesRect? TextRect { get; init; }
-
-    /// <summary>Where the characters of the shape's text are drawn, inside <see cref="TextRect"/>; null when the lines do not tell.</summary>
-    internal SlidesRect? TextGlyphRect { get; init; }
-
-    /// <summary>Whether the shape resizes to fit its text or shrinks its text on overflow, so text beyond its stored frame is not an overflow.</summary>
-    internal bool TextAutofits { get; init; }
-
-    /// <summary>The one solid color behind the text of a text shape or chart; null when no single color is known.</summary>
-    internal System.Drawing.Color? Backdrop { get; init; }
-
-    /// <summary>The color a chart states for its text; null when the chart style decides it.</summary>
-    internal System.Drawing.Color? ChartTextColor { get; init; }
-
-    /// <summary>Whether an evaluation-mode read found the shape to be the watermark text box an evaluation save added.</summary>
-    internal bool EvaluationWatermark { get; init; }
 }
 
 /// <summary>One text run with its effective formatting.</summary>

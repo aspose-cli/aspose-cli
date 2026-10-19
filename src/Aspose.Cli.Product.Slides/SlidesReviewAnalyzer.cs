@@ -25,7 +25,7 @@ internal static class SlidesReviewAnalyzer
     /// left out of the other checks and counted.
     /// </summary>
     public static SlidesReviewAnalysis Analyze(
-        IReadOnlyList<SlidesSlideData> slides,
+        IReadOnlyList<SlidesReviewSlide> slides,
         double slideWidth,
         double slideHeight,
         bool evaluation = false)
@@ -36,7 +36,7 @@ internal static class SlidesReviewAnalyzer
                 ? slides.Sum(static slide => slide.Shapes.Count(static shape => shape.EvaluationWatermark))
                 : null,
         };
-        foreach (SlidesSlideData slide in slides.Where(static slide => slide.Shapes.Any(static shape => shape.EvaluationWatermark)))
+        foreach (SlidesReviewSlide slide in slides.Where(static slide => slide.Shapes.Any(static shape => shape.EvaluationWatermark)))
         {
             result.Findings.Add(Finding(SlidesReviewChecks.EvaluationWatermark, slide,
                 $"Slide {slide.Slide} carries the evaluation watermark text box an Aspose.Slides save without a license added; a license does not remove it, so rebuild the deck with a license."));
@@ -51,7 +51,7 @@ internal static class SlidesReviewAnalyzer
 
         AnalyzeDuplicates(slides, result);
         double slideArea = Math.Max(1, slideWidth * slideHeight);
-        foreach (SlidesSlideData slide in slides)
+        foreach (SlidesReviewSlide slide in slides)
         {
             AnalyzeSlide(slide, slideWidth, slideHeight, slideArea, result);
         }
@@ -59,18 +59,18 @@ internal static class SlidesReviewAnalyzer
     }
 
     private static void AnalyzeDuplicates(
-        IReadOnlyList<SlidesSlideData> slides,
+        IReadOnlyList<SlidesReviewSlide> slides,
         SlidesReviewAnalysis result)
     {
-        var firstByFingerprint = new Dictionary<string, SlidesSlideData>(StringComparer.Ordinal);
-        foreach (SlidesSlideData slide in slides)
+        var firstByFingerprint = new Dictionary<string, SlidesReviewSlide>(StringComparer.Ordinal);
+        foreach (SlidesReviewSlide slide in slides)
         {
             string? fingerprint = Fingerprint(slide);
             if (fingerprint is null)
             {
                 continue;
             }
-            if (firstByFingerprint.TryGetValue(fingerprint, out SlidesSlideData? first))
+            if (firstByFingerprint.TryGetValue(fingerprint, out SlidesReviewSlide? first))
             {
                 result.DuplicateSlides++;
                 // A duplicate concerns two slides, so both images are its evidence.
@@ -89,7 +89,7 @@ internal static class SlidesReviewAnalyzer
     }
 
     private static void AnalyzeSlide(
-        SlidesSlideData slide,
+        SlidesReviewSlide slide,
         double slideWidth,
         double slideHeight,
         double slideArea,
@@ -104,7 +104,7 @@ internal static class SlidesReviewAnalyzer
                 "The slide has no visible authored content; confirm that it is intentional."));
         }
 
-        foreach (SlidesShapeData shape in slide.Shapes)
+        foreach (SlidesReviewShape shape in slide.Shapes)
         {
             AddShapeFindings(slide, shape, slideWidth, slideHeight, result);
         }
@@ -121,15 +121,15 @@ internal static class SlidesReviewAnalyzer
     /// readable run of each shape is judged, or a chart's stated text color; text over a picture,
     /// a gradient or a chart style's own text color is left to the image inspection.
     /// </summary>
-    private static void AnalyzeContrast(SlidesSlideData slide, SlidesReviewAnalysis result)
+    private static void AnalyzeContrast(SlidesReviewSlide slide, SlidesReviewAnalysis result)
     {
-        foreach (SlidesShapeData shape in slide.Shapes.Where(static shape => shape.Backdrop is not null && !IsDecorative(shape)))
+        foreach (SlidesReviewShape shape in slide.Shapes.Where(static shape => shape.Backdrop is not null && !IsDecorative(shape)))
         {
             Color backdrop = shape.Backdrop!.Value;
             IEnumerable<Color> colors = shape.Kind == "chart"
                 ? shape.ChartTextColor is { } chart ? [chart] : []
-                : (shape.Runs ?? [])
-                    .Where(static run => !string.IsNullOrWhiteSpace(run.Text) && run.Color is not null)
+                : shape.Runs
+                    .Where(static run => run.Color is not null)
                     .Select(static run => ColorTranslator.FromHtml(run.Color!));
             (Color Text, double Ratio)[] low = colors
                 .Select(color => (Text: color, Ratio: SlidesContrast.Ratio(color, backdrop)))
@@ -157,14 +157,14 @@ internal static class SlidesReviewAnalyzer
     /// the object. Text over a picture is left alone: captions often are.
     /// </summary>
     private static void AnalyzeTextOverObjects(
-        SlidesSlideData slide,
+        SlidesReviewSlide slide,
         double slideArea,
         SlidesReviewAnalysis result)
     {
-        foreach (SlidesShapeData text in slide.Shapes.Where(static shape => shape.TextRect is not null && !IsDecorative(shape)))
+        foreach (SlidesReviewShape text in slide.Shapes.Where(static shape => shape.TextRect is not null && !IsDecorative(shape)))
         {
             SlidesRect lines = text.TextRect!;
-            foreach (SlidesShapeData other in slide.Shapes.Where(shape => shape.ShapeId != text.ShapeId
+            foreach (SlidesReviewShape other in slide.Shapes.Where(shape => shape.ShapeId != text.ShapeId
                 && (shape.Kind is "table" or "chart" || shape.ZOrder > text.ZOrder && IsOccluder(shape, slideArea))))
             {
                 double overlap = IntersectionArea(lines, other.Rect);
@@ -183,9 +183,9 @@ internal static class SlidesReviewAnalyzer
         }
     }
 
-    private static void AnalyzeEmptyPlaceholders(SlidesSlideData slide, SlidesReviewAnalysis result)
+    private static void AnalyzeEmptyPlaceholders(SlidesReviewSlide slide, SlidesReviewAnalysis result)
     {
-        foreach (SlidesShapeData shape in slide.Shapes.Where(static shape =>
+        foreach (SlidesReviewShape shape in slide.Shapes.Where(static shape =>
                      shape.Placeholder is not (null or "footer" or "date" or "slide-number")
                      && shape.Kind is not ("chart" or "table" or "image" or "audio" or "video")
                      && string.IsNullOrWhiteSpace(shape.Text)))
@@ -202,8 +202,8 @@ internal static class SlidesReviewAnalyzer
     }
 
     private static void AddShapeFindings(
-        SlidesSlideData slide,
-        SlidesShapeData shape,
+        SlidesReviewSlide slide,
+        SlidesReviewShape shape,
         double slideWidth,
         double slideHeight,
         SlidesReviewAnalysis result)
@@ -225,11 +225,11 @@ internal static class SlidesReviewAnalyzer
             AddTextPlacementFindings(slide, shape, slideWidth, slideHeight, result);
         }
 
-        double minimum = shape.Runs?
-            .Where(static run => !string.IsNullOrWhiteSpace(run.Text) && run.FontSize is > 0)
+        double minimum = shape.Runs
+            .Where(static run => run.FontSize is > 0)
             .Select(static run => run.FontSize!.Value)
             .DefaultIfEmpty()
-            .Min() ?? 0;
+            .Min();
         if (minimum is > 0 and < 12)
         {
             result.SmallTextShapes++;
@@ -248,8 +248,8 @@ internal static class SlidesReviewAnalyzer
     /// outside the slide is not checked again here.
     /// </summary>
     private static void AddTextPlacementFindings(
-        SlidesSlideData slide,
-        SlidesShapeData shape,
+        SlidesReviewSlide slide,
+        SlidesReviewShape shape,
         double slideWidth,
         double slideHeight,
         SlidesReviewAnalysis result)
@@ -307,11 +307,11 @@ internal static class SlidesReviewAnalyzer
     /// count is judged; the review's EVALUATION_INPUT_TRUNCATED warning discloses the replacement.
     /// </summary>
     private static void AnalyzeDensity(
-        SlidesSlideData slide,
+        SlidesReviewSlide slide,
         double slideArea,
         SlidesReviewAnalysis result)
     {
-        SlidesShapeData[] content = slide.Shapes.Where(IsContent).ToArray();
+        SlidesReviewShape[] content = slide.Shapes.Where(IsContent).ToArray();
         int characters = content.Sum(static shape => shape.Text?.Length ?? 0);
         bool textMeasured = !TextReplacedByEvaluation(slide);
         bool high = content.Length >= 18
@@ -345,21 +345,21 @@ internal static class SlidesReviewAnalyzer
     }
 
     private static void AnalyzeOverlaps(
-        SlidesSlideData slide,
+        SlidesReviewSlide slide,
         double slideArea,
         SlidesReviewAnalysis result)
     {
-        SlidesShapeData[] ordered = slide.Shapes.OrderBy(static shape => shape.ZOrder).ToArray();
+        SlidesReviewShape[] ordered = slide.Shapes.OrderBy(static shape => shape.ZOrder).ToArray();
         for (int lowerIndex = 0; lowerIndex < ordered.Length; lowerIndex++)
         {
-            SlidesShapeData lower = ordered[lowerIndex];
+            SlidesReviewShape lower = ordered[lowerIndex];
             if (!IsContent(lower) || IsDecorative(lower))
             {
                 continue;
             }
             for (int upperIndex = lowerIndex + 1; upperIndex < ordered.Length; upperIndex++)
             {
-                SlidesShapeData upper = ordered[upperIndex];
+                SlidesReviewShape upper = ordered[upperIndex];
                 if (!IsOccluder(upper, slideArea))
                 {
                     continue;
@@ -394,17 +394,17 @@ internal static class SlidesReviewAnalyzer
         }
     }
 
-    private static bool IsBlank(SlidesSlideData slide) =>
+    private static bool IsBlank(SlidesReviewSlide slide) =>
         slide.Shapes.Count == 0
         || slide.Shapes.All(static shape =>
             string.IsNullOrWhiteSpace(shape.Text)
             && shape.Kind is not ("chart" or "table" or "image" or "audio" or "video"));
 
-    private static bool IsContent(SlidesShapeData shape) =>
+    private static bool IsContent(SlidesReviewShape shape) =>
         !string.IsNullOrWhiteSpace(shape.Text)
         || shape.Kind is "chart" or "table" or "image" or "audio" or "video";
 
-    private static bool IsOccluder(SlidesShapeData shape, double slideArea)
+    private static bool IsOccluder(SlidesReviewShape shape, double slideArea)
     {
         if (IsDecorative(shape) || Area(shape.Rect) / slideArea > 0.80)
         {
@@ -413,7 +413,7 @@ internal static class SlidesReviewAnalyzer
         return shape.HasOpaqueFill || shape.Kind is "chart" or "table" or "video";
     }
 
-    private static bool IsDecorative(SlidesShapeData shape)
+    private static bool IsDecorative(SlidesReviewShape shape)
     {
         if (shape.Placeholder is "footer" or "date" or "slide-number")
         {
@@ -429,9 +429,9 @@ internal static class SlidesReviewAnalyzer
         "watermark", "overlay", "callout",
     ];
 
-    private static string? Fingerprint(SlidesSlideData slide)
+    private static string? Fingerprint(SlidesReviewSlide slide)
     {
-        if (slide.ContentTruncated || TextReplacedByEvaluation(slide))
+        if (TextReplacedByEvaluation(slide))
         {
             return null;
         }
@@ -443,7 +443,7 @@ internal static class SlidesReviewAnalyzer
         }
 
         var value = new StringBuilder();
-        foreach (SlidesShapeData shape in slide.Shapes.Where(static shape => !IsDecorative(shape)))
+        foreach (SlidesReviewShape shape in slide.Shapes.Where(static shape => !IsDecorative(shape)))
         {
             value.Append(shape.Kind).Append('|').Append(shape.Placeholder).Append('|')
                 .Append(Normalize(shape.Text)).Append('|')
@@ -452,7 +452,7 @@ internal static class SlidesReviewAnalyzer
         return value.ToString();
     }
 
-    private static bool TextReplacedByEvaluation(SlidesSlideData slide) =>
+    private static bool TextReplacedByEvaluation(SlidesReviewSlide slide) =>
         slide.Shapes.Any(static shape => SlidesEngineSupport.CutByEvaluation(shape.Text));
 
     private static string Normalize(string? text) => string.IsNullOrWhiteSpace(text)
@@ -464,7 +464,7 @@ internal static class SlidesReviewAnalyzer
         CultureInfo.InvariantCulture,
         $"{Math.Round(rect.X, 1)},{Math.Round(rect.Y, 1)},{Math.Round(rect.Width, 1)},{Math.Round(rect.Height, 1)}");
 
-    private static double BoundingArea(IReadOnlyList<SlidesShapeData> shapes)
+    private static double BoundingArea(IReadOnlyList<SlidesReviewShape> shapes)
     {
         if (shapes.Count == 0)
         {
@@ -487,7 +487,7 @@ internal static class SlidesReviewAnalyzer
     private static double Area(SlidesRect rect) => Math.Max(0, rect.Width) * Math.Max(0, rect.Height);
 
     /// <summary>A shape as findings name it: its name, when it has one, and the shapeId that edit operations address.</summary>
-    private static string Label(SlidesShapeData shape) => string.IsNullOrEmpty(shape.ShapeName)
+    private static string Label(SlidesReviewShape shape) => string.IsNullOrEmpty(shape.ShapeName)
         ? string.Create(CultureInfo.InvariantCulture, $"shapeId {shape.ShapeId}")
         : string.Create(CultureInfo.InvariantCulture, $"'{shape.ShapeName}' (shapeId {shape.ShapeId})");
 
@@ -496,7 +496,7 @@ internal static class SlidesReviewAnalyzer
     /// <summary>
     /// A finding on one slide, with that slide's view part, so its evidence is that slide's image.
     /// </summary>
-    private static ReviewFinding Finding(ReviewCheck check, SlidesSlideData slide, string message) =>
+    private static ReviewFinding Finding(ReviewCheck check, SlidesReviewSlide slide, string message) =>
         check.Finding(message, Location(slide.Slide), Hint, SlidesViews.PartId(slide.SlideId));
 }
 
