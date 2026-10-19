@@ -38,7 +38,7 @@
         "command": "edit",
         "inputSchema": "v2/cells/ops",
         "operationSchema": "aspose-cli schema v2/cells/ops --operation <op>",
-        "contractFingerprint": "sha256:208e042504f16c3367a7dbfafb8d25003fff973309ee5ba851ff062097cba974",
+        "contractFingerprint": "sha256:3f7118cd4bba361db1525439fa23bfc14715de27b283092d79c69b2882292e42",
         "maximumOperationCount": 10000,
         "ops": [
           "add_comment",
@@ -6517,7 +6517,7 @@
           }
         },
         "resize_table": {
-          "description": "Moves the last row of an existing table, as Excel's Resize Table does, such as to take in rows written below it. The header row and the columns stay as they are; calculated columns fill the rows taken in, and a totals row moves to the new last row. A table with a totals row only grows.",
+          "description": "Moves the last row of an existing table, as Excel's Resize Table does, such as to take in rows written below it. The header row and the columns stay as they are; calculated columns, the formulas the table stores for a whole column, fill the rows taken in, and a totals row moves to the new last row. A table with a totals row only grows. Cell formulas and number formats do not fill the rows taken in, and a pivot source, a formula range or a print area given as cell addresses keeps its range.",
           "type": "object",
           "required": [
             "op",

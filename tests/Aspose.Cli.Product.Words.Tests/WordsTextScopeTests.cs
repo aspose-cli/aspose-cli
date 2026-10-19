@@ -1,3 +1,4 @@
+using Aspose.Cli.Sdk.Text;
 using Aspose.Words;
 using Aspose.Words.Drawing;
 using Aspose.Words.Notes;
@@ -41,6 +42,45 @@ public sealed class WordsTextScopeTests : IClassFixture<WordsFixture>
             ["Body needle", "Box needle", "Comment needle", "Footer needle", "Footnote needle", "Header needle"],
             result.Hits.SelectMany(static hit => Needles(hit.Context)).Distinct().Order());
     }
+
+    [Fact]
+    public void ExtractedText_HoldsOnlyTheBodyAndAnyLineSearchReadsTheOtherStories()
+    {
+        var document = new Document(CreateStories());
+        var builder = new DocumentBuilder(document);
+        builder.MoveTo(document.FirstSection.Body.FirstParagraph);
+        builder.InsertFootnote(FootnoteType.Endnote, "Endnote needle");
+        string input = _fixture.Temp.File($"stories-endnote-{Guid.NewGuid():N}.docx");
+        document.Save(input, SaveFormat.Docx);
+
+        WordsExtractResult extracted = WordsExtract.Run(_fixture.Session, new WordsExtractRequest
+        {
+            Input = input,
+            Output = new ResolvedDirectory(_fixture.Temp.File($"stories-text-{Guid.NewGuid():N}")),
+            What = "text",
+        });
+
+        string text = File.ReadAllText(Assert.Single(extracted.Outputs).Path);
+        Assert.Contains("Body needle", text, StringComparison.Ordinal);
+        Assert.DoesNotContain(Needles(text), static needle => needle is not ("Body needle" or "Box needle"));
+        Assert.DoesNotContain("Endnote needle", text, StringComparison.Ordinal);
+        // Evaluation mode adds its own header line, so only the lines of the stories are compared.
+        Assert.Equal(
+            [("comments", "Comment needle"), ("footnotes", "Endnote needle"), ("footnotes", "Footnote needle"),
+                ("headers-footers", "Footer needle"), ("headers-footers", "Header needle")],
+            AnyLine(input, WordsTextScopes.All).Where(static line => line.Scope != WordsTextScopes.Body));
+        Assert.Equal([("footnotes", "Endnote needle"), ("footnotes", "Footnote needle")], AnyLine(input, WordsTextScopes.Footnotes));
+    }
+
+    /// <summary>The scope and text of each line an any-line search returns that holds a needle, in order.</summary>
+    private IEnumerable<(string Scope, string Text)> AnyLine(string input, string scope) =>
+        WordsSearch.Run(_fixture.Session, new WordsSearchRequest
+            {
+                Input = input,
+                Query = new SearchQuery(TextSearch.Create(".+", regex: true, caseSensitive: false), 100, scope),
+            })
+            .Hits.Where(static hit => hit.Text.Contains("needle", StringComparison.Ordinal))
+            .Select(static hit => (hit.Scope, hit.Text.Trim())).Order();
 
     [Fact]
     public void Search_NamesTheSectionOfAHeaderHitAndGivesItNoBlock()
