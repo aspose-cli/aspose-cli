@@ -1,8 +1,6 @@
-using System.Text.Json;
 using Aspose.Cells;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Extensibility;
-using Json.Schema;
 using Xunit;
 
 namespace Aspose.Cli.Product.Cells.Tests;
@@ -13,10 +11,6 @@ namespace Aspose.Cli.Product.Cells.Tests;
 /// </summary>
 public sealed class CellsOpContractTests : IClassFixture<CellsFixture>
 {
-    private static readonly Lazy<JsonSchema> Schema = new(static () => JsonSchema.FromText(
-        ProductCatalog.Build([new CellsModule()]).Resources.Read("v2/cells/ops"),
-        SchemaTestRegistry.CreateOptions()));
-
     private readonly CellsFixture _fixture;
 
     public CellsOpContractTests(CellsFixture fixture) => _fixture = fixture;
@@ -65,7 +59,7 @@ public sealed class CellsOpContractTests : IClassFixture<CellsFixture>
         CliException error = Assert.Throws<CliException>(() => Parse(batch));
 
         Assert.Equal(ErrorCodes.OpsInvalid, error.Code);
-        Assert.False(IsSchemaValid(batch), "The schema accepted an operation the parser rejects.");
+        Assert.False(OpsSchema<CellsModule>.Accepts(batch), "The schema accepted an operation the parser rejects.");
     }
 
     [Theory]
@@ -120,7 +114,7 @@ public sealed class CellsOpContractTests : IClassFixture<CellsFixture>
 
         _ = Parse(batch);
 
-        Assert.True(IsSchemaValid(batch), "The schema rejected an operation the parser accepts.");
+        Assert.True(OpsSchema<CellsModule>.Accepts(batch), "The schema rejected an operation the parser accepts.");
     }
 
     [Theory]
@@ -132,7 +126,7 @@ public sealed class CellsOpContractTests : IClassFixture<CellsFixture>
     [InlineData("""{"op":"sort_range","range":"A1:B9","by":[{"column":"A","unexpected":1}]}""")]
     [InlineData("""{"op":"insert_pivot","sourceRange":"A1:B9","at":"D1","values":[{"field":"X","unexpected":1}]}""")]
     public void Schema_RejectsFieldsTheContractDoesNotKnow(string operation) =>
-        Assert.False(IsSchemaValid($$"""{"ops":[{{operation}}]}"""));
+        Assert.False(OpsSchema<CellsModule>.Accepts($$"""{"ops":[{{operation}}]}"""));
 
     [Fact]
     public void AHeaderMarginInsideMargins_PointsToHeaderMargin()
@@ -227,12 +221,6 @@ public sealed class CellsOpContractTests : IClassFixture<CellsFixture>
         using var workbook = new Workbook();
         Assert.Throws<ArgumentOutOfRangeException>(() =>
             StyleWriter.Apply(workbook.CreateStyle(), new CellsStyleData { Alignment = horizontal, VerticalAlignment = vertical }));
-    }
-
-    private static bool IsSchemaValid(string json)
-    {
-        using JsonDocument document = JsonDocument.Parse(json);
-        return Schema.Value.Evaluate(document.RootElement).IsValid;
     }
 
     [Theory]

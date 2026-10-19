@@ -25,9 +25,9 @@ public sealed class ReviewEvaluationDisclosureTests : IDisposable
 
         JsonNode printed = Run("review", "brief.docx", "--out", "review", "--license-mode", "evaluation");
 
-        string[] codes = Codes(printed);
+        string[] codes = ResultWarnings.Codes(printed);
         Assert.Contains("EVALUATION_MODE", codes);
-        Assert.Equal(codes, Codes(JsonNode.Parse(File.ReadAllText(_workspace.File(Path.Combine("review", "review.json"))))!));
+        Assert.Equal(codes, ResultWarnings.Codes(JsonNode.Parse(File.ReadAllText(_workspace.File(Path.Combine("review", "review.json"))))!));
         Assert.Contains("\"EVALUATION_MODE\"", File.ReadAllText(_workspace.File(Path.Combine("review", "index.html"))), StringComparison.Ordinal);
     }
 
@@ -80,8 +80,8 @@ public sealed class ReviewEvaluationDisclosureTests : IDisposable
 
         // A licensed result omits its license block.
         Assert.Null(printed["license"]);
-        Assert.DoesNotContain("EVALUATION_MODE", Codes(printed));
-        Assert.Equal(Codes(printed), Codes(JsonNode.Parse(File.ReadAllText(_workspace.File(Path.Combine("review", "review.json"))))!));
+        Assert.DoesNotContain("EVALUATION_MODE", ResultWarnings.Codes(printed));
+        Assert.Equal(ResultWarnings.Codes(printed), ResultWarnings.Codes(JsonNode.Parse(File.ReadAllText(_workspace.File(Path.Combine("review", "review.json"))))!));
         Assert.Contains(printed["findings"]!.AsArray(), static finding => finding!["code"]!.GetValue<string>() == "WORDS_EVALUATION_MARKS");
         // The evidence images show the marks the input carries, as a licensed render of it says.
         JsonNode rendered = Run("words", "render", "marked.docx", "--out", "page.png");
@@ -97,7 +97,4 @@ public sealed class ReviewEvaluationDisclosureTests : IDisposable
 
     private static string Message(JsonNode result, string code) =>
         Assert.Single(result["warnings"] as JsonArray ?? [], warning => warning!["code"]!.GetValue<string>() == code)!["message"]!.GetValue<string>();
-
-    private static string[] Codes(JsonNode result) =>
-        [.. (result["warnings"] as JsonArray ?? []).Select(static warning => warning!["code"]!.GetValue<string>())];
 }

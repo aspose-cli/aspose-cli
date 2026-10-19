@@ -31,7 +31,7 @@ public sealed class PdfImageInputTests
             Output = TestOutput.At(output),
         }));
 
-        AssertInvalidOperation(error, 1, "add_watermark_image", image);
+        OperationErrors.AssertInvalid(error, 1, "add_watermark_image", image);
         Assert.False(File.Exists(output));
     }
 
@@ -54,7 +54,7 @@ public sealed class PdfImageInputTests
             Output = TestOutput.At(output),
         }));
 
-        AssertInvalidOperation(error, 0, "add_stamp_image", image);
+        OperationErrors.AssertInvalid(error, 0, "add_stamp_image", image);
         Assert.False(File.Exists(output));
     }
 
@@ -324,14 +324,6 @@ public sealed class PdfImageInputTests
         }
 
         stream.Write(value);
-    }
-
-    private static void AssertInvalidOperation(CliException error, int index, string op, string image)
-    {
-        Assert.Equal(ErrorCodes.OpsInvalid, error.Code);
-        Assert.Equal($"op-{index + 1:D4}", error.Details!["id"]!.GetValue<string>());
-        Assert.Equal(op, error.Details["op"]!.GetValue<string>());
-        Assert.Contains(image, error.Message, StringComparison.Ordinal);
     }
 
     private static void AssertCorruptImage(CliResult result, string image)

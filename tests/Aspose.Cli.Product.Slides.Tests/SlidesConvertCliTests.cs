@@ -103,7 +103,7 @@ public sealed class SlidesConvertCliTests : IDisposable
 
         JsonNode result = Run("slides", "render", "deck.pptx", "--slides", "1,3", "--out", "slide.png");
 
-        Assert.DoesNotContain("HIDDEN_SLIDES_RENDERED", Codes(result));
+        Assert.DoesNotContain("HIDDEN_SLIDES_RENDERED", ResultWarnings.Codes(result));
     }
 
     /// <summary>A review draws a hidden slide and names it in a warning, so its evidence is not read as the show.</summary>
@@ -170,8 +170,8 @@ public sealed class SlidesConvertCliTests : IDisposable
         Run("slides", "create", "marked.pptx", "--from-markdown", "one.md", "--license-mode", "evaluation");
         Run("slides", "edit", "marked.pptx", "--in-place", "--ops", """[{"op":"insert_slide"}]""");
 
-        Assert.Contains("EVALUATION_INPUT_MARKED", Codes(Run("slides", "convert", "marked.pptx", "--slides", "1", "--out", "first.pdf")));
-        Assert.DoesNotContain("EVALUATION_INPUT_MARKED", Codes(Run("slides", "convert", "marked.pptx", "--slides", "2", "--out", "second.pdf")));
+        Assert.Contains("EVALUATION_INPUT_MARKED", ResultWarnings.Codes(Run("slides", "convert", "marked.pptx", "--slides", "1", "--out", "first.pdf")));
+        Assert.DoesNotContain("EVALUATION_INPUT_MARKED", ResultWarnings.Codes(Run("slides", "convert", "marked.pptx", "--slides", "2", "--out", "second.pdf")));
     }
 
     /// <summary>
@@ -348,7 +348,4 @@ public sealed class SlidesConvertCliTests : IDisposable
         Assert.True(result.ExitCode == 0, result.StdErr);
         return JsonNode.Parse(result.StdOut)!;
     }
-
-    private static string[] Codes(JsonNode result) =>
-        [.. (result["warnings"] as JsonArray ?? []).Select(static warning => warning!["code"]!.GetValue<string>())];
 }

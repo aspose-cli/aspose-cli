@@ -17,12 +17,12 @@ public sealed class CellsFontDirectoryTests
         string input = CreateWorkbook(fixture, fixture.Temp.File("fixture.xlsx"));
         IFontEnvironment environment = fixture.Fonts;
 
-        Assert.False(FixtureAvailable(environment, input));
+        Assert.False(FontFixtures.Available(environment, input));
         using (environment.UseFonts(FontSearchProfile.Explicit([fonts])))
         {
-            Assert.True(FixtureAvailable(environment, input));
+            Assert.True(FontFixtures.Available(environment, input));
         }
-        Assert.False(FixtureAvailable(environment, input));
+        Assert.False(FontFixtures.Available(environment, input));
     }
 
     [Category(TestCategory.Slow)]
@@ -47,11 +47,6 @@ public sealed class CellsFontDirectoryTests
         FontDirectoryContract.VerifyPdfOutput(
             workspace, "convert", output => ["cells", "convert", "fixture.xlsx", "--to", "pdf", "--out", output]);
     }
-
-    private static bool FixtureAvailable(IFontEnvironment environment, string input) =>
-        environment.CheckFonts(input, new FontCheckRequest()).Fonts
-            .Single(static font => font.Name == FontFixtures.UniqueFamily)
-            .Available;
 
     private static string CreateWorkbook(CellsFixture fixture, string path)
     {

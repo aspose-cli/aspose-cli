@@ -22,9 +22,9 @@ public sealed partial class RenderDpiContractTests : IDisposable
         File.WriteAllText(_workspace.File("table.csv"), "a,b\n1,2\n");
         File.WriteAllText(_workspace.File("text.txt"), "Dpi range.\n");
         File.WriteAllText(_workspace.File("outline.md"), "# Dpi range\n");
-        Succeeds(_workspace.Run("pdf", "create", "document.pdf", "--from-text", "text.txt", "--output-format", "json"));
-        Succeeds(_workspace.Run("words", "create", "document.docx", "--from-markdown", "outline.md", "--output-format", "json"));
-        Succeeds(_workspace.Run("slides", "create", "deck.pptx", "--output-format", "json"));
+        _workspace.Run("pdf", "create", "document.pdf", "--from-text", "text.txt", "--output-format", "json").Succeeded();
+        _workspace.Run("words", "create", "document.docx", "--from-markdown", "outline.md", "--output-format", "json").Succeeded();
+        _workspace.Run("slides", "create", "deck.pptx", "--output-format", "json").Succeeded();
         var inputs = new Dictionary<string, string>(StringComparer.Ordinal)
         {
             ["cells"] = "table.csv",
@@ -34,7 +34,7 @@ public sealed partial class RenderDpiContractTests : IDisposable
         };
 
         CliResult capabilities = _workspace.Run("capabilities", "--output-format", "json");
-        Succeeds(capabilities);
+        capabilities.Succeeded();
         var problems = new List<string>();
         foreach ((string product, string input) in inputs)
         {
@@ -103,8 +103,6 @@ public sealed partial class RenderDpiContractTests : IDisposable
     }
 
     private static string Text(int value) => value.ToString(System.Globalization.CultureInfo.InvariantCulture);
-
-    private static void Succeeds(CliResult result) => Assert.True(result.ExitCode == 0, result.StdErr);
 
     [GeneratedRegex(@"Range: (?<min>\d+)-(?<max>\d+)\.")]
     private static partial Regex StatedRange();

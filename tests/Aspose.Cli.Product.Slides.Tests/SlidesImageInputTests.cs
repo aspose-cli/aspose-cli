@@ -31,7 +31,7 @@ public sealed class SlidesImageInputTests
             Output = TestOutput.At(output),
         }));
 
-        AssertInvalidOperation(error, 1, "insert_image", picture);
+        OperationErrors.AssertInvalid(error, 1, "insert_image", picture);
         Assert.False(File.Exists(output));
     }
 
@@ -52,7 +52,7 @@ public sealed class SlidesImageInputTests
             Output = TestOutput.At(output),
         }));
 
-        AssertInvalidOperation(error, 0, "set_background", picture);
+        OperationErrors.AssertInvalid(error, 0, "set_background", picture);
         Assert.False(File.Exists(output));
     }
 
@@ -104,13 +104,5 @@ public sealed class SlidesImageInputTests
         }
 
         return compressed.ToArray();
-    }
-
-    private static void AssertInvalidOperation(CliException error, int index, string op, string image)
-    {
-        Assert.Equal(ErrorCodes.OpsInvalid, error.Code);
-        Assert.Equal($"op-{index + 1:D4}", error.Details!["id"]!.GetValue<string>());
-        Assert.Equal(op, error.Details["op"]!.GetValue<string>());
-        Assert.Contains(image, error.Message, StringComparison.Ordinal);
     }
 }

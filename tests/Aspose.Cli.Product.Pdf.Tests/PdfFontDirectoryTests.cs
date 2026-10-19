@@ -16,14 +16,15 @@ public sealed class PdfFontDirectoryTests
         string fonts = fixture.File("fonts");
         string font = FontFixtures.WriteUniqueFont(fonts);
         string input = CreateDocument(fixture, fixture.File("fixture.pdf"), font);
+        Func<string, bool> isFixture = static name => name.StartsWith("AsposeCLIFixtureSans", StringComparison.Ordinal);
         var environment = new PdfFontEnvironment(fixture.Outputs(ProductTestBudgets.Start<PdfModule>().Writer), ProductTestBudgets.Create<PdfModule>());
 
-        Assert.False(FixtureAvailable(environment, input));
+        Assert.False(FontFixtures.Available(environment, input, isFixture));
         using (environment.UseFonts(FontSearchProfile.Explicit([fonts])))
         {
-            Assert.True(FixtureAvailable(environment, input));
+            Assert.True(FontFixtures.Available(environment, input, isFixture));
         }
-        Assert.False(FixtureAvailable(environment, input));
+        Assert.False(FontFixtures.Available(environment, input, isFixture));
     }
 
     [Category(TestCategory.Slow)]
@@ -76,11 +77,6 @@ public sealed class PdfFontDirectoryTests
         FontDirectoryContract.VerifyPdfOutput(
             workspace, "create", output => ["pdf", "create", output, "--from-html", "brand.html"]);
     }
-
-    private static bool FixtureAvailable(IFontEnvironment environment, string input) =>
-        environment.CheckFonts(input, new FontCheckRequest()).Fonts
-            .Single(static font => font.Name.StartsWith("AsposeCLIFixtureSans", StringComparison.Ordinal))
-            .Available;
 
     /// <summary>A page whose text uses the fixture font without embedding it.</summary>
     private static string CreateDocument(PdfEngineFixture fixture, string path, string font)

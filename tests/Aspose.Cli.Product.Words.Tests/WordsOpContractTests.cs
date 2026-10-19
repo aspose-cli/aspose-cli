@@ -1,7 +1,5 @@
-using System.Text.Json;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Extensibility;
-using Json.Schema;
 using Xunit;
 
 namespace Aspose.Cli.Product.Words.Tests;
@@ -9,10 +7,6 @@ namespace Aspose.Cli.Product.Words.Tests;
 /// <summary>The Words ops schema and the parser give the same answer for block addresses and operation rules.</summary>
 public sealed class WordsOpContractTests
 {
-    private static readonly Lazy<JsonSchema> Schema = new(static () => JsonSchema.FromText(
-        ProductCatalog.Build([new WordsModule()]).Resources.Read("v2/words/ops"),
-        SchemaTestRegistry.CreateOptions()));
-
     [Theory]
     [InlineData("""{"op":"delete_blocks","target":{"blocks":"0"}}""")]
     [InlineData("""{"op":"set_text","target":{"block":1,"find":"Intro"},"text":"a"}""")]
@@ -48,7 +42,7 @@ public sealed class WordsOpContractTests
         CliException error = Assert.Throws<CliException>(() => Parse(batch));
 
         Assert.Equal(ErrorCodes.OpsInvalid, error.Code);
-        Assert.False(IsSchemaValid(batch), "The schema accepted an operation the parser rejects.");
+        Assert.False(OpsSchema<WordsModule>.Accepts(batch), "The schema accepted an operation the parser rejects.");
     }
 
     [Theory]
@@ -77,7 +71,7 @@ public sealed class WordsOpContractTests
 
         _ = Parse(batch);
 
-        Assert.True(IsSchemaValid(batch), "The schema rejected an operation the parser accepts.");
+        Assert.True(OpsSchema<WordsModule>.Accepts(batch), "The schema rejected an operation the parser accepts.");
     }
 
     [Theory]
@@ -121,12 +115,6 @@ public sealed class WordsOpContractTests
         Assert.Equal(ErrorCodes.OpsInvalid, error.Code);
         Assert.Equal(closest, error.Details!["suggestions"]![0]!.GetValue<string>());
         Assert.Contains("'color'", error.Hint, StringComparison.Ordinal);
-    }
-
-    private static bool IsSchemaValid(string json)
-    {
-        using JsonDocument document = JsonDocument.Parse(json);
-        return Schema.Value.Evaluate(document.RootElement).IsValid;
     }
 
     /// <summary>

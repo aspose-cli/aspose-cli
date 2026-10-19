@@ -34,19 +34,19 @@ public sealed class PdfResultWorkflowTests : IDisposable
             document.Save(_workspace.File("report.pdf"));
         }
 
-        JsonNode render = Succeeds(_workspace.Run(
+        JsonNode render = _workspace.Run(
             "pdf", "render", "report.pdf", "--pages", "1", "--dpi", "72", "--grid", "50",
-            "--out", "page.png", "--output-format", "json"));
+            "--out", "page.png", "--output-format", "json").Json();
         Assert.Equal(72, render["dpi"]!.GetValue<int>());
         Assert.Equal(50, render["grid"]!["spacing"]!.GetValue<int>());
         Assert.Equal(1, Assert.Single(render["outputs"]!.AsArray())!["page"]!.GetValue<int>());
 
-        JsonNode split = Succeeds(_workspace.Run(
-            "pdf", "split", "report.pdf", "--by", "pages", "--out-dir", "parts", "--output-format", "json"));
+        JsonNode split = _workspace.Run(
+            "pdf", "split", "report.pdf", "--by", "pages", "--out-dir", "parts", "--output-format", "json").Json();
         Assert.Equal(["1", "2"], split["outputs"]!.AsArray().Select(static part => part!["pages"]!.GetValue<string>()));
 
-        JsonNode extract = Succeeds(_workspace.Run(
-            "pdf", "extract", "report.pdf", "--what", "text", "--out-dir", "text", "--output-format", "json"));
+        JsonNode extract = _workspace.Run(
+            "pdf", "extract", "report.pdf", "--what", "text", "--out-dir", "text", "--output-format", "json").Json();
         Assert.Equal("text", extract["what"]!.GetValue<string>());
         Assert.NotEmpty(extract["outputs"]!.AsArray());
 
@@ -59,20 +59,14 @@ public sealed class PdfResultWorkflowTests : IDisposable
         Assert.Equal("pdfa-1b", validate["profile"]!.GetValue<string>());
 
         WriteCertificate(_workspace.File("signer.pfx"));
-        JsonNode sign = Succeeds(_workspace.RunWithEnv(
+        JsonNode sign = _workspace.RunWithEnv(
             new Dictionary<string, string?>(StringComparer.Ordinal) { [CertificatePasswordVariable] = CertificatePassword },
             "pdf", "sign", "report.pdf", "--certificate", "signer.pfx",
             "--certificate-password-env", CertificatePasswordVariable,
-            "--visible", "--page", "2", "--rect", "36,48,180,60", "--out", "signed.pdf", "--output-format", "json"));
+            "--visible", "--page", "2", "--rect", "36,48,180,60", "--out", "signed.pdf", "--output-format", "json").Json();
         Assert.True(sign["signature"]!["signed"]!.GetValue<bool>());
         Assert.Equal(2, sign["page"]!.GetValue<int>());
         Assert.NotNull(sign["rect"]);
-    }
-
-    private static JsonNode Succeeds(CliResult result)
-    {
-        Assert.True(result.ExitCode == 0, result.StdErr);
-        return result.Json();
     }
 
     private static void WriteCertificate(string path)

@@ -18,12 +18,12 @@ public sealed class SlidesFontDirectoryTests
         string input = CreatePresentation(fixture, fixture.File("fixture.pptx"));
         var environment = new SlidesFontEnvironment(fixture.Outputs(ProductTestBudgets.Start<SlidesModule>().Writer), ProductTestBudgets.Create<SlidesModule>());
 
-        Assert.False(FixtureAvailable(environment, input));
+        Assert.False(FontFixtures.Available(environment, input));
         using (environment.UseFonts(FontSearchProfile.Explicit([fonts])))
         {
-            Assert.True(FixtureAvailable(environment, input));
+            Assert.True(FontFixtures.Available(environment, input));
         }
-        Assert.False(FixtureAvailable(environment, input));
+        Assert.False(FontFixtures.Available(environment, input));
     }
 
     [Category(TestCategory.Slow)]
@@ -48,11 +48,6 @@ public sealed class SlidesFontDirectoryTests
         FontDirectoryContract.VerifyPdfOutput(
             workspace, "convert", output => ["slides", "convert", "fixture.pptx", "--to", "pdf", "--out", output]);
     }
-
-    private static bool FixtureAvailable(IFontEnvironment environment, string input) =>
-        environment.CheckFonts(input, new FontCheckRequest()).Fonts
-            .Single(static font => font.Name == FontFixtures.UniqueFamily)
-            .Available;
 
     private static string CreatePresentation(SlidesEngineFixture fixture, string path)
     {

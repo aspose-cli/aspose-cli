@@ -1,5 +1,6 @@
 using System.Buffers.Binary;
 using System.Text;
+using Aspose.Cli.Sdk.Rendering;
 
 namespace Aspose.Cli.TestKit;
 
@@ -21,6 +22,18 @@ public static class FontFixtures
         string path = Path.Combine(directory, "aspose-cli-fixture-sans.ttf");
         File.WriteAllBytes(path, Rename(File.ReadAllBytes(SystemTrueTypeFont()), UniqueFamily));
         return path;
+    }
+
+    /// <summary>
+    /// Whether the font check of <paramref name="input"/> reports the fixture font, the one font
+    /// it names <see cref="UniqueFamily"/> or that <paramref name="isFixture"/> recognizes by its
+    /// name, as available.
+    /// </summary>
+    public static bool Available(IFontEnvironment environment, string input, Func<string, bool>? isFixture = null)
+    {
+        ArgumentNullException.ThrowIfNull(environment);
+        Func<string, bool> named = isFixture ?? (static name => name == UniqueFamily);
+        return environment.CheckFonts(input, new FontCheckRequest()).Fonts.Single(font => named(font.Name)).Available;
     }
 
     private static string SystemTrueTypeFont()

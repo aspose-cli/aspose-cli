@@ -17,12 +17,12 @@ public sealed class WordsFontDirectoryTests
         string input = CreateDocument(fixture.Temp.File("fixture.docx"));
         WordsFontEnvironment environment = fixture.Fonts;
 
-        Assert.False(FixtureAvailable(environment, input));
+        Assert.False(FontFixtures.Available(environment, input));
         using (environment.UseFonts(FontSearchProfile.Explicit([fonts])))
         {
-            Assert.True(FixtureAvailable(environment, input));
+            Assert.True(FontFixtures.Available(environment, input));
         }
-        Assert.False(FixtureAvailable(environment, input));
+        Assert.False(FontFixtures.Available(environment, input));
     }
 
     [Fact]
@@ -93,11 +93,6 @@ public sealed class WordsFontDirectoryTests
             File.ReadAllBytes(workspace.File("ambient.png")),
             File.ReadAllBytes(workspace.File("fonts.png")));
     }
-
-    private static bool FixtureAvailable(IFontEnvironment environment, string input) =>
-        environment.CheckFonts(input, new FontCheckRequest()).Fonts
-            .Single(static font => font.Name == FontFixtures.UniqueFamily)
-            .Available;
 
     private static string CreateDocument(string path)
     {

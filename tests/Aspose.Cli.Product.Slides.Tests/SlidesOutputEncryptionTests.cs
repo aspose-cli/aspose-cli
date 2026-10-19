@@ -34,10 +34,10 @@ public sealed class SlidesOutputEncryptionTests : IDisposable
     [Fact]
     public void ConvertToAFormatWithoutPasswords_WritesAnOpenFileAndDisclosesIt()
     {
-        JsonNode result = Succeeds(Run("slides", "convert", "locked.pptx", "--password-env", "SLIDES_PASSWORD", "--to", "odp", "--out", "locked.odp"));
+        JsonNode result = Run("slides", "convert", "locked.pptx", "--password-env", "SLIDES_PASSWORD", "--to", "odp", "--out", "locked.odp").Json();
 
-        Assert.Contains("ENCRYPTION_REMOVED", Codes(result));
-        JsonNode reopened = Succeeds(Run("slides", "inspect", "locked.odp"));
+        Assert.Contains("ENCRYPTION_REMOVED", ResultWarnings.Codes(result));
+        JsonNode reopened = Run("slides", "inspect", "locked.odp").Json();
         Assert.False(reopened["input"]!["encrypted"]!.GetValue<bool>());
     }
 
@@ -45,37 +45,37 @@ public sealed class SlidesOutputEncryptionTests : IDisposable
     [Fact]
     public void ConvertSelectedSlidesToAFormatWithoutPasswords_WritesAnOpenFileAndDisclosesIt()
     {
-        JsonNode result = Succeeds(Run(
-            "slides", "convert", "locked.pptx", "--password-env", "SLIDES_PASSWORD", "--to", "odp", "--slides", "1", "--out", "selected.odp"));
+        JsonNode result = Run(
+            "slides", "convert", "locked.pptx", "--password-env", "SLIDES_PASSWORD", "--to", "odp", "--slides", "1", "--out", "selected.odp").Json();
 
-        Assert.Contains("ENCRYPTION_REMOVED", Codes(result));
-        Assert.False(Succeeds(Run("slides", "inspect", "selected.odp"))["input"]!["encrypted"]!.GetValue<bool>());
+        Assert.Contains("ENCRYPTION_REMOVED", ResultWarnings.Codes(result));
+        Assert.False(Run("slides", "inspect", "selected.odp").Json()["input"]!["encrypted"]!.GetValue<bool>());
     }
 
     [Category(TestCategory.Slow)]
     [Fact]
     public void ConvertToAFormatWithPasswords_WithoutEncrypt_KeepsTheSourcePassword()
     {
-        JsonNode result = Succeeds(Run("slides", "convert", "locked.pptx", "--password-env", "SLIDES_PASSWORD", "--to", "pptx", "--out", "copy.pptx"));
+        JsonNode result = Run("slides", "convert", "locked.pptx", "--password-env", "SLIDES_PASSWORD", "--to", "pptx", "--out", "copy.pptx").Json();
 
         Assert.True(result["outputs"]![0]!["encrypted"]!.GetValue<bool>());
-        Assert.DoesNotContain("ENCRYPTION_REMOVED", Codes(result));
+        Assert.DoesNotContain("ENCRYPTION_REMOVED", ResultWarnings.Codes(result));
         Assert.Equal("PASSWORD_REQUIRED", JsonNode.Parse(Run("slides", "inspect", "copy.pptx").StdErr)!["error"]!["code"]!.GetValue<string>());
-        Assert.True(Succeeds(Run("slides", "inspect", "copy.pptx", "--password-env", "SLIDES_PASSWORD"))["input"]!["encrypted"]!.GetValue<bool>());
+        Assert.True(Run("slides", "inspect", "copy.pptx", "--password-env", "SLIDES_PASSWORD").Json()["input"]!["encrypted"]!.GetValue<bool>());
     }
 
     [Category(TestCategory.Slow)]
     [Fact]
     public void ConvertToAFormatWithPasswords_WithEncrypt_EncryptsWithTheNewPassword()
     {
-        JsonNode result = Succeeds(Run(
+        JsonNode result = Run(
             "slides", "convert", "locked.pptx", "--password-env", "SLIDES_PASSWORD", "--to", "pptx", "--out", "copy.pptx",
-            "--encrypt-env", "SLIDES_NEW_PASSWORD"));
+            "--encrypt-env", "SLIDES_NEW_PASSWORD").Json();
 
         Assert.True(result["outputs"]![0]!["encrypted"]!.GetValue<bool>());
-        Assert.DoesNotContain("ENCRYPTION_REMOVED", Codes(result));
+        Assert.DoesNotContain("ENCRYPTION_REMOVED", ResultWarnings.Codes(result));
         Assert.Equal("PASSWORD_INVALID", JsonNode.Parse(Run("slides", "inspect", "copy.pptx", "--password-env", "SLIDES_PASSWORD").StdErr)!["error"]!["code"]!.GetValue<string>());
-        Assert.True(Succeeds(Run("slides", "inspect", "copy.pptx", "--password-env", "SLIDES_NEW_PASSWORD"))["input"]!["encrypted"]!.GetValue<bool>());
+        Assert.True(Run("slides", "inspect", "copy.pptx", "--password-env", "SLIDES_NEW_PASSWORD").Json()["input"]!["encrypted"]!.GetValue<bool>());
     }
 
     [Category(TestCategory.Slow)]
@@ -84,10 +84,10 @@ public sealed class SlidesOutputEncryptionTests : IDisposable
     {
         File.WriteAllText(_workspace.File("ops.json"), """{"ops":[{"op":"set_title","slide":1,"text":"Locked"}]}""");
 
-        JsonNode result = Succeeds(Run("slides", "edit", "locked.pptx", "--password-env", "SLIDES_PASSWORD", "--ops", "ops.json", "--out", "edited.pptx"));
+        JsonNode result = Run("slides", "edit", "locked.pptx", "--password-env", "SLIDES_PASSWORD", "--ops", "ops.json", "--out", "edited.pptx").Json();
 
         Assert.True(result["output"]!["encrypted"]!.GetValue<bool>());
-        Assert.DoesNotContain("ENCRYPTION_REMOVED", Codes(result));
+        Assert.DoesNotContain("ENCRYPTION_REMOVED", ResultWarnings.Codes(result));
         Assert.Equal("PASSWORD_REQUIRED", JsonNode.Parse(Run("slides", "inspect", "edited.pptx").StdErr)!["error"]!["code"]!.GetValue<string>());
     }
 
@@ -108,12 +108,12 @@ public sealed class SlidesOutputEncryptionTests : IDisposable
         File.WriteAllText(_workspace.File("ops.json"), """{"ops":[{"op":"set_title","slide":1,"text":"Locked"}]}""");
         Assert.Equal("PASSWORD_REQUIRED", JsonNode.Parse(Run("slides", "inspect", "locked.ppt").StdErr)!["error"]!["code"]!.GetValue<string>());
 
-        JsonNode result = Succeeds(Run("slides", "edit", "locked.ppt", "--password-env", "SLIDES_PASSWORD", "--ops", "ops.json", "--out", "edited.pptx"));
+        JsonNode result = Run("slides", "edit", "locked.ppt", "--password-env", "SLIDES_PASSWORD", "--ops", "ops.json", "--out", "edited.pptx").Json();
 
         Assert.True(result["output"]!["encrypted"]!.GetValue<bool>());
-        Assert.DoesNotContain("ENCRYPTION_REMOVED", Codes(result));
+        Assert.DoesNotContain("ENCRYPTION_REMOVED", ResultWarnings.Codes(result));
         Assert.Equal("PASSWORD_REQUIRED", JsonNode.Parse(Run("slides", "inspect", "edited.pptx").StdErr)!["error"]!["code"]!.GetValue<string>());
-        Assert.True(Succeeds(Run("slides", "inspect", "edited.pptx", "--password-env", "SLIDES_PASSWORD"))["input"]!["encrypted"]!.GetValue<bool>());
+        Assert.True(Run("slides", "inspect", "edited.pptx", "--password-env", "SLIDES_PASSWORD").Json()["input"]!["encrypted"]!.GetValue<bool>());
     }
 
     /// <summary>
@@ -144,27 +144,27 @@ public sealed class SlidesOutputEncryptionTests : IDisposable
     {
         File.WriteAllText(_workspace.File("ops.json"), """{"ops":[{"op":"set_title","slide":1,"text":"Relocked"}]}""");
 
-        JsonNode result = Succeeds(Run(
+        JsonNode result = Run(
             "slides", "edit", "locked.pptx", "--password-env", "SLIDES_PASSWORD", "--ops", "ops.json", "--out", "edited.pptx",
-            "--encrypt-env", "SLIDES_NEW_PASSWORD"));
+            "--encrypt-env", "SLIDES_NEW_PASSWORD").Json();
 
         Assert.True(result["output"]!["encrypted"]!.GetValue<bool>());
-        Assert.True(Succeeds(Run("slides", "inspect", "edited.pptx", "--password-env", "SLIDES_NEW_PASSWORD"))["input"]!["encrypted"]!.GetValue<bool>());
+        Assert.True(Run("slides", "inspect", "edited.pptx", "--password-env", "SLIDES_NEW_PASSWORD").Json()["input"]!["encrypted"]!.GetValue<bool>());
     }
 
     [Category(TestCategory.Slow)]
     [Fact]
     public void ImportSlides_OpensAnEncryptedSourceWithTheVariableItNames()
     {
-        Succeeds(Run("slides", "create", "base.pptx"));
+        Run("slides", "create", "base.pptx").Json();
         File.WriteAllText(_workspace.File("with.json"), """{"ops":[{"op":"import_slides","path":"locked.pptx","sourcePasswordEnv":"SLIDES_PASSWORD"}]}""");
         File.WriteAllText(_workspace.File("without.json"), """{"ops":[{"op":"import_slides","path":"locked.pptx"}]}""");
 
-        JsonNode imported = Succeeds(Run("slides", "edit", "base.pptx", "--ops", "with.json", "--out", "with.pptx"));
+        JsonNode imported = Run("slides", "edit", "base.pptx", "--ops", "with.json", "--out", "with.pptx").Json();
         CliResult refused = Run("slides", "edit", "base.pptx", "--ops", "without.json", "--out", "without.pptx");
 
         Assert.Equal(1, imported["applied"]![0]!["itemsAffected"]!.GetValue<long>());
-        Assert.Equal(2, Succeeds(Run("slides", "inspect", "with.pptx"))["presentation"]!["slideCount"]!.GetValue<int>());
+        Assert.Equal(2, Run("slides", "inspect", "with.pptx").Json()["presentation"]!["slideCount"]!.GetValue<int>());
         Assert.NotEqual(0, refused.ExitCode);
         Assert.Equal("PASSWORD_REQUIRED", JsonNode.Parse(refused.StdErr)!["error"]!["code"]!.GetValue<string>());
     }
@@ -216,9 +216,9 @@ public sealed class SlidesOutputEncryptionTests : IDisposable
     [Fact]
     public void RenderToImages_DisclosesNothing()
     {
-        JsonNode result = Succeeds(Run("slides", "render", "locked.pptx", "--password-env", "SLIDES_PASSWORD", "--to", "png", "--out", "slide.png"));
+        JsonNode result = Run("slides", "render", "locked.pptx", "--password-env", "SLIDES_PASSWORD", "--to", "png", "--out", "slide.png").Json();
 
-        Assert.DoesNotContain("ENCRYPTION_REMOVED", Codes(result));
+        Assert.DoesNotContain("ENCRYPTION_REMOVED", ResultWarnings.Codes(result));
         // Each image names its slide, and a PNG reports no encryption.
         JsonArray outputs = result["outputs"]!.AsArray();
         Assert.Equal(Enumerable.Range(1, outputs.Count), outputs.Select(static output => output!["slide"]!.GetValue<int>()));
@@ -227,13 +227,4 @@ public sealed class SlidesOutputEncryptionTests : IDisposable
 
     private CliResult Run(params string[] arguments) =>
         _workspace.RunWithEnv(Variables, [.. arguments, "--output-format", "json"]);
-
-    private static JsonNode Succeeds(CliResult result)
-    {
-        Assert.True(result.ExitCode == 0, result.StdErr + result.StdOut);
-        return JsonNode.Parse(result.StdOut)!;
-    }
-
-    private static string[] Codes(JsonNode result) =>
-        [.. result["warnings"]?.AsArray().Select(static warning => warning!["code"]!.GetValue<string>()) ?? []];
 }

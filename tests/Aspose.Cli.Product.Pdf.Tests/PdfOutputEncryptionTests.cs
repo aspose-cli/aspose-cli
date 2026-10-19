@@ -48,45 +48,45 @@ public sealed class PdfOutputEncryptionTests : IDisposable
     [Fact]
     public void EditOfOwnerOnlyInput_ReportsTheKeptEncryptionTruthfully()
     {
-        JsonNode result = Succeeds(Run("pdf", "edit", "owner-only.pdf", "--ops", Metadata, "--out", "edited.pdf"));
+        JsonNode result = Run("pdf", "edit", "owner-only.pdf", "--ops", Metadata, "--out", "edited.pdf").Json();
 
         Assert.True(Encrypted(_workspace.File("edited.pdf")));
         Assert.True(result["output"]!["encrypted"]!.GetValue<bool>());
-        Assert.DoesNotContain("ENCRYPTION_REMOVED", Codes(result));
+        Assert.DoesNotContain("ENCRYPTION_REMOVED", ResultWarnings.Codes(result));
     }
 
     [Category(TestCategory.Slow)]
     [Fact]
     public void EditThatDecrypts_DisclosesTheRemovedEncryption()
     {
-        JsonNode result = Succeeds(Run("pdf", "edit", "locked.pdf", "--password-env", "PDF_USER",
-            "--ops", """[{"op":"decrypt_document"}]""", "--out", "decrypted.pdf"));
+        JsonNode result = Run("pdf", "edit", "locked.pdf", "--password-env", "PDF_USER",
+            "--ops", """[{"op":"decrypt_document"}]""", "--out", "decrypted.pdf").Json();
 
         Assert.False(Encrypted(_workspace.File("decrypted.pdf")));
         Assert.False(result["output"]!["encrypted"]!.GetValue<bool>());
-        Assert.Contains("ENCRYPTION_REMOVED", Codes(result));
+        Assert.Contains("ENCRYPTION_REMOVED", ResultWarnings.Codes(result));
     }
 
     [Category(TestCategory.Slow)]
     [Fact]
     public void MergeOfAnEncryptedInput_DisclosesTheRemovedEncryption()
     {
-        JsonNode result = Succeeds(Run("pdf", "merge", "owner-only.pdf", "plain.pdf", "--out", "merged.pdf"));
+        JsonNode result = Run("pdf", "merge", "owner-only.pdf", "plain.pdf", "--out", "merged.pdf").Json();
 
         Assert.False(Encrypted(_workspace.File("merged.pdf")));
         Assert.False(result["output"]!["encrypted"]!.GetValue<bool>());
-        Assert.Contains("ENCRYPTION_REMOVED", Codes(result));
+        Assert.Contains("ENCRYPTION_REMOVED", ResultWarnings.Codes(result));
     }
 
     [Category(TestCategory.Slow)]
     [Fact]
     public void SplitOfAnOwnerOnlyInput_DisclosesTheRemovedEncryption()
     {
-        JsonNode result = Succeeds(Run("pdf", "split", "owner-only.pdf", "--by", "pages", "--every", "1", "--out-dir", "parts"));
+        JsonNode result = Run("pdf", "split", "owner-only.pdf", "--by", "pages", "--every", "1", "--out-dir", "parts").Json();
 
         Assert.All(Directory.GetFiles(_workspace.File("parts")), part => Assert.False(Encrypted(part)));
         Assert.Equal([false, false], PartsEncrypted(result));
-        Assert.Contains("ENCRYPTION_REMOVED", Codes(result));
+        Assert.Contains("ENCRYPTION_REMOVED", ResultWarnings.Codes(result));
     }
 
     /// <summary>
@@ -113,7 +113,7 @@ public sealed class PdfOutputEncryptionTests : IDisposable
     [Fact]
     public void SplitOfAPlainInput_ReportsEveryPartUnencrypted()
     {
-        JsonNode result = Succeeds(Run("pdf", "split", "plain.pdf", "--by", "pages", "--every", "1", "--out-dir", "parts"));
+        JsonNode result = Run("pdf", "split", "plain.pdf", "--by", "pages", "--every", "1", "--out-dir", "parts").Json();
 
         Assert.Equal([false, false], PartsEncrypted(result));
     }
@@ -124,9 +124,9 @@ public sealed class PdfOutputEncryptionTests : IDisposable
     {
         JsonNode merged = null!, split = null!;
         Parallel.Invoke(
-            () => merged = Succeeds(Run("pdf", "merge", "locked.pdf", "plain.pdf", "--password-env", "PDF_USER", "--out", "merged.pdf")),
-            () => split = Succeeds(Run("pdf", "split", "locked.pdf", "--password-env", "PDF_USER",
-                "--by", "pages", "--every", "1", "--out-dir", "parts")));
+            () => merged = Run("pdf", "merge", "locked.pdf", "plain.pdf", "--password-env", "PDF_USER", "--out", "merged.pdf").Json(),
+            () => split = Run("pdf", "split", "locked.pdf", "--password-env", "PDF_USER",
+                "--by", "pages", "--every", "1", "--out-dir", "parts").Json());
 
         Assert.True(merged["output"]!["encrypted"]!.GetValue<bool>());
         Assert.Equal([true, true], PartsEncrypted(split));
@@ -140,8 +140,8 @@ public sealed class PdfOutputEncryptionTests : IDisposable
         Assert.All(written, path => Assert.Throws<InvalidPasswordException>(() => new Document(path, OwnerPassword).Dispose()));
         foreach (JsonNode result in new[] { merged, split })
         {
-            Assert.DoesNotContain("ENCRYPTION_REMOVED", Codes(result));
-            Assert.Contains("PROTECTION_NOT_ENFORCED", Codes(result));
+            Assert.DoesNotContain("ENCRYPTION_REMOVED", ResultWarnings.Codes(result));
+            Assert.Contains("PROTECTION_NOT_ENFORCED", ResultWarnings.Codes(result));
         }
     }
 
@@ -151,9 +151,9 @@ public sealed class PdfOutputEncryptionTests : IDisposable
     {
         JsonNode merged = null!, split = null!;
         Parallel.Invoke(
-            () => merged = Succeeds(Run("pdf", "merge", "locked.pdf", "plain.pdf", "--password-env", "PDF_OWNER", "--out", "merged.pdf")),
-            () => split = Succeeds(Run("pdf", "split", "locked.pdf", "--password-env", "PDF_OWNER",
-                "--by", "pages", "--every", "1", "--out-dir", "parts")));
+            () => merged = Run("pdf", "merge", "locked.pdf", "plain.pdf", "--password-env", "PDF_OWNER", "--out", "merged.pdf").Json(),
+            () => split = Run("pdf", "split", "locked.pdf", "--password-env", "PDF_OWNER",
+                "--by", "pages", "--every", "1", "--out-dir", "parts").Json());
 
         string[] written = [_workspace.File("merged.pdf"), .. Directory.GetFiles(_workspace.File("parts"))];
         Assert.All(written, path => OpensOnlyWith(path, OwnerPassword));
@@ -176,14 +176,14 @@ public sealed class PdfOutputEncryptionTests : IDisposable
     {
         JsonNode merged = null!;
         Parallel.Invoke(
-            () => Succeeds(Run("pdf", "edit", "plain.pdf", "--ops", Metadata, "--out", "same.pdf", "--encrypt-env", "PDF_NEW")),
-            () => merged = Succeeds(Run("pdf", "merge", "locked.pdf", "plain.pdf", "--password-env", "PDF_OWNER", "--out", "merged.pdf")));
+            () => Run("pdf", "edit", "plain.pdf", "--ops", Metadata, "--out", "same.pdf", "--encrypt-env", "PDF_NEW").Json(),
+            () => merged = Run("pdf", "merge", "locked.pdf", "plain.pdf", "--password-env", "PDF_OWNER", "--out", "merged.pdf").Json());
         Warning(merged, "PROTECTION_NOT_ENFORCED", "which is also its owner password");
-        JsonNode remerged = Succeeds(Run("pdf", "merge", "same.pdf", "plain.pdf", "--password-env", "PDF_NEW", "--out", "remerged.pdf"));
+        JsonNode remerged = Run("pdf", "merge", "same.pdf", "plain.pdf", "--password-env", "PDF_NEW", "--out", "remerged.pdf").Json();
 
         foreach ((string file, string env) in new[] { ("same.pdf", "PDF_NEW"), ("merged.pdf", "PDF_OWNER"), ("remerged.pdf", "PDF_NEW") })
         {
-            JsonNode info = Succeeds(Run("pdf", "inspect", file, "--password-env", env, "--detail", "permissions"));
+            JsonNode info = Run("pdf", "inspect", file, "--password-env", env, "--detail", "permissions").Json();
             Assert.True(info["permissions"]!["hasOpenPassword"]!.GetValue<bool>(), file);
             Assert.True(info["permissions"]!["hasOwnerPassword"]!.GetValue<bool>(), file);
             Assert.True(info["permissions"]!["ownerAccess"]!.GetValue<bool>(), file);
@@ -192,8 +192,8 @@ public sealed class PdfOutputEncryptionTests : IDisposable
 
         // The input's one password opens the output and grants what it granted: nothing is lost.
         OpensOnlyWithTheNewPassword(_workspace.File("remerged.pdf"));
-        Assert.DoesNotContain("PROTECTION_NOT_ENFORCED", Codes(remerged));
-        Assert.DoesNotContain("ENCRYPTION_REMOVED", Codes(remerged));
+        Assert.DoesNotContain("PROTECTION_NOT_ENFORCED", ResultWarnings.Codes(remerged));
+        Assert.DoesNotContain("ENCRYPTION_REMOVED", ResultWarnings.Codes(remerged));
     }
 
     [Category(TestCategory.Slow)]
@@ -210,12 +210,12 @@ public sealed class PdfOutputEncryptionTests : IDisposable
         Encrypt("form.pdf", "locked-form.pdf", user: UserPassword);
         JsonNode[] results = new JsonNode[4];
         Parallel.Invoke(
-            () => results[0] = Succeeds(Run("pdf", "extract", "locked-form.pdf", "--password-env", "PDF_USER", "--what", "forms", "--form-format", "json", "--out-dir", "fields")),
-            () => results[1] = Succeeds(Run("pdf", "extract", "locked.pdf", "--password-env", "PDF_USER", "--what", "text", "--out-dir", "text")),
-            () => results[2] = Succeeds(Run("pdf", "convert", "locked.pdf", "--password-env", "PDF_USER", "--to", "tiff", "--out", "pages.tiff")),
-            () => results[3] = Succeeds(Run("pdf", "render", "locked.pdf", "--password-env", "PDF_USER", "--out", "render.png")));
+            () => results[0] = Run("pdf", "extract", "locked-form.pdf", "--password-env", "PDF_USER", "--what", "forms", "--form-format", "json", "--out-dir", "fields").Json(),
+            () => results[1] = Run("pdf", "extract", "locked.pdf", "--password-env", "PDF_USER", "--what", "text", "--out-dir", "text").Json(),
+            () => results[2] = Run("pdf", "convert", "locked.pdf", "--password-env", "PDF_USER", "--to", "tiff", "--out", "pages.tiff").Json(),
+            () => results[3] = Run("pdf", "render", "locked.pdf", "--password-env", "PDF_USER", "--out", "render.png").Json());
 
-        Assert.All(results, result => Assert.DoesNotContain("ENCRYPTION_REMOVED", Codes(result)));
+        Assert.All(results, result => Assert.DoesNotContain("ENCRYPTION_REMOVED", ResultWarnings.Codes(result)));
         // Images, text and form data cannot carry a password, so their files report no encryption.
         Assert.All(results, result => Assert.All(result["outputs"]!.AsArray(), output => Assert.Null(output!["encrypted"])));
     }
@@ -224,19 +224,19 @@ public sealed class PdfOutputEncryptionTests : IDisposable
     [Fact]
     public void TextConvertedFromAnEncryptedInput_DisclosesTheRemovedEncryption()
     {
-        JsonNode result = Succeeds(Run("pdf", "convert", "locked.pdf", "--password-env", "PDF_USER", "--to", "txt", "--out", "pages.txt"));
+        JsonNode result = Run("pdf", "convert", "locked.pdf", "--password-env", "PDF_USER", "--to", "txt", "--out", "pages.txt").Json();
 
-        Assert.Contains("ENCRYPTION_REMOVED", Codes(result));
+        Assert.Contains("ENCRYPTION_REMOVED", ResultWarnings.Codes(result));
     }
 
     [Category(TestCategory.Slow)]
     [Fact]
     public void PlainInput_DisclosesNothing()
     {
-        JsonNode result = Succeeds(Run("pdf", "merge", "plain.pdf", "plain.pdf", "--out", "merged.pdf"));
+        JsonNode result = Run("pdf", "merge", "plain.pdf", "plain.pdf", "--out", "merged.pdf").Json();
 
         Assert.False(result["output"]!["encrypted"]!.GetValue<bool>());
-        Assert.DoesNotContain("ENCRYPTION_REMOVED", Codes(result));
+        Assert.DoesNotContain("ENCRYPTION_REMOVED", ResultWarnings.Codes(result));
     }
 
     [Category(TestCategory.Slow)]
@@ -247,10 +247,10 @@ public sealed class PdfOutputEncryptionTests : IDisposable
         // The four writes are independent, so they run at once.
         JsonNode[] results = new JsonNode[4];
         Parallel.Invoke(
-            () => results[0] = Succeeds(Run("pdf", "create", "created.pdf", "--from-text", "text.txt", "--encrypt-env", "PDF_NEW")),
-            () => results[1] = Succeeds(Run("pdf", "edit", "owner-only.pdf", "--ops", Metadata, "--out", "edited.pdf", "--encrypt-env", "PDF_NEW")),
-            () => results[2] = Succeeds(Run("pdf", "merge", "locked.pdf", "plain.pdf", "--password-env", "PDF_USER", "--out", "merged.pdf", "--encrypt-env", "PDF_NEW")),
-            () => results[3] = Succeeds(Run("pdf", "split", "plain.pdf", "--by", "pages", "--every", "1", "--out-dir", "parts", "--encrypt-env", "PDF_NEW")));
+            () => results[0] = Run("pdf", "create", "created.pdf", "--from-text", "text.txt", "--encrypt-env", "PDF_NEW").Json(),
+            () => results[1] = Run("pdf", "edit", "owner-only.pdf", "--ops", Metadata, "--out", "edited.pdf", "--encrypt-env", "PDF_NEW").Json(),
+            () => results[2] = Run("pdf", "merge", "locked.pdf", "plain.pdf", "--password-env", "PDF_USER", "--out", "merged.pdf", "--encrypt-env", "PDF_NEW").Json(),
+            () => results[3] = Run("pdf", "split", "plain.pdf", "--by", "pages", "--every", "1", "--out-dir", "parts", "--encrypt-env", "PDF_NEW").Json());
 
         string[] written =
         [
@@ -261,7 +261,7 @@ public sealed class PdfOutputEncryptionTests : IDisposable
         Assert.All(written, OpensOnlyWithTheNewPassword);
         Assert.All(results[..3], result => Assert.True(result["output"]!["encrypted"]!.GetValue<bool>()));
         Assert.Equal([true, true], PartsEncrypted(results[3]));
-        Assert.All(results, result => Assert.DoesNotContain("ENCRYPTION_REMOVED", Codes(result)));
+        Assert.All(results, result => Assert.DoesNotContain("ENCRYPTION_REMOVED", ResultWarnings.Codes(result)));
         Assert.All(results, result => Assert.DoesNotContain(NewPassword, result.ToJsonString(), StringComparison.Ordinal));
     }
 
@@ -269,8 +269,8 @@ public sealed class PdfOutputEncryptionTests : IDisposable
     [Fact]
     public void EncryptOnAnEncryptedInput_KeepsDocumentInformationBeyondLatin1()
     {
-        JsonNode result = Succeeds(Run("pdf", "edit", "owner-only.pdf", "--ops", """[{"op":"set_properties","title":"采购申请"}]""",
-            "--out", "edited.pdf", "--encrypt-env", "PDF_NEW"));
+        JsonNode result = Run("pdf", "edit", "owner-only.pdf", "--ops", """[{"op":"set_properties","title":"采购申请"}]""",
+            "--out", "edited.pdf", "--encrypt-env", "PDF_NEW").Json();
 
         Assert.True(result["output"]!["encrypted"]!.GetValue<bool>());
         using var document = new Document(_workspace.File("edited.pdf"), NewPassword);
@@ -284,7 +284,7 @@ public sealed class PdfOutputEncryptionTests : IDisposable
         CliResult run = _workspace.RunWithInput(NewPassword + "\n",
             "pdf", "merge", "plain.pdf", "plain.pdf", "--out", "merged.pdf", "--encrypt-stdin", "--output-format", "json");
 
-        Assert.True(Succeeds(run)["output"]!["encrypted"]!.GetValue<bool>());
+        Assert.True(run.Json()["output"]!["encrypted"]!.GetValue<bool>());
         OpensOnlyWithTheNewPassword(_workspace.File("merged.pdf"));
     }
 
@@ -334,16 +334,7 @@ public sealed class PdfOutputEncryptionTests : IDisposable
         Assert.Contains(result["warnings"]!.AsArray(), warning => warning!["code"]!.GetValue<string>() == code
             && warning["message"]!.GetValue<string>().Contains(text, StringComparison.Ordinal));
 
-    private static JsonNode Succeeds(CliResult result)
-    {
-        Assert.True(result.ExitCode == 0, result.StdErr + result.StdOut);
-        return JsonNode.Parse(result.StdOut)!;
-    }
-
     /// <summary>The <c>encrypted</c> of each <c>outputs[]</c> item, which a PDF part always reports.</summary>
     private static bool[] PartsEncrypted(JsonNode result) =>
         [.. result["outputs"]!.AsArray().Select(static output => output!["encrypted"]!.GetValue<bool>())];
-
-    private static string[] Codes(JsonNode result) =>
-        [.. result["warnings"]?.AsArray().Select(static warning => warning!["code"]!.GetValue<string>()) ?? []];
 }
