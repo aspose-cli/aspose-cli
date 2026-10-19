@@ -60,7 +60,7 @@ internal static class PdfCreate
         return new PdfCreateResult
         {
             Output = FileObjects.Output(written, request.Output.Format, encrypted),
-            Inputs = CreationInputs(source),
+            Inputs = CreationInputs(source, imageContents),
             License = EnvelopeParts.License(state),
             Warnings = warnings.Count == 0 ? null : warnings,
         };
@@ -398,12 +398,13 @@ internal static class PdfCreate
 
     /// <summary>
     /// The source files, each with the option that named it and the id of the format it was
-    /// read as: an image by its file, the others by the option that named them.
+    /// read as: an image by its content (<see cref="ImageInput.FormatOf"/>), whatever its name,
+    /// the others by the option that named them.
     /// </summary>
-    private static IReadOnlyList<SourceInput> CreationInputs(PdfCreateSource source) => source switch
+    private static IReadOnlyList<SourceInput> CreationInputs(PdfCreateSource source, IReadOnlyList<byte[]> imageContents) => source switch
     {
-        PdfImageSource images => FileObjects.Sources([.. images.Files.Select(static file =>
-            ((SourceFile?)file, Path.GetExtension(file.Path).TrimStart('.').ToLowerInvariant(), false))]),
+        PdfImageSource images => FileObjects.Sources([.. images.Files.Zip(imageContents, static (file, content) =>
+            ((SourceFile?)file, (ImageInput.FormatOf(content) ?? throw new UnreachableException("A checked image has a format.")).Id, false))]),
         PdfHtmlSource html => FileObjects.Sources((html.File, "html", false)),
         PdfMarkdownSource markdown => FileObjects.Sources((markdown.File, "md", false)),
         PdfTextSource text => FileObjects.Sources((text.File, "txt", false)),
