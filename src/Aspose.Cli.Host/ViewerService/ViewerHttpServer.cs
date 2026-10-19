@@ -239,7 +239,7 @@ internal sealed class ViewerHttpServer : IDisposable
         }
         ContentHeaders(response);
         response.StatusCode = 200;
-        response.ContentType = ContentType(Path.GetExtension(file!));
+        response.ContentType = MediaTypes.OverHttp(Path.GetExtension(file!));
         response.Headers["Cache-Control"] = "private, max-age=31536000, immutable";
         response.ContentLength64 = content.Length;
         content.CopyTo(response.OutputStream);
@@ -280,18 +280,4 @@ internal sealed class ViewerHttpServer : IDisposable
         response.OutputStream.Write(bytes);
         response.Close();
     }
-
-    private static string ContentType(string extension) =>
-        extension.ToLowerInvariant() switch
-        {
-            ".html" or ".htm" => "text/html; charset=utf-8",
-            ".css" => "text/css; charset=utf-8",
-            ".json" => "application/json; charset=utf-8",
-            ".png" => "image/png",
-            ".jpg" or ".jpeg" => "image/jpeg",
-            ".svg" => "image/svg+xml",
-            ".webp" => "image/webp",
-            ".gif" => "image/gif",
-            _ => "application/octet-stream",
-        };
 }
