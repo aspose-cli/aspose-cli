@@ -36,10 +36,10 @@ public interface IOperationModel<in TOp>
 
     /// <summary>
     /// The objects of each unit the snapshots add with <see cref="OperationSnapshot.AddObjects"/>,
-    /// as the instances the engine keeps them as, in their current order. The SDK reads them
-    /// before the first operation and after the last, and reports each changed object at its
-    /// position in the output, or in the input when the batch removed it. Empty for a product
-    /// that adds no such sequence.
+    /// or name as owners, as the instances the engine keeps them as, in their current order. The
+    /// SDK reads them before the first operation and after the last, and reports each changed
+    /// object, or one on such an object, at its position in the output, or in the input when the
+    /// batch removed it. Empty for a product that adds no such sequence.
     /// </summary>
     IReadOnlyDictionary<string, IReadOnlyList<object>> Positions() => new Dictionary<string, IReadOnlyList<object>>(StringComparer.Ordinal);
 

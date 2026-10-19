@@ -266,6 +266,84 @@ public sealed class BoundedOperationModelTests
             applied.Changed.Select(static item => (item.Address, item.InOutput)));
     }
 
+    /// <summary>
+    /// A document of pages the engine keeps by instance but compares by state: an operation that
+    /// edits pages snapshots the text on each (<c>page/2/text</c>), one that moves them the page
+    /// order naming the moved page, and one that deletes them the page order.
+    /// </summary>
+    private sealed class PageModel(Action<TestOp, List<Page>> apply) : IOperationModel<TestOp>
+    {
+        public List<Page> Pages { get; } = [new("a"), new("b"), new("c"), new("d")];
+
+        public OperationSnapshot Snapshot(TestOp operation)
+        {
+            var snapshot = new OperationSnapshot();
+            switch (((SetOp)operation).Value)
+            {
+                case 1:
+                    for (int index = 0; index < Pages.Count; index++)
+                    {
+                        snapshot.Add($"page/{index + 1}/text", Pages[index].Text, owner: Pages[index]);
+                    }
+
+                    return snapshot;
+                case 2:
+                    return snapshot.AddSequence("page", Pages.Select(static page => page.Id), moved: [Pages[0].Id], owners: Pages);
+                default:
+                    return snapshot.AddSequence("page", Pages.Select(static page => page.Id), owners: Pages);
+            }
+        }
+
+        public void Apply(TestOp operation) => apply(operation, Pages);
+
+        public IReadOnlyList<string> AttemptedTargets(TestOp operation) => ["page/all"];
+
+        public IReadOnlyDictionary<string, IReadOnlyList<object>> Positions() =>
+            new Dictionary<string, IReadOnlyList<object>> { ["page"] = [.. Pages] };
+    }
+
+    private sealed class Page(string id)
+    {
+        public string Id { get; } = id;
+
+        public string Text { get; set; } = id;
+    }
+
+    [Fact]
+    public void Run_AnObjectAnEarlierOperationChanged_IsReportedWhereALaterMoveLeavesIt()
+    {
+        var model = new PageModel(static (op, pages) =>
+        {
+            switch (((SetOp)op).Value)
+            {
+                case 1:
+                    pages[0].Text = "A";
+                    break;
+                case 2:
+                    // a moves to the end: b, c, d, a.
+                    Page first = pages[0];
+                    pages.RemoveAt(0);
+                    pages.Add(first);
+                    break;
+                case 3:
+                    // b is deleted: c, d, a.
+                    pages.RemoveAt(0);
+                    break;
+            }
+        });
+
+        AppliedBatch applied = BoundedOperationRunner.Run(
+            Catalog, Batch(new SetOp { Value = 1 }, new SetOp { Value = 2 }, new SetOp { Value = 3 }), bestEffort: false, deadline: null, model, pageUnit: "page");
+
+        // A page that only moved still counts: the order is compared by state.
+        Assert.Equal([1L, 1L, 1L], applied.Outcomes.Select(static outcome => outcome.ItemsAffected));
+        Assert.Equal(["page/3/text"], applied.Outcomes[0].Targets);
+        Assert.Equal(["page/3"], applied.Outcomes[1].Targets);
+        // b is gone, so it keeps its number in the input.
+        Assert.Equal(["page/2"], applied.Outcomes[2].Targets);
+        Assert.Equal([3], applied.Pages);
+    }
+
     /// <summary>A workbook of named sheets, each a scope whose name begins the addresses of its cells.</summary>
     private sealed class SheetModel(Action<TestOp, List<Sheet>> apply) : IOperationModel<TestOp>
     {
