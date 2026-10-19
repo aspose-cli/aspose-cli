@@ -118,6 +118,39 @@ public sealed partial class DecisionOwnershipTests
             "Whether a format can carry a password is declared once, on its format descriptor, not in a product list:");
     }
 
+    /// <summary>
+    /// Whether an output keeps the input's password, takes the <c>--encrypt</c> one or carries
+    /// none is decided by the SDK's <c>OutputProtection</c>; a product engine only carries the
+    /// decision out. PDF keeps its own owner (<c>PdfOutputEncryption</c>): owner-only files,
+    /// permissions and operations that encrypt or decrypt are PDF's alone.
+    /// </summary>
+    [Fact]
+    public void D1_ProductEngines_DecideNoOutputPasswordThemselves()
+    {
+        string[] violations = [.. ProductFiles("Engine")
+            .Where(static file => file.Product != "Pdf")
+            .SelectMany(file => file.Root.DescendantNodes()
+                .Where(static node => node switch
+                {
+                    // --encrypt, or else some other password: request.EncryptPassword ?? ...
+                    BinaryExpressionSyntax binary when binary.IsKind(SyntaxKind.CoalesceExpression) =>
+                        string.Equals(LastIdentifier(binary.Left), "EncryptPassword", StringComparison.OrdinalIgnoreCase),
+                    // The input's password where the input was encrypted: loaded.IsEncrypted ? request.Password : null
+                    ConditionalExpressionSyntax conditional =>
+                        Names(conditional.Condition).Contains("IsEncrypted")
+                        && Names(conditional.WhenTrue).Concat(Names(conditional.WhenFalse))
+                            .Any(static name => name.EndsWith("Password", StringComparison.Ordinal)),
+                    _ => false,
+                })
+                .Select(node => file.At(node, node.ToString().Split('\n')[0].Trim())))];
+
+        AssertNone(violations,
+            "A product takes an output's password from OutputProtection.For, which decides it from --encrypt and the primary input:");
+
+        static IEnumerable<string> Names(SyntaxNode node) =>
+            node.DescendantNodesAndSelf().OfType<IdentifierNameSyntax>().Select(static name => name.Identifier.ValueText);
+    }
+
     [Fact]
     public void D1_FileObjects_ComeOnlyFromTheSdkFactory()
     {
