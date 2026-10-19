@@ -320,7 +320,7 @@ internal static class ReviewEvidenceWriter
     {
         string full = Path.TrimEndingDirectorySeparator(Path.GetFullPath(target));
         string source = Path.GetFullPath(input);
-        if (FilePaths.Same(full, source) || source.StartsWith(full + Path.DirectorySeparatorChar, FilePaths.Comparison))
+        if (FilePaths.IsWithin(full, source, allowEqual: true))
         {
             throw CliErrors.OptionInvalid(
                 "--out",
