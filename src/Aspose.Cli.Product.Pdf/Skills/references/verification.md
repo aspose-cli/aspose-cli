@@ -80,6 +80,10 @@ aspose-cli review report.final.pdf --out report.review-1 --output-format json
 aspose-cli fonts check report.pdf --font-dir fonts --output-format json
 ```
 
+To show a person the PDF, `aspose-cli preview open report.pdf` opens the `pages`
+view: pages, thumbnails, the size of the page in view, zoom and a mark on what a
+change touched (`aspose-cli docs preview`).
+
 Check page order and size, crop and rotation, clipping, images, tables, headers
 and footers, stamps, form field appearances, annotations, redaction appearance
 and contrast. The engine drops some thin glyph strokes, such as the underscores
@@ -91,18 +95,17 @@ print closely.
 
 What the PDF review findings ask of you:
 
-A font the PDF uses without embedding it is drawn from the fonts installed here;
-pass the delivered fonts with `--font-dir`, which HTML and text sources of
-`pdf create` also resolve CSS `font-family` from. Text operations that name a
+A font the PDF uses without embedding it is drawn from the fonts installed here
+or in `--font-dir` (`aspose-cli docs verification`); HTML and text sources of
+`pdf create` also resolve CSS `font-family` from `--font-dir`. Text operations that name a
 `font`, and a visible signature, need that font here. A blank or image-only page
 has no font resources, so `fonts check` returns an empty `fonts` array for it.
 
 For a PDF with form fields, open the pages with fields and look for stale,
 clipped or missing values.
 
-A run without a license saves its watermark into the page, and a license does
-not remove it: regenerate the file from its original inputs with the license
-before delivery. The check matches the notice from "Created with Aspose.<product>"
+A run without a license saves its watermark into the page; regenerate the file
+as `aspose-cli docs licensing` says. The check matches the notice from "Created with Aspose.<product>"
 to its "Copyright … Aspose Pty Ltd" in the page text, in the order it is drawn,
 so a notice drawn over a title is found too; a PDF that `cells`, `words` or
 `slides` saved is flagged as well, and the finding names the product whose
