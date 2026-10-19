@@ -42,6 +42,10 @@ positions joined by `/` that `delete_bookmarks.bookmarks` and `add_bookmark.pare
 accept: `"2/1"` is the first child of the second top-level bookmark. Titles are
 never parsed, so bookmarks with duplicate or empty titles are addressed the same
 way; `add_bookmark` refuses a title that contains `/`.
+A PDF created from Markdown has no bookmarks for its headings, and
+`pdf split --by bookmarks` refuses a document without bookmarks: add one for the
+first page of each part first, such as
+`{"op":"add_bookmark","title":"Part 1","page":1}`.
 
 Bookmarks follow the same rule as pages. `add_bookmark` always adds the last child
 of its parent, or the last top-level bookmark, so it never renumbers
