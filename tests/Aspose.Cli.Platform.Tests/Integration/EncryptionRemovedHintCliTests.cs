@@ -31,6 +31,7 @@ public sealed class EncryptionRemovedHintCliTests : IDisposable
     [InlineData("words", "locked.docx", "convert locked.docx --out plain.pdf", "write it as doc, dot, docx, docm, dotx, dotm, odt, ott instead", true)]
     [InlineData("slides", "locked.pptx", "convert locked.pptx --out plain.pdf", "write it as pptx, pptm instead", true)]
     [InlineData("cells", "locked.xlsx", "edit locked.xlsx --set Sheet1!A1=5 --out plain.csv", "write it as xlsx, xltx, xlsm, xltm, xlsb, xls, ods instead", false)]
+    [InlineData("pdf", "locked.pdf", "convert locked.pdf --out plain.md", "No command of this build can encrypt md files.", false)]
     public void UnencryptedCopy_HintNamesOnlyWaysThisBuildOffers(string product, string locked, string commandLine, string own, bool encryptable)
     {
         File.WriteAllText(_workspace.File("source.md"), "# One\n\nFirst part.\n");
@@ -38,6 +39,7 @@ public sealed class EncryptionRemovedHintCliTests : IDisposable
         {
             "cells" => ["cells", "create", locked],
             "slides" => ["slides", "create", locked, "--from-markdown", "source.md"],
+            "pdf" => ["pdf", "create", locked, "--from-markdown", "source.md"],
             _ => ["words", "create", locked, "--from-markdown", "source.md"],
         };
         CliResult created = Run([.. create, "--encrypt-env", Variable]);
@@ -53,7 +55,8 @@ public sealed class EncryptionRemovedHintCliTests : IDisposable
         if (!encryptable)
         {
             Assert.False(line.Success, hint);
-            Assert.EndsWith("No command of this build can encrypt csv files.", hint, StringComparison.Ordinal);
+            string written = Path.GetExtension(commandLine.Split(' ')[^1])[1..];
+            Assert.EndsWith($"No command of this build can encrypt {written} files.", hint, StringComparison.Ordinal);
             return;
         }
 
