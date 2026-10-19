@@ -44,6 +44,35 @@ namespace Aspose.Cli.Sdk.Extensibility.Commanding;
 /// <item>Tests call the handlers directly with a session and a request; there are no test shims
 /// standing in for the engine.</item>
 /// </list>
+/// <para>
+/// How a command declares the mistakes a caller may make on its command line. The host's parser
+/// recognises each kind by a strategy of its own and builds the suggestions with the SDK
+/// <see cref="Mistake"/>:
+/// </para>
+/// <list type="table">
+/// <listheader><term>Declaration</term><description>What a caller types, and what the error suggests</description></listheader>
+/// <item><term><see cref="MistakenFor"/></term><description>A command name no command of the
+/// product has, such as <c>merge</c>: every command that declares it, first
+/// (<c>USAGE_ERROR</c>).</description></item>
+/// <item><term><see cref="MistakenForHint"/></term><description>The same name: the hint says how
+/// the declaring command does what the name stands for.</description></item>
+/// <item><term><see cref="RefusedOptions"/></term><description>An option the command does not
+/// have, such as <c>--encrypt</c>: the closest options, with the declared hint in place of the
+/// advice to read help (<c>USAGE_ERROR</c>).</description></item>
+/// <item><term><c>option.MistakenFor(names)</c></term><description>An option name that names no
+/// option, such as a text option for a search's <c>--pattern</c>: the declaring option, first
+/// (<c>USAGE_ERROR</c>).</description></item>
+/// <item><term><c>option.MistakenForArgument()</c></term><description>The value of a required
+/// option given as a bare argument, such as <c>search &lt;file&gt; speaker</c> for <c>--pattern speaker</c>: the option
+/// (<c>USAGE_ERROR</c>).</description></item>
+/// <item><term>A format's <c>MistakenFor</c></term><description>A value of <c>--to</c> that names
+/// the format another way, such as <c>word</c>: the format's id (<c>OPTION_INVALID</c>).</description></item>
+/// </list>
+/// <para>
+/// Without any declaration the parser still recognises an unknown command or option by its
+/// closest names, <c>help</c> and <c>version</c> typed as commands, an argument's name written
+/// before its value, and a value outside an option's list or a number that does not parse.
+/// </para>
 /// </remarks>
 /// <typeparam name="TRequest">The request <c>bind</c> produces and the handler receives.</typeparam>
 /// <typeparam name="TResult">The result the handler returns.</typeparam>
