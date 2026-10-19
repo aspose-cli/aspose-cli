@@ -85,8 +85,7 @@ internal sealed record NamespaceGraph(
             {
                 if (ReferencedType(model, name) is not { } target
                     || !SymbolEqualityComparer.Default.Equals(target.ContainingAssembly, compilation.Assembly)
-                    || model.GetEnclosingSymbol(name.SpanStart) is not { } enclosing
-                    || EnclosingType(enclosing) is not { } owner)
+                    || OwnerOf(model, name) is not { } owner)
                 {
                     continue;
                 }
@@ -264,10 +263,15 @@ internal sealed record NamespaceGraph(
         return type is null ? null : Outermost(type.OriginalDefinition);
     }
 
-    private static INamedTypeSymbol? EnclosingType(ISymbol symbol) =>
-        symbol as INamedTypeSymbol is { } type ? Outermost(type)
-        : symbol.ContainingType is { } containing ? Outermost(containing)
-        : null;
+    // The type whose declaration holds the name. Its attributes, base list, constraints and a
+    // delegate's signature belong to it as much as its members do, though the semantic
+    // model encloses them in the namespace.
+    private static INamedTypeSymbol? OwnerOf(SemanticModel model, SyntaxNode name) =>
+        name.Ancestors().FirstOrDefault(static node => node is BaseTypeDeclarationSyntax or DelegateDeclarationSyntax)
+            is { } declaration
+            && model.GetDeclaredSymbol(declaration) is INamedTypeSymbol type
+                ? Outermost(type)
+                : null;
 
     private static INamedTypeSymbol Outermost(INamedTypeSymbol type)
     {
