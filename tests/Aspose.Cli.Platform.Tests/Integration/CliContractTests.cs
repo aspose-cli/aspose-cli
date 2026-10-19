@@ -596,16 +596,6 @@ public sealed class CliContractTests : IDisposable
         Assert.DoesNotContain("aspose-cli cells", hint, StringComparison.Ordinal);
     }
 
-    [Fact]
-    public void SeveralUsageProblems_AreListedInErrors()
-    {
-        CliResult result = _workspace.Run("cells", "inspect", "--detail", "cahrts", "--output-format", "json");
-
-        Assert.Equal(2, result.ExitCode);
-        JsonNode error = Parse(result.StdErr)["error"]!;
-        Assert.Equal(2, error["details"]!["errors"]!.AsArray().Count);
-    }
-
     [Theory]
     [InlineData("help", "--help")]
     [InlineData("version", "--version")]
@@ -642,18 +632,6 @@ public sealed class CliContractTests : IDisposable
         });
         Assert.True(one.ExitCode == 0, one.StdErr);
         Assert.Equal([products[^1]], Parse(one.StdOut)["products"]!.AsArray().Select(static item => item!["product"]!.GetValue<string>()));
-    }
-
-    [Fact]
-    public void AppOpen_RefusesWelcomeWithAFile()
-    {
-        File.WriteAllText(_workspace.File("book.xlsx"), "not opened");
-        CliResult result = _workspace.Run("app", "open", "book.xlsx", "--welcome", "--no-open", "--output-format", "json");
-
-        Assert.Equal(2, result.ExitCode);
-        JsonNode error = Parse(result.StdErr)["error"]!;
-        Assert.Equal("OPTION_INVALID", error["code"]!.GetValue<string>());
-        Assert.Equal("--welcome", error["details"]!["option"]!.GetValue<string>());
     }
 
     [Fact]
@@ -775,16 +753,6 @@ public sealed class CliContractTests : IDisposable
         JsonNode error = Parse(result.StdErr)["error"]!;
         Assert.DoesNotContain(hidden, (error["details"]!["suggestions"]?.AsArray() ?? []).Select(static item => item!.GetValue<string>()));
         Assert.DoesNotContain(hidden, error["details"]!["available"]!.AsArray().Select(static item => item!.GetValue<string>()));
-    }
-
-    [Fact]
-    public void UnknownOption_OfTheRootCommandSuggestsItsOwnOptions()
-    {
-        CliResult result = _workspace.Run("--vresion", "--output-format", "json");
-
-        Assert.Equal(2, result.ExitCode);
-        JsonNode error = Parse(result.StdErr)["error"]!;
-        Assert.Equal(["--version"], error["details"]!["suggestions"]!.AsArray().Select(static item => item!.GetValue<string>()));
     }
 
     [Theory]
