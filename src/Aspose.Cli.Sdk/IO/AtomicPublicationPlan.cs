@@ -313,7 +313,7 @@ internal sealed class AtomicPublicationPlan
 
     internal void EnsureNoUnknownArtifacts()
     {
-        StringComparer comparer = OperatingSystem.IsWindows() ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal;
+        StringComparer comparer = FilePaths.Comparer;
         var allowedFiles = new HashSet<string>(comparer) { Path.GetFullPath(JournalPath) };
         var allowedDirectories = new HashSet<string>(comparer) { Path.Combine(StagingDirectory, "backups") };
         foreach (PublicationJournalEntry entry in Journal.Entries)

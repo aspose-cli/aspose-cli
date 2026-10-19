@@ -147,9 +147,7 @@ internal sealed class AtomicPublicationStaging(
 
     private void EnsureUnique(string target, string? backup = null)
     {
-        StringComparer comparer = OperatingSystem.IsWindows()
-            ? StringComparer.OrdinalIgnoreCase
-            : StringComparer.Ordinal;
+        StringComparer comparer = FilePaths.Comparer;
         if (plan.Journal.Entries.Any(
                 item => comparer.Equals(item.Target, target)
                     || item.RequestedBackup is not null && comparer.Equals(item.RequestedBackup, target)

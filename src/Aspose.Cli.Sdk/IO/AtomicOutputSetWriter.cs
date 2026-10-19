@@ -206,11 +206,8 @@ public sealed class AtomicOutputSetWriter : IDisposable
     internal FilePublicationSnapshot PublishedSnapshot(string targetPath)
     {
         string target = Path.GetFullPath(targetPath);
-        StringComparer comparer = OperatingSystem.IsWindows()
-            ? StringComparer.OrdinalIgnoreCase
-            : StringComparer.Ordinal;
         PublicationJournalEntry entry = _plan.Journal.Entries.Single(
-            candidate => comparer.Equals(candidate.Target, target));
+            candidate => FilePaths.Same(candidate.Target, target));
         return entry.PublishedSnapshot
             ?? throw new InvalidOperationException(
                 $"Publication snapshot for '{target}' is unavailable.");
