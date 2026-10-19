@@ -1,4 +1,3 @@
-using Aspose.Cli.Sdk.Errors;
 using Aspose.Words;
 using Aspose.Words.Fonts;
 using Aspose.Words.Saving;
@@ -101,17 +100,22 @@ internal static class WordsSavePipeline
             image.Resolution = dpi.Value;
         }
 
-        if (password?.Reveal() is { } value)
+        if (password is not null)
         {
+            // The command line refuses --encrypt for a format that cannot carry a password, and
+            // OutputProtection passes no input password on to one, so a password here is a defect.
+            if (WordsFormats.Definitions.FirstOrDefault(format => format.Id == formatId) is not { Protectable: true })
+            {
+                throw new InvalidOperationException($"An output password reached the '{formatId}' format, which cannot carry one.");
+            }
+
+            string value = password.Reveal();
             switch (options)
             {
                 case OoxmlSaveOptions ooxml: ooxml.Password = value; break;
                 case DocSaveOptions doc: doc.Password = value; break;
                 case OdtSaveOptions odt: odt.Password = value; break;
-                default: throw CliErrors.OptionInvalid(
-                    "--encrypt",
-                    $"the '{formatId}' format cannot be password-protected",
-                    "Write a Word or OpenDocument format, or drop the password.");
+                default: throw new InvalidOperationException($"The '{formatId}' format carries a password, but its save options take none.");
             }
         }
 

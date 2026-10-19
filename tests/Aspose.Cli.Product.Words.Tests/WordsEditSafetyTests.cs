@@ -186,7 +186,9 @@ public sealed class WordsEditSafetyTests
         Assert.Equal(!dryRun, File.Exists(output));
         Assert.Equal(!dryRun, result.Warnings?.Any(warning => warning.Code == WarningCodes.EncryptionRemoved) == true);
         Assert.Equal(original, File.ReadAllBytes(input));
-        Assert.Throws<CliException>(() => WordsEdit.Run(fixture.Session, new WordsEditRequest
+        // The command line refuses --encrypt for RTF as OPTION_INVALID (EncryptedOutputContractTests);
+        // a request that carries one anyway is a defect, and nothing is written.
+        Assert.Throws<InvalidOperationException>(() => WordsEdit.Run(fixture.Session, new WordsEditRequest
         {
             Input = input,
             Batch = TextBatch(),
