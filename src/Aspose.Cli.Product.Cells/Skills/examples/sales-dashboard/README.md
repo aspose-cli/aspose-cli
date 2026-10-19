@@ -26,7 +26,8 @@ aspose-cli cells edit dashboard.xlsx --ops ops-structure.json --in-place --outpu
 ```
 
 The sort runs while the range is still pure values — never `sort_range` over
-live formulas — and only then do the Amount and Month formulas land.
+live formulas — and only then do the Amount and Month formulas land. The CSV
+import already gave the dates `yyyy-mm-dd`, so step 3 formats only the money.
 
 ```powershell
 # 3. The Data register: table, formats, widths, freeze, data bar, print.

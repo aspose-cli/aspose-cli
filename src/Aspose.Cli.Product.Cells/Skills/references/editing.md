@@ -13,6 +13,8 @@ Cells semantics, ordering rules and recipes.
 
 ## Operations by task
 
+`aspose-cli capabilities cells edit` lists the operations this build accepts.
+
 | task | operations |
 |------|------------|
 | Cell data | `set_values` writes a matrix; `set_formula` fills a formula over a range; `clear_range`; `copy_range` within the workbook; `replace_text` replaces text in text values, never in formulas or numbers |
@@ -377,7 +379,6 @@ or object name keeps its spelling, apostrophes and `!` included, except that
 Before the `!` of a cell, row, column, merge, comment or hyperlink address a
 `!` in the sheet name is `%21` too, so the first `!` ends the sheet:
 `cell/a%21b!A1` is cell A1 of the sheet `a!b`.
-An operation that changed nothing counts 0 and warns `OP_NO_EFFECT`.
 Inserting or deleting rows or columns counts each line it added or removed
 and each object anchored on the sheet that moved or resized with them, such
 as a chart or a comment; the cells and formulas that only shift with their
