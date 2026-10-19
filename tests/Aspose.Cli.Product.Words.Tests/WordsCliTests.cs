@@ -201,13 +201,17 @@ public sealed class WordsCliTests : IDisposable
             "--verify", "--license-mode", "evaluation", "--output-format", "json");
 
         // The input was whole, so the write pipeline's disclosure names the notice the output
-        // ends with; no product check says it a second time.
+        // ends with; no product check says it a second time. Verification reports the output
+        // incomplete, so the edit exits 8 with the output still written.
         JsonNode edited = JsonNode.Parse(result.StdOut)!;
         JsonNode[] warnings = [.. edited["warnings"]!.AsArray().Select(static item => item!)];
         JsonNode disclosure = warnings.Single(static item => item["code"]!.GetValue<string>() == "EVALUATION_MODE");
         Assert.Contains("evaluation mode cut the content short", disclosure["message"]!.GetValue<string>(), StringComparison.Ordinal);
         Assert.DoesNotContain(warnings, static item => item["code"]!.GetValue<string>() == "EVALUATION_INPUT_TRUNCATED");
-        Assert.True(result.ExitCode == 0, result.StdErr);
+        JsonNode verification = edited["verification"]!;
+        Assert.False(verification["ok"]!.GetValue<bool>());
+        Assert.Equal(["OUTPUT_TRUNCATED"], verification["issues"]!.AsArray().Select(static issue => issue!["code"]!.GetValue<string>()));
+        Assert.True(result.ExitCode == 8, result.StdErr + result.StdOut);
         Assert.True(File.Exists(_workspace.File("letters.docx")));
     }
 
