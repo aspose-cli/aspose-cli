@@ -1,0 +1,7 @@
+{
+  "description": "Documentation and repository metadata outside the projects: a change to one reaches only the test projects that list it as a RepositoryInput. scripts/documentation-paths.ps1 (for scripts/test.ps1) and RepositoryInputTests read this file. A path matches, ignoring case, when it ends with an extension, starts with a directory, or its file name starts with a name prefix or equals a name. .editorconfig is not among them: the compiler reads its analyzer severities, so it is a build input.",
+  "extensions": [".md"],
+  "directories": [".github/"],
+  "namePrefixes": ["LICENSE"],
+  "names": [".gitignore", ".gitattributes"]
+}
