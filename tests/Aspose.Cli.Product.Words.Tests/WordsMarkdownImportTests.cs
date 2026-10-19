@@ -46,6 +46,97 @@ public sealed class WordsMarkdownImportTests
         Assert.DoesNotContain("Bid 2026", toc, StringComparison.Ordinal);
     }
 
+    /// <summary>
+    /// A plain first line restyled as Title in the batch that inserts the table of contents
+    /// stays out of it, while the Markdown's <c>#</c> chapters stay Heading 1.
+    /// </summary>
+    [Fact]
+    public void FirstLineSetToTitle_StaysOutOfATableOfContentsInsertedInTheSameBatch()
+    {
+        using var fixture = new WordsFixture();
+        string markdown = fixture.Temp.File("bid.md");
+        File.WriteAllText(markdown, "Smart Campus Bid\n\n# Company overview\n\nWe build campuses.\n\n# Pricing\n\nSee the table.\n");
+        string created = fixture.Temp.File("bid.docx");
+        WordsCreate.Run(fixture.Session, new WordsCreateRequest { Output = TestOutput.At(created), Markdown = new SourceFile("--from-markdown", markdown) });
+        string output = fixture.Temp.File("bid-toc.docx");
+
+        WordsEdit.Run(fixture.Session, new WordsEditRequest
+        {
+            Input = created,
+            Batch = new WordsOpsBatch
+            {
+                Ops =
+                [
+                    new SetStyleOp { Target = new WordsTarget { Find = "Smart Campus Bid" }, Style = "Title" },
+                    new InsertTocOp { At = new WordsTarget { Find = "Smart Campus Bid" }, Position = "after" },
+                ],
+            },
+            Output = TestOutput.At(output),
+        });
+
+        WordsInspectResult info = WordsInspect.Run(fixture.Session, new WordsInspectRequest { Input = output, Details = ["outline"] });
+        Assert.Equal([("Company overview", 1), ("Pricing", 1)], info.Outline!.Select(static item => (item.Text, item.HeadingLevel)));
+        var document = new Document(output);
+        Assert.Equal("Title", Body(document).Single(static paragraph => paragraph.GetText().Trim() == "Smart Campus Bid").ParagraphFormat.StyleName);
+        string toc = document.Range.Fields.Cast<Aspose.Words.Fields.Field>()
+            .Single(static field => field.Type == Aspose.Words.Fields.FieldType.FieldTOC).Result;
+        Assert.Contains("Company overview", toc, StringComparison.Ordinal);
+        Assert.DoesNotContain("Smart Campus Bid", toc, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// The Markdown footnote syntax, <c>[^id]</c> in the text and <c>[^id]: text</c> below it,
+    /// adds a real footnote through both <c>create --from-markdown</c> and <c>insert_markdown</c>:
+    /// a footnotes-scope search reads its text, and the body keeps neither marker nor definition.
+    /// </summary>
+    [Fact]
+    public void MarkdownFootnoteSyntax_AddsARealFootnoteOnCreateAndInsertMarkdown()
+    {
+        using var fixture = new WordsFixture();
+        string markdown = fixture.Temp.File("bid.md");
+        // Definitions at the end keep every heading a heading (WORDS-MD-FOOTNOTE-HEADING).
+        File.WriteAllText(markdown,
+            "# Bid\n\nCertified under ISO 9001[^1].\n\n# Pricing\n\nPrices in CNY[^2].\n\n# Schedule\n\nDone.\n\n"
+            + "[^1]: Certificate CN-2026-001.\n\n[^2]: Before tax.\n");
+        string created = fixture.Temp.File("bid.docx");
+        WordsCreate.Run(fixture.Session, new WordsCreateRequest { Output = TestOutput.At(created), Markdown = new SourceFile("--from-markdown", markdown) });
+        WordsInspectResult info = WordsInspect.Run(fixture.Session, new WordsInspectRequest { Input = created, Details = ["outline"] });
+        Assert.Equal(["Bid", "Pricing", "Schedule"], info.Outline!.Select(static item => item.Text));
+        string output = fixture.Temp.File("bid-noted.docx");
+
+        WordsEdit.Run(fixture.Session, new WordsEditRequest
+        {
+            Input = created,
+            Batch = new WordsOpsBatch
+            {
+                Ops =
+                [
+                    new InsertMarkdownOp
+                    {
+                        At = new WordsTarget { Find = "Certified under" }, Position = "after",
+                        Markdown = "补充说明[^n]\n\n[^n]: 脚注：参见附件 A。",
+                    },
+                ],
+            },
+            Output = TestOutput.At(output),
+        });
+
+        Assert.Equal(["Before tax.", "Certificate CN-2026-001."], FootnoteLines(fixture, created).Order(StringComparer.Ordinal));
+        Assert.Equal(["Before tax.", "Certificate CN-2026-001.", "脚注：参见附件 A。"], FootnoteLines(fixture, output).Order(StringComparer.Ordinal));
+        var document = new Document(output);
+        Assert.Equal(3, document.GetChildNodes(NodeType.Footnote, true).Count);
+        Assert.DoesNotContain(Body(document), static paragraph => paragraph.GetText().Contains("[^", StringComparison.Ordinal));
+    }
+
+    private static string[] FootnoteLines(WordsFixture fixture, string input) =>
+        [.. WordsSearch.Run(fixture.Session, new WordsSearchRequest
+            {
+                Input = input,
+                Query = new Aspose.Cli.Sdk.Text.SearchQuery(
+                    Aspose.Cli.Sdk.Text.TextSearch.Create(".+", regex: true, caseSensitive: false), 100, WordsTextScopes.Footnotes),
+            })
+            .Hits.Select(static hit => hit.Text.Trim())];
+
     [Fact]
     public void Create_ClosesEmphasisAfterPunctuationOnlyAsCommonMarkDoes()
     {
