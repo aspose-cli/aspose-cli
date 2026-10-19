@@ -256,10 +256,10 @@ internal static class PdfEdit
             return null;
         }
 
-        string? encryption = encryptOption ? "--encrypt" : applied.LastOrDefault(static op => op is "encrypt_document" or "decrypt_document");
+        string? encryption = encryptOption ? EncryptedOutput.Option : applied.LastOrDefault(static op => op is "encrypt_document" or "decrypt_document");
         string output = encryption switch
         {
-            "--encrypt" => $"The output {(dryRun ? "would open" : "opens")} only with the --encrypt password, which grants every permission.",
+            EncryptedOutput.Option => $"The output {(dryRun ? "would open" : "opens")} only with the --encrypt password, which grants every permission.",
             "decrypt_document" => $"The output {(dryRun ? "would not be encrypted, so it would no longer restrict" : "is not encrypted, so it no longer restricts")} anyone.",
             "encrypt_document" => $"The output {(dryRun ? "would be" : "is")} encrypted with the passwords and permissions the encrypt operation set.",
             _ => $"The output {(dryRun ? "would keep" : "keeps")} the input's encryption and permissions; edit with the owner password to change them.",

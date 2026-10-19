@@ -28,7 +28,7 @@ internal static class PdfSearch
             Page page = loaded.Document.Pages[number];
             int occurrence = 0;
             TextFragmentCollection fragments = MatchText(page, text.Pattern, text.Expression is not null, text.CaseSensitive,
-                static reason => CliErrors.OptionInvalid("--pattern", reason, "Use a pattern that matches at least one character."));
+                static reason => CliErrors.OptionInvalid(SearchOptions.PatternOption, reason, "Use a pattern that matches at least one character."));
             // The engine's hits carry no surrounding text; the page's plain text gives it when
             // it holds the same number of matches, which then pair up in reading order. A pair
             // whose texts differ gets none. The text is extracted only for a hit that is kept.

@@ -388,7 +388,7 @@ internal static class PdfCreate
             || margins.Top + margins.Bottom >= height)
         {
             throw CliErrors.OptionInvalid(
-                "--margins",
+                PdfOptionNames.Margins,
                 page is null
                     ? "values must be non-negative and leave a positive content area"
                     : $"values must be non-negative and leave a positive content area on {page}",
@@ -429,7 +429,7 @@ internal static class PdfCreate
         if (paths.Count > 1000)
         {
             throw CliErrors.OptionInvalid(
-                "--from-images",
+                PdfOptionNames.FromImages,
                 "more than 1000 inputs were requested",
                 "Create smaller PDFs and merge them in bounded batches.");
         }
@@ -458,7 +458,7 @@ internal static class PdfCreate
         byte[] bytes = resourceBudgets.Inputs.ReadAllBytes(html);
         if (!allowNetwork)
         {
-            NetworkReferenceGuard.EnsureNone(bytes, "HTML input", html, optIn: "--allow-network-resources");
+            NetworkReferenceGuard.EnsureNone(bytes, "HTML input", html, optIn: PdfOptionNames.AllowNetworkResources);
         }
 
         return (bytes, images);

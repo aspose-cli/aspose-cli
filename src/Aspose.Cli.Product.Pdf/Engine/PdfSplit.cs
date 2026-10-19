@@ -105,7 +105,7 @@ internal static class PdfSplit
         if (bookmarks.Length == 0)
         {
             throw CliErrors.OptionInvalid(
-                "--by",
+                SplitOptions.ByOption,
                 "the document has no top-level bookmarks with page destinations",
                 "Use --by pages, or first bookmark the first page of each part with a 'pdf edit' batch of add_bookmark operations, "
                 + "such as {\"op\":\"add_bookmark\",\"title\":\"Part 1\",\"page\":1}; headings, such as those of Markdown, are not bookmarks.");

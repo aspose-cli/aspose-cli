@@ -43,7 +43,7 @@ internal static class PdfSign
         if (visibleRect is { Width: <= 0 } or { Height: <= 0 })
         {
             throw CliErrors.OptionInvalid(
-                "--rect",
+                PdfOptionNames.Rect,
                 "signature width and height must be greater than zero",
                 "Use x,y,width,height in PDF points from the page's top-left corner, for example 36,36,180,60.");
         }
@@ -60,7 +60,7 @@ internal static class PdfSign
         // PDF-SIGN-FULL-FONT: the engine embeds the whole font program its appearance draws in.
         // ASCII text is drawn in Helvetica, which is not embedded; PDF/A requires embedded fonts,
         // so its documents keep the engine's choice, and so does text beyond ASCII.
-        string[] beyondAscii = [.. new[] { ("--reason", request.Reason), ("--location", request.Location), ("--contact", request.Contact), ("the certificate's subject name", (string?)signer.Shown) }
+        string[] beyondAscii = [.. new[] { (PdfOptionNames.Reason, request.Reason), (PdfOptionNames.Location, request.Location), (PdfOptionNames.Contact, request.Contact), ("the certificate's subject name", (string?)signer.Shown) }
             .Where(static entry => !StandardFontShows(entry.Item2))
             .Select(static entry => entry.Item1)];
         bool pdfa = loaded.Document.IsPdfaCompliant;
@@ -326,7 +326,7 @@ internal static class PdfSign
         catch (OperationInvalidException exception)
         {
             throw CliErrors.OptionInvalid(
-                "--rect",
+                PdfOptionNames.Rect,
                 exception.Message,
                 "Use x,y,width,height in PDF points from the page's top-left corner that fit on the page; 'pdf inspect --sample' reports its size.");
         }
@@ -426,7 +426,7 @@ internal static class PdfSign
         }
         catch (CryptographicException exception) when (exception.HResult == WrongPassword)
         {
-            throw CliErrors.PasswordInvalid(Path.GetFullPath(path), passwordEnvironmentOption: "--certificate-password-env");
+            throw CliErrors.PasswordInvalid(Path.GetFullPath(path), passwordEnvironmentOption: PdfOptionNames.CertificatePasswordEnvironment);
         }
         catch (CryptographicException exception)
         {

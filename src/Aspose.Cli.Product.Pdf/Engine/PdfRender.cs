@@ -1,4 +1,3 @@
-using System.Globalization;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Licensing;
@@ -66,19 +65,9 @@ internal static class PdfRender
                 .Where(static format => format.Uses.HasFlag(FormatUse.Render) && format.Raster)
                 .Select(static format => format.Id)];
             throw CliErrors.OptionInvalid(
-                "--grid",
+                PdfOptionNames.Grid,
                 $"applies only to {Listed(raster, "and")} output",
                 $"Render the page with {Listed([.. raster.Select(static id => "--to " + id)], "or")} to draw a coordinate grid.");
-        }
-
-        if (spacing is < PdfRenderRequest.MinimumGrid or > PdfRenderRequest.MaximumGrid)
-        {
-            throw CliErrors.OptionInvalid(
-                "--grid",
-                string.Create(
-                    CultureInfo.InvariantCulture,
-                    $"must be between {PdfRenderRequest.MinimumGrid} and {PdfRenderRequest.MaximumGrid} points"),
-                "Choose a spacing such as --grid 50.");
         }
 
         return PdfGridOverlay.Describe(spacing);

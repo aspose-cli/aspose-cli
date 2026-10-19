@@ -10,13 +10,13 @@ internal static class CreateCommand
 {
     public static CommandDefinition<PdfCreateRequest, PdfCreateResult> Create()
     {
-        var images = new Option<string[]>("--from-images")
+        var images = new Option<string[]>(PdfOptionNames.FromImages)
         {
             Description = "One or more image files, one per page in the image's orientation, scaled without distortion.",
             AllowMultipleArgumentsPerToken = true,
         }.WithInput(InputKind.File);
         var html = new Option<string?>("--from-html") { Description = "HTML input file." }.WithInput(InputKind.File);
-        var allowNetwork = new Option<bool>("--allow-network-resources")
+        var allowNetwork = new Option<bool>(PdfOptionNames.AllowNetworkResources)
         {
             Description = "Let the HTML importer request the network resources trusted --from-html input names; the result lists every address. Local references stay beneath the HTML directory.",
         };
@@ -27,7 +27,7 @@ internal static class CreateCommand
         }.WithInput(InputKind.File);
         var pageSize = new Option<string>("--page-size") { DefaultValueFactory = _ => PageSizePresets.A4, Description = "Page size of the new PDF." }.WithInput(InputKind.None);
         pageSize.AcceptOnlyFromAmong([.. PdfCreateRequest.PageSizes]);
-        var margins = new Option<string>("--margins") { DefaultValueFactory = _ => "36", Description = "One value or top,right,bottom,left in points." }.WithInput(InputKind.None);
+        var margins = new Option<string>(PdfOptionNames.Margins) { DefaultValueFactory = _ => "36", Description = "One value or top,right,bottom,left in points." }.WithInput(InputKind.None);
         return new(
             "create",
             "Create a PDF from exactly one source family.",
@@ -97,7 +97,7 @@ internal static class CreateCommand
         if (allowNetwork && source is not PdfHtmlSource)
         {
             throw CliErrors.OptionInvalid(
-                "--allow-network-resources",
+                PdfOptionNames.AllowNetworkResources,
                 "it applies only to --from-html",
                 "The Markdown importer follows local file references inside fetched resources without any resource hook, so network resources stay refused for Markdown; convert the Markdown to HTML first.");
         }
@@ -107,7 +107,7 @@ internal static class CreateCommand
 
     internal static PdfMargins ParseMargins(string text)
     {
-        double[] values = PdfNumberList.Parse(text, "--margins", "Use one value or top,right,bottom,left in points.");
+        double[] values = PdfNumberList.Parse(text, PdfOptionNames.Margins, "Use one value or top,right,bottom,left in points.");
         if (values.Length == 1 && values[0] >= 0)
         {
             return new PdfMargins(values[0], values[0], values[0], values[0]);
@@ -119,7 +119,7 @@ internal static class CreateCommand
         }
 
         throw CliErrors.OptionInvalid(
-            "--margins",
+            PdfOptionNames.Margins,
             $"'{text}' must contain one or four non-negative values",
             "Use one value or top,right,bottom,left in points.");
     }

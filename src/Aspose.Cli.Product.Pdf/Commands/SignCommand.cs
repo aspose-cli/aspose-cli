@@ -15,7 +15,7 @@ internal static class SignCommand
             Required = true,
             Description = "PKCS#12 certificate path (.pfx or .p12).",
         }.WithInput(InputKind.File);
-        PasswordOptions certificatePassword = PasswordOptions.Required("--certificate-password", "the PKCS#12 certificate");
+        PasswordOptions certificatePassword = PasswordOptions.Required(PdfOptionNames.CertificatePasswordPrefix, "the PKCS#12 certificate");
         var visible = new Option<bool>("--visible")
         {
             Description = "Place a visible signature appearance on the selected page.",
@@ -25,13 +25,13 @@ internal static class SignCommand
             DefaultValueFactory = _ => 1,
             Description = "1-based page for the signature field.",
         };
-        var rect = new Option<string?>("--rect")
+        var rect = new Option<string?>(PdfOptionNames.Rect)
         {
             Description = "Visible rectangle x,y,width,height in PDF points from the page's top-left corner, as redact_area and 'pdf render --grid' measure. Default: 180x60, 36 points from the bottom-left corner, smaller on a page too small for it.",
         }.WithInput(InputKind.None);
-        var reason = new Option<string?>("--reason") { Description = "Signing reason stored in the signature." }.WithInput(InputKind.None);
-        var location = new Option<string?>("--location") { Description = "Signing location stored in the signature." }.WithInput(InputKind.None);
-        var contact = new Option<string?>("--contact") { Description = "Signer contact stored in the signature." }.WithInput(InputKind.None);
+        var reason = new Option<string?>(PdfOptionNames.Reason) { Description = "Signing reason stored in the signature." }.WithInput(InputKind.None);
+        var location = new Option<string?>(PdfOptionNames.Location) { Description = "Signing location stored in the signature." }.WithInput(InputKind.None);
+        var contact = new Option<string?>(PdfOptionNames.Contact) { Description = "Signer contact stored in the signature." }.WithInput(InputKind.None);
         return new(
             "sign",
             "Apply a PKCS#7 signature and verify the saved signature field.",
@@ -49,7 +49,7 @@ internal static class SignCommand
                 if (!isVisible && rectangleText is not null)
                 {
                     throw CliErrors.OptionInvalid(
-                        "--rect",
+                        PdfOptionNames.Rect,
                         "a rectangle has no effect on an invisible signature",
                         "Pass --visible with --rect, or omit --rect.");
                 }
@@ -100,11 +100,11 @@ internal static class SignCommand
 
     internal static PdfSignatureRect ParseRect(string text)
     {
-        double[] values = PdfNumberList.Parse(text, "--rect", "Use x,y,width,height in PDF points from the page's top-left corner.");
+        double[] values = PdfNumberList.Parse(text, PdfOptionNames.Rect, "Use x,y,width,height in PDF points from the page's top-left corner.");
         if (values.Length != 4 || values[2] <= 0 || values[3] <= 0)
         {
             throw CliErrors.OptionInvalid(
-                "--rect",
+                PdfOptionNames.Rect,
                 $"'{text}' must contain x,y and positive width,height",
                 "Use x,y,width,height in PDF points from the page's top-left corner, for example 36,36,180,60.");
         }
