@@ -83,7 +83,12 @@ exceeded it. `--section` with `--blocks` reads only that section's blocks in
 the range; block numbers run through the whole document, so a range with none
 of them is `BLOCK_NOT_FOUND`, whose hint names the section's blocks. `extract --what text` writes the visible text of every block to one
 file, one line per paragraph and per table row, whose cells are separated by
-tabs.
+tabs. It holds the body only: no headers or footers, footnotes, endnotes or
+comments, and it does not say they were left out. `extract --what comments`
+writes the comments with their author and block;
+`search --pattern ".+" --regex --scope all` returns the text of every scope
+line by line, each hit naming its `scope`, within the `--max-hits` window;
+`--scope footnotes` (with endnotes) or `headers-footers` reads just those.
 `extract --what tables` writes each body table to its own CSV file
 (`table-001.csv` and on, UTF-8; add `--bom` for a byte order mark, so Excel
 reads Chinese text) and reports its `block`; a cell's paragraphs and line breaks become lines

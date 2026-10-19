@@ -581,6 +581,85 @@ public sealed class CellsOperationsTests : IClassFixture<CellsFixture>
         Assert.Contains(result.Warnings ?? [], static warning => warning.Code.Name == "OP_NO_EFFECT");
     }
 
+    [Fact]
+    public void ResizeTable_LeavesCellFormulasAndRangesGivenAsAddressesBehind()
+    {
+        string path = _fixture.Temp.File("resize-table-addresses.xlsx");
+        using (var workbook = new Workbook())
+        {
+            Worksheet sheet = workbook.Worksheets[0];
+            sheet.Name = "Data";
+            sheet.Cells.ImportTwoDimensionArray(new object[,] { { "Region", "Q1", "Q2", "Sum" }, { "East", 1, 2, "" }, { "West", 3, 4, "" } }, 0, 0);
+            sheet.ListObjects[sheet.ListObjects.Add(0, 0, 2, 3, hasHeaders: true)].DisplayName = "Sales";
+            Style format = workbook.CreateStyle();
+            format.Custom = "0.00";
+            sheet.Cells.CreateRange("B2:B3").SetStyle(format);
+            workbook.Save(path);
+        }
+
+        string prepared = Apply(path,
+            """
+            { "ops": [
+              { "op": "set_formula", "sheet": "Data", "range": "D2:D3", "formula": "=B2+C2" },
+              { "op": "set_formula", "sheet": "Data", "range": "F1", "formula": "=SUM($B$2:$B$3)" },
+              { "op": "set_formula", "sheet": "Data", "range": "F2", "formula": "=SUM(Sales[Q1])" },
+              { "op": "insert_sheet", "name": "Pivot" },
+              { "op": "insert_pivot", "sheet": "Pivot", "sourceRange": "Data!A1:D3", "at": "A1",
+                "rows": ["Region"], "values": [ { "field": "Q1" } ] }
+            ] }
+            """,
+            "resize-table-addresses.prepared.xlsx").Output!.Path;
+
+        CellsEditResult result = Apply(prepared,
+            """
+            { "ops": [
+              { "op": "set_values", "sheet": "Data", "range": "A4", "values": [["North", 5, 6]] },
+              { "op": "resize_table", "sheet": "Data", "name": "Sales", "range": "A1:D4" },
+              { "op": "refresh_pivot", "sheet": "Pivot", "name": "PivotTable1" }
+            ] }
+            """,
+            "resize-table-addresses.out.xlsx");
+
+        // The pivot keeps its source range, so refreshing it reads none of the rows taken in.
+        Assert.Equal(0, result.Applied[2].ItemsAffected);
+        Assert.Contains(result.Warnings ?? [], static warning => warning.Code.Name == "OP_NO_EFFECT");
+        CellsInspectResult read = CellsInfo.Run(_fixture.Session,
+            new CellsInspectRequest { Input = result.Output!.Path, Details = [CellsInspectDetails.Pivots] });
+        Assert.Equal("Data!A1:D3", Assert.Single(read.Workbook.Pivots!).SourceRange);
+        using var reopened = new Workbook(result.Output!.Path);
+        var cells = reopened.Worksheets["Data"].Cells;
+        // A column set_formula wrote is not a calculated column, so the new row stays empty there.
+        Assert.Equal(CellValueType.IsNull, cells["D4"].Type);
+        Assert.False(cells["D4"].IsFormula);
+        // A fixed range keeps its addresses; a structured reference follows the table.
+        Assert.Equal(("=SUM($B$2:$B$3)", 4d), (cells["F1"].Formula, cells["F1"].DoubleValue));
+        Assert.Equal(("=SUM(Sales[Q1])", 9d), (cells["F2"].Formula, cells["F2"].DoubleValue));
+        // The new row takes no column's number format either.
+        Assert.Equal("0.00", cells["B3"].GetStyle().Custom);
+        Assert.NotEqual("0.00", cells["B4"].GetStyle().Custom);
+
+        // The rebuild the Skill gives takes the new rows into the pivot.
+        CellsEditResult rebuilt = Apply(result.Output!.Path,
+            """
+            { "ops": [
+              { "op": "delete_sheet", "sheet": "Pivot" },
+              { "op": "insert_sheet", "name": "Pivot" },
+              { "op": "insert_pivot", "sheet": "Pivot", "sourceRange": "Data!A1:D4", "at": "A1",
+                "rows": ["Region"], "values": [ { "field": "Q1" } ] }
+            ] }
+            """,
+            "resize-table-addresses.rebuilt.xlsx");
+
+        Assert.All(rebuilt.Applied, static item => Assert.Equal(OpStatuses.Ok, item.Status));
+        CellsInspectResult rebuiltRead = CellsInfo.Run(_fixture.Session,
+            new CellsInspectRequest { Input = rebuilt.Output!.Path, Details = [CellsInspectDetails.Pivots] });
+        Assert.Equal("Data!A1:D4", Assert.Single(rebuiltRead.Workbook.Pivots!).SourceRange);
+        using var pivotBook = new Workbook(rebuilt.Output!.Path);
+        Cell[] pivotCells = [.. pivotBook.Worksheets["Pivot"].Cells.Cast<Cell>()];
+        Assert.Contains(pivotCells, static cell => cell.StringValue == "North");
+        Assert.Contains(pivotCells, static cell => cell.Type == CellValueType.IsNumeric && cell.DoubleValue == 9d);
+    }
+
     [Theory]
     [InlineData("B1:D5", false, "A1:D5")]
     [InlineData("A2:D5", false, "A1:D5")]

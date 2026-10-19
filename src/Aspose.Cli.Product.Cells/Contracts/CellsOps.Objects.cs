@@ -323,9 +323,11 @@ public sealed record DefineTableOp : CellsSheetOp
 
 /// <summary>
 /// Moves the last row of an existing table, as Excel's Resize Table does, such as to take in rows
-/// written below it. The header row and the columns stay as they are; calculated columns fill the
-/// rows taken in, and a totals row moves to the new last row. A table with a totals row only
-/// grows.
+/// written below it. The header row and the columns stay as they are; calculated columns, the
+/// formulas the table stores for a whole column, fill the rows taken in, and a totals row moves to
+/// the new last row. A table with a totals row only grows. Cell formulas and number formats do
+/// not fill the rows taken in, and a pivot source, a formula range or a print area given as cell
+/// addresses keeps its range.
 /// </summary>
 [Operation("resize_table")]
 [MistakenFor("extend_table", "expand_table")]

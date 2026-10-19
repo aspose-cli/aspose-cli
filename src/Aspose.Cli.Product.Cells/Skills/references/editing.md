@@ -216,7 +216,9 @@ cells:
 - Give each value field a `numberFormat`; without one the aggregates render
   unformatted.
 - Pivots do not follow source changes: add `refresh_pivot` after editing the
-  source. Refresh keeps the pivot's formatting and the sheet's column widths.
+  source. Refresh reads the same source range, so rows added below it stay
+  out, even rows a `resize_table` took into the table (see Tables below).
+  Refresh keeps the pivot's formatting and the sheet's column widths.
 - Captions follow `captions`: `en` keeps the engine's English ones (`Sum of X`,
   `Grand Total`, `Data`); `zh` writes Excel's Simplified Chinese ones
   (`求和项:X`, `计数项:X`, `平均值项:X`, `最大值项:X`, `最小值项:X`, `总计`,
@@ -275,10 +277,28 @@ show in renders and reads; give the sparkline column a header.
   with `resize_table` and the table's new range, such as `A1:D25` for a
   table at `A1:D20`: it keeps the header row and the columns, so the range
   starts at the table's top-left cell and ends in its last column, or the
-  operation fails with `OPS_INVALID`. Calculated columns fill the new rows,
-  and a totals row moves down to the new last row, which must be empty; a
-  table with a totals row only grows. A print area set as cell addresses
-  does not follow; `define_table` again fails, because the name is taken.
+  operation fails with `OPS_INVALID`. A totals row moves down to the new last
+  row, which must be empty; a table with a totals row only grows.
+  `define_table` again fails, because the name is taken.
+- Only a calculated column fills the new rows: a formula the table stores for
+  a whole column, as Excel makes when a formula is typed into a table column.
+  No operation makes one. A formula `set_formula` writes over a column's
+  cells, such as `=D2*E2` over `F2:F201`, is a cell formula, so that column
+  stays empty in the new rows, and the new rows take no column's number
+  format either. Write both in the same batch, such as `set_formula` with
+  `=D202*E202` over `F202:F206` and `format_range` with the `numberFormat`
+  that `read --content full` shows for the rows above.
+- What names its cells by address keeps its range: a pivot's `sourceRange`
+  (`Data!A1:F201`), a formula's fixed range (`SUMIFS($F$2:$F$201,...)`) and a
+  print area. After the resize, `refresh_pivot` still reads the old range and
+  warns `OP_NO_EFFECT` when nothing in it changed. A formula written with
+  structured references, such as `=SUMIFS(Sales[Amount],Sales[Product],A2)`,
+  follows the table; rewrite a fixed range with `set_formula`, in that form
+  or over the new rows. No operation changes a pivot's source or deletes a
+  pivot. To take the new rows in, rebuild a pivot that has its own sheet in
+  one batch: `delete_sheet` that sheet, `insert_sheet` it again and
+  `insert_pivot` over the new range with the fields and value formats
+  `inspect --detail pivots` lists.
 - Validation constrains a person typing in Excel, not the CLI: an ops batch or
   `--set` writes any value into a validated cell and exits 0. Verify your own
   writes.
