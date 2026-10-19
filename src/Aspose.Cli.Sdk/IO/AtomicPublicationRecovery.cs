@@ -491,6 +491,19 @@ internal sealed class AtomicPublicationRecovery(AtomicPublicationPlan plan)
     }
 
     /// <summary>
+    /// Removes the never-journaled transactions of ended processes from a transaction parent that
+    /// is not the target's parent, which recovery reaches only as an ancestor of the target and
+    /// so never sweeps; the same judgement and budgets as in the target's parent apply.
+    /// </summary>
+    internal static void RemoveAbandonedCandidatesIn(string transactionParent, OperationDeadline? invocationDeadline)
+    {
+        string root = Path.GetFullPath(transactionParent);
+        if (!Directory.Exists(root)) { return; }
+        RemoveAbandonedCandidates(root, suppliedLease: null, invocationDeadline,
+            Stopwatch.GetTimestamp() + (long)(MaximumRecoveryTime.TotalSeconds * Stopwatch.Frequency));
+    }
+
+    /// <summary>
     /// Removes the transactions a process of this CLI created and never journaled before it
     /// ended at once, killed or stopped by a second Ctrl+C. Without a durable journal nothing
     /// of the user's moved into one, so it holds only the candidates it staged: debris, removed

@@ -69,7 +69,12 @@ public sealed class AtomicNewDirectoryWriter : IDisposable
         NewDirectoryPublication.EnsureAnchor(_anchor, _anchorIdentity);
         _parents = new OwnedOutputDirectories(budgets.OutputSession is not null);
         _journal = new PublicationJournal { Operation = operation, State = PublicationTransactionState.Staging };
-        if (budgets.OutputSession is null) { AtomicPublicationRecovery.RecoverPendingHierarchy(parent, budgets.Deadline); }
+        if (budgets.OutputSession is null)
+        {
+            AtomicPublicationRecovery.RecoverPendingHierarchy(parent, budgets.Deadline);
+            if (_transactionParent is not null && !WorkerManifestStore.PathComparer.Equals(_transactionParent, parent))
+            { AtomicPublicationRecovery.RemoveAbandonedCandidatesIn(_transactionParent, budgets.Deadline); }
+        }
         _parents.Ensure(parent);
         _transaction = budgets.OutputSession?.CreateDirectory("directory")
             ?? PublicationTransactionDirectory.Create(Path.Combine(_transactionParent ?? parent,
