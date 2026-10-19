@@ -1213,11 +1213,17 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
         Assert.True(opened.Workbook.SheetCount >= 1);
     }
 
+    /// <summary>
+    /// Delimited text under an extension no input declares is refused, naming the extension and
+    /// the ones that import it; under the extension of a format cells only writes, such as .json
+    /// in any case, the hint says what to give instead.
+    /// </summary>
     [Theory]
-    [InlineData("records.json")]
-    [InlineData("records.dat")]
-    [InlineData("records")]
-    public void Open_DelimitedTextUnderAnUndeclaredExtension_IsRefused(string fileName)
+    [InlineData("records.json", "its .json extension names no", true)]
+    [InlineData("records.JSON", "its .JSON extension names no", true)]
+    [InlineData("records.dat", "its .dat extension names no", false)]
+    [InlineData("records", "it has no extension that names a", false)]
+    public void Open_DelimitedTextUnderAnUndeclaredExtension_IsRefused(string fileName, string named, bool writtenOnly)
     {
         string path = _fixture.Temp.File(fileName);
         File.WriteAllText(path, "Item\tAmount\nFirst\t1\nSecond\t2\n");
@@ -1225,7 +1231,15 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
         CliException error = Assert.Throws<CliException>(() => CellsInfo.Run(_fixture.Session, new CellsInspectRequest { Input = path }));
 
         Assert.Equal(ErrorCodes.FileCorrupt, error.Code);
-        Assert.Contains("delimited text", error.Details!["reason"]!.GetValue<string>(), StringComparison.Ordinal);
+        Assert.Equal(
+            $"its content is delimited text, but {named} spreadsheet input; give it a .csv, .tsv, .txt extension to import it as text",
+            error.Details!["reason"]!.GetValue<string>());
+        Assert.Equal(
+            writtenOnly
+                ? "cells writes pdf, xps, json, md with convert but does not read them; give it a workbook (xlsx, xls, xlsb, ods), "
+                    + "delimited text (csv, tsv, txt) or html instead, such as the file the export was made from."
+                : "Verify the file opens in a spreadsheet application and is one of the supported input formats.",
+            error.Hint);
     }
 
     /// <summary>Many systems "export to Excel" as tab-separated text named .xls; it imports as before.</summary>

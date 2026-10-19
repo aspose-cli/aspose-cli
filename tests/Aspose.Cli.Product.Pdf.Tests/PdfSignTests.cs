@@ -283,6 +283,46 @@ public sealed class PdfSignTests
         }
     }
 
+    /// <summary>
+    /// The certificate is read as PKCS #12 under a .pfx or .p12 name, in any case; any other
+    /// name is an unsupported format named by its extension, and nothing is written.
+    /// </summary>
+    [Theory]
+    [InlineData("signing.P12", null)]
+    [InlineData("SIGNING.PFX", null)]
+    [InlineData("signing.pem", "pem")]
+    [InlineData("signing.PEM", "PEM")]
+    [InlineData("signing", "")]
+    public void Sign_ReadsACertificateOnlyUnderAPkcs12Name(string name, string? requested)
+    {
+        using var fixture = new PdfEngineFixture();
+        string input = fixture.CreateDocument("unsigned.pdf", pages: 1);
+        string certificate = fixture.CreateCertificate("correct-password", name);
+        string output = fixture.File("signed.pdf");
+
+        Exception? error = Record.Exception(() => PdfSign.Run(fixture.Session, new PdfSignRequest
+        {
+            Input = input,
+            Output = TestOutput.At(output),
+            CertificatePath = certificate,
+            CertificatePassword = new Secret("correct-password"),
+        }));
+
+        if (requested is null)
+        {
+            Assert.Null(error);
+            Assert.True(File.Exists(output));
+            return;
+        }
+        var refused = Assert.IsType<Sdk.Errors.CliException>(error);
+        Sdk.Errors.CliException expected = Sdk.Errors.CliErrors.FormatUnsupported(requested, ["pfx", "p12"]);
+        Assert.Equal(Sdk.Errors.ErrorCodes.FormatUnsupported, refused.Code);
+        Assert.Equal(expected.Message, refused.Message);
+        Assert.Equal(expected.Hint, refused.Hint);
+        Assert.Equal(expected.Details!.ToJsonString(), refused.Details!.ToJsonString());
+        Assert.False(File.Exists(output));
+    }
+
     [Fact]
     public void Sign_WrongCertificatePasswordWritesNoOutput()
     {

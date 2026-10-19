@@ -814,6 +814,32 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
         Assert.Equal(Path.GetFullPath(input), error.Details!["path"]!.GetValue<string>());
     }
 
+    /// <summary>
+    /// Bytes detected as plain text load under a name of a text format, in any case; under any
+    /// other name they are a damaged document container.
+    /// </summary>
+    [Theory]
+    [InlineData("notes.txt", false)]
+    [InlineData("NOTES.TXT", false)]
+    [InlineData("notes.docx", true)]
+    [InlineData("notes", true)]
+    public void PlainTextBytes_LoadOnlyUnderATextFormatName(string name, bool refused)
+    {
+        string input = _fixture.Temp.File(name);
+        File.WriteAllText(input, "First line of plain text.\nSecond line.\n");
+
+        Exception? error = Record.Exception(() => WordsInspect.Run(_fixture.Session, new WordsInspectRequest { Input = input }));
+
+        if (!refused)
+        {
+            Assert.Null(error);
+            return;
+        }
+        var corrupt = Assert.IsType<CliException>(error);
+        Assert.Equal(ErrorCodes.FileCorrupt, corrupt.Code);
+        Assert.Equal("the bytes were detected as plain text but the file name claims a document container", corrupt.Details!["reason"]!.GetValue<string>());
+    }
+
     [Fact]
     public void ExclusiveInputLock_IsDistinctFromCorruptionAndReopensAfterRelease()
     {
