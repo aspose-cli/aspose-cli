@@ -23,7 +23,7 @@ internal static class EditCommand
 
     public static CommandDefinition<WordsEditRequest, WordsEditResult> Create()
     {
-        var trackChanges = new Option<bool>("--track-changes") { Description = "Track this batch as revisions." };
+        var trackChanges = new Option<bool>(WordsOptionNames.TrackChanges) { Description = "Track this batch as revisions." };
         var author = new Option<string?>("--author") { Description = "Revision author; required with --track-changes." }.WithInput(InputKind.None);
         return EditDefinition.Create<WordsOp, WordsOpsBatch, WordsEditRequest, WordsEditResult>(
             new BoundedEditCommand<WordsOp, WordsOpsBatch>(Definition),

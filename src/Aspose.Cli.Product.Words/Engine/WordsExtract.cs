@@ -1,6 +1,6 @@
+using System.Diagnostics;
 using System.Text.Json;
 using Aspose.Cli.Product.Words.Engine.Mapping;
-using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Licensing;
 using Aspose.Cli.Sdk.Results;
@@ -91,7 +91,7 @@ internal static class WordsExtract
         }
         else
         {
-            throw CliErrors.OptionInvalid("--what", $"unknown extraction kind '{request.What}'", "Use images, comments, text or tables.");
+            throw new UnreachableException($"--what {request.What} reached the engine, which ExtractCommand refuses.");
         }
 
         guard.Commit();
