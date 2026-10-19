@@ -12,23 +12,23 @@ namespace Aspose.Cli.Product.Words.Engine;
 internal sealed class WordsSplitWriter : IDisposable
 {
     /// <summary>The format every part is written in.</summary>
-    private static readonly FormatDescriptor Docx = WordsFormats.SplitParts[0];
+    internal static readonly FormatDescriptor Docx = WordsFormats.SplitParts[0];
 
     private readonly ResolvedDirectory _output;
     private readonly string _stem;
     private readonly OutputSet<Document> _transaction;
     private readonly List<Func<OutputInfo, WordsPartOutput>> _parts = [];
-    private readonly Secret? _password;
+    private readonly OutputProtection _protection;
     private Dictionary<int, string> _paths = [];
 
     /// <summary>
     /// Begins the set of parts of <paramref name="input"/>, named after its file name, each
-    /// opening with <paramref name="password"/> when one is given.
+    /// protected as <paramref name="protection"/> decides.
     /// </summary>
-    public WordsSplitWriter(OutputPipeline<Document> outputs, ResolvedDirectory output, string input, Secret? password)
+    public WordsSplitWriter(OutputPipeline<Document> outputs, ResolvedDirectory output, string input, OutputProtection protection)
     {
         _output = output;
-        _password = password;
+        _protection = protection;
         _stem = Path.GetFileNameWithoutExtension(input);
         _transaction = outputs.BeginSet([output.Path], "words-split");
     }
@@ -49,15 +49,15 @@ internal sealed class WordsSplitWriter : IDisposable
             target,
             _output.Overwrite,
             document,
-            staged => document.Save(staged, WordsSavePipeline.Options(Docx.Id, _password)),
-            encrypted: _password is not null);
+            staged => document.Save(staged, WordsSavePipeline.Options(Docx.Id, _protection.Password)),
+            encrypted: _protection.Encrypted);
         _parts.Add(describe);
     }
 
     public IReadOnlyList<WordsPartOutput> Commit()
     {
         IReadOnlyList<PublishedFile> files = _transaction.Commit();
-        return _parts.Select((describe, index) => describe(FileObjects.Output(files[index], Docx, encrypted: _password is not null))).ToArray();
+        return _parts.Select((describe, index) => describe(FileObjects.Output(files[index], Docx, encrypted: _protection.Encrypted))).ToArray();
     }
 
     public void Dispose() => _transaction.Dispose();

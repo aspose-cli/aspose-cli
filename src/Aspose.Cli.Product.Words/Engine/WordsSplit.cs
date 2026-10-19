@@ -1,5 +1,6 @@
 using Aspose.Cli.Product.Words.Engine.Mapping;
 using Aspose.Cli.Sdk.Errors;
+using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Licensing;
 using Aspose.Cli.Sdk.Results;
 using Aspose.Words;
@@ -17,7 +18,7 @@ internal static class WordsSplit
         using LoadedDocument loaded = session.Loader.Open(request.Input, request.Password);
         // Every part keeps the input's password, as a converted copy does, unless --encrypt replaces it.
         using var writer = new WordsSplitWriter(session.Outputs, request.Output, request.Input,
-            request.EncryptPassword ?? (loaded.Format.IsEncrypted ? request.Password : null));
+            OutputProtection.For(WordsSplitWriter.Docx, request.EncryptPassword, loaded.Protection, request.Password));
         switch (request.Plan.By)
         {
             case SplitBy.Sections:
