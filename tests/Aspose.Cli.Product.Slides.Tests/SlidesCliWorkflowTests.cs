@@ -451,6 +451,36 @@ public sealed class SlidesCliWorkflowTests : IDisposable
         presentation.Save(path, SaveFormat.Pptx);
     }
 
+    [Fact]
+    public void ReadFullContent_CarriesNoReviewLayoutFacts()
+    {
+        using (var presentation = new Presentation())
+        {
+            ISlide slide = presentation.Slides[0];
+            IAutoShape box = slide.Shapes.AddAutoShape(ShapeType.Rectangle, 40, 40, 400, 80);
+            box.TextFrame.Text = "Quarterly revenue";
+            box.FillFormat.FillType = FillType.Solid;
+            box.FillFormat.SolidFillColor.Color = System.Drawing.Color.Navy;
+            slide.Shapes.AddTable(40, 200, [200, 200], [40, 40]);
+            slide.Shapes.AddChart(Aspose.Slides.Charts.ChartType.ClusteredColumn, 300, 300, 300, 200);
+            presentation.Save(_workspace.File("facts.pptx"), SaveFormat.Pptx);
+        }
+
+        CliResult read = _workspace.Run("slides", "read", "facts.pptx", "--content", "full", "--output-format", "json");
+
+        Assert.True(read.ExitCode == 0, read.StdErr);
+        string[] reviewFacts =
+            ["zOrder", "hasOpaqueFill", "textRect", "textGlyphRect", "textAutofits", "backdrop", "chartTextColor", "evaluationWatermark"];
+        Assert.Empty(PropertyNames(JsonNode.Parse(read.StdOut)!).Intersect(reviewFacts, StringComparer.OrdinalIgnoreCase));
+
+        static IEnumerable<string> PropertyNames(JsonNode? node) => node switch
+        {
+            JsonObject value => value.SelectMany(static pair => PropertyNames(pair.Value).Prepend(pair.Key)),
+            JsonArray items => items.SelectMany(PropertyNames),
+            _ => [],
+        };
+    }
+
     private static string[] FindingCodes(JsonNode result) =>
         [.. result["findings"]!.AsArray().Select(static finding => finding!["code"]!.GetValue<string>()).Distinct()];
 
