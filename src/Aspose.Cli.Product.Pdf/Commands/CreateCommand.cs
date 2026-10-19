@@ -1,5 +1,4 @@
 using System.CommandLine;
-using System.Globalization;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Extensibility;
 using Aspose.Cli.Sdk.Extensibility.Output;
@@ -106,19 +105,9 @@ internal static class CreateCommand
         return source;
     }
 
-    private static PdfMargins ParseMargins(string text)
+    internal static PdfMargins ParseMargins(string text)
     {
-        string[] tokens = text.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
-        double[] values;
-        try
-        {
-            values = tokens.Select(token => double.Parse(token, NumberStyles.Float, CultureInfo.InvariantCulture)).ToArray();
-        }
-        catch (FormatException)
-        {
-            throw CliErrors.OptionInvalid("--margins", $"'{text}' is not numeric", "Use one value or top,right,bottom,left in points.");
-        }
-
+        double[] values = PdfNumberList.Parse(text, "--margins", "Use one value or top,right,bottom,left in points.");
         if (values.Length == 1 && values[0] >= 0)
         {
             return new PdfMargins(values[0], values[0], values[0], values[0]);

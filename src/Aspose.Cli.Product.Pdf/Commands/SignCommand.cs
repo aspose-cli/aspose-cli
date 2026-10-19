@@ -1,5 +1,4 @@
 using System.CommandLine;
-using System.Globalization;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Extensibility;
 using Aspose.Cli.Sdk.Extensibility.Output;
@@ -99,21 +98,9 @@ internal static class SignCommand
         surface.Out.WriteLine($"  appearance: {(result.Visible ? $"visible on page {result.Page}" : "invisible")}");
     }
 
-    private static PdfSignatureRect ParseRect(string text)
+    internal static PdfSignatureRect ParseRect(string text)
     {
-        string[] tokens = text.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
-        double[] values;
-        try
-        {
-            values = tokens.Select(token =>
-                double.Parse(token, NumberStyles.Float, CultureInfo.InvariantCulture)).ToArray();
-        }
-        catch (FormatException)
-        {
-            throw CliErrors.OptionInvalid(
-                "--rect", $"'{text}' is not numeric", "Use x,y,width,height in PDF points from the page's top-left corner.");
-        }
-
+        double[] values = PdfNumberList.Parse(text, "--rect", "Use x,y,width,height in PDF points from the page's top-left corner.");
         if (values.Length != 4 || values[2] <= 0 || values[3] <= 0)
         {
             throw CliErrors.OptionInvalid(
