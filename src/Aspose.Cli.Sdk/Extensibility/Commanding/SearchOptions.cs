@@ -28,7 +28,8 @@ public sealed class SearchOptions
     /// <summary>The largest accepted <c>--max-hits</c>.</summary>
     internal const int MaximumHits = 10_000;
 
-    internal const string PatternOption = "--pattern";
+    /// <summary>The option that holds the text or expression to find, for an error about it.</summary>
+    public const string PatternOption = "--pattern";
     internal const string RegexOption = "--regex";
     internal const string CaseSensitiveOption = "--case-sensitive";
     internal const string ScopeOption = "--scope";

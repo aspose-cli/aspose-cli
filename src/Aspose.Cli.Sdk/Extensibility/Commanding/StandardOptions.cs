@@ -244,7 +244,11 @@ internal enum OutputKind { File, Directory, CreatedFile, Mutation }
 /// (<see cref="FormatDescriptor.Protectable"/>).
 /// </remarks>
 /// <param name="Subject">The output as the password help names it, such as "the output report".</param>
-public sealed record EncryptedOutput(string Subject);
+public sealed record EncryptedOutput(string Subject)
+{
+    /// <summary>The option that gives the output password, for a note or an error about it.</summary>
+    public const string Option = StandardOptionNames.Encrypt;
+}
 
 /// <summary>
 /// The one mapping from <see cref="CommandTraits"/> to the common arguments and options. It
