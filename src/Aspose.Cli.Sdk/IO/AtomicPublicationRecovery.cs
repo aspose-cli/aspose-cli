@@ -609,11 +609,7 @@ internal sealed class AtomicPublicationRecovery(AtomicPublicationPlan plan)
         foreach (PublicationJournalEntry? entry in recoveryPlan.Journal.Entries)
         {
             if (entry is null
-                || string.IsNullOrWhiteSpace(entry.Target)
-                || string.IsNullOrWhiteSpace(entry.Staged)
-                || !entry.Original.IsStructurallyValid()
-                || !entry.StagedSnapshot.IsStructurallyValid()
-                || entry.DeleteTarget && !entry.Original.Exists
+                || !entry.IsConsistent()
                 || entry.DeleteTarget && entry.Displaced is null
                 || entry.DisplacedSnapshot is not null
                     && !entry.DisplacedSnapshot.IsStructurallyValid()

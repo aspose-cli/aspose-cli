@@ -50,7 +50,7 @@ public sealed class WorkerOutputPublicationTests : IDisposable
         string replaced = _temp.File("report.txt");
         File.WriteAllText(deleted, "obsolete");
         File.WriteAllText(replaced, "original");
-        WorkerOutputEntry deletion = Entry(deleted, "unused") with { DeleteTarget = true };
+        PlannedOutput deletion = Entry(deleted, "unused") with { DeleteTarget = true };
         WorkerOutputManifest manifest = Manifest(
             deletion,
             Entry(replaced, "published"));
@@ -167,7 +167,7 @@ public sealed class WorkerOutputPublicationTests : IDisposable
         string input = _temp.File("source.txt");
         File.WriteAllText(input, "source");
         string target = _temp.File("report.txt");
-        WorkerOutputEntry entry = Entry(target, "published") with
+        PlannedOutput entry = Entry(target, "published") with
         { InputPath = input, InputSnapshot = FilePublicationSnapshot.Capture(input) };
         WorkerManifestStore.Write(ManifestPath, Manifest(entry));
         File.WriteAllText(input, "external");
@@ -257,11 +257,11 @@ public sealed class WorkerOutputPublicationTests : IDisposable
         string nested = Path.Combine(created, "nested.txt");
         File.WriteAllText(target, "original");
         File.WriteAllText(input, "source");
-        WorkerOutputEntry entry = Entry(target, "published", backup) with
+        PlannedOutput entry = Entry(target, "published", backup) with
         {
             InputPath = input,
             InputSnapshot = FilePublicationSnapshot.Capture(input),
-            BackupParentIdentity = FilePublicationOwnedDelete.TryGetDirectoryIdentity(_temp.Path),
+            RequestedBackupParentIdentity = FilePublicationOwnedDelete.TryGetDirectoryIdentity(_temp.Path),
         };
         WorkerOutputManifest manifest = Manifest(entry, Entry(nested, "nested")) with
         {
@@ -523,19 +523,19 @@ public sealed class WorkerOutputPublicationTests : IDisposable
         Assert.Empty(Directory.EnumerateDirectories(_temp.Path, ".aspose-publication-*"));
     }
 
-    private const string BackupField = "backupPath";
-    private const string BackupOriginalField = "backupOriginal";
-    private const string BackupParentField = "backupParentIdentity";
+    private const string BackupField = "requestedBackup";
+    private const string BackupOriginalField = "requestedBackupOriginal";
+    private const string BackupParentField = "requestedBackupParentIdentity";
 
     private sealed class Callback(Action<PublicationFaultPoint> action) : IPublicationFaultInjector
     {
         public void Hit(PublicationFaultPoint point) => action(point);
     }
 
-    private WorkerOutputManifest Manifest(params WorkerOutputEntry[] entries) =>
+    private WorkerOutputManifest Manifest(params PlannedOutput[] entries) =>
         new() { Entries = [.. entries], Sealed = true };
 
-    private WorkerOutputEntry Entry(
+    private PlannedOutput Entry(
         string target,
         string content,
         string? backupPath = null)
@@ -553,13 +553,13 @@ public sealed class WorkerOutputPublicationTests : IDisposable
         string? fullBackup = backupPath is null
             ? null
             : Path.GetFullPath(backupPath);
-        return new WorkerOutputEntry
+        return new PlannedOutput
         {
             Target = fullTarget,
             Staged = staged,
             Overwrite = original.Exists,
-            BackupPath = fullBackup,
-            BackupOriginal = fullBackup is null || !original.Exists
+            RequestedBackup = fullBackup,
+            RequestedBackupOriginal = fullBackup is null
                 ? null
                 : FilePublicationSnapshot.Capture(fullBackup),
             TargetParentIdentity = FilePublicationOwnedDelete.TryGetDirectoryIdentity(Path.GetDirectoryName(fullTarget)!),

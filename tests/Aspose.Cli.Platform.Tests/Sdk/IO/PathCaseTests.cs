@@ -31,7 +31,7 @@ public sealed class PathCaseTests : IDisposable
     {
         Assert.NotEqual(_workerRoot, Upper(_workerRoot));
         string manifestPath = Path.Combine(_workerRoot, WorkerOutputSession.ManifestName);
-        WorkerOutputEntry entry = WorkerEntry(_temp.File("report.txt"));
+        PlannedOutput entry = WorkerEntry(_temp.File("report.txt"));
         WorkerManifestStore.Write(manifestPath, new WorkerOutputManifest
         {
             Entries = [entry with { Target = Upper(Path.Combine(_workerRoot, "report.txt")) }],
@@ -364,13 +364,13 @@ public sealed class PathCaseTests : IDisposable
         Assert.Equal(StringComparison.OrdinalIgnoreCase, FilePaths.Comparison);
     }
 
-    private WorkerOutputEntry WorkerEntry(string target)
+    private PlannedOutput WorkerEntry(string target)
     {
         string fullTarget = Path.GetFullPath(target);
         string retained = Directory.CreateDirectory(Path.Combine(_workerRoot, Guid.NewGuid().ToString("N") + "-retained")).FullName;
         string staged = Path.Combine(retained, "output.stage");
         File.WriteAllText(staged, "published");
-        return new WorkerOutputEntry
+        return new PlannedOutput
         {
             Target = fullTarget,
             Staged = staged,

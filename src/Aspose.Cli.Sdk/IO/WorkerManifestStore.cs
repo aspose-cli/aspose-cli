@@ -100,7 +100,7 @@ internal static class WorkerManifestStore
 
     private static void Validate(string root, WorkerOutputManifest manifest)
     {
-        if (manifest.Version != 7 || !manifest.Sealed || manifest.Entries is null || manifest.Directories is null
+        if (manifest.Version != WorkerOutputManifest.CurrentVersion || !manifest.Sealed || manifest.Entries is null || manifest.Directories is null
             || manifest.Entries.Count > MaximumEntries || manifest.Directories.Count > MaximumDirectories)
         {
             throw new InvalidDataException("The worker manifest violates its bounded contract.");
@@ -128,12 +128,9 @@ internal static class WorkerManifestStore
             return;
         }
         var paths = new HashSet<string>(FilePaths.Comparer);
-        foreach (WorkerOutputEntry entry in manifest.Entries)
+        foreach (PlannedOutput entry in manifest.Entries)
         {
-            if (entry is null || entry.Original is null || entry.StagedSnapshot is null
-                || !entry.Original.IsStructurallyValid() || !entry.StagedSnapshot.IsStructurallyValid()
-                || !entry.StagedSnapshot.Exists || entry.Original.Exists && !entry.Overwrite
-                || entry.DeleteTarget && (!entry.Original.Exists || entry.BackupPath is not null))
+            if (entry is null || !entry.IsConsistent())
             {
                 throw new InvalidDataException("A worker entry has invalid snapshots or permissions.");
             }
@@ -149,17 +146,13 @@ internal static class WorkerManifestStore
             }
             if (!entry.StagedSnapshot.VersionEquals(FilePublicationSnapshot.Capture(staged))
                 || !entry.StagedSnapshot.Metadata!.Matches(staged)) { throw new InvalidDataException("The staged file changed after handoff."); }
-            if (entry.BackupPath is { } backup)
+            if (entry.RequestedBackup is { } backup)
             {
                 backup = Canonical(backup);
                 EnsureOutsideRoot(root, backup);
                 OutputPathValidator.EnsureSafeFile(backup, "backup");
-                if (!paths.Add(backup) || entry.BackupOriginal is null || !entry.BackupOriginal.IsStructurallyValid())
-                { throw new InvalidDataException("Worker backup paths or snapshots are invalid."); }
+                if (!paths.Add(backup)) { throw new InvalidDataException("Worker backup paths overlap."); }
             }
-            if ((entry.InputPath is null) != (entry.InputSnapshot is null)
-                || entry.InputSnapshot is { } input && (!input.Exists || !input.IsStructurallyValid()))
-            { throw new InvalidDataException("The input precondition is incomplete."); }
             if (entry.InputPath is not null) { _ = Canonical(entry.InputPath); }
         }
         var directories = new HashSet<string>(FilePaths.Comparer);

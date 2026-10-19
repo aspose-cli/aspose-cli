@@ -575,21 +575,23 @@ internal sealed class PublicationJournal
 internal sealed class PublicationJournalVersionException(string path, int version)
     : IOException($"Publication journal '{path}' has version {version}; this build reads version {PublicationJournal.CurrentVersion}.");
 
-internal sealed class PublicationJournalEntry
+/// <summary>
+/// One staged output and what its publication requires: the plan a publication journal records
+/// and a worker hands to its parent.
+/// </summary>
+internal record PlannedOutput
 {
-    public required int Index { get; init; }
-
     public required string Target { get; init; }
 
     public required string Staged { get; init; }
 
     public required bool Overwrite { get; init; }
 
-    public string? Displaced { get; init; }
+    public bool DeleteTarget { get; init; }
 
-    public FilePublicationSnapshot? DisplacedSnapshot { get; set; }
+    public required FilePublicationSnapshot Original { get; init; }
 
-    public FilePublicationSnapshot? PublishedSnapshot { get; set; }
+    public required FilePublicationSnapshot StagedSnapshot { get; init; }
 
     public string? RequestedBackup { get; init; }
 
@@ -599,17 +601,42 @@ internal sealed class PublicationJournalEntry
 
     public FilePublicationSnapshot? InputSnapshot { get; init; }
 
-    public required FilePublicationSnapshot Original { get; init; }
-
-    public required FilePublicationSnapshot StagedSnapshot { get; init; }
-
     public FilePhysicalIdentity? TargetParentIdentity { get; init; }
 
     public FilePhysicalIdentity? RequestedBackupParentIdentity { get; init; }
 
-    public PublicationEntryState State { get; set; } = PublicationEntryState.Staged;
+    /// <summary>
+    /// Whether the plan is one that staging produces: its snapshots are complete, an existing
+    /// target is overwritten, a deletion removes an existing target without a backup, and a
+    /// backup or an input comes with its snapshot. Each reader checks the paths against its own layout.
+    /// </summary>
+    internal bool IsConsistent() =>
+        !string.IsNullOrWhiteSpace(Target) && !string.IsNullOrWhiteSpace(Staged)
+        && Original is not null && Original.IsStructurallyValid()
+        && StagedSnapshot is not null && StagedSnapshot.Exists && StagedSnapshot.IsStructurallyValid()
+        && (!Original.Exists || Overwrite)
+        && (!DeleteTarget || Original.Exists && RequestedBackup is null)
+        && (RequestedBackup is null) == (RequestedBackupOriginal is null)
+        && RequestedBackupOriginal?.IsStructurallyValid() != false
+        && (InputPath is null) == (InputSnapshot is null)
+        && (InputSnapshot is null || InputSnapshot.Exists && InputSnapshot.IsStructurallyValid());
 
-    public bool DeleteTarget { get; init; }
+    /// <summary>The same plan with its staged file at <paramref name="staged"/>.</summary>
+    internal PlannedOutput StagedAt(string staged) => new PlannedOutput(this) { Staged = staged };
+}
+
+/// <summary>A planned output and how far its publication has gone.</summary>
+internal sealed record PublicationJournalEntry : PlannedOutput
+{
+    public required int Index { get; init; }
+
+    public string? Displaced { get; init; }
+
+    public FilePublicationSnapshot? DisplacedSnapshot { get; set; }
+
+    public FilePublicationSnapshot? PublishedSnapshot { get; set; }
+
+    public PublicationEntryState State { get; set; } = PublicationEntryState.Staged;
 
     public long Size { get; set; }
 }
