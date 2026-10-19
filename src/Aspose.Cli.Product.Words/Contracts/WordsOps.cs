@@ -1,5 +1,6 @@
 using System.Text.Json.Serialization;
 using Aspose.Cli.Sdk.Serialization;
+using Aspose.Cli.Sdk.Text;
 
 namespace Aspose.Cli.Product.Words.Contracts;
 
@@ -117,13 +118,15 @@ public sealed record WordsMarginInput
 }
 
 /// <summary>
-/// Replaces literal or regular-expression text within a document scope. A regex find may not use
-/// the anchors ^, $, \A, \Z, \z or \G outside a character class: the engine reads them at the
-/// edges of the whole scope, not of each paragraph as <c>words search</c> does. Nor may it use a
-/// (?#...) comment or the x option, which can hide an anchor.
+/// Replaces literal or regular-expression text within a document scope where
+/// <c>words search</c> finds it: in the text of each paragraph, with the text boxes it anchors,
+/// and of each comment and note, so ^ and $ anchor at each of them. A match that takes in a list
+/// number, a paragraph mark or a header or footer placeholder such as {PAGE} is neither replaced
+/// nor counted. The replacement takes the format of the text where the match starts and is
+/// inserted as text, so a code such as ^p or &amp;p inserts no break.
 /// </summary>
 [Operation("replace_text")]
-public sealed partial record ReplaceTextOp : WordsOp
+public sealed record ReplaceTextOp : WordsOp
 {
     /// <summary>The text to find, or the pattern when regex is true.</summary>
     [NotState]
@@ -161,66 +164,12 @@ public sealed partial record ReplaceTextOp : WordsOp
     /// <inheritdoc/>
     protected override BoundedOperation Validated()
     {
-        // WORDS-REGEX-ANCHORS: the engine anchors these at the scope's edges only. A comment or
-        // the x option can hide an anchor from the scan, so a find with either is refused too.
-        OperationInvalidException.Require(
-            !Regex || !HidesItsAnchors().IsMatch(Find),
-            "find uses a (?#...) comment or the x option, which replace_text does not read, since they can hide an anchor",
-            "Drop the comment and the x option, writing the pattern without the white space and comments they allow.");
-        string? anchor = Regex ? RegexAnchor(Find) : null;
-        OperationInvalidException.Require(
-            anchor is null,
-            $"find uses the anchor {anchor}, which replace_text cannot honor at each paragraph as 'words search' does",
-            "Drop the anchor and pin the match with the text next to it, such as the space after a number; "
-                + "or find the paragraphs with 'words search' and rewrite each with set_text.");
-        return this;
-    }
-
-    /// <summary>A comment group, or an inline option group that names the x option, such as (?x), (?ix) or (?-i+x:...).</summary>
-    [System.Text.RegularExpressions.GeneratedRegex(@"\(\?(#|[A-Za-z+-]*x[A-Za-z+-]*[:)])")]
-    private static partial System.Text.RegularExpressions.Regex HidesItsAnchors();
-
-    /// <summary>The first anchor of <paramref name="pattern"/> outside a character class, or null when it has none.</summary>
-    private static string? RegexAnchor(string pattern)
-    {
-        bool inClass = false;
-        for (int index = 0; index < pattern.Length; index++)
+        if (TextReplacement.Problem(Find, Regex, CaseSensitive) is { } problem)
         {
-            char current = pattern[index];
-            if (current == '\\')
-            {
-                if (index + 1 < pattern.Length && !inClass && pattern[index + 1] is 'A' or 'Z' or 'z' or 'G')
-                {
-                    return "\\" + pattern[index + 1];
-                }
-
-                index++;
-            }
-            else if (inClass)
-            {
-                inClass = current != ']';
-            }
-            else if (current == '[')
-            {
-                inClass = true;
-                // A leading ^ negates the class, and a ] right after the opening is a literal.
-                if (index + 1 < pattern.Length && pattern[index + 1] == '^')
-                {
-                    index++;
-                }
-
-                if (index + 1 < pattern.Length && pattern[index + 1] == ']')
-                {
-                    index++;
-                }
-            }
-            else if (current is '^' or '$')
-            {
-                return current.ToString();
-            }
+            throw new OperationInvalidException(problem.Reason, problem.Hint);
         }
 
-        return null;
+        return this;
     }
 }
 
@@ -700,6 +649,11 @@ public sealed record FormatTextOp : WordsOp
             Match is not null || !(Regex || CaseSensitive || WholeWord),
             "regex, caseSensitive and wholeWord true need match, the text to match",
             "Give match the text or pattern, or drop regex, caseSensitive and wholeWord.");
+        if (Match is not null && TextReplacement.Problem(Match, Regex, CaseSensitive) is { } problem)
+        {
+            throw new OperationInvalidException(problem.Reason, problem.Hint);
+        }
+
         return this;
     }
 }

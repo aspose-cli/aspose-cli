@@ -1,7 +1,5 @@
 using System.Data;
 using System.Drawing;
-using System.Text.RegularExpressions;
-using Aspose.Cli.Sdk.Text;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Words;
 
@@ -10,14 +8,6 @@ namespace Aspose.Cli.Product.Words.Engine.Editing;
 /// <summary>Provides stateless SDK adaptation helpers shared by Words operation families.</summary>
 internal static class WordsMutationSupport
 {
-    /// <summary>
-    /// The pattern replace_text finds and format_text matches: literal text, or a .NET regular
-    /// expression, ignoring letter case unless it is case-sensitive.
-    /// </summary>
-    internal static Regex FindPattern(string find, bool regex, bool caseSensitive) => regex
-        ? SafeRegex.Create(find, caseSensitive)
-        : new Regex(Regex.Escape(find), caseSensitive ? RegexOptions.CultureInvariant : RegexOptions.IgnoreCase | RegexOptions.CultureInvariant, SafeRegex.DefaultTimeout);
-
     internal static void ApplyPageSetup(Section section, WordsPageSetupInput setup)
     {
         // The orientation first: the SDK swaps the page's width and height when it changes it.

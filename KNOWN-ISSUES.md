@@ -656,9 +656,9 @@ fails, delete the issue's section, the code that names it and the test, then upd
 
 - **Defect:** while `Document.StartTrackRevisions` is on, setting `Run.Text` on a run that is not
   in the document tree, such as a copy from `Node.Clone`, throws `NullReferenceException`.
-- **CLI behavior:** none visible; `insert_paragraphs` and `set_text` set the text of the run they
-  copy, from the paragraph before the insertion point or from the replaced text, with tracking
-  paused, and the run's insertion is then tracked as usual.
+- **CLI behavior:** none visible; `insert_paragraphs`, `set_text` and `replace_text` set the text
+  of the run they copy, from the paragraph before the insertion point or from the replaced text,
+  with tracking paused, and the run's insertion is then tracked as usual.
 - **Reproduction:** [WordsKnownIssueTests](tests/Aspose.Cli.Product.Words.Tests/WordsKnownIssueTests.cs)
 
 ### WORDS-REGEX-TIMEOUT
@@ -666,10 +666,10 @@ fails, delete the issue's section, the code that names it and the test, then upd
 - **Defect:** `Range.Replace(Regex, string, FindReplaceOptions)` ignores the expression's
   `MatchTimeout`: an expression that backtracks catastrophically, such as `(a+)+$` on a run of
   `a` that ends in another character, runs until it finishes, which can take hours.
-- **CLI behavior:** `replace_text` with `regex` first runs the expression, under its execution
-  budget, on the text the replace searches (each story's text without field codes or text a
-  tracked change deletes), and an expression that runs past the budget fails with
-  `OPERATION_TIMEOUT` before the engine replaces anything.
+- **CLI behavior:** `replace_text` does not call `Range.Replace`: it finds its matches under the
+  expression's budget in the text `words search` reads and replaces them in place, so an
+  expression that runs past the budget fails with `OPERATION_TIMEOUT` and the edit writes
+  nothing.
 - **Reproduction:** [WordsKnownIssueTests](tests/Aspose.Cli.Product.Words.Tests/WordsKnownIssueTests.cs)
 
 ### WORDS-REGEX-ANCHORS
@@ -677,10 +677,7 @@ fails, delete the issue's section, the code that names it and the test, then upd
 - **Defect:** `Range.Replace(Regex, string, FindReplaceOptions)` matches `^` only at the start of
   the range, even with `(?m)`, and `$` at no paragraph end, even in the range of one paragraph,
   so an expression anchored at each paragraph replaces at most the first one.
-- **CLI behavior:** `replace_text` refuses a regex `find` that uses `^`, `$`, `\A`, `\Z`, `\z` or
-  `\G` outside a character class with `OPS_INVALID`, before the edit runs, and so a `find` with
-  a `(?#...)` comment or the `x` option, which can hide an anchor; `words search` reads those
-  anchors at each paragraph.
-- **Workaround:** drop the anchor and pin the match with the text next to it, or find the
-  paragraphs with `words search` and rewrite each with `set_text`.
+- **CLI behavior:** `replace_text` does not call `Range.Replace`: it replaces the matches
+  `words search` finds, in the text of each paragraph, comment and note, so `^` and `$` anchor
+  at each of them.
 - **Reproduction:** [WordsKnownIssueTests](tests/Aspose.Cli.Product.Words.Tests/WordsKnownIssueTests.cs)
