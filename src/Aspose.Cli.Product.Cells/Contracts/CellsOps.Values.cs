@@ -1,4 +1,5 @@
 using Aspose.Cli.Sdk.Operations;
+using Aspose.Cli.Sdk.Text;
 
 namespace Aspose.Cli.Product.Cells.Contracts;
 
@@ -170,17 +171,9 @@ public sealed record ReplaceTextOp : CellsSheetOp
     /// <inheritdoc />
     protected override BoundedOperation Validated()
     {
-        if (Regex)
+        if (TextReplacement.Problem(Find, Regex, CaseSensitive) is { } problem)
         {
-            try
-            {
-                _ = new System.Text.RegularExpressions.Regex(Find, System.Text.RegularExpressions.RegexOptions.CultureInvariant);
-            }
-            catch (ArgumentException exception)
-            {
-                throw new OperationInvalidException($"find is not a valid .NET regular expression: {exception.Message}",
-                    "Escape the characters . $ ^ { [ ( | ) * + ? \\ with a backslash, or set regex to false for literal text.");
-            }
+            throw new OperationInvalidException(problem.Reason, problem.Hint);
         }
 
         return this;

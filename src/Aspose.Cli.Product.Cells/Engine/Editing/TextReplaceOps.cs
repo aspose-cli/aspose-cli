@@ -1,4 +1,3 @@
-using System.Text.RegularExpressions;
 using Aspose.Cells;
 using Aspose.Cli.Sdk.Text;
 
@@ -14,32 +13,13 @@ internal static class TextReplaceOps
     /// </summary>
     public static long Replace(Worksheet sheet, ReplaceTextOp op)
     {
-        string pattern = op.Regex ? op.Find : Regex.Escape(op.Find);
-        if (op.WholeWord)
-        {
-            pattern = $@"(?<![\p{{L}}\p{{N}}_])(?:{pattern})(?![\p{{L}}\p{{N}}_])";
-        }
-
-        Regex find = SafeRegex.Create(pattern, op.CaseSensitive);
-        // A literal replacement is inserted verbatim; a regex one honors $1 and ${name}.
-        string replacement = op.Regex ? op.Replace : op.Replace.Replace("$", "$$", StringComparison.Ordinal);
+        TextReplacement replacement = TextReplacement.Create(op.Find, op.Replace, op.Regex, op.CaseSensitive, op.WholeWord);
         RangeRef? range = op.Range is { } text ? A1.ParseRange(text).Range : null;
-        long left = op.MaxReplacementCount ?? long.MaxValue;
+        int left = op.MaxReplacementCount ?? int.MaxValue;
         long replaced = 0;
         foreach (Cell cell in TextCells(sheet, range))
         {
-            string before = cell.StringValue;
-            int matches = 0;
-            string after = find.Replace(before, match =>
-            {
-                if (matches >= left)
-                {
-                    return match.Value;
-                }
-
-                matches++;
-                return match.Result(replacement);
-            });
+            (string after, int matches) = replacement.Replace(cell.StringValue, left);
             if (matches == 0)
             {
                 continue;
