@@ -64,7 +64,8 @@ internal static class CellsEdit
         if (transaction is not null)
         {
             // A batch that chose the active sheet keeps it; any other keeps the input's.
-            if (!applied.Any(static outcome => outcome is { Op: "set_active_sheet", Status: OpStatuses.Ok }))
+            string[] activating = [.. batch.Ops.OfType<SetActiveSheetOp>().Select(static op => op.Id!)];
+            if (!applied.Any(outcome => outcome.Status == OpStatuses.Ok && activating.Contains(outcome.Id)))
             {
                 loaded.RestoreActiveSheet(savePlan);
             }
