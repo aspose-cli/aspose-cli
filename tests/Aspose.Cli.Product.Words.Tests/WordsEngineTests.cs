@@ -1367,7 +1367,8 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
         // UTF-8 without a byte order mark unless one is asked for.
         const string First = "岗位,\"人数, 备注\"\r\n\"Engineer \"\"senior\"\"\",3\r\n";
         Assert.Equal(System.Text.Encoding.UTF8.GetBytes(First), File.ReadAllBytes(result.Outputs[0].Path));
-        Assert.Equal("\"Line one\nLine two\nLine three\"\r\n", File.ReadAllText(result.Outputs[1].Path));
+        const string Second = "\"Line one\nLine two\nLine three\"\r\n";
+        Assert.Equal(System.Text.Encoding.UTF8.GetBytes(Second), File.ReadAllBytes(result.Outputs[1].Path));
 
         WordsExtractResult marked = WordsExtract.Run(_fixture.Session, new WordsExtractRequest
         {
@@ -1377,8 +1378,8 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
             ByteOrderMark = true,
         });
 
-        Assert.All(marked.Outputs, static item => Assert.Equal([0xEF, 0xBB, 0xBF], File.ReadAllBytes(item.Path)[..3]));
-        Assert.Equal(First, File.ReadAllText(marked.Outputs[0].Path));
+        Assert.Equal([0xEF, 0xBB, 0xBF, .. System.Text.Encoding.UTF8.GetBytes(First)], File.ReadAllBytes(marked.Outputs[0].Path));
+        Assert.Equal([0xEF, 0xBB, 0xBF, .. System.Text.Encoding.UTF8.GetBytes(Second)], File.ReadAllBytes(marked.Outputs[1].Path));
     }
 
     /// <summary>Writes a table of one row per item of <paramref name="rows"/>, each cell its text.</summary>

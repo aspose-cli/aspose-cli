@@ -1001,6 +1001,51 @@ public sealed class PdfMutateTests
     }
 
     [Fact]
+    public void ExtractTables_QuotesFieldsWithCommasAndQuotesAndEndsRecordsWithCrLf()
+    {
+        using var fixture = new PdfEngineFixture();
+        string input = fixture.File("csv-table.pdf");
+        using (var document = new Document())
+        {
+            Page page = document.Pages.Add();
+            var table = new Table
+            {
+                ColumnWidths = "160 160",
+                DefaultCellBorder = new BorderInfo(BorderSide.All, Color.Black),
+            };
+            Row header = table.Rows.Add();
+            header.Cells.Add("Metric");
+            header.Cells.Add("Value, note");
+            Row row = table.Rows.Add();
+            row.Cells.Add("Say \"hi\"");
+            row.Cells.Add("42");
+            page.Paragraphs.Add(table);
+            document.Save(input);
+        }
+
+        PdfExtractResult plain = PdfExtract.Run(fixture.Session, new PdfExtractRequest
+        {
+            Input = input,
+            Output = new ResolvedDirectory(fixture.File("csv-plain")),
+            What = "tables",
+        });
+        PdfExtractResult marked = PdfExtract.Run(fixture.Session, new PdfExtractRequest
+        {
+            Input = input,
+            Output = new ResolvedDirectory(fixture.File("csv-marked")),
+            What = "tables",
+            ByteOrderMark = true,
+        });
+
+        // The absorber finds each row as a table of its own.
+        string[] expected = ["Metric,\"Value, note\"\r\n", "\"Say \"\"hi\"\"\",42\r\n"];
+        Assert.Equal(expected.Select(static csv => Encoding.UTF8.GetBytes(csv)), plain.Outputs.Select(static table => File.ReadAllBytes(table.Path)));
+        Assert.Equal(
+            expected.Select(static csv => (byte[])[0xEF, 0xBB, 0xBF, .. Encoding.UTF8.GetBytes(csv)]),
+            marked.Outputs.Select(static table => File.ReadAllBytes(table.Path)));
+    }
+
+    [Fact]
     public void SetFormField_RefusesACheckBoxStateThatWouldNotDisplay()
     {
         using var fixture = new PdfEngineFixture();
