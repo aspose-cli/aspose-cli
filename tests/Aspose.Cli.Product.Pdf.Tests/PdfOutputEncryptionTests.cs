@@ -89,6 +89,26 @@ public sealed class PdfOutputEncryptionTests : IDisposable
         Assert.Contains("ENCRYPTION_REMOVED", Codes(result));
     }
 
+    /// <summary>
+    /// The in-process session the tests share is wired as activation wires it: its loader tells
+    /// the write pipeline that the input is encrypted, so the result discloses the removal.
+    /// </summary>
+    [Fact]
+    public void InProcessConvertOfAnEncryptedInput_DisclosesTheRemovedEncryption()
+    {
+        using var fixture = new PdfEngineFixture();
+        string input = fixture.CreateEncryptedDocument(UserPassword, OwnerPassword, "locked.pdf");
+
+        PdfConvertResult result = fixture.Disclosed(session => PdfConvert.Run(session, new PdfConvertRequest
+        {
+            Input = input,
+            Password = new Secret(UserPassword),
+            Output = TestOutput.At(fixture.File("locked.txt"), format: "txt"),
+        }));
+
+        Assert.Contains(result.Warnings ?? [], static warning => warning.Code == WarningCodes.EncryptionRemoved);
+    }
+
     [Category(TestCategory.Slow)]
     [Fact]
     public void SplitOfAPlainInput_ReportsEveryPartUnencrypted()
