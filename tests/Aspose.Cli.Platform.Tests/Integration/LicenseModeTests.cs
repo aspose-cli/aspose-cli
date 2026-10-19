@@ -70,35 +70,6 @@ public sealed class LicenseModeTests : IDisposable
         Assert.Contains("--license-mode evaluation", license["detail"]!.GetValue<string>(), StringComparison.Ordinal);
     }
 
-    [Fact]
-    public void EvaluationMode_CannotBeCombinedWithAnExplicitLicense()
-    {
-        CliResult result = _workspace.Run(
-            "words", "create", "brief.docx", "--from-markdown", "brief.md",
-            "--license", "any.lic", "--license-mode", "evaluation", "--output-format", "json");
-
-        Assert.Equal(2, result.ExitCode);
-        JsonNode error = Error(result);
-        Assert.Equal("OPTION_INVALID", error["code"]!.GetValue<string>());
-        Assert.Equal("--license-mode", error["details"]!["option"]!.GetValue<string>());
-        Assert.False(File.Exists(_workspace.File("brief.docx")));
-    }
-
-    [Theory]
-    [InlineData("license", "install", "any.lic")]
-    [InlineData("license", "remove")]
-    [InlineData("app", "open", "--no-open")]
-    public void EvaluationMode_IsRefusedByCommandsWhoseEffectOutlivesThem(params string[] command)
-    {
-        // The refusal needs no file, so a missing one is not reported first.
-        CliResult result = _workspace.Run([.. command, "--license-mode", "evaluation", "--output-format", "json"]);
-
-        Assert.Equal(2, result.ExitCode);
-        JsonNode error = Error(result);
-        Assert.Equal("OPTION_INVALID", error["code"]!.GetValue<string>());
-        Assert.Equal("--license-mode", error["details"]!["option"]!.GetValue<string>());
-    }
-
     private JsonNode Create(string output, string[] options)
     {
         CliResult result = _workspace.Run(

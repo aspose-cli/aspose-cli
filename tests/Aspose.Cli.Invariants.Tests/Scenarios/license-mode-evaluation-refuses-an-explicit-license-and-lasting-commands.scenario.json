@@ -1,0 +1,44 @@
+{
+  "name": "--license-mode evaluation is refused with an explicit license and by commands whose effect outlives them",
+  "files": {
+    "brief.md": { "text": "# Project delivery\n\nApproved client scope.\n" }
+  },
+  "steps": [
+    {
+      "args": ["words", "create", "brief.docx", "--from-markdown", "brief.md", "--license", "any.lic", "--license-mode", "evaluation"],
+      "expect": {
+        "exitCode": 2,
+        "error": "OPTION_INVALID",
+        "json": [{ "path": "error.details.option", "equals": "--license-mode" }],
+        "files": { "absent": ["brief.docx"], "nothingWritten": true }
+      }
+    },
+    {
+      "args": ["license", "install", "any.lic", "--license-mode", "evaluation"],
+      "expect": {
+        "exitCode": 2,
+        "error": "OPTION_INVALID",
+        "json": [{ "path": "error.details.option", "equals": "--license-mode" }],
+        "files": { "nothingWritten": true }
+      }
+    },
+    {
+      "args": ["license", "remove", "--license-mode", "evaluation"],
+      "expect": {
+        "exitCode": 2,
+        "error": "OPTION_INVALID",
+        "json": [{ "path": "error.details.option", "equals": "--license-mode" }],
+        "files": { "nothingWritten": true }
+      }
+    },
+    {
+      "args": ["app", "open", "--no-open", "--license-mode", "evaluation"],
+      "expect": {
+        "exitCode": 2,
+        "error": "OPTION_INVALID",
+        "json": [{ "path": "error.details.option", "equals": "--license-mode" }],
+        "files": { "nothingWritten": true }
+      }
+    }
+  ]
+}
