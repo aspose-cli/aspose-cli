@@ -889,7 +889,7 @@ public sealed class PdfEngineTests
     {
         using var fixture = new PdfEngineFixture();
         string input = fixture.CreateDocument(pages: 1);
-        string output = fixture.File("output" + PdfFormats.Definitions.ExtensionFor(format));
+        string output = fixture.File("output" + PdfFormats.Definitions.ExtensionOf(format));
 
         var result = fixture.Disclosed(session => PdfConvert.Run(session, new PdfConvertRequest
         {

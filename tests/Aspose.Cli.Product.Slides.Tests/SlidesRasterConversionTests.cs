@@ -82,7 +82,7 @@ public sealed class SlidesRasterConversionTests(SlidesRasterConversionTests.Crea
         string input = fixture.CreatePresentation(slides: 1);
         string directory = fixture.File(Path.Combine(new string('a', 90), new string('b', 90), new string('c', 90)));
         Directory.CreateDirectory(directory);
-        string output = Path.Combine(directory, "slide" + SlidesFormats.Definitions.ExtensionFor(format));
+        string output = Path.Combine(directory, "slide" + SlidesFormats.Definitions.ExtensionOf(format));
         Assert.True(output.Length > 260);
 
         SlidesExport.Render(fixture.Session, new SlidesRenderRequest
