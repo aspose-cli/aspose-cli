@@ -16,14 +16,16 @@ internal static class WordsCreate
         LicenseState state = session.Outputs.License;
         using CreatedDocument created = Build(session, request);
         string formatId = request.Output.Format.Id;
-        SaveOptions options = WordsSavePipeline.Options(formatId, request.EncryptPassword);
+        // A new document has no input whose password it could keep.
+        OutputProtection protection = OutputProtection.For(request.Output.Format, request.EncryptPassword, new InputProtection(Encrypted: false), inputPassword: null);
+        SaveOptions options = WordsSavePipeline.Options(formatId, protection.Password);
         WordsSavePipeline.RemoveMacrosUnlessKept(created.Document, formatId);
         PublishedFile written = session.Outputs.Write(request.Output.Path, request.Output.Overwrite, created.Document, temp => created.Save(temp, options),
-            encrypted: request.EncryptPassword is not null);
+            encrypted: protection.Encrypted);
 
         return new WordsCreateResult
         {
-            Output = FileObjects.Output(written, request.Output.Format, encrypted: request.EncryptPassword is not null),
+            Output = FileObjects.Output(written, request.Output.Format, encrypted: protection.Encrypted),
             Inputs = created.Inputs,
             License = EnvelopeParts.License(state),
             Warnings = CreationWarnings(created, formatId),

@@ -41,9 +41,8 @@ internal static class WordsEdit
         ValidateRequest(request, batch);
         FormatDescriptor written = request.Output.Keeping(loaded.FormatId);
         string format = written.Id;
-        Secret? outputPassword = request.EncryptPassword
-            ?? (loaded.Format.IsEncrypted && written.Protectable ? request.Password : null);
-        SaveOptions saveOptions = WordsSavePipeline.Options(format, outputPassword);
+        OutputProtection protection = OutputProtection.For(written, request.EncryptPassword, loaded.Protection, request.Password);
+        SaveOptions saveOptions = WordsSavePipeline.Options(format, protection.Password);
         InputInfo input = InfoProjection.Source(request.Input, loaded);
         FileFingerprints.EnsureUnchanged(request.Input, precondition.Fingerprint, input.Fingerprint);
         FileFingerprints.EnsureMatch(request.Input, request.Options.IfMatch, input.Fingerprint);
@@ -77,7 +76,7 @@ internal static class WordsEdit
                 loaded.Resources,
                 written,
                 saveOptions,
-                outputPassword);
+                protection);
         baseline?.Cleanup();
         var outputWarnings = new List<Warning>();
         outputWarnings.AddRange(SaveWarnings(loaded, format));
@@ -180,7 +179,7 @@ internal static class WordsEdit
         LocalDocumentResourceLoader resources,
         FormatDescriptor written,
         SaveOptions saveOptions,
-        Secret? outputPassword)
+        OutputProtection protection)
     {
         string format = written.Id;
         OutputInfo? output = null;
@@ -200,22 +199,22 @@ internal static class WordsEdit
                     // Every format edit writes is one the product loads (WordsFormats.Editable).
                     if (!request.Verify)
                     {
-                        using LoadedDocument reopened = session.Loader.OpenPublishedCandidate(temp, outputPassword);
+                        using LoadedDocument reopened = session.Loader.OpenPublishedCandidate(temp, protection.Password);
                     }
                 },
                 backupPath: request.Output.BackupPath,
                 inputPrecondition: precondition,
-                encrypted: outputPassword is not null);
+                encrypted: protection.Encrypted);
             backup = write.Backup;
 
             if (request.Verify)
             {
                 WordsSavedState expected = WordsReadBack.Saved(document);
                 verification = write.Read(
-                    candidate => Verify(session, candidate, format, outputPassword, baseline!, expected, checkedOps));
+                    candidate => Verify(session, candidate, format, protection.Password, baseline!, expected, checkedOps));
             }
             transaction.Commit();
-            output = FileObjects.Output(write.Published, written, encrypted: outputPassword is not null);
+            output = FileObjects.Output(write.Published, written, encrypted: protection.Encrypted);
         }
         return (output, backup, verification);
     }

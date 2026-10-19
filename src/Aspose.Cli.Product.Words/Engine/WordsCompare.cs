@@ -48,12 +48,12 @@ internal static class WordsCompare
             FormatDescriptor written = redline.Keeping(leftLoaded.FormatId);
             format = written.Id;
             // The redline is a copy of the original, so it keeps the original's password where its format can.
-            Secret? password = leftLoaded.Format.IsEncrypted && written.Protectable ? request.LeftPassword : null;
-            SaveOptions options = WordsSavePipeline.Options(format, password);
+            OutputProtection protection = OutputProtection.For(written, encrypt: null, leftLoaded.Protection, request.LeftPassword);
+            SaveOptions options = WordsSavePipeline.Options(format, protection.Password);
             WordsSavePipeline.RemoveMacrosUnlessKept(compared, format);
             PublishedFile file = session.Outputs.Write(redline.Path, redline.Overwrite, compared, temp => compared.Save(temp, options),
-                encrypted: password is not null);
-            output = FileObjects.Output(file, written, encrypted: password is not null);
+                encrypted: protection.Encrypted);
+            output = FileObjects.Output(file, written, encrypted: protection.Encrypted);
         }
 
         return new WordsCompareResult
