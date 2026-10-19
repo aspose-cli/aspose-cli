@@ -1046,6 +1046,50 @@ public sealed class PdfMutateTests
     }
 
     [Fact]
+    public void ExtractTables_WarnsWhenItFindsNoTable()
+    {
+        using var fixture = new PdfEngineFixture();
+        string markdown = fixture.File("contract.md");
+        File.WriteAllText(markdown, """
+            # Service agreement
+
+            | Item | Qty | Amount |
+            |------|----:|-------:|
+            | Consulting | 10 | 50,000.00 |
+            | Training | 4 | 12,800.00 |
+            """);
+        string input = PdfCreate.Run(fixture.Session, new PdfCreateRequest
+        {
+            Output = TestOutput.At(fixture.File("contract.pdf")),
+            Source = new PdfMarkdownSource(new Aspose.Cli.Sdk.IO.Output.SourceFile("--from-markdown", markdown)),
+        }).Output.Path;
+
+        // A Markdown table is laid out without ruling lines, which the table absorber needs.
+        PdfExtractResult tables = PdfExtract.Run(fixture.Session, new PdfExtractRequest
+        {
+            Input = input,
+            Output = new ResolvedDirectory(fixture.File("tables")),
+            What = "tables",
+        });
+
+        Assert.Empty(tables.Outputs);
+        Warning warning = Assert.Single(tables.Warnings!, static warning => warning.Code.Name == "TABLES_NOT_FOUND");
+        Assert.Contains("ruling lines", warning.Message, StringComparison.Ordinal);
+        Assert.Contains("pdf extract --what text", warning.Hint, StringComparison.Ordinal);
+        Assert.Contains("review", warning.Hint, StringComparison.Ordinal);
+
+        // A ruled table is found, and then nothing warns.
+        PdfExtractResult ruled = PdfExtract.Run(fixture.Session, new PdfExtractRequest
+        {
+            Input = TableDocument(fixture),
+            Output = new ResolvedDirectory(fixture.File("ruled")),
+            What = "tables",
+        });
+        Assert.NotEmpty(ruled.Outputs);
+        Assert.DoesNotContain(ruled.Warnings ?? [], static warning => warning.Code.Name == "TABLES_NOT_FOUND");
+    }
+
+    [Fact]
     public void SetFormField_RefusesACheckBoxStateThatWouldNotDisplay()
     {
         using var fixture = new PdfEngineFixture();
