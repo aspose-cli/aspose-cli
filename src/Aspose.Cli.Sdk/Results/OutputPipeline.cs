@@ -648,6 +648,55 @@ public sealed class OutputPipeline<TDocument> : OutputPipeline
         new(this, _profile, new AtomicOutputSetWriter(Writer, targetDirectories, operation));
 
     /// <summary>
+    /// Publishes an edited document: stages <paramref name="output"/> with its backup and the
+    /// input precondition, reads the staged file back through <paramref name="verify"/> before
+    /// anything is published, and commits. A dry run publishes nothing. When saving, verifying or
+    /// committing fails, nothing is published and the input is left as it was.
+    /// </summary>
+    /// <typeparam name="TVerification">The product's verification of the staged output.</typeparam>
+    /// <param name="output">The resolved output, with the backup an in-place edit writes first.</param>
+    /// <param name="document">The edited document the output holds.</param>
+    /// <param name="precondition">The input the output replaces, which must not change meanwhile.</param>
+    /// <param name="dryRun">Whether the edit only reports what it would do.</param>
+    /// <param name="encrypted">Whether the written output carries a password.</param>
+    /// <param name="save">Saves the staged file and checks that it opens again.</param>
+    /// <param name="verify">Reads the staged file back, or null when the edit is not verified. Issues are reported, not refused.</param>
+    /// <param name="operation">The name of the publication, such as <c>pdf-edit</c>.</param>
+    public EditPublication<TVerification> PublishEdit<TVerification>(
+        ResolvedOutput output,
+        TDocument document,
+        FileWritePrecondition precondition,
+        bool dryRun,
+        bool encrypted,
+        Action<string> save,
+        Func<string, TVerification>? verify,
+        string operation)
+        where TVerification : class
+    {
+        ArgumentNullException.ThrowIfNull(output);
+        ArgumentNullException.ThrowIfNull(save);
+        if (dryRun)
+        {
+            return new EditPublication<TVerification>(null, null, null);
+        }
+
+        using OutputSet<TDocument> transaction = BeginSet([output.Directory], operation);
+        StagedOutput staged = transaction.Stage(
+            output.Path,
+            output.Overwrite,
+            document,
+            save,
+            backupPath: output.BackupPath,
+            inputPrecondition: precondition,
+            encrypted: encrypted);
+        BackupInfo? backup = staged.Backup;
+        TVerification? verification = verify is null ? null : staged.Read(verify);
+        transaction.Commit();
+        return new EditPublication<TVerification>(
+            FileObjects.Output(staged.Published, output.Format, encrypted), backup, verification);
+    }
+
+    /// <summary>
     /// Records that a view rendering, such as review evidence or a live preview, showed
     /// <paramref name="document"/>: its pages <paramref name="pages"/> as <paramref name="format"/>
     /// parts, or the whole document when null. The document is inspected now, while the product
