@@ -212,8 +212,7 @@ public static class LicenseInstaller
 
     /// <summary>Whether the license destinations' directory is the temporary snapshot's or inside it.</summary>
     internal static bool IsInsideSnapshot(string snapshotDirectory, string directory) =>
-        FilePaths.Same(directory, snapshotDirectory)
-            || directory.StartsWith(snapshotDirectory + Path.DirectorySeparatorChar, FilePaths.Comparison);
+        FilePaths.IsWithin(snapshotDirectory, directory, allowEqual: true);
 
     private static string[] NormalizePaths(IEnumerable<string> paths)
     {
@@ -229,9 +228,7 @@ public static class LicenseInstaller
         foreach (string path in paths.Skip(1))
         {
             string parent = Path.GetDirectoryName(path)!;
-            while (!FilePaths.Same(parent, directory)
-                && !parent.StartsWith(Path.TrimEndingDirectorySeparator(directory)
-                    + Path.DirectorySeparatorChar, FilePaths.Comparison))
+            while (!FilePaths.IsWithin(directory, parent, allowEqual: true))
             {
                 directory = Path.GetDirectoryName(directory)
                     ?? throw new ArgumentException("License destinations must share a filesystem root.", nameof(paths));

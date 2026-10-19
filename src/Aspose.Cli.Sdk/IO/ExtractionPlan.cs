@@ -39,7 +39,7 @@ internal sealed class ExtractionPlan(string root)
 
     private void EnsureBelowRoot(string full, string suggestedPath)
     {
-        if (!full.StartsWith(Path.TrimEndingDirectorySeparator(root) + Path.DirectorySeparatorChar, FilePaths.Comparison))
+        if (!FilePaths.IsWithin(root, full, allowEqual: false))
         {
             throw ExtractionPathValidator.Refused($"unsafe extraction name '{suggestedPath}'");
         }
