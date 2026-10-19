@@ -88,13 +88,15 @@ public sealed class PublicationBoundaryTests
         Assert.False(Directory.Exists(transaction));
     }
 
-    [Fact]
-    public void UnknownJournalVersion_IsPreservedAndReported()
+    [Theory]
+    [InlineData(1)]
+    [InlineData(-1)] // An earlier build's, such as the version 1 that kept internal backups.
+    public void UnknownJournalVersion_IsPreservedAndReported(int versionOffset)
     {
         using var temp = new TempDirectory();
         string target = temp.File("document.txt");
         File.WriteAllText(target, "original");
-        string transaction = WriteOtherVersionTransaction(temp.Path, target);
+        string transaction = WriteOtherVersionTransaction(temp.Path, target, PublicationJournal.CurrentVersion + versionOffset);
         Dictionary<string, byte[]> before = TreeBytes(transaction);
 
         CliException error = Assert.Throws<CliException>(() =>
@@ -114,7 +116,7 @@ public sealed class PublicationBoundaryTests
         string nested = Directory.CreateDirectory(temp.File("nested")).FullName;
         string target = Path.Combine(nested, "document.txt");
         File.WriteAllText(target, "original");
-        string transaction = WriteOtherVersionTransaction(temp.Path, target);
+        string transaction = WriteOtherVersionTransaction(temp.Path, target, PublicationJournal.CurrentVersion + 1);
         Dictionary<string, byte[]> before = TreeBytes(transaction);
 
         TestBudgets.Writer().Write(Path.Combine(nested, "next.txt"), false, path => File.WriteAllText(path, "next"));
@@ -125,10 +127,10 @@ public sealed class PublicationBoundaryTests
     }
 
     /// <summary>
-    /// Leaves an abandoned transaction whose journal a later version of the CLI wrote: an
+    /// Leaves an abandoned transaction whose journal another version of the CLI wrote: an
     /// unknown version with a field this version does not know, naming a target it replaced.
     /// </summary>
-    private static string WriteOtherVersionTransaction(string root, string target)
+    private static string WriteOtherVersionTransaction(string root, string target, int version)
     {
         string transaction = Directory.CreateDirectory(Path.Combine(root, ".aspose-publication-other-version")).FullName;
         string staged = AtomicPublicationPlan.StagedPath(transaction, target, 0);
@@ -138,11 +140,11 @@ public sealed class PublicationBoundaryTests
         File.WriteAllText(Path.Combine(displaced, "000001"), "displaced original");
         var journal = new System.Text.Json.Nodes.JsonObject
         {
-            ["version"] = PublicationJournal.CurrentVersion + 1,
+            ["version"] = version,
             ["operation"] = "future-operation",
             ["ownerProcessId"] = int.MaxValue,
             ["ownerProcessStartUtcTicks"] = 1,
-            ["state"] = "publishing",
+            ["state"] = "partial",
             ["futureField"] = "unknown to this version",
             ["entries"] = new System.Text.Json.Nodes.JsonArray(new System.Text.Json.Nodes.JsonObject
             {
