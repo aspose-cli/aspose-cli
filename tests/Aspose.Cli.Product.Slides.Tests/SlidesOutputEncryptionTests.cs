@@ -119,6 +119,26 @@ public sealed class SlidesOutputEncryptionTests : IDisposable
         Assert.Equal("PASSWORD_REQUIRED", JsonNode.Parse(refused.StdErr)!["error"]!["code"]!.GetValue<string>());
     }
 
+    /// <summary>
+    /// The in-process session the tests share is wired as activation wires it: its loader tells
+    /// the write pipeline that the input is encrypted, so the result discloses the removal.
+    /// </summary>
+    [Fact]
+    public void InProcessConvertOfAnEncryptedInput_DisclosesTheRemovedEncryption()
+    {
+        using var fixture = new SlidesEngineFixture();
+        string input = fixture.CreatePresentation("locked.pptx", slides: 1, password: "deck-secret");
+
+        SlidesConvertResult result = fixture.Disclosed(session => SlidesExport.Convert(session, new SlidesConvertRequest
+        {
+            Input = input,
+            Password = new Secret("deck-secret"),
+            Output = TestOutput.At(fixture.File("locked.odp"), format: "odp"),
+        }));
+
+        Assert.Contains(result.Warnings ?? [], static warning => warning.Code == WarningCodes.EncryptionRemoved);
+    }
+
     [Category(TestCategory.Slow)]
     [Fact]
     public void RenderToImages_DisclosesNothing()
