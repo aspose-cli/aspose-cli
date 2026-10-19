@@ -14,7 +14,7 @@ public static class CommandMistakes
     private static readonly ConditionalWeakTable<Command, IReadOnlyList<string>> Declared = [];
     private static readonly ConditionalWeakTable<Command, string> Hints = [];
     private static readonly ConditionalWeakTable<Option, Func<string, string?>> MeantValues = [];
-    private static readonly ConditionalWeakTable<Command, IReadOnlyList<RefusedOption>> RefusedOptions = [];
+    private static readonly ConditionalWeakTable<Command, IReadOnlyList<RefusedOption>> Refused = [];
 
     /// <summary>
     /// Declares the names <paramref name="command"/> is mistaken for, and the hint that says how it
@@ -82,7 +82,7 @@ public static class CommandMistakes
 
         if (refused.Count > 0)
         {
-            RefusedOptions.AddOrUpdate(command, [.. refused]);
+            Refused.AddOrUpdate(command, [.. refused]);
         }
     }
 
@@ -96,9 +96,18 @@ public static class CommandMistakes
     {
         ArgumentNullException.ThrowIfNull(command);
         ArgumentNullException.ThrowIfNull(option);
-        return RefusedOptions.TryGetValue(command, out IReadOnlyList<RefusedOption>? refused)
-            ? refused.FirstOrDefault(item => item.Names.Contains(option, StringComparer.Ordinal))?.Hint
-            : null;
+        return command.RefusedOptions().FirstOrDefault(item => item.Names.Contains(option, StringComparer.Ordinal))?.Hint;
+    }
+
+    /// <summary>
+    /// The options <paramref name="command"/> declares it does not have, each with the hint its
+    /// refusal gives (a command definition's <c>RefusedOptions</c>); empty when it declares none.
+    /// </summary>
+    /// <param name="command">The command to inspect.</param>
+    public static IReadOnlyList<RefusedOption> RefusedOptions(this Command command)
+    {
+        ArgumentNullException.ThrowIfNull(command);
+        return Refused.TryGetValue(command, out IReadOnlyList<RefusedOption>? refused) ? refused : [];
     }
 
     /// <summary>
