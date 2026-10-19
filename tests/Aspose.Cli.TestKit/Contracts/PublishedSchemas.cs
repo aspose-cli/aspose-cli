@@ -27,6 +27,9 @@ public static class PublishedSchemas
     /// <summary>A copy of the raw schema document <c>aspose-cli schema &lt;id&gt;</c> prints.</summary>
     public static JsonObject Document(string id) => (JsonObject)Current.Value.Documents[id].DeepClone();
 
+    /// <summary>The exact text <c>aspose-cli schema &lt;id&gt;</c> prints.</summary>
+    public static string Text(string id) => Current.Value.Texts[id];
+
     /// <summary>The schema of <paramref name="id"/>, with every published schema registered for its references.</summary>
     public static JsonSchema Schema(string id) =>
         Current.Value.Options.SchemaRegistry.Get(new Uri(UriPrefix + id + UriSuffix)) as JsonSchema
@@ -79,7 +82,7 @@ public static class PublishedSchemas
             pending = failed;
         }
 
-        return new Published(ids, documents, options);
+        return new Published(ids, snapshot.Documents, documents, options);
     }
 
     /// <summary>Asks the built CLI for every schema it lists, as an agent would.</summary>
@@ -108,5 +111,9 @@ public static class PublishedSchemas
         return new PublishedSchemaSnapshot(ids, documents);
     }
 
-    private sealed record Published(IReadOnlyList<string> Ids, IReadOnlyDictionary<string, JsonObject> Documents, BuildOptions Options);
+    private sealed record Published(
+        IReadOnlyList<string> Ids,
+        IReadOnlyDictionary<string, string> Texts,
+        IReadOnlyDictionary<string, JsonObject> Documents,
+        BuildOptions Options);
 }
