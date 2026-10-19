@@ -5,7 +5,6 @@ using Aspose.Cells.Charts;
 using Aspose.Cells.Drawing;
 using Aspose.Cells.Pivot;
 using Aspose.Cells.Tables;
-using Aspose.Cli.Product.Cells.Engine.Editing;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.IO;
 
@@ -109,7 +108,7 @@ internal static class ObjectProjection
     /// <summary>A chart, the <paramref name="index"/>th of its sheet from 1.</summary>
     public static CellsChartInfo Chart(Worksheet sheet, Chart chart, int index)
     {
-        bool pie = ChartPivotOps.IsPieFamily(chart.Type);
+        bool pie = ChartPivotVocabulary.IsPieFamily(chart.Type);
         var series = chart.NSeries.Cast<Series>().ToList();
         return new CellsChartInfo
         {
@@ -176,7 +175,7 @@ internal static class ObjectProjection
         return category is null && value is null ? null : new CellsChartAxisTitles { Category = category, Value = value };
     }
 
-    /// <summary>The colors in the places <see cref="ChartPivotOps"/> writes them for the chart's type.</summary>
+    /// <summary>The colors in the places <see cref="Editing.ChartPivotOps"/> writes them for the chart's type.</summary>
     private static IReadOnlyList<string>? SeriesColors(Chart chart, List<Series> series, bool pie)
     {
         bool line = chart.Type.ToString().StartsWith("Line", StringComparison.Ordinal);
@@ -196,7 +195,7 @@ internal static class ObjectProjection
             values.Add(new CellsPivotValueInfo
             {
                 Field = pivot.BaseFields[field.BaseIndex].Name,
-                Function = ChartPivotOps.FromFunction(field.Function) ?? JsonNamingPolicy.CamelCase.ConvertName(field.Function.ToString()),
+                Function = ChartPivotVocabulary.FromFunction(field.Function) ?? JsonNamingPolicy.CamelCase.ConvertName(field.Function.ToString()),
                 NumberFormat = field.NumberFormat is { Length: > 0 } format && format != "General" ? format : null,
                 Label = field.DisplayName,
             });
@@ -239,7 +238,7 @@ internal static class ObjectProjection
             Sheet = sheet.Name,
             Range = string.Join(",", areas.Select(Area)),
             Kind = VocabularyName(validation.Type, JsonNamingPolicy.KebabCaseLower),
-            Operator = compares ? ValidationOps.FromOperator(validation.Operator) : null,
+            Operator = compares ? ValidationVocabulary.FromOperator(validation.Operator) : null,
             Value1 = list ? null : Bound(formula),
             Value2 = compares && validation.Operator is OperatorType.Between or OperatorType.NotBetween ? Bound(validation.Formula2) : null,
             ListItems = list && ListLiteral(formula) is { } items ? items.Split(',') : null,
@@ -303,7 +302,7 @@ internal static class ObjectProjection
 
     private static CellsConditionalRuleInfo ConditionalRule(FormatCondition condition) => condition.Type switch
     {
-        FormatConditionType.CellValue when ValidationOps.FromOperator(condition.Operator) is { } comparison => new CellsConditionalRuleInfo
+        FormatConditionType.CellValue when ValidationVocabulary.FromOperator(condition.Operator) is { } comparison => new CellsConditionalRuleInfo
         {
             Kind = CellsConditionalRuleKinds.CellValue,
             Operator = comparison,
@@ -338,7 +337,7 @@ internal static class ObjectProjection
         FormatConditionType.IconSet => new CellsConditionalRuleInfo
         {
             Kind = CellsConditionalRuleKinds.IconSet,
-            IconSet = ConditionalFormatOps.FromIconSetType(condition.IconSet.Type)
+            IconSet = ConditionalFormatVocabulary.FromIconSetType(condition.IconSet.Type)
                 ?? JsonNamingPolicy.KebabCaseLower.ConvertName(condition.IconSet.Type.ToString()),
         },
         // A kind outside the vocabulary keeps its engine name; its fields are not read.
@@ -379,7 +378,7 @@ internal static class ObjectProjection
         return new CellsSparklineInfo
         {
             Sheet = sheet.Name,
-            Kind = SparklineOps.FromType(group.Type) ?? group.Type.ToString().ToLowerInvariant(),
+            Kind = SparklineVocabulary.FromType(group.Type) ?? group.Type.ToString().ToLowerInvariant(),
             Color = group.SeriesColor is { } color ? StylePool.ToHex(color.Color) : null,
             DataRange = data.Count < parsed.Count
                 ? string.Join(",", sparklines.Select(static sparkline => (sparkline.DataRange ?? string.Empty).TrimStart('=')))
