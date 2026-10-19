@@ -139,6 +139,26 @@ public sealed class InputLoading
     public CliException Unloadable(string path, string format, Exception? innerException = null) =>
         Unreadable(path, $"its content is {format}, not a {Document} this command reads", innerException);
 
+    /// <summary>
+    /// An input whose content is of a kind the product imports, but whose name carries the
+    /// extension of none of its input formats: <c>FILE_CORRUPT</c>, naming the extension and the
+    /// extensions of <paramref name="importing"/>, in ordinal order, under which it imports.
+    /// </summary>
+    /// <param name="path">The input file.</param>
+    /// <param name="content">What its content is, such as <c>delimited text</c>.</param>
+    /// <param name="importing">The formats a file of this content is imported as.</param>
+    /// <param name="importedAs">How it is imported, completing "to import it ...", such as <c>as text</c>.</param>
+    public CliException NotNamedAsInput(string path, string content, IEnumerable<FormatDescriptor> importing, string importedAs)
+    {
+        ArgumentNullException.ThrowIfNull(path);
+        ArgumentNullException.ThrowIfNull(importing);
+        string extension = Path.GetExtension(path);
+        string named = extension.Length > 1 ? $"its {extension} extension names no" : "it has no extension that names a";
+        string extensions = string.Join(", ", importing.SelectMany(static format => format.Extensions)
+            .Distinct(StringComparer.OrdinalIgnoreCase).Order(StringComparer.Ordinal));
+        return Unreadable(path, $"its content is {content}, but {named} {Document} input; give it a {extensions} extension to import it {importedAs}");
+    }
+
     // Engine messages can be multi-line; the first line carries the fact.
     private static string FirstLine(string message)
     {
@@ -171,6 +191,18 @@ public static class InputFailures
             IOException when !FileAccessProbe.CanOpenForRead(path) => CliErrors.FileLocked(path),
             _ => null,
         };
+    }
+
+    /// <summary>
+    /// An auxiliary input file, such as a signing certificate, whose name carries the extension
+    /// of none of the formats in <paramref name="accepted"/>: <c>FORMAT_UNSUPPORTED</c> for its
+    /// extension, as <see cref="CliErrors.FormatUnsupported"/> reports a format id, with their ids.
+    /// </summary>
+    public static CliException ExtensionUnsupported(string path, IReadOnlyList<FormatDescriptor> accepted)
+    {
+        ArgumentNullException.ThrowIfNull(path);
+        ArgumentNullException.ThrowIfNull(accepted);
+        return CliErrors.FormatUnsupported(Path.GetExtension(path).TrimStart('.'), [.. accepted.Select(static format => format.Id)]);
     }
 
     /// <summary>

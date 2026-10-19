@@ -28,6 +28,19 @@ public sealed class OwnedTemporaryFile : IDisposable
 
     public string Path { get; private set; }
 
+    /// <summary>
+    /// Creates <paramref name="name"/> in <paramref name="directory"/> with the extension of
+    /// <paramref name="source"/>, so an engine that reads a file by its name reads the copy as
+    /// it reads the source.
+    /// </summary>
+    public static OwnedTemporaryFile CreateNamedLike(string directory, string name, string source)
+    {
+        ArgumentException.ThrowIfNullOrEmpty(directory);
+        ArgumentException.ThrowIfNullOrEmpty(name);
+        ArgumentNullException.ThrowIfNull(source);
+        return Create(System.IO.Path.Combine(directory, name + System.IO.Path.GetExtension(source)));
+    }
+
     public static OwnedTemporaryFile Create(string path)
     {
         ArgumentException.ThrowIfNullOrEmpty(path);
