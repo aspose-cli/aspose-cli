@@ -215,7 +215,7 @@ public sealed class AtomicNewDirectoryWriterTests
             Operation = current.Operation, State = current.State, OwnerProcessId = int.MaxValue,
             OwnerProcessStartUtcTicks = 1, DirectoryOutput = current.DirectoryOutput,
         }.Write(journalPath);
-        Assert.Equal(1, AtomicOutputSetWriter.RecoverPending(temp.Path));
+        Assert.Equal(1, AtomicPublicationRecovery.RecoverPendingUnderLease(temp.Path, lease: null));
         Assert.False(Directory.Exists(transaction));
         Assert.False(Directory.Exists(output.TargetDirectory));
     }
@@ -379,7 +379,7 @@ public sealed class AtomicNewDirectoryWriterTests
         Assert.True(Directory.Exists(Path.Combine(transaction, "previous")));
         Directory.Delete(target);
         AbandonJournal(transaction, PublicationTransactionState.Publishing);
-        Assert.Equal(1, AtomicOutputSetWriter.RecoverPending(temp.Path));
+        Assert.Equal(1, AtomicPublicationRecovery.RecoverPendingUnderLease(temp.Path, lease: null));
         AssertPrevious(target);
         Assert.False(Directory.Exists(transaction));
     }
@@ -403,7 +403,7 @@ public sealed class AtomicNewDirectoryWriterTests
         }
         Assert.True(Directory.Exists(Path.Combine(transaction, "previous")));
         AbandonJournal(transaction, PublicationTransactionState.Committed);
-        Assert.Equal(1, AtomicOutputSetWriter.RecoverPending(temp.Path));
+        Assert.Equal(1, AtomicPublicationRecovery.RecoverPendingUnderLease(temp.Path, lease: null));
         Assert.Equal("replacement", File.ReadAllText(Path.Combine(target, "data.txt")));
         Assert.False(File.Exists(Path.Combine(target, "old.txt")));
         Assert.False(Directory.Exists(transaction));

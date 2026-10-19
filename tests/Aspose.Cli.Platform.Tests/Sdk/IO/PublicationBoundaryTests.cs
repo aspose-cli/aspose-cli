@@ -42,10 +42,10 @@ public sealed class PublicationBoundaryTests
             }],
         }.Write(Path.Combine(transaction, AtomicPublicationPlan.JournalName));
 
-        Assert.Equal(1, AtomicOutputSetWriter.RecoverPending(temp.Path));
+        Assert.Equal(1, AtomicPublicationRecovery.RecoverPendingUnderLease(temp.Path, lease: null));
         Assert.Equal("original", File.ReadAllText(target));
         Assert.False(Directory.Exists(transaction));
-        Assert.Equal(0, AtomicOutputSetWriter.RecoverPending(temp.Path));
+        Assert.Equal(0, AtomicPublicationRecovery.RecoverPendingUnderLease(temp.Path, lease: null));
     }
 
     [Fact]
@@ -82,7 +82,7 @@ public sealed class PublicationBoundaryTests
         }.Write(Path.Combine(transaction, AtomicPublicationPlan.JournalName));
         File.WriteAllText(temp.File("untouched.txt"), "edited after the crash");
 
-        Assert.Equal(1, AtomicOutputSetWriter.RecoverPending(temp.Path));
+        Assert.Equal(1, AtomicPublicationRecovery.RecoverPendingUnderLease(temp.Path, lease: null));
         Assert.Equal("original 0", File.ReadAllText(temp.File("swapped.txt")));
         Assert.Equal("edited after the crash", File.ReadAllText(temp.File("untouched.txt")));
         Assert.False(Directory.Exists(transaction));
@@ -234,8 +234,8 @@ public sealed class PublicationBoundaryTests
         journal["ownerProcessId"] = int.MaxValue;
         journal["ownerProcessStartUtcTicks"] = 1;
         File.WriteAllText(journalPath, journal.ToJsonString());
-        Assert.Equal(1, AtomicOutputSetWriter.RecoverPending(temp.Path));
-        Assert.Equal(0, AtomicOutputSetWriter.RecoverPending(temp.Path));
+        Assert.Equal(1, AtomicPublicationRecovery.RecoverPendingUnderLease(temp.Path, lease: null));
+        Assert.Equal(0, AtomicPublicationRecovery.RecoverPendingUnderLease(temp.Path, lease: null));
         Assert.Equal("original", File.ReadAllText(target));
     }
 
@@ -330,7 +330,7 @@ public sealed class PublicationBoundaryTests
             File.WriteAllText(
                 Path.Combine(transaction, $".publication-journal.v1.json.{Guid.NewGuid():N}.tmp"), "interrupted journal");
         }
-        Assert.Equal(0, AtomicOutputSetWriter.RecoverPending(temp.Path));
+        Assert.Equal(0, AtomicPublicationRecovery.RecoverPendingUnderLease(temp.Path, lease: null));
         TestBudgets.Writer().Write(temp.File("next.txt"), false, path => File.WriteAllText(path, "next"));
         Assert.Equal("next", File.ReadAllText(temp.File("next.txt")));
         Assert.Equal(34, Directory.EnumerateFiles(temp.Path, "candidate.txt", SearchOption.AllDirectories).Count());

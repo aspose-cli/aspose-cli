@@ -203,13 +203,6 @@ public sealed class AtomicOutputSetWriter : IDisposable
         }
     }
 
-    /// <summary>
-    /// Recovers abandoned transaction journals below an output directory.
-    /// Journals owned by a still-running process are not touched.
-    /// </summary>
-    public static int RecoverPending(string targetDirectory) =>
-        AtomicPublicationRecovery.RecoverPending(targetDirectory);
-
     internal FilePublicationSnapshot PublishedSnapshot(string targetPath)
     {
         string target = Path.GetFullPath(targetPath);

@@ -7,24 +7,6 @@ internal sealed class AtomicPublicationStaging(
     AtomicPublicationPlan plan,
     SafeFileWriter writer)
 {
-    public StagedOutput Stage(
-        string targetPath,
-        bool overwrite,
-        Action<string> write)
-    {
-        ArgumentException.ThrowIfNullOrEmpty(targetPath);
-        ArgumentNullException.ThrowIfNull(write);
-        if (plan.Journal.State != PublicationTransactionState.Staging)
-        {
-            throw new InvalidOperationException(
-                $"Cannot stage an output while the transaction is {plan.Journal.State}.");
-        }
-
-        string target = Path.GetFullPath(targetPath);
-        FilePublicationSnapshot original = FilePublicationSnapshot.Capture(target);
-        return StagePrepared(target, overwrite, requestedBackup: null, original, write);
-    }
-
     public StagedOutput StagePrepared(
         string target,
         bool overwrite,

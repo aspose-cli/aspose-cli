@@ -44,18 +44,6 @@ internal sealed class AtomicPublicationRecovery(AtomicPublicationPlan plan)
         return new PublicationRecoveryReport(complete, items);
     }
 
-    public static int RecoverPending(string targetDirectory)
-    {
-        ArgumentException.ThrowIfNullOrEmpty(targetDirectory);
-        string root = Path.GetFullPath(targetDirectory);
-        if (!Directory.Exists(root))
-        {
-            return 0;
-        }
-
-        return RecoverPendingUnderLease(root, lease: null);
-    }
-
     /// <summary>
     /// Recovers abandoned transactions in one directory. Without <paramref name="scope"/>
     /// every transaction there is recovered and any it cannot recover blocks the caller.
