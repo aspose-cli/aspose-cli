@@ -153,7 +153,7 @@ public sealed partial class CustomerInstallerPowerShellTests
             Directory.GetDirectories(skills).Select(Path.GetFileName).Order(StringComparer.Ordinal));
         Assert.Equal("preserve me", File.ReadAllText(customized, Encoding.UTF8));
         Assert.Contains("Kept customized or unmanaged Skill 'aspose-cli-pdf'", Flat(removed), StringComparison.Ordinal);
-        AssertNoTransactionLeftovers();
+        AssertNoTransactionLeftovers(skills);
         Assert.Equal(before, CaptureUserState());
 
         PowerShellResult again = RunUninstaller(install);
@@ -192,13 +192,13 @@ public sealed partial class CustomerInstallerPowerShellTests
             Assert.True(finished.ExitCode == 0, finished.StdErr + finished.StdOut);
             Assert.False(Directory.Exists(install));
             Assert.Empty(Directory.GetDirectories(skills));
-            AssertNoTransactionLeftovers();
+            AssertNoTransactionLeftovers(skills);
             return;
         }
         Assert.NotEqual(0, result.ExitCode);
         Assert.Equal(beforeInstall, Snapshot(install));
         Assert.Equal(beforeSkills, Snapshot(skills));
-        AssertNoTransactionLeftovers();
+        AssertNoTransactionLeftovers(skills);
     }
 
     [Fact]
@@ -216,14 +216,13 @@ public sealed partial class CustomerInstallerPowerShellTests
         Assert.Equal(97, interrupted.ExitCode);
         // A host loads every directory under its Skills root, so a Skill backup kept there
         // would read as a duplicate Skill while the transaction is open or interrupted.
-        Assert.Empty(Directory.GetDirectories(skills, ".aspose-skill-install-backup-*"));
-        Assert.Single(Directory.GetDirectories(_root, ".aspose-skill-install-backup-*"));
+        SkillsRootLayout.AssertTransactionArtifactsBeside(skills, ".aspose-skill-install-backup-*", 1);
 
         PowerShellResult finished = RunUninstaller(install);
         Assert.True(finished.ExitCode == 0, finished.StdErr + finished.StdOut);
         Assert.False(Directory.Exists(install));
         Assert.Empty(Directory.GetDirectories(skills));
-        AssertNoTransactionLeftovers();
+        AssertNoTransactionLeftovers(skills);
     }
 
     [Fact]
@@ -451,7 +450,7 @@ public sealed partial class CustomerInstallerPowerShellTests
             $"$lock = Enter-InstallLock (Resolve-InstallRoot {PowerShellLiteral(install)}); "
             + "try { Invoke-PendingRecovery $lock } finally { Exit-InstallLock $lock }");
 
-    private void AssertNoTransactionLeftovers()
+    private void AssertNoTransactionLeftovers(params string[] skillsRoots)
     {
         foreach (string pattern in new[] { ".aspose-cli-transaction-*", ".aspose-cli-install-*.lock" })
         {
@@ -462,6 +461,10 @@ public sealed partial class CustomerInstallerPowerShellTests
             Assert.Empty(Directory.GetDirectories(_root, pattern));
         }
         Assert.Empty(Directory.GetDirectories(_root, ".aspose-skill-install-backup-*", SearchOption.AllDirectories));
+        foreach (string skills in skillsRoots)
+        {
+            SkillsRootLayout.AssertTransactionArtifactsBeside(skills, ".aspose-skill-install-backup-*", 0);
+        }
     }
 
     // Windows PowerShell wraps redirected warnings and errors at the console width.

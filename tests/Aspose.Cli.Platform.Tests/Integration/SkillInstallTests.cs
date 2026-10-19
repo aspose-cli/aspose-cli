@@ -152,7 +152,8 @@ public sealed class SkillInstallTests : IDisposable
         DateTime until = DateTime.UtcNow.AddSeconds(30);
         while (!created.Contains(skill) && DateTime.UtcNow < until) { Thread.Sleep(25); }
         Assert.Equal([skill], created.Distinct());
-        Assert.Equal([skill], Directory.GetDirectories(root).Select(Path.GetFileName));
+        SkillsRootLayout.AssertOnlySkills(root, skill);
+        SkillsRootLayout.AssertTransactionArtifactsBeside(root, ".aspose-publication-*", 0);
     }
 
     [Fact]
