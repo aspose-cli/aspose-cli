@@ -45,4 +45,11 @@ public static class PdfFormats
         new("fdf", FormatUse.Convert, ".fdf"),
         new("xfdf", FormatUse.Convert, ".xfdf"),
     ];
+
+    /// <summary>The formats <c>sign</c> reads a signing certificate in: PKCS #12.</summary>
+    internal static IReadOnlyList<FormatDescriptor> Certificates { get; } =
+    [
+        new("pfx", FormatUse.Input, ".pfx"),
+        new("p12", FormatUse.Input, ".p12"),
+    ];
 }

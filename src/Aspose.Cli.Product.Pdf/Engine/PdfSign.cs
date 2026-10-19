@@ -377,11 +377,9 @@ internal static class PdfSign
         ResourceBudgetLedger resourceBudgets,
         string path)
     {
-        string extension = Path.GetExtension(path);
-        if (!string.Equals(extension, ".pfx", StringComparison.OrdinalIgnoreCase)
-            && !string.Equals(extension, ".p12", StringComparison.OrdinalIgnoreCase))
+        if (PdfFormats.Certificates.NamedBy(path).Count == 0)
         {
-            throw CliErrors.FormatUnsupported(extension.TrimStart('.'), ["pfx", "p12"]);
+            throw InputFailures.ExtensionUnsupported(path, PdfFormats.Certificates);
         }
 
         if (!File.Exists(path))

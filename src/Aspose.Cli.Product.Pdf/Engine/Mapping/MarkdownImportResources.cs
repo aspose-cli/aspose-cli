@@ -31,9 +31,8 @@ internal sealed class MarkdownImportResources : IDisposable
     private static readonly TimeSpan MatchTimeout = TimeSpan.FromSeconds(10);
 
     // The extensions of the bitmap image formats, by which a url() names an image.
-    private static readonly HashSet<string> RasterExtensions = new(
-        ImageInput.Formats.Where(static format => format.Raster).SelectMany(static format => format.Extensions),
-        StringComparer.OrdinalIgnoreCase);
+    private static readonly IReadOnlyList<FormatDescriptor> RasterImages =
+        [.. ImageInput.Formats.Where(static format => format.Raster)];
 
     // A reference definition, which only applies when an image uses its label.
     private static readonly Regex Definition = new(
@@ -215,7 +214,7 @@ internal sealed class MarkdownImportResources : IDisposable
             || head.StartsWith("OTTO"u8) || head.StartsWith("true"u8) || head.StartsWith("ttcf"u8)
             || head.StartsWith("wOFF"u8) || head.StartsWith("wOF2"u8);
         return !font && (NetworkReferenceGuard.IsSelfContained(head)
-            || RasterExtensions.Contains(Path.GetExtension(file)));
+            || RasterImages.NamedBy(file).Count > 0);
     }
 
     private static bool IsSelfContained(VerifiedReadLease lease)
