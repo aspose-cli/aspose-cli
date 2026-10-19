@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using Aspose.Cli.Host.Invocation;
 
 namespace Aspose.Cli.Host.App;
 
@@ -83,19 +84,18 @@ internal static class SystemFilePicker
                 info.ArgumentList.Add(argument);
             }
 
-            using Process? process = Process.Start(info);
-            if (process is null)
-            {
-                return new FilePickerResult(false, null);
-            }
-
+            using OwnedProcess picker = OwnedProcess.Start(info, killOnClose: true);
+            Process process = picker.Process;
+            // Both pipes are drained, so a chatty picker never blocks on a full buffer.
+            Task<string> output = process.StandardOutput.ReadToEndAsync();
+            _ = process.StandardError.ReadToEndAsync();
             if (!process.WaitForExit((int)PickerTimeout.TotalMilliseconds))
             {
-                TryKill(process);
+                picker.Stop();
                 return new FilePickerResult(true, null);
             }
 
-            string path = process.StandardOutput.ReadToEnd().Trim();
+            string path = output.GetAwaiter().GetResult().Trim();
             return process.ExitCode == 0 && path.Length > 0
                 ? new FilePickerResult(true, path)
                 : new FilePickerResult(true, null);
@@ -104,18 +104,6 @@ internal static class SystemFilePicker
             exception is IOException or InvalidOperationException or System.ComponentModel.Win32Exception)
         {
             return new FilePickerResult(false, null);
-        }
-    }
-
-    private static void TryKill(Process process)
-    {
-        try
-        {
-            process.Kill(entireProcessTree: true);
-        }
-        catch (Exception exception) when (
-            exception is InvalidOperationException or System.ComponentModel.Win32Exception)
-        {
         }
     }
 

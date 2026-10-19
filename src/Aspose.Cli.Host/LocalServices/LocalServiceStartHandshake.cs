@@ -65,7 +65,7 @@ internal static class LocalServiceStartHandshake
                 else if (deadline.Token.WaitHandle.WaitOne(50)) { deadline.ThrowIfExpired("local-service-startup"); }
             }
 
-            TerminateOrThrow(child.Process);
+            child.Owned.Stop();
             throw CliErrors.OperationTimeout(
                 checked((int)Math.Ceiling(
                     timeout.TotalSeconds)),
@@ -75,14 +75,14 @@ internal static class LocalServiceStartHandshake
         {
             if (!child.Process.HasExited)
             {
-                TerminateOrThrow(child.Process);
+                child.Owned.Stop();
             }
 
             throw;
         }
         finally
         {
-            child.Process.Dispose();
+            child.Owned.Dispose();
         }
     }
 
@@ -101,33 +101,6 @@ internal static class LocalServiceStartHandshake
             markerNonce,
             child.Nonce,
             StringComparison.Ordinal);
-
-    private static void TerminateOrThrow(Process process)
-    {
-        if (process.HasExited)
-        {
-            return;
-        }
-
-        try
-        {
-            process.Kill(entireProcessTree: true);
-            if (process.WaitForExit(
-                    checked((int)TimeSpan.FromSeconds(10)
-                        .TotalMilliseconds)))
-            {
-                return;
-            }
-        }
-        catch (Exception exception) when (
-            exception is InvalidOperationException
-                or System.ComponentModel.Win32Exception
-                or NotSupportedException)
-        {
-        }
-
-        throw CliErrors.WorkerTerminationFailed(process.Id);
-    }
 
     private static string SafeSuffix(
         string error,

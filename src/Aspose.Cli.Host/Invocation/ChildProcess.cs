@@ -1,5 +1,4 @@
 using System.Buffers;
-using System.ComponentModel;
 using System.Diagnostics;
 using Aspose.Cli.Sdk.Errors;
 
@@ -13,19 +12,16 @@ internal sealed class ChildOutputLimitException(string stream, int limit)
     : Exception($"The CLI {stream} exceeded the {limit}-byte limit.");
 
 /// <summary>
-/// The one way the host runs a short-lived child of its own: start it, bind
-/// it to a kill-on-close job, read stdout and stderr within one byte limit,
-/// and wait for it under the caller's token. When anything fails — the token,
-/// a stream over its limit, a companion task — the whole process tree is
-/// killed and its exit confirmed before the failure propagates; an exit that
-/// cannot be confirmed becomes <c>WORKER_TERMINATION_FAILED</c>. The exit
-/// code and the output are the caller's to interpret.
+/// The one way the host runs a short-lived child of its own: start it as an
+/// <see cref="OwnedProcess"/> bound to a kill-on-close job, read stdout and
+/// stderr within one byte limit, and wait for it under the caller's token.
+/// When anything fails — the token, a stream over its limit, a companion
+/// task — the whole process tree is stopped before the failure propagates;
+/// an exit that cannot be confirmed becomes <c>WORKER_TERMINATION_FAILED</c>.
+/// The exit code and the output are the caller's to interpret.
 /// </summary>
 internal static class ChildProcess
 {
-    /// <summary>How long a killed child may take to exit before it counts as unterminated.</summary>
-    public static readonly TimeSpan TerminationGrace = TimeSpan.FromSeconds(2);
-
     /// <param name="start">The child; this method sets its window and redirection flags.</param>
     /// <param name="maximumOutputBytes">Limit of stdout and of stderr, each.</param>
     /// <param name="cancellationToken">Ends the child early.</param>
@@ -45,13 +41,11 @@ internal static class ChildProcess
         start.CreateNoWindow = true;
         start.RedirectStandardOutput = true;
         start.RedirectStandardError = true;
-        using Process process = Process.Start(start)
-            ?? throw new IOException("The CLI child process could not be started.");
-        IDisposable? job = null;
+        using OwnedProcess owned = OwnedProcess.Start(start, killOnClose: true);
+        Process process = owned.Process;
         Task[] observed = [];
         try
         {
-            job = WindowsProcessJob.TryAttach(process);
             Task<byte[]> stdout = ReadBoundedAsync(
                 process.StandardOutput.BaseStream, "stdout", maximumOutputBytes, cancellationToken);
             Task<byte[]> stderr = ReadBoundedAsync(
@@ -67,15 +61,11 @@ internal static class ChildProcess
         }
         catch
         {
-            if (!await StopAsync(process, job, observed).ConfigureAwait(false))
+            if (!await StopAsync(owned, observed).ConfigureAwait(false))
             {
                 throw CliErrors.WorkerTerminationFailed(process.Id);
             }
             throw;
-        }
-        finally
-        {
-            job?.Dispose();
         }
     }
 
@@ -120,43 +110,28 @@ internal static class ChildProcess
         }
     }
 
-    /// <summary>Kills the tree and reports whether its exit was confirmed within the grace.</summary>
-    private static async Task<bool> StopAsync(Process process, IDisposable? job, Task[] observed)
+    /// <summary>
+    /// Kills the tree, closes its pipes before the exit is awaited (a child that exits only on
+    /// end of input would otherwise count as unterminated) and reports whether its exit was
+    /// confirmed within the grace.
+    /// </summary>
+    private static async Task<bool> StopAsync(OwnedProcess owned, Task[] observed)
     {
-        try
+        Process process = owned.Process;
+        return await owned.TryStopAsync(() =>
         {
-            if (!process.HasExited)
+            if (process.StartInfo.RedirectStandardInput)
             {
-                process.Kill(entireProcessTree: true);
+                process.StandardInput.Dispose();
             }
-        }
-        catch (Exception exception) when (
-            exception is InvalidOperationException or Win32Exception or NotSupportedException)
-        {
-            // The kill-on-close job and the exit confirmation below remain the boundary.
-        }
-        job?.Dispose();
-        if (process.StartInfo.RedirectStandardInput)
-        {
-            process.StandardInput.Dispose();
-        }
-        process.StandardOutput.Dispose();
-        process.StandardError.Dispose();
-        using var grace = new CancellationTokenSource(TerminationGrace);
-        try
-        {
-            await process.WaitForExitAsync(grace.Token).ConfigureAwait(false);
-        }
-        catch (OperationCanceledException)
-        {
-            return process.HasExited;
-        }
-        // Observe the remaining faults without extending the termination budget.
-        _ = Task.WhenAll(observed).ContinueWith(
-            static task => { _ = task.Exception; },
-            CancellationToken.None,
-            TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously,
-            TaskScheduler.Default);
-        return process.HasExited;
+            process.StandardOutput.Dispose();
+            process.StandardError.Dispose();
+            // Observe the remaining faults without extending the termination budget.
+            _ = Task.WhenAll(observed).ContinueWith(
+                static task => { _ = task.Exception; },
+                CancellationToken.None,
+                TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously,
+                TaskScheduler.Default);
+        }).ConfigureAwait(false);
     }
 }

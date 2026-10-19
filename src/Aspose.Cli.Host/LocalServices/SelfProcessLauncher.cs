@@ -1,13 +1,17 @@
 using System.Diagnostics;
 using System.Reflection;
+using Aspose.Cli.Host.Invocation;
 using Aspose.Cli.Sdk.Errors;
 
 namespace Aspose.Cli.Host.LocalServices;
 
 internal sealed record LocalServiceChild(
-    Process Process,
+    OwnedProcess Owned,
     string Nonce,
-    long StartTicksUtc);
+    long StartTicksUtc)
+{
+    public Process Process => Owned.Process;
+}
 
 /// <summary>Launches this executable as a silent background child.</summary>
 internal static class SelfProcessLauncher
@@ -109,24 +113,19 @@ internal static class SelfProcessLauncher
     {
         ArgumentNullException.ThrowIfNull(start);
         ArgumentNullException.ThrowIfNull(secrets);
-        Process process = ServiceStartSecretChannel.Start(
+        OwnedProcess owned = ServiceStartSecretChannel.Start(
             start,
             secrets);
         try
         {
             return new LocalServiceChild(
-                process,
+                owned,
                 secrets.ServiceNonce,
-                process.StartTime.ToUniversalTime().Ticks);
+                owned.Process.StartTime.ToUniversalTime().Ticks);
         }
         catch
         {
-            if (!process.HasExited)
-            {
-                process.Kill(entireProcessTree: true);
-            }
-
-            process.Dispose();
+            using (owned) { owned.Stop(); }
             throw;
         }
     }

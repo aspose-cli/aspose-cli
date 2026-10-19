@@ -12,6 +12,51 @@ namespace Aspose.Cli.Host.Tests;
 public sealed class OwnedProcessTests
 {
     [Fact]
+    public void Stop_WhoseExitCannotBeConfirmed_ReportsWorkerTerminationFailed()
+    {
+        Requires.Windows();
+        var start = new ProcessStartInfo(ToolPath.Require("pwsh")) { UseShellExecute = false, CreateNoWindow = true };
+        foreach (string argument in new[] { "-NoLogo", "-NoProfile", "-NonInteractive", "-Command", "Start-Sleep -Seconds 60" })
+        {
+            start.ArgumentList.Add(argument);
+        }
+        using OwnedProcess owned = OwnedProcess.Start(start, killOnClose: true, waitForExit: static (_, _) => Task.FromResult(false));
+        try
+        {
+            CliException error = Assert.Throws<CliException>(() => owned.Stop());
+
+            Assert.Equal(ErrorCodes.WorkerTerminationFailed, error.Code);
+            Assert.Equal(owned.Process.Id, error.Details?["pid"]?.GetValue<int>());
+        }
+        finally
+        {
+            Assert.True(owned.Process.WaitForExit(TimeSpan.FromSeconds(30)), "The killed child kept running.");
+        }
+    }
+
+    [Theory]
+    [InlineData(nameof(SecondPress.Ignore), 1, true)]
+    [InlineData(nameof(SecondPress.Ignore), 2, true)]
+    [InlineData(nameof(SecondPress.Ignore), 3, true)]
+    [InlineData(nameof(SecondPress.EndProcess), 1, true)]
+    [InlineData(nameof(SecondPress.EndProcess), 2, false)]
+    [InlineData(nameof(SecondPress.EndProcess), 3, false)]
+    public void ConsoleInterrupt_KeepsTheProcessOnlyForTheFirstPressUnlessTheSecondIsIgnored(
+        string secondPress, int press, bool keeps) =>
+        Assert.Equal(keeps, ConsoleInterrupt.KeepsProcess(Enum.Parse<SecondPress>(secondPress), press));
+
+    [Fact]
+    public void ConsoleInterrupt_Press_CancelsAndCountsEvenAfterTheWorkEnded()
+    {
+        int presses = 0;
+        var cancellation = new CancellationTokenSource();
+        Assert.Equal(1, ConsoleInterrupt.Press(cancellation, ref presses));
+        Assert.True(cancellation.IsCancellationRequested);
+        cancellation.Dispose();
+        Assert.Equal(2, ConsoleInterrupt.Press(cancellation, ref presses));
+    }
+
+    [Fact]
     public async Task RenderWorker_ThatIgnoresItsClosedInput_IsKilledAndConfirmed()
     {
         Requires.Windows();

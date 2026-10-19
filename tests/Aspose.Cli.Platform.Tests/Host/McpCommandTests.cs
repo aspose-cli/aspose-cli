@@ -9,6 +9,8 @@ namespace Aspose.Cli.Host.Tests;
 
 public sealed class McpCommandTests
 {
+    /// <summary>How long cancelling an MCP command may take, killing its process tree included.</summary>
+    private static readonly TimeSpan CancellationCleanupLimit = TimeSpan.FromSeconds(3);
 
 
     [Fact]
@@ -244,7 +246,7 @@ public sealed class McpCommandTests
             await Assert.ThrowsAnyAsync<OperationCanceledException>(() => execution);
             stopwatch.Stop();
             Assert.True(
-                stopwatch.Elapsed < ChildProcess.TerminationGrace + TimeSpan.FromSeconds(1),
+                stopwatch.Elapsed < CancellationCleanupLimit,
                 $"MCP process cleanup took {stopwatch.Elapsed}.");
             Assert.True(
                 await WaitForExitAsync(child, TimeSpan.FromSeconds(3)),
@@ -282,7 +284,7 @@ public sealed class McpCommandTests
             // Below the minute an unbounded wait would take; the slack covers starting and killing
             // the interpreter while other test projects load the machine, which once took 15 s.
             Assert.True(stopwatch.Elapsed < TimeSpan.FromSeconds(1)
-                + ChildProcess.TerminationGrace + TimeSpan.FromSeconds(30), stopwatch.Elapsed.ToString());
+                + OwnedProcess.TerminationGrace + TimeSpan.FromSeconds(30), stopwatch.Elapsed.ToString());
         }
         finally
         {
@@ -352,7 +354,7 @@ public sealed class McpCommandTests
     private static async Task ObserveCanceledExecutionAsync(Task? execution)
     {
         if (execution is null) { return; }
-        try { await execution.WaitAsync(ChildProcess.TerminationGrace + TimeSpan.FromSeconds(3)); }
+        try { await execution.WaitAsync(OwnedProcess.TerminationGrace + TimeSpan.FromSeconds(3)); }
         catch (OperationCanceledException) { }
         catch (McpCommandException) { }
     }
