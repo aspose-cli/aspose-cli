@@ -16,7 +16,7 @@ internal sealed class ResultContractWriter(
     Compilation compilation,
     IReadOnlyDictionary<string, INamedTypeSymbol> symbols,
     Func<ISymbol, bool> resolved,
-    Action<Location, string> report)
+    Action<Location, string> report) : ContractReporter(report)
 {
     private const string Sdk = "global::" + SdkMetadataNames.ContractsNamespace + ".";
     private static readonly string[] CaseTypes = ["null", "string", "number", "integer", "boolean"];
@@ -24,7 +24,6 @@ internal sealed class ResultContractWriter(
     private readonly List<INamedTypeSymbol> _order = [];
     private readonly Dictionary<INamedTypeSymbol, string> _code = new(SymbolEqualityComparer.Default);
     private readonly Queue<INamedTypeSymbol> _pending = new();
-    private bool _failed;
 
     /// <summary>Every record the compilation describes as a result contract.</summary>
     public HashSet<INamedTypeSymbol> Records { get; } = new(SymbolEqualityComparer.Default);
@@ -85,7 +84,7 @@ internal sealed class ResultContractWriter(
             Report(context, $"JSON context '{context.Name}' lists result records, so it must be a top-level partial class.");
         }
 
-        return _failed ? [] : [.. contexts.Select(context => (context.Name + ".ResultContracts.g.cs", Source(context)))];
+        return Failed ? [] : [.. contexts.Select(context => (context.Name + ".ResultContracts.g.cs", Source(context)))];
     }
 
     /// <summary>The relative id and version a record publishes, or null when it publishes none.</summary>
@@ -475,19 +474,5 @@ internal sealed class ResultContractWriter(
             .Append(string.Join("\n", _order.Select(type => _code[type])))
             .Append("\n        ];\n    }\n}\n")
             .ToString();
-    }
-
-    private string Invalid(IPropertySymbol property, string reason)
-    {
-        Report(SourceLocation(property), $"'{property.ContainingType.Name}.{property.Name}': {reason}.");
-        return string.Empty;
-    }
-
-    private void Report(ISymbol symbol, string message) => Report(SourceLocation(symbol), message);
-
-    private void Report(Location location, string message)
-    {
-        _failed = true;
-        report(location, message);
     }
 }
