@@ -311,9 +311,8 @@ internal sealed class AtomicPublicationPlan
 
     internal void EnsureNoUnknownArtifacts()
     {
-        StringComparer comparer = FilePaths.Comparer;
-        var allowedFiles = new HashSet<string>(comparer) { Path.GetFullPath(JournalPath) };
-        var allowedDirectories = new HashSet<string>(comparer) { Path.Combine(StagingDirectory, "backups") };
+        var allowedFiles = new HashSet<string>(FilePaths.Comparer) { Path.GetFullPath(JournalPath) };
+        var allowedDirectories = new HashSet<string>(FilePaths.Comparer) { Path.Combine(StagingDirectory, "backups") };
         foreach (PublicationJournalEntry entry in Journal.Entries)
         {
             allowedDirectories.Add(Path.GetDirectoryName(entry.Staged)!);

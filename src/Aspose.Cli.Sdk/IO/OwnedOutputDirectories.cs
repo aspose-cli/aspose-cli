@@ -7,9 +7,8 @@ namespace Aspose.Cli.Sdk.IO;
 /// <summary>Tracks explicitly declared output directories and only cleans directories this invocation created.</summary>
 internal sealed class OwnedOutputDirectories(bool deferred)
 {
-    private static StringComparer Comparer => FilePaths.Comparer;
-    private readonly HashSet<string> _declared = new(Comparer);
-    private readonly Dictionary<string, FilePhysicalIdentity?> _created = new(Comparer);
+    private readonly HashSet<string> _declared = new(FilePaths.Comparer);
+    private readonly Dictionary<string, FilePhysicalIdentity?> _created = new(FilePaths.Comparer);
     internal IEnumerable<string> Declared => _declared;
 
     internal void Ensure(string directory)
@@ -19,7 +18,7 @@ internal sealed class OwnedOutputDirectories(bool deferred)
         var missing = new Stack<string>();
         for (string? current = path; current is not null && !Directory.Exists(current); current = Path.GetDirectoryName(current))
         { missing.Push(current); }
-        string[] additions = missing.Where(item => !_declared.Contains(item)).Distinct(Comparer).ToArray();
+        string[] additions = missing.Where(item => !_declared.Contains(item)).Distinct(FilePaths.Comparer).ToArray();
         if (additions.Length > PublicationLimits.MaximumDirectories - _declared.Count)
         { throw CliErrors.OutputUnwritable(path, "the output directory budget was exceeded", phase: "output-set-admission"); }
         _declared.UnionWith(additions);

@@ -593,8 +593,7 @@ internal sealed class AtomicPublicationRecovery(AtomicPublicationPlan plan)
         string root,
         AtomicPublicationPlan recoveryPlan)
     {
-        StringComparer comparer = FilePaths.Comparer;
-        var targets = new HashSet<string>(comparer);
+        var targets = new HashSet<string>(FilePaths.Comparer);
         var indexes = new HashSet<int>();
         string transaction = Path.GetFullPath(recoveryPlan.StagingDirectory);
         string backupDirectory = Path.Combine(transaction, "backups");
@@ -645,7 +644,7 @@ internal sealed class AtomicPublicationRecovery(AtomicPublicationPlan plan)
                 || entry.Index < 0
                 || !targets.Add(target)
                 || !IsWithinRoot(root, targetParent)
-                || !comparer.Equals(staged, expectedStaged)
+                || !FilePaths.Same(staged, expectedStaged)
                 || !Enum.IsDefined(entry.State)
                 || (entry.State == PublicationEntryState.Published
                     && entry.PublishedSnapshot is null))
@@ -654,7 +653,7 @@ internal sealed class AtomicPublicationRecovery(AtomicPublicationPlan plan)
                     $"Publication journal '{recoveryPlan.JournalPath}' contains an invalid entry.");
             }
             if (entry.Backup is not null
-                && !comparer.Equals(
+                && !FilePaths.Same(
                     Path.GetFullPath(entry.Backup),
                     expectedBackup))
             {
@@ -662,7 +661,7 @@ internal sealed class AtomicPublicationRecovery(AtomicPublicationPlan plan)
                     $"Publication backup '{entry.Backup}' is outside its transaction directory.");
             }
             if (entry.Displaced is not null
-                && !comparer.Equals(
+                && !FilePaths.Same(
                     Path.GetFullPath(entry.Displaced),
                     expectedDisplaced))
             {
