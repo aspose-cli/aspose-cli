@@ -38,6 +38,9 @@ public static partial class ScenarioRunner
 
     private const string ResultOutputs = "@result";
 
+    // Stands for the workspace directory in problems and at the start of an expected path.
+    private const string WorkspacePlaceholder = "<workspace>";
+
     /// <summary>Reads and runs a scenario file.</summary>
     public static ScenarioOutcome Run(string path) => Run(Scenario.Load(path));
 
@@ -56,8 +59,8 @@ public static partial class ScenarioRunner
             // Messages name the workspace, not its random path, and replace generated ids, such as
             // a temporary directory's suffix, so a problem reads the same in every run.
             void Report(string check, string message) => problems.Add(new ScenarioProblem(number, check, GeneratedId().Replace(message
-                .Replace(workspace.Path.Replace("\\", "\\\\", StringComparison.Ordinal), "<workspace>", StringComparison.OrdinalIgnoreCase)
-                .Replace(workspace.Path, "<workspace>", StringComparison.OrdinalIgnoreCase), "<id>")));
+                .Replace(workspace.Path.Replace("\\", "\\\\", StringComparison.Ordinal), WorkspacePlaceholder, StringComparison.OrdinalIgnoreCase)
+                .Replace(workspace.Path, WorkspacePlaceholder, StringComparison.OrdinalIgnoreCase), "<id>")));
 
             bool installation = step.Expect?.Files?.NothingInstalled == true;
             IReadOnlyDictionary<string, string> before = Snapshot(workspace, installation);
@@ -154,7 +157,7 @@ public static partial class ScenarioRunner
         }
         foreach (JsonAssertion assertion in expect.Json ?? [])
         {
-            if (Evaluate(document, assertion) is { } failure)
+            if (Evaluate(document, assertion, workspace.Path) is { } failure)
             {
                 report(JsonCheck, failure);
             }
@@ -389,14 +392,14 @@ public static partial class ScenarioRunner
         return valid ? null : $"does not carry the {extension} signature";
     }
 
-    private static string? Evaluate(JsonNode? document, JsonAssertion assertion)
+    private static string? Evaluate(JsonNode? document, JsonAssertion assertion, string workspace)
     {
         bool found = TryResolve(document, assertion.Path, out JsonNode? value);
         if (assertion.Exists is { } exists && exists != found)
         {
             return exists ? $"{assertion.Path} is missing" : $"{assertion.Path} exists: {Show(value)}";
         }
-        if (assertion.Value is { } expected && (!found || !JsonNode.DeepEquals(value, expected)))
+        if (assertion.Value is { } expected && (!found || !JsonNode.DeepEquals(value, InWorkspace(expected, workspace))))
         {
             return $"{assertion.Path} is {(found ? Show(value) : "missing")}, expected {Show(expected)}";
         }
@@ -422,6 +425,19 @@ public static partial class ScenarioRunner
         }
         return null;
     }
+
+    /// <summary>
+    /// The expected value with every string that starts with <c>&lt;workspace&gt;</c> made the path it
+    /// names: the workspace directory, then the rest with <c>/</c> as the platform's separator.
+    /// </summary>
+    private static JsonNode? InWorkspace(JsonNode? expected, string workspace) => expected switch
+    {
+        JsonValue text when text.TryGetValue(out string? path) && path.StartsWith(WorkspacePlaceholder, StringComparison.Ordinal)
+            => JsonValue.Create(workspace + path[WorkspacePlaceholder.Length..].Replace('/', Path.DirectorySeparatorChar)),
+        JsonArray array => new JsonArray([.. array.Select(item => InWorkspace(item, workspace))]),
+        JsonObject obj => new JsonObject(obj.Select(property => KeyValuePair.Create(property.Key, InWorkspace(property.Value, workspace)))),
+        _ => expected?.DeepClone(),
+    };
 
     /// <summary>Whether an array holds the item or a string contains the text.</summary>
     private static bool Holds(JsonNode? value, JsonNode item) => value switch
