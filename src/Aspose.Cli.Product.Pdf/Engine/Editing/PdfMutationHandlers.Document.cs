@@ -3,8 +3,10 @@ using Aspose.Pdf;
 using Aspose.Pdf.Annotations;
 using Aspose.Pdf.Forms;
 using Aspose.Pdf.Optimization;
-using static Aspose.Cli.Product.Pdf.Engine.PdfEngineSupport;
 using static Aspose.Cli.Product.Pdf.Engine.Editing.PdfMutationSupport;
+using static Aspose.Cli.Product.Pdf.Engine.PdfAssembly;
+using static Aspose.Cli.Product.Pdf.Engine.PdfForms;
+using static Aspose.Cli.Product.Pdf.Engine.PdfPages;
 
 namespace Aspose.Cli.Product.Pdf.Engine.Editing;
 
@@ -160,7 +162,7 @@ internal sealed partial class PdfMutationHandlers
         }
 
         // The name of a radio group resolves to its first button; the group holds the selection.
-        (PdfForms.RadioGroup(field) ?? field).Value = operation.Value ?? ClearedFieldValue(field);
+        (RadioGroup(field) ?? field).Value = operation.Value ?? ClearedFieldValue(field);
         return default;
     }
 
@@ -178,7 +180,7 @@ internal sealed partial class PdfMutationHandlers
         Field[][] fields = [.. operation.Fields.Distinct(StringComparer.Ordinal).Select(name => FormFields(_document, name))];
         foreach (Field[] named in fields)
         {
-            (PdfForms.RadioGroup(named[0]) ?? named[0]).Flatten();
+            (RadioGroup(named[0]) ?? named[0]).Flatten();
         }
 
         return default;

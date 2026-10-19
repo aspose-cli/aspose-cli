@@ -44,7 +44,7 @@ internal static class PdfReviewLayouts
             displayed.Height,
             // In evaluation mode the evaluation finding covers a notice an engine prints beyond
             // the page edge, as Aspose.Cells prints it across the evaluation warning sheet it adds.
-            text.Where((_, index) => !excluded[index]).Count(fragment => IsOutsidePage(PdfEngineSupport.ToContractTextRect(page, fragment), displayed)),
+            text.Where((_, index) => !excluded[index]).Count(fragment => IsOutsidePage(PdfGeometry.ToContractTextRect(page, fragment), displayed)),
             ImageCoverage(page),
             text.Length == 0 ? 0 : CoveredFragments(page),
             product,

@@ -7,7 +7,8 @@ using Aspose.Cli.Sdk.Licensing;
 using Aspose.Pdf;
 using Aspose.Pdf.Forms;
 using Aspose.Pdf.Text;
-using static Aspose.Cli.Product.Pdf.Engine.PdfEngineSupport;
+using static Aspose.Cli.Product.Pdf.Engine.PdfPages;
+using static Aspose.Cli.Product.Pdf.Engine.PdfTextMatch;
 
 namespace Aspose.Cli.Product.Pdf.Engine.Editing;
 

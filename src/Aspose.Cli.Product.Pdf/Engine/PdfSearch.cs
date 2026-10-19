@@ -5,7 +5,9 @@ using Aspose.Cli.Sdk.Results;
 using Aspose.Cli.Sdk.Text;
 using Aspose.Pdf;
 using Aspose.Pdf.Text;
-using static Aspose.Cli.Product.Pdf.Engine.PdfEngineSupport;
+using static Aspose.Cli.Product.Pdf.Engine.PdfGeometry;
+using static Aspose.Cli.Product.Pdf.Engine.PdfPages;
+using static Aspose.Cli.Product.Pdf.Engine.PdfTextMatch;
 
 namespace Aspose.Cli.Product.Pdf.Engine;
 

@@ -1,7 +1,7 @@
 using Aspose.Cli.Sdk.Licensing;
 using Aspose.Cli.Sdk.Results;
 using Aspose.Pdf;
-using static Aspose.Cli.Product.Pdf.Engine.PdfEngineSupport;
+using static Aspose.Cli.Product.Pdf.Engine.PdfPages;
 
 namespace Aspose.Cli.Product.Pdf.Engine;
 
@@ -79,4 +79,24 @@ internal static class PdfRead
     /// </summary>
     private static bool HasNoOwnText(string text) =>
         PdfEvaluation.Notice.Replace(text, string.Empty).All(static character => char.IsWhiteSpace(character) || character == '.');
+
+    /// <summary>
+    /// Whether one image is scaled to the page, as a scan is: it spans at least three quarters of
+    /// the page's width or height and covers at least a quarter of its area. A scan placed inside
+    /// margins with its proportions kept, such as a square scan on an A4 page, covers far less
+    /// than the whole page but still spans it in one dimension.
+    /// </summary>
+    private static bool IsImageDominated(Page page)
+    {
+        var absorber = new ImagePlacementAbsorber { IsReadOnlyMode = true };
+        page.Accept(absorber);
+        double pageWidth = Math.Max(1d, page.Rect.Width);
+        double pageHeight = Math.Max(1d, page.Rect.Height);
+        return absorber.ImagePlacements.Any(placement =>
+        {
+            Rectangle placed = placement.Rectangle;
+            return (placed.Width >= pageWidth * 0.75d || placed.Height >= pageHeight * 0.75d)
+                && placed.Width * placed.Height >= pageWidth * pageHeight * 0.25d;
+        });
+    }
 }

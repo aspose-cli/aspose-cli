@@ -6,7 +6,7 @@ using Aspose.Cli.Sdk.Results;
 using Aspose.Cli.Sdk.Text;
 using Aspose.Pdf;
 using Aspose.Pdf.Text;
-using static Aspose.Cli.Product.Pdf.Engine.PdfEngineSupport;
+using static Aspose.Cli.Product.Pdf.Engine.PdfPages;
 using DrawingImageFormat = Aspose.Pdf.Drawing.ImageFormat;
 
 namespace Aspose.Cli.Product.Pdf.Engine;

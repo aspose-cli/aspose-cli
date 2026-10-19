@@ -1,7 +1,8 @@
 using Aspose.Cli.Sdk.IO;
 using Aspose.Pdf;
-using static Aspose.Cli.Product.Pdf.Engine.PdfEngineSupport;
 using static Aspose.Cli.Product.Pdf.Engine.Editing.PdfMutationSupport;
+using static Aspose.Cli.Product.Pdf.Engine.PdfAssembly;
+using static Aspose.Cli.Product.Pdf.Engine.PdfGeometry;
 
 namespace Aspose.Cli.Product.Pdf.Engine.Editing;
 

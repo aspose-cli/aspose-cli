@@ -5,7 +5,8 @@ using Aspose.Cli.Sdk.Rendering;
 using Aspose.Cli.Sdk.Results;
 using Aspose.Pdf;
 using Aspose.Pdf.Devices;
-using static Aspose.Cli.Product.Pdf.Engine.PdfEngineSupport;
+using static Aspose.Cli.Product.Pdf.Engine.PdfAssembly;
+using static Aspose.Cli.Product.Pdf.Engine.PdfPages;
 
 namespace Aspose.Cli.Product.Pdf.Engine;
 

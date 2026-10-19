@@ -197,7 +197,7 @@ internal static class PdfInfoProjection
     {
         Rectangle media = page.RotationMatrix.Transform(page.MediaBox);
         Rectangle seen = page.RotationMatrix.Transform(box);
-        return PdfEngineSupport.Rect(seen.LLX - media.LLX, media.URY - seen.URY, seen.Width, seen.Height);
+        return PdfGeometry.Rect(seen.LLX - media.LLX, media.URY - seen.URY, seen.Width, seen.Height);
     }
 
     private static double Round(double value) => Math.Round(value, 3, MidpointRounding.AwayFromZero);
@@ -259,7 +259,7 @@ internal static class PdfInfoProjection
                 .Select(link => new PdfLinkInfo
                 {
                     Page = number,
-                    Rect = PdfEngineSupport.ToContractRect(page, link.Rect),
+                    Rect = PdfGeometry.ToContractRect(page, link.Rect),
                     Url = ((Aspose.Pdf.Annotations.GoToURIAction)link.Action).URI,
                 });
         });

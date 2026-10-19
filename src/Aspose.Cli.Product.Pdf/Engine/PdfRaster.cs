@@ -4,7 +4,7 @@ using Aspose.Cli.Sdk.Rendering;
 using Aspose.Pdf;
 using Aspose.Pdf.Devices;
 using SkiaSharp;
-using static Aspose.Cli.Product.Pdf.Engine.PdfEngineSupport;
+using static Aspose.Cli.Product.Pdf.Engine.PdfAssembly;
 
 namespace Aspose.Cli.Product.Pdf.Engine;
 

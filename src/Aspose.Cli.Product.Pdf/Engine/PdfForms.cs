@@ -1,7 +1,8 @@
+using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.IO;
 using Aspose.Pdf;
 using Aspose.Pdf.Forms;
-using static Aspose.Cli.Product.Pdf.Engine.PdfEngineSupport;
+using static Aspose.Cli.Product.Pdf.Engine.PdfGeometry;
 
 namespace Aspose.Cli.Product.Pdf.Engine;
 
@@ -142,5 +143,16 @@ internal static class PdfForms
         export(new Aspose.Pdf.Facades.Form(document), data);
 
         return guard.StageAllBytes("form" + (format.OutputExtension ?? format.Extensions[0]), data.ToArray());
+    }
+
+    internal static void EnsureAcroForm(Document document)
+    {
+        if (document.Form.HasXfa)
+        {
+            throw new CliException(
+                PdfDiagnostics.FormXfaUnsupported,
+                "XFA forms are read-only in the current PDF command surface.",
+                hint: "Convert the XFA form to AcroForm before filling, flattening or exporting it.");
+        }
     }
 }
