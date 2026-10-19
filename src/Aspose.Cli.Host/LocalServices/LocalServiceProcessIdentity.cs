@@ -42,6 +42,10 @@ internal sealed record LocalServiceProcessIdentity(
             nonce)
         .MatchesLiveProcess();
 
+    /// <summary>Whether a start time a service reported is the one its launcher observed.</summary>
+    public static bool StartMatches(long launchedStartTicksUtc, long reportedStartTicksUtc) =>
+        ProcessIdentity.StartMatches(launchedStartTicksUtc, reportedStartTicksUtc, Liveness.StartTolerance);
+
     public bool MatchesLiveProcess() =>
         Pid > 0
         && !string.IsNullOrWhiteSpace(Nonce)

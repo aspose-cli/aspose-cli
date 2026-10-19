@@ -94,9 +94,9 @@ internal static class LocalServiceStartHandshake
         LocalServiceChild child) =>
         markerVersion == 1
         && markerPid == child.Process.Id
-        && Math.Abs(
-            markerStartTicksUtc - child.StartTicksUtc)
-            <= TimeSpan.FromSeconds(1).Ticks
+        && LocalServiceProcessIdentity.StartMatches(
+            child.StartTicksUtc,
+            markerStartTicksUtc)
         && string.Equals(
             markerNonce,
             child.Nonce,

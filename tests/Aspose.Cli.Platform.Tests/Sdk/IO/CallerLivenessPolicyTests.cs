@@ -73,6 +73,15 @@ public sealed class CallerLivenessPolicyTests
         Assert.False(ProcessIdentity.IsLive(Pid, Started, policy, static _ => throw new ArgumentException("No process.")));
     }
 
+    [Theory]
+    [InlineData(0, true)]
+    [InlineData(TimeSpan.TicksPerSecond, true)]
+    [InlineData(-TimeSpan.TicksPerSecond, true)]
+    [InlineData(TimeSpan.TicksPerSecond + 1, false)]
+    [InlineData(-TimeSpan.TicksPerSecond - 1, false)]
+    public void AServiceReadyMarker_MatchesItsLaunchWithinOneSecond(long offset, bool expected) =>
+        Assert.Equal(expected, LocalServiceProcessIdentity.StartMatches(Started, Started + offset));
+
     [Fact]
     public void TheInstallerCheck_TreatsAnUninspectableOrExitedProcessAsEnded()
     {

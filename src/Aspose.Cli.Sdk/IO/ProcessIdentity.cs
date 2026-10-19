@@ -74,10 +74,11 @@ public static class ProcessIdentity
         Inspect(processId, policy, open, process =>
             (!policy.ChecksExit || !process.HasExited)
             && ((policy.UnknownStartMatches && startUtcTicks == 0)
-                || StartMatches(process.StartUtcTicks, startUtcTicks, policy.StartTolerance.Ticks)));
+                || StartMatches(process.StartUtcTicks, startUtcTicks, policy.StartTolerance)));
 
-    private static bool StartMatches(long observed, long recorded, long tolerance) =>
-        recorded >= observed - tolerance && recorded <= observed + tolerance;
+    /// <summary>Whether a recorded start time, in UTC ticks, is within the tolerance of an observed one.</summary>
+    public static bool StartMatches(long observedUtcTicks, long recordedUtcTicks, TimeSpan tolerance) =>
+        recordedUtcTicks >= observedUtcTicks - tolerance.Ticks && recordedUtcTicks <= observedUtcTicks + tolerance.Ticks;
 
     internal static bool IsRunningAs(
         int processId,
