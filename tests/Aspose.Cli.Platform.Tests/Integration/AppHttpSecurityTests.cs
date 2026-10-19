@@ -117,13 +117,16 @@ public sealed class AppHttpSecurityTests
         Assert.Equal("first.csv", (await app.Status())["file"]!.GetValue<string>());
 
         // The public marker names the endpoint, but control needs the private token beside it.
+        // The refusal is judged, not its speed: a loaded test machine once took longer than the
+        // default 5 s for the exchange.
         JsonNode marker = JsonNode.Parse(File.ReadAllText(
             Path.Combine(app.Workspace.ConfigDirectory, "viewer", "service.json")))!;
         LocalServiceControlResponse forged = LocalServiceControlServer.Send(
             new LocalServiceControlEndpoint("viewer", marker["id"]!.GetValue<string>()),
             marker["nonce"]!.GetValue<string>(),
             token: "forged-token",
-            command: "stop");
+            command: "stop",
+            timeout: TimeSpan.FromSeconds(30));
         Assert.False(forged.Ok);
         Assert.Equal("first.csv", (await app.Status())["file"]!.GetValue<string>());
     }
