@@ -11,30 +11,6 @@ public sealed class MistakeRecoveryCliTests : IDisposable
 
     public void Dispose() => _workspace.Dispose();
 
-    [Theory]
-    [InlineData("words", "a.docx", """{"op":"replace_text","find":"30","replacement":"15"}""", "replace")]
-    [InlineData("slides", "a.pptx", """{"op":"replace_text","find":"30","replacement":"15"}""", "replace")]
-    [InlineData("slides", "a.pptx", """{"op":"insert_chart","slide":1,"type":"bar"}""", "kind")]
-    [InlineData("slides", "a.pptx", """{"op":"insert_chart","slide":1,"box":{}}""", "rect")]
-    [InlineData("slides", "a.pptx", """{"op":"set_body","slide":1,"paragraphs":[{"text":"x","bullet":true}]}""", "list")]
-    [InlineData("slides", "a.pptx", """{"op":"set_body","slide":1,"paragraphs":[{"text":"x","level":2}]}""", "list")]
-    [InlineData("slides", "a.pptx", """{"op":"set_body","slide":1,"paragraphs":[{"text":"x","listLevel":2}]}""", "list")]
-    [InlineData("cells", "a.xlsx", """{"op":"set_style","range":"A1","style":{"bold":true}}""", "format_range")]
-    [InlineData("pdf", "a.pdf", """{"op":"add_watermark","text":"DRAFT"}""", "add_watermark_text")]
-    public void EditOperationMistake_SuggestsTheNameThatWorks(string product, string file, string operation, string suggestion)
-    {
-        // The document is read only after its operations parse, so any bytes do.
-        File.WriteAllText(_workspace.File(file), "not a document");
-        File.WriteAllText(_workspace.File("ops.json"), $$"""{"ops":[{{operation}}]}""");
-
-        CliResult result = _workspace.Run(product, "edit", file, "--ops", "ops.json", "--output-format", "json");
-
-        JsonNode error = JsonNode.Parse(result.StdErr)!["error"]!;
-        Assert.Equal("OPS_INVALID", error["code"]!.GetValue<string>());
-        Assert.Equal(suggestion, error["details"]!["suggestions"]![0]!.GetValue<string>());
-        Assert.StartsWith($"Did you mean '{suggestion}'", error["hint"]!.GetValue<string>(), StringComparison.Ordinal);
-    }
-
     /// <summary>Every unknown field of one operation is reported at once, each with the field meant.</summary>
     [Theory]
     [InlineData("slides", "a.pptx", """{"op":"format_shape","slide":1,"shapeId":4,"style":{"fill":"#FF0000","size":20}}""", "fillColor", "fontSize")]
@@ -69,50 +45,6 @@ public sealed class MistakeRecoveryCliTests : IDisposable
         Assert.Equal("op-0001", error["details"]!["id"]!.GetValue<string>());
         Assert.Equal("add_image_stamp", error["details"]!["op"]!.GetValue<string>());
         Assert.Equal("add_stamp_image", error["details"]!["suggestions"]![0]!.GetValue<string>());
-    }
-
-    [Theory]
-    [InlineData("cells edit a.xlsx --set Sheet1!A1=5 --out x.pdf", "--out", "Must be one of: .xlsx,", "then run 'aspose-cli cells convert <that file> --to pdf' for pdf")]
-    [InlineData("slides edit a.pptx --ops ops.json --out x.pdf", "--out", "Must be one of: .pptx,", "then run 'aspose-cli slides convert <that file> --to pdf' for pdf")]
-    [InlineData("slides create x.ppt --from-markdown deck.md", "file", "Must be one of: .pptx,", "then run 'aspose-cli slides convert <that file> --to ppt' for ppt")]
-    [InlineData("cells create x.pdf", "file", "Must be one of: .xlsx,", "then run 'aspose-cli cells convert <that file> --to pdf' for pdf")]
-    [InlineData("pdf edit a.pdf --ops ops.json --out x.md", "--out", "Must be one of: .pdf.", "then run 'aspose-cli pdf convert <that file> --to md' for md")]
-    [InlineData("pdf create x.md --from-text deck.md", "file", "Must be one of: .pdf.", "then run 'aspose-cli pdf convert <that file> --to md' for md")]
-    [InlineData("words edit a.docx --set bookmark:A=x --out x.pdf", "--out", "Must be one of: .doc,", "then run 'aspose-cli words convert <that file> --to pdf' for pdf")]
-    [InlineData("words edit a.docx --set bookmark:A=x --out x.md", "--out", "Must be one of: .doc,", "then run 'aspose-cli words convert <that file> --to md' for md")]
-    [InlineData("words create x.pdf --from-markdown deck.md", "file", "Must be one of: .doc,", "then run 'aspose-cli words convert <that file> --to pdf' for pdf")]
-    [InlineData("words create x.md --from-markdown deck.md", "file", "Must be one of: .doc,", "then run 'aspose-cli words convert <that file> --to md' for md")]
-    [InlineData("cells render a.xlsx --out x.pdf", "--out", "Must be one of: .png,", "or run 'aspose-cli cells convert a.xlsx --to pdf --out x.pdf' for pdf")]
-    [InlineData("slides render a.pptx --out x.pdf", "--out", "Must be one of: .png,", "or run 'aspose-cli slides convert a.pptx --to pdf --out x.pdf' for pdf")]
-    [InlineData("cells convert a.xlsx --out x.png", "--out", "Must be one of: .xlsx,", "or run 'aspose-cli cells render a.xlsx --to png --out x.png' for png")]
-    [InlineData("slides convert a.pptx --out x.png", "--out", "Must be one of: .pptx,", "or run 'aspose-cli slides render a.pptx --to png --out x.png' for png")]
-    [InlineData("pdf convert a.pdf --out x.png", "--out", "Must be one of: .docx,", "or run 'aspose-cli pdf render a.pdf --to png --out x.png' for png")]
-    public void OutputFormatTheCommandCannotWrite_PointsToTheCommandThatWritesIt(
-        string commandLine, string option, string writes, string producer)
-    {
-        File.WriteAllText(_workspace.File("a.xlsx"), "not a document");
-        File.WriteAllText(_workspace.File("a.pptx"), "not a document");
-        File.WriteAllText(_workspace.File("a.pdf"), "not a document");
-        File.WriteAllText(_workspace.File("a.docx"), "not a document");
-        File.WriteAllText(_workspace.File("ops.json"), """{"ops":[{"op":"set_notes","slide":1,"text":"x"}]}""");
-        File.WriteAllText(_workspace.File("deck.md"), "# Title");
-        string[] arguments = commandLine.Split(' ');
-
-        CliResult result = _workspace.Run([.. arguments, "--output-format", "json"]);
-
-        Assert.Equal(2, result.ExitCode);
-        JsonNode error = JsonNode.Parse(result.StdErr)!["error"]!;
-        Assert.Equal("OPTION_INVALID", error["code"]!.GetValue<string>());
-        // A positional argument such as file is details.argument; an option is details.option.
-        Assert.Equal(option, error["details"]![option.StartsWith('-') ? "option" : "argument"]!.GetValue<string>());
-        // An option starts the message as written; a positional argument by its name, as in "The file".
-        Assert.StartsWith($"{(option.StartsWith('-') ? option : "The " + option)} '", error["message"]!.GetValue<string>(), StringComparison.Ordinal);
-        Assert.Contains($"which aspose-cli {arguments[0]} {arguments[1]} does not write. {writes}", error["message"]!.GetValue<string>(), StringComparison.Ordinal);
-        // The extension names a format another command writes, so it is no mistake to correct.
-        Assert.NotNull(error["details"]!["format"]);
-        Assert.Null(error["details"]!["suggestions"]);
-        Assert.Contains(producer, error["hint"]!.GetValue<string>(), StringComparison.Ordinal);
-        Assert.False(File.Exists(_workspace.File(arguments[1] == "create" ? arguments[2] : arguments[Array.IndexOf(arguments, "--out") + 1])));
     }
 
     /// <summary>
@@ -160,28 +92,6 @@ public sealed class MistakeRecoveryCliTests : IDisposable
         Assert.Equal("OPTION_INVALID", error["code"]!.GetValue<string>());
         Assert.Equal("--to", error["details"]!["option"]!.GetValue<string>());
         Assert.Contains(producer, error["hint"]!.GetValue<string>(), StringComparison.Ordinal);
-    }
-
-    [Theory]
-    [InlineData("pdf render a.pdf --out x.pdf")]
-    [InlineData("cells render a.xlsx --out x.xlsx")]
-    public void RenderOutputInTheInputsOwnFormat_SaysTheInputIsAlreadyThatFormat(string commandLine)
-    {
-        File.WriteAllText(_workspace.File("a.pdf"), "not a document");
-        File.WriteAllText(_workspace.File("a.xlsx"), "not a document");
-        string[] arguments = commandLine.Split(' ');
-
-        CliResult result = _workspace.Run([.. arguments, "--output-format", "json"]);
-
-        Assert.Equal(2, result.ExitCode);
-        JsonNode error = JsonNode.Parse(result.StdErr)!["error"]!;
-        Assert.Equal("OPTION_INVALID", error["code"]!.GetValue<string>());
-        string message = error["message"]!.GetValue<string>();
-        Assert.Contains("extension of its input, which already is that file", message, StringComparison.Ordinal);
-        Assert.Contains($"aspose-cli {arguments[0]} render writes only images. Must be one of: .png,", message, StringComparison.Ordinal);
-        Assert.DoesNotContain("convert", error["hint"]!.GetValue<string>(), StringComparison.Ordinal);
-        Assert.Null(error["details"]!["suggestions"]);
-        Assert.Null(error["details"]!["format"]);
     }
 
     [Fact]

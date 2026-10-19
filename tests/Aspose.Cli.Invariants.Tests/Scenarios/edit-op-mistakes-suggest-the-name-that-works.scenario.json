@@ -1,0 +1,244 @@
+{
+  "name": "an edit operation mistake in each product suggests the name that works first, before the document is read",
+  "files": {
+    "a.docx": {
+      "text": "not a document"
+    },
+    "a.pptx": {
+      "text": "not a document"
+    },
+    "a.xlsx": {
+      "text": "not a document"
+    },
+    "a.pdf": {
+      "text": "not a document"
+    }
+  },
+  "steps": [
+    {
+      "args": [
+        "words",
+        "edit",
+        "a.docx",
+        "--ops",
+        "{\"ops\":[{\"op\":\"replace_text\",\"find\":\"30\",\"replacement\":\"15\"}]}"
+      ],
+      "expect": {
+        "error": "OPS_INVALID",
+        "json": [
+          {
+            "path": "error.details.suggestions[0]",
+            "equals": "replace"
+          },
+          {
+            "path": "error.hint",
+            "startsWith": "Did you mean 'replace'"
+          }
+        ],
+        "files": {
+          "nothingWritten": true
+        }
+      }
+    },
+    {
+      "args": [
+        "slides",
+        "edit",
+        "a.pptx",
+        "--ops",
+        "{\"ops\":[{\"op\":\"replace_text\",\"find\":\"30\",\"replacement\":\"15\"}]}"
+      ],
+      "expect": {
+        "error": "OPS_INVALID",
+        "json": [
+          {
+            "path": "error.details.suggestions[0]",
+            "equals": "replace"
+          },
+          {
+            "path": "error.hint",
+            "startsWith": "Did you mean 'replace'"
+          }
+        ],
+        "files": {
+          "nothingWritten": true
+        }
+      }
+    },
+    {
+      "args": [
+        "slides",
+        "edit",
+        "a.pptx",
+        "--ops",
+        "{\"ops\":[{\"op\":\"insert_chart\",\"slide\":1,\"type\":\"bar\"}]}"
+      ],
+      "expect": {
+        "error": "OPS_INVALID",
+        "json": [
+          {
+            "path": "error.details.suggestions[0]",
+            "equals": "kind"
+          },
+          {
+            "path": "error.hint",
+            "startsWith": "Did you mean 'kind'"
+          }
+        ],
+        "files": {
+          "nothingWritten": true
+        }
+      }
+    },
+    {
+      "args": [
+        "slides",
+        "edit",
+        "a.pptx",
+        "--ops",
+        "{\"ops\":[{\"op\":\"insert_chart\",\"slide\":1,\"box\":{}}]}"
+      ],
+      "expect": {
+        "error": "OPS_INVALID",
+        "json": [
+          {
+            "path": "error.details.suggestions[0]",
+            "equals": "rect"
+          },
+          {
+            "path": "error.hint",
+            "startsWith": "Did you mean 'rect'"
+          }
+        ],
+        "files": {
+          "nothingWritten": true
+        }
+      }
+    },
+    {
+      "args": [
+        "slides",
+        "edit",
+        "a.pptx",
+        "--ops",
+        "{\"ops\":[{\"op\":\"set_body\",\"slide\":1,\"paragraphs\":[{\"text\":\"x\",\"bullet\":true}]}]}"
+      ],
+      "expect": {
+        "error": "OPS_INVALID",
+        "json": [
+          {
+            "path": "error.details.suggestions[0]",
+            "equals": "list"
+          },
+          {
+            "path": "error.hint",
+            "startsWith": "Did you mean 'list'"
+          }
+        ],
+        "files": {
+          "nothingWritten": true
+        }
+      }
+    },
+    {
+      "args": [
+        "slides",
+        "edit",
+        "a.pptx",
+        "--ops",
+        "{\"ops\":[{\"op\":\"set_body\",\"slide\":1,\"paragraphs\":[{\"text\":\"x\",\"level\":2}]}]}"
+      ],
+      "expect": {
+        "error": "OPS_INVALID",
+        "json": [
+          {
+            "path": "error.details.suggestions[0]",
+            "equals": "list"
+          },
+          {
+            "path": "error.hint",
+            "startsWith": "Did you mean 'list'"
+          }
+        ],
+        "files": {
+          "nothingWritten": true
+        }
+      }
+    },
+    {
+      "args": [
+        "slides",
+        "edit",
+        "a.pptx",
+        "--ops",
+        "{\"ops\":[{\"op\":\"set_body\",\"slide\":1,\"paragraphs\":[{\"text\":\"x\",\"listLevel\":2}]}]}"
+      ],
+      "expect": {
+        "error": "OPS_INVALID",
+        "json": [
+          {
+            "path": "error.details.suggestions[0]",
+            "equals": "list"
+          },
+          {
+            "path": "error.hint",
+            "startsWith": "Did you mean 'list'"
+          }
+        ],
+        "files": {
+          "nothingWritten": true
+        }
+      }
+    },
+    {
+      "args": [
+        "cells",
+        "edit",
+        "a.xlsx",
+        "--ops",
+        "{\"ops\":[{\"op\":\"set_style\",\"range\":\"A1\",\"style\":{\"bold\":true}}]}"
+      ],
+      "expect": {
+        "error": "OPS_INVALID",
+        "json": [
+          {
+            "path": "error.details.suggestions[0]",
+            "equals": "format_range"
+          },
+          {
+            "path": "error.hint",
+            "startsWith": "Did you mean 'format_range'"
+          }
+        ],
+        "files": {
+          "nothingWritten": true
+        }
+      }
+    },
+    {
+      "args": [
+        "pdf",
+        "edit",
+        "a.pdf",
+        "--ops",
+        "{\"ops\":[{\"op\":\"add_watermark\",\"text\":\"DRAFT\"}]}"
+      ],
+      "expect": {
+        "error": "OPS_INVALID",
+        "json": [
+          {
+            "path": "error.details.suggestions[0]",
+            "equals": "add_watermark_text"
+          },
+          {
+            "path": "error.hint",
+            "startsWith": "Did you mean 'add_watermark_text'"
+          }
+        ],
+        "files": {
+          "nothingWritten": true
+        }
+      }
+    }
+  ]
+}

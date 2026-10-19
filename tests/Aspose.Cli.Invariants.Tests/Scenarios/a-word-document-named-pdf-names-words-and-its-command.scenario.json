@@ -1,0 +1,164 @@
+{
+  "name": "a Word document named .pdf is FORMAT_MISMATCH naming words and its command, supervised or not, through pdf inspect, review and pdf merge",
+  "files": {
+    "renamed.pdf": {
+      "fixture": "words.docx"
+    },
+    "report.pdf": {
+      "fixture": "pdf.pdf"
+    }
+  },
+  "steps": [
+    {
+      "args": [
+        "pdf",
+        "inspect",
+        "renamed.pdf"
+      ],
+      "expect": {
+        "exitCode": 6,
+        "error": "FORMAT_MISMATCH",
+        "json": [
+          {
+            "path": "error.details.declared",
+            "equals": "pdf"
+          },
+          {
+            "path": "error.details.detected",
+            "equals": [
+              "words"
+            ]
+          },
+          {
+            "path": "error.details.path",
+            "equals": "<workspace>/renamed.pdf"
+          },
+          {
+            "path": "error.message",
+            "equals": "'renamed.pdf' has the .pdf extension of a pdf document, but its content looks like a words document."
+          },
+          {
+            "path": "error.hint",
+            "contains": "looks like a words document"
+          },
+          {
+            "path": "error.hint",
+            "contains": "'aspose-cli words inspect'"
+          }
+        ],
+        "files": {
+          "nothingWritten": true
+        }
+      }
+    },
+    {
+      "args": [
+        "--timeout",
+        "100",
+        "pdf",
+        "inspect",
+        "renamed.pdf"
+      ],
+      "expect": {
+        "exitCode": 6,
+        "error": "FORMAT_MISMATCH",
+        "json": [
+          {
+            "path": "error.details.declared",
+            "equals": "pdf"
+          },
+          {
+            "path": "error.details.detected",
+            "equals": [
+              "words"
+            ]
+          },
+          {
+            "path": "error.details.path",
+            "equals": "<workspace>/renamed.pdf"
+          },
+          {
+            "path": "error.message",
+            "equals": "'renamed.pdf' has the .pdf extension of a pdf document, but its content looks like a words document."
+          },
+          {
+            "path": "error.hint",
+            "contains": "looks like a words document"
+          },
+          {
+            "path": "error.hint",
+            "contains": "'aspose-cli words inspect'"
+          }
+        ],
+        "files": {
+          "nothingWritten": true
+        }
+      }
+    },
+    {
+      "args": [
+        "review",
+        "renamed.pdf"
+      ],
+      "expect": {
+        "exitCode": 6,
+        "error": "FORMAT_MISMATCH",
+        "json": [
+          {
+            "path": "error.details.declared",
+            "equals": "pdf"
+          },
+          {
+            "path": "error.details.detected",
+            "equals": [
+              "words"
+            ]
+          },
+          {
+            "path": "error.details.path",
+            "equals": "<workspace>/renamed.pdf"
+          },
+          {
+            "path": "error.message",
+            "equals": "'renamed.pdf' has the .pdf extension of a pdf document, but its content looks like a words document."
+          }
+        ],
+        "files": {
+          "nothingWritten": true
+        }
+      }
+    },
+    {
+      "args": [
+        "pdf",
+        "merge",
+        "report.pdf",
+        "renamed.pdf",
+        "--out",
+        "merged.pdf"
+      ],
+      "expect": {
+        "exitCode": 6,
+        "error": "FORMAT_MISMATCH",
+        "json": [
+          {
+            "path": "error.details.path",
+            "equals": "<workspace>/renamed.pdf"
+          },
+          {
+            "path": "error.details.detected",
+            "equals": [
+              "words"
+            ]
+          }
+        ],
+        "files": {
+          "absent": [
+            "merged.pdf"
+          ],
+          "nothingWritten": true
+        }
+      }
+    }
+  ]
+}

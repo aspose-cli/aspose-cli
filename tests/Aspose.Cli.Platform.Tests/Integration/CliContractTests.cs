@@ -597,24 +597,6 @@ public sealed class CliContractTests : IDisposable
         Assert.DoesNotContain("aspose-cli cells", hint, StringComparison.Ordinal);
     }
 
-    [Theory]
-    [InlineData("help", "--help")]
-    [InlineData("version", "--version")]
-    [InlineData("cells help", "cells --help")]
-    [InlineData("words help edit", "words edit --help")]
-    [InlineData("help words edit", "words edit --help")]
-    [InlineData("version capabilities", "--version")]
-    public void HelpOrVersionAsACommand_SuggestsTheOption(string commandLine, string suggestion)
-    {
-        CliResult result = _workspace.Run([.. commandLine.Split(' '), "--output-format", "json"]);
-
-        Assert.Equal(2, result.ExitCode);
-        JsonNode error = Parse(result.StdErr)["error"]!;
-        Assert.Equal("USAGE_ERROR", error["code"]!.GetValue<string>());
-        Assert.Equal(suggestion, error["details"]!["suggestions"]![0]!.GetValue<string>());
-        Assert.StartsWith($"Did you mean '{suggestion}'?", error["hint"]!.GetValue<string>(), StringComparison.Ordinal);
-    }
-
     [Fact]
     public void FontsList_WithoutProduct_ListsEveryProductEngine()
     {
@@ -645,27 +627,6 @@ public sealed class CliContractTests : IDisposable
         string[] available = [.. error["details"]!["available"]!.AsArray().Select(static item => item!.GetValue<string>())];
         Assert.DoesNotContain('\n', message);
         Assert.EndsWith($"Must be one of: {string.Join(", ", available)}", message, StringComparison.Ordinal);
-    }
-
-    [Theory]
-    [InlineData("pdf inspcet a.pdf", "pdf inspect", "'inspcet' is not a command of 'aspose-cli pdf'")]
-    [InlineData("pdf extact a.pdf --pages 1", "pdf extract", "'extact' is not a command of 'aspose-cli pdf'")]
-    [InlineData("wrods convert a.docx", "words", "'wrods' is not a command of 'aspose-cli'")]
-    [InlineData("app sattus", "app status", "'sattus' is not a command of 'aspose-cli app'")]
-    [InlineData("preview sattus", "preview status", "'sattus' is not a command of 'aspose-cli preview'")]
-    public void UnknownCommand_SuggestsTheClosestCommands(string commandLine, string suggestion, string message)
-    {
-        CliResult result = _workspace.Run([.. commandLine.Split(' '), "--output-format", "json"]);
-
-        Assert.Equal(2, result.ExitCode);
-        JsonNode error = Parse(result.StdErr)["error"]!;
-        Assert.Equal("USAGE_ERROR", error["code"]!.GetValue<string>());
-        Assert.StartsWith(message, error["message"]!.GetValue<string>(), StringComparison.Ordinal);
-        // The tokens after an unknown command are not reported as unknown on their own.
-        Assert.DoesNotContain(".docx", error["message"]!.GetValue<string>(), StringComparison.Ordinal);
-        Assert.DoesNotContain(".pdf", error["message"]!.GetValue<string>(), StringComparison.Ordinal);
-        Assert.Equal(suggestion, error["details"]!["suggestions"]![0]!.GetValue<string>());
-        Assert.StartsWith($"Did you mean '{suggestion}'", error["hint"]!.GetValue<string>(), StringComparison.Ordinal);
     }
 
     [Fact]
@@ -718,20 +679,6 @@ public sealed class CliContractTests : IDisposable
     }
 
     [Theory]
-    [InlineData("cells", "xlsx", "pdf")]
-    [InlineData("words", "docx", "pdf")]
-    public void OutputFormatGivenAFileFormat_SuggestsTo(string product, string extension, string format)
-    {
-        CliResult result = _workspace.Run(product, "convert", $"in.{extension}", "--out", $"out.{format}", "--output-format", format);
-
-        Assert.Equal(2, result.ExitCode);
-        JsonNode error = Parse(result.StdErr)["error"]!;
-        Assert.Equal("OPTION_INVALID", error["code"]!.GetValue<string>());
-        Assert.Equal($"--to {format}", error["details"]!["suggestions"]![0]!.GetValue<string>());
-        Assert.StartsWith($"Did you mean '--to {format}'?", error["hint"]!.GetValue<string>(), StringComparison.Ordinal);
-    }
-
-    [Theory]
     [InlineData("cells read", "--scan-range", true)]
     [InlineData("cells convert", "--out", false)]
     public void Capabilities_PublishWhetherAnOptionIsHidden(string command, string option, bool hidden)
@@ -754,22 +701,6 @@ public sealed class CliContractTests : IDisposable
         JsonNode error = Parse(result.StdErr)["error"]!;
         Assert.DoesNotContain(hidden, (error["details"]!["suggestions"]?.AsArray() ?? []).Select(static item => item!.GetValue<string>()));
         Assert.DoesNotContain(hidden, error["details"]!["available"]!.AsArray().Select(static item => item!.GetValue<string>()));
-    }
-
-    [Theory]
-    [InlineData("docs edting", "editing")]
-    [InlineData("schema v2/common/not-found-detail", "v2/common/not-found-details")]
-    [InlineData("schema v2/pdf/ops --operation rotate_page", "rotate_pages")]
-    public void UnknownName_ListsWhatExistsAndSuggestsTheClosest(string commandLine, string suggestion)
-    {
-        CliResult result = _workspace.Run([.. commandLine.Split(' '), "--output-format", "json"]);
-
-        Assert.Equal(2, result.ExitCode);
-        JsonNode error = Parse(result.StdErr)["error"]!;
-        Assert.Equal("OPTION_INVALID", error["code"]!.GetValue<string>());
-        Assert.Contains(suggestion, error["details"]!["available"]!.AsArray().Select(static item => item!.GetValue<string>()));
-        Assert.Equal(suggestion, error["details"]!["suggestions"]![0]!.GetValue<string>());
-        Assert.StartsWith($"Did you mean '{suggestion}'?", error["hint"]!.GetValue<string>(), StringComparison.Ordinal);
     }
 
     [Fact]

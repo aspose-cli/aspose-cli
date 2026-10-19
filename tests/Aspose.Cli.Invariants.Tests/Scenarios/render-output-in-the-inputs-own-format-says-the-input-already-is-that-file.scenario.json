@@ -1,0 +1,85 @@
+{
+  "name": "a render output in the input's own format says the input already is that file",
+  "files": {
+    "a.pdf": {
+      "text": "not a document"
+    },
+    "a.xlsx": {
+      "text": "not a document"
+    }
+  },
+  "steps": [
+    {
+      "args": [
+        "pdf",
+        "render",
+        "a.pdf",
+        "--out",
+        "x.pdf"
+      ],
+      "expect": {
+        "exitCode": 2,
+        "error": "OPTION_INVALID",
+        "json": [
+          {
+            "path": "error.message",
+            "contains": "extension of its input, which already is that file"
+          },
+          {
+            "path": "error.message",
+            "contains": "aspose-cli pdf render writes only images. Must be one of: .png,"
+          },
+          {
+            "path": "error.hint",
+            "notContains": "convert",
+            "exists": true
+          },
+          {
+            "path": "error.details.suggestions",
+            "exists": false
+          },
+          {
+            "path": "error.details.format",
+            "exists": false
+          }
+        ]
+      }
+    },
+    {
+      "args": [
+        "cells",
+        "render",
+        "a.xlsx",
+        "--out",
+        "x.xlsx"
+      ],
+      "expect": {
+        "exitCode": 2,
+        "error": "OPTION_INVALID",
+        "json": [
+          {
+            "path": "error.message",
+            "contains": "extension of its input, which already is that file"
+          },
+          {
+            "path": "error.message",
+            "contains": "aspose-cli cells render writes only images. Must be one of: .png,"
+          },
+          {
+            "path": "error.hint",
+            "notContains": "convert",
+            "exists": true
+          },
+          {
+            "path": "error.details.suggestions",
+            "exists": false
+          },
+          {
+            "path": "error.details.format",
+            "exists": false
+          }
+        ]
+      }
+    }
+  ]
+}

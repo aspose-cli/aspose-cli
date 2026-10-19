@@ -1,0 +1,65 @@
+{
+  "name": "--output-format given a file format suggests --to with that format",
+  "steps": [
+    {
+      "args": [
+        "cells",
+        "convert",
+        "in.xlsx",
+        "--out",
+        "out.pdf",
+        "--output-format",
+        "pdf"
+      ],
+      "expect": {
+        "exitCode": 2,
+        "error": "OPTION_INVALID",
+        "json": [
+          {
+            "path": "error.details.suggestions[0]",
+            "equals": "--to pdf"
+          },
+          {
+            "path": "error.hint",
+            "startsWith": "Did you mean '--to pdf'?"
+          }
+        ],
+        "files": {
+          "absent": [
+            "out.pdf"
+          ]
+        }
+      }
+    },
+    {
+      "args": [
+        "words",
+        "convert",
+        "in.docx",
+        "--out",
+        "out.pdf",
+        "--output-format",
+        "pdf"
+      ],
+      "expect": {
+        "exitCode": 2,
+        "error": "OPTION_INVALID",
+        "json": [
+          {
+            "path": "error.details.suggestions[0]",
+            "equals": "--to pdf"
+          },
+          {
+            "path": "error.hint",
+            "startsWith": "Did you mean '--to pdf'?"
+          }
+        ],
+        "files": {
+          "absent": [
+            "out.pdf"
+          ]
+        }
+      }
+    }
+  ]
+}

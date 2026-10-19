@@ -1,0 +1,175 @@
+{
+  "name": "an unknown command suggests the closest commands and does not report the tokens after it",
+  "steps": [
+    {
+      "args": [
+        "pdf",
+        "inspcet",
+        "a.pdf"
+      ],
+      "expect": {
+        "exitCode": 2,
+        "error": "USAGE_ERROR",
+        "json": [
+          {
+            "path": "error.message",
+            "startsWith": "'inspcet' is not a command of 'aspose-cli pdf'"
+          },
+          {
+            "path": "error.message",
+            "notContains": ".docx",
+            "exists": true
+          },
+          {
+            "path": "error.message",
+            "notContains": ".pdf"
+          },
+          {
+            "path": "error.details.suggestions[0]",
+            "equals": "pdf inspect"
+          },
+          {
+            "path": "error.hint",
+            "startsWith": "Did you mean 'pdf inspect'"
+          }
+        ]
+      }
+    },
+    {
+      "args": [
+        "pdf",
+        "extact",
+        "a.pdf",
+        "--pages",
+        "1"
+      ],
+      "expect": {
+        "exitCode": 2,
+        "error": "USAGE_ERROR",
+        "json": [
+          {
+            "path": "error.message",
+            "startsWith": "'extact' is not a command of 'aspose-cli pdf'"
+          },
+          {
+            "path": "error.message",
+            "notContains": ".docx",
+            "exists": true
+          },
+          {
+            "path": "error.message",
+            "notContains": ".pdf"
+          },
+          {
+            "path": "error.details.suggestions[0]",
+            "equals": "pdf extract"
+          },
+          {
+            "path": "error.hint",
+            "startsWith": "Did you mean 'pdf extract'"
+          }
+        ]
+      }
+    },
+    {
+      "args": [
+        "wrods",
+        "convert",
+        "a.docx"
+      ],
+      "expect": {
+        "exitCode": 2,
+        "error": "USAGE_ERROR",
+        "json": [
+          {
+            "path": "error.message",
+            "startsWith": "'wrods' is not a command of 'aspose-cli'"
+          },
+          {
+            "path": "error.message",
+            "notContains": ".docx",
+            "exists": true
+          },
+          {
+            "path": "error.message",
+            "notContains": ".pdf"
+          },
+          {
+            "path": "error.details.suggestions[0]",
+            "equals": "words"
+          },
+          {
+            "path": "error.hint",
+            "startsWith": "Did you mean 'words'"
+          }
+        ]
+      }
+    },
+    {
+      "args": [
+        "app",
+        "sattus"
+      ],
+      "expect": {
+        "exitCode": 2,
+        "error": "USAGE_ERROR",
+        "json": [
+          {
+            "path": "error.message",
+            "startsWith": "'sattus' is not a command of 'aspose-cli app'"
+          },
+          {
+            "path": "error.message",
+            "notContains": ".docx",
+            "exists": true
+          },
+          {
+            "path": "error.message",
+            "notContains": ".pdf"
+          },
+          {
+            "path": "error.details.suggestions[0]",
+            "equals": "app status"
+          },
+          {
+            "path": "error.hint",
+            "startsWith": "Did you mean 'app status'"
+          }
+        ]
+      }
+    },
+    {
+      "args": [
+        "preview",
+        "sattus"
+      ],
+      "expect": {
+        "exitCode": 2,
+        "error": "USAGE_ERROR",
+        "json": [
+          {
+            "path": "error.message",
+            "startsWith": "'sattus' is not a command of 'aspose-cli preview'"
+          },
+          {
+            "path": "error.message",
+            "notContains": ".docx",
+            "exists": true
+          },
+          {
+            "path": "error.message",
+            "notContains": ".pdf"
+          },
+          {
+            "path": "error.details.suggestions[0]",
+            "equals": "preview status"
+          },
+          {
+            "path": "error.hint",
+            "startsWith": "Did you mean 'preview status'"
+          }
+        ]
+      }
+    }
+  ]
+}
