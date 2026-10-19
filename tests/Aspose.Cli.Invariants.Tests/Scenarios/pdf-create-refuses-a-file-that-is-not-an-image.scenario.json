@@ -1,0 +1,63 @@
+{
+  "name": "pdf create refuses a file that is not an image as a corrupt input naming it",
+  "files": {
+    "scan.png": {
+      "text": "not an image"
+    },
+    "empty.png": {
+      "text": ""
+    }
+  },
+  "steps": [
+    {
+      "args": [
+        "pdf",
+        "create",
+        "scan.pdf",
+        "--from-images",
+        "scan.png"
+      ],
+      "expect": {
+        "exitCode": 3,
+        "error": "FILE_CORRUPT",
+        "json": [
+          {
+            "path": "error.details.path",
+            "equals": "<workspace>/scan.png"
+          }
+        ],
+        "files": {
+          "absent": [
+            "scan.pdf"
+          ],
+          "nothingWritten": true
+        }
+      }
+    },
+    {
+      "args": [
+        "pdf",
+        "create",
+        "scan.pdf",
+        "--from-images",
+        "empty.png"
+      ],
+      "expect": {
+        "exitCode": 3,
+        "error": "FILE_CORRUPT",
+        "json": [
+          {
+            "path": "error.details.path",
+            "equals": "<workspace>/empty.png"
+          }
+        ],
+        "files": {
+          "absent": [
+            "scan.pdf"
+          ],
+          "nothingWritten": true
+        }
+      }
+    }
+  ]
+}

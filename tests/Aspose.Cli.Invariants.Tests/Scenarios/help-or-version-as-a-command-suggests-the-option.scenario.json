@@ -1,0 +1,125 @@
+{
+  "name": "help or version written as a command suggests the option",
+  "steps": [
+    {
+      "args": [
+        "help"
+      ],
+      "expect": {
+        "exitCode": 2,
+        "error": "USAGE_ERROR",
+        "json": [
+          {
+            "path": "error.details.suggestions[0]",
+            "equals": "--help"
+          },
+          {
+            "path": "error.hint",
+            "startsWith": "Did you mean '--help'?"
+          }
+        ]
+      }
+    },
+    {
+      "args": [
+        "version"
+      ],
+      "expect": {
+        "exitCode": 2,
+        "error": "USAGE_ERROR",
+        "json": [
+          {
+            "path": "error.details.suggestions[0]",
+            "equals": "--version"
+          },
+          {
+            "path": "error.hint",
+            "startsWith": "Did you mean '--version'?"
+          }
+        ]
+      }
+    },
+    {
+      "args": [
+        "cells",
+        "help"
+      ],
+      "expect": {
+        "exitCode": 2,
+        "error": "USAGE_ERROR",
+        "json": [
+          {
+            "path": "error.details.suggestions[0]",
+            "equals": "cells --help"
+          },
+          {
+            "path": "error.hint",
+            "startsWith": "Did you mean 'cells --help'?"
+          }
+        ]
+      }
+    },
+    {
+      "args": [
+        "words",
+        "help",
+        "edit"
+      ],
+      "expect": {
+        "exitCode": 2,
+        "error": "USAGE_ERROR",
+        "json": [
+          {
+            "path": "error.details.suggestions[0]",
+            "equals": "words edit --help"
+          },
+          {
+            "path": "error.hint",
+            "startsWith": "Did you mean 'words edit --help'?"
+          }
+        ]
+      }
+    },
+    {
+      "args": [
+        "help",
+        "words",
+        "edit"
+      ],
+      "expect": {
+        "exitCode": 2,
+        "error": "USAGE_ERROR",
+        "json": [
+          {
+            "path": "error.details.suggestions[0]",
+            "equals": "words edit --help"
+          },
+          {
+            "path": "error.hint",
+            "startsWith": "Did you mean 'words edit --help'?"
+          }
+        ]
+      }
+    },
+    {
+      "args": [
+        "version",
+        "capabilities"
+      ],
+      "expect": {
+        "exitCode": 2,
+        "error": "USAGE_ERROR",
+        "json": [
+          {
+            "path": "error.details.suggestions[0]",
+            "equals": "--version"
+          },
+          {
+            "path": "error.hint",
+            "startsWith": "Did you mean '--version'?"
+          }
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,693 @@
+{
+  "name": "an output format the command cannot write points to the command that writes it",
+  "files": {
+    "a.xlsx": {
+      "text": "not a document"
+    },
+    "a.pptx": {
+      "text": "not a document"
+    },
+    "a.pdf": {
+      "text": "not a document"
+    },
+    "a.docx": {
+      "text": "not a document"
+    },
+    "ops.json": {
+      "text": "{\"ops\":[{\"op\":\"set_notes\",\"slide\":1,\"text\":\"x\"}]}"
+    },
+    "deck.md": {
+      "text": "# Title"
+    }
+  },
+  "steps": [
+    {
+      "args": [
+        "cells",
+        "edit",
+        "a.xlsx",
+        "--set",
+        "Sheet1!A1=5",
+        "--out",
+        "x.pdf"
+      ],
+      "expect": {
+        "exitCode": 2,
+        "error": "OPTION_INVALID",
+        "json": [
+          {
+            "path": "error.details.option",
+            "equals": "--out"
+          },
+          {
+            "path": "error.message",
+            "startsWith": "--out '"
+          },
+          {
+            "path": "error.message",
+            "contains": "which aspose-cli cells edit does not write. Must be one of: .xlsx,"
+          },
+          {
+            "path": "error.details.format",
+            "exists": true
+          },
+          {
+            "path": "error.details.suggestions",
+            "exists": false
+          },
+          {
+            "path": "error.hint",
+            "contains": "then run 'aspose-cli cells convert <that file> --to pdf' for pdf"
+          }
+        ],
+        "files": {
+          "absent": [
+            "x.pdf"
+          ]
+        }
+      }
+    },
+    {
+      "args": [
+        "slides",
+        "edit",
+        "a.pptx",
+        "--ops",
+        "ops.json",
+        "--out",
+        "x.pdf"
+      ],
+      "expect": {
+        "exitCode": 2,
+        "error": "OPTION_INVALID",
+        "json": [
+          {
+            "path": "error.details.option",
+            "equals": "--out"
+          },
+          {
+            "path": "error.message",
+            "startsWith": "--out '"
+          },
+          {
+            "path": "error.message",
+            "contains": "which aspose-cli slides edit does not write. Must be one of: .pptx,"
+          },
+          {
+            "path": "error.details.format",
+            "exists": true
+          },
+          {
+            "path": "error.details.suggestions",
+            "exists": false
+          },
+          {
+            "path": "error.hint",
+            "contains": "then run 'aspose-cli slides convert <that file> --to pdf' for pdf"
+          }
+        ],
+        "files": {
+          "absent": [
+            "x.pdf"
+          ]
+        }
+      }
+    },
+    {
+      "args": [
+        "slides",
+        "create",
+        "x.ppt",
+        "--from-markdown",
+        "deck.md"
+      ],
+      "expect": {
+        "exitCode": 2,
+        "error": "OPTION_INVALID",
+        "json": [
+          {
+            "path": "error.details.argument",
+            "equals": "file"
+          },
+          {
+            "path": "error.message",
+            "startsWith": "The file '"
+          },
+          {
+            "path": "error.message",
+            "contains": "which aspose-cli slides create does not write. Must be one of: .pptx,"
+          },
+          {
+            "path": "error.details.format",
+            "exists": true
+          },
+          {
+            "path": "error.details.suggestions",
+            "exists": false
+          },
+          {
+            "path": "error.hint",
+            "contains": "then run 'aspose-cli slides convert <that file> --to ppt' for ppt"
+          }
+        ],
+        "files": {
+          "absent": [
+            "x.ppt"
+          ]
+        }
+      }
+    },
+    {
+      "args": [
+        "cells",
+        "create",
+        "x.pdf"
+      ],
+      "expect": {
+        "exitCode": 2,
+        "error": "OPTION_INVALID",
+        "json": [
+          {
+            "path": "error.details.argument",
+            "equals": "file"
+          },
+          {
+            "path": "error.message",
+            "startsWith": "The file '"
+          },
+          {
+            "path": "error.message",
+            "contains": "which aspose-cli cells create does not write. Must be one of: .xlsx,"
+          },
+          {
+            "path": "error.details.format",
+            "exists": true
+          },
+          {
+            "path": "error.details.suggestions",
+            "exists": false
+          },
+          {
+            "path": "error.hint",
+            "contains": "then run 'aspose-cli cells convert <that file> --to pdf' for pdf"
+          }
+        ],
+        "files": {
+          "absent": [
+            "x.pdf"
+          ]
+        }
+      }
+    },
+    {
+      "args": [
+        "pdf",
+        "edit",
+        "a.pdf",
+        "--ops",
+        "ops.json",
+        "--out",
+        "x.md"
+      ],
+      "expect": {
+        "exitCode": 2,
+        "error": "OPTION_INVALID",
+        "json": [
+          {
+            "path": "error.details.option",
+            "equals": "--out"
+          },
+          {
+            "path": "error.message",
+            "startsWith": "--out '"
+          },
+          {
+            "path": "error.message",
+            "contains": "which aspose-cli pdf edit does not write. Must be one of: .pdf."
+          },
+          {
+            "path": "error.details.format",
+            "exists": true
+          },
+          {
+            "path": "error.details.suggestions",
+            "exists": false
+          },
+          {
+            "path": "error.hint",
+            "contains": "then run 'aspose-cli pdf convert <that file> --to md' for md"
+          }
+        ],
+        "files": {
+          "absent": [
+            "x.md"
+          ]
+        }
+      }
+    },
+    {
+      "args": [
+        "pdf",
+        "create",
+        "x.md",
+        "--from-text",
+        "deck.md"
+      ],
+      "expect": {
+        "exitCode": 2,
+        "error": "OPTION_INVALID",
+        "json": [
+          {
+            "path": "error.details.argument",
+            "equals": "file"
+          },
+          {
+            "path": "error.message",
+            "startsWith": "The file '"
+          },
+          {
+            "path": "error.message",
+            "contains": "which aspose-cli pdf create does not write. Must be one of: .pdf."
+          },
+          {
+            "path": "error.details.format",
+            "exists": true
+          },
+          {
+            "path": "error.details.suggestions",
+            "exists": false
+          },
+          {
+            "path": "error.hint",
+            "contains": "then run 'aspose-cli pdf convert <that file> --to md' for md"
+          }
+        ],
+        "files": {
+          "absent": [
+            "x.md"
+          ]
+        }
+      }
+    },
+    {
+      "args": [
+        "words",
+        "edit",
+        "a.docx",
+        "--set",
+        "bookmark:A=x",
+        "--out",
+        "x.pdf"
+      ],
+      "expect": {
+        "exitCode": 2,
+        "error": "OPTION_INVALID",
+        "json": [
+          {
+            "path": "error.details.option",
+            "equals": "--out"
+          },
+          {
+            "path": "error.message",
+            "startsWith": "--out '"
+          },
+          {
+            "path": "error.message",
+            "contains": "which aspose-cli words edit does not write. Must be one of: .doc,"
+          },
+          {
+            "path": "error.details.format",
+            "exists": true
+          },
+          {
+            "path": "error.details.suggestions",
+            "exists": false
+          },
+          {
+            "path": "error.hint",
+            "contains": "then run 'aspose-cli words convert <that file> --to pdf' for pdf"
+          }
+        ],
+        "files": {
+          "absent": [
+            "x.pdf"
+          ]
+        }
+      }
+    },
+    {
+      "args": [
+        "words",
+        "edit",
+        "a.docx",
+        "--set",
+        "bookmark:A=x",
+        "--out",
+        "x.md"
+      ],
+      "expect": {
+        "exitCode": 2,
+        "error": "OPTION_INVALID",
+        "json": [
+          {
+            "path": "error.details.option",
+            "equals": "--out"
+          },
+          {
+            "path": "error.message",
+            "startsWith": "--out '"
+          },
+          {
+            "path": "error.message",
+            "contains": "which aspose-cli words edit does not write. Must be one of: .doc,"
+          },
+          {
+            "path": "error.details.format",
+            "exists": true
+          },
+          {
+            "path": "error.details.suggestions",
+            "exists": false
+          },
+          {
+            "path": "error.hint",
+            "contains": "then run 'aspose-cli words convert <that file> --to md' for md"
+          }
+        ],
+        "files": {
+          "absent": [
+            "x.md"
+          ]
+        }
+      }
+    },
+    {
+      "args": [
+        "words",
+        "create",
+        "x.pdf",
+        "--from-markdown",
+        "deck.md"
+      ],
+      "expect": {
+        "exitCode": 2,
+        "error": "OPTION_INVALID",
+        "json": [
+          {
+            "path": "error.details.argument",
+            "equals": "file"
+          },
+          {
+            "path": "error.message",
+            "startsWith": "The file '"
+          },
+          {
+            "path": "error.message",
+            "contains": "which aspose-cli words create does not write. Must be one of: .doc,"
+          },
+          {
+            "path": "error.details.format",
+            "exists": true
+          },
+          {
+            "path": "error.details.suggestions",
+            "exists": false
+          },
+          {
+            "path": "error.hint",
+            "contains": "then run 'aspose-cli words convert <that file> --to pdf' for pdf"
+          }
+        ],
+        "files": {
+          "absent": [
+            "x.pdf"
+          ]
+        }
+      }
+    },
+    {
+      "args": [
+        "words",
+        "create",
+        "x.md",
+        "--from-markdown",
+        "deck.md"
+      ],
+      "expect": {
+        "exitCode": 2,
+        "error": "OPTION_INVALID",
+        "json": [
+          {
+            "path": "error.details.argument",
+            "equals": "file"
+          },
+          {
+            "path": "error.message",
+            "startsWith": "The file '"
+          },
+          {
+            "path": "error.message",
+            "contains": "which aspose-cli words create does not write. Must be one of: .doc,"
+          },
+          {
+            "path": "error.details.format",
+            "exists": true
+          },
+          {
+            "path": "error.details.suggestions",
+            "exists": false
+          },
+          {
+            "path": "error.hint",
+            "contains": "then run 'aspose-cli words convert <that file> --to md' for md"
+          }
+        ],
+        "files": {
+          "absent": [
+            "x.md"
+          ]
+        }
+      }
+    },
+    {
+      "args": [
+        "cells",
+        "render",
+        "a.xlsx",
+        "--out",
+        "x.pdf"
+      ],
+      "expect": {
+        "exitCode": 2,
+        "error": "OPTION_INVALID",
+        "json": [
+          {
+            "path": "error.details.option",
+            "equals": "--out"
+          },
+          {
+            "path": "error.message",
+            "startsWith": "--out '"
+          },
+          {
+            "path": "error.message",
+            "contains": "which aspose-cli cells render does not write. Must be one of: .png,"
+          },
+          {
+            "path": "error.details.format",
+            "exists": true
+          },
+          {
+            "path": "error.details.suggestions",
+            "exists": false
+          },
+          {
+            "path": "error.hint",
+            "contains": "or run 'aspose-cli cells convert a.xlsx --to pdf --out x.pdf' for pdf"
+          }
+        ],
+        "files": {
+          "absent": [
+            "x.pdf"
+          ]
+        }
+      }
+    },
+    {
+      "args": [
+        "slides",
+        "render",
+        "a.pptx",
+        "--out",
+        "x.pdf"
+      ],
+      "expect": {
+        "exitCode": 2,
+        "error": "OPTION_INVALID",
+        "json": [
+          {
+            "path": "error.details.option",
+            "equals": "--out"
+          },
+          {
+            "path": "error.message",
+            "startsWith": "--out '"
+          },
+          {
+            "path": "error.message",
+            "contains": "which aspose-cli slides render does not write. Must be one of: .png,"
+          },
+          {
+            "path": "error.details.format",
+            "exists": true
+          },
+          {
+            "path": "error.details.suggestions",
+            "exists": false
+          },
+          {
+            "path": "error.hint",
+            "contains": "or run 'aspose-cli slides convert a.pptx --to pdf --out x.pdf' for pdf"
+          }
+        ],
+        "files": {
+          "absent": [
+            "x.pdf"
+          ]
+        }
+      }
+    },
+    {
+      "args": [
+        "cells",
+        "convert",
+        "a.xlsx",
+        "--out",
+        "x.png"
+      ],
+      "expect": {
+        "exitCode": 2,
+        "error": "OPTION_INVALID",
+        "json": [
+          {
+            "path": "error.details.option",
+            "equals": "--out"
+          },
+          {
+            "path": "error.message",
+            "startsWith": "--out '"
+          },
+          {
+            "path": "error.message",
+            "contains": "which aspose-cli cells convert does not write. Must be one of: .xlsx,"
+          },
+          {
+            "path": "error.details.format",
+            "exists": true
+          },
+          {
+            "path": "error.details.suggestions",
+            "exists": false
+          },
+          {
+            "path": "error.hint",
+            "contains": "or run 'aspose-cli cells render a.xlsx --to png --out x.png' for png"
+          }
+        ],
+        "files": {
+          "absent": [
+            "x.png"
+          ]
+        }
+      }
+    },
+    {
+      "args": [
+        "slides",
+        "convert",
+        "a.pptx",
+        "--out",
+        "x.png"
+      ],
+      "expect": {
+        "exitCode": 2,
+        "error": "OPTION_INVALID",
+        "json": [
+          {
+            "path": "error.details.option",
+            "equals": "--out"
+          },
+          {
+            "path": "error.message",
+            "startsWith": "--out '"
+          },
+          {
+            "path": "error.message",
+            "contains": "which aspose-cli slides convert does not write. Must be one of: .pptx,"
+          },
+          {
+            "path": "error.details.format",
+            "exists": true
+          },
+          {
+            "path": "error.details.suggestions",
+            "exists": false
+          },
+          {
+            "path": "error.hint",
+            "contains": "or run 'aspose-cli slides render a.pptx --to png --out x.png' for png"
+          }
+        ],
+        "files": {
+          "absent": [
+            "x.png"
+          ]
+        }
+      }
+    },
+    {
+      "args": [
+        "pdf",
+        "convert",
+        "a.pdf",
+        "--out",
+        "x.png"
+      ],
+      "expect": {
+        "exitCode": 2,
+        "error": "OPTION_INVALID",
+        "json": [
+          {
+            "path": "error.details.option",
+            "equals": "--out"
+          },
+          {
+            "path": "error.message",
+            "startsWith": "--out '"
+          },
+          {
+            "path": "error.message",
+            "contains": "which aspose-cli pdf convert does not write. Must be one of: .docx,"
+          },
+          {
+            "path": "error.details.format",
+            "exists": true
+          },
+          {
+            "path": "error.details.suggestions",
+            "exists": false
+          },
+          {
+            "path": "error.hint",
+            "contains": "or run 'aspose-cli pdf render a.pdf --to png --out x.png' for png"
+          }
+        ],
+        "files": {
+          "absent": [
+            "x.png"
+          ]
+        }
+      }
+    }
+  ]
+}

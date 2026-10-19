@@ -1,0 +1,79 @@
+{
+  "name": "an unknown guide, schema or operation name lists what exists and suggests the closest",
+  "steps": [
+    {
+      "args": [
+        "docs",
+        "edting"
+      ],
+      "expect": {
+        "exitCode": 2,
+        "error": "OPTION_INVALID",
+        "json": [
+          {
+            "path": "error.details.available",
+            "contains": "editing"
+          },
+          {
+            "path": "error.details.suggestions[0]",
+            "equals": "editing"
+          },
+          {
+            "path": "error.hint",
+            "startsWith": "Did you mean 'editing'?"
+          }
+        ]
+      }
+    },
+    {
+      "args": [
+        "schema",
+        "v2/common/not-found-detail"
+      ],
+      "expect": {
+        "exitCode": 2,
+        "error": "OPTION_INVALID",
+        "json": [
+          {
+            "path": "error.details.available",
+            "contains": "v2/common/not-found-details"
+          },
+          {
+            "path": "error.details.suggestions[0]",
+            "equals": "v2/common/not-found-details"
+          },
+          {
+            "path": "error.hint",
+            "startsWith": "Did you mean 'v2/common/not-found-details'?"
+          }
+        ]
+      }
+    },
+    {
+      "args": [
+        "schema",
+        "v2/pdf/ops",
+        "--operation",
+        "rotate_page"
+      ],
+      "expect": {
+        "exitCode": 2,
+        "error": "OPTION_INVALID",
+        "json": [
+          {
+            "path": "error.details.available",
+            "contains": "rotate_pages"
+          },
+          {
+            "path": "error.details.suggestions[0]",
+            "equals": "rotate_pages"
+          },
+          {
+            "path": "error.hint",
+            "startsWith": "Did you mean 'rotate_pages'?"
+          }
+        ]
+      }
+    }
+  ]
+}

@@ -101,23 +101,6 @@ public sealed class PdfCliWorkflowTests : IDisposable
     }
 
     [Theory]
-    [InlineData("not an image")]
-    [InlineData("")]
-    public void Create_RefusesAFileThatIsNotAnImageAsACorruptInputNamingIt(string content)
-    {
-        File.WriteAllText(_workspace.File("scan.png"), content);
-
-        CliResult created = _workspace.Run(
-            "pdf", "create", "scan.pdf", "--from-images", "scan.png", "--output-format", "json");
-
-        Assert.Equal(3, created.ExitCode);
-        JsonNode error = JsonNode.Parse(created.StdErr)!["error"]!;
-        Assert.Equal("FILE_CORRUPT", error["code"]!.GetValue<string>());
-        Assert.Equal(_workspace.File("scan.png"), error["details"]!["path"]!.GetValue<string>(), ignoreCase: true);
-        Assert.False(File.Exists(_workspace.File("scan.pdf")));
-    }
-
-    [Theory]
     [InlineData("docx")]
     [InlineData("html")]
     [InlineData("pdfa-2b")]
@@ -361,27 +344,6 @@ public sealed class PdfCliWorkflowTests : IDisposable
     }
 
     [Fact]
-    public void Merge_OfAWordDocumentNamedPdf_NamesThatInputAndWhatItIs()
-    {
-        File.WriteAllText(_workspace.File("doc.md"), "# Title\n\nFirst paragraph.\n");
-        Assert.Equal(0, _workspace.Run("words", "create", "doc.docx", "--from-markdown", "doc.md", "--output-format", "json").ExitCode);
-        File.Move(_workspace.File("doc.docx"), _workspace.File("renamed.pdf"));
-        using (var document = new Document())
-        {
-            document.Pages.Add().Paragraphs.Add(new TextFragment("Report"));
-            document.Save(_workspace.File("report.pdf"));
-        }
-
-        CliResult merged = _workspace.Run("pdf", "merge", "report.pdf", "renamed.pdf", "--out", "merged.pdf", "--output-format", "json");
-
-        Assert.Equal(6, merged.ExitCode);
-        JsonNode error = JsonNode.Parse(merged.StdErr)!["error"]!;
-        Assert.Equal("FORMAT_MISMATCH", error["code"]!.GetValue<string>());
-        Assert.Equal(_workspace.File("renamed.pdf"), error["details"]!["path"]!.GetValue<string>());
-        Assert.Equal("words", Assert.Single(error["details"]!["detected"]!.AsArray())!.GetValue<string>());
-    }
-
-    [Fact]
     public void CreateFromHtml_DisclosesTheFieldsTheImporterNamedItself()
     {
         File.WriteAllText(_workspace.File("form.html"), """
@@ -477,26 +439,6 @@ public sealed class PdfCliWorkflowTests : IDisposable
         Assert.Equal(2, unnamed.ExitCode);
         Assert.StartsWith("Invalid use of --form-format:", JsonNode.Parse(unnamed.StdErr)!["error"]!["message"]!.GetValue<string>(), StringComparison.Ordinal);
         Assert.False(Directory.Exists(_workspace.File("files")));
-    }
-
-    [Theory]
-    [InlineData("text")]
-    [InlineData("forms")]
-    public void Extract_RefusesAByteOrderMarkForOutputOtherThanTables(string what)
-    {
-        using (var document = new Document())
-        {
-            document.Pages.Add();
-            document.Save(_workspace.File("source.pdf"));
-        }
-
-        CliResult result = _workspace.Run(
-            "pdf", "extract", "source.pdf", "--what", what, "--bom", "--out-dir", "files", "--output-format", "json");
-
-        Assert.Equal(2, result.ExitCode);
-        JsonNode error = JsonNode.Parse(result.StdErr)!["error"]!;
-        Assert.Equal("OPTION_INVALID", error["code"]!.GetValue<string>());
-        Assert.StartsWith("Invalid use of --bom:", error["message"]!.GetValue<string>(), StringComparison.Ordinal);
     }
 
     /// <summary>

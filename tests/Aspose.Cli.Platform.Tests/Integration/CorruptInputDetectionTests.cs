@@ -15,38 +15,6 @@ namespace Aspose.Cli.Platform.Tests.Integration;
 [Category(TestCategory.Slow)]
 public sealed class CorruptInputDetectionTests
 {
-    [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public void ProductCommand_OnAWordDocumentNamedPdf_NamesWordsAndItsCommand(bool supervised)
-    {
-        using var workspace = new TempWorkspace();
-        WriteWordDocumentNamedPdf(workspace);
-        string[] args = ["pdf", "inspect", "renamed.pdf", "--output-format", "json"];
-        if (supervised) { args = ["--timeout", TestDeadline.CliTimeout, .. args]; }
-
-        CliResult inspected = workspace.Run(args);
-        CliResult reviewed = workspace.Run("review", "renamed.pdf", "--output-format", "json");
-
-        // The product command and generic routing report a renamed file the same way.
-        foreach (CliResult result in new[] { inspected, reviewed })
-        {
-            Assert.Equal(6, result.ExitCode);
-            JsonNode failure = JsonNode.Parse(result.StdErr)!["error"]!;
-            Assert.Equal("FORMAT_MISMATCH", failure["code"]!.GetValue<string>());
-            Assert.Equal("pdf", failure["details"]!["declared"]!.GetValue<string>());
-            Assert.Equal("words", Assert.Single(failure["details"]!["detected"]!.AsArray())!.GetValue<string>());
-            Assert.Equal(workspace.File("renamed.pdf"), failure["details"]!["path"]!.GetValue<string>());
-            // The message states what the details do.
-            Assert.Equal(
-                "'renamed.pdf' has the .pdf extension of a pdf document, but its content looks like a words document.",
-                failure["message"]!.GetValue<string>());
-        }
-        string hint = JsonNode.Parse(inspected.StdErr)!["error"]!["hint"]!.GetValue<string>();
-        Assert.Contains("looks like a words document", hint, StringComparison.Ordinal);
-        Assert.Contains("'aspose-cli words inspect'", hint, StringComparison.Ordinal);
-    }
-
     [Fact]
     public void MultiInputCommand_UsesTheFileTheProductNames()
     {

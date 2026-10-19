@@ -1,0 +1,66 @@
+{
+  "name": "pdf extract refuses --bom for output other than tables",
+  "files": {
+    "source.pdf": {
+      "fixture": "pdf.pdf"
+    }
+  },
+  "steps": [
+    {
+      "args": [
+        "pdf",
+        "extract",
+        "source.pdf",
+        "--what",
+        "text",
+        "--bom",
+        "--out-dir",
+        "files"
+      ],
+      "expect": {
+        "exitCode": 2,
+        "error": "OPTION_INVALID",
+        "json": [
+          {
+            "path": "error.message",
+            "startsWith": "Invalid use of --bom:"
+          }
+        ],
+        "files": {
+          "absent": [
+            "files"
+          ],
+          "nothingWritten": true
+        }
+      }
+    },
+    {
+      "args": [
+        "pdf",
+        "extract",
+        "source.pdf",
+        "--what",
+        "forms",
+        "--bom",
+        "--out-dir",
+        "files"
+      ],
+      "expect": {
+        "exitCode": 2,
+        "error": "OPTION_INVALID",
+        "json": [
+          {
+            "path": "error.message",
+            "startsWith": "Invalid use of --bom:"
+          }
+        ],
+        "files": {
+          "absent": [
+            "files"
+          ],
+          "nothingWritten": true
+        }
+      }
+    }
+  ]
+}
