@@ -1,6 +1,7 @@
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
+using Aspose.Cli.Sdk;
 
 namespace Aspose.Cli.Host.LocalServices;
 
@@ -27,8 +28,7 @@ internal sealed class LocalServiceMarkerFiles<TMarker, TSecrets>
     {
         _markerPath = Path.GetFullPath(markerPath);
         _secretPath = Path.GetFullPath(secretPath);
-        string[] paths = [_markerPath, _secretPath];
-        if (OperatingSystem.IsWindows()) { paths = paths.Select(static path => path.ToUpperInvariant()).ToArray(); }
+        string[] paths = [FilePaths.LockKey(_markerPath), FilePaths.LockKey(_secretPath)];
         _lockKey = string.Join("\n", paths.Order(StringComparer.Ordinal));
         _markerType = markerType
             ?? throw new ArgumentNullException(nameof(markerType));

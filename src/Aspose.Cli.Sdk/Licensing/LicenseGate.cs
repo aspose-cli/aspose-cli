@@ -41,8 +41,7 @@ public sealed class LicenseGate : ILicenseGate
             using var stream = new MemoryStream(content, writable: false);
             _applyLicense(stream);
             using IncrementalHash hash = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
-            string path = Resolution.Path ?? string.Empty;
-            if (OperatingSystem.IsWindows()) { path = path.ToUpperInvariant(); }
+            string path = FilePaths.LockKey(Resolution.Path ?? string.Empty);
             hash.AppendData(Encoding.UTF8.GetBytes(source + "\0" + path + "\0"));
             hash.AppendData(content);
             return (LicenseState.Licensed, Convert.ToHexStringLower(hash.GetHashAndReset()));

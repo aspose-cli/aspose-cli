@@ -23,7 +23,7 @@ internal static class UpdateStatus
     internal static string PathFor(string installRoot)
     {
         string root = Path.TrimEndingDirectorySeparator(Path.GetFullPath(installRoot));
-        string key = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(root.ToUpperInvariant())))
+        string key = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(FilePaths.FoldedKey(root))))
             .ToLowerInvariant()[..16];
         return Path.Combine(UserStorage.TemporaryRoot(), "updates", "status-" + key + ".json");
     }
