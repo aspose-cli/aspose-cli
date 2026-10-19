@@ -1,10 +1,10 @@
-using Aspose.Cli.Host.Licensing;
+using Aspose.Cli.Host.Invocation;
 using Aspose.Cli.Host.Output;
 using Aspose.Cli.Sdk;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Licensing;
 
-namespace Aspose.Cli.Host.Invocation;
+namespace Aspose.Cli.Host.Licensing;
 
 /// <summary>Reports the products that run without a valid license once at the human CLI boundary.</summary>
 internal static class StartupLicenseNotice

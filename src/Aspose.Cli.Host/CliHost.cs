@@ -2,6 +2,7 @@ using System.CommandLine;
 using System.Globalization;
 using System.Text;
 using Aspose.Cli.Host.Invocation;
+using Aspose.Cli.Host.Licensing;
 using Aspose.Cli.Host.Output;
 
 namespace Aspose.Cli.Host;
