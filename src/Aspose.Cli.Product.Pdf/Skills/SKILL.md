@@ -10,8 +10,14 @@ reading windows, operation batches, secrets, review protocol, licensing, errors)
 are in `aspose-cli docs overview`; this Skill adds only what is specific to PDF.
 `aspose-cli capabilities pdf` lists the commands, formats and codes, and
 `aspose-cli schema v2/pdf/<id>` describes each result and the operations.
-When the goal is an editable word-processing document, convert explicitly with
-`aspose-cli words convert input.pdf --to docx`.
+Two commands write a docx from a PDF. For an editable word-processing document
+use `aspose-cli words convert input.pdf --to docx`: it rebuilds the text as
+flowing paragraphs and warns `LOSSY_CONVERSION`, since headers and footers are
+guessed and the new layout may add pages. `aspose-cli pdf convert input.pdf --to docx`
+keeps each line where the page had it, in positioned frames that are hard to
+edit, and its docx asks every save to embed the fonts it uses: once a Words
+command saves it, the file embeds them in full, grows by megabytes and warns
+`FONTS_EMBEDDED`.
 
 Pages are 1-based physical positions. Rectangles are points (72 per inch) with a
 top-left origin against the visible, rotated page box.
