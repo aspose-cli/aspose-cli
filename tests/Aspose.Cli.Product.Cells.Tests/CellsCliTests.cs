@@ -302,6 +302,46 @@ public sealed class CellsCliTests : IDisposable
     }
 
     /// <summary>
+    /// A JPEG render named <c>.jpg</c> is a jpeg output: in evaluation mode a render of the warning
+    /// sheet an evaluation save added discloses its pages, as a PNG render of it does.
+    /// </summary>
+    [Fact]
+    public void RenderJpeg_DisclosesTheWarningSheetPagesAsPngDoes()
+    {
+        Assert.Equal(0, _workspace.Run("cells", "create", "book.xlsx", "--sheets", "Data").ExitCode);
+        Assert.Equal(0, _workspace.Run("cells", "edit", "book.xlsx", "--in-place", "--set", "Data!A1=SO-001").ExitCode);
+
+        CliResult png = _workspace.Run("cells", "render", "book.xlsx", "--sheets", "2", "--out", "warning.png", "--output-format", "json");
+        CliResult jpeg = _workspace.Run("cells", "render", "book.xlsx", "--sheets", "2", "--out", "warning.jpg", "--output-format", "json");
+
+        Assert.True(png.ExitCode == 0, png.StdErr);
+        Assert.True(jpeg.ExitCode == 0, jpeg.StdErr);
+        string pngDisclosure = Warning(png.Json(), "EVALUATION_MODE")["message"]!.GetValue<string>();
+        string jpegDisclosure = Warning(jpeg.Json(), "EVALUATION_MODE")["message"]!.GetValue<string>();
+        Assert.Contains("the pages of the evaluation warning sheet 'Evaluation Warning'", pngDisclosure, StringComparison.Ordinal);
+        Assert.Equal(pngDisclosure.Replace(".png", ".jpg", StringComparison.Ordinal), jpegDisclosure);
+    }
+
+    /// <summary>
+    /// A CSV export named <c>.txt</c> is a csv output: in evaluation mode it discloses the notice
+    /// written as its last row, not the warning sheets of a workbook.
+    /// </summary>
+    [Fact]
+    public void ConvertToCsvNamedTxt_DisclosesTheNoticeRow()
+    {
+        Assert.Equal(0, _workspace.Run("cells", "create", "book.xlsx", "--sheets", "Data").ExitCode);
+        Assert.Equal(0, _workspace.Run("cells", "edit", "book.xlsx", "--in-place", "--set", "Data!A1=SO-001").ExitCode);
+
+        CliResult converted = _workspace.Run("cells", "convert", "book.xlsx", "--to", "csv", "--out", "report.txt", "--output-format", "json");
+
+        Assert.True(converted.ExitCode == 0, converted.StdErr);
+        Assert.StartsWith("Evaluation Only.", File.ReadAllLines(_workspace.File("report.txt"))[^1], StringComparison.Ordinal);
+        string disclosure = Warning(converted.Json(), "EVALUATION_MODE")["message"]!.GetValue<string>();
+        Assert.Contains("as the last row of the csv output, after the data", disclosure, StringComparison.Ordinal);
+        Assert.DoesNotContain("the evaluation warning sheet", disclosure, StringComparison.Ordinal);
+    }
+
+    /// <summary>
     /// Every CLI child runs in evaluation mode, the only place Cells evaluation is tested:
     /// the in-process engine suite needs a license.
     /// </summary>
@@ -628,6 +668,26 @@ public sealed class CellsCliTests : IDisposable
         {
             Assert.DoesNotContain(Secret, output, StringComparison.Ordinal);
         }
+    }
+
+    /// <summary>
+    /// A TSV export named <c>.txt</c> of an encrypted workbook is disclosed as the plain tsv copy
+    /// it is, by its declared format, not by the extension csv and tsv share.
+    /// </summary>
+    [Fact]
+    public void ConvertToTsvNamedTxt_OfAnEncryptedInput_DisclosesTheTsvCopy()
+    {
+        File.WriteAllText(_workspace.File("sales.csv"), "Region,Revenue\nEast,1200\n");
+        var variables = new Dictionary<string, string?> { ["ASPOSE_CLI_TEST_PASSWORD"] = Secret };
+        Assert.Equal(0, _workspace.RunWithEnv(
+            variables, "cells", "convert", "sales.csv", "--to", "xlsx", "--encrypt-env", "ASPOSE_CLI_TEST_PASSWORD").ExitCode);
+
+        CliResult converted = _workspace.RunWithEnv(
+            variables, "cells", "convert", "sales.xlsx", "--to", "tsv", "--out", "sales.txt",
+            "--password-env", "ASPOSE_CLI_TEST_PASSWORD", "--output-format", "json");
+
+        Assert.True(converted.ExitCode == 0, converted.StdErr);
+        Assert.Contains("The 'tsv' output is not encrypted", Warning(converted.Json(), "ENCRYPTION_REMOVED")["message"]!.GetValue<string>(), StringComparison.Ordinal);
     }
 
     [Fact]
