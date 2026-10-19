@@ -221,6 +221,64 @@ public sealed class AtomicOutputSetWriterTests
     }
 
     [Fact]
+    public void PartialRecoveryKeepsTheDisplacedOriginalForManualRestore()
+    {
+        using var temp = new TempDirectory();
+        string first = temp.File("first.txt");
+        string second = temp.File("second.txt");
+        File.WriteAllText(first, "original-one");
+        File.WriteAllText(second, "original-two");
+        var faults = new SelectiveFaultInjector(
+            point => point.Kind == PublicationFaultKind.Publish && point.EntryIndex == 1
+                ? new IOException("publish fault")
+                : point.Kind == PublicationFaultKind.Rollback && point.EntryIndex == 0
+                    ? new IOException("rollback fault")
+                    : null);
+        using (var set = new AtomicOutputSetWriter(TestBudgets.Writer(), temp.Path, "test", faults))
+        {
+            set.Stage(first, overwrite: true, staged => File.WriteAllText(staged, "replacement-one"));
+            set.Stage(second, overwrite: true, staged => File.WriteAllText(staged, "replacement-two"));
+            CliException error = Assert.Throws<CliException>(() => set.Commit());
+            Assert.Equal(ErrorCodes.OutputPublicationPartial, error.Code);
+        }
+
+        string transaction = Assert.Single(Directory.EnumerateDirectories(temp.Path, ".aspose-publication-*"));
+        string displaced = Path.Combine(transaction, "backups", "000001.displaced");
+        Assert.Equal("original-one", File.ReadAllText(displaced));
+        Assert.Empty(Directory.EnumerateFiles(transaction, "*.backup", SearchOption.AllDirectories));
+        File.Copy(displaced, first, overwrite: true);
+        Assert.Equal("original-one", File.ReadAllText(first));
+    }
+
+    [Fact]
+    public void InPlacePublicationKeepsNoInternalBackup()
+    {
+        using var temp = new TempDirectory();
+        string target = temp.File("target.txt");
+        File.WriteAllText(target, "original");
+        string[]? transactionFiles = null;
+        var faults = new SelectiveFaultInjector(point =>
+        {
+            if (point.Kind == PublicationFaultKind.Publish)
+            {
+                string transaction = Assert.Single(Directory.EnumerateDirectories(temp.Path, ".aspose-publication-*"));
+                transactionFiles = Directory.GetFiles(transaction, "*", SearchOption.AllDirectories);
+            }
+            return null;
+        });
+        using (var set = new AtomicOutputSetWriter(TestBudgets.Writer(), temp.Path, "test", faults))
+        {
+            set.Stage(target, overwrite: true, staged => File.WriteAllText(staged, "replacement"));
+            set.Commit();
+        }
+
+        Assert.Equal("replacement", File.ReadAllText(target));
+        Assert.NotNull(transactionFiles);
+        Assert.DoesNotContain(transactionFiles, path => path.EndsWith(".backup", StringComparison.Ordinal));
+        Assert.Empty(Directory.EnumerateDirectories(temp.Path, ".aspose-publication-*"));
+    }
+
+    [Fact]
     public void UnexpectedRecoveryExceptionStillUsesPublicationErrorContract()
     {
         using var temp = new TempDirectory();
