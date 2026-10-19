@@ -84,6 +84,42 @@ public sealed class PdfOutcomeTests
     }
 
     [Fact]
+    public void APageAnEarlierOperationRotated_IsNamedWhereALaterMoveLeavesIt()
+    {
+        using var fixture = new PdfEngineFixture();
+        string input = fixture.CreateDocument(pages: 4);
+
+        // Page 1 moves to the end: the output is pages 2, 3, 4, 1 of the input.
+        PdfEditResult result = Edit(
+            fixture,
+            input,
+            new RotatePagesOp { Pages = "1", Rotation = 90 },
+            new MovePagesOp { Pages = "1", To = 5 });
+
+        Assert.Equal(["page/4"], result.Applied[0].Targets);
+        Assert.Equal(["page/4"], result.Applied[1].Targets);
+        Assert.Equal([4], result.PagesTouched);
+    }
+
+    [Fact]
+    public void AMovedPage_IsNamedWhereALaterDeletionLeavesIt_AndTheDeletedOneByItsNumberInTheInput()
+    {
+        using var fixture = new PdfEngineFixture();
+        string input = fixture.CreateDocument(pages: 4);
+
+        // Page 1 moves to the end (2, 3, 4, 1), then input page 2, now first, is deleted: 3, 4, 1.
+        PdfEditResult result = Edit(
+            fixture,
+            input,
+            new MovePagesOp { Pages = "1", To = 5 },
+            new DeletePagesOp { Pages = "1" });
+
+        Assert.Equal(["page/3"], result.Applied[0].Targets);
+        Assert.Equal(["page/2"], result.Applied[1].Targets);
+        Assert.Equal([3], result.PagesTouched);
+    }
+
+    [Fact]
     public void DeletePages_NamesTheDeletedPageAndTouchesNone()
     {
         using var fixture = new PdfEngineFixture();
