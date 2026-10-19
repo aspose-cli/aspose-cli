@@ -56,7 +56,7 @@ internal static partial class CellsTextImport
         catch (ArgumentException)
         {
             throw CliErrors.OptionInvalid(
-                "--encoding",
+                CellsOptionNames.Encoding,
                 $"'{name}' is not a known text encoding",
                 "Use an encoding name such as utf-8, gb18030, big5, shift_jis or windows-1252.");
         }
@@ -64,7 +64,7 @@ internal static partial class CellsTextImport
         if (marked is not null && marked.CodePage != named.CodePage)
         {
             throw CliErrors.OptionInvalid(
-                "--encoding",
+                CellsOptionNames.Encoding,
                 $"the file starts with a {marked.WebName} byte order mark",
                 "Drop --encoding; the byte order mark already names the encoding.");
         }
@@ -81,7 +81,7 @@ internal static partial class CellsTextImport
         catch (CultureNotFoundException)
         {
             throw CliErrors.OptionInvalid(
-                "--culture",
+                CellsOptionNames.Culture,
                 $"'{name}' is not a known culture",
                 "Use a culture name such as de-DE, fr-FR, en-US or zh-CN.");
         }

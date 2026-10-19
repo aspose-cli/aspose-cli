@@ -16,12 +16,12 @@ internal static class ConvertCommand
             + "the active sheet and takes one selected sheet; a PDF takes any selection")
         {
         };
-        var encoding = new Option<string?>("--encoding")
+        var encoding = new Option<string?>(CellsOptionNames.Encoding)
         {
             Description = "Text encoding of a CSV or TSV input, such as gb18030, big5, shift_jis or windows-1252. "
                 + "Default: its byte order mark, else UTF-8 (other bytes are refused).",
         }.WithInput(InputKind.None);
-        var culture = new Option<string?>("--culture")
+        var culture = new Option<string?>(CellsOptionNames.Culture)
         {
             Description = "Culture whose number and date formats a CSV or TSV input uses, such as de-DE for '1.234,56'. "
                 + "Default: invariant formats (a decimal comma is refused).",
