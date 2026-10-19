@@ -44,7 +44,7 @@ public sealed class WordsMergeDataTests
     [MemberData(nameof(CsvCases))]
     public void Csv_ReadsRecords(string name, string text, string[][] expected)
     {
-        IReadOnlyList<string[]> records = WordsMutationHandlers.ReadCsv(text);
+        IReadOnlyList<string[]> records = WordsMergeData.ReadCsv(text);
 
         Assert.True(expected.Length == records.Count, $"{name}: {records.Count} records");
         for (int index = 0; index < expected.Length; index++)
@@ -59,7 +59,7 @@ public sealed class WordsMergeDataTests
     [InlineData("\"a\"\"")]
     public void Csv_EndingInsideAQuotedField_IsInvalid(string text)
     {
-        CliException error = Assert.Throws<CliException>(() => WordsMutationHandlers.ReadCsv(text));
+        CliException error = Assert.Throws<CliException>(() => WordsMergeData.ReadCsv(text));
 
         Assert.Equal(WordsDiagnostics.MergeDataInvalid, error.Code);
         Assert.Contains("inside a quoted field", error.Message, StringComparison.Ordinal);
@@ -71,7 +71,7 @@ public sealed class WordsMergeDataTests
         using var temp = new TempDirectory();
         string path = Write(temp, "rows.csv", "Name,City,Zip\nAva,,1\nBo\nCy,Oslo,2,extra\n");
 
-        IReadOnlyList<IReadOnlyDictionary<string, string?>> rows = WordsMutationHandlers.ReadMergeRows(path, Inputs());
+        IReadOnlyList<IReadOnlyDictionary<string, string?>> rows = WordsMergeData.Read(path, Inputs());
 
         Assert.Equal(3, rows.Count);
         Assert.Equal(Row(("Name", "Ava"), ("City", null), ("Zip", "1")), rows[0]);
@@ -85,7 +85,7 @@ public sealed class WordsMergeDataTests
         using var temp = new TempDirectory();
         string path = Write(temp, "rows.CSV", "Name,City\r\n");
 
-        Assert.Empty(WordsMutationHandlers.ReadMergeRows(path, Inputs()));
+        Assert.Empty(WordsMergeData.Read(path, Inputs()));
     }
 
     [Theory]
@@ -98,7 +98,7 @@ public sealed class WordsMergeDataTests
         using var temp = new TempDirectory();
         string path = Write(temp, "rows.csv", text);
 
-        CliException error = Assert.Throws<CliException>(() => WordsMutationHandlers.ReadMergeRows(path, Inputs()));
+        CliException error = Assert.Throws<CliException>(() => WordsMergeData.Read(path, Inputs()));
 
         Assert.Equal(WordsDiagnostics.MergeDataInvalid, error.Code);
         Assert.Contains(reason, error.Message, StringComparison.Ordinal);
@@ -110,7 +110,7 @@ public sealed class WordsMergeDataTests
         using var temp = new TempDirectory();
         string path = Write(temp, "rows.csv", "name,Name\na,b\n");
 
-        IReadOnlyList<IReadOnlyDictionary<string, string?>> rows = WordsMutationHandlers.ReadMergeRows(path, Inputs());
+        IReadOnlyList<IReadOnlyDictionary<string, string?>> rows = WordsMergeData.Read(path, Inputs());
 
         Assert.Equal(Row(("name", "a"), ("Name", "b")), Assert.Single(rows));
     }
@@ -121,7 +121,7 @@ public sealed class WordsMergeDataTests
         using var temp = new TempDirectory();
         string path = Write(temp, "rows.json", """[{"s":"x","n":1.50,"t":true,"f":false,"z":null},{}]""");
 
-        IReadOnlyList<IReadOnlyDictionary<string, string?>> rows = WordsMutationHandlers.ReadMergeRows(path, Inputs());
+        IReadOnlyList<IReadOnlyDictionary<string, string?>> rows = WordsMergeData.Read(path, Inputs());
 
         Assert.Equal(2, rows.Count);
         Assert.Equal(Row(("s", "x"), ("n", "1.50"), ("t", "true"), ("f", "false"), ("z", null)), rows[0]);
@@ -139,7 +139,7 @@ public sealed class WordsMergeDataTests
         using var temp = new TempDirectory();
         string path = Write(temp, "rows.json", json);
 
-        CliException error = Assert.Throws<CliException>(() => WordsMutationHandlers.ReadMergeRows(path, Inputs()));
+        CliException error = Assert.Throws<CliException>(() => WordsMergeData.Read(path, Inputs()));
 
         Assert.Equal(WordsDiagnostics.MergeDataInvalid, error.Code);
         Assert.Contains(reason, error.Message, StringComparison.Ordinal);
@@ -151,7 +151,7 @@ public sealed class WordsMergeDataTests
         using var temp = new TempDirectory();
         string path = Write(temp, "rows.json", "[{\"a\":");
 
-        CliException error = Assert.Throws<CliException>(() => WordsMutationHandlers.ReadMergeRows(path, Inputs()));
+        CliException error = Assert.Throws<CliException>(() => WordsMergeData.Read(path, Inputs()));
 
         Assert.Equal(WordsDiagnostics.MergeDataInvalid, error.Code);
         Assert.Contains("JSON syntax", error.Hint!, StringComparison.Ordinal);
@@ -165,7 +165,7 @@ public sealed class WordsMergeDataTests
         using var temp = new TempDirectory();
 
         CliException error = Assert.Throws<CliException>(
-            () => WordsMutationHandlers.ReadMergeRows(temp.File(name), Inputs()));
+            () => WordsMergeData.Read(temp.File(name), Inputs()));
 
         Assert.Equal(ErrorCodes.FileNotFound, error.Code);
     }
@@ -178,7 +178,7 @@ public sealed class WordsMergeDataTests
         using var temp = new TempDirectory();
         string path = Write(temp, name, text);
 
-        CliException error = Assert.Throws<CliException>(() => WordsMutationHandlers.ReadMergeRows(
+        CliException error = Assert.Throws<CliException>(() => WordsMergeData.Read(
             path,
             Inputs((ResourceBudgetKinds.DecodedTextCharacters, text.Length - 1L))));
 
@@ -192,7 +192,7 @@ public sealed class WordsMergeDataTests
         string text = "Name\nAva\n";
         string path = Write(temp, "rows.csv", text);
 
-        CliException error = Assert.Throws<CliException>(() => WordsMutationHandlers.ReadMergeRows(
+        CliException error = Assert.Throws<CliException>(() => WordsMergeData.Read(
             path,
             Inputs((ResourceBudgetKinds.InputBytes, text.Length - 1L))));
 
@@ -217,7 +217,7 @@ public sealed class WordsMergeDataTests
             },
         ];
 
-        IReadOnlyList<IReadOnlyDictionary<string, string?>> rows = WordsMutationHandlers.MergeRows(inline);
+        IReadOnlyList<IReadOnlyDictionary<string, string?>> rows = WordsMergeData.Inline(inline);
 
         Assert.Equal(
             Row(("s", "x"), ("t", "true"), ("f", "false"), ("i", "3"), ("d", "1.5"), ("z", null), ("e", "2.0")),
@@ -231,7 +231,7 @@ public sealed class WordsMergeDataTests
         IReadOnlyDictionary<string, object?>[] inline =
             [new Dictionary<string, object?> { ["a"] = json.RootElement.GetProperty("a") }];
 
-        CliException error = Assert.Throws<CliException>(() => WordsMutationHandlers.MergeRows(inline));
+        CliException error = Assert.Throws<CliException>(() => WordsMergeData.Inline(inline));
 
         Assert.Equal(WordsDiagnostics.MergeDataInvalid, error.Code);
     }
