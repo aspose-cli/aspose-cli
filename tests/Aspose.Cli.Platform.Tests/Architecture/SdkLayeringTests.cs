@@ -22,7 +22,7 @@ public sealed class SdkLayeringTests
     /// </summary>
     /// <remarks>
     /// <list type="number">
-    /// <item>The distribution identity.</item>
+    /// <item>The distribution identity, and FilePaths, by which every layer compares local paths.</item>
     /// <item>Contracts: the serialized result, error and warning shapes, the value constraints
     /// and schema attributes they declare, and the descriptors the contract generator extracts
     /// from them. They declare what a result says, not how it is checked or produced, so they

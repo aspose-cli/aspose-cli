@@ -95,10 +95,7 @@ public sealed class ResourceBudgetLedger
         _limits = NormalizeLimits(limits);
         _consumed = new ConcurrentDictionary<string, long>(
             StringComparer.Ordinal);
-        _admitted = new ConcurrentDictionary<string, AdmittedFile>(
-            OperatingSystem.IsWindows()
-                ? StringComparer.OrdinalIgnoreCase
-                : StringComparer.Ordinal);
+        _admitted = new ConcurrentDictionary<string, AdmittedFile>(FilePaths.Comparer);
         Inputs = new InputSource(this);
         OutputSession = outputSession;
     }

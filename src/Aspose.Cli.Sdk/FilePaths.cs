@@ -1,4 +1,4 @@
-namespace Aspose.Cli.Sdk.IO;
+namespace Aspose.Cli.Sdk;
 
 /// <summary>
 /// How the CLI compares local file-system paths (decision D12). Windows file names ignore case,

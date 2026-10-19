@@ -44,10 +44,7 @@ internal sealed class FontDirectoryOptions
         }
 
         var directories = new List<string>(values.Length);
-        var seen = new HashSet<string>(
-            OperatingSystem.IsWindows()
-                ? StringComparer.OrdinalIgnoreCase
-                : StringComparer.Ordinal);
+        var seen = new HashSet<string>(FilePaths.Comparer);
         foreach (string value in values)
         {
             string fullPath = Validate(value, paths.BaseDirectory);

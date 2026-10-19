@@ -321,7 +321,7 @@ internal sealed class OutputFileOption
         string targetExtension)
     {
         string candidate = Path.ChangeExtension(inputPath, targetExtension);
-        if (!string.Equals(candidate, inputPath, StringComparison.OrdinalIgnoreCase))
+        if (!FilePaths.Same(candidate, inputPath))
         {
             return candidate;
         }

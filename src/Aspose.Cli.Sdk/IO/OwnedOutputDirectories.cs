@@ -7,7 +7,7 @@ namespace Aspose.Cli.Sdk.IO;
 /// <summary>Tracks explicitly declared output directories and only cleans directories this invocation created.</summary>
 internal sealed class OwnedOutputDirectories(bool deferred)
 {
-    private static StringComparer Comparer => OperatingSystem.IsWindows() ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal;
+    private static StringComparer Comparer => FilePaths.Comparer;
     private readonly HashSet<string> _declared = new(Comparer);
     private readonly Dictionary<string, FilePhysicalIdentity?> _created = new(Comparer);
     internal IEnumerable<string> Declared => _declared;
