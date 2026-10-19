@@ -1,3 +1,5 @@
+using Aspose.Cli.Sdk.Formats;
+
 namespace Aspose.Cli.Sdk.IO;
 
 /// <summary>

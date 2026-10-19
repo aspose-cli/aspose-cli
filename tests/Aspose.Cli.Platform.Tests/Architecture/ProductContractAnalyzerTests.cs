@@ -235,8 +235,8 @@ public sealed class ProductContractAnalyzerTests
             {
                 public ProductDefinition Define()
                 {
-                    _ = Aspose.Cli.Sdk.IO.FormatDescriptorExtensions.IdsFor(
-                        System.Array.Empty<Aspose.Cli.Sdk.IO.FormatDescriptor>(), Aspose.Cli.Sdk.IO.FormatUse.Input);
+                    _ = Aspose.Cli.Sdk.Formats.FormatDescriptorExtensions.IdsFor(
+                        System.Array.Empty<Aspose.Cli.Sdk.Formats.FormatDescriptor>(), Aspose.Cli.Sdk.Formats.FormatUse.Input);
                     throw new System.NotSupportedException();
                 }
             }

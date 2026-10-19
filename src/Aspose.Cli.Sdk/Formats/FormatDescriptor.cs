@@ -1,4 +1,4 @@
-namespace Aspose.Cli.Sdk.IO;
+namespace Aspose.Cli.Sdk.Formats;
 
 /// <summary>How a product can use a declared file format.</summary>
 [Flags]

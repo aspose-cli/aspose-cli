@@ -2,6 +2,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.RegularExpressions;
 using Aspose.Cli.Sdk.Errors;
+using Aspose.Cli.Sdk.Formats;
 using SkiaSharp;
 
 namespace Aspose.Cli.Sdk.IO;

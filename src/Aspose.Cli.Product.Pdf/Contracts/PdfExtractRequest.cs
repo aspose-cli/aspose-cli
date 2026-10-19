@@ -1,3 +1,4 @@
+using Aspose.Cli.Sdk.Formats;
 using Aspose.Cli.Sdk.IO;
 
 namespace Aspose.Cli.Product.Pdf.Contracts;

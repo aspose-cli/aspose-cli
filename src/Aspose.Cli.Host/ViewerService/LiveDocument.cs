@@ -6,6 +6,7 @@ using Aspose.Cli.Sdk;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Host.Viewer;
 using Aspose.Cli.Sdk.IO;
+using Aspose.Cli.Sdk.IO.Files;
 using Aspose.Cli.Sdk.Views;
 
 namespace Aspose.Cli.Host.ViewerService;

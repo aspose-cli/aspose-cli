@@ -1,5 +1,6 @@
 using System.Text;
 using Aspose.Cli.Sdk.Errors;
+using Aspose.Cli.Sdk.IO.Files;
 
 namespace Aspose.Cli.Sdk.IO;
 

@@ -1,5 +1,6 @@
 using System.Runtime.ExceptionServices;
 using Aspose.Cli.Sdk.Errors;
+using Aspose.Cli.Sdk.Formats;
 
 namespace Aspose.Cli.Sdk.IO;
 

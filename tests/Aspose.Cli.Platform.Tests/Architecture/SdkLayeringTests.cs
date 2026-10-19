@@ -32,10 +32,12 @@ public sealed class SdkLayeringTests
     /// <item>Primitives built on errors: text search and name suggestions, cell and page
     /// addressing, configuration paths, view manifests and the human-readable output
     /// helpers.</item>
+    /// <item>IO.Files: the one open policy for reading an input file.</item>
+    /// <item>Formats: the format declarations and the byte-signature recognition of input
+    /// files, on which Extensibility builds products and their routes.</item>
     /// <item>IO: files, outputs, backups and publication, the operation deadline they run
     /// under, and the worker output session and manifest store that record a worker's
-    /// outputs. It also holds the format declarations and the byte-signature recognition
-    /// of input files, on which Extensibility builds products and their routes.</item>
+    /// outputs.</item>
     /// <item>Execution (worker output publication, built on IO) and Rendering (font profiles
     /// and pixel budgets).</item>
     /// <item>Serialization: the shared JSON contexts and converters, and the result schemas
@@ -57,6 +59,8 @@ public sealed class SdkLayeringTests
         [$"{Root}.Contracts"],
         [$"{Root}.Errors"],
         [$"{Root}.Text", $"{Root}.Addressing", $"{Root}.Configuration", $"{Root}.Views", $"{Root}.Extensibility.Output"],
+        [$"{Root}.IO.Files"],
+        [$"{Root}.Formats"],
         [$"{Root}.IO"],
         [$"{Root}.Execution", $"{Root}.Rendering"],
         [$"{Root}.Serialization"],

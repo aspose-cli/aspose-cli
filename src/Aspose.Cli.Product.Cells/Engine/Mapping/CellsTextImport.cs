@@ -3,6 +3,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.IO;
+using Aspose.Cli.Sdk.IO.Files;
 
 namespace Aspose.Cli.Product.Cells.Engine.Mapping;
 

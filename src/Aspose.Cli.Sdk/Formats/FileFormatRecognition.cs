@@ -1,4 +1,4 @@
-namespace Aspose.Cli.Sdk.IO;
+namespace Aspose.Cli.Sdk.Formats;
 
 /// <summary>
 /// Immutable ordered recognition clauses for one product-owned format.

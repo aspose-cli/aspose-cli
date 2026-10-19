@@ -1,5 +1,6 @@
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.IO;
+using Aspose.Cli.Sdk.IO.Files;
 using Aspose.Cli.Sdk.Results;
 using Aspose.Slides;
 using Aspose.Slides.Export;
