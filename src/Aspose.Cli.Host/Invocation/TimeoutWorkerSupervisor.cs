@@ -32,30 +32,31 @@ internal static class TimeoutWorkerSupervisor
                     ?? throw new InvalidDataException("The worker output manifest is missing."))
             : null;
 
+    /// <summary>
+    /// Runs a worker-owned command under <c>--timeout</c> in a supervised worker. Ctrl+C behaves as
+    /// it does in process: the first press cancels the worker and exits 130, a second press ends
+    /// the process at once.
+    /// </summary>
     public static int Run(HostContext host, string[] args, ParsedInvocation invocation, Func<int> inProcess)
     {
         if (invocation.GlobalValues?.TimeoutSeconds is not > 0
             || host.WorkerOutputs is not null || invocation.Execution != CommandExecutionOwnership.Worker) { return inProcess(); }
-        using var cancellation = new CancellationTokenSource();
-        ConsoleCancelEventHandler onCancel = (_, e) => { e.Cancel = true; cancellation.Cancel(); };
-        Console.CancelKeyPress += onCancel;
-        try
+        return ConsoleInterrupt.Run(cancellationToken =>
         {
             InvocationProcessResult result;
             try
             {
                 result = ExecuteAsync(host, args, invocation,
-                    TimeSpan.FromSeconds(invocation.GlobalValues.TimeoutSeconds.Value), cancellation.Token,
+                    TimeSpan.FromSeconds(invocation.GlobalValues.TimeoutSeconds.Value), cancellationToken,
                     () => SelfProcessLauncher.CreateBackground("--timeout", "Run from the installed aspose-cli executable."),
                     InvocationInputs.Current?.Inherited).GetAwaiter().GetResult();
             }
-            catch (OperationCanceledException) when (cancellation.IsCancellationRequested) { return (int)ExitCode.Cancelled; }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { return (int)ExitCode.Cancelled; }
             catch (Exception error) { result = RenderError(host, args, error); }
             Console.Out.Write(result.Stdout);
             Console.Error.Write(result.Stderr);
             return result.ExitCode;
-        }
-        finally { Console.CancelKeyPress -= onCancel; }
+        }, SecondPress.EndProcess);
     }
 
     internal static async Task<InvocationProcessResult> ExecuteAsync(

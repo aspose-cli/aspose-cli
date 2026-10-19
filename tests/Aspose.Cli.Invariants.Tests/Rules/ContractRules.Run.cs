@@ -174,13 +174,13 @@ internal sealed partial class RuleWorkspace : IDisposable
     }
 
     /// <summary>
-    /// Runs the invocation's arguments and presses Ctrl+C after <paramref name="delay"/>, as a
-    /// user at a terminal does: a Windows PowerShell helper, started with a console of its own and
-    /// no window, starts the CLI on that console, then raises <c>CTRL_C_EVENT</c> for every
-    /// process on it while it ignores the event itself. Returns the CLI's exit code and the
-    /// workspace entries the run left beside the seed files.
+    /// Runs the invocation's arguments and presses Ctrl+C <paramref name="presses"/> times in a row
+    /// after <paramref name="delay"/>, as a user at a terminal does: a Windows PowerShell helper,
+    /// started with a console of its own and no window, starts the CLI on that console, then raises
+    /// <c>CTRL_C_EVENT</c> for every process on it while it ignores the event itself. Returns the
+    /// CLI's exit code and the workspace entries the run left beside the seed files.
     /// </summary>
-    public (int ExitCode, string[] Left) Interrupt(TimeSpan delay)
+    public (int ExitCode, string[] Left) Interrupt(TimeSpan delay, int presses = 1)
     {
         Invocation invocation = _invocation ?? throw new InvalidOperationException("The workspace has no invocation.");
         if (invocation.Args.FirstOrDefault(static arg => arg.Length == 0 || arg.Any(static character => character is ' ' or '"')) is { } unsafeArg)
@@ -202,6 +202,7 @@ internal sealed partial class RuleWorkspace : IDisposable
             "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File", script,
             "-Exe", CliRunner.ExecutablePath,
             "-DelayMs", ((int)delay.TotalMilliseconds).ToString(CultureInfo.InvariantCulture),
+            "-Presses", presses.ToString(CultureInfo.InvariantCulture),
             "-CliArgs", string.Join(' ', invocation.Args),
         ];
         foreach (string arg in args)
@@ -297,7 +298,7 @@ internal sealed partial class RuleWorkspace : IDisposable
     // CREATE_NO_WINDOW starts the helper in a process group that ignores Ctrl+C, which its
     // children inherit, so it restores the default before it starts the CLI.
     private const string InterruptScript = """
-        param([string]$Exe, [int]$DelayMs, [string]$CliArgs)
+        param([string]$Exe, [int]$DelayMs, [int]$Presses, [string]$CliArgs)
         Add-Type -Namespace Invariants -Name Console -MemberDefinition @'
         [DllImport("kernel32.dll")] public static extern bool GenerateConsoleCtrlEvent(uint ctrlEvent, uint processGroupId);
         [DllImport("kernel32.dll")] public static extern bool SetConsoleCtrlHandler(System.IntPtr handler, bool add);
@@ -309,7 +310,7 @@ internal sealed partial class RuleWorkspace : IDisposable
         $cli = [System.Diagnostics.Process]::Start($start)
         Start-Sleep -Milliseconds $DelayMs
         [void][Invariants.Console]::SetConsoleCtrlHandler([System.IntPtr]::Zero, $true)
-        [void][Invariants.Console]::GenerateConsoleCtrlEvent(0, 0)
+        for ($press = 0; $press -lt $Presses; $press++) { [void][Invariants.Console]::GenerateConsoleCtrlEvent(0, 0) }
         $cli.WaitForExit()
         "exit=$($cli.ExitCode)"
         """;
