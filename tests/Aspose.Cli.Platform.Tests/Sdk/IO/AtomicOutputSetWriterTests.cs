@@ -1270,22 +1270,20 @@ public sealed class AtomicOutputSetWriterTests
             overwrite: false,
             staged => File.WriteAllText(staged, "first"));
 
-        var started = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        // On another thread, as another command's write would be: the journal lock is a mutex its
+        // owning thread may enter again. Were staging to hold a publication lease, the write would
+        // fail when its wait for that lease ends, so the deadline here only bounds a hang.
         Task secondWrite = Task.Factory.StartNew(() =>
-        {
-            started.SetResult();
             TestBudgets.Writer().Write(second, overwrite: false,
-                staged => File.WriteAllText(staged, "second"));
-        }, CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Default);
-        await started.Task.WaitAsync(TimeSpan.FromSeconds(5));
-        await secondWrite.WaitAsync(TimeSpan.FromSeconds(5));
+                staged => File.WriteAllText(staged, "second")),
+            CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Default);
+        await secondWrite.WaitAsync(TimeSpan.FromMinutes(5), TestContext.Current.CancellationToken);
+        Assert.Equal("second", File.ReadAllText(second));
         Assert.False(File.Exists(first));
 
         set.Commit();
-        await secondWrite.WaitAsync(TimeSpan.FromSeconds(5));
 
         Assert.Equal("first", File.ReadAllText(first));
-        Assert.Equal("second", File.ReadAllText(second));
     }
 
     [Fact]
