@@ -1,9 +1,13 @@
 using System.Diagnostics;
+using System.IO.Compression;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using System.Text.RegularExpressions;
+using System.Xml.Linq;
 using Aspose.Cli.TestKit;
 using Aspose.Cli.TestKit.Scenarios;
 using Xunit;
@@ -57,7 +61,9 @@ public sealed class CliWorkerTests
     /// without a license, runs in a worker with the exit code, stdout and stderr of a child
     /// process, once the workspaces' paths are named alike. Text is compared exactly; in a JSON
     /// document only a value that two child processes write differently, such as the fingerprint
-    /// of a document that records when it was saved, may differ.
+    /// of a document that records when it was saved, may differ, and the size and fingerprint of
+    /// an output whose content is the child process's in other bytes, such as an xlsx whose
+    /// package relationships Aspose.Cells wrote in another order.
     /// </summary>
     [Theory]
     [Category(TestCategory.Slow)]
@@ -85,9 +91,7 @@ public sealed class CliWorkerTests
                 again = Execute(invocation, projectLicense);
             }
             Assert.False(child.InWorker || again.InWorker, $"{name} ran in a worker, not a child process.");
-            if (worker.ExitCode != child.ExitCode
-                || !Same(worker.StdOut, child.StdOut, again.StdOut)
-                || !Same(worker.StdErr, child.StdErr, again.StdErr))
+            if (!Matches(worker, child, again))
             {
                 differences.Add($"{name}:{Environment.NewLine}worker: {worker}{Environment.NewLine}child:  {child}");
             }
@@ -97,20 +101,36 @@ public sealed class CliWorkerTests
         Assert.True(differences.Count == 0, $"{differences.Count} of {cases.Length} runs differ:{Environment.NewLine}" + string.Join(Environment.NewLine, differences));
     }
 
-    /// <summary>
-    /// Whether a worker wrote what a child process wrote: the same text, or, where two child
-    /// processes wrote different JSON documents, the same document except at the values that
-    /// differ between the two.
-    /// </summary>
-    private static bool Same(string worker, string child, string again)
+    /// <summary>Whether a worker run matches two child process runs of the same invocation.</summary>
+    private static bool Matches(Run worker, Run child, Run again)
     {
-        if (child == again)
+        string? Content(JsonNode? fingerprint) =>
+            fingerprint is JsonObject value && value["sha256"] is JsonValue sha256 && sha256.TryGetValue(out string? hash)
+                ? new[] { worker, child, again }.Select(run => run.Contents.GetValueOrDefault(hash)).FirstOrDefault(static content => content is not null)
+                : null;
+        bool SameContent(JsonNode? one, JsonNode? other) =>
+            !JsonNode.DeepEquals(one, other) && Content(one) is { } content && content == Content(other);
+        return worker.ExitCode == child.ExitCode
+            && Same(worker.StdOut, child.StdOut, again.StdOut, SameContent)
+            && Same(worker.StdErr, child.StdErr, again.StdErr, SameContent);
+    }
+
+    /// <summary>
+    /// Whether a worker wrote what a child process wrote: the same text; or, where two child
+    /// processes wrote different JSON documents, the same document except at the values that
+    /// differ between the two; or the same text except for the size and fingerprint of a file
+    /// with the same content as the child process's file.
+    /// </summary>
+    private static bool Same(string worker, string child, string again, Func<JsonNode?, JsonNode?, bool> sameContent)
+    {
+        if (worker == child && child == again)
         {
-            return worker == child;
+            return true;
         }
         try
         {
-            return Same(JsonNode.Parse(worker), JsonNode.Parse(child), JsonNode.Parse(again));
+            return Same(JsonNode.Parse(worker), JsonNode.Parse(child), JsonNode.Parse(again), sameContent)
+                && (child != again || Shape(worker) == Shape(child));
         }
         catch (JsonException)
         {
@@ -118,18 +138,21 @@ public sealed class CliWorkerTests
         }
     }
 
-    private static bool Same(JsonNode? worker, JsonNode? child, JsonNode? again)
+    /// <summary>A JSON text without its numbers and SHA-256 values, which the documents compare.</summary>
+    private static string Shape(string json) => Regex.Replace(json, "[0-9a-f]{64}|[0-9]+", "#");
+
+    private static bool Same(JsonNode? worker, JsonNode? child, JsonNode? again, Func<JsonNode?, JsonNode?, bool> sameContent)
     {
-        if (JsonNode.DeepEquals(child, again))
+        if (JsonNode.DeepEquals(child, again) && JsonNode.DeepEquals(worker, child))
         {
-            return JsonNode.DeepEquals(worker, child);
+            return true;
         }
         if ((worker, child, again) is (JsonObject file, JsonObject first, JsonObject second)
-            && !JsonNode.DeepEquals(first["fingerprint"], second["fingerprint"]))
+            && (!JsonNode.DeepEquals(first["fingerprint"], second["fingerprint"]) || sameContent(file["fingerprint"], first["fingerprint"])))
         {
-            // A file saved at another time: its size goes with its fingerprint, even when two
-            // saves happen to have the same size.
-            return Same(Without(file, FileVolatiles), Without(first, FileVolatiles), Without(second, FileVolatiles))
+            // A file saved at another time, or with the same content in other bytes: its size goes
+            // with its fingerprint, even when two saves happen to have the same size.
+            return Same(Without(file, FileVolatiles), Without(first, FileVolatiles), Without(second, FileVolatiles), sameContent)
                 && FileVolatiles.All(key => file[key]?.GetValueKind() == first[key]?.GetValueKind());
         }
         return (worker, child, again) switch
@@ -137,10 +160,11 @@ public sealed class CliWorkerTests
             (JsonObject w, JsonObject c, JsonObject a) =>
                 c.Select(static pair => pair.Key).Order(StringComparer.Ordinal).SequenceEqual(a.Select(static pair => pair.Key).Order(StringComparer.Ordinal))
                 && c.Select(static pair => pair.Key).Order(StringComparer.Ordinal).SequenceEqual(w.Select(static pair => pair.Key).Order(StringComparer.Ordinal))
-                && c.All(pair => Same(w[pair.Key], pair.Value, a[pair.Key])),
+                && c.All(pair => Same(w[pair.Key], pair.Value, a[pair.Key], sameContent)),
             (JsonArray w, JsonArray c, JsonArray a) =>
-                c.Count == a.Count && c.Count == w.Count && c.Select((item, index) => Same(w[index], item, a[index])).All(static same => same),
-            (JsonValue w, JsonValue c, JsonValue a) => w.GetValueKind() == c.GetValueKind() && c.GetValueKind() == a.GetValueKind(),
+                c.Count == a.Count && c.Count == w.Count && c.Select((item, index) => Same(w[index], item, a[index], sameContent)).All(static same => same),
+            (JsonValue w, JsonValue c, JsonValue a) =>
+                !JsonNode.DeepEquals(c, a) && w.GetValueKind() == c.GetValueKind() && c.GetValueKind() == a.GetValueKind(),
             _ => false,
         };
     }
@@ -207,8 +231,11 @@ public sealed class CliWorkerTests
         return copy;
     }
 
-    /// <summary>What one run wrote, with the workspace paths named, and whether a worker ran it.</summary>
-    private sealed record Run(int ExitCode, string StdOut, string StdErr, bool InWorker)
+    /// <summary>
+    /// What one run wrote, with the workspace paths named, whether a worker ran it, and the
+    /// content of each file its workspace held afterwards, by the file's SHA-256.
+    /// </summary>
+    private sealed record Run(int ExitCode, string StdOut, string StdErr, bool InWorker, IReadOnlyDictionary<string, string> Contents)
     {
         public override string ToString() =>
             $"exit {ExitCode}; stdout {JsonSerializer.Serialize(StdOut)}; stderr {JsonSerializer.Serialize(StdErr)}";
@@ -239,8 +266,105 @@ public sealed class CliWorkerTests
             .Replace(workspace.Path, "<workspace>", StringComparison.OrdinalIgnoreCase)
             .Replace(config.Replace("\\", "\\\\", StringComparison.Ordinal), "<config>", StringComparison.OrdinalIgnoreCase)
             .Replace(config, "<config>", StringComparison.OrdinalIgnoreCase);
-        return new Run(result.ExitCode, Named(result.StdOut), Named(result.StdErr), inWorker);
+        var contents = new Dictionary<string, string>(StringComparer.Ordinal);
+        foreach (string path in Directory.EnumerateFiles(workspace.Path, "*", SearchOption.AllDirectories))
+        {
+            byte[] bytes = File.ReadAllBytes(path);
+            contents[Convert.ToHexStringLower(SHA256.HashData(bytes))] = Content(bytes);
+        }
+        return new Run(result.ExitCode, Named(result.StdOut), Named(result.StdErr), inWorker, contents);
     }
+
+    /// <summary>
+    /// The content of a file: its bytes, or, for a ZIP package, its entries in their order with
+    /// the relationships of each relationship part in the order of their ids, which a package
+    /// does not give a meaning.
+    /// </summary>
+    private static string Content(byte[] bytes)
+    {
+        var content = new StringBuilder();
+        try
+        {
+            using var package = new ZipArchive(new MemoryStream(bytes), ZipArchiveMode.Read);
+            foreach (ZipArchiveEntry entry in package.Entries)
+            {
+                using Stream stream = entry.Open();
+                content.Append(entry.FullName).Append('\n');
+                if (entry.FullName.EndsWith(".rels", StringComparison.Ordinal))
+                {
+                    XDocument relationships = XDocument.Load(stream);
+                    content.Append(relationships.Declaration).Append(relationships.Root!.Name)
+                        .AppendJoin(string.Empty, relationships.Root.Attributes())
+                        .AppendJoin(string.Empty, relationships.Root.Nodes().OrderBy(static node => (string?)(node as XElement)?.Attribute("Id"), StringComparer.Ordinal));
+                }
+                else
+                {
+                    content.Append(Convert.ToHexStringLower(SHA256.HashData(stream)));
+                }
+                content.Append('\n');
+            }
+        }
+        catch (Exception exception) when (exception is InvalidDataException or System.Xml.XmlException)
+        {
+            return Convert.ToHexStringLower(SHA256.HashData(bytes));
+        }
+        return Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(content.ToString())));
+    }
+
+    /// <summary>
+    /// A worker's output whose package relationships are in another order than the child
+    /// processes' matches, though its fingerprint and size differ and the two child processes
+    /// happened to write the same bytes: Aspose.Cells orders the relationships of an xlsx anew on
+    /// every save.
+    /// </summary>
+    [Fact]
+    public void AWorkerOutput_WithReorderedRelationships_Matches()
+    {
+        Run child = Sample(Output(7092, Hash('a')), (Hash('a'), "book"));
+
+        Assert.True(Matches(Sample(Output(7096, Hash('b')), (Hash('b'), "book")), child, child));
+    }
+
+    /// <summary>
+    /// A worker run that differs from two equal child process runs in its exit code, the size,
+    /// format or content of its output, or its text does not match.
+    /// </summary>
+    [Fact]
+    public void AWorkerRun_ThatDiffers_DoesNotMatch()
+    {
+        Run child = Sample(Output(7092, Hash('a')), (Hash('a'), "book"));
+
+        Assert.True(Matches(child, child, child));
+        Assert.False(Matches(child with { ExitCode = 1 }, child, child));
+        Assert.False(Matches(Sample(Output(7096, Hash('a')), (Hash('a'), "book")), child, child));
+        Assert.False(Matches(Sample(Output(7092, Hash('b')), (Hash('b'), "another book")), child, child));
+        Assert.False(Matches(Sample(Output(7092, Hash('b'))), child, child));
+        Assert.False(Matches(Sample(Output(7096, Hash('b'), "xlsm"), (Hash('b'), "book")), child, child));
+        Assert.False(Matches(Sample(Output(7096, Hash('b')).Replace(",", ", ", StringComparison.Ordinal), (Hash('b'), "book")), child, child));
+        Assert.False(Matches(child with { StdErr = "warning" }, child, child));
+    }
+
+    /// <summary>
+    /// Where two child processes wrote different outputs, a worker's output may differ from them
+    /// only in its size and fingerprint.
+    /// </summary>
+    [Fact]
+    public void AWorkerOutput_SavedAtAnotherTime_DiffersOnlyInItsSizeAndFingerprint()
+    {
+        Run child = Sample(Output(7092, Hash('a')), (Hash('a'), "book at 1"));
+        Run again = Sample(Output(7093, Hash('c')), (Hash('c'), "book at 2"));
+
+        Assert.True(Matches(Sample(Output(7094, Hash('d')), (Hash('d'), "book at 3")), child, again));
+        Assert.False(Matches(Sample(Output(7094, Hash('d'), "xlsm"), (Hash('d'), "book at 3")), child, again));
+    }
+
+    private static string Output(long sizeBytes, string sha256, string format = "xlsx") =>
+        $$$"""{"outputs":[{"path":"<workspace>/out.xlsx","format":"{{{format}}}","sizeBytes":{{{sizeBytes}}},"fingerprint":{"sha256":"{{{sha256}}}"}}]}""";
+
+    private static string Hash(char character) => new(character, 64);
+
+    private static Run Sample(string stdOut, params (string Sha256, string Content)[] contents) =>
+        new(0, stdOut, string.Empty, false, contents.ToDictionary(static pair => pair.Sha256, static pair => pair.Content));
 
     /// <summary>
     /// A worker keeps the startup hooks of the run, such as the culture hook of
