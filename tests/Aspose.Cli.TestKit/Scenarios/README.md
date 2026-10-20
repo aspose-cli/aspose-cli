@@ -80,6 +80,8 @@ Every step is also checked, whatever it expects, against the CLI's own catalog
   code and whose details conform to the catalog's details schema;
 - `result-envelope`: a result is one JSON document conforming to the schema it names, and each
   warning code is in the catalog. The raw `schema` and `docs` documents are exempt;
+- `target-location`: every `location` of an item of a result's `warnings`, `issues` or
+  `findings` list is a target address `<unit>/<address>`, as `applied[].targets` write it;
 - `executable-hint`: what each `error.hint` and `warnings[].hint` names runs as written
   (`ExecutableHints`): a quoted or unquoted `aspose-cli` command runs on the step's own files in
   a copy of its workspace, with `--dry-run` where the command has one, and must not fail with

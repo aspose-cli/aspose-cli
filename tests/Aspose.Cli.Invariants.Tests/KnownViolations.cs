@@ -132,7 +132,8 @@ internal static class KnownViolations
 
     /// <summary>The invariant a problem breaks: a contract check names its own, an expectation the case's.</summary>
     public static string InvariantOf(InvariantCase item, string check) =>
-        check is ScenarioContract.NoInternalError or ScenarioContract.ErrorEnvelope or ScenarioContract.ResultEnvelope or ExecutableHints.Check
+        check is ScenarioContract.NoInternalError or ScenarioContract.ErrorEnvelope or ScenarioContract.ResultEnvelope
+            or ScenarioContract.TargetLocation or ExecutableHints.Check
             ? check
             : item.Invariant;
 
