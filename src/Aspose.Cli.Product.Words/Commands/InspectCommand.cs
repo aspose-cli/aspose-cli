@@ -31,7 +31,7 @@ internal static class InspectCommand
             Examples =
             [
                 "words inspect contract.docx --output-format json",
-                "words inspect contract.docx --detail outline sections fields bookmarks",
+                "words inspect contract.docx --detail outline --detail sections --detail fields --detail bookmarks",
             ],
             Links =
             [

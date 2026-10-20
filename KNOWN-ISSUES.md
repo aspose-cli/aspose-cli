@@ -578,9 +578,10 @@ Reproductions: [WordsKnownIssueTests](tests/Aspose.Cli.Product.Words.Tests/Words
 - **CLI behavior:** `words convert`, `words split` and `words edit` of a PDF input warn
   `LOSSY_CONVERSION` that headers and footers may become body text or page-number fields and
   that the layout may add pages.
-- **Workaround:** read the headers, footers and fields with `words inspect --detail sections
-  fields`, then restore them with `set_header`, `set_footer` or `set_page_numbers` and remove
-  body paragraphs that held them with `delete_blocks`.
+- **Workaround:** read the headers, footers and fields with
+  `words inspect --detail sections --detail fields`, then restore them with `set_header`,
+  `set_footer` or `set_page_numbers` and remove body paragraphs that held them with
+  `delete_blocks`.
 
 ### WORDS-PDF-CJK-LINE-END
 

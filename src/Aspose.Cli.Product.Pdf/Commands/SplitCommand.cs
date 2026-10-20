@@ -31,7 +31,7 @@ internal static class SplitCommand
             Examples =
             [
                 "pdf split report.pdf --by pages --every 2 --out-dir parts",
-                "pdf split report.pdf --by pages --groups 1-3 4-6 --out-dir parts",
+                "pdf split report.pdf --by pages --groups 1-3 --groups 4-6 --out-dir parts",
                 "pdf split report.pdf --by bookmarks --out-dir chapters",
             ],
             Links =

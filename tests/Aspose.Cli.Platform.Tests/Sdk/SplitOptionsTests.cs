@@ -91,7 +91,7 @@ public sealed class SplitOptionsTests
     {
         (SplitOptions split, Command command) = Create([SplitBy.Pages, SplitBy.Bookmarks], groups: true);
 
-        SplitPlan plan = Read(split, command, "--by", "pages", "--groups", "1-3", "5", "2,4");
+        SplitPlan plan = Read(split, command, "--by", "pages", "--groups", "1-3", "--groups", "5", "--groups", "2,4");
 
         Assert.Equal(["1-3", "5", "2,4"], plan.Groups!.Select(static group => group.Text));
         Assert.Equal(["1,2,3", "5", "2,4"], Groups(plan, 5));
@@ -154,7 +154,7 @@ public sealed class SplitOptionsTests
         (SplitOptions split, Command command) = Create([SplitBy.Pages, SplitBy.Bookmarks], groups: true);
 
         SplitPlan single = Read(split, command, "--by", "pages", "--pages", "3,5");
-        SplitPlan groups = Read(split, command, "--by", "pages", "--groups", "3", "5");
+        SplitPlan groups = Read(split, command, "--by", "pages", "--groups", "3", "--groups", "5");
         SplitPlan runs = Read(split, command, "--by", "pages", "--every", "2", "--pages", "3-6");
 
         Assert.Equal([3, 5], single.PartNumbers(single.PageGroups(6)));

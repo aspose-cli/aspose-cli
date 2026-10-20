@@ -19,7 +19,8 @@ namespace Aspose.Cli.Invariants.Tests;
 /// documentation comment as <c>&lt;c&gt;pdf read --content text&lt;/c&gt;</c>), or as a whole text, such
 /// as a help example or a Markdown code span (<c>cells convert book.csv --to xlsx</c>). Its path
 /// must be a command, the options written after it that command's or global ones, and the value
-/// of an option that lists its values one of them. An operation written as JSON names its
+/// of an option that lists its values one of them; a repeatable option is written once per value
+/// (<c>--detail charts --detail names</c>), since a second word after it is an argument. An operation written as JSON names its
 /// fields, which must be that operation's (DocumentationRules.Fields.cs), and so does prose that
 /// writes a field after its operation's name (<c>import_range.from</c>). A product command
 /// written bare in a sentence (<c>use slides render for</c>) is reported, since quoting is the
@@ -240,15 +241,23 @@ internal static partial class ContractRules
             (null, "cells inspect book.xlsx --version", "cells inspect book.xlsx --verbose", "'cells inspect' has no option '--version'"),
             (null, "license status extra", "license status --product pdf", "'license status' has no command 'extra'"),
             (null, "words merge a.docx", "words edit a.docx --ops ops.json --in-place", "'words' has no command 'merge'; it is a mistaken name of 'words edit'"),
+            (null, "cells inspect --detail charts names book.xlsx", "cells inspect --detail charts --detail names book.xlsx",
+                "'cells inspect --detail' takes one value per occurrence, so 'names' after '--detail charts' is an argument"),
+            (null, "pdf create scans.pdf --from-images a.png b.png", "pdf create scans.pdf --from-images a.png --from-images b.png",
+                "'pdf create --from-images' takes one value per occurrence, so 'b.png' after '--from-images a.png' is an argument"),
+            (null, "pdf split report.pdf --by pages --groups 1-3 4-6", "pdf split report.pdf --by pages --groups 1-3 --groups 4-6",
+                "'pdf split --groups' takes one value per occurrence, so '4-6' after '--groups 1-3' is an argument"),
         ];
-        // A field named in prose after its operation, which is no JSON and no command, so it has no
-        // fenced form.
+        // Prose that is no JSON and no command, so it has no fenced form: a field named after its
+        // operation, and a repeatable option written with two of its values.
         (string? Product, string Wrong, string Right, string Problem)[] prose =
         [
             ("cells", "import_sheet.sheet", "import_sheet.sourceSheet",
                 "'import_sheet' has no field 'sheet'; it is a mistaken name of 'sourceSheet'"),
             ("slides", "set_body.paragraphs.level", "set_body.paragraphs.list.level",
                 "'set_body' has no field 'paragraphs.level'; it is a mistaken name of 'list'"),
+            ("words", "inspect --detail sections fields", "inspect --detail sections --detail fields",
+                "'--detail' takes one value per occurrence; repeat the option: '--detail sections --detail fields'"),
         ];
         // A declaration added to a product's sources joins the table: on an operation and on a
         // field as an attribute, on a command as the initializer of its definition. A method named
@@ -422,6 +431,7 @@ internal static partial class ContractRules
         private readonly HashSet<string> _globalOptions;
         private readonly Dictionary<string, HashSet<string>> _recursiveOptions;
         private readonly HashSet<string> _globalValueOptions;
+        private readonly Dictionary<string, HashSet<string>> _repeatableValues;
         private readonly Regex _quoted;
         private readonly Regex _bare;
         private readonly Regex _hidden;
@@ -462,6 +472,14 @@ internal static partial class ContractRules
                     .Where(static option => option.Type is not ("boolean" or "Void"))
                     .Select(static option => option.Name),
             ];
+            // The values of each repeatable option that lists them, over every command that takes it.
+            _repeatableValues = catalog.Commands.SelectMany(static command => command.Options)
+                .Where(static option => option.MaximumArity > 1 && option.AllowedValues.Count > 0)
+                .GroupBy(static option => option.Name, StringComparer.Ordinal)
+                .ToDictionary(
+                    static group => group.Key,
+                    static group => new HashSet<string>(group.SelectMany(static option => option.AllowedValues), StringComparer.Ordinal),
+                    StringComparer.Ordinal);
             _codes =
             [
                 .. catalog.Diagnostics.Keys,
@@ -639,6 +657,10 @@ internal static partial class ContractRules
                 {
                     problems.Add($"'{name}' is no option of any command");
                 }
+                else if (!Inside(spans, match.Index) && SecondListedValue(name, text[(match.Index + match.Length)..]) is { } repeated)
+                {
+                    problems.Add(repeated);
+                }
             }
             List<(int Start, int End)> variables = [.. EnvironmentValue().Matches(text)
                 .Select(static match => (match.Groups["name"].Index, match.Groups["name"].Index + match.Groups["name"].Length))];
@@ -669,6 +691,23 @@ internal static partial class ContractRules
             problems.AddRange(CheckOperationJson(text, product, _fields, _mistaken, kinds));
             problems.AddRange(CheckDottedFields(text, product, _fields, _mistaken, kinds));
             return problems;
+        }
+
+        /// <summary>
+        /// Outside a written command, such as <c>inspect --detail sections fields</c>: the advice
+        /// to repeat a repeatable option whose next two words are both values it lists; null otherwise.
+        /// </summary>
+        private string? SecondListedValue(string name, string rest)
+        {
+            if (!_repeatableValues.TryGetValue(name, out HashSet<string>? values))
+            {
+                return null;
+            }
+            string[] next = rest.Split((char[]?)null, 3, StringSplitOptions.RemoveEmptyEntries);
+            string? second = next.Length >= 2 ? next[1].TrimEnd('.', ',', ';', ':', ')', '\'', '"', '`') : null;
+            return second is not null && values.Contains(next[0]) && values.Contains(second)
+                ? $"'{name}' takes one value per occurrence; repeat the option: '{name} {next[0]} {name} {second}'"
+                : null;
         }
 
         /// <summary>Whether a text that starts like a command is prose (<see cref="ProsePhrases"/>), noting the exemption as used.</summary>
@@ -803,25 +842,42 @@ internal static partial class ContractRules
             HashSet<string> options = resolved
                 ? [.. _commandOptions[command.Words], .. Enumerable.Range(0, path.Length).SelectMany(depth => _recursiveOptions[string.Join(' ', path[..depth])])]
                 : _options;
-            bool positional = false;
+            int positionals = 0;
+            long capacity = command.Arguments.Sum(static argument => (long)argument.MaximumArity);
+            // The repeatable option whose value the previous word was, with that value.
+            (CliOption Option, string Value)? repeatable = null;
             for (; index < tokens.Count; index++)
             {
-                if (resolved && !positional && !tokens[index].StartsWith('-'))
+                (CliOption Option, string Value)? previous = repeatable;
+                repeatable = null;
+                if (resolved && !tokens[index].StartsWith('-'))
                 {
+                    positionals++;
+                    if (previous is { } repeated && SecondValue(repeated.Option, tokens[index], positionals > capacity))
+                    {
+                        yield return $"'{command.Words} {repeated.Option.Name}' takes one value per occurrence, so '{tokens[index]}' "
+                            + $"after '{repeated.Option.Name} {repeated.Value}' is an argument; repeat the option: "
+                            + $"'{repeated.Option.Name} {repeated.Value} {repeated.Option.Name} {tokens[index]}'";
+                    }
+
                     // The first argument of docs and schema names a topic or a schema.
-                    positional = true;
-                    if (CheckArgument(command, tokens[index], kinds) is { } unknown)
+                    if (positionals == 1 && CheckArgument(command, tokens[index], kinds) is { } unknown)
                     {
                         yield return unknown;
                     }
+                    continue;
                 }
-                else if (tokens[index].StartsWith('-') && !tokens[index].Contains('=', StringComparison.Ordinal)
-                    && (command.Option(tokens[index]) ?? _catalog.Command(string.Empty).Option(tokens[index])) is { Type: not ("boolean" or "Void") })
+                if (tokens[index].StartsWith('-') && !tokens[index].Contains('=', StringComparison.Ordinal)
+                    && (command.Option(tokens[index]) ?? _catalog.Command(string.Empty).Option(tokens[index])) is { Type: not ("boolean" or "Void") } valued)
                 {
                     // An option's value is no argument.
                     if (CheckValue(command, tokens, index, kinds) is { } wrong)
                     {
                         yield return wrong;
+                    }
+                    if (valued.MaximumArity > 1 && index + 1 < tokens.Count)
+                    {
+                        repeatable = (valued, tokens[index + 1]);
                     }
                     index++;
                     continue;
@@ -841,10 +897,19 @@ internal static partial class ContractRules
         }
 
         /// <summary>
+        /// Whether a word right after the value of a repeatable option was written as its second
+        /// value, which the option no longer takes in the same occurrence (<c>--detail charts
+        /// names</c>, <c>--groups 1-3 4-6</c>): the word is one of the values the option lists, or
+        /// the command's arguments are already all written, so it can be no argument.
+        /// </summary>
+        private static bool SecondValue(CliOption option, string word, bool beyondArguments) =>
+            beyondArguments || option.AllowedValues.Contains(word, StringComparer.Ordinal);
+
+        /// <summary>
         /// The value written for the option at <paramref name="index"/>, after <c>=</c> or as the
         /// next word, must be one the option allows when it lists its values (<c>--detail
-        /// outline</c>); a placeholder, a variable or a quoted value is not judged, and only the
-        /// first value of a repeatable option is, since the words after it may be arguments.
+        /// outline</c>); a placeholder, a variable or a quoted value is not judged. A repeatable
+        /// option takes one value per occurrence, so a word after its value is an argument.
         /// </summary>
         private string? CheckArgument(CliCommand command, string token, HashSet<string> kinds)
         {

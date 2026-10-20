@@ -33,7 +33,7 @@ internal static class InspectCommand
             Examples =
             [
                 "slides inspect deck.pptx --output-format json",
-                "slides inspect deck.pptx --sample --detail layouts notes",
+                "slides inspect deck.pptx --sample --detail layouts --detail notes",
             ],
             Links =
             [

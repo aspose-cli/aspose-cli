@@ -25,7 +25,7 @@ read back, not that every operation was confirmed. In evaluation mode no text is
 ## Content
 
 ```powershell
-aspose-cli slides inspect deck.revised.pptx --sample --detail layouts fonts notes sections properties --output-format json
+aspose-cli slides inspect deck.revised.pptx --sample --detail layouts --detail fonts --detail notes --detail sections --detail properties --output-format json
 aspose-cli slides read deck.revised.pptx --slides 1- --content full --notes --output-format json
 aspose-cli slides search deck.revised.pptx --pattern TODO --scope all --output-format json
 ```

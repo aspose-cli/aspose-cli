@@ -460,7 +460,7 @@ internal sealed class ParsedInvocation
     /// The value a refused one most likely stands for: <c>--to</c> with a file format given to
     /// <c>--output-format</c>, the value the option declares the refused one stands for, such
     /// as <c>md</c> for <c>--to markdown</c>, or, for <c>all</c> given to an option that takes
-    /// several values, every value at once; null otherwise.
+    /// several values, the option repeated with every value; null otherwise.
     /// </summary>
     private string? MeantValue(Option? option, string value, IReadOnlyList<string> allowed) => option switch
     {
@@ -468,7 +468,7 @@ internal sealed class ParsedInvocation
         { Name: GlobalOptionNames.OutputFormat } => TargetFormat(value),
         _ when option.MeantValue(value) is { } meant => meant,
         { Arity.MaximumNumberOfValues: > 1 } when string.Equals(value, "all", StringComparison.OrdinalIgnoreCase)
-            => $"{option.Name} {string.Join(' ', allowed)}",
+            => string.Join(' ', allowed.Select(each => $"{option.Name} {each}")),
         _ => null,
     };
 

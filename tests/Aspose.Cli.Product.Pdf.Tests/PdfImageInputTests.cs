@@ -84,7 +84,7 @@ public sealed class PdfImageInputTests
         Write(workspace, "good.png", ResourceHttpServer.Image);
         string bad = Write(workspace, "scan.png", kind == "text" ? Encoding.UTF8.GetBytes("not an image") : CutPng);
 
-        CliResult created = workspace.Run("pdf", "create", "scan.pdf", "--from-images", "good.png", "scan.png", "--output-format", "json");
+        CliResult created = workspace.Run("pdf", "create", "scan.pdf", "--from-images", "good.png", "--from-images", "scan.png", "--output-format", "json");
 
         AssertCorruptImage(created, bad);
         Assert.False(File.Exists(workspace.File("scan.pdf")));
@@ -201,7 +201,7 @@ public sealed class PdfImageInputTests
         Write(workspace, "image.dat", ResourceHttpServer.Image);
 
         CliResult created = workspace.Run(
-            "pdf", "create", "out.pdf", "--from-images", "photo.jpg", "scan.tif", "image.dat", "--output-format", "json");
+            "pdf", "create", "out.pdf", "--from-images", "photo.jpg", "--from-images", "scan.tif", "--from-images", "image.dat", "--output-format", "json");
 
         Assert.True(created.ExitCode == 0, created.StdErr);
         Assert.Equal(

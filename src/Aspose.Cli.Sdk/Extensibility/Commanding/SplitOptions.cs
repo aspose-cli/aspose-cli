@@ -55,8 +55,7 @@ public sealed class SplitOptions
             {
                 _groups = new Option<string[]>(GroupsOption)
                 {
-                    Description = "Page groups with --by pages, one part each, such as --groups 1-3 4-6.",
-                    AllowMultipleArgumentsPerToken = true,
+                    Description = "A page group with --by pages, one part each; repeat for more, such as --groups 1-3 --groups 4-6.",
                 }.WithInput(InputKind.None);
                 options.Add(_groups);
             }

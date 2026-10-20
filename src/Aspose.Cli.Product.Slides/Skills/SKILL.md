@@ -28,7 +28,7 @@ A deck exported to PDF is a PDF: edit that file with the PDF Skill (`aspose-cli 
    doubled budget when it alone exceeded the budget.
 
    ```powershell
-   aspose-cli slides inspect deck.pptx --sample --detail layouts fonts notes --output-format json
+   aspose-cli slides inspect deck.pptx --sample --detail layouts --detail fonts --detail notes --output-format json
    aspose-cli slides read deck.pptx --slides 1-5 --content full --notes --output-format json
    ```
 

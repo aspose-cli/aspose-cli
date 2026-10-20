@@ -50,9 +50,9 @@ report `LOSSY_CONVERSION` for what may have changed. Its headers and footers
 are guessed (known SDK issue `WORDS-PDF-HEADER-FOOTER`): they may become body
 text, or real headers and footers in which a number, such as the "1" of a
 version "第 1 版", becomes a page-number field that counts up on later pages;
-the layout may also add pages. Check the output with `inspect --detail
-sections fields` and correct it with `set_header`, `set_footer`,
-`set_page_numbers` or `delete_blocks`. Chinese, Japanese or Korean text also
+the layout may also add pages. Check the output with
+`inspect --detail sections --detail fields` and correct it with `set_header`,
+`set_footer`, `set_page_numbers` or `delete_blocks`. Chinese, Japanese or Korean text also
 gets a space wherever a line ended on the PDF page, and the lines of a heading
 and the clause after it may share one paragraph (`WORDS-PDF-CJK-LINE-END`):
 read the blocks before editing, and find phrases with a regex that allows that

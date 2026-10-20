@@ -20,7 +20,7 @@ Global options:
 
 Examples:
   aspose-cli slides create deck.pptx --from-markdown outline.md --template brand.pptx
-  aspose-cli slides inspect deck.pptx --sample --detail masters layouts fonts notes
+  aspose-cli slides inspect deck.pptx --sample --detail masters --detail layouts --detail fonts --detail notes
   aspose-cli slides read deck.pptx --slides 1-5 --content full --notes --output-format json
   aspose-cli slides edit deck.pptx --ops deck-ops.json --out revised.pptx
   aspose-cli review revised.pptx --out revised.review
@@ -194,7 +194,7 @@ Global options:
 
 Examples:
   aspose-cli slides inspect deck.pptx --output-format json
-  aspose-cli slides inspect deck.pptx --sample --detail layouts notes
+  aspose-cli slides inspect deck.pptx --sample --detail layouts --detail notes
 
 Learn more:
   aspose-cli docs slides/overview  what each Slides command is for

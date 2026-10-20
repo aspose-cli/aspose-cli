@@ -47,7 +47,7 @@ redacted text.
 ## Content
 
 ```powershell
-aspose-cli pdf inspect report.final.pdf --detail properties permissions forms signatures attachments outline links fonts --output-format json
+aspose-cli pdf inspect report.final.pdf --detail properties --detail permissions --detail forms --detail signatures --detail attachments --detail outline --detail links --detail fonts --output-format json
 aspose-cli pdf read report.final.pdf --pages 1-5 --content layout --output-format json
 aspose-cli pdf search report.final.pdf --pattern DRAFT --output-format json
 ```

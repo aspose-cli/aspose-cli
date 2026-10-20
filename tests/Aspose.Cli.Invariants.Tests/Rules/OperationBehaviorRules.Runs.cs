@@ -193,8 +193,7 @@ internal static partial class OperationRuns
         List<string> args = [.. command.Tokens, file, .. open];
         if (command.Option("--detail") is { AllowedValues.Count: > 0 } detail)
         {
-            args.Add("--detail");
-            args.AddRange(detail.AllowedValues);
+            args.AddRange(detail.AllowedValues.SelectMany(static value => new[] { "--detail", value }));
         }
         if (command.Has("--sample"))
         {

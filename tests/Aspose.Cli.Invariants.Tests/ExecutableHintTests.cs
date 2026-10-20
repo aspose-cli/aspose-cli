@@ -110,6 +110,16 @@ public sealed class ExecutableHintTests : IDisposable
     }
 
     [Fact]
+    public void RepeatableOption_TakesOneValuePerOccurrenceInTheCatalogCheck()
+    {
+        HintRun create = new(["cells", "create", "new.xlsx", "--output-format", "json"], _workspace.Path, Path.GetDirectoryName(_workspace.ConfigDirectory)!, Variables: null);
+
+        Assert.Empty(ExecutableHints.Problems(create, Error("Check them with 'aspose-cli cells inspect <file> --detail charts --detail names'.")));
+        Assert.Contains("'cells inspect' takes no argument 'names'",
+            Assert.Single(ExecutableHints.Problems(create, Error("Check them with 'aspose-cli cells inspect <file> --detail charts names'."))), StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void LenientCatalogCheck_DoesNotStandInForARun()
     {
         const string Hint = "Read it with 'aspose-cli cells read <file> --range NOT-A-RANGE-KEY'.";

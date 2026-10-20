@@ -6,7 +6,7 @@ examples/report-from-markdown. The bundled
 
 ```powershell
 aspose-cli words create report.docx --from-markdown report.md --title "Quarterly Report" --output-format json
-aspose-cli words inspect report.docx --detail outline properties sections --output-format json
+aspose-cli words inspect report.docx --detail outline --detail properties --detail sections --output-format json
 aspose-cli review report.docx --out report.review --output-format json
 ```
 

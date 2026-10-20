@@ -24,7 +24,7 @@ operation fields: `aspose-cli schema v2/words/ops --operation <op>`.
    the blocks you need ([reading](references/editing.md#reading-the-document)).
 
    ```powershell
-   aspose-cli words inspect input.docx --detail outline sections fields bookmarks comments --output-format json
+   aspose-cli words inspect input.docx --detail outline --detail sections --detail fields --detail bookmarks --detail comments --output-format json
    aspose-cli words read input.docx --blocks 1- --max-blocks 30 --content full --output-format json
    aspose-cli words search input.docx --pattern "notice period" --scope all --output-format json
    ```
@@ -95,7 +95,7 @@ operation fields: `aspose-cli schema v2/words/ops --operation <op>`.
 - **Editing straight to PDF or Markdown.** `edit` writes only formats that
   reopen as the same document; edit to `.docx`, then `words convert`.
 - **Trusting a PDF input.** Its headers and footers are guessed and CJK lines
-  gain spaces; check `inspect --detail sections fields` and search with a
+  gain spaces; check `inspect --detail sections --detail fields` and search with a
   regex such as `甲 ?乙双方` ([troubleshooting](references/troubleshooting.md#a-pdf-input)).
 - **Fonts that differ from the template.** Styled text takes its style's font;
   set the body font with `define_style` or `set_default_font` in the batch.

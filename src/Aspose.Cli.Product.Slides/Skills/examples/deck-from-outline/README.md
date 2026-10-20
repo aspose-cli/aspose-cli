@@ -5,7 +5,7 @@ examples/deck-from-outline. [notes.md](notes.md) contains a synthetic quarterly 
 
 ```powershell
 aspose-cli slides create qbr.pptx --from-markdown notes.md --output-format json
-aspose-cli slides inspect qbr.pptx --sample --detail layouts fonts notes --output-format json
+aspose-cli slides inspect qbr.pptx --sample --detail layouts --detail fonts --detail notes --output-format json
 aspose-cli review qbr.pptx --out qbr.review --output-format json
 ```
 

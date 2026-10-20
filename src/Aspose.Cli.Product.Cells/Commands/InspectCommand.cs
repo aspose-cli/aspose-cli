@@ -57,7 +57,7 @@ internal static class InspectCommand
             Examples =
             [
                 "cells inspect book.xlsx --output-format json",
-                "cells inspect book.xlsx --detail charts names --sample",
+                "cells inspect book.xlsx --detail charts --detail names --sample",
             ],
             Links =
             [

@@ -57,9 +57,19 @@ internal static partial class ContractRules
                 index = end;
                 continue;
             }
-            foreach (System.Text.RegularExpressions.Match span in InlineSpan().Matches(lines[index]))
+            // A code span may wrap onto the next lines of its paragraph; it reads as one line.
+            int first = index;
+            while (index + 1 < lines.Length && lines[index + 1].Trim().Length > 0
+                && !lines[index + 1].TrimStart().StartsWith("```", StringComparison.Ordinal))
             {
-                texts.Add(new SourceText(index + 1, Placeholder().Replace(span.Groups["code"].Value, Hole)));
+                index++;
+            }
+            string paragraph = string.Join('\n', lines[first..(index + 1)]);
+            foreach (System.Text.RegularExpressions.Match span in InlineSpan().Matches(paragraph))
+            {
+                int line = first + 1 + paragraph.AsSpan(0, span.Index).Count('\n');
+                string code = Whitespace().Replace(span.Groups["code"].Value, " ");
+                texts.Add(new SourceText(line, Placeholder().Replace(code, Hole)));
             }
         }
         return texts;

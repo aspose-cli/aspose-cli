@@ -105,7 +105,7 @@ internal static class WordsEngineSupport
 
     private static Warning PdfInputReflowed { get; } = new(WarningCodes.LossyConversion, "A PDF input is rebuilt as flowing text, and its headers and footers are guessed: they may become body text, or headers and footers in which a number, such as a version number, becomes a page-number field; the new layout may add pages.")
     {
-        Hint = "Check the headers, footers and fields with 'aspose-cli words inspect <file> --detail sections fields' and the body with 'words read'; correct them with 'words edit' and set_header, set_footer, set_page_numbers or delete_blocks.",
+        Hint = "Check the headers, footers and fields with 'aspose-cli words inspect <file> --detail sections --detail fields' and the body with 'words read'; correct them with 'words edit' and set_header, set_footer, set_page_numbers or delete_blocks.",
     };
 
     /// <summary>The warning for a source with macros saved to a format that drops them, or null.</summary>

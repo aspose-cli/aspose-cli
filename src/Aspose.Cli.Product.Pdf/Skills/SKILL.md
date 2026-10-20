@@ -27,7 +27,7 @@ top-left origin against the visible, rotated page box.
 2. Inspect structure and security, then read only the pages you need:
 
    ```powershell
-   aspose-cli pdf inspect input.pdf --sample --detail properties permissions forms signatures attachments outline fonts --output-format json
+   aspose-cli pdf inspect input.pdf --sample --detail properties --detail permissions --detail forms --detail signatures --detail attachments --detail outline --detail fonts --output-format json
    aspose-cli pdf read input.pdf --pages 1-5 --content layout --output-format json
    ```
 

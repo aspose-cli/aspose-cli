@@ -35,7 +35,6 @@ public sealed class DetailOption
         {
             Description = "Extra sections to include; repeat for more."
                 + (noted.Length == 0 ? string.Empty : $" {string.Join("; ", noted)}."),
-            AllowMultipleArgumentsPerToken = true,
         }.WithInput(InputKind.None);
         _detail.AcceptOnlyFromAmong([.. values]);
         Options = [_detail];

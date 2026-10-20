@@ -21,7 +21,7 @@ Global options:
   -h/--help, --output-format, -q/--quiet, -v/--verbose, --license, --license-mode, --workdir, --timeout, --max-input-bytes (see aspose-cli --help)
 
 Examples:
-  aspose-cli words inspect contract.docx --detail outline sections
+  aspose-cli words inspect contract.docx --detail outline --detail sections
   aspose-cli words read contract.docx --blocks 1-30 --content full
 
 Learn more:
@@ -235,7 +235,7 @@ Global options:
 
 Examples:
   aspose-cli words inspect contract.docx --output-format json
-  aspose-cli words inspect contract.docx --detail outline sections fields bookmarks
+  aspose-cli words inspect contract.docx --detail outline --detail sections --detail fields --detail bookmarks
 
 Learn more:
   aspose-cli docs words/overview  what each Words command is for

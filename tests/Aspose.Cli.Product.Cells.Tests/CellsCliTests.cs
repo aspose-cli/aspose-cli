@@ -190,7 +190,7 @@ public sealed class CellsCliTests : IDisposable
         Assert.True(edited.ExitCode == 0, edited.StdErr);
 
         CliResult inspected = _workspace.Run(
-            "cells", "inspect", "book.xlsx", "--detail", "names", "errors", "charts", "--output-format", format);
+            "cells", "inspect", "book.xlsx", "--detail", "names", "--detail", "errors", "--detail", "charts", "--output-format", format);
 
         Assert.True(inspected.ExitCode == 0, inspected.StdErr);
         string Heading(string title) => format == "markdown" ? $"### {title}" : $"{title}:";

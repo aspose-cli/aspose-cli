@@ -148,7 +148,7 @@ public sealed class UsageErrorTests : IDisposable
 
     [Theory]
     [InlineData("words convert a.docx --to markdown", "md")]
-    [InlineData("words inspect a.docx --detail all", "--detail bookmarks comments fields fonts images outline properties revisions sections styles tables")]
+    [InlineData("words inspect a.docx --detail all", "--detail bookmarks --detail comments --detail fields --detail fonts --detail images --detail outline --detail properties --detail revisions --detail sections --detail styles --detail tables")]
     public void AValueStandingForAnother_SuggestsIt(string commandLine, string suggestion)
     {
         JsonNode error = Refused(commandLine, "OPTION_INVALID");
