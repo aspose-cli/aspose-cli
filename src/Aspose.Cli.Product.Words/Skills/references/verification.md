@@ -26,7 +26,7 @@ after it is missing.
 ## Read-back
 
 ```powershell
-aspose-cli words inspect output.docx --detail outline fields comments --output-format json
+aspose-cli words inspect output.docx --detail outline --detail fields --detail comments --output-format json
 aspose-cli words read output.docx --blocks 1- --max-blocks 30 --content full --output-format json
 aspose-cli words compare baseline.docx output.docx --output-format json
 ```

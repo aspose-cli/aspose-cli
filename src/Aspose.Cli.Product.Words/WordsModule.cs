@@ -50,7 +50,7 @@ public sealed class WordsModule : IProductModule
 
     private static CommandHelp Help() => new(
         [
-            "words inspect contract.docx --detail outline sections",
+            "words inspect contract.docx --detail outline --detail sections",
             "words read contract.docx --blocks 1-30 --content full",
         ],
         [

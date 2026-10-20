@@ -36,7 +36,7 @@ internal static class InspectCommand
             Examples =
             [
                 "pdf inspect report.pdf --output-format json",
-                "pdf inspect report.pdf --sample --detail outline fonts permissions",
+                "pdf inspect report.pdf --sample --detail outline --detail fonts --detail permissions",
             ],
             Links =
             [

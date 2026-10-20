@@ -250,7 +250,7 @@ public sealed class WordsDisclosureTests
 
         Warning lossy = Assert.Single(fromPdf.Warnings ?? [], static warning => warning.Code == WarningCodes.LossyConversion);
         Assert.Contains("may become body text, or headers and footers in which a number", lossy.Message, StringComparison.Ordinal);
-        Assert.Contains("--detail sections fields", lossy.Hint, StringComparison.Ordinal);
+        Assert.Contains("--detail sections --detail fields", lossy.Hint, StringComparison.Ordinal);
         Assert.Equal(lossy, Assert.Single(edited.Warnings ?? [], static warning => warning.Code == WarningCodes.LossyConversion));
         Assert.DoesNotContain(fromDocx.Warnings ?? [], static warning => warning.Code == WarningCodes.LossyConversion);
     }

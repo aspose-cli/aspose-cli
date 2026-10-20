@@ -140,10 +140,12 @@ aspose-cli cells compare book.backup.xlsx book.xlsx --output-format json
   `sizeBytes` change and a Tier 2 render, and never report "nothing changed"
   from the diff. Read layout and page setup back with
   `cells inspect --detail layout`, and the other objects with their sections:
-  `--detail charts pivots tables validation conditional-formats sparklines
-  images comments hyperlinks`; the `x-readBack` of each operation field
-  in `aspose-cli schema v2/cells/ops` names the property that reports it, or
-  says that no read reports it yet, so confirm that field in a render.
+  `charts`, `pivots`, `tables`, `validation`, `conditional-formats`,
+  `sparklines`, `images`, `comments` and `hyperlinks`, with `--detail` written
+  once per section (`--detail charts --detail pivots`); the `x-readBack` of
+  each operation field in `aspose-cli schema v2/cells/ops` names the property
+  that reports it, or says that no read reports it yet, so confirm that field
+  in a render.
 - Read the whole list. Any difference you did not intend, such as a shifted
   formula or a cleared cell, is a finding to fix before delivery.
 - A renamed sheet pairs with the sheet it was (they keep one internal sheet

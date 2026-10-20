@@ -152,7 +152,7 @@ internal sealed class WordsEditModel : IOperationModel<WordsOp>
             $"Operation {operation.Id} ({WordsOp.Catalog.NameOf(operation)}) changed nothing: the document has no {items} by '{author}'.")
         {
             Hint = authors.Length == 0
-                ? $"The document has no {items}s; check 'words inspect --detail revisions comments'."
+                ? $"The document has no {items}s; check 'words inspect --detail revisions --detail comments'."
                 : Mistake.Of(author, authors).Hint($"Authors match exactly; the document's are {listed}."),
         };
     }

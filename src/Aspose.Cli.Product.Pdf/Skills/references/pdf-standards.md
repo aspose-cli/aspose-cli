@@ -30,8 +30,8 @@ warning whose `location` names it, and removed bookmarks are one with
 `location: bookmark/all`; a further `LOSSY_CONVERSION` warning counts the other
 changes, which `pdf validate` on the original lists. With `--pages`, bookmarks
 and links to pages left out lose their target, counted by `NAVIGATION_DEGRADED`.
-Compare the candidate with the original (`pdf inspect --detail outline
-attachments`, and its pages) before delivery.
+Compare the candidate with the original
+(`pdf inspect --detail outline --detail attachments`, and its pages) before delivery.
 The command validates the file it converted. When the engine cannot make the
 document conform, or the converted file does not validate, the command fails
 with `PDFA_CONVERSION_FAILED`, writes no output and lists what it could not fix

@@ -19,7 +19,7 @@ gives an operation's fields. A table in a Word, PDF or slide file is theirs.
 
    ```
    aspose-cli cells inspect book.xlsx --output-format compact
-   aspose-cli cells inspect book.xlsx --sample --detail names errors --output-format json
+   aspose-cli cells inspect book.xlsx --sample --detail names --detail errors --output-format json
    aspose-cli cells read book.xlsx --sheet Sales --range A1:F50 --output-format json
    aspose-cli cells search book.xlsx --pattern "Total" --output-format json
    ```

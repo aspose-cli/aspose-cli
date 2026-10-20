@@ -199,7 +199,7 @@ Global options:
 
 Examples:
   aspose-cli cells inspect book.xlsx --output-format json
-  aspose-cli cells inspect book.xlsx --detail charts names --sample
+  aspose-cli cells inspect book.xlsx --detail charts --detail names --sample
 
 Learn more:
   aspose-cli docs cells/overview  what each Cells command is for

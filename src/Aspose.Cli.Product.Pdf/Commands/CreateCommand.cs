@@ -12,8 +12,7 @@ internal static class CreateCommand
     {
         var images = new Option<string[]>(PdfOptionNames.FromImages)
         {
-            Description = "One or more image files, one per page in the image's orientation, scaled without distortion.",
-            AllowMultipleArgumentsPerToken = true,
+            Description = "An image file, one page in the image's orientation, scaled without distortion; repeat for more pages.",
         }.WithInput(InputKind.File);
         var html = new Option<string?>("--from-html") { Description = "HTML input file." }.WithInput(InputKind.File);
         var allowNetwork = new Option<bool>(PdfOptionNames.AllowNetworkResources)
@@ -56,7 +55,7 @@ internal static class CreateCommand
         {
             Examples =
             [
-                "pdf create scans.pdf --from-images page1.png page2.png",
+                "pdf create scans.pdf --from-images page1.png --from-images page2.png",
                 "pdf create notes.pdf --from-markdown notes.md --page-size letter --margins 54",
             ],
             Links =

@@ -716,7 +716,8 @@ public static partial class ExecutableHints
                     values.Add((option, token[(equals + 1)..]));
                     continue;
                 }
-                for (int taken = 0; taken < option.MaximumArity && index + 1 < tokens.Count && !tokens[index + 1].StartsWith('-') && TakesValue(option, tokens[index + 1]); taken++)
+                // Each occurrence takes one value, as the CLI parses it; a repeatable option is repeated.
+                if (option.MaximumArity > 0 && index + 1 < tokens.Count && !tokens[index + 1].StartsWith('-') && TakesValue(option, tokens[index + 1]))
                 {
                     values.Add((option, tokens[++index]));
                 }

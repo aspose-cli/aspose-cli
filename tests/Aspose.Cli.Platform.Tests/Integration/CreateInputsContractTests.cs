@@ -45,7 +45,7 @@ public sealed class CreateInputsContractTests : IDisposable
     [InlineData("words create doc.docx --template brand.docx --from-markdown outline.md", "--template:brand.docx:docx", "--from-markdown:outline.md:md")]
     [InlineData("words create doc.docx --from-text notes.txt --template brand.docx", "--from-text:notes.txt:txt", "--template:brand.docx:docx")]
     [InlineData("words create doc.docx --from-markdown outline.md", "--from-markdown:outline.md:md")]
-    [InlineData("pdf create doc.pdf --from-images b.png a.png", "--from-images:b.png:png", "--from-images:a.png:png")]
+    [InlineData("pdf create doc.pdf --from-images b.png --from-images a.png", "--from-images:b.png:png", "--from-images:a.png:png")]
     [InlineData("pdf create doc.pdf --from-markdown outline.md", "--from-markdown:outline.md:md")]
     [InlineData("pdf create doc.pdf --from-text notes.txt", "--from-text:notes.txt:txt")]
     public void CreateFromFiles_ReportsEachFileWithItsOptionInCommandLineOrder(string commandLine, params string[] expected)
