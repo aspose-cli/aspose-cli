@@ -72,6 +72,7 @@ internal static class InvariantCases
         [ScenarioContract.NoInternalError] = "C-R24",
         [ScenarioContract.ErrorEnvelope] = "C-R25",
         [ScenarioContract.ResultEnvelope] = "C-R33",
+        [ScenarioContract.TargetLocation] = "C-R27",
         [ExecutableHints.Check] = "C-R26",
         [MissingInput] = "C-R24",
         [CorruptInput] = "C-R24",

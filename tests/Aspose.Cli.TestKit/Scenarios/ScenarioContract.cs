@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using System.Text.RegularExpressions;
 using Aspose.Cli.Sdk.Serialization;
 using Json.Schema;
 
@@ -10,7 +11,7 @@ namespace Aspose.Cli.TestKit.Scenarios;
 /// no internal failure, one valid error envelope per failure, and results that conform to the
 /// schema they name.
 /// </summary>
-public static class ScenarioContract
+public static partial class ScenarioContract
 {
     /// <summary>No invocation ends with <c>INTERNAL_ERROR</c> or its exit code.</summary>
     public const string NoInternalError = "no-internal-error";
@@ -24,6 +25,17 @@ public static class ScenarioContract
 
     /// <summary>A result is one JSON document that conforms to the schema it names, and its warning codes are in the catalog.</summary>
     public const string ResultEnvelope = "result-envelope";
+
+    /// <summary>
+    /// Every <c>location</c> of a warning, a verification issue or a review finding in a result is
+    /// a target address, <c>&lt;unit&gt;/&lt;address&gt;</c>, as <c>applied[].targets</c> write it:
+    /// a lowercase kebab-case unit that names no product, then an address with no white space at
+    /// either end and no control character, which <c>TargetName.Escape</c> escapes.
+    /// </summary>
+    public const string TargetLocation = "target-location";
+
+    /// <summary>The lists whose items carry a <c>location</c>: warnings, verification issues and review findings.</summary>
+    private static readonly string[] LocatedLists = ["warnings", "issues", "findings"];
 
     private const string SchemaPrefix = "https://schemas.aspose.com/aspose-cli/";
     private const string SchemaSuffix = ".schema.json";
@@ -100,8 +112,62 @@ public static class ScenarioContract
                 report(ResultEnvelope, $"warning {code} is not in the diagnostics catalog");
             }
         }
+        string[] products = [.. CliCatalog.Current.Products.Select(static product => product.Id)];
+        foreach ((string path, string location) in Locations(document, "$"))
+        {
+            if (!IsTargetAddress(location, products))
+            {
+                report(TargetLocation, $"{path} '{location}' is not a target address <unit>/<address>");
+            }
+        }
         return document;
     }
+
+    /// <summary>Every <c>location</c> string of an item of a warnings, issues or findings list, with its path.</summary>
+    private static IEnumerable<(string Path, string Location)> Locations(JsonNode? node, string path)
+    {
+        switch (node)
+        {
+            case JsonObject members:
+                foreach ((string key, JsonNode? value) in members)
+                {
+                    string at = $"{path}.{key}";
+                    if (LocatedLists.Contains(key) && value is JsonArray items)
+                    {
+                        for (int index = 0; index < items.Count; index++)
+                        {
+                            if (items[index]?["location"] is JsonValue location && location.TryGetValue(out string? text))
+                            {
+                                yield return ($"{at}[{index}].location", text);
+                            }
+                        }
+                    }
+                    foreach ((string, string) nested in Locations(value, at))
+                    {
+                        yield return nested;
+                    }
+                }
+                break;
+            case JsonArray items:
+                for (int index = 0; index < items.Count; index++)
+                {
+                    foreach ((string, string) nested in Locations(items[index], $"{path}[{index}]"))
+                    {
+                        yield return nested;
+                    }
+                }
+                break;
+        }
+    }
+
+    /// <summary>Whether a location is a target address of a unit that names no product.</summary>
+    internal static bool IsTargetAddress(string location, IReadOnlyCollection<string> products) =>
+        TargetAddress().Match(location) is { Success: true } match
+        && !products.Contains(match.Groups["unit"].Value)
+        && !location.Any(char.IsControl);
+
+    [GeneratedRegex(@"^(?<unit>[a-z]+(?:-[a-z]+)*)/\S(?:.*\S)?$", RegexOptions.Singleline)]
+    private static partial Regex TargetAddress();
 
     private static JsonNode? CheckFailure(CliCatalog catalog, CliResult result, Action<string, string> report)
     {

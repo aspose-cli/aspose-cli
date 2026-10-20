@@ -1,0 +1,10 @@
+{
+  "name": "a verification issue about one cell is located by its target address, as applied[].targets write it",
+  "files": { "book.xlsx": { "fixture": "cells.xlsx" } },
+  "steps": [
+    {
+      "args": ["cells", "edit", "book.xlsx", "--in-place", "--verify", "--ops", "{\"ops\":[{\"op\":\"set_formula\",\"range\":\"B1\",\"formula\":\"=1/0\"}]}"],
+      "expect": { "json": [{ "path": "verification.issues[0].location", "equals": "cell/Sheet1!B1" }] }
+    }
+  ]
+}
