@@ -60,7 +60,10 @@ content; `review` and `preview open` take `--product` to override it.
    (`aspose-cli docs licensing`).
 
 Pass `--output-format json` (or `compact`, the same JSON on one line) whenever
-you parse a result. Every result names its `schema`.
+you parse a result. Every result names its `schema`, an id for
+`aspose-cli schema <id>`, not a URL to fetch. Ignore result fields, warning
+codes and error codes you do not know; later versions add them. `--verbose`
+output is diagnostics for a person, not something to parse.
 
 ## Common mistakes
 

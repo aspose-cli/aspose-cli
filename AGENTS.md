@@ -189,6 +189,8 @@ Kept on purpose:
 - `--grid` is PDF only and `--width` Slides only; which commands take `--font-dir` is decided by
   `FontDirectoryOptionsTests` (C-R08).
 - `--timeout` takes seconds without a unit in its name, as command-line timeouts do (C-R20).
+- The PDF `rotation` fields take degrees without a unit in their name, as rotation angles do
+  (C-R20).
 - `--scan-range` stays hidden, only the carrier of `window.next` (C-R04).
 - In JSON mode warnings are part of the stdout envelope, and redirected output defaults to JSON
   (C-R23).
@@ -238,10 +240,11 @@ Kept on purpose:
 Use only the corresponding commercial Aspose SDK packages; no FOSS source, gitlinks or
 Git LFS. License-free products live in a separate repository; every product here is licensed.
 Code comments, diagnostics, documentation and Skills are English and describe present behavior.
-Never add old-command aliases, legacy installer or Skill readers, historical version
-baselines, historical trust allowlists, or migration frameworks for unpublished builds.
-The application is pre-release: update code, schemas, Skills and tests together for an
-intentional contract change.
+The contract follows the Compatibility section of [README.md](README.md#compatibility): a
+breaking change ships only in a major version, and a minor or patch release only adds. Update
+code, schemas, Skills and tests together for an intentional contract change. Never add
+old-command aliases, legacy installer or Skill readers, historical version baselines, historical
+trust allowlists, or migration frameworks.
 
 Before changing code around a commercial SDK, verify the official API usage and reproduce
 suspected engine behavior with a minimal SDK-only case. Correct our misuse in the owning

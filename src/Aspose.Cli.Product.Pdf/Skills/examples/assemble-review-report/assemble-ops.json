@@ -1,5 +1,4 @@
 {
-  "schemaVersion": 2,
   "ops": [
     {
       "op": "add_page_numbers",
