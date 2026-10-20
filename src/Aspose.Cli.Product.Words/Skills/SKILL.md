@@ -44,7 +44,7 @@ operation fields: `aspose-cli schema v2/words/ops --operation <op>`.
    ```json
    {"ops":[
      {"op":"replace_text","find":"{{contract_no}}","replace":"C-2026-014","scope":"all"},
-     {"op":"repeat_table_row","at":{"find":"{{code}}"},"items":[
+     {"op":"repeat_table_row","target":{"find":"{{code}}"},"items":[
        {"code":"A-100","name":"Widget","qty":"2"},
        {"code":"B-200","name":"Gadget","qty":"1"}]}
    ]}

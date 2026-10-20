@@ -43,11 +43,11 @@ internal sealed class WordsOpAddresses : IWordsOpHandler<WordsOpTraits>
 
     public WordsOpTraits Apply(SetTableCellOp operation) => Blocks(operation.Target) with { Trackable = true };
 
-    public WordsOpTraits Apply(RepeatTableRowOp operation) => Blocks(operation.At) with { Trackable = true };
+    public WordsOpTraits Apply(RepeatTableRowOp operation) => Blocks(operation.Target) with { Trackable = true };
 
     public WordsOpTraits Apply(SetTablePaginationOp operation) => Blocks(operation.Target);
 
-    public WordsOpTraits Apply(InsertBookmarkOp operation) => Blocks(operation.At) with { Trackable = true };
+    public WordsOpTraits Apply(InsertBookmarkOp operation) => Blocks(operation.Target) with { Trackable = true };
 
     // ----- fields: inserted as content, their results compared by the verification ------------
 

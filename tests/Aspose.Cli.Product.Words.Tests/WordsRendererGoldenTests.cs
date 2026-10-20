@@ -278,7 +278,7 @@ public sealed class WordsRendererGoldenTests
                 CheckedOps = [],
                 Issues =
                 [
-                    VerificationIssue.From(new Warning(new WarningCode("FIELD_STALE"), "1 field needs an update") { Location = "block 4", Hint = "Update the fields." }),
+                    VerificationIssue.From(new Warning(new WarningCode("FIELD_STALE"), "1 field needs an update") { Location = "block/4", Hint = "Update the fields." }),
                 ],
             },
         };
@@ -291,7 +291,7 @@ public sealed class WordsRendererGoldenTests
               [op-0001] set_text: ok (2 item(s))
             pages touched: 1, 3
             verification: needs attention; checked ops: -
-              FIELD_STALE [block 4]: 1 field needs an update
+              FIELD_STALE [block/4]: 1 field needs an update
                 hint: Update the fields.
             """,
             text);

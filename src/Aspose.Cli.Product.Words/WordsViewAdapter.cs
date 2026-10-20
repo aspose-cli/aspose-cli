@@ -53,16 +53,14 @@ internal sealed class WordsViewAdapter : IProductViewAdapter<WordsSession>
         {
             findings.Add(WordsReviewChecks.DocumentEmpty.Finding(
                 "The document has no readable text, tables, or images.",
-                "document",
-                RepairHint));
+                hint: RepairHint));
         }
         AddLayoutFindings(layout, findings);
         if (info.Document.HasRevisions)
         {
             findings.Add(WordsReviewChecks.RevisionsPresent.Finding(
                 $"The document contains {info.Document.RevisionCount} tracked revision(s), which must not be accepted as a visual-only repair.",
-                "document",
-                "Disclose the revisions; accept or reject them with accept_revisions or reject_revisions only when the user decides."));
+                hint: "Disclose the revisions; accept or reject them with accept_revisions or reject_revisions only when the user decides."));
         }
 
         if (layout.EvaluationMarks > 0 || layout.EvaluationTruncated)
@@ -73,16 +71,14 @@ internal sealed class WordsViewAdapter : IProductViewAdapter<WordsSession>
                 layout.EvaluationMarks == 0 ? $"The document ends with {Truncated}"
                     : layout.EvaluationTruncated ? $"{marks} The document also ends with {Truncated}"
                     : marks,
-                "document",
-                "Regenerate the document from its original inputs with an Aspose.Words license; editing this file keeps the marks."));
+                hint: "Regenerate the document from its original inputs with an Aspose.Words license; editing this file keeps the marks."));
         }
 
         if (info.Document.CommentCount > 0)
         {
             findings.Add(WordsReviewChecks.CommentsPresent.Finding(
                 $"The document contains {info.Document.CommentCount} comment(s).",
-                "document",
-                "Disclose the comments; remove them with delete_comments only when the user asks."));
+                hint: "Disclose the comments; remove them with delete_comments only when the user asks."));
         }
 
         return new ProductReviewAssessment
@@ -110,7 +106,7 @@ internal sealed class WordsViewAdapter : IProductViewAdapter<WordsSession>
     {
         foreach (WordsReviewPageLayout page in layout.Pages)
         {
-            string location = $"page {page.Page}";
+            string location = $"page/{page.Page}";
             string part = WordsViews.PagePart(page.Page);
             if (!HasVisibleContent(page))
             {
@@ -166,8 +162,8 @@ internal sealed class WordsViewAdapter : IProductViewAdapter<WordsSession>
         foreach (WordsReviewHeadingLayout heading in layout.OrphanedHeadings)
         {
             findings.Add(WordsReviewChecks.HeadingOrphaned.Finding(
-                $"Heading level {heading.Level} '{heading.Text}' follows prior page content but its body starts on the next page.",
-                $"page {heading.Page}, block {heading.Block}",
+                $"Heading level {heading.Level} '{heading.Text}' ends page {heading.Page} after prior content but its body starts on the next page.",
+                $"block/{heading.Block}",
                 RepairHint,
                 WordsViews.PagePart(heading.Page)));
         }

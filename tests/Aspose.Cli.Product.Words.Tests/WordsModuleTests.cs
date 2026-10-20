@@ -207,6 +207,8 @@ public sealed class WordsModuleTests
     [InlineData("""{"op":"set_text","at":{"block":1},"text":"a"}""", "target")]
     [InlineData("""{"op":"add_comment","at":{"block":1},"author":"A","text":"a"}""", "target")]
     [InlineData("""{"op":"set_table_pagination","at":{"block":1},"keepTogether":true}""", "target")]
+    [InlineData("""{"op":"repeat_table_row","at":{"block":1},"items":[]}""", "target")]
+    [InlineData("""{"op":"insert_bookmark","at":{"block":1},"name":"Mark"}""", "target")]
     [InlineData("""{"op":"insert_table","at":{"block":1},"position":"after","rowCount":1,"columnCount":1,"cells":[["a"]]}""", "values")]
     [InlineData("""{"op":"insert_table","at":{"block":1},"position":"after","rowCount":1,"columnCount":1,"style":"Table Grid"}""", "tableStyle")]
     [InlineData("""{"op":"replace_text","find":"a","replace":"b","matchCase":true}""", "caseSensitive")]

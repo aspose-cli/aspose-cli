@@ -169,6 +169,39 @@ public sealed class WordsCliTests : IClassFixture<WordsFixture>, IDisposable
             result["filter"]!["omittedFindingCount"]!.GetValue<int>());
     }
 
+    /// <summary>
+    /// A review finding is located as an operation's targets are: a page finding at
+    /// <c>page/2</c>, a heading at its <c>block/2</c>, and a document finding nowhere narrower.
+    /// </summary>
+    [Fact]
+    public void Review_LocatesFindingsWithTargetAddresses()
+    {
+        var document = new Document();
+        var builder = new DocumentBuilder(document);
+        builder.Writeln("Introduction.");
+        builder.ParagraphFormat.StyleIdentifier = StyleIdentifier.Heading2;
+        builder.Writeln("Terms");
+        builder.ParagraphFormat.StyleIdentifier = StyleIdentifier.Normal;
+        builder.InsertBreak(BreakType.SectionBreakNewPage);
+        builder.Font.Size = 5;
+        builder.Write("Fine print.");
+        var comment = new Comment(document, "Reviewer", "R", DateTime.UnixEpoch);
+        comment.SetText("Confirm the clause.");
+        builder.CurrentParagraph.AppendChild(comment);
+        document.Save(_workspace.File("located.docx"));
+
+        CliResult reviewed = _workspace.Run(
+            "review", "located.docx", "--out", "evidence", "--output-format", "json");
+
+        Assert.True(reviewed.ExitCode is 0 or 8, reviewed.StdErr);
+        JsonArray findings = JsonNode.Parse(reviewed.StdOut)!["findings"]!.AsArray();
+        string? Location(string code) => findings
+            .Single(finding => finding!["code"]!.GetValue<string>() == code)!["location"]?.GetValue<string>();
+        Assert.Equal("page/2", Location("WORDS_TEXT_TOO_SMALL"));
+        Assert.Equal("block/2", Location("WORDS_HEADING_ORPHANED"));
+        Assert.Null(Location("WORDS_COMMENTS_PRESENT"));
+    }
+
     [Category(TestCategory.Slow)]
     [Fact]
     public void Edit_DisclosesAnOutputEvaluationModeCutShortWhenSavingIt()

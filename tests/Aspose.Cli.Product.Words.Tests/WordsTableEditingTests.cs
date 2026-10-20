@@ -163,7 +163,7 @@ public sealed class WordsTableEditingTests : IClassFixture<WordsFixture>
                 [
                     new RepeatTableRowOp
                     {
-                        At = new WordsTarget { Find = "{{code}}" },
+                        Target = new WordsTarget { Find = "{{code}}" },
                         Items =
                         [
                             new Dictionary<string, object?> { ["code"] = "A-100", ["name"] = "Widget", ["price"] = "12.50" },
@@ -229,7 +229,7 @@ public sealed class WordsTableEditingTests : IClassFixture<WordsFixture>
             Input = input,
             Batch = new WordsOpsBatch
             {
-                Ops = [new RepeatTableRowOp { At = at, Items = [] }],
+                Ops = [new RepeatTableRowOp { Target = at, Items = [] }],
             },
             Output = TestOutput.At(output),
         }));
@@ -247,7 +247,7 @@ public sealed class WordsTableEditingTests : IClassFixture<WordsFixture>
                 [
                     new RepeatTableRowOp
                     {
-                        At = at,
+                        Target = at,
                         Row = 3,
                         Items =
                         [
@@ -282,7 +282,7 @@ public sealed class WordsTableEditingTests : IClassFixture<WordsFixture>
                 [
                     new RepeatTableRowOp
                     {
-                        At = new WordsTarget { Find = "{{code}}" },
+                        Target = new WordsTarget { Find = "{{code}}" },
                         Items =
                         [
                             new Dictionary<string, object?> { ["code"] = "A-100", ["name"] = "Widget", ["price"] = "1" },
@@ -313,7 +313,7 @@ public sealed class WordsTableEditingTests : IClassFixture<WordsFixture>
                 [
                     new RepeatTableRowOp
                     {
-                        At = new WordsTarget { Find = "{{code}}" },
+                        Target = new WordsTarget { Find = "{{code}}" },
                         Items = [new Dictionary<string, object?> { ["code"] = "A-100", ["naem"] = "Widget", ["price"] = "1" }],
                     },
                 ],
@@ -335,7 +335,7 @@ public sealed class WordsTableEditingTests : IClassFixture<WordsFixture>
             Input = input,
             Batch = new WordsOpsBatch
             {
-                Ops = [new RepeatTableRowOp { At = new WordsTarget { Find = "{{code}}" }, Items = [] }],
+                Ops = [new RepeatTableRowOp { Target = new WordsTarget { Find = "{{code}}" }, Items = [] }],
             },
             Output = TestOutput.At(output),
         });
@@ -358,7 +358,7 @@ public sealed class WordsTableEditingTests : IClassFixture<WordsFixture>
             Input = input,
             Batch = new WordsOpsBatch
             {
-                Ops = [new RepeatTableRowOp { At = new WordsTarget { Find = "{{code}}" }, Path = items }],
+                Ops = [new RepeatTableRowOp { Target = new WordsTarget { Find = "{{code}}" }, Path = items }],
             },
             Output = TestOutput.At(output),
         });
@@ -381,7 +381,7 @@ public sealed class WordsTableEditingTests : IClassFixture<WordsFixture>
             Input = input,
             Batch = new WordsOpsBatch
             {
-                Ops = [new RepeatTableRowOp { At = new WordsTarget { Find = "{{code}}" }, Path = items }],
+                Ops = [new RepeatTableRowOp { Target = new WordsTarget { Find = "{{code}}" }, Path = items }],
             },
             Output = TestOutput.At(output),
         });
@@ -409,7 +409,7 @@ public sealed class WordsTableEditingTests : IClassFixture<WordsFixture>
                 [
                     new RepeatTableRowOp
                     {
-                        At = new WordsTarget { Find = "{{code}}" },
+                        Target = new WordsTarget { Find = "{{code}}" },
                         Items = [new Dictionary<string, object?> { ["code"] = code, ["name"] = name, ["price"] = "{{code}}" }],
                     },
                 ],
