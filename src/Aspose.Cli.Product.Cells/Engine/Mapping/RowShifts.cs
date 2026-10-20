@@ -85,7 +85,7 @@ internal sealed class RowShifts
                 + "so the cells below a shift are compared with the row that held their address before, and their differences are not edits.")
         {
             Hint = "To compare row for row, apply the same insert_rows or delete_rows to a copy of the left workbook with 'aspose-cli cells edit --out', and compare that copy.",
-            Location = sheet,
+            Location = CellsAddresses.OfSheet("sheet", sheet),
         };
     }
 

@@ -12,7 +12,7 @@ public sealed class McpSecretExecutionTests
     public async Task Timeout_InterruptsUnfinishedOpsStdinWithoutPublishingOutput()
     {
         using var workspace = new TempWorkspace();
-        Assert.Equal(0, workspace.Run("cells", "create", "input.xlsx", "--sheets", "Data").ExitCode);
+        Assert.Equal(0, workspace.Run("cells", "create", "input.xlsx", "--sheet-names", "Data").ExitCode);
         byte[] original = File.ReadAllBytes(workspace.File("input.xlsx"));
         var start = new System.Diagnostics.ProcessStartInfo(CliRunner.ExecutablePath)
         {
@@ -65,7 +65,7 @@ public sealed class McpSecretExecutionTests
         var variables = new Dictionary<string, string?> { [Variable] = value };
         // The server starts while the input is created, and is disposed whatever the creation does.
         Task<McpTestServer> starting = McpTestServer.Start(workspace.Path, workspace.Path, variables);
-        Task<CliResult> creating = Task.Run(() => workspace.Run("cells", "create", "input.xlsx", "--sheets", "Data"));
+        Task<CliResult> creating = Task.Run(() => workspace.Run("cells", "create", "input.xlsx", "--sheet-names", "Data"));
         await using var server = await starting;
         Assert.Equal(0, (await creating).ExitCode);
         string ops = $$"""{"ops":[{"op":"protect_sheet","sheet":"Data","passwordEnv":"{{Variable}}"}]}""";
@@ -103,7 +103,7 @@ public sealed class McpSecretExecutionTests
         string input = "input." + extension;
         string[] create = product switch
         {
-            "cells" => [product, "create", input, "--sheets", "Data"],
+            "cells" => [product, "create", input, "--sheet-names", "Data"],
             "pdf" => [product, "create", input, "--from-text", "content.txt"],
             _ => [product, "create", input, "--from-text", "content.txt"],
         };
@@ -198,7 +198,7 @@ public sealed class McpSecretExecutionTests
         string name = "MISSING_" + Guid.NewGuid().ToString("N");
         (string extension, string[] create, string ops) = product switch
         {
-            "cells" => ("xlsx", new[] { "--sheets", "Data" },
+            "cells" => ("xlsx", new[] { "--sheet-names", "Data" },
                 $$"""{"ops":[{"op":"protect_sheet","sheet":"Data","passwordEnv":"{{name}}"},{"op":"set_values","sheet":"Data","range":"A1","values":[[42]]}]}"""),
             "pdf" => ("pdf", ["--from-text", "content.txt"],
                 $$"""{"ops":[{"op":"encrypt_document","ownerPasswordEnv":"{{name}}"},{"op":"set_properties","title":"Kept"}]}"""),
@@ -235,7 +235,7 @@ public sealed class McpSecretExecutionTests
         using var workspace = new TempWorkspace();
         // The server starts while the input is created, and is disposed whatever the creation does.
         Task<McpTestServer> starting = McpTestServer.Start(workspace.Path, workspace.Path);
-        Task<CliResult> creating = Task.Run(() => workspace.Run("cells", "create", "input.xlsx", "--sheets", "Data"));
+        Task<CliResult> creating = Task.Run(() => workspace.Run("cells", "create", "input.xlsx", "--sheet-names", "Data"));
         await using var server = await starting;
         Assert.Equal(0, (await creating).ExitCode);
         string name = "MISSING_" + Guid.NewGuid().ToString("N");

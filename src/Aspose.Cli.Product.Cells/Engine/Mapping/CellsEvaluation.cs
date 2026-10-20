@@ -43,7 +43,7 @@ internal static partial class CellsEvaluation
         return new SkippedWarningSheet(skipped, new Warning(CellsDiagnostics.ActiveSheetSkipped, $"The active sheet '{skipped.Name}' is the evaluation warning sheet Aspose.Cells evaluation mode added when it saved this workbook, so this command, which names no sheet, uses '{replacement.Name}' in its place.")
         {
             Docs = "cells/troubleshooting",
-            Location = skipped.Name,
+            Location = CellsAddresses.OfSheet("sheet", skipped.Name),
         });
     }
 

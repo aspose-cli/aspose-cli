@@ -84,7 +84,7 @@ public sealed class CellsConvertHintTests : IDisposable
     [Fact]
     public void JsonExport_SkipsAHeaderOnlySheetAndNamesIt()
     {
-        Assert.Equal(0, _workspace.Run("cells", "create", "book.xlsx", "--sheets", "Data,Returns").ExitCode);
+        Assert.Equal(0, _workspace.Run("cells", "create", "book.xlsx", "--sheet-names", "Data,Returns").ExitCode);
         CliResult filled = _workspace.Run("cells", "edit", "book.xlsx", "--in-place", "--ops", """
             [{"op":"set_values","sheet":"Data","range":"A1","values":[["Name","Qty"],["alpha",3]]},
              {"op":"set_values","sheet":"Returns","range":"A1","values":[["Name","Qty"]]}]
@@ -110,7 +110,7 @@ public sealed class CellsConvertHintTests : IDisposable
     [Fact]
     public void JsonExport_ReportsASheetThatIsNotAPlainTable()
     {
-        Assert.Equal(0, _workspace.Run("cells", "create", "report.xlsx", "--sheets", "Titled,Totals,Plain").ExitCode);
+        Assert.Equal(0, _workspace.Run("cells", "create", "report.xlsx", "--sheet-names", "Titled,Totals,Plain").ExitCode);
         CliResult filled = _workspace.Run("cells", "edit", "report.xlsx", "--in-place", "--ops", """
             [{"op":"set_values","sheet":"Titled","range":"A1","values":[["Monthly sales by region",null,null],["Region","Units","Amount"],["North",5,120],["South",7,180]]},
              {"op":"set_values","sheet":"Totals","range":"A1","values":[["Date","Units","Amount"],["2026-09-01",5,120],["2026-09-02",7,180],["Total",12,300]]},

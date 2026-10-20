@@ -25,7 +25,7 @@ public sealed class AppCommandTests : IDisposable
             "cells",
             "create",
             workbook,
-            "--sheets",
+            "--sheet-names",
             "Data",
             "--output-format",
             "json");

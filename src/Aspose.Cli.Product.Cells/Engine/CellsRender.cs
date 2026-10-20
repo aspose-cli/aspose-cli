@@ -357,7 +357,7 @@ internal static class CellsRender
             $"Worksheet '{sheet.Name}' prints {areas.Count} areas, {printArea}; its image shows only the first, {areas[0]}.")
         {
             Hint = $"Draw each other area on its own: {rest}",
-            Location = sheet.Name,
+            Location = CellsAddresses.OfSheet("sheet", sheet.Name),
             AffectsCompleteness = true,
         };
     }
@@ -383,7 +383,7 @@ internal static class CellsRender
             $"The image of worksheet '{sheet.Name}' is {width} x {height} pixels, more than {LargeImageSide} on a side, which image viewers and models scale down or cut.")
         {
             Hint = $"Render the sheet in windows with a sheet-qualified --range, such as aspose-cli cells render \"{request.Input}\" --range \"{Window(sheet, printArea, width, height)}\", or lower --dpi.",
-            Location = sheet.Name,
+            Location = CellsAddresses.OfSheet("sheet", sheet.Name),
         };
     }
 

@@ -348,7 +348,7 @@ public sealed class ReviewViewerBrowserTests(ITestOutputHelper output)
 
     private static void CreateWorkbook(TempWorkspace workspace)
     {
-        workspace.Run("cells", "create", "book.xlsx", "--sheets", "Summary,Data", "--output-format", "json").Succeeded();
+        workspace.Run("cells", "create", "book.xlsx", "--sheet-names", "Summary,Data", "--output-format", "json").Succeeded();
         workspace.Run("cells", "edit", "book.xlsx", "--in-place",
             "--set", "Summary!A1=Region", "--set", "Summary!B1=Revenue",
             "--set", "Data!A1=Raw", "--set", "Data!B2=42", "--output-format", "json").Succeeded();

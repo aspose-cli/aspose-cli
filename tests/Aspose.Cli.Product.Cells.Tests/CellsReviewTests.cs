@@ -145,9 +145,33 @@ public sealed class CellsReviewTests
         Dictionary<string, string> clipped = assessment.Findings!
             .Where(static finding => finding.Code == "CELLS_VALUES_CLIPPED")
             .ToDictionary(static finding => finding.Location!, static finding => finding.Message, StringComparer.Ordinal);
-        Assert.Equal(["Latin", "Mixed"], clipped.Keys.Order(StringComparer.Ordinal));
-        Assert.DoesNotContain("explicit width", clipped["Latin"], StringComparison.Ordinal);
-        Assert.Contains("explicit width", clipped["Mixed"], StringComparison.Ordinal);
+        Assert.Equal(["sheet/Latin", "sheet/Mixed"], clipped.Keys.Order(StringComparer.Ordinal));
+        Assert.DoesNotContain("explicit width", clipped["sheet/Latin"], StringComparison.Ordinal);
+        Assert.Contains("explicit width", clipped["sheet/Mixed"], StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// A formula error is located at its cell as a target address, with the sheet name escaped
+    /// as an operation's target escapes it.
+    /// </summary>
+    [Fact]
+    public void Review_LocatesAFormulaErrorAtItsCellOnASheetWhoseNameIsEscaped()
+    {
+        Requires.Windows();
+        using var fixture = new CellsFixture();
+        string input = fixture.Temp.File("formula-error.xlsx");
+        using (var workbook = new Workbook())
+        {
+            Worksheet sheet = workbook.Worksheets[0];
+            sheet.Name = "Net 5%!";
+            sheet.Cells["A1"].Formula = "=1/0";
+            workbook.CalculateFormula();
+            workbook.Save(input);
+        }
+
+        ReviewFinding error = Assert.Single(Review(fixture, input), static finding => finding.Code == "CELLS_FORMULA_ERROR");
+
+        Assert.Equal("cell/Net 5%25%21!A1", error.Location);
     }
     /// <summary>
     /// Text that spills over empty cells and ends close to a column edge, where page layout can
@@ -182,7 +206,7 @@ public sealed class CellsReviewTests
 
         ReviewFinding overflow = Assert.Single(Review(fixture, input), static finding => finding.Code == "CELLS_TEXT_OVERFLOWS");
 
-        Assert.Equal("Report", overflow.Location);
+        Assert.Equal("sheet/Report", overflow.Location);
         Assert.StartsWith("1 text value(s) spill over empty cells to their right and end close to a column edge; sample: A1.", overflow.Message, StringComparison.Ordinal);
     }
 
@@ -196,12 +220,12 @@ public sealed class CellsReviewTests
         Requires.Windows();
         using var fixture = new CellsFixture();
         using var workspace = new TempWorkspace();
-        Assert.Equal(0, workspace.Run("cells", "create", "marked.xlsx", "--sheets", "Data", "--license-mode", "evaluation").ExitCode);
+        Assert.Equal(0, workspace.Run("cells", "create", "marked.xlsx", "--sheet-names", "Data", "--license-mode", "evaluation").ExitCode);
         Assert.Equal(0, workspace.Run("cells", "edit", "marked.xlsx", "--set", "Data!A1=7", "--in-place", "--license-mode", "evaluation").ExitCode);
         string unmarked = fixture.CreateSalesWorkbook("unmarked.xlsx");
 
         Assert.Equal(
-            ["Evaluation Warning", "Evaluation Warning (1)"],
+            ["sheet/Evaluation Warning", "sheet/Evaluation Warning (1)"],
             Review(fixture, workspace.File("marked.xlsx"))
                 .Where(static finding => finding.Code == "CELLS_EVALUATION_SHEET")
                 .Select(static finding => finding.Location!));
@@ -223,7 +247,7 @@ public sealed class CellsReviewTests
         File.WriteAllText(workspace.File("plain.csv"), "Region,Q1\nEast,1200\nNote: Evaluation Only. Created with Aspose.Cells\n");
 
         ReviewFinding notice = Assert.Single(Review(fixture, workspace.File("marked.csv")), static finding => finding.Code == "CELLS_EVALUATION_NOTICE");
-        Assert.Equal("marked!A4", notice.Location);
+        Assert.Equal("row/marked!4", notice.Location);
         Assert.DoesNotContain(Review(fixture, workspace.File("plain.csv")), static finding => finding.Code == "CELLS_EVALUATION_NOTICE");
     }
 
@@ -268,7 +292,7 @@ public sealed class CellsReviewTests
     {
         Requires.Windows();
         using var workspace = new TempWorkspace();
-        Assert.Equal(0, workspace.Run("cells", "create", "areas.xlsx", "--sheets", "Data").ExitCode);
+        Assert.Equal(0, workspace.Run("cells", "create", "areas.xlsx", "--sheet-names", "Data").ExitCode);
         File.WriteAllText(workspace.File("ops.json"), """
             {"ops":[
               {"op":"set_values","sheet":"Data","range":"A1","values":[["Left",1],["Rows",2]]},
@@ -303,7 +327,7 @@ public sealed class CellsReviewTests
     {
         Requires.Windows();
         using var workspace = new TempWorkspace();
-        Assert.Equal(0, workspace.Run("cells", "create", "long.xlsx", "--sheets", "Data").ExitCode);
+        Assert.Equal(0, workspace.Run("cells", "create", "long.xlsx", "--sheet-names", "Data").ExitCode);
         string rows = string.Join(",", Enumerable.Range(1, 1200).Select(static row => $"[\"Item {row}\",{row}]"));
         File.WriteAllText(workspace.File("ops.json"), $$"""{"ops":[{"op":"set_values","sheet":"Data","range":"A1","values":[{{rows}}]}]}""");
         Assert.Equal(0, workspace.Run("cells", "edit", "long.xlsx", "--ops", "ops.json", "--in-place").ExitCode);
@@ -328,7 +352,7 @@ public sealed class CellsReviewTests
     {
         Requires.Windows();
         using var workspace = new TempWorkspace();
-        Assert.Equal(0, workspace.Run("cells", "create", "marked.xlsx", "--sheets", "Data", "--license-mode", "evaluation").ExitCode);
+        Assert.Equal(0, workspace.Run("cells", "create", "marked.xlsx", "--sheet-names", "Data", "--license-mode", "evaluation").ExitCode);
         Assert.Equal(0, workspace.Run("cells", "edit", "marked.xlsx", "--set", "Data!A1=7", "--in-place", "--license-mode", "evaluation").ExitCode);
 
         JsonNode evaluation = ReviewJson(workspace, "evaluation", "--license-mode", "evaluation");
@@ -339,7 +363,7 @@ public sealed class CellsReviewTests
         {
             JsonNode licensed = ReviewJson(workspace, "licensed", "--license", TestLicense.Path);
             Assert.Null(Metric(licensed, "excludedEvaluationMarks"));
-            Assert.Contains(Findings(licensed), static finding => finding.Code != "CELLS_EVALUATION_SHEET" && finding.Location!.StartsWith("Evaluation Warning", StringComparison.Ordinal));
+            Assert.Contains(Findings(licensed), static finding => finding.Code != "CELLS_EVALUATION_SHEET" && finding.Location!.StartsWith("sheet/Evaluation Warning", StringComparison.Ordinal));
         }
 
         static JsonNode ReviewJson(TempWorkspace workspace, string name, params string[] mode)
@@ -423,7 +447,7 @@ public sealed class CellsReviewTests
 
         ReviewFinding split = Assert.Single(Review(fixture, input),
             static finding => finding.Code == "CELLS_CHART_SPLIT_ACROSS_PAGES");
-        Assert.Equal("Data chart 'Wide'", split.Location);
+        Assert.Equal("chart/Data/1", split.Location);
         Assert.Contains("2 printed pages", split.Message, StringComparison.Ordinal);
         Assert.Contains("fitToWidth", split.Hint, StringComparison.Ordinal);
         Assert.DoesNotContain(Review(fixture, fitted),

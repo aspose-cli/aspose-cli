@@ -132,7 +132,7 @@ internal sealed class CellsProtectionTracker
                         ? "Excel lets users change only unlocked cells and the actions a sheet's protection allows, and no sheets or tab colors while the structure is protected. "
                         : "Excel lets users change only unlocked cells and the actions a sheet's protection allows. ")
                 + kept,
-            Location = _sheets.Count == 1 && !_structure ? Sheets.QuotedName(_sheets[0]) : null,
+            Location = _sheets.Count == 1 && !_structure ? CellsAddresses.OfSheet("sheet", _sheets[0]) : null,
         };
     }
 

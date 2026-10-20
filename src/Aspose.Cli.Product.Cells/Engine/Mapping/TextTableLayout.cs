@@ -151,7 +151,7 @@ internal static class TextTableLayout
         string rows = finding.Kind == TextTableFindingKind.Preamble
             ? RowReference(firstUsed + 1, finding.HeaderRow)
             : string.Join(",", finding.Rows.Take(ListedRows).Select(static row => RowReference(row + 1, row + 1)));
-        return Build(message, hint, Sheets.QuotedName(sheetName) + "!" + rows);
+        return Build(message, hint, sheetName, rows);
     }
 
     private static string RemoveRows(string sheetName, string what, string rows) =>
@@ -331,9 +331,9 @@ internal static class TextTableLayout
         return [.. findings.Select(finding => finding.Kind switch
         {
             TextTableFindingKind.Preamble => Preamble(finding, sheetName, last),
-            TextTableFindingKind.BlankRows => BlankRows(finding, last, capped),
-            TextTableFindingKind.TotalRows => TotalRows(finding),
-            _ => EvaluationNotice(finding),
+            TextTableFindingKind.BlankRows => BlankRows(finding, sheetName, last, capped),
+            TextTableFindingKind.TotalRows => TotalRows(finding, sheetName),
+            _ => EvaluationNotice(finding, sheetName),
         })];
     }
 
@@ -344,10 +344,10 @@ internal static class TextTableLayout
         return Build(
             $"The table header is probably row {header}; {rows} like a title, notes or empty lines, not data.",
             $"Read the header with 'cells read <file> --sheet \"{sheetName}\" --range A{header}:{lastColumn}{header}' and start data ranges, formulas and sorts at row {header + 1}, not row 2.",
-            RowReference(1, finding.Rows.Count));
+            sheetName, RowReference(1, finding.Rows.Count));
     }
 
-    private static Warning BlankRows(TextTableFinding finding, string lastColumn, bool capped)
+    private static Warning BlankRows(TextTableFinding finding, string sheetName, string lastColumn, bool capped)
     {
         string listed = string.Join(", ", finding.Rows.Take(ListedRows).Select(static row => (row + 1).ToString(CultureInfo.InvariantCulture)))
             + (finding.Rows.Count > ListedRows ? ", ..." : string.Empty);
@@ -356,10 +356,10 @@ internal static class TextTableLayout
         return Build(
             $"{subject} empty inside the table{scope}; sorting, filtering and anything that stops at the first empty row sees separate blocks.",
             $"Address the whole table explicitly (A{finding.HeaderRow + 1}:{lastColumn}{finding.LastRow + 1}), or remove the empty rows with the delete_rows operation of 'cells edit' after converting to xlsx; row numbers below them then move up.",
-            string.Join(",", finding.Rows.Take(ListedRows).Select(static row => RowReference(row + 1, row + 1))));
+            sheetName, string.Join(",", finding.Rows.Take(ListedRows).Select(static row => RowReference(row + 1, row + 1))));
     }
 
-    private static Warning TotalRows(TextTableFinding finding)
+    private static Warning TotalRows(TextTableFinding finding, string sheetName)
     {
         int first = finding.Rows[0] + 1;
         int end = (finding.DataEnd ?? finding.Rows[0] - 1) + 1;
@@ -377,27 +377,30 @@ internal static class TextTableLayout
             end >= dataStart
                 ? $"End data ranges at row {end}{example}, and leave row {first} out of sorts, pivots and charts."
                 : $"Leave row {first} out of formulas, sorts, pivots and charts.",
-            string.Join(",", finding.Rows.Select(static row => RowReference(row + 1, row + 1))));
+            sheetName, string.Join(",", finding.Rows.Select(static row => RowReference(row + 1, row + 1))));
     }
 
-    private static Warning EvaluationNotice(TextTableFinding finding)
+    private static Warning EvaluationNotice(TextTableFinding finding, string sheetName)
     {
         int row = finding.LastRow + 1;
         return Build(
             $"Row {row} is not data: it is the evaluation notice an Aspose.Cells export without a license wrote after the data.",
             $"Tell the user, and leave row {row} out of every range, or delete it with the delete_rows operation of 'cells edit' after converting to xlsx.",
-            RowReference(row, row));
+            sheetName, RowReference(row, row));
     }
 
-    private static Warning Build(string message, string hint, string location) => new(CellsDiagnostics.TextTableLayout, message)
+    /// <summary>A layout warning located at the <paramref name="rows"/> of sheet <paramref name="sheetName"/>, such as <c>row/Sales!1:3</c>.</summary>
+    private static Warning Build(string message, string hint, string sheetName, string rows) => new(CellsDiagnostics.TextTableLayout, message)
     {
         Hint = hint,
         Docs = "cells/troubleshooting",
-        Location = location,
+        Location = CellsAddresses.At("row", sheetName, rows),
     };
 
-    private static string RowReference(int first, int last) =>
-        string.Create(CultureInfo.InvariantCulture, $"{first}:{last}");
+    // One row as its number, as a row's target names it (row/Sales!5); a span of rows as an A1 row range (row/Sales!1:3).
+    private static string RowReference(int first, int last) => first == last
+        ? first.ToString(CultureInfo.InvariantCulture)
+        : string.Create(CultureInfo.InvariantCulture, $"{first}:{last}");
 
     private static (IReadOnlyList<TextRowShape> Head, IReadOnlyList<TextRowShape> Tail) ReadShapes(
         Worksheet sheet, RangeRef used, ResourceBudgetLedger budgets)

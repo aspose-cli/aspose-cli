@@ -116,7 +116,7 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
     {
         var located = new Warning(CellsDiagnostics.DataTruncated, "Data was discarded.")
         { Hint = "Use xlsx.",
-            Location = "'Data'!A1:C3", AffectsCompleteness = true,
+            Location = "cell/Data!A1:C3", AffectsCompleteness = true,
         };
         var informational = new Warning(CellsDiagnostics.FormulasCalculatedOnOpen, "Recalculated.");
 
@@ -124,7 +124,7 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
             Aspose.Cli.Product.Cells.Engine.Editing.CellsEditVerifier.CompletenessIssues([located, informational]));
 
         Assert.Equal(VerificationIssue.From(located), issue);
-        Assert.Equal("'Data'!A1:C3", issue.Location);
+        Assert.Equal("cell/Data!A1:C3", issue.Location);
     }
 
     [Fact]
@@ -156,7 +156,24 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
         Assert.Equal(("Data", "E5"), (error.Sheet, error.Cell));
         VerificationIssue issue = Assert.Single(result.Verification.Issues);
         Assert.Equal("FORMULA_ERRORS", issue.Code);
-        Assert.Equal("'Data'!E5", issue.Location);
+        Assert.Equal("cell/Data!E5", issue.Location);
+        Assert.Equal(["cell/Data!E5"], Assert.Single(result.Applied).Targets);
+    }
+
+    /// <summary>
+    /// A verification issue locates its cell as the operation's target does, with the sheet name
+    /// escaped the same way.
+    /// </summary>
+    [Fact]
+    public void Verify_LocatesAFormulaErrorAsItsTargetOnASheetWhoseNameIsEscaped()
+    {
+        string source = _fixture.CreateSalesWorkbook("verify-escaped-sheet.xlsx");
+        CellsEditResult result = CellsEdit.Run(_fixture.Session,
+            new CellsEditRequest { Input = source, Batch = ParseOps("""{"ops":[{"op":"insert_sheet","name":"Net 5%!"},{"op":"set_formula","sheet":"Net 5%!","range":"A1","formula":"=1/0"}]}"""), Output = TestOutput.At(_fixture.Temp.File("verify-escaped-sheet.out.xlsx")), Verify = true });
+
+        VerificationIssue issue = Assert.Single(result.Verification!.Issues, static issue => issue.Code == "FORMULA_ERRORS");
+        Assert.Equal("cell/Net 5%25%21!A1", issue.Location);
+        Assert.Equal(["cell/Net 5%25%21!A1"], result.Applied[1].Targets);
     }
 
     [Fact]
@@ -221,7 +238,7 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
             new CellsEditRequest { Input = source, Batch = ParseOps($$"""{"ops":[{"op":"set_values","sheet":"Second","range":"B1","values":[{{rows}}]},{"op":"set_formula","sheet":"Second","range":"C1002","formula":"=1/0"}]}"""), Output = TestOutput.At(_fixture.Temp.File("verify-diff-truncated-error.out.xlsx")), Verify = true });
 
         Assert.False(broken.Verification!.Ok);
-        Assert.Equal("'Second'!C1002", Assert.Single(broken.Verification.Issues).Location);
+        Assert.Equal("cell/Second!C1002", Assert.Single(broken.Verification.Issues).Location);
     }
 
     [Fact]
@@ -741,7 +758,7 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
         Assert.Equal("Data", read.Sheet!.Name);
         Warning skipped = Assert.Single(read.Warnings!);
         Assert.Equal("ACTIVE_SHEET_SKIPPED", skipped.Code.Name);
-        Assert.Equal("Evaluation Warning", skipped.Location);
+        Assert.Equal("sheet/Evaluation Warning", skipped.Location);
         Assert.Contains(csv.Warnings!, static warning => warning.Code.Name == "ACTIVE_SHEET_SKIPPED");
         Assert.StartsWith("data", File.ReadAllText(csv.Outputs[0].Path), StringComparison.Ordinal);
         Assert.Null(copied.Warnings);
@@ -821,7 +838,7 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
     {
         Requires.Windows();
         using var workspace = new TempWorkspace();
-        Assert.Equal(0, workspace.Run("cells", "create", "marked.xlsx", "--sheets", "Data", "--license-mode", "evaluation").ExitCode);
+        Assert.Equal(0, workspace.Run("cells", "create", "marked.xlsx", "--sheet-names", "Data", "--license-mode", "evaluation").ExitCode);
         string unmarked = _fixture.CreateSalesWorkbook("unmarked-export.xlsx");
 
         CellsConvertResult marked = _fixture.Disclosed(session => CellsConvert.Run(session, new CellsConvertRequest

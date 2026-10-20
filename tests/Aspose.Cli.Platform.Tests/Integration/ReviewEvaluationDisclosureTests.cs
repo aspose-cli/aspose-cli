@@ -56,7 +56,7 @@ public sealed class ReviewEvaluationDisclosureTests : IDisposable
     public void EvaluationReview_CountsTheMarksItLeftOutInOneCoverageMetric(string product, string file, string unit, long marks)
     {
         string[] create = product == "cells"
-            ? ["cells", "create", file, "--sheets", "Data"]
+            ? ["cells", "create", file, "--sheet-names", "Data"]
             : [product, "create", file, "--from-markdown", "brief.md"];
         Run([.. create, "--license-mode", "evaluation"]);
 

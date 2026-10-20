@@ -194,7 +194,7 @@ public sealed class ViewerServiceHttpTests : IDisposable
 
     private LiveDocument OpenWorkbook(string? view = null)
     {
-        _workspace.Run("cells", "create", "book.xlsx", "--sheets", "First,Second", "--output-format", "json").Succeeded();
+        _workspace.Run("cells", "create", "book.xlsx", "--sheet-names", "First,Second", "--output-format", "json").Succeeded();
         _workspace.Run("cells", "edit", "book.xlsx", "--in-place",
             "--set", "First!A1=Region", "--set", "Second!A1=Raw", "--output-format", "json").Succeeded();
         return _documents.Open(_workspace.File("book.xlsx"), new LiveDocumentOptions { View = view }, ViewerDocuments.PreviewHolder);

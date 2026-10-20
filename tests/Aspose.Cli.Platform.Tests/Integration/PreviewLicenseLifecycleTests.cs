@@ -17,7 +17,7 @@ public sealed class PreviewLicenseLifecycleTests : IDisposable
     private readonly TempWorkspace _workspace = new();
 
     public PreviewLicenseLifecycleTests() =>
-        _workspace.Run("cells", "create", "book.xlsx", "--sheets", "Data", "--output-format", "json").Succeeded();
+        _workspace.Run("cells", "create", "book.xlsx", "--sheet-names", "Data", "--output-format", "json").Succeeded();
 
     public void Dispose()
     {
@@ -54,7 +54,7 @@ public sealed class PreviewLicenseLifecycleTests : IDisposable
     {
         using var license = new PrivateLicense();
         JsonNode evaluation = Start();
-        _workspace.Run("cells", "create", "second.xlsx", "--sheets", "Data", "--output-format", "json").Succeeded();
+        _workspace.Run("cells", "create", "second.xlsx", "--sheet-names", "Data", "--output-format", "json").Succeeded();
 
         JsonNode licensed = _workspace.Run(
             "preview", "open", "second.xlsx", "--no-open", "--license", license.Path, "--output-format", "json").Json();
@@ -118,7 +118,7 @@ public sealed class PreviewLicenseLifecycleTests : IDisposable
     {
         using var license = new PrivateLicense();
         JsonNode evaluation = Start();
-        _workspace.Run("cells", "create", "second.xlsx", "--sheets", "Data", "--output-format", "json").Succeeded();
+        _workspace.Run("cells", "create", "second.xlsx", "--sheet-names", "Data", "--output-format", "json").Succeeded();
 
         JsonNode requested = RunInLicensedShell(license.Path, "preview", "open", "second.xlsx", "--no-open", "--output-format", "json");
 
@@ -134,7 +134,7 @@ public sealed class PreviewLicenseLifecycleTests : IDisposable
     {
         using var license = new PrivateLicense();
         JsonNode started = RunInLicensedShell(license.Path, "preview", "open", "book.xlsx", "--no-open", "--output-format", "json");
-        _workspace.Run("cells", "create", "second.xlsx", "--sheets", "Data", "--output-format", "json").Succeeded();
+        _workspace.Run("cells", "create", "second.xlsx", "--sheet-names", "Data", "--output-format", "json").Succeeded();
 
         JsonNode requested = _workspace.Run(
             "preview", "open", "second.xlsx", "--no-open", "--output-format", "json").Json();
@@ -151,7 +151,7 @@ public sealed class PreviewLicenseLifecycleTests : IDisposable
         JsonNode evaluation = Start();
         string project = Directory.CreateDirectory(_workspace.File(Path.Combine("project", ".aspose"))).Parent!.FullName;
         File.Copy(TestLicense.Path!, Path.Combine(project, ".aspose", "license.lic"));
-        _workspace.Run("cells", "create", "second.xlsx", "--sheets", "Data", "--output-format", "json").Succeeded();
+        _workspace.Run("cells", "create", "second.xlsx", "--sheet-names", "Data", "--output-format", "json").Succeeded();
 
         // The service started where no project license is; this command runs where one is.
         JsonNode requested = RunInShell(new Dictionary<string, string>(), project,

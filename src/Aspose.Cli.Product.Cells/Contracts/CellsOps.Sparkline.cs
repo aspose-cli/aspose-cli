@@ -31,7 +31,7 @@ public sealed record AddSparklineOp : CellsSheetOp
     [ReadBack("inspect-result.schema.json#/$defs/cellsSparklineInfo/properties/at")]
     [A1RangeList] public required string At { get; init; }
 
-    /// <summary>winloss draws equal-height columns above or below the axis by sign.</summary>
+    /// <summary>win-loss draws equal-height columns above or below the axis by sign.</summary>
     [MistakenFor("type")]
     [ReadBack("inspect-result.schema.json#/$defs/cellsSparklineInfo/properties/kind")]
     [AllowedValues(typeof(CellsSparklineTypes))] public string Kind { get; init; } = CellsSparklineTypes.Line;
@@ -116,5 +116,5 @@ public static class CellsSparklineTypes
 {
     public const string Line = "line";
     public const string Column = "column";
-    public const string WinLoss = "winloss";
+    public const string WinLoss = "win-loss";
 }

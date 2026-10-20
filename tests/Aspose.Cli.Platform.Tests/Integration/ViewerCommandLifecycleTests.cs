@@ -91,7 +91,7 @@ public sealed class ViewerCommandLifecycleTests
         using var workspace = new TempWorkspace();
         using var documents = new TempDirectory();
         string book = documents.File("book.xlsx");
-        workspace.Run("cells", "create", book, "--sheets", "Data", "--output-format", "json").Succeeded();
+        workspace.Run("cells", "create", book, "--sheet-names", "Data", "--output-format", "json").Succeeded();
         string moved = workspace.Path + "-moved";
         try
         {
@@ -167,7 +167,7 @@ public sealed class ViewerCommandLifecycleTests
         workspace.Run("preview", "open", file, "--no-open", "--output-format", "json").Json();
 
     private static void CreateWorkbook(TempWorkspace workspace, string file) =>
-        workspace.Run("cells", "create", file, "--sheets", "Data", "--output-format", "json").Succeeded();
+        workspace.Run("cells", "create", file, "--sheet-names", "Data", "--output-format", "json").Succeeded();
 
     private static void CreateDocument(TempWorkspace workspace, string file)
     {

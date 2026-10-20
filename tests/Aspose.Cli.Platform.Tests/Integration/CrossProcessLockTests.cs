@@ -20,7 +20,7 @@ public sealed class CrossProcessLockTests
     public void Edit_WhileAnotherProcessHoldsThePublicationLock_PublishesNothingUntilItIsReleased()
     {
         using var workspace = new TempWorkspace();
-        Assert.Equal(0, workspace.Run("cells", "create", "book.xlsx", "--sheets", "Data").ExitCode);
+        Assert.Equal(0, workspace.Run("cells", "create", "book.xlsx", "--sheet-names", "Data").ExitCode);
         byte[] original = File.ReadAllBytes(workspace.File("book.xlsx"));
         string[] edit = ["cells", "edit", "book.xlsx", "--in-place", "--set", "Data!A1=changed", "--output-format", "json"];
 
@@ -45,7 +45,7 @@ public sealed class CrossProcessLockTests
     public async Task ConcurrentConditionalEdits_FromTwoProcesses_PublishExactlyOne()
     {
         using var workspace = new TempWorkspace();
-        Assert.Equal(0, workspace.Run("cells", "create", "book.xlsx", "--sheets", "Data").ExitCode);
+        Assert.Equal(0, workspace.Run("cells", "create", "book.xlsx", "--sheet-names", "Data").ExitCode);
         string fingerprint = JsonNode.Parse(workspace.Run("cells", "inspect", "book.xlsx", "--output-format", "json").StdOut)!
             ["input"]!["fingerprint"]!["sha256"]!.GetValue<string>();
 

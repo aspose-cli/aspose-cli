@@ -193,7 +193,6 @@ internal static class ImportOps
         }
 
         const int Listed = 10;
-        string sheet = Sheets.QuotedName(to.Name);
         string cells = string.Join(", ", changed.Take(Listed)) + (changed.Count > Listed ? $" and {changed.Count - Listed} more" : string.Empty);
         sources.Warn(new Warning(CellsDiagnostics.ExternalLinkCacheMissing, $"{changed.Count} imported formula(s) on '{to.Name}' ({cells}) read {string.Join(", ", files)} through a link "
                 + "that caches no values: in the source they show an error such as #REF!, but here they read the linked cells as empty, "
@@ -204,7 +203,7 @@ internal static class ImportOps
             Hint = "Recalculation never opens the linked workbook. Replace these formulas with set_formula or set_values, or open the "
                 + "source in Excel with the linked workbook available and save it so the link caches its values.",
             Docs = "cells/editing",
-            Location = sheet + "!" + changed[0],
+            Location = CellsAddresses.At("cell", to.Name, changed[0]),
         });
     }
 

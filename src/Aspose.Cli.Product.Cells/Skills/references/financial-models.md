@@ -18,7 +18,7 @@ ink tokens (blue input / black formula / green cross-sheet) are
 standardized in `aspose-cli docs cells/design-system`, Design tokens:
 
 ```sh
-aspose-cli cells create model.xlsx --sheets "Assumptions,PnL,Summary"
+aspose-cli cells create model.xlsx --sheet-names "Assumptions,PnL,Summary"
 ```
 
 Prefer plain names — `&` or spaces force quoting everywhere (`='P&L'!B3*2`,

@@ -16,7 +16,7 @@ public sealed class CellsCliTests : IDisposable
     public void CreateEditAndQuery_RoundTripsThroughTheBuiltCli()
     {
         Assert.Equal(0, _workspace.Run(
-            "cells", "create", "book.xlsx", "--sheets", "Data").ExitCode);
+            "cells", "create", "book.xlsx", "--sheet-names", "Data").ExitCode);
         CliResult inspected = _workspace.Run(
             "cells", "inspect", "book.xlsx", "--output-format", "json");
         Assert.True(inspected.ExitCode == 0, inspected.StdErr);
@@ -140,7 +140,7 @@ public sealed class CellsCliTests : IDisposable
     [Fact]
     public void Edit_BestEffortTablePrintsTheFailedOperationErrorAndHint()
     {
-        Assert.Equal(0, _workspace.Run("cells", "create", "book.xlsx", "--sheets", "Data").ExitCode);
+        Assert.Equal(0, _workspace.Run("cells", "create", "book.xlsx", "--sheet-names", "Data").ExitCode);
 
         CliResult edited = _workspace.Run(
             "cells", "edit", "book.xlsx", "--set", "Data!A1=1", "--set", "Missing!A1=2",
@@ -158,7 +158,7 @@ public sealed class CellsCliTests : IDisposable
     [InlineData("""{"ops":[{"op":"rename_sheet","sheet":"Data","name":"RATES"}]}""")]
     public void Edit_ASheetNameTheWorkbookUsesIsRefusedAsTakenWithoutWriting(string operations)
     {
-        Assert.Equal(0, _workspace.Run("cells", "create", "book.xlsx", "--sheets", "Data,Rates").ExitCode);
+        Assert.Equal(0, _workspace.Run("cells", "create", "book.xlsx", "--sheet-names", "Data,Rates").ExitCode);
 
         CliResult taken = _workspace.Run(
             "cells", "edit", "book.xlsx", "--out", "edited.xlsx", "--output-format", "json", "--ops", operations);
@@ -175,7 +175,7 @@ public sealed class CellsCliTests : IDisposable
     [InlineData("markdown")]
     public void Inspect_HumanOutputShowsTheRequestedDetails(string format)
     {
-        Assert.Equal(0, _workspace.Run("cells", "create", "book.xlsx", "--sheets", "Data").ExitCode);
+        Assert.Equal(0, _workspace.Run("cells", "create", "book.xlsx", "--sheet-names", "Data").ExitCode);
         File.WriteAllText(
             _workspace.File("ops.json"),
             """
@@ -210,7 +210,7 @@ public sealed class CellsCliTests : IDisposable
     [InlineData("convert", "x.csv", "Lists", 2)]
     public void ASheetSelectionByName_ListsEachSheetWithItsPosition(string verb, string output, string name, int position)
     {
-        Assert.Equal(0, _workspace.Run("cells", "create", "named.xlsx", "--sheets", "Budget,Lists").ExitCode);
+        Assert.Equal(0, _workspace.Run("cells", "create", "named.xlsx", "--sheet-names", "Budget,Lists").ExitCode);
         File.WriteAllText(_workspace.File("rename.json"), """{"ops":[{"op":"rename_sheet","sheet":"Budget","name":"预算, 2026 H1"}]}""");
         Assert.Equal(0, _workspace.Run("cells", "edit", "named.xlsx", "--ops", "rename.json", "--in-place").ExitCode);
 
@@ -231,7 +231,7 @@ public sealed class CellsCliTests : IDisposable
     [InlineData("convert", "x.csv")]
     public void ASheetNamedLikeAPositionPastTheLastSheet_ListsEachSheetWithItsPosition(string verb, string output)
     {
-        Assert.Equal(0, _workspace.Run("cells", "create", "years.xlsx", "--sheets", "Budget,Lists,2024").ExitCode);
+        Assert.Equal(0, _workspace.Run("cells", "create", "years.xlsx", "--sheet-names", "Budget,Lists,2024").ExitCode);
 
         CliResult result = _workspace.Run("cells", verb, "years.xlsx", "--sheets", "2024", "--out", output, "--output-format", "json");
 
@@ -244,7 +244,7 @@ public sealed class CellsCliTests : IDisposable
     [Fact]
     public void TheAllKeyword_IsLowercaseAsInEveryProduct()
     {
-        Assert.Equal(0, _workspace.Run("cells", "create", "every.xlsx", "--sheets", "Budget,Lists").ExitCode);
+        Assert.Equal(0, _workspace.Run("cells", "create", "every.xlsx", "--sheet-names", "Budget,Lists").ExitCode);
         Assert.Equal(0, _workspace.Run("cells", "convert", "every.xlsx", "--to", "pdf", "--out", "every.pdf").ExitCode);
 
         CliResult upper = _workspace.Run("cells", "convert", "every.xlsx", "--sheets", "ALL", "--out", "upper.pdf", "--output-format", "json");
@@ -270,7 +270,7 @@ public sealed class CellsCliTests : IDisposable
     [InlineData("render", "--range")]
     public void TheAllRange_IsLowercaseAsEverySelectionsAll(string verb, string option)
     {
-        Assert.Equal(0, _workspace.Run("cells", "create", "every.xlsx", "--sheets", "Budget,Lists").ExitCode);
+        Assert.Equal(0, _workspace.Run("cells", "create", "every.xlsx", "--sheet-names", "Budget,Lists").ExitCode);
         Assert.Equal(0, _workspace.Run("cells", "edit", "every.xlsx", "--set", "Budget!A1=1", "--in-place").ExitCode);
         Assert.Equal(0, _workspace.Run("cells", "convert", "every.xlsx", "--to", "pdf", "--out", "every.pdf").ExitCode);
         string[] output = verb == "render" ? ["--out", "every.png", "--overwrite"] : [];
@@ -304,7 +304,7 @@ public sealed class CellsCliTests : IDisposable
     [Fact]
     public void Convert_StartsATextOutputWithAByteOrderMarkOnRequest()
     {
-        Assert.Equal(0, _workspace.Run("cells", "create", "book.xlsx", "--sheets", "Data").ExitCode);
+        Assert.Equal(0, _workspace.Run("cells", "create", "book.xlsx", "--sheet-names", "Data").ExitCode);
         Assert.Equal(0, _workspace.Run("cells", "edit", "book.xlsx", "--in-place", "--set", "Data!A1=交易").ExitCode);
 
         Assert.Equal(0, _workspace.Run("cells", "convert", "book.xlsx", "--to", "csv", "--sheets", "1", "--out", "plain.csv").ExitCode);
@@ -325,7 +325,7 @@ public sealed class CellsCliTests : IDisposable
     [Fact]
     public void RenderJpeg_DisclosesTheWarningSheetPagesAsPngDoes()
     {
-        Assert.Equal(0, _workspace.Run("cells", "create", "book.xlsx", "--sheets", "Data").ExitCode);
+        Assert.Equal(0, _workspace.Run("cells", "create", "book.xlsx", "--sheet-names", "Data").ExitCode);
         Assert.Equal(0, _workspace.Run("cells", "edit", "book.xlsx", "--in-place", "--set", "Data!A1=SO-001").ExitCode);
 
         CliResult png = _workspace.Run("cells", "render", "book.xlsx", "--sheets", "2", "--out", "warning.png", "--output-format", "json");
@@ -346,7 +346,7 @@ public sealed class CellsCliTests : IDisposable
     [Fact]
     public void ConvertToCsvNamedTxt_DisclosesTheNoticeRow()
     {
-        Assert.Equal(0, _workspace.Run("cells", "create", "book.xlsx", "--sheets", "Data").ExitCode);
+        Assert.Equal(0, _workspace.Run("cells", "create", "book.xlsx", "--sheet-names", "Data").ExitCode);
         Assert.Equal(0, _workspace.Run("cells", "edit", "book.xlsx", "--in-place", "--set", "Data!A1=SO-001").ExitCode);
 
         CliResult converted = _workspace.Run("cells", "convert", "book.xlsx", "--to", "csv", "--out", "report.txt", "--output-format", "json");
@@ -365,7 +365,7 @@ public sealed class CellsCliTests : IDisposable
     [Fact]
     public void Evaluation_DisclosesTheWatermarkAndTheNoticeInDataAndRefusesASilentSheetSubstitution()
     {
-        Assert.Equal(0, _workspace.Run("cells", "create", "book.xlsx", "--sheets", "Dashboard,Detail").ExitCode);
+        Assert.Equal(0, _workspace.Run("cells", "create", "book.xlsx", "--sheet-names", "Dashboard,Detail").ExitCode);
         Assert.Equal(0, _workspace.Run("cells", "edit", "book.xlsx", "--in-place",
             "--set", "Dashboard!A1=Overview", "--set", "Detail!A1=SO-001").ExitCode);
         File.WriteAllText(_workspace.File("report.csv"), "existing report");
@@ -423,7 +423,7 @@ public sealed class CellsCliTests : IDisposable
         JsonNode fitted = _workspace.Run("cells", "convert", "fitted.xlsx", "--to", format, "--out", "fitted." + format, "--output-format", "json").Json();
 
         JsonNode warning = Warning(split, "CHART_SPLIT_ACROSS_PAGES");
-        Assert.Equal("'Data'", warning["location"]!.GetValue<string>());
+        Assert.Equal("sheet/Data", warning["location"]!.GetValue<string>());
         Assert.Contains("'Wide' on sheet 'Data' (2 pages)", warning["message"]!.GetValue<string>(), StringComparison.Ordinal);
         Assert.DoesNotContain(fitted["warnings"]?.AsArray() ?? [],
             static warning => warning!["code"]!.GetValue<string>() == "CHART_SPLIT_ACROSS_PAGES");
@@ -444,6 +444,26 @@ public sealed class CellsCliTests : IDisposable
     }
 
     /// <summary>
+    /// <c>cells create</c> takes sheet names as <c>--sheet-names</c>; <c>--sheets</c>, which
+    /// selects positions on <c>convert</c> and <c>render</c>, is not one of its options.
+    /// </summary>
+    [Fact]
+    public void Create_NamesItsSheetsWithSheetNames()
+    {
+        JsonNode created = _workspace.Run("cells", "create", "book.xlsx", "--sheet-names", "Data,Summary", "--output-format", "json").Json();
+        Assert.Equal(["Data", "Summary"], created["sheets"]!.AsArray().Select(static sheet => sheet!.GetValue<string>()));
+        JsonNode sheets = _workspace.Run("cells", "inspect", "book.xlsx", "--output-format", "json").Json()["workbook"]!["sheets"]!;
+        // An evaluation save adds a warning sheet after them.
+        Assert.Equal(["Data", "Summary"], sheets.AsArray().Select(static sheet => sheet!["name"]!.GetValue<string>()).Take(2));
+
+        CliResult old = _workspace.Run("cells", "create", "old.xlsx", "--sheets", "1-3", "--output-format", "json");
+        Assert.Equal(2, old.ExitCode);
+        Assert.Equal("USAGE_ERROR", JsonNode.Parse(old.StdErr)!["error"]!["code"]!.GetValue<string>());
+        Assert.Contains("--sheets", old.StdErr, StringComparison.Ordinal);
+        Assert.False(File.Exists(_workspace.File("old.xlsx")));
+    }
+
+    /// <summary>
     /// A render without <c>--sheet</c> or <c>--range</c> draws every visible sheet, each as
     /// <c>&lt;stem&gt;.&lt;sheet&gt;.&lt;ext&gt;</c> beside <c>--out</c>, and a workbook of one sheet as
     /// <c>--out</c> itself.
@@ -457,7 +477,7 @@ public sealed class CellsCliTests : IDisposable
               {"op":"set_values","sheet":"One","range":"A1","values":[["one"]]},
               {"op":"set_values","sheet":"Two","range":"A1","values":[["two"]]}]}
             """);
-        Assert.Equal(0, _workspace.Run("cells", "create", "book.xlsx", "--sheets", "One,Two", "--output-format", "json").ExitCode);
+        Assert.Equal(0, _workspace.Run("cells", "create", "book.xlsx", "--sheet-names", "One,Two", "--output-format", "json").ExitCode);
         Assert.Equal(0, _workspace.Run("cells", "edit", "book.xlsx", "--ops", "ops.json", "--in-place", "--output-format", "json").ExitCode);
         Directory.CreateDirectory(_workspace.File("every"));
 
@@ -469,7 +489,7 @@ public sealed class CellsCliTests : IDisposable
         Assert.Equal(["book.One.png", "book.Two.png"], Directory.GetFiles(_workspace.File("every")).Select(Path.GetFileName).Order(StringComparer.Ordinal));
 
         string names = string.Join(",", Enumerable.Range(1, 21).Select(static sheet => $"S{sheet}"));
-        Assert.Equal(0, _workspace.Run("cells", "create", "wide.xlsx", "--sheets", names, "--output-format", "json").ExitCode);
+        Assert.Equal(0, _workspace.Run("cells", "create", "wide.xlsx", "--sheet-names", names, "--output-format", "json").ExitCode);
         CliResult wide = _workspace.Run("cells", "render", "wide.xlsx", "--out", "wide/wide.png", "--output-format", "json");
         Assert.Equal(2, wide.ExitCode);
         JsonNode error = JsonNode.Parse(wide.StdErr)!["error"]!;
@@ -487,7 +507,7 @@ public sealed class CellsCliTests : IDisposable
     public void Render_ByDefaultWritesTheOutItselfForOneSheet()
     {
         File.WriteAllText(_workspace.File("ops.json"), """{"ops":[{"op":"set_values","sheet":"Only","range":"A1","values":[["only"]]}]}""");
-        Assert.Equal(0, _workspace.Run("cells", "create", "only.xlsx", "--sheets", "Only", "--output-format", "json").ExitCode);
+        Assert.Equal(0, _workspace.Run("cells", "create", "only.xlsx", "--sheet-names", "Only", "--output-format", "json").ExitCode);
         Assert.Equal(0, _workspace.Run("cells", "edit", "only.xlsx", "--ops", "ops.json", "--in-place", "--output-format", "json").ExitCode);
         Directory.CreateDirectory(_workspace.File("single"));
 
@@ -505,7 +525,7 @@ public sealed class CellsCliTests : IDisposable
     public void Render_OfAnEmptySheet_HintsTheSheetsSelectionOfOneWithData()
     {
         File.WriteAllText(_workspace.File("ops.json"), """{"ops":[{"op":"set_values","sheet":"Data","range":"A1","values":[["data"]]}]}""");
-        Assert.Equal(0, _workspace.Run("cells", "create", "book.xlsx", "--sheets", "Blank,Data", "--output-format", "json").ExitCode);
+        Assert.Equal(0, _workspace.Run("cells", "create", "book.xlsx", "--sheet-names", "Blank,Data", "--output-format", "json").ExitCode);
         Assert.Equal(0, _workspace.Run("cells", "edit", "book.xlsx", "--ops", "ops.json", "--in-place", "--output-format", "json").ExitCode);
 
         CliResult empty = _workspace.Run("cells", "render", "book.xlsx", "--sheets", "1", "--out", "blank.png", "--output-format", "json");
@@ -552,7 +572,7 @@ public sealed class CellsCliTests : IDisposable
     [Fact]
     public void Evaluation_TheSkippedSheetHintNamesHowEachCommandChoosesASheet()
     {
-        _ = _workspace.Run("cells", "create", "book.xlsx", "--sheets", "One,Two", "--output-format", "json").Json();
+        _ = _workspace.Run("cells", "create", "book.xlsx", "--sheet-names", "One,Two", "--output-format", "json").Json();
         File.WriteAllText(_workspace.File("ops.json"), """{"ops":[{"op":"set_values","range":"A1","values":[["edited"]]}]}""");
 
         string Hint(params string[] args) =>
@@ -587,7 +607,7 @@ public sealed class CellsCliTests : IDisposable
     [Fact]
     public void Evaluation_TheAddedWarningSheetIsDisclosedAndSkippedByActiveSheetDefaults()
     {
-        JsonNode created = _workspace.Run("cells", "create", "book.xlsx", "--sheets", "One,Two", "--output-format", "json").Json();
+        JsonNode created = _workspace.Run("cells", "create", "book.xlsx", "--sheet-names", "One,Two", "--output-format", "json").Json();
         Assert.Contains("the evaluation warning sheet 'Evaluation Warning', which is the active sheet",
             Warning(created, "EVALUATION_MODE")["message"]!.GetValue<string>(), StringComparison.Ordinal);
         File.WriteAllText(_workspace.File("ops.json"), """
@@ -613,7 +633,7 @@ public sealed class CellsCliTests : IDisposable
 
         Assert.Equal("One", read["sheet"]!["name"]!.GetValue<string>());
         JsonNode skipped = Warning(read, "ACTIVE_SHEET_SKIPPED");
-        Assert.Equal("Evaluation Warning (1)", skipped["location"]!.GetValue<string>());
+        Assert.Equal("sheet/Evaluation Warning (1)", skipped["location"]!.GetValue<string>());
         Assert.Contains("uses 'One'", skipped["message"]!.GetValue<string>(), StringComparison.Ordinal);
         // A render covers every visible sheet by default, so it skips no active sheet.
         Assert.Equal("One", rendered["outputs"]![0]!["sheet"]!.GetValue<string>());
@@ -650,7 +670,7 @@ public sealed class CellsCliTests : IDisposable
 
         CliResult created = _workspace.RunWithEnv(
             variables,
-            "cells", "create", "secret.xlsx", "--sheets", "Data",
+            "cells", "create", "secret.xlsx", "--sheet-names", "Data",
             "--encrypt-env", "ASPOSE_CLI_TEST_PASSWORD", "--output-format", "json");
         CliResult fromEnvironment = _workspace.RunWithEnv(
             variables,
@@ -737,7 +757,7 @@ public sealed class CellsCliTests : IDisposable
     [Fact]
     public void Edit_FailsOnlyTheOperationWhoseFileIsMissing()
     {
-        Assert.Equal(0, _workspace.Run("cells", "create", "images.xlsx", "--sheets", "Data").ExitCode);
+        Assert.Equal(0, _workspace.Run("cells", "create", "images.xlsx", "--sheet-names", "Data").ExitCode);
 
         CliResult missing = _workspace.Run(
             "cells", "edit", "images.xlsx", "--out", "images.out.xlsx", "--best-effort", "--output-format", "json",
@@ -789,7 +809,7 @@ public sealed class CellsCliTests : IDisposable
     public void PreviewSheetsView_UsesTheRootLifecycle()
     {
         Assert.Equal(0, _workspace.Run(
-            "cells", "create", "preview-sheet.xlsx", "--sheets", "Data").ExitCode);
+            "cells", "create", "preview-sheet.xlsx", "--sheet-names", "Data").ExitCode);
         CliResult seeded = _workspace.Run(
             "cells", "edit", "preview-sheet.xlsx", "--ops",
             "{\"ops\":[{\"op\":\"set_values\",\"sheet\":\"Data\",\"range\":\"A1\",\"values\":[[\"value\"]]}]}",

@@ -108,9 +108,9 @@ public sealed class CellsSheetReferenceTests : IClassFixture<CellsFixture>
     [Theory]
     [InlineData("line", SparklineType.Line, "B2:D4", "F2:F4", false)]
     [InlineData("column", SparklineType.Column, "B2:D4", "F2:H2", false)]
-    [InlineData("winloss", SparklineType.WinLoss, "B2:D5", "F2:H2", true)]
+    [InlineData("win-loss", SparklineType.WinLoss, "B2:D5", "F2:H2", true)]
     [InlineData("line", SparklineType.Line, "B2:B5", "F2", true)]
-    [InlineData("winloss", SparklineType.WinLoss, "B2:B3", "F2:F3", false)]
+    [InlineData("win-loss", SparklineType.WinLoss, "B2:B3", "F2:F3", false)]
     public void Sparklines_MatchTheEnginesOneCallGroup(string type, SparklineType engineType, string data, string location, bool vertical)
     {
         string source = Seed("Data");

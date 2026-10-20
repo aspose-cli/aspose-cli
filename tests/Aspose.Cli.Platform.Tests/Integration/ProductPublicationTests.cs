@@ -104,7 +104,7 @@ public sealed class ProductPublicationTests
     public void AllSheetsFailureDoesNotLeaveEarlierOutputFiles(bool supervised)
     {
         using var workspace = new TempWorkspace();
-        workspace.Run("cells", "create", "input.xlsx", "--sheets", "First,Second").Succeeded();
+        workspace.Run("cells", "create", "input.xlsx", "--sheet-names", "First,Second").Succeeded();
         workspace.Run("cells", "edit", "input.xlsx", "--set", "First!A1=1", "--set", "Second!A1=2", "--in-place").Succeeded();
         File.WriteAllText(workspace.File("render.Second.png"), "existing second sheet");
         CliResult result = workspace.Run(["cells", "render", "input.xlsx", "--sheets", "all", "--out", "render.png", "--output-format", "json",

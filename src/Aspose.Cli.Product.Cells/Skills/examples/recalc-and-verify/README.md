@@ -6,7 +6,7 @@ back. Run from this directory.
 
 ```powershell
 # 1. Build a tiny model: revenue, growth assumption, projection formula.
-aspose-cli cells create model.xlsx --sheets Model --overwrite --output-format json
+aspose-cli cells create model.xlsx --sheet-names Model --overwrite --output-format json
 aspose-cli cells edit model.xlsx --ops model-ops.json --in-place --output-format json
 
 # 2. Read the projected value the engine computed.

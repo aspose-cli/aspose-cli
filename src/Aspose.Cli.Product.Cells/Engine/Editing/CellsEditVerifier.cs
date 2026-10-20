@@ -57,7 +57,7 @@ internal sealed class CellsEditVerifier(CellsWorkbookLoader loader, ResourceBudg
                     ? $"The edited workbook contains {errorTotal} formula error(s); formulaErrors lists the first {errors.Count}."
                     : $"The edited workbook contains {errorTotal} formula error(s).")
                 + (preexisting > 0 ? $" {preexisting} of the listed error(s) were already in the input." : ""),
-                location: errorTotal == 1 ? Sheets.QuotedName(errors[0].Sheet) + "!" + errors[0].Cell : null,
+                location: errorTotal == 1 ? CellsAddresses.At("cell", errors[0].Sheet, errors[0].Cell) : null,
                 hint: (errorsCapped
                     ? "Fix the cells listed in formulaErrors, then edit again with --verify to list the rest."
                     : "Fix the cells listed in formulaErrors, then edit again with --verify.")

@@ -110,7 +110,7 @@ public sealed class CellsReviewWindowTests : IClassFixture<CellsFixture>
             CellsView.Layout(_fixture.Session, path, null).Sheets,
             static sheet => sheet.Name == "Pivot");
         ReviewFinding? finding = assessment.Findings!.SingleOrDefault(static finding =>
-            finding.Code == "CELLS_VALUES_CLIPPED" && finding.Location == "Pivot");
+            finding.Code == "CELLS_VALUES_CLIPPED" && finding.Location == "sheet/Pivot");
         return (sheet, finding);
     }
 
@@ -219,7 +219,7 @@ public sealed class CellsReviewWindowTests : IClassFixture<CellsFixture>
 
         Assert.Equal(["Detail", "Summary"], manifest.Parts.Select(static part => part.Id));
         var window = Assert.Single(manifest.Warnings ?? [], static warning => warning.Code.Name == "SHEET_PARTIALLY_RENDERED");
-        Assert.Equal("Detail", window.Location);
+        Assert.Equal("sheet/Detail", window.Location);
         Assert.True(window.AffectsCompleteness);
     }
 
@@ -292,7 +292,7 @@ public sealed class CellsReviewWindowTests : IClassFixture<CellsFixture>
         int height = BinaryPrimitives.ReadInt32BigEndian(png.AsSpan(20, 4));
         Assert.True(Math.Max(width, height) <= 10_000, $"The review image is {width} x {height} pixels.");
         Warning window = Assert.Single(manifest.Warnings ?? [], static warning => warning.Code.Name == "SHEET_PARTIALLY_RENDERED");
-        Assert.Equal(sheet, window.Location);
+        Assert.Equal("sheet/" + sheet, window.Location);
         Assert.True(window.AffectsCompleteness);
 
         Match command = Regex.Match(window.Hint ?? string.Empty, "aspose-cli cells render \"[^\"]+\" --range \"'" + sheet + "'!([A-Z]+)([0-9]+):[A-Z]+[0-9]+\"");

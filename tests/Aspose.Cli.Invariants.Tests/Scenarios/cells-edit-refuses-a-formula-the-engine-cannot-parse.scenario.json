@@ -1,7 +1,7 @@
 {
   "name": "cells edit refuses a formula the engine cannot parse as an invalid operation and hints at commas",
   "steps": [
-    { "args": ["cells", "create", "book.xlsx", "--sheets", "Data"], "expect": { "exitCode": 0 } },
+    { "args": ["cells", "create", "book.xlsx", "--sheet-names", "Data"], "expect": { "exitCode": 0 } },
     {
       "args": ["cells", "edit", "book.xlsx", "--in-place", "--ops", "{\"ops\":[{\"op\":\"set_formula\",\"sheet\":\"Data\",\"range\":\"A1:A2\",\"formula\":\"=SUM(B1;B2)\"}]}"],
       "expect": {

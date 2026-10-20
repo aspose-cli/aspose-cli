@@ -472,7 +472,7 @@ public sealed class CellsOutcomeTests : IClassFixture<CellsFixture>
     [InlineData("""{"op":"add_sparkline","sheet":"Data","dataRange":"E2:F2,E4:F4,E5:F5","at":"G2,G4,G5","kind":"line","color":"#2E75B6"}""", new[] { "G2", "G4:G5" })]
     [InlineData("""{"op":"add_sparkline","sheet":"Data","dataRange":"E4:F4","at":"G4"}""", new[] { "G2", "G4:G5" })]
     [InlineData("""{"op":"add_sparkline","sheet":"Data","dataRange":"E2:F2,E4:F4,E5:F5","at":"G2,G4,G5","kind":"column"}""", new[] { "G2", "G4:G5" })]
-    [InlineData("""{"op":"add_sparkline","sheet":"Data","dataRange":"E2:F5","at":"H2:H5","kind":"winloss"}""", new[] { "H2:H5" })]
+    [InlineData("""{"op":"add_sparkline","sheet":"Data","dataRange":"E2:F5","at":"H2:H5","kind":"win-loss"}""", new[] { "H2:H5" })]
     public void AddingSparklinesOverCellsAnotherGroupIsDrawnIn_IsRefusedWithTheOperationsThatClearIt(string operation, string[] cleared)
     {
         string path = _fixture.CreateSalesWorkbook($"sparkline-overlap-{Guid.NewGuid():N}.xlsx");
