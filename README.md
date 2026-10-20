@@ -37,13 +37,48 @@ project by default or for the user with `--user`.
   every sheet, slide or page and its layout findings; `edit --verify` reads the staged output back
   and reports semantic evidence before publication.
 - **A stable contract.** In JSON mode a command writes one result to stdout or one error to
-  stderr, with a stable code and exit code.
+  stderr, with a stable code and exit code; [Compatibility](#compatibility) says what stays stable.
 - **Bounded work.** Inputs, rendering and extraction are held to the budgets that `capabilities`
   lists; `--timeout` sets a deadline for the whole command.
 - **No network access.** A document never causes a network request unless you opt in, and each
   omitted resource is reported ([SECURITY.md](SECURITY.md#boundaries)).
 - **Your fonts.** Commands whose output depends on fonts accept `--font-dir` to add local font
   directories to the system fonts.
+
+## Compatibility
+
+From 1.0 the machine contract changes only by adding, except in a major version. The contract
+is what a script or agent depends on: commands, options and positional arguments with their
+defaults and accepted values; edit operation names and fields; result field names, types and
+units; error codes, warning codes and exit codes; schema ids; the environment variables listed
+below; the configuration and installation directories; the Skill names; and the MCP tool names
+`capabilities` and `execute`.
+
+A breaking change removes or renames any of these, changes its type or meaning, narrows the
+input it accepts, or changes a default or an exit code; it happens only in a major version.
+A minor or patch release may add commands, options, operations, optional input fields, result
+fields, warning codes, error codes and enumeration values. Text is not part of the contract:
+messages, hints, help, the bundled docs and Skill prose, the layout of human-readable output and
+the diagnostic output of `--verbose` can change in any release.
+
+A consumer must ignore result fields, warning codes and error codes it does not know. The result
+schemas describe the current build; validate against them ignoring unknown properties.
+`schemaVersion` in a result is the contract version: it increases only with a breaking change,
+with the major version, never for an addition. It started at 2 and is independent of the CLI
+version, so 1.0 publishes `v2` schema ids. The `schema` field names a schema by id; the id is not
+a URL to fetch, and `aspose-cli schema <id>` prints that schema offline.
+
+The environment variables in the contract are the license variables `ASPOSE_LICENSE_B64`,
+`ASPOSE_LICENSE_PATH` and their per-product forms (`aspose-cli docs licensing`), named without the
+CLI prefix on purpose so that other Aspose tools can share them; `ASPOSE_CLI_CONFIG_DIR`; the
+variables that `capabilities` lists as the source of an option's value (now
+`ASPOSE_CLI_MAX_INPUT_BYTES`, for `--max-input-bytes`); and the App and Preview limits listed in
+`aspose-cli docs app` and `aspose-cli docs preview`. Any other `ASPOSE_CLI_*` variable is
+internal.
+
+Evaluation mode changes output as the Aspose SDKs decide; the CLI reports each effect with an
+`EVALUATION_*` warning, but the evaluation output itself is not covered. 1.0 has no experimental
+features: everything it exposes is covered.
 
 ## App, Preview and MCP
 

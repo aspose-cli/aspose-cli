@@ -1,5 +1,4 @@
 {
-  "schemaVersion": 2,
   "ops": [
     {
       "op": "set_form_field",
