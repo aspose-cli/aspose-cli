@@ -72,7 +72,7 @@ annotations or signatures.
 HTML output is one self-contained file that places every line of text
 absolutely and embeds subsets of the PDF's fonts; its `<title>` is the PDF
 title. Only a browser lays it out as the pages look: `review` does not take it
-(`FORMAT_MISMATCH`), and `review --product words` reflows it into one column of
+(`FORMAT_UNSUPPORTED`), and `review --product words` reflows it into one column of
 plain lines and reports the embedded fonts as missing, so neither shows what a
 reader sees. Review the source PDF instead, then open the HTML in a browser and
 compare the pages.

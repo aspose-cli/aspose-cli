@@ -22,7 +22,7 @@ public sealed class CliException : Exception
         JsonObject? details = null,
         string? docs = null,
         Exception? innerException = null)
-        : this(message, innerException, RefuseShared(code), hint, details, docs)
+        : this(message, innerException, RefuseShared(code), hint, details, docs, explanation: null)
     {
     }
 
@@ -32,7 +32,8 @@ public sealed class CliException : Exception
         ErrorCode code,
         string? hint,
         JsonObject? details,
-        string? docs)
+        string? docs,
+        string? explanation)
         : base(message, innerException)
     {
         ArgumentNullException.ThrowIfNull(code);
@@ -48,6 +49,7 @@ public sealed class CliException : Exception
         Hint = hint;
         Details = WithoutNulls(details);
         Docs = docs;
+        Explanation = explanation;
     }
 
     /// <summary>The details without their null members: a fact that does not apply is left out, never stated as null.</summary>
@@ -73,7 +75,8 @@ public sealed class CliException : Exception
         string? hint = null,
         JsonObject? details = null,
         string? docs = null,
-        Exception? innerException = null) => new(message, innerException, code, hint, details, docs);
+        Exception? innerException = null,
+        string? explanation = null) => new(message, innerException, code, hint, details, docs, explanation);
 
     private static ErrorCode RefuseShared(ErrorCode code)
     {
@@ -96,12 +99,20 @@ public sealed class CliException : Exception
     /// <summary>Topic name for <c>aspose-cli docs</c>.</summary>
     public string? Docs { get; }
 
+    /// <summary>
+    /// Why the value or file was refused, as the clause that completes the message, for a caller
+    /// that restates the error in its own words, such as an option's or a field's check; null
+    /// when the factory has none. It is never published: <c>details.reason</c> holds a token.
+    /// </summary>
+    public string? Explanation { get; }
+
     /// <summary>The process exit code this error maps to.</summary>
     public ExitCode ExitCode => Code.ExitCode;
 
     /// <summary>Invocation-wide failures must never be converted into best-effort operation outcomes.</summary>
     public bool IsInvocationFailure => Code == ErrorCodes.OperationTimeout
-        || Code == ErrorCodes.InputBudgetExceeded || Code == ErrorCodes.FileTooLarge;
+        || Code == ErrorCodes.InputBudgetExceeded || Code == ErrorCodes.FileTooLarge
+        || Code == ErrorCodes.OutputBudgetExceeded;
 
     /// <summary>Converts the exception to the public error contract.</summary>
     public ErrorEnvelope ToEnvelope() => new()

@@ -120,10 +120,10 @@ public sealed class ReviewEvidenceWriterTests
         {
             Findings =
             [
-                check.Finding("Second page.", "page 2", parts: ["part-1"]),
+                check.Finding("Second page.", "page/2", parts: ["part-1"]),
                 check.Finding("Whole document."),
-                check.Finding("Unrendered page.", "page 3", parts: ["part-2"]),
-                check.Finding("Third page repeats the first.", "page 3", parts: ["part-0", "part-2"]),
+                check.Finding("Unrendered page.", "page/3", parts: ["part-2"]),
+                check.Finding("Third page repeats the first.", "page/3", parts: ["part-0", "part-2"]),
             ],
         };
 

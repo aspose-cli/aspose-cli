@@ -102,7 +102,7 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
 
         Assert.Equal(1000, info.Outline!.Count);
         Warning warning = Assert.Single(info.Warnings!, static warning => warning.Code == WarningCodes.ListTruncated);
-        Assert.Equal("outline", warning.Location);
+        Assert.Equal("outline", warning.Details!["list"]!.GetValue<string>());
         Assert.Contains("first 1000 of 1001", warning.Message, StringComparison.Ordinal);
         Assert.Contains("words read --content outline", warning.Hint, StringComparison.Ordinal);
     }
@@ -837,7 +837,7 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
         }
         var corrupt = Assert.IsType<CliException>(error);
         Assert.Equal(ErrorCodes.FileCorrupt, corrupt.Code);
-        Assert.Equal("the bytes were detected as plain text but the file name claims a document container", corrupt.Details!["reason"]!.GetValue<string>());
+        Assert.Equal("the bytes were detected as plain text but the file name claims a document container", corrupt.Explanation);
     }
 
     [Fact]

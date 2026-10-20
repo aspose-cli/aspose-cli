@@ -955,7 +955,7 @@ internal static partial class ContractRules
                     Json =
                     [
                         new JsonAssertion { Path = "error.details.expectedSha256", Value = JsonValue.Create(R41Stale) },
-                        new JsonAssertion { Path = "error.details.observedSha256", Exists = true },
+                        new JsonAssertion { Path = "error.details.actualSha256", Exists = true },
                     ],
                     Files = new ScenarioFiles { NothingWritten = true },
                 });

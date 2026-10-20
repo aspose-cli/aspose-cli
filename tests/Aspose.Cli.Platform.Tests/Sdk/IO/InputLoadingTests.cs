@@ -46,9 +46,11 @@ public sealed class InputLoadingTests
         CliException truncated = Fail(path, null, new EndOfStreamException("Unexpected end."));
 
         Assert.All([damaged, unloadable, truncated], static error => Assert.Equal(ErrorCodes.FileCorrupt, error.Code));
-        Assert.Equal("The file format is not supported.", damaged.Details!["reason"]!.GetValue<string>());
-        Assert.Equal("Unexpected end.", truncated.Details!["reason"]!.GetValue<string>());
-        Assert.Equal("its content is Docx, not a test document this command reads", unloadable.Details!["reason"]!.GetValue<string>());
+        Assert.Equal("The file format is not supported.", damaged.Explanation);
+        Assert.Equal("Unexpected end.", truncated.Explanation);
+        Assert.Equal("its content is Docx, not a test document this command reads", unloadable.Explanation);
+        Assert.All([damaged, unloadable, truncated], static error => Assert.Null(error.Details!["reason"]));
+        Assert.Contains("(The file format is not supported.)", damaged.Message, StringComparison.Ordinal);
         Assert.Equal("Check the test document.", damaged.Hint);
         Assert.IsType<DamagedFailure>(damaged.InnerException);
     }
@@ -86,7 +88,7 @@ public sealed class InputLoadingTests
         CliException error = Loading.InMemoryFailure(new IOException("Unexpected end of the Markdown stream."), "inline Markdown");
 
         Assert.Equal(ErrorCodes.FileCorrupt, error.Code);
-        Assert.Equal("Unexpected end of the Markdown stream.", error.Details!["reason"]!.GetValue<string>());
+        Assert.Equal("Unexpected end of the Markdown stream.", error.Explanation);
         Assert.Contains("inline Markdown", error.Message, StringComparison.Ordinal);
     }
 

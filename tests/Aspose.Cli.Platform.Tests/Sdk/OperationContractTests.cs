@@ -237,7 +237,8 @@ public sealed class OperationContractTests
         }
         catch (CliException error)
         {
-            return "error: " + error.Details!["reason"]!.GetValue<string>();
+            Assert.Matches("^[a-z]+(-[a-z]+)*$", error.Details!["reason"]!.GetValue<string>());
+            return "error: " + OperationErrorText.Explanation(error);
         }
     }
 

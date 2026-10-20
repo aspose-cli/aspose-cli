@@ -131,7 +131,7 @@ internal static class LicenseManager
             Path = gate.Resolution.Path,
             // The source and path are fields of their own, so the problem is the reason alone;
             // an installation that refuses the file states it once.
-            Problem = error?.Details?["reason"]?.GetValue<string>() ?? error?.Message,
+            Problem = error?.Explanation ?? error?.Message,
             Hint = error?.Hint,
             UserLicenseInstalled = context.ProductActivation.UserLicenseChanges?.IsProductInstalled(context.ProductActivation.ConfigDirectory, product.Manifest.Id)
                 ?? File.Exists(LicenseResolver.UserLicensePath(context.ProductActivation.ConfigDirectory, product.Manifest.Id)),

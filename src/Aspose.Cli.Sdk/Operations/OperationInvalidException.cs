@@ -5,7 +5,8 @@ namespace Aspose.Cli.Sdk.Operations;
 /// <summary>
 /// Rejects one operation before it changes anything. Validators and handlers throw it
 /// without knowing the operation's position; the pipeline reports it as <c>OPS_INVALID</c>
-/// with the index and name, and a best-effort batch continues past it.
+/// with the operation's id and name and the reason <c>invalid-value</c>, and a best-effort
+/// batch continues past it.
 /// </summary>
 public sealed class OperationInvalidException : Exception
 {
@@ -26,6 +27,12 @@ public sealed class OperationInvalidException : Exception
 
     /// <summary>The file the operation reads that the rejection is about, stated in <c>details.path</c>; null for none.</summary>
     public string? Path { get; init; }
+
+    /// <summary>
+    /// The path of the field whose value is refused, such as <c>style.color</c>, stated in
+    /// <c>details.field</c>; null when the rejection is about the operation as a whole.
+    /// </summary>
+    public string? Field { get; init; }
 
     /// <summary>Throws a rejection unless <paramref name="condition"/> holds.</summary>
     public static void Require(bool condition, string reason, string? hint = null)

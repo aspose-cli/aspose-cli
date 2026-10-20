@@ -29,6 +29,7 @@ public sealed class OwnedProcessTests
             CliException error = Assert.Throws<CliException>(() => owned.Stop());
 
             Assert.Equal(ErrorCodes.WorkerTerminationFailed, error.Code);
+            Assert.Equal(ExitCode.OperationTimeout, error.ExitCode);
             Assert.Equal(owned.Process.Id, error.Details?["pid"]?.GetValue<int>());
         }
         finally

@@ -32,7 +32,7 @@ internal static class SheetRangeInput
         {
             throw CliErrors.OptionInvalid(
                 option,
-                ex.Details?["reason"]?.GetValue<string>() ?? $"'{text}' is not a range",
+                ex.Explanation ?? $"'{text}' is not a range",
                 "Use A1 notation such as B2:D10, a single cell such as C5, a sheet-qualified range such as Sales!A1:C10, or all.");
         }
     }

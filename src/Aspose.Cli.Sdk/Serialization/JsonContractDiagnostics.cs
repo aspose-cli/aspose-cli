@@ -2,6 +2,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
 using Aspose.Cli.Sdk.Contracts;
+using Aspose.Cli.Sdk.Errors;
 
 namespace Aspose.Cli.Sdk.Serialization;
 
@@ -32,7 +33,7 @@ internal static class JsonContractDiagnostics
         }
 
         string field = FieldPath(failurePath);
-        return new JsonException(
+        return new ContractRejection(OpsInvalidReasons.InvalidValue, field,
             field.Length == 0 ? "the value does not match the documented contract" : $"{field} has an invalid value");
     }
 
@@ -80,7 +81,7 @@ internal static class JsonContractDiagnostics
             string field = Join(path, member.Name);
             if (!options.AllowDuplicateProperties && !seen.Add(member.Name))
             {
-                return new JsonException($"{field} is duplicated");
+                return new ContractRejection(OpsInvalidReasons.DuplicateField, field, $"{field} is duplicated");
             }
 
             if (!properties.TryGetValue(member.Name, out JsonPropertyInfo? property))
@@ -97,7 +98,7 @@ internal static class JsonContractDiagnostics
             {
                 if (!(property.AssociatedParameter?.IsNullable ?? property.IsSetNullable))
                 {
-                    return new JsonException($"{field} must not be null");
+                    return new ContractRejection(OpsInvalidReasons.WrongType, field, $"{field} must not be null");
                 }
 
                 continue;
@@ -152,7 +153,7 @@ internal static class JsonContractDiagnostics
             string field = Join(path, entry.Name);
             if (!seen.Add(entry.Name))
             {
-                return new JsonException($"{field} is duplicated");
+                return new ContractRejection(OpsInvalidReasons.DuplicateField, field, $"{field} is duplicated");
             }
 
             if (entry.Value.ValueKind != JsonValueKind.Null && Find(entry.Value, element, options, field) is { } mismatch)
@@ -169,7 +170,7 @@ internal static class JsonContractDiagnostics
         Type? underlying = Nullable.GetUnderlyingType(type);
         if (value.ValueKind == JsonValueKind.Null)
         {
-            return type.IsValueType && underlying is null ? new JsonException($"{path} must not be null") : null;
+            return type.IsValueType && underlying is null ? new ContractRejection(OpsInvalidReasons.WrongType, path, $"{path} must not be null") : null;
         }
 
         Type scalar = underlying ?? type;
@@ -195,7 +196,8 @@ internal static class JsonContractDiagnostics
 
     /// <summary>Rejects an object that omits the required field <paramref name="field"/>, naming the values it takes when they are fixed.</summary>
     public static JsonException MissingField(string field, string? allowedValues = null) =>
-        new($"the required field '{field}' is missing" + (allowedValues is null ? string.Empty : $"; it takes: {allowedValues}"));
+        new ContractRejection(OpsInvalidReasons.MissingField, field,
+            $"the required field '{field}' is missing" + (allowedValues is null ? string.Empty : $"; it takes: {allowedValues}"));
 
     private static bool Declares(JsonElement value, string name, StringComparer names) =>
         value.EnumerateObject().Any(member => names.Equals(member.Name, name));
@@ -215,7 +217,9 @@ internal static class JsonContractDiagnostics
     }
 
     private static JsonException Expected(string path, string kind) =>
-        path.Length == 0 ? new JsonException($"the document must be {kind}") : new ValueKindException(path, $"{path} must be {kind}");
+        path.Length == 0
+            ? new ContractRejection(OpsInvalidReasons.WrongType, field: null, $"the document must be {kind}")
+            : new ValueKindException(path, $"{path} must be {kind}");
 
     private static string Join(string path, string name) => path.Length == 0 ? name : $"{path}.{name}";
 }

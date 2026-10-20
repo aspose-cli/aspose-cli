@@ -38,11 +38,7 @@ public sealed class PageRange
     public static PageRange Parse(string text) =>
         TryParse(text, out PageRange? range, out string? reason)
             ? range
-            : throw CliException.Create(
-                ErrorCodes.OpsInvalid,
-                $"Invalid selection '{text}': {reason}.",
-                hint: Hint,
-                details: new System.Text.Json.Nodes.JsonObject { ["reason"] = reason });
+            : throw CliErrors.OperationValueInvalid($"Invalid selection '{text}': {reason}.", reason, Hint);
 
     /// <summary>Parses the value of a selection option, such as <c>--pages</c>.</summary>
     /// <param name="option">The option, such as <c>--pages</c>.</param>

@@ -121,7 +121,11 @@ public sealed record ReviewFinding
     [MinLength(1)]
     public required string Message { get; init; }
 
-    /// <summary>Where, in words people read, for example <c>page 3</c>.</summary>
+    /// <summary>
+    /// The affected item's address in the targets syntax <c>&lt;unit&gt;/&lt;address&gt;</c>, such as
+    /// <c>page/3</c>, <c>slide/2/shape/4</c> or <c>cell/Sheet1!A1</c>, with names escaped as targets escape
+    /// them; omitted when the finding concerns the whole document.
+    /// </summary>
     [MinLength(1)]
     public string? Location { get; init; }
 

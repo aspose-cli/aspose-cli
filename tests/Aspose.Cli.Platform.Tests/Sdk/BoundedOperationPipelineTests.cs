@@ -27,7 +27,9 @@ public sealed class BoundedOperationPipelineTests
         Assert.Equal(ErrorCodes.OpsInvalid, error.Code);
         Assert.Equal("op-0003", error.Details!["id"]!.GetValue<string>());
         Assert.Equal("set", error.Details["op"]!.GetValue<string>());
-        Assert.Equal("value must be at least 0", error.Details["reason"]!.GetValue<string>());
+        Assert.Equal("invalid-value", error.Details["reason"]!.GetValue<string>());
+        Assert.Equal("value", error.Details["field"]!.GetValue<string>());
+        Assert.EndsWith("is invalid: value must be at least 0", error.Message, StringComparison.Ordinal);
         Assert.Contains("aspose-cli schema v2/common/ops", error.Hint, StringComparison.Ordinal);
         Assert.Equal(["op-0001", "op-0002"], Catalog.Prepare(new TestBatch { Ops = [Set(1), Note()] })
             .Ops.Select(static op => op.Id));
@@ -54,7 +56,8 @@ public sealed class BoundedOperationPipelineTests
         Assert.Equal(ErrorCodes.OpsInvalid, error.Code);
         Assert.Equal("op-0001", error.Details!["id"]!.GetValue<string>());
         Assert.Equal(op, error.Details["op"]!.GetValue<string>());
-        Assert.Equal(reason, error.Details["reason"]!.GetValue<string>());
+        Assert.Equal("unknown-field", error.Details["reason"]!.GetValue<string>());
+        Assert.Equal(reason["unknown field '".Length..^1], error.Details["field"]!.GetValue<string>());
         Assert.Equal(allowed.Split(','), error.Details["available"]!.AsArray().Select(static item => item!.GetValue<string>()));
         Assert.Null(error.Details["allowedFields"]);
         Assert.Equal(suggestion, error.Details["suggestions"]?[0]?.GetValue<string>());
@@ -70,7 +73,7 @@ public sealed class BoundedOperationPipelineTests
         Assert.Equal(ErrorCodes.OpsInvalid, error.Code);
         Assert.Equal("op-0001", error.Details!["id"]!.GetValue<string>());
         Assert.Equal(["op-0001", "op-0003"], error.Details["errors"]!.AsArray().Select(static item => item!["id"]!.GetValue<string>()));
-        Assert.All(error.Details["errors"]!.AsArray(), item => Assert.Equal("value must be at least 0", item!["reason"]!.GetValue<string>()));
+        Assert.All(error.Details["errors"]!.AsArray(), item => Assert.Equal("invalid-value", item!["reason"]!.GetValue<string>()));
         Assert.Equal("2 operations are invalid, each listed in details.errors; the first: Operation op-0001 (set) is invalid: value must be at least 0",
             error.Message);
         Assert.Null(Assert.Throws<CliException>(() => Catalog.Prepare(new TestBatch { Ops = [Set(-1)] })).Details!["errors"]);
@@ -87,9 +90,11 @@ public sealed class BoundedOperationPipelineTests
         Assert.Equal("op-0001", error.Details!["id"]!.GetValue<string>());
         JsonArray errors = error.Details["errors"]!.AsArray();
         Assert.Equal(["op-0001", "op-0003", "op-0004"], errors.Select(static item => item!["id"]!.GetValue<string>()));
-        Assert.Equal("value must be at least 0", errors[0]!["reason"]!.GetValue<string>());
+        Assert.Equal("invalid-value", errors[0]!["reason"]!.GetValue<string>());
         Assert.Equal("set", errors[1]!["op"]!.GetValue<string>());
-        Assert.Equal("value must be a whole number", errors[1]!["reason"]!.GetValue<string>());
+        Assert.Equal("wrong-type", errors[1]!["reason"]!.GetValue<string>());
+        Assert.Equal("value", errors[1]!["field"]!.GetValue<string>());
+        Assert.Equal("unknown-op", errors[2]!["reason"]!.GetValue<string>());
         Assert.Equal(["set"], errors[2]!["suggestions"]!.AsArray().Select(static item => item!.GetValue<string>()));
     }
 
@@ -117,7 +122,8 @@ public sealed class BoundedOperationPipelineTests
         Assert.Equal("op-0001", error.Details!["id"]!.GetValue<string>());
         // The op as the entry wrote it, so the caller finds the entry by either.
         Assert.Equal(name, error.Details["op"]!.GetValue<string>());
-        Assert.Equal($"unknown op '{name}'", error.Details["reason"]!.GetValue<string>());
+        Assert.Equal("unknown-op", error.Details["reason"]!.GetValue<string>());
+        Assert.Equal("op", error.Details["field"]!.GetValue<string>());
         string[] available = [.. error.Details["available"]!.AsArray().Select(static item => item!.GetValue<string>())];
         Assert.Equal(Catalog.Names.Order(StringComparer.Ordinal), available.Order(StringComparer.Ordinal));
         Assert.Equal($"Operation op-0001 is invalid: unknown op '{name}'. Must be one of: {string.Join(", ", available)}", error.Message);
@@ -166,7 +172,9 @@ public sealed class BoundedOperationPipelineTests
         Assert.Equal(ErrorCodes.OpsInvalid, error.Code);
         Assert.Equal("op-0001", error.Details!["id"]!.GetValue<string>());
         Assert.Equal("place", error.Details["op"]!.GetValue<string>());
-        Assert.Equal(reason, error.Details["reason"]!.GetValue<string>());
+        Assert.Equal("wrong-type", error.Details["reason"]!.GetValue<string>());
+        Assert.Equal(reason[..reason.IndexOf(' ', StringComparison.Ordinal)], error.Details["field"]!.GetValue<string>());
+        Assert.EndsWith($"is invalid: {reason}", error.Message, StringComparison.Ordinal);
         Assert.Equal(allowed.Split(','), error.Details["available"]!.AsArray().Select(static item => item!.GetValue<string>()));
         Assert.Null(error.Details["suggestions"]);
     }
@@ -181,7 +189,8 @@ public sealed class BoundedOperationPipelineTests
 
         Assert.Equal(ErrorCodes.OpsInvalid, error.Code);
         Assert.Null(error.Details!["id"]);
-        Assert.Equal(reason, error.Details["reason"]!.GetValue<string>());
+        Assert.Equal("unknown-field", error.Details["reason"]!.GetValue<string>());
+        Assert.Equal(reason["unknown field '".Length..^1], error.Details["field"]!.GetValue<string>());
         Assert.Equal(["schema", "schemaVersion", "ifMatch", "ops"],
             error.Details["available"]!.AsArray().Select(static item => item!.GetValue<string>()));
         Assert.Equal(suggestion, error.Details["suggestions"]?[0]?.GetValue<string>());
@@ -194,7 +203,8 @@ public sealed class BoundedOperationPipelineTests
         CliException error = Assert.Throws<CliException>(() => Catalog.Parse<TestBatch>(
             "{\"ops\":[\n  {\"op\":\"note\",\"text\":\"\\d\"}\n]}", TestContracts.Json));
 
-        string reason = error.Details!["reason"]!.GetValue<string>();
+        Assert.Equal("invalid-json", error.Details!["reason"]!.GetValue<string>());
+        string reason = error.Message["The operation document is invalid: ".Length..];
         Assert.StartsWith("the document is not valid JSON: 'd' is an invalid escapable character", reason, StringComparison.Ordinal);
         Assert.EndsWith("(line 2, byte 25)", reason, StringComparison.Ordinal);
         Assert.DoesNotContain("LineNumber", reason, StringComparison.Ordinal);
@@ -235,7 +245,8 @@ public sealed class BoundedOperationPipelineTests
         Assert.DoesNotContain("in this mode", error.Message + error.Hint, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("delete the comma", error.Message, StringComparison.Ordinal);
         Assert.Contains("delete the comma", error.Hint, StringComparison.Ordinal);
-        Assert.Matches(@"\(line 1, byte \d+\)$", error.Details!["reason"]!.GetValue<string>());
+        Assert.Matches(@"\(line 1, byte \d+\)$", error.Message);
+        Assert.Equal("invalid-json", error.Details!["reason"]!.GetValue<string>());
     }
 
     [Fact]
@@ -245,7 +256,8 @@ public sealed class BoundedOperationPipelineTests
             "Secret-7c2a\n{\"ops\":[]}", TestContracts.Json, quotesContent: false));
 
         Assert.Equal(ErrorCodes.OpsInvalid, error.Code);
-        Assert.Equal("the document is not valid JSON (line 1, byte 1)", error.Details!["reason"]!.GetValue<string>());
+        Assert.Equal("The operation document is invalid: the document is not valid JSON (line 1, byte 1)", error.Message);
+        Assert.Equal("invalid-json", error.Details!["reason"]!.GetValue<string>());
         Assert.DoesNotContain("'S'", error.Message, StringComparison.Ordinal);
     }
 
@@ -257,7 +269,9 @@ public sealed class BoundedOperationPipelineTests
         CliException error = Assert.Throws<CliException>(() => Catalog.Parse<TestBatch>(document, TestContracts.Json));
 
         Assert.Equal(ErrorCodes.OpsInvalid, error.Code);
-        Assert.Equal("the document must be an object with ops or the bare array of operations", error.Details!["reason"]!.GetValue<string>());
+        Assert.Equal("The operation document is invalid: the document must be an object with ops or the bare array of operations", error.Message);
+        Assert.Equal("wrong-type", error.Details!["reason"]!.GetValue<string>());
+        Assert.Null(error.Details["field"]);
     }
 
     [Fact]

@@ -195,11 +195,12 @@ public sealed class BoundedEditCommandTests : IDisposable
     }
 
     [Theory]
-    [InlineData("""{"ops":[{"op":"set","value":1},{"op":"set","value":1,"extra":true}]}""", 1, "set", "unknown field 'extra'")]
-    [InlineData("""{"ops":[{"op":"set","value":"one"}]}""", 0, "set", "value must be a whole number")]
-    [InlineData("""{"ops":[{"op":"set","value":1,"value":2}]}""", 0, "set", "value is duplicated")]
-    [InlineData("""{"ops":[{"op":"link","path":null}]}""", 0, "link", "path must not be null")]
-    public void Read_ExplainsARejectedOperationInWireTerms(string document, int index, string op, string reason)
+    [InlineData("""{"ops":[{"op":"set","value":1},{"op":"set","value":1,"extra":true}]}""", 1, "set", "unknown field 'extra'", "unknown-field", "extra")]
+    [InlineData("""{"ops":[{"op":"set","value":"one"}]}""", 0, "set", "value must be a whole number", "wrong-type", "value")]
+    [InlineData("""{"ops":[{"op":"set","value":1,"value":2}]}""", 0, "set", "value is duplicated", "duplicate-field", "value")]
+    [InlineData("""{"ops":[{"op":"link","path":null}]}""", 0, "link", "path must not be null", "wrong-type", "path")]
+    [InlineData("""{"ops":[{"op":"set"}]}""", 0, "set", "the required field 'value' is missing", "missing-field", "value")]
+    public void Read_ExplainsARejectedOperationInWireTerms(string document, int index, string op, string explanation, string reason, string field)
     {
         CliException error = Assert.Throws<CliException>(() => Read(Plain(), "--ops", document));
 
@@ -207,30 +208,35 @@ public sealed class BoundedEditCommandTests : IDisposable
         Assert.Equal($"op-{index + 1:D4}", error.Details!["id"]!.GetValue<string>());
         Assert.Equal(op, error.Details["op"]!.GetValue<string>());
         Assert.Equal(reason, error.Details["reason"]!.GetValue<string>());
+        Assert.Equal(field, error.Details["field"]!.GetValue<string>());
+        Assert.Contains($"is invalid: {explanation}", error.Message, StringComparison.Ordinal);
         Assert.DoesNotContain(nameof(BoundedEditCommandTests), error.Message, StringComparison.Ordinal);
     }
 
     [Theory]
-    [InlineData("""{"ops":[{"op":"sett","value":1}]}""", "unknown op 'sett'", "sett")]
-    [InlineData("""{"ops":[5]}""", "every op must be an object", null)]
-    public void Read_NamesAnEntryWithoutAKnownOperationByItsIdAndTheOpItWrote(string document, string reason, string? op)
+    [InlineData("""{"ops":[{"op":"sett","value":1}]}""", "unknown op 'sett'", "sett", "unknown-op")]
+    [InlineData("""{"ops":[5]}""", "every op must be an object", null, "wrong-type")]
+    public void Read_NamesAnEntryWithoutAKnownOperationByItsIdAndTheOpItWrote(string document, string explanation, string? op, string reason)
     {
         CliException error = Assert.Throws<CliException>(() => Read(Plain(), "--ops", document));
 
         Assert.Equal("op-0001", error.Details!["id"]!.GetValue<string>());
         Assert.Equal(op, error.Details["op"]?.GetValue<string>());
-        Assert.StartsWith(reason, error.Details["reason"]!.GetValue<string>(), StringComparison.Ordinal);
+        Assert.Equal(reason, error.Details["reason"]!.GetValue<string>());
+        Assert.Contains($"is invalid: {explanation}", error.Message, StringComparison.Ordinal);
     }
 
     [Theory]
-    [InlineData("""{"ops":{"op":"set","value":1}}""", "ops must be an array")]
-    [InlineData("""{"schemaVersion":2}""", "the required field 'ops' is missing")]
-    public void Read_ExplainsARejectedEnvelopeInWireTerms(string document, string reason)
+    [InlineData("""{"ops":{"op":"set","value":1}}""", "ops must be an array", "wrong-type")]
+    [InlineData("""{"schemaVersion":2}""", "the required field 'ops' is missing", "missing-field")]
+    public void Read_ExplainsARejectedEnvelopeInWireTerms(string document, string explanation, string reason)
     {
         CliException error = Assert.Throws<CliException>(() => Read(Plain(), "--ops", document));
 
         Assert.Equal(ErrorCodes.OpsInvalid, error.Code);
         Assert.Equal(reason, error.Details!["reason"]!.GetValue<string>());
+        Assert.Equal("ops", error.Details["field"]!.GetValue<string>());
+        Assert.Equal($"The operation document is invalid: {explanation}", error.Message);
         Assert.DoesNotContain(nameof(TestBatch), error.Message, StringComparison.Ordinal);
     }
 

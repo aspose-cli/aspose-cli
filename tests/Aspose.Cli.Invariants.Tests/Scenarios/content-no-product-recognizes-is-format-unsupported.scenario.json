@@ -1,0 +1,24 @@
+{
+  "name": "a product command, review and review --product refuse one file with one code: content no product recognizes under an extension no product reads, or an xps the CLI only writes, is FORMAT_UNSUPPORTED; under an extension a product reads, even only when selected (.html), it is FILE_CORRUPT; a PDF named .xlsx is FORMAT_MISMATCH naming pdf",
+  "files": {
+    "t.foo": { "text": "hi" },
+    "sales.xps": { "fixture": "cells.xps" },
+    "damaged.xlsx": { "text": "hi" },
+    "t.html": { "base64": "AQJnYXJiYWdl/w==" },
+    "x.xlsx": { "fixture": "pdf.pdf" }
+  },
+  "steps": [
+    { "args": ["cells", "inspect", "t.foo"], "expect": { "exitCode": 6, "error": "FORMAT_UNSUPPORTED", "files": { "nothingWritten": true } } },
+    { "args": ["review", "t.foo", "--out", "review"], "expect": { "exitCode": 6, "error": "FORMAT_UNSUPPORTED", "files": { "nothingWritten": true } } },
+    { "args": ["cells", "inspect", "sales.xps"], "expect": { "exitCode": 6, "error": "FORMAT_UNSUPPORTED", "files": { "nothingWritten": true } } },
+    { "args": ["review", "sales.xps", "--out", "review"], "expect": { "exitCode": 6, "error": "FORMAT_UNSUPPORTED", "files": { "nothingWritten": true } } },
+    { "args": ["cells", "inspect", "damaged.xlsx"], "expect": { "exitCode": 3, "error": "FILE_CORRUPT", "files": { "nothingWritten": true } } },
+    { "args": ["review", "damaged.xlsx", "--out", "review"], "expect": { "exitCode": 3, "error": "FILE_CORRUPT", "files": { "nothingWritten": true } } },
+    { "args": ["review", "damaged.xlsx", "--product", "cells", "--out", "review"], "expect": { "exitCode": 3, "error": "FILE_CORRUPT", "files": { "nothingWritten": true } } },
+    { "args": ["cells", "inspect", "t.html"], "expect": { "exitCode": 3, "error": "FILE_CORRUPT", "files": { "nothingWritten": true } } },
+    { "args": ["review", "t.html", "--out", "review"], "expect": { "exitCode": 3, "error": "FILE_CORRUPT", "files": { "nothingWritten": true } } },
+    { "args": ["review", "t.html", "--product", "cells", "--out", "review"], "expect": { "exitCode": 3, "error": "FILE_CORRUPT", "files": { "nothingWritten": true } } },
+    { "args": ["cells", "inspect", "x.xlsx"], "expect": { "exitCode": 6, "error": "FORMAT_MISMATCH", "json": [{ "path": "error.details.detected", "contains": "pdf" }], "files": { "nothingWritten": true } } },
+    { "args": ["review", "x.xlsx", "--product", "cells", "--out", "review"], "expect": { "exitCode": 6, "error": "FORMAT_MISMATCH", "json": [{ "path": "error.details.detected", "contains": "pdf" }], "files": { "nothingWritten": true } } }
+  ]
+}

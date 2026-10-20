@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Text.Json.Nodes;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Licensing;
 
@@ -55,7 +56,8 @@ public static class EnvelopeParts
 
     /// <summary>
     /// Discloses a list inside a result that holds only its first <paramref name="returned"/>
-    /// of <paramref name="total"/> entries, so no result is cut short silently.
+    /// of <paramref name="total"/> entries, so no result is cut short silently. <c>details.list</c>
+    /// names the list, <c>details.limit</c> the entries it holds and <c>details.actual</c> those that exist.
     /// </summary>
     /// <param name="list">The result field that was capped, e.g. <c>outline</c>.</param>
     /// <param name="returned">How many entries the list holds.</param>
@@ -68,7 +70,13 @@ public static class EnvelopeParts
         return new Warning(WarningCodes.ListTruncated, $"'{list}' lists the first {returned} of {total} entries.")
         {
             Hint = hint,
-            Location = list,
+            Details = new JsonObject
+            {
+                ["list"] = list,
+                ["limit"] = returned,
+                ["actual"] = total,
+                ["unit"] = "entries",
+            },
         };
     }
 
@@ -85,7 +93,7 @@ public static class EnvelopeParts
                 Hint = "The kept backup stays the state before the first backed-up edit. To keep the version this edit "
                     + "replaced as well, copy the file before the next in-place edit, or move the old backup aside so "
                     + "--backup creates a new one. Tell the user which version the backup holds.",
-                Location = "backup",
+                Details = new JsonObject { ["path"] = backup.Path },
             }]
             : null;
 

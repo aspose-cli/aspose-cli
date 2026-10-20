@@ -236,7 +236,7 @@ public sealed class AtomicOutputSetWriterTests
         CliException error = Assert.Throws<CliException>(() => set.Commit());
 
         Assert.Equal(ErrorCodes.OutputPublicationPartial, error.Code);
-        Assert.Equal(ExitCode.PartialFailure, error.ExitCode);
+        Assert.Equal(ExitCode.OutputError, error.ExitCode);
         Assert.False(error.Details!["recoveryComplete"]!.GetValue<bool>());
         JsonArray targets = Assert.IsType<JsonArray>(error.Details["targets"]);
         JsonObject firstState = Assert.IsType<JsonObject>(targets[0]);

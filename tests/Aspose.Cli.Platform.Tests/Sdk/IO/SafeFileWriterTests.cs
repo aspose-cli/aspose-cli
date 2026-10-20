@@ -126,6 +126,9 @@ public sealed class SafeFileWriterTests : IDisposable
         Warning warning = Assert.Single(EnvelopeParts.BackupWarnings(result.Backup)!);
         Assert.Equal(WarningCodes.BackupPredatesEdit, warning.Code);
         Assert.Contains(backup, warning.Message, StringComparison.Ordinal);
+        // A file is no target address: the backup is named by details.path, not by location.
+        Assert.Null(warning.Location);
+        Assert.Equal(result.Backup.Path, warning.Details!["path"]!.GetValue<string>());
     }
 
     [Fact]
@@ -317,9 +320,8 @@ public sealed class SafeFileWriterTests : IDisposable
                 _ => throw new IOException(privateReason)));
 
         Assert.Equal(ErrorCodes.OutputUnwritable, error.Code);
-        Assert.Equal(
-            "the staged output could not be written",
-            error.Details!["reason"]!.GetValue<string>());
+        Assert.Contains("(the staged output could not be written)", error.Message, StringComparison.Ordinal);
+        Assert.Null(error.Details!["reason"]);
         Assert.DoesNotContain(privateReason, error.Message, StringComparison.Ordinal);
     }
 

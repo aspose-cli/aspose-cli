@@ -8,7 +8,8 @@ namespace Aspose.Cli.Sdk.Contracts;
 /// the error schema publishes for it. Budgets state <c>limit</c>, <c>actual</c> and <c>unit</c>;
 /// collections state <c>available</c> and <c>suggestions</c>; an operation error states the
 /// operation's <c>id</c> and <c>op</c>; a positional argument is <c>argument</c>, an option
-/// <c>option</c>. A details object holds no key outside it and no null value.
+/// <c>option</c>. A details object holds no key outside it and no null value. A key whose
+/// values are tokens publishes their pattern (<see cref="Patterns"/>).
 /// </summary>
 public static class ErrorDetailKeys
 {
@@ -17,8 +18,8 @@ public static class ErrorDetailKeys
     {
         ("actual", "The measured amount of a budget, in unit."),
         ("actualExists", "Whether the output existed when publication found it changed."),
-        ("actualSha256", "The SHA-256 of the output publication found."),
-        ("actualSizeBytes", "The size of the output publication found."),
+        ("actualSha256", "The SHA-256 the file had when the command found it changed."),
+        ("actualSizeBytes", "The size the file had when the command found it changed."),
         ("argument", "The positional argument the error is about, such as file."),
         ("available", "The names or values that exist or are accepted, at most 50."),
         ("availableCount", "How many names or values exist or are accepted."),
@@ -30,10 +31,9 @@ public static class ErrorDetailKeys
         ("dpi", "The resolution of a render, in dots per inch."),
         ("engineMessage", "The document engine's own message."),
         ("errors", "Every problem, when there are several."),
-        ("expectedBytes", "The size an input had when it was admitted."),
         ("expectedExists", "Whether the output existed when the command read it."),
         ("expectedSha256", "The SHA-256 the file had when the command read it."),
-        ("expectedSizeBytes", "The size the output had when the command read it."),
+        ("expectedSizeBytes", "The size the file had when the command read it."),
         ("extension", "The file extension the error is about."),
         ("feature", "The feature the product or format does not support."),
         ("feed", "The release feed the update read."),
@@ -43,8 +43,7 @@ public static class ErrorDetailKeys
         ("id", "The id of the failing operation, as its applied[] entry states it."),
         ("limit", "The budget's limit, in unit."),
         ("line", "The line of a text input the error is about."),
-        ("observedBytes", "The size an input had when it was read again."),
-        ("observedSha256", "The SHA-256 an input had when it was read again."),
+        ("list", "The result field holding a list that was capped, such as outline."),
         ("offset", "The byte offset of the problem in an input."),
         ("op", "The op name of the failing operation."),
         ("operation", "The product feature the error is about."),
@@ -59,14 +58,13 @@ public static class ErrorDetailKeys
         ("profile", "The conformance profile the error is about."),
         ("quiescenceConfirmed", "Whether the stopped worker was confirmed to have ended."),
         ("range", "The range or selection as the caller wrote it."),
-        ("reason", "Why the value or file was refused."),
+        ("reason", "Why the value or file was refused, as a short kebab-case token such as unknown-field; the message explains it."),
         ("recoveryComplete", "Whether every publication target was restored."),
         ("requested", "The name, number, value or path as the caller wrote it."),
         ("resource", "The budget's resource kind."),
         ("sample", "An excerpt of the input the error is about."),
         ("sheet", "The worksheet the error is about."),
         ("source", "The source of a value, such as a variable or file."),
-        ("stage", "The stage of the worker that failed."),
         ("subject", "What was looked up, such as sheet, page or file."),
         ("suggestions", "The accepted names closest to the request, best first."),
         ("target", "The target the error is about."),
@@ -76,6 +74,15 @@ public static class ErrorDetailKeys
         ("variable", "The environment variable the error is about."),
         ("width", "The width of a render, in pixels."),
     }.ToFrozenDictionary(static key => key.Key, static key => key.Description, StringComparer.Ordinal);
+
+    /// <summary>
+    /// The pattern of each key whose value is a token, never words: <c>reason</c> is kebab-case,
+    /// so a caller can branch on it while the message explains it.
+    /// </summary>
+    public static FrozenDictionary<string, string> Patterns { get; } = new Dictionary<string, string>(StringComparer.Ordinal)
+    {
+        ["reason"] = "^[a-z0-9]+(-[a-z0-9]+)*$",
+    }.ToFrozenDictionary(StringComparer.Ordinal);
 }
 
 /// <summary>
@@ -95,6 +102,18 @@ public sealed class ErrorDetailsAttribute : ValueConstraintAttribute
         schema["additionalProperties"] = false;
         schema["properties"] = new JsonObject(
             ErrorDetailKeys.All.OrderBy(static key => key.Key, StringComparer.Ordinal)
-                .Select(static key => KeyValuePair.Create(key.Key, (JsonNode?)new JsonObject { ["description"] = key.Value })));
+                .Select(static key => KeyValuePair.Create(key.Key, (JsonNode?)Describe(key.Key, key.Value))));
+    }
+
+    private static JsonObject Describe(string key, string description)
+    {
+        var property = new JsonObject { ["description"] = description };
+        if (ErrorDetailKeys.Patterns.TryGetValue(key, out string? pattern))
+        {
+            property["type"] = "string";
+            property["pattern"] = pattern;
+        }
+
+        return property;
     }
 }

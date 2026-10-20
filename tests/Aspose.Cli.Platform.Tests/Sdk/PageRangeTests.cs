@@ -73,7 +73,8 @@ public sealed class PageRangeTests
         CliException error = Assert.Throws<CliException>(() => PageRange.Parse("1-x"));
 
         Assert.Equal(ErrorCodes.OpsInvalid, error.Code);
-        Assert.Equal("'x' is not a positive 1-based number", error.Details!["reason"]!.GetValue<string>());
+        Assert.Equal("invalid-value", error.Details!["reason"]!.GetValue<string>());
+        Assert.Equal("'x' is not a positive 1-based number", error.Explanation);
     }
 
     [Fact]

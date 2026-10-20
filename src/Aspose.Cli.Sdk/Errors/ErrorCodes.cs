@@ -33,10 +33,16 @@ public static partial class ErrorCodes
     /// <summary>The provided password does not open the input file.</summary>
     public static readonly ErrorCode PasswordInvalid = new("PASSWORD_INVALID", ExitCode.InputError);
 
-    /// <summary>The input file exceeds the configured size budget.</summary>
+    /// <summary>
+    /// The input exceeds the <c>--max-input-bytes</c> budget, whether its size showed it before
+    /// reading or its bytes did while they were read.
+    /// </summary>
     public static readonly ErrorCode FileTooLarge = new("FILE_TOO_LARGE", ExitCode.InputError);
 
-    /// <summary>A bounded input resource exceeded its versioned safety limit.</summary>
+    /// <summary>
+    /// A bounded resource of reading or processing the input, other than the input's bytes
+    /// (<c>FILE_TOO_LARGE</c>), exceeded its safety limit.
+    /// </summary>
     public static readonly ErrorCode InputBudgetExceeded =
         new("INPUT_BUDGET_EXCEEDED", ExitCode.InputError);
 
@@ -97,6 +103,15 @@ public static partial class ErrorCodes
     /// <summary>A multi-file publication failed but verified recovery completed.</summary>
     public static readonly ErrorCode OutputPublicationFailed = new("OUTPUT_PUBLICATION_FAILED", ExitCode.OutputError);
 
+    /// <summary>A failed multi-file publication could not be fully recovered.</summary>
+    public static readonly ErrorCode OutputPublicationPartial = new("OUTPUT_PUBLICATION_PARTIAL", ExitCode.OutputError);
+
+    /// <summary>
+    /// What the command writes exceeded a safety limit of its output, such as its bytes or the
+    /// number of files of one output set.
+    /// </summary>
+    public static readonly ErrorCode OutputBudgetExceeded = new("OUTPUT_BUDGET_EXCEEDED", ExitCode.OutputError);
+
     /// <summary>The requested live-preview port is already bound by another process.</summary>
     public static readonly ErrorCode LoopbackPortInUse = new("LOOPBACK_PORT_IN_USE", ExitCode.OutputError);
 
@@ -111,9 +126,15 @@ public static partial class ErrorCodes
 
     // -- Format problems (exit 6) --------------------------------------------
 
-    /// <summary>The requested format id is unknown or not supported here.</summary>
+    /// <summary>
+    /// The requested format id is unknown or not supported here, or an input is in no format a
+    /// product reads: its content matches none, or its format is one the CLI only writes.
+    /// </summary>
     public static readonly ErrorCode FormatUnsupported = new("FORMAT_UNSUPPORTED", ExitCode.FormatError);
-    /// <summary>A known extension disagrees with a different strong content match.</summary>
+    /// <summary>
+    /// The extension names one product's format and the content looks like another's. Content
+    /// no product recognizes, or a format the CLI only writes, is <c>FORMAT_UNSUPPORTED</c>.
+    /// </summary>
     public static readonly ErrorCode FormatMismatch = new("FORMAT_MISMATCH", ExitCode.FormatError);
     /// <summary>
     /// The input can be read more than one way and the caller must choose: several products
@@ -138,17 +159,10 @@ public static partial class ErrorCodes
     /// <summary>The operation exceeded the configured <c>--timeout</c>.</summary>
     public static readonly ErrorCode OperationTimeout = new("OPERATION_TIMEOUT", ExitCode.OperationTimeout);
 
-    // -- Partial publication (exit 8) ----------------------------------------
-
-    /// <summary>A failed multi-file publication could not be fully recovered.</summary>
-    public static readonly ErrorCode OutputPublicationPartial = new(
-        "OUTPUT_PUBLICATION_PARTIAL",
-        ExitCode.PartialFailure);
-
     /// <summary>A timed-out worker process tree could not be confirmed stopped.</summary>
-    public static readonly ErrorCode WorkerTerminationFailed = new(
-        "WORKER_TERMINATION_FAILED",
-        ExitCode.PartialFailure);
+    public static readonly ErrorCode WorkerTerminationFailed = new("WORKER_TERMINATION_FAILED", ExitCode.OperationTimeout);
+
+    // No error exits 8: it means only that a printed result did not pass.
 
     // -- Internal (exit 1) ----------------------------------------------------
 
@@ -186,6 +200,8 @@ public static partial class ErrorCodes
         OutputUnwritable,
         OutputConflict,
         OutputPublicationFailed,
+        OutputPublicationPartial,
+        OutputBudgetExceeded,
         LoopbackPortInUse,
         LoopbackListenerUnavailable,
         AppBusy,
@@ -197,7 +213,6 @@ public static partial class ErrorCodes
         LicenseInvalid,
         EvaluationLimit,
         OperationTimeout,
-        OutputPublicationPartial,
         WorkerTerminationFailed,
         Internal,
     ];

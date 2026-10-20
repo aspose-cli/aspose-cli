@@ -270,7 +270,7 @@ public sealed partial class ProductViewDefinition
         }
         ReviewFinding finding = ReviewChecks.FontsMissingOrSubstituted(productId).Finding(
             $"{unavailable.Length} used font(s) are unavailable or substituted: {summary}.",
-            "document",
+            null,
             "Install the required fonts or deliberately replace them, then save and run review again in a new directory.");
         return assessment with
         {

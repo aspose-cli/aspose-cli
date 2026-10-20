@@ -4,6 +4,7 @@ using Aspose.Cli.Host.Invocation;
 using Aspose.Cli.Host.LocalServices;
 using Aspose.Cli.Sdk;
 using Aspose.Cli.Sdk.Errors;
+using Aspose.Cli.Sdk.IO.Budgets;
 
 namespace Aspose.Cli.Host.Mcp;
 
@@ -20,6 +21,7 @@ internal sealed class McpCommandRunner
     private readonly string _workingDirectory;
     private readonly HostContext _host;
     private readonly Func<ProcessStartInfo> _startInfoFactory;
+    private readonly ChildRunner? _runChild;
 
     public McpCommandRunner(HostContext host, GlobalValues? inherited = null)
         : this(host, CreateStartInfo, inherited)
@@ -28,9 +30,10 @@ internal sealed class McpCommandRunner
 
     internal McpCommandRunner(
         HostContext host, Func<ProcessStartInfo> startInfoFactory,
-        GlobalValues? inherited = null, InvocationParser? parser = null)
+        GlobalValues? inherited = null, InvocationParser? parser = null, ChildRunner? runChild = null)
     {
         _host = host;
+        _runChild = runChild;
         _parser = parser ?? host.Parser;
         _startInfoFactory = startInfoFactory ?? throw new ArgumentNullException(nameof(startInfoFactory));
         _workingDirectory = Path.GetFullPath(inherited?.WorkDir ?? Directory.GetCurrentDirectory());
@@ -142,11 +145,13 @@ internal sealed class McpCommandRunner
             InvocationProcessResult result;
             try
             {
-                result = await TimeoutWorkerSupervisor.ExecuteAsync(_host, args, invocation,
-                    TimeSpan.FromSeconds(effectiveSeconds), cancellationToken, _startInfoFactory,
-                    _inherited, redirectInput: true, stdin).ConfigureAwait(false);
+                using OperationDeadline deadline = OperationDeadline.Start(TimeSpan.FromSeconds(effectiveSeconds), cancellationToken);
+                result = await TimeoutWorkerSupervisor.ExecuteAsync(_host, args, invocation, deadline, _startInfoFactory,
+                    _inherited, redirectInput: true, stdin, _runChild).ConfigureAwait(false);
             }
-            catch (CliException exception) when (exception.ExitCode == ExitCode.OperationTimeout)
+            // Only the timeout itself becomes the tool's timeout; a worker that could not be
+            // confirmed stopped, which exits 9 too, keeps its error envelope and details.pid.
+            catch (CliException exception) when (exception.Code == ErrorCodes.OperationTimeout)
             { throw new McpCommandException($"The CLI command exceeded the {effectiveSeconds}-second timeout."); }
             catch (CliException exception) { result = TimeoutWorkerSupervisor.RenderError(_host, args, exception); }
             catch (ChildOutputLimitException exception) { throw new McpCommandException(exception.Message); }

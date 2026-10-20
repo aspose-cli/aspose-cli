@@ -162,8 +162,8 @@ public sealed class ResourceBudgetLedgerTests
             CliException error = Assert.Throws<CliException>(
                 () => budgets.Inputs.OpenFile(path));
             Assert.Equal(ErrorCodes.InputChanged, error.Code);
-            Assert.Equal(3L, error.Details!["expectedBytes"]!.GetValue<long>());
-            Assert.Equal(4L, error.Details["observedBytes"]!.GetValue<long>());
+            Assert.Equal(3L, error.Details!["expectedSizeBytes"]!.GetValue<long>());
+            Assert.Equal(4L, error.Details["actualSizeBytes"]!.GetValue<long>());
         }
         finally
         {
@@ -215,7 +215,7 @@ public sealed class ResourceBudgetLedgerTests
                     path,
                     overwrite: true,
                     temporary => File.WriteAllBytes(temporary, [2, 3])));
-            Assert.Equal(ErrorCodes.InputBudgetExceeded, error.Code);
+            Assert.Equal(ErrorCodes.OutputBudgetExceeded, error.Code);
             Assert.Equal(
                 ResourceBudgetKinds.OutputBytes,
                 error.Details!["resource"]!.GetValue<string>());

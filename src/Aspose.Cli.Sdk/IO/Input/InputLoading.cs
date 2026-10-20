@@ -198,7 +198,7 @@ public static class InputFailures
     /// <summary>
     /// An auxiliary input file, such as a signing certificate, whose name carries the extension
     /// of none of the formats in <paramref name="accepted"/>: <c>FORMAT_UNSUPPORTED</c> for its
-    /// extension, as <see cref="CliErrors.FormatUnsupported"/> reports a format id, with their ids.
+    /// extension, as <see cref="CliErrors.FormatUnsupported(string, IReadOnlyList{string})"/> reports a format id, with their ids.
     /// </summary>
     public static CliException ExtensionUnsupported(string path, IReadOnlyList<FormatDescriptor> accepted)
     {

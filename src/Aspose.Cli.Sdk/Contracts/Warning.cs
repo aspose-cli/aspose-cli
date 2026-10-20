@@ -37,7 +37,11 @@ public sealed record Warning
     [MinLength(1)]
     public string? Docs { get; init; }
 
-    /// <summary>Stable product-owned address of the affected item, when known.</summary>
+    /// <summary>
+    /// The affected item's address in the targets syntax <c>&lt;unit&gt;/&lt;address&gt;</c>, such as
+    /// <c>page/3</c>, <c>slide/2/shape/4</c> or <c>cell/Sheet1!A1</c>, with names escaped as targets escape
+    /// them; omitted when the condition concerns no single item, such as the whole document.
+    /// </summary>
     [MinLength(1)]
     public string? Location { get; init; }
 
@@ -87,7 +91,7 @@ public static class WarningCodes
     /// <summary>The input was encrypted and the output is not: its format cannot hold the encryption.</summary>
     public static readonly WarningCode EncryptionRemoved = new("ENCRYPTION_REMOVED");
 
-    /// <summary>A list inside a result was capped; the warning's location names the list.</summary>
+    /// <summary>A list inside a result was capped; <c>details.list</c> names the list.</summary>
     public static readonly WarningCode ListTruncated = new("LIST_TRUNCATED");
 
     /// <summary>An in-place edit kept an existing backup that holds an earlier version than the file it replaced.</summary>

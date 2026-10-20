@@ -14,7 +14,10 @@ namespace Aspose.Cli.Host.Invocation;
 /// the <c>FORMAT_MISMATCH</c> that generic routing reports for the same file, names that product in
 /// <c>details.detected</c>, says so in its message, and its hint points to that product's
 /// command. The product's own details stay; content no product recognizes, or in a format this
-/// product reads, leaves the error unchanged. A command with several inputs is explained only when the product names the
+/// product reads, leaves the error unchanged, except where generic routing reports the same
+/// file as <c>FORMAT_UNSUPPORTED</c>: the product's error then takes that code and keeps its
+/// message, hint and details, which speak in the product's terms. A command with
+/// several inputs is explained only when the product names the
 /// failing file in <c>details.path</c>.
 /// </summary>
 internal static class CorruptInputDetection
@@ -46,7 +49,12 @@ internal static class CorruptInputDetection
             .ToArray();
         if (detected.Length == 0)
         {
-            return exception;
+            // Only a document the command takes as an argument is compared with generic routing;
+            // a file an option names, such as an image of 'pdf create --from-images', is no
+            // document a product routes, so a damaged one stays a corrupt input.
+            return IsDocumentArgument(path, parseResult, globals) && RoutedAsUnsupported(path, catalog)
+                ? CliErrors.FormatUnsupported(error)
+                : exception;
         }
 
         return CliErrors.FormatMismatch(
@@ -55,6 +63,26 @@ internal static class CorruptInputDetection
             productId,
             [.. detected.Select(static item => item.ProductId)],
             Hint(detected, productCommand!, parseResult.CommandResult, path));
+    }
+
+    /// <summary>
+    /// Whether generic routing refuses the file as <c>FORMAT_UNSUPPORTED</c>: content no product
+    /// recognizes under an extension no product owns as an input, or a format the CLI only
+    /// writes, such as <c>.xps</c>. A product command and <c>review</c> then refuse the file with
+    /// one code; under an extension a product owns as an input, routing too reports the
+    /// product's damaged file.
+    /// </summary>
+    private static bool RoutedAsUnsupported(string path, ProductCatalog catalog)
+    {
+        try
+        {
+            _ = new ProductFileRouter(catalog).ResolveAsync(new FileRouteRequest(path)).AsTask().GetAwaiter().GetResult();
+            return false;
+        }
+        catch (CliException routed)
+        {
+            return routed.Code == ErrorCodes.FormatUnsupported;
+        }
     }
 
     private static string Hint(
@@ -112,6 +140,17 @@ internal static class CorruptInputDetection
             }
         }
         return null;
+    }
+
+    /// <summary>Whether a positional file argument of the command names <paramref name="path"/>.</summary>
+    private static bool IsDocumentArgument(string path, ParseResult parseResult, GlobalValues globals)
+    {
+        var paths = new PathResolver(globals.WorkDir ?? Directory.GetCurrentDirectory());
+        return parseResult.DeclaredParameters()
+            .Where(static parameter => parameter.Symbol is Argument && parameter.Metadata.InputKind == InputKind.File)
+            .SelectMany(static parameter => parameter.TextValues())
+            .Where(static value => !string.IsNullOrWhiteSpace(value) && value != "-")
+            .Any(value => FilePaths.Same(paths.ResolveOutput(value), path));
     }
 
     // The file the product named, or else the command's only input file.

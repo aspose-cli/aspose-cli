@@ -35,30 +35,40 @@ internal static class HostDiagnostics
     ];
 
     /// <summary>A release could not be verified, so nothing was installed.</summary>
-    /// <param name="reason">Why the release failed verification.</param>
+    /// <param name="reason">Why the release failed verification, completing the message.</param>
     internal static CliException ReleaseVerificationFailed(string reason) => new(
         ReleaseVerificationFailedCode,
         $"The release could not be verified: {reason}",
-        hint: "Retry from the official release. Do not bypass the archive check.",
-        details: new JsonObject { ["reason"] = reason });
+        hint: "Retry from the official release. Do not bypass the archive check.");
 
     /// <summary>The release feed answered with a status other than success.</summary>
     /// <param name="feed">The feed, which carries no credentials, query or fragment.</param>
     /// <param name="status">The HTTP status it answered.</param>
     internal static CliException ReleaseFeedAnswered(Uri feed, System.Net.HttpStatusCode status) =>
         status == System.Net.HttpStatusCode.NotFound
-            ? ReleaseFeedUnavailable(
+            ? FeedUnavailable(
                 feed,
+                $"http-{(int)status}",
                 $"the feed answered HTTP {(int)status}",
                 "The server holds no release at this address: none has been published there yet, or the URL is wrong. "
                 + "Pass the URL of a release's RELEASE-MANIFEST.json, or a downloaded release directory, as the feed.")
-            : ReleaseFeedUnavailable(feed, $"the feed answered HTTP {(int)status}");
+            : FeedUnavailable(feed, $"http-{(int)status}", $"the feed answered HTTP {(int)status}", hint: null);
 
-    /// <summary>The release feed could not be read; nothing was verified or installed.</summary>
+    /// <summary>
+    /// The release feed could not be reached over the network; nothing was verified or installed.
+    /// <c>details.reason</c> is <c>unreachable</c>.
+    /// </summary>
     /// <param name="feed">The feed, which carries no credentials, query or fragment.</param>
-    /// <param name="reason">Why it could not be read.</param>
+    /// <param name="reason">Why it could not be reached, completing the message.</param>
+    internal static CliException ReleaseFeedUnavailable(Uri feed, string reason) =>
+        FeedUnavailable(feed, "unreachable", reason, hint: null);
+
+    /// <summary>The release feed could not be read, for the reason <paramref name="token"/> names.</summary>
+    /// <param name="feed">The feed.</param>
+    /// <param name="token">The kebab-case <c>details.reason</c>, such as <c>http-503</c>.</param>
+    /// <param name="reason">Why it could not be read, completing the message.</param>
     /// <param name="hint">What to do, when the network is not the cause.</param>
-    internal static CliException ReleaseFeedUnavailable(Uri feed, string reason, string? hint = null)
+    private static CliException FeedUnavailable(Uri feed, string token, string reason, string? hint)
     {
         ArgumentNullException.ThrowIfNull(feed);
         return new CliException(
@@ -67,7 +77,7 @@ internal static class HostDiagnostics
             hint: hint ?? "Check the network connection, proxy settings (HTTPS_PROXY) and the feed URL, then retry. A downloaded release directory also works as a local feed path.",
             details: new JsonObject
             {
-                ["reason"] = reason,
+                ["reason"] = token,
                 ["feed"] = feed.AbsoluteUri,
             });
     }
@@ -80,7 +90,7 @@ internal static class HostDiagnostics
         hint: "Pass a downloaded release directory, or the RELEASE-MANIFEST.json in it, as the feed.",
         details: new JsonObject
         {
-            ["reason"] = "the feed file does not exist",
+            ["reason"] = "file-not-found",
             ["feed"] = path,
         });
 }

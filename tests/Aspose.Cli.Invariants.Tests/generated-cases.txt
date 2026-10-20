@@ -3288,10 +3288,10 @@ C-R24 | host exit codes follow their category
 C-R24 | input file errors exit 3
 C-R24 | internal errors exit 1
 C-R24 | license errors exit 7
+C-R24 | no error exits 8
 C-R24 | one exit code per code
 C-R24 | ops and target errors exit 4
 C-R24 | output errors exit 5
-C-R24 | partial publications exit 8
 C-R24 | pdf exit codes follow their category
 C-R24 | pdf validate of a PDF that is not PDF/A
 C-R24 | slides exit codes follow their category

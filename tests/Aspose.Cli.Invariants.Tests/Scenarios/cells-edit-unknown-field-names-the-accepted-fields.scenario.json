@@ -8,7 +8,8 @@
         "exitCode": 4,
         "error": "OPS_INVALID",
         "json": [
-          { "path": "error.details.reason", "equals": "unknown field 'to'" },
+          { "path": "error.details.reason", "equals": "unknown-field" },
+          { "path": "error.details.field", "equals": "to" },
           { "path": "error.details.available", "equals": ["op", "id", "sheet", "name"] },
           { "path": "error.details.suggestions", "equals": ["name"] }
         ],
@@ -21,7 +22,8 @@
         "exitCode": 4,
         "error": "OPS_INVALID",
         "json": [
-          { "path": "error.details.reason", "equals": "unknown field 'by[0].direction'" },
+          { "path": "error.details.reason", "equals": "unknown-field" },
+          { "path": "error.details.field", "equals": "by[0].direction" },
           { "path": "error.details.available", "equals": ["column", "order"] },
           { "path": "error.details.suggestions", "exists": false }
         ],

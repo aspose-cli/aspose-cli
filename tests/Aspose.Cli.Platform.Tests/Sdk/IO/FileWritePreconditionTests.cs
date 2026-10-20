@@ -41,7 +41,7 @@ public sealed class FileWritePreconditionTests : IDisposable
 
         Assert.Equal(ErrorCodes.InputChanged, error.Code);
         Assert.Equal(stale, error.Details!["expectedSha256"]!.GetValue<string>());
-        Assert.Equal(FileFingerprints.Capture(input).Sha256, error.Details["observedSha256"]!.GetValue<string>());
+        Assert.Equal(FileFingerprints.Capture(input).Sha256, error.Details["actualSha256"]!.GetValue<string>());
     }
 
     [Theory]
@@ -72,7 +72,7 @@ public sealed class FileWritePreconditionTests : IDisposable
 
         Assert.Equal(ErrorCodes.InputChanged, error.Code);
         Assert.Equal(admittedSha256, error.Details!["expectedSha256"]!.GetValue<string>());
-        Assert.Equal(FileFingerprints.Capture(input).Sha256, error.Details["observedSha256"]!.GetValue<string>());
+        Assert.Equal(FileFingerprints.Capture(input).Sha256, error.Details["actualSha256"]!.GetValue<string>());
     }
 
     [Fact]

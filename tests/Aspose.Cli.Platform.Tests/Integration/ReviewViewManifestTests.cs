@@ -120,19 +120,21 @@ public sealed class ReviewViewManifestTests
     }
 
     [Theory]
-    [InlineData("data.records", "<?xml version=\"1.0\"?><records><record/></records>")]
-    [InlineData("data.xml", "<?xml version=\"1.0\"?><records><record/></records>")]
-    [InlineData("book.xml", "<?xml version=\"1.0\"?><?mso-application progid=\"Excel.Sheet\"?><Workbook xmlns=\"urn:schemas-microsoft-com:office:spreadsheet\"/>")]
-    public void Review_OfContentNoProductRecognizes_PointsAtTheProductOption(string file, string content)
+    [InlineData("data.records", "<?xml version=\"1.0\"?><records><record/></records>", "FORMAT_UNSUPPORTED")]
+    [InlineData("data.xml", "<?xml version=\"1.0\"?><records><record/></records>", "FILE_CORRUPT")]
+    [InlineData("book.xml", "<?xml version=\"1.0\"?><?mso-application progid=\"Excel.Sheet\"?><Workbook xmlns=\"urn:schemas-microsoft-com:office:spreadsheet\"/>", "FILE_CORRUPT")]
+    public void Review_OfContentNoProductRecognizes_PointsAtTheProductOption(string file, string content, string code)
     {
-        // .xml is shared by many kinds of file: XML no product recognizes is not a damaged document.
+        // Under an extension products read, such as .xml, content none recognizes is their damaged
+        // file; under one none reads it is unsupported. Either way the hint names --product, since
+        // .xml is shared by many kinds of file.
         using var workspace = new TempWorkspace();
         File.WriteAllText(workspace.File(file), content);
 
         CliResult reviewed = workspace.Run("review", file, "--output-format", "json");
 
         JsonNode error = JsonNode.Parse(reviewed.StdErr)!["error"]!;
-        Assert.Equal("FORMAT_MISMATCH", error["code"]!.GetValue<string>());
+        Assert.Equal(code, error["code"]!.GetValue<string>());
         Assert.Contains("--product <id>", error["hint"]!.GetValue<string>(), StringComparison.Ordinal);
     }
 

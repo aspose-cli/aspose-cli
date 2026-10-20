@@ -21,7 +21,10 @@ public enum ExitCode
     /// <summary>Domain validation failed (unknown part, invalid range, invalid ops).</summary>
     ValidationError = 4,
 
-    /// <summary>The output file could not be produced (exists, unwritable).</summary>
+    /// <summary>
+    /// The output could not be produced (exists, unwritable, over its budget) or published in
+    /// full.
+    /// </summary>
     OutputError = 5,
 
     /// <summary>The requested format is unknown or unsupported for the operation.</summary>
@@ -30,10 +33,16 @@ public enum ExitCode
     /// <summary>A license problem (invalid file, evaluation limit reached).</summary>
     LicenseError = 7,
 
-    /// <summary>A batch completed partially under --best-effort.</summary>
+    /// <summary>
+    /// The command printed its result, but the result did not pass: a failed operation under
+    /// --best-effort, a failed verification, review or check. No error envelope has this code.
+    /// </summary>
     PartialFailure = 8,
 
-    /// <summary>The operation exceeded the --timeout budget.</summary>
+    /// <summary>
+    /// The operation exceeded the --timeout budget, or the worker it stopped could not be
+    /// confirmed ended.
+    /// </summary>
     OperationTimeout = 9,
 
     /// <summary>

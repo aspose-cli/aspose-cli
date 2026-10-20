@@ -180,7 +180,7 @@ public sealed class CellsImportTests : IClassFixture<CellsFixture>
             $$"""{ "op": "import_sheet", "sourceSheet": "Totals", "path": {{Json(source)}}, "name": "second" }"""));
 
         Assert.Equal(ErrorCodes.OpsInvalid, error.Code);
-        Assert.Contains("'Second'", error.Details!["reason"]!.GetValue<string>(), StringComparison.Ordinal);
+        Assert.Contains("'Second'", error.Message, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -247,7 +247,7 @@ public sealed class CellsImportTests : IClassFixture<CellsFixture>
             $$"""{ "op": "import_sheet", "sourceSheet": "Totals", "path": {{Json(source)}} }"""));
 
         Assert.Equal(ErrorCodes.OpsInvalid, error.Code);
-        Assert.Contains("'Rate'", error.Details!["reason"]!.GetValue<string>(), StringComparison.Ordinal);
+        Assert.Contains("'Rate'", error.Message, StringComparison.Ordinal);
     }
 
     [Theory]

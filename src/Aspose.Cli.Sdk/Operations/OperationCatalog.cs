@@ -210,7 +210,7 @@ public sealed class OperationCatalog<TOp>
         ArgumentNullException.ThrowIfNull(contracts);
         if (string.IsNullOrWhiteSpace(json))
         {
-            throw Invalid("the document is empty");
+            throw OperationErrors.Invalid(OpsInvalidReasons.InvalidJson, "the document is empty", DefaultHint);
         }
 
         JsonDocument document = ParseJson(json, quotesContent);
@@ -257,7 +257,7 @@ public sealed class OperationCatalog<TOp>
         BoundedOperationValidation.ValidateEnvelope(batch, SchemaId, Invalid);
         if (batch.Ops.Count < 1 || batch.Ops.Count > MaximumOperationCount)
         {
-            throw Invalid($"the ops array must contain 1-{MaximumOperationCount} operations");
+            throw OperationErrors.Invalid(OpsInvalidReasons.InvalidValue, $"the ops array must contain 1-{MaximumOperationCount} operations", DefaultHint, field: "ops");
         }
 
         IReadOnlyList<TOp> identified = BoundedOperationIds.Assign(
@@ -326,12 +326,12 @@ public sealed class OperationCatalog<TOp>
         }
         catch (OperationInvalidException rejection)
         {
-            return OperationErrors.InvalidAt(id, record.Name, rejection.Message, rejection.Hint ?? DefaultHint, value: rejection.Mistake, path: rejection.Path);
+            return OperationErrors.InvalidAt(id, record.Name, rejection, DefaultHint);
         }
         catch (CliException failure) when (!failure.IsInvocationFailure)
         {
             // A shared value parser (a page range, an address) rejected a field.
-            return OperationErrors.InvalidAt(id, record.Name, failure.Message, failure.Hint ?? DefaultHint, failure.Code);
+            return OperationErrors.InvalidAt(id, record.Name, OpsInvalidReasons.InvalidValue, failure.Message, failure.Hint ?? DefaultHint, cause: failure.Code);
         }
     }
 
@@ -372,7 +372,7 @@ public sealed class OperationCatalog<TOp>
         }
         catch (JsonException exception)
         {
-            throw OperationErrors.Invalid($"the document is not valid JSON{SyntaxError(exception, quotesContent)}", SyntaxHint(exception));
+            throw OperationErrors.Invalid(OpsInvalidReasons.InvalidJson, $"the document is not valid JSON{SyntaxError(exception, quotesContent)}", SyntaxHint(exception));
         }
     }
 
@@ -476,7 +476,7 @@ public sealed class OperationCatalog<TOp>
         }
 
         JsonException reason = JsonContractDiagnostics.Explain(root, batchType, options, rejection?.Path);
-        return OperationErrors.Invalid(reason.Message, DefaultHint, reason as AllowedFieldsException);
+        return OperationErrors.Invalid(reason, DefaultHint);
     }
 
     /// <summary>Whether the serializer rejected the document's content rather than failed itself.</summary>
@@ -503,7 +503,7 @@ public sealed class OperationCatalog<TOp>
             ? OperationErrors.UnknownAt(ids[index], failure.Message, DefaultHint,
                 Mistake.Of(name, ByRelevance(name), meant: Closest(name, ops[index])))
             : OperationErrors.InvalidAt(
-                ids[index], KnownNameAt(ops, index), failure.Message, KindHint(KnownNameAt(ops, index), failure) ?? HintFor(KnownNameAt(ops, index)), field: failure as AllowedFieldsException);
+                ids[index], KnownNameAt(ops, index), failure, KindHint(KnownNameAt(ops, index), failure) ?? HintFor(KnownNameAt(ops, index)));
 
     /// <summary>
     /// The operation names in the order an error for the unknown <paramref name="name"/> lists
@@ -567,5 +567,6 @@ public sealed class OperationCatalog<TOp>
             : throw new InvalidOperationException(
                 $"Operation type {operation.GetType().Name} is not an operation of its catalog.");
 
-    private CliException Invalid(string reason) => OperationErrors.Invalid(reason, DefaultHint);
+    /// <summary>Rejects a value of the document's envelope or of an operation id, such as a duplicated id.</summary>
+    private CliException Invalid(string explanation) => OperationErrors.Invalid(OpsInvalidReasons.InvalidValue, explanation, DefaultHint);
 }

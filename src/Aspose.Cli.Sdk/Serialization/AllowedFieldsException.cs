@@ -10,10 +10,10 @@ namespace Aspose.Cli.Sdk.Serialization;
 /// fields most likely meant, travel with it so the operation error lists them once, as
 /// <c>details.available</c> and in the sentence that names them.
 /// </summary>
-internal sealed class AllowedFieldsException : JsonException
+internal sealed class AllowedFieldsException : ContractRejection
 {
-    private AllowedFieldsException(string message, IReadOnlyList<string> allowedFields, Mistake? mistake)
-        : base(message)
+    private AllowedFieldsException(string reason, string field, string message, IReadOnlyList<string> allowedFields, Mistake? mistake)
+        : base(reason, field, message)
     {
         AllowedFields = allowedFields;
         Mistake = mistake;
@@ -49,14 +49,14 @@ internal sealed class AllowedFieldsException : JsonException
         }
 
         string field = path.Length == 0 ? name : $"{path}.{name}";
-        return new AllowedFieldsException($"unknown field '{field}'", allowedFields, mistake);
+        return new AllowedFieldsException(OpsInvalidReasons.UnknownField, field, $"unknown field '{field}'", allowedFields, mistake);
     }
 
     /// <summary>Rejects a value of another kind where the contract expects an object with the given fields.</summary>
     /// <param name="path">The value's field path; never empty.</param>
     /// <param name="allowedFields">The object's accepted wire names in published order.</param>
     public static AllowedFieldsException NotAnObject(string path, IReadOnlyList<string> allowedFields) =>
-        new($"{path} must be an object; details.available lists its fields", allowedFields, mistake: null);
+        new(OpsInvalidReasons.WrongType, path, $"{path} must be an object; details.available lists its fields", allowedFields, mistake: null);
 }
 
 /// <summary>

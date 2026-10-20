@@ -29,6 +29,9 @@ exits non-zero:
   argument at fault, the valid alternatives (`available`, `suggestions`), the
   failing operation's `id` and `op`. `aspose-cli schema v2/common/error-payload`
   describes every key; `errors` appears only when there are several problems.
+  `details.reason`, when present, is a short kebab-case token such as
+  `unknown-field`; branch on it, and read `message` for the explanation. An
+  `OPS_INVALID` about one field names its path in `details.field`.
 - `hint` is the most likely next action; `docs`, when present, names a topic
   for `aspose-cli docs <topic>`.
 
@@ -45,7 +48,8 @@ Branch on the exit code first, then on the code in the envelope:
 - 8: the command finished and printed its result, but the result did not pass
   or is incomplete: a failed operation under `--best-effort`, failed
   verification, a failed review, a missing font in `fonts check`, a failed
-  `doctor` check. Read the result; it says what failed.
+  `doctor` check. Read the result; it says what failed. Exit 8 means only
+  this: no error envelope ever comes with it.
 - 130: the command was cancelled with Ctrl+C, with or without --timeout. The
   work stops, nothing is published, its staging is removed and no error is
   written. A second Ctrl+C ends the process at once; the next command that
@@ -54,7 +58,11 @@ Branch on the exit code first, then on the code in the envelope:
   and exit code are listed in `capabilities`. Usage errors (exit 2) are fixed
   on the command line, input errors (exit 3) in the input file or its
   password, and `OPERATION_TIMEOUT` (exit 9) by a longer `--timeout` or a
-  smaller request.
+  smaller request. A publication that failed and could not be fully restored
+  (`OUTPUT_PUBLICATION_PARTIAL`) exits 5 like the other output errors; a
+  worker that timed out and could not be confirmed stopped
+  (`WORKER_TERMINATION_FAILED`) exits 9: stop the process `details.pid`
+  names before retrying.
 
 ## Diagnosis
 
@@ -113,8 +121,13 @@ aspose-cli capabilities --output-format json
   renaming a file does not change its format. When the extension disagrees
   with the content (`FORMAT_MISMATCH`), `details.detected` names the products
   the content looks like and the hint names its command: use it, rename the
-  file, or pass `--product <id>` to `review` or `preview open`. When several
-  products or readings fit (`FORMAT_AMBIGUOUS`), pass what the hint names.
+  file, or pass `--product <id>` to `review` or `preview open`. Content no
+  product recognizes is `FILE_CORRUPT` when any product reads its extension,
+  even one shared by many kinds of file such as `.html` or `.xml`, and
+  `FORMAT_UNSUPPORTED` when none does or the CLI only writes its format, such
+  as `.xps`; a product command, `review` and `review --product <id>` report
+  the same file with the same code. Find out what the file really is. When several products or readings fit
+  (`FORMAT_AMBIGUOUS`), pass what the hint names.
 - A password that is missing or wrong (`PASSWORD_REQUIRED`,
   `PASSWORD_INVALID`): ask the user; never guess. Pass it with
   `--password-env <VAR>` or `--password-stdin`. A command that reads two
@@ -123,9 +136,11 @@ aspose-cli capabilities --output-format json
   `*Env` field in `details.field`.
 - The file changed since you read it (`INPUT_CHANGED`): read it again, review
   what changed, and retry with the new `input.fingerprint.sha256`.
-- An input over a resource budget: the message and `details` give the limit;
-  `--max-input-bytes` raises the size limit up to its hard maximum,
-  and a smaller selection helps the others.
+- An input over a resource budget: the message and `details` give the limit.
+  An input larger than `--max-input-bytes`, by its size or by the bytes read
+  of it, is `FILE_TOO_LARGE`: raise the option up to its hard maximum. Any
+  other input resource is `INPUT_BUDGET_EXCEEDED`, and a smaller selection
+  helps.
 
 **The output.**
 
@@ -135,6 +150,9 @@ aspose-cli capabilities --output-format json
 - A write the operating system refused (`OUTPUT_UNWRITABLE`): a file open in
   another application usually reads fine but fails the final in-place
   replace; ask the user to close it. The input and any backup are untouched.
+- An output over a resource budget (`OUTPUT_BUDGET_EXCEEDED`), such as too
+  many files in one output set: write less, such as a narrower selection;
+  `details.resource` and `details.limit` name the budget.
 
 **The engine.**
 

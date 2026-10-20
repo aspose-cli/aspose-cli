@@ -583,7 +583,7 @@ public sealed class PdfEngineTests
         Assert.Equal(PdfInspectResult.FieldLimit, result.Forms.Fields.Count);
         Assert.Equal(("field0000", "text", "value 0"), (result.Forms.Fields[0].Name, result.Forms.Fields[0].Kind, result.Forms.Fields[0].Value));
         Warning truncated = Assert.Single(result.Warnings!, static warning => warning.Code == WarningCodes.ListTruncated);
-        Assert.Equal("forms.fields", truncated.Location);
+        Assert.Equal("forms.fields", truncated.Details!["list"]!.GetValue<string>());
         Assert.Contains($"{PdfInspectResult.FieldLimit + 1}", truncated.Message, StringComparison.Ordinal);
     }
 
@@ -729,7 +729,7 @@ public sealed class PdfEngineTests
         Assert.Equal(20, info.Pages!.Count);
         Warning warning = Assert.Single(info.Warnings!);
         Assert.Equal(WarningCodes.ListTruncated, warning.Code);
-        Assert.Equal("pages", warning.Location);
+        Assert.Equal("pages", warning.Details!["list"]!.GetValue<string>());
         Assert.Contains("first 20 of 21", warning.Message, StringComparison.Ordinal);
     }
 

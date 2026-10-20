@@ -197,7 +197,8 @@ public sealed class ProductFileRouter
                 operation,
                 resolvedOwner!,
                 candidates,
-                recognitions);
+                recognitions,
+                InputReaders(extension));
         }
 
         return ResolveUnowned(
@@ -205,6 +206,7 @@ public sealed class ProductFileRouter
             operation,
             candidates,
             recognitions,
+            InputReaders(extension),
             OnlyWritten(extension),
             PdfWriter(extension));
     }
@@ -224,7 +226,21 @@ public sealed class ProductFileRouter
     /// extension, such as <c>cells convert</c> for <c>.xps</c>, as <c>product verb</c> in catalog
     /// order; empty when a product reads it or none writes it.
     /// </summary>
-    private IReadOnlyList<string> OnlyWritten(string extension)
+    private IReadOnlyList<string> OnlyWritten(string extension) => OnlyWrittenBy(extension);
+
+    /// <summary>
+    /// The products that declare <paramref name="extension"/> for one of their input formats,
+    /// whether or not it is a generic route of theirs, in catalog order. Content no product
+    /// recognizes under such an extension is a damaged file of theirs, never an unsupported one.
+    /// </summary>
+    private IReadOnlyList<string> InputReaders(string extension) =>
+        [.. _catalog.Products
+            .Where(product => product.Formats.Any(format => format.Uses.HasFlag(FormatUse.Input)
+                && format.Extensions.Any(candidate => string.Equals(
+                    ProductCatalog.NormalizeExtension(candidate), extension, StringComparison.Ordinal))))
+            .Select(static product => product.Manifest.Id)];
+
+    private IReadOnlyList<string> OnlyWrittenBy(string extension)
     {
         bool Declares(FormatDescriptor format) => format.Extensions.Any(candidate => string.Equals(
             ProductCatalog.NormalizeExtension(candidate), extension, StringComparison.Ordinal));
@@ -247,7 +263,8 @@ public sealed class ProductFileRouter
         string operation,
         ProductDefinition extensionOwner,
         IReadOnlyList<ProductDefinition> candidates,
-        IReadOnlyList<RecognitionEntry> recognitions)
+        IReadOnlyList<RecognitionEntry> recognitions,
+        IReadOnlyList<string> readers)
     {
         RecognitionEntry? ownerRecognition = recognitions.FirstOrDefault(
             entry => entry.Product == extensionOwner);
@@ -259,10 +276,13 @@ public sealed class ProductFileRouter
                 or FileRecognitionKind.Failed)
         {
             IReadOnlyList<string> detected = Detected(recognitions, extensionOwner);
-            // An extension many kinds of file share, such as .xml, names no product of its own.
+            // An extension many kinds of file share, such as .xml, names no product of its own:
+            // content no product recognizes is a damaged file of every product that reads it.
             bool shared = ExtensionIsShared(extensionOwner, Path.GetExtension(fullPath));
-            throw detected.Count == 0 && !shared
-                ? CliErrors.ContentUnrecognized(fullPath, extensionOwner.Manifest.Id)
+            throw detected.Count == 0
+                ? shared
+                    ? CliErrors.ContentUnrecognized(fullPath, readers)
+                    : CliErrors.ContentUnrecognized(fullPath, extensionOwner.Manifest.Id)
                 : CliErrors.FormatUnrecognized(
                     fullPath,
                     shared ? null : extensionOwner.Manifest.Id,
@@ -305,6 +325,7 @@ public sealed class ProductFileRouter
         string operation,
         IReadOnlyList<ProductDefinition> candidates,
         IReadOnlyList<RecognitionEntry> recognitions,
+        IReadOnlyList<string> readers,
         IReadOnlyList<string> writers,
         string? pdfWriter)
     {
@@ -330,7 +351,9 @@ public sealed class ProductFileRouter
         }
 
         IReadOnlyList<string> detected = Detected(recognitions, except: null);
-        throw detected.Count == 0 && writers.Count > 0
+        throw detected.Count == 0 && readers.Count > 0
+            ? CliErrors.ContentUnrecognized(fullPath, readers)
+            : detected.Count == 0 && writers.Count > 0
             ? CliErrors.FormatOnlyWritten(fullPath, writers, pdfWriter, operation, CandidateIds(candidates))
             : CliErrors.FormatUnrecognized(
                 fullPath,
@@ -391,16 +414,46 @@ public sealed class ProductFileRouter
             : new RecognitionEntry(product, Strongest(declarativeRules
                 .Select(format => format.Recognition!.Evaluate(format.Id, session.Prefix.Span))));
         // The explicit selection settles evidence that is real but not conclusive; content
-        // that contradicts the product still fails closed.
+        // that contradicts the product still fails closed, as generic routing reports the file.
         if (entry.Recognition.Kind is not (FileRecognitionKind.Match or FileRecognitionKind.Indeterminate))
         {
-            throw CliErrors.FormatUnrecognized(
-                session.FullPath,
-                product.Manifest.Id,
-                [],
-                [product.Manifest.Id]);
+            throw await ContradictedAsync(product, session, operation, cancellationToken).ConfigureAwait(false);
         }
         return Result(entry, operation, explicitSelection: true);
+    }
+
+    /// <summary>
+    /// The error for content that contradicts an explicitly selected product: the one generic
+    /// routing reports for the file, so that selecting the product changes no code. Content
+    /// generic routing gives to another product is <c>FORMAT_MISMATCH</c> naming it in
+    /// <c>details.detected</c>; any other content is the selected product's damaged file, since
+    /// the product declares the extension.
+    /// </summary>
+    private async ValueTask<CliException> ContradictedAsync(
+        ProductDefinition product,
+        FileProbeSession session,
+        string operation,
+        CancellationToken cancellationToken)
+    {
+        FileRouteResult routed;
+        try
+        {
+            routed = await ResolveGenericAsync(session, operation, cancellationToken).ConfigureAwait(false);
+        }
+        catch (CliException refused) when (refused.Code == ErrorCodes.FormatMismatch)
+        {
+            return refused;
+        }
+        catch (CliException)
+        {
+            // The selected product reads the extension, so content no product recognizes is
+            // its damaged file, named after it.
+            return CliErrors.ContentUnrecognized(session.FullPath, product.Manifest.Id);
+        }
+
+        return routed.Product == product
+            ? CliErrors.ContentUnrecognized(session.FullPath, product.Manifest.Id)
+            : CliErrors.FormatMismatch(session.FullPath, product.Manifest.Id, [routed.Product.Manifest.Id]);
     }
 
     private async ValueTask<FileProbeSession> CreateSessionAsync(

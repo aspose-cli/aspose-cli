@@ -23,7 +23,7 @@ public sealed class InputResourceScopeTests
         Stream second = scope.OpenFile(temp.File("second.bin"));
         Assert.Equal(5, first.Read(new byte[5]));
         CliException failure = Assert.Throws<CliException>(() => second.Read(new byte[5]));
-        Assert.Equal(ErrorCodes.InputBudgetExceeded, failure.Code);
+        Assert.Equal(ErrorCodes.FileTooLarge, failure.Code);
         Assert.True(failure.IsInvocationFailure);
         Assert.Same(failure, Assert.Throws<CliException>(() => scope.ThrowIfFailed()));
         Assert.Throws<CliException>(() => new SafeFileWriter(budgets).Write(temp.File("output.bin"), false,

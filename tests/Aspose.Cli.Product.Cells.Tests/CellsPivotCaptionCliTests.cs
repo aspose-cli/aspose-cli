@@ -100,7 +100,7 @@ public sealed class CellsPivotCaptionCliTests : IDisposable
 
         JsonNode error = JsonNode.Parse(refused.StdErr)!["error"]!;
         Assert.Equal("OPS_INVALID", error["code"]!.GetValue<string>());
-        Assert.Contains(owner, error["details"]!["reason"]!.GetValue<string>(), StringComparison.Ordinal);
+        Assert.Contains(owner, error["message"]!.GetValue<string>(), StringComparison.Ordinal);
         Assert.False(File.Exists(_workspace.File("report.out.xlsx")));
     }
 

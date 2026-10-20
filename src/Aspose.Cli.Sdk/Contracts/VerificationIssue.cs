@@ -29,7 +29,11 @@ public sealed record VerificationIssue
     /// <summary>Human-readable explanation.</summary>
     public string Message { get; }
 
-    /// <summary>Stable product-owned address of the affected item, when there is exactly one.</summary>
+    /// <summary>
+    /// The affected item's address in the targets syntax <c>&lt;unit&gt;/&lt;address&gt;</c>, such as
+    /// <c>page/3</c>, <c>slide/2/shape/4</c> or <c>cell/Sheet1!A1</c>, with names escaped as targets escape
+    /// them; omitted unless the issue concerns exactly one item.
+    /// </summary>
     public string? Location { get; }
 
     /// <summary>Recommended next action for the caller.</summary>
