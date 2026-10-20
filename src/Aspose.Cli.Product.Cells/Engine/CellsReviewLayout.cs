@@ -76,7 +76,8 @@ internal sealed record CellsReviewCellSet(
 /// <summary>Layout facts for one chart on a worksheet.</summary>
 internal sealed record CellsReviewChartLayout
 {
-    public required string Name { get; init; }
+    /// <summary>The chart's target address, such as <c>chart/Sales/2</c>.</summary>
+    public required string Address { get; init; }
 
     public required bool Hidden { get; init; }
 

@@ -139,7 +139,7 @@ public sealed class CellsImportCliTests : IClassFixture<CellsImportCliTests.Sour
             Parallel.Invoke(
                 () =>
                 {
-                    Workspace.Run("cells", "create", "eu.xlsx", "--sheets", "Notes,Totals,Rates").Succeeded();
+                    Workspace.Run("cells", "create", "eu.xlsx", "--sheet-names", "Notes,Totals,Rates").Succeeded();
                     Workspace.Run(
                         "cells", "edit", "eu.xlsx", "--in-place", "--output-format", "json", "--ops",
                         """
@@ -153,7 +153,7 @@ public sealed class CellsImportCliTests : IClassFixture<CellsImportCliTests.Sour
                         ]}
                         """).Succeeded();
                 },
-                () => Workspace.Run("cells", "create", "report.xlsx", "--sheets", "Report").Succeeded());
+                () => Workspace.Run("cells", "create", "report.xlsx", "--sheet-names", "Report").Succeeded());
         }
 
         public TempWorkspace Workspace { get; } = new();

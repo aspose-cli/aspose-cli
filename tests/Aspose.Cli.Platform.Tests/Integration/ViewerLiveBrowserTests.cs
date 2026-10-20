@@ -71,7 +71,7 @@ public sealed class ViewerLiveBrowserTests : IDisposable
     public Task Cells_AnEditLandsOnTheCellInTheProductGrid() =>
         InBrowser("cells-live", () =>
         {
-            _workspace.Run("cells", "create", "book.xlsx", "--sheets", "Data,Notes", "--output-format", "json").Succeeded();
+            _workspace.Run("cells", "create", "book.xlsx", "--sheet-names", "Data,Notes", "--output-format", "json").Succeeded();
             _workspace.Run("cells", "edit", "book.xlsx", "--in-place",
                 "--set", "Data!A1=Region", "--set", "Data!B1=Revenue", "--set", "Data!B2=120", "--output-format", "json").Succeeded();
             return _documents.Open(_workspace.File("book.xlsx"), new LiveDocumentOptions(), ViewerDocuments.PreviewHolder);

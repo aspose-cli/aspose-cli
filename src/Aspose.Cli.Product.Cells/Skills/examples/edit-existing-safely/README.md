@@ -8,7 +8,7 @@ Run from this directory.
 ```powershell
 # 1. Fabricate the "user's" workbook so this replays anywhere (a real
 #    session starts here, with a file you did not create).
-aspose-cli cells create quarterly.xlsx --sheets Q3 --overwrite --output-format json
+aspose-cli cells create quarterly.xlsx --sheet-names Q3 --overwrite --output-format json
 aspose-cli cells edit quarterly.xlsx --in-place --set "Q3!A1=Units" --set "Q3!A2=Price" --set "Q3!A3=Rebate" --set "Q3!A4=Revenue" --set "Q3!B1=1180" --set "Q3!B2=42.5" --set "Q3!B3=250" --set "Q3!B4==B1*B2-B3" --output-format json
 
 # 2. Requested edits with native backup and verification.

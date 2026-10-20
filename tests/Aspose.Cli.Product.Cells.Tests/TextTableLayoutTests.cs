@@ -139,7 +139,7 @@ public sealed class TextTableLayoutTests : IDisposable
         File.WriteAllText(_workspace.File("tot.csv"),
             "日期,数量,金额\n2026-09-01,5,120\n2026-09-02,7,180\n合计 Total,12,300\n",
             new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
-        Assert.Equal(0, _workspace.Run("cells", "create", "tot.xlsx", "--sheets", "Bilingual,Grand,Meters").ExitCode);
+        Assert.Equal(0, _workspace.Run("cells", "create", "tot.xlsx", "--sheet-names", "Bilingual,Grand,Meters").ExitCode);
         CliResult filled = _workspace.Run("cells", "edit", "tot.xlsx", "--in-place", "--ops", """
             [{"op":"set_values","sheet":"Bilingual","range":"A1","values":[["Date","Units"],["a",5],["b",7],["合计 Total",12]]},
              {"op":"set_values","sheet":"Grand","range":"A1","values":[["Date","Units"],["a",5],["b",7],["Grand Total",12]]},
@@ -220,13 +220,13 @@ public sealed class TextTableLayoutTests : IDisposable
         Assert.Equal(3, warnings.Length);
         Assert.Contains("header is probably row 3; rows 1-2", Text(warnings[0], "message"), StringComparison.Ordinal);
         Assert.Contains("'cells read <file> --sheet \"erp\" --range A3:D3'", Text(warnings[0], "hint"), StringComparison.Ordinal);
-        Assert.Equal("1:2", Text(warnings[0], "location"));
+        Assert.Equal("row/erp!1:2", Text(warnings[0], "location"));
         Assert.Contains("Row 6 is empty", Text(warnings[1], "message"), StringComparison.Ordinal);
-        Assert.Equal("6:6", Text(warnings[1], "location"));
+        Assert.Equal("row/erp!6", Text(warnings[1], "location"));
         Assert.Contains("Row 8 is a total row ('合计')", Text(warnings[2], "message"), StringComparison.Ordinal);
         // The example sums the column the total row holds a number in, not a text column.
         Assert.Contains("End data ranges at row 7, for example =SUM(D4:D7) for column D", Text(warnings[2], "hint"), StringComparison.Ordinal);
-        Assert.Equal("8:8", Text(warnings[2], "location"));
+        Assert.Equal("row/erp!8", Text(warnings[2], "location"));
 
         JsonNode converted = _workspace.Run(
             "cells", "convert", "erp.csv", "--to", "xlsx", "--out", "erp.xlsx", "--output-format", "json").Json();
@@ -251,7 +251,7 @@ public sealed class TextTableLayoutTests : IDisposable
         JsonNode warning = Assert.Single(warnings);
         Assert.Contains("header is probably row 4; rows 1-3", Text(warning, "message"), StringComparison.Ordinal);
         Assert.Contains("--range A4:C4' and start data ranges, formulas and sorts at row 5", Text(warning, "hint"), StringComparison.Ordinal);
-        Assert.Equal("1:3", Text(warning, "location"));
+        Assert.Equal("row/preamble!1:3", Text(warning, "location"));
     }
 
     [Fact]

@@ -190,7 +190,7 @@ public sealed class RenderWorkerTests : IDisposable
 
     private void CreateWorkbook(string file)
     {
-        _workspace.Run("cells", "create", file, "--sheets", "Data", "--output-format", "json").Succeeded();
+        _workspace.Run("cells", "create", file, "--sheet-names", "Data", "--output-format", "json").Succeeded();
         _workspace.Run("cells", "edit", file, "--in-place", "--set", "Data!A1=Region", "--output-format", "json").Succeeded();
     }
 }

@@ -11,7 +11,7 @@ public sealed class CellsMutationBoundaryTests
     public void AutoFitMeasuresFormulaResultsWrittenEarlierInTheSameBatch()
     {
         using var workspace = new TempWorkspace();
-        Assert.Equal(0, workspace.Run("cells", "create", "source.xlsx", "--sheets", "Data").ExitCode);
+        Assert.Equal(0, workspace.Run("cells", "create", "source.xlsx", "--sheet-names", "Data").ExitCode);
 
         CliResult edited = workspace.Run("cells", "edit", "source.xlsx", "--ops",
             """{"ops":[{"op":"set_formula","sheet":"Data","range":"A1","formula":"=REPT(\"x\",40)"},{"op":"resize_columns","sheet":"Data","first":"A"}]}""",
@@ -30,7 +30,7 @@ public sealed class CellsMutationBoundaryTests
     public void ImageInputBudgetAbortsPublicationEvenInBestEffort(bool bestEffort, bool supervised)
     {
         using var workspace = new TempWorkspace();
-        Assert.Equal(0, workspace.Run("cells", "create", "source.xlsx", "--sheets", "Data").ExitCode);
+        Assert.Equal(0, workspace.Run("cells", "create", "source.xlsx", "--sheet-names", "Data").ExitCode);
         byte[] image = new byte[128 * 1024];
         ResourceHttpServer.Image.CopyTo(image, 0);
         File.WriteAllBytes(workspace.File("large.png"), image);
@@ -53,7 +53,7 @@ public sealed class CellsMutationBoundaryTests
     {
         using var workspace = new TempWorkspace();
         var environment = new Dictionary<string, string?> { ["OLD_PASSWORD"] = "old-test-password", ["NEW_PASSWORD"] = "new-test-password" };
-        CliResult create = workspace.RunWithEnv(environment, "cells", "create", "secret.xlsx", "--sheets", "Data", "--encrypt-env", "OLD_PASSWORD", "--output-format", "json");
+        CliResult create = workspace.RunWithEnv(environment, "cells", "create", "secret.xlsx", "--sheet-names", "Data", "--encrypt-env", "OLD_PASSWORD", "--output-format", "json");
         Assert.True(create.ExitCode == 0, create.StdErr);
         var arguments = new List<string> { "cells", "edit", "secret.xlsx", "--password-env", "OLD_PASSWORD", "--set", "Data!A1=7", "--out", "edited.xlsx", "--timeout", TestDeadline.CliTimeout, "--output-format", "json" };
         if (changePassword) { arguments.AddRange(["--encrypt-env", "NEW_PASSWORD"]); }
@@ -76,7 +76,7 @@ public sealed class CellsMutationBoundaryTests
     {
         using var workspace = new TempWorkspace();
         var environment = new Dictionary<string, string?> { ["EXPORT_PASSWORD"] = "test-export-secret" };
-        Assert.Equal(0, workspace.RunWithEnv(environment, "cells", "create", "source.xlsx", "--sheets", "Data",
+        Assert.Equal(0, workspace.RunWithEnv(environment, "cells", "create", "source.xlsx", "--sheet-names", "Data",
             "--encrypt-env", "EXPORT_PASSWORD", "--output-format", "json").ExitCode);
         CliResult result = workspace.RunWithEnv(environment, "cells", "edit", "source.xlsx", "--password-env", "EXPORT_PASSWORD",
             "--set", "Data!A1=7", "--out", "result.csv", "--output-format", "json");
@@ -117,7 +117,7 @@ public sealed class CellsMutationBoundaryTests
     public void VerificationExaminesTheCandidateInSupervisedExecution(bool inPlace)
     {
         using var workspace = new TempWorkspace();
-        Assert.Equal(0, workspace.Run("cells", "create", "source.xlsx", "--sheets", "Data").ExitCode);
+        Assert.Equal(0, workspace.Run("cells", "create", "source.xlsx", "--sheet-names", "Data").ExitCode);
         var args = new List<string> { "cells", "edit", "source.xlsx", "--set", "Data!A1==1/0", "--verify", "--timeout", TestDeadline.CliTimeout, "--output-format", "json" };
         args.AddRange(inPlace ? ["--in-place"] : ["--out", "edited.xlsx"]);
         CliResult edited = workspace.Run(args.ToArray());

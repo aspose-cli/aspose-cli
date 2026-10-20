@@ -14,7 +14,7 @@ public sealed class LockedInputTests
     public void RoutedCommands_ReportAHeldInputAsLocked()
     {
         using var workspace = new TempWorkspace();
-        workspace.Run("cells", "create", "book.xlsx", "--sheets", "Data", "--output-format", "json").Succeeded();
+        workspace.Run("cells", "create", "book.xlsx", "--sheet-names", "Data", "--output-format", "json").Succeeded();
         string path = workspace.File("book.xlsx");
 
         CliResult[] results;

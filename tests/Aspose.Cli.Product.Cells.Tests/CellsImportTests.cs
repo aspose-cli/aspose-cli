@@ -281,7 +281,7 @@ public sealed class CellsImportTests : IClassFixture<CellsFixture>
             operation.Replace("\"{source}\"", Json(source), StringComparison.Ordinal));
 
         Warning warning = Assert.Single(result.Warnings!, static warning => warning.Code.Name == "EXTERNAL_LINK_CACHE_MISSING");
-        Assert.Equal($"'{sheet}'!{cell}", warning.Location);
+        Assert.Equal($"cell/{sheet}!{cell}", warning.Location);
         Assert.Contains("missing-rates.xlsx", warning.Message, StringComparison.Ordinal);
     }
 
@@ -297,7 +297,7 @@ public sealed class CellsImportTests : IClassFixture<CellsFixture>
 
         Assert.False(result.Verification!.Ok);
         VerificationIssue issue = Assert.Single(result.Verification.Issues, static issue => issue.Code == "EXTERNAL_LINK_CACHE_MISSING");
-        Assert.Equal("'Linked'!A1", issue.Location);
+        Assert.Equal("cell/Linked!A1", issue.Location);
         Assert.Contains(result.Warnings!, static warning => warning.Code.Name == "EXTERNAL_LINK_CACHE_MISSING");
     }
 

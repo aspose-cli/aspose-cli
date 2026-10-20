@@ -370,15 +370,17 @@ internal static class ReviewLayoutProjection
         IReadOnlyList<RangeRef> printRanges)
     {
         var charts = new List<CellsReviewChartLayout>(sheet.Charts.Count);
-        foreach ((Chart chart, int pages) in PrintedPages.ChartPages(sheet))
+        IReadOnlyList<(Chart Chart, int Pages)> chartPages = PrintedPages.ChartPages(sheet);
+        for (int index = 0; index < chartPages.Count; index++)
         {
+            (Chart chart, int pages) = chartPages[index];
             ChartShape shape = chart.ChartObject;
             var chartRange = new RangeRef(
                 new CellRef(shape.UpperLeftRow, shape.UpperLeftColumn),
                 new CellRef(shape.LowerRightRow, shape.LowerRightColumn));
             charts.Add(new CellsReviewChartLayout
             {
-                Name = chart.Name,
+                Address = CellsAddresses.Indexed("chart", sheet.Name, index),
                 Hidden = shape.IsHidden,
                 WidthPixels = shape.Width,
                 HeightPixels = shape.Height,

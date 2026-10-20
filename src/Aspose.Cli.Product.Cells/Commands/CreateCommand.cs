@@ -11,7 +11,7 @@ internal static class CreateCommand
 {
     public static CommandDefinition<CellsCreateRequest, CellsCreateResult> Create()
     {
-        var sheets = new Option<string?>("--sheets")
+        var sheets = new Option<string?>("--sheet-names")
         {
             Description = "Comma-separated sheet names, e.g. \"Data,Summary\". Default: one sheet named Sheet1.",
         }.WithInput(InputKind.None);
@@ -40,7 +40,7 @@ internal static class CreateCommand
         {
             Examples =
             [
-                "cells create book.xlsx --sheets \"Data,Summary\"",
+                "cells create book.xlsx --sheet-names \"Data,Summary\"",
                 "cells create budget.xlsx --overwrite",
             ],
             Links =
@@ -64,14 +64,14 @@ internal static class CreateCommand
         if (names.Any(string.IsNullOrEmpty))
         {
             throw CliErrors.OptionInvalid(
-                "--sheets", "sheet names must not be empty",
+                "--sheet-names", "sheet names must not be empty",
                 "Pass a comma-separated list such as \"Data,Summary\".");
         }
 
         if (names.Distinct(StringComparer.OrdinalIgnoreCase).Count() != names.Length)
         {
             throw CliErrors.OptionInvalid(
-                "--sheets", "sheet names must be unique (case-insensitive)",
+                "--sheet-names", "sheet names must be unique (case-insensitive)",
                 "Rename the duplicates; Excel does not allow two sheets with the same name.");
         }
 

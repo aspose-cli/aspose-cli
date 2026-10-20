@@ -114,7 +114,7 @@ Arguments:
   <file>  Path of the workbook to create, e.g. report.xlsx.
 
 Options:
-  --sheets <sheets>            Comma-separated sheet names, e.g. "Data,Summary". Default: one sheet named Sheet1.
+  --sheet-names <sheet-names>  Comma-separated sheet names, e.g. "Data,Summary". Default: one sheet named Sheet1.
   --overwrite                  Replace the output file if it already exists.
   --dry-run                    Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds.
   --encrypt <encrypt>          Password for the output file. Discouraged: visible in the process list; prefer --encrypt-env.
@@ -125,7 +125,7 @@ Global options:
   -h/--help, --output-format, -q/--quiet, -v/--verbose, --license, --license-mode, --workdir, --timeout, --max-input-bytes (see aspose-cli --help)
 
 Examples:
-  aspose-cli cells create book.xlsx --sheets "Data,Summary"
+  aspose-cli cells create book.xlsx --sheet-names "Data,Summary"
   aspose-cli cells create budget.xlsx --overwrite
 
 Learn more:

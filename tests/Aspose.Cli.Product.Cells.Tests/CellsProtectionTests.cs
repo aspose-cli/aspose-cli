@@ -34,7 +34,7 @@ public sealed class CellsProtectionTests(CellsProtectionTests.ProtectedBook book
     public void Edit_WarnsOnlyWhenItGoesThroughProtection()
     {
         Warning sheet = Unenforced(book.Edit("protected-sheet.xlsx", """{"op":"set_values","sheet":"Data","range":"A1","values":[[1]]}"""));
-        Assert.Equal("'Data'", sheet.Location);
+        Assert.Equal("sheet/Data", sheet.Location);
         Assert.Contains("protected sheet 'Data'", sheet.Message, StringComparison.Ordinal);
         Assert.Contains("keeps the protection", sheet.Hint, StringComparison.Ordinal);
 
@@ -111,7 +111,7 @@ public sealed class CellsProtectionTests(CellsProtectionTests.ProtectedBook book
     {
         Warning sheet = Unenforced(book.Edit("reprotected-sheet.xlsx",
             $$"""{"op":"protect_sheet","sheet":"Data","passwordEnv":"{{OtherPasswordVariable}}","allow":["sort"]}"""));
-        Assert.Equal("'Data'", sheet.Location);
+        Assert.Equal("sheet/Data", sheet.Location);
         Assert.Contains("protected sheet 'Data'", sheet.Message, StringComparison.Ordinal);
         Assert.Contains("protect_sheet kept the existing password of sheet 'Data'", sheet.Message, StringComparison.Ordinal);
 
@@ -187,7 +187,7 @@ public sealed class CellsProtectionTests(CellsProtectionTests.ProtectedBook book
     {
         public ProtectedBook()
         {
-            Assert.Equal(0, Workspace.Run("cells", "create", "book.xlsx", "--sheets", "Data,Open").ExitCode);
+            Assert.Equal(0, Workspace.Run("cells", "create", "book.xlsx", "--sheet-names", "Data,Open").ExitCode);
             Created = Edit(null,
                 $$"""{"op":"protect_sheet","sheet":"Data","passwordEnv":"{{PasswordVariable}}"},{"op":"protect_workbook"}""");
         }

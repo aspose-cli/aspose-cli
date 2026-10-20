@@ -16,7 +16,7 @@ public sealed class CellsImageInputTests
     public void InsertImage_RefusesAFileThatIsNotAnIntactImageAsAnInvalidOperation(string kind)
     {
         using var workspace = new TempWorkspace();
-        Assert.Equal(0, workspace.Run("cells", "create", "source.xlsx", "--sheets", "Data").ExitCode);
+        Assert.Equal(0, workspace.Run("cells", "create", "source.xlsx", "--sheet-names", "Data").ExitCode);
         byte[] content = kind == "text"
             ? "not an image"u8.ToArray()
             : ResourceHttpServer.Image[..(ResourceHttpServer.Image.Length / 2)];

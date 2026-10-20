@@ -1,7 +1,7 @@
 {
   "name": "cells convert refuses --sheets for a format that converts the whole workbook",
   "steps": [
-    { "args": ["cells", "create", "book.xlsx", "--sheets", "Data"], "expect": { "exitCode": 0 } },
+    { "args": ["cells", "create", "book.xlsx", "--sheet-names", "Data"], "expect": { "exitCode": 0 } },
     {
       "args": ["cells", "convert", "book.xlsx", "--to", "xlsx", "--sheets", "1", "--out", "copy.xlsx"],
       "expect": {

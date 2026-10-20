@@ -2,7 +2,7 @@
   "name": "review recognizes an encrypted workbook by its extension and opens it with its password",
   "steps": [
     {
-      "args": ["cells", "create", "secret.xlsx", "--sheets", "Data", "--encrypt-env", "ASPOSE_CLI_TEST_PASSWORD"],
+      "args": ["cells", "create", "secret.xlsx", "--sheet-names", "Data", "--encrypt-env", "ASPOSE_CLI_TEST_PASSWORD"],
       "env": { "ASPOSE_CLI_TEST_PASSWORD": "test-secret-must-not-leak" },
       "expect": { "exitCode": 0 }
     },

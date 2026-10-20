@@ -208,7 +208,7 @@ internal static class CellsView
             $"Worksheet '{sheet.Name}' is too large for one readable review image; it shows {A1.FormatRange(shown)} of {A1.FormatRange(drawn)}.")
         {
             Hint = $"Render the next window, then the ones after it the same way: aspose-cli cells render \"{input}\" --range \"{CellsRender.Qualified(sheet, next)}\"; or trust 'cells read' for the data.",
-            Location = sheet.Name,
+            Location = CellsAddresses.OfSheet("sheet", sheet.Name),
             AffectsCompleteness = true,
         };
     }

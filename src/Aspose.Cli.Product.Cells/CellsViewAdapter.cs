@@ -136,7 +136,7 @@ internal sealed class CellsViewAdapter : IProductViewAdapter<CellsSession>
         {
             findings.Add(SheetFinding(CellsReviewChecks.FormulaError, error.Sheet,
                 $"Formula evaluates to {error.Error}.",
-                location: $"{error.Sheet}!{error.Cell}"));
+                location: CellsAddresses.At("cell", error.Sheet, error.Cell)));
         }
         foreach (CellsReviewSheetLayout sheet in layout.Sheets.Where(static sheet => sheet.IsEvaluationWarning))
         {
@@ -150,7 +150,7 @@ internal sealed class CellsViewAdapter : IProductViewAdapter<CellsSession>
             {
                 findings.Add(SheetFinding(CellsReviewChecks.EvaluationNotice, sheet.Name,
                     $"Row {row + 1} of '{sheet.Name}' is the evaluation notice an Aspose.Cells CSV or TSV export without a license wrote after the data; it is not data.",
-                    location: $"{sheet.Name}!A{row + 1}",
+                    location: CellsAddresses.Line(sheet.Name, rows: true, row),
                     hint: "Tell the user. Delete the row before anything reads the file as data, or export it again with a license."));
             }
         }
@@ -284,7 +284,7 @@ internal sealed class CellsViewAdapter : IProductViewAdapter<CellsSession>
         CellsReviewSheetLayout sheet,
         CellsReviewChartLayout chart)
     {
-        string location = $"{sheet.Name} chart '{chart.Name}'";
+        string location = chart.Address;
         if (chart.Hidden)
         {
             findings.Add(SheetFinding(CellsReviewChecks.ChartHidden, sheet.Name,
@@ -320,5 +320,5 @@ internal sealed class CellsViewAdapter : IProductViewAdapter<CellsSession>
 
     /// <summary>A finding on one worksheet, shown with that sheet's image; it is located at the sheet unless <paramref name="location"/> says otherwise.</summary>
     private static ReviewFinding SheetFinding(ReviewCheck check, string sheet, string message, string? location = null, string hint = Hint) =>
-        check.Finding(message, location ?? sheet, hint, sheet);
+        check.Finding(message, location ?? CellsAddresses.OfSheet("sheet", sheet), hint, sheet);
 }

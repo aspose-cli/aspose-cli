@@ -27,7 +27,7 @@ public sealed class CreateInputsContractTests : IDisposable
 
     [Theory]
     [InlineData("cells create book.xlsx")]
-    [InlineData("cells create book.xlsx --sheets Data,Summary")]
+    [InlineData("cells create book.xlsx --sheet-names Data,Summary")]
     [InlineData("slides create deck.pptx")]
     [InlineData("words create doc.docx")]
     [InlineData("words create doc.docx --title Notes")]

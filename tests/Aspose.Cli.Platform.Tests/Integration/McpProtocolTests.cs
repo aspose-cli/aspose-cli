@@ -48,7 +48,7 @@ public sealed class McpProtocolTests
         async Task Chain()
         {
             await using var server = await McpTestServer.Start(temp.Path, work);
-            AssertSuccess(await server.Execute(["cells", "create", "book.xlsx", "--sheets", "Data", "--output-format=json"]));
+            AssertSuccess(await server.Execute(["cells", "create", "book.xlsx", "--sheet-names", "Data", "--output-format=json"]));
             const string ops = """{"ops":[{"op":"set_values","sheet":"Data","range":"A1","values":[[42]]}]}""";
             AssertSuccess(await server.Execute(
                 ["cells", "edit", "book.xlsx", "--ops=-", "--in-place", "--output-format=json"], ops));

@@ -5814,7 +5814,7 @@ unknown-option | cells create --encrypt as --ecnrypt
 unknown-option | cells create --encrypt-env as --ecnrypt-env
 unknown-option | cells create --encrypt-stdin as --ecnrypt-stdin
 unknown-option | cells create --overwrite as --oevrwrite
-unknown-option | cells create --sheets as --sehets
+unknown-option | cells create --sheet-names as --sehet-names
 unknown-option | cells edit --backup as --bcakup
 unknown-option | cells edit --best-effort as --bset-effort
 unknown-option | cells edit --dry-run as --dyr-run

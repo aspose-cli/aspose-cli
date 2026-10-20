@@ -115,7 +115,7 @@ public sealed class CellsPivotCaptionCliTests : IDisposable
     }
 
     private void CreateReport() =>
-        _workspace.Run("cells", "create", "report.xlsx", "--sheets", "Data,Pivot").Succeeded();
+        _workspace.Run("cells", "create", "report.xlsx", "--sheet-names", "Data,Pivot").Succeeded();
 
     private void Edit(params string[] operations) =>
         _workspace.Run(

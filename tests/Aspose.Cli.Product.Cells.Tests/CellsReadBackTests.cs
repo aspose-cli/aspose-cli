@@ -98,7 +98,7 @@ public sealed class CellsReadBackTests : IClassFixture<CellsFixture>
               {"op":"add_conditional_format","sheet":"Data","range":"B2:C2","rule":{"kind":"cell-value","operator":"greater-than","value1":"1000"},
                "matchStyle":{"bold":true,"color":"#C00000","fillColor":"#FFFF00"}},
               {"op":"add_conditional_format","sheet":"Data","range":"B2:C2","rule":{"kind":"color-scale","minColor":"#FFFFFF","maxColor":"#00B050"}},
-              {"op":"add_sparkline","sheet":"Data","dataRange":"B2:C2","at":"D2","kind":"winloss","color":"#7030A0"},
+              {"op":"add_sparkline","sheet":"Data","dataRange":"B2:C2","at":"D2","kind":"win-loss","color":"#7030A0"},
               {"op":"add_sparkline","sheet":"Second","dataRange":"Data!B2:C3","at":"B2:B3"}
             ]}
             """, CellsInspectDetails.ConditionalFormats, CellsInspectDetails.Sparklines);
@@ -111,7 +111,7 @@ public sealed class CellsReadBackTests : IClassFixture<CellsFixture>
         Assert.Null(scale.MatchStyle);
 
         CellsSparklineInfo own = workbook.Sparklines!.Single(static group => group.Sheet == "Data");
-        Assert.Equal(("winloss", "#7030A0", "B2:C2", "D2"), (own.Kind, own.Color, own.DataRange, own.At));
+        Assert.Equal(("win-loss", "#7030A0", "B2:C2", "D2"), (own.Kind, own.Color, own.DataRange, own.At));
         CellsSparklineInfo other = workbook.Sparklines!.Single(static group => group.Sheet == "Second");
         Assert.Equal(("line", "Data!B2:C3", "B2:B3"), (other.Kind, other.DataRange, other.At));
     }

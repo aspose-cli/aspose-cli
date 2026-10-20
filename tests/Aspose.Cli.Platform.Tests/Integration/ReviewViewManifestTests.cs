@@ -159,7 +159,7 @@ public sealed class ReviewViewManifestTests
         switch (Path.GetExtension(file))
         {
             case ".xlsx":
-                workspace.Run("cells", "create", file, "--sheets", "Data", "--output-format", "json").Succeeded();
+                workspace.Run("cells", "create", file, "--sheet-names", "Data", "--output-format", "json").Succeeded();
                 workspace.Run("cells", "edit", file, "--in-place", "--set", "Data!A1=Hello", "--output-format", "json").Succeeded();
                 break;
             case ".pptx":

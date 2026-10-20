@@ -354,7 +354,7 @@ delta carries three redundant cues (sign in the format, semantic color,
 `arrows-3` icon), so it survives grayscale and colorblind readers. A width-12
 column shows a six-figure KPI at 20pt as `#####` (probe-measured); width 16
 holds it — which is why the card columns above are 16. Sparkline types:
-`line` for trend, `column` for period volumes, `winloss` for above/below. A
+`line` for trend, `column` for period volumes, `win-loss` for above/below. A
 sparkline cell must fall inside the sheet's used range to show — beside a
 KPI it always does. The final `resize_rows` (no height) auto-fits the 20pt
 number's row.

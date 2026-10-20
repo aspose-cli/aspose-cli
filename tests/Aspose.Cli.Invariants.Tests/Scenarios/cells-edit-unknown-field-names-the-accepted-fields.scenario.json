@@ -1,7 +1,7 @@
 {
   "name": "cells edit names the accepted fields of an unknown field and the likely one when there is one",
   "steps": [
-    { "args": ["cells", "create", "book.xlsx", "--sheets", "Data"], "expect": { "exitCode": 0 } },
+    { "args": ["cells", "create", "book.xlsx", "--sheet-names", "Data"], "expect": { "exitCode": 0 } },
     {
       "args": ["cells", "edit", "book.xlsx", "--in-place", "--ops", "{\"ops\":[{\"op\":\"rename_sheet\",\"sheet\":\"Data\",\"to\":\"Sales\"}]}"],
       "expect": {

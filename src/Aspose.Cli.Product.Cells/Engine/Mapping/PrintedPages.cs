@@ -73,7 +73,7 @@ internal static class PrintedPages
         return split.Count == 0 ? null : new Warning(CellsDiagnostics.ChartSplitAcrossPages, $"The {formatId.ToUpperInvariant()} output splits {(split.Count == 1 ? "chart" : "charts")} {string.Join(", ", split)} across pages.")
         {
             Hint = $"Fit the sheet on fewer pages with the set_page_setup operation of 'cells edit' {CellsDiagnostics.ChartSplitRemedy}, then convert again.",
-            Location = sheets.Count == 1 ? Sheets.QuotedName(sheets.Single()) : null,
+            Location = sheets.Count == 1 ? CellsAddresses.OfSheet("sheet", sheets.Single()) : null,
         };
     }
 }

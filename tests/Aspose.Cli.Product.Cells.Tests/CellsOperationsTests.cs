@@ -349,7 +349,7 @@ public sealed class CellsOperationsTests : IClassFixture<CellsFixture>
               { "op": "set_values", "sheet": "Second", "range": "B2",
                 "values": [[1,-2,3,4],[5,6,-7,8],[9,10,11,-12]] },
               { "op": "add_sparkline", "sheet": "Second", "dataRange": "B2:E4", "at": "F2:F4",
-                "kind": "winloss", "color": "#1F4E79" }
+                "kind": "win-loss", "color": "#1F4E79" }
             ] }
             """,
             "sparkline.out.xlsx").Output!.Path;
@@ -360,6 +360,16 @@ public sealed class CellsOperationsTests : IClassFixture<CellsFixture>
         Assert.Equal(3, group.Sparklines.Count);
         Assert.Equal("Second!B2:E2", group.Sparklines[0].DataRange);
         Assert.Equal("Second!B4:E4", group.Sparklines[2].DataRange);
+    }
+
+    [Fact]
+    public void Sparkline_KindIsHyphenatedWinLoss()
+    {
+        CliException error = Assert.Throws<CliException>(() => ParseOps(
+            """{"ops":[{"op":"add_sparkline","sheet":"Data","dataRange":"B2:E2","at":"F2","kind":"winloss"}]}"""));
+
+        Assert.Equal(ErrorCodes.OpsInvalid, error.Code);
+        Assert.Contains("win-loss", error.Message + error.Hint, StringComparison.Ordinal);
     }
 
     [Fact]
