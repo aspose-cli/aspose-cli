@@ -384,7 +384,7 @@ internal static partial class ContractRules
             ["group_columns", "group_rows", "resize_columns", "resize_rows", "ungroup_columns", "ungroup_rows"],
             "last ends a span of rows or of columns (user, 2026-10-12): a row number or a column letter"),
         [("v2/words/ops", "at")] = (
-            ["insert_bookmark", "insert_break", "insert_field", "insert_hyperlink", "insert_image", "insert_markdown", "insert_paragraphs", "insert_section", "insert_table", "insert_toc", "repeat_table_row"],
+            ["insert_break", "insert_field", "insert_hyperlink", "insert_image", "insert_markdown", "insert_paragraphs", "insert_section", "insert_table", "insert_toc"],
             "at names where the new content goes in the object it addresses: a block address for the content of a section's body, the 1-based section number for insert_section, as slides insert_section names a slide"),
         [("v2/slides/ops", "values")] = (
             ["insert_table", "slidesChartSeriesInput"],

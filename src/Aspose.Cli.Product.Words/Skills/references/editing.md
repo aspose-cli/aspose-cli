@@ -133,7 +133,7 @@ such files as text when that matters.
   text take the East Asian font of the nearest East Asian text in the
   paragraph. With `--track-changes` each match reads as a deletion followed
   by an insertion.
-- `repeat_table_row` expands a template row of the table `at` addresses (such
+- `repeat_table_row` expands a template row of the table `target` addresses (such
   as `{"find":"{{code}}"}`): one copy per item, in order, in place of the
   template row. Without `row`, the template is the table's one row with a
   `{{key}}` placeholder (spaces inside the braces are allowed); pass the

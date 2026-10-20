@@ -80,7 +80,7 @@ internal static class WordsOperationSample
             },
             new RepeatTableRowOp
             {
-                At = new WordsTarget { Find = "{{code}}" },
+                Target = new WordsTarget { Find = "{{code}}" },
                 Row = 2,
                 Items =
                 [
@@ -102,7 +102,7 @@ internal static class WordsOperationSample
             },
             new InsertBookmarkOp
             {
-                At = new WordsTarget { Block = 5 },
+                Target = new WordsTarget { Block = 5 },
                 Name = "ReviewPoint",
             },
             new InsertHyperlinkOp

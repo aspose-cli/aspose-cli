@@ -334,7 +334,8 @@ public sealed record SetTableCellOp : WordsOp
 public sealed record RepeatTableRowOp : WordsOp
 {
     /// <summary>The table block that holds the template row.</summary>
-    public required WordsTarget At { get; init; }
+    [MistakenFor("at")]
+    public required WordsTarget Target { get; init; }
 
     /// <summary>The 1-based template row; when omitted, the table's one row that contains a <c>{{key}}</c> placeholder.</summary>
     [NotState]
@@ -415,7 +416,8 @@ public sealed record InsertTocOp : WordsOp
 public sealed record InsertBookmarkOp : WordsOp
 {
     /// <summary>The paragraph block whose visible text the bookmark encloses.</summary>
-    public required WordsTarget At { get; init; }
+    [MistakenFor("at")]
+    public required WordsTarget Target { get; init; }
 
     /// <summary>The bookmark name.</summary>
     [ReadBackByPosition] // Reads back as an entry of the document's bookmarks list.

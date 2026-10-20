@@ -5584,7 +5584,7 @@ unknown-field | words delete_comments.author as atuhor
 unknown-field | words delete_section.section as scetion
 unknown-field | words format_text.target as traget
 unknown-field | words import_sections.path as pathh
-unknown-field | words insert_bookmark.at as att
+unknown-field | words insert_bookmark.target as traget
 unknown-field | words insert_break.at as att
 unknown-field | words insert_field.at as att
 unknown-field | words insert_hyperlink.at as att
@@ -5598,7 +5598,7 @@ unknown-field | words mail_merge.path as pathh
 unknown-field | words protect_document.protection as portection
 unknown-field | words refresh_fields.what as whatt
 unknown-field | words reject_revisions.author as atuhor
-unknown-field | words repeat_table_row.at as att
+unknown-field | words repeat_table_row.target as traget
 unknown-field | words replace_text.find as findd
 unknown-field | words set_default_font.font as fontt
 unknown-field | words set_footer.section as scetion

@@ -49,7 +49,7 @@
         "command": "edit",
         "inputSchema": "v2/words/ops",
         "operationSchema": "aspose-cli schema v2/words/ops --operation <op>",
-        "contractFingerprint": "sha256:5e4910ff0c69103ab1516d6f9eeda943443f8d931cd9e961bb2a0060c97954d3",
+        "contractFingerprint": "sha256:01ad7e3d0b260b53a3a082e56b8b57a1a2adac26b3ab166d762085d2cd115072",
         "maximumOperationCount": 10000,
         "ops": [
           "accept_revisions",
@@ -5098,7 +5098,7 @@
           "type": "object",
           "required": [
             "op",
-            "at",
+            "target",
             "name"
           ],
           "additionalProperties": false,
@@ -5109,7 +5109,7 @@
             "op": {
               "const": "insert_bookmark"
             },
-            "at": {
+            "target": {
               "description": "The paragraph block whose visible text the bookmark encloses.",
               "$ref": "#/$defs/wordsTarget",
               "x-readBack": "not-state"
@@ -5651,7 +5651,7 @@
           "type": "object",
           "required": [
             "op",
-            "at"
+            "target"
           ],
           "additionalProperties": false,
           "properties": {
@@ -5661,7 +5661,7 @@
             "op": {
               "const": "repeat_table_row"
             },
-            "at": {
+            "target": {
               "description": "The table block that holds the template row.",
               "$ref": "#/$defs/wordsTarget",
               "x-readBack": "not-state"
