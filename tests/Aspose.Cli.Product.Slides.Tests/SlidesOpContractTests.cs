@@ -96,6 +96,8 @@ public sealed class SlidesOpContractTests
     [InlineData("""{"op":"set_table_cell","slide":1,"shapeId":2,"row":1,"col":1,"text":"a"}""", "column")]
     [InlineData("""{"op":"set_slide_size","size":"16x9"}""", "slideSize")]
     [InlineData("""{"op":"format_shape","slide":1,"shapeId":2,"style":{"fill":"#FFFFFF"}}""", "fillColor")]
+    [InlineData("""{"op":"format_shape","slide":1,"shapeId":2,"style":{"line":"#FFFFFF"}}""", "lineColor")]
+    [InlineData("""{"op":"insert_shape","slide":1,"geometry":"rectangle","rect":{"x":0,"y":0,"width":10,"height":10},"style":{"line":"#FFFFFF"}}""", "lineColor")]
     [InlineData("""{"op":"format_shape","slide":1,"shapeId":2,"style":{"size":12}}""", "fontSize")]
     [InlineData("""{"op":"insert_chart","slide":1,"type":"bar","rect":{"x":0,"y":0,"width":10,"height":10},"categories":["a"],"series":[{"name":"s","values":[1]}]}""", "kind")]
     [InlineData("""{"op":"insert_chart","slide":1,"kind":"bar","box":{"x":0,"y":0,"width":10,"height":10},"categories":["a"],"series":[{"name":"s","values":[1]}]}""", "rect")]

@@ -34,7 +34,7 @@
         "command": "edit",
         "inputSchema": "v2/slides/ops",
         "operationSchema": "aspose-cli schema v2/slides/ops --operation <op>",
-        "contractFingerprint": "sha256:c925ae62f34a5319de434fe1fede533d5cf2a9a4dd4bb5a7e90482b3d4fdca02",
+        "contractFingerprint": "sha256:46e83b32ccc837a37e10a39e328871294822782870342c5062d5073935de4e8f",
         "maximumOperationCount": 10000,
         "ops": [
           "copy_slide",
@@ -5137,10 +5137,10 @@
               "$ref": "#/$defs/color",
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/slides/read-result.schema.json#/$defs/slidesShapeData/properties/fillColor"
             },
-            "line": {
+            "lineColor": {
               "description": "The solid outline color of the shape.",
               "$ref": "#/$defs/color",
-              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/slides/read-result.schema.json#/$defs/slidesShapeData/properties/line"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/slides/read-result.schema.json#/$defs/slidesShapeData/properties/lineColor"
             },
             "font": {
               "description": "A font name for complex-script text, and for Latin and East Asian text where latinFont and eastAsianFont do not name another.",
@@ -5607,7 +5607,7 @@
               "type": "string",
               "pattern": "^#[0-9A-F]{6}$"
             },
-            "line": {
+            "lineColor": {
               "description": "The solid outline color, as #RRGGBB: a table's when every cell border has the same one; only with --content full, and omitted without one solid outline.",
               "type": "string",
               "pattern": "^#[0-9A-F]{6}$"

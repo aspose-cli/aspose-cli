@@ -49,7 +49,7 @@ enlarge a shape. `insert_table` reports a table whose rows grow past its `rect` 
 lets a long table fit. The warning measures the table as `insert_table` left it, so it stays
 when a later operation of the same batch shrinks the text; review the slide instead. On a chart, `format_shape` styles the title, legend, axis and
 data-label text. A picture has no text, so a text style on it fails with `OPS_INVALID`.
-The `format_shape` `line` is only the solid outline color; no operation sets an outline's
+The `format_shape` `lineColor` is only the solid outline color; no operation sets an outline's
 width, dash or transparency.
 
 No operation adds, changes or deletes comments: `slides read --content full` reports the

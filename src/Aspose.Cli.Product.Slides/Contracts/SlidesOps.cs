@@ -117,8 +117,9 @@ public sealed record SlidesShapeStyleInput
     [HexColor] public string? FillColor { get; init; }
 
     /// <summary>The solid outline color of the shape.</summary>
-    [ReadBack("read-result.schema.json#/$defs/slidesShapeData/properties/line")]
-    [HexColor] public string? Line { get; init; }
+    [MistakenFor("line")]
+    [ReadBack("read-result.schema.json#/$defs/slidesShapeData/properties/lineColor")]
+    [HexColor] public string? LineColor { get; init; }
 
     /// <summary>
     /// A font name for complex-script text, and for Latin and East Asian text where latinFont

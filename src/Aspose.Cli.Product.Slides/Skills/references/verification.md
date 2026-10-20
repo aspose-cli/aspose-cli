@@ -69,7 +69,7 @@ code, severity and summary. What the summaries do not say:
   replaced. `SLIDES_EVALUATION_WATERMARK` is reported in any license mode, and the watermark box
   is left out of the other checks.
 - A finding names each shape with its `shapeId`, which edit operations address together with
-  the slide in its `location`.
+  the slide in its `location`, such as `slide/3`.
 
 After fixing one kind of finding, a later round can focus on it while you still open every image:
 

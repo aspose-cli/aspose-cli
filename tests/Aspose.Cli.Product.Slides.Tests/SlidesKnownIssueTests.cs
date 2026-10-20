@@ -247,7 +247,7 @@ public sealed class SlidesKnownIssueTests
         });
 
         Warning warning = Assert.Single(affected.Warnings!, static item => item.Code == SlidesDiagnostics.ChartTitleOverlaid);
-        Assert.Equal("slide 2", warning.Location);
+        Assert.Equal("slide/2", warning.Location);
         Assert.Contains("implicit automatic title", warning.Message, StringComparison.Ordinal);
         Assert.True(warning.AffectsCompleteness);
         Assert.DoesNotContain(unaffected.Warnings ?? [], static item => item.Code == SlidesDiagnostics.ChartTitleOverlaid);

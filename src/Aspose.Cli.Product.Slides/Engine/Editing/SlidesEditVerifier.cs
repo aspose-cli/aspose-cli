@@ -29,6 +29,9 @@ internal sealed class SlidesEditVerifier : IEditVerifier<SlidesOp>
     /// <summary>The expectations a later operation of the same kind builds on, so it carries the earlier operations.</summary>
     private static readonly HashSet<string> Cumulative = new(StringComparer.Ordinal) { "order", "sections" };
 
+    /// <summary>The location of an effect on every slide, or on a slide the output no longer holds.</summary>
+    private static readonly Func<Presentation, string> AllSlides = static _ => AllAddress(SlideUnit);
+
     private readonly Presentation _presentation;
     private readonly Func<SlidesOp, SlidesMutationHandlers.ResolvedSlidesOp> _targets;
     private readonly bool _evaluation;
@@ -70,7 +73,7 @@ internal sealed class SlidesEditVerifier : IEditVerifier<SlidesOp>
         switch (operation)
         {
             case InsertSlideOp or DeleteSlidesOp or MoveSlideOp or CopySlideOp or ImportSlidesOp:
-                Expect(id, "order", SlidesDiagnostics.SlideOrderMismatch, "the slide order", null, static presentation => string.Join(",", SlideIds(presentation)));
+                Expect(id, "order", SlidesDiagnostics.SlideOrderMismatch, "the slide order", AllSlides, static presentation => string.Join(",", SlideIds(presentation)));
                 break;
             case SetSlideHiddenOp or SetLayoutOp:
                 ExpectSlides(id, operation, "hidden", "whether the slide is hidden", static slide => slide.Hidden.ToString());
@@ -100,23 +103,23 @@ internal sealed class SlidesEditVerifier : IEditVerifier<SlidesOp>
                         : null);
                 break;
             case SlidesReplaceTextOp replace when !_evaluation:
-                Expect(id, $"replace/{id}", SlidesDiagnostics.SlideContentMismatch, "the text replace_text left in its scope", null,
+                Expect(id, $"replace/{id}", SlidesDiagnostics.SlideContentMismatch, "the text replace_text left in its scope", AllSlides,
                     presentation => Occurrences(presentation, replace));
                 break;
             case InsertSectionOp:
-                Expect(id, "sections", SlidesDiagnostics.SlideContentMismatch, "the sections", null, static presentation =>
+                Expect(id, "sections", SlidesDiagnostics.SlideContentMismatch, "the sections", static _ => AllAddress("section"), static presentation =>
                     string.Join("\n", Sections(presentation).Select(static section => $"{section.Address}|{section.State}")));
                 break;
             case SlidesSetPropertiesOp:
                 foreach (string name in Properties(_presentation.DocumentProperties).Keys)
                 {
-                    Expect(id, PropertyAddress(name), SlidesDiagnostics.PresentationSettingMismatch, $"the {name} property", null,
+                    Expect(id, PropertyAddress(name), SlidesDiagnostics.PresentationSettingMismatch, $"the {name} property", _ => PropertyAddress(name),
                         presentation => Properties(presentation.DocumentProperties)[name]);
                 }
 
                 break;
             case SetSlideSizeOp:
-                Expect(id, "slide-size", SlidesDiagnostics.PresentationSettingMismatch, "the slide size", null, static presentation =>
+                Expect(id, "slide-size", SlidesDiagnostics.PresentationSettingMismatch, "the slide size", static _ => SlideSizeAddress, static presentation =>
                     SlideSize(presentation) is var size ? string.Create(CultureInfo.InvariantCulture, $"{size.Width:0.##}x{size.Height:0.##}") : null);
                 break;
             default:
@@ -137,14 +140,10 @@ internal sealed class SlidesEditVerifier : IEditVerifier<SlidesOp>
             covered.UnionWith(expectation.Ops);
             if (expectation.Read(output) is var found && found != expectation.Value)
             {
-                string location = expectation.SlideId is uint slideId
-                    && output.Slides.FirstOrDefault(slide => slide.SlideId == slideId) is { } slide
-                    ? string.Create(CultureInfo.InvariantCulture, $"slide {output.Slides.IndexOf(slide) + 1}")
-                    : "presentation";
                 issues.Add(VerificationIssues.Of(
                     expectation.Code,
                     $"Operation {expectation.Ops[^1]}: the output does not hold {expectation.Subject} the operation left.",
-                    location,
+                    expectation.Locate(output),
                     "Read the output back with 'slides read' or 'slides inspect', then apply the operation again."));
             }
         }
@@ -176,10 +175,16 @@ internal sealed class SlidesEditVerifier : IEditVerifier<SlidesOp>
     }
 
     private void ExpectSlide(string id, string part, string subject, uint slideId, Func<ISlide, string?> read) =>
-        Expect(id, $"{part}/{slideId}", SlidesDiagnostics.SlideContentMismatch, subject, slideId,
+        Expect(id, $"{part}/{slideId}", SlidesDiagnostics.SlideContentMismatch, subject,
+            presentation => Slide(presentation, slideId) is { } slide ? SlideAddress(presentation.Slides.IndexOf(slide) + 1) : AllSlides(presentation),
             presentation => Slide(presentation, slideId) is { } slide ? read(slide) : null);
 
-    private void Expect(string id, string key, DiagnosticDescriptor code, string subject, uint? slideId, Func<Presentation, string?> read)
+    /// <summary>
+    /// Expects the value <paramref name="read"/> reads now under <paramref name="key"/>, replacing an
+    /// earlier expectation of the key; <paramref name="locate"/> gives the effect's target address
+    /// in the output read back, which an issue reports as its location.
+    /// </summary>
+    private void Expect(string id, string key, DiagnosticDescriptor code, string subject, Func<Presentation, string> locate, Func<Presentation, string?> read)
     {
         if (_expected.Remove(key, out Expectation? earlier))
         {
@@ -188,7 +193,7 @@ internal sealed class SlidesEditVerifier : IEditVerifier<SlidesOp>
 
         List<string> ops = _carried.Remove(key, out List<string>? carried) ? carried : [];
         ops.Add(id);
-        _expected[key] = new Expectation(ops, code, subject, slideId, read, read(_presentation));
+        _expected[key] = new Expectation(ops, code, subject, locate, read, read(_presentation));
     }
 
     /// <summary>
@@ -258,12 +263,12 @@ internal sealed class SlidesEditVerifier : IEditVerifier<SlidesOp>
 
     private static string Invariant(long value) => value.ToString(CultureInfo.InvariantCulture);
 
-    /// <summary>One effect the output should hold: the operations it checks, what reads it, and the value they left.</summary>
+    /// <summary>One effect the output should hold: the operations it checks, where it is, what reads it, and the value they left.</summary>
     private sealed record Expectation(
         IReadOnlyList<string> Ops,
         DiagnosticDescriptor Code,
         string Subject,
-        uint? SlideId,
+        Func<Presentation, string> Locate,
         Func<Presentation, string?> Read,
         string? Value);
 }
