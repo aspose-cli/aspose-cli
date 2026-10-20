@@ -1,3 +1,4 @@
+using System.Text.Json;
 using System.Text.Json.Nodes;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Serialization;
@@ -8,7 +9,9 @@ namespace Aspose.Cli.Sdk.Operations;
 /// The one shape of operation-document failures. Details always carry the operation's
 /// <c>id</c> when one operation is at fault, the same id its <c>applied[]</c> entry carries,
 /// and its <c>op</c> name when the entry names a known operation, so an agent can fix exactly
-/// that entry. The message names the operation the same way, such as
+/// that entry. <c>details.reason</c> is one of <see cref="OpsInvalidReasons"/> and
+/// <c>details.field</c> the path of the field it is about, when it is about one; the message
+/// explains it and names the operation the same way, such as
 /// <c>Operation op-0002 (set_values)</c>. A list of names the caller can choose from appears
 /// once, as <c>details.available</c>, and the message's last sentence names the same list.
 /// </summary>
@@ -19,41 +22,53 @@ internal static class OperationErrors
     /// object belongs, lists the fields the object accepts in <c>available</c> and, when some
     /// are likely meant, names them in <c>suggestions</c>.
     /// </summary>
-    internal static CliException Invalid(string reason, string hint, AllowedFieldsException? field = null)
+    /// <param name="reason">One of <see cref="OpsInvalidReasons"/>.</param>
+    /// <param name="explanation">Why, completing the message.</param>
+    /// <param name="hint">The next step.</param>
+    /// <param name="field">The path of the field it is about, if any.</param>
+    /// <param name="allowed">The unknown or mistyped field's object and the fields it accepts, if any.</param>
+    internal static CliException Invalid(string reason, string explanation, string hint, string? field = null, AllowedFieldsException? allowed = null)
     {
-        var details = new JsonObject { ["reason"] = reason };
-        AddAllowedFields(details, field);
-        return CliException.Create(ErrorCodes.OpsInvalid, $"The operation document is invalid: {reason}{Listed(field?.Mistake)}",
-            hint: field?.Mistake?.Hint(hint) ?? hint, details: details);
+        var details = new JsonObject { ["reason"] = reason, ["field"] = field };
+        AddAllowedFields(details, allowed);
+        return CliException.Create(ErrorCodes.OpsInvalid, $"The operation document is invalid: {explanation}{Listed(allowed?.Mistake)}",
+            hint: allowed?.Mistake?.Hint(hint) ?? hint, details: details);
     }
+
+    /// <summary>Rejects the document as a whole for the serializer's rejection, by its reason and field.</summary>
+    internal static CliException Invalid(JsonException rejection, string hint) =>
+        Invalid(ReasonOf(rejection), rejection.Message, hint, FieldOf(rejection), rejection as AllowedFieldsException);
 
     /// <summary>
     /// Rejects one operation; <paramref name="name"/> is null when the entry names no known
-    /// operation. An unknown or mistyped field adds details as <see cref="Invalid"/> does, and a
-    /// value that names none of its allowed values adds them as <c>available</c> with the closest
-    /// as <c>suggestions</c>.
+    /// operation. An unknown or mistyped field adds details as the document's rejection does,
+    /// and a value that names none of its allowed values adds them as <c>available</c> with the
+    /// closest as <c>suggestions</c>.
     /// </summary>
     internal static CliException InvalidAt(
-        string id, string? name, string reason, string hint, ErrorCode? cause = null,
-        AllowedFieldsException? field = null, Mistake? value = null, string? path = null)
+        string id, string? name, string reason, string explanation, string hint, string? field = null, ErrorCode? cause = null,
+        AllowedFieldsException? allowed = null, Mistake? value = null, string? path = null)
     {
         JsonObject details = Identify(id, name);
         details["reason"] = reason;
-        if (path is not null)
-        {
-            details["path"] = path;
-        }
-
-        if (cause is not null)
-        {
-            details["cause"] = cause.Name;
-        }
-        AddAllowedFields(details, field);
+        details["field"] = field;
+        details["path"] = path;
+        details["cause"] = cause?.Name;
+        AddAllowedFields(details, allowed);
         value?.WriteTo(details);
-        Mistake? mistake = value ?? field?.Mistake;
-        return CliException.Create(ErrorCodes.OpsInvalid, $"{Subject(id, name)} is invalid: {reason}{Listed(mistake)}",
+        Mistake? mistake = value ?? allowed?.Mistake;
+        return CliException.Create(ErrorCodes.OpsInvalid, $"{Subject(id, name)} is invalid: {explanation}{Listed(mistake)}",
             hint: mistake?.Hint(hint) ?? hint, details: details);
     }
+
+    /// <summary>Rejects one operation the serializer could not read, by the rejection's reason and field.</summary>
+    internal static CliException InvalidAt(string id, string? name, JsonException rejection, string hint) =>
+        InvalidAt(id, name, ReasonOf(rejection), rejection.Message, hint, FieldOf(rejection), allowed: rejection as AllowedFieldsException);
+
+    /// <summary>Rejects one operation whose value its constraints, its own check or its handler refused.</summary>
+    internal static CliException InvalidAt(string id, string name, OperationInvalidException rejection, string defaultHint) =>
+        InvalidAt(id, name, OpsInvalidReasons.InvalidValue, rejection.Message, rejection.Hint ?? defaultHint, rejection.Field,
+            value: rejection.Mistake, path: rejection.Path);
 
     /// <summary>
     /// Rejects every invalid operation of a batch at once, and every unknown field of each, so a
@@ -85,12 +100,13 @@ internal static class OperationErrors
     /// <c>available</c> and, when some are likely meant, naming them in <c>suggestions</c>;
     /// <c>details.op</c> is the op name as the entry wrote it, so the caller finds the entry.
     /// </summary>
-    internal static CliException UnknownAt(string id, string reason, string hint, Mistake operation)
+    internal static CliException UnknownAt(string id, string explanation, string hint, Mistake operation)
     {
         JsonObject details = Identify(id, operation.Requested);
-        details["reason"] = reason;
+        details["reason"] = OpsInvalidReasons.UnknownOp;
+        details["field"] = "op";
         operation.WriteTo(details);
-        return CliException.Create(ErrorCodes.OpsInvalid, $"{Subject(id, name: null)} is invalid: {reason}{Listed(operation)}",
+        return CliException.Create(ErrorCodes.OpsInvalid, $"{Subject(id, name: null)} is invalid: {explanation}{Listed(operation)}",
             hint: operation.Hint(hint), details: details);
     }
 
@@ -112,6 +128,12 @@ internal static class OperationErrors
         $"{Subject(id, name)} failed inside the document engine, so the batch stopped and nothing was written: {failure.Message}",
         failure,
         Identify(id, name));
+
+    /// <summary>The reason of a serializer rejection: its own, or <c>invalid-value</c> for one that states none.</summary>
+    private static string ReasonOf(JsonException rejection) =>
+        rejection is ContractRejection stated ? stated.Reason : OpsInvalidReasons.InvalidValue;
+
+    private static string? FieldOf(JsonException rejection) => (rejection as ContractRejection)?.Field;
 
     private static string Subject(string id, string? name) => name is null ? $"Operation {id}" : $"Operation {id} ({name})";
 

@@ -191,7 +191,7 @@ public sealed class ResultTextTests
             CheckedOps = ["op-0001", "title"],
             Issues =
             [
-                VerificationIssue.From(new Warning(new WarningCode("FIELD_STALE"), "1 field needs an update") { Location = "block 4", Hint = "Update the fields." }),
+                VerificationIssue.From(new Warning(new WarningCode("FIELD_STALE"), "1 field needs an update") { Location = "block/4", Hint = "Update the fields." }),
                 VerificationIssue.From(new Warning(new WarningCode("COUNT_CHANGED"), "The count changed.")),
             ],
         };
@@ -201,7 +201,7 @@ public sealed class ResultTextTests
         Assert.Equal(
             [
                 "verification: needs attention; checked ops: op-0001, title; 1 direct",
-                "  FIELD_STALE [block 4]: 1 field needs an update",
+                "  FIELD_STALE [block/4]: 1 field needs an update",
                 "    hint: Update the fields.",
                 "  COUNT_CHANGED: The count changed.",
             ],

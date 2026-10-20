@@ -507,7 +507,7 @@ public sealed class CellsOperationBehaviorTests : IClassFixture<CellsFixture>
             source, """{ "op": "delete_chart", "sheet": "Data", "name": "Revenue" }""", "chart-names.out.xlsx"));
 
         Assert.Equal(ErrorCodes.OpsInvalid, ambiguous.Code);
-        Assert.Contains("at indexes 1, 3", ambiguous.Details!["reason"]!.GetValue<string>(), StringComparison.Ordinal);
+        Assert.Contains("at indexes 1, 3", ambiguous.Message, StringComparison.Ordinal);
         Assert.Equal(CellsDiagnostics.ChartNotFound, missing.Code);
         Assert.Equal(["Sales", "Costs", "Sales"], missing.Details!["available"]!.AsArray().Select(static name => name!.GetValue<string>()));
     }

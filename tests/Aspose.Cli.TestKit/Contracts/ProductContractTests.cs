@@ -391,7 +391,7 @@ public abstract class ProductContractTests<TModule>
         JsonSerializerOptions options = new TModule().Define().Json.LocalOptions;
         foreach (ProductSchemaSample sample in OperationInputs())
         {
-            Assert.Throws<JsonException>(() => JsonSerializer.Deserialize(
+            Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize(
                 "{\"ops\":[" + operation + "]}", sample.Value.GetType(), options));
         }
     }

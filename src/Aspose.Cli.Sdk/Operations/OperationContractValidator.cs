@@ -67,7 +67,7 @@ internal static class OperationContractValidator
         {
             if (constraint.Check(set) is { } reason)
             {
-                throw new OperationInvalidException($"{(path.Length == 0 ? "the operation" : path)} {reason}");
+                throw new OperationInvalidException($"{(path.Length == 0 ? "the operation" : path)} {reason}") { Field = path.Length == 0 ? null : path };
             }
         }
     }
@@ -90,7 +90,7 @@ internal static class OperationContractValidator
             {
                 throw constraint is AllowedValuesAttribute allowed && value is string text
                     ? NotAllowed(allowed, text, path, anyColor)
-                    : new OperationInvalidException($"{path} {reason}");
+                    : new OperationInvalidException($"{path} {reason}") { Field = path };
             }
         }
 
@@ -142,7 +142,10 @@ internal static class OperationContractValidator
         return new OperationInvalidException(
             $"{path} does not accept '{text}'",
             hint,
-            Mistake.Of(text, allowed.Spelled, color is null ? spelled : [color]));
+            Mistake.Of(text, allowed.Spelled, color is null ? spelled : [color]))
+        {
+            Field = path,
+        };
     }
 
     internal static string Join(string path, string name) => path.Length == 0 ? name : $"{path}.{name}";

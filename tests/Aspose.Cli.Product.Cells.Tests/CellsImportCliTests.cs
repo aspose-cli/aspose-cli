@@ -106,7 +106,7 @@ public sealed class CellsImportCliTests : IClassFixture<CellsImportCliTests.Sour
             """{"ops":[{"op":"import_sheet","sourceSheet":"Totals","path":"eu.xlsx","name":"eu"}]}""");
         JsonNode error = JsonNode.Parse(taken.StdErr)!["error"]!;
         Assert.Equal("OPS_INVALID", error["code"]!.GetValue<string>());
-        Assert.Contains("'EU'", error["details"]!["reason"]!.GetValue<string>(), StringComparison.Ordinal);
+        Assert.Contains("'EU'", error["message"]!.GetValue<string>(), StringComparison.Ordinal);
     }
 
     [Theory]

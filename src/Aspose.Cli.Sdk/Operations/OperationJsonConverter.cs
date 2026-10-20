@@ -3,6 +3,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
 using Aspose.Cli.Sdk.Contracts;
+using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Serialization;
 
 namespace Aspose.Cli.Sdk.Operations;
@@ -32,21 +33,24 @@ public sealed class OperationJsonConverter<TOp> : JsonConverter<TOp>
             || !root.TryGetProperty("op", out JsonElement discriminator)
             || discriminator.ValueKind != JsonValueKind.String)
         {
-            throw new JsonException("every op must be an object with a string 'op' field");
+            const string Message = "every op must be an object with a string 'op' field";
+            throw root.ValueKind != JsonValueKind.Object ? new ContractRejection(OpsInvalidReasons.WrongType, field: null, Message)
+                : !root.TryGetProperty("op", out _) ? new ContractRejection(OpsInvalidReasons.MissingField, "op", Message)
+                : new ContractRejection(OpsInvalidReasons.WrongType, "op", Message);
         }
 
         string name = discriminator.GetString()!;
         if (!TOp.Catalog.TryGetOperation(name, out OperationRecord? record))
         {
             // The operation error lists the operations once, in details.available and the message.
-            throw new JsonException($"unknown op '{name}'");
+            throw new ContractRejection(OpsInvalidReasons.UnknownOp, "op", $"unknown op '{name}'");
         }
 
         // The payload below omits the discriminator, so only its duplicates need a check here;
         // the serializer rejects every other duplicate and the diagnostics name it.
         if (root.EnumerateObject().Count(static property => property.NameEquals("op")) > 1)
         {
-            throw new JsonException("op is duplicated");
+            throw new ContractRejection(OpsInvalidReasons.DuplicateField, "op", "op is duplicated");
         }
 
         using var payload = new MemoryStream();
@@ -125,7 +129,7 @@ public sealed class OperationJsonConverter<TOp> : JsonConverter<TOp>
         {
             if (isOperation && member.NameEquals("opName"))
             {
-                throw new JsonException("unknown field 'opName'; use the 'op' discriminator");
+                throw new ContractRejection(OpsInvalidReasons.UnknownField, "opName", "unknown field 'opName'; use the 'op' discriminator");
             }
             if (isOperation && member.NameEquals("op"))
             {
@@ -138,7 +142,7 @@ public sealed class OperationJsonConverter<TOp> : JsonConverter<TOp>
             {
                 // An optional member is omitted, never null, as the schema states; only a
                 // required member whose type admits null may be null.
-                throw new JsonException($"{Join(path, member.Name)} must not be null");
+                throw new ContractRejection(OpsInvalidReasons.WrongType, Join(path, member.Name), $"{Join(path, member.Name)} must not be null");
             }
 
             if (property is null)
@@ -235,7 +239,7 @@ public sealed class OperationJsonConverter<TOp> : JsonConverter<TOp>
     {
         if (value.ValueKind == JsonValueKind.Null && !shape.Nullable && shape.Kind != OperationValueKind.Any)
         {
-            throw new JsonException($"{path} must not be null");
+            throw new ContractRejection(OpsInvalidReasons.WrongType, path, $"{path} must not be null");
         }
 
         WriteValue(writer, value, shape, path, unknown);

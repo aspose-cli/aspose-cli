@@ -184,7 +184,7 @@ internal sealed class AtomicPublicationPlan
         { throw new InvalidOperationException("The output set is sealed."); }
         ResourceBudgets?.EnsureWithin(ResourceBudgetKinds.OutputSetEntries, Journal.Entries.Count + 1L, "items", "output-set-admission");
         if (Journal.Entries.Count >= PublicationLimits.MaximumEntries)
-        { throw Aspose.Cli.Sdk.Errors.CliErrors.OutputUnwritable(TargetDirectory, "the output entry budget was exceeded", phase: "output-set-admission"); }
+        { throw Aspose.Cli.Sdk.Errors.CliErrors.OutputBudgetExceeded(ResourceBudgetKinds.OutputSetEntries, Journal.Entries.Count + 1L, PublicationLimits.MaximumEntries, "items", "output-set-admission"); }
     }
 
     internal void BeginCommit()

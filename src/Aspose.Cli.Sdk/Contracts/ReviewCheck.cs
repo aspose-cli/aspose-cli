@@ -49,7 +49,10 @@ public sealed partial record ReviewCheck
 
     /// <summary>A finding of this check.</summary>
     /// <param name="message">What was found.</param>
-    /// <param name="location">Where, in words people read, for example <c>page 3</c>.</param>
+    /// <param name="location">
+    /// The item's address in the targets syntax <c>&lt;unit&gt;/&lt;address&gt;</c>, such as <c>page/3</c>;
+    /// null when the finding concerns the whole document.
+    /// </param>
     /// <param name="hint">How to resolve it.</param>
     /// <param name="parts">Ids of the view parts that show it; see <see cref="ReviewFinding.Parts"/>.</param>
     public ReviewFinding Finding(

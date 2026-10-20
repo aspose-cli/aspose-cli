@@ -31,7 +31,7 @@ public abstract class ValueKindAttribute(string expected, string pattern, string
         }
         catch (CliException rejection)
         {
-            return $"{expected}: {rejection.Details?["reason"]?.GetValue<string>() ?? rejection.Message}";
+            return $"{expected}: {rejection.Explanation ?? rejection.Message}";
         }
 
         return _pattern.Check(value) is null ? null : expected;

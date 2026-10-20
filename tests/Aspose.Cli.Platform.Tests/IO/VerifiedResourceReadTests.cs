@@ -157,7 +157,7 @@ public sealed class VerifiedResourceReadTests
         Assert.True(first.TryRead("data", out _));
         byte[] bytes = [99];
         CliException error = Assert.Throws<CliException>(() => second.TryRead("data", out bytes));
-        Assert.Equal(ErrorCodes.InputBudgetExceeded, error.Code);
+        Assert.Equal(kind == ResourceBudgetKinds.InputBytes ? ErrorCodes.FileTooLarge : ErrorCodes.InputBudgetExceeded, error.Code);
         Assert.Empty(bytes);
         Assert.Same(error, Assert.Throws<CliException>(second.ThrowIfFailed));
         Assert.Equal(0, second.OmittedCount);

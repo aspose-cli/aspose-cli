@@ -66,7 +66,8 @@ public sealed class CellsModuleTests
 
         Assert.Equal("op-0002", error.Details!["id"]!.GetValue<string>());
         Assert.Equal("format_range", error.Details["op"]!.GetValue<string>());
-        Assert.Equal("unknown field 'style.shiny'", error.Details["reason"]!.GetValue<string>());
+        Assert.Equal("unknown-field", error.Details["reason"]!.GetValue<string>());
+        Assert.Equal("style.shiny", error.Details["field"]!.GetValue<string>());
         Assert.Contains("bold", error.Details["available"]!.AsArray().Select(static item => item!.GetValue<string>()));
         Assert.DoesNotContain("Aspose.Cli", error.Message, StringComparison.Ordinal);
     }

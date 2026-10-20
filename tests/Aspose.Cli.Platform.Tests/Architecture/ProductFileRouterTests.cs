@@ -74,7 +74,7 @@ public sealed class ProductFileRouterTests
             // Content no product recognizes under a product's extension is a damaged file.
             Assert.Equal(ErrorCodes.FileCorrupt, error.Code);
             Assert.Equal(path, error.Details!["path"]!.GetValue<string>());
-            Assert.NotNull(error.Details["reason"]);
+            Assert.NotNull(error.Explanation);
         }
         finally
         {
@@ -465,7 +465,7 @@ public sealed class ProductFileRouterTests
             CliException error = await Assert.ThrowsAsync<CliException>(
                 async () => await new ProductFileRouter(catalog).ResolveAsync(
                     new FileRouteRequest(path) { ExplicitProductId = "two" }));
-            Assert.Equal(ErrorCodes.FormatMismatch, error.Code);
+            Assert.Equal(ErrorCodes.FileCorrupt, error.Code);
         }
         finally
         {
@@ -490,7 +490,7 @@ public sealed class ProductFileRouterTests
             CliException error = await Assert.ThrowsAsync<CliException>(
                 async () => await new ProductFileRouter(catalog).ResolveAsync(
                     new FileRouteRequest(declared) { ExplicitProductId = "ambiguous-format" }));
-            Assert.Equal(ErrorCodes.FormatMismatch, error.Code);
+            Assert.Equal(ErrorCodes.FileCorrupt, error.Code);
         }
         finally
         {
@@ -533,7 +533,8 @@ public sealed class ProductFileRouterTests
             CliException error = await Assert.ThrowsAsync<CliException>(
                 async () => await new ProductFileRouter(catalog).ResolveAsync(
                     new FileRouteRequest(contradicting) { ExplicitProductId = "explicit-rules" }));
-            Assert.Equal(ErrorCodes.FormatMismatch, error.Code);
+            // The product declares the extension, so content it does not recognize is its damaged file.
+            Assert.Equal(ErrorCodes.FileCorrupt, error.Code);
         }
         finally
         {

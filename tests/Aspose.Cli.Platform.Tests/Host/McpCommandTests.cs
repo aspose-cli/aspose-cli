@@ -1,8 +1,10 @@
 using System.Diagnostics;
 using System.CommandLine;
+using System.Text.Json.Nodes;
 using Aspose.Cli.Host.Invocation;
 using Aspose.Cli.Host.LocalServices;
 using Aspose.Cli.Host.Mcp;
+using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.TestKit;
 using Xunit;
 
@@ -293,6 +295,22 @@ public sealed class McpCommandTests
             cancellation.Cancel();
             await ObserveCanceledExecutionAsync(execution);
         }
+    }
+
+    [Fact]
+    public async Task Execute_AWorkerNotConfirmedStoppedKeepsItsErrorEnvelope()
+    {
+        // WORKER_TERMINATION_FAILED exits 9 like a timeout, but it is its own error: the agent
+        // needs details.pid to stop the process before retrying.
+        var runner = new McpCommandRunner(ActualCommandTree.Host, static () => new ProcessStartInfo("unused"), parser: ProbeParser(),
+            runChild: static (_, _, _, _) => throw CliErrors.WorkerTerminationFailed(4242));
+
+        McpExecutionResult result = await runner.RunAsync(["timeout-probe"], null, 30, CancellationToken.None);
+
+        Assert.Equal(9, result.ExitCode);
+        JsonNode error = JsonNode.Parse(result.Stderr)!["error"]!;
+        Assert.Equal("WORKER_TERMINATION_FAILED", error["code"]!.GetValue<string>());
+        Assert.Equal(4242, error["details"]!["pid"]!.GetValue<int>());
     }
 
     private static InvocationParser ProbeParser()

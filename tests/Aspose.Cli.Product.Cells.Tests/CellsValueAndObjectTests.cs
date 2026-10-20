@@ -188,7 +188,7 @@ public sealed class CellsValueAndObjectTests : IClassFixture<CellsFixture>
             $$"""{ "op": "define_table", "sheet": "Data", "range": "A1:C2", "name": "{{name}}" }""");
 
         Assert.Equal("define_table", error.Details!["op"]!.GetValue<string>());
-        Assert.Contains(name, error.Details["reason"]!.GetValue<string>(), StringComparison.Ordinal);
+        Assert.Contains(name, error.Message, StringComparison.Ordinal);
     }
 
     [Theory]

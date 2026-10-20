@@ -1908,10 +1908,10 @@
               "description": "Whether the output existed when publication found it changed."
             },
             "actualSha256": {
-              "description": "The SHA-256 of the output publication found."
+              "description": "The SHA-256 the file had when the command found it changed."
             },
             "actualSizeBytes": {
-              "description": "The size of the output publication found."
+              "description": "The size the file had when the command found it changed."
             },
             "argument": {
               "description": "The positional argument the error is about, such as file."
@@ -1946,9 +1946,6 @@
             "errors": {
               "description": "Every problem, when there are several."
             },
-            "expectedBytes": {
-              "description": "The size an input had when it was admitted."
-            },
             "expectedExists": {
               "description": "Whether the output existed when the command read it."
             },
@@ -1956,7 +1953,7 @@
               "description": "The SHA-256 the file had when the command read it."
             },
             "expectedSizeBytes": {
-              "description": "The size the output had when the command read it."
+              "description": "The size the file had when the command read it."
             },
             "extension": {
               "description": "The file extension the error is about."
@@ -1985,11 +1982,8 @@
             "line": {
               "description": "The line of a text input the error is about."
             },
-            "observedBytes": {
-              "description": "The size an input had when it was read again."
-            },
-            "observedSha256": {
-              "description": "The SHA-256 an input had when it was read again."
+            "list": {
+              "description": "The result field holding a list that was capped, such as outline."
             },
             "offset": {
               "description": "The byte offset of the problem in an input."
@@ -2034,7 +2028,9 @@
               "description": "The range or selection as the caller wrote it."
             },
             "reason": {
-              "description": "Why the value or file was refused."
+              "description": "Why the value or file was refused, as a short kebab-case token such as unknown-field; the message explains it.",
+              "type": "string",
+              "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
             },
             "recoveryComplete": {
               "description": "Whether every publication target was restored."
@@ -2053,9 +2049,6 @@
             },
             "source": {
               "description": "The source of a value, such as a variable or file."
-            },
-            "stage": {
-              "description": "The stage of the worker that failed."
             },
             "subject": {
               "description": "What was looked up, such as sheet, page or file."
@@ -3123,7 +3116,7 @@
               "minLength": 1
             },
             "location": {
-              "description": "Where, in words people read, for example page 3.",
+              "description": "The affected item's address in the targets syntax <unit>/<address>, such as page/3, slide/2/shape/4 or cell/Sheet1!A1, with names escaped as targets escape them; omitted when the finding concerns the whole document.",
               "type": "string",
               "minLength": 1
             },
@@ -3426,7 +3419,7 @@
           "type": "string"
         },
         "location": {
-          "description": "Stable product-owned address of the affected item, when there is exactly one.",
+          "description": "The affected item's address in the targets syntax <unit>/<address>, such as page/3, slide/2/shape/4 or cell/Sheet1!A1, with names escaped as targets escape them; omitted unless the issue concerns exactly one item.",
           "type": "string"
         },
         "hint": {
@@ -3761,7 +3754,7 @@
           "minLength": 1
         },
         "location": {
-          "description": "Stable product-owned address of the affected item, when known.",
+          "description": "The affected item's address in the targets syntax <unit>/<address>, such as page/3, slide/2/shape/4 or cell/Sheet1!A1, with names escaped as targets escape them; omitted when the condition concerns no single item, such as the whole document.",
           "type": "string",
           "minLength": 1
         },
@@ -5520,6 +5513,14 @@
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
+      "code": "OUTPUT_BUDGET_EXCEEDED",
+      "owner": "common",
+      "severity": "error",
+      "exitCode": 5,
+      "category": "output",
+      "detailsSchemaId": "v2/common/diagnostic-details"
+    },
+    {
       "code": "OUTPUT_CONFLICT",
       "owner": "common",
       "severity": "error",
@@ -5547,8 +5548,8 @@
       "code": "OUTPUT_PUBLICATION_PARTIAL",
       "owner": "common",
       "severity": "error",
-      "exitCode": 8,
-      "category": "partial",
+      "exitCode": 5,
+      "category": "output",
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
@@ -5686,8 +5687,8 @@
       "code": "WORKER_TERMINATION_FAILED",
       "owner": "common",
       "severity": "error",
-      "exitCode": 8,
-      "category": "partial",
+      "exitCode": 9,
+      "category": "timeout",
       "detailsSchemaId": "v2/common/diagnostic-details"
     }
   ]

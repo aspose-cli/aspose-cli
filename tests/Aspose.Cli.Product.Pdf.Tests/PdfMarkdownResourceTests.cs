@@ -202,7 +202,7 @@ public sealed class PdfMarkdownResourceTests
         CliException exceeded = Assert.Throws<CliException>(() =>
             new MarkdownImportResources(markdown, budgets, directory).Dispose());
 
-        Assert.Equal(ErrorCodes.InputBudgetExceeded, exceeded.Code);
+        Assert.Equal(ErrorCodes.FileTooLarge, exceeded.Code);
     }
 
     [Fact]

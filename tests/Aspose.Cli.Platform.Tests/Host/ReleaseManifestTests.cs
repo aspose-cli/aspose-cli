@@ -2,6 +2,7 @@ using System.Text.Json.Nodes;
 using Aspose.Cli.Host.Invocation;
 using Aspose.Cli.Host.Updating;
 using Aspose.Cli.Sdk;
+using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.TestKit;
 using Xunit;
@@ -108,6 +109,9 @@ public sealed class ReleaseManifestTests : IDisposable
         Assert.Equal(HostDiagnostics.ReleaseVerificationFailedCode, error.Code);
         Assert.Contains("install.ps1", error.Hint, StringComparison.Ordinal);
         Assert.Contains("releases/latest/download/install.ps1", error.Hint, StringComparison.Ordinal);
+        // The details hold only keys of the error schema's dictionary, and the reason is its token.
+        Assert.Equal("manifest-schema-unsupported", error.Details!["reason"]!.GetValue<string>());
+        Assert.All(error.Details, static member => Assert.Contains(member.Key, ErrorDetailKeys.All.Keys));
     }
 
     [Fact]

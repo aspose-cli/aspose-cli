@@ -63,7 +63,7 @@ public sealed class MistakeRecoveryCliTests : IDisposable
         CliResult unknown = _workspace.Run("review", "unknown.bin", "--out", "review", "--output-format", "json");
 
         JsonNode error = JsonNode.Parse(written.StdErr)!["error"]!;
-        Assert.Equal("FORMAT_MISMATCH", error["code"]!.GetValue<string>());
+        Assert.Equal("FORMAT_UNSUPPORTED", error["code"]!.GetValue<string>());
         string hint = error["hint"]!.GetValue<string>();
         Assert.DoesNotContain("--product", hint, StringComparison.Ordinal);
         Assert.Contains("'aspose-cli cells convert <document> --to pdf'", hint, StringComparison.Ordinal);

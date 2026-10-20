@@ -17,10 +17,24 @@ internal static partial class ContractRules
     /// <c>sizeBytes</c>, <c>limitBytes</c>, <c>requestedCells</c>, <c>maxCells</c>, <c>maxPixels</c>,
     /// <c>requestedSheet</c>, <c>firstSheet</c>); collections state <c>available</c> (not
     /// <c>supported</c>); operation errors state <c>id</c> and <c>op</c> (not the batch position
-    /// <c>index</c>).
+    /// <c>index</c>); a changed file states <c>expectedSizeBytes</c>, <c>actualSizeBytes</c>,
+    /// <c>expectedSha256</c> and <c>actualSha256</c> (not <c>expectedBytes</c>, <c>observedBytes</c>,
+    /// <c>observedSha256</c>); a stage of processing is <c>phase</c> (not <c>stage</c>).
     /// </summary>
     private static readonly string[] ReplacedDetailsKeys =
-        ["observed", "sizeBytes", "limitBytes", "requestedCells", "maxCells", "maxPixels", "requestedSheet", "firstSheet", "supported", "index"];
+    [
+        "observed", "sizeBytes", "limitBytes", "requestedCells", "maxCells", "maxPixels", "requestedSheet", "firstSheet", "supported", "index",
+        "expectedBytes", "observedBytes", "observedSha256", "stage",
+    ];
+
+    /// <summary>
+    /// The form of <c>details.reason</c>: a short kebab-case token a caller can branch on, never a
+    /// sentence, which belongs in the message.
+    /// </summary>
+    private const string ReasonToken = "^[a-z0-9]+(-[a-z0-9]+)*$";
+
+    /// <summary>The <c>OPS_INVALID</c> reasons about one field, which name it in <c>details.field</c>.</summary>
+    private static readonly string[] FieldReasons = ["unknown-field", "missing-field", "wrong-type"];
 
     /// <summary>
     /// The schema of the error envelope's <c>error</c> object, which a failed operation of a
@@ -56,7 +70,9 @@ internal static partial class ContractRules
 
     /// <summary>
     /// The problems of the dictionary the error schema publishes: it lists keys, each with a
-    /// description, closes <c>error.details</c> to them and holds none of the replaced keys.
+    /// description, closes <c>error.details</c> to them, holds none of the replaced keys and
+    /// constrains <c>reason</c> to a kebab-case token, so every error envelope a scenario checks
+    /// against the schema holds a token there.
     /// </summary>
     private static IEnumerable<string> PublishedDictionaryProblems(CliCatalog catalog)
     {
@@ -81,6 +97,10 @@ internal static partial class ContractRules
         if (details["additionalProperties"]?.GetValue<bool>() != false)
         {
             yield return "error.details allows keys outside the dictionary";
+        }
+        if (published["reason"]?["pattern"]?.GetValue<string>() != ReasonToken)
+        {
+            yield return $"details key 'reason' does not publish the token pattern {ReasonToken}";
         }
     }
 
@@ -216,8 +236,10 @@ internal static partial class ContractRules
     /// <summary>
     /// Runs a failing sample and checks its error details against C-R25: the envelope matches the
     /// error schema, every key, and every key of each <c>errors</c> item, is in the dictionary, no value is null, <c>errors</c> lists
-    /// several problems, <c>path</c> is absolute and <c>option</c> names an option. A sample that no
-    /// longer fails, or fails without an error envelope, is reported, so it cannot pass unchecked.
+    /// several problems, <c>path</c> is absolute, <c>option</c> names an option, every <c>reason</c>
+    /// is a kebab-case token and an <c>OPS_INVALID</c> about one field names it in <c>field</c>. A
+    /// sample that no longer fails, or fails without an error envelope, is reported, so it cannot
+    /// pass unchecked.
     /// </summary>
     private static IEnumerable<string> DetailsProblems(DetailsSample sample)
     {
@@ -278,7 +300,20 @@ internal static partial class ContractRules
         {
             problems.Add($"{code} details.option '{name}' names an argument; details.argument names one");
         }
-        return problems;
+        JsonObject[] reasoned = [details, .. (details["errors"] as JsonArray ?? []).OfType<JsonObject>()];
+        foreach (JsonObject item in reasoned)
+        {
+            string? reason = item["reason"] is JsonValue value && value.TryGetValue(out string? token) ? token : null;
+            if (item["reason"] is not null && (reason is null || !System.Text.RegularExpressions.Regex.IsMatch(reason, ReasonToken)))
+            {
+                problems.Add($"{code} details.reason '{item["reason"]?.ToJsonString()}' is not a kebab-case token");
+            }
+            if (code == "OPS_INVALID" && reason is not null && FieldReasons.Contains(reason) && item["field"] is null)
+            {
+                problems.Add($"{code} details.reason '{reason}' names no details.field");
+            }
+        }
+        return problems.Distinct(StringComparer.Ordinal).ToList();
     }
 
     private static IEnumerable<string> NullMembers(JsonNode? node, string path) => node switch

@@ -145,7 +145,7 @@ public sealed class CellsOpContractTests : IClassFixture<CellsFixture>
         Assert.Equal(ErrorCodes.OpsInvalid, error.Code);
         Assert.Equal("op-0001", error.Details!["id"]!.GetValue<string>());
         Assert.Equal("merge_cells", error.Details["op"]!.GetValue<string>());
-        Assert.StartsWith("range must be an A1 cell or range on the operation's sheet, such as B2 or B2:D10: ", error.Details["reason"]!.GetValue<string>(), StringComparison.Ordinal);
+        Assert.Contains("is invalid: range must be an A1 cell or range on the operation's sheet, such as B2 or B2:D10: ", error.Message, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -155,7 +155,7 @@ public sealed class CellsOpContractTests : IClassFixture<CellsFixture>
             Parse("""{"ops":[{"op":"import_range","path":"eu.xlsx","from":"A1:B2","to":"C1:D2"}]}"""));
 
         Assert.Equal(ErrorCodes.OpsInvalid, error.Code);
-        Assert.Contains("single anchor cell", error.Details!["reason"]!.GetValue<string>(), StringComparison.Ordinal);
+        Assert.Contains("single anchor cell", error.Message, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -271,7 +271,7 @@ public sealed class CellsOpContractTests : IClassFixture<CellsFixture>
         CliException error = Assert.Throws<CliException>(() => Parse($$"""{"ops":[{{operation}}]}"""));
 
         Assert.Equal("OPS_INVALID", error.Code.Name);
-        Assert.Contains(reason, error.Details!["reason"]!.GetValue<string>(), StringComparison.Ordinal);
+        Assert.Contains(reason, error.Message, StringComparison.Ordinal);
     }
 
     [Fact]

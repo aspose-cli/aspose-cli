@@ -23,7 +23,7 @@ internal sealed class OwnedOutputDirectories(bool deferred)
         { missing.Push(current); }
         string[] additions = missing.Where(item => !_declared.Contains(item)).Distinct(FilePaths.Comparer).ToArray();
         if (additions.Length > PublicationLimits.MaximumDirectories - _declared.Count)
-        { throw CliErrors.OutputUnwritable(path, "the output directory budget was exceeded", phase: "output-set-admission"); }
+        { throw CliErrors.OutputBudgetExceeded(ResourceBudgetKinds.OutputSetDirectories, _declared.Count + additions.Length, PublicationLimits.MaximumDirectories, "items", "output-set-admission"); }
         _declared.UnionWith(additions);
         if (deferred) { return; }
         while (missing.TryPop(out string? current))

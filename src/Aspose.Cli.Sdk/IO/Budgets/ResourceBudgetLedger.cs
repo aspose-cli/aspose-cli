@@ -142,7 +142,10 @@ public sealed class ResourceBudgetLedger
         return Math.Max(0, limit - consumed);
     }
 
-    /// <summary>Atomically consumes a positive amount or raises the stable budget error.</summary>
+    /// <summary>
+    /// Atomically consumes a positive amount or raises the resource's budget error
+    /// (<see cref="CliErrors.ResourceBudgetExceeded"/>).
+    /// </summary>
     public void Consume(
         string kind,
         long amount,
@@ -168,7 +171,7 @@ public sealed class ResourceBudgetLedger
                 long observed = amount > long.MaxValue - current
                     ? long.MaxValue
                     : current + amount;
-                throw Reject(CliErrors.InputBudgetExceeded(
+                throw Reject(CliErrors.ResourceBudgetExceeded(
                     kind, observed, limit, unit, phase));
             }
 
@@ -201,7 +204,7 @@ public sealed class ResourceBudgetLedger
         long limit = Limit(kind);
         if (observed > limit)
         {
-            throw Reject(CliErrors.InputBudgetExceeded(
+            throw Reject(CliErrors.ResourceBudgetExceeded(
                 kind, observed, limit, unit, phase));
         }
     }
@@ -214,8 +217,7 @@ public sealed class ResourceBudgetLedger
         long limit = Limit(ResourceBudgetKinds.InputBytes);
         if (info.Length > limit)
         {
-            // File admission has a specific error; stream and domain budgets
-            // use the shared resource-budget error.
+            // The input's bytes are FILE_TOO_LARGE whether its size or its read shows it.
             throw Reject(CliErrors.FileTooLarge(info.Length, limit));
         }
         _admitted[full] = new AdmittedFile(

@@ -196,7 +196,7 @@ public sealed class PdfOperationVocabularyTests
         Assert.Equal(PdfInspectResult.LinkLimit, result.Links!.Count);
         Assert.Equal("https://example.com/0", result.Links[0].Url);
         Warning truncated = Assert.Single(result.Warnings!, static warning => warning.Code == WarningCodes.ListTruncated);
-        Assert.Equal("links", truncated.Location);
+        Assert.Equal("links", truncated.Details!["list"]!.GetValue<string>());
         Assert.Contains($"{PdfInspectResult.LinkLimit + 1}", truncated.Message, StringComparison.Ordinal);
     }
 

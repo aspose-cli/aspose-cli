@@ -56,7 +56,7 @@ public sealed class ProductViewDefinitionTests
             new TestProductViewAdapter<ITestSession>([new ReviewCheck("OTHER_PAGE_BLANK", ReviewSeverities.Info, "x")]),
             "test"));
         ProductViewDefinition declaring = ProductViewDefinition.Create(
-            new TestProductViewAdapter<ITestSession>([declared], [declared.Finding("Page 2 is blank.", "page 2")]),
+            new TestProductViewAdapter<ITestSession>([declared], [declared.Finding("Page 2 is blank.", "page/2")]),
             "test");
         ProductViewDefinition undeclared = ProductViewDefinition.Create(
             new TestProductViewAdapter<ITestSession>(

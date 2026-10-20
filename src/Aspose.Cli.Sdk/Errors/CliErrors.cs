@@ -299,7 +299,7 @@ public static partial class CliErrors
     /// </summary>
     /// <param name="path">The input file.</param>
     /// <param name="document">What the file should be, such as <c>PDF document</c> or <c>spreadsheet</c>.</param>
-    /// <param name="reason">Why it is not one, completing a sentence.</param>
+    /// <param name="reason">Why it is not one, completing a sentence; the message states it.</param>
     /// <param name="hint">How to check the file, in the terms of the product that reads it.</param>
     /// <param name="innerException">The engine or IO failure, if any.</param>
     public static CliException InputUnreadable(
@@ -311,22 +311,32 @@ public static partial class CliErrors
         ErrorCodes.FileCorrupt,
         $"Input is not a valid {document}: {path} ({reason}).",
         hint: hint,
-        details: new JsonObject { ["path"] = Path.GetFullPath(path), ["reason"] = reason },
-        innerException: innerException);
+        details: new JsonObject { ["path"] = Path.GetFullPath(path) },
+        innerException: innerException,
+        explanation: reason);
 
-    public static CliException FileTooLarge(long sizeBytes, long limitBytes) => CliException.Create(
+    /// <summary>
+    /// The input exceeds the <c>--max-input-bytes</c> budget: its size before it is read, or the
+    /// bytes read of it, and of the files it names, while it is read.
+    /// </summary>
+    /// <param name="actual">The size, or the bytes read so far.</param>
+    /// <param name="limit">The budget.</param>
+    /// <param name="phase">When it was found, such as <c>pre-runtime-metadata</c> or <c>file-read</c>.</param>
+    public static CliException FileTooLarge(long actual, long limit, string phase = PreRuntimePhase) => CliException.Create(
         ErrorCodes.FileTooLarge,
-        $"Input file is {sizeBytes} bytes, exceeding the {limitBytes}-byte budget.",
+        phase == PreRuntimePhase
+            ? $"Input file is {actual} bytes, exceeding the {limit}-byte budget."
+            : $"Reading the input reached {actual} bytes, exceeding the {limit}-byte budget.",
         hint: "Raise --max-input-bytes within its advertised safety maximum, or split the input into smaller files.",
-        details: new JsonObject
-        {
-            ["resource"] = ResourceBudgetKinds.InputBytes,
-            ["actual"] = sizeBytes,
-            ["limit"] = limitBytes,
-            ["unit"] = "bytes",
-            ["phase"] = "pre-runtime-metadata",
-        });
+        details: BudgetDetails(ResourceBudgetKinds.InputBytes, actual, limit, "bytes", phase));
 
+    private const string PreRuntimePhase = "pre-runtime-metadata";
+
+    /// <summary>
+    /// A bounded resource of reading or processing the input exceeded its budget. The input's
+    /// own bytes are <see cref="FileTooLarge"/> and the output's resources
+    /// <see cref="OutputBudgetExceeded"/>; <see cref="ResourceBudgetExceeded"/> chooses among them.
+    /// </summary>
     public static CliException InputBudgetExceeded(
         string resource,
         long observed,
@@ -335,39 +345,72 @@ public static partial class CliErrors
         string phase) => CliException.Create(
         ErrorCodes.InputBudgetExceeded,
         $"Resource '{resource}' reached {observed} {unit}, exceeding the {limit}-{unit} budget.",
-        hint: resource == ResourceBudgetKinds.InputBytes
-            ? "Raise --max-input-bytes within the advertised safety maximum, or split the input into smaller files."
-            : resource == ResourceBudgetKinds.OutputBytes
-                ? "Produce fewer or smaller outputs; capabilities lists the active default and hard maximum."
-                : "Use a smaller input or split the operation; capabilities lists the active default and hard maximum.",
-        details: new JsonObject
+        hint: "Use a smaller input or split the operation; capabilities lists the active default and hard maximum.",
+        details: BudgetDetails(resource, observed, limit, unit, phase));
+
+    /// <summary>
+    /// What the command writes exceeded a budget of its output: its bytes, the files or
+    /// directories of one output set, or the metadata that seals its publication.
+    /// </summary>
+    public static CliException OutputBudgetExceeded(
+        string resource,
+        long observed,
+        long limit,
+        string unit,
+        string phase) => CliException.Create(
+        ErrorCodes.OutputBudgetExceeded,
+        $"The output's resource '{resource}' reached {observed} {unit}, exceeding the {limit}-{unit} budget.",
+        hint: "Produce fewer or smaller outputs, such as a narrower selection; capabilities lists the active default and hard maximum.",
+        details: BudgetDetails(resource, observed, limit, unit, phase));
+
+    /// <summary>
+    /// The error of a resource budget the ledger refuses, chosen by its resource: the input's
+    /// bytes are <c>FILE_TOO_LARGE</c>, a resource of the output <c>OUTPUT_BUDGET_EXCEEDED</c>
+    /// and every other resource <c>INPUT_BUDGET_EXCEEDED</c>.
+    /// </summary>
+    public static CliException ResourceBudgetExceeded(
+        string resource,
+        long observed,
+        long limit,
+        string unit,
+        string phase) => resource switch
         {
-            ["resource"] = resource,
-            ["actual"] = observed,
-            ["limit"] = limit,
-            ["unit"] = unit,
-            ["phase"] = phase,
-        });
+            ResourceBudgetKinds.InputBytes => FileTooLarge(observed, limit, phase),
+            ResourceBudgetKinds.OutputBytes
+                or ResourceBudgetKinds.OutputSetEntries
+                or ResourceBudgetKinds.OutputSetDirectories
+                or ResourceBudgetKinds.PublicationMetadataBytes => OutputBudgetExceeded(resource, observed, limit, unit, phase),
+            _ => InputBudgetExceeded(resource, observed, limit, unit, phase),
+        };
+
+    private static JsonObject BudgetDetails(string resource, long observed, long limit, string unit, string phase) => new()
+    {
+        ["resource"] = resource,
+        ["actual"] = observed,
+        ["limit"] = limit,
+        ["unit"] = unit,
+        ["phase"] = phase,
+    };
 
     public static CliException InputChanged(
         string path,
-        long expectedBytes,
-        long observedBytes) => CliException.Create(
+        long expectedSizeBytes,
+        long actualSizeBytes) => CliException.Create(
         ErrorCodes.InputChanged,
         $"Input changed after admission: {path}",
         hint: "Stop the process modifying the input, then retry against a stable file or a private copy.",
         details: new JsonObject
         {
             ["path"] = path,
-            ["expectedBytes"] = expectedBytes,
-            ["observedBytes"] = observedBytes,
+            ["expectedSizeBytes"] = expectedSizeBytes,
+            ["actualSizeBytes"] = actualSizeBytes,
             ["resource"] = ResourceBudgetKinds.InputBytes,
         });
 
     public static CliException InputChanged(
         string path,
         string expectedSha256,
-        string observedSha256) => CliException.Create(
+        string actualSha256) => CliException.Create(
         ErrorCodes.InputChanged,
         $"Input no longer matches the requested fingerprint: {path}",
         hint: "Inspect the current file, review intervening changes, and retry with its new input.fingerprint.sha256 value.",
@@ -375,7 +418,7 @@ public static partial class CliErrors
         {
             ["path"] = path,
             ["expectedSha256"] = expectedSha256,
-            ["observedSha256"] = observedSha256,
+            ["actualSha256"] = actualSha256,
         });
 
     public static CliException InputEncodingInvalid(
@@ -616,8 +659,9 @@ public static partial class CliErrors
         ErrorCodes.OutputExists,
         $"{subject} cannot be updated safely: {path} ({reason}).",
         hint: hint,
-        details: new JsonObject { ["path"] = path, ["reason"] = reason },
-        innerException: innerException);
+        details: new JsonObject { ["path"] = path },
+        innerException: innerException,
+        explanation: reason);
 
     /// <summary>
     /// A product's own file operation failed for a reason of the file system, such as a lock,
@@ -700,10 +744,10 @@ public static partial class CliErrors
         details: new JsonObject
         {
             ["path"] = path,
-            ["reason"] = reason,
             ["phase"] = phase,
         },
-        innerException: inner);
+        innerException: inner,
+        explanation: reason);
 
     public static CliException LoopbackPortInUse(int port) => CliException.Create(
         ErrorCodes.LoopbackPortInUse,
@@ -727,7 +771,7 @@ public static partial class CliErrors
             : $"Run '{DistributionInfo.CommandName} doctor', verify loopback networking, and retry.",
         details: new JsonObject
         {
-            ["stage"] = "listener",
+            ["phase"] = "listener",
             ["reason"] = permissionDenied
                 ? "permission-denied"
                 : "listener-unavailable",
@@ -818,8 +862,7 @@ public static partial class CliErrors
     /// <summary>
     /// Restates a product's <c>FILE_CORRUPT</c> about a file whose content has the format of
     /// other products, such as a Word document renamed to <c>.pdf</c>, as the mismatch generic
-    /// routing reports for the same file, with the same message. The product's details stay, so
-    /// <c>details.reason</c> still says why the product could not read it.
+    /// routing reports for the same file, with the same message. The product's details stay.
     /// </summary>
     /// <param name="corrupt">The product's <c>FILE_CORRUPT</c>.</param>
     /// <param name="path">The file, when the details do not name it already.</param>
@@ -855,6 +898,31 @@ public static partial class CliErrors
     }
 
     /// <summary>
+    /// Restates a product's <c>FILE_CORRUPT</c> about a file in no format a product reads, as
+    /// generic routing reports it, as <c>FORMAT_UNSUPPORTED</c>, so every command refuses the
+    /// file with one code. The product's message, hint and details stay: they say, in its terms,
+    /// what it could not read and what it reads instead.
+    /// </summary>
+    /// <param name="corrupt">The product's <c>FILE_CORRUPT</c>.</param>
+    public static CliException FormatUnsupported(CliException corrupt)
+    {
+        ArgumentNullException.ThrowIfNull(corrupt);
+        if (corrupt.Code != ErrorCodes.FileCorrupt)
+        {
+            throw new ArgumentException($"{corrupt.Code.Name} is not a corrupt input.", nameof(corrupt));
+        }
+
+        return CliException.Create(
+            ErrorCodes.FormatUnsupported,
+            corrupt.Message,
+            hint: corrupt.Hint,
+            details: corrupt.Details?.DeepClone().AsObject(),
+            docs: corrupt.Docs,
+            innerException: corrupt.InnerException,
+            explanation: corrupt.Explanation);
+    }
+
+    /// <summary>
     /// Creates the error for a file whose extension names a product but whose content no
     /// product recognizes: a damaged file rather than a renamed one, <c>FILE_CORRUPT</c> as the
     /// product itself reports it. <c>FORMAT_MISMATCH</c> is for content that looks like another
@@ -870,12 +938,36 @@ public static partial class CliErrors
             $"Input is not a readable {declaredProduct} document: {path} ({reason}).",
             hint: "The file may be empty, truncated or damaged; renaming a file does not change its format. "
                 + "Ask for an intact copy of the document.",
-            details: new JsonObject { ["path"] = path, ["reason"] = reason });
+            details: new JsonObject { ["path"] = path },
+            explanation: reason);
+    }
+
+    /// <summary>
+    /// Creates the error for a file whose content no product recognizes under an extension that
+    /// is no product's own, such as <c>.xml</c> or <c>.html</c>, which some products read:
+    /// <c>FILE_CORRUPT</c>, as a damaged file of theirs, whose hint names <c>--product</c>, since
+    /// the file can be another kind of file of that extension.
+    /// </summary>
+    /// <param name="path">The file.</param>
+    /// <param name="readers">The products that read its extension, at least one.</param>
+    public static CliException ContentUnrecognized(string path, IReadOnlyList<string> readers)
+    {
+        ArgumentNullException.ThrowIfNull(readers);
+        string extension = Path.GetExtension(path);
+        string reason = $"no product that reads {extension} files ({string.Join(", ", readers)}) recognizes its content";
+        return CliException.Create(
+            ErrorCodes.FileCorrupt,
+            $"Input is not a readable document: {path} ({reason}).",
+            hint: $"The file may be damaged, or another kind of {extension} file; renaming a file does not change its format. "
+                + "If it is a document of one of these products, select it explicitly: --product <id> where the command offers it, "
+                + "or that product's commands; otherwise ask for an intact copy.",
+            details: new JsonObject { ["path"] = path },
+            explanation: reason);
     }
 
     /// <summary>
     /// Creates the error for a file in a format this CLI only writes, such as the <c>.xps</c> a
-    /// convert wrote: <c>FORMAT_MISMATCH</c>, as for content no product recognizes, but the hint
+    /// convert wrote: <c>FORMAT_UNSUPPORTED</c>, as for content no product recognizes, but the hint
     /// names the commands that write the format and, for <c>review</c>, the PDF of the same
     /// content to review instead, since naming a product cannot help.
     /// </summary>
@@ -904,7 +996,7 @@ public static partial class CliErrors
                 + $"then run '{DistributionInfo.CommandName} review' on that PDF."
             : " Use the source document, or the same content in a format a product reads, such as PDF.";
         return CliException.Create(
-            ErrorCodes.FormatMismatch,
+            ErrorCodes.FormatUnsupported,
             $"No product reads '{Path.GetFileName(path)}': {DistributionInfo.CommandName} writes {extension} files but reads none.",
             hint: $"{extension} files are only written, by {listed}.{next}",
             details: new JsonObject
@@ -918,7 +1010,11 @@ public static partial class CliErrors
 
     /// <summary>
     /// Creates a fail-closed error when the file's content does not show which product reads
-    /// it: it does not match the format its extension names, or no product recognizes it.
+    /// it. Content that looks like a product's format is <c>FORMAT_MISMATCH</c>: the extension
+    /// names another product's format, or no format the content can be read as. Content no
+    /// product recognizes is <c>FORMAT_UNSUPPORTED</c>; under an extension a product reads, such
+    /// content is that product's damaged file
+    /// (<see cref="ContentUnrecognized(string, IReadOnlyList{string})"/>).
     /// </summary>
     public static CliException FormatUnrecognized(
         string path,
@@ -932,14 +1028,10 @@ public static partial class CliErrors
             candidates.Select(static value => JsonValue.Create(value)).ToArray());
         string file = Path.GetFileName(path);
         // The message states what details.detected does, as the product's own mismatch does.
-        string message = (declaredProduct, detectedProducts.Count) switch
-        {
-            (null, _) => $"The content of '{file}' does not show which product reads it.",
-            (_, 0) => $"'{file}' has the {Path.GetExtension(path)} extension of a {declaredProduct} document, "
-                + "but its content does not look like one.",
-            _ => $"'{file}' has the {Path.GetExtension(path)} extension of a {declaredProduct} document, "
-                + $"but its content looks like {LooksLike(detectedProducts)}.",
-        };
+        string message = declaredProduct is null || detectedProducts.Count == 0
+            ? $"The content of '{file}' does not show which product reads it."
+            : $"'{file}' has the {Path.GetExtension(path)} extension of a {declaredProduct} document, "
+                + $"but its content looks like {LooksLike(detectedProducts)}.";
         string hint = detectedProducts.Count == 0
             ? "Check what the file really is, or select its product explicitly: --product <id> where the command "
                 + "offers it, or that product's commands. The product is never chosen from the extension alone."
@@ -947,7 +1039,7 @@ public static partial class CliErrors
                 ? $"The content looks like {LooksLike(detectedProducts)}. " + ProductChoiceHint(detectedProducts)
                 : ProductChoiceHint(detectedProducts);
         return CliException.Create(
-            ErrorCodes.FormatMismatch,
+            detectedProducts.Count == 0 ? ErrorCodes.FormatUnsupported : ErrorCodes.FormatMismatch,
             message,
             hint: hint,
             details: new JsonObject
@@ -991,9 +1083,10 @@ public static partial class CliErrors
 
     /// <summary>
     /// A value of an operation field that does not parse, such as an A1 reference, raised by a
-    /// parser that operations and options share: <c>OPS_INVALID</c> with the reason in
-    /// <c>details.reason</c>, which an operation's field check quotes. A command that parses an
-    /// option with the same parser reports <see cref="OptionInvalid(string, string, string)"/> instead.
+    /// parser that operations and options share: <c>OPS_INVALID</c> whose <c>details.reason</c>
+    /// is <c>invalid-value</c> and whose <see cref="CliException.Explanation"/> is the reason an
+    /// operation's field check quotes. A command that parses an option with the same parser
+    /// reports <see cref="OptionInvalid(string, string, string)"/> instead.
     /// </summary>
     /// <param name="message">The sentence that names the value and why it does not parse.</param>
     /// <param name="reason">Why it does not parse, without the value's field.</param>
@@ -1002,7 +1095,8 @@ public static partial class CliErrors
         ErrorCodes.OpsInvalid,
         message,
         hint: hint,
-        details: new JsonObject { ["reason"] = reason });
+        details: new JsonObject { ["reason"] = OpsInvalidReasons.InvalidValue },
+        explanation: reason);
 
     /// <summary>
     /// An option or positional argument used wrongly. <paramref name="option"/> names an option
@@ -1164,9 +1258,10 @@ public static partial class CliErrors
         ErrorCodes.LicenseInvalid,
         $"The license configured via {source} was rejected: {reason}",
         hint: "Verify the file is a valid Aspose license, or remove the setting to run in evaluation mode.",
-        details: new JsonObject { ["source"] = source, ["reason"] = reason },
+        details: new JsonObject { ["source"] = source },
         docs: "licensing",
-        innerException: inner);
+        innerException: inner,
+        explanation: reason);
 
     /// <summary>
     /// A command refuses what evaluation mode would silently get wrong, such as an export the

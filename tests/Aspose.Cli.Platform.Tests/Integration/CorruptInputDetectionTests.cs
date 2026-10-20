@@ -76,7 +76,7 @@ public sealed class CorruptInputDetectionTests
             JsonNode error = JsonNode.Parse(result.StdErr)!["error"]!;
             Assert.Equal("FILE_CORRUPT", error["code"]!.GetValue<string>());
             Assert.Equal(workspace.File(file), error["details"]!["path"]!.GetValue<string>());
-            Assert.False(string.IsNullOrWhiteSpace(error["details"]!["reason"]?.GetValue<string>()));
+            Assert.Null(error["details"]!["reason"]);
         }
     }
 

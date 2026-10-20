@@ -8,7 +8,11 @@ namespace Aspose.Cli.Invariants.Tests;
 // Exit codes, error and warning envelopes and diagnostic codes.
 internal static partial class ContractRules
 {
-    /// <summary>The exit code of each error category capabilities publishes (C-R24).</summary>
+    /// <summary>
+    /// The exit code of each error category capabilities publishes (C-R24). None exits 8: exit 8
+    /// means only that a command printed its result and the result did not pass, so no error
+    /// envelope comes with it.
+    /// </summary>
     private static readonly Dictionary<string, int> CategoryExitCodes = new(StringComparer.Ordinal)
     {
         ["internal"] = 1,
@@ -18,15 +22,18 @@ internal static partial class ContractRules
         ["output"] = 5,
         ["format"] = 6,
         ["license"] = 7,
-        ["partial"] = 8,
         ["timeout"] = 9,
     };
+
+    /// <summary>The exit code of a printed result that did not pass, which no error takes (C-R24).</summary>
+    private const int ResultNotPassedExitCode = 8;
 
     /// <summary>
     /// The exit code that C-R24's table gives the errors whose code name places them in one of its
     /// classes, first matching row first: usage and option values 2, the input file 3, licensing 7,
-    /// a partial publication 8, the output 5, an unsupported format or content (a render the engine
-    /// fails) 6, a timeout 9, ops and targets 4. A code no row names may take any error exit code.
+    /// the output 5, an unsupported format or content (a render the engine fails) 6, a timeout or a
+    /// worker it could not stop 9, ops and targets 4. A code no row names may take any error exit
+    /// code but 8.
     /// </summary>
     private static readonly (string Subject, int ExitCode, Regex Names)[] NamedExitCodes =
     [
@@ -34,10 +41,9 @@ internal static partial class ContractRules
         ("usage and option value errors", 2, new Regex("^(USAGE_ERROR|OPTION_[A-Z0-9_]+)$")),
         ("input file errors", 3, new Regex("^(FILE|PASSWORD|INPUT)_[A-Z0-9_]+$")),
         ("license errors", 7, new Regex("^(LICENSE|EVALUATION|EVAL)_[A-Z0-9_]+$")),
-        ("partial publications", 8, new Regex("^OUTPUT_PUBLICATION_PARTIAL$")),
         ("output errors", 5, new Regex("^OUTPUT_[A-Z0-9_]+$")),
         ("unsupported format or content errors", 6, new Regex("^(FORMAT_[A-Z0-9_]+|[A-Z0-9_]+_UNSUPPORTED|RENDER_FAILED)$")),
-        ("timeouts", 9, new Regex("^[A-Z0-9_]+_TIMEOUT$")),
+        ("timeouts", 9, new Regex("^([A-Z0-9_]+_TIMEOUT|WORKER_TERMINATION_FAILED)$")),
         ("ops and target errors", 4, new Regex("^(OPS_INVALID|[A-Z0-9_]+_NOT_FOUND)$")),
     ];
 
@@ -70,6 +76,9 @@ internal static partial class ContractRules
             .GroupBy(static diagnostic => diagnostic.Code, StringComparer.Ordinal)
             .Where(static group => group.Select(static diagnostic => diagnostic.ExitCode).Distinct().Count() > 1)
             .Select(static group => $"{group.Key} is declared with exit codes {string.Join(", ", group.Select(static diagnostic => Number(diagnostic.ExitCode)))}"));
+        yield return Check("C-R24", $"no error exits {ResultNotPassedExitCode}", () => diagnostics
+            .Where(static diagnostic => diagnostic.IsError && diagnostic.ExitCode == ResultNotPassedExitCode)
+            .Select(static diagnostic => $"{diagnostic.Code} exits {ResultNotPassedExitCode}, which only a printed result that did not pass takes"));
     }
 
     private static IEnumerable<InvariantCase> R27(CliCatalog catalog)

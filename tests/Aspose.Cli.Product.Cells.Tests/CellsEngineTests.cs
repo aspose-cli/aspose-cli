@@ -211,7 +211,7 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
         CellsEditVerification verification = result.Verification!;
         Assert.Equal(1000, verification.FormulaErrors.Count);
         VerificationIssue capped = Assert.Single(verification.Issues, issue => issue.Code == "LIST_TRUNCATED");
-        Assert.Equal("verification.formulaErrors", capped.Location);
+        Assert.Null(capped.Location);
         Assert.Contains("'verification.formulaErrors'", capped.Message, StringComparison.Ordinal);
         VerificationIssue errors = Assert.Single(verification.Issues, issue => issue.Code == "FORMULA_ERRORS");
         Assert.Contains("1001 formula error(s)", errors.Message, StringComparison.Ordinal);
@@ -1250,7 +1250,7 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
         Assert.Equal(ErrorCodes.FileCorrupt, error.Code);
         Assert.Equal(
             $"its content is delimited text, but {named} spreadsheet input; give it a .csv, .tsv, .txt extension to import it as text",
-            error.Details!["reason"]!.GetValue<string>());
+            error.Explanation);
         Assert.Equal(
             writtenOnly
                 ? "cells writes pdf, xps, json, md with convert but does not read them; give it a workbook (xlsx, xls, xlsb, ods), "

@@ -113,7 +113,7 @@ internal static class ReleaseManifest
         $"The release could not be verified: its manifest uses schema version {schemaVersion}, which this version cannot read.",
         hint: "Install the latest release with its installer, which replaces this version: "
             + $"irm {InstallScript} | iex",
-        details: new JsonObject { ["reason"] = "manifest-schema-unsupported", ["schemaVersion"] = schemaVersion });
+        details: new JsonObject { ["reason"] = "manifest-schema-unsupported" });
 }
 
 /// <summary>The fields of a release manifest an update needs.</summary>

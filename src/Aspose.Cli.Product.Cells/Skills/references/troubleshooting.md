@@ -35,8 +35,8 @@ spelling. A chart `index` past the last chart reports only
 `details.availableCount`.
 
 A range that is not A1 notation is `OPTION_INVALID` in an option, `--set`
-included, and `OPS_INVALID` in an operation, with the reason in the message and
-`details.reason`. Write `C5`, `B2:D10`, `Sales!A1:C10` or
+included, and `OPS_INVALID` in an operation, with the reason in the message;
+`details.reason` is the token `invalid-value`. Write `C5`, `B2:D10`, `Sales!A1:C10` or
 `'My Sheet'!A1:C10`; whole rows and columns (`A:A`, `1:3`) are refused so output
 stays bounded. `--sheets` on `cells convert` and `cells render` takes
 positions from `cells inspect` (`2`, `1-3`, `all`), never names: select a sheet
