@@ -192,7 +192,7 @@ internal static class PdfConvert
         {
             warnings.Add(new Warning(WarningCodes.LossyConversion, $"Attachment '{removed}' was removed: {target.AttachmentRule ?? $"the engine could not make it conform to {profile}"}.")
             {
-                Location = $"attachment {removed}",
+                Location = PdfInfoProjection.Address("attachment", removed),
                 Hint = target.AttachmentRule is null
                     ? "Deliver the file alongside the archive."
                     : "Convert to pdfa-3b to keep attachments, or deliver the file alongside the archive.",
@@ -204,7 +204,7 @@ internal static class PdfConvert
         {
             warnings.Add(new Warning(WarningCodes.LossyConversion, $"{lostBookmarks} bookmark(s) were removed by the conversion to {profile}.")
             {
-                Location = "outline",
+                Location = "bookmark/all",
                 Hint = "Compare 'pdf inspect --detail outline' of both files and re-create the missing bookmarks with add_bookmark.",
             });
         }

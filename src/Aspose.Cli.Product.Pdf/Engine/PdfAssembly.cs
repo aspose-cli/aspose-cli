@@ -196,7 +196,6 @@ internal static class PdfAssembly
                 WarningCodes.LossyConversion,
                 $"{(input is null ? "The input" : $"Input '{input}'")} is a PDF portfolio: its attachments were copied as plain attachments, but the portfolio presentation, such as its file list layout, columns and sort order, was not kept.")
             {
-                Location = input is null ? "portfolio" : $"{input} portfolio",
                 Hint = "List the attachments with 'pdf inspect --detail attachments'; rebuild the portfolio in a PDF editor if readers must open it as a portfolio.",
                 AffectsCompleteness = true,
             };

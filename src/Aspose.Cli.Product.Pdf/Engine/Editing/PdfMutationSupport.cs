@@ -87,15 +87,19 @@ internal static class PdfMutationSupport
     /// Refuses a position past the end of the document; pages insert before positions 1
     /// through the page count, and position count + 1 appends.
     /// </summary>
-    internal static void EnsureInsertionPosition(Document document, int position)
+    internal static void EnsureInsertionPosition(Document document, int position) =>
+        EnsurePagePosition(position, document.Pages.Count + 1);
+
+    /// <summary>Refuses a 1-based page position beyond <paramref name="last"/>.</summary>
+    internal static void EnsurePagePosition(int position, int last)
     {
-        if (position > document.Pages.Count + 1)
+        if (position > last)
         {
             throw CliErrors.NotFoundAt(
                 ErrorCodes.PageNotFound,
                 "page position",
                 position.ToString(CultureInfo.InvariantCulture),
-                document.Pages.Count + 1);
+                last);
         }
     }
 

@@ -67,7 +67,7 @@ internal static class PdfMerge
             warnings.AddRange(CopyAttachments(source, merged).Select(name =>
                 new Warning(WarningCodes.LossyConversion, $"Attachment '{name}' of '{path}' was left out: an earlier input has an attachment of that name, which the merged document keeps.")
                 {
-                    Location = $"{path} attachment {name}",
+                    Location = PdfInfoProjection.Address("attachment", name),
                     Hint = "Rename the attachment in that input (delete_attachment, then add_attachment with another name) and merge again, or deliver the file alongside the merged PDF.",
                     AffectsCompleteness = true,
                 }));

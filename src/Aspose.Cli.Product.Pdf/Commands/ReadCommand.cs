@@ -56,7 +56,7 @@ internal static class ReadCommand
         foreach (PdfPageText page in result.Pages)
         {
             surface.Out.WriteLine();
-            surface.Out.WriteLine($"--- page {page.Page}{(page.Truncated ? " (truncated)" : string.Empty)} ---");
+            surface.Out.WriteLine($"--- page {page.Page}{(page.ContentTruncated ? " (truncated)" : string.Empty)} ---");
             surface.Out.WriteLine(page.Text);
         }
     }
@@ -73,7 +73,7 @@ internal static class ReadCommand
             ?? Enumerable.Range(1, result.PageCount).ToArray();
         return ReadContinuation.After(
                 selection,
-                [.. result.Pages.Select(static page => new ReadPart(page.Page, page.Truncated))],
+                [.. result.Pages.Select(static page => new ReadPart(page.Page, page.ContentTruncated))],
                 request.MaxCharacters) is { } continuation
             ? resume
                 .Option(pagesOption, continuation.Parts)

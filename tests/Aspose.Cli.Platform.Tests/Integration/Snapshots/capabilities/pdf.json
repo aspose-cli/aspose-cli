@@ -39,7 +39,7 @@
         "command": "edit",
         "inputSchema": "v2/pdf/ops",
         "operationSchema": "aspose-cli schema v2/pdf/ops --operation <op>",
-        "contractFingerprint": "sha256:c1e072c16fda62ad729bb6e12a9c897cdef2c579317ca46ec2f2af5913769e96",
+        "contractFingerprint": "sha256:6d4d18ba54b1938afdf33e8dd2a371a0f6e8ff386f360a112346da909fe7e82b",
         "maximumOperationCount": 10000,
         "ops": [
           "add_attachment",
@@ -3691,7 +3691,7 @@
           "required": [
             "startPage",
             "numberStyle",
-            "startingValue"
+            "start"
           ],
           "additionalProperties": false,
           "properties": {
@@ -3716,7 +3716,7 @@
               "description": "The text put before each label's number; absent when there is none.",
               "type": "string"
             },
-            "startingValue": {
+            "start": {
               "description": "The number the range's first page shows.",
               "type": "integer",
               "minimum": 0
@@ -4210,18 +4210,15 @@
               "minLength": 1,
               "x-readBack": "not-state"
             },
-            "placement": {
-              "description": "Where in the bottom margin the text sits; a top placement puts it in the top margin instead.",
+            "alignment": {
+              "description": "Where across the bottom margin the text sits.",
               "type": "string",
               "enum": [
-                "top-left",
-                "top-center",
-                "top-right",
-                "bottom-left",
-                "bottom-center",
-                "bottom-right"
+                "left",
+                "center",
+                "right"
               ],
-              "default": "bottom-center",
+              "default": "center",
               "x-readBack": "not-state"
             },
             "font": {
@@ -4257,18 +4254,15 @@
               "minLength": 1,
               "x-readBack": "not-state"
             },
-            "placement": {
-              "description": "Where in the top margin the text sits; a bottom placement puts it in the bottom margin instead.",
+            "alignment": {
+              "description": "Where across the top margin the text sits.",
               "type": "string",
               "enum": [
-                "top-left",
-                "top-center",
-                "top-right",
-                "bottom-left",
-                "bottom-center",
-                "bottom-right"
+                "left",
+                "center",
+                "right"
               ],
-              "default": "top-center",
+              "default": "center",
               "x-readBack": "not-state"
             },
             "font": {
@@ -4814,7 +4808,7 @@
           }
         },
         "move_pages": {
-          "description": "Moves pages so the first of them lands at a position of the current document.",
+          "description": "Moves pages, in their order, so the first of them takes a position of the document after the move.",
           "type": "object",
           "required": [
             "op",
@@ -4835,7 +4829,7 @@
               "x-readBack": "not-state"
             },
             "to": {
-              "description": "The 1-based position, counted before the move, at most the page count plus one.",
+              "description": "The 1-based position of the first moved page after the move; the moved pages must fit before the end, so it is at most the page count less the moved pages plus one.",
               "type": "integer",
               "minimum": 1,
               "x-readBack": "not-state"
@@ -5238,12 +5232,12 @@
               "type": "string",
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/pdf/inspect-result.schema.json#/$defs/pdfPageLabelInfo/properties/prefix"
             },
-            "startingValue": {
+            "start": {
               "description": "The label value of the start page.",
               "type": "integer",
               "minimum": 0,
               "default": 1,
-              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/pdf/inspect-result.schema.json#/$defs/pdfPageLabelInfo/properties/startingValue"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/pdf/inspect-result.schema.json#/$defs/pdfPageLabelInfo/properties/start"
             }
           }
         },
@@ -5423,7 +5417,7 @@
           "required": [
             "page",
             "text",
-            "truncated"
+            "contentTruncated"
           ],
           "additionalProperties": false,
           "properties": {
@@ -5436,7 +5430,7 @@
               "description": "The page's text.",
               "type": "string"
             },
-            "truncated": {
+            "contentTruncated": {
               "description": "Whether the text was cut to stay within --max-chars.",
               "type": "boolean"
             }

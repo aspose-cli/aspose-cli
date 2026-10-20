@@ -112,7 +112,7 @@ internal sealed class PdfViewAdapter : IProductViewAdapter<PdfSession>
             }
             findings.Add(PdfReviewChecks.TextOutsidePage.Finding(
                 $"{page.OutsideTextFragments} text fragment(s) extend beyond the page rectangle and may be clipped.",
-                $"page {page.Page}",
+                PageAddress(page.Page),
                 Hint,
                 PdfViews.PagePart(page.Page)));
         }
@@ -130,7 +130,7 @@ internal sealed class PdfViewAdapter : IProductViewAdapter<PdfSession>
         {
             findings.Add(PdfReviewChecks.TextCovered.Finding(
                 $"{page.CoveredTextFragments} text fragment(s) lie under an opaque box, such as a redaction cover, so the page does not show them although the file still contains them.",
-                $"page {page.Page}",
+                PageAddress(page.Page),
                 "Compare the page image with the text 'pdf read' reads. When a redaction moved the text beside a removed value under its cover, redact the source document and create the PDF again; that text cannot be moved back in the PDF.",
                 PdfViews.PagePart(page.Page)));
         }
@@ -149,7 +149,7 @@ internal sealed class PdfViewAdapter : IProductViewAdapter<PdfSession>
             }
             findings.Add(PdfReviewChecks.EvaluationWatermark.Finding(
                 $"The page carries the evaluation watermark of {product}, saved into the file by a run without a license.",
-                $"page {page.Page}",
+                PageAddress(page.Page),
                 $"Regenerate the file from its original inputs with a license for {product}; editing this file keeps the watermark.",
                 PdfViews.PagePart(page.Page)));
         }
@@ -168,7 +168,7 @@ internal sealed class PdfViewAdapter : IProductViewAdapter<PdfSession>
                 findings.Add(PdfReviewChecks.PageSizeUnusual.Finding(
                     string.Create(CultureInfo.InvariantCulture,
                         $"Page size {page.WidthPoints:0.##} x {page.HeightPoints:0.##} pt is unusual and may preview poorly."),
-                    $"page {page.Page}",
+                    PageAddress(page.Page),
                     Hint,
                     PdfViews.PagePart(page.Page)));
             }
@@ -214,7 +214,7 @@ internal sealed class PdfViewAdapter : IProductViewAdapter<PdfSession>
             emptyPages++;
             findings.Add(PdfReviewChecks.PageWithoutReadableContent.Finding(
                 "The page has no readable text, no images covering a quarter of it and does not look scanned; inspect it for unintended blank output.",
-                $"page {page.Page}",
+                PageAddress(page.Page),
                 Hint,
                 PdfViews.PagePart(page.Page)));
         }
@@ -231,7 +231,7 @@ internal sealed class PdfViewAdapter : IProductViewAdapter<PdfSession>
         {
             findings.Add(PdfReviewChecks.PageWithoutTextLayer.Finding(
                 "The page has no extractable text and an image fills its width or height, as on a scan; search and redact_text do not reach its content.",
-                $"page {page}",
+                PageAddress(page),
                 "Read the page from its review image, and hide content on it with redact_area, whose coordinates 'aspose-cli pdf render --grid 50' labels.",
                 PdfViews.PagePart(page)));
         }
@@ -258,15 +258,15 @@ internal sealed class PdfViewAdapter : IProductViewAdapter<PdfSession>
             lowUtilization = 1;
             findings.Add(PdfReviewChecks.PageUtilizationLow.Finding(
                 "The page carries very little readable text and no images covering a quarter of it; inspect for an unintended sparse page or pagination break.",
-                $"page {page.Page}",
+                PageAddress(page.Page),
                 Hint,
                 PdfViews.PagePart(page.Page)));
         }
-        if (page.Truncated)
+        if (page.ContentTruncated)
         {
             findings.Add(PdfReviewChecks.TextAnalysisTruncated.Finding(
                 "Text analysis reached its extraction budget; visual evidence remains available but structural text checks are incomplete.",
-                $"page {page.Page}",
+                PageAddress(page.Page),
                 Hint,
                 PdfViews.PagePart(page.Page)));
         }
@@ -293,17 +293,21 @@ internal sealed class PdfViewAdapter : IProductViewAdapter<PdfSession>
 
         findings.Add(PdfReviewChecks.FormAppearanceReviewRequired.Finding(
             $"The PDF contains {formFields} form field(s); inspect every rendered field appearance for stale, clipped, or missing values.",
-            "document",
+            location: null,
             Hint));
         if (fieldsWithoutPage > 0)
         {
             findings.Add(PdfReviewChecks.FormFieldPageUnresolved.Finding(
                 $"{fieldsWithoutPage} form field(s) could not be associated with a valid page.",
-                "document",
+                location: null,
                 Hint));
         }
         return new FormAnalysis(formFields, fieldsWithoutPage);
     }
+
+    /// <summary>The target address of a page, where a finding on it is located.</summary>
+    private static string PageAddress(int page) =>
+        string.Create(System.Globalization.CultureInfo.InvariantCulture, $"page/{page}");
 
     private static int AnalyzeFonts(
         PdfSession session,
@@ -328,7 +332,7 @@ internal sealed class PdfViewAdapter : IProductViewAdapter<PdfSession>
         {
             findings.Add(PdfReviewChecks.FontsNotEmbedded.Finding(
                 $"{unembeddedFonts} font resource(s) are not embedded; rendering can vary on another machine.",
-                "document",
+                location: null,
                 Hint));
         }
         return unembeddedFonts;

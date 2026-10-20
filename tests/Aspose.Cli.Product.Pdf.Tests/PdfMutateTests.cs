@@ -29,7 +29,7 @@ public sealed class PdfMutateTests
                 Ops =
                 [
                     new AddPageNumbersOp { Text = "第 {n} 页 / 共 {N} 页", Placement = PdfPlacements.BottomRight },
-                    new AddHeaderTextOp { Text = "机密文件", Placement = PdfPlacements.TopLeft },
+                    new AddHeaderTextOp { Text = "机密文件", Alignment = PdfMarginAlignments.Left },
                 ],
             },
             Output = TestOutput.At(output),
@@ -50,6 +50,58 @@ public sealed class PdfMutateTests
             page.Accept(absorber);
             return Assert.Single(absorber.TextFragments).Rectangle;
         }
+    }
+
+    /// <summary>
+    /// A header sits only in the top margin and a footer only in the bottom one; alignment places
+    /// each across the page.
+    /// </summary>
+    [Fact]
+    public void HeaderAndFooter_StayInTheirMarginAndTakeTheirAlignment()
+    {
+        using var fixture = new PdfEngineFixture();
+        string input = fixture.CreateDocument("margins.pdf", pages: 1);
+        string output = fixture.File("margins.out.pdf");
+
+        PdfEdit.Run(fixture.Session, new PdfEditRequest
+        {
+            Input = input,
+            Batch = PdfOp.Catalog.Parse<PdfOpsBatch>(
+                """{"ops":[{"op":"add_header_text","text":"HEADTEXT","alignment":"right"},{"op":"add_footer_text","text":"FOOTTEXT","alignment":"left"}]}""",
+                Aspose.Cli.Generated.ProductJsonContext.Definition),
+            Output = TestOutput.At(output),
+        });
+
+        using var reopened = new Document(output);
+        Page page = reopened.Pages[1];
+        Rectangle header = Fragment(page, "HEADTEXT");
+        Rectangle footer = Fragment(page, "FOOTTEXT");
+        Assert.Equal(page.Rect.URX - 24, header.URX, 1d);
+        Assert.Equal(page.Rect.URY - 24, header.URY, 1d);
+        Assert.Equal(page.Rect.LLX + 24, footer.LLX, 1d);
+        Assert.Equal(page.Rect.LLY + 24, footer.LLY, 1d);
+
+        static Rectangle Fragment(Page page, string text)
+        {
+            var absorber = new TextFragmentAbsorber(text);
+            page.Accept(absorber);
+            return Assert.Single(absorber.TextFragments).Rectangle;
+        }
+    }
+
+    [Theory]
+    [InlineData("add_header_text", "bottom-left")]
+    [InlineData("add_footer_text", "top-center")]
+    public void HeaderAndFooter_RefuseAnAlignmentThatNamesAMargin(string op, string alignment)
+    {
+        CliException error = Assert.Throws<CliException>(() => PdfOp.Catalog.Parse<PdfOpsBatch>(
+            $$"""{"ops":[{"op":"{{op}}","text":"Text","alignment":"{{alignment}}"}]}""",
+            Aspose.Cli.Generated.ProductJsonContext.Definition));
+
+        Assert.Equal(ErrorCodes.OpsInvalid, error.Code);
+        Assert.Equal(
+            ["left", "center", "right"],
+            error.Details!["available"]!.AsArray().Select(static value => value!.GetValue<string>()));
     }
 
     [Theory]
@@ -336,20 +388,20 @@ public sealed class PdfMutateTests
         PdfEdit.Run(fixture.Session, new PdfEditRequest
         {
             Input = input,
-            Batch = new PdfOpsBatch
-            {
-                Ops = [new SetPageLabelsOp
-                {
-                    Ranges = [new PdfPageLabelRange { StartPage = startPage, Prefix = "R-", StartingValue = 7 }],
-                }],
-            },
+            Batch = PdfOp.Catalog.Parse<PdfOpsBatch>(
+                $$"""{"ops":[{"op":"set_page_labels","ranges":[{"startPage":{{startPage}},"prefix":"R-","start":7}]}]}""",
+                Aspose.Cli.Generated.ProductJsonContext.Definition),
             Output = TestOutput.At(output),
         });
 
         PdfInspectResult info = PdfInfo.Run(fixture.Session, new PdfInspectRequest { Input = output });
-        PdfPageLabelInfo label = Assert.Single(info.PageLabels!, item => item.Prefix == "R-");
-        Assert.Equal(startPage, label.StartPage);
-        Assert.Equal(7, label.StartingValue);
+        System.Text.Json.Nodes.JsonNode json = System.Text.Json.JsonSerializer.SerializeToNode(
+            info, Aspose.Cli.Generated.ProductJsonContext.Default.PdfInspectResult)!;
+        System.Text.Json.Nodes.JsonNode label = Assert.Single(
+            json["pageLabels"]!.AsArray(), static item => item!["prefix"]?.GetValue<string>() == "R-")!;
+        Assert.Equal(startPage, label["startPage"]!.GetValue<int>());
+        Assert.Equal(7, label["start"]!.GetValue<int>());
+        Assert.Null(label["startingValue"]);
     }
 
     [Fact]

@@ -86,8 +86,9 @@ public sealed record PdfPageLabelRange
     public string? Prefix { get; init; }
 
     /// <summary>The label value of the start page.</summary>
-    [ReadBack("inspect-result.schema.json#/$defs/pdfPageLabelInfo/properties/startingValue")]
-    [Minimum(0)] public int StartingValue { get; init; } = 1;
+    [ReadBack("inspect-result.schema.json#/$defs/pdfPageLabelInfo/properties/start")]
+    [MistakenFor("startingValue")]
+    [Minimum(0)] public int Start { get; init; } = 1;
 }
 
 /// <summary>Where margin text sits on a page.</summary>
@@ -99,6 +100,14 @@ public static class PdfPlacements
     public const string BottomLeft = "bottom-left";
     public const string BottomCenter = "bottom-center";
     public const string BottomRight = "bottom-right";
+}
+
+/// <summary>Where header or footer text sits across its margin.</summary>
+public static class PdfMarginAlignments
+{
+    public const string Left = "left";
+    public const string Center = "center";
+    public const string Right = "right";
 }
 
 /// <summary>Whether a watermark is drawn over or under the page content.</summary>
@@ -129,14 +138,17 @@ public sealed record DeletePagesOp : PdfOp
     [PageRange] public required string Pages { get; init; }
 }
 
-/// <summary>Moves pages so the first of them lands at a position of the current document.</summary>
+/// <summary>Moves pages, in their order, so the first of them takes a position of the document after the move.</summary>
 [Operation("move_pages")]
 public sealed record MovePagesOp : PdfOp
 {
     /// <summary>The pages to move.</summary>
     [PageRange] public required string Pages { get; init; }
 
-    /// <summary>The 1-based position, counted before the move, at most the page count plus one.</summary>
+    /// <summary>
+    /// The 1-based position of the first moved page after the move; the moved pages must fit
+    /// before the end, so it is at most the page count less the moved pages plus one.
+    /// </summary>
     [NotState]
     [Minimum(1)] public required int To { get; init; }
 }
@@ -311,10 +323,10 @@ public sealed record AddHeaderTextOp : PdfOp
     [NotState]
     [MinLength(1)] public required string Text { get; init; }
 
-    /// <summary>Where in the top margin the text sits; a bottom placement puts it in the bottom margin instead.</summary>
+    /// <summary>Where across the top margin the text sits.</summary>
     [NotState]
-    [MistakenFor("position")]
-    [AllowedValues(typeof(PdfPlacements))] public string Placement { get; init; } = PdfPlacements.TopCenter;
+    [MistakenFor("position", "placement")]
+    [AllowedValues(typeof(PdfMarginAlignments))] public string Alignment { get; init; } = PdfMarginAlignments.Center;
 
     /// <summary>An installed font name; the default font when omitted.</summary>
     [NotState]
@@ -332,10 +344,10 @@ public sealed record AddFooterTextOp : PdfOp
     [NotState]
     [MinLength(1)] public required string Text { get; init; }
 
-    /// <summary>Where in the bottom margin the text sits; a top placement puts it in the top margin instead.</summary>
+    /// <summary>Where across the bottom margin the text sits.</summary>
     [NotState]
-    [MistakenFor("position")]
-    [AllowedValues(typeof(PdfPlacements))] public string Placement { get; init; } = PdfPlacements.BottomCenter;
+    [MistakenFor("position", "placement")]
+    [AllowedValues(typeof(PdfMarginAlignments))] public string Alignment { get; init; } = PdfMarginAlignments.Center;
 
     /// <summary>An installed font name; the default font when omitted.</summary>
     [NotState]

@@ -83,10 +83,10 @@ internal sealed partial class PdfMutationHandlers
     }
 
     public ValueTuple Apply(AddHeaderTextOp operation) =>
-        MarginText(operation.Text, operation.Pages, operation.Placement, operation.Font);
+        MarginText(operation.Text, operation.Pages, $"top-{operation.Alignment}", operation.Font);
 
     public ValueTuple Apply(AddFooterTextOp operation) =>
-        MarginText(operation.Text, operation.Pages, operation.Placement, operation.Font);
+        MarginText(operation.Text, operation.Pages, $"bottom-{operation.Alignment}", operation.Font);
 
     public ValueTuple Apply(AddStampImageOp operation)
     {

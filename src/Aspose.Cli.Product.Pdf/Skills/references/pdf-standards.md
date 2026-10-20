@@ -26,8 +26,8 @@ PDF/A-3 needs a media type on every attachment: one the source declares is kept,
 an untyped PDF becomes `application/pdf` and any other untyped attachment
 `application/octet-stream`. Declare the type when you attach a file, such as
 `"mimeType": "image/png"` on `add_attachment`, so an archive can identify it. Each removed attachment is a `LOSSY_CONVERSION`
-warning whose `location` names it, and a removed bookmark is one with
-`location: outline`; a further `LOSSY_CONVERSION` warning counts the other
+warning whose `location` names it, and removed bookmarks are one with
+`location: bookmark/all`; a further `LOSSY_CONVERSION` warning counts the other
 changes, which `pdf validate` on the original lists. With `--pages`, bookmarks
 and links to pages left out lose their target, counted by `NAVIGATION_DEGRADED`.
 Compare the candidate with the original (`pdf inspect --detail outline

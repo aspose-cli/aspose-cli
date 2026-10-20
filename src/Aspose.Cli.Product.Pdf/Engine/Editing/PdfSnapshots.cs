@@ -162,7 +162,7 @@ internal sealed class PdfSnapshots(Document document, PdfPageIdentities pages, F
         var snapshot = new OperationSnapshot();
         foreach (PdfPageLabelInfo label in PdfInfoProjection.PageLabels(document))
         {
-            snapshot.Add(Address("page-label", label.StartPage), $"{label.NumberStyle}|{label.Prefix}|{label.StartingValue}");
+            snapshot.Add(Address("page-label", label.StartPage), $"{label.NumberStyle}|{label.Prefix}|{label.Start}");
         }
 
         return snapshot;

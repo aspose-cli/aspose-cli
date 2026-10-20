@@ -182,7 +182,7 @@ public sealed record PdfPageLabelInfo
 
     /// <summary>The number the range's first page shows.</summary>
     [Minimum(0)]
-    public required int StartingValue { get; init; }
+    public required int Start { get; init; }
 }
 
 /// <summary>One bookmark of the document's outline.</summary>

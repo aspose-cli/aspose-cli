@@ -43,16 +43,16 @@ internal sealed partial class PdfMutationHandlers
     public ValueTuple Apply(MovePagesOp operation)
     {
         int[] pages = Resolve(_document, operation.Pages).ToArray();
-        EnsureInsertionPosition(_document, operation.To);
+        // The moved pages must fit from the position to the end.
+        EnsurePagePosition(operation.To, _document.Pages.Count - pages.Length + 1);
 
         // The SDK has no page move: the pages are copied and the originals deleted, and the
         // navigation that targeted the originals is pointed at the copies.
         var navigation = PdfNavigationRetarget.Capture(_document, pages);
         Page[] originals = [.. pages.Select(page => _document.Pages[page])];
         using Document selected = Select(_document, pages);
-        int before = pages.Count(page => page < operation.To);
+        int at = operation.To;
         _document.Pages.Delete(pages);
-        int at = Math.Clamp(operation.To - before, 1, _document.Pages.Count + 1);
         _document.Pages.Insert(at, selected.Pages.ToArray());
         navigation.Retarget(_document, page => Array.IndexOf(pages, page) is var moved and >= 0
             ? at + moved

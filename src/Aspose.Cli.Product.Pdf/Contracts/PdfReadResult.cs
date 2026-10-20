@@ -40,5 +40,5 @@ public sealed record PdfPageText
     public required string Text { get; init; }
 
     /// <summary>Whether the text was cut to stay within <c>--max-chars</c>.</summary>
-    public required bool Truncated { get; init; }
+    public required bool ContentTruncated { get; init; }
 }

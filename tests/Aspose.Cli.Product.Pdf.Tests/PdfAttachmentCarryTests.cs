@@ -49,8 +49,8 @@ public sealed class PdfAttachmentCarryTests : IDisposable
     public void Merge_KeepsTheFirstInputsAttachmentOfANameAndNamesTheInputWhoseOneItDropped()
     {
         using var fixture = new PdfEngineFixture();
-        string first = WriteDocument(fixture.File("first.pdf"), pages: 1, ("same.csv", First));
-        string second = WriteDocument(fixture.File("second.pdf"), pages: 1, ("same.csv", Second));
+        string first = WriteDocument(fixture.File("first.pdf"), pages: 1, ("same 100%.csv", First));
+        string second = WriteDocument(fixture.File("second.pdf"), pages: 1, ("same 100%.csv", Second));
         string output = fixture.File("merged.pdf");
 
         PdfMergeResult result = PdfMerge.Run(fixture.Session, new PdfMergeRequest
@@ -59,11 +59,11 @@ public sealed class PdfAttachmentCarryTests : IDisposable
             InputPaths = [first, second],
         });
 
-        Assert.Equal([Entry("same.csv", First)], Attachments(output));
+        Assert.Equal([Entry("same 100%.csv", First)], Attachments(output));
         Warning dropped = Assert.Single(result.Warnings!, static warning => warning.Code.Name == "LOSSY_CONVERSION");
-        Assert.Contains("same.csv", dropped.Location, StringComparison.Ordinal);
-        Assert.Contains(second, dropped.Location, StringComparison.Ordinal);
-        Assert.DoesNotContain(first, dropped.Location, StringComparison.Ordinal);
+        Assert.Equal("attachment/same 100%25.csv", dropped.Location);
+        Assert.Contains(second, dropped.Message, StringComparison.Ordinal);
+        Assert.DoesNotContain(first, dropped.Message, StringComparison.Ordinal);
         Assert.True(dropped.AffectsCompleteness);
     }
 
@@ -119,9 +119,11 @@ public sealed class PdfAttachmentCarryTests : IDisposable
         Assert.All(split.Outputs, part => Assert.Equal([Entry("a.csv", First), Entry("b.csv", Second)], Attachments(part.Path)));
         Warning mergeWarning = Assert.Single(merge.Warnings!, static warning => warning.Code.Name == "LOSSY_CONVERSION");
         Assert.Contains("portfolio", mergeWarning.Message, StringComparison.Ordinal);
-        Assert.Contains(portfolio, mergeWarning.Location, StringComparison.Ordinal);
+        Assert.Contains(portfolio, mergeWarning.Message, StringComparison.Ordinal);
+        Assert.Null(mergeWarning.Location);
         Warning splitWarning = Assert.Single(split.Warnings!, static warning => warning.Code.Name == "LOSSY_CONVERSION");
         Assert.Contains("portfolio", splitWarning.Message, StringComparison.Ordinal);
+        Assert.Null(splitWarning.Location);
     }
 
     [Fact]

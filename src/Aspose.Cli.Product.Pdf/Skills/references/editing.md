@@ -36,7 +36,7 @@ Each operation resolves its pages against the document as the earlier
 operations of the batch left it: an insert, delete or move changes the pages
 that later operations name. `pdf inspect` and `pdf read` report targets
 under the names the operations take: each page's `page`, each label range's
-`startPage`, `numberStyle`, `prefix` and `startingValue`, each page's `pageSize`
+`startPage`, `numberStyle`, `prefix` and `start`, each page's `pageSize`
 and `rotation`, and each bookmark's `page` and `bookmark`, the address of 1-based
 positions joined by `/` that `delete_bookmarks.bookmarks` and `add_bookmark.parent`
 accept: `"2/1"` is the first child of the second top-level bookmark. Titles are
