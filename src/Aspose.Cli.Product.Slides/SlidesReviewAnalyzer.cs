@@ -499,7 +499,7 @@ internal static class SlidesReviewAnalyzer
         ? string.Create(CultureInfo.InvariantCulture, $"shapeId {shape.ShapeId}")
         : string.Create(CultureInfo.InvariantCulture, $"'{shape.ShapeName}' (shapeId {shape.ShapeId})");
 
-    private static string Location(int slide) => string.Create(CultureInfo.InvariantCulture, $"slide {slide}");
+    private static string Location(int slide) => SlidesStateProjection.SlideAddress(slide);
 
     /// <summary>
     /// A finding on one slide, with that slide's view part, so its evidence is that slide's image.

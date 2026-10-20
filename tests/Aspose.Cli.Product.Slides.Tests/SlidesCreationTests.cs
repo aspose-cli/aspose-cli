@@ -340,7 +340,7 @@ public sealed class SlidesCreationTests
         });
 
         Warning warning = Assert.Single(result.Warnings!, static item => item.Code == SlidesDiagnostics.TableOverflow);
-        Assert.Equal("slide 2", warning.Location);
+        Assert.Equal("slide/2", warning.Location);
         Assert.NotNull(warning.Hint);
     }
 
@@ -374,7 +374,7 @@ public sealed class SlidesCreationTests
 
         Warning[] overflow = (result.Warnings ?? []).Where(static item => item.Code == SlidesDiagnostics.TableOverflow).ToArray();
         Assert.Equal(reported ? 1 : 0, overflow.Length);
-        Assert.All(overflow, static warning => Assert.Equal("slide 2", warning.Location));
+        Assert.All(overflow, static warning => Assert.Equal("slide/2", warning.Location));
     }
 
     [Fact]

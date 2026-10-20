@@ -89,7 +89,7 @@ public sealed class SlidesEditVerificationTests
 
         VerificationIssue issue = Assert.Single(facts.Issues);
         Assert.Equal("SLIDE_CONTENT_MISMATCH", issue.Code);
-        Assert.Equal("slide 1", issue.Location);
+        Assert.Equal("slide/1", issue.Location);
         // The title was read back and compared, so it counts as checked although it differs.
         Assert.Contains("title", facts.Checked);
         SlidesEditResult failed = new()
@@ -100,6 +100,31 @@ public sealed class SlidesEditVerificationTests
             Verification = new SlidesEditVerification { Ok = false, Issues = facts.Issues, CheckedOps = [] },
         };
         Assert.True(failed.HasFailures);
+    }
+
+    /// <summary>
+    /// An effect on no one slide is located by the address its targets use: a document property
+    /// by its escaped name, the slide order by every slide.
+    /// </summary>
+    [Fact]
+    public void Verify_LocatesAPresentationEffectByItsTargetAddress()
+    {
+        using var fixture = new SlidesEngineFixture();
+        string input = Outline(fixture, "presentation.pptx");
+        using var edited = new Presentation(input);
+        using var output = new Presentation(input);
+        var properties = new SlidesSetPropertiesOp { Id = "props", Title = "Changed" };
+        var move = new MoveSlideOp { Id = "move", Slide = 1, To = 2 };
+        SlidesMutationHandlers.ResolvedSlidesOp target = SlidesMutationHandlers.ResolveTarget(edited, move);
+        var verifier = new SlidesEditVerifier(edited, _ => target, evaluation: false);
+        edited.DocumentProperties.Title = "Changed";
+        verifier.Record(properties, AppliedOperations.Changed(SlidesOp.Catalog, properties, 1));
+        edited.Slides.Reorder(1, edited.Slides[0]);
+        verifier.Record(move, AppliedOperations.Changed(SlidesOp.Catalog, move, 1));
+
+        VerificationFacts facts = verifier.Verify(output);
+
+        Assert.Equal(["property/title", "slide/all"], facts.Issues.Select(static issue => issue.Location).Order(StringComparer.Ordinal));
     }
 
     [Fact]

@@ -51,9 +51,9 @@ internal sealed partial class SlidesMutationHandlers
             SetSolid(Fills(shape), style.FillColor);
         }
 
-        if (style.Line is not null)
+        if (style.LineColor is not null)
         {
-            SetSolid(Lines(shape), style.Line);
+            SetSolid(Lines(shape), style.LineColor);
         }
 
         foreach (IBasePortionFormat format in text ?? [])

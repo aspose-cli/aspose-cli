@@ -141,7 +141,7 @@ public sealed record SlidesShapeData
     /// only with <c>--content full</c>, and omitted without one solid outline.
     /// </summary>
     [Pattern("^#[0-9A-F]{6}$")]
-    public string? Line { get; init; }
+    public string? LineColor { get; init; }
 
     /// <summary>How many rows a table has; only for a table with <c>--content full</c>.</summary>
     [Minimum(1)]

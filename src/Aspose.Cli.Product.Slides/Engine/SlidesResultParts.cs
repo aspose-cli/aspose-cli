@@ -1,4 +1,3 @@
-using System.Globalization;
 using Aspose.Cli.Sdk.IO.Output;
 
 namespace Aspose.Cli.Product.Slides.Engine;
@@ -42,7 +41,7 @@ internal static class SlidesResultParts
                 warnings.Add(new Warning(SlidesDiagnostics.ChartTitleOverlaid, $"The chart '{chart}' on slide {slide} has an implicit automatic title, which this output draws over the plot, enlarging the plot area.")
                 {
                     Hint = "Inspect the chart in PowerPoint and restore its title layout there if it changed.",
-                    Location = string.Create(CultureInfo.InvariantCulture, $"slide {slide}"),
+                    Location = SlidesStateProjection.SlideAddress(slide),
                     AffectsCompleteness = true,
                 });
             }

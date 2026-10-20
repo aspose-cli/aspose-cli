@@ -71,7 +71,7 @@ public sealed class SlidesCliWorkflowTests : IDisposable
 
         Assert.True(review.ExitCode == 0, review.StdErr);
         JsonNode finding = Assert.Single(JsonNode.Parse(review.StdOut)!["findings"]!.AsArray())!;
-        Assert.Equal("slide 2", finding["location"]!.GetValue<string>());
+        Assert.Equal("slide/2", finding["location"]!.GetValue<string>());
         Assert.Equal(
             ["artifacts/slide-0002.png"],
             finding["evidence"]!.AsArray().Select(static path => path!.GetValue<string>()));
@@ -103,7 +103,7 @@ public sealed class SlidesCliWorkflowTests : IDisposable
 
         Assert.True(review.ExitCode == 0, review.StdOut + review.StdErr);
         JsonNode finding = Assert.Single(JsonNode.Parse(review.StdOut)!["findings"]!.AsArray())!;
-        Assert.Equal("slide 7", finding["location"]!.GetValue<string>());
+        Assert.Equal("slide/7", finding["location"]!.GetValue<string>());
         Assert.Equal(
             ["artifacts/slide-0003.png", "artifacts/slide-0007.png"],
             finding["evidence"]!.AsArray().Select(static path => path!.GetValue<string>()));

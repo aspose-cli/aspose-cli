@@ -1,4 +1,7 @@
 using System.Drawing;
+using System.Text.Json;
+using System.Text.Json.Nodes;
+using Aspose.Cli.Generated;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Slides;
 using Aspose.Slides.Charts;
@@ -33,7 +36,7 @@ public sealed class SlidesShapeStyleTests
             Values = [["Metric", "Q3"], ["Revenue", "18,200"], ["Margin", "38.5%"]],
         });
 
-        string output = Style(fixture, seed, "table.pptx", Shape<ITable>(seed), TextStyle with { FillColor = "#102030", Line = "#405060" });
+        string output = Style(fixture, seed, "table.pptx", Shape<ITable>(seed), TextStyle with { FillColor = "#102030", LineColor = "#405060" });
 
         using var deck = new Presentation(output);
         ITable table = deck.Slides[0].Shapes.OfType<ITable>().Single();
@@ -47,6 +50,14 @@ public sealed class SlidesShapeStyleTests
                 static border => Assert.Equal(Color.FromArgb(0x40, 0x50, 0x60).ToArgb(), border.FillFormat.SolidFillColor.Color.ToArgb()));
             AssertTextStyle(Assert.Single(cell.TextFrame.Paragraphs.SelectMany(static paragraph => paragraph.Portions)).PortionFormat);
         });
+
+        // A read reports the outline under the name format_shape writes it.
+        SlidesReadResult read = SlidesRead.Run(fixture.Session, new SlidesReadRequest { Input = output, Content = SlidesReadContents.Full });
+        JsonNode shape = JsonSerializer.SerializeToNode(
+            Assert.Single(read.Slides[0].Shapes, static shape => shape.RowCount is not null),
+            ProductJsonContext.Default.SlidesShapeData)!;
+        Assert.Equal("#405060", (string?)shape["lineColor"]);
+        Assert.Null(shape["line"]);
     }
 
     [Fact]

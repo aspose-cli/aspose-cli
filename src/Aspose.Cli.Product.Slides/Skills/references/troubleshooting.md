@@ -24,7 +24,7 @@ link it by relative path, then review the incomplete rendering.
 When a template-based deck looks wrong, check which masters and layouts were kept and whether
 `import_slides` used `keep-source` or `use-destination` as its `formatting`.
 `use-destination` and `set_layout` replace a slide's own background with its layout's, and a
-`SLIDE_BACKGROUND_RESET` warning names the slides that had one; `set_background` sets one
+`SLIDE_BACKGROUND_RESET` warning locates each slide that had one; `set_background` sets one
 again, for imported slides in a later batch.
 
 ## Evaluation mode

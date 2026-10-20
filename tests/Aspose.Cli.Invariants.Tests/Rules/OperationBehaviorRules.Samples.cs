@@ -184,7 +184,7 @@ internal static class OperationSamples
         new("slides", """{"op":"copy_slide","slide":1}"""),
         new("slides", """{"op":"insert_chart","slide":2,"kind":"column","rect":{"x":72,"y":72,"width":144,"height":72},"categories":["A","B"],"series":[{"name":"Sales","values":[1,2]}],"title":"Plot"}"""),
         new("slides", """{"op":"insert_image","slide":2,"path":"image.png","rect":{"x":72,"y":72,"width":144,"height":72},"altText":"Logo"}"""),
-        new("slides", """{"op":"insert_shape","slide":2,"geometry":"rectangle","rect":{"x":72,"y":72,"width":144,"height":72},"text":"Box","style":{"fillColor":"#FF0000","line":"#00FF00","bold":true,"color":"#123456","eastAsianFont":"SimSun","font":"Arial","latinFont":"Arial","fontSize":20}}"""),
+        new("slides", """{"op":"insert_shape","slide":2,"geometry":"rectangle","rect":{"x":72,"y":72,"width":144,"height":72},"text":"Box","style":{"fillColor":"#FF0000","lineColor":"#00FF00","bold":true,"color":"#123456","eastAsianFont":"SimSun","font":"Arial","latinFont":"Arial","fontSize":20}}"""),
         new("slides", """{"op":"insert_table","slide":2,"rect":{"x":72,"y":72,"width":144,"height":72},"rowCount":2,"columnCount":2,"values":[["a","b"],["c","d"]]}"""),
         new("slides", """{"op":"move_slide","slide":2,"to":1}"""),
         new("slides", """{"op":"replace_text","find":"Second","replace":"Next"}"""),
@@ -196,7 +196,7 @@ internal static class OperationSamples
         new("slides", """{"op":"set_shape_bounds","slide":2,"shapeId":3,"x":50,"y":60,"width":600,"height":200}"""),
         // font reaches Latin text only where latinFont names no other font, so it is written apart
         // from latinFont; SlidesShapeStyleTests pins what font changes beside both of the others.
-        new("slides", """{"op":"format_shape","slide":2,"shapeId":3,"style":{"fillColor":"#FF0000","line":"#00FF00","bold":true,"color":"#123456","eastAsianFont":"SimSun","font":"Arial","fontSize":22}}"""),
+        new("slides", """{"op":"format_shape","slide":2,"shapeId":3,"style":{"fillColor":"#FF0000","lineColor":"#00FF00","bold":true,"color":"#123456","eastAsianFont":"SimSun","font":"Arial","fontSize":22}}"""),
         new("slides", """{"op":"format_shape","slide":2,"shapeId":3,"style":{"latinFont":"Arial"}}""", Label: "with a Latin font of its own"),
         new("slides", """{"op":"set_slide_hidden","slides":"2","hidden":true}"""),
         new("slides", """{"op":"set_slide_size","slideSize":{"preset":"4x3"}}"""),

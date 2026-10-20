@@ -1,3 +1,4 @@
+using System.Globalization;
 using Aspose.Cli.Sdk.IO.Input;
 using Aspose.Slides;
 using static Aspose.Cli.Product.Slides.Engine.Editing.SlidesMutationSupport;
@@ -98,13 +99,14 @@ internal sealed partial class SlidesMutationHandlers
             slide.Background.Type = BackgroundType.NotDefined;
         }
 
-        if (reset.Length > 0)
+        // One warning per slide, so each location is one slide's address.
+        foreach (int number in reset)
         {
-            string numbers = string.Join(", ", reset);
-            _warnings.Add(new Warning(SlidesDiagnostics.SlideBackgroundReset, $"The own background of slide(s) {numbers} was removed, so they show their layout's background.")
+            _warnings.Add(new Warning(SlidesDiagnostics.SlideBackgroundReset, string.Create(
+                CultureInfo.InvariantCulture, $"The own background of slide {number} was removed, so it shows its layout's background."))
             {
                 Hint = "To keep a background, set it again with set_background after this operation, then review the slides.",
-                Location = (reset.Length == 1 ? "slide " : "slides ") + numbers,
+                Location = SlidesStateProjection.SlideAddress(number),
             });
         }
     }

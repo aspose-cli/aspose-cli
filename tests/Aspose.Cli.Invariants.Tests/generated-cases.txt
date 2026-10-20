@@ -2261,7 +2261,7 @@ C-R20 | v2/slides/ops field kind
 C-R20 | v2/slides/ops field latinFont
 C-R20 | v2/slides/ops field layout
 C-R20 | v2/slides/ops field level
-C-R20 | v2/slides/ops field line
+C-R20 | v2/slides/ops field lineColor
 C-R20 | v2/slides/ops field list
 C-R20 | v2/slides/ops field maxReplacementCount
 C-R20 | v2/slides/ops field name

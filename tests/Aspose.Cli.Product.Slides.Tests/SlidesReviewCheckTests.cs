@@ -55,7 +55,7 @@ public sealed class SlidesReviewCheckTests
         Assert.All(analysis.Findings, static finding => Assert.Equal(
             finding.Code == SlidesReviewChecks.SlideDuplicate.Code
                 ? ["slide-256", "slide-257"]
-                : [$"slide-{255 + int.Parse(finding.Location!["slide ".Length..], System.Globalization.CultureInfo.InvariantCulture)}"],
+                : [$"slide-{255 + int.Parse(finding.Location!["slide/".Length..], System.Globalization.CultureInfo.InvariantCulture)}"],
             finding.Parts!));
     }
 
@@ -228,7 +228,7 @@ public sealed class SlidesReviewCheckTests
 
         Assert.DoesNotContain(before.Findings!, static finding => finding.Code.StartsWith("SLIDES_TEXT_O", StringComparison.Ordinal));
         ReviewFinding finding = Assert.Single(after.Findings!, static finding => finding.Code == SlidesReviewChecks.TextOutsideSlide.Code);
-        Assert.Equal("slide 2", finding.Location);
+        Assert.Equal("slide/2", finding.Location);
         Assert.Contains("top edge", finding.Message, StringComparison.Ordinal);
         Assert.DoesNotContain(after.Findings!, static finding => finding.Code == SlidesReviewChecks.ShapeOutsideSlide.Code);
     }
@@ -480,7 +480,7 @@ public sealed class SlidesReviewCheckTests
         ProductReviewAssessment review = fixture.Review(deck);
 
         ReviewFinding[] findings = [.. review.Findings!.Where(static finding => finding.Code == SlidesReviewChecks.TextLowContrast.Code)];
-        Assert.Equal(["slide 1", "slide 2", "slide 6"], findings.Select(static finding => finding.Location));
+        Assert.Equal(["slide/1", "slide/2", "slide/6"], findings.Select(static finding => finding.Location));
         Assert.Contains("#000000 on #1B2A41", findings[0].Message, StringComparison.Ordinal);
         Assert.Contains("shapeId ", findings[1].Message, StringComparison.Ordinal);
         Assert.Equal(3, SlidesEngineFixture.Metric(review, "lowContrastTexts"));
@@ -525,7 +525,7 @@ public sealed class SlidesReviewCheckTests
         ProductReviewAssessment review = fixture.Review(deck);
 
         Assert.Equal(
-            ["slide 4"],
+            ["slide/4"],
             review.Findings!.Where(static finding => finding.Code == SlidesReviewChecks.TextLowContrast.Code).Select(static finding => finding.Location));
     }
 

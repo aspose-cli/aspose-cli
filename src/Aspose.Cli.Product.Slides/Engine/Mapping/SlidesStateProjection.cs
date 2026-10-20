@@ -20,7 +20,8 @@ internal static class SlidesStateProjection
     internal const string SlideUnit = "slide";
 
     // Addresses: slide/3, slide/3/notes, slide/3/shape/7 (by shape id), section/Q3 plan,
-    // property/title (by escaped name), presentation/slide-size and <unit>/all.
+    // property/title (by escaped name), presentation/slide-size and <unit>/all. Warnings,
+    // verification issues and review findings locate what they report by the same addresses.
     internal const string SlideSizeAddress = "presentation/slide-size";
 
     internal static string SlideAddress(int number) => string.Create(CultureInfo.InvariantCulture, $"{SlideUnit}/{number}");
@@ -81,7 +82,7 @@ internal static class SlidesStateProjection
         Runs = full ? SlidesStateProjection.Runs(shape, ref remaining, ref truncated) : null,
         Paragraphs = full ? Paragraphs(shape, ref remaining, ref truncated) : null,
         FillColor = full ? FillColor(shape) : null,
-        Line = full ? Line(shape) : null,
+        LineColor = full ? LineColor(shape) : null,
         RowCount = full && shape is ITable rows ? rows.Rows.Count : null,
         ColumnCount = full && shape is ITable columns ? columns.Columns.Count : null,
         Values = full && shape is ITable table ? Values(table, ref remaining, ref truncated) : null,
@@ -94,7 +95,7 @@ internal static class SlidesStateProjection
         OneColor(SlidesShapeFormats.Fills(shape).Select(static fill => (fill.FillType, fill.SolidFillColor.Color)));
 
     /// <summary>The one solid color every outline of a shape (each cell border of a table) states, as #RRGGBB, or null.</summary>
-    internal static string? Line(IShape shape) =>
+    internal static string? LineColor(IShape shape) =>
         OneColor(SlidesShapeFormats.Lines(shape).Select(static line => (line.FillType, line.SolidFillColor.Color)));
 
     /// <summary>The paragraphs of a shape's own text frame with the list, bullets or numbers at a 1-based level, each one belongs to.</summary>
