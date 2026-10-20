@@ -46,14 +46,14 @@ internal static class HostHelpMetadata
             [
                 "preview open report.docx --output-format json",
                 "preview status --output-format json",
-                "preview stop --all --output-format json",
+                "preview stop --output-format json",
             ],
             [Preview]);
         Find(preview, "open").WithExamples(
             ["preview open report.docx", "preview open report.docx --no-open --output-format json"],
             [Preview]);
         Find(preview, "status").WithExamples(["preview status", "preview status --output-format json"], [Preview]);
-        Find(preview, "stop").WithExamples(["preview stop --all", "preview stop --all --output-format json"], [Preview]);
+        Find(preview, "stop").WithExamples(["preview stop", "preview stop --output-format json"], [Preview]);
         Find(root, "review").WithExamples(
             [
                 "review report.docx",

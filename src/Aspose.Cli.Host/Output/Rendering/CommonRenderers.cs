@@ -74,8 +74,6 @@ internal static class CommonRenderers
             $"input:   {input.Default} bytes default, {input.Maximum} hard maximum "
             + $"({input.Option})");
         surface.Out.WriteLine(
-            $"budgets: contract v{capabilities.ResourceBudgetContractVersion}");
-        surface.Out.WriteLine(
             $"diagnostics: {capabilities.Diagnostics.Count} "
             + $"({capabilities.Diagnostics.Count(static item => item.Severity == "error")} errors, "
             + $"{capabilities.Diagnostics.Count(static item => item.Severity == "warning")} warnings)");
@@ -243,7 +241,7 @@ internal static class CommonRenderers
         WriteIfPresent(surface, "source:    ", update.SourceRevision);
         WriteIfPresent(surface, "feed:      ", update.Feed);
         WriteIfPresent(surface, "sha256:    ", update.ArchiveSha256);
-        if (update.ProcessId is { } pid)
+        if (update.Pid is { } pid)
         {
             surface.Out.WriteLine($"installer: pid {TableText.Int(pid)}");
         }

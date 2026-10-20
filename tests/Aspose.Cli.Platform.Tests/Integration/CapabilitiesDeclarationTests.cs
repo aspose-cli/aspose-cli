@@ -25,7 +25,6 @@ public sealed partial class CapabilitiesDeclarationTests : IDisposable
         string[] listed =
         [
             .. capabilities["commands"]!.AsArray()
-                .Where(static command => !command!["hidden"]!.GetValue<bool>())
                 .Select(static command => command!["path"]!.GetValue<string>())
                 .Order(StringComparer.Ordinal),
         ];
@@ -75,7 +74,7 @@ public sealed partial class CapabilitiesDeclarationTests : IDisposable
     public void AllowedValues_AreTheValuesHelpShows()
     {
         JsonNode capabilities = Capabilities();
-        JsonNode[] commands = [.. capabilities["commands"]!.AsArray().Where(static command => !command!["hidden"]!.GetValue<bool>()).Select(static command => command!)];
+        JsonNode[] commands = [.. capabilities["commands"]!.AsArray().Select(static command => command!)];
         HelpOutputs.Prefetch(commands.Select(static command => command["path"]!.GetValue<string>().Split(' ')[1..]));
         var problems = new List<string>();
         foreach (JsonNode command in commands)

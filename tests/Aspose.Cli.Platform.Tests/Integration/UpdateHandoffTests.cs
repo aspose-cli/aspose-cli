@@ -62,7 +62,8 @@ public sealed class UpdateHandoffTests
             await WaitForFile(ready);
             JsonNode handoff = JsonNode.Parse(File.ReadAllText(ready))!;
             Assert.Equal(cli.Id, handoff["parent"]!.GetValue<int>());
-            Assert.Equal(result["processId"]!.GetValue<int>(), handoff["installer"]!.GetValue<int>());
+            Assert.Equal(result["pid"]!.GetValue<int>(), handoff["installer"]!.GetValue<int>());
+            Assert.False(result.AsObject().ContainsKey("processId"));
             // The installer replays the recorded choices and receives one spelling of the directory.
             Assert.True(handoff["update"]!.GetValue<bool>());
             string installDirectory = handoff["installDirectory"]!.GetValue<string>();

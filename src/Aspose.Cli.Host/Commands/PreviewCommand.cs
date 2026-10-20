@@ -141,20 +141,15 @@ internal static class PreviewCommand
     {
         var id = new Argument<string?>("id")
         {
-            Description = "Document id to close.",
+            Description = "Document id to close; without one, every document closes and the service stops.",
             Arity = ArgumentArity.ZeroOrOne,
         }.WithInput(InputKind.None);
-        var all = new Option<bool>("--all")
-        {
-            Description = "Close every document and stop the viewer service.",
-        };
         var stop = new Command("stop", "Close one document, or stop the local viewer service.");
         stop.Arguments.Add(id);
-        stop.Options.Add(all);
         stop.SetAction(parse => executor.RunLightweight(parse, globals, (_, _) =>
         {
             var client = new ViewerServiceClient();
-            ViewerStopResponse? state = client.Stop(parse.GetValue(id), parse.GetValue(all));
+            ViewerStopResponse? state = client.Stop(parse.GetValue(id));
             int pid = state?.Pid ?? 0;
             return new ProductPreviewStatusResult
             {

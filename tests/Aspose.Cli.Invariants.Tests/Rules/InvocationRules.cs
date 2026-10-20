@@ -37,10 +37,10 @@ internal static partial class ContractRules
     private static IEnumerable<InvariantCase> R03Run(CliCatalog catalog)
     {
         string output = OutputOption(catalog);
-        foreach (CliCommand group in catalog.Commands.Where(static command => !command.Hidden && command.Subcommands.Count > 0
+        foreach (CliCommand group in catalog.Commands.Where(static command => command.Subcommands.Count > 0
             && (command.Words.Length == 0 || (command.Options.Count == 0 && command.Arguments.Count == 0))))
         {
-            string[] subcommands = [.. group.Subcommands.Select(name => Join(group.Words, name)).Where(path => !catalog.Command(path).Hidden)];
+            string[] subcommands = [.. group.Subcommands.Select(name => Join(group.Words, name))];
             yield return Runs("C-R03", $"{group} without a subcommand", InvariantCases.ShardOf(group), slow: false,
                 new Invocation(group.Tokens), session => R03Problems(session, output, subcommands));
         }
@@ -100,7 +100,7 @@ internal static partial class ContractRules
     /// </summary>
     private static IEnumerable<InvariantCase> R10Run(CliCatalog catalog)
     {
-        foreach (CliCommand command in catalog.Commands.Where(static command => !command.Hidden))
+        foreach (CliCommand command in catalog.Commands)
         {
             CliOption[] sources =
             [
@@ -197,7 +197,7 @@ internal static partial class ContractRules
     /// </summary>
     private static IEnumerable<InvariantCase> R14(CliCatalog catalog)
     {
-        foreach (CliCommand command in catalog.Commands.Where(static command => !command.Hidden && command.Has("--out")))
+        foreach (CliCommand command in catalog.Commands.Where(static command => command.Has("--out")))
         {
             yield return InvariantCases.Case("C-R14", $"{command} --out -", InvariantCases.ShardOf(command), slow: false,
                 Invocation.For(command, "--out").Add("--out", "-"),
@@ -238,7 +238,7 @@ internal static partial class ContractRules
     private static IEnumerable<InvariantCase> R16(CliCatalog catalog)
     {
         string[] notFound = [.. catalog.Diagnostics.Keys.Where(static code => code.EndsWith("_NOT_FOUND", StringComparison.Ordinal)).Order(StringComparer.Ordinal)];
-        foreach (CliCommand command in catalog.Commands.Where(static command => !command.Hidden && command.Product is { } product
+        foreach (CliCommand command in catalog.Commands.Where(static command => command.Product is { } product
             && ScenarioFixtures.Products.Contains(product) && command.Verb != "create"
             && command.Arguments.Any(static argument => argument.Required && argument.InputKind == "file")))
         {
@@ -354,7 +354,7 @@ internal static partial class ContractRules
     /// <summary>Every edit accepts its operations as a bare JSON array as well as an <c>{ops:[...]}</c> document.</summary>
     private static IEnumerable<InvariantCase> R22Run(CliCatalog catalog)
     {
-        foreach (CliCommand edit in catalog.Commands.Where(static command => !command.Hidden && command.Verb == "edit" && command.Has("--ops")
+        foreach (CliCommand edit in catalog.Commands.Where(static command => command.Verb == "edit" && command.Has("--ops")
             && command.Product is { } product && ScenarioFixtures.Products.Contains(product)))
         {
             JsonNode operations = JsonNode.Parse(ScenarioFixtures.Read(edit.Product + ".ops"))!["ops"]!;
@@ -601,7 +601,7 @@ internal static partial class ContractRules
                 continue;
             }
             string[] siblings = [.. group.Subcommands];
-            string name = siblings.First(sibling => !catalog.Command(Join(product, sibling)).Hidden);
+            string name = siblings[0];
             string commandTypo = InvariantCases.Typo(name, siblings);
             yield return R26Case(output, $"{product} command {name} as {commandTypo}", product,
                 new Invocation([product, commandTypo]), Join(product, name), suggests: false);
@@ -653,7 +653,7 @@ internal static partial class ContractRules
         const string Topic = "editing";
         yield return R26Case(output, $"docs topic {Topic} as {InvariantCases.Typo(Topic, [Topic])}", InvariantCases.Platform,
             new Invocation(["docs", InvariantCases.Typo(Topic, [Topic])]), Topic, suggests: true);
-        if (catalog.Commands.FirstOrDefault(static command => !command.Hidden && command.Product == "cells" && command.Has("--sheet") && !command.Has("--out")
+        if (catalog.Commands.FirstOrDefault(static command => command.Product == "cells" && command.Has("--sheet") && !command.Has("--out")
             && command.Arguments.Any(static argument => argument.Required && argument.InputKind == "file")) is { } sheets)
         {
             // Every cells fixture has the one sheet that cells create names.
@@ -814,7 +814,7 @@ internal static partial class ContractRules
     private static IEnumerable<InvariantCase> R35(CliCatalog catalog)
     {
         string output = OutputOption(catalog);
-        foreach (CliCommand command in catalog.Commands.Where(static command => !command.Hidden))
+        foreach (CliCommand command in catalog.Commands)
         {
             yield return Runs("C-R35", $"{command} --help", InvariantCases.ShardOf(command), slow: command.Tokens.Length > 1,
                 new Invocation(command.Tokens), session => R35HelpProblems(session, output));
@@ -943,7 +943,7 @@ internal static partial class ContractRules
     /// </summary>
     private static IEnumerable<InvariantCase> R41(CliCatalog catalog)
     {
-        foreach (CliCommand command in catalog.Commands.Where(static command => !command.Hidden && command.Has(R41Option)))
+        foreach (CliCommand command in catalog.Commands.Where(static command => command.Has(R41Option)))
         {
             string shard = InvariantCases.ShardOf(command);
             yield return InvariantCases.Case("C-R41", $"{command} {R41Option} stale", shard, slow: false,

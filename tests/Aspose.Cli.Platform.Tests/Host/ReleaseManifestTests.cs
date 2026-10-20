@@ -37,7 +37,6 @@ public sealed class ReleaseManifestTests : IDisposable
         { "archive.path", "aspose-cli.exe" },
         { "archive.size", 0 },
         { "archive.sha256", "not-a-hash" },
-        { "unexpected", "field" },
         { "archive", null },
     };
 
@@ -54,6 +53,61 @@ public sealed class ReleaseManifestTests : IDisposable
         CliException error = Assert.Throws<CliException>(() => ReleaseManifest.Read(Write(manifest)));
 
         Assert.Equal(HostDiagnostics.ReleaseVerificationFailedCode, error.Code);
+    }
+
+    /// <summary>
+    /// The manifest at releases/latest is read by every installed version, so a later release
+    /// may add fields to the root or the archive without stopping an older CLI from updating.
+    /// </summary>
+    [Theory]
+    [InlineData("")]
+    [InlineData("archive.")]
+    public void IgnoresFieldsALaterReleaseAdds(string parentPath)
+    {
+        JsonObject manifest = Manifest();
+        JsonObject parent = parentPath.Length == 0 ? manifest : manifest["archive"]!.AsObject();
+        parent["addedLater"] = new JsonObject { ["any"] = "shape" };
+
+        ReleaseManifestInfo read = ReleaseManifest.Read(Write(manifest));
+
+        Assert.Equal("aspose-cli-1.2.3-win-x64.zip", read.ArchivePath);
+        Assert.Equal(new string('b', 64), read.ArchiveSha256);
+    }
+
+    [Theory]
+    [InlineData("schemaVersion")]
+    [InlineData("productId")]
+    [InlineData("runtimeIdentifier")]
+    [InlineData("artifactVersion")]
+    [InlineData("sourceRevision")]
+    [InlineData("archive")]
+    [InlineData("archive.path")]
+    [InlineData("archive.size")]
+    [InlineData("archive.sha256")]
+    public void RejectsAManifestWithoutARequiredField(string field)
+    {
+        JsonObject manifest = Manifest();
+        JsonObject parent = field.StartsWith("archive.", StringComparison.Ordinal)
+            ? manifest["archive"]!.AsObject()
+            : manifest;
+        Assert.True(parent.Remove(field.Split('.')[^1]));
+
+        CliException error = Assert.Throws<CliException>(() => ReleaseManifest.Read(Write(manifest)));
+
+        Assert.Equal(HostDiagnostics.ReleaseVerificationFailedCode, error.Code);
+    }
+
+    [Fact]
+    public void RejectsALaterManifestSchemaAndPointsToTheInstallScript()
+    {
+        JsonObject manifest = Manifest();
+        manifest["schemaVersion"] = 2;
+
+        CliException error = Assert.Throws<CliException>(() => ReleaseManifest.Read(Write(manifest)));
+
+        Assert.Equal(HostDiagnostics.ReleaseVerificationFailedCode, error.Code);
+        Assert.Contains("install.ps1", error.Hint, StringComparison.Ordinal);
+        Assert.Contains("releases/latest/download/install.ps1", error.Hint, StringComparison.Ordinal);
     }
 
     [Fact]

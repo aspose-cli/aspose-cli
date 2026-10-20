@@ -156,7 +156,7 @@ public static partial class ExecutableHints
         var actions = new List<HintAction>();
         char[] masked = hint.ToCharArray();
         void Mask(int start, int length) => Array.Fill(masked, ' ', start, length);
-        HashSet<string> topLevel = [.. catalog.Commands.Where(static command => !command.Hidden && command.Tokens.Length == 1).Select(static command => command.Words)];
+        HashSet<string> topLevel = [.. catalog.Commands.Where(static command => command.Tokens.Length == 1).Select(static command => command.Words)];
         bool IsCommand(string[] tokens) => tokens.Length > 0 && (tokens[0] == Executable || topLevel.Contains(tokens[0]));
 
         // A command in backticks is one shell line: its single quotes quote its arguments, and the

@@ -53,7 +53,7 @@ internal static partial class ContractRules
     /// </summary>
     private static IEnumerable<InvariantCase> R11Run(CliCatalog catalog)
     {
-        foreach (TreeCommand tree in CommandTree.Of(catalog).Where(static command => !command.Hidden && Writes(command) && command.Has("--dry-run")))
+        foreach (TreeCommand tree in CommandTree.Of(catalog).Where(static command => Writes(command) && command.Has("--dry-run")))
         {
             CliCommand command = tree.Command;
             Invocation invocation = DryRunInvocation(command);
@@ -263,7 +263,7 @@ internal static partial class ContractRules
     /// </summary>
     private static IEnumerable<InvariantCase> R15Run(CliCatalog catalog)
     {
-        foreach (CliCommand command in catalog.Commands.Where(static command => !command.Hidden && command.Product is not null
+        foreach (CliCommand command in catalog.Commands.Where(static command => command.Product is not null
             && command.Verb is "read" or "search"))
         {
             bool search = command.Has("--pattern");

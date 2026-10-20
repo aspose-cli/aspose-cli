@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Net;
 using System.Net.Http;
 using System.Text.Json.Nodes;
@@ -74,14 +75,37 @@ public sealed class ViewerCommandLifecycleTests
 
             JsonNode stoppedOne = workspace.Run("preview", "stop", id, "--output-format", "json").Json();
             Assert.Equal(id, Assert.Single(stoppedOne["stopped"]!.AsArray())!.GetValue<string>());
-            JsonNode stoppedAll = workspace.Run("preview", "stop", "--all", "--output-format", "json").Json();
+            JsonNode stoppedAll = workspace.Run("preview", "stop", "--output-format", "json").Json();
             Assert.Single(stoppedAll["stopped"]!.AsArray());
             Assert.Empty(stoppedAll["sessions"]!.AsArray());
             Assert.Empty(workspace.Run("preview", "status", "--output-format", "json").Json()["sessions"]!.AsArray());
         }
         finally
         {
-            workspace.Run("preview", "stop", "--all", "--output-format", "json");
+            workspace.Run("preview", "stop", "--output-format", "json");
+        }
+    }
+
+    [Fact]
+    public void PreviewStop_WithoutAnId_ClosesEveryDocumentAndEndsTheService()
+    {
+        using var workspace = new TempWorkspace();
+        CreateWorkbook(workspace, "book.xlsx");
+        try
+        {
+            JsonNode started = Start(workspace, "book.xlsx");
+            using Process service = Process.GetProcessById(started["pid"]!.GetValue<int>());
+
+            JsonNode stopped = workspace.Run("preview", "stop", "--output-format", "json").Json();
+
+            Assert.Equal(started["id"]!.GetValue<string>(), Assert.Single(stopped["stopped"]!.AsArray())!.GetValue<string>());
+            Assert.Empty(stopped["sessions"]!.AsArray());
+            Assert.True(service.WaitForExit(TestDeadline.Hang), "The viewer service kept running after 'preview stop'.");
+            Assert.Empty(workspace.Run("preview", "status", "--output-format", "json").Json()["sessions"]!.AsArray());
+        }
+        finally
+        {
+            workspace.Run("preview", "stop", "--output-format", "json");
         }
     }
 
@@ -108,7 +132,7 @@ public sealed class ViewerCommandLifecycleTests
             {
                 Directory.Move(moved, workspace.Path);
             }
-            workspace.Run("preview", "stop", "--all", "--output-format", "json");
+            workspace.Run("preview", "stop", "--output-format", "json");
         }
     }
 
@@ -128,7 +152,7 @@ public sealed class ViewerCommandLifecycleTests
         }
         finally
         {
-            workspace.Run("preview", "stop", "--all", "--output-format", "json");
+            workspace.Run("preview", "stop", "--output-format", "json");
         }
     }
 
@@ -159,7 +183,7 @@ public sealed class ViewerCommandLifecycleTests
         }
         finally
         {
-            workspace.Run("preview", "stop", "--all", "--output-format", "json");
+            workspace.Run("preview", "stop", "--output-format", "json");
         }
     }
 

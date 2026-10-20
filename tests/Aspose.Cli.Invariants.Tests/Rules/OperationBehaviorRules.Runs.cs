@@ -240,7 +240,7 @@ internal static partial class OperationRuns
 
     /// <summary>A product command that reads a document without writing or searching it: a <c>read</c>.</summary>
     private static bool IsRead(CliCommand command, string product) =>
-        command.Product == product && !command.Hidden && command.Verb == "read"
+        command.Product == product && command.Verb == "read"
         && command.Arguments.Any(static argument => argument.Required && argument.InputKind == "file")
         && !command.Has("--pattern") && !command.Has("--out") && !command.Has("--out-dir");
 

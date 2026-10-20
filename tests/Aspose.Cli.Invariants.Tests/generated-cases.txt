@@ -33,8 +33,6 @@ C-R03 | words declared
 C-R03 | words without a subcommand
 C-R04 | --scan-range
 C-R04 | Skills and README hidden names
-C-R04 | __render-worker
-C-R04 | __viewer-service
 C-R04 | cells read budget hint
 C-R04 | src/Aspose.Cli hidden names
 C-R04 | src/Aspose.Cli.Host hidden names
@@ -44,12 +42,10 @@ C-R04 | src/Aspose.Cli.Product.Slides hidden names
 C-R04 | src/Aspose.Cli.Product.Words hidden names
 C-R04 | src/Aspose.Cli.Sdk hidden names
 C-R04 | src/Aspose.Cli.Sdk.Analyzers hidden names
-C-R04 | update __prepare
 C-R05 | cells
 C-R05 | pdf
 C-R05 | slides
 C-R05 | words
-C-R06 | __viewer-service
 C-R06 | app open
 C-R06 | aspose-cli
 C-R06 | capabilities
@@ -79,7 +75,6 @@ C-R06 | pdf sign
 C-R06 | pdf split
 C-R06 | pdf validate
 C-R06 | preview open
-C-R06 | preview stop
 C-R06 | review
 C-R06 | schema
 C-R06 | skill install
@@ -102,7 +97,6 @@ C-R06 | words read
 C-R06 | words render
 C-R06 | words search
 C-R06 | words split
-C-R08 | __viewer-service
 C-R08 | app open
 C-R08 | aspose-cli
 C-R08 | capabilities
@@ -132,7 +126,6 @@ C-R08 | pdf sign
 C-R08 | pdf split
 C-R08 | pdf validate
 C-R08 | preview open
-C-R08 | preview stop
 C-R08 | review
 C-R08 | schema
 C-R08 | skill install
@@ -6008,7 +6001,6 @@ unknown-option | preview open --password-stdin as --psasword-stdin
 unknown-option | preview open --port as --portt
 unknown-option | preview open --product as --porduct
 unknown-option | preview open --view as --vieww
-unknown-option | preview stop --all as --alll
 unknown-option | review --code as --codee
 unknown-option | review --dry-run as --dyr-run
 unknown-option | review --font-dir as --fnot-dir

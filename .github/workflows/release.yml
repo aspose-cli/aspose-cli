@@ -39,5 +39,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           $assets = @(Get-ChildItem -LiteralPath artifacts/release/win-x64 -File | ForEach-Object FullName)
-          gh release create $env:GITHUB_REF_NAME @assets --verify-tag --title "Aspose CLI $($env:GITHUB_REF_NAME.Substring(1))" --generate-notes
+          # A pre-release version (v1.1.0-rc.1) never becomes releases/latest, which installed CLIs update from.
+          $prerelease = @(if ($env:GITHUB_REF_NAME.Contains('-')) { '--prerelease' })
+          gh release create $env:GITHUB_REF_NAME @assets --verify-tag --title "Aspose CLI $($env:GITHUB_REF_NAME.Substring(1))" --generate-notes @prerelease
           if ($LASTEXITCODE -ne 0) { throw "gh release create failed with exit code $LASTEXITCODE." }

@@ -23,14 +23,13 @@ internal static partial class ContractRules
         var help = new Lazy<HelpSnapshots>(static () => new HelpSnapshots());
         CliCommand[] leaves =
         [
-            .. catalog.Commands.Where(command => !command.Hidden && command.Words.Length > 0
-                && !command.Subcommands.Any(name => !catalog.Command($"{command.Words} {name}").Hidden)),
+            .. catalog.Commands.Where(static command => command.Words.Length > 0 && command.Subcommands.Count == 0),
         ];
         HashSet<string> global = [.. catalog.Command(string.Empty).Options.Select(static option => option.Name)];
         string[] folded = [.. catalog.Command(string.Empty).Options.Where(static option => option.Recursive && !option.Hidden).Select(static option => option.Name)];
         CliCommand[] groups =
         [
-            .. catalog.Commands.Where(command => !command.Hidden && command.Words.Length > 0 && !leaves.Contains(command)),
+            .. catalog.Commands.Where(command => command.Words.Length > 0 && !leaves.Contains(command)),
         ];
 
         foreach (CliCommand command in leaves)

@@ -3,9 +3,9 @@ using Aspose.Cli.Sdk;
 namespace Aspose.Cli.Host.LocalServices;
 
 /// <summary>
-/// Hard resource ceilings shared by the App and Preview local HTTP services.
-/// Environment overrides may lower or raise defaults only within the
-/// compiled safety maximum.
+/// Hard resource ceilings shared by the App and Preview local HTTP services. Only the
+/// snapshot and upload limits that <c>docs preview</c> and <c>docs app</c> name take an
+/// environment override, and only within the compiled safety maximum; the others are fixed.
 /// </summary>
 internal sealed record LocalServiceResourceLimits(
     int MaximumConcurrentRequests,
@@ -24,27 +24,10 @@ internal sealed record LocalServiceResourceLimits(
     {
         environment ??= Environment.GetEnvironmentVariable;
         return new LocalServiceResourceLimits(
-            Integer(
-                environment,
-                DistributionInfo.EnvironmentVariablePrefix + "LOCAL_HTTP_MAX_REQUESTS",
-                defaultValue: 32,
-                maximum: 128),
-            Integer(
-                environment,
-                DistributionInfo.EnvironmentVariablePrefix + "LOCAL_SSE_MAX_CLIENTS",
-                defaultValue: 16,
-                maximum: 64),
-            Integer(
-                environment,
-                DistributionInfo.EnvironmentVariablePrefix + "LOCAL_SSE_QUEUE_CAPACITY",
-                defaultValue: 16,
-                maximum: 128),
-            TimeSpan.FromMilliseconds(Integer(
-                environment,
-                DistributionInfo.EnvironmentVariablePrefix + "LOCAL_SSE_WRITE_TIMEOUT_MS",
-                defaultValue: 5_000,
-                maximum: 30_000,
-                minimum: 100)),
+            MaximumConcurrentRequests: 32,
+            MaximumSseClients: 16,
+            SseQueueCapacity: 16,
+            SseWriteTimeout: TimeSpan.FromSeconds(5),
             Integer(
                 environment,
                 DistributionInfo.EnvironmentVariablePrefix + "PREVIEW_MAX_FILES",
@@ -70,20 +53,14 @@ internal sealed record LocalServiceResourceLimits(
                 DistributionInfo.EnvironmentVariablePrefix + "APP_MAX_UPLOAD_SESSION_BYTES",
                 defaultValue: 512L * 1024 * 1024,
                 maximum: 2L * 1024 * 1024 * 1024),
-            TimeSpan.FromMilliseconds(Integer(
-                environment,
-                DistributionInfo.EnvironmentVariablePrefix + "VIEWER_RENDER_TIMEOUT_MS",
-                defaultValue: 60_000,
-                maximum: 600_000,
-                minimum: 1_000)));
+            RenderTimeout: TimeSpan.FromMinutes(1));
     }
 
     private static int Integer(
         Func<string, string?> environment,
         string name,
         int defaultValue,
-        int maximum,
-        int minimum = 1)
+        int maximum)
     {
         string? raw = environment(name);
         if (raw is null)
@@ -96,11 +73,11 @@ internal sealed record LocalServiceResourceLimits(
                 System.Globalization.NumberStyles.Integer,
                 System.Globalization.CultureInfo.InvariantCulture,
                 out int value)
-            || value < minimum
+            || value < 1
             || value > maximum)
         {
             throw new InvalidOperationException(
-                $"{name} must be between {minimum} and {maximum}.");
+                $"{name} must be between 1 and {maximum}.");
         }
 
         return value;

@@ -120,7 +120,7 @@ internal static class InvariantCases
     {
         CliCatalog catalog = CliCatalog.Current;
         var cases = new List<InvariantCase>();
-        CliCommand[] visible = [.. catalog.Commands.Where(static command => !command.Hidden)];
+        CliCommand[] visible = [.. catalog.Commands];
         CliCommand[] runnable = [.. visible.Where(IsRunnable)];
         foreach (CliCommand command in runnable)
         {
@@ -209,7 +209,7 @@ internal static class InvariantCases
 
     private static IEnumerable<InvariantCase> UnknownCommandCases(CliCatalog catalog, CliCommand command)
     {
-        string[] names = [.. command.Subcommands.Where(name => !catalog.Command(Join(command.Words, name)).Hidden)];
+        string[] names = [.. command.Subcommands];
         foreach (string name in names)
         {
             string typo = Typo(name, names);

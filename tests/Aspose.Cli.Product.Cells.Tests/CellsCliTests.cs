@@ -780,11 +780,7 @@ public sealed class CellsCliTests : IDisposable
             _workspace.File("sales.csv"),
             "Region,Revenue\nEast,1200\nWest,900\n");
         _previewRequested = true;
-        CliResult started = _workspace.RunWithEnv(
-            new Dictionary<string, string?>
-            {
-                ["ASPOSE_CLI_NO_OPEN"] = "1",
-            },
+        CliResult started = _workspace.Run(
             "preview", "open", "sales.csv", "--no-open", "--output-format", "json");
 
         Assert.True(started.ExitCode == 0, started.StdErr);
@@ -850,7 +846,7 @@ public sealed class CellsCliTests : IDisposable
             {
                 try
                 {
-                    CliResult stopped = _workspace.Run("preview", "stop", "--all", "--output-format", "json");
+                    CliResult stopped = _workspace.Run("preview", "stop", "--output-format", "json");
                     Assert.True(stopped.ExitCode == 0, stopped.StdErr);
                 }
                 finally

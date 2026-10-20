@@ -647,7 +647,6 @@
         "name": "cells",
         "aliases": [],
         "description": "Spreadsheet operations (Excel and friends) with engine-grade fidelity.",
-        "hidden": false,
         "options": [],
         "arguments": []
       },
@@ -656,7 +655,6 @@
         "name": "compare",
         "aliases": [],
         "description": "Compare stored workbook values and optional formula text; dates are ISO 8601.",
-        "hidden": false,
         "options": [
           {
             "name": "--content",
@@ -824,7 +822,6 @@
         "name": "convert",
         "aliases": [],
         "description": "Convert a workbook to another format.",
-        "hidden": false,
         "options": [
           {
             "name": "--bom",
@@ -1109,7 +1106,6 @@
         "name": "create",
         "aliases": [],
         "description": "Create a new workbook.",
-        "hidden": false,
         "options": [
           {
             "name": "--dry-run",
@@ -1233,7 +1229,6 @@
         "name": "edit",
         "aliases": [],
         "description": "Apply a batch of edit ops atomically. Editable outputs: xlsx, xltx, xlsm, xltm, xlsb, xls, ods, csv, tsv, html, mhtml.",
-        "hidden": false,
         "options": [
           {
             "name": "--backup",
@@ -1564,7 +1559,6 @@
         "name": "inspect",
         "aliases": [],
         "description": "Show structure and metadata of a workbook.",
-        "hidden": false,
         "options": [
           {
             "name": "--detail",
@@ -1700,7 +1694,6 @@
         "name": "read",
         "aliases": [],
         "description": "Read cell data of one sheet as a windowed projection.",
-        "hidden": false,
         "options": [
           {
             "name": "--content",
@@ -1853,7 +1846,6 @@
         "name": "render",
         "aliases": [],
         "description": "Render sheets, or a range of one, to images.",
-        "hidden": false,
         "options": [
           {
             "name": "--dpi",
@@ -2060,7 +2052,6 @@
         "name": "search",
         "aliases": [],
         "description": "Find cells whose value or formula matches a pattern.",
-        "hidden": false,
         "options": [
           {
             "name": "--case-sensitive",

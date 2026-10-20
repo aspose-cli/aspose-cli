@@ -14,8 +14,6 @@ internal sealed record TreeCommand(CliCommand Command, IReadOnlyList<TreeOption>
 
     public string? Product => Command.Product;
 
-    public bool Hidden => Command.Hidden;
-
     /// <summary>The product verb, the second path word of a product command; empty otherwise.</summary>
     public string ProductVerb => Product is not null && Command.Tokens.Length > 1 ? Command.Tokens[1] : string.Empty;
 

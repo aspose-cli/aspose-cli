@@ -89,7 +89,7 @@ internal static class DoctorCommand
             Name = "resource-budgets",
             Status = DoctorStatuses.Ok,
             Detail =
-                $"input={context.ResourceBudgets.Limit(ResourceBudgetKinds.InputBytes)} bytes; contract v{ResourceBudgetDefaults.ContractVersion}",
+                $"input={context.ResourceBudgets.Limit(ResourceBudgetKinds.InputBytes)} bytes",
         };
     }
 

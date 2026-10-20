@@ -795,7 +795,6 @@
         "name": "words",
         "aliases": [],
         "description": "Word-processing document automation with layout fidelity.",
-        "hidden": false,
         "options": [],
         "arguments": []
       },
@@ -804,7 +803,6 @@
         "name": "compare",
         "aliases": [],
         "description": "Semantically compare two documents and optionally save a redline.",
-        "hidden": false,
         "options": [
           {
             "name": "--author",
@@ -1060,7 +1058,6 @@
         "name": "convert",
         "aliases": [],
         "description": "Convert a document using the detected input format.",
-        "hidden": false,
         "options": [
           {
             "name": "--dry-run",
@@ -1305,7 +1302,6 @@
         "name": "create",
         "aliases": [],
         "description": "Create a document from at most one content source, optionally inside a template; without either it is blank.",
-        "hidden": false,
         "options": [
           {
             "name": "--dry-run",
@@ -1492,7 +1488,6 @@
         "name": "edit",
         "aliases": [],
         "description": "Apply one validated, atomic Words operation batch.",
-        "hidden": false,
         "options": [
           {
             "name": "--author",
@@ -1838,7 +1833,6 @@
         "name": "extract",
         "aliases": [],
         "description": "Extract bounded document assets.",
-        "hidden": false,
         "options": [
           {
             "name": "--bom",
@@ -2002,7 +1996,6 @@
         "name": "inspect",
         "aliases": [],
         "description": "Show document structure, safety state and metadata.",
-        "hidden": false,
         "options": [
           {
             "name": "--detail",
@@ -2116,7 +2109,6 @@
         "name": "read",
         "aliases": [],
         "description": "Read a bounded, stable window of document blocks.",
-        "hidden": false,
         "options": [
           {
             "name": "--blocks",
@@ -2270,7 +2262,6 @@
         "name": "render",
         "aliases": [],
         "description": "Render one or more document pages.",
-        "hidden": false,
         "options": [
           {
             "name": "--dpi",
@@ -2462,7 +2453,6 @@
         "name": "search",
         "aliases": [],
         "description": "Search bounded document scopes with regex timeout protection.",
-        "hidden": false,
         "options": [
           {
             "name": "--case-sensitive",
@@ -2641,7 +2631,6 @@
         "name": "split",
         "aliases": [],
         "description": "Split a document into safe, deterministically named DOCX files.",
-        "hidden": false,
         "options": [
           {
             "name": "--by",

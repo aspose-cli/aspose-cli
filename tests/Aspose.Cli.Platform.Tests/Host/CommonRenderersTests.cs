@@ -45,7 +45,7 @@ public sealed class CommonRenderersTests
             SourceRevision = "fedcba9876543210",
             Feed = @"C:\feeds\release-manifest.json",
             ArchiveSha256 = "cd34",
-            ProcessId = 4242,
+            Pid = 4242,
         };
 
         string text = RenderedText.Of(surface => CommonRenderers.Render(update, surface));

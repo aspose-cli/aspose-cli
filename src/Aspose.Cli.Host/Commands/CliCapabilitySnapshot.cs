@@ -60,8 +60,7 @@ internal sealed class CliCapabilitySnapshot
                     ConvertFormats = product.ConvertFormats,
                     RenderFormats = product.RenderFormats,
                     Commands = product.Commands
-                        .Where(command => !command.Hidden
-                            && command.Path.StartsWith(
+                        .Where(command => command.Path.StartsWith(
                                 _productRoots[product.Id] + " ",
                                 StringComparison.Ordinal))
                         .Select(command => new CommandCapabilitiesSummary
@@ -236,8 +235,6 @@ internal sealed class CliCapabilitySnapshot
             Schemas = schemas.Ids,
             Routing = catalog.GetRoutingCapabilities(),
             Commands = tree.Select(static owned => owned.Command).ToArray(),
-            ResourceBudgetContractVersion =
-                ResourceBudgetDefaults.ContractVersion,
             ResourceBudgets = ResourceBudgetDefaults.Global
                 .OrderBy(static budget => budget.Kind, StringComparer.Ordinal)
                 .ToArray(),
