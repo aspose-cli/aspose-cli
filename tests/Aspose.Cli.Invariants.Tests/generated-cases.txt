@@ -1950,6 +1950,7 @@ C-R20 | v2/pdf/inspect-result variants
 C-R20 | v2/pdf/merge-result fixednames
 C-R20 | v2/pdf/merge-result spelling
 C-R20 | v2/pdf/merge-result variants
+C-R20 | v2/pdf/ops field alignment
 C-R20 | v2/pdf/ops field annotate
 C-R20 | v2/pdf/ops field assemble
 C-R20 | v2/pdf/ops field at
@@ -2002,7 +2003,6 @@ C-R20 | v2/pdf/ops field scalePercent
 C-R20 | v2/pdf/ops field sourcePasswordEnv
 C-R20 | v2/pdf/ops field start
 C-R20 | v2/pdf/ops field startPage
-C-R20 | v2/pdf/ops field startingValue
 C-R20 | v2/pdf/ops field subject
 C-R20 | v2/pdf/ops field text
 C-R20 | v2/pdf/ops field title

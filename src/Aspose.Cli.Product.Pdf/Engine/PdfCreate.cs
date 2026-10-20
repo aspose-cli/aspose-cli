@@ -168,7 +168,7 @@ internal static class PdfCreate
         return new Warning(PdfDiagnostics.ImageResolutionLow, string.Create(CultureInfo.InvariantCulture,
             $"Image '{Path.GetFileName(path)}' ({codec.Info.Width} x {codec.Info.Height} pixels) is drawn on page {page} at {perInch:0} pixels per inch, enlarged beyond its own size, so it shows blurred."))
         {
-            Location = string.Create(CultureInfo.InvariantCulture, $"page {page}"),
+            Location = string.Create(CultureInfo.InvariantCulture, $"page/{page}"),
             Hint = string.Create(CultureInfo.InvariantCulture,
                 $"Use an image with at least {needed} pixels on its longer side, or a smaller --page-size or wider --margins."),
         };

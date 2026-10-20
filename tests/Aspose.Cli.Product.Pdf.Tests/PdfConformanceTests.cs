@@ -182,13 +182,13 @@ public sealed class PdfConformanceTests
         string[] removed = ["appendix.pdf", "figures.csv", "notes.bin"];
         foreach (string name in removed.Except(kept))
         {
-            Warning warning = Assert.Single(result.Warnings!, warning => warning.Location == $"attachment {name}");
+            Warning warning = Assert.Single(result.Warnings!, warning => warning.Location == $"attachment/{name}");
             Assert.Equal(WarningCodes.LossyConversion, warning.Code);
             Assert.Contains(profile == "pdfa-1b" ? "PDF/A-1 does not allow attachments" : "PDF/A-2 allows only attachments that are PDF/A documents", warning.Message, StringComparison.Ordinal);
             Assert.Contains("pdfa-3b", warning.Hint, StringComparison.Ordinal);
         }
 
-        Assert.DoesNotContain(result.Warnings ?? [], warning => kept.Any(name => warning.Location == $"attachment {name}"));
+        Assert.DoesNotContain(result.Warnings ?? [], warning => kept.Any(name => warning.Location == $"attachment/{name}"));
 
         // The engine labels every attachment application/pdf (PDF-PDFA-ATTACHMENT-TYPE).
         Dictionary<string, string> types = archived.EmbeddedFiles.Cast<Aspose.Pdf.FileSpecification>()

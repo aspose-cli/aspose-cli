@@ -172,7 +172,7 @@ internal static class OperationSamples
         new("pdf", """{"op":"set_form_field","name":"name","value":"Filled"}""",
             FromHtml: "<html><body><form><input type=\"text\" name=\"name\" value=\"Empty\"></form></body></html>"),
         new("pdf", """{"op":"set_properties","title":"Edited","author":"Tester","subject":"Checks","keywords":"invariant","custom":{"Department":"Sales"}}"""),
-        new("pdf", """{"op":"set_page_labels","ranges":[{"startPage":1,"numberStyle":"roman-lower","prefix":"A-","startingValue":3}]}"""),
+        new("pdf", """{"op":"set_page_labels","ranges":[{"startPage":1,"numberStyle":"roman-lower","prefix":"A-","start":3}]}"""),
         new("pdf", """{"op":"set_page_size","pages":"1","pageSize":{"preset":"letter"}}"""),
         new("slides", """{"op":"insert_section","name":"Intro","at":1}""",
             Unrepeatable: "A second section of the same name is refused."),

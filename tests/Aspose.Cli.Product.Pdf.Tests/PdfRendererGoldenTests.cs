@@ -215,7 +215,7 @@ public sealed class PdfRendererGoldenTests
                 CheckedOps = ["stamp"],
                 Issues =
                 [
-                    VerificationIssue.From(new Warning(new WarningCode("TEXT_NOT_FOUND"), "the stamp text was not read back") { Location = "page 2", Hint = "Check the font." }),
+                    VerificationIssue.From(new Warning(new WarningCode("TEXT_NOT_FOUND"), "the stamp text was not read back") { Location = "page/2", Hint = "Check the font." }),
                     VerificationIssue.From(new Warning(new WarningCode("REDACTION_PARTIAL"), "1 match remains")),
                 ],
             },
@@ -231,7 +231,7 @@ public sealed class PdfRendererGoldenTests
             backup: in.backup.pdf (kept existing)
             pages touched: 2
             verification: needs attention; checked ops: stamp
-              TEXT_NOT_FOUND [page 2]: the stamp text was not read back
+              TEXT_NOT_FOUND [page/2]: the stamp text was not read back
                 hint: Check the font.
               REDACTION_PARTIAL: 1 match remains
             """,
@@ -305,8 +305,8 @@ public sealed class PdfRendererGoldenTests
             ],
             PageLabels =
             [
-                new PdfPageLabelInfo { StartPage = 1, NumberStyle = "roman", Prefix = "A-", StartingValue = 1 },
-                new PdfPageLabelInfo { StartPage = 3, NumberStyle = "decimal", StartingValue = 1 },
+                new PdfPageLabelInfo { StartPage = 1, NumberStyle = "roman", Prefix = "A-", Start = 1 },
+                new PdfPageLabelInfo { StartPage = 3, NumberStyle = "decimal", Start = 1 },
             ],
             Outline =
             [

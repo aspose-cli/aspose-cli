@@ -164,7 +164,7 @@ internal static class PdfInfoProjection
                     StartPage = pageIndex + 1,
                     NumberStyle = PdfPageLabelStyles.ToStyle(label.NumberingStyle),
                     Prefix = string.IsNullOrEmpty(label.Prefix) ? null : label.Prefix,
-                    StartingValue = label.StartingValue,
+                    Start = label.StartingValue,
                 };
             })
             .ToArray();

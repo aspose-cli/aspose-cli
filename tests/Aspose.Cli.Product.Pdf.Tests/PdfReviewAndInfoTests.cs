@@ -46,7 +46,7 @@ public sealed class PdfReviewAndInfoTests
         JsonNode finding = Assert.Single(
             review["findings"]!.AsArray(),
             static item => item!["code"]!.GetValue<string>() == "PDF_PAGE_SIZE_UNUSUAL")!;
-        Assert.Equal("page 2", finding["location"]!.GetValue<string>());
+        Assert.Equal("page/2", finding["location"]!.GetValue<string>());
         Assert.Contains("60 x 40 pt", finding["message"]!.GetValue<string>(), StringComparison.Ordinal);
         // The evidence is the image of that page alone.
         Assert.EndsWith(
@@ -81,7 +81,7 @@ public sealed class PdfReviewAndInfoTests
         JsonNode review = Review(workspace, input);
 
         Assert.Equal(
-            [("PDF_PAGE_UTILIZATION_LOW", "page 2")],
+            [("PDF_PAGE_UTILIZATION_LOW", "page/2")],
             review["findings"]!.AsArray()
                 .Select(static item => (item!["code"]!.GetValue<string>(), item["location"]!.GetValue<string>()))
                 .Where(static item => item.Item1.StartsWith("PDF_PAGE_", StringComparison.Ordinal)));
@@ -105,7 +105,7 @@ public sealed class PdfReviewAndInfoTests
             static item => item!["code"]!.GetValue<string>().StartsWith("PDF_PAGE_", StringComparison.Ordinal))!;
         Assert.Equal("PDF_PAGE_WITHOUT_TEXT_LAYER", finding["code"]!.GetValue<string>());
         Assert.Equal("info", finding["severity"]!.GetValue<string>());
-        Assert.Equal("page 3", finding["location"]!.GetValue<string>());
+        Assert.Equal("page/3", finding["location"]!.GetValue<string>());
         Assert.Contains("redact_area", finding["hint"]!.GetValue<string>(), StringComparison.Ordinal);
         Assert.Equal(1, result["coverage"]!["metrics"]!.AsArray()
             .Single(static metric => metric!["name"]!.GetValue<string>() == "scannedPages")!["value"]!.GetValue<int>());
@@ -142,7 +142,7 @@ public sealed class PdfReviewAndInfoTests
         JsonNode finding = Assert.Single(
             review["findings"]!.AsArray(),
             static item => item!["code"]!.GetValue<string>() == "PDF_TEXT_COVERED")!;
-        Assert.Equal("page 1", finding["location"]!.GetValue<string>());
+        Assert.Equal("page/1", finding["location"]!.GetValue<string>());
         Assert.Contains("source document", finding["hint"]!.GetValue<string>(), StringComparison.Ordinal);
     }
 
@@ -225,7 +225,7 @@ public sealed class PdfReviewAndInfoTests
         JsonNode finding = Assert.Single(
             review["findings"]!.AsArray(),
             static item => item!["code"]!.GetValue<string>() == "PDF_TEXT_COVERED")!;
-        Assert.Equal("page 1", finding["location"]!.GetValue<string>());
+        Assert.Equal("page/1", finding["location"]!.GetValue<string>());
         Assert.StartsWith("1 text fragment(s)", finding["message"]!.GetValue<string>(), StringComparison.Ordinal);
     }
 
@@ -243,9 +243,9 @@ public sealed class PdfReviewAndInfoTests
         JsonNode review = workspace.Run(["review", NoticeDocument(fixture), "--out", workspace.File("review"), "--license-mode", "evaluation", "--output-format", "json"]).Json();
 
         JsonNode[] findings = [.. review["findings"]!.AsArray().Select(static item => item!)];
-        Assert.Equal(["page 2"], OutsidePages(findings));
+        Assert.Equal(["page/2"], OutsidePages(findings));
         Assert.Contains(findings, static item => item["code"]!.GetValue<string>() == "PDF_EVALUATION_WATERMARK"
-            && item["location"]!.GetValue<string>() == "page 1"
+            && item["location"]!.GetValue<string>() == "page/1"
             && item["message"]!.GetValue<string>().Contains("Aspose.Cells", StringComparison.Ordinal));
         JsonNode excluded = review["coverage"]!["metrics"]!.AsArray()
             .Single(static metric => metric!["name"]!.GetValue<string>() == "excludedEvaluationMarks")!;
@@ -262,7 +262,7 @@ public sealed class PdfReviewAndInfoTests
         JsonNode review = workspace.Run(["review", NoticeDocument(fixture), "--out", workspace.File("review"), "--license", TestLicense.Path!, "--output-format", "json"]).Json();
 
         JsonNode[] findings = [.. review["findings"]!.AsArray().Select(static item => item!)];
-        Assert.Equal(["page 1", "page 2"], OutsidePages(findings));
+        Assert.Equal(["page/1", "page/2"], OutsidePages(findings));
         Assert.Contains(findings, static item => item["code"]!.GetValue<string>() == "PDF_EVALUATION_WATERMARK");
         Assert.DoesNotContain(review["coverage"]!["metrics"]!.AsArray(),
             static metric => metric!["name"]!.GetValue<string>() == "excludedEvaluationMarks");
@@ -328,7 +328,7 @@ public sealed class PdfReviewAndInfoTests
         JsonNode review = Review(workspace, input);
 
         Assert.Equal(
-            ["page 4"],
+            ["page/4"],
             review["findings"]!.AsArray()
                 .Where(static item => item!["code"]!.GetValue<string>() == "PDF_TEXT_OUTSIDE_PAGE")
                 .Select(static item => item!["location"]!.GetValue<string>()));
@@ -413,7 +413,7 @@ public sealed class PdfReviewAndInfoTests
             .Select(static item => item!)];
         // Without a license the test's own save stamps every page.
         Assert.Equal(
-            fixture.LicenseState == Aspose.Cli.Sdk.Licensing.LicenseState.Licensed ? ["page 2"] : ["page 1", "page 2"],
+            fixture.LicenseState == Aspose.Cli.Sdk.Licensing.LicenseState.Licensed ? ["page/2"] : ["page/1", "page/2"],
             findings.Select(static item => item["location"]!.GetValue<string>()));
         Assert.All(findings, static item => Assert.Contains("license", item["hint"]!.GetValue<string>(), StringComparison.Ordinal));
     }
@@ -451,7 +451,7 @@ public sealed class PdfReviewAndInfoTests
         Assert.Contains(
             review["findings"]!.AsArray(),
             static item => item!["code"]!.GetValue<string>() == "PDF_EVALUATION_WATERMARK"
-                && item["location"]!.GetValue<string>() == "page 1");
+                && item["location"]!.GetValue<string>() == "page/1");
 
         string Write(string name, string contents)
         {
@@ -486,7 +486,8 @@ public sealed class PdfReviewAndInfoTests
         Assert.Equal(2, info.Forms!.FieldCount);
         Assert.Equal(2, fixture.Forms(input).Fields.Count);
         Assert.Contains(result["findings"]!.AsArray(), static item => item!["code"]!.GetValue<string>() == "PDF_FORM_APPEARANCE_REVIEW_REQUIRED"
-            && item["message"]!.GetValue<string>().Contains("2 form field(s)", StringComparison.Ordinal));
+            && item["message"]!.GetValue<string>().Contains("2 form field(s)", StringComparison.Ordinal)
+            && item["location"] is null);
         Assert.Equal(2, result["coverage"]!["metrics"]!.AsArray()
             .Single(static metric => metric!["name"]!.GetValue<string>() == "formFields")!["value"]!.GetValue<int>());
     }

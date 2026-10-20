@@ -144,7 +144,7 @@ internal sealed partial class PdfMutationHandlers
             _document.PageLabels.UpdateLabel(range.StartPage - 1, new PageLabel
             {
                 Prefix = range.Prefix,
-                StartingValue = range.StartingValue,
+                StartingValue = range.Start,
                 NumberingStyle = PdfPageLabelStyles.FromStyle(range.NumberStyle),
             });
         }

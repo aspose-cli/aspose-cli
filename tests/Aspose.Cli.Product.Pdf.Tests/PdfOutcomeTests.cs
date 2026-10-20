@@ -1,3 +1,6 @@
+using Aspose.Cli.Sdk.Errors;
+using Aspose.Pdf;
+using Aspose.Pdf.Text;
 using Xunit;
 
 namespace Aspose.Cli.Product.Pdf.Tests;
@@ -31,11 +34,52 @@ public sealed class PdfOutcomeTests
         Assert.Equal([1], result.PagesTouched);
     }
 
+    /// <summary>
+    /// The position counts in the output, as Slides and Cells count theirs: the first moved page
+    /// lands at it, and the moved pages must fit before the end.
+    /// </summary>
+    [Fact]
+    public void MovePages_PutsTheFirstMovedPageAtThePositionItTakesInTheOutput()
+    {
+        using var fixture = new PdfEngineFixture();
+        string input = fixture.CreateDocument(pages: 3);
+
+        PdfEditResult result = Edit(fixture, input, new MovePagesOp { Pages = "1", To = 3 });
+
+        using var moved = new Document(result.Output!.Path);
+        // Evaluation mode adds its own text to a page, so each page is known by its own line.
+        Assert.Equal(
+            ["Portable PDF page 2", "Portable PDF page 3", "Portable PDF page 1"],
+            Enumerable.Range(1, moved.Pages.Count).Select(number => System.Text.RegularExpressions.Regex.Match(
+                PageText(moved.Pages[number]), "Portable PDF page [0-9]+").Value));
+        Assert.Equal(["page/3"], Assert.Single(result.Applied).Targets);
+    }
+
+    [Theory]
+    [InlineData("1", 4)]
+    [InlineData("1-2", 3)]
+    public void MovePages_RefusesAPositionThatLeavesTheMovedPagesNoRoom(string pages, int to)
+    {
+        using var fixture = new PdfEngineFixture();
+        string input = fixture.CreateDocument(pages: 3);
+
+        CliException error = Assert.Throws<CliException>(() => Edit(fixture, input, new MovePagesOp { Pages = pages, To = to }));
+
+        Assert.Equal(ErrorCodes.PageNotFound, error.Code);
+    }
+
+    private static string PageText(Page page)
+    {
+        var absorber = new TextAbsorber();
+        page.Accept(absorber);
+        return absorber.Text.Trim();
+    }
+
     // Four pages, the most evaluation mode reads.
     [Theory]
     [InlineData("4", 3, new[] { "page/3" }, new[] { 3 })]
     [InlineData("3-4", 2, new[] { "page/2", "page/3" }, new[] { 2, 3 })]
-    [InlineData("2", 5, new[] { "page/4" }, new[] { 4 })]
+    [InlineData("2", 4, new[] { "page/4" }, new[] { 4 })]
     public void MovePages_CountsEachMovedPageWhereItLandsWhenItPassesFewerPages(string pages, int to, string[] targets, int[] touched)
     {
         using var fixture = new PdfEngineFixture();
@@ -94,7 +138,7 @@ public sealed class PdfOutcomeTests
             fixture,
             input,
             new RotatePagesOp { Pages = "1", Rotation = 90 },
-            new MovePagesOp { Pages = "1", To = 5 });
+            new MovePagesOp { Pages = "1", To = 4 });
 
         Assert.Equal(["page/4"], result.Applied[0].Targets);
         Assert.Equal(["page/4"], result.Applied[1].Targets);
@@ -111,7 +155,7 @@ public sealed class PdfOutcomeTests
         PdfEditResult result = Edit(
             fixture,
             input,
-            new MovePagesOp { Pages = "1", To = 5 },
+            new MovePagesOp { Pages = "1", To = 4 },
             new DeletePagesOp { Pages = "1" });
 
         Assert.Equal(["page/3"], result.Applied[0].Targets);
@@ -215,7 +259,7 @@ public sealed class PdfOutcomeTests
         using var fixture = new PdfEngineFixture();
         string input = fixture.CreateDocument(pages: 2);
         string stamped = Edit(fixture, input,
-            new AddHeaderTextOp { Text = "Internal", Placement = PdfPlacements.TopRight },
+            new AddHeaderTextOp { Text = "Internal", Alignment = PdfMarginAlignments.Right },
             new AddPageNumbersOp { Text = "Page {n} of {N}", Placement = PdfPlacements.BottomCenter },
             new AddWatermarkTextOp { Text = "DRAFT", FontSize = 60, Rotation = -45 }).Output!.Path;
 

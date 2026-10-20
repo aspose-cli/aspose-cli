@@ -34,7 +34,7 @@ internal static class PdfRead
             {
                 Page = pageNumber,
                 Text = projected,
-                Truncated = truncated,
+                ContentTruncated = truncated,
             });
             remaining -= projected.Length;
 
@@ -44,7 +44,7 @@ internal static class PdfRead
             }
         }
 
-        bool windowTruncated = pages.Count < requested.Count || pages.Any(static page => page.Truncated);
+        bool windowTruncated = pages.Count < requested.Count || pages.Any(static page => page.ContentTruncated);
         IReadOnlyList<Warning>? warnings = scanned.Count == 0
             ? null
             : [new Warning(PdfDiagnostics.ScannedPagesSuspected, $"Pages with no extractable text appear image-dominated: {string.Join(", ", scanned)}.")

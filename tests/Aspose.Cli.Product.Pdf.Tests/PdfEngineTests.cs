@@ -244,7 +244,7 @@ public sealed class PdfEngineTests
 
         Warning warning = Assert.Single(result.Warnings!);
         Assert.Equal("IMAGE_RESOLUTION_LOW", warning.Code.Name);
-        Assert.Equal("page 2", warning.Location);
+        Assert.Equal("page/2", warning.Location);
         Assert.Contains("icon.bmp", warning.Message, StringComparison.Ordinal);
         Assert.Contains("40 x 30 pixels", warning.Message, StringComparison.Ordinal);
     }
@@ -389,7 +389,7 @@ public sealed class PdfEngineTests
         Assert.Equal([1, 2, 3, 4], read.ScannedPagesSuspected);
         Assert.Contains(read.Warnings!, static warning => warning.Code.Name == "SCANNED_PAGES_SUSPECTED");
         Assert.Equal(
-            ["page 1", "page 2", "page 3", "page 4"],
+            ["page/1", "page/2", "page/3", "page/4"],
             review.Json()["findings"]!.AsArray()
                 .Where(static item => item!["code"]!.GetValue<string>() == "PDF_PAGE_WITHOUT_TEXT_LAYER")
                 .Select(static item => item!["location"]!.GetValue<string>()));
@@ -530,7 +530,7 @@ public sealed class PdfEngineTests
                 Assert.Equal(1, label.StartPage);
                 Assert.Equal("roman-lower", label.NumberStyle);
                 Assert.Equal("A-", label.Prefix);
-                Assert.Equal(1, label.StartingValue);
+                Assert.Equal(1, label.Start);
             });
         Assert.Collection(
             result.Outline!,
@@ -620,7 +620,7 @@ public sealed class PdfEngineTests
 
         Assert.True(result.Window!.Truncated);
         Assert.Equal(24, result.Pages.Sum(static page => page.Text.Length));
-        Assert.True(result.Pages[^1].Truncated);
+        Assert.True(result.Pages[^1].ContentTruncated);
     }
 
     [Fact]

@@ -73,7 +73,7 @@ internal static class InspectCommand
                 + string.Join(
                     ", ",
                     labels.Select(static label =>
-                        $"p{label.StartPage} {label.Prefix ?? string.Empty}{label.NumberStyle} from {label.StartingValue}")));
+                        $"p{label.StartPage} {label.Prefix ?? string.Empty}{label.NumberStyle} from {label.Start}")));
         }
 
         if (result.Pages is { Count: > 0 } pages)
