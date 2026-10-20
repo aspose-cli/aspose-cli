@@ -62,15 +62,15 @@ internal sealed class ViewerServiceClient
                 ViewerServiceJsonContext.Default.ViewerStatusResponse, deadline)
             : null;
 
-    /// <summary>Closes one document, or the whole service.</summary>
-    public ViewerStopResponse? Stop(string? id, bool all)
+    /// <summary>Closes the document <paramref name="id"/> names, or, without one, the whole service.</summary>
+    public ViewerStopResponse? Stop(string? id)
     {
         ViewerServiceMarker? marker = _store.ReadLive();
         if (marker is null)
         {
             return null;
         }
-        return all || id is null
+        return id is null
             ? Send(marker, ViewerServiceCommands.Stop, null, null,
                 ViewerServiceJsonContext.Default.ViewerStopResponse)
             : Send(marker, ViewerServiceCommands.Close, id, null,

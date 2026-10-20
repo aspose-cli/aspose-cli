@@ -34,5 +34,5 @@ public sealed record UpdateResult() : ResultEnvelope("update-result", 2)
 
     /// <summary>The installer process id; present only when the status is pending.</summary>
     [Minimum(1)]
-    public int? ProcessId { get; init; }
+    public int? Pid { get; init; }
 }

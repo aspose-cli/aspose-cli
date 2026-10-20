@@ -37,10 +37,18 @@ param(
 
     [switch] $DevelopmentPackage,
 
+    # Update handoff only: the CLI's 'update install' passes it; do not pass it yourself.
+    [Parameter(DontShow)]
     [int] $WaitForProcessId,
 
+    # Update handoff only: the CLI's 'update install' passes it; do not pass it yourself.
+    [Parameter(DontShow)]
     [string] $CleanupRoot,
 
+    # Update handoff only: the CLI's 'update install' passes it; do not pass it yourself.
+    # Every released version passes these three, so their names and meanings never change
+    # (AGENTS.md, Must not break).
+    [Parameter(DontShow)]
     [string] $StatusPath
 )
 
@@ -2066,7 +2074,7 @@ function Install-Release {
             $serviceExecutable = Join-Path $stage $script:ExecutableName
             # One service holds the App and every open document, so one stop ends
             # everything that could still be using the installation.
-            $stopResult = Invoke-CliChildProcess $serviceExecutable @('preview','stop','--all','--output-format','json')
+            $stopResult = Invoke-CliChildProcess $serviceExecutable @('preview','stop','--output-format','json')
             if ($stopResult.ExitCode -ne 0) { throw "Existing local service could not be stopped safely with exit code $($stopResult.ExitCode): $(Get-ChildProcessDiagnostic $stopResult)" }
             $rechecked = Get-ManagedInstallState $installRoot
             if ($rechecked.Snapshot -cne $existingState.Snapshot) { throw 'Existing installation changed while services were stopping.' }
@@ -2295,7 +2303,7 @@ function Uninstall-Installation {
             # executable is the only one available to stop it; no package is involved here.
             $stopFailure = $null
             try {
-                $stopResult = Invoke-CliChildProcess $executable @('preview','stop','--all','--output-format','json')
+                $stopResult = Invoke-CliChildProcess $executable @('preview','stop','--output-format','json')
                 if ($stopResult.ExitCode -ne 0) { $stopFailure = "exit code $($stopResult.ExitCode): $(Get-ChildProcessDiagnostic $stopResult)" }
             }
             catch { $stopFailure = $_.Exception.Message }

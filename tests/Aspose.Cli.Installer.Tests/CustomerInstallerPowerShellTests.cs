@@ -484,6 +484,35 @@ public sealed partial class CustomerInstallerPowerShellTests : IDisposable, ICla
             result.StdOut.Trim());
     }
 
+    /// <summary>
+    /// The parameters only 'update install' passes are left out of tab completion, and the help
+    /// that still lists them says that the update handoff passes them.
+    /// </summary>
+    [Fact]
+    public void UpdateHandoffParametersAreLeftOutOfCompletionAndMarkedInHelp()
+    {
+        Requires.Windows();
+        string installer = Path.Combine(RepositoryPaths.Root, "install.ps1");
+        string input = $"& {PowerShellLiteral(installer)} -";
+        string command = $"$typed = {PowerShellLiteral(input)}; "
+            + "(TabExpansion2 -inputScript $typed -cursorColumn $typed.Length).CompletionMatches | ForEach-Object { 'COMPLETES ' + $_.CompletionText }; "
+            + $"(Get-Help {PowerShellLiteral(installer)} -Full).parameters.parameter | ForEach-Object {{ 'HELP ' + $_.name + ' ' + (($_.description | Out-String) -replace '\\s+', ' ').Trim() }}";
+
+        PowerShellResult result = RunExecutable(
+            "powershell.exe",
+            ["-NoLogo", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-Command", command]);
+
+        Assert.True(result.ExitCode == 0, result.StdErr);
+        string[] lines = result.StdOut.ReplaceLineEndings("\n").Split('\n');
+        Assert.Contains("COMPLETES -Update", lines);
+        foreach (string name in new[] { "WaitForProcessId", "CleanupRoot", "StatusPath" })
+        {
+            Assert.DoesNotContain($"COMPLETES -{name}", lines);
+            string help = Assert.Single(lines, line => line.StartsWith($"HELP {name} ", StringComparison.Ordinal));
+            Assert.Contains("Update handoff only", help, StringComparison.Ordinal);
+        }
+    }
+
     [Fact]
     public void UnsupportedOldInstallIsRejectedWithoutExecutingOrChangingIt()
     {

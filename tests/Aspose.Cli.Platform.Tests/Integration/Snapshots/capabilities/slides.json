@@ -615,7 +615,6 @@
         "name": "slides",
         "aliases": [],
         "description": "Presentation automation with slide, layout and notes semantics.",
-        "hidden": false,
         "options": [],
         "arguments": []
       },
@@ -624,7 +623,6 @@
         "name": "convert",
         "aliases": [],
         "description": "Convert a presentation or selected slides.",
-        "hidden": false,
         "options": [
           {
             "name": "--dry-run",
@@ -856,7 +854,6 @@
         "name": "create",
         "aliases": [],
         "description": "Create a blank, template-based or Markdown-authored presentation.",
-        "hidden": false,
         "options": [
           {
             "name": "--dry-run",
@@ -1030,7 +1027,6 @@
         "name": "edit",
         "aliases": [],
         "description": "Apply one validated, atomic presentation operation batch.",
-        "hidden": false,
         "options": [
           {
             "name": "--backup",
@@ -1327,7 +1323,6 @@
         "name": "extract",
         "aliases": [],
         "description": "Extract bounded presentation media, notes or text.",
-        "hidden": false,
         "options": [
           {
             "name": "--dry-run",
@@ -1486,7 +1481,6 @@
         "name": "inspect",
         "aliases": [],
         "description": "Show presentation structure, stable slide ids and metadata.",
-        "hidden": false,
         "options": [
           {
             "name": "--detail",
@@ -1601,7 +1595,6 @@
         "name": "read",
         "aliases": [],
         "description": "Read a bounded slide-content window.",
-        "hidden": false,
         "options": [
           {
             "name": "--content",
@@ -1743,7 +1736,6 @@
         "name": "render",
         "aliases": [],
         "description": "Render one or more slides for visual verification.",
-        "hidden": false,
         "options": [
           {
             "name": "--dpi",
@@ -1950,7 +1942,6 @@
         "name": "search",
         "aliases": [],
         "description": "Search presentation shape and speaker-notes text.",
-        "hidden": false,
         "options": [
           {
             "name": "--case-sensitive",

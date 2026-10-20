@@ -67,7 +67,7 @@ public sealed class InvocationTests
     }
 
     private static CliCommand Command(string words, params CliOption[] options) =>
-        new(words, false, words.Split(' ')[0], options, [new CliArgument("file", 1, true)], []);
+        new(words, words.Split(' ')[0], options, [new CliArgument("file", 1, true)], []);
 
     private static CliOption Option(
         string name, bool required = false, string? inputKind = null, string valueSource = "command-line", string[]? allowedValues = null) =>

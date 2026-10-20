@@ -16,6 +16,7 @@
     <RepositoryInput Include="..\..\.github\CODEOWNERS" />
     <RepositoryInput Include="..\..\.github\workflows\ci.yml" />
     <RepositoryInput Include="..\..\.github\workflows\pull-request.yml" />
+    <RepositoryInput Include="..\..\.github\workflows\release.yml" />
     <RepositoryInput Include="..\..\scripts\documentation-paths.json" />
     <RepositoryInput Include="..\..\scripts\documentation-paths.ps1" />
     <RepositoryInput Include="..\..\scripts\require-approval.ps1" />

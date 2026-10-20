@@ -420,7 +420,6 @@
         "name": "pdf",
         "aliases": [],
         "description": "PDF automation with page, security and fixed-layout semantics.",
-        "hidden": false,
         "options": [],
         "arguments": []
       },
@@ -429,7 +428,6 @@
         "name": "convert",
         "aliases": [],
         "description": "Convert selected PDF pages to a supported format.",
-        "hidden": false,
         "options": [
           {
             "name": "--dry-run",
@@ -614,7 +612,6 @@
         "name": "create",
         "aliases": [],
         "description": "Create a PDF from exactly one source family.",
-        "hidden": false,
         "options": [
           {
             "name": "--allow-network-resources",
@@ -860,7 +857,6 @@
         "name": "edit",
         "aliases": [],
         "description": "Apply one validated, atomic PDF operation batch.",
-        "hidden": false,
         "options": [
           {
             "name": "--backup",
@@ -1157,7 +1153,6 @@
         "name": "extract",
         "aliases": [],
         "description": "Extract bounded PDF assets, text, tables or form data.",
-        "hidden": false,
         "options": [
           {
             "name": "--bom",
@@ -1356,7 +1351,6 @@
         "name": "inspect",
         "aliases": [],
         "description": "Show PDF structure, security state and properties.",
-        "hidden": false,
         "options": [
           {
             "name": "--detail",
@@ -1472,7 +1466,6 @@
         "name": "merge",
         "aliases": [],
         "description": "Merge PDF inputs in order.",
-        "hidden": false,
         "options": [
           {
             "name": "--bookmarks",
@@ -1666,7 +1659,6 @@
         "name": "read",
         "aliases": [],
         "description": "Read a bounded page-text window.",
-        "hidden": false,
         "options": [
           {
             "name": "--content",
@@ -1788,7 +1780,6 @@
         "name": "render",
         "aliases": [],
         "description": "Render one or more PDF pages.",
-        "hidden": false,
         "options": [
           {
             "name": "--dpi",
@@ -1995,7 +1986,6 @@
         "name": "search",
         "aliases": [],
         "description": "Search PDF text and return page rectangles.",
-        "hidden": false,
         "options": [
           {
             "name": "--case-sensitive",
@@ -2167,7 +2157,6 @@
         "name": "sign",
         "aliases": [],
         "description": "Apply a PKCS#7 signature and verify the saved signature field.",
-        "hidden": false,
         "options": [
           {
             "name": "--certificate",
@@ -2453,7 +2442,6 @@
         "name": "split",
         "aliases": [],
         "description": "Split a PDF into an atomic output set.",
-        "hidden": false,
         "options": [
           {
             "name": "--by",
@@ -2689,7 +2677,6 @@
         "name": "validate",
         "aliases": [],
         "description": "Validate a PDF against a PDF/A profile.",
-        "hidden": false,
         "options": [
           {
             "name": "--password",

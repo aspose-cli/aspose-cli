@@ -311,7 +311,6 @@ public sealed class CliContractTests : IDisposable
             Assert.Equal(product["engine"]!["sdkVersion"]!.GetValue<string>(), entry!["engineVersion"]!.GetValue<string>());
             Assert.Equal(
                 product["commands"]!.AsArray()
-                    .Where(static command => !command!["hidden"]!.GetValue<bool>())
                     .Select(static command => command!["path"]!.GetValue<string>())
                     .Where(path => path != id)
                     .Select(path => path[(id.Length + 1)..]),
@@ -668,6 +667,7 @@ public sealed class CliContractTests : IDisposable
     [InlineData("cells inspect a.xlsx --preview", "--preview")]
     [InlineData("preview open a.xlsx --open", "--open")]
     [InlineData("skill install aspose-cli-platform --host codex --scope user", "--scope")]
+    [InlineData("preview stop --all", "--all")]
     public void RemovedNames_AreUnknownOptions(string commandLine, string removed)
     {
         CliResult result = _workspace.Run(commandLine.Split(' '));
@@ -676,6 +676,29 @@ public sealed class CliContractTests : IDisposable
         JsonNode error = Parse(result.StdErr)["error"]!;
         Assert.Equal("USAGE_ERROR", error["code"]!.GetValue<string>());
         Assert.Contains($"'{removed}'", error["message"]!.GetValue<string>(), StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// The full capabilities document describes the public grammar: the hidden internal commands
+    /// that the CLI starts for itself stay out, while a hidden option of a public command is still
+    /// listed, marked hidden. It states no separate resource-budget contract version.
+    /// </summary>
+    [Fact]
+    public void Capabilities_ListNoInternalCommandOrBudgetContractVersion()
+    {
+        CliResult result = _workspace.Run("capabilities", "--output-format", "json");
+        Assert.True(result.ExitCode == 0, result.StdErr);
+        JsonNode capabilities = Parse(result.StdOut);
+
+        string[] paths = [.. capabilities["commands"]!.AsArray().Select(static item => item!["path"]!.GetValue<string>())];
+        Assert.Contains("aspose-cli update", paths);
+        Assert.DoesNotContain(paths, static path => path.Contains("__", StringComparison.Ordinal));
+        Assert.DoesNotContain(capabilities["commands"]!.AsArray(), static command => command!.AsObject().ContainsKey("hidden"));
+        Assert.DoesNotContain(
+            capabilities["products"]!.AsArray().SelectMany(static product => product!["commands"]!.AsArray()),
+            static command => command!["path"]!.GetValue<string>().Contains("__", StringComparison.Ordinal));
+        Assert.False(capabilities.AsObject().ContainsKey("resourceBudgetContractVersion"));
+        Assert.NotEmpty(capabilities["resourceBudgets"]!.AsArray());
     }
 
     [Theory]

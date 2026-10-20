@@ -130,7 +130,7 @@ internal static partial class ContractRules
             yield return new DetailsSample($"{id} unknown command", id, new Invocation([id, "no-such-command"]));
             yield return new DetailsSample($"{id} missing argument", id, new Invocation(inspect.Tokens));
 
-            if (catalog.Commands.Where(command => command.Product == id && !command.Hidden)
+            if (catalog.Commands.Where(command => command.Product == id)
                     .SelectMany(static command => command.Options.Select(option => (command, option)))
                     .FirstOrDefault(pair => pair.option.AllowedValues.Count > 0 && pair.option.Type != "boolean" && !globals.Contains(pair.option.Name))
                 is { command: { } valued, option: { } option })

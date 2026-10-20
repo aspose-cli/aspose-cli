@@ -11,8 +11,8 @@ namespace Aspose.Cli.Sdk.IO.Budgets;
 /// </summary>
 public static class InputSizeGuard
 {
-    /// <summary>Environment variable the host reads for the default byte budget.</summary>
-    public const string BudgetVariable = DistributionInfo.EnvironmentVariablePrefix + "MAX_FILE_BYTES";
+    /// <summary>Environment variable the host reads for the default byte budget, named after <c>--max-input-bytes</c>.</summary>
+    public const string BudgetVariable = DistributionInfo.EnvironmentVariablePrefix + "MAX_INPUT_BYTES";
 
     /// <summary>Default budget: 1 GiB.</summary>
     public const long DefaultMaxBytes = ResourceBudgetDefaults.DefaultInputBytes;

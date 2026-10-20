@@ -483,12 +483,9 @@ internal static partial class ContractRules
             _quoted = new Regex(
                 string.Join('|', "'`\"".Select(quote => $@"{quote}(?<command>(?:{roots})(?: [^{quote}\n]*?)?){quote}")),
                 RegexOptions.CultureInvariant);
-            string[] hidden =
-            [
-                .. HiddenOptions(catalog),
-                .. catalog.Commands.Where(static command => command.Hidden).Select(static command => command.Verb),
-            ];
-            _hidden = new Regex($@"(?<![\w-])(?:{string.Join('|', hidden.Select(Regex.Escape))})(?![\w-])", RegexOptions.CultureInvariant);
+            // Capabilities lists no hidden command; a hidden command's name starts with '__' (C-R04).
+            string[] hidden = [.. HiddenOptions(catalog).Select(Regex.Escape), "__[a-z][a-z0-9-]*"];
+            _hidden = new Regex($@"(?<![\w-])(?:{string.Join('|', hidden)})(?![\w-])", RegexOptions.CultureInvariant);
         }
 
         private static IEnumerable<string> NamesOf(JsonNode? option) =>

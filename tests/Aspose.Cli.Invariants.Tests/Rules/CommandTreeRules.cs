@@ -79,13 +79,11 @@ internal static partial class ContractRules
     private static IEnumerable<InvariantCase> R04(CliCatalog catalog)
     {
         IReadOnlyList<TreeCommand> tree = CommandTree.Of(catalog);
-        foreach (TreeCommand command in tree.Where(static command => command.Hidden || command.Verb.StartsWith('_')))
+        // Capabilities leaves the hidden commands out, so a listed command is public and its
+        // name does not take the '__' of a hidden one.
+        foreach (TreeCommand command in tree.Where(static command => command.Verb.StartsWith('_')))
         {
-            yield return Check("C-R04", command.ToString(), () => command.Hidden == command.Verb.StartsWith("__", StringComparison.Ordinal)
-                ? []
-                : [command.Hidden
-                    ? $"{command} is hidden, so its name starts with '__'."
-                    : $"{command} starts with '__', so it is hidden."]);
+            yield return Check("C-R04", command.ToString(), () => [$"{command} is public, so its name does not start with '_'."]);
         }
         foreach (string hidden in tree.SelectMany(static command => command.Options).Where(static option => option.Hidden)
             .Select(static option => option.Name).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal))
@@ -107,10 +105,6 @@ internal static partial class ContractRules
     {
         foreach ((TreeCommand command, JsonNode node) in tree.Zip(catalog.Document["commands"]!.AsArray().Select(static node => node!)))
         {
-            if (command.Hidden)
-            {
-                continue;
-            }
             yield return ($"The description of {command}", node["description"]?.GetValue<string>() ?? string.Empty);
             foreach (TreeOption option in command.Options.Where(static option => !option.Hidden))
             {
@@ -299,7 +293,7 @@ internal static partial class ContractRules
     /// </summary>
     private static IEnumerable<InvariantCase> R11Declared(CliCatalog catalog)
     {
-        foreach (TreeCommand command in CommandTree.Of(catalog).Where(static command => !command.Hidden && Writes(command)
+        foreach (TreeCommand command in CommandTree.Of(catalog).Where(static command => Writes(command)
             && (command.Product is null || command.ProductVerb == "create")))
         {
             // A removal replaces nothing, so it needs --dry-run but no --overwrite.

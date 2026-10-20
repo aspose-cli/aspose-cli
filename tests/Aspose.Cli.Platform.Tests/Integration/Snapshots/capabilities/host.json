@@ -634,7 +634,6 @@
         "routing",
         "commands",
         "resourceBudgets",
-        "resourceBudgetContractVersion",
         "diagnostics"
       ],
       "additionalProperties": false,
@@ -686,25 +685,18 @@
           "$ref": "#/$defs/routingCapabilities"
         },
         "commands": {
-          "description": "Complete root command grammar, including global commands and options.",
+          "description": "Complete public root command grammar, including global commands and options; the hidden commands the CLI starts for itself are left out.",
           "type": "array",
           "items": {
             "$ref": "#/$defs/commandCapabilities"
           }
         },
         "resourceBudgets": {
-          "description": "Versioned global resource defaults and hard safety maxima.",
+          "description": "Global resource defaults and hard safety maxima.",
           "type": "array",
           "items": {
             "$ref": "#/$defs/resourceBudgetCapabilities"
           }
-        },
-        "resourceBudgetContractVersion": {
-          "description": "Version of the global/product resource-budget contract.",
-          "type": "integer",
-          "enum": [
-            2
-          ]
         },
         "diagnostics": {
           "description": "Resolved common and compiled-product diagnostic catalog.",
@@ -809,7 +801,6 @@
             "path",
             "name",
             "aliases",
-            "hidden",
             "options",
             "arguments"
           ],
@@ -833,10 +824,6 @@
             "description": {
               "description": "The command's help description.",
               "type": "string"
-            },
-            "hidden": {
-              "description": "Whether help leaves the command out.",
-              "type": "boolean"
             },
             "options": {
               "description": "Options the command accepts, in help order.",
@@ -3404,7 +3391,7 @@
           "type": "string",
           "pattern": "^[0-9a-f]{64}$"
         },
-        "processId": {
+        "pid": {
           "description": "The installer process id; present only when the status is pending.",
           "type": "integer",
           "minimum": 1
@@ -3803,7 +3790,6 @@
       "name": "aspose-cli",
       "aliases": [],
       "description": "Aspose CLI — high-fidelity file automation for people, scripts, and AI agents. Structured commands support --output-format json for stable, machine-readable results; explicit schema and docs documents remain raw.",
-      "hidden": false,
       "options": [
         {
           "name": "--help",
@@ -3981,46 +3967,10 @@
       "arguments": []
     },
     {
-      "path": "aspose-cli __render-worker",
-      "name": "__render-worker",
-      "aliases": [],
-      "description": "Serve view render requests for the local viewer service.",
-      "hidden": true,
-      "options": [],
-      "arguments": []
-    },
-    {
-      "path": "aspose-cli __viewer-service",
-      "name": "__viewer-service",
-      "aliases": [],
-      "description": "Host the local viewer service.",
-      "hidden": true,
-      "options": [
-        {
-          "name": "--port",
-          "aliases": [],
-          "type": "integer",
-          "minimumArity": 1,
-          "maximumArity": 1,
-          "required": false,
-          "recursive": false,
-          "hidden": false,
-          "hasDefault": true,
-          "default": "0",
-          "allowedValues": [],
-          "secret": false,
-          "valueSource": "command-line",
-          "description": "Loopback port; 0 chooses a free port. Range: 0-65535."
-        }
-      ],
-      "arguments": []
-    },
-    {
       "path": "aspose-cli app",
       "name": "app",
       "aliases": [],
       "description": "Open the local file workspace in a browser.",
-      "hidden": false,
       "options": [],
       "arguments": []
     },
@@ -4029,7 +3979,6 @@
       "name": "open",
       "aliases": [],
       "description": "Start or activate the local App and open a file, its home page or its guide.",
-      "hidden": false,
       "options": [
         {
           "name": "--foreground",
@@ -4126,7 +4075,6 @@
       "name": "status",
       "aliases": [],
       "description": "Show whether the local App is running.",
-      "hidden": false,
       "options": [],
       "arguments": []
     },
@@ -4135,7 +4083,6 @@
       "name": "stop",
       "aliases": [],
       "description": "Stop the local App, its documents and the viewer service.",
-      "hidden": false,
       "options": [],
       "arguments": []
     },
@@ -4144,7 +4091,6 @@
       "name": "capabilities",
       "aliases": [],
       "description": "Describe everything this build supports (products, verbs, formats), as data.",
-      "hidden": false,
       "options": [
         {
           "name": "--summary",
@@ -4198,7 +4144,6 @@
       "name": "docs",
       "aliases": [],
       "description": "Print an offline reference document bundled with this binary.",
-      "hidden": false,
       "options": [],
       "arguments": [
         {
@@ -4220,7 +4165,6 @@
       "name": "doctor",
       "aliases": [],
       "description": "Diagnose the environment: runtime, resource budgets and output writability.",
-      "hidden": false,
       "options": [],
       "arguments": []
     },
@@ -4229,7 +4173,6 @@
       "name": "fonts",
       "aliases": [],
       "description": "Diagnose the font environment used for rendering.",
-      "hidden": false,
       "options": [],
       "arguments": []
     },
@@ -4238,7 +4181,6 @@
       "name": "check",
       "aliases": [],
       "description": "Check whether a document's fonts are available here, and what they substitute to.",
-      "hidden": false,
       "options": [
         {
           "name": "--font-dir",
@@ -4325,7 +4267,6 @@
       "name": "list",
       "aliases": [],
       "description": "List each engine's font sources and its default fallback font.",
-      "hidden": false,
       "options": [
         {
           "name": "--product",
@@ -4355,7 +4296,6 @@
       "name": "license",
       "aliases": [],
       "description": "Inspect and manage the Aspose license used by the CLI.",
-      "hidden": false,
       "options": [],
       "arguments": []
     },
@@ -4364,7 +4304,6 @@
       "name": "install",
       "aliases": [],
       "description": "Validate a license file and install it for every compatible product.",
-      "hidden": false,
       "options": [
         {
           "name": "--dry-run",
@@ -4426,7 +4365,6 @@
       "name": "remove",
       "aliases": [],
       "description": "Remove saved user licenses; env and project sources are left untouched.",
-      "hidden": false,
       "options": [
         {
           "name": "--dry-run",
@@ -4475,7 +4413,6 @@
       "name": "status",
       "aliases": [],
       "description": "Show whether licensing applies and which license source and mode are in effect.",
-      "hidden": false,
       "options": [
         {
           "name": "--product",
@@ -4505,7 +4442,6 @@
       "name": "mcp",
       "aliases": [],
       "description": "Expose this CLI to a local MCP client over stdio.",
-      "hidden": false,
       "options": [],
       "arguments": []
     },
@@ -4514,7 +4450,6 @@
       "name": "serve",
       "aliases": [],
       "description": "Run the single-session MCP stdio server.",
-      "hidden": false,
       "options": [],
       "arguments": []
     },
@@ -4523,7 +4458,6 @@
       "name": "preview",
       "aliases": [],
       "description": "Watch files in the local viewer and follow every change.",
-      "hidden": false,
       "options": [],
       "arguments": []
     },
@@ -4532,7 +4466,6 @@
       "name": "open",
       "aliases": [],
       "description": "Open a file in the local viewer and follow every change.",
-      "hidden": false,
       "options": [
         {
           "name": "--font-dir",
@@ -4711,7 +4644,6 @@
       "name": "status",
       "aliases": [],
       "description": "List the documents the local viewer has open.",
-      "hidden": false,
       "options": [],
       "arguments": [
         {
@@ -4733,28 +4665,7 @@
       "name": "stop",
       "aliases": [],
       "description": "Close one document, or stop the local viewer service.",
-      "hidden": false,
-      "options": [
-        {
-          "name": "--all",
-          "aliases": [],
-          "type": "boolean",
-          "minimumArity": 0,
-          "maximumArity": 1,
-          "required": false,
-          "recursive": false,
-          "hidden": false,
-          "hasDefault": true,
-          "default": "false",
-          "allowedValues": [
-            "false",
-            "true"
-          ],
-          "secret": false,
-          "valueSource": "command-line",
-          "description": "Close every document and stop the viewer service."
-        }
-      ],
+      "options": [],
       "arguments": [
         {
           "name": "id",
@@ -4766,7 +4677,7 @@
           "required": false,
           "hasDefault": false,
           "allowedValues": [],
-          "description": "Document id to close."
+          "description": "Document id to close; without one, every document closes and the service stops."
         }
       ]
     },
@@ -4775,7 +4686,6 @@
       "name": "review",
       "aliases": [],
       "description": "Create a portable static evidence directory for visual inspection.",
-      "hidden": false,
       "options": [
         {
           "name": "--code",
@@ -5056,7 +4966,6 @@
       "name": "schema",
       "aliases": [],
       "description": "List schema ids as an envelope, or print one raw JSON Schema document when an id is supplied.",
-      "hidden": false,
       "options": [
         {
           "name": "--operation",
@@ -5094,7 +5003,6 @@
       "name": "skill",
       "aliases": [],
       "description": "List or install Agent Skills bundled with this binary.",
-      "hidden": false,
       "options": [],
       "arguments": []
     },
@@ -5103,7 +5011,6 @@
       "name": "install",
       "aliases": [],
       "description": "Install a bundled Agent Skill for Codex, Claude Code, or OpenCode.",
-      "hidden": false,
       "options": [
         {
           "name": "--dir",
@@ -5213,7 +5120,6 @@
       "name": "list",
       "aliases": [],
       "description": "List bundled Agent Skills and supported hosts.",
-      "hidden": false,
       "options": [],
       "arguments": []
     },
@@ -5222,48 +5128,14 @@
       "name": "update",
       "aliases": [],
       "description": "Check or install a CLI release; no background checks are performed.",
-      "hidden": false,
       "options": [],
       "arguments": []
-    },
-    {
-      "path": "aspose-cli update __prepare",
-      "name": "__prepare",
-      "aliases": [],
-      "description": "Prepare a verified update for its owning parent.",
-      "hidden": true,
-      "options": [],
-      "arguments": [
-        {
-          "name": "feed",
-          "type": "string",
-          "valueSource": "command-line",
-          "secret": false,
-          "minimumArity": 1,
-          "maximumArity": 1,
-          "required": true,
-          "hasDefault": false,
-          "allowedValues": []
-        },
-        {
-          "name": "target",
-          "type": "string",
-          "valueSource": "command-line",
-          "secret": false,
-          "minimumArity": 1,
-          "maximumArity": 1,
-          "required": true,
-          "hasDefault": false,
-          "allowedValues": []
-        }
-      ]
     },
     {
       "path": "aspose-cli update check",
       "name": "check",
       "aliases": [],
       "description": "Check whether a newer release is available.",
-      "hidden": false,
       "options": [],
       "arguments": [
         {
@@ -5286,7 +5158,6 @@
       "name": "install",
       "aliases": [],
       "description": "Install a newer release after checking its archive against the release manifest.",
-      "hidden": false,
       "options": [
         {
           "name": "--dry-run",
@@ -5339,7 +5210,7 @@
       "maximum": 4294967296,
       "unit": "bytes",
       "option": "--max-input-bytes",
-      "environmentVariable": "ASPOSE_CLI_MAX_FILE_BYTES",
+      "environmentVariable": "ASPOSE_CLI_MAX_INPUT_BYTES",
       "enforcementStage": "pre-runtime-and-stream"
     },
     {
@@ -5399,7 +5270,6 @@
       "enforcementStage": "stdin-stream"
     }
   ],
-  "resourceBudgetContractVersion": 2,
   "diagnostics": [
     {
       "code": "APP_BUSY",

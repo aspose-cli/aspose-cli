@@ -123,7 +123,7 @@ internal static class AppCommand
             globals,
             (_, _) =>
             {
-                _ = new ViewerServiceClient().Stop(id: null, all: true);
+                _ = new ViewerServiceClient().Stop(id: null);
                 return new AppResult
                 {
                     Running = false,

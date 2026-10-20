@@ -70,6 +70,28 @@ public sealed class InputAdmissionTests
         }
     }
 
+    /// <summary>
+    /// The environment default of the input budget is named after <c>--max-input-bytes</c>;
+    /// the earlier name sets nothing.
+    /// </summary>
+    [Fact]
+    public void InputBudgetVariable_IsNamedAfterTheOption()
+    {
+        using var workspace = new TempWorkspace();
+        File.WriteAllText(workspace.File("source.csv"), "Value\n" + string.Join('\n', Enumerable.Range(1, 40)) + "\n");
+
+        CliResult limited = workspace.RunWithEnv(
+            new Dictionary<string, string?> { ["ASPOSE_CLI_MAX_INPUT_BYTES"] = "64" },
+            "cells", "inspect", "source.csv", "--output-format", "json");
+        CliResult earlierName = workspace.RunWithEnv(
+            new Dictionary<string, string?> { ["ASPOSE_CLI_MAX_FILE_BYTES"] = "64" },
+            "cells", "inspect", "source.csv", "--output-format", "json");
+
+        Assert.Equal(3, limited.ExitCode);
+        Assert.Equal("FILE_TOO_LARGE", JsonNode.Parse(limited.StdErr)!["error"]!["code"]!.GetValue<string>());
+        Assert.True(earlierName.ExitCode == 0, earlierName.StdErr);
+    }
+
     [Fact]
     public void Convert_ExcludesTheOutputOptionFromAdmission()
     {

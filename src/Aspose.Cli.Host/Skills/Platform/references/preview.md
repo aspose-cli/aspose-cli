@@ -19,12 +19,12 @@ describes the result.
 
 ```powershell
 aspose-cli preview status --output-format json
-aspose-cli preview stop --all --output-format json
+aspose-cli preview stop --output-format json
 ```
 
 `preview status <id>` and `preview stop <id>` address one document, by the
 `id` that `preview open` returned; `status` without an id lists every open
-document, and `stop --all` closes every document and ends the service.
+document, and `stop` without an id closes every document and ends the service.
 
 ## The viewer service
 
@@ -42,6 +42,20 @@ document, and `stop --all` closes every document and ends the service.
   the pointer on or off without reopening the document.
 - Passwords come from `--password-env` or `--password-stdin` and never appear
   in results; `--font-dir` applies as for every render.
+
+## Limits
+
+Each render, for the viewer and for `review` evidence alike, is a snapshot of
+files kept within these limits. A render beyond one fails with
+`PREVIEW_BUDGET_EXCEEDED`; the viewer keeps the last good revision on screen.
+An environment variable changes a limit within its maximum; the viewer service
+reads it when it starts:
+
+| Variable | Default | Maximum | Limits |
+|---|---|---|---|
+| `ASPOSE_CLI_PREVIEW_MAX_FILES` | `2048` | `8192` | files in one snapshot |
+| `ASPOSE_CLI_PREVIEW_MAX_FILE_BYTES` | `67108864` | `268435456` | bytes of one snapshot file (64 MiB, at most 256 MiB) |
+| `ASPOSE_CLI_PREVIEW_MAX_SNAPSHOT_BYTES` | `268435456` | `1073741824` | bytes of one snapshot (256 MiB, at most 1 GiB) |
 
 ## Licensing
 

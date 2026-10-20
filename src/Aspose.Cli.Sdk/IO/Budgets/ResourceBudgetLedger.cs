@@ -6,10 +6,9 @@ using Aspose.Cli.Sdk.IO.Publication;
 
 namespace Aspose.Cli.Sdk.IO.Budgets;
 
-/// <summary>Versioned defaults and hard safety maxima for ordinary CLI input.</summary>
+/// <summary>Defaults and hard safety maxima for ordinary CLI input.</summary>
 public static class ResourceBudgetDefaults
 {
-    public const int ContractVersion = 2;
     public const long DefaultInputBytes = 1L << 30;
     public const long MaximumInputBytes = 4L << 30;
     public const long DefaultStandardInputBytes = 16L << 20;

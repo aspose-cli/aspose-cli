@@ -1,13 +1,12 @@
 using System.Diagnostics;
-using Aspose.Cli.Sdk;
 
 namespace Aspose.Cli.Host.LocalServices;
 
 /// <summary>
 /// Opens a local service page in the person's browser. It stays quiet where
-/// nobody is watching — a script, a CI job, or a session that asked not to be
-/// interrupted — and a browser that refuses to start is a notice, never a
-/// failure of the command that produced the page.
+/// nobody is watching — a CI job or a session without a desktop; a script
+/// passes <c>--no-open</c> — and a browser that refuses to start is a notice,
+/// never a failure of the command that produced the page.
 /// </summary>
 internal static class BrowserLauncher
 {
@@ -30,8 +29,7 @@ internal static class BrowserLauncher
     }
 
     private static bool IsInteractive() =>
-        Environment.GetEnvironmentVariable(DistributionInfo.EnvironmentVariablePrefix + "NO_OPEN") != "1"
-        && string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("CI"))
+        string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("CI"))
         && string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("GITHUB_ACTIONS"))
         && Environment.UserInteractive;
 }

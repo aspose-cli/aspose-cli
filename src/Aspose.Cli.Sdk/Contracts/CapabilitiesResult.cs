@@ -29,15 +29,14 @@ public sealed record CapabilitiesResult() : ResultEnvelope("capabilities", 2)
     /// <summary>Final operation-aware routing truth for this compiled distribution.</summary>
     public required RoutingCapabilities Routing { get; init; }
 
-    /// <summary>Complete root command grammar, including global commands and options.</summary>
+    /// <summary>
+    /// Complete public root command grammar, including global commands and options; the hidden
+    /// commands the CLI starts for itself are left out.
+    /// </summary>
     public required IReadOnlyList<CommandCapabilities> Commands { get; init; }
 
-    /// <summary>Versioned global resource defaults and hard safety maxima.</summary>
+    /// <summary>Global resource defaults and hard safety maxima.</summary>
     public required IReadOnlyList<ResourceBudgetCapabilities> ResourceBudgets { get; init; }
-
-    /// <summary>Version of the global/product resource-budget contract.</summary>
-    [AllowedValues(2)]
-    public required int ResourceBudgetContractVersion { get; init; }
 
     /// <summary>Resolved common and compiled-product diagnostic catalog.</summary>
     public required IReadOnlyList<DiagnosticCapabilities> Diagnostics { get; init; }
@@ -369,9 +368,6 @@ public sealed record CommandCapabilities
 
     /// <summary>The command's help description.</summary>
     public string? Description { get; init; }
-
-    /// <summary>Whether help leaves the command out.</summary>
-    public required bool Hidden { get; init; }
 
     /// <summary>Options the command accepts, in help order.</summary>
     public required IReadOnlyList<CommandOptionCapabilities> Options { get; init; }

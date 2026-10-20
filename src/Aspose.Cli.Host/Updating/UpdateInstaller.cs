@@ -57,7 +57,7 @@ internal static class UpdateInstaller
             UpdateResult prepared = JsonSerializer.Deserialize(process.Stdout, HostResultJsonContext.Default.UpdateResult)
                 ?? throw HostDiagnostics.ReleaseVerificationFailed("the preparation worker returned no result");
             if (prepared.CurrentVersion != VersionInfo.ArtifactVersion
-                || prepared.Feed != source || prepared.ProcessId is not null
+                || prepared.Feed != source || prepared.Pid is not null
                 || prepared.Status is not ("available" or "up-to-date")
                 || (prepared.Status == "available") != ownsPackage)
             { throw HostDiagnostics.ReleaseVerificationFailed("the preparation worker returned an inconsistent result"); }
@@ -69,7 +69,7 @@ internal static class UpdateInstaller
             // before it records its own progress, so this pending record cannot overwrite it.
             try { UpdateStatus.WritePending(statusPath, pid, VersionInfo.ArtifactVersion, prepared.AvailableVersion); }
             catch (Exception exception) when (exception is IOException or UnauthorizedAccessException) { }
-            return prepared with { Status = "pending", Feed = feed, ProcessId = pid, Warnings = warnings };
+            return prepared with { Status = "pending", Feed = feed, Pid = pid, Warnings = warnings };
         }
         finally
         {

@@ -29,6 +29,15 @@ local machine.
   priority, preview defaults, font and runtime diagnostics, and local-data
   controls.
 
+Browser uploads stay within these limits for each App session; an
+environment variable set before the App starts changes a limit within its
+maximum:
+
+| Variable | Default | Maximum | Limits |
+|---|---|---|---|
+| `ASPOSE_CLI_APP_MAX_UPLOAD_FILES` | `16` | `128` | uploaded files kept at once |
+| `ASPOSE_CLI_APP_MAX_UPLOAD_SESSION_BYTES` | `536870912` | `2147483648` | bytes of all uploads together (512 MiB, at most 2 GiB) |
+
 ## Licenses in the App
 
 A license file is validated before it is installed for this user. A Total

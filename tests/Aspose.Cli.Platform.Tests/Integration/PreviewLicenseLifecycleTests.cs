@@ -21,7 +21,7 @@ public sealed class PreviewLicenseLifecycleTests : IDisposable
 
     public void Dispose()
     {
-        _workspace.Run("preview", "stop", "--all", "--output-format", "json");
+        _workspace.Run("preview", "stop", "--output-format", "json");
         _workspace.Dispose();
     }
 

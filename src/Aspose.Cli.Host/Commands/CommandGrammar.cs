@@ -17,8 +17,10 @@ internal sealed record OwnedCommand(CommandCapabilities Command, string? Product
 internal static class CommandGrammar
 {
     /// <summary>
-    /// Describes every command under <paramref name="root"/>, in ordinal path order, with the
-    /// product that owns it: the one a command root names in its invocation policy.
+    /// Describes every public command under <paramref name="root"/>, in ordinal path order, with
+    /// the product that owns it: the one a command root names in its invocation policy. A hidden
+    /// command is one the CLI starts for itself, so it and its subcommands stay out; a hidden
+    /// option of a public command is described, marked hidden.
     /// </summary>
     public static IReadOnlyList<OwnedCommand> Describe(Command root)
     {
@@ -36,6 +38,10 @@ internal static class CommandGrammar
         string? owner,
         ICollection<OwnedCommand> result)
     {
+        if (command.Hidden)
+        {
+            return;
+        }
         string path = parent.Length == 0
             ? command.Name
             : parent + " " + command.Name;
@@ -46,7 +52,6 @@ internal static class CommandGrammar
             Name = command.Name,
             Aliases = command.Aliases.Order(StringComparer.Ordinal).ToArray(),
             Description = command.Description,
-            Hidden = command.Hidden,
             Options = command.Options
                 .OrderBy(static option => option.Name, StringComparer.Ordinal)
                 .Select(Describe)

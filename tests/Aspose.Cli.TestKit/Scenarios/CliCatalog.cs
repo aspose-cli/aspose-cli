@@ -94,7 +94,6 @@ public sealed class CliCatalog
         string? first = words.Split(' ')[0];
         return new CliCommand(
             words,
-            command["hidden"]!.GetValue<bool>(),
             productIds.Contains(first) ? first : null,
             [.. command["options"]!.AsArray().Select(static option => ReadOption(option!))],
             [.. (command["arguments"]?.AsArray() ?? []).Select(static argument => ReadArgument(argument!))],
@@ -135,16 +134,14 @@ public sealed class CliCatalog
         array is null ? [] : [.. array.AsArray().Select(static item => item!.GetValue<string>())];
 }
 
-/// <summary>One command of the catalog.</summary>
+/// <summary>One command of the catalog; capabilities lists no hidden command.</summary>
 /// <param name="Words">The path after the executable name, such as <c>cells read</c>; empty for the root.</param>
-/// <param name="Hidden">Whether help hides the command.</param>
 /// <param name="Product">The product that owns the command, or null for a platform command.</param>
 /// <param name="Options">The command's own options; the root lists the recursive global ones.</param>
 /// <param name="Arguments">The command's arguments in order.</param>
 /// <param name="Subcommands">The names of the commands directly below it.</param>
 public sealed record CliCommand(
     string Words,
-    bool Hidden,
     string? Product,
     IReadOnlyList<CliOption> Options,
     IReadOnlyList<CliArgument> Arguments,
