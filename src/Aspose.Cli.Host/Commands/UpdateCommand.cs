@@ -25,7 +25,7 @@ internal static class UpdateCommand
         command.Arguments.Add(feed);
         command.SetAction(parse => executor.Run(parse, globals, context =>
             UpdateClient.Check(context, parse.GetValue(feed)!)));
-        return command;
+        return command.WithInvocationPolicy(new CommandInvocationPolicy(ReachesNetwork: true));
     }
 
     private static Command CreateInstall(HostContext host, CommandExecutor executor, GlobalOptions globals)
@@ -38,7 +38,7 @@ internal static class UpdateCommand
         command.SetAction(parse => executor.RunHandoff(parse, globals, context => parse.GetValue(dryRun)
             ? UpdateInstaller.DryRun(context, parse.GetValue(feed)!)
             : UpdateInstaller.Install(host, context, parse.GetValue(feed)!)));
-        return command.WithInvocationPolicy(new CommandInvocationPolicy(Execution: CommandExecutionOwnership.ParentHandoff));
+        return command.WithInvocationPolicy(new CommandInvocationPolicy(Execution: CommandExecutionOwnership.ParentHandoff, ReachesNetwork: true));
     }
 
     private static Command CreatePreparation(HostContext host, CommandExecutor executor, GlobalOptions globals)
@@ -57,7 +57,7 @@ internal static class UpdateCommand
             return UpdateClient.Prepare(context, parse.GetRequiredValue(feed), parse.GetRequiredValue(target));
         }));
         return command.WithInvocationPolicy(new CommandInvocationPolicy(
-            OutputBytesLimit: UpdateClient.MaximumArchiveBytes));
+            OutputBytesLimit: UpdateClient.MaximumArchiveBytes, ReachesNetwork: true));
     }
 
     private static Argument<string> Feed() => new Argument<string>("feed")

@@ -76,22 +76,20 @@ public sealed class ImageInputTests : IDisposable
         Assert.NotNull(refused.Hint);
     }
 
-    // A compressed image would be an SVGZ, whose network addresses no one can check: refused as
-    // NetworkReferenceGuard refuses it, with the same code for an input and an operation.
+    // A compressed image would be an SVGZ, whose references no one can remove: refused with the
+    // same code and message for an input and an operation.
     [Fact]
-    public void Read_RefusesACompressedImageAsTheNetworkGuardDoes()
+    public void Read_RefusesACompressedImage()
     {
         string path = Write("image.svgz", [0x1F, 0x8B, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00]);
 
         CliException input = Assert.Throws<CliException>(() => ImageInput.Read(Budgets().Inputs, path));
         CliException operation = Assert.Throws<CliException>(() => OperationImages.Read(Budgets().Inputs, path));
-        CliException guard = Assert.Throws<CliException>(
-            () => NetworkReferenceGuard.EnsureNoneInImage(new MemoryStream(File.ReadAllBytes(path)), path));
 
-        Assert.Equal(ErrorCodes.FeatureUnsupported, guard.Code);
-        Assert.Equal(guard.Code, input.Code);
-        Assert.Equal(guard.Code, operation.Code);
-        Assert.Equal(guard.Message, input.Message);
+        Assert.Equal(ErrorCodes.FeatureUnsupported, input.Code);
+        Assert.Equal(input.Code, operation.Code);
+        Assert.Equal(input.Message, operation.Message);
+        Assert.Contains("SVGZ", input.Message, StringComparison.Ordinal);
     }
 
     public static TheoryData<string, byte[]> EngineFormats() => new()

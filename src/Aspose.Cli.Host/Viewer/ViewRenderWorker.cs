@@ -8,6 +8,7 @@ using Aspose.Cli.Host.LocalServices;
 using Aspose.Cli.Sdk;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.IO.Budgets;
+using Aspose.Cli.Sdk.IO.Input;
 using Aspose.Cli.Sdk.Licensing;
 using Aspose.Cli.Sdk.Rendering;
 using Aspose.Cli.Sdk.Serialization;
@@ -69,6 +70,9 @@ internal static class ViewRenderWorker
     {
         try
         {
+            // Each document is its own invocation for the network gate: no file a previous
+            // document's loader permitted stays readable.
+            NetworkGate.Admit(NetworkAccess.None);
             TimeSpan budget = TimeSpan.FromMilliseconds(request.TimeoutMs);
             using var deadline = request.ExpiresAtTick is { } expires
                 ? OperationDeadline.FromAbsoluteTick(budget, expires) : OperationDeadline.Start(budget);

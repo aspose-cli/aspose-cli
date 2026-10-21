@@ -32,7 +32,11 @@ public enum EngineImageFormat
 /// The decode's output is small whatever the image's size, so checking an image never refuses
 /// one the engines would take. An image a created or imported document
 /// embeds is <c>FILE_CORRUPT</c> naming the image; an image an edit operation inserts goes
-/// through <see cref="Operations.OperationImages"/> instead.
+/// through <see cref="Operations.OperationImages"/> instead. An engine reads what an SVG image
+/// names past any resource hook, local files and shares included, so a read SVG keeps only what
+/// it holds itself (<see cref="SvgReferences"/>) and the gate lists what was removed
+/// (<see cref="NetworkGate.Withhold"/>); an SVG that does not parse as XML, and a compressed one
+/// (SVGZ), are refused.
 /// </summary>
 public static class ImageInput
 {
@@ -90,12 +94,8 @@ public static class ImageInput
     /// </summary>
     /// <param name="inputs">The scope that reads the file.</param>
     /// <param name="path">The image file.</param>
-    /// <param name="refuseNetworkReferences">Whether an SVG that names a network address is refused
-    /// first (<see cref="NetworkReferenceGuard.EnsureNoneInImage"/>), for an engine that would
-    /// fetch it with no resource hook.</param>
     /// <returns>The image's bytes, for the engine.</returns>
-    public static byte[] Read(InputResourceScope inputs, string path, bool refuseNetworkReferences) =>
-        Read(inputs, path, refuseNetworkReferences, Corrupt);
+    public static byte[] Read(InputResourceScope inputs, string path) => Read(inputs, path, Corrupt);
 
     /// <summary>Refuses image bytes another reader read unless they are an intact image.</summary>
     /// <param name="inputs">The invocation's input reader, whose budgets the decode is checked against.</param>
@@ -112,11 +112,10 @@ public static class ImageInput
         ArgumentNullException.ThrowIfNull(inputs);
         byte[] content = inputs.ReadAllBytes(path);
         Check(inputs.Budgets, content, path, invalid);
-        return content;
+        return KeepInternal(content, path, invalid);
     }
 
-    internal static byte[] Read(
-        InputResourceScope inputs, string path, bool refuseNetworkReferences, Func<string, string, Exception> invalid)
+    internal static byte[] Read(InputResourceScope inputs, string path, Func<string, string, Exception> invalid)
     {
         ArgumentNullException.ThrowIfNull(inputs);
         byte[] content;
@@ -126,13 +125,25 @@ public static class ImageInput
             content = buffer.ToArray();
         }
 
-        if (refuseNetworkReferences)
+        Check(inputs.Source.Budgets, content, path, invalid);
+        return KeepInternal(content, path, invalid);
+    }
+
+    /// <summary>
+    /// An SVG image without the references outside it, which the gate lists; any other image as
+    /// it is. An SVG that does not parse as XML is the caller's error.
+    /// </summary>
+    private static byte[] KeepInternal(byte[] content, string path, Func<string, string, Exception> invalid)
+    {
+        if (!IsSvg(content))
         {
-            NetworkReferenceGuard.EnsureNoneInImage(new MemoryStream(content, writable: false), path);
+            return content;
         }
 
-        Check(inputs.Source.Budgets, content, path, invalid);
-        return content;
+        SvgReferences.Cleaned cleaned = SvgReferences.KeepInternal(content)
+            ?? throw invalid(path, "its SVG does not parse as XML without a document type declaration");
+        NetworkGate.Withhold(cleaned.Removed);
+        return cleaned.Content;
     }
 
     private static void Check(ResourceBudgetLedger budgets, byte[] content, string path, Func<string, string, Exception> invalid)
@@ -145,15 +156,17 @@ public static class ImageInput
 
     /// <summary>
     /// The error for bytes that are not an intact image, or null when they are. A compressed
-    /// image is refused as <see cref="NetworkReferenceGuard"/> refuses one, since it would be a
-    /// compressed SVG that no one can check; any other problem becomes the caller's error.
+    /// image is refused, since it would be a compressed SVG whose references no one can remove;
+    /// any other problem becomes the caller's error.
     /// </summary>
     internal static Exception? Refusal(byte[] content, ResourceBudgetLedger budgets, string path, Func<string, string, Exception> invalid)
     {
         ArgumentNullException.ThrowIfNull(content);
-        if (NetworkReferenceGuard.CompressedImageRefusal(content, path) is { } compressed)
+        if (content.Length >= 2 && content[0] == 0x1F && content[1] == 0x8B)
         {
-            return compressed;
+            return CliErrors.ResourceRefused(
+                $"The image is compressed (SVGZ) and its references cannot be removed: {path}.",
+                "Decompress it to an .svg file, or supply a raster image.");
         }
 
         return Problem(content, budgets) is { } reason ? invalid(path, reason) : null;
@@ -431,6 +444,23 @@ public static class ImageInput
     // Markup with an svg element. Latin-1 keeps every ASCII token intact, and removing NUL
     // exposes those of unmarked UTF-16.
     private static bool IsSvg(ReadOnlySpan<byte> content) =>
-        NetworkReferenceGuard.IsMarkup(content)
+        IsMarkup(content)
         && SvgRoot.IsMatch(Encoding.Latin1.GetString(content).Replace("\0", "", StringComparison.Ordinal));
+
+    // Markup starts with '<' after an optional byte order mark, whitespace and, for unmarked
+    // UTF-16, NUL bytes. No raster image format starts that way.
+    private static bool IsMarkup(ReadOnlySpan<byte> head)
+    {
+        foreach (byte value in head)
+        {
+            if (value is (byte)' ' or (byte)'\t' or (byte)'\r' or (byte)'\n' or 0x00 or 0xEF or 0xBB or 0xBF or 0xFE or 0xFF)
+            {
+                continue;
+            }
+
+            return value == (byte)'<';
+        }
+
+        return false;
+    }
 }

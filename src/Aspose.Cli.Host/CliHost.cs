@@ -4,6 +4,7 @@ using System.Text;
 using Aspose.Cli.Host.Invocation;
 using Aspose.Cli.Host.Licensing;
 using Aspose.Cli.Host.Output;
+using Aspose.Cli.Sdk.IO.Input;
 
 namespace Aspose.Cli.Host;
 
@@ -38,6 +39,8 @@ public static class CliHost
                 }
 
                 invocation.EnsureValid();
+                // Every process that runs a command, a worker and a render worker included, gets here first.
+                NetworkGate.Admit(invocation.NetworkAccess);
                 StartupLicenseNotice.Write(host, invocation, Console.Error);
                 return TimeoutWorkerSupervisor.Run(host, arguments, invocation,
                     () => RunInProcess(invocation));

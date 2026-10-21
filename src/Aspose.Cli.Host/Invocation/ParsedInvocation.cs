@@ -3,6 +3,7 @@ using Aspose.Cli.Host.Output;
 using System.CommandLine.Parsing;
 using Aspose.Cli.Sdk;
 using Aspose.Cli.Sdk.Errors;
+using Aspose.Cli.Sdk.IO.Input;
 
 namespace Aspose.Cli.Host.Invocation;
 
@@ -39,6 +40,17 @@ internal sealed class ParsedInvocation
     public string? ProductId { get; }
     public CommandExecutionOwnership Execution { get; }
     public bool McpAllowed { get; }
+
+    /// <summary>
+    /// What the invocation may reach through the <see cref="NetworkGate"/>: the web for a host
+    /// command that requests it or a set network opt-in flag, and nothing otherwise.
+    /// </summary>
+    public NetworkAccess NetworkAccess =>
+        Command.Policy().ReachesNetwork
+        || CommandPath.SelectMany(static command => command.Options).OfType<Option<bool>>()
+            .Any(option => option.IsNetworkOptIn() && ParseResult.GetResult(option) is not null && ParseResult.GetValue(option))
+            ? NetworkAccess.Web
+            : NetworkAccess.None;
 
     /// <summary>
     /// Whether the command only groups other commands and was given none of them, such as

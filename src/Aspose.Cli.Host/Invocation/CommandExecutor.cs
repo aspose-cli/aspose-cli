@@ -9,6 +9,7 @@ using Aspose.Cli.Sdk;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.IO.Budgets;
+using Aspose.Cli.Sdk.IO.Input;
 using Aspose.Cli.Sdk.IO.Publication;
 
 namespace Aspose.Cli.Host.Invocation;
@@ -431,6 +432,11 @@ internal sealed class CommandExecutor
             ResultEnvelope result,
             bool detectPartial)
         {
+            if (NetworkGate.Warning is { } blocked)
+            {
+                result = result with { Warnings = [.. result.Warnings ?? [], blocked] };
+            }
+
             int exitCode = Complete(() => _writer.WriteResult(result));
             return detectPartial
                 && result is IPartialOutcome { HasFailures: true }

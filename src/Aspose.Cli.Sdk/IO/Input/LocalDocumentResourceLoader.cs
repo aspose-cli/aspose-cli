@@ -150,6 +150,7 @@ public sealed class LocalDocumentResourceLoader : IDisposable
                 refused = image ? ImageInput.Refusal(buffer, _budgets, path!, ImageInput.Corrupt) : null;
                 if (refused is null)
                 {
+                    NetworkGate.Permit(path!);
                     data = buffer;
                     return true;
                 }

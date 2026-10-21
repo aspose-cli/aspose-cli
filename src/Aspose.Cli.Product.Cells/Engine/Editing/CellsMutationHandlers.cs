@@ -259,12 +259,9 @@ internal sealed class CellsMutationHandlers : ICellsOpHandler<ValueTuple>
         return default;
     }
 
-    /// <summary>The references removed from the SVG images that insert_image inserted.</summary>
-    internal int SvgReferencesRemoved { get; private set; }
-
     public ValueTuple Apply(InsertImageOp operation)
     {
-        SvgReferencesRemoved += ImageOps.InsertImage(Sheet(operation), operation, _inputs);
+        ImageOps.InsertImage(Sheet(operation), operation, _inputs);
         return default;
     }
 

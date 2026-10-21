@@ -24,9 +24,11 @@ reproduction. Do not attach customer documents, passwords, tokens or license con
   commands that read or publish new outputs; it cannot install, update, change licenses or start
   and stop services.
 - **Network.** Documents never cause network requests unless the caller opts in for trusted
-  input. External resources are read only from ordinary local files beneath the input
-  directory, and each omitted resource is reported. Input that an SDK importer would fetch
-  before any policy applies is refused; see [KNOWN-ISSUES.md](KNOWN-ISSUES.md).
+  input. Every command passes one network gate before it runs, in every process that runs it,
+  which blocks the http, https, ftp and file requests of the document engines; an opt-in opens
+  http and https for that command alone. External resources are read only from ordinary local
+  files beneath the input directory, and each omitted or blocked resource is reported; see
+  [KNOWN-ISSUES.md](KNOWN-ISSUES.md).
 - **Files.** File routing is content-driven. Publication is atomic, extraction and inputs are
   bounded by resource budgets, and file publication and the per-user install and PATH state are
   guarded by interprocess locks. No command writes over its own input unless asked to edit in

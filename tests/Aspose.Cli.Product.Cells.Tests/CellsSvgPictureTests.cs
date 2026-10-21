@@ -160,7 +160,15 @@ public sealed class CellsSvgPictureTests : IDisposable
         Assert.True(converted.ExitCode == 0, converted.StdErr);
         Assert.DoesNotContain(XlsxImages(workspace.File("page.xlsx")), image => HasPixels(image, static _ => true));
         Assert.False(XlsxHasSecretPixels(workspace.File("page.xlsx")), "the workbook holds the file the SVG names");
-        Assert.True(Warned(converted.StdOut, ImagesSkipped), converted.StdOut);
+        Assert.True(server.RequestCount == 0, string.Join("; ", server.Requests));
+        // The process's network gate blocks a file URI or an http address before the engine has
+        // an image to import, and lists it; a plain path is read, and the image is left out.
+        Assert.True(reference == "path"
+            ? Warned(converted.StdOut, ImagesSkipped)
+            : JsonNode.Parse(converted.StdOut)!["warnings"]!.AsArray().Any(warning =>
+                warning!["code"]!.GetValue<string>() == WarningCodes.RemoteResourcesBlocked.Name
+                && warning["message"]!.GetValue<string>().Contains(reference == "http" ? href : _secret, StringComparison.OrdinalIgnoreCase)),
+            converted.StdOut);
     }
 
     /// <summary>

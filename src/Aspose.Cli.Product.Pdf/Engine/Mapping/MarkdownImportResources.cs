@@ -13,9 +13,10 @@ namespace Aspose.Cli.Product.Pdf.Engine.Mapping;
 
 /// <summary>
 /// Enforces the input-directory boundary for the Aspose.PDF Markdown importer, which reads
-/// files with no resource hook (known issue PDF-HTML-EGRESS in KNOWN-ISSUES.md). Before the
-/// import, every file the importer could read must be an ordinary file beneath the Markdown
-/// file's directory: Markdown
+/// files with no resource hook (known issue PDF-HTML-EGRESS in KNOWN-ISSUES.md); the process's
+/// <see cref="NetworkGate"/> blocks what it requests from the network. Before the import, every
+/// file the importer could read must be an ordinary file beneath the Markdown file's directory:
+/// Markdown
 /// images, the resources raw HTML and CSS name, and the resources named inside the
 /// stylesheets, SVG and HTML files those load. A Markdown image, an image that HTML or SVG
 /// markup embeds, and an image a stylesheet names, must also be an intact image
@@ -82,8 +83,8 @@ internal sealed class MarkdownImportResources : IDisposable
     private readonly HashSet<string> _images = new(FilePaths.Comparer);
 
     /// <summary>
-    /// Refuses a Markdown file that names a network address or script, or references a file
-    /// the importer could read outside the Markdown file's directory.
+    /// Refuses a Markdown file that references a file the importer could read outside the
+    /// Markdown file's directory.
     /// </summary>
     /// <param name="markdownPath">The Markdown input.</param>
     /// <param name="budgets">The invocation budgets charged for every file read.</param>
@@ -97,7 +98,6 @@ internal sealed class MarkdownImportResources : IDisposable
         try
         {
             byte[] markdown = budgets.Inputs.ReadAllBytes(markdownPath);
-            NetworkReferenceGuard.EnsureNone(markdown, "Markdown input", markdownPath);
             var pending = new Queue<(Reference Reference, string Base, string Source)>();
             foreach (Reference reference in MarkdownReferences(Text(markdown)))
             {
@@ -156,7 +156,7 @@ internal sealed class MarkdownImportResources : IDisposable
             }
 
             _files[file] = (held.Lease, true);
-            return Read(file, held.Lease);
+            return Read(held.Lease);
         }
 
         if (_files.Count == MaximumFiles)
@@ -168,6 +168,8 @@ internal sealed class MarkdownImportResources : IDisposable
             ?? throw Refusal(reference.Value, source,
                 $"resolves to '{file}', which is not an ordinary file: it is a link, a junction, a directory, a device or a file with several names");
         _files.Add(file, (lease, false));
+        // The importer reads the file itself, through a file request the gate must let pass.
+        NetworkGate.Permit(file);
         _budgets.Consume(ResourceBudgetKinds.InputBytes, lease.Length, "bytes", "markdown-resource");
         if (reference.Image || NamesAnImage(reference, file, lease))
         {
@@ -180,7 +182,7 @@ internal sealed class MarkdownImportResources : IDisposable
         }
 
         _files[file] = (lease, true);
-        return Read(file, lease);
+        return Read(lease);
     }
 
     /// <summary>Refuses a held file that an image reference names unless it is an intact image.</summary>
@@ -216,7 +218,7 @@ internal sealed class MarkdownImportResources : IDisposable
         bool font = head.StartsWith((ReadOnlySpan<byte>)[0x00, 0x01, 0x00, 0x00])
             || head.StartsWith("OTTO"u8) || head.StartsWith("true"u8) || head.StartsWith("ttcf"u8)
             || head.StartsWith("wOFF"u8) || head.StartsWith("wOF2"u8);
-        return !font && (NetworkReferenceGuard.IsSelfContained(head)
+        return !font && (IsSelfContained(head)
             || RasterImages.NamedBy(file).Count > 0);
     }
 
@@ -225,10 +227,31 @@ internal sealed class MarkdownImportResources : IDisposable
         Span<byte> head = stackalloc byte[16];
         lease.Position = 0;
         int length = lease.ReadAtLeast(head, head.Length, throwOnEndOfStream: false);
-        return NetworkReferenceGuard.IsSelfContained(head[..length]);
+        return IsSelfContained(head[..length]);
     }
 
-    private byte[] Read(string file, VerifiedReadLease lease)
+    /// <summary>
+    /// Whether content is a raster image or a font, identified from its first bytes: formats
+    /// that name no other resource, so the importer reading them reads nothing further.
+    /// </summary>
+    private static bool IsSelfContained(ReadOnlySpan<byte> head) =>
+        head.StartsWith((ReadOnlySpan<byte>)[0x89, (byte)'P', (byte)'N', (byte)'G', 0x0D, 0x0A, 0x1A, 0x0A])
+        || head.StartsWith((ReadOnlySpan<byte>)[0xFF, 0xD8, 0xFF])
+        || head.StartsWith("GIF87a"u8)
+        || head.StartsWith("GIF89a"u8)
+        || (head.StartsWith("BM"u8) && head.Length >= 10 && head[6..10].IndexOfAnyExcept((byte)0) < 0)
+        || head.StartsWith((ReadOnlySpan<byte>)[(byte)'I', (byte)'I', 0x2A, 0x00])
+        || head.StartsWith((ReadOnlySpan<byte>)[(byte)'M', (byte)'M', 0x00, 0x2A])
+        || (head.StartsWith("RIFF"u8) && head.Length >= 12 && head[8..12].SequenceEqual("WEBP"u8))
+        || head.StartsWith((ReadOnlySpan<byte>)[0x00, 0x00, 0x01, 0x00])
+        || head.StartsWith((ReadOnlySpan<byte>)[0x00, 0x01, 0x00, 0x00])
+        || head.StartsWith("OTTO"u8)
+        || head.StartsWith("true"u8)
+        || head.StartsWith("ttcf"u8)
+        || head.StartsWith("wOFF"u8)
+        || head.StartsWith("wOF2"u8);
+
+    private byte[] Read(VerifiedReadLease lease)
     {
         long length = lease.Length;
         if (length > Array.MaxLength)
@@ -241,7 +264,6 @@ internal sealed class MarkdownImportResources : IDisposable
         byte[] content = new byte[length];
         lease.Position = 0;
         lease.ReadExactly(content);
-        NetworkReferenceGuard.EnsureNone(content, "resource", file);
         return content;
     }
 
