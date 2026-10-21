@@ -359,109 +359,31 @@ internal sealed record BundledSkill(
         RequireString(manifest, "productId", ManifestProductId);
         RequireString(manifest, "skill", Name);
         string expectedContentSha256 = RequireSha256(manifest, "contentSha256");
-        SkillTree tree = ReadTree(target);
-        if (!tree.Files.Remove(ManifestName))
-        {
-            throw new InvalidDataException("the ownership manifest is missing from the inventory");
-        }
-
-        var expected = new Dictionary<string, SkillFileEntry>(FilePaths.Comparer);
+        var expected = new Dictionary<string, string?>(FilePaths.Comparer) { [ManifestName] = null };
         foreach (JsonElement item in manifest.GetProperty("files").EnumerateArray())
         {
             RequireProperties(item, "path", "size", "sha256");
             string path = NormalizeManifestPath(item.GetProperty("path").GetString());
             long size = item.GetProperty("size").GetInt64();
             string sha256 = RequireSha256(item, "sha256");
-            if (size < 0 || !expected.TryAdd(path, new(path, size, sha256)))
+            if (size < 0 || !expected.TryAdd(path, sha256))
             {
                 throw new InvalidDataException($"invalid or duplicate Skill file entry '{path}'");
             }
         }
 
-        if (!expected.Keys.ToHashSet(FilePaths.Comparer)
-            .SetEquals(tree.Files.Keys))
+        EnsureNoReparsePoint(target);
+        if (OwnedDirectoryInventory.Mismatch(target, expected) is { } mismatch)
         {
-            throw ManagedSkillConflict(
-                target,
-                "the managed Skill contains an unknown, missing, or case-conflicting file");
-        }
-
-        HashSet<string> expectedDirectories = ExpectedDirectories(expected.Keys);
-        if (!expectedDirectories.SetEquals(tree.Directories))
-        {
-            throw ManagedSkillConflict(
-                target,
-                "the managed Skill contains an unknown or missing directory");
-        }
-
-        foreach (SkillFileEntry file in expected.Values)
-        {
-            FileInfo actual = tree.Files[file.Path];
-            if (actual.Length != file.Size
-                || !string.Equals(FileSha256(actual.FullName), file.Sha256, StringComparison.Ordinal))
-            {
-                throw ManagedSkillConflict(target, $"managed file '{file.Path}' was modified");
-            }
+            throw ManagedSkillConflict(target, $"the directory is not the managed Skill: {mismatch}");
         }
         if (!string.Equals(
                 expectedContentSha256,
-                AggregateHash(target, expected.Keys),
+                AggregateHash(target, expected.Keys.Where(static path => path != ManifestName)),
                 StringComparison.Ordinal))
         {
             throw ManagedSkillConflict(target, "the aggregate managed content hash does not match");
         }
-    }
-
-    private static SkillTree ReadTree(string target)
-    {
-        EnsureNoReparsePoint(target);
-        var files = new Dictionary<string, FileInfo>(FilePaths.Comparer);
-        var directories = new HashSet<string>(FilePaths.Comparer);
-        var pending = new Queue<DirectoryInfo>();
-        pending.Enqueue(new DirectoryInfo(target));
-        while (pending.Count != 0)
-        {
-            DirectoryInfo current = pending.Dequeue();
-            foreach (FileSystemInfo item in current.EnumerateFileSystemInfos())
-            {
-                if ((item.Attributes & FileAttributes.ReparsePoint) != 0)
-                {
-                    throw ManagedSkillConflict(target, $"reparse point '{item.FullName}' is not allowed");
-                }
-                string relative = NormalizeManifestPath(Path.GetRelativePath(target, item.FullName));
-                if (item is DirectoryInfo directory)
-                {
-                    if (!directories.Add(relative))
-                    {
-                        throw new InvalidDataException($"duplicate directory '{relative}'");
-                    }
-                    pending.Enqueue(directory);
-                }
-                else if (item is FileInfo file)
-                {
-                    if (!files.TryAdd(relative, file))
-                    {
-                        throw new InvalidDataException($"duplicate file '{relative}'");
-                    }
-                }
-            }
-        }
-        return new(files, directories);
-    }
-
-    private static HashSet<string> ExpectedDirectories(IEnumerable<string> files)
-    {
-        var result = new HashSet<string>(FilePaths.Comparer);
-        foreach (string file in files)
-        {
-            string? directory = Path.GetDirectoryName(file.Replace('/', Path.DirectorySeparatorChar));
-            while (!string.IsNullOrEmpty(directory))
-            {
-                result.Add(directory.Replace(Path.DirectorySeparatorChar, '/'));
-                directory = Path.GetDirectoryName(directory);
-            }
-        }
-        return result;
     }
 
     private static string AggregateHash(string target, IEnumerable<string> files)
@@ -566,12 +488,6 @@ internal sealed record BundledSkill(
         return value.ToLowerInvariant();
     }
 
-    private static string FileSha256(string path)
-    {
-        using FileStream input = File.OpenRead(path);
-        return Convert.ToHexString(SHA256.HashData(input)).ToLowerInvariant();
-    }
-
     private static void EnsureNoReparsePoint(string path)
     {
         string fullPath = Path.GetFullPath(path);
@@ -611,8 +527,4 @@ internal sealed record BundledSkill(
             inner);
 
     private sealed record SkillFileEntry(string Path, long Size, string Sha256);
-
-    private sealed record SkillTree(
-        Dictionary<string, FileInfo> Files,
-        HashSet<string> Directories);
 }

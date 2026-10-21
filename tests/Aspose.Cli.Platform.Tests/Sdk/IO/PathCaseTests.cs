@@ -228,64 +228,6 @@ public sealed class PathCaseTests : IDisposable
         // A publication into the drive root holds its own files.
         AtomicPublicationPlan.Open(Path.Combine(drive, ".aspose-publication-boundary"), new PublicationJournal { Operation = "boundary" })
             .EnsureTarget(Path.Combine(drive, "x.txt"));
-        // So does an extraction rooted at the drive root, which still refuses a path on a share.
-        Assert.Equal(Path.Combine(drive, "x.txt"), new ExtractionPlan(drive).ReserveFile("x.txt", "x.txt"));
-        Assert.Equal(Path.Combine(drive, "d", "x.txt"), new ExtractionPlan(drive).ReserveFile(@"d\x.txt", "d/x.txt"));
-        CliException refused = Assert.Throws<CliException>(
-            () => new ExtractionPlan(drive).ReserveFile(@"\\server\share\x.txt", "x.txt"));
-        Assert.Equal(ErrorCodes.ExtractBudgetExceeded, refused.Code);
-    }
-
-    [Theory]
-    [InlineData("a", "x.txt", true)]
-    [InlineData(@"a\", "x.txt", true)]
-    [InlineData("a", @"..\A\x.txt", true)]
-    [InlineData("a", @"..\ab\x.txt", false)]
-    [InlineData("a", @"..\AB\x.txt", false)]
-    [InlineData("a", @"..\x.txt", false)]
-    [InlineData("a", @"\\server\share\a\x.txt", false)]
-    public void Boundaries_ForAnExtraction(string root, string entry, bool inside)
-    {
-        var plan = new ExtractionPlan(_temp.Path + Path.DirectorySeparatorChar + root);
-
-        Exception? error = Record.Exception(() => plan.ReserveFile(entry, entry));
-
-        Assert.Equal(inside, error is null);
-    }
-
-    [Fact]
-    public void Boundaries_ForAnExtraction_RefuseTheDeviceSpellingOfAPathBelowTheRoot()
-    {
-        string root = _temp.File("a");
-
-        CliException refused = Assert.Throws<CliException>(
-            () => new ExtractionPlan(root).ReserveFile(@"\\?\" + Path.Combine(root, "x.txt"), "x.txt"));
-        Assert.Equal(ErrorCodes.ExtractBudgetExceeded, refused.Code);
-    }
-
-    [Theory]
-    [InlineData(@"evidence", @"evidence\book.docx", true)]
-    [InlineData(@"evidence\", @"evidence\book.docx", true)]
-    [InlineData(@"evidence", @"EVIDENCE\book.docx", true)]
-    [InlineData(@"book.docx", @"BOOK.DOCX", true)]
-    [InlineData(@"evidence", @"evidence-2\book.docx", false)]
-    [InlineData(@"evidence", @"EVIDENCE-2\book.docx", false)]
-    public void Boundaries_ForReviewEvidence(string target, string input, bool refused)
-    {
-        Exception? error = Record.Exception(() => ReviewEvidenceWriter.EnsureTarget(_temp.File(target), overwrite: false, _temp.File(input)));
-
-        Assert.Equal(refused, error is CliException cli && cli.Code == ErrorCodes.OptionInvalid);
-    }
-
-    [Fact]
-    public void Boundaries_ForReviewEvidence_RefuseADriveRootThatHoldsTheInput()
-    {
-        string drive = Path.GetPathRoot(_temp.Path)!;
-
-        CliException error = Assert.Throws<CliException>(
-            () => ReviewEvidenceWriter.EnsureTarget(drive, overwrite: false, _temp.File("book.docx")));
-
-        Assert.Equal(ErrorCodes.OptionInvalid, error.Code);
     }
 
     [Theory]

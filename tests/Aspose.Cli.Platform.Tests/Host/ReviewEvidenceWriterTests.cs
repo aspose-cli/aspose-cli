@@ -273,7 +273,14 @@ public sealed class ReviewEvidenceWriterTests
         Assert.True(JsonNode.DeepEquals(
             JsonNode.Parse(File.ReadAllText(Path.Combine(result.OutputDirectory, "artifacts", "view.json"))),
             document["view"]));
-        Assert.True(JsonNode.DeepEquals(JsonNode.Parse(File.ReadAllText(result.Manifest)), document["review"]));
+        // The page holds the review, so only review.json can record the page's fingerprint.
+        JsonNode review = JsonNode.Parse(File.ReadAllText(result.Manifest))!;
+        JsonObject index = review["artifacts"]!.AsArray().Single(static artifact => artifact!["path"]!.GetValue<string>() == "index.html")!.AsObject();
+        Assert.Equal(
+            Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(result.IndexPath))).ToLowerInvariant(),
+            index["fingerprint"]!["sha256"]!.GetValue<string>());
+        index.Remove("fingerprint");
+        Assert.True(JsonNode.DeepEquals(review, document["review"]));
         Assert.Contains(Presentation.Script, html, StringComparison.Ordinal);
         Assert.Contains(Presentation.Stylesheet!, html, StringComparison.Ordinal);
         Assert.Contains("AsposeViewer.start({ base: \"artifacts/\" })", html, StringComparison.Ordinal);

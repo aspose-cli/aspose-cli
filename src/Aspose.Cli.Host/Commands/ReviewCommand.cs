@@ -116,7 +116,7 @@ internal static class ReviewCommand
             IReadOnlyList<string>? selectedCodes = SelectedCodes(parse.GetValue(codes), definition);
             string target = requestedOutput ?? input + ".review";
             bool replace = parse.GetValue(overwrite);
-            ReviewEvidenceWriter.EnsureTarget(target, replace, input);
+            ReviewEvidenceWriter.EnsureTarget(target, replace);
             if (parse.GetValue(dryRun))
             {
                 return DryRunResult.Of([DryRunChecks.Input, DryRunChecks.Output], [target]);

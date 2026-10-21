@@ -209,4 +209,11 @@ public sealed record ReviewArtifact
     /// <summary>Image height in pixels; omitted when the artifact is not an image.</summary>
     [Minimum(1)]
     public int? Height { get; init; }
+
+    /// <summary>
+    /// The SHA-256 the artifact was written with; omitted only for <c>review.json</c>, which
+    /// lists the others. <c>review --overwrite</c> replaces the bundle only while every file
+    /// still has its fingerprint and no other file is there.
+    /// </summary>
+    public FileFingerprint? Fingerprint { get; init; }
 }
