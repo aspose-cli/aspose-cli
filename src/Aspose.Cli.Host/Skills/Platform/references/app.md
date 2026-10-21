@@ -52,7 +52,9 @@ the viewer service recycles its renderer and the next render applies it.
 
 ## Lifecycle
 
-`app status` reports whether the App is `running`. `app stop` stops the App,
+`app status` reports whether the App is `running` and returns a new `url`:
+each `url` lets the first browser that opens it in, once and within five
+minutes, and that browser keeps access. `app stop` stops the App,
 its documents and the viewer service. `app open --no-open` starts or activates
 the App without a browser, and `app open --foreground` keeps it in the current
 process for debugging, containers and browser automation; `--help` lists the

@@ -141,20 +141,13 @@ internal static class AppCommand
     private static AppResult Describe(ViewerStatusResponse? service) => new()
     {
         Running = service is not null,
-        Url = service is null
-            ? null
-            : service.Url + ((service.AppRoute ?? AppRoutes.Home) == AppRoutes.Welcome
-                ? string.Empty
-                : service.AppRoute ?? AppRoutes.Home),
-        Port = service is null ? null : PortOf(service.Url),
+        Url = service?.Url,
+        Port = service?.Port,
         Pid = service?.Pid,
         Reused = false,
         Route = service?.AppRoute ?? AppRoutes.Home,
         File = service?.AppFile,
     };
-
-    private static int? PortOf(string url) =>
-        Uri.TryCreate(url, UriKind.Absolute, out Uri? parsed) ? parsed.Port : null;
 
     /// <summary>
     /// The page <c>app open</c> lands on: the file it names, else the guide with

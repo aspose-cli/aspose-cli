@@ -95,7 +95,7 @@ internal static class CommonSchemaSamples
     public static AppResult App { get; } = new()
     {
         Running = true,
-        Url = "http://127.0.0.1:4680/preview",
+        Url = "http://127.0.0.1:4680/preview?t=0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
         Port = 4680,
         Pid = 4242,
         Reused = false,
@@ -226,7 +226,7 @@ internal static class CommonSchemaSamples
     {
         Id = "fedcba9876543210fedcba9876543210",
         Product = "synthetic",
-        Url = "http://127.0.0.1:54322/d/0123456789abcdef0123456789abcdef/",
+        Url = "http://127.0.0.1:54322/d/0123456789abcdef0123456789abcdef/?t=0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
         Pid = 4243,
         File = "D:/data/sample.bin",
         View = "default",
@@ -241,7 +241,7 @@ internal static class CommonSchemaSamples
             {
                 Id = "0123456789abcdef0123456789abcdef",
                 Product = "synthetic",
-                Url = "http://127.0.0.1:54321/d/00112233445566778899aabbccddeeff/",
+                Url = "http://127.0.0.1:54321/d/00112233445566778899aabbccddeeff/?t=0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
                 Pid = 4242,
                 File = "D:/data/sample.bin",
                 View = "default",
@@ -251,7 +251,7 @@ internal static class CommonSchemaSamples
             {
                 Id = "fedcba9876543210fedcba9876543210",
                 Product = "synthetic",
-                Url = "http://127.0.0.1:54322/d/0123456789abcdef0123456789abcdef/",
+                Url = "http://127.0.0.1:54322/d/0123456789abcdef0123456789abcdef/?t=0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
                 Pid = 4243,
                 File = "D:/data/other.bin",
                 View = "default",

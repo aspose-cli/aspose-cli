@@ -1,8 +1,6 @@
 (function () {
   'use strict';
 
-  var csrfMeta = document.querySelector('meta[name="aspose-csrf"]');
-  var csrf = csrfMeta ? csrfMeta.content : '';
   var status = null;
   var polling = null;
   var statusRequest = null;
@@ -112,10 +110,6 @@
   async function api(path, options) {
     options = options || {};
     options.headers = options.headers || {};
-    if (options.method && options.method !== 'GET') {
-      options.headers['X-CSRF-Token'] = csrf;
-    }
-
     var response = await fetch(path, options);
     var data = await response.json().catch(function () {
       return {

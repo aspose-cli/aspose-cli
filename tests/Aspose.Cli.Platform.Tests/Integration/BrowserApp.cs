@@ -1,3 +1,4 @@
+using Aspose.Cli.TestKit;
 using Xunit;
 using Microsoft.Playwright;
 
@@ -61,7 +62,11 @@ internal sealed class BrowserApp(AppTestSession app, IPage page)
         var ui = new BrowserApp(app, page);
         try
         {
-            await page.GotoAsync(new Uri(app.Client.BaseAddress!, "/preview").AbsoluteUri);
+            // The browser enters as a person's does, through the address `app status` returns.
+            CliResult status = app.Workspace.Run("app", "status", "--output-format", "json");
+            Assert.True(status.ExitCode == 0, status.StdErr);
+            await page.GotoAsync(System.Text.Json.Nodes.JsonNode.Parse(status.StdOut)!["url"]!.GetValue<string>());
+            Assert.EndsWith("/preview", page.Url, StringComparison.Ordinal);
             await ui.WaitForPreview("first.csv", "workbook");
             await test(ui);
             await context.Tracing.StopAsync();

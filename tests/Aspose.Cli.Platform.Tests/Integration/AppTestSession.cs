@@ -1,6 +1,5 @@
 using System.Text;
 using System.Text.Json.Nodes;
-using System.Text.RegularExpressions;
 using Aspose.Cli.TestKit;
 using Xunit;
 
@@ -25,16 +24,8 @@ internal sealed class AppTestSession : IAsyncDisposable
             CliResult started = session.Open("first.csv");
             session._started = true;
             session.Url = new Uri(JsonNode.Parse(started.StdOut)!["url"]!.GetValue<string>());
-            session.Client = new HttpClient(new HttpClientHandler { UseCookies = false })
-            {
-                BaseAddress = new Uri(session.Url.GetLeftPart(UriPartial.Authority)),
-                Timeout = TimeSpan.FromSeconds(30),
-            };
-            string shell = await session.Client.GetStringAsync("/");
-            string csrf = Regex.Match(shell, @"name=""aspose-csrf"" content=""([^""]+)""").Groups[1].Value;
-            Assert.NotEmpty(csrf);
-            session.Client.DefaultRequestHeaders.Add("Origin", session.Client.BaseAddress.GetLeftPart(UriPartial.Authority));
-            session.Client.DefaultRequestHeaders.Add("X-CSRF-Token", csrf);
+            // The client a browser would be: it entered once through the address the CLI returned.
+            session.Client = await LocalServiceEntry.Client(session.Url.AbsoluteUri, TimeSpan.FromSeconds(30));
             return session;
         }
         catch

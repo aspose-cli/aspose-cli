@@ -24,27 +24,19 @@ internal static class ViewerServiceHosting
         bool openBrowser = false)
     {
         ArgumentNullException.ThrowIfNull(catalog);
-        AppHost? mounted = null;
-        HostedCommandLifecycle lifecycle = ViewerServiceHost.Start(
+        return ViewerServiceHost.Start(
             globals,
             ServiceStartSecretChannel.Current,
             requestedPort,
-            (documents, port, touch, stop) => new AppServiceMount(mounted = new AppHost(
+            (documents, port, touch, stop) => new AppServiceMount(new AppHost(
                 catalog,
                 capabilities,
                 globals,
                 documents,
                 port,
                 touch,
-                stop)));
-        if (page is not null && mounted is { } app)
-        {
-            AppResult opened = app.Open(page.Route, page.File, AppLicenseContext.Of(page));
-            if (openBrowser && opened.Url is { } url)
-            {
-                BrowserLauncher.Open(url);
-            }
-        }
-        return lifecycle;
+                stop)),
+            page,
+            openBrowser);
     }
 }

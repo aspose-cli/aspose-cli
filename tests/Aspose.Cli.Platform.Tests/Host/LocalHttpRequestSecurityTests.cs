@@ -48,6 +48,24 @@ public sealed class LocalHttpRequestSecurityTests
             expected,
             LocalHttpRequestSecurity.IsExactLoopbackHost(host, port));
 
+    [Theory]
+    [InlineData(80, "http://127.0.0.1:80/home")]
+    [InlineData(80, "http://127.0.0.1/")]
+    [InlineData(49152, "http://127.0.0.1:49152/d/0123456789abcdef0123456789abcdef/")]
+    public void Entry_AppendsATicketToAnAddressOfThisService(int port, string url) =>
+        Assert.Matches(
+            "^" + System.Text.RegularExpressions.Regex.Escape(url) + @"\?t=[0-9a-f]{64}$",
+            new LocalHttpRequestSecurity(port).Entry(url));
+
+    [Theory]
+    [InlineData(80, "http://127.0.0.1:8080/")]
+    [InlineData(49152, "http://127.0.0.1:49153/")]
+    [InlineData(49152, "https://127.0.0.1:49152/")]
+    [InlineData(49152, "http://localhost:49152/")]
+    [InlineData(49152, "http://127.0.0.1:49152/?t=0")]
+    public void Entry_RefusesAnAddressOfAnotherService(int port, string url) =>
+        Assert.Throws<ArgumentException>(() => new LocalHttpRequestSecurity(port).Entry(url));
+
     [Fact]
     public void FixedEquals_RejectsNullAndNearMatches()
     {

@@ -60,9 +60,9 @@
           "type": "boolean"
         },
         "url": {
-          "description": "Loopback URL of the application, omitted when it is not running.",
+          "description": "Loopback URL of the application with a one-time entry ticket, omitted when it is not running: it lets the first browser that opens it in, within five minutes, and that browser keeps access while the application runs. app status returns a new one.",
           "type": "string",
-          "pattern": "^http://127\\.0\\.0\\.1:[0-9]+/"
+          "pattern": "^http://127\\.0\\.0\\.1:[0-9]+/[a-z]*\\?t=[0-9a-f]{64}$"
         },
         "port": {
           "description": "Resolved loopback port, omitted when it is not running.",
@@ -2649,9 +2649,9 @@
           "pattern": "^[a-z0-9][a-z0-9-]*$"
         },
         "url": {
-          "description": "Loopback browser URL of the document.",
+          "description": "Loopback browser URL of the document with a one-time entry ticket: it lets the first browser that opens it in, within five minutes, and that browser keeps access while the service runs. preview status returns a new one.",
           "type": "string",
-          "pattern": "^http://127\\.0\\.0\\.1:[0-9]+/d/[0-9a-f]{32}/$"
+          "pattern": "^http://127\\.0\\.0\\.1:[0-9]+/d/[0-9a-f]{32}/\\?t=[0-9a-f]{64}$"
         },
         "pid": {
           "description": "Background process identifier.",
@@ -2756,9 +2756,9 @@
               "pattern": "^[a-z0-9][a-z0-9-]*$"
             },
             "url": {
-              "description": "Loopback browser URL of the document.",
+              "description": "Loopback browser URL of the document with a one-time entry ticket: it lets the first browser that opens it in, within five minutes, and that browser keeps access while the service runs. preview status returns a new one.",
               "type": "string",
-              "pattern": "^http://127\\.0\\.0\\.1:[0-9]+/d/[0-9a-f]{32}/$"
+              "pattern": "^http://127\\.0\\.0\\.1:[0-9]+/d/[0-9a-f]{32}/\\?t=[0-9a-f]{64}$"
             },
             "pid": {
               "description": "Background process identifier.",

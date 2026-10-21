@@ -8,15 +8,22 @@ namespace Aspose.Cli.Host.ViewerService;
 
 /// <summary>
 /// The loopback surface of the viewer service. It accepts exact loopback
-/// requests only and serves three things per open document: the viewer page,
-/// its event stream, and the immutable files of a rendered revision. Those
-/// never mutate state, so they carry no body and answer GET alone. The App,
-/// when one is mounted, answers everything outside <c>/d/</c> on the same
-/// origin, including its own mutations.
+/// requests from a browser holding a session of this service only, and
+/// serves three things per open document: the viewer page, its event stream,
+/// and the immutable files of a rendered revision. Those never mutate state,
+/// so they carry no body and answer GET alone. The App, when one is mounted,
+/// answers everything outside <c>/d/</c> on the same origin, including its
+/// own mutations. Every route, the App's included, is behind the session;
+/// only presenting an entry ticket is not (<see cref="LocalHttpRequestSecurity"/>).
 /// </summary>
 internal sealed class ViewerHttpServer : IDisposable
 {
     private static readonly TimeSpan StopTimeout = TimeSpan.FromSeconds(2);
+
+    private static readonly string ExpiredEntry =
+        $"Forbidden: open the address that '{Aspose.Cli.Sdk.DistributionInfo.CommandName} app status' or "
+        + $"'{Aspose.Cli.Sdk.DistributionInfo.CommandName} preview status' prints; "
+        + "each address lets one browser in, once, within a few minutes.";
 
     private readonly ViewerDocuments _documents;
     private readonly HttpRequestGate _requests;
@@ -24,6 +31,7 @@ internal sealed class ViewerHttpServer : IDisposable
     private readonly string _nonce = LocalHttpRequestSecurity.RandomToken();
     private readonly int _requestedPort;
     private HttpListener? _listener;
+    private LocalHttpRequestSecurity? _security;
     private Task? _acceptLoop;
     private volatile bool _stopping;
     private int _port;
@@ -50,9 +58,16 @@ internal sealed class ViewerHttpServer : IDisposable
     /// </summary>
     public void Mount(Func<HttpListenerContext, int, bool> home) => _home = home;
 
-    /// <summary>The address a person opens for one document.</summary>
+    /// <summary>The address of one document, without an entry ticket.</summary>
     public string Url(string documentId) =>
         string.Create(CultureInfo.InvariantCulture, $"http://127.0.0.1:{_port}/d/{documentId}/");
+
+    /// <summary>
+    /// The address a person opens: <paramref name="url"/> with a new one-time
+    /// entry ticket that lets the browser that opens it in.
+    /// </summary>
+    public string Entry(string url) =>
+        (_security ?? throw new InvalidOperationException("The viewer server is not started.")).Entry(url);
 
     /// <summary>Binds loopback and starts accepting; returns the bound port.</summary>
     public int Start()
@@ -60,6 +75,7 @@ internal sealed class ViewerHttpServer : IDisposable
         LoopbackHttpListenerBinding binding = LoopbackHttpListenerBinder.Start(_requestedPort);
         _listener = binding.Listener;
         _port = binding.Port;
+        _security = new LocalHttpRequestSecurity(binding.Port);
         _acceptLoop = Task.Run(() => AcceptLoopAsync(binding.Listener));
         return _port;
     }
@@ -137,6 +153,10 @@ internal sealed class ViewerHttpServer : IDisposable
                 Text(response, 403, "text/plain; charset=utf-8", "Forbidden: the viewer accepts exact loopback requests only.");
                 return;
             }
+            if (!Admitted(context))
+            {
+                return;
+            }
             string path = context.Request.Url?.AbsolutePath ?? "/";
             string[] segments = path.Split('/', StringSplitOptions.RemoveEmptyEntries);
             if (segments is not ["d", ..] && _home is { } home && home(context, _port))
@@ -199,6 +219,40 @@ internal sealed class ViewerHttpServer : IDisposable
             }
             catch (Exception) { }
         }
+    }
+
+    /// <summary>
+    /// Lets a request through when it carries this service's session, and
+    /// answers it itself otherwise: an entry ticket is spent for a session
+    /// cookie and sent on to its address without the ticket, and everything
+    /// else is refused.
+    /// </summary>
+    private bool Admitted(HttpListenerContext context)
+    {
+        LocalHttpRequestSecurity security = _security!;
+        HttpListenerResponse response = context.Response;
+        switch (security.Admit(context.Request, out string? setCookie))
+        {
+            case LocalHttpRequestSecurity.Admission.Granted:
+                if (setCookie is not null)
+                {
+                    response.AppendHeader("Set-Cookie", setCookie);
+                }
+                response.StatusCode = 303;
+                response.RedirectLocation = security.Continuation(context.Request);
+                response.ContentLength64 = 0;
+                response.Close();
+                return false;
+            case LocalHttpRequestSecurity.Admission.Refused:
+                Text(response, 403, "text/plain; charset=utf-8", ExpiredEntry);
+                return false;
+        }
+        if (security.HasSession(context.Request))
+        {
+            return true;
+        }
+        Text(response, 403, "text/plain; charset=utf-8", ExpiredEntry);
+        return false;
     }
 
     private void Page(HttpListenerResponse response, LiveDocument document)

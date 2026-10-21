@@ -82,6 +82,7 @@ internal sealed record ViewerDocumentState
 
     public required string View { get; init; }
 
+    /// <summary>The document's address with a new one-time entry ticket.</summary>
     public required string Url { get; init; }
 
     public required int Revision { get; init; }
@@ -104,6 +105,9 @@ internal sealed record ViewerStatusResponse
 {
     public required int Pid { get; init; }
 
+    public required int Port { get; init; }
+
+    /// <summary>The page the App is showing, with a new one-time entry ticket.</summary>
     public required string Url { get; init; }
 
     public required IReadOnlyList<ViewerDocumentState> Documents { get; init; }
@@ -146,6 +150,7 @@ internal sealed record ViewerAppRequest
 /// <summary>Where the App is, and what it is showing.</summary>
 internal sealed record ViewerAppResponse
 {
+    /// <summary>The page the App is showing, with a new one-time entry ticket.</summary>
     public required string Url { get; init; }
 
     public required int Port { get; init; }

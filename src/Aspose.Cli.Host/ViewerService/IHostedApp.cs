@@ -17,7 +17,7 @@ internal interface IHostedApp : IDisposable
     bool TryHandle(HttpListenerContext context, int port);
 
     /// <summary>Points the App at the page and file a command named.</summary>
-    AppResult Open(ViewerAppRequest request, OperationDeadline deadline);
+    AppResult Open(ViewerAppRequest request, OperationDeadline? deadline);
 
     /// <summary>The page and file the App shows.</summary>
     AppResult Result(bool reused);
