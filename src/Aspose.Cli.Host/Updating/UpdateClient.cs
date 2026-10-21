@@ -135,7 +135,7 @@ internal static class UpdateClient
             // archive's SHA-256, the preparation worker hashes the archive and extracts it from
             // one handle that denies writers, and this install.ps1 is an entry of that archive,
             // checked against its SHA256SUMS. From download to this launch every file stays in the current
-            // user's temporary directory, whose Windows per-user permissions admit no other
+            // user's local application data folder, whose Windows per-user permissions admit no other
             // standard account. Only code already running as this user could swap the script between extraction and
             // PowerShell reading it, and such code can equally replace the installed CLI itself,
             // so the remaining window crosses no privilege boundary.

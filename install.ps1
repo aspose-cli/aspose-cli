@@ -1806,10 +1806,16 @@ function Resolve-CleanupRoot {
     param([AllowEmptyString()][string] $Root)
     if ([string]::IsNullOrWhiteSpace($Root)) { return '' }
     $directory = Assert-LocalAbsolutePath $Root 'update staging directory'
-    $temporaryRoot = [IO.Path]::GetFullPath([IO.Path]::GetTempPath()).TrimEnd('\') + '\'
-    if ((-not $directory.StartsWith($temporaryRoot, [StringComparison]::OrdinalIgnoreCase)) -or
+    # The CLI stages an update in its per-user state below the local application data folder,
+    # found as the CLI finds it: the LOCALAPPDATA variable, or the known folder without it.
+    $localAppData = $env:LOCALAPPDATA
+    if ([string]::IsNullOrWhiteSpace($localAppData) -or $localAppData -notmatch '^(?:[A-Za-z]:\\|\\\\)') {
+        $localAppData = [Environment]::GetFolderPath([Environment+SpecialFolder]::LocalApplicationData, [Environment+SpecialFolderOption]::DoNotVerify)
+    }
+    $stagingRoot = [IO.Path]::GetFullPath([IO.Path]::Combine($localAppData, $script:ProductId, 'updates')).TrimEnd('\') + '\'
+    if ((-not $directory.StartsWith($stagingRoot, [StringComparison]::OrdinalIgnoreCase)) -or
         (-not [IO.Path]::GetFileName($directory).StartsWith($script:ProductId + '-update-', [StringComparison]::OrdinalIgnoreCase))) {
-        throw "-CleanupRoot must be a $($script:ProductId)-update-* directory below the local temporary directory."
+        throw "-CleanupRoot must be a $($script:ProductId)-update-* directory in the update staging directory $stagingRoot"
     }
     return $directory
 }

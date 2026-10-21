@@ -34,7 +34,7 @@ internal static class UpdateInstaller
         Warning? previous = UpdateStatus.ReadWarning(statusPath);
         IReadOnlyList<Warning>? warnings = previous is null ? null : [previous];
         string parent = Directory.CreateDirectory(Path.Combine(UserStorage.TemporaryRoot(), "updates")).FullName;
-        // install.ps1 accepts only a <distribution id>-update-* cleanup root below the temporary directory.
+        // install.ps1 accepts only a <distribution id>-update-* cleanup root in this updates directory.
         string target = Path.Combine(parent, DistributionInfo.Id + "-update-" + Guid.NewGuid().ToString("N"));
         string source = !Path.IsPathRooted(feed) && Uri.TryCreate(feed, UriKind.Absolute, out _)
             ? feed : Path.GetFullPath(feed, context.Paths.BaseDirectory);

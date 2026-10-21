@@ -513,6 +513,37 @@ public sealed partial class CustomerInstallerPowerShellTests : IDisposable, ICla
         }
     }
 
+    /// <summary>
+    /// The update handoff's -CleanupRoot names the package that 'update install' staged in the
+    /// CLI's per-user state below the local application data folder; a staging directory in the
+    /// temporary directory, where another account could have created it, is refused.
+    /// </summary>
+    [Fact]
+    public void UpdateCleanupRoot_IsAcceptedOnlyInTheCliUpdateStagingDirectory()
+    {
+        Requires.Windows();
+        string local = Directory.CreateDirectory(Path.Combine(_root, "cleanup-local")).FullName;
+        string temporary = Directory.CreateDirectory(Path.Combine(_root, "cleanup-temp")).FullName;
+        string staged = Path.Combine(local, "aspose-cli", "updates", "aspose-cli-update-" + Guid.NewGuid().ToString("N"));
+        string inTemporary = Path.Combine(temporary, "aspose-cli-update-" + Guid.NewGuid().ToString("N"));
+        string installer = Path.Combine(RepositoryPaths.Root, "install.ps1");
+        var environment = new Dictionary<string, string?> { ["LOCALAPPDATA"] = local, ["TEMP"] = temporary, ["TMP"] = temporary };
+
+        PowerShellResult accepted = Resolve(staged);
+        PowerShellResult refused = Resolve(inTemporary);
+
+        Assert.True(accepted.ExitCode == 0, accepted.StdErr);
+        Assert.Equal(staged, accepted.StdOut.Trim(), StringComparer.OrdinalIgnoreCase);
+        Assert.NotEqual(0, refused.ExitCode);
+        Assert.Contains("-CleanupRoot", refused.StdErr, StringComparison.Ordinal);
+
+        PowerShellResult Resolve(string root) => RunExecutable(
+            "powershell.exe",
+            ["-NoLogo", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-Command",
+                $". {PowerShellLiteral(installer)}; Resolve-CleanupRoot {PowerShellLiteral(root)}"],
+            environment);
+    }
+
     [Fact]
     public void UnsupportedOldInstallIsRejectedWithoutExecutingOrChangingIt()
     {
