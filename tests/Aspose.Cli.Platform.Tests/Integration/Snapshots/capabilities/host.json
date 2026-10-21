@@ -4161,7 +4161,7 @@
       "path": "aspose-cli doctor",
       "name": "doctor",
       "aliases": [],
-      "description": "Diagnose the environment: runtime, resource budgets and output writability.",
+      "description": "Diagnose the environment: runtime, native libraries, resource budgets and output writability.",
       "options": [],
       "arguments": []
     },

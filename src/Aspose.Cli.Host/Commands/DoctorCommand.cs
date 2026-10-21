@@ -18,7 +18,7 @@ internal static class DoctorCommand
         GlobalOptions globals)
     {
         var doctor = new Command(
-            "doctor", "Diagnose the environment: runtime, resource budgets and output writability.");
+            "doctor", "Diagnose the environment: runtime, native libraries, resource budgets and output writability.");
         doctor.SetAction(parse => executor.Run(parse, globals, context =>
         {
             IReadOnlyList<ProductLicenseStatus> licenses =
@@ -27,6 +27,7 @@ internal static class DoctorCommand
             {
                 CliCheck(),
                 RuntimeCheck(),
+                NativeRuntimeCheck(Environment.SystemDirectory),
                 BudgetCheck(context),
                 LicenseCheck(licenses),
                 OutputCheck(context),
@@ -63,6 +64,33 @@ internal static class DoctorCommand
         Status = DoctorStatuses.Ok,
         Detail = RuntimeInformation.FrameworkDescription,
     };
+
+    /// <summary>The Visual C++ runtime the native engine libraries link against.</summary>
+    private static readonly string[] VisualCppRuntime = ["msvcp140.dll", "vcruntime140.dll", "vcruntime140_1.dll"];
+
+    /// <summary>
+    /// Whether <paramref name="systemDirectory"/> holds the Visual C++ runtime. The package does
+    /// not carry it, and without it the Slides drawing library cannot load.
+    /// </summary>
+    internal static DoctorCheck NativeRuntimeCheck(string systemDirectory)
+    {
+        string[] missing = [.. VisualCppRuntime.Where(name => !File.Exists(Path.Combine(systemDirectory, name)))];
+        return missing.Length == 0
+            ? new DoctorCheck
+            {
+                Name = "native-runtime",
+                Status = DoctorStatuses.Ok,
+                Detail = $"Visual C++ runtime: {string.Join(", ", VisualCppRuntime)}",
+            }
+            : new DoctorCheck
+            {
+                Name = "native-runtime",
+                Status = DoctorStatuses.Warn,
+                Detail = $"Visual C++ runtime missing from {systemDirectory}: {string.Join(", ", missing)}",
+                Hint = "Install the Microsoft Visual C++ Redistributable (x64), https://aka.ms/vs/17/release/vc_redist.x64.exe; "
+                    + "until then Slides commands that need its native drawing library fail.",
+            };
+    }
 
     private static DoctorCheck BudgetCheck(CommandContext context)
     {

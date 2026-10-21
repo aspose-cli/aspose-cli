@@ -17,6 +17,7 @@ public static class CliHost
     /// </summary>
     public static int Run(string[] args, Func<ProductCatalog> catalogFactory)
     {
+        Invocation.WindowsDllSearch.ExcludeCurrentDirectory();
         ArgumentNullException.ThrowIfNull(args);
         ArgumentNullException.ThrowIfNull(catalogFactory);
         Invocation.WindowsProcessErrorMode.SuppressNativeErrorUi();

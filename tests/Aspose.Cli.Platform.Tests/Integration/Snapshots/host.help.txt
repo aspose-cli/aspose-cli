@@ -27,7 +27,7 @@ Commands:
   words                             Word-processing document automation with layout fidelity.
   license                           Inspect and manage the Aspose license used by the CLI.
   capabilities <product> <command>  Describe everything this build supports (products, verbs, formats), as data.
-  doctor                            Diagnose the environment: runtime, resource budgets and output writability.
+  doctor                            Diagnose the environment: runtime, native libraries, resource budgets and output writability.
   skill                             List or install Agent Skills bundled with this binary.
   schema <id>                       List schema ids as an envelope, or print one raw JSON Schema document when an id is supplied.
   docs <topic>                      Print an offline reference document bundled with this binary.
@@ -188,7 +188,7 @@ Learn more:
 
 ## aspose-cli doctor --help
 Description:
-  Diagnose the environment: runtime, resource budgets and output writability.
+  Diagnose the environment: runtime, native libraries, resource budgets and output writability.
 
 Usage:
   aspose-cli doctor

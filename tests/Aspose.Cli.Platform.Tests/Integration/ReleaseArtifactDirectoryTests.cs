@@ -191,6 +191,68 @@ public sealed class ReleaseArtifactDirectoryTests
         }
     }
 
+    /// <summary>
+    /// The customer package carries the native engine libraries beside the executable, which
+    /// loads them from there: a Slides render extracts nothing to a temporary directory first.
+    /// </summary>
+    [Category(TestCategory.Slow)]
+    [Fact]
+    public void CustomerPublish_ShipsNativeLibrariesBesideTheExecutable()
+    {
+        Requires.Windows();
+        string parent = Path.Combine(
+            RepositoryPaths.Root,
+            "artifacts",
+            "publish",
+            "native-" + Guid.NewGuid().ToString("N"));
+        string output = Path.Combine(parent, "win-x64");
+        try
+        {
+            using var workspace = new TempWorkspace();
+            // No build node or compiler server outlives the publish holding its output pipes.
+            CliResult publish = new CliProcess(
+                ToolPath.Require("pwsh"),
+                CliEnvironment.Evaluation(workspace.Path, new Dictionary<string, string?>
+                {
+                    ["MSBUILDDISABLENODEREUSE"] = "1",
+                    ["DOTNET_CLI_USE_MSBUILD_SERVER"] = "0",
+                    ["UseSharedCompilation"] = "false",
+                }),
+                TimeSpan.FromMinutes(30)).Run(
+                workspace.Path,
+                null,
+                "-NoLogo", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass",
+                "-File", Path.Combine(RepositoryPaths.Root, "scripts", "publish.ps1"),
+                "-Configuration", "Release",
+                "-RuntimeIdentifier", "win-x64",
+                "-OutputRoot", output);
+            Assert.True(publish.ExitCode == 0, publish.StdOut + publish.StdErr);
+            foreach (string library in new[] { "aspose.slides.drawing.capi_vc14x64.dll", "libSkiaSharp.dll" })
+            {
+                Assert.True(File.Exists(Path.Combine(output, library)), $"The package has no {library} beside the executable.");
+            }
+
+            string extraction = Directory.CreateDirectory(workspace.File("bundle-extraction")).FullName;
+            var published = new CliProcess(
+                Path.Combine(output, "aspose-cli.exe"),
+                CliEnvironment.Evaluation(workspace.File("config"), new Dictionary<string, string?>
+                {
+                    ["DOTNET_BUNDLE_EXTRACT_BASE_DIR"] = extraction,
+                }),
+                TimeSpan.FromMinutes(5));
+            CliResult created = published.Run(workspace.Path, null, "slides", "create", "deck.pptx", "--output-format", "json");
+            Assert.True(created.ExitCode == 0, created.StdErr);
+            CliResult rendered = published.Run(workspace.Path, null, "slides", "render", "deck.pptx", "--slides", "1", "--out", "slide.png", "--output-format", "json");
+            Assert.True(rendered.ExitCode == 0, rendered.StdErr);
+            Assert.True(File.Exists(workspace.File("slide.png")));
+            Assert.Empty(Directory.EnumerateFileSystemEntries(extraction));
+        }
+        finally
+        {
+            if (Directory.Exists(parent)) { Directory.Delete(parent, recursive: true); }
+        }
+    }
+
     private static CliResult Initialize(TempDirectory directory, string target, string allowed) =>
         Run(directory,
             $"Initialize-OwnedArtifactDirectory -Path {Literal(target)} -AllowedRoot {Literal(allowed)} -Kind publish");

@@ -757,6 +757,39 @@ public sealed class CliContractTests : IDisposable
         Assert.Contains("output", names);
     }
 
+    /// <summary>
+    /// The package does not carry the Visual C++ runtime that the Slides drawing library links
+    /// against, so doctor reports whether the system directory holds it.
+    /// </summary>
+    [Fact]
+    public void Doctor_ReportsWhetherTheVisualCppRuntimeIsInstalled()
+    {
+        Requires.Windows();
+        string[] runtime = ["msvcp140.dll", "vcruntime140.dll", "vcruntime140_1.dll"];
+        bool installed = runtime.All(static name => File.Exists(Path.Combine(Environment.SystemDirectory, name)));
+
+        CliResult result = _workspace.Run("doctor", "--output-format", "json");
+
+        Assert.Equal(0, result.ExitCode);
+        JsonNode check = Assert.Single(
+            Parse(result.StdOut)["checks"]!.AsArray(),
+            static item => item!["name"]!.GetValue<string>() == "native-runtime")!;
+        Assert.Equal(installed ? "ok" : "warn", check["status"]!.GetValue<string>());
+
+        // A system directory without the runtime: every missing file is named, with what to install.
+        using var empty = new TempDirectory();
+        System.Reflection.MethodInfo? probe = typeof(Aspose.Cli.Host.CliHost).Assembly
+            .GetType("Aspose.Cli.Host.Commands.DoctorCommand")
+            ?.GetMethod("NativeRuntimeCheck", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+        Assert.NotNull(probe);
+        var missing = (Aspose.Cli.Host.Contracts.DoctorCheck)probe.Invoke(null, [empty.Path])!;
+        Assert.Equal("native-runtime", missing.Name);
+        Assert.Equal("warn", missing.Status);
+        Assert.All(runtime, name => Assert.Contains(name, missing.Detail, StringComparison.Ordinal));
+        Assert.Contains("Visual C++ Redistributable", missing.Hint, StringComparison.Ordinal);
+        Assert.Contains("Slides", missing.Hint, StringComparison.Ordinal);
+    }
+
     [Fact]
     public void LicenseProvisioning_FollowsTheCompiledEngineContract()
     {
