@@ -143,10 +143,9 @@ Configuration lives in `%APPDATA%\aspose-cli`, or in the absolute directory name
 powershell -NoProfile -ExecutionPolicy ByPass -File "$env:LOCALAPPDATA\Aspose\CLI\install.ps1" -Uninstall
 ```
 
-`aspose-cli update check` and `aspose-cli update install` read the latest release, or the
-`RELEASE-MANIFEST.json` path or HTTPS URL you name, and verify it the same way. An update runs
-the release's installer after the CLI exits; a later `update` command reports a failed or
-unfinished run.
+`aspose-cli update check` and `aspose-cli update install` read the latest release and verify it
+the same way. An update runs the release's installer after the CLI exits; a later `update`
+command reports a failed or unfinished run.
 
 ## Development
 

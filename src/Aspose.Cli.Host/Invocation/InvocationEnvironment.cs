@@ -8,12 +8,20 @@ namespace Aspose.Cli.Host.Invocation;
 /// <summary>Explicit child-process environment policy shared by MCP and supervised commands.</summary>
 internal static class InvocationEnvironment
 {
+    /// <summary>
+    /// Names another update feed than the official release, for tests only: a
+    /// <c>RELEASE-MANIFEST.json</c> path or HTTPS URL. Neither help, capabilities nor a Skill
+    /// names it.
+    /// </summary>
+    internal const string UpdateFeedVariable = Aspose.Cli.Sdk.DistributionInfo.EnvironmentVariablePrefix + "UPDATE_FEED";
+
     private static readonly string[] Baseline =
     [
         "SystemRoot", "WINDIR", "TEMP", "TMP", "PATH", "PATHEXT",
         "USERPROFILE", "HOMEDRIVE", "HOMEPATH", "HOME",
         "LOCALAPPDATA", "APPDATA", "PROGRAMDATA", "LANG", "LC_ALL", "LC_CTYPE",
         Aspose.Cli.Sdk.Configuration.ConfigurationPaths.EnvironmentVariableName, LicenseResolver.EnvPathName, LicenseResolver.EnvBase64Name,
+        UpdateFeedVariable,
     ];
 
     internal static IReadOnlyList<string> ProductVariables(ProductCatalog catalog) =>

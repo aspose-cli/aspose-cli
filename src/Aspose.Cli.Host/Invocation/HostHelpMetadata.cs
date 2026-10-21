@@ -109,7 +109,7 @@ internal static class HostHelpMetadata
 
         if (FindOptional(root, "update") is { } update)
         {
-            Find(update, "check").WithExamples(["update check", "update check RELEASE-MANIFEST.json --output-format json"], [Troubleshooting]);
+            Find(update, "check").WithExamples(["update check", "update check --output-format json"], [Troubleshooting]);
             Find(update, "install").WithExamples(["update install --dry-run", "update install"], [Troubleshooting]);
         }
     }
