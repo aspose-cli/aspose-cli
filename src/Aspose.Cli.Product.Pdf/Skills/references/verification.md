@@ -65,7 +65,10 @@ local link and named destination against the original target, including
 destination type, coordinates and zoom. The absence of a `NAVIGATION_DEGRADED`
 warning covers only the page each entry reaches, not its location or zoom.
 
-For attachments, compare each extracted file with the original bytes.
+For attachments, compare each extracted file with the original bytes. `extract --what attachments`
+writes them as `attachment-0001` and on, in name order, never under the name the PDF gives;
+each output's `name` is that name, an untrusted value, and a file whose extension is not a
+document, image or text one is written as `.bin`.
 
 ## Standards and signatures
 

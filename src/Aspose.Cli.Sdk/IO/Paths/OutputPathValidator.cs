@@ -109,7 +109,7 @@ internal static class OutputPathValidator
         string[] segments = relative.Split(
             [Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar],
             StringSplitOptions.RemoveEmptyEntries);
-        if (segments.Any(ExtractionPathValidator.IsUnsafeSegment))
+        if (segments.Any(IsUnsafeSegment))
         {
             throw Unsafe(
                 full,
@@ -136,6 +136,34 @@ internal static class OutputPathValidator
             }
             current = parent;
         }
+    }
+
+    /// <summary>
+    /// Whether one path segment is no plain file name: empty, <c>.</c> or <c>..</c>, ending in a
+    /// space or a dot, holding a character no file name takes, or a device name such as
+    /// <c>NUL</c> or <c>COM1</c>, with or without extensions.
+    /// </summary>
+    internal static bool IsUnsafeSegment(string segment)
+    {
+        if (segment.Length == 0
+            || segment is "." or ".."
+            || segment.EndsWith(' ')
+            || segment.EndsWith('.')
+            || segment.Contains(':')
+            || segment.IndexOfAny(['<', '>', '"', '|', '?', '*']) >= 0
+            || segment.Any(static character => char.IsControl(character))
+            || segment.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0)
+        {
+            return true;
+        }
+
+        int extension = segment.IndexOf('.');
+        string device = (extension < 0 ? segment : segment[..extension]).TrimEnd(' ').ToUpperInvariant();
+        return device is "CON" or "PRN" or "AUX" or "NUL"
+            || (device.Length == 4
+                && (device.StartsWith("COM", StringComparison.Ordinal)
+                    || device.StartsWith("LPT", StringComparison.Ordinal))
+                && device[3] is >= '1' and <= '9' or '\u00B9' or '\u00B2' or '\u00B3');
     }
 
     private static CliException Unsafe(

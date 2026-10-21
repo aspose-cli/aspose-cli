@@ -1,4 +1,4 @@
-using Aspose.Cli.Sdk.IO.Paths;
+using Aspose.Cli.Sdk.Errors;
 
 namespace Aspose.Cli.Sdk.IO.Extraction;
 
@@ -41,11 +41,16 @@ internal sealed class ExtractionBudgetLedger
     public Stream Bound(Stream stream, long limit, string name) =>
         new BudgetWriteStream(stream, limit, name);
 
+    private static CliException Refused(string reason) => CliException.Create(
+        ErrorCodes.ExtractBudgetExceeded,
+        $"Extraction was refused: {reason}.",
+        hint: "Narrow the extraction or raise the documented item/byte budget only for trusted content.");
+
     private void EnsureWithinBudget()
     {
         if (_items > _maxItems || Bytes > _maxBytes)
         {
-            throw ExtractionPathValidator.Refused(
+            throw Refused(
                 $"extraction exceeds {_maxItems} items or {_maxBytes} bytes");
         }
     }
@@ -98,7 +103,7 @@ internal sealed class ExtractionBudgetLedger
         {
             if (count < 0 || _length > _limit - count)
             {
-                throw ExtractionPathValidator.Refused(
+                throw Refused(
                     $"entry '{_name}' exceeds the remaining {_limit}-byte output budget");
             }
             _length += count;

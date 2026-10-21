@@ -466,7 +466,7 @@ public sealed class PublicationBoundaryTests
     {
         using var temp = new TempDirectory();
         using var extraction = new ExtractionGuard(TestBudgets.Create(), temp.Path, overwrite: false);
-        for (int i = 0; i < 1000; i++) { extraction.WriteAllBytes($"item-{i}.bin", [1]); }
+        for (int i = 0; i < 1000; i++) { extraction.StageAllBytes($"item-{i}.bin", [1]); }
         extraction.Commit();
         Assert.Equal(1000, Directory.EnumerateFiles(temp.Path, "*.bin").Count());
         Assert.Empty(Directory.EnumerateDirectories(temp.Path, ".aspose-publication-*"));

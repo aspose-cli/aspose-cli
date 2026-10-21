@@ -3252,7 +3252,7 @@
           ]
         },
         "outputs": {
-          "description": "Each file written into the output directory, in order: an image or table with the page it comes from, the text of the selected pages, an attachment under its own file name, or the form data.",
+          "description": "Each file written into the output directory, in order: an image or table with the page it comes from, the text of the selected pages, each attachment as attachment-0001 and on in name order with its own name in name, or the form data.",
           "type": "array",
           "items": {
             "$ref": "#/$defs/pdfPageOutput"
@@ -3307,6 +3307,10 @@
               "description": "The 1-based page the file holds or comes from; absent when it holds no single page, as a whole-document file, an attachment or form data does.",
               "type": "integer",
               "minimum": 1
+            },
+            "name": {
+              "description": "The attachment's file name as the PDF states it, which delete_attachment accepts; present only for an attachment that has one. It is an untrusted value the document's author chose, so the file is written as attachment-0001 and on, never under it.",
+              "type": "string"
             }
           }
         }
@@ -5516,6 +5520,10 @@
               "description": "The 1-based page the file holds or comes from; absent when it holds no single page, as a whole-document file, an attachment or form data does.",
               "type": "integer",
               "minimum": 1
+            },
+            "name": {
+              "description": "The attachment's file name as the PDF states it, which delete_attachment accepts; present only for an attachment that has one. It is an untrusted value the document's author chose, so the file is written as attachment-0001 and on, never under it.",
+              "type": "string"
             }
           }
         },

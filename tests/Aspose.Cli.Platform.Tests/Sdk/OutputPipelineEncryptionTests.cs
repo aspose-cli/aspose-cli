@@ -78,7 +78,7 @@ public sealed class OutputPipelineEncryptionTests
         encrypted.Write(temp.File("pages.TIF"), Tiff, false, null, Save);
         using (ExtractionGuard extraction = encrypted.BeginExtraction(temp.File("extracted"), overwrite: false))
         {
-            extraction.WriteAllBytes("fields.json", [1]);
+            extraction.StageAllBytes("fields.json", [1]);
             extraction.Commit();
         }
 

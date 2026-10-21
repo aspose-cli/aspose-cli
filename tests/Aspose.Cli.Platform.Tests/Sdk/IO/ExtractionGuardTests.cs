@@ -18,12 +18,8 @@ public sealed class ExtractionGuardTests
     [InlineData("COM\u00B9.txt")]
     [InlineData("LPT\u00B2.log")]
     [InlineData("LPT\u00B3.log")]
-    public void Paths_RejectDeviceNamesWithMultipleExtensionsAndSuperscriptDigits(string name)
-    {
-        Assert.Throws<CliException>(() => ExtractionPathValidator.NormalizeRelativePath(name, flatten: false));
-        Assert.Throws<CliException>(() => ExtractionPathValidator.NormalizeRelativePath("nested/" + name, flatten: true));
+    public void Paths_RejectDeviceNamesWithMultipleExtensionsAndSuperscriptDigits(string name) =>
         Assert.Throws<CliException>(() => OutputPathValidator.NormalizeFile(Path.Combine(Path.GetTempPath(), name)));
-    }
 
     [Theory]
     [InlineData("report.tar.gz")]
@@ -32,7 +28,7 @@ public sealed class ExtractionGuardTests
     [InlineData("CONTRACT.backup.txt")]
     [InlineData(".config")]
     public void Paths_PreserveOrdinaryNamesWithDeviceLikePrefixes(string name) =>
-        Assert.Equal(name, ExtractionPathValidator.NormalizeRelativePath(name, flatten: false));
+        Assert.Equal(Path.Combine(Path.GetTempPath(), name), OutputPathValidator.NormalizeFile(Path.Combine(Path.GetTempPath(), name)));
 
     [Fact]
     public void Commit_CreatesEveryMissingLevelOfTheExtractionDirectory()
@@ -42,11 +38,11 @@ public sealed class ExtractionGuardTests
 
         using (var extraction = new ExtractionGuard(TestBudgets.Create(), root, overwrite: false))
         {
-            extraction.Write("notes/slide-1.txt", sizeBytes: 5, output => output.Write("notes"u8));
+            extraction.Stage("slide-1.txt", sizeBytes: 5, output => output.Write("notes"u8));
             extraction.Commit();
         }
 
-        Assert.Equal("notes", File.ReadAllText(Path.Combine(root, "notes", "slide-1.txt")));
+        Assert.Equal("notes", File.ReadAllText(Path.Combine(root, "slide-1.txt")));
     }
 
     [Fact]
@@ -58,13 +54,13 @@ public sealed class ExtractionGuardTests
 
         using (var extraction = new ExtractionGuard(TestBudgets.Create(), drive.Root, overwrite: false))
         {
-            extraction.Write("document.txt", sizeBytes: 4, output => output.Write("text"u8));
-            extraction.Write("notes/slide-1.txt", sizeBytes: 5, output => output.Write("notes"u8));
+            extraction.Stage("document.txt", sizeBytes: 4, output => output.Write("text"u8));
+            extraction.Stage("slide-1.txt", sizeBytes: 5, output => output.Write("notes"u8));
             extraction.Commit();
         }
 
         Assert.Equal("text", File.ReadAllText(temp.File("document.txt")));
-        Assert.Equal("notes", File.ReadAllText(Path.Combine(temp.Path, "notes", "slide-1.txt")));
+        Assert.Equal("notes", File.ReadAllText(temp.File("slide-1.txt")));
     }
 
     /// <summary>A free drive letter that <c>subst</c> maps to a directory, so a test can use a drive root it owns.</summary>
@@ -121,7 +117,7 @@ public sealed class ExtractionGuardTests
             overwrite: true);
 
         CliException error = Assert.Throws<CliException>(() =>
-            extraction.Write(
+            extraction.Stage(
                 "report.txt",
                 sizeBytes: 11,
                 output =>

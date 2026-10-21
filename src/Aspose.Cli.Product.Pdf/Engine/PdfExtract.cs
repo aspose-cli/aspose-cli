@@ -29,26 +29,33 @@ internal static class PdfExtract
         // An attachment is copied as the PDF stores it, so it carries nothing evaluation mode adds.
         using ExtractionGuard guard = session.Outputs.BeginExtraction(request.Output.Path, request.Output.Overwrite,
             request.What == PdfExtractKinds.Attachments ? ExtractionContent.EmbeddedFiles : ExtractionContent.Derived);
-        IReadOnlyList<(PublishedFile File, int? Page)> files = request.What switch
+        IReadOnlyList<PdfPageOutput> outputs = request.What == PdfExtractKinds.Attachments
+            ? ExtractAttachments(loaded.Document, guard)
+            : [.. Extract(request, loaded, pages, guard, session.Budgets)
+                .Select(static item => new PdfPageOutput(FileObjects.Companion(item.File)) { Page = item.Page })];
+        guard.Commit();
+        return new PdfExtractResult
         {
-            PdfExtractKinds.Images => ExtractImages(loaded.Document, pages, guard, session.Budgets),
-            PdfExtractKinds.Attachments => ExtractAttachments(loaded.Document, guard),
+            Input = PdfInfoProjection.Source(filePath, loaded),
+            What = request.What,
+            Outputs = outputs,
+            License = EnvelopeParts.License(state),
+            Warnings = request.What == PdfExtractKinds.Tables && outputs.Count == 0 ? [TablesNotFound()] : null,
+        };
+    }
+
+    // The files of every kind but attachments, each with the page it comes from.
+    private static IReadOnlyList<(PublishedFile File, int? Page)> Extract(
+        PdfExtractRequest request, LoadedPdf loaded, IReadOnlyList<int> pages, ExtractionGuard guard, ResourceBudgetLedger budgets) =>
+        request.What switch
+        {
+            PdfExtractKinds.Images => ExtractImages(loaded.Document, pages, guard, budgets),
             PdfExtractKinds.Text => [(guard.StageAllBytes("document.txt", Encoding.UTF8.GetBytes(DocumentText(loaded.Document, pages))), null)],
             PdfExtractKinds.Tables => ExtractTables(loaded.Document, pages, guard, request.ByteOrderMark),
             PdfExtractKinds.Forms => [(PdfForms.Export(loaded.Document, request.FormFormat
                 ?? throw new InvalidOperationException("Form data is extracted in a format the command chose."), guard), null)],
             _ => throw new InvalidOperationException("The extraction registry and handler are out of sync."),
         };
-        guard.Commit();
-        return new PdfExtractResult
-        {
-            Input = PdfInfoProjection.Source(filePath, loaded),
-            What = request.What,
-            Outputs = [.. files.Select(static item => new PdfPageOutput(FileObjects.Companion(item.File)) { Page = item.Page })],
-            License = EnvelopeParts.License(state),
-            Warnings = request.What == PdfExtractKinds.Tables && files.Count == 0 ? [TablesNotFound()] : null,
-        };
-    }
 
     /// <summary>
     /// The table absorber recognizes a table by its ruling lines, so an empty result does not
@@ -93,20 +100,23 @@ internal static class PdfExtract
         return items;
     }
 
-    private static IReadOnlyList<(PublishedFile File, int? Page)> ExtractAttachments(
+    // Each attachment as attachment-0001 and on, in name order; its own name, which the
+    // document's author chose, is reported and never used as a path.
+    private static IReadOnlyList<PdfPageOutput> ExtractAttachments(
         Document document,
         ExtractionGuard guard)
     {
-        var items = new List<(PublishedFile File, int? Page)>();
+        var items = new List<PdfPageOutput>();
         foreach (FileSpecification file in document.EmbeddedFiles.OrderBy(
                      static item => item.UnicodeName ?? item.Name,
                      StringComparer.Ordinal))
         {
-            string name = file.UnicodeName ?? file.Name ?? "attachment.bin";
+            string? name = file.UnicodeName ?? file.Name;
             long declaredLength = file.Contents.CanSeek
                 ? file.Contents.Length
                 : 0;
-            PublishedFile written = guard.Stage(
+            PublishedFile written = guard.StageNamedByDocument(
+                "attachment",
                 name,
                 declaredLength,
                 output =>
@@ -114,9 +124,8 @@ internal static class PdfExtract
                     // budget-allow: ExtractionGuard supplies a BudgetWriteStream
                     // bounded by the remaining extraction byte budget.
                     file.Contents.CopyTo(output);
-                },
-                flatten: true);
-            items.Add((written, null));
+                });
+            items.Add(new PdfPageOutput(FileObjects.Companion(written)) { Name = string.IsNullOrEmpty(name) ? null : name });
         }
 
         return items;

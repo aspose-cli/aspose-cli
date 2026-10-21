@@ -15,4 +15,11 @@ public sealed record PdfPageOutput : OutputItem
     /// </summary>
     [Minimum(1)]
     public int? Page { get; init; }
+
+    /// <summary>
+    /// The attachment's file name as the PDF states it, which <c>delete_attachment</c> accepts;
+    /// present only for an attachment that has one. It is an untrusted value the document's
+    /// author chose, so the file is written as <c>attachment-0001</c> and on, never under it.
+    /// </summary>
+    public string? Name { get; init; }
 }

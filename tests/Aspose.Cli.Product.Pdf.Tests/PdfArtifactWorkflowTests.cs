@@ -347,8 +347,8 @@ public sealed class PdfArtifactWorkflowTests
         PdfExtractResult result = PdfExtract.Run(fixture.Session, new PdfExtractRequest { Input = input, Output = new ResolvedDirectory(directory), What = "attachments" });
 
         Assert.Equal(2, result.Outputs.Count);
-        var evidence = Assert.Single(result.Outputs, item => Path.GetFileName(item.Path) == "evidence.bin");
-        var emptyItem = Assert.Single(result.Outputs, item => Path.GetFileName(item.Path) == "empty.txt");
+        var evidence = Assert.Single(result.Outputs, item => item.Name == "evidence.bin");
+        var emptyItem = Assert.Single(result.Outputs, item => item.Name == "empty.txt");
         Assert.All(result.Outputs, static item => Assert.Null(item.Page));
         Assert.Equal(["bin", "txt"], result.Outputs.Select(static item => item.Format).Order());
         Assert.Equal(payload.LongLength, evidence.SizeBytes);

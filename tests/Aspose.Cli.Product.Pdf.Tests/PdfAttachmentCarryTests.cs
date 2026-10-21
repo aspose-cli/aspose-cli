@@ -36,7 +36,7 @@ public sealed class PdfAttachmentCarryTests : IDisposable
             inspect.Json()["attachments"]!.AsArray().Select(static item => item!["name"]!.GetValue<string>()).Order(StringComparer.Ordinal));
         Assert.True(extract.ExitCode == 0, extract.StdErr);
         Dictionary<string, string> paths = extract.Json()["outputs"]!.AsArray().ToDictionary(
-            static item => Path.GetFileName(item!["path"]!.GetValue<string>()),
+            static item => item!["name"]!.GetValue<string>(),
             static item => item!["path"]!.GetValue<string>(),
             StringComparer.Ordinal);
         Assert.Equal(First, File.ReadAllBytes(paths["a.csv"]));
