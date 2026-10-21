@@ -157,7 +157,7 @@ public sealed class PdfTargetNameTests
 
         Assert.Equal(
             new[] { attachment, field, property }.Order(StringComparer.Ordinal),
-            verifier.Verify(unchanged, fixture.LicenseState, deadline: null).Issues.Select(static issue => issue.Location).Order(StringComparer.Ordinal));
+            verifier.Verify(unchanged).Issues.Select(static issue => issue.Location).Order(StringComparer.Ordinal));
     }
 
     /// <summary>
@@ -186,7 +186,7 @@ public sealed class PdfTargetNameTests
             verifier.Record(op, AppliedOperations.Changed(PdfOp.Catalog, op, op is SetPropertiesOp ? 2 : 1));
         }
 
-        VerificationFacts verification = verifier.Verify(document, fixture.LicenseState, deadline: null);
+        VerificationFacts verification = verifier.Verify(document);
 
         Assert.Equal(
             [$"attachment/{Escaped}", $"field/{Escaped}", $"property/{Escaped}", "property/title"],
