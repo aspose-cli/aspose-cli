@@ -153,7 +153,7 @@ internal static class PdfEdit
             verifier is null ? null : candidate =>
             {
                 using LoadedPdf reopened = session.Loader.OpenPublishedCandidate(candidate, outputPassword);
-                VerifiedBatch verified = applied.Verified(verifier.Verify(reopened.Document, state, session.Budgets.Deadline));
+                VerifiedBatch verified = applied.Verified(verifier.Verify(reopened.Document));
                 return new PdfEditVerification { Ok = verified.Ok, Issues = verified.Issues, CheckedOps = verified.CheckedOps };
             },
             "pdf-edit");

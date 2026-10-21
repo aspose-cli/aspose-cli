@@ -111,6 +111,6 @@ public sealed class PdfEditStateParityTests
     {
         var verifier = new PdfEditVerifier(document);
         verifier.Record(op, AppliedOperations.Changed(PdfOp.Catalog, op, 1));
-        return verifier.Verify(document, fixture.LicenseState, deadline: null).Issues;
+        return verifier.Verify(document).Issues;
     }
 }

@@ -19,26 +19,25 @@ omits was not fully checked, even when part of its effect was.
 | --- | --- |
 | `set_form_field` | the field holds the value set, or is clear after `null` |
 | `flatten_forms` | no field of a flattened name remains, or no field at all without `fields` |
-| `redact_text` | its text no longer matches the text of its pages |
+| `redact_text` | checked before publishing, with or without `--verify` ([redaction](editing.md#redaction)) |
 | `add_bookmark` | its address holds its title and page, and the bookmark count |
 | `delete_bookmarks` | the bookmark count |
 | `set_properties` | each document information entry set |
 | `add_attachment`, `delete_attachment` | an attachment of the name holds the embedded length, or none has the name |
 | `insert_page`, `import_pages`, `delete_pages`, `move_pages` | the page count |
 
-A page whose `redact_text` match could not be checked within its time budget is
-reported as not checked; search that page with `pdf search`. A `redact_text`
-that matched nothing passes its check, and no check catches text a redaction
-moved under its cover; act on `OP_NO_EFFECT`, `REDACTION_TEXT_MOVED`,
+Every edit, with or without `--verify`, searches its output for the text of
+each `redact_text` before publishing, and writes nothing and exits 8 where it
+is still found, so a published `redact_text` is checked. A `redact_text` that
+matched nothing passes its check, and no check catches text a redaction moved
+under its cover; act on `OP_NO_EFFECT`, `REDACTION_TEXT_MOVED`,
 `REDACTION_NEARBY_TEXT_REMOVED` and the review's covered-text finding
-([redaction](editing.md#redaction)). Without `--verify` too, an edit whose
-output still holds the text of a `redact_text` writes nothing and exits 8.
+([redaction](editing.md#redaction)).
 
 The batch is checked as a whole: only the last value set for a field, entry or
 attachment is checked, the value of a flattened field or a deleted page's fields is not, a
 bookmark position is not checked after `delete_bookmarks` renumbers the outline,
-and page-scoped redactions and bookmark pages are not checked after a page
-operation renumbers the pages. `add_attachment` with a name the document already
+and bookmark pages are not checked after a page operation renumbers the pages. `add_attachment` with a name the document already
 uses adds a second attachment of that name. Other operations (stamps,
 watermarks, links, `redact_area`, page geometry, page labels,
 `clear_properties`, encryption, `optimize_document`) are not checked: render,

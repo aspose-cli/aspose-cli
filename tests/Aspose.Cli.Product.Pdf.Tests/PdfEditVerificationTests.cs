@@ -233,35 +233,10 @@ public sealed class PdfEditVerificationTests
         Assert.Throws<InvalidOperationException>(() => verifier.Record(orphan, applied));
     }
 
-    [Fact]
-    public void Verify_ReportsAPatternThatTimesOutAsAnUncheckedPage()
-    {
-        using var fixture = new PdfEngineFixture();
-        string input = fixture.File("backtracking.pdf");
-        using (var created = new Document())
-        {
-            created.Pages.Add().Paragraphs.Add(new TextFragment(new string('a', 40) + "!"));
-            created.Save(input);
-        }
-
-        using var document = new Document(input);
-        var verifier = new PdfEditVerifier(document);
-        var redact = new RedactTextOp { Id = "op-0001", Find = "(a+)+$", Regex = true };
-        verifier.Record(redact, AppliedOperations.Changed(PdfOp.Catalog, redact, 0));
-
-        VerificationFacts verification = verifier.Verify(document, fixture.LicenseState, deadline: null);
-
-        VerificationIssue issue = Assert.Single(verification.Issues);
-        Assert.Equal("VERIFICATION_INCOMPLETE", issue.Code);
-        Assert.Equal("page/1", issue.Location);
-        Assert.Empty(verification.Checked);
-    }
-
     public static TheoryData<string> Unapplied =>
     [
         "set_form_field",
         "flatten_forms",
-        "redact_text",
         "add_bookmark",
         "delete_bookmarks",
         "set_properties",
@@ -289,7 +264,6 @@ public sealed class PdfEditVerificationTests
         {
             "set_form_field" => ((PdfOp)new SetFormFieldOp { Name = "Customer", Value = "Contoso" }, 1L, "FIELD_VALUE_MISMATCH"),
             "flatten_forms" => (new FlattenFormsOp { Fields = ["Customer"] }, 1L, "FIELD_NOT_FLATTENED"),
-            "redact_text" => (new RedactTextOp { Find = "Secret" }, 1L, "REDACTED_TEXT_FOUND"),
             "add_bookmark" => (new AddBookmarkOp { Title = "Appendix", Page = 2 }, 1L, "BOOKMARK_MISMATCH"),
             "delete_bookmarks" => (new DeleteBookmarksOp { Bookmarks = ["1"] }, 1L, "BOOKMARK_MISMATCH"),
             "set_properties" => (new SetPropertiesOp { Title = "Quarterly" }, 1L, "PROPERTIES_MISMATCH"),
@@ -302,7 +276,7 @@ public sealed class PdfEditVerificationTests
 
         PdfOp identified = op with { Id = "op-0001" };
         verifier.Record(identified, AppliedOperations.Changed(PdfOp.Catalog, identified, affected));
-        VerificationFacts verification = verifier.Verify(document, fixture.LicenseState, deadline: null);
+        VerificationFacts verification = verifier.Verify(document);
 
         Assert.Contains(verification.Issues, issue => issue.Code == code);
         Assert.Equal(["op-0001"], verification.Checked);
@@ -319,7 +293,7 @@ public sealed class PdfEditVerificationTests
 
         var properties = new SetPropertiesOp { Id = "op-0001", Title = "Quarterly", Custom = new Dictionary<string, string> { ["Department"] = "Sales" } };
         verifier.Record(properties, AppliedOperations.Changed(PdfOp.Catalog, properties, 2));
-        VerificationFacts verification = verifier.Verify(document, fixture.LicenseState, deadline: null);
+        VerificationFacts verification = verifier.Verify(document);
 
         Assert.Equal(
             ["property/Department", "property/title"],
@@ -440,7 +414,8 @@ public sealed class PdfEditVerificationTests
     [Fact]
     public void EveryOperationIsReadBackOrListedAsUnread()
     {
-        string[] readBack = [.. Unapplied.Select(static row => row.Data), "import_pages", "move_pages", "clear_properties"];
+        // redact_text is searched for before publishing, so a published one is checked.
+        string[] readBack = [.. Unapplied.Select(static row => row.Data), "import_pages", "move_pages", "clear_properties", "redact_text"];
         string[] unread = [.. Unread.Select(static row => row.Data)];
 
         Assert.Empty(readBack.Intersect(unread));
@@ -489,22 +464,23 @@ public sealed class PdfEditVerificationTests
             verifier.Record(op, AppliedOperations.Changed(PdfOp.Catalog, op, 1));
         }
 
-        VerificationFacts verification = verifier.Verify(document, fixture.LicenseState, deadline: null);
+        VerificationFacts verification = verifier.Verify(document);
 
         Assert.Empty(verification.Issues);
         Assert.Equal(["op-0001", "op-0002"], verification.Checked.Order(StringComparer.Ordinal));
     }
 
     /// <summary>
-    /// A page operation renumbers the pages, so a redaction limited to pages and a bookmark's
-    /// page recorded before it are left unchecked, and only the page operation is checked.
+    /// A page operation renumbers the pages, so a bookmark's page recorded before it is left
+    /// unchecked; a redaction limited to pages is checked, because before publishing the output
+    /// was searched on the pages it covered, wherever they moved.
     /// </summary>
     [Theory]
     [InlineData("insert_page")]
     [InlineData("import_pages")]
     [InlineData("delete_pages")]
     [InlineData("move_pages")]
-    public void Verify_LeavesPagedRedactionsAndBookmarksUncheckedAfterAPageOperation(string operation)
+    public void Verify_LeavesBookmarksUncheckedAfterAPageOperationAndChecksPagedRedactions(string operation)
     {
         using var fixture = new PdfEngineFixture();
         string input = CreateDocument(fixture);
@@ -525,7 +501,7 @@ public sealed class PdfEditVerificationTests
         }, "renumbered.pdf"));
 
         Assert.True(result.Verification!.Ok, string.Join("; ", result.Verification.Issues.Select(static issue => issue.Message)));
-        Assert.Equal(["op-0003"], result.Verification.CheckedOps);
+        Assert.Equal(["op-0001", "op-0003"], result.Verification.CheckedOps);
     }
 
     [Fact]

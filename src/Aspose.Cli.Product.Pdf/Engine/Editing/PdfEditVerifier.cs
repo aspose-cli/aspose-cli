@@ -1,12 +1,8 @@
 using System.Globalization;
-using System.Text.RegularExpressions;
 using Aspose.Cli.Sdk.Diagnostics;
 using Aspose.Cli.Sdk.Errors;
-using Aspose.Cli.Sdk.IO.Budgets;
-using Aspose.Cli.Sdk.Licensing;
 using Aspose.Pdf;
 using Aspose.Pdf.Forms;
-using static Aspose.Cli.Product.Pdf.Engine.PdfTextMatch;
 
 namespace Aspose.Cli.Product.Pdf.Engine.Editing;
 
@@ -14,8 +10,10 @@ namespace Aspose.Cli.Product.Pdf.Engine.Editing;
 /// Records what each applied operation of a batch should leave in the output, then reads the
 /// staged output back and reports every expectation it does not meet; the SDK runner records
 /// each applied operation and turns the read-back into the verification. Only effects with a
-/// reliable read-back are recorded: form field values, flattened fields, redacted text, bookmarks, document
-/// information, attachments and the page count. The batch is checked as a whole: an
+/// reliable read-back are recorded: form field values, flattened fields, bookmarks, document
+/// information, attachments and the page count. Redacted text needs no record: before
+/// publishing, every edit searched the output for it (<see cref="PdfRedactionAudit"/>) and would
+/// have published nothing, so a redact_text that reaches this read-back is checked. The batch is checked as a whole: an
 /// expectation a later operation supersedes (the same field, key or attachment set again, the
 /// outline or the pages renumbered) is dropped, and an operation is reported as checked only
 /// when every effect it recorded was read back. The output is read as <c>pdf inspect</c> reads it
@@ -33,7 +31,6 @@ internal sealed class PdfEditVerifier : IEditVerifier<PdfOp>
     // A deletion expects only that no attachment of its name is left, so it keeps no value.
     private readonly Expectations<ValueTuple> _removedAttachments;
     private readonly List<Expected<IReadOnlyList<string>?>> _flattened = [];
-    private readonly List<RedactionExpectation> _redactions = [];
     private readonly List<BookmarkExpectation> _bookmarks = [];
     private readonly List<string> _pageOps = [];
     private readonly List<string> _bookmarkOps = [];
@@ -65,18 +62,12 @@ internal sealed class PdfEditVerifier : IEditVerifier<PdfOp>
 
     /// <summary>
     /// Counts the pages a page operation leaves. Page numbers recorded before it name other pages
-    /// now, so a redaction limited to pages and a bookmark's page can no longer be checked.
+    /// now, so a bookmark's page can no longer be checked.
     /// </summary>
     private void InvalidatePositions(string id, int pages)
     {
         _expectedPages += pages;
         _pageOps.Add(id);
-        foreach (RedactionExpectation redaction in _redactions.Where(static redaction => redaction.Pages is not null))
-        {
-            _incomplete.Add(redaction.Id);
-        }
-
-        _redactions.RemoveAll(static redaction => redaction.Pages is not null);
         for (int index = 0; index < _bookmarks.Count; index++)
         {
             _incomplete.Add(_bookmarks[index].Id);
@@ -85,13 +76,12 @@ internal sealed class PdfEditVerifier : IEditVerifier<PdfOp>
     }
 
     /// <summary>Reads the reopened output back against every recorded expectation.</summary>
-    internal VerificationFacts Verify(Document output, LicenseState license, OperationDeadline? deadline)
+    internal VerificationFacts Verify(Document output)
     {
         var issues = new List<VerificationIssue>();
         VerifyPages(output, issues);
         VerifyFields(output, issues);
         VerifyFlattened(output, issues);
-        VerifyRedactions(output, license, deadline, issues);
         VerifyBookmarks(output, issues);
         VerifyMetadata(output, issues);
         VerifyAttachments(output, issues);
@@ -160,66 +150,6 @@ internal sealed class PdfEditVerifier : IEditVerifier<PdfOp>
                     $"the output still has the form field(s) {string.Join(", ", remaining.Select(static name => $"'{name}'"))}",
                     location: "field/all",
                     hint: "List the remaining fields with 'pdf inspect --detail forms' and flatten them again."));
-            }
-        }
-    }
-
-    /// <summary>
-    /// Extracts each page's text once for every redaction that covers it, and counts the
-    /// matches each pattern still has, without those of the evaluation watermark
-    /// (<see cref="PdfRedactionAudit.Remaining"/>). Before publishing, every edit has already
-    /// refused an output that still holds a redaction's text (<see cref="PdfRedactionAudit"/>);
-    /// this records which redactions were read back.
-    /// </summary>
-    private void VerifyRedactions(Document output, LicenseState license, OperationDeadline? deadline, List<VerificationIssue> issues)
-    {
-        if (_redactions.Count == 0)
-        {
-            return;
-        }
-
-        IEnumerable<int> pages = _redactions.Any(static redaction => redaction.Pages is null)
-            ? Enumerable.Range(1, output.Pages.Count)
-            : _redactions.SelectMany(static redaction => redaction.Pages!).Distinct().Order();
-        foreach (RedactionExpectation redaction in _redactions)
-        {
-            _checked.Add(redaction.Id);
-        }
-
-        foreach (int number in pages.Where(number => number <= output.Pages.Count))
-        {
-            deadline?.ThrowIfExpired("pdf-verify");
-            (string text, string? watermark) = PdfRedactionAudit.PageText(output.Pages[number], license);
-            string location = string.Create(CultureInfo.InvariantCulture, $"page/{number}");
-            foreach (RedactionExpectation redaction in _redactions.Where(redaction => redaction.Pages?.Contains(number) ?? true))
-            {
-                int remaining;
-                try
-                {
-                    remaining = PdfRedactionAudit.Remaining(redaction.Pattern, text, watermark);
-                }
-                catch (RegexMatchTimeoutException)
-                {
-                    _incomplete.Add(redaction.Id);
-                    issues.Add(Issue(
-                        PdfDiagnostics.VerificationIncomplete,
-                        [redaction.Id],
-                        string.Create(CultureInfo.InvariantCulture, $"its pattern exceeded its time budget on page {number}, so the page was not checked"),
-                        location,
-                        "Simplify the expression, or search the page with 'pdf search'."));
-                    continue;
-                }
-
-                if (remaining > 0)
-                {
-                    // The message never repeats the redacted text.
-                    issues.Add(Issue(
-                        PdfDiagnostics.RedactedTextFound,
-                        [redaction.Id],
-                        string.Create(CultureInfo.InvariantCulture, $"page {number} of the output still has {remaining} match(es) of its pattern"),
-                        location,
-                        "Check whether a later operation added the text again, or redact the area with redact_area, then search the output with 'pdf search'."));
-                }
             }
         }
     }
@@ -350,8 +280,6 @@ internal sealed class PdfEditVerifier : IEditVerifier<PdfOp>
 
     private sealed record Expected<T>(string Id, T Value);
 
-    private sealed record RedactionExpectation(string Id, Regex Pattern, IReadOnlyList<int>? Pages);
-
     private sealed record BookmarkExpectation(string Id, string Index, string Title, int? Page);
 
     /// <summary>
@@ -425,10 +353,7 @@ internal sealed class PdfEditVerifier : IEditVerifier<PdfOp>
 
         public ValueTuple Apply(RedactTextOp operation)
         {
-            verifier._redactions.Add(new RedactionExpectation(
-                id,
-                TextPattern(operation.Find, operation.Regex, operation.CaseSensitive),
-                operation.Pages is null ? null : PdfMutationSupport.Resolve(Document, operation.Pages)));
+            verifier._checked.Add(id);
             return default;
         }
 
