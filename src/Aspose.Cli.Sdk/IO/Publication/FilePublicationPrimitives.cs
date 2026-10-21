@@ -160,8 +160,7 @@ internal static class FilePublicationInheritance
     {
         try
         {
-            return new FileInfo(existingTarget).GetAccessControl(AccessControlSections.Access)
-                .GetSecurityDescriptorBinaryForm();
+            return CaptureAccess(existingTarget);
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException
             or InvalidOperationException or NotSupportedException)
@@ -169,6 +168,10 @@ internal static class FilePublicationInheritance
             return null;
         }
     }
+
+    /// <summary>Reads the access rules of a file, as <see cref="TryCaptureAccess"/> does, or throws.</summary>
+    public static byte[] CaptureAccess(string existingFile) =>
+        new FileInfo(existingFile).GetAccessControl(AccessControlSections.Access).GetSecurityDescriptorBinaryForm();
 
     /// <summary>
     /// Applies rules captured by <see cref="TryCaptureAccess"/> to the published file. Applied
@@ -180,9 +183,7 @@ internal static class FilePublicationInheritance
         if (access is null) { return; }
         try
         {
-            var security = new FileSecurity();
-            security.SetSecurityDescriptorBinaryForm(access, AccessControlSections.Access);
-            new FileInfo(published).SetAccessControl(security);
+            ApplyAccess(published, access);
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException
             or InvalidOperationException or NotSupportedException)
@@ -190,6 +191,32 @@ internal static class FilePublicationInheritance
             System.Diagnostics.Trace.TraceWarning(
                 "A published replacement kept its staging access rules ({0}).", exception.GetType().Name);
         }
+    }
+
+    /// <summary>Gives a file exactly the captured rules, as <see cref="TryApplyAccess"/> does, or throws.</summary>
+    public static void ApplyAccess(string path, byte[] access)
+    {
+        var security = new FileSecurity();
+        security.SetSecurityDescriptorBinaryForm(access, AccessControlSections.Access);
+        new FileInfo(path).SetAccessControl(security);
+    }
+
+    /// <summary>
+    /// Creates the new, empty file <paramref name="path"/> with the rules captured by
+    /// <see cref="CaptureAccess"/>, so a copy written over it never has other rules: Windows
+    /// keeps the access list of a file a copy replaces. Until <see cref="ApplyAccess"/> gives it
+    /// exactly the captured rules, the current user may also write it, which the copy needs when
+    /// the rules do not allow it.
+    /// </summary>
+    /// <exception cref="IOException">The file already exists.</exception>
+    public static void CreateWithAccess(string path, byte[] access)
+    {
+        var security = new FileSecurity();
+        security.SetSecurityDescriptorBinaryForm(access, AccessControlSections.Access);
+        security.AddAccessRule(new FileSystemAccessRule(
+            WindowsIdentity.GetCurrent().User!, FileSystemRights.FullControl, AccessControlType.Allow));
+        using FileStream created = new FileInfo(path).Create(
+            FileMode.CreateNew, FileSystemRights.Write, FileShare.None, 4096, FileOptions.None, security);
     }
 
     private static void Unprotect(FileSystemSecurity security)

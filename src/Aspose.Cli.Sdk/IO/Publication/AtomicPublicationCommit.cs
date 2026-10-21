@@ -113,7 +113,7 @@ internal sealed class AtomicPublicationCommit(AtomicPublicationPlan plan)
         Directory.CreateDirectory(backups);
     }
 
-    private static void PrepareRequestedBackup(PublicationJournalEntry entry)
+    private void PrepareRequestedBackup(PublicationJournalEntry entry)
     {
         if (entry.RequestedBackup is not { } requestedBackup
             || File.Exists(requestedBackup))
@@ -131,7 +131,31 @@ internal sealed class AtomicPublicationCommit(AtomicPublicationPlan plan)
             Directory.CreateDirectory(requestedDirectory);
         }
 
-        File.Copy(entry.Target, requestedBackup, overwrite: false);
+        // The backup is created empty with the original's access rules and then filled, since a
+        // plain copy takes the folder's: a file its owner restricted is never readable through
+        // its backup, not even for a moment. Rules that cannot be read or given exactly fail the
+        // backup, and with it the edit, rather than leave a copy with other rules.
+        byte[] access;
+        try { access = FilePublicationInheritance.CaptureAccess(entry.Target); }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException
+            or InvalidOperationException or NotSupportedException)
+        {
+            throw CliErrors.OutputUnwritable(requestedBackup, "the original's access rules could not be read for its backup", error, "backup");
+        }
+        FilePublicationInheritance.CreateWithAccess(requestedBackup, access);
+        try
+        {
+            File.Copy(entry.Target, requestedBackup, overwrite: true);
+            plan.Faults.Hit(new PublicationFaultPoint(PublicationFaultKind.Access, entry.Index, requestedBackup));
+            FilePublicationInheritance.ApplyAccess(requestedBackup, access);
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException
+            or InvalidOperationException or NotSupportedException)
+        {
+            // The backup this transaction just created goes, so no copy keeps other rules.
+            File.Delete(requestedBackup);
+            throw CliErrors.OutputUnwritable(requestedBackup, "the backup could not be given the original's access rules", error, "backup");
+        }
         DurableFile.Flush(requestedBackup);
         entry.Original.Metadata?.Apply(requestedBackup);
         OutputPathValidator.EnsureParentUnchanged(
