@@ -103,8 +103,9 @@ if ($customerPublish) {
         $RuntimeIdentifier
         "-p:AsposeCliPublishRuntimeIdentifier=$RuntimeIdentifier"
         "-p:PublishDepsFilePath=$dependencyManifest"
+        # Managed code is bundled into the executable; native libraries ship beside it and load
+        # from the installation directory, never extracted to a temporary directory first.
         '-p:PublishSingleFile=true'
-        '-p:IncludeNativeLibrariesForSelfExtract=true'
         '-p:EnableCompressionInSingleFile=true'
         '-p:PublishTrimmed=false'
         '-p:DebugType=None'
@@ -171,7 +172,10 @@ if ($customerPublish) {
     else {
         [string]$layout.Identity.commandName
     }
-    $requiredCustomerFiles = @($executableName, $script:BuildManifestName) + $noticeFiles
+    # The native libraries the engines load, beside the executable: the Slides drawing library
+    # (which needs the Visual C++ runtime, see doctor) and SkiaSharp's.
+    $nativeLibraries = @('aspose.slides.drawing.capi_vc14x64.dll', 'libSkiaSharp.dll')
+    $requiredCustomerFiles = @($executableName, $script:BuildManifestName) + $nativeLibraries + $noticeFiles
     $missingCustomerFiles = @(
         $requiredCustomerFiles |
             Where-Object { $_ -cnotin $relativeFileNames }
@@ -191,6 +195,10 @@ if ($customerPublish) {
     # Every invocation starts a process, so the launcher's own assemblies ship precompiled
     # (ReadyToRun); the document engines stay IL, which keeps them out of the package size.
     $bundled = @(Get-BundledAssemblyCode -Executable $executable)
+    $selfExtracting = @($bundled | Where-Object Code -ceq 'Native' | ForEach-Object Name)
+    if ($selfExtracting.Count -ne 0) {
+        throw "Customer executable bundles native libraries that it would extract to a temporary directory: $($selfExtracting -join ', ')."
+    }
     $ownAssembly = {
         param($name)
         $name -ceq [string]$layout.Identity.commandName -or

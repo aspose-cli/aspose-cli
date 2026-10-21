@@ -279,7 +279,8 @@ function Assert-RuntimePackLock {
 }
 
 # The managed assemblies a single-file executable bundles, each with its code form: R2R when it
-# carries precompiled code, IL when it carries only IL. Reads the .NET single-file bundle manifest.
+# carries precompiled code, IL when it carries only IL; and the native libraries it bundles, which
+# the host extracts to disk before loading, as Native. Reads the .NET single-file bundle manifest.
 function Get-BundledAssemblyCode {
     param([Parameter(Mandatory)][string] $Executable)
     $bytes = [IO.File]::ReadAllBytes($Executable)
@@ -312,8 +313,13 @@ function Get-BundledAssemblyCode {
         $offset = $reader.ReadInt64()
         $size = $reader.ReadInt64()
         $compressedSize = $reader.ReadInt64()
-        [void]$reader.ReadByte()
+        $type = $reader.ReadByte()
         $path = $reader.ReadString()
+        # Bundle file type 2 is a native binary.
+        if ($type -eq 2) {
+            [pscustomobject]@{ Name = [IO.Path]::GetFileName($path); Code = 'Native' }
+            continue
+        }
         if (-not $path.EndsWith('.dll', [StringComparison]::OrdinalIgnoreCase)) { continue }
         $content = [IO.MemoryStream]::new()
         if ($compressedSize -gt 0) {
