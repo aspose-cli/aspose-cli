@@ -16,6 +16,23 @@ internal static class AnalyzerTypes
             DiagnosticSeverity.Error,
             isEnabledByDefault: true);
 
+    /// <summary>
+    /// An error-severity rule for this repository's production code only: disabled by default and
+    /// enabled by the <c>[src/**.cs]</c> section of <c>.editorconfig</c>.
+    /// </summary>
+    internal static DiagnosticDescriptor SourceRule(
+        string category,
+        string id,
+        string title,
+        string message) =>
+        new(
+            id,
+            title,
+            message,
+            category,
+            DiagnosticSeverity.Error,
+            isEnabledByDefault: false);
+
     internal static IEnumerable<INamedTypeSymbol> Declared(
         Compilation compilation) =>
         compilation.GetSymbolsWithName(

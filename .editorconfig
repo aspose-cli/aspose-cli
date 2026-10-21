@@ -82,3 +82,7 @@ dotnet_diagnostic.CA1866.severity = error
 dotnet_diagnostic.CA1867.severity = error
 dotnet_diagnostic.CA2016.severity = error
 dotnet_diagnostic.CA2215.severity = error
+# Security boundary owners (Aspose.Cli.Sdk.Analyzers): a product uses no network client, and
+# only UserStorage reads the temporary path. Disabled by default, so tests may use both.
+dotnet_diagnostic.APCLI015.severity = error
+dotnet_diagnostic.APCLI016.severity = error

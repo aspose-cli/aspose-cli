@@ -18,3 +18,5 @@ APCLI011 | Aspose.Cli.ProductIsolation | Error | Product code cannot build or bi
 APCLI012 | Aspose.Cli.OperationContracts | Error | Operation records must be listed in their camelCase JSON context and describe every member with a supported type and a requirement or default.
 APCLI013 | Aspose.Cli.ResultContracts | Error | Result records must describe every serialized member with a summary and a supported type, and publish each relative schema id once.
 APCLI014 | Aspose.Cli.SdkMetadata | Error | The contract generator must resolve every SDK type it recognizes by metadata name.
+APCLI015 | Aspose.Cli.SecurityBoundary | Disabled | Product code cannot use WebRequest, HttpClient or another HttpMessageInvoker, WebClient, sockets or ClientWebSocket; the SDK's process-level gate owns network access for documents.
+APCLI016 | Aspose.Cli.SecurityBoundary | Disabled | Only UserStorage reads the temporary path (Path.GetTempPath, Path.GetTempFileName, the TEMP or TMP variable); per-user state has one owner.
