@@ -17,6 +17,7 @@ internal sealed partial class PdfMutationHandlers : IPdfOpHandler<ValueTuple>
     private readonly IReadOnlyDictionary<string, Secret>? _secrets;
     private readonly PdfPageIdentities _pages;
     private readonly ISet<int> _textMoved;
+    private readonly ICollection<(int Page, int Lines, int Characters)> _beside;
 
     /// <summary>Creates the handlers of one operation.</summary>
     /// <param name="loader">Opens the PDFs that operations insert.</param>
@@ -25,13 +26,15 @@ internal sealed partial class PdfMutationHandlers : IPdfOpHandler<ValueTuple>
     /// <param name="secrets">The operations' secrets by environment variable name.</param>
     /// <param name="pages">The identities of the document's pages, which a moved page keeps.</param>
     /// <param name="textMoved">Receives the pages on which a redaction moved the remaining text.</param>
+    /// <param name="beside">Receives, by page, how many characters on how many lines a redaction took beside its selection.</param>
     internal PdfMutationHandlers(
         PdfDocumentLoader loader,
         InputResourceScope inputs,
         Document document,
         IReadOnlyDictionary<string, Secret>? secrets,
         PdfPageIdentities pages,
-        ISet<int> textMoved)
+        ISet<int> textMoved,
+        ICollection<(int Page, int Lines, int Characters)> beside)
     {
         _loader = loader;
         _inputs = inputs;
@@ -39,6 +42,7 @@ internal sealed partial class PdfMutationHandlers : IPdfOpHandler<ValueTuple>
         _secrets = secrets;
         _pages = pages;
         _textMoved = textMoved;
+        _beside = beside;
     }
 
     /// <summary>

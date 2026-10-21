@@ -58,9 +58,19 @@ internal static class PdfEdit
             navigationBefore, PdfNavigationCensus.Unresolved(loaded.Document));
         EditPublication<PdfEditVerification> publication;
         // --encrypt replaces whatever encryption the operations leave.
-        try { publication = Publish(session, loaded.Document, request, request.EncryptPassword ?? model.OutputPassword, encryptCopy, precondition, verifier, applied, state); }
+        try { publication = Publish(session, loaded.Document, request, request.EncryptPassword ?? model.OutputPassword, encryptCopy, precondition, model, verifier, applied, state); }
+        catch (RedactedTextLeft left)
+        {
+            publication = new EditPublication<PdfEditVerification>(null, null, new PdfEditVerification
+            {
+                Ok = false,
+                Issues = left.Issues,
+                // The output was searched for the text of every redact_text the batch applied.
+                CheckedOps = model.Redactions,
+            });
+        }
         finally { operationInputs.ThrowIfFailed(); }
-        List<Warning> warnings = BuildWarnings(signatures, applied, model.TextMoved);
+        List<Warning> warnings = BuildWarnings(signatures, applied, model.TextMoved, model.TextBeside);
         if (MetadataRewritten(batch.Ops, applied.Outcomes) is { } rewritten)
         {
             warnings.Add(rewritten);
@@ -103,6 +113,7 @@ internal static class PdfEdit
         Secret? outputPassword,
         EncryptDocumentOp? encryptCopy,
         FileWritePrecondition precondition,
+        PdfEditModel model,
         PdfEditVerifier? verifier,
         AppliedBatch applied,
         LicenseState state)
@@ -121,6 +132,8 @@ internal static class PdfEdit
             PdfOutputEncryption.Encrypted(document, passwords),
             temp =>
             {
+                // The properties as the document holds them before the engine stamps its own on save.
+                IReadOnlyDictionary<string, string> properties = PdfRedactionAudit.Properties(document);
                 if (passwords is not null)
                 {
                     PdfOutputEncryption.Save(document, temp, passwords);
@@ -131,6 +144,11 @@ internal static class PdfEdit
                 }
 
                 using LoadedPdf reopened = session.Loader.OpenPublishedCandidate(temp, outputPassword);
+                IReadOnlyList<VerificationIssue> left = model.RedactedTextLeft(reopened.Document, properties, state, session.Budgets.Deadline);
+                if (left.Count > 0)
+                {
+                    throw new RedactedTextLeft(left);
+                }
             },
             verifier is null ? null : candidate =>
             {
@@ -209,7 +227,8 @@ internal static class PdfEdit
     private static List<Warning> BuildWarnings(
         bool signatures,
         AppliedBatch applied,
-        IReadOnlyList<string> textMoved)
+        IReadOnlyList<string> textMoved,
+        IReadOnlyList<string> textBeside)
     {
         var warnings = new List<Warning>();
         if (signatures && applied.Outcomes.Any(static item => item.Status == OpStatuses.Ok && item.ItemsAffected > 0))
@@ -235,7 +254,27 @@ internal static class PdfEdit
             });
         }
 
+        if (textBeside.Count > 0)
+        {
+            warnings.Add(new Warning(PdfDiagnostics.RedactionNearbyTextRemoved,
+                "Redaction covers also removed characters of neighbouring lines beside what they selected, not counting spaces: "
+                    + string.Join("; ", textBeside) + ". The engine removes the characters of a neighbouring line that a cover overlaps.")
+            {
+                Hint = "A cover always spans all it selects, so nothing of it shows, also on a scanned image under the text. "
+                    + "Render the pages with 'pdf render' to see what else was covered; to keep that text, redact the source document and create the PDF again.",
+            });
+        }
+
         return warnings;
+    }
+
+    /// <summary>
+    /// The edit stops publishing because the reopened output still holds the text of a
+    /// <c>redact_text</c>: the staged output is discarded, and the result reports the issues.
+    /// </summary>
+    private sealed class RedactedTextLeft(IReadOnlyList<VerificationIssue> issues) : Exception("The output still holds redacted text.")
+    {
+        internal IReadOnlyList<VerificationIssue> Issues { get; } = issues;
     }
 
     /// <summary>

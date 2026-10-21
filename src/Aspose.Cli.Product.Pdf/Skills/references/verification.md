@@ -29,8 +29,10 @@ omits was not fully checked, even when part of its effect was.
 A page whose `redact_text` match could not be checked within its time budget is
 reported as not checked; search that page with `pdf search`. A `redact_text`
 that matched nothing passes its check, and no check catches text a redaction
-moved under its cover; act on `OP_NO_EFFECT`, `REDACTION_TEXT_MOVED` and the
-review's covered-text finding ([redaction](editing.md#redaction)).
+moved under its cover; act on `OP_NO_EFFECT`, `REDACTION_TEXT_MOVED`,
+`REDACTION_NEARBY_TEXT_REMOVED` and the review's covered-text finding
+([redaction](editing.md#redaction)). Without `--verify` too, an edit whose
+output still holds the text of a `redact_text` writes nothing and exits 8.
 
 The batch is checked as a whole: only the last value set for a field, entry or
 attachment is checked, the value of a flattened field or a deleted page's fields is not, a

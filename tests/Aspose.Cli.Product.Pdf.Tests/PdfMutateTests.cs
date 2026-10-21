@@ -207,15 +207,16 @@ public sealed class PdfMutateTests
 
     /// <summary>
     /// Lines of text set 10 points apart, as create sets 10 pt text, have character boxes that
-    /// overlap the next line's: a redaction removes only what it was asked to, whichever way the
-    /// page is turned.
+    /// overlap the next line's: a redaction removes what it was asked to with a cover that spans
+    /// it all, whichever way the page is turned, and counts the neighbouring characters that cover
+    /// also took.
     /// </summary>
     [Theory]
     [InlineData(0)]
     [InlineData(90)]
     [InlineData(180)]
     [InlineData(270)]
-    public void Redaction_OnCloselySetLines_RemovesOnlyTheTextItSelects(int angle)
+    public void Redaction_OnCloselySetLines_CountsTheNeighbouringCharactersItAlsoRemoves(int angle)
     {
         using var fixture = new PdfEngineFixture();
         string text = fixture.File("contacts.txt");
@@ -240,17 +241,27 @@ public sealed class PdfMutateTests
         })
         {
             string output = fixture.File($"contacts-{angle}-{name}.pdf");
-            PdfEdit.Run(fixture.Session, new PdfEditRequest
+            PdfEditResult result = PdfEdit.Run(fixture.Session, new PdfEditRequest
             {
                 Input = input,
                 Batch = new PdfOpsBatch { Ops = [op] },
                 Output = TestOutput.At(output),
             });
             Assert.Empty(PdfSearch.Run(fixture.Session, Find(output, removed)).Hits);
-            foreach (string kept in new[] { "Shanghai", "Zhang", "13812345678", "Hangzhou", "Wang", "13998765432", "Nanjing", "Li 137", "13700001111" }.Where(kept => kept != removed))
+            // The warning counts exactly the characters the page lost beside the selection.
+            int lost = Characters(input) - Characters(output) - removed.Count(static character => !char.IsWhiteSpace(character));
+            Warning? beside = result.Warnings?.SingleOrDefault(static warning => warning.Code.Name == "REDACTION_NEARBY_TEXT_REMOVED");
+            if (lost == 0)
             {
-                Assert.True(PdfSearch.Run(fixture.Session, Find(output, kept)).Hits.Count == 1, $"redact {name} at {angle} degrees also removed {kept}.");
+                Assert.Null(beside);
             }
+            else
+            {
+                Assert.NotNull(beside);
+                Assert.Contains($"on page 1: {lost} character{(lost == 1 ? "" : "s")} on ", beside.Message, StringComparison.Ordinal);
+            }
+
+            Assert.DoesNotContain(removed, beside?.Message ?? string.Empty, StringComparison.Ordinal);
         }
     }
 
@@ -2404,6 +2415,15 @@ public sealed class PdfMutateTests
         Assert.Equal(5, hits.Count);
         Assert.All(hits.SelectMany(static hit => new[] { hit.Rect.X, hit.Rect.Y, hit.Rect.Width, hit.Rect.Height }),
             static value => Assert.Equal(Math.Round(value, 2), value));
+    }
+
+    /// <summary>The characters of the first page's text other than white space and the evaluation watermark.</summary>
+    private static int Characters(string path)
+    {
+        using var document = new Document(path);
+        var absorber = new TextAbsorber();
+        document.Pages[1].Accept(absorber);
+        return PdfEvaluation.Watermark.Replace(absorber.Text, string.Empty).Count(static character => !char.IsWhiteSpace(character));
     }
 
     private static PdfSearchRequest Find(string input, string pattern, bool regex = false, int maxHits = 100) => new()

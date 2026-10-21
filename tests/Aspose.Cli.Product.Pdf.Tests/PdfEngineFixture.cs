@@ -130,8 +130,11 @@ public sealed class PdfEngineFixture : IDisposable
         return path;
     }
 
-    /// <summary>Writes numbered objects, the first being the catalog, as a PDF with a cross-reference table.</summary>
-    public static void WriteRawPdf(string path, IReadOnlyList<string> objects)
+    /// <summary>
+    /// Writes numbered objects, the first being the catalog, as a PDF with a cross-reference table;
+    /// <paramref name="info"/> numbers the document information dictionary, if any.
+    /// </summary>
+    public static void WriteRawPdf(string path, IReadOnlyList<string> objects, int? info = null)
     {
         var pdf = new StringBuilder("%PDF-1.7\n");
         var offsets = new List<int>();
@@ -148,7 +151,7 @@ public sealed class PdfEngineFixture : IDisposable
             pdf.Append($"{offset:0000000000} 00000 n \n");
         }
 
-        pdf.Append($"trailer\n<< /Size {objects.Count + 1} /Root 1 0 R >>\nstartxref\n{xref}\n%%EOF\n");
+        pdf.Append($"trailer\n<< /Size {objects.Count + 1} /Root 1 0 R{(info is int number ? $" /Info {number} 0 R" : string.Empty)} >>\nstartxref\n{xref}\n%%EOF\n");
         System.IO.File.WriteAllBytes(path, Encoding.ASCII.GetBytes(pdf.ToString()));
     }
 

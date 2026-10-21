@@ -128,6 +128,28 @@ the document references, so a field `flatten_forms` flattened or an attachment
 with `pdf search`, and when it shows on the page but is not found, widen
 the pattern into a regular expression or cover the text with `redact_area`.
 
+On the pages it searches, `redact_text` also clears the whole value of each
+form field whose value matches and removes each annotation whose text matches.
+Before publishing, every edit with `redact_text`, with or without `--verify`,
+searches the output again: the text of those pages, their fields and their
+annotations, and, for an operation without `pages`, the bookmark titles, the
+attachment names and descriptions, and every document information entry, under
+any key, and XMP value the document held; what the save itself writes, such as
+the producer and the modification date, is the engine's and is not searched.
+Where its text is still found, nothing is written, also not with `--in-place`
+or `--backup`: the command exits 8 with `verification.ok: false` and a
+`REDACTED_TEXT_FOUND` issue whose `location` names each place,
+`attachment/all` for an attachment whose name matches. Take the text out there,
+for example with `set_properties`, `clear_properties`, `delete_bookmarks` or
+`delete_attachment`, and redact again. An operation limited to `pages` does
+not search the bookmarks, properties or attachments. A pattern that also
+matches a property the document holds, such as `\d` and a date in its XMP
+metadata, refuses the edit until `clear_properties` comes before `redact_text`
+in the same batch, or a more specific pattern leaves the property alone.
+`--dry-run` writes nothing
+and does not search the output, so it does not show that a redaction would
+publish.
+
 The engine removes redacted text without keeping its width, so text on the
 same line that was written to follow it, without a position of its own, moves
 left under the cover and no longer shows on the page. Word-made PDFs write
@@ -148,17 +170,14 @@ the text that follows them on their lines:
   left it and removes its matches on a page from the last to the first, so
   every match is still where it was found.
 - To cover text with `redact_area`, take each rectangle from the `rect` of a
-  `pdf search` hit as it is. A redaction removes the characters whose middle
-  lies in its rectangle, `redact_text` those of its matches, and its cover
-  stops short of the characters around them, such as the lines above and
-  below; a margin that takes in the middle of the full-width `，` or `：`
-  beside a value removes it too. On closely set lines a margin also takes in
-  the middle of the next line's characters and removes them: do not widen the
-  area there. The cover can be smaller than the area, because it stops short
-  of every character kept, and a removed character it no longer reaches, as
-  in an area across lines or one that only grazes a character, gets a small
-  cover of its own. Confirm a redaction by `pdf search` no longer finding the
-  text, not by the black box.
+  `pdf search` hit as it is. The cover spans the whole rectangle, and that of
+  `redact_text` each whole match, so nothing of a scanned image under the text
+  shows. On closely set lines the engine also removes characters of a
+  neighbouring line that a cover overlaps; a `REDACTION_NEARBY_TEXT_REMOVED`
+  warning names each operation and page with the number of such characters and
+  lines, never the text itself.
+  Do not widen an area there. Confirm a redaction by
+  `pdf search` no longer finding the text, not by the black box.
   Order the areas of one line from right to left, because each removal moves
   the rest of the line and an area taken from the original would then miss
   part of the value it was meant to cover.

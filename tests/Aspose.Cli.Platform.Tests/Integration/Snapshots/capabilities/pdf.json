@@ -39,7 +39,7 @@
         "command": "edit",
         "inputSchema": "v2/pdf/ops",
         "operationSchema": "aspose-cli schema v2/pdf/ops --operation <op>",
-        "contractFingerprint": "sha256:6d4d18ba54b1938afdf33e8dd2a371a0f6e8ff386f360a112346da909fe7e82b",
+        "contractFingerprint": "sha256:f8d99aa779ed8f4f2d7fc27c3cfd2e1d0ec9c25ac28003abd8eeb0dd1da4592d",
         "maximumOperationCount": 10000,
         "ops": [
           "add_attachment",
@@ -2914,6 +2914,13 @@
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
+      "code": "REDACTION_NEARBY_TEXT_REMOVED",
+      "owner": "pdf",
+      "severity": "warning",
+      "category": "warning",
+      "detailsSchemaId": "v2/common/diagnostic-details"
+    },
+    {
       "code": "REDACTION_TEXT_MOVED",
       "owner": "pdf",
       "severity": "warning",
@@ -3124,7 +3131,7 @@
           "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/input.schema.json"
         },
         "output": {
-          "description": "The PDF written; absent for a dry run, which writes nothing.",
+          "description": "The PDF written; absent for a dry run, which writes nothing, and when the output still held the text of a redact_text, which is then not written.",
           "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/output.schema.json"
         },
         "dryRun": {
@@ -3166,7 +3173,7 @@
           }
         },
         "verification": {
-          "description": "Present with --verify: the staged output read back against the effect of each form, redaction, bookmark, property, attachment and page operation.",
+          "description": "Present with --verify: the staged output read back against the effect of each form, redaction, bookmark, property, attachment and page operation. Also present, not ok, when the output still held the text of a redact_text, with an issue for each place it was found.",
           "$ref": "#/$defs/pdfEditVerification"
         },
         "license": {
@@ -4898,7 +4905,7 @@
               "x-readBack": "not-state"
             },
             "rect": {
-              "description": "The area whose content is removed.",
+              "description": "The area whose content is removed, with every character it overlaps.",
               "$ref": "#/$defs/pdfRectInput",
               "x-readBack": "not-state"
             },
@@ -4911,7 +4918,7 @@
           }
         },
         "redact_text": {
-          "description": "Redacts every match of a text pattern in the extractable text; it does not perform OCR. A regular expression runs with a one-second timeout and must not match an empty string.",
+          "description": "Redacts every match of a text pattern in the extractable text under a cover that spans the whole match, clears the whole value of each form field whose value matches and removes each annotation whose text matches, on the pages searched; it does not perform OCR. Before the output is published it is searched again, and, without pages, also its bookmark titles, the properties the document held and its attachment names and descriptions: a match left anywhere publishes nothing. A regular expression runs with a one-second timeout and must not match an empty string.",
           "type": "object",
           "required": [
             "op",

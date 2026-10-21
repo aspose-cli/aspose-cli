@@ -6,8 +6,6 @@ using Aspose.Cli.Sdk.IO.Budgets;
 using Aspose.Cli.Sdk.Licensing;
 using Aspose.Pdf;
 using Aspose.Pdf.Forms;
-using Aspose.Pdf.Text;
-using static Aspose.Cli.Product.Pdf.Engine.PdfPages;
 using static Aspose.Cli.Product.Pdf.Engine.PdfTextMatch;
 
 namespace Aspose.Cli.Product.Pdf.Engine.Editing;
@@ -168,10 +166,10 @@ internal sealed class PdfEditVerifier : IEditVerifier<PdfOp>
 
     /// <summary>
     /// Extracts each page's text once for every redaction that covers it, and counts the
-    /// matches each pattern still has. In evaluation mode the matches inside the watermark
-    /// sentence the engine stamps on the page are the engine's, not the document's: they are
-    /// subtracted once per page, so any other text, on the same line or not, still counts.
-    /// The watermarks of earlier evaluation saves lie on the new one and extract as one line.
+    /// matches each pattern still has, without those of the evaluation watermark
+    /// (<see cref="PdfRedactionAudit.Remaining"/>). Before publishing, every edit has already
+    /// refused an output that still holds a redaction's text (<see cref="PdfRedactionAudit"/>);
+    /// this records which redactions were read back.
     /// </summary>
     private void VerifyRedactions(Document output, LicenseState license, OperationDeadline? deadline, List<VerificationIssue> issues)
     {
@@ -191,15 +189,14 @@ internal sealed class PdfEditVerifier : IEditVerifier<PdfOp>
         foreach (int number in pages.Where(number => number <= output.Pages.Count))
         {
             deadline?.ThrowIfExpired("pdf-verify");
-            string text = ExtractText(output.Pages[number], PdfReadContents.Text);
-            string? watermark = license == LicenseState.Evaluation ? Watermark(output.Pages[number]) : null;
+            (string text, string? watermark) = PdfRedactionAudit.PageText(output.Pages[number], license);
             string location = string.Create(CultureInfo.InvariantCulture, $"page/{number}");
             foreach (RedactionExpectation redaction in _redactions.Where(redaction => redaction.Pages?.Contains(number) ?? true))
             {
                 int remaining;
                 try
                 {
-                    remaining = Count(redaction.Pattern, text) - (watermark is null ? 0 : Count(redaction.Pattern, watermark));
+                    remaining = PdfRedactionAudit.Remaining(redaction.Pattern, text, watermark);
                 }
                 catch (RegexMatchTimeoutException)
                 {
@@ -349,16 +346,6 @@ internal sealed class PdfEditVerifier : IEditVerifier<PdfOp>
         {
             throw new InvalidOperationException($"Bookmark {parent} was not found.", exception);
         }
-    }
-
-    private static int Count(Regex pattern, string text) => pattern.Matches(text).Count(static match => match.Length > 0);
-
-    /// <summary>The evaluation watermark sentence the page carries, or null.</summary>
-    private static string? Watermark(Page page)
-    {
-        var absorber = new TextFragmentAbsorber(PdfEvaluation.Watermark, new TextSearchOptions(true));
-        page.Accept(absorber);
-        return absorber.TextFragments.Count == 0 ? null : absorber.TextFragments[1].Text;
     }
 
     private sealed record Expected<T>(string Id, T Value);
