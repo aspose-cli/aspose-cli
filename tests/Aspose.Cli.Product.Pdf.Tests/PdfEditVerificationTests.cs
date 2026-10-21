@@ -167,7 +167,9 @@ public sealed class PdfEditVerificationTests
         Assert.False(result.Verification.Ok);
         Assert.Empty(result.Verification.CheckedOps.Except(["op-0001"]));
         Assert.True(result.HasFailures);
-        Assert.True(File.Exists(result.Output!.Path));
+        // Redacted text left in the output is never published.
+        Assert.Null(result.Output);
+        Assert.False(File.Exists(fixture.File("readded.pdf")));
 
         using var writer = new StringWriter();
         Commands.EditCommand.Table(result, new Sdk.Extensibility.Output.TableSurface(writer, Sdk.Extensibility.Output.TableFormat.Plain));

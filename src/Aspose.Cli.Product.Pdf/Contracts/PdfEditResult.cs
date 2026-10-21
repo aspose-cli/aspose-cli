@@ -9,7 +9,10 @@ public sealed record PdfEditResult() : EngineResultEnvelope("edit-result", 2), I
     [JsonPropertyOrder(-50)]
     public required InputInfo Input { get; init; }
 
-    /// <summary>The PDF written; absent for a dry run, which writes nothing.</summary>
+    /// <summary>
+    /// The PDF written; absent for a dry run, which writes nothing, and when the output still held
+    /// the text of a redact_text, which is then not written.
+    /// </summary>
     [JsonPropertyOrder(-49)]
     public OutputInfo? Output { get; init; }
 
@@ -32,7 +35,8 @@ public sealed record PdfEditResult() : EngineResultEnvelope("edit-result", 2), I
 
     /// <summary>
     /// Present with <c>--verify</c>: the staged output read back against the effect of each form,
-    /// redaction, bookmark, property, attachment and page operation.
+    /// redaction, bookmark, property, attachment and page operation. Also present, not ok, when
+    /// the output still held the text of a redact_text, with an issue for each place it was found.
     /// </summary>
     public PdfEditVerification? Verification { get; init; }
 

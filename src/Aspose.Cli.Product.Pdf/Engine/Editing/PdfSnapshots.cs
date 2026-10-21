@@ -103,7 +103,8 @@ internal sealed class PdfSnapshots(Document document, PdfPageIdentities pages, F
 
     public Scope Apply(AddHyperlinkOp operation) => Page(operation.Page);
 
-    public Scope Apply(RedactTextOp operation) => Pages(operation.Pages, content: true);
+    /// <summary>The pages a selection names, or every page, each by its content and annotations, and every form field, whose value a match clears.</summary>
+    public Scope Apply(RedactTextOp operation) => new(Selection(operation.Pages), () => Fields(SelectedPages(operation.Pages, content: true), names: null));
 
     public Scope Apply(RedactAreaOp operation) => Page(operation.Page, content: true);
 
@@ -287,8 +288,10 @@ internal sealed class PdfSnapshots(Document document, PdfPageIdentities pages, F
     /// The form fields of the names an operation lists, or every field without a list, in order,
     /// each by the kind and value a read reports; a flattened field is gone.
     /// </summary>
-    private OperationSnapshot Fields(IReadOnlyList<string>? names) =>
-        new OperationSnapshot().AddSequence("field", document.Form.Fields
+    private OperationSnapshot Fields(IReadOnlyList<string>? names) => Fields(new OperationSnapshot(), names);
+
+    private OperationSnapshot Fields(OperationSnapshot snapshot, IReadOnlyList<string>? names) =>
+        snapshot.AddSequence("field", document.Form.Fields
             .Where(field => !string.IsNullOrWhiteSpace(field.FullName) && (names is null || names.Contains(field.FullName, StringComparer.Ordinal)))
             .Select(static field => (PdfInfoProjection.Address("field", field.FullName), PdfForms.State(field).ToString())));
 

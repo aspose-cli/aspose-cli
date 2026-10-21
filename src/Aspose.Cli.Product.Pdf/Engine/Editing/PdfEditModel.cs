@@ -1,12 +1,17 @@
+using System.Globalization;
+using Aspose.Cli.Sdk.IO.Budgets;
 using Aspose.Cli.Sdk.IO.Input;
+using Aspose.Cli.Sdk.Licensing;
 using Aspose.Pdf;
+using static Aspose.Cli.Product.Pdf.Engine.PdfTextMatch;
 
 namespace Aspose.Cli.Product.Pdf.Engine.Editing;
 
 /// <summary>
 /// The document a <c>pdf edit</c> batch changes, as the SDK runner applies operations to it
 /// and snapshots them (<see cref="PdfSnapshots"/>). It also keeps what the save needs after the
-/// batch: the encryption the operations leave and the pages on which a redaction moved text.
+/// batch: the encryption the operations leave, what each redaction took beside its selection or
+/// moved, and the redactions whose text the output must no longer hold.
 /// </summary>
 internal sealed class PdfEditModel : IOperationModel<PdfOp>
 {
@@ -19,6 +24,9 @@ internal sealed class PdfEditModel : IOperationModel<PdfOp>
     private readonly PdfSnapshots _snapshots;
     private readonly SortedSet<int> _movedPages = [];
     private readonly List<string> _textMoved = [];
+    private readonly List<(int Page, int Lines, int Characters)> _besidePages = [];
+    private readonly List<string> _beside = [];
+    private readonly List<PdfRedactionAudit.Redaction> _redactions = [];
 
     // The encryption the operations set, by the variables of its passwords and its permissions;
     // null for the input's own until an operation encrypts.
@@ -45,7 +53,7 @@ internal sealed class PdfEditModel : IOperationModel<PdfOp>
         _encryptOption = encryptOption;
         _secrets = secrets;
         OutputPassword = password;
-        _handlers = new PdfMutationHandlers(loader, inputs, document, secrets, _pages, _movedPages);
+        _handlers = new PdfMutationHandlers(loader, inputs, document, secrets, _pages, _movedPages, _besidePages);
         _snapshots = new PdfSnapshots(document, _pages, () => _encryption);
     }
 
@@ -61,6 +69,27 @@ internal sealed class PdfEditModel : IOperationModel<PdfOp>
     /// </summary>
     internal IReadOnlyList<string> TextMoved => _textMoved;
 
+    /// <summary>
+    /// What each redaction's cover took beside its selection, by page, as
+    /// <c>'id' (op) on page N: C character(s) on L neighbouring line(s)</c>; never the text.
+    /// </summary>
+    internal IReadOnlyList<string> TextBeside => _beside;
+
+    /// <summary>The ids of the <c>redact_text</c> operations the batch applied, in batch order.</summary>
+    internal IReadOnlyList<string> Redactions => [.. _redactions.Select(static redaction => redaction.Id)];
+
+    /// <summary>
+    /// Where the reopened output still holds the text of a <c>redact_text</c> the batch applied
+    /// (<see cref="PdfRedactionAudit"/>); empty when it holds none.
+    /// </summary>
+    /// <param name="output">The reopened output.</param>
+    /// <param name="properties">The document's properties before the save (<see cref="PdfRedactionAudit.Properties"/>).</param>
+    /// <param name="license">The license state.</param>
+    /// <param name="deadline">The deadline of the invocation.</param>
+    internal IReadOnlyList<VerificationIssue> RedactedTextLeft(
+        Document output, IReadOnlyDictionary<string, string> properties, LicenseState license, OperationDeadline? deadline) =>
+        _redactions.Count == 0 ? [] : PdfRedactionAudit.Check(output, properties, _redactions, _pages.Order(_document), license, deadline);
+
     public OperationSnapshot Snapshot(PdfOp operation) => PdfMutationHandlers.Engine(() => operation.Accept(_snapshots).Take());
 
     public void Apply(PdfOp operation)
@@ -73,11 +102,29 @@ internal sealed class PdfEditModel : IOperationModel<PdfOp>
         }
 
         _movedPages.Clear();
+        _besidePages.Clear();
         _snapshots.Invalidate();
+        // The pages a redaction covers, by identity, which later operations may renumber.
+        PdfPageIdentity[]? redacted = operation is RedactTextOp { Pages: { } selection }
+            ? [.. PdfMutationSupport.Resolve(_document, selection).Select(number => _pages.Of(_document.Pages[number]))]
+            : null;
         _handlers.Run(operation);
+        string name = PdfOp.Catalog.NameOf(operation);
         if (_movedPages.Count > 0)
         {
-            _textMoved.Add($"'{operation.Id}' ({PdfOp.Catalog.NameOf(operation)}) on page{(_movedPages.Count == 1 ? "" : "s")} {string.Join(", ", _movedPages)}");
+            _textMoved.Add($"'{operation.Id}' ({name}) on page{(_movedPages.Count == 1 ? "" : "s")} {string.Join(", ", _movedPages)}");
+        }
+
+        foreach (IGrouping<int, (int Page, int Lines, int Characters)> page in _besidePages.GroupBy(static entry => entry.Page))
+        {
+            int lines = page.Sum(static entry => entry.Lines), characters = page.Sum(static entry => entry.Characters);
+            _beside.Add(string.Create(CultureInfo.InvariantCulture,
+                $"'{operation.Id}' ({name}) on page {page.Key}: {characters} character{(characters == 1 ? "" : "s")} on {lines} neighbouring line{(lines == 1 ? "" : "s")}"));
+        }
+
+        if (operation is RedactTextOp redaction)
+        {
+            _redactions.Add(new PdfRedactionAudit.Redaction(operation.Id!, TextPattern(redaction.Find, redaction.Regex, redaction.CaseSensitive), redacted));
         }
 
         if (operation is EncryptDocumentOp encrypt)
@@ -110,11 +157,6 @@ internal sealed class PdfEditModel : IOperationModel<PdfOp>
             Hint = "Search the pages with 'pdf search' and the same pattern. When the text shows on the page but is not found, "
                 + "its extracted text differs, for example by spaces between characters: match it with a regular expression "
                 + "that allows them (\\s*), or cover it with redact_area.",
-        },
-        RedactAreaOp => new NoEffect(NoEffectReasons.NoMatch,
-            $"Operation {operation.Id} (redact_area) removed nothing: no character has its middle inside the area, and no image lies under it.")
-        {
-            Hint = "Take the area from the rect of a 'pdf search' hit, or measure it on 'pdf render --grid'; a character is removed when its middle lies inside the area.",
         },
         FlattenFormsOp => new NoEffect(NoEffectReasons.NoMatch,
             $"Operation {operation.Id} (flatten_forms) found no form field to flatten."),

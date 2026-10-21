@@ -1,6 +1,8 @@
 using System.Globalization;
+using System.Text.RegularExpressions;
 using Aspose.Pdf;
 using Aspose.Pdf.Annotations;
+using Aspose.Pdf.Forms;
 using Aspose.Pdf.Text;
 using static Aspose.Cli.Product.Pdf.Engine.Editing.PdfMutationSupport;
 using static Aspose.Cli.Product.Pdf.Engine.PdfGeometry;
@@ -119,6 +121,7 @@ internal sealed partial class PdfMutationHandlers
     {
         IReadOnlyList<int> pages = ResolveOptional(_document, operation.Pages);
         PdfColor fill = ParseColor(operation.FillColor);
+        Regex pattern = TextPattern(operation.Find, operation.Regex, operation.CaseSensitive);
         foreach (int number in pages)
         {
             Page page = _document.Pages[number];
@@ -131,18 +134,22 @@ internal sealed partial class PdfMutationHandlers
                     return;
                 }
 
+                HashSet<(double, double, double, double)> matched = [.. fragments
+                    .SelectMany(static fragment => fragment.Segments)
+                    .SelectMany(static segment => segment.Characters)
+                    .Select(static character => Key(character.Rectangle))];
                 ILookup<string, Point> before = TextRuns(page);
                 // PDF-REDACT-TEXT-SHIFT moves the text that follows a removed match in the content
                 // stream, wherever it is drawn. The search returns the matches in that order, so
                 // they are removed last first: each one still lies where the search found it.
-                foreach (TextFragment fragment in fragments.Reverse())
-                {
-                    Redact(page, fragment.Rectangle, fill);
-                }
+                Rectangle[] covers = [.. fragments.Reverse().Select(static fragment => fragment.Rectangle)];
+                NoteBeside(number, Redact(page, covers, character => matched.Contains(Key(character)), fill));
                 NoteMovedText(number, page, before);
             });
+            RemoveAnnotations(page, pattern);
         }
 
+        ClearFields(operation.Pages is null ? null : pages, pattern);
         return default;
     }
 
@@ -153,82 +160,139 @@ internal sealed partial class PdfMutationHandlers
         Unrotated(page, () =>
         {
             ILookup<string, Point> before = TextRuns(page);
-            Redact(page, area, ParseColor(operation.FillColor));
+            NoteBeside(operation.Page, Redact(page, [area], character => Contains(area, Middle(character)), ParseColor(operation.FillColor)));
             NoteMovedText(operation.Page, page, before);
         });
         return default;
     }
 
     /// <summary>
-    /// Removes the characters whose middle lies in the area and covers it. The engine removes
-    /// every character its redaction touches, so on lines set closer than their characters are
-    /// high it would also take the neighbouring lines' text the area only grazes. The cover is
-    /// drawn short of each such character, and a selected character the shortened cover no
-    /// longer touches is removed under a cover of its own at its middle.
+    /// Covers each rectangle and removes what lies under it, in the order given. The cover is
+    /// never drawn smaller than asked, which would leave part of a scanned image of the text
+    /// showing, and the engine also removes characters of a neighbouring line that a cover
+    /// overlaps. Returns how many lines lost characters beside the <paramref name="selected"/>
+    /// ones and how many such characters, not counting white space; never the text, which may be
+    /// what a later redaction removes. Each line's text after the redaction is matched against its
+    /// text before, since the engine moves what follows a removal left but keeps every line where
+    /// it was.
     /// </summary>
-    private static void Redact(Page page, Rectangle area, PdfColor fill)
+    private static (int Lines, int Characters) Redact(Page page, IReadOnlyList<Rectangle> covers, Func<Rectangle, bool> selected, PdfColor fill)
     {
-        Rectangle[] characters = Characters(page);
-        Rectangle[] selected = [.. characters.Where(character => Contains(area, Middle(character)))];
-        double left = area.LLX, bottom = area.LLY, right = area.URX, top = area.URY;
-        foreach (Rectangle other in characters.Where(character => !Contains(area, Middle(character))))
+        List<Glyph> before = Glyphs(page, selected);
+        foreach (Rectangle cover in covers)
         {
-            if (!Touches(other, left, bottom, right, top))
+            Cover(page, cover, fill).Redact();
+        }
+
+        ILookup<double, char> after = Glyphs(page, static _ => false).ToLookup(static glyph => glyph.Line, static glyph => glyph.Text);
+        int lines = 0, characters = 0;
+        foreach (IGrouping<double, Glyph> line in before.GroupBy(static glyph => glyph.Line))
+        {
+            Glyph[] glyphs = [.. line];
+            int next = 0, lost = 0;
+            foreach (char kept in after[line.Key])
+            {
+                for (; next < glyphs.Length && glyphs[next].Text != kept; next++)
+                {
+                    lost += Beside(glyphs[next]);
+                }
+
+                next++;
+            }
+
+            for (; next < glyphs.Length; next++)
+            {
+                lost += Beside(glyphs[next]);
+            }
+
+            lines += lost > 0 ? 1 : 0;
+            characters += lost;
+        }
+
+        return (lines, characters);
+
+        static int Beside(Glyph glyph) => glyph.Selected || char.IsWhiteSpace(glyph.Text) ? 0 : 1;
+    }
+
+    /// <summary>One character of a page's text: the line it lies on, by the bottom of its box, its text, and whether it is selected.</summary>
+    private readonly record struct Glyph(double Line, char Text, bool Selected);
+
+    /// <summary>The characters of the page's text in content order.</summary>
+    private static List<Glyph> Glyphs(Page page, Func<Rectangle, bool> selected)
+    {
+        var glyphs = new List<Glyph>();
+        var absorber = new TextFragmentAbsorber();
+        page.Accept(absorber);
+        foreach (TextSegment segment in absorber.TextFragments.SelectMany(static fragment => fragment.Segments))
+        {
+            int index = 0;
+            foreach (CharInfo character in segment.Characters)
+            {
+                if (index < segment.Text.Length)
+                {
+                    glyphs.Add(new Glyph(Math.Round(character.Rectangle.LLY, 1), segment.Text[index], selected(character.Rectangle)));
+                }
+
+                index++;
+            }
+        }
+
+        return glyphs;
+    }
+
+    /// <summary>
+    /// Removes each annotation whose text matches, and the pop-up that shows a removed one's
+    /// text. A form field's widget is left to <see cref="ClearFields"/>.
+    /// </summary>
+    private static void RemoveAnnotations(Page page, Regex pattern)
+    {
+        Annotation[] matching = [.. page.Annotations.Where(annotation => annotation switch
+        {
+            WidgetAnnotation => false,
+            PopupAnnotation popup => popup.Parent is { } parent && PdfRedactionAudit.Matches(pattern, PdfRedactionAudit.Texts(parent)),
+            _ => PdfRedactionAudit.Matches(pattern, PdfRedactionAudit.Texts(annotation)),
+        })];
+        foreach (Annotation annotation in matching)
+        {
+            page.Annotations.Delete(annotation);
+        }
+    }
+
+    /// <summary>
+    /// Clears each form field whose value matches, as set_form_field clears it: the whole value,
+    /// so no part of it shows in the field. With <paramref name="pages"/>, only the fields on them.
+    /// </summary>
+    private void ClearFields(IReadOnlyList<int>? pages, Regex pattern)
+    {
+        foreach (Field field in _document.Form.Fields)
+        {
+            if (field is ButtonField or SignatureField
+                || (pages is not null && !(PdfForms.PageOf(field) is int page && pages.Contains(page)))
+                || !PdfRedactionAudit.Matches(pattern, [PdfForms.State(field).Value]))
             {
                 continue;
             }
 
-            (double x, double y) = Middle(other);
-            double above = y > top ? (top - (other.LLY - Gap)) * (right - left) : double.MaxValue;
-            double below = y < bottom ? ((other.URY + Gap) - bottom) * (right - left) : double.MaxValue;
-            double before = x < left ? ((other.URX + Gap) - left) * (top - bottom) : double.MaxValue;
-            double after = x > right ? (right - (other.LLX - Gap)) * (top - bottom) : double.MaxValue;
-            double least = Math.Min(Math.Min(above, below), Math.Min(before, after));
-            if (least == above) { top = other.LLY - Gap; }
-            else if (least == below) { bottom = other.URY + Gap; }
-            else if (least == before) { left = other.URX + Gap; }
-            else { right = other.LLX - Gap; }
-        }
-
-        bool cover = left < right && bottom < top;
-        foreach (Rectangle character in selected.Where(character => !cover || !Touches(character, left, bottom, right, top)))
-        {
-            (double x, double y) = Middle(character);
-            double half = Math.Min(MiddleCover, Math.Min(character.Width, character.Height) / 4);
-            Cover(page, new Rectangle(x - half, y - half, x + half, y + half), fill).Redact();
-        }
-
-        if (cover)
-        {
-            Cover(page, new Rectangle(left, bottom, right, top), fill).Redact();
+            (PdfForms.RadioGroup(field) ?? field).Value = ClearedFieldValue(field);
         }
     }
 
-    /// <summary>How far a shortened cover stays from a character it must not touch, in points.</summary>
-    private const double Gap = 0.01;
-
-    /// <summary>Half the side of the cover over the middle of one character, in points.</summary>
-    private const double MiddleCover = 0.25;
-
-    private static Rectangle[] Characters(Page page)
+    private void NoteBeside(int number, (int Lines, int Characters) taken)
     {
-        var absorber = new TextFragmentAbsorber();
-        page.Accept(absorber);
-        return [.. absorber.TextFragments
-            .SelectMany(static fragment => fragment.Segments)
-            .SelectMany(static segment => segment.Characters)
-            .Select(static character => character.Rectangle)
-            .Where(static rectangle => rectangle.Width > 0 && rectangle.Height > 0)];
+        if (taken.Characters > 0)
+        {
+            _beside.Add((number, taken.Lines, taken.Characters));
+        }
     }
+
+    private static (double, double, double, double) Key(Rectangle rectangle) =>
+        (Math.Round(rectangle.LLX, 3), Math.Round(rectangle.LLY, 3), Math.Round(rectangle.URX, 3), Math.Round(rectangle.URY, 3));
 
     private static (double X, double Y) Middle(Rectangle rectangle) =>
         ((rectangle.LLX + rectangle.URX) / 2, (rectangle.LLY + rectangle.URY) / 2);
 
     private static bool Contains(Rectangle area, (double X, double Y) point) =>
         point.X > area.LLX && point.X < area.URX && point.Y > area.LLY && point.Y < area.URY;
-
-    private static bool Touches(Rectangle character, double left, double bottom, double right, double top) =>
-        character.LLX <= right && character.URX >= left && character.LLY <= top && character.URY >= bottom;
 
     /// <summary>
     /// Redacts with the page's rotation cleared: on a rotated page the engine would draw the

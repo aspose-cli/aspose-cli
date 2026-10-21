@@ -37,6 +37,9 @@ internal static class PdfDiagnostics
     /// <summary>A redaction moved the text that followed what it removed.</summary>
     internal static readonly WarningCode RedactionTextMoved = new("REDACTION_TEXT_MOVED");
 
+    /// <summary>A redaction's cover overlapped text beside what it selected, and removed it too.</summary>
+    internal static readonly WarningCode RedactionNearbyTextRemoved = new("REDACTION_NEARBY_TEXT_REMOVED");
+
     /// <summary>A raster image is drawn larger than its pixels allow, at fewer than 96 of them per inch, so it shows blurred.</summary>
     internal static readonly WarningCode ImageResolutionLow = new("IMAGE_RESOLUTION_LOW");
 
@@ -96,6 +99,7 @@ internal static class PdfDiagnostics
         DiagnosticDescriptor.Warning(NavigationDegraded),
         DiagnosticDescriptor.Warning(NetworkResourcesRequested),
         DiagnosticDescriptor.Warning(RedactionTextMoved),
+        DiagnosticDescriptor.Warning(RedactionNearbyTextRemoved),
         DiagnosticDescriptor.Warning(MetadataRewritten),
         DiagnosticDescriptor.Warning(ImageResolutionLow),
         DiagnosticDescriptor.Warning(SignatureFontEmbedded),

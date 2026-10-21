@@ -388,8 +388,13 @@ public sealed record AddHyperlinkOp : PdfOp
 }
 
 /// <summary>
-/// Redacts every match of a text pattern in the extractable text; it does not perform OCR. A
-/// regular expression runs with a one-second timeout and must not match an empty string.
+/// Redacts every match of a text pattern in the extractable text under a cover that spans the
+/// whole match, clears the whole value of each form field whose value matches and removes each
+/// annotation whose text matches, on the pages searched; it does not perform OCR. Before the
+/// output is published it is searched again, and, without pages, also its bookmark titles,
+/// the properties the document held and its attachment names and descriptions: a match left
+/// anywhere publishes nothing.
+/// A regular expression runs with a one-second timeout and must not match an empty string.
 /// </summary>
 [Operation("redact_text")]
 public sealed record RedactTextOp : PdfOp
@@ -450,7 +455,7 @@ public sealed record RedactAreaOp : PdfOp
     /// <summary>The 1-based page to redact.</summary>
     [Minimum(1)] public required int Page { get; init; }
 
-    /// <summary>The area whose content is removed.</summary>
+    /// <summary>The area whose content is removed, with every character it overlaps.</summary>
     [NotState]
     public required PdfRectInput Rect { get; init; }
 

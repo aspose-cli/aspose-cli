@@ -90,7 +90,7 @@ internal static class PdfForms
             .Count();
 
     /// <summary>The page of the field's widget, or null when it has none or evaluation mode hides it.</summary>
-    private static int? PageOf(Field field)
+    internal static int? PageOf(Field field)
     {
         try
         {

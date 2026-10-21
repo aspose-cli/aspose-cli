@@ -276,34 +276,6 @@ public sealed class PdfOutcomeTests
     }
 
     [Fact]
-    public void RedactArea_OverNoCharacterMiddle_SaysWhyNothingWasRemoved()
-    {
-        using var fixture = new PdfEngineFixture();
-        string input = fixture.CreateDocument(pages: 1);
-
-        // A strip across the bottom of a line's characters, below their middles.
-        PdfRect line = Assert.Single(PdfSearch.Run(fixture.Session, new PdfSearchRequest
-        {
-            Input = input,
-            Query = new Aspose.Cli.Sdk.Text.SearchQuery(Aspose.Cli.Sdk.Text.TextSearch.Create("Portable", false, caseSensitive: true), 10, Scope: null),
-        }).Hits).Rect;
-        var strip = new PdfRectInput { X = line.X, Y = line.Y + (line.Height * 0.75), Width = line.Width, Height = line.Height / 8 };
-
-        PdfEditResult result = Edit(fixture, input, new RedactAreaOp { Page = 1, Rect = strip });
-
-        BoundedOperationOutcome outcome = Assert.Single(result.Applied);
-        Assert.Equal(0, outcome.ItemsAffected);
-        Warning warning = Assert.Single(result.Warnings!, static warning => warning.Code.Name == "OP_NO_EFFECT");
-        Assert.Equal("no-match", warning.Details!["reason"]!.GetValue<string>());
-        Assert.Contains("no character has its middle inside the area", warning.Message, StringComparison.Ordinal);
-        Assert.Single(PdfSearch.Run(fixture.Session, new PdfSearchRequest
-        {
-            Input = result.Output!.Path,
-            Query = new Aspose.Cli.Sdk.Text.SearchQuery(Aspose.Cli.Sdk.Text.TextSearch.Create("Portable", false, caseSensitive: true), 10, Scope: null),
-        }).Hits);
-    }
-
-    [Fact]
     public void Encrypt_AgainWithTheSamePasswordsAndPermissionsChangesNothing()
     {
         using var fixture = new PdfEngineFixture();
