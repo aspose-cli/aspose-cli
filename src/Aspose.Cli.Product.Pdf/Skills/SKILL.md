@@ -61,12 +61,13 @@ whose image shows blurred.
 
 ## Sources that can reach the network
 
-HTML, Markdown and SVG inputs are refused with `FEATURE_UNSUPPORTED` when they
-name a network address or contain script, and Markdown also when it references a
-file outside its own directory. Keep resources beside the input, reference them
-by relative path, and run `pdf create --from-markdown` from the Markdown file's
-directory. [Troubleshooting](references/troubleshooting.md) lists each refusal and
-its remedy, including `--allow-network-resources` for trusted HTML.
+HTML and SVG inputs reach no network: the CLI blocks each request and lists it in
+`REMOTE_RESOURCES_BLOCKED`. Markdown is refused with `FEATURE_UNSUPPORTED` when it
+references a network address or a file outside its own directory. Keep
+resources beside the input, reference them by relative path, and run
+`pdf create --from-markdown` from the Markdown file's directory.
+[Troubleshooting](references/troubleshooting.md) lists each case and its remedy,
+including `--allow-network-resources` for trusted HTML.
 
 ## Evaluation mode
 

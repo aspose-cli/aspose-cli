@@ -45,9 +45,6 @@ internal sealed class CellsEditModel : IOperationModel<CellsOp>
     /// <summary>True once an operation that names no sheet was applied to the active sheet.</summary>
     internal bool DefaultedToActiveSheet => _handlers.DefaultedToActiveSheet;
 
-    /// <summary>The references removed from the SVG images that insert_image inserted.</summary>
-    internal int SvgReferencesRemoved => _handlers.SvgReferencesRemoved;
-
     /// <summary>The anchor cells set_formula wrote, which the batch checks for unknown functions.</summary>
     internal IReadOnlyList<Cell> FormulaAnchors => _handlers.FormulaAnchors;
 

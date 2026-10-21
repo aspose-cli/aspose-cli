@@ -20,12 +20,18 @@ internal enum CommandExecutionOwnership { Worker, Service, ParentHandoff }
 /// command, such as the installed licenses or the shared App. The refusal comes before any input
 /// is read.
 /// </param>
+/// <param name="ReachesNetwork">
+/// Whether the host command itself requests web addresses, such as the release feed, and so is
+/// admitted to the <see cref="Aspose.Cli.Sdk.IO.Input.NetworkGate"/> with web access. Every other
+/// command reaches the network only through a declared <see cref="Aspose.Cli.Sdk.Extensibility.Commanding.NetworkOptIn"/>.
+/// </param>
 internal sealed record CommandInvocationPolicy(
     string? ProductId = null,
     CommandExecutionOwnership Execution = CommandExecutionOwnership.Worker,
     bool McpAllowed = false,
     long? OutputBytesLimit = null,
-    bool RefusesEvaluationRequest = false);
+    bool RefusesEvaluationRequest = false,
+    bool ReachesNetwork = false);
 
 internal static class CommandInvocationPolicies
 {

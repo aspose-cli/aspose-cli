@@ -449,22 +449,11 @@ internal static class PdfCreate
         foreach (string image in source is PdfImageSource imageSource ? imageSource.Files.Select(static file => file.Path) : [])
         {
             using InputResourceScope scope = resourceBudgets.Inputs.CreateScope();
-            images.Add(ImageInput.Read(scope, image, refuseNetworkReferences: true));
+            images.Add(ImageInput.Read(scope, image));
         }
 
-        if (source is not PdfHtmlSource { File.Path: var html, AllowNetworkResources: var allowNetwork })
-        {
-            return (null, images);
-        }
-
-        // The HTML importer reaches the network before any resource policy applies; refuse
-        // first unless the caller allowed it. Markdown is checked with its local references.
-        byte[] bytes = resourceBudgets.Inputs.ReadAllBytes(html);
-        if (!allowNetwork)
-        {
-            NetworkReferenceGuard.EnsureNone(bytes, "HTML input", html, optIn: PdfOptionNames.AllowNetworkResources);
-        }
-
-        return (bytes, images);
+        return source is PdfHtmlSource { File.Path: var html }
+            ? (resourceBudgets.Inputs.ReadAllBytes(html), images)
+            : (null, images);
     }
 }

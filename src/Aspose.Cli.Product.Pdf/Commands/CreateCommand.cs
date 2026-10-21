@@ -18,7 +18,7 @@ internal static class CreateCommand
         var allowNetwork = new Option<bool>(PdfOptionNames.AllowNetworkResources)
         {
             Description = "Let the HTML importer request the network resources trusted --from-html input names; the result lists every address. Local references stay beneath the HTML directory.",
-        };
+        }.OptsIntoNetwork();
         var markdown = new Option<string?>("--from-markdown") { Description = "UTF-8 Markdown input file." }.WithInput(InputKind.File);
         var text = new Option<string?>("--from-text")
         {

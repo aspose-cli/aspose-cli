@@ -182,11 +182,15 @@ Reproductions: [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownI
   (`Image.File`, `ImageStamp`) have no resource hook: they fetch remote resources and read any
   local file a reference names, and Markdown resolves relative paths against the process working
   directory.
-- **CLI behavior:** HTML, Markdown and SVG input that names a network address or contains script
-  is refused with `FEATURE_UNSUPPORTED` before the engine reads it, and Markdown also unless every
-  file it references is an ordinary file beneath its directory. For trusted HTML,
-  `pdf create --from-html --allow-network-resources` lets the importer fetch and lists every
-  address in `NETWORK_RESOURCES_REQUESTED`.
+- **CLI behavior:** the process's network gate, which every command passes before it runs, blocks
+  each http, https, ftp and file request the engine makes, so the request fails inside the process
+  and the result lists its address in `REMOTE_RESOURCES_BLOCKED`. An SVG image, which the engine
+  also reads through file and share paths the gate cannot see, reaches it with only the
+  references inside itself, and the removed ones are listed there too. Markdown is refused with
+  `FEATURE_UNSUPPORTED` unless every file it references is an ordinary file beneath its directory;
+  only those files pass the gate. For trusted HTML,
+  `pdf create --from-html --allow-network-resources` opens http and https for that command alone
+  and lists every fetched address in `NETWORK_RESOURCES_REQUESTED`; ftp and file stay blocked.
 - **Workaround:** keep resources beside the input and reference them by relative path, or
   convert HTML with `aspose-cli words convert`, which makes no network request.
 

@@ -6,22 +6,22 @@ adds what to do about the PDF cases that need more than the error's hint.
 
 ## Sources that can reach the network
 
-HTML, Markdown and SVG image inputs, and the stylesheets and SVG files they load,
-may not name any network address, including hyperlinks and addresses in text, or
-contain script, event-handler attributes or `javascript:` URLs: the PDF engine
-requests them, or runs the script, before the CLI can refuse them, so the input is
-refused with `FEATURE_UNSUPPORTED`. Remove the address, or save the resource beside
-the input and reference it by relative path. For trusted HTML,
-`--allow-network-resources` lets the import fetch them, and the result lists the
-requested addresses as `NETWORK_RESOURCES_REQUESTED`; review what they returned.
+The CLI blocks every network and `file:` request the PDF engine makes for HTML and
+SVG image inputs and the stylesheets and SVG files they load, script included: the
+command still succeeds, without those resources, and `REMOTE_RESOURCES_BLOCKED`
+lists each blocked address. An SVG image keeps only the images it embeds as `data:`
+URIs: every other reference is removed and listed the same way. Save the resource
+beside the input and reference it by relative path. For trusted HTML,
+`--allow-network-resources` lets the import fetch http and https addresses, and the
+result lists them as `NETWORK_RESOURCES_REQUESTED`; review what they returned.
 Combine the option with `--timeout`, since each unanswered request can hold the
 import for up to 100 seconds. `aspose-cli words convert page.html --to pdf`
 converts without any request.
 
 Every image, stylesheet and SVG file Markdown could load, and those they reference,
-must be an existing ordinary file beneath the Markdown file's directory: absolute
-paths, `file:` URIs, `..` escapes (also percent- or entity-encoded), links and
-junctions, missing files and non-raster `data:` URIs are refused, including in code
+must be an existing ordinary file beneath the Markdown file's directory: network
+addresses, absolute paths, `file:` URIs, `..` escapes (also percent- or
+entity-encoded), links and junctions, missing files and non-raster `data:` URIs are refused, including in code
 examples. Run the command from the Markdown file's directory. A local HTML image or
 stylesheet that is missing or outside the HTML directory is left out with
 `REMOTE_RESOURCES_BLOCKED`; keep resources beneath that directory rather than

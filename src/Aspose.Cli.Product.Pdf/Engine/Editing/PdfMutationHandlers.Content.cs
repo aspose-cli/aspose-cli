@@ -44,11 +44,10 @@ internal sealed partial class PdfMutationHandlers
     {
         EnsureFile(operation.Path);
         IReadOnlyList<int> pages = ResolveOptional(_document, operation.Pages);
-        // Read (and charge) the image once; every page stamps its own view of the bytes. An SVG
-        // stamp fetches its external images with no resource hook (known issue PDF-HTML-EGRESS), so the
-        // read refuses an SVG that names a network address. The engine loads a stamp's image
-        // only when the document is saved, so a damaged image is refused here.
-        byte[] image = OperationImages.Read(_inputs, operation.Path, refuseNetworkReferences: true);
+        // Read (and charge) the image once; every page stamps its own view of the bytes. The
+        // engine loads a stamp's image only when the document is saved, so a damaged image is
+        // refused here.
+        byte[] image = OperationImages.Read(_inputs, operation.Path);
 
         foreach (int number in pages)
         {
@@ -93,7 +92,7 @@ internal sealed partial class PdfMutationHandlers
         Page page = PageAt(_document, operation.Page);
         EnsureFile(operation.Path);
         Rectangle rectangle = ToPdfRect(page, operation.Rect);
-        byte[] image = OperationImages.Read(_inputs, operation.Path, refuseNetworkReferences: true);
+        byte[] image = OperationImages.Read(_inputs, operation.Path);
         var stamp = new ImageStamp(new MemoryStream(image, writable: false))
         {
             XIndent = rectangle.LLX,
