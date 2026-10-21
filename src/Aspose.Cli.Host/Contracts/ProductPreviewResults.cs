@@ -16,8 +16,12 @@ public sealed record ProductPreviewStartResult()
     [Pattern("^[a-z0-9][a-z0-9-]*$")]
     public required string Product { get; init; }
 
-    /// <summary>Loopback browser URL of the document.</summary>
-    [Pattern("^http://127\\.0\\.0\\.1:[0-9]+/d/[0-9a-f]{32}/$")]
+    /// <summary>
+    /// Loopback browser URL of the document with a one-time entry ticket: it lets the first browser
+    /// that opens it in, within five minutes, and that browser keeps access while the service runs.
+    /// <c>preview status</c> returns a new one.
+    /// </summary>
+    [Pattern("^http://127\\.0\\.0\\.1:[0-9]+/d/[0-9a-f]{32}/\\?t=[0-9a-f]{64}$")]
     public required string Url { get; init; }
 
     /// <summary>Background process identifier.</summary>
@@ -64,8 +68,12 @@ public sealed record ProductPreviewSessionInfo
     [Pattern("^[a-z0-9][a-z0-9-]*$")]
     public required string Product { get; init; }
 
-    /// <summary>Loopback browser URL of the document.</summary>
-    [Pattern("^http://127\\.0\\.0\\.1:[0-9]+/d/[0-9a-f]{32}/$")]
+    /// <summary>
+    /// Loopback browser URL of the document with a one-time entry ticket: it lets the first browser
+    /// that opens it in, within five minutes, and that browser keeps access while the service runs.
+    /// <c>preview status</c> returns a new one.
+    /// </summary>
+    [Pattern("^http://127\\.0\\.0\\.1:[0-9]+/d/[0-9a-f]{32}/\\?t=[0-9a-f]{64}$")]
     public required string Url { get; init; }
 
     /// <summary>Background process identifier.</summary>

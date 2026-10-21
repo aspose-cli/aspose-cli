@@ -4,6 +4,7 @@ using System.Text.Json;
 using Aspose.Cli.Host.Invocation;
 using Aspose.Cli.Host.LocalServices;
 using Aspose.Cli.Sdk;
+using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.IO.Budgets;
 
@@ -36,16 +37,50 @@ internal sealed class ViewerServiceHost : IDisposable
     private long _lastAppActivity = Environment.TickCount64;
     private int _disposed;
 
-    /// <summary>Starts the service and hands its lifetime to the command host.</summary>
+    /// <summary>
+    /// Starts the service and hands its lifetime to the command host. With
+    /// <paramref name="page"/>, the App lands there at once, as a control
+    /// request would point it: the command reports the App with the address
+    /// that request would return, and <paramref name="openBrowser"/> opens it.
+    /// </summary>
     public static HostedCommandLifecycle Start(
         GlobalValues globals,
         ServiceStartSecrets? secrets,
         int requestedPort,
-        Func<ViewerDocuments, int, Action, Action, IHostedApp> app)
+        Func<ViewerDocuments, int, Action, Action, IHostedApp> app,
+        ViewerAppRequest? page = null,
+        bool openBrowser = false)
     {
         var host = new ViewerServiceHost(globals, secrets, requestedPort, app);
+        ResultEnvelope startup = new ProductPreviewStatusResult { Sessions = [] };
+        if (page is not null)
+        {
+            try
+            {
+                ViewerAppResponse opened = host.App(page, deadline: null);
+                if (openBrowser)
+                {
+                    BrowserLauncher.Open(opened.Url);
+                }
+                startup = new AppResult
+                {
+                    Running = true,
+                    Url = opened.Url,
+                    Port = opened.Port,
+                    Pid = opened.Pid,
+                    Reused = false,
+                    Route = opened.Route,
+                    File = opened.File,
+                };
+            }
+            catch
+            {
+                host.Dispose();
+                throw;
+            }
+        }
         return new HostedCommandLifecycle(
-            new ProductPreviewStatusResult { Sessions = [] },
+            startup,
             host.Wait,
             host.Dispose);
     }
@@ -179,7 +214,7 @@ internal sealed class ViewerServiceHost : IDisposable
                 case ViewerServiceCommands.Close:
                     return Ok(Close(request.Path), ViewerServiceJsonContext.Default.ViewerStopResponse);
                 case ViewerServiceCommands.App:
-                    return Ok(App(request.Payload, deadline), ViewerServiceJsonContext.Default.ViewerAppResponse);
+                    return Ok(App(AppRequest(request.Payload), deadline), ViewerServiceJsonContext.Default.ViewerAppResponse);
                 case ViewerServiceCommands.Stop:
                     // Withdraw discovery before acknowledging shutdown; later status calls must not join a closing pipe.
                     _store.DeleteIfOwned(_token);
@@ -251,23 +286,25 @@ internal sealed class ViewerServiceHost : IDisposable
         };
     }
 
-    /// <summary>
-    /// Points the App at a page and opens the file a command named there. The
-    /// service is already listening, so the browser has somewhere to go the
-    /// moment this answers.
-    /// </summary>
-    private ViewerAppResponse App(string? payload, OperationDeadline deadline)
-    {
-        IHostedApp app = _app;
-        ViewerAppRequest request = payload is null
+    private static ViewerAppRequest AppRequest(string? payload) =>
+        payload is null
             ? throw new InvalidDataException("The app request carries no page.")
             : JsonSerializer.Deserialize(payload, ViewerServiceJsonContext.Default.ViewerAppRequest)
                 ?? throw new InvalidDataException("The app request is empty.");
+
+    /// <summary>
+    /// Points the App at a page and opens the file a command named there. The
+    /// service is already listening, so the browser has somewhere to go the
+    /// moment this answers; the address carries a new entry ticket.
+    /// </summary>
+    private ViewerAppResponse App(ViewerAppRequest request, OperationDeadline? deadline)
+    {
+        IHostedApp app = _app;
         AppResult opened = app.Open(request, deadline);
         RecordActivity();
         return new ViewerAppResponse
         {
-            Url = opened.Url ?? app.Url,
+            Url = _http.Entry(opened.Url ?? app.Url),
             Port = _http.Port,
             Pid = Environment.ProcessId,
             Route = opened.Route,
@@ -291,7 +328,8 @@ internal sealed class ViewerServiceHost : IDisposable
         return new ViewerStatusResponse
         {
             Pid = Environment.ProcessId,
-            Url = string.Create(CultureInfo.InvariantCulture, $"http://127.0.0.1:{_http.Port}/"),
+            Port = _http.Port,
+            Url = _http.Entry(app.Url ?? _app.Url),
             Documents = _documents.All.Where(static document => document.Current is not null).Select(State).ToArray(),
             AppRoute = app.Route,
             AppFile = app.File,
@@ -317,7 +355,7 @@ internal sealed class ViewerServiceHost : IDisposable
         File = document.SourcePath,
         Product = document.Current?.Product ?? string.Empty,
         View = document.Current?.View ?? string.Empty,
-        Url = _http.Url(document.Id),
+        Url = _http.Entry(_http.Url(document.Id)),
         Revision = document.Current?.Number ?? 0,
         License = document.Current?.License ?? string.Empty,
     };

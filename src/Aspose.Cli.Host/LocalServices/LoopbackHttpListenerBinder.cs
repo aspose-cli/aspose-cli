@@ -12,7 +12,10 @@ namespace Aspose.Cli.Host.LocalServices;
 /// accept mutations from. A requested port of zero searches the dynamic range
 /// directly with HTTP.sys instead of probing with a TCP socket first; on
 /// Windows the TCP allocator can return ports reserved from HTTP.sys, so a
-/// probe is not proof that an HTTP listener can bind the same number.
+/// probe is not proof that an HTTP listener can bind the same number. A
+/// candidate HTTP.sys refuses with access denied is skipped too: another
+/// user's listener on a path beneath it (<c>http://127.0.0.1:P/x/</c>) holds
+/// the port as surely as one on its root.
 /// </summary>
 internal static class LoopbackHttpListenerBinder
 {
@@ -28,7 +31,9 @@ internal static class LoopbackHttpListenerBinder
     /// <param name="requestedPort">An explicit port, or zero to select one.</param>
     /// <exception cref="CliException">
     /// Thrown with <c>LOOPBACK_PORT_IN_USE</c> when the explicit port or every
-    /// sampled dynamic candidate cannot be bound.
+    /// sampled dynamic candidate is in use, and with
+    /// <c>LOOPBACK_LISTENER_UNAVAILABLE</c> when the explicit port, or every
+    /// candidate, is refused.
     /// </exception>
     public static LoopbackHttpListenerBinding Start(int requestedPort)
     {
@@ -41,28 +46,51 @@ internal static class LoopbackHttpListenerBinder
 
         if (requestedPort != 0)
         {
-            return TryStart(requestedPort)
-                ?? throw CliErrors.LoopbackPortInUse(requestedPort);
+            return TryStart(requestedPort, out Exception? refused)
+                ?? throw (refused is null
+                    ? CliErrors.LoopbackPortInUse(requestedPort)
+                    : CliErrors.LoopbackListenerUnavailable(permissionDenied: true, refused));
         }
 
         int start = RandomNumberGenerator.GetInt32(DynamicPortCount);
-        int lastCandidate = DynamicPortStart + start;
-        for (int attempt = 0; attempt < MaxCandidateAttempts; attempt++)
+        return StartAny(Enumerable.Range(0, MaxCandidateAttempts)
+            .Select(attempt => DynamicPortStart + ((start + (attempt * CandidateStep)) % DynamicPortCount)));
+    }
+
+    /// <summary>
+    /// Starts a listener on the first of <paramref name="candidates"/> that is
+    /// neither in use nor refused.
+    /// </summary>
+    internal static LoopbackHttpListenerBinding StartAny(IEnumerable<int> candidates)
+    {
+        int lastCandidate = 0;
+        bool anyInUse = false;
+        Exception? refused = null;
+        foreach (int candidate in candidates)
         {
-            int offset = (start + (attempt * CandidateStep)) % DynamicPortCount;
-            lastCandidate = DynamicPortStart + offset;
-            LoopbackHttpListenerBinding? binding = TryStart(lastCandidate);
+            lastCandidate = candidate;
+            LoopbackHttpListenerBinding? binding = TryStart(candidate, out Exception? denied);
             if (binding is not null)
             {
                 return binding;
             }
+            anyInUse |= denied is null;
+            refused ??= denied;
         }
 
-        throw CliErrors.LoopbackPortInUse(lastCandidate);
+        throw refused is not null && !anyInUse
+            ? CliErrors.LoopbackListenerUnavailable(permissionDenied: true, refused)
+            : CliErrors.LoopbackPortInUse(lastCandidate);
     }
 
-    private static LoopbackHttpListenerBinding? TryStart(int port)
+    /// <summary>
+    /// Starts a listener on <paramref name="port"/>, or returns null when the
+    /// port is in use or, with <paramref name="refused"/> set, when HTTP.sys
+    /// denies it.
+    /// </summary>
+    private static LoopbackHttpListenerBinding? TryStart(int port, out Exception? refused)
     {
+        refused = null;
         var listener = new HttpListener();
         listener.Prefixes.Add(string.Create(
             CultureInfo.InvariantCulture,
@@ -80,11 +108,18 @@ internal static class LoopbackHttpListenerBinder
             return null;
         }
         catch (Exception exception) when (
+            IsPermissionDenied(exception))
+        {
+            listener.Close();
+            refused = exception;
+            return null;
+        }
+        catch (Exception exception) when (
             exception is HttpListenerException or SocketException)
         {
             listener.Close();
             throw CliErrors.LoopbackListenerUnavailable(
-                IsPermissionDenied(exception),
+                permissionDenied: false,
                 exception);
         }
     }

@@ -8,9 +8,15 @@ reproduction. Do not attach customer documents, passwords, tokens or license con
 ## Boundaries
 
 - **Local services.** App and Preview listen only on `127.0.0.1` and require the exact Host
-  header, same-origin requests, CSRF tokens and bounded bodies; only the current user can control
-  them. Their pages send `object-src 'none'` and `Cross-Origin-Resource-Policy: same-origin`; the
-  App shell cannot be framed (`frame-ancestors 'none'`, `X-Frame-Options: DENY`) and the viewer
+  header and bounded bodies; only the current user can control them. Every page, document and
+  request needs the service's session cookie (HttpOnly, SameSite=Strict), which a browser gets
+  only by opening an address the CLI returns: each carries a one-time entry ticket, valid for
+  five minutes, that the service issues over its current-user control channel. State changes
+  also need the service's exact Origin. Browsers do not keep cookies apart by port, so this does
+  not protect against another user of the same machine who serves another port of `127.0.0.1`
+  and gets your browser to open a page there once: the browser sends that user the session
+  cookie. Their pages send `object-src 'none'` and `Cross-Origin-Resource-Policy: same-origin`;
+  the App shell cannot be framed (`frame-ancestors 'none'`, `X-Frame-Options: DENY`) and the viewer
   only by its own origin (`frame-ancestors 'self'`, `SAMEORIGIN`). Rendered document parts run no
   scripts. The App control endpoint is one per configuration directory: a user who runs two
   configuration directories gets two services, each with its own endpoint.

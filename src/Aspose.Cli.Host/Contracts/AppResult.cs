@@ -13,9 +13,13 @@ public sealed record AppResult() : ResultEnvelope("app-result", 2)
     [JsonPropertyOrder(-50)]
     public required bool Running { get; init; }
 
-    /// <summary>Loopback URL of the application, omitted when it is not running.</summary>
+    /// <summary>
+    /// Loopback URL of the application with a one-time entry ticket, omitted when it is not running:
+    /// it lets the first browser that opens it in, within five minutes, and that browser keeps access
+    /// while the application runs. <c>app status</c> returns a new one.
+    /// </summary>
     [JsonPropertyOrder(-49)]
-    [Pattern("^http://127\\.0\\.0\\.1:[0-9]+/")]
+    [Pattern("^http://127\\.0\\.0\\.1:[0-9]+/[a-z]*\\?t=[0-9a-f]{64}$")]
     public string? Url { get; init; }
 
     /// <summary>Resolved loopback port, omitted when it is not running.</summary>

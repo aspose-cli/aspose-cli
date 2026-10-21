@@ -83,7 +83,7 @@ public sealed class AppMutationTests
 
     /// <summary>
     /// One real service with the App mounted on it, reached exactly as the
-    /// browser reaches it: same origin, same CSRF token, same routes.
+    /// browser reaches it: same origin, same session cookie, same routes.
     /// </summary>
     private sealed class RunningApp : IDisposable
     {
@@ -107,18 +107,9 @@ public sealed class AppMutationTests
             SessionRoot = Assert.Single(
                 Directory.GetDirectories(sessions, $"{pid}-*"),
                 directory => !existing.Contains(directory));
-            _client = new HttpClient(new HttpClientHandler { UseCookies = false })
-            {
-                BaseAddress = new Uri(Url.GetLeftPart(UriPartial.Authority)),
-                Timeout = ResponseBound,
-            };
-            string shell = _client.GetStringAsync("/").GetAwaiter().GetResult();
-            string csrf = System.Text.RegularExpressions.Regex.Match(
-                shell, @"name=""aspose-csrf"" content=""([^""]+)""").Groups[1].Value;
-            Assert.NotEmpty(csrf);
-            _client.DefaultRequestHeaders.Add("Origin", _client.BaseAddress.GetLeftPart(UriPartial.Authority));
-            _client.DefaultRequestHeaders.Add(LocalHttpRequestSecurity.CsrfHeader, csrf);
-            Csrf = csrf;
+            _client = Aspose.Cli.Platform.Tests.Integration.LocalServiceEntry
+                .Client(Url.AbsoluteUri, ResponseBound).GetAwaiter().GetResult();
+            Cookie = _client.DefaultRequestHeaders.GetValues("Cookie").Single();
         }
 
         internal string Original { get; }
@@ -127,7 +118,7 @@ public sealed class AppMutationTests
 
         internal Uri Url { get; }
 
-        internal string Csrf { get; }
+        internal string Cookie { get; }
 
         internal async Task<JsonNode> Status() =>
             JsonNode.Parse(await _client.GetStringAsync("/api/status").WaitAsync(ResponseBound))!;
@@ -158,7 +149,7 @@ public sealed class AppMutationTests
             {
                 await client.ConnectAsync("127.0.0.1", Url.Port);
                 string request = $"POST /api/preferences HTTP/1.1\r\nHost: 127.0.0.1:{Url.Port}\r\n"
-                    + $"Origin: http://127.0.0.1:{Url.Port}\r\n{LocalHttpRequestSecurity.CsrfHeader}: {Csrf}\r\n"
+                    + $"Origin: http://127.0.0.1:{Url.Port}\r\nCookie: {Cookie}\r\n"
                     + "Content-Type: application/json\r\nContent-Length: 1\r\n"
                     + "Expect: 100-continue\r\nConnection: close\r\n\r\n";
                 await client.GetStream().WriteAsync(Encoding.ASCII.GetBytes(request));

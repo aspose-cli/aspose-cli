@@ -64,8 +64,11 @@ public sealed class AppCommandTests : IDisposable
                 BaseAddress = new Uri(
                     $"http://127.0.0.1:{launchUri.Port}"),
             };
+            string? cookie = await LocalServiceEntry.Cookie(launchUri.AbsoluteUri);
+            Assert.NotNull(cookie);
+            client.DefaultRequestHeaders.Add("Cookie", cookie);
             using HttpResponseMessage page =
-                await client.GetAsync(launchUri);
+                await client.GetAsync(launchUri.AbsolutePath);
             Assert.Equal(HttpStatusCode.OK, page.StatusCode);
             Assert.False(page.Headers.Contains("Set-Cookie"));
             string shell = await page.Content.ReadAsStringAsync();
@@ -182,7 +185,10 @@ public sealed class AppCommandTests : IDisposable
                 CliResult activeStatus = _workspace.Run("app", "status", "--output-format", "json");
                 Assert.Equal(0, activeStatus.ExitCode);
                 Assert.Equal(route, Parse(activeStatus.StdOut)["route"]!.GetValue<string>());
-                using HttpResponseMessage activePage = await client.GetAsync(activeUri);
+                using HttpResponseMessage activeEntry = await client.GetAsync(activeUri);
+                Assert.Equal(HttpStatusCode.SeeOther, activeEntry.StatusCode);
+                Assert.Equal(path, activeEntry.Headers.Location!.AbsolutePath);
+                using HttpResponseMessage activePage = await client.GetAsync(activeEntry.Headers.Location);
                 Assert.Equal(HttpStatusCode.OK, activePage.StatusCode);
             }
         }
@@ -195,6 +201,50 @@ public sealed class AppCommandTests : IDisposable
                 "json");
             Assert.True(stopped.ExitCode == 0, stopped.StdErr);
             Assert.False(Parse(stopped.StdOut)["running"]!.GetValue<bool>());
+        }
+    }
+
+    /// <summary>
+    /// In the foreground the App reports itself as <c>app open</c> does in the background: with the
+    /// address, carrying a one-time entry ticket, that lets a browser in.
+    /// </summary>
+    [Fact]
+    public async Task App_InTheForeground_ReportsItsEntryAddress()
+    {
+        System.Diagnostics.ProcessStartInfo start = _workspace.StartInfo();
+        foreach (string argument in new[] { "app", "open", "--foreground", "--no-open", "--output-format", "json" })
+        {
+            start.ArgumentList.Add(argument);
+        }
+        start.RedirectStandardOutput = true;
+        start.RedirectStandardError = true;
+        using var process = System.Diagnostics.Process.Start(start)!;
+        try
+        {
+            var text = new System.Text.StringBuilder();
+            JsonNode? reported = null;
+            using var deadline = new CancellationTokenSource(TimeSpan.FromSeconds(60));
+            while (reported is null && await process.StandardOutput.ReadLineAsync(deadline.Token) is { } line)
+            {
+                text.AppendLine(line);
+                try { reported = JsonNode.Parse(text.ToString()); }
+                catch (JsonException) { }
+            }
+            Assert.NotNull(reported);
+            string url = reported["url"]?.GetValue<string>() ?? string.Empty;
+            Assert.Matches(@"^http://127\.0\.0\.1:[0-9]+/home\?t=[0-9a-f]{64}$", url);
+            Assert.True(reported["running"]!.GetValue<bool>());
+            Assert.Equal(new Uri(url).Port, reported["port"]!.GetValue<int>());
+            Assert.NotNull(await LocalServiceEntry.Cookie(url));
+        }
+        finally
+        {
+            CliResult stopped = _workspace.Run("app", "stop", "--output-format", "json");
+            if (!process.WaitForExit(TimeSpan.FromSeconds(30)))
+            {
+                process.Kill(entireProcessTree: true);
+            }
+            Assert.True(stopped.ExitCode == 0, stopped.StdErr);
         }
     }
 

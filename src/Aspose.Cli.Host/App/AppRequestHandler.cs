@@ -15,16 +15,12 @@ internal sealed class AppRequestHandler
 {
     private const int MaxJsonBytes = 64 * 1024;
     private readonly AppHost _host;
-    private readonly string _csrf = Convert.ToHexString(
-        System.Security.Cryptography.RandomNumberGenerator.GetBytes(24)).ToLowerInvariant();
-    private readonly LocalHttpRequestSecurity _security;
     private readonly JsonSerializerOptions _json = AppJsonContext.Default.Options;
     private readonly AppErrorMessages _messages;
 
     public AppRequestHandler(AppHost host)
     {
         _host = host ?? throw new ArgumentNullException(nameof(host));
-        _security = new LocalHttpRequestSecurity(_csrf);
         _messages = new AppErrorMessages(host.Catalog);
     }
 
@@ -67,9 +63,9 @@ internal sealed class AppRequestHandler
                 return;
             }
 
-            if (!_security.IsMutationAuthorized(request, port))
+            if (!LocalHttpRequestSecurity.IsSameOrigin(request, port))
             {
-                await WriteError(response, HttpStatusCode.Forbidden, "CSRF_REJECTED", "The request did not come from this local App.").ConfigureAwait(false);
+                await WriteError(response, HttpStatusCode.Forbidden, "ORIGIN_REJECTED", "The request did not come from this local App.").ConfigureAwait(false);
                 return;
             }
 
@@ -109,8 +105,7 @@ internal sealed class AppRequestHandler
             case "/home":
             case "/preview":
             case "/settings":
-                string bootstrap = $"<meta name=\"aspose-csrf\" content=\"{_csrf}\">";
-                await WriteText(response, HttpStatusCode.OK, "text/html; charset=utf-8", AppAssets.Html.Replace("__ASPOSE_CLI_BOOTSTRAP__", bootstrap, StringComparison.Ordinal)).ConfigureAwait(false);
+                await WriteText(response, HttpStatusCode.OK, "text/html; charset=utf-8", AppAssets.Html).ConfigureAwait(false);
                 break;
             case "/app.css":
                 await WriteText(response, HttpStatusCode.OK, "text/css; charset=utf-8", AppAssets.Css).ConfigureAwait(false);

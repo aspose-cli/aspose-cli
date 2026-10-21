@@ -339,7 +339,7 @@ public sealed class ViewerLiveBrowserTests : IDisposable
         var failures = new List<string>();
         page.PageError += (_, error) => failures.Add("Script error: " + error);
         if (configure is not null) { await configure(page); }
-        await page.GotoAsync(_server.Url(document.Id));
+        await page.GotoAsync(_server.Entry(_server.Url(document.Id)));
         try
         {
             await test(page, document);

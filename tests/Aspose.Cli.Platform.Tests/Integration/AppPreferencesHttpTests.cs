@@ -1,7 +1,6 @@
 using System.Net;
 using System.Text;
 using System.Text.Json.Nodes;
-using System.Text.RegularExpressions;
 using Aspose.Cli.TestKit;
 using Xunit;
 
@@ -22,16 +21,7 @@ public sealed class AppPreferencesHttpTests
             CliResult start = workspace.Run("app", "open", input, "--no-open", "--output-format", "json");
             Assert.True(start.ExitCode == 0, start.StdErr);
             var url = new Uri(JsonNode.Parse(start.StdOut)!["url"]!.GetValue<string>());
-            using var client = new HttpClient(new HttpClientHandler { UseCookies = false })
-            {
-                BaseAddress = new Uri(url.GetLeftPart(UriPartial.Authority)),
-                Timeout = TimeSpan.FromSeconds(30),
-            };
-            string shell = await client.GetStringAsync("/");
-            string csrf = Regex.Match(shell, @"name=""aspose-csrf"" content=""([^""]+)""").Groups[1].Value;
-            Assert.NotEmpty(csrf);
-            client.DefaultRequestHeaders.Add("Origin", client.BaseAddress.GetLeftPart(UriPartial.Authority));
-            client.DefaultRequestHeaders.Add("X-CSRF-Token", csrf);
+            using HttpClient client = await LocalServiceEntry.Client(url.AbsoluteUri, TimeSpan.FromSeconds(30));
             string oldPreview = await PreviewUrl(client);
             const string preferences = """{"product":"cells","defaultView":"sheets","rememberRecentFiles":true}""";
             using (var held = new FileStream(input, FileMode.Open, FileAccess.Read, FileShare.None))

@@ -33,6 +33,8 @@ public sealed class ViewerServiceHttpTests : IDisposable
         _server = new ViewerHttpServer(_documents, requestedPort: 0, limits);
         _server.Start();
         _client.Timeout = EventTimeout;
+        // The client holds a session, as a browser that opened an address the CLI returned does.
+        using HttpResponseMessage entered = _client.GetAsync(_server.Entry(Url("/"))).GetAwaiter().GetResult();
     }
 
     public void Dispose()

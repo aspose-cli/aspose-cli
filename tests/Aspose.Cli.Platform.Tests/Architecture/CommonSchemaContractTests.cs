@@ -85,13 +85,15 @@ public sealed class CommonSchemaContractTests
     }
 
     [Theory]
-    [InlineData("http://127.0.0.1:54322/d/0123456789abcdef0123456789abcdef/", true)]
+    [InlineData("http://127.0.0.1:54322/d/0123456789abcdef0123456789abcdef/?t=0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef", true)]
+    [InlineData("http://127.0.0.1:54322/d/0123456789abcdef0123456789abcdef/", false)]
+    [InlineData("http://127.0.0.1:54322/d/0123456789abcdef0123456789abcdef/?t=0123", false)]
     [InlineData("http://127.0.0.1:54322/", false)]
     [InlineData("http://127.0.0.1:54322/d/0123456789abcdef0123456789abcdef/extra", false)]
     [InlineData("http://127.0.0.1:54322/d/0123456789abcdef0123456789abcdef/?token=value", false)]
     [InlineData("http://example.com:54322/d/0123456789abcdef0123456789abcdef/", false)]
     [InlineData("https://127.0.0.1:54322/d/0123456789abcdef0123456789abcdef/", false)]
-    public void PreviewSessionUrl_RequiresOneLoopbackDocument(string url, bool valid)
+    public void PreviewSessionUrl_RequiresOneLoopbackDocumentWithAnEntryTicket(string url, bool valid)
     {
         ProductPreviewStartResult sample = CommonSchemaSamples.ProductPreviewStart with { Url = url };
         string json = CommonSerializer.Serialize(sample);

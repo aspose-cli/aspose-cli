@@ -37,7 +37,7 @@ internal sealed class AppServiceMount : IHostedApp
         return true;
     }
 
-    public AppResult Open(ViewerAppRequest request, OperationDeadline deadline) =>
+    public AppResult Open(ViewerAppRequest request, OperationDeadline? deadline) =>
         _app.Open(request.Route, request.File, AppLicenseContext.Of(request), deadline);
 
     public AppResult Result(bool reused) => _app.Result(reused);

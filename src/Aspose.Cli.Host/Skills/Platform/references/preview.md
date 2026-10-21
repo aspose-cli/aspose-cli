@@ -10,7 +10,9 @@ aspose-cli preview open <file> --output-format json
 
 It opens the viewer in the default browser; pass `--no-open` when no browser
 should appear, such as in automation, and hand the result's `url` to the
-person. Content detection selects the product; `--product` overrides it and
+person. The `url` lets the first browser that opens it in, once and within
+five minutes, and that browser keeps access; `preview status` returns a new
+`url` for each document. Content detection selects the product; `--product` overrides it and
 `--view` picks another of the product's views (`capabilities` lists them
 under `products[].preview.views`). `aspose-cli schema v2/common/preview-session`
 describes the result.
