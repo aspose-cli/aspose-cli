@@ -133,6 +133,16 @@ internal static class FilePublicationOwnedDelete
         return OpenedFileBoundary.GetInformation(handle)?.Identity;
     }
 
+    /// <summary>
+    /// The identity of the file or directory at <paramref name="path"/>, opened without following
+    /// a link it ends in; null when nothing is there or it cannot be opened.
+    /// </summary>
+    public static FilePhysicalIdentity? TryGetIdentity(string path)
+    {
+        using SafeFileHandle handle = OpenIdentityHandle(path);
+        return TryGetIdentity(handle);
+    }
+
     public static FilePhysicalIdentity? TryGetDirectoryIdentity(string path)
     {
         using SafeFileHandle handle = CreateFile(

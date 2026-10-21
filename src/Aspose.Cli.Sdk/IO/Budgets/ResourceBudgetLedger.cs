@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Errors;
+using Aspose.Cli.Sdk.IO.Files;
 using Aspose.Cli.Sdk.IO.Input;
 using Aspose.Cli.Sdk.IO.Publication;
 
@@ -223,7 +224,26 @@ public sealed class ResourceBudgetLedger
         _admitted[full] = new AdmittedFile(
             info.Length,
             info.LastWriteTimeUtc,
-            info.CreationTimeUtc);
+            info.CreationTimeUtc,
+            FilePublicationOwnedDelete.TryGetIdentity(full));
+    }
+
+    /// <summary>
+    /// Refuses a publication target that is one of this invocation's admitted inputs, compared
+    /// by file identity, so no other spelling of the input (a case variant, a hard link, a
+    /// junction or a short 8.3 name) lets an output replace it. The publication transaction
+    /// asks it about every file it writes and every file a directory it replaces holds; an
+    /// in-place edit's own input is the one target it does not ask about.
+    /// </summary>
+    /// <param name="target">The target path, for the error.</param>
+    /// <param name="identity">The identity of the file at the target; null when there is none.</param>
+    /// <exception cref="CliException"><c>OPTION_INVALID</c> when the target is an input.</exception>
+    internal void EnsureNotInput(string target, FilePhysicalIdentity? identity)
+    {
+        if (identity is { } file && _admitted.Values.Any(input => input.Identity == file))
+        {
+            throw CliErrors.OutputIsInput(target);
+        }
     }
 
     /// <summary>Rejects a file that changed after its pre-runtime admission.</summary>
@@ -265,7 +285,8 @@ public sealed class ResourceBudgetLedger
         _admitted[full] = new AdmittedFile(
             info.Length,
             info.LastWriteTimeUtc,
-            info.CreationTimeUtc);
+            info.CreationTimeUtc,
+            FilePublicationOwnedDelete.TryGetIdentity(full));
     }
 
     private static IReadOnlyDictionary<string, long> NormalizeLimits(
@@ -302,5 +323,6 @@ public sealed class ResourceBudgetLedger
     private sealed record AdmittedFile(
         long Length,
         DateTime LastWriteTimeUtc,
-        DateTime CreationTimeUtc);
+        DateTime CreationTimeUtc,
+        FilePhysicalIdentity? Identity);
 }

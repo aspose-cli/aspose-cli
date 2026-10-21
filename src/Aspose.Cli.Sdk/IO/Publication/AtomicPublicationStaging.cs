@@ -29,6 +29,11 @@ internal sealed class AtomicPublicationStaging(
         EnsureUnique(target, requestedBackup);
         plan.EnsureCapacityForEntry();
         FilePublicationSnapshot? backupOriginal = requestedBackup is null ? null : FilePublicationSnapshot.Capture(requestedBackup);
+        // Only an in-place edit, whose precondition names the target, replaces an input.
+        if (inputPrecondition?.Targets(target) is not true)
+        {
+            writer.ResourceBudgets.EnsureNotInput(target, original.PhysicalIdentity);
+        }
         if (!overwrite && original.Exists)
         {
             throw CliErrors.OutputExists(target);

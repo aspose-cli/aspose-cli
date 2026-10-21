@@ -2,6 +2,7 @@ using System.Text;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Execution;
 using Aspose.Cli.Sdk.IO.Budgets;
+using Aspose.Cli.Sdk.IO.Output;
 using Aspose.Cli.Sdk.IO.Publication;
 using Xunit;
 
@@ -185,9 +186,12 @@ public sealed class ResourceBudgetLedgerTests
                 (ResourceBudgetKinds.InputBytes, 32));
             budgets.AdmitFile(path);
 
+            // Only an in-place edit publishes over an input of its invocation.
             new SafeFileWriter(budgets).Write(
                 path,
                 overwrite: true,
+                backupPath: null,
+                FileWritePrecondition.Capture(path),
                 temporary => File.WriteAllBytes(temporary, [4, 5, 6, 7]));
             Assert.Equal(
                 [4, 5, 6, 7],

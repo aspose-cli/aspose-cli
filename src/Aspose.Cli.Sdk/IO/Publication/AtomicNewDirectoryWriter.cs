@@ -143,8 +143,10 @@ public sealed class AtomicNewDirectoryWriter : IDisposable
             _journal.EnsureLifecycleCapacity(JournalPath), "bytes", "directory-seal");
         if (_budgets.OutputSession is { } worker)
         {
-            // The worker admits the target as it is now; the parent publishes only over that tree.
-            AdmittedDirectoryPrevious? admittedHere = admitPrevious is null ? null : new AdmittedDirectoryPrevious(Admit(admitPrevious));
+            // The worker, which knows the invocation's inputs, admits the target as it is now;
+            // the parent publishes only over that tree.
+            AdmittedDirectoryPrevious? admittedHere = admitPrevious is null && !_replace
+                ? null : new AdmittedDirectoryPrevious(Admit(admitPrevious));
             worker.RegisterDirectory(_output, _transactionParent, admittedHere, _budgets.Deadline);
             _completed = true;
             return;
@@ -211,6 +213,10 @@ public sealed class AtomicNewDirectoryWriter : IDisposable
     {
         DirectoryTreeSnapshot? previous = _replace ? CapturePrevious() : null;
         if (previous is null) { NewDirectoryPublication.EnsureAbsent(TargetDirectory); }
+        foreach (DirectoryOutputFile file in previous?.Files ?? [])
+        {
+            _budgets.EnsureNotInput(Path.Combine(TargetDirectory, file.Path), file.Snapshot.PhysicalIdentity);
+        }
         admitPrevious?.Invoke(TargetDirectory);
         return previous;
     }

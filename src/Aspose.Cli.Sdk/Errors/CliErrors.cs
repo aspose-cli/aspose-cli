@@ -692,6 +692,19 @@ public static partial class CliErrors
         details: new JsonObject { [ParameterKey(parameter)] = parameter, ["path"] = path });
 
     /// <summary>
+    /// A file the publication would write or remove is one of the invocation's inputs under
+    /// another name, such as an extracted file named like the input or a directory to replace
+    /// that holds it. It is the fact the overload with a parameter states, found where no
+    /// option names the file, so it has the same code.
+    /// </summary>
+    /// <param name="path">The target that is an input.</param>
+    internal static CliException OutputIsInput(string path) => CliException.Create(
+        ErrorCodes.OptionInvalid,
+        $"The output would replace an input file: {path}",
+        hint: "Choose another output path or directory; only --in-place, where a command offers it, replaces its input.",
+        details: new JsonObject { ["path"] = path, ["reason"] = "output-is-input" });
+
+    /// <summary>
     /// An output named <c>-</c>, which names standard input only: every output is a file or a
     /// directory, never standard output.
     /// </summary>
