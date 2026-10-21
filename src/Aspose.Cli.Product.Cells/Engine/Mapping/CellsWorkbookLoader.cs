@@ -165,7 +165,12 @@ internal sealed class CellsWorkbookLoader
             {
                 workbook.Worksheets[0].Name = stem.Replace('[', '(').Replace(']', ')')[..Math.Min(stem.Length, MaxSheetNameLength)];
             }
+            if (plan.Format is LoadFormat.Html or LoadFormat.MHtml)
+            {
+                resources.LeaveOutImages(workbook);
+            }
             resources.MaterializeLinkedPictures(workbook);
+            resources.CleanSvgPictures(workbook);
             resources.ThrowIfFailed();
             _resourceBudgets.EnsureWithin(CellsBudgetDomains.Sheets,
                 workbook.Worksheets.Count, "items", "post-load");

@@ -15,12 +15,25 @@ Reproductions: [CellsKnownIssueTests](tests/Aspose.Cli.Product.Cells.Tests/Cells
 
 ### CELLS-SVG-EGRESS
 
-- **Defect:** adding an SVG picture requests the images its `xlink:href` attributes name while
-  the engine rasterizes the picture's fallback image; `WorkbookSettings.ResourceProvider` is
-  never consulted.
-- **CLI behavior:** `insert_image` refuses an SVG that names a network address, and a compressed
-  SVG, with `FEATURE_UNSUPPORTED`.
-- **Workaround:** embed the SVG's images as `data:` URIs, or insert a raster image.
+- **Defect:** an SVG picture without a raster image, one being added or one a workbook stores
+  alone (as an ODS can), is rasterized by reading every image its `<image>` elements name: a bare
+  path from the file system, and a `file:` or `http:` URL through a request of the engine's own.
+  `WorkbookSettings.ResourceProvider` and `LoadOptions.StreamProvider` are never consulted. An
+  HTML input's SVG images are rasterized the same way while it loads.
+- **CLI behavior:** every SVG the engine gets keeps only references inside itself, `#id`
+  fragments and base64 `data:` URIs whose bytes are a PNG, JPEG or GIF file; other references,
+  in attributes, CSS, `xml:base` or SMIL animations, are removed and reported with
+  `REMOTE_RESOURCES_BLOCKED`. A loaded workbook's SVG picture that named any is replaced by the
+  same picture without them, at the same place and size, so what the engine read while loading
+  it never reaches an output; one whose SVG does not parse as XML, or that sits in a group, is
+  left out with `IMAGES_SKIPPED`. `insert_image` refuses an SVG that does not parse with
+  `OPS_INVALID`, and a compressed SVG, which cannot be read, with `FEATURE_UNSUPPORTED`. The
+  images of an HTML or MHTML input are removed once it loads, with `IMAGES_SKIPPED`; the engine
+  has no option to skip them, so it still reads what such an SVG image names while it loads, but
+  none of it reaches an output.
+- **Workaround:** embed an SVG's images as base64 `data:` URIs (PNG, JPEG or GIF), or insert a
+  raster image;
+  add an HTML page's images to the converted workbook with `insert_image`.
 
 ### CELLS-SPARKLINE-APOSTROPHE
 

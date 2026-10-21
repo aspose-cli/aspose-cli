@@ -74,11 +74,12 @@ internal static class CellsEdit
             saved = saver.Stage(transaction, workbook, savePlan, output, precondition, verifyReopen: true);
         }
 
-        Warning?[] editWarnings = [.. batchOutcome.Warnings, skippedSheet, unenforced, relativeLinks, unknownFunctions];
+        Warning? svgReferences = SvgPictures.OmissionWarning(model.SvgReferencesRemoved, model.SvgReferencesRemoved);
+        Warning?[] editWarnings = [.. batchOutcome.Warnings, skippedSheet, unenforced, relativeLinks, unknownFunctions, svgReferences];
         IReadOnlyList<Warning>? warnings = saved is null
             ? EnvelopeParts.CombineWarnings(loaded.Warnings(editWarnings), importSources.Warnings())
             : EnvelopeParts.CombineWarnings(
-                EnvelopeParts.CombineWarnings([loaded.Resources.CoverageWarning, .. editWarnings, saved.Truncated, saved.FormulasBroken, saved.SheetsDropped]),
+                EnvelopeParts.CombineWarnings([.. loaded.Resources.Warnings, .. editWarnings, saved.Truncated, saved.FormulasBroken, saved.SheetsDropped]),
                 importSources.Warnings(),
                 EnvelopeParts.BackupWarnings(saved.Backup));
         if (transaction is not null)

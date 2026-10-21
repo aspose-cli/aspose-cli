@@ -59,7 +59,7 @@ public sealed class CellsResourceLoadingTests
     [InlineData("html")]
     [InlineData("xls")]
     [InlineData("mht")]
-    public async Task HtmlInputs_UseLocalResourcesAndNeverFetchRemoteResources(string extension)
+    public async Task HtmlInputs_ImportNoImagesAndNeverFetchRemoteResources(string extension)
     {
         Requires.Windows();
         using var fixture = new CellsFixture();
@@ -75,7 +75,7 @@ public sealed class CellsResourceLoadingTests
         var loader = CellsWorkbookLoader.ForFontInspection(ProductTestBudgets.Create<CellsModule>());
         using (LoadedWorkbook loaded = loader.Open(input, null))
         {
-            Assert.True(loaded.Workbook.Worksheets.Cast<Worksheet>().Sum(sheet => sheet.Pictures.Count) > 0);
+            Assert.Equal(0, loaded.Workbook.Worksheets.Cast<Worksheet>().Sum(sheet => sheet.Pictures.Count));
             Assert.True(server.RequestCount == 0, string.Join("; ", server.Requests));
             AssertOmission(loaded.Warnings());
         }
@@ -127,7 +127,7 @@ public sealed class CellsResourceLoadingTests
     }
 
     [Fact]
-    public void Mhtml_EmbeddedImageNeedsNoExternalFile()
+    public void Mhtml_EmbeddedImageIsNotImported()
     {
         Requires.Windows();
         using var fixture = new CellsFixture();
@@ -135,9 +135,8 @@ public sealed class CellsResourceLoadingTests
         File.WriteAllText(input, Mhtml("<html><body><table><tr><td>Embedded</td><td><img src='local.png'></td></tr></table></body></html>"));
         Assert.False(File.Exists(fixture.Temp.File("local.png")));
         using LoadedWorkbook loaded = CellsWorkbookLoader.ForFontInspection(ProductTestBudgets.Create<CellsModule>()).Open(input, null);
-        Assert.Contains(loaded.Workbook.Worksheets.Cast<Worksheet>().SelectMany(
-            sheet => sheet.Pictures.Cast<Aspose.Cells.Drawing.Picture>()),
-            picture => picture.Data is { Length: > 0 } && picture.OriginalWidth == 1 && picture.OriginalHeight == 1);
+        Assert.Equal(0, loaded.Workbook.Worksheets.Cast<Worksheet>().Sum(sheet => sheet.Pictures.Count));
+        Assert.Contains(loaded.Warnings() ?? [], warning => warning.Code.Name == "IMAGES_SKIPPED" && warning.AffectsCompleteness);
     }
 
     [Fact]
@@ -165,13 +164,12 @@ public sealed class CellsResourceLoadingTests
         Assert.Equal(0, server.RequestCount);
     }
 
-    // Adding an SVG picture makes Aspose.Cells fetch the SVG's external images, and no resource
-    // provider governs that request (gate CELLS-SVG-EGRESS), so the CLI refuses such an image.
+    // A compressed SVG cannot be read for the references it names (CELLS-SVG-EGRESS), so the
+    // CLI refuses it; an SVG's references are covered by CellsSvgPictureTests.
     [Theory]
-    [InlineData("remote.svg", true)]
     [InlineData("remote.svgz", true)]
     [InlineData("local.svg", false)]
-    public async Task InsertImage_RefusesAnSvgThatNamesANetworkAddressWithoutARequest(string name, bool refused)
+    public async Task InsertImage_RefusesACompressedSvgWithoutARequest(string name, bool refused)
     {
         using var workspace = new TempWorkspace();
         await using var server = new ResourceHttpServer();
@@ -213,7 +211,8 @@ public sealed class CellsResourceLoadingTests
     private static void AssertOmission(IReadOnlyList<Warning>? warnings) =>
         Assert.Contains(warnings ?? [], warning =>
             (warning.Code == WarningCodes.RemoteResourcesBlocked
-                || warning.Code == CellsDiagnostics.MhtmlResourceCoverageUnverified) && warning.AffectsCompleteness);
+                || warning.Code == CellsDiagnostics.MhtmlResourceCoverageUnverified
+                || warning.Code.Name == "IMAGES_SKIPPED") && warning.AffectsCompleteness);
 
     private static string Mhtml(string html) =>
         "MIME-Version: 1.0\r\nContent-Type: multipart/related; boundary=resource-test\r\n\r\n"

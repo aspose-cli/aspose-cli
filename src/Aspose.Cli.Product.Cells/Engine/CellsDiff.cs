@@ -33,7 +33,7 @@ internal static class CellsDiff
             Summary = diff.Summary,
             Sheets = diff.Sheets.Count > 0 ? diff.Sheets : null,
             License = EnvelopeParts.License(licenseState),
-            Warnings = loaded.Warnings([other.Resources.CoverageWarning, CellsTruncated(diff), .. diff.Warnings]),
+            Warnings = loaded.Warnings([.. other.Resources.Warnings, CellsTruncated(diff), .. diff.Warnings]),
         };
     }
 

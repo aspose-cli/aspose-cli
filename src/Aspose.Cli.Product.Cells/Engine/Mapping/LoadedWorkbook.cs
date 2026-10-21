@@ -69,7 +69,7 @@ internal sealed record LoadedWorkbook(Workbook Workbook, WorkbookResources Resou
     /// </summary>
     internal IReadOnlyList<Warning>? Warnings(params Warning?[] additional)
     {
-        Warning[] warnings = new[] { Resources.CoverageWarning, CalculatedOnOpen }.Concat(additional).OfType<Warning>().ToArray();
+        Warning[] warnings = Resources.Warnings.Append(CalculatedOnOpen).Concat(additional).OfType<Warning>().ToArray();
         return warnings.Length == 0 ? null : warnings;
     }
 
