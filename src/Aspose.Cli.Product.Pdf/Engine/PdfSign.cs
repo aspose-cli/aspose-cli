@@ -356,22 +356,8 @@ internal static class PdfSign
             throw new EngineOpException(message, new InvalidOperationException(message));
         }
 
-        bool? valid;
-        try
-        {
-            valid = field.Signature.Verify();
-        }
-        catch (Exception exception) when (exception.GetType().Assembly.GetName().Name == "Aspose.PDF")
-        {
-            valid = null;
-        }
-
-        return new PdfSignatureInfo
-        {
-            Name = field.FullName ?? field.PartialName ?? string.Empty,
-            Signed = true,
-            Valid = valid,
-        };
+        // The facade only reads the document; disposing it would close the document.
+        return PdfInfoProjection.Signature(new PdfFileSignature(reopened.Document), field);
     }
 
     private static IEnumerable<SignatureField> SignedFields(Document document) =>

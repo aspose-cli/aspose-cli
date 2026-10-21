@@ -94,7 +94,7 @@ internal static class SignCommand
     {
         ResultText.Produced(surface, result.Output, "signed");
         surface.Out.WriteLine($"  field: {result.Signature.Name}");
-        surface.Out.WriteLine($"  valid: {(result.Signature.Valid is bool valid ? TableText.YesNo(valid) : TableText.Missing)}");
+        surface.Out.WriteLine($"  intact: {(result.Signature.Intact is bool intact ? TableText.YesNo(intact) : TableText.Missing)}");
         surface.Out.WriteLine($"  appearance: {(result.Visible ? $"visible on page {result.Page}" : "invisible")}");
     }
 

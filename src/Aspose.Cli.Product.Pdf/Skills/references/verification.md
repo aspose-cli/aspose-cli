@@ -73,8 +73,9 @@ document, image or text one is written as `.bin`.
 ## Standards and signatures
 
 Require `valid: true` from `pdf validate` for archival output
-([PDF/A and conversion](pdf-standards.md)) and for every signature in
-`pdf inspect --detail signatures` ([forms and security](forms-security.md)).
+([PDF/A and conversion](pdf-standards.md)), and `intact: true` for every
+signature in `pdf inspect --detail signatures`, which says nothing changed after
+signing, not that the signer is trusted ([forms and security](forms-security.md)).
 
 ## Appearance
 

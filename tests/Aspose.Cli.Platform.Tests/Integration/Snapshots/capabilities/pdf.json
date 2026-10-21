@@ -3830,7 +3830,7 @@
           }
         },
         "pdfSignatureInfo": {
-          "description": "One signature field and the verification state the engine reports.",
+          "description": "One signature field and whether its signature still covers the file unchanged.",
           "type": "object",
           "required": [
             "name",
@@ -3846,8 +3846,8 @@
               "description": "Whether the field holds a signature.",
               "type": "boolean"
             },
-            "valid": {
-              "description": "Whether the signature verifies against the signed bytes; absent when it was not verified.",
+            "intact": {
+              "description": "Whether the signature verifies against the bytes it signed and those bytes are the whole file, so nothing was appended after signing; false once any revision follows it, also a later signature. It says nothing about who signed: the certificate is not checked against any trust store, so a self-signed certificate is intact too. Absent when it could not be checked.",
               "type": "boolean"
             }
           }
@@ -5778,7 +5778,7 @@
           }
         },
         "pdfSignatureInfo": {
-          "description": "One signature field and the verification state the engine reports.",
+          "description": "One signature field and whether its signature still covers the file unchanged.",
           "type": "object",
           "required": [
             "name",
@@ -5794,8 +5794,8 @@
               "description": "Whether the field holds a signature.",
               "type": "boolean"
             },
-            "valid": {
-              "description": "Whether the signature verifies against the signed bytes; absent when it was not verified.",
+            "intact": {
+              "description": "Whether the signature verifies against the bytes it signed and those bytes are the whole file, so nothing was appended after signing; false once any revision follows it, also a later signature. It says nothing about who signed: the certificate is not checked against any trust store, so a self-signed certificate is intact too. Absent when it could not be checked.",
               "type": "boolean"
             }
           }

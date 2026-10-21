@@ -147,7 +147,13 @@ Keep `--reason`, `--location`, `--contact` and the certificate's subject name in
 ASCII: other text makes the engine embed a whole font into the file, even for an
 invisible signature, which for Chinese text adds megabytes; the result then warns
 `SIGNATURE_FONT_EMBEDDED` with the options that hold such text and the growth.
-The command reopens the saved file and reports `signature.valid`, which may be
-true, false or unavailable. Require `valid: true` and inspect every signature
-field, especially when the input was already signed. The CLI does not validate
-operating-system trust chains or revocation.
+The command reopens the saved file and reports `signature.intact`, which may be
+true, false or unavailable. `intact: true` means the signature verifies against
+the bytes it signed and those bytes are the whole file; a revision appended
+after signing, which can change what every page shows, makes it false. A file
+signed more than once reports `intact: false` for every signature but the last,
+because each later signature is appended after the earlier ones: check the last
+one. It does not mean the signer is trusted: the CLI checks no trust chain or
+revocation, and a self-signed certificate is intact too. Require `intact: true`
+of the last signature and inspect every signature field, especially when the
+input was already signed, then confirm the signer by other means.

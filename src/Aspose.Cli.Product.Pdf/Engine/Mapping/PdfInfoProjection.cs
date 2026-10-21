@@ -3,6 +3,7 @@ using System.Text.RegularExpressions;
 using Aspose.Cli.Sdk.IO.Output;
 using Aspose.Cli.Sdk.Results;
 using Aspose.Pdf;
+using Aspose.Pdf.Facades;
 using Aspose.Pdf.Forms;
 using Aspose.Pdf.Text;
 
@@ -331,28 +332,42 @@ internal static class PdfInfoProjection
         };
     }
 
-    private static PdfSignatureInfo[] Signatures(Document document) =>
-        document.Form.Fields
+    private static PdfSignatureInfo[] Signatures(Document document)
+    {
+        // The facade only reads the document; disposing it would close the document.
+        var facade = new PdfFileSignature(document);
+        return [.. document.Form.Fields
             .OfType<SignatureField>()
-            .Select(static field =>
-            {
-                Signature? signature = field.Signature;
-                bool signed = signature is not null;
-                return new PdfSignatureInfo
-                {
-                    Name = field.FullName ?? field.PartialName ?? string.Empty,
-                    Signed = signed,
-                    Valid = signed ? Verify(signature!) : null,
-                };
-            })
-            .OrderBy(static item => item.Name, StringComparer.Ordinal)
-            .ToArray();
+            .Select(field => Signature(facade, field))
+            .OrderBy(static item => item.Name, StringComparer.Ordinal)];
+    }
 
-    private static bool? Verify(Signature signature)
+    /// <summary>
+    /// One signature field as a read reports it. A signature is intact when it verifies and covers
+    /// the whole file: the engine verifies only the bytes a signature names, so a revision
+    /// appended after it, which can change every page, still verifies.
+    /// </summary>
+    /// <param name="facade">The signature facade over the field's document.</param>
+    /// <param name="field">The signature field.</param>
+    internal static PdfSignatureInfo Signature(PdfFileSignature facade, SignatureField field)
+    {
+        string name = field.FullName ?? field.PartialName ?? string.Empty;
+        Signature? signature = field.Signature;
+        return new PdfSignatureInfo
+        {
+            Name = name,
+            Signed = signature is not null,
+            Intact = signature is null ? null : Intact(facade, name, signature),
+        };
+    }
+
+    private static bool? Intact(PdfFileSignature facade, string name, Signature signature)
     {
         try
         {
-            return signature.Verify();
+            return signature.Verify()
+                && facade.GetSignatureNames().FirstOrDefault(signed => signed.FullName == name) is { } signed
+                && facade.CoversWholeDocument(signed);
         }
         catch (Exception exception) when (exception.GetType().Assembly.GetName().Name == "Aspose.PDF")
         {
