@@ -15,9 +15,18 @@ namespace Aspose.Cli.Host.Updating;
 /// <summary>Resolves a release feed and checks its archive against the release manifest.</summary>
 internal static class UpdateClient
 {
-    /// <summary>The manifest of the latest GitHub release, read when no feed is named.</summary>
+    /// <summary>The manifest of the latest GitHub release, the only feed a customer updates from.</summary>
     internal static string DefaultFeed { get; } =
         $"https://github.com/{DistributionInfo.ReleaseRepository}/releases/latest/download/{ReleaseManifest.FileName}";
+
+    /// <summary>
+    /// The feed <c>update check</c> and <c>update install</c> read: the official release, unless a
+    /// test names another in <see cref="InvocationEnvironment.UpdateFeedVariable"/>.
+    /// </summary>
+    internal static string Feed =>
+        Environment.GetEnvironmentVariable(InvocationEnvironment.UpdateFeedVariable) is { } feed && !string.IsNullOrWhiteSpace(feed)
+            ? feed
+            : DefaultFeed;
 
     private const int MaximumManifestBytes = 64 * 1024;
     internal const long MaximumArchiveBytes = 1L * 1024 * 1024 * 1024;

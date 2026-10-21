@@ -44,8 +44,8 @@ public sealed class UpdateHandoffTests
             Remove-Item -LiteralPath $full -Recurse -Force
             """;
         string feed = Feed(workspace, script);
-        var start = StartInfo(workspace, scratch,
-            ["update", "install", feed, "--output-format", "json", .. timed ? new[] { "--timeout", TestDeadline.CliTimeout } : Array.Empty<string>()]);
+        var start = StartInfo(workspace, scratch, feed,
+            ["update", "install", "--output-format", "json", .. timed ? new[] { "--timeout", TestDeadline.CliTimeout } : Array.Empty<string>()]);
         using Process cli = Process.Start(start)!;
         Task<string> stdout = cli.StandardOutput.ReadToEndAsync();
         Task<string> stderr = cli.StandardError.ReadToEndAsync();
@@ -97,8 +97,8 @@ public sealed class UpdateHandoffTests
         int port = ((IPEndPoint)server.LocalEndpoint).Port;
         using var stopAccepting = new CancellationTokenSource();
         Task<TcpClient> accepted = server.AcceptTcpClientAsync(stopAccepting.Token).AsTask();
-        var start = StartInfo(workspace, scratch,
-            ["update", "install", $"https://127.0.0.1:{port}/RELEASE-MANIFEST.json", "--timeout", "3", "--output-format", "json"]);
+        var start = StartInfo(workspace, scratch, $"https://127.0.0.1:{port}/RELEASE-MANIFEST.json",
+            ["update", "install", "--timeout", "3", "--output-format", "json"]);
         using Process cli = Process.Start(start)!;
         Task<string> stdout = cli.StandardOutput.ReadToEndAsync();
         Task<string> stderr = cli.StandardError.ReadToEndAsync();
@@ -141,11 +141,12 @@ public sealed class UpdateHandoffTests
         while (!File.Exists(path)) { await Task.Delay(25, timeout.Token); }
     }
 
-    private static ProcessStartInfo StartInfo(TempWorkspace workspace, string scratch, string[] args)
+    // The update commands read the feed only from the internal test variable.
+    private static ProcessStartInfo StartInfo(TempWorkspace workspace, string scratch, string feed, string[] args)
     {
         ProcessStartInfo start = workspace.StartInfo(new Dictionary<string, string?>
         {
-            ["TEMP"] = scratch, ["TMP"] = scratch, ["LOCALAPPDATA"] = scratch,
+            ["TEMP"] = scratch, ["TMP"] = scratch, ["LOCALAPPDATA"] = scratch, ["ASPOSE_CLI_UPDATE_FEED"] = feed,
         });
         start.RedirectStandardOutput = true;
         start.RedirectStandardError = true;

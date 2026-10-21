@@ -5134,21 +5134,7 @@
       "aliases": [],
       "description": "Check whether a newer release is available.",
       "options": [],
-      "arguments": [
-        {
-          "name": "feed",
-          "type": "string",
-          "valueSource": "command-line",
-          "secret": false,
-          "minimumArity": 0,
-          "maximumArity": 1,
-          "required": false,
-          "hasDefault": true,
-          "default": "https://github.com/aspose-cli/aspose-cli/releases/latest/download/RELEASE-MANIFEST.json",
-          "allowedValues": [],
-          "description": "RELEASE-MANIFEST.json, as a local path or an HTTPS URL."
-        }
-      ]
+      "arguments": []
     },
     {
       "path": "aspose-cli update install",
@@ -5176,21 +5162,7 @@
           "description": "Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds."
         }
       ],
-      "arguments": [
-        {
-          "name": "feed",
-          "type": "string",
-          "valueSource": "command-line",
-          "secret": false,
-          "minimumArity": 0,
-          "maximumArity": 1,
-          "required": false,
-          "hasDefault": true,
-          "default": "https://github.com/aspose-cli/aspose-cli/releases/latest/download/RELEASE-MANIFEST.json",
-          "allowedValues": [],
-          "description": "RELEASE-MANIFEST.json, as a local path or an HTTPS URL."
-        }
-      ]
+      "arguments": []
     }
   ],
   "resourceBudgets": [

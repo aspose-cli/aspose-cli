@@ -167,12 +167,11 @@ aspose-cli capabilities --output-format json
 - Evaluation codes (`EVALUATION_LIMIT` and the `EVALUATION_*` warnings): see
   `aspose-cli docs licensing`.
 
-**Updating.** `update check` and `update install` read a release feed: the
-latest published release by default, or a `RELEASE-MANIFEST.json` URL, file
-or downloaded release directory.
+**Updating.** `update check` and `update install` read the latest published
+release.
 
-Nothing is checked or installed when the feed cannot be read or the release
-does not match its manifest or is older than this build; the error's
+Nothing is checked or installed when the release cannot be read or does not
+match its manifest or is older than this build; the error's
 `details` and hint say which, such as whether the network or the address is the
 cause, and a failed verification is never to be worked around. A warning that
 an earlier `update install` is still running means wait, then check

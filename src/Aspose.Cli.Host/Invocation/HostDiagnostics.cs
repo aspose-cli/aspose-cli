@@ -50,8 +50,7 @@ internal static class HostDiagnostics
                 feed,
                 $"http-{(int)status}",
                 $"the feed answered HTTP {(int)status}",
-                "The server holds no release at this address: none has been published there yet, or the URL is wrong. "
-                + "Pass the URL of a release's RELEASE-MANIFEST.json, or a downloaded release directory, as the feed.")
+                "No release has been published at this address yet. Retry once a release is published.")
             : FeedUnavailable(feed, $"http-{(int)status}", $"the feed answered HTTP {(int)status}", hint: null);
 
     /// <summary>
@@ -74,7 +73,7 @@ internal static class HostDiagnostics
         return new CliException(
             ReleaseFeedUnavailableCode,
             $"The release feed could not be reached: {reason}",
-            hint: hint ?? "Check the network connection, proxy settings (HTTPS_PROXY) and the feed URL, then retry. A downloaded release directory also works as a local feed path.",
+            hint: hint ?? "Check the network connection and proxy settings (HTTPS_PROXY), then retry.",
             details: new JsonObject
             {
                 ["reason"] = token,
@@ -87,7 +86,7 @@ internal static class HostDiagnostics
     internal static CliException ReleaseFeedNotFound(string path) => new(
         ReleaseFeedUnavailableCode,
         $"The release feed could not be read: no file exists at '{path}'.",
-        hint: "Pass a downloaded release directory, or the RELEASE-MANIFEST.json in it, as the feed.",
+        hint: "The feed names no release manifest at this path; nothing was checked or installed.",
         details: new JsonObject
         {
             ["reason"] = "file-not-found",

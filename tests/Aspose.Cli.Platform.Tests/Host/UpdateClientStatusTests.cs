@@ -98,13 +98,19 @@ public sealed class UpdateClientStatusTests : IDisposable
         listener.Stop();
         using var workspace = new TempWorkspace();
 
-        CliResult result = workspace.Run(
-            "update", "check", $"https://127.0.0.1:{port}/RELEASE-MANIFEST.json", "--output-format", "json");
+        string feed = $"https://127.0.0.1:{port}/RELEASE-MANIFEST.json";
+
+        CliResult result = workspace.RunWithEnv(
+            new Dictionary<string, string?> { ["ASPOSE_CLI_UPDATE_FEED"] = feed },
+            "update", "check", "--output-format", "json");
 
         Assert.NotEqual(0, result.ExitCode);
         Assert.NotEqual(130, result.ExitCode);
         JsonNode error = JsonNode.Parse(result.StdErr)!["error"]!;
         Assert.Equal("RELEASE_FEED_UNAVAILABLE", error["code"]!.GetValue<string>());
+        // The local feed the variable names was read and refused the connection; no other address was.
+        Assert.Equal(feed, error["details"]!["feed"]!.GetValue<string>());
+        Assert.Equal("unreachable", error["details"]!["reason"]!.GetValue<string>());
         Assert.False(string.IsNullOrWhiteSpace(error["hint"]?.GetValue<string>()));
     }
 
@@ -114,15 +120,18 @@ public sealed class UpdateClientStatusTests : IDisposable
         using var workspace = new TempWorkspace();
         string missing = workspace.File(Path.Combine("releases", "RELEASE-MANIFEST.json"));
 
-        CliResult result = workspace.Run("update", "check", missing, "--output-format", "json");
+        CliResult result = workspace.RunWithEnv(
+            new Dictionary<string, string?> { ["ASPOSE_CLI_UPDATE_FEED"] = missing }, "update", "check", "--output-format", "json");
 
         Assert.Equal(5, result.ExitCode);
         JsonNode error = JsonNode.Parse(result.StdErr)!["error"]!;
         Assert.Equal("RELEASE_FEED_UNAVAILABLE", error["code"]!.GetValue<string>());
         Assert.Equal(missing, error["details"]!["feed"]!.GetValue<string>());
+        Assert.Equal("file-not-found", error["details"]!["reason"]!.GetValue<string>());
         string hint = error["hint"]!.GetValue<string>();
-        Assert.Contains("release directory", hint, StringComparison.Ordinal);
+        Assert.Contains("no release manifest at this path", hint, StringComparison.Ordinal);
         Assert.DoesNotContain("network", hint, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("as the feed", hint, StringComparison.Ordinal);
     }
 
     private static void Write(string path, JsonObject status) => File.WriteAllText(path, status.ToJsonString());

@@ -805,7 +805,7 @@ public sealed class CliContractTests : IDisposable
     {
         string manifest = WriteReleaseManifest(_workspace.File("feed"), "release.zip", 1, new string('a', 64));
 
-        CliResult result = _workspace.Run("update", "check", manifest, "--output-format", "json");
+        CliResult result = _workspace.RunWithEnv(UpdateFeed(manifest), "update", "check", "--output-format", "json");
 
         Assert.Equal(0, result.ExitCode);
         JsonNode update = Parse(result.StdOut);
@@ -821,7 +821,7 @@ public sealed class CliContractTests : IDisposable
         File.WriteAllText(Path.Combine(root, "release.zip"), "tampered", Encoding.UTF8);
         string manifest = WriteReleaseManifest(root, "release.zip", 8, new string('a', 64));
 
-        CliResult result = _workspace.Run("update", "install", manifest, "--output-format", "json");
+        CliResult result = _workspace.RunWithEnv(UpdateFeed(manifest), "update", "install", "--output-format", "json");
 
         Assert.Equal(5, result.ExitCode);
         Assert.Equal("RELEASE_VERIFICATION_FAILED", Parse(result.StdErr)["error"]!["code"]!.GetValue<string>());
@@ -844,12 +844,35 @@ public sealed class CliContractTests : IDisposable
         }
 
         string manifest = WriteReleaseManifest(root, "release.zip", new FileInfo(archive).Length, HashFile(archive));
-        CliResult result = _workspace.Run("update", "install", manifest, "--output-format", "json");
+        CliResult result = _workspace.RunWithEnv(UpdateFeed(manifest), "update", "install", "--output-format", "json");
 
         Assert.Equal(5, result.ExitCode);
         Assert.Equal("RELEASE_VERIFICATION_FAILED", Parse(result.StdErr)["error"]!["code"]!.GetValue<string>());
         Assert.False(File.Exists(escaped));
     }
+
+    /// <summary>
+    /// The update commands take no feed: they read the official release, which only the
+    /// internal test variable replaces. A feed given as an argument is a usage error, before
+    /// anything is read or run.
+    /// </summary>
+    [Theory]
+    [InlineData("check")]
+    [InlineData("install")]
+    public void UpdateCommands_RefuseAFeedArgument(string command)
+    {
+        const string Feed = "https://evil.example/RELEASE-MANIFEST.json";
+
+        CliResult result = _workspace.Run("update", command, Feed, "--output-format", "json");
+
+        Assert.Equal(2, result.ExitCode);
+        JsonNode error = Parse(result.StdErr)["error"]!;
+        Assert.Contains(Feed, error["message"]!.GetValue<string>(), StringComparison.Ordinal);
+        Assert.NotEqual("RELEASE_FEED_UNAVAILABLE", error["code"]!.GetValue<string>());
+    }
+
+    // The internal variable that names a test feed in place of the official release.
+    private static Dictionary<string, string?> UpdateFeed(string manifest) => new() { ["ASPOSE_CLI_UPDATE_FEED"] = manifest };
 
     private static string WriteReleaseManifest(string root, string archive, long size, string sha256)
     {

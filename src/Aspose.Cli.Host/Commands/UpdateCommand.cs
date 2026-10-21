@@ -21,23 +21,19 @@ internal static class UpdateCommand
     private static Command CreateCheck(CommandExecutor executor, GlobalOptions globals)
     {
         var command = new Command("check", "Check whether a newer release is available.");
-        Argument<string> feed = Feed();
-        command.Arguments.Add(feed);
         command.SetAction(parse => executor.Run(parse, globals, context =>
-            UpdateClient.Check(context, parse.GetValue(feed)!)));
+            UpdateClient.Check(context, UpdateClient.Feed)));
         return command.WithInvocationPolicy(new CommandInvocationPolicy(ReachesNetwork: true));
     }
 
     private static Command CreateInstall(HostContext host, CommandExecutor executor, GlobalOptions globals)
     {
         var command = new Command("install", "Install a newer release after checking its archive against the release manifest.");
-        Argument<string> feed = Feed();
         Option<bool> dryRun = StandardOptions.DryRunOption();
-        command.Arguments.Add(feed);
         command.Options.Add(dryRun);
         command.SetAction(parse => executor.RunHandoff(parse, globals, context => parse.GetValue(dryRun)
-            ? UpdateInstaller.DryRun(context, parse.GetValue(feed)!)
-            : UpdateInstaller.Install(host, context, parse.GetValue(feed)!)));
+            ? UpdateInstaller.DryRun(context, UpdateClient.Feed)
+            : UpdateInstaller.Install(host, context, UpdateClient.Feed)));
         return command.WithInvocationPolicy(new CommandInvocationPolicy(Execution: CommandExecutionOwnership.ParentHandoff, ReachesNetwork: true));
     }
 
@@ -59,11 +55,4 @@ internal static class UpdateCommand
         return command.WithInvocationPolicy(new CommandInvocationPolicy(
             OutputBytesLimit: UpdateClient.MaximumArchiveBytes, ReachesNetwork: true));
     }
-
-    private static Argument<string> Feed() => new Argument<string>("feed")
-    {
-        Description = "RELEASE-MANIFEST.json, as a local path or an HTTPS URL.",
-        Arity = ArgumentArity.ZeroOrOne,
-        DefaultValueFactory = static _ => UpdateClient.DefaultFeed,
-    }.WithInput(InputKind.None);
 }
