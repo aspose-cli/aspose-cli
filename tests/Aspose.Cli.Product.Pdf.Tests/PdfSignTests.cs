@@ -1,3 +1,6 @@
+using System.Globalization;
+using System.Text;
+using System.Text.RegularExpressions;
 using Aspose.Cli.Product.Pdf.Contracts;
 using Xunit;
 
@@ -32,7 +35,7 @@ public sealed class PdfSignTests
 
         Assert.True(File.Exists(output));
         Assert.True(result.Signature.Signed);
-        Assert.True(result.Signature.Valid);
+        Assert.True(ResultJson.Intact(result.Signature));
         Assert.Equal(visible, result.Visible);
         Assert.Equal(2, result.Page);
         Assert.Equal(visible, result.Rect is not null);
@@ -45,7 +48,7 @@ public sealed class PdfSignTests
         Assert.True(info.Pdf.Signed);
         Assert.Single(info.Signatures!);
         Assert.True(info.Signatures![0].Signed);
-        Assert.True(info.Signatures[0].Valid);
+        Assert.True(ResultJson.Intact(info.Signatures[0]));
     }
 
     [Fact]
@@ -556,5 +559,121 @@ public sealed class PdfSignTests
         Assert.Equal(Sdk.Errors.ErrorCodes.FileLocked, exception.Code);
         Assert.Equal(Path.GetFullPath(certificate), exception.Details!["path"]!.GetValue<string>());
         Assert.False(File.Exists(output));
+    }
+
+    /// <summary>
+    /// A revision appended after signing can replace what a page shows while the signed bytes
+    /// still verify: a signature is intact only when it also covers the whole file.
+    /// </summary>
+    [Fact]
+    public void Inspect_ReportsASignatureNotIntactOnceARevisionIsAppendedAfterIt()
+    {
+        using var fixture = new PdfEngineFixture();
+        const string certificatePassword = "test-certificate-password";
+        string signed = fixture.File("signed.pdf");
+        PdfSignResult result = PdfSign.Run(fixture.Session, new PdfSignRequest
+        {
+            Input = fixture.CreateDocument("unsigned.pdf", pages: 1),
+            Output = TestOutput.At(signed),
+            CertificatePath = fixture.CreateCertificate(certificatePassword),
+            CertificatePassword = new Secret(certificatePassword),
+            Page = 1,
+        });
+        string tampered = fixture.File("tampered.pdf");
+        AppendRevision(signed, tampered, "PAY 1000000 TO MALLORY");
+
+        PdfSignatureInfo Signature(string path) => Assert.Single(PdfInfo.Run(fixture.Session, new PdfInspectRequest
+        {
+            Input = path,
+            Details = ["signatures"],
+        }).Signatures!);
+
+        Assert.True(ResultJson.Intact(result.Signature));
+        Assert.True(ResultJson.Intact(Signature(signed)));
+        using (var document = new Aspose.Pdf.Document(tampered))
+        {
+            var text = new Aspose.Pdf.Text.TextAbsorber();
+            document.Pages[1].Accept(text);
+            Assert.Contains("MALLORY", text.Text, StringComparison.Ordinal);
+        }
+
+        PdfSignatureInfo after = Signature(tampered);
+        Assert.True(after.Signed);
+        Assert.False(ResultJson.Intact(after));
+    }
+
+    /// <summary>
+    /// Signing a signed file again appends the new signature after the first, so the first no
+    /// longer covers the whole file and only the last is intact.
+    /// </summary>
+    [Fact]
+    public void Inspect_ReportsOnlyTheLastOfTwoSignaturesIntact()
+    {
+        using var fixture = new PdfEngineFixture();
+        const string certificatePassword = "test-certificate-password";
+        string certificate = fixture.CreateCertificate(certificatePassword);
+        string once = fixture.File("once.pdf");
+        string twice = fixture.File("twice.pdf");
+        foreach ((string input, string output) in new[] { (fixture.CreateDocument("unsigned.pdf", pages: 1), once), (once, twice) })
+        {
+            PdfSign.Run(fixture.Session, new PdfSignRequest
+            {
+                Input = input,
+                Output = TestOutput.At(output),
+                CertificatePath = certificate,
+                CertificatePassword = new Secret(certificatePassword),
+                Page = 1,
+            });
+        }
+
+        IReadOnlyList<PdfSignatureInfo> signatures = PdfInfo.Run(fixture.Session, new PdfInspectRequest
+        {
+            Input = twice,
+            Details = ["signatures"],
+        }).Signatures!;
+
+        Assert.Equal(2, signatures.Count);
+        Assert.Equal(new bool?[] { false, true }, signatures.OrderBy(static signature => signature.Name, StringComparer.Ordinal).Select(ResultJson.Intact));
+    }
+
+    /// <summary>
+    /// Appends an incremental update to <paramref name="source"/> that gives its last page a new
+    /// content stream drawing <paramref name="text"/>, as an attacker edits a signed file.
+    /// </summary>
+    private static void AppendRevision(string source, string target, string text)
+    {
+        CultureInfo invariant = CultureInfo.InvariantCulture;
+        string pdf = Encoding.Latin1.GetString(File.ReadAllBytes(source));
+        int previous = int.Parse(Regex.Matches(pdf, @"startxref\s+(\d+)")[^1].Groups[1].Value, invariant);
+        Match page = Regex.Matches(pdf, @"(\d+) 0 obj\s*(<<(?:(?!endobj).)*?/Type\s*/Page[^s](?:(?!endobj).)*?)endobj", RegexOptions.Singleline)[^1];
+        int size = Regex.Matches(pdf, @"/Size (\d+)").Max(match => int.Parse(match.Groups[1].Value, invariant));
+        string content = $"BT /Tampered 28 Tf 1 0 0 1 20 300 Tm ({text}) Tj ET";
+        string body = Regex.Replace(page.Groups[2].Value.Trim(), @"/Contents\s*(\[[^\]]*\]|\d+ 0 R)", $"/Contents {size} 0 R");
+        body = new Regex(@"/Font\s*<<").Replace(body, $"/Font << /Tampered {size + 1} 0 R ", 1);
+        var update = new StringBuilder(pdf);
+        if (!pdf.EndsWith('\n'))
+        {
+            update.Append('\n');
+        }
+
+        var offsets = new SortedDictionary<int, int>
+        {
+            [int.Parse(page.Groups[1].Value, invariant)] = update.Length,
+        };
+        update.Append($"{page.Groups[1].Value} 0 obj\n{body}\nendobj\n");
+        offsets[size] = update.Length;
+        update.Append($"{size} 0 obj\n<< /Length {content.Length} >>\nstream\n{content}\nendstream\nendobj\n");
+        offsets[size + 1] = update.Length;
+        update.Append($"{size + 1} 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\nendobj\n");
+        int xref = update.Length;
+        update.Append("xref\n");
+        foreach ((int number, int offset) in offsets)
+        {
+            update.Append(invariant, $"{number} 1\n{offset:0000000000} 00000 n \n");
+        }
+
+        string root = Regex.Matches(pdf, @"/Root (\d+ 0 R)")[^1].Groups[1].Value;
+        update.Append($"trailer\n<< /Size {size + 2} /Root {root} /Prev {previous} >>\nstartxref\n{xref}\n%%EOF\n");
+        File.WriteAllBytes(target, Encoding.Latin1.GetBytes(update.ToString()));
     }
 }

@@ -157,12 +157,12 @@ internal static class InspectCommand
                 + $"high-resolution print: {TableText.YesNo(permissions.PrintHighResolution)}");
         }
 
-        ResultText.Table(surface, "signatures", result.Signatures, ["field", "signed", "valid"],
+        ResultText.Table(surface, "signatures", result.Signatures, ["field", "signed", "intact"],
             static signature =>
             [
                 signature.Name,
                 TableText.YesNo(signature.Signed),
-                signature.Valid is bool valid ? TableText.YesNo(valid) : null,
+                signature.Intact is bool intact ? TableText.YesNo(intact) : null,
             ]);
         ResultText.List(surface, "layers", result.Layers);
 

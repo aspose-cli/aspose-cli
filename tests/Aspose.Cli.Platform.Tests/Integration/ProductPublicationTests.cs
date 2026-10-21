@@ -136,7 +136,7 @@ public sealed class ProductPublicationTests
         Assert.True(File.Exists(output));
         JsonNode signature = JsonNode.Parse(signed.StdOut)!["signature"]!;
         Assert.True(signature["signed"]!.GetValue<bool>());
-        Assert.True(signature["valid"]!.GetValue<bool>());
+        Assert.True(signature["intact"]!.GetValue<bool>());
     }
 
     // SkillInstallTests cover the install of every Skill without a timeout.

@@ -104,7 +104,7 @@ public sealed class PdfEvaluationMarkTests
 
         Assert.Contains("Aspose.PDF", Disclosure(signed).Message, StringComparison.Ordinal);
         Assert.True(signed.Signature.Signed);
-        Assert.True(signed.Signature.Valid);
+        Assert.True(ResultJson.Intact(signed.Signature));
     }
 
     /// <summary>

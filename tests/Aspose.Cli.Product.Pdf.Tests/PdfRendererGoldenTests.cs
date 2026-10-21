@@ -49,7 +49,7 @@ public sealed class PdfRendererGoldenTests
             print: yes   copy: no   modify: no   annotate: yes   fill forms: yes   accessibility: yes   assemble: no   high-resolution print: yes
 
             signatures:
-            field       signed  valid
+            field       signed  intact
             Signature1  yes     yes
             Signature2  no      -
 
@@ -114,7 +114,7 @@ public sealed class PdfRendererGoldenTests
 
             ### signatures
 
-            | field | signed | valid |
+            | field | signed | intact |
             | --- | --- | --- |
             | Signature1 | yes | yes |
             | Signature2 | no | - |
@@ -332,7 +332,7 @@ public sealed class PdfRendererGoldenTests
             },
             Signatures =
             [
-                new PdfSignatureInfo { Name = "Signature1", Signed = true, Valid = true },
+                ResultJson.Read<PdfSignatureInfo>("""{"name":"Signature1","signed":true,"intact":true}"""),
                 new PdfSignatureInfo { Name = "Signature2", Signed = false },
             ],
             Layers = ["Background", "Notes"],
