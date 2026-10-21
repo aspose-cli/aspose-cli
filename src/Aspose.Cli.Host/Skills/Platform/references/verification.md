@@ -46,8 +46,9 @@ source; write evidence to a scratch directory instead of the user's folder.
    charts against their data, and page or slide order.
 4. Fix, then review again into a new directory, or pass `--overwrite` to
    replace the earlier evidence; `--overwrite` replaces only an empty
-   directory or one that holds earlier evidence (`review.json`), never a
-   folder of other files.
+   directory or earlier evidence left exactly as its `review.json` records
+   it, with no file added, removed or changed; anything else is refused with
+   `OUTPUT_EXISTS` and left as it is.
 5. Stop after three rounds and report what remains.
 
 `review` exits 8, with the evidence still written, when coverage is incomplete

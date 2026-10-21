@@ -3,10 +3,10 @@ using System.Text;
 using System.Text.Json;
 using Aspose.Cli.Host.LocalServices;
 using Aspose.Cli.Host.Viewer;
-using Aspose.Cli.Sdk;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.IO.Budgets;
+using Aspose.Cli.Sdk.IO.Files;
 using Aspose.Cli.Sdk.IO.Output;
 using Aspose.Cli.Sdk.IO.Publication;
 using Aspose.Cli.Sdk.Licensing;
@@ -28,6 +28,11 @@ internal static class ReviewEvidenceWriter
     public const int MaximumMaxItems = 8_192;
     internal const string ViewManifestFile = "view.json";
     private const string ArtifactsBase = "artifacts/";
+    private const string IndexFile = "index.html";
+    private const string ManifestFile = "review.json";
+
+    /// <summary>The most bytes of an earlier <c>review.json</c> read to learn what it recorded.</summary>
+    private const int MaximumManifestBytes = 64 << 20;
 
     public static ReviewResult Write(
         string sourcePath,
@@ -57,7 +62,7 @@ internal static class ReviewEvidenceWriter
 
         string source = Path.GetFullPath(sourcePath);
         string target = Path.GetFullPath(outputDirectory);
-        EnsureTarget(target, overwrite, source);
+        EnsureTarget(target, overwrite);
         using var publication = new AtomicNewDirectoryWriter(budgets, target, "review", overwrite);
         string staging = publication.StagingDirectory;
         try
@@ -90,21 +95,30 @@ internal static class ReviewEvidenceWriter
                 license,
                 codes));
 
-            string reviewJson = serializer.Serialize(result);
+            string index = Path.Combine(staging, IndexFile);
             File.WriteAllText(
-                Path.Combine(staging, "index.html"),
+                index,
                 ViewerPage.Static(
                     "Review: " + Path.GetFileName(source),
                     presentation,
-                    $"{{\"view\":{viewJson},\"review\":{reviewJson}}}",
+                    $"{{\"view\":{viewJson},\"review\":{serializer.Serialize(result)}}}",
                     ArtifactsBase,
                     Fallback(manifest)),
                 new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
+            // The page holds the result, so only review.json records the page's own fingerprint.
+            FileFingerprint indexFingerprint = FileFingerprints.Capture(index);
+            result = result with
+            {
+                Artifacts = [.. result.Artifacts.Select(artifact => artifact.Path == IndexFile
+                    ? artifact with { Fingerprint = indexFingerprint }
+                    : artifact)],
+            };
             File.WriteAllText(
-                Path.Combine(staging, "review.json"),
-                reviewJson + Environment.NewLine,
+                Path.Combine(staging, ManifestFile),
+                serializer.Serialize(result) + Environment.NewLine,
                 new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
-            publication.Commit();
+            // Admitted again under the publication's lease, after it captures the tree it replaces.
+            publication.Commit(EnsureEarlierReview);
             return result;
         }
         catch (Exception exception) when (
@@ -138,14 +152,14 @@ internal static class ReviewEvidenceWriter
             new ReviewArtifact
             {
                 Sequence = 0,
-                Path = "index.html",
+                Path = IndexFile,
                 Role = "index",
                 MediaType = "text/html",
             },
             new ReviewArtifact
             {
                 Sequence = 1,
-                Path = "review.json",
+                Path = ManifestFile,
                 Role = "manifest",
                 MediaType = "application/json",
             },
@@ -157,6 +171,7 @@ internal static class ReviewEvidenceWriter
                 MediaType = "application/json",
                 Scope = manifest.View,
                 Label = ViewManifestFile,
+                Fingerprint = FileFingerprints.Capture(Path.Combine(evidenceDirectory, ViewManifestFile)),
             },
             .. manifest.Parts.Select((part, index) => CreateArtifact(
                 evidenceDirectory,
@@ -176,8 +191,8 @@ internal static class ReviewEvidenceWriter
             Product = productId,
             Input = FileObjects.Input(source, manifest.SourceFormat, manifest.SourceEncrypted),
             OutputDirectory = target,
-            IndexPath = Path.Combine(target, "index.html"),
-            Manifest = Path.Combine(target, "review.json"),
+            IndexPath = Path.Combine(target, IndexFile),
+            Manifest = Path.Combine(target, ManifestFile),
             View = manifest.View,
             VisualInspectionRequired = visualInspectionRequired,
             Coverage = new ReviewCoverage
@@ -260,9 +275,8 @@ internal static class ReviewEvidenceWriter
             throw new InvalidOperationException(
                 $"The product view part '{part.Id}' names a missing file '{part.File}'.");
         }
-        (int? width, int? height) = ReadDimensions(Path.Combine(
-            evidenceDirectory,
-            part.File.Replace('/', Path.DirectorySeparatorChar)));
+        string file = Path.Combine(evidenceDirectory, part.File.Replace('/', Path.DirectorySeparatorChar));
+        (int? width, int? height) = ReadDimensions(file);
         return new ReviewArtifact
         {
             Sequence = sequence,
@@ -273,6 +287,7 @@ internal static class ReviewEvidenceWriter
             Label = part.Label.Length == 0 ? Path.GetFileName(part.File) : part.Label,
             Width = width,
             Height = height,
+            Fingerprint = FileFingerprints.Capture(file),
         };
     }
 
@@ -310,26 +325,16 @@ internal static class ReviewEvidenceWriter
         + "</div></div>";
 
     /// <summary>
-    /// Refuses an evidence directory the review may not publish at <paramref name="target"/>:
-    /// the input itself or a directory that holds it (<c>OPTION_INVALID</c>, with or without
-    /// <paramref name="overwrite"/>, as an output file never names an input); a file; and an
-    /// existing directory, unless <paramref name="overwrite"/> lets the review replace one that
-    /// is empty or holds earlier evidence, recognised by its <c>review.json</c>. Like
+    /// Refuses an evidence directory the review may not publish at <paramref name="target"/>: a
+    /// file; and an existing directory, unless <paramref name="overwrite"/> lets the review
+    /// replace one that is empty or is exactly an earlier review's evidence. Like
     /// <c>skill install</c>, which replaces only a Skill it installed, the review never replaces
-    /// a directory that is not its own (<c>OUTPUT_EXISTS</c>).
+    /// a directory it cannot prove is its own (<c>OUTPUT_EXISTS</c>). The publication itself
+    /// refuses a directory that holds an input, however the input was named.
     /// </summary>
-    internal static void EnsureTarget(string target, bool overwrite, string input)
+    internal static void EnsureTarget(string target, bool overwrite)
     {
         string full = Path.TrimEndingDirectorySeparator(Path.GetFullPath(target));
-        string source = Path.GetFullPath(input);
-        if (FilePaths.IsWithin(full, source, allowEqual: true))
-        {
-            throw CliErrors.OptionInvalid(
-                "--out",
-                $"the evidence directory would hold or replace the input file: {full}",
-                "Choose an --out outside the input's folder, or omit --out to write <filename>.review beside the input.");
-        }
-
         if (File.Exists(full) && overwrite)
         {
             throw CliErrors.OutputUnwritable(full, "a file occupies the path, and --overwrite replaces only a directory");
@@ -340,12 +345,75 @@ internal static class ReviewEvidenceWriter
             throw CliErrors.OutputDirectoryExists(full);
         }
 
-        if (Directory.Exists(full) && Directory.EnumerateFileSystemEntries(full).Any()
-            && !File.Exists(Path.Combine(full, "review.json")))
+        EnsureEarlierReview(full);
+    }
+
+    /// <summary>
+    /// Refuses a directory at <paramref name="target"/> that is neither empty nor exactly the
+    /// evidence an earlier review recorded in its <c>review.json</c>: every artifact it lists,
+    /// each with the fingerprint it lists, and no other file or directory. A missing target is
+    /// admitted.
+    /// </summary>
+    private static void EnsureEarlierReview(string target)
+    {
+        if (!Directory.Exists(target) || !Directory.EnumerateFileSystemEntries(target).Any())
         {
-            throw CliErrors.OutputDirectoryNotOwned(full, "review evidence (review.json)");
+            return;
+        }
+
+        string? mismatch = RecordedArtifacts(target) is { } recorded
+            ? OwnedDirectoryInventory.Mismatch(target, recorded)
+            : $"it has no {ManifestFile} that lists the fingerprint of every artifact";
+        if (mismatch is not null)
+        {
+            throw CliErrors.OutputDirectoryNotOwned(target, $"review evidence ({ManifestFile}): {mismatch}");
         }
     }
 
-
+    // The artifacts an earlier review.json lists, each with its SHA-256 and review.json itself
+    // without one; null when there is no such manifest or it lists an artifact without one.
+    private static Dictionary<string, string?>? RecordedArtifacts(string target)
+    {
+        string manifest = Path.Combine(target, ManifestFile);
+        try
+        {
+            var info = new FileInfo(manifest);
+            if (!info.Exists || (info.Attributes & FileAttributes.ReparsePoint) != 0 || info.Length > MaximumManifestBytes)
+            {
+                return null;
+            }
+            using JsonDocument document = JsonDocument.Parse(File.ReadAllBytes(manifest));
+            if (document.RootElement.ValueKind != JsonValueKind.Object
+                || !document.RootElement.TryGetProperty("artifacts", out JsonElement artifacts)
+                || artifacts.ValueKind != JsonValueKind.Array)
+            {
+                return null;
+            }
+            var recorded = new Dictionary<string, string?>(StringComparer.Ordinal);
+            foreach (JsonElement artifact in artifacts.EnumerateArray())
+            {
+                if (artifact.ValueKind != JsonValueKind.Object
+                    || !artifact.TryGetProperty("path", out JsonElement path) || path.ValueKind != JsonValueKind.String)
+                {
+                    return null;
+                }
+                string? sha256 = artifact.TryGetProperty("fingerprint", out JsonElement fingerprint)
+                    && fingerprint.ValueKind == JsonValueKind.Object
+                    && fingerprint.TryGetProperty("sha256", out JsonElement digest)
+                    && digest.ValueKind == JsonValueKind.String
+                        ? digest.GetString()
+                        : null;
+                string name = path.GetString()!;
+                if ((sha256 is null) != (name == ManifestFile) || !recorded.TryAdd(name, sha256))
+                {
+                    return null;
+                }
+            }
+            return recorded.ContainsKey(ManifestFile) ? recorded : null;
+        }
+        catch (Exception exception) when (exception is JsonException or IOException or UnauthorizedAccessException)
+        {
+            return null;
+        }
+    }
 }

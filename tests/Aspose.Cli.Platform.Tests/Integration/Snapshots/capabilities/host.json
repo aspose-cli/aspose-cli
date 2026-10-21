@@ -2968,6 +2968,10 @@
               "description": "Image height in pixels; omitted when the artifact is not an image.",
               "type": "integer",
               "minimum": 1
+            },
+            "fingerprint": {
+              "description": "The SHA-256 the artifact was written with; omitted only for review.json, which lists the others. review --overwrite replaces the bundle only while every file still has its fingerprint and no other file is there.",
+              "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/file-fingerprint.schema.json"
             }
           }
         },
