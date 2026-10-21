@@ -145,7 +145,7 @@ public sealed class UpdateHandoffTests
     {
         ProcessStartInfo start = workspace.StartInfo(new Dictionary<string, string?>
         {
-            ["TEMP"] = scratch, ["TMP"] = scratch,
+            ["TEMP"] = scratch, ["TMP"] = scratch, ["LOCALAPPDATA"] = scratch,
         });
         start.RedirectStandardOutput = true;
         start.RedirectStandardError = true;

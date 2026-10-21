@@ -229,7 +229,9 @@ Kept on purpose:
   `sourceRevision`, `archive.path`, `archive.size`, `archive.sha256`), which a release may only add
   to (`ReleaseManifest` ignores other fields); the archive keeps `install.ps1` at its root, which
   `update install` runs with `-PackageRoot`, `-InstallDirectory`, `-Update`, `-WaitForProcessId`,
-  `-CleanupRoot` and `-StatusPath`; an installed executable's `preview stop` without an id, which
+  `-CleanupRoot` and `-StatusPath`, whose cleanup root is the
+  `%LOCALAPPDATA%\aspose-cli\updates\aspose-cli-update-*` directory the CLI stages the package in
+  and the only one `install.ps1` accepts; an installed executable's `preview stop` without an id, which
   `install.ps1` runs to close every document and stop the service before it uninstalls that
   installation; and the status file keeps `schemaVersion: 1`, `state`
   (`pending`, `running`, `succeeded`, `failed`), `installerProcessId`, `message`, `log` and

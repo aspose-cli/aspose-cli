@@ -7,10 +7,11 @@ using Aspose.Cli.Sdk.IO.Files;
 namespace Aspose.Cli.Sdk.IO.Paths;
 
 /// <summary>
-/// Locates the current user's Aspose CLI temporary storage and removes bounded trees from it.
-/// Roots live below the user's temporary directory and carry a hash of the user's SID, which
-/// keeps users who share one temporary directory apart. Access control is the one Windows
-/// gives the temporary directory; this class sets and validates none.
+/// Locates the current user's Aspose CLI local state and removes bounded trees from it. The
+/// root is the CLI's directory in the user's local application data folder
+/// (<c>%LOCALAPPDATA%</c>), inside the user profile, whose Windows permissions admit no other
+/// standard account; a shared temporary directory, where another account could create the
+/// root first, holds none of it. This class sets and validates no access control of its own.
 /// </summary>
 public static class UserStorage
 {
@@ -44,11 +45,38 @@ public static class UserStorage
             prefix + Guid.NewGuid().ToString("N"))).FullName;
     }
 
-    /// <summary>Returns the current user's Aspose CLI temporary root, creating it when absent.</summary>
+    /// <summary>
+    /// Returns the current user's Aspose CLI local state root, <c>%LOCALAPPDATA%\aspose-cli</c>,
+    /// creating it when absent. Scratch directories, worker outputs, local service locks and
+    /// update staging all live below it.
+    /// </summary>
     public static string TemporaryRoot() =>
-        Directory.CreateDirectory(Path.Combine(Path.GetTempPath(), DistributionInfo.Id + "-" + CurrentUserSuffix())).FullName;
+        Directory.CreateDirectory(Path.Combine(LocalApplicationData(), DistributionInfo.Id)).FullName;
 
-    /// <summary>Neutral per-user namespace for cross-application document publication locks.</summary>
+    // The variable Windows sets for the user, as install.ps1 reads it; the known folder when it
+    // is unset or not an absolute path.
+    private static string LocalApplicationData()
+    {
+        string? variable = Environment.GetEnvironmentVariable("LOCALAPPDATA");
+        string folder = !string.IsNullOrWhiteSpace(variable) && Path.IsPathFullyQualified(variable)
+            ? variable
+            : Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData, Environment.SpecialFolderOption.DoNotVerify);
+        if (!Path.IsPathFullyQualified(folder))
+        {
+            throw new IOException("The current user has no local application data folder.");
+        }
+        return Path.GetFullPath(folder);
+    }
+
+    /// <summary>
+    /// Neutral per-user namespace for cross-application document publication locks. Other Aspose
+    /// CLI distributions take the same lock files, so this root keeps its temporary-directory
+    /// location and name.
+    /// </summary>
+    // Not in %LOCALAPPDATA% like the rest: moving it would split the locks from those of the
+    // other distributions. The lock files are empty and only held open, so another account
+    // that shares a temporary directory and creates this root first can at worst delay or fail
+    // a publication; it never reads or changes a document.
     internal static string PublicationLockRoot() =>
         Directory.CreateDirectory(Path.Combine(Path.GetTempPath(), "aspose-document-publication-" + CurrentUserSuffix())).FullName;
 

@@ -8,17 +8,22 @@ namespace Aspose.Cli.Sdk.Tests.IO;
 public sealed class UserStorageTests
 {
     [Fact]
-    public void TemporaryRoot_IsAPerUserDirectoryBelowTheTemporaryPath()
+    public void TemporaryRoot_IsTheCliDirectoryInTheLocalApplicationDataFolder()
     {
         Requires.Windows();
+        string localAppData = Environment.GetEnvironmentVariable("LOCALAPPDATA") is { Length: > 0 } variable
+            ? variable
+            : Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
         string root = UserStorage.TemporaryRoot();
 
         Assert.True(Directory.Exists(root));
         Assert.Equal(
-            Path.TrimEndingDirectorySeparator(Path.GetFullPath(Path.GetTempPath())),
-            Path.GetDirectoryName(root),
+            Path.Combine(Path.GetFullPath(localAppData), DistributionInfo.Id),
+            root,
             StringComparer.OrdinalIgnoreCase);
-        Assert.StartsWith(DistributionInfo.Id + "-", Path.GetFileName(root), StringComparison.Ordinal);
+        Assert.False(
+            root.StartsWith(Path.GetFullPath(Path.GetTempPath()), StringComparison.OrdinalIgnoreCase),
+            $"The per-user root '{root}' is in the temporary directory.");
         Assert.Equal(root, UserStorage.TemporaryRoot());
     }
 
