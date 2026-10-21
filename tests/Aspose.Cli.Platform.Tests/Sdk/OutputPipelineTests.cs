@@ -199,7 +199,7 @@ public sealed class OutputPipelineTests
 
         using (ExtractionGuard guard = pipeline.BeginExtraction(temp.File("out"), overwrite: false, content))
         {
-            guard.WriteAllBytes("picture.png", [1, 2, 3]);
+            guard.StageAllBytes("picture.png", [1, 2, 3]);
             guard.Commit();
         }
 

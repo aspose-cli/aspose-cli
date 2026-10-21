@@ -426,7 +426,7 @@ internal static class NewDirectoryPublication
         !string.IsNullOrWhiteSpace(path) && (allowRoot && path == "."
             || !Escapes(path) && !Path.IsPathRooted(path)
             && path.Split([Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar]).All(segment =>
-                segment.Length > 0 && segment is not "." and not ".." && !ExtractionPathValidator.IsUnsafeSegment(segment)));
+                segment.Length > 0 && segment is not "." and not ".." && !OutputPathValidator.IsUnsafeSegment(segment)));
 
     internal static bool Escapes(string relative) => Path.IsPathRooted(relative) || relative == ".."
         || relative.StartsWith(".." + Path.DirectorySeparatorChar, StringComparison.Ordinal);

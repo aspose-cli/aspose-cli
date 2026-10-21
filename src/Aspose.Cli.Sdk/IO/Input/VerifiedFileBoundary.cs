@@ -119,7 +119,7 @@ public sealed class VerifiedFileBoundary
         if (path.Length < 3 || !char.IsAsciiLetter(path[0]) || path[1] != ':'
             || path[2] != '\\'
             || path[3..].Split('\\').Any(segment =>
-                ExtractionPathValidator.IsUnsafeSegment(segment)))
+                OutputPathValidator.IsUnsafeSegment(segment)))
         {
             if (path.Length == 3 && char.IsAsciiLetter(path[0])
                 && path[1] == ':' && path[2] == '\\')
