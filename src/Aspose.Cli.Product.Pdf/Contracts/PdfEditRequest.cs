@@ -4,7 +4,8 @@ namespace Aspose.Cli.Product.Pdf.Contracts;
 
 /// <summary>
 /// Options of <c>pdf edit</c>. <c>EncryptPassword</c> is applied after the operations and replaces
-/// any encryption they leave; null keeps what they leave.
+/// the input's encryption, which an <c>encrypt_document</c> in the same batch may not also set;
+/// null keeps what the operations leave.
 /// </summary>
 public sealed record PdfEditRequest : BoundedEditRequest<PdfOpsBatch>
 {

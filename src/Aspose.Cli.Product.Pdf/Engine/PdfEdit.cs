@@ -1,4 +1,5 @@
 using Aspose.Cli.Product.Pdf.Engine.Editing;
+using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.IO.Input;
 using Aspose.Cli.Sdk.IO.Output;
 using Aspose.Cli.Sdk.Licensing;
@@ -18,6 +19,16 @@ internal static class PdfEdit
     {
         string filePath = request.Input;
         PdfOpsBatch batch = PdfOp.Catalog.Prepare(request.Batch);
+        // Both set the output's passwords and permissions, and --encrypt-env would replace the
+        // operation's without a trace, so the batch is refused before it starts.
+        if (request.EncryptPassword is not null && batch.Ops.OfType<EncryptDocumentOp>().FirstOrDefault() is { } encrypt)
+        {
+            throw CliErrors.OptionInvalid(
+                "--encrypt-env",
+                $"it encrypts the output and would replace the passwords and permissions that operation {encrypt.Id} (encrypt_document) sets",
+                "Remove --encrypt-env (or --encrypt-stdin) to keep the operation's passwords and permissions, or remove the encrypt_document operation to encrypt with --encrypt-env alone.");
+        }
+
         LicenseState state = session.Outputs.License;
         FileWritePrecondition precondition = FileWritePrecondition.Capture(filePath);
         using InputResourceScope operationInputs = session.Budgets.Inputs.CreateScope();
