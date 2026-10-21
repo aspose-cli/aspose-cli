@@ -288,6 +288,28 @@ public sealed class PdfOutputEncryptionTests : IDisposable
         OpensOnlyWithTheNewPassword(_workspace.File("merged.pdf"));
     }
 
+    /// <summary>
+    /// <c>--encrypt-env</c> would replace the passwords and permissions an <c>encrypt_document</c>
+    /// sets, so the two together are refused before the batch starts, also with
+    /// <c>--best-effort</c>, and nothing is written.
+    /// </summary>
+    [Category(TestCategory.Slow)]
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void EditWithEncryptDocumentAndEncryptEnv_IsRefused(bool bestEffort)
+    {
+        CliResult run = Run(["pdf", "edit", "plain.pdf", "--out", "both.pdf", "--encrypt-env", "PDF_NEW", "--ops",
+            """[{"op":"set_properties","title":"Edited"},{"op":"encrypt_document","userPasswordEnv":"PDF_USER","ownerPasswordEnv":"PDF_OWNER","permissions":{"print":true}}]""",
+            .. (bestEffort ? new[] { "--best-effort" } : [])]);
+
+        Assert.Equal(2, run.ExitCode);
+        JsonNode error = JsonNode.Parse(run.StdErr)!["error"]!;
+        Assert.Equal("OPTION_INVALID", error["code"]!.GetValue<string>());
+        Assert.Contains("--encrypt-env", error["message"]!.GetValue<string>(), StringComparison.Ordinal);
+        Assert.False(File.Exists(_workspace.File("both.pdf")));
+    }
+
     private const string Metadata = """[{"op":"set_properties","title":"Edited"}]""";
 
     private CliResult Run(params string[] arguments) =>
