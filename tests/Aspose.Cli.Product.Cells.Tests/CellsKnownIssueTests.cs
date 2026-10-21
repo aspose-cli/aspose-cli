@@ -13,14 +13,22 @@ namespace Aspose.Cli.Product.Cells.Tests;
 public sealed class CellsKnownIssueTests
 {
     [LicensedFact]
-    public async Task SvgPictures_FetchTheirImagesPastTheResourceProvider()
+    public async Task SvgPictures_ReadTheirImagesPastTheResourceProvider()
     {
         Requires.Windows();
         using var fixture = new CellsFixture();
         await using var server = new ResourceHttpServer();
+        string secret = fixture.Temp.File("outside.png");
+        using (var green = new SkiaSharp.SKBitmap(20, 20))
+        {
+            green.Erase(new SkiaSharp.SKColor(0, 200, 0));
+            using SkiaSharp.SKData encoded = green.Encode(SkiaSharp.SKEncodedImageFormat.Png, 100);
+            File.WriteAllBytes(secret, encoded.ToArray());
+        }
         byte[] svg = Encoding.UTF8.GetBytes(
-            $"""<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="40" height="40"><image xlink:href="{server.Url}/svg-image.png" width="20" height="20"/><rect y="25" width="10" height="10"/></svg>""");
+            $"""<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="40" height="40"><image xlink:href="{secret}" width="20" height="20"/><image xlink:href="{server.Url}/svg-image.png" x="20" width="20" height="20"/></svg>""");
 
+        string rendered = fixture.Temp.File("svg.png");
         using (var workbook = new Workbook())
         {
             workbook.Settings.ResourceProvider = new RefuseEveryResource();
@@ -28,13 +36,19 @@ public sealed class CellsKnownIssueTests
             {
                 workbook.Worksheets[0].Pictures.Add(1, 1, stream);
             }
-            workbook.Save(fixture.Temp.File("svg.xlsx"));
+            new Aspose.Cells.Rendering.SheetRender(workbook.Worksheets[0], new Aspose.Cells.Rendering.ImageOrPrintOptions
+            {
+                ImageType = Aspose.Cells.Drawing.ImageType.Png,
+                OnePagePerSheet = true,
+            }).ToImage(0, rendered);
         }
+        using SkiaSharp.SKBitmap image = SkiaSharp.SKBitmap.Decode(rendered);
+        bool readFile = image.Pixels.Any(static color => color.Green > 150 && color.Red < 60 && color.Blue < 60);
 
         KnownIssue.Reproduces(
             "CELLS-SVG-EGRESS",
-            server.RequestCount > 0,
-            "adding an SVG picture made no request past a provider that refuses every resource");
+            readFile && server.RequestCount > 0,
+            $"past a provider that refuses every resource, the SVG picture {(readFile ? "drew" : "did not draw")} the file its image names by path and made {server.RequestCount} request(s)");
     }
 
     [LicensedFact]

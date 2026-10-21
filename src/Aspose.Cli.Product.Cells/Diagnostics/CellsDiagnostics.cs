@@ -56,6 +56,12 @@ internal static class CellsDiagnostics
     /// <summary>A comparison found rows one side inserted or deleted, which shift the cells below them.</summary>
     internal static readonly WarningCode RowsShifted = new("ROWS_SHIFTED");
 
+    /// <summary>
+    /// The loaded workbook leaves out images its input holds: the images of an HTML or MHTML
+    /// input, or SVG pictures that cannot be kept to what they hold themselves.
+    /// </summary>
+    internal static readonly WarningCode ImagesSkipped = new("IMAGES_SKIPPED");
+
     /// <summary>Verification: the edited workbook contains formula errors.</summary>
     internal static readonly DiagnosticDescriptor FormulaErrors = DiagnosticDescriptor.Verification("FORMULA_ERRORS");
 
@@ -84,6 +90,7 @@ internal static class CellsDiagnostics
         DiagnosticDescriptor.Warning(FormulaFunctionUnknown),
         DiagnosticDescriptor.Warning(ChartSplitAcrossPages),
         DiagnosticDescriptor.Warning(RowsShifted),
+        DiagnosticDescriptor.Warning(ImagesSkipped),
         FormulaErrors,
     ];
 }

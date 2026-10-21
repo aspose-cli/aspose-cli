@@ -2480,6 +2480,13 @@
       "detailsSchemaId": "v2/common/not-found-details"
     },
     {
+      "code": "IMAGES_SKIPPED",
+      "owner": "cells",
+      "severity": "warning",
+      "category": "warning",
+      "detailsSchemaId": "v2/common/diagnostic-details"
+    },
+    {
       "code": "MHTML_RESOURCE_COVERAGE_UNVERIFIED",
       "owner": "cells",
       "severity": "warning",

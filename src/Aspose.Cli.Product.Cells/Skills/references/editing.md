@@ -312,8 +312,10 @@ show in renders and reads; give the sparkline column a header.
   on a cell that already has a comment adds its text as a new paragraph;
   `set_comment` replaces the text of a comment the cell has, and on a cell
   without one fails with `COMMENT_NOT_FOUND`: add it with `add_comment`.
-- `insert_image` refuses an SVG that names a network address, and any SVGZ,
-  with `FEATURE_UNSUPPORTED`, because the engine would fetch the address.
+- `insert_image` removes from an SVG every reference to anything outside it,
+  keeping `#id` fragments and base64 `data:` images whose bytes are PNG, JPEG
+  or GIF, and warns `REMOTE_RESOURCES_BLOCKED`; an SVG that does not parse as
+  XML is refused with `OPS_INVALID`, and any SVGZ with `FEATURE_UNSUPPORTED`.
   Embed the SVG's images or supply a raster image.
 - `protect_sheet` locks every cell with action-level `allow` exceptions,
   except the cells `format_range` set `"locked": false`: format a form's

@@ -122,7 +122,7 @@ internal static class CellsConvert
             License = EnvelopeParts.License(licenseState),
             // Only a text export without --sheets writes one sheet chosen by default; the other
             // formats write every sheet.
-            Warnings = EnvelopeParts.CombineWarnings([loaded.Resources.CoverageWarning, loaded.CalculatedOnOpen,
+            Warnings = EnvelopeParts.CombineWarnings([.. loaded.Resources.Warnings, loaded.CalculatedOnOpen,
                 loaded.SkippedSheetWarning(selected is null && savePlan.WritesActiveSheetOnly, licenseState == LicenseState.Evaluation
                     // The evaluation SDK writes only the first sheet to a text format.
                     ? $"Evaluation mode exports only the first sheet to {request.Output.Format.Id}; converting another sheet needs an Aspose.Cells license, then --sheets with the sheet's position from inspect."
