@@ -28,6 +28,47 @@ public sealed class LicenseManagementTests
             product => Assert.Equal("evaluation", product!["mode"]!.GetValue<string>()));
     }
 
+    /// <summary>
+    /// What a license file holds never reaches a result or a diagnostic, from any source the CLI
+    /// reads a license from, in results or in what --verbose adds.
+    /// </summary>
+    [Fact]
+    public void LicenseContents_NeverEnterResultsOrDiagnostics()
+    {
+        using var workspace = new TempWorkspace();
+        string marker = "LICENSE-CONTENT-" + Guid.NewGuid().ToString("N");
+        string license =
+            $"<License><Data><LicensedTo>{marker}</LicensedTo><SerialNumber>{marker}</SerialNumber>"
+            + $"<Products><Product>Aspose.Total for .NET</Product></Products></Data><Signature>{marker}</Signature></License>";
+        string base64 = Convert.ToBase64String(Encoding.UTF8.GetBytes(license));
+        File.WriteAllText(workspace.File("fake.lic"), license);
+        File.WriteAllText(workspace.File("input.csv"), "Name,Value\nA,42\n");
+        string stored = workspace.File(".aspose/licenses/pdf.lic");
+        Directory.CreateDirectory(Path.GetDirectoryName(stored)!);
+        File.WriteAllText(stored, license);
+
+        // JSON mode keeps stderr to one envelope, so the diagnostics --verbose adds are read in text mode.
+        foreach (string[] mode in new[] { new[] { "--output-format", "json" }, new[] { "--verbose", "--output-format", "text" } })
+        {
+            Unseen(workspace.Run(["license", "install", "fake.lic", .. mode]));
+            Unseen(workspace.Run(["license", "status", .. mode]));
+            Unseen(workspace.Run(["cells", "inspect", "input.csv", "--license", "fake.lic", .. mode]));
+            Unseen(workspace.RunWithEnv(
+                new Dictionary<string, string?> { ["ASPOSE_LICENSE_PATH"] = workspace.File("fake.lic") },
+                ["license", "status", .. mode]));
+            Unseen(workspace.RunWithEnv(
+                new Dictionary<string, string?> { ["ASPOSE_LICENSE_B64"] = base64 },
+                ["cells", "inspect", "input.csv", .. mode]));
+        }
+
+        void Unseen(CliResult result)
+        {
+            string output = result.StdOut + result.StdErr;
+            Assert.DoesNotContain(marker, output, StringComparison.Ordinal);
+            Assert.DoesNotContain(base64[..32], output, StringComparison.Ordinal);
+        }
+    }
+
     [Fact]
     public void InstallOfAFileThatIsNoLicense_StatesTheReasonOnce()
     {

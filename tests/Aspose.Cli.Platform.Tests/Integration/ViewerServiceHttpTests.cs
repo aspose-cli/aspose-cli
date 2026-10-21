@@ -92,6 +92,40 @@ public sealed class ViewerServiceHttpTests : IDisposable
         Assert.True((await part.Content.ReadAsByteArrayAsync()).Length > 0);
     }
 
+    /// <summary>
+    /// A document page may be framed only by its own origin and embeds no plugin; a rendered part
+    /// may load nothing but its own images, styles and fonts, so no script it holds runs. Neither
+    /// lends itself to another origin.
+    /// </summary>
+    [Fact]
+    public async Task DocumentPageAndParts_AreConfinedToTheirOrigin()
+    {
+        LiveDocument document = OpenWorkbook();
+
+        using HttpResponseMessage page = await Get($"/d/{document.Id}/");
+        using HttpResponseMessage manifest = await Get($"/d/{document.Id}/r/1/view.json");
+        string file = JsonNode.Parse(await manifest.Content.ReadAsStringAsync())!["parts"]![0]!["file"]!.GetValue<string>();
+        using HttpResponseMessage part = await Get($"/d/{document.Id}/r/1/{file}");
+
+        Assert.Equal(HttpStatusCode.OK, page.StatusCode);
+        string pagePolicy = Header(page, "Content-Security-Policy");
+        Assert.Contains("object-src 'none'", pagePolicy, StringComparison.Ordinal);
+        Assert.Contains("frame-ancestors 'self'", pagePolicy, StringComparison.Ordinal);
+        Assert.Equal("SAMEORIGIN", Header(page, "X-Frame-Options"));
+        Assert.Equal("same-origin", Header(page, "Cross-Origin-Resource-Policy"));
+        Assert.Equal(HttpStatusCode.OK, part.StatusCode);
+        string partPolicy = Header(part, "Content-Security-Policy");
+        Assert.StartsWith("default-src 'none';", partPolicy, StringComparison.Ordinal);
+        Assert.DoesNotContain("script-src", partPolicy, StringComparison.Ordinal);
+        Assert.Contains("frame-ancestors 'self'", partPolicy, StringComparison.Ordinal);
+        Assert.Equal("same-origin", Header(part, "Cross-Origin-Resource-Policy"));
+    }
+
+    private static string Header(HttpResponseMessage response, string name) =>
+        string.Join(", ", response.Headers.TryGetValues(name, out IEnumerable<string>? values)
+            ? values
+            : response.Content.Headers.TryGetValues(name, out IEnumerable<string>? content) ? content : []);
+
     [Category(TestCategory.Slow)]
     [Fact]
     public async Task Edit_ReachesTheViewerAsOneUpdateNamingTheChangedParts()

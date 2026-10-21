@@ -250,6 +250,67 @@ public sealed class AppHttpSecurityTests
         Assert.True((await app.Preferences("sheets"))["ok"]!.GetValue<bool>());
     }
 
+    /// <summary>
+    /// The App shell embeds no plugin, cannot be framed by any page, and lends its resources to
+    /// no other origin.
+    /// </summary>
+    [Fact]
+    public async Task AppShell_CannotBeFramedAndLoadsNoPlugin()
+    {
+        await using var app = await AppTestSession.Start();
+
+        using HttpResponseMessage shell = await app.Client.GetAsync("/");
+
+        Assert.Equal(HttpStatusCode.OK, shell.StatusCode);
+        string policy = Header(shell, "Content-Security-Policy");
+        Assert.Contains("object-src 'none'", policy, StringComparison.Ordinal);
+        Assert.Contains("frame-ancestors 'none'", policy, StringComparison.Ordinal);
+        Assert.Equal("DENY", Header(shell, "X-Frame-Options"));
+        Assert.Equal("same-origin", Header(shell, "Cross-Origin-Resource-Policy"));
+    }
+
+    /// <summary>
+    /// A request body beyond the service's bound is refused whether it declares its length or
+    /// streams in chunks, and changes nothing.
+    /// </summary>
+    [Fact]
+    public async Task Mutations_WithAnOversizedBody_AreRefused()
+    {
+        await using var app = await AppTestSession.Start();
+        string settings = Path.Combine(app.Workspace.ConfigDirectory, "app-settings.json");
+        string? before = File.Exists(settings) ? File.ReadAllText(settings) : null;
+        string oversized = Preferences[..^1] + ",\"padding\":\"" + new string('x', 1024 * 1024) + "\"}";
+
+        foreach (bool chunked in new[] { false, true })
+        {
+            using var request = new HttpRequestMessage(HttpMethod.Post, "/api/preferences")
+            {
+                Content = new StringContent(oversized, Encoding.UTF8, "application/json"),
+            };
+            request.Headers.TransferEncodingChunked = chunked;
+            try
+            {
+                using HttpResponseMessage response = await app.Client.SendAsync(request);
+                string body = await response.Content.ReadAsStringAsync();
+                Assert.True(response.StatusCode == HttpStatusCode.BadRequest,
+                    $"An oversized body (chunked: {chunked}) was answered with {(int)response.StatusCode}: {body}");
+                Assert.Equal("FILE_TOO_LARGE", JsonNode.Parse(body)!["code"]!.GetValue<string>());
+            }
+            catch (HttpRequestException)
+            {
+                // The service may close the connection while the rest of the body is still being sent.
+            }
+        }
+
+        Assert.Equal(before, File.Exists(settings) ? File.ReadAllText(settings) : null);
+        Assert.Equal("first.csv", (await app.Status())["file"]!.GetValue<string>());
+    }
+
+    private static string Header(HttpResponseMessage response, string name) =>
+        string.Join(", ", response.Headers.TryGetValues(name, out IEnumerable<string>? values)
+            ? values
+            : response.Content.Headers.TryGetValues(name, out IEnumerable<string>? content) ? content : []);
+
     private static string Url(CliResult result)
     {
         Assert.True(result.ExitCode == 0, result.StdErr);
