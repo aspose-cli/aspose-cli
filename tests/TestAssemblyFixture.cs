@@ -35,6 +35,17 @@ public sealed class ProcessLicenseEnvironmentCollection
 }
 
 /// <summary>
+/// Tests that admit the process to the SDK's network gate, which takes over the process's request
+/// prefixes and default proxy. They run alone, after the parallel tests, so no other test makes a
+/// request while the gate blocks it.
+/// </summary>
+[Xunit.CollectionDefinition(Name, DisableParallelization = true)]
+public sealed class ProcessNetworkGateCollection
+{
+    public const string Name = "Process network gate";
+}
+
+/// <summary>
 /// Tests that read what a document engine writes into every document it saves, such as the PDF
 /// engine's modification date, which it leaves out of a document saved while other documents of
 /// the process are saved. They run alone, after the parallel tests.
