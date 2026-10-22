@@ -19,14 +19,17 @@ internal static class SvgPictures
         content is { Length: > 0 } && ImageInput.EngineFormatOf(content) == EngineImageFormat.Svg;
 
     /// <summary>
-    /// The <c>REMOTE_RESOURCES_BLOCKED</c> warning for <paramref name="omitted"/> resources left out,
-    /// <paramref name="fromSvg"/> of them references removed from SVG images; null for none.
+    /// The <c>REMOTE_RESOURCES_BLOCKED</c> warning for the resources the loader left out, named,
+    /// and <paramref name="fromSvg"/> references removed from SVG images; null for none.
     /// </summary>
-    internal static Warning? OmissionWarning(int omitted, int fromSvg) => omitted <= 0 ? null
+    internal static Warning? OmissionWarning(IReadOnlyList<OmittedResource> omitted, int fromSvg) => fromSvg <= 0
+        ? LocalDocumentResourceLoader.OmissionWarning(omitted)
         : new Warning(WarningCodes.RemoteResourcesBlocked,
-            $"{omitted} external resource(s) were omitted, {fromSvg} of them referenced by SVG images, whose references were removed.")
+            $"{omitted.Count + fromSvg} resource(s) the workbook references were omitted: "
+            + (omitted.Count > 0 ? LocalDocumentResourceLoader.Describe(omitted) + ", and " : "")
+            + $"{fromSvg} reference(s) inside SVG images, which were removed from them.")
         {
-            Hint = "Embed an SVG image's images as base64 data: URIs (PNG, JPEG or GIF), place other resources beside the input and reference them by relative path, then review the incomplete output.",
+            Hint = "Embed an SVG image's images as base64 data: URIs (PNG, JPEG or GIF); copy other files the workbook needs into the input's folder, or a folder below it, and reference them by a relative path. Then review the incomplete output.",
             AffectsCompleteness = true,
         };
 
