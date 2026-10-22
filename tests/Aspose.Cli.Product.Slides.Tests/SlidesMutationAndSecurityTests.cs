@@ -72,7 +72,7 @@ public sealed class SlidesMutationAndSecurityTests
     }
 
     [Fact]
-    public void RemoteMarkdownImage_IsBlockedBeforeWriting()
+    public void RemoteMarkdownImage_IsOmittedWithAWarning()
     {
         using var fixture = new SlidesEngineFixture();
         string markdown = fixture.File("remote.md");
@@ -81,15 +81,72 @@ public sealed class SlidesMutationAndSecurityTests
             markdown,
             "# Remote\n\n![hero](https://example.test/hero.png)");
 
-        CliException error = Assert.Throws<CliException>(() =>
-            SlidesCreate.Run(fixture.Session, new SlidesCreateRequest
-            {
-                Output = TestOutput.At(output),
-                Markdown = new SourceFile("--from-markdown", markdown),
-            }));
+        SlidesCreateResult result = SlidesCreate.Run(fixture.Session, new SlidesCreateRequest
+        {
+            Output = TestOutput.At(output),
+            Markdown = new SourceFile("--from-markdown", markdown),
+        });
 
-        Assert.Equal(ErrorCodes.FeatureUnsupported, error.Code);
-        Assert.False(File.Exists(output));
+        Assert.Empty(Media(output));
+        Assert.Contains(result.Warnings ?? [], static warning =>
+            warning.Code == WarningCodes.RemoteResourcesBlocked && warning.AffectsCompleteness);
+    }
+
+    /// <summary>
+    /// A Markdown image is read only from an ordinary file beneath the Markdown file's directory:
+    /// a picture outside it, named by an absolute path, a parent path or a share, is omitted and
+    /// reported, while the picture beside the Markdown is embedded.
+    /// </summary>
+    [Theory]
+    [InlineData("absolute")]
+    [InlineData("parent")]
+    [InlineData("share")]
+    public void MarkdownImageOutsideItsDirectory_IsOmittedWhileOneBesideItIsEmbedded(string reference)
+    {
+        using var fixture = new SlidesEngineFixture();
+        string outside = Directory.CreateDirectory(fixture.File("outside")).FullName;
+        string inside = Directory.CreateDirectory(fixture.File("deck")).FullName;
+        byte[] sentinel = SlidesEngineFixture.Png(41);
+        byte[] picture = SlidesEngineFixture.Png(40);
+        Assert.NotEqual(sentinel, picture);
+        string sentinelPath = Path.Combine(outside, "sentinel.png");
+        File.WriteAllBytes(sentinelPath, sentinel);
+        File.WriteAllBytes(Path.Combine(inside, "picture.png"), picture);
+        string target = reference switch
+        {
+            "absolute" => sentinelPath,
+            "parent" => "../outside/sentinel.png",
+            _ => @"\\localhost\" + sentinelPath[0] + "$" + sentinelPath[2..],
+        };
+        string markdown = Path.Combine(inside, "deck.md");
+        File.WriteAllText(markdown, $"## Outside\n\n![](<{target}>)\n\n## Beside\n\n![](picture.png)\n");
+        string output = Path.Combine(inside, "deck.pptx");
+
+        SlidesCreateResult result = SlidesCreate.Run(fixture.Session, new SlidesCreateRequest
+        {
+            Output = TestOutput.At(output),
+            Markdown = new SourceFile("--from-markdown", markdown),
+        });
+
+        byte[][] media = Media(output);
+        Assert.DoesNotContain(media, item => item.AsSpan().SequenceEqual(sentinel));
+        Assert.Contains(media, item => item.AsSpan().SequenceEqual(picture));
+        Assert.Contains(result.Warnings ?? [], static warning =>
+            warning.Code == WarningCodes.RemoteResourcesBlocked && warning.AffectsCompleteness);
+    }
+
+    private static byte[][] Media(string presentation)
+    {
+        using System.IO.Compression.ZipArchive archive = System.IO.Compression.ZipFile.OpenRead(presentation);
+        return [.. archive.Entries
+            .Where(static entry => entry.FullName.StartsWith("ppt/media/", StringComparison.Ordinal))
+            .Select(static entry =>
+            {
+                using Stream stream = entry.Open();
+                using var buffer = new MemoryStream();
+                stream.CopyTo(buffer);
+                return buffer.ToArray();
+            })];
     }
 
     [Fact]

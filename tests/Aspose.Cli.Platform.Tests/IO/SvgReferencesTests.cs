@@ -79,10 +79,30 @@ public sealed class SvgReferencesTests
 
     [Theory]
     [InlineData("""<!DOCTYPE svg [<!ENTITY e SYSTEM "file:///C:/secret.txt">]><svg xmlns="http://www.w3.org/2000/svg">&e;</svg>""")]
+    [InlineData("""<!DOCTYPE svg [<!ENTITY xxe "x">]><svg xmlns="http://www.w3.org/2000/svg"><text>&xxe;</text></svg>""")]
     [InlineData("""<svg xmlns="http://www.w3.org/2000/svg"><g></svg>""")]
     [InlineData("not markup")]
     public void KeepInternal_ReturnsNullForAnSvgThatDoesNotParse(string content) =>
         Assert.Null(SvgReferences.KeepInternal(Encoding.UTF8.GetBytes(content)));
+
+    /// <summary>
+    /// A document type, as editors export it, is skipped with its internal subset: the SVG is
+    /// kept, without the document type.
+    /// </summary>
+    [Fact]
+    public void KeepInternal_KeepsAnSvgWithADocumentTypeItsContentDoesNotUse()
+    {
+        byte[] svg = Encoding.UTF8.GetBytes(
+            """<?xml version="1.0"?><!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd" [<!ENTITY ns_svg "http://www.w3.org/2000/svg">]><svg xmlns="http://www.w3.org/2000/svg" width="4" height="4"><rect id="r" width="4" height="4"/></svg>""");
+
+        SvgReferences.Cleaned? cleaned = SvgReferences.KeepInternal(svg);
+
+        Assert.NotNull(cleaned);
+        string kept = Encoding.UTF8.GetString(cleaned.Content);
+        Assert.DoesNotContain("DOCTYPE", kept, StringComparison.Ordinal);
+        Assert.DoesNotContain("ENTITY", kept, StringComparison.Ordinal);
+        Assert.Contains("<rect id=\"r\"", kept, StringComparison.Ordinal);
+    }
 
     [Fact]
     public void KeepInternal_RemovesAStyleSheetInstruction()

@@ -30,7 +30,9 @@ slide size are kept. A layout type the template lacks falls back to Title and
 Content. Unused placeholders are removed. Body placeholders are set to shrink
 text on overflow; still check review for overflow and split a crowded slide
 rather than rely on shrinking. Wrap an image path that contains spaces in angle
-brackets; remote images are refused.
+brackets. An image is read only from an ordinary file beneath the Markdown
+file's directory, by relative path; any other image, a remote one included, is
+left out and reported as `REMOTE_RESOURCES_BLOCKED`.
 
 `--slide-size 16x9` or `--slide-size 4x3` resizes the canvas and scales the masters,
 layouts and slides with it. Without `--from-markdown`, the template's own slides

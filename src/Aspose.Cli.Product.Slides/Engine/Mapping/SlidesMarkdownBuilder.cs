@@ -1,6 +1,5 @@
 using System.Drawing;
 using System.Text.RegularExpressions;
-using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.IO.Budgets;
 using Aspose.Cli.Sdk.IO.Input;
 using Aspose.Slides;
@@ -16,7 +15,7 @@ namespace Aspose.Cli.Product.Slides.Engine.Mapping;
 /// </summary>
 internal static partial class SlidesMarkdownBuilder
 {
-    /// <summary>Replaces the presentation's slides with the outline; returns the fit warnings.</summary>
+    /// <summary>Replaces the presentation's slides with the outline; returns the fit warnings and the warning for omitted pictures.</summary>
     public static IReadOnlyList<Warning> Build(
         ResourceBudgetLedger resourceBudgets,
         Presentation presentation,
@@ -25,7 +24,7 @@ internal static partial class SlidesMarkdownBuilder
         InputSizeGuard.Ensure(resourceBudgets, markdownPath);
         string markdown = resourceBudgets.Inputs.ReadTextFile(markdownPath);
         IReadOnlyList<MarkdownSlide> model = Parse(markdown, Path.GetFileNameWithoutExtension(markdownPath));
-        string root = Path.GetDirectoryName(Path.GetFullPath(markdownPath))!;
+        using var resources = new LocalDocumentResourceLoader(markdownPath, resourceBudgets);
 
         presentation.Sections.Clear();
         while (presentation.Slides.Count > 0)
@@ -54,7 +53,7 @@ internal static partial class SlidesMarkdownBuilder
 
             if (item.Image is not null)
             {
-                AddImage(resourceBudgets, presentation, slide, root, item.Image, content);
+                AddImage(resources, presentation, slide, item.Image, content);
             }
 
             if (item.Table is not null
@@ -68,6 +67,11 @@ internal static partial class SlidesMarkdownBuilder
             {
                 presentation.Sections.AddSection(item.Section, slide);
             }
+        }
+
+        if (resources.Warning is { } omitted)
+        {
+            warnings.Add(omitted);
         }
 
         return warnings;
@@ -259,17 +263,24 @@ internal static partial class SlidesMarkdownBuilder
         return SlidesPlaceholders.Layout(presentation, type);
     }
 
+    /// <summary>
+    /// Places the picture the Markdown names. The document resource policy reads it: a picture
+    /// that is not an ordinary file beneath the Markdown file's directory is omitted, and counted
+    /// in the build's warning.
+    /// </summary>
     private static void AddImage(
-        ResourceBudgetLedger resourceBudgets,
+        LocalDocumentResourceLoader resources,
         Presentation presentation,
         ISlide slide,
-        string root,
         MarkdownImage source,
         IAutoShape[] content)
     {
-        string imagePath = ResolveLocalImage(root, source.Path);
-        InputSizeGuard.Ensure(resourceBudgets, imagePath);
-        IPPImage image = presentation.Images.AddImage(ImageInput.Read(resourceBudgets.Inputs, imagePath));
+        if (!resources.TryRead(source.Path, out byte[] data, image: true))
+        {
+            return;
+        }
+
+        IPPImage image = presentation.Images.AddImage(data);
 
         // The image takes the frame of the first content placeholder that holds no text.
         IAutoShape? frame = content.FirstOrDefault(static shape => string.IsNullOrEmpty(shape.TextFrame?.Text));
@@ -307,25 +318,6 @@ internal static partial class SlidesMarkdownBuilder
         {
             slide.Shapes.Remove(shape);
         }
-    }
-
-    private static string ResolveLocalImage(string root, string value)
-    {
-        if (Uri.TryCreate(value, UriKind.Absolute, out Uri? uri)
-            && !uri.IsFile)
-        {
-            throw CliErrors.ResourceRefused(
-                $"Remote Markdown image is blocked: {value}.",
-                "Download the image beside the Markdown file and reference it with a relative path.");
-        }
-
-        string path = Path.GetFullPath(Path.Combine(root, value));
-        if (!File.Exists(path))
-        {
-            throw CliErrors.FileNotFound(path);
-        }
-
-        return path;
     }
 
     [GeneratedRegex(@"^(?<marks>#{1,6})\s+(?<text>.+?)\s*#*$", RegexOptions.CultureInvariant)]

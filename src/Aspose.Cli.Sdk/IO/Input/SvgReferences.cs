@@ -7,8 +7,8 @@ namespace Aspose.Cli.Sdk.IO.Input;
 
 /// <summary>
 /// Keeps an SVG to what it holds itself, for a document engine that reads what an SVG names past
-/// any resource hook the CLI can install (see KNOWN-ISSUES.md). The SVG is parsed as XML, with no
-/// document type, and only references inside it survive: a fragment (<c>#id</c>) and a base64
+/// any resource hook the CLI can install (see KNOWN-ISSUES.md). The SVG is parsed as XML with any
+/// document type skipped, and only references inside it survive: a fragment (<c>#id</c>) and a base64
 /// <c>data:</c> URI whose bytes begin as a PNG, JPEG or GIF file, whatever media type it declares.
 /// Every other reference, in an attribute, in CSS or in a processing instruction, is removed, as
 /// are <c>xml:base</c> and SMIL animation elements, whose values can set a reference. An element
@@ -51,25 +51,29 @@ public static class SvgReferences
     public sealed record Cleaned(byte[] Content, IReadOnlyList<string> Removed);
 
     /// <summary>
-    /// The SVG with every reference outside itself removed, or null when it does not parse as XML
-    /// without a document type.
+    /// The SVG with every reference outside itself removed and without its document type, or null
+    /// when it does not parse as XML once its document type is skipped.
     /// </summary>
     /// <param name="svg">The SVG's bytes.</param>
     public static Cleaned? KeepInternal(byte[] svg)
     {
         ArgumentNullException.ThrowIfNull(svg);
-        XDocument document;
-        try
+        // A document type, as editors export it, is skipped whole: no entity it declares is
+        // defined, so content that uses one does not parse, and the output carries none.
+        bool declared = false;
+        XDocument? document = Load(svg, DtdProcessing.Prohibit);
+        if (document is null)
         {
-            var settings = new XmlReaderSettings { DtdProcessing = DtdProcessing.Prohibit, XmlResolver = null };
-            using var reader = XmlReader.Create(new MemoryStream(svg, writable: false), settings);
-            document = XDocument.Load(reader, LoadOptions.PreserveWhitespace);
+            document = Load(svg, DtdProcessing.Ignore);
+            declared = document is not null;
         }
-        catch (XmlException)
+
+        if (document is null)
         {
             return null;
         }
 
+        document.DocumentType?.Remove();
         var removed = new List<string>();
         // A processing instruction such as xml-stylesheet names a style sheet to fetch.
         foreach (XProcessingInstruction instruction in document.DescendantNodes().OfType<XProcessingInstruction>().ToList())
@@ -110,7 +114,7 @@ public static class SvgReferences
             }
         }
 
-        if (removed.Count == 0)
+        if (removed.Count == 0 && !declared)
         {
             return new Cleaned(svg, []);
         }
@@ -121,6 +125,21 @@ public static class SvgReferences
             document.Save(writer);
         }
         return new Cleaned(output.ToArray(), removed);
+    }
+
+    // The SVG parsed with no resolver, or null when it does not parse.
+    private static XDocument? Load(byte[] svg, DtdProcessing dtd)
+    {
+        try
+        {
+            var settings = new XmlReaderSettings { DtdProcessing = dtd, XmlResolver = null };
+            using var reader = XmlReader.Create(new MemoryStream(svg, writable: false), settings);
+            return XDocument.Load(reader, LoadOptions.PreserveWhitespace);
+        }
+        catch (XmlException)
+        {
+            return null;
+        }
     }
 
     // SMIL: set and the animate elements write attribute values, a reference among them.
