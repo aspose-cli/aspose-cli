@@ -5,19 +5,33 @@ using Aspose.Cli.Sdk.IO.Budgets;
 
 namespace Aspose.Cli.Sdk.IO.Input;
 
+/// <summary>A resource a document names that was left out of the output, and why.</summary>
+/// <param name="Reference">
+/// The reference as the document wrote it. A local path is named only from the input folder: a
+/// path below it relative to it, any other one by its file name, so no result carries a local
+/// folder.
+/// </param>
+/// <param name="Reason">Why it was left out, such as <c>not found</c> or <c>outside the input folder</c>.</param>
+public sealed record OmittedResource(string Reference, string Reason);
+
 /// <summary>Owns one document's external resource policy, budgets and callback lifetime.</summary>
 public sealed class LocalDocumentResourceLoader : IDisposable
 {
+    /// <summary>The most omitted resources an omission warning names; it counts the rest.</summary>
+    public const int ListedResources = 10;
+
+    private const int ReferenceLength = 120;
     private readonly Uri _baseUri;
+    private readonly string _root;
     private readonly VerifiedFileBoundary _boundary;
     private readonly ResourceBudgetLedger _budgets;
     private readonly int _maximumItems;
     private readonly long _maximumItemBytes;
     private readonly long _maximumTotalBytes;
     private readonly object _gate = new();
+    private readonly List<OmittedResource> _omitted = [];
     private int _items;
     private long _totalBytes;
-    private int _omitted;
     private bool _disposed;
     private ExceptionDispatchInfo? _failure;
     private Exception? _refusedImage;
@@ -36,10 +50,10 @@ public sealed class LocalDocumentResourceLoader : IDisposable
             throw new ArgumentOutOfRangeException(nameof(maximumItems),
                 "Local resource limits must be positive.");
         }
-        string root = Path.GetDirectoryName(budgets.Inputs.ResourceOriginFor(documentPath))!;
-        _baseUri = new Uri(new Uri(Path.EndsInDirectorySeparator(root)
-            ? root : root + Path.DirectorySeparatorChar).AbsoluteUri);
-        _boundary = new VerifiedFileBoundary(root);
+        _root = Path.GetDirectoryName(budgets.Inputs.ResourceOriginFor(documentPath))!;
+        _baseUri = new Uri(new Uri(Path.EndsInDirectorySeparator(_root)
+            ? _root : _root + Path.DirectorySeparatorChar).AbsoluteUri);
+        _boundary = new VerifiedFileBoundary(_root);
         _maximumItems = maximumItems;
         _maximumItemBytes = maximumItemBytes;
         _maximumTotalBytes = maximumTotalBytes;
@@ -48,17 +62,58 @@ public sealed class LocalDocumentResourceLoader : IDisposable
     /// <summary>Canonical base used by native importers for relative resource references.</summary>
     public string BaseUri => _baseUri.AbsoluteUri;
 
-    public int OmittedCount { get { lock (_gate) { return _omitted; } } }
+    /// <summary>
+    /// The resources left out so far, each reference once with the first reason it was left out
+    /// for: an engine that asks for one resource several times leaves it out once.
+    /// </summary>
+    public IReadOnlyList<OmittedResource> Omitted { get { lock (_gate) { return [.. _omitted]; } } }
+
+    public int OmittedCount { get { lock (_gate) { return _omitted.Count; } } }
+
+    private const string DefaultHint = "Copy each file the document needs into the input's folder, or a folder below it, and reference it by a relative path; network resources are not loaded. Then review the incomplete output.";
 
     /// <summary>
-    /// The completeness warning for external resources a document engine was denied, or null
-    /// when none were. Every product reports omitted resources through this one warning.
+    /// The completeness warning for external resources a document engine was denied, known only
+    /// by their number, or null when none were.
     /// </summary>
-    public static Warning? OmissionWarning(int omitted) => omitted <= 0 ? null : new Warning(WarningCodes.RemoteResourcesBlocked, $"{omitted} external resource(s) were omitted.")
+    public static Warning? OmissionWarning(int omitted) => omitted <= 0 ? null : new Warning(WarningCodes.RemoteResourcesBlocked, $"{omitted} resource(s) the document references were omitted.")
     {
-        Hint = "Place required resources beside the input and reference them by relative path, then review the incomplete output.",
+        Hint = DefaultHint,
         AffectsCompleteness = true,
     };
+
+    /// <summary>
+    /// The completeness warning naming the resources left out and why, at most
+    /// <see cref="ListedResources"/> of them, or null when none were. Every product reports
+    /// omitted resources through this one warning; a reference several loaders left out is
+    /// named once.
+    /// </summary>
+    public static Warning? OmissionWarning(IEnumerable<OmittedResource> omitted, string? hint = null)
+    {
+        ArgumentNullException.ThrowIfNull(omitted);
+        OmittedResource[] distinct = [.. omitted.DistinctBy(static item => item.Reference, StringComparer.Ordinal)];
+        if (distinct.Length == 0)
+        {
+            return null;
+        }
+
+        return new Warning(WarningCodes.RemoteResourcesBlocked, $"{distinct.Length} resource(s) the document references were omitted: {Describe(distinct)}.")
+        {
+            Hint = hint ?? DefaultHint,
+            AffectsCompleteness = true,
+        };
+    }
+
+    /// <summary>
+    /// Names the first <see cref="ListedResources"/> omitted resources with their reasons, as
+    /// the omission warning does, and counts the rest.
+    /// </summary>
+    public static string Describe(IReadOnlyCollection<OmittedResource> omitted)
+    {
+        ArgumentNullException.ThrowIfNull(omitted);
+        string listed = string.Join(", ", omitted.Take(ListedResources).Select(static item => $"{item.Reference} ({item.Reason})"));
+        return omitted.Count > ListedResources ? $"{listed}, and {omitted.Count - ListedResources} more" : listed;
+    }
 
     /// <summary>The completeness warning for this document's omitted resources, after any fatal callback failure.</summary>
     public Warning? Warning
@@ -66,7 +121,7 @@ public sealed class LocalDocumentResourceLoader : IDisposable
         get
         {
             ThrowIfFailed();
-            return OmissionWarning(OmittedCount);
+            return OmissionWarning(Omitted);
         }
     }
 
@@ -90,42 +145,55 @@ public sealed class LocalDocumentResourceLoader : IDisposable
     }
 
     /// <summary>
-    /// Reads a verified local resource in full. Rejected resources return an empty result;
-    /// shared budget, cancellation and deadline failures abort the operation. An image that
+    /// Reads a verified local resource in full. Rejected resources return an empty result and
+    /// are recorded with their reason; shared budget, cancellation and deadline failures abort
+    /// the operation. An image that
     /// <see cref="ImageInput"/> refuses, when the caller reads an image, fails the load that
     /// reads it: it is thrown here and once more by the next <see cref="ThrowIfFailed"/>, in case
     /// the engine swallowed it. An admitted SVG image comes back with only what it holds itself
     /// (<see cref="ImageInput"/>), and one that does not parse as XML is omitted.
     /// </summary>
-    /// <param name="reference">The reference the document names.</param>
+    /// <param name="reference">The reference the document names, resolved against the input folder.</param>
     /// <param name="data">The resource's bytes, or empty when it was rejected.</param>
     /// <param name="image">Whether the document embeds the resource as an image, which must then be intact.</param>
-    public bool TryRead(string? reference, out byte[] data, bool image = false)
+    /// <param name="written">
+    /// The reference as the document wrote it, when the engine passes a resolved one as
+    /// <paramref name="reference"/>; it names an omitted resource.
+    /// </param>
+    public bool TryRead(string? reference, out byte[] data, bool image = false, string? written = null)
     {
         data = [];
         Exception? refused;
         lock (_gate)
         {
             ObjectDisposedException.ThrowIf(_disposed, this);
+            string named = string.IsNullOrWhiteSpace(written) ? reference ?? string.Empty : written;
             try
             {
                 ThrowIfFailed();
-                if (_items >= _maximumItems) { return Omit(); }
+                if (_items >= _maximumItems) { return Omit(named, $"over the limit of {_maximumItems} resources"); }
                 _items++;
-                if (!TryResolve(reference, out string? path))
+                if (Resolve(reference, out string? path) is { } unresolved)
                 {
-                    return Omit();
+                    return Omit(named, unresolved);
+                }
+                if (!FilePaths.IsWithin(_root, path!, allowEqual: false))
+                {
+                    return Omit(named, "outside the input folder");
                 }
                 using VerifiedReadLease? stream = _boundary.TryOpenRead(path!);
                 if (stream is null)
                 {
-                    return Omit();
+                    return Omit(named, File.Exists(path) || Directory.Exists(path) ? "not an ordinary file" : "not found");
                 }
                 long length = stream.Length;
-                if (length > _maximumItemBytes || length > Array.MaxLength
-                    || length > _maximumTotalBytes - _totalBytes)
+                if (length > _maximumItemBytes || length > Array.MaxLength)
                 {
-                    return Omit();
+                    return Omit(named, "too large");
+                }
+                if (length > _maximumTotalBytes - _totalBytes)
+                {
+                    return Omit(named, "over the total size limit for resources");
                 }
                 _totalBytes += length;
                 // Reserve before allocating or reading; failed attempts cannot reclaim a budget.
@@ -139,21 +207,21 @@ public sealed class LocalDocumentResourceLoader : IDisposable
                     int read = stream.Read(buffer, offset, Math.Min(64 * 1024, buffer.Length - offset));
                     if (read == 0)
                     {
-                        return Omit();
+                        return Omit(named, "changed while it was read");
                     }
                     offset += read;
                 }
                 _budgets.Deadline.ThrowIfExpired("document-resource");
                 if (stream.ReadByte() != -1 || stream.Length != length)
                 {
-                    return Omit();
+                    return Omit(named, "changed while it was read");
                 }
                 refused = image ? ImageInput.Refusal(buffer, _budgets, path!, ImageInput.Corrupt) : null;
                 byte[]? content = image && refused is null ? ImageInput.KeepInternal(buffer) : buffer;
                 if (content is null)
                 {
                     // An SVG that cannot be cleaned is left out like any refused resource.
-                    return Omit();
+                    return Omit(named, "not a supported image");
                 }
 
                 if (refused is null)
@@ -170,7 +238,7 @@ public sealed class LocalDocumentResourceLoader : IDisposable
             }
             catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
             {
-                return Omit();
+                return Omit(named, "unreadable");
             }
 
             _refusedImage = refused;
@@ -179,37 +247,90 @@ public sealed class LocalDocumentResourceLoader : IDisposable
         throw refused;
     }
 
-    private bool TryResolve(string? reference, out string? path)
+    /// <summary>Resolves a reference to a local path, or returns why it names none.</summary>
+    private string? Resolve(string? reference, out string? path)
     {
         path = null;
-        if (string.IsNullOrWhiteSpace(reference)
-            || FilePaths.IsRemoteOrDevice(reference))
+        if (string.IsNullOrWhiteSpace(reference))
         {
-            return false;
+            return "empty reference";
+        }
+        if (FilePaths.IsRemoteOrDevice(reference))
+        {
+            return "network address";
         }
         try
         {
-            if (!Uri.TryCreate(_baseUri, reference, out Uri? resolved)
-                || !resolved.IsFile || resolved.IsUnc
-                || !string.IsNullOrEmpty(resolved.Query)
-                || !string.IsNullOrEmpty(resolved.Fragment))
+            if (!Uri.TryCreate(_baseUri, reference, out Uri? resolved))
             {
-                return false;
+                return "not a file reference";
+            }
+            if (!resolved.IsFile || resolved.IsUnc)
+            {
+                return "network address";
+            }
+            if (!string.IsNullOrEmpty(resolved.Query) || !string.IsNullOrEmpty(resolved.Fragment))
+            {
+                return "not a file reference";
             }
             // The boundary validates decoded segments, including ADS and Win32 aliases.
             path = resolved.LocalPath;
-            return true;
+            return null;
         }
         catch (Exception exception) when (exception is ArgumentException or NotSupportedException)
         {
-            return false;
+            return "not a file reference";
         }
     }
 
-    private bool Omit()
+    private bool Omit(string reference, string reason)
     {
-        _omitted++;
+        var omitted = new OmittedResource(ReferenceName(reference), reason);
+        if (!_omitted.Exists(item => string.Equals(item.Reference, omitted.Reference, StringComparison.Ordinal)))
+        {
+            _omitted.Add(omitted);
+        }
+
         return false;
+    }
+
+    /// <summary>
+    /// How a warning names a reference: as written, unless it is a local path or file URI, which
+    /// is named relative to the input folder when below it and by its file name otherwise; a
+    /// network address loses its query. Long references are shortened.
+    /// </summary>
+    public string ReferenceName(string reference)
+    {
+        ArgumentNullException.ThrowIfNull(reference);
+        string named = reference.Trim();
+        if (named.Length == 0)
+        {
+            return "(empty)";
+        }
+
+        try
+        {
+            string? local = Uri.TryCreate(named, UriKind.Absolute, out Uri? uri)
+                ? uri.IsFile ? uri.LocalPath : null
+                : Path.IsPathFullyQualified(named) || named.StartsWith('\\') || named.StartsWith('/') ? named : null;
+            if (local is not null)
+            {
+                string full = Path.GetFullPath(local);
+                named = FilePaths.IsWithin(_root, full, allowEqual: false)
+                    ? Path.GetRelativePath(_root, full)
+                    : Path.GetFileName(full.TrimEnd('\\', '/'));
+            }
+            else if (uri is not null && !string.IsNullOrEmpty(uri.Query))
+            {
+                named = uri.GetLeftPart(UriPartial.Path);
+            }
+        }
+        catch (Exception exception) when (exception is ArgumentException or NotSupportedException or PathTooLongException)
+        {
+            named = "(unreadable reference)";
+        }
+
+        return named.Length <= ReferenceLength ? named : named[..ReferenceLength] + "...";
     }
 
     public void Dispose()

@@ -469,6 +469,38 @@ public sealed class WordsMarkdownImportTests
     }
 
     /// <summary>
+    /// The importer asks for an omitted image more than once; the warning counts and names each
+    /// reference once, as the Markdown wrote it, with its reason.
+    /// </summary>
+    [Fact]
+    public void OmittedMarkdownImages_AreCountedAndNamedOnce()
+    {
+        using var fixture = new WordsFixture();
+        string input = Directory.CreateDirectory(fixture.Temp.File("in")).FullName;
+        string shared = Directory.CreateDirectory(fixture.Temp.File("shared")).FullName;
+        File.WriteAllBytes(Path.Combine(shared, "logo.png"), Convert.FromBase64String(
+            "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGP4z8DwHwAFAAH/iZk9HQAAAABJRU5ErkJggg=="));
+        string markdown = Path.Combine(input, "doc.md");
+        File.WriteAllText(markdown, "# Title\n\n![gone](images/missing.png)\n\n![far](../shared/logo.png)\n\n<img src=\"x.png\">\n");
+
+        WordsCreateResult created = WordsCreate.Run(fixture.Session, new WordsCreateRequest
+        {
+            Output = TestOutput.At(Path.Combine(input, "doc.docx")),
+            Markdown = new SourceFile("--from-markdown", markdown),
+        });
+
+        Warning warning = Assert.Single(created.Warnings ?? [], static warning => warning.Code == WarningCodes.RemoteResourcesBlocked);
+        Assert.StartsWith("3 resource(s)", warning.Message, StringComparison.Ordinal);
+        foreach (string named in new[] { "images/missing.png (not found)", "../shared/logo.png (outside the input folder)", "x.png (not found)" })
+        {
+            Assert.Equal(warning.Message.IndexOf(named, StringComparison.Ordinal), warning.Message.LastIndexOf(named, StringComparison.Ordinal));
+            Assert.Contains(named, warning.Message, StringComparison.Ordinal);
+        }
+
+        Assert.DoesNotContain(shared, warning.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    /// <summary>
     /// An image the resource policy omits, one that does not exist or lies outside the Markdown's
     /// directory, leaves no link in the output, through both <c>create --from-markdown</c> and
     /// <c>insert_markdown</c>: no relationship names a local path or an external picture, while

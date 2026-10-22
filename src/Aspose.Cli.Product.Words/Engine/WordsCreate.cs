@@ -131,7 +131,7 @@ internal static class WordsCreate
         string format)
     {
         var extra = new List<Warning>();
-        if (LocalDocumentResourceLoader.OmissionWarning(created.RemoteResourcesBlocked) is { } omitted)
+        if (LocalDocumentResourceLoader.OmissionWarning(created.OmittedResources) is { } omitted)
         {
             extra.Add(omitted);
         }
@@ -156,7 +156,7 @@ internal static class WordsCreate
         IReadOnlyList<LoadedDocument> Sources,
         IReadOnlyList<SourceInput> Inputs) : IDisposable
     {
-        internal int RemoteResourcesBlocked => Sources.Sum(static source => source.RemoteResourcesBlocked);
+        internal IReadOnlyList<OmittedResource> OmittedResources => [.. Sources.SelectMany(static source => source.OmittedResources)];
         internal bool WasSigned => Template?.Format.HasDigitalSignature ?? false;
 
         internal void Save(string path, SaveOptions options)
