@@ -3621,6 +3621,7 @@ C-R31 | cells edit paths
 C-R31 | cells inspect paths
 C-R31 | cells render paths
 C-R31 | pdf edit paths
+C-R31 | pdf extract units
 C-R31 | pdf inspect paths
 C-R31 | pdf render paths
 C-R31 | slides edit paths

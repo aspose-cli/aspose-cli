@@ -703,17 +703,29 @@ internal static partial class ContractRules
         {
             Fixture = "slides.media",
         },
+        [("v2/pdf/extract-result", "outputs")] = new("pdf extract", "--what", ["page", "name"],
+            "pdf extract names each image or table by the page it comes from and each attachment by the name the document gives it, never used as its file name; the text and the form data name neither; --what chooses which (security fixes S9, 2026-10-21)")
+        {
+            Fixture = "pdf.media",
+            Unitless = ["text", "forms"],
+            Arguments = new Dictionary<string, string[]>(StringComparer.Ordinal) { ["forms"] = ["--form-format", "json"] },
+        },
     };
     // rule-exemptions: end
 
     /// <summary>
     /// The units an outputs list may name, the command whose option chooses one for a run, and why;
     /// <see cref="Fixture"/> names the input its runs read when the product's own sample lacks
-    /// what some value writes, such as media.
+    /// what some value writes, such as media; <see cref="Unitless"/> lists the values whose files
+    /// name no unit at all, and <see cref="Arguments"/> what a value's run needs beside it.
     /// </summary>
     private sealed record UnitChoice(string Command, string Option, string[] Units, string Reason)
     {
         public string? Fixture { get; init; }
+
+        public string[] Unitless { get; init; } = [];
+
+        public IReadOnlyDictionary<string, string[]> Arguments { get; init; } = new Dictionary<string, string[]>(StringComparer.Ordinal);
     }
 
     private static IEnumerable<InvariantCase> R32(CliCatalog catalog)
