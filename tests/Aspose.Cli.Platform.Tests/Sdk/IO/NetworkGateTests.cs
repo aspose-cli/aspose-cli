@@ -63,5 +63,50 @@ public sealed class NetworkGateTests
             NetworkGate.Admit(NetworkAccess.Web);
         }
     }
+
+    /// <summary>
+    /// A file request names a host when a document references a share, such as
+    /// <c>\\localhost\pipe\name</c>: the gate blocks it whatever the host is called, before the
+    /// request opens the path, which a pipe of the test's own would see.
+    /// </summary>
+    [Fact]
+    public async Task FileRequestsWithAHost_AreBlockedBeforeTheyOpenAnything()
+    {
+        string name = "aspose-cli-gate-" + Guid.NewGuid().ToString("N");
+        var server = new System.IO.Pipes.NamedPipeServerStream(name, System.IO.Pipes.PipeDirection.InOut, 1,
+            System.IO.Pipes.PipeTransmissionMode.Byte, System.IO.Pipes.PipeOptions.Asynchronous);
+        Task connected = server.WaitForConnectionAsync();
+        Uri[] hosted =
+        [
+            new(@"\\localhost\pipe\" + name),
+            new("file://localhost/pipe/" + name),
+            new("file://Server/share/x.png"),
+            new("file://127.0.0.1/c$/x.png"),
+            new("file://2130706433/c$/x.png"),
+            new("file://[::1]/c$/x.png"),
+            new("file://xn--bcher-kva.example/share/x.png"),
+            new("file://1password.example/share/x.png"),
+        ];
+        try
+        {
+            NetworkGate.Admit(NetworkAccess.None);
+
+            foreach (Uri uri in hosted)
+            {
+                WebException refusal = Assert.Throws<WebException>(() => WebRequest.Create(uri).GetResponse());
+                Assert.Contains("blocked", refusal.Message, StringComparison.Ordinal);
+            }
+
+            await Task.Delay(250);
+            Assert.False(connected.IsCompleted, "A blocked file request opened the pipe it names.");
+            string listed = Assert.IsType<Warning>(NetworkGate.Warning).Message;
+            Assert.Contains(name, listed, StringComparison.OrdinalIgnoreCase);
+        }
+        finally
+        {
+            await server.DisposeAsync();
+            NetworkGate.Admit(NetworkAccess.Web);
+        }
+    }
 #pragma warning restore SYSLIB0014
 }
