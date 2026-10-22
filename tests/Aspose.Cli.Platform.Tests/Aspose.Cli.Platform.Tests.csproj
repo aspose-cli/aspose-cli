@@ -25,6 +25,7 @@
     <RepositoryInput Include="..\..\CONTRIBUTING.md" />
     <RepositoryInput Include="..\..\KNOWN-ISSUES.md" />
     <RepositoryInput Include="..\..\LICENSE" />
+    <RepositoryInput Include="..\..\SECURITY.md" />
   </ItemGroup>
 
 </Project>
