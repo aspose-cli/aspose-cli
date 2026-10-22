@@ -32,6 +32,13 @@ correct a design paragraph by paragraph.
   after it, so `~~原《守则》~~同时` stays literal; write `<del>`, `<strong>` or
   `<em>` tags in Chinese text instead, and read the result back for leftover
   markers.
+- A Markdown image is read only from an ordinary file beneath a directory, by
+  relative path: the Markdown file's directory for `words create
+  --from-markdown`, the input document's directory for `insert_markdown`. A
+  missing image, one outside that directory and a network image are left out,
+  and `REMOTE_RESOURCES_BLOCKED` names each one as the Markdown wrote it, with
+  the reason. To use an image from elsewhere, copy it into that directory or a
+  folder below it and reference it by a relative path.
 - Markdown has no Title syntax, and its `#` becomes Heading 1, which the table
   of contents lists. For a document title, write it as a plain first line,
   write the chapters as `#`, and restyle that line in the batch that inserts
