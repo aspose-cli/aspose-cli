@@ -53,6 +53,21 @@ the check is its authority.
 - Derive contracts from one source: generate what can be generated and test that it is current,
   rather than keeping hand-written copies in sync.
 - Prefer deleting unused surface to preserving it.
+- Processing a document reaches neither the network nor a file outside its input's folder. The
+  SDK's process-level `NetworkGate`, each product's single loading entry and `SvgReferences`
+  enforce it, never a scan of the content for addresses (`APCLI015`, `PdfResourceLoadingTests`,
+  `CellsSvgPictureTests`, `SvgReferencesTests`, the product `*ResourceLoadingTests`).
+- The CLI replaces or deletes only what it can prove it wrote, by file identity or recorded hash,
+  never by name (`PublicationOwnershipTests`, `OutputIsInputContractTests`,
+  `ReviewOverwriteOwnershipTests`, `ViewerStorageTests`, `UserStorageTests`).
+- A security-relevant result (encryption kept or removed, redaction, omitted or blocked
+  resources) reports only what an independent re-check of the output establishes
+  (`OutputPipelineEncryptionTests`, `PdfEditVerificationTests`, `PdfResourceLoadingTests`; D7).
+- Per-user state and local services are reachable only by the current user: per-user state lives
+  under `UserStorage` (`APCLI016`, `UserStorageTests`), and the services answer only their session
+  and control secret (`AppHttpSecurityTests`, `LocalServiceRuntimeTests`).
+- [SECURITY.md](SECURITY.md) names the tests behind each boundary it states, and
+  `SecurityClaimsTests` keeps those names current.
 - The [gates](#gates) judge a change: never add a known violation to make a change pass. Code
   metrics (`eng/tools/CodeHealth`) are a diagnostic, never a target.
 
