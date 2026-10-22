@@ -20,22 +20,22 @@ public sealed class AppLicenseChangeTests
         {
             JsonNode started = Start(workspace);
             int pid = started["pid"]!.GetValue<int>();
-            var url = new Uri(started["url"]!.GetValue<string>());
-            await AssertMode(url, "pdf", "evaluation");
+            using HttpClient app = await LocalServiceEntry.Client(started["url"]!.GetValue<string>(), TestDeadline.Hang);
+            await AssertMode(app, "pdf", "evaluation");
 
             string configured = workspace.File(".aspose/licenses/pdf.lic");
             Directory.CreateDirectory(Path.GetDirectoryName(configured)!);
             File.WriteAllText(configured, "<License>invalid native license fixture</License>");
 
-            await AssertMode(url, "pdf", "invalid");
-            await AssertMode(url, "words", "evaluation");
+            await AssertMode(app, "pdf", "invalid");
+            await AssertMode(app, "words", "evaluation");
             JsonNode again = Start(workspace);
             Assert.True(again["reused"]!.GetValue<bool>());
             Assert.Equal(pid, again["pid"]!.GetValue<int>());
 
             File.Delete(configured);
 
-            await AssertMode(url, "pdf", "evaluation");
+            await AssertMode(app, "pdf", "evaluation");
             Assert.Equal(pid, Start(workspace)["pid"]!.GetValue<int>());
         }
         finally
@@ -59,19 +59,19 @@ public sealed class AppLicenseChangeTests
         try
         {
             JsonNode started = Start(workspace);
-            var url = new Uri(started["url"]!.GetValue<string>());
-            await AssertMode(url, "pdf", "evaluation");
+            using HttpClient app = await LocalServiceEntry.Client(started["url"]!.GetValue<string>(), TestDeadline.Hang);
+            await AssertMode(app, "pdf", "evaluation");
 
             JsonNode licensed = Start(workspace, InvalidLicenseShell(workspace));
             Assert.Equal(started["pid"]!.GetValue<int>(), licensed["pid"]!.GetValue<int>());
-            await AssertMode(url, "pdf", "invalid", RequesterChange);
+            await AssertMode(app, "pdf", "invalid", RequesterChange);
 
             Start(workspace);
-            await AssertMode(url, "pdf", "evaluation", RequesterChange);
+            await AssertMode(app, "pdf", "evaluation", RequesterChange);
 
             Start(workspace, variables: null, "--workdir", project);
-            await AssertMode(url, "pdf", "invalid", RequesterChange);
-            await AssertMode(url, "words", "evaluation", RequesterChange);
+            await AssertMode(app, "pdf", "invalid", RequesterChange);
+            await AssertMode(app, "words", "evaluation", RequesterChange);
         }
         finally
         {
@@ -87,11 +87,11 @@ public sealed class AppLicenseChangeTests
         try
         {
             JsonNode started = Start(workspace, InvalidLicenseShell(workspace));
-            var url = new Uri(started["url"]!.GetValue<string>());
-            await AssertMode(url, "pdf", "invalid");
+            using HttpClient app = await LocalServiceEntry.Client(started["url"]!.GetValue<string>(), TestDeadline.Hang);
+            await AssertMode(app, "pdf", "invalid");
 
             Start(workspace);
-            await AssertMode(url, "pdf", "evaluation", RequesterChange);
+            await AssertMode(app, "pdf", "evaluation", RequesterChange);
         }
         finally
         {
@@ -174,11 +174,12 @@ public sealed class AppLicenseChangeTests
     }
 
     /// <summary>
-    /// The App reports the CLI's own view of the licence, read in a child
+    /// The App, through a client that entered it once by the address <c>app open</c> returned,
+    /// reports the CLI's own view of the licence, read in a child
     /// process and kept for a moment, so a change outside the App shows up
     /// within seconds rather than instantly.
     /// </summary>
-    private static async Task AssertMode(Uri app, string product, string expected, TimeSpan? within = null)
+    private static async Task AssertMode(HttpClient app, string product, string expected, TimeSpan? within = null)
     {
         string mode = await ProductMode(app, product);
         using var deadline = new CancellationTokenSource(within ?? TestDeadline.Hang);
@@ -190,10 +191,9 @@ public sealed class AppLicenseChangeTests
         Assert.Equal(expected, mode);
     }
 
-    private static async Task<string> ProductMode(Uri app, string product)
+    private static async Task<string> ProductMode(HttpClient app, string product)
     {
-        using var client = new HttpClient { Timeout = TestDeadline.Hang };
-        JsonNode status = JsonNode.Parse(await client.GetStringAsync(new Uri(app, "/api/status")))!;
+        JsonNode status = JsonNode.Parse(await app.GetStringAsync("/api/status"))!;
         return status["license"]!["products"]!.AsArray()
             .Single(item => item!["product"]!.GetValue<string>() == product)!["mode"]!.GetValue<string>();
     }
