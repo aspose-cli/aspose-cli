@@ -73,6 +73,16 @@ internal sealed class WorkbookResources(string path, ResourceBudgetLedger budget
         _svgPictures += pictures;
     }
 
+    /// <summary>
+    /// Counts what keeping an OpenDocument package's SVG pictures to themselves removed before
+    /// the load (<see cref="OdsPackages"/>): references, and pictures left out.
+    /// </summary>
+    internal void NoteSvgPictures(int references, int pictures)
+    {
+        _svgReferences += references;
+        _svgPictures += pictures;
+    }
+
     internal void ThrowIfFailed() => _loader.ThrowIfFailed();
 
     /// <summary>
@@ -95,7 +105,7 @@ internal sealed class WorkbookResources(string path, ResourceBudgetLedger budget
     }
 
     private Warning? SvgPicturesWarning => _svgPictures > 0
-        ? new Warning(CellsDiagnostics.ImagesSkipped, $"{_svgPictures} SVG picture(s) were left out: their SVG does not parse as XML, or they sit in a group.")
+        ? new Warning(CellsDiagnostics.ImagesSkipped, $"{_svgPictures} SVG picture(s) were left out: their SVG is compressed or does not parse as XML, or they sit in a group.")
         {
             Hint = "Replace each such picture with a PNG, or with an SVG that parses and is not grouped, using insert_image.",
             AffectsCompleteness = true,

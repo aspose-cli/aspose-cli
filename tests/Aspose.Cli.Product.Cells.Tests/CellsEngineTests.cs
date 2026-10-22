@@ -1207,12 +1207,12 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
     {
         { "xls", Aspose.Cells.SaveFormat.Excel97To2003 },
         { "xlsb", Aspose.Cells.SaveFormat.Xlsb },
-        { "ods", Aspose.Cells.SaveFormat.Ods },
     };
 
     /// <summary>
     /// Every encrypted workbook format is refused the same way: without a password before the
     /// engine opens it, with a wrong one by the engine's typed failure, and opened with the right one.
+    /// An encrypted ODS is refused with any password (CellsOdsPackageTests).
     /// </summary>
     [Theory]
     [MemberData(nameof(EncryptedFormats))]

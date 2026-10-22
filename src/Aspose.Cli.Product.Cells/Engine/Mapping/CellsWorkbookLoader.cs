@@ -150,7 +150,7 @@ internal sealed class CellsWorkbookLoader
         {
             LoadOptions options = plan.ToLoadOptions();
             options.Password = password.Password?.Reveal();
-            using (FileStream input = InputFiles.OpenRead(path))
+            using (Stream input = OpenPackage(path, plan, resources))
             {
                 workbook = new Workbook(input, options);
             }
@@ -210,7 +210,7 @@ internal sealed class CellsWorkbookLoader
 
     private LoadPlan ResolveLoadPlan(string path, CellsTextImportOptions? textImport, bool published)
     {
-        LoadPlan plan = ResolveFormatPlan(path);
+        LoadPlan plan = ResolveFormatPlan(path, published);
         if (plan.Separator is not { } separator)
         {
             if (textImport is { Encoding: not null } or { Culture: not null })
@@ -230,7 +230,36 @@ internal sealed class CellsWorkbookLoader
         return plan with { TextEncoding = encoding, TextCulture = culture };
     }
 
-    private static LoadPlan ResolveFormatPlan(string path)
+    // The OpenDocument spreadsheet packages, whose SVG pictures the engine reads by path.
+    private static bool IsOpenDocument(FileFormatType format) => format is FileFormatType.Ods or FileFormatType.Ots;
+
+    /// <summary>
+    /// The input as the engine reads it: an OpenDocument package always rebuilt with its SVG
+    /// pictures kept to themselves (<see cref="OdsPackages"/>, CELLS-SVG-EGRESS), any other file
+    /// as it is.
+    /// </summary>
+    private Stream OpenPackage(string path, LoadPlan plan, WorkbookResources resources)
+    {
+        if (plan.Detected is not { } format || !IsOpenDocument(format))
+        {
+            return InputFiles.OpenRead(path);
+        }
+
+        OdsPackages.Cleaned cleaned;
+        try
+        {
+            cleaned = OdsPackages.KeepSvgInternal(path, _resourceBudgets);
+        }
+        catch (InvalidDataException exception)
+        {
+            throw For(path).Unreadable(path, "its OpenDocument package is damaged: " + exception.Message, exception);
+        }
+
+        resources.NoteSvgPictures(cleaned.References, cleaned.Pictures);
+        return new MemoryStream(cleaned.Package, writable: false);
+    }
+
+    private static LoadPlan ResolveFormatPlan(string path, bool published)
     {
         FileFormatInfo detected = Loading.Load(path, password: default, () =>
         {
@@ -240,6 +269,17 @@ internal sealed class CellsWorkbookLoader
 
         if (detected.IsEncrypted)
         {
+            if (IsOpenDocument(detected.FileFormatType) && !published)
+            {
+                // CELLS-SVG-EGRESS: the engine opens what an SVG picture names while it loads,
+                // and the pictures of an encrypted package cannot be kept to themselves first.
+                // A read-back is an output the CLI wrote or the edit baseline, a verified copy of
+                // an input this loader opened first, and so refused already if it was encrypted.
+                throw CliErrors.EngineDefect(
+                    $"The OpenDocument spreadsheet {path} is encrypted: while it loads, the engine would open the files and addresses its SVG pictures name, and the CLI cannot remove them from an encrypted package first.",
+                    "Remove the password in the application that made the file, or save it as xlsx there, then open that copy.");
+            }
+
             return LoadPlan.Auto with { Encrypted = true };
         }
 

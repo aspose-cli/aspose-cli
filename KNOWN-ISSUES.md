@@ -18,8 +18,9 @@ Reproductions: [CellsKnownIssueTests](tests/Aspose.Cli.Product.Cells.Tests/Cells
 - **Defect:** an SVG picture without a raster image, one being added or one a workbook stores
   alone (as an ODS can), is rasterized by reading every image its `<image>` elements name: a bare
   path from the file system, and a `file:` or `http:` URL through a request of the engine's own.
-  `WorkbookSettings.ResourceProvider` and `LoadOptions.StreamProvider` are never consulted.
-  Loading HTML or MHTML, the engine also opens the images the page names by path, and no option
+  `WorkbookSettings.ResourceProvider` and `LoadOptions.StreamProvider` are never consulted, and
+  an ODS or OTS package's SVG picture is read this way while the package loads, no `LoadFilter`
+  excepted. Loading HTML or MHTML, the engine also opens the images the page names by path, and no option
   turns that off.
 - **CLI behavior:** every SVG the engine gets keeps only references inside itself, `#id`
   fragments and base64 `data:` URIs whose bytes are a PNG, JPEG or GIF file; other references,
@@ -28,12 +29,16 @@ Reproductions: [CellsKnownIssueTests](tests/Aspose.Cli.Product.Cells.Tests/Cells
   links. A loaded workbook's SVG picture that named any is replaced by the
   same picture without them, at the same place and size, so what the engine read while loading
   it never reaches an output; one whose SVG does not parse as XML, or that sits in a group, is
-  left out with `IMAGES_SKIPPED`. `insert_image` refuses an SVG that does not parse with
-  `OPS_INVALID`, and a compressed SVG, which cannot be read, with `FEATURE_UNSUPPORTED`. Cells
-  reads no HTML or MHTML: it only writes them, and refuses such an input with
-  `FORMAT_UNSUPPORTED` before the engine loads it.
+  left out with `IMAGES_SKIPPED`. An ODS or OTS package is given to the engine with every SVG
+  entry, wherever it sits, cleaned the same way, and a compressed SVG entry, which cannot be
+  checked, removed with `IMAGES_SKIPPED`; an encrypted package, which cannot be cleaned first, is
+  refused with `FEATURE_UNSUPPORTED` (`details.reason` `engine-defect`). `insert_image` refuses an
+  SVG that does not parse with `OPS_INVALID`, and a compressed SVG, which cannot be read, with
+  `FEATURE_UNSUPPORTED`. Cells reads no HTML or MHTML: it only writes them, and refuses such an
+  input before the engine loads it.
 - **Workaround:** embed an SVG's images as base64 `data:` URIs (PNG, JPEG or GIF), or insert a
-  raster image; save an HTML table as xlsx or csv in the application it came from, then open
+  raster image; remove an ODS file's password, or save it as xlsx, in the application that made
+  it; save an HTML table as xlsx or csv in the application it came from, then open
   that.
 
 ### CELLS-SPARKLINE-APOSTROPHE

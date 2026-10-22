@@ -62,6 +62,7 @@ internal static class IsolationDocuments
     private static readonly XNamespace AsSvg = "http://schemas.microsoft.com/office/drawing/2016/SVG/main";
     private static readonly XNamespace Xlink = "http://www.w3.org/1999/xlink";
     private static readonly XNamespace Draw = "urn:oasis:names:tc:opendocument:xmlns:drawing:1.0";
+    private static readonly XNamespace Office = "urn:oasis:names:tc:opendocument:xmlns:office:1.0";
     private static readonly XNamespace Manifest = "urn:oasis:names:tc:opendocument:xmlns:manifest:1.0";
     private static readonly XNamespace Pkg = "http://schemas.microsoft.com/office/2006/xmlPackage";
     private static readonly XNamespace WordMl = "http://schemas.microsoft.com/office/word/2003/wordml";
@@ -541,7 +542,8 @@ internal static class IsolationDocuments
 
     /// <summary>
     /// Points the <c>draw:image</c> pictures of an OpenDocument package at the references: the
-    /// first becomes an SVG picture in the package, and each next one links a reference.
+    /// first becomes an SVG picture in the package, a copy of its frame holds the same SVG inline
+    /// as <c>office:binary-data</c>, and each next one links a reference.
     /// </summary>
     private static byte[] PatchOpenDocument(byte[] package, References references)
     {
@@ -567,6 +569,12 @@ internal static class IsolationDocuments
                     manifest.Root!.Add(new XElement(Manifest + "file-entry",
                         new XAttribute(Manifest + "full-path", picture), new XAttribute(Manifest + "media-type", "image/svg+xml")));
                     parts["META-INF/manifest.xml"] = Bytes(manifest);
+                    XElement frame = image.Parent!;
+                    var inline = new XElement(frame);
+                    XElement inlineImage = inline.Element(Draw + "image")!;
+                    inlineImage.Attribute(Xlink + "href")!.Remove();
+                    inlineImage.Add(new XElement(Office + "binary-data", Convert.ToBase64String(Svg(references.SvgImages))));
+                    frame.AddAfterSelf(inline);
                     svg = true;
                 }
                 else if (linked < references.Images.Count)

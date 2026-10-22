@@ -76,7 +76,9 @@ with `FILE_CORRUPT`, whose hint says cells only writes these formats. Save the
 table as xlsx or csv where it came from, and give cells that file. An SVG picture of any input
 keeps only what it holds itself: references to other files or addresses are
 removed with `REMOTE_RESOURCES_BLOCKED`, and an SVG picture that does not parse
-is left out with `IMAGES_SKIPPED`.
+or is compressed is left out with `IMAGES_SKIPPED`. An encrypted ODS is refused
+with `FEATURE_UNSUPPORTED`: remove its password, or save it as xlsx, in the
+application that made it, then open that copy.
 
 ## Formulas
 
