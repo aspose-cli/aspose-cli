@@ -10,7 +10,7 @@ namespace Aspose.Cli.Product.Cells.Tests;
 
 /// <summary>
 /// An SVG picture keeps only what it holds itself (CELLS-SVG-EGRESS): the images it names by a
-/// path or URL never reach an output, and the images of an HTML or MHTML input are not imported.
+/// path or URL never reach an output.
 /// Each sample names a solid green PNG outside the input's folder, so an output that holds green
 /// pixels holds that file.
 /// </summary>
@@ -127,48 +127,6 @@ public sealed class CellsSvgPictureTests : IDisposable
         Assert.True(converted.ExitCode == 0, converted.StdErr);
         Assert.True(Warned(converted.StdOut, ImagesSkipped), converted.StdOut);
         Assert.False(XlsxHasSecretPixels(workspace.File("book.xlsx")), "the workbook holds the file the SVG names");
-    }
-
-    /// <summary>
-    /// HTML and MHTML input keeps no images, so nothing an SVG data URI names, a file or an
-    /// address, reaches the workbook, and the result says the images were left out. The engine
-    /// still requests an http image while it loads, which this check does not cover.
-    /// </summary>
-    [Theory]
-    [InlineData("html", "path")]
-    [InlineData("html", "file-uri")]
-    [InlineData("html", "http")]
-    [InlineData("mht", "path")]
-    [InlineData("mht", "file-uri")]
-    [InlineData("mht", "http")]
-    public async Task HtmlInput_KeepsNoImagesSoNothingAnSvgNamesReachesTheWorkbook(string extension, string reference)
-    {
-        using var workspace = new TempWorkspace();
-        await using var server = new ResourceHttpServer();
-        string href = reference switch
-        {
-            "path" => _secret,
-            "file-uri" => new Uri(_secret).AbsoluteUri,
-            _ => server.Url + "/svg-image.png",
-        };
-        string html = "<html><body><table><tr><td>Data</td><td><img width=\"40\" height=\"40\" src=\"data:image/svg+xml;base64,"
-            + Convert.ToBase64String(Svg(Image(href))) + "\"></td></tr></table></body></html>";
-        File.WriteAllText(workspace.File("page." + extension), extension == "mht" ? Mhtml(html) : html);
-
-        CliResult converted = workspace.Run("cells", "convert", "page." + extension, "--to", "xlsx", "--out", "page.xlsx", "--output-format", "json");
-
-        Assert.True(converted.ExitCode == 0, converted.StdErr);
-        Assert.DoesNotContain(XlsxImages(workspace.File("page.xlsx")), image => HasPixels(image, static _ => true));
-        Assert.False(XlsxHasSecretPixels(workspace.File("page.xlsx")), "the workbook holds the file the SVG names");
-        Assert.True(server.RequestCount == 0, string.Join("; ", server.Requests));
-        // The process's network gate blocks a file URI or an http address before the engine has
-        // an image to import, and lists it; a plain path is read, and the image is left out.
-        Assert.True(reference == "path"
-            ? Warned(converted.StdOut, ImagesSkipped)
-            : JsonNode.Parse(converted.StdOut)!["warnings"]!.AsArray().Any(warning =>
-                warning!["code"]!.GetValue<string>() == WarningCodes.RemoteResourcesBlocked.Name
-                && warning["message"]!.GetValue<string>().Contains(reference == "http" ? href : _secret, StringComparison.OrdinalIgnoreCase)),
-            converted.StdOut);
     }
 
     /// <summary>
@@ -338,12 +296,6 @@ public sealed class CellsSvgPictureTests : IDisposable
         }
         return buffer.ToArray();
     }
-
-    private static string Mhtml(string html) =>
-        "MIME-Version: 1.0\r\nContent-Type: multipart/related; boundary=svg-test\r\n\r\n"
-        + "--svg-test\r\nContent-Type: text/html; charset=utf-8\r\n"
-        + "Content-Transfer-Encoding: 8bit\r\n\r\n" + html
-        + "\r\n--svg-test--\r\n";
 
     /// <summary>Whether the result names a warning with this code.</summary>
     private static bool Warned(string stdout, string code) =>

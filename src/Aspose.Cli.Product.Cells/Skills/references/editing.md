@@ -354,7 +354,7 @@ show in renders and reads; give the sparkline column a header.
 `cells edit` and `cells create` write the workbook formats that `aspose-cli
 capabilities cells` lists as both loaded and converted; any other output, such
 as `.pdf` or `.md`, is refused with `OPTION_INVALID` and a hint naming the
-`cells convert` to run after. HTML output embeds its images. Encryption
+`cells convert` to run after; `cells convert` writes html with its images embedded. Encryption
 follows the shared rule (`aspose-cli docs editing`). Of the Cells outputs,
 xlsx, xltx, xlsm, xltm, xlsb, xls and ods can be encrypted: an encrypted
 workbook keeps its password in them, and `--encrypt-env` changes it. Every

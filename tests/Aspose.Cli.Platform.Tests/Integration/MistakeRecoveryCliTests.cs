@@ -105,10 +105,10 @@ public sealed class MistakeRecoveryCliTests : IDisposable
         JsonNode error = JsonNode.Parse(result.StdErr)!["error"]!;
         Assert.Equal("OPTION_INVALID", error["code"]!.GetValue<string>());
         Assert.Equal(
-            [".xlsx", ".xltx", ".xlsm", ".xltm", ".xlsb", ".xls", ".ods", ".csv", ".txt", ".tsv", ".html", ".htm", ".mhtml"],
+            [".xlsx", ".xltx", ".xlsm", ".xltm", ".xlsb", ".xls", ".ods", ".csv", ".txt", ".tsv"],
             error["details"]!["available"]!.AsArray().Select(static extension => extension!.GetValue<string>()));
         Assert.Null(error["details"]!["supported"]);
-        Assert.EndsWith("Must be one of: .xlsx, .xltx, .xlsm, .xltm, .xlsb, .xls, .ods, .csv, .txt, .tsv, .html, .htm, .mhtml.", error["message"]!.GetValue<string>(), StringComparison.Ordinal);
+        Assert.EndsWith("Must be one of: .xlsx, .xltx, .xlsm, .xltm, .xlsb, .xls, .ods, .csv, .txt, .tsv.", error["message"]!.GetValue<string>(), StringComparison.Ordinal);
         Assert.DoesNotContain(".pdf", error["hint"]!.GetValue<string>(), StringComparison.Ordinal);
         Assert.Contains("then run 'aspose-cli cells render <that file> --to png'", error["hint"]!.GetValue<string>(), StringComparison.Ordinal);
     }

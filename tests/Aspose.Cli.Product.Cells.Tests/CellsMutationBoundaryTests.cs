@@ -90,7 +90,7 @@ public sealed class CellsMutationBoundaryTests
     }
 
     [Fact]
-    public void HtmlEditIsSelfContainedAndDoesNotBlockLaterWrites()
+    public void HtmlConvertIsSelfContainedAndDoesNotBlockLaterWrites()
     {
         using var workspace = new TempWorkspace();
         using (var workbook = new Workbook())
@@ -102,10 +102,9 @@ public sealed class CellsMutationBoundaryTests
             workbook.Worksheets[0].Pictures.Add(1, 1, picture);
             workbook.Save(workspace.File("source.xlsx"));
         }
-        CliResult edit = workspace.Run("cells", "edit", "source.xlsx", "--set", "Data!A1=changed", "--out", "edited.html", "--output-format", "json");
-        Assert.True(edit.ExitCode == 0, edit.StdErr);
-        Assert.Contains("data:image", File.ReadAllText(workspace.File("edited.html")), StringComparison.OrdinalIgnoreCase);
-        Assert.True(workspace.Run("cells", "inspect", "edited.html", "--output-format", "json").ExitCode == 0);
+        CliResult convert = workspace.Run("cells", "convert", "source.xlsx", "--to", "html", "--out", "converted.html", "--output-format", "json");
+        Assert.True(convert.ExitCode == 0, convert.StdErr);
+        Assert.Contains("data:image", File.ReadAllText(workspace.File("converted.html")), StringComparison.OrdinalIgnoreCase);
         CliResult next = workspace.Run("cells", "edit", "source.xlsx", "--set", "Data!A1=next", "--out", "next.xlsx", "--output-format", "json");
         Assert.True(next.ExitCode == 0, next.StdErr);
         Assert.Empty(Directory.EnumerateDirectories(Path.GetDirectoryName(workspace.File("source.xlsx"))!, ".aspose-publication-*"));

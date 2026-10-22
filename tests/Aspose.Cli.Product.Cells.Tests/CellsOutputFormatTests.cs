@@ -36,12 +36,14 @@ public sealed class CellsOutputFormatTests : IClassFixture<CellsFixture>
     [Fact]
     public void AnHtmOutput_IsWrittenAsHtml()
     {
-        string output = _fixture.Temp.File("report.htm");
+        using var workspace = new TempWorkspace();
+        Assert.Equal(0, workspace.Run("cells", "create", "source.xlsx", "--output-format", "json").ExitCode);
 
-        CellsEditResult result = Apply(_fixture.CreateSalesWorkbook("htm-source.xlsx"), output);
+        CliResult converted = workspace.Run("cells", "convert", "source.xlsx", "--out", "report.htm", "--output-format", "json");
 
-        Assert.Equal("html", result.Output!.Format);
-        Assert.Contains("edited", File.ReadAllText(output), StringComparison.Ordinal);
+        Assert.True(converted.ExitCode == 0, converted.StdErr);
+        Assert.Equal("html", System.Text.Json.Nodes.JsonNode.Parse(converted.StdOut)!["outputs"]![0]!["format"]!.GetValue<string>());
+        Assert.Contains("<html", File.ReadAllText(workspace.File("report.htm")), StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
@@ -69,12 +71,10 @@ public sealed class CellsOutputFormatTests : IClassFixture<CellsFixture>
     [Theory]
     [InlineData("book.xltx", "xltx")]
     [InlineData("book.XLTM", "xltm")]
-    [InlineData("book.htm", "html")]
     [InlineData("book.xlsx", "xlsx")]
     [InlineData("book.xls", "xls")]
     [InlineData("book.ods", "ods")]
     [InlineData("book.csv", "csv")]
-    [InlineData("book.mhtml", "mhtml")]
     public void ACreatedWorkbook_IsTheFormatItsExtensionNames(string path, string format)
     {
         using var workspace = new TempWorkspace();
@@ -108,6 +108,8 @@ public sealed class CellsOutputFormatTests : IClassFixture<CellsFixture>
     [InlineData("book.md", "md")]
     [InlineData("book.json", "json")]
     [InlineData("book.xps", "xps")]
+    [InlineData("book.htm", "html")]
+    [InlineData("book.mhtml", "mhtml")]
     public void ACreatedWorkbookInAFormatEditCannotWrite_IsRefused_AndPointsToTheConvertThatWritesIt(string path, string format)
     {
         using var workspace = new TempWorkspace();
@@ -119,7 +121,7 @@ public sealed class CellsOutputFormatTests : IClassFixture<CellsFixture>
         Assert.Equal("OPTION_INVALID", error["code"]!.GetValue<string>());
         Assert.Equal(format, error["details"]!["format"]!.GetValue<string>());
         Assert.Equal(
-            [".xlsx", ".xltx", ".xlsm", ".xltm", ".xlsb", ".xls", ".ods", ".csv", ".txt", ".tsv", ".html", ".htm", ".mhtml"],
+            [".xlsx", ".xltx", ".xlsm", ".xltm", ".xlsb", ".xls", ".ods", ".csv", ".txt", ".tsv"],
             error["details"]!["available"]!.AsArray().Select(static extension => extension!.GetValue<string>()));
         Assert.Empty(Directory.GetFileSystemEntries(workspace.Path));
         string convert = $"aspose-cli cells convert <that file> --to {format}";

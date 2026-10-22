@@ -55,50 +55,44 @@ public sealed class CellsResourceLoadingTests
         Assert.Equal(sheet, loaded.Workbook.Worksheets[0].Name);
     }
 
+    /// <summary>
+    /// Cells reads no HTML or MHTML, whatever the file's name: reading it, the engine would open
+    /// the images it names by path, past every resource hook. The input is refused before the
+    /// engine loads it, so nothing it names is requested.
+    /// </summary>
     [Theory]
     [InlineData("html")]
+    [InlineData("htm")]
     [InlineData("xls")]
+    [InlineData("mhtml")]
     [InlineData("mht")]
-    public async Task HtmlInputs_ImportNoImagesAndNeverFetchRemoteResources(string extension)
+    public async Task HtmlInputs_AreRefusedBeforeAnythingTheyNameIsRequested(string extension)
     {
         Requires.Windows();
         using var fixture = new CellsFixture();
         await using var server = new ResourceHttpServer();
         string input = fixture.Temp.File("input." + extension);
-        File.WriteAllBytes(fixture.Temp.File("local.png"), ResourceHttpServer.Image);
         string html = $"""
             <html><head><link rel="stylesheet" href="{server.Url}/style.css"></head>
-            <body><table><tr><td>Resource test</td><td><img src="local.png" width="20" height="20"></td>
-            <td><img src="{server.Url}/image.png" width="20" height="20"></td></tr></table></body></html>
+            <body><table><tr><td>Resource test</td><td><img src="{server.Url}/image.png" width="20" height="20"></td></tr></table></body></html>
             """;
-        File.WriteAllText(input, extension == "mht" ? Mhtml(html) : html);
-        var loader = CellsWorkbookLoader.ForFontInspection(ProductTestBudgets.Create<CellsModule>());
-        using (LoadedWorkbook loaded = loader.Open(input, null))
-        {
-            Assert.Equal(0, loaded.Workbook.Worksheets.Cast<Worksheet>().Sum(sheet => sheet.Pictures.Count));
-            Assert.True(server.RequestCount == 0, string.Join("; ", server.Requests));
-            AssertOmission(loaded.Warnings());
-        }
-        AssertOmission(CellsInfo.Run(fixture.Session, new CellsInspectRequest { Input = input }).Warnings);
-        AssertOmission(CellsRead.Run(fixture.Session, new CellsReadRequest { Input = input }).Warnings);
-        string output = fixture.Temp.File("converted-" + extension + ".xlsx");
-        AssertOmission(CellsConvert.Run(fixture.Session, new CellsConvertRequest
+        File.WriteAllText(input, extension.StartsWith("mht", StringComparison.Ordinal) ? Mhtml(html) : html);
+
+        CliException inspected = Assert.Throws<CliException>(() => CellsInfo.Run(fixture.Session, new CellsInspectRequest { Input = input }));
+        CliException converted = Assert.Throws<CliException>(() => CellsConvert.Run(fixture.Session, new CellsConvertRequest
         {
             Input = input,
-            Output = TestOutput.At(output, format: "xlsx"),
-        }).Warnings);
-        var sink = new MemoryArtifactSink();
-        AssertOmission(CellsView.Render(fixture.Session, input,
-            new ViewRenderRequest
-            {
-                View = CellsViews.Workbook,
-                MaxPartCount = 8,
-                Purpose = ViewPurpose.Display,
-            },
-            sink).Warnings);
-        Assert.All(sink.Paths, path => Assert.NotEmpty(sink.Bytes(path)));
+            Output = TestOutput.At(fixture.Temp.File("converted-" + extension + ".xlsx"), format: "xlsx"),
+        }));
+
+        foreach (CliException refused in new[] { inspected, converted })
+        {
+            // The Host restates it as FORMAT_UNSUPPORTED or FORMAT_MISMATCH where routing says so.
+            Assert.Equal(ErrorCodes.FileCorrupt, refused.Code);
+            Assert.StartsWith("cells writes html, mhtml", refused.Hint, StringComparison.Ordinal);
+        }
+        Assert.False(File.Exists(fixture.Temp.File("converted-" + extension + ".xlsx")));
         Assert.True(server.RequestCount == 0, string.Join("; ", server.Requests));
-        File.WriteAllBytes(fixture.Temp.File("local.png"), []);
     }
 
     [Fact]
@@ -107,8 +101,7 @@ public sealed class CellsResourceLoadingTests
         Requires.Windows();
         using var fixture = new CellsFixture();
         await using var server = new ResourceHttpServer();
-        string input = fixture.Temp.File("review.html");
-        File.WriteAllText(input, $"<html><body><table><tr><td>Data</td></tr></table><img src='{server.Url}/image.png'></body></html>");
+        string input = LinkedWorkbook(fixture.Temp.File("review.xlsx"), server.Url + "/image.png");
         var adapter = new CellsViewAdapter();
         var request = new ViewRenderRequest
         {
@@ -127,81 +120,22 @@ public sealed class CellsResourceLoadingTests
     }
 
     [Fact]
-    public void Mhtml_EmbeddedImageIsNotImported()
-    {
-        Requires.Windows();
-        using var fixture = new CellsFixture();
-        string input = fixture.Temp.File("embedded.mht");
-        File.WriteAllText(input, Mhtml("<html><body><table><tr><td>Embedded</td><td><img src='local.png'></td></tr></table></body></html>"));
-        Assert.False(File.Exists(fixture.Temp.File("local.png")));
-        using LoadedWorkbook loaded = CellsWorkbookLoader.ForFontInspection(ProductTestBudgets.Create<CellsModule>()).Open(input, null);
-        Assert.Equal(0, loaded.Workbook.Worksheets.Cast<Worksheet>().Sum(sheet => sheet.Pictures.Count));
-        Assert.Contains(loaded.Warnings() ?? [], warning => warning.Code.Name == "IMAGES_SKIPPED" && warning.AffectsCompleteness);
-    }
-
-    [Fact]
     public async Task EditVerification_ReportsSourceResourceOmissions()
     {
         Requires.Windows();
         using var workspace = new TempWorkspace();
         await using var server = new ResourceHttpServer();
-        File.WriteAllText(workspace.File("input.html"),
-            $"<html><body><table><tr><td>Old value</td></tr></table><img src='{server.Url}/image.png'></body></html>");
-        CliResult inspected = workspace.Run("cells", "inspect", "input.html", "--output-format", "json");
-        Assert.True(inspected.ExitCode == 0, inspected.StdErr);
-        string sheet = System.Text.Json.Nodes.JsonNode.Parse(inspected.StdOut)!["workbook"]!["sheets"]![0]!["name"]!.GetValue<string>();
-        string ops = System.Text.Json.JsonSerializer.Serialize(new
-        {
-            ops = new[] { new { op = "set_values", sheet, range = "A1", values = new[] { new[] { "New value" } } } },
-        });
-        CliResult edited = workspace.Run("cells", "edit", "input.html", "--ops", ops,
+        LinkedWorkbook(workspace.File("input.xlsx"), server.Url + "/image.png");
+
+        CliResult edited = workspace.Run("cells", "edit", "input.xlsx", "--set", "Data!A1=New value",
             "--out", "edited.xlsx", "--verify", "--output-format", "json");
+
         Assert.Equal(8, edited.ExitCode);
         var verification = System.Text.Json.Nodes.JsonNode.Parse(edited.StdOut)!["verification"]!;
         Assert.False(verification["ok"]!.GetValue<bool>());
-        // An HTML image is never imported: the omission is reported as a skipped image.
         Assert.Contains(verification["issues"]!.AsArray(),
-            issue => issue!["code"]!.GetValue<string>() == "IMAGES_SKIPPED");
+            issue => issue!["code"]!.GetValue<string>() == WarningCodes.RemoteResourcesBlocked.Name);
         Assert.Equal(0, server.RequestCount);
-    }
-
-    /// <summary>
-    /// An HTML input imports no images: the warning names each image its img elements write,
-    /// wherever it is, and points to insert_image, while the omission warning names only the
-    /// other resources, such as a missing style sheet, with the relative-path advice.
-    /// </summary>
-    [Fact]
-    public void Html_NamesTheImagesItLeavesOutApartFromOtherOmittedResources()
-    {
-        Requires.Windows();
-        using var fixture = new CellsFixture();
-        string folder = Directory.CreateDirectory(fixture.Temp.File("page")).FullName;
-        Directory.CreateDirectory(fixture.Temp.File("shared"));
-        byte[] png = Convert.FromBase64String(
-            "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGP4z8DwHwAFAAH/iZk9HQAAAABJRU5ErkJggg==");
-        File.WriteAllBytes(Path.Combine(folder, "beside.png"), png);
-        File.WriteAllBytes(fixture.Temp.File("shared/far.png"), png);
-        string input = Path.Combine(folder, "page.html");
-        File.WriteAllText(input,
-            "<html><head><link rel='stylesheet' href='gone.css'></head><body><table><tr><td>a"
-            + "<img src='beside.png'><img src='images/missing.png'><img src='../shared/far.png'></td></tr></table></body></html>");
-
-        using LoadedWorkbook loaded = CellsWorkbookLoader.ForFontInspection(ProductTestBudgets.Create<CellsModule>()).Open(input, null);
-
-        Warning[] warnings = [.. loaded.Warnings() ?? []];
-        Warning images = Assert.Single(warnings, static warning => warning.Code.Name == "IMAGES_SKIPPED");
-        foreach (string source in new[] { "beside.png", "images/missing.png", "../shared/far.png" })
-        {
-            Assert.Contains(source, images.Message, StringComparison.Ordinal);
-        }
-
-        Assert.Contains("insert_image", images.Hint, StringComparison.Ordinal);
-        Assert.DoesNotContain("relative path", images.Hint, StringComparison.Ordinal);
-        Warning omitted = Assert.Single(warnings, static warning => warning.Code.Name == "REMOTE_RESOURCES_BLOCKED");
-        Assert.Contains("gone.css (not found)", omitted.Message, StringComparison.Ordinal);
-        Assert.DoesNotContain(".png", omitted.Message, StringComparison.Ordinal);
-        Assert.Contains("relative path", omitted.Hint, StringComparison.Ordinal);
-        Assert.DoesNotContain(fixture.Temp.File("shared"), string.Join(" ", warnings.Select(static warning => warning.Message)), StringComparison.OrdinalIgnoreCase);
     }
 
     // A compressed SVG cannot be read for the references it names (CELLS-SVG-EGRESS), so the
@@ -249,10 +183,21 @@ public sealed class CellsResourceLoadingTests
     }
 
     private static void AssertOmission(IReadOnlyList<Warning>? warnings) =>
-        Assert.Contains(warnings ?? [], warning =>
-            (warning.Code == WarningCodes.RemoteResourcesBlocked
-                || warning.Code == CellsDiagnostics.MhtmlResourceCoverageUnverified
-                || warning.Code.Name == "IMAGES_SKIPPED") && warning.AffectsCompleteness);
+        Assert.Contains(warnings ?? [], warning => warning.Code == WarningCodes.RemoteResourcesBlocked && warning.AffectsCompleteness);
+
+    // A workbook whose one picture links to reference and stores no copy of it.
+    private static string LinkedWorkbook(string path, string reference)
+    {
+        using var workbook = new Workbook();
+        Worksheet sheet = workbook.Worksheets[0];
+        sheet.Name = "Data";
+        sheet.Cells["A1"].PutValue("Linked picture");
+        using var image = new MemoryStream(ResourceHttpServer.Image, writable: false);
+        Aspose.Cells.Drawing.Picture picture = sheet.Pictures[sheet.Pictures.Add(2, 1, image)];
+        picture.SourceFullName = reference;
+        workbook.Save(path, SaveFormat.Xlsx);
+        return path;
+    }
 
     private static string Mhtml(string html) =>
         "MIME-Version: 1.0\r\nContent-Type: multipart/related; boundary=resource-test\r\n\r\n"

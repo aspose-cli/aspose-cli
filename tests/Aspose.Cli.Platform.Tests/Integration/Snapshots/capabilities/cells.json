@@ -117,9 +117,7 @@
       "xls",
       "ods",
       "csv",
-      "tsv",
-      "html",
-      "mhtml"
+      "tsv"
     ],
     "engine": {
       "id": "aspose",
@@ -310,19 +308,12 @@
         ],
         "aliases": [],
         "uses": [
-          "input",
           "convert"
         ],
-        "operations": [
-          "app",
-          "fonts",
-          "open",
-          "preview",
-          "review"
-        ],
+        "operations": [],
         "declaredOwnership": "explicit",
         "genericAvailable": false,
-        "explicitAvailable": true
+        "explicitAvailable": false
       },
       {
         "id": "jpeg",
@@ -376,19 +367,12 @@
         ],
         "aliases": [],
         "uses": [
-          "input",
           "convert"
         ],
-        "operations": [
-          "app",
-          "fonts",
-          "open",
-          "preview",
-          "review"
-        ],
+        "operations": [],
         "declaredOwnership": "explicit",
         "genericAvailable": false,
-        "explicitAvailable": true
+        "explicitAvailable": false
       },
       {
         "id": "ods",
@@ -1228,7 +1212,7 @@
         "path": "cells edit",
         "name": "edit",
         "aliases": [],
-        "description": "Apply a batch of edit ops atomically. Editable outputs: xlsx, xltx, xlsm, xltm, xlsb, xls, ods, csv, tsv, html, mhtml.",
+        "description": "Apply a batch of edit ops atomically. Editable outputs: xlsx, xltx, xlsm, xltm, xlsb, xls, ods, csv, tsv.",
         "options": [
           {
             "name": "--backup",
@@ -2481,13 +2465,6 @@
     },
     {
       "code": "IMAGES_SKIPPED",
-      "owner": "cells",
-      "severity": "warning",
-      "category": "warning",
-      "detailsSchemaId": "v2/common/diagnostic-details"
-    },
-    {
-      "code": "MHTML_RESOURCE_COVERAGE_UNVERIFIED",
       "owner": "cells",
       "severity": "warning",
       "category": "warning",
