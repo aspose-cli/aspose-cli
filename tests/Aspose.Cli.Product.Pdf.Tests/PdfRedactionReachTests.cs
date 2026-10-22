@@ -191,8 +191,10 @@ public sealed class PdfRedactionReachTests
 
     /// <summary>
     /// A document property is checked by where its value came from, not by its name: a
-    /// non-standard lowercase key the document holds is searched, while the producer and the
-    /// modification date the save rewrites are the engine's and are not.
+    /// non-standard lowercase key and a custom key the document holds are searched, while the
+    /// producer, the creator and the dates the save writes into a document that held none are
+    /// the engine's and are not. The input holds no entry the save may or may not rewrite, so
+    /// the outcome does not depend on what the engine stamps.
     /// </summary>
     [Fact]
     public void RedactText_ChecksThePropertiesTheDocumentHeldWhateverTheirKey()
@@ -212,8 +214,11 @@ public sealed class PdfRedactionReachTests
         Assert.False(File.Exists(output));
         string?[] locations = [.. result.Verification!.Issues.Select(static issue => issue.Location)];
         Assert.Contains("property/keywords", locations);
+        Assert.Contains("property/Reference", locations);
         Assert.DoesNotContain("property/producer", locations);
+        Assert.DoesNotContain("property/creator", locations);
         Assert.DoesNotContain("property/modificationDate", locations);
+        Assert.DoesNotContain("property/creationDate", locations);
     }
 
     /// <summary>
@@ -413,7 +418,7 @@ public sealed class PdfRedactionReachTests
             $"<< /Length {content.Length} >>\nstream\n{content}\nendstream",
             "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>",
             $"<< /Type /Metadata /Subtype /XML /Length {xmp.Length} >>\nstream\n{xmp}\nendstream",
-            $"<< /keywords ({Secret}) /Producer (Writer 1.0) /ModDate (D:20200102030405Z) >>",
+            $"<< /keywords ({Secret}) /Reference (Case 2026) >>",
         ], info: 7);
         return path;
     }
