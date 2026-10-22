@@ -16,6 +16,8 @@ namespace Aspose.Cli.TestKit.Scenarios;
 /// <item><c>&lt;product&gt;.encrypted</c>: the product's primary-format document encrypted with
 /// <see cref="Password"/>.</item>
 /// <item><c>&lt;product&gt;.ops</c>: a valid one-operation document for the product's <c>edit --ops</c>.</item>
+/// <item><c>slides.media</c> and <c>pdf.media</c>: the primary document with media every value of
+/// its <c>extract --what</c> writes a file from.</item>
 /// <item><c>markdown</c> and <c>text</c>: source text that holds <see cref="SampleText"/>.</item>
 /// <item><c>certificate.pfx</c>: a self-signed signing certificate protected by <see cref="Password"/>.</item>
 /// </list>
@@ -90,6 +92,7 @@ public static class ScenarioFixtures
             "ops" => Encoding.UTF8.GetBytes(Operations[product]),
             "encrypted" => Encrypt(product, primary),
             "media" when product == "slides" => SlidesWithMedia(primary),
+            "media" when product == "pdf" => PdfWithMedia(primary),
             _ when format == primary => CreateDocument(product, primary),
             _ => Convert(product, primary, format),
         };
@@ -139,6 +142,28 @@ public static class ScenarioFixtures
             """{"ops":[{"op":"insert_image","slide":1,"path":"picture.png"},{"op":"set_notes","slide":1,"text":"Speaker notes of the seed slide."}]}""");
         Require(workspace.Run("slides", "edit", source, "--ops", "ops.json", "--in-place", "--output-format", "json"));
         return File.ReadAllBytes(workspace.File(source));
+    }
+
+    /// <summary>
+    /// A PDF with an image and a ruled table on its page and an attached text file, so that
+    /// extracting images, tables, attachments, text or form data each writes a file: the image is
+    /// the primary PDF's first page, rendered small.
+    /// </summary>
+    private static byte[] PdfWithMedia(string primary)
+    {
+        using var workspace = new TempWorkspace();
+        ScenarioLicense.Project(workspace.Path);
+        string source = "seed." + primary;
+        File.WriteAllBytes(workspace.File(source), Read($"pdf.{primary}"));
+        Require(workspace.Run("pdf", "render", source, "--pages", "1", "--dpi", "36", "--out", "picture.png", "--output-format", "json"));
+        File.WriteAllText(workspace.File("media.html"),
+            """<html><body><img src="picture.png" width="60"><table style="border-collapse:collapse"><tr><td style="border:1px solid black">Item</td><td style="border:1px solid black">Amount</td></tr><tr><td style="border:1px solid black">First</td><td style="border:1px solid black">1</td></tr></table></body></html>""");
+        string target = "media." + primary;
+        Require(workspace.Run("pdf", "create", target, "--from-html", "media.html", "--output-format", "json"));
+        File.WriteAllText(workspace.File("note.txt"), SampleText);
+        File.WriteAllText(workspace.File("ops.json"), """{"ops":[{"op":"add_attachment","path":"note.txt"}]}""");
+        Require(workspace.Run("pdf", "edit", target, "--ops", "ops.json", "--in-place", "--output-format", "json"));
+        return File.ReadAllBytes(workspace.File(target));
     }
 
     private static byte[] Convert(string product, string primary, string format)

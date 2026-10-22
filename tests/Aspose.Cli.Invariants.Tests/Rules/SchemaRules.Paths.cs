@@ -33,7 +33,8 @@ internal static partial class ContractRules
     /// The run of each value of the option that chooses an outputs list's unit
     /// (<see cref="UnitsARunChooses"/>): every item of its <c>outputs</c> names exactly one unit
     /// beside the file fields and <c>encrypted</c>, the same in every item, as the schema check
-    /// cannot tell. Every value must write some, or that value was not judged.
+    /// cannot tell, or none at all for a value the choice lists as unitless. Every value must
+    /// write some, or that value was not judged.
     /// </summary>
     private static IEnumerable<InvariantCase> ChosenUnits(CliCatalog catalog)
     {
@@ -50,7 +51,8 @@ internal static partial class ContractRules
                 var problems = new List<string>();
                 foreach (string value in option.AllowedValues)
                 {
-                    Invocation invocation = Invocation.For(command, omit: choice.Option).Add(choice.Option, value);
+                    Invocation invocation = Invocation.For(command, omit: choice.Option).Add(choice.Option, value)
+                        .Add(choice.Arguments.TryGetValue(value, out string[]? arguments) ? arguments : []);
                     if (choice.Fixture is { } fixture)
                     {
                         foreach (string input in invocation.Inputs)
@@ -72,6 +74,13 @@ internal static partial class ContractRules
                     if (units.Length == 0)
                     {
                         problems.Add($"{choice.Option} {value}: no outputs");
+                    }
+                    else if (choice.Unitless.Contains(value, StringComparer.Ordinal))
+                    {
+                        if (distinct.Length > 0)
+                        {
+                            problems.Add($"{choice.Option} {value}: outputs[] name {string.Join(", ", distinct)}, though this value's files name no unit");
+                        }
                     }
                     else if (units.Any(static names => names.Length != 1) || distinct.Length != 1)
                     {
