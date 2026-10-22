@@ -25,8 +25,10 @@ public static class CellsFormats
             with { UnroutedExtensions = [".txt"] },
         FormatDescriptor.Declare("tsv", FormatUse.Input | FormatUse.Convert, 8, 8, null, true, ".tsv", ".txt")
             with { UnroutedExtensions = [".txt"] },
-        FormatDescriptor.Declare("html", FormatUse.Input | FormatUse.Convert, 9, 9, null, false, ".html", ".htm"),
-        FormatDescriptor.Declare("mhtml", FormatUse.Input | FormatUse.Convert, 10, 10, null, false, ".mhtml"),
+        // HTML and MHTML are written only: reading them, the engine opens the images they name by
+        // path, past every resource hook, and no option turns that off.
+        FormatDescriptor.Declare("html", FormatUse.Convert, null, 9, null, false, ".html", ".htm"),
+        FormatDescriptor.Declare("mhtml", FormatUse.Convert, null, 10, null, false, ".mhtml"),
         FormatDescriptor.Declare("pdf", FormatUse.Convert, null, 11, null, false, ".pdf"),
         FormatDescriptor.Declare("xps", FormatUse.Convert, null, 12, null, false, ".xps"),
         FormatDescriptor.Declare("json", FormatUse.Convert, null, 13, null, false, ".json"),
@@ -38,8 +40,9 @@ public static class CellsFormats
 
     /// <summary>
     /// The formats create and edit write: the workbook formats the engine both loads and saves,
-    /// so the output reopens as a workbook that can be read, verified and edited again. pdf, xps,
-    /// json and md are renditions it cannot load; convert writes them from one of these.
+    /// so the output reopens as a workbook that can be read, verified and edited again. html,
+    /// mhtml, pdf, xps, json and md are renditions it does not load; convert writes them from one
+    /// of these.
     /// </summary>
     internal static IReadOnlyList<FormatDescriptor> Editable { get; } =
         [.. Definitions.Where(static format => format.Uses.HasFlag(FormatUse.Input | FormatUse.Convert))];

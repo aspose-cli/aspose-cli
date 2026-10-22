@@ -63,8 +63,8 @@ internal sealed class CellsWorkbookLoader
     private static readonly InputLoading WrittenOnly = new(
         "spreadsheet",
         $"cells writes {string.Join(", ", CellsFormats.Definitions.Where(static format => !format.Uses.HasFlag(FormatUse.Input) && format.Uses.HasFlag(FormatUse.Convert)).Select(static format => format.Id))} "
-            + "with convert but does not read them; give it a workbook (xlsx, xls, xlsb, ods), delimited text (csv, tsv, txt) "
-            + "or html instead, such as the file the export was made from.",
+            + "with convert but does not read them; give it a workbook (xlsx, xls, xlsb, ods) or delimited text (csv, tsv, txt) "
+            + "instead, such as the file the export was made from.",
         Classify);
 
     private static readonly HashSet<FileFormatType> OpenableFormats =
@@ -84,9 +84,6 @@ internal sealed class CellsWorkbookLoader
         FileFormatType.SpreadsheetML,
         FileFormatType.Csv,
         FileFormatType.TabDelimited,
-        FileFormatType.Html,
-        FileFormatType.XHtml,
-        FileFormatType.MHtml,
     ];
 
     // Every declared input: delimited text the engine detects imports under any of their
@@ -146,13 +143,12 @@ internal sealed class CellsWorkbookLoader
             throw InputLoading.PasswordRefused(path, password);
         }
 
-        var resources = new WorkbookResources(resourceSource ?? path, _resourceBudgets, plan.Format == LoadFormat.MHtml,
-            html: plan.Format == LoadFormat.Html ? path : null);
+        var resources = new WorkbookResources(resourceSource ?? path, _resourceBudgets);
         Workbook? workbook = null;
         bool transferred = false;
         try
         {
-            LoadOptions options = plan.ToLoadOptions(resources);
+            LoadOptions options = plan.ToLoadOptions();
             options.Password = password.Password?.Reveal();
             using (FileStream input = InputFiles.OpenRead(path))
             {
@@ -166,10 +162,6 @@ internal sealed class CellsWorkbookLoader
             {
                 workbook.Worksheets[0].Name = stem.Replace('[', '(').Replace(']', ')')[..Math.Min(stem.Length, MaxSheetNameLength)];
             }
-            if (plan.Format is LoadFormat.Html or LoadFormat.MHtml)
-            {
-                resources.LeaveOutImages(workbook);
-            }
             resources.MaterializeLinkedPictures(workbook);
             resources.CleanSvgPictures(workbook);
             resources.ThrowIfFailed();
@@ -178,14 +170,6 @@ internal sealed class CellsWorkbookLoader
             _resourceBudgets.EnsureWithin(CellsBudgetDomains.Objects,
                 workbook.Worksheets.Cast<Worksheet>().Sum(static sheet => (long)sheet.Shapes.Count),
                 "items", "post-load");
-            if (workbook.FileFormat is FileFormatType.Html or FileFormatType.XHtml or FileFormatType.MHtml)
-            {
-                foreach (Worksheet sheet in workbook.Worksheets)
-                {
-                    _resourceBudgets.Deadline.ThrowIfExpired("post-load");
-                    sheet.AutoFitColumns();
-                }
-            }
             resources.ThrowIfFailed();
             Warning? calculated = calculateOnOpen ? CellsOpenCalculation.Apply(workbook, _resourceBudgets) : null;
             CellsEvaluation.SkippedWarningSheet? skipped = published || _outputs?.IsEvaluation != true
@@ -280,28 +264,26 @@ internal sealed class CellsWorkbookLoader
                     ?? (detected == FileFormatType.TabDelimited
                         ? '\t'
                         : ',');
-                return new LoadPlan(null, separator);
+                return new LoadPlan(separator);
             }
 
-            return detected switch
-            {
-                FileFormatType.Html or FileFormatType.XHtml => new LoadPlan(LoadFormat.Html, null),
-                FileFormatType.MHtml => new LoadPlan(LoadFormat.MHtml, null),
-                _ => LoadPlan.Auto,
-            };
+            return LoadPlan.Auto;
         }
 
         if (detected == FileFormatType.Unknown)
         {
             if (CellsFormats.Delimited.NamedBy(path).Count > 0)
             {
-                return new LoadPlan(null, DetectDelimiter(path) ?? ',');
+                return new LoadPlan(DetectDelimiter(path) ?? ',');
             }
+        }
 
-            if (ContentLooksLikeHtml(path))
-            {
-                return new LoadPlan(LoadFormat.Html, null);
-            }
+        // HTML and MHTML, which cells writes but does not read whatever the file's name: reading
+        // them, the engine opens the images they name by path, past every resource hook.
+        string content = CellsEngineFormats.IdOf(detected == FileFormatType.XHtml ? FileFormatType.Html : detected);
+        if (WrittenOnlyFormats.Any(format => format.Id == content))
+        {
+            throw WrittenOnly.Unloadable(path, content);
         }
 
         if (detected != FileFormatType.Unknown)
@@ -414,47 +396,11 @@ internal sealed class CellsWorkbookLoader
             .FirstOrDefault(static line => !string.IsNullOrWhiteSpace(line));
     }
 
-    private static bool ContentLooksLikeHtml(string path)
-    {
-        byte[] prefix;
-        try
-        {
-            using FileStream stream = InputFiles.OpenRead(path);
-            int length = (int)Math.Min(4096, stream.Length);
-            prefix = new byte[length];
-            int read = stream.Read(prefix, 0, length);
-            if (read < length)
-            {
-                Array.Resize(ref prefix, read);
-            }
-        }
-        catch (Exception exception)
-            when (exception is IOException or UnauthorizedAccessException)
-        {
-            return false;
-        }
-
-        string text = Encoding.ASCII.GetString(prefix).ToLowerInvariant();
-        string[] signatures =
-        [
-            "<!doctype html",
-            "<html",
-            "<head",
-            "<body",
-            "<meta",
-            "<table",
-            "mso-number-format",
-        ];
-        return Array.Exists(
-            signatures,
-            signature => text.Contains(signature, StringComparison.Ordinal));
-    }
-
     /// <summary>
     /// How one input is opened. A delimited text input always carries its separator, encoding
     /// and culture, so neither the engine's guesses nor the machine's regional settings apply.
     /// </summary>
-    private readonly record struct LoadPlan(LoadFormat? Format, char? Separator, bool Encrypted = false)
+    private readonly record struct LoadPlan(char? Separator, bool Encrypted = false)
     {
         internal static LoadPlan Auto => default;
 
@@ -468,7 +414,7 @@ internal sealed class CellsWorkbookLoader
 
         internal CultureInfo? TextCulture { get; init; }
 
-        internal LoadOptions ToLoadOptions(IStreamProvider resources)
+        internal LoadOptions ToLoadOptions()
         {
             if (Separator is { } separator)
             {
@@ -479,15 +425,7 @@ internal sealed class CellsWorkbookLoader
                     CultureInfo = TextCulture,
                 };
             }
-            return Format switch
-            {
-                LoadFormat.Html or LoadFormat.MHtml => new HtmlLoadOptions(Format.Value)
-                {
-                    StreamProvider = resources,
-                },
-                { } format => new LoadOptions(format),
-                _ => new LoadOptions(),
-            };
+            return new LoadOptions();
         }
     }
 }

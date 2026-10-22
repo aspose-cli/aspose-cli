@@ -1,5 +1,6 @@
 using System.Text;
 using Aspose.Cells;
+using Aspose.Cli.Sdk.Errors;
 using Xunit;
 
 namespace Aspose.Cli.Product.Cells.Tests;
@@ -45,7 +46,7 @@ public sealed class CellsFormatDetectionTests(CellsFixture fixture) : IClassFixt
     }
 
     [Fact]
-    public void AnHtmlExportThatDefeatsDetection_IsReportedAsHtml()
+    public void AnHtmlExportThatDefeatsDetection_IsRefusedAsAFormatCellsOnlyWrites()
     {
         string path = fixture.Temp.File("export.html");
         File.WriteAllText(
@@ -57,9 +58,9 @@ public sealed class CellsFormatDetectionTests(CellsFixture fixture) : IClassFixt
             Assert.Equal(FileFormatType.Unknown, FileFormatUtil.DetectFileFormat(input).FileFormatType);
         }
 
-        CellsInspectResult result = CellsInfo.Run(fixture.Session, new CellsInspectRequest { Input = path });
+        CliException refused = Assert.Throws<CliException>(() => CellsInfo.Run(fixture.Session, new CellsInspectRequest { Input = path }));
 
-        Assert.Equal("html", result.Input.Format);
+        Assert.StartsWith("cells writes html, mhtml", refused.Hint, StringComparison.Ordinal);
     }
 
     private string SaveWorkbook(string fileName, SaveFormat format)

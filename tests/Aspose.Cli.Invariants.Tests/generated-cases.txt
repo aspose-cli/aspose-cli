@@ -4868,10 +4868,6 @@ missing-input | words search
 missing-input | words split
 output-reopens | cells convert csv -> pdf
 output-reopens | cells convert csv -> xlsx
-output-reopens | cells convert html -> pdf
-output-reopens | cells convert html -> xlsx
-output-reopens | cells convert mhtml -> pdf
-output-reopens | cells convert mhtml -> xlsx
 output-reopens | cells convert ods -> pdf
 output-reopens | cells convert ods -> xlsx
 output-reopens | cells convert tsv -> pdf

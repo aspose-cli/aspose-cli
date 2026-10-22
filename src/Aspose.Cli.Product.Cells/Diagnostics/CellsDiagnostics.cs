@@ -19,7 +19,6 @@ internal static class CellsDiagnostics
     internal static readonly WarningCode SheetsDropped = new("SHEETS_DROPPED");
     internal static readonly WarningCode SheetsSkipped = new("SHEETS_SKIPPED");
     internal static readonly WarningCode DataTruncated = new("DATA_TRUNCATED");
-    internal static readonly WarningCode MhtmlResourceCoverageUnverified = new("MHTML_RESOURCE_COVERAGE_UNVERIFIED");
     internal static readonly WarningCode FormulasBroken = new("FORMULAS_BROKEN");
     internal static readonly WarningCode FormulasCalculatedOnOpen = new("FORMULAS_CALCULATED_ON_OPEN");
     internal static readonly WarningCode SheetPartiallyRendered = new("SHEET_PARTIALLY_RENDERED");
@@ -57,8 +56,8 @@ internal static class CellsDiagnostics
     internal static readonly WarningCode RowsShifted = new("ROWS_SHIFTED");
 
     /// <summary>
-    /// The loaded workbook leaves out images its input holds: the images of an HTML or MHTML
-    /// input, or SVG pictures that cannot be kept to what they hold themselves.
+    /// The loaded workbook leaves out images its input holds: SVG pictures that cannot be kept to
+    /// what they hold themselves.
     /// </summary>
     internal static readonly WarningCode ImagesSkipped = new("IMAGES_SKIPPED");
 
@@ -83,7 +82,6 @@ internal static class CellsDiagnostics
         DiagnosticDescriptor.Warning(SheetPartiallyRendered),
         DiagnosticDescriptor.Warning(RenderImageLarge),
         DiagnosticDescriptor.Warning(ActiveSheetSkipped),
-        DiagnosticDescriptor.Warning(MhtmlResourceCoverageUnverified),
         DiagnosticDescriptor.Warning(TextTableLayout),
         DiagnosticDescriptor.Warning(ExternalLinkCacheMissing),
         DiagnosticDescriptor.Warning(ExternalLinkRelative),

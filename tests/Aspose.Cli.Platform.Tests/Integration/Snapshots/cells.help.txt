@@ -10,7 +10,7 @@ Commands:
   read <file>             Read cell data of one sheet as a windowed projection.
   search <file>           Find cells whose value or formula matches a pattern.
   create <file>           Create a new workbook.
-  edit <file>             Apply a batch of edit ops atomically. Editable outputs: xlsx, xltx, xlsm, xltm, xlsb, xls, ods, csv, tsv, html, mhtml.
+  edit <file>             Apply a batch of edit ops atomically. Editable outputs: xlsx, xltx, xlsm, xltm, xlsb, xls, ods, csv, tsv.
   compare <left> <right>  Compare stored workbook values and optional formula text; dates are ISO 8601.
   convert <file>          Convert a workbook to another format.
   render <file>           Render sheets, or a range of one, to images.
@@ -134,7 +134,7 @@ Learn more:
 
 ## aspose-cli cells edit --help
 Description:
-  Apply a batch of edit ops atomically. Editable outputs: xlsx, xltx, xlsm, xltm, xlsb, xls, ods, csv, tsv, html, mhtml.
+  Apply a batch of edit ops atomically. Editable outputs: xlsx, xltx, xlsm, xltm, xlsb, xls, ods, csv, tsv.
 
 Usage:
   aspose-cli cells edit <file> [options]

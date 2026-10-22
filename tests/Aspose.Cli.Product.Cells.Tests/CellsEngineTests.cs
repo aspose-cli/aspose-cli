@@ -1253,8 +1253,8 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
             error.Explanation);
         Assert.Equal(
             writtenOnly
-                ? "cells writes pdf, xps, json, md with convert but does not read them; give it a workbook (xlsx, xls, xlsb, ods), "
-                    + "delimited text (csv, tsv, txt) or html instead, such as the file the export was made from."
+                ? "cells writes html, mhtml, pdf, xps, json, md with convert but does not read them; give it a workbook (xlsx, xls, xlsb, ods) "
+                    + "or delimited text (csv, tsv, txt) instead, such as the file the export was made from."
                 : "Verify the file opens in a spreadsheet application and is one of the supported input formats.",
             error.Hint);
     }

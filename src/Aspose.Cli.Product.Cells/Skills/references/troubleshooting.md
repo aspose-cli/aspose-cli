@@ -71,11 +71,9 @@ below the header, or convert to csv.
 `RENDER_EMPTY` means the selected sheet has no content; `cells inspect` lists
 each sheet's used range. When a render of several sheets cannot render some of
 them it warns `SHEETS_SKIPPED`; render one alone with `--sheets` for its error.
-An MHTML output warns `MHTML_RESOURCE_COVERAGE_UNVERIFIED` because the engine
-does not report missing resources; check its images and styles yourself.
-
-HTML and MHTML inputs keep no images and warn `IMAGES_SKIPPED`; add the
-images the workbook needs with `insert_image`. An SVG picture of any input
+Cells writes HTML and MHTML but does not read them: such an input is refused
+with `FILE_CORRUPT`, whose hint says cells only writes these formats. Save the
+table as xlsx or csv where it came from, and give cells that file. An SVG picture of any input
 keeps only what it holds itself: references to other files or addresses are
 removed with `REMOTE_RESOURCES_BLOCKED`, and an SVG picture that does not parse
 is left out with `IMAGES_SKIPPED`.

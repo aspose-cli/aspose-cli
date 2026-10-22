@@ -51,11 +51,11 @@ internal static class IsolationCases
 
     /// <summary>
     /// The unmarked sample that every run checks: the formats with known reference handling of
-    /// their own (Cells HTML and ODS, PDF HTML import) and each other product's own format, each
-    /// rendered or created from, against the outside sentinels and as a control.
+    /// their own (Cells ODS, PDF HTML import) and each other product's own format, each rendered
+    /// or created from, against the outside sentinels and as a control.
     /// </summary>
     private static readonly (string Product, string Format)[] SampleRows =
-        [("cells", "html"), ("cells", "ods"), ("pdf", "html"), ("slides", "pptx"), ("words", "docx")];
+        [("cells", "ods"), ("pdf", "html"), ("slides", "pptx"), ("words", "docx")];
 
     private static readonly Lazy<IReadOnlyDictionary<string, IsolationCase>> Generated = new(Generate);
 
@@ -69,9 +69,6 @@ internal static class IsolationCases
         // The only form a Cells ODS shows is an SVG picture naming the file; a draw:image link
         // was never followed, master included.
         [("cells", "ods")] = "CELLS-SVG-EGRESS: an SVG picture keeps only its own content, so the same-folder image it names is removed.",
-        // img, inline SVG and data SVG were the forms master showed; CSS backgrounds and style
-        // sheets never showed in MHTML.
-        [("cells", "mhtml")] = "Cells drops every image of HTML and MHTML input (IMAGES_SKIPPED), an approved decision.",
     };
 
     /// <summary>Every case by id.</summary>

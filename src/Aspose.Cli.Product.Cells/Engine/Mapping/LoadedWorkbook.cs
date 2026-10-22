@@ -29,8 +29,7 @@ internal sealed record LoadedWorkbook(Workbook Workbook, WorkbookResources Resou
     /// <c>Excel2</c> file would otherwise be reported as <c>xlsx</c>). The loaded workbook's
     /// format stands only where detection cannot see the true format: an <b>encrypted</b>
     /// container detects as its wrapper, whereas the decrypted workbook knows it is <c>xlsx</c>,
-    /// and a defeated sniff returns <c>Unknown</c>, as for an HTML export that opens with a line
-    /// of text before its markup and loaded as <c>Html</c> through the content fallback.
+    /// and a defeated sniff returns <c>Unknown</c>, as for delimited text loaded by its name.
     /// </summary>
     internal required FileFormatType SourceFormat { get; init; }
 

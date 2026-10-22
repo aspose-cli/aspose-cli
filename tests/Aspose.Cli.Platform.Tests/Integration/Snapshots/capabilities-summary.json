@@ -18,9 +18,7 @@
         "xls",
         "ods",
         "csv",
-        "tsv",
-        "html",
-        "mhtml"
+        "tsv"
       ],
       "convertFormats": [
         "xlsx",
@@ -59,7 +57,7 @@
         },
         {
           "command": "edit",
-          "description": "Apply a batch of edit ops atomically. Editable outputs: xlsx, xltx, xlsm, xltm, xlsb, xls, ods, csv, tsv, html, mhtml."
+          "description": "Apply a batch of edit ops atomically. Editable outputs: xlsx, xltx, xlsm, xltm, xlsb, xls, ods, csv, tsv."
         },
         {
           "command": "inspect",
