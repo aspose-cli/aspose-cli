@@ -67,7 +67,8 @@ public static class UserStorage
     // system reports no drive path for it.
     private static string WhereContentLands(string root)
     {
-        string probe = Directory.CreateDirectory(Path.Combine(root, ".location-" + Guid.NewGuid().ToString("N"))).FullName;
+        RemoveAbandonedProbes(root);
+        string probe = Directory.CreateDirectory(Path.Combine(root, ProbePrefix + Guid.NewGuid().ToString("N"))).FullName;
         try
         {
             using Microsoft.Win32.SafeHandles.SafeFileHandle handle = OpenedFileBoundary.OpenNoFollow(probe, directory: true);
@@ -77,7 +78,43 @@ public static class UserStorage
         }
         finally
         {
+            TryRemoveProbe(probe);
+        }
+    }
+
+    private const string ProbePrefix = ".location-";
+
+    // A probe another process is using is younger than this; an older one was left by a process
+    // that ended before removing it.
+    private static readonly TimeSpan AbandonedProbeAge = TimeSpan.FromHours(1);
+
+    private static void RemoveAbandonedProbes(string root)
+    {
+        try
+        {
+            foreach (DirectoryInfo probe in new DirectoryInfo(root).EnumerateDirectories(ProbePrefix + "*"))
+            {
+                if (DateTime.UtcNow - probe.CreationTimeUtc > AbandonedProbeAge)
+                {
+                    TryRemoveProbe(probe.FullName);
+                }
+            }
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+        {
+            // Leftover probes are empty directories; they never fail a command.
+        }
+    }
+
+    // A probe is an empty directory: one that cannot be removed now stays for a later run.
+    private static void TryRemoveProbe(string probe)
+    {
+        try
+        {
             Directory.Delete(probe);
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+        {
         }
     }
 
