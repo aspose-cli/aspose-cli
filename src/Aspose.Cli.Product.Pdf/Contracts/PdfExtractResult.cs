@@ -18,5 +18,5 @@ public sealed record PdfExtractResult() : EngineResultEnvelope("extract-result",
     /// comes from, the text of the selected pages, each attachment as <c>attachment-0001</c> and
     /// on in name order with its own name in <c>name</c>, or the form data.
     /// </summary>
-    public required IReadOnlyList<PdfPageOutput> Outputs { get; init; }
+    public required IReadOnlyList<PdfExtractOutput> Outputs { get; init; }
 }
