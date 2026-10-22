@@ -62,7 +62,8 @@ the check is its authority.
   `ReviewOverwriteOwnershipTests`, `ViewerStorageTests`, `UserStorageTests`).
 - A security-relevant result (encryption kept or removed, redaction, omitted or blocked
   resources) reports only what an independent re-check of the output establishes
-  (`OutputPipelineEncryptionTests`, `PdfEditVerificationTests`, `PdfResourceLoadingTests`; D7).
+  (`OutputPipelineEncryptionTests`, `PdfEditVerificationTests`, `PdfRedactionReachTests`,
+  `PdfSignTests`, `PdfResourceLoadingTests`; D7).
 - Per-user state and local services are reachable only by the current user: per-user state lives
   under `UserStorage` (`APCLI016`, `UserStorageTests`), and the services answer only their session
   and control secret (`AppHttpSecurityTests`, `LocalServiceRuntimeTests`).
