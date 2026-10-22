@@ -289,8 +289,10 @@ internal static class WordsViewLayout
                     .Append('|').Append(Number(shape.Height));
                 if (shape.HasImage)
                 {
-                    canonical.Append('|').Append(
-                        Convert.ToHexString(SHA256.HashData(shape.ImageData.ImageBytes)));
+                    // A picture stored only as a link has no bytes in the document; its link names it.
+                    canonical.Append('|').Append(shape.ImageData.ImageBytes is { } image
+                        ? Convert.ToHexString(SHA256.HashData(image))
+                        : shape.ImageData.SourceFullName);
                 }
                 break;
             default:
