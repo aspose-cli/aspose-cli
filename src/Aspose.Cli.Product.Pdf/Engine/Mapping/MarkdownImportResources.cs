@@ -21,9 +21,7 @@ namespace Aspose.Cli.Product.Pdf.Engine.Mapping;
 /// stylesheets, SVG and HTML files those load. A Markdown image, an image that HTML or SVG
 /// markup embeds, and an image a stylesheet names, must also be an intact image
 /// (<see cref="ImageInput"/>), checked before the
-/// importer sees it. The importer reads an SVG file as it is, so the script that
-/// <see cref="SvgReferences"/> would remove cannot be taken out of it: an SVG file that holds
-/// script is refused. As the importer does, the Markdown's own
+/// importer sees it. As the importer does, the Markdown's own
 /// references resolve against the working directory and a loaded file's references against
 /// that file. Every decoding the importer might apply is checked, so a reference that cannot
 /// be proven to stay inside refuses the import. Accepted files are charged to the input budget
@@ -112,7 +110,6 @@ internal sealed class MarkdownImportResources : IDisposable
                 {
                     if (Admit(file, item.Reference, item.Source) is { } content)
                     {
-                        RefuseScript(content, item.Reference, item.Source);
                         foreach (Reference nested in MarkupReferences(Text(content)))
                         {
                             pending.Enqueue((nested, Path.GetDirectoryName(file)!, file));
@@ -186,19 +183,6 @@ internal sealed class MarkdownImportResources : IDisposable
 
         _files[file] = (lease, true);
         return Read(lease);
-    }
-
-    /// <summary>
-    /// Refuses an SVG file that holds script: a <c>script</c> element, an <c>on*</c> event
-    /// attribute or a <c>javascript:</c> reference, which <see cref="SvgReferences"/> decides.
-    /// </summary>
-    private void RefuseScript(byte[] content, Reference reference, string source)
-    {
-        if (ImageInput.EngineFormatOf(content) == EngineImageFormat.Svg && SvgReferences.KeepInternal(content) is { Scripted: true })
-        {
-            throw Refusal(reference.Value, source,
-                "names an SVG file that holds script, which the importer would read as it is; remove its script elements, event attributes and javascript: links");
-        }
     }
 
     /// <summary>Refuses a held file that an image reference names unless it is an intact image.</summary>

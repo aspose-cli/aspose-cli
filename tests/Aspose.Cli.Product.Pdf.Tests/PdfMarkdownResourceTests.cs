@@ -129,37 +129,6 @@ public sealed class PdfMarkdownResourceTests
         Assert.Equal(ErrorCodes.FeatureUnsupported, refused.Code);
     }
 
-    /// <summary>
-    /// The importer reads an SVG file as it is, so one that holds script, which the SVG cleaning
-    /// would remove, is refused whether it is an image or a loaded document; one without script
-    /// is imported.
-    /// </summary>
-    [Theory]
-    [InlineData("<svg xmlns=\"http://www.w3.org/2000/svg\"><script>fetch('x')</script></svg>", "![a](sub/scripted.svg)")]
-    [InlineData("<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:s=\"http://www.w3.org/2000/svg\"><s:script>fetch('x')</s:script></svg>", "![a](sub/scripted.svg)")]
-    [InlineData("<svg xmlns=\"http://www.w3.org/2000/svg\" onload=\"fetch('x')\"><rect width=\"4\" height=\"4\"/></svg>", "![a](sub/scripted.svg)")]
-    [InlineData("<svg xmlns=\"http://www.w3.org/2000/svg\"><a href=\"javascript:fetch('x')\"><text>t</text></a></svg>", "![a](sub/scripted.svg)")]
-    [InlineData("<svg xmlns=\"http://www.w3.org/2000/svg\"><script>fetch('x')</script></svg>", "<object data=\"sub/scripted.svg\"></object>")]
-    public void Markdown_RefusesAnSvgThatHoldsScript(string content, string reference)
-    {
-        using var fixture = new PdfEngineFixture();
-        string directory = Directory.CreateDirectory(fixture.File("docs")).FullName;
-        string sub = Directory.CreateDirectory(Path.Combine(directory, "sub")).FullName;
-        File.WriteAllText(Path.Combine(sub, "scripted.svg"), content);
-        File.WriteAllText(Path.Combine(sub, "plain.svg"), "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"4\" height=\"4\"><rect width=\"4\" height=\"4\"/></svg>");
-        string markdown = Path.Combine(directory, "input.md");
-        File.WriteAllText(markdown, "# Report\n\n" + reference + "\n");
-        string plain = Path.Combine(directory, "plain.md");
-        File.WriteAllText(plain, "# Report\n\n![a](sub/plain.svg)\n");
-
-        CliException refused = Assert.Throws<CliException>(() =>
-            new MarkdownImportResources(markdown, ProductTestBudgets.Create<PdfModule>(), directory).Dispose());
-        new MarkdownImportResources(plain, ProductTestBudgets.Create<PdfModule>(), directory).Dispose();
-
-        Assert.Equal(ErrorCodes.FeatureUnsupported, refused.Code);
-        Assert.Contains("script", refused.Message, StringComparison.Ordinal);
-    }
-
     [Fact]
     public void Markdown_RefusesAJunctionThatLeavesTheDirectory()
     {

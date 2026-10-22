@@ -192,6 +192,13 @@ Reproductions: [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownI
   only those files pass the gate. For trusted HTML,
   `pdf create --from-html --allow-network-resources` opens http and https for that command alone
   and lists every fetched address in `NETWORK_RESOURCES_REQUESTED`; ftp and file stay blocked.
+  The importers run the page script of HTML and Markdown input, which has no
+  `XMLHttpRequest`; script in an SVG file the page loads was not seen to run. The CLI does not
+  scan for script: what a script adds to the page, such as a frame, an object, an image or a
+  stylesheet, is loaded through the same gate and loader, so it reaches no network address and
+  no file outside the input's directory (`PdfScriptReachTests`). An SVG image the CLI hands the
+  engine itself (`--from-images`, image stamps and watermarks) has its script removed with its
+  references.
 - **Workaround:** keep resources beside the input and reference them by relative path, or
   convert HTML with `aspose-cli words convert`, which makes no network request.
 
