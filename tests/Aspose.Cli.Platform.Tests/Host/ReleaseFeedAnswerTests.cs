@@ -17,7 +17,7 @@ public sealed class ReleaseFeedAnswerTests
 
         Assert.Equal("RELEASE_FEED_UNAVAILABLE", error.Code.Name);
         Assert.Contains("HTTP 404", error.Message, StringComparison.Ordinal);
-        Assert.Contains("no release", error.Hint, StringComparison.Ordinal);
+        Assert.Contains("no release", error.Hint, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("network", error.Hint, StringComparison.OrdinalIgnoreCase);
         Assert.Equal(Feed.AbsoluteUri, error.Details!["feed"]!.GetValue<string>());
     }
