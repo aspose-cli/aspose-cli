@@ -42,7 +42,9 @@ public sealed class NetworkGateTests
                 Warning warning = Assert.IsType<Warning>(NetworkGate.Warning);
                 Assert.Equal(WarningCodes.RemoteResourcesBlocked, warning.Code);
                 Assert.Contains(ftp.GetLeftPart(UriPartial.Path), warning.Message, StringComparison.Ordinal);
-                Assert.Contains(Path.GetFullPath(outside), warning.Message, StringComparison.OrdinalIgnoreCase);
+                // A file is named, never its folder.
+                Assert.Contains("outside.txt", warning.Message, StringComparison.Ordinal);
+                Assert.DoesNotContain(workspace.Path, warning.Message, StringComparison.OrdinalIgnoreCase);
             }
 
             NetworkGate.Permit(outside);
@@ -53,7 +55,7 @@ public sealed class NetworkGateTests
             }
             // A permitted file is no longer reported as omitted; the blocked ftp request still is.
             string listed = Assert.IsType<Warning>(NetworkGate.Warning).Message;
-            Assert.DoesNotContain(Path.GetFullPath(outside), listed, StringComparison.OrdinalIgnoreCase);
+            Assert.DoesNotContain("outside.txt", listed, StringComparison.Ordinal);
             Assert.Contains(ftp.GetLeftPart(UriPartial.Path), listed, StringComparison.Ordinal);
         }
         finally
@@ -105,6 +107,46 @@ public sealed class NetworkGateTests
         finally
         {
             await server.DisposeAsync();
+            NetworkGate.Admit(NetworkAccess.Web);
+        }
+    }
+    /// <summary>
+    /// The warning names a blocked file as the input's resource loader names it: relative to the
+    /// input's folder below it, by its file name elsewhere, and two files that share a name as two.
+    /// </summary>
+    [Fact]
+    public void BlockedFiles_AreNamedWithoutTheirFolders()
+    {
+        using var workspace = new TempWorkspace();
+        string input = workspace.File("in/input.html");
+        Directory.CreateDirectory(Path.GetDirectoryName(input)!);
+        File.WriteAllText(input, "<html></html>");
+        string below = workspace.File("in/images/below.png");
+        string first = workspace.File("one/same.png");
+        string second = workspace.File("two/same.png");
+        foreach (string file in new[] { below, first, second })
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(file)!);
+            File.WriteAllText(file, "png");
+        }
+        try
+        {
+            NetworkGate.Admit(NetworkAccess.None);
+            using var loader = new LocalDocumentResourceLoader(input, TestBudgets.Create());
+
+            foreach (string file in new[] { below, first, second })
+            {
+                Assert.Throws<WebException>(() => WebRequest.Create(new Uri(file)).GetResponse());
+            }
+
+            string message = Assert.IsType<Warning>(NetworkGate.Warning).Message;
+            Assert.StartsWith("3 resource(s)", message, StringComparison.Ordinal);
+            Assert.Contains(Path.Combine("images", "below.png"), message, StringComparison.Ordinal);
+            Assert.Equal(2, message.Split("same.png").Length - 1);
+            Assert.DoesNotContain(workspace.Path, message, StringComparison.OrdinalIgnoreCase);
+        }
+        finally
+        {
             NetworkGate.Admit(NetworkAccess.Web);
         }
     }

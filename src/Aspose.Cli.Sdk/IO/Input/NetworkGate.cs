@@ -35,6 +35,7 @@ public static class NetworkGate
     private static readonly HashSet<string> Permitted = new(FilePaths.Comparer);
     private static readonly List<string> Withheld = [];
     private static NetworkAccess _access;
+    private static string? _inputFolder;
     private static IWebProxy? _system;
     private static bool _installed;
 
@@ -61,6 +62,7 @@ public static class NetworkGate
             Blocked.Clear();
             Permitted.Clear();
             Withheld.Clear();
+            _inputFolder = null;
         }
     }
 
@@ -80,6 +82,21 @@ public static class NetworkGate
     }
 
     /// <summary>
+    /// Names the local files the warning lists relative to <paramref name="folder"/>, the input's
+    /// folder, when they are below it; any other is named by its file name alone, so the warning
+    /// never names a local folder.
+    /// </summary>
+    /// <param name="folder">The folder of the input a resource loader reads for.</param>
+    public static void NameFilesBelow(string folder)
+    {
+        ArgumentException.ThrowIfNullOrEmpty(folder);
+        lock (Sync)
+        {
+            _inputFolder = Path.GetFullPath(folder);
+        }
+    }
+
+    /// <summary>
     /// Lists references the CLI removed from content before the invocation's engine read it, such
     /// as those of an SVG image (<see cref="SvgReferences"/>), beside the addresses the gate blocks.
     /// </summary>
@@ -91,10 +108,9 @@ public static class NetworkGate
         {
             foreach (string reference in references)
             {
-                string listed = reference.Length <= 120 ? reference : reference[..120] + "...";
-                if (!Withheld.Contains(listed, StringComparer.Ordinal))
+                if (!Withheld.Contains(reference, StringComparer.Ordinal))
                 {
-                    Withheld.Add(listed);
+                    Withheld.Add(reference);
                 }
             }
         }
@@ -117,7 +133,9 @@ public static class NetworkGate
                     return null;
                 }
 
-                string listed = string.Join(", ", omitted.Take(ListedAddresses));
+                // Each is listed once by what it resolves to, and named as the loaders name it.
+                string listed = string.Join(", ", omitted.Take(ListedAddresses)
+                    .Select(static reference => LocalDocumentResourceLoader.NameOf(reference, _inputFolder)));
                 string more = omitted.Length > ListedAddresses ? $", and {omitted.Length - ListedAddresses} more" : "";
                 return new Warning(WarningCodes.RemoteResourcesBlocked,
                     $"{omitted.Length} resource(s) outside the input were blocked or removed before the document engine could read them: {listed}{more}.")
