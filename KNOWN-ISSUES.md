@@ -23,7 +23,8 @@ Reproductions: [CellsKnownIssueTests](tests/Aspose.Cli.Product.Cells.Tests/Cells
 - **CLI behavior:** every SVG the engine gets keeps only references inside itself, `#id`
   fragments and base64 `data:` URIs whose bytes are a PNG, JPEG or GIF file; other references,
   in attributes, CSS, `xml:base` or SMIL animations, are removed and reported with
-  `REMOTE_RESOURCES_BLOCKED`. A loaded workbook's SVG picture that named any is replaced by the
+  `REMOTE_RESOURCES_BLOCKED`, as are script elements, `on*` event attributes and `javascript:`
+  links. A loaded workbook's SVG picture that named any is replaced by the
   same picture without them, at the same place and size, so what the engine read while loading
   it never reaches an output; one whose SVG does not parse as XML, or that sits in a group, is
   left out with `IMAGES_SKIPPED`. `insert_image` refuses an SVG that does not parse with

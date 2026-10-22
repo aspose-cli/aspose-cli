@@ -22,7 +22,7 @@ Every image, stylesheet and SVG file Markdown could load, and those they referen
 must be an existing ordinary file beneath the Markdown file's directory: network
 addresses, absolute paths, `file:` URIs, `..` escapes (also percent- or
 entity-encoded), links and junctions, missing files and non-raster `data:` URIs are refused, including in code
-examples. Run the command from the Markdown file's directory. A local HTML image or
+examples, and so is an SVG file that holds script, which the importer would read as it is. Run the command from the Markdown file's directory. A local HTML image or
 stylesheet that is missing or outside the HTML directory is left out with
 `REMOTE_RESOURCES_BLOCKED`; keep resources beneath that directory rather than
 widening access, and review the incomplete output.
