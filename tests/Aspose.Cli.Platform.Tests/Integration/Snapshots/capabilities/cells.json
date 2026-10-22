@@ -38,7 +38,7 @@
         "command": "edit",
         "inputSchema": "v2/cells/ops",
         "operationSchema": "aspose-cli schema v2/cells/ops --operation <op>",
-        "contractFingerprint": "sha256:8ed830721404f6efae961356bffc6baa28e15962b7c567a6dc6400b3fed24735",
+        "contractFingerprint": "sha256:93c6f93f6118a1317d61e5ff3cc631ba4fef56c010dfb5f0ad4f3e80778c04e2",
         "maximumOperationCount": 10000,
         "ops": [
           "add_comment",
@@ -6004,7 +6004,7 @@
               "x-readBack": "not-state"
             },
             "path": {
-              "description": "The image file (png, jpeg, gif or bmp), relative to the working directory.",
+              "description": "The image file (png, jpeg, gif, bmp or svg), relative to the working directory. An SVG keeps only what it holds itself: references to anything outside it are removed.",
               "type": "string",
               "minLength": 1,
               "pattern": "\\S",

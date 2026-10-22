@@ -201,7 +201,10 @@ public static class CellsPivotFunctions
 [MistakenFor("add_image", "add_picture", "insert_picture")]
 public sealed record InsertImageOp : CellsSheetOp
 {
-    /// <summary>The image file (png, jpeg, gif or bmp), relative to the working directory.</summary>
+    /// <summary>
+    /// The image file (png, jpeg, gif, bmp or svg), relative to the working directory. An SVG keeps
+    /// only what it holds itself: references to anything outside it are removed.
+    /// </summary>
     [InputPath, Pattern(@"\S")] public required string Path { get; init; }
 
     /// <summary>The top-left anchor cell, such as E2.</summary>

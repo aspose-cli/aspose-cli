@@ -10,8 +10,8 @@ The CLI blocks every network and `file:` request the PDF engine makes for HTML a
 SVG image inputs and the stylesheets and SVG files they load, script included: the
 command still succeeds, without those resources, and `REMOTE_RESOURCES_BLOCKED`
 lists each blocked address. An SVG image keeps only the images it embeds as `data:`
-URIs: every other reference is removed and listed the same way. Save the resource
-beside the input and reference it by relative path. For trusted HTML,
+URIs: every other reference is removed and listed the same way. Copy the resource
+into the input's folder or a folder below it and reference it by relative path. For trusted HTML,
 `--allow-network-resources` lets the import fetch http and https addresses, and the
 result lists them as `NETWORK_RESOURCES_REQUESTED`; review what they returned.
 Combine the option with `--timeout`, since each unanswered request can hold the

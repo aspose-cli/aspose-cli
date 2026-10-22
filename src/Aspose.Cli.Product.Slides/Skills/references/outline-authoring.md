@@ -31,8 +31,11 @@ Content. Unused placeholders are removed. Body placeholders are set to shrink
 text on overflow; still check review for overflow and split a crowded slide
 rather than rely on shrinking. Wrap an image path that contains spaces in angle
 brackets. An image is read only from an ordinary file beneath the Markdown
-file's directory, by relative path; any other image, a remote one included, is
-left out and reported as `REMOTE_RESOURCES_BLOCKED`.
+file's directory, by relative path; any other image, a missing or remote one
+included, is left out, and `REMOTE_RESOURCES_BLOCKED` names each one as the
+outline wrote it, with the reason. To use an image from elsewhere, copy it into
+the Markdown file's directory or a folder below it and reference it by a
+relative path such as `images/chart.png`.
 
 `--slide-size 16x9` or `--slide-size 4x3` resizes the canvas and scales the masters,
 layouts and slides with it. Without `--from-markdown`, the template's own slides
