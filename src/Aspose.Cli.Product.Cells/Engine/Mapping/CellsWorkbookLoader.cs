@@ -146,7 +146,8 @@ internal sealed class CellsWorkbookLoader
             throw InputLoading.PasswordRefused(path, password);
         }
 
-        var resources = new WorkbookResources(resourceSource ?? path, _resourceBudgets, plan.Format == LoadFormat.MHtml);
+        var resources = new WorkbookResources(resourceSource ?? path, _resourceBudgets, plan.Format == LoadFormat.MHtml,
+            html: plan.Format == LoadFormat.Html ? path : null);
         Workbook? workbook = null;
         bool transferred = false;
         try

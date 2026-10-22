@@ -159,9 +159,49 @@ public sealed class CellsResourceLoadingTests
         Assert.Equal(8, edited.ExitCode);
         var verification = System.Text.Json.Nodes.JsonNode.Parse(edited.StdOut)!["verification"]!;
         Assert.False(verification["ok"]!.GetValue<bool>());
+        // An HTML image is never imported: the omission is reported as a skipped image.
         Assert.Contains(verification["issues"]!.AsArray(),
-            issue => issue!["code"]!.GetValue<string>() == WarningCodes.RemoteResourcesBlocked.Name);
+            issue => issue!["code"]!.GetValue<string>() == "IMAGES_SKIPPED");
         Assert.Equal(0, server.RequestCount);
+    }
+
+    /// <summary>
+    /// An HTML input imports no images: the warning names each image its img elements write,
+    /// wherever it is, and points to insert_image, while the omission warning names only the
+    /// other resources, such as a missing style sheet, with the relative-path advice.
+    /// </summary>
+    [Fact]
+    public void Html_NamesTheImagesItLeavesOutApartFromOtherOmittedResources()
+    {
+        Requires.Windows();
+        using var fixture = new CellsFixture();
+        string folder = Directory.CreateDirectory(fixture.Temp.File("page")).FullName;
+        Directory.CreateDirectory(fixture.Temp.File("shared"));
+        byte[] png = Convert.FromBase64String(
+            "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGP4z8DwHwAFAAH/iZk9HQAAAABJRU5ErkJggg==");
+        File.WriteAllBytes(Path.Combine(folder, "beside.png"), png);
+        File.WriteAllBytes(fixture.Temp.File("shared/far.png"), png);
+        string input = Path.Combine(folder, "page.html");
+        File.WriteAllText(input,
+            "<html><head><link rel='stylesheet' href='gone.css'></head><body><table><tr><td>a"
+            + "<img src='beside.png'><img src='images/missing.png'><img src='../shared/far.png'></td></tr></table></body></html>");
+
+        using LoadedWorkbook loaded = CellsWorkbookLoader.ForFontInspection(ProductTestBudgets.Create<CellsModule>()).Open(input, null);
+
+        Warning[] warnings = [.. loaded.Warnings() ?? []];
+        Warning images = Assert.Single(warnings, static warning => warning.Code.Name == "IMAGES_SKIPPED");
+        foreach (string source in new[] { "beside.png", "images/missing.png", "../shared/far.png" })
+        {
+            Assert.Contains(source, images.Message, StringComparison.Ordinal);
+        }
+
+        Assert.Contains("insert_image", images.Hint, StringComparison.Ordinal);
+        Assert.DoesNotContain("relative path", images.Hint, StringComparison.Ordinal);
+        Warning omitted = Assert.Single(warnings, static warning => warning.Code.Name == "REMOTE_RESOURCES_BLOCKED");
+        Assert.Contains("gone.css (not found)", omitted.Message, StringComparison.Ordinal);
+        Assert.DoesNotContain(".png", omitted.Message, StringComparison.Ordinal);
+        Assert.Contains("relative path", omitted.Hint, StringComparison.Ordinal);
+        Assert.DoesNotContain(fixture.Temp.File("shared"), string.Join(" ", warnings.Select(static warning => warning.Message)), StringComparison.OrdinalIgnoreCase);
     }
 
     // A compressed SVG cannot be read for the references it names (CELLS-SVG-EGRESS), so the
