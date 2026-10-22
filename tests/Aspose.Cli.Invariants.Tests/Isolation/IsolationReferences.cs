@@ -23,6 +23,14 @@ internal enum ReferenceKind
 
     /// <summary>Only resources inside the input folder, which the command must keep.</summary>
     Control,
+
+    /// <summary>
+    /// A named pipe of the case's own, <c>\\.\pipe\&lt;name&gt;</c>, in every reference place, by
+    /// its device path, through <c>\\localhost\pipe</c> and as a file URI. A pipe is no file
+    /// anyone could have copied the sentinel into: any engine that opens a reference by its path,
+    /// whatever it does with what it reads, connects to it, which an output scan cannot see.
+    /// </summary>
+    Pipe,
 }
 
 /// <summary>
@@ -130,7 +138,7 @@ internal sealed record References(
     /// reference must climb before it reaches the input folder: 0 for a plain file, 1 where the
     /// format resolves it from inside its package, as OpenDocument does.
     /// </summary>
-    public static References For(ReferenceKind kind, IsolationLayout layout, string serverUrl, int packageDepth, string? uncImage = null, string? uncStylesheet = null, string? uncPage = null)
+    public static References For(ReferenceKind kind, IsolationLayout layout, string serverUrl, int packageDepth, string? uncImage = null, string? uncStylesheet = null, string? uncPage = null, string? pipe = null)
     {
         string up = string.Concat(Enumerable.Repeat("../", packageDepth));
         string png = Path.Combine(layout.Outside, "sentinel.png");
@@ -146,6 +154,9 @@ internal sealed record References(
                     null);
             case ReferenceKind.Decoy:
                 return new References(kind, [], [], [], [], serverUrl + "/decoy.png");
+            case ReferenceKind.Pipe:
+                string[] pipes = [IsolationPipe.DevicePath(pipe!), IsolationPipe.SharePath(pipe!), IsolationPipe.FileUri(pipe!)];
+                return new References(kind, pipes, pipes, pipes, pipes, null);
             case ReferenceKind.Control:
                 layout.WriteControlResources();
                 // A relative path only: the one form every importer documents for a resource of its
