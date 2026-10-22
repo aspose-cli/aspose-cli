@@ -2,6 +2,7 @@ using Aspose.Cli.Host.Catalog;
 using Aspose.Cli.Host.LocalServices;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.IO.Paths;
+using Aspose.Cli.Sdk.IO.Publication;
 using Aspose.Cli.Sdk.Licensing;
 
 namespace Aspose.Cli.Host.App;
@@ -46,7 +47,7 @@ internal sealed partial class AppHost
     {
         if (length > LicenseInstaller.MaximumBytes) { throw CliErrors.FileTooLarge(length, LicenseInstaller.MaximumBytes); }
         // The file the person chose is staged in the per-user temporary root
-        // and is gone again before this answers.
+        // and is gone again before this answers; only the current user can read it meanwhile.
         string directory = UserStorage.CreateTemporaryDirectory(
             "app-license",
             Environment.ProcessId.ToString(System.Globalization.CultureInfo.InvariantCulture));
@@ -54,7 +55,7 @@ internal sealed partial class AppHost
         IReadOnlyList<string> installed;
         try
         {
-            using (FileStream destination = new(staged, FileMode.CreateNew, FileAccess.ReadWrite, FileShare.None))
+            using (FileStream destination = CurrentUserFileAccess.CreateNew(staged))
             {
                 BoundedStreamCopy.CopyAsync(
                     input,

@@ -109,7 +109,7 @@ internal sealed class LocalServiceMarkerFiles<TMarker, TSecrets>
         ArgumentNullException.ThrowIfNull(marker);
         ArgumentNullException.ThrowIfNull(secrets);
         using LocalServiceOperationLock lease = Acquire();
-        UserTextFile.Replace(
+        UserTextFile.ReplaceSecret(
             _secretPath,
             JsonSerializer.Serialize(
                 secrets,

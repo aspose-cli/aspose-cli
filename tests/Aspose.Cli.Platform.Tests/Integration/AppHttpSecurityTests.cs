@@ -377,6 +377,30 @@ public sealed class AppHttpSecurityTests
     }
 
     /// <summary>
+    /// The secret that proves control of the service is readable only by the current user, even
+    /// in a configuration directory that lets everyone read what is created inside it.
+    /// </summary>
+    [Fact]
+    public void ServiceSecret_InASharedConfigurationDirectory_IsReadableOnlyByTheCurrentUser()
+    {
+        Requires.Windows();
+        using var workspace = new TempWorkspace();
+        AccessRules.ShareForReading(workspace.ConfigDirectory);
+        File.WriteAllText(workspace.File("first.csv"), "Label,Value\nFIRST_DOCUMENT,42\n");
+
+        CliResult opened = workspace.Run("app", "open", workspace.File("first.csv"), "--no-open", "--output-format", "json");
+        try
+        {
+            Assert.True(opened.ExitCode == 0, opened.StdErr);
+            AccessRules.AssertCurrentUserOnly(Path.Combine(workspace.ConfigDirectory, "viewer", "service.secret"));
+        }
+        finally
+        {
+            workspace.Run("app", "stop", "--output-format", "json");
+        }
+    }
+
+    /// <summary>
     /// The service's control pipe is owned by the current user and grants nobody else access, so
     /// another user of the machine cannot even connect to send a command.
     /// </summary>

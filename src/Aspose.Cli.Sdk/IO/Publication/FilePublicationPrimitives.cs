@@ -93,23 +93,8 @@ internal static class PublicationTransactionDirectory
 
     private static DirectoryInfo CreateWindows(string path)
     {
-        using WindowsIdentity current = WindowsIdentity.GetCurrent();
-        SecurityIdentifier user = current.User
-            ?? throw new InvalidOperationException("The current Windows user SID is unavailable.");
-        var security = new DirectorySecurity();
-        security.SetAccessRuleProtection(isProtected: true, preserveInheritance: false);
-        security.SetOwner(user);
-        foreach (SecurityIdentifier principal in new[] { user, new SecurityIdentifier(WellKnownSidType.LocalSystemSid, null) })
-        {
-            security.AddAccessRule(new FileSystemAccessRule(
-                principal,
-                FileSystemRights.FullControl,
-                InheritanceFlags.ContainerInherit | InheritanceFlags.ObjectInherit,
-                PropagationFlags.None,
-                AccessControlType.Allow));
-        }
         var directory = new DirectoryInfo(path);
-        directory.Create(security);
+        directory.Create(CurrentUserFileAccess.DirectoryRules());
         return directory;
     }
 }

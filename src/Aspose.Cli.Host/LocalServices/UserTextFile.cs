@@ -5,8 +5,8 @@ namespace Aspose.Cli.Host.LocalServices;
 
 /// <summary>
 /// Writes the small UTF-8 state, marker and log files the Host keeps in the current user's
-/// configuration and temporary directories. Those directories' own per-user permissions
-/// protect the files; this helper sets no permissions of its own.
+/// configuration and temporary directories. Those files take their directory's permissions,
+/// except a secret, which <see cref="ReplaceSecret"/> gives current-user-only access.
 /// </summary>
 internal static class UserTextFile
 {
@@ -16,7 +16,24 @@ internal static class UserTextFile
     /// Replaces a file atomically: the text is written and flushed to a temporary file in the
     /// same directory, which is then renamed over the target, waiting briefly out a scanner's lock.
     /// </summary>
-    public static void Replace(string path, string contents)
+    public static void Replace(string path, string contents) =>
+        Replace(path, contents, static temporary => new FileStream(
+            temporary,
+            FileMode.CreateNew,
+            FileAccess.ReadWrite,
+            FileShare.None,
+            bufferSize: 4096,
+            FileOptions.WriteThrough));
+
+    /// <summary>
+    /// Replaces a file that holds a secret atomically, as <see cref="Replace(string, string)"/>
+    /// does, with current-user-only access from the moment it is created, whatever its folder's
+    /// rules (<see cref="CurrentUserFileAccess"/>).
+    /// </summary>
+    public static void ReplaceSecret(string path, string contents) =>
+        Replace(path, contents, static temporary => CurrentUserFileAccess.CreateNew(temporary, FileOptions.WriteThrough));
+
+    private static void Replace(string path, string contents, Func<string, FileStream> create)
     {
         ArgumentNullException.ThrowIfNull(contents);
         string full = Path.GetFullPath(path);
@@ -24,13 +41,7 @@ internal static class UserTextFile
         string temporary = Path.Combine(directory, $".{Path.GetFileName(full)}.{Guid.NewGuid():N}.tmp");
         try
         {
-            using (var stream = new FileStream(
-                       temporary,
-                       FileMode.CreateNew,
-                       FileAccess.ReadWrite,
-                       FileShare.None,
-                       bufferSize: 4096,
-                       FileOptions.WriteThrough))
+            using (FileStream stream = create(temporary))
             {
                 stream.Write(Utf8NoBom.GetBytes(contents));
                 stream.Flush(flushToDisk: true);

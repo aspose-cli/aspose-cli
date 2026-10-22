@@ -181,7 +181,12 @@ internal sealed class AtomicPublicationCommit(AtomicPublicationPlan plan)
             entry.Target,
             entry.TargetParentIdentity);
         plan.ResourceBudgets?.Deadline.ThrowIfExpired("publication-replace");
-        byte[]? originalAccess = entry.Original.Exists
+        // A secret was staged with current-user-only rules (CurrentUserFileAccess), which it keeps
+        // wherever it is published. A replacement takes the replaced file's rules, so the file it
+        // replaces is given them first.
+        bool currentUserOnly = CurrentUserFileAccess.IsCurrentUserOnly(entry.Staged);
+        if (currentUserOnly && entry.Original.Exists) { CurrentUserFileAccess.Restrict(entry.Target); }
+        byte[]? originalAccess = entry.Original.Exists && !currentUserOnly
             ? FilePublicationInheritance.TryCaptureAccess(entry.Target)
             : null;
         (FilePublicationSnapshot published, FilePublicationSnapshot? displaced) = FilePublicationAtomicSwap.Publish(
@@ -198,8 +203,11 @@ internal sealed class AtomicPublicationCommit(AtomicPublicationPlan plan)
         plan.Faults.Hit(new PublicationFaultPoint(PublicationFaultKind.Access, entry.Index, entry.Target));
         // The replacement was staged in the private transaction directory: a new file takes the
         // folder's rules, a replaced file keeps the rules its owner had set.
-        if (entry.Original.Exists) { FilePublicationInheritance.TryApplyAccess(entry.Target, originalAccess); }
-        else { FilePublicationInheritance.TryReset(entry.Target); }
+        if (!currentUserOnly)
+        {
+            if (entry.Original.Exists) { FilePublicationInheritance.TryApplyAccess(entry.Target, originalAccess); }
+            else { FilePublicationInheritance.TryReset(entry.Target); }
+        }
         EnsureStillPublished(entry, published);
         plan.ResourceBudgets?.RefreshAdmissionAfterPublication(entry.Target);
 
