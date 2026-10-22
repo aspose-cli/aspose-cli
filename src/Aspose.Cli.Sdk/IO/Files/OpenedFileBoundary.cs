@@ -41,17 +41,25 @@ internal static class OpenedFileBoundary
         && (info.Attributes & (FileAttributes.Directory | FileAttributes.ReparsePoint)) == 0
         && GetFileType(handle) == 1;
 
-    internal static bool HasPath(SafeFileHandle handle, string expected)
+    internal static bool HasPath(SafeFileHandle handle, string expected) =>
+        FinalPath(handle) is { } path && FilePaths.Same(path.TrimEnd('\\'), expected.TrimEnd('\\'));
+
+    /// <summary>
+    /// The drive path the file system reaches the opened object by, with every link and
+    /// redirection resolved; null when it has none, such as an object on a share.
+    /// </summary>
+    internal static string? FinalPath(SafeFileHandle handle)
     {
         var buffer = new StringBuilder(32768);
         uint length = GetFinalPathNameByHandle(handle, buffer, (uint)buffer.Capacity, 0);
         if (length == 0 || length >= buffer.Capacity)
         {
-            return false;
+            return null;
         }
         string value = buffer.ToString();
-        return value.StartsWith(@"\\?\", StringComparison.Ordinal)
-            && FilePaths.Same(value[4..].TrimEnd('\\'), expected.TrimEnd('\\'));
+        return value.StartsWith(@"\\?\", StringComparison.Ordinal) && value.Length >= 7 && value[5] == ':' && value[6] == '\\'
+            ? value[4..]
+            : null;
     }
 
     [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]

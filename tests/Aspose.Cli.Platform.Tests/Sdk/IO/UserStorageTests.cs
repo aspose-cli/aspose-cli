@@ -17,10 +17,19 @@ public sealed class UserStorageTests
         string root = UserStorage.TemporaryRoot();
 
         Assert.True(Directory.Exists(root));
-        Assert.Equal(
-            Path.Combine(Path.GetFullPath(localAppData), DistributionInfo.Id),
-            root,
-            StringComparer.OrdinalIgnoreCase);
+        Assert.Equal(DistributionInfo.Id, Path.GetFileName(root));
+        // The root is where what is created in the CLI's directory of the folder lands: that
+        // directory itself, or where a link or an MSIX host's redirection takes it.
+        string name = "probe-" + Guid.NewGuid().ToString("N");
+        string created = Directory.CreateDirectory(Path.Combine(Path.GetFullPath(localAppData), DistributionInfo.Id, name)).FullName;
+        try
+        {
+            Assert.True(Directory.Exists(Path.Combine(root, name)), $"'{created}' is not reached below '{root}'.");
+        }
+        finally
+        {
+            Directory.Delete(created);
+        }
         Assert.False(
             root.StartsWith(Path.GetFullPath(Path.GetTempPath()), StringComparison.OrdinalIgnoreCase),
             $"The per-user root '{root}' is in the temporary directory.");

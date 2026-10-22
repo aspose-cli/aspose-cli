@@ -73,6 +73,29 @@ namespace AsposeFileInstaller {
         public static extern System.IntPtr SendMessageTimeout(
             System.IntPtr window, uint message, System.UIntPtr wParam, string lParam,
             uint flags, uint timeout, out System.UIntPtr result);
+
+        // The drive path the file system reaches a directory by, every link and redirection
+        // resolved; null when it cannot be opened or has no drive path.
+        public static string FinalDirectoryPath(string path) {
+            using (Microsoft.Win32.SafeHandles.SafeFileHandle handle = CreateFile(
+                @"\\?\" + path, 0x80u, 7u, System.IntPtr.Zero, 3u, 0x02000000u, System.IntPtr.Zero)) {
+                if (handle.IsInvalid) { return null; }
+                System.Text.StringBuilder buffer = new System.Text.StringBuilder(32768);
+                uint length = GetFinalPathNameByHandle(handle, buffer, (uint)buffer.Capacity, 0u);
+                if (length == 0 || length >= buffer.Capacity) { return null; }
+                string value = buffer.ToString();
+                return value.StartsWith(@"\\?\") && value.Length >= 7 && value[5] == ':' && value[6] == '\\'
+                    ? value.Substring(4).TrimEnd('\\')
+                    : null;
+            }
+        }
+
+        [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+        private static extern Microsoft.Win32.SafeHandles.SafeFileHandle CreateFile(
+            string path, uint access, uint share, System.IntPtr security, uint disposition, uint flags, System.IntPtr template);
+        [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+        private static extern uint GetFinalPathNameByHandle(
+            Microsoft.Win32.SafeHandles.SafeFileHandle handle, System.Text.StringBuilder path, uint capacity, uint flags);
     }
 
     public sealed class BoundedWriteStream : System.IO.Stream {
@@ -1813,7 +1836,17 @@ function Resolve-CleanupRoot {
         $localAppData = [Environment]::GetFolderPath([Environment+SpecialFolder]::LocalApplicationData, [Environment+SpecialFolderOption]::DoNotVerify)
     }
     $stagingRoot = [IO.Path]::GetFullPath([IO.Path]::Combine($localAppData, $script:ProductId, 'updates')).TrimEnd('\') + '\'
-    if ((-not $directory.StartsWith($stagingRoot, [StringComparison]::OrdinalIgnoreCase)) -or
+    $staged = $directory.StartsWith($stagingRoot, [StringComparison]::OrdinalIgnoreCase)
+    if (-not $staged) {
+        # The CLI names its state by the path the file system reaches it by, which a junction in
+        # the folder's path or the AppData redirection of an MSIX-packaged host makes differ from
+        # the variable: the directory is staged when the one of its name in the staging
+        # directory resolves to it.
+        $alias = [AsposeFileInstaller.NativeMethods]::FinalDirectoryPath([IO.Path]::Combine($stagingRoot, [IO.Path]::GetFileName($directory)))
+        $resolved = [AsposeFileInstaller.NativeMethods]::FinalDirectoryPath($directory)
+        $staged = $null -ne $alias -and [string]::Equals($alias, $resolved, [StringComparison]::OrdinalIgnoreCase)
+    }
+    if ((-not $staged) -or
         (-not [IO.Path]::GetFileName($directory).StartsWith($script:ProductId + '-update-', [StringComparison]::OrdinalIgnoreCase))) {
         throw "-CleanupRoot must be a $($script:ProductId)-update-* directory in the update staging directory $stagingRoot"
     }

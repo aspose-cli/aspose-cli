@@ -544,6 +544,40 @@ public sealed partial class CustomerInstallerPowerShellTests : IDisposable, ICla
             environment);
     }
 
+    /// <summary>
+    /// The CLI names its update staging by the path the file system reaches it by, which differs
+    /// from LOCALAPPDATA when a junction, or an MSIX host's redirection, takes the folder
+    /// elsewhere: that path is accepted when the staging directory's entry of its name resolves to
+    /// it, and a directory of the same name anywhere else is still refused.
+    /// </summary>
+    [Fact]
+    public void UpdateCleanupRoot_IsAcceptedByThePathItsStagingDirectoryResolvesTo()
+    {
+        Requires.Windows();
+        string target = Directory.CreateDirectory(Path.Combine(_root, "cleanup-target")).FullName;
+        string linked = Path.Combine(_root, "cleanup-linked");
+        FileSystemLinks.CreateDirectoryLink(linked, target);
+        string name = "aspose-cli-update-" + Guid.NewGuid().ToString("N");
+        string staged = Directory.CreateDirectory(Path.Combine(target, "aspose-cli", "updates", name)).FullName;
+        string elsewhere = Directory.CreateDirectory(Path.Combine(target, "elsewhere", "aspose-cli-update-" + Guid.NewGuid().ToString("N"))).FullName;
+        string installer = Path.Combine(RepositoryPaths.Root, "install.ps1");
+        var environment = new Dictionary<string, string?> { ["LOCALAPPDATA"] = linked };
+
+        PowerShellResult accepted = Resolve(staged);
+        PowerShellResult refused = Resolve(elsewhere);
+
+        Assert.True(accepted.ExitCode == 0, accepted.StdErr);
+        Assert.Equal(staged, accepted.StdOut.Trim(), StringComparer.OrdinalIgnoreCase);
+        Assert.NotEqual(0, refused.ExitCode);
+        Assert.Contains("-CleanupRoot", refused.StdErr, StringComparison.Ordinal);
+
+        PowerShellResult Resolve(string root) => RunExecutable(
+            "powershell.exe",
+            ["-NoLogo", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-Command",
+                $". {PowerShellLiteral(installer)}; Resolve-CleanupRoot {PowerShellLiteral(root)}"],
+            environment);
+    }
+
     [Fact]
     public void UnsupportedOldInstallIsRejectedWithoutExecutingOrChangingIt()
     {
