@@ -22,7 +22,9 @@ internal sealed class IsolationPipe : IAsyncDisposable
     }
 
     /// <summary>The pipe's name, unique to the case.</summary>
-    public string Name { get; } = "aspose-cli-isolation-" + Guid.NewGuid().ToString("N");
+    // The name ends as an SVG file's does, so a reference to it also stands for a link to an
+    // external .svg file, which a reader may treat apart from other images.
+    public string Name { get; } = "aspose-cli-isolation-" + Guid.NewGuid().ToString("N") + ".svg";
 
     /// <summary>How many times anything connected to the pipe.</summary>
     public int Connections => Volatile.Read(ref _connections);
