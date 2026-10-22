@@ -46,7 +46,8 @@ Each boundary names the tests that check it, and `SecurityClaimsTests` keeps tho
   [KNOWN-ISSUES.md](KNOWN-ISSUES.md).
   Checked by: `PdfResourceLoadingTests`, `CellsResourceLoadingTests`, `CellsSvgPictureTests`,
   `SlidesResourceLoadingTests`, `WordsResourceLoadingTests`, `SvgReferencesTests`,
-  `NetworkGateTests`, `LocalDocumentResourceLoaderTests`, `VerifiedResourceReadTests`.
+  `NetworkGateTests`, `LocalDocumentResourceLoaderTests`, `VerifiedResourceReadTests`,
+  `SlidesMutationAndSecurityTests.MarkdownImageOutsideItsDirectory_IsOmittedWhileOneBesideItIsEmbedded`.
 - **Files.** File routing is content-driven. Publication is atomic, extraction and inputs are
   bounded by resource budgets, and file publication and the per-user install and PATH state are
   guarded by interprocess locks. No command writes over its own input unless asked to edit in

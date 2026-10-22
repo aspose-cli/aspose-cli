@@ -94,7 +94,8 @@ public sealed class LocalDocumentResourceLoader : IDisposable
     /// shared budget, cancellation and deadline failures abort the operation. An image that
     /// <see cref="ImageInput"/> refuses, when the caller reads an image, fails the load that
     /// reads it: it is thrown here and once more by the next <see cref="ThrowIfFailed"/>, in case
-    /// the engine swallowed it.
+    /// the engine swallowed it. An admitted SVG image comes back with only what it holds itself
+    /// (<see cref="ImageInput"/>), and one that does not parse as XML is omitted.
     /// </summary>
     /// <param name="reference">The reference the document names.</param>
     /// <param name="data">The resource's bytes, or empty when it was rejected.</param>
@@ -148,10 +149,17 @@ public sealed class LocalDocumentResourceLoader : IDisposable
                     return Omit();
                 }
                 refused = image ? ImageInput.Refusal(buffer, _budgets, path!, ImageInput.Corrupt) : null;
+                byte[]? content = image && refused is null ? ImageInput.KeepInternal(buffer) : buffer;
+                if (content is null)
+                {
+                    // An SVG that cannot be cleaned is left out like any refused resource.
+                    return Omit();
+                }
+
                 if (refused is null)
                 {
                     NetworkGate.Permit(path!);
-                    data = buffer;
+                    data = content;
                     return true;
                 }
             }

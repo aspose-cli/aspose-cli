@@ -133,15 +133,28 @@ public static class ImageInput
     /// An SVG image without the references outside it, which the gate lists; any other image as
     /// it is. An SVG that does not parse as XML is the caller's error.
     /// </summary>
-    private static byte[] KeepInternal(byte[] content, string path, Func<string, string, Exception> invalid)
+    private static byte[] KeepInternal(byte[] content, string path, Func<string, string, Exception> invalid) =>
+        KeepInternal(content) ?? throw invalid(path, UnparsedSvg);
+
+    // Why an SVG image that KeepInternal cannot clean is refused.
+    private const string UnparsedSvg = "its SVG does not parse as XML";
+
+    /// <summary>
+    /// An intact image's bytes for the engine: an SVG image without the references outside it,
+    /// which the gate lists; any other image as it is; null for an SVG that does not parse as XML.
+    /// </summary>
+    internal static byte[]? KeepInternal(byte[] content)
     {
         if (!IsSvg(content))
         {
             return content;
         }
 
-        SvgReferences.Cleaned cleaned = SvgReferences.KeepInternal(content)
-            ?? throw invalid(path, "its SVG does not parse as XML without a document type declaration");
+        if (SvgReferences.KeepInternal(content) is not { } cleaned)
+        {
+            return null;
+        }
+
         NetworkGate.Withhold(cleaned.Removed);
         return cleaned.Content;
     }

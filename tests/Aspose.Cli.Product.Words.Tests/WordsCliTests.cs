@@ -258,6 +258,51 @@ public sealed class WordsCliTests : IClassFixture<WordsFixture>, IDisposable
     }
 
     /// <summary>
+    /// An SVG beside the Markdown that names a picture outside the Markdown's directory, by an
+    /// absolute path, a parent path or a file URI, is imported without it: no part of the
+    /// document holds the picture or its name, and the result reports the removed reference.
+    /// </summary>
+    [Theory]
+    [InlineData("absolute")]
+    [InlineData("parent")]
+    [InlineData("uri")]
+    public void CreateFromMarkdown_AnSvgNamingAPictureOutsideTheDirectory_KeepsThePictureOut(string reference)
+    {
+        string outside = Directory.CreateDirectory(_workspace.File("outside")).FullName;
+        Directory.CreateDirectory(_workspace.File("doc"));
+        byte[] sentinel = Convert.FromBase64String(
+            "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGP4z8DwHwAFAAH/iZk9HQAAAABJRU5ErkJggg==");
+        string sentinelPath = Path.Combine(outside, "sentinel.png");
+        File.WriteAllBytes(sentinelPath, sentinel);
+        string href = reference switch
+        {
+            "absolute" => sentinelPath,
+            "parent" => "../outside/sentinel.png",
+            _ => new Uri(sentinelPath).AbsoluteUri,
+        };
+        File.WriteAllText(_workspace.File("doc/diagram.svg"),
+            $"""<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="40" height="40"><rect width="40" height="40" fill="#0000ff"/><image xlink:href="{System.Security.SecurityElement.Escape(href)}" width="40" height="40"/></svg>""");
+        File.WriteAllText(_workspace.File("doc/source.md"), "# Diagram\n\n![Diagram](diagram.svg)\n");
+
+        CliResult created = _workspace.Run("words", "create", "doc/out.docx", "--from-markdown", "doc/source.md", "--output-format", "json");
+
+        Assert.True(created.ExitCode == 0, created.StdErr);
+        Assert.Contains(JsonNode.Parse(created.StdOut)!["warnings"]!.AsArray(),
+            static warning => warning!["code"]!.GetValue<string>() == "REMOTE_RESOURCES_BLOCKED");
+        using System.IO.Compression.ZipArchive archive = System.IO.Compression.ZipFile.OpenRead(_workspace.File("doc/out.docx"));
+        Assert.Contains(archive.Entries, static entry => entry.FullName.StartsWith("word/media/", StringComparison.Ordinal));
+        foreach (System.IO.Compression.ZipArchiveEntry entry in archive.Entries)
+        {
+            using Stream stream = entry.Open();
+            using var buffer = new MemoryStream();
+            stream.CopyTo(buffer);
+            byte[] part = buffer.ToArray();
+            Assert.False(part.AsSpan().SequenceEqual(sentinel), entry.FullName);
+            Assert.DoesNotContain("sentinel", System.Text.Encoding.Latin1.GetString(part), StringComparison.OrdinalIgnoreCase);
+        }
+    }
+
+    /// <summary>
     /// A picture stored only as a link has no image bytes once loaded: review completes on it, as
     /// render does, whether the link names a picture beside the document or a resource the
     /// Markdown import omitted.
