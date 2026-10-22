@@ -47,11 +47,39 @@ public static class UserStorage
 
     /// <summary>
     /// Returns the current user's Aspose CLI local state root, <c>%LOCALAPPDATA%\aspose-cli</c>,
-    /// creating it when absent. Scratch directories, worker outputs, local service locks and
-    /// update staging all live below it.
+    /// creating it when absent, as the path the file system reaches what is created in it by.
+    /// Scratch directories, worker outputs, local service locks and update staging all live
+    /// below it.
     /// </summary>
+    /// <remarks>
+    /// The CLI compares a file it opened with the path it named (<c>VerifiedFileBoundary</c>,
+    /// the publication anchors), so every path below the root must be one no link or redirection
+    /// changes. Two do: a junction or link in the folder's own path, and the AppData redirection
+    /// of an MSIX-packaged host (such as a desktop application that runs the CLI), which creates
+    /// a new directory under <c>Packages\&lt;package&gt;\LocalCache\Local</c> even inside a root
+    /// that exists where the variable names. A fresh directory created in the root and removed
+    /// again shows where new content lands, and the root is reported there.
+    /// </remarks>
     public static string TemporaryRoot() =>
-        Directory.CreateDirectory(Path.Combine(LocalApplicationData(), DistributionInfo.Id)).FullName;
+        WhereContentLands(Directory.CreateDirectory(Path.Combine(LocalApplicationData(), DistributionInfo.Id)).FullName);
+
+    // The directory a new directory created in root is reached by; root itself when the file
+    // system reports no drive path for it.
+    private static string WhereContentLands(string root)
+    {
+        string probe = Directory.CreateDirectory(Path.Combine(root, ".location-" + Guid.NewGuid().ToString("N"))).FullName;
+        try
+        {
+            using Microsoft.Win32.SafeHandles.SafeFileHandle handle = OpenedFileBoundary.OpenNoFollow(probe, directory: true);
+            return !handle.IsInvalid && OpenedFileBoundary.FinalPath(handle) is { } landed && Path.GetDirectoryName(landed) is { } parent
+                ? parent
+                : root;
+        }
+        finally
+        {
+            Directory.Delete(probe);
+        }
+    }
 
     // The variable Windows sets for the user, as install.ps1 reads it; the known folder when it
     // is unset or not an absolute path.
