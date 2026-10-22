@@ -1,5 +1,8 @@
 using System.Net;
+using System.IO.Pipes;
 using System.Net.Sockets;
+using System.Security.AccessControl;
+using System.Security.Principal;
 using System.Text;
 using System.Text.Json.Nodes;
 using Aspose.Cli.Host.LocalServices;
@@ -370,6 +373,39 @@ public sealed class AppHttpSecurityTests
         {
             // The service closed the connection without executing the request (EndOfStreamException included).
         }
+        Assert.Equal("first.csv", (await app.Status())["file"]!.GetValue<string>());
+    }
+
+    /// <summary>
+    /// The service's control pipe is owned by the current user and grants nobody else access, so
+    /// another user of the machine cannot even connect to send a command.
+    /// </summary>
+    [Fact]
+    public async Task ControlPipe_GrantsAccessOnlyToTheCurrentUser()
+    {
+        await using var app = await AppTestSession.Start();
+        JsonNode marker = JsonNode.Parse(File.ReadAllText(
+            Path.Combine(app.Workspace.ConfigDirectory, "viewer", "service.json")))!;
+        var endpoint = new LocalServiceControlEndpoint("viewer", marker["id"]!.GetValue<string>());
+        using WindowsIdentity current = WindowsIdentity.GetCurrent();
+
+        PipeSecurity security;
+        using (var pipe = new NamedPipeClientStream(".", endpoint.PipeName, PipeDirection.InOut, PipeOptions.CurrentUserOnly))
+        {
+            await pipe.ConnectAsync(30_000);
+            security = pipe.GetAccessControl();
+        }
+
+        Assert.Equal(current.User, security.GetOwner(typeof(SecurityIdentifier)));
+        AuthorizationRule[] rules = [.. security.GetAccessRules(includeExplicit: true, includeInherited: true, typeof(SecurityIdentifier))
+            .Cast<AuthorizationRule>()];
+        Assert.NotEmpty(rules);
+        Assert.All(rules, rule =>
+        {
+            var access = Assert.IsType<PipeAccessRule>(rule);
+            Assert.True(access.AccessControlType == AccessControlType.Deny || Equals(current.User, access.IdentityReference),
+                $"The control pipe allows {access.IdentityReference} {access.PipeAccessRights}.");
+        });
         Assert.Equal("first.csv", (await app.Status())["file"]!.GetValue<string>());
     }
 
