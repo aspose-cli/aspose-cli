@@ -5524,7 +5524,7 @@
               "type": "boolean"
             },
             "page": {
-              "description": "The 1-based page the file holds or comes from; absent when it holds no single page, as a whole-document file, an attachment or form data does.",
+              "description": "The 1-based page the file holds or comes from; absent when it holds no single page, as a whole-document file does.",
               "type": "integer",
               "minimum": 1
             }

@@ -11,7 +11,7 @@ public sealed record PdfPageOutput : OutputItem
 
     /// <summary>
     /// The 1-based page the file holds or comes from; absent when it holds no single page, as a
-    /// whole-document file, an attachment or form data does.
+    /// whole-document file does.
     /// </summary>
     [Minimum(1)]
     public int? Page { get; init; }
