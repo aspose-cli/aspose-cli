@@ -144,8 +144,12 @@ public static class NetworkGate
         {
             // A whole-address prefix is longer than the built-in scheme prefix, so it wins for
             // WebRequest.Create; WebRequest.CreateDefault still reaches the built-in creator,
-            // whose HTTP requests go through the gate's proxy.
-            if (!WebRequest.RegisterPrefix(scheme + "://", new GateCreator(scheme)))
+            // whose HTTP requests go through the gate's proxy. For file, WebRequest would keep
+            // "file://" as "file:///", a local drive only, and a file request naming a host, as a
+            // reference to \\server\share\x or \\localhost\pipe\x becomes, would open the path;
+            // "file:/", which no URI parses from, is kept as written and precedes every file URI.
+            string prefix = scheme == Uri.UriSchemeFile ? scheme + ":/" : scheme + "://";
+            if (!WebRequest.RegisterPrefix(prefix, new GateCreator(scheme)))
             {
                 throw new InvalidOperationException($"The network gate could not take over the {scheme} request prefix.");
             }
