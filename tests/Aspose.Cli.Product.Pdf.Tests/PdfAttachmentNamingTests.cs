@@ -44,7 +44,7 @@ public sealed class PdfAttachmentNamingTests
         });
 
         Assert.Equal(original, File.ReadAllBytes(input));
-        PdfPageOutput output = Assert.Single(result.Outputs);
+        PdfExtractOutput output = Assert.Single(result.Outputs);
         Assert.Equal(Path.Combine(directory, written), output.Path);
         Assert.Equal(name, output.Name);
         Assert.Equal("attached", File.ReadAllText(output.Path));

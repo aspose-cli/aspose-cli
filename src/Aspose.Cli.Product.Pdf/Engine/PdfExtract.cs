@@ -29,10 +29,10 @@ internal static class PdfExtract
         // An attachment is copied as the PDF stores it, so it carries nothing evaluation mode adds.
         using ExtractionGuard guard = session.Outputs.BeginExtraction(request.Output.Path, request.Output.Overwrite,
             request.What == PdfExtractKinds.Attachments ? ExtractionContent.EmbeddedFiles : ExtractionContent.Derived);
-        IReadOnlyList<PdfPageOutput> outputs = request.What == PdfExtractKinds.Attachments
+        IReadOnlyList<PdfExtractOutput> outputs = request.What == PdfExtractKinds.Attachments
             ? ExtractAttachments(loaded.Document, guard)
             : [.. Extract(request, loaded, pages, guard, session.Budgets)
-                .Select(static item => new PdfPageOutput(FileObjects.Companion(item.File)) { Page = item.Page })];
+                .Select(static item => new PdfExtractOutput(FileObjects.Companion(item.File)) { Page = item.Page })];
         guard.Commit();
         return new PdfExtractResult
         {
@@ -102,11 +102,11 @@ internal static class PdfExtract
 
     // Each attachment as attachment-0001 and on, in name order; its own name, which the
     // document's author chose, is reported and never used as a path.
-    private static IReadOnlyList<PdfPageOutput> ExtractAttachments(
+    private static IReadOnlyList<PdfExtractOutput> ExtractAttachments(
         Document document,
         ExtractionGuard guard)
     {
-        var items = new List<PdfPageOutput>();
+        var items = new List<PdfExtractOutput>();
         foreach (FileSpecification file in document.EmbeddedFiles.OrderBy(
                      static item => item.UnicodeName ?? item.Name,
                      StringComparer.Ordinal))
@@ -125,7 +125,7 @@ internal static class PdfExtract
                     // bounded by the remaining extraction byte budget.
                     file.Contents.CopyTo(output);
                 });
-            items.Add(new PdfPageOutput(FileObjects.Companion(written)) { Name = string.IsNullOrEmpty(name) ? null : name });
+            items.Add(new PdfExtractOutput(FileObjects.Companion(written)) { Name = string.IsNullOrEmpty(name) ? null : name });
         }
 
         return items;

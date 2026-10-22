@@ -530,7 +530,7 @@ public sealed class PdfMutateTests
             Output = new ResolvedDirectory(fixture.File("form-data")),
             FormFormat = PdfFormats.FormData.Single(static format => format.Id == "json"),
         });
-        PdfPageOutput data = Assert.Single(exported.Outputs);
+        PdfExtractOutput data = Assert.Single(exported.Outputs);
         Assert.Equal("json", data.Format);
         Assert.Equal("form.json", Path.GetFileName(data.Path));
         Assert.Null(data.Page);
@@ -2279,7 +2279,7 @@ public sealed class PdfMutateTests
             FormFormat = PdfFormats.FormData.Single(candidate => candidate.Id == format),
         });
 
-        PdfPageOutput data = Assert.Single(exported.Outputs);
+        PdfExtractOutput data = Assert.Single(exported.Outputs);
         Assert.Equal(fileName, Path.GetFileName(data.Path));
         string text = File.ReadAllText(data.Path);
         Assert.Contains(marker, text, StringComparison.Ordinal);
