@@ -58,7 +58,7 @@ Each boundary names the tests that check it, and `SecurityClaimsTests` keeps tho
   `PdfArtifactWorkflowTests.ExtractAttachments_LaterBudgetFailureRollsBackTheWholeSet`,
   `CrossProcessLockTests`,
   `CustomerInstallerPowerShellTests.Install_WhileAnotherProcessHoldsTheDirectoryLock_ChangesNothingUntilItIsReleased`,
-  `OutputIsInputContractTests`, `PublicationOwnershipTests`.
+  `OutputIsInputContractTests`, `PublicationOwnershipTests`, `OwnershipMatrixTests`.
 - **Secrets.** License contents and passwords never enter logs or results. SDK evaluation
   effects are always disclosed.
   Checked by: `HostSecretTests`, `McpSecretExecutionTests`,
