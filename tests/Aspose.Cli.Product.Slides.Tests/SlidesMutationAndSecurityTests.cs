@@ -135,6 +135,35 @@ public sealed class SlidesMutationAndSecurityTests
             warning.Code == WarningCodes.RemoteResourcesBlocked && warning.AffectsCompleteness);
     }
 
+    /// <summary>
+    /// The omission warning names each picture the outline references but the presentation
+    /// leaves out, as the outline wrote it, with its own reason, and names no local folder.
+    /// </summary>
+    [Fact]
+    public void OmittedMarkdownImages_AreNamedWithTheirReasons()
+    {
+        using var fixture = new SlidesEngineFixture();
+        string inside = Directory.CreateDirectory(fixture.File("deck")).FullName;
+        string shared = Directory.CreateDirectory(fixture.File("shared")).FullName;
+        File.WriteAllBytes(Path.Combine(shared, "logo.png"), SlidesEngineFixture.Png(40));
+        string markdown = Path.Combine(inside, "deck.md");
+        File.WriteAllText(markdown,
+            "## Missing\n\n![](images/missing.png)\n\n## Outside\n\n![](../shared/logo.png)\n\n## Remote\n\n![](https://example.test/hero.png)\n");
+
+        SlidesCreateResult result = SlidesCreate.Run(fixture.Session, new SlidesCreateRequest
+        {
+            Output = TestOutput.At(Path.Combine(inside, "deck.pptx")),
+            Markdown = new SourceFile("--from-markdown", markdown),
+        });
+
+        Warning warning = Assert.Single(result.Warnings ?? [], static warning => warning.Code == WarningCodes.RemoteResourcesBlocked);
+        Assert.Contains("images/missing.png (not found)", warning.Message, StringComparison.Ordinal);
+        Assert.Contains("../shared/logo.png (outside the input folder)", warning.Message, StringComparison.Ordinal);
+        Assert.Contains("https://example.test/hero.png (network address)", warning.Message, StringComparison.Ordinal);
+        Assert.DoesNotContain("external", warning.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain(shared, warning.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
     private static byte[][] Media(string presentation)
     {
         using System.IO.Compression.ZipArchive archive = System.IO.Compression.ZipFile.OpenRead(presentation);

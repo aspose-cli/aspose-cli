@@ -175,7 +175,9 @@ public sealed class VerifiedResourceReadTests
         bool[] results = await Task.WhenAll(Enumerable.Range(0, 12).Select(index =>
             Task.Run(() => resources.TryRead("data", out _))));
         Assert.Equal(3, results.Count(static accepted => accepted));
-        Assert.Equal(9, resources.OmittedCount);
+        // Nine refused requests for one reference leave out one resource.
+        Assert.Equal(1, resources.OmittedCount);
+        Assert.Contains("data (over the total size limit for resources)", resources.Warning!.Message, StringComparison.Ordinal);
     }
 
     [Fact]

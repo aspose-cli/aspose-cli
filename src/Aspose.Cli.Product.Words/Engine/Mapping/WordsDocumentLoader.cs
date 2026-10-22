@@ -318,7 +318,7 @@ internal sealed class WordsDocumentLoader
 
         public ResourceLoadingAction ResourceLoading(ResourceLoadingArgs args)
         {
-            if (_resources.TryRead(args.Uri, out byte[] data, image: _checksImages && args.ResourceType == ResourceType.Image))
+            if (_resources.TryRead(args.Uri, out byte[] data, image: _checksImages && args.ResourceType == ResourceType.Image, written: args.OriginalUri))
             {
                 args.SetData(data);
                 return ResourceLoadingAction.UserProvided;
@@ -346,14 +346,17 @@ internal sealed record LoadedDocument(
 
     internal void Retain(Document document) => _imports.Add(document);
 
-    public int RemoteResourcesBlocked
+    public IReadOnlyList<OmittedResource> OmittedResources
     {
         get
         {
             Resources.ThrowIfFailed();
-            return Resources.OmittedCount;
+            return Resources.Omitted;
         }
     }
+
+    /// <summary>The number of resources the load left out, each reference once.</summary>
+    public int RemoteResourcesBlocked => OmittedResources.Count;
 
     public void Dispose()
     {

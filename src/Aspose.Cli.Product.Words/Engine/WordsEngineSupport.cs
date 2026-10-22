@@ -12,7 +12,7 @@ internal static class WordsEngineSupport
     internal static IReadOnlyList<Warning>? InputWarnings(LoadedDocument loaded)
     {
         var warnings = new List<Warning>();
-        if (LocalDocumentResourceLoader.OmissionWarning(loaded.RemoteResourcesBlocked) is { } omitted)
+        if (LocalDocumentResourceLoader.OmissionWarning(loaded.OmittedResources) is { } omitted)
         {
             warnings.Add(omitted);
         }

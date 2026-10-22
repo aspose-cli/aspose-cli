@@ -92,7 +92,7 @@ internal static class WordsEdit
                 inputHadRevisions && KeepsRevisions(loaded.Document, format),
                 inputWasSigned,
                 inputProtection,
-                loaded.RemoteResourcesBlocked)),
+                loaded.OmittedResources)),
         };
     }
 
@@ -396,7 +396,7 @@ internal static class WordsEdit
         bool revisionsKept,
         bool inputWasSigned,
         ProtectionType inputProtection,
-        int remoteResourcesBlocked)
+        IReadOnlyList<OmittedResource> omittedResources)
     {
         var extra = new List<Warning>();
         if (revisionsKept)
@@ -423,7 +423,7 @@ internal static class WordsEdit
 
         extra.AddRange(ConversionWarnings(document, format));
 
-        if (LocalDocumentResourceLoader.OmissionWarning(remoteResourcesBlocked) is { } omitted)
+        if (LocalDocumentResourceLoader.OmissionWarning(omittedResources) is { } omitted)
         {
             extra.Add(omitted);
         }
