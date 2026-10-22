@@ -28,8 +28,9 @@ internal sealed record IsolationCase(
 /// that references a loopback HTTP server (<see cref="ReferenceKind.Network"/>,
 /// <see cref="ReferenceKind.Decoy"/>) or sentinel files outside its folder
 /// (<see cref="ReferenceKind.Files"/>, and through the administrative share,
-/// <see cref="ReferenceKind.Unc"/>), and must leave the server unasked and every output free of
-/// the sentinels. The <see cref="ReferenceKind.Control"/> of each format references only files of
+/// <see cref="ReferenceKind.Unc"/>) or a named pipe of its own (<see cref="ReferenceKind.Pipe"/>),
+/// and must leave the server unasked, the pipe unconnected and every output free of the
+/// sentinels. The <see cref="ReferenceKind.Control"/> of each format references only files of
 /// its own folder the same ways and must succeed and keep them, so the forms the matrix uses are
 /// ones the product follows where it is allowed to, and an inside resource is never reported.
 /// </summary>
@@ -52,7 +53,7 @@ internal static class IsolationCases
     /// <summary>
     /// The unmarked sample that every run checks: the formats with known reference handling of
     /// their own (Cells ODS, PDF HTML import) and each other product's own format, each rendered
-    /// or created from, against the outside sentinels and as a control.
+    /// or created from, against the outside sentinels, the pipe and as a control.
     /// </summary>
     private static readonly (string Product, string Format)[] SampleRows =
         [("cells", "ods"), ("pdf", "html"), ("slides", "pptx"), ("words", "docx")];
@@ -168,7 +169,8 @@ internal static class IsolationCases
         ScenarioLicense.Project(workspace.Path);
         var layout = new IsolationLayout(workspace.Path);
         await using var server = new ResourceHttpServer();
-        References references = ReferencesOf(item, layout, server.Url);
+        await using var pipe = new IsolationPipe();
+        References references = ReferencesOf(item, layout, server.Url, pipe.Name);
         // The command runs in the input folder, as the Skills direct: a relative reference then
         // means the same from the document and from the working directory.
         ScenarioLicense.Project(layout.Input);
@@ -195,6 +197,8 @@ internal static class IsolationCases
 
         List<string> leaks = Leaks(workspace.Path, written, result, IsolationLayout.SentinelColour, IsolationLayout.Marker);
         Assert.True(server.RequestCount == 0, Describe($"The command asked the loopback server for: {string.Join("; ", server.Requests)}"));
+        int connections = item.Kind == ReferenceKind.Pipe ? await pipe.SettledConnections() : pipe.Connections;
+        Assert.True(connections == 0, Describe($"The command opened the pipe {IsolationPipe.DevicePath(pipe.Name)} that the document names, {connections} time(s): something opened a reference by its path."));
         Assert.True(leaks.Count == 0, Describe($"An output holds a sentinel from outside the input folder:{Environment.NewLine}{string.Join(Environment.NewLine, leaks)}"));
         if (item.Kind != ReferenceKind.Control)
         {
@@ -215,12 +219,12 @@ internal static class IsolationCases
         }
     }
 
-    private static References ReferencesOf(IsolationCase item, IsolationLayout layout, string serverUrl)
+    private static References ReferencesOf(IsolationCase item, IsolationLayout layout, string serverUrl, string pipe)
     {
         int depth = IsolationDocuments.PackageDepth(item.Format);
         if (item.Kind != ReferenceKind.Unc)
         {
-            return References.For(item.Kind, layout, serverUrl, depth);
+            return References.For(item.Kind, layout, serverUrl, depth, pipe: pipe);
         }
         (string? image, string? unreachable) = layout.Unc("sentinel.png");
         Assert.SkipWhen(image is null, unreachable ?? "The administrative share is not reachable.");
