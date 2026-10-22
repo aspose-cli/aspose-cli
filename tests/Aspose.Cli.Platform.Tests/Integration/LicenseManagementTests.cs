@@ -134,6 +134,44 @@ public sealed class LicenseManagementTests
         Assert.False(File.Exists(Path.Combine(workspace.ConfigDirectory, ".aspose-cli-config.json")));
     }
 
+    /// <summary>
+    /// `license install` leaves every copy of the license readable only by the current user, even
+    /// in a configuration directory that lets everyone read what is created inside it: installed
+    /// in process or through a worker (`--timeout`), as new files and as replacements.
+    /// </summary>
+    [LicensedFact]
+    public void InstalledLicense_InASharedConfigurationDirectory_IsReadableOnlyByTheCurrentUser()
+    {
+        Requires.Windows();
+        using var workspace = new TempWorkspace();
+        AccessRules.ShareForReading(workspace.ConfigDirectory);
+        string[] inProcess = [];
+        string[] worker = ["--timeout", "60"];
+
+        // In process (new copies), then through a worker (replacements).
+        foreach (string[] run in new[] { inProcess, worker })
+        {
+            CliResult installed = workspace.Run(["license", "install", TestLicense.Path!, "--output-format", "json", .. run]);
+
+            Assert.True(installed.ExitCode == 0, installed.StdErr);
+            string[] copies = [.. JsonNode.Parse(installed.StdOut)!["products"]!.AsArray()
+                .Select(static product => product!["path"]!.GetValue<string>())
+                .Distinct(StringComparer.OrdinalIgnoreCase)];
+            Assert.NotEmpty(copies);
+            Assert.All(copies, copy =>
+            {
+                Assert.StartsWith(Path.GetFullPath(workspace.ConfigDirectory), Path.GetFullPath(copy), StringComparison.OrdinalIgnoreCase);
+                AccessRules.AssertCurrentUserOnly(copy);
+            });
+        }
+        // The worker also installs new copies, not only replacements.
+        Assert.Equal(0, workspace.Run("license", "remove", "--output-format", "json").ExitCode);
+        CliResult again = workspace.Run(["license", "install", TestLicense.Path!, "--output-format", "json", .. worker]);
+        Assert.True(again.ExitCode == 0, again.StdErr);
+        Assert.All(JsonNode.Parse(again.StdOut)!["products"]!.AsArray(),
+            product => AccessRules.AssertCurrentUserOnly(product!["path"]!.GetValue<string>()));
+    }
+
     [LicensedFact]
     public void ValidatedTotalLicense_InstallsAndRemovesAtomicallyThroughWorkers()
     {

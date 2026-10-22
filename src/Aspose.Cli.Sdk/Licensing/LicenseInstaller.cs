@@ -58,11 +58,8 @@ public static class LicenseInstaller
                 ? worker.CreateDirectory("license-snapshot")
                 : UserStorage.CreateTemporaryDirectory("license-install");
             string snapshot = Path.Combine(snapshotDirectory, "source.lic");
-            using (var created = new FileStream(snapshot, FileMode.CreateNew, FileAccess.ReadWrite, FileShare.None))
-            {
-                created.Write(contents);
-                created.Flush(flushToDisk: true);
-            }
+            // A license is a secret: only the current user may read any copy of it.
+            CurrentUserFileAccess.Write(snapshot, contents);
 
             // Native validators may open the path, but managed writers cannot
             // replace or rewrite the file while its validation lease is held.
@@ -93,7 +90,7 @@ public static class LicenseInstaller
             {
                 resourceBudgets.Deadline.ThrowIfExpired("license-install-stage");
                 transaction.Stage(destination, overwrite: true,
-                    staged => File.WriteAllBytes(staged, contents));
+                    staged => CurrentUserFileAccess.Write(staged, contents));
             }
             transaction.Commit();
             return destinations;

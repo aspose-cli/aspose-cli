@@ -65,8 +65,11 @@ the check is its authority.
   (`OutputPipelineEncryptionTests`, `PdfEditVerificationTests`, `PdfRedactionReachTests`,
   `PdfSignTests`, `PdfResourceLoadingTests`; D7).
 - Per-user state and local services are reachable only by the current user: per-user state lives
-  under `UserStorage` (`APCLI016`, `UserStorageTests`), and the services answer only their session
-  and control secret (`AppHttpSecurityTests`, `LocalServiceRuntimeTests`).
+  under `UserStorage` (`APCLI016`, `UserStorageTests`), every file that holds a secret (a license,
+  a service's control secret) is written through `CurrentUserFileAccess` whatever its folder's
+  rules (`LicenseInstallerTests`, `LicenseManagementTests`), and the services answer only their
+  session and control secret over a current-user pipe (`AppHttpSecurityTests`,
+  `LocalServiceRuntimeTests`).
 - [SECURITY.md](SECURITY.md) names the tests behind each boundary it states, and
   `SecurityClaimsTests` keeps those names current.
 - The [gates](#gates) judge a change: never add a known violation to make a change pass. Code

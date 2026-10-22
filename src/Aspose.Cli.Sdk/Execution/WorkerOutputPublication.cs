@@ -92,6 +92,8 @@ public static class WorkerOutputPublisher
         using var input = new FileStream(entry.Staged, FileMode.Open, FileAccess.Read, FileShare.Read);
         if (!entry.StagedSnapshot.VersionEquals(FilePublicationSnapshot.Capture(entry.Staged)))
         { throw new IOException("The worker output was replaced after manifest validation."); }
+        // A secret keeps the worker's current-user-only rules, given before any byte is copied.
+        CurrentUserFileAccess.Mirror(entry.Staged, destination);
         using var output = new FileStream(destination, FileMode.Truncate, FileAccess.Write, FileShare.None);
         byte[] buffer = new byte[81920];
         int read;

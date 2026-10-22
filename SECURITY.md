@@ -27,7 +27,10 @@ Each boundary names the tests that check it, and `SecurityClaimsTests` keeps tho
   `ViewerServiceHttpTests.DocumentPageAndParts_AreConfinedToTheirOrigin`,
   `AppCommandTests.App_WithADocument_MountsPreviewOnItsLoopbackOrigin`,
   `LocalServiceRuntimeTests.ControlProtocol_RejectsWrongTokenAndNonce`,
-  `LocalServiceRuntimeTests.ViewerService_IsOnePerConfigurationDirectory`.
+  `LocalServiceRuntimeTests.ViewerService_IsOnePerConfigurationDirectory`,
+  `AppHttpSecurityTests.ServiceSecret_InASharedConfigurationDirectory_IsReadableOnlyByTheCurrentUser`,
+  `LicenseInstallerTests.InstalledLicense_InASharedFolder_IsReadableOnlyByTheCurrentUser`,
+  `LicenseManagementTests.InstalledLicense_InASharedConfigurationDirectory_IsReadableOnlyByTheCurrentUser`.
 - **MCP.** `capabilities` is read-only. `execute` runs product commands and only the host
   commands that read or publish new outputs; it cannot install, update, change licenses or start
   and stop services.

@@ -178,12 +178,34 @@ public sealed class LicenseInstallerTests
         {
             Assert.Equal([target], LicenseInstaller.InstallMany(TestBudgets.Create(), source, _ => [target]));
             Assert.Equal("replacement", File.ReadAllText(target));
-            Assert.Contains(new FileInfo(target).GetAccessControl()
-                .GetAccessRules(includeExplicit: true, includeInherited: false, typeof(SecurityIdentifier))
-                .Cast<FileSystemAccessRule>(), rule => rule.IdentityReference == everyone
-                    && rule.AccessControlType == AccessControlType.Allow
-                    && rule.FileSystemRights.HasFlag(FileSystemRights.ReadData));
+            // A license is a secret: the replacement does not keep the broader rule.
+            AccessRules.AssertCurrentUserOnly(target);
         }
+    }
+
+    /// <summary>
+    /// An installed license is readable only by the current user, whatever its folder lets
+    /// others read, both as a new file and as the replacement of an existing one.
+    /// </summary>
+    [Fact]
+    [SupportedOSPlatform("windows")]
+    public void InstalledLicense_InASharedFolder_IsReadableOnlyByTheCurrentUser()
+    {
+        Requires.Windows();
+        using var temp = new TempDirectory();
+        string directory = Directory.CreateDirectory(temp.File("licenses")).FullName;
+        AccessRules.ShareForReading(directory);
+        string created = Path.Combine(directory, "alpha.lic");
+        string replaced = Path.Combine(directory, "beta.lic");
+        WriteFile(replaced, "existing license");
+        string source = temp.File("source.lic");
+        File.WriteAllText(source, "replacement");
+
+        Assert.Equal(2, LicenseInstaller.InstallMany(TestBudgets.Create(), source, _ => [created, replaced]).Count);
+        Assert.Equal("replacement", File.ReadAllText(replaced));
+
+        AccessRules.AssertCurrentUserOnly(created);
+        AccessRules.AssertCurrentUserOnly(replaced);
     }
 
     [Fact]
@@ -280,6 +302,44 @@ public sealed class LicenseInstallerTests
             WorkerOutputPublisher.Publish(manifestPath, TestBudgets.Create());
             Assert.Equal("new license", File.ReadAllText(installed));
             Assert.False(File.Exists(deleted));
+        }
+        finally { UserStorage.TryDeleteTree(workerRoot); }
+    }
+
+    /// <summary>
+    /// A license a worker stages is still readable only by the current user once its parent
+    /// publishes it, as a new file and as the replacement of an existing one, whatever its folder
+    /// lets others read.
+    /// </summary>
+    [Fact]
+    [SupportedOSPlatform("windows")]
+    public void WorkerStagedLicense_InASharedFolder_IsReadableOnlyByTheCurrentUser()
+    {
+        Requires.Windows();
+        using var temp = new TempDirectory();
+        string directory = Directory.CreateDirectory(temp.File("licenses")).FullName;
+        AccessRules.ShareForReading(directory);
+        string created = Path.Combine(directory, "alpha.lic");
+        string replaced = Path.Combine(directory, "beta.lic");
+        WriteFile(replaced, "existing license");
+        string workerRoot = WorkerOutputSession.CreateRoot();
+        string manifestPath = Path.Combine(workerRoot, WorkerOutputSession.ManifestName);
+        var worker = new WorkerOutputSession(workerRoot, manifestPath);
+        using var deadline = OperationDeadline.Start(null);
+        var budgets = new ResourceBudgetLedger(deadline, outputSession: worker);
+        try
+        {
+            string source = temp.File("source.lic");
+            File.WriteAllText(source, "new license");
+            LicenseInstaller.InstallMany(budgets, source, _ => [created, replaced]);
+            worker.SealForPublication();
+
+            WorkerOutputPublisher.Publish(manifestPath, TestBudgets.Create());
+
+            Assert.Equal("new license", File.ReadAllText(created));
+            Assert.Equal("new license", File.ReadAllText(replaced));
+            AccessRules.AssertCurrentUserOnly(created);
+            AccessRules.AssertCurrentUserOnly(replaced);
         }
         finally { UserStorage.TryDeleteTree(workerRoot); }
     }
