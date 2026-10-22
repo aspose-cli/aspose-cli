@@ -281,7 +281,9 @@ public sealed class PdfResourceLoadingTests
             && warning["affectsCompleteness"]!.GetValue<bool>());
         JsonNode blocked = Assert.Single(warnings, warning => warning!["code"]!.GetValue<string>() == "REMOTE_RESOURCES_BLOCKED"
             && warning["message"]!.GetValue<string>().Contains("were blocked or removed", StringComparison.Ordinal))!;
-        Assert.Contains(outside, blocked["message"]!.GetValue<string>(), StringComparison.OrdinalIgnoreCase);
+        // The file is named, never its folder.
+        Assert.Contains("outside.png", blocked["message"]!.GetValue<string>(), StringComparison.Ordinal);
+        Assert.DoesNotContain(workspace.Path, blocked["message"]!.GetValue<string>(), StringComparison.OrdinalIgnoreCase);
         Assert.Contains($"ftp://{server.Url["http://".Length..]}/ftp.png", blocked["message"]!.GetValue<string>(), StringComparison.Ordinal);
         using var document = new Document(output);
         Assert.Single(document.Pages[1].Resources.Images.Cast<XImage>(), image => image.Width == 1 && image.Height == 1);

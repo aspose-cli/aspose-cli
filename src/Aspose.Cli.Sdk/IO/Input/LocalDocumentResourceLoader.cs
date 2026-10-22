@@ -54,6 +54,8 @@ public sealed class LocalDocumentResourceLoader : IDisposable
         _baseUri = new Uri(new Uri(Path.EndsInDirectorySeparator(_root)
             ? _root : _root + Path.DirectorySeparatorChar).AbsoluteUri);
         _boundary = new VerifiedFileBoundary(_root);
+        // The gate names the files it blocks for this document as this loader names them.
+        NetworkGate.NameFilesBelow(_root);
         _maximumItems = maximumItems;
         _maximumItemBytes = maximumItemBytes;
         _maximumTotalBytes = maximumTotalBytes;
@@ -299,7 +301,12 @@ public sealed class LocalDocumentResourceLoader : IDisposable
     /// is named relative to the input folder when below it and by its file name otherwise; a
     /// network address loses its query. Long references are shortened.
     /// </summary>
-    public string ReferenceName(string reference)
+    public string ReferenceName(string reference) => NameOf(reference, _root);
+
+    /// <inheritdoc cref="ReferenceName(string)"/>
+    /// <param name="reference">The reference as the document wrote it.</param>
+    /// <param name="root">The input folder, or null when there is none: a local file is then named by its file name.</param>
+    internal static string NameOf(string reference, string? root)
     {
         ArgumentNullException.ThrowIfNull(reference);
         string named = reference.Trim();
@@ -316,8 +323,8 @@ public sealed class LocalDocumentResourceLoader : IDisposable
             if (local is not null)
             {
                 string full = Path.GetFullPath(local);
-                named = FilePaths.IsWithin(_root, full, allowEqual: false)
-                    ? Path.GetRelativePath(_root, full)
+                named = root is not null && FilePaths.IsWithin(root, full, allowEqual: false)
+                    ? Path.GetRelativePath(root, full)
                     : Path.GetFileName(full.TrimEnd('\\', '/'));
             }
             else if (uri is not null && !string.IsNullOrEmpty(uri.Query))
