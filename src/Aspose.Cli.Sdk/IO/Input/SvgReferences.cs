@@ -13,7 +13,9 @@ namespace Aspose.Cli.Sdk.IO.Input;
 /// Every other reference, in an attribute, in CSS or in a processing instruction, is removed, as
 /// are <c>xml:base</c> and SMIL animation elements, whose values can set a reference. An element
 /// that exists to show what a removed reference named, anything but a link (<c>a</c>), goes with
-/// it, since an engine may fail on an image without one.
+/// it, since an engine may fail on an image without one. Script goes too, whatever an engine
+/// does with it: every <c>script</c> element in any namespace, every <c>on*</c> event attribute
+/// and every <c>javascript:</c> reference.
 /// </summary>
 public static class SvgReferences
 {
@@ -48,7 +50,14 @@ public static class SvgReferences
     /// <summary>An SVG that names nothing outside itself, and what was removed from it.</summary>
     /// <param name="Content">The SVG; the input's own bytes when nothing was removed.</param>
     /// <param name="Removed">Each reference or element removed, in document order.</param>
-    public sealed record Cleaned(byte[] Content, IReadOnlyList<string> Removed);
+    public sealed record Cleaned(byte[] Content, IReadOnlyList<string> Removed)
+    {
+        /// <summary>
+        /// Whether script was among what was removed: a <c>script</c> element, an <c>on*</c>
+        /// event attribute or a <c>javascript:</c> reference.
+        /// </summary>
+        public bool Scripted { get; init; }
+    }
 
     /// <summary>
     /// The SVG with every reference outside itself removed and without its document type, or null
@@ -75,6 +84,7 @@ public static class SvgReferences
 
         document.DocumentType?.Remove();
         var removed = new List<string>();
+        bool scripted = false;
         // A processing instruction such as xml-stylesheet names a style sheet to fetch.
         foreach (XProcessingInstruction instruction in document.DescendantNodes().OfType<XProcessingInstruction>().ToList())
         {
@@ -89,14 +99,15 @@ public static class SvgReferences
                 // Removed with an ancestor.
                 continue;
             }
-            if (element != document.Root && IsAnimation(element))
+            if (element != document.Root && (IsAnimation(element) || IsScript(element)))
             {
+                scripted |= IsScript(element);
                 removed.Add($"<{element.Name.LocalName}>");
                 element.Remove();
                 continue;
             }
 
-            CleanAttributes(document, element, removed);
+            CleanAttributes(document, element, removed, ref scripted);
             if (element.Document is not null && element.Name.LocalName.Equals("style", StringComparison.OrdinalIgnoreCase))
             {
                 foreach (XText text in element.Nodes().OfType<XText>().ToList())
@@ -124,7 +135,7 @@ public static class SvgReferences
         {
             document.Save(writer);
         }
-        return new Cleaned(output.ToArray(), removed);
+        return new Cleaned(output.ToArray(), removed) { Scripted = scripted };
     }
 
     // The SVG parsed with no resolver, or null when it does not parse.
@@ -147,12 +158,34 @@ public static class SvgReferences
         element.Name.LocalName.Equals("set", StringComparison.OrdinalIgnoreCase)
         || element.Name.LocalName.StartsWith("animate", StringComparison.OrdinalIgnoreCase);
 
-    private static void CleanAttributes(XDocument document, XElement element, List<string> removed)
+    // A script element, whatever its namespace or prefix: SVG's own, or XHTML's inside foreignObject.
+    private static bool IsScript(XElement element) =>
+        element.Name.LocalName.Equals("script", StringComparison.OrdinalIgnoreCase);
+
+    // An event handler attribute, such as onload or onclick, whose value is script.
+    private static bool IsEventHandler(XAttribute attribute) =>
+        attribute.Name.LocalName.Length > 2 && attribute.Name.LocalName.StartsWith("on", StringComparison.OrdinalIgnoreCase);
+
+    // A javascript: reference, spelled as a browser reads it: whitespace and control characters
+    // inside the scheme are ignored.
+    private static bool IsJavaScript(string reference) =>
+        new string([.. reference.Where(static character => !char.IsWhiteSpace(character) && !char.IsControl(character))])
+            .StartsWith("javascript:", StringComparison.OrdinalIgnoreCase);
+
+    private static void CleanAttributes(XDocument document, XElement element, List<string> removed, ref bool scripted)
     {
         foreach (XAttribute attribute in element.Attributes().ToList())
         {
             if (attribute.IsNamespaceDeclaration)
             {
+                continue;
+            }
+
+            if (IsEventHandler(attribute))
+            {
+                scripted = true;
+                removed.Add(attribute.Name.LocalName);
+                attribute.Remove();
                 continue;
             }
 
@@ -167,6 +200,7 @@ public static class SvgReferences
             {
                 if (!IsInternal(attribute.Value))
                 {
+                    scripted |= IsJavaScript(attribute.Value);
                     removed.Add(attribute.Value);
                     attribute.Remove();
                     // A link keeps its content; any other element shows what it named.

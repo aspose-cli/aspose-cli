@@ -115,6 +115,28 @@ public sealed class SvgReferencesTests
         Assert.DoesNotContain("example.test", Encoding.UTF8.GetString(cleaned.Content), StringComparison.Ordinal);
     }
 
+    /// <summary>Script goes whatever an engine does with it: script elements, event attributes and javascript: links.</summary>
+    [Theory]
+    [InlineData("""<script>fetch('http://example.test/')</script>""")]
+    [InlineData("""<script type="text/ecmascript"><![CDATA[fetch('http://example.test/')]]></script>""")]
+    [InlineData("""<foreignObject><h:script xmlns:h="http://www.w3.org/1999/xhtml">fetch('http://example.test/')</h:script></foreignObject>""")]
+    [InlineData("""<SCRIPT>fetch('http://example.test/')</SCRIPT>""")]
+    [InlineData("""<rect width="4" height="4" onload="fetch('http://example.test/')"/>""")]
+    [InlineData("""<g onClick="fetch('http://example.test/')"><rect width="4" height="4"/></g>""")]
+    [InlineData("""<a href="javascript:fetch('http://example.test/')"><text>label</text></a>""")]
+    [InlineData("""<a xlink:href=" java&#9;script:fetch('http://example.test/')"><text>label</text></a>""")]
+    public void KeepInternal_RemovesScript(string content)
+    {
+        SvgReferences.Cleaned cleaned = SvgReferences.KeepInternal(Svg(content))!;
+
+        Assert.NotEmpty(cleaned.Removed);
+        string kept = Encoding.UTF8.GetString(cleaned.Content);
+        Assert.DoesNotContain("script", kept, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("fetch", kept, StringComparison.Ordinal);
+        Assert.DoesNotContain(" on", kept, StringComparison.OrdinalIgnoreCase);
+        Assert.Empty(SvgReferences.KeepInternal(cleaned.Content)!.Removed);
+    }
+
     private static byte[] Svg(string content) => Encoding.UTF8.GetBytes(
         $"""<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="4" height="4">{content}</svg>""");
 }
