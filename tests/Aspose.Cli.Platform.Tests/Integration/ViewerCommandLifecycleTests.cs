@@ -26,41 +26,48 @@ public sealed class ViewerCommandLifecycleTests
             JsonNode first = Start(workspace, "book.xlsx");
             string id = first["id"]!.GetValue<string>();
             string url = first["url"]!.GetValue<string>();
+            string page = Address(url);
             Assert.False(first["reused"]!.GetValue<bool>());
             Assert.Equal("cells", first["product"]!.GetValue<string>());
             Assert.Equal($"/d/{id}/", new Uri(url).AbsolutePath);
 
-            // Every client reads the same address; the viewer sets no cookie to tell them apart.
-            using var firstClient = new HttpClient(new HttpClientHandler { UseCookies = false, AllowAutoRedirect = false })
-            {
-                Timeout = TimeSpan.FromSeconds(30),
-            };
-            using var secondClient = new HttpClient(new HttpClientHandler { UseCookies = false, AllowAutoRedirect = false })
-            {
-                Timeout = TimeSpan.FromSeconds(30),
-            };
-            foreach (HttpClient client in new[] { firstClient, secondClient, firstClient })
-            {
-                using HttpResponseMessage page = await client.GetAsync(url);
-                Assert.Equal(HttpStatusCode.OK, page.StatusCode);
-                Assert.False(page.Headers.Contains("Set-Cookie"));
-                Assert.Contains("definePresenter('cells'", await page.Content.ReadAsStringAsync(), StringComparison.Ordinal);
-            }
-
+            // Status names the same document with a ticket of its own.
             JsonNode discovered = Assert.Single(
                 workspace.Run("preview", "status", id, "--output-format", "json").Json()["sessions"]!.AsArray())!;
-            Assert.Equal(url, discovered["url"]!.GetValue<string>());
+            string discoveredUrl = discovered["url"]!.GetValue<string>();
+            Assert.Equal(page, Address(discoveredUrl));
+            Assert.NotEqual(url, discoveredUrl);
+
+            // Each browser enters once through an address the CLI returned; its session serves it after that.
+            string firstCookie = await Enter(url);
+            string secondCookie = await Enter(discoveredUrl);
+            Assert.NotEqual(firstCookie, secondCookie);
+            using var client = new HttpClient(new HttpClientHandler { UseCookies = false, AllowAutoRedirect = false })
+            {
+                Timeout = TimeSpan.FromSeconds(30),
+            };
+            foreach (string cookie in new[] { firstCookie, secondCookie, firstCookie })
+            {
+                using HttpResponseMessage shown = await Send(client, HttpMethod.Get, page, cookie);
+                Assert.Equal(HttpStatusCode.OK, shown.StatusCode);
+                Assert.False(shown.Headers.Contains("Set-Cookie"));
+                Assert.Contains("definePresenter('cells'", await shown.Content.ReadAsStringAsync(), StringComparison.Ordinal);
+            }
 
             JsonNode again = Start(workspace, "book.xlsx");
             Assert.True(again["reused"]!.GetValue<bool>());
             Assert.Equal(id, again["id"]!.GetValue<string>());
-            Assert.Equal(url, again["url"]!.GetValue<string>());
-            using (HttpResponseMessage afterReuse = await secondClient.GetAsync(url))
+            string againUrl = again["url"]!.GetValue<string>();
+            Assert.Equal(page, Address(againUrl));
+            Assert.NotEqual(url, againUrl);
+            Assert.NotEqual(discoveredUrl, againUrl);
+            await Enter(againUrl);
+            using (HttpResponseMessage afterReuse = await Send(client, HttpMethod.Get, page, secondCookie))
             {
                 Assert.Equal(HttpStatusCode.OK, afterReuse.StatusCode);
             }
             // The viewer answers reads only: nothing can be posted to it.
-            using (HttpResponseMessage refused = await secondClient.PostAsync(url, content: null))
+            using (HttpResponseMessage refused = await Send(client, HttpMethod.Post, page, secondCookie))
             {
                 Assert.Equal(HttpStatusCode.MethodNotAllowed, refused.StatusCode);
             }
@@ -69,7 +76,7 @@ public sealed class ViewerCommandLifecycleTests
             Assert.Equal("words", other["product"]!.GetValue<string>());
             // One service, one process: only the document changes.
             Assert.Equal(first["pid"]!.GetValue<int>(), other["pid"]!.GetValue<int>());
-            Assert.NotEqual(url, other["url"]!.GetValue<string>());
+            Assert.NotEqual(page, Address(other["url"]!.GetValue<string>()));
             JsonNode status = workspace.Run("preview", "status", "--output-format", "json").Json();
             Assert.Equal(2, status["sessions"]!.AsArray().Count);
 
@@ -84,6 +91,29 @@ public sealed class ViewerCommandLifecycleTests
         {
             workspace.Run("preview", "stop", "--output-format", "json");
         }
+    }
+
+    /// <summary>A service address without its entry ticket.</summary>
+    private static string Address(string url)
+    {
+        int query = url.IndexOf('?', StringComparison.Ordinal);
+        Assert.True(query > 0, $"The address {url} carries no entry ticket.");
+        return url[..query];
+    }
+
+    /// <summary>Opens an entry address as a new browser and returns the session it was admitted with.</summary>
+    private static async Task<string> Enter(string url)
+    {
+        string? cookie = await LocalServiceEntry.Cookie(url);
+        Assert.True(cookie is not null, $"The entry address {new Uri(url).AbsolutePath} admitted no browser.");
+        return cookie;
+    }
+
+    private static Task<HttpResponseMessage> Send(HttpClient client, HttpMethod method, string url, string cookie)
+    {
+        var request = new HttpRequestMessage(method, url);
+        request.Headers.Add("Cookie", cookie);
+        return client.SendAsync(request);
     }
 
     [Fact]
