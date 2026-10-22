@@ -420,14 +420,18 @@ public sealed class AppHttpSecurityTests
             security = pipe.GetAccessControl();
         }
 
-        Assert.Equal(current.User, security.GetOwner(typeof(SecurityIdentifier)));
+        // PipeOptions.CurrentUserOnly owns the pipe by, and grants it to, the token's owner: the
+        // user, or for an elevated administrator (as on CI runners) the Administrators group, whose
+        // elevated members already control the machine. No other account is admitted.
+        IdentityReference?[] self = [current.User, current.Owner];
+        Assert.Contains(security.GetOwner(typeof(SecurityIdentifier)), self);
         AuthorizationRule[] rules = [.. security.GetAccessRules(includeExplicit: true, includeInherited: true, typeof(SecurityIdentifier))
             .Cast<AuthorizationRule>()];
         Assert.NotEmpty(rules);
         Assert.All(rules, rule =>
         {
             var access = Assert.IsType<PipeAccessRule>(rule);
-            Assert.True(access.AccessControlType == AccessControlType.Deny || Equals(current.User, access.IdentityReference),
+            Assert.True(access.AccessControlType == AccessControlType.Deny || self.Contains(access.IdentityReference),
                 $"The control pipe allows {access.IdentityReference} {access.PipeAccessRights}.");
         });
         Assert.Equal("first.csv", (await app.Status())["file"]!.GetValue<string>());
