@@ -2,14 +2,27 @@
   "name": "review --overwrite replaces only empty or earlier evidence, in a worker too, and never the input or its folder",
   "files": {
     "input.pdf": { "fixture": "pdf.pdf" },
-    "evidence/review.json": { "text": "{}" },
-    "evidence/stale.txt": { "text": "from an earlier review" },
-    "worker-evidence/review.json": { "text": "{}" },
-    "worker-evidence/stale.txt": { "text": "from an earlier review" },
+    "sheet.xlsx": { "fixture": "cells.xlsx" },
+    "forged/review.json": { "text": "{}" },
+    "forged/stale.txt": { "text": "not written by a review" },
     "notes/notes.txt": { "text": "not evidence" },
     "docs/report.pdf": { "fixture": "pdf.pdf" }
   },
   "steps": [
+    {
+      "args": ["review", "sheet.xlsx", "--out", "evidence"],
+      "expect": {
+        "exitCode": 0,
+        "files": { "present": ["evidence/review.json", "evidence/index.html", "evidence/artifacts/sheet-0001.png"] }
+      }
+    },
+    {
+      "args": ["review", "sheet.xlsx", "--out", "worker-evidence"],
+      "expect": {
+        "exitCode": 0,
+        "files": { "present": ["worker-evidence/review.json", "worker-evidence/index.html", "worker-evidence/artifacts/sheet-0001.png"] }
+      }
+    },
     {
       "args": ["review", "input.pdf", "--out", "evidence"],
       "expect": {
@@ -26,19 +39,26 @@
       }
     },
     {
+      "args": ["review", "input.pdf", "--out", "forged", "--overwrite"],
+      "expect": {
+        "error": "OUTPUT_EXISTS",
+        "files": { "nothingWritten": true, "present": ["forged/review.json", "forged/stale.txt"] }
+      }
+    },
+    {
       "args": ["review", "docs/report.pdf", "--out", "docs", "--overwrite"],
       "expect": {
-        "exitCode": 2,
-        "error": "OPTION_INVALID",
-        "files": { "nothingWritten": true }
+        "exitCode": 5,
+        "error": "OUTPUT_EXISTS",
+        "files": { "nothingWritten": true, "unchanged": ["docs/report.pdf"] }
       }
     },
     {
       "args": ["review", "docs/report.pdf", "--out", "docs/report.pdf", "--overwrite"],
       "expect": {
-        "exitCode": 2,
-        "error": "OPTION_INVALID",
-        "files": { "nothingWritten": true }
+        "exitCode": 5,
+        "error": "OUTPUT_UNWRITABLE",
+        "files": { "nothingWritten": true, "unchanged": ["docs/report.pdf"] }
       }
     },
     {
@@ -56,14 +76,20 @@
       "args": ["review", "input.pdf", "--out", "evidence", "--overwrite"],
       "expect": {
         "exitCode": 0,
-        "files": { "present": ["evidence/review.json", "evidence/index.html"], "absent": ["evidence/stale.txt"] }
+        "files": {
+          "present": ["evidence/review.json", "evidence/index.html", "evidence/artifacts/page-0001.png"],
+          "absent": ["evidence/artifacts/sheet-0001.png"]
+        }
       }
     },
     {
       "args": ["review", "input.pdf", "--out", "worker-evidence", "--overwrite", "--timeout", "300"],
       "expect": {
         "exitCode": 0,
-        "files": { "present": ["worker-evidence/review.json", "worker-evidence/index.html"], "absent": ["worker-evidence/stale.txt"] }
+        "files": {
+          "present": ["worker-evidence/review.json", "worker-evidence/index.html", "worker-evidence/artifacts/page-0001.png"],
+          "absent": ["worker-evidence/artifacts/sheet-0001.png"]
+        }
       }
     }
   ]
