@@ -468,6 +468,114 @@ public sealed class WordsMarkdownImportTests
         Assert.Equal(["5.", "6."], ListLabels(output));
     }
 
+    /// <summary>
+    /// An image the resource policy omits, one that does not exist or lies outside the Markdown's
+    /// directory, leaves no link in the output, through both <c>create --from-markdown</c> and
+    /// <c>insert_markdown</c>: no relationship names a local path or an external picture, while
+    /// the picture beside the Markdown is stored.
+    /// </summary>
+    [Fact]
+    public void OmittedMarkdownImage_LeavesNoLinkToALocalPath()
+    {
+        using var fixture = new WordsFixture();
+        string root = fixture.Temp.File("root");
+        string input = Directory.CreateDirectory(Path.Combine(root, "in")).FullName;
+        string outside = Directory.CreateDirectory(Path.Combine(root, "outside")).FullName;
+        string output = Directory.CreateDirectory(Path.Combine(root, "out")).FullName;
+        byte[] png = Convert.FromBase64String(
+            "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGP4z8DwHwAFAAH/iZk9HQAAAABJRU5ErkJggg==");
+        File.WriteAllBytes(Path.Combine(input, "beside.png"), png);
+        File.WriteAllBytes(Path.Combine(output, "beside.png"), png);
+        string sentinel = Path.Combine(outside, "sentinel.png");
+        File.WriteAllBytes(sentinel, png);
+        string markdown = Path.Combine(input, "doc.md");
+        File.WriteAllText(markdown,
+            "# Title\n\n![kept](beside.png)\n\n![gone](missing.png)\n\n![far](../outside/sentinel.png)\n\n<img src=\"x\">\n");
+        string created = Path.Combine(output, "created.docx");
+        string edited = Path.Combine(output, "edited.docx");
+
+        WordsCreateResult create = WordsCreate.Run(fixture.Session, new WordsCreateRequest
+        {
+            Output = TestOutput.At(created),
+            Markdown = new SourceFile("--from-markdown", markdown),
+        });
+        WordsEdit.Run(fixture.Session, new WordsEditRequest
+        {
+            Input = created,
+            Batch = new WordsOpsBatch
+            {
+                Ops =
+                [
+                    new InsertMarkdownOp
+                    {
+                        At = new WordsTarget { Block = 1 }, Position = "after",
+                        Markdown = $"![kept](beside.png)\n\n![gone](missing.png)\n\n![far](<{sentinel}>)\n",
+                    },
+                ],
+            },
+            Output = TestOutput.At(edited),
+        });
+
+        Assert.Contains(create.Warnings ?? [], static warning => warning.Code == WarningCodes.RemoteResourcesBlocked);
+        foreach (string path in new[] { created, edited })
+        {
+            using System.IO.Compression.ZipArchive archive = System.IO.Compression.ZipFile.OpenRead(path);
+            foreach (System.IO.Compression.ZipArchiveEntry entry in archive.Entries.Where(static entry => entry.FullName.EndsWith(".rels", StringComparison.Ordinal)))
+            {
+                using var reader = new StreamReader(entry.Open());
+                string rels = reader.ReadToEnd();
+                foreach (string form in new[] { root, root.Replace('\\', '/'), new Uri(root).AbsoluteUri, Environment.UserName })
+                {
+                    Assert.DoesNotContain(form, rels, StringComparison.OrdinalIgnoreCase);
+                }
+
+                Assert.DoesNotContain(System.Xml.Linq.XDocument.Parse(rels).Root!.Elements(), static relationship =>
+                    (string?)relationship.Attribute("TargetMode") == "External"
+                    && ((string?)relationship.Attribute("Type"))?.EndsWith("/image", StringComparison.Ordinal) == true);
+            }
+
+            Assert.Contains(archive.Entries, static entry => entry.FullName.StartsWith("word/media/", StringComparison.Ordinal));
+        }
+    }
+
+    /// <summary>
+    /// insert_markdown drops links only from the pictures it imports: a linked picture the
+    /// document already held keeps its link.
+    /// </summary>
+    [Fact]
+    public void InsertMarkdown_KeepsALinkedPictureTheDocumentAlreadyHeld()
+    {
+        using var fixture = new WordsFixture();
+        var source = new Document();
+        var builder = new DocumentBuilder(source);
+        builder.Writeln("Clause one.");
+        var linked = new Aspose.Words.Drawing.Shape(source, Aspose.Words.Drawing.ShapeType.Image)
+        {
+            Width = 40,
+            Height = 40,
+            WrapType = Aspose.Words.Drawing.WrapType.Inline,
+        };
+        linked.ImageData.SourceFullName = "logo.png";
+        builder.InsertNode(linked);
+        string input = fixture.Temp.File("linked.docx");
+        source.Save(input, SaveFormat.Docx);
+        string output = fixture.Temp.File("linked-inserted.docx");
+
+        WordsEdit.Run(fixture.Session, new WordsEditRequest
+        {
+            Input = input,
+            Batch = new WordsOpsBatch
+            {
+                Ops = [new InsertMarkdownOp { At = new WordsTarget { Block = 1 }, Position = "after", Markdown = "Added **text**.\n\n![gone](missing.png)\n" }],
+            },
+            Output = TestOutput.At(output),
+        });
+
+        Aspose.Words.Drawing.Shape kept = Assert.Single(new Document(output).GetChildNodes(NodeType.Shape, true)
+            .OfType<Aspose.Words.Drawing.Shape>(), static shape => shape.HasImage && shape.GetAncestor(NodeType.HeaderFooter) is null);
+        Assert.EndsWith("logo.png", kept.ImageData.SourceFullName, StringComparison.Ordinal);
+    }
+
     private static string[] ListLabels(string path)
     {
         var document = new Document(path);
