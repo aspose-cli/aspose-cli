@@ -258,6 +258,48 @@ public sealed class WordsCliTests : IClassFixture<WordsFixture>, IDisposable
     }
 
     /// <summary>
+    /// A picture stored only as a link has no image bytes once loaded: review completes on it, as
+    /// render does, whether the link names a picture beside the document or a resource the
+    /// Markdown import omitted.
+    /// </summary>
+    [Category(TestCategory.Slow)]
+    [Theory]
+    [InlineData("beside")]
+    [InlineData("omitted")]
+    public void Review_OfADocumentWithALinkedPicture_Completes(string link)
+    {
+        if (link == "beside")
+        {
+            File.WriteAllBytes(_workspace.File("control.png"), Convert.FromBase64String(
+                "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGP4z8DwHwAFAAH/iZk9HQAAAABJRU5ErkJggg=="));
+            var document = new Document();
+            var builder = new DocumentBuilder(document);
+            builder.Writeln("Linked picture.");
+            var linked = new Aspose.Words.Drawing.Shape(document, Aspose.Words.Drawing.ShapeType.Image)
+            {
+                Width = 40,
+                Height = 40,
+                WrapType = Aspose.Words.Drawing.WrapType.Inline,
+            };
+            linked.ImageData.SourceFullName = "control.png";
+            builder.InsertNode(linked);
+            document.Save(_workspace.File("linked.docx"), SaveFormat.Docx);
+        }
+        else
+        {
+            File.WriteAllText(_workspace.File("linked.md"), "text <img src=x onerror=alert(7)>\n");
+            CliResult created = _workspace.Run("words", "create", "linked.docx", "--from-markdown", "linked.md", "--output-format", "json");
+            Assert.True(created.ExitCode == 0, created.StdErr);
+        }
+
+        CliResult reviewed = _workspace.Run("review", "linked.docx", "--output-format", "json");
+
+        Assert.DoesNotContain("INTERNAL_ERROR", reviewed.StdErr + reviewed.StdOut, StringComparison.Ordinal);
+        Assert.True(reviewed.ExitCode is 0 or 8, $"exit {reviewed.ExitCode}: {reviewed.StdErr}");
+        Assert.True(File.Exists(Path.Combine(_workspace.File("linked.docx.review"), "review.json")));
+    }
+
+    /// <summary>
     /// An encrypted template is refused with the convert that writes an unencrypted Flat OPC
     /// copy of it, and that copy, run as the hint says, serves as the template with its styles.
     /// </summary>
