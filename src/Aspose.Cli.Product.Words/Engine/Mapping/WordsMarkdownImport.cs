@@ -16,6 +16,7 @@ internal static class WordsMarkdownImport
     internal static IReadOnlyList<Node> Blocks(Document destination, Document markdown)
     {
         KeepOnlyExpressedEmphasis(markdown);
+        DropImageLinks(markdown);
         FitImages(markdown, destination);
         // The Markdown's lists keep their own numbering. Without the options the importer merges
         // a Markdown list into the destination list that has the same list id, which drops the
@@ -27,6 +28,32 @@ internal static class WordsMarkdownImport
             .Where(static node => node is Paragraph or Table)
             .Select(node => importer.ImportNode(node, true))
             .ToArray();
+    }
+
+    /// <summary>
+    /// The Markdown reader keeps an image the resource policy omitted as a link to the path it
+    /// resolved, which the output would carry (the user's local path included) and Word would
+    /// follow on opening. An imported image is stored or absent: a picture without stored bytes
+    /// is removed, the loader's warning having counted it, and a stored one keeps no link.
+    /// </summary>
+    private static void DropImageLinks(Document markdown)
+    {
+        foreach (Shape shape in markdown.GetChildNodes(NodeType.Shape, isDeep: true).OfType<Shape>().ToArray())
+        {
+            if (!shape.HasImage || string.IsNullOrEmpty(shape.ImageData.SourceFullName))
+            {
+                continue;
+            }
+
+            if (shape.ImageData.ImageBytes is null)
+            {
+                shape.Remove();
+            }
+            else
+            {
+                shape.ImageData.SourceFullName = string.Empty;
+            }
+        }
     }
 
     /// <summary>
