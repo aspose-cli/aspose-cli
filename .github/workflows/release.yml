@@ -1,8 +1,10 @@
 name: Release
 # A release is built only from a protected version tag, v<Version from Directory.Build.props>,
 # that names a commit on master.
-# The licensed Full scope runs locally before the tag is pushed; this job runs
-# the Fast scope, packages and checks the release, and publishes it as a GitHub release.
+# The licensed Full scope runs locally before the tag is pushed, and CI runs the Fast scope on
+# every master push; this job requires that run to have passed, packages and checks the release,
+# and publishes it as a GitHub release. It does not run the tests again: one runner running every
+# test project at once times out tests that pass in CI, where each project has its own runner.
 on:
   push:
     tags: ['v*']
@@ -18,6 +20,7 @@ jobs:
     timeout-minutes: 90
     permissions:
       contents: write
+      actions: read
     defaults:
       run:
         shell: pwsh
@@ -42,7 +45,14 @@ jobs:
           [xml] $props = Get-Content -LiteralPath Directory.Build.props -Raw
           $version = $props.SelectSingleNode('/Project/PropertyGroup/Version').InnerText
           if ("v$version" -cne $env:GITHUB_REF_NAME) { throw "Tag $env:GITHUB_REF_NAME does not name the declared version $version." }
-      - run: ./scripts/test.ps1 -Configuration Release -Scope Fast
+      - name: Require CI on master to have passed on the tagged commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $commit = git rev-parse "$($env:GITHUB_REF)^{commit}"
+          $passed = gh api "repos/$env:GITHUB_REPOSITORY/actions/workflows/ci.yml/runs?branch=master&event=push&head_sha=$commit" --jq '[.workflow_runs[] | select(.conclusion == "success")] | length'
+          if ($LASTEXITCODE -ne 0) { throw "Could not read the CI runs for commit $commit (gh exit code $LASTEXITCODE)." }
+          if ([int]$passed -lt 1) { throw "CI on master has not passed on commit $commit; tag a commit whose master CI run is green." }
       - run: ./scripts/package.ps1 -Configuration Release -RuntimeIdentifier win-x64
       - name: Publish the GitHub release
         env:
