@@ -121,6 +121,11 @@ configuration unless you ask with `-Mcp`, which also registers the `aspose-cli m
 with those hosts (a host it cannot register produces only a warning). To install without
 downloading, run `install.ps1` from an extracted release archive.
 
+Slides rendering needs the [Microsoft Visual C++ Redistributable (x64)](https://aka.ms/vs/17/release/vc_redist.x64.exe),
+which the package does not carry. Without it,
+`aspose-cli doctor` warns in its `native-runtime` check and Slides commands that need its native
+drawing library fail.
+
 Switches apply to `install.ps1` run from an extracted archive, or to the downloaded script, as in
 `& ([scriptblock]::Create((irm <install.ps1 URL>))) -Mcp`:
 
