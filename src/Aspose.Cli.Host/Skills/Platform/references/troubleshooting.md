@@ -161,6 +161,11 @@ aspose-cli capabilities --output-format json
 - `RENDER_FAILED`: the engine failed while rasterizing content it can
   otherwise read; the input can still be valid. Reduce the selection or check
   fonts. `RENDER_TOO_LARGE`: lower `--dpi` or render less.
+- Slides rendering needs the Microsoft Visual C++ Redistributable (x64),
+  which the package does not carry. When it is missing, the `native-runtime`
+  check of `aspose-cli doctor` warns and Slides commands that need its native
+  drawing library fail. Ask the user to install it from
+  https://aka.ms/vs/17/release/vc_redist.x64.exe.
 - `OPERATION_TIMEOUT` with `details.phase` `regex`: a regular expression you
   supplied exceeded its own budget, which `--timeout` does not raise; simplify
   it or search a narrower part of the document.
