@@ -1,5 +1,6 @@
 name: Release
-# A release is built only from a protected version tag, v<Version from Directory.Build.props>.
+# A release is built only from a protected version tag, v<Version from Directory.Build.props>,
+# that names a commit on master.
 # The licensed Full scope runs locally before the tag is pushed; this job runs
 # the Fast scope, packages and checks the release, and publishes it as a GitHub release.
 on:
@@ -24,6 +25,15 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+          # The whole history, so the next step can see whether master contains the tagged commit.
+          fetch-depth: 0
+      - name: Require the tag to name a commit on master
+        run: |
+          $commit = git rev-parse --verify --quiet "$($env:GITHUB_REF)^{commit}"
+          if ($LASTEXITCODE -ne 0) { throw "Tag $env:GITHUB_REF_NAME does not name a commit." }
+          git merge-base --is-ancestor $commit refs/remotes/origin/master
+          if ($LASTEXITCODE -eq 1) { throw "Tag $env:GITHUB_REF_NAME names commit $commit, which is not on master." }
+          if ($LASTEXITCODE -ne 0) { throw "Could not check whether master contains commit $commit (git exit code $LASTEXITCODE)." }
       - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
           global-json-file: global.json
