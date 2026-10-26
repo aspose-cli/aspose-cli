@@ -116,9 +116,10 @@ without `set_properties` saves once, whatever the title.
 
 ## Signatures
 
-Edits can invalidate existing signatures. Inspect signatures before changing
-signed material and again afterward; a `SIGNATURE_INVALIDATED` warning is not a
-preservation guarantee. Sign only after final content and standards
+A `pdf edit` saves the whole file again, so it invalidates the signatures of a
+signed PDF even when no operation changed anything: `SIGNATURE_INVALIDATED` names
+each signature intact in the input that a read of the output no longer finds
+intact. Inspect signatures with `pdf inspect --detail signatures`. Sign only after final content and standards
 verification, with the PKCS#12 password in an environment variable that is
 already set (or on stdin with `--certificate-password-stdin`):
 
