@@ -107,6 +107,7 @@ internal static class CellsConvert
 
         loaded.RestoreActiveSheet(savePlan);
         Warning? sheetsDropped = savePlan.DetectSheetLoss(workbook);
+        Warning? drawingsDropped = savePlan.DropDrawings(workbook);
         PublishedFile written = saver.Write(request.Output, workbook, singleSheet: selectedSheets is not null,
             savePlan.Encrypts, path => saver.Produce(workbook, savePlan, path));
         Warning? formulasBroken = saver.BuildBrokenFormulaWarning(
@@ -126,7 +127,7 @@ internal static class CellsConvert
                 loaded.SkippedSheetWarning(selected is null && savePlan.WritesActiveSheetOnly, licenseState == LicenseState.Evaluation
                     // The evaluation SDK writes only the first sheet to a text format.
                     ? $"Evaluation mode exports only the first sheet to {request.Output.Format.Id}; converting another sheet needs an Aspose.Cells license, then --sheets with the sheet's position from inspect."
-                    : "Pass --sheets with the sheet's position from inspect to convert another sheet."), sheetsDropped, headerOnlySkipped, dataTruncated, formulasBroken, chartsSplit,
+                    : "Pass --sheets with the sheet's position from inspect to convert another sheet."), sheetsDropped, drawingsDropped, headerOnlySkipped, dataTruncated, formulasBroken, chartsSplit,
                 .. textLayout]),
         };
     }

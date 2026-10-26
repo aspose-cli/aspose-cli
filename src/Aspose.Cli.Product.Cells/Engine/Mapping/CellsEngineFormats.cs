@@ -48,8 +48,8 @@ internal static class CellsEngineFormats
         new("json") { Detected = FileFormatType.Json, Save = SaveFormat.Json, WritesRecords = true, EvaluationMarks = CellsEvaluationMarkKind.JsonRecord },
         new("md")
         {
-            Save = SaveFormat.Markdown, EvaluationMarks = CellsEvaluationMarkKind.MarkdownHeading,
-            Options = static (_, _) => new MarkdownSaveOptions { FormatStrategy = CellValueFormatStrategy.None },
+            Save = SaveFormat.Markdown, EvaluationMarks = CellsEvaluationMarkKind.MarkdownHeading, DropsDrawings = true,
+            Options = static (_, _) => new MarkdownSaveOptions { FormatStrategy = CellValueFormatStrategy.DisplayString },
         },
         new("png") { Image = ImageType.Png, EvaluationMarks = CellsEvaluationMarkKind.Pages },
         new("jpeg") { Image = ImageType.Jpeg, EvaluationMarks = CellsEvaluationMarkKind.Pages },
@@ -72,6 +72,9 @@ internal static class CellsEngineFormats
 
     /// <summary><c>true</c> for a convert format that writes each sheet's rows as records (json).</summary>
     public static bool WritesRecords(string formatId) => Find(formatId).WritesRecords;
+
+    /// <inheritdoc cref="CellsEngineFormat.DropsDrawings"/>
+    public static bool DropsDrawings(string formatId) => Find(formatId).DropsDrawings;
 
     /// <summary>
     /// The evaluation marks an output in <paramref name="formatId"/> carries; null for an id the
@@ -136,6 +139,13 @@ internal sealed record CellsEngineFormat(string Id)
 
     /// <summary>Whether the output writes each sheet's rows as records (json), so it chooses the sheets it holds.</summary>
     public bool WritesRecords { get; init; }
+
+    /// <summary>
+    /// Whether the output is a text table that leaves out the charts, pictures and other drawings of
+    /// the sheet, which the engine would otherwise write into its rows as embedded images (md);
+    /// the comments stay.
+    /// </summary>
+    public bool DropsDrawings { get; init; }
 
     /// <summary>The evaluation marks an output in this format carries; null when the format is never written.</summary>
     public CellsEvaluationMarkKind? EvaluationMarks { get; init; }
