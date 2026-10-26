@@ -36,7 +36,9 @@ internal static class PdfEdit
         using InputResourceScope operationInputs = session.Budgets.Inputs.CreateScope();
         using LoadedPdf loaded = session.Loader.Open(filePath, request.Password);
         InputInfo input = precondition.Admit("pdf", loaded.Protection, request.Options.IfMatch);
-        bool signatures = loaded.Document.Form.SignaturesExist;
+        // The signatures intact in the input, which the output is read back for.
+        IReadOnlySet<string> intact = PdfInfoProjection.IntactSignatures(loaded.Document);
+        IReadOnlySet<string>? intactAfter = null;
         Permissions? userPermissions = loaded.PasswordType == PasswordType.User && loaded.Document.IsEncrypted
             ? (Permissions)loaded.Document.Permissions
             : null;
@@ -60,7 +62,11 @@ internal static class PdfEdit
             navigationBefore, PdfNavigationCensus.Unresolved(loaded.Document));
         EditPublication<PdfEditVerification> publication;
         // --encrypt replaces whatever encryption the operations leave.
-        try { publication = Publish(session, loaded.Document, request, request.EncryptPassword ?? model.OutputPassword, encryptCopy, precondition, model, verifier, applied, state); }
+        try
+        {
+            publication = Publish(session, loaded.Document, request, request.EncryptPassword ?? model.OutputPassword, encryptCopy, precondition, model, verifier, applied, state,
+                output => intactAfter = intact.Count == 0 ? intact : PdfInfoProjection.IntactSignatures(output));
+        }
         catch (RedactedTextLeft left)
         {
             publication = new EditPublication<PdfEditVerification>(null, null, new PdfEditVerification
@@ -72,7 +78,12 @@ internal static class PdfEdit
             });
         }
         finally { operationInputs.ThrowIfFailed(); }
-        List<Warning> warnings = BuildWarnings(signatures, applied, model.TextMoved, model.TextBeside);
+        List<Warning> warnings = BuildWarnings(applied, model.TextMoved, model.TextBeside);
+        if (SignaturesInvalidated(intact, publication.Output is null ? null : intactAfter, request.Options.DryRun) is { } invalidated)
+        {
+            warnings.Insert(0, invalidated);
+        }
+
         warnings.AddRange(model.NumberedTwice.Select(static numbered => NumberedTwice(numbered.Id, numbered.Pages)));
         if (MetadataRewritten(batch.Ops, applied.Outcomes) is { } rewritten)
         {
@@ -119,7 +130,8 @@ internal static class PdfEdit
         PdfEditModel model,
         PdfEditVerifier? verifier,
         AppliedBatch applied,
-        LicenseState state)
+        LicenseState state,
+        Action<Document> readBack)
     {
         if (!request.Options.DryRun)
         {
@@ -147,6 +159,7 @@ internal static class PdfEdit
                 }
 
                 using LoadedPdf reopened = session.Loader.OpenPublishedCandidate(temp, outputPassword);
+                readBack(reopened.Document);
                 IReadOnlyList<VerificationIssue> left = model.RedactedTextLeft(reopened.Document, properties, state, session.Budgets.Deadline);
                 if (left.Count > 0)
                 {
@@ -262,21 +275,37 @@ internal static class PdfEdit
         return (pages.Count == 1 ? "page " : "pages ") + string.Join(", ", ranges);
     }
 
+    /// <summary>
+    /// The signatures intact in the input that a read of the output no longer finds intact,
+    /// whatever the operations report they changed: the engine rewrites the whole file it saves,
+    /// so the bytes a signature covers change even when no operation changed anything. A dry run
+    /// writes nothing, so it reports every intact signature as one the edit would invalidate.
+    /// </summary>
+    /// <param name="intact">The signatures intact in the input.</param>
+    /// <param name="intactAfter">The signatures intact in the published output; null when nothing was published.</param>
+    /// <param name="dryRun">Whether the edit only reports what it would do.</param>
+    private static Warning? SignaturesInvalidated(IReadOnlySet<string> intact, IReadOnlySet<string>? intactAfter, bool dryRun)
+    {
+        string[] names = dryRun
+            ? [.. intact.Order(StringComparer.Ordinal)]
+            : intactAfter is null ? [] : [.. intact.Except(intactAfter).Order(StringComparer.Ordinal)];
+        return names.Length == 0
+            ? null
+            : new Warning(WarningCodes.SignatureInvalidated,
+                $"{(names.Length == 1 ? "Signature" : "Signatures")} {string.Join(", ", names.Select(static name => $"'{name}'"))} of the input "
+                + (dryRun ? "would no longer be intact in the output" : "no longer verify over the whole output")
+                + ": saving the edited PDF rewrites the bytes a signature covers, also when no operation changed anything.")
+            {
+                Hint = "Validate signatures again and apply any required signature only after the final edit; to keep a signature, deliver the signed file unedited.",
+            };
+    }
+
     private static List<Warning> BuildWarnings(
-        bool signatures,
         AppliedBatch applied,
         IReadOnlyList<string> textMoved,
         IReadOnlyList<string> textBeside)
     {
         var warnings = new List<Warning>();
-        if (signatures && applied.Outcomes.Any(static item => item.Status == OpStatuses.Ok && item.ItemsAffected > 0))
-        {
-            warnings.Add(new Warning(WarningCodes.SignatureInvalidated, "Editing a signed PDF invalidates or changes its existing signature state.")
-            {
-                Hint = "Validate signatures again and apply any required signature only after the final edit.",
-            });
-        }
-
         // An operation that changed nothing, such as a redaction that matched nothing, passes its
         // read-back check without having changed anything, so it is disclosed.
         warnings.AddRange(applied.Warnings);

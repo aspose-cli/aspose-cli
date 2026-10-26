@@ -257,8 +257,8 @@ public sealed class PdfAssemblyWarningTests
     }
 
     /// <summary>
-    /// Optimizing a signed PDF keeps its fonts whole, whose subsetting would rewrite what the
-    /// signature covers: it changes no font and adds no warning, as before fonts were cut.
+    /// Optimizing a signed PDF keeps its fonts whole, as it did before fonts were cut: it changes
+    /// no font. Whether the saved output keeps the signature is PdfSignedEditTests'.
     /// </summary>
     [Fact]
     public void OptimizeDocument_OfASignedPdf_KeepsItsFontsWhole()
@@ -283,7 +283,6 @@ public sealed class PdfAssemblyWarningTests
         });
 
         Assert.Equal(0, Assert.Single(result.Applied).ItemsAffected);
-        Assert.DoesNotContain(result.Warnings ?? [], static warning => warning.Code.Name == "SIGNATURE_INVALIDATED");
     }
 
     /// <summary>

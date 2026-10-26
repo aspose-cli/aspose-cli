@@ -332,6 +332,12 @@ internal static class PdfInfoProjection
         };
     }
 
+    /// <summary>The names of the document's intact signatures, as a read reports them.</summary>
+    internal static IReadOnlySet<string> IntactSignatures(Document document) =>
+        document.Form.SignaturesExist
+            ? Signatures(document).Where(static signature => signature.Intact == true).Select(static signature => signature.Name).ToHashSet(StringComparer.Ordinal)
+            : new HashSet<string>(StringComparer.Ordinal);
+
     private static PdfSignatureInfo[] Signatures(Document document)
     {
         // The facade only reads the document; disposing it would close the document.
