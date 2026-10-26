@@ -7,8 +7,9 @@ namespace Aspose.Cli.Product.Cells.Tests;
 
 /// <summary>
 /// The engine save options <see cref="WorkbookSavePlan"/> chooses for each convert format: text
-/// exports write values as they are, in UTF-8 with a byte order mark only on request; html is
-/// one self-contained file; a pdf prints the selected sheets; every other format needs none.
+/// exports write values as they are (Markdown as the sheet shows them), in UTF-8 with a byte
+/// order mark only on request; html is one self-contained file; a pdf prints the selected
+/// sheets; every other format needs none.
 /// </summary>
 public sealed class CellsSaveOptionsTests
 {
@@ -38,7 +39,7 @@ public sealed class CellsSaveOptionsTests
                     Assert.True(html.ExportImagesAsBase64);
                     break;
                 case "md":
-                    Assert.Equal(CellValueFormatStrategy.None, Assert.IsType<MarkdownSaveOptions>(options).FormatStrategy);
+                    Assert.Equal(CellValueFormatStrategy.DisplayString, Assert.IsType<MarkdownSaveOptions>(options).FormatStrategy);
                     break;
                 default:
                     // pdf without a selection, and the formats whose save format alone is enough.

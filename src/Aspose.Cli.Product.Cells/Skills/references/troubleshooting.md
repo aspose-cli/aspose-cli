@@ -51,6 +51,13 @@ grid smaller than the data, such as xls with 65,536 rows, warns
 `DATA_TRUNCATED`, and formulas that referenced the lost cells become `#REF!`
 with `FORMULAS_BROKEN`: save to xlsx, xlsb or ods instead.
 
+An md output writes each cell as the sheet shows it (`700,000`, `38.6%`),
+where csv and tsv write the stored value, so the table can go straight to
+`words create --from-markdown`. It keeps the sheet's comments but leaves out its
+charts, pictures and other drawings, and warns `LOSSY_CONVERSION` with how many
+of each: convert to xlsx or pdf to keep them, or `cells render` an image of
+the sheet.
+
 A PDF or XPS that prints a chart across two or more pages warns
 `CHART_SPLIT_ACROSS_PAGES` with each chart and its page count, and `review`
 reports such a workbook as `CELLS_CHART_SPLIT_ACROSS_PAGES`. Fit the sheet

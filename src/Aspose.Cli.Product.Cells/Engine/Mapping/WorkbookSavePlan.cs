@@ -2,6 +2,7 @@ using Aspose.Cli.Sdk.Formats;
 using Aspose.Cli.Sdk.IO.Output;
 using Aspose.Cli.Sdk.Licensing;
 using Aspose.Cells;
+using Aspose.Cells.Drawing;
 
 namespace Aspose.Cli.Product.Cells.Engine.Mapping;
 
@@ -35,6 +36,52 @@ internal sealed record WorkbookSavePlan(string FormatId, SaveFormat Format, Save
             Hint = "Use a multi-sheet format (xlsx, xlsb, ods, pdf) to retain every worksheet.",
             AffectsCompleteness = true,
         } : null;
+
+    /// <summary>
+    /// Removes from the in-memory workbook the drawings of the sheet a format that
+    /// <see cref="CellsEngineFormats.DropsDrawings"/> writes, and says how many of each kind it left
+    /// out; null when it removed none. A group counts once, as one drawing, and takes the shapes
+    /// in it along. Comments are no drawings: the output keeps them.
+    /// </summary>
+    internal Warning? DropDrawings(Workbook workbook)
+    {
+        if (!CellsEngineFormats.DropsDrawings(FormatId))
+        {
+            return null;
+        }
+
+        Worksheet sheet = TextSheet(workbook);
+        Shape[] drawings = [.. sheet.Shapes.Cast<Shape>().Where(static shape => shape is not CommentShape && !shape.IsInGroup)];
+        int charts = 0, pictures = 0, others = 0;
+        foreach (Shape drawing in drawings)
+        {
+            switch (drawing)
+            {
+                case ChartShape:
+                    charts++;
+                    break;
+                case Picture:
+                    pictures++;
+                    break;
+                default:
+                    others++;
+                    break;
+            }
+
+            sheet.Shapes.Remove(drawing);
+        }
+
+        var lost = new List<string>();
+        if (charts > 0) { lost.Add($"{charts} chart(s)"); }
+        if (pictures > 0) { lost.Add($"{pictures} picture(s)"); }
+        if (others > 0) { lost.Add($"{others} other drawing(s), such as text boxes, shapes or groups,"); }
+        return lost.Count == 0 ? null : new Warning(WarningCodes.LossyConversion,
+            $"The '{FormatId}' output holds the cells of worksheet '{sheet.Name}' as a table, so its {string.Join(" and ", lost)} were not written.")
+        {
+            Hint = "To keep them, render the sheet as an image with aspose-cli cells render, or convert to xlsx or pdf.",
+            AffectsCompleteness = true,
+        };
+    }
 
     internal Worksheet TextSheet(Workbook workbook) =>
         workbook.Worksheets[IsEvaluation ? 0 : workbook.Worksheets.ActiveSheetIndex];
