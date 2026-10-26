@@ -60,7 +60,9 @@ without East Asian glyphs (Calibri, Arial): judge those columns in the image,
 or use a font such as Microsoft YaHei. It does report the indented column
 labels of a pivot table, which the engine cuts off at their column's edge and
 `resize_columns` without `widthChars` leaves as they are: give those columns an
-explicit `widthChars`. For a file a person opens, the look
+explicit `widthChars`. `CELLS_TEXT_TALLER_THAN_ROW` names a row shorter than
+the font of its text, such as a title enlarged with `format_range`, which the
+row cuts off at the top: `resize_rows` without `height` fits it. For a file a person opens, the look
 also grades the design checklist in `aspose-cli docs cells/design-system`,
 section 12. Render large sheets as windows with a sheet-qualified `--range`;
 `cells render` warns `RENDER_IMAGE_LARGE` with such a window when an image is
@@ -141,8 +143,8 @@ aspose-cli cells compare book.backup.xlsx book.xlsx --output-format json
   from the diff. Read layout and page setup back with
   `cells inspect --detail layout`, and the other objects with their sections:
   `charts`, `pivots`, `tables`, `validation`, `conditional-formats`,
-  `sparklines`, `images`, `comments` and `hyperlinks`, with `--detail` written
-  once per section (`--detail charts --detail pivots`); the `x-readBack` of
+  `sparklines`, `images`, `comments`, `hyperlinks` and `merges`, with
+  `--detail` written once per section (`--detail charts --detail pivots`); the `x-readBack` of
   each operation field in `aspose-cli schema v2/cells/ops` names the property
   that reports it, or says that no read reports it yet, so confirm that field
   in a render.

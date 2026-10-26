@@ -153,6 +153,20 @@ public sealed class RoundTripJudgmentTests
         Assert.Equal(["sheet/Sales"], ContractRules.RoundTripAddress("cells", "cells inspect: workbook.sheets[0].hidden", evaluation, evaluation));
     }
 
+    /// <summary>A merged range is addressed by its range, so a changed range names the merge it replaced and the new one.</summary>
+    [Fact]
+    public void Addresses_OfAChangedMergedRange_AreTheMergeBeforeAndAfter()
+    {
+        JsonArray before = Read("""{"workbook":{"merges":[{"sheet":"Sheet1","range":"D1:E2"}]}}""");
+        JsonArray after = Read("""{"workbook":{"merges":[{"sheet":"Sheet1","range":"D1:E3"}]}}""");
+
+        string[] changes = [.. ContractRules.Changes(before, after)];
+
+        Assert.Equal(["cells inspect: workbook.merges[0].range"], changes);
+        Assert.Equal(["merge/Sheet1!D1:E3", "merge/Sheet1!D1:E2"], ContractRules.RoundTripAddress("cells", changes[0], after, before));
+        Assert.Equal(["merge/Sheet1!D1:E2"], ContractRules.RoundTripAddress("cells", changes[0], before, before));
+    }
+
     [Fact]
     public void Addresses_OfAStyle_AreTheCellsThatUseIt()
     {

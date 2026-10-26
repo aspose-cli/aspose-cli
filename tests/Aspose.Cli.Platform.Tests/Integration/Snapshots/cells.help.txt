@@ -189,7 +189,7 @@ Arguments:
 Options:
   --sample                       Include a bounded sample: display values of the first --sample-rows rows and up to 20 columns of each sheet, from A1. Default: off.
   --sample-rows <sample-rows>    Number of sample rows per sheet. Only with --sample. Range: 1-100. [default: 5]
-  --detail <detail>              Extra sections to include; repeat for more. names: defined names; errors: formula-error scan; conditional-formats: conditional-formatting rules; layout: view, tab color, frozen panes, sizes, outline groups, filter, protection, print area and page setup of each sheet. Values: charts, comments, conditional-formats, errors, fonts, hyperlinks, images, layout, names, pivots, sparklines, tables, validation.
+  --detail <detail>              Extra sections to include; repeat for more. names: defined names; errors: formula-error scan; conditional-formats: conditional-formatting rules; layout: view, tab color, frozen panes, sizes, outline groups, filter, protection, print area and page setup of each sheet. Values: charts, comments, conditional-formats, errors, fonts, hyperlinks, images, layout, merges, names, pivots, sparklines, tables, validation.
   --password <password>          Password for the workbook. Discouraged: visible in the process list; prefer --password-env.
   --password-env <password-env>  Name of an environment variable holding the password for the workbook.
   --password-stdin               Read the password for the workbook from the first line of stdin.

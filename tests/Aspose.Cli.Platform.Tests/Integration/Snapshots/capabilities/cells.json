@@ -38,7 +38,7 @@
         "command": "edit",
         "inputSchema": "v2/cells/ops",
         "operationSchema": "aspose-cli schema v2/cells/ops --operation <op>",
-        "contractFingerprint": "sha256:93c6f93f6118a1317d61e5ff3cc631ba4fef56c010dfb5f0ad4f3e80778c04e2",
+        "contractFingerprint": "sha256:d78e964c7a775d2c3b11a52b22e9897b33a8f76f04e89f750ae3074b2c25dafa",
         "maximumOperationCount": 10000,
         "ops": [
           "add_comment",
@@ -256,6 +256,11 @@
           "code": "CELLS_TEXT_OVERFLOWS",
           "severity": "info",
           "summary": "Text spills over empty cells and ends close to a column edge, where a sheet image can cut its last character."
+        },
+        {
+          "code": "CELLS_TEXT_TALLER_THAN_ROW",
+          "severity": "warning",
+          "summary": "A row is shorter than the font of a value in it, so the row cuts the text off at the top, as when an edit enlarges a font without fitting the row."
         },
         {
           "code": "CELLS_USED_RANGE_SPARSE",
@@ -1563,6 +1568,7 @@
               "hyperlinks",
               "images",
               "layout",
+              "merges",
               "names",
               "pivots",
               "sparklines",
@@ -3910,6 +3916,25 @@
             }
           }
         },
+        "cellsMergeInfo": {
+          "description": "A merged range, as merge_cells writes it.",
+          "type": "object",
+          "required": [
+            "sheet",
+            "range"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "sheet": {
+              "description": "Sheet the merged range is on.",
+              "type": "string"
+            },
+            "range": {
+              "description": "The A1 range merged into one cell, such as A1:C1.",
+              "type": "string"
+            }
+          }
+        },
         "cellsPageSetupInfo": {
           "description": "A sheet's page setup for printing and PDF export.",
           "type": "object",
@@ -4689,6 +4714,13 @@
               "type": "array",
               "items": {
                 "$ref": "#/$defs/cellsHyperlinkInfo"
+              }
+            },
+            "merges": {
+              "description": "Merged ranges, by sheet and then from the top left; present only with --detail merges.",
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/cellsMergeInfo"
               }
             },
             "layouts": {
@@ -6172,7 +6204,7 @@
             "range": {
               "description": "The range to merge, such as A1:C1.",
               "$ref": "#/$defs/range",
-              "x-readBack": "not-state"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsMergeInfo/properties/range"
             }
           }
         },

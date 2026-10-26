@@ -2875,6 +2875,7 @@ C-R21 | cells insert_chart reads back
 C-R21 | cells insert_image reads back
 C-R21 | cells insert_pivot reads back
 C-R21 | cells insert_sheet reads back
+C-R21 | cells merge_cells reads back
 C-R21 | cells protect_sheet reads back
 C-R21 | cells rename_sheet reads back
 C-R21 | cells resize_columns reads back
@@ -4615,6 +4616,7 @@ C-R39 | cells insert_chart round trip
 C-R39 | cells insert_image round trip
 C-R39 | cells insert_pivot round trip
 C-R39 | cells insert_sheet round trip
+C-R39 | cells merge_cells round trip
 C-R39 | cells protect_sheet round trip
 C-R39 | cells rename_sheet round trip
 C-R39 | cells resize_columns round trip
@@ -5008,6 +5010,7 @@ read-only | cells inspect --detail fonts
 read-only | cells inspect --detail hyperlinks
 read-only | cells inspect --detail images
 read-only | cells inspect --detail layout
+read-only | cells inspect --detail merges
 read-only | cells inspect --detail names
 read-only | cells inspect --detail pivots
 read-only | cells inspect --detail sparklines

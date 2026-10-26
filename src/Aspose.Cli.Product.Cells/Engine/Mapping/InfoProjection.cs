@@ -59,6 +59,7 @@ internal static class InfoProjection
             Images = WantsDetail(request, CellsInspectDetails.Images) ? ObjectProjection.Images(workbook) : null,
             Comments = WantsDetail(request, CellsInspectDetails.Comments) ? ObjectProjection.Comments(budgets, workbook) : null,
             Hyperlinks = WantsDetail(request, CellsInspectDetails.Hyperlinks) ? ObjectProjection.Hyperlinks(budgets, workbook) : null,
+            Merges = WantsDetail(request, CellsInspectDetails.Merges) ? ObjectProjection.Merges(budgets, workbook) : null,
             Layouts = WantsDetail(request, CellsInspectDetails.Layout) ? SheetLayoutProjection.Build(budgets, workbook) : null,
         };
 

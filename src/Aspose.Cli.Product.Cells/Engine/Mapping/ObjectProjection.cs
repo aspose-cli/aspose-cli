@@ -435,6 +435,11 @@ internal static class ObjectProjection
         };
     }
 
+    public static IReadOnlyList<CellsMergeInfo> Merges(ResourceBudgetLedger budgets, Workbook workbook) =>
+        [.. Each(budgets, workbook, "merges",
+            static sheet => (sheet.Cells.GetMergedAreas() ?? []).OrderBy(static area => area.StartRow).ThenBy(static area => area.StartColumn),
+            static (sheet, area) => new CellsMergeInfo { Sheet = sheet.Name, Range = Area(area) })];
+
     /// <summary>Each object of every sheet read in order, stopping a read past its deadline every 1024 objects.</summary>
     private static IEnumerable<TInfo> Each<TObject, TInfo>(ResourceBudgetLedger budgets, Workbook workbook, string phase,
         Func<Worksheet, IEnumerable<TObject>> objects, Func<Worksheet, TObject, TInfo> read)

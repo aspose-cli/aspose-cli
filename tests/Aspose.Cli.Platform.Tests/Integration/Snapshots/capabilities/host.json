@@ -4718,6 +4718,7 @@
             "CELLS_SHEET_EMPTY",
             "CELLS_SHEET_HIDDEN",
             "CELLS_TEXT_OVERFLOWS",
+            "CELLS_TEXT_TALLER_THAN_ROW",
             "CELLS_USED_RANGE_SPARSE",
             "CELLS_VALUES_CLIPPED",
             "CELLS_VBA_PRESENT",
