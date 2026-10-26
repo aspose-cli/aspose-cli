@@ -253,6 +253,16 @@ internal sealed partial class PdfMutationHandlers
 
     public ValueTuple Apply(OptimizeDocumentOp operation)
     {
+        // PDF-ENCRYPTED-OBJECT-STREAMS: objects packed into object streams while the document is
+        // encrypted make a file that no reader opens, with its password or without.
+        if (operation.CompressStreams && _document.IsEncrypted)
+        {
+            throw new OperationInvalidException(
+                "compressStreams packs objects into object streams, which the PDF engine writes unreadable into an encrypted document",
+                "Set \"compressStreams\": false to optimize the document as it is encrypted, or put decrypt_document before optimize_document "
+                + "and encrypt_document after it (or pass --encrypt-env) to pack the objects and encrypt the result.");
+        }
+
         var options = new OptimizationOptions
         {
             RemoveUnusedStreams = operation.RemoveUnusedObjects,

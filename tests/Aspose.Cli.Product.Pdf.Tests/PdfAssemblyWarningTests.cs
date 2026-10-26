@@ -225,9 +225,8 @@ public sealed class PdfAssemblyWarningTests
     }
 
     /// <summary>
-    /// An encrypted PDF stays encrypted with its password when optimizing cuts its fonts. Streams
-    /// stay uncompressed: compressing them in an encrypted PDF writes a file no reader opens, as it
-    /// did before fonts were cut.
+    /// An encrypted PDF stays encrypted with its password when optimizing cuts its fonts. Its
+    /// objects stay unpacked, as an encrypted PDF needs (PDF-ENCRYPTED-OBJECT-STREAMS).
     /// </summary>
     [Fact]
     public void OptimizeDocument_KeepsTheEncryptionOfAnEncryptedInput()
