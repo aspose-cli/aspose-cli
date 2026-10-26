@@ -3776,7 +3776,7 @@
   "routing": {
     "defaultProduct": "cells",
     "defaultProductSource": "product-manifest",
-    "totalProbeMilliseconds": 500,
+    "totalProbeMilliseconds": 10000,
     "totalProbeBytes": 65536,
     "maxConcurrency": 4,
     "indeterminatePolicy": "fail-closed-explicit-product-required"

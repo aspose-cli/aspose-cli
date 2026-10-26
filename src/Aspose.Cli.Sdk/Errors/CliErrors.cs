@@ -549,6 +549,25 @@ public static partial class CliErrors
         });
 
     /// <summary>
+    /// The content recognizers that choose a file's product ran past their shared routing
+    /// budget, a fixed bound that <c>--timeout</c> does not raise.
+    /// </summary>
+    /// <param name="budget">The routing budget that ran out.</param>
+    public static CliException FileRoutingTimeout(TimeSpan budget)
+    {
+        int seconds = Math.Max(1, (int)Math.Ceiling(budget.TotalSeconds));
+        return CliException.Create(
+            ErrorCodes.OperationTimeout,
+            $"Recognizing the file's content to choose its product did not finish within the {seconds}s routing budget.",
+            hint: "The routing budget is fixed and --timeout does not raise it; retry when the machine is less busy.",
+            details: new JsonObject
+            {
+                ["timeoutSeconds"] = seconds,
+                ["phase"] = "file-routing",
+            });
+    }
+
+    /// <summary>
     /// A regular expression the caller supplied ran past its execution budget, which bounds
     /// the time any one match may take whatever <c>--timeout</c> allows.
     /// </summary>
