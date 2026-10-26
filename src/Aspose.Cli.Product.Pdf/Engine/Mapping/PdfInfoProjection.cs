@@ -140,7 +140,7 @@ internal static class PdfInfoProjection
             .Select(pageNumber => Page(document.Pages[pageNumber]))
             .ToArray();
 
-    private static PdfPageSizeSummary[] DistinctPageSizes(Document document) =>
+    internal static PdfPageSizeSummary[] DistinctPageSizes(Document document) =>
         document.Pages
             .Select(static page => (Width: Round(page.GetPageRect(considerRotation: true).Width), Height: Round(page.GetPageRect(considerRotation: true).Height)))
             .GroupBy(static size => size)

@@ -172,7 +172,7 @@ internal sealed class PdfSnapshots(Document document, PdfPageIdentities pages, F
     /// <summary>
     /// What optimizing changes that a reader of the file can see: each image a page draws,
     /// directly or through a form, by its size, compression and encoded data, and each font by
-    /// whether it is embedded. Removing unused objects and compressing streams store the same
+    /// whether it is embedded and by its name, whose prefix names the subset embedded. Removing unused objects and compressing streams store the same
     /// content in fewer bytes and change no object.
     /// </summary>
     private OperationSnapshot OptimizedObjects()
@@ -206,7 +206,7 @@ internal sealed class PdfSnapshots(Document document, PdfPageIdentities pages, F
                 {
                     snapshot.Add(
                         string.Create(CultureInfo.InvariantCulture, $"page/{number}/font/{++fonts}"),
-                        $"{font.FontName}|{font.IsEmbedded}|{font.IsSubset}",
+                        $"{font.BaseFont}|{font.IsEmbedded}|{font.IsSubset}",
                         owner);
                 }
 

@@ -23,7 +23,10 @@ aspose-cli pdf read review.archive.pdf --output-format json
 aspose-cli review review.archive.pdf --out review.archive.review --output-format json
 ```
 
-With your own documents, read the field names from `pdf inspect --detail forms` and adjust
+With your own documents, read a page of each input first: a PDF converted from a
+Word document or a spreadsheet may already show page numbers, and
+`PAGE_NUMBERS_ALREADY_PRESENT` names the pages that `add_page_numbers` numbered a
+second time. Read the field names from `pdf inspect --detail forms` and adjust
 `cover-values.json`; when the form is XFA or has no fields, skip the fill and
 convert `review.pdf` instead.
 

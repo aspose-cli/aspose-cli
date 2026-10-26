@@ -40,6 +40,12 @@ internal static class PdfDiagnostics
     /// <summary>A redaction's cover overlapped text beside what it selected, and removed it too.</summary>
     internal static readonly WarningCode RedactionNearbyTextRemoved = new("REDACTION_NEARBY_TEXT_REMOVED");
 
+    /// <summary>add_page_numbers numbered pages whose header or footer already showed a page number.</summary>
+    internal static readonly WarningCode PageNumbersAlreadyPresent = new("PAGE_NUMBERS_ALREADY_PRESENT");
+
+    /// <summary>The pages a merge put together have different paper sizes.</summary>
+    internal static readonly WarningCode PageSizesMixed = new("PAGE_SIZES_MIXED");
+
     /// <summary>A raster image is drawn larger than its pixels allow, at fewer than 96 of them per inch, so it shows blurred.</summary>
     internal static readonly WarningCode ImageResolutionLow = new("IMAGE_RESOLUTION_LOW");
 
@@ -105,5 +111,7 @@ internal static class PdfDiagnostics
         DiagnosticDescriptor.Warning(SignatureFontEmbedded),
         DiagnosticDescriptor.Warning(SignatureTextClipped),
         DiagnosticDescriptor.Warning(TablesNotFound),
+        DiagnosticDescriptor.Warning(PageNumbersAlreadyPresent),
+        DiagnosticDescriptor.Warning(PageSizesMixed),
     ];
 }

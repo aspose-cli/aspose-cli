@@ -766,7 +766,7 @@ public sealed record EncryptDocumentOp : PdfOp
 [MistakenFor("decrypt")]
 public sealed record DecryptDocumentOp : PdfOp;
 
-/// <summary>Optimizes the document's resources; image options recompress images.</summary>
+/// <summary>Optimizes the document's resources: embedded fonts keep only what the document's characters need unless a form field is left to fill or a signature field signs it, and image options recompress images.</summary>
 [Operation("optimize_document")]
 [MistakenFor("optimize")]
 public sealed record OptimizeDocumentOp : PdfOp

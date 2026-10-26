@@ -26,6 +26,8 @@ internal sealed class PdfEditModel : IOperationModel<PdfOp>
     private readonly List<string> _textMoved = [];
     private readonly List<(int Page, int Lines, int Characters)> _besidePages = [];
     private readonly List<string> _beside = [];
+    private readonly SortedSet<int> _numberedPages = [];
+    private readonly List<(string Id, IReadOnlyList<int> Pages)> _numberedTwice = [];
     private readonly List<PdfRedactionAudit.Redaction> _redactions = [];
 
     // The encryption the operations set, by the variables of its passwords and its permissions;
@@ -53,7 +55,7 @@ internal sealed class PdfEditModel : IOperationModel<PdfOp>
         _encryptOption = encryptOption;
         _secrets = secrets;
         OutputPassword = password;
-        _handlers = new PdfMutationHandlers(loader, inputs, document, secrets, _pages, _movedPages, _besidePages);
+        _handlers = new PdfMutationHandlers(loader, inputs, document, secrets, _pages, _movedPages, _besidePages, _numberedPages);
         _snapshots = new PdfSnapshots(document, _pages, () => _encryption);
     }
 
@@ -74,6 +76,12 @@ internal sealed class PdfEditModel : IOperationModel<PdfOp>
     /// <c>'id' (op) on page N: C character(s) on L neighbouring line(s)</c>; never the text.
     /// </summary>
     internal IReadOnlyList<string> TextBeside => _beside;
+
+    /// <summary>
+    /// Each <c>add_page_numbers</c> that numbered pages whose header or footer already showed a
+    /// page number, with those pages as the operation saw them.
+    /// </summary>
+    internal IReadOnlyList<(string Id, IReadOnlyList<int> Pages)> NumberedTwice => _numberedTwice;
 
     /// <summary>The ids of the <c>redact_text</c> operations the batch applied, in batch order.</summary>
     internal IReadOnlyList<string> Redactions => [.. _redactions.Select(static redaction => redaction.Id)];
@@ -103,6 +111,7 @@ internal sealed class PdfEditModel : IOperationModel<PdfOp>
 
         _movedPages.Clear();
         _besidePages.Clear();
+        _numberedPages.Clear();
         _snapshots.Invalidate();
         // The pages a redaction covers, by identity, which later operations may renumber.
         PdfPageIdentity[]? redacted = operation is RedactTextOp { Pages: { } selection }
@@ -120,6 +129,11 @@ internal sealed class PdfEditModel : IOperationModel<PdfOp>
             int lines = page.Sum(static entry => entry.Lines), characters = page.Sum(static entry => entry.Characters);
             _beside.Add(string.Create(CultureInfo.InvariantCulture,
                 $"'{operation.Id}' ({name}) on page {page.Key}: {characters} character{(characters == 1 ? "" : "s")} on {lines} neighbouring line{(lines == 1 ? "" : "s")}"));
+        }
+
+        if (_numberedPages.Count > 0)
+        {
+            _numberedTwice.Add((operation.Id!, [.. _numberedPages]));
         }
 
         if (operation is RedactTextOp redaction)

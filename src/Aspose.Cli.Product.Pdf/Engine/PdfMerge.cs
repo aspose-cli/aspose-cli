@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.Json.Nodes;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.IO.Output;
@@ -89,6 +90,11 @@ internal static class PdfMerge
             }
         }
 
+        if (MixedPaper(merged) is { } mixed)
+        {
+            warnings.Add(mixed);
+        }
+
         var navigation = new PdfNavigationCensus(
             bookmarks,
             Math.Max(0, PdfNavigationCensus.Unresolved(merged).Links - brokenInputLinks),
@@ -116,6 +122,31 @@ internal static class PdfMerge
             License = EnvelopeParts.License(state),
             Warnings = warnings.Count == 0 ? null : warnings,
         };
+    }
+
+    /// <summary>
+    /// Merged pages keep their own size, so inputs of different paper, such as A4 and Letter,
+    /// make a document whose pages differ in size. Pages of one paper turned either way are one
+    /// paper; a size that matches a preset is that preset, any other is its whole points.
+    /// </summary>
+    private static Warning? MixedPaper(Document merged)
+    {
+        PdfPageSizeSummary[] sizes = PdfInfoProjection.DistinctPageSizes(merged);
+        int papers = sizes
+            .Select(static size => size.PageSize.Preset
+                ?? string.Create(CultureInfo.InvariantCulture,
+                    $"{Math.Round(Math.Min(size.PageSize.Width, size.PageSize.Height))}x{Math.Round(Math.Max(size.PageSize.Width, size.PageSize.Height))}"))
+            .Distinct(StringComparer.Ordinal)
+            .Count();
+        return papers < 2
+            ? null
+            : new Warning(PdfDiagnostics.PageSizesMixed,
+                "The merged pages have different paper sizes, width by height: " + string.Join(", ", sizes.Select(static size => string.Create(CultureInfo.InvariantCulture,
+                    $"{(size.PageSize.Preset is { } preset ? preset + " " : "")}{size.PageSize.Width:0.##} x {size.PageSize.Height:0.##} pt ({size.PageCount} page{(size.PageCount == 1 ? "" : "s")})"))) + ".")
+            {
+                Hint = "Each page keeps its own size. For one paper size throughout, set it in the source documents before converting them to PDF and merge again, "
+                    + "or resize pages with set_page_size and scaleContent: true; 'pdf inspect' lists the pages' sizes.",
+            };
     }
 
     /// <summary>
