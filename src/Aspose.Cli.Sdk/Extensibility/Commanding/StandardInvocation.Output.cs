@@ -433,8 +433,7 @@ public partial class StandardInvocation
             extensions,
             mistyped: extension.Length > 1 && producer is null && !inputs,
             hint,
-            producer is { Formats: [var named] } ? new JsonObject { ["format"] = named.Id } : [],
-            meant);
+            producer is { Formats: [var named] } ? new JsonObject { ["format"] = named.Id } : []);
     }
 
     // An extension as a mistake compares it: without its dot, ignoring case.

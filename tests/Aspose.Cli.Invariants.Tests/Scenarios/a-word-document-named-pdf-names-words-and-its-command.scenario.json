@@ -35,7 +35,7 @@
           },
           {
             "path": "error.message",
-            "equals": "'renamed.pdf' has the .pdf extension of a pdf document, but its content looks like a words document."
+            "equals": "By its content, 'renamed.pdf' is a words document; it is not a pdf document."
           },
           {
             "path": "error.hint",
@@ -79,7 +79,7 @@
           },
           {
             "path": "error.message",
-            "equals": "'renamed.pdf' has the .pdf extension of a pdf document, but its content looks like a words document."
+            "equals": "By its content, 'renamed.pdf' is a words document; it is not a pdf document."
           },
           {
             "path": "error.hint",
@@ -120,7 +120,7 @@
           },
           {
             "path": "error.message",
-            "equals": "'renamed.pdf' has the .pdf extension of a pdf document, but its content looks like a words document."
+            "equals": "By its content, 'renamed.pdf' is a words document; it is not a pdf document."
           }
         ],
         "files": {

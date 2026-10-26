@@ -154,7 +154,7 @@ public sealed class OperationContractTests
     [InlineData("""{"op":"place","pages":"0","all":true}""", "pages must be a 1-based range list such as 1-3,7,9-: '0' is not a positive 1-based number")]
     [InlineData("""{"op":"link","path":" "}""", "path must not be blank")]
     [InlineData("""{"op":"set"}""", "the required field 'value' is missing")]
-    [InlineData("""{"op":"paint"}""", "the required field 'shades' is missing; it takes: light, dark")]
+    [InlineData("""{"op":"paint"}""", """the required field 'shades' is missing; it takes an array of: light, dark, as in "shades": ["light"]""")]
     public void Parse_RejectsABrokenRuleByItsWirePath(string operation, string reason) =>
         Assert.Equal("error: " + reason, Parse(operation));
 

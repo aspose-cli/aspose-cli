@@ -3,9 +3,10 @@ namespace Aspose.Cli.Sdk.Errors;
 /// <summary>
 /// Ranks the existing names closest to a name that was not found, so a caller can correct a
 /// typo or a casing slip in one step. Ranking is deterministic: a match that ignores case and
-/// surrounding white space comes first, then names with the same words in another order, then
-/// names that contain the request or are a whole word of it, then names within a small edit
-/// distance; ties keep the candidates' order.
+/// surrounding white space comes first, then names with the same words in another order or with
+/// a word another spelling or synonym of one of theirs (<c>bottom-middle</c> for
+/// <c>bottom-center</c>), then names that contain the request or are a whole word of it, then
+/// names within a small edit distance; ties keep the candidates' order.
 /// </summary>
 internal static class NameSuggestions
 {
@@ -18,6 +19,16 @@ internal static class NameSuggestions
 
     // The shorter of two names must have this many characters to count as contained in the other.
     private const int MinimumOverlap = 3;
+
+    // Words a caller writes for a word the vocabulary spells otherwise, in upper case as names compare.
+    private static readonly Dictionary<string, string> Synonyms = new(StringComparer.Ordinal)
+    {
+        ["MIDDLE"] = "CENTER",
+        ["CENTRE"] = "CENTER",
+        ["CENTRED"] = "CENTERED",
+        ["COLOUR"] = "COLOR",
+        ["GREY"] = "GRAY",
+    };
 
     /// <summary>Returns up to <see cref="MaximumSuggestions"/> candidates close to <paramref name="requested"/>.</summary>
     /// <param name="requested">The name that was not found.</param>
@@ -74,14 +85,18 @@ internal static class NameSuggestions
 
     private static string Normalize(string value) => value.Trim().ToUpperInvariant();
 
-    // The same words in another order, such as "add_image_stamp" for "add_stamp_image".
+    // The same words in another order, such as "add_image_stamp" for "add_stamp_image", or with
+    // a word spelled as another one of the same meaning, such as "bottom-middle" for "bottom-center".
     private static bool SameWords(string wanted, string name)
     {
         string[] requested = Words(wanted);
-        return requested.Length > 1 && requested.SequenceEqual(Words(name), StringComparer.Ordinal);
+        bool respelled = !requested.SequenceEqual(Words(wanted, synonyms: false), StringComparer.Ordinal);
+        return (requested.Length > 1 || respelled) && requested.SequenceEqual(Words(name), StringComparer.Ordinal);
 
-        static string[] Words(string value) =>
-            [.. value.Split(['_', '-', ' '], StringSplitOptions.RemoveEmptyEntries).Order(StringComparer.Ordinal)];
+        static string[] Words(string value, bool synonyms = true) =>
+            [.. value.Split(['_', '-', ' '], StringSplitOptions.RemoveEmptyEntries)
+                .Select(word => synonyms && Synonyms.TryGetValue(word, out string? same) ? same : word)
+                .Order(StringComparer.Ordinal)];
     }
 
     // A compound field name says what it is in its last word: a contained name that ends the
