@@ -49,7 +49,7 @@
         "command": "edit",
         "inputSchema": "v2/words/ops",
         "operationSchema": "aspose-cli schema v2/words/ops --operation <op>",
-        "contractFingerprint": "sha256:01ad7e3d0b260b53a3a082e56b8b57a1a2adac26b3ab166d762085d2cd115072",
+        "contractFingerprint": "sha256:575489f9317a3261b1cb28853d415462371b451d2f8cdb2096e02ea7024dd8b3",
         "maximumOperationCount": 10000,
         "ops": [
           "accept_revisions",
@@ -5992,7 +5992,7 @@
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/read-result.schema.json#/$defs/wordsListData/properties/level"
             },
             "numberStyle": {
-              "description": "How the items are numbered, such as letters-lower for a., b., c.; decimal when omitted.",
+              "description": "How the items are numbered, such as letters-lower for a., b., c. When omitted, the level's style in a new numbered list: decimal at levels 1, 4 and 7, letters-lower at levels 2, 5 and 8, and roman-lower at levels 3, 6 and 9.",
               "type": "string",
               "enum": [
                 "decimal",

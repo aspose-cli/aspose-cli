@@ -283,6 +283,36 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
     }
 
     [Fact]
+    public void MissingHeadingAnchors_PointToAHeadingThatHoldsPartOfTheTextBeforeBodyText()
+    {
+        string input = _fixture.Temp.File("clause-headings.docx");
+        var document = new Document();
+        var builder = new DocumentBuilder(document);
+        builder.ParagraphFormat.StyleIdentifier = StyleIdentifier.Heading1;
+        builder.Writeln("3. 保密 Confidentiality");
+        builder.ParagraphFormat.StyleIdentifier = StyleIdentifier.Normal;
+        builder.Writeln("保密期限为合同终止后三年。");
+        builder.ParagraphFormat.StyleIdentifier = StyleIdentifier.Heading1;
+        builder.Writeln("4. 终止 Termination");
+        builder.ParagraphFormat.StyleIdentifier = StyleIdentifier.Normal;
+        builder.Write("任何一方可提前三十日书面通知对方。");
+        document.Save(input);
+
+        CliException chinese = Assert.Throws<CliException>(() => Edit(input, "heading-chinese",
+            new SetTextOp { Target = new WordsTarget { Heading = "终止条款" }, Text = "x" }));
+        CliException misspelt = Assert.Throws<CliException>(() => Edit(input, "heading-misspelt",
+            new SetTextOp { Target = new WordsTarget { Heading = "Termintion" }, Text = "x" }));
+        CliException body = Assert.Throws<CliException>(() => Edit(input, "heading-body",
+            new SetTextOp { Target = new WordsTarget { Heading = "书面通知双方" }, Text = "x" }));
+
+        const string Expected = "Heading '4. 终止 Termination' holds the closest text; address it with {\"heading\": \"4. 终止 Termination\"}.";
+        Assert.Equal(WordsDiagnostics.AnchorNotFound, chinese.Code);
+        Assert.Equal(Expected, chinese.Hint);
+        Assert.Equal(Expected, misspelt.Hint);
+        Assert.StartsWith("Block 4 holds the closest text: '任何一方可提前三十日书面通知对方。', but it is not a heading;", body.Hint, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void InsertParagraphs_ContinueTheFormatOfTheParagraphBeforeThem()
     {
         string input = _fixture.Temp.File("clauses-format.docx");

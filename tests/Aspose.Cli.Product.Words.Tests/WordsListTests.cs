@@ -54,6 +54,46 @@ public sealed class WordsListTests : IDisposable
         Assert.All(blocks, static block => Assert.Equal("%1.%2", block["list"]?["numberFormat"]?.GetValue<string>()));
     }
 
+    /// <summary>Without numberStyle, a level takes its style in a new numbered list, as the schema describes.</summary>
+    [Theory]
+    [InlineData(2, "letters-lower", "a.")]
+    [InlineData(3, "roman-lower", "i.")]
+    public void SetList_WithoutNumberStyle_UsesTheLevelsStyleInANewList(int level, string style, string first)
+    {
+        JsonNode[] blocks = EditNumberedList($$"""{"op":"set_list","target":{"blocks":"1-3"},"kind":"number","level":{{level}}}""");
+
+        Assert.Equal(first, blocks[0]["listLabel"]?.GetValue<string>());
+        Assert.All(blocks, block => Assert.Equal(style, block["list"]?["numberStyle"]?.GetValue<string>()));
+    }
+
+    /// <summary>
+    /// The contract clause recipe in document-standards.md, run as it stands on the Markdown it
+    /// shows, numbers the sub-clauses 1.1, 1.2; one op per sub-clause numbers each 1.1, and a
+    /// later article's number written as text gives 2.1, 2.2.
+    /// </summary>
+    [Fact]
+    public void SetList_ContractClauseRecipeOfTheSkill_NumbersSubClausesUnderTheirArticle()
+    {
+        string standards = Path.Combine(RepositoryPaths.Root, "src", "Aspose.Cli.Product.Words", "Skills", "references", "document-standards.md");
+        string recipe = SkillOperationDocuments.Collect(Path.GetDirectoryName(standards)!).Documents
+            .Single(document => document.Source == standards && document.Json.Contains("\"set_list\"", StringComparison.Ordinal)).Json;
+        const string Markdown = "Agreement\n\n# General\n\n1. Article one\n   1. Clause one\n   2. Clause two\n2. Article two\n";
+
+        Assert.Equal(["1.", "1.1", "1.2", "2."], Labels(Markdown, recipe));
+        Assert.Equal(["1.", "1.1", "1.1", "2."], Labels(Markdown, """
+            {"ops":[
+              {"op":"set_list","target":{"block":4},"kind":"number","level":2,"numberStyle":"decimal","numberFormat":"%1.%2"},
+              {"op":"set_list","target":{"block":5},"kind":"number","level":2,"numberStyle":"decimal","numberFormat":"%1.%2"}
+            ]}
+            """));
+        Assert.Equal(["1.", "1.1", "1.2", "2.", "2.1", "2.2"], Labels(Markdown + "   1. Clause one\n   2. Clause two\n", """
+            {"ops":[
+              {"op":"set_list","target":{"blocks":"4-5"},"kind":"number","level":2,"numberStyle":"decimal","numberFormat":"%1.%2"},
+              {"op":"set_list","target":{"blocks":"7-8"},"kind":"number","level":2,"numberStyle":"decimal","numberFormat":"2.%2"}
+            ]}
+            """));
+    }
+
     /// <summary>
     /// A number format another program wrote, with fixed text and a literal percent sign, reads
     /// as a numberFormat that set_list writes back as the same list.
@@ -123,6 +163,16 @@ public sealed class WordsListTests : IDisposable
         CliResult read = _workspace.Run("words", "read", "edited.docx", "--content", "full", "--output-format", "json");
         Assert.True(read.ExitCode == 0, read.StdErr);
         return [.. JsonNode.Parse(read.StdOut)!["blocks"]!.AsArray().Select(static block => block!)];
+    }
+
+    /// <summary>The list labels a full read reports after <paramref name="ops"/> edit a document made from <paramref name="markdown"/>.</summary>
+    private IEnumerable<string?> Labels(string markdown, string ops)
+    {
+        File.WriteAllText(_workspace.File("clauses.md"), markdown);
+        Assert.Equal(0, _workspace.Run("words", "create", "clauses.docx", "--from-markdown", "clauses.md", "--overwrite").ExitCode);
+        CliResult edited = _workspace.RunWithInput(ops, "words", "edit", "clauses.docx", "--ops", "-", "--out", "clauses.edited.docx", "--overwrite", "--output-format", "json");
+        Assert.True(edited.ExitCode == 0, edited.StdErr + edited.StdOut);
+        return [.. ListItems("clauses.edited.docx").Select(static item => item["listLabel"]?.GetValue<string>())];
     }
 
     /// <summary>The blocks of a document that a full read reports in a list.</summary>

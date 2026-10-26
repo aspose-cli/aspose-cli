@@ -51,6 +51,34 @@ correct a design paragraph by paragraph.
     {"op":"insert_toc","at":{"block":1},"position":"after"}
   ]}
   ```
+- A nested Markdown list numbers its sub-items 1., 2. again, not as contract
+  clauses 1.1, 1.2. Renumber them after the import with one `set_list` that
+  covers all the sub-clauses of an article, at `"level": 2` with `numberStyle`
+  `decimal` and `numberFormat` `"%1.%2"`. For this Markdown, whose blocks 4 and
+  5 are the sub-clauses (find them with `words read`):
+
+  ```markdown
+  Agreement
+
+  # General
+
+  1. Article one
+     1. Clause one
+     2. Clause two
+  2. Article two
+  ```
+
+  ```json
+  {"ops":[
+    {"op":"set_list","target":{"blocks":"4-5"},"kind":"number","level":2,"numberStyle":"decimal","numberFormat":"%1.%2"}
+  ]}
+  ```
+
+  `listLabel` in `words read` then shows 1., 1.1, 1.2, 2. Each `set_list`
+  makes a new list that counts from 1.1, so one op per sub-clause numbers each
+  of them 1.1. A new list does not count the articles either: give a later
+  article's sub-clauses its number as text, such as `"numberFormat": "2.%2"`
+  for 2.1, 2.2.
 - Use real tables for tabular data; never align columns with spaces or tabs.
 - Keep one style per role; apply `set_style`, or create one with
   `define_style`, instead of `format_text` on individual runs.
