@@ -661,7 +661,7 @@ public sealed class CliContractTests : IDisposable
     [Theory]
     [InlineData("-f json cells inspect a.xlsx", "-f")]
     [InlineData("cells inspect a.xlsx --output json", "--output")]
-    [InlineData("cells inspect a.xlsx --output=json", "--output=json")]
+    [InlineData("cells inspect a.xlsx --output=json", "--output")]
     [InlineData("-? cells", "-?")]
     [InlineData("cells inspect a.xlsx /h", "/h")]
     [InlineData("cells inspect a.xlsx --preview", "--preview")]
@@ -676,6 +676,8 @@ public sealed class CliContractTests : IDisposable
         JsonNode error = Parse(result.StdErr)["error"]!;
         Assert.Equal("USAGE_ERROR", error["code"]!.GetValue<string>());
         Assert.Contains($"'{removed}'", error["message"]!.GetValue<string>(), StringComparison.Ordinal);
+        // A value joined to an unknown option may be a secret, so the message names the option alone.
+        Assert.DoesNotContain("=json", error["message"]!.GetValue<string>(), StringComparison.Ordinal);
     }
 
     /// <summary>

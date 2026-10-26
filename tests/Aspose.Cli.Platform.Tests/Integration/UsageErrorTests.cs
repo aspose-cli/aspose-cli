@@ -175,6 +175,52 @@ public sealed class UsageErrorTests : IDisposable
         Assert.EndsWith("Must be one of: --output-format", error["message"]!.GetValue<string>().TrimEnd('.'), StringComparison.Ordinal);
     }
 
+    /// <summary>
+    /// The value written after an unknown option, or joined to it by '=' or ':', may be a secret
+    /// meant for the option the caller mistyped: no output repeats it, the verbose diagnostics
+    /// included, and the option it was meant for is still suggested.
+    /// </summary>
+    [Theory]
+    [InlineData("pdf edit x.pdf --encryptt S3cretPw", "S3cretPw", "--encryptt", "--encrypt")]
+    [InlineData("pdf edit x.pdf --encryptt=S3cretPw", "S3cretPw", "--encryptt", "--encrypt")]
+    [InlineData("pdf edit x.pdf --encryptt:S3cretPw", "S3cretPw", "--encryptt", "--encrypt")]
+    [InlineData("words create b.docx --pasword hunter2", "hunter2", "--pasword", null)]
+    [InlineData("words create b.docx --pasword=hunter2", "hunter2", "--pasword", null)]
+    [InlineData("words create b.docx --pasword:hunter2", "hunter2", "--pasword", null)]
+    [InlineData("pdf merge a.pdf --encryptt=S3cretPw b.pdf --out o.pdf", "S3cretPw", "--encryptt", "--encrypt")]
+    [InlineData("pdf --encryptt=S3cretPw", "S3cretPw", "--encryptt", null)]
+    public void TheValueOfAnUnknownOption_IsNotRepeated(string commandLine, string value, string option, string? suggestion)
+    {
+        foreach (string[] extra in (string[][])[["--output-format", "json"], ["--output-format", "json", "-v"], ["--output-format", "compact", "-v"], ["--output-format", "table"]])
+        {
+            CliResult result = _workspace.Run([.. commandLine.Split(' '), .. extra]);
+
+            Assert.Equal(2, result.ExitCode);
+            Assert.DoesNotContain(value, result.StdOut, StringComparison.Ordinal);
+            Assert.DoesNotContain(value, result.StdErr, StringComparison.Ordinal);
+            Assert.Contains(option, result.StdErr, StringComparison.Ordinal);
+            if (extra[1] == "json")
+            {
+                JsonNode error = JsonNode.Parse(result.StdErr)!["error"]!;
+                Assert.Equal("USAGE_ERROR", error["code"]!.GetValue<string>());
+                Assert.Equal(option, error["details"]!["option"]!.GetValue<string>());
+                Assert.Equal(suggestion, error["details"]!["suggestions"]?[0]?.GetValue<string>());
+            }
+        }
+    }
+
+    /// <summary>An argument left over that follows no unknown option is still named.</summary>
+    [Theory]
+    [InlineData("words read a.docx extra.docx", "Unrecognized command or argument 'extra.docx'.")]
+    [InlineData("words inspect a.docx --bogus", "Unrecognized command or argument '--bogus'.")]
+    [InlineData("words inspect a.docx --bogus --detail fonts", "Unrecognized command or argument '--bogus'.")]
+    public void AStrayArgument_IsStillNamed(string commandLine, string problem)
+    {
+        JsonNode error = Refused(commandLine, "USAGE_ERROR");
+
+        Assert.Contains(problem, error["message"]!.GetValue<string>(), StringComparison.Ordinal);
+    }
+
     private JsonNode Refused(string commandLine, string code)
     {
         CliResult result = _workspace.Run([.. commandLine.Split(' '), "--output-format", "json"]);

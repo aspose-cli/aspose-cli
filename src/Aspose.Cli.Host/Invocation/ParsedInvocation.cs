@@ -69,7 +69,7 @@ internal sealed class ParsedInvocation
     {
         if (LacksCommand)
         {
-            string[] unknown = [.. ParseResult.UnmatchedTokens.Where(static token => token.StartsWith('-'))];
+            string[] unknown = [.. ParseResult.UnmatchedTokens.Where(static token => token.StartsWith('-')).Select(OptionName)];
             throw CliErrors.CommandRequired(
                 Path(),
                 [.. VisibleCommands().Select(Below)],
@@ -131,8 +131,8 @@ internal sealed class ParsedInvocation
         string[] optionLike = [.. OptionLikeArguments()];
         string[] problems =
         [
-            .. ParseResult.Errors.Select(error => values.TryGetValue(error, out RefusedValue? refused) ? refused.Problem : error.Message),
-            .. optionLike.Select(static token => $"Unrecognized command or argument '{token}'."),
+            .. ParseResult.Errors.Select(error => values.TryGetValue(error, out RefusedValue? refused) ? refused.Problem : Unmatched(error) ?? error.Message),
+            .. optionLike.Select(Unrecognized),
         ];
         if (problems.Length == 0)
         {
@@ -163,7 +163,7 @@ internal sealed class ParsedInvocation
     /// </summary>
     private Refusal UnknownOptionOrArgument(string[] problems, RefusedValue? first, string[] optionLike)
     {
-        string? unknownOption = ParseResult.UnmatchedTokens.Concat(optionLike).FirstOrDefault(static token => token.StartsWith('-'));
+        string? unknownOption = ParseResult.UnmatchedTokens.Concat(optionLike).Where(static token => token.StartsWith('-')).Select(OptionName).FirstOrDefault();
         Option? missing = MissingOptions().FirstOrDefault();
         Mistake? mistake = unknownOption is not null ? UnknownOptionMistake(unknownOption)
             : StrayArgumentMistake() ?? first?.Mistake
@@ -264,6 +264,62 @@ internal sealed class ParsedInvocation
                 .SelectMany(static argument => argument.Tokens)
                 .Select(static token => token.Value)
                 .Where(static value => value.StartsWith("--", StringComparison.Ordinal));
+
+    /// <summary>The parser's sentence for a token it could not place.</summary>
+    private static string UnrecognizedMessage(string token) => $"Unrecognized command or argument '{token}'.";
+
+    /// <summary>
+    /// <paramref name="error"/> when the parser could not place a token, said as
+    /// <see cref="Unrecognized"/> says it; null for any other error.
+    /// </summary>
+    private string? Unmatched(ParseError error) =>
+        ParseResult.UnmatchedTokens.FirstOrDefault(token => error.Message == UnrecognizedMessage(token)) is { } token
+            ? Unrecognized(token)
+            : null;
+
+    /// <summary>
+    /// A token the command could not place. The value of an unknown option, joined to it by
+    /// <c>=</c> or <c>:</c> or written after it, may be a secret meant for the option the caller
+    /// mistyped, such as the password given to a misspelled encryption option, so only the option
+    /// is named; any other token is named as written.
+    /// </summary>
+    private string Unrecognized(string token) =>
+        OptionName(token) is var name && name.Length < token.Length
+            ? $"Unrecognized command or argument '{name}' and the value given to it."
+            : UnknownOptionBefore(token) is { } option
+                ? $"Unrecognized command or argument after '{option}', which is not repeated in case it is a secret."
+                : UnrecognizedMessage(token);
+
+    /// <summary>
+    /// The name of an option token, without a value joined to it by <c>=</c> or <c>:</c>, as the
+    /// parser takes them: the part before the first of them.
+    /// </summary>
+    private static string OptionName(string token) =>
+        token.StartsWith('-') && token.IndexOfAny(['=', ':']) is > 1 and var end ? token[..end] : token;
+
+    /// <summary>
+    /// The unknown option that <paramref name="value"/>, not an option itself, follows on the
+    /// command line, so it is that option's value; null when it follows none.
+    /// </summary>
+    private string? UnknownOptionBefore(string value)
+    {
+        if (value.StartsWith('-'))
+        {
+            return null;
+        }
+
+        string[] unknown = [.. ParseResult.UnmatchedTokens.Concat(OptionLikeArguments()).Where(static token => token.StartsWith('-'))];
+        Token[] tokens = [.. ParseResult.Tokens];
+        for (int index = 1; index < tokens.Length; index++)
+        {
+            if (tokens[index].Value == value && unknown.Contains(tokens[index - 1].Value, StringComparer.Ordinal))
+            {
+                return OptionName(tokens[index - 1].Value);
+            }
+        }
+
+        return null;
+    }
 
     /// <summary>
     /// A command that only groups other commands, given a first token that names none of them:
@@ -412,7 +468,7 @@ internal sealed class ParsedInvocation
     private string? VersionWithOthers() =>
         CommandPath.Count == 0
         && ParseResult.RootCommandResult.Children.OfType<OptionResult>().Any(static result => result.Option is VersionOption)
-            ? ParseResult.UnmatchedTokens.FirstOrDefault()
+            ? ParseResult.UnmatchedTokens.FirstOrDefault() is { } token ? OptionName(token) : null
             : null;
 
     /// <summary>
