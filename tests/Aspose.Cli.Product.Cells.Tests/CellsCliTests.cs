@@ -519,6 +519,46 @@ public sealed class CellsCliTests : IDisposable
     }
 
     /// <summary>
+    /// A <c>--range</c> image is cut to the range: the range's cells, filled green around a chart,
+    /// reach to within a tenth of the image on every side, with no page margins around them.
+    /// </summary>
+    [Fact]
+    public void Render_OfARange_CutsTheImageToTheRange()
+    {
+        File.WriteAllText(_workspace.File("ops.json"), """
+            {"ops":[
+              {"op":"set_values","sheet":"Data","range":"A1:B3","values":[["Region","Sales"],["East",10],["West",20]]},
+              {"op":"format_range","sheet":"Data","range":"E2:J14","style":{"fillColor":"#00B050"}},
+              {"op":"insert_chart","sheet":"Data","kind":"column","dataRange":"A1:B3","at":"F3:I12","title":"Sales"}]}
+            """);
+        Assert.Equal(0, _workspace.Run("cells", "create", "book.xlsx", "--sheet-names", "Data", "--output-format", "json").ExitCode);
+        CliResult edited = _workspace.Run("cells", "edit", "book.xlsx", "--ops", "ops.json", "--in-place", "--output-format", "json");
+        Assert.True(edited.ExitCode == 0, edited.StdErr);
+
+        CliResult rendered = _workspace.Run("cells", "render", "book.xlsx", "--range", "Data!E2:J14", "--dpi", "96", "--out", "chart.png", "--output-format", "json");
+
+        Assert.True(rendered.ExitCode == 0, rendered.StdErr);
+        using SkiaSharp.SKBitmap image = SkiaSharp.SKBitmap.Decode(_workspace.File("chart.png"));
+        int left = image.Width, top = image.Height, right = -1, bottom = -1;
+        for (int y = 0; y < image.Height; y++)
+        {
+            for (int x = 0; x < image.Width; x++)
+            {
+                SkiaSharp.SKColor color = image.GetPixel(x, y);
+                if (color.Green > 150 && color.Red < 40 && color.Blue < 120)
+                {
+                    (left, top, right, bottom) = (Math.Min(left, x), Math.Min(top, y), Math.Max(right, x), Math.Max(bottom, y));
+                }
+            }
+        }
+
+        Assert.True(right >= 0, "The image shows none of the range's green fill.");
+        double[] margins = [left / (double)image.Width, (image.Width - 1 - right) / (double)image.Width, top / (double)image.Height, (image.Height - 1 - bottom) / (double)image.Height];
+        Assert.True(margins.All(static margin => margin <= 0.1),
+            $"A {image.Width} x {image.Height} image leaves margins (left, right, top, bottom) of {string.Join(", ", margins.Select(static margin => margin.ToString("P0", System.Globalization.CultureInfo.InvariantCulture)))} around the range.");
+    }
+
+    /// <summary>
     /// The hint of an empty sheet's <c>RENDER_EMPTY</c> names the <c>--sheets</c> position of a
     /// sheet that has data, and the render it gives succeeds.
     /// </summary>
