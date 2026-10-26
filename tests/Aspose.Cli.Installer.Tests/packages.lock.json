@@ -268,7 +268,7 @@
       "aspose.cli.host": {
         "type": "Project",
         "dependencies": {
-          "Aspose.Cli.Sdk": "[1.0.0, )",
+          "Aspose.Cli.Sdk": "[1.0.1, )",
           "ModelContextProtocol": "[2.2.0, )",
           "System.CommandLine": "[2.0.9, )"
         }
@@ -283,7 +283,7 @@
       "aspose.cli.testkit": {
         "type": "Project",
         "dependencies": {
-          "Aspose.Cli.Sdk": "[1.0.0, )",
+          "Aspose.Cli.Sdk": "[1.0.1, )",
           "JsonSchema.Net": "[9.2.2, )",
           "xunit.v3.assert": "[3.2.2, )",
           "xunit.v3.extensibility.core": "[3.2.2, )"
