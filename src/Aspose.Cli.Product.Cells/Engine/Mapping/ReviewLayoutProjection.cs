@@ -46,6 +46,7 @@ internal static class ReviewLayoutProjection
         PrintAreaScan print = InspectPrintArea(sheet, content.ContentRange);
         IReadOnlyList<CellsReviewChartLayout> charts = InspectCharts(sheet, print.Ranges);
         (CellsReviewCellSet clipped, CellsReviewCellSet overflowing) = InspectWideValues(sheet);
+        CellsReviewRowSet textTallerThanRows = InspectTextHeights(sheet);
         bool warningSheet = CellsEvaluation.IsWarningSheet(sheet);
 
         return new CellsReviewSheetLayout
@@ -65,6 +66,7 @@ internal static class ReviewLayoutProjection
             TallPopulatedRows = rows.Large.ToSet(),
             ClippedCells = clipped,
             OverflowingCells = overflowing,
+            TextTallerThanRows = textTallerThanRows,
             PrintArea = print.Value,
             PrintAreaInvalid = print.Invalid,
             PrintAreaExcludesContent = print.ExcludesContent,
@@ -193,6 +195,65 @@ internal static class ReviewLayoutProjection
         }
 
         return (clipped.Build(), overflowing.Build());
+    }
+
+    /// <summary>
+    /// Finds visible rows shorter than the font of a value in them, whose text the row cuts off
+    /// at the top: the row height an edit leaves when it enlarges a font, as Excel would have
+    /// auto-fit. A merged cell has the height of all its rows. Rotated text is not measured, nor a
+    /// row shorter than <see cref="ShortRowHeight"/>, which is reported as short.
+    /// Only rows shorter than the largest font of the workbook are read cell by cell.
+    /// </summary>
+    private static CellsReviewRowSet InspectTextHeights(Worksheet sheet)
+    {
+        Aspose.Cells.Cells cells = sheet.Cells;
+        Workbook workbook = sheet.Workbook;
+        double largestFont = Enumerable.Range(0, workbook.CountOfStylesInPool)
+            .Select(index => workbook.GetStyleInPool(index).Font.DoubleSize)
+            .Append(workbook.DefaultStyle.Font.DoubleSize)
+            .Max();
+        var rows = new SortedDictionary<int, CellsReviewShortRow>();
+        foreach (Cell cell in cells)
+        {
+            if (cell.Value is null or "" || cells.IsColumnHidden(cell.Column) || cells.IsRowHidden(cell.Row))
+            {
+                continue;
+            }
+
+            // A row shorter than ShortRowHeight is reported as such already.
+            double height = cells.GetRowHeight(cell.Row);
+            if (height >= largestFont || height < ShortRowHeight)
+            {
+                continue;
+            }
+
+            if (cell.IsMerged)
+            {
+                Aspose.Cells.Range area = cell.GetMergedRange();
+                if (area.FirstRow != cell.Row || area.FirstColumn != cell.Column)
+                {
+                    continue;
+                }
+
+                height = Enumerable.Range(area.FirstRow, area.RowCount)
+                    .Where(row => !cells.IsRowHidden(row))
+                    .Sum(row => cells.GetRowHeight(row));
+            }
+
+            Style style = cell.GetStyle();
+            double font = style.Font.DoubleSize;
+            if (font <= height || style.RotationAngle != 0)
+            {
+                continue;
+            }
+
+            if (!rows.TryGetValue(cell.Row, out CellsReviewShortRow? known) || known.FontSize < font)
+            {
+                rows[cell.Row] = new CellsReviewShortRow(cell.Row, height, font);
+            }
+        }
+
+        return new CellsReviewRowSet(rows.Count, [.. rows.Values.Take(MaxDimensionSamples)]);
     }
 
     /// <summary>

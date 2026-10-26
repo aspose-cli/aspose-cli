@@ -425,6 +425,7 @@ public sealed class CellsCliTests : IDisposable
         JsonNode warning = Warning(split, "CHART_SPLIT_ACROSS_PAGES");
         Assert.Equal("sheet/Data", warning["location"]!.GetValue<string>());
         Assert.Contains("'Wide' on sheet 'Data' (2 pages)", warning["message"]!.GetValue<string>(), StringComparison.Ordinal);
+        Assert.Contains("pageSize", warning["hint"]!.GetValue<string>(), StringComparison.Ordinal);
         Assert.DoesNotContain(fitted["warnings"]?.AsArray() ?? [],
             static warning => warning!["code"]!.GetValue<string>() == "CHART_SPLIT_ACROSS_PAGES");
     }
@@ -592,6 +593,79 @@ public sealed class CellsCliTests : IDisposable
         Assert.DoesNotContain("--sheet", edit, StringComparison.Ordinal);
         Assert.Contains("--sheet ", read, StringComparison.Ordinal);
         Assert.Contains("name", read, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// A title enlarged with format_range in a row of the default height is cut off at the top:
+    /// review reports that row, and nothing once resize_rows has fitted it. Body rows of 11 point
+    /// Chinese and English text at the default height are not reported.
+    /// </summary>
+    [Fact]
+    public void Review_ReportsARowTooShortForItsEnlargedTitleUntilTheRowIsFitted()
+    {
+        Assert.Equal(0, _workspace.Run("cells", "create", "title.xlsx", "--sheet-names", "汇总").ExitCode);
+        File.WriteAllText(_workspace.File("title.json"), """
+            {"ops":[
+            {"op":"set_values","range":"A1:B4","values":[["2026 年销售汇总 Sales Summary",null],["单位：人民币元",null],["华东 East","1,200"],["华南 South Region",980]]},
+            {"op":"format_range","range":"A1","style":{"bold":true,"fontSize":28}}
+            ]}
+            """);
+        File.WriteAllText(_workspace.File("fit.json"), """{"ops":[{"op":"resize_rows","first":1}]}""");
+        Assert.Equal(0, _workspace.Run("cells", "edit", "title.xlsx", "--ops", "title.json", "--in-place").ExitCode);
+
+        JsonNode[] cut = TallTextFindings("cut");
+        Assert.Equal(0, _workspace.Run("cells", "edit", "title.xlsx", "--ops", "fit.json", "--in-place").ExitCode);
+        JsonNode[] fitted = TallTextFindings("fitted");
+
+        JsonNode finding = Assert.Single(cut);
+        Assert.Equal("warning", finding["severity"]!.GetValue<string>());
+        Assert.Equal("row/汇总!1", finding["location"]!.GetValue<string>());
+        Assert.Matches(@"^1 row\(s\) .*; sample: 1 \([\d.]+ pt tall, 28 pt text\)\.$", finding["message"]!.GetValue<string>());
+        Assert.Contains("resize_rows", finding["hint"]!.GetValue<string>(), StringComparison.Ordinal);
+        Assert.Empty(fitted);
+    }
+
+    private JsonNode[] TallTextFindings(string name)
+    {
+        CliResult review = _workspace.Run("review", "title.xlsx", "--out", _workspace.File(name), "--output-format", "json");
+        Assert.True(review.ExitCode == 0, review.StdErr);
+        return [.. JsonNode.Parse(review.StdOut)!["findings"]!.AsArray()
+            .Where(static finding => finding!["code"]!.GetValue<string>() == "CELLS_TEXT_TALLER_THAN_ROW")
+            .Select(static finding => finding!)];
+    }
+
+    /// <summary>
+    /// inspect --detail merges reads back each merged range merge_cells wrote, by sheet, and the
+    /// ops schema points merge_cells' range there.
+    /// </summary>
+    [Fact]
+    public void InspectMerges_ReadsBackTheRangesMergeCellsWrote()
+    {
+        Assert.Equal(0, _workspace.Run("cells", "create", "merged.xlsx", "--sheet-names", "Data,Notes").ExitCode);
+        File.WriteAllText(_workspace.File("merge.json"), """
+            {"ops":[
+            {"op":"set_values","sheet":"Data","range":"A1","values":[["Title"]]},
+            {"op":"merge_cells","sheet":"Data","range":"A1:C1"},
+            {"op":"merge_cells","sheet":"Data","range":"B3:B5"},
+            {"op":"merge_cells","sheet":"Notes","range":"D2:E2"}
+            ]}
+            """);
+        Assert.Equal(0, _workspace.Run("cells", "edit", "merged.xlsx", "--ops", "merge.json", "--in-place").ExitCode);
+
+        CliResult inspected = _workspace.Run("cells", "inspect", "merged.xlsx", "--detail", "merges", "--output-format", "json");
+        CliResult plain = _workspace.Run("cells", "inspect", "merged.xlsx", "--output-format", "json");
+        CliResult schema = _workspace.Run("schema", "v2/cells/ops");
+
+        Assert.True(inspected.ExitCode == 0, inspected.StdErr);
+        Assert.Equal(
+            ["Data!A1:C1", "Data!B3:B5", "Notes!D2:E2"],
+            JsonNode.Parse(inspected.StdOut)!["workbook"]!["merges"]!.AsArray()
+                .Select(static merge => merge!["sheet"]!.GetValue<string>() + "!" + merge["range"]!.GetValue<string>()));
+        Assert.Null(JsonNode.Parse(plain.StdOut)!["workbook"]!["merges"]);
+        Assert.EndsWith(
+            "/v2/cells/inspect-result.schema.json#/$defs/cellsMergeInfo/properties/range",
+            JsonNode.Parse(schema.StdOut)!["$defs"]!["merge_cells"]!["properties"]!["range"]!["x-readBack"]!.GetValue<string>(),
+            StringComparison.Ordinal);
     }
 
     /// <summary>The one warning of <paramref name="result"/> with <paramref name="code"/>.</summary>

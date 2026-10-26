@@ -136,6 +136,8 @@ internal static class InspectCommand
             static comment => [comment.Sheet, comment.Cell, comment.Author, comment.Text]);
         ResultText.Table(surface, "hyperlinks", workbook.Hyperlinks, ["sheet", "range", "link", "display"],
             static link => [link.Sheet, link.Range, link.Url ?? link.Target, link.Display]);
+        ResultText.Table(surface, "merges", workbook.Merges, ["sheet", "range"],
+            static merge => [merge.Sheet, merge.Range]);
         ResultText.Table(surface, "layouts", workbook.Layouts,
             ["sheet", "freeze", "row groups", "column groups", "filter", "print area", "titles", "page", "header", "footer"],
             static layout =>

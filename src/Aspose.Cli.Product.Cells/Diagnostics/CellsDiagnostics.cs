@@ -41,7 +41,7 @@ internal static class CellsDiagnostics
     /// How to keep a chart on one page, shared by the conversion warning and the review finding,
     /// after "Fit the sheet on fewer pages with" and the operation.
     /// </summary>
-    internal const string ChartSplitRemedy = "(fitToWidth 1 and fitToHeight 0, or orientation landscape), or move or resize the chart";
+    internal const string ChartSplitRemedy = "(fitToWidth 1 and fitToHeight 0, or orientation landscape, with pageSize {\"preset\":\"a4\"} or the paper of the report the pages join), or move or resize the chart";
 
     /// <summary>An import copied formulas that read a link without cached values, and their results changed.</summary>
     internal static readonly WarningCode ExternalLinkCacheMissing = new("EXTERNAL_LINK_CACHE_MISSING");

@@ -92,6 +92,9 @@ public sealed record CellsWorkbookSummary
     /// <summary>Hyperlinks; present only with <c>--detail hyperlinks</c>.</summary>
     public IReadOnlyList<CellsHyperlinkInfo>? Hyperlinks { get; init; }
 
+    /// <summary>Merged ranges, by sheet and then from the top left; present only with <c>--detail merges</c>.</summary>
+    public IReadOnlyList<CellsMergeInfo>? Merges { get; init; }
+
     /// <summary>The layout of every sheet, in workbook order; present only with <c>--detail layout</c>.</summary>
     public IReadOnlyList<CellsSheetLayoutInfo>? Layouts { get; init; }
 }
@@ -676,6 +679,16 @@ public sealed record CellsCommentInfo
 
     /// <summary>The comment author; omitted when empty.</summary>
     public string? Author { get; init; }
+}
+
+/// <summary>A merged range, as merge_cells writes it.</summary>
+public sealed record CellsMergeInfo
+{
+    /// <summary>Sheet the merged range is on.</summary>
+    public required string Sheet { get; init; }
+
+    /// <summary>The A1 range merged into one cell, such as A1:C1.</summary>
+    public required string Range { get; init; }
 }
 
 /// <summary>A hyperlink, with one of url and target.</summary>

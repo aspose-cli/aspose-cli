@@ -435,6 +435,36 @@ public sealed class CellsReviewTests
         return path;
     }
 
+    /// <summary>
+    /// A row too short for its text on a sheet that is not the active one gets a resize_rows
+    /// example that names that sheet, since an operation without one acts on the active sheet.
+    /// </summary>
+    [Fact]
+    public void Review_TextTallerThanRow_OnAnotherSheet_NamesThatSheetInTheExample()
+    {
+        Requires.Windows();
+        using var fixture = new CellsFixture();
+        string input = fixture.Temp.File("tall-title.xlsx");
+        using (var workbook = new Workbook())
+        {
+            workbook.Worksheets[0].Name = "Cover";
+            workbook.Worksheets[0].Cells["A1"].PutValue("Contents");
+            Worksheet data = workbook.Worksheets[workbook.Worksheets.Add()];
+            data.Name = "汇总 \"Q1\"";
+            data.Cells["A1"].PutValue("2026 年销售汇总 Sales Summary");
+            Style style = data.Cells["A1"].GetStyle();
+            style.Font.Size = 28;
+            data.Cells["A1"].SetStyle(style);
+            workbook.Worksheets.ActiveSheetIndex = 0;
+            workbook.Save(input);
+        }
+
+        ReviewFinding tall = Assert.Single(Review(fixture, input), static finding => finding.Code == "CELLS_TEXT_TALLER_THAN_ROW");
+
+        Assert.Equal("row/汇总 \"Q1\"!1", tall.Location);
+        Assert.Contains("""{"op":"resize_rows","sheet":"汇总 \"Q1\"","first":1}""", tall.Hint, StringComparison.Ordinal);
+    }
+
     [Fact]
     public void Review_ReportsAChartThatPrintingSplitsAcrossPages()
     {
@@ -450,6 +480,7 @@ public sealed class CellsReviewTests
         Assert.Equal("chart/Data/1", split.Location);
         Assert.Contains("2 printed pages", split.Message, StringComparison.Ordinal);
         Assert.Contains("fitToWidth", split.Hint, StringComparison.Ordinal);
+        Assert.Contains("pageSize", split.Hint, StringComparison.Ordinal);
         Assert.DoesNotContain(Review(fixture, fitted),
             static finding => finding.Code == "CELLS_CHART_SPLIT_ACROSS_PAGES");
     }

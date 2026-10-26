@@ -58,6 +58,9 @@ public static class CellsInspectDetails
     /// <summary>Hyperlinks in the workbook.</summary>
     public const string Hyperlinks = "hyperlinks";
 
+    /// <summary>Merged ranges in the workbook.</summary>
+    public const string Merges = "merges";
+
     /// <summary>
     /// The layout of each sheet: view, tab color, frozen panes, row heights and column widths,
     /// outline groups, AutoFilter, protection, print area and titles, orientation, scaling,
@@ -67,5 +70,5 @@ public static class CellsInspectDetails
 
     /// <summary>Every detail id, in documentation order.</summary>
     public static IReadOnlyList<string> All { get; } =
-        [Names, Errors, Fonts, Tables, Charts, Pivots, Validation, ConditionalFormats, Sparklines, Images, Comments, Hyperlinks, Layout];
+        [Names, Errors, Fonts, Tables, Charts, Pivots, Validation, ConditionalFormats, Sparklines, Images, Comments, Hyperlinks, Merges, Layout];
 }

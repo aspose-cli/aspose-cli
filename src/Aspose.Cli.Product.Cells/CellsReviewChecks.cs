@@ -30,6 +30,11 @@ internal static class CellsReviewChecks
         ReviewSeverities.Info,
         "Text spills over empty cells and ends close to a column edge, where a sheet image can cut its last character.");
 
+    public static ReviewCheck TextTallerThanRow { get; } = new(
+        "CELLS_TEXT_TALLER_THAN_ROW",
+        ReviewSeverities.Warning,
+        "A row is shorter than the font of a value in it, so the row cuts the text off at the top, as when an edit enlarges a font without fitting the row.");
+
     public static ReviewCheck PopulatedColumnsHidden { get; } = new(
         "CELLS_POPULATED_COLUMNS_HIDDEN",
         ReviewSeverities.Warning,
@@ -137,6 +142,7 @@ internal static class CellsReviewChecks
         SheetEmpty,
         CellsClipped,
         TextOverflows,
+        TextTallerThanRow,
         UsedRangeSparse,
         PopulatedColumnsHidden,
         PopulatedColumnsNarrow,

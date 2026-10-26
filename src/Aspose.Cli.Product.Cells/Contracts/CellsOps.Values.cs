@@ -119,6 +119,7 @@ public sealed record FormatRangeOp : CellsSheetOp
 public sealed record MergeCellsOp : CellsSheetOp
 {
     /// <summary>The range to merge, such as A1:C1.</summary>
+    [ReadBack("inspect-result.schema.json#/$defs/cellsMergeInfo/properties/range")]
     [A1Range] public required string Range { get; init; }
 }
 

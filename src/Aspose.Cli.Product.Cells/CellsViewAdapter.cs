@@ -198,8 +198,30 @@ internal sealed class CellsViewAdapter : IProductViewAdapter<CellsSession>
                     + "A sheet image or PDF page can cut the last character of such text there; check the end of each in the image.",
                 hint: "If a character is cut, widen the column the text starts in by one or two characters, or wrap the text."));
         }
+        AddTextHeightFinding(findings, sheet);
         AddPrintAreaFindings(findings, sheet);
         AddChartFindings(findings, sheet);
+    }
+
+    private static void AddTextHeightFinding(
+        ICollection<ReviewFinding> findings,
+        CellsReviewSheetLayout sheet)
+    {
+        CellsReviewRowSet rows = sheet.TextTallerThanRows;
+        if (rows.Count == 0)
+        {
+            return;
+        }
+
+        string samples = string.Join(", ", rows.Samples.Select(static row => string.Create(
+            System.Globalization.CultureInfo.InvariantCulture,
+            $"{row.Row + 1} ({row.Height:0.##} pt tall, {row.FontSize:0.##} pt text)")));
+        int first = rows.Samples[0].Row;
+        findings.Add(SheetFinding(CellsReviewChecks.TextTallerThanRow, sheet.Name,
+            $"{rows.Count} row(s) are shorter than the font of their text, which they cut off at the top; sample: {samples}.",
+            location: rows.Count == 1 ? CellsAddresses.Line(sheet.Name, rows: true, first) : null,
+            hint: $"Fit the rows to their text with resize_rows without a height, which auto-fits them, such as "
+                + $"{{\"op\":\"resize_rows\",\"sheet\":\"{System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping.Encode(sheet.Name)}\",\"first\":{first + 1}}}."));
     }
 
     private static void AddSparseRangeFinding(

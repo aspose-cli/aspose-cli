@@ -14,7 +14,12 @@ namespace Aspose.Cli.Invariants.Tests;
 /// <param name="Place">The place, <c>&lt;command&gt;: &lt;path&gt;</c>, with groups the items use.</param>
 /// <param name="Items">The items of a match, by its groups (the whole place first) and a lookup of a path in the same read result.</param>
 /// <param name="When">Whether the rule applies to a match; null when it applies to every one.</param>
-internal sealed record ReadItem(Regex Place, Func<string[], Func<string, string?>, IEnumerable<string>> Items, Func<string[], Func<string, string?>, bool>? When = null);
+/// <param name="Keyed">
+/// Whether the item's address is made of the values the place reports, such as a merged range:
+/// a change of them removes the item at the address before it and adds one at the address after
+/// it, so the place belongs to both.
+/// </param>
+internal sealed record ReadItem(Regex Place, Func<string[], Func<string, string?>, IEnumerable<string>> Items, Func<string[], Func<string, string?>, bool>? When = null, bool Keyed = false);
 
 // C-R39: the items whose reads changed, named as the targets of an edit name them (AGENTS.md
 // "Targets"). One table per product, in one place; a changed place no rule names is reported.
@@ -54,6 +59,7 @@ internal static partial class ContractRules
                 [$"{(m[1] == "sparklines" ? "sparkline-group" : "conditional-format")}/{at($"workbook.{m[1]}[{m[2]}].sheet")}/{SheetOrdinal(m[1], int.Parse(m[2], CultureInfo.InvariantCulture), at)}"]),
             Item(@"^cells inspect: workbook\.comments\[(\d+)\]", (m, at) => [$"comment/{at($"workbook.comments[{m[1]}].sheet")}!{at($"workbook.comments[{m[1]}].cell")}"]),
             Item(@"^cells inspect: workbook\.hyperlinks\[(\d+)\]", (m, at) => [$"hyperlink/{at($"workbook.hyperlinks[{m[1]}].sheet")}!{at($"workbook.hyperlinks[{m[1]}].range")}"]),
+            Keyed(@"^cells inspect: workbook\.merges\[(\d+)\]", (m, at) => [$"merge/{at($"workbook.merges[{m[1]}].sheet")}!{at($"workbook.merges[{m[1]}].range")}"]),
             Item(@"^cells inspect: workbook\.defaultFont\b", static (_, _) => ["workbook/default-font"]),
             // A read without --sheet reads the active sheet: reading another one, at another
             // position, is a change of it; the same one under another name is a renamed sheet.
@@ -127,21 +133,28 @@ internal static partial class ContractRules
         [StringSyntax(StringSyntaxAttribute.Regex)] string place, Func<string[], Func<string, string?>, IEnumerable<string>> items, Func<string[], Func<string, string?>, bool> when) =>
         new(new Regex(place, RegexOptions.CultureInvariant), items, when);
 
+    /// <summary>A rule whose items are addressed by the values the place reports (<see cref="ReadItem.Keyed"/>).</summary>
+    private static ReadItem Keyed([StringSyntax(StringSyntaxAttribute.Regex)] string place, Func<string[], Func<string, string?>, IEnumerable<string>> items) =>
+        new(new Regex(place, RegexOptions.CultureInvariant), items, Keyed: true);
+
     private static ReadItem Derived([StringSyntax(StringSyntaxAttribute.Regex)] string place) =>
         new(new Regex(place, RegexOptions.CultureInvariant), static (_, _) => []);
 
     /// <summary>
     /// The items a changed place of a read belongs to, by the product's <see cref="ReadItems"/>,
     /// looking its names up in the read after the change, or before it for an item the change
-    /// removed; none for a derived place, and null for a place no rule names.
+    /// removed, and for a keyed item in both; none for a derived place, and null for a place no
+    /// rule names.
     /// </summary>
     internal static IEnumerable<string>? RoundTripAddress(string product, string change, JsonArray read, JsonArray staged)
     {
         int colon = change.IndexOf(": ", StringComparison.Ordinal);
         string command = change[..colon];
-        string? Lookup(string path)
+        string? Lookup(string path) => LookupIn(path, read, staged);
+        string? Before(string path) => LookupIn(path, staged, read);
+        string? LookupIn(string path, params JsonArray[] states)
         {
-            foreach (JsonArray state in new[] { read, staged })
+            foreach (JsonArray state in states)
             {
                 JsonNode? result = state.FirstOrDefault(item => item!["command"]!.GetValue<string>() == command)?["result"];
                 if (result is not null && ScenarioRunner.TryResolve(result, path, out JsonNode? value) && value is JsonValue scalar)
@@ -157,7 +170,9 @@ internal static partial class ContractRules
                 && match.Groups.Cast<Group>().Select(static group => group.Value).ToArray() is var groups
                 && rule.When?.Invoke(groups, Lookup) != false)
             {
-                string[] items = [.. rule.Items(groups, Lookup)];
+                string[] items = rule.Keyed
+                    ? [.. rule.Items(groups, Lookup).Union(rule.Items(groups, Before), StringComparer.Ordinal)]
+                    : [.. rule.Items(groups, Lookup)];
                 // A name the lookup could not find leaves the address incomplete: no rule names it.
                 return items.Any(static item => item.Contains("//", StringComparison.Ordinal) || item.EndsWith('/') || item.EndsWith('!')) ? null : items;
             }
