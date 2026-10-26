@@ -1,4 +1,6 @@
 using System.Globalization;
+using System.Text.Encodings.Web;
+using System.Text.Json;
 using Aspose.Cli.Product.Words.Engine.Mapping;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Text;
@@ -178,9 +180,12 @@ internal static class WordsAnchorResolver
 
     /// <summary>
     /// The error for a heading or find text no candidate block contains. A name close to it among
-    /// the candidates is suggested as for any name; otherwise the hint names the block, heading
-    /// or not, that contains the longest leading part of the text, at least half of it, as a
-    /// clause title remembered as "第六条 合同解除" leads to "第六条 合同的解除和终止".
+    /// the candidates is suggested as for any name; otherwise the hint names the block that
+    /// contains the longest leading part of the text, at least half of it, as a clause title
+    /// remembered as "第六条 合同解除" leads to "第六条 合同的解除和终止". A missing heading looks
+    /// among the headings first, so "终止条款" leads to the heading "4. 终止 Termination" rather
+    /// than to a body paragraph that mentions 终止, and among all blocks only when no heading holds
+    /// such a part.
     /// </summary>
     private static CliException AnchorMissing(DocumentBlockIndex index, string subject, string needle, BlockEntry[] candidates)
     {
@@ -189,24 +194,35 @@ internal static class WordsAnchorResolver
             .Select(static entry => TextSearch.Truncate(WordsText.Of(entry.Node).Trim(), 80))
             .Where(static text => text.Length > 0)];
         string? hint = null;
-        if (Mistake.Of(needle, available).Suggestions.Count == 0 && Closest(index, needle) is { } closest)
+        if (Mistake.Of(needle, available).Suggestions.Count == 0)
         {
-            string text = WordsText.Of(closest.Node).Trim();
-            string heading = subject == "heading" && !candidates.Contains(closest) ? ", but it is not a heading" : string.Empty;
-            hint = $"Block {closest.Index} holds the closest text: '{TextSearch.Truncate(text, 80)}'{heading}; "
-                + $"address it with {{\"block\": {closest.Index}}} or a \"find\" text it contains.";
+            if (subject == "heading" && Closest(candidates, needle) is { } heading)
+            {
+                string text = WordsText.Of(heading.Node).Trim();
+                hint = $"Heading '{text}' holds the closest text; "
+                    + $"address it with {{\"heading\": {JsonSerializer.Serialize(text, Readable)}}}.";
+            }
+            else if (Closest(index.Entries, needle) is { } closest)
+            {
+                string text = WordsText.Of(closest.Node).Trim();
+                string notHeading = subject == "heading" ? ", but it is not a heading" : string.Empty;
+                hint = $"Block {closest.Index} holds the closest text: '{TextSearch.Truncate(text, 80)}'{notHeading}; "
+                    + $"address it with {{\"block\": {closest.Index}}} or a \"find\" text it contains.";
+            }
         }
 
         return CliErrors.TextNotFound(WordsDiagnostics.AnchorNotFound, subject, needle, available, hint);
     }
 
+    private static readonly JsonSerializerOptions Readable = new() { Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping };
+
     // The first block that contains the longest leading part of the text, at least half of it.
     // Spaces do not count, as a half-width space typed for a full-width one is a common slip,
     // and body blocks come before table of contents entries, which repeat the headings' text.
-    private static BlockEntry? Closest(DocumentBlockIndex index, string needle)
+    private static BlockEntry? Closest(IEnumerable<BlockEntry> entries, string needle)
     {
         string wanted = WithoutSpaces(needle);
-        (BlockEntry Entry, string Text)[] blocks = [.. index.Entries
+        (BlockEntry Entry, string Text)[] blocks = [.. entries
             .OrderBy(static entry => entry.Node is Paragraph
             {
                 ParagraphFormat.StyleIdentifier: >= StyleIdentifier.Toc1 and <= StyleIdentifier.Toc9,

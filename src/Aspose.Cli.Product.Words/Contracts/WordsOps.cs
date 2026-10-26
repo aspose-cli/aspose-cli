@@ -739,7 +739,11 @@ public sealed record SetListOp : WordsOp
     [ReadBack("read-result.schema.json#/$defs/wordsListData/properties/level")]
     [Minimum(1), Maximum(9)] public int Level { get; init; } = 1;
 
-    /// <summary>How the items are numbered, such as letters-lower for a., b., c.; decimal when omitted.</summary>
+    /// <summary>
+    /// How the items are numbered, such as letters-lower for a., b., c. When omitted, the level's
+    /// style in a new numbered list: decimal at levels 1, 4 and 7, letters-lower at levels 2, 5
+    /// and 8, and roman-lower at levels 3, 6 and 9.
+    /// </summary>
     [MistakenFor("format")]
     [ReadBack("read-result.schema.json#/$defs/wordsListData/properties/numberStyle")]
     [AllowedValues(typeof(WordsListNumberStyles))] public string? NumberStyle { get; init; }
