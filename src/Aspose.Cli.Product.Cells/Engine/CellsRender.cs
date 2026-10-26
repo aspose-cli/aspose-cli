@@ -206,7 +206,13 @@ internal static class CellsRender
         {
             // Rendering a sub-range goes through the print area; OnlyArea
             // keeps the output at exactly that area instead of a full page.
-            sheet.PageSetup.PrintArea = printArea;
+            // The page margins (and the headers and footers drawn in them)
+            // would still frame it in white, so a chart's image would be
+            // mostly blank paper; the render never saves, so they go.
+            PageSetup page = sheet.PageSetup;
+            page.PrintArea = printArea;
+            page.LeftMargin = page.RightMargin = page.TopMargin = page.BottomMargin = 0;
+            page.ClearHeaderFooter();
             imageOptions.OnlyArea = true;
         }
 

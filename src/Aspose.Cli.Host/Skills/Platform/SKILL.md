@@ -65,6 +65,25 @@ you parse a result. Every result names its `schema`, an id for
 codes and error codes you do not know; later versions add them. `--verbose`
 output is diagnostics for a person, not something to parse.
 
+## Hand off between products
+
+- **A chart or range as a picture.** Render the cells it covers; the image is
+  cut to that range, so it drops into a report or slide without white paper
+  around it:
+  `aspose-cli cells render book.xlsx --range "Summary!G2:N18" --out chart.png`.
+  Render the whole sheet first if you do not know which cells a chart covers,
+  then place the picture with the Words or Slides `insert_image` operation.
+- **A table into a Word report.** Convert one sheet to Markdown, which holds
+  the values as the sheet displays them and leaves out charts and pictures,
+  then pour it into the document's styles:
+  `aspose-cli cells convert book.xlsx --to md --sheets 2 --out table.md`, then
+  `aspose-cli words create report.docx --from-markdown table.md --template brand.docx`.
+- **PDFs merged into one.** Give every source the same paper before
+  converting it, with `set_page_setup` and `"pageSize": {"preset": "a4"}` in
+  Cells and in Words, so the merged pages do not switch size. A PDF converted from a Word document
+  or a workbook may already carry page numbers in its footer; render a page
+  before running `add_page_numbers` on the merged file.
+
 ## Common mistakes
 
 - **Guessing names.** A mistyped command, option, value, operation or field
