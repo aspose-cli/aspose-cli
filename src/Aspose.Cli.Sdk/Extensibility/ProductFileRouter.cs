@@ -11,10 +11,12 @@ public sealed record FileProbeOptions
     public int MaxPrefixBytes { get; init; } = 64 * 1024;
 
     /// <summary>
-    /// Absolute wall-clock budget shared by all recognizers.
+    /// Absolute wall-clock budget shared by all recognizers. It only ends a recognizer that
+    /// hangs, so it is far above what a cold engine load on a busy machine takes; a shorter
+    /// command deadline still ends routing first.
     /// </summary>
     public TimeSpan RecognizerTimeout { get; init; } =
-        TimeSpan.FromMilliseconds(500);
+        TimeSpan.FromSeconds(10);
 
     /// <summary>Maximum recognizers executing concurrently.</summary>
     public int MaxConcurrency { get; init; } = 4;
@@ -516,7 +518,7 @@ public sealed class ProductFileRouter
         {
             RecognitionEntry[] results = await Task.WhenAll(work)
                 .ConfigureAwait(false);
-            deadline.ThrowIfExpired("file-routing");
+            ThrowIfRoutingExpired(deadline);
             return results.OrderBy(
                     static entry => entry.Product.Manifest.Id,
                     StringComparer.Ordinal)
@@ -525,9 +527,7 @@ public sealed class ProductFileRouter
         catch (OperationCanceledException)
             when (!cancellationToken.IsCancellationRequested)
         {
-            throw CliErrors.OperationTimeout(
-                Math.Max(1, (int)Math.Ceiling(_options.RecognizerTimeout.TotalSeconds)),
-                "file-routing");
+            throw CliErrors.FileRoutingTimeout(_options.RecognizerTimeout);
         }
     }
 
@@ -573,13 +573,27 @@ public sealed class ProductFileRouter
                     Evidence = "recognizer failed",
                 };
             }
-            deadline.ThrowIfExpired("file-routing");
+            ThrowIfRoutingExpired(deadline);
             return new RecognitionEntry(product, recognition);
         }
         finally
         {
             concurrency.Release();
         }
+    }
+
+    /// <summary>
+    /// Ends routing whose own budget ran out with the error that names that budget, which
+    /// <c>--timeout</c> does not govern; caller cancellation stays a cancellation.
+    /// </summary>
+    private static void ThrowIfRoutingExpired(OperationDeadline deadline)
+    {
+        if (deadline.IsExpired)
+        {
+            throw CliErrors.FileRoutingTimeout(deadline.OriginalBudget!.Value);
+        }
+
+        deadline.Token.ThrowIfCancellationRequested();
     }
 
     private static bool EligibleForOperation(

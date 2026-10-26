@@ -311,6 +311,60 @@ public sealed class ProductFileRouterTests
     }
 
     [Fact]
+    public async Task DefaultBudget_RoutesRecognizersSlowedByALoadedMachine()
+    {
+        // A cold engine load or a busy machine can hold a recognizer well past a second.
+        var slow = new StaticRecognizer(async (_, cancellationToken) =>
+        {
+            await Task.Delay(TimeSpan.FromMilliseconds(1500), cancellationToken);
+            return new FileRecognition { Kind = FileRecognitionKind.Match };
+        });
+        ProductCatalog catalog = ProductCatalog.Build([Module("owner", ".owned", slow)]);
+        string path = CreateFile(".owned");
+        try
+        {
+            ProductDefinition result = await new ProductFileRouter(catalog).RouteAsync(path);
+
+            Assert.Equal("owner", result.Manifest.Id);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
+    public async Task RoutingTimeout_StatesItsOwnBudgetAndDoesNotPointAtTimeoutOption()
+    {
+        var hanging = new StaticRecognizer(async (_, cancellationToken) =>
+        {
+            await Task.Delay(Timeout.InfiniteTimeSpan, cancellationToken);
+            return new FileRecognition { Kind = FileRecognitionKind.Match };
+        });
+        ProductCatalog catalog = ProductCatalog.Build([Module("owner", ".owned", hanging)]);
+        string path = CreateFile(".owned");
+        try
+        {
+            CliException error = await Assert.ThrowsAsync<CliException>(
+                async () => await new ProductFileRouter(
+                    catalog,
+                    new FileProbeOptions { RecognizerTimeout = TimeSpan.FromSeconds(2) }).RouteAsync(path));
+
+            Assert.Equal(ErrorCodes.OperationTimeout, error.Code);
+            Assert.Equal(2, (int)error.Details!["timeoutSeconds"]!);
+            Assert.Equal("file-routing", (string)error.Details!["phase"]!);
+            Assert.Contains("2s", error.Message, StringComparison.Ordinal);
+            Assert.Contains("routing", error.Message, StringComparison.Ordinal);
+            // --timeout does not govern the routing budget, so the hint must not tell the caller to raise it.
+            Assert.DoesNotContain("Raise --timeout", error.Hint ?? "", StringComparison.Ordinal);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
     public void GenericFormatRejectsUnisolatedNonCooperativeRecognizer()
     {
         ProductDefinitionBuilder<ITestSession> builder = ExtProduct.Define<ITestSession>(
