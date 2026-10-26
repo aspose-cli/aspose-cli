@@ -168,7 +168,8 @@ public sealed class OperationJsonConverter<TOp> : JsonConverter<TOp>
             {
                 throw JsonContractDiagnostics.MissingField(
                     Join(path, property.Name),
-                    property.Constraints.OfType<AllowedValuesAttribute>().FirstOrDefault()?.Listed);
+                    property.Constraints.OfType<AllowedValuesAttribute>().FirstOrDefault()?.Spelled.ToArray(),
+                    property.Value is { Kind: OperationValueKind.Array, Items.Kind: OperationValueKind.String });
             }
 
             if (property.Default is not null && !value.TryGetProperty(property.Name, out _))

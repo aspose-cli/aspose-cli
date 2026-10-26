@@ -1,5 +1,6 @@
 using System.Text.Json.Nodes;
 using Aspose.Cli.TestKit;
+using Aspose.Cli.TestKit.Scenarios;
 using Xunit;
 
 namespace Aspose.Cli.IntegrationTests;
@@ -156,13 +157,13 @@ public sealed class MistakeRecoveryCliTests : IDisposable
 
     /// <summary>
     /// An extension close to none the command writes but to one a sibling command writes, such as
-    /// <c>.pfd</c> beside the <c>.pdf</c> of convert, suggests that extension and the sibling
-    /// that writes it, as the extension itself would.
+    /// <c>.pfd</c> beside the <c>.pdf</c> of convert, names the sibling that writes it, but
+    /// suggests no extension the command itself cannot write.
     /// </summary>
     [Theory]
-    [InlineData("words edit a.docx --ops words.json --out x.pfd", ".pdf", "then run 'aspose-cli words convert <that file> --to pdf' for pdf")]
-    [InlineData("cells edit a.xlsx --set Sheet1!A1=5 --out x.pfd", ".pdf", "then run 'aspose-cli cells convert <that file> --to pdf' for pdf")]
-    public void MistypedExtensionOfASiblingsFormat_SuggestsItAndTheSibling(string commandLine, string suggestion, string producer)
+    [InlineData("words edit a.docx --ops words.json --out x.pfd", "then run 'aspose-cli words convert <that file> --to pdf' for pdf")]
+    [InlineData("cells edit a.xlsx --set Sheet1!A1=5 --out x.pfd", "then run 'aspose-cli cells convert <that file> --to pdf' for pdf")]
+    public void MistypedExtensionOfASiblingsFormat_NamesTheSiblingAndSuggestsNothingItCannotWrite(string commandLine, string producer)
     {
         File.WriteAllText(_workspace.File("a.docx"), "not a document");
         File.WriteAllText(_workspace.File("a.xlsx"), "not a document");
@@ -173,12 +174,122 @@ public sealed class MistakeRecoveryCliTests : IDisposable
         Assert.Equal(2, result.ExitCode);
         JsonNode error = JsonNode.Parse(result.StdErr)!["error"]!;
         Assert.Equal("OPTION_INVALID", error["code"]!.GetValue<string>());
-        Assert.Equal([suggestion], error["details"]!["suggestions"]!.AsArray().Select(static extension => extension!.GetValue<string>()));
+        Assert.Null(error["details"]!["suggestions"]);
         Assert.Equal("pdf", error["details"]!["format"]!.GetValue<string>());
         string hint = error["hint"]!.GetValue<string>();
-        Assert.StartsWith($"Did you mean '{suggestion}'?", hint, StringComparison.Ordinal);
+        Assert.DoesNotContain("Did you mean", hint, StringComparison.Ordinal);
         Assert.Contains(producer, hint, StringComparison.Ordinal);
         Assert.False(File.Exists(_workspace.File("x.pfd")));
+    }
+
+    /// <summary>
+    /// An image command given an extension close to a format only another command writes, such as
+    /// <c>.gif</c> beside the <c>.tif</c> of convert, suggests only extensions it writes; the hint
+    /// still names the command that writes the other format.
+    /// </summary>
+    [Theory]
+    [InlineData("pdf render a.pdf --out x.gif", "aspose-cli pdf convert a.pdf --to tiff --out x.tif")]
+    [InlineData("slides render a.pptx --out x.gifx", "aspose-cli slides convert a.pptx --to gif --out x.gif")]
+    public void RenderOutputCloseToAnotherCommandsFormat_SuggestsOnlyExtensionsRenderWrites(string commandLine, string producer)
+    {
+        File.WriteAllText(_workspace.File("a.pdf"), "not a document");
+        File.WriteAllText(_workspace.File("a.pptx"), "not a document");
+
+        CliResult result = _workspace.Run([.. commandLine.Split(' '), "--output-format", "json"]);
+
+        Assert.Equal(2, result.ExitCode);
+        JsonNode error = JsonNode.Parse(result.StdErr)!["error"]!;
+        Assert.Equal("OPTION_INVALID", error["code"]!.GetValue<string>());
+        string[] available = [.. error["details"]!["available"]!.AsArray().Select(static extension => extension!.GetValue<string>())];
+        Assert.Subset(new HashSet<string>([".png", ".jpg", ".jpeg", ".svg"]), new HashSet<string>(available));
+        string[] suggestions = error["details"]!["suggestions"]?.AsArray().Select(static extension => extension!.GetValue<string>()).ToArray() ?? [];
+        Assert.Subset(new HashSet<string>(available), new HashSet<string>(suggestions));
+        string hint = error["hint"]!.GetValue<string>();
+        Assert.DoesNotContain("Did you mean", hint, StringComparison.Ordinal);
+        Assert.Contains(producer, hint, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// An image format that convert does not write, named by its extension as in <c>--to jpg</c>,
+    /// points to the render beside it, with the format render calls it and the same output.
+    /// </summary>
+    [Theory]
+    [InlineData("slides convert a.pptx --to jpg --out x.jpg", "Run 'aspose-cli slides render a.pptx --to jpeg --out x.jpg' for jpeg.")]
+    [InlineData("pdf convert a.pdf --to jpg --out x.jpg", "Run 'aspose-cli pdf render a.pdf --to jpeg --out x.jpg' for jpeg.")]
+    [InlineData("words convert a.docx --to jpg --out x.jpg", "Run 'aspose-cli words render a.docx --to jpeg --out x.jpg' for jpeg.")]
+    [InlineData("cells convert a.xlsx --to jpg", "Run 'aspose-cli cells render a.xlsx --to jpeg' for jpeg.")]
+    public void ImageFormatNamedByItsExtension_PointsToRenderWithTheSameOutput(string commandLine, string producer)
+    {
+        File.WriteAllText(_workspace.File("a.xlsx"), "not a document");
+        File.WriteAllText(_workspace.File("a.pptx"), "not a document");
+        File.WriteAllText(_workspace.File("a.pdf"), "not a document");
+        File.WriteAllText(_workspace.File("a.docx"), "not a document");
+
+        CliResult result = _workspace.Run([.. commandLine.Split(' '), "--output-format", "json"]);
+
+        Assert.Equal(2, result.ExitCode);
+        JsonNode error = JsonNode.Parse(result.StdErr)!["error"]!;
+        Assert.Equal("OPTION_INVALID", error["code"]!.GetValue<string>());
+        Assert.Equal("--to", error["details"]!["option"]!.GetValue<string>());
+        Assert.Contains(producer, error["hint"]!.GetValue<string>(), StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// A fixed value of an operation field written with a word of the same meaning, such as
+    /// <c>middle</c> for <c>center</c>, or mistyped, suggests the value meant, in every product.
+    /// </summary>
+    [Theory]
+    [InlineData("pdf", "a.pdf", """{"op":"add_page_numbers","placement":"bottom-middle"}""", "bottom-center")]
+    [InlineData("pdf", "a.pdf", """{"op":"add_page_numbers","placement":"bottm-left"}""", "bottom-left")]
+    [InlineData("cells", "a.xlsx", """{"op":"set_borders","range":"A1:B2","edges":["all"],"lineStyle":"thinn"}""", "thin")]
+    [InlineData("words", "a.docx", """{"op":"set_page_numbers","alignment":"centre"}""", "center")]
+    public void MisspelledFixedValueOfAnOperation_SuggestsTheValueMeant(string product, string file, string operation, string meant)
+    {
+        File.WriteAllText(_workspace.File(file), "not a document");
+        File.WriteAllText(_workspace.File("ops.json"), $$"""{"ops":[{{operation}}]}""");
+
+        CliResult result = _workspace.Run(product, "edit", file, "--ops", "ops.json", "--out", "out" + Path.GetExtension(file), "--output-format", "json");
+
+        JsonNode error = JsonNode.Parse(result.StdErr)!["error"]!;
+        Assert.Equal("OPS_INVALID", error["code"]!.GetValue<string>());
+        Assert.Contains(meant, error["details"]!["suggestions"]!.AsArray().Select(static value => value!.GetValue<string>()));
+        Assert.Contains($"Did you mean '{meant}'", error["hint"]!.GetValue<string>(), StringComparison.Ordinal);
+    }
+
+    /// <summary>A missing required array of fixed values says it is an array and shows one.</summary>
+    [Fact]
+    public void MissingRequiredArrayOfFixedValues_SaysItIsAnArrayAndShowsOne()
+    {
+        File.WriteAllText(_workspace.File("a.xlsx"), "not a document");
+        File.WriteAllText(_workspace.File("ops.json"), """{"ops":[{"op":"set_borders","range":"A1:B2"}]}""");
+
+        CliResult result = _workspace.Run("cells", "edit", "a.xlsx", "--ops", "ops.json", "--out", "out.xlsx", "--output-format", "json");
+
+        JsonNode error = JsonNode.Parse(result.StdErr)!["error"]!;
+        Assert.Equal("OPS_INVALID", error["code"]!.GetValue<string>());
+        Assert.Equal("edges", error["details"]!["field"]!.GetValue<string>());
+        string message = error["message"]!.GetValue<string>();
+        Assert.Contains("array", message, StringComparison.Ordinal);
+        Assert.Contains("\"edges\": [\"outline\"]", message, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// A file whose content is another product's document is named by what it is and by the
+    /// product that expected another, whichever way the command was chosen.
+    /// </summary>
+    [Theory]
+    [InlineData("words.docx", "report2.docx", "pdf merge report2.docx summary.pdf --out x.pdf", "By its content, 'report2.docx' is a words document; it is not a pdf document.")]
+    [InlineData("cells.xlsx", "a.xlsx", "words inspect a.xlsx", "By its content, 'a.xlsx' is a cells document; it is not a words document.")]
+    public void DocumentOfAnotherProduct_IsNamedByWhatItIs(string fixture, string file, string commandLine, string message)
+    {
+        File.WriteAllBytes(_workspace.File(file), ScenarioFixtures.Read(fixture));
+        File.WriteAllBytes(_workspace.File("summary.pdf"), ScenarioFixtures.Read("pdf.pdf"));
+
+        CliResult result = _workspace.Run([.. commandLine.Split(' '), "--output-format", "json"]);
+
+        JsonNode error = JsonNode.Parse(result.StdErr)!["error"]!;
+        Assert.Equal("FORMAT_MISMATCH", error["code"]!.GetValue<string>());
+        Assert.Equal(message, error["message"]!.GetValue<string>());
     }
 
     [Theory]

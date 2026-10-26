@@ -194,10 +194,24 @@ internal static class JsonContractDiagnostics
         return AllowedFieldsException.UnknownField(path, name, allowed, missing);
     }
 
-    /// <summary>Rejects an object that omits the required field <paramref name="field"/>, naming the values it takes when they are fixed.</summary>
-    public static JsonException MissingField(string field, string? allowedValues = null) =>
+    /// <summary>
+    /// Rejects an object that omits the required field <paramref name="field"/>, naming the
+    /// values it takes when they are fixed; for an array of them, it says so and shows one.
+    /// </summary>
+    /// <param name="field">The path of the missing field.</param>
+    /// <param name="allowedValues">The fixed values the field or its items take, as they are spelled; null for any.</param>
+    /// <param name="array">Whether the field is an array of strings whose items take <paramref name="allowedValues"/>.</param>
+    public static JsonException MissingField(string field, IReadOnlyList<string>? allowedValues = null, bool array = false) =>
         new ContractRejection(OpsInvalidReasons.MissingField, field,
-            $"the required field '{field}' is missing" + (allowedValues is null ? string.Empty : $"; it takes: {allowedValues}"));
+            $"the required field '{field}' is missing" + allowedValues switch
+            {
+                null or [] => string.Empty,
+                [var first, ..] when array =>
+                    $"; it takes an array of: {string.Join(", ", allowedValues)}, as in \"{LastName(field)}\": [\"{first}\"]",
+                _ => $"; it takes: {string.Join(", ", allowedValues)}",
+            });
+
+    private static string LastName(string field) => field[(field.LastIndexOf('.') + 1)..];
 
     private static bool Declares(JsonElement value, string name, StringComparer names) =>
         value.EnumerateObject().Any(member => names.Equals(member.Name, name));

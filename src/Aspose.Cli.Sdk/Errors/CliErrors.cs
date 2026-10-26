@@ -821,11 +821,12 @@ public static partial class CliErrors
     /// </param>
     /// <param name="hint">How to fix the command line.</param>
     /// <param name="facts">The format that decided <paramref name="extensions"/>, or the one the extension names.</param>
-    /// <param name="meant">
-    /// The extension a mistyped one stands for when it is none of <paramref name="extensions"/>
-    /// but that of a format another command writes, such as <c>.pdf</c> for <c>.pfd</c>; it is
-    /// the suggestion. Null otherwise.
-    /// </param>
+    /// <remarks>
+    /// <c>details.suggestions</c> holds only names among <paramref name="extensions"/>, which
+    /// this command writes: an extension that stands for a format another command writes, such
+    /// as <c>.pfd</c> for the <c>.pdf</c> of convert, is named by <paramref name="problem"/> and
+    /// <paramref name="hint"/> with the command that writes it, never suggested for this one.
+    /// </remarks>
     internal static CliException OutputExtensionInvalid(
         string parameter,
         string output,
@@ -834,12 +835,11 @@ public static partial class CliErrors
         IReadOnlyList<string> extensions,
         bool mistyped,
         string hint,
-        JsonObject facts,
-        string? meant = null)
+        JsonObject facts)
     {
         string extension = Path.GetExtension(output);
         // Only a mistyped extension is compared; an empty request is close to nothing.
-        var mistake = Mistake.Of(mistyped || meant is not null ? extension : string.Empty, extensions, meant,
+        var mistake = Mistake.Of(mistyped ? extension : string.Empty, extensions,
             keyOf: static name => name.TrimStart('.').ToLowerInvariant());
         facts[ParameterKey(parameter)] = parameter;
         facts["extension"] = extension;
@@ -861,8 +861,7 @@ public static partial class CliErrors
 
         return CliException.Create(
             ErrorCodes.FormatMismatch,
-            $"'{Path.GetFileName(path)}' has the {Path.GetExtension(path)} extension of a {declaredProduct} document, "
-                + $"but its content looks like {LooksLike(detectedProducts)}.",
+            Mismatch(path, declaredProduct, detectedProducts),
             hint: "Check where the file came from. " + ProductChoiceHint(detectedProducts),
             details: new JsonObject
             {
@@ -902,8 +901,7 @@ public static partial class CliErrors
         string file = details["path"]!.GetValue<string>();
         return CliException.Create(
             ErrorCodes.FormatMismatch,
-            $"'{Path.GetFileName(file)}' has the {Path.GetExtension(file)} extension of a {declaredProduct} document, "
-                + $"but its content looks like {LooksLike(detectedProducts)}.",
+            Mismatch(file, declaredProduct, detectedProducts),
             hint: hint,
             details: details,
             docs: corrupt.Docs,
@@ -1043,8 +1041,7 @@ public static partial class CliErrors
         // The message states what details.detected does, as the product's own mismatch does.
         string message = declaredProduct is null || detectedProducts.Count == 0
             ? $"The content of '{file}' does not show which product reads it."
-            : $"'{file}' has the {Path.GetExtension(path)} extension of a {declaredProduct} document, "
-                + $"but its content looks like {LooksLike(detectedProducts)}.";
+            : Mismatch(path, declaredProduct, detectedProducts);
         string hint = detectedProducts.Count == 0
             ? "Check what the file really is, or select its product explicitly: --product <id> where the command "
                 + "offers it, or that product's commands. The product is never chosen from the extension alone."
@@ -1063,6 +1060,11 @@ public static partial class CliErrors
                 ["available"] = available,
             });
     }
+
+    // The one sentence of a mismatch: what the content is, then the product that expected
+    // another document, whether the command's or the extension's.
+    private static string Mismatch(string path, string declaredProduct, IReadOnlyList<string> detectedProducts) =>
+        $"By its content, '{Path.GetFileName(path)}' is {LooksLike(detectedProducts)}; it is not a {declaredProduct} document.";
 
     private static string LooksLike(IReadOnlyList<string> products) => products.Count == 1
         ? $"a {products[0]} document"
