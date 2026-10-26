@@ -197,6 +197,45 @@ public sealed class PdfKnownIssueTests
     }
 
     [LicensedFact]
+    public void CompressObjects_InAnEncryptedDocument_WritesAFileNoReaderOpens()
+    {
+        using var fixture = new PdfEngineFixture();
+        string encrypted = fixture.File("encrypted.pdf");
+        using (var document = new Document(fixture.CreateDocument("plain.pdf", pages: 1)))
+        {
+            document.Encrypt("user", "owner", Aspose.Pdf.Facades.DocumentPrivilege.AllowAll, CryptoAlgorithm.AESx256, usePdf20: false);
+            document.Save(encrypted);
+        }
+
+        string optimized = fixture.File("optimized.pdf");
+        using (var document = new Document(encrypted, "user"))
+        {
+            document.OptimizeResources(new Aspose.Pdf.Optimization.OptimizationOptions { CompressObjects = true });
+            document.Save(optimized);
+        }
+
+        bool reencrypted;
+        string text;
+        try
+        {
+            using var reopened = new Document(optimized, "user");
+            reencrypted = reopened.IsEncrypted;
+            var absorber = new Aspose.Pdf.Text.TextAbsorber();
+            reopened.Pages.Accept(absorber);
+            text = absorber.Text;
+        }
+        catch (Exception exception) when (exception.GetType().Assembly.GetName().Name == "Aspose.PDF")
+        {
+            (reencrypted, text) = (false, string.Empty);
+        }
+
+        KnownIssue.Reproduces(
+            "PDF-ENCRYPTED-OBJECT-STREAMS",
+            !reencrypted && !text.Contains("Portable PDF page 1", StringComparison.Ordinal),
+            $"the optimized file reads back {(reencrypted ? "encrypted" : "unencrypted")} with the text '{text.Trim()}'");
+    }
+
+    [LicensedFact]
     public void NamedDestinations_ThrowForANameTreeWithoutDests()
     {
         using var fixture = new PdfEngineFixture();

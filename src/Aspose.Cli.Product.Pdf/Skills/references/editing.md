@@ -247,7 +247,8 @@ streams. After optimizing, the page is about 50 KB; run it last, after stamping
 text. A document with a form field to fill keeps its fonts whole, so a value can
 still use any character: fill, then `flatten_forms` and `optimize_document` in
 one batch to cut them. A document with a signature field keeps its fonts whole
-too. Identical streams are stored once. `removeUnusedObjects` removes images a page lists but
+too. On an encrypted document `optimize_document` needs `"compressStreams": false`,
+or `decrypt_document` before it and `encrypt_document` after it. Identical streams are stored once. `removeUnusedObjects` removes images a page lists but
 never draws. `unembedFonts` removes the fonts altogether, and the
 text then renders only where the reader has them installed (a CJK font on
 another operating system usually is not): tell the user before sending such a

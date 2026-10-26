@@ -483,6 +483,17 @@ Reproductions: [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownI
 - **Workaround:** deliver the docx as `pdf convert` wrote it, or write it with
   `aspose-cli words convert <pdf> --to docx`, which asks for no embedded fonts.
 
+### PDF-ENCRYPTED-OBJECT-STREAMS
+
+- **Defect:** `OptimizeResources` with `CompressObjects` on an encrypted document writes a file
+  that no reader opens: Aspose.PDF reads it back with neither encryption nor text, and other
+  readers report a corrupt object stream, with the password or without. Decrypting first and
+  encrypting after the optimization writes a sound file.
+- **CLI behavior:** `optimize_document` with `compressStreams` (its default) on an encrypted
+  document is refused before anything is written.
+- **Workaround:** set `"compressStreams": false`, or put `decrypt_document` before
+  `optimize_document` and `encrypt_document` after it (or pass `--encrypt-env`).
+
 ## Aspose.Slides.NET6.CrossPlatform 26.9.0
 
 Reproductions: [SlidesKnownIssueTests](tests/Aspose.Cli.Product.Slides.Tests/SlidesKnownIssueTests.cs),
