@@ -193,7 +193,7 @@
         "type": "Project",
         "dependencies": {
           "Aspose.Cells": "[26.9.0, )",
-          "Aspose.Cli.Sdk": "[1.0.0, )"
+          "Aspose.Cli.Sdk": "[1.0.1, )"
         }
       },
       "aspose.cli.sdk": {
@@ -206,7 +206,7 @@
       "aspose.cli.testkit": {
         "type": "Project",
         "dependencies": {
-          "Aspose.Cli.Sdk": "[1.0.0, )",
+          "Aspose.Cli.Sdk": "[1.0.1, )",
           "JsonSchema.Net": "[9.2.2, )",
           "xunit.v3.assert": "[3.2.2, )",
           "xunit.v3.extensibility.core": "[3.2.2, )"
