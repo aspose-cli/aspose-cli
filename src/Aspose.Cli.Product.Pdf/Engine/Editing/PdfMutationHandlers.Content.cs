@@ -73,6 +73,11 @@ internal sealed partial class PdfMutationHandlers
         int ordinal = operation.Start;
         foreach (int number in pages)
         {
+            if (ShowsPageNumber(_document.Pages[number], _document.Pages.Count))
+            {
+                _numbered.Add(number);
+            }
+
             string text = operation.Text
                 .Replace("{n}", ordinal.ToString(CultureInfo.InvariantCulture), StringComparison.Ordinal)
                 .Replace("{N}", _document.Pages.Count.ToString(CultureInfo.InvariantCulture), StringComparison.Ordinal);
@@ -82,6 +87,67 @@ internal sealed partial class PdfMutationHandlers
 
         return default;
     }
+
+    /// <summary>
+    /// Whether the page shows a page number in its header or footer, as a PDF converted from a
+    /// word-processing document or a spreadsheet often does: a line near the top or bottom edge,
+    /// within the outer inch or the outer tenth of a smaller page, that reads as a page number,
+    /// such as <c>3</c>, <c>- 3 -</c>, <c>Page 3 of 9</c> or <c>3 / 9</c> with numbers the
+    /// document's <paramref name="pages"/> allow, and stands apart from every other line but
+    /// another page number by at least half a line, as a header or footer does and a line of
+    /// the body does not. A number alone beside other text on its line, such as a footer with a
+    /// title on the left and the number on the right, counts too.
+    /// </summary>
+    private static bool ShowsPageNumber(Page page, int pages)
+    {
+        const double apart = 6;
+        bool shows = false;
+        Unrotated(page, () =>
+        {
+            Rectangle box = page.CropBox;
+            double margin = Math.Min(72, box.Height / 10);
+            var absorber = new TextFragmentAbsorber();
+            page.Accept(absorber);
+            TextFragment[] fragments = [.. absorber.TextFragments.Where(static fragment => !string.IsNullOrWhiteSpace(fragment.Text))];
+            shows = fragments
+                .Where(fragment => fragment.Rectangle.URY <= box.LLY + margin || fragment.Rectangle.LLY >= box.URY - margin)
+                .Any(candidate =>
+                {
+                    Rectangle at = candidate.Rectangle;
+                    // A fragment of the same line has its middle within half a line of the candidate's.
+                    TextFragment[] line = [.. fragments.Where(fragment =>
+                        Math.Abs(fragment.Rectangle.LLY + fragment.Rectangle.URY - at.LLY - at.URY) < at.Height)];
+                    return (IsPageNumber(candidate.Text, pages)
+                            || IsPageNumber(string.Concat(line.OrderBy(static fragment => fragment.Rectangle.LLX).Select(static fragment => fragment.Text)), pages))
+                        && fragments.Except(line).All(fragment => fragment.Rectangle.LLY >= at.URY + apart || fragment.Rectangle.URY <= at.LLY - apart
+                            || IsPageNumber(fragment.Text, pages));
+                });
+        });
+        return shows;
+    }
+
+    /// <summary>
+    /// Whether the text reads as a page number of a document of <paramref name="pages"/> pages:
+    /// a number from 1 to the page count and, when it gives one, a page count from that number to
+    /// the document's, which a merged document's parts number on their own.
+    /// </summary>
+    private static bool IsPageNumber(string text, int pages)
+    {
+        Match match = PageNumberText().Match(text);
+        if (!match.Success)
+        {
+            return false;
+        }
+
+        int number = int.Parse(match.Groups["n"].ValueSpan, CultureInfo.InvariantCulture);
+        int total = match.Groups["total"].Success ? int.Parse(match.Groups["total"].ValueSpan, CultureInfo.InvariantCulture) : number;
+        return number >= 1 && number <= total && total <= pages;
+    }
+
+    // A page number alone or with the usual words around it: dashes or bars, "Page", "p.", the
+    // Chinese 第…页, and a page count after "/" or "of", in Chinese 共…页.
+    [GeneratedRegex(@"^[\s\-\u2013\u2014|]*(?:(?:page|p\.|\u7B2C)\s*)?(?<n>[0-9]{1,4})\s*\u9875?(?:\s*(?:/|of)\s*\u5171?\s*(?<total>[0-9]{1,4})\s*\u9875?)?[\s\-\u2013\u2014|]*$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
+    private static partial Regex PageNumberText();
 
     public ValueTuple Apply(AddHeaderTextOp operation) =>
         MarginText(operation.Text, operation.Pages, $"top-{operation.Alignment}", operation.Font);

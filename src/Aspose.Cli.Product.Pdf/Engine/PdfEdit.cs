@@ -1,3 +1,5 @@
+using System.Globalization;
+using System.Text.Json.Nodes;
 using Aspose.Cli.Product.Pdf.Engine.Editing;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.IO.Input;
@@ -71,6 +73,7 @@ internal static class PdfEdit
         }
         finally { operationInputs.ThrowIfFailed(); }
         List<Warning> warnings = BuildWarnings(signatures, applied, model.TextMoved, model.TextBeside);
+        warnings.AddRange(model.NumberedTwice.Select(static numbered => NumberedTwice(numbered.Id, numbered.Pages)));
         if (MetadataRewritten(batch.Ops, applied.Outcomes) is { } rewritten)
         {
             warnings.Add(rewritten);
@@ -222,6 +225,41 @@ internal static class PdfEdit
             {
                 Hint = "They name the PDF library and the time of this save, and no operation removes them; the operation's targets name only the entries the output changed.",
             };
+    }
+
+    /// <summary>
+    /// An add_page_numbers stamped its number on pages whose header or footer already showed one,
+    /// as a PDF converted from a word-processing document or a spreadsheet often does.
+    /// </summary>
+    private static Warning NumberedTwice(string id, IReadOnlyList<int> pages) =>
+        new(PdfDiagnostics.PageNumbersAlreadyPresent,
+            $"Operation '{id}' (add_page_numbers) numbered {PageList(pages)}, whose header or footer already shows a page number, so {(pages.Count == 1 ? "it shows" : "they show")} two.")
+        {
+            Location = $"{PdfSnapshots.PageUnit}/{pages[0].ToString(CultureInfo.InvariantCulture)}",
+            Hint = $"A PDF converted from a Word document or a spreadsheet often numbers its pages already: read the page with 'pdf read --pages {pages[0].ToString(CultureInfo.InvariantCulture)}' to see the number it shows. "
+                + "To keep one number, edit the input again without add_page_numbers, or with its pages limited to the pages that show none.",
+            Details = new JsonObject { ["id"] = id, ["op"] = "add_page_numbers" },
+        };
+
+    /// <summary>The pages as <c>page 3</c> or <c>pages 1-3, 7</c>.</summary>
+    private static string PageList(IReadOnlyList<int> pages)
+    {
+        var ranges = new List<string>();
+        for (int start = 0; start < pages.Count;)
+        {
+            int end = start;
+            while (end + 1 < pages.Count && pages[end + 1] == pages[end] + 1)
+            {
+                end++;
+            }
+
+            ranges.Add(end == start
+                ? pages[start].ToString(CultureInfo.InvariantCulture)
+                : string.Create(CultureInfo.InvariantCulture, $"{pages[start]}-{pages[end]}"));
+            start = end + 1;
+        }
+
+        return (pages.Count == 1 ? "page " : "pages ") + string.Join(", ", ranges);
     }
 
     private static List<Warning> BuildWarnings(

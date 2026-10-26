@@ -84,7 +84,10 @@ the top-left corner of the media box.
 `set_page_labels` changes navigation labels, not visible page text, and updates
 only the ranges it names. `add_page_numbers` stamps visible text: `{n}` counts
 the selected pages from `start`, and `{N}` is the document's page count when the
-operation runs, so number pages after inserting or deleting them.
+operation runs, so number pages after inserting or deleting them. A PDF converted
+from a Word document or a spreadsheet often numbers its pages in its footer
+already: read a page with `pdf read --pages 1` before numbering, and act on
+`PAGE_NUMBERS_ALREADY_PRESENT`, which names the pages that now show two numbers.
 
 ## Navigation after page moves
 
@@ -107,6 +110,9 @@ input but with other contents is left out with a `LOSSY_CONVERSION` warning that
 names it: rename it in its input and merge again. `pdf inspect --detail attachments`
 lists two attachments of the same name as two entries, each with the `sizeBytes`,
 `mimeType` and `description` the file states for it.
+A merge keeps each page's size and warns `PAGE_SIZES_MIXED`, listing the sizes,
+when the inputs' paper differs, such as A4 and Letter: set one paper size in the
+sources before converting them to PDF.
 Each publishes its output with
 a `NAVIGATION_DEGRADED` warning that counts the entries that no longer lead where
 they did. Re-create them with `add_bookmark` and `add_hyperlink`, or reorder pages
@@ -233,10 +239,15 @@ The grid exists only in the rendered image; the PDF is never changed.
 ## Other effects
 
 `optimize_document` can lower image quality and unembed fonts; compare file sizes and
-look at the affected pages. It always stores identical streams once, so a merge
-of files that each embed the same font keeps one copy; image settings do not
-shrink a file whose size is its fonts (`pdf inspect --detail fonts` shows
-`embedded` and `subset`). `removeUnusedObjects` removes images a page lists but
+look at the affected pages. It cuts every embedded font down to what the
+document's characters need: a PDF that `pdf create` writes embeds font subsets
+still sized for the whole font, about 300 KB for a page of Chinese and English,
+and a merge of such files keeps each one, since different subsets are different
+streams. After optimizing, the page is about 50 KB; run it last, after stamping
+text. A document with a form field to fill keeps its fonts whole, so a value can
+still use any character: fill, then `flatten_forms` and `optimize_document` in
+one batch to cut them. A document with a signature field keeps its fonts whole
+too. Identical streams are stored once. `removeUnusedObjects` removes images a page lists but
 never draws. `unembedFonts` removes the fonts altogether, and the
 text then renders only where the reader has them installed (a CJK font on
 another operating system usually is not): tell the user before sending such a

@@ -260,6 +260,13 @@ internal sealed partial class PdfMutationHandlers
             CompressObjects = operation.CompressStreams,
             LinkDuplicateStreams = true,
             UnembedFonts = operation.UnembedFonts,
+            // The engine embeds a font subset with tables still sized for every glyph of the
+            // font, such as a SimSun of about 400 KB for a few characters; subsetting again keeps
+            // only what the characters need, and the save leaves out the programs it replaced.
+            // A field to fill keeps the fonts whole: the engine leaves a value unset whose
+            // characters the field's font no longer has. So does a signature field, whose
+            // signature rewriting the fonts would invalidate.
+            SubsetFonts = !operation.UnembedFonts && !_document.Form.Fields.Any(static field => field is not ButtonField),
         };
         if (operation.DownsampleImagesDpi.HasValue || operation.ImageQuality.HasValue)
         {
