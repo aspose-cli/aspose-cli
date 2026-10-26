@@ -1,5 +1,6 @@
 using System.Drawing;
 using System.Globalization;
+using Aspose.Cli.Sdk.IO.Input;
 using Aspose.Slides;
 
 namespace Aspose.Cli.Product.Slides.Engine;
@@ -131,6 +132,17 @@ internal static class SlidesAuthoring
                 Hint = "Split the table across slides under the same heading, shorten its cells or give it a smaller fontSize with format_shape, then review the slide.",
                 Location = SlidesStateProjection.SlideAddress(slideNumber),
             };
+
+    /// <summary>
+    /// Adds a checked image's bytes to the presentation's images. Aspose.Slides keeps SVG markup
+    /// given as bytes as an unknown picture that renders blank, so an SVG is imported as one,
+    /// which the presentation stores with a rendering the viewers draw. The caller has already
+    /// removed every reference outside the SVG (<see cref="ImageInput"/>).
+    /// </summary>
+    internal static IPPImage AddImage(Presentation presentation, byte[] data) =>
+        ImageInput.EngineFormatOf(data) == EngineImageFormat.Svg
+            ? presentation.Images.AddImage(new SvgImage(data))
+            : presentation.Images.AddImage(data);
 
     /// <summary>The largest rectangle with the image's aspect ratio, centered in the box.</summary>
     internal static RectangleF Fit(IPPImage image, RectangleF box)

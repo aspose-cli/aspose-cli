@@ -117,7 +117,7 @@ internal sealed partial class SlidesMutationHandlers
         if (operation.Path is not null)
         {
             EnsureFile(operation.Path);
-            image = _presentation.Images.AddImage(OperationImages.Read(_inputs, operation.Path));
+            image = SlidesAuthoring.AddImage(_presentation, OperationImages.Read(_inputs, operation.Path));
         }
 
         foreach (ISlide slide in Slides)

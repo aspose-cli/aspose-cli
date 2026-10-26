@@ -280,7 +280,7 @@ internal static partial class SlidesMarkdownBuilder
             return;
         }
 
-        IPPImage image = presentation.Images.AddImage(data);
+        IPPImage image = SlidesAuthoring.AddImage(presentation, data);
 
         // The image takes the frame of the first content placeholder that holds no text.
         IAutoShape? frame = content.FirstOrDefault(static shape => string.IsNullOrEmpty(shape.TextFrame?.Text));
