@@ -1,5 +1,3 @@
-using System.Text.Json.Nodes;
-
 namespace Aspose.Cli.Sdk.IO.Input;
 
 /// <summary>
@@ -8,12 +6,7 @@ namespace Aspose.Cli.Sdk.IO.Input;
 /// </summary>
 /// <param name="Encrypted">Whether the document is encrypted, including a PDF with only an owner password.</param>
 /// <param name="OpenPassword">Whether an encrypted document needs a password to open, not only to change it.</param>
-/// <param name="Restrictions">
-/// For an encrypted document, the fields of the operation that encrypts
-/// (<c>[EncryptsOutput]</c>) that restrict a copy as the document is
-/// restricted, such as the permissions it grants readers without the owner password.
-/// </param>
-public sealed record InputProtection(bool Encrypted, bool OpenPassword = true, JsonObject? Restrictions = null);
+public sealed record InputProtection(bool Encrypted, bool OpenPassword = true);
 
 /// <summary>
 /// An input document a product loader opened, which tells the write pipeline how it is

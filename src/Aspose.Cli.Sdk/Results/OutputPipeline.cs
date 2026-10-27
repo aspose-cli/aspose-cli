@@ -1,4 +1,3 @@
-using System.Text.Json.Nodes;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Formats;
@@ -37,7 +36,6 @@ public abstract class OutputPipeline : ILicenseState
     private bool _encryptedInput;
     private bool _openPassword;
     private bool _decrypted;
-    private JsonObject? _restrictions;
     private readonly SortedSet<string> _plainCopies = new(StringComparer.Ordinal);
 
     private protected OutputPipeline(ILicenseGate licenseGate, SafeFileWriter writer)
@@ -113,10 +111,6 @@ public abstract class OutputPipeline : ILicenseState
         {
             _encryptedInput |= protection.Encrypted;
             _openPassword |= protection.Encrypted && protection.OpenPassword;
-            if (protection.Encrypted)
-            {
-                _restrictions ??= protection.Restrictions;
-            }
         }
     }
 
@@ -164,7 +158,6 @@ public abstract class OutputPipeline : ILicenseState
         string[] formats;
         bool openPassword;
         bool decrypted;
-        JsonObject? restrictions;
         lock (_sync)
         {
             if (!_encryptedInput || _plainCopies.Count == 0)
@@ -175,14 +168,13 @@ public abstract class OutputPipeline : ILicenseState
             formats = [.. _plainCopies];
             openPassword = _openPassword;
             decrypted = _decrypted;
-            restrictions = _restrictions;
         }
 
         return new Warning(
             WarningCodes.EncryptionRemoved,
             $"The {string.Join(", ", formats.Select(static format => $"'{format}'"))} output is not encrypted, although an input it was made from is: it opens without a password.")
         {
-            Hint = protection?.Invoke(new EncryptionLoss(formats, openPassword, decrypted, restrictions)) ?? "If the output must stay protected, write it in a format that can carry a password.",
+            Hint = protection?.Invoke(new EncryptionLoss(formats, openPassword, decrypted)) ?? "If the output must stay protected, write it in a format that can carry a password.",
         };
     }
 

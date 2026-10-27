@@ -1,5 +1,3 @@
-using System.Text.Json;
-using System.Text.Json.Nodes;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Formats;
 using Aspose.Cli.Sdk.IO.Budgets;
@@ -53,56 +51,11 @@ internal sealed class PdfDocumentLoader
     /// <summary>Opens a user input with the password from the command's <c>--password-env</c>, if any.</summary>
     public LoadedPdf Open(string path, Secret? password) => Open(path, PasswordSource.Option(password));
 
-    /// <summary>
-    /// The <c>encrypt_document</c> fields that grant a copy what the document grants readers
-    /// without the owner password, named as <c>pdf inspect --detail permissions</c> names them.
-    /// </summary>
-    private static JsonObject Restrictions(Document document)
-    {
-        var permissions = (Permissions)document.Permissions;
-        var granted = new PdfPermissionsInput
-        {
-            Print = permissions.HasFlag(Permissions.PrintDocument),
-            Copy = permissions.HasFlag(Permissions.ExtractContent),
-            Modify = permissions.HasFlag(Permissions.ModifyContent),
-            Annotate = permissions.HasFlag(Permissions.ModifyTextAnnotations),
-            FillForms = permissions.HasFlag(Permissions.FillForm),
-            ExtractAccessibility = permissions.HasFlag(Permissions.ExtractContentWithDisabilities),
-            Assemble = permissions.HasFlag(Permissions.AssembleDocument),
-            PrintHighResolution = permissions.HasFlag(Permissions.PrintingQuality),
-        };
-        return new JsonObject
-        {
-            ["permissions"] = JsonSerializer.SerializeToNode(granted, PdfOpsJsonContext.Default.PdfPermissionsInput),
-        };
-    }
-
     // Generated candidates are bounded by publication, not a second user-input admission.
     internal LoadedPdf OpenPublishedCandidate(string path, Secret? password) =>
         InputOpening.OpenPublished(() => OpenCore(path, PasswordSource.Option(password)));
 
-    // An encrypted file's restrictions are read once it has loaded, outside the translation of
-    // its load failures: an engine failure to read them is not a damaged input.
     private LoadedPdf OpenCore(string path, PasswordSource password)
-    {
-        LoadedPdf loaded = Load(path, password);
-        if (!loaded.Encrypted)
-        {
-            return loaded;
-        }
-
-        try
-        {
-            return loaded with { Restrictions = Restrictions(loaded.Document) };
-        }
-        catch
-        {
-            loaded.Dispose();
-            throw;
-        }
-    }
-
-    private LoadedPdf Load(string path, PasswordSource password)
     {
         EnsurePdfHeader(path);
 
@@ -197,14 +150,8 @@ internal sealed record LoadedPdf(
     /// <summary>Whether the file is encrypted, as it was opened; a later decryption does not change it.</summary>
     public bool Encrypted { get; } = Document.IsEncrypted;
 
-    /// <summary>
-    /// For an encrypted file, the <c>encrypt_document</c> fields that grant a copy what the file
-    /// grants readers without the owner password; null for a file that is not encrypted.
-    /// </summary>
-    public JsonObject? Restrictions { get; init; }
-
     /// <inheritdoc />
-    public InputProtection Protection => new(Encrypted, HasOpenPassword, Restrictions);
+    public InputProtection Protection => new(Encrypted, HasOpenPassword);
 
     public void Dispose()
     {
