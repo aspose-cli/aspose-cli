@@ -170,11 +170,8 @@ public sealed class CommandDefinition<TRequest, TResult>
     /// </summary>
     internal Func<string, ProductOperationCommand>? Operations { get; init; }
 
-    /// <summary>
-    /// For an edit, the operation document that encrypts the edited document with the password
-    /// a named environment variable holds, or null when its vocabulary has none.
-    /// </summary>
-    internal Func<string?, bool, System.Text.Json.Nodes.JsonObject?, string?>? EncryptingDocument { get; init; }
+    /// <summary>For an edit, whether its vocabulary has an operation that encrypts the edited document.</summary>
+    internal bool Encrypts { get; init; }
 
     /// <summary>Every renderer the definition declares.</summary>
     internal IEnumerable<ProductOutputDefinition> Outputs()
@@ -199,9 +196,9 @@ public sealed class CommandDefinition<TRequest, TResult>
         command.SetAction(parse => context.Run(parse, scope => Execute(options, parse, scope, context, handler)));
         CommandMistakes.Declare(command, MistakenFor, MistakenForHint);
         CommandMistakes.DeclareRefused(command, RefusedOptions);
-        if (EncryptingDocument is { } encrypting)
+        if (Encrypts)
         {
-            ProtectionAdvice.Declare(command, encrypting);
+            ProtectionAdvice.Declare(command);
         }
 
         return Examples.Count == 0 && Links.Count == 0 ? command : command.WithExamples(Examples, Links);
@@ -323,7 +320,7 @@ public static class EditDefinition
             MistakenFor = mistakenFor ?? [],
             MistakenForHint = mistakenForHint,
             Operations = TOp.Catalog.Describe,
-            EncryptingDocument = TOp.Catalog.EncryptingDocument,
+            Encrypts = TOp.Catalog.Encrypts,
         };
     }
 }
