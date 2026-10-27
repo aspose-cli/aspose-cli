@@ -12,31 +12,48 @@ public static class CellsFormats
 {
     /// <summary>Canonical immutable format declarations owned by this product.</summary>
     internal static readonly IReadOnlyList<FormatDescriptor> Definitions =
-        FileFormatRecognition.AttachTo(
     [
-        FormatDescriptor.Declare("xlsx", FormatUse.Input | FormatUse.Convert, 0, 0, null, true, ".xlsx") with { Protectable = true },
-        FormatDescriptor.Declare("xltx", FormatUse.Input | FormatUse.Convert, 1, 1, null, true, ".xltx") with { Protectable = true },
-        FormatDescriptor.Declare("xlsm", FormatUse.Input | FormatUse.Convert, 2, 2, null, true, ".xlsm") with { Protectable = true },
-        FormatDescriptor.Declare("xltm", FormatUse.Input | FormatUse.Convert, 3, 3, null, true, ".xltm") with { Protectable = true },
-        FormatDescriptor.Declare("xlsb", FormatUse.Input | FormatUse.Convert, 4, 4, null, true, ".xlsb") with { Protectable = true },
-        FormatDescriptor.Declare("xls", FormatUse.Input | FormatUse.Convert, 5, 5, null, true, ".xls") with { Protectable = true },
-        FormatDescriptor.Declare("ods", FormatUse.Input | FormatUse.Convert, 6, 6, null, true, ".ods") with { Protectable = true },
-        FormatDescriptor.Declare("csv", FormatUse.Input | FormatUse.Convert, 7, 7, null, true, ".csv", ".txt")
-            with { UnroutedExtensions = [".txt"] },
-        FormatDescriptor.Declare("tsv", FormatUse.Input | FormatUse.Convert, 8, 8, null, true, ".tsv", ".txt")
-            with { UnroutedExtensions = [".txt"] },
+        FormatDescriptor.Declare("xlsx", FormatUse.Input | FormatUse.Convert, true, ".xlsx") with { Protectable = true, Recognition = CellsFormatRecognition.SpreadsheetPackage },
+        FormatDescriptor.Declare("xltx", FormatUse.Input | FormatUse.Convert, true, ".xltx") with { Protectable = true, Recognition = CellsFormatRecognition.SpreadsheetPackage },
+        FormatDescriptor.Declare("xlsm", FormatUse.Input | FormatUse.Convert, true, ".xlsm") with { Protectable = true, Recognition = CellsFormatRecognition.SpreadsheetPackage },
+        FormatDescriptor.Declare("xltm", FormatUse.Input | FormatUse.Convert, true, ".xltm") with { Protectable = true, Recognition = CellsFormatRecognition.SpreadsheetPackage },
+        FormatDescriptor.Declare("xlsb", FormatUse.Input | FormatUse.Convert, true, ".xlsb") with { Protectable = true, Recognition = CellsFormatRecognition.SpreadsheetPackage },
+        FormatDescriptor.Declare("xls", FormatUse.Input | FormatUse.Convert, true, ".xls") with { Protectable = true, Recognition = CellsFormatRecognition.CompoundWorkbook },
+        FormatDescriptor.Declare("ods", FormatUse.Input | FormatUse.Convert, true, ".ods") with
+        {
+            Protectable = true,
+            Recognition = FileFormatRecognition.Match(
+                FileProbePattern.ZipContainsAny("application/vnd.oasis.opendocument.spreadsheet"),
+                "OpenDocument spreadsheet mimetype"),
+        },
+        FormatDescriptor.Declare("csv", FormatUse.Input | FormatUse.Convert, true, ".csv", ".txt") with
+        {
+            UnroutedExtensions = [".txt"],
+            Recognition = FileFormatRecognition.Match(
+                FileProbePattern.All(FileProbePattern.ValidText(), FileProbePattern.TextContains(",")),
+                "bounded delimited-text grammar",
+                70),
+        },
+        FormatDescriptor.Declare("tsv", FormatUse.Input | FormatUse.Convert, true, ".tsv", ".txt") with
+        {
+            UnroutedExtensions = [".txt"],
+            Recognition = FileFormatRecognition.Match(
+                FileProbePattern.All(FileProbePattern.ValidText(), FileProbePattern.TextContains("\t")),
+                "bounded tab-delimited grammar",
+                70),
+        },
         // HTML and MHTML are written only: reading them, the engine opens the images they name by
         // path, past every resource hook, and no option turns that off.
-        FormatDescriptor.Declare("html", FormatUse.Convert, null, 9, null, false, ".html", ".htm"),
-        FormatDescriptor.Declare("mhtml", FormatUse.Convert, null, 10, null, false, ".mhtml"),
-        FormatDescriptor.Declare("pdf", FormatUse.Convert, null, 11, null, false, ".pdf"),
-        FormatDescriptor.Declare("xps", FormatUse.Convert, null, 12, null, false, ".xps"),
-        FormatDescriptor.Declare("json", FormatUse.Convert, null, 13, null, false, ".json"),
-        FormatDescriptor.Declare("md", FormatUse.Convert, null, 14, null, false, ".md", ".markdown"),
-        FormatDescriptor.Declare("png", FormatUse.Render, null, null, 0, false, ".png") with { Raster = true },
-        FormatDescriptor.Declare("jpeg", FormatUse.Render, null, null, 1, false, ".jpg", ".jpeg") with { Raster = true },
-        FormatDescriptor.Declare("svg", FormatUse.Render, null, null, 2, false, ".svg"),
-    ], CellsFormatRecognition.Rules);
+        FormatDescriptor.Declare("html", FormatUse.Convert, false, ".html", ".htm"),
+        FormatDescriptor.Declare("mhtml", FormatUse.Convert, false, ".mhtml"),
+        FormatDescriptor.Declare("pdf", FormatUse.Convert, false, ".pdf"),
+        FormatDescriptor.Declare("xps", FormatUse.Convert, false, ".xps"),
+        FormatDescriptor.Declare("json", FormatUse.Convert, false, ".json"),
+        FormatDescriptor.Declare("md", FormatUse.Convert, false, ".md", ".markdown"),
+        FormatDescriptor.Declare("png", FormatUse.Render, false, ".png") with { Raster = true },
+        FormatDescriptor.Declare("jpeg", FormatUse.Render, false, ".jpg", ".jpeg") with { Raster = true },
+        FormatDescriptor.Declare("svg", FormatUse.Render, false, ".svg"),
+    ];
 
     /// <summary>
     /// The formats create and edit write: the workbook formats the engine both loads and saves,

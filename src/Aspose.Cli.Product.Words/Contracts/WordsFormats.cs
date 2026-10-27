@@ -6,41 +6,77 @@ namespace Aspose.Cli.Product.Words.Contracts;
 /// <summary>Deny-by-default Words format registry.</summary>
 public static class WordsFormats
 {
-    /// <summary>Canonical immutable format declarations owned by this product.</summary>
+    /// <summary>
+    /// Canonical immutable format declarations owned by this product. Convert lists the Word
+    /// formats and the fixed-page outputs first, then the web pages, the e-books and the
+    /// OpenDocument and text formats: <see cref="FormatDescriptor.ConvertOrder"/> ranks those
+    /// groups, each in declaration order.
+    /// </summary>
     internal static readonly IReadOnlyList<FormatDescriptor> Definitions =
-        FileFormatRecognition.AttachTo(
     [
-        FormatDescriptor.Declare("doc", FormatUse.Input | FormatUse.Convert, 0, 0, null, true, ".doc") with { Protectable = true },
-        FormatDescriptor.Declare("dot", FormatUse.Input | FormatUse.Convert, 1, 1, null, true, ".dot") with { Protectable = true },
-        FormatDescriptor.Declare("docx", FormatUse.Input | FormatUse.Convert, 2, 2, null, true, ".docx") with { Protectable = true, MistakenFor = ["word"] },
-        FormatDescriptor.Declare("docm", FormatUse.Input | FormatUse.Convert, 3, 3, null, true, ".docm") with { Protectable = true },
-        FormatDescriptor.Declare("dotx", FormatUse.Input | FormatUse.Convert, 4, 4, null, true, ".dotx") with { Protectable = true },
-        FormatDescriptor.Declare("dotm", FormatUse.Input | FormatUse.Convert, 5, 5, null, true, ".dotm") with { Protectable = true },
+        FormatDescriptor.Declare("doc", FormatUse.Input | FormatUse.Convert, true, ".doc") with { Protectable = true, Recognition = WordsFormatRecognition.CompoundDocument },
+        FormatDescriptor.Declare("dot", FormatUse.Input | FormatUse.Convert, true, ".dot") with { Protectable = true, Recognition = WordsFormatRecognition.CompoundDocument },
+        FormatDescriptor.Declare("docx", FormatUse.Input | FormatUse.Convert, true, ".docx") with { Protectable = true, MistakenFor = ["word"], Recognition = WordsFormatRecognition.OpenXmlDocument },
+        FormatDescriptor.Declare("docm", FormatUse.Input | FormatUse.Convert, true, ".docm") with { Protectable = true, Recognition = WordsFormatRecognition.OpenXmlDocument },
+        FormatDescriptor.Declare("dotx", FormatUse.Input | FormatUse.Convert, true, ".dotx") with { Protectable = true, Recognition = WordsFormatRecognition.OpenXmlDocument },
+        FormatDescriptor.Declare("dotm", FormatUse.Input | FormatUse.Convert, true, ".dotm") with { Protectable = true, Recognition = WordsFormatRecognition.OpenXmlDocument },
         // Flat OPC is plain XML: the engine encrypts it only by writing an encrypted package, which
         // is no longer the .xml document the caller named, so it carries no password.
-        FormatDescriptor.Declare("flatopc", FormatUse.Input | FormatUse.Convert, 6, 6, null, true, ".xml") with { SharedExtensions = [".xml"] },
-        FormatDescriptor.Declare("rtf", FormatUse.Input | FormatUse.Convert, 7, 7, null, true, ".rtf"),
-        FormatDescriptor.Declare("wordml", FormatUse.Input | FormatUse.Convert, 8, 8, null, true, ".xml") with { SharedExtensions = [".xml"] },
-        FormatDescriptor.Declare("html", FormatUse.Input | FormatUse.Convert, 9, 15, null, false, ".html", ".htm"),
-        FormatDescriptor.Declare("mhtml", FormatUse.Input | FormatUse.Convert, 10, 17, null, false, ".mhtml"),
-        FormatDescriptor.Declare("odt", FormatUse.Input | FormatUse.Convert, 11, 21, null, true, ".odt") with { Protectable = true },
-        FormatDescriptor.Declare("ott", FormatUse.Input | FormatUse.Convert, 12, 22, null, true, ".ott") with { Protectable = true },
-        FormatDescriptor.Declare("txt", FormatUse.Input | FormatUse.Convert, 13, 23, null, true, ".txt"),
-        FormatDescriptor.Declare("md", FormatUse.Input | FormatUse.Convert, 14, 24, null, true, ".md", ".markdown"),
-        FormatDescriptor.Declare("pdf", FormatUse.Input | FormatUse.Convert, 15, 9, null, false, ".pdf"),
-        FormatDescriptor.Declare("epub", FormatUse.Input | FormatUse.Convert, 16, 18, null, true, ".epub"),
-        FormatDescriptor.Declare("mobi", FormatUse.Input | FormatUse.Convert, 17, 19, null, true, ".mobi"),
-        FormatDescriptor.Declare("azw3", FormatUse.Input | FormatUse.Convert, 18, 20, null, true, ".azw3"),
-        FormatDescriptor.Declare("chm", FormatUse.Input, 19, null, null, true, ".chm"),
-        FormatDescriptor.Declare("xps", FormatUse.Convert, null, 10, null, false, ".xps"),
-        FormatDescriptor.Declare("openxps", FormatUse.Convert, null, 11, null, false, ".oxps"),
-        FormatDescriptor.Declare("ps", FormatUse.Convert, null, 12, null, false, ".ps"),
-        FormatDescriptor.Declare("pcl", FormatUse.Convert, null, 13, null, false, ".pcl"),
-        FormatDescriptor.Declare("html-fixed", FormatUse.Convert, null, 16, null, false, ".html", ".htm"),
-        FormatDescriptor.Declare("png", FormatUse.Render, null, null, 0, false, ".png") with { Raster = true },
-        FormatDescriptor.Declare("jpeg", FormatUse.Render, null, null, 1, false, ".jpg", ".jpeg") with { Raster = true },
-        FormatDescriptor.Declare("svg", FormatUse.Render, null, null, 2, false, ".svg"),
-    ], WordsFormatRecognition.Rules);
+        FormatDescriptor.Declare("flatopc", FormatUse.Input | FormatUse.Convert, true, ".xml") with
+        {
+            SharedExtensions = [".xml"],
+            Recognition = FileFormatRecognition.Match(
+                FileProbePattern.All(
+                    FileProbePattern.TextStartsIgnoringBomAndWhitespace("<"),
+                    FileProbePattern.TextContains("schemas.microsoft.com/office/2006/xmlPackage"),
+                    FileProbePattern.Any(
+                        FileProbePattern.TextContains("progid=\"Word.Document\""),
+                        FileProbePattern.TextContains("pkg:name=\"/word/"))),
+                "flat OPC word-processing package"),
+        },
+        FormatDescriptor.Declare("rtf", FormatUse.Input | FormatUse.Convert, true, ".rtf") with
+        {
+            Recognition = FileFormatRecognition.Match(FileProbePattern.TextStartsIgnoringBomAndWhitespace(@"{\rtf"), "RTF header"),
+        },
+        // Word 2003 XML.
+        FormatDescriptor.Declare("wordml", FormatUse.Input | FormatUse.Convert, true, ".xml") with
+        {
+            SharedExtensions = [".xml"],
+            Recognition = FileFormatRecognition.Match(
+                FileProbePattern.All(
+                    FileProbePattern.TextStartsIgnoringBomAndWhitespace("<"),
+                    FileProbePattern.TextContains("schemas.microsoft.com/office/word/2003/wordml")),
+                "Word 2003 XML namespace"),
+        },
+        FormatDescriptor.Declare("html", FormatUse.Input | FormatUse.Convert, false, ".html", ".htm") with { ConvertOrder = 1 },
+        FormatDescriptor.Declare("mhtml", FormatUse.Input | FormatUse.Convert, false, ".mhtml") with { ConvertOrder = 2 },
+        FormatDescriptor.Declare("odt", FormatUse.Input | FormatUse.Convert, true, ".odt") with { Protectable = true, ConvertOrder = 3, Recognition = WordsFormatRecognition.OpenDocumentText },
+        FormatDescriptor.Declare("ott", FormatUse.Input | FormatUse.Convert, true, ".ott") with { Protectable = true, ConvertOrder = 3, Recognition = WordsFormatRecognition.OpenDocumentText },
+        FormatDescriptor.Declare("txt", FormatUse.Input | FormatUse.Convert, true, ".txt") with { ConvertOrder = 3, Recognition = WordsFormatRecognition.PlainText },
+        FormatDescriptor.Declare("md", FormatUse.Input | FormatUse.Convert, true, ".md", ".markdown") with { ConvertOrder = 3, Recognition = WordsFormatRecognition.PlainText },
+        FormatDescriptor.Declare("pdf", FormatUse.Input | FormatUse.Convert, false, ".pdf"),
+        FormatDescriptor.Declare("epub", FormatUse.Input | FormatUse.Convert, true, ".epub") with
+        {
+            ConvertOrder = 2,
+            Recognition = FileFormatRecognition.Match(
+                FileProbePattern.ZipContainsAny("application/epub+zip", "META-INF/container.xml"),
+                "EPUB container marker"),
+        },
+        FormatDescriptor.Declare("mobi", FormatUse.Input | FormatUse.Convert, true, ".mobi") with { ConvertOrder = 2, Recognition = WordsFormatRecognition.Mobipocket },
+        FormatDescriptor.Declare("azw3", FormatUse.Input | FormatUse.Convert, true, ".azw3") with { ConvertOrder = 2, Recognition = WordsFormatRecognition.Mobipocket },
+        FormatDescriptor.Declare("chm", FormatUse.Input, true, ".chm") with
+        {
+            Recognition = FileFormatRecognition.Match(FileProbePattern.AsciiBytesAt(0, "ITSF"), "CHM signature"),
+        },
+        FormatDescriptor.Declare("xps", FormatUse.Convert, false, ".xps"),
+        FormatDescriptor.Declare("openxps", FormatUse.Convert, false, ".oxps"),
+        FormatDescriptor.Declare("ps", FormatUse.Convert, false, ".ps"),
+        FormatDescriptor.Declare("pcl", FormatUse.Convert, false, ".pcl"),
+        FormatDescriptor.Declare("html-fixed", FormatUse.Convert, false, ".html", ".htm") with { ConvertOrder = 1 },
+        FormatDescriptor.Declare("png", FormatUse.Render, false, ".png") with { Raster = true },
+        FormatDescriptor.Declare("jpeg", FormatUse.Render, false, ".jpg", ".jpeg") with { Raster = true },
+        FormatDescriptor.Declare("svg", FormatUse.Render, false, ".svg"),
+    ];
 
     public static IReadOnlyList<string> LoadIds { get; } =
         Definitions.IdsFor(FormatUse.Input);

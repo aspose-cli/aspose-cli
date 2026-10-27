@@ -423,9 +423,9 @@ public sealed class BoundedEditCommandTests : IDisposable
         // The extensions of the files the tests name as outputs.
         Writes =
         [
-            FormatDescriptor.Declare("tst", FormatUse.Input | FormatUse.Convert, 0, 0, null, false, ".test"),
-            FormatDescriptor.Declare("json", FormatUse.Convert, null, 1, null, false, ".json"),
-            FormatDescriptor.Declare("png", FormatUse.Convert, null, 2, null, false, ".png"),
+            FormatDescriptor.Declare("tst", FormatUse.Input | FormatUse.Convert, false, ".test"),
+            FormatDescriptor.Declare("json", FormatUse.Convert, false, ".json"),
+            FormatDescriptor.Declare("png", FormatUse.Convert, false, ".png"),
         ],
     };
 

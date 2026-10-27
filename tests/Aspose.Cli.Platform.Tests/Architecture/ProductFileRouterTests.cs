@@ -439,22 +439,19 @@ public sealed class ProductFileRouterTests
     public async Task ExtensionlessDeclarativeTieIsIndeterminate()
     {
         FileProbePattern signature = FileProbePattern.AsciiBytesAt(0, "same");
-        IReadOnlyList<FormatDescriptor> formats = FileFormatRecognition.AttachTo(
+        IReadOnlyList<FormatDescriptor> formats =
         [
             new FormatDescriptor("alpha", FormatUse.Input, ".alpha")
             {
                 Ownership = RouteOwnership.Default,
+                Recognition = FileFormatRecognition.Match(signature, "same signature"),
             },
             new FormatDescriptor("beta", FormatUse.Input, ".beta")
             {
                 Ownership = RouteOwnership.Default,
+                Recognition = FileFormatRecognition.Match(signature, "same signature"),
             },
-        ],
-        new Dictionary<string, FileFormatRecognition>(StringComparer.Ordinal)
-        {
-            ["alpha"] = FileFormatRecognition.Match(signature, "same signature"),
-            ["beta"] = FileFormatRecognition.Match(signature, "same signature"),
-        });
+        ];
         ProductDefinitionBuilder<ITestSession> builder = ExtProduct.Define<ITestSession>(
                 Manifest("ambiguous-format"))
             .Formats(formats);
@@ -556,18 +553,14 @@ public sealed class ProductFileRouterTests
     [Fact]
     public async Task ExplicitProduct_StillChecksTheRulesOfAFormatItNeverRoutesGenerically()
     {
-        IReadOnlyList<FormatDescriptor> formats = FileFormatRecognition.AttachTo(
-        [
-            new FormatDescriptor("alpha", FormatUse.Input, ".alpha") { Ownership = RouteOwnership.Default },
-        ],
-        new Dictionary<string, FileFormatRecognition>(StringComparer.Ordinal)
-        {
-            ["alpha"] = FileFormatRecognition.Match(FileProbePattern.AsciiBytesAt(0, "alpha"), "alpha signature"),
-        });
         ProductDefinitionBuilder<ITestSession> builder = ExtProduct.Define<ITestSession>(Manifest("explicit-rules"))
             .Formats(
             [
-                .. formats,
+                new FormatDescriptor("alpha", FormatUse.Input, ".alpha")
+                {
+                    Ownership = RouteOwnership.Default,
+                    Recognition = FileFormatRecognition.Match(FileProbePattern.AsciiBytesAt(0, "alpha"), "alpha signature"),
+                },
                 FormatDescriptor.Input("delta", 1, RouteOwnership.Explicit, ".delta") with
                 {
                     Recognition = FileFormatRecognition.Match(
@@ -624,19 +617,15 @@ public sealed class ProductFileRouterTests
     [Fact]
     public async Task UnroutedExtension_LeavesTheRouteToItsOwnerAndStillReadsExplicitly()
     {
-        IReadOnlyList<FormatDescriptor> formats = FileFormatRecognition.AttachTo(
+        ProductDefinitionBuilder<ITestSession> rows = ExtProduct.Define<ITestSession>(Manifest("two")).Formats(
         [
             new FormatDescriptor("rows", FormatUse.Input, ".rows", ".txt")
             {
                 Ownership = RouteOwnership.Default,
                 UnroutedExtensions = [".txt"],
+                Recognition = FileFormatRecognition.Match(FileProbePattern.TextContains(","), "delimited text", 70),
             },
-        ],
-        new Dictionary<string, FileFormatRecognition>(StringComparer.Ordinal)
-        {
-            ["rows"] = FileFormatRecognition.Match(FileProbePattern.TextContains(","), "delimited text", 70),
-        });
-        ProductDefinitionBuilder<ITestSession> rows = ExtProduct.Define<ITestSession>(Manifest("two")).Formats(formats);
+        ]);
         Complete(rows, "two");
         ProductCatalog catalog = ProductCatalog.Build(
         [
@@ -671,20 +660,15 @@ public sealed class ProductFileRouterTests
     private static ProductDefinition TieProduct()
     {
         FileProbePattern signature = FileProbePattern.AsciiBytesAt(0, "same");
-        IReadOnlyList<FormatDescriptor> formats = FileFormatRecognition.AttachTo(
-        [
-            new FormatDescriptor("alpha", FormatUse.Input, ".alpha") { Ownership = RouteOwnership.Default },
-            new FormatDescriptor("beta", FormatUse.Input, ".beta") { Ownership = RouteOwnership.Default },
-            FormatDescriptor.Input("gamma", 2, RouteOwnership.Explicit, ".gamma"),
-        ],
-        new Dictionary<string, FileFormatRecognition>(StringComparer.Ordinal)
-        {
-            ["alpha"] = FileFormatRecognition.Match(signature, "same signature"),
-            ["beta"] = FileFormatRecognition.Match(signature, "same signature"),
-        });
+        FileFormatRecognition recognition = FileFormatRecognition.Match(signature, "same signature");
         ProductDefinitionBuilder<ITestSession> builder = ExtProduct.Define<ITestSession>(
                 Manifest("ambiguous-format"))
-            .Formats(formats);
+            .Formats(
+            [
+                new FormatDescriptor("alpha", FormatUse.Input, ".alpha") { Ownership = RouteOwnership.Default, Recognition = recognition },
+                new FormatDescriptor("beta", FormatUse.Input, ".beta") { Ownership = RouteOwnership.Default, Recognition = recognition },
+                FormatDescriptor.Input("gamma", 2, RouteOwnership.Explicit, ".gamma"),
+            ]);
         Complete(builder, "ambiguous-format");
         return builder.Build();
     }
@@ -692,22 +676,18 @@ public sealed class ProductFileRouterTests
     [Fact]
     public async Task TruncatedZipWithoutDeclaredMarkerRemainsIndeterminateAtForty()
     {
-        IReadOnlyList<FormatDescriptor> formats = FileFormatRecognition.AttachTo(
-        [
-            new FormatDescriptor("package", FormatUse.Input, ".package")
-            {
-                Ownership = RouteOwnership.Default,
-            },
-        ],
-        new Dictionary<string, FileFormatRecognition>(StringComparer.Ordinal)
-        {
-            ["package"] = FileFormatRecognition.Match(
-                FileProbePattern.ZipContainsAny("required/marker.xml"),
-                "package marker"),
-        });
         ProductDefinitionBuilder<ITestSession> builder = ExtProduct.Define<ITestSession>(
                 Manifest("package"))
-            .Formats(formats);
+            .Formats(
+            [
+                new FormatDescriptor("package", FormatUse.Input, ".package")
+                {
+                    Ownership = RouteOwnership.Default,
+                    Recognition = FileFormatRecognition.Match(
+                        FileProbePattern.ZipContainsAny("required/marker.xml"),
+                        "package marker"),
+                },
+            ]);
         Complete(builder, "package");
         ProductDefinition definition = builder.Build();
         ProductCatalog catalog =
@@ -736,20 +716,16 @@ public sealed class ProductFileRouterTests
             FileProbePattern.BytesAt(0, signature),
             "CLI signature");
         signature[0] = 0x00;
-        IReadOnlyList<FormatDescriptor> formats = FileFormatRecognition.AttachTo(
-        [
-            new FormatDescriptor("sample", FormatUse.Input, ".sample")
-            {
-                Ownership = RouteOwnership.Default,
-            },
-        ],
-        new Dictionary<string, FileFormatRecognition>(StringComparer.Ordinal)
-        {
-            ["sample"] = recognition,
-        });
         ProductDefinitionBuilder<ITestSession> builder = ExtProduct.Define<ITestSession>(
                 Manifest("snapshot"))
-            .Formats(formats);
+            .Formats(
+            [
+                new FormatDescriptor("sample", FormatUse.Input, ".sample")
+                {
+                    Ownership = RouteOwnership.Default,
+                    Recognition = recognition,
+                },
+            ]);
         Complete(builder, "snapshot");
         ProductDefinition definition = builder.Build();
         string path = CreateFile(".sample", [0x43, 0x4C, 0x49]);
@@ -769,23 +745,19 @@ public sealed class ProductFileRouterTests
     [Fact]
     public async Task DeclarativeOffsetsCannotOverflowBoundedPrefixChecks()
     {
-        IReadOnlyList<FormatDescriptor> formats = FileFormatRecognition.AttachTo(
-        [
-            new FormatDescriptor("sample", FormatUse.Input, ".sample")
-            {
-                Ownership = RouteOwnership.Default,
-            },
-        ],
-        new Dictionary<string, FileFormatRecognition>(StringComparer.Ordinal)
-        {
-            ["sample"] = FileFormatRecognition.FirstOf(
-                FileFormatRecognition.Match(
-                    FileProbePattern.BytesAt(int.MaxValue, 0x43),
-                    "far byte")),
-        });
         ProductDefinitionBuilder<ITestSession> builder = ExtProduct.Define<ITestSession>(
                 Manifest("bounded-offset"))
-            .Formats(formats);
+            .Formats(
+            [
+                new FormatDescriptor("sample", FormatUse.Input, ".sample")
+                {
+                    Ownership = RouteOwnership.Default,
+                    Recognition = FileFormatRecognition.FirstOf(
+                        FileFormatRecognition.Match(
+                            FileProbePattern.BytesAt(int.MaxValue, 0x43),
+                            "far byte")),
+                },
+            ]);
         Complete(builder, "bounded-offset");
         ProductDefinition definition = builder.Build();
         string path = CreateFile(".sample", [0x43]);

@@ -21,49 +21,6 @@ public sealed class FileFormatRecognition
         _clauses = Array.AsReadOnly(snapshot);
     }
 
-    /// <summary>
-    /// Attaches one recognition profile to every default input declaration.
-    /// Extra or missing profile keys are rejected so product metadata cannot
-    /// silently drift from its generic-routing contract.
-    /// </summary>
-    public static IReadOnlyList<FormatDescriptor> AttachTo(
-        IEnumerable<FormatDescriptor> formats,
-        IReadOnlyDictionary<string, FileFormatRecognition> recognitions)
-    {
-        ArgumentNullException.ThrowIfNull(formats);
-        ArgumentNullException.ThrowIfNull(recognitions);
-        FormatDescriptor[] declarations = formats.ToArray();
-        string[] required = declarations
-            .Where(static format =>
-                format.Uses.HasFlag(FormatUse.Input)
-                && format.Ownership == RouteOwnership.Default)
-            .Select(static format => format.Id)
-            .Distinct(StringComparer.Ordinal)
-            .ToArray();
-        string[] missing = required
-            .Where(id => !recognitions.ContainsKey(id))
-            .ToArray();
-        string[] extra = recognitions.Keys
-            .Where(id => !required.Contains(id, StringComparer.Ordinal))
-            .ToArray();
-        if (missing.Length > 0 || extra.Length > 0)
-        {
-            throw new ArgumentException(
-                "Recognition profiles must exactly match default input formats. "
-                + $"Missing: {List(missing)}. Extra: {List(extra)}.",
-                nameof(recognitions));
-        }
-
-        FormatDescriptor[] attached = declarations
-            .Select(format => recognitions.TryGetValue(
-                    format.Id,
-                    out FileFormatRecognition? recognition)
-                ? format with { Recognition = recognition.Snapshot() }
-                : format)
-            .ToArray();
-        return Array.AsReadOnly(attached);
-    }
-
     /// <summary>Creates one positive recognition clause.</summary>
     public static FileFormatRecognition Match(
         FileProbePattern pattern,
@@ -146,11 +103,6 @@ public sealed class FileFormatRecognition
 
     internal FileFormatRecognition Snapshot() =>
         new(_clauses);
-
-    private static string List(IReadOnlyList<string> values) =>
-        values.Count == 0
-            ? "(none)"
-            : string.Join(", ", values);
 
     private sealed record Clause(
         FileProbePattern Pattern,

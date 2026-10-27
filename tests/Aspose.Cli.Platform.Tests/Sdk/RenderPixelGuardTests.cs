@@ -13,7 +13,7 @@ namespace Aspose.Cli.Platform.Tests.Sdk;
 public sealed class RenderPixelGuardTests
 {
     private static readonly FormatDescriptor Png =
-        FormatDescriptor.Declare("png", FormatUse.Render, null, null, 0, false, ".png") with { Raster = true };
+        FormatDescriptor.Declare("png", FormatUse.Render, false, ".png") with { Raster = true };
 
     [Theory]
     [InlineData("36", 36)]

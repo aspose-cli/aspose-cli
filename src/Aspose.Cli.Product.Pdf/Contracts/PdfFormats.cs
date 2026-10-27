@@ -8,25 +8,28 @@ public static class PdfFormats
 {
     /// <summary>Canonical immutable format declarations owned by this product.</summary>
     internal static readonly IReadOnlyList<FormatDescriptor> Definitions =
-        FileFormatRecognition.AttachTo(
     [
-        FormatDescriptor.Routed("pdf", FormatUse.Input, 0, null, null, ".pdf") with { Protectable = true },
-        FormatDescriptor.Routed("docx", FormatUse.Convert, null, 0, null, ".docx") with { MistakenFor = ["word"] },
-        FormatDescriptor.Routed("xlsx", FormatUse.Convert, null, 1, null, ".xlsx") with { MistakenFor = ["excel"] },
-        FormatDescriptor.Routed("pptx", FormatUse.Convert, null, 2, null, ".pptx") with { MistakenFor = ["powerpoint"] },
-        FormatDescriptor.Routed("html", FormatUse.Convert, null, 3, null, ".html", ".htm"),
-        FormatDescriptor.Routed("epub", FormatUse.Convert, null, 4, null, ".epub"),
-        FormatDescriptor.Routed("txt", FormatUse.Convert, null, 5, null, ".txt"),
-        FormatDescriptor.Routed("md", FormatUse.Convert, null, 6, null, ".md", ".markdown"),
-        FormatDescriptor.Routed("xps", FormatUse.Convert, null, 7, null, ".xps"),
-        FormatDescriptor.Routed("pdfa-1b", FormatUse.Convert, null, 8, null, ".pdf") with { ChosenByExtension = false },
-        FormatDescriptor.Routed("pdfa-2b", FormatUse.Convert, null, 9, null, ".pdf") with { ChosenByExtension = false },
-        FormatDescriptor.Routed("pdfa-3b", FormatUse.Convert, null, 10, null, ".pdf") with { ChosenByExtension = false },
-        FormatDescriptor.Routed("tiff", FormatUse.Convert, null, 11, null, ".tiff", ".tif") with { Raster = true },
-        FormatDescriptor.Routed("png", FormatUse.Render, null, null, 0, ".png") with { Raster = true },
-        FormatDescriptor.Routed("jpeg", FormatUse.Render, null, null, 1, ".jpg", ".jpeg") with { Raster = true },
-        FormatDescriptor.Routed("svg", FormatUse.Render, null, null, 2, ".svg"),
-    ], PdfFormatRecognition.Rules);
+        FormatDescriptor.Routed("pdf", FormatUse.Input, ".pdf") with
+        {
+            Protectable = true,
+            Recognition = FileFormatRecognition.Match(FileProbePattern.PdfHeader(), "PDF header"),
+        },
+        FormatDescriptor.Routed("docx", FormatUse.Convert, ".docx") with { MistakenFor = ["word"] },
+        FormatDescriptor.Routed("xlsx", FormatUse.Convert, ".xlsx") with { MistakenFor = ["excel"] },
+        FormatDescriptor.Routed("pptx", FormatUse.Convert, ".pptx") with { MistakenFor = ["powerpoint"] },
+        FormatDescriptor.Routed("html", FormatUse.Convert, ".html", ".htm"),
+        FormatDescriptor.Routed("epub", FormatUse.Convert, ".epub"),
+        FormatDescriptor.Routed("txt", FormatUse.Convert, ".txt"),
+        FormatDescriptor.Routed("md", FormatUse.Convert, ".md", ".markdown"),
+        FormatDescriptor.Routed("xps", FormatUse.Convert, ".xps"),
+        FormatDescriptor.Routed("pdfa-1b", FormatUse.Convert, ".pdf") with { ChosenByExtension = false },
+        FormatDescriptor.Routed("pdfa-2b", FormatUse.Convert, ".pdf") with { ChosenByExtension = false },
+        FormatDescriptor.Routed("pdfa-3b", FormatUse.Convert, ".pdf") with { ChosenByExtension = false },
+        FormatDescriptor.Routed("tiff", FormatUse.Convert, ".tiff", ".tif") with { Raster = true },
+        FormatDescriptor.Routed("png", FormatUse.Render, ".png") with { Raster = true },
+        FormatDescriptor.Routed("jpeg", FormatUse.Render, ".jpg", ".jpeg") with { Raster = true },
+        FormatDescriptor.Routed("svg", FormatUse.Render, ".svg"),
+    ];
 
     /// <summary>
     /// Whether converting to <paramref name="format"/> reads every page of the document, whatever
