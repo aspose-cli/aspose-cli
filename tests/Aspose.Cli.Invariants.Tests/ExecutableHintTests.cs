@@ -242,12 +242,12 @@ public sealed class ExecutableHintTests : IDisposable
         Assert.Empty(ErrorHint("Choose a sheet such as 'Sales'; the sheet's name comes from 'Did you mean' lists, shift_jis or 'slide'."));
 
     /// <summary>
-    /// The real <c>ENCRYPTION_REMOVED</c> hint of a Words document converted to PDF quotes the
-    /// encrypting command in backticks with single-quoted arguments: it runs as that one PDF
-    /// command, and the operations inside it are not run against the Words input on their own.
+    /// The real <c>ENCRYPTION_REMOVED</c> hint of a Words document converted to PDF names the
+    /// encrypting command by its path alone: a quoted PDF command the catalog accepts, with no
+    /// operations of its own to run against the Words input.
     /// </summary>
     [Fact]
-    public void BacktickedCommand_RunsWholeWithTheOperationsItPasses()
+    public void QuotedCommandPath_OfTheEncryptionHint_IsCheckedAgainstTheCatalog()
     {
         File.WriteAllBytes(_workspace.File("locked.docx"), ScenarioFixtures.Read("words.encrypted"));
         string[] args = ["words", "convert", "locked.docx", "--password-env", "DOC_PASSWORD", "--to", "pdf", "--out", "plain.pdf", "--output-format", "json"];
@@ -257,8 +257,7 @@ public sealed class ExecutableHintTests : IDisposable
 
         HintAction action = Assert.Single(ExecutableHints.Extract(CliCatalog.Current, hint), static action => action.Kind != HintKind.Option);
         Assert.Equal(HintKind.Command, action.Kind);
-        Assert.Equal(["pdf", "edit"], action.Tokens.Take(2));
-        Assert.Contains(action.Tokens, static token => token.StartsWith("{\"ops\"", StringComparison.Ordinal));
+        Assert.Equal(["pdf", "edit"], action.Tokens);
         Assert.Empty(ExecutableHints.Problems(new HintRun(args, _workspace.Path, Path.GetDirectoryName(_workspace.ConfigDirectory)!, variables), result));
     }
 
