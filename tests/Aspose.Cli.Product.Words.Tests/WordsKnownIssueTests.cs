@@ -77,6 +77,32 @@ public sealed class WordsKnownIssueTests
     }
 
     [Fact]
+    public void FormatDetection_ReportsNoPdfEncrypted()
+    {
+        using var fixture = new WordsFixture();
+        (bool Detected, Exception? Load) locked = Probe("user-secret", password: null);
+        (bool Detected, Exception? Load) restricted = Probe(string.Empty, password: "wrong-secret");
+
+        KnownIssue.Reproduces(
+            "WORDS-PDF-ENCRYPTION",
+            !locked.Detected && locked.Load is IncorrectPasswordException && !restricted.Detected && restricted.Load is IncorrectPasswordException,
+            $"open password: IsEncrypted {locked.Detected}, a load without one {Outcome(locked.Load)}; "
+                + $"owner password only: IsEncrypted {restricted.Detected}, a load with a wrong one {Outcome(restricted.Load)}");
+
+        static (bool, Exception?) Probe(string userPassword, string? password)
+        {
+            using var output = new MemoryStream();
+            new Document().Save(output, new PdfSaveOptions { EncryptionDetails = new PdfEncryptionDetails(userPassword, "owner-secret") });
+            output.Position = 0;
+            bool detected = FileFormatUtil.DetectFileFormat(output).IsEncrypted;
+            output.Position = 0;
+            return (detected, Record.Exception(() => new Document(output, new Aspose.Words.Loading.PdfLoadOptions { Password = password, PageCount = 1 })));
+        }
+
+        static string Outcome(Exception? load) => load is null ? "succeeded" : "threw " + load.GetType().Name;
+    }
+
+    [Fact]
     public void TextSave_WritesCommentTextIntoTheBody()
     {
         using var fixture = new WordsFixture();

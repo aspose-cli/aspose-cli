@@ -636,6 +636,16 @@ Reproductions: [WordsKnownIssueTests](tests/Aspose.Cli.Product.Words.Tests/Words
 - **Workaround:** read the blocks before editing; find a phrase with a regex that allows a space
   where a line may have ended, such as `甲 ?乙双方`, and remove a space only where it was read.
 
+### WORDS-PDF-ENCRYPTION
+
+- **Defect:** `FileFormatUtil.DetectFileFormat` reports `IsEncrypted` false for every PDF,
+  including one that needs a password to open and one with only an owner password, although
+  loading the first refuses no password and loading either refuses a wrong one.
+- **CLI behavior:** none visible: Words loads the first page of a PDF input again with a password
+  no one chose and, when that is refused, without one, and reports the input encrypted from what
+  those loads refuse. A DOCX copy of a PDF that needs a password to open keeps that password,
+  and one of a PDF with only an owner password warns `ENCRYPTION_REMOVED`.
+
 ### WORDS-CJK-LINE-BREAK
 
 - **Defect:** page layout breaks East Asian lines against the line-breaking rules the paragraph

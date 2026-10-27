@@ -67,7 +67,7 @@ internal static class InfoProjection
     }
 
     public static InputInfo Source(string path, LoadedDocument loaded) =>
-        FileObjects.Input(path, loaded.FormatId, loaded.Format.IsEncrypted);
+        FileObjects.Input(path, loaded.FormatId, loaded.Protection.Encrypted);
 
     private static IReadOnlyList<WordsSectionData> Sections(Document document, bool evaluation) =>
         document.Sections.Cast<Section>().Select((section, index) => new WordsSectionData

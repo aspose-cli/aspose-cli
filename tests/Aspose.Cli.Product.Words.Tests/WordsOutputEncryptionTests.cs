@@ -1,6 +1,7 @@
 using System.Text.Json.Nodes;
 using Aspose.Cli.TestKit;
 using Aspose.Words;
+using Aspose.Words.Saving;
 using Xunit;
 
 namespace Aspose.Cli.Product.Words.Tests;
@@ -45,6 +46,71 @@ public sealed class WordsOutputEncryptionTests : IDisposable
         Assert.True(result["outputs"]![0]!["encrypted"]!.GetValue<bool>());
         Assert.True(FileFormatUtil.DetectFileFormat(_workspace.File("locked.odt")).IsEncrypted);
         Assert.DoesNotContain("ENCRYPTION_REMOVED", ResultWarnings.Codes(result));
+    }
+
+    /// <summary>
+    /// WORDS-PDF-ENCRYPTION: a PDF that needs a password to open is reported encrypted, and its
+    /// DOCX copy keeps that password, as a DOCX input's copy does.
+    /// </summary>
+    [Category(TestCategory.Slow)]
+    [Fact]
+    public void ConvertOfAPdfWithAnOpenPassword_KeepsThePassword()
+    {
+        SaveEncryptedPdf("locked.pdf", Password, "owner-secret");
+
+        JsonNode result = Run("words", "convert", "locked.pdf", "--password-env", "WORDS_PASSWORD", "--to", "docx", "--out", "locked.docx", "--overwrite").Json();
+
+        Assert.True(result["input"]!["encrypted"]!.GetValue<bool>());
+        Assert.True(result["outputs"]![0]!["encrypted"]!.GetValue<bool>());
+        Assert.True(FileFormatUtil.DetectFileFormat(_workspace.File("locked.docx")).IsEncrypted);
+        Assert.NotNull(new Document(_workspace.File("locked.docx"), new Aspose.Words.Loading.LoadOptions { Password = Password }));
+        Assert.DoesNotContain("ENCRYPTION_REMOVED", ResultWarnings.Codes(result));
+    }
+
+    [Category(TestCategory.Slow)]
+    [Fact]
+    public void ConvertOfAPdfWithAnOpenPasswordAndEncryptEnv_EncryptsWithTheNewPassword()
+    {
+        SaveEncryptedPdf("locked.pdf", "pdf-secret", "owner-secret");
+        var variables = new Dictionary<string, string?>(Variables, StringComparer.Ordinal) { ["PDF_PASSWORD"] = "pdf-secret" };
+
+        JsonNode result = _workspace.RunWithEnv(variables,
+            ["words", "convert", "locked.pdf", "--password-env", "PDF_PASSWORD", "--encrypt-env", "WORDS_PASSWORD", "--to", "docx", "--out", "sealed.docx", "--output-format", "json"]).Json();
+
+        Assert.True(result["input"]!["encrypted"]!.GetValue<bool>());
+        Assert.True(result["outputs"]![0]!["encrypted"]!.GetValue<bool>());
+        Assert.True(FileFormatUtil.DetectFileFormat(_workspace.File("sealed.docx")).IsEncrypted);
+        Assert.NotNull(new Document(_workspace.File("sealed.docx"), new Aspose.Words.Loading.LoadOptions { Password = Password }));
+        Assert.DoesNotContain("ENCRYPTION_REMOVED", ResultWarnings.Codes(result));
+    }
+
+    /// <summary>
+    /// WORDS-PDF-ENCRYPTION: a PDF with only an owner password opens without one, so its DOCX
+    /// copy has no password to keep and the lost restrictions are disclosed.
+    /// </summary>
+    [Category(TestCategory.Slow)]
+    [Fact]
+    public void ConvertOfAPdfWithOnlyAnOwnerPassword_DisclosesTheRemovedEncryption()
+    {
+        SaveEncryptedPdf("restricted.pdf", userPassword: string.Empty, "owner-secret");
+
+        JsonNode result = Run("words", "convert", "restricted.pdf", "--to", "docx", "--out", "restricted.docx").Json();
+
+        Assert.True(result["input"]!["encrypted"]!.GetValue<bool>());
+        Assert.False(result["outputs"]![0]!["encrypted"]!.GetValue<bool>());
+        Assert.False(FileFormatUtil.DetectFileFormat(_workspace.File("restricted.docx")).IsEncrypted);
+        Assert.Contains("ENCRYPTION_REMOVED", ResultWarnings.Codes(result));
+    }
+
+    [Category(TestCategory.Slow)]
+    [Fact]
+    public void InspectOfAPdfWithAnOpenPassword_ReportsItEncrypted()
+    {
+        SaveEncryptedPdf("locked.pdf", Password, "owner-secret");
+
+        JsonNode result = Run("words", "inspect", "locked.pdf", "--password-env", "WORDS_PASSWORD").Json();
+
+        Assert.True(result["input"]!["encrypted"]!.GetValue<bool>());
     }
 
     /// <summary>X-03: split encrypts every part with --encrypt-env, as pdf split does.</summary>
@@ -278,6 +344,16 @@ public sealed class WordsOutputEncryptionTests : IDisposable
         entry.Delete();
         using var writer = new StreamWriter(package.CreateEntry(part).Open());
         writer.Write(rewrite(text));
+    }
+
+    /// <summary>Saves the plain document as a PDF encrypted with the given passwords; an empty user password opens it without one.</summary>
+    private void SaveEncryptedPdf(string target, string userPassword, string ownerPassword)
+    {
+        using var fixture = new WordsFixture();
+        new Document(_workspace.File("plain.docx")).Save(_workspace.File(target), new PdfSaveOptions
+        {
+            EncryptionDetails = new PdfEncryptionDetails(userPassword, ownerPassword),
+        });
     }
 
     private CliResult Run(params string[] arguments) =>

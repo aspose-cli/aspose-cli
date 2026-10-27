@@ -108,7 +108,7 @@ internal static class WordsRender
             View = WordsViews.Pages,
             SourceFormat = loaded.FormatId,
             SourceSizeBytes = new FileInfo(filePath).Length,
-            SourceEncrypted = loaded.Format.IsEncrypted,
+            SourceEncrypted = loaded.Protection.Encrypted,
             TotalPartCount = total,
             Parts = parts,
             Warnings = InputWarnings(loaded),

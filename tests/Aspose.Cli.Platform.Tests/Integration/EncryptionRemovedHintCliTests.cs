@@ -200,6 +200,28 @@ public sealed class EncryptionRemovedHintCliTests : IDisposable
             + "which restricts it as the input was and keeps it opening without a password.", Hint(result));
     }
 
+    /// <summary>
+    /// A DOCX copy of a PDF with only an owner password cannot be restricted that way: only a
+    /// conversion encrypts DOCX, and with a password to open, which the hint says.
+    /// </summary>
+    [Category(TestCategory.Slow)]
+    [Fact]
+    public void RestrictedPdfToDocx_HintSaysTheOutputWouldNeedAPasswordToOpen()
+    {
+        File.WriteAllText(_workspace.File("source.md"), "# One\n\nFirst part.\n");
+        Assert.Equal(0, Run("pdf", "create", "plain.pdf", "--from-markdown", "source.md").ExitCode);
+        Assert.Equal(0, Run(
+            "pdf", "edit", "plain.pdf", "--ops",
+            $$$"""[{"op":"encrypt_document","ownerPasswordEnv":"{{{OwnerVariable}}}","permissions":{"print":true,"copy":true}}]""",
+            "--out", "restricted.pdf").ExitCode);
+
+        CliResult result = Run("words", "convert", "restricted.pdf", "--to", "docx", "--out", "restricted.docx");
+
+        Assert.True(result.ExitCode == 0, result.StdErr);
+        Assert.Equal("If the output must stay protected, run the command again with --encrypt-env naming an environment variable that holds a password, "
+            + "which encrypts the output with that password to open it, although the input opens without one.", Hint(result));
+    }
+
     // protected.pdf: an open password, a different owner password, and only printing allowed.
     private void CreateProtected()
     {
