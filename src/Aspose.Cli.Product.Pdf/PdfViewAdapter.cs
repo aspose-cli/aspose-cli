@@ -97,6 +97,8 @@ internal sealed class PdfViewAdapter : IProductViewAdapter<PdfSession>
                 ReviewCoverageMetric.Of("formFieldsWithoutPage", forms.FieldsWithoutPage, "fields"),
                 .. EnvelopeParts.ExcludedEvaluationMarks(session.Outputs.License, layout.Pages.Sum(static page => page.ExcludedEvaluationMarks), "fragments"),
             ],
+            // A page whose text the extraction budget cut short was not fully checked.
+            Complete = !read.Pages.Any(static page => page.ContentTruncated),
         };
     }
 

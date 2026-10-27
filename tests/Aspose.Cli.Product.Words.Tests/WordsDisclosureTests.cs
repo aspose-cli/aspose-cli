@@ -299,15 +299,20 @@ public sealed class WordsDisclosureTests
         Sdk.Views.ViewManifest rendered = adapter.Render(fixture.Session, html, request, new MemoryArtifactSink());
         var assessment =adapter.Assess(fixture.Session, html, request, rendered);
 
-        Warning[] lossy = [.. EnvelopeParts.CombineWarnings(rendered.Warnings, assessment.Warnings) ?? []];
-        lossy = [.. lossy.Where(static warning => warning.Code == WarningCodes.LossyConversion)];
+        // The review reports the view's warnings and, once each, the assessment's.
+        Warning[] lossy = [.. (rendered.Warnings ?? []).Where(static warning => warning.Code == WarningCodes.LossyConversion)];
         if (!disclosed)
         {
             Assert.Empty(lossy);
+            Assert.DoesNotContain(assessment.Warnings ?? [], static warning => warning.Code == WarningCodes.LossyConversion);
             return;
         }
 
         Warning reflowed = Assert.Single(lossy);
+        // The assessment repeats it word for word, so the review reports it once.
+        Assert.All(
+            (assessment.Warnings ?? []).Where(static warning => warning.Code == WarningCodes.LossyConversion),
+            warning => Assert.Equal(reflowed.Message, warning.Message));
         Assert.Contains("loads as flowing HTML", reflowed.Message, StringComparison.Ordinal);
         Assert.Contains("page count", reflowed.Message, StringComparison.Ordinal);
         Assert.Contains("source document", reflowed.Hint, StringComparison.Ordinal);

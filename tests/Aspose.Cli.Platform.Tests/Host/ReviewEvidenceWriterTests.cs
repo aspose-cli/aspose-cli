@@ -88,6 +88,36 @@ public sealed class ReviewEvidenceWriterTests
     }
 
     [Fact]
+    public void Write_ReportsAWarningTheViewAndTheAssessmentBothRaiseOnce()
+    {
+        using var temp = new TempDirectory();
+        Warning omitted = new(WarningCodes.RemoteResourcesBlocked, "1 resource(s) the document references were omitted.")
+        {
+            AffectsCompleteness = true,
+        };
+        Warning onPage = new(WarningCodes.RemoteResourcesBlocked, "A page references an omitted resource.")
+        {
+            Location = "page/1",
+        };
+        Warning another = new(WarningCodes.RemoteResourcesBlocked, "2 resource(s) a second list references were omitted.");
+
+        ReviewResult result = Write(
+            temp,
+            temp.File("review"),
+            maxItems: 1,
+            totalPartCount: 1,
+            ["page.png"],
+            new ProductReviewAssessment { Warnings = [omitted with { }, onPage, another] },
+            viewWarnings: [omitted]);
+
+        // A repeat of the same warning is dropped; another location or message is another warning.
+        Assert.Equal(
+            [omitted.Message, onPage.Message, another.Message],
+            result.Warnings!.Select(static warning => warning.Message));
+        Assert.False(result.Coverage.Complete);
+    }
+
+    [Fact]
     public void Write_EvidenceFollowsDocumentOrderInManifestAndGallery()
     {
         using var temp = new TempDirectory();
@@ -392,7 +422,8 @@ public sealed class ReviewEvidenceWriterTests
         int maxItems,
         int totalPartCount,
         string[] files,
-        ProductReviewAssessment? assessment = null) =>
+        ProductReviewAssessment? assessment = null,
+        IReadOnlyList<Warning>? viewWarnings = null) =>
         ReviewEvidenceWriter.Write(
             Source(temp),
             "test",
@@ -406,7 +437,7 @@ public sealed class ReviewEvidenceWriterTests
                 {
                     artifacts.Write(file, static stream => stream.Write(PngHeader));
                 }
-                return Manifest(totalPartCount, files);
+                return Manifest(totalPartCount, files) with { Warnings = viewWarnings };
             },
             _ => assessment ?? new ProductReviewAssessment(),
             LicenseState.Licensed,

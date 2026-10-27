@@ -84,8 +84,7 @@ internal sealed class WordsViewAdapter : IProductViewAdapter<WordsSession>
         return new ProductReviewAssessment
         {
             Findings = findings,
-            // The page view already reports the input's warnings.
-            Warnings = info.Warnings?.Except(rendered.Warnings ?? []).ToArray() is { Length: > 0 } own ? own : null,
+            Warnings = info.Warnings,
             Coverage =
             [
                 ReviewCoverageMetric.Of("pages", info.Document.PageCount, "pages"),

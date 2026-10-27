@@ -80,7 +80,7 @@ internal sealed class CellsViewAdapter : IProductViewAdapter<CellsSession>
         return new ProductReviewAssessment
         {
             Findings = findings,
-            Warnings = warnings.DistinctBy(static warning => (warning.Code, warning.Location)).ToArray(),
+            Warnings = warnings,
             Coverage =
             [
                 ReviewCoverageMetric.Of("sheets", info.Workbook.SheetCount, "sheets"),
@@ -94,9 +94,6 @@ internal sealed class CellsViewAdapter : IProductViewAdapter<CellsSession>
                 ReviewCoverageMetric.Of("formulaErrors", info.Workbook.FormulaErrors?.Count ?? 0, "cells"),
                 .. EnvelopeParts.ExcludedEvaluationMarks(session.Outputs.License, excludedMarks, "sheets"),
             ],
-            // Complete says whether every check ran; an error finding is a result, which the
-            // review weighs after any --code filter.
-            Complete = !warnings.Any(static warning => warning.AffectsCompleteness),
         };
     }
 
