@@ -10,44 +10,35 @@ namespace Aspose.Cli.Product.Cells.Engine.Mapping;
 /// Owns atomic workbook persistence, text-export normalization and warnings
 /// caused by target-format limits.
 /// </summary>
-internal sealed class CellsSavePipeline(OutputPipeline<Workbook> outputs, CellsWorkbookLoader loader)
+internal sealed class CellsSavePipeline(OutputPipeline<Workbook> outputs)
 {
     private readonly OutputPipeline<Workbook> _outputs =
         outputs ?? throw new ArgumentNullException(nameof(outputs));
 
-    internal OutputSet<Workbook> CreateOutputSet(IEnumerable<string> directories, string operation, string? backupPath = null) =>
-        _outputs.BeginSet(backupPath is null ? directories : directories.Append(Path.GetDirectoryName(backupPath)!), operation);
-
-    internal WorkbookStagedSave Save(
-        Workbook workbook, ResolvedOutput output, LicenseState licenseState, OutputProtection protection,
-        FileWritePrecondition? inputPrecondition = null, bool verifyReopen = false)
+    internal WorkbookSave Save(Workbook workbook, ResolvedOutput output, LicenseState licenseState, OutputProtection protection)
     {
         WorkbookSavePlan plan = WorkbookSavePlan.Create(output.Format, licenseState, protection);
-        using OutputSet<Workbook> transaction = CreateOutputSet([output.Directory], "cells-save", output.BackupPath);
-        WorkbookStagedSave saved = Stage(transaction, workbook, plan, output, inputPrecondition, verifyReopen);
+        using OutputSet<Workbook> transaction = _outputs.BeginSet([output.Directory], "cells-save");
+        WorkbookSaveLoss? loss = null;
+        StagedOutput candidate = transaction.Stage(output.Path, output.Format, output.Overwrite, workbook,
+            path => loss = ProduceReporting(workbook, plan, path), encrypted: plan.Encrypts);
         transaction.Commit();
-        return saved;
+        return new WorkbookSave(FileObjects.Output(candidate.Published, output.Format, plan.Encrypts), loss!);
     }
 
-    internal WorkbookStagedSave Stage(OutputSet<Workbook> transaction, Workbook workbook,
-        WorkbookSavePlan plan, ResolvedOutput output, FileWritePrecondition? inputPrecondition, bool verifyReopen)
+    /// <summary>
+    /// Writes the workbook (<see cref="Produce"/>) and names what the target format's limits
+    /// lost: the data beyond its grid, the formulas that became <c>#REF!</c> and the sheets it
+    /// cannot hold.
+    /// </summary>
+    internal WorkbookSaveLoss ProduceReporting(Workbook workbook, WorkbookSavePlan plan, string path)
     {
         Warning? truncated = DetectGridTruncation(workbook, plan.Format);
         Warning? sheetsDropped = plan.DetectSheetLoss(workbook);
         int refsBefore = CountRefFormulas(workbook);
-        StagedOutput candidate = transaction.Stage(output.Path, output.Format, output.Overwrite, workbook,
-            path => Produce(workbook, plan, path),
-            backupPath: output.BackupPath,
-            inputPrecondition: inputPrecondition,
-            encrypted: plan.Encrypts,
-            verify: verifyReopen ? path =>
-            {
-                using LoadedWorkbook reopened = loader.OpenPublishedCandidate(path, plan.Protection.Password);
-                _ = reopened.Workbook.Worksheets.Count;
-            } : null);
-        return new WorkbookStagedSave(candidate, output, truncated,
-            BuildBrokenFormulaWarning(refsBefore, CountRefFormulas(workbook), plan.FormatId), sheetsDropped)
-        { Encrypted = plan.Encrypts };
+        Produce(workbook, plan, path);
+        return new WorkbookSaveLoss(truncated,
+            BuildBrokenFormulaWarning(refsBefore, CountRefFormulas(workbook), plan.FormatId), sheetsDropped);
     }
 
     /// <summary>
@@ -179,13 +170,11 @@ internal sealed class CellsSavePipeline(OutputPipeline<Workbook> outputs, CellsW
         };
 }
 
-internal sealed record WorkbookStagedSave(StagedOutput Candidate, ResolvedOutput Target,
-    Warning? Truncated, Warning? FormulasBroken, Warning? SheetsDropped)
+/// <summary>What a save lost to its target format's limits, in the order a result reports it.</summary>
+internal sealed record WorkbookSaveLoss(Warning? Truncated, Warning? FormulasBroken, Warning? SheetsDropped)
 {
-    /// <summary>Whether the save encrypted the output with a password.</summary>
-    internal bool Encrypted { get; init; }
-
-    /// <summary>The published output; read it once the save is committed.</summary>
-    internal OutputInfo Output => FileObjects.Output(Candidate.Published, Target.Format, Encrypted);
-    internal BackupInfo? Backup => Candidate.Backup;
+    internal Warning?[] Warnings => [Truncated, FormulasBroken, SheetsDropped];
 }
+
+/// <summary>A published workbook and what its format's limits lost.</summary>
+internal sealed record WorkbookSave(OutputInfo Output, WorkbookSaveLoss Loss);

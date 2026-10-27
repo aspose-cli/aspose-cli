@@ -21,37 +21,6 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
     private static CellsSheetInfo FindSheet(CellsInspectResult result, string name) =>
         Assert.Single(result.Workbook.Sheets, sheet => sheet.Name == name);
 
-    [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public void EditOwnsDocumentBackupAndEvidenceAcrossSiblingDirectories(bool verify)
-    {
-        using var temp = new Aspose.Cli.TestKit.TempDirectory();
-        string documents = Path.Combine(temp.Path, "documents");
-        Directory.CreateDirectory(documents);
-        string source = Path.Combine(documents, "book.xlsx");
-        File.Copy(_fixture.CreateSalesWorkbook($"backup-root-{verify}.xlsx"), source);
-        byte[] original = File.ReadAllBytes(source);
-        string backup = Path.Combine(temp.Path, "backups", "original.xlsx");
-        CellsEditResult result = CellsEdit.Run(_fixture.Session,
-            new CellsEditRequest
-            {
-                Input = source,
-                Batch = ParseOps("""{"ops":[{"op":"set_values","sheet":"Data","range":"B2","values":[[7]]}]}"""),
-                Output = TestOutput.At(source, overwrite: true, backup: backup),
-                Verify = verify,
-            });
-        Assert.Equal(original, File.ReadAllBytes(backup));
-        Assert.Equal(backup, result.Backup!.Path);
-        Assert.Equal(source, result.Output!.Path);
-        using var reopened = new Aspose.Cells.Workbook(source);
-        Assert.Equal(7, reopened.Worksheets["Data"].Cells["B2"].IntValue);
-        if (verify)
-        {
-            Assert.Equal("B2", Assert.Single(result.Verification!.DirectChanges).Cell);
-        }
-    }
-
     [Fact]
     public void Edit_InPlaceBackupTwice_WarnsBackupPredatesEdit()
     {
