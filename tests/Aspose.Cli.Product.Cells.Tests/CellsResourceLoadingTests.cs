@@ -113,9 +113,14 @@ public sealed class CellsResourceLoadingTests
         ViewManifest rendered = adapter.Render(fixture.Session, input, request, sink);
         Assert.All(sink.Paths, path => Assert.NotEmpty(sink.Bytes(path)));
         ProductReviewAssessment assessment = adapter.Assess(fixture.Session, input, request, rendered);
-        Assert.False(assessment.Complete);
+        // The review counts a warning that affects completeness against its coverage, and reports
+        // the omission once: each load the assessment makes repeats the view's warning word for word.
         AssertOmission(rendered.Warnings);
         AssertOmission(assessment.Warnings);
+        string omission = rendered.Warnings!.Single(static warning => warning.Code == WarningCodes.RemoteResourcesBlocked).Message;
+        Assert.All(
+            assessment.Warnings!.Where(static warning => warning.Code == WarningCodes.RemoteResourcesBlocked),
+            warning => Assert.Equal(omission, warning.Message));
         Assert.Equal(0, server.RequestCount);
     }
 

@@ -56,6 +56,31 @@ public sealed class PdfReviewAndInfoTests
     }
 
     [Fact]
+    [Category(TestCategory.Slow)]
+    public void Review_WhenTextAnalysisReachesItsBudget_IsIncomplete()
+    {
+        using var fixture = new PdfEngineFixture();
+        using var workspace = new TempWorkspace();
+        // A page of more text than the million characters the review's text analysis reads, in
+        // lines short enough for the extraction to stay quick.
+        string line = $"({new string('a', 1000)}) Tj 0 -0.75 Td ";
+        string input = fixture.CreateRawDocument("long.pdf", pages: 1,
+            textContent: $"BT /F1 1 Tf 0 791 Td {string.Concat(Enumerable.Repeat(line, 1001))}ET");
+
+        CliResult result = workspace.Run(["review", input, "--out", workspace.File("review"), "--output-format", "json"]);
+
+        // An incomplete review fails its gate.
+        Assert.True(result.ExitCode == 8, result.StdOut + result.StdErr);
+        JsonNode review = JsonNode.Parse(result.StdOut)!;
+
+        JsonNode finding = Assert.Single(
+            review["findings"]!.AsArray(),
+            static item => item!["code"]!.GetValue<string>() == "PDF_TEXT_ANALYSIS_TRUNCATED")!;
+        Assert.Equal("page/1", finding["location"]!.GetValue<string>());
+        Assert.False(review["coverage"]!["complete"]!.GetValue<bool>());
+    }
+
+    [Fact]
     public void Review_SaysTheSourceIsEncrypted()
     {
         using var fixture = new PdfEngineFixture();

@@ -180,8 +180,10 @@ internal static class ReviewEvidenceWriter
                 part,
                 index + 3)),
         ];
-        IReadOnlyList<Warning>? warnings = EnvelopeParts.CombineWarnings(
-            manifest.Warnings, assessment.Warnings);
+        // An assessment reads the input again, so it repeats the input's warnings the view
+        // already reported; each appears once.
+        IReadOnlyList<Warning>? warnings = EnvelopeParts.CombineWarnings(manifest.Warnings, assessment.Warnings)
+            ?.DistinctBy(static warning => (warning.Code, warning.Location, warning.Message)).ToArray();
         IReadOnlyList<ReviewFinding> findings = AssociateEvidence(assessment.Findings ?? [], artifacts, manifest.Parts);
         IReadOnlyList<ReviewFinding> reported = codes is null
             ? findings
