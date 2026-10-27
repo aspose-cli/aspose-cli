@@ -1,5 +1,3 @@
-using System.Text.Json.Nodes;
-
 namespace Aspose.Cli.Sdk.Results;
 
 /// <summary>
@@ -11,8 +9,4 @@ namespace Aspose.Cli.Sdk.Results;
 /// what may be done with it.
 /// </param>
 /// <param name="Requested">Whether the command removed the encryption because it was asked to.</param>
-/// <param name="Restrictions">
-/// The fields of the operation that encrypts that restrict a copy as the encrypted input was
-/// restricted, such as its permissions; null when the product names none.
-/// </param>
-internal sealed record EncryptionLoss(IReadOnlyList<string> Formats, bool OpenPassword, bool Requested, JsonObject? Restrictions = null);
+internal sealed record EncryptionLoss(IReadOnlyList<string> Formats, bool OpenPassword, bool Requested);
