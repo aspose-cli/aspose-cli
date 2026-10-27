@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 namespace Aspose.Cli.Product.Slides.Contracts;
 
 /// <summary>Result of <c>slides convert</c>: the file a presentation or its selected slides were converted to.</summary>
-public sealed record SlidesConvertResult() : EngineResultEnvelope("convert-result", 2)
+public sealed record SlidesConvertResult() : EngineResultEnvelope("convert-result")
 {
     /// <summary>The converted presentation.</summary>
     [JsonPropertyOrder(-50)]

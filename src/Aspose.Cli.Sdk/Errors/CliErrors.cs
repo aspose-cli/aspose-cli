@@ -1190,31 +1190,6 @@ public static partial class CliErrors
             details);
     }
 
-    /// <summary>Creates an error for an unavailable product capability.</summary>
-    public static CliException FeatureUnsupported(
-        string feature,
-        string product,
-        IReadOnlyList<string> available)
-    {
-        ArgumentException.ThrowIfNullOrWhiteSpace(feature);
-        ArgumentException.ThrowIfNullOrWhiteSpace(product);
-        ArgumentNullException.ThrowIfNull(available);
-        JsonArray values = Strings(available);
-
-        return CliException.Create(
-            ErrorCodes.FeatureUnsupported,
-            $"Product '{product}' does not support {feature}.",
-            available.Count == 0
-                ? "This distribution has no product that supports this feature."
-                : $"Use a product that supports this feature: {string.Join(", ", available)}.",
-            new JsonObject
-            {
-                ["feature"] = feature,
-                ["product"] = product,
-                ["available"] = values,
-            });
-    }
-
     /// <summary>
     /// Input content names a resource the CLI does not let the document engine read: a network
     /// address, script, a compressed resource it cannot check, or a file outside the input's

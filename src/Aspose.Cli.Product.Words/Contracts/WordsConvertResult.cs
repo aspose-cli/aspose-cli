@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 namespace Aspose.Cli.Product.Words.Contracts;
 
 /// <summary>Result of <c>words convert</c>.</summary>
-public sealed record WordsConvertResult() : EngineResultEnvelope("convert-result", 2)
+public sealed record WordsConvertResult() : EngineResultEnvelope("convert-result")
 {
     /// <summary>The converted document.</summary>
     [JsonPropertyOrder(-50)]

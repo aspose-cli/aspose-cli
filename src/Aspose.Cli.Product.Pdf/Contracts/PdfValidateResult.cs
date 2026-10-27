@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 namespace Aspose.Cli.Product.Pdf.Contracts;
 
 /// <summary>Result of <c>pdf validate</c>, a PDF/A conformance check.</summary>
-public sealed record PdfValidateResult() : EngineResultEnvelope("validate-result", 2), IPartialOutcome
+public sealed record PdfValidateResult() : EngineResultEnvelope("validate-result"), IPartialOutcome
 {
     /// <summary>The PDF checked.</summary>
     [JsonPropertyOrder(-50)]

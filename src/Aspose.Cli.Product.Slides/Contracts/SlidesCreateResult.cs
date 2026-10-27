@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 namespace Aspose.Cli.Product.Slides.Contracts;
 
 /// <summary>Result of <c>slides create</c>: the new presentation and what it was built from.</summary>
-public sealed record SlidesCreateResult() : EngineResultEnvelope("create-result", 2)
+public sealed record SlidesCreateResult() : EngineResultEnvelope("create-result")
 {
     /// <summary>The created presentation.</summary>
     [JsonPropertyOrder(-50)]

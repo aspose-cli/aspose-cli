@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 namespace Aspose.Cli.Product.Pdf.Contracts;
 
 /// <summary>Result of <c>pdf extract</c>: the files it wrote into the output directory.</summary>
-public sealed record PdfExtractResult() : EngineResultEnvelope("extract-result", 2)
+public sealed record PdfExtractResult() : EngineResultEnvelope("extract-result")
 {
     /// <summary>The PDF extracted from.</summary>
     [JsonPropertyOrder(-50)]

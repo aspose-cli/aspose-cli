@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 namespace Aspose.Cli.Product.Slides.Contracts;
 
 /// <summary>Result of <c>slides read</c>: a window of slides with their content at the requested depth.</summary>
-public sealed record SlidesReadResult() : WindowedResultEnvelope("read-result", 2)
+public sealed record SlidesReadResult() : WindowedResultEnvelope("read-result")
 {
     /// <summary>The presentation read.</summary>
     [JsonPropertyOrder(-49)]

@@ -1,5 +1,6 @@
 using System.Xml.Linq;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using Aspose.Cli.TestKit;
 using Xunit;
 
@@ -58,8 +59,9 @@ public sealed class CustomerDistributionContractTests
             sourceRoot,
             "SKILL.md",
             SearchOption.AllDirectories);
+        int products = JsonNode.Parse(File.ReadAllText(Path.Combine(RepositoryPaths.Root, "eng", "products.json")))!["products"]!.AsArray().Count;
         // The platform Skill and one Skill per product.
-        Assert.Equal(5, skills.Length);
+        Assert.Equal(1 + products, skills.Length);
 
         foreach (string skill in skills)
         {

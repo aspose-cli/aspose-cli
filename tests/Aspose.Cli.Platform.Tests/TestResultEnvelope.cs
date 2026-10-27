@@ -9,9 +9,9 @@ namespace Aspose.Cli.Platform.Tests;
 /// </summary>
 public abstract record TestResultEnvelope : ResultEnvelope
 {
-    /// <summary>Starts a version 1 result that states the relative schema id <paramref name="schema"/>.</summary>
+    /// <summary>Starts a result that states the relative schema id <paramref name="schema"/>.</summary>
     protected TestResultEnvelope(string schema)
-        : base(schema, 1)
+        : base(schema)
     {
     }
 }

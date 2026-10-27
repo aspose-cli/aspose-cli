@@ -130,7 +130,7 @@ weaken a check or remove a supported operation to make a test pass.
   branch, so a new operation does not compile until it is placed (`CellsOpFootprints`,
   `WordsOpAddresses`, `PdfEditVerifier.Recording`). A no-effect explanation that only a few
   operations have (`Explain`, the Words review authors) is not such a classification.
-- **Results** pass their relative schema id and version to a result envelope; ids are
+- **Results** pass only their relative schema id to a result envelope; ids are
   `v2/common/` for the SDK and Host, `v2/<product>/` for a product. `APCLI013` rejects a record it
   cannot describe. An edit's `verification` derives from the SDK `EditVerification` core and
   declares only the product's evidence.

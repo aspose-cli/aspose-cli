@@ -11,10 +11,9 @@ public abstract record EngineResultEnvelope : ResultEnvelope
 {
     /// <summary>Starts a result that follows the schema <paramref name="schema"/>.</summary>
     /// <param name="schema">The schema id relative to the record's owner, such as <c>render-result</c>.</param>
-    /// <param name="schemaVersion">The version of the result contract.</param>
     /// <exception cref="ArgumentException"><paramref name="schema"/> is not a relative schema id.</exception>
-    protected EngineResultEnvelope(string schema, int schemaVersion)
-        : base(schema, schemaVersion)
+    protected EngineResultEnvelope(string schema)
+        : base(schema)
     {
     }
 

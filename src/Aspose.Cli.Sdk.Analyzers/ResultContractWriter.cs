@@ -20,7 +20,7 @@ internal sealed class ResultContractWriter(
 {
     private const string Sdk = "global::" + SdkMetadataNames.ContractsNamespace + ".";
     private static readonly string[] CaseTypes = ["null", "string", "number", "integer", "boolean"];
-    private readonly Dictionary<INamedTypeSymbol, (string? SchemaId, int Version)> _published = new(SymbolEqualityComparer.Default);
+    private readonly Dictionary<INamedTypeSymbol, string> _published = new(SymbolEqualityComparer.Default);
     private readonly List<INamedTypeSymbol> _order = [];
     private readonly Dictionary<INamedTypeSymbol, string> _code = new(SymbolEqualityComparer.Default);
     private readonly Queue<INamedTypeSymbol> _pending = new();
@@ -35,19 +35,19 @@ internal sealed class ResultContractWriter(
         var ids = new Dictionary<string, INamedTypeSymbol>(StringComparer.Ordinal);
         foreach (INamedTypeSymbol type in declared)
         {
-            if (Published(type) is not { } root)
+            if (Published(type) is not { } id)
             {
                 continue;
             }
 
-            if (ids.TryGetValue(root.SchemaId, out INamedTypeSymbol? other))
+            if (ids.TryGetValue(id, out INamedTypeSymbol? other))
             {
-                Report(type, $"Result records '{other.Name}' and '{type.Name}' both publish the schema '{root.SchemaId}'; merge them into one record.");
+                Report(type, $"Result records '{other.Name}' and '{type.Name}' both publish the schema '{id}'; merge them into one record.");
                 continue;
             }
 
-            ids.Add(root.SchemaId, type);
-            _published[type] = (root.SchemaId, root.Version);
+            ids.Add(id, type);
+            _published[type] = id;
             Enqueue(type);
         }
 
@@ -87,8 +87,8 @@ internal sealed class ResultContractWriter(
         return Failed ? [] : [.. contexts.Select(context => (context.Name + ".ResultContracts.g.cs", Source(context)))];
     }
 
-    /// <summary>The relative id and version a record publishes, or null when it publishes none.</summary>
-    private (string SchemaId, int Version)? Published(INamedTypeSymbol type)
+    /// <summary>The relative id a record publishes, or null when it publishes none.</summary>
+    private string? Published(INamedTypeSymbol type)
     {
         if (Find(type, SdkMetadataNames.SchemaIdAttribute) is { } attribute)
         {
@@ -99,7 +99,7 @@ internal sealed class ResultContractWriter(
                 return null;
             }
 
-            return (id, 0);
+            return id;
         }
 
         if (type.IsAbstract || type.TypeKind != TypeKind.Class || type.BaseType is not { } envelope || !IsEnvelope(envelope))
@@ -119,19 +119,16 @@ internal sealed class ResultContractWriter(
                     .Select(static initializer => initializer.ArgumentList));
             foreach (ArgumentListSyntax? arguments in calls)
             {
-                if (arguments is { Arguments.Count: 2 })
+                if (arguments is { Arguments.Count: 1 }
+                    && compilation.GetSemanticModel(arguments.SyntaxTree).GetConstantValue(arguments.Arguments[0].Expression).Value is string id
+                    && RelativeId.IsMatch(id))
                 {
-                    SemanticModel model = compilation.GetSemanticModel(arguments.SyntaxTree);
-                    if (model.GetConstantValue(arguments.Arguments[0].Expression).Value is string id && RelativeId.IsMatch(id)
-                        && model.GetConstantValue(arguments.Arguments[1].Expression).Value is int version)
-                    {
-                        return (id, version);
-                    }
+                    return id;
                 }
             }
         }
 
-        Report(type, $"Result '{type.Name}' must pass the ResultEnvelope constructor a constant relative schema id, such as 'render-result', and a constant version; the schema is published under that id.");
+        Report(type, $"Result '{type.Name}' must pass the ResultEnvelope constructor a constant relative schema id, such as 'render-result'; the schema is published under that id.");
         return null;
     }
 
@@ -186,13 +183,9 @@ internal sealed class ResultContractWriter(
             code.Append(", Base = typeof(").Append(TypeName(baseType)).Append(')');
         }
 
-        if (_published.TryGetValue(type, out (string? SchemaId, int Version) published))
+        if (_published.TryGetValue(type, out string? published))
         {
-            code.Append(", SchemaId = ").Append(Literal(published.SchemaId!));
-            if (published.Version > 0)
-            {
-                code.Append(", SchemaVersion = ").Append(published.Version);
-            }
+            code.Append(", SchemaId = ").Append(Literal(published));
         }
 
         string[] members = [.. Properties(type).Select(property => Member(type, property)).OfType<string>()];

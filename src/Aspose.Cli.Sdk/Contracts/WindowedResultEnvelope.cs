@@ -10,10 +10,9 @@ public abstract record WindowedResultEnvelope : EngineResultEnvelope
 {
     /// <summary>Starts a result that follows the schema <paramref name="schema"/>.</summary>
     /// <param name="schema">The schema id relative to the record's owner, such as <c>read-result</c>.</param>
-    /// <param name="schemaVersion">The version of the result contract.</param>
     /// <exception cref="ArgumentException"><paramref name="schema"/> is not a relative schema id.</exception>
-    protected WindowedResultEnvelope(string schema, int schemaVersion)
-        : base(schema, schemaVersion)
+    protected WindowedResultEnvelope(string schema)
+        : base(schema)
     {
     }
 

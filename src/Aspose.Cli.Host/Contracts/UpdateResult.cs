@@ -3,7 +3,7 @@ using Aspose.Cli.Sdk.Contracts;
 namespace Aspose.Cli.Host.Contracts;
 
 /// <summary>Result of <c>aspose-cli update</c>: an update check, or an install handed to the installer.</summary>
-public sealed record UpdateResult() : ResultEnvelope("update-result", 2)
+public sealed record UpdateResult() : ResultEnvelope("update-result")
 {
     /// <summary>
     /// <c>up-to-date</c> when no newer release exists, <c>available</c> when one does, or

@@ -4,7 +4,7 @@ using Aspose.Cli.Sdk.Rendering;
 namespace Aspose.Cli.Product.Words.Contracts;
 
 /// <summary>Result of <c>words render</c>.</summary>
-public sealed record WordsRenderResult() : EngineResultEnvelope("render-result", 2)
+public sealed record WordsRenderResult() : EngineResultEnvelope("render-result")
 {
     /// <summary>The rendered document.</summary>
     [JsonPropertyOrder(-50)]

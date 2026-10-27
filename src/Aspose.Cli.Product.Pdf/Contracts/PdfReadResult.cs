@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 namespace Aspose.Cli.Product.Pdf.Contracts;
 
 /// <summary>Windowed page text returned by <c>pdf read</c>.</summary>
-public sealed record PdfReadResult() : WindowedResultEnvelope("read-result", 2)
+public sealed record PdfReadResult() : WindowedResultEnvelope("read-result")
 {
     /// <summary>The PDF read.</summary>
     [JsonPropertyOrder(-49)]

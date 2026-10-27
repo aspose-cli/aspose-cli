@@ -6,7 +6,7 @@ namespace Aspose.Cli.Host.Contracts;
 /// Result of <c>aspose-cli license status</c>: the effective, independently verified license
 /// status of every selected product; there is no first-product summary.
 /// </summary>
-public sealed record LicenseStatusResult() : ResultEnvelope("license-status", 2)
+public sealed record LicenseStatusResult() : ResultEnvelope("license-status")
 {
     /// <summary>The license status of each selected product.</summary>
     [MinItems(1)]

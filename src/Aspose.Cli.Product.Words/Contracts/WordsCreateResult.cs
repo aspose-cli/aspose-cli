@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 namespace Aspose.Cli.Product.Words.Contracts;
 
 /// <summary>Result of <c>words create</c>: the document written and what it was created from.</summary>
-public sealed record WordsCreateResult() : EngineResultEnvelope("create-result", 2)
+public sealed record WordsCreateResult() : EngineResultEnvelope("create-result")
 {
     /// <summary>The created document.</summary>
     [JsonPropertyOrder(-49)]

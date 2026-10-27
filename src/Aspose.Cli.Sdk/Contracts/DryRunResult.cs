@@ -22,7 +22,7 @@ public static class DryRunChecks
 /// it names were checked, and nothing ran or was written. A dry run that succeeds does not
 /// guarantee that the command succeeds.
 /// </summary>
-public sealed record DryRunResult() : ResultEnvelope("dry-run-result", 2)
+public sealed record DryRunResult() : ResultEnvelope("dry-run-result")
 {
     /// <summary>Always <c>true</c>: the command ran nothing and wrote no file.</summary>
     [AllowedValues(true)]

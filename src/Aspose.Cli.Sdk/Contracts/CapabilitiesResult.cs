@@ -5,7 +5,7 @@ namespace Aspose.Cli.Sdk.Contracts;
 /// formats and ops this build supports. Agents use it for runtime discovery
 /// instead of hard-coding command lists.
 /// </summary>
-public sealed record CapabilitiesResult() : ResultEnvelope("capabilities", 2)
+public sealed record CapabilitiesResult() : ResultEnvelope("capabilities")
 {
     /// <summary>CLI version, e.g. <c>0.2.0</c>.</summary>
     public required string CliVersion { get; init; }

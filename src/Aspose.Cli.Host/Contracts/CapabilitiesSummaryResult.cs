@@ -8,7 +8,7 @@ namespace Aspose.Cli.Host.Contracts;
 /// their descriptions, its formats and its edit operation names;
 /// <c>capabilities &lt;product&gt; &lt;command&gt;</c> gives the full detail of one command.
 /// </summary>
-public sealed record CapabilitiesSummaryResult() : ResultEnvelope("capabilities-summary", 2)
+public sealed record CapabilitiesSummaryResult() : ResultEnvelope("capabilities-summary")
 {
     /// <summary>CLI version, the same value as capabilities <c>cliVersion</c>.</summary>
     [MinLength(1)]

@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 namespace Aspose.Cli.Product.Pdf.Contracts;
 
 /// <summary>Result of one <c>pdf edit</c> batch.</summary>
-public sealed record PdfEditResult() : EngineResultEnvelope("edit-result", 2), IPartialOutcome
+public sealed record PdfEditResult() : EngineResultEnvelope("edit-result"), IPartialOutcome
 {
     /// <summary>The PDF edited.</summary>
     [JsonPropertyOrder(-50)]

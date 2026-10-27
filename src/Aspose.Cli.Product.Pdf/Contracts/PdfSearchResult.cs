@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 namespace Aspose.Cli.Product.Pdf.Contracts;
 
 /// <summary>The bounded text search of <c>pdf search</c>.</summary>
-public sealed record PdfSearchResult() : WindowedResultEnvelope("search-result", 2)
+public sealed record PdfSearchResult() : WindowedResultEnvelope("search-result")
 {
     /// <summary>The PDF searched.</summary>
     [JsonPropertyOrder(-50)]
