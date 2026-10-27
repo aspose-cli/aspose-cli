@@ -6,7 +6,7 @@ namespace Aspose.Cli.Product.Words.Contracts;
 /// Result of <c>words edit</c>: one operation batch, applied or checked, and the checks run on
 /// the written document.
 /// </summary>
-public sealed record WordsEditResult() : EngineResultEnvelope("edit-result", 2), IPartialOutcome
+public sealed record WordsEditResult() : EngineResultEnvelope("edit-result"), IPartialOutcome
 {
     /// <summary>The edited document.</summary>
     [JsonPropertyOrder(-50)]

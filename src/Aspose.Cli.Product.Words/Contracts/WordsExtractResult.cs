@@ -1,7 +1,7 @@
 namespace Aspose.Cli.Product.Words.Contracts;
 
 /// <summary>Result of <c>words extract</c>: the files written for the images, comments, text or tables extracted.</summary>
-public sealed record WordsExtractResult() : EngineResultEnvelope("extract-result", 2)
+public sealed record WordsExtractResult() : EngineResultEnvelope("extract-result")
 {
     /// <summary>The document extracted from.</summary>
     public required InputInfo Input { get; init; }

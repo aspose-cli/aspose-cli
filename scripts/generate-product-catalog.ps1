@@ -239,12 +239,12 @@ $requiredFields = @(
     'id',
     'productName',
     'engine',
+    'sdkPackageId',
     'sdkVersion'
 )
 $allowedFields = @(
     $requiredFields + @(
         'displayName',
-        'sdkPackageId',
         'supplementalPackages'))
 # Row order is display order; the optional defaultProduct names the product that owns
 # unprefixed commands.
@@ -341,9 +341,8 @@ $products = @(
                 $projectXml.SelectNodes('//*[local-name()="PackageReference"]') |
                     ForEach-Object { [string] $_.GetAttribute('Include') })
             $declared = @(
-                @([string] (Get-OptionalValue $row 'sdkPackageId' '')) +
-                    @($supplemental | ForEach-Object { [string] $_.packageId }) |
-                    Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
+                @([string] $row.sdkPackageId) +
+                    @($supplemental | ForEach-Object { [string] $_.packageId }))
             $missingReferences = @($declared | Where-Object { $_ -notin $referenced })
             $unexpectedReferences = @($referenced | Where-Object { $_ -notin $declared })
             if ($missingReferences.Count -ne 0 -or $unexpectedReferences.Count -ne 0) {
@@ -362,8 +361,7 @@ $products = @(
                 assemblyName = $projectName
                 moduleType = $moduleType
                 engineName = [string] $row.engine
-                sdkPackageId = [string] (
-                    Get-OptionalValue $row 'sdkPackageId' '')
+                sdkPackageId = [string] $row.sdkPackageId
                 sdkVersion = [string] $row.sdkVersion
                 supplementalPackageVersions = $supplemental
                 resourceNamespace = "v2/$id"
@@ -410,12 +408,10 @@ Assert-NoSetDifference $expectedTestDirectories $actualTestDirectories `
 
 $declaredPackages = @(
     foreach ($product in $products) {
-        if (-not [string]::IsNullOrWhiteSpace($product.sdkPackageId)) {
-            [pscustomobject] @{
-                packageId = $product.sdkPackageId
-                version = $product.sdkVersion
-                product = $product.id
-            }
+        [pscustomobject] @{
+            packageId = $product.sdkPackageId
+            version = $product.sdkVersion
+            product = $product.id
         }
         foreach ($item in $product.supplementalPackageVersions) {
             [pscustomobject] @{

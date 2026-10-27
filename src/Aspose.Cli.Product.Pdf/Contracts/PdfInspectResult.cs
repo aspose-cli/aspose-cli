@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 namespace Aspose.Cli.Product.Pdf.Contracts;
 
 /// <summary>Structural information returned by <c>pdf inspect</c>.</summary>
-public sealed record PdfInspectResult() : EngineResultEnvelope("inspect-result", 2)
+public sealed record PdfInspectResult() : EngineResultEnvelope("inspect-result")
 {
     /// <summary>The most pages <see cref="Pages"/> lists.</summary>
     public const int PagePreviewLimit = 20;

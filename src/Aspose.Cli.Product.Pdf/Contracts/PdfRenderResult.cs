@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 namespace Aspose.Cli.Product.Pdf.Contracts;
 
 /// <summary>Result of <c>pdf render</c>.</summary>
-public sealed record PdfRenderResult() : EngineResultEnvelope("render-result", 2)
+public sealed record PdfRenderResult() : EngineResultEnvelope("render-result")
 {
     /// <summary>The rendered PDF.</summary>
     [JsonPropertyOrder(-50)]

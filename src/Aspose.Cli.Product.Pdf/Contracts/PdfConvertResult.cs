@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 namespace Aspose.Cli.Product.Pdf.Contracts;
 
 /// <summary>Result of <c>pdf convert</c>: the file a PDF or its selected pages were converted to.</summary>
-public sealed record PdfConvertResult() : EngineResultEnvelope("convert-result", 2)
+public sealed record PdfConvertResult() : EngineResultEnvelope("convert-result")
 {
     /// <summary>The converted PDF.</summary>
     [JsonPropertyOrder(-50)]

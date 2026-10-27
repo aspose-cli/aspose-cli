@@ -31,13 +31,10 @@ public abstract partial record ResultEnvelope
     /// whose assembly declares the record, or <c>common</c> for the SDK and the host. The
     /// contract generator publishes the record's schema under the same id.
     /// </param>
-    /// <param name="schemaVersion">The version of the result contract.</param>
     /// <exception cref="ArgumentException"><paramref name="schema"/> is not a relative schema id.</exception>
-    protected ResultEnvelope(string schema, int schemaVersion)
+    protected ResultEnvelope(string schema)
     {
-        ArgumentOutOfRangeException.ThrowIfLessThan(schemaVersion, 1);
         Schema = SchemaUri(OwnerOf(GetType().Assembly), schema);
-        SchemaVersion = schemaVersion;
     }
 
     /// <summary>URI of the JSON schema this result conforms to.</summary>
@@ -46,7 +43,7 @@ public abstract partial record ResultEnvelope
 
     /// <summary>Version of this result contract.</summary>
     [JsonPropertyOrder(-99)]
-    public int SchemaVersion { get; }
+    public int SchemaVersion => ContractVersion;
 
     /// <summary>
     /// Warnings the agent is expected to act on (for example

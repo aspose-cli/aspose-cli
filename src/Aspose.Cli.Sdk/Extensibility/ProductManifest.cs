@@ -11,9 +11,6 @@ public sealed record ProductManifest
     /// <summary>Human-readable product name.</summary>
     public required string DisplayName { get; init; }
 
-    /// <summary>Stable contract family implemented by this package.</summary>
-    public string ContractVersion { get; init; } = "v1";
-
     /// <summary>Deterministic order used by capabilities and UI surfaces.</summary>
     public int DisplayOrder { get; init; }
 

@@ -8,7 +8,7 @@ namespace Aspose.Cli.Sdk.Contracts;
 /// with. This is the rendering-fidelity diagnostic that a product listing of the used
 /// fonts cannot give. A document with a font that is not available here exits 8.
 /// </summary>
-public sealed record FontCheckResult() : EngineResultEnvelope("font-check", 2), IPartialOutcome
+public sealed record FontCheckResult() : EngineResultEnvelope("font-check"), IPartialOutcome
 {
     /// <summary>The document that was checked.</summary>
     [JsonPropertyOrder(-50)]

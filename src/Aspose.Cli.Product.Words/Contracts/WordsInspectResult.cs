@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 namespace Aspose.Cli.Product.Words.Contracts;
 
 /// <summary>Structural information returned by <c>words inspect</c>.</summary>
-public sealed record WordsInspectResult() : EngineResultEnvelope("inspect-result", 2)
+public sealed record WordsInspectResult() : EngineResultEnvelope("inspect-result")
 {
     /// <summary>The inspected document.</summary>
     [JsonPropertyOrder(-49)]

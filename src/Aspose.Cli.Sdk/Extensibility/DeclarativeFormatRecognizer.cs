@@ -16,8 +16,6 @@ internal sealed class DeclarativeFormatRecognizer(
         .Where(static format =>
             format.Uses.HasFlag(FormatUse.Input)
             && format.Ownership == RouteOwnership.Default)
-        .OrderBy(static format => format.InputOrder)
-        .ThenBy(static format => format.Id, StringComparer.Ordinal)
         .ToArray();
 
     public FileRecognizerDescriptor Descriptor { get; } = new()

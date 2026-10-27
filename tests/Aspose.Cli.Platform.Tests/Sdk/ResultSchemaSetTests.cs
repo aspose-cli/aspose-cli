@@ -270,20 +270,6 @@ public sealed class ResultSchemaSetTests
     }
 
     [Fact]
-    public void PublishedRecordOfAnotherVersion_IsRefused()
-    {
-        ResultRecord current = new() { Type = typeof(SamplePage), SchemaId = "current", SchemaVersion = 2 };
-        ResultRecord block = new() { Type = typeof(SampleBlock), SchemaId = "block" };
-        ResultRecord older = new() { Type = typeof(SampleCell), SchemaId = "older", SchemaVersion = 1 };
-
-        Assert.Equal(["v2/test/block", "v2/test/current"], new ResultSchemaSet("test", [current, block], common: null).Ids);
-        Assert.Contains(
-            "states schemaVersion 1, but its schema is published under v2",
-            Assert.Throws<InvalidOperationException>(() => new ResultSchemaSet("test", [current, older], common: null)).Message,
-            StringComparison.Ordinal);
-    }
-
-    [Fact]
     public void RecordsThatClaimOneSchemaOrDefinition_AreRefused()
     {
         ResultRecord first = new() { Type = typeof(SamplePage), SchemaId = "twice" };

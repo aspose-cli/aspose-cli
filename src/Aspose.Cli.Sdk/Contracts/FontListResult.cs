@@ -8,7 +8,7 @@ namespace Aspose.Cli.Sdk.Contracts;
 /// fonts, and what does it fall back to" so a "renders wrong on the server" problem can be
 /// traced to font configuration.
 /// </summary>
-public sealed record FontListResult() : EngineResultEnvelope("font-list", 2)
+public sealed record FontListResult() : EngineResultEnvelope("font-list")
 {
     /// <summary>
     /// One entry per product, in catalog order: every product with font diagnostics, or only the

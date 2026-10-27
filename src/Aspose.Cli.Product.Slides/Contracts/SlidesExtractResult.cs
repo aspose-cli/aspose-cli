@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 namespace Aspose.Cli.Product.Slides.Contracts;
 
 /// <summary>Result of <c>slides extract</c>: the files written for the extracted content.</summary>
-public sealed record SlidesExtractResult() : EngineResultEnvelope("extract-result", 2)
+public sealed record SlidesExtractResult() : EngineResultEnvelope("extract-result")
 {
     /// <summary>The presentation extracted from.</summary>
     [JsonPropertyOrder(-50)]

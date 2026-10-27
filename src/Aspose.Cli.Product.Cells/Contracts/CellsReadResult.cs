@@ -9,7 +9,7 @@ namespace Aspose.Cli.Product.Cells.Contracts;
 /// returns the next page. The file on disk remains the primary artifact — this JSON is a
 /// view of it, never a round-trip format.
 /// </summary>
-public sealed record CellsReadResult() : WindowedResultEnvelope("read-result", 2)
+public sealed record CellsReadResult() : WindowedResultEnvelope("read-result")
 {
     /// <summary>The projected file.</summary>
     [JsonPropertyOrder(-49)]

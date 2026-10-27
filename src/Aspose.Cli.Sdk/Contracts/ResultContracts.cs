@@ -169,9 +169,6 @@ public sealed class ResultRecord
     /// <summary>The relative id the record is published under, or null for a record that is only referenced.</summary>
     public string? SchemaId { get; init; }
 
-    /// <summary>The <c>schemaVersion</c> a published result states, or 0 when the record states none.</summary>
-    public int SchemaVersion { get; init; }
-
     /// <summary>The record's own serialized members in declaration order; inherited members come from <see cref="Base"/>.</summary>
     public IReadOnlyList<ResultProperty> Properties { get; init; } = [];
 }

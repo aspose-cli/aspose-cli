@@ -8,7 +8,7 @@ namespace Aspose.Cli.Host.Contracts;
 /// user) can tell whether the CLI is ready — licensed, on a supported runtime,
 /// able to write output — before a task fails midway.
 /// </summary>
-public sealed record DoctorResult() : ResultEnvelope("doctor", 2), IPartialOutcome
+public sealed record DoctorResult() : ResultEnvelope("doctor"), IPartialOutcome
 {
     /// <summary><c>true</c> when no check failed; warnings still allow readiness.</summary>
     [JsonPropertyOrder(-50)]

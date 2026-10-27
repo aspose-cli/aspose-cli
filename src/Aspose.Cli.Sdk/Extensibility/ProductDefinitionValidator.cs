@@ -135,11 +135,6 @@ internal sealed class ProductDefinitionValidator
             throw new InvalidOperationException(
                 $"Product '{manifest.Id}' has no display name.");
         }
-        if (!string.Equals(manifest.ContractVersion, "v1", StringComparison.Ordinal))
-        {
-            throw new InvalidOperationException(
-                $"Product '{manifest.Id}' targets unsupported contract '{manifest.ContractVersion}'.");
-        }
         if (string.IsNullOrWhiteSpace(manifest.Engine.Id)
             || !manifest.AvailableEngines.Contains(
                 manifest.Engine.Id,

@@ -1,7 +1,7 @@
 namespace Aspose.Cli.Product.Words.Contracts;
 
 /// <summary>Result of <c>words split</c>: the parts the document was split into, in document order.</summary>
-public sealed record WordsSplitResult() : EngineResultEnvelope("split-result", 2)
+public sealed record WordsSplitResult() : EngineResultEnvelope("split-result")
 {
     /// <summary>The split document.</summary>
     public required InputInfo Input { get; init; }

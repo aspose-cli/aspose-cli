@@ -8,7 +8,7 @@ namespace Aspose.Cli.Product.Cells.Contracts;
 /// as the first step of the projection ladder (metadata before structure,
 /// structure before values). Never contains full cell data.
 /// </summary>
-public sealed record CellsInspectResult() : EngineResultEnvelope("inspect-result", 2)
+public sealed record CellsInspectResult() : EngineResultEnvelope("inspect-result")
 {
     /// <summary>The inspected file.</summary>
     [JsonPropertyOrder(-49)]

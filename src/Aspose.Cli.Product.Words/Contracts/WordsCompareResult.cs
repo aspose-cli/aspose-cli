@@ -4,7 +4,7 @@ namespace Aspose.Cli.Product.Words.Contracts;
 /// Result of <c>words compare</c>: the revisions a semantic comparison of two documents found,
 /// and the redline document when one is written.
 /// </summary>
-public sealed record WordsCompareResult() : EngineResultEnvelope("compare-result", 2)
+public sealed record WordsCompareResult() : EngineResultEnvelope("compare-result")
 {
     /// <summary>The original document.</summary>
     public required InputInfo Left { get; init; }

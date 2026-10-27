@@ -33,7 +33,7 @@ public sealed class ResultContractGeneratorTests
         GeneratorDriverRunResult result = Run(
             """
             /// <summary>The pages rendered and the files written.</summary>
-            public sealed record RenderResult() : ResultEnvelope("render-result", 2)
+            public sealed record RenderResult() : ResultEnvelope("render-result")
             {
                 /// <summary>The kind of result.</summary>
                 [JsonPropertyOrder(-50)]
@@ -110,7 +110,7 @@ public sealed class ResultContractGeneratorTests
         const string Kind = "global::Aspose.Cli.Sdk.Contracts.ResultValueKind.";
         Assert.Contains("partial class ProductJsonContext : global::Aspose.Cli.Sdk.Contracts.IResultSchemaSource", source, StringComparison.Ordinal);
         Assert.Contains(
-            "new() { Type = typeof(global::Sample.RenderResult), Description = \"The pages rendered and the files written.\", Base = typeof(global::Aspose.Cli.Sdk.Contracts.ResultEnvelope), SchemaId = \"render-result\", SchemaVersion = 2, Properties = [",
+            "new() { Type = typeof(global::Sample.RenderResult), Description = \"The pages rendered and the files written.\", Base = typeof(global::Aspose.Cli.Sdk.Contracts.ResultEnvelope), SchemaId = \"render-result\", Properties = [",
             source,
             StringComparison.Ordinal);
         Assert.Contains($"new() {{ Name = \"kind\", Description = \"The kind of result.\", Value = new() {{ Kind = {Kind}String }}, Required = true, Const = \"\\\"render\\\"\", Order = -50 }}", source, StringComparison.Ordinal);
@@ -143,7 +143,7 @@ public sealed class ResultContractGeneratorTests
         GeneratorDriverRunResult result = Run(
             """
             /// <summary>A stamp: <see cref="Text"/> is drawn on <see cref="Spot.Page"/>, see <see cref="Spot"/>.</summary>
-            public sealed record StampResult() : ResultEnvelope("stamp-result", 2)
+            public sealed record StampResult() : ResultEnvelope("stamp-result")
             {
                 /// <summary>The stamp text; present only with <see cref="P:Sample.StampResult.Where"/>.</summary>
                 public required string Text { get; init; }
@@ -183,7 +183,7 @@ public sealed class ResultContractGeneratorTests
         GeneratorDriverRunResult result = Run(
             """
             /// <summary>The pages rendered.</summary>
-            public sealed record RenderResult() : ResultEnvelope("render-result", 2)
+            public sealed record RenderResult() : ResultEnvelope("render-result")
             {
                 /// <summary>One file per page.</summary>
                 public required IReadOnlyList<PageFile> Outputs { get; init; }
@@ -218,12 +218,12 @@ public sealed class ResultContractGeneratorTests
         GeneratorDriverRunResult result = Run(
             """
             /// <summary>A bounded read.</summary>
-            public sealed record ReadResult() : WindowedResultEnvelope("read-result", 2);
+            public sealed record ReadResult() : WindowedResultEnvelope("read-result");
 
             public abstract record LocalEnvelope : ResultEnvelope
             {
                 protected LocalEnvelope(string schema)
-                    : base(schema, 1)
+                    : base(schema)
                 {
                 }
             }
@@ -236,7 +236,7 @@ public sealed class ResultContractGeneratorTests
 
         Assert.Empty(result.Diagnostics.Where(static diagnostic => diagnostic.Id == "APCLI013"));
         string source = Assert.Single(Assert.Single(result.Results).GeneratedSources).SourceText.ToString();
-        Assert.Contains("Base = typeof(global::Aspose.Cli.Sdk.Contracts.WindowedResultEnvelope), SchemaId = \"read-result\", SchemaVersion = 2", source, StringComparison.Ordinal);
+        Assert.Contains("Base = typeof(global::Aspose.Cli.Sdk.Contracts.WindowedResultEnvelope), SchemaId = \"read-result\"", source, StringComparison.Ordinal);
         Assert.DoesNotContain("LocalResult", source, StringComparison.Ordinal);
         Assert.DoesNotContain("LocalEnvelope", source, StringComparison.Ordinal);
     }
@@ -249,7 +249,7 @@ public sealed class ResultContractGeneratorTests
         GeneratorDriverRunResult result = Run(
             $$"""
             /// <summary>A result.</summary>
-            public sealed record LegacyResult() : ResultEnvelope({{id}}, 2)
+            public sealed record LegacyResult() : ResultEnvelope({{id}})
             {
                 public static readonly string Id = "legacy-result";
             }
@@ -271,7 +271,7 @@ public sealed class ResultContractGeneratorTests
             public enum Mode { Fast, Slow }
 
             /// <summary>A result.</summary>
-            public sealed record BrokenResult() : ResultEnvelope("broken-result", 2)
+            public sealed record BrokenResult() : ResultEnvelope("broken-result")
             {
                 public required string Undescribed { get; init; }
 
@@ -350,11 +350,11 @@ public sealed class ResultContractGeneratorTests
             public static class Holder
             {
                 /// <summary>A result its JSON context cannot name.</summary>
-                private sealed record HiddenResult() : ResultEnvelope("hidden-result", 2);
+                private sealed record HiddenResult() : ResultEnvelope("hidden-result");
             }
 
             /// <summary>Another result with the same id.</summary>
-            public sealed record TwinResult() : ResultEnvelope("broken-result", 2);
+            public sealed record TwinResult() : ResultEnvelope("broken-result");
 
             [SchemaId("Not Relative")]
             public sealed record Misnamed;
@@ -388,7 +388,7 @@ public sealed class ResultContractGeneratorTests
         GeneratorDriverRunResult result = Run(
             """
             /// <summary>A result no JSON context lists.</summary>
-            public sealed record LostResult() : ResultEnvelope("lost-result", 2);
+            public sealed record LostResult() : ResultEnvelope("lost-result");
             """);
 
         Assert.Contains(

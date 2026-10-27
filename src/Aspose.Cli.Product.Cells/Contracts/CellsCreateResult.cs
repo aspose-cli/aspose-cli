@@ -5,7 +5,7 @@ namespace Aspose.Cli.Product.Cells.Contracts;
 /// <summary>
 /// Result of <c>aspose-cli cells create</c>.
 /// </summary>
-public sealed record CellsCreateResult() : EngineResultEnvelope("create-result", 2)
+public sealed record CellsCreateResult() : EngineResultEnvelope("create-result")
 {
     /// <summary>The produced file.</summary>
     [JsonPropertyOrder(-49)]

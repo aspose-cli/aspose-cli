@@ -4,7 +4,7 @@ using Aspose.Cli.Sdk.Rendering;
 namespace Aspose.Cli.Product.Slides.Contracts;
 
 /// <summary>Result of <c>slides render</c>: one image per rendered slide.</summary>
-public sealed record SlidesRenderResult() : EngineResultEnvelope("render-result", 2)
+public sealed record SlidesRenderResult() : EngineResultEnvelope("render-result")
 {
     /// <summary>The rendered presentation.</summary>
     [JsonPropertyOrder(-50)]

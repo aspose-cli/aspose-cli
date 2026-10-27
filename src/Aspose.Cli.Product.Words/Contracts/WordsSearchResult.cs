@@ -6,7 +6,7 @@ namespace Aspose.Cli.Product.Words.Contracts;
 /// Result of <c>words search</c>: one window of search hits; its <c>window</c> counts hits
 /// and continues with <c>--skip</c>.
 /// </summary>
-public sealed record WordsSearchResult() : WindowedResultEnvelope("search-result", 2)
+public sealed record WordsSearchResult() : WindowedResultEnvelope("search-result")
 {
     /// <summary>The searched document.</summary>
     [JsonPropertyOrder(-50)]

@@ -15,21 +15,7 @@ public sealed class CatalogPackageDriftTests : IDisposable
     [Fact]
     public void GeneratorRejectsProjectPackagesThatTheCatalogDoesNotDeclare()
     {
-        foreach (string script in new[] { "generate-product-catalog.ps1", "resolve-project-layout.ps1" })
-        {
-            Directory.CreateDirectory(Path.Combine(_root, "scripts"));
-            File.Copy(Path.Combine(Root, "scripts", script), Path.Combine(_root, "scripts", script));
-        }
-        Directory.CreateDirectory(Path.Combine(_root, "eng"));
-        File.Copy(Path.Combine(Root, "eng", "distribution.json"), Path.Combine(_root, "eng", "distribution.json"));
-        Write("eng/products.json", """
-            {"schemaVersion":1,"products":[{"id":"alpha","productName":"Alpha","engine":"Sample.Engine","sdkPackageId":"Sample.Engine","sdkVersion":"1.0.0","supplementalPackages":{"Sample.Native":"2.0.0"}}]}
-            """);
-        Write("src/Aspose.Cli.Product.Alpha/AlphaModule.cs",
-            "// Id = ProductBuildMetadata.ProductId DisplayName = ProductBuildMetadata.DisplayName ProductBuildMetadata.EngineName ProductBuildMetadata.SdkVersion "
-            + "DisplayOrder = ProductBuildMetadata.DisplayOrder IsDefaultCandidate = ProductBuildMetadata.IsDefaultCandidate");
-        Write("tests/Aspose.Cli.Product.Alpha.Tests/Aspose.Cli.Product.Alpha.Tests.csproj", "<Project Sdk=\"Microsoft.NET.Sdk\" />");
-        string project = "src/Aspose.Cli.Product.Alpha/Aspose.Cli.Product.Alpha.csproj";
+        string project = Arrange("\"sdkPackageId\":\"Sample.Engine\",");
 
         Write(project, Project("Sample.Engine", "Sample.Unlisted"));
         (int drifted, string output) = RunGenerator();
@@ -41,6 +27,36 @@ public sealed class CatalogPackageDriftTests : IDisposable
         Write(project, Project("Sample.Engine", "Sample.Native"));
         (int matching, string matchingOutput) = RunGenerator();
         Assert.True(matching == 0, matchingOutput);
+    }
+
+    [Category(TestCategory.Slow)]
+    [Fact]
+    public void GeneratorRejectsAProductWithoutItsSdkPackage()
+    {
+        Write(Arrange(sdkPackage: string.Empty), Project("Sample.Native"));
+        (int exitCode, string output) = RunGenerator();
+        Assert.NotEqual(0, exitCode);
+        Assert.Contains("missing catalog field 'sdkPackageId'", output, StringComparison.Ordinal);
+    }
+
+    /// <summary>Lays out a one-product repository whose catalog row states <paramref name="sdkPackage"/>; returns its project path.</summary>
+    private string Arrange(string sdkPackage)
+    {
+        foreach (string script in new[] { "generate-product-catalog.ps1", "resolve-project-layout.ps1" })
+        {
+            Directory.CreateDirectory(Path.Combine(_root, "scripts"));
+            File.Copy(Path.Combine(Root, "scripts", script), Path.Combine(_root, "scripts", script));
+        }
+        Directory.CreateDirectory(Path.Combine(_root, "eng"));
+        File.Copy(Path.Combine(Root, "eng", "distribution.json"), Path.Combine(_root, "eng", "distribution.json"));
+        Write("eng/products.json", $$$"""
+            {"schemaVersion":1,"products":[{"id":"alpha","productName":"Alpha","engine":"Sample.Engine",{{{sdkPackage}}}"sdkVersion":"1.0.0","supplementalPackages":{"Sample.Native":"2.0.0"}}]}
+            """);
+        Write("src/Aspose.Cli.Product.Alpha/AlphaModule.cs",
+            "// Id = ProductBuildMetadata.ProductId DisplayName = ProductBuildMetadata.DisplayName ProductBuildMetadata.EngineName ProductBuildMetadata.SdkVersion "
+            + "DisplayOrder = ProductBuildMetadata.DisplayOrder IsDefaultCandidate = ProductBuildMetadata.IsDefaultCandidate");
+        Write("tests/Aspose.Cli.Product.Alpha.Tests/Aspose.Cli.Product.Alpha.Tests.csproj", "<Project Sdk=\"Microsoft.NET.Sdk\" />");
+        return "src/Aspose.Cli.Product.Alpha/Aspose.Cli.Product.Alpha.csproj";
     }
 
     private static string Project(params string[] packages) =>

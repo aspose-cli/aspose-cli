@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 namespace Aspose.Cli.Product.Pdf.Contracts;
 
 /// <summary>Result of <c>pdf sign</c>: the signature applied and read back from the saved file.</summary>
-public sealed record PdfSignResult() : EngineResultEnvelope("sign-result", 2)
+public sealed record PdfSignResult() : EngineResultEnvelope("sign-result")
 {
     /// <summary>The PDF signed.</summary>
     [JsonPropertyOrder(-50)]

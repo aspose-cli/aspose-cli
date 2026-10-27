@@ -676,7 +676,6 @@ public abstract class ProductContractTests<TModule>
             definition.Manifest.Id,
             definition.Manifest.DisplayName,
             definition.Manifest.DisplayOrder,
-            definition.Manifest.ContractVersion,
             definition.SessionType,
             string.Join(
                 "\n",
@@ -855,7 +854,6 @@ public abstract class ProductContractTests<TModule>
         string Id,
         string DisplayName,
         int DisplayOrder,
-        string ContractVersion,
         Type SessionType,
         string DefaultOwnerExtensions,
         string AcceptedInputExtensions,

@@ -8,7 +8,7 @@ namespace Aspose.Cli.Product.Words.Contracts;
 /// starts again at a block whose content was truncated and doubles <c>--max-chars</c> when that
 /// block alone exceeded the budget.
 /// </summary>
-public sealed record WordsReadResult() : WindowedResultEnvelope("read-result", 2)
+public sealed record WordsReadResult() : WindowedResultEnvelope("read-result")
 {
     /// <summary>The document read.</summary>
     [JsonPropertyOrder(-49)]

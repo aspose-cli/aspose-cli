@@ -10,7 +10,7 @@ namespace Aspose.Cli.Product.Cells.Contracts;
 /// and the command exits 8. A resource failure of the invocation aborts publication.
 /// Verification describes the staged candidate and the evidence published with it.
 /// </summary>
-public sealed record CellsEditResult() : EngineResultEnvelope("edit-result", 2), IPartialOutcome
+public sealed record CellsEditResult() : EngineResultEnvelope("edit-result"), IPartialOutcome
 {
     /// <summary>The workbook that was edited.</summary>
     [JsonPropertyOrder(-50)]

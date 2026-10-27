@@ -7,7 +7,7 @@ namespace Aspose.Cli.Host.Contracts;
 /// Result of <c>aspose-cli app</c>: the local browser application was started,
 /// reused, queried or stopped.
 /// </summary>
-public sealed record AppResult() : ResultEnvelope("app-result", 2)
+public sealed record AppResult() : ResultEnvelope("app-result")
 {
     /// <summary>Whether a local application instance is running after the command.</summary>
     [JsonPropertyOrder(-50)]

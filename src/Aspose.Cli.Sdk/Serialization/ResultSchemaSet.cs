@@ -32,8 +32,7 @@ public sealed class ResultSchemaSet
     /// <param name="records">The records the owner's assembly describes.</param>
     /// <param name="common">The SDK's set, whose records the owner's records may reference; null for the SDK's own set.</param>
     /// <exception cref="InvalidOperationException">
-    /// Two records claim one type or one schema id, or a published record states a
-    /// <c>schemaVersion</c> other than <see cref="ResultEnvelope.ContractVersion"/>.
+    /// Two records claim one type or one schema id.
     /// </exception>
     public ResultSchemaSet(string owner, IEnumerable<ResultRecord> records, ResultSchemaSet? common)
     {
@@ -57,12 +56,6 @@ public sealed class ResultSchemaSet
             }
 
             byType.Add(record.Type, record);
-            if (record.SchemaId is not null && record.SchemaVersion is not 0 and not ResultEnvelope.ContractVersion)
-            {
-                throw new InvalidOperationException(
-                    $"Result record {record.Type.Name} states schemaVersion {record.SchemaVersion}, but its schema is published under v{ResultEnvelope.ContractVersion}.");
-            }
-
             if (record.SchemaId is { } id && !schemas.TryAdd(Id(owner, id), new Lazy<string>(() => Write(record))))
             {
                 throw new InvalidOperationException($"Schema '{Id(owner, id)}' is published by more than one result record.");
@@ -132,7 +125,7 @@ public sealed class ResultSchemaSet
             ["$schema"] = Draft,
             ["$id"] = uri,
         };
-        foreach ((string key, JsonNode? value) in Object(root, (uri, root.SchemaVersion), definitions, defined))
+        foreach ((string key, JsonNode? value) in Object(root, uri, definitions, defined))
         {
             document[key] = value?.DeepClone();
         }
@@ -147,12 +140,12 @@ public sealed class ResultSchemaSet
 
     /// <summary>The schema of a record's object, its inherited members first.</summary>
     /// <param name="record">The record.</param>
-    /// <param name="identity">The published URI and version a root states in its schema and schemaVersion members; null for a nested record.</param>
+    /// <param name="identity">The published URI a root states in its schema member; null for a nested record.</param>
     /// <param name="definitions">The document's <c>$defs</c>, which nested records are added to.</param>
     /// <param name="defined">The record type of each <c>$defs</c> entry.</param>
     private JsonObject Object(
         ResultRecord record,
-        (string Uri, int Version)? identity,
+        string? identity,
         SortedDictionary<string, JsonObject?> definitions,
         Dictionary<string, Type> defined)
     {
@@ -222,7 +215,7 @@ public sealed class ResultSchemaSet
     private JsonObject Property(
         ResultRecord record,
         ResultProperty member,
-        (string Uri, int Version)? identity,
+        string? identity,
         SortedDictionary<string, JsonObject?> definitions,
         Dictionary<string, Type> defined)
     {
@@ -233,17 +226,17 @@ public sealed class ResultSchemaSet
         }
 
         JsonNode? constant = member.Const is null ? null : JsonNode.Parse(member.Const);
-        if (identity is { } root && member.Name is "schema" or "schemaVersion")
+        if (identity is not null && member.Name == "schemaVersion" && constant is null)
         {
-            JsonNode stated = member.Name == "schema" ? JsonValue.Create(root.Uri) : JsonValue.Create(root.Version);
-            if (member.Name == "schemaVersion" && root.Version == 0)
-            {
-                stated = constant ?? throw new InvalidOperationException($"Result record {record.Type.Name} states no schema version.");
-            }
+            throw new InvalidOperationException($"Result record {record.Type.Name} states no schema version.");
+        }
 
+        if (identity is not null && member.Name == "schema")
+        {
+            JsonNode stated = JsonValue.Create(identity);
             if (constant is not null && !JsonNode.DeepEquals(constant, stated))
             {
-                throw new InvalidOperationException($"Result record {record.Type.Name} states {member.Name} {constant.ToJsonString()}, but publishes {stated.ToJsonString()}.");
+                throw new InvalidOperationException($"Result record {record.Type.Name} states schema {constant.ToJsonString()}, but publishes {stated.ToJsonString()}.");
             }
 
             constant = stated;

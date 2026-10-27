@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 namespace Aspose.Cli.Product.Cells.Contracts;
 
 /// <summary>Result of <c>aspose-cli cells convert</c>.</summary>
-public sealed record CellsConvertResult() : EngineResultEnvelope("convert-result", 2)
+public sealed record CellsConvertResult() : EngineResultEnvelope("convert-result")
 {
     /// <summary>The converted input file.</summary>
     [JsonPropertyOrder(-50)]

@@ -4,7 +4,7 @@ using Aspose.Cli.Sdk.Contracts;
 namespace Aspose.Cli.Host.Contracts;
 
 /// <summary>Result of <c>aspose-cli skill list</c>: skills bundled in this build.</summary>
-public sealed record SkillListResult() : ResultEnvelope("skill-list", 2)
+public sealed record SkillListResult() : ResultEnvelope("skill-list")
 {
     /// <summary>Bundled skill packages available for installation.</summary>
     [JsonPropertyOrder(-50)]

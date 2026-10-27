@@ -6,7 +6,7 @@ namespace Aspose.Cli.Product.Slides.Contracts;
 /// Result of <c>slides inspect</c>: the presentation's structure, its slides with their stable
 /// ids, and the detail inventories <c>--detail</c> asked for.
 /// </summary>
-public sealed record SlidesInspectResult() : EngineResultEnvelope("inspect-result", 2)
+public sealed record SlidesInspectResult() : EngineResultEnvelope("inspect-result")
 {
     /// <summary>The inspected presentation.</summary>
     [JsonPropertyOrder(-49)]

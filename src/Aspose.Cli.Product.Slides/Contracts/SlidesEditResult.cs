@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 namespace Aspose.Cli.Product.Slides.Contracts;
 
 /// <summary>Result of <c>slides edit</c>: one atomic operation batch, applied or checked.</summary>
-public sealed record SlidesEditResult() : EngineResultEnvelope("edit-result", 2), IPartialOutcome
+public sealed record SlidesEditResult() : EngineResultEnvelope("edit-result"), IPartialOutcome
 {
     /// <summary>The edited presentation.</summary>
     [JsonPropertyOrder(-50)]

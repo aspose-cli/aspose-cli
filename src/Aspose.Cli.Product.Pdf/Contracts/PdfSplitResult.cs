@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 namespace Aspose.Cli.Product.Pdf.Contracts;
 
 /// <summary>Result of <c>pdf split</c>, which writes every part or none.</summary>
-public sealed record PdfSplitResult() : EngineResultEnvelope("split-result", 2)
+public sealed record PdfSplitResult() : EngineResultEnvelope("split-result")
 {
     /// <summary>The PDF split.</summary>
     [JsonPropertyOrder(-50)]
