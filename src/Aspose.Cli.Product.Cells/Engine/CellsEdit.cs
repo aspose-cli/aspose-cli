@@ -20,12 +20,8 @@ internal static class CellsEdit
         ArgumentException.ThrowIfNullOrEmpty(request.Input);
         ArgumentNullException.ThrowIfNull(request.Batch);
         string filePath = request.Input;
-        var saver = new CellsSavePipeline(session.Outputs, session.Loader);
         ResolvedOutput output = request.Output;
-        string format = output.Format.Id;
         CellsOpsBatch batch = CellsOp.Catalog.Prepare(request.Batch);
-        using OutputSet<Workbook>? transaction = request.Options.DryRun ? null
-            : saver.CreateOutputSet([output.Directory], "cells-edit", output.BackupPath);
 
         LicenseState licenseState = session.Outputs.License;
         FileWritePrecondition precondition = FileWritePrecondition.Capture(filePath);
@@ -60,9 +56,7 @@ internal static class CellsEdit
             workbook.CalculateFormula();
         }
 
-        WorkbookStagedSave? saved = null;
-        CellsEditVerification? verification = null;
-        if (transaction is not null)
+        if (!request.Options.DryRun)
         {
             // A batch that chose the active sheet keeps it; any other keeps the input's.
             string[] activating = [.. batch.Ops.OfType<SetActiveSheetOp>().Select(static op => op.Id!)];
@@ -70,38 +64,44 @@ internal static class CellsEdit
             {
                 loaded.RestoreActiveSheet(savePlan);
             }
-
-            saved = saver.Stage(transaction, workbook, savePlan, output, precondition, verifyReopen: true);
         }
 
         Warning?[] editWarnings = [.. batchOutcome.Warnings, skippedSheet, unenforced, relativeLinks, unknownFunctions];
-        IReadOnlyList<Warning>? warnings = saved is null
-            ? EnvelopeParts.CombineWarnings(loaded.Warnings(editWarnings), importSources.Warnings())
-            : EnvelopeParts.CombineWarnings(
-                EnvelopeParts.CombineWarnings([.. loaded.Resources.Warnings, .. editWarnings, saved.Truncated, saved.FormulasBroken, saved.SheetsDropped]),
-                importSources.Warnings(),
-                EnvelopeParts.BackupWarnings(saved.Backup));
-        if (transaction is not null)
-        {
-            if (request.Verify)
+        // The save records what the format's limits lost; the verification reads it back.
+        WorkbookSaveLoss? loss = null;
+        IReadOnlyList<Warning>? WrittenWarnings() => EnvelopeParts.CombineWarnings(
+            EnvelopeParts.CombineWarnings([.. loaded.Resources.Warnings, .. editWarnings, .. loss!.Warnings]),
+            importSources.Warnings());
+        EditPublication<CellsEditVerification> publication = session.Outputs.PublishEdit<CellsEditVerification>(
+            output,
+            workbook,
+            precondition,
+            request.Options.DryRun,
+            savePlan.Encrypts,
+            temp =>
             {
-                // Verification reports the warnings that make the output incomplete as issues.
-                verification = new CellsEditVerifier(session.Loader, session.Budgets).Verify(saved!.Candidate, baseline!.Path, filePath,
-                    request.Password, savePlan.Protection.Password, batch, activeSheet, applied, warnings);
-            }
-            transaction.Commit();
-        }
+                loss = new CellsSavePipeline(session.Outputs).ProduceReporting(workbook, savePlan, temp);
+                using LoadedWorkbook reopened = session.Loader.OpenPublishedCandidate(temp, savePlan.Protection.Password);
+                _ = reopened.Workbook.Worksheets.Count;
+            },
+            // Verification reports the warnings that make the output incomplete as issues.
+            request.Verify ? candidate => new CellsEditVerifier(session.Loader, session.Budgets).Verify(candidate, baseline!.Path, filePath,
+                request.Password, savePlan.Protection.Password, batch, activeSheet, applied, WrittenWarnings()) : null,
+            "cells-edit");
+        IReadOnlyList<Warning>? warnings = request.Options.DryRun
+            ? EnvelopeParts.CombineWarnings(loaded.Warnings(editWarnings), importSources.Warnings())
+            : EnvelopeParts.CombineWarnings(WrittenWarnings(), publication.BackupWarnings);
 
         return new CellsEditResult
         {
             Input = input,
-            Output = saved?.Output,
+            Output = publication.Output,
             DryRun = request.Options.DryRun,
             Checked = request.Options.Checked,
             Recalculated = request.Recalculate,
             Applied = applied,
-            Backup = saved?.Backup,
-            Verification = verification,
+            Backup = publication.Backup,
+            Verification = publication.Verification,
             License = EnvelopeParts.License(licenseState),
             Warnings = warnings,
         };

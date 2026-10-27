@@ -43,7 +43,7 @@ internal sealed class PublicationDirectoryLease : IDisposable
             while (!System.IO.Directory.Exists(existing)) { existing = Path.GetDirectoryName(existing)!; }
             FilePhysicalIdentity? identity = FilePublicationOwnedDelete.TryGetDirectoryIdentity(existing);
             if (identity is null) { throw CliErrors.OutputUnwritable(path, "the output volume identity could not be verified"); }
-            volumes.Add(OperatingSystem.IsWindows() ? $"volume:{identity!.Value.VolumeSerialNumber:X8}" : Path.GetPathRoot(path)!);
+            volumes.Add($"volume:{identity.Value.VolumeSerialNumber:X8}");
             for (string? current = path; current is not null; current = Path.GetDirectoryName(current))
             {
                 bool write = FilePaths.Same(current, path);

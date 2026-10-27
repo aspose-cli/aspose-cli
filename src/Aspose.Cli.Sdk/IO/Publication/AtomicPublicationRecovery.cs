@@ -444,10 +444,6 @@ internal sealed class AtomicPublicationRecovery(AtomicPublicationPlan plan)
             recoveryPlan.CleanUp(throwOnFailure: true);
             return false;
         }
-        if (IsOwnerAlive(journal))
-        {
-            return false;
-        }
 
         var recovery = new AtomicPublicationRecovery(recoveryPlan);
         foreach (PublicationJournalEntry entry in journal.Entries)

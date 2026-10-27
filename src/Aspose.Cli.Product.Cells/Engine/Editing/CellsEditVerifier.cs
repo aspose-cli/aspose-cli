@@ -2,7 +2,6 @@ using Aspose.Cells;
 using Aspose.Cli.Product.Cells.Engine.Mapping;
 using Aspose.Cli.Sdk.Diagnostics;
 using Aspose.Cli.Sdk.IO.Budgets;
-using Aspose.Cli.Sdk.IO.Publication;
 using Aspose.Cli.Sdk.Results;
 
 namespace Aspose.Cli.Product.Cells.Engine.Editing;
@@ -12,13 +11,7 @@ internal sealed class CellsEditVerifier(CellsWorkbookLoader loader, ResourceBudg
 {
     private const int MaxDiffs = 1000;
 
-    internal CellsEditVerification Verify(StagedOutput staged,
-        string baselinePath, string originalPath, Secret? inputPassword, Secret? outputPassword,
-        CellsOpsBatch batch, string activeSheet, IReadOnlyList<BoundedOperationOutcome> applied, IReadOnlyList<Warning>? sourceWarnings) =>
-        staged.Read(candidate => VerifyCandidate(candidate, baselinePath,
-            originalPath, inputPassword, outputPassword, batch, activeSheet, applied, sourceWarnings));
-
-    private CellsEditVerification VerifyCandidate(string candidatePath,
+    internal CellsEditVerification Verify(string candidatePath,
         string baselinePath, string originalPath, Secret? inputPassword,
         Secret? outputPassword, CellsOpsBatch batch, string activeSheet, IReadOnlyList<BoundedOperationOutcome> applied,
         IReadOnlyList<Warning>? sourceWarnings)

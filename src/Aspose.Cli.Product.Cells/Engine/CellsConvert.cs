@@ -17,7 +17,7 @@ internal static class CellsConvert
         ArgumentNullException.ThrowIfNull(request);
         ArgumentException.ThrowIfNullOrEmpty(request.Input);
 
-        var saver = new CellsSavePipeline(session.Outputs, session.Loader);
+        var saver = new CellsSavePipeline(session.Outputs);
         LicenseState licenseState = session.Outputs.License;
         using LoadedWorkbook loaded = session.Loader.Open(request.Input, request.Password, request.TextImport);
         Workbook workbook = loaded.Workbook;

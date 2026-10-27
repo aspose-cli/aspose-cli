@@ -24,7 +24,7 @@ internal static class CellsCreate
             workbook.Worksheets[workbook.Worksheets.Add()].Name = name;
         }
 
-        WorkbookStagedSave saved = new CellsSavePipeline(session.Outputs, session.Loader).Save(
+        WorkbookSave saved = new CellsSavePipeline(session.Outputs).Save(
             workbook,
             request.Output,
             licenseState,
@@ -37,7 +37,7 @@ internal static class CellsCreate
             Inputs = [],
             Sheets = request.SheetNames,
             License = EnvelopeParts.License(licenseState),
-            Warnings = EnvelopeParts.CombineWarnings(saved.Truncated, saved.FormulasBroken, saved.SheetsDropped),
+            Warnings = EnvelopeParts.CombineWarnings(saved.Loss.Warnings),
         };
     }
 }
