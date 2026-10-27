@@ -65,23 +65,28 @@ internal static class ProtectionAdvice
         // protects only what its --encrypt-env encrypts.
         foreach (string format in kept)
         {
-            string? encryptor = Encryptor(commands, excluded: null, format)?.Path;
+            (string Path, Command Command, bool Converts)? encryptor = Encryptor(commands, excluded: null, format);
+            string again = variable is null
+                ? $"run the command again with {EncryptEnvironment} naming an environment variable that holds a password"
+                : $"run the command again with {EncryptEnvironment} {variable}";
             if (loss.Requested)
             {
                 notes.Add($"The {format} output is not encrypted because the command decrypted it as it was asked to; that is the expected result."
-                    + (encryptor is null ? string.Empty : $" To protect it, encrypt it with '{encryptor}' instead of decrypting it."));
+                    + (encryptor is null ? string.Empty : $" To protect it, encrypt it with '{encryptor.Value.Path}' instead of decrypting it."));
             }
             else if (loss.OpenPassword)
             {
-                ways.Add((variable is null
-                        ? $"run the command again with {EncryptEnvironment} naming an environment variable that holds a password"
-                        : $"run the command again with {EncryptEnvironment} {variable}")
-                    + ", which encrypts the output with that password to open it and grants every permission");
+                ways.Add(again + ", which encrypts the output with that password to open it and grants every permission");
+            }
+            else if (encryptor is { Converts: false } edit)
+            {
+                // An input with only an owner password opens without one, as an --encrypt-env
+                // output would not; only an edit's operation that encrypts takes an owner password alone.
+                ways.Add($"encrypt the {format} file with '{edit.Path}' and an owner password only, which restricts it as the input was and keeps it opening without a password");
             }
             else if (encryptor is not null)
             {
-                // An input with only an owner password opens without one, as an --encrypt-env output would not.
-                ways.Add($"encrypt the {format} file with '{encryptor}' and an owner password only, which restricts it as the input was and keeps it opening without a password");
+                ways.Add(again + ", which encrypts the output with that password to open it, although the input opens without one");
             }
         }
 

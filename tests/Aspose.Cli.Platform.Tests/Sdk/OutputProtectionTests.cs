@@ -84,6 +84,22 @@ public sealed class OutputProtectionTests
         }
     }
 
+    /// <summary>
+    /// An encrypted input that opens without a password, such as a PDF with only an owner
+    /// password, has no password to open that a copy could keep, whatever password it was
+    /// opened with.
+    /// </summary>
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void For_KeepsNoPasswordOfAnInputThatOpensWithoutOne(bool inputPassword)
+    {
+        OutputProtection protection = OutputProtection.For(
+            Protectable, null, new InputProtection(Encrypted: true, OpenPassword: false), inputPassword ? InputPassword : null);
+
+        Assert.Same(OutputProtection.None, protection);
+    }
+
     [Fact]
     public void Printing_ShowsNoPassword()
     {

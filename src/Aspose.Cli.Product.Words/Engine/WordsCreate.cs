@@ -89,8 +89,8 @@ internal static class WordsCreate
 
             ApplyTitle(document, request.Title);
             IReadOnlyList<SourceInput> inputs = FileObjects.Sources(
-                (request.Template, template?.FormatId ?? string.Empty, template?.Format.IsEncrypted ?? false),
-                (request.Markdown, markdown?.FormatId ?? string.Empty, markdown?.Format.IsEncrypted ?? false),
+                (request.Template, template?.FormatId ?? string.Empty, template?.Protection.Encrypted ?? false),
+                (request.Markdown, markdown?.FormatId ?? string.Empty, markdown?.Protection.Encrypted ?? false),
                 (request.Text, "txt", false));
             return new CreatedDocument(document, template, sources, inputs);
         }

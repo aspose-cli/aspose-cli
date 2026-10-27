@@ -124,6 +124,9 @@ internal sealed class WordsDocumentLoader
         }
 
         bool fixedPages = WordsEngineFormats.Has(id, static format => format.MayHoldFixedPages) && IsFixedPageHtml(input);
+        InputProtection protection = WordsEngineFormats.Has(id, static format => format.EncryptionUndetected)
+            ? loading.Load(path, password, () => ProbePdfProtection(input, password))
+            : new InputProtection(detected.IsEncrypted);
         var resources = new LocalDocumentResourceLoader(path, _resourceBudgets);
         try
         {
@@ -135,6 +138,7 @@ internal sealed class WordsDocumentLoader
                 _outputs?.IsEvaluation == true)
             {
                 FixedPageHtml = fixedPages,
+                Protection = protection,
             };
         }
         catch
@@ -142,6 +146,44 @@ internal sealed class WordsDocumentLoader
             resources.Dispose();
             throw;
         }
+    }
+
+    /// <summary>
+    /// How a PDF is protected, as the load that follows opens it. Format detection reports no PDF
+    /// encrypted (WORDS-PDF-ENCRYPTION), so its first page is loaded first: a PDF that refuses a
+    /// password no one chose is encrypted, and one that also refuses no password needs one to
+    /// open; one with only an owner password opens without one, so one opened without a password
+    /// has none, and one that needs a password but has none is refused by the load that follows.
+    /// </summary>
+    private static InputProtection ProbePdfProtection(Stream input, PasswordSource password)
+    {
+        if (OpensWith(input, Guid.NewGuid().ToString("N")))
+        {
+            return new InputProtection(Encrypted: false);
+        }
+
+        return new InputProtection(Encrypted: true, OpenPassword: password.Password is not null && !OpensWith(input, password: null));
+    }
+
+    /// <summary>Whether the first page of a PDF loads with <paramref name="password"/>, under the deny-all resource policy.</summary>
+    private static bool OpensWith(Stream input, string? password)
+    {
+        input.Position = 0;
+        try
+        {
+            new Document(input, new PdfLoadOptions
+            {
+                Password = password,
+                PageCount = 1,
+                ResourceLoadingCallback = DenyAllResources.Instance,
+            }).Cleanup();
+            return true;
+        }
+        catch (IncorrectPasswordException)
+        {
+            return false;
+        }
+        finally { input.Position = 0; }
     }
 
     /// <summary>
@@ -337,7 +379,7 @@ internal sealed record LoadedDocument(
     bool Evaluation) : IOpenedInput, IDisposable
 {
     /// <inheritdoc />
-    public InputProtection Protection => new(Format.IsEncrypted);
+    public required InputProtection Protection { get; init; }
 
     private readonly List<Document> _imports = [];
 

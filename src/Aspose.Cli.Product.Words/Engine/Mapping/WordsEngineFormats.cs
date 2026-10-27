@@ -27,7 +27,7 @@ internal static class WordsEngineFormats
         new("ott") { Load = LoadFormat.Ott, Save = SaveFormat.Ott },
         new("txt") { Load = LoadFormat.Text, Save = SaveFormat.Text, Lossy = true, PlainText = true },
         new("md") { Load = LoadFormat.Markdown, Save = SaveFormat.Markdown, Lossy = true, PlainText = true },
-        new("pdf") { Load = LoadFormat.Pdf, Save = SaveFormat.Pdf, ReflowsOnLoad = true },
+        new("pdf") { Load = LoadFormat.Pdf, Save = SaveFormat.Pdf, ReflowsOnLoad = true, EncryptionUndetected = true },
         new("epub") { Load = LoadFormat.Epub, Save = SaveFormat.Epub },
         new("mobi") { Load = LoadFormat.Mobi, Save = SaveFormat.Mobi },
         new("azw3") { Load = LoadFormat.Azw3, Save = SaveFormat.Azw3 },
@@ -80,4 +80,7 @@ internal sealed record WordsEngineFormat(string Id)
 
     /// <summary>An input of this id may be an html-fixed page rendition, which loads reflowed.</summary>
     public bool MayHoldFixedPages { get; init; }
+
+    /// <summary>Format detection never reports an input of this id encrypted (WORDS-PDF-ENCRYPTION), so loading probes it.</summary>
+    public bool EncryptionUndetected { get; init; }
 }

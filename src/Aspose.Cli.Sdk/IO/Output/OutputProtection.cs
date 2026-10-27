@@ -7,7 +7,7 @@ namespace Aspose.Cli.Sdk.IO.Output;
 /// <summary>
 /// The password a written copy of a document carries, decided once from the command line and
 /// the primary input: <c>--encrypt</c> replaces the input's password; without it, a format that
-/// can carry a password keeps the password of an encrypted primary input; every other output is
+/// can carry a password keeps the password an encrypted primary input opens with; every other output is
 /// written without one, which the write pipeline discloses as <c>ENCRYPTION_REMOVED</c>.
 /// A product's engine adapter carries the decision out: an engine that encrypts through save
 /// options sets <see cref="Password"/>, and one that keeps encryption on the document keeps it
@@ -55,7 +55,9 @@ public abstract record OutputProtection
                 : throw new InvalidOperationException($"An output password reached the '{written.Id}' format, which cannot carry one.");
         }
 
-        if (!written.Protectable || !primary.Encrypted)
+        // An input that opens without a password, such as a PDF with only an owner password, has
+        // no password to open that a copy could keep.
+        if (!written.Protectable || !primary.Encrypted || !primary.OpenPassword)
         {
             return None;
         }

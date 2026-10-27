@@ -328,7 +328,10 @@ one should restart.
   replaces it on `edit`, `convert` and `split`. A format that cannot be encrypted produces
   `ENCRYPTION_REMOVED`, and `--encrypt-env` with such a format is
   `OPTION_INVALID`. A read password for a plaintext input does not encrypt the
-  output. A dry run does not report removed encryption.
+  output. A dry run does not report removed encryption. A PDF input with only
+  an owner password opens without `--password-env` and is still reported as
+  `input.encrypted`; its output has no password to keep, so it is written
+  without one and produces `ENCRYPTION_REMOVED`.
 
 ## Save and verify
 
