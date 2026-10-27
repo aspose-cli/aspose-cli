@@ -16,9 +16,9 @@ namespace Aspose.Cli.Sdk.Tests.IO;
 public sealed class FileObjectsTests : IDisposable
 {
     private static readonly FormatDescriptor Protectable =
-        FormatDescriptor.Declare("doc", FormatUse.Input | FormatUse.Convert, 0, 0, null, true, ".doc") with { Protectable = true };
+        FormatDescriptor.Declare("doc", FormatUse.Input | FormatUse.Convert, true, ".doc") with { Protectable = true };
 
-    private static readonly FormatDescriptor Plain = FormatDescriptor.Declare("png", FormatUse.Render, null, null, 0, false, ".png");
+    private static readonly FormatDescriptor Plain = FormatDescriptor.Declare("png", FormatUse.Render, false, ".png");
 
     private readonly TempDirectory _temp = new();
     private readonly SafeFileWriter _writer = TestBudgets.Writer();

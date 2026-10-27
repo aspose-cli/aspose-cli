@@ -538,7 +538,7 @@ public sealed class ProductMenuTests : IDisposable
             var edit = new BoundedEditCommand<TestOp, TestBatch>(new BoundedEditDefinition<TestOp, TestBatch>
             {
                 Contracts = TestContracts.Json,
-                Writes = [FormatDescriptor.Declare("tst", FormatUse.Input | FormatUse.Convert, 0, 0, null, false, ".test")],
+                Writes = [FormatDescriptor.Declare("tst", FormatUse.Input | FormatUse.Convert, false, ".test")],
             });
             return EditDefinition.Create<TestOp, TestBatch, EditRequest, EditedResult>(
                 edit,
@@ -563,8 +563,8 @@ public sealed class ProductMenuTests : IDisposable
     {
         public static readonly FormatDescriptor[] Writes =
         [
-            FormatDescriptor.Declare("tst", FormatUse.Input | FormatUse.Convert, 0, 0, null, false, ".test") with { Protectable = true },
-            FormatDescriptor.Declare("old", FormatUse.Input | FormatUse.Convert, 1, 1, null, false, ".test"),
+            FormatDescriptor.Declare("tst", FormatUse.Input | FormatUse.Convert, false, ".test") with { Protectable = true },
+            FormatDescriptor.Declare("old", FormatUse.Input | FormatUse.Convert, false, ".test"),
         ];
 
         public static CommandDefinition<ProtectRequest, TextResult> Create() => new(

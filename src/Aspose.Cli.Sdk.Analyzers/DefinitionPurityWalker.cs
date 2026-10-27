@@ -297,7 +297,7 @@ internal sealed class DefinitionPurityWalker : OperationWalker
             SdkMetadataNames.FormatDescriptorExtensions =>
                 member == "IdsFor",
             SdkMetadataNames.FileFormatRecognition =>
-                member is "AttachTo" or "Match" or "FirstOf",
+                member is "Match" or "FirstOf",
             SdkMetadataNames.FileProbePattern => true,
             SdkMetadataNames.ResourceBudgetCapabilities =>
                 member == "Domain",

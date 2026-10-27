@@ -31,15 +31,11 @@ public enum RouteOwnership
 public sealed record FormatDescriptor
 {
     /// <summary>
-    /// Creates a fully ordered declaration for formats that participate in
-    /// several input and output uses.
+    /// Creates a declaration listed, for each of its uses, in the order the product declares it.
     /// </summary>
     public static FormatDescriptor Declare(
         string id,
         FormatUse uses,
-        int? inputOrder,
-        int? convertOrder,
-        int? renderOrder,
         bool defaultOwner,
         params string[] extensions) =>
         new(id, uses, extensions)
@@ -47,30 +43,16 @@ public sealed record FormatDescriptor
             Ownership = defaultOwner
                 ? RouteOwnership.Default
                 : RouteOwnership.Explicit,
-            InputOrder = inputOrder ?? int.MaxValue,
-            ConvertOrder = convertOrder ?? int.MaxValue,
-            RenderOrder = renderOrder ?? int.MaxValue,
         };
 
     /// <summary>
-    /// Creates a fully ordered declaration whose input formats own their
-    /// generic routes by default.
+    /// Creates a declaration whose input formats own their generic routes by default.
     /// </summary>
     public static FormatDescriptor Routed(
         string id,
         FormatUse uses,
-        int? inputOrder,
-        int? convertOrder,
-        int? renderOrder,
         params string[] extensions) =>
-        Declare(
-            id,
-            uses,
-            inputOrder,
-            convertOrder,
-            renderOrder,
-            uses.HasFlag(FormatUse.Input),
-            extensions);
+        Declare(id, uses, uses.HasFlag(FormatUse.Input), extensions);
 
     /// <summary>Creates an input format with explicit routing ownership.</summary>
     internal static FormatDescriptor Input(
@@ -194,14 +176,17 @@ public sealed record FormatDescriptor
     /// <summary>Generic-routing ownership for input extensions.</summary>
     public RouteOwnership Ownership { get; init; } = RouteOwnership.Explicit;
 
-    /// <summary>Stable ordering among advertised input formats.</summary>
-    public int InputOrder { get; init; } = int.MaxValue;
+    /// <summary>
+    /// Rank among advertised input formats; formats of one rank keep declaration order. A product
+    /// sets it only when its input formats are listed in another order than they are declared.
+    /// </summary>
+    public int InputOrder { get; init; }
 
-    /// <summary>Stable ordering among advertised convert formats.</summary>
-    public int ConvertOrder { get; init; } = int.MaxValue;
+    /// <summary>Rank among advertised convert formats, as <see cref="InputOrder"/> is for input.</summary>
+    public int ConvertOrder { get; init; }
 
-    /// <summary>Stable ordering among advertised render formats.</summary>
-    public int RenderOrder { get; init; } = int.MaxValue;
+    /// <summary>Rank among advertised render formats, as <see cref="InputOrder"/> is for input.</summary>
+    public int RenderOrder { get; init; }
 
     /// <summary>
     /// Optional content recognizer for ambiguous or renamed inputs; a test seam for routing
@@ -230,7 +215,7 @@ internal static class StandardFileRouteOperations
 /// <summary>Deterministic projections over a product's format descriptors.</summary>
 public static class FormatDescriptorExtensions
 {
-    /// <summary>Returns format ids for one use in declared stable order.</summary>
+    /// <summary>Returns format ids for one use by rank, then in declaration order.</summary>
     public static IReadOnlyList<string> IdsFor(
         this IEnumerable<FormatDescriptor> descriptors,
         FormatUse use) =>
@@ -297,8 +282,7 @@ public static class FormatDescriptorExtensions
 
         return descriptors
             .Where(format => format.Uses.HasFlag(use))
-            .OrderBy(format => Order(format, use))
-            .ThenBy(static format => format.Id, StringComparer.Ordinal);
+            .OrderBy(format => Order(format, use));
     }
 
     private static int Order(FormatDescriptor format, FormatUse use) =>

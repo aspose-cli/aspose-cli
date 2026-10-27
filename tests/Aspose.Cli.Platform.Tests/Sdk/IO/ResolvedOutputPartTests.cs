@@ -11,7 +11,7 @@ namespace Aspose.Cli.Sdk.Tests.IO;
 /// </summary>
 public sealed class ResolvedOutputPartTests
 {
-    private static readonly FormatDescriptor Png = FormatDescriptor.Declare("png", FormatUse.Render, null, null, 0, false, ".png");
+    private static readonly FormatDescriptor Png = FormatDescriptor.Declare("png", FormatUse.Render, false, ".png");
 
     private static readonly ResolvedOutput Report = new(Png, Path.Combine(Path.GetTempPath(), "report.png"));
 
