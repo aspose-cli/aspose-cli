@@ -28,8 +28,8 @@ public sealed class EncryptionRemovedHintCliTests : IDisposable
 
     [Category(TestCategory.Slow)]
     [Theory]
-    [InlineData("words", "locked.docx", "convert locked.docx --out plain.pdf", "write it as doc, dot, docx, docm, dotx, dotm, odt, ott instead", "encrypt the pdf file with 'aspose-cli pdf edit'")]
-    [InlineData("slides", "locked.pptx", "convert locked.pptx --out plain.pdf", "write it as pptx, pptm instead", "encrypt the pdf file with 'aspose-cli pdf edit'")]
+    [InlineData("words", "locked.docx", "convert locked.docx --out plain.pdf", "write it as doc, dot, docx, docm, dotx, dotm, odt, ott instead", "encrypt the pdf file with 'aspose-cli pdf edit --in-place'")]
+    [InlineData("slides", "locked.pptx", "convert locked.pptx --out plain.pdf", "write it as pptx, pptm instead", "encrypt the pdf file with 'aspose-cli pdf edit --in-place'")]
     [InlineData("cells", "locked.xlsx", "edit locked.xlsx --set Sheet1!A1=5 --out plain.csv", "write it as xlsx, xltx, xlsm, xltm, xlsb, xls, ods instead", null)]
     [InlineData("pdf", "locked.pdf", "convert locked.pdf --out plain.md", "No command of this build can encrypt md files.", null)]
     public void UnencryptedCopy_HintNamesOnlyWaysThisBuildOffers(string product, string locked, string commandLine, string own, string? encryptor)
@@ -64,6 +64,26 @@ public sealed class EncryptionRemovedHintCliTests : IDisposable
     }
 
     /// <summary>
+    /// Writing a protectable format instead leaves the csv this command wrote beside the encrypted
+    /// workbook: the hint says to delete it once that workbook exists.
+    /// </summary>
+    [Category(TestCategory.Slow)]
+    [Fact]
+    public void WorkbookWrittenAsCsv_HintDeletesTheCsvOnceAProtectedWorkbookExists()
+    {
+        CliResult created = Run("cells", "create", "locked.xlsx", "--encrypt-env", Variable);
+        Assert.True(created.ExitCode == 0, created.StdErr);
+
+        CliResult result = Run("cells", "edit", "locked.xlsx", "--set", "Sheet1!A1=5", "--out", "plain.csv", "--password-env", Variable);
+
+        Assert.True(result.ExitCode == 0, result.StdErr);
+        Assert.Equal("If the output must stay protected, write it as xlsx, xltx, xlsm, xltm, xlsb, xls, ods instead, "
+            + "which keeps the input's password or takes the one --encrypt-env names. "
+            + "Once the encrypted copy exists, delete the unencrypted file this command wrote. "
+            + "No command of this build can encrypt csv files.", Hint(result));
+    }
+
+    /// <summary>
     /// A PDF converted to an Office format no edit can encrypt: the hint names the conversion of
     /// that product, which takes <c>--encrypt-env</c>. When that conversion reads PDF itself, as
     /// words convert does, the hint converts the locked input instead of the output, a second
@@ -71,9 +91,9 @@ public sealed class EncryptionRemovedHintCliTests : IDisposable
     /// </summary>
     [Category(TestCategory.Slow)]
     [Theory]
-    [InlineData("docx", "If the output must stay protected, convert the pdf input itself to docx, not the docx file this command wrote, with 'aspose-cli words convert --encrypt-env'.")]
-    [InlineData("xlsx", "If the output must stay protected, encrypt the xlsx file with 'aspose-cli cells convert'.")]
-    [InlineData("pptx", "If the output must stay protected, encrypt the pptx file with 'aspose-cli slides convert'.")]
+    [InlineData("docx", "If the output must stay protected, convert the pdf input itself to docx, not the docx file this command wrote, with 'aspose-cli words convert --encrypt-env'. Once the encrypted copy exists, delete the unencrypted file this command wrote.")]
+    [InlineData("xlsx", "If the output must stay protected, encrypt the xlsx file with 'aspose-cli cells convert'. Once the encrypted copy exists, delete the unencrypted file this command wrote.")]
+    [InlineData("pptx", "If the output must stay protected, encrypt the pptx file with 'aspose-cli slides convert'. Once the encrypted copy exists, delete the unencrypted file this command wrote.")]
     public void PdfConvertedToAnOfficeFormat_HintNamesTheConversionThatEncryptsIt(string format, string expected)
     {
         CreateEncryptedPdf();
@@ -121,7 +141,8 @@ public sealed class EncryptionRemovedHintCliTests : IDisposable
         CliResult result = Run("pdf", "convert", "locked.pdf", "--password-env", Variable, "--to", "pdfa-2b", "--out", "archive.pdf");
 
         Assert.True(result.ExitCode == 0, result.StdErr);
-        Assert.Equal("A pdfa-2b file cannot be encrypted and stay pdfa-2b. If the output must stay protected, encrypt a pdf copy of it with 'aspose-cli pdf edit'.", Hint(result));
+        Assert.Equal("A pdfa-2b file cannot be encrypted and stay pdfa-2b. If the output must stay protected, encrypt a pdf copy of it with 'aspose-cli pdf edit'. "
+            + "Once the encrypted copy exists, delete the unencrypted file this command wrote.", Hint(result));
         // The copy is named by the format it was written in, not by the extension pdf shares.
         Assert.StartsWith("The 'pdfa-2b' output is not encrypted", JsonNode.Parse(result.StdOut)!["warnings"]!.AsArray()
             .Single(static warning => warning!["code"]!.GetValue<string>() == "ENCRYPTION_REMOVED")!["message"]!.GetValue<string>(), StringComparison.Ordinal);
@@ -196,7 +217,7 @@ public sealed class EncryptionRemovedHintCliTests : IDisposable
         CliResult result = Run("pdf", "split", "restricted.pdf", "--by", "pages", "--out-dir", "parts");
 
         Assert.True(result.ExitCode == 0, result.StdErr);
-        Assert.Equal("If the output must stay protected, encrypt the pdf file with 'aspose-cli pdf edit' and an owner password only, "
+        Assert.Equal("If the output must stay protected, encrypt the pdf file with 'aspose-cli pdf edit --in-place' and an owner password only, "
             + "which restricts it as the input was and keeps it opening without a password.", Hint(result));
     }
 
