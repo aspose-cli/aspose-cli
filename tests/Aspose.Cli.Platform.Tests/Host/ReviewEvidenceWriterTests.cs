@@ -117,6 +117,34 @@ public sealed class ReviewEvidenceWriterTests
         Assert.False(result.Coverage.Complete);
     }
 
+    [Theory]
+    [InlineData(false, true)]
+    [InlineData(true, false)]
+    public void Write_WhenEitherCopyOfARepeatedWarningAffectsCompleteness_MarksCoverageIncomplete(
+        bool viewAffects,
+        bool assessmentAffects)
+    {
+        using var temp = new TempDirectory();
+        Warning warning = new(WarningCodes.RemoteResourcesBlocked, "1 resource(s) the document references were omitted.")
+        {
+            Location = "page/1",
+        };
+
+        ReviewResult result = Write(
+            temp,
+            temp.File("review"),
+            maxItems: 1,
+            totalPartCount: 1,
+            ["page.png"],
+            new ProductReviewAssessment { Warnings = [warning with { AffectsCompleteness = assessmentAffects }] },
+            viewWarnings: [warning with { AffectsCompleteness = viewAffects }]);
+
+        // The repeat is reported once, and what either copy says about completeness holds.
+        Warning reported = Assert.Single(result.Warnings!);
+        Assert.True(reported.AffectsCompleteness);
+        Assert.False(result.Coverage.Complete);
+    }
+
     [Fact]
     public void Write_EvidenceFollowsDocumentOrderInManifestAndGallery()
     {
