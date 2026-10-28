@@ -333,6 +333,18 @@ one should restart.
   `input.encrypted`; its output has no password to keep, so it is written
   without one and produces `ENCRYPTION_REMOVED`.
 
+`words convert --to pdf` cannot encrypt, so `--encrypt-env` with it is
+`OPTION_INVALID`. For a PDF that needs a password to open, convert first:
+
+```powershell
+aspose-cli words convert contract.docx --to pdf --out contract.pdf --output-format json
+```
+
+then encrypt `contract.pdf` with `--in-place`, so no unencrypted PDF is left,
+and an `encrypt_document` operation of `aspose-cli pdf edit`, which grants
+readers only the `permissions` it lists
+(the PDF Skill, `aspose-cli docs pdf/forms-security`).
+
 ## Save and verify
 
 `edit` and `create` write only the formats that reopen as the same document:
@@ -358,7 +370,7 @@ shows no images.
 styles, headers or fields. A convert to any format other than those `edit`
 writes also reports it for the tracked changes it cannot keep as revisions,
 and to any non-Word format, PDF included, for the editing restrictions it
-cannot keep; restrict a PDF with the `encrypt` operation of
+cannot keep; restrict a PDF with the `encrypt_document` operation of
 `aspose-cli pdf edit`. A `txt` or `md` convert also writes comment text into
 the body and deleted text beside inserted text, each reported by its own
 `LOSSY_CONVERSION`; run `delete_comments`, and `accept_revisions` or

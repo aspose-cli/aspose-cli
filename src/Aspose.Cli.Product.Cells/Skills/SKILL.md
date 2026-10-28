@@ -45,10 +45,19 @@ gives an operation's fields. A table in a Word, PDF or slide file is theirs.
    aspose-cli cells edit book.xlsx --in-place --set "Sales!B3=42" --set "Sales!G2==E2*F2"
    ```
 
-   The engine recalculates the workbook after the batch. `--verify` reports
-   cell changes and formula errors before publishing (exit 8 on findings);
-   add it to the first in-place edit of a file you did not create, and report
-   the totals `verification.formulaResultChanges` lists. Operations by task,
+   The engine recalculates the workbook after the batch. `--verify` checks
+   the written result for cell changes and formula errors; on findings it
+   exits 8 with the output already published (`--in-place` has replaced the
+   input, and `--backup` keeps the original to restore). Add it to the first
+   edit of a file you did not create, and report the totals
+   `verification.formulaResultChanges` lists. To leave the original untouched
+   until the check passes, edit to a new file and deliver it only on exit 0:
+
+   ```
+   aspose-cli cells edit book.xlsx --ops ops.json --out book.edited.xlsx --verify --output-format json
+   ```
+
+   Operations by task,
    batch order and recipes: `aspose-cli docs cells/editing`.
 
 3. **Verify** (`aspose-cli docs cells/verification`):
