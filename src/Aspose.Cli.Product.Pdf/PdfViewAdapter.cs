@@ -65,6 +65,7 @@ internal sealed class PdfViewAdapter : IProductViewAdapter<PdfSession>
             layout,
             info.Forms?.FieldCount ?? 0,
             findings);
+        AnalyzeUnreadPages(read, findings);
         IReadOnlyList<int> scannedPages = AnalyzeScannedPages(read, findings);
         FormAnalysis forms = AnalyzeForms(
             session,
@@ -97,8 +98,8 @@ internal sealed class PdfViewAdapter : IProductViewAdapter<PdfSession>
                 ReviewCoverageMetric.Of("formFieldsWithoutPage", forms.FieldsWithoutPage, "fields"),
                 .. EnvelopeParts.ExcludedEvaluationMarks(session.Outputs.License, layout.Pages.Sum(static page => page.ExcludedEvaluationMarks), "fragments"),
             ],
-            // A page whose text the extraction budget cut short was not fully checked.
-            Complete = !read.Pages.Any(static page => page.ContentTruncated),
+            // A page whose text the extraction budget cut short, or never reached, was not fully checked.
+            Complete = !read.Window.Truncated,
         };
     }
 
@@ -238,6 +239,31 @@ internal sealed class PdfViewAdapter : IProductViewAdapter<PdfSession>
                 PdfViews.PagePart(page)));
         }
         return pages;
+    }
+
+    /// <summary>
+    /// The pages the text extraction never reached because an earlier page used up its budget.
+    /// The read starts at page 1 and stops at the budget, so they are the last of the pages it
+    /// was asked for.
+    /// </summary>
+    private static void AnalyzeUnreadPages(
+        PdfReadResult read,
+        ICollection<ReviewFinding> findings)
+    {
+        int first = read.Window.Returned + 1;
+        if (read.Window.Total is not { } total || total < first)
+        {
+            return;
+        }
+        int last = (int)total;
+        string pages = first == last
+            ? string.Create(System.Globalization.CultureInfo.InvariantCulture, $"{first}")
+            : string.Create(System.Globalization.CultureInfo.InvariantCulture, $"{first}-{last}");
+        findings.Add(PdfReviewChecks.TextAnalysisTruncated.Finding(
+            $"Text analysis reached its extraction budget before page(s) {pages}; their text was not analyzed, so visual evidence remains available but structural text checks are incomplete.",
+            $"page/{pages}",
+            $"Review those pages on their own: split them out with 'aspose-cli pdf split --by pages --groups {pages}' and review that part.",
+            [.. Enumerable.Range(first, last - first + 1).Select(PdfViews.PagePart)]));
     }
 
     private static bool HasTextOrImageContent(

@@ -81,6 +81,51 @@ public sealed class PdfReviewAndInfoTests
     }
 
     [Fact]
+    [Category(TestCategory.Slow)]
+    public void Review_WhenTextAnalysisStopsBeforeAPage_NamesThePageItDidNotRead()
+    {
+        const int budget = 1_000_000;
+        using var fixture = new PdfEngineFixture();
+        using var workspace = new TempWorkspace();
+        // Page 1 extracts to exactly the million characters the review's text analysis reads, so
+        // the analysis stops before page 2 without cutting any page short.
+        string input = string.Empty;
+        int lastLine = 1000;
+        int length = 0;
+        for (int attempt = 0; attempt < 5 && length != budget; attempt++)
+        {
+            string lines = string.Concat(Enumerable.Repeat($"({new string('a', 1000)}) Tj 0 -0.75 Td ", 997));
+            input = fixture.CreateRawDocument($"exact-{attempt}.pdf", pages: 1,
+                textContent: $"BT /F1 1 Tf 0 791 Td {lines}({new string('a', lastLine)}) Tj ET");
+            using (var document = new Document(input))
+            {
+                document.Pages.Add().Paragraphs.Add(new Aspose.Pdf.Text.TextFragment("Text on the second page"));
+                document.Save(input);
+            }
+            length = PdfRead.Run(fixture.Session, new PdfReadRequest
+            {
+                Input = input,
+                Pages = Sdk.Addressing.PageRange.Parse("1"),
+                Content = PdfReadContents.Text,
+                MaxCharacters = int.MaxValue,
+            }).Pages.Single().Text.Length;
+            lastLine -= length - budget;
+        }
+        Assert.Equal(budget, length);
+
+        CliResult result = workspace.Run(["review", input, "--out", workspace.File("review"), "--output-format", "json"]);
+
+        Assert.True(result.ExitCode == 8, result.StdOut + result.StdErr);
+        JsonNode review = JsonNode.Parse(result.StdOut)!;
+        Assert.False(review["coverage"]!["complete"]!.GetValue<bool>());
+        JsonNode finding = Assert.Single(
+            review["findings"]!.AsArray(),
+            static item => item!["code"]!.GetValue<string>() == "PDF_TEXT_ANALYSIS_TRUNCATED")!;
+        Assert.Equal("page/2", finding["location"]!.GetValue<string>());
+        Assert.Contains("'aspose-cli pdf split --by pages --groups 2'", finding["hint"]!.GetValue<string>(), StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void Review_SaysTheSourceIsEncrypted()
     {
         using var fixture = new PdfEngineFixture();
