@@ -20,6 +20,14 @@ internal static class CellsDiagnostics
     internal static readonly WarningCode SheetsSkipped = new("SHEETS_SKIPPED");
     internal static readonly WarningCode DataTruncated = new("DATA_TRUNCATED");
     internal static readonly WarningCode FormulasBroken = new("FORMULAS_BROKEN");
+
+    /// <summary>
+    /// A workbook that asks to be calculated when opened was calculated on loading and shows formula
+    /// results that differ from its stored ones. <c>details.differingCount</c> counts the differing
+    /// results, <c>details.formulaCount</c> the formulas and <c>details.storedWithoutResultCount</c>
+    /// the formulas stored without a result; the message stays the same when volatile formulas
+    /// change the counts from one load to the next.
+    /// </summary>
     internal static readonly WarningCode FormulasCalculatedOnOpen = new("FORMULAS_CALCULATED_ON_OPEN");
     internal static readonly WarningCode SheetPartiallyRendered = new("SHEET_PARTIALLY_RENDERED");
 

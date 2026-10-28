@@ -72,8 +72,8 @@ The whole workbook calculates once after the complete batch, including
 earlier edits first, so they see current formula results. Reads show what
 Excel shows on opening: a workbook that asks to be calculated when opened (as
 openpyxl, pandas and many exporters write them, with no stored results) is
-calculated first, and `FORMULAS_CALCULATED_ON_OPEN` says how many results differ
-from the stored ones. Any other workbook reads its stored results, so treat a
+calculated first, and the `details` of `FORMULAS_CALCULATED_ON_OPEN` count the
+results that differ from the stored ones (`differingCount` of `formulaCount`). Any other workbook reads its stored results, so treat a
 `--no-recalc` edit as stale until an edit recalculates it.
 
 Because operations apply in order and calculate at the end, a whole model fits

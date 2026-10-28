@@ -1,3 +1,4 @@
+using System.Text.Json.Nodes;
 using Aspose.Cells;
 using Aspose.Cli.Sdk.IO.Budgets;
 
@@ -43,11 +44,19 @@ internal static class CellsOpenCalculation
             return null;
         }
 
-        return new Warning(CellsDiagnostics.FormulasCalculatedOnOpen, $"The workbook asks to be calculated when opened, as Excel does: {changed} of {stored.Count} formula results "
-                + $"shown differ from the stored ones ({empty} were stored without a result).")
+        // A volatile formula such as RANDBETWEEN or NOW changes with every load, so the counts go
+        // in the details and the message stays the same for every load of one workbook.
+        return new Warning(CellsDiagnostics.FormulasCalculatedOnOpen, "The workbook asks to be calculated when opened, as Excel does, "
+                + "and formula results shown differ from the stored ones; details counts them.")
         {
+            Details = new JsonObject
+            {
+                ["differingCount"] = changed,
+                ["formulaCount"] = stored.Count,
+                ["storedWithoutResultCount"] = empty,
+            },
             Hint = "The values shown are the engine's, as Excel shows them on opening. Save the workbook with 'cells edit' "
-                + "to store them, or read with --content formulas to see the formulas.",
+                + "to store them, or run 'cells read <file> --content formulas' to see the formulas.",
         };
     }
 

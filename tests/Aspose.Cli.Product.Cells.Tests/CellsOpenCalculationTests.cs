@@ -36,6 +36,48 @@ public sealed class CellsOpenCalculationTests : IClassFixture<CellsFixture>
         Assert.DoesNotContain(read.Warnings ?? [], static warning => warning.Code.Name == "FORMULAS_CALCULATED_ON_OPEN");
     }
 
+    /// <summary>
+    /// A read of a workbook whose volatile formulas change on every load states the counts in the
+    /// warning's details, so its message stays the same from one load to the next.
+    /// </summary>
+    [Fact]
+    public void VolatileFormulas_CountTheDifferingResultsInTheDetails()
+    {
+        string path = _fixture.Temp.File("volatile.xlsx");
+        CreateVolatileWorkbook(path);
+
+        CellsReadResult read = CellsRead.Run(_fixture.Session, new CellsReadRequest { Input = path });
+
+        Aspose.Cli.Sdk.Contracts.Warning warning = Assert.Single(read.Warnings ?? [], static warning => warning.Code.Name == "FORMULAS_CALCULATED_ON_OPEN");
+        Assert.DoesNotMatch(@"\d", warning.Message);
+        Assert.NotNull(warning.Details);
+        Assert.Equal(VolatileFormulaCount, warning.Details["formulaCount"]!.GetValue<int>());
+        Assert.InRange(warning.Details["differingCount"]!.GetValue<int>(), 1, VolatileFormulaCount);
+        Assert.Equal(0, warning.Details["storedWithoutResultCount"]!.GetValue<int>());
+    }
+
+    /// <summary>The number of volatile formulas in <see cref="CreateVolatileWorkbook"/>.</summary>
+    internal const int VolatileFormulaCount = 200;
+
+    /// <summary>
+    /// Writes a workbook that asks to be calculated when opened, with stored results for
+    /// <see cref="VolatileFormulaCount"/> formulas <c>=RANDBETWEEN(1,2)</c>: each load recalculates
+    /// about half of them to a different result, so two loads almost never count the same number.
+    /// </summary>
+    internal static void CreateVolatileWorkbook(string path)
+    {
+        using var workbook = new Aspose.Cells.Workbook();
+        Aspose.Cells.Cells cells = workbook.Worksheets[0].Cells;
+        for (int row = 0; row < VolatileFormulaCount; row++)
+        {
+            cells[row, 0].Formula = "=RANDBETWEEN(1,2)";
+        }
+
+        workbook.CalculateFormula();
+        workbook.Settings.FormulaSettings.CalculateOnOpen = true;
+        workbook.Save(path, Aspose.Cells.SaveFormat.Xlsx);
+    }
+
     private string Workbook(string name, bool calculate)
     {
         string path = _fixture.Temp.File(name);

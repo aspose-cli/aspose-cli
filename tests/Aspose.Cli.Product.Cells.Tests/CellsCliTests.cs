@@ -445,6 +445,22 @@ public sealed class CellsCliTests : IDisposable
     }
 
     /// <summary>
+    /// A review loads the workbook more than once, and volatile formulas recalculate to other
+    /// results on each load; the calculated-on-open warning still appears once.
+    /// </summary>
+    [Fact]
+    public void Review_ReportsTheCalculatedOnOpenWarningOnceForVolatileFormulas()
+    {
+        CellsOpenCalculationTests.CreateVolatileWorkbook(_workspace.File("volatile.xlsx"));
+
+        CliResult review = _workspace.Run("review", "volatile.xlsx", "--out", _workspace.File("review"), "--output-format", "json");
+
+        Assert.True(review.ExitCode == 0, review.StdErr);
+        Assert.Single(JsonNode.Parse(review.StdOut)!["warnings"]!.AsArray(),
+            static warning => warning!["code"]!.GetValue<string>() == "FORMULAS_CALCULATED_ON_OPEN");
+    }
+
+    /// <summary>
     /// <c>cells create</c> takes sheet names as <c>--sheet-names</c>; <c>--sheets</c>, which
     /// selects positions on <c>convert</c> and <c>render</c>, is not one of its options.
     /// </summary>
