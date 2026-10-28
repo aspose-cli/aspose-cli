@@ -243,8 +243,8 @@ public sealed class ExecutableHintTests : IDisposable
 
     /// <summary>
     /// The real <c>ENCRYPTION_REMOVED</c> hint of a Words document converted to PDF names the
-    /// encrypting command by its path alone: a quoted PDF command the catalog accepts, with no
-    /// operations of its own to run against the Words input.
+    /// encrypting command by its path and <c>--in-place</c> alone: a quoted PDF command the catalog
+    /// accepts, with no operations of its own to run against the Words input.
     /// </summary>
     [Fact]
     public void QuotedCommandPath_OfTheEncryptionHint_IsCheckedAgainstTheCatalog()
@@ -257,7 +257,7 @@ public sealed class ExecutableHintTests : IDisposable
 
         HintAction action = Assert.Single(ExecutableHints.Extract(CliCatalog.Current, hint), static action => action.Kind != HintKind.Option);
         Assert.Equal(HintKind.Command, action.Kind);
-        Assert.Equal(["pdf", "edit"], action.Tokens);
+        Assert.Equal(["pdf", "edit", "--in-place"], action.Tokens);
         Assert.Empty(ExecutableHints.Problems(new HintRun(args, _workspace.Path, Path.GetDirectoryName(_workspace.ConfigDirectory)!, variables), result));
     }
 

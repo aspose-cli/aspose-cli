@@ -20,7 +20,9 @@ namespace Aspose.Cli.Sdk.Extensibility.Commanding;
 /// conversion, which can change it, as a document that asks every save to embed its fonts embeds
 /// all of them in full when it is saved again. An output in a variant of a format
 /// that cannot carry a password, such as an archival variant whose standard forbids encryption, is
-/// never encrypted itself: only a copy of it.
+/// never encrypted itself: only a copy of it. An edit encrypts the written file in place; a way
+/// that writes an encrypted file beside it, as a conversion does, ends by telling to delete the
+/// unencrypted file once the copy exists.
 /// </summary>
 internal static class ProtectionAdvice
 {
@@ -57,6 +59,9 @@ internal static class ProtectionAdvice
         string[] kept = [.. loss.Formats.Where(format => own.Any(protectable => Is(protectable, format)))];
         string[] other = [.. loss.Formats.Except(kept, StringComparer.Ordinal)];
         var ways = new List<string>();
+        // Whether a way writes an encrypted file beside the unencrypted one this command wrote,
+        // rather than writing that output again or encrypting it in place, as an edit does.
+        bool copies = false;
         var notes = new List<string>();
         // What the output cannot be, said before the ways to protect it.
         var limits = new List<string>();
@@ -82,7 +87,7 @@ internal static class ProtectionAdvice
             {
                 // An input with only an owner password opens without one, as an --encrypt-env
                 // output would not; only an edit's operation that encrypts takes an owner password alone.
-                ways.Add($"encrypt the {format} file with '{edit.Path}' and an owner password only, which restricts it as the input was and keeps it opening without a password");
+                ways.Add($"encrypt the {format} file with '{edit.Path} {StandardOptionNames.InPlace}' and an owner password only, which restricts it as the input was and keeps it opening without a password");
             }
             else if (encryptor is not null)
             {
@@ -94,6 +99,7 @@ internal static class ProtectionAdvice
         {
             ways.Add($"write it as {string.Join(", ", own.Select(static format => format.Id).Distinct(StringComparer.Ordinal))} instead, "
                 + $"which keeps the input's password or takes the one {EncryptEnvironment} names");
+            copies = true;
         }
 
         var unprotectable = new List<string>();
@@ -116,18 +122,30 @@ internal static class ProtectionAdvice
             if (Encryptor(commands, current, format) is not { } encryptor)
             {
                 unprotectable.Add(format);
+                continue;
             }
-            else if (written && variantOf is null && source is not null && encryptor.Converts
+
+            if (written && variantOf is null && source is not null && encryptor.Converts
                 && ProductReads.Of(encryptor.Command)?.Any(read => Is(read, source.Id)) == true)
             {
                 ways.Add($"convert the {source.Id} input itself to {format}, not the {format} file this command wrote, "
                     + $"with '{encryptor.Path} {EncryptEnvironment}'");
+                copies = true;
+            }
+            else if (variantOf is not null)
+            {
+                // Encrypting the variant in place would end it: the copy keeps it.
+                ways.Add($"encrypt a {format} copy of it with '{encryptor.Path}'");
+                copies = true;
+            }
+            else if (!encryptor.Converts)
+            {
+                ways.Add($"encrypt the {format} file with '{encryptor.Path} {StandardOptionNames.InPlace}'");
             }
             else
             {
-                ways.Add(variantOf is null
-                    ? $"encrypt the {format} file with '{encryptor.Path}'"
-                    : $"encrypt a {format} copy of it with '{encryptor.Path}'");
+                ways.Add($"encrypt the {format} file with '{encryptor.Path}'");
+                copies = true;
             }
         }
 
@@ -136,7 +154,10 @@ internal static class ProtectionAdvice
             notes.Add($"No command of this build can encrypt {string.Join(" or ", unprotectable)} files.");
         }
 
-        string said = ways.Count == 0 ? string.Empty : $"If the output must stay protected, {string.Join(", or ", ways.Distinct(StringComparer.Ordinal))}.";
+        string said = ways.Count == 0 ? string.Empty : $"If the output must stay protected, {string.Join(", or ", ways.Distinct(StringComparer.Ordinal))}."
+            + (!copies ? string.Empty
+                : output is null ? " Once the encrypted copies exist, delete the unencrypted files this command wrote."
+                : " Once the encrypted copy exists, delete the unencrypted file this command wrote.");
         return string.Join(" ", limits.Append(said).Concat(notes).Where(static part => part.Length > 0));
     }
 
