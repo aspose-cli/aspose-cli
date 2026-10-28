@@ -47,6 +47,15 @@ public partial class StandardInvocation
     public Secret? EncryptPassword() =>
         EncryptPassword(DetectFormat is { } detect ? () => detect(Input) : null);
 
+    /// <summary>
+    /// The option that names the output password's environment variable and the variable the
+    /// caller named in it, or null when the caller named none.
+    /// </summary>
+    internal (string Option, string Variable)? EncryptEnvironment() =>
+        _options.Encrypt is { } encrypt && encrypt.EnvironmentName(_parse) is { } variable
+            ? (encrypt.EnvironmentOption, variable)
+            : null;
+
     /// <inheritdoc cref="EncryptPassword()"/>
     /// <param name="sourceFormat">
     /// Detects the format id of the edited input from its content without loading it, or returns

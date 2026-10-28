@@ -124,7 +124,11 @@ public sealed class OperationCatalog<TOp>
     }
 
     /// <summary>Whether the vocabulary has an operation that encrypts the edited document (<see cref="EncryptsOutputAttribute"/>).</summary>
-    internal bool Encrypts => _byName.Values.Any(static operation => operation.Record.EncryptsOutput);
+    internal bool Encrypts => Encryptor is not null;
+
+    /// <summary>The operation that encrypts the edited document (<see cref="EncryptsOutputAttribute"/>), or null when the vocabulary has none.</summary>
+    internal OperationRecord? Encryptor =>
+        _byName.Values.Select(static operation => operation.Record).FirstOrDefault(static record => record.EncryptsOutput);
 
     /// <summary>Returns the wire name of an operation of this vocabulary.</summary>
     public string NameOf(TOp operation)
