@@ -181,9 +181,14 @@ internal static class ReviewEvidenceWriter
                 index + 3)),
         ];
         // An assessment reads the input again, so it repeats the input's warnings the view
-        // already reported; each appears once.
+        // already reported; each appears once, affecting completeness when any of its copies does.
         IReadOnlyList<Warning>? warnings = EnvelopeParts.CombineWarnings(manifest.Warnings, assessment.Warnings)
-            ?.DistinctBy(static warning => (warning.Code, warning.Location, warning.Message)).ToArray();
+            ?.GroupBy(static warning => (warning.Code, warning.Location, warning.Message))
+            .Select(static copies => copies.First() with
+            {
+                AffectsCompleteness = copies.Any(static warning => warning.AffectsCompleteness),
+            })
+            .ToArray();
         IReadOnlyList<ReviewFinding> findings = AssociateEvidence(assessment.Findings ?? [], artifacts, manifest.Parts);
         IReadOnlyList<ReviewFinding> reported = codes is null
             ? findings
