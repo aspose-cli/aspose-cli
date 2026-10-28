@@ -1,4 +1,7 @@
 using System.CommandLine;
+using System.CommandLine.Parsing;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Formats;
@@ -184,9 +187,13 @@ public sealed class BoundedEditCommand<TOp, TBatch>
         string[] directives = _set is null ? [] : parse.GetValue(_set) ?? [];
         if (source is null && directives.Length == 0)
         {
-            throw CliErrors.Usage([_set is null
-                ? $"Give {OpsOption} (an ops JSON document)."
-                : $"Give {OpsOption} (an ops JSON document), {StandardOptionNames.Set}, or both."]);
+            throw WithEncryptOnly(
+                CliErrors.Usage([_set is null
+                    ? $"Give {OpsOption} (an ops JSON document)."
+                    : $"Give {OpsOption} (an ops JSON document), {StandardOptionNames.Set}, or both."]),
+                parse,
+                standard,
+                encrypts);
         }
 
         bool verify = IsVerifyRequested(parse);
@@ -204,7 +211,13 @@ public sealed class BoundedEditCommand<TOp, TBatch>
         TOp[] compiled = _definition.SetDirectives is { } grammar
             ? directives.Select(grammar.Parse).ToArray()
             : [];
-        TBatch batch = Compose(source is null ? null : ParseDocument(source, paths, standard.Inputs), compiled);
+        // A document without operations, and no directive to add one, is refused as no
+        // operations at all; it says how to only encrypt as well.
+        TBatch batch = Compose(
+            source is null
+                ? null
+                : ParseDocument(source, paths, standard.Inputs, empty => compiled.Length == 0 ? WithEncryptOnly(empty, parse, standard, encrypts) : empty),
+            compiled);
         // Every [InputPath] member resolves against the invocation directory; the edit never
         // publishes over a file an operation reads. A file that does not exist fails the
         // operation that reads it, which the runner numbers and --best-effort skips.
@@ -270,7 +283,7 @@ public sealed class BoundedEditCommand<TOp, TBatch>
             }));
     }
 
-    private TBatch ParseDocument(string source, PathResolver paths, InputSource inputs)
+    private TBatch ParseDocument(string source, PathResolver paths, InputSource inputs, Func<CliException, CliException> noOperations)
     {
         string text = JsonInputSource.Read(source, paths, inputs, OpsOption);
         try
@@ -278,6 +291,10 @@ public sealed class BoundedEditCommand<TOp, TBatch>
             // A document read from stdin is never quoted back: stdin may hold something else.
             return TOp.Catalog.Parse<TBatch>(text, _definition.Contracts,
                 quotesContent: JsonInputSource.Classify(source, OpsOption) != JsonSourceKind.StandardInput);
+        }
+        catch (CliException exception) when (exception.Code == ErrorCodes.OpsInvalid && HasNoOperations(text))
+        {
+            throw noOperations(exception);
         }
         catch (CliException exception) when (
             exception.Code == ErrorCodes.OpsInvalid
@@ -297,6 +314,103 @@ public sealed class BoundedEditCommand<TOp, TBatch>
                 details: exception.Details,
                 docs: exception.Docs);
         }
+    }
+
+    // Whether the document parses and holds no operation: the bare empty array, or an object whose
+    // ops array is empty.
+    private static bool HasNoOperations(string text)
+    {
+        try
+        {
+            using JsonDocument document = JsonDocument.Parse(text);
+            JsonElement root = document.RootElement;
+            JsonElement ops = root.ValueKind == JsonValueKind.Object && root.TryGetProperty("ops", out JsonElement found) ? found : root;
+            return ops.ValueKind == JsonValueKind.Array && ops.GetArrayLength() == 0;
+        }
+        catch (JsonException)
+        {
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Adds to the hint of an edit given no operation the way to only encrypt its output, when the
+    /// caller named the output password's environment variable and the vocabulary has an operation
+    /// that encrypts (<see cref="EncryptsOutputAttribute"/>): the same command line with that
+    /// operation in place of the password option, every secret variable of the operation named by
+    /// the caller's variable. The code, message and details stay as they are.
+    /// </summary>
+    private CliException WithEncryptOnly(CliException error, ParseResult parse, StandardInvocation standard, bool encrypts) =>
+        EncryptOnly(parse, standard, encrypts) is { } only
+            ? CliException.Create(error.Code, error.Message, hint: $"{error.Hint} {only}", details: error.Details, docs: error.Docs)
+            : error;
+
+    // The sentence that shows how to only encrypt, or null when the edit cannot or the command line
+    // holds a secret given literally, which a hint never repeats.
+    private string? EncryptOnly(ParseResult parse, StandardInvocation standard, bool encrypts)
+    {
+        if (!encrypts || TOp.Catalog.Encryptor is not { } encryptor || standard.EncryptEnvironment() is not { } environment)
+        {
+            return null;
+        }
+
+        string[] secrets = [.. encryptor.Properties
+            .Where(static property => property.Constraints.OfType<SecretEnvAttribute>().Any())
+            .Select(static property => property.Name)];
+        var operation = new JsonObject { ["op"] = encryptor.Name };
+        foreach (string field in secrets)
+        {
+            operation[field] = environment.Variable;
+        }
+
+        var tokens = new List<string> { DistributionInfo.CommandName };
+        if (secrets.Length == 0 || !AddArguments(parse.RootCommandResult, environment.Option, tokens))
+        {
+            return null;
+        }
+
+        tokens.Add(OpsOption);
+        tokens.Add($"'{new JsonArray(operation).ToJsonString()}'");
+        string command = string.Join(' ', tokens);
+        // The command is quoted in backticks, which none of its tokens may hold.
+        return command.Contains('`', StringComparison.Ordinal)
+            ? null
+            : $"To only encrypt, run `{command}`.";
+    }
+
+    // Appends the command line's commands, arguments and options as the caller gave them, without
+    // the operation document and the dropped option; false when an option holds a literal secret.
+    private bool AddArguments(CommandResult command, string dropped, List<string> tokens)
+    {
+        foreach (SymbolResult child in command.Children)
+        {
+            switch (child)
+            {
+                case CommandResult subcommand:
+                    tokens.Add(subcommand.IdentifierToken.Value);
+                    if (!AddArguments(subcommand, dropped, tokens))
+                    {
+                        return false;
+                    }
+
+                    break;
+                case OptionResult { Implicit: true }:
+                    break;
+                case OptionResult option when option.Option == _ops || option.Option.Name == dropped:
+                    break;
+                case OptionResult option when option.Option.GetParameterMetadata() is { Secret: true, ValueSource: ParameterValueSource.CommandLine }:
+                    return false;
+                case OptionResult option:
+                    tokens.Add(option.IdentifierToken?.Value ?? option.Option.Name);
+                    tokens.AddRange(option.Tokens.Select(static token => CommandLineText.Quote(token.Value)));
+                    break;
+                case ArgumentResult argument:
+                    tokens.AddRange(argument.Tokens.Select(static token => CommandLineText.Quote(token.Value)));
+                    break;
+            }
+        }
+
+        return true;
     }
 
     private static string? ReconcileIfMatch(string? command, string? document)

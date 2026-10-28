@@ -214,7 +214,8 @@ public abstract class NotBlankAttribute : MinLengthAttribute
 /// <summary>
 /// Marks the operation that encrypts the document its edit publishes, with a password read only
 /// from the environment variables its <see cref="SecretEnvAttribute"/> fields name, so the CLI can
-/// tell how to protect an output another command wrote without a password.
+/// tell how to protect an output another command wrote without a password, and an edit given
+/// <c>--encrypt-env</c> and no operation how to only encrypt.
 /// </summary>
 [AttributeUsage(AttributeTargets.Class, Inherited = false)]
 public sealed class EncryptsOutputAttribute : Attribute;
