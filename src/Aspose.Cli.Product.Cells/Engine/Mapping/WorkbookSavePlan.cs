@@ -41,7 +41,7 @@ internal sealed record WorkbookSavePlan(string FormatId, SaveFormat Format, Save
     /// Removes from the in-memory workbook the drawings of the sheet a format that
     /// <see cref="CellsEngineFormats.DropsDrawings"/> writes, and says how many of each kind it left
     /// out; null when it removed none. A group counts once, as one drawing, and takes the shapes
-    /// in it along. Comments are no drawings: the output keeps them.
+    /// in it along. Comments are no drawings: they are neither removed nor counted.
     /// </summary>
     internal Warning? DropDrawings(Workbook workbook)
     {
