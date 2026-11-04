@@ -9,7 +9,12 @@ namespace Aspose.Cli.Product.Cells.Engine.Mapping;
 /// <param name="Filled">The number of cells that hold a value other than blank text.</param>
 /// <param name="FirstText">The trimmed text of the leftmost cell that holds text, or null.</param>
 /// <param name="NumberColumn">The zero-based column of the leftmost number, or null.</param>
-internal readonly record struct TextRowShape(int Row, int Filled, string? FirstText, int? NumberColumn = null);
+/// <param name="HoldsDate">Whether a cell holds a date or time.</param>
+internal readonly record struct TextRowShape(int Row, int Filled, string? FirstText, int? NumberColumn = null, bool HoldsDate = false)
+{
+    /// <summary>Whether a cell holds a number or a date, which the labels of a header are not.</summary>
+    internal bool HoldsNumberOrDate => NumberColumn is not null || HoldsDate;
+}
 
 internal enum TextTableFindingKind
 {
@@ -233,12 +238,14 @@ internal static class TextTableLayout
 
     /// <summary>
     /// Moves the header past the blocks of notes an export writes before its table, such as an
-    /// "export time, query" row of several values: a block that ends in an empty row is notes when
-    /// it holds a title, a row of one value, or a row that starts with a "label:" note, and the
-    /// first row after the empty rows is wider than every row of the block, wide enough for a
-    /// header, and holds no number, as a header does. A block of data rows split by an empty row
-    /// fails the test, because its rows are as wide as the rows after it or hold numbers, and so
-    /// does a header narrower than its data rows, which holds labels only.
+    /// "export time, query" row of several values: a block that starts at the header candidate
+    /// and ends in an empty row is notes when the candidate holds a number or a date, as an
+    /// "export time, 2026-10-31" row does and a header's labels do not, or the block holds a
+    /// title, a row of one value, or a row that starts with a "label:" note; and the first row
+    /// after the empty rows is wider than every row of the block, wide enough for a header, and
+    /// holds no number, as a header does. A block of data rows split by an empty row fails the
+    /// test, because its rows are as wide as the rows after it or hold numbers, and so does a
+    /// header narrower than its data rows, which holds labels only, even below a title.
     /// </summary>
     private static TextRowShape SkipPreambleBlocks(
         IReadOnlyList<TextRowShape> head, TextRowShape[] filled, TextRowShape header, int width)
@@ -254,7 +261,8 @@ internal static class TextTableLayout
             TextRowShape[] block = [.. filled.Where(shape => shape.Row >= header.Row && shape.Row <= blockEnd)];
             int blockWidth = block.Max(static shape => shape.Filled);
             if (blockEnd + 1 >= head.Count
-                || !block.Any(static shape => shape.Filled == 1 || shape.FirstText?.IndexOfAny([':', '：']) >= 0)
+                || !(header.HoldsNumberOrDate
+                    || block.Any(static shape => shape.Filled == 1 || shape.FirstText?.IndexOfAny([':', '：']) >= 0))
                 || filled.FirstOrDefault(shape => shape.Row > blockEnd) is not { Filled: > 0 } next
                 || next.Row > MaxPreambleRows
                 || next.NumberColumn is not null
@@ -438,6 +446,7 @@ internal static class TextTableLayout
         int textColumn = int.MaxValue;
         string? text = null;
         int? numberColumn = null;
+        bool holdsDate = false;
         foreach (Cell cell in row)
         {
             if (cell.Type == CellValueType.IsNull)
@@ -449,6 +458,8 @@ internal static class TextTableLayout
             {
                 numberColumn = cell.Column;
             }
+
+            holdsDate |= cell.Type == CellValueType.IsDateTime;
 
             if (cell.Type == CellValueType.IsString)
             {
@@ -467,6 +478,6 @@ internal static class TextTableLayout
             filled++;
         }
 
-        return new TextRowShape(rowIndex, filled, text, numberColumn);
+        return new TextRowShape(rowIndex, filled, text, numberColumn, holdsDate);
     }
 }
