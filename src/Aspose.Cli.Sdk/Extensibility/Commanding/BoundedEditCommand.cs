@@ -1,7 +1,6 @@
 using System.CommandLine;
 using System.CommandLine.Parsing;
 using System.Text.Json;
-using System.Text.Json.Nodes;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Formats;
@@ -47,6 +46,15 @@ public sealed record BoundedEditDefinition<TOp, TBatch>
 
     /// <summary>Help for <c>--verify</c>, or null when the product has no staged verification.</summary>
     public string? VerifyDescription { get; init; }
+
+    /// <summary>
+    /// The operation of the vocabulary that encrypts (<see cref="EncryptsOutputAttribute"/>) as the
+    /// edit's output password option does, built from the environment variable that holds the
+    /// password, so that the file it writes grants what that option's does; null when the edit
+    /// cannot only encrypt. An edit given that option and no operation shows it as the way to only
+    /// encrypt.
+    /// </summary>
+    public Func<string, TOp>? EncryptOnly { get; init; }
 }
 
 /// <summary>One fully resolved bounded-edit invocation, ready for the product request.</summary>
@@ -102,6 +110,11 @@ public sealed class BoundedEditCommand<TOp, TBatch>
         ArgumentNullException.ThrowIfNull(definition);
         ArgumentNullException.ThrowIfNull(definition.Contracts);
         ArgumentNullException.ThrowIfNull(definition.Writes);
+        if (definition.EncryptOnly is not null && !TOp.Catalog.Encrypts)
+        {
+            throw new ArgumentException("An edit that declares how to only encrypt needs a vocabulary with an operation that encrypts.", nameof(definition));
+        }
+
         _definition = definition;
         string schema = TOp.Catalog.SchemaCommandId;
         _ops = new Option<string?>(OpsOption)
@@ -335,10 +348,10 @@ public sealed class BoundedEditCommand<TOp, TBatch>
 
     /// <summary>
     /// Adds to the hint of an edit given no operation the way to only encrypt its output, when the
-    /// caller named the output password's environment variable and the vocabulary has an operation
-    /// that encrypts (<see cref="EncryptsOutputAttribute"/>): the same command line with that
-    /// operation in place of the password option, every secret variable of the operation named by
-    /// the caller's variable. The code, message and details stay as they are.
+    /// caller named the output password's environment variable and the product declared the
+    /// operation that encrypts as that option does (<see cref="BoundedEditDefinition{TOp, TBatch}.EncryptOnly"/>):
+    /// the same command line with that operation, built from the caller's variable, in place of the
+    /// password option. The code, message and details stay as they are.
     /// </summary>
     private CliException WithEncryptOnly(CliException error, ParseResult parse, StandardInvocation standard, bool encrypts) =>
         EncryptOnly(parse, standard, encrypts) is { } only
@@ -349,28 +362,26 @@ public sealed class BoundedEditCommand<TOp, TBatch>
     // holds a secret given literally, which a hint never repeats.
     private string? EncryptOnly(ParseResult parse, StandardInvocation standard, bool encrypts)
     {
-        if (!encrypts || TOp.Catalog.Encryptor is not { } encryptor || standard.EncryptEnvironment() is not { } environment)
+        if (!encrypts || _definition.EncryptOnly is not { } encryptOnly || standard.EncryptEnvironment() is not { } environment)
         {
             return null;
         }
 
-        string[] secrets = [.. encryptor.Properties
-            .Where(static property => property.Constraints.OfType<SecretEnvAttribute>().Any())
-            .Select(static property => property.Name)];
-        var operation = new JsonObject { ["op"] = encryptor.Name };
-        foreach (string field in secrets)
+        TOp operation = encryptOnly(environment.Variable);
+        if (TOp.Catalog.NameOf(operation) != TOp.Catalog.Encryptor?.Name)
         {
-            operation[field] = environment.Variable;
+            throw new InvalidOperationException($"The operation that only encrypts is not the vocabulary's operation that encrypts, but {TOp.Catalog.NameOf(operation)}.");
         }
 
         var tokens = new List<string> { DistributionInfo.CommandName };
-        if (secrets.Length == 0 || !AddArguments(parse.RootCommandResult, environment.Option, tokens))
+        if (!AddArguments(parse.RootCommandResult, environment.Option, tokens))
         {
             return null;
         }
 
+        var compact = new JsonSerializerOptions(_definition.Contracts.LocalOptions) { WriteIndented = false };
         tokens.Add(OpsOption);
-        tokens.Add($"'{new JsonArray(operation).ToJsonString()}'");
+        tokens.Add($"'[{JsonSerializer.Serialize(operation, typeof(TOp), compact)}]'");
         string command = string.Join(' ', tokens);
         // The command is quoted in backticks, which none of its tokens may hold.
         return command.Contains('`', StringComparison.Ordinal)

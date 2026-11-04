@@ -38,7 +38,13 @@ public sealed class TempWorkspace : IDisposable
     /// (double quotes, with <c>\"</c>, <c>\$</c> and <c>\`</c> escaped inside them), and its
     /// leading executable name is dropped.
     /// </summary>
-    public CliResult RunCommandLine(string commandLine)
+    public CliResult RunCommandLine(string commandLine) => RunCommandLine(commandLine, variables: null);
+
+    /// <summary>
+    /// Runs a command line the CLI printed, as <see cref="RunCommandLine(string)"/> does, with extra
+    /// environment variables set on the child, such as the one a printed <c>--password-env</c> names.
+    /// </summary>
+    public CliResult RunCommandLine(string commandLine, IReadOnlyDictionary<string, string?>? variables)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(commandLine);
         var tokens = new List<string>();
@@ -84,7 +90,7 @@ public sealed class TempWorkspace : IDisposable
             throw new ArgumentException($"Not a command line of this CLI: {commandLine}", nameof(commandLine));
         }
 
-        return Run([.. tokens.Skip(1)]);
+        return Execute(standardInput: null, variables, [.. tokens.Skip(1)]);
     }
 
     /// <summary>Runs in evaluation mode with extra environment variables set on the child.</summary>

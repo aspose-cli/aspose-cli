@@ -103,6 +103,14 @@ omitted.
 aspose-cli pdf edit report.pdf --in-place --ops '{"ops":[{"op":"encrypt_document","userPasswordEnv":"PASSWORD","ownerPasswordEnv":"OWNERPASSWORD","permissions":{"print":true,"copy":true}}]}' --output-format json
 ```
 
+An edit given `--encrypt-env` and no operation is refused, and its hint shows the
+edit that only encrypts: an `encrypt_document` whose `userPasswordEnv` and
+`ownerPasswordEnv` both name that variable and whose `permissions` allow every
+permission, so it writes what `--encrypt-env` writes. To restrict readers, delete
+the permissions they should not have, and name another variable in
+`ownerPasswordEnv`: a password that is also the owner password lifts every
+restriction.
+
 Inspect protected
 output with `pdf inspect --detail permissions`: `print`, `copy` and the other
 permission fields state what the file grants readers without the owner

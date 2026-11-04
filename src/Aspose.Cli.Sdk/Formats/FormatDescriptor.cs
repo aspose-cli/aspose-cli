@@ -168,6 +168,17 @@ public sealed record FormatDescriptor
     /// </summary>
     public bool ChosenByExtension { get; init; } = true;
 
+    /// <summary>
+    /// The id of the product whose <c>convert</c> writes an editable file of this format from a
+    /// document of the declaring product, as a word processor rebuilds a fixed-layout page as
+    /// flowing paragraphs where the page's own export keeps each line where it stood; null when
+    /// the declaring product's own conversion is the one to use. The hint for an output of this
+    /// format that a command of the declaring product does not write names that conversion
+    /// instead of the declaring product's, when this build has it, and a command of the declaring
+    /// product can name it with <c>StandardInvocation.EditableConversion</c>.
+    /// </summary>
+    public string? EditableBy { get; init; }
+
     /// <summary>Whether a file name carries one of this format's extensions, ignoring case.</summary>
     internal bool Names(string path) =>
         Path.GetExtension(path) is { Length: > 1 } extension

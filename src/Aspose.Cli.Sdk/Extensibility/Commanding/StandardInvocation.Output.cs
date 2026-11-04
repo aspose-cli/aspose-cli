@@ -1,3 +1,4 @@
+using System.CommandLine;
 using System.CommandLine.Parsing;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
@@ -471,7 +472,9 @@ public partial class StandardInvocation
     /// their <c>--to</c>, or every format it names when only <c>--to</c> chooses them, as
     /// an archive extension may name several archival profiles, and the command line that writes each: from this
     /// command's output, or, when <paramref name="output"/> is given, from this command's input
-    /// straight to that output.
+    /// straight to that output. The sibling writes it, unless the format names the product that
+    /// writes an editable file of it (<see cref="FormatDescriptor.EditableBy"/>) and that product
+    /// has a command of the sibling's name that writes the format: then that command does.
     /// </summary>
     /// <param name="extension">The extension the output was given.</param>
     /// <param name="output">The output as the caller gave it, for a command whose output is not a document to convert; otherwise null.</param>
@@ -485,10 +488,55 @@ public partial class StandardInvocation
         return SiblingTargets()
             .Select(sibling => Named(sibling.Target.Offered.DeclaringExtension(extension)) is { Length: > 0 } formats
                 ? ((IReadOnlyList<FormatDescriptor> Formats, IReadOnlyList<string> Commands)?)(formats, [.. formats.Select(format => string.Join(' ',
-                    [DistributionInfo.CommandName, .. path[..^1], sibling.Command, .. source, StandardOptionNames.To, format.Id, .. target]))])
+                    [DistributionInfo.CommandName, .. Writer(path[..^1], sibling.Command, format), .. source, StandardOptionNames.To, format.Id, .. target]))])
                 : null)
             .FirstOrDefault(static line => line is not null);
     }
+
+    /// <summary>
+    /// The command line, for a hint, that writes an editable file in place of the one this
+    /// command writes (<see cref="Output"/>), from this command's input: this command's name under
+    /// the product the output's format names as writing one (<see cref="FormatDescriptor.EditableBy"/>),
+    /// with the input and its password's environment variable as <see cref="Continuation()"/>
+    /// repeats them, then <c>--to</c> the format, <c>--out</c> this command's output and
+    /// <c>--overwrite</c>, so it replaces that file; null when the format names no such product or
+    /// this build has no such command.
+    /// </summary>
+    public string? EditableConversion()
+    {
+        ResolvedOutput output = Output;
+        return Editor(output.Format, CommandPath()[^1]) is { } path
+            ? ContinuationAt(path)
+                .Option(StandardOptionNames.To, output.Format.Id)
+                .Option(StandardOptionNames.Out, output.Path)
+                .Flag(StandardOptionNames.Overwrite)
+                .ToString()
+            : null;
+    }
+
+    // The command path that writes a format a sibling of this command writes: the editor's (Editor)
+    // when there is one, otherwise the sibling's own.
+    private string[] Writer(string[] product, string sibling, FormatDescriptor format) =>
+        Editor(format, sibling) ?? [.. product, sibling];
+
+    // The path of the visible command of a name under the product the format names as writing an
+    // editable file of it, when that command's --to offers the format; otherwise null.
+    private string[]? Editor(FormatDescriptor format, string command)
+    {
+        Command? editor = format.EditableBy is { } id
+            ? Visible(_parse.RootCommandResult.Command, id) is { } product ? Visible(product, command) : null
+            : null;
+        return editor is not null && editor.Options
+            .Select(StandardOptions.TargetOf)
+            .OfType<TargetFormat>()
+            .Any(target => target.Offered.Any(offered => string.Equals(offered.Id, format.Id, StringComparison.OrdinalIgnoreCase)))
+                ? [format.EditableBy!, command]
+                : null;
+    }
+
+    // The visible subcommand of a command by its name, or null.
+    private static Command? Visible(Command command, string name) =>
+        command.Subcommands.FirstOrDefault(subcommand => !subcommand.Hidden && string.Equals(subcommand.Name, name, StringComparison.Ordinal));
 
     // The first format an extension chooses among those that declare it, or all of them when
     // only --to chooses them.

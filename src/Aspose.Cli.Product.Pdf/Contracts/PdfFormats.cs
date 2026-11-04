@@ -14,7 +14,9 @@ public static class PdfFormats
             Protectable = true,
             Recognition = FileFormatRecognition.Match(FileProbePattern.PdfHeader(), "PDF header"),
         },
-        FormatDescriptor.Routed("docx", FormatUse.Convert, ".docx") with { MistakenFor = ["word"] },
+        // Words rebuilds a PDF as flowing paragraphs; this product's export keeps each line in a
+        // positioned frame that is hard to edit.
+        FormatDescriptor.Routed("docx", FormatUse.Convert, ".docx") with { MistakenFor = ["word"], EditableBy = "words" },
         FormatDescriptor.Routed("xlsx", FormatUse.Convert, ".xlsx") with { MistakenFor = ["excel"] },
         FormatDescriptor.Routed("pptx", FormatUse.Convert, ".pptx") with { MistakenFor = ["powerpoint"] },
         FormatDescriptor.Routed("html", FormatUse.Convert, ".html", ".htm"),
