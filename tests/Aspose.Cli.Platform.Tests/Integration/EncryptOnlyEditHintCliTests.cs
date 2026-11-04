@@ -7,9 +7,10 @@ namespace Aspose.Cli.IntegrationTests;
 
 /// <summary>
 /// An edit given <c>--encrypt-env</c> and no operation is refused as before, with the same code
-/// and exit code; when its vocabulary has an operation that encrypts, the hint also shows the
-/// command that only encrypts: the same command line with that operation in place of
-/// <c>--encrypt-env</c>. Running it writes a file that opens only with the password.
+/// and exit code; when its product declares the operation that encrypts as <c>--encrypt-env</c>
+/// does, the hint also shows the command that only encrypts: the same command line with that
+/// operation in place of <c>--encrypt-env</c>. Running it writes a file that opens only with the
+/// password and grants what <c>--encrypt-env</c> grants.
 /// </summary>
 public sealed class EncryptOnlyEditHintCliTests : IDisposable
 {
@@ -41,7 +42,7 @@ public sealed class EncryptOnlyEditHintCliTests : IDisposable
         Assert.True(at >= 0, hint);
         string command = hint[(at + Shown.Length)..].Split('`', 2)[0];
         Assert.Equal(
-            $$$"""aspose-cli pdf edit plain.pdf --in-place --output-format json --ops '[{"op":"encrypt_document","userPasswordEnv":"{{{Variable}}}","ownerPasswordEnv":"{{{Variable}}}"}]'""",
+            $$$"""aspose-cli pdf edit plain.pdf --in-place --output-format json --ops '[{"op":"encrypt_document","userPasswordEnv":"{{{Variable}}}","ownerPasswordEnv":"{{{Variable}}}","permissions":{"print":true,"copy":true,"modify":true,"annotate":true,"fillForms":true,"extractAccessibility":true,"assemble":true,"printHighResolution":true}}]'""",
             command);
         Assert.EndsWith("`.", hint, StringComparison.Ordinal);
 
@@ -53,6 +54,41 @@ public sealed class EncryptOnlyEditHintCliTests : IDisposable
         Assert.Equal("PASSWORD_REQUIRED", JsonNode.Parse(Run("pdf", "inspect", "plain.pdf").StdErr)!["error"]!["code"]!.GetValue<string>());
         CliResult opened = Run("pdf", "inspect", "plain.pdf", "--password-env", Variable);
         Assert.True(opened.ExitCode == 0, opened.StdErr);
+    }
+
+    /// <summary>
+    /// The edit the hint shows to only encrypt writes the passwords and permissions that
+    /// <c>--encrypt-env</c> writes after an operation: the file grants readers every permission.
+    /// </summary>
+    [Fact]
+    public void PdfEditThatOnlyEncrypts_GrantsThePermissionsEncryptEnvGrants()
+    {
+        File.WriteAllBytes(_workspace.File("shown.pdf"), ScenarioFixtures.Read("pdf.pdf"));
+        File.WriteAllBytes(_workspace.File("option.pdf"), ScenarioFixtures.Read("pdf.pdf"));
+
+        CliResult refused = Run("pdf", "edit", "shown.pdf", "--in-place", "--encrypt-env", Variable);
+
+        Assert.Equal(2, refused.ExitCode);
+        JsonNode error = JsonNode.Parse(refused.StdErr)!["error"]!;
+        Assert.Equal("USAGE_ERROR", error["code"]!.GetValue<string>());
+        string hint = error["hint"]!.GetValue<string>();
+        const string Shown = "To only encrypt, run `";
+        int at = hint.IndexOf(Shown, StringComparison.Ordinal);
+        Assert.True(at >= 0, hint);
+        string command = hint[(at + Shown.Length)..].Split('`', 2)[0];
+        // The shown command runs as written: its operations are the one single-quoted argument.
+        string[] parts = command.Split(" '", 2);
+        CliResult onlyEncrypted = _workspace.RunWithEnv(Variables, [.. parts[0].Split(' ').Skip(1), parts[1].TrimEnd('\'')]);
+        Assert.True(onlyEncrypted.ExitCode == 0, onlyEncrypted.StdErr);
+        CliResult encrypted = Run("pdf", "edit", "option.pdf", "--in-place", "--ops", """[{"op":"set_properties","title":"Encrypted"}]""", "--encrypt-env", Variable);
+        Assert.True(encrypted.ExitCode == 0, encrypted.StdErr);
+
+        JsonNode expected = Permissions("option.pdf");
+        Assert.All(
+            ["print", "copy", "modify", "annotate", "fillForms", "extractAccessibility", "assemble", "printHighResolution"],
+            name => Assert.True(expected[name]!.GetValue<bool>(), $"--encrypt-env does not grant {name}: {expected.ToJsonString()}"));
+        JsonNode actual = Permissions("shown.pdf");
+        Assert.True(JsonNode.DeepEquals(expected, actual), $"--encrypt-env: {expected.ToJsonString()}; the shown edit: {actual.ToJsonString()}");
     }
 
     /// <summary>
@@ -92,6 +128,14 @@ public sealed class EncryptOnlyEditHintCliTests : IDisposable
         JsonNode error = JsonNode.Parse(refused.StdErr)!["error"]!;
         Assert.Equal(code, error["code"]!.GetValue<string>());
         Assert.Equal(expected, error["hint"]!.GetValue<string>());
+    }
+
+    // The passwords and permissions that pdf inspect reads from a file it opens with the password.
+    private JsonNode Permissions(string file)
+    {
+        CliResult inspected = Run("pdf", "inspect", file, "--password-env", Variable, "--detail", "permissions");
+        Assert.True(inspected.ExitCode == 0, inspected.StdErr);
+        return JsonNode.Parse(inspected.StdOut)!["permissions"]!;
     }
 
     private CliResult Run(params string[] arguments) =>

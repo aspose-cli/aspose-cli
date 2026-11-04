@@ -36,7 +36,7 @@ internal static class PdfConvert
         {
             warnings.Add(new Warning(WarningCodes.LossyConversion, $"PDF conversion to {request.Output.Format.Id} may not preserve every layout or interactive feature.")
             {
-                Hint = target.LossyHint ?? "Inspect the produced file before relying on exact pagination, forms or annotations.",
+                Hint = (target.LossyHint ?? "Inspect the produced file before relying on exact pagination, forms or annotations.") + Editable(request),
             });
         }
 
@@ -49,6 +49,13 @@ internal static class PdfConvert
             Warnings = warnings.Count == 0 ? null : warnings,
         };
     }
+
+    // The conversion of the input that writes an editable file of the output's format, when another
+    // product writes one; otherwise nothing.
+    private static string Editable(PdfConvertRequest request) =>
+        request.EditableConversion is { } command
+            ? $" For an editable document, run '{command}' instead."
+            : string.Empty;
 
     /// <summary>
     /// Converts the opened document itself, which this command never saves back, so the

@@ -697,9 +697,13 @@ public partial class StandardInvocation
     /// from one (the variable's name is not a secret). The product appends its own options. A
     /// password given literally or on stdin is not repeated, so the caller supplies it again.
     /// </summary>
-    public ContinuationCommand Continuation()
+    public ContinuationCommand Continuation() => ContinuationAt(CommandPath());
+
+    // The command of a path for this invocation's input, with the input password's environment
+    // variable when it came from one, as Continuation() repeats it.
+    private ContinuationCommand ContinuationAt(string[] path)
     {
-        ContinuationCommand next = new ContinuationCommand(CommandPath()).Argument(Input);
+        ContinuationCommand next = new ContinuationCommand(path).Argument(Input);
         if (_options.InputPassword is { } password && password.EnvironmentName(_parse) is { } variable)
         {
             next.Option(password.EnvironmentOption, variable);

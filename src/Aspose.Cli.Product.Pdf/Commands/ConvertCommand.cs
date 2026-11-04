@@ -29,6 +29,7 @@ internal static class ConvertCommand
                     Output = output,
                     Pages = pages.ReadRange(parse),
                     Password = standard.InputPassword,
+                    EditableConversion = standard.EditableConversion(),
                 };
             },
             Table)
