@@ -21,7 +21,7 @@ aspose-cli slides create qbr.pptx --from-markdown notes.md --template brand.pptx
 | Plain paragraph, `> quote` | Body paragraphs without bullets; a quote is wrapped in quotation marks |
 | `**strong**`, `*emphasis*`, `` `code` ``, a link | Bold, italic and monospace runs; a link keeps its text only |
 | Fenced code block | Body paragraphs in a monospace font |
-| Markdown image of a local file, with optional `"title"` after the path | Picture with the image's alternative text and title; with body text the slide uses Two Content |
+| Markdown image of a local file, with optional `"title"` after the path | Picture with the image's alternative text and title; with body text the slide uses Two Content, and a further picture starts a continuation slide (see [Tables](#tables)) |
 | Pipe table: header row, delimiter row (`\|---\|:-:\|--:\|`), body rows | Table with a header row; see [Tables](#tables) |
 | `---` | Starts a new section at the next slide |
 
@@ -57,10 +57,10 @@ Deals by stage
   needs, so short labels and numbers stay on one line, and the widest columns
   share what is left. For another arrangement, such as text beside the table,
   move the body and the table afterwards with `set_shape_bounds`.
-- A slide holds one picture or table. A further table, or a picture after a
-  table, starts a continuation slide with the same title, which also takes the
-  content that follows. A title slide's subtitle holds text only, so a table or
-  picture under `# Title` starts such a continuation slide too.
+- A slide holds one picture or table. A further picture or table starts a
+  continuation slide with the same title, which also takes the content that
+  follows. A title slide's subtitle holds text only, so a table or picture under
+  `# Title` starts such a continuation slide too.
 - The first row is the table's header row, styled by the template. Colons in
   the delimiter row align a column left, center or right; without them the
   table style decides.

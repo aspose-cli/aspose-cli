@@ -141,24 +141,13 @@ internal static partial class SlidesMarkdownBuilder
             string trimmed = line.Trim();
             if (ReadTable(lines, ref index, current.Title) is { } table)
             {
-                // A slide holds one picture or table; another table continues on a new slide.
-                // A title slide's subtitle holds text only, so its table continues too.
-                if (current.HasObject || current.TitleSlide)
-                {
-                    current = Continue(slides, current);
-                }
-
+                current = ForObject(slides, current);
                 current.Table = table;
             }
             else if (ImagePattern().Match(trimmed) is { Success: true } image)
             {
-                // A picture after a table, or under a title slide, continues on a new slide.
-                if (current.Table is not null || current.TitleSlide)
-                {
-                    current = Continue(slides, current);
-                }
-
-                current.Image ??= new MarkdownImage(
+                current = ForObject(slides, current);
+                current.Image = new MarkdownImage(
                     image.Groups["path"].Value,
                     SlidesShapeText.EmptyToNull(image.Groups["alt"].Value),
                     SlidesShapeText.EmptyToNull(image.Groups["title"].Value));
@@ -243,6 +232,14 @@ internal static partial class SlidesMarkdownBuilder
         slides.Add(value);
         return value;
     }
+
+    /// <summary>
+    /// The slide that takes the next picture or table. A slide holds one picture or table, so
+    /// another one continues on a new slide; a title slide's subtitle holds text only, so its
+    /// picture or table continues too.
+    /// </summary>
+    private static MarkdownSlide ForObject(List<MarkdownSlide> slides, MarkdownSlide slide) =>
+        slide.HasObject || slide.TitleSlide ? Continue(slides, slide) : slide;
 
     private static MarkdownSlide Continue(List<MarkdownSlide> slides, MarkdownSlide slide)
     {
