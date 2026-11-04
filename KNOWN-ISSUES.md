@@ -494,6 +494,28 @@ Reproductions: [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownI
 - **Workaround:** set `"compressStreams": false`, or put `decrypt_document` before
   `optimize_document` and `encrypt_document` after it (or pass `--encrypt-env`).
 
+### PDF-FORM-RECURSION-CRASH
+
+- **Defect:** reading the text of a page (`TextAbsorber`) whose Form XObject draws itself
+  recurses until the stack overflows, which ends the process at once with exit code `0xC00000FD`
+  and no exception that code could catch. Rendering the same page with `PngDevice` completes.
+- **CLI behavior:** a command that reads the text of such a page ends the same way, and so does
+  every command whose evaluation-notice check reaches it: licensed or not, that check reads the
+  text of up to four pages of every document a PDF command writes or renders. `pdf read`,
+  `pdf edit`, `pdf convert`, `pdf render` and `review` are among them. Without `--timeout` the
+  command runs in the CLI's own process: it exits with `0xC00000FD`, with nothing on stdout and
+  the runtime's `Stack overflow.` and stack trace on stderr. An output published before the check
+  stays, as `pdf render`'s image does; one only staged, as the outputs of `pdf edit`,
+  `pdf convert` and `review` are, is not published, but its `.aspose-publication-*` staging stays
+  in the output's directory until the next command that writes there removes it. With
+  `--timeout`, and for every command the MCP server runs, the command runs in a worker process:
+  a worker that ends with an exit code the CLI does not use has its output withheld and its
+  staging removed, and the command reports `INTERNAL_ERROR` (exit 1) with the worker's exit code
+  in its message.
+- **Workaround:** pass `--timeout` so that such a document fails with `INTERNAL_ERROR` and leaves
+  no output; its text cannot be read until the application that made it saves it without the
+  form that draws itself.
+
 ## Aspose.Slides.NET6.CrossPlatform 26.9.0
 
 Reproductions: [SlidesKnownIssueTests](tests/Aspose.Cli.Product.Slides.Tests/SlidesKnownIssueTests.cs),

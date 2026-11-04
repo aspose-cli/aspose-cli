@@ -54,6 +54,12 @@ Branch on the exit code first, then on the code in the envelope:
   work stops, nothing is published, its staging is removed and no error is
   written. A second Ctrl+C ends the process at once; the next command that
   writes into the same directory removes the staging it left.
+- An exit code the CLI never uses (it uses 0 to 9 and 130), such as
+  -1073741571 (`0xC00000FD`): the runtime ended the process, as a stack
+  overflow in a document engine does. No error envelope is written, and what
+  the command wrote before can remain. Run it with `--timeout` so that it runs
+  in a worker, which then publishes nothing and reports `INTERNAL_ERROR`
+  (exit 1) with the worker's exit code.
 - Any other non-zero exit comes with an error envelope; its code's category
   and exit code are listed in `capabilities`. Usage errors (exit 2) are fixed
   on the command line, input errors (exit 3) in the input file or its
