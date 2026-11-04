@@ -39,6 +39,21 @@ public sealed class TextTableLayoutTests : IDisposable
     }
 
     [Fact]
+    public void Detect_FindsTheHeaderAfterANoteRowOfALabelAndANumberAndAnEmptyRow()
+    {
+        // A supplier statement: a title, then "record count" and its number in two cells, an empty row, then the header.
+        TextTableFinding finding = Assert.Single(TextTableLayout.Detect(
+        [
+            new TextRowShape(0, 1, "供应商对账单"), new TextRowShape(1, 2, "记录数", 1), new TextRowShape(2, 0, null),
+            new TextRowShape(3, 6, "供应商编码"), new TextRowShape(4, 6, "S001", 2), new TextRowShape(5, 6, "S002", 2),
+        ], []));
+
+        Assert.Equal(TextTableFindingKind.Preamble, finding.Kind);
+        Assert.Equal(3, finding.HeaderRow);
+        Assert.Equal([0, 1, 2], finding.Rows);
+    }
+
+    [Fact]
     public void Detect_KeepsAHeaderWhoseBlockAfterAnEmptyRowStartsWithNumbers()
     {
         TextTableFinding finding = Assert.Single(TextTableLayout.Detect(
@@ -254,6 +269,102 @@ public sealed class TextTableLayoutTests : IDisposable
         Assert.Equal("row/preamble!1:3", Text(warning, "location"));
     }
 
+    /// <summary>
+    /// A supplier statement with a title, an "export time, date" row of two cells and an empty row
+    /// above its header: every warning counts from the header in row 4, and the empty row above it
+    /// is not inside the table.
+    /// </summary>
+    [Fact]
+    public void Convert_CountsTheTableFromTheHeaderBelowATitleAndAnExportTimeRow()
+    {
+        File.WriteAllText(_workspace.File("supplier-export.csv"), "供应商对账单,,,,,\n导出时间,2026-10-31,,,,\n,,,,,\n" + SupplierTable,
+            new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
+
+        JsonNode[] warnings = LayoutWarnings(_workspace.Run(
+            "cells", "convert", "supplier-export.csv", "--to", "xlsx", "--out", "supplier-export.xlsx", "--output-format", "json").Json());
+
+        Assert.Equal(3, warnings.Length);
+        Assert.Contains("header is probably row 4; rows 1-3", Text(warnings[0], "message"), StringComparison.Ordinal);
+        Assert.Contains("--range A4:F4' and start data ranges, formulas and sorts at row 5,", Text(warnings[0], "hint"), StringComparison.Ordinal);
+        Assert.Equal("row/supplier-export!1:3", Text(warnings[0], "location"));
+        Assert.StartsWith("2 rows (7, 10) are empty inside the table", Text(warnings[1], "message"), StringComparison.Ordinal);
+        Assert.Contains("(A4:F12)", Text(warnings[1], "hint"), StringComparison.Ordinal);
+        Assert.Equal("row/supplier-export!7,10", Text(warnings[1], "location"));
+        Assert.Contains("Row 14 is a total row ('合计')", Text(warnings[2], "message"), StringComparison.Ordinal);
+        Assert.Contains("End data ranges at row 12, for example =SUM(C5:C12) for column C", Text(warnings[2], "hint"), StringComparison.Ordinal);
+        Assert.Equal("row/supplier-export!14", Text(warnings[2], "location"));
+        // The hinted range reads the header of the converted workbook.
+        JsonNode header = _workspace.Run(
+            "cells", "read", "supplier-export.xlsx", "--sheet", "supplier-export", "--range", "A4:F4", "--output-format", "json").Json();
+        Assert.Equal("供应商编码", header["sheet"]!["cells"]![0]![0]!["v"]!.GetValue<string>());
+    }
+
+    /// <summary>
+    /// The same table with its header in row 1 has no header warning, and with one title row
+    /// above it the header is row 2.
+    /// </summary>
+    [Theory]
+    [InlineData("", 0)]
+    [InlineData("供应商对账单,,,,,\n", 2)]
+    public void Convert_KeepsTheHeaderOfATableWithoutAnExportRow(string preamble, int headerRow)
+    {
+        File.WriteAllText(_workspace.File("supplier.csv"), preamble + SupplierTable, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
+
+        JsonNode[] warnings = LayoutWarnings(_workspace.Run(
+            "cells", "convert", "supplier.csv", "--to", "xlsx", "--out", "supplier.xlsx", "--output-format", "json").Json());
+
+        string[] headers = [.. warnings.Select(static warning => Text(warning, "message"))
+            .Where(static message => message.Contains("header is probably", StringComparison.Ordinal))];
+        if (headerRow == 0)
+        {
+            Assert.Empty(headers);
+            return;
+        }
+
+        Assert.Contains($"header is probably row {headerRow}; row 1 looks", Assert.Single(headers), StringComparison.Ordinal);
+        Assert.Contains(warnings, warning => Text(warning, "hint").Contains(
+            $"--range A{headerRow}:F{headerRow}' and start data ranges, formulas and sorts at row {headerRow + 1},", StringComparison.Ordinal));
+    }
+
+    /// <summary>
+    /// An "export time, date" row is a note wherever it stands: after a title and an empty row,
+    /// or first in the file, the header is the full row after the empty row below it.
+    /// </summary>
+    [Theory]
+    [InlineData("供应商对账单,,,,,\n,,,,,\n导出时间,2026-10-31,,,,\n,,,,,\n", 5)]
+    [InlineData("导出时间,2026-10-31,,,,\n,,,,,\n", 3)]
+    public void Convert_FindsTheHeaderAfterAnExportTimeRowWithNoTitleRightAboveIt(string preamble, int headerRow)
+    {
+        File.WriteAllText(_workspace.File("supplier.csv"), preamble + SupplierTable, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
+
+        JsonNode[] warnings = LayoutWarnings(_workspace.Run(
+            "cells", "convert", "supplier.csv", "--to", "xlsx", "--out", "supplier.xlsx", "--output-format", "json").Json());
+
+        Assert.Equal(3, warnings.Length);
+        Assert.Contains($"header is probably row {headerRow}; rows 1-{headerRow - 1}", Text(warnings[0], "message"), StringComparison.Ordinal);
+        Assert.Contains($"--range A{headerRow}:F{headerRow}' and start data ranges, formulas and sorts at row {headerRow + 1},",
+            Text(warnings[0], "hint"), StringComparison.Ordinal);
+        Assert.Contains($"(A{headerRow}:F{headerRow + 8})", Text(warnings[1], "hint"), StringComparison.Ordinal);
+        Assert.Contains($"=SUM(C{headerRow + 1}:C{headerRow + 8})", Text(warnings[2], "hint"), StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// A header of labels only that is narrower than its data rows stays the header below a title
+    /// when an empty row follows it, even though the data rows are wider and hold only text.
+    /// </summary>
+    [Fact]
+    public void Inspect_KeepsANarrowHeaderOfLabelsBelowATitleWhenAnEmptyRowFollowsIt()
+    {
+        File.WriteAllText(_workspace.File("staff.csv"),
+            "Staff,,,,\nName,Dept,,,\n,,,,\nAnn,Sales,Rome,Remote,Full\nBob,Ops,Oslo,Office,Part\n");
+
+        JsonNode[] warnings = LayoutWarnings(_workspace.Run("cells", "inspect", "staff.csv", "--output-format", "json").Json());
+
+        JsonNode header = Assert.Single(warnings, static warning => Text(warning, "message").Contains("header is probably", StringComparison.Ordinal));
+        Assert.Contains("header is probably row 2; row 1 looks", Text(header, "message"), StringComparison.Ordinal);
+        Assert.Contains("--range A2:E2'", Text(header, "hint"), StringComparison.Ordinal);
+    }
+
     [Fact]
     public void Inspect_ReportsNoLayoutWarningForAPlainCsv()
     {
@@ -269,6 +380,20 @@ public sealed class TextTableLayoutTests : IDisposable
 
         Assert.Empty(LayoutWarnings(_workspace.Run("cells", "inspect", "unnamed.csv", "--output-format", "json").Json()));
     }
+
+    // A supplier table of six columns with empty rows inside it and a total row after an empty row.
+    private const string SupplierTable =
+        "供应商编码,供应商名称,采购金额,付款金额,信用额度,余额\n"
+        + "S001,深圳市鑫联电子有限公司,\"1,250,300.50\",\"1,100,000.00\",\"2,000,000\",150300.50\n"
+        + "S002,上海恒泰精密机械,\"845,120.00\",\"845,120.00\",\"1,200,000\",0\n"
+        + ",,,,,\n"
+        + "S003,苏州瑞达包装材料,\"312,980.75\",\"250,000.00\",\"500,000\",\"62,980.75\"\n"
+        + "S004,广州海川贸易有限公司,\"2,108,450.00\",\"1,900,000.00\",\"2,500,000\",\"208,450.00\"\n"
+        + ",,,,,\n"
+        + "S005,杭州云岚纺织,\"47,600.00\",\"30,000.00\",\"300,000\",\"17,600.00\"\n"
+        + "S006,成都天府塑胶制品,\"589,200.25\",\"400,000.00\",\"800,000\",\"189,200.25\"\n"
+        + ",,,,,\n"
+        + "合计,,\"5,153,651.50\",\"4,525,120.00\",,\"628,531.50\"\n";
 
     public void Dispose() => _workspace.Dispose();
 
