@@ -81,6 +81,13 @@ comments a deck already has.
   with `--verify`, which compares how often the find text and the replacement occur in the
   output with what the operation did. In evaluation mode a paragraph that evaluation mode cut
   short is left as it is, and the result warns `EVALUATION_INPUT_TRUNCATED`.
+- `replace_text` does not change charts, neither their titles nor their data. With scope
+  `shapes` or `all`, a chart placed directly on a slide whose title matches stays as it was, and
+  the edit warns `CHART_TITLE_NOT_REPLACED` with the chart's `location`, such as
+  `slide/2/shape/5`; a chart inside a group is not checked and gets no warning. To change
+  the title, rebuild the chart: read its kind, categories and series with `slides read --content
+  full`, `delete_shape` it, then `insert_chart` the same data with the new `title` at its `rect`;
+  the new chart takes the automatic chart style. `set_chart_data` changes a chart's data.
 - `set_notes` replaces speaker-note text. `inspect --detail notes` reports only presence and
   character counts; read note text with `slides read --notes` or `extract --what notes`.
 - `set_footer` uses the layout's own footer, number and date placeholders; their position and
@@ -134,6 +141,7 @@ master or layout art); each item keeps its presentation-wide `index`.
   `set_slide_hidden`, or leave them out of what you report as the deck.
 - An ODP output turns native charts into pictures and drops slide transitions and sections, and
   warns `LOSSY_CONVERSION` (SLIDES-ODP-NATIVE-CONTENT); keep the PPTX for further edits.
-- A PDF or other export holds the slides alone, with no handout or notes-page layout, so
-  speaker notes are not in it; read them with `slides read --notes` or
-  `slides extract --what notes`.
+- A PDF or other export (XPS, HTML, HTML5, Markdown, TIFF, GIF) holds the slides alone, with no
+  handout or notes-page layout, so speaker notes are not in it: a `convert` to one warns
+  `LOSSY_CONVERSION` with the numbers of the converted slides that have notes. PPT, PPTX, PPTM
+  and ODP keep the notes. Read them with `slides read --notes` or `slides extract --what notes`.

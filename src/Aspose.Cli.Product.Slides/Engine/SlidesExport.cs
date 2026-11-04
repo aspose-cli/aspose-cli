@@ -37,7 +37,7 @@ internal static partial class SlidesExport
 
         IReadOnlyList<int>? selection = skipped.Length == 0 ? slides : [.. AllSlides(presentation.Slides.Count).Except(skipped)];
         IReadOnlyList<SlidesConvertOutput> outputs = ConvertOutputs(session, loaded, request, selection);
-        List<Warning> warnings = BuildConvertWarnings(loaded, formatId, skipped);
+        List<Warning> warnings = BuildConvertWarnings(loaded, formatId, skipped, selection ?? AllSlides(presentation.Slides.Count));
         return new SlidesConvertResult
         {
             Input = Source(request.Input, loaded),
@@ -257,7 +257,8 @@ internal static partial class SlidesExport
     private static List<Warning> BuildConvertWarnings(
         LoadedPresentation loaded,
         string targetFormatId,
-        IReadOnlyList<int> skipped)
+        IReadOnlyList<int> skipped,
+        IReadOnlyList<int> shown)
     {
         var warnings = WrittenWarnings(loaded)?.ToList() ?? [];
         if (skipped.Count > 0)
@@ -267,6 +268,20 @@ internal static partial class SlidesExport
                 $"The {targetFormatId} output leaves out the hidden slide(s) {numbers}, as a slide show and PowerPoint's export do.")
             {
                 Hint = $"To include them, name every slide to convert with --slides, such as --slides 1-{loaded.Presentation.Slides.Count}; a selected hidden slide is converted.",
+            });
+        }
+
+        // An export holds the slides alone, with no notes pages, so the speaker notes of the
+        // slides it shows are not in it; a presentation format keeps them.
+        int[] noted = Exports(SlidesEngineFormats.SaveFormatOf(targetFormatId))
+            ? [.. shown.Where(number => Notes(loaded.Presentation.Slides[number - 1]) is not null)]
+            : [];
+        if (noted.Length > 0)
+        {
+            warnings.Add(new Warning(WarningCodes.LossyConversion,
+                $"The {targetFormatId} output does not include the speaker notes of slide(s) {string.Join(", ", noted)}: an export holds the slides alone.")
+            {
+                Hint = $"Read the notes with 'slides read --slides {string.Join(",", noted)} --notes'; a pptx output keeps them.",
             });
         }
 
