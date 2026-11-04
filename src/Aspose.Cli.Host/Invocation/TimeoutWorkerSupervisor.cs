@@ -74,7 +74,9 @@ internal static class TimeoutWorkerSupervisor
 
     /// <summary>
     /// Runs owned preparation against the caller's existing absolute deadline. The worker runs
-    /// through <see cref="ChildProcess.RunAsync"/> unless a test passes another runner.
+    /// through <see cref="ChildProcess.RunAsync"/> unless a test passes another runner. A worker
+    /// that ends with an exit code this CLI never uses crashed before it reported: its output is
+    /// not published, and the result is an internal error instead of what the worker printed.
     /// </summary>
     internal static async Task<InvocationProcessResult> ExecuteAsync(
         HostContext host, string[] args, ParsedInvocation invocation, OperationDeadline deadline,
@@ -132,6 +134,15 @@ internal static class TimeoutWorkerSupervisor
             }
             deadline.ThrowIfExpired("worker-exited");
             int exitCode = child.ExitCode;
+            if (!Enum.IsDefined((ExitCode)exitCode))
+            {
+                // The runtime ended the worker, as a stack overflow in an engine does
+                // (PDF-FORM-RECURSION-CRASH); what it printed is the runtime's, never a result.
+                return RenderError(host, args, CliErrors.Internal(
+                    $"The worker process ended with exit code 0x{exitCode:X8} before it reported a result, so no output was published.",
+                    "If this input ends the worker every time, it may trigger a defect in the document engine: "
+                    + "ask its source for a re-exported copy of the file, and report the command you ran."));
+            }
             if (exitCode is (int)ExitCode.Success or (int)ExitCode.PartialFailure && File.Exists(manifest))
             {
                 // This is the only final publisher. Recovery runs here even when the deadline expires.

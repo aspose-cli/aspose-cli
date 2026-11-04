@@ -817,6 +817,44 @@ public sealed class PdfKnownIssueTests
             $"saved at the same time, {together.Count(static stamped => !stamped)} of {together.Count} outputs have no ModDate");
     }
 
+    private const string FormRecursionVariable = "ASPOSE_CLI_TEST_FORM_RECURSION_PDF";
+
+    /// <summary>
+    /// The overflow ends the process that reads the text, so this test reads it in a new test
+    /// process, which runs this test again with the input in <see cref="FormRecursionVariable"/>.
+    /// </summary>
+    [LicensedFact]
+    public void TextOfAFormXObjectThatDrawsItself_OverflowsTheStack()
+    {
+        if (Environment.GetEnvironmentVariable(FormRecursionVariable) is { } recursive)
+        {
+            _ = TestLicense.Apply(PdfActivation.ApplyLicense);
+            using var opened = new Document(recursive);
+            opened.Pages[1].Accept(new Aspose.Pdf.Text.TextAbsorber());
+            return;
+        }
+
+        using var temp = new TempDirectory();
+        string input = temp.File("recursive-form.pdf");
+        PdfEngineFixture.WriteRawPdf(input,
+        [
+            "<< /Type /Catalog /Pages 2 0 R >>",
+            "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+            "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 200 200] /Resources << /XObject << /X0 5 0 R >> >> /Contents 4 0 R >>",
+            "<< /Length 10 >>\nstream\nq /X0 Do Q\nendstream",
+            "<< /Type /XObject /Subtype /Form /BBox [0 0 200 200] /Resources << /XObject << /X0 5 0 R >> >> /Length 22 >>\nstream\n0 0 m 10 10 l S /X0 Do\nendstream",
+        ]);
+
+        (int exitCode, string output) = TestProcess.RunAlone(
+            typeof(PdfKnownIssueTests), nameof(TextOfAFormXObjectThatDrawsItself_OverflowsTheStack), FormRecursionVariable, input);
+
+        const int StackOverflow = unchecked((int)0xC00000FD);
+        KnownIssue.Reproduces(
+            "PDF-FORM-RECURSION-CRASH",
+            exitCode == StackOverflow,
+            $"reading the text ended its process with exit code 0x{exitCode:X8}: {output[..Math.Min(output.Length, 2000)]}");
+    }
+
     /// <summary>One page and two bookmarks: one omits every coordinate, one names 0.</summary>
     private static void WriteDestinationDocument(string path)
     {

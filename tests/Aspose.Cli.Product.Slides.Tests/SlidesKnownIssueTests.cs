@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.IO.Compression;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
@@ -187,7 +186,8 @@ public sealed class SlidesKnownIssueTests
         if (hive is null)
         {
             using var directory = new TempDirectory();
-            (int exitCode, string output) = RunThisTestAlone(directory.File("current-user.hive"));
+            (int exitCode, string output) = TestProcess.RunAlone(typeof(SlidesKnownIssueTests),
+                nameof(FontInitialization_BreaksOnARegistryValueThatIsNotAString), FontRegistryHiveVariable, directory.File("current-user.hive"));
             Assert.True(
                 exitCode == 0 && output.Contains("Total: 1, Errors: 0, Failed: 0, Skipped: 0,", StringComparison.Ordinal),
                 output);
@@ -270,25 +270,6 @@ public sealed class SlidesKnownIssueTests
         Assert.Equal(ErrorCodes.FeatureUnsupported, refused.Code);
         Assert.Contains("'Other software'", refused.Message, StringComparison.Ordinal);
         Assert.DoesNotContain("Readable", refused.Message, StringComparison.Ordinal);
-    }
-
-    /// <summary>Runs <see cref="FontInitialization_BreaksOnARegistryValueThatIsNotAString"/> in a new test process.</summary>
-    private static (int ExitCode, string Output) RunThisTestAlone(string hive)
-    {
-        var start = new ProcessStartInfo(Path.ChangeExtension(typeof(SlidesKnownIssueTests).Assembly.Location, ".exe"))
-        {
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-            UseShellExecute = false,
-        };
-        start.ArgumentList.Add("-method");
-        start.ArgumentList.Add($"{typeof(SlidesKnownIssueTests).FullName}.{nameof(FontInitialization_BreaksOnARegistryValueThatIsNotAString)}");
-        start.Environment[FontRegistryHiveVariable] = hive;
-        using Process process = Process.Start(start)!;
-        Task<string> error = process.StandardError.ReadToEndAsync();
-        string output = process.StandardOutput.ReadToEnd();
-        Assert.True(process.WaitForExit(TimeSpan.FromMinutes(2)), "The font registry test process did not exit.");
-        return (process.ExitCode, output + error.GetAwaiter().GetResult());
     }
 
     /// <summary>A Fonts key in a new application hive file, which never touches the user's registry.</summary>
