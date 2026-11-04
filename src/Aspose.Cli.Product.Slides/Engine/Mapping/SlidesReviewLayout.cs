@@ -1,4 +1,8 @@
+using System.Globalization;
+using System.Security.Cryptography;
+using System.Text;
 using Aspose.Slides;
+using Aspose.Slides.Charts;
 using static Aspose.Cli.Product.Slides.Engine.Mapping.SlidesStateProjection;
 using static Aspose.Cli.Product.Slides.Engine.SlidesEvaluationMarks;
 using static Aspose.Cli.Product.Slides.Engine.SlidesShapeText;
@@ -47,8 +51,55 @@ internal static class SlidesReviewLayout
             TextAutofits = SlidesReviewProjection.TextAutofits(shape),
             Backdrop = SlidesReviewProjection.Backdrop(slide, shape),
             ChartTextColor = SlidesReviewProjection.ChartTextColor(shape),
+            Content = Content(shape),
             EvaluationWatermark = IsEvaluationWatermark(shape),
         };
+    }
+
+    /// <summary>
+    /// A digest of what a picture or chart shows besides text: the picture's bytes, or the chart's
+    /// type, title, categories and series, each series with its name and every point's stored x
+    /// value, y value, value and bubble size, whichever its chart type has; null for any other shape.
+    /// </summary>
+    private static string? Content(IShape shape)
+    {
+        switch (shape)
+        {
+            case IPictureFrame { PictureFormat.Picture.Image: { } image }:
+                return "image|" + Digest(image.BinaryData);
+            case IChart chart:
+                var value = new StringBuilder();
+                Append(value, [chart.Type.ToString(), chart.HasTitle ? Text(chart.ChartTitle?.TextFrameForOverriding?.Text) : string.Empty]);
+                Append(value, chart.ChartData.Categories.Select(static category => Text(category.Value)));
+                foreach (IChartSeries series in chart.ChartData.Series)
+                {
+                    Append(value, [Text(series.Name)]);
+                    Append(value, series.DataPoints.SelectMany(static point => new[]
+                    {
+                        Text(point.XValue?.Data), Text(point.YValue?.Data), Text(point.Value?.Data), Text(point.BubbleSize?.Data),
+                    }));
+                }
+
+                return "chart|" + Digest(Encoding.UTF8.GetBytes(value.ToString()));
+            default:
+                return null;
+        }
+
+        // A list is prefixed with its count and each of its fields with its length, so no text
+        // in one field can shift the next.
+        static void Append(StringBuilder value, IEnumerable<string> fields)
+        {
+            string[] all = [.. fields];
+            value.Append(all.Length).Append('[');
+            foreach (string field in all)
+            {
+                value.Append(field.Length).Append(':').Append(field);
+            }
+        }
+
+        static string Text(object? data) => Convert.ToString(data, CultureInfo.InvariantCulture) ?? string.Empty;
+
+        static string Digest(byte[] bytes) => Convert.ToHexStringLower(SHA256.HashData(bytes));
     }
 
     /// <summary>
@@ -148,6 +199,12 @@ internal sealed record SlidesReviewShape
 
     /// <summary>The color a chart states for its text; null when the chart style decides it.</summary>
     public System.Drawing.Color? ChartTextColor { get; init; }
+
+    /// <summary>
+    /// A digest of what a picture or chart shows besides text, which tells apart two of them of one
+    /// kind and frame; null for any other shape.
+    /// </summary>
+    public string? Content { get; init; }
 
     /// <summary>Whether the shape is the watermark text box an evaluation save added.</summary>
     public bool EvaluationWatermark { get; init; }
