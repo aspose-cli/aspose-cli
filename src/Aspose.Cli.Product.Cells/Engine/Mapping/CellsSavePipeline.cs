@@ -28,24 +28,27 @@ internal sealed class CellsSavePipeline(OutputPipeline<Workbook> outputs)
 
     /// <summary>
     /// Writes the workbook (<see cref="Produce"/>) and names what the target format's limits
-    /// lost: the data beyond its grid, the formulas that became <c>#REF!</c> and the sheets it
-    /// cannot hold.
+    /// lost: the data beyond its grid, the formulas that became <c>#REF!</c>, the sheets it
+    /// cannot hold and the drawings of a text table, which it leaves out
+    /// (<see cref="WorkbookSavePlan.DropDrawings"/>). Convert, create and edit save their
+    /// workbook output through it.
     /// </summary>
     internal WorkbookSaveLoss ProduceReporting(Workbook workbook, WorkbookSavePlan plan, string path)
     {
         Warning? truncated = DetectGridTruncation(workbook, plan.Format);
         Warning? sheetsDropped = plan.DetectSheetLoss(workbook);
+        Warning? drawingsDropped = plan.DropDrawings(workbook);
         int refsBefore = CountRefFormulas(workbook);
         Produce(workbook, plan, path);
         return new WorkbookSaveLoss(truncated,
-            BuildBrokenFormulaWarning(refsBefore, CountRefFormulas(workbook), plan.FormatId), sheetsDropped);
+            BuildBrokenFormulaWarning(refsBefore, CountRefFormulas(workbook), plan.FormatId), sheetsDropped, drawingsDropped);
     }
 
     /// <summary>
     /// Writes the workbook. An evaluation save adds its warning sheet to the in-memory workbook
     /// too and activates it, which the write pipeline reports (<see cref="CellsEvaluationProfile"/>).
     /// </summary>
-    internal void Produce(Workbook workbook, WorkbookSavePlan plan, string path)
+    private static void Produce(Workbook workbook, WorkbookSavePlan plan, string path)
     {
         if (plan.WritesActiveSheetOnly)
         { NormalizeDatesForTextExport(plan.TextSheet(workbook)); }
@@ -65,7 +68,7 @@ internal sealed class CellsSavePipeline(OutputPipeline<Workbook> outputs)
         Action<string> save) =>
         _outputs.Write(output.Path, output.Format, output.Overwrite, singleSheet ? null : workbook, save, encrypted: encrypted);
 
-    internal void NormalizeDatesForTextExport(Worksheet sheet)
+    private static void NormalizeDatesForTextExport(Worksheet sheet)
     {
         var dateCells = new List<Cell>();
         foreach (Cell cell in sheet.Cells)
@@ -81,7 +84,12 @@ internal sealed class CellsSavePipeline(OutputPipeline<Workbook> outputs)
         }
     }
 
-    internal Warning? DetectGridTruncation(
+    /// <summary>
+    /// Names the rows and columns a sheet loses beyond the target grid, such as the legacy xls
+    /// grid of 65,536 rows × 256 columns, whose save discards everything past it without a word.
+    /// It reads the in-memory used range before the save, as Excel warns when saving down to xls.
+    /// </summary>
+    private static Warning? DetectGridTruncation(
         Workbook workbook,
         SaveFormat saveFormat)
     {
@@ -126,7 +134,7 @@ internal sealed class CellsSavePipeline(OutputPipeline<Workbook> outputs)
         };
     }
 
-    internal int CountRefFormulas(Workbook workbook)
+    private static int CountRefFormulas(Workbook workbook)
     {
         int count = 0;
         foreach (Worksheet sheet in workbook.Worksheets)
@@ -143,7 +151,7 @@ internal sealed class CellsSavePipeline(OutputPipeline<Workbook> outputs)
         return count;
     }
 
-    internal Warning? BuildBrokenFormulaWarning(
+    private static Warning? BuildBrokenFormulaWarning(
         int refsBefore,
         int refsAfter,
         string formatId)
@@ -170,10 +178,11 @@ internal sealed class CellsSavePipeline(OutputPipeline<Workbook> outputs)
         };
 }
 
-/// <summary>What a save lost to its target format's limits, in the order a result reports it.</summary>
-internal sealed record WorkbookSaveLoss(Warning? Truncated, Warning? FormulasBroken, Warning? SheetsDropped)
+/// <summary>What a save lost to its target format's limits.</summary>
+internal sealed record WorkbookSaveLoss(Warning? Truncated, Warning? FormulasBroken, Warning? SheetsDropped, Warning? DrawingsDropped)
 {
-    internal Warning?[] Warnings => [Truncated, FormulasBroken, SheetsDropped];
+    /// <summary>The losses in the order create and edit report them.</summary>
+    internal Warning?[] Warnings => [Truncated, FormulasBroken, SheetsDropped, DrawingsDropped];
 }
 
 /// <summary>A published workbook and what its format's limits lost.</summary>

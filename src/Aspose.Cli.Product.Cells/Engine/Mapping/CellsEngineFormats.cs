@@ -25,12 +25,12 @@ internal static class CellsEngineFormats
         new("ods") { Detected = FileFormatType.Ods, Save = SaveFormat.Ods, KeepsSheetProtection = true, EvaluationMarks = CellsEvaluationMarkKind.Workbook },
         new("csv")
         {
-            Detected = FileFormatType.Csv, Save = SaveFormat.Csv, EvaluationMarks = CellsEvaluationMarkKind.DataRow,
+            Detected = FileFormatType.Csv, Save = SaveFormat.Csv, EvaluationMarks = CellsEvaluationMarkKind.DataRow, DropsDrawings = true,
             Options = static (byteOrderMark, _) => DelimitedText(SaveFormat.Csv, byteOrderMark),
         },
         new("tsv")
         {
-            Detected = FileFormatType.TabDelimited, Save = SaveFormat.TabDelimited, EvaluationMarks = CellsEvaluationMarkKind.DataRow,
+            Detected = FileFormatType.TabDelimited, Save = SaveFormat.TabDelimited, EvaluationMarks = CellsEvaluationMarkKind.DataRow, DropsDrawings = true,
             Options = static (byteOrderMark, _) => DelimitedText(SaveFormat.TabDelimited, byteOrderMark),
         },
         new("html")
@@ -141,9 +141,10 @@ internal sealed record CellsEngineFormat(string Id)
     public bool WritesRecords { get; init; }
 
     /// <summary>
-    /// Whether the output is a text table that leaves out the charts, pictures and other drawings of
-    /// the sheet, which the engine would otherwise write into its rows as embedded images (md);
-    /// the comments stay.
+    /// Whether the output is a text table of one sheet's cells (csv, tsv, md), which holds none of
+    /// the sheet's charts, pictures and other drawings. Every save to it leaves them out and says
+    /// how many (<see cref="WorkbookSavePlan.DropDrawings"/>), which also keeps the engine from
+    /// writing them into the rows of an md table as embedded images.
     /// </summary>
     public bool DropsDrawings { get; init; }
 

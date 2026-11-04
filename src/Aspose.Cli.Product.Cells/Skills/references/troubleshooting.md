@@ -46,17 +46,17 @@ with `--sheet`.
 ## Outputs that hold less than the workbook
 
 A format that holds one worksheet (csv, tsv, md) keeps one sheet and warns
-`SHEETS_DROPPED` with the sheet kept; select another with `--sheets`. A target
-grid smaller than the data, such as xls with 65,536 rows, warns
-`DATA_TRUNCATED`, and formulas that referenced the lost cells become `#REF!`
-with `FORMULAS_BROKEN`: save to xlsx, xlsb or ods instead.
+`SHEETS_DROPPED` with the sheet kept; select another with `--sheets`. It writes
+that sheet's cells as a table and leaves out its charts, pictures and other
+drawings, and warns `LOSSY_CONVERSION` with how many of each: convert to xlsx
+or pdf to keep them, or `cells render` an image of the sheet. A target grid
+smaller than the data, such as xls with 65,536 rows, warns `DATA_TRUNCATED`,
+and formulas that referenced the lost cells become `#REF!` with
+`FORMULAS_BROKEN`: save to xlsx, xlsb or ods instead.
 
 An md output writes each cell as the sheet shows it (`700,000`, `38.6%`),
 where csv and tsv write the stored value, so the table can go straight to
-`words create --from-markdown`. It keeps the sheet's comments but leaves out its
-charts, pictures and other drawings, and warns `LOSSY_CONVERSION` with how many
-of each: convert to xlsx or pdf to keep them, or `cells render` an image of
-the sheet.
+`words create --from-markdown`, and it keeps the sheet's comments.
 
 A PDF or XPS that prints a chart across two or more pages warns
 `CHART_SPLIT_ACROSS_PAGES` with each chart and its page count, and `review`

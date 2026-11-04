@@ -30,19 +30,11 @@ internal static class CellsConvert
         // format once the workbook is saved.
         InputInfo input = BuildSource(request.Input, loaded);
 
-        SaveFormat saveFormat = CellsEngineFormats.Save(request.Output.Format.Id);
         IReadOnlyList<Worksheet>? selected = request.Sheets is { } selection
             ? [.. Sheets.Selected(workbook, request.SheetsText, range: false,
                 () => selection.Resolve(workbook.Worksheets.Count, CellsDiagnostics.SheetNotFound, "sheet")).Distinct().Order().Select(position => workbook.Worksheets[position - 1])]
             : null;
         IReadOnlyList<int>? selectedSheets = null;
-
-        // A modern sheet can overflow the legacy xls grid (65,536 rows × 256
-        // columns); the engine's save then silently discards everything past it.
-        // Detect it off the in-memory used range BEFORE saving so the warning
-        // names the exact rows/columns that would be lost — never silent, as the
-        // contract demands and as Excel itself warns when saving down to xls.
-        Warning? dataTruncated = saver.DetectGridTruncation(workbook, saveFormat);
 
         if (selected is not null)
         {
@@ -96,7 +88,6 @@ internal static class CellsConvert
         Warning? chartsSplit = CellsEngineFormats.IsPaginated(request.Output.Format.Id)
             ? PrintedPages.SplitChartsWarning(workbook, request.Output.Format.Id, selectedSheets)
             : null;
-        int refsBefore = saver.CountRefFormulas(workbook);
         WorkbookSavePlan savePlan = WorkbookSavePlan.Create(request.Output.Format, licenseState,
             OutputProtection.For(request.Output.Format, request.EncryptPassword, loaded.Protection, request.Password),
             selectedSheets, request.ByteOrderMark);
@@ -106,14 +97,10 @@ internal static class CellsConvert
         }
 
         loaded.RestoreActiveSheet(savePlan);
-        Warning? sheetsDropped = savePlan.DetectSheetLoss(workbook);
-        Warning? drawingsDropped = savePlan.DropDrawings(workbook);
+        WorkbookSaveLoss? loss = null;
         PublishedFile written = saver.Write(request.Output, workbook, singleSheet: selectedSheets is not null,
-            savePlan.Encrypts, path => saver.Produce(workbook, savePlan, path));
-        Warning? formulasBroken = saver.BuildBrokenFormulaWarning(
-            refsBefore,
-            saver.CountRefFormulas(workbook),
-            request.Output.Format.Id);
+            savePlan.Encrypts, path => loss = saver.ProduceReporting(workbook, savePlan, path));
+        WorkbookSaveLoss lost = loss!;
 
         return new CellsConvertResult
         {
@@ -127,7 +114,7 @@ internal static class CellsConvert
                 loaded.SkippedSheetWarning(selected is null && savePlan.WritesActiveSheetOnly, licenseState == LicenseState.Evaluation
                     // The evaluation SDK writes only the first sheet to a text format.
                     ? $"Evaluation mode exports only the first sheet to {request.Output.Format.Id}; converting another sheet needs an Aspose.Cells license, then --sheets with the sheet's position from inspect."
-                    : "Pass --sheets with the sheet's position from inspect to convert another sheet."), sheetsDropped, drawingsDropped, headerOnlySkipped, dataTruncated, formulasBroken, chartsSplit,
+                    : "Pass --sheets with the sheet's position from inspect to convert another sheet."), lost.SheetsDropped, lost.DrawingsDropped, headerOnlySkipped, lost.Truncated, lost.FormulasBroken, chartsSplit,
                 .. textLayout]),
         };
     }
