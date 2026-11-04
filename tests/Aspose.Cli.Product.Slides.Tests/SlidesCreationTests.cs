@@ -324,6 +324,74 @@ public sealed class SlidesCreationTests
     }
 
     [Fact]
+    public void Markdown_EachFurtherPictureContinuesOnASlideWithTheSameTitle()
+    {
+        using var fixture = new SlidesEngineFixture();
+        File.WriteAllBytes(fixture.File("first.png"), SlidesEngineFixture.Png(40));
+        File.WriteAllBytes(fixture.File("second.png"), SlidesEngineFixture.Png(41));
+        File.WriteAllBytes(fixture.File("third.png"), SlidesEngineFixture.Png(42));
+        string markdown = fixture.File("pictures.md");
+        File.WriteAllText(markdown, "## S\n![First](first.png)\n![Second](second.png)\n![Third](third.png)\nDone\n");
+        string output = fixture.File("pictures.pptx");
+
+        SlidesCreateResult result = SlidesCreate.Run(fixture.Session, new SlidesCreateRequest { Output = TestOutput.At(output), Markdown = new SourceFile("--from-markdown", markdown) });
+
+        // A slide holds one picture, so each further one continues on a slide with the same title,
+        // and the last continuation also takes the text that follows.
+        Assert.DoesNotContain(result.Warnings ?? [], static warning => warning.Code == WarningCodes.RemoteResourcesBlocked);
+        using var deck = new Presentation(output);
+        Assert.Equal(
+            ["Title and Content", "Title and Content", "Two Content"],
+            deck.Slides.Select(static slide => slide.LayoutSlide.Name));
+        Assert.Equal(["S", "S", "S"], deck.Slides.Select(static slide => SlidesPlaceholders.Title(slide)!.TextFrame.Text));
+        Assert.Equal(
+            ["First", "Second", "Third"],
+            deck.Slides.Select(static slide => Assert.Single(slide.Shapes.OfType<IPictureFrame>()).AlternativeText));
+        IAutoShape body = deck.Slides[2].Shapes.OfType<IAutoShape>().Single(static shape => shape.Name == "Body");
+        Assert.StartsWith("Done", body.TextFrame.Text, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Markdown_AFurtherPictureThatIsMissing_IsNamedWhileTheFirstIsPlaced()
+    {
+        using var fixture = new SlidesEngineFixture();
+        File.WriteAllBytes(fixture.File("present.png"), SlidesEngineFixture.Png(40));
+        string markdown = fixture.File("missing.md");
+        File.WriteAllText(markdown, "## S\n![Present](present.png)\n![Missing](images/missing.png)\n");
+        string output = fixture.File("missing.pptx");
+
+        SlidesCreateResult result = SlidesCreate.Run(fixture.Session, new SlidesCreateRequest { Output = TestOutput.At(output), Markdown = new SourceFile("--from-markdown", markdown) });
+
+        using var deck = new Presentation(output);
+        Assert.Equal("Present", Assert.Single(deck.Slides[0].Shapes.OfType<IPictureFrame>()).AlternativeText);
+        Assert.Single(deck.Slides.SelectMany(static slide => slide.Shapes.OfType<IPictureFrame>()));
+        Warning warning = Assert.Single(result.Warnings ?? [], static warning => warning.Code == WarningCodes.RemoteResourcesBlocked);
+        Assert.True(warning.AffectsCompleteness);
+        Assert.Contains("images/missing.png (not found)", warning.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Markdown_OnePicturePerSlide_TakesTitleAndContentOrTwoContentBesideText()
+    {
+        using var fixture = new SlidesEngineFixture();
+        File.WriteAllBytes(fixture.File("one.png"), SlidesEngineFixture.Png(40));
+        File.WriteAllBytes(fixture.File("two.png"), SlidesEngineFixture.Png(41));
+        string markdown = fixture.File("single.md");
+        File.WriteAllText(markdown, "## One\n![One](one.png)\n\n## Two\nBeside it\n![Two](two.png)\n");
+        string output = fixture.File("single.pptx");
+
+        SlidesCreateResult result = SlidesCreate.Run(fixture.Session, new SlidesCreateRequest { Output = TestOutput.At(output), Markdown = new SourceFile("--from-markdown", markdown) });
+
+        Assert.DoesNotContain(result.Warnings ?? [], static warning => warning.Code == WarningCodes.RemoteResourcesBlocked);
+        using var deck = new Presentation(output);
+        Assert.Equal(["Title and Content", "Two Content"], deck.Slides.Select(static slide => slide.LayoutSlide.Name));
+        Assert.Equal(
+            ["One", "Two"],
+            deck.Slides.Select(static slide => Assert.Single(slide.Shapes.OfType<IPictureFrame>()).AlternativeText));
+        Assert.Single(deck.Slides[1].Shapes.OfType<IAutoShape>(), static shape => shape.Name == "Body");
+    }
+
+    [Fact]
     public void Markdown_TableTallerThanItsArea_IsReported()
     {
         using var fixture = new SlidesEngineFixture();
