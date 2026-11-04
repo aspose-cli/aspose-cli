@@ -75,11 +75,14 @@ public sealed class ProductLifecycleTests
         Assert.Contains("Aspose.Cli.Product.Alpha", composition, StringComparison.Ordinal);
         string versions = File.ReadAllText(
             Path.Combine(generatedRoot, "ProductVersions.props"));
-        Assert.DoesNotContain("Sample.Alpha", versions, StringComparison.Ordinal);
+        Assert.Contains(
+            "<PackageVersion Include=\"Sample.Alpha\" Version=\"1.0.0\" />",
+            versions,
+            StringComparison.Ordinal);
         string repositoryBuild = File.ReadAllText(
             Path.Combine(generatedRoot, "RepositoryBuild.props"));
         Assert.Contains(
-            "<AsposeProductSdkPackageId></AsposeProductSdkPackageId>",
+            "<AsposeProductSdkPackageId>Sample.Alpha</AsposeProductSdkPackageId>",
             repositoryBuild,
             StringComparison.Ordinal);
         Assert.Contains("<AsposeProductDisplayOrder>1</AsposeProductDisplayOrder>", repositoryBuild, StringComparison.Ordinal);
@@ -154,9 +157,10 @@ public sealed class ProductLifecycleTests
         string projectName = $"Aspose.Cli.Product.{productName}";
         string sourceRoot = Path.Combine(root, "src", projectName);
         Directory.CreateDirectory(sourceRoot);
+        // The project references exactly the packages its catalog row declares.
         File.WriteAllText(
             Path.Combine(sourceRoot, projectName + ".csproj"),
-            "<Project Sdk=\"Microsoft.NET.Sdk\" />\n",
+            $"<Project Sdk=\"Microsoft.NET.Sdk\"><ItemGroup><PackageReference Include=\"{SdkPackageId(productName)}\" /></ItemGroup></Project>\n",
             Encoding.UTF8);
         File.WriteAllText(
             Path.Combine(sourceRoot, productName + "Module.cs"),
@@ -197,6 +201,7 @@ public sealed class ProductLifecycleTests
                 ["id"] = product.Id,
                 ["productName"] = product.ProductName,
                 ["engine"] = "Sample.Engine",
+                ["sdkPackageId"] = SdkPackageId(product.ProductName),
                 ["sdkVersion"] = "1.0.0",
                 ["supplementalPackages"] = new Dictionary<string, string>(),
             })
@@ -213,6 +218,8 @@ public sealed class ProductLifecycleTests
             json + "\n",
             new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
     }
+
+    private static string SdkPackageId(string productName) => $"Sample.{productName}";
 
     private static void AssertCatalogHashes(string root)
     {
