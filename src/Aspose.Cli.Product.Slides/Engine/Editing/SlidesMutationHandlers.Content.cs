@@ -1,6 +1,9 @@
+using System.Globalization;
 using System.Text;
+using System.Text.Json.Nodes;
 using Aspose.Cli.Sdk.Text;
 using Aspose.Slides;
+using Aspose.Slides.Charts;
 using static Aspose.Cli.Product.Slides.Engine.SlidesEvaluationMarks;
 using static Aspose.Cli.Product.Slides.Engine.SlidesShapeText;
 
@@ -55,8 +58,46 @@ internal sealed partial class SlidesMutationHandlers
             remaining -= Replace(paragraph, replacement, remaining);
         }
 
+        if (operation.Scope is SlidesSearchScopes.Shapes or SlidesSearchScopes.All)
+        {
+            WarnUnreplacedChartTitles(operation, replacement);
+        }
+
         return default;
     }
+
+    /// <summary>
+    /// Names each chart on a slide whose title holds a match, which replace_text leaves as it is:
+    /// chart titles and data are not text it reaches. A title matches as a paragraph of shape text
+    /// does. The message never repeats the find text or the title.
+    /// </summary>
+    private void WarnUnreplacedChartTitles(SlidesReplaceTextOp operation, TextReplacement replacement)
+    {
+        for (int number = 1; number <= _presentation.Slides.Count; number++)
+        {
+            foreach (IChart chart in _presentation.Slides[number - 1].Shapes.OfType<IChart>()
+                .Where(chart => TitleMatches(chart, replacement)))
+            {
+                string rect = string.Create(CultureInfo.InvariantCulture,
+                    $$"""{"x":{{chart.X:0.##}},"y":{{chart.Y:0.##}},"width":{{chart.Width:0.##}},"height":{{chart.Height:0.##}}}""");
+                _warnings.Add(new Warning(SlidesDiagnostics.ChartTitleNotReplaced, string.Create(CultureInfo.InvariantCulture,
+                    $"Operation {operation.Id} (replace_text) found a match in the title of chart '{chart.Name}' (shapeId {chart.OfficeInteropShapeId}) on slide {number} and left the title as it was: replace_text does not change chart titles or chart data."))
+                {
+                    Hint = string.Create(CultureInfo.InvariantCulture,
+                        $$"""To change the title, rebuild the chart: read its kind, categories and series with 'slides read --slides {{number}} --content full', apply {"op":"delete_shape","slide":{{number}},"shapeId":{{chart.OfficeInteropShapeId}}}, then insert_chart on slide {{number}} with the same data, the new title and "rect":{{rect}}. The new chart takes the automatic chart style."""),
+                    Location = SlidesStateProjection.ShapeAddress(number, chart.OfficeInteropShapeId),
+                    Details = new JsonObject { ["id"] = operation.Id, ["op"] = "replace_text" },
+                });
+            }
+        }
+    }
+
+    // Whether a paragraph of the chart's title holds a match, read as Replace reads a paragraph.
+    private static bool TitleMatches(IChart chart, TextReplacement replacement) =>
+        chart.HasTitle
+        && chart.ChartTitle.TextFrameForOverriding is { } title
+        && title.Paragraphs.Any(paragraph =>
+            replacement.Matches(string.Concat(paragraph.Portions.Select(static portion => portion.Text ?? string.Empty)), 1).Count > 0);
 
     /// <summary>The text frames of a slide that a search scope reaches: its shapes, its speaker notes, or both.</summary>
     private IEnumerable<ITextFrame> Frames(ISlide slide, string scope)
