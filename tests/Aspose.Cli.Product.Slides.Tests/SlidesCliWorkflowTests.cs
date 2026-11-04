@@ -110,6 +110,31 @@ public sealed class SlidesCliWorkflowTests : IDisposable
     }
 
     [Fact]
+    public void Review_OfAHeadingWithThreeMarkdownPictures_ReportsNoDuplicateSlide()
+    {
+        // SL-001: each further picture continues on a slide with the same title, in the same place.
+        Aspose.Cli.TestKit.Scenarios.ScenarioLicense.Project(_workspace.Path);
+        File.WriteAllBytes(_workspace.File("first.png"), SlidesEngineFixture.Png(40));
+        File.WriteAllBytes(_workspace.File("second.png"), SlidesEngineFixture.Png(41));
+        File.WriteAllBytes(_workspace.File("third.png"), SlidesEngineFixture.Png(42));
+        File.WriteAllText(_workspace.File("pictures.md"), "## S\n![First](first.png)\n![Second](second.png)\n![Third](third.png)\n");
+
+        CliResult created = _workspace.Run("slides", "create", "deck.pptx", "--from-markdown", "pictures.md", "--output-format", "json");
+        CliResult review = _workspace.Run("review", "deck.pptx", "--out", "evidence", "--output-format", "json");
+
+        Assert.True(created.ExitCode == 0, created.StdOut + created.StdErr);
+        using (var deck = new Presentation(_workspace.File("deck.pptx")))
+        {
+            Assert.Equal(3, deck.Slides.Count);
+        }
+
+        Assert.True(review.ExitCode is 0 or 8, review.StdOut + review.StdErr);
+        JsonNode result = JsonNode.Parse(review.StdOut)!;
+        Assert.DoesNotContain("SLIDES_SLIDE_DUPLICATE", FindingCodes(result));
+        Assert.Equal(0, Metric(result, "duplicateSlides"));
+    }
+
+    [Fact]
     public void Review_OfAPasswordEncryptedPresentation_RendersWithItsPassword()
     {
         // An encrypted Open XML presentation is an OLE compound file, not a ZIP package.

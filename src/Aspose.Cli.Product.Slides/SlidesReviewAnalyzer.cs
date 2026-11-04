@@ -437,6 +437,13 @@ internal static class SlidesReviewAnalyzer
         "watermark", "overlay", "callout",
     ];
 
+    /// <summary>
+    /// What makes two slides duplicates: the kind, placeholder role, text, picture or chart content
+    /// and frame of each shape that is not decorative, so slides that share a title and frames but
+    /// show different pictures or chart data, as further Markdown pictures under one heading do,
+    /// differ. Null for a slide with too little to compare and one whose text evaluation mode cut
+    /// short.
+    /// </summary>
     private static string? Fingerprint(SlidesReviewSlide slide)
     {
         if (TextReplacedByEvaluation(slide))
@@ -455,6 +462,7 @@ internal static class SlidesReviewAnalyzer
         {
             value.Append(shape.Kind).Append('|').Append(shape.Placeholder).Append('|')
                 .Append(Normalize(shape.Text)).Append('|')
+                .Append(shape.Content).Append('|')
                 .Append(Geometry(shape.Rect)).Append(';');
         }
         return value.ToString();

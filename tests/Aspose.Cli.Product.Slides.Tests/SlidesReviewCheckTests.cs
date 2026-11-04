@@ -529,6 +529,106 @@ public sealed class SlidesReviewCheckTests
             review.Findings!.Where(static finding => finding.Code == SlidesReviewChecks.TextLowContrast.Code).Select(static finding => finding.Location));
     }
 
+    [Fact]
+    public void SlidesWithOneTitleAndADifferentPictureInOnePlace_AreNotDuplicates()
+    {
+        // SL-001: further Markdown pictures continue on slides with the same title, each in the same place.
+        using var fixture = new SlidesEngineFixture();
+        byte[][] pictures = [SlidesEngineFixture.Png(40), SlidesEngineFixture.Png(41), SlidesEngineFixture.Png(42)];
+        string deck = TitledDeck(fixture, "pictures.pptx", pictures, static (presentation, slide, picture) =>
+            slide.Shapes.AddPictureFrame(ShapeType.Rectangle, 100, 220, 400, 280, presentation.Images.AddImage(picture)));
+
+        ProductReviewAssessment review = fixture.Review(deck);
+
+        Assert.DoesNotContain(review.Findings!, static finding => finding.Code == SlidesReviewChecks.SlideDuplicate.Code);
+        Assert.Equal(0, SlidesEngineFixture.Metric(review, "duplicateSlides"));
+    }
+
+    [Fact]
+    public void SlidesWithOneTitleAndTheSamePictureInOnePlace_AreDuplicates()
+    {
+        using var fixture = new SlidesEngineFixture();
+        byte[] picture = SlidesEngineFixture.Png(40);
+        string deck = TitledDeck(fixture, "same-picture.pptx", [picture, picture], static (presentation, slide, picture) =>
+            slide.Shapes.AddPictureFrame(ShapeType.Rectangle, 100, 220, 400, 280, presentation.Images.AddImage(picture)));
+
+        ProductReviewAssessment review = fixture.Review(deck);
+
+        ReviewFinding finding = Assert.Single(review.Findings!, static finding => finding.Code == SlidesReviewChecks.SlideDuplicate.Code);
+        Assert.Equal("slide/2", finding.Location);
+        Assert.Contains("as slide 1;", finding.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void ChartsInOnePlaceUnderOneTitle_AreDuplicatesOnlyWithTheSameData()
+    {
+        // The second chart's first value differs; the third chart's data is the first's.
+        using var fixture = new SlidesEngineFixture();
+        double?[] firstValues = [null, 99, null];
+        string deck = TitledDeck(fixture, "charts.pptx", firstValues, static (_, slide, value) =>
+        {
+            IChart chart = slide.Shapes.AddChart(ChartType.ClusteredColumn, 100, 220, 400, 280);
+            if (value is { } changed)
+            {
+                chart.ChartData.Series[0].DataPoints[0].Value.Data = changed;
+            }
+        });
+
+        ProductReviewAssessment review = fixture.Review(deck);
+
+        ReviewFinding finding = Assert.Single(review.Findings!, static finding => finding.Code == SlidesReviewChecks.SlideDuplicate.Code);
+        Assert.Equal("slide/3", finding.Location);
+        Assert.Contains("as slide 1;", finding.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void BubbleChartsWhosePointsHaveNoValue_AreReviewedAndDuplicatesOnlyWithTheSameData()
+    {
+        // A bubble point has x and y values and a bubble size but no value. The second chart's
+        // data is the first's; the third chart's first bubble is larger.
+        using var fixture = new SlidesEngineFixture();
+        double?[] firstSizes = [null, null, 9];
+        string deck = TitledDeck(fixture, "bubbles.pptx", firstSizes, static (_, slide, size) =>
+        {
+            IChart chart = slide.Shapes.AddChart(ChartType.Bubble, 100, 220, 400, 280);
+            if (size is { } changed)
+            {
+                chart.ChartData.Series[0].DataPoints[0].BubbleSize.Data = changed;
+            }
+        });
+        using (var saved = new Presentation(deck))
+        {
+            Assert.Null(saved.Slides[0].Shapes.OfType<IChart>().Single().ChartData.Series[0].DataPoints[0].Value?.Data);
+        }
+
+        ProductReviewAssessment review = fixture.Review(deck);
+
+        ReviewFinding finding = Assert.Single(review.Findings!, static finding => finding.Code == SlidesReviewChecks.SlideDuplicate.Code);
+        Assert.Equal("slide/2", finding.Location);
+        Assert.Contains("as slide 1;", finding.Message, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// A deck of one slide per item on the blank layout: each shows the short title "S", which
+    /// evaluation mode reads whole, in one place and below it what <paramref name="add"/> adds.
+    /// </summary>
+    private static string TitledDeck<T>(SlidesEngineFixture fixture, string name, IEnumerable<T> items, Action<Presentation, ISlide, T> add)
+    {
+        string deck = fixture.File(name);
+        using var presentation = new Presentation();
+        ILayoutSlide blank = presentation.LayoutSlides.GetByType(SlideLayoutType.Blank);
+        presentation.Slides.RemoveAt(0);
+        foreach (T item in items)
+        {
+            ISlide slide = presentation.Slides.AddEmptySlide(blank);
+            TextBox(slide, "S");
+            add(presentation, slide, item);
+        }
+
+        presentation.Save(deck, SaveFormat.Pptx);
+        return deck;
+    }
+
     private static IAutoShape TextBox(ISlide slide, string text, System.Drawing.Color? color = null)
     {
         IAutoShape box = slide.Shapes.AddAutoShape(ShapeType.Rectangle, 40, 100, 500, 80, createFromTemplate: false);
