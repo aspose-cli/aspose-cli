@@ -4710,6 +4710,60 @@ C-R41 | slides edit --if-match malformed
 C-R41 | slides edit --if-match stale
 C-R41 | words edit --if-match malformed
 C-R41 | words edit --if-match stale
+C-R42 | cells convert xlsx -> csv
+C-R42 | cells convert xlsx -> html
+C-R42 | cells convert xlsx -> md
+C-R42 | cells convert xlsx -> mhtml
+C-R42 | cells convert xlsx -> ods
+C-R42 | cells convert xlsx -> pdf
+C-R42 | cells convert xlsx -> tsv
+C-R42 | cells convert xlsx -> xls
+C-R42 | cells convert xlsx -> xlsb
+C-R42 | cells convert xlsx -> xlsm
+C-R42 | cells convert xlsx -> xlsx
+C-R42 | cells convert xlsx -> xltm
+C-R42 | cells convert xlsx -> xltx
+C-R42 | pdf convert pdf -> docx
+C-R42 | pdf convert pdf -> epub
+C-R42 | pdf convert pdf -> html
+C-R42 | pdf convert pdf -> md
+C-R42 | pdf convert pdf -> pdfa-1b
+C-R42 | pdf convert pdf -> pdfa-2b
+C-R42 | pdf convert pdf -> pdfa-3b
+C-R42 | pdf convert pdf -> pptx
+C-R42 | pdf convert pdf -> txt
+C-R42 | pdf convert pdf -> xlsx
+C-R42 | slides convert pptx -> html
+C-R42 | slides convert pptx -> html5
+C-R42 | slides convert pptx -> md
+C-R42 | slides convert pptx -> odp
+C-R42 | slides convert pptx -> pdf
+C-R42 | slides convert pptx -> ppt
+C-R42 | slides convert pptx -> pptm
+C-R42 | slides convert pptx -> pptx
+C-R42 | words convert docx -> azw3
+C-R42 | words convert docx -> doc
+C-R42 | words convert docx -> docm
+C-R42 | words convert docx -> docx
+C-R42 | words convert docx -> dot
+C-R42 | words convert docx -> dotm
+C-R42 | words convert docx -> dotx
+C-R42 | words convert docx -> epub
+C-R42 | words convert docx -> flatopc
+C-R42 | words convert docx -> html
+C-R42 | words convert docx -> html-fixed
+C-R42 | words convert docx -> md
+C-R42 | words convert docx -> mhtml
+C-R42 | words convert docx -> mobi
+C-R42 | words convert docx -> odt
+C-R42 | words convert docx -> ott
+C-R42 | words convert docx -> pdf
+C-R42 | words convert docx -> rtf
+C-R42 | words convert docx -> txt
+C-R42 | words convert docx -> wordml
+C-R43 | cells replace_text
+C-R43 | slides replace_text
+C-R43 | words replace_text
 corrupt-input | cells compare
 corrupt-input | cells convert
 corrupt-input | cells edit
