@@ -87,6 +87,7 @@ internal static class WordsEdit
             Warnings = EnvelopeParts.CombineWarnings(outputWarnings, publication.BackupWarnings, operationWarnings, PdfInputWarnings(loaded), MutationWarnings(
                 loaded.Document,
                 format,
+                loaded.Evaluation,
                 // The input's revisions are disclosed while the output still contains revisions;
                 // LOSSY_CONVERSION covers the formats that cannot store them.
                 inputHadRevisions && KeepsRevisions(loaded.Document, format),
@@ -393,6 +394,7 @@ internal static class WordsEdit
     private static IReadOnlyList<Warning>? MutationWarnings(
         Document document,
         string format,
+        bool evaluation,
         bool revisionsKept,
         bool inputWasSigned,
         ProtectionType inputProtection,
@@ -421,7 +423,7 @@ internal static class WordsEdit
             });
         }
 
-        extra.AddRange(ConversionWarnings(document, format));
+        extra.AddRange(ConversionWarnings(document, format, evaluation));
 
         if (LocalDocumentResourceLoader.OmissionWarning(omittedResources) is { } omitted)
         {

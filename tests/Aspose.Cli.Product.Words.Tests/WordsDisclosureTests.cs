@@ -469,6 +469,83 @@ public sealed class WordsDisclosureTests
     }
 
     /// <summary>
+    /// An epub or azw3 output has no headers or footers, so a convert to one names the sections
+    /// whose header or footer holds text or a drawing, without marking the output incomplete. A
+    /// mobi output writes their text into its flow, and a document whose header is an empty
+    /// paragraph and whose footer is only a page number loses nothing an e-book could show:
+    /// neither warns.
+    /// </summary>
+    [Theory]
+    [InlineData("epub", "text", "the headers of section(s) 1 and the footers of section(s) 1, 2")]
+    [InlineData("azw3", "text", "the headers of section(s) 1 and the footers of section(s) 1, 2")]
+    [InlineData("mobi", "text", null)]
+    [InlineData("epub", "drawing", "the headers of section(s) 1")]
+    [InlineData("epub", "empty", null)]
+    [InlineData("azw3", "empty", null)]
+    public void ConvertingToAnEbook_NamesTheHeadersAndFootersItLeavesOut(string format, string content, string? named)
+    {
+        using var fixture = new WordsFixture();
+        var source = new Document();
+        var builder = new DocumentBuilder(source);
+        builder.Writeln("First section body.");
+        builder.MoveToHeaderFooter(HeaderFooterType.HeaderPrimary);
+        switch (content)
+        {
+            case "text":
+                builder.Write("Running head");
+                break;
+            case "drawing":
+                builder.InsertShape(Aspose.Words.Drawing.ShapeType.Rectangle, 40, 20);
+                break;
+        }
+        builder.MoveToHeaderFooter(HeaderFooterType.FooterPrimary);
+        if (content == "text")
+        {
+            builder.Write("First footer");
+        }
+        else
+        {
+            builder.InsertField("PAGE");
+        }
+        builder.MoveToDocumentEnd();
+        builder.InsertBreak(BreakType.SectionBreakNewPage);
+        builder.Write("Second section body.");
+        if (content == "text")
+        {
+            // The second section shows the first one's header and has a footer of its own.
+            builder.MoveToHeaderFooter(HeaderFooterType.FooterPrimary);
+            builder.Write("Second footer");
+        }
+        bool withText = content == "text";
+        string input = fixture.Temp.File($"ebook-{content}.docx");
+        source.Save(input, SaveFormat.Docx);
+        string output = fixture.Temp.File($"ebook-{content}.{format}");
+
+        WordsConvertResult converted = WordsConvert.Run(fixture.Session, new WordsConvertRequest
+        {
+            Input = input,
+            Output = TestOutput.At(output, format: format),
+        });
+
+        Warning[] leftOut = [.. (converted.Warnings ?? []).Where(static warning => warning.Code == WarningCodes.LossyConversion
+            && warning.Message.Contains("leaves out", StringComparison.Ordinal))];
+        string text = new Document(output).GetText();
+        if (named is null)
+        {
+            Assert.Empty(leftOut);
+            Assert.True(!withText || text.Contains("Running head", StringComparison.Ordinal), text);
+            return;
+        }
+
+        Warning warning = Assert.Single(leftOut);
+        Assert.Equal($"The {format} output leaves out {named}: an e-book flows its text without pages, so it has no headers or footers.", warning.Message);
+        Assert.Contains("'aspose-cli words inspect <file> --detail sections'", warning.Hint, StringComparison.Ordinal);
+        Assert.False(warning.AffectsCompleteness);
+        Assert.DoesNotContain("Running head", text, StringComparison.Ordinal);
+        Assert.DoesNotContain("Second footer", text, StringComparison.Ordinal);
+    }
+
+    /// <summary>
     /// A document whose tracked change replaces "thirty" with "sixty", above a line "Other
     /// text."; <paramref name="withComment"/> adds a comment on the first paragraph.
     /// </summary>

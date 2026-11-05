@@ -14,7 +14,12 @@ internal static class SlidesEngineFormats
     /// <summary>Every format id the engine maps, with what it maps to.</summary>
     internal static IReadOnlyList<SlidesEngineFormat> All { get; } =
     [
-        new("ppt", [LoadFormat.Ppt, LoadFormat.Ppt95], SaveFormat.Ppt) { BinaryPpt = true },
+        new("ppt", [LoadFormat.Ppt, LoadFormat.Ppt95], SaveFormat.Ppt)
+        {
+            BinaryPpt = true,
+            // SLIDES-PPT-NATIVE-CONTENT: the charts and the table styles; a PPT file has no sections.
+            Loses = SlidesContentLoss.Charts | SlidesContentLoss.Sections | SlidesContentLoss.TableStyles,
+        },
         new("pptx", [LoadFormat.Pptx], SaveFormat.Pptx),
         new("pptm", [LoadFormat.Pptm], SaveFormat.Pptm),
         new("pps", [LoadFormat.Pps]) { BinaryPpt = true },
@@ -23,7 +28,8 @@ internal static class SlidesEngineFormats
         new("pot", [LoadFormat.Pot]) { BinaryPpt = true },
         new("potx", [LoadFormat.Potx]),
         new("potm", [LoadFormat.Potm]),
-        new("odp", [LoadFormat.Odp], SaveFormat.Odp) { LosesNativeContent = true },
+        // SLIDES-ODP-NATIVE-CONTENT: the charts, the transitions and the sections.
+        new("odp", [LoadFormat.Odp], SaveFormat.Odp) { Loses = SlidesContentLoss.Charts | SlidesContentLoss.Transitions | SlidesContentLoss.Sections },
         new("otp", [LoadFormat.Otp]),
         new("fodp", [LoadFormat.Fodp]),
         new("pdf", [], SaveFormat.Pdf),
@@ -64,8 +70,8 @@ internal static class SlidesEngineFormats
     /// <summary>Whether an output of a format id holds the slides' text as the CLI read it.</summary>
     internal static bool HoldsReadText(string id) => Find(id)?.HoldsReadText == true;
 
-    /// <summary>Whether a save in a format id loses the deck's native charts, transitions and sections.</summary>
-    internal static bool LosesNativeContent(string id) => Find(id)?.LosesNativeContent == true;
+    /// <summary>What a save in a format id does not keep of a deck; <see cref="SlidesContentLoss.None"/> for an id the engine does not map.</summary>
+    internal static SlidesContentLoss Losses(string id) => Find(id)?.Loses ?? SlidesContentLoss.None;
 
     private static SlidesEngineFormat? Find(string id) => All.FirstOrDefault(row => string.Equals(row.Id, id, StringComparison.Ordinal));
 }
@@ -98,8 +104,31 @@ internal sealed record SlidesEngineFormat(string Id, LoadFormat[] Loads, SaveFor
     public bool HoldsReadText { get; init; }
 
     /// <summary>
-    /// Whether the save turns the native charts into pictures and drops the transitions and
-    /// sections (SLIDES-ODP-NATIVE-CONTENT), which a convert names in <c>LOSSY_CONVERSION</c>.
+    /// What the save does not keep of a deck, though PowerPoint opens the output, which a convert
+    /// names in <c>LOSSY_CONVERSION</c> when the deck has it.
     /// </summary>
-    public bool LosesNativeContent { get; init; }
+    public SlidesContentLoss Loses { get; init; }
+}
+
+/// <summary>The kinds of deck content a save in a presentation format may not keep.</summary>
+[Flags]
+internal enum SlidesContentLoss
+{
+    /// <summary>The save keeps every kind.</summary>
+    None = 0,
+
+    /// <summary>The native charts, which become pictures of themselves.</summary>
+    Charts = 1,
+
+    /// <summary>The slide transitions.</summary>
+    Transitions = 2,
+
+    /// <summary>The sections.</summary>
+    Sections = 4,
+
+    /// <summary>
+    /// The table styles: a styled table keeps its cells and text but not the fills, borders and
+    /// text formatting its style gives it.
+    /// </summary>
+    TableStyles = 8,
 }

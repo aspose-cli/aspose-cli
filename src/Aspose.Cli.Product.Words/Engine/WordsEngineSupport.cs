@@ -45,7 +45,7 @@ internal static class WordsEngineSupport
 
         if (!rendered)
         {
-            extra.AddRange(ConversionWarnings(loaded.Document, format));
+            extra.AddRange(ConversionWarnings(loaded.Document, format, loaded.Evaluation));
             extra.AddRange(PdfInputWarnings(loaded) ?? []);
         }
 
@@ -126,11 +126,14 @@ internal static class WordsEngineSupport
 
     /// <summary>
     /// The warnings for saving a document to a format that cannot hold every Word feature: one
-    /// for the format; one for revisions the format cannot store; and for plain text and
-    /// Markdown one for each kind of text the SDK mixes into the body (WORDS-TEXT-COMMENTS,
-    /// WORDS-TEXT-DELETIONS), which also stands for the revisions such an output drops.
+    /// for the format; one for revisions the format cannot store; one for the headers and
+    /// footers with content an e-book leaves out; and for plain text and Markdown one for each
+    /// kind of text the SDK mixes into the body (WORDS-TEXT-COMMENTS, WORDS-TEXT-DELETIONS),
+    /// which also stands for the revisions such an output drops. Under
+    /// <paramref name="evaluation"/>, what evaluation mode wrote into the headers and footers is
+    /// not their content.
     /// </summary>
-    internal static IEnumerable<Warning> ConversionWarnings(Document document, string format)
+    internal static IEnumerable<Warning> ConversionWarnings(Document document, string format, bool evaluation)
     {
         bool text = WordsEngineFormats.Has(format, static entry => entry.PlainText);
         if (WordsEngineFormats.Has(format, static entry => entry.Lossy))
@@ -157,6 +160,15 @@ internal static class WordsEngineSupport
             };
         }
 
+        if (WordsEngineFormats.Has(format, static entry => entry.LeavesOutHeadersFooters)
+            && HeadersFootersWithContent(document, evaluation) is { } leftOut)
+        {
+            yield return new Warning(WarningCodes.LossyConversion, $"The {format} output leaves out {leftOut}: an e-book flows its text without pages, so it has no headers or footers.")
+            {
+                Hint = "Read them from the source with 'aspose-cli words inspect <file> --detail sections'; keep a DOCX or PDF copy to keep them.",
+            };
+        }
+
         if (!text)
         {
             yield break;
@@ -178,6 +190,41 @@ internal static class WordsEngineSupport
                 Hint = $"Disclose the revisions; when the user decides, accept or reject them with 'aspose-cli words edit' and a .{format} --out, or keep a DOCX copy.",
             };
         }
+    }
+
+    /// <summary>
+    /// The headers and footers that hold content, by the sections that define them, such as
+    /// <c>the headers and footers of section(s) 1</c> or <c>the headers of section(s) 1, 2 and the
+    /// footers of section(s) 2</c>; null when every one is empty. Content is text or a drawing.
+    /// A page number or page count is not: an e-book has no pages to number. Under
+    /// <paramref name="evaluation"/>, neither are the banner, footer sentence and watermark
+    /// evaluation mode writes.
+    /// </summary>
+    private static string? HeadersFootersWithContent(Document document, bool evaluation)
+    {
+        Section[] sections = [.. document.Sections.Cast<Section>()];
+        string headers = Numbers(isHeader: true);
+        string footers = Numbers(isHeader: false);
+        return (headers.Length, footers.Length) switch
+        {
+            (0, 0) => null,
+            (_, 0) => $"the headers of section(s) {headers}",
+            (0, _) => $"the footers of section(s) {footers}",
+            _ when headers == footers => $"the headers and footers of section(s) {headers}",
+            _ => $"the headers of section(s) {headers} and the footers of section(s) {footers}",
+        };
+
+        string Numbers(bool isHeader) => string.Join(", ", sections
+            .Select(static (section, index) => (Section: section, Number: index + 1))
+            .Where(item => item.Section.HeadersFooters.Cast<HeaderFooter>().Any(story => story.IsHeader == isHeader && HoldsContent(story)))
+            .Select(static item => item.Number.ToString(CultureInfo.InvariantCulture)));
+
+        bool HoldsContent(HeaderFooter story) =>
+            story.GetChildNodes(NodeType.Paragraph, true).Cast<Paragraph>()
+                .Any(paragraph => !(evaluation && WordsEvaluation.IsMark(paragraph))
+                    && WordsText.VisibleRuns(paragraph).Any(static run => !string.IsNullOrWhiteSpace(run.Text)))
+            || story.GetChildNodes(NodeType.Shape, true).Cast<Aspose.Words.Drawing.Shape>()
+                .Any(shape => !(evaluation && WordsEvaluation.IsWatermark(shape)));
     }
 
     internal static IReadOnlyList<Warning>? CompareWarnings(LoadedDocument left, LoadedDocument right) =>

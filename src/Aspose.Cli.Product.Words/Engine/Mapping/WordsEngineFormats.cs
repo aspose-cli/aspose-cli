@@ -28,9 +28,10 @@ internal static class WordsEngineFormats
         new("txt") { Load = LoadFormat.Text, Save = SaveFormat.Text, Lossy = true, PlainText = true },
         new("md") { Load = LoadFormat.Markdown, Save = SaveFormat.Markdown, Lossy = true, PlainText = true },
         new("pdf") { Load = LoadFormat.Pdf, Save = SaveFormat.Pdf, ReflowsOnLoad = true, EncryptionUndetected = true },
-        new("epub") { Load = LoadFormat.Epub, Save = SaveFormat.Epub },
+        new("epub") { Load = LoadFormat.Epub, Save = SaveFormat.Epub, LeavesOutHeadersFooters = true },
+        // MOBI writes the headers and footers into the text flow, at the start and end of each section.
         new("mobi") { Load = LoadFormat.Mobi, Save = SaveFormat.Mobi },
-        new("azw3") { Load = LoadFormat.Azw3, Save = SaveFormat.Azw3 },
+        new("azw3") { Load = LoadFormat.Azw3, Save = SaveFormat.Azw3, LeavesOutHeadersFooters = true },
         new("chm") { Load = LoadFormat.Chm },
         new("xps") { Save = SaveFormat.Xps },
         new("openxps") { Save = SaveFormat.OpenXps },
@@ -74,6 +75,13 @@ internal sealed record WordsEngineFormat(string Id)
     /// deleted text mixed into the body.
     /// </summary>
     public bool PlainText { get; init; }
+
+    /// <summary>
+    /// A save in this format writes no header or footer, as the SDK saves an e-book that flows
+    /// its text without pages, which convert discloses for a document whose headers or footers
+    /// hold content.
+    /// </summary>
+    public bool LeavesOutHeadersFooters { get; init; }
 
     /// <summary>Loading rebuilds the fixed pages as flowing text and guesses the headers and footers.</summary>
     public bool ReflowsOnLoad { get; init; }

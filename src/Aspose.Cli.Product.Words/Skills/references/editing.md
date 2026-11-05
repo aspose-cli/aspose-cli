@@ -371,8 +371,12 @@ styles, headers or fields. A convert to any format other than those `edit`
 writes also reports it for the tracked changes it cannot keep as revisions,
 and to any non-Word format, PDF included, for the editing restrictions it
 cannot keep; restrict a PDF with the `encrypt_document` operation of
-`aspose-cli pdf edit`. A `txt` or `md` convert also writes comment text into
-the body and deleted text beside inserted text, each reported by its own
+`aspose-cli pdf edit`. An `epub` or `azw3` output has no headers or footers,
+so a convert to one reports `LOSSY_CONVERSION` naming the sections whose
+headers or footers hold text or drawings, a page number alone aside; read
+them on the source with `words inspect --detail sections`, or keep a `docx`
+copy. A `txt` or `md` convert also writes comment text into the body and
+deleted text beside inserted text, each reported by its own
 `LOSSY_CONVERSION`; run `delete_comments`, and `accept_revisions` or
 `reject_revisions` as the reviewer decides, in the edit before it to leave
 them out. A `txt` output is the body text: it leaves out headers, footers and
