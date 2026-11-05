@@ -472,7 +472,8 @@ public partial class StandardInvocation
     /// their <c>--to</c>, or every format it names when only <c>--to</c> chooses them, as
     /// an archive extension may name several archival profiles, and the command line that writes each: from this
     /// command's output, or, when <paramref name="output"/> is given, from this command's input
-    /// straight to that output. The sibling writes it, unless the format names the product that
+    /// straight to that output, as <see cref="ContinuationAt"/> continues this invocation. The
+    /// sibling writes it, unless the format names the product that
     /// writes an editable file of it (<see cref="FormatDescriptor.EditableBy"/>) and that product
     /// has a command of the sibling's name that writes the format: then that command does.
     /// </summary>
@@ -481,14 +482,17 @@ public partial class StandardInvocation
     private (IReadOnlyList<FormatDescriptor> Formats, IReadOnlyList<string> Commands)? Producer(string extension, string? output)
     {
         string[] path = CommandPath();
-        string[] source = output is not null && _options.Input is { } input && _parse.GetValue(input) is { } given
-            ? [Quoted(given)]
-            : ["<that file>"];
         string[] target = output is null ? [] : [StandardOptionNames.Out, Quoted(output)];
+        // From this command's input, the command continues this invocation (ContinuationAt), so
+        // it opens the input with the same password; otherwise the caller names the file.
+        string Line(string[] writer, FormatDescriptor format) =>
+            output is not null && _options.Input is not null
+                ? ContinuationAt(writer).Option(StandardOptionNames.To, format.Id).Option(StandardOptionNames.Out, output).ToString()
+                : string.Join(' ', [DistributionInfo.CommandName, .. writer, "<that file>", StandardOptionNames.To, format.Id, .. target]);
         return SiblingTargets()
             .Select(sibling => Named(sibling.Target.Offered.DeclaringExtension(extension)) is { Length: > 0 } formats
-                ? ((IReadOnlyList<FormatDescriptor> Formats, IReadOnlyList<string> Commands)?)(formats, [.. formats.Select(format => string.Join(' ',
-                    [DistributionInfo.CommandName, .. Writer(path[..^1], sibling.Command, format), .. source, StandardOptionNames.To, format.Id, .. target]))])
+                ? ((IReadOnlyList<FormatDescriptor> Formats, IReadOnlyList<string> Commands)?)(formats,
+                    [.. formats.Select(format => Line(Writer(path[..^1], sibling.Command, format), format))])
                 : null)
             .FirstOrDefault(static line => line is not null);
     }

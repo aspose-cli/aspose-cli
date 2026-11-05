@@ -188,9 +188,9 @@ public sealed class MistakeRecoveryCliTests : IDisposable
     /// still names the command that writes the other format.
     /// </summary>
     [Theory]
-    [InlineData("pdf render a.pdf --out x.gif", "aspose-cli pdf convert a.pdf --to tiff --out x.tif")]
-    [InlineData("slides render a.pptx --out x.gifx", "aspose-cli slides convert a.pptx --to gif --out x.gif")]
-    public void RenderOutputCloseToAnotherCommandsFormat_SuggestsOnlyExtensionsRenderWrites(string commandLine, string producer)
+    [InlineData("pdf render a.pdf --out x.gif", "pdf convert", "a.pdf", "--to tiff --out x.tif")]
+    [InlineData("slides render a.pptx --out x.gifx", "slides convert", "a.pptx", "--to gif --out x.gif")]
+    public void RenderOutputCloseToAnotherCommandsFormat_SuggestsOnlyExtensionsRenderWrites(string commandLine, string producer, string input, string options)
     {
         File.WriteAllText(_workspace.File("a.pdf"), "not a document");
         File.WriteAllText(_workspace.File("a.pptx"), "not a document");
@@ -206,7 +206,7 @@ public sealed class MistakeRecoveryCliTests : IDisposable
         Assert.Subset(new HashSet<string>(available), new HashSet<string>(suggestions));
         string hint = error["hint"]!.GetValue<string>();
         Assert.DoesNotContain("Did you mean", hint, StringComparison.Ordinal);
-        Assert.Contains(producer, hint, StringComparison.Ordinal);
+        Assert.Contains($"'aspose-cli {producer} \"{_workspace.File(input)}\" {options} --output-format json'", hint, StringComparison.Ordinal);
     }
 
     /// <summary>

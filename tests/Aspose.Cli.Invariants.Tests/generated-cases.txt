@@ -4844,6 +4844,148 @@ evaluation-disclosed | words edit
 evaluation-disclosed | words extract
 evaluation-disclosed | words render
 evaluation-disclosed | words split
+executable-hint | cells convert --password-env --to csv
+executable-hint | cells convert --password-env --to html
+executable-hint | cells convert --password-env --to json
+executable-hint | cells convert --password-env --to md
+executable-hint | cells convert --password-env --to mhtml
+executable-hint | cells convert --password-env --to ods
+executable-hint | cells convert --password-env --to pdf
+executable-hint | cells convert --password-env --to tsv
+executable-hint | cells convert --password-env --to xls
+executable-hint | cells convert --password-env --to xlsb
+executable-hint | cells convert --password-env --to xlsm
+executable-hint | cells convert --password-env --to xlsx
+executable-hint | cells convert --password-env --to xltm
+executable-hint | cells convert --password-env --to xltx
+executable-hint | cells convert --password-env --to xps
+executable-hint | cells edit --password-env
+executable-hint | cells inspect --password-env
+executable-hint | cells inspect --password-env --detail charts
+executable-hint | cells inspect --password-env --detail comments
+executable-hint | cells inspect --password-env --detail conditional-formats
+executable-hint | cells inspect --password-env --detail errors
+executable-hint | cells inspect --password-env --detail fonts
+executable-hint | cells inspect --password-env --detail hyperlinks
+executable-hint | cells inspect --password-env --detail images
+executable-hint | cells inspect --password-env --detail layout
+executable-hint | cells inspect --password-env --detail merges
+executable-hint | cells inspect --password-env --detail names
+executable-hint | cells inspect --password-env --detail pivots
+executable-hint | cells inspect --password-env --detail sparklines
+executable-hint | cells inspect --password-env --detail tables
+executable-hint | cells inspect --password-env --detail validation
+executable-hint | cells read --password-env
+executable-hint | cells render --password-env --to jpeg
+executable-hint | cells render --password-env --to png
+executable-hint | cells render --password-env --to svg
+executable-hint | cells search --password-env
+executable-hint | fonts check --password-env
+executable-hint | pdf convert --password-env --to docx
+executable-hint | pdf convert --password-env --to epub
+executable-hint | pdf convert --password-env --to html
+executable-hint | pdf convert --password-env --to md
+executable-hint | pdf convert --password-env --to pdfa-1b
+executable-hint | pdf convert --password-env --to pdfa-2b
+executable-hint | pdf convert --password-env --to pdfa-3b
+executable-hint | pdf convert --password-env --to pptx
+executable-hint | pdf convert --password-env --to tiff
+executable-hint | pdf convert --password-env --to txt
+executable-hint | pdf convert --password-env --to xlsx
+executable-hint | pdf convert --password-env --to xps
+executable-hint | pdf edit --password-env
+executable-hint | pdf extract --password-env
+executable-hint | pdf inspect --password-env
+executable-hint | pdf inspect --password-env --detail attachments
+executable-hint | pdf inspect --password-env --detail fonts
+executable-hint | pdf inspect --password-env --detail forms
+executable-hint | pdf inspect --password-env --detail layers
+executable-hint | pdf inspect --password-env --detail links
+executable-hint | pdf inspect --password-env --detail outline
+executable-hint | pdf inspect --password-env --detail permissions
+executable-hint | pdf inspect --password-env --detail properties
+executable-hint | pdf inspect --password-env --detail signatures
+executable-hint | pdf merge --password-env
+executable-hint | pdf read --password-env
+executable-hint | pdf render --password-env --to jpeg
+executable-hint | pdf render --password-env --to png
+executable-hint | pdf render --password-env --to svg
+executable-hint | pdf search --password-env
+executable-hint | pdf sign --password-env
+executable-hint | pdf split --password-env
+executable-hint | pdf validate --password-env
+executable-hint | review --password-env
+executable-hint | slides convert --password-env --to gif
+executable-hint | slides convert --password-env --to html
+executable-hint | slides convert --password-env --to html5
+executable-hint | slides convert --password-env --to md
+executable-hint | slides convert --password-env --to odp
+executable-hint | slides convert --password-env --to pdf
+executable-hint | slides convert --password-env --to ppt
+executable-hint | slides convert --password-env --to pptm
+executable-hint | slides convert --password-env --to pptx
+executable-hint | slides convert --password-env --to tiff
+executable-hint | slides convert --password-env --to xps
+executable-hint | slides edit --password-env
+executable-hint | slides extract --password-env
+executable-hint | slides inspect --password-env
+executable-hint | slides inspect --password-env --detail comments
+executable-hint | slides inspect --password-env --detail fonts
+executable-hint | slides inspect --password-env --detail layouts
+executable-hint | slides inspect --password-env --detail masters
+executable-hint | slides inspect --password-env --detail media
+executable-hint | slides inspect --password-env --detail notes
+executable-hint | slides inspect --password-env --detail properties
+executable-hint | slides inspect --password-env --detail sections
+executable-hint | slides read --password-env
+executable-hint | slides render --password-env --to jpeg
+executable-hint | slides render --password-env --to png
+executable-hint | slides render --password-env --to svg
+executable-hint | slides search --password-env
+executable-hint | words convert --password-env --to azw3
+executable-hint | words convert --password-env --to doc
+executable-hint | words convert --password-env --to docm
+executable-hint | words convert --password-env --to docx
+executable-hint | words convert --password-env --to dot
+executable-hint | words convert --password-env --to dotm
+executable-hint | words convert --password-env --to dotx
+executable-hint | words convert --password-env --to epub
+executable-hint | words convert --password-env --to flatopc
+executable-hint | words convert --password-env --to html
+executable-hint | words convert --password-env --to html-fixed
+executable-hint | words convert --password-env --to md
+executable-hint | words convert --password-env --to mhtml
+executable-hint | words convert --password-env --to mobi
+executable-hint | words convert --password-env --to odt
+executable-hint | words convert --password-env --to openxps
+executable-hint | words convert --password-env --to ott
+executable-hint | words convert --password-env --to pcl
+executable-hint | words convert --password-env --to pdf
+executable-hint | words convert --password-env --to ps
+executable-hint | words convert --password-env --to rtf
+executable-hint | words convert --password-env --to txt
+executable-hint | words convert --password-env --to wordml
+executable-hint | words convert --password-env --to xps
+executable-hint | words edit --password-env
+executable-hint | words extract --password-env
+executable-hint | words inspect --password-env
+executable-hint | words inspect --password-env --detail bookmarks
+executable-hint | words inspect --password-env --detail comments
+executable-hint | words inspect --password-env --detail fields
+executable-hint | words inspect --password-env --detail fonts
+executable-hint | words inspect --password-env --detail images
+executable-hint | words inspect --password-env --detail outline
+executable-hint | words inspect --password-env --detail properties
+executable-hint | words inspect --password-env --detail revisions
+executable-hint | words inspect --password-env --detail sections
+executable-hint | words inspect --password-env --detail styles
+executable-hint | words inspect --password-env --detail tables
+executable-hint | words read --password-env
+executable-hint | words render --password-env --to jpeg
+executable-hint | words render --password-env --to png
+executable-hint | words render --password-env --to svg
+executable-hint | words search --password-env
+executable-hint | words split --password-env
 invalid-enum | aspose-cli --license-mode autoo
 invalid-enum | cells compare --content fromulas
 invalid-enum | cells convert --to csvv

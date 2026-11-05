@@ -131,6 +131,7 @@ internal static class InvariantCases
             cases.AddRange(DryRunCases(command));
         }
         cases.AddRange(SecretCases(runnable));
+        cases.AddRange(PasswordHintCases(runnable));
         foreach (CliCommand command in visible)
         {
             cases.AddRange(UnknownOptionCases(command));
@@ -520,6 +521,37 @@ internal static class InvariantCases
             }
         }
     }
+
+    /// <summary>
+    /// Every command that reads its input with <see cref="InputPasswordVariable"/>, on its product's
+    /// encrypted fixture with the variable that holds the password: as its smallest invocation, or
+    /// with each value of its <c>--to</c>, and with each value of its <c>--detail</c>, since the
+    /// hints a result gives depend on them. It completes, and the commands its hints name, which
+    /// every run checks (<see cref="ExecutableHints"/>), open that input too.
+    /// </summary>
+    private static IEnumerable<InvariantCase> PasswordHintCases(IEnumerable<CliCommand> commands)
+    {
+        foreach (CliCommand command in commands)
+        {
+            if (command.Option(InputPasswordVariable) is not { } password)
+            {
+                continue;
+            }
+            string[][] targets = command.Option("--to") is { AllowedValues.Count: > 0 } to ? [.. to.AllowedValues.Select(static value => new[] { "--to", value })] : [[]];
+            string[][] details = [.. (command.Option("--detail")?.AllowedValues ?? []).Select(static value => new[] { "--detail", value })];
+            foreach (string[] variant in targets.Concat(details))
+            {
+                Invocation invocation = Invocation.For(command, omit: variant.FirstOrDefault()).Add(variant);
+                Protect(invocation, password);
+                Pass(invocation, password, ScenarioFixtures.Password);
+                yield return Case(ExecutableHints.Check, string.Join(' ', [command.Words, password.Name, .. variant]), ShardOf(command), slow: false,
+                    invocation, new ScenarioExpectation { ExitCode = Completed(command) });
+            }
+        }
+    }
+
+    /// <summary>The option that names the environment variable holding the password of a command's input.</summary>
+    private const string InputPasswordVariable = "--password-env";
 
     /// <summary>Replaces the document a password option opens with its encrypted fixture; returns the code that refuses a wrong password.</summary>
     private static string Protect(Invocation invocation, CliOption option)

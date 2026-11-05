@@ -39,4 +39,11 @@ public sealed record CellsRenderRequest
 
     /// <summary>Password for encrypted files.</summary>
     public Secret? Password { get; init; }
+
+    /// <summary>
+    /// Starts the <c>cells render</c> command on <see cref="Input"/>, with the variable of its
+    /// password when the invocation named one (<see cref="StandardInvocation.ContinuationAt"/>):
+    /// the command a hint names to draw another part of a sheet.
+    /// </summary>
+    public required Func<ContinuationCommand> Continuation { get; init; }
 }

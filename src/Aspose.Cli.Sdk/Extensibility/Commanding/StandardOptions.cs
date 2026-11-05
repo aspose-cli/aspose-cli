@@ -699,9 +699,15 @@ public partial class StandardInvocation
     /// </summary>
     public ContinuationCommand Continuation() => ContinuationAt(CommandPath());
 
-    // The command of a path for this invocation's input, with the input password's environment
-    // variable when it came from one, as Continuation() repeats it.
-    private ContinuationCommand ContinuationAt(string[] path)
+    /// <summary>
+    /// Starts the command at <paramref name="path"/>, such as <c>cells render</c>, on this
+    /// invocation's input, with the input password's environment variable when it came from one,
+    /// as <see cref="Continuation()"/> repeats them: the one way a hint names a command on the
+    /// input, so the command opens the input as this one did. The caller appends its own options.
+    /// </summary>
+    /// <param name="path">The command path below the root.</param>
+    /// <exception cref="CliException">The input does not exist.</exception>
+    public ContinuationCommand ContinuationAt(params string[] path)
     {
         ContinuationCommand next = new ContinuationCommand(path).Argument(Input);
         if (_options.InputPassword is { } password && password.EnvironmentName(_parse) is { } variable)
