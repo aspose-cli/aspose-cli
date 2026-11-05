@@ -285,12 +285,9 @@ internal static partial class SlidesExport
             });
         }
 
-        if (SlidesEngineFormats.LosesNativeContent(targetFormatId) && NativeContentLosses(loaded.Presentation) is { } losses)
+        if (ContentLost(loaded.Presentation, targetFormatId) is { } lost)
         {
-            warnings.Add(new Warning(WarningCodes.LossyConversion, $"The {targetFormatId} output does not keep {losses}, though its slides look as in the deck.")
-            {
-                Hint = "Keep the source deck for further edits; to keep the charts editable, the transitions and the sections, convert to pptx instead.",
-            });
+            warnings.Add(lost);
         }
 
         if (SlidesEngineFormats.IsLossy(targetFormatId))
@@ -304,23 +301,58 @@ internal static partial class SlidesExport
         return warnings;
     }
 
-    // What an ODP save of the presentation does not keep (SLIDES-ODP-NATIVE-CONTENT): its native charts, which become
-    // pictures, the slide transitions and the sections; null when it has none of them.
-    private static string? NativeContentLosses(Presentation presentation)
+    // What a save in the format does not keep of the deck (SlidesEngineFormat.Loses): an ODP save
+    // (SLIDES-ODP-NATIVE-CONTENT) turns its native charts into pictures and drops the transitions
+    // and the sections; a PPT save (SLIDES-PPT-NATIVE-CONTENT) turns the charts into pictures and
+    // drops the table styles, and the format holds no sections. Null when the deck has none of
+    // what the format loses. The slides look as in the deck unless a table loses its style.
+    private static Warning? ContentLost(Presentation presentation, string format)
     {
-        int[] charts = [.. AllSlides(presentation.Slides.Count).Where(number => HasChart(presentation.Slides[number - 1].Shapes))];
-        int[] transitions = [.. AllSlides(presentation.Slides.Count)
-            .Where(number => presentation.Slides[number - 1].SlideShowTransition.Type != Aspose.Slides.SlideShow.TransitionType.None)];
+        SlidesContentLoss loses = SlidesEngineFormats.Losses(format);
+        if (loses == SlidesContentLoss.None)
+        {
+            return null;
+        }
+
+        int[] charts = Slides(SlidesContentLoss.Charts, static slide => Has(slide.Shapes, static shape => shape is Aspose.Slides.Charts.IChart));
+        int[] transitions = Slides(SlidesContentLoss.Transitions, static slide => slide.SlideShowTransition.Type != Aspose.Slides.SlideShow.TransitionType.None);
+        int sections = loses.HasFlag(SlidesContentLoss.Sections) ? presentation.Sections.Count : 0;
+        // A table without a style, or with the style that draws nothing, has nothing to lose.
+        int[] tables = Slides(SlidesContentLoss.TableStyles, static slide => Has(slide.Shapes, static shape =>
+            shape is ITable { StylePreset: not (TableStylePreset.None or TableStylePreset.NoStyleNoGrid) }));
         string[] lost =
         [
             .. charts.Length == 0 ? [] : new[] { $"the native charts of slide(s) {string.Join(", ", charts)}, which become pictures" },
             .. transitions.Length == 0 ? [] : new[] { $"the transitions of slide(s) {string.Join(", ", transitions)}" },
-            .. presentation.Sections.Count == 0 ? [] : new[] { $"the {presentation.Sections.Count} section(s)" },
+            .. sections == 0 ? [] : new[] { $"the {sections} section(s)" },
+            .. tables.Length == 0 ? [] : new[] { $"the table styles of slide(s) {string.Join(", ", tables)}, so those tables lose the fills, borders and text formatting of their style" },
         ];
-        return lost.Length == 0 ? null : string.Join("; ", lost);
+        if (lost.Length == 0)
+        {
+            return null;
+        }
 
-        static bool HasChart(IShapeCollection shapes) =>
-            shapes.Any(static shape => shape is Aspose.Slides.Charts.IChart || (shape is IGroupShape group && HasChart(group.Shapes)));
+        string[] kept =
+        [
+            .. loses.HasFlag(SlidesContentLoss.Charts) ? new[] { "the charts editable" } : [],
+            .. loses.HasFlag(SlidesContentLoss.Transitions) ? new[] { "the transitions" } : [],
+            .. loses.HasFlag(SlidesContentLoss.Sections) ? new[] { "the sections" } : [],
+            .. loses.HasFlag(SlidesContentLoss.TableStyles) ? new[] { "the table styles" } : [],
+        ];
+        string keep = kept.Length == 1 ? kept[0] : $"{string.Join(", ", kept[..^1])} and {kept[^1]}";
+        return new Warning(
+            WarningCodes.LossyConversion,
+            $"The {format} output does not keep {string.Join("; ", lost)}{(tables.Length == 0 ? ", though its slides look as in the deck." : ".")}")
+        {
+            Hint = $"Keep the source deck for further edits; to keep {keep}, convert to pptx instead.",
+        };
+
+        int[] Slides(SlidesContentLoss kind, Func<ISlide, bool> holds) => loses.HasFlag(kind)
+            ? [.. AllSlides(presentation.Slides.Count).Where(number => holds(presentation.Slides[number - 1]))]
+            : [];
+
+        static bool Has(IShapeCollection shapes, Func<IShape, bool> kind) =>
+            shapes.Any(shape => kind(shape) || (shape is IGroupShape group && Has(group.Shapes, kind)));
     }
 
     internal static SlidesRenderResult Render(SlidesSession session, SlidesRenderRequest request)

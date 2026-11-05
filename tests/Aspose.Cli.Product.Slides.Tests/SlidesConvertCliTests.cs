@@ -9,7 +9,7 @@ namespace Aspose.Cli.Product.Slides.Tests;
 /// <summary>
 /// What <c>slides convert</c> writes and says through the CLI: hidden slides, which an export of
 /// every slide leaves out with a warning and a selection converts; the slide numbers of selected
-/// slides; the evaluation marks of the slides an output shows; and what an ODP output loses.
+/// slides; the evaluation marks of the slides an output shows; and what an ODP or PPT output loses.
 /// </summary>
 public sealed class SlidesConvertCliTests : IDisposable
 {
@@ -272,6 +272,46 @@ public sealed class SlidesConvertCliTests : IDisposable
         Assert.Contains("native charts of slide(s) 2", message, StringComparison.Ordinal);
         Assert.Contains("transitions of slide(s) 1", message, StringComparison.Ordinal);
         Assert.Contains("section(s)", message, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// A PPT output names the native charts that become pictures, the sections and the table
+    /// styles it does not keep, without marking the output incomplete, and keeps the transitions;
+    /// a deck with none of the three, a transition aside, converts to PPT without the warning.
+    /// </summary>
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void PptOutput_NamesTheChartsSectionsAndTableStylesItLoses(bool withContent)
+    {
+        Run("slides", "create", "deck.pptx", "--from-markdown", "deck.md");
+        Run("slides", "edit", "deck.pptx", "--in-place", "--ops", withContent
+            ? """
+                [{"op":"set_transition","slides":"1","kind":"fade"},
+                 {"op":"insert_section","name":"Part","at":2},
+                 {"op":"insert_chart","slide":2,"kind":"column","rect":{"x":50,"y":100,"width":300,"height":200},"categories":["a","b"],"series":[{"name":"S","values":[1,2]}]},
+                 {"op":"insert_table","slide":3,"rect":{"x":50,"y":100,"width":300,"height":100},"rowCount":2,"columnCount":2,"values":[["a","b"],["c","d"]]}]
+                """
+            : """[{"op":"set_transition","slides":"1","kind":"fade"}]""");
+
+        JsonNode result = Run("slides", "convert", "deck.pptx", "--out", "deck.ppt");
+
+        JsonNode[] lossy = [.. (result["warnings"] as JsonArray ?? []).Where(static warning => warning!["code"]!.GetValue<string>() == "LOSSY_CONVERSION").Select(static warning => warning!)];
+        if (!withContent)
+        {
+            Assert.Empty(lossy);
+            return;
+        }
+
+        JsonNode warning = Assert.Single(lossy);
+        Assert.Equal(
+            "The ppt output does not keep the native charts of slide(s) 2, which become pictures; the 2 section(s); "
+                + "the table styles of slide(s) 3, so those tables lose the fills, borders and text formatting of their style.",
+            warning["message"]!.GetValue<string>());
+        Assert.Equal(
+            "Keep the source deck for further edits; to keep the charts editable, the sections and the table styles, convert to pptx instead.",
+            warning["hint"]!.GetValue<string>());
+        Assert.NotEqual(true, warning["affectsCompleteness"]?.GetValue<bool>());
     }
 
     /// <summary>

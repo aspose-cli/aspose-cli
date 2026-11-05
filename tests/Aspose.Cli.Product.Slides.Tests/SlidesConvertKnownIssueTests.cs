@@ -37,6 +37,42 @@ public sealed class SlidesConvertKnownIssueTests
     }
 
     /// <summary>
+    /// A PPT save writes a native chart as a picture and a styled table without its style, so the
+    /// table's cells lose the fill the style gave them. PowerPoint's own PPT save keeps the chart
+    /// editable and the table's fills.
+    /// </summary>
+    [LicensedFact]
+    public void PptSave_TurnsChartsIntoPicturesAndDropsTableStyles()
+    {
+        using var fixture = new SlidesEngineFixture();
+        string path = fixture.File("deck.ppt");
+        TableStylePreset style;
+        FillType styledFill;
+        using (var deck = new Presentation())
+        {
+            deck.Slides[0].Shapes.AddChart(ChartType.ClusteredColumn, 50, 50, 300, 200);
+            ITable table = deck.Slides[0].Shapes.AddTable(50, 300, [100, 100], [40, 40]);
+            style = table.StylePreset;
+            styledFill = table.Rows[0][0].CellFormat.GetEffective().FillFormat.FillType;
+            deck.Save(path, SaveFormat.Ppt);
+        }
+
+        using var reopened = new Presentation(path);
+        IShape[] shapes = [.. reopened.Slides[0].Shapes];
+        bool chart = shapes.Any(static shape => shape is IChart);
+        bool picture = shapes.Any(static shape => shape is IPictureFrame);
+        ITable? kept = shapes.OfType<ITable>().SingleOrDefault();
+        FillType fill = kept?.Rows[0][0].CellFormat.GetEffective().FillFormat.FillType ?? FillType.NotDefined;
+
+        KnownIssue.Reproduces(
+            "SLIDES-PPT-NATIVE-CONTENT",
+            style != TableStylePreset.None && styledFill == FillType.Solid
+                && !chart && picture && kept?.StylePreset == TableStylePreset.None && fill == FillType.NoFill,
+            $"a table of style {style} and first-cell fill {styledFill} reopens from PPT with style {kept?.StylePreset} and fill {fill}; "
+                + $"the reopened PPT has a chart: {chart}, a picture: {picture}");
+    }
+
+    /// <summary>
     /// A body placeholder's paragraphs take their bullets from the master. Markdown export writes
     /// them as plain lines, while the same paragraphs with explicit bullets become a list.
     /// </summary>

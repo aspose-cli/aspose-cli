@@ -575,6 +575,16 @@ Reproductions: [SlidesKnownIssueTests](tests/Aspose.Cli.Product.Slides.Tests/Sli
   charts become pictures, the slides whose transitions are dropped and the number of sections.
 - **Workaround:** keep the PPTX for further edits.
 
+### SLIDES-PPT-NATIVE-CONTENT
+
+- **Defect:** saving a presentation as PPT writes each native chart as a picture and drops the
+  table styles, so a styled table keeps its cells and text but not its fills, borders and text
+  formatting. PowerPoint's own PPT save keeps the chart editable and the table's look.
+- **CLI behavior:** `slides convert` to PPT warns `LOSSY_CONVERSION`, naming the slides whose
+  charts become pictures and the slides whose tables lose their style, and the number of
+  sections, which a PPT file cannot hold.
+- **Workaround:** keep the PPTX for further edits.
+
 ### SLIDES-PPT-TEMPLATE-LAYOUTS
 
 - **Defect:** loading some PowerPoint 97-2003 binary files (PPT, PPS, POT) lists extra layouts

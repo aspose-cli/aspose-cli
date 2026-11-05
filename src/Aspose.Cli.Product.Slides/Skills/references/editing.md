@@ -141,6 +141,10 @@ master or layout art); each item keeps its presentation-wide `index`.
   `set_slide_hidden`, or leave them out of what you report as the deck.
 - An ODP output turns native charts into pictures and drops slide transitions and sections, and
   warns `LOSSY_CONVERSION` (SLIDES-ODP-NATIVE-CONTENT); keep the PPTX for further edits.
+- A PPT output turns native charts into pictures and drops the sections and the table styles, so
+  a styled table loses its fills, borders and text formatting; it warns `LOSSY_CONVERSION` naming
+  the slides with charts or styled tables and the number of sections (SLIDES-PPT-NATIVE-CONTENT).
+  Keep the PPTX for further edits.
 - A PDF or other export (XPS, HTML, HTML5, Markdown, TIFF, GIF) holds the slides alone, with no
   handout or notes-page layout, so speaker notes are not in it: a `convert` to one warns
   `LOSSY_CONVERSION` with the numbers of the converted slides that have notes. PPT, PPTX, PPTM
