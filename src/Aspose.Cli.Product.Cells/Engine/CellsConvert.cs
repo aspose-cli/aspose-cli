@@ -88,6 +88,8 @@ internal static class CellsConvert
         Warning? chartsSplit = CellsEngineFormats.IsPaginated(request.Output.Format.Id)
             ? PrintedPages.SplitChartsWarning(workbook, request.Output.Format.Id, selectedSheets)
             : null;
+        // What the output format leaves out of the sheets it writes (CellsEngineFormat.Leaves).
+        Warning[] unwritten = [.. UnwrittenContent.Warnings(workbook, request.Output.Format.Id, selectedSheets)];
         WorkbookSavePlan savePlan = WorkbookSavePlan.Create(request.Output.Format, licenseState,
             OutputProtection.For(request.Output.Format, request.EncryptPassword, loaded.Protection, request.Password),
             selectedSheets, request.ByteOrderMark);
@@ -115,7 +117,7 @@ internal static class CellsConvert
                     // The evaluation SDK writes only the first sheet to a text format.
                     ? $"Evaluation mode exports only the first sheet to {request.Output.Format.Id}; converting another sheet needs an Aspose.Cells license, then --sheets with the sheet's position from inspect."
                     : "Pass --sheets with the sheet's position from inspect to convert another sheet."), lost.SheetsDropped, lost.DrawingsDropped, headerOnlySkipped, lost.Truncated, lost.FormulasBroken, chartsSplit,
-                .. textLayout]),
+                .. unwritten, .. textLayout]),
         };
     }
 

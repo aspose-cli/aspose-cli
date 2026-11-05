@@ -58,6 +58,14 @@ An md output writes each cell as the sheet shows it (`700,000`, `38.6%`),
 where csv and tsv write the stored value, so the table can go straight to
 `words create --from-markdown`, and it keeps the sheet's comments.
 
+A PDF or XPS prints only the comments its page setup prints, by default none,
+and warns `LOSSY_CONVERSION` with how many comments each sheet it prints has.
+An html or mhtml page holds no comments, shows the charts as pictures and
+keeps the headers and footers only as Excel print data that a browser neither
+shows nor prints; it warns `LOSSY_CONVERSION` for each of these the sheets
+have. The workbook keeps all of it: read the comments, charts and headers with
+`cells inspect --detail comments`, `--detail charts` and `--detail layout`.
+
 A PDF or XPS that prints a chart across two or more pages warns
 `CHART_SPLIT_ACROSS_PAGES` with each chart and its page count, and `review`
 reports such a workbook as `CELLS_CHART_SPLIT_ACROSS_PAGES`. Fit the sheet

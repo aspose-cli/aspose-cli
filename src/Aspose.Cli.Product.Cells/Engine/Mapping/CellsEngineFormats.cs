@@ -13,6 +13,10 @@ namespace Aspose.Cli.Product.Cells.Engine.Mapping;
 /// </summary>
 internal static class CellsEngineFormats
 {
+    // What an html or mhtml page of the workbook leaves out, as Aspose.Cells writes it.
+    private const CellsContentLoss WebPageLosses =
+        CellsContentLoss.Comments | CellsContentLoss.ChartPictures | CellsContentLoss.PrintHeadersFooters;
+
     /// <summary>Every format id the engine maps, with what it maps to.</summary>
     internal static IReadOnlyList<CellsEngineFormat> All { get; } =
     [
@@ -35,16 +39,16 @@ internal static class CellsEngineFormats
         },
         new("html")
         {
-            Detected = FileFormatType.Html, Save = SaveFormat.Html, EvaluationMarks = CellsEvaluationMarkKind.Pages,
+            Detected = FileFormatType.Html, Save = SaveFormat.Html, EvaluationMarks = CellsEvaluationMarkKind.Pages, Leaves = WebPageLosses,
             Options = static (_, _) => new HtmlSaveOptions { SaveAsSingleFile = true, ExportImagesAsBase64 = true },
         },
-        new("mhtml") { Detected = FileFormatType.MHtml, Save = SaveFormat.MHtml, EvaluationMarks = CellsEvaluationMarkKind.Pages },
+        new("mhtml") { Detected = FileFormatType.MHtml, Save = SaveFormat.MHtml, EvaluationMarks = CellsEvaluationMarkKind.Pages, Leaves = WebPageLosses },
         new("pdf")
         {
-            Save = SaveFormat.Pdf, Paginated = true, EvaluationMarks = CellsEvaluationMarkKind.Pages,
+            Save = SaveFormat.Pdf, Paginated = true, EvaluationMarks = CellsEvaluationMarkKind.Pages, Leaves = CellsContentLoss.UnprintedComments,
             Options = static (_, selectedSheets) => selectedSheets is { } sheets ? new PdfSaveOptions { SheetSet = new SheetSet([.. sheets]) } : null,
         },
-        new("xps") { Save = SaveFormat.Xps, Paginated = true, EvaluationMarks = CellsEvaluationMarkKind.Pages },
+        new("xps") { Save = SaveFormat.Xps, Paginated = true, EvaluationMarks = CellsEvaluationMarkKind.Pages, Leaves = CellsContentLoss.UnprintedComments },
         new("json") { Detected = FileFormatType.Json, Save = SaveFormat.Json, WritesRecords = true, EvaluationMarks = CellsEvaluationMarkKind.JsonRecord },
         new("md")
         {
@@ -75,6 +79,9 @@ internal static class CellsEngineFormats
 
     /// <inheritdoc cref="CellsEngineFormat.DropsDrawings"/>
     public static bool DropsDrawings(string formatId) => Find(formatId).DropsDrawings;
+
+    /// <inheritdoc cref="CellsEngineFormat.Leaves"/>
+    public static CellsContentLoss Leaves(string formatId) => Find(formatId).Leaves;
 
     /// <summary>
     /// The evaluation marks an output in <paramref name="formatId"/> carries; null for an id the
@@ -148,6 +155,13 @@ internal sealed record CellsEngineFormat(string Id)
     /// </summary>
     public bool DropsDrawings { get; init; }
 
+    /// <summary>
+    /// The content of a workbook that an output in this format does not hold as the workbook does.
+    /// A convert names what the sheets it writes have of it in <c>LOSSY_CONVERSION</c>
+    /// (<see cref="UnwrittenContent"/>); the content stays in the workbook.
+    /// </summary>
+    public CellsContentLoss Leaves { get; init; }
+
     /// <summary>The evaluation marks an output in this format carries; null when the format is never written.</summary>
     public CellsEvaluationMarkKind? EvaluationMarks { get; init; }
 
@@ -159,6 +173,34 @@ internal sealed record CellsEngineFormat(string Id)
 /// <param name="byteOrderMark">Whether a text output starts with a UTF-8 byte order mark (<c>--bom</c>).</param>
 /// <param name="selectedSheets">The zero-based sheets <c>--sheets</c> selected, or null for every sheet.</param>
 internal delegate SaveOptions? CellsSaveOptionsFactory(bool byteOrderMark, IReadOnlyList<int>? selectedSheets);
+
+/// <summary>The kinds of workbook content an output format does not hold as the workbook does (<see cref="CellsEngineFormat.Leaves"/>).</summary>
+[Flags]
+internal enum CellsContentLoss
+{
+    /// <summary>The output holds every kind of content the workbook has.</summary>
+    None = 0,
+
+    /// <summary>
+    /// The comments the page setup of their sheet does not print, as a printout leaves them out:
+    /// every comment, unless the sheet prints its comments at its end, or, in place, the ones shown.
+    /// </summary>
+    UnprintedComments = 1,
+
+    /// <summary>Every comment.</summary>
+    Comments = 2,
+
+    /// <summary>The charts, which become pictures, so their titles, labels and data are no text of the output.</summary>
+    ChartPictures = 4,
+
+    /// <summary>
+    /// The headers and footers, which the output keeps only as Excel print data in its styles
+    /// (<c>mso-header-data</c>, <c>mso-footer-data</c>), which a browser neither shows nor prints.
+    /// A header or footer that prints only the page number or page count is no loss: a page
+    /// without pages has nothing to show for it.
+    /// </summary>
+    PrintHeadersFooters = 8,
+}
 
 /// <summary>What evaluation mode leaves in an output, as <see cref="CellsEvaluationProfile"/> names it.</summary>
 internal enum CellsEvaluationMarkKind
