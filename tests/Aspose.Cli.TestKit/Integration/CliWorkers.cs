@@ -2,8 +2,10 @@ using System.Diagnostics;
 using System.IO.Pipes;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json;
 using Aspose.Cli.Sdk;
 using Aspose.Cli.Sdk.Configuration;
+using Aspose.Cli.Sdk.Errors;
 
 namespace Aspose.Cli.TestKit;
 
@@ -14,7 +16,9 @@ namespace Aspose.Cli.TestKit;
 /// (<see cref="CliWorkerHost"/>), and runs one command at a time with the working directory,
 /// environment and console streams a child process would get, so commands that run side by side
 /// never share output. A worker that crashes or exceeds the timeout fails its command with what
-/// the worker wrote, and is never replaced by a silent rerun.
+/// the worker wrote, and is never replaced by a silent rerun. The one command that runs again is
+/// one that fails with <c>EVALUATION_LIMIT</c> in a worker that ran other commands, a limit the
+/// worker itself can reach (see <see cref="Run"/>).
 /// </summary>
 /// <remarks>
 /// An engine's license is process-wide, so a worker serves one license lane: the commands whose
@@ -67,11 +71,14 @@ public static class CliWorkers
     /// <summary>Whether this test process runs commands in workers.</summary>
     public static bool Enabled => _slots is not null;
 
-    /// <summary>The command lines workers have run for the current thread, so a test can tell where its runs went.</summary>
+    /// <summary>The runs workers have made for the current thread, so a test can tell where its runs went.</summary>
     [ThreadStatic]
     private static int _threadRuns;
 
-    /// <summary>The command lines workers have run for the current thread.</summary>
+    /// <summary>
+    /// The runs workers have made for the current thread: one for each command line, and one more
+    /// for a command line that ran again in a new worker (see <see cref="Run"/>).
+    /// </summary>
     public static int ThreadRuns => _threadRuns;
 
     /// <summary>Runs the commands of this flow as child processes until disposed.</summary>
@@ -141,40 +148,35 @@ public static class CliWorkers
     /// </summary>
     private static readonly string[] ChildOptions = [GlobalOptionNames.License, GlobalOptionNames.LicenseMode, GlobalOptionNames.WorkDir, "--font-dir"];
 
-    /// <summary>Runs a command line in a worker of <paramref name="lane"/>.</summary>
+    /// <summary>
+    /// Runs a command line in a worker of <paramref name="lane"/>. A command that fails with
+    /// <c>EVALUATION_LIMIT</c> in a worker that ran other commands runs again in a new worker,
+    /// whose result is the command's.
+    /// </summary>
     internal static CliResult Run(string lane, string executable, string directory, IReadOnlyList<string> args, IDictionary<string, string?> environment, TimeSpan timeout)
     {
         SemaphoreSlim slots = _slots ?? throw new InvalidOperationException("Workers are not enabled.");
         slots.Wait();
         try
         {
-            CliWorker worker = Take(lane, executable);
-            bool reusable = false;
-            try
+            CliWorker worker = Take(lane, executable, reuse: true);
+            bool ranOthers = worker.Commands > 0;
+            CliResult result = RunIn(worker, directory, args, environment, timeout);
+            // An evaluation limit can be the worker's own doing: Aspose.Cells evaluation mode opens
+            // at most 100 files in one process, which a worker reaches across commands while one
+            // command line in a process of its own, the child process a worker stands in for,
+            // never does. So this is no silent rerun of a crash: the worker answered, and the new
+            // worker gives the command the fresh process a child would have. A limit the command
+            // reaches by itself it reaches there too, and that is the result; the product's
+            // preview render worker recycles itself by the same rule.
+            if (ranOthers && IsEvaluationLimit(result))
             {
-                CliResult result = worker.Run(directory, args, environment, timeout);
-                _threadRuns++;
-                reusable = worker.Commands < CommandsPerWorker;
-                return result;
+                Stop(worker);
+                worker = Take(lane, executable, reuse: false);
+                result = RunIn(worker, directory, args, environment, timeout);
             }
-            finally
-            {
-                if (reusable)
-                {
-                    lock (Gate)
-                    {
-                        if (!Idle.TryGetValue(lane, out Stack<CliWorker>? idle))
-                        {
-                            Idle[lane] = idle = new Stack<CliWorker>();
-                        }
-                        idle.Push(worker);
-                    }
-                }
-                else
-                {
-                    Stop(worker);
-                }
-            }
+            Return(lane, worker);
+            return result;
         }
         finally
         {
@@ -183,15 +185,97 @@ public static class CliWorkers
     }
 
     /// <summary>
-    /// An idle worker of the lane, or a new one; at capacity an idle worker of another lane makes
-    /// room. Holding a slot guarantees one: fewer workers than the capacity are busy.
+    /// Whether a command failed with <c>EVALUATION_LIMIT</c>. Its exit code, 7, is also that of
+    /// the other license errors, <c>LICENSE_FILE_NOT_FOUND</c> and <c>LICENSE_INVALID</c>, so the
+    /// code is read from the error the command wrote to stderr: in the JSON formats the
+    /// <c>error.code</c> of the error envelope, after any JSON lines of diagnostics, and in the table
+    /// and Markdown formats the line <c>error EVALUATION_LIMIT: ...</c>.
     /// </summary>
-    private static CliWorker Take(string lane, string executable)
+    private static bool IsEvaluationLimit(CliResult result)
+    {
+        if (result.ExitCode != (int)ExitCode.LicenseError)
+        {
+            return false;
+        }
+        string code = ErrorCodes.EvaluationLimit.Name;
+        string line = $"error {code}: ";
+        if (result.StdErr.Split('\n').Any(text => text.StartsWith(line, StringComparison.Ordinal)))
+        {
+            return true;
+        }
+        try
+        {
+            var reader = new Utf8JsonReader(Encoding.UTF8.GetBytes(result.StdErr), new JsonReaderOptions { AllowMultipleValues = true });
+            while (reader.Read())
+            {
+                using JsonDocument document = JsonDocument.ParseValue(ref reader);
+                if (document.RootElement.ValueKind == JsonValueKind.Object
+                    && document.RootElement.TryGetProperty("error", out JsonElement error)
+                    && error.ValueKind == JsonValueKind.Object
+                    && error.TryGetProperty("code", out JsonElement value)
+                    && value.ValueKind == JsonValueKind.String
+                    && value.ValueEquals(code))
+                {
+                    return true;
+                }
+            }
+        }
+        catch (JsonException)
+        {
+            // Not the stderr of a JSON format.
+        }
+        return false;
+    }
+
+    /// <summary>Runs a command line in <paramref name="worker"/>, which is stopped when it does not answer.</summary>
+    private static CliResult RunIn(CliWorker worker, string directory, IReadOnlyList<string> args, IDictionary<string, string?> environment, TimeSpan timeout)
+    {
+        bool answered = false;
+        try
+        {
+            CliResult result = worker.Run(directory, args, environment, timeout);
+            answered = true;
+            _threadRuns++;
+            return result;
+        }
+        finally
+        {
+            if (!answered)
+            {
+                Stop(worker);
+            }
+        }
+    }
+
+    /// <summary>Makes a worker idle in its lane, or stops it once it has served its commands.</summary>
+    private static void Return(string lane, CliWorker worker)
+    {
+        if (worker.Commands >= CommandsPerWorker)
+        {
+            Stop(worker);
+            return;
+        }
+        lock (Gate)
+        {
+            if (!Idle.TryGetValue(lane, out Stack<CliWorker>? idle))
+            {
+                Idle[lane] = idle = new Stack<CliWorker>();
+            }
+            idle.Push(worker);
+        }
+    }
+
+    /// <summary>
+    /// An idle worker of the lane when <paramref name="reuse"/> allows one, or a new one; at
+    /// capacity an idle worker makes room. Holding a slot guarantees one: fewer workers than the
+    /// capacity are busy.
+    /// </summary>
+    private static CliWorker Take(string lane, string executable, bool reuse)
     {
         CliWorker? evicted = null;
         lock (Gate)
         {
-            if (Idle.TryGetValue(lane, out Stack<CliWorker>? idle) && idle.Count > 0)
+            if (reuse && Idle.TryGetValue(lane, out Stack<CliWorker>? idle) && idle.Count > 0)
             {
                 return idle.Pop();
             }
