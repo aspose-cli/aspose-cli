@@ -1,38 +1,3 @@
 {
-  "violations": [
-    {
-      "case": "C-R42 | cells convert xlsx -> pdf",
-      "invariant": "C-R42",
-      "rule": "C-R42",
-      "cause": "cells-pdf-export-drops-comments-unreported",
-      "modes": [
-        "licensed"
-      ],
-      "actual": "pdf reads no comment marker from the pdf output, and the convert warns of nothing"
-    },
-    {
-      "case": "C-R43 | cells replace_text",
-      "invariant": "C-R43",
-      "rule": "C-R43",
-      "cause": "cells-replace-text-skips-text-outside-cells-unreported",
-      "modes": [
-        "licensed"
-      ],
-      "actual": "cells still reads the header, footer, comment and chart title markers after the replacement, and the edit warns of nothing"
-    },
-    {
-      "case": "C-R42 | cells convert xlsx -> html",
-      "invariant": "C-R42",
-      "rule": "C-R42",
-      "cause": "cells-web-export-drops-content-unreported",
-      "actual": "words reads no header, footer, comment or chart title marker from the html output, and the convert warns of nothing"
-    },
-    {
-      "case": "C-R42 | cells convert xlsx -> mhtml",
-      "invariant": "C-R42",
-      "rule": "C-R42",
-      "cause": "cells-web-export-drops-content-unreported",
-      "actual": "words reads no comment or chart title marker from the mhtml output, and the convert warns of nothing"
-    }
-  ]
+  "violations": []
 }

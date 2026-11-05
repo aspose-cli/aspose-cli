@@ -69,6 +69,14 @@ internal static class CellsDiagnostics
     /// </summary>
     internal static readonly WarningCode ImagesSkipped = new("IMAGES_SKIPPED");
 
+    /// <summary>
+    /// A replace_text found a match in text of its sheet outside the cells, which it does not
+    /// change: the header or footer, a comment or a chart title. One warning names each of these
+    /// parts that holds a match, with its <c>location</c>; <c>details</c> names the operation by
+    /// <c>id</c> and <c>op</c>.
+    /// </summary>
+    internal static readonly WarningCode TextOutsideCellsNotReplaced = new("TEXT_OUTSIDE_CELLS_NOT_REPLACED");
+
     /// <summary>Verification: the edited workbook contains formula errors.</summary>
     internal static readonly DiagnosticDescriptor FormulaErrors = DiagnosticDescriptor.Verification("FORMULA_ERRORS");
 
@@ -97,6 +105,7 @@ internal static class CellsDiagnostics
         DiagnosticDescriptor.Warning(ChartSplitAcrossPages),
         DiagnosticDescriptor.Warning(RowsShifted),
         DiagnosticDescriptor.Warning(ImagesSkipped),
+        DiagnosticDescriptor.Warning(TextOutsideCellsNotReplaced),
         FormulaErrors,
     ];
 }

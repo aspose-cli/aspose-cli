@@ -2552,6 +2552,13 @@
       "detailsSchemaId": "v2/common/not-found-details"
     },
     {
+      "code": "TEXT_OUTSIDE_CELLS_NOT_REPLACED",
+      "owner": "cells",
+      "severity": "warning",
+      "category": "warning",
+      "detailsSchemaId": "v2/common/diagnostic-details"
+    },
+    {
       "code": "TEXT_TABLE_LAYOUT",
       "owner": "cells",
       "severity": "warning",

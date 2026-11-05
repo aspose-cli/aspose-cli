@@ -118,6 +118,18 @@ Run `--dry-run` first for a large or destructive batch (`delete_sheet`,
   `#SPILL!` in every cell but the last.
 - Inserting or deleting rows and columns updates formula references as in
   Excel.
+- `replace_text` changes the text values of the cells of its sheet, or of its
+  `range`, and no text outside them. When the sheet's header or footer, a
+  comment or a chart title holds a match, found by the same `regex`,
+  `caseSensitive` and `wholeWord`, that text stays as it was, and the edit
+  warns `TEXT_OUTSIDE_CELLS_NOT_REPLACED` once for each of these parts, with
+  its `location`: `page-setup/Sales`, `comment/Sales!B2`, `chart/Sales/1`, or
+  `sheet/Sales` for several comments or charts. With a `range`, only the
+  comments of its cells are checked. The edit still exits 0, and the warning
+  is no `--verify` issue. Read that text with `cells inspect --detail layout`,
+  `--detail comments` or `--detail charts`, and change it with
+  `set_page_setup` (`headerCenter`, `footerCenter`; no operation changes the
+  left and right sections), `set_comment` or `set_chart` with its `title`.
 
 ## Combining workbooks
 
