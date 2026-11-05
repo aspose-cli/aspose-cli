@@ -57,6 +57,17 @@ public sealed class EngineSaveStampsCollection
 }
 
 /// <summary>
+/// Tests that follow the workers of one lane of <see cref="CliWorkers"/> from one command to the
+/// next. They run alone, after the parallel tests, so no other test's command stops a worker of
+/// the lane to make room for its own.
+/// </summary>
+[Xunit.CollectionDefinition(Name, DisableParallelization = true)]
+public sealed class CliWorkerLaneCollection
+{
+    public const string Name = "CLI worker lane";
+}
+
+/// <summary>
 /// The result schema coverage check of a product's tests. It runs alone and last, after every
 /// other test of the process has made its CLI runs (<see cref="ResultSchemaCoverageOrderer"/>).
 /// </summary>
