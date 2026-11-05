@@ -3,6 +3,7 @@ using Aspose.Cli.Product.Cells.Contracts.Addressing;
 using Aspose.Cli.Sdk.Addressing;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Errors;
+using Aspose.Cli.Sdk.Extensibility.Commanding;
 using Xunit;
 
 namespace Aspose.Cli.Product.Cells.Tests;
@@ -1036,6 +1037,7 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
         CliException error = Assert.Throws<CliException>(() => CellsRender.Run(_fixture.Session, new CellsRenderRequest
         {
             Input = path,
+            Continuation = () => new ContinuationCommand("cells", "render").Argument(path),
             Output = TestOutput.At(_fixture.Temp.File($"too-large-{Guid.NewGuid():N}.png"), format: "png"),
             Dpi = 1200,
         }));
@@ -1053,6 +1055,7 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
         CellsRenderResult result = CellsRender.Run(_fixture.Session, new CellsRenderRequest
         {
             Input = path,
+            Continuation = () => new ContinuationCommand("cells", "render").Argument(path),
             Output = TestOutput.At(output, format: "png"),
             SheetName = "Data",
             Range = new RangeRef(new CellRef(0, 0), new CellRef(2, 2)),
@@ -1079,6 +1082,7 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
         CellsRenderResult images = CellsRender.Run(_fixture.Session, new CellsRenderRequest
         {
             Input = path,
+            Continuation = () => new ContinuationCommand("cells", "render").Argument(path),
             Output = TestOutput.At(_fixture.Temp.File("selected.png"), format: "png"),
             Sheets = PageRange.Parse("2,1"),
             Dpi = 72,
@@ -1114,6 +1118,7 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
         CellsRenderResult result = CellsRender.Run(_fixture.Session, new CellsRenderRequest
         {
             Input = path,
+            Continuation = () => new ContinuationCommand("cells", "render").Argument(path),
             Output = TestOutput.At(_fixture.Temp.File("colliding.png"), format: "png"),
             Dpi = 72,
         });
@@ -1132,6 +1137,7 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
         CellsRenderResult result = CellsRender.Run(_fixture.Session, new CellsRenderRequest
         {
             Input = path,
+            Continuation = () => new ContinuationCommand("cells", "render").Argument(path),
             Output = TestOutput.At(output, format: "svg"),
             Sheets = PageRange.Parse("1"),
         });

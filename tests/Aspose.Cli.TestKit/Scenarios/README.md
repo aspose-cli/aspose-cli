@@ -87,9 +87,14 @@ Every step is also checked, whatever it expects, against the CLI's own catalog
 - `executable-hint`: what each `error.hint` and `warnings[].hint` names runs as written
   (`ExecutableHints`): a quoted or unquoted `aspose-cli` command runs on the step's own files in
   a copy of its workspace, with `--dry-run` where the command has one, and must not fail with
-  `USAGE_ERROR`, `OPTION_INVALID` or `OPS_INVALID`; a JSON operation runs through the product's
-  `edit --ops … --dry-run`; an option named alone must be one of the step's command, with an
-  allowed value; and an operation named must be one of the product's.
+  `USAGE_ERROR`, `OPTION_INVALID` or `OPS_INVALID`. When the step gives the password of its
+  input in an environment variable (`--password-env`), the command runs without `--dry-run`,
+  which does not open the input, and must not fail with `PASSWORD_REQUIRED` or
+  `PASSWORD_INVALID` either: a command that names the input passes that variable on, and one
+  whose input the check fills in gets it with the input. A JSON operation runs through the
+  product's `edit --ops … --dry-run`, with the step's password variable; an option named alone
+  must be one of the step's command, with an allowed value; and an operation named must be one
+  of the product's.
 
 ## License mode
 

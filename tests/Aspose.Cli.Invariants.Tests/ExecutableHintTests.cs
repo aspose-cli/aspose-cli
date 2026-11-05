@@ -281,6 +281,44 @@ public sealed class ExecutableHintTests : IDisposable
             StringComparison.Ordinal);
     }
 
+    /// <summary>
+    /// A command a hint names the input in must pass on the variable the invocation gave the
+    /// input's password in: the editable conversion that the conversion of an encrypted PDF to
+    /// docx named without it (c15dd538) cannot open the input.
+    /// </summary>
+    [Fact]
+    public void CommandOnTheInput_WithoutTheInvocationsPasswordVariable_IsReported()
+    {
+        File.WriteAllBytes(_workspace.File("locked.pdf"), ScenarioFixtures.Read("pdf.encrypted"));
+        string[] args = ["pdf", "convert", "locked.pdf", "--password-env", "PDF_PASSWORD", "--to", "docx", "--output-format", "json"];
+        var run = new HintRun(args, _workspace.Path, Path.GetDirectoryName(_workspace.ConfigDirectory)!,
+            new Dictionary<string, string?> { ["PDF_PASSWORD"] = ScenarioFixtures.Password });
+
+        Assert.Contains("fails with PASSWORD_REQUIRED", Assert.Single(ExecutableHints.Problems(run, Warning(
+            "For an editable document, run 'aspose-cli words convert \"locked.pdf\" --to docx --out \"locked.docx\" --overwrite --output-format json' instead."))),
+            StringComparison.Ordinal);
+        Assert.Empty(ExecutableHints.Problems(run, Warning(
+            "For an editable document, run 'aspose-cli words convert \"locked.pdf\" --password-env PDF_PASSWORD --to docx --out \"locked.docx\" --overwrite --output-format json' instead.")));
+    }
+
+    /// <summary>
+    /// A hint that leaves the input to the caller, by naming none or by a placeholder, and the
+    /// operations a hint shows, get the variable of the input's password with the input, as the
+    /// caller filling it in would pass it.
+    /// </summary>
+    [Fact]
+    public void InputTheCheckFillsIn_TakesTheInvocationsPasswordVariable()
+    {
+        File.WriteAllBytes(_workspace.File("locked.xlsx"), ScenarioFixtures.Read("cells.encrypted"));
+        string[] args = ["cells", "inspect", "locked.xlsx", "--password-env", "BOOK_PASSWORD", "--output-format", "json"];
+        var run = new HintRun(args, _workspace.Path, Path.GetDirectoryName(_workspace.ConfigDirectory)!,
+            new Dictionary<string, string?> { ["BOOK_PASSWORD"] = ScenarioFixtures.Password });
+
+        Assert.Empty(ExecutableHints.Problems(run, Warning("Read the locked cells with 'cells read --range A1:C3'.")));
+        Assert.Empty(ExecutableHints.Problems(run, Warning("Read the locked cells with 'aspose-cli cells read <workbook> --range A1:C4'.")));
+        Assert.Empty(ExecutableHints.Problems(run, Warning("""Fill the locked cell with {"op":"set_values","sheet":"Sheet1","range":"E1","values":[["locked"]]}.""")));
+    }
+
     /// <summary>Global options before the command path still leave that command to judge an option the hint names alone.</summary>
     [Fact]
     public void BareOption_IsJudgedByTheCommandAfterLeadingGlobalOptions()

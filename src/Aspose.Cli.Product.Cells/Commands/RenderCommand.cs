@@ -59,6 +59,7 @@ internal static class RenderCommand
                     Range = range?.Range,
                     Dpi = resolution,
                     Password = standard.InputPassword,
+                    Continuation = standard.Continuation,
                 };
             },
             Table)

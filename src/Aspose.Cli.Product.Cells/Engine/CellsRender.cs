@@ -18,6 +18,9 @@ namespace Aspose.Cli.Product.Cells.Engine;
 /// <summary><c>cells render</c>: sheets, or a range of one, drawn as images.</summary>
 internal static class CellsRender
 {
+    /// <summary>The option of <c>cells render</c> that names the range a hint's command draws.</summary>
+    private const string RangeOption = "--range";
+
     public static CellsRenderResult Run(CellsSession session, CellsRenderRequest request)
     {
         ArgumentNullException.ThrowIfNull(session);
@@ -227,7 +230,7 @@ internal static class CellsRender
             throw Empty(sheet);
         }
 
-        if (printArea is null && PrintAreasLeftOut(sheet, render, request.Input) is { } leftOut)
+        if (printArea is null && PrintAreasLeftOut(sheet, render, request.Continuation) is { } leftOut)
         {
             warnings.Add(leftOut);
         }
@@ -348,8 +351,8 @@ internal static class CellsRender
     /// </summary>
     /// <param name="sheet">The sheet drawn.</param>
     /// <param name="render">Its one-page-per-sheet render.</param>
-    /// <param name="input">The workbook path, for the commands that draw the rest.</param>
-    internal static Warning? PrintAreasLeftOut(Worksheet sheet, SheetRender render, string input)
+    /// <param name="renderCommand">Starts the <c>cells render</c> command of the workbook, for the commands that draw the rest.</param>
+    internal static Warning? PrintAreasLeftOut(Worksheet sheet, SheetRender render, Func<ContinuationCommand> renderCommand)
     {
         if (render.PageCount < 2 || SheetLayoutProjection.PrintArea(sheet.PageSetup)?.Range is not { } printArea)
         {
@@ -358,7 +361,7 @@ internal static class CellsRender
 
         IReadOnlyList<string> areas = A1.SplitList(printArea);
         string rest = string.Join("; ", areas.Skip(1).Select(area =>
-            $"aspose-cli cells render \"{input}\" --range \"{Sheets.QuotedName(sheet.Name)}!{area}\""));
+            renderCommand().Option(RangeOption, $"{Sheets.QuotedName(sheet.Name)}!{area}").ToString()));
         return new Warning(CellsDiagnostics.SheetPartiallyRendered,
             $"Worksheet '{sheet.Name}' prints {areas.Count} areas, {printArea}; its image shows only the first, {areas[0]}.")
         {
@@ -388,7 +391,8 @@ internal static class CellsRender
         return new Warning(CellsDiagnostics.RenderImageLarge,
             $"The image of worksheet '{sheet.Name}' is {width} x {height} pixels, more than {LargeImageSide} on a side, which image viewers and models scale down or cut.")
         {
-            Hint = $"Render the sheet in windows with a sheet-qualified --range, such as aspose-cli cells render \"{request.Input}\" --range \"{Window(sheet, printArea, width, height)}\", or lower --dpi.",
+            Hint = $"Render the sheet in windows with a sheet-qualified --range, such as "
+                + $"{request.Continuation().Option(RangeOption, Window(sheet, printArea, width, height))}, or lower --dpi.",
             Location = CellsAddresses.OfSheet("sheet", sheet.Name),
         };
     }

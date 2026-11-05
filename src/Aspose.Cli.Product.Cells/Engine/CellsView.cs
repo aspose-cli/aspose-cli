@@ -150,7 +150,8 @@ internal static class CellsView
                 window = shown == drawn ? null : WindowShown(sheet, drawn, shown, input);
             }
 
-            window ??= CellsRender.PrintAreasLeftOut(sheet, render, input);
+            // A view request names no password variable, so the command carries none.
+            window ??= CellsRender.PrintAreasLeftOut(sheet, render, () => new ContinuationCommand("cells", "render").Argument(input));
             CellsRender.EnsureRenderable(budgets, render, dpi, sheet, printArea: null);
             float[] inches = render.GetPageSizeInch(0);
             artifacts.Write(file, stream => render.ToImage(0, stream));

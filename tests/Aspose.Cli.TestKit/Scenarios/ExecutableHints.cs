@@ -28,19 +28,24 @@ public sealed record HintRun(
 /// names alone (<c>lower --dpi</c>) and each operation it names (<c>use clear_autofilter</c>).
 /// <list type="bullet">
 /// <item>A command with arguments runs on the invocation's own files, in a copy of its workspace,
-/// configuration and user profile, with <c>--dry-run</c> where the command has it; a
+/// configuration and user profile, with <c>--dry-run</c> where the command has it, unless the
+/// invocation gives the password of its input, which a dry run does not open; a
 /// <c>&lt;file&gt;</c>-like placeholder (by its last word, so <c>&lt;that file&gt;</c> too) or a
 /// missing input argument takes the invocation's input, a <c>&lt;dir&gt;</c>-like one a directory
 /// in that copy, and any other placeholder, such as <c>&lt;sheet&gt;</c>, makes the hint not
 /// executable, except <c>&lt;command&gt;</c> (or <c>&lt;subcommand&gt;</c>) alone after a group,
 /// as in <c>'aspose-cli cells &lt;command&gt;'</c>. It must not fail with
-/// <see cref="RefusedCodes"/>.</item>
+/// <see cref="RefusedCodes"/>, nor, when the invocation gives the password of its input in an
+/// environment variable, with <see cref="PasswordCodes"/>: a command that names the input must
+/// pass that variable on, while one the check fills the input of gets it too, as the caller
+/// filling it in would add it.</item>
 /// <item>A command is only checked against the catalog (its command, options, argument count and
 /// option values) when it is named by its path and option names alone, such as
 /// <c>'cells edit --out'</c>; when the invocation has no file to fill its input with, such as a
 /// <c>create</c>'s; when it writes and has no dry run; and when it starts or stops a service or
 /// reaches the network (<see cref="StaticOnly"/>).</item>
-/// <item>A JSON operation runs as <c>&lt;product&gt; edit &lt;input&gt; --ops … --dry-run</c>.</item>
+/// <item>A JSON operation runs as <c>&lt;product&gt; edit &lt;input&gt; --ops … --dry-run</c>, with
+/// the variable of the input's password when the invocation gives one.</item>
 /// <item>An option named alone must be one of the invocation's command, and the word after it, when
 /// it is not running text, one of its allowed values.</item>
 /// <item>A named operation must be one of the product's operations; a word counts as one when it is
@@ -58,10 +63,19 @@ public static partial class ExecutableHints
     /// <summary>The error codes that mean a hint's command or operation was not written to run.</summary>
     public static IReadOnlyList<string> RefusedCodes { get; } = ["USAGE_ERROR", "OPTION_INVALID", "OPS_INVALID"];
 
+    /// <summary>
+    /// The error codes that refuse an input's password: a hint's command that fails with one did
+    /// not pass on the variable the invocation gave the password of its input in.
+    /// </summary>
+    public static IReadOnlyList<string> PasswordCodes { get; } = ["PASSWORD_REQUIRED", "PASSWORD_INVALID"];
+
     /// <summary>The top-level commands that start or stop a service or reach the network; they are only checked against the catalog.</summary>
     public static IReadOnlyList<string> StaticOnly { get; } = ["app", "doctor", "mcp", "preview", "update"];
 
     private const string Executable = "aspose-cli";
+
+    /// <summary>The option that names the environment variable holding the input's password.</summary>
+    private const string PasswordOption = "--password-env";
 
     private static readonly string[] InputPlaceholders = ["document", "file", "input", "original", "pdf", "presentation", "workbook"];
 
@@ -284,7 +298,8 @@ public static partial class ExecutableHints
         }
 
         var args = new List<string>(line.Path);
-        if (line.Positionals.Count == 0 && required > 0)
+        bool fillsInput = line.Positionals.Count == 0 && required > 0;
+        if (fillsInput)
         {
             args.AddRange(invocation.Files.Take(required).Select(file => Logical(run, file)));
         }
@@ -293,6 +308,7 @@ public static partial class ExecutableHints
             string value = Logical(run, token);
             foreach (Match placeholder in Placeholder().Matches(token))
             {
+                fillsInput |= Fills(InputPlaceholders, placeholder);
                 value = value.Replace(placeholder.Value,
                     NamesVariable(placeholder) ? variable!
                     : Fills(InputPlaceholders, placeholder) ? Logical(run, invocation.Files[0])
@@ -300,7 +316,14 @@ public static partial class ExecutableHints
             }
             args.Add(value);
         }
-        if (line.Command.Has("--dry-run") && !args.Contains("--dry-run"))
+        // Whoever fills in the input passes its password on too; a hint that names the input itself must.
+        if (fillsInput && !line.Rest.Any(static token => token.StartsWith("--password", StringComparison.Ordinal)))
+        {
+            args.AddRange(invocation.PasswordFor(line.Command));
+        }
+        // A dry run does not open the input, so it cannot tell whether the command passes on the
+        // input's password: with one given, the command runs for real, in the copy.
+        if (invocation.Password is null && line.Command.Has("--dry-run") && !args.Contains("--dry-run"))
         {
             args.Add("--dry-run");
         }
@@ -318,7 +341,7 @@ public static partial class ExecutableHints
         {
             return Judgement.Static(subject, invocation.Product, "not executable: this invocation has no product document to apply the operations to");
         }
-        if (!catalog.Commands.Any(command => command.Words == product + " edit"))
+        if (catalog.Commands.FirstOrDefault(command => command.Words == product + " edit") is not { } edit)
         {
             return Judgement.Static(subject, product, $"not executable: {product} has no edit command");
         }
@@ -334,7 +357,8 @@ public static partial class ExecutableHints
             }
             ops = Placeholder().Replace(ops, placeholder => NamesVariable(placeholder) ? variable : placeholder.Value);
         }
-        return Execution(run, invocation, product, [product, "edit", Logical(run, invocation.Files[0]), "--ops", ops, "--dry-run", "--output-format", "json"]);
+        return Execution(run, invocation, product,
+            [product, "edit", Logical(run, invocation.Files[0]), .. invocation.PasswordFor(edit), "--ops", ops, "--dry-run", "--output-format", "json"]);
     }
 
     /// <summary>An option a hint names alone, such as <c>--dpi</c> or <c>--scope all</c>: the invocation's command must have it and allow the value.</summary>
@@ -354,11 +378,13 @@ public static partial class ExecutableHints
 
     /// <summary>
     /// A command line to run in a copy of the invocation's workspace, keyed by the command line
-    /// itself and the content of the invocation's files, so the same file name in two workspaces
-    /// is judged on each one's content.
+    /// itself, the content of the invocation's files and whether a refused password counts, so the
+    /// same file name in two workspaces is judged on each one's content.
     /// </summary>
-    private static Judgement Execution(HintRun run, Invocation invocation, string? product, IReadOnlyList<string> args) =>
-        new($"run\n{product}\n{ContentKey(run, invocation)}\n{string.Join(Separator, args)}", () =>
+    private static Judgement Execution(HintRun run, Invocation invocation, string? product, IReadOnlyList<string> args)
+    {
+        string[] refused = invocation.Password is null ? [.. RefusedCodes] : [.. RefusedCodes, .. PasswordCodes];
+        return new($"run\n{product}\n{string.Join(',', refused)}\n{ContentKey(run, invocation)}\n{string.Join(Separator, args)}", () =>
         {
             using var scratch = new Scratch(run);
             var resolved = new List<string>();
@@ -372,8 +398,9 @@ public static partial class ExecutableHints
                 }
                 resolved.Add(value);
             }
-            return scratch.Run(resolved);
+            return scratch.Run(resolved, refused);
         });
+    }
 
     /// <summary>The SHA-256 of each of the invocation's files that exists, in order; a missing one is empty.</summary>
     private static string ContentKey(HintRun run, Invocation invocation) =>
@@ -622,9 +649,16 @@ public static partial class ExecutableHints
     [GeneratedRegex(@"<([a-z][a-z0-9-]*(?: [a-z][a-z0-9-]*)*)>")]
     private static partial Regex Placeholder();
 
-    /// <summary>The invocation a hint came from: its product and its input files, as it named them.</summary>
-    private sealed record Invocation(string? Product, IReadOnlyList<string> Files)
+    /// <summary>
+    /// The invocation a hint came from: its product, its input files, as it named them, and the
+    /// environment variable it gives the password of its input in, or null.
+    /// </summary>
+    private sealed record Invocation(string? Product, IReadOnlyList<string> Files, string? Password)
     {
+        /// <summary>The options that pass the input's password to <paramref name="command"/>: none when the invocation gives none or the command takes none.</summary>
+        public string[] PasswordFor(CliCommand command) =>
+            Password is { } variable && command.Has(PasswordOption) ? [PasswordOption, variable] : [];
+
         public static Invocation Of(CliCatalog catalog, HintRun run, JsonNode? document)
         {
             CommandLine line = CommandLine.Parse(catalog, run.Args);
@@ -643,8 +677,18 @@ public static partial class ExecutableHints
             }
             string? product = line.Command.Product
                 ?? (files.Count > 0 ? catalog.ReaderOf(Path.IsPathFullyQualified(files[0]) ? files[0] : Path.Combine(run.Workspace, files[0])) : null);
-            return new Invocation(product, files);
+            return new Invocation(product, files, line.Values.FirstOrDefault(pair => OpensInput(line.Command, pair.Option)).Value);
         }
+
+        /// <summary>
+        /// Whether an option names the variable of a password that opens an input document: a
+        /// secret read from a variable that neither encrypts the output (<c>--encrypt-env</c>)
+        /// nor opens a file another option names (<c>--certificate-password-env</c>).
+        /// </summary>
+        private static bool OpensInput(CliCommand command, CliOption option) =>
+            option is { Secret: true, ValueSource: "environment-variable-name" }
+            && !option.Name.StartsWith("--encrypt", StringComparison.Ordinal)
+            && !command.Options.Any(file => file.InputKind == "file" && option.Name == file.Name + "-password-env");
     }
 
     /// <summary>A command line split by the catalog into its command path, options with their values and positional arguments.</summary>
@@ -760,8 +804,8 @@ public static partial class ExecutableHints
         public bool Contains(string path) =>
             System.IO.Path.GetFullPath(path).StartsWith(_directory.Path, StringComparison.OrdinalIgnoreCase);
 
-        /// <summary>Runs the command line in the copy; the refusal it ends with, or null.</summary>
-        public string? Run(IReadOnlyList<string> args)
+        /// <summary>Runs the command line in the copy; the refusal among <paramref name="refused"/> it ends with, or null.</summary>
+        public string? Run(IReadOnlyList<string> args, IReadOnlyList<string> refused)
         {
             CliResult result;
             try
@@ -780,7 +824,7 @@ public static partial class ExecutableHints
                 return null; // Only a refusal of the command line itself is judged.
             }
             if (result.ExitCode == 0 || Parse(result.StdErr)?["error"] is not JsonObject error
-                || Text(error["code"]) is not { } code || !RefusedCodes.Contains(code))
+                || Text(error["code"]) is not { } code || !refused.Contains(code))
             {
                 return null;
             }

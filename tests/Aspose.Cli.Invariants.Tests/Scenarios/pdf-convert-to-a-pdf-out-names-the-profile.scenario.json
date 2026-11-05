@@ -23,7 +23,9 @@
         "error": "OPTION_INVALID",
         "json": [
           { "path": "error.details.suggestions", "notContains": ".pdf" },
-          { "path": "error.hint", "contains": "--to pdfa-1b --out archive.pdf', 'aspose-cli pdf convert input.pdf --to pdfa-2b --out archive.pdf' or 'aspose-cli pdf convert input.pdf --to pdfa-3b --out archive.pdf' for pdfa-1b, pdfa-2b or pdfa-3b." }
+          { "path": "error.hint", "contains": "input.pdf\" --to pdfa-1b --out archive.pdf --output-format json', 'aspose-cli pdf convert \"" },
+          { "path": "error.hint", "contains": "input.pdf\" --to pdfa-2b --out archive.pdf --output-format json' or 'aspose-cli pdf convert \"" },
+          { "path": "error.hint", "contains": "input.pdf\" --to pdfa-3b --out archive.pdf --output-format json' for pdfa-1b, pdfa-2b or pdfa-3b." }
         ],
         "files": { "absent": ["archive.pfd", "archive.pdf"], "nothingWritten": true }
       }

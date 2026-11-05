@@ -503,7 +503,11 @@
           },
           {
             "path": "error.hint",
-            "contains": "or run 'aspose-cli cells convert a.xlsx --to pdf --out x.pdf' for pdf"
+            "contains": "or run 'aspose-cli cells convert "
+          },
+          {
+            "path": "error.hint",
+            "contains": "a.xlsx\" --to pdf --out x.pdf --output-format json' for pdf"
           }
         ],
         "files": {
@@ -547,7 +551,11 @@
           },
           {
             "path": "error.hint",
-            "contains": "or run 'aspose-cli slides convert a.pptx --to pdf --out x.pdf' for pdf"
+            "contains": "or run 'aspose-cli slides convert "
+          },
+          {
+            "path": "error.hint",
+            "contains": "a.pptx\" --to pdf --out x.pdf --output-format json' for pdf"
           }
         ],
         "files": {
@@ -591,7 +599,11 @@
           },
           {
             "path": "error.hint",
-            "contains": "or run 'aspose-cli cells render a.xlsx --to png --out x.png' for png"
+            "contains": "or run 'aspose-cli cells render "
+          },
+          {
+            "path": "error.hint",
+            "contains": "a.xlsx\" --to png --out x.png --output-format json' for png"
           }
         ],
         "files": {
@@ -635,7 +647,11 @@
           },
           {
             "path": "error.hint",
-            "contains": "or run 'aspose-cli slides render a.pptx --to png --out x.png' for png"
+            "contains": "or run 'aspose-cli slides render "
+          },
+          {
+            "path": "error.hint",
+            "contains": "a.pptx\" --to png --out x.png --output-format json' for png"
           }
         ],
         "files": {
@@ -679,7 +695,11 @@
           },
           {
             "path": "error.hint",
-            "contains": "or run 'aspose-cli pdf render a.pdf --to png --out x.png' for png"
+            "contains": "or run 'aspose-cli pdf render "
+          },
+          {
+            "path": "error.hint",
+            "contains": "a.pdf\" --to png --out x.png --output-format json' for png"
           }
         ],
         "files": {
