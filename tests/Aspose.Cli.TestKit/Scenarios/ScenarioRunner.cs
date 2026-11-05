@@ -178,7 +178,7 @@ public static partial class ScenarioRunner
             }
             foreach (string written in Written(before, after).Where(static key => !key.StartsWith('<')))
             {
-                if (hidden.Length > 0 && HiddenIn(workspace.File(written), hidden) is { } where)
+                if (hidden.Length > 0 && TextIn(workspace.File(written), hidden) is { } where)
                 {
                     report(HiddenCheck, $"the hidden text appears in {written}{where}");
                 }
@@ -200,18 +200,20 @@ public static partial class ScenarioRunner
     }
 
     /// <summary>
-    /// Where a file holds <paramref name="hidden"/> as UTF-8 or UTF-16 text, in its own bytes
+    /// Where a file holds <paramref name="text"/> as UTF-8 or UTF-16 text, in its own bytes
     /// (an empty string) or in an entry of the ZIP package it is (<c> (entry name)</c>), such as a
     /// part of an Office document; null when it does not.
     /// </summary>
-    private static string? HiddenIn(string path, string hidden)
+    public static string? TextIn(string path, string text)
     {
+        ArgumentNullException.ThrowIfNull(path);
+        ArgumentNullException.ThrowIfNull(text);
         if (!File.Exists(path))
         {
             return null;
         }
         byte[] bytes = File.ReadAllBytes(path);
-        if (Holds(bytes, hidden))
+        if (Holds(bytes, text))
         {
             return string.Empty;
         }
@@ -227,7 +229,7 @@ public static partial class ScenarioRunner
                 using Stream stream = entry.Open();
                 using var content = new MemoryStream();
                 stream.CopyTo(content);
-                if (Holds(content.ToArray(), hidden))
+                if (Holds(content.ToArray(), text))
                 {
                     return $" ({entry.FullName})";
                 }

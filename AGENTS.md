@@ -192,6 +192,10 @@ This section holds only what a test cannot judge.
   the document) stay separate.
 - **Skills claim only what is tested (C-R38).** What a Skill says about a result's meaning has a
   behavior check behind it. A product Skill need not show every command.
+- **Name what is left behind (C-R42, C-R43).** A convert whose output loses content, and a
+  `replace_text` that leaves a match in place, warn and name what they left. The rules check only
+  that such a result warns at all, on each product's `<product>.rich` fixture; whether the warning
+  names the lost or remaining content is for review.
 
 Kept on purpose:
 

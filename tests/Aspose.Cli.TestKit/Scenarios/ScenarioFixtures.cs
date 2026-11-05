@@ -18,6 +18,8 @@ namespace Aspose.Cli.TestKit.Scenarios;
 /// <item><c>&lt;product&gt;.ops</c>: a valid one-operation document for the product's <c>edit --ops</c>.</item>
 /// <item><c>slides.media</c> and <c>pdf.media</c>: the primary document with media every value of
 /// its <c>extract --what</c> writes a file from.</item>
+/// <item><c>&lt;product&gt;.rich</c>: the primary format with one marker text in each kind of
+/// content the product makes (<see cref="RichMarkers"/>).</item>
 /// <item><c>markdown</c> and <c>text</c>: source text that holds <see cref="SampleText"/>.</item>
 /// <item><c>certificate.pfx</c>: a self-signed signing certificate protected by <see cref="Password"/>.</item>
 /// </list>
@@ -56,6 +58,38 @@ public static class ScenarioFixtures
 
     private static readonly string Text = $"{SampleText}\n\nThe second paragraph of the seed document.\n";
 
+    /// <summary>The text every marker of a rich fixture starts with, and no other text of it holds.</summary>
+    public const string MarkerPrefix = "Zqx";
+
+    /// <summary>
+    /// The marker of each kind of content: five letters, the most Aspose.Slides evaluation mode
+    /// reads of a text without truncating it, and the whole text of the paragraph, shape, note or
+    /// title that holds it.
+    /// </summary>
+    private static readonly Dictionary<string, string> MarkerOfKind = new(StringComparer.Ordinal)
+    {
+        ["body"] = MarkerPrefix + "Bd",
+        ["header"] = MarkerPrefix + "Hd",
+        ["footer"] = MarkerPrefix + "Ft",
+        ["comment"] = MarkerPrefix + "Cm",
+        ["speaker notes"] = MarkerPrefix + "Nt",
+        ["chart title"] = MarkerPrefix + "Ct",
+        ["shape text"] = MarkerPrefix + "Sh",
+        ["form field value"] = MarkerPrefix + "Fv",
+    };
+
+    /// <summary>
+    /// The kinds of content each product's rich fixture holds a marker in: each kind the product's
+    /// own commands make and its <c>inspect</c>, <c>read</c> or <c>search</c> report.
+    /// </summary>
+    private static readonly Dictionary<string, string[]> RichKinds = new(StringComparer.Ordinal)
+    {
+        ["cells"] = ["body", "header", "footer", "comment", "chart title"],
+        ["pdf"] = ["body", "header", "footer", "form field value"],
+        ["slides"] = ["body", "footer", "speaker notes", "chart title", "shape text"],
+        ["words"] = ["body", "header", "footer", "comment"],
+    };
+
     private static readonly ConcurrentDictionary<string, Lazy<byte[]>> Built = new(StringComparer.Ordinal);
 
     /// <summary>The products that have document fixtures.</summary>
@@ -63,6 +97,13 @@ public static class ScenarioFixtures
 
     /// <summary>The format of a product's own fixture document, such as <c>xlsx</c>.</summary>
     public static string PrimaryFormat(string product) => PrimaryFormats[product];
+
+    /// <summary>
+    /// The marker texts of a product's <c>&lt;product&gt;.rich</c> fixture by the kind of content
+    /// that holds each, such as <c>speaker notes</c> to <c>ZqxNt</c>, in a stable order.
+    /// </summary>
+    public static IReadOnlyList<KeyValuePair<string, string>> RichMarkers(string product) =>
+        [.. RichKinds[product].Select(static kind => KeyValuePair.Create(kind, MarkerOfKind[kind]))];
 
     /// <summary>The bytes of a named fixture.</summary>
     /// <exception cref="ArgumentException">The name is not a fixture.</exception>
@@ -93,6 +134,7 @@ public static class ScenarioFixtures
             "encrypted" => Encrypt(product, primary),
             "media" when product == "slides" => SlidesWithMedia(primary),
             "media" when product == "pdf" => PdfWithMedia(primary),
+            "rich" => Rich(product, primary),
             _ when format == primary => CreateDocument(product, primary),
             _ => Convert(product, primary, format),
         };
@@ -164,6 +206,67 @@ public static class ScenarioFixtures
         File.WriteAllText(workspace.File("ops.json"), """{"ops":[{"op":"add_attachment","path":"note.txt"}]}""");
         Require(workspace.Run("pdf", "edit", target, "--ops", "ops.json", "--in-place", "--output-format", "json"));
         return File.ReadAllBytes(workspace.File(target));
+    }
+
+    /// <summary>
+    /// A document of the product's primary format with each marker of <see cref="RichMarkers"/> in
+    /// the kind of content it names, built with the product's own create and edit: the body text,
+    /// and a header, footer, comment, chart title, form field value, slide footer, speaker notes or
+    /// shape text where the product makes one.
+    /// </summary>
+    private static byte[] Rich(string product, string primary)
+    {
+        using var workspace = new TempWorkspace();
+        ScenarioLicense.Project(workspace.Path);
+        string file = "rich." + primary;
+        static string Marker(string kind) => MarkerOfKind[kind];
+        string operations;
+        switch (product)
+        {
+            case "cells":
+                Require(workspace.Run("cells", "create", file, "--output-format", "json"));
+                operations = $$"""
+                    [{"op":"set_values","sheet":"Sheet1","range":"A1","values":[["Item","Amount"],["{{Marker("body")}}",1],["Second row",2]]},
+                    {"op":"add_comment","sheet":"Sheet1","cell":"B2","text":"{{Marker("comment")}}"},
+                    {"op":"set_page_setup","sheet":"Sheet1","headerCenter":"{{Marker("header")}}","footerCenter":"{{Marker("footer")}}"},
+                    {"op":"insert_chart","sheet":"Sheet1","kind":"column","dataRange":"A1:B3","at":"D2:I12","title":"{{Marker("chart title")}}"}]
+                    """;
+                break;
+            case "pdf":
+                File.WriteAllText(workspace.File("rich.html"),
+                    $"""<html><body><h1>Rich seed</h1><p>{Marker("body")}</p><form><input type="text" name="field" value="seed"></form></body></html>""");
+                Require(workspace.Run("pdf", "create", file, "--from-html", "rich.html", "--output-format", "json"));
+                operations = $$"""
+                    [{"op":"set_form_field","name":"field","value":"{{Marker("form field value")}}"},
+                    {"op":"add_header_text","text":"{{Marker("header")}}"},
+                    {"op":"add_footer_text","text":"{{Marker("footer")}}"}]
+                    """;
+                break;
+            case "slides":
+                File.WriteAllText(workspace.File("rich.md"), $"# Rich seed\n\n{Marker("body")}\n\n## Second slide\n\n- One point\n");
+                Require(workspace.Run("slides", "create", file, "--from-markdown", "rich.md", "--output-format", "json"));
+                operations = $$"""
+                    [{"op":"set_notes","slide":1,"text":"{{Marker("speaker notes")}}"},
+                    {"op":"set_footer","text":"{{Marker("footer")}}"},
+                    {"op":"insert_shape","slide":2,"geometry":"rectangle","rect":{"x":40,"y":300,"width":220,"height":60},"text":"{{Marker("shape text")}}"},
+                    {"op":"insert_chart","slide":2,"kind":"column","rect":{"x":300,"y":250,"width":320,"height":200},"categories":["A","B"],"series":[{"name":"Series","values":[1,2]}],"title":"{{Marker("chart title")}}"}]
+                    """;
+                break;
+            case "words":
+                File.WriteAllText(workspace.File("rich.md"), $"# Rich seed\n\n{Marker("body")}\n\nSecond paragraph.\n");
+                Require(workspace.Run("words", "create", file, "--from-markdown", "rich.md", "--output-format", "json"));
+                operations = $$"""
+                    [{"op":"set_header","paragraphs":[{"text":"{{Marker("header")}}"}]},
+                    {"op":"set_footer","paragraphs":[{"text":"{{Marker("footer")}}"}]},
+                    {"op":"add_comment","target":{"block":2},"author":"Invariant","text":"{{Marker("comment")}}"}]
+                    """;
+                break;
+            default:
+                throw new ArgumentException($"'{product}' has no rich fixture.", nameof(product));
+        }
+        File.WriteAllText(workspace.File("ops.json"), $$"""{"ops":{{operations}}}""");
+        Require(workspace.Run(product, "edit", file, "--ops", "ops.json", "--in-place", "--output-format", "json"));
+        return File.ReadAllBytes(workspace.File(file));
     }
 
     private static byte[] Convert(string product, string primary, string format)
