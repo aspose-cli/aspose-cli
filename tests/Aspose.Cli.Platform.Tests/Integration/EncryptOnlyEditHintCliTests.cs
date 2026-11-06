@@ -42,13 +42,13 @@ public sealed class EncryptOnlyEditHintCliTests : IDisposable
         Assert.True(at >= 0, hint);
         string command = hint[(at + Shown.Length)..].Split('`', 2)[0];
         Assert.Equal(
-            $$$"""aspose-cli pdf edit plain.pdf --in-place --output-format json --ops '[{"op":"encrypt_document","userPasswordEnv":"{{{Variable}}}","ownerPasswordEnv":"{{{Variable}}}","permissions":{"print":true,"copy":true,"modify":true,"annotate":true,"fillForms":true,"extractAccessibility":true,"assemble":true,"printHighResolution":true}}]'""",
+            $"aspose-cli pdf edit \"{_workspace.File("plain.pdf")}\" --in-place --ops "
+                + $$$"""'[{"op":"encrypt_document","userPasswordEnv":"{{{Variable}}}","ownerPasswordEnv":"{{{Variable}}}","permissions":{"print":true,"copy":true,"modify":true,"annotate":true,"fillForms":true,"extractAccessibility":true,"assemble":true,"printHighResolution":true}}]' --output-format json""",
             command);
         Assert.EndsWith("`.", hint, StringComparison.Ordinal);
 
         // The shown command runs as written: its operations are the one single-quoted argument.
-        string[] parts = command.Split(" '", 2);
-        CliResult encrypted = _workspace.RunWithEnv(Variables, [.. parts[0].Split(' ').Skip(1), parts[1].TrimEnd('\'')]);
+        CliResult encrypted = _workspace.RunCommandLine(command, Variables);
 
         Assert.True(encrypted.ExitCode == 0, encrypted.StdErr);
         Assert.Equal("PASSWORD_REQUIRED", JsonNode.Parse(Run("pdf", "inspect", "plain.pdf").StdErr)!["error"]!["code"]!.GetValue<string>());
@@ -77,8 +77,7 @@ public sealed class EncryptOnlyEditHintCliTests : IDisposable
         Assert.True(at >= 0, hint);
         string command = hint[(at + Shown.Length)..].Split('`', 2)[0];
         // The shown command runs as written: its operations are the one single-quoted argument.
-        string[] parts = command.Split(" '", 2);
-        CliResult onlyEncrypted = _workspace.RunWithEnv(Variables, [.. parts[0].Split(' ').Skip(1), parts[1].TrimEnd('\'')]);
+        CliResult onlyEncrypted = _workspace.RunCommandLine(command, Variables);
         Assert.True(onlyEncrypted.ExitCode == 0, onlyEncrypted.StdErr);
         CliResult encrypted = Run("pdf", "edit", "option.pdf", "--in-place", "--ops", """[{"op":"set_properties","title":"Encrypted"}]""", "--encrypt-env", Variable);
         Assert.True(encrypted.ExitCode == 0, encrypted.StdErr);

@@ -1,21 +1,26 @@
 using System.Text.Json.Nodes;
+using System.Text.RegularExpressions;
 using Aspose.Cli.TestKit;
+using Aspose.Cli.TestKit.Scenarios;
 using Xunit;
 
 namespace Aspose.Cli.IntegrationTests;
 
 /// <summary>
-/// The hint of <c>ENCRYPTION_REMOVED</c> names only what this build can do for the product and
-/// format at hand: the command again with <c>--encrypt-env</c>, the protectable formats of the
-/// command, the path of the edit or conversion that encrypts the format written, or that no command
-/// encrypts it. It names a command by its path alone, never an operation document; the product's
-/// Skill says how to encrypt with it.
+/// The hint of <c>ENCRYPTION_REMOVED</c> gives one step, after the reason for it, as commands that
+/// run as written and name only what this build can do: the command again with
+/// <c>--encrypt-env</c> and <c>--overwrite</c>, the format the command protects instead, the edit
+/// that encrypts the file in place, or the conversion of the input itself, splitting a page
+/// selection first. A step that writes an encrypted copy beside the unencrypted file ends by
+/// telling to delete that file. Each step runs as the hint writes it, on the default output path
+/// and on an output that already existed, and protects what it writes.
 /// </summary>
-public sealed class EncryptionRemovedHintCliTests : IDisposable
+public sealed partial class EncryptionRemovedHintCliTests : IDisposable
 {
     private const string Variable = "DOC_PASSWORD";
     private const string UserVariable = "DOC_USER_PASSWORD";
     private const string OwnerVariable = "DOC_OWNER_PASSWORD";
+    private const string DeleteCopy = "Once the encrypted copy exists, delete the unencrypted file this command wrote.";
     private static readonly Dictionary<string, string?> Variables = new(StringComparer.Ordinal)
     {
         [Variable] = "hint-secret",
@@ -24,136 +29,194 @@ public sealed class EncryptionRemovedHintCliTests : IDisposable
     };
     private readonly TempWorkspace _workspace = new();
 
+    public EncryptionRemovedHintCliTests() => ScenarioLicense.Project(_workspace.Path);
+
     public void Dispose() => _workspace.Dispose();
 
+    /// <summary>
+    /// No command encrypts csv: the hint converts the workbook to xlsx with its password instead,
+    /// then says to delete the csv. Run as written, it writes an xlsx that needs the password.
+    /// </summary>
     [Category(TestCategory.Slow)]
     [Theory]
-    [InlineData("words", "locked.docx", "convert locked.docx --out plain.pdf", "write it as doc, dot, docx, docm, dotx, dotm, odt, ott instead", "encrypt the pdf file with 'aspose-cli pdf edit --in-place'")]
-    [InlineData("slides", "locked.pptx", "convert locked.pptx --out plain.pdf", "write it as pptx, pptm instead", "encrypt the pdf file with 'aspose-cli pdf edit --in-place'")]
-    [InlineData("cells", "locked.xlsx", "edit locked.xlsx --set Sheet1!A1=5 --out plain.csv", "write it as xlsx, xltx, xlsm, xltm, xlsb, xls, ods instead", null)]
-    [InlineData("pdf", "locked.pdf", "convert locked.pdf --out plain.md", "No command of this build can encrypt md files.", null)]
-    public void UnencryptedCopy_HintNamesOnlyWaysThisBuildOffers(string product, string locked, string commandLine, string own, string? encryptor)
+    [InlineData(false)]
+    [InlineData(true)]
+    public void WorkbookConvertedToCsv_HintWritesItAsAnEncryptedWorkbook(bool existingOutput)
     {
-        File.WriteAllText(_workspace.File("source.md"), "# One\n\nFirst part.\n");
-        string[] create = product switch
-        {
-            "cells" => ["cells", "create", locked],
-            "slides" => ["slides", "create", locked, "--from-markdown", "source.md"],
-            "pdf" => ["pdf", "create", locked, "--from-markdown", "source.md"],
-            _ => ["words", "create", locked, "--from-markdown", "source.md"],
-        };
-        CliResult created = Run([.. create, "--encrypt-env", Variable]);
-        Assert.True(created.ExitCode == 0, created.StdErr);
+        Created(Run("cells", "create", "locked.xlsx", "--encrypt-env", Variable));
 
-        CliResult result = Run([product, .. commandLine.Split(' '), "--password-env", Variable]);
+        CliResult result = Run(["cells", "convert", "locked.xlsx", "--password-env", Variable, "--to", "csv", .. Output("plain.csv", existingOutput)]);
 
-        Assert.True(result.ExitCode == 0, result.StdErr);
         string hint = Hint(result);
-        Assert.Contains(own, hint, StringComparison.Ordinal);
-        AssertNamesNoOperation(hint);
-        if (encryptor is null)
-        {
-            Assert.DoesNotContain("'aspose-cli", hint, StringComparison.Ordinal);
-            string written = Path.GetExtension(commandLine.Split(' ')[^1])[1..];
-            Assert.EndsWith($"No command of this build can encrypt {written} files.", hint, StringComparison.Ordinal);
-            return;
-        }
-
-        Assert.Contains(encryptor, hint, StringComparison.Ordinal);
-        Assert.DoesNotContain("No command", hint, StringComparison.Ordinal);
+        Assert.StartsWith("No command of this build can encrypt csv files. If the output must stay protected, run '", hint, StringComparison.Ordinal);
+        Assert.EndsWith("', which writes it as xlsx encrypted with a password to open it. " + DeleteCopy, hint, StringComparison.Ordinal);
+        string written = Written(Step(Assert.Single(Commands(hint))));
+        Assert.EndsWith(".xlsx", written, StringComparison.Ordinal);
+        AssertNeedsThePassword("cells", written);
     }
 
     /// <summary>
-    /// Writing a protectable format instead leaves the csv this command wrote beside the encrypted
-    /// workbook: the hint says to delete it once that workbook exists.
+    /// An edit written as csv: the hint runs the same edit again to an xlsx, which keeps the edit
+    /// and needs the password, and then says to delete the csv.
     /// </summary>
     [Category(TestCategory.Slow)]
     [Fact]
-    public void WorkbookWrittenAsCsv_HintDeletesTheCsvOnceAProtectedWorkbookExists()
+    public void WorkbookEditedToCsv_HintRunsTheEditAgainToAnEncryptedWorkbook()
     {
-        CliResult created = Run("cells", "create", "locked.xlsx", "--encrypt-env", Variable);
-        Assert.True(created.ExitCode == 0, created.StdErr);
+        Created(Run("cells", "create", "locked.xlsx", "--encrypt-env", Variable));
 
         CliResult result = Run("cells", "edit", "locked.xlsx", "--set", "Sheet1!A1=5", "--out", "plain.csv", "--password-env", Variable);
 
-        Assert.True(result.ExitCode == 0, result.StdErr);
-        Assert.Equal("If the output must stay protected, write it as xlsx, xltx, xlsm, xltm, xlsb, xls, ods instead, "
-            + "which keeps the input's password or takes the one --encrypt-env names. "
-            + "Once the encrypted copy exists, delete the unencrypted file this command wrote. "
-            + "No command of this build can encrypt csv files.", Hint(result));
+        string hint = Hint(result);
+        Assert.StartsWith("No command of this build can encrypt csv files. If the output must stay protected, run 'aspose-cli cells edit ", hint, StringComparison.Ordinal);
+        Assert.EndsWith(DeleteCopy, hint, StringComparison.Ordinal);
+        string written = Written(Step(Assert.Single(Commands(hint))));
+        Assert.Equal(_workspace.File("plain.xlsx"), written, ignoreCase: true);
+        AssertNeedsThePassword("cells", written);
+        JsonNode read = Run("cells", "read", written, "--password-env", Variable, "--range", "Sheet1!A1").Json();
+        Assert.Equal("5", read["sheet"]!["cells"]![0]![0]!["v"]!.ToString());
     }
 
     /// <summary>
-    /// A PDF converted to an Office format no edit can encrypt: the hint names the conversion of
-    /// that product, which takes <c>--encrypt-env</c>. When that conversion reads PDF itself, as
-    /// words convert does, the hint converts the locked input instead of the output, a second
-    /// save that would embed every font of a docx that pdf convert wrote (PDF-DOCX-EMBED-FONTS).
+    /// A PDF converted to docx: the hint converts the encrypted input itself with Words and
+    /// replaces the docx this command wrote, so nothing is left to delete, and never converts that
+    /// docx again, a second save that would embed every font (PDF-DOCX-EMBED-FONTS).
     /// </summary>
     [Category(TestCategory.Slow)]
     [Theory]
-    [InlineData("docx", "If the output must stay protected, convert the pdf input itself to docx, not the docx file this command wrote, with 'aspose-cli words convert --encrypt-env'. Once the encrypted copy exists, delete the unencrypted file this command wrote.")]
-    [InlineData("xlsx", "If the output must stay protected, encrypt the xlsx file with 'aspose-cli cells convert'. Once the encrypted copy exists, delete the unencrypted file this command wrote.")]
-    [InlineData("pptx", "If the output must stay protected, encrypt the pptx file with 'aspose-cli slides convert'. Once the encrypted copy exists, delete the unencrypted file this command wrote.")]
-    public void PdfConvertedToAnOfficeFormat_HintNamesTheConversionThatEncryptsIt(string format, string expected)
+    [InlineData(false)]
+    [InlineData(true)]
+    public void PdfConvertedToDocx_HintConvertsTheInputItselfOverTheDocx(bool existingOutput)
     {
-        CreateEncryptedPdf();
+        CreateEncryptedPdf(pages: 1);
+
+        CliResult result = Run(["pdf", "convert", "locked.pdf", "--password-env", Variable, "--to", "docx", .. Output("plain.docx", existingOutput)]);
+
+        string hint = Hint(result);
+        Assert.StartsWith("This command cannot encrypt docx files, and converting the one it wrote again could change it. "
+            + "If the output must stay protected, run 'aspose-cli words convert ", hint, StringComparison.Ordinal);
+        Assert.DoesNotContain("delete", hint, StringComparison.Ordinal);
+        string command = Assert.Single(Commands(hint));
+        Assert.Contains(Quoted(_workspace.File("locked.pdf")), command, StringComparison.OrdinalIgnoreCase);
+        JsonNode converted = Step(command);
+        Assert.DoesNotContain(Codes(converted), static code => code == "FONTS_EMBEDDED");
+        Assert.Equal(Written(result.Json()), Written(converted), ignoreCase: true);
+        AssertNeedsThePassword("words", Written(converted));
+    }
+
+    /// <summary>
+    /// A selection of pages converted to docx: the hint splits those pages from the encrypted
+    /// input and converts the part with Words over the docx, never converting the docx again.
+    /// Run as written, the docx holds the selected page alone and needs the password.
+    /// </summary>
+    [Category(TestCategory.Slow)]
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void PagesOfAPdfConvertedToDocx_HintSplitsThemAndConvertsThePart(bool existingOutput)
+    {
+        CreateEncryptedPdf(pages: 3);
+
+        CliResult result = Run(["pdf", "convert", "locked.pdf", "--password-env", Variable, "--pages", "2", "--to", "docx", .. Output("page.docx", existingOutput)]);
+
+        string hint = Hint(result);
+        string[] commands = Commands(hint);
+        Assert.Equal(2, commands.Length);
+        Assert.StartsWith("aspose-cli pdf split " + Quoted(_workspace.File("locked.pdf")) + " --password-env " + Variable + " --by pages --groups 2 ", commands[0], StringComparison.OrdinalIgnoreCase);
+        Assert.StartsWith("aspose-cli words convert " + Quoted(_workspace.File("locked.1.pdf")) + " ", commands[1], StringComparison.OrdinalIgnoreCase);
+        Assert.EndsWith("; once the conversion has run, locked.1.pdf, the part the split wrote beside the output, can be deleted.", hint, StringComparison.Ordinal);
+        Step(commands[0]);
+        JsonNode converted = Step(commands[1]);
+        // The part the hint says may be deleted is the one the split wrote and the conversion read.
+        Assert.Equal(_workspace.File("locked.1.pdf"), converted["input"]!["path"]!.GetValue<string>(), ignoreCase: true);
+        Assert.DoesNotContain(Codes(converted), static code => code == "FONTS_EMBEDDED");
+        Assert.Equal(Written(result.Json()), Written(converted), ignoreCase: true);
+        AssertNeedsThePassword("words", Written(converted));
+        JsonNode inspected = Run("words", "inspect", Written(converted), "--password-env", Variable).Json();
+        Assert.Equal(1, inspected["document"]!["pageCount"]!.GetValue<int>());
+    }
+
+    /// <summary>
+    /// A PDF converted to a format another product's conversion encrypts but cannot read PDF for:
+    /// the hint converts the file this command wrote to an encrypted copy, then says to delete it.
+    /// </summary>
+    [Category(TestCategory.Slow)]
+    [Theory]
+    [InlineData("xlsx", "cells")]
+    [InlineData("pptx", "slides")]
+    public void PdfConvertedToAnOfficeFormat_HintWritesAnEncryptedCopy(string format, string product)
+    {
+        CreateEncryptedPdf(pages: 1);
 
         CliResult result = Run("pdf", "convert", "locked.pdf", "--password-env", Variable, "--out", $"plain.{format}");
 
-        Assert.True(result.ExitCode == 0, result.StdErr);
-        Assert.Equal(expected, Hint(result));
+        string hint = Hint(result);
+        Assert.StartsWith($"This command cannot encrypt {format} files. If the output must stay protected, run 'aspose-cli {product} convert ", hint, StringComparison.Ordinal);
+        Assert.EndsWith(DeleteCopy, hint, StringComparison.Ordinal);
+        string copy = Written(Step(Assert.Single(Commands(hint))));
+        Assert.Equal(_workspace.File($"plain.encrypted.{format}"), copy, ignoreCase: true);
+        AssertNeedsThePassword(product, copy);
     }
 
     /// <summary>
-    /// The conversion the hint of a PDF converted to docx names, run on the locked input with
-    /// <c>--encrypt-env</c>, writes an encrypted docx without embedding every font.
+    /// A Words or Slides document converted to PDF: no conversion encrypts PDF, so the hint
+    /// encrypts the PDF in place with the PDF edit and the input's password variable.
     /// </summary>
     [Category(TestCategory.Slow)]
-    [Fact]
-    public void PdfConvertedToDocx_ConversionTheHintNamesEncryptsFromTheInput()
+    [Theory]
+    [InlineData("words", "locked.docx")]
+    [InlineData("slides", "locked.pptx")]
+    public void DocumentConvertedToPdf_HintEncryptsThePdfInPlace(string product, string locked)
     {
-        CreateEncryptedPdf();
-        string hint = Hint(Run("pdf", "convert", "locked.pdf", "--password-env", Variable, "--out", "plain.docx"));
-        const string Named = "the pdf input itself to docx, not the docx file this command wrote, with 'aspose-cli ";
-        int at = hint.IndexOf(Named, StringComparison.Ordinal);
-        Assert.True(at >= 0, hint);
-        string[] path = hint[(at + Named.Length)..].Split(" --encrypt-env'", 2)[0].Split(' ');
+        File.WriteAllText(_workspace.File("source.md"), "# One\n\nFirst part.\n");
+        Created(Run(product, "create", locked, "--from-markdown", "source.md", "--encrypt-env", Variable));
 
-        CliResult encrypted = Run([.. path, "locked.pdf", "--password-env", Variable, "--to", "docx", "--out", "plain.encrypted.docx", "--encrypt-env", Variable]);
+        CliResult result = Run(product, "convert", locked, "--password-env", Variable, "--out", "plain.pdf");
 
-        Assert.True(encrypted.ExitCode == 0, encrypted.StdErr);
-        Assert.DoesNotContain("FONTS_EMBEDDED", encrypted.StdOut, StringComparison.Ordinal);
-        Assert.Equal("PASSWORD_REQUIRED", JsonNode.Parse(Run("words", "inspect", "plain.encrypted.docx").StdErr)!["error"]!["code"]!.GetValue<string>());
-        Assert.Equal(0, Run("words", "inspect", "plain.encrypted.docx", "--password-env", Variable).ExitCode);
+        string hint = Hint(result);
+        Assert.StartsWith("This command cannot encrypt pdf files. If the output must stay protected, run `aspose-cli pdf edit ", hint, StringComparison.Ordinal);
+        Assert.DoesNotContain("delete", hint, StringComparison.Ordinal);
+        string encrypted = Written(Step(Assert.Single(Commands(hint))));
+        Assert.Equal(_workspace.File("plain.pdf"), encrypted, ignoreCase: true);
+        AssertNeedsThePassword("pdf", encrypted);
     }
 
     /// <summary>
-    /// PDF/A forbids encryption: the hint of a conversion to PDF/A says the output cannot be
-    /// encrypted and stay PDF/A, and names the edit that encrypts a copy of it, never the PDF/A
-    /// file itself.
+    /// PDF/A forbids encryption: the hint says the output cannot be encrypted and stay PDF/A, and
+    /// encrypts a copy of it with the PDF edit, never the PDF/A file itself, which stays as written.
     /// </summary>
     [Category(TestCategory.Slow)]
     [Fact]
     public void PdfConvertedToPdfA_HintKeepsTheArchiveAndEncryptsACopy()
     {
-        CreateEncryptedPdf();
+        CreateEncryptedPdf(pages: 1);
 
         CliResult result = Run("pdf", "convert", "locked.pdf", "--password-env", Variable, "--to", "pdfa-2b", "--out", "archive.pdf");
 
-        Assert.True(result.ExitCode == 0, result.StdErr);
-        Assert.Equal("A pdfa-2b file cannot be encrypted and stay pdfa-2b. If the output must stay protected, encrypt a pdf copy of it with 'aspose-cli pdf edit'. "
-            + "Once the encrypted copy exists, delete the unencrypted file this command wrote.", Hint(result));
+        string hint = Hint(result);
+        Assert.StartsWith("A pdfa-2b file cannot be encrypted and stay pdfa-2b. If the output must stay protected, run `aspose-cli pdf edit ", hint, StringComparison.Ordinal);
+        Assert.EndsWith(DeleteCopy, hint, StringComparison.Ordinal);
         // The copy is named by the format it was written in, not by the extension pdf shares.
-        Assert.StartsWith("The 'pdfa-2b' output is not encrypted", JsonNode.Parse(result.StdOut)!["warnings"]!.AsArray()
-            .Single(static warning => warning!["code"]!.GetValue<string>() == "ENCRYPTION_REMOVED")!["message"]!.GetValue<string>(), StringComparison.Ordinal);
+        Assert.StartsWith("The 'pdfa-2b' output is not encrypted", Warning(result)["message"]!.GetValue<string>(), StringComparison.Ordinal);
+        string archive = FileHashes.Sha256(_workspace.File("archive.pdf"));
+        string copy = Written(Step(Assert.Single(Commands(hint))));
+        Assert.Equal(_workspace.File("archive.encrypted.pdf"), copy, ignoreCase: true);
+        AssertNeedsThePassword("pdf", copy);
+        Assert.Equal(archive, FileHashes.Sha256(_workspace.File("archive.pdf")));
     }
 
-    // locked.pdf: a PDF whose open password the variable holds.
-    private void CreateEncryptedPdf()
+    /// <summary>
+    /// No command of this build encrypts Markdown: the hint says so and names no command.
+    /// </summary>
+    [Category(TestCategory.Slow)]
+    [Fact]
+    public void PdfConvertedToMarkdown_HintSaysNoCommandEncryptsIt()
     {
-        File.WriteAllText(_workspace.File("source.md"), "# One\n\nFirst part.\n");
-        CliResult created = Run("pdf", "create", "locked.pdf", "--from-markdown", "source.md", "--encrypt-env", Variable);
-        Assert.True(created.ExitCode == 0, created.StdErr);
+        CreateEncryptedPdf(pages: 1);
+
+        CliResult result = Run("pdf", "convert", "locked.pdf", "--password-env", Variable, "--out", "plain.md");
+
+        Assert.Equal("No command of this build can encrypt md files.", Hint(result));
     }
 
     /// <summary>
@@ -168,104 +231,306 @@ public sealed class EncryptionRemovedHintCliTests : IDisposable
 
         CliResult result = Run("pdf", "edit", "protected.pdf", "--password-env", OwnerVariable, "--ops", """[{"op":"decrypt_document"}]""", "--out", "decrypted.pdf");
 
-        Assert.True(result.ExitCode == 0, result.StdErr);
         string hint = Hint(result);
         Assert.Contains("expected result", hint, StringComparison.Ordinal);
         Assert.EndsWith("To protect it, encrypt it with 'aspose-cli pdf edit' instead of decrypting it.", hint, StringComparison.Ordinal);
-        AssertNamesNoOperation(hint);
+        Assert.DoesNotContain("encrypt_document", hint, StringComparison.Ordinal);
         Assert.DoesNotContain("--encrypt-env", hint, StringComparison.Ordinal);
         Assert.DoesNotContain("must stay protected", hint, StringComparison.Ordinal);
     }
 
     /// <summary>
     /// Pages imported from a PDF with an open password: the hint runs the edit again with
-    /// <c>--encrypt-env</c>, and claims no option keeps the source's password.
+    /// <c>--encrypt-env</c> and <c>--overwrite</c>, so it replaces the file it wrote instead of
+    /// failing with <c>OUTPUT_EXISTS</c>; the variable is the caller's to name.
     /// </summary>
     [Category(TestCategory.Slow)]
-    [Fact]
-    public void ImportFromProtectedPdf_HintRunsTheEditAgainWithEncryptEnv()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void ImportFromProtectedPdf_HintRunsTheEditAgainOverItsOutput(bool existingOutput)
     {
         CreateProtected();
 
-        CliResult result = Run(
+        CliResult result = Run([
             "pdf", "edit", "plain.pdf", "--ops",
             $$$"""[{"op":"import_pages","path":"protected.pdf","pages":"1","at":1,"sourcePasswordEnv":"{{{UserVariable}}}"}]""",
-            "--out", "imported.pdf");
+            .. Output("imported.pdf", existingOutput)]);
 
-        Assert.True(result.ExitCode == 0, result.StdErr);
-        Assert.Equal("If the output must stay protected, run the command again with --encrypt-env naming an environment variable that holds a password, "
-            + "which encrypts the output with that password to open it and grants every permission.", Hint(result));
+        string hint = Hint(result);
+        Assert.StartsWith("Only the password of the document a command opens carries over to its output, not one of a document it takes content from. "
+            + "If the output must stay protected, run `aspose-cli pdf edit ", hint, StringComparison.Ordinal);
+        Assert.EndsWith(", which writes the output again encrypted with a password to open it that grants every permission, "
+            + "after replacing <password-env> with the name of the environment variable that holds that password.", hint, StringComparison.Ordinal);
+        JsonNode written = Step(Assert.Single(Commands(hint)), ("<password-env>", Variable));
+        Assert.Equal(Written(result.Json()), Written(written), ignoreCase: true);
+        AssertNeedsThePassword("pdf", Written(written));
     }
 
     /// <summary>
     /// A PDF with only an owner password opens without one and only restricts what may be done:
-    /// the hint of a split names the edit that restores that protection alone, not an option that
-    /// would make the parts need a password to open.
+    /// the hint of a merge, a split and a PDF/A conversion of it encrypts what they wrote with the
+    /// edit that sets only an owner password, so it is restricted again and still opens without a
+    /// password; the variable is the caller's to name. That edit grants readers nothing, which the
+    /// hint says, and it names the inspect that reads what the original granted.
     /// </summary>
     [Category(TestCategory.Slow)]
-    [Fact]
-    public void RestrictedPdf_HintNamesAnOwnerPasswordOnly()
+    [Theory]
+    [InlineData("merge", false)]
+    [InlineData("merge", true)]
+    [InlineData("split", false)]
+    [InlineData("pdfa", false)]
+    public void RestrictedPdf_HintEncryptsWithAnOwnerPasswordOnly(string command, bool existingOutput)
     {
-        File.WriteAllText(_workspace.File("source.md"), "# One\n\nFirst part.\n");
-        Assert.Equal(0, Run("pdf", "create", "plain.pdf", "--from-markdown", "source.md").ExitCode);
-        // Readers may print and copy without the owner password.
-        Assert.Equal(0, Run(
-            "pdf", "edit", "plain.pdf", "--ops",
-            $$$"""[{"op":"encrypt_document","ownerPasswordEnv":"{{{OwnerVariable}}}","permissions":{"print":true,"copy":true}}]""",
-            "--out", "restricted.pdf").ExitCode);
+        CreateRestricted();
 
-        CliResult result = Run("pdf", "split", "restricted.pdf", "--by", "pages", "--out-dir", "parts");
+        CliResult result = Run(command switch
+        {
+            "merge" => ["pdf", "merge", "restricted.pdf", "plain.pdf", .. Output("merged.pdf", existingOutput, required: true)],
+            "split" => ["pdf", "split", "restricted.pdf", "--by", "pages", "--out-dir", "parts"],
+            _ => ["pdf", "convert", "restricted.pdf", "--to", "pdfa-2b"],
+        });
 
-        Assert.True(result.ExitCode == 0, result.StdErr);
-        Assert.Equal("If the output must stay protected, encrypt the pdf file with 'aspose-cli pdf edit --in-place' and an owner password only, "
-            + "which restricts it as the input was and keeps it opening without a password.", Hint(result));
+        string hint = Hint(result);
+        Assert.Contains("an owner password only: it still opens without a password, but the command grants readers no permission without the owner password, "
+            + "after replacing <owner-password-env> with the name of the environment variable that holds the owner password.", hint, StringComparison.Ordinal);
+        string[] commands = Commands(hint);
+        Assert.Equal(2, commands.Length);
+        (string step, string reader) = (commands[0], commands[1]);
+        Assert.Contains("\"ownerPasswordEnv\":\"<owner-password-env>\"", step, StringComparison.Ordinal);
+        Assert.DoesNotContain("userPasswordEnv", step, StringComparison.Ordinal);
+        // After the step and the deletion it ends with, the hint reads what the original grants.
+        Assert.Contains("To grant readers what the original allowed, set the permissions field of the operation as 'aspose-cli pdf inspect ", hint, StringComparison.Ordinal);
+        Assert.True(hint.IndexOf("To grant readers", StringComparison.Ordinal) > hint.IndexOf(step, StringComparison.Ordinal), hint);
+        if (command == "pdfa")
+        {
+            Assert.True(hint.IndexOf("To grant readers", StringComparison.Ordinal) > hint.IndexOf("delete the unencrypted file", StringComparison.Ordinal), hint);
+        }
+
+        JsonNode original = Step(reader, ("\"<original>\"", Quoted(_workspace.File("restricted.pdf"))));
+        Assert.Equal(_workspace.File("restricted.pdf"), original["input"]!["path"]!.GetValue<string>(), ignoreCase: true);
+        Assert.True(original["permissions"]!["print"]!.GetValue<bool>());
+        string[] files = command == "split"
+            ? [.. result.Json()["outputs"]!.AsArray().Select(static output => output!["path"]!.GetValue<string>())]
+            : [Written(result.Json())];
+        foreach (string file in files)
+        {
+            string written = Written(Step(step, ("<owner-password-env>", OwnerVariable), ("\"<file>\"", Quoted(file))));
+            JsonNode inspected = Run("pdf", "inspect", written, "--detail", "permissions").Json();
+            Assert.True(inspected["input"]!["encrypted"]!.GetValue<bool>(), written);
+            Assert.False(inspected["permissions"]!["print"]!.GetValue<bool>(), written);
+        }
     }
 
     /// <summary>
     /// A DOCX copy of a PDF with only an owner password cannot be restricted that way: only a
-    /// conversion encrypts DOCX, and with a password to open, which the hint says.
+    /// conversion encrypts DOCX, and with a password to open, which the hint says as it runs the
+    /// command again.
     /// </summary>
     [Category(TestCategory.Slow)]
     [Fact]
-    public void RestrictedPdfToDocx_HintSaysTheOutputWouldNeedAPasswordToOpen()
+    public void RestrictedPdfToDocx_HintRunsTheConversionAgainWithAPasswordToOpen()
     {
-        File.WriteAllText(_workspace.File("source.md"), "# One\n\nFirst part.\n");
-        Assert.Equal(0, Run("pdf", "create", "plain.pdf", "--from-markdown", "source.md").ExitCode);
-        Assert.Equal(0, Run(
-            "pdf", "edit", "plain.pdf", "--ops",
-            $$$"""[{"op":"encrypt_document","ownerPasswordEnv":"{{{OwnerVariable}}}","permissions":{"print":true,"copy":true}}]""",
-            "--out", "restricted.pdf").ExitCode);
+        CreateRestricted();
 
         CliResult result = Run("words", "convert", "restricted.pdf", "--to", "docx", "--out", "restricted.docx");
 
+        string hint = Hint(result);
+        Assert.StartsWith("The input opens without a password, but only a password to open it protects a docx file. "
+            + "If the output must stay protected, run 'aspose-cli words convert ", hint, StringComparison.Ordinal);
+        Assert.Contains("although the input opens without one", hint, StringComparison.Ordinal);
+        JsonNode written = Step(Assert.Single(Commands(hint)), ("<password-env>", Variable));
+        AssertNeedsThePassword("words", Written(written));
+    }
+
+    /// <summary>
+    /// A password read from stdin is never repeated, by value or by option, as a continuation
+    /// leaves it out: the hint's command names no --password-stdin and says to give the password
+    /// again, and given it again it runs as written.
+    /// </summary>
+    [Category(TestCategory.Slow)]
+    [Fact]
+    public void WorkbookOpenedWithAPasswordOnStdin_HintLeavesThePasswordOptionOut()
+    {
+        Created(Run("cells", "create", "locked.xlsx", "--encrypt-env", Variable));
+
+        CliResult result = _workspace.RunCommandLine("aspose-cli cells convert locked.xlsx --password-stdin --to csv --output-format json", Variables, "hint-secret\n");
+
+        string hint = Hint(result);
+        Assert.DoesNotContain("--password-stdin", hint, StringComparison.Ordinal);
+        Assert.DoesNotContain("hint-secret", hint, StringComparison.Ordinal);
+        Assert.Contains(", giving it again the password this command read from stdin, ", hint, StringComparison.Ordinal);
+        string command = Assert.Single(Commands(hint)).Replace("<password-env>", Variable, StringComparison.Ordinal) + " --password-stdin";
+        CliResult ran = _workspace.RunCommandLine(command, Variables, "hint-secret\n");
+        Assert.True(ran.ExitCode == 0, $"{command}\n{ran.StdErr}");
+        AssertNeedsThePassword("cells", Written(ran.Json()));
+    }
+
+    /// <summary>
+    /// A password given literally is never repeated: the hint names no command that would carry
+    /// it, only the way in words.
+    /// </summary>
+    [Category(TestCategory.Slow)]
+    [Fact]
+    public void WorkbookOpenedWithALiteralPassword_HintNeverRepeatsIt()
+    {
+        Created(Run("cells", "create", "locked.xlsx", "--encrypt-env", Variable));
+
+        CliResult result = Run("cells", "convert", "locked.xlsx", "--password", "hint-secret", "--to", "csv");
+
+        string hint = Hint(result);
+        Assert.DoesNotContain("hint-secret", hint, StringComparison.Ordinal);
+        Assert.DoesNotContain("--password ", hint, StringComparison.Ordinal);
+        Assert.Empty(Commands(hint));
+    }
+
+    /// <summary>
+    /// An edit that read its operations from stdin: the hint's command keeps --ops - and says to
+    /// pipe the same operations again, never writing them into the hint, where a secret they hold
+    /// would show. Run as written with those operations on stdin, it encrypts what it writes.
+    /// </summary>
+    [Category(TestCategory.Slow)]
+    [Fact]
+    public void ImportWithOperationsOnStdin_HintPipesTheSameOperationsAgain()
+    {
+        CreateProtected();
+        string ops = $$$"""[{"op":"import_pages","path":"protected.pdf","pages":"1","at":1,"sourcePasswordEnv":"{{{UserVariable}}}"}]""";
+
+        CliResult result = _workspace.RunCommandLine("aspose-cli pdf edit plain.pdf --ops - --out imported.pdf --output-format json", Variables, ops);
+
+        string hint = Hint(result);
+        string command = Assert.Single(Commands(hint));
+        Assert.Contains(" --ops - ", command, StringComparison.Ordinal);
+        Assert.DoesNotContain("import_pages", hint, StringComparison.Ordinal);
+        Assert.Contains("', piping the same --ops document to it on stdin as this command read it, ", hint, StringComparison.Ordinal);
+        CliResult ran = _workspace.RunCommandLine(command.Replace("<password-env>", Variable, StringComparison.Ordinal), Variables, ops);
+        Assert.True(ran.ExitCode == 0, $"{command}\n{ran.StdErr}");
+        Assert.Equal(Written(result.Json()), Written(ran.Json()), ignoreCase: true);
+        AssertNeedsThePassword("pdf", Written(ran.Json()));
+    }
+
+    /// <summary>
+    /// The two hints of a page selection converted to docx split the same part: run one after the
+    /// other as written, the second replaces the part the first wrote and ends with an encrypted
+    /// docx of that page.
+    /// </summary>
+    [Category(TestCategory.Slow)]
+    [Fact]
+    public void PagesOfAPdfConvertedToDocx_BothHintsRunOneAfterTheOther()
+    {
+        CreateEncryptedPdf(pages: 3);
+
+        CliResult result = Run("pdf", "convert", "locked.pdf", "--password-env", Variable, "--pages", "2", "--to", "docx", "--out", "page.docx");
+
         Assert.True(result.ExitCode == 0, result.StdErr);
-        Assert.Equal("If the output must stay protected, run the command again with --encrypt-env naming an environment variable that holds a password, "
-            + "which encrypts the output with that password to open it, although the input opens without one.", Hint(result));
+        string editable = result.Json()["warnings"]!.AsArray()
+            .Single(static warning => warning!["code"]!.GetValue<string>() == "LOSSY_CONVERSION")!["hint"]!.GetValue<string>();
+        string[] commands = [.. Commands(editable), .. Commands(Hint(result))];
+        Assert.Equal(4, commands.Length);
+        foreach (string command in commands)
+        {
+            Step(command);
+        }
+
+        AssertNeedsThePassword("words", _workspace.File("page.docx"));
+        JsonNode inspected = Run("words", "inspect", "page.docx", "--password-env", Variable).Json();
+        Assert.Equal(1, inspected["document"]!["pageCount"]!.GetValue<int>());
+    }
+
+    // locked.pdf: a PDF of the given number of pages whose open password the variable holds.
+    private void CreateEncryptedPdf(int pages)
+    {
+        File.WriteAllText(_workspace.File("source.md"), "# One\n\nFirst part.\n");
+        if (pages == 1)
+        {
+            Created(Run("pdf", "create", "locked.pdf", "--from-markdown", "source.md", "--encrypt-env", Variable));
+            return;
+        }
+
+        Created(Run("pdf", "create", "page.pdf", "--from-markdown", "source.md"));
+        Created(Run(["pdf", "merge", .. Enumerable.Repeat("page.pdf", pages), "--out", "locked.pdf", "--encrypt-env", Variable]));
     }
 
     // protected.pdf: an open password, a different owner password, and only printing allowed.
     private void CreateProtected()
     {
         File.WriteAllText(_workspace.File("source.md"), "# One\n\nFirst part.\n\n# Two\n\nSecond part.\n");
-        Assert.Equal(0, Run("pdf", "create", "plain.pdf", "--from-markdown", "source.md").ExitCode);
-        CliResult encrypted = Run(
+        Created(Run("pdf", "create", "plain.pdf", "--from-markdown", "source.md"));
+        Created(Run(
             "pdf", "edit", "plain.pdf", "--ops",
             $$$"""[{"op":"encrypt_document","userPasswordEnv":"{{{UserVariable}}}","ownerPasswordEnv":"{{{OwnerVariable}}}","permissions":{"print":true}}]""",
-            "--out", "protected.pdf");
-        Assert.True(encrypted.ExitCode == 0, encrypted.StdErr);
+            "--out", "protected.pdf"));
     }
 
-    private static string Hint(CliResult result) => JsonNode.Parse(result.StdOut)!["warnings"]!.AsArray()
-        .Single(static warning => warning!["code"]!.GetValue<string>() == "ENCRYPTION_REMOVED")!["hint"]!.GetValue<string>();
-
-    // A hint names a command by its path, never an operation or an operation document to run.
-    private static void AssertNamesNoOperation(string hint)
+    // restricted.pdf: only an owner password, which lets readers print and copy; plain.pdf beside it.
+    private void CreateRestricted()
     {
-        Assert.DoesNotContain("\"ops\"", hint, StringComparison.Ordinal);
-        Assert.DoesNotContain("encrypt_document", hint, StringComparison.Ordinal);
-        Assert.DoesNotContain("`", hint, StringComparison.Ordinal);
+        File.WriteAllText(_workspace.File("source.md"), "# One\n\nFirst part.\n");
+        Created(Run("pdf", "create", "plain.pdf", "--from-markdown", "source.md"));
+        Created(Run(
+            "pdf", "edit", "plain.pdf", "--ops",
+            $$$"""[{"op":"encrypt_document","ownerPasswordEnv":"{{{OwnerVariable}}}","permissions":{"print":true,"copy":true}}]""",
+            "--out", "restricted.pdf"));
     }
+
+    // The --out of a command: a new file, or one that already exists with --overwrite; none for
+    // the default output path, unless the command requires one.
+    private string[] Output(string name, bool existing, bool required = false)
+    {
+        if (existing)
+        {
+            File.WriteAllText(_workspace.File(name), "an earlier file");
+            return ["--out", name, "--overwrite"];
+        }
+
+        return required ? ["--out", name] : [];
+    }
+
+    // Runs one command a hint gives, as written but for its placeholders; returns its result.
+    private JsonNode Step(string command, params (string Placeholder, string Value)[] filled)
+    {
+        string line = filled.Aggregate(command, static (text, fill) => text.Replace(fill.Placeholder, fill.Value, StringComparison.Ordinal));
+        CliResult ran = _workspace.RunCommandLine(line, Variables);
+        Assert.True(ran.ExitCode == 0, $"{line}\n{ran.StdErr}");
+        return JsonNode.Parse(ran.StdOut)!;
+    }
+
+    // A file a protected format holds: it needs the password the variable holds to open.
+    private void AssertNeedsThePassword(string product, string file)
+    {
+        Assert.Equal("PASSWORD_REQUIRED", JsonNode.Parse(Run(product, "inspect", file).StdErr)!["error"]!["code"]!.GetValue<string>());
+        CliResult opened = Run(product, "inspect", file, "--password-env", Variable);
+        Assert.True(opened.ExitCode == 0, opened.StdErr);
+    }
+
+    // The commands a hint quotes to run, in order: in backticks, or in single quotes when they hold none.
+    private static string[] Commands(string hint) =>
+        [.. QuotedCommand().Matches(hint).Select(static match => match.Groups[1].Success ? match.Groups[1].Value : match.Groups[2].Value)];
+
+    // The one file a result names as written.
+    private static string Written(JsonNode result) =>
+        (result["output"] ?? result["outputs"]![0])!["path"]!.GetValue<string>();
+
+    private static string[] Codes(JsonNode result) =>
+        [.. (result["warnings"]?.AsArray() ?? []).Select(static warning => warning!["code"]!.GetValue<string>())];
+
+    // A path as a command line of this CLI quotes it.
+    private static string Quoted(string path) => $"\"{path}\"";
+
+    private static void Created(CliResult created) => Assert.True(created.ExitCode == 0, created.StdErr);
+
+    private static JsonNode Warning(CliResult result)
+    {
+        Assert.True(result.ExitCode == 0, result.StdErr);
+        return JsonNode.Parse(result.StdOut)!["warnings"]!.AsArray()
+            .Single(static warning => warning!["code"]!.GetValue<string>() == "ENCRYPTION_REMOVED")!;
+    }
+
+    private static string Hint(CliResult result) => Warning(result)["hint"]!.GetValue<string>();
 
     private CliResult Run(params string[] arguments) =>
         _workspace.RunWithEnv(Variables, [.. arguments, "--output-format", "json"]);
+
+    [GeneratedRegex(@"`(aspose-cli [^`]+)`|(?<![\p{L}\p{N}])'(aspose-cli [^'`]+)'(?![\p{L}\p{N}])")]
+    private static partial Regex QuotedCommand();
 }

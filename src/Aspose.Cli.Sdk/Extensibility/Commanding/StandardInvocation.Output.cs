@@ -2,6 +2,7 @@ using System.CommandLine;
 using System.CommandLine.Parsing;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
+using Aspose.Cli.Sdk.Addressing;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Formats;
@@ -108,8 +109,205 @@ public partial class StandardInvocation
             ? $"An in-place edit keeps the file's format; write a protectable copy with {StandardOptionNames.Out} instead, "
                 + $"naming a file with one of {string.Join(", ", protectable.Select(static format => format.PreferredExtension).Distinct())}, "
                 + $"or drop {option}."
-            : $"Protect only {string.Join(", ", protectable.Select(static format => format.Id))} outputs, or drop {option}.";
+            : EncryptedAfterwards(option, written)
+                ?? $"Protect only {string.Join(", ", protectable.Select(static format => format.Id))} outputs, or drop {option}.";
         return CliErrors.OptionInvalid(option, reason, hint);
+    }
+
+    // The hint that writes the output without a password, then encrypts it in place with the edit
+    // that encrypts its format (ProtectionAdvice.EncryptInPlace), with the variable the caller named
+    // for the output's password; null when no edit encrypts the format or the command line holds a
+    // secret given literally, which a hint never repeats.
+    private string? EncryptedAfterwards(string option, IReadOnlyList<FormatDescriptor> written)
+    {
+        if (written is not [var format] || _options.Encrypt is not { } encrypt)
+        {
+            return null;
+        }
+
+        string password = encrypt.EnvironmentName(_parse) ?? ProtectionAdvice.PasswordPlaceholder;
+        return ProtectionAdvice.EncryptInPlace(_parse.RootCommandResult.Command, format.Id, Output.Path, password) is { } encrypted
+            && Again([.. encrypt.Options]) is { } plain
+                ? $"Write the {format.Id} file without {option}, then encrypt it in place with a password to open it that grants every permission: "
+                    // What the first command cannot repeat is said right after it.
+                    + $"run {plain.Command.Quoted()}{plain.Repeating}, then {encrypted.Quoted()}{ProtectionAdvice.Naming(password)}."
+                : null;
+    }
+
+    /// <summary>The options that name the output's password, which an edit that only encrypts takes the place of.</summary>
+    internal IReadOnlyList<Option> OutputPasswordOptions => _options.Encrypt?.Options ?? [];
+
+    /// <summary>
+    /// This invocation as a command line for a hint: <see cref="ContinuationAt"/> of its own
+    /// command, or that command alone when it has no input, then every other argument and option the
+    /// caller gave, as given, except <paramref name="dropped"/> and the output format, which every
+    /// such command line names itself. A password follows the rule of <see cref="ContinuationAt"/>:
+    /// one in an environment variable is passed on by the variable's name, one read from stdin is
+    /// left out, and one given literally is never repeated, so the result is null. A document read
+    /// from stdin keeps its <c>-</c>, which <see cref="RepeatedInvocation.Repeating"/> tells the
+    /// caller to pipe again, so a document that may hold secrets is never written into the hint.
+    /// The caller appends what it changes. Null, too, for a command parsed on its own, outside the
+    /// command tree, which has no path to repeat.
+    /// </summary>
+    /// <param name="dropped">The parameters the caller replaces or leaves out; a null entry is ignored.</param>
+    internal RepeatedInvocation? Again(params Symbol?[] dropped)
+    {
+        ArgumentNullException.ThrowIfNull(dropped);
+        string[] path = CommandPath();
+        if (path.Length == 0)
+        {
+            return null;
+        }
+
+        ContinuationCommand again = _options.Input is null ? new ContinuationCommand(path) : ContinuationAt(path);
+        // ContinuationAt passes the input's password variable on itself.
+        string? passed = _options.Input is null ? null : _options.InputPassword?.EnvironmentOption;
+        var replay = new Replaying(again, [.. dropped.OfType<Symbol>()], passed);
+        return Replay(_parse.RootCommandResult, replay) ? new RepeatedInvocation(again, replay.Piped, [.. replay.LeftOut]) : null;
+    }
+
+    // Appends the arguments and options of a command and its subcommands as the caller gave them;
+    // false when an option holds a secret given literally.
+    private bool Replay(CommandResult command, Replaying replay)
+    {
+        foreach (SymbolResult child in command.Children)
+        {
+            if (child is CommandResult subcommand)
+            {
+                if (!Replay(subcommand, replay))
+                {
+                    return false;
+                }
+            }
+            else if (child is OptionResult { Implicit: false } option && !replay.Dropped.Contains(option.Option)
+                && option.Option.Name is not GlobalOptionNames.OutputFormat && option.Option.Name != replay.Passed)
+            {
+                ParameterMetadata metadata = option.Option.GetParameterMetadata();
+                if (metadata is { Secret: true, ValueSource: ParameterValueSource.CommandLine })
+                {
+                    return false;
+                }
+
+                if (metadata.ValueSource == ParameterValueSource.StandardInput)
+                {
+                    replay.LeftOut.Add(option.Option.Name);
+                    continue;
+                }
+
+                replay.Command.Flag(option.Option.Name, option.Tokens.Count == 0);
+                foreach (Token token in option.Tokens)
+                {
+                    replay.Piped ??= metadata.InputKind == InputKind.JsonSource && token.Value == "-" ? option.Option.Name : null;
+                    // An inline operation document is passed in single quotes, as a document is.
+                    _ = metadata.InputKind == InputKind.JsonSource && token.Value.TrimStart() is ['{' or '[', ..]
+                        ? replay.Command.Document(option.Option.Name, token.Value)
+                        : replay.Command.Option(option.Option.Name, token.Value);
+                }
+            }
+            else if (child is ArgumentResult argument && argument.Argument != _options.Input && !replay.Dropped.Contains(argument.Argument))
+            {
+                foreach (Token token in argument.Tokens)
+                {
+                    replay.Command.Argument(token.Value);
+                }
+            }
+        }
+
+        return true;
+    }
+
+    // The command line a replay appends to, what it leaves out and passes on, and what it finds.
+    private sealed class Replaying(ContinuationCommand command, Symbol[] dropped, string? passed)
+    {
+        public ContinuationCommand Command { get; } = command;
+
+        public Symbol[] Dropped { get; } = dropped;
+
+        public string? Passed { get; } = passed;
+
+        // The option of a document the invocation read from stdin, or null.
+        public string? Piped { get; set; }
+
+        // The options of the secrets the invocation read from stdin.
+        public List<string> LeftOut { get; } = [];
+    }
+
+    /// <summary>
+    /// The command lines, for a hint, that write a file of <paramref name="format"/> at
+    /// <paramref name="output"/>, replacing it, from this command's input with the conversion at
+    /// <paramref name="converter"/>: that conversion of the input itself, or, when the invocation
+    /// selected pages with a range option, this product's split of those pages into the output's
+    /// folder, then that conversion of the part, so the file holds only the pages selected. Each
+    /// starts from the input as <see cref="ContinuationOf"/> names it, the part as the input with
+    /// another document, since the split keeps the input's password; the caller may append options
+    /// to the last. Null when the invocation gave the command other arguments or options of its own,
+    /// which the conversion might not take, or selected pages its product has no split by groups for.
+    /// </summary>
+    /// <param name="converter">The command path of the conversion.</param>
+    /// <param name="format">The format id the conversion writes.</param>
+    /// <param name="output">The file the conversion writes.</param>
+    internal InputConversion? FromInput(string[] converter, string format, string output)
+    {
+        ArgumentNullException.ThrowIfNull(converter);
+        ContinuationInput input = ContinuationOf(Input);
+        ContinuationCommand Convert(ContinuationInput source) => source.ContinuationAt(converter)
+            .Option(StandardOptionNames.To, format)
+            .Option(StandardOptionNames.Out, output)
+            .Flag(StandardOptionNames.Overwrite);
+        Symbol[] given = [.. _options.Own.Where(Gave)];
+        if (given.Length == 0)
+        {
+            return new InputConversion([Convert(input)], Part: null);
+        }
+
+        if (given is not [Option range] || !PartRangeOption.Selects(range, SplitBy.Pages)
+            || _parse.GetResult(range) is not OptionResult { Tokens: [var selection] }
+            || GroupedSplit() is not { } split)
+        {
+            return null;
+        }
+
+        string folder = Path.GetDirectoryName(output)!;
+        string part = new ResolvedDirectory(folder, overwrite: false).Parts(Path.GetFileNameWithoutExtension(Input), split.Extension, [1])[0];
+        return new InputConversion(
+        [
+            // The part may be one another hint of the same invocation wrote already, so it replaces it.
+            input.ContinuationAt(split.Path)
+                .Option(SplitOptions.ByOption, SplitPlan.Spell(SplitBy.Pages))
+                .Option(SplitOptions.GroupsOption, selection.Value)
+                .Option(StandardOptionNames.OutDir, folder)
+                .Flag(StandardOptionNames.Overwrite),
+            Convert(input with { Document = part }),
+        ], part);
+    }
+
+    /// <summary>
+    /// Whether the caller gave any of the command's own arguments and options, which a
+    /// conversion to another format, or by another command, might not take.
+    /// </summary>
+    internal bool GaveOwnParameters => _options.Own.Any(Gave);
+
+    // Whether the caller gave the command's own argument or option.
+    private bool Gave(Symbol parameter) => parameter switch
+    {
+        Option option => _parse.GetResult(option) is OptionResult { Implicit: false },
+        Argument argument => _parse.GetResult(argument) is ArgumentResult { Tokens.Count: > 0 },
+        _ => false,
+    };
+
+    // The visible split beside this command that writes one part per page group (SplitOptions),
+    // with the extension of its parts; null when there is none.
+    private (string[] Path, string Extension)? GroupedSplit()
+    {
+        if (_parse.CommandResult.Parent is not CommandResult product)
+        {
+            return null;
+        }
+
+        Command? split = product.Command.Subcommands.FirstOrDefault(static command => !command.Hidden && SplitOptions.SplitsByGroups(command));
+        return split is not null && StandardOptions.Of(split) is { OutputTarget.Kind: OutputKind.Directory } options
+            ? ([.. CommandPath()[..^1], split.Name], options.OutputTarget.Writes?.FirstOrDefault()?.PreferredExtension ?? Path.GetExtension(Input))
+            : null;
     }
 
     /// <summary>
@@ -404,7 +602,7 @@ public partial class StandardInvocation
             && string.Equals(Path.GetExtension(given), extension, StringComparison.OrdinalIgnoreCase);
         string[] extensions = [.. writes.SelectMany(static format => format.Extensions).Distinct(StringComparer.OrdinalIgnoreCase)];
         string? producerOutput = fromInput && !derived ? output : null;
-        (IReadOnlyList<FormatDescriptor> Formats, IReadOnlyList<string> Commands)? producer = extension.Length > 1 && !inputs ? Producer(extension, producerOutput) : null;
+        (IReadOnlyList<FormatDescriptor> Formats, IReadOnlyList<ContinuationCommand> Commands)? producer = extension.Length > 1 && !inputs ? Producer(extension, producerOutput) : null;
         // A mistyped extension close to none the command writes may stand for one a sibling
         // writes, as .htlm stands for the .html of convert: that extension is answered as itself.
         string? meant = extension.Length > 1 && !inputs && producer is null
@@ -479,42 +677,45 @@ public partial class StandardInvocation
     /// </summary>
     /// <param name="extension">The extension the output was given.</param>
     /// <param name="output">The output as the caller gave it, for a command whose output is not a document to convert; otherwise null.</param>
-    private (IReadOnlyList<FormatDescriptor> Formats, IReadOnlyList<string> Commands)? Producer(string extension, string? output)
+    private (IReadOnlyList<FormatDescriptor> Formats, IReadOnlyList<ContinuationCommand> Commands)? Producer(string extension, string? output)
     {
         string[] path = CommandPath();
-        string[] target = output is null ? [] : [StandardOptionNames.Out, Quoted(output)];
         // From this command's input, the command continues this invocation (ContinuationAt), so
         // it opens the input with the same password; otherwise the caller names the file.
-        string Line(string[] writer, FormatDescriptor format) =>
-            output is not null && _options.Input is not null
-                ? ContinuationAt(writer).Option(StandardOptionNames.To, format.Id).Option(StandardOptionNames.Out, output).ToString()
-                : string.Join(' ', [DistributionInfo.CommandName, .. writer, "<that file>", StandardOptionNames.To, format.Id, .. target]);
+        ContinuationCommand Line(string[] writer, FormatDescriptor format)
+        {
+            ContinuationCommand line = (output is not null && _options.Input is not null
+                ? ContinuationAt(writer)
+                : new ContinuationCommand(writer).Placeholder("that file")).Option(StandardOptionNames.To, format.Id);
+            return output is null ? line : line.Option(StandardOptionNames.Out, output);
+        }
+
         return SiblingTargets()
             .Select(sibling => Named(sibling.Target.Offered.DeclaringExtension(extension)) is { Length: > 0 } formats
-                ? ((IReadOnlyList<FormatDescriptor> Formats, IReadOnlyList<string> Commands)?)(formats,
+                ? ((IReadOnlyList<FormatDescriptor> Formats, IReadOnlyList<ContinuationCommand> Commands)?)(formats,
                     [.. formats.Select(format => Line(Writer(path[..^1], sibling.Command, format), format))])
                 : null)
             .FirstOrDefault(static line => line is not null);
     }
 
     /// <summary>
-    /// The command line, for a hint, that writes an editable file in place of the one this
-    /// command writes (<see cref="Output"/>), from this command's input: this command's name under
-    /// the product the output's format names as writing one (<see cref="FormatDescriptor.EditableBy"/>),
+    /// The command lines, quoted for a hint and run one after the other
+    /// (<see cref="ContinuationCommand.Steps"/>), that write an editable file in place of the one
+    /// this command writes (<see cref="Output"/>), from this command's input: this command's name
+    /// under the product the output's format names as writing one (<see cref="FormatDescriptor.EditableBy"/>),
     /// with the input and its password's environment variable as <see cref="Continuation()"/>
     /// repeats them, then <c>--to</c> the format, <c>--out</c> this command's output and
-    /// <c>--overwrite</c>, so it replaces that file; null when the format names no such product or
-    /// this build has no such command.
+    /// <c>--overwrite</c>, so it replaces that file. A selection of pages is split from the input
+    /// first and the part converted, so the file keeps only those pages, and the part may be
+    /// deleted once converted. The text ends with <c>instead</c> and what to delete, as in
+    /// <c>run 'a', then 'b' instead; …</c>. Null when the format names no such product, this build
+    /// has no such command, or the command was given other options of its own.
     /// </summary>
     public string? EditableConversion()
     {
         ResolvedOutput output = Output;
-        return Editor(output.Format, CommandPath()[^1]) is { } path
-            ? ContinuationAt(path)
-                .Option(StandardOptionNames.To, output.Format.Id)
-                .Option(StandardOptionNames.Out, output.Path)
-                .Flag(StandardOptionNames.Overwrite)
-                .ToString()
+        return Editor(output.Format, CommandPath()[^1]) is { } path && FromInput(path, output.Format.Id, output.Path) is { } conversion
+            ? $"{ContinuationCommand.Steps(conversion.Commands)} instead{conversion.Leftover}"
             : null;
     }
 
@@ -548,8 +749,38 @@ public partial class StandardInvocation
         declaring.FirstOrDefault(static format => format.ChosenByExtension) is { } chosen ? [chosen] : [.. declaring];
 
     // Command lines as a hint quotes them, one or several to choose from.
-    private static string Run(IReadOnlyList<string> commands) => Listed([.. commands.Select(static line => $"'{line}'")]);
+    private static string Run(IReadOnlyList<ContinuationCommand> commands) => Listed([.. commands.Select(static line => line.Quoted())]);
+}
 
-    // A path as a command line names it: quoted when it holds a space.
-    private static string Quoted(string path) => path.Contains(' ', StringComparison.Ordinal) ? $"\"{path}\"" : path;
+/// <summary>
+/// An invocation as a command line for a hint (<see cref="StandardInvocation.Again"/>), with what
+/// it could not write into it.
+/// </summary>
+/// <param name="Command">The command line; the caller appends what it changes.</param>
+/// <param name="Piped">The option of a document the invocation read from stdin, which keeps its <c>-</c>; null for none.</param>
+/// <param name="LeftOut">The options of the passwords the invocation read from stdin, which the command line leaves out.</param>
+internal sealed record RepeatedInvocation(ContinuationCommand Command, string? Piped, IReadOnlyList<string> LeftOut)
+{
+    /// <summary>
+    /// What a hint says right after the command of what it cannot repeat: the document to pipe
+    /// to it again on stdin, and that the passwords read from stdin, which it names neither by
+    /// value nor by option, are the caller's to give again; empty when it repeats everything.
+    /// </summary>
+    public string Repeating =>
+        (Piped is null ? string.Empty : $", piping the same {Piped} document to it on stdin as this command read it")
+        + (LeftOut.Count == 0 ? string.Empty : ", giving it again the password this command read from stdin");
+}
+
+/// <summary>
+/// The command lines that convert an invocation's input, or the part split from it
+/// (<see cref="StandardInvocation.FromInput"/>), run one after the other.
+/// </summary>
+/// <param name="Commands">The command lines; the caller may append options to the last.</param>
+/// <param name="Part">The part the split writes for the conversion to read, or null when the input itself is converted.</param>
+internal sealed record InputConversion(IReadOnlyList<ContinuationCommand> Commands, string? Part)
+{
+    /// <summary>What a hint says after the commands of the part they leave behind, which only the conversion reads; empty without one.</summary>
+    public string Leftover => Part is null
+        ? string.Empty
+        : $"; once the conversion has run, {Path.GetFileName(Part)}, the part the split wrote beside the output, can be deleted";
 }

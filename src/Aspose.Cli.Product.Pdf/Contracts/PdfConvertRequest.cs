@@ -13,10 +13,11 @@ public sealed record PdfConvertRequest
     public Secret? Password { get; init; }
 
     /// <summary>
-    /// The command line that writes an editable file of the output's format from the input over
-    /// the output, with the input password's environment variable when one gave it, which the
-    /// conversion's <c>LOSSY_CONVERSION</c> names; null when no other product writes an editable
-    /// file of the format.
+    /// The command lines, quoted and followed by <c>instead</c> and the part they leave to delete,
+    /// that write an editable file of the output's format from the input, or from the selected
+    /// pages split from it, over the output, with the input password's environment variable when
+    /// one gave it, which the conversion's <c>LOSSY_CONVERSION</c> names; null when no other product
+    /// writes an editable file of the format.
     /// </summary>
     public string? EditableConversion { get; init; }
 }

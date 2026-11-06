@@ -148,6 +148,22 @@ the product cannot encrypt is written unencrypted with an
 the files `extract` writes never warn. The product Skill says which of its
 outputs can be encrypted.
 
+The warning's hint gives one step that protects the output, after the reason
+for it, as commands to run as written: the same command again with
+`--encrypt-env` and `--overwrite`, which replaces the unencrypted file; an
+edit that encrypts the file in place, such as `pdf edit` with an
+`encrypt_document` operation; or a conversion of the encrypted input itself
+with `--encrypt-env`. A step that writes an encrypted copy beside the
+unencrypted file ends by telling you to delete that file once the copy
+exists. In a command, `<password-env>` stands for the name of an environment
+variable that holds the password to set, and `<file>` for each file the
+command wrote. When that step does not suit the task, the other ways are to
+write the output in a format the product can encrypt, to encrypt a PDF with
+`pdf edit` and `encrypt_document` passwords and permissions of your own, and
+to convert again from the encrypted input rather than from its unencrypted
+copy, since converting a file again can change it. A hint that says no command
+of this build can encrypt a format means that format cannot be protected.
+
 ## When a target is not found
 
 A not-found error (a `*_NOT_FOUND` code) states what exists, so you can

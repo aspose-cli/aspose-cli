@@ -242,12 +242,32 @@ public sealed class ExecutableHintTests : IDisposable
         Assert.Empty(ErrorHint("Choose a sheet such as 'Sales'; the sheet's name comes from 'Did you mean' lists, shift_jis or 'slide'."));
 
     /// <summary>
-    /// The real <c>ENCRYPTION_REMOVED</c> hint of a Words document converted to PDF names the
-    /// encrypting command by its path and <c>--in-place</c> alone: a quoted PDF command the catalog
-    /// accepts, with no operations of its own to run against the Words input.
+    /// The real <c>ENCRYPTION_REMOVED</c> hint of a PDF a batch decrypted names the encrypting
+    /// command by its path alone: a quoted PDF command the catalog accepts, with no operations of its
+    /// own to run.
     /// </summary>
     [Fact]
     public void QuotedCommandPath_OfTheEncryptionHint_IsCheckedAgainstTheCatalog()
+    {
+        File.WriteAllBytes(_workspace.File("locked.pdf"), ScenarioFixtures.Read("pdf.encrypted"));
+        string[] args = ["pdf", "edit", "locked.pdf", "--password-env", "DOC_PASSWORD", "--ops", """[{"op":"decrypt_document"}]""", "--out", "plain.pdf", "--output-format", "json"];
+        var variables = new Dictionary<string, string?> { ["DOC_PASSWORD"] = ScenarioFixtures.Password };
+        JsonNode result = _workspace.RunWithEnv(variables, args).Json();
+        string hint = result["warnings"]!.AsArray().Single(static warning => warning!["code"]!.GetValue<string>() == "ENCRYPTION_REMOVED")!["hint"]!.GetValue<string>();
+
+        HintAction action = Assert.Single(ExecutableHints.Extract(CliCatalog.Current, hint), static action => action.Kind != HintKind.Option);
+        Assert.Equal(HintKind.Command, action.Kind);
+        Assert.Equal(["pdf", "edit"], action.Tokens);
+        Assert.Empty(ExecutableHints.Problems(new HintRun(args, _workspace.Path, Path.GetDirectoryName(_workspace.ConfigDirectory)!, variables), result));
+    }
+
+    /// <summary>
+    /// The real <c>ENCRYPTION_REMOVED</c> hint of a Words document converted to PDF is one command
+    /// in backticks, the PDF edit that encrypts the file in place with its operation in single
+    /// quotes, and it runs as written on the PDF the conversion wrote.
+    /// </summary>
+    [Fact]
+    public void EncryptionHint_OfAWordsDocumentConvertedToPdf_RunsAsWritten()
     {
         File.WriteAllBytes(_workspace.File("locked.docx"), ScenarioFixtures.Read("words.encrypted"));
         string[] args = ["words", "convert", "locked.docx", "--password-env", "DOC_PASSWORD", "--to", "pdf", "--out", "plain.pdf", "--output-format", "json"];
@@ -257,7 +277,8 @@ public sealed class ExecutableHintTests : IDisposable
 
         HintAction action = Assert.Single(ExecutableHints.Extract(CliCatalog.Current, hint), static action => action.Kind != HintKind.Option);
         Assert.Equal(HintKind.Command, action.Kind);
-        Assert.Equal(["pdf", "edit", "--in-place"], action.Tokens);
+        Assert.Equal(["pdf", "edit", _workspace.File("plain.pdf"), "--in-place", "--ops"], action.Tokens.Take(5));
+        Assert.Contains("\"op\":\"encrypt_document\"", action.Tokens[5], StringComparison.Ordinal);
         Assert.Empty(ExecutableHints.Problems(new HintRun(args, _workspace.Path, Path.GetDirectoryName(_workspace.ConfigDirectory)!, variables), result));
     }
 
@@ -317,6 +338,25 @@ public sealed class ExecutableHintTests : IDisposable
         Assert.Empty(ExecutableHints.Problems(run, Warning("Read the locked cells with 'cells read --range A1:C3'.")));
         Assert.Empty(ExecutableHints.Problems(run, Warning("Read the locked cells with 'aspose-cli cells read <workbook> --range A1:C4'.")));
         Assert.Empty(ExecutableHints.Problems(run, Warning("""Fill the locked cell with {"op":"set_values","sheet":"Sheet1","range":"E1","values":[["locked"]]}.""")));
+    }
+
+    /// <summary>
+    /// The password an invocation read from stdin is never piped to a hint's command: one that
+    /// repeats --password-stdin gets empty stdin, as a caller running it after the invocation
+    /// would, and is reported, while the same command given the password another way runs.
+    /// </summary>
+    [Fact]
+    public void CommandThatRepeatsThePasswordFromStdin_GetsNoStdinAndIsReported()
+    {
+        File.WriteAllBytes(_workspace.File("locked.xlsx"), ScenarioFixtures.Read("cells.encrypted"));
+        string[] args = ["cells", "inspect", "locked.xlsx", "--password-stdin", "--output-format", "json"];
+        var run = new HintRun(args, _workspace.Path, Path.GetDirectoryName(_workspace.ConfigDirectory)!,
+            new Dictionary<string, string?> { ["BOOK_PASSWORD"] = ScenarioFixtures.Password }, ScenarioFixtures.Password + "\n");
+
+        Assert.Contains("fails with OPTION_INVALID", Assert.Single(ExecutableHints.Problems(run, Warning(
+            "Read the names with 'aspose-cli cells inspect locked.xlsx --password-stdin --detail names'."))), StringComparison.Ordinal);
+        Assert.Empty(ExecutableHints.Problems(run, Warning(
+            "Read the names with 'aspose-cli cells inspect locked.xlsx --password-env BOOK_PASSWORD --detail names'.")));
     }
 
     /// <summary>Global options before the command path still leave that command to judge an option the hint names alone.</summary>

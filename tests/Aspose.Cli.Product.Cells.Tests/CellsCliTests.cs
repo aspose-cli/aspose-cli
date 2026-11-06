@@ -461,6 +461,34 @@ public sealed class CellsCliTests : IDisposable
     }
 
     /// <summary>
+    /// Formulas stored without results: saving the workbook with an edit, as the hint of
+    /// <c>FORMULAS_CALCULATED_ON_OPEN</c> says, stores their results, so the next read warns no more.
+    /// </summary>
+    [Fact]
+    public void CalculatedOnOpen_SavedWithAnEditAsTheHintSays_ReadsWithoutTheWarning()
+    {
+        using (var workbook = new Aspose.Cells.Workbook())
+        {
+            Aspose.Cells.Cells cells = workbook.Worksheets[0].Cells;
+            cells["A1"].PutValue(40);
+            cells["B1"].PutValue(2);
+            cells["C1"].Formula = "=A1+B1";
+            workbook.Settings.FormulaSettings.CalculateOnOpen = true;
+            workbook.Save(_workspace.File("uncalculated.xlsx"), Aspose.Cells.SaveFormat.Xlsx);
+        }
+
+        JsonNode read = _workspace.Run("cells", "read", "uncalculated.xlsx", "--output-format", "json").Json();
+        JsonNode warning = Assert.Single(read["warnings"]!.AsArray(), static warning => warning!["code"]!.GetValue<string>() == "FORMULAS_CALCULATED_ON_OPEN")!;
+        Assert.Contains("Save the workbook with 'cells edit'", warning["hint"]!.GetValue<string>(), StringComparison.Ordinal);
+
+        CliResult saved = _workspace.Run("cells", "edit", "uncalculated.xlsx", "--in-place", "--set", "Sheet1!E1=1", "--output-format", "json");
+
+        Assert.True(saved.ExitCode == 0, saved.StdErr);
+        JsonNode again = _workspace.Run("cells", "read", "uncalculated.xlsx", "--output-format", "json").Json();
+        Assert.DoesNotContain(again["warnings"]?.AsArray() ?? [], static warning => warning!["code"]!.GetValue<string>() == "FORMULAS_CALCULATED_ON_OPEN");
+    }
+
+    /// <summary>
     /// <c>cells create</c> takes sheet names as <c>--sheet-names</c>; <c>--sheets</c>, which
     /// selects positions on <c>convert</c> and <c>render</c>, is not one of its options.
     /// </summary>

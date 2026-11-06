@@ -14,11 +14,16 @@ namespace Aspose.Cli.TestKit.Scenarios;
 /// <param name="Workspace">The working directory the invocation ran in.</param>
 /// <param name="ConfigRoot">The directory that stands for the user's application data, which holds the CLI configuration.</param>
 /// <param name="Variables">The extra environment variables, such as a password variable; null for none.</param>
+/// <param name="StandardInput">
+/// What the invocation read from stdin, such as its operations given as <c>--ops -</c>, which a
+/// hint's command that reads stdin as well is given again; null for none.
+/// </param>
 public sealed record HintRun(
     IReadOnlyList<string> Args,
     string Workspace,
     string ConfigRoot,
-    IReadOnlyDictionary<string, string?>? Variables);
+    IReadOnlyDictionary<string, string?>? Variables,
+    string? StandardInput = null);
 
 /// <summary>
 /// The hints of a result or an error envelope (<c>error.hint</c> and <c>warnings[].hint</c>) tell
@@ -384,7 +389,8 @@ public static partial class ExecutableHints
     private static Judgement Execution(HintRun run, Invocation invocation, string? product, IReadOnlyList<string> args)
     {
         string[] refused = invocation.Password is null ? [.. RefusedCodes] : [.. RefusedCodes, .. PasswordCodes];
-        return new($"run\n{product}\n{string.Join(',', refused)}\n{ContentKey(run, invocation)}\n{string.Join(Separator, args)}", () =>
+        string piped = PipedInput(run, args) is { } input ? Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(Encoding.UTF8.GetBytes(input))) : string.Empty;
+        return new($"run\n{product}\n{string.Join(',', refused)}\n{ContentKey(run, invocation)}\n{piped}\n{string.Join(Separator, args)}", () =>
         {
             using var scratch = new Scratch(run);
             var resolved = new List<string>();
@@ -400,6 +406,31 @@ public static partial class ExecutableHints
             }
             return scratch.Run(resolved, refused);
         });
+    }
+
+    /// <summary>
+    /// What the invocation read from stdin, for a command line that reads a JSON document from
+    /// stdin as it did, with a JSON source option given <c>-</c> (as the CLI's
+    /// <c>StandardInputSources</c> judges it); null for any other command line, which gets empty
+    /// stdin, so one that repeats a password the invocation read from stdin is refused.
+    /// </summary>
+    private static string? PipedInput(HintRun run, IReadOnlyList<string> args)
+    {
+        if (run.StandardInput is null)
+        {
+            return null;
+        }
+        string[] sources = [.. CommandLine.Parse(CliCatalog.Current, args).Command.Options
+            .Where(static option => option.InputKind == "json-source")
+            .SelectMany(static option => option.Aliases.Prepend(option.Name))];
+        for (int index = 0; index < args.Count; index++)
+        {
+            if (sources.Any(name => args[index] == name + "=-" || (args[index] == name && index + 1 < args.Count && args[index + 1] == "-")))
+            {
+                return run.StandardInput;
+            }
+        }
+        return null;
     }
 
     /// <summary>The SHA-256 of each of the invocation's files that exists, in order; a missing one is empty.</summary>
@@ -817,7 +848,7 @@ public static partial class ExecutableHints
                     ["USERPROFILE"] = _home,
                 };
                 result = new CliProcess(CliRunner.ExecutablePath, CliEnvironment.Evaluation(_config, variables), TimeSpan.FromSeconds(60))
-                    .Run(_workspace, string.Empty, [.. args]);
+                    .Run(_workspace, PipedInput(_run, args) ?? string.Empty, [.. args]);
             }
             catch (TimeoutException)
             {

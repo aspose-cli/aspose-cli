@@ -56,6 +56,37 @@ public sealed class CellsOpenCalculationTests : IClassFixture<CellsFixture>
         Assert.Equal(0, warning.Details["storedWithoutResultCount"]!.GetValue<int>());
     }
 
+    /// <summary>
+    /// A volatile function changes with every calculation, so saving does not settle it: the hint
+    /// of such a workbook says so rather than telling to save it.
+    /// </summary>
+    [Fact]
+    public void VolatileFormulas_HintSaysEveryCalculationCanChangeThem()
+    {
+        string path = _fixture.Temp.File("volatile-hint.xlsx");
+        CreateVolatileWorkbook(path);
+
+        CellsReadResult read = CellsRead.Run(_fixture.Session, new CellsReadRequest { Input = path });
+
+        string hint = Assert.Single(read.Warnings ?? [], static warning => warning.Code.Name == "FORMULAS_CALCULATED_ON_OPEN").Hint!;
+        Assert.DoesNotContain("Save the workbook", hint, StringComparison.Ordinal);
+        Assert.Contains("volatile function", hint, StringComparison.Ordinal);
+        Assert.Contains("can change each time, so saving the workbook does not settle them", hint, StringComparison.Ordinal);
+    }
+
+    /// <summary>Formulas stored without results and no volatile function: the hint saves the workbook to store them, as before.</summary>
+    [Fact]
+    public void UncalculatedFormulas_HintSavesTheWorkbookToStoreThem()
+    {
+        string path = Workbook("uncalculated-hint.xlsx", calculate: false);
+
+        CellsReadResult read = CellsRead.Run(_fixture.Session, new CellsReadRequest { Input = path });
+
+        Assert.Equal("The values shown are the engine's, as Excel shows them on opening. Save the workbook with 'cells edit' "
+            + "to store them, or run 'cells read <file> --content formulas' to see the formulas.",
+            Assert.Single(read.Warnings ?? [], static warning => warning.Code.Name == "FORMULAS_CALCULATED_ON_OPEN").Hint);
+    }
+
     /// <summary>The number of volatile formulas in <see cref="CreateVolatileWorkbook"/>.</summary>
     internal const int VolatileFormulaCount = 200;
 

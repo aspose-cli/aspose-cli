@@ -57,7 +57,7 @@
           },
           {
             "path": "error.hint",
-            "contains": "then run 'aspose-cli cells convert <that file> --to pdf' for pdf"
+            "contains": "then run 'aspose-cli cells convert <that file> --to pdf --output-format json' for pdf"
           }
         ],
         "files": {
@@ -103,7 +103,7 @@
           },
           {
             "path": "error.hint",
-            "contains": "then run 'aspose-cli slides convert <that file> --to pdf' for pdf"
+            "contains": "then run 'aspose-cli slides convert <that file> --to pdf --output-format json' for pdf"
           }
         ],
         "files": {
@@ -147,7 +147,7 @@
           },
           {
             "path": "error.hint",
-            "contains": "then run 'aspose-cli slides convert <that file> --to ppt' for ppt"
+            "contains": "then run 'aspose-cli slides convert <that file> --to ppt --output-format json' for ppt"
           }
         ],
         "files": {
@@ -189,7 +189,7 @@
           },
           {
             "path": "error.hint",
-            "contains": "then run 'aspose-cli cells convert <that file> --to pdf' for pdf"
+            "contains": "then run 'aspose-cli cells convert <that file> --to pdf --output-format json' for pdf"
           }
         ],
         "files": {
@@ -235,7 +235,7 @@
           },
           {
             "path": "error.hint",
-            "contains": "then run 'aspose-cli pdf convert <that file> --to md' for md"
+            "contains": "then run 'aspose-cli pdf convert <that file> --to md --output-format json' for md"
           }
         ],
         "files": {
@@ -279,7 +279,7 @@
           },
           {
             "path": "error.hint",
-            "contains": "then run 'aspose-cli pdf convert <that file> --to md' for md"
+            "contains": "then run 'aspose-cli pdf convert <that file> --to md --output-format json' for md"
           }
         ],
         "files": {
@@ -325,7 +325,7 @@
           },
           {
             "path": "error.hint",
-            "contains": "then run 'aspose-cli words convert <that file> --to pdf' for pdf"
+            "contains": "then run 'aspose-cli words convert <that file> --to pdf --output-format json' for pdf"
           }
         ],
         "files": {
@@ -371,7 +371,7 @@
           },
           {
             "path": "error.hint",
-            "contains": "then run 'aspose-cli words convert <that file> --to md' for md"
+            "contains": "then run 'aspose-cli words convert <that file> --to md --output-format json' for md"
           }
         ],
         "files": {
@@ -415,7 +415,7 @@
           },
           {
             "path": "error.hint",
-            "contains": "then run 'aspose-cli words convert <that file> --to pdf' for pdf"
+            "contains": "then run 'aspose-cli words convert <that file> --to pdf --output-format json' for pdf"
           }
         ],
         "files": {
@@ -459,7 +459,7 @@
           },
           {
             "path": "error.hint",
-            "contains": "then run 'aspose-cli words convert <that file> --to md' for md"
+            "contains": "then run 'aspose-cli words convert <that file> --to md --output-format json' for md"
           }
         ],
         "files": {
