@@ -84,11 +84,15 @@ internal static class WordsRender
                 RenderHint);
             string file = string.Create(CultureInfo.InvariantCulture, $"page-{page:0000}.png");
             int pageNumber = page;
-            artifacts.Write(
-                file,
-                stream => document.Save(
-                    stream,
-                    WordsSavePipeline.Options("png", pages: [pageNumber], dpi: dpi)));
+            if (!artifacts.TryWritePart(
+                    file,
+                    stream => document.Save(
+                        stream,
+                        WordsSavePipeline.Options("png", pages: [pageNumber], dpi: dpi))))
+            {
+                // The snapshot has no room for the page: it and the pages after it are left out.
+                break;
+            }
             parts.Add(new ViewPart
             {
                 Id = WordsViews.PagePart(page),
@@ -102,7 +106,7 @@ internal static class WordsRender
         }
 
         loaded.Resources.ThrowIfFailed();
-        session.Outputs.ShowsInView(document, "png", Enumerable.Range(1, count));
+        session.Outputs.ShowsInView(document, "png", Enumerable.Range(1, parts.Count));
         return new ViewManifest
         {
             View = WordsViews.Pages,

@@ -36,10 +36,34 @@ public static class ContinuationInputExtensions
     /// <param name="request">The view's render request.</param>
     /// <param name="filePath">The file the view renders.</param>
     /// <param name="path">The command path below the root.</param>
-    public static ContinuationCommand ContinuationAt(this ViewRenderRequest request, string filePath, params string[] path)
+    public static ContinuationCommand ContinuationAt(this ViewRenderRequest request, string filePath, params string[] path) =>
+        request.ContinuationSource(filePath).ContinuationAt(path);
+
+    /// <summary>
+    /// The source of a view as the invocation that renders the view names it
+    /// (<see cref="ViewRenderRequest.Continuation"/>), or as <paramref name="filePath"/>, the file
+    /// rendered, when the request names none: what the commands a view's hints name start from.
+    /// </summary>
+    /// <param name="request">The view's render request.</param>
+    /// <param name="filePath">The file the view renders.</param>
+    public static ContinuationInput ContinuationSource(this ViewRenderRequest request, string filePath)
     {
         ArgumentNullException.ThrowIfNull(request);
         ArgumentException.ThrowIfNullOrEmpty(filePath);
-        return (request.Continuation ?? new ContinuationInput(filePath)).ContinuationAt(path);
+        return request.Continuation ?? new ContinuationInput(filePath);
+    }
+
+    /// <summary>
+    /// <paramref name="document"/>, a file that a command on <paramref name="input"/> writes and
+    /// protects with the password the input opened with, such as a part a split writes: with the
+    /// input's password variable, so a command on that file opens it as one on the input does.
+    /// </summary>
+    /// <param name="input">The input the file is written from.</param>
+    /// <param name="document">The file, as the command names it.</param>
+    public static ContinuationInput WrittenAs(this ContinuationInput input, string document)
+    {
+        ArgumentNullException.ThrowIfNull(input);
+        ArgumentException.ThrowIfNullOrEmpty(document);
+        return input with { Document = document };
     }
 }

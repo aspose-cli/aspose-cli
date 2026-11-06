@@ -3,6 +3,7 @@ using Aspose.Cli.Sdk;
 using Aspose.Cli.Sdk.Errors;
 using System.Security.Cryptography;
 using Aspose.Cli.Sdk.IO.Input;
+using Aspose.Cli.Sdk.Views;
 
 namespace Aspose.Cli.Host.Viewer;
 
@@ -80,7 +81,8 @@ internal sealed class ViewBundleManifest
                         throw CliErrors.PreviewBudgetExceeded(
                             "directory count",
                             directoryCount,
-                            limits.MaximumSnapshotFiles);
+                            limits.MaximumSnapshotFiles,
+                            ViewArtifactLimits.FilesVariable);
                     }
                     pending.Push(child.FullName);
                     continue;
@@ -104,7 +106,8 @@ internal sealed class ViewBundleManifest
                     throw CliErrors.PreviewBudgetExceeded(
                         "file count",
                         files.Count + 1,
-                        limits.MaximumSnapshotFiles);
+                        limits.MaximumSnapshotFiles,
+                        ViewArtifactLimits.FilesVariable);
                 }
 
                 ArtifactRecord record = ReadRecord(
@@ -268,7 +271,8 @@ internal sealed class ViewBundleManifest
             throw CliErrors.PreviewBudgetExceeded(
                 "file size",
                 length,
-                limits.MaximumSnapshotFileBytes);
+                limits.MaximumSnapshotFileBytes,
+                ViewArtifactLimits.FileBytesVariable);
         }
         long total = checked(acceptedBytes + length);
         if (total > limits.MaximumSnapshotBytes)
@@ -276,7 +280,8 @@ internal sealed class ViewBundleManifest
             throw CliErrors.PreviewBudgetExceeded(
                 "total bytes",
                 total,
-                limits.MaximumSnapshotBytes);
+                limits.MaximumSnapshotBytes,
+                ViewArtifactLimits.SnapshotBytesVariable);
         }
         byte[] hash = SHA256.HashData(stream);
         if (stream.Length != length)

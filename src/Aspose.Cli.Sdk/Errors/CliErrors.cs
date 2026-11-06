@@ -461,14 +461,19 @@ public static partial class CliErrors
         hint: hint,
         details: new JsonObject { ["path"] = path, ["sample"] = sample, ["line"] = line });
 
+    /// <summary>
+    /// A view's artifacts exceed one of their limits; the hint names <paramref name="variable"/>,
+    /// the environment variable that sets the limit they reached (<c>ViewArtifactLimits</c>).
+    /// </summary>
     public static CliException PreviewBudgetExceeded(
         string resource,
         long actual,
-        long limit) => CliException.Create(
+        long limit,
+        string variable) => CliException.Create(
         ErrorCodes.PreviewBudgetExceeded,
         $"The preview {resource} exceeds its resource budget.",
         hint:
-            $"Reduce the rendered document or raise the matching {DistributionInfo.EnvironmentVariablePrefix}PREVIEW_MAX_* limit within its safety maximum.",
+            $"Reduce the rendered document or raise {variable} within its safety maximum.",
         details: new JsonObject
         {
             ["resource"] = resource,

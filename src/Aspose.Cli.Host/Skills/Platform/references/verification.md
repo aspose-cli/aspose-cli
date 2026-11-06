@@ -37,8 +37,9 @@ source; write evidence to a scratch directory instead of the user's folder.
 1. Read the result. `artifacts[]` lists each image with the sheet, page or
    slide it shows. `findings[]` point at likely defects, each with its
    `severity`, `location`, `hint` and the `evidence` images it concerns.
-2. Read `coverage`. `--max-items` caps the images; anything omitted is
-   unreviewed, and incomplete coverage fails the review. `input.encrypted`
+2. Read `coverage`. `--max-items` caps the images, and so does the snapshot
+   budget in `aspose-cli docs preview`; anything omitted is unreviewed, and
+   incomplete coverage fails the review. `input.encrypted`
    says whether the reviewed file is encrypted, as evidence for a delivery
    that must be.
 3. Open every evidence image with your image-reading tool and look. Findings

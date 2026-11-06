@@ -74,7 +74,7 @@ internal static class ReviewEvidenceWriter
             string viewJson = JsonSerializer.Serialize(manifest, SdkJsonContext.Default.ViewManifest);
             File.WriteAllText(
                 Path.Combine(evidenceDirectory, ViewManifestFile),
-                viewJson + Environment.NewLine,
+                ViewRendering.ManifestText(manifest),
                 new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
             ViewBundleManifest files = ViewBundleManifest.Validate(
                 evidenceDirectory,

@@ -88,6 +88,9 @@ public sealed class ProductViewDefinitionTests
 
         public void WriteText(string relativePath, string content) =>
             throw new InvalidOperationException("The test view writes no artifacts.");
+
+        public bool TryWritePart(string relativePath, Action<Stream> contentWriter) =>
+            throw new InvalidOperationException("The test view writes no artifacts.");
     }
 
     private interface ITestSession;

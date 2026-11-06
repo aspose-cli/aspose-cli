@@ -30,7 +30,7 @@ internal static class PdfPagesView
             Page page = loaded.Document.Pages[pageNumber];
             string file = string.Create(CultureInfo.InvariantCulture, $"page-{pageNumber:0000}.png");
             int number = pageNumber;
-            artifacts.Write(
+            bool written = artifacts.TryWritePart(
                 file,
                 stream =>
                 {
@@ -46,6 +46,11 @@ internal static class PdfPagesView
             if (evidence)
             {
                 ReleaseEvidenceRaster();
+            }
+            if (!written)
+            {
+                // The snapshot has no room for the page: it and the pages after it are left out.
+                break;
             }
 
             parts.Add(new ViewPart
@@ -65,7 +70,7 @@ internal static class PdfPagesView
             });
         }
 
-        session.Outputs.ShowsInView(loaded.Document, "png", Enumerable.Range(1, count));
+        session.Outputs.ShowsInView(loaded.Document, "png", Enumerable.Range(1, parts.Count));
         return new ViewManifest
         {
             View = PdfViews.Pages,

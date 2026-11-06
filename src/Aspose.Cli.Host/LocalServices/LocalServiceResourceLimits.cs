@@ -1,4 +1,5 @@
 using Aspose.Cli.Sdk;
+using Aspose.Cli.Sdk.Views;
 
 namespace Aspose.Cli.Host.LocalServices;
 
@@ -30,17 +31,17 @@ internal sealed record LocalServiceResourceLimits(
             SseWriteTimeout: TimeSpan.FromSeconds(5),
             Integer(
                 environment,
-                DistributionInfo.EnvironmentVariablePrefix + "PREVIEW_MAX_FILES",
+                ViewArtifactLimits.FilesVariable,
                 defaultValue: 2_048,
                 maximum: 8_192),
             Bytes(
                 environment,
-                DistributionInfo.EnvironmentVariablePrefix + "PREVIEW_MAX_FILE_BYTES",
+                ViewArtifactLimits.FileBytesVariable,
                 defaultValue: 64L * 1024 * 1024,
                 maximum: 256L * 1024 * 1024),
             Bytes(
                 environment,
-                DistributionInfo.EnvironmentVariablePrefix + "PREVIEW_MAX_SNAPSHOT_BYTES",
+                ViewArtifactLimits.SnapshotBytesVariable,
                 defaultValue: 256L * 1024 * 1024,
                 maximum: 1024L * 1024 * 1024),
             Integer(

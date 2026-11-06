@@ -22,6 +22,13 @@ public sealed class MemoryArtifactSink : IViewArtifactSink
     public void WriteText(string relativePath, string content) =>
         _artifacts.Add(relativePath, Encoding.UTF8.GetBytes(content));
 
+    /// <summary>Keeps every part: the sink has no limit to refuse one.</summary>
+    public bool TryWritePart(string relativePath, Action<Stream> contentWriter)
+    {
+        Write(relativePath, contentWriter);
+        return true;
+    }
+
     public byte[] Bytes(string relativePath) => _artifacts[relativePath];
 
     public string Text(string relativePath) => Encoding.UTF8.GetString(Bytes(relativePath));

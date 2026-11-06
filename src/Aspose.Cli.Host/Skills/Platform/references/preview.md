@@ -48,8 +48,13 @@ document, and `stop` without an id closes every document and ends the service.
 ## Limits
 
 Each render, for the viewer and for `review` evidence alike, is a snapshot of
-files kept within these limits. A render beyond one fails with
-`PREVIEW_BUDGET_EXCEEDED`; the viewer keeps the last good revision on screen.
+files kept within these limits. A page, slide or sheet that the rest of the
+snapshot's bytes cannot hold, beside its `view.json`, ends the render there: it
+and the parts after it are omitted, as `--max-items` omits them, and a PDF
+review names them in a `PDF_REVIEW_TRUNCATED` finding. A file beyond its own
+limit, or one file too many, fails the render with `PREVIEW_BUDGET_EXCEEDED`,
+whose hint names the variable to raise; the viewer keeps the last good revision
+on screen.
 An environment variable changes a limit within its maximum; the viewer service
 reads it when it starts:
 

@@ -45,9 +45,15 @@ internal static class SlidesView
             ISlide slide = presentation.Slides[index];
             int number = index + 1;
             string file = string.Create(CultureInfo.InvariantCulture, $"slide-{number:0000}.png");
+            bool written;
             using (IImage image = slide.GetImage(scale, scale))
             {
-                artifacts.Write(file, stream => image.Save(stream, ImageFormat.Png));
+                written = artifacts.TryWritePart(file, stream => image.Save(stream, ImageFormat.Png));
+            }
+            if (!written)
+            {
+                // The snapshot has no room for the slide: it and the slides after it are left out.
+                break;
             }
             string? notes = Notes(slide);
             parts.Add(new ViewPart
@@ -66,7 +72,7 @@ internal static class SlidesView
             });
         }
 
-        session.Outputs.ShowsInView(presentation, "png", Enumerable.Range(1, count));
+        session.Outputs.ShowsInView(presentation, "png", Enumerable.Range(1, parts.Count));
         return new ViewManifest
         {
             View = SlidesViews.Slides,
@@ -76,7 +82,7 @@ internal static class SlidesView
             TotalPartCount = total,
             Parts = parts,
             Warnings = request.Purpose == ViewPurpose.Evidence
-                ? EnvelopeParts.CombineWarnings(InputWarnings(loaded), SlidesExport.HiddenRendered(presentation, Enumerable.Range(1, count)))
+                ? EnvelopeParts.CombineWarnings(InputWarnings(loaded), SlidesExport.HiddenRendered(presentation, Enumerable.Range(1, parts.Count)))
                 : InputWarnings(loaded),
         };
     }
