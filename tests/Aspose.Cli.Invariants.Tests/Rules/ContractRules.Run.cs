@@ -144,7 +144,7 @@ internal sealed partial class RuleWorkspace : IDisposable
             result = rewrite(result);
         }
         IReadOnlyList<string> hintProblems = RequestsJson(args)
-            ? [.. ExecutableHints.Problems(new HintRun(args, Root, ConfigRoot, _environment), result).Select(Stable)]
+            ? [.. ExecutableHints.Problems(new HintRun(args, Root, ConfigRoot, _environment), result, variants: true).Select(Stable)]
             : [];
         if (hintProblems.Count > 0 && CaseHintProblems.Value is { } collected)
         {

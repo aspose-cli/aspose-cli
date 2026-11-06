@@ -68,7 +68,7 @@ public static partial class ScenarioRunner
             CliResult result = Execute(workspace, args, step.Env, step.Stdin);
             IReadOnlyDictionary<string, string> after = Snapshot(workspace, installation);
             JsonNode? document = ScenarioContract.Check(args, result, Report);
-            foreach (string problem in ExecutableHints.Problems(new HintRun(args, workspace.Path, Path.GetDirectoryName(workspace.ConfigDirectory)!, Variables(step.Env)), document))
+            foreach (string problem in ExecutableHints.Problems(new HintRun(args, workspace.Path, Path.GetDirectoryName(workspace.ConfigDirectory)!, Variables(step.Env)), document, variants: true))
             {
                 Report(ExecutableHints.Check, problem);
             }

@@ -370,12 +370,12 @@ public sealed class WordsCliTests : IClassFixture<WordsFixture>, IDisposable
         Assert.False(File.Exists(_workspace.File("letter.docx")));
 
         // Run the convert the hint names, with the password in the variable it leaves to fill.
-        string command = System.Text.RegularExpressions.Regex.Match(hint, "'aspose-cli (words convert [^']+)'").Groups[1].Value;
-        string[] convert = [.. command.Replace("<password-env>", "TEMPLATE_PASSWORD", StringComparison.Ordinal).Split(' ')];
-        CliResult copied = _workspace.RunWithEnv(
-            new Dictionary<string, string?> { ["TEMPLATE_PASSWORD"] = "template-secret" }, [.. convert, "--output-format", "json"]);
-        Assert.True(copied.ExitCode == 0, copied.StdErr);
-        string copy = convert[Array.IndexOf(convert, "--out") + 1];
+        string command = System.Text.RegularExpressions.Regex.Match(hint, "'(aspose-cli words convert [^']+)'").Groups[1].Value;
+        CliResult copied = _workspace.RunCommandLine(
+            command.Replace("<password-env>", "TEMPLATE_PASSWORD", StringComparison.Ordinal),
+            new Dictionary<string, string?> { ["TEMPLATE_PASSWORD"] = "template-secret" });
+        Assert.True(copied.ExitCode == 0, $"{command}{Environment.NewLine}{copied.StdErr}");
+        string copy = _workspace.File("locked.unencrypted.xml");
 
         CliResult created = _workspace.Run(
             "words", "create", "letter.docx", "--template", copy, "--from-text", "body.txt", "--output-format", "json");

@@ -55,6 +55,20 @@ public sealed record HintRun(
 /// it is not running text, one of its allowed values.</item>
 /// <item>A named operation must be one of the product's operations; a word counts as one when it is
 /// in snake case and starts with a verb some operation of the catalog starts with.</item>
+/// <item>With <c>variants</c>, as the scenarios and the generated cases judge hints, a command that
+/// writes to an <c>--out</c> that exists in the invocation's workspace runs for real in the copy,
+/// without a dry run, and must not fail with <c>OUTPUT_EXISTS</c> either: a hint that names an
+/// existing file as its output means to replace it, while one that names a file that does not
+/// exist means to write a new one. A hint of a successful invocation that says to run the command
+/// again with options runs it again with them over what it wrote, under the same refusals. And an
+/// invocation one of whose hints names its input in a command runs again in a copy of its
+/// workspace on two variants of that input, and the commands its hints name on the variant must
+/// run as written too: an encrypted copy, opened with <c>--password-env</c> (a command without that
+/// option, an input already opened with a password and a format that carries none are skipped),
+/// and a copy at a path with a space (paths with <c>$</c> or a backtick are not tried). An
+/// invocation run again is given again the JSON document it read from stdin, as a hint's command
+/// is (<see cref="PipedInput"/>); one that read a secret there, or a document the check was not
+/// given, is not run again.</item>
 /// </list>
 /// An outcome is judged once per test process and keyed by what was judged: the command line that
 /// ran, with the invocation's files in it, the content of those files, and its product, or what the catalog check covered, so a
@@ -105,14 +119,20 @@ public static partial class ExecutableHints
     private static readonly ConcurrentDictionary<string, Lazy<string?>> Outcomes = new(StringComparer.Ordinal);
 
     /// <summary>The problems of the hints in the document a run wrote, its stdout result or its stderr error envelope.</summary>
-    public static IReadOnlyList<string> Problems(HintRun run, CliResult result)
+    /// <param name="run">The invocation.</param>
+    /// <param name="result">What it wrote.</param>
+    /// <param name="variants">Whether the hints are judged on the variants of the invocation too.</param>
+    public static IReadOnlyList<string> Problems(HintRun run, CliResult result, bool variants = false)
     {
         ArgumentNullException.ThrowIfNull(result);
-        return Problems(run, Parse(string.IsNullOrWhiteSpace(result.StdOut) ? result.StdErr : result.StdOut));
+        return Problems(run, Parse(string.IsNullOrWhiteSpace(result.StdOut) ? result.StdErr : result.StdOut), variants);
     }
 
     /// <summary>The problems of the hints in a result or an error envelope; empty when every hint runs.</summary>
-    public static IReadOnlyList<string> Problems(HintRun run, JsonNode? document)
+    /// <param name="run">The invocation.</param>
+    /// <param name="document">Its result or error envelope.</param>
+    /// <param name="variants">Whether the hints are judged on the variants of the invocation too.</param>
+    public static IReadOnlyList<string> Problems(HintRun run, JsonNode? document, bool variants = false)
     {
         ArgumentNullException.ThrowIfNull(run);
         (string Source, string Text)[] hints = [.. Hints(document)];
@@ -122,16 +142,26 @@ public static partial class ExecutableHints
         }
         CliCatalog catalog = CliCatalog.Current;
         var problems = new List<string>();
+        var commands = new List<HintAction>();
         foreach ((string source, string hint) in hints)
         {
             foreach (HintAction action in Extract(catalog, hint))
             {
-                Judgement judgement = Plan(catalog, run, document, action);
+                Judgement judgement = Plan(catalog, run, document, action, variants);
                 if (Outcomes.GetOrAdd(judgement.Key, _ => new Lazy<string?>(judgement.Judge)).Value is { } problem)
                 {
                     problems.Add($"the {source} hint {action}: {problem}");
                 }
+                if (action.Kind == HintKind.Command)
+                {
+                    commands.Add(action);
+                }
             }
+        }
+        if (variants)
+        {
+            problems.AddRange(AgainProblems(catalog, run, document, hints));
+            problems.AddRange(VariantProblems(catalog, run, document, commands));
         }
         return [.. problems.Distinct(StringComparer.Ordinal)];
     }
@@ -254,19 +284,19 @@ public static partial class ExecutableHints
             new($"static\n{product}\n{subject}", () => problem);
     }
 
-    private static Judgement Plan(CliCatalog catalog, HintRun run, JsonNode? document, HintAction action)
+    private static Judgement Plan(CliCatalog catalog, HintRun run, JsonNode? document, HintAction action, bool variants = false)
     {
         Invocation invocation = Invocation.Of(catalog, run, document);
         return action.Kind switch
         {
-            HintKind.Command => PlanCommand(catalog, run, invocation, action.Tokens),
+            HintKind.Command => PlanCommand(catalog, run, invocation, action.Tokens, variants),
             HintKind.Operations => PlanOperations(catalog, run, invocation, action.Text),
             HintKind.Option => PlanOption(catalog, run, invocation, action.Tokens),
             _ => Judgement.Static("operation " + action.Text, invocation.Product, OperationNameProblem(catalog, invocation, action.Text)),
         };
     }
 
-    private static Judgement PlanCommand(CliCatalog catalog, HintRun run, Invocation invocation, IReadOnlyList<string> tokens)
+    private static Judgement PlanCommand(CliCatalog catalog, HintRun run, Invocation invocation, IReadOnlyList<string> tokens, bool variants)
     {
         CommandLine line = CommandLine.Parse(catalog, tokens);
         string subject = "command " + string.Join(Separator, tokens);
@@ -290,7 +320,10 @@ public static partial class ExecutableHints
         // network are left to the catalog check.
         bool unfilledFile = (line.Positionals.Count == 0 && invocation.Files.Count < required)
             || (invocation.Files.Count == 0 && line.Rest.SelectMany(static token => Placeholder().Matches(token)).Any(static placeholder => Fills(InputPlaceholders, placeholder)));
-        bool writesForReal = !line.Command.Has("--dry-run") && (line.Command.Has("--out") || line.Command.Has("--out-dir") || line.Command.Has("--in-place"));
+        // With variants, a command that names an existing file as its output runs, for real when it
+        // has no dry run, and must replace that file rather than fail because it exists.
+        bool replaces = variants && ExistingOutput(run, line);
+        bool writesForReal = !replaces && !line.Command.Has("--dry-run") && (line.Command.Has("--out") || line.Command.Has("--out-dir") || line.Command.Has("--in-place"));
         string? variable = Variable(run);
         // A variable placeholder the run sets no variable for leaves the command to the catalog
         // and its operations to the ops schema.
@@ -328,7 +361,7 @@ public static partial class ExecutableHints
         }
         // A dry run does not open the input, so it cannot tell whether the command passes on the
         // input's password: with one given, the command runs for real, in the copy.
-        if (invocation.Password is null && line.Command.Has("--dry-run") && !args.Contains("--dry-run"))
+        if (invocation.Password is null && !replaces && line.Command.Has("--dry-run") && !args.Contains("--dry-run"))
         {
             args.Add("--dry-run");
         }
@@ -336,7 +369,7 @@ public static partial class ExecutableHints
         {
             args.AddRange(["--output-format", "json"]);
         }
-        return Execution(run, invocation, invocation.Product, args);
+        return replaces ? Replacing(run, invocation, invocation.Product, args) : Execution(run, invocation, invocation.Product, args);
     }
 
     private static Judgement PlanOperations(CliCatalog catalog, HintRun run, Invocation invocation, string json)
@@ -828,6 +861,12 @@ public static partial class ExecutableHints
 
         public string OutputDirectory { get; }
 
+        /// <summary>The copy of the invocation's workspace.</summary>
+        public string Workspace => _workspace;
+
+        /// <summary>The copy of the invocation's configuration root.</summary>
+        public string Config => _config;
+
         /// <summary>A logical value with the workspace and output markers replaced by their places in the copy.</summary>
         public string Resolve(string value) =>
             value.Replace(WorkspaceMarker, _workspace, StringComparison.Ordinal).Replace(OutputMarker, OutputDirectory, StringComparison.Ordinal);
@@ -861,6 +900,26 @@ public static partial class ExecutableHints
             }
             string message = Text(error["message"]) ?? string.Empty;
             return $"fails with {code}: {ScenarioContract.Excerpt(message.Replace(_workspace, "<workspace>", StringComparison.OrdinalIgnoreCase))}";
+        }
+
+        /// <summary>Runs a command line in the copy with these extra variables and that stdin; null when it does not end in time.</summary>
+        public CliResult? Execute(IReadOnlyList<string> args, IReadOnlyDictionary<string, string?>? extra, string? standardInput = null)
+        {
+            // The user's profile is the copy's too, so nothing a hint runs reaches the real one.
+            var variables = new Dictionary<string, string?>(extra ?? new Dictionary<string, string?>(), StringComparer.OrdinalIgnoreCase)
+            {
+                ["HOME"] = _home,
+                ["USERPROFILE"] = _home,
+            };
+            try
+            {
+                return new CliProcess(CliRunner.ExecutablePath, CliEnvironment.Evaluation(_config, variables), TimeSpan.FromSeconds(60))
+                    .Run(_workspace, standardInput ?? string.Empty, [.. args]);
+            }
+            catch (TimeoutException)
+            {
+                return null;
+            }
         }
 
         public void Dispose() => _directory.Dispose();

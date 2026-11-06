@@ -1,0 +1,22 @@
+{
+  "name": "the commands the hints of a workbook review name run as written on an encrypted copy of the workbook and on one at a path with a space",
+  "files": {
+    "layout.json": {
+      "text": "{\"ops\":[{\"op\":\"set_values\",\"sheet\":\"Data\",\"range\":\"A1\",\"values\":[[\"a\",\"b\",\"c\",\"d\",\"e\"],[1,2,3,4,5],[1,2,3,4,5]]},{\"op\":\"set_print_area\",\"sheet\":\"Data\",\"range\":\"A1:B3,D1:E3\"},{\"op\":\"set_values\",\"sheet\":\"Hidden\",\"range\":\"A1\",\"values\":[[\"secret\"]]},{\"op\":\"set_sheet_visibility\",\"sheet\":\"Hidden\",\"visibility\":\"hidden\"}]}"
+    }
+  },
+  "steps": [
+    {
+      "args": ["cells", "create", "book.xlsx", "--sheet-names", "Data,Hidden"],
+      "expect": { "exitCode": 0 }
+    },
+    {
+      "args": ["cells", "edit", "book.xlsx", "--in-place", "--ops", "layout.json"],
+      "expect": { "exitCode": 0 }
+    },
+    {
+      "args": ["review", "book.xlsx", "--out", "book.review"],
+      "expect": { "exitCode": [0, 8], "warnings": { "present": ["SHEET_PARTIALLY_RENDERED"] } }
+    }
+  ]
+}
