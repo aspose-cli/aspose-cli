@@ -1,6 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Aspose.Cells;
+using Aspose.Cli.Sdk.Licensing;
 using Aspose.Cli.TestKit;
 using Xunit;
 
@@ -43,6 +44,58 @@ public sealed class CellsTextTableDrawingsTests : IDisposable
         Assert.Contains("'Summary'", message, StringComparison.Ordinal);
         Assert.True(lossy["affectsCompleteness"]!.GetValue<bool>());
         Assert.Contains(warnings, static warning => Code(warning) == "SHEETS_DROPPED");
+    }
+
+    /// <summary>The warning of a csv names the kinds of drawings it left out in <c>details.content</c>.</summary>
+    [Fact]
+    public void TextTableOutput_NamesTheKindsOfDrawingsItLeftOut()
+    {
+        Book("book.xlsx", withDrawings: true);
+
+        CliResult written = Write("convert", "book.xlsx", "out.csv");
+
+        Assert.True(written.ExitCode == 0, $"exit {written.ExitCode}: {written.StdErr}{written.StdOut}");
+        JsonNode lossy = Assert.Single(Warnings(JsonNode.Parse(written.StdOut)!), static warning => Code(warning) == LossyConversion);
+        Assert.Equal("""["charts","pictures"]""", lossy["details"]?["content"]?.ToJsonString());
+    }
+
+    /// <summary>
+    /// The drawings a text table leaves out are named by kind, each once and only when the sheet
+    /// has some: the charts, the pictures and the other drawings, such as a rectangle, as shapes.
+    /// </summary>
+    [Theory]
+    [InlineData(true, false, false, new[] { "charts" })]
+    [InlineData(false, true, false, new[] { "pictures" })]
+    [InlineData(false, false, true, new[] { "shapes" })]
+    [InlineData(true, true, true, new[] { "charts", "pictures", "shapes" })]
+    public void LeftOutDrawings_AreNamedByKind(bool chart, bool picture, bool shape, string[] kinds)
+    {
+        using var workbook = new Workbook();
+        Worksheet sheet = workbook.Worksheets[0];
+        sheet.Cells["A1"].PutValue("Dept");
+        sheet.Cells["B1"].PutValue("Revenue");
+        sheet.Cells["A2"].PutValue("East");
+        sheet.Cells["B2"].PutValue(700);
+        if (chart)
+        {
+            sheet.Charts.Add(Aspose.Cells.Charts.ChartType.Column, 4, 4, 14, 10);
+        }
+
+        if (picture)
+        {
+            sheet.Pictures.Add(16, 4, new MemoryStream(ResourceHttpServer.Image));
+        }
+
+        if (shape)
+        {
+            sheet.Shapes.AddRectangle(20, 0, 4, 0, 40, 40);
+        }
+
+        Warning? lost = WorkbookSavePlan.Create(CellsFormats.Definitions.Single(static format => format.Id == "csv"), LicenseState.Licensed,
+            OutputProtection.None).DropDrawings(workbook);
+
+        Assert.NotNull(lost);
+        Assert.Equal(kinds, lost.Details?["content"]?.AsArray().Select(static kind => kind!.GetValue<string>()) ?? []);
     }
 
     /// <summary>

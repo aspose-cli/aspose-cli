@@ -9,7 +9,8 @@ namespace Aspose.Cli.Sdk.Contracts;
 /// collections state <c>available</c> and <c>suggestions</c>; an operation error states the
 /// operation's <c>id</c> and <c>op</c>; a positional argument is <c>argument</c>, an option
 /// <c>option</c>. A details object holds no key outside it and no null value. A key whose
-/// values are tokens publishes their pattern (<see cref="Patterns"/>).
+/// values are tokens publishes their pattern (<see cref="Patterns"/>), or, when they form a
+/// closed set, each token with its meaning (<see cref="Tokens"/>).
 /// </summary>
 public static class ErrorDetailKeys
 {
@@ -24,6 +25,7 @@ public static class ErrorDetailKeys
         ("available", "The names or values that exist or are accepted, at most 50."),
         ("availableCount", "How many names or values exist or are accepted."),
         ("cause", "Why an operation field was refused."),
+        ("content", "The kinds of content an output leaves out, each one of these tokens."),
         ("declared", "The product the command or extension declares."),
         ("detected", "The products whose formats the content matches."),
         ("diagnosticId", "The host diagnostic id of a startup or process failure."),
@@ -49,6 +51,7 @@ public static class ErrorDetailKeys
         ("operation", "The product feature the error is about."),
         ("option", "The option the error is about, such as --pages."),
         ("originalError", "The error that stopped a publication: its code and details."),
+        ("part", "The kind of part of a document that holds text an operation found and left as it was, one of these tokens."),
         ("path", "The absolute path of the file the error is about."),
         ("phase", "The stage of processing that failed."),
         ("pid", "The id of the process the error is about."),
@@ -83,6 +86,22 @@ public static class ErrorDetailKeys
     {
         ["reason"] = "^[a-z0-9]+(-[a-z0-9]+)*$",
     }.ToFrozenDictionary(StringComparer.Ordinal);
+
+    /// <summary>
+    /// The closed set of tokens of each key whose value is one of them, or a list of them
+    /// (<see cref="TokenLists"/>), each with its meaning, which the schema publishes:
+    /// <c>content</c> takes the <see cref="ContentKind"/> tokens and <c>part</c> the
+    /// <see cref="TextPart"/> tokens.
+    /// </summary>
+    public static FrozenDictionary<string, IReadOnlyList<(string Token, string Description)>> Tokens { get; } =
+        new Dictionary<string, IReadOnlyList<(string Token, string Description)>>(StringComparer.Ordinal)
+        {
+            ["content"] = [.. ContentKind.All.Select(static kind => (kind.Token, kind.Description))],
+            ["part"] = [.. TextPart.All.Select(static part => (part.Token, part.Description))],
+        }.ToFrozenDictionary(StringComparer.Ordinal);
+
+    /// <summary>The keys of <see cref="Tokens"/> whose value is a list of tokens rather than one.</summary>
+    public static FrozenSet<string> TokenLists { get; } = new[] { "content" }.ToFrozenSet(StringComparer.Ordinal);
 }
 
 /// <summary>
@@ -108,7 +127,20 @@ public sealed class ErrorDetailsAttribute : ValueConstraintAttribute
     private static JsonObject Describe(string key, string description)
     {
         var property = new JsonObject { ["description"] = description };
-        if (ErrorDetailKeys.Patterns.TryGetValue(key, out string? pattern))
+        if (ErrorDetailKeys.Tokens.TryGetValue(key, out IReadOnlyList<(string Token, string Description)>? tokens))
+        {
+            if (ErrorDetailKeys.TokenLists.Contains(key))
+            {
+                property["type"] = "array";
+                property["items"] = new JsonObject { ["type"] = "string", ["oneOf"] = OneOf(tokens) };
+            }
+            else
+            {
+                property["type"] = "string";
+                property["oneOf"] = OneOf(tokens);
+            }
+        }
+        else if (ErrorDetailKeys.Patterns.TryGetValue(key, out string? pattern))
         {
             property["type"] = "string";
             property["pattern"] = pattern;
@@ -116,4 +148,12 @@ public sealed class ErrorDetailsAttribute : ValueConstraintAttribute
 
         return property;
     }
+
+    /// <summary>The alternatives of a string that is one of <paramref name="tokens"/>, each with its meaning.</summary>
+    private static JsonArray OneOf(IReadOnlyList<(string Token, string Description)> tokens) =>
+        new([.. tokens.Select(static token => (JsonNode)new JsonObject
+        {
+            ["const"] = token.Token,
+            ["description"] = token.Description,
+        })]);
 }

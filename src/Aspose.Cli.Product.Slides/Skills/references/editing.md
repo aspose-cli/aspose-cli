@@ -83,11 +83,12 @@ comments a deck already has.
   short is left as it is, and the result warns `EVALUATION_INPUT_TRUNCATED`.
 - `replace_text` does not change charts, neither their titles nor their data. With scope
   `shapes` or `all`, a chart placed directly on a slide whose title matches stays as it was, and
-  the edit warns `CHART_TITLE_NOT_REPLACED` with the chart's `location`, such as
-  `slide/2/shape/5`; a chart inside a group is not checked and gets no warning. To change
-  the title, rebuild the chart: read its kind, categories and series with `slides read --content
-  full`, `delete_shape` it, then `insert_chart` the same data with the new `title` at its `rect`;
-  the new chart takes the automatic chart style. `set_chart_data` changes a chart's data.
+  the edit warns `TEXT_NOT_REPLACED` with `details.part` `chart-title` and the chart's
+  `location`, such as `slide/2/shape/5`; a chart inside a group is not checked and gets no
+  warning. To change the title, rebuild the chart: read its kind, categories and series with
+  `slides read --content full`, `delete_shape` it, then `insert_chart` the same data with the
+  new `title` at its `rect`; the new chart takes the automatic chart style. `set_chart_data`
+  changes a chart's data.
 - `set_notes` replaces speaker-note text. `inspect --detail notes` reports only presence and
   character counts; read note text with `slides read --notes` or `extract --what notes`.
 - `set_footer` uses the layout's own footer, number and date placeholders; their position and

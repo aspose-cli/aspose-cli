@@ -201,6 +201,36 @@ public sealed class PdfConformanceTests
         }
     }
 
+    /// <summary>
+    /// Each attachment a PDF/A conversion removes is a warning that names attachments as its kind
+    /// of content, while the warning that an html output may not keep every layout or interactive
+    /// feature names no kind.
+    /// </summary>
+    [Fact]
+    public void Convert_NamesTheAttachmentsItRemovesAsTheirKindOfContent()
+    {
+        using var fixture = new PdfEngineFixture();
+        string input = CreateArchivable(fixture);
+
+        PdfConvertResult archived = PdfConvert.Run(fixture.Session, new PdfConvertRequest
+        {
+            Input = input,
+            Output = TestOutput.At(fixture.File("archive.pdf"), format: "pdfa-1b"),
+        });
+        PdfConvertResult page = PdfConvert.Run(fixture.Session, new PdfConvertRequest
+        {
+            Input = input,
+            Output = TestOutput.At(fixture.File("page.html"), format: "html"),
+        });
+
+        Warning[] removed = [.. (archived.Warnings ?? []).Where(static warning => warning.Location?.StartsWith("attachment/", StringComparison.Ordinal) == true)];
+        Assert.Equal(3, removed.Length);
+        Assert.All(removed, static warning => Assert.Equal("""{"content":["attachments"]}""", warning.Details?.ToJsonString()));
+        Warning general = Assert.Single(page.Warnings ?? [], static warning => warning.Code.Name == "LOSSY_CONVERSION"
+            && warning.Message.Contains("may not preserve every layout or interactive feature", StringComparison.Ordinal));
+        Assert.Null(general.Details);
+    }
+
     /// <summary>The media type add_attachment declares is stored and kept by PDF/A-3.</summary>
     [Fact]
     public void AddAttachment_DeclaresAMediaTypeThatPdfa3Keeps()

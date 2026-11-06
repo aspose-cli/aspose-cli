@@ -72,7 +72,10 @@ public static class WarningCodes
     /// <summary>A document referenced remote resources, which the CLI did not load.</summary>
     public static readonly WarningCode RemoteResourcesBlocked = new("REMOTE_RESOURCES_BLOCKED");
 
-    /// <summary>The output format cannot hold everything the input holds.</summary>
+    /// <summary>
+    /// The output format cannot hold everything the input holds. A warning that names what the
+    /// output leaves out lists its kinds in <c>details.content</c> (<see cref="ContentLoss"/>).
+    /// </summary>
     public static readonly WarningCode LossyConversion = new("LOSSY_CONVERSION");
 
     /// <summary>A change invalidated a digital signature of the input.</summary>
@@ -106,6 +109,14 @@ public static class WarningCodes
     /// </summary>
     public static readonly WarningCode OpNoEffect = new("OP_NO_EFFECT");
 
+    /// <summary>
+    /// An operation found the text it looks for in a part of the document it does not change, such
+    /// as a header or a chart title, and left that text as it was; <c>details</c> names the
+    /// operation by <c>id</c> and <c>op</c> and the part in <c>part</c>, and <c>location</c> the
+    /// place (<see cref="UnreplacedText"/>).
+    /// </summary>
+    public static readonly WarningCode TextNotReplaced = new("TEXT_NOT_REPLACED");
+
     /// <summary>Every common warning code in this SDK build.</summary>
     public static IReadOnlyList<WarningCode> All { get; } =
     [
@@ -120,6 +131,7 @@ public static class WarningCodes
         BackupPredatesEdit,
         ProtectionNotEnforced,
         OpNoEffect,
+        TextNotReplaced,
     ];
 }
 

@@ -279,6 +279,7 @@ internal static class PdfCreate
             .Select(static match => match.Groups[1].Value.ToLowerInvariant())
             .ToArray();
         var losses = new List<string>(3);
+        var kinds = new List<ContentKind>(2);
         if (names[true].Any())
         {
             losses.Add($"these form fields are named after their HTML id attribute and lost their HTML values: {string.Join(", ", names[true].Select(static name => $"'{name}'"))}");
@@ -289,15 +290,20 @@ internal static class PdfCreate
             losses.Add($"these form fields have generated names and lost their HTML values: {string.Join(", ", names[false].Select(static name => $"'{name}'"))}");
         }
 
+        if (names[true].Any() || names[false].Any())
+        {
+            kinds.Add(ContentKind.FormValues);
+        }
+
         if (dropped.Length > 0)
         {
             losses.Add($"it dropped {dropped.Length} input(s) of type {string.Join(", ", dropped.Distinct(StringComparer.Ordinal))}, which have no field");
+            kinds.Add(ContentKind.FormFields);
         }
 
-        return losses.Count == 0 ? null : new Warning(WarningCodes.LossyConversion, $"The HTML importer keeps the name and value of single-line text inputs only: {string.Join("; ", losses)}.")
-        {
-            Hint = "Read the fields with 'pdf inspect --detail forms' and match each field's page and rect to the label beside it before filling; give a dropped input type=\"text\" to keep it as a field, and place the picture of an image input with add_stamp_image.",
-        };
+        return losses.Count == 0 ? null : ContentLoss.Warning(kinds,
+            $"The HTML importer keeps the name and value of single-line text inputs only: {string.Join("; ", losses)}.",
+            "Read the fields with 'pdf inspect --detail forms' and match each field's page and rect to the label beside it before filling; give a dropped input type=\"text\" to keep it as a field, and place the picture of an image input with add_stamp_image.");
     }
 
     private static Document CreateFromText(string path, bool markdown, PdfCreateRequest request)

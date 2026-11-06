@@ -1925,6 +1925,79 @@
             "cause": {
               "description": "Why an operation field was refused."
             },
+            "content": {
+              "description": "The kinds of content an output leaves out, each one of these tokens.",
+              "type": "array",
+              "items": {
+                "type": "string",
+                "oneOf": [
+                  {
+                    "const": "attachments",
+                    "description": "Files embedded in the document, such as the attachments of a PDF."
+                  },
+                  {
+                    "const": "bookmarks",
+                    "description": "The bookmarks of the document's outline."
+                  },
+                  {
+                    "const": "charts",
+                    "description": "Charts as charts with their data: the output holds only a picture of them, or none."
+                  },
+                  {
+                    "const": "comments",
+                    "description": "Comments as comments: the output writes their text into the body, or leaves them out."
+                  },
+                  {
+                    "const": "editing-restrictions",
+                    "description": "Editing restrictions, such as a read-only protection of the document."
+                  },
+                  {
+                    "const": "form-fields",
+                    "description": "Form fields: inputs the output has no field for."
+                  },
+                  {
+                    "const": "form-values",
+                    "description": "The values of form fields."
+                  },
+                  {
+                    "const": "headers-footers",
+                    "description": "Headers and footers."
+                  },
+                  {
+                    "const": "pictures",
+                    "description": "Pictures."
+                  },
+                  {
+                    "const": "portfolios",
+                    "description": "The presentation of a PDF portfolio, such as its file list layout; its files stay plain attachments."
+                  },
+                  {
+                    "const": "revisions",
+                    "description": "Tracked changes as revisions a reader can accept or reject."
+                  },
+                  {
+                    "const": "sections",
+                    "description": "Sections, such as the sections of a deck."
+                  },
+                  {
+                    "const": "shapes",
+                    "description": "Drawings other than charts and pictures, such as shapes, text boxes and groups."
+                  },
+                  {
+                    "const": "speaker-notes",
+                    "description": "Speaker notes."
+                  },
+                  {
+                    "const": "table-styles",
+                    "description": "Table styles: the fills, borders and text formatting a table's style gives it."
+                  },
+                  {
+                    "const": "transitions",
+                    "description": "Slide transitions."
+                  }
+                ]
+              }
+            },
             "declared": {
               "description": "The product the command or extension declares."
             },
@@ -1999,6 +2072,36 @@
             },
             "originalError": {
               "description": "The error that stopped a publication: its code and details."
+            },
+            "part": {
+              "description": "The kind of part of a document that holds text an operation found and left as it was, one of these tokens.",
+              "type": "string",
+              "oneOf": [
+                {
+                  "const": "header-footer",
+                  "description": "A header or footer."
+                },
+                {
+                  "const": "comment",
+                  "description": "A comment."
+                },
+                {
+                  "const": "chart-title",
+                  "description": "The title of a chart."
+                },
+                {
+                  "const": "chart-data",
+                  "description": "The data of a chart, such as its categories and series names."
+                },
+                {
+                  "const": "axis-title",
+                  "description": "The title of a chart's axis."
+                },
+                {
+                  "const": "text-box",
+                  "description": "A text box, or another drawing that holds text."
+                }
+              ]
             },
             "path": {
               "description": "The absolute path of the file the error is about."
@@ -5630,6 +5733,13 @@
       "exitCode": 4,
       "category": "validation",
       "detailsSchemaId": "v2/common/not-found-details"
+    },
+    {
+      "code": "TEXT_NOT_REPLACED",
+      "owner": "common",
+      "severity": "warning",
+      "category": "warning",
+      "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
       "code": "UPDATE_FAILED",

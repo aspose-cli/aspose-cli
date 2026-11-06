@@ -197,23 +197,21 @@ internal static class PdfConvert
 
         foreach (string removed in attachments.Except(AttachmentNames(document), StringComparer.Ordinal))
         {
-            warnings.Add(new Warning(WarningCodes.LossyConversion, $"Attachment '{removed}' was removed: {target.AttachmentRule ?? $"the engine could not make it conform to {profile}"}.")
-            {
-                Location = PdfInfoProjection.Address("attachment", removed),
-                Hint = target.AttachmentRule is null
+            warnings.Add(ContentLoss.Warning([ContentKind.Attachments],
+                $"Attachment '{removed}' was removed: {target.AttachmentRule ?? $"the engine could not make it conform to {profile}"}.",
+                target.AttachmentRule is null
                     ? "Deliver the file alongside the archive."
                     : "Convert to pdfa-3b to keep attachments, or deliver the file alongside the archive.",
-            });
+                PdfInfoProjection.Address("attachment", removed)));
         }
 
         int lostBookmarks = bookmarks - PdfOutlineAddresses.CountOutline(document.Outlines);
         if (lostBookmarks > 0)
         {
-            warnings.Add(new Warning(WarningCodes.LossyConversion, $"{lostBookmarks} bookmark(s) were removed by the conversion to {profile}.")
-            {
-                Location = "bookmark/all",
-                Hint = "Compare 'pdf inspect --detail outline' of both files and re-create the missing bookmarks with add_bookmark.",
-            });
+            warnings.Add(ContentLoss.Warning([ContentKind.Bookmarks],
+                $"{lostBookmarks} bookmark(s) were removed by the conversion to {profile}.",
+                "Compare 'pdf inspect --detail outline' of both files and re-create the missing bookmarks with add_bookmark.",
+                "bookmark/all"));
         }
 
         if (UnselectedNavigation(degraded) is { } navigation)

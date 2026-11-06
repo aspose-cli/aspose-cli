@@ -14,9 +14,6 @@ internal static class SlidesDiagnostics
     /// <summary>An output draws a chart's implicit automatic title over its plot.</summary>
     internal static readonly WarningCode ChartTitleOverlaid = new("CHART_TITLE_OVERLAID");
 
-    /// <summary>A replace_text matched text in a chart's title, which it does not change.</summary>
-    internal static readonly WarningCode ChartTitleNotReplaced = new("CHART_TITLE_NOT_REPLACED");
-
     /// <summary>An authored table is taller than the area it was placed in.</summary>
     internal static readonly WarningCode TableOverflow = new("TABLE_OVERFLOW");
 
@@ -46,7 +43,6 @@ internal static class SlidesDiagnostics
         DiagnosticDescriptor.Error(ShapeNotFound),
         DiagnosticDescriptor.Error(LayoutNotFound),
         DiagnosticDescriptor.Warning(ChartTitleOverlaid),
-        DiagnosticDescriptor.Warning(ChartTitleNotReplaced),
         DiagnosticDescriptor.Warning(TableOverflow),
         DiagnosticDescriptor.Warning(SlideBackgroundReset),
         DiagnosticDescriptor.Warning(HiddenSlidesSkipped),

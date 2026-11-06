@@ -40,6 +40,14 @@ with a `code`, `message` and, when there is one, `hint` and `details`, and on
 stderr in human output. A warning with `affectsCompleteness: true` leaves the
 output or its evidence incomplete; report it.
 
+A `LOSSY_CONVERSION` that names what the output leaves out lists the kinds of
+content in `details.content`; one without it names no kind, such as one that
+says the format may not keep every feature. A `TEXT_NOT_REPLACED` says that an
+operation found its text in a part of the document it does not change and left
+that text as it was: `details.part` names the kind of part, `location` the
+place and the hint how to change it. `aspose-cli schema v2/common/error-payload`
+gives the meaning of every value of both.
+
 ## Exit codes
 
 Branch on the exit code first, then on the code in the envelope:

@@ -117,6 +117,27 @@ public sealed class PdfEngineTests
     }
 
     /// <summary>
+    /// The warning of an HTML form names what the importer lost in <c>details.content</c>: the
+    /// values of the fields it named after their id or gave a generated name, and the inputs it
+    /// dropped without a field.
+    /// </summary>
+    [Theory]
+    [InlineData("""<input type="checkbox" id="agree" name="agree" value="yes"/><textarea id="notes-box" name="notes"></textarea>""", """["form-values"]""")]
+    [InlineData("""<input type="text" name="employee"/><input type="hidden" name="employee_id" value="E-1024"/>""", """["form-fields"]""")]
+    [InlineData("""<input type="checkbox" id="agree" name="agree" value="yes"/><input type="hidden" name="employee_id" value="E-1024"/>""", """["form-values","form-fields"]""")]
+    public void Create_FromHtml_NamesTheKindsOfFormContentItLost(string inputs, string content)
+    {
+        using var fixture = new PdfEngineFixture();
+        string input = fixture.File("form.html");
+        File.WriteAllText(input, $"<html><body><form>{inputs}</form></body></html>");
+
+        PdfCreateResult result = PdfCreate.Run(fixture.Session, new PdfCreateRequest { Output = TestOutput.At(fixture.File("form.pdf")), Source = new PdfHtmlSource(new SourceFile("--from-html", input), AllowNetworkResources: false) });
+
+        Warning lossy = Assert.Single(result.Warnings!, static warning => warning.Code == WarningCodes.LossyConversion);
+        Assert.Equal(content, lossy.Details?["content"]?.ToJsonString());
+    }
+
+    /// <summary>
     /// The importer drops image and hidden inputs without a field (PDF-HTML-FORM-INPUTS); the
     /// warning names both types and says how to place the image.
     /// </summary>

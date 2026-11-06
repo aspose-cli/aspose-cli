@@ -278,11 +278,9 @@ internal static partial class SlidesExport
             : [];
         if (noted.Length > 0)
         {
-            warnings.Add(new Warning(WarningCodes.LossyConversion,
-                $"The {targetFormatId} output does not include the speaker notes of slide(s) {string.Join(", ", noted)}: an export holds the slides alone.")
-            {
-                Hint = $"Read the notes with 'slides read --slides {string.Join(",", noted)} --notes'; a pptx output keeps them.",
-            });
+            warnings.Add(ContentLoss.Warning([ContentKind.SpeakerNotes],
+                $"The {targetFormatId} output does not include the speaker notes of slide(s) {string.Join(", ", noted)}: an export holds the slides alone.",
+                $"Read the notes with 'slides read --slides {string.Join(",", noted)} --notes'; a pptx output keeps them."));
         }
 
         if (ContentLost(loaded.Presentation, targetFormatId) is { } lost)
@@ -320,12 +318,12 @@ internal static partial class SlidesExport
         // A table without a style, or with the style that draws nothing, has nothing to lose.
         int[] tables = Slides(SlidesContentLoss.TableStyles, static slide => Has(slide.Shapes, static shape =>
             shape is ITable { StylePreset: not (TableStylePreset.None or TableStylePreset.NoStyleNoGrid) }));
-        string[] lost =
+        (string Text, ContentKind Kind)[] lost =
         [
-            .. charts.Length == 0 ? [] : new[] { $"the native charts of slide(s) {string.Join(", ", charts)}, which become pictures" },
-            .. transitions.Length == 0 ? [] : new[] { $"the transitions of slide(s) {string.Join(", ", transitions)}" },
-            .. sections == 0 ? [] : new[] { $"the {sections} section(s)" },
-            .. tables.Length == 0 ? [] : new[] { $"the table styles of slide(s) {string.Join(", ", tables)}, so those tables lose the fills, borders and text formatting of their style" },
+            .. charts.Length == 0 ? [] : new[] { ($"the native charts of slide(s) {string.Join(", ", charts)}, which become pictures", ContentKind.Charts) },
+            .. transitions.Length == 0 ? [] : new[] { ($"the transitions of slide(s) {string.Join(", ", transitions)}", ContentKind.Transitions) },
+            .. sections == 0 ? [] : new[] { ($"the {sections} section(s)", ContentKind.Sections) },
+            .. tables.Length == 0 ? [] : new[] { ($"the table styles of slide(s) {string.Join(", ", tables)}, so those tables lose the fills, borders and text formatting of their style", ContentKind.TableStyles) },
         ];
         if (lost.Length == 0)
         {
@@ -340,12 +338,9 @@ internal static partial class SlidesExport
             .. loses.HasFlag(SlidesContentLoss.TableStyles) ? new[] { "the table styles" } : [],
         ];
         string keep = kept.Length == 1 ? kept[0] : $"{string.Join(", ", kept[..^1])} and {kept[^1]}";
-        return new Warning(
-            WarningCodes.LossyConversion,
-            $"The {format} output does not keep {string.Join("; ", lost)}{(tables.Length == 0 ? ", though its slides look as in the deck." : ".")}")
-        {
-            Hint = $"Keep the source deck for further edits; to keep {keep}, convert to pptx instead.",
-        };
+        return ContentLoss.Warning([.. lost.Select(static item => item.Kind)],
+            $"The {format} output does not keep {string.Join("; ", lost.Select(static item => item.Text))}{(tables.Length == 0 ? ", though its slides look as in the deck." : ".")}",
+            $"Keep the source deck for further edits; to keep {keep}, convert to pptx instead.");
 
         int[] Slides(SlidesContentLoss kind, Func<ISlide, bool> holds) => loses.HasFlag(kind)
             ? [.. AllSlides(presentation.Slides.Count).Where(number => holds(presentation.Slides[number - 1]))]

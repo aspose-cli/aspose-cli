@@ -8,9 +8,10 @@ namespace Aspose.Cli.Product.Cells.Engine.Mapping;
 /// Names, before a convert saves, the content of the sheets it writes that the output format
 /// does not hold as the workbook does (<see cref="CellsEngineFormat.Leaves"/>): one
 /// <c>LOSSY_CONVERSION</c> per kind of content the sheets have, with how much of it each sheet
-/// has. A workbook without such content warns of nothing. The content stays in the workbook and
-/// in its other outputs, so no warning affects completeness, as speaker notes an export leaves
-/// out do not. The evaluation warning sheets are no content of the workbook and are skipped.
+/// has, naming its kind in <c>details.content</c> (<see cref="ContentLoss"/>). A workbook
+/// without such content warns of nothing. The content stays in the workbook and in its other
+/// outputs, so no warning affects completeness, as speaker notes an export leaves out do not.
+/// The evaluation warning sheets are no content of the workbook and are skipped.
 /// </summary>
 internal static partial class UnwrittenContent
 {
@@ -26,45 +27,37 @@ internal static partial class UnwrittenContent
         if (leaves.HasFlag(CellsContentLoss.UnprintedComments)
             && Counted(written.Where(sheet => selectedSheets is not null || sheet.IsVisible), UnprintedComments) is { Count: > 0 } unprinted)
         {
-            yield return new Warning(WarningCodes.LossyConversion,
-                $"The {formatId} output leaves out {Total(unprinted)} comment(s), which the page setup of their worksheet does not print: {PerSheet(unprinted)}.")
-            {
-                Hint = "Read the comments with 'aspose-cli cells inspect <file> --detail comments'. A worksheet whose page setup prints comments "
+            yield return ContentLoss.Warning([ContentKind.Comments],
+                $"The {formatId} output leaves out {Total(unprinted)} comment(s), which the page setup of their worksheet does not print: {PerSheet(unprinted)}.",
+                "Read the comments with 'aspose-cli cells inspect <file> --detail comments'. A worksheet whose page setup prints comments "
                     + "at the end of the sheet, which Excel can set and no operation does, keeps them in the output.",
-                Location = OneSheet(unprinted),
-            };
+                OneSheet(unprinted));
         }
 
         if (leaves.HasFlag(CellsContentLoss.Comments) && Counted(written, static sheet => sheet.Comments.Count) is { Count: > 0 } comments)
         {
-            yield return new Warning(WarningCodes.LossyConversion,
-                $"The {formatId} output leaves out {Total(comments)} comment(s): {PerSheet(comments)}.")
-            {
-                Hint = "Read the comments with 'aspose-cli cells inspect <file> --detail comments'; the workbook keeps them.",
-                Location = OneSheet(comments),
-            };
+            yield return ContentLoss.Warning([ContentKind.Comments],
+                $"The {formatId} output leaves out {Total(comments)} comment(s): {PerSheet(comments)}.",
+                "Read the comments with 'aspose-cli cells inspect <file> --detail comments'; the workbook keeps them.",
+                OneSheet(comments));
         }
 
         if (leaves.HasFlag(CellsContentLoss.ChartPictures) && Counted(written, static sheet => sheet.Charts.Count) is { Count: > 0 } charts)
         {
-            yield return new Warning(WarningCodes.LossyConversion,
-                $"The {formatId} output shows {Total(charts)} chart(s) as pictures, whose titles, labels and data are not text: {PerSheet(charts)}.")
-            {
-                Hint = "Read the chart titles and data ranges with 'aspose-cli cells inspect <file> --detail charts'; the workbook keeps the charts editable.",
-                Location = OneSheet(charts),
-            };
+            yield return ContentLoss.Warning([ContentKind.Charts],
+                $"The {formatId} output shows {Total(charts)} chart(s) as pictures, whose titles, labels and data are not text: {PerSheet(charts)}.",
+                "Read the chart titles and data ranges with 'aspose-cli cells inspect <file> --detail charts'; the workbook keeps the charts editable.",
+                OneSheet(charts));
         }
 
         if (leaves.HasFlag(CellsContentLoss.PrintHeadersFooters)
             && Counted(written, static sheet => HasHeaderOrFooter(sheet.PageSetup) ? 1 : 0) is { Count: > 0 } headed)
         {
             string names = string.Join(", ", headed.Select(static item => $"'{item.Sheet}'"));
-            yield return new Warning(WarningCodes.LossyConversion,
-                $"The {formatId} output keeps the headers and footers of {(headed.Count == 1 ? "worksheet" : "worksheets")} {names} only as Excel print data in its styles, which a browser neither shows nor prints.")
-            {
-                Hint = "Read the headers and footers with 'aspose-cli cells inspect <file> --detail layout'; a PDF of the workbook prints them on every page.",
-                Location = OneSheet(headed),
-            };
+            yield return ContentLoss.Warning([ContentKind.HeadersFooters],
+                $"The {formatId} output keeps the headers and footers of {(headed.Count == 1 ? "worksheet" : "worksheets")} {names} only as Excel print data in its styles, which a browser neither shows nor prints.",
+                "Read the headers and footers with 'aspose-cli cells inspect <file> --detail layout'; a PDF of the workbook prints them on every page.",
+                OneSheet(headed));
         }
     }
 

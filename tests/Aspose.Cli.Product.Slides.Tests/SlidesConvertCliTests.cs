@@ -315,6 +315,32 @@ public sealed class SlidesConvertCliTests : IDisposable
     }
 
     /// <summary>
+    /// The warning of an ODP or PPT output names each kind of content it does not keep in
+    /// <c>details.content</c>, in the order of its message, while the warning that an html output
+    /// may not keep every feature names none.
+    /// </summary>
+    [Theory]
+    [InlineData("odp", """["charts","transitions","sections"]""")]
+    [InlineData("ppt", """["charts","sections","table-styles"]""")]
+    [InlineData("html", null)]
+    public void Convert_NamesTheKindsOfContentItDoesNotKeep(string format, string? content)
+    {
+        Run("slides", "create", "deck.pptx", "--from-markdown", "deck.md");
+        Run("slides", "edit", "deck.pptx", "--in-place", "--ops", """
+            [{"op":"set_transition","slides":"1","kind":"fade"},
+             {"op":"insert_section","name":"Part","at":2},
+             {"op":"insert_chart","slide":2,"kind":"column","rect":{"x":50,"y":100,"width":300,"height":200},"categories":["a","b"],"series":[{"name":"S","values":[1,2]}]},
+             {"op":"insert_table","slide":3,"rect":{"x":50,"y":100,"width":300,"height":100},"rowCount":2,"columnCount":2,"values":[["a","b"],["c","d"]]}]
+            """);
+
+        JsonNode result = Run("slides", "convert", "deck.pptx", "--to", format, "--out", $"deck.{format}");
+
+        JsonNode warning = Assert.Single(result["warnings"] as JsonArray ?? [], static warning => warning!["code"]!.GetValue<string>() == "LOSSY_CONVERSION")!;
+        Assert.Equal(content, warning["details"]?["content"]?.ToJsonString());
+        Assert.Equal(content is null, warning["details"] is null);
+    }
+
+    /// <summary>
     /// An html, html5 or Markdown output warns that it may not keep every presentation feature;
     /// a presentation or a PDF does not.
     /// </summary>

@@ -1,5 +1,4 @@
 using System.Globalization;
-using System.Text.Json.Nodes;
 using Aspose.Cells;
 using Aspose.Cells.Charts;
 using Aspose.Cli.Product.Cells.Engine.Mapping;
@@ -48,8 +47,8 @@ internal static class TextReplaceOps
 
     /// <summary>
     /// The text of the sheet outside its cells that holds a match of <paramref name="op"/>, which
-    /// <see cref="Replace"/> leaves as it is: one <c>TEXT_OUTSIDE_CELLS_NOT_REPLACED</c> warning
-    /// each for the header and footer, the comments and the chart titles that hold one, matched as
+    /// <see cref="Replace"/> leaves as it is: one <c>TEXT_NOT_REPLACED</c> warning each for the
+    /// header and footer, the comments and the chart titles that hold one, matched as
     /// the operation matches a cell's text (regex, caseSensitive and wholeWord). The header,
     /// footer and chart titles are read as a read reports them, an automatic chart title as none.
     /// A range reaches only the comments of its cells; the header, footer and charts belong to the
@@ -71,7 +70,7 @@ internal static class TextReplaceOps
             if (parts.Length > 0)
             {
                 bool sides = header.Concat(footer).Any(static section => section != 1);
-                warnings.Add(Warning(op, sheet, $"the {string.Join(" and the ", parts)}", parts.Length > 1,
+                warnings.Add(Warning(op, sheet, TextPart.HeaderFooter, $"the {string.Join(" and the ", parts)}", parts.Length > 1,
                     "Read the header and footer with 'aspose-cli cells inspect <file> --detail layout', then set the new text with set_page_setup, "
                         + "whose headerCenter and footerCenter replace the center sections"
                         + (sides ? "; no operation changes the left and right sections." : "."),
@@ -88,7 +87,7 @@ internal static class TextReplaceOps
             string named = cells.Length <= NamedComments
                 ? string.Join(", ", cells)
                 : string.Create(CultureInfo.InvariantCulture, $"{string.Join(", ", cells.Take(NamedComments))} and {cells.Length - NamedComments} more");
-            warnings.Add(Warning(op, sheet, $"the {(cells.Length == 1 ? "comment of cell" : "comments of cells")} {named}", cells.Length > 1,
+            warnings.Add(Warning(op, sheet, TextPart.Comment, $"the {(cells.Length == 1 ? "comment of cell" : "comments of cells")} {named}", cells.Length > 1,
                 "Read the comments with 'aspose-cli cells inspect <file> --detail comments', then set the new text of each with set_comment.",
                 cells.Length == 1 ? CellsAddresses.At("comment", sheet.Name, cells[0]) : CellsAddresses.OfSheet("sheet", sheet.Name)));
         }
@@ -99,7 +98,7 @@ internal static class TextReplaceOps
             if (charts.Length > 0)
             {
                 string numbers = string.Join(", ", charts.Select(static index => (index + 1).ToString(CultureInfo.InvariantCulture)));
-                warnings.Add(Warning(op, sheet, $"the {(charts.Length == 1 ? "title of chart" : "titles of charts")} {numbers}", charts.Length > 1,
+                warnings.Add(Warning(op, sheet, TextPart.ChartTitle, $"the {(charts.Length == 1 ? "title of chart" : "titles of charts")} {numbers}", charts.Length > 1,
                     "Read the titles with 'aspose-cli cells inspect <file> --detail charts', then set each new title with set_chart and the index of its chart.",
                     charts.Length == 1 ? CellsAddresses.Indexed("chart", sheet.Name, charts[0]) : CellsAddresses.OfSheet("sheet", sheet.Name)));
             }
@@ -115,16 +114,11 @@ internal static class TextReplaceOps
     /// <summary>A chart's title as a read reports it: its text, or none when the title is automatic.</summary>
     private static string? Title(Chart chart) => chart.Title.IsAutoText ? null : chart.Title.Text;
 
-    private static Warning Warning(ReplaceTextOp op, Worksheet sheet, string what, bool several, string hint, string location) =>
-        new(CellsDiagnostics.TextOutsideCellsNotReplaced,
+    private static Warning Warning(ReplaceTextOp op, Worksheet sheet, TextPart part, string what, bool several, string hint, string location) =>
+        UnreplacedText.Warning(part, op, "replace_text",
             $"Operation {op.Id} (replace_text) found a match in {what} on worksheet '{sheet.Name}' and left "
-                + (several ? "them as they were" : "it as it was") + ": replace_text changes the text of cells only.")
-        {
-            Hint = hint,
-            Location = location,
-            Docs = "cells/editing",
-            Details = new JsonObject { ["id"] = op.Id, ["op"] = "replace_text" },
-        };
+                + (several ? "them as they were" : "it as it was") + ": replace_text changes the text of cells only.",
+            hint, location, docs: "cells/editing");
 
     private static TextReplacement Replacement(ReplaceTextOp op) =>
         TextReplacement.Create(op.Find, op.Replace, op.Regex, op.CaseSensitive, op.WholeWord);
