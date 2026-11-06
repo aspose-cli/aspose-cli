@@ -115,6 +115,7 @@ internal sealed class AppCliGateway
             }
             LicenseStatusResult status = Read(
                 ["license", "status"],
+                [],
                 HostResultJsonContext.Default.LicenseStatusResult);
             lock (_gate)
             {
@@ -131,9 +132,10 @@ internal sealed class AppCliGateway
     public IReadOnlyList<string> InstallLicense(string sourcePath, string? productId)
     {
         string[] arguments = productId is null
-            ? ["license", "install", sourcePath]
-            : ["license", "install", sourcePath, "--product", productId];
+            ? [sourcePath]
+            : [sourcePath, "--product", productId];
         LicenseStatusResult installed = Read(
+            ["license", "install"],
             arguments,
             HostResultJsonContext.Default.LicenseStatusResult);
         Invalidate();
@@ -147,9 +149,10 @@ internal sealed class AppCliGateway
     public void RemoveLicense(string? productId)
     {
         string[] arguments = productId is null
-            ? ["license", "remove"]
-            : ["license", "remove", "--product", productId];
+            ? []
+            : ["--product", productId];
         _ = Read(
+            ["license", "remove"],
             arguments,
             HostResultJsonContext.Default.LicenseStatusResult);
         Invalidate();
@@ -179,7 +182,8 @@ internal sealed class AppCliGateway
         try
         {
             answer = new FontAnswer(Read(
-                ["fonts", "list", "--product", productId],
+                ["fonts", "list"],
+                ["--product", productId],
                 SdkJsonContext.Default.FontListResult).Products.Single(), null, _clock.GetUtcNow());
         }
         catch (CliException failure)
@@ -214,12 +218,16 @@ internal sealed class AppCliGateway
         }
     }
 
+    // Runs the command at the path, such as license install, with its arguments and options, each
+    // option with a value, and reads the result it answers with.
     private T Read<T>(
-        IReadOnlyList<string> arguments,
+        string[] command,
+        string[] arguments,
         System.Text.Json.Serialization.Metadata.JsonTypeInfo<T> type)
         where T : ResultEnvelope
     {
-        byte[] output = Run(arguments);
+        string[] line = [.. command, .. arguments];
+        byte[] output = Run(line);
         try
         {
             using JsonDocument document = JsonDocument.Parse(
@@ -228,24 +236,38 @@ internal sealed class AppCliGateway
             if (document.RootElement.ValueKind != JsonValueKind.Object
                 || !document.RootElement.TryGetProperty("schema", out JsonElement schema))
             {
-                throw new InvalidDataException($"The CLI answered '{arguments[0]}' with another envelope.");
+                throw new InvalidDataException($"The CLI answered '{line[0]}' with another envelope.");
             }
             BoundedJsonValidation.ValidateNoDuplicateProperties(
                 document.RootElement,
                 static reason => new JsonException(reason));
             T result = document.RootElement.Deserialize(type)
-                ?? throw new InvalidDataException($"The CLI answered '{arguments[0]}' with nothing.");
+                ?? throw new InvalidDataException($"The CLI answered '{line[0]}' with nothing.");
             // A result states its schema from its record, so another envelope differs from it.
             return schema.GetString() == result.Schema
                 ? result
-                : throw new InvalidDataException($"The CLI answered '{arguments[0]}' with another envelope.");
+                : throw new InvalidDataException($"The CLI answered '{line[0]}' with another envelope.");
         }
         catch (Exception exception) when (exception is JsonException or InvalidDataException)
         {
             throw CliErrors.Internal(
-                $"The CLI could not report {arguments[0]} state.",
-                $"Run 'aspose-cli {string.Join(' ', arguments)}' to see why.");
+                $"The CLI could not report {line[0]} state.",
+                $"Run '{Again(command, arguments)}' to see why.");
         }
+    }
+
+    // The command again, as the person at the prompt runs it, its values quoted.
+    private static ContinuationCommand Again(string[] command, string[] arguments)
+    {
+        var again = new ContinuationCommand(command);
+        for (int index = 0; index < arguments.Length; index++)
+        {
+            again = arguments[index].StartsWith('-')
+                ? again.Option(arguments[index], arguments[++index])
+                : again.Argument(arguments[index]);
+        }
+
+        return again;
     }
 
     /// <summary>

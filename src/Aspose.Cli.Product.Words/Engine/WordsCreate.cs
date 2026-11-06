@@ -1,4 +1,5 @@
 using Aspose.Cli.Product.Words.Engine.Mapping;
+using Aspose.Cli.Sdk;
 using Aspose.Cli.Sdk.IO.Input;
 using Aspose.Cli.Sdk.IO.Output;
 using Aspose.Cli.Sdk.Licensing;
@@ -33,9 +34,6 @@ internal static class WordsCreate
         };
     }
 
-    // A path as a command line names it: quoted when it holds a space.
-    private static string Quoted(string path) => path.Contains(' ', StringComparison.Ordinal) ? $"\"{path}\"" : path;
-
     /// <summary>
     /// A template, which opens without a password: an encrypted one is refused with the convert
     /// that writes an unencrypted copy of it, Flat OPC, which carries no password but keeps
@@ -44,9 +42,15 @@ internal static class WordsCreate
     private static LoadedDocument OpenTemplate(WordsSession session, string path)
     {
         string copy = Path.Combine(Path.GetDirectoryName(path) ?? string.Empty, Path.GetFileNameWithoutExtension(path) + ".unencrypted.xml");
+        // This command takes no password for its template, so the variable is the caller's to name.
+        ContinuationCommand convert = new ContinuationInput(path).ContinuationAt("words", "convert")
+            .Option("--to", "flatopc")
+            .Option("--out", copy)
+            .Flag("--password-env")
+            .Placeholder("password-env");
         return session.Loader.Open(path, PasswordSource.None(
             "'words create' cannot open an encrypted template. With its password, write an unencrypted copy: "
-            + $"'aspose-cli words convert {Quoted(path)} --to flatopc --out {Quoted(copy)} --password-env <password-env>', "
+            + $"{convert.Quoted()}, "
             + "then pass that copy to --template. Without the password, ask the user for an unencrypted copy of the template."));
     }
 

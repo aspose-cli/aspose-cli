@@ -1,0 +1,18 @@
+{
+  "name": "the hint of an edit that imports pages from a protected PDF runs the command again over the output it wrote",
+  "files": {
+    "plain.pdf": { "fixture": "pdf.pdf" },
+    "protected.pdf": { "fixture": "pdf.encrypted" }
+  },
+  "steps": [
+    {
+      "args": [
+        "pdf", "edit", "plain.pdf", "--ops",
+        "[{\"op\":\"import_pages\",\"path\":\"protected.pdf\",\"pages\":\"1\",\"at\":1,\"sourcePasswordEnv\":\"SOURCE_PASSWORD\"}]",
+        "--out", "imported.pdf"
+      ],
+      "env": { "SOURCE_PASSWORD": "Invariant-Secret-5f1c9e7a" },
+      "expect": { "exitCode": 0, "warnings": { "present": ["ENCRYPTION_REMOVED"] } }
+    }
+  ]
+}

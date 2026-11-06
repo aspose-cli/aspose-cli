@@ -94,7 +94,12 @@ Every step is also checked, whatever it expects, against the CLI's own catalog
   whose input the check fills in gets it with the input. A JSON operation runs through the
   product's `edit --ops … --dry-run`, with the step's password variable; an option named alone
   must be one of the step's command, with an allowed value; and an operation named must be one
-  of the product's.
+  of the product's. Scenarios and generated cases also judge variants: a command that writes to
+  an `--out` that exists in the workspace runs for real and must not fail with `OUTPUT_EXISTS`;
+  a hint that says to run the command again with options runs the step again with them over what
+  it wrote; and a step one of whose hints names its input runs again on an encrypted copy of that
+  input opened with `--password-env` and on one at a path with a space, and the commands its hints
+  name there must run as written too.
 
 ## License mode
 

@@ -165,7 +165,7 @@ internal static class AppCommand
             throw CliErrors.OptionInvalid(
                 "--welcome",
                 "it opens the workspace guide, not a file",
-                $"Run '{DistributionInfo.CommandName} app open {file}' to open the file, or '{DistributionInfo.CommandName} app open --welcome' for the guide.");
+                $"Run '{new ContinuationInput(file).ContinuationAt("app", "open")}' to open the file, or '{DistributionInfo.CommandName} app open --welcome' for the guide.");
         }
 
         string baseDirectory = globals.WorkDir is null

@@ -1,4 +1,5 @@
 using System.Text.Json.Nodes;
+using Aspose.Cli.Sdk;
 using Aspose.Cli.Sdk.Errors;
 
 namespace Aspose.Cli.Product.Cells.Contracts;
@@ -58,7 +59,7 @@ public static class CellsErrors
     internal static CliException TextEncodingInvalid(string path, long offset) => CliErrors.InputEncodingInvalid(
         path,
         offset,
-        $"Import it with its encoding: aspose-cli cells convert \"{path}\" --to xlsx --encoding gb18030 "
+        $"Import it with its encoding: {Import(path).Option("--encoding", "gb18030")} "
             + "(Chinese Windows and ERP exports; use big5, shift_jis, windows-1252 or another name for other sources).");
 
     /// <summary>A delimited text input writes numbers in a form invariant parsing would change.</summary>
@@ -66,6 +67,10 @@ public static class CellsErrors
         path,
         sample,
         line,
-        $"Import it with its culture: aspose-cli cells convert \"{path}\" --to xlsx --culture de-DE "
+        $"Import it with its culture: {Import(path).Option("--culture", "de-DE")} "
             + "(or another culture that writes a decimal comma). The culture also reads its dates.");
+
+    // The conversion of a delimited text input to a workbook, which a text input carries no password for.
+    private static ContinuationCommand Import(string path) =>
+        new ContinuationInput(path).ContinuationAt("cells", "convert").Option("--to", "xlsx");
 }
