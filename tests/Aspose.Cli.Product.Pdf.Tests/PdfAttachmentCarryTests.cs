@@ -126,6 +126,37 @@ public sealed class PdfAttachmentCarryTests : IDisposable
         Assert.Null(splitWarning.Location);
     }
 
+    /// <summary>
+    /// The warnings of a merge name what it left out by kind in <c>details.content</c>: an
+    /// attachment whose name an earlier input took, and the presentation of an input portfolio.
+    /// </summary>
+    [Fact]
+    public void Merge_NamesTheKindOfEachThingItLeavesOut()
+    {
+        using var fixture = new PdfEngineFixture();
+        string first = WriteDocument(fixture.File("first.pdf"), pages: 1, ("same.csv", First));
+        string second = WriteDocument(fixture.File("second.pdf"), pages: 1, ("same.csv", Second));
+        string portfolio = fixture.File("portfolio.pdf");
+        using (var document = new Document())
+        {
+            document.Pages.Add().Paragraphs.Add(new TextFragment("Portfolio cover"));
+            document.Collection = new Collection();
+            document.Collection.Add(Specification("a.csv", First));
+            document.Save(portfolio);
+        }
+
+        PdfMergeResult result = PdfMerge.Run(fixture.Session, new PdfMergeRequest
+        {
+            Output = TestOutput.At(fixture.File("merged.pdf")),
+            InputPaths = [first, second, portfolio],
+        });
+
+        Warning attachment = Assert.Single(result.Warnings!, static warning => warning.Location == "attachment/same.csv");
+        Assert.Equal("""{"content":["attachments"]}""", attachment.Details?.ToJsonString());
+        Warning presentation = Assert.Single(result.Warnings!, static warning => warning.Message.Contains("PDF portfolio", StringComparison.Ordinal));
+        Assert.Equal("""{"content":["portfolios"]}""", presentation.Details?.ToJsonString());
+    }
+
     [Fact]
     public void MergeAndSplit_KeepTheFileAttachmentAnnotationsOfTheirPages()
     {

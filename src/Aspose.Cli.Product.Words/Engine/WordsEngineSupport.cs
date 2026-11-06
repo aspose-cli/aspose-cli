@@ -126,7 +126,9 @@ internal static class WordsEngineSupport
 
     /// <summary>
     /// The warnings for saving a document to a format that cannot hold every Word feature: one
-    /// for the format; one for revisions the format cannot store; one for the headers and
+    /// for the format, which names no kind of content; and, each naming its kind in
+    /// <c>details.content</c>, one for revisions the format cannot store; one for the editing
+    /// restrictions a format other than Word's cannot keep; one for the headers and
     /// footers with content an e-book leaves out; and for plain text and Markdown one for each
     /// kind of text the SDK mixes into the body (WORDS-TEXT-COMMENTS, WORDS-TEXT-DELETIONS),
     /// which also stands for the revisions such an output drops. Under
@@ -146,27 +148,24 @@ internal static class WordsEngineSupport
             .Any(static revision => revision.RevisionType is RevisionType.Deletion or RevisionType.Moving);
         if (revised && !mixed && !WordsFormats.KeepsRevisions(format))
         {
-            yield return new Warning(WarningCodes.LossyConversion, $"The {format} output cannot keep tracked changes as revisions that can be accepted or rejected.")
-            {
-                Hint = "Disclose the tracked changes; keep a DOCX, RTF or ODT copy to keep them reviewable.",
-            };
+            yield return ContentLoss.Warning([ContentKind.Revisions],
+                $"The {format} output cannot keep tracked changes as revisions that can be accepted or rejected.",
+                "Disclose the tracked changes; keep a DOCX, RTF or ODT copy to keep them reviewable.");
         }
 
         if (document.ProtectionType != ProtectionType.NoProtection && !WordsFormats.IsWord(format))
         {
-            yield return new Warning(WarningCodes.LossyConversion, $"The {format} output cannot keep the {WordsProtection.ToMode(document.ProtectionType)} editing restrictions of the document.")
-            {
-                Hint = "Keep a DOCX copy to keep them; restrict a PDF with the encrypt operation of 'aspose-cli pdf edit'.",
-            };
+            yield return ContentLoss.Warning([ContentKind.EditingRestrictions],
+                $"The {format} output cannot keep the {WordsProtection.ToMode(document.ProtectionType)} editing restrictions of the document.",
+                "Keep a DOCX copy to keep them; restrict a PDF with the encrypt operation of 'aspose-cli pdf edit'.");
         }
 
         if (WordsEngineFormats.Has(format, static entry => entry.LeavesOutHeadersFooters)
             && HeadersFootersWithContent(document, evaluation) is { } leftOut)
         {
-            yield return new Warning(WarningCodes.LossyConversion, $"The {format} output leaves out {leftOut}: an e-book flows its text without pages, so it has no headers or footers.")
-            {
-                Hint = "Read them from the source with 'aspose-cli words inspect <file> --detail sections'; keep a DOCX or PDF copy to keep them.",
-            };
+            yield return ContentLoss.Warning([ContentKind.HeadersFooters],
+                $"The {format} output leaves out {leftOut}: an e-book flows its text without pages, so it has no headers or footers.",
+                "Read them from the source with 'aspose-cli words inspect <file> --detail sections'; keep a DOCX or PDF copy to keep them.");
         }
 
         if (!text)
@@ -177,18 +176,16 @@ internal static class WordsEngineSupport
         int comments = document.GetChildNodes(NodeType.Comment, true).Count;
         if (comments > 0)
         {
-            yield return new Warning(WarningCodes.LossyConversion, string.Create(CultureInfo.InvariantCulture, $"The {format} output writes the text of {comments} comment(s) into the body text, where it reads as document text."))
-            {
-                Hint = $"To leave the comments out, apply delete_comments with 'aspose-cli words edit' and a .{format} --out; keep a DOCX copy to keep them.",
-            };
+            yield return ContentLoss.Warning([ContentKind.Comments],
+                string.Create(CultureInfo.InvariantCulture, $"The {format} output writes the text of {comments} comment(s) into the body text, where it reads as document text."),
+                $"To leave the comments out, apply delete_comments with 'aspose-cli words edit' and a .{format} --out; keep a DOCX copy to keep them.");
         }
 
         if (mixed)
         {
-            yield return new Warning(WarningCodes.LossyConversion, $"The {format} output writes the deleted and moved-from text of tracked changes beside the text that replaces it, so it reads as neither the original nor the revised document.")
-            {
-                Hint = $"Disclose the revisions; when the user decides, accept or reject them with 'aspose-cli words edit' and a .{format} --out, or keep a DOCX copy.",
-            };
+            yield return ContentLoss.Warning([ContentKind.Revisions],
+                $"The {format} output writes the deleted and moved-from text of tracked changes beside the text that replaces it, so it reads as neither the original nor the revised document.",
+                $"Disclose the revisions; when the user decides, accept or reject them with 'aspose-cli words edit' and a .{format} --out, or keep a DOCX copy.");
         }
     }
 

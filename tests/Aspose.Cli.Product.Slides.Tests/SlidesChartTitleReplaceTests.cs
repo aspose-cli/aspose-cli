@@ -8,14 +8,15 @@ using Xunit;
 namespace Aspose.Cli.Product.Slides.Tests;
 
 /// <summary>
-/// replace_text does not change a chart's title: it warns <c>CHART_TITLE_NOT_REPLACED</c> for
-/// each chart whose title matches as the operation matches text, and says how to rebuild it.
+/// replace_text does not change a chart's title: it warns <c>TEXT_NOT_REPLACED</c>, with
+/// <c>details.part</c> <c>chart-title</c>, for each chart whose title matches as the operation
+/// matches text, and says how to rebuild it.
 /// Evaluation mode reads text longer than five characters cut short, so every text here is at
 /// most five characters long.
 /// </summary>
 public sealed class SlidesChartTitleReplaceTests : IDisposable
 {
-    private const string ChartTitleNotReplaced = "CHART_TITLE_NOT_REPLACED";
+    private const string ChartTitleNotReplaced = "TEXT_NOT_REPLACED";
 
     private readonly TempWorkspace _workspace = new();
 
@@ -71,6 +72,29 @@ public sealed class SlidesChartTitleReplaceTests : IDisposable
         Assert.Equal("2025", chart.ChartTitle.TextFrameForOverriding.Text);
         // The chart's data is not text replace_text reaches either.
         Assert.Equal("2025", chart.ChartData.Categories[0].Value?.ToString());
+    }
+
+    /// <summary>
+    /// The warning names the operation by its id and op and the chart's title as the part it
+    /// left, at the chart's shape address.
+    /// </summary>
+    [Fact]
+    public void ChartTitleWarning_NamesTheChartTitleAsThePartItLeft()
+    {
+        using var fixture = new SlidesEngineFixture();
+        string input = fixture.File("chart.pptx");
+        long chartId = Deck(input, title: "2025", text: "2025");
+
+        SlidesEditResult result = SlidesEdit.Run(fixture.Session, new SlidesEditRequest
+        {
+            Input = input,
+            Batch = new SlidesOpsBatch { Ops = [new SlidesReplaceTextOp { Id = "year", Find = "2025", Replace = "2026", Scope = "all" }] },
+            Output = TestOutput.At(fixture.File("replaced.pptx")),
+        });
+
+        Warning warning = Assert.Single(result.Warnings ?? [], static warning => warning.Code.Name == "TEXT_NOT_REPLACED");
+        Assert.Equal($"slide/2/shape/{chartId}", warning.Location);
+        Assert.Equal("""{"id":"year","op":"replace_text","part":"chart-title"}""", warning.Details?.ToJsonString());
     }
 
     /// <summary>

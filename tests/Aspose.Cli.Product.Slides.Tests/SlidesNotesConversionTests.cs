@@ -74,6 +74,24 @@ public sealed class SlidesNotesConversionTests
         }
     }
 
+    /// <summary>The notes warning names its kind of content, the speaker notes, in <c>details.content</c>.</summary>
+    [Theory]
+    [InlineData("pdf")]
+    [InlineData("md")]
+    public void Warning_NamesTheSpeakerNotesAsItsKindOfContent(string format)
+    {
+        using var fixture = new SlidesEngineFixture();
+
+        SlidesConvertResult result = SlidesExport.Convert(fixture.Session, new SlidesConvertRequest
+        {
+            Input = Deck(fixture, noted: 2),
+            Output = TestOutput.At(fixture.File($"deck.{format}"), format: format),
+        });
+
+        Warning warning = Assert.Single(NotesWarnings(result));
+        Assert.Equal("""{"content":["speaker-notes"]}""", warning.Details?.ToJsonString());
+    }
+
     /// <summary>
     /// The warning names only the converted slides with notes: a deck without notes (an empty
     /// notes page included) and a selection of slides without notes give none.

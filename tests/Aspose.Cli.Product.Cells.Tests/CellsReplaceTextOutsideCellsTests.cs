@@ -9,15 +9,15 @@ namespace Aspose.Cli.Product.Cells.Tests;
 /// <summary>
 /// replace_text changes the text of cells only. When the header, footer, a comment or a chart
 /// title of its sheet holds a match, matched as the operation matches a cell (regex,
-/// caseSensitive, wholeWord), it leaves that text as it was and warns
-/// <c>TEXT_OUTSIDE_CELLS_NOT_REPLACED</c> once for each of these parts, with its location and a
-/// hint that runs as written; the edit still exits 0 and its verification is what it is without
+/// caseSensitive, wholeWord), it leaves that text as it was and warns <c>TEXT_NOT_REPLACED</c>
+/// once for each of these parts, with its kind in <c>details.part</c>, its location and a hint
+/// that runs as written; the edit still exits 0 and its verification is what it is without
 /// that text. The commands run with the test license when the run has one, and in evaluation
 /// mode otherwise.
 /// </summary>
 public sealed class CellsReplaceTextOutsideCellsTests : IDisposable
 {
-    private const string Code = "TEXT_OUTSIDE_CELLS_NOT_REPLACED";
+    private const string Code = "TEXT_NOT_REPLACED";
 
     private readonly TempWorkspace _workspace = new();
 
@@ -150,26 +150,54 @@ public sealed class CellsReplaceTextOutsideCellsTests : IDisposable
     public void ReplaceText_MatchingTheLeftHeader_SaysNoOperationChangesIt()
     {
         Book("book.xlsx", outside: true);
-        using (ZipArchive package = ZipFile.Open(_workspace.File("book.xlsx"), ZipArchiveMode.Update))
-        {
-            ZipArchiveEntry entry = Assert.Single(package.Entries, static entry => entry.FullName == "xl/worksheets/sheet1.xml");
-            string xml;
-            using (var reader = new StreamReader(entry.Open()))
-            {
-                xml = reader.ReadToEnd();
-            }
-
-            Assert.Contains("<oddHeader>&amp;CAcme report</oddHeader>", xml, StringComparison.Ordinal);
-            entry.Delete();
-            using var writer = new StreamWriter(package.CreateEntry("xl/worksheets/sheet1.xml").Open());
-            writer.Write(xml.Replace("<oddHeader>&amp;CAcme report</oddHeader>", "<oddHeader>&amp;LAcme report</oddHeader>", StringComparison.Ordinal));
-        }
+        MoveTheHeaderLeft("book.xlsx");
 
         JsonNode result = Edit("book.xlsx", Replace("Acme"));
 
         JsonNode page = Assert.Single(Outside(result), static warning => Text(warning, "location") == "page-setup/Data");
         Assert.Contains("the header (left) and the footer (center)", Text(page, "message"), StringComparison.Ordinal);
         Assert.Contains("no operation changes the left and right sections", Text(page, "hint"), StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// Each warning names the kind of part it left in <c>details.part</c>, beside the operation's
+    /// <c>id</c> and <c>op</c>, at the location the part had before: the header or footer, with the
+    /// match in the left section of the header, a comment and a chart title.
+    /// </summary>
+    [Fact]
+    public void ReplaceText_NamesTheKindOfEachPartItLeft()
+    {
+        Book("book.xlsx", outside: true);
+        MoveTheHeaderLeft("book.xlsx");
+
+        JsonNode result = Edit("book.xlsx", Replace("Acme"));
+
+        JsonNode[] warnings = Outside(result);
+        Assert.Equal(
+            ["chart/Data/1 chart-title", "comment/Data!B2 comment", "page-setup/Data header-footer"],
+            warnings.Select(static warning => $"{Text(warning, "location")} {Text(warning["details"]!, "part")}").Order(StringComparer.Ordinal));
+        Assert.All(warnings, static warning =>
+        {
+            Assert.Equal(["id", "op", "part"], warning["details"]!.AsObject().Select(static member => member.Key));
+            Assert.Equal("replace_text", Text(warning["details"]!, "op"));
+        });
+    }
+
+    /// <summary>Moves the center header "Acme report" of the first sheet to the header's left section.</summary>
+    private void MoveTheHeaderLeft(string name)
+    {
+        using ZipArchive package = ZipFile.Open(_workspace.File(name), ZipArchiveMode.Update);
+        ZipArchiveEntry entry = Assert.Single(package.Entries, static entry => entry.FullName == "xl/worksheets/sheet1.xml");
+        string xml;
+        using (var reader = new StreamReader(entry.Open()))
+        {
+            xml = reader.ReadToEnd();
+        }
+
+        Assert.Contains("<oddHeader>&amp;CAcme report</oddHeader>", xml, StringComparison.Ordinal);
+        entry.Delete();
+        using var writer = new StreamWriter(package.CreateEntry("xl/worksheets/sheet1.xml").Open());
+        writer.Write(xml.Replace("<oddHeader>&amp;CAcme report</oddHeader>", "<oddHeader>&amp;LAcme report</oddHeader>", StringComparison.Ordinal));
     }
 
     /// <summary>

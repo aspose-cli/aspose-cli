@@ -546,6 +546,61 @@ public sealed class WordsDisclosureTests
     }
 
     /// <summary>
+    /// Each warning that names what a conversion leaves out gives its kind in
+    /// <c>details.content</c>: the revisions a format cannot keep or mixes into the text, the
+    /// editing restrictions, the headers and footers of an e-book and the comments a text output
+    /// writes into the body. The warning that a format cannot keep every Word feature names none.
+    /// </summary>
+    [Theory]
+    [InlineData("revised", "pdf", "cannot keep tracked changes", "revisions")]
+    [InlineData("locked", "odt", "editing restrictions", "editing-restrictions")]
+    [InlineData("headed", "epub", "an e-book flows its text", "headers-footers")]
+    [InlineData("commented", "txt", "comment(s) into the body", "comments")]
+    [InlineData("commented", "txt", "deleted and moved-from text", "revisions")]
+    [InlineData("commented", "txt", "cannot preserve every Word feature", null)]
+    public void ConversionWarnings_NameTheKindOfContentTheyLeaveOut(string source, string format, string fragment, string? kind)
+    {
+        using var fixture = new WordsFixture();
+        string input = source switch
+        {
+            "revised" => RevisedDocument(fixture),
+            "commented" => RevisedDocument(fixture, withComment: true),
+            _ => Saved(fixture, source),
+        };
+
+        WordsConvertResult converted = WordsConvert.Run(fixture.Session, new WordsConvertRequest
+        {
+            Input = input,
+            Output = TestOutput.At(fixture.Temp.File($"converted.{format}"), format: format),
+        });
+
+        Warning warning = Assert.Single(converted.Warnings ?? [], warning => warning.Code == WarningCodes.LossyConversion
+            && warning.Message.Contains(fragment, StringComparison.Ordinal));
+        Assert.Equal(kind is null ? null : $$"""{"content":["{{kind}}"]}""", warning.Details?.ToJsonString());
+
+        // A document with read-only protection, or with a running header.
+        static string Saved(WordsFixture fixture, string source)
+        {
+            var document = new Document();
+            var builder = new DocumentBuilder(document);
+            builder.Write("Body text");
+            if (source == "locked")
+            {
+                document.Protect(ProtectionType.ReadOnly, "owner");
+            }
+            else
+            {
+                builder.MoveToHeaderFooter(HeaderFooterType.HeaderPrimary);
+                builder.Write("Running head");
+            }
+
+            string path = fixture.Temp.File($"{source}.docx");
+            document.Save(path, SaveFormat.Docx);
+            return path;
+        }
+    }
+
+    /// <summary>
     /// A document whose tracked change replaces "thirty" with "sixty", above a line "Other
     /// text."; <paramref name="withComment"/> adds a comment on the first paragraph.
     /// </summary>

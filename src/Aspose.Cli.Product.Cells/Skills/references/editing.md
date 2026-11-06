@@ -122,8 +122,9 @@ Run `--dry-run` first for a large or destructive batch (`delete_sheet`,
   `range`, and no text outside them. When the sheet's header or footer, a
   comment or a chart title holds a match, found by the same `regex`,
   `caseSensitive` and `wholeWord`, that text stays as it was, and the edit
-  warns `TEXT_OUTSIDE_CELLS_NOT_REPLACED` once for each of these parts, with
-  its `location`: `page-setup/Sales`, `comment/Sales!B2`, `chart/Sales/1`, or
+  warns `TEXT_NOT_REPLACED` once for each of these parts, with its
+  `details.part` (`header-footer`, `comment` or `chart-title`) and its
+  `location`: `page-setup/Sales`, `comment/Sales!B2`, `chart/Sales/1`, or
   `sheet/Sales` for several comments or charts. With a `range`, only the
   comments of its cells are checked. The edit still exits 0, and the warning
   is no `--verify` issue. Read that text with `cells inspect --detail layout`,

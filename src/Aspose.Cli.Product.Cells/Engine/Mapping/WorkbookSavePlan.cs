@@ -40,8 +40,9 @@ internal sealed record WorkbookSavePlan(string FormatId, SaveFormat Format, Save
     /// <summary>
     /// Removes from the in-memory workbook the drawings of the sheet a format that
     /// <see cref="CellsEngineFormats.DropsDrawings"/> writes, and says how many of each kind it left
-    /// out; null when it removed none. A group counts once, as one drawing, and takes the shapes
-    /// in it along. Comments are no drawings: they are neither removed nor counted.
+    /// out, as the charts, pictures and shapes of <c>details.content</c>; null when it removed none.
+    /// A group counts once, as one drawing, and takes the shapes in it along. Comments are no
+    /// drawings: they are neither removed nor counted.
     /// </summary>
     internal Warning? DropDrawings(Workbook workbook)
     {
@@ -72,15 +73,14 @@ internal sealed record WorkbookSavePlan(string FormatId, SaveFormat Format, Save
         }
 
         var lost = new List<string>();
-        if (charts > 0) { lost.Add($"{charts} chart(s)"); }
-        if (pictures > 0) { lost.Add($"{pictures} picture(s)"); }
-        if (others > 0) { lost.Add($"{others} other drawing(s), such as text boxes, shapes or groups,"); }
-        return lost.Count == 0 ? null : new Warning(WarningCodes.LossyConversion,
-            $"The '{FormatId}' output holds the cells of worksheet '{sheet.Name}' as a table, so its {string.Join(" and ", lost)} were not written.")
-        {
-            Hint = "To keep them, render the sheet as an image with aspose-cli cells render, or convert to xlsx or pdf.",
-            AffectsCompleteness = true,
-        };
+        var kinds = new List<ContentKind>();
+        if (charts > 0) { lost.Add($"{charts} chart(s)"); kinds.Add(ContentKind.Charts); }
+        if (pictures > 0) { lost.Add($"{pictures} picture(s)"); kinds.Add(ContentKind.Pictures); }
+        if (others > 0) { lost.Add($"{others} other drawing(s), such as text boxes, shapes or groups,"); kinds.Add(ContentKind.Shapes); }
+        return lost.Count == 0 ? null : ContentLoss.Warning(kinds,
+            $"The '{FormatId}' output holds the cells of worksheet '{sheet.Name}' as a table, so its {string.Join(" and ", lost)} were not written.",
+            "To keep them, render the sheet as an image with aspose-cli cells render, or convert to xlsx or pdf.",
+            affectsCompleteness: true);
     }
 
     internal Worksheet TextSheet(Workbook workbook) =>

@@ -66,12 +66,11 @@ internal static class PdfMerge
 
             // An attachment keeps the name it has in the first input that holds that name.
             warnings.AddRange(CopyAttachments(source, merged).Select(name =>
-                new Warning(WarningCodes.LossyConversion, $"Attachment '{name}' of '{path}' was left out: an earlier input has an attachment of that name, which the merged document keeps.")
-                {
-                    Location = PdfInfoProjection.Address("attachment", name),
-                    Hint = "Rename the attachment in that input (delete_attachment, then add_attachment with another name) and merge again, or deliver the file alongside the merged PDF.",
-                    AffectsCompleteness = true,
-                }));
+                ContentLoss.Warning([ContentKind.Attachments],
+                    $"Attachment '{name}' of '{path}' was left out: an earlier input has an attachment of that name, which the merged document keeps.",
+                    "Rename the attachment in that input (delete_attachment, then add_attachment with another name) and merge again, or deliver the file alongside the merged PDF.",
+                    PdfInfoProjection.Address("attachment", name),
+                    affectsCompleteness: true)));
             if (PortfolioNotKept(source, path) is { } portfolio)
             {
                 warnings.Add(portfolio);

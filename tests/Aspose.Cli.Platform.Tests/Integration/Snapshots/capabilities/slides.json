@@ -2311,13 +2311,6 @@
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
-      "code": "CHART_TITLE_NOT_REPLACED",
-      "owner": "slides",
-      "severity": "warning",
-      "category": "warning",
-      "detailsSchemaId": "v2/common/diagnostic-details"
-    },
-    {
       "code": "CHART_TITLE_OVERLAID",
       "owner": "slides",
       "severity": "warning",

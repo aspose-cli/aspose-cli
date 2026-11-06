@@ -131,6 +131,24 @@ public sealed class CellsConvertUnwrittenContentTests : IDisposable
         Assert.DoesNotContain("ZqxNote", page, StringComparison.Ordinal);
     }
 
+    /// <summary>
+    /// Each warning names its kind of content in <c>details.content</c>: a pdf or xps the comments
+    /// it does not print, and an html page the comments, the charts it shows as pictures and the
+    /// headers and footers it keeps only as print data, in that order.
+    /// </summary>
+    [Theory]
+    [InlineData("pdf", new[] { "comments" })]
+    [InlineData("xps", new[] { "comments" })]
+    [InlineData("html", new[] { "comments", "charts", "headers-footers" })]
+    public void Convert_NamesTheKindOfContentEachWarningLeavesOut(string format, string[] kinds)
+    {
+        Book("book.xlsx", comments: true, chart: true, header: true);
+
+        JsonNode[] lossy = Lossy(Convert("book.xlsx", format));
+
+        Assert.Equal(kinds.Select(static kind => $"[\"{kind}\"]"), lossy.Select(static warning => warning["details"]?["content"]?.ToJsonString()));
+    }
+
     /// <summary>A page of a workbook with only a chart names the chart alone.</summary>
     [Fact]
     public void Html_OfAWorkbookWithOnlyAChart_NamesTheChartAlone()

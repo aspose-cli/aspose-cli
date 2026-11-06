@@ -288,6 +288,29 @@ public sealed partial class DecisionOwnershipTests
     }
 
     /// <summary>
+    /// A warning names the kinds of content an output leaves out only through the SDK's
+    /// <c>ContentLoss</c>, which takes them from the closed <c>ContentKind</c> set: no other source
+    /// writes a <c>details.content</c>, so no product names a kind outside the set. A dictionary
+    /// other than a JSON object, such as the patterns of the details keys, holds no details.
+    /// </summary>
+    [Fact]
+    public void D2_LostContentKinds_AreNamedOnlyByContentLoss()
+    {
+        string owner = Path.Combine(SdkRoot, "Contracts", "ContentLoss.cs");
+        bool IsOwner(SourceFile file) => string.Equals(file.Path, owner, StringComparison.OrdinalIgnoreCase);
+        string[] violations = [.. Sources.Value
+            .Where(file => !IsOwner(file))
+            .SelectMany(static file => SuggestionWrites(file, "content")
+                .Where(static write => write.Parent is not InitializerExpressionSyntax { Parent: ObjectCreationExpressionSyntax creation }
+                    || LastIdentifier(creation.Type) == "JsonObject")
+                .Select(node => file.At(node, node.ToString().Split('\n')[0].Trim())))];
+
+        Assert.NotEmpty(SuggestionWrites(Assert.Single(Sources.Value, IsOwner), "content"));
+        AssertNone(violations,
+            "details.content is written only by the SDK's ContentLoss, from the ContentKind set; name a lost kind with ContentLoss.Warning:");
+    }
+
+    /// <summary>
     /// The format ids each product declares in its Contracts, by product folder name such as
     /// <c>Cells</c>: the first argument of every <c>FormatDescriptor</c> it creates, by
     /// <c>FormatDescriptor.Declare</c> or <c>Routed</c>, <c>new FormatDescriptor(...)</c> or a

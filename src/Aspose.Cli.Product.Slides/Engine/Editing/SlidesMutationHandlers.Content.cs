@@ -1,6 +1,5 @@
 using System.Globalization;
 using System.Text;
-using System.Text.Json.Nodes;
 using Aspose.Cli.Sdk.Text;
 using Aspose.Slides;
 using Aspose.Slides.Charts;
@@ -80,14 +79,12 @@ internal sealed partial class SlidesMutationHandlers
             {
                 string rect = string.Create(CultureInfo.InvariantCulture,
                     $$"""{"x":{{chart.X:0.##}},"y":{{chart.Y:0.##}},"width":{{chart.Width:0.##}},"height":{{chart.Height:0.##}}}""");
-                _warnings.Add(new Warning(SlidesDiagnostics.ChartTitleNotReplaced, string.Create(CultureInfo.InvariantCulture,
-                    $"Operation {operation.Id} (replace_text) found a match in the title of chart '{chart.Name}' (shapeId {chart.OfficeInteropShapeId}) on slide {number} and left the title as it was: replace_text does not change chart titles or chart data."))
-                {
-                    Hint = string.Create(CultureInfo.InvariantCulture,
+                _warnings.Add(UnreplacedText.Warning(TextPart.ChartTitle, operation, "replace_text",
+                    string.Create(CultureInfo.InvariantCulture,
+                        $"Operation {operation.Id} (replace_text) found a match in the title of chart '{chart.Name}' (shapeId {chart.OfficeInteropShapeId}) on slide {number} and left the title as it was: replace_text does not change chart titles or chart data."),
+                    string.Create(CultureInfo.InvariantCulture,
                         $$"""To change the title, rebuild the chart: read its kind, categories and series with 'slides read --slides {{number}} --content full', apply {"op":"delete_shape","slide":{{number}},"shapeId":{{chart.OfficeInteropShapeId}}}, then insert_chart on slide {{number}} with the same data, the new title and "rect":{{rect}}. The new chart takes the automatic chart style."""),
-                    Location = SlidesStateProjection.ShapeAddress(number, chart.OfficeInteropShapeId),
-                    Details = new JsonObject { ["id"] = operation.Id, ["op"] = "replace_text" },
-                });
+                    SlidesStateProjection.ShapeAddress(number, chart.OfficeInteropShapeId)));
             }
         }
     }
