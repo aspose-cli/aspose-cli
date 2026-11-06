@@ -131,6 +131,7 @@ internal static class ReviewCommand
                 MaxPartCount = maximum,
                 Purpose = ViewPurpose.Evidence,
                 Password = invocation.InputPassword,
+                Continuation = invocation.ContinuationOf(input),
             };
             return ReviewEvidenceWriter.Write(
                 input,

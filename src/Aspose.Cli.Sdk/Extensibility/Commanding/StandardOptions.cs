@@ -707,15 +707,22 @@ public partial class StandardInvocation
     /// </summary>
     /// <param name="path">The command path below the root.</param>
     /// <exception cref="CliException">The input does not exist.</exception>
-    public ContinuationCommand ContinuationAt(params string[] path)
-    {
-        ContinuationCommand next = new ContinuationCommand(path).Argument(Input);
-        if (_options.InputPassword is { } password && password.EnvironmentName(_parse) is { } variable)
-        {
-            next.Option(password.EnvironmentOption, variable);
-        }
+    public ContinuationCommand ContinuationAt(params string[] path) => ContinuationOf(Input).ContinuationAt(path);
 
-        return next;
+    /// <summary>
+    /// <paramref name="document"/> as a command that continues this invocation names it: with the
+    /// input password's environment variable when it came from one, as <see cref="ContinuationAt"/>
+    /// repeats it, never the password. A view rendered for this invocation carries it
+    /// (<see cref="Views.ViewRenderRequest.Continuation"/>), so the commands its hints name open the
+    /// document as this invocation does.
+    /// </summary>
+    /// <param name="document">The document, as the command names it.</param>
+    public ContinuationInput ContinuationOf(string document)
+    {
+        ArgumentException.ThrowIfNullOrEmpty(document);
+        return _options.InputPassword is { } password && password.EnvironmentName(_parse) is { } variable
+            ? new ContinuationInput(document, password.EnvironmentOption, variable)
+            : new ContinuationInput(document);
     }
 
     /// <summary>The password for <see cref="Other"/>, or null when none was given.</summary>

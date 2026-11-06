@@ -3,6 +3,7 @@ using System.Net;
 using System.Net.Http;
 using System.Text.Json.Nodes;
 using Aspose.Cli.TestKit;
+using Aspose.Cli.TestKit.Scenarios;
 using Xunit;
 
 namespace Aspose.Cli.Platform.Tests.Integration;
@@ -210,6 +211,59 @@ public sealed class ViewerCommandLifecycleTests
             Assert.Equal("PASSWORD_INVALID", error["code"]!.GetValue<string>());
             Assert.Equal(expected["hint"]!.GetValue<string>(), error["hint"]?.GetValue<string>());
             Assert.Equal(workspace.File("locked.xlsx"), error["details"]?["path"]?.GetValue<string>());
+        }
+        finally
+        {
+            workspace.Run("preview", "stop", "--output-format", "json");
+        }
+    }
+
+    /// <summary>
+    /// A preview renders the view a review renders: the command a warning of the view names on an
+    /// encrypted workbook opened with <c>--password-env</c> passes the same variable on and runs as
+    /// written, and the view the viewer serves holds no password.
+    /// </summary>
+    [Fact]
+    public async Task Preview_OfAnEncryptedWorkbook_NamesItsPasswordVariableInTheViewsHints()
+    {
+        const string Secret = "preview-hint-secret-9a3f";
+        using var workspace = new TempWorkspace();
+        ScenarioLicense.Project(workspace.Path);
+        var password = new Dictionary<string, string?> { ["BOOK_PASSWORD"] = Secret };
+        CreateWorkbook(workspace, "plain.xlsx");
+        workspace.Run("cells", "edit", "plain.xlsx", "--in-place", "--ops", """
+            {"ops":[
+             {"op":"set_values","sheet":"Data","range":"A1","values":[["a","b","c","d","e"],[1,2,3,4,5]]},
+             {"op":"set_print_area","sheet":"Data","range":"A1:B2,D1:E2"}
+            ]}
+            """, "--output-format", "json").Succeeded();
+        workspace.RunWithEnv(password,
+            "cells", "convert", "plain.xlsx", "--out", "locked.xlsx", "--encrypt-env", "BOOK_PASSWORD", "--output-format", "json")
+            .Succeeded();
+        try
+        {
+            JsonNode opened = workspace.RunWithEnv(password,
+                "preview", "open", "locked.xlsx", "--password-env", "BOOK_PASSWORD", "--view", "sheets", "--no-open", "--output-format", "json").Json();
+            string url = opened["url"]!.GetValue<string>();
+            int revision = Assert.Single(workspace.Run("preview", "status", opened["id"]!.GetValue<string>(), "--output-format", "json")
+                .Json()["sessions"]!.AsArray())!["revision"]!.GetValue<int>();
+            string cookie = await Enter(url);
+            using var client = new HttpClient(new HttpClientHandler { UseCookies = false, AllowAutoRedirect = false })
+            {
+                Timeout = TimeSpan.FromSeconds(30),
+            };
+            using HttpResponseMessage served = await Send(client, HttpMethod.Get, $"{Address(url)}r/{revision}/view.json", cookie);
+            Assert.Equal(HttpStatusCode.OK, served.StatusCode);
+            string view = await served.Content.ReadAsStringAsync();
+
+            Assert.DoesNotContain(Secret, view, StringComparison.Ordinal);
+            JsonNode warning = Assert.Single(JsonNode.Parse(view)!["warnings"]!.AsArray(),
+                static warning => warning!["code"]!.GetValue<string>() == "SHEET_PARTIALLY_RENDERED")!;
+            string command = $"aspose-cli cells render \"{workspace.File("locked.xlsx")}\" --password-env BOOK_PASSWORD "
+                + "--range \"'Data'!D1:E2\" --output-format json";
+            Assert.Equal($"Draw each other area on its own: {command}", warning["hint"]!.GetValue<string>());
+            CliResult rendered = workspace.RunCommandLine(command, password);
+            Assert.True(rendered.ExitCode == 0, rendered.StdErr);
         }
         finally
         {

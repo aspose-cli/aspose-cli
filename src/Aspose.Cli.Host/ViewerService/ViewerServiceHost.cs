@@ -272,6 +272,7 @@ internal sealed class ViewerServiceHost : IDisposable
             View = request.View,
             Effect = request.Effect,
             Password = request.Password,
+            Continuation = request.Continuation,
             License = request.License,
             EvaluationRequested = request.EvaluationRequested,
             RequesterLicense = request.RequesterLicense,

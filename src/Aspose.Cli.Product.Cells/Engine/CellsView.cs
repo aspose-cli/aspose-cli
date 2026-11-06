@@ -64,12 +64,14 @@ internal static class CellsView
             .ToArray();
         var parts = new List<ViewPart>();
         var partial = new List<Warning>();
+        // The commands a warning names open the workbook as the invocation that renders the view does.
+        ContinuationCommand RenderCommand() => request.ContinuationAt(filePath, "cells", "render");
         foreach (Worksheet sheet in visible.Take(request.MaxPartCount))
         {
             string file = string.Create(
                 System.Globalization.CultureInfo.InvariantCulture,
                 $"sheet-{sheet.Index + 1:0000}.png");
-            (int width, int height, Warning? window) = RenderSheetPart(session.Budgets, sheet, RenderPixelGuard.DefaultDpi, file, artifacts, filePath);
+            (int width, int height, Warning? window) = RenderSheetPart(session.Budgets, sheet, RenderPixelGuard.DefaultDpi, file, artifacts, RenderCommand);
             if (window is not null)
             {
                 partial.Add(window);
@@ -101,7 +103,8 @@ internal static class CellsView
     /// <summary>
     /// Writes one worksheet image and returns its CSS layout size. A sheet
     /// without printable content becomes a blank placeholder rather than an
-    /// error, so an empty sheet never hides the rest of the workbook.
+    /// error, so an empty sheet never hides the rest of the workbook. The warning's commands, which
+    /// draw what the image leaves out, start from <c>renderCommand</c>.
     /// </summary>
     private static (int Width, int Height, Warning? Window) RenderSheetPart(
         ResourceBudgetLedger budgets,
@@ -109,7 +112,7 @@ internal static class CellsView
         int dpi,
         string file,
         IViewArtifactSink artifacts,
-        string input)
+        Func<ContinuationCommand> renderCommand)
     {
         var options = new ImageOrPrintOptions
         {
@@ -147,11 +150,10 @@ internal static class CellsView
                     (width, height) = Pixels(render, dpi);
                 }
 
-                window = shown == drawn ? null : WindowShown(sheet, drawn, shown, input);
+                window = shown == drawn ? null : WindowShown(sheet, drawn, shown, renderCommand);
             }
 
-            // A view request names no password variable, so the command carries none.
-            window ??= CellsRender.PrintAreasLeftOut(sheet, render, () => new ContinuationCommand("cells", "render").Argument(input));
+            window ??= CellsRender.PrintAreasLeftOut(sheet, render, renderCommand);
             CellsRender.EnsureRenderable(budgets, render, dpi, sheet, printArea: null);
             float[] inches = render.GetPageSizeInch(0);
             artifacts.Write(file, stream => render.ToImage(0, stream));
@@ -196,7 +198,7 @@ internal static class CellsView
     /// <paramref name="shown"/> of <paramref name="drawn"/>, with the command that renders the
     /// next window: the rows below it, or once the rows are all shown, the columns to its right.
     /// </summary>
-    private static Warning WindowShown(Worksheet sheet, RangeRef drawn, RangeRef shown, string input)
+    private static Warning WindowShown(Worksheet sheet, RangeRef drawn, RangeRef shown, Func<ContinuationCommand> renderCommand)
     {
         RangeRef next = shown.End.Row < drawn.End.Row
             ? new RangeRef(
@@ -208,7 +210,7 @@ internal static class CellsView
         return new Warning(CellsDiagnostics.SheetPartiallyRendered,
             $"Worksheet '{sheet.Name}' is too large for one readable review image; it shows {A1.FormatRange(shown)} of {A1.FormatRange(drawn)}.")
         {
-            Hint = $"Render the next window, then the ones after it the same way: aspose-cli cells render \"{input}\" --range \"{CellsRender.Qualified(sheet, next)}\"; or trust 'cells read' for the data.",
+            Hint = $"Render the next window, then the ones after it the same way: {renderCommand().Option(CellsRender.RangeOption, CellsRender.Qualified(sheet, next))}; or trust 'cells read' for the data.",
             Location = CellsAddresses.OfSheet("sheet", sheet.Name),
             AffectsCompleteness = true,
         };

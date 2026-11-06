@@ -74,11 +74,11 @@ public sealed class MistakeRecoveryCliTests : IDisposable
 
     /// <summary>A <c>--to</c> format the command does not write but a command beside it does points to that command.</summary>
     [Theory]
-    [InlineData("cells convert a.xlsx --to png", "Run 'aspose-cli cells render a.xlsx --to png' for png.")]
-    [InlineData("pdf convert a.pdf --to png", "Run 'aspose-cli pdf render a.pdf --to png' for png.")]
-    [InlineData("slides convert a.pptx --to png", "Run 'aspose-cli slides render a.pptx --to png' for png.")]
-    [InlineData("slides convert a.pptx --to jpeg", "Run 'aspose-cli slides render a.pptx --to jpeg' for jpeg.")]
-    [InlineData("slides convert a.pptx --to svg", "Run 'aspose-cli slides render a.pptx --to svg' for svg.")]
+    [InlineData("cells convert a.xlsx --to png", "Run 'aspose-cli cells render a.xlsx --to png --output-format json' for png.")]
+    [InlineData("pdf convert a.pdf --to png", "Run 'aspose-cli pdf render a.pdf --to png --output-format json' for png.")]
+    [InlineData("slides convert a.pptx --to png", "Run 'aspose-cli slides render a.pptx --to png --output-format json' for png.")]
+    [InlineData("slides convert a.pptx --to jpeg", "Run 'aspose-cli slides render a.pptx --to jpeg --output-format json' for jpeg.")]
+    [InlineData("slides convert a.pptx --to svg", "Run 'aspose-cli slides render a.pptx --to svg --output-format json' for svg.")]
     public void TargetFormatAnotherCommandWrites_PointsToThatCommand(string commandLine, string producer)
     {
         File.WriteAllText(_workspace.File("a.xlsx"), "not a document");
@@ -93,6 +93,36 @@ public sealed class MistakeRecoveryCliTests : IDisposable
         Assert.Equal("OPTION_INVALID", error["code"]!.GetValue<string>());
         Assert.Equal("--to", error["details"]!["option"]!.GetValue<string>());
         Assert.Contains(producer, error["hint"]!.GetValue<string>(), StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// The command beside a convert of an encrypted workbook, read with <c>--password-env</c>,
+    /// that writes the image format the convert was given passes the same variable on, never the
+    /// password, and runs as written to the same <c>--out</c>.
+    /// </summary>
+    [Fact]
+    public void TargetFormatAnotherCommandWrites_PassesTheInputsPasswordVariableOn()
+    {
+        ScenarioLicense.Project(_workspace.Path);
+        var password = new Dictionary<string, string?> { ["BOOK_PASSWORD"] = "sibling-hint-secret-5e1b" };
+        Assert.Equal(0, _workspace.Run("cells", "create", "plain.xlsx", "--sheet-names", "Data", "--output-format", "json").ExitCode);
+        Assert.Equal(0, _workspace.Run("cells", "edit", "plain.xlsx", "--in-place", "--set", "Data!A1=Region", "--output-format", "json").ExitCode);
+        CliResult created = _workspace.RunWithEnv(password,
+            "cells", "convert", "plain.xlsx", "--to", "xlsx", "--out", "book.xlsx", "--encrypt-env", "BOOK_PASSWORD", "--output-format", "json");
+        Assert.True(created.ExitCode == 0, created.StdErr);
+
+        CliResult refused = _workspace.RunWithEnv(password,
+            "cells", "convert", "book.xlsx", "--password-env", "BOOK_PASSWORD", "--to", "png", "--out", "x.png", "--output-format", "json");
+
+        Assert.Equal(2, refused.ExitCode);
+        string hint = JsonNode.Parse(refused.StdErr)!["error"]!["hint"]!.GetValue<string>();
+        const string Command = "aspose-cli cells render book.xlsx --password-env BOOK_PASSWORD --to png --out x.png --output-format json";
+        Assert.Equal($"Run '{Command}' for png.", hint);
+        CliResult rendered = _workspace.RunCommandLine(Command, password);
+        Assert.True(rendered.ExitCode == 0, rendered.StdErr);
+        JsonArray outputs = JsonNode.Parse(rendered.StdOut)!["outputs"]!.AsArray();
+        Assert.NotEmpty(outputs);
+        Assert.All(outputs, static output => Assert.True(File.Exists(output!["path"]!.GetValue<string>())));
     }
 
     [Fact]
@@ -214,10 +244,10 @@ public sealed class MistakeRecoveryCliTests : IDisposable
     /// points to the render beside it, with the format render calls it and the same output.
     /// </summary>
     [Theory]
-    [InlineData("slides convert a.pptx --to jpg --out x.jpg", "Run 'aspose-cli slides render a.pptx --to jpeg --out x.jpg' for jpeg.")]
-    [InlineData("pdf convert a.pdf --to jpg --out x.jpg", "Run 'aspose-cli pdf render a.pdf --to jpeg --out x.jpg' for jpeg.")]
-    [InlineData("words convert a.docx --to jpg --out x.jpg", "Run 'aspose-cli words render a.docx --to jpeg --out x.jpg' for jpeg.")]
-    [InlineData("cells convert a.xlsx --to jpg", "Run 'aspose-cli cells render a.xlsx --to jpeg' for jpeg.")]
+    [InlineData("slides convert a.pptx --to jpg --out x.jpg", "Run 'aspose-cli slides render a.pptx --to jpeg --out x.jpg --output-format json' for jpeg.")]
+    [InlineData("pdf convert a.pdf --to jpg --out x.jpg", "Run 'aspose-cli pdf render a.pdf --to jpeg --out x.jpg --output-format json' for jpeg.")]
+    [InlineData("words convert a.docx --to jpg --out x.jpg", "Run 'aspose-cli words render a.docx --to jpeg --out x.jpg --output-format json' for jpeg.")]
+    [InlineData("cells convert a.xlsx --to jpg", "Run 'aspose-cli cells render a.xlsx --to jpeg --output-format json' for jpeg.")]
     public void ImageFormatNamedByItsExtension_PointsToRenderWithTheSameOutput(string commandLine, string producer)
     {
         File.WriteAllText(_workspace.File("a.xlsx"), "not a document");

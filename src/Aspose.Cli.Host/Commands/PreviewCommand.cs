@@ -78,6 +78,7 @@ internal static class PreviewCommand
                 View = view == AutoView ? null : view,
                 Effect = parse.GetValue(symbols.Effect),
                 Password = WireSecret.From(standard.InputPassword),
+                Continuation = standard.ContinuationOf(input),
                 License = context.Globals.LicensePath is { } license
                     ? Path.GetFullPath(license, context.Paths.BaseDirectory)
                     : null,
