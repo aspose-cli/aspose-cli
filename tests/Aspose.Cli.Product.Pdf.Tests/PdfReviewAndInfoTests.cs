@@ -122,7 +122,33 @@ public sealed class PdfReviewAndInfoTests
             review["findings"]!.AsArray(),
             static item => item!["code"]!.GetValue<string>() == "PDF_TEXT_ANALYSIS_TRUNCATED")!;
         Assert.Equal("page/2", finding["location"]!.GetValue<string>());
-        Assert.Contains("'aspose-cli pdf split --by pages --groups 2'", finding["hint"]!.GetValue<string>(), StringComparison.Ordinal);
+        Assert.Contains($"aspose-cli pdf split \"{input}\" --by pages --groups 2 --out-dir ", finding["hint"]!.GetValue<string>(), StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// P12: the page whose text the budget cuts short and the page after it, which the analysis
+    /// never reaches, are one finding from the cut page on, whose hint splits them out and reviews
+    /// them; the cut page has no finding of its own with the generic hint.
+    /// </summary>
+    [Fact]
+    [Category(TestCategory.Slow)]
+    public void Review_WhenTextAnalysisCutsAPageShort_NamesItWithThePagesAfterItOnce()
+    {
+        using var fixture = new PdfEngineFixture();
+        using var workspace = new TempWorkspace();
+        // Page 1 holds more text than the million characters the review's text analysis reads.
+        string line = $"({new string('a', 1000)}) Tj 0 -0.75 Td ";
+        string input = fixture.CreateRawDocument("cut.pdf", pages: 2, textPages: new HashSet<int> { 1 },
+            textContent: $"BT /F1 1 Tf 0 791 Td {string.Concat(Enumerable.Repeat(line, 1001))}ET");
+
+        CliResult result = workspace.Run(["review", input, "--out", workspace.File("review"), "--output-format", "json"]);
+
+        Assert.True(result.ExitCode == 8, result.StdOut + result.StdErr);
+        JsonNode finding = Assert.Single(
+            JsonNode.Parse(result.StdOut)!["findings"]!.AsArray(),
+            static item => item!["code"]!.GetValue<string>() == "PDF_TEXT_ANALYSIS_TRUNCATED")!;
+        Assert.Equal("page/1-2", finding["location"]!.GetValue<string>());
+        Assert.Contains($"aspose-cli pdf split \"{input}\" --by pages --groups 1-2 --out-dir ", finding["hint"]!.GetValue<string>(), StringComparison.Ordinal);
     }
 
     [Fact]

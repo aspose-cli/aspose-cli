@@ -144,6 +144,11 @@
           "summary": "A page has no extractable text and an image fills its width or height, as on a scan, so search and redact_text do not reach its content."
         },
         {
+          "code": "PDF_REVIEW_TRUNCATED",
+          "severity": "warning",
+          "summary": "The review rendered only some pages, as many as --max-items or the preview snapshot budget allowed, so the rest have no image and were not checked."
+        },
+        {
           "code": "PDF_TEXT_ANALYSIS_TRUNCATED",
           "severity": "warning",
           "summary": "Text extraction reached its budget, so the structural text checks of a page are incomplete."

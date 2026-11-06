@@ -1,5 +1,4 @@
 using System.Text;
-using System.Text.Json;
 using System.Text.Json.Nodes;
 using Aspose.Cli.Host.Catalog;
 using Aspose.Cli.Host.Invocation;
@@ -11,7 +10,6 @@ using Aspose.Cli.Sdk.IO.Budgets;
 using Aspose.Cli.Sdk.IO.Input;
 using Aspose.Cli.Sdk.Licensing;
 using Aspose.Cli.Sdk.Rendering;
-using Aspose.Cli.Sdk.Serialization;
 using Aspose.Cli.Sdk.Views;
 
 namespace Aspose.Cli.Host.Viewer;
@@ -126,7 +124,7 @@ internal static class ViewRenderWorker
                 limits);
             File.WriteAllText(
                 Path.Combine(request.Output, RenderWorkerProtocol.ManifestFileName),
-                JsonSerializer.Serialize(manifest, SdkJsonContext.Default.ViewManifest),
+                ViewRendering.ManifestText(manifest),
                 new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
             return new RenderWorkerResponse
             {

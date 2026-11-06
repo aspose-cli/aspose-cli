@@ -45,6 +45,12 @@ internal static class PdfReviewChecks
         ReviewSeverities.Warning,
         "Text extraction reached its budget, so the structural text checks of a page are incomplete.");
 
+    /// <summary>The review rendered only some pages: --max-items or the preview snapshot budget left the rest without an image.</summary>
+    public static ReviewCheck ReviewTruncated { get; } = new(
+        "PDF_REVIEW_TRUNCATED",
+        ReviewSeverities.Warning,
+        "The review rendered only some pages, as many as --max-items or the preview snapshot budget allowed, so the rest have no image and were not checked.");
+
     /// <summary>The document has form fields whose rendered appearance needs inspection.</summary>
     public static ReviewCheck FormAppearanceReviewRequired { get; } = new(
         "PDF_FORM_APPEARANCE_REVIEW_REQUIRED",
@@ -79,6 +85,7 @@ internal static class PdfReviewChecks
         PageWithoutTextLayer,
         PageUtilizationLow,
         TextAnalysisTruncated,
+        ReviewTruncated,
         FormAppearanceReviewRequired,
         FormFieldPageUnresolved,
         FontsNotEmbedded,

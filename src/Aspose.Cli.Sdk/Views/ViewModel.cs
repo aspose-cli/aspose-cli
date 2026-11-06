@@ -76,6 +76,34 @@ public interface IViewArtifactSink
     void WriteText(
         string relativePath,
         string content);
+
+    /// <summary>
+    /// Writes the one artifact of a part as <see cref="Write"/> does, unless the bytes the view's
+    /// artifacts may hold together have too little left for it: then it keeps none of it and returns
+    /// false, and the renderer renders no more parts. The parts it leaves out still count in
+    /// <see cref="ViewManifest.TotalPartCount"/>, so a review reports them as omitted. Every other
+    /// limit fails as <see cref="Write"/> does, and so does any write after a false return.
+    /// </summary>
+    bool TryWritePart(
+        string relativePath,
+        Action<Stream> contentWriter);
+}
+
+/// <summary>
+/// The environment variables that set the limits a view's artifacts are kept within, as
+/// <c>docs preview</c> lists them: the host reads them, and an error or a review finding about
+/// a limit names its variable.
+/// </summary>
+public static class ViewArtifactLimits
+{
+    /// <summary>The variable that sets how many files one view holds.</summary>
+    public const string FilesVariable = DistributionInfo.EnvironmentVariablePrefix + "PREVIEW_MAX_FILES";
+
+    /// <summary>The variable that sets the most bytes one file of a view holds.</summary>
+    public const string FileBytesVariable = DistributionInfo.EnvironmentVariablePrefix + "PREVIEW_MAX_FILE_BYTES";
+
+    /// <summary>The variable that sets the most bytes all the files of one view hold together.</summary>
+    public const string SnapshotBytesVariable = DistributionInfo.EnvironmentVariablePrefix + "PREVIEW_MAX_SNAPSHOT_BYTES";
 }
 
 /// <summary>

@@ -117,6 +117,12 @@ public sealed class SlidesEngineFixture : IDisposable
         public void WriteText(string relativePath, string content)
         {
         }
+
+        public bool TryWritePart(string relativePath, Action<Stream> contentWriter)
+        {
+            Write(relativePath, contentWriter);
+            return true;
+        }
     }
 
     public void Dispose() => Temp.Dispose();

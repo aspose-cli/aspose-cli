@@ -71,7 +71,13 @@ internal static class CellsView
             string file = string.Create(
                 System.Globalization.CultureInfo.InvariantCulture,
                 $"sheet-{sheet.Index + 1:0000}.png");
-            (int width, int height, Warning? window) = RenderSheetPart(session.Budgets, sheet, RenderPixelGuard.DefaultDpi, file, artifacts, RenderCommand);
+            if (RenderSheetPart(session.Budgets, sheet, RenderPixelGuard.DefaultDpi, file, artifacts, RenderCommand)
+                is not { } rendered)
+            {
+                // The snapshot has no room for the sheet: it and the sheets after it are left out.
+                break;
+            }
+            (int width, int height, Warning? window) = rendered;
             if (window is not null)
             {
                 partial.Add(window);
@@ -104,9 +110,10 @@ internal static class CellsView
     /// Writes one worksheet image and returns its CSS layout size. A sheet
     /// without printable content becomes a blank placeholder rather than an
     /// error, so an empty sheet never hides the rest of the workbook. The warning's commands, which
-    /// draw what the image leaves out, start from <c>renderCommand</c>.
+    /// draw what the image leaves out, start from <c>renderCommand</c>. Null when the snapshot has
+    /// no room for the image.
     /// </summary>
-    private static (int Width, int Height, Warning? Window) RenderSheetPart(
+    private static (int Width, int Height, Warning? Window)? RenderSheetPart(
         ResourceBudgetLedger budgets,
         Worksheet sheet,
         int dpi,
@@ -124,8 +131,7 @@ internal static class CellsView
         var render = new SheetRender(sheet, options);
         if (render.PageCount == 0)
         {
-            artifacts.Write(file, stream => stream.Write(BlankPng));
-            return (320, 120, null);
+            return artifacts.TryWritePart(file, stream => stream.Write(BlankPng)) ? (320, 120, null) : null;
         }
 
         try
@@ -156,7 +162,10 @@ internal static class CellsView
             window ??= CellsRender.PrintAreasLeftOut(sheet, render, renderCommand);
             CellsRender.EnsureRenderable(budgets, render, dpi, sheet, printArea: null);
             float[] inches = render.GetPageSizeInch(0);
-            artifacts.Write(file, stream => render.ToImage(0, stream));
+            if (!artifacts.TryWritePart(file, stream => render.ToImage(0, stream)))
+            {
+                return null;
+            }
             return (
                 Math.Max(1, (int)Math.Ceiling(inches[0] * 96)),
                 Math.Max(1, (int)Math.Ceiling(inches[1] * 96)),

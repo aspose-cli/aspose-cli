@@ -1,5 +1,7 @@
 using System.Globalization;
+using Aspose.Cli.Sdk;
 using Aspose.Cli.Sdk.Extensibility;
+using Aspose.Cli.Sdk.IO.Output;
 using Aspose.Cli.Sdk.Results;
 using Aspose.Cli.Sdk.Views;
 
@@ -47,26 +49,35 @@ internal sealed class PdfViewAdapter : IProductViewAdapter<PdfSession>
             filePath,
             request.Password,
             inspected);
-        PdfReadResult read = PdfRead.Run(session, new PdfReadRequest
+        // The text checks read the pages the review rendered, and none when it rendered none.
+        PdfReadResult? read = inspected == 0 ? null : PdfRead.Run(session, new PdfReadRequest
         {
             Input = filePath,
-            Pages = inspected == 0 ? null : PageRange.Parse($"1-{inspected}"),
+            Pages = PageRange.Parse($"1-{inspected}"),
             Content = PdfReadContents.Text,
             MaxCharacters = 1_000_000,
             Password = request.Password,
         });
+        IReadOnlyList<PdfPageText> readPages = read?.Pages ?? [];
+        // The commands a finding names open the document as the invocation that reviews it does.
+        ContinuationInput source = request.ContinuationSource(filePath);
         var findings = new List<ReviewFinding>();
         AnalyzeTextBounds(layout, findings);
         AnalyzeCoveredText(layout, findings);
         AnalyzeWatermarks(layout, findings);
         int unusualPages = AnalyzePageSizes(layout, findings);
         TextAnalysis text = AnalyzeText(
-            read,
+            readPages,
+            read?.ScannedPagesSuspected ?? [],
             layout,
             info.Forms?.FieldCount ?? 0,
             findings);
-        AnalyzeUnreadPages(read, findings);
-        IReadOnlyList<int> scannedPages = AnalyzeScannedPages(read, findings);
+        if (read is not null)
+        {
+            AnalyzeUnreadPages(read, source, findings);
+        }
+        AnalyzeOmittedPages(request, rendered, source, findings);
+        IReadOnlyList<int> scannedPages = AnalyzeScannedPages(read?.ScannedPagesSuspected ?? [], findings);
         FormAnalysis forms = AnalyzeForms(
             session,
             filePath,
@@ -78,7 +89,7 @@ internal sealed class PdfViewAdapter : IProductViewAdapter<PdfSession>
             session,
             filePath,
             request.Password,
-            read.Pages,
+            readPages,
             findings);
         return new ProductReviewAssessment
         {
@@ -99,7 +110,7 @@ internal sealed class PdfViewAdapter : IProductViewAdapter<PdfSession>
                 .. EnvelopeParts.ExcludedEvaluationMarks(session.Outputs.License, layout.Pages.Sum(static page => page.ExcludedEvaluationMarks), "fragments"),
             ],
             // A page whose text the extraction budget cut short, or never reached, was not fully checked.
-            Complete = !read.Window.Truncated,
+            Complete = read?.Window.Truncated != true,
         };
     }
 
@@ -192,18 +203,19 @@ internal sealed class PdfViewAdapter : IProductViewAdapter<PdfSession>
     private const double PicturedPageCoverage = 0.25;
 
     private static TextAnalysis AnalyzeText(
-        PdfReadResult read,
+        IReadOnlyList<PdfPageText> pages,
+        IReadOnlyList<int> scannedPages,
         PdfReviewLayout layout,
         int formFields,
         ICollection<ReviewFinding> findings)
     {
-        HashSet<int> imagePages = (read.ScannedPagesSuspected ?? [])
+        HashSet<int> imagePages = scannedPages
             .Concat(layout.Pages.Where(static page => page.ImageCoverage >= PicturedPageCoverage)
                 .Select(static page => page.Page))
             .ToHashSet();
         int emptyPages = 0;
         int lowUtilizationPages = 0;
-        foreach (PdfPageText page in read.Pages)
+        foreach (PdfPageText page in pages)
         {
             if (HasTextOrImageContent(page, imagePages))
             {
@@ -226,10 +238,9 @@ internal sealed class PdfViewAdapter : IProductViewAdapter<PdfSession>
 
     /// <summary>The pages <c>pdf read</c> reports as SCANNED_PAGES_SUSPECTED, one finding each.</summary>
     private static IReadOnlyList<int> AnalyzeScannedPages(
-        PdfReadResult read,
+        IReadOnlyList<int> pages,
         ICollection<ReviewFinding> findings)
     {
-        IReadOnlyList<int> pages = read.ScannedPagesSuspected ?? [];
         foreach (int page in pages)
         {
             findings.Add(PdfReviewChecks.PageWithoutTextLayer.Finding(
@@ -242,29 +253,95 @@ internal sealed class PdfViewAdapter : IProductViewAdapter<PdfSession>
     }
 
     /// <summary>
-    /// The pages the text extraction never reached because an earlier page used up its budget.
-    /// The read starts at page 1 and stops at the budget, so they are the last of the pages it
-    /// was asked for.
+    /// The pages whose text the analysis did not finish because it used up its extraction budget:
+    /// the page the budget cut short, if one was, and the pages after it that the analysis never
+    /// reached. The read starts at page 1 and stops at the budget, so they are the last of the
+    /// pages it was asked for, and one finding names them all.
     /// </summary>
     private static void AnalyzeUnreadPages(
         PdfReadResult read,
+        ContinuationInput source,
         ICollection<ReviewFinding> findings)
     {
-        int first = read.Window.Returned + 1;
+        PdfPageText? cut = read.Pages.FirstOrDefault(static page => page.ContentTruncated);
+        int first = cut?.Page ?? read.Window.Returned + 1;
         if (read.Window.Total is not { } total || total < first)
         {
             return;
         }
         int last = (int)total;
-        string pages = first == last
-            ? string.Create(System.Globalization.CultureInfo.InvariantCulture, $"{first}")
-            : string.Create(System.Globalization.CultureInfo.InvariantCulture, $"{first}-{last}");
+        string pages = Pages(first, last);
+        string reached = cut is null
+            ? string.Create(CultureInfo.InvariantCulture, $"before page {first}")
+            : string.Create(CultureInfo.InvariantCulture, $"within page {first}");
         findings.Add(PdfReviewChecks.TextAnalysisTruncated.Finding(
-            $"Text analysis reached its extraction budget before page(s) {pages}; their text was not analyzed, so visual evidence remains available but structural text checks are incomplete.",
+            $"Text analysis reached its extraction budget {reached}, so the text of page(s) {pages} was not fully analyzed; visual evidence remains available but structural text checks are incomplete.",
             $"page/{pages}",
-            $"Review those pages on their own: split them out with 'aspose-cli pdf split --by pages --groups {pages}' and review that part.",
+            ReviewOnTheirOwn(source, pages),
             [.. Enumerable.Range(first, last - first + 1).Select(PdfViews.PagePart)]));
     }
+
+    /// <summary>
+    /// The pages the review left without an image, and so unchecked: those beyond the
+    /// <c>--max-items</c> bound, or, when the preview snapshot budget stopped the rendering
+    /// earlier, the first page it had no room for and those after it.
+    /// </summary>
+    private static void AnalyzeOmittedPages(
+        ViewRenderRequest request,
+        ViewManifest rendered,
+        ContinuationInput source,
+        ICollection<ReviewFinding> findings)
+    {
+        int count = rendered.Parts.Count;
+        int first = count + 1;
+        int last = rendered.TotalPartCount;
+        if (last < first)
+        {
+            return;
+        }
+        string pages = Pages(first, last);
+        string missed = $"page(s) {pages} have no image and were not checked.";
+        // The rendering stops before the bound only when the snapshot has no room for the next page.
+        bool budget = count < Math.Min(last, request.MaxPartCount);
+        string message = !budget
+            ? string.Create(CultureInfo.InvariantCulture, $"The review rendered {count} of {last} pages, the most --max-items allows; {missed}")
+            : count == 0
+                ? string.Create(CultureInfo.InvariantCulture, $"The review rendered none of {last} pages: the preview snapshot budget, {ViewArtifactLimits.SnapshotBytesVariable}, has no room for page 1; {missed}")
+                : string.Create(CultureInfo.InvariantCulture, $"The review rendered {count} of {last} pages: the preview snapshot budget, {ViewArtifactLimits.SnapshotBytesVariable}, had no room for page {first}; {missed}");
+        findings.Add(PdfReviewChecks.ReviewTruncated.Finding(
+            message,
+            $"page/{pages}",
+            budget && count == 0
+                // Reviewing fewer pages renders none either: only a larger budget holds a page.
+                ? $"Unset {ViewArtifactLimits.SnapshotBytesVariable} for its default, or raise it, and review again."
+                : ReviewOnTheirOwn(source, pages),
+            [.. Enumerable.Range(first, last - first + 1).Select(PdfViews.PagePart)]));
+    }
+
+    /// <summary>
+    /// The hint that reviews <paramref name="pages"/> on their own: the command that splits them
+    /// out of the source into a directory beside it, and the review of that part, both opening the
+    /// source as the review did.
+    /// </summary>
+    private static string ReviewOnTheirOwn(ContinuationInput source, string pages)
+    {
+        string stem = Path.GetFileNameWithoutExtension(source.Document);
+        var directory = new ResolvedDirectory(Path.Combine(
+            Path.GetDirectoryName(source.Document) ?? string.Empty,
+            $"{stem}.pages-{pages}"));
+        ContinuationCommand split = source.ContinuationAt("pdf", "split")
+            .Option("--by", "pages")
+            .Option("--groups", pages)
+            .Option("--out-dir", directory.Path);
+        // The one part is named as pdf split names it.
+        ContinuationCommand review = source.WrittenAs(directory.Parts(stem, "pdf", [1])[0]).ContinuationAt("review");
+        return $"Review those pages on their own: split them out with {split}; then review that part with {review}";
+    }
+
+    /// <summary>Pages <paramref name="first"/> to <paramref name="last"/> as a page range, such as <c>3</c> or <c>3-9</c>.</summary>
+    private static string Pages(int first, int last) => first == last
+        ? string.Create(CultureInfo.InvariantCulture, $"{first}")
+        : string.Create(CultureInfo.InvariantCulture, $"{first}-{last}");
 
     private static bool HasTextOrImageContent(
         PdfPageText page,
@@ -286,14 +363,6 @@ internal sealed class PdfViewAdapter : IProductViewAdapter<PdfSession>
             lowUtilization = 1;
             findings.Add(PdfReviewChecks.PageUtilizationLow.Finding(
                 "The page carries very little readable text and no images covering a quarter of it; inspect for an unintended sparse page or pagination break.",
-                PageAddress(page.Page),
-                Hint,
-                PdfViews.PagePart(page.Page)));
-        }
-        if (page.ContentTruncated)
-        {
-            findings.Add(PdfReviewChecks.TextAnalysisTruncated.Finding(
-                "Text analysis reached its extraction budget; visual evidence remains available but structural text checks are incomplete.",
                 PageAddress(page.Page),
                 Hint,
                 PdfViews.PagePart(page.Page)));

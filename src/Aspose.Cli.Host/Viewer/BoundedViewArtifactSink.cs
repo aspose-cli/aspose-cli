@@ -11,7 +11,8 @@ namespace Aspose.Cli.Host.Viewer;
 /// Materializes one immutable preview view without exposing its owned
 /// directory. Every artifact is bounded while bytes are written, so a product
 /// renderer cannot create an oversized transient publication before the
-/// manifest validation boundary runs.
+/// manifest validation boundary runs. A part the rest of the snapshot cannot
+/// hold leaves no file and ends the view there instead of failing it.
 /// </summary>
 internal sealed class BoundedViewArtifactSink : IViewArtifactSink
 {
@@ -26,6 +27,7 @@ internal sealed class BoundedViewArtifactSink : IViewArtifactSink
     private readonly HashSet<string> _directories = new(FilePaths.Comparer);
     private ExceptionDispatchInfo? _failure;
     private long _totalBytes;
+    private bool _stopped;
 
     public BoundedViewArtifactSink(
         string root,
@@ -38,23 +40,8 @@ internal sealed class BoundedViewArtifactSink : IViewArtifactSink
 
     public void Write(
         string relativePath,
-        Action<Stream> contentWriter)
-    {
-        ArgumentNullException.ThrowIfNull(contentWriter);
-        lock (_gate)
-        {
-            ThrowIfFailed();
-            try
-            {
-                WriteCore(relativePath, contentWriter);
-            }
-            catch (Exception exception)
-            {
-                _failure = ExceptionDispatchInfo.Capture(exception);
-                throw;
-            }
-        }
-    }
+        Action<Stream> contentWriter) =>
+        Publish(relativePath, contentWriter, stopAtSnapshot: false);
 
     public void WriteText(
         string relativePath,
@@ -72,6 +59,11 @@ internal sealed class BoundedViewArtifactSink : IViewArtifactSink
         });
     }
 
+    public bool TryWritePart(
+        string relativePath,
+        Action<Stream> contentWriter) =>
+        Publish(relativePath, contentWriter, stopAtSnapshot: true);
+
     /// <summary>
     /// Fails a publication whose renderer caught a sink exception. Product
     /// code may add context, but it cannot turn a breached hard limit into a
@@ -85,7 +77,52 @@ internal sealed class BoundedViewArtifactSink : IViewArtifactSink
         }
     }
 
-    private void WriteCore(
+    // Writes one artifact. What is left of the snapshot refusing it fails a plain write, but only
+    // stops a part's: the sink then takes no more artifacts.
+    private bool Publish(
+        string relativePath,
+        Action<Stream> contentWriter,
+        bool stopAtSnapshot)
+    {
+        ArgumentNullException.ThrowIfNull(contentWriter);
+        lock (_gate)
+        {
+            ThrowIfFailed();
+            try
+            {
+                if (_stopped)
+                {
+                    throw new InvalidOperationException(
+                        "A renderer wrote another artifact after the snapshot had no room for a part.");
+                }
+
+                CliException? refusal = WriteCore(relativePath, contentWriter);
+                if (refusal is null)
+                {
+                    return true;
+                }
+                if (!stopAtSnapshot)
+                {
+                    throw refusal;
+                }
+
+                _stopped = true;
+                return false;
+            }
+            catch (Exception exception)
+            {
+                _failure = ExceptionDispatchInfo.Capture(exception);
+                throw;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Writes one artifact within the nearer of its two byte limits: its own, or what is left of
+    /// the snapshot. An artifact beyond its own limit fails. One beyond what is left of the
+    /// snapshot leaves no file, and its refusal is returned; null when the artifact is written.
+    /// </summary>
+    private CliException? WriteCore(
         string relativePath,
         Action<Stream> contentWriter)
     {
@@ -101,43 +138,72 @@ internal sealed class BoundedViewArtifactSink : IViewArtifactSink
             throw CliErrors.PreviewBudgetExceeded(
                 "view artifact files",
                 _paths.Count,
-                _limits.MaximumSnapshotFiles);
+                _limits.MaximumSnapshotFiles,
+                ViewArtifactLimits.FilesVariable);
         }
 
         RegisterDirectories(normalized);
 
-        long remaining = _limits.MaximumSnapshotBytes - _totalBytes;
-        long fileLimit = Math.Min(
-            _limits.MaximumSnapshotFileBytes,
-            remaining);
-        if (fileLimit < 0)
-        {
-            throw CliErrors.PreviewBudgetExceeded(
-                "view snapshot bytes",
-                _totalBytes,
-                _limits.MaximumSnapshotBytes);
-        }
-
+        long total = _totalBytes;
+        long remaining = _limits.MaximumSnapshotBytes - total;
+        bool snapshotNearer = remaining < _limits.MaximumSnapshotFileBytes;
         string fullPath = Path.Combine(
             _root,
             normalized.Replace('/', Path.DirectorySeparatorChar));
         Directory.CreateDirectory(
             Path.GetDirectoryName(fullPath)!);
+        CliException? refusal;
         try
         {
             using FileStream file = new(fullPath, FileMode.CreateNew, FileAccess.ReadWrite, FileShare.None);
-            using var bounded = new BoundedWriteStream(file, fileLimit);
-            contentWriter(bounded);
-            bounded.Flush();
-            long bytes = file.Length;
-            _totalBytes = checked(_totalBytes + bytes);
+            using var bounded = new BoundedWriteStream(
+                file,
+                Math.Min(_limits.MaximumSnapshotFileBytes, remaining),
+                snapshotNearer
+                    ? length => SnapshotExceeded(total + length)
+                    : length => CliErrors.PreviewBudgetExceeded(
+                        "view artifact bytes",
+                        length,
+                        _limits.MaximumSnapshotFileBytes,
+                        ViewArtifactLimits.FileBytesVariable));
+            try
+            {
+                contentWriter(bounded);
+            }
+            catch (Exception) when (snapshotNearer && bounded.Refusal is not null)
+            {
+                // An engine may wrap the refusal in an error of its own; the stream recorded it.
+            }
+
+            refusal = bounded.Refusal;
+            if (refusal is null)
+            {
+                bounded.Flush();
+                _totalBytes = checked(total + file.Length);
+                return null;
+            }
+            if (!snapshotNearer)
+            {
+                // The engine kept the refusal of a file beyond its own limit to itself.
+                throw refusal;
+            }
         }
         catch
         {
             LocalFileCleanup.DeleteFile(fullPath);
             throw;
         }
+
+        LocalFileCleanup.DeleteFile(fullPath);
+        _paths.Remove(normalized);
+        return refusal;
     }
+
+    private CliException SnapshotExceeded(long actual) => CliErrors.PreviewBudgetExceeded(
+        "view snapshot bytes",
+        actual,
+        _limits.MaximumSnapshotBytes,
+        ViewArtifactLimits.SnapshotBytesVariable);
 
     private void ThrowIfFailed() => _failure?.Throw();
 
@@ -153,7 +219,8 @@ internal sealed class BoundedViewArtifactSink : IViewArtifactSink
                 throw CliErrors.PreviewBudgetExceeded(
                     "view artifact directories",
                     _directories.Count,
-                    _limits.MaximumSnapshotFiles);
+                    _limits.MaximumSnapshotFiles,
+                    ViewArtifactLimits.FilesVariable);
             }
         }
     }
@@ -165,12 +232,16 @@ internal sealed class BoundedViewArtifactSink : IViewArtifactSink
     /// </summary>
     private sealed class BoundedWriteStream(
         Stream inner,
-        long maximumLength) : Stream
+        long maximumLength,
+        Func<long, CliException> exceeded) : Stream
     {
         public override bool CanRead => false;
         public override bool CanSeek => inner.CanSeek;
         public override bool CanWrite => inner.CanWrite;
         public override long Length => inner.Length;
+
+        /// <summary>The limit's error once a write went beyond it; null while none did.</summary>
+        public CliException? Refusal { get; private set; }
 
         public override long Position
         {
@@ -268,10 +339,8 @@ internal sealed class BoundedViewArtifactSink : IViewArtifactSink
             }
             if (length > maximumLength)
             {
-                throw CliErrors.PreviewBudgetExceeded(
-                    "view artifact bytes",
-                    length,
-                    maximumLength);
+                Refusal ??= exceeded(length);
+                throw Refusal;
             }
         }
 
