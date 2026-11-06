@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Net;
 using System.Net.Http;
+using System.Text.Json;
 using System.Text.Json.Nodes;
 using Aspose.Cli.Host.LocalServices;
 using Aspose.Cli.Host.ViewerService;
@@ -194,6 +195,29 @@ public sealed class ViewerServiceHttpTests : IDisposable
         Assert.Single(_documents.All);
     }
 
+    /// <summary>
+    /// The preview command names the document in its continuation as the caller typed it, so the
+    /// same file opened again in another case, with the same password variable, still lands on the
+    /// open document: whether two paths are one file is <c>FilePaths</c>' decision. Another
+    /// variable opens another document, whose hints name that variable.
+    /// </summary>
+    [Category(TestCategory.Slow)]
+    [Fact]
+    public void Opening_TheSameFileWithAnotherCaseAndTheSameContinuation_ReusesTheOpenDocument()
+    {
+        CreateWorkbook();
+        string book = _workspace.File("book.xlsx");
+        LiveDocument first = _documents.Open(book, Continued(book, "BOOK_PASSWORD"), ViewerDocuments.PreviewHolder);
+
+        LiveDocument again = _documents.Open(
+            book.ToUpperInvariant(), Continued(book.ToUpperInvariant(), "BOOK_PASSWORD"), ViewerDocuments.PreviewHolder);
+        LiveDocument other = _documents.Open(book, Continued(book, "OTHER_PASSWORD"), ViewerDocuments.PreviewHolder);
+
+        Assert.Same(first, again);
+        Assert.NotSame(first, other);
+        Assert.Equal(2, _documents.All.Count);
+    }
+
     [Category(TestCategory.Slow)]
     [Fact]
     public void Release_ClosesADocumentOnlyWhenItsLastHolderLetsGo()
@@ -230,11 +254,28 @@ public sealed class ViewerServiceHttpTests : IDisposable
 
     private LiveDocument OpenWorkbook(string? view = null)
     {
+        CreateWorkbook();
+        return _documents.Open(_workspace.File("book.xlsx"), new LiveDocumentOptions { View = view }, ViewerDocuments.PreviewHolder);
+    }
+
+    private void CreateWorkbook()
+    {
         _workspace.Run("cells", "create", "book.xlsx", "--sheet-names", "First,Second", "--output-format", "json").Succeeded();
         _workspace.Run("cells", "edit", "book.xlsx", "--in-place",
             "--set", "First!A1=Region", "--set", "Second!A1=Raw", "--output-format", "json").Succeeded();
-        return _documents.Open(_workspace.File("book.xlsx"), new LiveDocumentOptions { View = view }, ViewerDocuments.PreviewHolder);
     }
+
+    /// <summary>The options of a preview that names <paramref name="document"/> and the password's <paramref name="variable"/>, read from the JSON the service receives.</summary>
+    private static LiveDocumentOptions Continued(string document, string variable) =>
+        new JsonObject
+        {
+            ["continuation"] = new JsonObject
+            {
+                ["document"] = document,
+                ["passwordOption"] = "--password-env",
+                ["passwordVariable"] = variable,
+            },
+        }.Deserialize<LiveDocumentOptions>(JsonSerializerOptions.Web)!;
 
     private string Url(string path) => $"http://127.0.0.1:{_server.Port}{path}";
 

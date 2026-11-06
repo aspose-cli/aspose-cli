@@ -114,6 +114,8 @@ internal static class ViewRenderWorker
                 MaxPartCount = request.MaxPartCount,
                 Purpose = ViewPurpose.Display,
                 Password = request.Password?.ToSecret(),
+                // The service renders its own copy of the document; a hint's command names the original.
+                Continuation = request.Continuation ?? new ContinuationInput(request.SourceOrigin ?? request.Source),
             };
             LicenseState state = binding.LicenseGate.EnsureApplied();
             licenses[product] = license;

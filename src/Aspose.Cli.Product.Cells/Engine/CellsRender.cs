@@ -19,7 +19,7 @@ namespace Aspose.Cli.Product.Cells.Engine;
 internal static class CellsRender
 {
     /// <summary>The option of <c>cells render</c> that names the range a hint's command draws.</summary>
-    private const string RangeOption = "--range";
+    internal const string RangeOption = "--range";
 
     public static CellsRenderResult Run(CellsSession session, CellsRenderRequest request)
     {

@@ -46,6 +46,14 @@ public sealed record ViewRenderRequest
 
     /// <summary>Password of the source document, when encrypted.</summary>
     public Secret? Password { get; init; }
+
+    /// <summary>
+    /// The source document as the invocation that renders the view names it, with its password's
+    /// variable when the password came from one: what the commands a view's hints name on the
+    /// source start from (<c>ContinuationAt</c>). It never holds the password. Null names the file
+    /// rendered, without a variable.
+    /// </summary>
+    public ContinuationInput? Continuation { get; init; }
 }
 
 /// <summary>

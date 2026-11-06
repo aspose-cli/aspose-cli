@@ -60,8 +60,9 @@ internal sealed class CellsViewAdapter : IProductViewAdapter<CellsSession>
         // them. With a license a review checks every sheet.
         bool evaluation = session.Outputs.License == LicenseState.Evaluation;
         int excludedMarks = evaluation ? layout.Sheets.Count(static sheet => sheet.IsEvaluationWarning) : 0;
+        // The commands a finding names open the workbook as the invocation that reviews it does.
         List<ReviewFinding> findings = Findings(
-            filePath,
+            () => request.ContinuationAt(filePath, "cells", "render"),
             info,
             layout,
             visible,
@@ -98,7 +99,7 @@ internal sealed class CellsViewAdapter : IProductViewAdapter<CellsSession>
     }
 
     private static List<ReviewFinding> Findings(
-        string filePath,
+        Func<ContinuationCommand> renderCommand,
         CellsInspectResult info,
         CellsReviewLayout layout,
         IReadOnlyList<CellsSheetInfo> visible,
@@ -112,7 +113,7 @@ internal sealed class CellsViewAdapter : IProductViewAdapter<CellsSession>
         {
             findings.Add(SheetFinding(CellsReviewChecks.SheetHidden, sheet.Name,
                 $"Hidden worksheet '{sheet.Name}' is excluded from visual evidence.",
-                hint: $"If it should be seen, render it on its own: aspose-cli cells render \"{filePath}\" --sheets {sheet.Position}"));
+                hint: $"If it should be seen, render it on its own: {renderCommand().Option(CellsOptionNames.Sheets, sheet.Position)}"));
         }
         foreach (CellsSheetInfo sheet in visible.Where(sheet =>
                      sheet.UsedRange is null

@@ -23,6 +23,12 @@ internal sealed record LiveDocumentOptions
     /// <summary>Password of an encrypted document.</summary>
     public WireSecret? Password { get; init; }
 
+    /// <summary>
+    /// The document as the opening command names it, with its password's variable when the
+    /// password came from one, for the commands the view's hints name; null names the watched file.
+    /// </summary>
+    public ContinuationInput? Continuation { get; init; }
+
     /// <summary>Explicit license file, or null for the configured sources.</summary>
     public string? License { get; init; }
 
@@ -183,6 +189,10 @@ internal sealed class LiveDocument : IDisposable
             && _options.View == options.View
             && _options.Effect == options.Effect
             && Equals(_options.Password, options.Password)
+            // The password variable the view's hints name. Whether the two paths are one file is
+            // decided by FilePaths before a document is matched, so the path as typed does not count.
+            && _options.Continuation?.PasswordOption == options.Continuation?.PasswordOption
+            && _options.Continuation?.PasswordVariable == options.Continuation?.PasswordVariable
             && _options.License == options.License
             && _options.EvaluationRequested == options.EvaluationRequested
             && RequesterLicense.Same(_options.RequesterLicense, options.RequesterLicense)
@@ -309,6 +319,7 @@ internal sealed class LiveDocument : IDisposable
                     Product = _options.Product,
                     View = _options.View,
                     Password = _options.Password,
+                    Continuation = _options.Continuation,
                     License = _options.License,
                     EvaluationRequested = _options.EvaluationRequested,
                     RequesterLicense = _options.RequesterLicense,

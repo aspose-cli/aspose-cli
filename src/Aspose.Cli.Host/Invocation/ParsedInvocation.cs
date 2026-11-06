@@ -544,7 +544,8 @@ internal sealed class ParsedInvocation
     /// A format given to <c>--to</c> that the command does not write but a command beside it
     /// writes through its own <c>--to</c>, as <c>png</c> given to a convert that leaves images to
     /// render, or a name that <c>--to</c> declares it stands for, as <c>jpg</c> for <c>jpeg</c>:
-    /// the advice to run that command on the same input and to the same <c>--out</c>; null otherwise.
+    /// the advice to run that command on the same input, with the same <c>--password-env</c>, and to
+    /// the same <c>--out</c>; null otherwise.
     /// </summary>
     private string? SiblingTarget(Option option, string value)
     {
@@ -565,16 +566,32 @@ internal sealed class ParsedInvocation
             return null;
         }
 
+        // The input as the caller wrote it, with the variable its password came from when the
+        // command beside this one takes the same option, so that command opens the input as this one would.
         string input = Command.Arguments.FirstOrDefault() is { } argument
             && ParseResult.GetResult(argument) is { Tokens: [var token, ..] }
-            ? Quoted(token.Value)
+            ? token.Value
             : "<file>";
-        string[] output = Command.Options.FirstOrDefault(static candidate => candidate.Name == "--out") is { } named
-            && ParseResult.GetResult(named) is { Tokens: [var path, ..] }
-            ? ["--out", Quoted(path.Value)]
-            : [];
-        string[] group = [DistributionInfo.CommandName, .. CommandPath.SkipLast(1).Select(static command => command.Name)];
-        return $"Run '{string.Join(' ', [.. group, found.Command.Name, input, "--to", found.Format, .. output])}' for {found.Format}.";
+        string? variable = Given(PasswordEnvironment) is { } named
+            && found.Command.Options.Any(static candidate => candidate.Name == PasswordEnvironment)
+            ? named
+            : null;
+        ContinuationCommand line = new ContinuationInput(input, variable is null ? null : PasswordEnvironment, variable)
+            .ContinuationAt([.. CommandPath.SkipLast(1).Select(static command => command.Name), found.Command.Name])
+            .Option("--to", found.Format);
+        if (Given("--out") is { } output)
+        {
+            line.Option("--out", output);
+        }
+
+        return $"Run '{line}' for {found.Format}.";
+
+        // The first value the caller gave the command's option of this name, or null.
+        string? Given(string name) =>
+            Command.Options.FirstOrDefault(candidate => candidate.Name == name) is { } declared
+            && ParseResult.GetResult(declared) is { Tokens: [var given, ..] }
+                ? given.Value
+                : null;
 
         // The value a --to writes for the one given: itself, or the value it declares the given one stands for.
         static string? Writes(Option to, string value)
@@ -584,9 +601,10 @@ internal sealed class ParsedInvocation
                 : to.MeantValue(value) is { } meant && values.Contains(meant, StringComparer.Ordinal) ? meant
                 : null;
         }
-
-        static string Quoted(string value) => value.Contains(' ', StringComparison.Ordinal) ? $"\"{value}\"" : value;
     }
+
+    /// <summary>The option that names the environment variable of the input's password.</summary>
+    private const string PasswordEnvironment = "--password-env";
 
     /// <summary>
     /// A file format given to <c>--output-format</c>, which selects how results are printed:

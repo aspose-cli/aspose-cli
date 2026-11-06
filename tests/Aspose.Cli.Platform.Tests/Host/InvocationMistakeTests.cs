@@ -34,7 +34,7 @@ public sealed class InvocationMistakeTests
         // A refused value: outside the list, the value it stands for, a sibling's format, a number.
         { "words inspect a.docx --detail bogus", "OPTION_INVALID", "'bogus' is not a value of --detail.", "--help", null },
         { "pdf convert a.pdf --to word", "OPTION_INVALID", "'word' is not a value of --to.", "Did you mean 'docx'?", "docx" },
-        { "cells convert a.xlsx --to png", "OPTION_INVALID", "'png' is not a value of --to.", "Run 'aspose-cli cells render a.xlsx --to png' for png.", null },
+        { "cells convert a.xlsx --to png", "OPTION_INVALID", "'png' is not a value of --to.", "Run 'aspose-cli cells render a.xlsx --to png --output-format json' for png.", null },
         { "cells convert a.xlsx --to xlsx --output-format pdf", "OPTION_INVALID", "'pdf' is not a value of --output-format.", "Did you mean '--to pdf'?", "--to pdf" },
         { "words render a.docx --dpi abc", "OPTION_INVALID", "'abc' is not a whole number, which --dpi takes.", "--help", null },
 

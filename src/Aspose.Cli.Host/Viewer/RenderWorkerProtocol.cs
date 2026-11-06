@@ -50,6 +50,13 @@ internal sealed record RenderWorkerRequest(long MaxInputBytes = Aspose.Cli.Sdk.I
     /// <summary>Password of an encrypted document.</summary>
     public WireSecret? Password { get; init; }
 
+    /// <summary>
+    /// The document as the opening command names it, with its password's variable when the
+    /// password came from one, for the commands the view's hints name; null names the original
+    /// document, or the source without one. It never holds the password.
+    /// </summary>
+    public Aspose.Cli.Sdk.ContinuationInput? Continuation { get; init; }
+
     /// <summary>Explicit license file, or null for the configured sources.</summary>
     public string? License { get; init; }
 
