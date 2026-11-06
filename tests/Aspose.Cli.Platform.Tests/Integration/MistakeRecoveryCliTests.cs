@@ -141,7 +141,7 @@ public sealed class MistakeRecoveryCliTests : IDisposable
         Assert.Null(error["details"]!["supported"]);
         Assert.EndsWith("Must be one of: .xlsx, .xltx, .xlsm, .xltm, .xlsb, .xls, .ods, .csv, .txt, .tsv.", error["message"]!.GetValue<string>(), StringComparison.Ordinal);
         Assert.DoesNotContain(".pdf", error["hint"]!.GetValue<string>(), StringComparison.Ordinal);
-        Assert.Contains("then run 'aspose-cli cells render <that file> --to png'", error["hint"]!.GetValue<string>(), StringComparison.Ordinal);
+        Assert.Contains("then run 'aspose-cli cells render <that file> --to png --output-format json'", error["hint"]!.GetValue<string>(), StringComparison.Ordinal);
     }
 
     /// <summary>
@@ -191,8 +191,8 @@ public sealed class MistakeRecoveryCliTests : IDisposable
     /// suggests no extension the command itself cannot write.
     /// </summary>
     [Theory]
-    [InlineData("words edit a.docx --ops words.json --out x.pfd", "then run 'aspose-cli words convert <that file> --to pdf' for pdf")]
-    [InlineData("cells edit a.xlsx --set Sheet1!A1=5 --out x.pfd", "then run 'aspose-cli cells convert <that file> --to pdf' for pdf")]
+    [InlineData("words edit a.docx --ops words.json --out x.pfd", "then run 'aspose-cli words convert <that file> --to pdf --output-format json' for pdf")]
+    [InlineData("cells edit a.xlsx --set Sheet1!A1=5 --out x.pfd", "then run 'aspose-cli cells convert <that file> --to pdf --output-format json' for pdf")]
     public void MistypedExtensionOfASiblingsFormat_NamesTheSiblingAndSuggestsNothingItCannotWrite(string commandLine, string producer)
     {
         File.WriteAllText(_workspace.File("a.docx"), "not a document");

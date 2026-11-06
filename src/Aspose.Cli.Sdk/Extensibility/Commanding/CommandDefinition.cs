@@ -173,6 +173,9 @@ public sealed class CommandDefinition<TRequest, TResult>
     /// <summary>For an edit, whether its vocabulary has an operation that encrypts the edited document.</summary>
     internal bool Encrypts { get; init; }
 
+    /// <summary>For an edit that <see cref="Encrypts"/>, the operation documents that only encrypt; <see cref="EditDefinition"/> sets them.</summary>
+    internal EncryptionOperations? Encryption { get; init; }
+
     /// <summary>Every renderer the definition declares.</summary>
     internal IEnumerable<ProductOutputDefinition> Outputs()
     {
@@ -198,7 +201,7 @@ public sealed class CommandDefinition<TRequest, TResult>
         CommandMistakes.DeclareRefused(command, RefusedOptions);
         if (Encrypts)
         {
-            ProtectionAdvice.Declare(command);
+            ProtectionAdvice.Declare(command, Encryption ?? new EncryptionOperations(null, null));
         }
 
         return Examples.Count == 0 && Links.Count == 0 ? command : command.WithExamples(Examples, Links);
@@ -245,7 +248,7 @@ public sealed class CommandDefinition<TRequest, TResult>
             }
 
             // The write pipeline discloses evaluation output for every product command alike.
-            return scope.Binding.Publishing.DiscloseWith(result, loss => ProtectionAdvice.Hint(parse, loss, invocation.ResolvedFile, invocation.ResolvedInput));
+            return scope.Binding.Publishing.DiscloseWith(result, loss => ProtectionAdvice.Hint(parse, invocation, loss));
         }
         catch (CliException error) when (invocation.ForPairedInput(error) is var restated && restated != error)
         {
@@ -321,6 +324,7 @@ public static class EditDefinition
             MistakenForHint = mistakenForHint,
             Operations = TOp.Catalog.Describe,
             Encrypts = TOp.Catalog.Encrypts,
+            Encryption = edit.Encryption,
         };
     }
 }

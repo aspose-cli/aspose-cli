@@ -35,8 +35,8 @@ public sealed class TempWorkspace : IDisposable
     /// <summary>
     /// Runs a command line the CLI printed for the caller to run verbatim, such as a result's
     /// <c>window.next</c>: it is split the way a shell splits the quoting the continuation writes
-    /// (double quotes, with <c>\"</c>, <c>\$</c> and <c>\`</c> escaped inside them), and its
-    /// leading executable name is dropped.
+    /// (double quotes, with <c>\"</c>, <c>\$</c> and <c>\`</c> escaped inside them, and single
+    /// quotes, inside which every character is literal), and its leading executable name is dropped.
     /// </summary>
     public CliResult RunCommandLine(string commandLine) => RunCommandLine(commandLine, variables: null);
 
@@ -44,17 +44,41 @@ public sealed class TempWorkspace : IDisposable
     /// Runs a command line the CLI printed, as <see cref="RunCommandLine(string)"/> does, with extra
     /// environment variables set on the child, such as the one a printed <c>--password-env</c> names.
     /// </summary>
-    public CliResult RunCommandLine(string commandLine, IReadOnlyDictionary<string, string?>? variables)
+    public CliResult RunCommandLine(string commandLine, IReadOnlyDictionary<string, string?>? variables) =>
+        RunCommandLine(commandLine, variables, standardInput: null);
+
+    /// <summary>
+    /// Runs a command line the CLI printed, as <see cref="RunCommandLine(string, IReadOnlyDictionary{string, string?})"/>
+    /// does, with <paramref name="standardInput"/> piped to it, as for a printed <c>--ops -</c>.
+    /// </summary>
+    public CliResult RunCommandLine(string commandLine, IReadOnlyDictionary<string, string?>? variables, string? standardInput)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(commandLine);
         var tokens = new List<string>();
         var current = new System.Text.StringBuilder();
         bool quoted = false;
+        bool literal = false;
         bool started = false;
         for (int index = 0; index < commandLine.Length; index++)
         {
             char character = commandLine[index];
-            if (quoted && character == '\\' && index + 1 < commandLine.Length
+            if (literal)
+            {
+                if (character == '\'')
+                {
+                    literal = false;
+                }
+                else
+                {
+                    current.Append(character);
+                }
+            }
+            else if (!quoted && character == '\'')
+            {
+                literal = true;
+                started = true;
+            }
+            else if (quoted && character == '\\' && index + 1 < commandLine.Length
                 && commandLine[index + 1] is '"' or '$' or '`')
             {
                 current.Append(commandLine[++index]);
@@ -90,7 +114,7 @@ public sealed class TempWorkspace : IDisposable
             throw new ArgumentException($"Not a command line of this CLI: {commandLine}", nameof(commandLine));
         }
 
-        return Execute(standardInput: null, variables, [.. tokens.Skip(1)]);
+        return Execute(standardInput, variables, [.. tokens.Skip(1)]);
     }
 
     /// <summary>Runs in evaluation mode with extra environment variables set on the child.</summary>
@@ -133,7 +157,7 @@ public sealed class TempWorkspace : IDisposable
         result = ValidateJsonContract(result, args);
         if (RequestsJson(args) && !IsSchemaCommand(args))
         {
-            Scenarios.ExecutableHints.Require(new Scenarios.HintRun(args, Path, _configDirectory.Path, variables), result);
+            Scenarios.ExecutableHints.Require(new Scenarios.HintRun(args, Path, _configDirectory.Path, variables, standardInput), result);
         }
         return result;
     }

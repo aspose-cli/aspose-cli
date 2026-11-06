@@ -125,7 +125,7 @@ public sealed class CellsOutputFormatTests : IClassFixture<CellsFixture>
             error["details"]!["available"]!.AsArray().Select(static extension => extension!.GetValue<string>()));
         Assert.Empty(Directory.GetFileSystemEntries(workspace.Path));
         string convert = $"aspose-cli cells convert <that file> --to {format}";
-        Assert.Equal($"Give the file one of these extensions, then run '{convert}' for {format}.", error["hint"]!.GetValue<string>());
+        Assert.Equal($"Give the file one of these extensions, then run '{convert} --output-format json' for {format}.", error["hint"]!.GetValue<string>());
 
         // The hint works as written: create a workbook, then run the convert it names.
         CliResult kept = workspace.Run("cells", "create", "book.xlsx", "--output-format", "json");

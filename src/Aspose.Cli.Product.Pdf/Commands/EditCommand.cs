@@ -13,6 +13,13 @@ internal static class EditCommand
                 VerifyDescription = "Read the staged output back and check the effect of each form, redaction, bookmark, metadata, attachment and page operation.",
                 Writes = PdfFormats.Document,
                 EncryptOnly = EncryptsAsTheOutputPassword,
+                // Every permission is denied unless the caller grants it as the original did, which
+                // inspect --detail permissions reads.
+                EncryptOwnerOnly = new OwnerPasswordEncryption<PdfOp>(
+                    static variable => new EncryptDocumentOp { OwnerPasswordEnv = variable },
+                    "permissions",
+                    "inspect",
+                    [("--detail", "permissions")]),
             }),
             "Apply one validated, atomic PDF operation batch.",
             new CommandTraits

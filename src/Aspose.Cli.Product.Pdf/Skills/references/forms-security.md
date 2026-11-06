@@ -90,8 +90,11 @@ password to keep, and a convert writes formats that cannot carry one: a convert
 to a document or text format, a `decrypt_document`, and a merge or split of an
 input with only an owner password warn `ENCRYPTION_REMOVED`
 (`aspose-cli docs editing`). Pass `--encrypt-env` where the output must stay
-protected. The warning's hint names the command that can protect the output by
-its path, such as `pdf edit`. To encrypt a PDF afterwards with passwords and
+protected. The warning's hint gives the command that protects the output, ready
+to run, such as `pdf edit` with an `encrypt_document` that sets only an owner
+password for an input that had only one; that operation grants readers nothing
+until you copy into its `permissions` what `pdf inspect <original> --detail
+permissions` reads from the input. To encrypt a PDF afterwards with passwords and
 permissions of its own, apply an `encrypt_document` operation: `ownerPasswordEnv`
 names the variable that holds the owner password, `userPasswordEnv` the one that
 holds the password to open it (omit it to keep the file opening without a

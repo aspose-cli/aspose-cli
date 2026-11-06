@@ -50,11 +50,11 @@ internal static class PdfConvert
         };
     }
 
-    // The conversion of the input that writes an editable file of the output's format, when another
-    // product writes one; otherwise nothing.
+    // The conversion of the input, or of the selected pages split from it, that writes an editable
+    // file of the output's format, when another product writes one; otherwise nothing.
     private static string Editable(PdfConvertRequest request) =>
-        request.EditableConversion is { } command
-            ? $" For an editable document, run '{command}' instead."
+        request.EditableConversion is { } commands
+            ? $" For an editable document, run {commands}."
             : string.Empty;
 
     /// <summary>

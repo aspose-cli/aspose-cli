@@ -39,7 +39,7 @@ public sealed class PdfOutputFormatTests : IDisposable
         Assert.Equal("OPTION_INVALID", error["code"]!.GetValue<string>());
         Assert.Equal("docx", error["details"]!["format"]!.GetValue<string>());
         string hint = error["hint"]!.GetValue<string>();
-        Assert.Equal("Give --out one of these extensions, then run 'aspose-cli words convert <that file> --to docx' for docx.", hint);
+        Assert.Equal("Give --out one of these extensions, then run 'aspose-cli words convert <that file> --to docx --output-format json' for docx.", hint);
         Assert.DoesNotContain("pdf convert", hint, StringComparison.Ordinal);
         Assert.False(File.Exists(_workspace.File("y.docx")));
 
@@ -66,7 +66,7 @@ public sealed class PdfOutputFormatTests : IDisposable
         Assert.Equal("OPTION_INVALID", error["code"]!.GetValue<string>());
         Assert.Equal(format, error["details"]!["format"]!.GetValue<string>());
         Assert.Equal(
-            $"Give --out one of these extensions, then run 'aspose-cli pdf convert <that file> --to {format}' for {format}.",
+            $"Give --out one of these extensions, then run 'aspose-cli pdf convert <that file> --to {format} --output-format json' for {format}.",
             error["hint"]!.GetValue<string>());
     }
 
@@ -130,6 +130,48 @@ public sealed class PdfOutputFormatTests : IDisposable
 
         // The shown command opens the encrypted input as written and converts it over the file just written.
         AssertWordsReplaces(_workspace.RunCommandLine(command, variables), "locked.pdf", "framed.docx");
+    }
+
+    /// <summary>
+    /// A conversion of selected pages to docx names the Words conversion of those pages alone:
+    /// the split of the pages from the input, then the conversion of the part over the file just
+    /// written. Run as written, the docx holds the selected page, not the whole document.
+    /// </summary>
+    [Category(TestCategory.Slow)]
+    [Fact]
+    public void ConvertOfSelectedPagesToDocx_NamesTheWordsConversionOfThosePagesAlone()
+    {
+        using (var document = new Aspose.Pdf.Document())
+        {
+            foreach (string line in new[] { "First page.", "Second page.", "Third page." })
+            {
+                document.Pages.Add().Paragraphs.Add(new Aspose.Pdf.Text.TextFragment(line));
+            }
+
+            document.Save(_workspace.File("three.pdf"));
+        }
+
+        CliResult converted = Run("pdf", "convert", "three.pdf", "--pages", "2", "--to", "docx", "--out", "page.docx");
+
+        Assert.True(converted.ExitCode == 0, converted.StdErr);
+        string hint = JsonNode.Parse(converted.StdOut)!["warnings"]!.AsArray()
+            .Single(static warning => warning!["code"]!.GetValue<string>() == "LOSSY_CONVERSION")!["hint"]!.GetValue<string>();
+        string[] commands = [.. System.Text.RegularExpressions.Regex.Matches(hint, "'(aspose-cli [^']+)'").Select(static match => match.Groups[1].Value)];
+        Assert.Equal(2, commands.Length);
+        Assert.StartsWith("aspose-cli pdf split ", commands[0], StringComparison.Ordinal);
+        Assert.Contains(" --by pages --groups 2 ", commands[0], StringComparison.Ordinal);
+        Assert.StartsWith("aspose-cli words convert ", commands[1], StringComparison.Ordinal);
+        Assert.Contains(" --overwrite", commands[1], StringComparison.Ordinal);
+        Assert.EndsWith("' instead; once the conversion has run, three.1.pdf, the part the split wrote beside the output, can be deleted.", hint, StringComparison.Ordinal);
+
+        CliResult split = _workspace.RunCommandLine(commands[0]);
+        Assert.True(split.ExitCode == 0, split.StdErr);
+        AssertWordsReplaces(_workspace.RunCommandLine(commands[1]), "three.1.pdf", "page.docx");
+        JsonNode inspected = Run("words", "inspect", "page.docx").Json();
+        Assert.Equal(1, inspected["document"]!["pageCount"]!.GetValue<int>());
+        string text = Run("words", "read", "page.docx").StdOut;
+        Assert.Contains("Second page.", text, StringComparison.Ordinal);
+        Assert.DoesNotContain("First page.", text, StringComparison.Ordinal);
     }
 
     // The command the LOSSY_CONVERSION warning of a conversion shows for an editable document.

@@ -57,6 +57,10 @@ public sealed class PartRangeOption
             ? option.Name
             : null;
 
+    /// <summary>Whether <paramref name="option"/> is a range option that selects the parts of <paramref name="unit"/>, such as <c>--pages</c> for pages.</summary>
+    internal static bool Selects(Option option, SplitBy unit) =>
+        Narrowings.TryGetValue(option, out _) && option.Name == "--" + SplitPlan.Spell(unit);
+
     /// <summary>The option name, such as <c>--pages</c>.</summary>
     public string Name => _range.Name;
 

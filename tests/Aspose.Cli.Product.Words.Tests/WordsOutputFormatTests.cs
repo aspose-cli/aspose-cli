@@ -77,7 +77,7 @@ public sealed class WordsOutputFormatTests
             error["details"]!["available"]!.AsArray().Select(static extension => extension!.GetValue<string>()));
         Assert.False(File.Exists(workspace.File(output)));
         string convert = $"aspose-cli words convert <that file> --to {format}";
-        Assert.Equal($"Give {(verb == "edit" ? "--out" : "the file")} one of these extensions, then run '{convert}' for {format}.", error["hint"]!.GetValue<string>());
+        Assert.Equal($"Give {(verb == "edit" ? "--out" : "the file")} one of these extensions, then run '{convert} --output-format json' for {format}.", error["hint"]!.GetValue<string>());
 
         // The hint works as written: the same command to a .docx, then the convert it names.
         CliResult kept = workspace.Run([.. Command(verb, "kept.docx"), "--output-format", "json"]);
@@ -100,7 +100,7 @@ public sealed class WordsOutputFormatTests
         Assert.Equal(2, refused.ExitCode);
         JsonNode error = JsonNode.Parse(refused.StdErr)!["error"]!;
         Assert.Equal("OPTION_INVALID", error["code"]!.GetValue<string>());
-        Assert.Equal("Name the output with --out and one of these extensions, then run 'aspose-cli words convert <that file> --to md' for md.", error["hint"]!.GetValue<string>());
+        Assert.Equal("Name the output with --out and one of these extensions, then run 'aspose-cli words convert <that file> --to md --output-format json' for md.", error["hint"]!.GetValue<string>());
         Assert.Equal(Notes, File.ReadAllText(workspace.File("notes.md")));
         CliResult copied = workspace.Run("words", "edit", "notes.md", "--ops", RefreshFields, "--out", "notes.docx", "--output-format", "json");
         Assert.True(copied.ExitCode == 0, copied.StdErr);

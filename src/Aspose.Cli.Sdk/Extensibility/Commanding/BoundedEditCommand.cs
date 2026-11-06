@@ -1,5 +1,4 @@
 using System.CommandLine;
-using System.CommandLine.Parsing;
 using System.Text.Json;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Errors;
@@ -55,7 +54,33 @@ public sealed record BoundedEditDefinition<TOp, TBatch>
     /// encrypt.
     /// </summary>
     public Func<string, TOp>? EncryptOnly { get; init; }
+
+    /// <summary>
+    /// How the edit encrypts with only an owner password, so that the file it writes still opens
+    /// without a password; null when the edit cannot. The hint of a copy that lost an owner password
+    /// alone shows it.
+    /// </summary>
+    public OwnerPasswordEncryption<TOp>? EncryptOwnerOnly { get; init; }
 }
+
+/// <summary>
+/// How an edit encrypts with only an owner password: the operation of its vocabulary that encrypts
+/// (<see cref="EncryptsOutputAttribute"/>), built from the environment variable that holds the owner
+/// password, which grants readers no permission; the field of that operation that grants them; and
+/// the product's command, with its options, that reads what a document grants, so a caller can grant
+/// what the original did.
+/// </summary>
+/// <param name="Operation">Builds the operation from the variable that holds the owner password.</param>
+/// <param name="PermissionsField">The operation's field that grants readers permissions, such as <c>permissions</c>.</param>
+/// <param name="PermissionsCommand">The command of the product, below it, that reads what a document grants, such as <c>inspect</c>.</param>
+/// <param name="PermissionsOptions">The options and values that command reads the permissions with.</param>
+/// <typeparam name="TOp">The edit's operation vocabulary.</typeparam>
+public sealed record OwnerPasswordEncryption<TOp>(
+    Func<string, TOp> Operation,
+    string PermissionsField,
+    string PermissionsCommand,
+    IReadOnlyList<(string Name, string Value)> PermissionsOptions)
+    where TOp : BoundedOperation, IOperationVocabulary<TOp>;
 
 /// <summary>One fully resolved bounded-edit invocation, ready for the product request.</summary>
 /// <param name="Input">The edited document.</param>
@@ -110,7 +135,7 @@ public sealed class BoundedEditCommand<TOp, TBatch>
         ArgumentNullException.ThrowIfNull(definition);
         ArgumentNullException.ThrowIfNull(definition.Contracts);
         ArgumentNullException.ThrowIfNull(definition.Writes);
-        if (definition.EncryptOnly is not null && !TOp.Catalog.Encrypts)
+        if ((definition.EncryptOnly is not null || definition.EncryptOwnerOnly is not null) && !TOp.Catalog.Encrypts)
         {
             throw new ArgumentException("An edit that declares how to only encrypt needs a vocabulary with an operation that encrypts.", nameof(definition));
         }
@@ -204,7 +229,6 @@ public sealed class BoundedEditCommand<TOp, TBatch>
                 CliErrors.Usage([_set is null
                     ? $"Give {OpsOption} (an ops JSON document)."
                     : $"Give {OpsOption} (an ops JSON document), {StandardOptionNames.Set}, or both."]),
-                parse,
                 standard,
                 encrypts);
         }
@@ -229,7 +253,7 @@ public sealed class BoundedEditCommand<TOp, TBatch>
         TBatch batch = Compose(
             source is null
                 ? null
-                : ParseDocument(source, paths, standard.Inputs, empty => compiled.Length == 0 ? WithEncryptOnly(empty, parse, standard, encrypts) : empty),
+                : ParseDocument(source, paths, standard.Inputs, empty => compiled.Length == 0 ? WithEncryptOnly(empty, standard, encrypts) : empty),
             compiled);
         // Every [InputPath] member resolves against the invocation directory; the edit never
         // publishes over a file an operation reads. A file that does not exist fails the
@@ -353,75 +377,52 @@ public sealed class BoundedEditCommand<TOp, TBatch>
     /// the same command line with that operation, built from the caller's variable, in place of the
     /// password option. The code, message and details stay as they are.
     /// </summary>
-    private CliException WithEncryptOnly(CliException error, ParseResult parse, StandardInvocation standard, bool encrypts) =>
-        EncryptOnly(parse, standard, encrypts) is { } only
+    private CliException WithEncryptOnly(CliException error, StandardInvocation standard, bool encrypts) =>
+        EncryptOnly(standard, encrypts) is { } only
             ? CliException.Create(error.Code, error.Message, hint: $"{error.Hint} {only}", details: error.Details, docs: error.Docs)
             : error;
 
-    // The sentence that shows how to only encrypt, or null when the edit cannot or the command line
-    // holds a secret given literally, which a hint never repeats.
-    private string? EncryptOnly(ParseResult parse, StandardInvocation standard, bool encrypts)
-    {
-        if (!encrypts || _definition.EncryptOnly is not { } encryptOnly || standard.EncryptEnvironment() is not { } environment)
-        {
-            return null;
-        }
+    /// <summary>
+    /// The operation documents with which this edit only encrypts what it publishes, from the
+    /// definition's <see cref="BoundedEditDefinition{TOp, TBatch}.EncryptOnly"/> and
+    /// <see cref="BoundedEditDefinition{TOp, TBatch}.EncryptOwnerOnly"/>.
+    /// </summary>
+    internal EncryptionOperations Encryption => new(
+        _definition.EncryptOnly is { } encrypt ? variable => EncryptingDocument(encrypt(variable)) : null,
+        _definition.EncryptOwnerOnly is { } ownerOnly ? variable => EncryptingDocument(ownerOnly.Operation(variable)) : null,
+        _definition.EncryptOwnerOnly is { } reader
+            ? new PermissionsReader(reader.PermissionsField, reader.PermissionsCommand, reader.PermissionsOptions)
+            : null);
 
-        TOp operation = encryptOnly(environment.Variable);
+    // The one operation that encrypts as a compact operation array, as --ops takes it.
+    private string EncryptingDocument(TOp operation)
+    {
         if (TOp.Catalog.NameOf(operation) != TOp.Catalog.Encryptor?.Name)
         {
             throw new InvalidOperationException($"The operation that only encrypts is not the vocabulary's operation that encrypts, but {TOp.Catalog.NameOf(operation)}.");
         }
 
-        var tokens = new List<string> { DistributionInfo.CommandName };
-        if (!AddArguments(parse.RootCommandResult, environment.Option, tokens))
+        var compact = new JsonSerializerOptions(_definition.Contracts.LocalOptions) { WriteIndented = false };
+        return $"[{JsonSerializer.Serialize(operation, typeof(TOp), compact)}]";
+    }
+
+    // The sentence that shows how to only encrypt: this command line again (StandardInvocation.Again)
+    // with that operation in place of the operation document and the output password options; null
+    // when the edit cannot, or the command line holds a secret given literally, which a hint never
+    // repeats, or a backtick, in which the sentence quotes the command.
+    private string? EncryptOnly(StandardInvocation standard, bool encrypts)
+    {
+        if (!encrypts || _definition.EncryptOnly is not { } encryptOnly || standard.EncryptEnvironment() is not { } environment
+            || standard.Again([_ops, .. standard.OutputPasswordOptions]) is not { } again)
         {
             return null;
         }
 
-        var compact = new JsonSerializerOptions(_definition.Contracts.LocalOptions) { WriteIndented = false };
-        tokens.Add(OpsOption);
-        tokens.Add($"'[{JsonSerializer.Serialize(operation, typeof(TOp), compact)}]'");
-        string command = string.Join(' ', tokens);
-        // The command is quoted in backticks, which none of its tokens may hold.
-        return command.Contains('`', StringComparison.Ordinal)
-            ? null
-            : $"To only encrypt, run `{command}`.";
-    }
-
-    // Appends the command line's commands, arguments and options as the caller gave them, without
-    // the operation document and the dropped option; false when an option holds a literal secret.
-    private bool AddArguments(CommandResult command, string dropped, List<string> tokens)
-    {
-        foreach (SymbolResult child in command.Children)
-        {
-            switch (child)
-            {
-                case CommandResult subcommand:
-                    tokens.Add(subcommand.IdentifierToken.Value);
-                    if (!AddArguments(subcommand, dropped, tokens))
-                    {
-                        return false;
-                    }
-
-                    break;
-                case OptionResult { Implicit: true }:
-                    break;
-                case OptionResult option when option.Option == _ops || option.Option.Name == dropped:
-                    break;
-                case OptionResult option when option.Option.GetParameterMetadata() is { Secret: true, ValueSource: ParameterValueSource.CommandLine }:
-                    return false;
-                case OptionResult option:
-                    tokens.Add(option.IdentifierToken?.Value ?? option.Option.Name);
-                    tokens.AddRange(option.Tokens.Select(static token => CommandLineText.Quote(token.Value)));
-                    break;
-                case ArgumentResult argument:
-                    tokens.AddRange(argument.Tokens.Select(static token => CommandLineText.Quote(token.Value)));
-                    break;
-            }
-        }
-
-        return true;
+        ContinuationCommand command = again.Command.Document(OpsOption, EncryptingDocument(encryptOnly(environment.Variable)));
+        string quoted = command.Quoted();
+        return quoted.StartsWith('`') && !command.ToString().Contains('`', StringComparison.Ordinal)
+            ? $"To only encrypt, run {quoted}{again.Repeating}."
+            : null;
     }
 
     private static string? ReconcileIfMatch(string? command, string? document)
