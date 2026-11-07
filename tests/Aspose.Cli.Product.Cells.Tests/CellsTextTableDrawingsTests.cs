@@ -166,8 +166,8 @@ public sealed class CellsTextTableDrawingsTests : IDisposable
     /// <summary>
     /// A workbook of one sheet loses nothing else to csv, so the left-out drawings alone fail a
     /// verified edit: exit 8, with them as its only issue, where the same edit without
-    /// <c>--verify</c> exits 0 and warns of them. An evaluation save adds its warning sheet to
-    /// the workbook, which then has a second sheet the csv leaves out (<c>SHEETS_DROPPED</c>).
+    /// <c>--verify</c> exits 0 and warns of them. The warning sheet an evaluation save adds to
+    /// the workbook is no worksheet of it, so the csv drops no sheet in evaluation mode either.
     /// </summary>
     [Fact]
     public void VerifiedEditToCsv_OfAOneSheetWorkbookWithDrawings_FailsOnTheLeftOutDrawingsAlone()
@@ -181,7 +181,7 @@ public sealed class CellsTextTableDrawingsTests : IDisposable
         JsonNode verification = JsonNode.Parse(verified.StdOut)!["verification"]!;
         Assert.False(verification["ok"]!.GetValue<bool>());
         string[] issues = [.. verification["issues"]!.AsArray().Select(static issue => Code(issue!))];
-        Assert.Equal(TestLicense.Path is null ? ["SHEETS_DROPPED", LossyConversion] : [LossyConversion], issues);
+        Assert.Equal([LossyConversion], issues);
         Assert.True(written.ExitCode == 0, $"exit {written.ExitCode}: {written.StdErr}{written.StdOut}");
         Assert.Single(Warnings(JsonNode.Parse(written.StdOut)!), static warning => Code(warning) == LossyConversion);
     }

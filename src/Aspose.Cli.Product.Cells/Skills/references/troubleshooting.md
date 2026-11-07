@@ -46,17 +46,23 @@ with `--sheet`.
 ## Outputs that hold less than the workbook
 
 A format that holds one worksheet (csv, tsv, md) keeps one sheet and warns
-`SHEETS_DROPPED` with the sheet kept; select another with `--sheets`. It writes
+`SHEETS_DROPPED` with the sheet kept and the sheets left out, the first ten by
+name; select another with `--sheets`. It writes
 that sheet's cells as a table and leaves out its charts, pictures and other
 drawings, and warns `LOSSY_CONVERSION` with how many of each: convert to xlsx
-or pdf to keep them, or `cells render` an image of the sheet. A target grid
+or pdf to keep them, or `cells render` an image of the sheet. `cells convert`
+also warns `LOSSY_CONVERSION` for the headers and footers of that sheet, which
+the table leaves out, and, to csv or tsv, for its comments. A target grid
 smaller than the data, such as xls with 65,536 rows, warns `DATA_TRUNCATED`,
 and formulas that referenced the lost cells become `#REF!` with
 `FORMULAS_BROKEN`: save to xlsx, xlsb or ods instead.
 
 An md output writes each cell as the sheet shows it (`700,000`, `38.6%`),
 where csv and tsv write the stored value, so the table can go straight to
-`words create --from-markdown`, and it keeps the sheet's comments.
+`words create --from-markdown`. It writes the sheet's comments after the
+table as footnote definitions (`[^Comment_0_1]: ...`) that no cell refers to,
+so a Markdown reader may not show them and `words create --from-markdown`
+leaves them out; read them with `cells inspect --detail comments`.
 
 A PDF or XPS prints only the comments its page setup prints, by default none,
 and warns `LOSSY_CONVERSION` with how many comments each sheet it prints has.
@@ -203,7 +209,8 @@ handle these effects:
   rebuild the workbook and the export with a license.
 - CSV, TSV and Markdown export only the first worksheet. Without `--sheets` the
   first sheet is written even when another one is active, and
-  `SHEETS_DROPPED` names it; `--sheets` selecting another sheet fails with
+  `SHEETS_DROPPED` names it and the sheets left out, never a warning sheet;
+  `--sheets` selecting another sheet fails with
   `EVALUATION_LIMIT` and writes nothing.
 - `review` reports each warning sheet as `CELLS_EVALUATION_SHEET`, with or
   without a license.

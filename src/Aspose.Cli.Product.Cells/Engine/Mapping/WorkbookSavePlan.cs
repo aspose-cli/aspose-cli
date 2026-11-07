@@ -1,3 +1,4 @@
+using System.Globalization;
 using Aspose.Cli.Sdk.Formats;
 using Aspose.Cli.Sdk.IO.Output;
 using Aspose.Cli.Sdk.Licensing;
@@ -12,6 +13,9 @@ namespace Aspose.Cli.Product.Cells.Engine.Mapping;
 /// </summary>
 internal sealed record WorkbookSavePlan(string FormatId, SaveFormat Format, SaveOptions? Options, OutputProtection Protection, bool IsEvaluation)
 {
+    /// <summary>The most worksheets a <c>SHEETS_DROPPED</c> names one by one.</summary>
+    private const int NamedSheets = 10;
+
     internal static WorkbookSavePlan Create(FormatDescriptor output, LicenseState licenseState,
         OutputProtection protection, IReadOnlyList<int>? selectedSheets = null, bool byteOrderMark = false)
     {
@@ -30,12 +34,38 @@ internal sealed record WorkbookSavePlan(string FormatId, SaveFormat Format, Save
     /// <summary>Whether the output carries a password.</summary>
     internal bool Encrypts => Protection.Encrypted;
 
-    internal Warning? DetectSheetLoss(Workbook workbook) =>
-        WritesActiveSheetOnly && workbook.Worksheets.Count > 1 ? new Warning(CellsDiagnostics.SheetsDropped, $"Only worksheet '{TextSheet(workbook).Name}' was exported; the '{FormatId}' output holds one worksheet, so {workbook.Worksheets.Count - 1} other worksheet(s) were not written.")
+    /// <summary>
+    /// The <c>SHEETS_DROPPED</c> of a text format, which writes only <see cref="TextSheet"/>: it
+    /// names the other worksheets, the first <see cref="NamedSheets"/> by name and the rest by
+    /// count; null when the workbook has no other. The evaluation warning sheets are no content of
+    /// the workbook (<see cref="CellsEvaluation.IsWarningSheet"/>) and are neither named nor counted.
+    /// </summary>
+    internal Warning? DetectSheetLoss(Workbook workbook)
+    {
+        if (!WritesActiveSheetOnly)
+        {
+            return null;
+        }
+
+        Worksheet written = TextSheet(workbook);
+        string[] dropped = [.. workbook.Worksheets.Cast<Worksheet>()
+            .Where(sheet => sheet.Index != written.Index && !CellsEvaluation.IsWarningSheet(sheet))
+            .Select(static sheet => $"'{sheet.Name}'")];
+        if (dropped.Length == 0)
+        {
+            return null;
+        }
+
+        string named = dropped.Length <= NamedSheets
+            ? string.Join(", ", dropped)
+            : string.Create(CultureInfo.InvariantCulture, $"{string.Join(", ", dropped.Take(NamedSheets))} and {dropped.Length - NamedSheets} more");
+        return new Warning(CellsDiagnostics.SheetsDropped, string.Create(CultureInfo.InvariantCulture,
+            $"Only worksheet '{written.Name}' was exported; the '{FormatId}' output holds one worksheet, so {dropped.Length} other worksheet(s) were not written: {named}."))
         {
             Hint = "Use a multi-sheet format (xlsx, xlsb, ods, pdf) to retain every worksheet.",
             AffectsCompleteness = true,
-        } : null;
+        };
+    }
 
     /// <summary>
     /// Removes from the in-memory workbook the drawings of the sheet a format that

@@ -1,6 +1,7 @@
 using System.Globalization;
 using Aspose.Cells;
 using Aspose.Cells.Charts;
+using Aspose.Cells.Drawing;
 using Aspose.Cli.Product.Cells.Engine.Mapping;
 using Aspose.Cli.Sdk.Text;
 
@@ -9,10 +10,8 @@ namespace Aspose.Cli.Product.Cells.Engine.Editing;
 /// <summary>Replaces text within the text values of a sheet's cells.</summary>
 internal static class TextReplaceOps
 {
-    /// <summary>The most cells whose comments a warning names one by one.</summary>
-    private const int NamedComments = 10;
-
-    private static readonly string[] Sections = ["left", "center", "right"];
+    /// <summary>The most cells whose comments, or drawings, a warning names one by one.</summary>
+    private const int NamedItems = 10;
 
     /// <summary>
     /// Replaces the matches of <paramref name="op"/> in the text cells of its range, row by row,
@@ -48,71 +47,167 @@ internal static class TextReplaceOps
     /// <summary>
     /// The text of the sheet outside its cells that holds a match of <paramref name="op"/>, which
     /// <see cref="Replace"/> leaves as it is: one <c>TEXT_NOT_REPLACED</c> warning each for the
-    /// header and footer, the comments and the chart titles that hold one, matched as
-    /// the operation matches a cell's text (regex, caseSensitive and wholeWord). The header,
-    /// footer and chart titles are read as a read reports them, an automatic chart title as none.
-    /// A range reaches only the comments of its cells; the header, footer and charts belong to the
-    /// whole sheet. A warning never repeats the find text or the text that holds the match.
+    /// header and footer, the comments, the chart titles, the axis titles and the text of the
+    /// drawings, such as text boxes, that hold one, matched as the operation matches a cell's text
+    /// (regex, caseSensitive and wholeWord). The header and footer are matched on the text they
+    /// print, past their formatting codes (<see cref="HeaderFooterText.Visible"/>), in every
+    /// section that prints on some page: the first page's and the even pages' too when the sheet
+    /// has its own for them. The chart and axis titles are read as a read reports them: an
+    /// automatic title as none, and the axis titles of a pie, which has no axes, as none. A title
+    /// linked to a cell follows the cell, so it is not named either. A range reaches only the
+    /// comments of its cells; the header, footer, charts and drawings belong to the whole sheet.
+    /// A warning never repeats the find text or the text that holds the match.
     /// </summary>
     public static IReadOnlyList<Warning> Unreached(Worksheet sheet, ReplaceTextOp op)
     {
         TextReplacement replacement = Replacement(op);
         RangeRef? range = Range(op);
         bool Holds(string? text) => !string.IsNullOrEmpty(text) && replacement.Matches(text, 1).Count > 0;
-        var warnings = new List<Warning>();
-
-        if (range is null)
-        {
-            PageSetup page = sheet.PageSetup;
-            int[] header = [.. Enumerable.Range(0, Sections.Length).Where(section => Holds(page.GetHeader(section)))];
-            int[] footer = [.. Enumerable.Range(0, Sections.Length).Where(section => Holds(page.GetFooter(section)))];
-            string[] parts = [.. Part("header", header), .. Part("footer", footer)];
-            if (parts.Length > 0)
-            {
-                bool sides = header.Concat(footer).Any(static section => section != 1);
-                warnings.Add(Warning(op, sheet, TextPart.HeaderFooter, $"the {string.Join(" and the ", parts)}", parts.Length > 1,
-                    "Read the header and footer with 'aspose-cli cells inspect <file> --detail layout', then set the new text with set_page_setup, "
-                        + "whose headerCenter and footerCenter replace the center sections"
-                        + (sides ? "; no operation changes the left and right sections." : "."),
-                    CellsAddresses.OfSheet("page-setup", sheet.Name)));
-            }
-        }
-
-        Comment[] comments = [.. sheet.Comments.Cast<Comment>()
-            .Where(comment => Within(range, comment.Row, comment.Column) && Holds(comment.Note))
-            .OrderBy(static comment => comment.Row).ThenBy(static comment => comment.Column)];
-        if (comments.Length > 0)
-        {
-            string[] cells = [.. comments.Select(static comment => A1.FormatCell(new CellRef(comment.Row, comment.Column)))];
-            string named = cells.Length <= NamedComments
-                ? string.Join(", ", cells)
-                : string.Create(CultureInfo.InvariantCulture, $"{string.Join(", ", cells.Take(NamedComments))} and {cells.Length - NamedComments} more");
-            warnings.Add(Warning(op, sheet, TextPart.Comment, $"the {(cells.Length == 1 ? "comment of cell" : "comments of cells")} {named}", cells.Length > 1,
-                "Read the comments with 'aspose-cli cells inspect <file> --detail comments', then set the new text of each with set_comment.",
-                cells.Length == 1 ? CellsAddresses.At("comment", sheet.Name, cells[0]) : CellsAddresses.OfSheet("sheet", sheet.Name)));
-        }
-
-        if (range is null)
-        {
-            int[] charts = [.. Enumerable.Range(0, sheet.Charts.Count).Where(index => Holds(Title(sheet.Charts[index])))];
-            if (charts.Length > 0)
-            {
-                string numbers = string.Join(", ", charts.Select(static index => (index + 1).ToString(CultureInfo.InvariantCulture)));
-                warnings.Add(Warning(op, sheet, TextPart.ChartTitle, $"the {(charts.Length == 1 ? "title of chart" : "titles of charts")} {numbers}", charts.Length > 1,
-                    "Read the titles with 'aspose-cli cells inspect <file> --detail charts', then set each new title with set_chart and the index of its chart.",
-                    charts.Length == 1 ? CellsAddresses.Indexed("chart", sheet.Name, charts[0]) : CellsAddresses.OfSheet("sheet", sheet.Name)));
-            }
-        }
-
-        return warnings;
+        Warning?[] warnings =
+        [
+            range is null ? HeaderFooter(sheet, op, Holds) : null,
+            Comments(sheet, op, range, Holds),
+            range is null ? ChartTitles(sheet, op, Holds) : null,
+            range is null ? AxisTitles(sheet, op, Holds) : null,
+            range is null ? Drawings(sheet, op, Holds) : null,
+        ];
+        return [.. warnings.OfType<Warning>()];
     }
 
-    /// <summary>A part of the header or footer and the sections that hold a match, such as <c>header (center)</c>.</summary>
-    private static IEnumerable<string> Part(string part, int[] sections) =>
-        sections.Length == 0 ? [] : [$"{part} ({string.Join(", ", sections.Select(static section => Sections[section]))})"];
+    /// <summary>The header and footer sections that hold a match, named by their part and section, such as <c>the header (center) and the first-page footer (left)</c>.</summary>
+    private static Warning? HeaderFooter(Worksheet sheet, ReplaceTextOp op, Func<string?, bool> holds)
+    {
+        HeaderFooterSection[] matched = [.. HeaderFooterText.InEffect(sheet.PageSetup).Where(section => holds(HeaderFooterText.Visible(section.Text)))];
+        if (matched.Length == 0)
+        {
+            return null;
+        }
 
-    /// <summary>A chart's title as a read reports it: its text, or none when the title is automatic.</summary>
-    private static string? Title(Chart chart) => chart.Title.IsAutoText ? null : chart.Title.Text;
+        string[] parts = [.. matched.GroupBy(static section => section.Part)
+            .Select(static part => $"{part.Key} ({string.Join(", ", part.Select(static section => HeaderFooterText.SectionName(section.Section)))})")];
+        HeaderFooterSection[] read = [.. matched.Where(static section => section.Pages == HeaderFooterPages.Default)];
+        bool first = matched.Any(static section => section.Pages == HeaderFooterPages.FirstPage);
+        bool even = matched.Any(static section => section.Pages == HeaderFooterPages.EvenPages);
+        var hint = new List<string>();
+        if (read.Length > 0)
+        {
+            hint.Add("Read the header and footer with 'aspose-cli cells inspect <file> --detail layout', then set the new text with set_page_setup, "
+                + "whose headerCenter and footerCenter replace the center sections"
+                + (read.Any(static section => section.Section != 1) ? "; no operation changes the left and right sections." : "."));
+        }
+
+        if (first || even)
+        {
+            string pages = (first, even) switch
+            {
+                (true, true) => "of the first page and of the even pages",
+                (true, false) => "of the first page",
+                _ => "of the even pages",
+            };
+            hint.Add($"No operation reads or changes the header and footer {pages}: tell the user they still hold the old text.");
+        }
+
+        return Warning(op, sheet, TextPart.HeaderFooter, $"the {string.Join(" and the ", parts)}", parts.Length > 1,
+            string.Join(" ", hint), CellsAddresses.OfSheet("page-setup", sheet.Name));
+    }
+
+    /// <summary>The comments that hold a match, of the cells of the range when the operation has one, by their cells.</summary>
+    private static Warning? Comments(Worksheet sheet, ReplaceTextOp op, RangeRef? range, Func<string?, bool> holds)
+    {
+        Comment[] comments = [.. sheet.Comments.Cast<Comment>()
+            .Where(comment => Within(range, comment.Row, comment.Column) && holds(comment.Note))
+            .OrderBy(static comment => comment.Row).ThenBy(static comment => comment.Column)];
+        if (comments.Length == 0)
+        {
+            return null;
+        }
+
+        string[] cells = [.. comments.Select(static comment => A1.FormatCell(new CellRef(comment.Row, comment.Column)))];
+        return Warning(op, sheet, TextPart.Comment, $"the {(cells.Length == 1 ? "comment of cell" : "comments of cells")} {Named(cells)}", cells.Length > 1,
+            "Read the comments with 'aspose-cli cells inspect <file> --detail comments', then set the new text of each with set_comment.",
+            cells.Length == 1 ? CellsAddresses.At("comment", sheet.Name, cells[0]) : CellsAddresses.OfSheet("sheet", sheet.Name));
+    }
+
+    /// <summary>The chart titles that hold a match, by the number of their chart.</summary>
+    private static Warning? ChartTitles(Worksheet sheet, ReplaceTextOp op, Func<string?, bool> holds)
+    {
+        int[] charts = [.. Enumerable.Range(0, sheet.Charts.Count).Where(index => holds(Title(sheet.Charts[index].Title)))];
+        if (charts.Length == 0)
+        {
+            return null;
+        }
+
+        string numbers = string.Join(", ", charts.Select(static index => (index + 1).ToString(CultureInfo.InvariantCulture)));
+        return Warning(op, sheet, TextPart.ChartTitle, $"the {(charts.Length == 1 ? "title of chart" : "titles of charts")} {numbers}", charts.Length > 1,
+            "Read the titles with 'aspose-cli cells inspect <file> --detail charts', then set each new title with set_chart and the index of its chart.",
+            charts.Length == 1 ? CellsAddresses.Indexed("chart", sheet.Name, charts[0]) : CellsAddresses.OfSheet("sheet", sheet.Name));
+    }
+
+    /// <summary>
+    /// The axis titles that hold a match, by the number of their chart and their axes, such as
+    /// <c>the axis titles of chart 1 (category, value)</c>.
+    /// </summary>
+    private static Warning? AxisTitles(Worksheet sheet, ReplaceTextOp op, Func<string?, bool> holds)
+    {
+        var matched = new List<(int Chart, string[] Axes)>();
+        for (int index = 0; index < sheet.Charts.Count; index++)
+        {
+            Chart chart = sheet.Charts[index];
+            if (ChartPivotVocabulary.IsPieFamily(chart.Type))
+            {
+                continue;
+            }
+
+            string[] axes = [.. new[] { ("category", chart.CategoryAxis.Title), ("value", chart.ValueAxis.Title) }
+                .Where(axis => holds(Title(axis.Item2))).Select(static axis => axis.Item1)];
+            if (axes.Length > 0)
+            {
+                matched.Add((index, axes));
+            }
+        }
+
+        if (matched.Count == 0)
+        {
+            return null;
+        }
+
+        int titles = matched.Sum(static chart => chart.Axes.Length);
+        string charts = string.Join(", ", matched.Select(static chart => string.Create(CultureInfo.InvariantCulture, $"{chart.Chart + 1} ({string.Join(", ", chart.Axes)})")));
+        return Warning(op, sheet, TextPart.AxisTitle, $"the {(titles == 1 ? "axis title" : "axis titles")} of {(matched.Count == 1 ? "chart" : "charts")} {charts}", titles > 1,
+            "Read the axis titles with 'aspose-cli cells inspect <file> --detail charts', then set the new titles with set_chart, its axisTitles and the index of its chart.",
+            matched.Count == 1 ? CellsAddresses.Indexed("chart", sheet.Name, matched[0].Chart) : CellsAddresses.OfSheet("sheet", sheet.Name));
+    }
+
+    /// <summary>
+    /// The drawings whose own text holds a match, such as a text box, by their names: every shape
+    /// but a comment, a chart, whose titles are named apart, and a group, whose shapes are named.
+    /// </summary>
+    private static Warning? Drawings(Worksheet sheet, ReplaceTextOp op, Func<string?, bool> holds)
+    {
+        string[] names = [.. sheet.Shapes.Cast<Shape>()
+            .Where(shape => shape is not (CommentShape or ChartShape or GroupShape) && holds(shape.Text))
+            .Select(static shape => $"'{shape.Name}'")];
+        if (names.Length == 0)
+        {
+            return null;
+        }
+
+        return Warning(op, sheet, TextPart.TextBox, $"the text of {(names.Length == 1 ? "drawing" : "drawings")} {Named(names)}", names.Length > 1,
+            "No operation reads or changes the text of a text box or another drawing: tell the user it still holds the old text.",
+            CellsAddresses.OfSheet("sheet", sheet.Name));
+    }
+
+    /// <summary>The first <see cref="NamedItems"/> of <paramref name="items"/> and how many more, such as <c>B1, B2 and 2 more</c>.</summary>
+    private static string Named(string[] items) => items.Length <= NamedItems
+        ? string.Join(", ", items)
+        : string.Create(CultureInfo.InvariantCulture, $"{string.Join(", ", items.Take(NamedItems))} and {items.Length - NamedItems} more");
+
+    /// <summary>
+    /// A chart or axis title as a read reports it: its text, or none when the title is automatic
+    /// or the chart has none; and none when it is linked to a cell, whose text it follows.
+    /// </summary>
+    private static string? Title(Title? title) =>
+        title is null || title.IsAutoText || !string.IsNullOrEmpty(title.LinkedSource) ? null : title.Text;
 
     private static Warning Warning(ReplaceTextOp op, Worksheet sheet, TextPart part, string what, bool several, string hint, string location) =>
         UnreplacedText.Warning(part, op, "replace_text",
