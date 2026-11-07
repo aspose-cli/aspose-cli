@@ -69,6 +69,13 @@ PDF has fixed pages; review the results. Raster outputs keep no selectable text
 or interactive features, and SVG or XPS keep no editable structure, forms,
 annotations or signatures.
 
+A form field's value is not page text, so `--to txt` and `--to md` leave out
+the values of filled fields; a `LOSSY_CONVERSION` with `details.content`
+`["form-values"]` counts and names those fields. To convert the values as text,
+flatten the fields with `flatten_forms` in a `pdf edit` to a new `--out` file,
+which ends their fillability, and convert that file; to read the values, use
+`pdf inspect --detail forms`.
+
 HTML output is one self-contained file that places every line of text
 absolutely and embeds subsets of the PDF's fonts; its `<title>` is the PDF
 title. Only a browser lays it out as the pages look: `review` does not take it

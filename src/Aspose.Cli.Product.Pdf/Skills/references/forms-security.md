@@ -16,7 +16,12 @@ file for other form software in the format `--form-format` names: `fdf`,
 `xfdf`, or with `json` the engine's own JSON, whose field names (`Name`,
 `PageIndex`, `Flags`, `Value`) differ from the inspect result's and that no
 schema describes. To hand field values to another program, read them with
-`inspect --detail forms`.
+`inspect --detail forms`. A field's value is not page text: `pdf read` returns
+none, and warns `FORM_VALUES_NOT_IN_TEXT` naming the filled fields on the pages
+it read, and a conversion to text or Markdown leaves the values out
+([conversions](pdf-standards.md)). The hint of either warning gives the
+`pdf inspect --detail forms` command for the input, with its `--password-env`
+when it was opened with one.
 
 `set_form_field` addresses an AcroForm field by its exact full name. Each field's
 `kind` is one of `text` (including date, number, password and rich-text boxes),

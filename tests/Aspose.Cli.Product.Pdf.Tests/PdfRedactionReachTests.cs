@@ -283,6 +283,68 @@ public sealed class PdfRedactionReachTests
     }
 
     /// <summary>
+    /// The characters a cover took from the line above its match leave the output without text
+    /// no operation selected: the edit warns with or without <c>--verify</c>, and with it the
+    /// verification reports the warning as an issue and the edit exits 8, the output published.
+    /// </summary>
+    [Fact]
+    public void RedactText_ThatTakesNeighbouringText_FailsTheVerification()
+    {
+        using var workspace = new TempWorkspace();
+        Contacts(workspace.File("contacts.pdf"), nameLine: 600);
+        const string Ops = """[{"op":"redact_text","find":"ZHANG"}]""";
+
+        CliResult verified = workspace.Run("pdf", "edit", "contacts.pdf", "--out", "verified.pdf", "--verify", "--output-format", "json", "--ops", Ops);
+        CliResult unverified = workspace.Run("pdf", "edit", "contacts.pdf", "--out", "unverified.pdf", "--output-format", "json", "--ops", Ops);
+
+        Assert.True(verified.ExitCode == 8, verified.StdOut + verified.StdErr);
+        JsonNode result = JsonNode.Parse(verified.StdOut)!;
+        JsonNode beside = Assert.Single(result["warnings"]!.AsArray(), static warning => warning!["code"]!.GetValue<string>() == "REDACTION_NEARBY_TEXT_REMOVED")!;
+        Assert.True(beside["affectsCompleteness"]!.GetValue<bool>());
+        Assert.False(result["verification"]!["ok"]!.GetValue<bool>());
+        JsonNode issue = Assert.Single(result["verification"]!["issues"]!.AsArray())!;
+        Assert.Equal("REDACTION_NEARBY_TEXT_REMOVED", issue["code"]!.GetValue<string>());
+        Assert.Equal(beside["message"]!.GetValue<string>(), issue["message"]!.GetValue<string>());
+        Assert.True(File.Exists(workspace.File("verified.pdf")));
+        Assert.True(unverified.ExitCode == 0, unverified.StdOut + unverified.StdErr);
+        Assert.Contains(unverified.Json()["warnings"]!.AsArray(), static warning => warning!["code"]!.GetValue<string>() == "REDACTION_NEARBY_TEXT_REMOVED");
+    }
+
+    /// <summary>A cover that takes nothing beside its match leaves a verified edit that exits 0.</summary>
+    [Fact]
+    public void RedactText_ThatTakesNothingBeside_PassesTheVerification()
+    {
+        using var workspace = new TempWorkspace();
+        Contacts(workspace.File("contacts.pdf"), nameLine: 500);
+
+        CliResult run = workspace.Run("pdf", "edit", "contacts.pdf", "--out", "out.pdf", "--verify", "--output-format", "json", "--ops",
+            """[{"op":"redact_text","find":"ZHANG"}]""");
+
+        Assert.True(run.ExitCode == 0, run.StdOut + run.StdErr);
+        JsonNode result = run.Json();
+        Assert.True(result["verification"]!["ok"]!.GetValue<bool>());
+        Assert.DoesNotContain(result["warnings"]?.AsArray() ?? [], static warning => warning!["code"]!.GetValue<string>() == "REDACTION_NEARBY_TEXT_REMOVED");
+    }
+
+    /// <summary>
+    /// A page with a phone number at 612 points from its bottom and a name at
+    /// <paramref name="nameLine"/>, both 20 points high: 12 points below the number, the name's
+    /// cover overlaps it.
+    /// </summary>
+    private static void Contacts(string path, int nameLine)
+    {
+        string content = string.Create(CultureInfo.InvariantCulture, $"BT /F1 20 Tf 1 0 0 1 20 612 Tm (13998765432) Tj 1 0 0 1 20 {nameLine} Tm (ZHANG) Tj ET");
+        PdfEngineFixture.WriteRawPdf(path,
+        [
+            "<< /Type /Catalog /Pages 2 0 R >>",
+            "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+            "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 400 800] /Resources << /Font << /F1 5 0 R >> >> /Contents 4 0 R >>",
+            $"<< /Length {content.Length} >>\nstream\n{content}\nendstream",
+            "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>",
+        ]);
+    }
+
+    /// <summary>
     /// A pattern that takes too long on text the publish check searches leaves the output
     /// unchecked, so it is not published.
     /// </summary>

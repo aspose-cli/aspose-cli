@@ -29,7 +29,7 @@ internal static class EditCommand
                 UsesFonts = true,
             },
             [],
-            static (_, edit, _) => new PdfEditRequest(edit),
+            static (_, edit, standard) => new PdfEditRequest(edit) { OutlineInspection = PdfInputs.OutlineInspection(standard, edit.Output) },
             Table,
             examples:
             [

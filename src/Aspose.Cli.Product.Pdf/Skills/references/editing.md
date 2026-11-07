@@ -115,8 +115,16 @@ when the inputs' paper differs, such as A4 and Letter: set one paper size in the
 sources before converting them to PDF.
 Each publishes its output with
 a `NAVIGATION_DEGRADED` warning that counts the entries that no longer lead where
-they did. Re-create them with `add_bookmark` and `add_hyperlink`, or reorder pages
-before adding navigation, then follow the destination checks in
+they did. In `pdf edit` the entries whose page the batch deleted, as asked, have
+a warning of their own; remove the bookmarks you no longer need with
+`delete_bookmarks`. The entries whose page is still in the output, such as one
+with a coordinate of 0 on a page `move_pages` moved, have a warning with
+`affectsCompleteness: true`, whose hint gives the `pdf inspect --detail outline`
+command that reads the page each bookmark of the input opened: in the same batch,
+after the page operations, delete those bookmarks with `delete_bookmarks` and add
+them again with `add_bookmark`.
+No operation re-creates a link or a named destination: tell the user which no
+longer lead to their page. Then follow the destination checks in
 [verification](verification.md).
 
 ## Redaction
@@ -181,7 +189,8 @@ the text that follows them on their lines:
   shows. On closely set lines the engine also removes characters of a
   neighbouring line that a cover overlaps; a `REDACTION_NEARBY_TEXT_REMOVED`
   warning names each operation and page with the number of such characters and
-  lines, never the text itself.
+  lines, never the text itself, and with `--verify` the edit exits 8 on it
+  ([verification](verification.md)).
   Do not widen an area there. Confirm a redaction by
   `pdf search` no longer finding the text, not by the black box.
   Order the areas of one line from right to left, because each removal moves

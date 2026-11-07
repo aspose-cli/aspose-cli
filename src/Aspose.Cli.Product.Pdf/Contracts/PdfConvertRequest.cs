@@ -20,4 +20,11 @@ public sealed record PdfConvertRequest
     /// writes an editable file of the format.
     /// </summary>
     public string? EditableConversion { get; init; }
+
+    /// <summary>
+    /// The quoted command line that reads the input's form fields with their values, with the
+    /// input password's environment variable when one gave it, which the warning that the output
+    /// leaves out field values names; null for a conversion made without a command line.
+    /// </summary>
+    public string? FormsInspection { get; init; }
 }

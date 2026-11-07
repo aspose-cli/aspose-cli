@@ -9,6 +9,13 @@ public sealed record PdfReadRequest
     public string Content { get; init; } = PdfReadContents.Text;
     public int MaxCharacters { get; init; } = 20_000;
     public Secret? Password { get; init; }
+
+    /// <summary>
+    /// The quoted command line that reads the input's form fields with their values, with the
+    /// input password's environment variable when one gave it, which the warning that the text
+    /// leaves out field values names; null for a read made without a command line.
+    /// </summary>
+    public string? FormsInspection { get; init; }
 }
 
 /// <summary>What <c>pdf read --content</c> returns of each page.</summary>
