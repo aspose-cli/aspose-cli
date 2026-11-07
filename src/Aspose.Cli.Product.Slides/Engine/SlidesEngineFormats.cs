@@ -35,7 +35,8 @@ internal static class SlidesEngineFormats
         new("pdf", [], SaveFormat.Pdf),
         new("xps", [], SaveFormat.Xps),
         new("html", [], SaveFormat.Html) { Lossy = true },
-        new("html5", [], SaveFormat.Html5) { Lossy = true },
+        // The HTML5 export draws each native chart as a picture, whose text no reader finds.
+        new("html5", [], SaveFormat.Html5) { Lossy = true, Loses = SlidesContentLoss.Charts },
         new("tiff", [], SaveFormat.Tiff),
         new("gif", [], SaveFormat.Gif),
         new("md", [], SaveFormat.Md) { Lossy = true, HoldsReadText = true },
@@ -104,13 +105,13 @@ internal sealed record SlidesEngineFormat(string Id, LoadFormat[] Loads, SaveFor
     public bool HoldsReadText { get; init; }
 
     /// <summary>
-    /// What the save does not keep of a deck, though PowerPoint opens the output, which a convert
-    /// names in <c>LOSSY_CONVERSION</c> when the deck has it.
+    /// What the save does not keep of a deck, though the output shows its slides, which a convert
+    /// names in <c>LOSSY_CONVERSION</c> when the slides it converts have it.
     /// </summary>
     public SlidesContentLoss Loses { get; init; }
 }
 
-/// <summary>The kinds of deck content a save in a presentation format may not keep.</summary>
+/// <summary>The kinds of deck content a save in a format may not keep.</summary>
 [Flags]
 internal enum SlidesContentLoss
 {

@@ -10,13 +10,16 @@ namespace Aspose.Cli.Product.Slides.Tests;
 /// <summary>
 /// replace_text does not change a chart's title: it warns <c>TEXT_NOT_REPLACED</c>, with
 /// <c>details.part</c> <c>chart-title</c>, for each chart whose title matches as the operation
-/// matches text, and says how to rebuild it.
+/// matches text, and says how to rebuild it. A chart whose data matches as well warns once more,
+/// with <c>chart-data</c> (<see cref="SlidesChartDataReplaceTests"/>).
 /// Evaluation mode reads text longer than five characters cut short, so every text here is at
 /// most five characters long.
 /// </summary>
 public sealed class SlidesChartTitleReplaceTests : IDisposable
 {
-    private const string ChartTitleNotReplaced = "TEXT_NOT_REPLACED";
+    private const string TextNotReplaced = "TEXT_NOT_REPLACED";
+
+    private const string ChartTitle = "chart-title";
 
     private readonly TempWorkspace _workspace = new();
 
@@ -25,9 +28,10 @@ public sealed class SlidesChartTitleReplaceTests : IDisposable
     public void Dispose() => _workspace.Dispose();
 
     /// <summary>
-    /// A replace over every scope changes the text box and leaves the chart title, and warns once,
-    /// at the chart's shape address, with a hint that rebuilds the chart at its rect; the edit
-    /// still exits 0 and its verification passes.
+    /// A replace over every scope changes the text box and leaves the chart title, and warns once
+    /// for the title, at the chart's shape address, with a hint that rebuilds the chart at its
+    /// rect, and once more for the chart's first category, which matches too; the edit still exits
+    /// 0 and its verification passes.
     /// </summary>
     [Fact]
     public void ReplaceText_LeavesAMatchingChartTitleAndWarnsHowToRebuildIt()
@@ -47,7 +51,11 @@ public sealed class SlidesChartTitleReplaceTests : IDisposable
         // Evaluation mode reads text cut short, so it checks no text replacement.
         string[] checkedOps = fixture.LicenseState == Sdk.Licensing.LicenseState.Licensed ? ["year"] : [];
         Assert.Equal(checkedOps, verification["checkedOps"]!.AsArray().Select(static id => id!.GetValue<string>()));
-        JsonNode warning = Assert.Single(result["warnings"] as JsonArray ?? [], static warning => warning!["code"]!.GetValue<string>() == ChartTitleNotReplaced)!;
+        JsonNode[] unreplaced = [.. (result["warnings"] as JsonArray ?? [])
+            .Where(static warning => warning!["code"]!.GetValue<string>() == TextNotReplaced)
+            .Select(static warning => warning!)];
+        Assert.Equal([ChartTitle, "chart-data"], unreplaced.Select(static warning => warning["details"]?["part"]?.GetValue<string>()));
+        JsonNode warning = unreplaced[0];
         string message = warning["message"]!.GetValue<string>();
         Assert.Contains("Operation year (replace_text)", message, StringComparison.Ordinal);
         Assert.Contains("chart 'Sales'", message, StringComparison.Ordinal);
@@ -75,11 +83,11 @@ public sealed class SlidesChartTitleReplaceTests : IDisposable
     }
 
     /// <summary>
-    /// The warning names the operation by its id and op and the chart's title as the part it
-    /// left, at the chart's shape address.
+    /// The warnings name the operation by its id and op and the part of the chart each left,
+    /// first the title and then the data, both at the chart's shape address.
     /// </summary>
     [Fact]
-    public void ChartTitleWarning_NamesTheChartTitleAsThePartItLeft()
+    public void ChartWarnings_NameTheTitleAndThenTheDataAsThePartsTheyLeft()
     {
         using var fixture = new SlidesEngineFixture();
         string input = fixture.File("chart.pptx");
@@ -92,15 +100,17 @@ public sealed class SlidesChartTitleReplaceTests : IDisposable
             Output = TestOutput.At(fixture.File("replaced.pptx")),
         });
 
-        Warning warning = Assert.Single(result.Warnings ?? [], static warning => warning.Code.Name == "TEXT_NOT_REPLACED");
-        Assert.Equal($"slide/2/shape/{chartId}", warning.Location);
-        Assert.Equal("""{"id":"year","op":"replace_text","part":"chart-title"}""", warning.Details?.ToJsonString());
+        Warning[] warnings = [.. (result.Warnings ?? []).Where(static warning => warning.Code.Name == TextNotReplaced)];
+        Assert.Equal(
+            ["""{"id":"year","op":"replace_text","part":"chart-title"}""", """{"id":"year","op":"replace_text","part":"chart-data"}"""],
+            warnings.Select(static warning => warning.Details?.ToJsonString()));
+        Assert.All(warnings, warning => Assert.Equal($"slide/2/shape/{chartId}", warning.Location));
     }
 
     /// <summary>
-    /// The warning follows the operation's own matching and scope: a notes-only replace, a title
-    /// without the find text, and a title that letter case, whole words or the pattern keep from
-    /// matching give none; a title that matches gives one.
+    /// The title warning follows the operation's own matching and scope: a notes-only replace, a
+    /// title without the find text, and a title that letter case, whole words or the pattern keep
+    /// from matching give none; a title that matches gives one.
     /// </summary>
     [Theory]
     [InlineData("2025", "2025", false, false, false, "shapes", true)]
@@ -138,41 +148,61 @@ public sealed class SlidesChartTitleReplaceTests : IDisposable
         });
 
         Assert.Equal("ok", Assert.Single(result.Applied).Status);
-        Assert.Equal(warns ? 1 : 0, (result.Warnings ?? []).Count(static warning => warning.Code.Name == ChartTitleNotReplaced));
+        Assert.Equal(warns ? 1 : 0, (result.Warnings ?? []).Count(static warning =>
+            warning.Code.Name == TextNotReplaced && warning.Details?["part"]?.GetValue<string>() == ChartTitle));
         using var output = new Presentation(fixture.File("replaced.pptx"));
         Assert.Equal(title, output.Slides[1].Shapes.OfType<IChart>().Single().ChartTitle.TextFrameForOverriding.Text);
     }
 
     /// <summary>
-    /// Only a chart placed directly on a slide is checked: a matching title of a chart inside a
-    /// group gives no warning, and the title stays as it was.
+    /// A chart inside a group, or inside a group in a group, is checked too: its matching title
+    /// stays as it was and warns at the chart's own address, naming the slide's group that holds
+    /// it, with a hint that no operation edits it rather than one to rebuild it.
     /// </summary>
-    [Fact]
-    public void ChartInsideAGroup_IsNotChecked()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void ChartInsideAGroup_WarnsThatNoOperationReachesItsTitle(bool nested)
     {
         using var fixture = new SlidesEngineFixture();
         string input = fixture.File("grouped.pptx");
+        long chartId;
+        long groupId;
         using (var presentation = new Presentation())
         {
             ISlide slide = presentation.Slides[0];
             slide.Shapes.AddAutoShape(ShapeType.Rectangle, 40, 40, 200, 60).TextFrame.Text = "2025";
-            IChart chart = slide.Shapes.AddGroupShape().Shapes.AddChart(ChartType.ClusteredColumn, 40, 120, 300, 200);
+            IGroupShape group = slide.Shapes.AddGroupShape();
+            group.Name = "Pair";
+            IShapeCollection holder = nested ? group.Shapes.AddGroupShape().Shapes : group.Shapes;
+            IChart chart = holder.AddChart(ChartType.ClusteredColumn, 40, 120, 300, 200);
+            chart.Name = "Sales";
             chart.HasTitle = true;
             chart.ChartTitle.AddTextFrameForOverriding("2025");
+            chartId = chart.OfficeInteropShapeId;
+            groupId = group.OfficeInteropShapeId;
             presentation.Save(input, SaveFormat.Pptx);
         }
 
         SlidesEditResult result = SlidesEdit.Run(fixture.Session, new SlidesEditRequest
         {
             Input = input,
-            Batch = new SlidesOpsBatch { Ops = [new SlidesReplaceTextOp { Find = "2025", Replace = "2026" }] },
+            Batch = new SlidesOpsBatch { Ops = [new SlidesReplaceTextOp { Id = "year", Find = "2025", Replace = "2026" }] },
             Output = TestOutput.At(fixture.File("grouped.out.pptx")),
         });
 
         Assert.Equal(1, Assert.Single(result.Applied).ItemsAffected);
-        Assert.DoesNotContain(result.Warnings ?? [], static warning => warning.Code.Name == ChartTitleNotReplaced);
+        Warning warning = Assert.Single(result.Warnings ?? [], static warning => warning.Code.Name == TextNotReplaced);
+        Assert.Equal(ChartTitle, warning.Details?["part"]?.GetValue<string>());
+        Assert.Equal($"slide/1/shape/{chartId}", warning.Location);
+        Assert.Equal(
+            $"Operation year (replace_text) found a match in the title of chart 'Sales' (shapeId {chartId}) in group 'Pair' (shapeId {groupId}) on slide 1 and left the title as it was: replace_text does not change chart titles or chart data.",
+            warning.Message);
+        Assert.StartsWith("No operation addresses a shape inside a group", warning.Hint, StringComparison.Ordinal);
+        Assert.DoesNotContain("delete_shape", warning.Hint, StringComparison.Ordinal);
         using var output = new Presentation(fixture.File("grouped.out.pptx"));
-        IChart grouped = output.Slides[0].Shapes.OfType<IGroupShape>().Single().Shapes.OfType<IChart>().Single();
+        IGroupShape outer = output.Slides[0].Shapes.OfType<IGroupShape>().Single();
+        IChart grouped = (nested ? outer.Shapes.OfType<IGroupShape>().Single().Shapes : outer.Shapes).OfType<IChart>().Single();
         Assert.Equal("2025", grouped.ChartTitle.TextFrameForOverriding.Text);
     }
 

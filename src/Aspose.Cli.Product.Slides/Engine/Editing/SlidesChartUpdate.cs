@@ -15,7 +15,11 @@ internal static class SlidesChartUpdate
     {
         IChartData data = chart.ChartData;
         IChartSeries[] existing = data.Series.ToArray();
-        EnsureSupported(chart, existing);
+        if (CannotUpdate(chart) is { } reason)
+        {
+            throw Unsupported(reason);
+        }
+
         if (IsScatter(chart))
         {
             UpdateScatter(data, existing, op, chart.Type);
@@ -34,24 +38,35 @@ internal static class SlidesChartUpdate
                 .ToArray())
             .ToArray();
 
-    private static void EnsureSupported(IChart chart, IChartSeries[] series)
+    /// <summary>
+    /// Why set_chart_data cannot update the chart in place, whatever data it is given, or null
+    /// when it can: its data lives in an external workbook, a series or the chart is of a kind it
+    /// does not update, it combines scatter and category series, or its categories are literal or
+    /// multi-level.
+    /// </summary>
+    internal static string? CannotUpdate(IChart chart)
     {
-        if (chart.ChartData.DataSourceType != ChartDataSourceType.InternalWorkbook)
+        IChartData data = chart.ChartData;
+        if (data.DataSourceType != ChartDataSourceType.InternalWorkbook)
         {
-            throw Unsupported("its data lives in an external workbook");
+            return "its data lives in an external workbook";
         }
 
-        ChartType[] types = series.Select(static item => item.Type).Append(chart.Type).ToArray();
+        ChartType[] types = data.Series.Select(static item => item.Type).Append(chart.Type).ToArray();
         ChartType? unsupported = types.Cast<ChartType?>().FirstOrDefault(static type => !IsSupported(type!.Value));
         if (unsupported is not null)
         {
-            throw Unsupported($"{unsupported} charts are not supported by set_chart_data");
+            return $"{unsupported} charts are not supported by set_chart_data";
         }
 
         if (types.Any(ChartTypeCharacterizer.IsChartTypeScatter) && !types.All(ChartTypeCharacterizer.IsChartTypeScatter))
         {
-            throw Unsupported("it combines scatter and category series");
+            return "it combines scatter and category series";
         }
+
+        return !IsScatter(chart) && data.Categories.Count > 0 && (!data.Categories.UseCells || data.Categories.GroupingLevelCount > 1)
+            ? "its categories are literal or multi-level"
+            : null;
     }
 
     private static bool IsSupported(ChartType type) =>
@@ -72,11 +87,6 @@ internal static class SlidesChartUpdate
     private static void UpdateCategories(IChartData data, IChartSeries[] existing, SetChartDataOp op, ChartType chartType)
     {
         IChartCategory[] categories = data.Categories.ToArray();
-        if (categories.Length > 0 && (!data.Categories.UseCells || data.Categories.GroupingLevelCount > 1))
-        {
-            throw Unsupported("its categories are literal or multi-level");
-        }
-
         int count = op.Categories?.Count ?? categories.Length;
         if (op.Series is null && existing.Any(series => series.DataPoints.Count != count))
         {
