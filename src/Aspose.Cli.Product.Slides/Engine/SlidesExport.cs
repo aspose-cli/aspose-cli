@@ -36,8 +36,12 @@ internal static partial class SlidesExport
         }
 
         IReadOnlyList<int>? selection = skipped.Length == 0 ? slides : [.. AllSlides(presentation.Slides.Count).Except(skipped)];
+        IReadOnlyList<int> shown = selection ?? AllSlides(presentation.Slides.Count);
+        // Read before the save, which removes the unselected slides from this private copy for a
+        // presentation format, so the slides keep their numbers in the deck.
+        Warning? lost = ContentLost(presentation, formatId, shown);
         IReadOnlyList<SlidesConvertOutput> outputs = ConvertOutputs(session, loaded, request, selection);
-        List<Warning> warnings = BuildConvertWarnings(loaded, formatId, skipped, selection ?? AllSlides(presentation.Slides.Count));
+        List<Warning> warnings = BuildConvertWarnings(loaded, formatId, skipped, shown, lost);
         return new SlidesConvertResult
         {
             Input = Source(request.Input, loaded),
@@ -258,7 +262,8 @@ internal static partial class SlidesExport
         LoadedPresentation loaded,
         string targetFormatId,
         IReadOnlyList<int> skipped,
-        IReadOnlyList<int> shown)
+        IReadOnlyList<int> shown,
+        Warning? lost)
     {
         var warnings = WrittenWarnings(loaded)?.ToList() ?? [];
         if (skipped.Count > 0)
@@ -283,7 +288,7 @@ internal static partial class SlidesExport
                 $"Read the notes with 'slides read --slides {string.Join(",", noted)} --notes'; a pptx output keeps them."));
         }
 
-        if (ContentLost(loaded.Presentation, targetFormatId) is { } lost)
+        if (lost is not null)
         {
             warnings.Add(lost);
         }
@@ -299,12 +304,15 @@ internal static partial class SlidesExport
         return warnings;
     }
 
-    // What a save in the format does not keep of the deck (SlidesEngineFormat.Loses): an ODP save
-    // (SLIDES-ODP-NATIVE-CONTENT) turns its native charts into pictures and drops the transitions
-    // and the sections; a PPT save (SLIDES-PPT-NATIVE-CONTENT) turns the charts into pictures and
-    // drops the table styles, and the format holds no sections. Null when the deck has none of
-    // what the format loses. The slides look as in the deck unless a table loses its style.
-    private static Warning? ContentLost(Presentation presentation, string format)
+    // What a save in the format does not keep of the slides it shows (SlidesEngineFormat.Loses),
+    // named by their numbers in the deck: an ODP save (SLIDES-ODP-NATIVE-CONTENT) turns their
+    // native charts into pictures and drops the transitions and the sections; a PPT save
+    // (SLIDES-PPT-NATIVE-CONTENT) turns the charts into pictures and drops the table styles, and
+    // the format holds no sections; an HTML5 export draws the charts as pictures, with no text a
+    // reader finds. A selection keeps every section, so the sections are the deck's. Null when the
+    // shown slides have none of what the format loses. The slides look as in the deck unless a
+    // table loses its style.
+    private static Warning? ContentLost(Presentation presentation, string format, IReadOnlyList<int> shown)
     {
         SlidesContentLoss loses = SlidesEngineFormats.Losses(format);
         if (loses == SlidesContentLoss.None)
@@ -343,7 +351,7 @@ internal static partial class SlidesExport
             $"Keep the source deck for further edits; to keep {keep}, convert to pptx instead.");
 
         int[] Slides(SlidesContentLoss kind, Func<ISlide, bool> holds) => loses.HasFlag(kind)
-            ? [.. AllSlides(presentation.Slides.Count).Where(number => holds(presentation.Slides[number - 1]))]
+            ? [.. shown.Where(number => holds(presentation.Slides[number - 1]))]
             : [];
 
         static bool Has(IShapeCollection shapes, Func<IShape, bool> kind) =>

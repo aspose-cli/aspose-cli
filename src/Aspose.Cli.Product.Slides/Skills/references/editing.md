@@ -82,13 +82,16 @@ comments a deck already has.
   output with what the operation did. In evaluation mode a paragraph that evaluation mode cut
   short is left as it is, and the result warns `EVALUATION_INPUT_TRUNCATED`.
 - `replace_text` does not change charts, neither their titles nor their data. With scope
-  `shapes` or `all`, a chart placed directly on a slide whose title matches stays as it was, and
-  the edit warns `TEXT_NOT_REPLACED` with `details.part` `chart-title` and the chart's
-  `location`, such as `slide/2/shape/5`; a chart inside a group is not checked and gets no
-  warning. To change the title, rebuild the chart: read its kind, categories and series with
-  `slides read --content full`, `delete_shape` it, then `insert_chart` the same data with the
-  new `title` at its `rect`; the new chart takes the automatic chart style. `set_chart_data`
-  changes a chart's data.
+  `shapes` or `all`, a chart whose title, categories or series names match stays as it was, and
+  the edit warns `TEXT_NOT_REPLACED` at the chart's `location`, such as `slide/2/shape/5`: once
+  with `details.part` `chart-title` for the title and once with `chart-data` for the categories
+  and series names. To change the title, rebuild the chart: read its kind, categories and series
+  with `slides read --content full`, `delete_shape` it, then `insert_chart` the same data with
+  the new `title` at its `rect`; the new chart takes the automatic chart style. To change the
+  data, read it the same way and give `set_chart_data` the changed categories, or every series
+  with its values and changed name; rebuild a chart `set_chart_data` does not update
+  ([charts](#charts)) as for its title. A chart inside a group warns as well, naming the group,
+  but no operation addresses it.
 - `set_notes` replaces speaker-note text. `inspect --detail notes` reports only presence and
   character counts; read note text with `slides read --notes` or `extract --what notes`.
 - `set_footer` uses the layout's own footer, number and date placeholders; their position and
@@ -146,6 +149,11 @@ master or layout art); each item keeps its presentation-wide `index`.
   a styled table loses its fills, borders and text formatting; it warns `LOSSY_CONVERSION` naming
   the slides with charts or styled tables and the number of sections (SLIDES-PPT-NATIVE-CONTENT).
   Keep the PPTX for further edits.
+- An HTML5 output draws native charts as pictures, so their text, such as the title, is not
+  text in the page; it warns `LOSSY_CONVERSION` with `details.content` `["charts"]` naming the
+  slides with charts. An HTML output holds a chart's text.
+- These warnings name only the slides a `convert` converts, by their numbers in the deck, also
+  with `--slides`.
 - A PDF or other export (XPS, HTML, HTML5, Markdown, TIFF, GIF) holds the slides alone, with no
   handout or notes-page layout, so speaker notes are not in it: a `convert` to one warns
   `LOSSY_CONVERSION` with the numbers of the converted slides that have notes. PPT, PPTX, PPTM

@@ -59,32 +59,87 @@ internal sealed partial class SlidesMutationHandlers
 
         if (operation.Scope is SlidesSearchScopes.Shapes or SlidesSearchScopes.All)
         {
-            WarnUnreplacedChartTitles(operation, replacement);
+            WarnUnreplacedChartText(operation, replacement);
         }
 
         return default;
     }
 
     /// <summary>
-    /// Names each chart on a slide whose title holds a match, which replace_text leaves as it is:
-    /// chart titles and data are not text it reaches. A title matches as a paragraph of shape text
-    /// does. The message never repeats the find text or the title.
+    /// Names each chart on a slide, inside a group or not, whose title or data holds a match,
+    /// which replace_text leaves as it is: chart titles and data are not text it reaches. The
+    /// title warns as part <c>chart-title</c>, the categories and series names as
+    /// <c>chart-data</c>; each matches as a paragraph of shape text does. The message never
+    /// repeats the find text or the chart's text.
     /// </summary>
-    private void WarnUnreplacedChartTitles(SlidesReplaceTextOp operation, TextReplacement replacement)
+    private void WarnUnreplacedChartText(SlidesReplaceTextOp operation, TextReplacement replacement)
     {
         for (int number = 1; number <= _presentation.Slides.Count; number++)
         {
-            foreach (IChart chart in _presentation.Slides[number - 1].Shapes.OfType<IChart>()
-                .Where(chart => TitleMatches(chart, replacement)))
+            foreach ((IChart chart, IGroupShape? group) in Charts(_presentation.Slides[number - 1].Shapes, null))
             {
-                string rect = string.Create(CultureInfo.InvariantCulture,
-                    $$"""{"x":{{chart.X:0.##}},"y":{{chart.Y:0.##}},"width":{{chart.Width:0.##}},"height":{{chart.Height:0.##}}}""");
-                _warnings.Add(UnreplacedText.Warning(TextPart.ChartTitle, operation, "replace_text",
-                    string.Create(CultureInfo.InvariantCulture,
-                        $"Operation {operation.Id} (replace_text) found a match in the title of chart '{chart.Name}' (shapeId {chart.OfficeInteropShapeId}) on slide {number} and left the title as it was: replace_text does not change chart titles or chart data."),
-                    string.Create(CultureInfo.InvariantCulture,
-                        $$"""To change the title, rebuild the chart: read its kind, categories and series with 'slides read --slides {{number}} --content full', apply {"op":"delete_shape","slide":{{number}},"shapeId":{{chart.OfficeInteropShapeId}}}, then insert_chart on slide {{number}} with the same data, the new title and "rect":{{rect}}. The new chart takes the automatic chart style."""),
-                    SlidesStateProjection.ShapeAddress(number, chart.OfficeInteropShapeId)));
+                string chartName = string.Create(CultureInfo.InvariantCulture, $"chart '{chart.Name}' (shapeId {chart.OfficeInteropShapeId})");
+                string where = group is null
+                    ? string.Create(CultureInfo.InvariantCulture, $"{chartName} on slide {number}")
+                    : string.Create(CultureInfo.InvariantCulture, $"{chartName} in group '{group.Name}' (shapeId {group.OfficeInteropShapeId}) on slide {number}");
+                string location = SlidesStateProjection.ShapeAddress(number, chart.OfficeInteropShapeId);
+                if (TitleMatches(chart, replacement))
+                {
+                    _warnings.Add(UnreplacedText.Warning(TextPart.ChartTitle, operation, "replace_text",
+                        $"Operation {operation.Id} (replace_text) found a match in the title of {where} and left the title as it was: replace_text does not change chart titles or chart data.",
+                        group is null ? RebuildHint(number, chart, "To change the title, rebuild the chart", "the same data, the new title") : GroupedChartHint,
+                        location));
+                }
+
+                if (DataMatched(chart, replacement) is { } data)
+                {
+                    _warnings.Add(UnreplacedText.Warning(TextPart.ChartData, operation, "replace_text",
+                        $"Operation {operation.Id} (replace_text) found a match in the {data.Parts} of {where} and left them as they were: replace_text does not change chart titles or chart data.",
+                        group is not null ? GroupedChartHint : DataHint(number, chart, data.Change),
+                        location));
+                }
+            }
+        }
+    }
+
+    // No operation addresses a shape inside a group, and slides read reports only a slide's own shapes.
+    private const string GroupedChartHint =
+        "No operation addresses a shape inside a group, so the chart keeps that text: report it as unchanged, or ungroup the shapes in a presentation editor and run the edit again.";
+
+    // How to change the data of a chart on the slide itself: set_chart_data, unless it cannot
+    // update the chart in place, when the chart is rebuilt as its title would be.
+    private static string DataHint(int number, IChart chart, string change) =>
+        SlidesChartUpdate.CannotUpdate(chart) is not null
+            ? RebuildHint(number, chart, "To change them, rebuild the chart, since its data cannot be updated in place", "the changed data, its title")
+            : string.Create(CultureInfo.InvariantCulture,
+                $"To change them, read the chart's categories and series with 'slides read --slides {number} --content full', then apply set_chart_data to shapeId {chart.OfficeInteropShapeId} on slide {number} with {change}.");
+
+    // A hint that rebuilds the chart: read it, delete it, then insert it again at its rect.
+    private static string RebuildHint(int number, IChart chart, string change, string with)
+    {
+        string rect = string.Create(CultureInfo.InvariantCulture,
+            $$"""{"x":{{chart.X:0.##}},"y":{{chart.Y:0.##}},"width":{{chart.Width:0.##}},"height":{{chart.Height:0.##}}}""");
+        return string.Create(CultureInfo.InvariantCulture,
+            $$"""{{change}}: read its kind, categories and series with 'slides read --slides {{number}} --content full', apply {"op":"delete_shape","slide":{{number}},"shapeId":{{chart.OfficeInteropShapeId}}}, then insert_chart on slide {{number}} with {{with}} and "rect":{{rect}}. The new chart takes the automatic chart style.""");
+    }
+
+    /// <summary>Every chart among the shapes, a group's included, with the slide's own group that holds it, or null for a chart on the slide itself.</summary>
+    private static IEnumerable<(IChart Chart, IGroupShape? Group)> Charts(IShapeCollection shapes, IGroupShape? group)
+    {
+        foreach (IShape shape in shapes)
+        {
+            switch (shape)
+            {
+                case IChart chart:
+                    yield return (chart, group);
+                    break;
+                case IGroupShape inner:
+                    foreach ((IChart Chart, IGroupShape? Group) grouped in Charts(inner.Shapes, group ?? inner))
+                    {
+                        yield return grouped;
+                    }
+
+                    break;
             }
         }
     }
@@ -95,6 +150,32 @@ internal sealed partial class SlidesMutationHandlers
         && chart.ChartTitle.TextFrameForOverriding is { } title
         && title.Paragraphs.Any(paragraph =>
             replacement.Matches(string.Concat(paragraph.Portions.Select(static portion => portion.Text ?? string.Empty)), 1).Count > 0);
+
+    /// <summary>
+    /// Which of the chart's data holds a match, its categories or its series names, as set_chart_data
+    /// would change them; null when neither does. A category is read as <c>slides read</c> reads it,
+    /// and a series name from its cells or, without them, as its literal text.
+    /// </summary>
+    private static (string Parts, string Change)? DataMatched(IChart chart, TextReplacement replacement)
+    {
+        bool categories = chart.ChartData.Categories.Any(category => Matches(replacement, Text(category.Value)));
+        bool names = chart.ChartData.Series.Any(series => series.Name.DataSourceType == DataSourceType.Worksheet
+            ? series.Name.AsCells.Any(cell => Matches(replacement, Text(cell.Value)))
+            : Matches(replacement, series.Name.AsLiteralString));
+        return (categories, names) switch
+        {
+            (true, true) => ("categories and series names", "the categories and every series as read, each changed where it matches"),
+            (true, false) => ("categories", "the categories, changed where they match"),
+            (false, true) => ("series names", "every series as read, values and all, renamed where its name matches"),
+            _ => null,
+        };
+
+        static string? Text(object? value) => Convert.ToString(value, CultureInfo.InvariantCulture);
+    }
+
+    // Whether a category or series name holds a match; an empty one holds no text.
+    private static bool Matches(TextReplacement replacement, string? text) =>
+        !string.IsNullOrEmpty(text) && replacement.Matches(text, 1).Count > 0;
 
     /// <summary>The text frames of a slide that a search scope reaches: its shapes, its speaker notes, or both.</summary>
     private IEnumerable<ITextFrame> Frames(ISlide slide, string scope)

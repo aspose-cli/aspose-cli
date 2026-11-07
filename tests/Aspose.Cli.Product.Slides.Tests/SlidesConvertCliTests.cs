@@ -9,7 +9,8 @@ namespace Aspose.Cli.Product.Slides.Tests;
 /// <summary>
 /// What <c>slides convert</c> writes and says through the CLI: hidden slides, which an export of
 /// every slide leaves out with a warning and a selection converts; the slide numbers of selected
-/// slides; the evaluation marks of the slides an output shows; and what an ODP or PPT output loses.
+/// slides; the evaluation marks of the slides an output shows; and what an ODP, PPT or HTML5
+/// output loses.
 /// </summary>
 public sealed class SlidesConvertCliTests : IDisposable
 {
@@ -338,6 +339,68 @@ public sealed class SlidesConvertCliTests : IDisposable
         JsonNode warning = Assert.Single(result["warnings"] as JsonArray ?? [], static warning => warning!["code"]!.GetValue<string>() == "LOSSY_CONVERSION")!;
         Assert.Equal(content, warning["details"]?["content"]?.ToJsonString());
         Assert.Equal(content is null, warning["details"] is null);
+    }
+
+    /// <summary>
+    /// A convert names what it does not keep of the slides it converts, by their numbers in the
+    /// deck: a selection names only its own slides' charts, transitions and styled tables, as a
+    /// convert of every slide numbers them, and the deck's sections, which a selection keeps. An
+    /// html5 output, whose text lacks a chart's title, draws the native charts as pictures and
+    /// names them too, leaving out a hidden slide's unless the selection names it; an html
+    /// output, whose text holds the title, names none.
+    /// </summary>
+    [Theory]
+    [InlineData("ppt", null, "The ppt output does not keep the native charts of slide(s) 1, 4, which become pictures; the 2 section(s); the table styles of slide(s) 2, so those tables lose the fills, borders and text formatting of their style.")]
+    [InlineData("ppt", "2-4", "The ppt output does not keep the native charts of slide(s) 4, which become pictures; the 2 section(s); the table styles of slide(s) 2, so those tables lose the fills, borders and text formatting of their style.")]
+    [InlineData("ppt", "3-4", "The ppt output does not keep the native charts of slide(s) 4, which become pictures; the 2 section(s), though its slides look as in the deck.")]
+    [InlineData("odp", null, "The odp output does not keep the native charts of slide(s) 1, 4, which become pictures; the transitions of slide(s) 3; the 2 section(s), though its slides look as in the deck.")]
+    [InlineData("odp", "2-4", "The odp output does not keep the native charts of slide(s) 4, which become pictures; the transitions of slide(s) 3; the 2 section(s), though its slides look as in the deck.")]
+    [InlineData("html5", null, "The html5 output does not keep the native charts of slide(s) 4, which become pictures, though its slides look as in the deck.")]
+    [InlineData("html5", "1-3", "The html5 output does not keep the native charts of slide(s) 1, which become pictures, though its slides look as in the deck.")]
+    [InlineData("html5", "2-3", null)]
+    [InlineData("html", null, null)]
+    [InlineData("html", "2-4", null)]
+    public void Convert_NamesWhatItLosesOfTheSlidesItConvertsByTheirNumbersInTheDeck(string format, string? slides, string? message)
+    {
+        // Slide 1 is hidden and holds a chart, slide 2 a styled table, slide 3 a transition and
+        // slide 4 a chart titled Qz7; the second section starts at slide 3.
+        Run("slides", "create", "deck.pptx", "--from-markdown", "deck.md");
+        Run("slides", "edit", "deck.pptx", "--in-place", "--ops", """
+            [{"op":"insert_chart","slide":1,"kind":"column","rect":{"x":50,"y":100,"width":300,"height":200},"categories":["a","b"],"series":[{"name":"S","values":[1,2]}]},
+             {"op":"set_slide_hidden","slides":"1","hidden":true},
+             {"op":"insert_table","slide":2,"rect":{"x":50,"y":100,"width":300,"height":100},"rowCount":2,"columnCount":2,"values":[["a","b"],["c","d"]]},
+             {"op":"set_transition","slides":"3","kind":"fade"},
+             {"op":"insert_section","name":"Part","at":3},
+             {"op":"insert_chart","slide":4,"kind":"column","rect":{"x":50,"y":100,"width":300,"height":200},"title":"Qz7","categories":["a","b"],"series":[{"name":"S","values":[1,2]}]}]
+            """);
+        string extension = format == "html5" ? "html" : format;
+
+        JsonNode result = Run([
+            "slides", "convert", "deck.pptx", "--to", format, "--out", $"converted.{extension}",
+            .. slides is null ? Array.Empty<string>() : ["--slides", slides]]);
+
+        if (format is "html" or "html5" && slides is null or "2-4")
+        {
+            // The chart of slide 4 is in the page: as text in html, only as a picture in html5.
+            Assert.Equal(format == "html", File.ReadAllText(_workspace.File("converted.html")).Contains("Qz7", StringComparison.Ordinal));
+        }
+
+        JsonNode[] named = [.. (result["warnings"] as JsonArray ?? [])
+            .Where(static warning => warning!["code"]!.GetValue<string>() == "LOSSY_CONVERSION" && warning["details"]?["content"] is not null)
+            .Select(static warning => warning!)];
+        if (message is null)
+        {
+            Assert.Empty(named);
+            return;
+        }
+
+        JsonNode lost = Assert.Single(named);
+        Assert.Equal(message, lost["message"]!.GetValue<string>());
+        if (format == "html5")
+        {
+            Assert.Equal("""["charts"]""", lost["details"]!["content"]!.ToJsonString());
+            Assert.Equal("Keep the source deck for further edits; to keep the charts editable, convert to pptx instead.", lost["hint"]!.GetValue<string>());
+        }
     }
 
     /// <summary>
