@@ -3195,6 +3195,13 @@
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
+      "code": "PAGE_NUMBERS_REMOVED",
+      "owner": "words",
+      "severity": "warning",
+      "category": "warning",
+      "detailsSchemaId": "v2/common/diagnostic-details"
+    },
+    {
       "code": "PROTECTION_MISMATCH",
       "owner": "words",
       "severity": "warning",

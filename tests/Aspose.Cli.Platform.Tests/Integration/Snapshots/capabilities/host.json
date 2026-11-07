@@ -1945,7 +1945,7 @@
                   },
                   {
                     "const": "comments",
-                    "description": "Comments as comments: the output writes their text into the body, or leaves them out."
+                    "description": "Comments as comments: the output writes their text into the body, draws them in balloons beside its pages, or leaves them out."
                   },
                   {
                     "const": "editing-restrictions",

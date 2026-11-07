@@ -1,4 +1,5 @@
 using Aspose.Words;
+using Aspose.Words.Saving;
 
 namespace Aspose.Cli.Product.Words.Engine.Mapping;
 
@@ -25,12 +26,11 @@ internal static class WordsEngineFormats
         new("mhtml") { Load = LoadFormat.Mhtml, Save = SaveFormat.Mhtml },
         new("odt") { Load = LoadFormat.Odt, Save = SaveFormat.Odt },
         new("ott") { Load = LoadFormat.Ott, Save = SaveFormat.Ott },
-        new("txt") { Load = LoadFormat.Text, Save = SaveFormat.Text, Lossy = true, PlainText = true },
-        new("md") { Load = LoadFormat.Markdown, Save = SaveFormat.Markdown, Lossy = true, PlainText = true },
+        new("txt") { Load = LoadFormat.Text, Save = SaveFormat.Text, Lossy = true, PlainText = true, LeavesOutHeadersFooters = true },
+        new("md") { Load = LoadFormat.Markdown, Save = SaveFormat.Markdown, Lossy = true, PlainText = true, LeavesOutHeadersFooters = true },
         new("pdf") { Load = LoadFormat.Pdf, Save = SaveFormat.Pdf, ReflowsOnLoad = true, EncryptionUndetected = true },
         new("epub") { Load = LoadFormat.Epub, Save = SaveFormat.Epub, LeavesOutHeadersFooters = true },
-        // MOBI writes the headers and footers into the text flow, at the start and end of each section.
-        new("mobi") { Load = LoadFormat.Mobi, Save = SaveFormat.Mobi },
+        new("mobi") { Load = LoadFormat.Mobi, Save = SaveFormat.Mobi, LeavesOutHeadersFooters = true },
         new("azw3") { Load = LoadFormat.Azw3, Save = SaveFormat.Azw3, LeavesOutHeadersFooters = true },
         new("chm") { Load = LoadFormat.Chm },
         new("xps") { Save = SaveFormat.Xps },
@@ -50,6 +50,14 @@ internal static class WordsEngineFormats
     /// <summary>Whether a format id has an engine trait; false for an id the engine does not map.</summary>
     public static bool Has(string formatId, Func<WordsEngineFormat, bool> trait) =>
         All.FirstOrDefault(entry => string.Equals(entry.Id, formatId, StringComparison.Ordinal)) is { } entry && trait(entry);
+
+    /// <summary>
+    /// Whether the engine lays a document out on fixed pages to save it in a format, as for
+    /// printing: such a save draws the tracked changes on the pages as markup and the comments in
+    /// balloons in a margin beside the text.
+    /// </summary>
+    public static bool LaysOutPages(string formatId) =>
+        Has(formatId, static entry => entry.Save is { } save && SaveOptions.CreateSaveOptions(save) is FixedPageSaveOptions);
 
     /// <summary>The engine format that saves a format id.</summary>
     public static SaveFormat Save(string formatId) =>
@@ -77,9 +85,10 @@ internal sealed record WordsEngineFormat(string Id)
     public bool PlainText { get; init; }
 
     /// <summary>
-    /// A save in this format writes no header or footer, as the SDK saves an e-book that flows
-    /// its text without pages, which convert discloses for a document whose headers or footers
-    /// hold content.
+    /// A save in this format writes no header or footer: an e-book flows its text without pages,
+    /// and plain text and Markdown hold the body text alone. The save options leave them out,
+    /// where the SDK would write the primary ones into the text at the start and end of each
+    /// section with their page numbers frozen, and convert discloses the ones that hold content.
     /// </summary>
     public bool LeavesOutHeadersFooters { get; init; }
 

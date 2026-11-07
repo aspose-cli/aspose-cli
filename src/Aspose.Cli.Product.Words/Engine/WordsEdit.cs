@@ -40,6 +40,10 @@ internal static class WordsEdit
         SaveOptions saveOptions = WordsSavePipeline.Options(format, protection.Password);
         InputInfo input = precondition.Admit(loaded.FormatId, loaded.Protection, request.Options.IfMatch);
         Node[] blocksBefore = BodyBlocks(loaded.Document).ToArray();
+        Section[] sectionsBefore = [.. loaded.Document.Sections.Cast<Section>()];
+        // The references the input held that loading left out: the output keeps them as the input
+        // held them, so only a resource the batch or the save could not load is missing from it.
+        HashSet<string> inputOmissions = [.. loaded.OmittedResources.Select(static resource => resource.Reference)];
         var blocks = new DocumentBlockIndex(loaded.Document, loaded.Evaluation);
         IReadOnlyList<ResolvedWordsOp> resolved = WordsAnchorResolver.Resolve(loaded.Document, blocks, batch);
         Document? baseline = request.Verify ? loaded.Document.Clone() : null;
@@ -49,14 +53,20 @@ internal static class WordsEdit
         tracking?.Start();
         var operationWarnings = new List<Warning>();
         var pageFields = new List<Field>();
-        AppliedBatch applied = ApplyOperations(session, loaded, resolved, request, operationInputs, tracking, operationWarnings, pageFields);
+        var pageNumbers = new WordsPageNumberLosses();
+        AppliedBatch applied = ApplyOperations(session, loaded, resolved, request, operationInputs, tracking, operationWarnings, pageFields, pageNumbers);
         IReadOnlyList<BoundedOperationOutcome> outcomes = applied.Outcomes;
         tracking?.Stop();
+        operationWarnings.AddRange(pageNumbers.Warnings(loaded.Document, sectionsBefore));
         UpdatePageFields(loaded.Document, pageFields);
         IReadOnlyList<int> pagesTouched = TouchedPages(loaded.Document, blocksBefore, applied.Changed);
 
         session.Loader.EnsureWithinBudgets(loaded.Document, loaded.Resources);
         WordsSavePipeline.RemoveMacrosUnlessKept(loaded.Document, format);
+        // The input's revisions are disclosed while the output still contains revisions;
+        // LOSSY_CONVERSION covers the formats that cannot store them.
+        bool revisionsKept = inputHadRevisions && KeepsRevisions(loaded.Document, format);
+        IReadOnlyList<Warning>? Mutation() => MutationWarnings(loaded.Document, format, loaded.Evaluation, revisionsKept, inputWasSigned, inputProtection);
 
         EditPublication<WordsEditVerification> publication = Persist(
             session,
@@ -68,7 +78,11 @@ internal static class WordsEdit
             loaded.Resources,
             written,
             saveOptions,
-            protection);
+            protection,
+            // What the batch and the save left out of the output, read after the save, which may
+            // omit more resources.
+            () => EnvelopeParts.CombineWarnings([.. SaveWarnings(loaded, format)], operationWarnings, Mutation(),
+                Omitted(loaded.OmittedResources.Where(resource => !inputOmissions.Contains(resource.Reference)))));
         baseline?.Cleanup();
         var outputWarnings = new List<Warning>();
         outputWarnings.AddRange(SaveWarnings(loaded, format));
@@ -84,16 +98,8 @@ internal static class WordsEdit
             PagesTouched = pagesTouched.Count == 0 ? null : pagesTouched,
             Verification = publication.Verification,
             License = EnvelopeParts.License(state),
-            Warnings = EnvelopeParts.CombineWarnings(outputWarnings, publication.BackupWarnings, operationWarnings, PdfInputWarnings(loaded), MutationWarnings(
-                loaded.Document,
-                format,
-                loaded.Evaluation,
-                // The input's revisions are disclosed while the output still contains revisions;
-                // LOSSY_CONVERSION covers the formats that cannot store them.
-                inputHadRevisions && KeepsRevisions(loaded.Document, format),
-                inputWasSigned,
-                inputProtection,
-                loaded.OmittedResources)),
+            Warnings = EnvelopeParts.CombineWarnings(outputWarnings, publication.BackupWarnings, operationWarnings, PdfInputWarnings(loaded), Mutation(),
+                Omitted(loaded.OmittedResources)),
         };
     }
 
@@ -126,12 +132,13 @@ internal static class WordsEdit
         InputResourceScope operationInputs,
         WordsRevisionTracking? tracking,
         List<Warning> warnings,
-        List<Field> pageFields)
+        List<Field> pageFields,
+        WordsPageNumberLosses pageNumbers)
     {
         // The SDK snapshots what each operation can change before and after it, and derives its
         // outcome and the OP_NO_EFFECT of one that changed nothing; the handlers count nothing.
         var model = new WordsEditModel(loaded, resolved, item => new WordsMutationHandlers(
-            loaded, item, session.Outputs, session.Loader, session.Budgets.Inputs, operationInputs, request.OpSecrets, tracking, warnings, pageFields));
+            loaded, item, session.Outputs, session.Loader, session.Budgets.Inputs, operationInputs, request.OpSecrets, tracking, warnings, pageFields, pageNumbers));
         AppliedBatch applied = BoundedOperationRunner.Run(
             WordsOp.Catalog,
             resolved.Select(static item => item.Op).ToArray(),
@@ -145,7 +152,9 @@ internal static class WordsEdit
     /// <summary>
     /// Saves, verifies and publishes the edited document. Aspose.Words keeps only the start of
     /// a long document it lays out or saves in evaluation mode and ends it with its truncation
-    /// notice; the write pipeline finds the notice in the saved output and discloses it.
+    /// notice; the write pipeline finds the notice in the saved output and discloses it. The
+    /// verification reports the <paramref name="warnings"/> about what the batch and the save
+    /// left out that leave the output incomplete as issues.
     /// </summary>
     private static EditPublication<WordsEditVerification> Persist(
         WordsSession session,
@@ -157,7 +166,8 @@ internal static class WordsEdit
         LocalDocumentResourceLoader resources,
         FormatDescriptor written,
         SaveOptions saveOptions,
-        OutputProtection protection)
+        OutputProtection protection,
+        Func<IReadOnlyList<Warning>?> warnings)
     {
         ResolvedOutput output = request.Output;
         return session.Outputs.PublishEdit<WordsEditVerification>(
@@ -177,7 +187,7 @@ internal static class WordsEdit
                 }
             },
             request.Verify
-                ? candidate => Verify(session, candidate, written.Id, protection.Password, baseline!, WordsReadBack.Saved(document), checkedOps)
+                ? candidate => Verify(session, candidate, written.Id, protection.Password, baseline!, WordsReadBack.Saved(document), checkedOps, warnings())
                 : null,
             "words-edit");
     }
@@ -307,7 +317,10 @@ internal static class WordsEdit
     /// <summary>
     /// Reports save-and-reopen evidence for the staged candidate. A comparison that
     /// finds no body change is evidence, not a fault: whether an operation did
-    /// anything is already answered, authoritatively, by its own outcome.
+    /// anything is already answered, authoritatively, by its own outcome. Each warning about the
+    /// batch's result that leaves the output incomplete, such as PAGE_NUMBERS_REMOVED, is an issue,
+    /// with its code, message, location and hint; a reference the input already held unloaded is
+    /// kept as it was and is none.
     /// </summary>
     private static WordsEditVerification Verify(
         WordsSession session,
@@ -316,9 +329,11 @@ internal static class WordsEdit
         Secret? outputPassword,
         Document baseline,
         WordsSavedState expected,
-        IReadOnlyList<string> checkedOps)
+        IReadOnlyList<string> checkedOps,
+        IReadOnlyList<Warning>? warnings)
     {
         var issues = new List<VerificationIssue>();
+        issues.AddRange((warnings ?? []).Where(static warning => warning.AffectsCompleteness).Select(VerificationIssue.From));
 
         using LoadedDocument reopened = session.Loader.OpenPublishedCandidate(candidatePath, outputPassword);
         WordsSavedState found = WordsReadBack.Saved(reopened.Document);
@@ -397,8 +412,7 @@ internal static class WordsEdit
         bool evaluation,
         bool revisionsKept,
         bool inputWasSigned,
-        ProtectionType inputProtection,
-        IReadOnlyList<OmittedResource> omittedResources)
+        ProtectionType inputProtection)
     {
         var extra = new List<Warning>();
         if (revisionsKept)
@@ -424,14 +438,12 @@ internal static class WordsEdit
         }
 
         extra.AddRange(ConversionWarnings(document, format, evaluation));
-
-        if (LocalDocumentResourceLoader.OmissionWarning(omittedResources) is { } omitted)
-        {
-            extra.Add(omitted);
-        }
-
         return EnvelopeParts.CombineWarnings(extra);
     }
+
+    /// <summary>The warning naming the omitted resources, as a list, or null when none were.</summary>
+    private static IReadOnlyList<Warning>? Omitted(IEnumerable<OmittedResource> omitted) =>
+        LocalDocumentResourceLoader.OmissionWarning(omitted) is { } warning ? [warning] : null;
 
     /// <summary>
     /// The ids, in batch order, of the applied operations whose effect verification reads back:

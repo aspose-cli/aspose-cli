@@ -85,7 +85,9 @@ aspose-cli words compare original.docx changed.docx --out redline.docx --author 
 ```
 
 The redline's revisions are attributed to `--author`, or to `Aspose CLI`
-without it.
+without it. A redline written as `epub`, `azw3`, `mobi`, `txt` or `md`
+leaves out the headers and footers as a convert to it does, and reports the
+same `LOSSY_CONVERSION` naming them.
 
 `--granularity word` (the default) marks whole changed words. Chinese and
 Japanese text has no spaces between words, so a one-character edit marks the

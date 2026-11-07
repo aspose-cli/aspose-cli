@@ -20,6 +20,7 @@ internal static class WordsDiagnostics
     internal static readonly WarningCode MergeValueMissing = new("MERGE_VALUE_MISSING");
     internal static readonly WarningCode FontsEmbedded = new("FONTS_EMBEDDED");
     internal static readonly WarningCode SplitSingleHeading = new("SPLIT_SINGLE_HEADING");
+    internal static readonly WarningCode PageNumbersRemoved = new("PAGE_NUMBERS_REMOVED");
 
     internal static readonly DiagnosticDescriptor FieldCountMismatch = DiagnosticDescriptor.Verification("FIELD_COUNT_MISMATCH");
     internal static readonly DiagnosticDescriptor RevisionCountMismatch = DiagnosticDescriptor.Verification("REVISION_COUNT_MISMATCH");
@@ -41,6 +42,7 @@ internal static class WordsDiagnostics
         DiagnosticDescriptor.Warning(MergeValueMissing),
         DiagnosticDescriptor.Warning(FontsEmbedded),
         DiagnosticDescriptor.Warning(SplitSingleHeading),
+        DiagnosticDescriptor.Warning(PageNumbersRemoved),
         FieldCountMismatch,
         RevisionCountMismatch,
         ProtectionMismatch,
