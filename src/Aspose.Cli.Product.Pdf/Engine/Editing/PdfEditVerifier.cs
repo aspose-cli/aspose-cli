@@ -88,6 +88,13 @@ internal sealed class PdfEditVerifier : IEditVerifier<PdfOp>
         return new VerificationFacts(issues, [.. _checked.Where(id => !_incomplete.Contains(id))]);
     }
 
+    /// <summary>
+    /// The warnings of the edit that leave the output incomplete, such as text a redaction took
+    /// beside its selection, carried into the verification with their location and hint.
+    /// </summary>
+    internal static IEnumerable<VerificationIssue> CompletenessIssues(IReadOnlyList<Warning> warnings) =>
+        warnings.Where(static warning => warning.AffectsCompleteness).Select(VerificationIssue.From);
+
     private void VerifyPages(Document output, List<VerificationIssue> issues)
     {
         if (_pageOps.Count == 0)

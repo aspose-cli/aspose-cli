@@ -80,10 +80,13 @@ internal readonly record struct PdfNavigationCensus(int Bookmarks, int Links, in
         Math.Max(0, after.Links - before.Links),
         Math.Max(0, after.NamedDestinations - before.NamedDestinations));
 
-    /// <summary>The completeness warning for degraded navigation, or null when nothing degraded.</summary>
-    internal Warning? ToWarning(string cause, string hint) => Total == 0 ? null : new Warning(PdfDiagnostics.NavigationDegraded, $"{Bookmarks} bookmark(s), {Links} link(s) and {NamedDestinations} named destination(s) {cause}.")
+    /// <summary>
+    /// The warning for degraded navigation, or null when nothing degraded; it leaves the output
+    /// incomplete unless the navigation led to what the caller asked to remove.
+    /// </summary>
+    internal Warning? ToWarning(string cause, string hint, bool affectsCompleteness = true) => Total == 0 ? null : new Warning(PdfDiagnostics.NavigationDegraded, $"{Bookmarks} bookmark(s), {Links} link(s) and {NamedDestinations} named destination(s) {cause}.")
     {
-        AffectsCompleteness = true,
+        AffectsCompleteness = affectsCompleteness,
         Hint = hint,
     };
 

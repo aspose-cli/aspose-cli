@@ -144,6 +144,31 @@ public sealed class PdfEditVerificationTests
         Assert.Equal(["op-0001", "op-0002", "op-0004"], result.Verification.CheckedOps);
     }
 
+    /// <summary>
+    /// Deleting the page the bookmark leads to leaves it leading to no page, which is what the
+    /// caller asked for: the warning counts it and names the operation that removes the bookmark,
+    /// but does not leave the output incomplete, so the verification passes on the page count
+    /// the deletion left.
+    /// </summary>
+    [Fact]
+    public void Verify_PassesWithNavigationThatLeadsToADeletedPage()
+    {
+        using var fixture = new PdfEngineFixture();
+        string input = CreateDocument(fixture);
+
+        PdfEditResult result = PdfEdit.Run(fixture.Session, Request(fixture, input, new PdfOpsBatch
+        {
+            Ops = [new DeletePagesOp { Pages = "1" }],
+        }, "degraded.pdf"));
+
+        Warning degraded = Assert.Single(result.Warnings!, static warning => warning.Code.Name == "NAVIGATION_DEGRADED");
+        Assert.False(degraded.AffectsCompleteness);
+        Assert.Contains("delete_bookmarks", degraded.Hint, StringComparison.Ordinal);
+        Assert.True(result.Verification!.Ok, string.Join("; ", result.Verification.Issues.Select(static issue => issue.Message)));
+        Assert.Equal(["op-0001"], result.Verification.CheckedOps);
+        Assert.False(result.HasFailures);
+    }
+
     [Fact]
     public void Verify_ReportsTextThatALaterOperationAddedBackAfterItsRedaction()
     {

@@ -35,9 +35,9 @@ internal static class PdfEngineFormats
             LossyHint = "Open the HTML in a browser and compare it with the PDF before relying on exact pagination, forms or annotations; review does not lay out HTML made from a PDF, so review the PDF itself.",
         },
         new("epub") { Write = PdfEngineWrite.Document, Save = SaveFormat.Epub, Lossy = true },
-        new("md") { Write = PdfEngineWrite.Document, Save = SaveFormat.Markdown, Lossy = true },
+        new("md") { Write = PdfEngineWrite.Document, Save = SaveFormat.Markdown, Lossy = true, LeavesFormValues = true },
         new("xps") { Write = PdfEngineWrite.Document, Save = SaveFormat.Xps },
-        new("txt") { Write = PdfEngineWrite.Text, Lossy = true },
+        new("txt") { Write = PdfEngineWrite.Text, Lossy = true, LeavesFormValues = true },
         new("pdfa-1b") { Write = PdfEngineWrite.Archive, Archive = PdfFormat.PDF_A_1B, AppearanceClause = "6.5.3", AttachmentRule = "PDF/A-1 does not allow attachments" },
         new("pdfa-2b") { Write = PdfEngineWrite.Archive, Archive = PdfFormat.PDF_A_2B, AppearanceClause = "6.3.3", AttachmentRule = "PDF/A-2 allows only attachments that are PDF/A documents" },
         new("pdfa-3b") { Write = PdfEngineWrite.Archive, Archive = PdfFormat.PDF_A_3B, AppearanceClause = "6.3.3" },
@@ -142,6 +142,12 @@ internal sealed record PdfEngineFormat(string Id)
 
     /// <summary>What to check before relying on a <see cref="Lossy"/> conversion; null for the general advice.</summary>
     public string? LossyHint { get; init; }
+
+    /// <summary>
+    /// Whether a conversion to this format leaves out the values of form fields: the format
+    /// holds only page text, and a field's value is not page text until the field is flattened.
+    /// </summary>
+    public bool LeavesFormValues { get; init; }
 
     /// <summary>
     /// Why an archive profile does not keep every attachment; null for a profile that keeps any

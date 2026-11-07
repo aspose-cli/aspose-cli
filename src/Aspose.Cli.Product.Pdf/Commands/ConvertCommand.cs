@@ -30,6 +30,7 @@ internal static class ConvertCommand
                     Pages = pages.ReadRange(parse),
                     Password = standard.InputPassword,
                     EditableConversion = standard.EditableConversion(),
+                    FormsInspection = PdfInputs.FormsInspection(standard),
                 };
             },
             Table)

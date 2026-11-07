@@ -1,4 +1,6 @@
+using System.Text.Json.Nodes;
 using Aspose.Cli.Sdk.Contracts;
+using Aspose.Cli.TestKit;
 using Aspose.Pdf;
 using Aspose.Pdf.Annotations;
 using Aspose.Pdf.Text;
@@ -8,10 +10,251 @@ namespace Aspose.Cli.Product.Pdf.Tests;
 
 /// <summary>
 /// Page moves and merges that break bookmarks, links or named destinations publish their
-/// output with a completeness warning that counts what broke; nothing is silently lost.
+/// output with a warning that counts what broke; nothing is silently lost. Navigation that led
+/// to a page the edit deleted is what the caller asked for; navigation whose page is still in
+/// the output leaves it incomplete, so a verified edit exits 8 on it.
 /// </summary>
 public sealed class PdfNavigationTests
 {
+    /// <summary>
+    /// A table of contents' link and a bookmark lead to page 2, which the edit deletes as asked:
+    /// the warning counts them and does not leave the output incomplete, so the verified edit
+    /// exits 0, and the link to page 3, which the engine reads by the number it had before the
+    /// deletion, is not counted. The hint names the operation that removes the bookmark, and
+    /// ending the batch with it does.
+    /// </summary>
+    [Fact]
+    public void DeletePages_ThatNavigationLeadsTo_CountsItWithoutFailingTheVerification()
+    {
+        using var fixture = new PdfEngineFixture();
+        using var workspace = new TempWorkspace();
+        using (var document = new Document())
+        {
+            foreach (string chapter in new[] { "Contents", "Results", "Appendix" })
+            {
+                document.Pages.Add().Paragraphs.Add(new TextFragment(chapter));
+            }
+
+            Page contents = document.Pages[1];
+            contents.Annotations.Add(new LinkAnnotation(contents, new Rectangle(68, 700, 300, 714)) { Destination = new XYZExplicitDestination(document.Pages[2], 68, 750, 0) });
+            contents.Annotations.Add(new LinkAnnotation(contents, new Rectangle(68, 680, 300, 694)) { Destination = new XYZExplicitDestination(document.Pages[3], 68, 750, 0) });
+            document.Outlines.Add(new OutlineItemCollection(document.Outlines) { Title = "Results", Destination = new FitExplicitDestination(document.Pages[2]) });
+            document.Save(workspace.File("chapters.pdf"));
+        }
+
+        CliResult deleted = workspace.Run("pdf", "edit", "chapters.pdf", "--out", "deleted.pdf", "--verify", "--output-format", "json", "--ops",
+            """[{"op":"delete_pages","pages":"2"}]""");
+
+        Assert.True(deleted.ExitCode == 0, deleted.StdOut + deleted.StdErr);
+        JsonNode result = deleted.Json();
+        Assert.True(result["verification"]!["ok"]!.GetValue<bool>());
+        JsonNode warning = Assert.Single(result["warnings"]!.AsArray(), static item => item!["code"]!.GetValue<string>() == "NAVIGATION_DEGRADED")!;
+        Assert.Null(warning["affectsCompleteness"]);
+        Assert.Equal("1 bookmark(s), 1 link(s) and 0 named destination(s) lead to pages the edit deleted.", warning["message"]!.GetValue<string>());
+        string hint = warning["hint"]!.GetValue<string>();
+        Assert.Contains("delete_bookmarks", hint, StringComparison.Ordinal);
+        Assert.Contains("No operation deletes links or named destinations", hint, StringComparison.Ordinal);
+        Assert.DoesNotContain("{", hint, StringComparison.Ordinal);
+
+        CliResult cleaned = workspace.Run("pdf", "edit", "chapters.pdf", "--out", "cleaned.pdf", "--verify", "--output-format", "json", "--ops",
+            """[{"op":"delete_pages","pages":"2"},{"op":"delete_bookmarks","bookmarks":["1"]}]""");
+
+        JsonNode left = Assert.Single(cleaned.Json()["warnings"]!.AsArray(), static item => item!["code"]!.GetValue<string>() == "NAVIGATION_DEGRADED")!;
+        Assert.StartsWith("0 bookmark(s), 1 link(s) and 0 named destination(s)", left["message"]!.GetValue<string>(), StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// PDF-MOVE-BOOKMARK: a bookmark with a coordinate of 0 on a moved page no longer leads to the
+    /// page, which is still in the output, so the verified edit exits 8. The hint names the two
+    /// operations and gives the command that reads, run as written, the page the bookmark opened
+    /// in the input; deleting it and adding it again in the same batch makes the edit exit 0.
+    /// </summary>
+    [Fact]
+    public void MovePages_ThatStrandsABookmark_FailsTheVerificationUntilTheBatchAddsItAgain()
+    {
+        using var fixture = new PdfEngineFixture();
+        using var workspace = new TempWorkspace();
+        using (Document document = Chapters())
+        {
+            document.Save(workspace.File("chapters.pdf"));
+        }
+
+        const string Move = """{"op":"move_pages","pages":"3","to":1}""";
+        CliResult moved = workspace.Run("pdf", "edit", "chapters.pdf", "--out", "moved.pdf", "--verify", "--output-format", "json", "--ops", $"[{Move}]");
+
+        Assert.True(moved.ExitCode == 8, moved.StdOut + moved.StdErr);
+        JsonNode result = JsonNode.Parse(moved.StdOut)!;
+        Assert.Equal("NAVIGATION_DEGRADED", Assert.Single(result["verification"]!["issues"]!.AsArray())!["code"]!.GetValue<string>());
+        JsonNode warning = Assert.Single(result["warnings"]!.AsArray(), static item => item!["code"]!.GetValue<string>() == "NAVIGATION_DEGRADED")!;
+        Assert.True(warning["affectsCompleteness"]!.GetValue<bool>());
+        string hint = warning["hint"]!.GetValue<string>();
+        Assert.Contains("delete_bookmarks", hint, StringComparison.Ordinal);
+        Assert.Contains("add_bookmark", hint, StringComparison.Ordinal);
+        Assert.DoesNotContain("{", hint, StringComparison.Ordinal);
+        Assert.Equal(3, OpenedPage(workspace.RunCommandLine(InspectionIn(hint)), "Chapter 3"));
+
+        CliResult fixedUp = workspace.Run("pdf", "edit", "chapters.pdf", "--out", "fixed.pdf", "--verify", "--output-format", "json", "--ops",
+            $$"""[{{Move}},{"op":"delete_bookmarks","bookmarks":["3"]},{"op":"add_bookmark","title":"Chapter 3","page":1}]""");
+
+        Assert.True(fixedUp.ExitCode == 0, fixedUp.StdOut + fixedUp.StdErr);
+        JsonNode repaired = fixedUp.Json();
+        Assert.True(repaired["verification"]!["ok"]!.GetValue<bool>());
+        Assert.DoesNotContain(repaired["warnings"]?.AsArray() ?? [], static item => item!["code"]!.GetValue<string>() == "NAVIGATION_DEGRADED");
+        using var output = new Document(workspace.File("fixed.pdf"));
+        OutlineItemCollection chapter = output.Outlines.Single(static item => item.Title == "Chapter 3");
+        Assert.Contains("Chapter 3", Text(output.Pages[((ExplicitDestination)chapter.Destination).PageNumber]), StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// A title with a slash, no title and titles two bookmarks share change nothing in the hint,
+    /// which names no bookmark: it still says how to repair them and gives the command to read them.
+    /// </summary>
+    [Fact]
+    public void MovePages_OfBookmarksWithAwkwardTitles_GivesTheSameHint()
+    {
+        using var workspace = new TempWorkspace();
+        const string Target = "/Dest [5 0 R /XYZ 0 800 0]";
+        PdfEngineFixture.WriteRawPdf(workspace.File("titles.pdf"),
+        [
+            "<< /Type /Catalog /Pages 2 0 R /Outlines 6 0 R >>",
+            "<< /Type /Pages /Kids [3 0 R 4 0 R 5 0 R] /Count 3 >>",
+            "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] >>",
+            "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] >>",
+            "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] >>",
+            "<< /Type /Outlines /First 7 0 R /Last 10 0 R /Count 4 >>",
+            $"<< /Title (Part A/B) /Parent 6 0 R /Next 8 0 R {Target} >>",
+            $"<< /Parent 6 0 R /Prev 7 0 R /Next 9 0 R {Target} >>",
+            $"<< /Title (Same) /Parent 6 0 R /Prev 8 0 R /Next 10 0 R {Target} >>",
+            $"<< /Title (Same) /Parent 6 0 R /Prev 9 0 R {Target} >>",
+        ]);
+
+        CliResult moved = workspace.Run("pdf", "edit", "titles.pdf", "--out", "moved.pdf", "--verify", "--output-format", "json", "--ops",
+            """[{"op":"move_pages","pages":"3","to":1}]""");
+
+        Assert.True(moved.ExitCode == 8, moved.StdOut + moved.StdErr);
+        JsonNode warning = Assert.Single(JsonNode.Parse(moved.StdOut)!["warnings"]!.AsArray(), static item => item!["code"]!.GetValue<string>() == "NAVIGATION_DEGRADED")!;
+        Assert.StartsWith("4 bookmark(s), 0 link(s)", warning["message"]!.GetValue<string>(), StringComparison.Ordinal);
+        string hint = warning["hint"]!.GetValue<string>();
+        Assert.Contains("delete_bookmarks", hint, StringComparison.Ordinal);
+        Assert.Contains("add_bookmark", hint, StringComparison.Ordinal);
+        Assert.DoesNotContain("{", hint, StringComparison.Ordinal);
+        Assert.DoesNotContain("Part A/B", hint, StringComparison.Ordinal);
+        Assert.Equal(3, OpenedPage(workspace.RunCommandLine(InspectionIn(hint)), "Part A/B"));
+    }
+
+    /// <summary>
+    /// An in-place edit replaces its input, so the command of the hint reads the backup, which
+    /// still holds the bookmarks' pages; without a backup no file holds them, and the hint says so
+    /// without giving a command that would read the edited file.
+    /// </summary>
+    [Fact]
+    public void MovePages_InPlace_PointsTheHintAtTheBackupOrAtACopyOfTheOriginal()
+    {
+        using var fixture = new PdfEngineFixture();
+        using var workspace = new TempWorkspace();
+        using (Document document = Chapters())
+        {
+            document.Save(workspace.File("backed.pdf"));
+            document.Save(workspace.File("bare.pdf"));
+        }
+
+        const string Ops = """[{"op":"move_pages","pages":"3","to":1}]""";
+        CliResult backed = workspace.Run("pdf", "edit", "backed.pdf", "--in-place", "--backup", "--verify", "--output-format", "json", "--ops", Ops);
+        CliResult bare = workspace.Run("pdf", "edit", "bare.pdf", "--in-place", "--verify", "--output-format", "json", "--ops", Ops);
+
+        Assert.True(backed.ExitCode == 8, backed.StdOut + backed.StdErr);
+        JsonNode result = JsonNode.Parse(backed.StdOut)!;
+        string command = InspectionIn(Assert.Single(result["warnings"]!.AsArray(), static item => item!["code"]!.GetValue<string>() == "NAVIGATION_DEGRADED")!["hint"]!.GetValue<string>());
+        Assert.Contains(Path.GetFileName(result["backup"]!["path"]!.GetValue<string>()), command, StringComparison.Ordinal);
+        Assert.Equal(3, OpenedPage(workspace.RunCommandLine(command), "Chapter 3"));
+
+        Assert.True(bare.ExitCode == 8, bare.StdOut + bare.StdErr);
+        string hint = Assert.Single(JsonNode.Parse(bare.StdOut)!["warnings"]!.AsArray(), static item => item!["code"]!.GetValue<string>() == "NAVIGATION_DEGRADED")!["hint"]!.GetValue<string>();
+        Assert.Contains("'pdf inspect --detail outline' on a copy of the original", hint, StringComparison.Ordinal);
+        Assert.DoesNotContain("aspose-cli", hint, StringComparison.Ordinal);
+    }
+
+    /// <summary>On an encrypted input the command of the hint carries its password variable, and run as written it reads the bookmarks.</summary>
+    [Fact]
+    public void MovePages_OfAnEncryptedPdf_GivesAnInspectionWithItsPasswordVariable()
+    {
+        using var fixture = new PdfEngineFixture();
+        using var workspace = new TempWorkspace();
+        using (Document document = Chapters())
+        {
+            document.Encrypt("user-secret", "owner-secret", Aspose.Pdf.Facades.DocumentPrivilege.ForbidAll, CryptoAlgorithm.AESx256, usePdf20: false);
+            document.Save(workspace.File("locked chapters.pdf"));
+        }
+
+        var variables = new Dictionary<string, string?>(StringComparer.Ordinal) { ["PDF_USER"] = "user-secret" };
+        CliResult moved = workspace.RunWithEnv(variables, "pdf", "edit", "locked chapters.pdf", "--password-env", "PDF_USER", "--out", "moved.pdf", "--verify", "--output-format", "json", "--ops",
+            """[{"op":"move_pages","pages":"3","to":1}]""");
+
+        Assert.True(moved.ExitCode == 8, moved.StdOut + moved.StdErr);
+        string command = InspectionIn(Assert.Single(JsonNode.Parse(moved.StdOut)!["warnings"]!.AsArray(), static item => item!["code"]!.GetValue<string>() == "NAVIGATION_DEGRADED")!["hint"]!.GetValue<string>());
+        Assert.Contains(" --password-env PDF_USER", command, StringComparison.Ordinal);
+        Assert.Equal(3, OpenedPage(workspace.RunCommandLine(command, variables), "Chapter 3"));
+    }
+
+    // Three chapters, each with a bookmark to its page at a left of 0, which a page move cannot rebuild.
+    private static Document Chapters()
+    {
+        var document = new Document();
+        for (int number = 1; number <= 3; number++)
+        {
+            document.Pages.Add().Paragraphs.Add(new TextFragment($"Chapter {number}"));
+            document.Outlines.Add(new OutlineItemCollection(document.Outlines)
+            {
+                Title = $"Chapter {number}",
+                Destination = new XYZExplicitDestination(document.Pages[number], 0, 800, 0),
+            });
+        }
+
+        return document;
+    }
+
+    // The one runnable command a warning's hint quotes.
+    private static string InspectionIn(string hint) =>
+        Assert.Single(System.Text.RegularExpressions.Regex.Matches(hint, "'(aspose-cli [^']+ --detail outline --output-format json)'")).Groups[1].Value;
+
+    // The page the outline a command read opens for the bookmark of a title.
+    private static int OpenedPage(CliResult inspected, string title) =>
+        inspected.Json()["outline"]!.AsArray().First(item => item!["title"]!.GetValue<string>() == title)!["page"]!.GetValue<int>();
+
+    /// <summary>
+    /// Destinations and link areas with long fractions, as other producers write them, are
+    /// recognised in the saved output: their page is still there, so they count as stranded and
+    /// the verified edit exits 8, rather than passing as navigation to a deleted page.
+    /// </summary>
+    [Fact]
+    public void MovePages_WithCoordinatesThatAreNotWhole_CountsWhatItStranded()
+    {
+        using var workspace = new TempWorkspace();
+        PdfEngineFixture.WriteRawPdf(workspace.File("fractions.pdf"),
+        [
+            "<< /Type /Catalog /Pages 2 0 R /Outlines 6 0 R >>",
+            "<< /Type /Pages /Kids [3 0 R 4 0 R 5 0 R] /Count 3 >>",
+            "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Annots [9 0 R] >>",
+            "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] >>",
+            "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Annots [10 0 R] >>",
+            "<< /Type /Outlines /First 7 0 R /Last 8 0 R /Count 2 >>",
+            "<< /Title (Top) /Parent 6 0 R /Next 8 0 R /Dest [5 0 R /XYZ 0 700.123456789 1.5] >>",
+            "<< /Title (Left) /Parent 6 0 R /Prev 7 0 R /Dest [5 0 R /XYZ 72.350000001 0 0] >>",
+            "<< /Type /Annot /Subtype /Link /Rect [68.123456 700.5 300.75 714.25] /Border [0 0 0] /Dest [5 0 R /XYZ 0 650.987654321 0] >>",
+            // A link on the moved page, which the page's copy carries.
+            "<< /Type /Annot /Subtype /Link /Rect [72.111111 500.222222 310.333333 520.444444] /Border [0 0 0] /Dest [3 0 R /XYZ 0 640.555555555 0] >>",
+        ]);
+
+        CliResult moved = workspace.Run("pdf", "edit", "fractions.pdf", "--out", "moved.pdf", "--verify", "--output-format", "json", "--ops",
+            """[{"op":"move_pages","pages":"3","to":1}]""");
+
+        Assert.True(moved.ExitCode == 8, moved.StdOut + moved.StdErr);
+        JsonNode warning = Assert.Single(JsonNode.Parse(moved.StdOut)!["warnings"]!.AsArray(), static item => item!["code"]!.GetValue<string>() == "NAVIGATION_DEGRADED")!;
+        Assert.True(warning["affectsCompleteness"]!.GetValue<bool>());
+        Assert.StartsWith("2 bookmark(s), 2 link(s) and 0 named destination(s) no longer lead to a page", warning["message"]!.GetValue<string>(), StringComparison.Ordinal);
+        Assert.Contains("No operation re-creates links or named destinations", warning["hint"]!.GetValue<string>(), StringComparison.Ordinal);
+    }
+
     [Fact]
     public void MovePages_RetargetsExactDestinationsAndCountsOnesWithAZeroCoordinate()
     {

@@ -9,11 +9,20 @@ review codes.
 
 `pdf edit --verify` reads the staged output back against the effect of each
 applied operation. When it finds an issue, the output is still published so you
-can inspect it. Each issue message starts with the ids and names of the
-operations it concerns, and never repeats redacted text; its `location` is the
-address the operation's `targets` use. `verification.checkedOps` lists, in batch
+can inspect it. Each issue of the read-back starts its message with the ids and
+names of the operations it concerns, and never repeats redacted text; its
+`location` is the address the operation's `targets` use. `verification.checkedOps` lists, in batch
 order, the operations whose every recorded effect was read back; an operation it
 omits was not fully checked, even when part of its effect was.
+
+A warning of the edit with `affectsCompleteness: true` is an issue too, with the
+same code, message, location and hint: `REDACTION_NEARBY_TEXT_REMOVED` when a
+cover removed characters beside what a redaction selected, and
+`NAVIGATION_DEGRADED` when bookmarks, links or named destinations no longer
+lead to their page although it is still in the output. With `--verify` such an
+edit exits 8; without it, it exits 0 with the warning alone. The
+`NAVIGATION_DEGRADED` of navigation that led to a page the batch deleted has no
+`affectsCompleteness` and is no issue ([page changes](editing.md)).
 
 | Operation | Read back |
 | --- | --- |

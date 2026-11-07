@@ -58,6 +58,9 @@ internal static class PdfDiagnostics
     /// <summary>A table extraction found no table on the selected pages.</summary>
     internal static readonly WarningCode TablesNotFound = new("TABLES_NOT_FOUND");
 
+    /// <summary>Filled form fields lie on the pages read, and their values are not page text.</summary>
+    internal static readonly WarningCode FormValuesNotInText = new("FORM_VALUES_NOT_IN_TEXT");
+
     /// <summary>A form field of the output does not hold the value set_form_field set.</summary>
     internal static readonly DiagnosticDescriptor FieldValueMismatch = DiagnosticDescriptor.Verification("FIELD_VALUE_MISMATCH");
 
@@ -111,6 +114,7 @@ internal static class PdfDiagnostics
         DiagnosticDescriptor.Warning(SignatureFontEmbedded),
         DiagnosticDescriptor.Warning(SignatureTextClipped),
         DiagnosticDescriptor.Warning(TablesNotFound),
+        DiagnosticDescriptor.Warning(FormValuesNotInText),
         DiagnosticDescriptor.Warning(PageNumbersAlreadyPresent),
         DiagnosticDescriptor.Warning(PageSizesMixed),
     ];

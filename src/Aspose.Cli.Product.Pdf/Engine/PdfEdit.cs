@@ -43,7 +43,7 @@ internal static class PdfEdit
             ? (Permissions)loaded.Document.Permissions
             : null;
         bool openPassword = userPermissions is not null && loaded.HasOpenPassword;
-        PdfNavigationCensus navigationBefore = PdfNavigationCensus.Unresolved(loaded.Document);
+        IReadOnlyList<PdfNavigationLoss.Entry> navigationBefore = PdfNavigationLoss.Capture(loaded.Document);
         PdfEditVerifier? verifier = request.Verify ? new PdfEditVerifier(loaded.Document) : null;
         var model = new PdfEditModel(
             session.Loader, operationInputs, loaded.Document, batch.Ops, request.Password, request.EncryptPassword is not null, request.OpSecrets);
@@ -58,14 +58,28 @@ internal static class PdfEdit
         // only an encryption applied to a reopened copy.
         EncryptDocumentOp? encryptCopy = batch.Ops.Any(static op => op is SetPropertiesOp)
             && PdfOutputEncryption.InformationBeyondLatin1(loaded.Document) ? model.Encryption : null;
-        PdfNavigationCensus navigation = PdfNavigationCensus.Degraded(
-            navigationBefore, PdfNavigationCensus.Unresolved(loaded.Document));
+        // The navigation the batch left leading to no page, as the published output reads it: the
+        // engine keeps the page numbers of the destinations it read before a page deletion, so the
+        // edited document itself can name the wrong ones. A dry run publishes nothing to read.
+        IReadOnlyList<PdfNavigationLoss.Entry>? navigationAfter = null;
+        PdfNavigationLoss? navigation = null;
+        PdfNavigationLoss Navigation() => navigation ??= PdfNavigationLoss.Between(
+            navigationBefore, navigationAfter ?? PdfNavigationLoss.Capture(loaded.Document), model.Keeps);
+
+        // What the batch left: the verification reports each warning that leaves the output
+        // incomplete as an issue.
+        List<Warning> warnings = BatchWarnings(batch, applied, model, userPermissions, openPassword, request);
         EditPublication<PdfEditVerification> publication;
         // --encrypt replaces whatever encryption the operations leave.
         try
         {
-            publication = Publish(session, loaded.Document, request, request.EncryptPassword ?? model.OutputPassword, encryptCopy, precondition, model, verifier, applied, state,
-                output => intactAfter = intact.Count == 0 ? intact : PdfInfoProjection.IntactSignatures(output));
+            publication = Publish(session, loaded.Document, request, request.EncryptPassword ?? model.OutputPassword, encryptCopy, precondition, model, verifier, applied,
+                () => [.. warnings, .. Navigation().Warnings(request.OutlineInspection)], state,
+                output =>
+                {
+                    intactAfter = intact.Count == 0 ? intact : PdfInfoProjection.IntactSignatures(output);
+                    navigationAfter = PdfNavigationLoss.Capture(output);
+                });
         }
         catch (RedactedTextLeft left)
         {
@@ -78,29 +92,12 @@ internal static class PdfEdit
             });
         }
         finally { operationInputs.ThrowIfFailed(); }
-        List<Warning> warnings = BuildWarnings(applied, model.TextMoved, model.TextBeside);
+        // Navigation the batch left leading to no page: only what led to a page still in the output
+        // leaves it incomplete.
+        warnings.AddRange(Navigation().Warnings(request.OutlineInspection));
         if (SignaturesInvalidated(intact, publication.Output is null ? null : intactAfter, request.Options.DryRun) is { } invalidated)
         {
             warnings.Insert(0, invalidated);
-        }
-
-        warnings.AddRange(model.NumberedTwice.Select(static numbered => NumberedTwice(numbered.Id, numbered.Pages)));
-        if (MetadataRewritten(batch.Ops, applied.Outcomes) is { } rewritten)
-        {
-            warnings.Add(rewritten);
-        }
-
-        if (UnpermittedChange(userPermissions, openPassword, applied.Outcomes, request.Options.DryRun, request.EncryptPassword is not null) is { } protection)
-        {
-            warnings.Add(protection);
-        }
-
-        if (navigation.ToWarning(
-                "no longer lead to a page: they targeted deleted pages, or moved pages at a position with a coordinate of 0, which the SDK cannot tell apart from an omitted one",
-                "Re-create the affected bookmarks (add_bookmark) and links (add_hyperlink) after the page change, or reorder pages before adding navigation.")
-            is { } degraded)
-        {
-            warnings.Add(degraded);
         }
 
         warnings.AddRange(publication.BackupWarnings ?? []);
@@ -130,6 +127,7 @@ internal static class PdfEdit
         PdfEditModel model,
         PdfEditVerifier? verifier,
         AppliedBatch applied,
+        Func<IReadOnlyList<Warning>> warnings,
         LicenseState state,
         Action<Document> readBack)
     {
@@ -169,7 +167,8 @@ internal static class PdfEdit
             verifier is null ? null : candidate =>
             {
                 using LoadedPdf reopened = session.Loader.OpenPublishedCandidate(candidate, outputPassword);
-                VerifiedBatch verified = applied.Verified(verifier.Verify(reopened.Document));
+                VerificationFacts facts = verifier.Verify(reopened.Document);
+                VerifiedBatch verified = applied.Verified(facts with { Issues = [.. PdfEditVerifier.CompletenessIssues(warnings()), .. facts.Issues] });
                 return new PdfEditVerification { Ok = verified.Ok, Issues = verified.Issues, CheckedOps = verified.CheckedOps };
             },
             "pdf-edit");
@@ -300,6 +299,34 @@ internal static class PdfEdit
             };
     }
 
+    /// <summary>
+    /// The warnings about what the batch did to the document, in the order the result lists them,
+    /// before those that only the publication knows: the navigation it left leading to no page,
+    /// the signatures it invalidated and the backup.
+    /// </summary>
+    private static List<Warning> BatchWarnings(
+        PdfOpsBatch batch,
+        AppliedBatch applied,
+        PdfEditModel model,
+        Permissions? userPermissions,
+        bool openPassword,
+        PdfEditRequest request)
+    {
+        List<Warning> warnings = BuildWarnings(applied, model.TextMoved, model.TextBeside);
+        warnings.AddRange(model.NumberedTwice.Select(static numbered => NumberedTwice(numbered.Id, numbered.Pages)));
+        if (MetadataRewritten(batch.Ops, applied.Outcomes) is { } rewritten)
+        {
+            warnings.Add(rewritten);
+        }
+
+        if (UnpermittedChange(userPermissions, openPassword, applied.Outcomes, request.Options.DryRun, request.EncryptPassword is not null) is { } protection)
+        {
+            warnings.Add(protection);
+        }
+
+        return warnings;
+    }
+
     private static List<Warning> BuildWarnings(
         AppliedBatch applied,
         IReadOnlyList<string> textMoved,
@@ -321,6 +348,7 @@ internal static class PdfEdit
             });
         }
 
+        // The output lacks text no operation selected, so --verify reports it as an issue.
         if (textBeside.Count > 0)
         {
             warnings.Add(new Warning(PdfDiagnostics.RedactionNearbyTextRemoved,
@@ -329,6 +357,7 @@ internal static class PdfEdit
             {
                 Hint = "A cover always spans all it selects, so nothing of it shows, also on a scanned image under the text. "
                     + "Render the pages with 'pdf render' to see what else was covered; to keep that text, redact the source document and create the PDF again.",
+                AffectsCompleteness = true,
             });
         }
 

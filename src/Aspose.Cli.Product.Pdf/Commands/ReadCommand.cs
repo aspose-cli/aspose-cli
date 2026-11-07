@@ -31,6 +31,7 @@ internal static class ReadCommand
                     Content = parse.GetValue(content) ?? PdfReadContents.Text,
                     MaxCharacters = characters,
                     Password = standard.InputPassword,
+                    FormsInspection = PdfInputs.FormsInspection(standard),
                 };
             },
             Table)

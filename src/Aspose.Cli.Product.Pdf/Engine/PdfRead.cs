@@ -45,14 +45,21 @@ internal static class PdfRead
         }
 
         bool windowTruncated = pages.Count < requested.Count || pages.Any(static page => page.ContentTruncated);
-        IReadOnlyList<Warning>? warnings = scanned.Count == 0
-            ? null
-            : [new Warning(PdfDiagnostics.ScannedPagesSuspected, $"Pages with no extractable text appear image-dominated: {string.Join(", ", scanned)}.")
+        var warnings = new List<Warning>();
+        if (scanned.Count > 0)
+        {
+            warnings.Add(new Warning(PdfDiagnostics.ScannedPagesSuspected, $"Pages with no extractable text appear image-dominated: {string.Join(", ", scanned)}.")
             {
                 Hint = "This build has no OCR: read those pages from rendered images ('aspose-cli pdf render'), and hide content "
                     + "on them with redact_area, whose coordinates you can read from 'aspose-cli pdf render --grid 50', "
                     + "which labels points from the page's top-left corner.",
-            }];
+            });
+        }
+
+        if (FormValuesNotInText(loaded.Document, [.. pages.Select(static page => page.Page)], request.FormsInspection) is { } filled)
+        {
+            warnings.Add(filled);
+        }
 
         return new PdfReadResult
         {
@@ -69,8 +76,25 @@ internal static class PdfRead
             },
             ScannedPagesSuspected = scanned.Count == 0 ? null : scanned,
             License = EnvelopeParts.License(state),
-            Warnings = warnings,
+            Warnings = warnings.Count == 0 ? null : warnings,
         };
+    }
+
+    /// <summary>
+    /// The warning that the text read leaves out the values of the filled fields on the pages
+    /// read, with the command that reads them, or null when none of them holds one.
+    /// </summary>
+    private static Warning? FormValuesNotInText(Document document, IReadOnlyCollection<int> read, string? inspection)
+    {
+        IReadOnlyList<string> filled = PdfForms.Filled(document, read);
+        return filled.Count == 0
+            ? null
+            : new Warning(PdfDiagnostics.FormValuesNotInText,
+                $"The page text leaves out the values of {filled.Count} filled form field{(filled.Count == 1 ? "" : "s")} on the pages read: {PdfForms.Listed(filled)}.")
+            {
+                Hint = $"A field's value is not page text: read the values with {PdfForms.Inspection(inspection)}, which gives each field's name, value, page and rect.",
+                Location = filled.Count == 1 ? PdfInfoProjection.Address("field", filled[0]) : null,
+            };
     }
 
     /// <summary>

@@ -20,4 +20,11 @@ public sealed record PdfEditRequest : BoundedEditRequest<PdfOpsBatch>
         : base(edit)
     {
     }
+
+    /// <summary>
+    /// The quoted command line that reads the bookmarks of the document as they were before the
+    /// edit, with the input password's environment variable when one gave it, which the warning of
+    /// stranded bookmarks names; null when there is no such file or no command line.
+    /// </summary>
+    public string? OutlineInspection { get; init; }
 }

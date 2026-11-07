@@ -40,6 +40,45 @@ internal static class PdfForms
             .OrderBy(static group => group.Key, StringComparer.Ordinal)
             .Select(static group => (group.Key, group.First()));
 
+    /// <summary>
+    /// The names, in ordinal order, of the fields a reader sees filled in on
+    /// <paramref name="pages"/>: a widget of the field, or of a button of its radio group, lies on
+    /// one of them, and its value is not blank, not the unchecked state of a check box or radio
+    /// group, and not a signature's or a button's. A field's value is not page text.
+    /// </summary>
+    internal static IReadOnlyList<string> Filled(Document document, IReadOnlyCollection<int> pages) =>
+        [.. document.Form.Fields
+            .GroupBy(static field => field.FullName, StringComparer.Ordinal)
+            .OrderBy(static group => group.Key, StringComparer.Ordinal)
+            .Where(group => Shows(group.First()) && group.Any(field => PageOf(field) is int page && pages.Contains(page)))
+            .Select(static group => group.Key)];
+
+    /// <summary>
+    /// Whether a field holds a value a reader filled in: not blank, not the unchecked state of a
+    /// check box or radio group, and not a signature, which flattening would invalidate, or a button.
+    /// </summary>
+    private static bool Shows(Field field) => State(field) is (string kind, string value)
+        && kind is not (PdfFormFieldKinds.Signature or PdfFormFieldKinds.Button)
+        && !string.IsNullOrWhiteSpace(value)
+        && !(kind is PdfFormFieldKinds.Checkbox or PdfFormFieldKinds.Radio && value == CheckboxOff);
+
+    /// <summary>
+    /// The first of <paramref name="names"/>, quoted, with how many more there are:
+    /// <c>'a', 'b', and 3 more</c>.
+    /// </summary>
+    internal static string Listed(IReadOnlyList<string> names)
+    {
+        const int Shown = 5;
+        string listed = string.Join(", ", names.Take(Shown).Select(static name => $"'{name}'"));
+        return names.Count > Shown ? $"{listed}, and {names.Count - Shown} more" : listed;
+    }
+
+    /// <summary>
+    /// The command a hint gives to read the field values: the command line built for the
+    /// invocation's input, or, for a request made without one, the command's name.
+    /// </summary>
+    internal static string Inspection(string? commandLine) => commandLine ?? "'pdf inspect --detail forms'";
+
     /// <summary>The kind and value a read reports for a field; a radio button reports its group's.</summary>
     internal static (string Kind, string? Value) State(Field field)
     {
@@ -147,9 +186,15 @@ internal static class PdfForms
         return guard.StageAllBytes("form" + (format.OutputExtension ?? format.Extensions[0]), data.ToArray());
     }
 
+    /// <summary>
+    /// Whether the document's form is AcroForm alone, which filling, flattening and form export
+    /// take; one with XFA, a hybrid included, is read-only (<see cref="EnsureAcroForm"/>).
+    /// </summary>
+    internal static bool IsAcroForm(Document document) => !document.Form.HasXfa;
+
     internal static void EnsureAcroForm(Document document)
     {
-        if (document.Form.HasXfa)
+        if (!IsAcroForm(document))
         {
             throw new CliException(
                 PdfDiagnostics.FormXfaUnsupported,

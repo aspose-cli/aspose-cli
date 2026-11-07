@@ -213,9 +213,12 @@ Reproductions: [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownI
   one (`XYZExplicitDestination` with `NaN` writes an invalid `NaN` token), so a destination that
   named a moved page cannot always be rebuilt exactly; the SDK has no page move.
 - **CLI behavior:** `move_pages` retargets navigation to and from the moved pages exactly, except
-  a destination with a coordinate of 0, which it leaves without a target and counts in
-  `NAVIGATION_DEGRADED`.
-- **Workaround:** re-create the counted bookmarks and links with `add_bookmark` and `add_hyperlink`.
+  a destination with a coordinate of 0, which it leaves without a target and counts in a
+  `NAVIGATION_DEGRADED` with `affectsCompleteness: true`, so `pdf edit --verify` exits 8.
+- **Workaround:** in the same batch, after the page operations, delete the counted bookmarks with
+  `delete_bookmarks` and add them again with `add_bookmark`, taking the pages they opened from
+  `pdf inspect --detail outline` of the input; no operation re-creates a link or a named
+  destination, so tell the user which no longer lead to their page.
 
 ### PDF-PDFA-ATTACHMENT-TYPE
 

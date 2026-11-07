@@ -35,7 +35,8 @@ public sealed record PdfEditResult() : EngineResultEnvelope("edit-result"), IPar
 
     /// <summary>
     /// Present with <c>--verify</c>: the staged output read back against the effect of each form,
-    /// redaction, bookmark, property, attachment and page operation. Also present, not ok, when
+    /// redaction, bookmark, property, attachment and page operation, with an issue for each
+    /// warning that leaves the output incomplete. Also present, not ok, when
     /// the output still held the text of a redact_text, with an issue for each place it was found.
     /// </summary>
     public PdfEditVerification? Verification { get; init; }

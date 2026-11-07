@@ -23,6 +23,9 @@ internal static class PdfConvert
             ?? Enumerable.Range(1, loaded.Document.Pages.Count).ToArray();
         List<Warning> warnings = [];
         PdfEngineFormat target = PdfEngineFormats.Of(request.Output.Format.Id);
+        // Read before a conversion deletes the pages --pages did not select.
+        IReadOnlyList<string> filled = target.LeavesFormValues ? PdfForms.Filled(loaded.Document, pages) : [];
+        bool flattens = PdfForms.IsAcroForm(loaded.Document);
         IReadOnlyList<PdfConvertOutput> outputs = target.Write switch
         {
             PdfEngineWrite.Tiff => [new(ConvertTiff(session, loaded.Document, pages, request))],
@@ -31,6 +34,11 @@ internal static class PdfConvert
             PdfEngineWrite.Document => [new(ConvertDocument(session, loaded.Document, pages, request, warnings))],
             _ => throw new InvalidOperationException($"'{target.Id}' is not a PDF convert format."),
         };
+
+        if (filled.Count > 0)
+        {
+            warnings.Add(FormValuesLeftOut(request.Output.Format.Id, filled, flattens, request.FormsInspection));
+        }
 
         if (target.Lossy)
         {
@@ -49,6 +57,22 @@ internal static class PdfConvert
             Warnings = warnings.Count == 0 ? null : warnings,
         };
     }
+
+    /// <summary>
+    /// The warning that an output of page text alone, such as text or Markdown, leaves out the
+    /// values of the filled fields on the converted pages, which a flattened copy of an AcroForm
+    /// writes as page text, and the command that reads them.
+    /// </summary>
+    private static Warning FormValuesLeftOut(string format, IReadOnlyList<string> filled, bool flattens, string? inspection) =>
+        ContentLoss.Warning([ContentKind.FormValues],
+            $"The {format} output leaves out the values of {filled.Count} filled form field{(filled.Count == 1 ? "" : "s")}: {PdfForms.Listed(filled)}.",
+            "A field's value is not page text. "
+                + (flattens
+                    ? "To keep the values, flatten the fields first: an edit with a flatten_forms operation and a new --out file "
+                        + "writes them as page text and ends their fillability; then convert that file. "
+                    : "The form has XFA, which is read-only, so its fields cannot be flattened into page text. ")
+                + $"To read the values, run {PdfForms.Inspection(inspection)}.",
+            filled.Count == 1 ? PdfInfoProjection.Address("field", filled[0]) : null);
 
     // The conversion of the input, or of the selected pages split from it, that writes an editable
     // file of the output's format, when another product writes one; otherwise nothing.
