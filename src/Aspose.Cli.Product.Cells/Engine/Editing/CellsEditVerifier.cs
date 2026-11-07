@@ -6,7 +6,10 @@ using Aspose.Cli.Sdk.Results;
 
 namespace Aspose.Cli.Product.Cells.Engine.Editing;
 
-/// <summary>Verifies the exact staged workbook against its pre-edit baseline.</summary>
+/// <summary>
+/// Verifies the exact staged workbook against its pre-edit baseline, as far as the output's format
+/// holds it: a text table holds the values of one sheet (<see cref="DiffComparer.CompareTextTable"/>).
+/// </summary>
 internal sealed class CellsEditVerifier(CellsWorkbookLoader loader, ResourceBudgetLedger budgets)
 {
     private const int MaxDiffs = 1000;
@@ -14,10 +17,14 @@ internal sealed class CellsEditVerifier(CellsWorkbookLoader loader, ResourceBudg
     internal CellsEditVerification Verify(string candidatePath,
         string baselinePath, string originalPath, Secret? inputPassword,
         Secret? outputPassword, CellsOpsBatch batch, string activeSheet, IReadOnlyList<BoundedOperationOutcome> applied,
-        IReadOnlyList<Warning>? sourceWarnings)
+        IReadOnlyList<Warning>? sourceWarnings, TextTableSheet? textTable)
     {
         using LoadedWorkbook baseline = loader.OpenPublishedCandidate(baselinePath, inputPassword, originalPath);
         using LoadedWorkbook candidate = loader.OpenPublishedCandidate(candidatePath, outputPassword);
+        // A text table reads back named after its file and holds no formulas: its sheet keeps the
+        // name it was written from, and its values alone are compared.
+        textTable?.Rename(candidate.Workbook);
+        bool valuesOnly = textTable is not null;
         // Targets as the batch found the workbook before its first operation: an operation that
         // names no sheet ran on the sheet active then.
         IReadOnlyList<CellsEditTarget> footprint = OpsFootprint.Collect(batch, activeSheet);
@@ -28,13 +35,14 @@ internal sealed class CellsEditVerifier(CellsWorkbookLoader loader, ResourceBudg
         var issues = new List<VerificationIssue>();
         issues.AddRange(CompletenessIssues(sourceWarnings));
         issues.AddRange(CompletenessIssues(candidate.Warnings()));
-        DiffComparer.Result diff = DiffComparer.Compare(budgets, baseline.Workbook, candidate.Workbook,
-            includeFormulas: true, MaxDiffs);
+        DiffComparer.Result diff = textTable is null
+            ? DiffComparer.Compare(budgets, baseline.Workbook, candidate.Workbook, includeFormulas: true, MaxDiffs)
+            : DiffComparer.CompareTextTable(budgets, baseline.Workbook, candidate.Workbook, textTable, MaxDiffs);
         // The change lists are evidence capped at MaxDiffs cells (Truncated); they decide nothing,
         // so a large edit such as a sort still passes when the checks below find no issue.
-        Classify(diff, written, direct, formulaResults, other);
+        Classify(diff, written, direct, formulaResults, other, valuesOnly);
         (IReadOnlyList<CellsCellError> errors, int errorTotal) = InfoProjection.ScanFormulaErrors(budgets, candidate.Workbook);
-        errors = errors.Select(error => IsPreexisting(error, baseline.Workbook, candidate.Workbook)
+        errors = errors.Select(error => IsPreexisting(error, baseline.Workbook, candidate.Workbook, valuesOnly)
             ? error with { Preexisting = true } : error).ToArray();
         bool errorsCapped = errorTotal > errors.Count;
         if (errorsCapped)
@@ -61,7 +69,7 @@ internal sealed class CellsEditVerifier(CellsWorkbookLoader loader, ResourceBudg
         return new CellsEditVerification
         {
             Ok = issues.Count == 0,
-            CheckedOps = OpsFootprint.Checked(batch, footprint, applied
+            CheckedOps = OpsFootprint.Checked(batch, Held(footprint, textTable, baseline.Workbook), applied
                 .Where(static outcome => outcome.Status == OpStatuses.Ok)
                 .Select(static outcome => outcome.Id)
                 .ToHashSet(StringComparer.Ordinal), activeSheet),
@@ -76,12 +84,29 @@ internal sealed class CellsEditVerifier(CellsWorkbookLoader loader, ResourceBudg
     internal static IEnumerable<VerificationIssue> CompletenessIssues(IReadOnlyList<Warning>? warnings) =>
         (warnings ?? []).Where(static warning => warning.AffectsCompleteness).Select(VerificationIssue.From);
 
+    /// <summary>
+    /// The targets on the sheets the output holds: every target, or for a text table those on its
+    /// one sheet, by the name it has or had before the edit. The diff reads no other sheet back.
+    /// </summary>
+    private static IReadOnlyList<CellsEditTarget> Held(
+        IReadOnlyList<CellsEditTarget> footprint, TextTableSheet? textTable, Workbook baseline)
+    {
+        if (textTable is null)
+        {
+            return footprint;
+        }
+
+        string?[] names = [textTable.Name, textTable.Before(baseline)?.Name];
+        return [.. footprint.Where(target => names.Contains(target.Sheet, StringComparer.OrdinalIgnoreCase))];
+    }
+
     private static void Classify(
         DiffComparer.Result diff,
         IReadOnlyList<CellsEditTarget> targets,
         ICollection<CellsVerifiedCellChange> direct,
         ICollection<CellsVerifiedCellChange> formulaResults,
-        ICollection<CellsVerificationOtherChange> other)
+        ICollection<CellsVerificationOtherChange> other,
+        bool valuesOnly)
     {
         foreach (CellsSheetDiff sheet in diff.Sheets ?? [])
         {
@@ -105,7 +130,7 @@ internal sealed class CellsEditVerifier(CellsWorkbookLoader loader, ResourceBudg
                 {
                     direct.Add(change);
                 }
-                else if (HasUnchangedFormulaWithChangedResult(cell))
+                else if (IsFormulaResult(cell, valuesOnly))
                 {
                     formulaResults.Add(change);
                 }
@@ -153,19 +178,26 @@ internal sealed class CellsEditVerifier(CellsWorkbookLoader loader, ResourceBudg
         return false;
     }
 
-    /// <summary>Whether the input cell had the same formula and the same error value.</summary>
-    private static bool IsPreexisting(CellsCellError error, Workbook baseline, Workbook candidate)
+    /// <summary>
+    /// Whether the input cell had the same error value and the same formula, or, in an output that
+    /// holds values only, held the same error value.
+    /// </summary>
+    private static bool IsPreexisting(CellsCellError error, Workbook baseline, Workbook candidate, bool valuesOnly)
     {
         CellRef address = A1.ParseCell(error.Cell);
         Cell? before = baseline.Worksheets[error.Sheet]?.Cells.CheckCell(address.Row, address.Column);
         Cell after = candidate.Worksheets[error.Sheet].Cells.CheckCell(address.Row, address.Column);
         return before is { Type: CellValueType.IsError }
             && string.Equals(before.StringValue, error.Error, StringComparison.Ordinal)
-            && string.Equals(before.Formula, after.Formula, StringComparison.Ordinal);
+            && (valuesOnly || string.Equals(before.Formula, after.Formula, StringComparison.Ordinal));
     }
 
-    private static bool HasUnchangedFormulaWithChangedResult(CellsCellDiff cell) =>
+    /// <summary>
+    /// Whether a changed cell is a formula's new result: the cell kept its formula or, in an output
+    /// that holds values only, held one in the input.
+    /// </summary>
+    private static bool IsFormulaResult(CellsCellDiff cell, bool valuesOnly) =>
         cell.Left?.F is { } formula &&
-        string.Equals(formula, cell.Right?.F, StringComparison.Ordinal);
+        (valuesOnly || string.Equals(formula, cell.Right?.F, StringComparison.Ordinal));
 
 }
