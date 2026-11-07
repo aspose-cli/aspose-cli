@@ -392,6 +392,74 @@ public sealed class WordsDisclosureTests
         }
     }
 
+    /// <summary>
+    /// A format the engine lays out on pages draws the tracked changes on them as markup and the
+    /// comments in balloons in a margin that narrows the pages: each is named, with a hint to
+    /// delete the comments and settle the revisions first. Other formats keep or drop them with
+    /// their own warnings, and a document without comments has no balloons to name.
+    /// </summary>
+    [Theory]
+    [InlineData("pdf", true, true)]
+    [InlineData("xps", true, true)]
+    [InlineData("ps", true, true)]
+    [InlineData("openxps", true, true)]
+    [InlineData("pcl", true, true)]
+    [InlineData("html-fixed", true, true)]
+    [InlineData("pdf", false, true)]
+    [InlineData("html", true, false)]
+    [InlineData("epub", true, false)]
+    [InlineData("docx", true, false)]
+    public void ConvertingToPages_NamesTheMarkupAndCommentBalloonsItDraws(string format, bool withComment, bool drawn)
+    {
+        using var fixture = new WordsFixture();
+        string input = RevisedDocument(fixture, withComment);
+        string extension = WordsFormats.Definitions.Named(FormatUse.Convert, format)!.Extensions[0];
+
+        WordsConvertResult converted = WordsConvert.Run(fixture.Session, new WordsConvertRequest
+        {
+            Input = input,
+            Output = TestOutput.At(fixture.Temp.File($"drawn-{format}-{withComment}{extension}"), format: format),
+        });
+
+        Warning[] lossy = [.. (converted.Warnings ?? []).Where(static warning => warning.Code == WarningCodes.LossyConversion)];
+        Warning[] balloons = [.. lossy.Where(static warning => warning.Message.Contains("balloons", StringComparison.Ordinal))];
+        Assert.Equal(drawn, lossy.Any(static warning => warning.Message.Contains("draws the tracked changes on its pages as markup", StringComparison.Ordinal)));
+        if (!(drawn && withComment))
+        {
+            Assert.Empty(balloons);
+            return;
+        }
+
+        Warning warning = Assert.Single(balloons);
+        Assert.Equal($"The {format} output draws 1 comment(s) in balloons in a margin beside the text, which narrows its pages.", warning.Message);
+        Assert.Equal("""{"content":["comments"]}""", warning.Details?.ToJsonString());
+        Assert.Contains("delete_comments", warning.Hint, StringComparison.Ordinal);
+        Assert.Contains("accept_revisions or reject_revisions", warning.Hint, StringComparison.Ordinal);
+        Assert.False(warning.AffectsCompleteness);
+    }
+
+    /// <summary>
+    /// A page render draws the comments in balloons too, which narrow its pages: it names them,
+    /// though it is not told that it drops the source's revisions.
+    /// </summary>
+    [Fact]
+    public void RenderingACommentedDocument_NamesTheCommentBalloons()
+    {
+        using var fixture = new WordsFixture();
+        string input = RevisedDocument(fixture, withComment: true);
+
+        WordsRenderResult rendered = WordsRender.Run(fixture.Session, new WordsRenderRequest
+        {
+            Input = input,
+            Output = TestOutput.At(fixture.Temp.File("commented-page.png"), format: "png"),
+        });
+
+        Warning warning = Assert.Single(rendered.Warnings ?? [], static warning => warning.Code == WarningCodes.LossyConversion);
+        Assert.Equal("The png output draws 1 comment(s) in balloons in a margin beside the text, which narrows its pages.", warning.Message);
+        Assert.Equal("""{"content":["comments"]}""", warning.Details?.ToJsonString());
+        Assert.DoesNotContain(rendered.Warnings ?? [], static warning => warning.Code == WordsDiagnostics.TrackedChangesPresent);
+    }
+
     [Fact]
     public void RenderingARevisedDocument_DoesNotReportLostRevisions()
     {
@@ -469,20 +537,25 @@ public sealed class WordsDisclosureTests
     }
 
     /// <summary>
-    /// An epub or azw3 output has no headers or footers, so a convert to one names the sections
-    /// whose header or footer holds text or a drawing, without marking the output incomplete. A
-    /// mobi output writes their text into its flow, and a document whose header is an empty
-    /// paragraph and whose footer is only a page number loses nothing an e-book could show:
-    /// neither warns.
+    /// An e-book (epub, azw3, mobi) has no headers or footers, and plain text and Markdown hold
+    /// the body text alone, so a convert to one writes none of them into its text and names the
+    /// sections whose header or footer holds text or a drawing, with the reason for its format,
+    /// without marking the output incomplete. A document whose header is an empty paragraph and
+    /// whose footer is only a page number loses nothing such an output could show: it does not warn.
     /// </summary>
     [Theory]
     [InlineData("epub", "text", "the headers of section(s) 1 and the footers of section(s) 1, 2")]
     [InlineData("azw3", "text", "the headers of section(s) 1 and the footers of section(s) 1, 2")]
-    [InlineData("mobi", "text", null)]
+    [InlineData("mobi", "text", "the headers of section(s) 1 and the footers of section(s) 1, 2")]
+    [InlineData("txt", "text", "the headers of section(s) 1 and the footers of section(s) 1, 2")]
+    [InlineData("md", "text", "the headers of section(s) 1 and the footers of section(s) 1, 2")]
     [InlineData("epub", "drawing", "the headers of section(s) 1")]
     [InlineData("epub", "empty", null)]
     [InlineData("azw3", "empty", null)]
-    public void ConvertingToAnEbook_NamesTheHeadersAndFootersItLeavesOut(string format, string content, string? named)
+    [InlineData("mobi", "empty", null)]
+    [InlineData("txt", "empty", null)]
+    [InlineData("md", "empty", null)]
+    public void ConvertingToAFormatWithoutPages_NamesTheHeadersAndFootersItLeavesOut(string format, string content, string? named)
     {
         using var fixture = new WordsFixture();
         var source = new Document();
@@ -530,6 +603,12 @@ public sealed class WordsDisclosureTests
         Warning[] leftOut = [.. (converted.Warnings ?? []).Where(static warning => warning.Code == WarningCodes.LossyConversion
             && warning.Message.Contains("leaves out", StringComparison.Ordinal))];
         string text = new Document(output).GetText();
+        if (format is "txt" or "md")
+        {
+            // A page number would be a line of digits alone, such as the 1 of the first page.
+            Assert.DoesNotContain(text.Split(['\r', '\n', '\v', '\f'], StringSplitOptions.TrimEntries),
+                static line => line.Length > 0 && line.All(char.IsAsciiDigit));
+        }
         if (named is null)
         {
             Assert.Empty(leftOut);
@@ -538,11 +617,79 @@ public sealed class WordsDisclosureTests
         }
 
         Warning warning = Assert.Single(leftOut);
-        Assert.Equal($"The {format} output leaves out {named}: an e-book flows its text without pages, so it has no headers or footers.", warning.Message);
+        string reason = format is "txt" or "md" ? "a text file holds the body text alone, without pages" : "an e-book flows its text without pages";
+        Assert.Equal($"The {format} output leaves out {named}: {reason}, so it has no headers or footers.", warning.Message);
+        Assert.Equal("""{"content":["headers-footers"]}""", warning.Details?.ToJsonString());
         Assert.Contains("'aspose-cli words inspect <file> --detail sections'", warning.Hint, StringComparison.Ordinal);
         Assert.False(warning.AffectsCompleteness);
         Assert.DoesNotContain("Running head", text, StringComparison.Ordinal);
+        Assert.DoesNotContain("First footer", text, StringComparison.Ordinal);
         Assert.DoesNotContain("Second footer", text, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// An e-book leaves out only the headers and footers some page shows: a first-page one only
+    /// when its section, or a later section that continues it, shows a different first page, and
+    /// an even-page one only when odd and even pages differ. A primary header always shows.
+    /// </summary>
+    [Theory]
+    [InlineData("first", false, null)]
+    [InlineData("first", true, "the headers of section(s) 1")]
+    [InlineData("even", false, null)]
+    [InlineData("even", true, "the footers of section(s) 1")]
+    [InlineData("continued", false, null)]
+    [InlineData("continued", true, "the headers of section(s) 1")]
+    [InlineData("primary", false, "the headers of section(s) 1")]
+    public void ConvertingToAnEbook_NamesOnlyTheHeadersAndFootersAPageShows(string story, bool shown, string? named)
+    {
+        using var fixture = new WordsFixture();
+        var source = new Document();
+        var builder = new DocumentBuilder(source);
+        builder.Write("First section body.");
+        switch (story)
+        {
+            case "first" or "continued":
+                builder.MoveToHeaderFooter(HeaderFooterType.HeaderFirst);
+                builder.Write("Cover header");
+                source.FirstSection.PageSetup.DifferentFirstPageHeaderFooter = story == "first" && shown;
+                break;
+            case "even":
+                builder.MoveToHeaderFooter(HeaderFooterType.FooterEven);
+                builder.Write("Even footer");
+                source.FirstSection.PageSetup.OddAndEvenPagesHeaderFooter = shown;
+                break;
+            default:
+                builder.MoveToHeaderFooter(HeaderFooterType.HeaderPrimary);
+                builder.Write("Running head");
+                break;
+        }
+        if (story == "continued")
+        {
+            // The second section defines no first-page header and continues the first one's.
+            builder.MoveToDocumentEnd();
+            builder.InsertBreak(BreakType.SectionBreakNewPage);
+            builder.Write("Second section body.");
+            source.LastSection.PageSetup.DifferentFirstPageHeaderFooter = shown;
+            Assert.Null(source.LastSection.HeadersFooters[HeaderFooterType.HeaderFirst]);
+        }
+        string input = fixture.Temp.File($"shown-{story}-{shown}.docx");
+        source.Save(input, SaveFormat.Docx);
+
+        WordsConvertResult converted = WordsConvert.Run(fixture.Session, new WordsConvertRequest
+        {
+            Input = input,
+            Output = TestOutput.At(fixture.Temp.File($"shown-{story}-{shown}.epub"), format: "epub"),
+        });
+
+        Warning[] leftOut = [.. (converted.Warnings ?? []).Where(static warning => warning.Code == WarningCodes.LossyConversion
+            && warning.Message.Contains("leaves out", StringComparison.Ordinal))];
+        if (named is null)
+        {
+            Assert.Empty(leftOut);
+            return;
+        }
+
+        Assert.Contains($"leaves out {named}:", Assert.Single(leftOut).Message, StringComparison.Ordinal);
     }
 
     /// <summary>
@@ -555,6 +702,11 @@ public sealed class WordsDisclosureTests
     [InlineData("revised", "pdf", "cannot keep tracked changes", "revisions")]
     [InlineData("locked", "odt", "editing restrictions", "editing-restrictions")]
     [InlineData("headed", "epub", "an e-book flows its text", "headers-footers")]
+    [InlineData("headed", "mobi", "an e-book flows its text", "headers-footers")]
+    [InlineData("headed", "txt", "a text file holds the body text alone", "headers-footers")]
+    [InlineData("headed", "md", "a text file holds the body text alone", "headers-footers")]
+    [InlineData("commented", "pdf", "comment(s) in balloons", "comments")]
+    [InlineData("commented", "pdf", "draws the tracked changes on its pages as markup", "revisions")]
     [InlineData("commented", "txt", "comment(s) into the body", "comments")]
     [InlineData("commented", "txt", "deleted and moved-from text", "revisions")]
     [InlineData("commented", "txt", "cannot preserve every Word feature", null)]
@@ -717,6 +869,107 @@ public sealed class WordsDisclosureTests
         Assert.False(new Document(Assert.Single(split.Outputs).Path).HasMacros);
         Assert.Contains(compared.Warnings ?? [], static warning => warning.Code == WordsDiagnostics.MacrosDropped);
         Assert.False(new Document(compared.Output!.Path).HasMacros);
+    }
+
+    /// <summary>
+    /// A redline written in a format without pages leaves the headers and footers out too, and
+    /// compare names them as convert does; a Word redline keeps them and names none.
+    /// </summary>
+    [Theory]
+    [InlineData("md", true)]
+    [InlineData("mobi", true)]
+    [InlineData("docx", false)]
+    public void ComparingIntoAFormatWithoutPages_NamesTheHeadersAndFootersTheRedlineLeavesOut(string format, bool named)
+    {
+        using var fixture = new WordsFixture();
+        string left = Headed("left.docx", "The notice period is thirty days.");
+        string right = Headed("right.docx", "The notice period is sixty days.");
+
+        WordsCompareResult compared = WordsCompare.Run(fixture.Session, new WordsCompareRequest
+        {
+            Left = left,
+            Right = right,
+            Output = TestOutput.At(fixture.Temp.File($"redline.{format}"), format: format),
+        });
+
+        Warning[] leftOut = [.. (compared.Warnings ?? []).Where(static warning => warning.Code == WarningCodes.LossyConversion
+            && warning.Message.Contains("leaves out", StringComparison.Ordinal))];
+        if (!named)
+        {
+            Assert.Empty(leftOut);
+            return;
+        }
+
+        Warning warning = Assert.Single(leftOut);
+        Assert.Equal("""{"content":["headers-footers"]}""", warning.Details?.ToJsonString());
+        Assert.Contains("the headers of section(s) 1", warning.Message, StringComparison.Ordinal);
+        Assert.DoesNotContain("Running head", new Document(compared.Output!.Path).GetText(), StringComparison.Ordinal);
+
+        string Headed(string name, string body)
+        {
+            var document = new Document();
+            var builder = new DocumentBuilder(document);
+            builder.Write(body);
+            builder.MoveToHeaderFooter(HeaderFooterType.HeaderPrimary);
+            builder.Write("Running head");
+            string path = fixture.Temp.File(name);
+            document.Save(path, SaveFormat.Docx);
+            return path;
+        }
+    }
+
+    /// <summary>
+    /// An edit's verification reports a resource that loading left out as an issue only when the
+    /// batch left it out of the output: a picture the input links to and does not store stays a
+    /// link in the output, so it is disclosed and passes, while a picture an operation's Markdown
+    /// names on the network is missing from the output and fails.
+    /// </summary>
+    [Theory]
+    [InlineData("linked", true)]
+    [InlineData("inserted", false)]
+    public void EditVerification_CountsOnlyTheResourcesTheBatchLeftOut(string example, bool ok)
+    {
+        using var fixture = new WordsFixture();
+        const string link = "http://example.invalid/logo.png";
+        var source = new Document();
+        var builder = new DocumentBuilder(source);
+        builder.Writeln("Clause one.");
+        if (example == "linked")
+        {
+            var linked = new Aspose.Words.Drawing.Shape(source, Aspose.Words.Drawing.ShapeType.Image)
+            {
+                Width = 40,
+                Height = 40,
+                WrapType = Aspose.Words.Drawing.WrapType.Inline,
+            };
+            linked.ImageData.SourceFullName = link;
+            builder.InsertNode(linked);
+        }
+        string input = fixture.Temp.File($"resources-{example}.docx");
+        source.Save(input, SaveFormat.Docx);
+        string output = fixture.Temp.File($"resources-{example}-out.docx");
+
+        WordsEditResult result = WordsEdit.Run(fixture.Session, new WordsEditRequest
+        {
+            Input = input,
+            Batch = new WordsOpsBatch
+            {
+                Ops = example == "linked"
+                    ? [new ReplaceTextOp { Find = "one", Replace = "two" }]
+                    : [new SetFooterOp { Markdown = $"![logo]({link})" }],
+            },
+            Output = TestOutput.At(output),
+            Verify = true,
+        });
+
+        Assert.Contains(result.Warnings ?? [], static warning => warning.Code == WarningCodes.RemoteResourcesBlocked);
+        Assert.Equal(ok, result.Verification!.Ok);
+        Assert.Equal(ok ? Array.Empty<string>() : ["REMOTE_RESOURCES_BLOCKED"], result.Verification.Issues.Select(static issue => issue.Code));
+        if (ok)
+        {
+            Assert.Contains(new Document(output).GetChildNodes(NodeType.Shape, true).Cast<Aspose.Words.Drawing.Shape>(),
+                static shape => shape.ImageData.SourceFullName == link);
+        }
     }
 
     [Fact]

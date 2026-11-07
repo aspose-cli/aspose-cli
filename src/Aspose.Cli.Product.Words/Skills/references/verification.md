@@ -19,7 +19,12 @@ protection mismatch is an issue, usually because the output format (such as
 again. A count that grew instead means the format stored content as fields,
 such as a linked picture in RTF. In evaluation mode, an output that ends with
 the engine's truncation notice is the issue `OUTPUT_TRUNCATED`: the content
-after it is missing.
+after it is missing. A warning about what the batch left out that leaves the
+output incomplete (`affectsCompleteness`), such as `PAGE_NUMBERS_REMOVED`, or
+`REMOTE_RESOURCES_BLOCKED` for a picture an operation's Markdown names on the
+network, is also an issue, with the warning's code, message, location and
+hint. A resource the input already referenced without it being loaded, such as
+a linked picture, stays a reference in the output: it is reported, not an issue.
 
 `--verify` cannot be combined with `--dry-run`.
 

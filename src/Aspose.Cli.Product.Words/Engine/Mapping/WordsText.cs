@@ -70,6 +70,9 @@ internal static class WordsText
         [FieldType.FieldSectionPages] = "SECTIONPAGES",
     };
 
+    /// <summary>Whether a field shows another result on each page, such as PAGE: a page number or page count.</summary>
+    internal static bool VariesByPage(Field field) => PageVaryingFields.ContainsKey(field.Type);
+
     /// <summary>
     /// The number Word draws before a numbered list paragraph, such as 6.2, or null for a bullet,
     /// which names nothing, or a paragraph outside a list. It is current once

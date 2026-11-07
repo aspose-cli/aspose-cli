@@ -3,6 +3,7 @@ using Aspose.Cli.Product.Words.Engine.Mapping;
 using Aspose.Cli.Sdk.IO.Input;
 using Aspose.Cli.Sdk.Results;
 using Aspose.Words;
+using Aspose.Words.Layout;
 
 namespace Aspose.Cli.Product.Words.Engine;
 
@@ -36,7 +37,7 @@ internal static class WordsEngineSupport
     /// The warnings for writing a loaded document to a format; the write pipeline adds the
     /// evaluation disclosure. A page render passes <paramref name="rendered"/>: an image shows
     /// the document as it looks and is never a copy of it, so it is not told that it drops the
-    /// source's revisions or macros.
+    /// source's revisions or macros, only that comment balloons narrow its pages.
     /// </summary>
     internal static IReadOnlyList<Warning>? WrittenWarnings(LoadedDocument loaded, string format, bool rendered = false)
     {
@@ -47,6 +48,10 @@ internal static class WordsEngineSupport
         {
             extra.AddRange(ConversionWarnings(loaded.Document, format, loaded.Evaluation));
             extra.AddRange(PdfInputWarnings(loaded) ?? []);
+        }
+        else if (CommentBalloons(loaded.Document, format) is { } balloons)
+        {
+            extra.Add(balloons);
         }
 
         if (KeepsRevisions(loaded.Document, format))
@@ -127,13 +132,14 @@ internal static class WordsEngineSupport
     /// <summary>
     /// The warnings for saving a document to a format that cannot hold every Word feature: one
     /// for the format, which names no kind of content; and, each naming its kind in
-    /// <c>details.content</c>, one for revisions the format cannot store; one for the editing
-    /// restrictions a format other than Word's cannot keep; one for the headers and
-    /// footers with content an e-book leaves out; and for plain text and Markdown one for each
-    /// kind of text the SDK mixes into the body (WORDS-TEXT-COMMENTS, WORDS-TEXT-DELETIONS),
-    /// which also stands for the revisions such an output drops. Under
-    /// <paramref name="evaluation"/>, what evaluation mode wrote into the headers and footers is
-    /// not their content.
+    /// <c>details.content</c>, one for revisions the format cannot store, which a format laid
+    /// out on pages draws as markup; one for the editing restrictions a format other than Word's
+    /// cannot keep; one for the headers and footers with content a format without pages leaves
+    /// out; for a format laid out on pages one for the comments it draws in balloons; and for
+    /// plain text and Markdown one for each kind of text the SDK mixes into the body
+    /// (WORDS-TEXT-COMMENTS, WORDS-TEXT-DELETIONS), which also stands for the revisions such an
+    /// output drops. Under <paramref name="evaluation"/>, what evaluation mode wrote into the
+    /// headers and footers is not their content.
     /// </summary>
     internal static IEnumerable<Warning> ConversionWarnings(Document document, string format, bool evaluation)
     {
@@ -148,9 +154,13 @@ internal static class WordsEngineSupport
             .Any(static revision => revision.RevisionType is RevisionType.Deletion or RevisionType.Moving);
         if (revised && !mixed && !WordsFormats.KeepsRevisions(format))
         {
-            yield return ContentLoss.Warning([ContentKind.Revisions],
-                $"The {format} output cannot keep tracked changes as revisions that can be accepted or rejected.",
-                "Disclose the tracked changes; keep a DOCX, RTF or ODT copy to keep them reviewable.");
+            yield return WordsEngineFormats.LaysOutPages(format)
+                ? ContentLoss.Warning([ContentKind.Revisions],
+                    $"The {format} output draws the tracked changes on its pages as markup, such as struck-through deletions, and cannot keep tracked changes as revisions that can be accepted or rejected.",
+                    "Disclose the tracked changes; when the user decides, accept or reject them with 'aspose-cli words edit' before converting, so the pages show one version, or keep a DOCX, RTF or ODT copy to keep them reviewable.")
+                : ContentLoss.Warning([ContentKind.Revisions],
+                    $"The {format} output cannot keep tracked changes as revisions that can be accepted or rejected.",
+                    "Disclose the tracked changes; keep a DOCX, RTF or ODT copy to keep them reviewable.");
         }
 
         if (document.ProtectionType != ProtectionType.NoProtection && !WordsFormats.IsWord(format))
@@ -160,12 +170,14 @@ internal static class WordsEngineSupport
                 "Keep a DOCX copy to keep them; restrict a PDF with the encrypt operation of 'aspose-cli pdf edit'.");
         }
 
-        if (WordsEngineFormats.Has(format, static entry => entry.LeavesOutHeadersFooters)
-            && HeadersFootersWithContent(document, evaluation) is { } leftOut)
+        if (HeadersFootersLeftOut(document, format, evaluation) is { } headersFooters)
         {
-            yield return ContentLoss.Warning([ContentKind.HeadersFooters],
-                $"The {format} output leaves out {leftOut}: an e-book flows its text without pages, so it has no headers or footers.",
-                "Read them from the source with 'aspose-cli words inspect <file> --detail sections'; keep a DOCX or PDF copy to keep them.");
+            yield return headersFooters;
+        }
+
+        if (CommentBalloons(document, format) is { } balloons)
+        {
+            yield return balloons;
         }
 
         if (!text)
@@ -173,7 +185,7 @@ internal static class WordsEngineSupport
             yield break;
         }
 
-        int comments = document.GetChildNodes(NodeType.Comment, true).Count;
+        int comments = CommentCount(document);
         if (comments > 0)
         {
             yield return ContentLoss.Warning([ContentKind.Comments],
@@ -190,16 +202,57 @@ internal static class WordsEngineSupport
     }
 
     /// <summary>
-    /// The headers and footers that hold content, by the sections that define them, such as
-    /// <c>the headers and footers of section(s) 1</c> or <c>the headers of section(s) 1, 2 and the
-    /// footers of section(s) 2</c>; null when every one is empty. Content is text or a drawing.
-    /// A page number or page count is not: an e-book has no pages to number. Under
-    /// <paramref name="evaluation"/>, neither are the banner, footer sentence and watermark
-    /// evaluation mode writes.
+    /// The warning naming the headers and footers with content that a format without pages leaves
+    /// out, with the reason for the format, or null: convert and edit report it with the other
+    /// conversion warnings, compare for its redline.
+    /// </summary>
+    internal static Warning? HeadersFootersLeftOut(Document document, string format, bool evaluation)
+    {
+        if (!WordsEngineFormats.Has(format, static entry => entry.LeavesOutHeadersFooters)
+            || HeadersFootersWithContent(document, evaluation) is not { } leftOut)
+        {
+            return null;
+        }
+
+        string reason = WordsEngineFormats.Has(format, static entry => entry.PlainText)
+            ? "a text file holds the body text alone, without pages"
+            : "an e-book flows its text without pages";
+        return ContentLoss.Warning([ContentKind.HeadersFooters],
+            $"The {format} output leaves out {leftOut}: {reason}, so it has no headers or footers.",
+            "Read them from the source with 'aspose-cli words inspect <file> --detail sections'; keep a DOCX or PDF copy to keep them.");
+    }
+
+    /// <summary>
+    /// The comments a format laid out on pages draws in balloons in a margin beside the text,
+    /// which the engine makes room for by narrowing the pages, or null.
+    /// </summary>
+    private static Warning? CommentBalloons(Document document, string format)
+    {
+        int comments = CommentCount(document);
+        return comments > 0 && WordsEngineFormats.LaysOutPages(format)
+            && document.LayoutOptions.CommentDisplayMode == CommentDisplayMode.ShowInBalloons
+            ? ContentLoss.Warning([ContentKind.Comments],
+                string.Create(CultureInfo.InvariantCulture, $"The {format} output draws {comments} comment(s) in balloons in a margin beside the text, which narrows its pages."),
+                "When the user has decided on them, apply delete_comments with 'aspose-cli words edit' first, with accept_revisions or reject_revisions for tracked changes, so the pages keep their full width; keep a DOCX copy to keep the comments.")
+            : null;
+    }
+
+    /// <summary>The comments of a document, replies included.</summary>
+    private static int CommentCount(Document document) => document.GetChildNodes(NodeType.Comment, true).Count;
+
+    /// <summary>
+    /// The headers and footers that hold content and that some page shows, by the sections that
+    /// define them, such as <c>the headers and footers of section(s) 1</c> or <c>the headers of
+    /// section(s) 1, 2 and the footers of section(s) 2</c>; null when every one is empty or no page
+    /// shows it, as a first-page header of a section without a different first page. Content is
+    /// text or a drawing. A page number or page count is not: an output without pages has none to
+    /// number. Under <paramref name="evaluation"/>, neither are the banner, footer sentence and
+    /// watermark evaluation mode writes.
     /// </summary>
     private static string? HeadersFootersWithContent(Document document, bool evaluation)
     {
         Section[] sections = [.. document.Sections.Cast<Section>()];
+        IReadOnlySet<HeaderFooter> shown = WordsHeadersFooters.ShownStories(document);
         string headers = Numbers(isHeader: true);
         string footers = Numbers(isHeader: false);
         return (headers.Length, footers.Length) switch
@@ -213,7 +266,7 @@ internal static class WordsEngineSupport
 
         string Numbers(bool isHeader) => string.Join(", ", sections
             .Select(static (section, index) => (Section: section, Number: index + 1))
-            .Where(item => item.Section.HeadersFooters.Cast<HeaderFooter>().Any(story => story.IsHeader == isHeader && HoldsContent(story)))
+            .Where(item => item.Section.HeadersFooters.Cast<HeaderFooter>().Any(story => story.IsHeader == isHeader && shown.Contains(story) && HoldsContent(story)))
             .Select(static item => item.Number.ToString(CultureInfo.InvariantCulture)));
 
         bool HoldsContent(HeaderFooter story) =>

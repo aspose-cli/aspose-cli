@@ -300,6 +300,13 @@ takes, without `list`, such as `[{"text": "Contract C-2026-014"}]`. A paragraph
 without `style` keeps the alignment, style and font of the first paragraph it
 replaces, including one a section continues from an earlier section, or takes
 Word's Header or Footer style when there is none. Markdown takes the document's styles. Apply footer text before `set_page_numbers`.
+Neither writes a page number: when the primary header or footer they replace
+held one (a PAGE, NUMPAGES or SECTIONPAGES field) and the batch leaves the
+section's primary header and footer without one, the edit reports
+`PAGE_NUMBERS_REMOVED`, which `--verify` counts as an issue (exit 8); its hint
+gives the `set_page_numbers` operation to add after it in the same batch. A
+first-page or even-page kind is not checked, since no operation numbers those
+pages again.
 `import_sections` brings the appended document's sections with the headers
 and footers they define, and `formatting` decides only styles. A
 section that defines no header or footer of a kind continues the one before
@@ -371,15 +378,21 @@ styles, headers or fields. A convert to any format other than those `edit`
 writes also reports it for the tracked changes it cannot keep as revisions,
 and to any non-Word format, PDF included, for the editing restrictions it
 cannot keep; restrict a PDF with the `encrypt_document` operation of
-`aspose-cli pdf edit`. An `epub` or `azw3` output has no headers or footers,
-so a convert to one reports `LOSSY_CONVERSION` naming the sections whose
-headers or footers hold text or drawings, a page number alone aside; read
-them on the source with `words inspect --detail sections`, or keep a `docx`
-copy. A `txt` or `md` convert also writes comment text into the body and
+`aspose-cli pdf edit`. An `epub`, `azw3` or `mobi` output has no headers or
+footers, and a `txt` or `md` output is the body text alone: a convert to one
+leaves out the headers, footers and page numbers and reports
+`LOSSY_CONVERSION` naming the sections whose headers or footers some page
+shows with text or drawings, a page number alone aside; read them on the
+source with `words inspect --detail sections`, or keep a `docx` copy. A `txt`
+or `md` convert also writes comment text into the body and
 deleted text beside inserted text, each reported by its own
 `LOSSY_CONVERSION`; run `delete_comments`, and `accept_revisions` or
 `reject_revisions` as the reviewer decides, in the edit before it to leave
-them out. A `txt` output is the body text: it leaves out headers, footers and
-page numbers, and lays each table row out on one line with its cells in
-aligned columns. `--verify` adds the semantic checks described in
-[verification](verification.md); it does not render pages.
+them out. A `txt` output lays each table row out on one line with its cells in
+aligned columns. A convert to a page format (`pdf`, `xps`, `openxps`, `ps`,
+`pcl`, `html-fixed`) and a `words render` draw the tracked changes on the pages
+as markup and the comments in balloons in a margin that narrows the pages;
+each is reported by its own `LOSSY_CONVERSION` (a render reports only the
+comments), and the same edit before it leaves them out. `--verify` adds the
+semantic checks described in [verification](verification.md); it does not
+render pages.

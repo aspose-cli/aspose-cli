@@ -119,13 +119,19 @@ internal sealed partial class WordsMutationHandlers
     /// Replaces one kind of header or footer in each section with plain paragraphs or imported
     /// Markdown. Plain paragraphs keep the format of the first paragraph and run the section
     /// shows, such as a right alignment, or take Word's Header or Footer style when there is none. A
-    /// first-page or even-page kind also turns on the section setting that shows it.
+    /// first-page or even-page kind also turns on the section setting that shows it. A replaced
+    /// primary header or footer that held page numbers is recorded, to report them removed when
+    /// the batch leaves the section without one.
     /// </summary>
     private void SetHeaderFooter(HeaderFooterOp operation, bool isHeader)
     {
         string kind = operation.Kind;
         Document? markdown = operation.Markdown is null ? null : _loader.OpenMarkdown(operation.Markdown, _loaded);
         HeaderFooterType type = HeaderFooterTypeOf(kind, isHeader);
+        // Before the first replacement: a section without its own continues an earlier one's.
+        Section[] numbered = kind == WordsHeaderFooterKinds.Primary
+            ? [.. Sections.Where(section => WordsHeadersFooters.HoldsPageNumbers(WordsHeadersFooters.Continued(section, type)))]
+            : [];
         foreach (Section section in Sections)
         {
             Paragraph? replaced = ShownParagraph(section, type);
@@ -152,6 +158,11 @@ internal sealed partial class WordsMutationHandlers
             else if (kind == "even")
             {
                 section.PageSetup.OddAndEvenPagesHeaderFooter = true;
+            }
+
+            if (numbered.Contains(section))
+            {
+                _pageNumbers.Replaced(operation, section, isHeader);
             }
         }
     }

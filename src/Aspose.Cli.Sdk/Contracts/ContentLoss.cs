@@ -31,7 +31,7 @@ public sealed class ContentKind
     public static ContentKind Charts { get; } = new("charts", "Charts as charts with their data: the output holds only a picture of them, or none.");
 
     /// <summary>Comments.</summary>
-    public static ContentKind Comments { get; } = new("comments", "Comments as comments: the output writes their text into the body, or leaves them out.");
+    public static ContentKind Comments { get; } = new("comments", "Comments as comments: the output writes their text into the body, draws them in balloons beside its pages, or leaves them out.");
 
     /// <summary>Editing restrictions.</summary>
     public static ContentKind EditingRestrictions { get; } = new("editing-restrictions", "Editing restrictions, such as a read-only protection of the document.");

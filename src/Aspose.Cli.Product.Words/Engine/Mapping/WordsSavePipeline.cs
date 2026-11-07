@@ -70,11 +70,9 @@ internal static class WordsSavePipeline
             case MarkdownSaveOptions markdown:
                 markdown.ExportImagesAsBase64 = true;
                 break;
-            // Plain text is the body text: a table keeps its rows and columns, and the page
-            // headers, footers and page numbers stay out of it.
+            // Plain text is the body text: a table keeps its rows and columns.
             case TxtSaveOptions text:
                 text.PreserveTableLayout = true;
-                text.ExportHeadersFootersMode = TxtExportHeadersFootersMode.None;
                 break;
             // RTF stores each image once, in its own format such as PNG. The copy the SDK adds
             // for old readers is an uncompressed metafile, which makes a document with a few
@@ -82,6 +80,17 @@ internal static class WordsSavePipeline
             case RtfSaveOptions rtf:
                 rtf.ExportImagesForOldReaders = false;
                 break;
+        }
+
+        // The page headers, footers and page numbers stay out of a format without pages.
+        if (WordsEngineFormats.Has(formatId, static entry => entry.LeavesOutHeadersFooters))
+        {
+            switch (options)
+            {
+                case TxtSaveOptionsBase text: text.ExportHeadersFootersMode = TxtExportHeadersFootersMode.None; break;
+                case HtmlSaveOptions html: html.ExportHeadersFootersMode = ExportHeadersFootersMode.None; break;
+                default: throw new InvalidOperationException($"The '{formatId}' format leaves out headers and footers, but its save options cannot.");
+            }
         }
 
         if (pages is not null)

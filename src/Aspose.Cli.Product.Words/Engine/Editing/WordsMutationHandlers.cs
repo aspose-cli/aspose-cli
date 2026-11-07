@@ -25,6 +25,7 @@ internal sealed partial class WordsMutationHandlers : IWordsOpHandler<ValueTuple
     private readonly WordsRevisionTracking? _tracking;
     private readonly ICollection<Warning> _warnings;
     private readonly ICollection<Field> _pageFields;
+    private readonly WordsPageNumberLosses _pageNumbers;
 
     /// <summary>Creates the handlers of one resolved operation.</summary>
     /// <param name="loaded">The document being edited.</param>
@@ -37,6 +38,7 @@ internal sealed partial class WordsMutationHandlers : IWordsOpHandler<ValueTuple
     /// <param name="tracking">The edit's revision tracking, or null when changes are not tracked.</param>
     /// <param name="warnings">Collects the warnings operations disclose about their result.</param>
     /// <param name="pageFields">Collects the inserted page fields to update after the batch.</param>
+    /// <param name="pageNumbers">Collects the page numbers replaced headers and footers held, checked after the batch.</param>
     internal WordsMutationHandlers(
         LoadedDocument loaded,
         ResolvedWordsOp resolved,
@@ -47,7 +49,8 @@ internal sealed partial class WordsMutationHandlers : IWordsOpHandler<ValueTuple
         IReadOnlyDictionary<string, Secret>? secrets,
         WordsRevisionTracking? tracking,
         ICollection<Warning> warnings,
-        ICollection<Field> pageFields)
+        ICollection<Field> pageFields,
+        WordsPageNumberLosses pageNumbers)
     {
         _loaded = loaded;
         _document = loaded.Document;
@@ -60,6 +63,7 @@ internal sealed partial class WordsMutationHandlers : IWordsOpHandler<ValueTuple
         _tracking = tracking;
         _warnings = warnings;
         _pageFields = pageFields;
+        _pageNumbers = pageNumbers;
     }
 
     /// <summary>How many matches a replace_text replaced or a format_text with match formatted; the model explains an operation that changed nothing by it.</summary>
