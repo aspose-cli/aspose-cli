@@ -17,6 +17,9 @@ internal static class CellsEngineFormats
     private const CellsContentLoss WebPageLosses =
         CellsContentLoss.Comments | CellsContentLoss.ChartPictures | CellsContentLoss.PrintHeadersFooters;
 
+    // What a csv or tsv table of the sheet's cells leaves out, beside its drawings (DropsDrawings).
+    private const CellsContentLoss DelimitedTextLosses = CellsContentLoss.Comments | CellsContentLoss.HeadersFooters;
+
     /// <summary>Every format id the engine maps, with what it maps to.</summary>
     internal static IReadOnlyList<CellsEngineFormat> All { get; } =
     [
@@ -29,12 +32,12 @@ internal static class CellsEngineFormats
         new("ods") { Detected = FileFormatType.Ods, Save = SaveFormat.Ods, KeepsSheetProtection = true, EvaluationMarks = CellsEvaluationMarkKind.Workbook },
         new("csv")
         {
-            Detected = FileFormatType.Csv, Save = SaveFormat.Csv, EvaluationMarks = CellsEvaluationMarkKind.DataRow, DropsDrawings = true,
+            Detected = FileFormatType.Csv, Save = SaveFormat.Csv, EvaluationMarks = CellsEvaluationMarkKind.DataRow, DropsDrawings = true, Leaves = DelimitedTextLosses,
             Options = static (byteOrderMark, _) => DelimitedText(SaveFormat.Csv, byteOrderMark),
         },
         new("tsv")
         {
-            Detected = FileFormatType.TabDelimited, Save = SaveFormat.TabDelimited, EvaluationMarks = CellsEvaluationMarkKind.DataRow, DropsDrawings = true,
+            Detected = FileFormatType.TabDelimited, Save = SaveFormat.TabDelimited, EvaluationMarks = CellsEvaluationMarkKind.DataRow, DropsDrawings = true, Leaves = DelimitedTextLosses,
             Options = static (byteOrderMark, _) => DelimitedText(SaveFormat.TabDelimited, byteOrderMark),
         },
         new("html")
@@ -52,7 +55,8 @@ internal static class CellsEngineFormats
         new("json") { Detected = FileFormatType.Json, Save = SaveFormat.Json, WritesRecords = true, EvaluationMarks = CellsEvaluationMarkKind.JsonRecord },
         new("md")
         {
-            Save = SaveFormat.Markdown, EvaluationMarks = CellsEvaluationMarkKind.MarkdownHeading, DropsDrawings = true,
+            // The engine writes the sheet's comments after the table as footnote definitions, so they are not named as left out.
+            Save = SaveFormat.Markdown, EvaluationMarks = CellsEvaluationMarkKind.MarkdownHeading, DropsDrawings = true, Leaves = CellsContentLoss.HeadersFooters,
             Options = static (_, _) => new MarkdownSaveOptions { FormatStrategy = CellValueFormatStrategy.DisplayString },
         },
         new("png") { Image = ImageType.Png, EvaluationMarks = CellsEvaluationMarkKind.Pages },
@@ -197,9 +201,15 @@ internal enum CellsContentLoss
     /// The headers and footers, which the output keeps only as Excel print data in its styles
     /// (<c>mso-header-data</c>, <c>mso-footer-data</c>), which a browser neither shows nor prints.
     /// A header or footer that prints only the page number or page count is no loss: a page
-    /// without pages has nothing to show for it.
+    /// without pages has nothing to show for it (<see cref="HeaderFooterText.PrintsText"/>).
     /// </summary>
     PrintHeadersFooters = 8,
+
+    /// <summary>
+    /// The headers and footers, which a table of cells has no pages for and leaves out; as with
+    /// <see cref="PrintHeadersFooters"/>, one that prints only the page number or page count is no loss.
+    /// </summary>
+    HeadersFooters = 16,
 }
 
 /// <summary>What evaluation mode leaves in an output, as <see cref="CellsEvaluationProfile"/> names it.</summary>

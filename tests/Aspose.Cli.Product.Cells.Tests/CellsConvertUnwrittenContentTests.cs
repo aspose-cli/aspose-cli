@@ -9,9 +9,11 @@ namespace Aspose.Cli.Product.Cells.Tests;
 /// <summary>
 /// A convert output that does not hold some content of the sheets it writes names it in a
 /// <c>LOSSY_CONVERSION</c> per kind of content, with how much each sheet has: a pdf or xps
-/// prints no comment the page setup leaves unprinted, and an html or mhtml page holds no
+/// prints no comment the page setup leaves unprinted, an html or mhtml page holds no
 /// comment, shows the charts as pictures and keeps the headers and footers only as print data
-/// in its styles. A workbook without such content, and an output that keeps it, warn of none.
+/// in its styles, and a csv or tsv table of one sheet holds neither its comments nor its
+/// headers and footers, an md table no headers and footers. A workbook without such content,
+/// and an output that keeps it, warn of none.
 /// The content stays in the workbook, so no such warning affects completeness. The commands run
 /// with the test license when the run has one, and in evaluation mode otherwise.
 /// </summary>
@@ -161,9 +163,10 @@ public sealed class CellsConvertUnwrittenContentTests : IDisposable
     }
 
     /// <summary>
-    /// A printout leaves out the comments and a page the comments, charts and headers; a
-    /// workbook without them loses nothing to either, and a workbook output keeps them all, so
-    /// neither warns of lost content.
+    /// A printout leaves out the comments and a page the comments, charts and headers; a csv or
+    /// tsv table of the sheet leaves out its comments, headers and chart, and an md table its
+    /// headers and chart. A workbook without them loses nothing to any of these, and a workbook
+    /// output keeps them all, so neither warns of lost content.
     /// </summary>
     [Theory]
     [InlineData(true, "pdf", 1)]
@@ -174,6 +177,12 @@ public sealed class CellsConvertUnwrittenContentTests : IDisposable
     [InlineData(false, "html", 0)]
     [InlineData(true, "mhtml", 3)]
     [InlineData(false, "mhtml", 0)]
+    [InlineData(true, "csv", 3)]
+    [InlineData(false, "csv", 0)]
+    [InlineData(true, "tsv", 3)]
+    [InlineData(false, "tsv", 0)]
+    [InlineData(true, "md", 2)]
+    [InlineData(false, "md", 0)]
     [InlineData(true, "xlsx", 0)]
     [InlineData(true, "ods", 0)]
     public void Convert_WarnsOfLostContent_OnlyWhenTheWorkbookHasItAndTheOutputLeavesItOut(bool content, string format, int warnings)
@@ -224,19 +233,115 @@ public sealed class CellsConvertUnwrittenContentTests : IDisposable
 
     /// <summary>
     /// A page has no pages, so a header or footer that prints only the page number or count, in
-    /// whatever font and size, is no loss of it; one with text of its own, as in "Page &amp;P",
-    /// or a doubled ampersand, which prints one, is.
+    /// whatever font and size, with an offset such as "&amp;P+1" and in either case of its
+    /// letter, is no loss of it; one with text of its own, as in "Page &amp;P" or
+    /// "Page &amp;P+1", or a doubled ampersand, which prints one, is. A size code takes every
+    /// digit after it, as the engine prints it, so "&amp;122024" prints nothing.
     /// </summary>
     [Theory]
     [InlineData("Page &P", 1)]
+    [InlineData("Page &P+1", 1)]
     [InlineData("&&P", 1)]
     [InlineData("&P", 0)]
+    [InlineData("&P+1", 0)]
+    [InlineData("&p", 0)]
+    [InlineData("&122024", 0)]
     [InlineData("&\"Arial,Bold\"&12&P&N", 0)]
     public void WebPage_NamesAHeaderOrFooter_OnlyWhenItPrintsMoreThanThePageNumber(string footer, int warnings)
     {
         Book("book.xlsx", footerCenter: footer);
 
         Assert.Equal(warnings, Lossy(Convert("book.xlsx", "html")).Length);
+    }
+
+    /// <summary>
+    /// A table of cells (csv, tsv, md) writes one sheet and names what that sheet has and the
+    /// table leaves out, each kind in its own warning: a csv or tsv its comments, then its
+    /// headers and footers; an md its headers and footers alone. The comments of the sheet it
+    /// does not write are no part of it, and the message says why a table has no headers.
+    /// </summary>
+    [Theory]
+    [InlineData("csv", new[] { "comments", "headers-footers" })]
+    [InlineData("tsv", new[] { "comments", "headers-footers" })]
+    [InlineData("md", new[] { "headers-footers" })]
+    public void TextTable_OfASheetWithCommentsAndHeaders_NamesWhatThatSheetLoses(string format, string[] kinds)
+    {
+        Book("book.xlsx", comments: true, header: true);
+
+        JsonNode[] lossy = Lossy(Convert("book.xlsx", format));
+
+        Assert.Equal(kinds.Select(static kind => $"[\"{kind}\"]"), lossy.Select(static warning => warning["details"]?["content"]?.ToJsonString()));
+        Assert.All(lossy, static warning =>
+        {
+            Assert.Equal("sheet/Summary", Text(warning, "location"));
+            Assert.Null(warning["affectsCompleteness"]);
+        });
+        if (format != "md")
+        {
+            JsonNode comments = lossy[0];
+            Assert.Equal($"The {format} output leaves out 2 comment(s): 2 on worksheet 'Summary'.", Text(comments, "message"));
+            Assert.Contains("cells inspect <file> --detail comments", Text(comments, "hint"), StringComparison.Ordinal);
+        }
+
+        JsonNode headers = lossy[^1];
+        Assert.Equal($"The {format} output leaves out the headers and footers of worksheet 'Summary': a table of cells has no pages to print them on.",
+            Text(headers, "message"));
+        Assert.Contains("cells inspect <file> --detail layout", Text(headers, "hint"), StringComparison.Ordinal);
+        string table = File.ReadAllText(_workspace.File($"converted.{format}"));
+        Assert.Contains("ZqxCellA", table, StringComparison.Ordinal);
+        Assert.DoesNotContain("Quarterly", table, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// A table of cells has no pages either, so a footer that prints only the page number is no
+    /// loss of a csv, while one with text of its own is.
+    /// </summary>
+    [Theory]
+    [InlineData("&P", 0)]
+    [InlineData("&P+1", 0)]
+    [InlineData("Page &P", 1)]
+    public void Csv_NamesAHeaderOrFooter_OnlyWhenItPrintsMoreThanThePageNumber(string footer, int warnings)
+    {
+        Book("book.xlsx", footerCenter: footer);
+
+        Assert.Equal(warnings, Lossy(Convert("book.xlsx", "csv")).Length);
+    }
+
+    /// <summary>
+    /// A csv of the sheet <c>--sheets</c> selects names that sheet's comments, not those of the
+    /// first or active sheet; evaluation mode exports only the first sheet to csv, so the run
+    /// needs a license.
+    /// </summary>
+    [LicensedFact]
+    public void Csv_OfTheSelectedSheet_NamesThatSheetsComments()
+    {
+        Book("book.xlsx", comments: true);
+
+        JsonNode lossy = Assert.Single(Lossy(Convert("book.xlsx", "csv", "--sheets", "2")));
+
+        Assert.Equal("The csv output leaves out 1 comment(s): 1 on worksheet 'Notes'.", Text(lossy, "message"));
+        Assert.Equal("sheet/Notes", Text(lossy, "location"));
+    }
+
+    /// <summary>
+    /// An md output writes the comments of its sheet after the table as footnote definitions that
+    /// no cell of the table refers to, and a Word document made from it with
+    /// <c>words create --from-markdown</c> holds the table and none of the comments.
+    /// </summary>
+    [Fact]
+    public void Md_WritesTheCommentsAsFootnotesNoCellRefersTo()
+    {
+        Book("book.xlsx", comments: true);
+
+        Convert("book.xlsx", "md");
+
+        string[] lines = File.ReadAllLines(_workspace.File("converted.md"));
+        Assert.Contains(lines, static line => line.StartsWith("[^", StringComparison.Ordinal) && line.Contains("]: ZqxNoteA", StringComparison.Ordinal));
+        Assert.Contains(lines, static line => line.StartsWith("[^", StringComparison.Ordinal) && line.Contains("]: ZqxNoteB", StringComparison.Ordinal));
+        Assert.All(lines.Where(static line => line.StartsWith('|')), static row => Assert.DoesNotContain("[^", row, StringComparison.Ordinal));
+        Run("words", "create", "made.docx", "--from-markdown", "converted.md");
+        Assert.NotEmpty(Run("words", "search", "made.docx", "--pattern", "ZqxCell", "--scope", "all")["hits"]!.AsArray());
+        Assert.Empty(Run("words", "search", "made.docx", "--pattern", "ZqxNote", "--scope", "all")["hits"]!.AsArray());
     }
 
     /// <summary>

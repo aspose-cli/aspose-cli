@@ -1,19 +1,24 @@
 using System.IO.Compression;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using Aspose.Cells;
+using Aspose.Cells.Charts;
+using Aspose.Cells.Drawing;
+using Aspose.Cli.Product.Cells.Engine;
 using Aspose.Cli.TestKit.Scenarios;
 using Xunit;
 
 namespace Aspose.Cli.Product.Cells.Tests;
 
 /// <summary>
-/// replace_text changes the text of cells only. When the header, footer, a comment or a chart
-/// title of its sheet holds a match, matched as the operation matches a cell (regex,
-/// caseSensitive, wholeWord), it leaves that text as it was and warns <c>TEXT_NOT_REPLACED</c>
-/// once for each of these parts, with its kind in <c>details.part</c>, its location and a hint
-/// that runs as written; the edit still exits 0 and its verification is what it is without
-/// that text. The commands run with the test license when the run has one, and in evaluation
-/// mode otherwise.
+/// replace_text changes the text of cells only. When the header, footer, a comment, a chart
+/// title, an axis title or a text box of its sheet holds a match, matched as the operation
+/// matches a cell (regex, caseSensitive, wholeWord), and a header on the text it prints, it
+/// leaves that text as it was and warns <c>TEXT_NOT_REPLACED</c> once for each of these parts,
+/// with its kind in <c>details.part</c>, its location and a hint that runs as written; the edit
+/// still exits 0 and its verification is what it is without that text. A title linked to a cell
+/// follows the cell and is not named. The commands run with the test license when the run has
+/// one, and in evaluation mode otherwise.
 /// </summary>
 public sealed class CellsReplaceTextOutsideCellsTests : IDisposable
 {
@@ -181,6 +186,229 @@ public sealed class CellsReplaceTextOutsideCellsTests : IDisposable
             Assert.Equal(["id", "op", "part"], warning["details"]!.AsObject().Select(static member => member.Key));
             Assert.Equal("replace_text", Text(warning["details"]!, "op"));
         });
+    }
+
+    /// <summary>
+    /// The header is matched on the text it prints: its font, style and size codes are no text,
+    /// so a find for them matches nothing there, while one for the printed text does.
+    /// </summary>
+    [Theory]
+    [InlineData("Arial", false)]
+    [InlineData("12", false)]
+    [InlineData("Bold", false)]
+    [InlineData("Quarterly", true)]
+    public void ReplaceText_MatchesTheHeaderOnTheTextItPrints(string find, bool named)
+    {
+        HeaderBook("book.xlsx", "&\"Arial,Bold\"&12Quarterly");
+
+        JsonNode[] warnings = Outside(Edit("book.xlsx", Replace(find)));
+
+        if (!named)
+        {
+            Assert.Empty(warnings);
+            return;
+        }
+
+        JsonNode page = Assert.Single(warnings);
+        Assert.Equal("page-setup/Data header-footer", $"{Text(page, "location")} {Text(page["details"]!, "part")}");
+        Assert.Contains("found a match in the header (center) on worksheet 'Data'", Text(page, "message"), StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// A find that matches no cell says it matched no text in the cells of the sheet, beside the
+    /// warning for the header that holds it.
+    /// </summary>
+    [Fact]
+    public void ReplaceText_ThatMatchesOnlyTheHeader_SaysItMatchedNoTextInTheCells()
+    {
+        HeaderBook("book.xlsx", "Quarterly");
+
+        JsonNode result = Edit("book.xlsx", Replace("Quarterly"));
+
+        JsonNode noEffect = Assert.Single(result["warnings"]!.AsArray(), static warning => Text(warning!, "code") == "OP_NO_EFFECT")!;
+        Assert.Equal("Operation op-0001 (replace_text) matched no text in the cells of the sheet, so nothing was replaced.", Text(noEffect, "message"));
+        Assert.Single(Outside(result));
+    }
+
+    /// <summary>
+    /// The first page's own header and the even pages' own footer print only when the sheet uses
+    /// them: then a match there is named with its part and section, and the hint does not send
+    /// the caller to a read that does not report them; with the default header holding a match
+    /// too, the hint gives both. A sheet that does not use them keeps their text unprinted, so a
+    /// match there is not named.
+    /// </summary>
+    [Theory]
+    [InlineData("Quarterly", true, "the first-page header (left) and the even-page footer (right)", false)]
+    [InlineData("Acme report", true, "the header (center) and the first-page header (left) and the even-page footer (right)", true)]
+    [InlineData("Quarterly", false, null, false)]
+    public void ReplaceText_NamesTheFirstPageAndEvenPageHeaders_OnlyWhenTheSheetUsesThem(string header, bool used, string? named, bool readable)
+    {
+        Author("book.xlsx", sheet =>
+        {
+            PageSetup setup = sheet.PageSetup;
+            setup.SetHeader(1, header);
+            setup.IsHFDiffFirst = true;
+            setup.IsHFDiffOddEven = true;
+            setup.SetFirstPageHeader(0, "Acme cover");
+            setup.SetEvenFooter(2, "Acme even");
+            setup.IsHFDiffFirst = used;
+            setup.IsHFDiffOddEven = used;
+        });
+
+        JsonNode[] warnings = Outside(Edit("book.xlsx", Replace("Acme")));
+
+        if (named is null)
+        {
+            Assert.Empty(warnings);
+            return;
+        }
+
+        JsonNode page = Assert.Single(warnings);
+        Assert.Equal("page-setup/Data header-footer", $"{Text(page, "location")} {Text(page["details"]!, "part")}");
+        Assert.Contains($"found a match in {named} on worksheet 'Data' and left them as they were", Text(page, "message"), StringComparison.Ordinal);
+        string hint = Text(page, "hint");
+        Assert.Equal(readable, hint.Contains("cells inspect <file> --detail layout", StringComparison.Ordinal));
+        Assert.Contains("No operation reads or changes the header and footer of the first page and of the even pages", hint, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// An axis title that holds a match is named with its chart and axis, at the chart, with a
+    /// hint that reads and sets it; the chart title, which holds none, is not named.
+    /// </summary>
+    [Theory]
+    [InlineData("Amount", "the axis title of chart 1 (category)", "it as it was")]
+    [InlineData("Acme amount", "the axis titles of chart 1 (category, value)", "them as they were")]
+    public void ReplaceText_NamesTheAxisTitlesThatHoldAMatch(string valueAxis, string named, string left)
+    {
+        Assert.Equal(0, Cli("cells", "create", "book.xlsx", "--sheet-names", "Data").ExitCode);
+        object[] ops =
+        [
+            new { op = "set_values", sheet = "Data", range = "A1", values = new object[][] { ["Region", "Amount"], ["East", 700], ["North", 580] } },
+            new
+            {
+                op = "insert_chart", sheet = "Data", kind = "column", dataRange = "A1:B3", at = "D2:I12", title = "Revenue",
+                axisTitles = new { category = "Acme regions", value = valueAxis },
+            },
+        ];
+        CliResult edited = Cli("cells", "edit", "book.xlsx", "--in-place", "--ops", JsonSerializer.Serialize(new { ops }), "--output-format", "json");
+        Assert.True(edited.ExitCode == 0, edited.StdErr);
+
+        JsonNode axis = Assert.Single(Outside(Edit("book.xlsx", Replace("Acme"))));
+
+        Assert.Equal("chart/Data/1 axis-title", $"{Text(axis, "location")} {Text(axis["details"]!, "part")}");
+        Assert.Contains($"found a match in {named} on worksheet 'Data' and left {left}", Text(axis, "message"), StringComparison.Ordinal);
+        string hint = Text(axis, "hint");
+        Assert.Contains("cells inspect <file> --detail charts", hint, StringComparison.Ordinal);
+        Assert.Contains("set_chart, its axisTitles", hint, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// A text box whose text holds a match is named by its name, at its sheet, with a hint that
+    /// says no operation changes it; one whose text holds none is not named.
+    /// </summary>
+    [Theory]
+    [InlineData("Acme note", true)]
+    [InlineData("Quarterly note", false)]
+    public void ReplaceText_NamesATextBoxThatHoldsAMatch(string text, bool named)
+    {
+        Author("book.xlsx", sheet =>
+        {
+            TextBox textBox = sheet.TextBoxes[sheet.TextBoxes.Add(6, 1, 60, 200)];
+            textBox.Text = text;
+            textBox.Name = "Note box";
+        });
+
+        JsonNode[] warnings = Outside(Edit("book.xlsx", Replace("Acme")));
+
+        if (!named)
+        {
+            Assert.Empty(warnings);
+            return;
+        }
+
+        JsonNode box = Assert.Single(warnings);
+        Assert.Equal("sheet/Data text-box", $"{Text(box, "location")} {Text(box["details"]!, "part")}");
+        Assert.Contains("found a match in the text of drawing 'Note box' on worksheet 'Data' and left it as it was", Text(box, "message"), StringComparison.Ordinal);
+        Assert.Contains("No operation reads or changes the text of a text box", Text(box, "hint"), StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// A chart title or an axis title linked to a cell follows the cell, so a replacement in that
+    /// cell changes it and it is not named; the same titles written as text are left as they
+    /// were and named.
+    /// </summary>
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void ReplaceText_NamesAChartOrAxisTitle_OnlyWhenItIsNotLinkedToACell(bool linked)
+    {
+        Author("book.xlsx", sheet =>
+        {
+            sheet.Cells["A1"].PutValue("Acme revenue");
+            sheet.Cells["D1"].PutValue("Acme regions");
+            Chart chart = sheet.Charts[sheet.Charts.Add(ChartType.Column, 4, 4, 18, 10)];
+            chart.NSeries.Add("Data!B2:B3", true);
+            chart.NSeries.CategoryData = "Data!A2:A3";
+            if (linked)
+            {
+                chart.Title.LinkedSource = "Data!$A$1";
+                chart.CategoryAxis.Title.LinkedSource = "Data!$D$1";
+            }
+            else
+            {
+                chart.Title.Text = "Acme revenue";
+                chart.CategoryAxis.Title.Text = "Acme regions";
+            }
+        });
+
+        JsonNode[] warnings = Outside(Edit("book.xlsx", Replace("Acme")));
+
+        string[] parts = linked ? [] : ["axis-title", "chart-title"];
+        Assert.Equal(parts,
+            warnings.Select(static warning => Text(warning["details"]!, "part")).Order(StringComparer.Ordinal));
+        if (linked)
+        {
+            JsonNode chart = JsonNode.Parse(Inspect("out.xlsx"))!["workbook"]!["charts"]![0]!;
+            Assert.Equal("Globex revenue", Text(chart, "title"));
+            Assert.Equal("Globex regions", Text(chart["axisTitles"]!, "category"));
+        }
+    }
+
+    /// <summary>
+    /// A workbook whose sheet Data holds a small table and the header <paramref name="header"/>,
+    /// written by set_page_setup as it is, formatting codes included.
+    /// </summary>
+    private void HeaderBook(string name, string header)
+    {
+        Assert.Equal(0, Cli("cells", "create", name, "--sheet-names", "Data").ExitCode);
+        object[] ops =
+        [
+            new { op = "set_values", sheet = "Data", range = "A1", values = new object[][] { ["Region", "Amount"], ["East", 700] } },
+            new { op = "set_page_setup", sheet = "Data", headerCenter = header },
+        ];
+        CliResult edited = Cli("cells", "edit", name, "--in-place", "--ops", JsonSerializer.Serialize(new { ops }), "--output-format", "json");
+        Assert.True(edited.ExitCode == 0, edited.StdErr);
+    }
+
+    /// <summary>
+    /// A workbook whose sheet Data holds a small table and what <paramref name="build"/> adds to
+    /// it, saved by the engine itself, for content no operation writes; the run's license, when
+    /// it has one, is applied first, so the workbook is written as the CLI reads it.
+    /// </summary>
+    private void Author(string name, Action<Worksheet> build)
+    {
+        TestLicense.Apply(CellsActivation.ApplyLicense);
+        using var workbook = new Workbook();
+        Worksheet sheet = workbook.Worksheets[0];
+        sheet.Name = "Data";
+        sheet.Cells["A1"].PutValue("Region");
+        sheet.Cells["B1"].PutValue("Amount");
+        sheet.Cells["A2"].PutValue("East");
+        sheet.Cells["B2"].PutValue(700);
+        sheet.Cells["A3"].PutValue("North");
+        sheet.Cells["B3"].PutValue(580);
+        build(sheet);
+        workbook.Save(_workspace.File(name), SaveFormat.Xlsx);
     }
 
     /// <summary>Moves the center header "Acme report" of the first sheet to the header's left section.</summary>

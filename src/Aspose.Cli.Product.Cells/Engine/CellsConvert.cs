@@ -88,11 +88,11 @@ internal static class CellsConvert
         Warning? chartsSplit = CellsEngineFormats.IsPaginated(request.Output.Format.Id)
             ? PrintedPages.SplitChartsWarning(workbook, request.Output.Format.Id, selectedSheets)
             : null;
-        // What the output format leaves out of the sheets it writes (CellsEngineFormat.Leaves).
-        Warning[] unwritten = [.. UnwrittenContent.Warnings(workbook, request.Output.Format.Id, selectedSheets)];
         WorkbookSavePlan savePlan = WorkbookSavePlan.Create(request.Output.Format, licenseState,
             OutputProtection.For(request.Output.Format, request.EncryptPassword, loaded.Protection, request.Password),
             selectedSheets, request.ByteOrderMark);
+        // What the output format leaves out of the sheets it writes (CellsEngineFormat.Leaves).
+        Warning[] unwritten = [.. UnwrittenContent.Warnings(workbook, savePlan, selectedSheets)];
         if (CellsEngineFormats.WritesRecords(request.Output.Format.Id))
         {
             savePlan = savePlan with { Options = JsonOptions(workbook, jsonSheets) };

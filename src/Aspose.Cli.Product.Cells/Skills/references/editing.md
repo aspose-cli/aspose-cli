@@ -120,17 +120,24 @@ Run `--dry-run` first for a large or destructive batch (`delete_sheet`,
   Excel.
 - `replace_text` changes the text values of the cells of its sheet, or of its
   `range`, and no text outside them. When the sheet's header or footer, a
-  comment or a chart title holds a match, found by the same `regex`,
-  `caseSensitive` and `wholeWord`, that text stays as it was, and the edit
-  warns `TEXT_NOT_REPLACED` once for each of these parts, with its
-  `details.part` (`header-footer`, `comment` or `chart-title`) and its
-  `location`: `page-setup/Sales`, `comment/Sales!B2`, `chart/Sales/1`, or
-  `sheet/Sales` for several comments or charts. With a `range`, only the
-  comments of its cells are checked. The edit still exits 0, and the warning
-  is no `--verify` issue. Read that text with `cells inspect --detail layout`,
-  `--detail comments` or `--detail charts`, and change it with
-  `set_page_setup` (`headerCenter`, `footerCenter`; no operation changes the
-  left and right sections), `set_comment` or `set_chart` with its `title`.
+  comment, a chart title, an axis title or the text of a drawing such as a
+  text box holds a match, found by the same `regex`, `caseSensitive` and
+  `wholeWord`, that text stays as it was, and the edit warns
+  `TEXT_NOT_REPLACED` once for each of these parts, with its `details.part`
+  (`header-footer`, `comment`, `chart-title`, `axis-title` or `text-box`) and
+  its `location`: `page-setup/Sales`, `comment/Sales!B2`, `chart/Sales/1`, or
+  `sheet/Sales` for several comments or charts and for drawings. A header or
+  footer is matched on the text it prints, not its font, size or page number
+  codes, and the first page's or the even pages' own header and footer count
+  when the sheet has them; a title linked to a cell follows the cell and is
+  not named. With a `range`, only the comments of its cells are checked. The
+  edit still exits 0, and the warning is no `--verify` issue. Read that text
+  with `cells inspect --detail layout`, `--detail comments` or
+  `--detail charts`, and change it with `set_page_setup` (`headerCenter`,
+  `footerCenter`; no operation changes the left and right sections or the
+  first-page and even-page headers and footers), `set_comment`, or
+  `set_chart` with its `title` or `axisTitles`. No operation reads or changes
+  the text of a drawing.
 
 ## Combining workbooks
 

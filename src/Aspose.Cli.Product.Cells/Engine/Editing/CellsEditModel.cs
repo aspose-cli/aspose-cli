@@ -96,7 +96,7 @@ internal sealed class CellsEditModel : IOperationModel<CellsOp>
             $"Operation {operation.Id} ({CellsOp.Catalog.NameOf(operation)}) changed nothing: the sheet had nothing to remove."),
         // Like a verification issue, it never repeats the find text.
         ReplaceTextOp replace when _handlers.Replaced.GetValueOrDefault(replace) == 0 => new NoEffect(NoEffectReasons.NoMatch,
-            $"Operation {operation.Id} (replace_text) matched no text in {(replace.Range is null ? "the sheet" : "the range")}, so nothing was replaced.")
+            $"Operation {operation.Id} (replace_text) matched no text in {(replace.Range is null ? "the cells of the sheet" : "the range")}, so nothing was replaced.")
         {
             Hint = "Search with 'aspose-cli cells search' and the same pattern; replace_text changes text values only, never formulas, numbers or dates.",
         },
