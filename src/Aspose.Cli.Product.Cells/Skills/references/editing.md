@@ -429,6 +429,15 @@ result changed, and `otherChanges`. After changing input values, read
 moved, each with its `left` (before) and `right` (after) side, and report those
 instead of working them out.
 
+A csv or tsv output holds the values of one sheet and no formulas, so
+`--verify` compares only that sheet, under the name it was written from, value
+by value: a cell that held a formula in the input and whose value moved is in
+`formulaResultChanges`, with the formula on its `left` side only, and a formula
+error the input cell already held is `preexisting`. The other sheets and the
+drawings the output leaves out are its `SHEETS_DROPPED` and `LOSSY_CONVERSION`
+issues, which exit 8, and an operation on a sheet it does not write is not in
+`checkedOps`.
+
 A formula error whose input cell had the same formula and the same error
 carries `preexisting: true`; it still fails verification, so fix it or tell
 the user it predates the edit. An edit that changes more than 1000 cells,

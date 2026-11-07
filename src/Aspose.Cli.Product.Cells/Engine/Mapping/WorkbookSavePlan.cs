@@ -69,14 +69,14 @@ internal sealed record WorkbookSavePlan(string FormatId, SaveFormat Format, Save
 
     /// <summary>
     /// Removes from the in-memory workbook the drawings of the sheet a format that
-    /// <see cref="CellsEngineFormats.DropsDrawings"/> writes, and says how many of each kind it left
+    /// <see cref="CellsEngineFormats.IsTextTable"/> writes, and says how many of each kind it left
     /// out, as the charts, pictures and shapes of <c>details.content</c>; null when it removed none.
     /// A group counts once, as one drawing, and takes the shapes in it along. Comments are no
     /// drawings: they are neither removed nor counted.
     /// </summary>
     internal Warning? DropDrawings(Workbook workbook)
     {
-        if (!CellsEngineFormats.DropsDrawings(FormatId))
+        if (!CellsEngineFormats.IsTextTable(FormatId))
         {
             return null;
         }
@@ -116,10 +116,53 @@ internal sealed record WorkbookSavePlan(string FormatId, SaveFormat Format, Save
     internal Worksheet TextSheet(Workbook workbook) =>
         workbook.Worksheets[IsEvaluation ? 0 : workbook.Worksheets.ActiveSheetIndex];
 
+    /// <summary>
+    /// The sheet a text table output holds (<see cref="CellsEngineFormats.IsTextTable"/>), as the
+    /// save about to write <paramref name="workbook"/> finds it; null for an output that holds the
+    /// workbook.
+    /// </summary>
+    internal TextTableSheet? TextTable(Workbook workbook)
+    {
+        if (!CellsEngineFormats.IsTextTable(FormatId))
+        {
+            return null;
+        }
+
+        Worksheet sheet = TextSheet(workbook);
+        return new TextTableSheet(sheet.Name, sheet.TabId);
+    }
+
     internal void Save(Workbook workbook, string path)
     {
         workbook.Settings.Password = Protection.Password?.Reveal() ?? string.Empty;
         if (Options is not null) { workbook.Save(path, Options); }
         else { workbook.Save(path, Format); }
+    }
+}
+
+/// <summary>
+/// The sheet of an edited workbook a text table output holds, by its name and its internal id
+/// (TabId) as the save found them. The table's one sheet, which reads back named after its file,
+/// stands for it (<see cref="DiffComparer.CompareTextTable"/>).
+/// </summary>
+internal sealed record TextTableSheet(string Name, int TabId)
+{
+    /// <summary>Names the one sheet of <paramref name="table"/>, the text table read back, as this sheet.</summary>
+    internal void Rename(Workbook table) => table.Worksheets[0].Name = Name;
+
+    /// <summary>
+    /// The sheet of <paramref name="workbook"/>, the workbook before the edit, that became this
+    /// sheet: the one of its name, or else the only one with its id, which a rename keeps; null
+    /// when the edit added the sheet.
+    /// </summary>
+    internal Worksheet? Before(Workbook workbook)
+    {
+        if (workbook.Worksheets[Name] is { } named)
+        {
+            return named;
+        }
+
+        Worksheet[] sameId = [.. workbook.Worksheets.Cast<Worksheet>().Where(sheet => sheet.TabId == TabId)];
+        return sameId.Length == 1 ? sameId[0] : null;
     }
 }

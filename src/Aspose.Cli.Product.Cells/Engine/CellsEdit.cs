@@ -69,6 +69,7 @@ internal static class CellsEdit
         Warning?[] editWarnings = [.. batchOutcome.Warnings, .. model.Warnings, skippedSheet, unenforced, relativeLinks, unknownFunctions];
         // The save records what the format's limits lost; the verification reads it back.
         WorkbookSaveLoss? loss = null;
+        TextTableSheet? textTable = null;
         IReadOnlyList<Warning>? WrittenWarnings() => EnvelopeParts.CombineWarnings(
             EnvelopeParts.CombineWarnings([.. loaded.Resources.Warnings, .. editWarnings, .. loss!.Warnings]),
             importSources.Warnings());
@@ -80,13 +81,15 @@ internal static class CellsEdit
             savePlan.Encrypts,
             temp =>
             {
+                // A text table holds one sheet, the only one the verification compares.
+                textTable = savePlan.TextTable(workbook);
                 loss = new CellsSavePipeline(session.Outputs).ProduceReporting(workbook, savePlan, temp);
                 using LoadedWorkbook reopened = session.Loader.OpenPublishedCandidate(temp, savePlan.Protection.Password);
                 _ = reopened.Workbook.Worksheets.Count;
             },
             // Verification reports the warnings that make the output incomplete as issues.
             request.Verify ? candidate => new CellsEditVerifier(session.Loader, session.Budgets).Verify(candidate, baseline!.Path, filePath,
-                request.Password, savePlan.Protection.Password, batch, activeSheet, applied, WrittenWarnings()) : null,
+                request.Password, savePlan.Protection.Password, batch, activeSheet, applied, WrittenWarnings(), textTable) : null,
             "cells-edit");
         IReadOnlyList<Warning>? warnings = request.Options.DryRun
             ? EnvelopeParts.CombineWarnings(loaded.Warnings(editWarnings), importSources.Warnings())

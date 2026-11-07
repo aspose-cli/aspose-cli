@@ -124,7 +124,9 @@ internal sealed class CellsWorkbookLoader
 
     // Derived output is already bounded by publication; it is not a new user input, and its
     // text was written with invariant formats, so its quoted text fields are not re-judged.
-    // It is read as stored, since verification compares what was written.
+    // It is read as stored, since verification compares what was written. A copy of an input
+    // names the input as its resourceSource, which its links resolve against and its delimited
+    // text sheet is named after, as the input's is.
     internal LoadedWorkbook OpenPublishedCandidate(string path, Secret? password, string? resourceSource = null) =>
         InputOpening.OpenPublished(() => OpenCore(path, PasswordSource.Option(password), textImport: null, published: true, calculateOnOpen: false, resourceSource));
 
@@ -158,7 +160,7 @@ internal sealed class CellsWorkbookLoader
             // name, and a delimited text sheet is named after the file, as the path loader does;
             // a file name without a stem keeps the engine's default sheet name.
             workbook.FileName = path;
-            if (plan.Separator is not null && Path.GetFileNameWithoutExtension(path) is { Length: > 0 } stem)
+            if (plan.Separator is not null && Path.GetFileNameWithoutExtension(resourceSource ?? path) is { Length: > 0 } stem)
             {
                 workbook.Worksheets[0].Name = stem.Replace('[', '(').Replace(']', ')')[..Math.Min(stem.Length, MaxSheetNameLength)];
             }
