@@ -382,7 +382,8 @@ other output, csv, tsv, html, mhtml, pdf, xps, json and md included, cannot:
 it drops the encryption with an `ENCRYPTION_REMOVED` warning, and
 `--encrypt-env` on it is `OPTION_INVALID`. A single-sheet output of a multi-sheet workbook reports
 `SHEETS_DROPPED`, and a csv or tsv output of a sheet with charts, pictures or other drawings
-`LOSSY_CONVERSION`. `cells create` and `cells convert` follow the same rules.
+`LOSSY_CONVERSION`, as it does for the sheet's comments and its headers and footers, which are
+no `--verify` issue. `cells create` and `cells convert` follow the same rules.
 
 ## Reading the outcome
 

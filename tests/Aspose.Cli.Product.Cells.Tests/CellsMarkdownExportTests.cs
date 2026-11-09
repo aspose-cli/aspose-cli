@@ -7,7 +7,8 @@ namespace Aspose.Cli.Product.Cells.Tests;
 /// <summary>
 /// <c>cells convert --to md</c> writes a table another tool can take as it is: every row has the
 /// columns of its header, each cell reads as the sheet shows it, and the drawings a Markdown table
-/// cannot hold are left out with a warning that counts them.
+/// cannot hold are left out with a warning that counts them, beside the warning that names the
+/// comment of the sheet, which it holds only as a footnote definition.
 /// </summary>
 public sealed class CellsMarkdownExportTests : IDisposable
 {
@@ -36,8 +37,7 @@ public sealed class CellsMarkdownExportTests : IDisposable
         Assert.DoesNotContain("![", markdown, StringComparison.Ordinal);
         Assert.Contains("Check the margin", markdown, StringComparison.Ordinal);
 
-        JsonNode warning = Assert.Single(JsonNode.Parse(converted.StdOut)!["warnings"]!.AsArray(),
-            static warning => warning!["code"]!.GetValue<string>() == "LOSSY_CONVERSION")!;
+        JsonNode warning = LostDrawings(converted);
         string message = warning["message"]!.GetValue<string>();
         Assert.Contains("1 chart(s)", message, StringComparison.Ordinal);
         Assert.Contains("1 picture(s)", message, StringComparison.Ordinal);
@@ -84,8 +84,7 @@ public sealed class CellsMarkdownExportTests : IDisposable
         Assert.Contains("|700,000|38.6%|", markdown, StringComparison.Ordinal);
         Assert.DoesNotContain("data:image", markdown, StringComparison.Ordinal);
         Assert.DoesNotContain("![", markdown, StringComparison.Ordinal);
-        string message = Assert.Single(JsonNode.Parse(converted.StdOut)!["warnings"]!.AsArray(),
-            static warning => warning!["code"]!.GetValue<string>() == "LOSSY_CONVERSION")!["message"]!.GetValue<string>();
+        string message = LostDrawings(converted)["message"]!.GetValue<string>();
         Assert.Contains("1 chart(s)", message, StringComparison.Ordinal);
         Assert.Contains("1 picture(s)", message, StringComparison.Ordinal);
         Assert.Contains(" 1 other drawing(s)", message, StringComparison.Ordinal);
@@ -103,6 +102,19 @@ public sealed class CellsMarkdownExportTests : IDisposable
         Assert.Contains("|East|700,000|38.6%|", markdown, StringComparison.Ordinal);
         Assert.DoesNotContain(JsonNode.Parse(converted.StdOut)!["warnings"]?.AsArray() ?? [],
             static warning => warning!["code"]!.GetValue<string>() == "LOSSY_CONVERSION");
+    }
+
+    /// <summary>
+    /// The warning that counts the drawings an md output left out, of the two a sheet with
+    /// drawings and a comment has: the other names the comment.
+    /// </summary>
+    private static JsonNode LostDrawings(CliResult converted)
+    {
+        JsonNode[] lossy = [.. JsonNode.Parse(converted.StdOut)!["warnings"]!.AsArray().Select(static warning => warning!)
+            .Where(static warning => warning["code"]!.GetValue<string>() == "LOSSY_CONVERSION")];
+        Assert.Equal(2, lossy.Length);
+        Assert.Single(lossy, static warning => warning["details"]!["content"]!.ToJsonString() == """["comments"]""");
+        return Assert.Single(lossy, static warning => warning["details"]!["content"]!.ToJsonString() != """["comments"]""");
     }
 
     private void Book(bool withDrawings)

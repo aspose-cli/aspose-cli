@@ -29,19 +29,21 @@ internal sealed class CellsSavePipeline(OutputPipeline<Workbook> outputs)
     /// <summary>
     /// Writes the workbook (<see cref="Produce"/>) and names what the target format's limits
     /// lost: the data beyond its grid, the formulas that became <c>#REF!</c>, the sheets it
-    /// cannot hold and the drawings of a text table, which it leaves out
-    /// (<see cref="WorkbookSavePlan.DropDrawings"/>). Convert, create and edit save their
+    /// cannot hold, the drawings of a text table, which it leaves out
+    /// (<see cref="WorkbookSavePlan.DropDrawings"/>), and the content the format does not hold as
+    /// the workbook does (<see cref="UnwrittenContent"/>). Convert, create and edit save their
     /// workbook output through it.
     /// </summary>
     internal WorkbookSaveLoss ProduceReporting(Workbook workbook, WorkbookSavePlan plan, string path)
     {
+        Warning[] unwritten = [.. UnwrittenContent.Warnings(workbook, plan)];
         Warning? truncated = DetectGridTruncation(workbook, plan.Format);
         Warning? sheetsDropped = plan.DetectSheetLoss(workbook);
         Warning? drawingsDropped = plan.DropDrawings(workbook);
         int refsBefore = CountRefFormulas(workbook);
         Produce(workbook, plan, path);
         return new WorkbookSaveLoss(truncated,
-            BuildBrokenFormulaWarning(refsBefore, CountRefFormulas(workbook), plan.FormatId), sheetsDropped, drawingsDropped);
+            BuildBrokenFormulaWarning(refsBefore, CountRefFormulas(workbook), plan.FormatId), sheetsDropped, drawingsDropped, unwritten);
     }
 
     /// <summary>
@@ -179,10 +181,10 @@ internal sealed class CellsSavePipeline(OutputPipeline<Workbook> outputs)
 }
 
 /// <summary>What a save lost to its target format's limits.</summary>
-internal sealed record WorkbookSaveLoss(Warning? Truncated, Warning? FormulasBroken, Warning? SheetsDropped, Warning? DrawingsDropped)
+internal sealed record WorkbookSaveLoss(Warning? Truncated, Warning? FormulasBroken, Warning? SheetsDropped, Warning? DrawingsDropped, IReadOnlyList<Warning> Unwritten)
 {
     /// <summary>The losses in the order create and edit report them.</summary>
-    internal Warning?[] Warnings => [Truncated, FormulasBroken, SheetsDropped, DrawingsDropped];
+    internal Warning?[] Warnings => [Truncated, FormulasBroken, SheetsDropped, DrawingsDropped, .. Unwritten];
 }
 
 /// <summary>A published workbook and what its format's limits lost.</summary>

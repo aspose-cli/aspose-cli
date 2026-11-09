@@ -51,8 +51,9 @@ name; select another with `--sheets`. It writes
 that sheet's cells as a table and leaves out its charts, pictures and other
 drawings, and warns `LOSSY_CONVERSION` with how many of each: convert to xlsx
 or pdf to keep them, or `cells render` an image of the sheet. `cells convert`
-also warns `LOSSY_CONVERSION` for the headers and footers of that sheet, which
-the table leaves out, and, to csv or tsv, for its comments. A target grid
+and a `cells edit` that writes csv or tsv also warn `LOSSY_CONVERSION` for the
+headers and footers of that sheet, which the table leaves out, and for its
+comments. These warnings are no `--verify` issue. A target grid
 smaller than the data, such as xls with 65,536 rows, warns `DATA_TRUNCATED`,
 and formulas that referenced the lost cells become `#REF!` with
 `FORMULAS_BROKEN`: save to xlsx, xlsb or ods instead.
@@ -61,8 +62,9 @@ An md output writes each cell as the sheet shows it (`700,000`, `38.6%`),
 where csv and tsv write the stored value, so the table can go straight to
 `words create --from-markdown`. It writes the sheet's comments after the
 table as footnote definitions (`[^Comment_0_1]: ...`) that no cell refers to,
-so a Markdown reader may not show them and `words create --from-markdown`
-leaves them out; read them with `cells inspect --detail comments`.
+so a Markdown reader does not get them and `words create --from-markdown`
+leaves them out, and warns `LOSSY_CONVERSION`; read them with
+`cells inspect --detail comments`.
 
 A PDF or XPS prints only the comments its page setup prints, by default none,
 and warns `LOSSY_CONVERSION` with how many comments each sheet it prints has.

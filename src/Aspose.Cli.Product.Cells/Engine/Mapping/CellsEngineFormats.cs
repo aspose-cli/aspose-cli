@@ -55,8 +55,7 @@ internal static class CellsEngineFormats
         new("json") { Detected = FileFormatType.Json, Save = SaveFormat.Json, WritesRecords = true, EvaluationMarks = CellsEvaluationMarkKind.JsonRecord },
         new("md")
         {
-            // The engine writes the sheet's comments after the table as footnote definitions, so they are not named as left out.
-            Save = SaveFormat.Markdown, EvaluationMarks = CellsEvaluationMarkKind.MarkdownHeading, TextTable = true, Leaves = CellsContentLoss.HeadersFooters,
+            Save = SaveFormat.Markdown, EvaluationMarks = CellsEvaluationMarkKind.MarkdownHeading, TextTable = true, Leaves = CellsContentLoss.FootnoteComments | CellsContentLoss.HeadersFooters,
             Options = static (_, _) => new MarkdownSaveOptions { FormatStrategy = CellValueFormatStrategy.DisplayString },
         },
         new("png") { Image = ImageType.Png, EvaluationMarks = CellsEvaluationMarkKind.Pages },
@@ -163,7 +162,7 @@ internal sealed record CellsEngineFormat(string Id)
 
     /// <summary>
     /// The content of a workbook that an output in this format does not hold as the workbook does.
-    /// A convert names what the sheets it writes have of it in <c>LOSSY_CONVERSION</c>
+    /// A save names what the sheets it writes have of it in <c>LOSSY_CONVERSION</c>
     /// (<see cref="UnwrittenContent"/>); the content stays in the workbook.
     /// </summary>
     public CellsContentLoss Leaves { get; init; }
@@ -196,8 +195,14 @@ internal enum CellsContentLoss
     /// <summary>Every comment.</summary>
     Comments = 2,
 
+    /// <summary>
+    /// The comments, which the output writes only as footnote definitions no cell refers to: the
+    /// text is in the file, but what reads the format does not get it.
+    /// </summary>
+    FootnoteComments = 4,
+
     /// <summary>The charts, which become pictures, so their titles, labels and data are no text of the output.</summary>
-    ChartPictures = 4,
+    ChartPictures = 8,
 
     /// <summary>
     /// The headers and footers, which the output keeps only as Excel print data in its styles
@@ -205,13 +210,13 @@ internal enum CellsContentLoss
     /// A header or footer that prints only the page number or page count is no loss: a page
     /// without pages has nothing to show for it (<see cref="HeaderFooterText.PrintsText"/>).
     /// </summary>
-    PrintHeadersFooters = 8,
+    PrintHeadersFooters = 16,
 
     /// <summary>
     /// The headers and footers, which a table of cells has no pages for and leaves out; as with
     /// <see cref="PrintHeadersFooters"/>, one that prints only the page number or page count is no loss.
     /// </summary>
-    HeadersFooters = 16,
+    HeadersFooters = 32,
 }
 
 /// <summary>What evaluation mode leaves in an output, as <see cref="CellsEvaluationProfile"/> names it.</summary>

@@ -9,9 +9,10 @@ namespace Aspose.Cli.Product.Cells.Engine.Mapping;
 
 /// <summary>
 /// The engine save format and options of one workbook output, and the password it carries
-/// (<see cref="OutputProtection"/>).
+/// (<see cref="OutputProtection"/>). <c>SelectedSheets</c> holds the zero-based sheets
+/// <c>--sheets</c> selected for a format that holds several, or null for every sheet.
 /// </summary>
-internal sealed record WorkbookSavePlan(string FormatId, SaveFormat Format, SaveOptions? Options, OutputProtection Protection, bool IsEvaluation)
+internal sealed record WorkbookSavePlan(string FormatId, SaveFormat Format, SaveOptions? Options, OutputProtection Protection, bool IsEvaluation, IReadOnlyList<int>? SelectedSheets)
 {
     /// <summary>The most worksheets a <c>SHEETS_DROPPED</c> names one by one.</summary>
     private const int NamedSheets = 10;
@@ -22,7 +23,7 @@ internal sealed record WorkbookSavePlan(string FormatId, SaveFormat Format, Save
         string formatId = output.Id;
         SaveFormat format = CellsEngineFormats.Save(formatId);
         SaveOptions? options = CellsEngineFormats.Options(formatId, byteOrderMark, selectedSheets);
-        return new WorkbookSavePlan(formatId, format, options, protection, licenseState == LicenseState.Evaluation);
+        return new WorkbookSavePlan(formatId, format, options, protection, licenseState == LicenseState.Evaluation, selectedSheets);
     }
 
     /// <summary>True for the text formats (csv, tsv, md), which write only the active sheet.</summary>

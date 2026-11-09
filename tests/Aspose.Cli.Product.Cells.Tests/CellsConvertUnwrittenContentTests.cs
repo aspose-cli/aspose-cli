@@ -11,15 +11,19 @@ namespace Aspose.Cli.Product.Cells.Tests;
 /// <c>LOSSY_CONVERSION</c> per kind of content, with how much each sheet has: a pdf or xps
 /// prints no comment the page setup leaves unprinted, an html or mhtml page holds no
 /// comment, shows the charts as pictures and keeps the headers and footers only as print data
-/// in its styles, and a csv or tsv table of one sheet holds neither its comments nor its
-/// headers and footers, an md table no headers and footers. A workbook without such content,
-/// and an output that keeps it, warn of none.
+/// in its styles, a csv or tsv table of one sheet holds neither its comments nor its
+/// headers and footers, and an md table no headers and footers and its comments only as
+/// footnote definitions no cell refers to. An edit that writes a csv or tsv names the same
+/// content the same way. A workbook without such content, and an output that keeps it, warn of
+/// none.
 /// The content stays in the workbook, so no such warning affects completeness. The commands run
 /// with the test license when the run has one, and in evaluation mode otherwise.
 /// </summary>
 public sealed class CellsConvertUnwrittenContentTests : IDisposable
 {
     private const string LossyConversion = "LOSSY_CONVERSION";
+
+    private const string MarkdownComments = "The md output writes 2 comment(s) only as footnote definitions no cell refers to, which a Markdown reader does not get: 2 on worksheet 'Summary'.";
 
     private readonly TempWorkspace _workspace = new();
 
@@ -165,7 +169,8 @@ public sealed class CellsConvertUnwrittenContentTests : IDisposable
     /// <summary>
     /// A printout leaves out the comments and a page the comments, charts and headers; a csv or
     /// tsv table of the sheet leaves out its comments, headers and chart, and an md table its
-    /// headers and chart. A workbook without them loses nothing to any of these, and a workbook
+    /// headers and chart and holds its comments where no reader gets them. A workbook without
+    /// them loses nothing to any of these, and a workbook
     /// output keeps them all, so neither warns of lost content.
     /// </summary>
     [Theory]
@@ -181,7 +186,7 @@ public sealed class CellsConvertUnwrittenContentTests : IDisposable
     [InlineData(false, "csv", 0)]
     [InlineData(true, "tsv", 3)]
     [InlineData(false, "tsv", 0)]
-    [InlineData(true, "md", 2)]
+    [InlineData(true, "md", 3)]
     [InlineData(false, "md", 0)]
     [InlineData(true, "xlsx", 0)]
     [InlineData(true, "ods", 0)]
@@ -256,14 +261,15 @@ public sealed class CellsConvertUnwrittenContentTests : IDisposable
 
     /// <summary>
     /// A table of cells (csv, tsv, md) writes one sheet and names what that sheet has and the
-    /// table leaves out, each kind in its own warning: a csv or tsv its comments, then its
-    /// headers and footers; an md its headers and footers alone. The comments of the sheet it
-    /// does not write are no part of it, and the message says why a table has no headers.
+    /// table loses, each kind in its own warning: its comments, then its headers and footers.
+    /// A csv or tsv leaves the comments out, and an md holds them only as footnote definitions
+    /// no cell refers to. The comments of the sheet it does not write are no part of it, and the
+    /// message says why a table has no headers.
     /// </summary>
     [Theory]
     [InlineData("csv", new[] { "comments", "headers-footers" })]
     [InlineData("tsv", new[] { "comments", "headers-footers" })]
-    [InlineData("md", new[] { "headers-footers" })]
+    [InlineData("md", new[] { "comments", "headers-footers" })]
     public void TextTable_OfASheetWithCommentsAndHeaders_NamesWhatThatSheetLoses(string format, string[] kinds)
     {
         Book("book.xlsx", comments: true, header: true);
@@ -276,13 +282,9 @@ public sealed class CellsConvertUnwrittenContentTests : IDisposable
             Assert.Equal("sheet/Summary", Text(warning, "location"));
             Assert.Null(warning["affectsCompleteness"]);
         });
-        if (format != "md")
-        {
-            JsonNode comments = lossy[0];
-            Assert.Equal($"The {format} output leaves out 2 comment(s): 2 on worksheet 'Summary'.", Text(comments, "message"));
-            Assert.Contains("cells inspect <file> --detail comments", Text(comments, "hint"), StringComparison.Ordinal);
-        }
-
+        JsonNode comments = lossy[0];
+        Assert.Equal(format == "md" ? MarkdownComments : $"The {format} output leaves out 2 comment(s): 2 on worksheet 'Summary'.", Text(comments, "message"));
+        Assert.Contains("cells inspect <file> --detail comments", Text(comments, "hint"), StringComparison.Ordinal);
         JsonNode headers = lossy[^1];
         Assert.Equal($"The {format} output leaves out the headers and footers of worksheet 'Summary': a table of cells has no pages to print them on.",
             Text(headers, "message"));
@@ -345,29 +347,189 @@ public sealed class CellsConvertUnwrittenContentTests : IDisposable
     }
 
     /// <summary>
-    /// A workbook of two sheets: Summary holds a small table and, on request, comments on two
-    /// cells, a chart and a center header and footer; Notes holds one cell and, with comments or
+    /// An md output of a sheet with comments names them in a warning of their own, which says
+    /// what became of them: their text is in the file, as footnote definitions no reader gets, so
+    /// it does not say they were left out.
+    /// </summary>
+    [Fact]
+    public void Md_OfASheetWithComments_SaysTheyAreFootnotesNoReaderGets()
+    {
+        Book("book.xlsx", comments: true);
+
+        JsonNode comments = Assert.Single(Lossy(Convert("book.xlsx", "md")));
+
+        Assert.Equal("""["comments"]""", comments["details"]?["content"]?.ToJsonString());
+        Assert.Equal(MarkdownComments, Text(comments, "message"));
+        Assert.DoesNotContain("leaves out", Text(comments, "message"), StringComparison.Ordinal);
+        Assert.Equal("Read the comments with 'aspose-cli cells inspect <file> --detail comments'; the workbook keeps them.", Text(comments, "hint"));
+        Assert.Equal("sheet/Summary", Text(comments, "location"));
+        Assert.Null(comments["affectsCompleteness"]);
+        Assert.Contains("ZqxNoteA", File.ReadAllText(_workspace.File("converted.md")), StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// A table of cells counts the comments of the sheet it writes and no other, an md as a csv:
+    /// the comment of a hidden sheet it does not write is not counted, so a workbook with no
+    /// other comment warns of none.
+    /// </summary>
+    [Theory]
+    [InlineData("csv", true, "The csv output leaves out 2 comment(s): 2 on worksheet 'Summary'.")]
+    [InlineData("md", true, MarkdownComments)]
+    [InlineData("csv", false, null)]
+    [InlineData("md", false, null)]
+    public void TextTable_CountsOnlyTheCommentsOfTheSheetItWrites_NotThoseOfAHiddenSheet(string format, bool visibleComments, string? message)
+    {
+        Book("book.xlsx", comments: visibleComments, notesComment: true, hideNotes: true);
+
+        JsonNode[] lossy = Lossy(Convert("book.xlsx", format));
+
+        string[] messages = message is null ? [] : [message];
+        Assert.Equal(messages, lossy.Select(static warning => Text(warning, "message")));
+    }
+
+    /// <summary>
+    /// A table of the sheet <c>--sheets</c> selects counts that sheet's comments, an md as a csv,
+    /// whether the sheet is visible or hidden; evaluation mode exports only the first sheet to a
+    /// text format, so the run needs a license.
+    /// </summary>
+    [Theory]
+    [InlineData("md", false)]
+    [InlineData("md", true)]
+    [InlineData("csv", true)]
+    public void TextTable_OfTheSelectedSheet_CountsThatSheetsComments(string format, bool hidden)
+    {
+        TestLicense.Require("Evaluation mode exports only the first sheet to a text format.");
+        Book("book.xlsx", comments: true, hideNotes: hidden);
+
+        JsonNode lossy = Assert.Single(Lossy(Convert("book.xlsx", format, "--sheets", "2")));
+
+        Assert.Contains("1 comment(s)", Text(lossy, "message"), StringComparison.Ordinal);
+        Assert.EndsWith(": 1 on worksheet 'Notes'.", Text(lossy, "message"), StringComparison.Ordinal);
+        Assert.Equal("sheet/Notes", Text(lossy, "location"));
+    }
+
+    /// <summary>
+    /// An edit that writes a csv or tsv names the comments and the headers and footers of the
+    /// sheet it writes exactly as a convert of the same workbook does: the same warnings, with
+    /// the same message, hint, location and details.
+    /// </summary>
+    [Theory]
+    [InlineData("csv")]
+    [InlineData("tsv")]
+    public void Edit_ToATextTable_NamesTheCommentsAndHeaders_AsConvertDoes(string format)
+    {
+        Book("book.xlsx", comments: true, header: true);
+        JsonNode[] converted = Lossy(Convert("book.xlsx", format));
+
+        CliResult edited = Edit("book.xlsx", "--out", $"edited.{format}");
+
+        Assert.True(edited.ExitCode == 0, $"exit {edited.ExitCode}: {edited.StdErr}{edited.StdOut}");
+        JsonNode[] lossy = Lossy(JsonNode.Parse(edited.StdOut)!);
+        Assert.Equal(2, lossy.Length);
+        Assert.Equal(converted.Length, lossy.Length);
+        for (int index = 0; index < lossy.Length; index++)
+        {
+            Assert.True(JsonNode.DeepEquals(converted[index], lossy[index]), $"{lossy[index].ToJsonString()}\n{converted[index].ToJsonString()}");
+        }
+    }
+
+    /// <summary>
+    /// These warnings affect no verification: a verified edit to a csv or tsv of a workbook with
+    /// comments and headers exits as the same edit of the workbook without them, 0 when the
+    /// workbook has one sheet and 8 for the sheet the table drops, with the same issues, and adds
+    /// only the warnings.
+    /// </summary>
+    [Theory]
+    [InlineData("csv", false, 0)]
+    [InlineData("tsv", false, 0)]
+    [InlineData("csv", true, 8)]
+    public void VerifiedEdit_ToATextTable_ExitsAsWithoutTheCommentsAndHeaders(string format, bool otherSheet, int exit)
+    {
+        Book("noted.xlsx", comments: true, header: true, otherSheet: otherSheet);
+        Book("plain.xlsx", otherSheet: otherSheet);
+
+        CliResult noted = Edit("noted.xlsx", "--out", $"noted.{format}", "--verify");
+        CliResult plain = Edit("plain.xlsx", "--out", $"plain.{format}", "--verify");
+
+        Assert.True(noted.ExitCode == exit, $"exit {noted.ExitCode}: {noted.StdErr}{noted.StdOut}");
+        Assert.True(plain.ExitCode == exit, $"without them, exit {plain.ExitCode}: {plain.StdErr}{plain.StdOut}");
+        JsonNode result = JsonNode.Parse(noted.StdOut)!;
+        JsonNode baseline = JsonNode.Parse(plain.StdOut)!;
+        Assert.Equal(
+            ["""["comments"]""", """["headers-footers"]"""],
+            Lossy(result).Select(static warning => warning["details"]!["content"]!.ToJsonString()));
+        Assert.Empty(Lossy(baseline));
+        Assert.True(JsonNode.DeepEquals(baseline["verification"]!["issues"], result["verification"]!["issues"]),
+            $"{result["verification"]!["issues"]?.ToJsonString()}\n{baseline["verification"]!["issues"]?.ToJsonString()}");
+    }
+
+    /// <summary>
+    /// An edit names lost content only for an output the format table says loses it: a csv or tsv
+    /// of a workbook that has it. An edit to a workbook format, in place or to another file,
+    /// keeps it, and a dry run writes nothing to lose it from.
+    /// </summary>
+    [Theory]
+    [InlineData(true, 2, "--out", "edited.csv")]
+    [InlineData(false, 0, "--out", "edited.csv")]
+    [InlineData(true, 2, "--out", "edited.tsv")]
+    [InlineData(false, 0, "--out", "edited.tsv")]
+    [InlineData(true, 0, "--out", "edited.xlsx")]
+    [InlineData(true, 0, "--out", "edited.ods")]
+    [InlineData(true, 0, "--in-place")]
+    [InlineData(true, 0, "--out", "edited.csv", "--dry-run")]
+    public void Edit_WarnsOfLostContent_OnlyWhenTheOutputLeavesItOut(bool content, int warnings, params string[] target)
+    {
+        Book("book.xlsx", comments: content, header: content);
+
+        CliResult edited = Edit("book.xlsx", target);
+
+        Assert.True(edited.ExitCode == 0, $"exit {edited.ExitCode}: {edited.StdErr}{edited.StdOut}");
+        Assert.Equal(warnings, Lossy(JsonNode.Parse(edited.StdOut)!).Length);
+    }
+
+    /// <summary>An edit counts the comments of the sheet as its batch leaves them, not as the input had them.</summary>
+    [Fact]
+    public void Edit_ToCsv_CountsTheCommentsTheBatchLeaves()
+    {
+        Book("book.xlsx", comments: true);
+
+        CliResult edited = Cli("cells", "edit", "book.xlsx", "--ops", """{"ops":[{"op":"delete_comment","sheet":"Summary","cell":"B2"}]}""",
+            "--out", "edited.csv", "--output-format", "json");
+
+        Assert.True(edited.ExitCode == 0, $"exit {edited.ExitCode}: {edited.StdErr}{edited.StdOut}");
+        JsonNode lossy = Assert.Single(Lossy(JsonNode.Parse(edited.StdOut)!));
+        Assert.Equal("The csv output leaves out 1 comment(s): 1 on worksheet 'Summary'.", Text(lossy, "message"));
+    }
+
+    /// <summary>
+    /// A workbook of two sheets, or of Summary alone without <paramref name="otherSheet"/>:
+    /// Summary holds a small table and, on request, comments on two cells, a chart and a center
+    /// header and footer; Notes holds one cell and, with comments or
     /// <paramref name="notesComment"/>, a comment of its own, and with
     /// <paramref name="hideNotes"/> is hidden. <paramref name="footerCenter"/> sets the center
     /// footer of Summary alone. Cell text starts with ZqxCell and comment text with ZqxNote.
     /// </summary>
     private void Book(string name, bool comments = false, bool chart = false, bool header = false,
-        bool notesComment = false, bool hideNotes = false, string? footerCenter = null)
+        bool notesComment = false, bool hideNotes = false, string? footerCenter = null, bool otherSheet = true)
     {
-        Assert.Equal(0, Cli("cells", "create", name, "--sheet-names", "Summary,Notes").ExitCode);
+        Assert.Equal(0, Cli("cells", "create", name, "--sheet-names", otherSheet ? "Summary,Notes" : "Summary").ExitCode);
         var ops = new List<object>
         {
             new { op = "set_values", sheet = "Summary", range = "A1", values = new object[][] { ["ZqxCellA", "Amount"], ["East", 700], ["North", 580] } },
-            new { op = "set_values", sheet = "Notes", range = "A1", values = new object[][] { ["ZqxCellB"] } },
             new { op = "set_page_setup", sheet = "Summary", orientation = "portrait" },
         };
+        if (otherSheet)
+        {
+            ops.Add(new { op = "set_values", sheet = "Notes", range = "A1", values = new object[][] { ["ZqxCellB"] } });
+        }
+
         if (comments)
         {
             ops.Add(new { op = "add_comment", sheet = "Summary", cell = "B2", text = "ZqxNoteA" });
             ops.Add(new { op = "add_comment", sheet = "Summary", cell = "B3", text = "ZqxNoteB" });
         }
 
-        if (comments || notesComment)
+        if (otherSheet && (comments || notesComment))
         {
             ops.Add(new { op = "add_comment", sheet = "Notes", cell = "A1", text = "ZqxNoteC" });
         }
@@ -420,6 +582,10 @@ public sealed class CellsConvertUnwrittenContentTests : IDisposable
         Assert.True(converted.ExitCode == 0, $"exit {converted.ExitCode}: {converted.StdErr}{converted.StdOut}");
         return JsonNode.Parse(converted.StdOut)!;
     }
+
+    /// <summary>Edits one cell of Summary and writes the result where <paramref name="target"/> says.</summary>
+    private CliResult Edit(string input, params string[] target) =>
+        Cli(["cells", "edit", input, "--set", "Summary!B2=701", .. target, "--output-format", "json"]);
 
     private JsonNode Run(params string[] args)
     {
