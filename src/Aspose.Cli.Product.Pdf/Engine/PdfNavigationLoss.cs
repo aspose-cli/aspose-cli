@@ -7,7 +7,7 @@ namespace Aspose.Cli.Product.Pdf.Engine;
 /// <summary>
 /// The in-document navigation an edit left leading to no page, by why. An entry whose page the
 /// edit deleted is the result the caller asked for. An entry whose page is still in the output
-/// but which no longer leads to it, such as a destination with a coordinate of 0 on a moved page
+/// but which no longer leads to it, such as a destination whose top reads 0 on a moved page
 /// (PDF-MOVE-BOOKMARK), is damage beside what the caller asked for and leaves the output
 /// incomplete. Each entry is matched before and after the edit by what the edit keeps of it: a
 /// bookmark by its title and destination, a link by its area and destination, a named
@@ -116,7 +116,7 @@ internal sealed record PdfNavigationLoss(PdfNavigationCensus Stranded, PdfNaviga
     {
         if (Stranded.ToWarning(
                 "no longer lead to a page, although the page they led to is still in the output: the edit could not point them at it, "
-                    + "as with a destination with a coordinate of 0 on a moved page, which the SDK cannot tell apart from an omitted one",
+                    + "as with a destination whose top reads 0 on a moved page, which the SDK cannot tell apart from an omitted top",
                 StrandedHint(outlineInspection)) is { } stranded)
         {
             yield return stranded;

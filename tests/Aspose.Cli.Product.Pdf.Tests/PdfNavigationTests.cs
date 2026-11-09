@@ -64,7 +64,7 @@ public sealed class PdfNavigationTests
     }
 
     /// <summary>
-    /// PDF-MOVE-BOOKMARK: a bookmark with a coordinate of 0 on a moved page no longer leads to the
+    /// PDF-MOVE-BOOKMARK: a bookmark with a top of 0 on a moved page no longer leads to the
     /// page, which is still in the output, so the verified edit exits 8. The hint names the two
     /// operations and gives the command that reads, run as written, the page the bookmark opened
     /// in the input; deleting it and adding it again in the same batch makes the edit exit 0.
@@ -113,7 +113,7 @@ public sealed class PdfNavigationTests
     public void MovePages_OfBookmarksWithAwkwardTitles_GivesTheSameHint()
     {
         using var workspace = new TempWorkspace();
-        const string Target = "/Dest [5 0 R /XYZ 0 800 0]";
+        const string Target = "/Dest [5 0 R /XYZ 72 0 0]";
         PdfEngineFixture.WriteRawPdf(workspace.File("titles.pdf"),
         [
             "<< /Type /Catalog /Pages 2 0 R /Outlines 6 0 R >>",
@@ -196,8 +196,9 @@ public sealed class PdfNavigationTests
         Assert.Equal(3, OpenedPage(workspace.RunCommandLine(command, variables), "Chapter 3"));
     }
 
-    // Three chapters, each with a bookmark to its page at a left of 0, which a page move cannot rebuild.
-    private static Document Chapters()
+    // Three chapters, each with a bookmark to its page at the destination given, by default at a
+    // top of 0, which a page move cannot rebuild.
+    private static Document Chapters(Func<Page, IAppointment>? destination = null)
     {
         var document = new Document();
         for (int number = 1; number <= 3; number++)
@@ -206,7 +207,7 @@ public sealed class PdfNavigationTests
             document.Outlines.Add(new OutlineItemCollection(document.Outlines)
             {
                 Title = $"Chapter {number}",
-                Destination = new XYZExplicitDestination(document.Pages[number], 0, 800, 0),
+                Destination = destination?.Invoke(document.Pages[number]) ?? new XYZExplicitDestination(document.Pages[number], 72, 0, 0),
             });
         }
 
@@ -238,11 +239,11 @@ public sealed class PdfNavigationTests
             "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] >>",
             "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Annots [10 0 R] >>",
             "<< /Type /Outlines /First 7 0 R /Last 8 0 R /Count 2 >>",
-            "<< /Title (Top) /Parent 6 0 R /Next 8 0 R /Dest [5 0 R /XYZ 0 700.123456789 1.5] >>",
+            "<< /Title (Top) /Parent 6 0 R /Next 8 0 R /Dest [5 0 R /XYZ 72.123456789 0 1.5] >>",
             "<< /Title (Left) /Parent 6 0 R /Prev 7 0 R /Dest [5 0 R /XYZ 72.350000001 0 0] >>",
-            "<< /Type /Annot /Subtype /Link /Rect [68.123456 700.5 300.75 714.25] /Border [0 0 0] /Dest [5 0 R /XYZ 0 650.987654321 0] >>",
+            "<< /Type /Annot /Subtype /Link /Rect [68.123456 700.5 300.75 714.25] /Border [0 0 0] /Dest [5 0 R /XYZ 68.987654321 0 0] >>",
             // A link on the moved page, which the page's copy carries.
-            "<< /Type /Annot /Subtype /Link /Rect [72.111111 500.222222 310.333333 520.444444] /Border [0 0 0] /Dest [3 0 R /XYZ 0 640.555555555 0] >>",
+            "<< /Type /Annot /Subtype /Link /Rect [72.111111 500.222222 310.333333 520.444444] /Border [0 0 0] /Dest [3 0 R /XYZ 72.555555555 0 0] >>",
         ]);
 
         CliResult moved = workspace.Run("pdf", "edit", "fractions.pdf", "--out", "moved.pdf", "--verify", "--output-format", "json", "--ops",
@@ -253,6 +254,153 @@ public sealed class PdfNavigationTests
         Assert.True(warning["affectsCompleteness"]!.GetValue<bool>());
         Assert.StartsWith("2 bookmark(s), 2 link(s) and 0 named destination(s) no longer lead to a page", warning["message"]!.GetValue<string>(), StringComparison.Ordinal);
         Assert.Contains("No operation re-creates links or named destinations", warning["hint"]!.GetValue<string>(), StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// A bookmark whose left reads 0 is rebuilt with a left of 0 and follows its page: whether the
+    /// left was 0 or omitted, a reader opens the page at much the same place.
+    /// </summary>
+    [Fact]
+    public void MovePages_RebuildsABookmarkWhoseLeftReadsZero()
+    {
+        using var fixture = new PdfEngineFixture();
+        using var workspace = new TempWorkspace();
+        using (Document document = Chapters(static page => new XYZExplicitDestination(page, 0, 800, 0)))
+        {
+            document.Save(workspace.File("chapters.pdf"));
+        }
+
+        CliResult moved = workspace.Run("pdf", "edit", "chapters.pdf", "--out", "moved.pdf", "--verify", "--output-format", "json", "--ops",
+            """[{"op":"move_pages","pages":"3","to":1}]""");
+
+        Assert.True(moved.ExitCode == 0, moved.StdOut + moved.StdErr);
+        JsonNode result = moved.Json();
+        Assert.True(result["verification"]!["ok"]!.GetValue<bool>());
+        Assert.DoesNotContain(result["warnings"]?.AsArray() ?? [], static item => item!["code"]!.GetValue<string>() == "NAVIGATION_DEGRADED");
+        using var output = new Document(workspace.File("moved.pdf"));
+        Assert.Equal("1 XYZ 0 800 0", Describe(output.Outlines.Single(static item => item.Title == "Chapter 3").Destination));
+        Assert.Contains("Chapter 3", Text(output.Pages[1]), StringComparison.Ordinal);
+    }
+
+    /// <summary>Links, named destinations and what leads through them go the same way as a bookmark, to and from the moved page.</summary>
+    [Fact]
+    public void MovePages_RebuildsLinksAndNamedDestinationsWhoseLeftReadsZero()
+    {
+        using var fixture = new PdfEngineFixture();
+        string input = fixture.File("links.pdf");
+        using (var document = new Document())
+        {
+            for (int number = 1; number <= 3; number++)
+            {
+                document.Pages.Add().Paragraphs.Add(new TextFragment($"Page {number}"));
+            }
+
+            Page first = document.Pages[1], third = document.Pages[3];
+            document.NamedDestinations.Add("appendix", new XYZExplicitDestination(third, 0, 600, 0));
+            document.Outlines.Add(new OutlineItemCollection(document.Outlines) { Title = "Named", Destination = new NamedDestination(document, "appendix") });
+            first.Annotations.Add(new LinkAnnotation(first, new Rectangle(100, 100, 200, 120)) { Destination = new XYZExplicitDestination(third, 0, 500, 0) });
+            first.Annotations.Add(new LinkAnnotation(first, new Rectangle(100, 200, 200, 220)) { Action = new GoToAction(new XYZExplicitDestination(third, 0, 400, 1)) });
+            first.Annotations.Add(new LinkAnnotation(first, new Rectangle(100, 300, 200, 320)) { Destination = new NamedDestination(document, "appendix") });
+            third.Annotations.Add(new LinkAnnotation(third, new Rectangle(100, 100, 200, 120)) { Destination = new XYZExplicitDestination(first, 0, 300, 0) });
+            document.Save(input);
+        }
+
+        PdfEditResult result = PdfEdit.Run(fixture.Session, new PdfEditRequest
+        {
+            Input = input,
+            Batch = new PdfOpsBatch { Ops = [new MovePagesOp { Pages = "3", To = 1 }] },
+            Output = TestOutput.At(fixture.File("links.out.pdf")),
+            Verify = true,
+        });
+
+        Assert.DoesNotContain(result.Warnings ?? [], static item => item.Code.Name == "NAVIGATION_DEGRADED");
+        Assert.True(result.Verification!.Ok, string.Join("; ", result.Verification.Issues.Select(static issue => issue.Message)));
+        using var moved = new Document(result.Output!.Path);
+        Assert.Equal("1 XYZ 0 600 0", Describe(moved.NamedDestinations["appendix"]));
+        Assert.Equal("1 XYZ 0 500 0", Describe(((LinkAnnotation)moved.Pages[2].Annotations[1]).Destination));
+        Assert.Equal("1 XYZ 0 400 1", Describe(((GoToAction)((LinkAnnotation)moved.Pages[2].Annotations[2]).Action).Destination));
+        Assert.Equal("2 XYZ 0 300 0", Describe(((LinkAnnotation)moved.Pages[1].Annotations[1]).Destination));
+    }
+
+    /// <summary>
+    /// A top that reads 0 may stand for an omitted one, and the two open different places, so the
+    /// destination is not rebuilt, whatever its left: it is counted and fails the verification.
+    /// </summary>
+    [Theory]
+    [InlineData(72d)]
+    [InlineData(0d)]
+    public void MovePages_LeavesADestinationWhoseTopReadsZero(double left)
+    {
+        using var fixture = new PdfEngineFixture();
+
+        PdfEditResult result = EditChapters(fixture, page => new XYZExplicitDestination(page, left, 0, 0), new MovePagesOp { Pages = "3", To = 1 });
+
+        Warning warning = Assert.Single(result.Warnings!, static item => item.Code.Name == "NAVIGATION_DEGRADED");
+        Assert.True(warning.AffectsCompleteness);
+        Assert.StartsWith("1 bookmark(s), 0 link(s) and 0 named destination(s) no longer lead to a page", warning.Message, StringComparison.Ordinal);
+        Assert.False(result.Verification!.Ok);
+        Assert.True(result.HasFailures);
+    }
+
+    /// <summary>A destination without a coordinate of 0 is rebuilt exactly, as it always was.</summary>
+    [Fact]
+    public void MovePages_RebuildsADestinationWithoutAZeroCoordinateExactly()
+    {
+        using var fixture = new PdfEngineFixture();
+
+        PdfEditResult result = EditChapters(fixture, static page => new XYZExplicitDestination(page, 72.5, 700.25, 1.5), new MovePagesOp { Pages = "3", To = 1 });
+
+        Assert.DoesNotContain(result.Warnings ?? [], static item => item.Code.Name == "NAVIGATION_DEGRADED");
+        Assert.True(result.Verification!.Ok, string.Join("; ", result.Verification.Issues.Select(static issue => issue.Message)));
+        using var moved = new Document(result.Output!.Path);
+        Assert.Equal("1 XYZ 72.5 700.25 1.5", Describe(moved.Outlines.Single(static item => item.Title == "Chapter 3").Destination));
+    }
+
+    /// <summary>A destination with no coordinate to read is rebuilt as it always was.</summary>
+    [Fact]
+    public void MovePages_RebuildsAFitDestination()
+    {
+        using var fixture = new PdfEngineFixture();
+
+        PdfEditResult result = EditChapters(fixture, static page => new FitExplicitDestination(page), new MovePagesOp { Pages = "3", To = 1 });
+
+        Assert.DoesNotContain(result.Warnings ?? [], static item => item.Code.Name == "NAVIGATION_DEGRADED");
+        Assert.True(result.Verification!.Ok, string.Join("; ", result.Verification.Issues.Select(static issue => issue.Message)));
+        using var moved = new Document(result.Output!.Path);
+        Assert.Equal("1 Fit", Describe(moved.Outlines.Single(static item => item.Title == "Chapter 3").Destination));
+    }
+
+    /// <summary>A left of 0 changes nothing for a page the batch deleted: the loss is what the caller asked for.</summary>
+    [Fact]
+    public void DeletePages_ThatABookmarkWithALeftOfZeroLeadsTo_StaysWhatTheEditDeleted()
+    {
+        using var fixture = new PdfEngineFixture();
+
+        PdfEditResult result = EditChapters(fixture, static page => new XYZExplicitDestination(page, 0, 800, 0), new DeletePagesOp { Pages = "3" });
+
+        Warning warning = Assert.Single(result.Warnings!, static item => item.Code.Name == "NAVIGATION_DEGRADED");
+        Assert.False(warning.AffectsCompleteness);
+        Assert.Equal("1 bookmark(s), 0 link(s) and 0 named destination(s) lead to pages the edit deleted.", warning.Message);
+        Assert.True(result.Verification!.Ok, string.Join("; ", result.Verification.Issues.Select(static issue => issue.Message)));
+        Assert.False(result.HasFailures);
+    }
+
+    // Applies one operation with --verify to the three chapters whose bookmarks open each page at the destination given.
+    private static PdfEditResult EditChapters(PdfEngineFixture fixture, Func<Page, IAppointment> destination, PdfOp operation)
+    {
+        string input = fixture.File("chapters.pdf");
+        using (Document document = Chapters(destination))
+        {
+            document.Save(input);
+        }
+
+        return PdfEdit.Run(fixture.Session, new PdfEditRequest
+        {
+            Input = input,
+            Batch = new PdfOpsBatch { Ops = [operation] },
+            Output = TestOutput.At(fixture.File("chapters.out.pdf")),
+            Verify = true,
+        });
     }
 
     [Fact]
@@ -268,8 +416,8 @@ public sealed class PdfNavigationTests
             Output = TestOutput.At(fixture.File("move.out.pdf")),
         });
 
-        // "Three" and the explicit link are retargeted; "appendix" has left 0, which may stand
-        // for an omitted coordinate, so it and the bookmark and link that use it are counted.
+        // "Three" and the explicit link are retargeted; "appendix" has a top of 0, which may stand
+        // for an omitted one, so it and the bookmark and link that use it are counted.
         Warning warning = Assert.Single(result.Warnings!, static item => item.Code.Name == "NAVIGATION_DEGRADED");
         Assert.True(warning.AffectsCompleteness);
         Assert.StartsWith("1 bookmark(s), 1 link(s) and 1 named destination(s)", warning.Message, StringComparison.Ordinal);
@@ -468,7 +616,7 @@ public sealed class PdfNavigationTests
             document.Pages.Add().Paragraphs.Add(new TextFragment($"Page {number}"));
         }
 
-        document.NamedDestinations.Add("appendix", new XYZExplicitDestination(document.Pages[3], 0, 600, 0));
+        document.NamedDestinations.Add("appendix", new XYZExplicitDestination(document.Pages[3], 20, 0, 0));
         document.Outlines.Add(new OutlineItemCollection(document.Outlines) { Title = "Two", Destination = new FitExplicitDestination(document.Pages[2]) });
         document.Outlines.Add(new OutlineItemCollection(document.Outlines) { Title = "Three", Destination = new XYZExplicitDestination(document.Pages[3], 10, 700, 2) });
         document.Outlines.Add(new OutlineItemCollection(document.Outlines) { Title = "Named", Destination = new NamedDestination(document, "appendix") });
