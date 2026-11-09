@@ -177,6 +177,15 @@ Reproductions: [CellsKnownIssueTests](tests/Aspose.Cli.Product.Cells.Tests/Cells
 - **Workaround:** add a data row below the header, or convert the sheet to csv with `--sheets`,
   which writes the header alone.
 
+### CELLS-AUTOFIT-RICH-TEXT
+
+- **Defect:** `Worksheet.AutoFitRows` fits a row to the cell's font when the cell holds rich text
+  that does not wrap, so a run larger than that font is cut off, though
+  `Cell.GetHeightOfValue` measures the run, and wrapped rich text is fitted.
+- **CLI behavior:** review reports such a row as `CELLS_TEXT_TALLER_THAN_ROW` with the font of
+  the largest run, and its hint says that auto-fit leaves it short.
+- **Workaround:** set the row height with `resize_rows` and `height`.
+
 ## Aspose.PDF.Drawing 26.8.0
 
 Reproductions: [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownIssueTests.cs).

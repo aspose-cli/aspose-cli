@@ -260,7 +260,7 @@
         {
           "code": "CELLS_TEXT_TALLER_THAN_ROW",
           "severity": "warning",
-          "summary": "A row is shorter than the font of a value in it, so the row cuts the text off at the top, as when an edit enlarges a font without fitting the row."
+          "summary": "A row is too short for a value in it, shorter than its font or the lines of its wrapped text, so the row cuts the text off, as when an edit enlarges a font or wraps text without fitting the row."
         },
         {
           "code": "CELLS_USED_RANGE_SPARSE",

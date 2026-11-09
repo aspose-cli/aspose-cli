@@ -1,3 +1,4 @@
+using Aspose.Cli.Sdk;
 using Aspose.Cli.Sdk.Addressing;
 using Aspose.Cli.Sdk.IO.Output;
 
@@ -8,6 +9,9 @@ public sealed record CellsConvertRequest
 {
     /// <summary>The workbook to convert.</summary>
     public required string Input { get; init; }
+
+    /// <summary>The workbook as a command a hint names opens it, with the variable of its password; null to name no command on it.</summary>
+    public ContinuationInput? Continuation { get; init; }
 
     /// <summary>The resolved output: its format, path and overwrite permission.</summary>
     public required ResolvedOutput Output { get; init; }

@@ -1,5 +1,6 @@
 using Aspose.Cells;
 using Aspose.Cli.Product.Cells.Engine.Mapping;
+using Aspose.Cli.Sdk;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.IO.Output;
 using Aspose.Cli.Sdk.Licensing;
@@ -82,7 +83,7 @@ internal static class CellsConvert
         // Say which rows are not table data: the rows a text input brought over as they are, or,
         // in a JSON output, the rows each sheet writes as records.
         IReadOnlyList<Warning> textLayout = CellsEngineFormats.WritesRecords(request.Output.Format.Id)
-            ? TextTableLayout.JsonWarnings(jsonSheets, session.Budgets)
+            ? TextTableLayout.JsonWarnings(jsonSheets, session.Budgets, request.Continuation ?? new ContinuationInput(request.Input), request.TextImport)
             : TextTableLayout.Warnings(loaded, session.Budgets);
 
         Warning? chartsSplit = CellsEngineFormats.IsPaginated(request.Output.Format.Id)

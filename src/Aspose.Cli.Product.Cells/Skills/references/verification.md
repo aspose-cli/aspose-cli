@@ -60,9 +60,11 @@ without East Asian glyphs (Calibri, Arial): judge those columns in the image,
 or use a font such as Microsoft YaHei. It does report the indented column
 labels of a pivot table, which the engine cuts off at their column's edge and
 `resize_columns` without `widthChars` leaves as they are: give those columns an
-explicit `widthChars`. `CELLS_TEXT_TALLER_THAN_ROW` names a row shorter than
-the font of its text, such as a title enlarged with `format_range`, which the
-row cuts off at the top: `resize_rows` without `height` fits it. For a file a person opens, the look
+explicit `widthChars`. `CELLS_TEXT_TALLER_THAN_ROW` names a row too short for
+its text, a title enlarged with `format_range` or text wrapped onto more lines
+than the row shows, which the row cuts off: `resize_rows` without `height` fits
+it, except unwrapped rich text with a larger run and a cell merged over several
+rows, which take an explicit `height`. For a file a person opens, the look
 also grades the design checklist in `aspose-cli docs cells/design-system`,
 section 12. Render large sheets as windows with a sheet-qualified `--range`;
 `cells render` warns `RENDER_IMAGE_LARGE` with such a window when an image is

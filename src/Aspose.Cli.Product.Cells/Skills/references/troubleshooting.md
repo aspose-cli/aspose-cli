@@ -136,8 +136,9 @@ Tables, validation, links and pictures).
 
 `ROWS_SHIFTED` from `cells compare` names rows one side inserted or deleted;
 the cells below each shift are compared with different rows, so their
-differences are not edits. Apply the same `insert_rows` or `delete_rows` to a
-copy of the left workbook and compare the copy.
+differences are not edits. The shift is inferred by matching rows, so read
+those rows in both workbooks first; then apply the same `insert_rows` or
+`delete_rows` to a copy of the left workbook and compare the copy.
 
 ## Text tables that do not start at row 1
 
@@ -163,9 +164,10 @@ message says when empty rows were looked for only in the first 10,000.
 input: the JSON takes its keys from a sheet's first used row and writes every
 row below it as a record, so a title row makes the real header a record, an
 empty row a `null` record and a total row a record a sum counts twice. Each
-`TEXT_TABLE_LAYOUT` names the sheet and rows; convert a copy without them
-(`delete_rows` in `cells edit` with `--out`), or leave those records out
-downstream.
+`TEXT_TABLE_LAYOUT` names the sheet and rows. The header and total rows are
+inferred from the rows' shape and labels, so read them with the command the
+hint names first; then convert a copy without them (`delete_rows` in
+`cells edit` with `--out`), or leave those records out downstream.
 
 ## Evaluation mode in workbooks
 

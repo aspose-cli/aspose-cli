@@ -465,6 +465,175 @@ public sealed class CellsReviewTests
         Assert.Contains("""{"op":"resize_rows","sheet":"汇总 \"Q1\"","first":1}""", tall.Hint, StringComparison.Ordinal);
     }
 
+    private const string WrappingText = "This is a long wrapped text that will need several lines to show in a narrow column";
+
+    /// <summary>Wrapped text in a row one line tall is reported with the height its lines take, and with the sample of the row, not of its font.</summary>
+    [Fact]
+    public void Review_WrappedTextTheRowCutsOff_NamesTheHeightItNeeds()
+    {
+        Requires.Windows();
+        using var fixture = new CellsFixture();
+        string input = fixture.Temp.File("wrapped.xlsx");
+        SaveWithCell(input, static (sheet, cell) =>
+        {
+            cell.PutValue(WrappingText);
+            Wrap(cell);
+            sheet.Cells.SetRowHeight(cell.Row, 25);
+        });
+
+        ReviewFinding finding = Assert.Single(Review(fixture, input), static finding => finding.Code == "CELLS_TEXT_TALLER_THAN_ROW");
+
+        Assert.Equal("row/Data!2", finding.Location);
+        Assert.Matches(@"sample: 2 \(25 pt tall, wrapped text needs [\d.]+ pt\)\.$", finding.Message);
+    }
+
+    /// <summary>Wrapped text in merged cells takes the width and the height of all of them.</summary>
+    [Fact]
+    public void Review_WrappedTextTheMergedRowsCutOff_IsReported()
+    {
+        Requires.Windows();
+        using var fixture = new CellsFixture();
+        string input = fixture.Temp.File("merged.xlsx");
+        SaveWithCell(input, static (sheet, cell) =>
+        {
+            cell.PutValue(WrappingText + " " + WrappingText);
+            Wrap(cell);
+            sheet.Cells.Merge(cell.Row, cell.Column, 2, 1);
+        });
+
+        ReviewFinding finding = Assert.Single(Review(fixture, input), static finding => finding.Code == "CELLS_TEXT_TALLER_THAN_ROW");
+
+        Assert.Contains("sample: 2 (25.5 pt tall, wrapped text needs", finding.Message, StringComparison.Ordinal);
+    }
+
+    /// <summary>The largest run of a rich text cell sets its height, which no style in the workbook's pool tells.</summary>
+    [Fact]
+    public void Review_RichTextWithARunTallerThanTheRow_NamesThatRunsFont()
+    {
+        Requires.Windows();
+        using var fixture = new CellsFixture();
+        string input = fixture.Temp.File("rich.xlsx");
+        SaveWithCell(input, static (_, cell) =>
+        {
+            cell.PutValue("small BIG small");
+            cell.Characters(6, 3).Font.Size = 30;
+        });
+
+        ReviewFinding finding = Assert.Single(Review(fixture, input), static finding => finding.Code == "CELLS_TEXT_TALLER_THAN_ROW");
+
+        Assert.Contains("sample: 2 (12.75 pt tall, 30 pt text)", finding.Message, StringComparison.Ordinal);
+        Assert.Contains("give such a row a height", finding.Hint, StringComparison.Ordinal);
+    }
+
+    /// <summary>A cell's font is not the text's when every run of its rich text is set smaller.</summary>
+    [Fact]
+    public void Review_RichTextWhoseRunsFitTheRow_IsNotReportedByTheCellsFont()
+    {
+        Requires.Windows();
+        using var fixture = new CellsFixture();
+        string input = fixture.Temp.File("rich-small.xlsx");
+        SaveWithCell(input, static (_, cell) =>
+        {
+            cell.PutValue("small text");
+            Style style = cell.GetStyle();
+            style.Font.Size = 28;
+            cell.SetStyle(style);
+            cell.Characters(0, 10).Font.Size = 10;
+        });
+
+        Assert.DoesNotContain(Review(fixture, input), static finding => finding.Code == "CELLS_TEXT_TALLER_THAN_ROW");
+    }
+
+    /// <summary>Wrapped text its row is tall enough for, and text that does not wrap, are left alone.</summary>
+    [Theory]
+    [InlineData("auto-fitted")]
+    [InlineData("tall-enough")]
+    [InlineData("one-word")]
+    [InlineData("one-line-taller-font")]
+    [InlineData("merged-wide-enough")]
+    [InlineData("merged-tall-enough")]
+    [InlineData("not-wrapped")]
+    [InlineData("number")]
+    [InlineData("rotated")]
+    [InlineData("hidden-row")]
+    public void Review_TextThatFitsItsRow_IsNotReported(string kind)
+    {
+        Requires.Windows();
+        using var fixture = new CellsFixture();
+        string input = fixture.Temp.File("fits.xlsx");
+        SaveWithCell(input, (sheet, cell) =>
+        {
+            cell.PutValue(WrappingText);
+            Wrap(cell);
+            switch (kind)
+            {
+                case "auto-fitted":
+                    sheet.AutoFitRow(cell.Row);
+                    break;
+                case "tall-enough":
+                    sheet.Cells.SetRowHeight(cell.Row, 200);
+                    break;
+                case "one-word":
+                    cell.PutValue("Fits");
+                    break;
+                case "one-line-taller-font":
+                    // Calibri 11 takes 15 points a line, more than the default 12.75, without cutting it.
+                    cell.PutValue("Fits in one line");
+                    Style font = cell.GetStyle();
+                    font.Font.Name = "Calibri";
+                    font.Font.Size = 11;
+                    cell.SetStyle(font);
+                    sheet.Cells.SetColumnWidth(cell.Column, 20);
+                    break;
+                case "merged-wide-enough":
+                    cell.PutValue("Spans the merged columns on one line");
+                    sheet.Cells.Merge(cell.Row, cell.Column, 1, 4);
+                    break;
+                case "merged-tall-enough":
+                    cell.PutValue("Two lines of it");
+                    sheet.Cells.Merge(cell.Row, cell.Column, 4, 1);
+                    break;
+                case "not-wrapped":
+                    Style plain = cell.GetStyle();
+                    plain.IsTextWrapped = false;
+                    cell.SetStyle(plain);
+                    break;
+                case "number":
+                    cell.PutValue(1234567890123.45);
+                    break;
+                case "rotated":
+                    Style rotated = cell.GetStyle();
+                    rotated.RotationAngle = 45;
+                    cell.SetStyle(rotated);
+                    break;
+                case "hidden-row":
+                    sheet.Cells.HideRow(cell.Row);
+                    break;
+            }
+        });
+
+        Assert.DoesNotContain(Review(fixture, input), static finding => finding.Code == "CELLS_TEXT_TALLER_THAN_ROW");
+    }
+
+    /// <summary>A workbook whose sheet "Data" has its column A 12 characters wide and a heading above the cell A2 the test sets up.</summary>
+    private static void SaveWithCell(string path, Action<Worksheet, Cell> arrange)
+    {
+        using var workbook = new Workbook();
+        Worksheet sheet = workbook.Worksheets[0];
+        sheet.Name = "Data";
+        sheet.Cells.SetColumnWidth(0, 12);
+        sheet.Cells["A1"].PutValue("Notes");
+        arrange(sheet, sheet.Cells["A2"]);
+        workbook.Save(path);
+    }
+
+    private static void Wrap(Cell cell)
+    {
+        Style style = cell.GetStyle();
+        style.IsTextWrapped = true;
+        cell.SetStyle(style);
+    }
+
     [Fact]
     public void Review_ReportsAChartThatPrintingSplitsAcrossPages()
     {

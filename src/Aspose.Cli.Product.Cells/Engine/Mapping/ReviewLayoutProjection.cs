@@ -22,6 +22,9 @@ internal static class ReviewLayoutProjection
     private const double ShortRowHeight = 8;
     private const double TallRowHeight = 120;
 
+    // The engine measures a value's height in pixels at 96 DPI.
+    private const double PointsPerPixel = 0.75;
+
     // The indent the engine draws a pivot table's outer column item labels with, in pixels at
     // 96 DPI (CELLS-PIVOT-LABEL-INDENT), and in characters of the default font rounded up (about
     // 2.3 in Arial 10), so the character pre-checks never skip a label the pixel check reports.
@@ -198,20 +201,24 @@ internal static class ReviewLayoutProjection
     }
 
     /// <summary>
-    /// Finds visible rows shorter than the font of a value in them, whose text the row cuts off
-    /// at the top: the row height an edit leaves when it enlarges a font, as Excel would have
+    /// Finds visible rows too short for a value in them, whose text the row cuts off: shorter
+    /// than its font, the largest run's in rich text, or than the lines of wrapped text, the
+    /// row height an edit leaves when it enlarges a font or wraps text, as Excel would have
     /// auto-fit. A merged cell has the height of all its rows. Rotated text is not measured, nor a
     /// row shorter than <see cref="ShortRowHeight"/>, which is reported as short.
-    /// Only rows shorter than the largest font of the workbook are read cell by cell.
+    /// In a workbook without wrapped text, only rows shorter than the largest font of its styles
+    /// and rich text, whose runs no style holds, are read cell by cell.
     /// </summary>
     private static CellsReviewRowSet InspectTextHeights(Worksheet sheet)
     {
         Aspose.Cells.Cells cells = sheet.Cells;
         Workbook workbook = sheet.Workbook;
-        double largestFont = Enumerable.Range(0, workbook.CountOfStylesInPool)
-            .Select(index => workbook.GetStyleInPool(index).Font.DoubleSize)
+        Style[] styles = [.. Enumerable.Range(0, workbook.CountOfStylesInPool).Select(workbook.GetStyleInPool)];
+        double largestFont = styles.Select(static style => style.Font.DoubleSize)
             .Append(workbook.DefaultStyle.Font.DoubleSize)
             .Max();
+        bool anyWrapped = styles.Any(static style => style.IsTextWrapped);
+        double standardFontSize = workbook.DefaultStyle.Font.DoubleSize;
         var rows = new SortedDictionary<int, CellsReviewShortRow>();
         foreach (Cell cell in cells)
         {
@@ -222,7 +229,7 @@ internal static class ReviewLayoutProjection
 
             // A row shorter than ShortRowHeight is reported as such already.
             double height = cells.GetRowHeight(cell.Row);
-            if (height >= largestFont || height < ShortRowHeight)
+            if (height < ShortRowHeight || (height >= largestFont && !anyWrapped && !cell.IsRichText()))
             {
                 continue;
             }
@@ -241,19 +248,62 @@ internal static class ReviewLayoutProjection
             }
 
             Style style = cell.GetStyle();
-            double font = style.Font.DoubleSize;
-            if (font <= height || style.RotationAngle != 0)
+            if (style.RotationAngle != 0)
             {
                 continue;
             }
 
-            if (!rows.TryGetValue(cell.Row, out CellsReviewShortRow? known) || known.FontSize < font)
+            double font = LargestFont(cell, style);
+            double? wrapped = style.IsTextWrapped
+                ? CutOffWrappedTextHeight(cell, font, height, cells.GetColumnWidth(cell.Column), standardFontSize)
+                : null;
+            double needed = wrapped ?? font;
+            if (needed > height && (!rows.TryGetValue(cell.Row, out CellsReviewShortRow? known) || known.NeededHeight < needed))
             {
-                rows[cell.Row] = new CellsReviewShortRow(cell.Row, height, font);
+                rows[cell.Row] = new CellsReviewShortRow(cell.Row, height, font, wrapped);
             }
         }
 
         return new CellsReviewRowSet(rows.Count, [.. rows.Values.Take(MaxDimensionSamples)]);
+    }
+
+    /// <summary>The largest font of a value: its cell's, or the largest of its rich text runs, with the cell's for text before the first of them.</summary>
+    private static double LargestFont(Cell cell, Style style)
+    {
+        FontSetting[]? runs = cell.IsRichText() ? cell.GetCharacters() : null;
+        if (runs is null or [])
+        {
+            return style.Font.DoubleSize;
+        }
+
+        double largest = runs.Max(static run => run.Font.DoubleSize);
+        return runs[0].StartIndex > 0 ? Math.Max(largest, style.Font.DoubleSize) : largest;
+    }
+
+    /// <summary>
+    /// The height in points the lines of a wrapped text value take, when its rows cut it off, or
+    /// null when they do not. A font's line can be a few points taller than a row without cutting
+    /// its text (Calibri 11 takes 15 points of a 12.75 point row), so the rows cut it off when they
+    /// hide more than half of its font's height. Only text that may take a second line is
+    /// measured: it holds a line break, or would fill the column at twice its width in characters
+    /// of the standard font, which the widest letters do not reach.
+    /// </summary>
+    private static double? CutOffWrappedTextHeight(Cell cell, double font, double height, double columnWidth, double standardFontSize)
+    {
+        if (cell.Type != CellValueType.IsString)
+        {
+            return null;
+        }
+
+        string text = cell.StringValue;
+        if (!text.Contains('\n', StringComparison.Ordinal)
+            && TextWidth.Of(text) * 2 * Math.Max(1, font / standardFontSize) <= columnWidth)
+        {
+            return null;
+        }
+
+        double needed = cell.GetHeightOfValue() * PointsPerPixel;
+        return needed - height > font / 2 ? needed : null;
     }
 
     /// <summary>

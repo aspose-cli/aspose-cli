@@ -65,6 +65,7 @@ internal static class ConvertCommand
                 return new CellsConvertRequest
                 {
                     Input = standard.Input,
+                    Continuation = standard.ContinuationOf(standard.Input),
                     Output = output,
                     Sheets = selection,
                     SheetsText = text,
