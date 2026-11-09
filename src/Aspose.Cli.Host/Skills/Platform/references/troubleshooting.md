@@ -206,7 +206,7 @@ and on `$PSNativeCommandArgumentPassing`:
 
 | shell | inline `'{"ops":...}'` | inline with `\"` | piped to `--ops -` | ops file |
 |-------|------------------------|------------------|--------------------|----------|
-| Windows PowerShell 5.1 | quotes stripped, `OPS_INVALID` | `USAGE_ERROR` or `OPS_INVALID` | non-ASCII text becomes `?`, no error | works |
+| Windows PowerShell 5.1 | quotes stripped, `OPS_INVALID` | works, but a space inside a string can split it: `USAGE_ERROR` | non-ASCII text becomes `?`, no error | works |
 | PowerShell 7.3+, `Windows` (default) or `Standard` | works | `OPS_INVALID` | works | works |
 | PowerShell 7, `Legacy` | quotes stripped, `OPS_INVALID` | works | works | works |
 
@@ -219,3 +219,8 @@ and on `$PSNativeCommandArgumentPassing`:
   text into `?`.
 - Windows PowerShell 5.1's `>` redirection re-encodes stdout as UTF-16; parse
   stdout directly or use PowerShell 7.
+- A command in a hint or `window.next` runs as written in bash and in
+  PowerShell, except when a value holds `$` or a backtick: it is escaped for
+  bash (`\$`), and PowerShell still expands it, so the path reaches the CLI
+  changed, usually as `FILE_NOT_FOUND`. In PowerShell, put that value in
+  single quotes and remove the `\` before the character.

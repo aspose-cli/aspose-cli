@@ -33,11 +33,14 @@ Each boundary names the tests that check it, and `SecurityClaimsTests` keeps tho
   `LicenseManagementTests.InstalledLicense_InASharedConfigurationDirectory_IsReadableOnlyByTheCurrentUser`.
 - **MCP.** `capabilities` is read-only. `execute` runs product commands and only the host
   commands that read or publish new outputs; it cannot install, update, change licenses or start
-  and stop services.
+  and stop services. `execute` can name any environment variable of the server's process as a
+  password (`--password-env`, `--encrypt-env`, an operation's `*Env` field). No result returns
+  the value, but start the server with only the variables it needs.
   Checked by: `McpCommandTests.Server_ReportsReadOnlyDiscoveryAndMutatingExecution`,
   `McpCommandTests.Execute_AllowsExactlyTheseHostCommandsAndNamesThemWhenRejecting`,
   `McpCommandTests.Execute_RejectsPrivilegedAndLifecycleCommands`,
-  `McpProtocolTests.Execute_UsesActualSyntaxPreservesHostDefaultsAndRejectsUnauthorizedCommands`.
+  `McpProtocolTests.Execute_UsesActualSyntaxPreservesHostDefaultsAndRejectsUnauthorizedCommands`,
+  `McpSecretExecutionTests.OperationSecrets_AreIdenticalForDirectTimeoutAndMcpExecution`.
 - **Network.** Documents never cause network requests unless the caller opts in for trusted
   input. Every command passes one network gate before it runs, in every process that runs it,
   which blocks the http, https, ftp and file requests of the document engines; an opt-in opens

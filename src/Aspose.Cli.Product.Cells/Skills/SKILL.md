@@ -108,6 +108,7 @@ gives an operation's fields. A table in a Word, PDF or slide file is theirs.
 | `copy_range` from another file | It copies within the workbook; use `import_range` or `import_sheet` |
 | A bigger font on a title row | The row keeps its height; auto-fit it with `resize_rows` and no `height` |
 | Text written into a new workbook | Columns keep the default width, so long text is cut off by the next cell; size them with `resize_columns` (no `widthChars` auto-fits) |
+| Chinese text in a new workbook | The default font is Arial, so it renders in a serif fallback; make `{"op":"set_default_font","font":"DengXian","fontSize":11}` the first operation |
 | A workbook open in Excel | The in-place save fails with `OUTPUT_UNWRITABLE`; ask the user to close it |
 | `cells compare` after a formatting session | `identical: true` is correct: it compares values and formula text only |
 
