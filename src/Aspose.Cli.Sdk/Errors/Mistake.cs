@@ -68,12 +68,18 @@ public sealed class Mistake
     /// <param name="meant">The names known to be meant, best first; they lead the suggestions.</param>
     /// <param name="fieldNames">Whether the names are compound field names, as for the other overload.</param>
     /// <param name="keyOf">The part of a name that is compared, as for the other overload.</param>
+    /// <param name="closest">
+    /// Whether the names closest to <paramref name="requested"/> follow the ones meant; false when
+    /// the request is known to stand for no other name, so a name that merely looks like it would
+    /// mislead, as an output option a command does not have and <c>--output-format</c> would.
+    /// </param>
     public static Mistake Of(
         string requested,
         IEnumerable<string> available,
         IReadOnlyList<string> meant,
         bool fieldNames = false,
-        Func<string, string>? keyOf = null)
+        Func<string, string>? keyOf = null,
+        bool closest = true)
     {
         ArgumentNullException.ThrowIfNull(requested);
         ArgumentNullException.ThrowIfNull(available);
@@ -87,11 +93,12 @@ public sealed class Mistake
             byKey.TryAdd(keyOf(name), name);
         }
 
-        IEnumerable<string> closest = NameSuggestions.Closest(keyOf(requested), byKey.Keys, fieldNames)
-            .Select(key => byKey[key]);
+        IEnumerable<string> close = closest
+            ? NameSuggestions.Closest(keyOf(requested), byKey.Keys, fieldNames).Select(key => byKey[key])
+            : [];
         string[] suggestions =
         [
-            .. meant.Concat(closest)
+            .. meant.Concat(close)
                 .Distinct(StringComparer.Ordinal)
                 .Take(NameSuggestions.MaximumSuggestions),
         ];

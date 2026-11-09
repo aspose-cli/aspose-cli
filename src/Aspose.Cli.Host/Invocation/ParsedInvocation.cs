@@ -8,17 +8,19 @@ using Aspose.Cli.Sdk.IO.Input;
 namespace Aspose.Cli.Host.Invocation;
 
 /// <summary>The actual parsed command, resolved globals and declared execution ownership.</summary>
-internal sealed class ParsedInvocation
+internal sealed partial class ParsedInvocation
 {
     private readonly GlobalOptions _globals;
     private readonly ProductCatalog? _catalog;
+    private readonly Refusal? _refusedBesideHelp;
 
     internal ParsedInvocation(ParseResult parse, GlobalOptions globals, GlobalValues? inherited = null, ProductCatalog? catalog = null)
     {
         ParseResult = parse;
         _globals = globals;
         _catalog = catalog;
-        GlobalValues = parse.Errors.Count == 0 ? globals.Resolve(parse, inherited) : null;
+        _refusedBesideHelp = parse.Errors.Count == 0 ? RefusedGlobalBesideHelp() : null;
+        GlobalValues = parse.Errors.Count == 0 && _refusedBesideHelp is null ? globals.Resolve(parse, inherited) : null;
         var path = new List<Command>();
         for (CommandResult? current = parse.CommandResult; current?.Parent is not null;
             current = current.Parent as CommandResult)
@@ -102,10 +104,13 @@ internal sealed class ParsedInvocation
     /// each one reads are listed on <c>CommandDefinition</c>.
     /// </summary>
     private Refusal? Problems() =>
-        MissingCommand()
+        _refusedBesideHelp
+        ?? MissingCommand()
         ?? UnknownCommand()
         ?? HelpOrVersionWord()
         ?? Placeholder()
+        ?? MissingValue()
+        ?? OutputOptionOfAnArgument()
         ?? ParseProblems();
 
     /// <summary>A command that only groups others, given none of them (<see cref="LacksCommand"/>); null otherwise.</summary>
@@ -159,21 +164,25 @@ internal sealed class ParsedInvocation
     /// it (<see cref="UnknownOptionMistake"/>) with the hint the command declares for it; without
     /// one, a stray argument suggests the missing option it stands for
     /// (<see cref="StrayArgumentMistake"/>), else the first refused value its own mistake, else a
-    /// single missing option its values.
+    /// single missing option its values. A token left over after an option's value is about
+    /// that option (<see cref="OptionWithValueBefore"/>).
     /// </summary>
     private Refusal UnknownOptionOrArgument(string[] problems, RefusedValue? first, string[] optionLike)
     {
         string? unknownOption = ParseResult.UnmatchedTokens.Concat(optionLike).Where(static token => token.StartsWith('-')).Select(OptionName).FirstOrDefault();
+        Option? crowded = ParseResult.UnmatchedTokens.Select(OptionWithValueBefore).FirstOrDefault(static option => option is not null);
         Option? missing = MissingOptions().FirstOrDefault();
         Mistake? mistake = unknownOption is not null ? UnknownOptionMistake(unknownOption)
-            : StrayArgumentMistake() ?? first?.Mistake
+            : (crowded is null ? StrayArgumentMistake() : null) ?? first?.Mistake
             ?? (problems.Length == 1 && missing is not null && OptionCompletions.Read(missing) is { Count: > 0 } allowed
                 ? Mistake.Of(string.Empty, allowed)
                 : null);
-        string? parameter = unknownOption ?? missing?.Name ?? MissingArguments().FirstOrDefault()?.Name ?? first?.Parameter;
+        string? parameter = unknownOption ?? crowded?.Name ?? missing?.Name ?? MissingArguments().FirstOrDefault()?.Name ?? first?.Parameter;
         return new(problems, mistake, parameter, ValuesOnly: false)
         {
-            Hint = unknownOption is null ? null : Command.RefusedOptionHint(unknownOption),
+            Hint = unknownOption is not null ? Command.RefusedOptionHint(unknownOption)
+                : crowded is not null ? OneValueHint(crowded)
+                : null,
         };
     }
 
@@ -181,8 +190,9 @@ internal sealed class ParsedInvocation
     /// The name of an argument written in place of its value beside the value itself, such as
     /// <c>words read file a.docx</c>, as a usage line reads: the name is taken as the value and
     /// the value is left over. The command line without the name is parsed again: when it
-    /// parses it is the correction, ready to run; otherwise its own problems are reported beside
-    /// the name. Null when no argument holds its own name while a token is left over.
+    /// parses it is the correction, ready to run, unless it gives a password that no output
+    /// repeats, when the hint says what to leave out; otherwise its own problems are reported
+    /// beside the name. Null when no argument holds its own name while a token is left over.
     /// </summary>
     private Refusal? Placeholder()
     {
@@ -203,13 +213,18 @@ internal sealed class ParsedInvocation
             string[] values = [.. ParseResult.Tokens.Select(static item => item.Value)];
             int index = Array.IndexOf(values, placeholder.Value);
             string[] corrected = [.. values[..index], .. values[(index + 1)..]];
-            Refusal? rest = Reparsed(corrected).Problems();
+            ParsedInvocation line = Reparsed(corrected);
+            Refusal? rest = line.Problems();
+            bool holdsSecret = rest is null && line.GivesLiteralSecret();
             return new(
                 [$"'{placeholder.Value}' stands for the <{name}> argument, whose value follows it.", .. rest?.Problems ?? []],
                 rest?.Mistake,
                 name,
                 ValuesOnly: false,
-                Corrected: rest is null ? corrected : null);
+                Corrected: rest is null && !holdsSecret ? corrected : null)
+            {
+                Hint = holdsSecret ? $"Write the command line again without '{placeholder.Value}'." : null,
+            };
         }
 
         return null;
@@ -219,7 +234,7 @@ internal sealed class ParsedInvocation
     private ParsedInvocation Reparsed(IReadOnlyList<string> tokens) =>
         new(ParseResult.RootCommandResult.Command.Parse(tokens, InvocationParser.Configuration), _globals, catalog: _catalog);
 
-    /// <summary>What fails a command line; see <see cref="Problems"/>. <c>Corrected</c> is the command line that fixes it, when one is known.</summary>
+    /// <summary>What fails a command line; see <see cref="Problems"/>. <c>Corrected</c> is the command line that fixes it, when one is known and holds no secret.</summary>
     private sealed record Refusal(string[] Problems, Mistake? Mistake, string? Parameter, bool ValuesOnly, IReadOnlyList<string>? Corrected = null)
     {
         /// <summary>The hint the command declares for the unknown option, in place of the advice to read help.</summary>
@@ -281,14 +296,17 @@ internal sealed class ParsedInvocation
     /// A token the command could not place. The value of an unknown option, joined to it by
     /// <c>=</c> or <c>:</c> or written after it, may be a secret meant for the option the caller
     /// mistyped, such as the password given to a misspelled encryption option, so only the option
-    /// is named; any other token is named as written.
+    /// is named; a token after an option's value is that option's extra value
+    /// (<see cref="OptionWithValueBefore"/>); any other token is named as written.
     /// </summary>
     private string Unrecognized(string token) =>
         OptionName(token) is var name && name.Length < token.Length
             ? $"Unrecognized command or argument '{name}' and the value given to it."
             : UnknownOptionBefore(token) is { } option
                 ? $"Unrecognized command or argument after '{option}', which is not repeated in case it is a secret."
-                : UnrecognizedMessage(token);
+                : OptionWithValueBefore(token) is { } crowded
+                    ? ExtraValueMessage(crowded, token)
+                    : UnrecognizedMessage(token);
 
     /// <summary>
     /// The name of an option token, without a value joined to it by <c>=</c> or <c>:</c>, as the
@@ -329,7 +347,9 @@ internal sealed class ParsedInvocation
     /// <c>--help</c> and <c>--version</c>; a name commands declare they are mistaken for, such as
     /// a command that no longer exists, suggests those commands first. A product's command written
     /// without its product, such as <c>read a.docx</c>, suggests that command of the product whose
-    /// format the file's extension names, with the command line that runs it.
+    /// format the file's extension names, with the command line that runs it, and a command of the
+    /// root written below a product, such as <c>review</c> after a product's name, the command
+    /// line that runs it (<see cref="RootCommandLine"/>).
     /// </summary>
     private Refusal? UnknownCommand()
     {
@@ -344,20 +364,24 @@ internal sealed class ParsedInvocation
         Command[] declaring = [.. Command.Subcommands
             .Where(command => !command.Hidden && command.MistakenNames().Contains(token, StringComparer.Ordinal))];
         (string Path, IReadOnlyList<string>? Corrected)? product = token is "help" or "version" ? null : ProductCommand(token);
+        string? root = RootCommandLine(token);
         string[] meant = token switch
         {
             "help" => [Below(GlobalOptionNames.Help)],
             "version" when CommandPath.Count == 0 => [GlobalOptionNames.Version],
+            _ when root is not null => [root],
             _ => [.. product is { } command ? [command.Path] : Array.Empty<string>(), .. declaring.Select(static command => command.Name).Select(Below)],
         };
         return new(
             [$"'{token}' is not a command of '{parent}'."],
-            Mistake.Of(token, commands.Select(Below), meant, keyOf: static name => name[(name.LastIndexOf(' ') + 1)..]),
+            Mistake.Of(token, commands.Select(Below), meant, keyOf: static name => name[(name.LastIndexOf(' ') + 1)..], closest: root is null),
             null,
             ValuesOnly: false,
             product?.Corrected)
         {
-            Hint = declaring.Select(static command => command.MistakenNameHint()).FirstOrDefault(static hint => hint is not null),
+            Hint = root is not null
+                ? $"'{token}' is a top-level command; run it without '{CommandPath[0].Name}'."
+                : declaring.Select(static command => command.MistakenNameHint()).FirstOrDefault(static hint => hint is not null),
         };
     }
 
@@ -366,8 +390,8 @@ internal sealed class ParsedInvocation
     /// that name of the product whose format the extension of the first file after it names, as
     /// the catalog routes the file, and the command line with the product written before it when
     /// that line parses, or reads once the name of an argument written before its value is
-    /// dropped. Null below the root, without a file, or for an extension no product with that
-    /// command claims.
+    /// dropped, and gives no password that no output repeats. Null below the root, without a
+    /// file, or for an extension no product with that command claims.
     /// </summary>
     private (string Path, IReadOnlyList<string>? Corrected)? ProductCommand(string token)
     {
@@ -387,8 +411,9 @@ internal sealed class ParsedInvocation
         string[] values = [.. ParseResult.Tokens.Select(static item => item.Value)];
         int index = Array.IndexOf(values, token);
         string[] corrected = [.. values[..index], group.Name, .. values[index..]];
-        Refusal? rest = Reparsed(corrected).Problems();
-        return ($"{group.Name} {token}", rest is null ? corrected : rest.Corrected);
+        ParsedInvocation line = Reparsed(corrected);
+        Refusal? rest = line.Problems();
+        return ($"{group.Name} {token}", rest is not null ? rest.Corrected : line.GivesLiteralSecret() ? null : corrected);
     }
 
     /// <summary>
@@ -416,24 +441,29 @@ internal sealed class ParsedInvocation
     /// does: its own, the recursive ones of its parents and the root's, compared without their
     /// dashes, with the options that declare it a common mistake for them first. A single letter,
     /// such as <c>-o</c>, most likely abbreviates the options that start with it, and <c>-?</c>
-    /// asks for help.
+    /// asks for help. An option the command declares it refuses stands for what its hint says,
+    /// never for an option that merely looks like it.
     /// </summary>
     private Mistake UnknownOptionMistake(string unknown)
     {
         Option[] options = AcceptedOptions();
         string[] names = [.. options.Select(static option => option.Name)];
-        string[] meant =
-        [
-            .. options.Where(option => option.MistakenNames().Contains(unknown, StringComparer.Ordinal)).Select(static option => option.Name),
-            .. unknown switch
+        bool refused = Command.RefusedOptionHint(unknown) is not null;
+        IEnumerable<string> abbreviated = refused
+            ? []
+            : unknown switch
             {
                 "-?" or "/?" => [GlobalOptionNames.Help],
                 ['-', var letter] when char.IsAsciiLetter(letter) =>
                     names.Where(name => name.StartsWith("--" + letter, StringComparison.Ordinal)),
                 _ => [],
-            },
+            };
+        string[] meant =
+        [
+            .. options.Where(option => option.MistakenNames().Contains(unknown, StringComparer.Ordinal)).Select(static option => option.Name),
+            .. abbreviated,
         ];
-        return Mistake.Of(unknown, names, meant, keyOf: static name => name.TrimStart('-'));
+        return Mistake.Of(unknown, names, meant, keyOf: static name => name.TrimStart('-'), closest: !refused);
     }
 
     /// <summary>

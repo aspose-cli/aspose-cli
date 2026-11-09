@@ -74,7 +74,7 @@ public static class CommandMistakes
         string[] accepted = [.. command.Options.SelectMany(static option => option.Aliases.Prepend(option.Name))];
         foreach (string name in refused.SelectMany(static option => option.Names))
         {
-            if (!name.StartsWith("--", StringComparison.Ordinal) || accepted.Contains(name, StringComparer.Ordinal))
+            if (!name.StartsWith('-') || accepted.Contains(name, StringComparer.Ordinal))
             {
                 throw new InvalidOperationException($"Command '{command.Name}' refuses '{name}', which is no option name or an option it accepts.");
             }

@@ -58,6 +58,12 @@ internal static class SearchCommand
 
                 return result with { Window = SearchOptions.Continue(request.Query, result.Window, resume) };
             },
+            RefusedOptions =
+            [
+                new RefusedOption(
+                    ["--scope"],
+                    $"Choose what to search with --content {InValues}|{InFormulas}|{InAll}, and restrict it to one sheet with --sheet."),
+            ],
             Examples =
             [
                 "cells search book.xlsx --pattern TODO --output-format json",

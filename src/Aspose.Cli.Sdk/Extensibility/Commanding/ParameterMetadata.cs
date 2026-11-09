@@ -13,7 +13,14 @@ public enum ParameterValueSource { CommandLine, EnvironmentVariableName, Standar
 public sealed record ParameterMetadata(
     InputKind InputKind,
     ParameterValueSource ValueSource = ParameterValueSource.CommandLine,
-    bool Secret = false);
+    bool Secret = false)
+{
+    /// <summary>
+    /// Whether the value written on the command line is the secret itself, rather than the name of
+    /// the variable that holds it: no output repeats it.
+    /// </summary>
+    public bool LiteralSecret => Secret && ValueSource == ParameterValueSource.CommandLine;
+}
 
 /// <summary>Declares and validates parameter roles without interpreting names or tokens.</summary>
 public static class ParameterMetadataExtensions

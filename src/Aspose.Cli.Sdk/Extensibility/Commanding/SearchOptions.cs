@@ -50,7 +50,7 @@ public sealed class SearchOptions
         {
             Required = true,
             Description = "Text to find, or a regular expression with --regex.",
-        }.WithInput(InputKind.None).MistakenFor("--text").MistakenForArgument();
+        }.WithInput(InputKind.None).MistakenFor("--text", "--query", "--find").MistakenForArgument();
         _regex = new Option<bool>(RegexOption)
         {
             Description = "Treat the pattern as a culture-invariant regular expression with a one-second budget.",
@@ -83,6 +83,11 @@ public sealed class SearchOptions
                 DefaultValueFactory = _ => scope.Default,
             }.WithInput(InputKind.None);
             _scope.AcceptOnlyFromAmong([.. scope.Values]);
+            if (scope.Option != ScopeOption)
+            {
+                // The name the other products give it is what a caller brings from them.
+                _scope.MistakenFor(ScopeOption);
+            }
         }
 
         Options = _scope is null
