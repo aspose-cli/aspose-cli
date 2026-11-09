@@ -286,6 +286,26 @@ public sealed class MistakeRecoveryCliTests : IDisposable
         Assert.Contains($"Did you mean '{meant}'", error["hint"]!.GetValue<string>(), StringComparison.Ordinal);
     }
 
+    /// <summary>
+    /// A vertical alignment written with the word of the horizontal axis, and the other way round,
+    /// suggests the word this field uses.
+    /// </summary>
+    [Theory]
+    [InlineData("""{"op":"format_range","range":"A1","style":{"verticalAlignment":"center"}}""", "middle")]
+    [InlineData("""{"op":"format_range","range":"A1","style":{"alignment":"middle"}}""", "center")]
+    public void AnAlignmentWrittenWithTheWordOfTheOtherAxis_SuggestsTheWordOfThisField(string operation, string meant)
+    {
+        File.WriteAllText(_workspace.File("a.xlsx"), "not a document");
+        File.WriteAllText(_workspace.File("ops.json"), $$"""{"ops":[{{operation}}]}""");
+
+        CliResult result = _workspace.Run("cells", "edit", "a.xlsx", "--ops", "ops.json", "--out", "out.xlsx", "--output-format", "json");
+
+        JsonNode error = JsonNode.Parse(result.StdErr)!["error"]!;
+        Assert.Equal("OPS_INVALID", error["code"]!.GetValue<string>());
+        Assert.Equal(meant, error["details"]!["suggestions"]![0]!.GetValue<string>());
+        Assert.Contains($"Did you mean '{meant}'", error["hint"]!.GetValue<string>(), StringComparison.Ordinal);
+    }
+
     /// <summary>A missing required array of fixed values says it is an array and shows one.</summary>
     [Fact]
     public void MissingRequiredArrayOfFixedValues_SaysItIsAnArrayAndShowsOne()

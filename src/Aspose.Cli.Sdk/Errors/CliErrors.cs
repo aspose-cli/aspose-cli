@@ -27,6 +27,7 @@ public static partial class CliErrors
     /// <param name="corrected">
     /// The arguments of the command line without the mistake, when that alone corrects it: the
     /// hint ends with the command line they make, ready to run, in place of the advice to read help.
+    /// They are repeated as written, so they hold no secret.
     /// </param>
     /// <param name="parameter">
     /// The option or argument the first problem is about, such as an unknown or missing option,

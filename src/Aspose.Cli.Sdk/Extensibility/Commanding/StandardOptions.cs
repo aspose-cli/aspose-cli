@@ -418,6 +418,23 @@ public sealed class StandardOptions
     internal OutputTarget? OutputTarget { get; }
 
     /// <summary>
+    /// The output options of every other command, refused by one that names the file it creates
+    /// by its argument: the error shows the command line with their value as that argument.
+    /// </summary>
+    internal IReadOnlyList<RefusedOption> RefusedOutputOptions =>
+        CreatedFile is null
+            ? []
+            :
+            [
+                new RefusedOption(
+                    [StandardOptionNames.Out, "--output", StandardOptionNames.OutAlias],
+                    "The file to create is the first argument of this command, not an option.")
+                {
+                    Argument = CreatedFile.Name,
+                },
+            ];
+
+    /// <summary>
     /// Creates the command: the document arguments, the command's own arguments, then the
     /// target format, the command's own options in declaration order and the common options.
     /// </summary>

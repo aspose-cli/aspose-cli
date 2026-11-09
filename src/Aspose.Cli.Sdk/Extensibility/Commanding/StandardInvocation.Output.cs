@@ -162,74 +162,9 @@ public partial class StandardInvocation
         ContinuationCommand again = _options.Input is null ? new ContinuationCommand(path) : ContinuationAt(path);
         // ContinuationAt passes the input's password variable on itself.
         string? passed = _options.Input is null ? null : _options.InputPassword?.EnvironmentOption;
-        var replay = new Replaying(again, [.. dropped.OfType<Symbol>()], passed);
-        return Replay(_parse.RootCommandResult, replay) ? new RepeatedInvocation(again, replay.Piped, [.. replay.LeftOut]) : null;
-    }
-
-    // Appends the arguments and options of a command and its subcommands as the caller gave them;
-    // false when an option holds a secret given literally.
-    private bool Replay(CommandResult command, Replaying replay)
-    {
-        foreach (SymbolResult child in command.Children)
-        {
-            if (child is CommandResult subcommand)
-            {
-                if (!Replay(subcommand, replay))
-                {
-                    return false;
-                }
-            }
-            else if (child is OptionResult { Implicit: false } option && !replay.Dropped.Contains(option.Option)
-                && option.Option.Name is not GlobalOptionNames.OutputFormat && option.Option.Name != replay.Passed)
-            {
-                ParameterMetadata metadata = option.Option.GetParameterMetadata();
-                if (metadata is { Secret: true, ValueSource: ParameterValueSource.CommandLine })
-                {
-                    return false;
-                }
-
-                if (metadata.ValueSource == ParameterValueSource.StandardInput)
-                {
-                    replay.LeftOut.Add(option.Option.Name);
-                    continue;
-                }
-
-                replay.Command.Flag(option.Option.Name, option.Tokens.Count == 0);
-                foreach (Token token in option.Tokens)
-                {
-                    replay.Piped ??= metadata.InputKind == InputKind.JsonSource && token.Value == "-" ? option.Option.Name : null;
-                    // An inline operation document is passed in single quotes, as a document is.
-                    _ = metadata.InputKind == InputKind.JsonSource && token.Value.TrimStart() is ['{' or '[', ..]
-                        ? replay.Command.Document(option.Option.Name, token.Value)
-                        : replay.Command.Option(option.Option.Name, token.Value);
-                }
-            }
-            else if (child is ArgumentResult argument && argument.Argument != _options.Input && !replay.Dropped.Contains(argument.Argument))
-            {
-                foreach (Token token in argument.Tokens)
-                {
-                    replay.Command.Argument(token.Value);
-                }
-            }
-        }
-
-        return true;
-    }
-
-    // The command line a replay appends to, what it leaves out and passes on, and what it finds.
-    private sealed class Replaying(ContinuationCommand command, Symbol[] dropped, string? passed)
-    {
-        public ContinuationCommand Command { get; } = command;
-
-        public Symbol[] Dropped { get; } = dropped;
-
-        public string? Passed { get; } = passed;
-
-        // The option of a document the invocation read from stdin, or null.
-        public string? Piped { get; set; }
-
-        // The options of the secrets the invocation read from stdin.
-        public List<string> LeftOut { get; } = [];
+        Symbol[] named = _options.Input is null ? [] : [_options.Input];
+        var replay = new CommandLineReplay(again, [.. dropped.OfType<Symbol>(), .. named], passed);
+        return replay.Append(_parse.RootCommandResult) ? new RepeatedInvocation(again, replay.Piped, [.. replay.LeftOut]) : null;
     }
 
     /// <summary>

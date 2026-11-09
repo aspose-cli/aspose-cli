@@ -30,6 +30,28 @@ public sealed class NotFoundErrorTests
     public void Closest_FindsTheSameWordsInAnotherOrder(string requested, string[] expected) =>
         Assert.Equal(expected, NameSuggestions.Closest(requested, ["add_watermark_text", "add_stamp_image", "add_image"]));
 
+    /// <summary>A word of the same meaning is found whichever side spells it the other way.</summary>
+    [Theory]
+    [InlineData("center", new[] { "top", "middle", "bottom" }, new[] { "middle" })]
+    [InlineData("bottom-center", new[] { "bottom-middle", "top-middle" }, new[] { "bottom-middle" })]
+    [InlineData("color", new[] { "colour", "font" }, new[] { "colour" })]
+    [InlineData("gray", new[] { "grey", "font" }, new[] { "grey" })]
+    [InlineData("centre", new[] { "top", "middle", "bottom" }, new[] { "middle" })]
+    public void Closest_FindsAWordOfTheSameMeaningOnTheCandidatesSide(string requested, string[] candidates, string[] expected) =>
+        Assert.Equal(expected, NameSuggestions.Closest(requested, candidates));
+
+    /// <summary>What the request spells another way is still found, and a name of another meaning is not.</summary>
+    [Theory]
+    [InlineData("middle", new[] { "left", "center", "right" }, new[] { "center" })]
+    [InlineData("centre", new[] { "left", "center", "right" }, new[] { "center" })]
+    [InlineData("bottom-middle", new[] { "bottom-center", "top-center" }, new[] { "bottom-center" })]
+    [InlineData("colour", new[] { "color", "font" }, new[] { "color" })]
+    [InlineData("grey", new[] { "gray", "font" }, new[] { "gray" })]
+    [InlineData("center", new[] { "top", "bottom" }, new string[0])]
+    [InlineData("left", new[] { "top", "middle", "bottom" }, new string[0])]
+    public void Closest_FindsAWordOfTheSameMeaningOnTheRequestsSide(string requested, string[] candidates, string[] expected) =>
+        Assert.Equal(expected, NameSuggestions.Closest(requested, candidates));
+
     [Theory]
     [InlineData("fontSize", new[] { "size", "font" })]
     [InlineData("fontName", new[] { "name", "font" })]

@@ -57,8 +57,10 @@ namespace Aspose.Cli.Sdk.Extensibility.Commanding;
 /// <item><term><see cref="MistakenForHint"/></term><description>The same name: the hint says how
 /// the declaring command does what the name stands for.</description></item>
 /// <item><term><see cref="RefusedOptions"/></term><description>An option the command does not
-/// have, such as <c>--encrypt</c>: the closest options, with the declared hint in place of the
-/// advice to read help (<c>USAGE_ERROR</c>).</description></item>
+/// have, such as <c>--encrypt</c>: only the options that declare it a mistake for them, with the
+/// declared hint in place of the advice to read help (<c>USAGE_ERROR</c>). Every <c>create</c>
+/// refuses the output options this way, and its error shows the command line with their value
+/// as the file argument.</description></item>
 /// <item><term><c>option.MistakenFor(names)</c></term><description>An option name that names no
 /// option, such as a text option for a search's <c>--pattern</c>: the declaring option, first
 /// (<c>USAGE_ERROR</c>).</description></item>
@@ -71,7 +73,9 @@ namespace Aspose.Cli.Sdk.Extensibility.Commanding;
 /// <para>
 /// Without any declaration the parser still recognises an unknown command or option by its
 /// closest names, <c>help</c> and <c>version</c> typed as commands, an argument's name written
-/// before its value, and a value outside an option's list or a number that does not parse.
+/// before its value, an option without its value or with more values than it takes, a value
+/// outside an option's list or a number that does not parse, and a command of the root that
+/// reads any product's file written below a product.
 /// </para>
 /// </remarks>
 /// <typeparam name="TRequest">The request <c>bind</c> produces and the handler receives.</typeparam>
@@ -147,8 +151,8 @@ public sealed class CommandDefinition<TRequest, TResult>
     /// <summary>
     /// Options the command does not have that a caller may reach for, such as <c>--encrypt</c> on a
     /// command that never encrypts, each with the hint that names what does it instead. The
-    /// parser refuses them as any unknown option, with that hint; help and capabilities do not
-    /// list them.
+    /// parser refuses them as any unknown option, with that hint and without the options that
+    /// merely look like them; help and capabilities do not list them.
     /// </summary>
     public IReadOnlyList<RefusedOption> RefusedOptions { get; init; } = [];
 
@@ -198,7 +202,7 @@ public sealed class CommandDefinition<TRequest, TResult>
         Command command = options.CreateCommand(Name, Description, _parameters);
         command.SetAction(parse => context.Run(parse, scope => Execute(options, parse, scope, context, handler)));
         CommandMistakes.Declare(command, MistakenFor, MistakenForHint);
-        CommandMistakes.DeclareRefused(command, RefusedOptions);
+        CommandMistakes.DeclareRefused(command, [.. RefusedOptions, .. options.RefusedOutputOptions]);
         if (Encrypts)
         {
             ProtectionAdvice.Declare(command, Encryption ?? new EncryptionOperations(null, null));

@@ -4,9 +4,10 @@ namespace Aspose.Cli.Sdk.Errors;
 /// Ranks the existing names closest to a name that was not found, so a caller can correct a
 /// typo or a casing slip in one step. Ranking is deterministic: a match that ignores case and
 /// surrounding white space comes first, then names with the same words in another order or with
-/// a word another spelling or synonym of one of theirs (<c>bottom-middle</c> for
-/// <c>bottom-center</c>), then names that contain the request or are a whole word of it, then
-/// names within a small edit distance; ties keep the candidates' order.
+/// a word another spelling or synonym of one of theirs, whichever side has it (<c>bottom-middle</c>
+/// for <c>bottom-center</c> and <c>center</c> for <c>middle</c>), then names that contain the
+/// request or are a whole word of it, then names within a small edit distance; ties keep the
+/// candidates' order.
 /// </summary>
 internal static class NameSuggestions
 {
@@ -86,12 +87,15 @@ internal static class NameSuggestions
     private static string Normalize(string value) => value.Trim().ToUpperInvariant();
 
     // The same words in another order, such as "add_image_stamp" for "add_stamp_image", or with
-    // a word spelled as another one of the same meaning, such as "bottom-middle" for "bottom-center".
+    // a word spelled as another one of the same meaning on either side, such as "bottom-middle"
+    // for "bottom-center" and "center" for "middle".
     private static bool SameWords(string wanted, string name)
     {
         string[] requested = Words(wanted);
-        bool respelled = !requested.SequenceEqual(Words(wanted, synonyms: false), StringComparer.Ordinal);
-        return (requested.Length > 1 || respelled) && requested.SequenceEqual(Words(name), StringComparer.Ordinal);
+        string[] existing = Words(name);
+        bool respelled = !requested.SequenceEqual(Words(wanted, synonyms: false), StringComparer.Ordinal)
+            || !existing.SequenceEqual(Words(name, synonyms: false), StringComparer.Ordinal);
+        return (requested.Length > 1 || respelled) && requested.SequenceEqual(existing, StringComparer.Ordinal);
 
         static string[] Words(string value, bool synonyms = true) =>
             [.. value.Split(['_', '-', ' '], StringSplitOptions.RemoveEmptyEntries)
