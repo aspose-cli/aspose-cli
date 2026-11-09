@@ -23,10 +23,12 @@ internal static class SlidesResultParts
     /// extraction of text tells the pipeline it read the presentation; saved presentations,
     /// PDFs and images keep the full text.
     /// </summary>
-    internal static IReadOnlyList<Warning>? WrittenWarnings(LoadedPresentation loaded) =>
-        Warnings(loaded, output: true);
+    /// <param name="loaded">The presentation the output was produced from.</param>
+    /// <param name="shown">The numbers in the deck of the slides the output shows, or null for every slide.</param>
+    internal static IReadOnlyList<Warning>? WrittenWarnings(LoadedPresentation loaded, IReadOnlyCollection<int>? shown = null) =>
+        Warnings(loaded, output: true, shown);
 
-    private static IReadOnlyList<Warning>? Warnings(LoadedPresentation loaded, bool output)
+    private static IReadOnlyList<Warning>? Warnings(LoadedPresentation loaded, bool output, IReadOnlyCollection<int>? shown = null)
     {
         var warnings = new List<Warning>();
         if (loaded.Resources.Warning is { } omitted)
@@ -36,7 +38,7 @@ internal static class SlidesResultParts
 
         if (output)
         {
-            foreach ((int slide, string chart) in loaded.ImplicitTitleCharts)
+            foreach ((int slide, string chart) in loaded.ImplicitTitleCharts.Where(item => shown?.Contains(item.Slide) != false))
             {
                 warnings.Add(new Warning(SlidesDiagnostics.ChartTitleOverlaid, $"The chart '{chart}' on slide {slide} has an implicit automatic title, which this output draws over the plot, enlarging the plot area.")
                 {

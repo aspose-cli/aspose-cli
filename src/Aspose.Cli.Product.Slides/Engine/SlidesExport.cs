@@ -265,7 +265,7 @@ internal static partial class SlidesExport
         IReadOnlyList<int> shown,
         Warning? lost)
     {
-        var warnings = WrittenWarnings(loaded)?.ToList() ?? [];
+        var warnings = WrittenWarnings(loaded, shown)?.ToList() ?? [];
         if (skipped.Count > 0)
         {
             string numbers = string.Join(", ", skipped);
@@ -373,7 +373,7 @@ internal static partial class SlidesExport
                 : request.Dpi ?? RenderPixelGuard.DefaultDpi,
             Width = request.Output.Format.Raster ? request.Width : null,
             License = EnvelopeParts.License(state),
-            Warnings = EnvelopeParts.CombineWarnings(WrittenWarnings(loaded), HiddenRendered(loaded.Presentation, slides)),
+            Warnings = EnvelopeParts.CombineWarnings(WrittenWarnings(loaded, slides), HiddenRendered(loaded.Presentation, slides)),
         };
     }
 

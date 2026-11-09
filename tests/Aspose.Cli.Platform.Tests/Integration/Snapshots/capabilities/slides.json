@@ -5357,6 +5357,16 @@
               "items": {
                 "$ref": "#/$defs/slidesChartSeriesData"
               }
+            },
+            "bubbleSizes": {
+              "description": "The size of each point of a bubble chart, one list per series in the order of series; omitted for other charts.",
+              "type": "array",
+              "items": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                }
+              }
             }
           }
         },
@@ -5374,14 +5384,14 @@
               "type": "string"
             },
             "values": {
-              "description": "The value of each point, in category order.",
+              "description": "The value of each point, in category order; the y value of each point of a scatter or bubble series.",
               "type": "array",
               "items": {
                 "type": "number"
               }
             },
             "xValues": {
-              "description": "The x value of each point of a scatter series; omitted for other series.",
+              "description": "The x value of each point of a scatter or bubble series; omitted for other series.",
               "type": "array",
               "items": {
                 "type": "number"

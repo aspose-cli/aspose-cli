@@ -609,6 +609,118 @@ public sealed class SlidesReviewCheckTests
     }
 
     /// <summary>
+    /// Slides under one title and with one logo that differ only in what a group holds, a picture
+    /// fill or a media file show different things, so they are not duplicates; the third slide
+    /// shows what the first does, so it is one. Which media, fill or group differs is
+    /// <paramref name="kind"/>; each slide's <c>seed</c> picks what it shows.
+    /// </summary>
+    [Theory]
+    [InlineData("picture in a group")]
+    [InlineData("picture in a nested group")]
+    [InlineData("chart in a group")]
+    [InlineData("picture fill in a group")]
+    [InlineData("moved shape in a group")]
+    [InlineData("picture fill")]
+    [InlineData("picture fill of a table cell")]
+    [InlineData("video")]
+    [InlineData("linked video")]
+    [InlineData("sound")]
+    public void SlidesThatDifferOnlyInWhatAGroupFillOrMediaShows_AreNotDuplicates(string kind)
+    {
+        using var fixture = new SlidesEngineFixture();
+        byte[] logo = SlidesEngineFixture.Png(30);
+        string deck = TitledDeck(fixture, "shows.pptx", new[] { 40, 41, 40 }, (presentation, slide, seed) =>
+        {
+            slide.Shapes.AddPictureFrame(ShapeType.Rectangle, 600, 20, 40, 40, presentation.Images.AddImage(logo));
+            Show(presentation, slide, kind, seed);
+        });
+
+        ProductReviewAssessment review = fixture.Review(deck);
+
+        ReviewFinding finding = Assert.Single(review.Findings!, static finding => finding.Code == SlidesReviewChecks.SlideDuplicate.Code);
+        Assert.Equal("slide/3", finding.Location);
+        Assert.Contains("as slide 1;", finding.Message, StringComparison.Ordinal);
+        Assert.Equal(1, SlidesEngineFixture.Metric(review, "duplicateSlides"));
+    }
+
+    /// <summary>
+    /// Slides with the same group of text boxes, in letter case or not, stay duplicates: the
+    /// text inside a group compares as a shape's text does.
+    /// </summary>
+    [Theory]
+    [InlineData("North", "North")]
+    [InlineData("North", "NORTH")]
+    public void SlidesWithTheSameGroupOfText_AreDuplicates(string first, string second)
+    {
+        using var fixture = new SlidesEngineFixture();
+        byte[] logo = SlidesEngineFixture.Png(30);
+        string deck = TitledDeck(fixture, "text.pptx", new[] { first, second }, (presentation, slide, text) =>
+        {
+            slide.Shapes.AddPictureFrame(ShapeType.Rectangle, 600, 20, 40, 40, presentation.Images.AddImage(logo));
+            IGroupShape group = slide.Shapes.AddGroupShape();
+            group.Shapes.AddAutoShape(ShapeType.Rectangle, 100, 220, 200, 80).TextFrame.Text = text;
+        });
+
+        ProductReviewAssessment review = fixture.Review(deck);
+
+        ReviewFinding finding = Assert.Single(review.Findings!, static finding => finding.Code == SlidesReviewChecks.SlideDuplicate.Code);
+        Assert.Equal("slide/2", finding.Location);
+    }
+
+    // Adds to the slide the thing of the kind the seed picks, each different for another seed.
+    private static void Show(Presentation presentation, ISlide slide, string kind, int seed)
+    {
+        byte[] picture = SlidesEngineFixture.Png(seed);
+        switch (kind)
+        {
+            case "picture in a group":
+                slide.Shapes.AddGroupShape().Shapes.AddPictureFrame(ShapeType.Rectangle, 100, 220, 400, 280, presentation.Images.AddImage(picture));
+                break;
+            case "picture in a nested group":
+                slide.Shapes.AddGroupShape().Shapes.AddGroupShape().Shapes.AddPictureFrame(ShapeType.Rectangle, 100, 220, 400, 280, presentation.Images.AddImage(picture));
+                break;
+            case "chart in a group":
+                IChart chart = slide.Shapes.AddGroupShape().Shapes.AddChart(ChartType.ClusteredColumn, 100, 220, 400, 280);
+                chart.ChartData.Series[0].DataPoints[0].Value.Data = seed;
+                break;
+            case "picture fill in a group":
+                FillWith(presentation, slide.Shapes.AddGroupShape().Shapes.AddAutoShape(ShapeType.Rectangle, 100, 220, 400, 280, createFromTemplate: false).FillFormat, picture);
+                break;
+            case "moved shape in a group":
+                // The large box keeps the group's own frame the same on every slide.
+                IGroupShape moved = slide.Shapes.AddGroupShape();
+                moved.Shapes.AddAutoShape(ShapeType.Rectangle, 100, 220, 400, 280, createFromTemplate: false);
+                moved.Shapes.AddPictureFrame(ShapeType.Rectangle, seed * 3, 240, 40, 40, presentation.Images.AddImage(SlidesEngineFixture.Png(40)));
+                break;
+            case "picture fill":
+                FillWith(presentation, slide.Shapes.AddAutoShape(ShapeType.Rectangle, 100, 220, 400, 280, createFromTemplate: false).FillFormat, picture);
+                break;
+            case "picture fill of a table cell":
+                ITable table = slide.Shapes.AddTable(100, 220, [200, 200], [140]);
+                FillWith(presentation, table[0, 0].CellFormat.FillFormat, picture);
+                break;
+            case "video":
+                slide.Shapes.AddVideoFrame(100, 220, 400, 280, presentation.Videos.AddVideo([1, 2, 3, (byte)seed]));
+                break;
+            case "linked video":
+                slide.Shapes.AddVideoFrame(100, 220, 400, 280, $"http://127.0.0.1:9/clip{seed}.mp4");
+                break;
+            case "sound":
+                slide.Shapes.AddAudioFrameEmbedded(100, 220, 40, 40, presentation.Audios.AddAudio([1, 2, 3, (byte)seed]));
+                break;
+            default:
+                throw new ArgumentOutOfRangeException(nameof(kind), kind, null);
+        }
+    }
+
+    private static void FillWith(Presentation presentation, IFillFormat fill, byte[] picture)
+    {
+        fill.FillType = FillType.Picture;
+        fill.PictureFillFormat.PictureFillMode = PictureFillMode.Stretch;
+        fill.PictureFillFormat.Picture.Image = presentation.Images.AddImage(picture);
+    }
+
+    /// <summary>
     /// A deck of one slide per item on the blank layout: each shows the short title "S", which
     /// evaluation mode reads whole, in one place and below it what <paramref name="add"/> adds.
     /// </summary>

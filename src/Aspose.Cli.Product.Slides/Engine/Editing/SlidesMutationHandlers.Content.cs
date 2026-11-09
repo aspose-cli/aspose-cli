@@ -66,11 +66,11 @@ internal sealed partial class SlidesMutationHandlers
     }
 
     /// <summary>
-    /// Names each chart on a slide, inside a group or not, whose title or data holds a match,
-    /// which replace_text leaves as it is: chart titles and data are not text it reaches. The
-    /// title warns as part <c>chart-title</c>, the categories and series names as
-    /// <c>chart-data</c>; each matches as a paragraph of shape text does. The message never
-    /// repeats the find text or the chart's text.
+    /// Names each chart on a slide, inside a group or not, whose title, axis titles or data hold a
+    /// match, which replace_text leaves as it is: chart text is not text it reaches. The title
+    /// warns as part <c>chart-title</c>, the axis titles as <c>axis-title</c>, the categories and
+    /// series names as <c>chart-data</c>; each matches as a paragraph of shape text does. The
+    /// message never repeats the find text or the chart's text.
     /// </summary>
     private void WarnUnreplacedChartText(SlidesReplaceTextOp operation, TextReplacement replacement)
     {
@@ -91,6 +91,14 @@ internal sealed partial class SlidesMutationHandlers
                         location));
                 }
 
+                if (SlidesShapeFormats.AxisTitles(chart).Any(title => FrameMatches(title, replacement)))
+                {
+                    _warnings.Add(UnreplacedText.Warning(TextPart.AxisTitle, operation, "replace_text",
+                        $"Operation {operation.Id} (replace_text) found a match in an axis title of {where} and left it as it was: replace_text does not change a chart's axis titles.",
+                        AxisTitleHint,
+                        location));
+                }
+
                 if (DataMatched(chart, replacement) is { } data)
                 {
                     _warnings.Add(UnreplacedText.Warning(TextPart.ChartData, operation, "replace_text",
@@ -105,6 +113,10 @@ internal sealed partial class SlidesMutationHandlers
     // No operation addresses a shape inside a group, and slides read reports only a slide's own shapes.
     private const string GroupedChartHint =
         "No operation addresses a shape inside a group, so the chart keeps that text: report it as unchanged, or ungroup the shapes in a presentation editor and run the edit again.";
+
+    // No operation writes an axis title, and a chart insert_chart rebuilds has none.
+    private const string AxisTitleHint =
+        "No operation changes a chart's axis titles, so the chart keeps that text: report it as unchanged, or change it in a presentation editor.";
 
     // How to change the data of a chart on the slide itself: set_chart_data, unless it cannot
     // update the chart in place, when the chart is rebuilt as its title would be.
@@ -144,11 +156,12 @@ internal sealed partial class SlidesMutationHandlers
         }
     }
 
-    // Whether a paragraph of the chart's title holds a match, read as Replace reads a paragraph.
     private static bool TitleMatches(IChart chart, TextReplacement replacement) =>
-        chart.HasTitle
-        && chart.ChartTitle.TextFrameForOverriding is { } title
-        && title.Paragraphs.Any(paragraph =>
+        chart.HasTitle && chart.ChartTitle.TextFrameForOverriding is { } title && FrameMatches(title, replacement);
+
+    // Whether a paragraph of a title holds a match, read as Replace reads a paragraph.
+    private static bool FrameMatches(ITextFrame frame, TextReplacement replacement) =>
+        frame.Paragraphs.Any(paragraph =>
             replacement.Matches(string.Concat(paragraph.Portions.Select(static portion => portion.Text ?? string.Empty)), 1).Count > 0);
 
     /// <summary>

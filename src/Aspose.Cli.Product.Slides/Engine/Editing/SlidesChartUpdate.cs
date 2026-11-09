@@ -41,8 +41,8 @@ internal static class SlidesChartUpdate
     /// <summary>
     /// Why set_chart_data cannot update the chart in place, whatever data it is given, or null
     /// when it can: its data lives in an external workbook, a series or the chart is of a kind it
-    /// does not update, it combines scatter and category series, or its categories are literal or
-    /// multi-level.
+    /// does not update, it combines scatter and category series, its categories are literal or
+    /// multi-level, or the values of its points, a scatter point's x and y values, are literal.
     /// </summary>
     internal static string? CannotUpdate(IChart chart)
     {
@@ -64,8 +64,16 @@ internal static class SlidesChartUpdate
             return "it combines scatter and category series";
         }
 
-        return !IsScatter(chart) && data.Categories.Count > 0 && (!data.Categories.UseCells || data.Categories.GroupingLevelCount > 1)
-            ? "its categories are literal or multi-level"
+        bool scatter = IsScatter(chart);
+        if (!scatter && data.Categories.Count > 0 && (!data.Categories.UseCells || data.Categories.GroupingLevelCount > 1))
+        {
+            return "its categories are literal or multi-level";
+        }
+
+        return data.Series.SelectMany(static series => series.DataPoints)
+            .SelectMany(point => scatter ? new IBaseChartValue[] { point.XValue, point.YValue } : [point.Value])
+            .Any(static value => value.DataSourceType != DataSourceType.Worksheet)
+            ? "its values are literals rather than workbook cells"
             : null;
     }
 
@@ -97,11 +105,6 @@ internal static class SlidesChartUpdate
         if (op.Series?.Any(series => series.Values.Count != count) == true)
         {
             throw ChartDataInvalid($"each series needs exactly {count} values, one per category.");
-        }
-
-        if (op.Series is not null)
-        {
-            EnsureWorksheetBacked(existing.Take(op.Series.Count), static point => [point.Value]);
         }
 
         CellGrid grid = CellGrid.ForCategories(categories, existing);
@@ -187,7 +190,6 @@ internal static class SlidesChartUpdate
         }
 
         IChartSeries[] kept = existing.Take(inputs.Count).ToArray();
-        EnsureWorksheetBacked(kept, static point => [point.XValue, point.YValue]);
         if (kept.Any(series => series.DataPoints.Count == 0)
             && inputs.Take(kept.Length).Any(static series => series.Values.Count > 0))
         {
@@ -298,17 +300,6 @@ internal static class SlidesChartUpdate
 
                 assigned[key] = value;
             }
-        }
-    }
-
-    private static void EnsureWorksheetBacked(
-        IEnumerable<IChartSeries> series,
-        Func<IChartDataPoint, IBaseChartValue[]> values)
-    {
-        if (series.SelectMany(static item => item.DataPoints).SelectMany(values)
-            .Any(static value => value.DataSourceType != DataSourceType.Worksheet))
-        {
-            throw Unsupported("its values are literals rather than workbook cells");
         }
     }
 

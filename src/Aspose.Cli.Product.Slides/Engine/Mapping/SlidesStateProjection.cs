@@ -146,7 +146,6 @@ internal static class SlidesStateProjection
     /// <summary>A chart's kind, title, categories and series.</summary>
     internal static SlidesChartData Chart(IChart chart, ref int remaining, ref bool truncated)
     {
-        bool scatter = ChartTypeCharacterizer.IsChartTypeScatter(chart.Type);
         var categories = new List<string>();
         foreach (IChartCategory category in chart.ChartData.Categories)
         {
@@ -156,11 +155,13 @@ internal static class SlidesStateProjection
         var series = new List<SlidesChartSeriesData>();
         foreach (IChartSeries item in chart.ChartData.Series)
         {
+            // A scatter or bubble point is drawn at its x and y values and has no value of its own.
+            bool plotted = ChartTypeCharacterizer.IsChartTypeScatter(item.Type) || ChartTypeCharacterizer.IsChartTypeBubble(item.Type);
             series.Add(new SlidesChartSeriesData
             {
-                Name = Take(Text(item.Name.AsCells.FirstOrDefault()?.Value), ref remaining, ref truncated) ?? string.Empty,
-                Values = [.. item.DataPoints.Select(point => Number(scatter ? point.YValue.Data : point.Value.Data))],
-                XValues = scatter ? [.. item.DataPoints.Select(static point => Number(point.XValue.Data))] : null,
+                Name = Take(SeriesName(item), ref remaining, ref truncated) ?? string.Empty,
+                Values = [.. item.DataPoints.Select(point => Number(plotted ? point.YValue?.Data : point.Value?.Data))],
+                XValues = plotted ? [.. item.DataPoints.Select(static point => Number(point.XValue?.Data))] : null,
             });
         }
 
@@ -180,8 +181,26 @@ internal static class SlidesStateProjection
                 : null,
             Categories = categories,
             Series = series,
+            BubbleSizes = ChartTypeCharacterizer.IsChartTypeBubble(chart.Type)
+                ? [.. chart.ChartData.Series.Select(static item => (IReadOnlyList<double>)[.. item.DataPoints.Select(static point => Number(point.BubbleSize?.Data))])]
+                : null,
         };
     }
+
+    /// <summary>A series' name: the value of its first cell or, stored without cells, its literal text.</summary>
+    internal static string? SeriesName(IChartSeries series) =>
+        series.Name.DataSourceType == DataSourceType.Worksheet
+            ? Text(series.Name.AsCells.FirstOrDefault()?.Value)
+            : series.Name.AsLiteralString;
+
+    /// <summary>What a chart point stores, as text: its x value, y value, value and bubble size, each empty when its chart type has none.</summary>
+    internal static string[] PointData(IChartDataPoint point) =>
+    [
+        Text(point.XValue?.Data) ?? string.Empty,
+        Text(point.YValue?.Data) ?? string.Empty,
+        Text(point.Value?.Data) ?? string.Empty,
+        Text(point.BubbleSize?.Data) ?? string.Empty,
+    ];
 
     /// <summary>A chart data value as a number, 0 for one that is not.</summary>
     internal static double Number(object? value) =>
@@ -284,10 +303,10 @@ internal static class SlidesStateProjection
 
             foreach (IChartSeries series in chart.ChartData.Series)
             {
-                yield return "series|" + series.Name.AsCells.FirstOrDefault()?.Value;
+                yield return "series|" + SeriesName(series);
                 foreach (IChartDataPoint point in series.DataPoints)
                 {
-                    yield return string.Create(CultureInfo.InvariantCulture, $"point|{point.XValue?.Data}|{point.YValue?.Data}|{point.Value?.Data}");
+                    yield return "point|" + string.Join('|', PointData(point));
                 }
             }
         }
@@ -321,13 +340,14 @@ internal static class SlidesStateProjection
             .Select(static paragraph => paragraph.Text)
             .OfType<string>();
 
-    private static string Fill(IFillFormat fill) =>
+    /// <summary>A fill as stored: its type and color, or a picture fill's bytes by their digest.</summary>
+    internal static string Fill(IFillFormat fill) =>
         fill.FillType == FillType.Picture
             ? "Picture|" + (fill.PictureFillFormat.Picture.Image is { } image ? Digest(image) : "-")
             : $"{fill.FillType}|{Color(fill.FillType, fill.SolidFillColor.Color)}";
 
     /// <summary>A digest of a picture's bytes: two pictures of the same size differ by their content.</summary>
-    private static string Digest(IPPImage image) => Convert.ToHexStringLower(SHA256.HashData(image.BinaryData));
+    internal static string Digest(IPPImage image) => Convert.ToHexStringLower(SHA256.HashData(image.BinaryData));
 
     private static string Color(FillType type, System.Drawing.Color color) =>
         type == FillType.Solid ? color.ToArgb().ToString("X8", CultureInfo.InvariantCulture) : "-";
