@@ -88,6 +88,8 @@ internal static partial class ContractRules
         [("v2/pdf/inspect-result", "pdfPageLabelInfo.numberStyle")] = "reads back the page-label style none that set_page_labels writes",
         [("v2/words/ops", "set_page_numbers.numberStyle")] = "a numberStyle of none numbers the pages without a visible number, a numbering style of its own as PageNumberStyles names it",
         [("v2/words/inspect-result", "wordsPageNumbersData.numberStyle")] = "reads back the numberStyle none that set_page_numbers writes",
+        [("v2/cells/ops", "set_page_setup.printComments")] = "omitting printComments leaves the setting as it is, so only none takes back a sheet-end",
+        [("v2/cells/inspect-result", "cellsPageSetupInfo.printComments.anyOf[0]")] = "reads back the printComments none that set_page_setup writes",
     };
     // rule-exemptions: end
 

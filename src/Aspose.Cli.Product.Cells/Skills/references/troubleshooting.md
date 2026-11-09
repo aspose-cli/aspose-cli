@@ -68,6 +68,8 @@ leaves them out, and warns `LOSSY_CONVERSION`; read them with
 
 A PDF or XPS prints only the comments its page setup prints, by default none,
 and warns `LOSSY_CONVERSION` with how many comments each sheet it prints has.
+To print them, set `printComments` to `sheet-end` with `set_page_setup` on the
+sheet and convert again: they follow its last page, and the warning goes away.
 An html or mhtml page holds no comments, shows the charts as pictures and
 keeps the headers and footers only as Excel print data that a browser neither
 shows nor prints; it warns `LOSSY_CONVERSION` for each of these the sheets

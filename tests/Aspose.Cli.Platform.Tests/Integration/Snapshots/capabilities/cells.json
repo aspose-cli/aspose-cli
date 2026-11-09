@@ -38,7 +38,7 @@
         "command": "edit",
         "inputSchema": "v2/cells/ops",
         "operationSchema": "aspose-cli schema v2/cells/ops --operation <op>",
-        "contractFingerprint": "sha256:d78e964c7a775d2c3b11a52b22e9897b33a8f76f04e89f750ae3074b2c25dafa",
+        "contractFingerprint": "sha256:c095f54230520e859803c700b750dd5f13871032c37662ddb663c3acb42f7266",
         "maximumOperationCount": 10000,
         "ops": [
           "add_comment",
@@ -1256,6 +1256,25 @@
             "secret": false,
             "valueSource": "command-line",
             "description": "Keep successful operations, report failures, and exit 8."
+          },
+          {
+            "name": "--bom",
+            "aliases": [],
+            "type": "boolean",
+            "minimumArity": 0,
+            "maximumArity": 1,
+            "required": false,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": true,
+            "default": "false",
+            "allowedValues": [
+              "false",
+              "true"
+            ],
+            "secret": false,
+            "valueSource": "command-line",
+            "description": "Start a CSV or TSV output with a UTF-8 byte order mark, so Excel reads its non-English text correctly. Default: UTF-8 without one."
           },
           {
             "name": "--dry-run",
@@ -3951,7 +3970,8 @@
             "pageSize",
             "margins",
             "headerMargin",
-            "footerMargin"
+            "footerMargin",
+            "printComments"
           ],
           "additionalProperties": false,
           "properties": {
@@ -4016,6 +4036,21 @@
             "footerRight": {
               "description": "The right footer text; omitted when empty.",
               "type": "string"
+            },
+            "printComments": {
+              "description": "Whether a PDF or XPS of the sheet prints its comments: none, sheet-end for all of them after the sheet's last page, or as-displayed, which only Excel sets, for those the sheet shows, where it shows them.",
+              "type": "string",
+              "anyOf": [
+                {
+                  "enum": [
+                    "none",
+                    "sheet-end"
+                  ]
+                },
+                {
+                  "pattern": "^[a-z][a-z0-9]*(-[a-z0-9]+)*$"
+                }
+              ]
             }
           }
         },
@@ -7080,6 +7115,15 @@
               "description": "The center footer text, with Excel codes such as &P and &N.",
               "type": "string",
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsPageSetupInfo/properties/footerCenter"
+            },
+            "printComments": {
+              "description": "Whether a PDF or XPS of the sheet prints its comments: none, or sheet-end for all of them after the sheet's last page.",
+              "type": "string",
+              "enum": [
+                "none",
+                "sheet-end"
+              ],
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsPageSetupInfo/properties/printComments"
             }
           },
           "allOf": [
@@ -7133,6 +7177,11 @@
                 {
                   "required": [
                     "footerCenter"
+                  ]
+                },
+                {
+                  "required": [
+                    "printComments"
                   ]
                 }
               ]

@@ -27,7 +27,7 @@ internal static class ConvertCommand
             Description = "Culture whose number and date formats a CSV or TSV input uses, such as de-DE for '1.234,56'. "
                 + "Default: invariant formats (a decimal comma is refused).",
         }.WithInput(InputKind.None);
-        var bom = new BomOption("a CSV or TSV output");
+        BomOption bom = CellsInputs.TextOutputBom();
         return new(
             "convert",
             "Convert a workbook to another format.",
@@ -59,7 +59,7 @@ internal static class ConvertCommand
                         $"Drop {sheets.Name}, or use one of: {string.Join(", ", CellsFormats.SheetScoped)}.");
                 }
 
-                bool byteOrderMark = bom.Read(parse, CellsFormats.IsDelimited(format) ? null : $"a '{format}' output is not CSV or TSV text");
+                bool byteOrderMark = CellsInputs.ReadBom(bom, parse, format);
 
                 Secret? encryptPassword = standard.EncryptPassword();
                 return new CellsConvertRequest

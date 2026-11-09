@@ -3,11 +3,23 @@ using Aspose.Cells;
 namespace Aspose.Cli.Product.Cells.Engine.Mapping;
 
 /// <summary>
-/// The page-size presets as the engine's paper sizes, the page size a read reports, and the
-/// margins in points the engine stores in centimetres.
+/// The page-size presets as the engine's paper sizes, the page size a read reports, the margins
+/// in points the engine stores in centimetres, and how comments print in the engine's terms.
 /// </summary>
 internal static class PageSetupVocabulary
 {
+    /// <summary>The engine's setting for a value of <see cref="SetPageSetupOp.PrintComments"/>.</summary>
+    internal static PrintCommentsType PrintComments(string value) =>
+        value == CellsPrintComments.SheetEnd ? PrintCommentsType.PrintSheetEnd : PrintCommentsType.PrintNoComments;
+
+    /// <summary>How the page setup prints comments, as a read reports it.</summary>
+    internal static string PrintComments(PageSetup pageSetup) => pageSetup.PrintComments switch
+    {
+        PrintCommentsType.PrintSheetEnd => CellsPrintComments.SheetEnd,
+        PrintCommentsType.PrintInPlace => "as-displayed",
+        _ => CellsPrintComments.None,
+    };
+
     // Every Aspose.Cells PageSetup margin is measured in centimetres, while the op
     // contract states points. The unit is translated here, at the engine boundary.
     internal static double Centimetres(double points) => points / 72 * 2.54;

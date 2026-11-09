@@ -7,8 +7,9 @@ namespace Aspose.Cli.Product.Cells.Engine.Editing;
 
 /// <summary>
 /// Page layout operations: orientation, paper size, scaling, margins, headers
-/// and footers, the print area and repeating print titles. Page setup is not
-/// cell data, so these return null (no meaningful cell count).
+/// and footers, whether comments print, the print area and repeating print
+/// titles. Page setup is not cell data, so these return null (no meaningful
+/// cell count).
 /// </summary>
 internal static class PageSetupOps
 {
@@ -68,6 +69,11 @@ internal static class PageSetupOps
         if (op.FooterCenter is { } footer)
         {
             pageSetup.SetFooter(1, footer);
+        }
+
+        if (op.PrintComments is { } printComments)
+        {
+            pageSetup.PrintComments = PrintComments(printComments);
         }
     }
 

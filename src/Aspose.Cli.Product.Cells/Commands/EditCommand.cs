@@ -28,6 +28,7 @@ internal static class EditCommand
     public static CommandDefinition<CellsEditRequest, CellsEditResult> Create()
     {
         var noRecalc = new Option<bool>("--no-recalc") { Description = "Skip the automatic formula recalculation after applying the ops." };
+        BomOption bom = CellsInputs.TextOutputBom();
         var bounded = new BoundedEditCommand<CellsOp, CellsOpsBatch>(Definition);
         return EditDefinition.Create<CellsOp, CellsOpsBatch, CellsEditRequest, CellsEditResult>(
             bounded,
@@ -38,8 +39,12 @@ internal static class EditCommand
                 Encrypt = CellsInputs.EncryptedWorkbook,
                 UsesFonts = true,
             },
-            [noRecalc],
-            (parse, edit, _) => new CellsEditRequest(edit) { Recalculate = !parse.GetValue(noRecalc) },
+            [noRecalc, .. bom.Options],
+            (parse, edit, _) => new CellsEditRequest(edit)
+            {
+                Recalculate = !parse.GetValue(noRecalc),
+                ByteOrderMark = CellsInputs.ReadBom(bom, parse, edit.Output.Format.Id),
+            },
             Table,
             checkUsage: parse =>
             {
