@@ -160,8 +160,9 @@ public static class ResultText
     /// <summary>
     /// Writes the read-back verification of an edit: <c>verification: ok</c> or
     /// <c>verification: needs attention</c>, the operations it checked and
-    /// <paramref name="evidence"/>, then for each issue a <c>  CODE [LOCATION]: MESSAGE</c> line,
-    /// without the location when it has none, and a <c>    hint: HINT</c> line when it has a hint.
+    /// <paramref name="evidence"/>, then a <c>  not checked ID: REASON</c> line for each operation
+    /// it did not read back, and for each issue a <c>  CODE [LOCATION]: MESSAGE</c> line, without
+    /// the location when it has none, and a <c>    hint: HINT</c> line when it has a hint.
     /// </summary>
     /// <param name="surface">The surface to write to.</param>
     /// <param name="verification">The verification, which may be absent.</param>
@@ -176,6 +177,11 @@ public static class ResultText
         string checkedOps = verification.CheckedOps.Count == 0 ? TableText.Missing : string.Join(", ", verification.CheckedOps);
         string facts = evidence is null ? string.Empty : $"; {evidence}";
         surface.Out.WriteLine($"verification: {(verification.Ok ? "ok" : "needs attention")}; checked ops: {checkedOps}{facts}");
+        foreach (UncheckedOperation operation in verification.UncheckedOps ?? [])
+        {
+            surface.Out.WriteLine($"  not checked {operation.Id}: {operation.Reason}");
+        }
+
         foreach (VerificationIssue issue in verification.Issues)
         {
             string at = issue.Location is null ? string.Empty : $" [{issue.Location}]";

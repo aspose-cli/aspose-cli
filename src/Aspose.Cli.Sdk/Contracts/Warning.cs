@@ -53,8 +53,8 @@ public sealed record Warning
 
     /// <summary>
     /// Whether this condition leaves the output or its visual evidence incomplete, or different
-    /// from the input; a review counts it against coverage and an edit's verification reports it
-    /// as an issue.
+    /// from the input; a review counts it against coverage, and an edit's verification reports it
+    /// as an issue when it is about content the edit lost.
     /// </summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
     public bool AffectsCompleteness { get; init; }

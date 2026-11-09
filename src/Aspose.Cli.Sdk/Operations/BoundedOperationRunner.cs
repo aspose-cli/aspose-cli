@@ -85,7 +85,6 @@ public static class BoundedOperationRunner
         ArgumentNullException.ThrowIfNull(model);
         var warnings = new List<Warning>();
         var pages = new SortedSet<int>();
-        var recorded = new List<string>();
         var unrecorded = new HashSet<string>(StringComparer.Ordinal);
         Dictionary<string, Dictionary<object, int>> input = Index(model.Positions());
         NamedScopes? firstScopes = model.Scopes();
@@ -145,7 +144,6 @@ public static class BoundedOperationRunner
 
                 if (verifier is not null)
                 {
-                    recorded.Add(id);
                     try
                     {
                         verifier.Record(operation, applied);
@@ -181,7 +179,7 @@ public static class BoundedOperationRunner
         outcomes = [.. outcomes.Select((outcome, index) => outcome.Status == OpStatuses.Ok && placed.TryGetValue(index, out IReadOnlyList<ChangedObject>? objects)
             ? outcome with { Targets = Covered(InOrder(objects.Select(static item => item.Address))) }
             : outcome)];
-        return new AppliedBatch(outcomes, warnings, [.. pages], Batch(placed), recorded, unrecorded);
+        return new AppliedBatch(outcomes, warnings, [.. pages], Batch(placed), unrecorded);
     }
 
     /// <summary>

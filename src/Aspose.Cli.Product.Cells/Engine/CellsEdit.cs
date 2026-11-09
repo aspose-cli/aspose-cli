@@ -87,9 +87,10 @@ internal static class CellsEdit
                 using LoadedWorkbook reopened = session.Loader.OpenPublishedCandidate(temp, savePlan.Protection.Password);
                 _ = reopened.Workbook.Worksheets.Count;
             },
-            // Verification reports the warnings that make the output incomplete as issues.
+            // The load turns a linked picture it cannot read into no picture and takes references
+            // out of an SVG, so the output lacks what the load left out: those warnings count too.
             request.Verify ? candidate => new CellsEditVerifier(session.Loader, session.Budgets).Verify(candidate, baseline!.Path, filePath,
-                request.Password, savePlan.Protection.Password, batch, activeSheet, applied, WrittenWarnings(), textTable) : null,
+                request.Password, savePlan.Protection.Password, batch, activeSheet, batchOutcome, WrittenWarnings(), textTable) : null,
             "cells-edit");
         IReadOnlyList<Warning>? warnings = request.Options.DryRun
             ? EnvelopeParts.CombineWarnings(loaded.Warnings(editWarnings), importSources.Warnings())

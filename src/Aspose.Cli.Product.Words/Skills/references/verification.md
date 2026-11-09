@@ -13,7 +13,7 @@ document, and compares the content with the input's on private copies with
 revisions accepted, so the saved document keeps its revisions. The operations
 it reads back are those that add, update or remove fields, set protection or
 accept or reject revisions, and with `--track-changes` every applied
-operation; one left out of `checkedOps` was not checked. A count or
+operation; any other is in `uncheckedOps`. A count or
 protection mismatch is an issue, usually because the output format (such as
 `txt` or `html`) does not keep that state; save to a Word format and verify
 again. A count that grew instead means the format stored content as fields,

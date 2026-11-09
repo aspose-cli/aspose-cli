@@ -35,8 +35,8 @@ internal static class SlidesEdit
         SlidesEditVerifier? verifier = request.Verify ? new SlidesEditVerifier(presentation, model.Target, evaluation) : null;
         AppliedBatch applied = BoundedOperationRunner.Run(
             SlidesOp.Catalog, batch.Ops, request.Options.BestEffort, deadline: null, model, verifier, SlidesStateProjection.SlideUnit);
-        EditPublication<SlidesEditVerification> publication = Publish(session, loaded, request, format, precondition, verifier, applied);
         IReadOnlyList<Warning> warnings = [.. model.Warnings, .. applied.Warnings];
+        EditPublication<SlidesEditVerification> publication = Publish(session, loaded, request, format, precondition, verifier, applied, warnings);
 
         return new SlidesEditResult
         {
@@ -62,7 +62,8 @@ internal static class SlidesEdit
         string format,
         FileWritePrecondition precondition,
         SlidesEditVerifier? verifier,
-        AppliedBatch applied)
+        AppliedBatch applied,
+        IReadOnlyList<Warning> warnings)
     {
         Presentation presentation = loaded.Presentation;
         OutputProtection protection = OutputProtection.For(request.Output.Format, request.EncryptPassword, loaded.Protection, request.Password);
@@ -90,8 +91,17 @@ internal static class SlidesEdit
                 using LoadedPresentation reopened = session.Loader.OpenPublishedCandidate(
                     candidate,
                     protection.Password);
-                VerifiedBatch verified = applied.Verified(verifier.Verify(reopened.Presentation));
-                return new SlidesEditVerification { Ok = verified.Ok, Issues = verified.Issues, CheckedOps = verified.CheckedOps };
+                // Only what the operations reported is the batch's: a resource the presentation
+                // links stays a link in the output, loaded or not, and every save redraws a chart's
+                // implicit title, whatever the batch does (SLIDES-CHART-TITLE).
+                VerifiedBatch verified = applied.Verified(verifier.Verify(reopened.Presentation) with { Warnings = warnings });
+                return new SlidesEditVerification
+                {
+                    Ok = verified.Ok,
+                    Issues = verified.Issues,
+                    CheckedOps = verified.CheckedOps,
+                    UncheckedOps = verified.UncheckedOps,
+                };
             },
             "slides-edit");
     }

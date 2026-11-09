@@ -3436,6 +3436,29 @@
         }
       }
     },
+    "v2/common/unchecked-operation": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "$id": "https://schemas.aspose.com/aspose-cli/v2/common/unchecked-operation.schema.json",
+      "description": "An operation of the batch that an edit's verification did not read back.",
+      "type": "object",
+      "required": [
+        "id",
+        "reason"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "description": "The operation's id in the batch.",
+          "type": "string",
+          "minLength": 1
+        },
+        "reason": {
+          "description": "Why the verification did not read the operation back.",
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
     "v2/common/update-result": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
       "$id": "https://schemas.aspose.com/aspose-cli/v2/common/update-result.schema.json",
@@ -3870,7 +3893,7 @@
           "type": "object"
         },
         "affectsCompleteness": {
-          "description": "Whether this condition leaves the output or its visual evidence incomplete, or different from the input; a review counts it against coverage and an edit's verification reports it as an issue.",
+          "description": "Whether this condition leaves the output or its visual evidence incomplete, or different from the input; a review counts it against coverage, and an edit's verification reports it as an issue when it is about content the edit lost.",
           "type": "boolean"
         }
       }

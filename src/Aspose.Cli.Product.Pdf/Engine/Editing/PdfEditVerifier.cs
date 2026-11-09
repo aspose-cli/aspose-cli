@@ -21,6 +21,8 @@ namespace Aspose.Cli.Product.Pdf.Engine.Editing;
 /// </summary>
 internal sealed class PdfEditVerifier : IEditVerifier<PdfOp>
 {
+    private const string LaterOperationChangedIt = "A later operation of the batch changed or renumbered what this one set, so its own effect could not be read back.";
+
     private readonly Document _document;
     private readonly List<(string Id, string Op)> _recorded = [];
     private readonly HashSet<string> _incomplete = new(StringComparer.Ordinal);
@@ -85,15 +87,11 @@ internal sealed class PdfEditVerifier : IEditVerifier<PdfOp>
         VerifyBookmarks(output, issues);
         VerifyMetadata(output, issues);
         VerifyAttachments(output, issues);
-        return new VerificationFacts(issues, [.. _checked.Where(id => !_incomplete.Contains(id))]);
+        return new VerificationFacts(issues, [.. _checked.Where(id => !_incomplete.Contains(id))])
+        {
+            UncheckedReasons = _incomplete.ToDictionary(static id => id, static _ => LaterOperationChangedIt, StringComparer.Ordinal),
+        };
     }
-
-    /// <summary>
-    /// The warnings of the edit that leave the output incomplete, such as text a redaction took
-    /// beside its selection, carried into the verification with their location and hint.
-    /// </summary>
-    internal static IEnumerable<VerificationIssue> CompletenessIssues(IReadOnlyList<Warning> warnings) =>
-        warnings.Where(static warning => warning.AffectsCompleteness).Select(VerificationIssue.From);
 
     private void VerifyPages(Document output, List<VerificationIssue> issues)
     {

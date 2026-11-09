@@ -16,6 +16,8 @@ namespace Aspose.Cli.Product.Pdf.Engine;
 /// </summary>
 internal static class PdfEdit
 {
+    private const string StoppedAtRedaction = "The batch stopped before this operation was read back because redacted text is still in the output, which was not published.";
+
     /// <summary>Opens the document, runs the batch through the mutation handlers and publishes the result.</summary>
     internal static PdfEditResult Run(PdfSession session, PdfEditRequest request)
     {
@@ -83,13 +85,11 @@ internal static class PdfEdit
         }
         catch (RedactedTextLeft left)
         {
-            publication = new EditPublication<PdfEditVerification>(null, null, new PdfEditVerification
+            // The output was searched for the text of every redact_text the batch applied.
+            publication = new EditPublication<PdfEditVerification>(null, null, Verification(applied.Verified(new VerificationFacts(left.Issues, model.Redactions)
             {
-                Ok = false,
-                Issues = left.Issues,
-                // The output was searched for the text of every redact_text the batch applied.
-                CheckedOps = model.Redactions,
-            });
+                UncheckedReasons = batch.Ops.ToDictionary(static op => op.Id!, static _ => StoppedAtRedaction, StringComparer.Ordinal),
+            })));
         }
         finally { operationInputs.ThrowIfFailed(); }
         // Navigation the batch left leading to no page: only what led to a page still in the output
@@ -167,12 +167,18 @@ internal static class PdfEdit
             verifier is null ? null : candidate =>
             {
                 using LoadedPdf reopened = session.Loader.OpenPublishedCandidate(candidate, outputPassword);
-                VerificationFacts facts = verifier.Verify(reopened.Document);
-                VerifiedBatch verified = applied.Verified(facts with { Issues = [.. PdfEditVerifier.CompletenessIssues(warnings()), .. facts.Issues] });
-                return new PdfEditVerification { Ok = verified.Ok, Issues = verified.Issues, CheckedOps = verified.CheckedOps };
+                return Verification(applied.Verified(verifier.Verify(reopened.Document) with { Warnings = warnings() }));
             },
             "pdf-edit");
     }
+
+    private static PdfEditVerification Verification(VerifiedBatch verified) => new()
+    {
+        Ok = verified.Ok,
+        Issues = verified.Issues,
+        CheckedOps = verified.CheckedOps,
+        UncheckedOps = verified.UncheckedOps,
+    };
 
     /// <summary>
     /// The engine writes every object the input held, including those an operation stopped

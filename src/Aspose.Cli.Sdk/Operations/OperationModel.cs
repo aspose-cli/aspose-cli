@@ -100,18 +100,40 @@ public interface IEditVerifier<in TOp>
 /// <summary>What the product's read-back of the staged output found.</summary>
 /// <param name="Issues">Each expectation the output does not meet.</param>
 /// <param name="Checked">The ids of the operations whose every recorded effect was read back.</param>
-public sealed record VerificationFacts(IReadOnlyList<VerificationIssue> Issues, IReadOnlyCollection<string> Checked);
+public sealed record VerificationFacts(IReadOnlyList<VerificationIssue> Issues, IReadOnlyCollection<string> Checked)
+{
+    /// <summary>
+    /// The warnings about what the output of this batch lost: each one that affects completeness
+    /// (<see cref="Warning.AffectsCompleteness"/>) is an issue. Leave out a warning about anything
+    /// else, such as a link the output still holds although its target was not loaded, or a change
+    /// every save of the input makes whatever the batch does.
+    /// </summary>
+    public IReadOnlyList<Warning>? Warnings { get; init; }
+
+    /// <summary>
+    /// Why the read-back left an operation unchecked, by the operation's id, where the product can
+    /// say more than that its effect was not read back.
+    /// </summary>
+    public IReadOnlyDictionary<string, string>? UncheckedReasons { get; init; }
+}
 
 /// <summary>The core of an edit's <c>verification</c>, as <see cref="EditVerification"/> reports it.</summary>
 /// <param name="Ok">Whether the verification found no issue.</param>
 /// <param name="Issues">The problems found.</param>
 /// <param name="CheckedOps">In batch order, the ids of the operations whose effect was read back.</param>
-public sealed record VerifiedBatch(bool Ok, IReadOnlyList<VerificationIssue> Issues, IReadOnlyList<string> CheckedOps);
+/// <param name="UncheckedOps">In batch order, the other operations of the batch with the reason, or null when there are none.</param>
+public sealed record VerifiedBatch(
+    bool Ok,
+    IReadOnlyList<VerificationIssue> Issues,
+    IReadOnlyList<string> CheckedOps,
+    IReadOnlyList<UncheckedOperation>? UncheckedOps);
 
 /// <summary>A batch the SDK applied through an <see cref="IOperationModel{TOp}"/>.</summary>
 public sealed class AppliedBatch
 {
-    private readonly IReadOnlyList<string> _recorded;
+    private const string NotReadBack = "The verification did not read this operation's effect back from the output; read the output to confirm it.";
+    private const string OperationFailed = "The operation failed, so it left nothing to read back.";
+
     private readonly IReadOnlySet<string> _unrecorded;
 
     internal AppliedBatch(
@@ -119,14 +141,12 @@ public sealed class AppliedBatch
         IReadOnlyList<Warning> warnings,
         IReadOnlyList<int> pages,
         IReadOnlyList<ChangedObject> changed,
-        IReadOnlyList<string> recorded,
         IReadOnlySet<string> unrecorded)
     {
         Outcomes = outcomes;
         Warnings = warnings;
         Pages = pages;
         Changed = changed;
-        _recorded = recorded;
         _unrecorded = unrecorded;
     }
 
@@ -143,16 +163,39 @@ public sealed class AppliedBatch
     public IReadOnlyList<ChangedObject> Changed { get; }
 
     /// <summary>
-    /// The verification core from the product's read-back of the staged output: it passes
-    /// without issues, and an operation counts as checked when the verifier recorded it and the
-    /// read-back checked every effect it recorded.
+    /// The verification core from the product's read-back of the staged output, the one place
+    /// that decides it: the issues are one for each of <see cref="VerificationFacts.Warnings"/>
+    /// that affects completeness, then the read-back's, and it passes without issues. An operation
+    /// counts as checked when it applied, the read-back checked it and a verifier that records the
+    /// batch could read its effect; every other operation of the batch is unchecked, with the
+    /// reason.
     /// </summary>
     public VerifiedBatch Verified(VerificationFacts facts)
     {
         ArgumentNullException.ThrowIfNull(facts);
-        return new VerifiedBatch(
-            facts.Issues.Count == 0,
-            facts.Issues,
-            [.. _recorded.Where(id => facts.Checked.Contains(id) && !_unrecorded.Contains(id)).Distinct(StringComparer.Ordinal)]);
+        VerificationIssue[] issues =
+        [
+            .. (facts.Warnings ?? []).Where(static warning => warning.AffectsCompleteness).Select(VerificationIssue.From),
+            .. facts.Issues,
+        ];
+        string[] checkedOps =
+        [
+            .. Outcomes
+                .Where(outcome => outcome.Status == OpStatuses.Ok && facts.Checked.Contains(outcome.Id) && !_unrecorded.Contains(outcome.Id))
+                .Select(static outcome => outcome.Id)
+                .Distinct(StringComparer.Ordinal),
+        ];
+        UncheckedOperation[] uncheckedOps =
+        [
+            .. Outcomes
+                .Where(outcome => !checkedOps.Contains(outcome.Id, StringComparer.Ordinal))
+                .DistinctBy(static outcome => outcome.Id, StringComparer.Ordinal)
+                .Select(outcome => new UncheckedOperation { Id = outcome.Id, Reason = ReasonFor(outcome, facts) }),
+        ];
+        return new VerifiedBatch(issues.Length == 0, issues, checkedOps, uncheckedOps.Length == 0 ? null : uncheckedOps);
     }
+
+    private static string ReasonFor(BoundedOperationOutcome outcome, VerificationFacts facts) =>
+        outcome.Status != OpStatuses.Ok ? OperationFailed
+            : facts.UncheckedReasons?.GetValueOrDefault(outcome.Id) ?? NotReadBack;
 }

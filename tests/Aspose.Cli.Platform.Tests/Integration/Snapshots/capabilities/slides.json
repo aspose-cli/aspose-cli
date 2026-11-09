@@ -1299,7 +1299,7 @@
             ],
             "secret": false,
             "valueSource": "command-line",
-            "description": "Read the staged output back and check the slide order, titles, shape text, body paragraphs, notes, layouts, hidden slides, footers, transitions, sections, properties, slide size and replaced text each operation left."
+            "description": "Read the staged output back and check the slide order, titles, shape text, body paragraphs, notes, layouts, hidden slides, footers, transitions, sections, properties, slide size and replaced text each operation left. A warning with affectsCompleteness about content the edit lost is also an issue; uncheckedOps lists each operation not read back."
           }
         ],
         "arguments": [
@@ -2646,10 +2646,18 @@
               }
             },
             "checkedOps": {
-              "description": "In batch order, the ids of the operations whose effect the verification read back from the staged output; an operation left out was not checked.",
+              "description": "In batch order, the ids of the operations whose effect the verification read back from the staged output.",
               "type": "array",
               "items": {
                 "type": "string"
+              }
+            },
+            "uncheckedOps": {
+              "description": "In batch order, each operation of the batch the verification did not read back from the staged output, with the reason; omitted when it read back every operation.",
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/unchecked-operation.schema.json"
               }
             }
           }

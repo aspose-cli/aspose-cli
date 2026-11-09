@@ -19,8 +19,14 @@ the review below.
 holds it (each effect it does not hold is an issue). An operation a later one of the batch
 changed again is left out, except for the slide order and the sections: their expectations
 build on each other, so an earlier `insert_slide`, `import_slides`, `move_slide` or
-`insert_section` is checked with the latest one. An empty list with `ok: true` means nothing was
-read back, not that every operation was confirmed. In evaluation mode no text is read back.
+`insert_section` is checked with the latest one. Every operation it leaves out is in
+`uncheckedOps` with the reason, so `ok: true` says nothing about those. In evaluation mode no
+text is read back.
+
+Two warnings with `affectsCompleteness` are reported and are not issues, because no operation of
+the batch causes them. `CHART_TITLE_OVERLAID`: every save draws the chart's implicit title over
+its plot, whatever the batch does, and only PowerPoint restores it. `REMOTE_RESOURCES_BLOCKED`: a
+picture or video the deck links and the CLI did not load stays a link in the output.
 
 ## Content
 
