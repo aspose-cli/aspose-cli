@@ -488,6 +488,39 @@ public sealed partial class DecisionOwnershipTests
         Assert.DoesNotContain(SecretSentinel, json ?? string.Empty, StringComparison.Ordinal);
     }
 
+    // -- D7 Truthful results ----------------------------------------------------------------
+
+    /// <summary>
+    /// Whether a verified edit passed, and which warnings count against it, are decided once, by the
+    /// SDK's <c>AppliedBatch.Verified</c>: a product marks a warning that affects completeness and
+    /// copies the verdict into its record, and never reads the mark or works the verdict out.
+    /// </summary>
+    [Fact]
+    public void D7_TheVerdictOfAVerification_HasOneSdkOwner()
+    {
+        string[] violations = [.. ProductFiles().SelectMany(static file => file.Root.DescendantNodes()
+            .Where(static node => node switch
+            {
+                MemberAccessExpressionSyntax access => access.Name.Identifier.ValueText == "AffectsCompleteness",
+                MemberBindingExpressionSyntax binding => binding.Name.Identifier.ValueText == "AffectsCompleteness",
+                InitializerExpressionSyntax initializer => OwnVerdict(initializer),
+                _ => false,
+            })
+            .Select(node => file.At(node, node.ToString())))];
+
+        AssertNone(violations,
+            "A product marks a warning with AffectsCompleteness and takes ok, issues and checkedOps from the SDK's VerifiedBatch; only AppliedBatch.Verified decides them:");
+
+        // An initializer of an edit's verification whose ok is not the VerifiedBatch's.
+        static bool OwnVerdict(InitializerExpressionSyntax initializer)
+        {
+            AssignmentExpressionSyntax[] members = [.. initializer.Expressions.OfType<AssignmentExpressionSyntax>()];
+            return members.Any(static member => member.Left.ToString() == "CheckedOps")
+                && members.Any(static member => member.Left.ToString() == "Ok"
+                    && member.Right is not MemberAccessExpressionSyntax { Name.Identifier.ValueText: "Ok" });
+        }
+    }
+
     // -- D12 Path case ----------------------------------------------------------------------
 
     [Fact]

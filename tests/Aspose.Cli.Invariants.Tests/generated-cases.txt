@@ -538,6 +538,7 @@ C-R17 | v2/common/schema-list
 C-R17 | v2/common/skill-install
 C-R17 | v2/common/skill-list
 C-R17 | v2/common/source-input
+C-R17 | v2/common/unchecked-operation
 C-R17 | v2/common/update-result
 C-R17 | v2/common/verification-issue
 C-R17 | v2/common/version
@@ -825,6 +826,7 @@ C-R18 | v2/common/schema-list
 C-R18 | v2/common/skill-install
 C-R18 | v2/common/skill-list
 C-R18 | v2/common/source-input
+C-R18 | v2/common/unchecked-operation
 C-R18 | v2/common/update-result
 C-R18 | v2/common/verification-issue
 C-R18 | v2/common/version
@@ -1910,6 +1912,9 @@ C-R20 | v2/common/skill-list variants
 C-R20 | v2/common/source-input fixednames
 C-R20 | v2/common/source-input spelling
 C-R20 | v2/common/source-input variants
+C-R20 | v2/common/unchecked-operation fixednames
+C-R20 | v2/common/unchecked-operation spelling
+C-R20 | v2/common/unchecked-operation variants
 C-R20 | v2/common/update-result fixednames
 C-R20 | v2/common/update-result spelling
 C-R20 | v2/common/update-result variants
@@ -3701,6 +3706,8 @@ C-R31 | v2/common/skill-list fields
 C-R31 | v2/common/skill-list outputs
 C-R31 | v2/common/source-input fields
 C-R31 | v2/common/source-input outputs
+C-R31 | v2/common/unchecked-operation fields
+C-R31 | v2/common/unchecked-operation outputs
 C-R31 | v2/common/update-result fields
 C-R31 | v2/common/update-result outputs
 C-R31 | v2/common/verification-issue fields
@@ -4065,6 +4072,9 @@ C-R33 | v2/common/skill-list none
 C-R33 | v2/common/source-input envelope
 C-R33 | v2/common/source-input names
 C-R33 | v2/common/source-input none
+C-R33 | v2/common/unchecked-operation envelope
+C-R33 | v2/common/unchecked-operation names
+C-R33 | v2/common/unchecked-operation none
 C-R33 | v2/common/update-result envelope
 C-R33 | v2/common/update-result names
 C-R33 | v2/common/update-result none

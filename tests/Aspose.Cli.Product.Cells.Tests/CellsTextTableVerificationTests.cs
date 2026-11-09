@@ -83,6 +83,20 @@ public sealed partial class CellsTextTableVerificationTests : IDisposable
         }
     }
 
+    /// <summary>An edit of a sheet the csv does not write names that operation, and says why.</summary>
+    [Fact]
+    public void VerifiedEditToCsv_NamesAnOperationOnASheetItDoesNotWrite()
+    {
+        Book("book.xlsx", otherSheet: true);
+
+        CliResult edited = Edit("book.xlsx", "x.csv", "--set", "Other!A1=Done");
+
+        Assert.True(edited.ExitCode == 8, $"exit {edited.ExitCode}: {edited.StdErr}{edited.StdOut}");
+        JsonNode item = Assert.Single(Verification(edited)["uncheckedOps"]!.AsArray())!;
+        Assert.Equal("op-0001", item["id"]!.GetValue<string>());
+        Assert.Contains("changed another", item["reason"]!.GetValue<string>(), StringComparison.Ordinal);
+    }
+
     /// <summary>
     /// Guardrails: a sheet the csv does not write still fails a verified edit (exit 8), as the
     /// <c>SHEETS_DROPPED</c> issue that names it, not as a removed sheet. An edit of only that

@@ -22,7 +22,8 @@ namespace Aspose.Cli.Product.Slides.Engine.Editing;
 /// the earlier operations into its expectation. An operation counts as checked when every effect
 /// it recorded was read back, whether or not the output holds it. Evaluation mode reads longer text cut short, so it records
 /// no text, and an operation that sets or replaces text is then left unchecked. Each effect is
-/// read as the read projection reports it (<see cref="SlidesStateProjection"/>).
+/// read as the read projection reports it (<see cref="SlidesStateProjection"/>). The facts say why
+/// an operation was left unchecked.
 /// </summary>
 internal sealed class SlidesEditVerifier : IEditVerifier<SlidesOp>
 {
@@ -32,12 +33,17 @@ internal sealed class SlidesEditVerifier : IEditVerifier<SlidesOp>
     /// <summary>The location of an effect on every slide, or on a slide the output no longer holds.</summary>
     private static readonly Func<Presentation, string> AllSlides = static _ => AllAddress(SlideUnit);
 
+    private const string NoReadBack = "The verification has no read-back for this operation's effect; check it with 'slides read --content full' or 'aspose-cli review'.";
+    private const string EvaluationCutsText = "Evaluation mode reads text cut short, so no text is read back; a license lifts the cut.";
+    private const string LaterOperationChangedIt = "A later operation of the batch changed what this one set, so its own effect could not be read back.";
+
     private readonly Presentation _presentation;
     private readonly Func<SlidesOp, SlidesMutationHandlers.ResolvedSlidesOp> _targets;
     private readonly bool _evaluation;
     private readonly Dictionary<string, Expectation> _expected = new(StringComparer.Ordinal);
     private readonly Dictionary<string, List<string>> _carried = new(StringComparer.Ordinal);
-    private readonly HashSet<string> _incomplete = new(StringComparer.Ordinal);
+    // Why each operation that cannot count as checked was left out.
+    private readonly Dictionary<string, string> _incomplete = new(StringComparer.Ordinal);
     private readonly HashSet<string> _recorded = new(StringComparer.Ordinal);
 
     /// <param name="presentation">The presentation the batch edits, which each record reads as the operation left it.</param>
@@ -125,7 +131,7 @@ internal sealed class SlidesEditVerifier : IEditVerifier<SlidesOp>
             default:
                 // Styles, pictures, shapes, tables, charts and backgrounds have no reliable read-back here, nor
                 // text an evaluation read cuts short or an operation whose shape or slide is gone.
-                _incomplete.Add(id);
+                _incomplete[id] = operation is SlidesReplaceTextOp ? EvaluationCutsText : NoReadBack;
                 break;
         }
     }
@@ -150,15 +156,15 @@ internal sealed class SlidesEditVerifier : IEditVerifier<SlidesOp>
 
         // An operation whose effect was read back is checked whether or not the output holds it;
         // an issue reports each effect it does not hold.
-        string[] checkedOps = [.. _recorded.Where(id => covered.Contains(id) && !_incomplete.Contains(id))];
-        return new VerificationFacts(issues, checkedOps);
+        string[] checkedOps = [.. _recorded.Where(id => covered.Contains(id) && !_incomplete.ContainsKey(id))];
+        return new VerificationFacts(issues, checkedOps) { UncheckedReasons = _incomplete };
     }
 
     private void ExpectText(string id, SlideTargetOp operation, string part, string subject, Func<ISlide, string?> read)
     {
         if (_evaluation || TargetSlideId(operation) is not uint slideId)
         {
-            _incomplete.Add(id);
+            _incomplete[id] = _evaluation ? EvaluationCutsText : NoReadBack;
             return;
         }
 
@@ -213,7 +219,10 @@ internal sealed class SlidesEditVerifier : IEditVerifier<SlidesOp>
             return;
         }
 
-        _incomplete.UnionWith(expectation.Ops);
+        foreach (string id in expectation.Ops)
+        {
+            _incomplete[id] = LaterOperationChangedIt;
+        }
     }
 
     /// <summary>The id of the slide a slide operation addressed, resolved when it ran.</summary>

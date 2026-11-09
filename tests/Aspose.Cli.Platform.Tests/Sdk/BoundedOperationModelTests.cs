@@ -215,6 +215,45 @@ public sealed class BoundedOperationModelTests
         Assert.Equal(["op-0001"], verified.CheckedOps);
     }
 
+    /// <summary>A product that reads the output back without recording each operation names what it checked.</summary>
+    [Fact]
+    public void Verified_TakesTheOperationsAReadBackWithoutARecordChecked()
+    {
+        var model = new Model(static (op, document) => document.Pages[0] = ((SetOp)op).Value.ToString(System.Globalization.CultureInfo.InvariantCulture));
+
+        AppliedBatch applied = BoundedOperationRunner.Run(Catalog, Batch(new SetOp { Value = 1 }, new SetOp { Value = 2 }), bestEffort: false, deadline: null, model);
+        VerifiedBatch verified = applied.Verified(new VerificationFacts([], ["op-0002"]));
+
+        Assert.True(verified.Ok);
+        Assert.Equal(["op-0002"], verified.CheckedOps);
+    }
+
+    /// <summary>
+    /// A warning that affects completeness is an issue with its location and hint, before the
+    /// issues of the read-back, and fails the verification; any other warning is none.
+    /// </summary>
+    [Fact]
+    public void Verified_ReportsAWarningThatAffectsCompletenessAsAnIssue_WithItsLocationAndHint()
+    {
+        var model = new Model(static (_, document) => document.Pages[0] = "A");
+        var lost = new Warning(WarningCodes.LossyConversion, "Content was lost.") { Location = "page/1", Hint = "Keep it.", AffectsCompleteness = true };
+        var informational = new Warning(WarningCodes.OpNoEffect, "Nothing changed.");
+        VerificationIssue mismatch = VerificationIssues.Of(DiagnosticDescriptor.Verification("TEST_MISMATCH", "test"), "Page 1 reads 'a'.");
+        var facts = new VerificationFacts([], ["op-0001"]);
+        typeof(VerificationFacts).GetProperty("Warnings")!.SetValue(facts, new[] { lost, informational });
+
+        AppliedBatch applied = BoundedOperationRunner.Run(Catalog, Batch(new SetOp { Value = 1 }), bestEffort: false, deadline: null, model);
+        VerifiedBatch verified = applied.Verified(facts);
+        VerifiedBatch both = applied.Verified(facts with { Issues = [mismatch] });
+
+        Assert.False(verified.Ok);
+        VerificationIssue issue = Assert.Single(verified.Issues);
+        Assert.Equal(VerificationIssue.From(lost), issue);
+        Assert.Equal("page/1", issue.Location);
+        Assert.Equal("Keep it.", issue.Hint);
+        Assert.Equal([issue, mismatch], both.Issues);
+    }
+
     /// <summary>A document of blocks the engine keeps by instance, each with its text.</summary>
     private sealed class BlockModel(Action<TestOp, List<Block>> apply) : IOperationModel<TestOp>
     {

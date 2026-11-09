@@ -22,6 +22,8 @@ namespace Aspose.Cli.Product.Words.Engine;
 /// </summary>
 internal static class WordsEdit
 {
+    private const string NotCompared = "The verification compares the field count, the revision count and the protection, and this operation sets none of them; read the output to confirm it.";
+
     /// <summary>Applies a validated operation batch and commits it atomically.</summary>
     internal static WordsEditResult Run(WordsSession session, WordsEditRequest request)
     {
@@ -67,22 +69,26 @@ internal static class WordsEdit
         // LOSSY_CONVERSION covers the formats that cannot store them.
         bool revisionsKept = inputHadRevisions && KeepsRevisions(loaded.Document, format);
         IReadOnlyList<Warning>? Mutation() => MutationWarnings(loaded.Document, format, loaded.Evaluation, revisionsKept, inputWasSigned, inputProtection);
+        // The verification takes what the batch and the save left out of the output, read after
+        // the save, which may omit more resources.
+        VerifiedBatch Verified(IReadOnlyList<VerificationIssue> issues) => applied.Verified(new VerificationFacts(issues, VerifiedOps(batch.Ops, request.TrackChanges))
+        {
+            Warnings = EnvelopeParts.CombineWarnings([.. SaveWarnings(loaded, format)], operationWarnings, Mutation(),
+                Omitted(loaded.OmittedResources.Where(resource => !inputOmissions.Contains(resource.Reference)))),
+            UncheckedReasons = batch.Ops.ToDictionary(static op => op.Id!, static _ => NotCompared, StringComparer.Ordinal),
+        });
 
         EditPublication<WordsEditVerification> publication = Persist(
             session,
             loaded.Document,
             request,
             baseline,
-            VerifiedOps(outcomes, batch.Ops, request.TrackChanges),
             precondition,
             loaded.Resources,
             written,
             saveOptions,
             protection,
-            // What the batch and the save left out of the output, read after the save, which may
-            // omit more resources.
-            () => EnvelopeParts.CombineWarnings([.. SaveWarnings(loaded, format)], operationWarnings, Mutation(),
-                Omitted(loaded.OmittedResources.Where(resource => !inputOmissions.Contains(resource.Reference)))));
+            Verified);
         baseline?.Cleanup();
         var outputWarnings = new List<Warning>();
         outputWarnings.AddRange(SaveWarnings(loaded, format));
@@ -152,22 +158,19 @@ internal static class WordsEdit
     /// <summary>
     /// Saves, verifies and publishes the edited document. Aspose.Words keeps only the start of
     /// a long document it lays out or saves in evaluation mode and ends it with its truncation
-    /// notice; the write pipeline finds the notice in the saved output and discloses it. The
-    /// verification reports the <paramref name="warnings"/> about what the batch and the save
-    /// left out that leave the output incomplete as issues.
+    /// notice; the write pipeline finds the notice in the saved output and discloses it.
     /// </summary>
     private static EditPublication<WordsEditVerification> Persist(
         WordsSession session,
         Document document,
         WordsEditRequest request,
         Document? baseline,
-        IReadOnlyList<string> checkedOps,
         FileWritePrecondition precondition,
         LocalDocumentResourceLoader resources,
         FormatDescriptor written,
         SaveOptions saveOptions,
         OutputProtection protection,
-        Func<IReadOnlyList<Warning>?> warnings)
+        Func<IReadOnlyList<VerificationIssue>, VerifiedBatch> verified)
     {
         ResolvedOutput output = request.Output;
         return session.Outputs.PublishEdit<WordsEditVerification>(
@@ -187,7 +190,7 @@ internal static class WordsEdit
                 }
             },
             request.Verify
-                ? candidate => Verify(session, candidate, written.Id, protection.Password, baseline!, WordsReadBack.Saved(document), checkedOps, warnings())
+                ? candidate => Verify(session, candidate, written.Id, protection.Password, baseline!, WordsReadBack.Saved(document), verified)
                 : null,
             "words-edit");
     }
@@ -317,10 +320,8 @@ internal static class WordsEdit
     /// <summary>
     /// Reports save-and-reopen evidence for the staged candidate. A comparison that
     /// finds no body change is evidence, not a fault: whether an operation did
-    /// anything is already answered, authoritatively, by its own outcome. Each warning about the
-    /// batch's result that leaves the output incomplete, such as PAGE_NUMBERS_REMOVED, is an issue,
-    /// with its code, message, location and hint; a reference the input already held unloaded is
-    /// kept as it was and is none.
+    /// anything is already answered, authoritatively, by its own outcome. The core of the result
+    /// comes from <paramref name="verified"/>, which takes the issues found here.
     /// </summary>
     private static WordsEditVerification Verify(
         WordsSession session,
@@ -329,11 +330,9 @@ internal static class WordsEdit
         Secret? outputPassword,
         Document baseline,
         WordsSavedState expected,
-        IReadOnlyList<string> checkedOps,
-        IReadOnlyList<Warning>? warnings)
+        Func<IReadOnlyList<VerificationIssue>, VerifiedBatch> verified)
     {
         var issues = new List<VerificationIssue>();
-        issues.AddRange((warnings ?? []).Where(static warning => warning.AffectsCompleteness).Select(VerificationIssue.From));
 
         using LoadedDocument reopened = session.Loader.OpenPublishedCandidate(candidatePath, outputPassword);
         WordsSavedState found = WordsReadBack.Saved(reopened.Document);
@@ -370,11 +369,13 @@ internal static class WordsEdit
         comparisonBaseline.Cleanup();
         comparisonOutput.Cleanup();
 
+        VerifiedBatch core = verified(issues);
         return new WordsEditVerification
         {
-            Ok = issues.Count == 0,
-            Issues = issues,
-            CheckedOps = checkedOps,
+            Ok = core.Ok,
+            Issues = core.Issues,
+            CheckedOps = core.CheckedOps,
+            UncheckedOps = core.UncheckedOps,
             SemanticChangesDetected = semanticChanges,
             FieldCount = found.FieldCount,
             RevisionCount = found.RevisionCount,
@@ -446,15 +447,12 @@ internal static class WordsEdit
         LocalDocumentResourceLoader.OmissionWarning(omitted) is { } warning ? [warning] : null;
 
     /// <summary>
-    /// The ids, in batch order, of the applied operations whose effect verification reads back:
-    /// it compares the field count, the revision count and the protection of the reopened output
-    /// with the edited document, so it checks the operations that add, update or remove fields,
-    /// set protection or accept and reject revisions, and with tracked changes every operation,
-    /// whose revisions it counts.
+    /// The ids of the operations whose effect verification reads back: it compares the field
+    /// count, the revision count and the protection of the reopened output with the edited
+    /// document, so it checks the operations that add, update or remove fields, set protection or
+    /// accept and reject revisions, and with tracked changes every operation, whose revisions it
+    /// counts.
     /// </summary>
-    private static IReadOnlyList<string> VerifiedOps(IReadOnlyList<BoundedOperationOutcome> outcomes, IReadOnlyList<WordsOp> ops, bool trackChanges)
-    {
-        HashSet<string> compared = [.. ops.Where(op => trackChanges || WordsOpAddresses.Of(op).StateCompared).Select(static op => op.Id!)];
-        return [.. outcomes.Where(outcome => outcome.Status == OpStatuses.Ok && compared.Contains(outcome.Id)).Select(static outcome => outcome.Id)];
-    }
+    private static IReadOnlyCollection<string> VerifiedOps(IReadOnlyList<WordsOp> ops, bool trackChanges) =>
+        [.. ops.Where(op => trackChanges || WordsOpAddresses.Of(op).StateCompared).Select(static op => op.Id!)];
 }

@@ -352,6 +352,22 @@ public sealed class BoundedEditCommandTests : IDisposable
         Assert.Equal("--out", error.Details!["option"]!.GetValue<string>());
     }
 
+    /// <summary>What counts as an issue and what is not read back is the same for every product, so the template says it.</summary>
+    [Fact]
+    public void Create_SaysWhatEveryVerificationAddsToTheProductsDescription()
+    {
+        var edit = new BoundedEditCommand<TestOp, TestBatch>(Definition() with { VerifyDescription = "Verify." });
+
+        Command command = Edit(
+            edit, Runner(), new CommandTraits { Input = Book, Encrypt = new EncryptedOutput("the output book") }, [],
+            static (_, _, _) => throw new InvalidOperationException());
+
+        string description = command.Options.Single(static option => option.Name == "--verify").Description!;
+        Assert.StartsWith("Verify. ", description, StringComparison.Ordinal);
+        Assert.Contains("affectsCompleteness", description, StringComparison.Ordinal);
+        Assert.Contains("uncheckedOps", description, StringComparison.Ordinal);
+    }
+
     [Fact]
     public void Create_PutsTheEditOptionsBeforeTheProductAndCommonOptions()
     {

@@ -12,8 +12,8 @@ applied operation. When it finds an issue, the output is still published so you
 can inspect it. Each issue of the read-back starts its message with the ids and
 names of the operations it concerns, and never repeats redacted text; its
 `location` is the address the operation's `targets` use. `verification.checkedOps` lists, in batch
-order, the operations whose every recorded effect was read back; an operation it
-omits was not fully checked, even when part of its effect was.
+order, the operations whose every recorded effect was read back; every other
+operation is in `uncheckedOps`, even when part of its effect was read back.
 
 A warning of the edit with `affectsCompleteness: true` is an issue too, with the
 same code, message, location and hint: `REDACTION_NEARBY_TEXT_REMOVED` when a

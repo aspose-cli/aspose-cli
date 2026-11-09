@@ -415,11 +415,13 @@ staged output before publishing and reports `verification`
 (`aspose-cli schema v2/cells/edit-result`). `checkedOps` lists the operations
 whose changes the comparison read back: those that write cell values or
 formulas, or add, remove or rename a sheet, among the first 16 targets of the
-batch. An operation that names no sheet is checked on the sheet that was
-active when the batch started. Formula errors, sheet loss, grid truncation,
-imported formulas whose results changed or an incomplete scan keep the edited
-file and exit 8 with `verification.ok: false`; each issue's code is one that
-`aspose-cli capabilities cells` lists. `FORMULA_ERRORS` is the common one:
+batch; every other operation is in `uncheckedOps`. An operation that names no
+sheet is checked on the sheet that was active when the batch started. Formula
+errors, sheet loss, grid truncation, imported formulas whose results changed or
+an incomplete scan keep the edited file and exit 8 with
+`verification.ok: false`, and so does `REMOTE_RESOURCES_BLOCKED`, because the
+output has no linked picture the CLI could not read; each issue's code is one
+that `aspose-cli capabilities cells` lists. `FORMULA_ERRORS` is the common one:
 `#NAME?` usually means a localized or misspelled function name, which
 `FORMULA_FUNCTION_UNKNOWN` names with or without `--verify`.
 
@@ -436,8 +438,8 @@ by value: a cell that held a formula in the input and whose value moved is in
 `formulaResultChanges`, with the formula on its `left` side only, and a formula
 error the input cell already held is `preexisting`. The other sheets and the
 drawings the output leaves out are its `SHEETS_DROPPED` and `LOSSY_CONVERSION`
-issues, which exit 8, and an operation on a sheet it does not write is not in
-`checkedOps`.
+issues, which exit 8, and an operation on a sheet it does not write is in
+`uncheckedOps`.
 
 A formula error whose input cell had the same formula and the same error
 carries `preexisting: true`; it still fails verification, so fix it or tell

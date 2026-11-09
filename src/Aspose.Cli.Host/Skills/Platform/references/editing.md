@@ -104,7 +104,13 @@ A product Skill says when its edits reopen the output before publishing it;
 where a product offers `--verify`, it adds a semantic check described in the
 product Skill. Any `verification.issues` entry makes `verification.ok` false
 and the command exit 8; each issue has a stable `code` and, when known, a
-`location` and `hint`.
+`location` and `hint`. A warning with `affectsCompleteness: true` about content
+the edit lost is an issue too, with the warning's code, message, location and
+hint; the product Skill names those that are only reported, such as a link the
+output keeps. `verification.checkedOps` lists the operations the check read back,
+and `verification.uncheckedOps` every other operation of the batch with the
+`reason`; it is absent when all were read back. `ok: true` says nothing about
+an operation in `uncheckedOps`: confirm it with a read of the output.
 
 ## Output, in-place and backups
 

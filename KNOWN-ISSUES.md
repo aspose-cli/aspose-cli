@@ -539,7 +539,8 @@ Reproductions: [SlidesKnownIssueTests](tests/Aspose.Cli.Product.Slides.Tests/Sli
   `autoTitleDeleted` 0) reports a title that overlays the plot, and saving writes it, so the plot
   area grows and its automatic axis scale can change.
 - **CLI behavior:** every edit, conversion and rendering of such a chart warns
-  `CHART_TITLE_OVERLAID` with its slide.
+  `CHART_TITLE_OVERLAID` with its slide. `slides edit --verify` only warns: no operation of the
+  batch causes it, so it is not an issue.
 - **Workaround:** inspect those charts in PowerPoint and restore their title layout there.
 
 ### SLIDES-CJK-FALLBACK

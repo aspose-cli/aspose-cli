@@ -2,6 +2,7 @@ using Aspose.Cells;
 using Aspose.Cli.Product.Cells.Engine.Mapping;
 using Aspose.Cli.Sdk.Diagnostics;
 using Aspose.Cli.Sdk.IO.Budgets;
+using Aspose.Cli.Sdk.Operations;
 using Aspose.Cli.Sdk.Results;
 
 namespace Aspose.Cli.Product.Cells.Engine.Editing;
@@ -16,8 +17,8 @@ internal sealed class CellsEditVerifier(CellsWorkbookLoader loader, ResourceBudg
 
     internal CellsEditVerification Verify(string candidatePath,
         string baselinePath, string originalPath, Secret? inputPassword,
-        Secret? outputPassword, CellsOpsBatch batch, string activeSheet, IReadOnlyList<BoundedOperationOutcome> applied,
-        IReadOnlyList<Warning>? sourceWarnings, TextTableSheet? textTable)
+        Secret? outputPassword, CellsOpsBatch batch, string activeSheet, AppliedBatch applied,
+        IReadOnlyList<Warning>? warnings, TextTableSheet? textTable)
     {
         using LoadedWorkbook baseline = loader.OpenPublishedCandidate(baselinePath, inputPassword, originalPath);
         using LoadedWorkbook candidate = loader.OpenPublishedCandidate(candidatePath, outputPassword);
@@ -33,8 +34,6 @@ internal sealed class CellsEditVerifier(CellsWorkbookLoader loader, ResourceBudg
         var formulaResults = new List<CellsVerifiedCellChange>();
         var other = new List<CellsVerificationOtherChange>();
         var issues = new List<VerificationIssue>();
-        issues.AddRange(CompletenessIssues(sourceWarnings));
-        issues.AddRange(CompletenessIssues(candidate.Warnings()));
         DiffComparer.Result diff = textTable is null
             ? DiffComparer.Compare(budgets, baseline.Workbook, candidate.Workbook, includeFormulas: true, MaxDiffs)
             : DiffComparer.CompareTextTable(budgets, baseline.Workbook, candidate.Workbook, textTable, MaxDiffs);
@@ -66,23 +65,24 @@ internal sealed class CellsEditVerifier(CellsWorkbookLoader loader, ResourceBudg
                         ? " #NAME? means a formula names a function or name the workbook does not know. " + CellOps.EnglishFormulaHint
                         : "")));
         }
+        IReadOnlyList<CellsEditTarget> held = Held(footprint, textTable, baseline.Workbook);
+        VerifiedBatch verified = applied.Verified(new VerificationFacts(issues, OpsFootprint.Checked(batch, held, activeSheet))
+        {
+            Warnings = EnvelopeParts.CombineWarnings(warnings, candidate.Warnings()),
+            UncheckedReasons = OpsFootprint.UncheckedReasons(batch, footprint, held, activeSheet),
+        });
         return new CellsEditVerification
         {
-            Ok = issues.Count == 0,
-            CheckedOps = OpsFootprint.Checked(batch, Held(footprint, textTable, baseline.Workbook), applied
-                .Where(static outcome => outcome.Status == OpStatuses.Ok)
-                .Select(static outcome => outcome.Id)
-                .ToHashSet(StringComparer.Ordinal), activeSheet),
+            Ok = verified.Ok,
+            Issues = verified.Issues,
+            CheckedOps = verified.CheckedOps,
+            UncheckedOps = verified.UncheckedOps,
             RequestedTargets = footprint.Select(static target => new CellsVerificationTarget { Sheet = target.Sheet, Range = target.Range }).ToArray(),
             DirectChanges = direct, FormulaResultChanges = formulaResults, OtherChanges = other,
             FormulaErrors = errors,
-            Truncated = diff.Truncated, Issues = issues,
+            Truncated = diff.Truncated,
         };
     }
-
-    /// <summary>Completeness warnings carried into verification with their location and hint.</summary>
-    internal static IEnumerable<VerificationIssue> CompletenessIssues(IReadOnlyList<Warning>? warnings) =>
-        (warnings ?? []).Where(static warning => warning.AffectsCompleteness).Select(VerificationIssue.From);
 
     /// <summary>
     /// The targets on the sheets the output holds: every target, or for a text table those on its

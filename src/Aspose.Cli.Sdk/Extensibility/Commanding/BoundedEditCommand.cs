@@ -43,7 +43,10 @@ public sealed record BoundedEditDefinition<TOp, TBatch>
     /// <summary>The <c>--set</c> shorthand, or null when the product has none.</summary>
     public SetDirectiveGrammar<TOp, TBatch>? SetDirectives { get; init; }
 
-    /// <summary>Help for <c>--verify</c>, or null when the product has no staged verification.</summary>
+    /// <summary>
+    /// Help for <c>--verify</c>: what the product's verification reads back, to which the command
+    /// adds what every verification shares; or null when the product has no staged verification.
+    /// </summary>
     public string? VerifyDescription { get; init; }
 
     /// <summary>
@@ -121,6 +124,11 @@ public sealed class BoundedEditCommand<TOp, TBatch>
     where TBatch : BoundedOperationEnvelope<TOp>
 {
     private const string OpsOption = StandardOptionNames.Ops;
+
+    /// <summary>What every verification adds to the product's description of what it reads back.</summary>
+    private const string VerifyCoverage =
+        "A warning with affectsCompleteness about content the edit lost is also an issue; uncheckedOps lists each operation not read back.";
+
     private readonly BoundedEditDefinition<TOp, TBatch> _definition;
     private readonly Option<string?> _ops;
     private readonly Option<string[]>? _set;
@@ -170,7 +178,7 @@ public sealed class BoundedEditCommand<TOp, TBatch>
         if (definition.VerifyDescription is { } verify)
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(verify);
-            _verify = new Option<bool>(StandardOptionNames.Verify) { Description = verify };
+            _verify = new Option<bool>(StandardOptionNames.Verify) { Description = $"{verify} {VerifyCoverage}" };
         }
 
         _options =

@@ -43,5 +43,6 @@ internal static class EditCommand
     {
         ResultText.Edit(surface, result.DryRun, result.Output, result.Applied, result.Backup);
         ResultText.Touched(surface, "slides", result.SlidesTouched);
+        ResultText.Verification(surface, result.Verification);
     }
 }

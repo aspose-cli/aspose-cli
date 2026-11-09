@@ -82,22 +82,6 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
     }
 
     [Fact]
-    public void VerificationForwardsACompletenessWarningWithItsLocationAndHint()
-    {
-        var located = new Warning(CellsDiagnostics.DataTruncated, "Data was discarded.")
-        { Hint = "Use xlsx.",
-            Location = "cell/Data!A1:C3", AffectsCompleteness = true,
-        };
-        var informational = new Warning(CellsDiagnostics.FormulasCalculatedOnOpen, "Recalculated.");
-
-        VerificationIssue issue = Assert.Single(
-            Aspose.Cli.Product.Cells.Engine.Editing.CellsEditVerifier.CompletenessIssues([located, informational]));
-
-        Assert.Equal(VerificationIssue.From(located), issue);
-        Assert.Equal("cell/Data!A1:C3", issue.Location);
-    }
-
-    [Fact]
     public void VerificationChecksTheOperationsWhoseCellsItDiffs()
     {
         string source = _fixture.CreateSalesWorkbook("verify-checked-ops.xlsx");
