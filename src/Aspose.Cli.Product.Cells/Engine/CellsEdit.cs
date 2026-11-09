@@ -35,7 +35,8 @@ internal static class CellsEdit
         using CellsEditBaseline? baseline = request.Verify
             ? CellsEditBaseline.Capture(filePath, precondition, session.Budgets) : null;
         WorkbookSavePlan savePlan = WorkbookSavePlan.Create(output.Format, licenseState,
-            OutputProtection.For(output.Format, request.EncryptPassword, loaded.Protection, request.Password));
+            OutputProtection.For(output.Format, request.EncryptPassword, loaded.Protection, request.Password),
+            byteOrderMark: request.ByteOrderMark);
         using var importSources = new CellsImportSources(session.Loader, session.Budgets, request.OpSecrets);
         var protection = new CellsProtectionTracker();
         string[] linksBefore = LinkSources(workbook);

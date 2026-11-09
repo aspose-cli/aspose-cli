@@ -558,7 +558,7 @@ public sealed class CellsConvertUnwrittenContentTests : IDisposable
         Assert.True(edited.ExitCode == 0, edited.StdErr);
     }
 
-    /// <summary>Rewrites the XML of the <paramref name="sheet"/>th worksheet of an xlsx, for a setting no operation writes.</summary>
+    /// <summary>Rewrites the XML of the <paramref name="sheet"/>th worksheet of an xlsx, for a setting as Excel stores it.</summary>
     private void PatchSheet(string name, int sheet, Func<string, string> edit)
     {
         using ZipArchive package = ZipFile.Open(_workspace.File(name), ZipArchiveMode.Update);

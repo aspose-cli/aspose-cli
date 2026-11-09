@@ -36,8 +36,8 @@ internal static class UnwrittenContent
         {
             yield return ContentLoss.Warning([ContentKind.Comments],
                 $"The {formatId} output leaves out {Total(unprinted)} comment(s), which the page setup of their worksheet does not print: {PerSheet(unprinted)}.",
-                "Read the comments with 'aspose-cli cells inspect <file> --detail comments'. A worksheet whose page setup prints comments "
-                    + "at the end of the sheet, which Excel can set and no operation does, keeps them in the output.",
+                "Read the comments with 'aspose-cli cells inspect <file> --detail comments'. To keep them in the output, "
+                    + "set printComments to sheet-end with set_page_setup on the worksheet and convert again: they print after its last page.",
                 OneSheet(unprinted));
         }
 

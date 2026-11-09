@@ -23,4 +23,7 @@ public sealed record CellsEditRequest : BoundedEditRequest<CellsOpsBatch>
 
     /// <summary>Recalculate formulas after applying the ops.</summary>
     public bool Recalculate { get; init; } = true;
+
+    /// <summary>Whether a CSV or TSV output starts with a UTF-8 byte order mark.</summary>
+    public bool ByteOrderMark { get; init; }
 }

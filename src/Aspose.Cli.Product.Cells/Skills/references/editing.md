@@ -365,6 +365,9 @@ show in renders and reads; give the sparkline column a header.
   per side, and `format_range` writes the same `style.borders` cell by cell.
 - `set_page_setup` writes the center header and footer (`headerCenter`,
   `footerCenter`); `cells inspect --detail layout` reads all three sections.
+  Its `printComments` is `none` or `sheet-end`, which prints the sheet's
+  comments after its last page in a PDF or XPS. The same read reports it, and
+  `as-displayed` for the setting only Excel makes, which no operation writes.
 - `set_print_area` replaces the sheet's print area with what it gives: title
   rows or columns it omits are cleared, so repeat `titleRows` in every call
   that should keep them.
@@ -383,7 +386,9 @@ it drops the encryption with an `ENCRYPTION_REMOVED` warning, and
 `--encrypt-env` on it is `OPTION_INVALID`. A single-sheet output of a multi-sheet workbook reports
 `SHEETS_DROPPED`, and a csv or tsv output of a sheet with charts, pictures or other drawings
 `LOSSY_CONVERSION`, as it does for the sheet's comments and its headers and footers, which are
-no `--verify` issue. `cells create` and `cells convert` follow the same rules.
+no `--verify` issue. `cells create` and `cells convert` follow the same rules. `--bom` starts a
+csv or tsv output with a UTF-8 byte order mark, as on `cells convert`, and is `OPTION_INVALID` on
+any other output.
 
 ## Reading the outcome
 

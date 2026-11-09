@@ -87,6 +87,7 @@ internal static class SheetLayoutProjection
             FooterCenter = Text(page.GetFooter(1)),
             FooterLeft = Text(page.GetFooter(0)),
             FooterRight = Text(page.GetFooter(2)),
+            PrintComments = PageSetupVocabulary.PrintComments(page),
         };
     }
 

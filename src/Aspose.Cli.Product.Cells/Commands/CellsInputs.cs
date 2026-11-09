@@ -3,9 +3,17 @@ using Aspose.Cli.Sdk.Addressing;
 
 namespace Aspose.Cli.Product.Cells.Commands;
 
-/// <summary>The input documents and encrypted output the Cells commands declare.</summary>
+/// <summary>The input documents, encrypted output and text output the Cells commands declare.</summary>
 internal static class CellsInputs
 {
+    /// <summary>The <c>--bom</c> of a command that can write CSV or TSV text.</summary>
+    public static BomOption TextOutputBom() => new("a CSV or TSV output");
+
+    /// <summary>Whether the caller asked for the mark on an output of <paramref name="format"/>.</summary>
+    /// <exception cref="Aspose.Cli.Sdk.Errors.CliException"><c>OPTION_INVALID</c> when it did and the output is not CSV or TSV text.</exception>
+    public static bool ReadBom(BomOption bom, ParseResult parse, string format) =>
+        bom.Read(parse, CellsFormats.IsDelimited(format) ? null : $"a '{format}' output is not CSV or TSV text");
+
     /// <summary>
     /// A <c>--sheets</c> value as a selection of positions, as <see cref="PageRange"/> reads it,
     /// and the value as given when it may name a sheet, which only the open workbook can answer:

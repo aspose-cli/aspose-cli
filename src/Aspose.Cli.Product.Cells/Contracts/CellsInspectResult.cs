@@ -345,6 +345,14 @@ public sealed record CellsPageSetupInfo
 
     /// <summary>The right footer text; omitted when empty.</summary>
     public string? FooterRight { get; init; }
+
+    /// <summary>
+    /// Whether a PDF or XPS of the sheet prints its comments: <c>none</c>, <c>sheet-end</c> for all
+    /// of them after the sheet's last page, or <c>as-displayed</c>, which only Excel sets, for those
+    /// the sheet shows, where it shows them.
+    /// </summary>
+    [AllowedValues(typeof(CellsPrintComments)), OpenEnum("^[a-z][a-z0-9]*(-[a-z0-9]+)*$")]
+    public string PrintComments { get; init; } = CellsPrintComments.None;
 }
 
 /// <summary>A row outline group.</summary>

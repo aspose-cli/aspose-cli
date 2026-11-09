@@ -125,7 +125,7 @@ internal static class OperationSamples
         new("cells", """{"op":"set_formula","sheet":"Sheet1","range":"C2","formula":"=B2*2"}"""),
         new("cells", """{"op":"set_hyperlink","sheet":"Sheet1","cell":"A1","url":"https://example.com/","display":"Example"}"""),
         new("cells", """{"op":"set_hyperlink","sheet":"Sheet1","cell":"A3","target":"B3"}""", Label: "an internal target"),
-        new("cells", """{"op":"set_page_setup","sheet":"Sheet1","orientation":"landscape","pageSize":{"preset":"a4"},"margins":{"top":72,"bottom":72,"left":36,"right":36},"headerMargin":18,"footerMargin":24,"fitToWidth":1,"fitToHeight":2,"headerCenter":"Head","footerCenter":"Foot"}"""),
+        new("cells", """{"op":"set_page_setup","sheet":"Sheet1","orientation":"landscape","pageSize":{"preset":"a4"},"margins":{"top":72,"bottom":72,"left":36,"right":36},"headerMargin":18,"footerMargin":24,"fitToWidth":1,"fitToHeight":2,"headerCenter":"Head","footerCenter":"Foot","printComments":"sheet-end"}"""),
         new("cells", """{"op":"set_page_setup","sheet":"Sheet1","scalePercent":80}""", Label: "a scale"),
         new("cells", """{"op":"set_print_area","sheet":"Sheet1","range":"A1:B3","titleRows":"1:1","titleColumns":"A:A"}"""),
         new("cells", """{"op":"set_sheet_view","sheet":"Sheet1","zoomPercent":150,"gridlines":false,"headings":false}"""),

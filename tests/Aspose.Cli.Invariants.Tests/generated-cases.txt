@@ -1354,6 +1354,7 @@ C-R20 | v2/cells/ops field path
 C-R20 | v2/cells/ops field percent
 C-R20 | v2/cells/ops field position
 C-R20 | v2/cells/ops field preset
+C-R20 | v2/cells/ops field printComments
 C-R20 | v2/cells/ops field range
 C-R20 | v2/cells/ops field rank
 C-R20 | v2/cells/ops field refersTo
@@ -6039,6 +6040,7 @@ unknown-option | cells create --overwrite as --oevrwrite
 unknown-option | cells create --sheet-names as --sehet-names
 unknown-option | cells edit --backup as --bcakup
 unknown-option | cells edit --best-effort as --bset-effort
+unknown-option | cells edit --bom as --bomm
 unknown-option | cells edit --dry-run as --dyr-run
 unknown-option | cells edit --encrypt as --ecnrypt
 unknown-option | cells edit --encrypt-env as --ecnrypt-env

@@ -156,7 +156,7 @@ public sealed record UnfreezePanesOp : CellsSheetOp;
 /// least one side. Only the fields present are applied; the rest of the page setup is preserved.
 /// </summary>
 [Operation("set_page_setup", Hint = "The header and footer distances are headerMargin and footerMargin, beside margins.")]
-[AtLeastOneOf("orientation", "pageSize", "fitToWidth", "fitToHeight", "scalePercent", "margins", "headerMargin", "footerMargin", "headerCenter", "footerCenter")]
+[AtLeastOneOf("orientation", "pageSize", "fitToWidth", "fitToHeight", "scalePercent", "margins", "headerMargin", "footerMargin", "headerCenter", "footerCenter", "printComments")]
 public sealed record SetPageSetupOp : CellsSheetOp
 {
     /// <summary>Whether the page is printed upright (portrait) or sideways (landscape).</summary>
@@ -205,6 +205,10 @@ public sealed record SetPageSetupOp : CellsSheetOp
     [MistakenFor("footer")]
     [ReadBack("inspect-result.schema.json#/$defs/cellsPageSetupInfo/properties/footerCenter")]
     public string? FooterCenter { get; init; }
+
+    /// <summary>Whether a PDF or XPS of the sheet prints its comments: none, or sheet-end for all of them after the sheet's last page.</summary>
+    [ReadBack("inspect-result.schema.json#/$defs/cellsPageSetupInfo/properties/printComments")]
+    [AllowedValues(typeof(CellsPrintComments))] public string? PrintComments { get; init; }
 
     /// <inheritdoc />
     protected override BoundedOperation Validated()
