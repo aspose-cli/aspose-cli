@@ -438,11 +438,11 @@ internal static class SlidesReviewAnalyzer
     ];
 
     /// <summary>
-    /// What makes two slides duplicates: the kind, placeholder role, text, picture or chart content
-    /// and frame of each shape that is not decorative, so slides that share a title and frames but
-    /// show different pictures or chart data, as further Markdown pictures under one heading do,
-    /// differ. Null for a slide with too little to compare and one whose text evaluation mode cut
-    /// short.
+    /// What makes two slides duplicates: the kind, placeholder role, text, content and frame of
+    /// each shape that is not decorative, so slides that share a title and frames but show
+    /// different pictures, chart data, media or group contents, as further Markdown pictures under
+    /// one heading do, differ. Null for a slide with too little to compare and one whose text
+    /// evaluation mode cut short.
     /// </summary>
     private static string? Fingerprint(SlidesReviewSlide slide)
     {

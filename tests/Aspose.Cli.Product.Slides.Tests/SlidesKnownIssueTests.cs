@@ -253,6 +253,104 @@ public sealed class SlidesKnownIssueTests
         Assert.DoesNotContain(unaffected.Warnings ?? [], static item => item.Code == SlidesDiagnostics.ChartTitleOverlaid);
     }
 
+    /// <summary>
+    /// A conversion names only the implicit titles of the slides it writes: slide 2 of the fixture
+    /// has the chart, so a selection of slide 1 alone, to any format, does not warn about it.
+    /// </summary>
+    [Theory]
+    [InlineData("pdf", "1")]
+    [InlineData("pptx", "1")]
+    [InlineData("md", "1")]
+    public void AConversionOfSlidesWithoutTheChart_DoesNotNameIt(string format, string slides)
+    {
+        using var fixture = new SlidesEngineFixture();
+        string input = fixture.File("implicit-title.pptx");
+        File.Copy(ImplicitTitleDeck, input);
+
+        SlidesConvertResult result = SlidesExport.Convert(fixture.Session, new SlidesConvertRequest
+        {
+            Input = input,
+            Output = TestOutput.At(fixture.File($"selected.{format}"), format: format),
+            Slides = PageRange.Parse(slides),
+        });
+
+        Assert.DoesNotContain(result.Warnings ?? [], static item => item.Code == SlidesDiagnostics.ChartTitleOverlaid);
+    }
+
+    /// <summary>
+    /// An export leaves a hidden slide out, so it does not name that slide's chart; a presentation
+    /// format keeps the slide, and a selection of it exports it, so those do.
+    /// </summary>
+    [Theory]
+    [InlineData("pdf", null, false)]
+    [InlineData("pptx", null, true)]
+    [InlineData("pdf", "2", true)]
+    public void AHiddenSlidesChart_IsNamedOnlyWhenTheOutputHoldsTheSlide(string format, string? slides, bool named)
+    {
+        using var fixture = new SlidesEngineFixture();
+        string input = fixture.File("hidden.pptx");
+        using (var presentation = new Presentation(ImplicitTitleDeck))
+        {
+            presentation.Slides[1].Hidden = true;
+            presentation.Save(input, SaveFormat.Pptx);
+        }
+
+        SlidesConvertResult result = SlidesExport.Convert(fixture.Session, new SlidesConvertRequest
+        {
+            Input = input,
+            Output = TestOutput.At(fixture.File($"hidden.out.{format}"), format: format),
+            Slides = slides is null ? null : PageRange.Parse(slides),
+        });
+
+        Assert.Equal(named ? 1 : 0, (result.Warnings ?? []).Count(static item => item.Code == SlidesDiagnostics.ChartTitleOverlaid));
+    }
+
+    /// <summary>A selection that holds the chart's slide still names it, with its number in the deck.</summary>
+    [Theory]
+    [InlineData("pdf", "2")]
+    [InlineData("pdf", "1-2")]
+    [InlineData("pptx", "2")]
+    public void AConversionOfTheChartsSlide_NamesItWithItsNumberInTheDeck(string format, string slides)
+    {
+        using var fixture = new SlidesEngineFixture();
+        string input = fixture.File("implicit-title.pptx");
+        File.Copy(ImplicitTitleDeck, input);
+
+        SlidesConvertResult result = SlidesExport.Convert(fixture.Session, new SlidesConvertRequest
+        {
+            Input = input,
+            Output = TestOutput.At(fixture.File($"selected.{format}"), format: format),
+            Slides = PageRange.Parse(slides),
+        });
+
+        Warning warning = Assert.Single(result.Warnings!, static item => item.Code == SlidesDiagnostics.ChartTitleOverlaid);
+        Assert.Equal("slide/2", warning.Location);
+    }
+
+    /// <summary>
+    /// A rendering names only the implicit titles of the slides it draws: slide 2 of the fixture
+    /// has the chart, so drawing slide 1 alone does not warn about it and drawing slide 2 does.
+    /// </summary>
+    [Theory]
+    [InlineData("1", false)]
+    [InlineData("2", true)]
+    public void ARendering_NamesOnlyTheChartsOfTheSlidesItDraws(string slides, bool named)
+    {
+        using var fixture = new SlidesEngineFixture();
+        string input = fixture.File("implicit-title.pptx");
+        File.Copy(ImplicitTitleDeck, input);
+
+        SlidesRenderResult result = SlidesExport.Render(fixture.Session, new SlidesRenderRequest
+        {
+            Input = input,
+            Output = TestOutput.At(fixture.File("slide.png"), format: "png"),
+            Slides = PageRange.Parse(slides),
+        });
+
+        string?[] locations = [.. (result.Warnings ?? []).Where(static item => item.Code == SlidesDiagnostics.ChartTitleOverlaid).Select(static item => item.Location)];
+        Assert.Equal(named ? ["slide/2"] : [], locations);
+    }
+
     [Fact]
     [SupportedOSPlatform("windows")]
     public void AFontRegistryValueThatIsNotAString_IsRefusedWithItsName()

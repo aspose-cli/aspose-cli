@@ -185,6 +185,175 @@ public sealed class SlidesChartDataReplaceTests : IDisposable
         Assert.DoesNotContain("set_chart_data", warning.Hint, StringComparison.Ordinal);
     }
 
+    /// <summary>
+    /// A series named by literal text is data too: a find text it holds warns <c>chart-data</c>
+    /// and names the series names, and the hint run as it says, reading the series and giving
+    /// set_chart_data every series with the name changed, renames it. A find text only other
+    /// series names hold still warns; one no name holds does not.
+    /// </summary>
+    [Fact]
+    public void ALiteralSeriesName_WarnsAsDataAndSetChartDataRenamesIt()
+    {
+        using var fixture = new SlidesEngineFixture();
+        string input = _workspace.File("deck.pptx");
+        long chartId = Deck(input);
+        WriteLiteralSeriesName(input, "Lit");
+
+        CliResult edit = _workspace.Run("slides", "edit", "deck.pptx", "--out", "out.pptx", "--output-format", "json",
+            "--ops", """[{"op":"replace_text","id":"l","find":"Lit","replace":"New"}]""");
+
+        Assert.True(edit.ExitCode == 0, edit.StdErr);
+        JsonNode warning = Assert.Single(JsonNode.Parse(edit.StdOut)!["warnings"] as JsonArray ?? [],
+            static warning => warning!["code"]!.GetValue<string>() == TextNotReplaced)!;
+        Assert.Equal(ChartData, warning["details"]!["part"]!.GetValue<string>());
+        Assert.Equal($"slide/2/shape/{chartId}", warning["location"]!.GetValue<string>());
+        Assert.Contains("found a match in the series names of chart 'Sales'", warning["message"]!.GetValue<string>(), StringComparison.Ordinal);
+        Assert.Equal(
+            $"To change them, read the chart's categories and series with 'slides read --slides 2 --content full', then apply set_chart_data to shapeId {chartId} on slide 2 with every series as read, values and all, renamed where its name matches.",
+            warning["hint"]!.GetValue<string>());
+
+        CliResult read = _workspace.Run("slides", "read", "out.pptx", "--slides", "2", "--content", "full", "--output-format", "json");
+        Assert.True(read.ExitCode == 0, read.StdErr);
+        JsonArray series = JsonNode.Parse(read.StdOut)!["slides"]![0]!["shapes"]!.AsArray()
+            .Single(static shape => shape!["kind"]!.GetValue<string>() == "chart")!["chart"]!["series"]!.AsArray();
+        Assert.Equal("Lit", series[1]!["name"]!.GetValue<string>());
+        series[1]!["name"] = "New";
+        CliResult set = _workspace.Run("slides", "edit", "out.pptx", "--out", "set.pptx", "--output-format", "json",
+            "--ops", $$"""[{"op":"set_chart_data","slide":2,"shapeId":{{chartId}},"series":{{series.ToJsonString()}}}]""");
+
+        Assert.True(set.ExitCode == 0, set.StdErr);
+        using var output = new Presentation(_workspace.File("set.pptx"));
+        IChart chart = output.Slides.SelectMany(static slide => slide.Shapes).OfType<IChart>().Single();
+        Assert.Equal("New", chart.ChartData.Series[1].Name.AsLiteralString);
+    }
+
+    /// <summary>A find text no series name holds gives no warning about a literal series name, and a whole name matches as other text does.</summary>
+    [Theory]
+    [InlineData("Lit", false, 1)]
+    [InlineData("lit", true, 0)]
+    [InlineData("Zed", false, 0)]
+    public void ALiteralSeriesName_MatchesAsTheOperationMatchesText(string find, bool caseSensitive, int warnings)
+    {
+        using var fixture = new SlidesEngineFixture();
+        string input = fixture.File("chart.pptx");
+        Deck(input);
+        WriteLiteralSeriesName(input, "Lit");
+
+        SlidesEditResult result = Replace(fixture, input, new SlidesReplaceTextOp { Find = find, Replace = "X", CaseSensitive = caseSensitive });
+
+        Assert.Equal(warnings, (result.Warnings ?? []).Count(static warning =>
+            warning.Code.Name == TextNotReplaced && warning.Details?["part"]?.GetValue<string>() == ChartData));
+    }
+
+    /// <summary>
+    /// A chart whose point values are literal has no cells set_chart_data can write, so its data
+    /// warning rebuilds the chart as its title's hint does and never offers set_chart_data.
+    /// </summary>
+    [Theory]
+    [InlineData(ChartType.ClusteredColumn, "Q2", "categories")]
+    [InlineData(ChartType.ClusteredColumn, "S1", "series names")]
+    [InlineData(ChartType.ScatterWithMarkers, "S1", "series names")]
+    public void ChartDataWarning_OfAChartWithLiteralPointValues_RebuildsIt(ChartType type, string find, string data)
+    {
+        using var fixture = new SlidesEngineFixture();
+        string input = fixture.File("chart.pptx");
+        long chartId = Deck(input, type);
+        WriteLiteralPointValues(input);
+
+        SlidesEditResult result = Replace(fixture, input, new SlidesReplaceTextOp { Id = "r", Find = find, Replace = "X" });
+
+        Warning warning = Assert.Single(result.Warnings ?? [], static warning => warning.Code.Name == TextNotReplaced);
+        Assert.Equal(ChartData, warning.Details?["part"]?.GetValue<string>());
+        Assert.Contains($"found a match in the {data} of chart 'Sales'", warning.Message, StringComparison.Ordinal);
+        Assert.Equal(
+            $$"""To change them, rebuild the chart, since its data cannot be updated in place: read its kind, categories and series with 'slides read --slides 2 --content full', apply {"op":"delete_shape","slide":2,"shapeId":{{chartId}}}, then insert_chart on slide 2 with the changed data, its title and "rect":{"x":40,"y":120,"width":300,"height":200}. The new chart takes the automatic chart style.""",
+            warning.Hint);
+        Assert.DoesNotContain("set_chart_data", warning.Hint, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// set_chart_data refuses a chart whose point values are literal with CHART_DATA_INVALID,
+    /// whatever data it is given, and writes no output; a categories-only update used to read
+    /// their missing cells and stop with exit 6.
+    /// </summary>
+    [Theory]
+    [InlineData(ChartType.ClusteredColumn, """ "categories":["A","B","C"] """)]
+    [InlineData(ChartType.ClusteredColumn, """ "series":[{"name":"N","values":[1,2,3]}] """)]
+    [InlineData(ChartType.ScatterWithMarkers, """ "series":[{"name":"N","values":[1,2,3],"xValues":[1,2,3]}] """)]
+    public void SetChartData_OfAChartWithLiteralPointValues_IsRefused(ChartType type, string data)
+    {
+        using var fixture = new SlidesEngineFixture();
+        string input = _workspace.File("deck.pptx");
+        long chartId = Deck(input, type);
+        WriteLiteralPointValues(input);
+
+        CliResult set = _workspace.Run("slides", "edit", "deck.pptx", "--out", "set.pptx", "--output-format", "json",
+            "--ops", $$"""[{"op":"set_chart_data","slide":2,"shapeId":{{chartId}},{{data}}}]""");
+
+        Assert.NotEqual(6, set.ExitCode);
+        Assert.NotEqual(0, set.ExitCode);
+        JsonNode error = JsonNode.Parse(set.StdErr)!["error"]!;
+        Assert.Equal("CHART_DATA_INVALID", error["code"]!.GetValue<string>());
+        Assert.Contains("its values are literals rather than workbook cells", error["message"]!.GetValue<string>(), StringComparison.Ordinal);
+        Assert.False(File.Exists(_workspace.File("set.pptx")));
+    }
+
+    // Makes every point value of the chart's first series literal: a scatter point's x and y
+    // values, any other point's value.
+    private static void WriteLiteralPointValues(string path)
+    {
+        using (var presentation = new Presentation(path))
+        {
+            IChart chart = presentation.Slides.SelectMany(static slide => slide.Shapes).OfType<IChart>().Single();
+            IChartDataPointCollection points = chart.ChartData.Series[0].DataPoints;
+            bool scatter = ChartTypeCharacterizer.IsChartTypeScatter(chart.Type);
+            if (scatter)
+            {
+                points.DataSourceTypeForXValues = DataSourceType.DoubleLiterals;
+                points.DataSourceTypeForYValues = DataSourceType.DoubleLiterals;
+            }
+            else
+            {
+                points.DataSourceTypeForValues = DataSourceType.DoubleLiterals;
+            }
+
+            double literal = 1;
+            foreach (IChartDataPoint point in points)
+            {
+                if (scatter)
+                {
+                    point.XValue.AsLiteralDouble = literal;
+                    point.YValue.AsLiteralDouble = literal + 1;
+                }
+                else
+                {
+                    point.Value.AsLiteralDouble = literal;
+                }
+
+                literal++;
+            }
+
+            presentation.Save(path, SaveFormat.Pptx);
+        }
+
+        using var saved = new Presentation(path);
+        IChart reloaded = saved.Slides.SelectMany(static slide => slide.Shapes).OfType<IChart>().Single();
+        IChartDataPoint first = reloaded.ChartData.Series[0].DataPoints[0];
+        Assert.Equal(DataSourceType.DoubleLiterals, ChartTypeCharacterizer.IsChartTypeScatter(reloaded.Type) ? first.YValue.DataSourceType : first.Value.DataSourceType);
+    }
+
+    // Makes the name of the chart's second series the literal text, as a chart without a name cell stores it.
+    private static void WriteLiteralSeriesName(string path, string name)
+    {
+        using (var presentation = new Presentation(path))
+        {
+            IStringChartValue literal = presentation.Slides.SelectMany(static slide => slide.Shapes).OfType<IChart>().Single().ChartData.Series[1].Name;
+            literal.DataSourceType = DataSourceType.StringLiterals;
+            literal.AsLiteralString = name;
+            presentation.Save(path, SaveFormat.Pptx);
+        }
+    }
+
     private static SlidesEditResult Replace(SlidesEngineFixture fixture, string input, SlidesReplaceTextOp operation) =>
         SlidesEdit.Run(fixture.Session, new SlidesEditRequest
         {

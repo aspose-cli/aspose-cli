@@ -91,7 +91,9 @@ comments a deck already has.
   data, read it the same way and give `set_chart_data` the changed categories, or every series
   with its values and changed name; rebuild a chart `set_chart_data` does not update
   ([charts](#charts)) as for its title. A chart inside a group warns as well, naming the group,
-  but no operation addresses it.
+  but no operation addresses it. An axis title that matches stays too and warns with
+  `details.part` `axis-title`; no operation changes an axis title, so report it as unchanged or
+  change it in a presentation editor.
 - `set_notes` replaces speaker-note text. `inspect --detail notes` reports only presence and
   character counts; read note text with `slides read --notes` or `extract --what notes`.
 - `set_footer` uses the layout's own footer, number and date placeholders; their position and
@@ -111,8 +113,8 @@ charts have no categories: pass `series` with matching `xValues` and `values`.
 
 It supports bar, column, line, area, pie, doughnut, radar and scatter charts whose data lives
 in the embedded workbook. Other charts (bubble, stock, surface, mixed scatter and category
-series, external or literal data, multi-level categories) fail with `CHART_DATA_INVALID` and
-stay unchanged; recreate them with `insert_chart`.
+series, external data, literal values or categories, multi-level categories) fail with
+`CHART_DATA_INVALID` and stay unchanged; recreate them with `insert_chart`.
 
 New charts reserve space for their title and legend; a new pie colors each slice and names the
 categories in its legend. A new column or line chart slants its category labels by 45 degrees

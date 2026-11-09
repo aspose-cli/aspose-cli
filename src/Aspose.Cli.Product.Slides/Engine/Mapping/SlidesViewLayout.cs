@@ -67,11 +67,14 @@ internal static class SlidesViewLayout
         {
             canonical.Append('|').Append(fill.SolidFillColor.ToArgb());
         }
-        ILineFormatEffectiveData line = shape.LineFormat.GetEffective();
-        canonical.Append("|L").Append(Number(line.Width)).Append('|').Append((int)line.FillFormat.FillType);
-        if (line.FillFormat.FillType == FillType.Solid)
+        // A group has no outline of its own.
+        if (shape.LineFormat?.GetEffective() is { } line)
         {
-            canonical.Append('|').Append(line.FillFormat.SolidFillColor.ToArgb());
+            canonical.Append("|L").Append(Number(line.Width)).Append('|').Append((int)line.FillFormat.FillType);
+            if (line.FillFormat.FillType == FillType.Solid)
+            {
+                canonical.Append('|').Append(line.FillFormat.SolidFillColor.ToArgb());
+            }
         }
 
         switch (shape)

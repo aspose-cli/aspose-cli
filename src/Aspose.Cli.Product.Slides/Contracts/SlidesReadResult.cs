@@ -259,6 +259,9 @@ public sealed record SlidesChartData
 
     /// <summary>The series, in order.</summary>
     public required IReadOnlyList<SlidesChartSeriesData> Series { get; init; }
+
+    /// <summary>The size of each point of a bubble chart, one list per series in the order of series; omitted for other charts.</summary>
+    public IReadOnlyList<IReadOnlyList<double>>? BubbleSizes { get; init; }
 }
 
 /// <summary>One chart series.</summary>
@@ -267,10 +270,10 @@ public sealed record SlidesChartSeriesData
     /// <summary>The series name.</summary>
     public required string Name { get; init; }
 
-    /// <summary>The value of each point, in category order.</summary>
+    /// <summary>The value of each point, in category order; the y value of each point of a scatter or bubble series.</summary>
     public required IReadOnlyList<double> Values { get; init; }
 
-    /// <summary>The x value of each point of a scatter series; omitted for other series.</summary>
+    /// <summary>The x value of each point of a scatter or bubble series; omitted for other series.</summary>
     public IReadOnlyList<double>? XValues { get; init; }
 }
 

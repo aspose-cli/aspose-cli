@@ -57,49 +57,98 @@ internal static class SlidesReviewLayout
     }
 
     /// <summary>
-    /// A digest of what a picture or chart shows besides text: the picture's bytes, or the chart's
-    /// type, title, categories and series, each series with its name and every point's stored x
-    /// value, y value, value and bubble size, whichever its chart type has; null for any other shape.
+    /// A digest of what a shape shows besides its text and frame: a picture's bytes; a video's or
+    /// sound's media, embedded or linked, and its poster picture; a chart's type, title,
+    /// categories and series, each series with its name and every point's stored x value, y
+    /// value, value and bubble size, whichever its chart type has; each picture fill, a table
+    /// cell's too; and for a group, the kind, frame and digest of each shape inside it. Null for a
+    /// shape that shows none of these.
     /// </summary>
     private static string? Content(IShape shape)
     {
+        string[] parts = [.. ContentParts(shape)];
+        return parts.Length == 0 ? null : string.Join(';', parts);
+    }
+
+    private static IEnumerable<string> ContentParts(IShape shape)
+    {
         switch (shape)
         {
-            case IPictureFrame { PictureFormat.Picture.Image: { } image }:
-                return "image|" + Digest(image.BinaryData);
-            case IChart chart:
-                var value = new StringBuilder();
-                Append(value, [chart.Type.ToString(), chart.HasTitle ? Text(chart.ChartTitle?.TextFrameForOverriding?.Text) : string.Empty]);
-                Append(value, chart.ChartData.Categories.Select(static category => Text(category.Value)));
-                foreach (IChartSeries series in chart.ChartData.Series)
+            case IGroupShape group:
+                yield return "group|" + FieldsDigest(group.Shapes.Select(static child => new[]
                 {
-                    Append(value, [Text(series.Name)]);
-                    Append(value, series.DataPoints.SelectMany(static point => new[]
-                    {
-                        Text(point.XValue?.Data), Text(point.YValue?.Data), Text(point.Value?.Data), Text(point.BubbleSize?.Data),
-                    }));
-                }
-
-                return "chart|" + Digest(Encoding.UTF8.GetBytes(value.ToString()));
-            default:
-                return null;
+                    ShapeKind(child),
+                    string.Create(CultureInfo.InvariantCulture, $"{Math.Round(child.X, 1)},{Math.Round(child.Y, 1)},{Math.Round(child.Width, 1)},{Math.Round(child.Height, 1)}"),
+                    Content(child) ?? string.Empty,
+                }));
+                break;
+            case IChart chart:
+                yield return "chart|" + FieldsDigest(ChartFields(chart));
+                break;
+            case IAudioFrame audio:
+                yield return "audio|" + Media(audio.EmbeddedAudio?.GetStream(), audio.LinkPathLong);
+                break;
+            case IVideoFrame video:
+                yield return "video|" + Media(video.EmbeddedVideo?.GetStream(), video.LinkPathLong);
+                break;
         }
 
-        // A list is prefixed with its count and each of its fields with its length, so no text
-        // in one field can shift the next.
-        static void Append(StringBuilder value, IEnumerable<string> fields)
+        if (shape is IPictureFrame { PictureFormat.Picture.Image: { } image })
         {
-            string[] all = [.. fields];
-            value.Append(all.Length).Append('[');
-            foreach (string field in all)
+            yield return "image|" + Digest(image);
+        }
+
+        foreach (IFillFormat fill in SlidesShapeFormats.Fills(shape).Where(static fill => fill.FillType == FillType.Picture))
+        {
+            yield return "fill|" + Fill(fill);
+        }
+    }
+
+    // The fields a chart's digest covers, a list per entry: its type and title, its categories,
+    // then each series' name and point values.
+    private static IEnumerable<IEnumerable<string>> ChartFields(IChart chart)
+    {
+        yield return [chart.Type.ToString(), chart.HasTitle ? Text(chart.ChartTitle?.TextFrameForOverriding?.Text) : string.Empty];
+        yield return chart.ChartData.Categories.Select(static category => Text(category.Value));
+        foreach (IChartSeries series in chart.ChartData.Series)
+        {
+            yield return [Text(series.Name)];
+            yield return series.DataPoints.SelectMany(PointData);
+        }
+
+        static string Text(object? data) => Convert.ToString(data, CultureInfo.InvariantCulture) ?? string.Empty;
+    }
+
+    // An embedded file is known by its bytes, a linked one by its address, which is not opened.
+    private static string Media(Stream? embedded, string? link)
+    {
+        if (embedded is null)
+        {
+            return link ?? string.Empty;
+        }
+
+        using (embedded)
+        {
+            return Convert.ToHexStringLower(SHA256.HashData(embedded));
+        }
+    }
+
+    // A list is prefixed with its count and each of its fields with its length, so no text in
+    // one field can shift the next.
+    private static string FieldsDigest(IEnumerable<IEnumerable<string>> lists)
+    {
+        var value = new StringBuilder();
+        foreach (IEnumerable<string> list in lists)
+        {
+            string[] fields = [.. list];
+            value.Append(fields.Length).Append('[');
+            foreach (string field in fields)
             {
                 value.Append(field.Length).Append(':').Append(field);
             }
         }
 
-        static string Text(object? data) => Convert.ToString(data, CultureInfo.InvariantCulture) ?? string.Empty;
-
-        static string Digest(byte[] bytes) => Convert.ToHexStringLower(SHA256.HashData(bytes));
+        return Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(value.ToString())));
     }
 
     /// <summary>
@@ -201,8 +250,9 @@ internal sealed record SlidesReviewShape
     public System.Drawing.Color? ChartTextColor { get; init; }
 
     /// <summary>
-    /// A digest of what a picture or chart shows besides text, which tells apart two of them of one
-    /// kind and frame; null for any other shape.
+    /// A digest of what the shape shows besides its text and frame, such as a picture, a chart's
+    /// data, a video or a group's shapes, which tells apart two shapes of one kind and frame; null
+    /// for a shape that shows only text.
     /// </summary>
     public string? Content { get; init; }
 

@@ -39,13 +39,7 @@ internal static class SlidesShapeFormats
             yield return chart.Legend.TextFormat.PortionFormat;
         }
 
-        // A pie has no axes.
-        IAxis?[] axes =
-        [
-            chart.Axes?.HorizontalAxis, chart.Axes?.VerticalAxis,
-            chart.Axes?.SecondaryHorizontalAxis, chart.Axes?.SecondaryVerticalAxis,
-        ];
-        foreach (IAxis axis in axes.OfType<IAxis>().Where(static axis => axis.IsVisible))
+        foreach (IAxis axis in VisibleAxes(chart.Axes?.HorizontalAxis, chart.Axes?.VerticalAxis, chart.Axes?.SecondaryHorizontalAxis, chart.Axes?.SecondaryVerticalAxis))
         {
             yield return axis.TextFormat.PortionFormat;
         }
@@ -57,6 +51,17 @@ internal static class SlidesShapeFormats
             yield return labels.TextFormat.PortionFormat;
         }
     }
+
+    /// <summary>The text of the title of each axis a chart draws, its depth axis included, for each title with text of its own.</summary>
+    internal static IEnumerable<ITextFrame> AxisTitles(IChart chart) =>
+        VisibleAxes(chart.Axes?.HorizontalAxis, chart.Axes?.VerticalAxis, chart.Axes?.SecondaryHorizontalAxis, chart.Axes?.SecondaryVerticalAxis, chart.Axes?.SeriesAxis)
+            .Where(static axis => axis.HasTitle)
+            .Select(static axis => axis.Title.TextFrameForOverriding)
+            .OfType<ITextFrame>();
+
+    // A chart type without an axis, such as a pie's, gives null for it.
+    private static IEnumerable<IAxis> VisibleAxes(params IAxis?[] axes) =>
+        axes.OfType<IAxis>().Where(static axis => axis.IsVisible);
 
     private static IEnumerable<IBasePortionFormat> Runs(ITextFrame frame) =>
         frame.Paragraphs.SelectMany(static paragraph => paragraph.Portions).Select(static portion => portion.PortionFormat);
