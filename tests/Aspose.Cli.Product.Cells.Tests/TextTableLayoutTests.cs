@@ -1,6 +1,7 @@
 using System.Text;
 using System.Text.Json.Nodes;
 using Aspose.Cli.Sdk.Contracts;
+using Aspose.Cli.TestKit.Scenarios;
 using Xunit;
 
 namespace Aspose.Cli.Product.Cells.Tests;
@@ -363,6 +364,211 @@ public sealed class TextTableLayoutTests : IDisposable
         JsonNode header = Assert.Single(warnings, static warning => Text(warning, "message").Contains("header is probably", StringComparison.Ordinal));
         Assert.Contains("header is probably row 2; row 1 looks", Text(header, "message"), StringComparison.Ordinal);
         Assert.Contains("--range A2:E2'", Text(header, "hint"), StringComparison.Ordinal);
+    }
+
+    private const string NotesTable = "Name,Region,Amount\nAlice,East,700\nBob,West,580\n";
+
+    /// <summary>
+    /// Notes an export writes above its table, of text and dates only, however they are laid out:
+    /// a text row and a date row in one block, one row of two text values, or two blocks as wide
+    /// as each other. The header is the wider row of labels with data below it.
+    /// </summary>
+    [Theory]
+    [InlineData("Report,Sales export\nExported at,2026-10-31\n\n", 4)]
+    [InlineData("Exported by,Zhang San\n\n", 3)]
+    [InlineData("Exported at,2026-10-31\n\nQuery,East only\n\n", 5)]
+    [InlineData("Sales report\n\nExported at,2026-10-31\n\nQuery,East only\n\n", 7)]
+    [InlineData("Query,East only\n\nExported at,2026-10-31\n\n", 5)]
+    [InlineData("Exported by,Zhang San\n\nQuery,East only\n\n", 5)]
+    public void Inspect_FindsTheHeaderBelowNotesOfTextAndDates(string notes, int headerRow)
+    {
+        File.WriteAllText(_workspace.File("notes.csv"), notes + NotesTable);
+
+        JsonNode warning = Assert.Single(LayoutWarnings(_workspace.Run("cells", "inspect", "notes.csv", "--output-format", "json").Json()));
+
+        Assert.Contains($"header is probably row {headerRow}; rows 1-{headerRow - 1}", Text(warning, "message"), StringComparison.Ordinal);
+        Assert.Contains($"--range A{headerRow}:C{headerRow}' and start data ranges, formulas and sorts at row {headerRow + 1},", Text(warning, "hint"), StringComparison.Ordinal);
+        Assert.Equal($"row/notes!1:{headerRow - 1}", Text(warning, "location"));
+    }
+
+    /// <summary>A header whose column labels are dates is a header, where it starts the file, below a title, or above an empty row.</summary>
+    [Theory]
+    [InlineData("Region,2026-01-01,2026-02-01\nEast,100,200\nWest,150,250\n", null, null)]
+    [InlineData("Sales report\nRegion,2026-01-01,2026-02-01\nEast,100,200\nWest,150,250\n", 2, null)]
+    [InlineData("Region,2026-01-01,2026-02-01\nEast,100,200\n\nWest,150,250\nNorth,160,260\n", null, "Row 3 is")]
+    public void Inspect_KeepsAHeaderThatHoldsDates(string csv, int? headerRow, string? empty)
+    {
+        AssertLayout(csv, headerRow, empty);
+    }
+
+    /// <summary>
+    /// A header narrower than its data keeps its place above an empty row, whether its data is
+    /// text or holds numbers, as does one that is just above a wider all-text block.
+    /// </summary>
+    [Theory]
+    [InlineData("Name,Dept\n\nAnn,Sales,Rome,Remote,Full\nBob,Ops,Oslo,Office,Part\n")]
+    [InlineData("Name,Amount\n\nAnn,5,a,b,c\nBob,7,d,e,f\n")]
+    public void Inspect_KeepsAHeaderNarrowerThanItsDataAboveAnEmptyRow(string csv)
+    {
+        AssertLayout(csv, headerRow: null, "Row 2 is");
+    }
+
+    /// <summary>
+    /// Text above an empty row is not taken for notes when it is a table of its own: rows of
+    /// values with numbers, several text rows without a date, several rows with a date each, a
+    /// table split by empty rows, or a wider block below it with no data under its labels.
+    /// </summary>
+    [Theory]
+    [InlineData("Region,Sales\nEast,100\n\nName,Region,Amount\nAlice,East,700\n", "Row 3 is")]
+    [InlineData("Name,Dept\nAnn,Sales\n\nItem,Region,Qty\nBolt,East,5\n", "Row 3 is")]
+    [InlineData("Name,Score\nAnn,5\n\nBob,7\n\nTitle,X,Y\nFoo,1,2\n", "2 rows (3, 5) are")]
+    [InlineData("Task,Due\nDesign,2026-01-05\nBuild,2026-02-01\n\nItem,Qty,Cost\nBolt,5,1.2\nNut,7,0.4\n", "Row 4 is")]
+    [InlineData("Date,Region,Note\n2026-01-05,East\n2026-01-06,West\n\nAlpha,Beta,Gamma,Delta,Epsilon\n1,2,3,4,5\n", "Row 4 is")]
+    [InlineData("Date,Region,Note\n2026-01-05,East\n\nAlpha,Beta,Gamma,Delta,Epsilon\n", "Row 3 is")]
+    public void Inspect_KeepsTheFirstTableAboveAnEmptyRowAndAWiderBlock(string csv, string empty)
+    {
+        AssertLayout(csv, headerRow: null, empty);
+    }
+
+    /// <summary>
+    /// An "export time, date" row above rows without a header stays what it was: that row and a
+    /// header labeled with a month have the same shape.
+    /// </summary>
+    [Fact]
+    public void Inspect_StillTakesRowsWithoutAHeaderBelowADateNoteForTheTable()
+    {
+        AssertLayout("Exported at,2026-10-31\n\nAlice,East,2026-01-05\nBob,West,2026-01-06\nCarol,North,2026-01-07\n", headerRow: 3, empty: null);
+    }
+
+    private void AssertLayout(string csv, int? headerRow, string? empty)
+    {
+        File.WriteAllText(_workspace.File("layout.csv"), csv);
+
+        string[] messages = [.. LayoutWarnings(_workspace.Run("cells", "inspect", "layout.csv", "--output-format", "json").Json())
+            .Select(static warning => Text(warning, "message"))];
+
+        string? header = messages.SingleOrDefault(static message => message.Contains("header is probably", StringComparison.Ordinal));
+        if (headerRow is null)
+        {
+            Assert.Null(header);
+        }
+        else
+        {
+            Assert.Contains($"header is probably row {headerRow}", header, StringComparison.Ordinal);
+        }
+
+        string? emptyRows = messages.SingleOrDefault(static message => message.Contains("empty inside the table", StringComparison.Ordinal));
+        if (empty is null)
+        {
+            Assert.Null(emptyRows);
+        }
+        else
+        {
+            Assert.StartsWith($"{empty} empty inside the table", emptyRows, StringComparison.Ordinal);
+        }
+    }
+
+    /// <summary>
+    /// The rows a JSON export would write under the wrong keys are inferred, so the hint names a
+    /// command that shows them before it mentions delete_rows, and gives no operation fields
+    /// with their addresses. The command runs as written, on a path with a space in it.
+    /// </summary>
+    [Theory]
+    [InlineData("report.xlsx", "Titled", "Monthly sales by region", "row 2", "A1:C2")]
+    [InlineData("my report.xlsx", "Totals", "Total", "Row 4", "A4:C4")]
+    public void JsonExport_ShowsTheInferredRowsBeforeNamingDeleteRows(string file, string sheet, string shown, string subject, string range)
+    {
+        CreateReport(file);
+        string[] args = ["cells", "convert", file, "--to", "json", "--out", "report.json", "--output-format", "json"];
+
+        CliResult converted = _workspace.Run(args);
+
+        Assert.True(converted.ExitCode == 0, converted.StdErr);
+        Assert.Empty(ExecutableHints.Problems(new HintRun(args, _workspace.Path, Path.GetDirectoryName(_workspace.ConfigDirectory)!, Variables: null), converted, variants: true));
+        JsonNode warning = Assert.Single(LayoutWarnings(converted.Json()), found => Text(found, "message").Contains($"'{sheet}'", StringComparison.Ordinal));
+        Assert.Contains(subject, Text(warning, "message"), StringComparison.Ordinal);
+        string hint = Text(warning, "hint");
+        string command = ReadCommand(hint);
+        Assert.Contains($"--range {range}", command, StringComparison.Ordinal);
+        Assert.True(hint.IndexOf(command, StringComparison.Ordinal) < hint.IndexOf("delete_rows", StringComparison.Ordinal), hint);
+        Assert.DoesNotContain("\"at\"", hint, StringComparison.Ordinal);
+        CliResult read = _workspace.RunCommandLine(command);
+        Assert.True(read.ExitCode == 0, $"{command}{Environment.NewLine}{read.StdErr}");
+        Assert.Contains(shown, read.StdOut, StringComparison.Ordinal);
+    }
+
+    /// <summary>The command that shows the inferred rows opens an encrypted input as the export did, by the variable that holds its password.</summary>
+    [Fact]
+    public void JsonExport_ShowsTheInferredRowsOfAnEncryptedInputByItsPasswordVariable()
+    {
+        var password = new Dictionary<string, string?> { ["REPORT_PASSWORD"] = "Layout-7c2e" };
+        CreateReport("plain.xlsx");
+        CliResult encrypted = _workspace.RunWithEnv(password,
+            "cells", "convert", "plain.xlsx", "--to", "xlsx", "--out", "locked.xlsx", "--encrypt-env", "REPORT_PASSWORD", "--output-format", "json");
+        Assert.True(encrypted.ExitCode == 0, encrypted.StdErr);
+
+        CliResult converted = _workspace.RunWithEnv(password,
+            "cells", "convert", "locked.xlsx", "--password-env", "REPORT_PASSWORD", "--to", "json", "--out", "report.json", "--output-format", "json");
+
+        Assert.True(converted.ExitCode == 0, converted.StdErr);
+        JsonNode warning = Assert.Single(LayoutWarnings(converted.Json()), static found => Text(found, "message").Contains("'Titled'", StringComparison.Ordinal));
+        string command = ReadCommand(Text(warning, "hint"));
+        Assert.Contains("--password-env REPORT_PASSWORD", command, StringComparison.Ordinal);
+        CliResult read = _workspace.RunCommandLine(command, password);
+        Assert.True(read.ExitCode == 0, $"{command}{Environment.NewLine}{read.StdErr}");
+        Assert.Contains("Monthly sales by region", read.StdOut, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// A text input imported with --encoding or --culture opens only with that option, which the
+    /// commands that read and edit do not have, so the hint first converts it to a workbook with
+    /// the same option. That command runs as written, and the rows can be read in what it wrote.
+    /// </summary>
+    [Theory]
+    [InlineData("--encoding", "gb18030", "销售报表")]
+    [InlineData("--culture", "de-DE", "Bericht")]
+    public void JsonExport_OfATextInputWithImportOptions_ConvertsItFirstWithTheSameOption(string option, string value, string title)
+    {
+        Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
+        File.WriteAllBytes(_workspace.File("data.csv"), option == "--encoding"
+            ? Encoding.GetEncoding("gb18030").GetBytes($"{title},,\n编码,名称,数量\nA1,螺栓,1200\nA2,垫片,300\n")
+            : Encoding.UTF8.GetBytes($"{title},,\nName,Anzahl,Preis\nA,1,\"1.234,56\"\nB,2,\"2.345,67\"\n"));
+        string[] args = ["cells", "convert", "data.csv", option, value, "--to", "json", "--out", "data.json", "--output-format", "json"];
+
+        CliResult converted = _workspace.Run(args);
+
+        Assert.True(converted.ExitCode == 0, converted.StdErr);
+        Assert.Empty(ExecutableHints.Problems(new HintRun(args, _workspace.Path, Path.GetDirectoryName(_workspace.ConfigDirectory)!, Variables: null), converted, variants: true));
+        string hint = Text(Assert.Single(LayoutWarnings(converted.Json())), "hint");
+        string command = HintCommand(hint, "convert");
+        Assert.Contains($"--to xlsx {option} {value}", command, StringComparison.Ordinal);
+        Assert.True(hint.IndexOf(command, StringComparison.Ordinal) < hint.IndexOf("delete_rows", StringComparison.Ordinal), hint);
+        Assert.DoesNotContain("cells read", hint, StringComparison.Ordinal);
+        CliResult imported = _workspace.RunCommandLine(command);
+        Assert.True(imported.ExitCode == 0, $"{command}{Environment.NewLine}{imported.StdErr}");
+        CliResult read = _workspace.Run("cells", "read", "data.xlsx", "--sheet", "data", "--range", "A1:C2", "--output-format", "json");
+        Assert.True(read.ExitCode == 0, read.StdErr);
+        Assert.Contains(title, read.StdOut, StringComparison.Ordinal);
+    }
+
+    private void CreateReport(string file)
+    {
+        Assert.Equal(0, _workspace.Run("cells", "create", file, "--sheet-names", "Titled,Totals").ExitCode);
+        CliResult filled = _workspace.Run("cells", "edit", file, "--in-place", "--ops", """
+            [{"op":"set_values","sheet":"Titled","range":"A1","values":[["Monthly sales by region",null,null],["Region","Units","Amount"],["North",5,120],["South",7,180]]},
+             {"op":"set_values","sheet":"Totals","range":"A1","values":[["Date","Units","Amount"],["2026-09-01",5,120],["2026-09-02",7,180],["Total",12,300]]}]
+            """);
+        Assert.True(filled.ExitCode == 0, filled.StdErr);
+    }
+
+    private static string ReadCommand(string hint) => HintCommand(hint, "read");
+
+    // The cells command a hint quotes in single quotes.
+    private static string HintCommand(string hint, string verb)
+    {
+        System.Text.RegularExpressions.Match command = System.Text.RegularExpressions.Regex.Match(hint, $@"'(aspose-cli cells {verb} [^']*)'");
+        Assert.True(command.Success, hint);
+        return command.Groups[1].Value;
     }
 
     [Fact]

@@ -44,7 +44,7 @@ internal sealed record CellsReviewSheetLayout
     /// <summary>Text cells wider than their column that spill over the empty cell to their right.</summary>
     public required CellsReviewCellSet OverflowingCells { get; init; }
 
-    /// <summary>Visible rows shorter than the font of a value in them, which they cut off at the top.</summary>
+    /// <summary>Visible rows too short for the font or the wrapped lines of a value in them, which they cut off.</summary>
     public required CellsReviewRowSet TextTallerThanRows { get; init; }
 
     public required string? PrintArea { get; init; }
@@ -82,13 +82,19 @@ internal sealed record CellsReviewRowSet(
     IReadOnlyList<CellsReviewShortRow> Samples);
 
 /// <summary>
-/// A row shorter than the largest font of a value in it: its zero-based index, the height that
-/// value has (of all its rows for a merged cell) and that font's size, both in points.
+/// A row too short for a value in it: its zero-based index, the height that value has (of all its
+/// rows for a merged cell), that value's largest font, and the height its lines take when it is
+/// wrapped text the row cuts off, all in points.
 /// </summary>
 internal sealed record CellsReviewShortRow(
     int Row,
     double Height,
-    double FontSize);
+    double FontSize,
+    double? WrappedTextHeight = null)
+{
+    /// <summary>The height in points the value needs: that of its wrapped lines, or else its font's.</summary>
+    public double NeededHeight => WrappedTextHeight ?? FontSize;
+}
 
 /// <summary>Layout facts for one chart on a worksheet.</summary>
 internal sealed record CellsReviewChartLayout

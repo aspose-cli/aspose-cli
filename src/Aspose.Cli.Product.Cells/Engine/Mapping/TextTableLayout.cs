@@ -1,5 +1,6 @@
 using System.Globalization;
 using Aspose.Cells;
+using Aspose.Cli.Sdk;
 using Aspose.Cli.Sdk.IO.Budgets;
 
 namespace Aspose.Cli.Product.Cells.Engine.Mapping;
@@ -105,7 +106,12 @@ internal static class TextTableLayout
     /// the header, an empty row inside the table and a total row each end up in the records.
     /// Empty rows above the first used row are not reported: the export skips them.
     /// </summary>
-    internal static IReadOnlyList<Warning> JsonWarnings(IEnumerable<Worksheet> sheets, ResourceBudgetLedger budgets)
+    /// <param name="sheets">The sheets the export writes.</param>
+    /// <param name="budgets">The budgets of the command.</param>
+    /// <param name="input">The input as a command a hint names opens it.</param>
+    /// <param name="textImport">The options a text input was imported with; null when it needed none.</param>
+    internal static IReadOnlyList<Warning> JsonWarnings(
+        IEnumerable<Worksheet> sheets, ResourceBudgetLedger budgets, ContinuationInput input, CellsTextImportOptions? textImport)
     {
         var warnings = new List<Warning>();
         foreach (Worksheet sheet in sheets)
@@ -119,13 +125,14 @@ internal static class TextTableLayout
             int firstUsed = head.FirstOrDefault(static shape => shape.Filled > 0) is { Filled: > 0 } first ? first.Row : 0;
             warnings.AddRange(Detect(head, tail)
                 .Where(finding => finding.Kind != TextTableFindingKind.Preamble || finding.HeaderRow > firstUsed)
-                .Select(finding => JsonWarning(finding, sheet.Name, firstUsed, capped: tail.Count > 0)));
+                .Select(finding => JsonWarning(finding, sheet.Name, firstUsed, used.End.Column, capped: tail.Count > 0, input, textImport)));
         }
 
         return warnings;
     }
 
-    private static Warning JsonWarning(TextTableFinding finding, string sheetName, int firstUsed, bool capped)
+    private static Warning JsonWarning(
+        TextTableFinding finding, string sheetName, int firstUsed, int lastColumn, bool capped, ContinuationInput input, CellsTextImportOptions? textImport)
     {
         string sheet = $"sheet '{sheetName}'";
         string listed = string.Join(", ", finding.Rows.Take(ListedRows).Select(static row => (row + 1).ToString(CultureInfo.InvariantCulture)))
@@ -136,7 +143,9 @@ internal static class TextTableLayout
                 $"The JSON of {sheet} takes its keys from row {firstUsed + 1}, but the table header is probably row {finding.HeaderRow + 1}; "
                     + (finding.HeaderRow - firstUsed == 1 ? $"row {firstUsed + 1} looks" : $"rows {firstUsed + 1}-{finding.HeaderRow} look")
                     + " like a title or notes, so the header and the rows below it are written as records under the wrong keys.",
-                RemoveRows(sheetName, "the rows above the header", $", \"at\": {firstUsed + 1}, \"count\": {finding.HeaderRow - firstUsed}")),
+                ReadFirst(input, textImport, sheetName, firstUsed, finding.HeaderRow, lastColumn)
+                    + ": the header is inferred from the shape of the rows. If those above it are only a title or notes, "
+                    + RemoveInferredRows("them")),
             TextTableFindingKind.BlankRows => (
                 (finding.Rows.Count == 1 ? $"Row {listed} of {sheet} is" : $"{finding.Rows.Count} rows of {sheet} ({listed}) are")
                     + " empty inside the table" + (capped ? $" (only the first {ScanRows} rows were checked)" : string.Empty)
@@ -146,8 +155,8 @@ internal static class TextTableLayout
                 (finding.Rows.Count == 1 ? $"Row {finding.Rows[0] + 1} of {sheet} is a total row" : $"Rows {listed} of {sheet} are total rows")
                     + $" ('{string.Join("', '", finding.Labels)}'); the JSON writes {(finding.Rows.Count == 1 ? "it as a record" : "them as records")}, "
                     + "so a sum over the records counts the data twice.",
-                "Leave the last records out downstream, or " + LowerFirst(RemoveRows(sheetName, "them",
-                    $", \"at\": {finding.Rows[0] + 1}, \"count\": {finding.LastRow - finding.Rows[0] + 1}"))),
+                "Leave the last records out downstream. To remove them instead, " + LowerFirst(ReadFirst(input, textImport, sheetName, finding.Rows[0], finding.LastRow, lastColumn))
+                    + ": a total row is recognized by its label alone. If they are totals, " + RemoveInferredRows("them")),
             _ => (
                 $"Row {finding.LastRow + 1} of {sheet} is not data: it is the evaluation notice an Aspose.Cells export without a license "
                     + "wrote after the data, and the JSON writes it as a record.",
@@ -161,6 +170,42 @@ internal static class TextTableLayout
 
     private static string RemoveRows(string sheetName, string what, string rows) =>
         $"Convert a copy without {what}: delete_rows with \"sheet\": \"{sheetName}\"{rows} in 'cells edit' with --out, then convert the copy.";
+
+    /// <summary>
+    /// The step before deleting rows the check only infers to be something other than data: a
+    /// command that shows the zero-based rows <paramref name="first"/> to <paramref name="last"/>.
+    /// A text input imported with --encoding or --culture opens only with them, which no command
+    /// that reads or edits takes, so it is converted to a workbook first with the same options.
+    /// </summary>
+    private static string ReadFirst(ContinuationInput input, CellsTextImportOptions? textImport, string sheetName, int first, int last, int lastColumn)
+    {
+        (int from, int to) = (first + 1, last + 1);
+        if (textImport is not null)
+        {
+            ContinuationCommand convert = input.ContinuationAt("cells", "convert").Option("--to", "xlsx");
+            if (textImport.Encoding is { } encoding)
+            {
+                convert.Option(CellsOptionNames.Encoding, encoding);
+            }
+
+            if (textImport.Culture is { } culture)
+            {
+                convert.Option(CellsOptionNames.Culture, culture);
+            }
+
+            return $"Only a conversion opens this input with its options, so convert it first with {convert.Quoted()}, "
+                + $"and read {(from == to ? $"row {from}" : $"rows {from}-{to}")} of sheet '{sheetName}' in that workbook";
+        }
+
+        string command = input.ContinuationAt("cells", "read")
+            .Option("--sheet", sheetName)
+            .Option("--range", $"A{from}:{A1.ColumnName(lastColumn)}{to}")
+            .Quoted();
+        return $"Read them first with {command}";
+    }
+
+    private static string RemoveInferredRows(string what) =>
+        $"convert a copy without {what}: delete_rows in 'cells edit' with --out, then convert the copy.";
 
     private static string LowerFirst(string text) => char.ToLowerInvariant(text[0]) + text[1..];
 
@@ -237,45 +282,107 @@ internal static class TextTableLayout
     }
 
     /// <summary>
-    /// Moves the header past the blocks of notes an export writes before its table, such as an
-    /// "export time, query" row of several values: a block that starts at the header candidate
-    /// and ends in an empty row is notes when the candidate holds a number or a date, as an
-    /// "export time, 2026-10-31" row does and a header's labels do not, or the block holds a
-    /// title, a row of one value, or a row that starts with a "label:" note; and the first row
-    /// after the empty rows is wider than every row of the block, wide enough for a header, and
-    /// holds no number, as a header does. A block of data rows split by an empty row fails the
-    /// test, because its rows are as wide as the rows after it or hold numbers, and so does a
-    /// header narrower than its data rows, which holds labels only, even below a title.
+    /// Moves the header past the blocks of notes an export writes before its table, by either
+    /// of two tests, and keeps it where neither holds.
     /// </summary>
     private static TextRowShape SkipPreambleBlocks(
         IReadOnlyList<TextRowShape> head, TextRowShape[] filled, TextRowShape header, int width)
     {
-        while (header.Row <= MaxPreambleRows)
+        while (header.Row <= MaxPreambleRows
+            && (HeaderBelowMarkedNotes(head, filled, header, width) ?? HeaderBelowPlainNotes(head, filled, header, width)) is { } next)
         {
-            int blockEnd = header.Row;
-            while (blockEnd + 1 < head.Count && head[blockEnd + 1].Filled > 0)
-            {
-                blockEnd++;
-            }
-
-            TextRowShape[] block = [.. filled.Where(shape => shape.Row >= header.Row && shape.Row <= blockEnd)];
-            int blockWidth = block.Max(static shape => shape.Filled);
-            if (blockEnd + 1 >= head.Count
-                || !(header.HoldsNumberOrDate
-                    || block.Any(static shape => shape.Filled == 1 || shape.FirstText?.IndexOfAny([':', '：']) >= 0))
-                || filled.FirstOrDefault(shape => shape.Row > blockEnd) is not { Filled: > 0 } next
-                || next.Row > MaxPreambleRows
-                || next.NumberColumn is not null
-                || next.Filled <= blockWidth
-                || next.Filled * 2 <= width)
-            {
-                return header;
-            }
-
             header = next;
         }
 
         return header;
+    }
+
+    /// <summary>
+    /// The header below notes that show what they are, such as an "export time, query" row of
+    /// several values: a block that starts at the header candidate and ends in an empty row is
+    /// notes when the candidate holds a number or a date, as an "export time, 2026-10-31" row
+    /// does and a header's labels do not, or the block holds a title, a row of one value, or a
+    /// row that starts with a "label:" note; and the first row after the empty rows is wider
+    /// than every row of the block, wide enough for a header, and holds no number, as a header
+    /// does. A block of data rows split by an empty row fails the test, because its rows are as
+    /// wide as the rows after it or hold numbers, and so does a header narrower than its data
+    /// rows, which holds labels only, even below a title.
+    /// </summary>
+    private static TextRowShape? HeaderBelowMarkedNotes(
+        IReadOnlyList<TextRowShape> head, TextRowShape[] filled, TextRowShape header, int width)
+    {
+        (TextRowShape[] block, TextRowShape? below) = BlockAt(head, filled, header.Row);
+        return below is { } next
+            && (header.HoldsNumberOrDate
+                || block.Any(static shape => shape.Filled == 1 || shape.FirstText?.IndexOfAny([':', '：']) >= 0))
+            && next.Row <= MaxPreambleRows
+            && next.NumberColumn is null
+            && next.Filled > block.Max(static shape => shape.Filled)
+            && next.Filled * 2 > width
+                ? next
+                : null;
+    }
+
+    /// <summary>
+    /// The header below notes of text and dates that nothing else marks, such as a row of a
+    /// report name above a row of an export date, or an "exported by, name" row: the blocks from
+    /// the header candidate on are notes when each holds no number and is one row, or several
+    /// of which exactly one holds a date, as a table's rows of dates do not; and the first row
+    /// wider than all of them is wide enough for a header, holds labels only and has a row below
+    /// it that is more than half as wide and holds a number or a date. Blocks as wide as each
+    /// other are all passed over. A first table above another, whose rows hold numbers, are
+    /// several rows of text or several with a date each, a table split by empty rows and a
+    /// header narrower than its all-text data all fail the test.
+    /// </summary>
+    private static TextRowShape? HeaderBelowPlainNotes(
+        IReadOnlyList<TextRowShape> head, TextRowShape[] filled, TextRowShape header, int width)
+    {
+        int notesWidth = 0;
+        int start = header.Row;
+        while (true)
+        {
+            (TextRowShape[] block, TextRowShape? below) = BlockAt(head, filled, start);
+            if (below is not { } next
+                || next.Row > MaxPreambleRows
+                || block.Any(static shape => shape.NumberColumn is not null)
+                || (block.Length > 1 && block.Count(static shape => shape.HoldsDate) != 1))
+            {
+                return null;
+            }
+
+            notesWidth = Math.Max(notesWidth, block.Max(static shape => shape.Filled));
+            if (next.Filled > notesWidth)
+            {
+                return next.Filled * 2 > width && HasLabelsOverData(head, next) ? next : null;
+            }
+
+            start = next.Row;
+        }
+    }
+
+    // A header holds labels only, and the first row below it holds a number or a date and fills more than half as many cells.
+    private static bool HasLabelsOverData(IReadOnlyList<TextRowShape> head, TextRowShape row) =>
+        !row.HoldsNumberOrDate
+        && row.Row + 1 < head.Count
+        && head[row.Row + 1] is { HoldsNumberOrDate: true } data
+        && data.Filled * 2 > row.Filled;
+
+    /// <summary>
+    /// The rows of the block of non-empty rows that starts at <paramref name="start"/>, and the
+    /// first non-empty row after the empty rows below it, or null when the block ends the rows read.
+    /// </summary>
+    private static (TextRowShape[] Rows, TextRowShape? Below) BlockAt(IReadOnlyList<TextRowShape> head, TextRowShape[] filled, int start)
+    {
+        int end = start;
+        while (end + 1 < head.Count && head[end + 1].Filled > 0)
+        {
+            end++;
+        }
+
+        TextRowShape[] rows = [.. filled.Where(shape => shape.Row >= start && shape.Row <= end)];
+        return end + 1 < head.Count && filled.FirstOrDefault(shape => shape.Row > end) is { Filled: > 0 } below
+            ? (rows, below)
+            : (rows, null);
     }
 
     internal static bool IsTotalLabel(string? text)

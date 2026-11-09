@@ -709,6 +709,33 @@ public sealed class CellsCliTests : IDisposable
         Assert.Empty(fitted);
     }
 
+    /// <summary>
+    /// Text wrapped in a column too narrow for one line, at the default row height, shows only
+    /// its first lines: review reports that row with the height the text needs, and nothing once
+    /// the hint's resize_rows has fitted it.
+    /// </summary>
+    [Fact]
+    public void Review_ReportsARowTooShortForItsWrappedTextUntilTheRowIsFitted()
+    {
+        Assert.Equal(0, _workspace.Run("cells", "create", "title.xlsx", "--sheet-names", "Data").ExitCode);
+        File.WriteAllText(_workspace.File("wrap.json"), """
+            {"ops":[
+            {"op":"set_values","sheet":"Data","range":"A1:A2","values":[["Notes"],["This is a long wrapped text that will need several lines to show in a narrow column"]]},
+            {"op":"format_range","sheet":"Data","range":"A2","style":{"wrap":true}}
+            ]}
+            """);
+        File.WriteAllText(_workspace.File("fit.json"), """{"ops":[{"op":"resize_rows","sheet":"Data","first":2}]}""");
+        Assert.Equal(0, _workspace.Run("cells", "edit", "title.xlsx", "--ops", "wrap.json", "--in-place").ExitCode);
+
+        JsonNode finding = Assert.Single(TallTextFindings("cut"));
+        Assert.Equal("row/Data!2", finding["location"]!.GetValue<string>());
+        Assert.Matches(@"^1 row\(s\) are too short for their text, which they cut off; sample: 2 \(12\.75 pt tall, wrapped text needs [\d.]+ pt\)\.$", finding["message"]!.GetValue<string>());
+        Assert.Contains("""{"op":"resize_rows","sheet":"Data","first":2}""", finding["hint"]!.GetValue<string>(), StringComparison.Ordinal);
+
+        Assert.Equal(0, _workspace.Run("cells", "edit", "title.xlsx", "--ops", "fit.json", "--in-place").ExitCode);
+        Assert.Empty(TallTextFindings("fitted"));
+    }
+
     private JsonNode[] TallTextFindings(string name)
     {
         CliResult review = _workspace.Run("review", "title.xlsx", "--out", _workspace.File(name), "--output-format", "json");

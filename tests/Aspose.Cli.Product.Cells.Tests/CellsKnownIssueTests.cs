@@ -315,6 +315,24 @@ public sealed class CellsKnownIssueTests
             $"deleting row 10 of C2:C10 left the validation ending at row {area.EndRow + 1}");
     }
 
+    /// <summary>Auto-fit leaves a row at the height of the cell's font though the value, measured, has a run taller than it.</summary>
+    [LicensedFact]
+    public void AutoFitRows_LeavesAnUnwrappedRichTextRunTallerThanItsRow()
+    {
+        Requires.Windows();
+        using var workbook = new Workbook();
+        Worksheet sheet = workbook.Worksheets[0];
+        Cell cell = sheet.Cells["A1"];
+        cell.PutValue("small BIG small");
+        cell.Characters(6, 3).Font.Size = 30;
+
+        sheet.AutoFitRows();
+
+        int fitted = sheet.Cells.GetRowHeightPixel(0);
+        int measured = cell.GetHeightOfValue();
+        KnownIssue.Reproduces("CELLS-AUTOFIT-RICH-TEXT", fitted < measured, $"row {fitted} px, value {measured} px");
+    }
+
     /// <summary>
     /// In pivots whose column area holds more than one field, the item labels of a column field
     /// other than the innermost are drawn about 16 pixels at 96 DPI further right than the same

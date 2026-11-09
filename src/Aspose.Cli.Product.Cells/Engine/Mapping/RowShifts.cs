@@ -84,7 +84,8 @@ internal sealed class RowShifts
         return shifts.Count == 0 ? null : new Warning(CellsDiagnostics.RowsShifted, $"Rows of sheet '{sheet}' appear shifted: {string.Join("; ", shifts)}. Cells are compared by address, "
                 + "so the cells below a shift are compared with the row that held their address before, and their differences are not edits.")
         {
-            Hint = "To compare row for row, apply the same insert_rows or delete_rows to a copy of the left workbook with 'aspose-cli cells edit --out', and compare that copy.",
+            Hint = "The shift is inferred by matching rows, so read the rows it names in both workbooks first with 'aspose-cli cells read --range'. "
+                + "To compare row for row, apply the same insert_rows or delete_rows to a copy of the left workbook with 'aspose-cli cells edit --out', and compare that copy.",
             Location = CellsAddresses.OfSheet("sheet", sheet),
         };
     }

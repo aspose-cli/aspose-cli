@@ -276,6 +276,34 @@ public sealed class CellsComparisonTests
         Assert.Contains("1 row inserted at right row 6", shift.Message, StringComparison.Ordinal);
         Assert.Contains("1 row deleted at left row 6", reverse.Message, StringComparison.Ordinal);
         Assert.Empty(Compare(left, edited).Warnings);
+        // The rows are matched by inference, so the hint reads them before it names delete_rows.
+        Assert.True(shift.Hint!.IndexOf("cells read", StringComparison.Ordinal) is >= 0 and var read
+            && read < shift.Hint.IndexOf("delete_rows", StringComparison.Ordinal), shift.Hint);
+    }
+
+    /// <summary>The commands, options and operations the hint of a row shift names are in the catalog.</summary>
+    [Fact]
+    public void RowsShifted_HintsCommandsAndOperationsExist()
+    {
+        using var workspace = new TempWorkspace();
+        foreach ((string file, string values) in new[]
+        {
+            ("left.xlsx", """[["Item","Cost"],["Alpha",1],["Beta",2],["Gamma",3],["Delta",4]]"""),
+            ("right.xlsx", """[["Item","Cost"],["Alpha",1],["New",9],["Beta",2],["Gamma",3],["Delta",4]]"""),
+        })
+        {
+            Assert.Equal(0, workspace.Run("cells", "create", file, "--sheet-names", "Quote").ExitCode);
+            CliResult filled = workspace.Run("cells", "edit", file, "--in-place", "--ops",
+                $$$"""[{"op":"set_values","sheet":"Quote","range":"A1","values":{{{values}}}}]""");
+            Assert.True(filled.ExitCode == 0, filled.StdErr);
+        }
+
+        string[] args = ["cells", "compare", "left.xlsx", "right.xlsx", "--output-format", "json"];
+        CliResult compared = workspace.Run(args);
+
+        Assert.Contains("ROWS_SHIFTED", compared.StdOut, StringComparison.Ordinal);
+        Assert.Empty(Aspose.Cli.TestKit.Scenarios.ExecutableHints.Problems(
+            new Aspose.Cli.TestKit.Scenarios.HintRun(args, workspace.Path, Path.GetDirectoryName(workspace.ConfigDirectory)!, Variables: null), compared));
     }
 
     /// <summary>

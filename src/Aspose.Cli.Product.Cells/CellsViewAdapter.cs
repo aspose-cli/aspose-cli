@@ -213,14 +213,21 @@ internal sealed class CellsViewAdapter : IProductViewAdapter<CellsSession>
 
         string samples = string.Join(", ", rows.Samples.Select(static row => string.Create(
             System.Globalization.CultureInfo.InvariantCulture,
-            $"{row.Row + 1} ({row.Height:0.##} pt tall, {row.FontSize:0.##} pt text)")));
+            $"{row.Row + 1} ({row.Height:0.##} pt tall, {NeededText(row)})")));
         int first = rows.Samples[0].Row;
         findings.Add(SheetFinding(CellsReviewChecks.TextTallerThanRow, sheet.Name,
-            $"{rows.Count} row(s) are shorter than the font of their text, which they cut off at the top; sample: {samples}.",
+            $"{rows.Count} row(s) are too short for their text, which they cut off; sample: {samples}.",
             location: rows.Count == 1 ? CellsAddresses.Line(sheet.Name, rows: true, first) : null,
+            // Auto-fit does not fit a row to the larger runs of unwrapped rich text (known issue
+            // CELLS-AUTOFIT-RICH-TEXT, KNOWN-ISSUES.md), nor, as in Excel, to a cell merged over rows.
             hint: $"Fit the rows to their text with resize_rows without a height, which auto-fits them, such as "
-                + $"{{\"op\":\"resize_rows\",\"sheet\":\"{System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping.Encode(sheet.Name)}\",\"first\":{first + 1}}}."));
+                + $"{{\"op\":\"resize_rows\",\"sheet\":\"{System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping.Encode(sheet.Name)}\",\"first\":{first + 1}}}. "
+                + "Auto-fit leaves short a row of unwrapped rich text with a larger run or of a cell merged over several rows: give such a row a height."));
     }
+
+    private static string NeededText(CellsReviewShortRow row) => row.WrappedTextHeight is { } wrapped
+        ? string.Create(System.Globalization.CultureInfo.InvariantCulture, $"wrapped text needs {wrapped:0.##} pt")
+        : string.Create(System.Globalization.CultureInfo.InvariantCulture, $"{row.FontSize:0.##} pt text");
 
     private static void AddSparseRangeFinding(
         ICollection<ReviewFinding> findings,
