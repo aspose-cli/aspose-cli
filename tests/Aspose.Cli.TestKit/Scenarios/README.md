@@ -45,7 +45,8 @@ product's primary format (`xlsx`, `pdf`, `pptx`, `docx`) comes from its `create`
 other format is that document converted with `convert --to <format>`. `<product>.encrypted` is
 the primary-format document encrypted with `ScenarioFixtures.Password`. `<product>.rich` is a
 primary-format document with one marker text (`ScenarioFixtures.RichMarkers`) in each kind of
-content the product makes, such as a header, a comment or speaker notes. `<product>.ops` is a valid
+content the product makes, such as a header, a comment or speaker notes; `ScenarioFixtures.Kinds`
+lists every kind with the tokens a warning names it by. `<product>.ops` is a valid
 one-operation document for the product's `edit --ops`; `markdown` and `text` are source text; and
 `certificate.pfx` is a self-signed certificate protected by `ScenarioFixtures.Password`.
 

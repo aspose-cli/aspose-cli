@@ -193,10 +193,12 @@ This section holds only what a test cannot judge.
   the document) stay separate.
 - **Skills claim only what is tested (C-R38).** What a Skill says about a result's meaning has a
   behavior check behind it. A product Skill need not show every command.
-- **Name what is left behind (C-R42, C-R43).** A convert whose output loses content, and a
-  `replace_text` that leaves a match in place, warn and name what they left. The rules check only
-  that such a result warns at all, on each product's `<product>.rich` fixture; whether the warning
-  names the lost or remaining content is for review.
+- **Name what is left behind (C-R42, C-R43).** A convert or edit whose output loses content, and
+  a `replace_text` that leaves a match in place, warn and name what they left. The rules check it
+  by kind on each product's `<product>.rich` fixture: each kind whose marker is gone after a
+  convert or edit must be in a `LOSSY_CONVERSION`'s `details.content`, and each kind whose marker
+  is left after a replacement in a `TEXT_NOT_REPLACED`'s `details.part`, by the tokens of
+  `ScenarioFixtures.Kinds`. Whether the message and hint say it well is for review.
 
 Kept on purpose:
 

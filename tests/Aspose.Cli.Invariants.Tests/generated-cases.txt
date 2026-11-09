@@ -4723,6 +4723,16 @@ C-R42 | cells convert xlsx -> xlsm
 C-R42 | cells convert xlsx -> xlsx
 C-R42 | cells convert xlsx -> xltm
 C-R42 | cells convert xlsx -> xltx
+C-R42 | cells edit xlsx -> .csv
+C-R42 | cells edit xlsx -> .ods
+C-R42 | cells edit xlsx -> .tsv
+C-R42 | cells edit xlsx -> .txt
+C-R42 | cells edit xlsx -> .xls
+C-R42 | cells edit xlsx -> .xlsb
+C-R42 | cells edit xlsx -> .xlsm
+C-R42 | cells edit xlsx -> .xlsx
+C-R42 | cells edit xlsx -> .xltm
+C-R42 | cells edit xlsx -> .xltx
 C-R42 | pdf convert pdf -> docx
 C-R42 | pdf convert pdf -> epub
 C-R42 | pdf convert pdf -> html
@@ -4733,6 +4743,7 @@ C-R42 | pdf convert pdf -> pdfa-3b
 C-R42 | pdf convert pdf -> pptx
 C-R42 | pdf convert pdf -> txt
 C-R42 | pdf convert pdf -> xlsx
+C-R42 | pdf edit pdf -> .pdf
 C-R42 | slides convert pptx -> html
 C-R42 | slides convert pptx -> html5
 C-R42 | slides convert pptx -> md
@@ -4741,6 +4752,8 @@ C-R42 | slides convert pptx -> pdf
 C-R42 | slides convert pptx -> ppt
 C-R42 | slides convert pptx -> pptm
 C-R42 | slides convert pptx -> pptx
+C-R42 | slides edit pptx -> .pptm
+C-R42 | slides edit pptx -> .pptx
 C-R42 | words convert docx -> azw3
 C-R42 | words convert docx -> doc
 C-R42 | words convert docx -> docm
@@ -4761,6 +4774,16 @@ C-R42 | words convert docx -> pdf
 C-R42 | words convert docx -> rtf
 C-R42 | words convert docx -> txt
 C-R42 | words convert docx -> wordml
+C-R42 | words edit docx -> .doc
+C-R42 | words edit docx -> .docm
+C-R42 | words edit docx -> .docx
+C-R42 | words edit docx -> .dot
+C-R42 | words edit docx -> .dotm
+C-R42 | words edit docx -> .dotx
+C-R42 | words edit docx -> .odt
+C-R42 | words edit docx -> .ott
+C-R42 | words edit docx -> .rtf
+C-R42 | words edit docx -> .xml
 C-R43 | cells replace_text
 C-R43 | slides replace_text
 C-R43 | words replace_text

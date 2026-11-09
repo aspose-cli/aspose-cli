@@ -157,11 +157,15 @@ public static class CliWorkers
     {
         SemaphoreSlim slots = _slots ?? throw new InvalidOperationException("Workers are not enabled.");
         slots.Wait();
+        // The worker that answered the last command it ran, which goes back to the lane however
+        // this ends; one that did not answer, RunIn has stopped.
+        CliWorker? answered = null;
         try
         {
             CliWorker worker = Take(lane, executable, reuse: true);
             bool ranOthers = worker.Commands > 0;
             CliResult result = RunIn(worker, directory, args, environment, timeout);
+            answered = worker;
             // An evaluation limit can be the worker's own doing: Aspose.Cells evaluation mode opens
             // at most 100 files in one process, which a worker reaches across commands while one
             // command line in a process of its own, the child process a worker stands in for,
@@ -171,15 +175,20 @@ public static class CliWorkers
             // preview render worker recycles itself by the same rule.
             if (ranOthers && IsEvaluationLimit(result))
             {
+                answered = null;
                 Stop(worker);
                 worker = Take(lane, executable, reuse: false);
                 result = RunIn(worker, directory, args, environment, timeout);
+                answered = worker;
             }
-            Return(lane, worker);
             return result;
         }
         finally
         {
+            if (answered is not null)
+            {
+                Return(lane, answered);
+            }
             slots.Release();
         }
     }
@@ -188,8 +197,9 @@ public static class CliWorkers
     /// Whether a command failed with <c>EVALUATION_LIMIT</c>. Its exit code, 7, is also that of
     /// the other license errors, <c>LICENSE_FILE_NOT_FOUND</c> and <c>LICENSE_INVALID</c>, so the
     /// code is read from the error the command wrote to stderr: in the JSON formats the
-    /// <c>error.code</c> of the error envelope, after any JSON lines of diagnostics, and in the table
-    /// and Markdown formats the line <c>error EVALUATION_LIMIT: ...</c>.
+    /// <c>error.code</c> of the error envelope, which comes before any JSON lines of diagnostics
+    /// such as the <c>{"event":"failed",...}</c> of <c>--verbose</c>, and in the table and
+    /// Markdown formats the line <c>error EVALUATION_LIMIT: ...</c>.
     /// </summary>
     private static bool IsEvaluationLimit(CliResult result)
     {

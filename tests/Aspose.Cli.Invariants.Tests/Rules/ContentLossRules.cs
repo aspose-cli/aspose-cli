@@ -1,24 +1,23 @@
 using System.Collections.Concurrent;
 using System.Text.Json.Nodes;
 using Aspose.Cli.TestKit.Scenarios;
+using Xunit;
 
 namespace Aspose.Cli.Invariants.Tests;
 
-// What a command leaves out of its output, it says. Each product's rich fixture holds one marker
+// What a command leaves out of its output, it names. Each product's rich fixture holds one marker
 // text in each kind of content the product makes (ScenarioFixtures.RichMarkers); a command that
-// writes the fixture's content to a file is judged by the markers that file still holds. Only
-// silence is judged: a result that carries any warning other than an evaluation notice has said
-// something, and whether that warning names what was lost is for review.
+// writes the fixture's content to a file is judged by the markers that file still holds. Each
+// kind whose marker is gone must be named by its token (RichKind.Content in a LOSSY_CONVERSION's
+// details.content, RichKind.Part in a TEXT_NOT_REPLACED's details.part); any other warning, an
+// evaluation notice included, excuses nothing, and a kind without a token is never excused.
 internal static partial class ContractRules
 {
-    /// <summary>
-    /// The warnings evaluation mode adds to a result, which say that the engine marked or truncated
-    /// what it wrote or read but nothing about what the command left out: <c>EVALUATION_MODE</c>,
-    /// <c>EVALUATION_INPUT_MARKED</c> and <c>EVALUATION_INPUT_TRUNCATED</c>. The fourth evaluation
-    /// code, <c>EVALUATION_LIMIT</c>, is an error: a run that ends with it is not judged.
-    /// </summary>
-    private static readonly HashSet<string> EvaluationNotices =
-        new(["EVALUATION_MODE", "EVALUATION_INPUT_MARKED", "EVALUATION_INPUT_TRUNCATED"], StringComparer.Ordinal);
+    /// <summary>The warning that names, in <c>details.content</c>, the kinds of content an output leaves out.</summary>
+    private const string LossyConversion = "LOSSY_CONVERSION";
+
+    /// <summary>The warning that names, in <c>details.part</c>, the part of the document where an operation left the text it found.</summary>
+    private const string TextNotReplaced = "TEXT_NOT_REPLACED";
 
     /// <summary>A probe of <see cref="OperationRuns.State"/> that evaluation mode stopped (<see cref="RuleRun.Unjudged"/>), as the state records it.</summary>
     private const string EvaluationStopped = "error EVALUATION_LIMIT";
@@ -32,15 +31,19 @@ internal static partial class ContractRules
     /// </summary>
     private static readonly ConcurrentDictionary<string, Lazy<string[]?>> UnreadSamples = new(StringComparer.Ordinal);
 
-    // ----- C-R42: a convert that loses content says so -------------------------------------------
+    // ----- C-R42: a convert or an edit that loses content names it ---------------------------------
 
     /// <summary>
     /// Every <c>convert --to</c> target of a product with a rich fixture, when some product takes a
-    /// file of that format as input: the fixture converts, and the product that reads the output
-    /// (<see cref="ReaderOf"/>) must read every marker back, or the result must warn. A file from
-    /// which the reader reads no marker at all is one it cannot read, such as the frameset of a
-    /// Cells MHTML archive that Words reads as an empty document, so the markers that file holds as
-    /// text count instead. A target no product reads is skipped; today these are the Cells
+    /// file of that format as input, and every extension its <c>edit --out</c> writes
+    /// (<see cref="EditExtensions"/>): the fixture is converted, or edited by the product's
+    /// one-operation document, which touches no marker, and for each kind of content whose marker
+    /// the product that reads the output (<see cref="ReaderOf"/>) does not read back, a
+    /// <c>LOSSY_CONVERSION</c> of the result must name the kind's token (<see cref="RichKind.Content"/>)
+    /// in <c>details.content</c>. A file from which the reader reads no marker at all is one it
+    /// cannot read, such as the frameset of a Cells MHTML archive that Words reads as an empty
+    /// document, so the markers that file holds as text count instead. A convert target no product
+    /// reads is skipped; today these are the Cells
     /// <c>json</c> and <c>xps</c>, the PDF <c>tiff</c> and <c>xps</c>, the Slides <c>gif</c>,
     /// <c>tiff</c> and <c>xps</c>, and the Words <c>openxps</c>, <c>pcl</c>, <c>ps</c> and <c>xps</c>.
     /// </summary>
@@ -48,19 +51,58 @@ internal static partial class ContractRules
     {
         foreach (CliProduct product in catalog.Products.Where(static product => ScenarioFixtures.Products.Contains(product.Id)))
         {
-            if (catalog.Commands.FirstOrDefault(command => command.Words == $"{product.Id} convert")?.Option("--to") is not { } to)
-            {
-                continue;
-            }
             string own = ScenarioFixtures.PrimaryFormat(product.Id);
-            foreach (string target in to.AllowedValues.Where(target => Extensions(catalog, product.Id, target).Any(extension => Readers(catalog, extension).Length > 0)))
+            if (catalog.Commands.FirstOrDefault(command => command.Words == $"{product.Id} convert")?.Option("--to") is { } to)
             {
-                yield return Check("C-R42", $"{product.Id} convert {own} -> {target}", () => ConversionLosses(catalog, product.Id, target), shard: product.Id);
+                foreach (string target in to.AllowedValues.Where(target => Extensions(catalog, product.Id, target).Any(extension => Readers(catalog, extension).Length > 0)))
+                {
+                    yield return Check("C-R42", $"{product.Id} convert {own} -> {target}",
+                        () => OutputLosses(catalog, product.Id, target, "convert", workspace => workspace.Json(product.Id, "convert", SeedRich(workspace, product.Id), "--to", target)),
+                        shard: product.Id);
+                }
+            }
+            foreach (string extension in EditExtensions(catalog, product.Id))
+            {
+                yield return Check("C-R42", $"{product.Id} edit {own} -> {extension}",
+                    () => OutputLosses(catalog, product.Id, extension, "edit", workspace => EditTo(workspace, product.Id, extension)),
+                    shard: product.Id);
             }
         }
     }
 
-    private static IEnumerable<string> ConversionLosses(CliCatalog catalog, string product, string target)
+    /// <summary>
+    /// The extensions a product's <c>edit --out</c> writes, as the command itself states them:
+    /// <c>capabilities</c> does not list what a command writes, and only some of these formats
+    /// follow from a format's uses, so they are the <c>details.available</c> of its refusal of an
+    /// extension no format has, which comes before the input is read. Empty for a product without
+    /// <c>edit</c>.
+    /// </summary>
+    /// <exception cref="InvalidOperationException">The refusal no longer lists the extensions, so the cases cannot be generated.</exception>
+    private static string[] EditExtensions(CliCatalog catalog, string product)
+    {
+        if (!catalog.Commands.Any(command => command.Words == $"{product} edit"))
+        {
+            return [];
+        }
+        using var workspace = new RuleWorkspace();
+        string input = "input." + ScenarioFixtures.PrimaryFormat(product);
+        workspace.Seed(input, "Not a document: the refusal comes before the input is read.");
+        RuleRun refused = workspace.Json(product, "edit", input, "--ops", """{"ops":[]}""", "--out", "output.unwritable");
+        return refused.Document?["error"]?["details"]?["available"] is JsonArray { Count: > 0 } available
+            ? [.. available.Select(static extension => extension!.GetValue<string>())]
+            : throw new InvalidOperationException($"{product} edit does not list the extensions it writes when it refuses one: {refused.Describe()}");
+    }
+
+    /// <summary>Edits the product's rich fixture into <c>output&lt;extension&gt;</c> with its one-operation document.</summary>
+    private static RuleRun EditTo(RuleWorkspace workspace, string product, string extension)
+    {
+        string input = SeedRich(workspace, product);
+        workspace.Seed("edit.ops.json", ScenarioFixtures.Read($"{product}.ops"));
+        return workspace.Json(product, "edit", input, "--ops", "edit.ops.json", "--out", "output" + extension);
+    }
+
+    /// <summary>What <paramref name="write"/>, the <paramref name="verb"/> of the case, left out of the output it wrote and did not name.</summary>
+    private static IEnumerable<string> OutputLosses(CliCatalog catalog, string product, string target, string verb, Func<RuleWorkspace, RuleRun> write)
     {
         if (Unjudgeable(catalog, product) is { } reason)
         {
@@ -71,23 +113,23 @@ internal static partial class ContractRules
             yield break;
         }
         using var workspace = new RuleWorkspace();
-        RuleRun converted = workspace.Json(product, "convert", SeedRich(workspace, product), "--to", target);
+        RuleRun converted = write(workspace);
         if (converted.ExitCode != 0)
         {
             if (!converted.Unjudged)
             {
-                yield return "the convert failed: " + converted.Describe();
+                yield return $"the {verb} failed: " + converted.Describe();
+            }
+            else
+            {
+                Judged($"not judged: evaluation mode stopped the {verb}");
             }
             yield break;
         }
-        if (Warned(converted.Document))
-        {
-            yield break;
-        }
-        IReadOnlyList<KeyValuePair<string, string>> markers = ScenarioFixtures.RichMarkers(product);
+        IReadOnlyList<RichKind> kinds = ScenarioFixtures.RichMarkers(product);
         string[] outputs = [.. OutputFiles(converted.Document)];
         var readers = new SortedSet<string>(StringComparer.Ordinal);
-        var kept = new HashSet<string>(StringComparer.Ordinal);
+        var kept = new HashSet<RichKind>();
         foreach (string output in outputs)
         {
             if (ReaderOf(catalog, product, output) is not { } reader)
@@ -96,33 +138,45 @@ internal static partial class ContractRules
             }
             if (ReadText(catalog, workspace, reader, output) is not { } read)
             {
+                Judged($"not judged: evaluation mode stopped {reader} reading {Path.GetFileName(output)}");
                 yield break;
             }
             readers.Add(reader);
-            Func<string, bool> holds = markers.Any(marker => Holds(read, marker.Value))
+            Func<string, bool> holds = kinds.Any(kind => Holds(read, kind.Marker))
                 ? marker => Holds(read, marker)
                 : marker => ScenarioRunner.TextIn(output, marker) is not null;
-            kept.UnionWith(markers.Where(marker => holds(marker.Value)).Select(static marker => marker.Key));
+            kept.UnionWith(kinds.Where(kind => holds(kind.Marker)));
         }
         if (readers.Count == 0)
         {
             yield return $"no product reads the outputs {string.Join(", ", outputs.Select(Path.GetFileName))}";
             yield break;
         }
-        string[] lost = [.. markers.Select(static marker => marker.Key).Where(kind => !kept.Contains(kind))];
-        if (lost.Length > 0)
+        RichKind[] lost = [.. kinds.Where(kind => !kept.Contains(kind))];
+        string[] named = [.. Named(converted.Document, LossyConversion, "content")];
+        Judged($"judged: {Sentence([.. readers], "and")} reads {Names(kinds.Where(kept.Contains))} back; lost {Names(lost)}; {LossyConversion} names [{string.Join(", ", named)}]");
+        RichKind[] unnamed = [.. lost.Where(kind => kind.Content is { } token && !named.Contains(token, StringComparer.Ordinal))];
+        if (unnamed.Length > 0)
         {
-            yield return $"{Sentence([.. readers], "and")} reads no {Sentence(lost, "or")} marker from the {target} output, and the convert warns of nothing";
+            yield return $"{Sentence([.. readers], "and")} reads no {Sentence([.. unnamed.Select(static kind => kind.Name)], "or")} marker from the {target} output, "
+                + $"and no {LossyConversion} names {Sentence([.. unnamed.Select(static kind => kind.Content!).Distinct(StringComparer.Ordinal)], "or")} in details.content";
+        }
+        RichKind[] unexcused = [.. lost.Where(static kind => kind.Content is null)];
+        if (unexcused.Length > 0)
+        {
+            yield return $"{Sentence([.. readers], "and")} reads no {Sentence([.. unexcused.Select(static kind => kind.Name)], "or")} marker from the {target} output, which no warning can excuse";
         }
     }
 
-    // ----- C-R43: a replacement that leaves a match in place says so -----------------------------
+    // ----- C-R43: a replacement that leaves a match in place names where ---------------------------
 
     /// <summary>
     /// Every product with a rich fixture and a <c>replace_text</c> operation replaces
     /// <see cref="ScenarioFixtures.MarkerPrefix"/>, the start of every marker, in the scope that
-    /// covers the most content (<c>all</c> where the operation has a scope): the product must read
-    /// no marker back from the output, or the result must warn.
+    /// covers the most content (<c>all</c> where the operation has a scope): for each kind of
+    /// content whose marker the product still reads back from the output, a
+    /// <c>TEXT_NOT_REPLACED</c> of the result must name the kind's part (<see cref="RichKind.Part"/>)
+    /// in <c>details.part</c>.
     /// </summary>
     private static IEnumerable<InvariantCase> R43(CliCatalog catalog)
     {
@@ -158,16 +212,30 @@ internal static partial class ContractRules
             {
                 yield return "the edit failed: " + edit.Describe();
             }
+            else
+            {
+                Judged("not judged: evaluation mode stopped the edit");
+            }
             yield break;
         }
-        if (Warned(edit.Document) || ReadText(catalog, workspace, product.Id, output) is not { } read)
+        if (ReadText(catalog, workspace, product.Id, output) is not { } read)
         {
+            Judged($"not judged: evaluation mode stopped {product.Id} reading {output}");
             yield break;
         }
-        string[] left = [.. ScenarioFixtures.RichMarkers(product.Id).Where(marker => Holds(read, marker.Value)).Select(static marker => marker.Key)];
-        if (left.Length > 0)
+        RichKind[] left = [.. ScenarioFixtures.RichMarkers(product.Id).Where(kind => Holds(read, kind.Marker))];
+        string[] named = [.. Named(edit.Document, TextNotReplaced, "part")];
+        Judged($"judged: {product.Id} still reads {Names(left)}; {TextNotReplaced} names [{string.Join(", ", named)}]");
+        RichKind[] unnamed = [.. left.Where(kind => kind.Part is { } token && !named.Contains(token, StringComparer.Ordinal))];
+        if (unnamed.Length > 0)
         {
-            yield return $"{product.Id} still reads the {Sentence(left, "and")} marker{(left.Length == 1 ? string.Empty : "s")} after the replacement, and the edit warns of nothing";
+            yield return $"{product.Id} still reads the {Sentence([.. unnamed.Select(static kind => kind.Name)], "and")} marker{(unnamed.Length == 1 ? string.Empty : "s")} after the replacement, "
+                + $"and no {TextNotReplaced} names {Sentence([.. unnamed.Select(static kind => kind.Part!).Distinct(StringComparer.Ordinal)], "or")} in details.part";
+        }
+        RichKind[] unexcused = [.. left.Where(static kind => kind.Part is null)];
+        if (unexcused.Length > 0)
+        {
+            yield return $"{product.Id} still reads the {Sentence([.. unexcused.Select(static kind => kind.Name)], "and")} marker{(unexcused.Length == 1 ? string.Empty : "s")} after the replacement, which no warning can excuse";
         }
     }
 
@@ -181,9 +249,31 @@ internal static partial class ContractRules
         return input;
     }
 
-    /// <summary>Whether a result carries a warning other than an evaluation notice.</summary>
-    private static bool Warned(JsonNode? document) =>
-        ScenarioContract.Codes(document?["warnings"]).Any(static code => !EvaluationNotices.Contains(code));
+    /// <summary>
+    /// The tokens the result's warnings of <paramref name="code"/> name in <c>details.&lt;key&gt;</c>,
+    /// a token or a list of them, each once.
+    /// </summary>
+    private static IEnumerable<string> Named(JsonNode? document, string code, string key) =>
+        (document?["warnings"] as JsonArray ?? [])
+            .Where(warning => warning?["code"]?.GetValue<string>() == code)
+            .SelectMany(warning => warning?["details"]?[key] switch
+            {
+                JsonArray tokens => tokens.Select(static token => token?.GetValue<string>()),
+                JsonValue token => [token.GetValue<string>()],
+                _ => [],
+            })
+            .OfType<string>()
+            .Distinct(StringComparer.Ordinal);
+
+    /// <summary>The names of the kinds in a sentence, or <c>none</c>.</summary>
+    private static string Names(IEnumerable<RichKind> kinds) =>
+        kinds.Select(static kind => kind.Name).ToArray() is { Length: > 0 } names ? Sentence(names, "and") : "none";
+
+    /// <summary>
+    /// Writes to the test's output whether the case was judged, and by what, so a passing case
+    /// shows it was not skipped: in evaluation mode a read can stop with <c>EVALUATION_LIMIT</c>.
+    /// </summary>
+    private static void Judged(string outcome) => TestContext.Current.TestOutputHelper?.WriteLine(outcome);
 
     private static bool Holds(string text, string marker) => text.Contains(marker, StringComparison.OrdinalIgnoreCase);
 
@@ -203,9 +293,13 @@ internal static partial class ContractRules
         {
             using var workspace = new RuleWorkspace();
             return ReadText(catalog, workspace, key, SeedRich(workspace, key)) is { } read
-                ? [.. ScenarioFixtures.RichMarkers(key).Where(marker => !Holds(read, marker.Value)).Select(static marker => marker.Key)]
+                ? [.. ScenarioFixtures.RichMarkers(key).Where(kind => !Holds(read, kind.Marker)).Select(static kind => kind.Name)]
                 : null;
         })).Value;
+        if (unread is null)
+        {
+            Judged($"not judged: evaluation mode stopped {product} reading its rich fixture");
+        }
         return unread is null ? string.Empty
             : unread.Length > 0 ? $"{product} reads no {Sentence(unread, "or")} marker from its rich fixture"
             : null;
