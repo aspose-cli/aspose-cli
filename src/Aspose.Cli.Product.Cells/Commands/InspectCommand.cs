@@ -20,7 +20,7 @@ internal static class InspectCommand
         {
             Description = "Number of sample rows per sheet. Only with --sample.",
             DefaultValueFactory = _ => 5,
-        }.InRange(1, MaxSampleRows);
+        }.InRange(1, MaxSampleRows).MistakenFor("--preview-rows");
         var detail = new DetailOption(CellsInspectDetails.All, new Dictionary<string, string>
         {
             [CellsInspectDetails.Names] = "defined names",

@@ -22,7 +22,7 @@ internal static class CompareCommand
         {
             Description = "What to compare; formulas adds the formula text to the cell results.",
             DefaultValueFactory = _ => CompareFormulas,
-        }.WithInput(InputKind.None);
+        }.WithInput(InputKind.None).MistakenFor("--compare");
         compare.AcceptOnlyFromAmong(CompareValues, CompareFormulas);
         var maxDiffsOption = new Option<int>("--max-diffs")
         {
@@ -53,6 +53,7 @@ internal static class CompareCommand
             },
             Table)
         {
+            MistakenFor = ["diff"],
             Examples =
             [
                 "cells compare old.xlsx new.xlsx --output-format json",

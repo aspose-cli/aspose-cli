@@ -45,6 +45,33 @@ public sealed class MistakeTests
         Assert.Equal(["app status"], commands.Suggestions);
     }
 
+    /// <summary>An edit that turns one word of an operation's name into another names another operation, however few letters it takes.</summary>
+    [Theory]
+    [InlineData("replace_text", "redact_text")]
+    [InlineData("insert_chart", "insert_image")]
+    [InlineData("hide_slide", "move_slide")]
+    [InlineData("add_notes", "set_notes")]
+    [InlineData("replace-text", "redact_text")]
+    [InlineData("replace text", "redact_text")]
+    public void Of_DoesNotSuggestAnOperationThatDiffersByAWholeWord(string requested, string other) =>
+        Assert.Empty(Mistake.Of(requested, [other]).Suggestions);
+
+    /// <summary>A typo stays within its word, an abbreviation is the word it shortens, names of different word counts are compared whole, and a document's own text with spaces keeps its edit distance.</summary>
+    [Theory]
+    [InlineData("set_titel", "set_title")]
+    [InlineData("replace_txt", "replace_text")]
+    [InlineData("set_propertys", "set_properties")]
+    [InlineData("add_pagenumbers", "add_page_numbers")]
+    [InlineData("Sale 2025", "Sale 2026")]
+    [InlineData("Northh", "North")]
+    [InlineData("insert_img", "insert_image")]
+    [InlineData("insert_tbl", "insert_table")]
+    [InlineData("del_sheet", "delete_sheet")]
+    [InlineData("Title & Content", "Title and Content")]
+    [InlineData("第五条 假期类别", "第五条 假期种类")]
+    public void Of_StillSuggestsATypoInAWord(string requested, string meant) =>
+        Assert.Equal([meant], Mistake.Of(requested, [meant]).Suggestions);
+
     [Fact]
     public void Of_WithoutACloseNameAsksNothing()
     {

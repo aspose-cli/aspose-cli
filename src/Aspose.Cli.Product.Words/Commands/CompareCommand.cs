@@ -53,6 +53,7 @@ internal static class CompareCommand
             },
             Table)
         {
+            MistakenFor = ["diff"],
             Examples =
             [
                 "words compare original.docx changed.docx --output-format json",

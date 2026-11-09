@@ -349,10 +349,17 @@ internal sealed partial class ParsedInvocation
     /// without its product, such as <c>read a.docx</c>, suggests that command of the product whose
     /// format the file's extension names, with the command line that runs it, and a command of the
     /// root written below a product, such as <c>review</c> after a product's name, the command
-    /// line that runs it (<see cref="RootCommandLine"/>).
+    /// line that runs it (<see cref="RootCommandLine"/>). <paramref name="written"/> is the whole
+    /// command line when this one is only the part of it before a value taken for a command
+    /// (<see cref="BeforeValueTakenForCommand"/>).
     /// </summary>
-    private Refusal? UnknownCommand()
+    private Refusal? UnknownCommand(string[]? written = null)
     {
+        if (written is null && BeforeValueTakenForCommand() is { } before)
+        {
+            return Reparsed(before).UnknownCommand([.. ParseResult.Tokens.Select(static item => item.Value)]);
+        }
+
         string[] commands = VisibleCommands();
         if (commands.Length == 0
             || ParseResult.UnmatchedTokens.FirstOrDefault() is not { } token || token.StartsWith('-'))
@@ -363,7 +370,7 @@ internal sealed partial class ParsedInvocation
         string parent = string.Join(' ', [DistributionInfo.CommandName, .. CommandPath.Select(static command => command.Name)]);
         Command[] declaring = [.. Command.Subcommands
             .Where(command => !command.Hidden && command.MistakenNames().Contains(token, StringComparer.Ordinal))];
-        (string Path, IReadOnlyList<string>? Corrected)? product = token is "help" or "version" ? null : ProductCommand(token);
+        (string Path, IReadOnlyList<string>? Corrected)? product = token is "help" or "version" ? null : ProductCommand(token, written);
         string? root = RootCommandLine(token);
         string[] meant = token switch
         {
@@ -386,6 +393,26 @@ internal sealed partial class ParsedInvocation
     }
 
     /// <summary>
+    /// The tokens before a value the parser took for a command: a command's name is matched
+    /// wherever it stands, so the <c>pdf</c> of <c>convert a.docx --to pdf</c> opens that product's
+    /// group, with the words before it left over. Those words were typed at the root, as the
+    /// command line up to that value shows. Null when no leftover word stands before the first
+    /// command; <c>help</c> and <c>version</c> belong to the command they are typed beside.
+    /// </summary>
+    private string[]? BeforeValueTakenForCommand()
+    {
+        Token[] tokens = [.. ParseResult.Tokens];
+        int command = Array.FindIndex(tokens, static item => item.Type == TokenType.Command);
+        return command > 0
+            && ParseResult.UnmatchedTokens.FirstOrDefault() is { } first
+            && first is not ("help" or "version")
+            && !first.StartsWith('-')
+            && Array.FindIndex(tokens, item => item.Value == first) < command
+                ? [.. tokens[..command].Select(static item => item.Value)]
+                : null;
+    }
+
+    /// <summary>
     /// The product command <paramref name="token"/>, typed at the root, stands for: the command of
     /// that name of the product whose format the extension of the first file after it names, as
     /// the catalog routes the file, and the command line with the product written before it when
@@ -393,7 +420,7 @@ internal sealed partial class ParsedInvocation
     /// dropped, and gives no password that no output repeats. Null below the root, without a
     /// file, or for an extension no product with that command claims.
     /// </summary>
-    private (string Path, IReadOnlyList<string>? Corrected)? ProductCommand(string token)
+    private (string Path, IReadOnlyList<string>? Corrected)? ProductCommand(string token, string[]? written)
     {
         if (CommandPath.Count > 0 || _catalog is null
             || ParseResult.UnmatchedTokens.Skip(1).FirstOrDefault(static value => !value.StartsWith('-') && System.IO.Path.GetExtension(value).Length > 1) is not { } file
@@ -408,7 +435,7 @@ internal sealed partial class ParsedInvocation
             return null;
         }
 
-        string[] values = [.. ParseResult.Tokens.Select(static item => item.Value)];
+        string[] values = written ?? [.. ParseResult.Tokens.Select(static item => item.Value)];
         int index = Array.IndexOf(values, token);
         string[] corrected = [.. values[..index], group.Name, .. values[index..]];
         ParsedInvocation line = Reparsed(corrected);

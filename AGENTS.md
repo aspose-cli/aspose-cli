@@ -102,7 +102,8 @@ weaken a check or remove a supported operation to make a test pass.
 - **Scenarios and invariants.** Add a reproduction or example as a `*.scenario.json` in
   `tests/Aspose.Cli.Invariants.Tests/Scenarios` (format in
   `tests/Aspose.Cli.TestKit/Scenarios/README.md`). The `*InvariantTests` generate their cases from
-  `capabilities` and each ops schema.
+  `capabilities` and each ops schema. A wrong name a UAT turns up is one more row of
+  `tests/Aspose.Cli.Invariants.Tests/wrong-names.json` (`WrongNameTests`).
 - **Known violations.** `tests/Aspose.Cli.Invariants.Tests/known-violations.json` lists today's
   product defects, and `generated-cases.txt` beside it every generated case id
   (`KnownViolationsTests`, `GeneratedCaseListTests`). Delete an entry when its defect is fixed.

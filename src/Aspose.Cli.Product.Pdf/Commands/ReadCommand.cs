@@ -13,7 +13,7 @@ internal static class ReadCommand
         {
             Description = "How each page is returned: in reading order, or with the spacing of the page kept.",
             DefaultValueFactory = _ => PdfReadContents.Text,
-        }.WithInput(InputKind.None);
+        }.WithInput(InputKind.None).MistakenFor("--mode");
         content.AcceptOnlyFromAmong([.. PdfReadContents.All]);
         var maxChars = new MaxCharactersOption("the text of the returned pages");
         return new(

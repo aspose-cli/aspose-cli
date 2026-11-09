@@ -6,7 +6,8 @@ namespace Aspose.Cli.Sdk.Errors;
 /// surrounding white space comes first, then names with the same words in another order or with
 /// a word another spelling or synonym of one of theirs, whichever side has it (<c>bottom-middle</c>
 /// for <c>bottom-center</c> and <c>center</c> for <c>middle</c>), then names that contain the
-/// request or are a whole word of it, then names within a small edit distance; ties keep the
+/// request or are a whole word of it, then names within a small edit distance, which in a name
+/// joined by underscores or hyphens, such as an operation's, stays within each word; ties keep the
 /// candidates' order.
 /// </summary>
 internal static class NameSuggestions
@@ -17,6 +18,8 @@ internal static class NameSuggestions
     // Suggestions are computed over at most this many candidates, which bounds the work for
     // documents with very many names; the error still reports the full count.
     private const int MaximumCandidates = 10_000;
+
+    private static readonly char[] WordSeparators = ['_', '-', ' '];
 
     // The shorter of two names must have this many characters to count as contained in the other.
     private const int MinimumOverlap = 3;
@@ -50,7 +53,7 @@ internal static class NameSuggestions
             return [];
         }
 
-        int allowedDistance = Math.Max(1, wanted.Length / 3);
+        int allowedDistance = AllowedEdits(wanted);
         var ranked = new List<(int Rank, int Order, string Name)>();
         var seen = new HashSet<string>(StringComparer.Ordinal);
         int order = 0;
@@ -66,7 +69,7 @@ internal static class NameSuggestions
                 : SameWords(wanted, name) ? 1
                 : fieldNames ? 1 + FieldRank(trimmed, candidate.Trim(), wanted, name, allowedDistance)
                 : Overlaps(trimmed, candidate.Trim()) ? 2
-                : Distance(wanted, name, allowedDistance) is int distance ? 3 + distance
+                : !ChangesAWord(wanted, name) && Distance(wanted, name, allowedDistance) is int distance ? 3 + distance
                 : null;
             if (rank is int value)
             {
@@ -86,6 +89,49 @@ internal static class NameSuggestions
 
     private static string Normalize(string value) => value.Trim().ToUpperInvariant();
 
+    private static int AllowedEdits(string name) => Math.Max(1, name.Length / 3);
+
+    // An edit that turns a word of an identifier into another word names something else, however
+    // few letters it takes: "redact_text", which deletes text, is not "replace_text" with a typo,
+    // nor "insert_image" "insert_chart". A typo stays within its word ("set_titel"), an abbreviation
+    // keeps the first letter and the order of the rest ("insert_img"), and names of different word
+    // counts ("add_pagenumbers") are compared whole. A name with spaces is a document's own text,
+    // such as a heading, which a caller recalls loosely, so it is compared whole too.
+    private static bool ChangesAWord(string wanted, string name)
+    {
+        if (name.Contains(' ', StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        string[] requested = wanted.Split(WordSeparators, StringSplitOptions.RemoveEmptyEntries);
+        string[] existing = name.Split(WordSeparators, StringSplitOptions.RemoveEmptyEntries);
+        return requested.Length > 1 && requested.Length == existing.Length
+            && requested.Zip(existing).Any(static pair =>
+                Distance(pair.First, pair.Second, AllowedEdits(pair.First)) is null
+                && !Abbreviates(pair.First, pair.Second) && !Abbreviates(pair.Second, pair.First));
+    }
+
+    // "IMG" for "IMAGE": the same first letter, and the shorter word's letters in order in the longer.
+    private static bool Abbreviates(string shorter, string longer)
+    {
+        if (shorter.Length > longer.Length || shorter[0] != longer[0])
+        {
+            return false;
+        }
+
+        int matched = 0;
+        foreach (char letter in longer)
+        {
+            if (matched < shorter.Length && letter == shorter[matched])
+            {
+                matched++;
+            }
+        }
+
+        return matched == shorter.Length;
+    }
+
     // The same words in another order, such as "add_image_stamp" for "add_stamp_image", or with
     // a word spelled as another one of the same meaning on either side, such as "bottom-middle"
     // for "bottom-center" and "center" for "middle".
@@ -98,7 +144,7 @@ internal static class NameSuggestions
         return (requested.Length > 1 || respelled) && requested.SequenceEqual(existing, StringComparer.Ordinal);
 
         static string[] Words(string value, bool synonyms = true) =>
-            [.. value.Split(['_', '-', ' '], StringSplitOptions.RemoveEmptyEntries)
+            [.. value.Split(WordSeparators, StringSplitOptions.RemoveEmptyEntries)
                 .Select(word => synonyms && Synonyms.TryGetValue(word, out string? same) ? same : word)
                 .Order(StringComparer.Ordinal)];
     }
