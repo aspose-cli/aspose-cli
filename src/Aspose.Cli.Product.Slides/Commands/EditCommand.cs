@@ -11,7 +11,7 @@ internal static class EditCommand
             new BoundedEditCommand<SlidesOp, SlidesOpsBatch>(new BoundedEditDefinition<SlidesOp, SlidesOpsBatch>
             {
                 Contracts = ProductJsonContext.Definition,
-                VerifyDescription = "Read the staged output back and check the slide order, titles, shape text, body paragraphs, notes, layouts, hidden slides, footers, transitions, sections, properties, slide size and replaced text each operation left.",
+                VerifyDescription = "Read the staged output back and check the slide order, titles, shape text, body paragraphs, notes, layouts, hidden slides, footers, transitions, sections, properties, slide size and replaced text each operation left; inserted pictures, shapes, tables and charts are not read back.",
                 Writes = SlidesFormats.Writable,
             }),
             "Apply one validated, atomic presentation operation batch.",

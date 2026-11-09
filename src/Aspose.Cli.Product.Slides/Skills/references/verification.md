@@ -19,7 +19,8 @@ the review below.
 holds it (each effect it does not hold is an issue). An operation a later one of the batch
 changed again is left out, except for the slide order and the sections: their expectations
 build on each other, so an earlier `insert_slide`, `import_slides`, `move_slide` or
-`insert_section` is checked with the latest one. Every operation it leaves out is in
+`insert_section` is checked with the latest one. A `replace_text` is also left out when a later
+operation writes its find or replacement text in its scope. Every operation it leaves out is in
 `uncheckedOps` with the reason, so `ok: true` says nothing about those. In evaluation mode no
 text is read back.
 
