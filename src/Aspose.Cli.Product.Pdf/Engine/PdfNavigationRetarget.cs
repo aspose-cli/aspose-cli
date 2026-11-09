@@ -14,9 +14,11 @@ namespace Aspose.Cli.Product.Pdf.Engine;
 /// </summary>
 /// <remarks>
 /// Known issue PDF-MOVE-BOOKMARK (KNOWN-ISSUES.md): the SDK reads an omitted (null) destination
-/// coordinate as 0 and cannot write one, so a destination with a coordinate that reads 0 could
-/// only be rebuilt with an invented position. It is left untouched and <see cref="PdfNavigationLoss"/> discloses it. A zoom
-/// of 0 means the same as an omitted zoom, and FitR coordinates are never omitted, so neither
+/// coordinate as 0 and cannot write one. An XYZ left that reads 0 is rebuilt as 0: whether it was
+/// 0 or omitted, a reader opens the page at much the same place. Any other coordinate that reads 0
+/// could only be rebuilt with an invented position, such as the bottom of the page for an omitted
+/// top, so that destination is left untouched and <see cref="PdfNavigationLoss"/> discloses it. A
+/// zoom of 0 means the same as an omitted zoom, and FitR coordinates are never omitted, so neither
 /// is ambiguous. Destinations are built with <see cref="ExplicitDestination.CreateDestination(Page, ExplicitDestinationType, double[])"/>:
 /// one constructed from a page reports page number 0 until the document is saved, which the
 /// census would count as lost.
@@ -121,14 +123,14 @@ internal sealed class PdfNavigationRetarget
 
     /// <summary>
     /// The page, type and coordinates of an explicit destination, or null when it is not
-    /// explicit or a coordinate reads 0 and may stand for an omitted one.
+    /// explicit or a coordinate other than an XYZ left reads 0 and may stand for an omitted one.
     /// </summary>
     private static Entry? Exact(IAppointment? appointment) => appointment switch
     {
         FitExplicitDestination fit => new(fit.PageNumber, ExplicitDestinationType.Fit, []),
         FitBExplicitDestination fit => new(fit.PageNumber, ExplicitDestinationType.FitB, []),
         FitRExplicitDestination fit => new(fit.PageNumber, ExplicitDestinationType.FitR, [fit.Left, fit.Bottom, fit.Right, fit.Top]),
-        XYZExplicitDestination { Left: not 0, Top: not 0 } xyz => new(xyz.PageNumber, ExplicitDestinationType.XYZ, [xyz.Left, xyz.Top, xyz.Zoom]),
+        XYZExplicitDestination { Top: not 0 } xyz => new(xyz.PageNumber, ExplicitDestinationType.XYZ, [xyz.Left, xyz.Top, xyz.Zoom]),
         FitHExplicitDestination { Top: not 0 } fit => new(fit.PageNumber, ExplicitDestinationType.FitH, [fit.Top]),
         FitBHExplicitDestination { Top: not 0 } fit => new(fit.PageNumber, ExplicitDestinationType.FitBH, [fit.Top]),
         FitVExplicitDestination { Left: not 0 } fit => new(fit.PageNumber, ExplicitDestinationType.FitV, [fit.Left]),

@@ -221,9 +221,11 @@ Reproductions: [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownI
 - **Defect:** destination getters read an omitted (null) coordinate as 0 and no public API writes
   one (`XYZExplicitDestination` with `NaN` writes an invalid `NaN` token), so a destination that
   named a moved page cannot always be rebuilt exactly; the SDK has no page move.
-- **CLI behavior:** `move_pages` retargets navigation to and from the moved pages exactly, except
-  a destination with a coordinate of 0, which it leaves without a target and counts in a
-  `NAVIGATION_DEGRADED` with `affectsCompleteness: true`, so `pdf edit --verify` exits 8.
+- **CLI behavior:** `move_pages` retargets navigation to and from the moved pages exactly. An XYZ
+  left that reads 0 is rebuilt as 0, which a reader opens at much the same place as an omitted
+  left. A destination with any other coordinate that reads 0, such as an XYZ top, is left without
+  a target and counted in a `NAVIGATION_DEGRADED` with `affectsCompleteness: true`, so
+  `pdf edit --verify` exits 8.
 - **Workaround:** in the same batch, after the page operations, delete the counted bookmarks with
   `delete_bookmarks` and add them again with `add_bookmark`, taking the pages they opened from
   `pdf inspect --detail outline` of the input; no operation re-creates a link or a named

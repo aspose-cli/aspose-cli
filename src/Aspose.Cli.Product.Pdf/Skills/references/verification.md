@@ -19,7 +19,8 @@ A warning of the edit with `affectsCompleteness: true` is an issue too, with the
 same code, message, location and hint: `REDACTION_NEARBY_TEXT_REMOVED` when a
 cover removed characters beside what a redaction selected, and
 `NAVIGATION_DEGRADED` when bookmarks, links or named destinations no longer
-lead to their page although it is still in the output. With `--verify` such an
+lead to their page although it is still in the output, as when `move_pages`
+moves a page they open at a top that reads 0. With `--verify` such an
 edit exits 8; without it, it exits 0 with the warning alone. The
 `NAVIGATION_DEGRADED` of navigation that led to a page the batch deleted has no
 `affectsCompleteness` and is no issue ([page changes](editing.md)).

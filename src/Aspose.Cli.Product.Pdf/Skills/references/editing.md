@@ -92,9 +92,11 @@ already: read a page with `pdf read --pages 1` before numbering, and act on
 ## Navigation after page moves
 
 `move_pages` keeps the bookmarks, local links and named destinations that lead to
-or from the moved pages, with their destination type, coordinates and zoom,
-except a destination with a coordinate of 0: the SDK reads an omitted coordinate
-as 0, so the CLI cannot rebuild it exactly and leaves it without a target.
+or from the moved pages, with their destination type, coordinates and zoom. The
+SDK reads an omitted coordinate as 0: an XYZ destination whose left reads 0 is
+kept with a left of 0, which opens the page at much the same place, but one whose
+top reads 0, or a fit to the page's height whose left reads 0, is left without a
+target, because the CLI would have to invent the position.
 `delete_pages` leaves navigation to deleted pages without a target. `pdf merge`
 points each copied bookmark at its page with Fit zoom (other locations and zooms
 are lost) and does not carry named destinations. `pdf split` does the same with
@@ -118,7 +120,7 @@ a `NAVIGATION_DEGRADED` warning that counts the entries that no longer lead wher
 they did. In `pdf edit` the entries whose page the batch deleted, as asked, have
 a warning of their own; remove the bookmarks you no longer need with
 `delete_bookmarks`. The entries whose page is still in the output, such as one
-with a coordinate of 0 on a page `move_pages` moved, have a warning with
+whose top reads 0 on a page `move_pages` moved, have a warning with
 `affectsCompleteness: true`, whose hint gives the `pdf inspect --detail outline`
 command that reads the page each bookmark of the input opened: in the same batch,
 after the page operations, delete those bookmarks with `delete_bookmarks` and add
