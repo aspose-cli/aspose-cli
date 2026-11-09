@@ -42,6 +42,7 @@ public sealed record DeleteRowsOp : CellsSheetOp
 /// the latest, and the columns they push right must not hold data past it.
 /// </summary>
 [Operation("insert_columns")]
+[MistakenFor("insert_cols")]
 public sealed record InsertColumnsOp : CellsSheetOp
 {
     /// <summary>The column to insert before, such as C.</summary>
@@ -57,6 +58,7 @@ public sealed record InsertColumnsOp : CellsSheetOp
 
 /// <summary>Deletes columns starting at a column, up to the sheet's last column, XFD.</summary>
 [Operation("delete_columns")]
+[MistakenFor("delete_cols")]
 public sealed record DeleteColumnsOp : CellsSheetOp
 {
     /// <summary>The first column to delete, such as C.</summary>

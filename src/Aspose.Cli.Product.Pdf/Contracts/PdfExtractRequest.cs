@@ -22,6 +22,16 @@ public sealed record PdfExtractRequest
 
     /// <summary>The format the form data is written in (<c>--form-format</c>), with <c>--what forms</c> only.</summary>
     public FormatDescriptor? FormFormat { get; init; }
+
+    /// <summary>
+    /// The quoted command line that extracts the text of the same pages into the same directory,
+    /// with the input password's environment variable when one gave it, which the warning that no
+    /// table was found names; null for an extraction made without a command line.
+    /// </summary>
+    public string? TextExtraction { get; init; }
+
+    /// <summary>The quoted command line that reviews the input, as <see cref="TextExtraction"/> names one; null likewise.</summary>
+    public string? InputReview { get; init; }
 }
 
 /// <summary>What <c>pdf extract --what</c> takes out of a PDF.</summary>

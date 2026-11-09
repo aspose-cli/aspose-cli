@@ -40,7 +40,7 @@ internal static class PdfExtract
             What = request.What,
             Outputs = outputs,
             License = EnvelopeParts.License(state),
-            Warnings = request.What == PdfExtractKinds.Tables && outputs.Count == 0 ? [TablesNotFound()] : null,
+            Warnings = request.What == PdfExtractKinds.Tables && outputs.Count == 0 ? [TablesNotFound(request)] : null,
         };
     }
 
@@ -61,11 +61,11 @@ internal static class PdfExtract
     /// The table absorber recognizes a table by its ruling lines, so an empty result does not
     /// mean the pages hold no table.
     /// </summary>
-    private static Warning TablesNotFound() => new(
+    private static Warning TablesNotFound(PdfExtractRequest request) => new(
         PdfDiagnostics.TablesNotFound,
         "No table was recognized on the selected pages; a table drawn without ruling lines, such as one laid out from Markdown, may not be recognized.")
     {
-        Hint = "Compare with 'pdf extract --what text' or 'aspose-cli review' of the same pages, and take the table from the text if it is there.",
+        Hint = $"Compare with {request.TextExtraction ?? "'pdf extract --what text'"} or {request.InputReview ?? "'aspose-cli review'"}, and take the table from the text if it is there.",
     };
 
     private static IReadOnlyList<(PublishedFile File, int? Page)> ExtractImages(

@@ -216,7 +216,7 @@ public sealed record SetPageSizeOp : PdfOp
 
     /// <summary>The new page size, a preset or a width and height in points.</summary>
     [ReadBack("inspect-result.schema.json#/$defs/pdfPageInfo/properties/pageSize")]
-    [MistakenFor("size")]
+    [MistakenFor("size", "pageSise")]
     public required PageSizeInput PageSize { get; init; }
 
     /// <summary>Whether the content is scaled to the new size rather than kept at its position.</summary>
@@ -627,7 +627,7 @@ public sealed record DeleteBookmarksOp : PdfOp
     /// later operations in the batch address the renumbered outline.
     /// </summary>
     [MinItems(1), Pattern(BookmarkAddress.Pattern, Meaning = BookmarkAddress.Meaning)]
-    [MistakenFor("indexes")]
+    [MistakenFor("indexes", "index")]
     [NotState]
     public IReadOnlyList<string>? Bookmarks { get; init; }
 

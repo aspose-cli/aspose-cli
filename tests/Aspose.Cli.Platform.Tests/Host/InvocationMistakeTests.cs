@@ -23,6 +23,17 @@ public sealed class InvocationMistakeTests
         { "words merge a.docx b.docx", "USAGE_ERROR", "'merge' is not a command of 'aspose-cli words'.", "import_sections operation", "words edit" },
         { "read a.docx", "USAGE_ERROR", "'read' is not a command of 'aspose-cli'.", "Run 'aspose-cli words read a.docx'.", "words read" },
 
+        // The same, with a later value spelled like a command: the file's product still decides.
+        { "convert a.docx --to pdf", "USAGE_ERROR", "'convert' is not a command of 'aspose-cli'.", "Run 'aspose-cli words convert a.docx --to pdf'.", "words convert" },
+        { "convert a.xlsx --to pdf --out a.pdf", "USAGE_ERROR", "'convert' is not a command of 'aspose-cli'.", "Run 'aspose-cli cells convert a.xlsx --to pdf --out a.pdf'.", "cells convert" },
+        { "convert deck.pptx --to pdf", "USAGE_ERROR", "'convert' is not a command of 'aspose-cli'.", "Run 'aspose-cli slides convert deck.pptx --to pdf'.", "slides convert" },
+        { "--output-format json convert a.docx --to pdf", "USAGE_ERROR", "'convert' is not a command of 'aspose-cli'.", "Run 'aspose-cli --output-format json words convert a.docx --to pdf'.", "words convert" },
+        { "convert a.docx pdf", "USAGE_ERROR", "'convert' is not a command of 'aspose-cli'.", "Did you mean 'words convert'?", "words convert" },
+
+        // A word typed before the command it belongs to is still about that command.
+        { "help words", "USAGE_ERROR", "'help' is not a command of 'aspose-cli words'.", "Did you mean 'words --help'?", "words --help" },
+        { "words inpsect a.docx --to pdf", "USAGE_ERROR", "'inpsect' is not a command of 'aspose-cli words'.", "Did you mean 'words inspect'?", "words inspect" },
+
         // A help or version word: as a command, and beside the command it belongs to.
         { "cells help", "USAGE_ERROR", "'help' is not a command of 'aspose-cli cells'.", "Did you mean 'cells --help'?", "cells --help" },
         { "version", "USAGE_ERROR", "'version' is not a command of 'aspose-cli'.", "Did you mean '--version'?", "--version" },
@@ -62,5 +73,16 @@ public sealed class InvocationMistakeTests
         Assert.Contains(message, error.Message, StringComparison.Ordinal);
         Assert.Contains(hint, error.Hint, StringComparison.Ordinal);
         Assert.Equal(suggestion, error.Details?["suggestions"]?.AsArray().FirstOrDefault()?.GetValue<string>());
+    }
+
+    [Fact]
+    public void EnsureValid_DoesNotRepeatAPasswordBesideAValueSpelledLikeACommand()
+    {
+        ParsedInvocation invocation = ActualCommandTree.Parser.Parse("convert a.docx --password hunter2 --to pdf".Split(' '));
+
+        CliException error = Assert.Throws<CliException>(invocation.EnsureValid);
+
+        Assert.Equal("words convert", error.Details?["suggestions"]?.AsArray().FirstOrDefault()?.GetValue<string>());
+        Assert.DoesNotContain("hunter2", error.Message + error.Hint + error.Details?.ToJsonString(), StringComparison.Ordinal);
     }
 }
