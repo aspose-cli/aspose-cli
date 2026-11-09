@@ -147,8 +147,8 @@ aspose-cli cells edit model.xlsx --in-place --set "Assumptions!B10=Upside"
 aspose-cli cells read model.xlsx --sheet Summary --range B3 --output-format json
 ```
 
-The summary NPV moved 301.27 → 320.98, and back when B10 returned to
-`Base` — full precision against independent calculation. The validation does
+The summary NPV moves with the selector, and comes back when B10 returns to
+`Base`. The validation does
 not stop a typo'd scenario value from a CLI write (`aspose-cli docs
 cells/editing`); it turns MATCH into `#N/A` across every dependent cell, and
 the `cells inspect --detail errors` gate catches it.
@@ -206,7 +206,8 @@ shifted anchors.
 | every division | `IFERROR` or an `IF` on the denominator | a shipped `#DIV/0!` is a delivery failure |
 
 Every row is engine-verified against independently computed expectations,
-to full precision: flows (-1000, 300, 400, 500, 200) — NPV 1115.5659, IRR
+to full precision: flows (-1000, 300, 400, 500, 200) in B2:B6 —
+`NPV(0.1,B3:B6)` 1115.5659, so `=B2+NPV(0.1,B3:B6)` 115.5659, and IRR
 15.3221%; the same flows on irregular dates (`=DATE(...)` in the dates
 column, `=XNPV(0.1,B2:B6,A2:A6)`) — XNPV 230.7164, XIRR 29.0813%;
 SUMPRODUCT and INDEX/MATCH exact; `IFERROR(1/0,"n/a")` returns the

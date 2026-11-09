@@ -92,11 +92,11 @@ public sealed record SetValidationOp : CellsSheetOp
     [ReadBack("inspect-result.schema.json#/$defs/cellsValidationInfo/properties/operator")]
     [AllowedValues(typeof(CellsValidationOperators))] public string? Operator { get; init; }
 
-    /// <summary>The first bound (the lower bound for between), or the formula of a custom validation.</summary>
+    /// <summary>The first bound (the lower bound for between), or the formula of a custom validation; always a JSON string, a number as "50000".</summary>
     [ReadBack("inspect-result.schema.json#/$defs/cellsValidationInfo/properties/value1")]
     [Pattern(@"\S")] public string? Value1 { get; init; }
 
-    /// <summary>The upper bound for between and not-between.</summary>
+    /// <summary>The upper bound for between and not-between, written as value1 is.</summary>
     [ReadBack("inspect-result.schema.json#/$defs/cellsValidationInfo/properties/value2")]
     [Pattern(@"\S")] public string? Value2 { get; init; }
 

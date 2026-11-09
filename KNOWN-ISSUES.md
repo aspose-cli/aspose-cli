@@ -7,6 +7,7 @@ SDK alone through `KnownIssue.Reproduces`, and the code that handles it names th
 `KnownIssueCatalogTests` keeps this file true. To update an SDK, change its version in
 `eng/products.json`, run `scripts/sync.ps1` and the `Full` scope; for each reproduction that now
 fails, delete the issue's section, the code that names it and the test, then update the headings.
+The last section, on memory, is a limit no single SDK version owns, and has no id.
 
 ## Aspose.Cells 26.9.0
 
@@ -745,3 +746,18 @@ Reproductions: [WordsKnownIssueTests](tests/Aspose.Cli.Product.Words.Tests/Words
   footers load the Markdown as written; the Words Skill gives the workaround.
 - **Workaround:** write every `[^id]: text` definition at the end of the Markdown, after the
   last heading.
+
+## Memory on untrusted documents
+
+- **Limit:** an SDK expands a document in memory while it loads it, before the CLI's resource
+  budgets can count what is in it, and nothing limits that memory. A document that compresses
+  well is small on disk and large once loaded: a 300 KB DOCX holding 100 MB of XML reaches 1.4 GB
+  before `INPUT_BUDGET_EXCEEDED` refuses it, and a 500 KB XLSX of 8 million cells reaches 0.76 GB
+  and loads.
+- **CLI behavior:** `--max-input-bytes` admits a document by the size of its file, which such a
+  document passes. A command has no deadline unless it is given `--timeout`, or is run by the MCP
+  server's `execute`, whose `timeoutSeconds` defaults to 120. `--timeout` stops the worker by
+  time only and sets no memory limit.
+- **Workaround:** on an untrusted document pass `--timeout` and `--max-input-bytes` on every
+  command, and to cap memory run the CLI under an operating-system limit on the process, such as
+  a Windows job object.

@@ -221,6 +221,9 @@ cells:
 - `set_chart` and `delete_chart` address a chart by `index` or `name` as
   `cells inspect --detail charts` lists them. Chart names need not be unique;
   address a shared name by `index`. An update leaves the value axis as it is.
+- The value axis shows the number format of its data cells, and no operation
+  sets it: data formatted `#,##0.00` labels the axis `400,000.00`. For clean
+  labels format the data `#,##0`, which also changes an existing chart.
 - Chart fonts, axis bounds and category or percentage labels are not
   expressible.
 
@@ -380,13 +383,17 @@ as `.pdf` or `.md`, is refused with `OPTION_INVALID` and a hint naming the
 `cells convert` to run after; `cells convert` writes html with its images embedded. Encryption
 follows the shared rule (`aspose-cli docs editing`). Of the Cells outputs,
 xlsx, xltx, xlsm, xltm, xlsb, xls and ods can be encrypted: an encrypted
-workbook keeps its password in them, and `--encrypt-env` changes it. Every
+workbook keeps its password in them, and `--encrypt-env` changes it. An xls
+file can hold only the old RC4 encryption: when the protection matters,
+deliver xlsx, which uses AES. Every
 other output, csv, tsv, html, mhtml, pdf, xps, json and md included, cannot:
 it drops the encryption with an `ENCRYPTION_REMOVED` warning, and
 `--encrypt-env` on it is `OPTION_INVALID`. A single-sheet output of a multi-sheet workbook reports
 `SHEETS_DROPPED`, and a csv or tsv output of a sheet with charts, pictures or other drawings
 `LOSSY_CONVERSION`, as it does for the sheet's comments and its headers and footers, which are
-no `--verify` issue. `cells create` and `cells convert` follow the same rules. `--bom` starts a
+no `--verify` issue. `cells create` and `cells convert` follow the same rules. A `.txt` output
+is written as csv; for tab-delimited text write a `.tsv` output, or run
+`cells convert book.xlsx --to tsv --out data.txt`. `--bom` starts a
 csv or tsv output with a UTF-8 byte order mark, as on `cells convert`, and is `OPTION_INVALID` on
 any other output.
 

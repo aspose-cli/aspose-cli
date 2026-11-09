@@ -109,10 +109,10 @@ public sealed record CellsConditionalRule
     [AllowedValues(typeof(CellsValidationOperators))] public string? Operator { get; init; }
 
     /// <summary>
-    /// The comparison value of a cell-value rule (the lower bound for between): a number, text as
-    /// it is (Done) or quoted as in Excel ("Done"), or a formula after = (=$F$1). For a formula
-    /// rule, the formula, which anchors at the range's top-left cell and shifts per cell ($ parts
-    /// stay fixed).
+    /// The comparison value of a cell-value rule (the lower bound for between), always a JSON
+    /// string: a number as "50000", text as it is (Done) or quoted as in Excel ("Done"), or a
+    /// formula after = (=$F$1). For a formula rule, the formula, which anchors at the range's
+    /// top-left cell and shifts per cell ($ parts stay fixed).
     /// </summary>
     [Pattern(@"\S")] public string? Value1 { get; init; }
 

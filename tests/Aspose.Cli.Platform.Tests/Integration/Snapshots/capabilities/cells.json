@@ -38,7 +38,7 @@
         "command": "edit",
         "inputSchema": "v2/cells/ops",
         "operationSchema": "aspose-cli schema v2/cells/ops --operation <op>",
-        "contractFingerprint": "sha256:c095f54230520e859803c700b750dd5f13871032c37662ddb663c3acb42f7266",
+        "contractFingerprint": "sha256:b1bd569060ab740c8331a6a2d47747a8de12c5287597ad506d865febdb6c03da",
         "maximumOperationCount": 10000,
         "ops": [
           "add_comment",
@@ -7413,13 +7413,13 @@
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsValidationInfo/properties/operator"
             },
             "value1": {
-              "description": "The first bound (the lower bound for between), or the formula of a custom validation.",
+              "description": "The first bound (the lower bound for between), or the formula of a custom validation; always a JSON string, a number as \"50000\".",
               "type": "string",
               "pattern": "\\S",
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsValidationInfo/properties/value1"
             },
             "value2": {
-              "description": "The upper bound for between and not-between.",
+              "description": "The upper bound for between and not-between, written as value1 is.",
               "type": "string",
               "pattern": "\\S",
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsValidationInfo/properties/value2"
@@ -7858,7 +7858,7 @@
               ]
             },
             "value1": {
-              "description": "The comparison value of a cell-value rule (the lower bound for between): a number, text as it is (Done) or quoted as in Excel (\"Done\"), or a formula after = (=$F$1). For a formula rule, the formula, which anchors at the range's top-left cell and shifts per cell ($ parts stay fixed).",
+              "description": "The comparison value of a cell-value rule (the lower bound for between), always a JSON string: a number as \"50000\", text as it is (Done) or quoted as in Excel (\"Done\"), or a formula after = (=$F$1). For a formula rule, the formula, which anchors at the range's top-left cell and shifts per cell ($ parts stay fixed).",
               "type": "string",
               "pattern": "\\S"
             },
