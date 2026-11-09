@@ -131,7 +131,7 @@ Switches apply to `install.ps1` run from an extracted archive, or to the downloa
 
 | Switch | Effect |
 | --- | --- |
-| `-InstallDirectory <path>` | Install somewhere other than `%LOCALAPPDATA%\Aspose\CLI`. |
+| `-InstallDirectory <path>` | Install somewhere other than `%LOCALAPPDATA%\Aspose\CLI`. An install directory it creates is open only to you, SYSTEM and the administrators; parent folders it creates can be read by other users but not changed. An existing directory keeps its access rules, with a warning if other accounts can write to the install directory, since they could replace the executable. |
 | `-SkipPath`, `-SkipSkills` | Leave PATH or the Skills alone. |
 | `-Mcp` | Also register the MCP server with the detected agent hosts. |
 | `-SkillsRoot <path>` | Install the Skills into this directory instead of the detected hosts. |

@@ -89,6 +89,134 @@ public sealed class PublicationBoundaryTests
         Assert.False(Directory.Exists(transaction));
     }
 
+    [Fact]
+    public void ReplacementStoppedHalfway_PutsTheOriginalBackByteForByte()
+    {
+        using var temp = new TempDirectory();
+        HalfFinishedReplacement state = AbandonHalfFinishedReplacement(temp, BinaryOriginal);
+
+        Assert.Equal(1, AtomicPublicationRecovery.RecoverPendingUnderLease(temp.Path, lease: null));
+
+        Assert.Equal(BinaryOriginal, File.ReadAllBytes(state.Target));
+        Assert.False(Directory.Exists(state.Transaction));
+        Assert.Equal(0, AtomicPublicationRecovery.RecoverPendingUnderLease(temp.Path, lease: null));
+        Assert.Equal(BinaryOriginal, File.ReadAllBytes(state.Target));
+    }
+
+    [Fact]
+    public void ReplacementStoppedHalfway_LeavesAJournalALaterRecoveryStillAccepts()
+    {
+        using var temp = new TempDirectory();
+        HalfFinishedReplacement state = AbandonHalfFinishedReplacement(temp, BinaryOriginal);
+        string journalPath = Path.Combine(state.Transaction, AtomicPublicationPlan.JournalName);
+
+        // The cleanup after a rollback can fail, which leaves the rolled-back journal behind.
+        PublicationRecoveryReport report = new AtomicPublicationRecovery(
+            AtomicPublicationPlan.Open(state.Transaction, PublicationJournal.Read(journalPath))).RollBack();
+
+        Assert.True(report.RecoveryComplete);
+        Assert.Equal("restored", Assert.Single(report.Items).Status);
+        Assert.Equal(BinaryOriginal, File.ReadAllBytes(state.Target));
+        Assert.Equal(0, AtomicPublicationRecovery.RecoverPendingUnderLease(temp.Path, lease: null));
+        Assert.False(Directory.Exists(state.Transaction));
+        Assert.Equal(BinaryOriginal, File.ReadAllBytes(state.Target));
+    }
+
+    [Fact]
+    public void ReplacementStoppedHalfway_ConcurrentRecoveriesLoseNothing()
+    {
+        using var temp = new TempDirectory();
+        HalfFinishedReplacement state = AbandonHalfFinishedReplacement(temp, BinaryOriginal);
+
+        Parallel.For(0, 4, _ =>
+        {
+            try { AtomicPublicationRecovery.RecoverPendingUnderLease(temp.Path, lease: null); }
+            catch (CliException) { } // A loser can find the winner's cleanup half done.
+        });
+
+        Assert.Equal(BinaryOriginal, File.ReadAllBytes(state.Target));
+        AtomicPublicationRecovery.RecoverPendingUnderLease(temp.Path, lease: null);
+        Assert.Equal(BinaryOriginal, File.ReadAllBytes(state.Target));
+        Assert.False(Directory.Exists(state.Transaction));
+    }
+
+    [Fact]
+    public void ReplacementStoppedHalfway_RecoveryThatStoppedAfterItsMoveFinishesOnTheNextRun()
+    {
+        using var temp = new TempDirectory();
+        HalfFinishedReplacement state = AbandonHalfFinishedReplacement(temp, BinaryOriginal);
+        File.Move(state.Displaced, state.Target);
+
+        Assert.Equal(1, AtomicPublicationRecovery.RecoverPendingUnderLease(temp.Path, lease: null));
+
+        Assert.Equal(BinaryOriginal, File.ReadAllBytes(state.Target));
+        Assert.False(Directory.Exists(state.Transaction));
+    }
+
+    [Fact]
+    public void ReplacementStoppedHalfway_DoesNotOverwriteAFileThatTookTheTargetsPlace()
+    {
+        using var temp = new TempDirectory();
+        HalfFinishedReplacement state = AbandonHalfFinishedReplacement(temp, BinaryOriginal);
+        File.WriteAllText(state.Target, "written after the crash");
+
+        Assert.Throws<CliException>(() => AtomicPublicationRecovery.RecoverPendingUnderLease(temp.Path, lease: null));
+
+        Assert.Equal("written after the crash", File.ReadAllText(state.Target));
+        Assert.Equal(BinaryOriginal, File.ReadAllBytes(state.Displaced));
+        Assert.True(Directory.Exists(state.Transaction));
+    }
+
+    [Fact]
+    public void ReplacementStoppedHalfway_WithoutItsStagedFileKeepsTheOriginalForTheUser()
+    {
+        using var temp = new TempDirectory();
+        HalfFinishedReplacement state = AbandonHalfFinishedReplacement(temp, BinaryOriginal);
+        File.Delete(state.Staged);
+
+        Assert.Throws<CliException>(() => AtomicPublicationRecovery.RecoverPendingUnderLease(temp.Path, lease: null));
+
+        Assert.False(File.Exists(state.Target));
+        Assert.Equal(BinaryOriginal, File.ReadAllBytes(state.Displaced));
+    }
+
+    private static readonly byte[] BinaryOriginal = [0x00, 0xFF, 0x0D, 0x0A, 0xFE, 0x41, 0x00];
+
+    private sealed record HalfFinishedReplacement(string Target, string Transaction, string Staged, string Displaced);
+
+    /// <summary>
+    /// Leaves what ReplaceFile leaves when it fails with ERROR_UNABLE_TO_MOVE_REPLACEMENT_2 and
+    /// the process ends: the target moved to its displaced path and the staged file not moved.
+    /// </summary>
+    private static HalfFinishedReplacement AbandonHalfFinishedReplacement(TempDirectory temp, byte[] content)
+    {
+        string target = temp.File("document.bin");
+        File.WriteAllBytes(target, content);
+        FilePublicationSnapshot original = FilePublicationSnapshot.Capture(target);
+        string transaction = Directory.CreateDirectory(temp.File(".aspose-publication-halfway")).FullName;
+        string backups = Directory.CreateDirectory(Path.Combine(transaction, "backups")).FullName;
+        string staged = AtomicPublicationPlan.StagedPath(transaction, target, 0);
+        Directory.CreateDirectory(Path.GetDirectoryName(staged)!);
+        File.WriteAllText(staged, "candidate");
+        FilePublicationSnapshot candidate = FilePublicationSnapshot.Capture(staged);
+        string displaced = Path.Combine(backups, "000001.displaced");
+        File.Move(target, displaced);
+        new PublicationJournal
+        {
+            Operation = "halfway", OwnerProcessId = int.MaxValue, OwnerProcessStartUtcTicks = 1,
+            State = PublicationTransactionState.Publishing,
+            Entries = [new PublicationJournalEntry
+            {
+                Index = 0, Target = target, Staged = staged, Overwrite = true,
+                Original = original, StagedSnapshot = candidate, Size = candidate.Length,
+                Displaced = displaced,
+                TargetParentIdentity = OutputPathValidator.CaptureParentIdentity(target),
+                State = PublicationEntryState.Publishing,
+            }],
+        }.Write(Path.Combine(transaction, AtomicPublicationPlan.JournalName));
+        return new HalfFinishedReplacement(target, transaction, staged, displaced);
+    }
+
     [Theory]
     [InlineData(1)]
     [InlineData(-1)] // An earlier build's, such as the version 1 that kept internal backups.
