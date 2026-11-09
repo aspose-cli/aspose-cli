@@ -1,5 +1,7 @@
 using System.IO.Compression;
 using System.Text;
+using Aspose.Cli.TestKit;
+using Aspose.Cli.TestKit.Scenarios;
 using SkiaSharp;
 using Xunit;
 
@@ -38,6 +40,32 @@ public sealed class OutputScanTests
     {
         Assert.NotEmpty(OutputScan.Find(container, Text(container, $"before {Marker} after"), Sentinel, Marker));
         Assert.Empty(OutputScan.Find(container, Text(container, "before ISOLATION-OTHER after"), Sentinel, Marker));
+    }
+
+    /// <summary>
+    /// The text of a real PDF, which a narrow column breaks over lines, and a clean one. A heading
+    /// keeps it off the first line, which an evaluation notice prints over.
+    /// </summary>
+    [Fact]
+    public void FindsTheTextAPdfShows_AndNothingInACleanOne()
+    {
+        using var workspace = new TempWorkspace();
+        ScenarioLicense.Project(workspace.Path);
+
+        Assert.NotNull(FindInCreatedPdf(workspace, "planted", Marker));
+        Assert.Null(FindInCreatedPdf(workspace, "clean", "ISOLATION-OTHER"));
+    }
+
+    [Fact]
+    public void AFailedPdfRead_IsAFinding() =>
+        Assert.NotNull(OutputScan.FindInPdfRead("output.pdf", new CliResult(5, string.Empty, "refused"), Marker));
+
+    private static string? FindInCreatedPdf(TempWorkspace workspace, string name, string text)
+    {
+        File.WriteAllText(workspace.File($"{name}.html"), $"""<html><body><h1>Heading</h1><div style="width:40px">{text}</div></body></html>""");
+        CliResult created = workspace.Run("pdf", "create", $"{name}.pdf", "--from-html", $"{name}.html");
+        Assert.True(created.ExitCode == 0, created.StdErr);
+        return OutputScan.FindInPdfRead($"{name}.pdf", workspace.Run("pdf", "read", $"{name}.pdf", "--output-format", "json"), Marker);
     }
 
     private static byte[] Sample(string container, SKColor colour) => container switch

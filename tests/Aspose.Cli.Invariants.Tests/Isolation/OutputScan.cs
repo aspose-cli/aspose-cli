@@ -1,6 +1,8 @@
 using System.IO.Compression;
 using System.Text;
+using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
+using Aspose.Cli.TestKit;
 using SkiaSharp;
 
 namespace Aspose.Cli.Invariants.Tests.Isolation;
@@ -9,7 +11,8 @@ namespace Aspose.Cli.Invariants.Tests.Isolation;
 /// Finds a marker resource in what a command wrote: a solid colour in any raster image (an output
 /// file, a part of a package, an image stream of a PDF or a <c>data:</c> URI of a text output) and a
 /// unique text in any byte stream. A package is opened part by part, a PDF stream inflated and an
-/// SVGZ unzipped, so a resource that reached an output under another encoding is still found.
+/// SVGZ unzipped, so a resource that reached an output under another encoding is still found. The
+/// text a PDF shows is searched in what <c>pdf read</c> extracts (<see cref="FindInPdfRead"/>).
 /// </summary>
 internal static partial class OutputScan
 {
@@ -28,6 +31,30 @@ internal static partial class OutputScan
         var findings = new List<string>();
         Scan(name, content, colour, text, 0, findings);
         return findings;
+    }
+
+    /// <summary>Whether the content is a PDF, whose text only <see cref="FindInPdfRead"/> can see.</summary>
+    public static bool IsPdf(ReadOnlySpan<byte> content) => content.StartsWith("%PDF"u8);
+
+    /// <summary>
+    /// Where the text occurs in the JSON result of <c>pdf read</c> on a written file, or null. A PDF
+    /// stream holds a font subset's glyph numbers rather than letters, so no byte scan finds its
+    /// text, and the layout can break the text over lines. A read that fails or stops short is a
+    /// finding too, because the text must be absent, not unseen.
+    /// </summary>
+    public static string? FindInPdfRead(string name, CliResult read, string text)
+    {
+        if (read.ExitCode != 0)
+        {
+            return $"{name}: its text could not be searched, pdf read exited {read.ExitCode}: {read.StdErr}";
+        }
+        JsonNode result = JsonNode.Parse(read.StdOut)!;
+        if (result["window"]!["truncated"]!.GetValue<bool>())
+        {
+            return $"{name}: its text could not be searched to the end, pdf read returned part of it";
+        }
+        string shown = string.Concat(result["pages"]!.AsArray().SelectMany(static page => page!["text"]!.GetValue<string>()).Where(static letter => !char.IsWhiteSpace(letter)));
+        return shown.Contains(text, StringComparison.Ordinal) ? $"{name}: shows the marker text '{text}'" : null;
     }
 
     /// <summary>Whether the text occurs in UTF-8 or UTF-16 in the content.</summary>

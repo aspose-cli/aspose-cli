@@ -776,7 +776,7 @@ public sealed class PdfKnownIssueTests
     }
 
     [LicensedFact]
-    public void ConcurrentSaves_LeaveTheModificationDateOut()
+    public async Task ConcurrentSaves_LeaveTheModificationDateOut()
     {
         using var fixture = new PdfEngineFixture();
         string[] inputs = [.. Enumerable.Range(0, 16).Select(index =>
@@ -797,19 +797,32 @@ public sealed class PdfKnownIssueTests
 
         // Saved one at a time, as the PdfSaveStampTests collection does, every output has the date;
         // other tests of this process may save at the same time, so this test checks only the
-        // concurrent saves.
-        var together = new ConcurrentBag<bool>();
-        Parallel.ForEach(inputs, input =>
+        // concurrent saves. Each save has a thread of its own, because a busy thread pool can run
+        // them one by one, and they start together; a round in which none collides is run again.
+        const int Rounds = 20;
+        var together = new List<bool>();
+        for (int round = 0; round < Rounds && !together.Contains(false); round++)
         {
-            string output = input.Replace("input-", "together-", StringComparison.Ordinal);
-            using (var document = new Document(input))
-            {
-                document.Info.Clear();
-                document.Save(output);
-            }
+            using var start = new Barrier(inputs.Length);
+            Task<bool>[] saves = [.. inputs.Select(input => Task.Factory.StartNew(
+                () =>
+                {
+                    string output = input.Replace("input-", "together-", StringComparison.Ordinal);
+                    using (var document = new Document(input))
+                    {
+                        document.Info.Clear();
+                        // Bounded so that one failed load fails the test instead of hanging the others.
+                        start.SignalAndWait(TimeSpan.FromSeconds(60));
+                        document.Save(output);
+                    }
 
-            together.Add(Stamped(output));
-        });
+                    return Stamped(output);
+                },
+                CancellationToken.None,
+                TaskCreationOptions.LongRunning,
+                TaskScheduler.Default))];
+            together.AddRange(await Task.WhenAll(saves));
+        }
 
         KnownIssue.Reproduces(
             "PDF-CONCURRENT-SAVE-MODDATE",

@@ -195,7 +195,8 @@ internal static class IsolationCases
             $"{problem}{Environment.NewLine}case: {id}{Environment.NewLine}command: aspose-cli {string.Join(' ', args)}{Environment.NewLine}"
             + $"exit {result.ExitCode}; written: {string.Join(", ", written)}{Environment.NewLine}{Truncate(result.StdOut + result.StdErr)}";
 
-        List<string> leaks = Leaks(workspace.Path, written, result, IsolationLayout.SentinelColour, IsolationLayout.Marker);
+        List<string> leaks = Leaks(workspace.Path, written, result, IsolationLayout.SentinelColour, IsolationLayout.Marker,
+            path => process.Run(layout.Input, string.Empty, ["pdf", "read", path, "--output-format", "json"]));
         Assert.True(server.RequestCount == 0, Describe($"The command asked the loopback server for: {string.Join("; ", server.Requests)}"));
         int connections = item.Kind == ReferenceKind.Pipe ? await pipe.SettledConnections() : pipe.Connections;
         Assert.True(connections == 0, Describe($"The command opened the pipe {IsolationPipe.DevicePath(pipe.Name)} that the document names, {connections} time(s): something opened a reference by its path."));
@@ -277,12 +278,18 @@ internal static class IsolationCases
     }
 
     /// <summary>Where the colour or text reached a written file or the command's output.</summary>
-    private static List<string> Leaks(string root, IEnumerable<string> written, CliResult result, SKColor colour, string text)
+    private static List<string> Leaks(string root, IEnumerable<string> written, CliResult result, SKColor colour, string text, Func<string, CliResult> readPdf)
     {
         var leaks = new List<string>();
         foreach (string file in written)
         {
-            leaks.AddRange(OutputScan.Find(file, File.ReadAllBytes(Path.Combine(root, file)), colour, text));
+            string path = Path.Combine(root, file);
+            byte[] content = File.ReadAllBytes(path);
+            leaks.AddRange(OutputScan.Find(file, content, colour, text));
+            if (OutputScan.IsPdf(content) && OutputScan.FindInPdfRead(file, readPdf(path), text) is { } finding)
+            {
+                leaks.Add(finding);
+            }
         }
         leaks.AddRange(OutputScan.Find("stdout", Encoding.UTF8.GetBytes(result.StdOut), colour, text));
         leaks.AddRange(OutputScan.Find("stderr", Encoding.UTF8.GetBytes(result.StdErr), colour, text));
