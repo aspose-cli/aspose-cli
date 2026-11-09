@@ -11,7 +11,9 @@ Windows x64 with a .NET 10 SDK at or above the version in `global.json`, PowerSh
 
 ## Build and test
 
-`scripts/test.ps1` builds once and runs the tests; its help describes the scopes. A licensed run
+`scripts/test.ps1` builds once and runs the tests; its help describes the scopes. It runs one test
+project at a time and limits its build and test threads, so the machine stays usable during a run;
+`-BuildParallelism` and `-TestThreads` change the limits. A licensed run
 needs `ASPOSE_CLI_TEST_LICENSE_PATH` set to a license file. CI runs the `Changed` scope without
 a license, so before opening a pull request run the licensed cases it skips:
 
