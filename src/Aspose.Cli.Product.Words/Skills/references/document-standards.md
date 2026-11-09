@@ -39,6 +39,12 @@ correct a design paragraph by paragraph.
   and `REMOTE_RESOURCES_BLOCKED` names each one as the Markdown wrote it, with
   the reason. To use an image from elsewhere, copy it into that directory or a
   folder below it and reference it by a relative path.
+- A paragraph of text right before a Markdown image, a heading or a line that
+  introduces it, stays on the image's page. Other paragraphs break as usual.
+- A Markdown table's first row is its header: it repeats on every page the
+  table spans (`inspect --detail tables` reports `headerRowCount` 1), its text
+  is bold and every cell is vertically centered, unless the template's table
+  style aligns its cells. The table style itself does not change.
 - Markdown has no Title syntax, and its `#` becomes Heading 1, which the table
   of contents lists. For a document title, write it as a plain first line,
   write the chapters as `#`, and restyle that line in the batch that inserts

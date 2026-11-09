@@ -83,18 +83,21 @@ internal static class WordsReadBack
         (string Location, HeaderFooterType Type)[] places = [("header", HeaderFooterType.HeaderPrimary), ("footer", HeaderFooterType.FooterPrimary)];
         string? location = null;
         string? alignment = null;
+        string? text = null;
         foreach ((string place, HeaderFooterType type) in places)
         {
             if (section.HeadersFooters[type]?.Range.Fields.Cast<Field>().FirstOrDefault(static field => field.Type == FieldType.FieldPage) is { } page)
             {
                 location = place;
-                alignment = (page.Start.GetAncestor(NodeType.Paragraph) as Paragraph)?.ParagraphFormat.Alignment switch
+                var paragraph = page.Start.GetAncestor(NodeType.Paragraph) as Paragraph;
+                alignment = paragraph?.ParagraphFormat.Alignment switch
                 {
                     ParagraphAlignment.Left => "left",
                     ParagraphAlignment.Center => "center",
                     ParagraphAlignment.Right => "right",
                     _ => null,
                 };
+                text = paragraph is null || PageNumberText(paragraph) is not { } written || written == PageNumberPlaceholder ? null : written;
                 break;
             }
         }
@@ -103,10 +106,23 @@ internal static class WordsReadBack
         {
             Location = location,
             Alignment = alignment,
+            Text = text,
             NumberStyle = NumberStyleName(setup.PageNumberStyle),
             Start = setup.RestartPageNumbering ? setup.PageStartingNumber : null,
         };
     }
+
+    /// <summary>What a page number's text writes for the PAGE field.</summary>
+    internal const string PageNumberPlaceholder = "{n}";
+
+    /// <summary>What a page number's text writes for the NUMPAGES field.</summary>
+    internal const string PageCountPlaceholder = "{N}";
+
+    /// <summary>The text of a header or footer paragraph as set_page_numbers writes it, with its PAGE and NUMPAGES fields as placeholders.</summary>
+    internal static string PageNumberText(Paragraph paragraph) =>
+        WordsText.Of(paragraph, listNumbers: false)
+            .Replace("{PAGE}", PageNumberPlaceholder, StringComparison.Ordinal)
+            .Replace("{NUMPAGES}", PageCountPlaceholder, StringComparison.Ordinal);
 
     /// <summary>How a table breaks across pages, as set_table_pagination sets it.</summary>
     internal static (bool KeepTogether, bool AllowRowBreakAcrossPages, int HeaderRowCount, bool KeepWithNext) Pagination(Table table)

@@ -320,6 +320,16 @@ Page numbering targets only the primary header or footer, reuses its first
 PAGE field or appends one in a new paragraph, and keeps the other content. A
 `start` restarts numbering in each selected section; name a `section` when only
 one should restart.
+`text` puts words around the number, such as `"text": "第 {n} 页，共 {N} 页"`:
+`{n}` is written as a PAGE field and `{N}` as a NUMPAGES field; `{PAGE}`,
+`{NUMPAGES}` and `{SECTIONPAGES}`, as a read shows those fields, are refused. The text replaces
+what the paragraph that holds the number held, in that paragraph's font, so
+the number stays in one line with its words, and `inspect --detail sections`
+reads it back as `pageNumbers.text`. A paragraph that also holds an image or
+another object is refused with `OPS_INVALID`, since a text cannot carry it.
+With `text`, moving the number to the other `location` clears the paragraph it
+leaves. A text without `{n}` goes in a new paragraph and leaves any page number
+where it is.
 
 ## Protection and encryption
 
