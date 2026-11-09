@@ -38,8 +38,9 @@ ones the scope starts; a named project that the scope leaves out is skipped as u
 category-only projects of the scope are still checked, so a run split by -TestProject makes
 every check of the whole run. CI plans the scope once and runs each project in its own job.
 
-Test projects run at the same time, each with its log beside its TRX result. Prerequisites are
-checked first: PowerShell 7.4 (tests start pwsh.exe from PATH), and only when the scope needs
+Test projects run one at a time, each with its log beside its TRX result, so the machine stays
+usable during a run; -TestThreads and -BuildParallelism raise or lower the defaults. Prerequisites
+are checked first: PowerShell 7.4 (tests start pwsh.exe from PATH), and only when the scope needs
 them Windows PowerShell 5.1 (the customer installer's runtime), the pinned Chromium that the
 built playwright.ps1 provisions, and the license.
 
@@ -83,6 +84,14 @@ param(
 
     # Runs the tests without a license, under en-US and without tiered compilation, as on CI.
     [switch] $CiLike,
+
+    # The MSBuild node count of the build.
+    [ValidateRange(1, 256)]
+    [int] $BuildParallelism = [Math]::Min(6, [Environment]::ProcessorCount),
+
+    # The xUnit threads of each test project.
+    [ValidateRange(1, 256)]
+    [int] $TestThreads = [Math]::Min(6, [int][Math]::Ceiling([Environment]::ProcessorCount * 1.5)),
 
     # A test that stays silent this long is reported with its name and a mini dump.
     [string] $HangTimeout = '15m'
@@ -357,7 +366,8 @@ if (-not $NoBuild) {
     & dotnet build $solution `
         --configuration $Configuration `
         --no-restore `
-        --nologo
+        --nologo `
+        "-m:$BuildParallelism"
     if ($LASTEXITCODE -ne 0) {
         throw "Solution build failed with exit code $LASTEXITCODE."
     }
@@ -393,7 +403,7 @@ if ($runsBrowser) {
     }
 }
 
-# Starts dotnet with its output copied to files, so concurrent projects never interleave.
+# Starts dotnet with its output copied to a log file.
 function Start-Dotnet {
     param(
         [Parameter(Mandatory)][string[]] $Arguments,
@@ -482,15 +492,13 @@ internal static class StartupHook
     $ciArguments = @('--environment', 'DOTNET_TieredCompilation=0', '--environment', "DOTNET_STARTUP_HOOKS=$cultureHook")
     Write-Host 'CI-LIKE tests run as on the CI runner: no license, en-US culture, DOTNET_TieredCompilation=0.'
 }
-# Concurrent projects share the processor: each runs at most its share of 1.5 test threads
-# per core, so tests with process-start and I/O budgets are not starved.
-$threadsPerProject = [Math]::Max(2, [int][Math]::Ceiling([Environment]::ProcessorCount * 1.5 / $selected.Count))
-$runs = foreach ($project in $selected) {
-    $projectName = [IO.Path]::GetFileNameWithoutExtension($project)
+function Start-TestProject {
+    param([Parameter(Mandatory)][string] $Project)
+    $projectName = [IO.Path]::GetFileNameWithoutExtension($Project)
     $resultsDirectory = Join-Path $resultsRoot $projectName
-    $filter = Get-ProjectFilter $project
+    $filter = Get-ProjectFilter $Project
     $arguments = @(
-        'test', $project,
+        'test', $Project,
         '--configuration', $Configuration,
         '--no-build', '--no-restore', '--nologo',
         '--blame-hang-timeout', $HangTimeout,
@@ -498,16 +506,16 @@ $runs = foreach ($project in $selected) {
         '--logger', 'trx;LogFileName=results.trx',
         '--results-directory', $resultsDirectory) + $ciArguments
     if ($null -ne $filter) { $arguments += @('--filter', $filter) }
-    $arguments += @('--', "xUnit.MaxParallelThreads=$threadsPerProject")
+    $arguments += @('--', "xUnit.MaxParallelThreads=$TestThreads")
     $test = Start-Dotnet $arguments (Join-Path $resultsDirectory 'test.log') ($testEnvironment + @{ ASPOSE_CLI_TEST_ARTIFACTS = $resultsDirectory })
     # A project that runs marked tests lists them, so the slow-test report can leave them out.
-    $listing = if ($included[$project].Count -eq 0) { $null } else {
-        Start-Dotnet @('test', $project, '--configuration', $Configuration, '--no-build', '--no-restore', '--nologo',
+    $listing = if ($included[$Project].Count -eq 0) { $null } else {
+        Start-Dotnet @('test', $Project, '--configuration', $Configuration, '--no-build', '--no-restore', '--nologo',
             '--list-tests', '--filter', $markedFilter) (Join-Path $resultsDirectory 'marked.log') $testEnvironment
     }
     [pscustomobject]@{
         Name = $projectName
-        Project = $project
+        Project = $Project
         ResultsFile = Join-Path $resultsDirectory 'results.trx'
         Test = $test
         Listing = $listing
@@ -517,7 +525,8 @@ $runs = foreach ($project in $selected) {
 $failures = @()
 $skipped = @()
 $unmarkedSlow = @()
-foreach ($run in $runs) {
+foreach ($project in $selected) {
+    $run = Start-TestProject $project
     $exitCode = Complete-Dotnet $run.Test
     $marked = [Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
     if ($null -ne $run.Listing) {

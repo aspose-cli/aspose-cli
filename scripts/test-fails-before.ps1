@@ -75,11 +75,11 @@ param(
 
     # The MSBuild node count of each build.
     [ValidateRange(1, 256)]
-    [int] $BuildParallelism = [Math]::Max(1, [int][Math]::Floor([Environment]::ProcessorCount / 4)),
+    [int] $BuildParallelism = [Math]::Min(6, [Environment]::ProcessorCount),
 
     # The xUnit threads of each test run.
     [ValidateRange(1, 256)]
-    [int] $TestThreads = [Math]::Max(1, [int][Math]::Floor([Environment]::ProcessorCount / 4)),
+    [int] $TestThreads = [Math]::Min(6, [int][Math]::Ceiling([Environment]::ProcessorCount * 1.5)),
 
     # The directory the temporary worktree is created in.
     [string] $WorkRoot = [IO.Path]::GetTempPath(),
