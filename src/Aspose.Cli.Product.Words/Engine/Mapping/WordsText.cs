@@ -89,19 +89,35 @@ internal static class WordsText
     /// The result of a field as a reader sees it: the results of the fields nested in it, such as
     /// a table of contents' hyperlinks and page references, without their codes and marks.
     /// </summary>
-    internal static string ResultOf(Field field)
+    internal static string ResultOf(Field field) => Clean(WithoutFieldCodes(field.Result ?? string.Empty));
+
+    /// <summary>
+    /// Raw SDK text, such as a field's result or a tracked change's, as a reader sees it: each
+    /// field shows its result, without its code and marks. The marks of a field opened before
+    /// the text are dropped too; <paramref name="startsInCode"/> says the text starts inside the
+    /// code of such a field.
+    /// </summary>
+    internal static string WithoutFieldCodes(string raw, bool startsInCode = false)
     {
-        var text = new StringBuilder();
+        var text = new StringBuilder(raw.Length);
         var fields = new FieldNesting();
-        foreach (char c in field.Result ?? string.Empty)
+        if (startsInCode)
+        {
+            fields.Start();
+        }
+
+        foreach (char c in raw)
         {
             switch (c)
             {
                 case ControlChar.FieldStartChar:
                     fields.Start();
                     break;
-                case ControlChar.FieldSeparatorChar when fields.Separate():
-                case ControlChar.FieldEndChar when fields.End():
+                case ControlChar.FieldSeparatorChar:
+                    fields.Separate();
+                    break;
+                case ControlChar.FieldEndChar:
+                    fields.End();
                     break;
                 default:
                     if (!fields.InCode)
@@ -113,7 +129,34 @@ internal static class WordsText
             }
         }
 
-        return Clean(text.ToString());
+        return text.ToString();
+    }
+
+    /// <summary>The runs that hold a field's code, in every story of the document.</summary>
+    internal static IReadOnlySet<Node> FieldCodeRuns(Document document)
+    {
+        var runs = new HashSet<Node>(ReferenceEqualityComparer.Instance);
+        var fields = new FieldNesting();
+        foreach (Node node in document.GetChildNodes(NodeType.Any, true))
+        {
+            switch (node)
+            {
+                case FieldStart:
+                    fields.Start();
+                    break;
+                case FieldSeparator:
+                    fields.Separate();
+                    break;
+                case FieldEnd:
+                    fields.End();
+                    break;
+                case Run when fields.InCode:
+                    runs.Add(node);
+                    break;
+            }
+        }
+
+        return runs;
     }
 
     /// <summary>

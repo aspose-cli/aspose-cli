@@ -42,6 +42,7 @@ internal static class WordsCompare
             Granularity = request.Granularity == "char" ? Granularity.CharLevel : Granularity.WordLevel,
         });
         Revision[] revisions = compared.Revisions.Cast<Revision>().ToArray();
+        IReadOnlySet<Node> fieldCode = WordsText.FieldCodeRuns(compared);
         OutputInfo? output = null;
         string? format = null;
         if (request.Output is { } redline)
@@ -69,10 +70,10 @@ internal static class WordsCompare
                 FormatChangeCount = revisions.Count(static r => r.RevisionType == RevisionType.FormatChange),
                 MoveCount = revisions.Count(static r => r.RevisionType == RevisionType.Moving),
             },
-            Samples = revisions.Take(SampleLimit).Select(static revision => new WordsRevisionSample
+            Samples = revisions.Take(SampleLimit).Select(revision => new WordsRevisionSample
             {
                 Kind = InfoProjection.RevisionKindName(revision.RevisionType),
-                Text = InfoProjection.NodeText(revision) is { } text && WordsText.Clean(text) is { Length: > 0 } clean
+                Text = InfoProjection.NodeText(revision, fieldCode) is { } text && WordsText.Clean(text) is { Length: > 0 } clean
                     ? TextSearch.Truncate(clean, 300)
                     : null,
             }).ToArray(),

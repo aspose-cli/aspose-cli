@@ -67,11 +67,7 @@ internal sealed partial class WordsMutationHandlers
             throw Invalid($"bookmark '{operation.Name}' already exists");
         }
 
-        if (Anchor is not Paragraph paragraph)
-        {
-            throw Invalid("insert_bookmark must target a paragraph block");
-        }
-
+        Paragraph paragraph = AnnotatedParagraph("insert_bookmark", "bookmark");
         paragraph.PrependChild(new BookmarkStart(_document, operation.Name));
         paragraph.AppendChild(new BookmarkEnd(_document, operation.Name));
         return default;
@@ -284,11 +280,7 @@ internal sealed partial class WordsMutationHandlers
 
     public ValueTuple Apply(AddCommentOp operation)
     {
-        if (Anchor is not Paragraph paragraph)
-        {
-            throw Invalid("add_comment must target a paragraph block");
-        }
-
+        Paragraph paragraph = AnnotatedParagraph("add_comment", "comment");
         string initials = string.Concat(operation.Author.Split(' ', StringSplitOptions.RemoveEmptyEntries).Select(static part => char.ToUpperInvariant(part[0])));
         Untracked(() =>
         {
@@ -303,6 +295,15 @@ internal sealed partial class WordsMutationHandlers
         });
         return default;
     }
+
+    /// <summary>
+    /// The paragraph a comment or bookmark anchors to. A block is a paragraph or a table, and an
+    /// address that reaches a table, as a find text inside a cell does, is refused naming that block.
+    /// </summary>
+    private Paragraph AnnotatedParagraph(string op, string annotation) => Anchor as Paragraph
+        ?? throw Invalid(
+            $"{op} must target a paragraph block, but {_resolved.Targets[0]} is a table",
+            $"A {annotation} anchors only to a body paragraph, not to a table or the text in it. Target the paragraph before or after the table instead.");
 
     /// <summary>
     /// Changes comments outside revision tracking: a comment is a review annotation of its own,
