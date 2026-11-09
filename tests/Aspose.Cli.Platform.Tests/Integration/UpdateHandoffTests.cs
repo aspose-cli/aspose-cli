@@ -85,6 +85,7 @@ public sealed class UpdateHandoffTests
         { await Task.Delay(25, cleanup.Token); }
     }
 
+    [Category(TestCategory.Slow)]
     [Fact]
     public async Task StalledHttpsPreparation_TimesOutAndReclaimsWorkerScratch()
     {
@@ -98,17 +99,18 @@ public sealed class UpdateHandoffTests
         using var stopAccepting = new CancellationTokenSource();
         Task<TcpClient> accepted = server.AcceptTcpClientAsync(stopAccepting.Token).AsTask();
         var start = StartInfo(workspace, scratch, $"https://127.0.0.1:{port}/RELEASE-MANIFEST.json",
-            ["update", "install", "--timeout", "3", "--output-format", "json"]);
+            ["update", "install", "--timeout", "10", "--output-format", "json"]);
         using Process cli = Process.Start(start)!;
         Task<string> stdout = cli.StandardOutput.ReadToEndAsync();
         Task<string> stderr = cli.StandardError.ReadToEndAsync();
         try
         {
-            // The budget starts in the parent CLI, so on a loaded machine it can expire before the
-            // preparation worker connects. A connection that does arrive stays open and unanswered
-            // until the CLI exits; the timeout and cleanup contract holds either way.
+            // The budget starts in the parent CLI and leaves a loaded machine time to start the
+            // preparation worker. Its connection stays open and unanswered until the CLI exits, so
+            // the deadline is what ends the transfer.
             await cli.WaitForExitAsync().WaitAsync(TimeSpan.FromSeconds(60));
             Assert.Equal(9, cli.ExitCode);
+            Assert.True(accepted.IsCompletedSuccessfully, "The worker never connected, so no stalled transfer was timed out.");
             Assert.Equal(string.Empty, await stdout);
             Assert.Equal("OPERATION_TIMEOUT", JsonNode.Parse(await stderr)!["error"]!["code"]!.GetValue<string>());
             Assert.Empty(Directory.EnumerateFiles(scratch, "*", SearchOption.AllDirectories));

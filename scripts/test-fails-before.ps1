@@ -1,14 +1,22 @@
 <#
 .SYNOPSIS
-Checks that the tests a change adds or edits fail without its src/ change.
+Checks that the tests a change adds or edits fail without the change's code.
 
 .DESCRIPTION
 A test that still passes once the implementation it covers is taken away proves nothing. This
 script takes a committed change (by default HEAD against its merge base with origin/master; with
 -Commit, one commit against its parent), checks the change's head out into a temporary git
-worktree, reverts src/ there to the merge base while keeping the change's tests, builds, and runs
+worktree, reverts there to the merge base everything outside tests/ but this script (src/, the
+root install.ps1, scripts/, eng/ and the rest) while keeping the change's tests, builds, and runs
 the selected tests twice: with the license that ASPOSE_CLI_TEST_LICENSE_PATH names and without
 it (as -CiLike in scripts/test.ps1 does, by removing the variable from the test processes).
+
+Nothing under tests/ is reverted unless -AlsoRevert names it, so a fix that lives there, such as
+a checker in tests/Aspose.Cli.TestKit/ or a rule of the invariant project, stays beside the test
+that covers it and the test passes. Name such a fix with -AlsoRevert: it is reverted with the
+rest and its lines no longer count as changed test lines. Name the fix alone, by file where a
+folder also holds what the tests need: a test that calls a helper the reverted path added does
+not compile, which proves nothing.
 
 The selected tests are the [Fact] and [Theory] methods (LicensedFact and the other attributes
 whose name ends in Fact or Theory included) whose lines the change adds or edits in a test
@@ -29,8 +37,8 @@ neither mode and each filter term that selected nothing. A test project whose bu
 with compiler errors (CS) in files under tests/ is reported on its own and its tests count as
 failing, but a compiler error alone proves nothing about behavior: the script exits 0 only when
 at least one selected test in a project that builds also runs and fails. Any other build failure (a restore error, an error
-outside tests/, or the reverted src/ itself not building) leaves the change unjudged: the script
-exits 1 and asks for a -Base whose build works.
+outside tests/, or the reverted launcher itself not building) leaves the change unjudged: the
+script exits 1 and asks for a -Base whose build works.
 
 Only committed history is read: the caller's worktree, index and uncommitted changes are never
 touched. The temporary worktree is created under -WorkRoot and removed at the end, even when the
@@ -40,6 +48,7 @@ the machine free. -Plan lists the selected tests and their filters and stops bef
     scripts/test-fails-before.ps1
     scripts/test-fails-before.ps1 -Commit da0c4858
     scripts/test-fails-before.ps1 -Base origin/master -Head test/my-fix -Filter 'DisplayName~C-R39' -TestProject Aspose.Cli.Invariants.Tests
+    scripts/test-fails-before.ps1 -Commit da0c4858 -AlsoRevert tests/Aspose.Cli.TestKit/Scenarios/ScenarioRunner.cs
 #>
 [CmdletBinding()]
 param(
@@ -57,6 +66,9 @@ param(
 
     # The test projects, by name, that -Filter runs in; by default the test projects the change touches.
     [string[]] $TestProject,
+
+    # The paths under tests/ that hold the change's fix rather than its tests.
+    [string[]] $AlsoRevert = @(),
 
     [ValidateSet('Debug', 'Release')]
     [string] $Configuration = 'Release',
@@ -109,10 +121,26 @@ else {
     $rangeName = "$Head against its merge base with $Base"
 }
 $mergeBase = [string]$mergeBase
-$changedSource = @(Invoke-Git @('diff', '--name-only', '--no-renames', $mergeBase, $headSha, '--', 'src/') | Where-Object { $_ })
-Write-Host "FAILS-BEFORE $rangeName ($($mergeBase.Substring(0, 8))..$($headSha.Substring(0, 8))): $($changedSource.Count) src/ file(s) are reverted."
-if ($changedSource.Count -eq 0) {
-    Write-Host 'The change leaves src/ as it was, so every selected test runs against the code it already ran against.'
+# What the change did outside tests/ is its code. This script stays: the running copy is the
+# caller's, and a change to it is no code a test runs against.
+$outsideTests = @('.', ':(exclude)tests/', ':(exclude)scripts/test-fails-before.ps1')
+$AlsoRevert = [string[]]@($AlsoRevert | ForEach-Object { $_.Replace('\', '/') })
+foreach ($path in $AlsoRevert) {
+    if (-not $path.StartsWith('tests/', [StringComparison]::OrdinalIgnoreCase)) {
+        throw "-AlsoRevert takes paths under tests/; everything else is reverted already: $path"
+    }
+    if (@(Invoke-Git @('diff', '--name-only', '--no-renames', $mergeBase, $headSha, '--', $path) | Where-Object { $_ }).Count -eq 0) {
+        throw "-AlsoRevert names a path the change does not touch: $path"
+    }
+}
+$changedCode = @(Invoke-Git (@('diff', '--name-only', '--no-renames', $mergeBase, $headSha, '--') + $outsideTests) | Where-Object { $_ })
+if ($AlsoRevert.Count -ne 0) {
+    $changedCode += @(Invoke-Git (@('diff', '--name-only', '--no-renames', $mergeBase, $headSha, '--') + $AlsoRevert) | Where-Object { $_ })
+}
+$also = if ($AlsoRevert.Count -eq 0) { '' } else { ' and in -AlsoRevert' }
+Write-Host "FAILS-BEFORE $rangeName ($($mergeBase.Substring(0, 8))..$($headSha.Substring(0, 8))): $($changedCode.Count) file(s) outside tests/$also are reverted."
+if ($changedCode.Count -eq 0) {
+    Write-Host 'The change touches nothing outside its tests, so every selected test runs against the code it already ran against. A fix under tests/ is named with -AlsoRevert.'
 }
 
 # The test methods of a C# file, with their fully qualified names and the lines from their first
@@ -440,7 +468,8 @@ $structuralLine = '^\s*(?:$|//|/\*|\*|using\s[^;]*;\s*$|namespace\s|[{}]\s*$|(?:
 $changedLines = [ordered]@{}
 $currentFile = $null
 $deletion = $null
-foreach ($line in @(Invoke-Git @('diff', '-U0', '--no-renames', '--diff-filter=AM', $mergeBase, $headSha, '--', 'tests/')) + @('@@ end')) {
+$keptTests = @('tests/') + @($AlsoRevert | ForEach-Object { ":(exclude)$_" })
+foreach ($line in @(Invoke-Git (@('diff', '-U0', '--no-renames', '--diff-filter=AM', $mergeBase, $headSha, '--') + $keptTests)) + @('@@ end')) {
     if ($null -ne $deletion -and $line.StartsWith('-') -and -not $line.StartsWith('---')) {
         if ($line.Substring(1) -notmatch $structuralLine) { $deletion.Behavior = $true }
         continue
@@ -619,27 +648,31 @@ $exitCode = 1
 try {
     Invoke-Git @('worktree', 'add', '--detach', '--quiet', $worktree, $headSha) | Out-Null
     $created = $true
-    & git -C $worktree restore --source=$mergeBase --staged --worktree -- src/
-    if ($LASTEXITCODE -ne 0) { throw "src/ could not be reverted to $mergeBase in the temporary worktree." }
+    & git -C $worktree restore --source=$mergeBase --staged --worktree -- @outsideTests
+    if ($LASTEXITCODE -ne 0) { throw "The paths outside tests/ could not be reverted to $mergeBase in the temporary worktree." }
+    if ($AlsoRevert.Count -ne 0) {
+        & git -C $worktree restore --source=$mergeBase --staged --worktree -- @AlsoRevert
+        if ($LASTEXITCODE -ne 0) { throw "$($AlsoRevert -join ' ') could not be reverted to $mergeBase in the temporary worktree." }
+    }
     $logs = Join-Path $worktree 'artifacts/fails-before'
     # The launcher and its executable name come from the change's project layout, as in scripts/test.ps1.
     $layout = & (Join-Path $PSScriptRoot 'resolve-project-layout.ps1') -RepositoryRoot $worktree
     $executable = Join-Path (Split-Path -Parent $layout.LauncherProject) "bin/$Configuration/net10.0/$($layout.Names.ExecutableName)"
     $buildArguments = @('--configuration', $Configuration, '--nologo', "-m:$BuildParallelism", '--disable-build-servers', '-p:RestoreLockedMode=true')
 
-    # project name -> the errors its build reported against the reverted src/.
+    # project name -> the errors its build reported against the reverted code.
     $buildFailures = [ordered]@{}
     $launcherErrors = $null
-    Write-Host "BUILD the launcher against the reverted src/ (-m:$BuildParallelism)"
+    Write-Host "BUILD the launcher against the reverted code (-m:$BuildParallelism)"
     $launcherLog = Join-Path $logs 'build-launcher.log'
     if ((Invoke-Dotnet (@('build', $layout.LauncherProject) + $buildArguments) $launcherLog) -ne 0) {
-        # The launcher is src/ alone: when it does not build, no test runs and nothing is learned
-        # about them, so the change cannot be judged against this base.
+        # The launcher lies outside tests/: when it does not build, no test runs and nothing is
+        # learned about them, so the change cannot be judged against this base.
         $launcherErrors = @(Get-Content -LiteralPath $launcherLog | Where-Object { $_ -match ': error ' } | Sort-Object -Unique)
-        Write-Host "CANNOT JUDGE: the reverted src/ does not build, so no selected test ran:"
+        Write-Host "CANNOT JUDGE: the reverted launcher does not build, so no selected test ran:"
         $launcherErrors | Select-Object -First 20 | ForEach-Object { Write-Host "  $($_.Trim())" }
         if ($launcherErrors.Count -eq 0) { Write-Host '  (no compiler error line; the build log is removed with the temporary worktree)' }
-        Write-Host "src/ at $($mergeBase.Substring(0, 8)) does not build in the change's tree. Pass -Base (with -Head) naming an earlier commit whose src/ builds, such as the commit before a series that only builds as a whole."
+        Write-Host "The code at $($mergeBase.Substring(0, 8)) does not build in the change's tree. Pass -Base (with -Head) naming an earlier commit whose code builds, such as the commit before a series that only builds as a whole."
         exit 1
     }
     foreach ($project in @($runs.Keys)) {
@@ -648,7 +681,7 @@ try {
         $projectFile = Join-Path $worktree "tests/$project/$project.csproj"
         if ((Invoke-Dotnet (@('build', $projectFile) + $buildArguments) $log) -ne 0) {
             $errors = @(Get-Content -LiteralPath $log | Where-Object { $_ -match ': error ' } | ForEach-Object { $_.Trim() } | Sort-Object -Unique)
-            # Only compiler errors in the tests show that the tests need the change's src/; a
+            # Only compiler errors in the tests show that the tests need the change's code; a
             # restore error, or an error in any other file, says nothing about them.
             $testsRoot = (Join-Path $worktree 'tests') + [IO.Path]::DirectorySeparatorChar
             $foreign = @($errors | Where-Object {
@@ -666,7 +699,7 @@ try {
         }
     }
     foreach ($project in $buildFailures.Keys) {
-        Write-Host "BUILD-FAILED [$project] does not compile against the reverted src/, so its selected tests fail before the change:"
+        Write-Host "BUILD-FAILED [$project] does not compile against the reverted code, so its selected tests fail before the change:"
         $buildFailures[$project] | Select-Object -First 20 | ForEach-Object { Write-Host "  $($_.Trim())" }
     }
 
@@ -713,7 +746,7 @@ try {
         if ($licensed -eq 'passed' -or $unlicensed -eq 'passed') {
             $passedCases = @(@($entry.licensed) + @($entry.unlicensed) | Where-Object { $_.Outcome -eq 'Passed' -and $_.Case -ne $method } | ForEach-Object Case | Sort-Object -Unique)
             $cases = if ($passedCases.Count -eq 0) { '' } else { ": $($passedCases -join '; ')" }
-            $offending.Add("[$($entry.Project)] $method ($states) passes without the src/ change$cases")
+            $offending.Add("[$($entry.Project)] $method ($states) passes without the change's code$cases")
         }
         elseif ($licensed -ne 'failed' -and $unlicensed -ne 'failed') {
             $offending.Add("[$($entry.Project)] $method ($states) ran in neither mode")
@@ -726,10 +759,10 @@ try {
         }
     }
     if ($buildFailures.Count -ne 0 -and $failedBefore -eq 0) {
-        # A compiler error shows only that the tests name something the reverted src/ lacks, not
+        # A compiler error shows only that the tests name something the reverted code lacks, not
         # that any assertion depends on the change's behavior: a renamed type or a new overload
         # breaks the build just as well. A selected test must also run and fail.
-        $offending.Add("$($buildFailures.Count) test project(s) do not compile without the src/ change, and no selected test ran and failed; name a test that runs without the change with -Filter and -TestProject")
+        $offending.Add("$($buildFailures.Count) test project(s) do not compile without the change's code, and no selected test ran and failed; name a test that runs without the change with -Filter and -TestProject")
     }
     foreach ($term in @($terms | Where-Object { -not $buildFailures.Contains($_.Project) })) {
         $hit = $false
@@ -745,13 +778,13 @@ try {
     if ($null -ne $unselected) { $offending.Add($unselected) }
 
     if ($offending.Count -ne 0) {
-        Write-Host "FAIL $($offending.Count) problem(s) leave the change unproven to fail without its src/ change:"
+        Write-Host "FAIL $($offending.Count) problem(s) leave the change unproven to fail without its code:"
         foreach ($line in $offending) { Write-Host "  $line" }
         $exitCode = 1
     }
     else {
         $compiled = if ($buildFailures.Count -ne 0) { "; $($buildFailures.Count) test project(s) do not compile without it" } else { '' }
-        Write-Host "PASS every selected test fails without the src/ change ($($outcomes.Count) ran$compiled)."
+        Write-Host "PASS every selected test fails without the change's code ($($outcomes.Count) ran$compiled)."
         $exitCode = 0
     }
 }

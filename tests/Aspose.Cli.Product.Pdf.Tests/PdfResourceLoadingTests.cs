@@ -324,7 +324,16 @@ public sealed class PdfResourceLoadingTests
     // URI, must not appear in the output.
     public static TheoryData<string, string> SvgImageUses => Combine(["create", "stamp", "watermark"]);
 
-    public static TheoryData<string, string> HtmlUses => Combine(["inline-svg", "data-svg", "img"]);
+    public static TheoryData<string, string> HtmlUses
+    {
+        get
+        {
+            TheoryData<string, string> uses = Combine(["inline-svg", "data-svg", "img", "local-svg"]);
+            // A local SVG can also climb out of the input directory by a relative path.
+            uses.Add("local-svg", "relative");
+            return uses;
+        }
+    }
 
     [Theory]
     [MemberData(nameof(SvgImageUses))]
@@ -358,8 +367,10 @@ public sealed class PdfResourceLoadingTests
         {
             "inline-svg" => svg,
             "data-svg" => $"""<img src="data:image/svg+xml;base64,{Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(svg))}" width="200" height="200">""",
+            "local-svg" => """<img src="image.svg" width="200" height="200">""",
             _ => $"""<img src="{reference}" width="200" height="200">""",
         };
+        File.WriteAllText(workspace.File("in/image.svg"), svg);
         File.WriteAllText(workspace.File("in/input.html"), $"<html><body>{body}</body></html>");
 
         CliResult result = workspace.Run("pdf", "create", "in/output.pdf", "--from-html", "in/input.html", "--output-format", "json");
@@ -418,6 +429,7 @@ public sealed class PdfResourceLoadingTests
         {
             "path" => full,
             "unc" => unc,
+            "relative" => "../secret/sentinel.png",
             _ => new Uri(full).AbsoluteUri,
         };
     }

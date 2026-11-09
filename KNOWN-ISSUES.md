@@ -444,8 +444,9 @@ Reproductions: [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownI
 ### PDF-CONCURRENT-SAVE-MODDATE
 
 - **Defect:** `Document.Save` writes the modification date (`ModDate`) into the document
-  information of every PDF it saves, but leaves it out of documents saved while other documents
-  of the same process are being saved.
+  information of a PDF it saves, but may leave it out when other documents of the same process
+  are being saved at the same time. How many of the concurrent outputs lose it varies from run
+  to run; saved one at a time, every output has it.
 - **CLI behavior:** none visible: every command runs in its own process, and the MCP server and
   the app run each command in a child process of its own.
 

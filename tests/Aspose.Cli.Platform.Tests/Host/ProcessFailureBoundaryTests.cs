@@ -100,7 +100,9 @@ public sealed class ProcessFailureBoundaryTests
             return;
         }
         Assert.NotEqual(0, child.ExitCode);
-        await Task.WhenAll(output, error).WaitAsync(TimeSpan.FromSeconds(5));
+        // The child has exited, which is what this test checks; this wait only collects its output,
+        // and a process the crash left behind can hold the pipes open for a while on a loaded machine.
+        await Task.WhenAll(output, error).WaitAsync(TimeSpan.FromSeconds(30));
     }
 
     [Fact]

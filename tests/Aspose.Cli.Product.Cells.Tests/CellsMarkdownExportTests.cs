@@ -1,5 +1,6 @@
 using System.Text.Json.Nodes;
 using Aspose.Cli.TestKit;
+using Aspose.Cli.TestKit.Scenarios;
 using Xunit;
 
 namespace Aspose.Cli.Product.Cells.Tests;
@@ -13,6 +14,9 @@ namespace Aspose.Cli.Product.Cells.Tests;
 public sealed class CellsMarkdownExportTests : IDisposable
 {
     private readonly TempWorkspace _workspace = new();
+
+    /// <summary>A licensed save picks the sheet of a text table another way than an evaluation one.</summary>
+    public CellsMarkdownExportTests() => ScenarioLicense.Project(_workspace.Path);
 
     public void Dispose() => _workspace.Dispose();
 

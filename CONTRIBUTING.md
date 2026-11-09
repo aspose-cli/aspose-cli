@@ -28,7 +28,8 @@ The invariant tests run their command lines in warm `aspose-cli` worker processe
 sets the number of workers.
 `scripts/install-local.ps1` installs a development build.
 
-A test that a change adds or edits must fail without the change's `src/` code.
+A test that a change adds or edits must fail without the change's code: everything it changes
+outside `tests/`, and a fix under `tests/` that `-AlsoRevert` names.
 `scripts/test-fails-before.ps1` checks this for the committed change, with and without the
 license; its help describes how it selects the tests, when a change outside test methods needs
 `-Filter` and `-TestProject`, and what it counts as failing. It is for tests that pin a fix or
