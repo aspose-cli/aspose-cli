@@ -1299,7 +1299,7 @@
             ],
             "secret": false,
             "valueSource": "command-line",
-            "description": "Read the staged output back and check the slide order, titles, shape text, body paragraphs, notes, layouts, hidden slides, footers, transitions, sections, properties, slide size and replaced text each operation left. A warning with affectsCompleteness about content the edit lost is also an issue; uncheckedOps lists each operation not read back."
+            "description": "Read the staged output back and check the slide order, titles, shape text, body paragraphs, notes, layouts, hidden slides, footers, transitions, sections, properties, slide size and replaced text each operation left; inserted pictures, shapes, tables and charts are not read back. A warning with affectsCompleteness about content the edit lost is also an issue; uncheckedOps lists each operation not read back."
           }
         ],
         "arguments": [

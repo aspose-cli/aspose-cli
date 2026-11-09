@@ -283,6 +283,57 @@ public sealed class ExecutableHintTests : IDisposable
     }
 
     /// <summary>
+    /// The review findings of a Words document's tracked changes and comments locate nothing
+    /// narrower than the document, so each hint names the read that gives every item's block. That
+    /// command runs as written, for real, on the input as the review named it: a plain file, one
+    /// at a path with a space, and an encrypted one, with the review's password variable.
+    /// </summary>
+    [Theory]
+    [InlineData("marked.docx", false)]
+    [InlineData("two words/marked copy.docx", false)]
+    [InlineData("locked.docx", true)]
+    public void ReviewFindingHints_OfTrackedChangesAndComments_RunAsWritten(string input, bool encrypted)
+    {
+        const string Variable = "DOC_PASSWORD";
+        var variables = new Dictionary<string, string?> { [Variable] = ScenarioFixtures.Password };
+        WriteTrackedDocument(input, encrypted ? Variable : null, variables);
+        string[] review = ["review", input, .. encrypted ? new[] { "--password-env", Variable } : [], "--out", "evidence", "--output-format", "json"];
+
+        JsonNode reviewed = _workspace.RunWithEnv(variables, review).Json();
+
+        string[] password = encrypted ? ["--password-env", Variable] : [];
+        foreach ((string code, string detail, int block) in new[] { ("WORDS_REVISIONS_PRESENT", "revisions", 2), ("WORDS_COMMENTS_PRESENT", "comments", 3) })
+        {
+            string hint = reviewed["findings"]!.AsArray().Single(finding => finding!["code"]!.GetValue<string>() == code)!["hint"]!.GetValue<string>();
+            HintAction command = Assert.Single(ExecutableHints.Extract(CliCatalog.Current, hint), static action => action.Kind == HintKind.Command);
+            Assert.Equal(["words", "inspect", Path.GetFullPath(_workspace.File(input)), .. password, "--detail", detail, "--output-format", "json"], command.Tokens);
+
+            CliResult listed = _workspace.RunWithEnv(variables, [.. command.Tokens]);
+
+            Assert.True(listed.ExitCode == 0, listed.StdErr);
+            Assert.All(listed.Json()[detail]!.AsArray(), item => Assert.Equal(block, item!["block"]!.GetValue<int>()));
+            Assert.NotEmpty(listed.Json()[detail]!.AsArray());
+            // The hint's operation names are the document's own, as a warning's are judged.
+            Assert.Empty(ExecutableHints.Problems(
+                new HintRun(review, _workspace.Path, Path.GetDirectoryName(_workspace.ConfigDirectory)!, variables),
+                Warning(hint)));
+        }
+    }
+
+    /// <summary>A Words document with a tracked change in block 2 and a comment on block 3, encrypted with <paramref name="encryptWith"/> when it is given.</summary>
+    private void WriteTrackedDocument(string name, string? encryptWith, Dictionary<string, string?> variables)
+    {
+        Directory.CreateDirectory(Path.GetDirectoryName(_workspace.File(name))!);
+        File.WriteAllText(_workspace.File("source.md"), "Intro paragraph.\n\nSecond clause reads thirty days.\n\nThird paragraph.\n");
+        File.WriteAllText(_workspace.File("mark.json"), """{"ops":[{"op":"replace_text","find":"thirty","replace":"forty"},{"op":"add_comment","target":{"find":"Third"},"text":"Check this.","author":"Legal"}]}""");
+        string[] encrypt = encryptWith is null ? [] : ["--encrypt-env", encryptWith];
+        Assert.Equal(0, _workspace.RunWithEnv(variables, ["words", "create", "source.docx", "--from-markdown", "source.md", "--overwrite", "--output-format", "json"]).ExitCode);
+        CliResult marked = _workspace.RunWithEnv(variables,
+            ["words", "edit", "source.docx", "--ops", "mark.json", "--out", name, "--overwrite", "--track-changes", "--author", "Legal", .. encrypt, "--output-format", "json"]);
+        Assert.True(marked.ExitCode == 0, marked.StdErr);
+    }
+
+    /// <summary>
     /// A <c>&lt;...-env&gt;</c> placeholder in the operations of a quoted command takes the variable
     /// the run sets; without one the command is left to the catalog and its operations to the ops
     /// schema, which still reports a field the operation does not have.

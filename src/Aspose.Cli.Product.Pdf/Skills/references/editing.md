@@ -133,8 +133,21 @@ longer lead to their page. Then follow the destination checks in
 
 Redaction is destructive: keep the baseline, apply `redact_text` or
 `redact_area`, then verify with `pdf search` and `review`. `redact_text`
-works on extractable text and performs no OCR; it matches any case unless
-`caseSensitive` is `true`. A black rectangle or zero search
+works on extractable text and performs no OCR; `find` is the literal text, or
+with `"regex": true` a regular expression, and it matches any case unless
+`caseSensitive` is `true`. One batch can fill a form, redact it, number the
+pages and encrypt the result:
+
+```json
+{ "ops": [
+  { "op": "set_form_field", "name": "applicant", "value": "Li Lei" },
+  { "op": "redact_text", "find": "1[3-9]\\d{9}", "regex": true },
+  { "op": "add_page_numbers", "text": "{n} / {N}" },
+  { "op": "encrypt_document", "userPasswordEnv": "PASSWORD", "ownerPasswordEnv": "OWNERPASSWORD", "permissions": { "print": true } }
+] }
+```
+
+A black rectangle or zero search
 hits alone is not proof that all sensitive content was removed; a raw-byte
 absence check for a known literal is additional evidence only, because PDF text
 can be encoded or compressed. Every edit leaves out the objects that nothing in

@@ -114,7 +114,7 @@ Options:
   --ops <ops>                    The ops JSON, an object with ops or the bare array of operations: a path to the document, '-' to read it from stdin, or the document itself when the value starts with { or [ (inline). To name a file whose name starts with '[', prefix it with ./ . At most 10000 operations. Vocabulary: aspose-cli schema v2/slides/ops.
   --if-match <if-match>          Require the current input SHA-256 fingerprint before editing.
   --best-effort                  Keep successful operations, report failures, and exit 8.
-  --verify                       Read the staged output back and check the slide order, titles, shape text, body paragraphs, notes, layouts, hidden slides, footers, transitions, sections, properties, slide size and replaced text each operation left. A warning with affectsCompleteness about content the edit lost is also an issue; uncheckedOps lists each operation not read back.
+  --verify                       Read the staged output back and check the slide order, titles, shape text, body paragraphs, notes, layouts, hidden slides, footers, transitions, sections, properties, slide size and replaced text each operation left; inserted pictures, shapes, tables and charts are not read back. A warning with affectsCompleteness about content the edit lost is also an issue; uncheckedOps lists each operation not read back.
   -o, --out <out>                Output path. Default: the input path with '.out' inserted before the extension.
   --overwrite                    Replace the output file if it already exists.
   --in-place                     Modify the input file itself atomically.

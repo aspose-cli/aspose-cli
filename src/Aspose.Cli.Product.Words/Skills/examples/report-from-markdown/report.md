@@ -1,6 +1,6 @@
-# Quarterly Report
+Quarterly Report
 
-## Summary
+# Summary
 
 Revenue increased while operating costs remained stable.
 

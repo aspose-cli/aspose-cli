@@ -60,7 +60,7 @@ internal sealed class WordsViewAdapter : IProductViewAdapter<WordsSession>
         {
             findings.Add(WordsReviewChecks.RevisionsPresent.Finding(
                 $"The document contains {info.Document.RevisionCount} tracked revision(s), which must not be accepted as a visual-only repair.",
-                hint: "Disclose the revisions; accept or reject them with accept_revisions or reject_revisions only when the user decides."));
+                hint: $"Disclose the revisions; accept or reject them with accept_revisions or reject_revisions only when the user decides. {ListingWithBlocks(request, filePath, WordsInspectDetails.Revisions)}"));
         }
 
         if (layout.EvaluationMarks > 0 || layout.EvaluationTruncated)
@@ -78,7 +78,7 @@ internal sealed class WordsViewAdapter : IProductViewAdapter<WordsSession>
         {
             findings.Add(WordsReviewChecks.CommentsPresent.Finding(
                 $"The document contains {info.Document.CommentCount} comment(s).",
-                hint: "Disclose the comments; remove them with delete_comments only when the user asks."));
+                hint: $"Disclose the comments; remove them with delete_comments only when the user asks. {ListingWithBlocks(request, filePath, WordsInspectDetails.Comments)}"));
         }
 
         return new ProductReviewAssessment
@@ -98,6 +98,14 @@ internal sealed class WordsViewAdapter : IProductViewAdapter<WordsSession>
             ],
         };
     }
+
+    /// <summary>
+    /// The sentence of a document finding's hint that names the read of what it found, opening the
+    /// source as the review did: the finding locates nothing narrower than the document, and that
+    /// read gives each item's block.
+    /// </summary>
+    private static string ListingWithBlocks(ViewRenderRequest request, string filePath, string detail) =>
+        $"{request.ContinuationAt(filePath, "words", "inspect").Option("--detail", detail).Quoted()} lists each one with its block.";
 
     private static void AddLayoutFindings(
         WordsReviewLayout layout,

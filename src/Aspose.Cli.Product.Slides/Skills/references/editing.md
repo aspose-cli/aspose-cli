@@ -41,6 +41,11 @@ end written as `%XX` of their UTF-8 bytes: `section/Q3 Results`, `section/业绩
 | Data | `set_chart_data` |
 | Document | `set_properties` |
 
+A `rect` and the `set_shape_bounds` sides are in points from the slide's top-left corner. Read
+the page size from `presentation.slideSize` in `slides inspect` first: the `16x9` preset is 720
+by 405 and the `4x3` preset 720 by 540, and a deck made in PowerPoint is usually 960 by 540. The
+`insert_chart` `kind` `column` draws vertical bars and `bar` horizontal ones.
+
 Inserted shapes, pictures, tables and charts are named by their geometry or kind and their
 shapeId, such as `rectangle 5`. `set_shape_bounds` moves or resizes a shape in place, keeping its id, name,
 style and text; omitted sides keep their values. Use it when a review finding asks to move or

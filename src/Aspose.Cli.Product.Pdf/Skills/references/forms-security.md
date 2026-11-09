@@ -105,7 +105,8 @@ names the variable that holds the owner password, `userPasswordEnv` the one that
 holds the password to open it (omit it to keep the file opening without a
 password, as an input with only an owner password did), and `permissions` what
 readers may do without the owner password; every permission is denied when
-omitted.
+omitted. Use `--in-place` without `--backup`: a backup keeps the unencrypted
+original beside the file, as asked and without a warning.
 
 ```bash
 aspose-cli pdf edit report.pdf --in-place --ops '{"ops":[{"op":"encrypt_document","userPasswordEnv":"PASSWORD","ownerPasswordEnv":"OWNERPASSWORD","permissions":{"print":true,"copy":true}}]}' --output-format json

@@ -24,6 +24,7 @@ aspose-cli slides create qbr.pptx --from-markdown notes.md --template brand.pptx
 | Markdown image of a local file, with optional `"title"` after the path | Picture with the image's alternative text and title; with body text the slide uses Two Content, and a further picture starts a continuation slide (see [Tables](#tables)) |
 | Pipe table: header row, delimiter row (`\|---\|:-:\|--:\|`), body rows | Table with a header row; see [Tables](#tables) |
 | `---` | Starts a new section at the next slide |
+| Raw HTML such as `<b>`, `<br>` or `<img>` | Not interpreted: written as literal text; use Markdown emphasis and images |
 
 The template's existing slides are replaced; its masters, layouts, theme and
 slide size are kept. A layout type the template lacks falls back to Title and
@@ -60,7 +61,9 @@ Deals by stage
 - A slide holds one picture or table. A further picture or table starts a
   continuation slide with the same title, which also takes the content that
   follows. A title slide's subtitle holds text only, so a table or picture under
-  `# Title` starts such a continuation slide too.
+  `# Title` starts such a continuation slide too. To show several pictures on
+  one slide, author it with one and add the others with `slides edit`
+  `insert_image` and a `rect`.
 - The first row is the table's header row, styled by the template. Colons in
   the delimiter row align a column left, center or right; without them the
   table style decides.

@@ -32,6 +32,9 @@ correct a design paragraph by paragraph.
   after it, so `~~原《守则》~~同时` stays literal; write `<del>`, `<strong>` or
   `<em>` tags in Chinese text instead, and read the result back for leftover
   markers.
+- Consecutive Markdown lines are one paragraph, joined by a space, in Chinese
+  text too. For a line break inside the paragraph end the line with two spaces
+  or a `\`; for a new paragraph leave a blank line, or write `<br>`.
 - A Markdown image is read only from an ordinary file beneath a directory, by
   relative path: the Markdown file's directory for `words create
   --from-markdown`, the input document's directory for `insert_markdown`. A

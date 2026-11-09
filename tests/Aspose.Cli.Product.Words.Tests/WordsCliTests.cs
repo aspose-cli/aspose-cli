@@ -155,7 +155,7 @@ public sealed class WordsCliTests : IClassFixture<WordsFixture>, IDisposable
         Assert.Equal(["page-0001.png"], Evidence("WORDS_TEXT_TOO_SMALL"));
         Assert.Equal(["page-0001.png", "page-0002.png"], Evidence("WORDS_REVISIONS_PRESENT"));
         Assert.Equal(
-            "Disclose the revisions; accept or reject them with accept_revisions or reject_revisions only when the user decides.",
+            $"Disclose the revisions; accept or reject them with accept_revisions or reject_revisions only when the user decides. 'aspose-cli words inspect \"{Path.GetFullPath(_workspace.File("findings.docx"))}\" --detail revisions --output-format json' lists each one with its block.",
             findings.Single(static finding => finding!["code"]!.GetValue<string>() == "WORDS_REVISIONS_PRESENT")!["hint"]!.GetValue<string>());
 
         CliResult filtered = _workspace.Run(

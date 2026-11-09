@@ -351,6 +351,20 @@ where it is.
   an owner password opens without `--password-env` and is still reported as
   `input.encrypted`; its output has no password to keep, so it is written
   without one and produces `ENCRYPTION_REMOVED`.
+- A `doc` output can carry only legacy RC4 encryption; when the protection
+  matters, deliver `docx`, which uses AES.
+
+No Words command removes a password: an output that can be encrypted keeps it.
+For a copy that opens without one, write Flat OPC, which cannot carry a
+password and reports `ENCRYPTION_REMOVED`, and convert that:
+
+```powershell
+aspose-cli words convert locked.docx --password-env DOC_PASSWORD --to flatopc --out plain.xml --output-format json
+aspose-cli words convert plain.xml --to docx --out plain.docx --output-format json
+```
+
+A PDF input can instead be decrypted first by a `decrypt_document` operation of
+`aspose-cli pdf edit`, opened with its owner password.
 
 `words convert --to pdf` cannot encrypt, so `--encrypt-env` with it is
 `OPTION_INVALID`. For a PDF that needs a password to open, convert first:
@@ -359,10 +373,10 @@ where it is.
 aspose-cli words convert contract.docx --to pdf --out contract.pdf --output-format json
 ```
 
-then encrypt `contract.pdf` with `--in-place`, so no unencrypted PDF is left,
-and an `encrypt_document` operation of `aspose-cli pdf edit`, which grants
-readers only the `permissions` it lists
-(the PDF Skill, `aspose-cli docs pdf/forms-security`).
+then encrypt `contract.pdf` with an `encrypt_document` operation of
+`aspose-cli pdf edit`, which grants readers only the `permissions` it lists
+(the PDF Skill, `aspose-cli docs pdf/forms-security`). Use `--in-place` without
+`--backup`, which would keep the unencrypted PDF.
 
 ## Save and verify
 

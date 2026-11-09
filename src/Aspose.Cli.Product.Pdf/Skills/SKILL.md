@@ -55,6 +55,10 @@ HTML, whose `<title>` becomes the PDF title and whose form controls become
 fields ([forms](references/forms-security.md)). A PDF made from HTML or Markdown
 has no author or subject until a `set_properties` edit sets them.
 
+A Markdown table has no borders or cell padding, and a column without alignment
+centers its header over left-aligned cells; write `---:` for a number column. For
+borders, write HTML with a CSS `border` and use `--from-html`.
+
 `--from-images` puts each image on its own page, without distortion
 ([images](references/pdf-standards.md)); `IMAGE_RESOLUTION_LOW` names a page
 whose image shows blurred.
