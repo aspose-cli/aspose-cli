@@ -1,4 +1,5 @@
 using System.Data;
+using System.Text.RegularExpressions;
 using Aspose.Cli.Product.Words.Engine.Mapping;
 using Aspose.Cli.Sdk.IO.Input;
 using Aspose.Words;
@@ -222,6 +223,8 @@ internal sealed partial class WordsMutationHandlers
 
     public ValueTuple Apply(SetPageNumbersOp operation)
     {
+        // A text without {n} shows no page number: nothing moves and the number stays where it is.
+        bool numbers = operation.Text?.Contains(WordsReadBack.PageNumberPlaceholder, StringComparison.Ordinal) != false;
         foreach (Section section in Sections)
         {
             HeaderFooterType type = operation.Location == "header" ? HeaderFooterType.HeaderPrimary : HeaderFooterType.FooterPrimary;
@@ -232,27 +235,44 @@ internal sealed partial class WordsMutationHandlers
                 section.HeadersFooters.Add(container);
             }
 
-            // The page numbers move: their PAGE field leaves the other primary header or footer.
+            // The page numbers move: their PAGE field leaves the other primary header or footer,
+            // and with a text, which is its paragraph's whole content, so does that paragraph's.
             HeaderFooterType other = operation.Location == "header" ? HeaderFooterType.FooterPrimary : HeaderFooterType.HeaderPrimary;
-            if (section.HeadersFooters[other] is { } previous)
+            if (numbers && section.HeadersFooters[other] is { } previous)
             {
-                RemovePageFields(previous);
+                if (operation.Text is null)
+                {
+                    RemovePageFields(previous);
+                }
+                else
+                {
+                    ClearPageNumberParagraphs(previous);
+                }
             }
 
-            Field? existingPage = container.Range.Fields.Cast<Field>()
-                .FirstOrDefault(static field => field.Type == FieldType.FieldPage);
+            Field? existingPage = numbers
+                ? container.Range.Fields.Cast<Field>().FirstOrDefault(static field => field.Type == FieldType.FieldPage)
+                : null;
             Paragraph paragraph;
             if (existingPage is null)
             {
                 paragraph = new Paragraph(_document);
                 container.AppendChild(paragraph);
-                var builder = new DocumentBuilder(_document);
-                builder.MoveTo(paragraph);
-                builder.InsertField("PAGE");
             }
             else
             {
                 paragraph = (Paragraph)existingPage.Start.GetAncestor(NodeType.Paragraph);
+            }
+
+            if (operation.Text is { } text)
+            {
+                WritePageNumberText(paragraph, text);
+            }
+            else if (existingPage is null)
+            {
+                var builder = new DocumentBuilder(_document);
+                builder.MoveTo(paragraph);
+                builder.InsertField("PAGE");
             }
 
             paragraph.ParagraphFormat.Alignment = AlignmentOf(operation.Alignment);
@@ -270,6 +290,103 @@ internal sealed partial class WordsMutationHandlers
 
         _document.UpdatePageLayout();
         return default;
+    }
+
+    /// <summary>
+    /// Replaces what a paragraph holds with a set_page_numbers text, its placeholders written as
+    /// fields, in the font of what it replaces. A paragraph that already reads so is left as it is.
+    /// </summary>
+    private void WritePageNumberText(Paragraph paragraph, string text)
+    {
+        if (WordsReadBack.PageNumberText(paragraph) == text)
+        {
+            return;
+        }
+
+        RequireOnlyTextAndFields(paragraph);
+        Field[] fields = [.. paragraph.Range.Fields.Cast<Field>()];
+        Node[] replaced = [.. paragraph.GetChildNodes(NodeType.Any, isDeep: false).Cast<Node>()];
+        var builder = new DocumentBuilder(_document);
+        // Moved to the first node, the builder writes in that node's font.
+        builder.MoveTo(replaced.FirstOrDefault() ?? paragraph);
+        foreach (string piece in PageNumberPlaceholders().Split(text).Where(static piece => piece.Length > 0))
+        {
+            switch (piece)
+            {
+                case WordsReadBack.PageNumberPlaceholder:
+                    builder.InsertField("PAGE");
+                    break;
+                case WordsReadBack.PageCountPlaceholder:
+                    builder.InsertField("NUMPAGES");
+                    break;
+                default:
+                    builder.Write(piece);
+                    break;
+            }
+        }
+
+        RemoveInlines(fields, replaced);
+    }
+
+    [GeneratedRegex(@"(\{n\}|\{N\})", RegexOptions.CultureInvariant)]
+    private static partial Regex PageNumberPlaceholders();
+
+    /// <summary>
+    /// Empties each paragraph of a header or footer that holds a PAGE field, and removes it when
+    /// it is not the last, so that a text moving the number elsewhere leaves none of its words.
+    /// </summary>
+    private void ClearPageNumberParagraphs(HeaderFooter headerFooter)
+    {
+        Paragraph[] paragraphs = [.. headerFooter.Range.Fields.Cast<Field>()
+            .Where(static field => field.Type == FieldType.FieldPage)
+            .Select(static field => (Paragraph)field.Start.GetAncestor(NodeType.Paragraph))
+            .Distinct()];
+        foreach (Paragraph paragraph in paragraphs)
+        {
+            RequireOnlyTextAndFields(paragraph);
+            RemoveInlines([.. paragraph.Range.Fields.Cast<Field>()], [.. paragraph.GetChildNodes(NodeType.Any, isDeep: false).Cast<Node>()]);
+            if (paragraph.ParentNode is HeaderFooter && headerFooter.Paragraphs.Count > 1)
+            {
+                paragraph.Remove();
+            }
+        }
+    }
+
+    /// <summary>
+    /// Refuses to overwrite a paragraph that holds what a text cannot carry, such as an image, a
+    /// logo or a shape. A bookmark shows nothing, and evaluation mode draws its watermark again at
+    /// every save.
+    /// </summary>
+    private void RequireOnlyTextAndFields(Paragraph paragraph)
+    {
+        if (paragraph.GetChildNodes(NodeType.Any, isDeep: false).Cast<Node>().All(IsTextOrField))
+        {
+            return;
+        }
+
+        bool isHeader = ((HeaderFooter)paragraph.GetAncestor(NodeType.HeaderFooter)).IsHeader;
+        string location = isHeader ? WordsHeaderFooterLocations.Header : WordsHeaderFooterLocations.Footer;
+        throw new OperationInvalidException(
+            $"the {location} paragraph that holds the page number also holds an image or another object that text cannot carry, and text replaces the whole paragraph",
+            $"Rewrite the {location} with {(isHeader ? "set_header" : "set_footer")} first so that the page number stands in a paragraph of its own, or omit text to keep the paragraph as it is.");
+    }
+
+    private bool IsTextOrField(Node node) =>
+        node is Aspose.Words.Run or FieldStart or FieldSeparator or FieldEnd or BookmarkStart or BookmarkEnd
+        || (_loaded.Evaluation && node is Aspose.Words.Drawing.Shape shape && WordsEvaluation.IsWatermark(shape));
+
+    /// <summary>Removes the fields and then the other nodes of a paragraph, each only while it is still there.</summary>
+    private static void RemoveInlines(IEnumerable<Field> fields, IEnumerable<Node> nodes)
+    {
+        foreach (Field field in fields.Where(static field => field.Start.ParentNode is not null))
+        {
+            field.Remove();
+        }
+
+        foreach (Node node in nodes.Where(static node => node.ParentNode is not null))
+        {
+            node.Remove();
+        }
     }
 
     /// <summary>Removes the PAGE fields of a header or footer, and each paragraph one leaves empty that is not its last.</summary>

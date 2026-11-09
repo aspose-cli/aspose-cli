@@ -437,6 +437,10 @@ public sealed record WordsPageNumbersData
     [AllowedValues("left", "center", "right")]
     public string? Alignment { get; init; }
 
+    /// <summary>The text of the paragraph that holds the PAGE field, with {n} for the page number and {N} for the page count; absent when it holds the number alone or there is no PAGE field.</summary>
+    [MinLength(1)]
+    public string? Text { get; init; }
+
     /// <summary>How the page numbers are written.</summary>
     [AllowedValues(typeof(PageNumberStyles))]
     public string? NumberStyle { get; init; }

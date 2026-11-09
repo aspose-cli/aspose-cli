@@ -239,7 +239,7 @@ internal static class OperationSamples
         new("words", """{"op":"set_default_font","font":"Arial","latinFont":"Arial","eastAsianFont":"SimSun","fontSize":12}"""),
         new("words", """{"op":"set_footer","kind":"primary","paragraphs":[{"text":"Footer","style":"Footer"}]}"""),
         new("words", """{"op":"set_header","kind":"primary","paragraphs":[{"text":"Header","style":"Header"}]}"""),
-        new("words", """{"op":"set_page_numbers","location":"header","alignment":"right","numberStyle":"roman-lower","start":3}"""),
+        new("words", """{"op":"set_page_numbers","location":"header","alignment":"right","text":"Page {n} of {N} pages","numberStyle":"roman-lower","start":3}"""),
         new("words", """{"op":"set_page_setup","pageSize":{"preset":"letter"},"orientation":"landscape","margins":{"top":36,"left":54},"columnCount":2}"""),
         new("words", """{"op":"set_properties","title":"Edited","author":"Tester","subject":"Checks","keywords":"invariant","custom":{"Status":"Final"}}"""),
         new("words", """{"op":"set_style","target":{"block":2},"style":"Quote"}"""),

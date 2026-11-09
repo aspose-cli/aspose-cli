@@ -52,6 +52,6 @@ public sealed record WordsRevisionSample
     [AllowedValues(typeof(WordsRevisionKinds))]
     public required string Kind { get; init; }
 
-    /// <summary>The text of the revision's run, cut to 300 characters and an ellipsis; absent for a paragraph mark.</summary>
+    /// <summary>The text of the revision's run, cut to 300 characters and an ellipsis; absent for a paragraph mark, a field mark or a field code.</summary>
     public string? Text { get; init; }
 }

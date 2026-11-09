@@ -49,7 +49,7 @@
         "command": "edit",
         "inputSchema": "v2/words/ops",
         "operationSchema": "aspose-cli schema v2/words/ops --operation <op>",
-        "contractFingerprint": "sha256:575489f9317a3261b1cb28853d415462371b451d2f8cdb2096e02ea7024dd8b3",
+        "contractFingerprint": "sha256:9c8ce8fac55253961cb3f45d52d2df93765147269fb41c5a1c6968e89e1e2621",
         "maximumOperationCount": 10000,
         "ops": [
           "accept_revisions",
@@ -3372,7 +3372,7 @@
               ]
             },
             "text": {
-              "description": "The text of the revision's run, cut to 300 characters and an ellipsis; absent for a paragraph mark.",
+              "description": "The text of the revision's run, cut to 300 characters and an ellipsis; absent for a paragraph mark, a field mark or a field code.",
               "type": "string"
             }
           }
@@ -4237,6 +4237,11 @@
                 "center",
                 "right"
               ]
+            },
+            "text": {
+              "description": "The text of the paragraph that holds the PAGE field, with {n} for the page number and {N} for the page count; absent when it holds the number alone or there is no PAGE field.",
+              "type": "string",
+              "minLength": 1
             },
             "numberStyle": {
               "description": "How the page numbers are written.",
@@ -5452,7 +5457,7 @@
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/read-result.schema.json#/$defs/wordsBlockData/properties/values"
             },
             "tableStyle": {
-              "description": "An existing table style.",
+              "description": "An existing table style, or a table style Word has built in, by name, such as Table Grid or Grid Table 4.",
               "type": "string",
               "minLength": 1,
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/inspect-result.schema.json#/$defs/wordsTableData/properties/tableStyle"
@@ -6072,6 +6077,12 @@
               ],
               "default": "center",
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/inspect-result.schema.json#/$defs/wordsPageNumbersData/properties/alignment"
+            },
+            "text": {
+              "description": "The text of the paragraph that holds the number, replacing what it holds; {n} is the page number and {N} the document's page count, and {PAGE}, {NUMPAGES} and {SECTIONPAGES}, as a read shows those fields, are refused. A paragraph that also holds an image or another object is refused, and moving the number to the other location clears the paragraph it leaves. Without text, a new number takes a paragraph of its own and an existing one keeps its paragraph. A text without {n} goes in a new paragraph and leaves any page number where it is.",
+              "type": "string",
+              "minLength": 1,
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/inspect-result.schema.json#/$defs/wordsPageNumbersData/properties/text"
             },
             "numberStyle": {
               "description": "How the page numbers are written; the section's numbering keeps its style when omitted.",

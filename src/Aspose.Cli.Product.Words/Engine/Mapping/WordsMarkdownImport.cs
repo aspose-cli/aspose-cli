@@ -8,7 +8,8 @@ namespace Aspose.Cli.Product.Words.Engine.Mapping;
 /// The one way Markdown content enters a destination document, shared by <c>create</c>,
 /// <c>insert_markdown</c> and Markdown headers and footers. Blocks take the destination's
 /// styles, so the destination's template owns the look, and runs keep only the emphasis the
-/// Markdown expressed, and images fit the destination's text width.
+/// Markdown expressed, and images fit the destination's text width. A Markdown table's first
+/// row is its header, and a paragraph that leads into an image stays on the image's page.
 /// </summary>
 internal static class WordsMarkdownImport
 {
@@ -23,12 +24,63 @@ internal static class WordsMarkdownImport
         // start number the Markdown wrote and continues that list's numbering.
         var importer = new NodeImporter(markdown, destination, ImportFormatMode.UseDestinationStyles,
             new ImportFormatOptions { KeepSourceNumbering = true });
-        return markdown.Sections.Cast<Section>()
+        Node[] blocks = markdown.Sections.Cast<Section>()
             .SelectMany(static section => section.Body.GetChildNodes(NodeType.Any, false).Cast<Node>())
             .Where(static node => node is Paragraph or Table)
             .Select(node => importer.ImportNode(node, true))
             .ToArray();
+        foreach (Table table in blocks.OfType<Table>())
+        {
+            MarkHeaderRow(table);
+        }
+
+        KeepLeadInsWithTheirImages(blocks);
+        return blocks;
     }
+
+    /// <summary>
+    /// The first row of a Markdown table is its header, which repeats on every page the table
+    /// spans and whose text is bold. Each cell is vertically centered, unless the table style the
+    /// destination gives the table aligns its cells: the destination's template owns the look.
+    /// </summary>
+    private static void MarkHeaderRow(Table table)
+    {
+        Row header = table.FirstRow;
+        header.RowFormat.HeadingFormat = true;
+        foreach (Run run in header.GetChildNodes(NodeType.Run, isDeep: true).OfType<Run>())
+        {
+            run.Font.Bold = true;
+        }
+
+        if (table.Style is not TableStyle { VerticalAlignment: not CellVerticalAlignment.Top })
+        {
+            foreach (Cell cell in table.GetChildNodes(NodeType.Cell, isDeep: true).OfType<Cell>())
+            {
+                cell.CellFormat.VerticalAlignment = CellVerticalAlignment.Center;
+            }
+        }
+    }
+
+    /// <summary>
+    /// A paragraph of text right before one that holds only images leads into them, as a heading
+    /// or a line such as "The chart below shows" does: it keeps with the next paragraph, so a
+    /// page break falls before both. The paragraph carries the setting, never its style.
+    /// </summary>
+    private static void KeepLeadInsWithTheirImages(IReadOnlyList<Node> blocks)
+    {
+        for (int index = 0; index + 1 < blocks.Count; index++)
+        {
+            if (blocks[index] is Paragraph leadIn && blocks[index + 1] is Paragraph next
+                && !string.IsNullOrWhiteSpace(WordsText.Of(leadIn, listNumbers: false)) && HoldsOnlyImages(next))
+            {
+                leadIn.ParagraphFormat.KeepWithNext = true;
+            }
+        }
+    }
+
+    private static bool HoldsOnlyImages(Paragraph paragraph) =>
+        string.IsNullOrWhiteSpace(WordsText.Of(paragraph, listNumbers: false))
+        && paragraph.GetChildNodes(NodeType.Shape, isDeep: true).OfType<Shape>().Any(static shape => shape.HasImage);
 
     /// <summary>
     /// The Markdown reader keeps an image the resource policy omitted as a link to the path it

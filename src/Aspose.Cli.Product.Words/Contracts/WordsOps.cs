@@ -287,7 +287,7 @@ public sealed record InsertTableOp : WordsOp
     [ReadBack("read-result.schema.json#/$defs/wordsBlockData/properties/values")]
     public IReadOnlyList<IReadOnlyList<string>>? Values { get; init; }
 
-    /// <summary>An existing table style.</summary>
+    /// <summary>An existing table style, or a table style Word has built in, by name, such as Table Grid or Grid Table 4.</summary>
     [MistakenFor("style")]
     [ReadBack("inspect-result.schema.json#/$defs/wordsTableData/properties/tableStyle")]
     [MinLength(1)] public string? TableStyle { get; init; }
@@ -565,6 +565,17 @@ public sealed record SetPageNumbersOp : WordsOp
     [ReadBack("inspect-result.schema.json#/$defs/wordsPageNumbersData/properties/alignment")]
     [AllowedValues("left", "center", "right")] public string Alignment { get; init; } = "center";
 
+    /// <summary>
+    /// The text of the paragraph that holds the number, replacing what it holds; {n} is the page
+    /// number and {N} the document's page count, and {PAGE}, {NUMPAGES} and {SECTIONPAGES}, as a
+    /// read shows those fields, are refused. A paragraph that also holds an image or another
+    /// object is refused, and moving the number to the other location clears the paragraph it leaves. Without text, a new
+    /// number takes a paragraph of its own and an existing one keeps its paragraph. A text without
+    /// {n} goes in a new paragraph and leaves any page number where it is.
+    /// </summary>
+    [ReadBack("inspect-result.schema.json#/$defs/wordsPageNumbersData/properties/text")]
+    [MinLength(1)] public string? Text { get; init; }
+
     /// <summary>How the page numbers are written; the section's numbering keeps its style when omitted.</summary>
     [MistakenFor("format")]
     [ReadBack("inspect-result.schema.json#/$defs/wordsPageNumbersData/properties/numberStyle")]
@@ -573,6 +584,16 @@ public sealed record SetPageNumbersOp : WordsOp
     /// <summary>The number of the section's first page; numbering continues when omitted.</summary>
     [ReadBack("inspect-result.schema.json#/$defs/wordsPageNumbersData/properties/start")]
     [Minimum(0)] public int? Start { get; init; }
+
+    /// <inheritdoc />
+    protected override BoundedOperation Validated()
+    {
+        OperationInvalidException.Require(
+            !new[] { "{PAGE}", "{NUMPAGES}", "{SECTIONPAGES}" }.Any(field => Text?.Contains(field, StringComparison.Ordinal) == true),
+            "text would write {PAGE}, {NUMPAGES} or {SECTIONPAGES} as literal words: they are how a read shows those fields",
+            "Write {n} for the page number and {N} for the page count.");
+        return this;
+    }
 }
 
 /// <summary>
