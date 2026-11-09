@@ -62,21 +62,25 @@ public static class ScenarioFixtures
     public const string MarkerPrefix = "Zqx";
 
     /// <summary>
-    /// The marker of each kind of content: five letters, the most Aspose.Slides evaluation mode
-    /// reads of a text without truncating it, and the whole text of the paragraph, shape, note or
-    /// title that holds it.
+    /// Every kind of content a rich fixture can hold a marker in, with the tokens by which a
+    /// warning names it: the one table from which the fixtures take their markers and C-R42 and
+    /// C-R43 the warnings they expect. Each marker is five letters, the most Aspose.Slides
+    /// evaluation mode reads of a text without truncating it, and the whole text of the
+    /// paragraph, shape, note or title that holds it.
     /// </summary>
-    private static readonly Dictionary<string, string> MarkerOfKind = new(StringComparer.Ordinal)
-    {
-        ["body"] = MarkerPrefix + "Bd",
-        ["header"] = MarkerPrefix + "Hd",
-        ["footer"] = MarkerPrefix + "Ft",
-        ["comment"] = MarkerPrefix + "Cm",
-        ["speaker notes"] = MarkerPrefix + "Nt",
-        ["chart title"] = MarkerPrefix + "Ct",
-        ["shape text"] = MarkerPrefix + "Sh",
-        ["form field value"] = MarkerPrefix + "Fv",
-    };
+    public static IReadOnlyList<RichKind> Kinds { get; } =
+    [
+        new("body", MarkerPrefix + "Bd", Content: null, Part: null),
+        new("header", MarkerPrefix + "Hd", Content: "headers-footers", Part: "header-footer"),
+        new("footer", MarkerPrefix + "Ft", Content: "headers-footers", Part: "header-footer"),
+        new("comment", MarkerPrefix + "Cm", Content: "comments", Part: "comment"),
+        new("speaker notes", MarkerPrefix + "Nt", Content: "speaker-notes", Part: null),
+        new("chart title", MarkerPrefix + "Ct", Content: "charts", Part: "chart-title"),
+        new("shape text", MarkerPrefix + "Sh", Content: "shapes", Part: "text-box"),
+        new("form field value", MarkerPrefix + "Fv", Content: "form-values", Part: null),
+    ];
+
+    private static readonly Dictionary<string, RichKind> KindNamed = Kinds.ToDictionary(static kind => kind.Name, StringComparer.Ordinal);
 
     /// <summary>
     /// The kinds of content each product's rich fixture holds a marker in: each kind the product's
@@ -99,11 +103,10 @@ public static class ScenarioFixtures
     public static string PrimaryFormat(string product) => PrimaryFormats[product];
 
     /// <summary>
-    /// The marker texts of a product's <c>&lt;product&gt;.rich</c> fixture by the kind of content
-    /// that holds each, such as <c>speaker notes</c> to <c>ZqxNt</c>, in a stable order.
+    /// The kinds of content a product's <c>&lt;product&gt;.rich</c> fixture holds a marker in,
+    /// such as <c>speaker notes</c> with <c>ZqxNt</c>, in a stable order.
     /// </summary>
-    public static IReadOnlyList<KeyValuePair<string, string>> RichMarkers(string product) =>
-        [.. RichKinds[product].Select(static kind => KeyValuePair.Create(kind, MarkerOfKind[kind]))];
+    public static IReadOnlyList<RichKind> RichMarkers(string product) => [.. RichKinds[product].Select(static kind => KindNamed[kind])];
 
     /// <summary>The bytes of a named fixture.</summary>
     /// <exception cref="ArgumentException">The name is not a fixture.</exception>
@@ -219,7 +222,7 @@ public static class ScenarioFixtures
         using var workspace = new TempWorkspace();
         ScenarioLicense.Project(workspace.Path);
         string file = "rich." + primary;
-        static string Marker(string kind) => MarkerOfKind[kind];
+        static string Marker(string kind) => KindNamed[kind].Marker;
         string operations;
         switch (product)
         {
@@ -317,3 +320,17 @@ public static class ScenarioFixtures
         return certificate.Export(X509ContentType.Pfx, Password);
     }
 }
+
+/// <summary>
+/// A kind of content a rich fixture holds a marker in (<see cref="ScenarioFixtures.Kinds"/>), and
+/// how a warning names it: <paramref name="Content"/> is the <c>details.content</c> token of a
+/// <c>LOSSY_CONVERSION</c> that names it left out of an output (C-R42), <paramref name="Part"/>
+/// the <c>details.part</c> token of a <c>TEXT_NOT_REPLACED</c> that names it left in place by
+/// <c>replace_text</c> (C-R43). A null token is a stated absence, not a gap: no warning names
+/// that kind, so losing it, or leaving it in place, is never excused.
+/// </summary>
+/// <param name="Name">The kind, as violations name it, such as <c>speaker notes</c>.</param>
+/// <param name="Marker">The marker text, which starts with <see cref="ScenarioFixtures.MarkerPrefix"/>.</param>
+/// <param name="Content">The <c>details.content</c> token that names the kind lost, or null.</param>
+/// <param name="Part">The <c>details.part</c> token that names the kind left in place, or null.</param>
+public sealed record RichKind(string Name, string Marker, string? Content, string? Part);
