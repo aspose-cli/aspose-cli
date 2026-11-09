@@ -1697,16 +1697,134 @@ function Recover-PendingTransaction {
     Remove-Item -LiteralPath $JournalPath -Force
 }
 
+function Get-LocalApplicationDataDirectory {
+    return [Environment]::GetFolderPath([Environment+SpecialFolder]::LocalApplicationData, [Environment+SpecialFolderOption]::DoNotVerify)
+}
+
 function Resolve-InstallRoot {
     param([AllowEmptyString()][string] $Directory)
-    $localAppData = [Environment]::GetFolderPath([Environment+SpecialFolder]::LocalApplicationData, [Environment+SpecialFolderOption]::DoNotVerify)
-    $requested = if ([string]::IsNullOrWhiteSpace($Directory)) { Join-Path $localAppData $script:DefaultInstallDirectory } else { $Directory }
+    $requested = if ([string]::IsNullOrWhiteSpace($Directory)) { Join-Path (Get-LocalApplicationDataDirectory) $script:DefaultInstallDirectory } else { $Directory }
     $full = Assert-LocalAbsolutePath $requested 'install directory'
     # One spelling per directory: the transaction key, lock, journal and PATH entry must not
     # depend on whether a caller passed a trailing separator.
     $trimmed = $full.TrimEnd('\')
     if ($trimmed.Length -le ([IO.Path]::GetPathRoot($full)).TrimEnd('\').Length) { throw "The install directory may not be a drive root: $full" }
     return $trimmed
+}
+
+# Whoever can replace the executable on this user's PATH runs code as this user, and a folder
+# such as a drive root lets every signed-in account change what is created in it. The default
+# location is private by its place in the profile; any other is given the rules below.
+function Test-CustomInstallLocation {
+    param([Parameter(Mandatory)][string] $InstallRoot)
+    return -not (Test-IsSameOrChildPath $InstallRoot (Get-LocalApplicationDataDirectory))
+}
+
+# This user, SYSTEM and the administrators, with nothing inherited from the folder above.
+function Get-PrivateDirectoryAccess {
+    param([string] $AdditionalRules = '')
+    $user = [Security.Principal.WindowsIdentity]::GetCurrent().User.Value
+    $access = [Security.AccessControl.DirectorySecurity]::new()
+    $access.SetSecurityDescriptorSddlForm("D:P(A;OICI;FA;;;$user)(A;OICI;FA;;;SY)(A;OICI;FA;;;BA)$AdditionalRules", [Security.AccessControl.AccessControlSections]::Access)
+    return $access
+}
+
+# A parent folder created for a custom installation: the same, and the computer's users may read
+# it and what it holds. An uninstall leaves these folders, so closing them would keep other
+# accounts and services out of whatever is put in them later.
+function Get-NewParentDirectoryAccess {
+    return Get-PrivateDirectoryAccess '(A;OICI;0x1200a9;;;BU)'
+}
+
+# Creates a directory and its missing parents with these rules, so nothing can reach them under
+# other rules; a directory that already exists is left as it is.
+function New-DirectoryWithAccess {
+    param(
+        [Parameter(Mandatory)][string] $Path,
+        [Parameter(Mandatory)][Security.AccessControl.DirectorySecurity] $Access
+    )
+    # A method of the directory on Windows PowerShell and an extension method on PowerShell 7.
+    $extensions = 'System.IO.FileSystemAclExtensions' -as [type]
+    if ($null -eq $extensions) { [void][IO.Directory]::CreateDirectory($Path, $Access) }
+    else { $extensions::Create([IO.DirectoryInfo]::new($Path), $Access) }
+}
+
+function Set-DirectoryAccess {
+    param(
+        [Parameter(Mandatory)][string] $Path,
+        [Parameter(Mandatory)][Security.AccessControl.DirectorySecurity] $Access
+    )
+    $extensions = 'System.IO.FileSystemAclExtensions' -as [type]
+    if ($null -eq $extensions) { [IO.DirectoryInfo]::new($Path).SetAccessControl($Access) }
+    else { $extensions::SetAccessControl([IO.DirectoryInfo]::new($Path), $Access) }
+}
+
+# Reads a directory's rules into a set that writes them back: one read from disk and not changed
+# since is written as nothing.
+function Read-DirectoryAccess {
+    param([Parameter(Mandatory)][string] $Path)
+    $sections = [Security.AccessControl.AccessControlSections]::Access
+    $access = [Security.AccessControl.DirectorySecurity]::new()
+    $access.SetSecurityDescriptorSddlForm(
+        [Security.AccessControl.DirectorySecurity]::new($Path, $sections).GetSecurityDescriptorSddlForm($sections), $sections)
+    return $access
+}
+
+# The stage is renamed onto the install root and a rename keeps a directory's rules, so the stage
+# of a custom location is created with the rules the published directory is to have: private ones
+# for a new directory, or those of the directory it replaces, which an install or an update leaves
+# as they were.
+function New-CustomLocationStage {
+    param(
+        [Parameter(Mandatory)][string] $Stage,
+        [Parameter(Mandatory)][string] $InstallRoot
+    )
+    if (-not (Test-Path -LiteralPath $InstallRoot -PathType Container)) {
+        New-DirectoryWithAccess $Stage (Get-PrivateDirectoryAccess)
+        return
+    }
+    $access = $null
+    try { $access = Read-DirectoryAccess $InstallRoot }
+    catch { Write-Warning "The access rules of '$InstallRoot' could not be read, so the new installation takes those of the folder it is in: $($_.Exception.Message)" }
+    if ($null -ne $access -and $access.AreAccessRulesProtected) { New-DirectoryWithAccess $Stage $access; return }
+    [IO.Directory]::CreateDirectory($Stage) | Out-Null
+    if ($null -eq $access) { return }
+    # Rules the folder gives are recomputed for the stage, which is in the same folder, so this
+    # carries over the ones set on the directory itself.
+    try { Set-DirectoryAccess $Stage $access }
+    catch { Write-Warning "The access rules of '$InstallRoot' could not be kept, so the new installation takes those of the folder it is in: $($_.Exception.Message)" }
+}
+
+# The accounts other than this user, SYSTEM, the administrators and the system's installer service
+# that a directory's rules let change it or what it holds. Rules for CREATOR OWNER and CREATOR
+# GROUP stand for whoever creates an entry, so they let nobody in.
+function Get-DirectoryOtherWriters {
+    param([Parameter(Mandatory)][string] $Directory)
+    $trusted = @(
+        [Security.Principal.WindowsIdentity]::GetCurrent().User.Value,
+        'S-1-5-18', 'S-1-5-32-544', 'S-1-3-0', 'S-1-3-1',
+        'S-1-5-80-956008885-3418522649-1831038044-1853292631-2271478464')
+    $generic = 0x10000000 -bor 0x40000000
+    $writing = [int][Security.AccessControl.FileSystemRights]'WriteData,AppendData,DeleteSubdirectoriesAndFiles,Delete,ChangePermissions,TakeOwnership' -bor $generic
+    $access = [Security.AccessControl.DirectorySecurity]::new($Directory, [Security.AccessControl.AccessControlSections]::Access)
+    $writers = [Collections.Generic.SortedSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
+    foreach ($rule in @($access.GetAccessRules($true, $true, [Security.Principal.SecurityIdentifier]))) {
+        if ($rule.AccessControlType -ne [Security.AccessControl.AccessControlType]::Allow) { continue }
+        if (([int]$rule.FileSystemRights -band $writing) -eq 0) { continue }
+        if ($rule.IdentityReference.Value -cin $trusted) { continue }
+        $name = $rule.IdentityReference.Value
+        try { $name = $rule.IdentityReference.Translate([Security.Principal.NTAccount]).Value } catch { }
+        [void]$writers.Add($name)
+    }
+    return @($writers)
+}
+
+function Write-InstallDirectoryAccessWarning {
+    param([Parameter(Mandatory)][string] $InstallRoot)
+    try { $writers = @(Get-DirectoryOtherWriters $InstallRoot) }
+    catch { Write-Warning "The access rules of '$InstallRoot' could not be checked: $($_.Exception.Message)"; return }
+    if ($writers.Count -eq 0) { return }
+    Write-Warning "Other accounts can change '$InstallRoot': $($writers -join ', '). Any of them can replace $($script:ExecutableName) with a program that then runs with your rights. Remove their write access to that directory, or run install.ps1 -Uninstall -InstallDirectory '$InstallRoot' and install again with an -InstallDirectory that does not exist yet, which only you, SYSTEM and the administrators can reach."
 }
 
 function Get-TransactionKey {
@@ -2009,6 +2127,10 @@ function Install-Release {
     $installRoot = Resolve-InstallRoot $InstallDirectory
     if ((Test-IsSameOrChildPath $installRoot $packageDirectory) -or (Test-IsSameOrChildPath $packageDirectory $installRoot)) { throw 'Package and install directories may not overlap.' }
     Assert-SkillsRootPlacement $customSkillsRoot $packageDirectory $installRoot
+    # An account that could change a parent created for the installation could rename it and put
+    # its own directory on the PATH entry. A parent that already exists is left as it is.
+    $customLocation = Test-CustomInstallLocation $installRoot
+    if ($customLocation) { New-DirectoryWithAccess (Split-Path -Parent $installRoot) (Get-NewParentDirectoryAccess) }
     $lock = Enter-InstallLock $installRoot
     $installParent = $lock.InstallParent
     $targetKey = $lock.TargetKey
@@ -2047,7 +2169,8 @@ function Install-Release {
             Assert-InstallationUpgrade $existingState ([string]$capabilities.cliVersion) ([string]$capabilities.sourceRevision)
         }
 
-        [IO.Directory]::CreateDirectory($stage) | Out-Null
+        if ($customLocation) { New-CustomLocationStage $stage $installRoot }
+        else { [IO.Directory]::CreateDirectory($stage) | Out-Null }
         foreach ($payload in $verifiedFiles) {
             $destination = Join-Path $stage $payload.Path.Replace('/', '\')
             [IO.Directory]::CreateDirectory((Split-Path -Parent $destination)) | Out-Null
@@ -2272,6 +2395,7 @@ function Install-Release {
             }
         }
         Write-Host "$($script:DisplayName) $($capabilities.cliVersion) installed to $installRoot"
+        if ($customLocation) { Write-InstallDirectoryAccessWarning $installRoot }
         if (-not $skipPath) { Write-Host 'The user PATH contains exactly one install-directory entry; restart terminals and AI agents to pick it up.' }
         if ($installedSkills -ne 0) { Write-Host "Installed or updated $installedSkills pristine bundled Agent Skill package(s)." }
         if ($null -eq $licenseArguments -and -not $Update) { Write-LicenseSummary $installExecutable }

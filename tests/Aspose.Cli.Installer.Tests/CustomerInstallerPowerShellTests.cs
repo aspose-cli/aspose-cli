@@ -943,10 +943,11 @@ public sealed partial class CustomerInstallerPowerShellTests : IDisposable, ICla
         bool skipPath = true,
         bool skipSkills = true,
         bool developmentPackage = true,
-        bool registerMcp = false)
+        bool registerMcp = false,
+        string shell = "powershell.exe")
     {
         string script = Path.Combine(RepositoryPaths.Root, "install.ps1");
-        var start = new ProcessStartInfo("powershell.exe")
+        var start = new ProcessStartInfo(shell)
         {
             UseShellExecute = false,
             RedirectStandardOutput = true,

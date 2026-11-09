@@ -299,6 +299,16 @@ internal sealed class AtomicPublicationRecovery(AtomicPublicationPlan plan)
                 && !entry.StagedSnapshot.ContentEquals(current));
     }
 
+    /// <summary>
+    /// Whether a replacement moved the target to its displaced path and then could not put the
+    /// staged file in its place, as ReplaceFile does when it fails with Win32 error 1177: the
+    /// target is gone and the staged file is still the admitted one.
+    /// </summary>
+    private static bool ReplacementStoppedHalfway(PublicationJournalEntry entry, FilePublicationSnapshot current) =>
+        !entry.DeleteTarget
+        && !current.Exists
+        && entry.StagedSnapshot.VersionEquals(FilePublicationSnapshot.Capture(entry.Staged));
+
     private static FilePublicationSnapshot RecognizeInterruptedPublication(
         PublicationJournalEntry entry,
         FilePublicationSnapshot current)
@@ -307,6 +317,13 @@ internal sealed class AtomicPublicationRecovery(AtomicPublicationPlan plan)
             && entry.Displaced is not null
             && entry.Original.VersionEquals(
                 FilePublicationSnapshot.Capture(entry.Displaced));
+        if (displacedOriginal && ReplacementStoppedHalfway(entry, current))
+        {
+            // Nothing was published, so no published snapshot is recorded: the journal's
+            // validation reads a missing one as a deletion's.
+            return current;
+        }
+
         bool recognized = entry.DeleteTarget
             ? !current.Exists && displacedOriginal
             : entry.StagedSnapshot.VersionEquals(current)
