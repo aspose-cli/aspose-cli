@@ -5,7 +5,7 @@ namespace Aspose.Cli.Product.Cells.Engine.Mapping;
 
 /// <summary>
 /// The text the header and footer of a sheet print: the one place that reads it past its
-/// formatting codes, so what a convert says it leaves out (<see cref="UnwrittenContent"/>) and
+/// formatting codes, so what a save says it leaves out (<see cref="UnwrittenContent"/>) and
 /// what a replacement says it leaves in place (<c>TextReplaceOps</c>) are judged on the same
 /// text.
 /// </summary>

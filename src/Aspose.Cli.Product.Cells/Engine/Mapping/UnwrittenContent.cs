@@ -4,8 +4,9 @@ using Aspose.Cells;
 namespace Aspose.Cli.Product.Cells.Engine.Mapping;
 
 /// <summary>
-/// Names, before a convert saves, the content of the sheets it writes that the output format
-/// does not hold as the workbook does (<see cref="CellsEngineFormat.Leaves"/>): one
+/// Names, before a save, the content of the sheets it writes that the output format does not
+/// hold as the workbook does (<see cref="CellsEngineFormat.Leaves"/>), for every command that
+/// saves (<see cref="CellsSavePipeline.ProduceReporting"/>): one
 /// <c>LOSSY_CONVERSION</c> per kind of content the sheets have, with how much of it each sheet
 /// has, naming its kind in <c>details.content</c> (<see cref="ContentLoss"/>). A workbook
 /// without such content warns of nothing. A table of cells (csv, tsv, md) writes one sheet
@@ -16,13 +17,15 @@ namespace Aspose.Cli.Product.Cells.Engine.Mapping;
 /// </summary>
 internal static class UnwrittenContent
 {
-    /// <summary>The warnings of a convert of <paramref name="workbook"/> by <paramref name="plan"/>, in the order of <see cref="CellsContentLoss"/>.</summary>
-    /// <param name="workbook">The workbook as loaded, before the save.</param>
-    /// <param name="plan">How the output is saved: its format and the sheet a table of cells writes.</param>
-    /// <param name="selectedSheets">The zero-based sheets <c>--sheets</c> selected for a format that holds several, or null for every sheet.</param>
-    internal static IEnumerable<Warning> Warnings(Workbook workbook, WorkbookSavePlan plan, IReadOnlyList<int>? selectedSheets)
+    private const string ReadComments = "Read the comments with 'aspose-cli cells inspect <file> --detail comments'; the workbook keeps them.";
+
+    /// <summary>The warnings of a save of <paramref name="workbook"/> by <paramref name="plan"/>, in the order of <see cref="CellsContentLoss"/>.</summary>
+    /// <param name="workbook">The workbook as the save is about to write it.</param>
+    /// <param name="plan">How the output is saved: its format, the sheets <c>--sheets</c> selected and the sheet a table of cells writes.</param>
+    internal static IEnumerable<Warning> Warnings(Workbook workbook, WorkbookSavePlan plan)
     {
         string formatId = plan.FormatId;
+        IReadOnlyList<int>? selectedSheets = plan.SelectedSheets;
         CellsContentLoss leaves = CellsEngineFormats.Leaves(formatId);
         Worksheet[] written = plan.WritesActiveSheetOnly
             ? [plan.TextSheet(workbook)]
@@ -42,8 +45,16 @@ internal static class UnwrittenContent
         {
             yield return ContentLoss.Warning([ContentKind.Comments],
                 $"The {formatId} output leaves out {Total(comments)} comment(s): {PerSheet(comments)}.",
-                "Read the comments with 'aspose-cli cells inspect <file> --detail comments'; the workbook keeps them.",
+                ReadComments,
                 OneSheet(comments));
+        }
+
+        if (leaves.HasFlag(CellsContentLoss.FootnoteComments) && Counted(written, static sheet => sheet.Comments.Count) is { Count: > 0 } footnotes)
+        {
+            yield return ContentLoss.Warning([ContentKind.Comments],
+                $"The {formatId} output writes {Total(footnotes)} comment(s) only as footnote definitions no cell refers to, which a Markdown reader does not get: {PerSheet(footnotes)}.",
+                ReadComments,
+                OneSheet(footnotes));
         }
 
         if (leaves.HasFlag(CellsContentLoss.ChartPictures) && Counted(written, static sheet => sheet.Charts.Count) is { Count: > 0 } charts)
