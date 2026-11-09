@@ -16,7 +16,7 @@ internal sealed partial class WordsMutationHandlers
 {
     public ValueTuple Apply(InsertTableOp operation)
     {
-        Style? style = operation.TableStyle is null ? null : GetStyle(_document, operation.TableStyle);
+        Style? style = operation.TableStyle is null ? null : GetTableStyle(_document, operation.TableStyle);
 
         // One table, then per row a row node and per cell a cell, a paragraph and a run.
         _loader.EnsureNodeCapacity(_document, 1 + ((long)operation.RowCount * (1 + (3L * operation.ColumnCount))));

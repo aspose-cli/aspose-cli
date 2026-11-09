@@ -41,7 +41,8 @@ A change inside a comment's text belongs to the comment's `scope`, not to the
 body around it, even though its `block` is the block that anchors the
 comment. Format and style definition changes have no `text`; read the
 `block` instead. A paragraph mark inserted or deleted on its own, as when a
-paragraph is split or joined, has no `text` either. The `date` is reported as
+paragraph is split or joined, has no `text` either. A field inside a change
+reads as its result, without its code or field marks. The `date` is reported as
 UTC; Word stores the author's local time in this field, so a revision date
 Word wrote can be off from the true UTC by the author's time zone offset,
 while the revisions a `--track-changes` edit records carry the
@@ -95,5 +96,6 @@ whole run of text; pass `--granularity char` to mark only the changed
 characters.
 
 The result counts the revisions by kind and lists up to 50 `samples`, one per
-revision run or paragraph mark, with the `kind` names `--detail revisions`
-uses; a paragraph mark's sample has no `text`.
+revision run, field mark or paragraph mark, with the `kind` names `--detail
+revisions` uses; a paragraph mark's or field mark's sample has no `text`, and
+neither has a run of a field's code: a field's `text` is only its result.

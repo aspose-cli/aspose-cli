@@ -103,6 +103,21 @@ internal static class WordsMutationSupport
         document.Styles[name] ?? throw CliErrors.NotFound(
             ErrorCodes.StyleNotFound, "style", name, document.Styles.Select(static style => style.Name).ToArray());
 
-    internal static OperationInvalidException Invalid(string reason) => new(reason);
+    /// <summary>
+    /// A table style by name: one the document has, or a built-in one of Word's, which the engine
+    /// adds to the document when it is named. A name that is missing or belongs to a style of
+    /// another type is STYLE_NOT_FOUND listing the document's table styles.
+    /// </summary>
+    internal static Style GetTableStyle(Document document, string name) =>
+        document.Styles[name] is { Type: StyleType.Table } style
+            ? style
+            : throw CliErrors.NotFound(
+                ErrorCodes.StyleNotFound,
+                "table style",
+                name,
+                document.Styles.Where(static candidate => candidate.Type == StyleType.Table).Select(static candidate => candidate.Name).ToArray(),
+                hint: "Word's built-in table styles, such as 'Table Grid' and 'Grid Table 4', also work by name.");
+
+    internal static OperationInvalidException Invalid(string reason, string? hint = null) => new(reason, hint);
 }
 

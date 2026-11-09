@@ -180,9 +180,11 @@ Insertions at the same anchor stack against it: each `after` insertion lands
 directly after the anchor, ahead of earlier ones, and each `before` insertion
 lands directly before it, behind earlier ones. To keep the batch order as the
 reading order, anchor every piece `before` the block that should follow them.
-`insert_table`'s `tableStyle` names an existing table style; `inspect --detail
-tables` shows the `tableStyle` each table uses, so a new table can match the
-document's tables.
+`insert_table`'s `tableStyle` names a table style the document has, or one of
+Word's built-in table styles such as `Table Grid` or `Grid Table 4`; any other
+name, a paragraph style such as `Heading 1` included, is `STYLE_NOT_FOUND`.
+`inspect --detail tables` shows the `tableStyle` each table uses, so a new
+table can match the document's tables.
 
 ```json
 {

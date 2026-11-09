@@ -380,6 +380,102 @@ public sealed class WordsTrackChangesTests
             info.Revisions);
     }
 
+    private const string Reviewer = """w:author="Ann" w:date="2026-09-01T10:00:00Z" """;
+
+    // Text with a field in it: the code is AUTHOR and a reader sees its result, Alice.
+    private static string FieldRuns(string textElement, string codeElement) =>
+        $"""<w:r><w:{textElement} xml:space="preserve">Signed by </w:{textElement}></w:r><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:{codeElement}> AUTHOR </w:{codeElement}></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:{textElement}>Alice</w:{textElement}></w:r><w:r><w:fldChar w:fldCharType="end"/></w:r><w:r><w:{textElement} xml:space="preserve"> today.</w:{textElement}></w:r>""";
+
+    /// <summary>A field inside a change reads as its result, whichever kind of change holds it.</summary>
+    [Theory]
+    [InlineData("insertion")]
+    [InlineData("deletion")]
+    [InlineData("moving")]
+    public void InspectRevisions_ReadsAFieldInAChangeAsItsResult(string kind)
+    {
+        using var fixture = new WordsFixture();
+        string revised = kind switch
+        {
+            "insertion" => $"""<w:p><w:ins w:id="1" {Reviewer}>{FieldRuns("t", "instrText")}</w:ins></w:p>""",
+            "deletion" => $"""<w:p><w:del w:id="1" {Reviewer}>{FieldRuns("delText", "delInstrText")}</w:del></w:p>""",
+            _ => $"""
+                <w:p><w:moveFromRangeStart w:id="1" {Reviewer} w:name="m"/><w:moveFrom w:id="2" {Reviewer}>{FieldRuns("t", "instrText")}</w:moveFrom><w:moveFromRangeEnd w:id="1"/></w:p>
+                <w:p><w:moveToRangeStart w:id="3" {Reviewer} w:name="m"/><w:moveTo w:id="4" {Reviewer}>{FieldRuns("t", "instrText")}</w:moveTo><w:moveToRangeEnd w:id="3"/></w:p>
+                """,
+        };
+        string input = WriteDocx(fixture.Temp.File("field-change.docx"), $"""<w:p><w:r><w:t>Intro.</w:t></w:r></w:p>{revised}""");
+
+        WordsInspectResult info = WordsInspect.Run(fixture.Session, new WordsInspectRequest { Input = input, Details = ["revisions"] });
+
+        Assert.NotEmpty(info.Revisions!);
+        Assert.All(info.Revisions!, revision =>
+        {
+            Assert.Equal(kind, revision.Kind);
+            Assert.Equal("Signed by Alice today.", revision.Text);
+        });
+    }
+
+    /// <summary>A change inside a field's code shows nothing a reader sees, so it lists no text.</summary>
+    [Fact]
+    public void InspectRevisions_GivesAChangeInsideAFieldCodeNoText()
+    {
+        using var fixture = new WordsFixture();
+        string input = WriteDocx(fixture.Temp.File("code-change.docx"), $"""
+            <w:p><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:ins w:id="1" {Reviewer}><w:r><w:instrText> AUTHOR </w:instrText></w:r></w:ins><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:t>Alice</w:t></w:r><w:r><w:fldChar w:fldCharType="end"/></w:r></w:p>
+            """);
+
+        WordsInspectResult info = WordsInspect.Run(fixture.Session, new WordsInspectRequest { Input = input, Details = ["revisions"] });
+
+        Assert.Null(Assert.Single(info.Revisions!).Text);
+    }
+
+    /// <summary>A change that starts inside a field's code keeps only what follows the code.</summary>
+    [Fact]
+    public void InspectRevisions_ReadsAChangeStartingInAFieldCodeFromTheResultOn()
+    {
+        using var fixture = new WordsFixture();
+        string input = WriteDocx(fixture.Temp.File("code-into-result.docx"), $"""
+            <w:p><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:ins w:id="1" {Reviewer}><w:r><w:instrText> AUTHOR </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:t>Alice</w:t></w:r><w:r><w:fldChar w:fldCharType="end"/></w:r><w:r><w:t xml:space="preserve"> signs.</w:t></w:r></w:ins></w:p>
+            """);
+
+        WordsInspectResult info = WordsInspect.Run(fixture.Session, new WordsInspectRequest { Input = input, Details = ["revisions"] });
+
+        Assert.Equal("Alice signs.", Assert.Single(info.Revisions!).Text);
+    }
+
+    /// <summary>A sample per revision node: a field's marks and code have no text, its result does.</summary>
+    [Fact]
+    public void Compare_SamplesAFieldByItsResultAlone()
+    {
+        using var fixture = new WordsFixture();
+        string left = fixture.CreateReport("left.docx");
+        string right = fixture.Temp.File("right.docx");
+        var changed = new Document(left);
+        var builder = new DocumentBuilder(changed);
+        builder.MoveToDocumentEnd();
+        builder.InsertField("AUTHOR", "Alice");
+        changed.Save(right);
+
+        WordsCompareResult result = WordsCompare.Run(fixture.Session, new WordsCompareRequest { Left = left, Right = right });
+
+        string?[] texts = [.. result.Samples.Select(static sample => sample.Text)];
+        Assert.Contains("Alice", texts);
+        Assert.DoesNotContain("AUTHOR", string.Concat(texts), StringComparison.Ordinal);
+        Assert.DoesNotContain(texts, static text => text is not null && text.Any(static c => c is '\u0013' or '\u0014' or '\u0015'));
+    }
+
+    /// <summary>What a field's text reads does not depend on the change around it: a block reads the same with the change listed.</summary>
+    [Fact]
+    public void Read_ShowsAFieldInATrackedChangeByItsResult()
+    {
+        using var fixture = new WordsFixture();
+        string input = WriteDocx(fixture.Temp.File("read-field.docx"), $"""<w:p><w:ins w:id="1" {Reviewer}>{FieldRuns("t", "instrText")}</w:ins></w:p>""");
+
+        WordsReadResult read = WordsRead.Run(fixture.Session, new WordsReadRequest { Input = input, Content = "text" });
+
+        Assert.Equal("Signed by Alice today.", Assert.Single(read.Blocks!).Text);
+    }
+
     [Fact]
     public void RevisionsByNumber_DecideAParagraphsTwoFormatChangesOnlyTogether()
     {

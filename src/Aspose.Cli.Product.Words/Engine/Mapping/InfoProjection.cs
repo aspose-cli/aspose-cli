@@ -179,7 +179,8 @@ internal static class InfoProjection
     internal static IReadOnlyList<RevisionChange> RevisionChanges(Document document)
     {
         Revision[] revisions = document.Revisions.Cast<Revision>().ToArray();
-        Dictionary<Revision, RevisionChange> moves = Moves(document, revisions);
+        IReadOnlySet<Node> fieldCode = WordsText.FieldCodeRuns(document);
+        Dictionary<Revision, RevisionChange> moves = Moves(document, revisions, fieldCode);
         var groups = new Dictionary<RevisionGroup, List<Revision>>(ReferenceEqualityComparer.Instance);
         var changes = new List<RevisionChange>();
         foreach (Revision revision in revisions)
@@ -208,7 +209,9 @@ internal static class InfoProjection
 
             changes.Add(new RevisionChange(revision, revision.RevisionType switch
             {
-                RevisionType.Insertion or RevisionType.Deletion => revision.Group?.Text ?? NodeText(revision),
+                RevisionType.Insertion or RevisionType.Deletion => revision.Group?.Text is { } groupText
+                    ? WordsText.WithoutFieldCodes(groupText, startsInCode: fieldCode.Contains(revision.ParentNode))
+                    : NodeText(revision, fieldCode),
                 // Format changes carry a description of the formatting, not document text.
                 _ => null,
             }, members));
@@ -218,12 +221,17 @@ internal static class InfoProjection
     }
 
     /// <summary>
-    /// The text of the one node a revision changes, or null for a paragraph: a paragraph's own
-    /// revision is its mark alone, which has no text, while the SDK would return the whole
-    /// paragraph's text.
+    /// The text a reader sees of the one node a revision changes, or null when it shows none: a
+    /// paragraph's own revision is its mark alone, while the SDK would return the whole
+    /// paragraph's text, and a field shows only its result, not its marks or the runs of its code
+    /// (<paramref name="fieldCode"/>).
     /// </summary>
-    internal static string? NodeText(Revision revision) =>
-        revision.ParentNode is Paragraph or null ? null : revision.ParentNode.GetText();
+    internal static string? NodeText(Revision revision, IReadOnlySet<Node> fieldCode) => revision.ParentNode switch
+    {
+        null or Paragraph or FieldChar => null,
+        Run run when fieldCode.Contains(run) => null,
+        Node node => WordsText.WithoutFieldCodes(node.GetText()),
+    };
 
     /// <summary>
     /// Joins the move revisions into one move per side: its source (moved from) and its
@@ -232,9 +240,10 @@ internal static class InfoProjection
     /// its paragraph's runs. Walking the paragraphs, each inline node and then the paragraph's
     /// mark, the nodes that follow one another with one direction, author and date are one move.
     /// Returns each move by the first of its revisions in <paramref name="revisions"/> order,
-    /// with the move's text: its runs' text, with a paragraph break for each moved mark.
+    /// with the move's text: its runs' text outside field codes, with a paragraph break for each
+    /// moved mark.
     /// </summary>
-    private static Dictionary<Revision, RevisionChange> Moves(Document document, Revision[] revisions)
+    private static Dictionary<Revision, RevisionChange> Moves(Document document, Revision[] revisions, IReadOnlySet<Node> fieldCode)
     {
         var moves = new Dictionary<Revision, RevisionChange>(ReferenceEqualityComparer.Instance);
         var byNode = new Dictionary<Node, Revision>(ReferenceEqualityComparer.Instance);
@@ -288,7 +297,7 @@ internal static class InfoProjection
             // The text is cut to the limit when listed, so collecting stops just past it.
             if (text.Length <= RevisionTextLimit)
             {
-                text.Append(node is Run run ? run.Text : node is Paragraph ? "\r" : string.Empty);
+                text.Append(node is Run run && !fieldCode.Contains(run) ? run.Text : node is Paragraph ? "\r" : string.Empty);
             }
         }
 
@@ -300,7 +309,7 @@ internal static class InfoProjection
         // A move revision on a node the walk does not reach, such as a table row, is listed on its own.
         foreach (Revision revision in byNode.Values.Where(revision => !walked.Contains(revision)))
         {
-            moves[revision] = new RevisionChange(revision, revision.ParentNode.GetText(), [revision]);
+            moves[revision] = new RevisionChange(revision, NodeText(revision, fieldCode), [revision]);
         }
 
         return moves;
