@@ -325,23 +325,25 @@ internal sealed partial class PdfMutationHandlers
     }
 
     /// <summary>
-    /// Clears each form field whose value matches, as set_form_field clears it: the whole value,
-    /// so no part of it shows in the field. With <paramref name="pages"/>, only the fields on them.
+    /// Clears each form field that <see cref="Clears"/>, as set_form_field clears it: the whole
+    /// value, so no part of it shows in the field.
     /// </summary>
     private void ClearFields(IReadOnlyList<int>? pages, Regex pattern)
     {
-        foreach (Field field in _document.Form.Fields)
+        foreach (Field field in _document.Form.Fields.Where(field => Clears(field, PdfForms.State(field).Value, pages, pattern)))
         {
-            if (field is ButtonField or SignatureField
-                || (pages is not null && !(PdfForms.PageOf(field) is int page && pages.Contains(page)))
-                || !PdfRedactionAudit.Matches(pattern, [PdfForms.State(field).Value]))
-            {
-                continue;
-            }
-
             (PdfForms.RadioGroup(field) ?? field).Value = ClearedFieldValue(field);
         }
     }
+
+    /// <summary>
+    /// Whether redact_text clears a field that holds <paramref name="value"/>: one with a value
+    /// the pattern matches and, with <paramref name="pages"/>, only on them.
+    /// </summary>
+    internal static bool Clears(Field field, string? value, IReadOnlyList<int>? pages, Regex pattern) =>
+        field is not (ButtonField or SignatureField)
+        && (pages is null || (PdfForms.PageOf(field) is int page && pages.Contains(page)))
+        && PdfRedactionAudit.Matches(pattern, [value]);
 
     private void NoteBeside(int number, (int Lines, int Characters) taken)
     {
