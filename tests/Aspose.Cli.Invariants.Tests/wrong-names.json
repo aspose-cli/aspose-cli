@@ -95,6 +95,7 @@
 {"edit":"words","ops":[{"op":"remove_watermark"}],"wrong":"remove_watermark","suggests":"delete_watermark"},
 {"edit":"words","ops":[{"op":"replace_txt","find":"Hello","replace":"Hi"}],"wrong":"replace_txt","suggests":"replace_text"},
 {"edit":"words","ops":[{"op":"update_fields"}],"wrong":"update_fields","suggests":"refresh_fields"},
+{"edit":"words","first":[{"op":"insert_table","at":{"block":1},"position":"after","rowCount":1,"columnCount":1}],"ops":[{"op":"set_table_style","target":{"block":2},"tableStyle":"Grid Table 4"}],"wrong":"set_table_style","suggests":"insert_table","fixed":[{"op":"insert_table","at":{"block":2},"position":"after","rowCount":1,"columnCount":1,"tableStyle":"Grid Table 4"},{"op":"delete_blocks","target":{"block":2}}]},
 {"edit":"words","ops":[{"op":"insert_chart","kind":"column"}],"wrong":"insert_chart","suggests":null,"because":"a Word document takes no chart from this CLI"},
 // Words: fields
 {"edit":"words","first":"words edit a.docx --in-place --track-changes --author A --ops [{\"op\":\"replace_text\",\"find\":\"seed\",\"replace\":\"new\"}]","ops":[{"op":"accept_revisions","revision":[1]}],"wrong":"revision","suggests":"revisions"},
