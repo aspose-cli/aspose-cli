@@ -632,19 +632,22 @@ Reproductions: [WordsKnownIssueTests](tests/Aspose.Cli.Product.Words.Tests/Words
 - **Defect:** saving to plain text or Markdown writes each comment's text into the body, as a
   paragraph beside the one that anchors the comment, where it reads as document text.
   `TxtSaveOptions` and `MarkdownSaveOptions` have no option to leave comments out.
-- **CLI behavior:** `words convert` and `words edit` with a `txt` or `md` output warn
-  `LOSSY_CONVERSION` with the number of comments written into the body.
-- **Workaround:** add `delete_comments` to a `words edit` batch whose `--out` is the text file.
+- **CLI behavior:** `words convert` to `txt` or `md` warns `LOSSY_CONVERSION` with the number of
+  comments written into the body; `words edit` writes neither format.
+- **Workaround:** delete the comments with `delete_comments` in a `words edit` that writes a Word
+  format such as docx, then convert that file to the text format, as the warning's hint gives.
 
 ### WORDS-TEXT-DELETIONS
 
 - **Defect:** saving a document with tracked changes to plain text or Markdown writes deleted and
   moved-from text beside the text that replaces it, so the output reads as neither the original
   nor the revised document.
-- **CLI behavior:** `words convert` and `words edit` with a `txt` or `md` output warn
-  `LOSSY_CONVERSION` when the saved document has tracked deletions or moves.
-- **Workaround:** add `accept_revisions` or `reject_revisions`, as the reviewer decides, to a
-  `words edit` batch whose `--out` is the text file.
+- **CLI behavior:** `words convert` to `txt` or `md` warns `LOSSY_CONVERSION` when the document
+  has tracked deletions or moves; `words edit` writes neither format.
+- **Workaround:** accept or reject the revisions, as the reviewer decides, with
+  `accept_revisions` or `reject_revisions` in a `words edit` that writes a Word format such as
+  docx, then convert that file to the text format, as the warning's hint gives; with
+  `delete_comments` in the same edit when the document has comments too.
 
 ### WORDS-PAGE-FIELD-LAYOUT
 
