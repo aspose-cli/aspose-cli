@@ -53,7 +53,10 @@ extension: `--from-markdown` lays out Markdown, a `#` line as a heading;
 `--from-text` lays out plain text line by line, `#` and all; `--from-html` takes
 HTML, whose `<title>` becomes the PDF title and whose form controls become
 fields ([forms](references/forms-security.md)). A PDF made from HTML or Markdown
-has no author or subject until a `set_properties` edit sets them.
+has no author or subject until a `set_properties` edit sets them. Its link to a
+place in the page leads there only when the place is marked `<a name="part"></a>`;
+`NAVIGATION_DEGRADED` counts the links to an element `id` or a local file, which
+lead nowhere.
 
 A Markdown table has no borders or cell padding, and a column without alignment
 centers its header over left-aligned cells; write `---:` for a number column. For

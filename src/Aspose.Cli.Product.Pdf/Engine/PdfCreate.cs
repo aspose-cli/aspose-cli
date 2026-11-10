@@ -10,6 +10,7 @@ using Aspose.Cli.Sdk.IO.Output;
 using Aspose.Cli.Sdk.Licensing;
 using Aspose.Cli.Sdk.Results;
 using Aspose.Pdf;
+using Aspose.Pdf.Annotations;
 using Aspose.Pdf.Text;
 
 namespace Aspose.Cli.Product.Pdf.Engine;
@@ -45,6 +46,10 @@ internal static class PdfCreate
             document.Info.Title = html is null ? string.Empty : HtmlDocumentTitle.Read(html) ?? string.Empty;
             document.Info.Author = string.Empty;
             document.Info.Subject = string.Empty;
+            if (RemoveLocalAddresses(document) is { } nowhere)
+            {
+                warnings.Add(nowhere);
+            }
         }
 
         PdfOutputPasswords? passwords = PdfOutputEncryption.Requested(request.EncryptPassword);
@@ -305,6 +310,38 @@ internal static class PdfCreate
             $"The HTML importer keeps the name and value of single-line text inputs only: {string.Join("; ", losses)}.",
             "Read the fields with 'pdf inspect --detail forms' and match each field's page and rect to the label beside it before filling; give a dropped input type=\"text\" to keep it as a field, and place the picture of an image input with add_stamp_image.");
     }
+
+    /// <summary>
+    /// Both importers resolve each relative link against a local folder and write that file address
+    /// into the link's text and, for a link to another file, its action; a link to an element id
+    /// gets no target (PDF-IMPORT-LINK-ADDRESSES). Each link loses such an address, so the output
+    /// names no folder of this machine, and the links it leaves leading nowhere are counted.
+    /// </summary>
+    private static Warning? RemoveLocalAddresses(Document document)
+    {
+        int nowhere = 0;
+        foreach (LinkAnnotation link in document.Pages.SelectMany(static page => page.Annotations.OfType<LinkAnnotation>()))
+        {
+            bool local = IsLocal(link.Contents);
+            if (link.Action is GoToURIAction { URI: var address } && IsLocal(address))
+            {
+                link.Action = null;
+                local = true;
+            }
+
+            if (local)
+            {
+                link.Contents = string.Empty;
+                nowhere += PdfNavigationCensus.Target(link.Destination, link.Action) is null ? 1 : 0;
+            }
+        }
+
+        return new PdfNavigationCensus(0, nowhere, 0).ToWarning(
+            "lead nowhere: the importer gives a link to an element id or to a local file no target",
+            "Mark each place a link leads to with <a name=\"...\"></a>, which the importer links to, give a link to another document its https address, and create the PDF again.");
+    }
+
+    private static bool IsLocal(string? address) => Uri.TryCreate(address, UriKind.Absolute, out Uri? uri) && uri.IsFile;
 
     private static Document CreateFromText(string path, bool markdown, PdfCreateRequest request)
     {

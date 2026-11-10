@@ -302,6 +302,29 @@ public sealed class PdfKnownIssueTests
     }
 
     [LicensedFact]
+    public void HtmlAndMarkdownImports_WriteTheLocalAddressOfARelativeLinkIntoIt()
+    {
+        using var fixture = new PdfEngineFixture();
+        string folder = fixture.Temp.Path + Path.DirectorySeparatorChar;
+        string html = fixture.File("links.html");
+        File.WriteAllText(html, """<html><body><h1 id="part">One</h1><p><a href="#part">Part</a> <a href="annex.html">Annex</a></p></body></html>""");
+        string markdown = fixture.File("links.md");
+        File.WriteAllText(markdown, "# One\n\n[Annex](annex.md)\n");
+
+        using var fromHtml = new Document(html, new HtmlLoadOptions(folder));
+        using var fromMarkdown = new Document(markdown, new MdLoadOptions());
+        LinkAnnotation[] links = [.. fromHtml.Pages[1].Annotations.OfType<LinkAnnotation>()];
+        string?[] addresses = [.. links.Select(static link => link.Contents), .. fromMarkdown.Pages[1].Annotations.OfType<LinkAnnotation>().Select(static link => link.Contents)];
+
+        KnownIssue.Reproduces(
+            "PDF-IMPORT-LINK-ADDRESSES",
+            links.Length == 2 && links[0].Action is null && links[0].Destination is null
+                && links[1].Action is GoToURIAction { URI: var annex } && annex.StartsWith(new Uri(folder).AbsoluteUri, StringComparison.OrdinalIgnoreCase)
+                && addresses.Length == 3 && addresses.All(static address => address?.StartsWith("file:///", StringComparison.Ordinal) == true),
+            $"the imports gave their links the texts [{string.Join(", ", addresses)}] and the actions [{string.Join(", ", links.Select(static link => link.Action?.GetType().Name ?? "none"))}]");
+    }
+
+    [LicensedFact]
     public void HtmlImport_NamesFormControlsOtherThanTextInputsItself()
     {
         using var fixture = new PdfEngineFixture();

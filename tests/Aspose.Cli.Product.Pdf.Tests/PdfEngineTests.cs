@@ -76,6 +76,38 @@ public sealed class PdfEngineTests
         Assert.DoesNotContain(info.Properties.Keys, static key => key.StartsWith("xmp:", StringComparison.Ordinal));
     }
 
+    /// <summary>
+    /// The importer writes the folder a relative link resolves to into the link
+    /// (PDF-IMPORT-LINK-ADDRESSES): the output names no folder, a link to a named anchor still leads
+    /// to its page, a web link stays, and the links left leading nowhere are counted.
+    /// </summary>
+    [Fact]
+    public void Create_FromHtml_NamesNoLocalFolderAndCountsTheLinksThatLeadNowhere()
+    {
+        using var fixture = new PdfEngineFixture();
+        string input = fixture.File("contract.html");
+        File.WriteAllText(input, """
+            <html><body><h1 id="c1">General</h1>
+            <p><a href="#c2">Price</a> | <a href="#n3">Delivery</a> | <a href="annex.html">Annex</a> | <a href="https://example.com/terms">Terms</a>
+            | <a href="file:///C:/Docs/absolute.pdf">Absolute</a> | <a href="\\localhost\share\shared.pdf">Shared</a></p>
+            <h1 id="c2" style="page-break-before:always">Price</h1>
+            <h1 style="page-break-before:always"><a name="n3"></a>Delivery</h1>
+            </body></html>
+            """);
+
+        PdfCreateResult result = PdfCreate.Run(fixture.Session, new PdfCreateRequest { Output = TestOutput.At(fixture.File("contract.pdf")), Source = new PdfHtmlSource(new SourceFile("--from-html", input), AllowNetworkResources: false) });
+
+        Assert.DoesNotContain(fixture.Temp.Path.Replace('\\', '/')[2..], System.Text.Encoding.Latin1.GetString(File.ReadAllBytes(result.Output.Path)), StringComparison.OrdinalIgnoreCase);
+        using var document = new Document(result.Output.Path);
+        LinkAnnotation[] links = [.. document.Pages[1].Annotations.OfType<LinkAnnotation>()];
+        Assert.Contains(links, static link => link.Action is GoToAction { Destination: ExplicitDestination { PageNumber: 3 } });
+        Assert.Contains(links, static link => link.Action is GoToURIAction { URI: "https://example.com/terms" });
+        Assert.DoesNotContain(links, static link => link.Contents.StartsWith("file:", StringComparison.OrdinalIgnoreCase)
+            || link.Action is GoToURIAction { URI: var address } && address.StartsWith("file:", StringComparison.OrdinalIgnoreCase));
+        Warning nowhere = Assert.Single(result.Warnings!, static warning => warning.Code.Name == "NAVIGATION_DEGRADED");
+        Assert.Contains("4 link(s)", nowhere.Message, StringComparison.Ordinal);
+    }
+
     [Fact]
     public void Create_FromHtml_DrawsTheBoxOfEveryCheckBox()
     {
