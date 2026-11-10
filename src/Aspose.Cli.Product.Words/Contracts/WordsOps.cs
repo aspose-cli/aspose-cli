@@ -266,6 +266,7 @@ public sealed record InsertImageOp : WordsOp
 
 /// <summary>Inserts a table at a block boundary; values must fit the table's rows and columns.</summary>
 [Operation("insert_table")]
+[MistakenFor("set_table_style")]
 public sealed record InsertTableOp : WordsOp
 {
     /// <summary>The block the new content goes next to.</summary>
