@@ -27,7 +27,7 @@ edit exits 8; without it, it exits 0 with the warning alone. The
 
 | Operation | Read back |
 | --- | --- |
-| `set_form_field` | the field holds the value set, or is clear after `null` |
+| `set_form_field` | the field holds the value set, or is clear after `null` or a later `redact_text` that clears it |
 | `flatten_forms` | no field of a flattened name remains, or no field at all without `fields` |
 | `redact_text` | checked before publishing, with or without `--verify` ([redaction](editing.md#redaction)) |
 | `add_bookmark` | its address holds its title and page, and the bookmark count |

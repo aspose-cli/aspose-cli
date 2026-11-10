@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Text.RegularExpressions;
 using Aspose.Cli.Sdk.Diagnostics;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Pdf;
@@ -15,7 +16,8 @@ namespace Aspose.Cli.Product.Pdf.Engine.Editing;
 /// publishing, every edit searched the output for it (<see cref="PdfRedactionAudit"/>) and would
 /// have published nothing, so a redact_text that reaches this read-back is checked. The batch is checked as a whole: an
 /// expectation a later operation supersedes (the same field, key or attachment set again, the
-/// outline or the pages renumbered) is dropped, and an operation is reported as checked only
+/// outline or the pages renumbered) is dropped, a field a later redact_text clears is expected
+/// clear, and an operation is reported as checked only
 /// when every effect it recorded was read back. The output is read as <c>pdf inspect</c> reads it
 /// (<see cref="PdfInfoProjection"/>), and an issue is located under the object's address there.
 /// </summary>
@@ -306,6 +308,9 @@ internal sealed class PdfEditVerifier : IEditVerifier<PdfOp>
             _items[key] = new Expected<T>(id, value);
         }
 
+        /// <summary>Changes the value a key is expected to hold, keeping the operation that set it.</summary>
+        public void Expect(string key, T value) => _items[key] = _items[key] with { Value = value };
+
         public void Drop(string key)
         {
             if (_items.Remove(key, out Expected<T>? earlier))
@@ -356,9 +361,24 @@ internal sealed class PdfEditVerifier : IEditVerifier<PdfOp>
             return default;
         }
 
+        /// <summary>
+        /// A field it clears is expected clear, by the operation that set it; a field an earlier
+        /// operation removed, such as a redact_area over it, is not there to clear.
+        /// </summary>
         public ValueTuple Apply(RedactTextOp operation)
         {
             verifier._checked.Add(id);
+            IReadOnlyList<int>? pages = operation.Pages is null ? null : PdfMutationSupport.ResolveOptional(Document, operation.Pages);
+            Regex pattern = PdfTextMatch.TextPattern(operation.Find, operation.Regex, operation.CaseSensitive);
+            foreach ((string name, Expected<string> expected) in verifier._fields.ToArray())
+            {
+                if (Document.Form.Fields.FirstOrDefault(field => string.Equals(field.FullName, name, StringComparison.Ordinal)
+                    && PdfMutationHandlers.Clears(field, expected.Value, pages, pattern)) is { } cleared)
+                {
+                    verifier._fields.Expect(name, PdfMutationSupport.ClearedFieldValue(cleared));
+                }
+            }
+
             return default;
         }
 
