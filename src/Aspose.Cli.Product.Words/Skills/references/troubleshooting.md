@@ -13,7 +13,8 @@ Block and section numbers are 1-based and count the document as it was
 before the batch: read them again with `words read --content outline` or
 `inspect --detail sections` right before the edit. A `heading` or `find`
 address matches visible text, ignoring case, and an `nth` past the matches
-fails the same way ([editing](editing.md#addresses)). `words split --by
+fails the same way (`at` or `target` in
+`aspose-cli schema v2/words/ops --operation <op>`). `words split --by
 heading1` needs a Heading 1 paragraph, and warns `SPLIT_SINGLE_HEADING` when
 there is only one, which divides the document at that heading alone: apply
 Heading 1 to each chapter's title with `set_style`, or split `--by sections`
@@ -38,8 +39,8 @@ A tracked batch (`--track-changes`) holds only operations Word can record as
 revisions, and comments ([editing](editing.md#batch-semantics)); run the
 others in a separate batch. The data of `mail_merge` and `repeat_table_row`
 must be usable as their pages describe ([mail merge](mail-merge.md),
-[editing](editing.md#text)). `words compare` needs revision-free inputs: list
-the revisions with `words inspect --detail revisions` and decide them first
+`aspose-cli schema v2/words/ops --operation repeat_table_row`). `words compare`
+needs revision-free inputs: list the revisions with `words inspect --detail revisions` and decide them first
 ([revisions](revisions.md)). `unprotect_document` with a wrong `passwordEnv`
 password fails ([editing](editing.md#protection-and-encryption)).
 
