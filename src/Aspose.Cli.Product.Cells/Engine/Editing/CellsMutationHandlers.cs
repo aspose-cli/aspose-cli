@@ -410,16 +410,16 @@ internal sealed class CellsMutationHandlers : ICellsOpHandler<ValueTuple>
     /// <summary>How many matches each replace_text operation applied so far replaced.</summary>
     internal Dictionary<ReplaceTextOp, long> Replaced { get; } = new(ReferenceEqualityComparer.Instance);
 
-    /// <summary>The warnings of the operations applied so far, in batch order.</summary>
-    internal List<Warning> Warnings { get; } = [];
+    /// <summary>The text outside the cells the replace_text operations applied so far found and left, in batch order.</summary>
+    internal List<UnreplacedText> Unreplaced { get; } = [];
 
     public ValueTuple Apply(ReplaceTextOp operation)
     {
         Worksheet sheet = Sheet(operation);
         // Read before the replacement changes anything, so a match that runs out of time fails the operation unapplied.
-        IReadOnlyList<Warning> unreached = TextReplaceOps.Unreached(sheet, operation);
+        IReadOnlyList<UnreplacedText> unreached = TextReplaceOps.Unreached(sheet, operation);
         Replaced[operation] = TextReplaceOps.Replace(sheet, operation);
-        Warnings.AddRange(unreached);
+        Unreplaced.AddRange(unreached);
         return default;
     }
 

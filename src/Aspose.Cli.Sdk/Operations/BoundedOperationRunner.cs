@@ -57,7 +57,9 @@ public static class BoundedOperationRunner
     /// address, and one a later operation removed has its address in the input of the batch. More than
     /// <see cref="BoundedOperationOutcome.MaximumTargets"/> addresses shorten to one per unit
     /// that covers them all, such as <c>page/1-150</c>. An operation that applied but changed
-    /// nothing warns <c>OP_NO_EFFECT</c>.
+    /// nothing warns <c>OP_NO_EFFECT</c>, and text an operation found and left
+    /// (<see cref="IOperationModel{TOp}.Unreplaced"/>) warns <c>TEXT_NOT_REPLACED</c> when the
+    /// document still holds it after the last operation.
     /// When the snapshot after an operation cannot be read, the operation has applied but no
     /// outcome can say what it changed: the batch stops as after an engine failure.
     /// </summary>
@@ -155,6 +157,8 @@ public static class BoundedOperationRunner
                     }
                 }
             });
+        // Said of the output, so text a later operation changed or removed is not named.
+        warnings.AddRange(model.Unreplaced().Where(static text => text.Remains()).Select(static text => text.Warning));
         Dictionary<string, Dictionary<object, int>> output = input.Count == 0 ? input : Index(model.Positions());
         NamedScopes? lastScopes = firstScopes is null ? null : model.Scopes();
         var placed = new Dictionary<int, IReadOnlyList<ChangedObject>>();

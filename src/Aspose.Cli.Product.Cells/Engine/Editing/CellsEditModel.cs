@@ -48,8 +48,8 @@ internal sealed class CellsEditModel : IOperationModel<CellsOp>
     /// <summary>The anchor cells set_formula wrote, which the batch checks for unknown functions.</summary>
     internal IReadOnlyList<Cell> FormulaAnchors => _handlers.FormulaAnchors;
 
-    /// <summary>The warnings the applied operations raised, in batch order, such as the text a replace_text did not reach.</summary>
-    internal IReadOnlyList<Warning> Warnings => _handlers.Warnings;
+    /// <summary>The text outside the cells each replace_text applied so far found and left, in batch order.</summary>
+    public IReadOnlyList<UnreplacedText> Unreplaced() => _handlers.Unreplaced;
 
     public OperationSnapshot Snapshot(CellsOp operation) => Engine(() => operation.Accept(_snapshots));
 

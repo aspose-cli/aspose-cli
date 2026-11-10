@@ -12,7 +12,7 @@ namespace Aspose.Cli.Platform.Tests.Sdk;
 /// sets of tokens: <c>ContentLoss</c> a <c>LOSSY_CONVERSION</c> with the <c>ContentKind</c> tokens
 /// in <c>details.content</c>, and <c>UnreplacedText</c> a <c>TEXT_NOT_REPLACED</c> with the
 /// <c>TextPart</c> token in <c>details.part</c>. A product picks a member of a set; a token outside
-/// it does not compile.
+/// it does not compile, and neither does a <c>TEXT_NOT_REPLACED</c> it makes or reads itself.
 /// </summary>
 public sealed class ContentLossTests
 {
@@ -98,9 +98,9 @@ public sealed class ContentLossTests
     {
         TextPart part = Assert.Single(TextPart.All, part => part.Token == token);
 
-        Warning warning = UnreplacedText.Warning(part, new Operation { Id = "rename" }, "replace_text",
+        Warning warning = UnreplacedText.Found(part, new Operation { Id = "rename" }, "replace_text",
             "Operation rename (replace_text) found a match in the comment of cell B2 and left it as it was.",
-            "Set the new text of the comment with set_comment.", "comment/Data!B2", docs: "cells/editing");
+            "Set the new text of the comment with set_comment.", "comment/Data!B2", static () => true, docs: "cells/editing").Warning;
 
         Assert.Equal(WarningCodes.TextNotReplaced, warning.Code);
         Assert.Equal("TEXT_NOT_REPLACED", warning.Code.Name);
@@ -116,19 +116,22 @@ public sealed class ContentLossTests
     /// <summary>A warning about an operation needs the id the batch gave it.</summary>
     [Fact]
     public void UnreplacedText_RefusesAnOperationWithoutAnId() =>
-        Assert.Throws<ArgumentException>(() => UnreplacedText.Warning(TextPart.Comment, new Operation(), "replace_text", "m", "h", "comment/Data!B2"));
+        Assert.Throws<ArgumentException>(() => UnreplacedText.Found(TextPart.Comment, new Operation(), "replace_text", "m", "h", "comment/Data!B2", static () => true));
 
     /// <summary>
     /// A product picks a member of a set: a token written as a string, or a member it makes
-    /// itself, does not compile, while the same call with a member of the set does.
+    /// itself, does not compile, while the same call with a member of the set does. The warning
+    /// of an <c>UnreplacedText</c> is the runner's to report, and its code is the SDK's alone.
     /// </summary>
     [Theory]
     [InlineData("""ContentLoss.Warning([ContentKind.Comments], "m", "h")""", true)]
     [InlineData("""ContentLoss.Warning(["comments"], "m", "h")""", false)]
     [InlineData("""ContentLoss.Warning([new ContentKind("comments")], "m", "h")""", false)]
-    [InlineData("""UnreplacedText.Warning(TextPart.Comment, operation, "replace_text", "m", "h", "comment/Data!B2")""", true)]
-    [InlineData("""UnreplacedText.Warning("comment", operation, "replace_text", "m", "h", "comment/Data!B2")""", false)]
-    [InlineData("""UnreplacedText.Warning(new TextPart("comment"), operation, "replace_text", "m", "h", "comment/Data!B2")""", false)]
+    [InlineData("""UnreplacedText.Found(TextPart.Comment, operation, "replace_text", "m", "h", "comment/Data!B2", () => true)""", true)]
+    [InlineData("""UnreplacedText.Found("comment", operation, "replace_text", "m", "h", "comment/Data!B2", () => true)""", false)]
+    [InlineData("""UnreplacedText.Found(new TextPart("comment"), operation, "replace_text", "m", "h", "comment/Data!B2", () => true)""", false)]
+    [InlineData("""UnreplacedText.Found(TextPart.Comment, operation, "replace_text", "m", "h", "comment/Data!B2", () => true).Warning""", false)]
+    [InlineData("""new Warning(WarningCodes.TextNotReplaced, "m")""", false)]
     public void ATokenOutsideTheSet_DoesNotCompile(string call, bool compiles)
     {
         string source = $$"""
@@ -136,7 +139,7 @@ public sealed class ContentLossTests
 
             internal static class Fixture
             {
-                internal static Warning Make(BoundedOperation operation) => {{call}};
+                internal static object Make(BoundedOperation operation) => {{call}};
             }
             """;
         CSharpCompilation compilation = CSharpCompilation.Create("Fixture",

@@ -56,14 +56,16 @@ internal static class TextReplaceOps
     /// automatic title as none, and the axis titles of a pie, which has no axes, as none. A title
     /// linked to a cell follows the cell, so it is not named either. A range reaches only the
     /// comments of its cells; the header, footer, charts and drawings belong to the whole sheet.
-    /// A warning never repeats the find text or the text that holds the match.
+    /// A warning never repeats the find text or the text that holds the match. Each is reported
+    /// only if the same section, comment, title or drawing still holds a match once the batch has
+    /// run (<see cref="UnreplacedText"/>).
     /// </summary>
-    public static IReadOnlyList<Warning> Unreached(Worksheet sheet, ReplaceTextOp op)
+    public static IReadOnlyList<UnreplacedText> Unreached(Worksheet sheet, ReplaceTextOp op)
     {
         TextReplacement replacement = Replacement(op);
         RangeRef? range = Range(op);
         bool Holds(string? text) => !string.IsNullOrEmpty(text) && replacement.Matches(text, 1).Count > 0;
-        Warning?[] warnings =
+        UnreplacedText?[] found =
         [
             range is null ? HeaderFooter(sheet, op, Holds) : null,
             Comments(sheet, op, range, Holds),
@@ -71,11 +73,11 @@ internal static class TextReplaceOps
             range is null ? AxisTitles(sheet, op, Holds) : null,
             range is null ? Drawings(sheet, op, Holds) : null,
         ];
-        return [.. warnings.OfType<Warning>()];
+        return [.. found.OfType<UnreplacedText>()];
     }
 
     /// <summary>The header and footer sections that hold a match, named by their part and section, such as <c>the header (center) and the first-page footer (left)</c>.</summary>
-    private static Warning? HeaderFooter(Worksheet sheet, ReplaceTextOp op, Func<string?, bool> holds)
+    private static UnreplacedText? HeaderFooter(Worksheet sheet, ReplaceTextOp op, Func<string?, bool> holds)
     {
         HeaderFooterSection[] matched = [.. HeaderFooterText.InEffect(sheet.PageSetup).Where(section => holds(HeaderFooterText.Visible(section.Text)))];
         if (matched.Length == 0)
@@ -107,12 +109,14 @@ internal static class TextReplaceOps
             hint.Add($"No operation reads or changes the header and footer {pages}: tell the user they still hold the old text.");
         }
 
-        return Warning(op, sheet, TextPart.HeaderFooter, $"the {string.Join(" and the ", parts)}", parts.Length > 1,
-            string.Join(" ", hint), CellsAddresses.OfSheet("page-setup", sheet.Name));
+        return Found(op, sheet, TextPart.HeaderFooter, $"the {string.Join(" and the ", parts)}", parts.Length > 1,
+            string.Join(" ", hint), CellsAddresses.OfSheet("page-setup", sheet.Name),
+            () => HeaderFooterText.InEffect(sheet.PageSetup).Any(section => holds(HeaderFooterText.Visible(section.Text))
+                && matched.Any(then => then with { Text = section.Text } == section)));
     }
 
     /// <summary>The comments that hold a match, of the cells of the range when the operation has one, by their cells.</summary>
-    private static Warning? Comments(Worksheet sheet, ReplaceTextOp op, RangeRef? range, Func<string?, bool> holds)
+    private static UnreplacedText? Comments(Worksheet sheet, ReplaceTextOp op, RangeRef? range, Func<string?, bool> holds)
     {
         Comment[] comments = [.. sheet.Comments.Cast<Comment>()
             .Where(comment => Within(range, comment.Row, comment.Column) && holds(comment.Note))
@@ -123,13 +127,14 @@ internal static class TextReplaceOps
         }
 
         string[] cells = [.. comments.Select(static comment => A1.FormatCell(new CellRef(comment.Row, comment.Column)))];
-        return Warning(op, sheet, TextPart.Comment, $"the {(cells.Length == 1 ? "comment of cell" : "comments of cells")} {Named(cells)}", cells.Length > 1,
+        return Found(op, sheet, TextPart.Comment, $"the {(cells.Length == 1 ? "comment of cell" : "comments of cells")} {Named(cells)}", cells.Length > 1,
             "Read the comments with 'aspose-cli cells inspect <file> --detail comments', then set the new text of each with set_comment.",
-            cells.Length == 1 ? CellsAddresses.At("comment", sheet.Name, cells[0]) : CellsAddresses.OfSheet("sheet", sheet.Name));
+            cells.Length == 1 ? CellsAddresses.At("comment", sheet.Name, cells[0]) : CellsAddresses.OfSheet("sheet", sheet.Name),
+            () => sheet.Comments.Cast<Comment>().Any(comment => comments.Contains(comment, ReferenceEqualityComparer.Instance) && holds(comment.Note)));
     }
 
     /// <summary>The chart titles that hold a match, by the number of their chart.</summary>
-    private static Warning? ChartTitles(Worksheet sheet, ReplaceTextOp op, Func<string?, bool> holds)
+    private static UnreplacedText? ChartTitles(Worksheet sheet, ReplaceTextOp op, Func<string?, bool> holds)
     {
         int[] charts = [.. Enumerable.Range(0, sheet.Charts.Count).Where(index => holds(Title(sheet.Charts[index].Title)))];
         if (charts.Length == 0)
@@ -137,17 +142,20 @@ internal static class TextReplaceOps
             return null;
         }
 
+        Chart[] found = [.. charts.Select(index => sheet.Charts[index])];
+
         string numbers = string.Join(", ", charts.Select(static index => (index + 1).ToString(CultureInfo.InvariantCulture)));
-        return Warning(op, sheet, TextPart.ChartTitle, $"the {(charts.Length == 1 ? "title of chart" : "titles of charts")} {numbers}", charts.Length > 1,
+        return Found(op, sheet, TextPart.ChartTitle, $"the {(charts.Length == 1 ? "title of chart" : "titles of charts")} {numbers}", charts.Length > 1,
             "Read the titles with 'aspose-cli cells inspect <file> --detail charts', then set each new title with set_chart and the index of its chart.",
-            charts.Length == 1 ? CellsAddresses.Indexed("chart", sheet.Name, charts[0]) : CellsAddresses.OfSheet("sheet", sheet.Name));
+            charts.Length == 1 ? CellsAddresses.Indexed("chart", sheet.Name, charts[0]) : CellsAddresses.OfSheet("sheet", sheet.Name),
+            () => Charts(sheet).Any(chart => found.Contains(chart, ReferenceEqualityComparer.Instance) && holds(Title(chart.Title))));
     }
 
     /// <summary>
     /// The axis titles that hold a match, by the number of their chart and their axes, such as
     /// <c>the axis titles of chart 1 (category, value)</c>.
     /// </summary>
-    private static Warning? AxisTitles(Worksheet sheet, ReplaceTextOp op, Func<string?, bool> holds)
+    private static UnreplacedText? AxisTitles(Worksheet sheet, ReplaceTextOp op, Func<string?, bool> holds)
     {
         var matched = new List<(int Chart, string[] Axes)>();
         for (int index = 0; index < sheet.Charts.Count; index++)
@@ -158,8 +166,7 @@ internal static class TextReplaceOps
                 continue;
             }
 
-            string[] axes = [.. new[] { ("category", chart.CategoryAxis.Title), ("value", chart.ValueAxis.Title) }
-                .Where(axis => holds(Title(axis.Item2))).Select(static axis => axis.Item1)];
+            string[] axes = [.. new[] { "category", "value" }.Where(axis => holds(Title(Axis(chart, axis))))];
             if (axes.Length > 0)
             {
                 matched.Add((index, axes));
@@ -172,29 +179,34 @@ internal static class TextReplaceOps
         }
 
         int titles = matched.Sum(static chart => chart.Axes.Length);
+        (Chart Chart, string[] Axes)[] found = [.. matched.Select(chart => (sheet.Charts[chart.Chart], chart.Axes))];
         string charts = string.Join(", ", matched.Select(static chart => string.Create(CultureInfo.InvariantCulture, $"{chart.Chart + 1} ({string.Join(", ", chart.Axes)})")));
-        return Warning(op, sheet, TextPart.AxisTitle, $"the {(titles == 1 ? "axis title" : "axis titles")} of {(matched.Count == 1 ? "chart" : "charts")} {charts}", titles > 1,
+        return Found(op, sheet, TextPart.AxisTitle, $"the {(titles == 1 ? "axis title" : "axis titles")} of {(matched.Count == 1 ? "chart" : "charts")} {charts}", titles > 1,
             "Read the axis titles with 'aspose-cli cells inspect <file> --detail charts', then set the new titles with set_chart, its axisTitles and the index of its chart.",
-            matched.Count == 1 ? CellsAddresses.Indexed("chart", sheet.Name, matched[0].Chart) : CellsAddresses.OfSheet("sheet", sheet.Name));
+            matched.Count == 1 ? CellsAddresses.Indexed("chart", sheet.Name, matched[0].Chart) : CellsAddresses.OfSheet("sheet", sheet.Name),
+            () => found.Any(then => Charts(sheet).Contains(then.Chart, ReferenceEqualityComparer.Instance)
+                && then.Axes.Any(axis => holds(Title(Axis(then.Chart, axis))))));
+
+        static Title Axis(Chart chart, string axis) => axis == "category" ? chart.CategoryAxis.Title : chart.ValueAxis.Title;
     }
 
     /// <summary>
     /// The drawings whose own text holds a match, such as a text box, by their names: every shape
     /// but a comment, a chart, whose titles are named apart, and a group, whose shapes are named.
     /// </summary>
-    private static Warning? Drawings(Worksheet sheet, ReplaceTextOp op, Func<string?, bool> holds)
+    private static UnreplacedText? Drawings(Worksheet sheet, ReplaceTextOp op, Func<string?, bool> holds)
     {
-        string[] names = [.. sheet.Shapes.Cast<Shape>()
-            .Where(shape => shape is not (CommentShape or ChartShape or GroupShape) && holds(shape.Text))
-            .Select(static shape => $"'{shape.Name}'")];
+        Shape[] drawings = [.. sheet.Shapes.Cast<Shape>().Where(shape => shape is not (CommentShape or ChartShape or GroupShape) && holds(shape.Text))];
+        string[] names = [.. drawings.Select(static shape => $"'{shape.Name}'")];
         if (names.Length == 0)
         {
             return null;
         }
 
-        return Warning(op, sheet, TextPart.TextBox, $"the text of {(names.Length == 1 ? "drawing" : "drawings")} {Named(names)}", names.Length > 1,
+        return Found(op, sheet, TextPart.TextBox, $"the text of {(names.Length == 1 ? "drawing" : "drawings")} {Named(names)}", names.Length > 1,
             "No operation reads or changes the text of a text box or another drawing: tell the user it still holds the old text.",
-            CellsAddresses.OfSheet("sheet", sheet.Name));
+            CellsAddresses.OfSheet("sheet", sheet.Name),
+            () => sheet.Shapes.Cast<Shape>().Any(shape => drawings.Contains(shape, ReferenceEqualityComparer.Instance) && holds(shape.Text)));
     }
 
     /// <summary>The first <see cref="NamedItems"/> of <paramref name="items"/> and how many more, such as <c>B1, B2 and 2 more</c>.</summary>
@@ -209,11 +221,14 @@ internal static class TextReplaceOps
     private static string? Title(Title? title) =>
         title is null || title.IsAutoText || !string.IsNullOrEmpty(title.LinkedSource) ? null : title.Text;
 
-    private static Warning Warning(ReplaceTextOp op, Worksheet sheet, TextPart part, string what, bool several, string hint, string location) =>
-        UnreplacedText.Warning(part, op, "replace_text",
+    // What remains is read only while the sheet is still in its workbook.
+    private static UnreplacedText Found(ReplaceTextOp op, Worksheet sheet, TextPart part, string what, bool several, string hint, string location, Func<bool> remains) =>
+        UnreplacedText.Found(part, op, "replace_text",
             $"Operation {op.Id} (replace_text) found a match in {what} on worksheet '{sheet.Name}' and left "
                 + (several ? "them as they were" : "it as it was") + ": replace_text changes the text of cells only.",
-            hint, location, docs: "cells/editing");
+            hint, location, () => sheet.Workbook.Worksheets.Contains(sheet, ReferenceEqualityComparer.Instance) && remains(), docs: "cells/editing");
+
+    private static IEnumerable<Chart> Charts(Worksheet sheet) => Enumerable.Range(0, sheet.Charts.Count).Select(index => sheet.Charts[index]);
 
     private static TextReplacement Replacement(ReplaceTextOp op) =>
         TextReplacement.Create(op.Find, op.Replace, op.Regex, op.CaseSensitive, op.WholeWord);

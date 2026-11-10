@@ -18,6 +18,7 @@ internal sealed partial class SlidesMutationHandlers : ISlidesOpHandler<ValueTup
     private readonly Presentation _presentation;
     private readonly ResolvedSlidesOp _target;
     private readonly ICollection<Warning> _warnings;
+    private readonly ICollection<UnreplacedText> _unreplaced;
     private readonly bool _evaluation;
     private readonly Action _readInput;
     private readonly IReadOnlyDictionary<string, Secret>? _secrets;
@@ -28,6 +29,7 @@ internal sealed partial class SlidesMutationHandlers : ISlidesOpHandler<ValueTup
     /// <param name="presentation">The presentation being edited.</param>
     /// <param name="target">The operation with the targets it resolved just before it runs.</param>
     /// <param name="warnings">Receives what the operation reports about its result.</param>
+    /// <param name="unreplaced">Receives the text the operation found and left as it was.</param>
     /// <param name="evaluation">Whether the engine runs in evaluation mode, which cuts text short when it is read.</param>
     /// <param name="secrets">The secrets the operations name by environment variable.</param>
     /// <param name="readInput">Tells the write pipeline that the operation read the presentation's text, which discloses text evaluation mode cut short.</param>
@@ -37,6 +39,7 @@ internal sealed partial class SlidesMutationHandlers : ISlidesOpHandler<ValueTup
         Presentation presentation,
         ResolvedSlidesOp target,
         ICollection<Warning> warnings,
+        ICollection<UnreplacedText> unreplaced,
         bool evaluation,
         IReadOnlyDictionary<string, Secret>? secrets,
         Action readInput)
@@ -46,6 +49,7 @@ internal sealed partial class SlidesMutationHandlers : ISlidesOpHandler<ValueTup
         _presentation = presentation;
         _target = target;
         _warnings = warnings;
+        _unreplaced = unreplaced;
         _evaluation = evaluation;
         _readInput = readInput;
         _secrets = secrets;

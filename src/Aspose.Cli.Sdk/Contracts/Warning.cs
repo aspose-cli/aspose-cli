@@ -113,9 +113,9 @@ public static class WarningCodes
     /// An operation found the text it looks for in a part of the document it does not change, such
     /// as a header or a chart title, and left that text as it was; <c>details</c> names the
     /// operation by <c>id</c> and <c>op</c> and the part in <c>part</c>, and <c>location</c> the
-    /// place (<see cref="UnreplacedText"/>).
+    /// place. Only <see cref="UnreplacedText"/> makes it.
     /// </summary>
-    public static readonly WarningCode TextNotReplaced = new("TEXT_NOT_REPLACED");
+    internal static readonly WarningCode TextNotReplaced = new("TEXT_NOT_REPLACED");
 
     /// <summary>Every common warning code in this SDK build.</summary>
     public static IReadOnlyList<WarningCode> All { get; } =
