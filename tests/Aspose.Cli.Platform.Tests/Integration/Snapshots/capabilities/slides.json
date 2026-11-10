@@ -27,6 +27,7 @@
     "renderFormats": [
       "png",
       "jpeg",
+      "tiff",
       "svg"
     ],
     "operations": [
@@ -587,7 +588,8 @@
         ],
         "aliases": [],
         "uses": [
-          "convert"
+          "convert",
+          "render"
         ],
         "operations": [],
         "declaredOwnership": "explicit",
@@ -1899,7 +1901,8 @@
             "allowedValues": [
               "jpeg",
               "png",
-              "svg"
+              "svg",
+              "tiff"
             ],
             "secret": false,
             "valueSource": "command-line",

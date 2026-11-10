@@ -1,4 +1,7 @@
 using System.Text.RegularExpressions;
+using Aspose.Cli.Sdk;
+using Aspose.Cli.Sdk.Errors;
+using Aspose.Cli.Sdk.Extensibility.Commanding;
 using Aspose.Cli.Sdk.IO.Output;
 using Aspose.Cli.Sdk.Licensing;
 using Aspose.Cli.Sdk.Rendering;
@@ -37,6 +40,11 @@ internal static partial class SlidesExport
 
         IReadOnlyList<int>? selection = skipped.Length == 0 ? slides : [.. AllSlides(presentation.Slides.Count).Except(skipped)];
         IReadOnlyList<int> shown = selection ?? AllSlides(presentation.Slides.Count);
+        if (shown.Count > 1 && SlidesEngineFormats.SavesOneSlide(formatId))
+        {
+            throw OneSlideOnly(request, shown, skipped.Length > 0);
+        }
+
         // Read before the save, which removes the unselected slides from this private copy for a
         // presentation format, so the slides keep their numbers in the deck.
         Warning? lost = ContentLost(presentation, formatId, shown);
@@ -50,6 +58,32 @@ internal static partial class SlidesExport
             License = EnvelopeParts.License(state),
             Warnings = warnings.Count == 0 ? null : warnings,
         };
+    }
+
+    /// <summary>
+    /// The refusal of a convert of several slides to a format whose save writes the first slide
+    /// alone, a TIFF (SLIDES-TIFF-ONE-FRAME), with the commands that write every slide: 'slides
+    /// render', one TIFF per slide and at most <see cref="RenderSelection.MaximumParts"/> slides a
+    /// run, and a convert of the slides to PDF, which opens without a password, then 'pdf convert'
+    /// of the PDF to one multi-page TIFF.
+    /// </summary>
+    private static CliException OneSlideOnly(SlidesConvertRequest request, IReadOnlyList<int> shown, bool hiddenSkipped)
+    {
+        ContinuationInput input = request.Continuation ?? new ContinuationInput(request.Input);
+        string tiff = request.Output.Path;
+        string pdf = Path.Combine(Path.GetDirectoryName(tiff)!, Path.GetFileNameWithoutExtension(tiff) + ".pdf");
+        static ContinuationCommand Selecting(ContinuationCommand command, string? slides) => slides is null ? command : command.Option("--slides", slides);
+        ContinuationCommand render = Selecting(input.ContinuationAt("slides", "render"), request.Slides?.Text ?? (hiddenSkipped ? string.Join(",", shown) : null))
+            .Option("--to", request.Output.Format.Id).Option("--out", tiff).Flag("--overwrite", request.Output.Overwrite);
+        ContinuationCommand toPdf = Selecting(input.ContinuationAt("slides", "convert"), request.Slides?.Text).Option("--to", "pdf").Option("--out", pdf);
+        ContinuationCommand toTiff = new ContinuationInput(pdf).ContinuationAt("pdf", "convert")
+            .Option("--to", request.Output.Format.Id).Option("--out", tiff).Flag("--overwrite", request.Output.Overwrite);
+        string perSlide = shown.Count <= RenderSelection.MaximumParts
+            ? $"For one TIFF per slide, run {render.Quoted()}, which writes them beside {tiff}"
+            : $"For one TIFF per slide, run 'slides render' with --to tiff and --slides on at most {RenderSelection.MaximumParts} slides at a time";
+        return CliErrors.EngineDefect(
+            $"Aspose.Slides writes only the first slide to a TIFF file, and this conversion selects {shown.Count} slides; nothing was written.",
+            $"{perSlide}; for one multi-page TIFF, run {ContinuationCommand.Steps([toPdf, toTiff])}.");
     }
 
     // Whether a conversion to the format keeps the hidden slides: a presentation format carries

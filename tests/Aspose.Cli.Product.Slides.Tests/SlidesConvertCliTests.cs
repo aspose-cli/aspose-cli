@@ -12,7 +12,7 @@ namespace Aspose.Cli.Product.Slides.Tests;
 /// slides; the evaluation marks of the slides an output shows; and what an ODP, PPT or HTML5
 /// output loses.
 /// </summary>
-public sealed class SlidesConvertCliTests : IDisposable
+public sealed partial class SlidesConvertCliTests : IDisposable
 {
     private readonly TempWorkspace _workspace = new();
 
@@ -431,10 +431,11 @@ public sealed class SlidesConvertCliTests : IDisposable
         Assert.Equal($"Slides conversion to {format} may not preserve every presentation feature.", warning["message"]!.GetValue<string>());
     }
 
-    /// <summary>Each render format writes its own kind of image: a PNG, a JPEG or an SVG document.</summary>
+    /// <summary>Each render format writes its own kind of image: a PNG, a JPEG, a TIFF or an SVG document.</summary>
     [Theory]
     [InlineData("png", new byte[] { 0x89, 0x50, 0x4E, 0x47 })]
     [InlineData("jpeg", new byte[] { 0xFF, 0xD8, 0xFF })]
+    [InlineData("tiff", new byte[] { 0x49, 0x49, 0x2A, 0x00 })]
     [InlineData("svg", null)]
     public void Render_WritesTheImageOfItsFormat(string format, byte[]? signature)
     {
@@ -470,6 +471,56 @@ public sealed class SlidesConvertCliTests : IDisposable
             _ => new[] { "One", "Two", "Three", "Four" }.Count(title => File.ReadAllText(path).Contains(title, StringComparison.Ordinal)),
         };
     }
+
+    /// <summary>
+    /// SLIDES-TIFF-ONE-FRAME: a convert of several slides to TIFF, which the engine would write
+    /// with the first slide alone, is refused before anything is written, and each command its
+    /// hint gives runs as written: the render writes each slide into a TIFF of one frame that
+    /// decodes, and the convert to PDF, then the PDF's convert, one TIFF with a frame per slide.
+    /// The same holds on a deck at a path with a space, for a selection, and on an encrypted deck.
+    /// </summary>
+    [Theory]
+    [InlineData("with space", null, false, new[] { 1, 2, 3, 4 })]
+    [InlineData("plain", "2-3", false, new[] { 2, 3 })]
+    [InlineData("locked", null, true, new[] { 1, 2, 3, 4 })]
+    public void SeveralSlidesToTiff_AreRefused_AndTheHintsCommandsWriteEverySlide(string folder, string? slides, bool encrypted, int[] written)
+    {
+        const string Variable = "SLIDES_TIFF_PASSWORD";
+        var variables = new Dictionary<string, string?> { [Variable] = "Tiff-Secret-7c2e" };
+        string deck = Path.Combine(folder, "deck.pptx");
+        Directory.CreateDirectory(_workspace.File(folder));
+        string[] encrypt = encrypted ? ["--encrypt-env", Variable] : [];
+        string[] open = encrypted ? ["--password-env", Variable] : [];
+        string[] select = slides is null ? [] : ["--slides", slides];
+        Assert.Equal(0, _workspace.RunWithEnv(variables, ["slides", "create", deck, "--from-markdown", "deck.md", .. encrypt, "--output-format", "json"]).ExitCode);
+
+        CliResult refused = _workspace.RunWithEnv(variables, ["slides", "convert", deck, .. open, "--to", "tiff", .. select, "--output-format", "json"]);
+
+        JsonNode error = JsonNode.Parse(refused.StdErr)!["error"]!;
+        Assert.Equal("FEATURE_UNSUPPORTED", error["code"]!.GetValue<string>());
+        Assert.Equal("engine-defect", error["details"]!["reason"]!.GetValue<string>());
+        Assert.Equal(["deck.pptx"], Directory.EnumerateFiles(_workspace.File(folder)).Select(Path.GetFileName));
+        string[] commands = [.. HintCommand().Matches(error["hint"]!.GetValue<string>()).Select(static match => match.Groups[1].Value)];
+        Assert.Equal(3, commands.Length);
+        foreach (string command in commands)
+        {
+            CliResult run = _workspace.RunCommandLine(command, variables);
+            Assert.True(run.ExitCode == 0, $"{command}{Environment.NewLine}{run.StdErr}");
+        }
+
+        string stem = Path.Combine(_workspace.File(folder), "deck");
+        Assert.Equal(written.Length, SlidesEngineFixture.TiffFrames(File.ReadAllBytes(stem + ".tiff")));
+        foreach (int number in written)
+        {
+            string image = $"{stem}.{number}.tiff";
+            Assert.Equal(1, SlidesEngineFixture.TiffFrames(File.ReadAllBytes(image)));
+            using IImage decoded = Images.FromFile(image);
+            Assert.True(decoded.Width > 0);
+        }
+    }
+
+    [System.Text.RegularExpressions.GeneratedRegex("'(aspose-cli [^']+)'")]
+    private static partial System.Text.RegularExpressions.Regex HintCommand();
 
     private JsonNode Run(params string[] args)
     {

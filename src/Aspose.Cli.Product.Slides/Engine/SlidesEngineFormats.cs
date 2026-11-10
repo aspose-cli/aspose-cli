@@ -37,7 +37,8 @@ internal static class SlidesEngineFormats
         new("html", [], SaveFormat.Html) { Lossy = true },
         // The HTML5 export draws each native chart as a picture, whose text no reader finds.
         new("html5", [], SaveFormat.Html5) { Lossy = true, Loses = SlidesContentLoss.Charts },
-        new("tiff", [], SaveFormat.Tiff),
+        // SLIDES-TIFF-ONE-FRAME: a save writes the first slide alone; each slide is drawn as one.
+        new("tiff", [], SaveFormat.Tiff) { SlideImage = ImageFormat.Tiff, SavesOneSlide = true },
         new("gif", [], SaveFormat.Gif),
         new("md", [], SaveFormat.Md) { Lossy = true, HoldsReadText = true },
         new("png", []) { SlideImage = ImageFormat.Png },
@@ -55,12 +56,16 @@ internal static class SlidesEngineFormats
 
     /// <summary>
     /// The bitmap a render format draws each slide as, or null for SVG, which each slide writes
-    /// itself. A render format is a row that is neither read nor saved as a presentation.
+    /// itself. A render format is a row that declares a slide image, or one that is neither read
+    /// nor saved as a presentation.
     /// </summary>
     internal static ImageFormat? SlideImageOf(string id) =>
-        Find(id) is { Save: null, Loads.Length: 0 } row
+        Find(id) is { } row && (row.SlideImage is not null || row is { Save: null, Loads.Length: 0 })
             ? row.SlideImage
             : throw new InvalidOperationException($"'{id}' is not a slide image format.");
+
+    /// <summary>Whether a save in a format id writes only the first of the slides it is given.</summary>
+    internal static bool SavesOneSlide(string id) => Find(id)?.SavesOneSlide == true;
 
     /// <summary>Whether a format id is a PowerPoint 97-2003 binary file: a presentation, show or template.</summary>
     internal static bool IsBinaryPpt(string id) => Find(id)?.BinaryPpt == true;
@@ -87,10 +92,16 @@ internal sealed record SlidesEngineFormat(string Id, LoadFormat[] Loads, SaveFor
     public bool BinaryPpt { get; init; }
 
     /// <summary>
-    /// For a render format, which is neither read nor saved as a presentation, the bitmap each
-    /// slide is drawn as; null when each slide is written as SVG.
+    /// For a render format, the bitmap each slide is drawn as; null when each slide is written as
+    /// SVG, or the format is not rendered.
     /// </summary>
     public ImageFormat? SlideImage { get; init; }
+
+    /// <summary>
+    /// Whether a save writes only the first of the slides it is given, so a convert of several
+    /// slides to the format is refused before anything is written.
+    /// </summary>
+    public bool SavesOneSlide { get; init; }
 
     /// <summary>
     /// Whether the export may not keep every presentation feature (layout, animation,

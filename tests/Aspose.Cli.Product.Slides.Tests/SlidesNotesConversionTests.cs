@@ -17,21 +17,21 @@ public sealed class SlidesNotesConversionTests
 
     /// <summary>
     /// An export warns once, names slide 2 and leaves its notes out; a presentation format keeps
-    /// the notes and does not warn.
+    /// the notes and does not warn. A TIFF holds slide 2 alone (SLIDES-TIFF-ONE-FRAME).
     /// </summary>
     [Theory]
-    [InlineData("pdf", "pdf", true)]
-    [InlineData("xps", "xps", true)]
-    [InlineData("html", "html", true)]
-    [InlineData("html5", "html", true)]
-    [InlineData("md", "md", true)]
-    [InlineData("tiff", "tiff", true)]
-    [InlineData("gif", "gif", true)]
-    [InlineData("pptx", "pptx", false)]
-    [InlineData("pptm", "pptm", false)]
-    [InlineData("ppt", "ppt", false)]
-    [InlineData("odp", "odp", false)]
-    public void Convert_WarnsWhenItsFormatLeavesTheSpeakerNotesOut(string format, string extension, bool dropsNotes)
+    [InlineData("pdf", "pdf", true, null)]
+    [InlineData("xps", "xps", true, null)]
+    [InlineData("html", "html", true, null)]
+    [InlineData("html5", "html", true, null)]
+    [InlineData("md", "md", true, null)]
+    [InlineData("tiff", "tiff", true, "2")]
+    [InlineData("gif", "gif", true, null)]
+    [InlineData("pptx", "pptx", false, null)]
+    [InlineData("pptm", "pptm", false, null)]
+    [InlineData("ppt", "ppt", false, null)]
+    [InlineData("odp", "odp", false, null)]
+    public void Convert_WarnsWhenItsFormatLeavesTheSpeakerNotesOut(string format, string extension, bool dropsNotes, string? slides)
     {
         using var fixture = new SlidesEngineFixture();
         string input = Deck(fixture, noted: 2);
@@ -41,6 +41,7 @@ public sealed class SlidesNotesConversionTests
         {
             Input = input,
             Output = TestOutput.At(output, format: format),
+            Slides = slides is null ? null : PageRange.Parse(slides),
         });
 
         if (!dropsNotes)
@@ -69,6 +70,7 @@ public sealed class SlidesNotesConversionTests
             {
                 Input = Deck(fixture, noted: null, name: "plain.pptx"),
                 Output = TestOutput.At(plain, format: format),
+                Slides = slides is null ? null : PageRange.Parse(slides),
             });
             Assert.Equal(File.ReadAllBytes(plain), File.ReadAllBytes(output));
         }
