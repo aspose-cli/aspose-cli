@@ -187,6 +187,17 @@ Reproductions: [CellsKnownIssueTests](tests/Aspose.Cli.Product.Cells.Tests/Cells
   the largest run, and its hint says that auto-fit leaves it short.
 - **Workaround:** set the row height with `resize_rows` and `height`.
 
+### CELLS-SHEET-END-COMMENT-PAGES
+
+- **Defect:** on a sheet whose `PageSetup.PrintComments` is `PrintSheetEnd`,
+  `Worksheet.GetPrintingPageBreaks` reports each page of comments as the cell area A1:A1, and
+  throws a `NullReferenceException` when a comment holds a character such as Chinese, Japanese or
+  an emoji. Saving the same sheet as PDF or XPS, and `SheetRender`, print its comments at the end.
+- **CLI behavior:** the printed pages of a sheet's charts, which `cells convert` to pdf or xps
+  warns about with `CHART_SPLIT_ACROSS_PAGES` and `review` checks with
+  `CELLS_CHART_SPLIT_ACROSS_PAGES`, are measured as if the sheet printed no comments, since its
+  comment pages hold no chart; the output still prints the comments at the end of the sheet.
+
 ## Aspose.PDF.Drawing 26.8.0
 
 Reproductions: [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownIssueTests.cs).

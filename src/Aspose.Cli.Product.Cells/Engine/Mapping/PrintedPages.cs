@@ -23,7 +23,7 @@ internal static class PrintedPages
             return [];
         }
 
-        CellArea[] pages = sheet.GetPrintingPageBreaks(new ImageOrPrintOptions());
+        CellArea[] pages = CellPages(sheet);
         var counts = new List<(Chart, int)>(sheet.Charts.Count);
         foreach (Chart chart in sheet.Charts)
         {
@@ -35,6 +35,31 @@ internal static class PrintedPages
                 && page.StartColumn <= lastColumn && shape.UpperLeftColumn <= page.EndColumn)));
         }
         return counts;
+    }
+
+    /// <summary>
+    /// The page areas the cells of <paramref name="sheet"/> print on. Comments printed at the end of
+    /// the sheet take pages of their own after these, which hold no chart and which the engine
+    /// measures wrongly (CELLS-SHEET-END-COMMENT-PAGES), so the sheet is measured as if it printed
+    /// no comments; its setting is restored before anything else reads it.
+    /// </summary>
+    private static CellArea[] CellPages(Worksheet sheet)
+    {
+        PageSetup setup = sheet.PageSetup;
+        PrintCommentsType printComments = setup.PrintComments;
+        if (printComments == PrintCommentsType.PrintSheetEnd)
+        {
+            setup.PrintComments = PrintCommentsType.PrintNoComments;
+        }
+
+        try
+        {
+            return sheet.GetPrintingPageBreaks(new ImageOrPrintOptions());
+        }
+        finally
+        {
+            setup.PrintComments = printComments;
+        }
     }
 
     // A chart whose edge lies on a cell boundary (offset 0 into its lower-right cell) ends in
