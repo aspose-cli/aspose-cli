@@ -361,7 +361,7 @@ public sealed class CommandDefinitionTests : IDisposable
 
         CliException conflict = RunFailing(command, "report.test", "--to", "png", "--out", "page.svg");
         Assert.Equal(ErrorCodes.OptionInvalid, conflict.Code);
-        Assert.Equal("--to png contradicts --out 'page.svg': its .svg extension is not a png extension. Must be one of: .png.", conflict.Message);
+        Assert.Equal("--to png contradicts --out 'page.svg': its .svg extension is not an extension of png. Must be one of: .png.", conflict.Message);
         Assert.Equal("Give --out the .png extension, as in page.png, or pass --to svg to write svg.", conflict.Hint);
 
         // An output without an extension often names a folder: the hint names both corrected paths.

@@ -832,7 +832,7 @@
             ],
             "secret": false,
             "valueSource": "command-line",
-            "description": "Target presentation export format; 'slides render' writes slide images. Default: the --out extension's format."
+            "description": "Target presentation export format; 'slides render' writes slide images. Default: the --out extension's format. html5 writes .html or .htm."
           }
         ],
         "arguments": [

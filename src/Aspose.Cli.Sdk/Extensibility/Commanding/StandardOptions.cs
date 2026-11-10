@@ -82,7 +82,8 @@ public sealed class TargetFormat
     /// An optional <c>--to</c> among the product's convert formats; when it is omitted, the
     /// <c>--out</c> extension names the format, and a convert that names neither is a usage
     /// error. Its help ends with the standard wording of that default, naming the formats that
-    /// only <c>--to</c> chooses (<see cref="FormatDescriptor.ChosenByExtension"/>).
+    /// only <c>--to</c> chooses (<see cref="FormatDescriptor.ChosenByExtension"/>), and the
+    /// extensions of the formats whose extensions do not spell their names, such as openxps .oxps.
     /// </summary>
     /// <param name="description">Help for <c>--to</c>, without its default.</param>
     /// <param name="formats">The product's format declarations; those with the convert use are offered.</param>
@@ -96,7 +97,13 @@ public sealed class TargetFormat
         string except = named.Length > 0
             ? $", except {string.Join(", ", named)}, which only {StandardOptionNames.To} chooses"
             : string.Empty;
-        return new(FormatUse.Convert, $"{description} Default: the {StandardOptionNames.Out} extension's format{except}.",
+        string[] spelled = [.. formats
+            .Where(static format => format.Uses.HasFlag(FormatUse.Convert) && format.Extensions.Count > 0
+                && !format.Extensions.Contains($".{format.Id}", StringComparer.OrdinalIgnoreCase))
+            .GroupBy(static format => string.Join(" or ", format.Extensions), StringComparer.Ordinal)
+            .Select(static same => $"{string.Join(", ", same.Select(static format => format.Id))} {(same.Count() == 1 ? "writes" : "write")} {same.Key}")];
+        string extensions = spelled.Length > 0 ? $" {string.Join("; ", spelled)}." : string.Empty;
+        return new(FormatUse.Convert, $"{description} Default: the {StandardOptionNames.Out} extension's format{except}.{extensions}",
             formats, defaultFormat: null, required: false);
     }
 

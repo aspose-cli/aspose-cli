@@ -476,8 +476,8 @@ public partial class StandardInvocation
     {
         string extension = Path.GetExtension(output);
         string problem = extension.Length > 1
-            ? $"its {extension} extension is not a {format.Id} extension"
-            : $"it has no extension, and a {format.Id} output needs one";
+            ? $"its {extension} extension is not an extension of {format.Id}"
+            : $"it has no extension, and an output in {format.Id} needs one";
         FormatDescriptor[] named = Writing(writes, output);
         string other = named switch
         {

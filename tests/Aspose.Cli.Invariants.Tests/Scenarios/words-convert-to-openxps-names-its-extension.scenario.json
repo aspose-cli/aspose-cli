@@ -1,0 +1,36 @@
+{
+  "name": "words convert --to openxps with an --out of another extension, or none, says in a sentence that reads for any format name that the output needs the .oxps extension, and writes nothing; the .oxps output converts",
+  "files": {
+    "contract.docx": { "fixture": "words.docx" }
+  },
+  "steps": [
+    {
+      "args": ["words", "convert", "contract.docx", "--to", "openxps", "--out", "contract.openxps"],
+      "expect": {
+        "exitCode": 2,
+        "error": "OPTION_INVALID",
+        "json": [
+          { "path": "error.message", "equals": "--to openxps contradicts --out 'contract.openxps': its .openxps extension is not an extension of openxps. Must be one of: .oxps." },
+          { "path": "error.details", "equals": { "format": "openxps", "option": "--out", "extension": ".openxps", "available": [".oxps"] } },
+          { "path": "error.hint", "contains": "contract.oxps" }
+        ],
+        "files": { "nothingWritten": true }
+      }
+    },
+    {
+      "args": ["words", "convert", "contract.docx", "--to", "openxps", "--out", "contract"],
+      "expect": {
+        "exitCode": 2,
+        "error": "OPTION_INVALID",
+        "json": [
+          { "path": "error.message", "equals": "--to openxps contradicts --out 'contract': it has no extension, and an output in openxps needs one. Must be one of: .oxps." }
+        ],
+        "files": { "nothingWritten": true }
+      }
+    },
+    {
+      "args": ["words", "convert", "contract.docx", "--to", "openxps", "--out", "contract.oxps"],
+      "expect": { "exitCode": 0, "files": { "present": ["contract.oxps"] } }
+    }
+  ]
+}
