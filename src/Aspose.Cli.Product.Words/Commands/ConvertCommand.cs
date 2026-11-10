@@ -38,6 +38,7 @@ internal static class ConvertCommand
                 return new WordsConvertRequest
                 {
                     Input = standard.Input,
+                    Continuation = standard.ContinuationOf(standard.Input),
                     Output = output,
                     Pages = pages.ReadRange(parse),
                     Password = standard.InputPassword,

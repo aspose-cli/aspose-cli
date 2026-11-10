@@ -1,4 +1,5 @@
 using Aspose.Cli.Product.Words.Engine.Mapping;
+using Aspose.Cli.Sdk;
 using Aspose.Cli.Sdk.IO.Output;
 using Aspose.Cli.Sdk.Licensing;
 using Aspose.Cli.Sdk.Results;
@@ -24,7 +25,8 @@ internal static class WordsConvert
             try { loaded.Document.Save(temp, options); }
             finally { loaded.Resources.ThrowIfFailed(); }
         }, encrypted: protection.Encrypted);
-        var warnings = WrittenWarnings(loaded, request.Output.Format.Id);
+        var warnings = WrittenWarnings(loaded, request.Output.Format.Id,
+            converted: (request.Continuation ?? new ContinuationInput(request.Input), request.Output.Path));
         return new WordsConvertResult
         {
             Input = InfoProjection.Source(request.Input, loaded),

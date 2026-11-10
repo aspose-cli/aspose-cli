@@ -1,5 +1,6 @@
 using System.Globalization;
 using Aspose.Cli.Product.Words.Engine.Mapping;
+using Aspose.Cli.Sdk;
 using Aspose.Cli.Sdk.IO.Input;
 using Aspose.Cli.Sdk.Results;
 using Aspose.Words;
@@ -37,16 +38,17 @@ internal static class WordsEngineSupport
     /// The warnings for writing a loaded document to a format; the write pipeline adds the
     /// evaluation disclosure. A page render passes <paramref name="rendered"/>: an image shows
     /// the document as it looks and is never a copy of it, so it is not told that it drops the
-    /// source's revisions or macros, only that comment balloons narrow its pages.
+    /// source's revisions or macros, only that comment balloons narrow its pages. A convert passes
+    /// the input it read and the file it wrote as <paramref name="converted"/>.
     /// </summary>
-    internal static IReadOnlyList<Warning>? WrittenWarnings(LoadedDocument loaded, string format, bool rendered = false)
+    internal static IReadOnlyList<Warning>? WrittenWarnings(LoadedDocument loaded, string format, bool rendered = false, (ContinuationInput Input, string Output)? converted = null)
     {
         var extra = new List<Warning>();
         extra.AddRange(InputWarnings(loaded) ?? []);
 
         if (!rendered)
         {
-            extra.AddRange(ConversionWarnings(loaded.Document, format, loaded.Evaluation));
+            extra.AddRange(ConversionWarnings(loaded.Document, format, loaded.Evaluation, converted));
             extra.AddRange(PdfInputWarnings(loaded) ?? []);
         }
         else if (CommentBalloons(loaded.Document, format) is { } balloons)
@@ -138,10 +140,14 @@ internal static class WordsEngineSupport
     /// out; for a format laid out on pages one for the comments it draws in balloons; and for
     /// plain text and Markdown one for each kind of text the SDK mixes into the body
     /// (WORDS-TEXT-COMMENTS, WORDS-TEXT-DELETIONS), which also stands for the revisions such an
-    /// output drops. Under <paramref name="evaluation"/>, what evaluation mode wrote into the
-    /// headers and footers is not their content.
+    /// output drops. Their hints give the commands that leave it out of the file
+    /// <paramref name="converted"/> names, a convert's output, or without it say the same in words;
+    /// for a document with both kinds the revisions' commands delete the comments too, since two
+    /// edits of the input would each put back what the other left out. Under
+    /// <paramref name="evaluation"/>, what evaluation mode wrote into the headers and footers is
+    /// not their content.
     /// </summary>
-    internal static IEnumerable<Warning> ConversionWarnings(Document document, string format, bool evaluation)
+    internal static IEnumerable<Warning> ConversionWarnings(Document document, string format, bool evaluation, (ContinuationInput Input, string Output)? converted = null)
     {
         bool text = WordsEngineFormats.Has(format, static entry => entry.PlainText);
         if (WordsEngineFormats.Has(format, static entry => entry.Lossy))
@@ -186,19 +192,46 @@ internal static class WordsEngineSupport
         }
 
         int comments = CommentCount(document);
+        bool both = comments > 0 && mixed;
         if (comments > 0)
         {
             yield return ContentLoss.Warning([ContentKind.Comments],
                 string.Create(CultureInfo.InvariantCulture, $"The {format} output writes the text of {comments} comment(s) into the body text, where it reads as document text."),
-                $"To leave the comments out, apply delete_comments with 'aspose-cli words edit' and a .{format} --out; keep a DOCX copy to keep them.");
+                converted is not { } from
+                    ? $"To leave the comments out, apply delete_comments in an edit that writes a Word format such as docx, then convert that file to {format}; keep a DOCX copy to keep them."
+                    : both ? "To leave the comments out, run the commands of the warning about the tracked changes, whose edit deletes the comments too; keep a DOCX copy to keep them."
+                    : $"To leave the comments out, run {Rewritten(from, format, "delete_comments")}; keep a DOCX copy to keep them.");
         }
 
         if (mixed)
         {
+            string[] deleting = both ? ["delete_comments"] : [];
             yield return ContentLoss.Warning([ContentKind.Revisions],
                 $"The {format} output writes the deleted and moved-from text of tracked changes beside the text that replaces it, so it reads as neither the original nor the revised document.",
-                $"Disclose the revisions; when the user decides, accept or reject them with 'aspose-cli words edit' and a .{format} --out, or keep a DOCX copy.");
+                converted is not { } from
+                    ? $"Disclose the revisions; when the user decides, accept or reject them in an edit that writes a Word format such as docx, then convert that file to {format}, or keep a DOCX copy."
+                    : $"Disclose the revisions; when the user decides, run {Rewritten(from, format, [.. deleting, "accept_revisions"])} to accept them or "
+                        + $"{Rewritten(from, format, [.. deleting, "reject_revisions"])} to reject them, or keep a DOCX copy."
+                        + (both ? " Either edit deletes the comments too." : string.Empty));
         }
+    }
+
+    /// <summary>
+    /// The commands that leave out of a converted file what <paramref name="ops"/> remove: the edit
+    /// of the input that applies them and writes a Word copy beside that file, since an edit writes
+    /// no format a convert alone writes, then the convert of the copy, opened as the input is, that
+    /// replaces the file.
+    /// </summary>
+    private static string Rewritten((ContinuationInput Input, string Output) from, string format, params string[] ops)
+    {
+        string copy = Path.Combine(Path.GetDirectoryName(from.Output) ?? string.Empty,
+            Path.GetFileNameWithoutExtension(from.Input.Document) + ".out" + WordsSplitWriter.Docx.Extensions[0]);
+        string operations = "[" + string.Join(",", ops.Select(static op => $$"""{"op":"{{op}}"}""")) + "]";
+        return ContinuationCommand.Steps(
+        [
+            from.Input.ContinuationAt("words", "edit").Document("--ops", operations).Option("--out", copy),
+            from.Input.WrittenAs(copy).ContinuationAt("words", "convert").Option("--to", format).Option("--out", from.Output).Flag("--overwrite"),
+        ]);
     }
 
     /// <summary>

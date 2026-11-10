@@ -320,15 +320,106 @@ public sealed class ExecutableHintTests : IDisposable
         }
     }
 
-    /// <summary>A Words document with a tracked change in block 2 and a comment on block 3, encrypted with <paramref name="encryptWith"/> when it is given.</summary>
-    private void WriteTrackedDocument(string name, string? encryptWith, Dictionary<string, string?> variables)
+    /// <summary>
+    /// A plain-text or Markdown convert writes a comment and the deleted text of a tracked change
+    /// into its body, and warns of each. The commands of each decision the hints offer run as
+    /// written, in order, for real, each decision in a workspace of its own, on a plain input and
+    /// on an encrypted one opened with a password variable: every decision leaves the comment out
+    /// of the output, and of the two on the revisions one leaves each side of the tracked
+    /// replacement. With both kinds the revisions' commands alone, which delete the comments too,
+    /// are offered: two edits of the input would each put back what the other left out.
+    /// </summary>
+    [Theory]
+    [InlineData("txt", false, true, true)]
+    [InlineData("md", true, true, true)]
+    [InlineData("txt", false, true, false)]
+    [InlineData("md", true, false, true)]
+    public void TextOutputHints_OfCommentsAndRevisions_LeaveThemOutAsWritten(string format, bool encrypted, bool comment, bool revision)
     {
-        Directory.CreateDirectory(Path.GetDirectoryName(_workspace.File(name))!);
-        File.WriteAllText(_workspace.File("source.md"), "Intro paragraph.\n\nSecond clause reads thirty days.\n\nThird paragraph.\n");
-        File.WriteAllText(_workspace.File("mark.json"), """{"ops":[{"op":"replace_text","find":"thirty","replace":"forty"},{"op":"add_comment","target":{"find":"Third"},"text":"Check this.","author":"Legal"}]}""");
+        const string Variable = "DOC_PASSWORD";
+        var variables = new Dictionary<string, string?> { [Variable] = ScenarioFixtures.Password };
+        var outputs = new List<string>();
+        for (int decision = 0, count = 1; decision < count; decision++)
+        {
+            using var workspace = new TempWorkspace();
+            ScenarioLicense.Project(workspace.Path);
+            WriteMarkedDocument(workspace, "marked.docx", encrypted ? Variable : null, variables, comment, revision);
+            string output = workspace.File("plain." + format);
+            CliResult converted = workspace.RunWithEnv(variables,
+                ["words", "convert", "marked.docx", .. encrypted ? new[] { "--password-env", Variable } : [], "--to", format, "--out", output, "--output-format", "json"]);
+            Assert.True(converted.ExitCode == 0, converted.StdErr);
+            string[] hints = [.. converted.Json()["warnings"]!.AsArray()
+                .Where(static warning => warning!["details"]?["content"]?[0]?.GetValue<string>() is "comments" or "revisions")
+                .Select(static warning => warning!["hint"]!.GetValue<string>())];
+            Assert.Equal((comment ? 1 : 0) + (revision ? 1 : 0), hints.Length);
+
+            List<List<HintAction>> decisions = [.. hints.SelectMany(Decisions)];
+            count = decisions.Count;
+            foreach (HintAction command in decisions[decision])
+            {
+                CliResult ran = workspace.RunWithEnv(variables, [.. command.Tokens]);
+                Assert.True(ran.ExitCode == 0, $"{command.Text}\n{ran.StdErr}");
+            }
+            outputs.Add(File.ReadAllText(output));
+        }
+
+        Assert.Equal(revision ? 2 : 1, outputs.Count);
+        Assert.All(outputs, static text => Assert.Contains("Third paragraph.", text, StringComparison.Ordinal));
+        Assert.All(outputs, static text => Assert.DoesNotContain("Check this.", text, StringComparison.Ordinal));
+        if (revision)
+        {
+            Assert.Single(outputs, static text => text.Contains("forty days", StringComparison.Ordinal) && !text.Contains("thirty", StringComparison.Ordinal));
+            Assert.Single(outputs, static text => text.Contains("thirty days", StringComparison.Ordinal) && !text.Contains("forty", StringComparison.Ordinal));
+        }
+    }
+
+    /// <summary>
+    /// The decisions a hint offers, each the commands to run in order: an edit starts one, and the
+    /// commands after it in the hint's text, up to the next edit, belong to it. Extract lists the
+    /// commands in backticks before the quoted ones, and the same command can be quoted twice.
+    /// </summary>
+    private static List<List<HintAction>> Decisions(string hint)
+    {
+        var positions = new List<(int At, HintAction Command)>();
+        foreach (HintAction command in ExecutableHints.Extract(CliCatalog.Current, hint).Where(static action => action.Kind == HintKind.Command))
+        {
+            int after = positions.Where(pair => pair.Command.Text == command.Text).Select(static pair => pair.At + 1).DefaultIfEmpty(0).Max();
+            positions.Add((hint.IndexOf(command.Text, after, StringComparison.Ordinal), command));
+        }
+        var decisions = new List<List<HintAction>>();
+        foreach (HintAction command in positions.OrderBy(static pair => pair.At).Select(static pair => pair.Command))
+        {
+            if (decisions.Count == 0 || command.Tokens is ["words", "edit", ..])
+            {
+                decisions.Add([]);
+            }
+            decisions[^1].Add(command);
+        }
+        return decisions;
+    }
+
+    /// <summary>A Words document with a tracked change in block 2 and a comment on block 3, encrypted with <paramref name="encryptWith"/> when it is given.</summary>
+    private void WriteTrackedDocument(string name, string? encryptWith, Dictionary<string, string?> variables) =>
+        WriteMarkedDocument(_workspace, name, encryptWith, variables, comment: true, revision: true);
+
+    /// <summary>
+    /// A Words document in <paramref name="workspace"/> with, as asked, a tracked change of
+    /// "thirty" to "forty" in block 2 and the comment "Check this." on block 3, encrypted with
+    /// <paramref name="encryptWith"/> when it is given.
+    /// </summary>
+    private static void WriteMarkedDocument(TempWorkspace workspace, string name, string? encryptWith, Dictionary<string, string?> variables, bool comment, bool revision)
+    {
+        Directory.CreateDirectory(Path.GetDirectoryName(workspace.File(name))!);
+        File.WriteAllText(workspace.File("source.md"), "Intro paragraph.\n\nSecond clause reads thirty days.\n\nThird paragraph.\n");
+        string[] ops =
+        [
+            .. revision ? new[] { """{"op":"replace_text","find":"thirty","replace":"forty"}""" } : [],
+            .. comment ? new[] { """{"op":"add_comment","target":{"find":"Third"},"text":"Check this.","author":"Legal"}""" } : [],
+        ];
+        File.WriteAllText(workspace.File("mark.json"), $$"""{"ops":[{{string.Join(",", ops)}}]}""");
         string[] encrypt = encryptWith is null ? [] : ["--encrypt-env", encryptWith];
-        Assert.Equal(0, _workspace.RunWithEnv(variables, ["words", "create", "source.docx", "--from-markdown", "source.md", "--overwrite", "--output-format", "json"]).ExitCode);
-        CliResult marked = _workspace.RunWithEnv(variables,
+        Assert.Equal(0, workspace.RunWithEnv(variables, ["words", "create", "source.docx", "--from-markdown", "source.md", "--overwrite", "--output-format", "json"]).ExitCode);
+        CliResult marked = workspace.RunWithEnv(variables,
             ["words", "edit", "source.docx", "--ops", "mark.json", "--out", name, "--overwrite", "--track-changes", "--author", "Legal", .. encrypt, "--output-format", "json"]);
         Assert.True(marked.ExitCode == 0, marked.StdErr);
     }

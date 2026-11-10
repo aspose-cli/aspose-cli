@@ -511,6 +511,26 @@ public sealed class WordsDisclosureTests
         }
     }
 
+    /// <summary>
+    /// The comments and deleted text a plain-text or Markdown output mixes into its body are named
+    /// whoever writes it: without the convert that names its input and output, as for a writer
+    /// that does not pass them, both warnings are still given, and their hints say what to do in
+    /// words, naming no command.
+    /// </summary>
+    [Fact]
+    public void TextWarnings_WithoutTheConvertThatWroteTheOutput_AreStillGiven()
+    {
+        using var fixture = new WordsFixture();
+        var document = new Document(RevisedDocument(fixture, withComment: true));
+
+        Warning[] mixed = [.. WordsEngineSupport.ConversionWarnings(document, "md", evaluation: false)
+            .Where(static warning => warning.Message.Contains("into the body text", StringComparison.Ordinal)
+                || warning.Message.Contains("deleted and moved-from text", StringComparison.Ordinal))];
+
+        Assert.Equal(2, mixed.Length);
+        Assert.All(mixed, static warning => Assert.DoesNotContain("aspose-cli", warning.Hint, StringComparison.Ordinal));
+    }
+
     [Fact]
     public void SavingToText_AfterRemovingCommentsAndAcceptingRevisions_MixesNothing()
     {
