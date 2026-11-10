@@ -1,0 +1,50 @@
+{
+  "name": "an edit whose --ops names a file that does not exist says the --ops file was not found, with the subject ops file, in every product; a missing input document is still the input file",
+  "files": {
+    "book.xlsx": { "fixture": "cells.xlsx" },
+    "doc.docx": { "fixture": "words.docx" },
+    "ops.json": { "text": "{\"ops\":[{\"op\":\"set_values\",\"sheet\":\"Sheet1\",\"range\":\"A1\",\"values\":[[\"x\"]]}]}" }
+  },
+  "steps": [
+    {
+      "args": ["cells", "edit", "book.xlsx", "--ops", "no-such.json", "--out", "out.xlsx"],
+      "expect": {
+        "exitCode": 3,
+        "error": "FILE_NOT_FOUND",
+        "json": [
+          { "path": "error.message", "startsWith": "The --ops file was not found: " },
+          { "path": "error.details.subject", "equals": "ops file" },
+          { "path": "error.details.requested", "equals": "<workspace>/no-such.json" },
+          { "path": "error.details.path", "equals": "<workspace>/no-such.json" },
+          { "path": "error.hint", "contains": "To pass the JSON itself" }
+        ],
+        "files": { "nothingWritten": true }
+      }
+    },
+    {
+      "args": ["words", "edit", "doc.docx", "--ops", "batches/ops.json", "--out", "out.docx"],
+      "expect": {
+        "exitCode": 3,
+        "error": "FILE_NOT_FOUND",
+        "json": [
+          { "path": "error.message", "startsWith": "The --ops file was not found: " },
+          { "path": "error.details.subject", "equals": "ops file" }
+        ],
+        "files": { "nothingWritten": true }
+      }
+    },
+    {
+      "args": ["cells", "edit", "missing.xlsx", "--ops", "ops.json", "--out", "out.xlsx"],
+      "expect": {
+        "exitCode": 3,
+        "error": "FILE_NOT_FOUND",
+        "json": [
+          { "path": "error.message", "startsWith": "Input file not found: " },
+          { "path": "error.details.subject", "equals": "file" },
+          { "path": "error.details.requested", "equals": "<workspace>/missing.xlsx" }
+        ],
+        "files": { "nothingWritten": true }
+      }
+    }
+  ]
+}

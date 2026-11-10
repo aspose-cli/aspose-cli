@@ -1,4 +1,5 @@
 using System.CommandLine;
+using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.IO.Budgets;
 using Aspose.Cli.Sdk.IO.Paths;
 
@@ -26,7 +27,16 @@ internal static class ProductInputAdmission
                 {
                     continue;
                 }
-                budgets.AdmitFile(paths.ResolveInput(value));
+                try
+                {
+                    budgets.AdmitFile(paths.ResolveInput(value));
+                }
+                catch (CliException missing)
+                    when (missing.Code == ErrorCodes.FileNotFound && parameter.Metadata.InputKind == InputKind.JsonSource)
+                {
+                    // The missing file is the option's JSON document, not an input.
+                    throw JsonInputSource.NotFound(paths.ResolveOutput(value), parameter.Symbol.Name);
+                }
             }
         }
     }
