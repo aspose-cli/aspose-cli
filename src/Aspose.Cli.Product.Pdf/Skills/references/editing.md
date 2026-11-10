@@ -15,10 +15,9 @@ aspose-cli pdf edit report.pdf --ops report-ops.json --out report.review.pdf --v
 
 ## Operations by task
 
-- Pages: `insert_page`, `import_pages` (pages of another PDF),
-  `delete_pages`, `move_pages`, `rotate_pages` (absolute clockwise `rotation`; 0 sets a page upright),
-  `set_page_size`, `crop_pages` (the visible crop box; `box: "media"` sets the physical
-  media box).
+- Pages: `insert_page`, `import_pages`,
+  `delete_pages`, `move_pages`, `rotate_pages`,
+  `set_page_size`, `crop_pages`.
 - Stamps: `add_header_text`, `add_footer_text`, `add_page_numbers`,
   `add_watermark_text`, `add_watermark_image`, `add_stamp_image`.
 - Navigation: `add_bookmark`, `delete_bookmarks`, `add_hyperlink`,
@@ -34,28 +33,12 @@ aspose-cli pdf edit report.pdf --ops report-ops.json --out report.review.pdf --v
 
 Each operation resolves its pages against the document as the earlier
 operations of the batch left it: an insert, delete or move changes the pages
-that later operations name. `pdf inspect` and `pdf read` report targets
-under the names the operations take: each page's `page`, each label range's
-`startPage`, `numberStyle`, `prefix` and `start`, each page's `pageSize`
-and `rotation`, and each bookmark's `page` and `bookmark`, the address of 1-based
-positions joined by `/` that `delete_bookmarks.bookmarks` and `add_bookmark.parent`
-accept: `"2/1"` is the first child of the second top-level bookmark. Titles are
-never parsed, so bookmarks with duplicate or empty titles are addressed the same
-way; `add_bookmark` refuses a title that contains `/`.
-A PDF created from Markdown has no bookmarks for its headings, and
-`pdf split --by bookmarks` refuses a document without bookmarks: add one for the
-first page of each part first, such as
-`{"op":"add_bookmark","title":"Part 1","page":1}`.
+that later operations name.
 
-Bookmarks follow the same rule as pages. `add_bookmark` always adds the last child
-of its parent, or the last top-level bookmark, so it never renumbers
-existing bookmarks. Like `delete_pages.pages`, `delete_bookmarks.bookmarks`
-resolves every address against the outline as it stands before the operation,
-then removes them all with their children; a missing address removes none of
-them, and omitting `bookmarks` removes every bookmark. List every bookmark to
+A missing address in `delete_bookmarks.bookmarks` removes none of
+them. List every bookmark to
 delete in one `delete_bookmarks` operation, with addresses read from one
-`pdf inspect --detail outline`; list a parent without its
-children. Later operations of the batch see the renumbered outline; put
+`pdf inspect --detail outline`. Later operations of the batch see the renumbered outline; put
 `add_bookmark` operations that name a parent before the deletion, or reinspect
 and edit in a second batch.
 
@@ -70,24 +53,19 @@ match a redaction removed there.
 Aspose.PDF writes `creator`, `producer` and `modificationDate` into every PDF
 it saves, so no operation removes or sets them: `clear_properties` leaves them
 out of its `targets` and warns `METADATA_REWRITTEN`. A `set_properties` `custom`
-key must not be empty, hold characters beyond Latin-1 (Aspose.PDF writes such a
-name garbled; the value may hold any text), name a standard entry, in any case, nor
-start with `info:` or `xmp:`; a custom entry reads back under its own key.
+key must not hold characters beyond Latin-1 (Aspose.PDF writes such a
+name garbled; the value may hold any text).
 
-Rectangles must lie within the visible page box. Reinspect geometry and review
+Reinspect geometry and review
 after changing crop, size or rotation, because later rectangles follow the new
-box. A `crop_pages` rectangle is measured on the page as the crop finds it, so a
-second crop cuts into the first; `pdf inspect --sample` reports each page's
-`mediaBox` and `cropBox` as seen, with the page's rotation, both measured from
-the top-left corner of the media box.
+box. A second crop cuts into the first.
 
-`set_page_labels` changes navigation labels, not visible page text, and updates
-only the ranges it names. `add_page_numbers` stamps visible text: `{n}` counts
-the selected pages from `start`, and `{N}` is the document's page count when the
+`set_page_labels` updates
+only the ranges it names. In `add_page_numbers`, `{N}` is the document's page count when the
 operation runs, so number pages after inserting or deleting them. A PDF converted
 from a Word document or a spreadsheet often numbers its pages in its footer
 already: read a page with `pdf read --pages 1` before numbering, and act on
-`PAGE_NUMBERS_ALREADY_PRESENT`, which names the pages that now show two numbers.
+`PAGE_NUMBERS_ALREADY_PRESENT`.
 
 ## Navigation after page moves
 
@@ -107,11 +85,8 @@ the input's document information and every attachment of the input. A merge
 keeps the document information of the first input and the page labels of each
 input; once any input has labels, an input without them numbers its pages from 1.
 It keeps every attachment of each input, an attachment whose name and contents an
-earlier input already gave only once; an attachment named like one of an earlier
-input but with other contents is left out with a `LOSSY_CONVERSION` warning that
-names it: rename it in its input and merge again. `pdf inspect --detail attachments`
-lists two attachments of the same name as two entries, each with the `sizeBytes`,
-`mimeType` and `description` the file states for it.
+earlier input already gave only once. `pdf inspect --detail attachments`
+lists two attachments of the same name as two entries.
 A merge keeps each page's size and warns `PAGE_SIZES_MIXED`, listing the sizes,
 when the inputs' paper differs, such as A4 and Letter: set one paper size in the
 sources before converting them to PDF.
@@ -119,23 +94,14 @@ Each publishes its output with
 a `NAVIGATION_DEGRADED` warning that counts the entries that no longer lead where
 they did. In `pdf edit` the entries whose page the batch deleted, as asked, have
 a warning of their own; remove the bookmarks you no longer need with
-`delete_bookmarks`. The entries whose page is still in the output, such as one
-whose top reads 0 on a page `move_pages` moved, have a warning with
-`affectsCompleteness: true`, whose hint gives the `pdf inspect --detail outline`
-command that reads the page each bookmark of the input opened: in the same batch,
-after the page operations, delete those bookmarks with `delete_bookmarks` and add
-them again with `add_bookmark`.
-No operation re-creates a link or a named destination: tell the user which no
-longer lead to their page. Then follow the destination checks in
+`delete_bookmarks`.
+Follow the destination checks in
 [verification](verification.md).
 
 ## Redaction
 
 Redaction is destructive: keep the baseline, apply `redact_text` or
-`redact_area`, then verify with `pdf search` and `review`. `redact_text`
-works on extractable text and performs no OCR; `find` is the literal text, or
-with `"regex": true` a regular expression, and it matches any case unless
-`caseSensitive` is `true`. One batch can fill a form, redact it, number the
+`redact_area`, then verify with `pdf search` and `review`. One batch can fill a form, redact it, number the
 pages and encrypt the result:
 
 ```json
@@ -150,28 +116,16 @@ pages and encrypt the result:
 A black rectangle or zero search
 hits alone is not proof that all sensitive content was removed; a raw-byte
 absence check for a known literal is additional evidence only, because PDF text
-can be encoded or compressed. Every edit leaves out the objects that nothing in
-the document references, so a field `flatten_forms` flattened or an attachment
-`delete_attachment` deleted no longer holds its value in the file. An `OP_NO_EFFECT` warning names each
-`redact_text` operation that removed nothing: search for the text it targets
-with `pdf search`, and when it shows on the page but is not found, widen
-the pattern into a regular expression or cover the text with `redact_area`.
+can be encoded or compressed. A field `flatten_forms` flattened or an attachment
+`delete_attachment` deleted no longer holds its value in the file.
 
-On the pages it searches, `redact_text` also clears the whole value of each
-form field whose value matches and removes each annotation whose text matches.
 Before publishing, every edit with `redact_text`, with or without `--verify`,
-searches the output again: the text of those pages, their fields and their
+searches the output again: the text of the pages it searched, their fields and their
 annotations, and, for an operation without `pages`, the bookmark titles, the
 attachment names and descriptions, and every document information entry, under
 any key, and XMP value the document held; what the save itself writes, such as
 the producer and the modification date, is the engine's and is not searched.
-Where its text is still found, nothing is written, also not with `--in-place`
-or `--backup`: the command exits 8 with `verification.ok: false` and a
-`REDACTED_TEXT_FOUND` issue whose `location` names each place,
-`attachment/all` for an attachment whose name matches. Take the text out there,
-for example with `set_properties`, `clear_properties`, `delete_bookmarks` or
-`delete_attachment`, and redact again. An operation limited to `pages` does
-not search the bookmarks, properties or attachments. A pattern that also
+A pattern that also
 matches a property the document holds, such as `\d` and a date in its XMP
 metadata, refuses the edit until `clear_properties` comes before `redact_text`
 in the same batch, or a more specific pattern leaves the property alone.
@@ -183,20 +137,16 @@ The engine removes redacted text without keeping its width, so text on the
 same line that was written to follow it, without a position of its own, moves
 left under the cover and no longer shows on the page. Word-made PDFs write
 their lines that way, so labels and punctuation after a value, such as
-`，手机号：`, disappear under the black box. A `REDACTION_TEXT_MOVED` warning
-names each `redact_text` or `redact_area` operation and the pages on which
-this happened. The check follows runs that keep their whole text, so a run
+`，手机号：`, disappear under the black box. The `REDACTION_TEXT_MOVED` check follows runs that keep their whole text, so a run
 that the redaction cut can move unnoticed: no warning does not prove that
-nothing moved. `review` reports `PDF_TEXT_COVERED` on every page where text lies
-under such a cover. The moved text is still in the file and searchable, and
+nothing moved. The moved text is still in the file and searchable, and
 nothing in the PDF can move it back: to keep the line visible, redact the
 source document and create the PDF again.
 
 When only the PDF exists, the values can still all be removed, at the cost of
 the text that follows them on their lines:
 
-- Prefer `redact_text`. Each operation searches the page as the earlier ones
-  left it and removes its matches on a page from the last to the first, so
+- Prefer `redact_text`. Each operation removes its matches on a page from the last to the first, so
   every match is still where it was found.
 - To cover text with `redact_area`, take each rectangle from the `rect` of a
   `pdf search` hit as it is. The cover spans the whole rectangle, and that of
@@ -213,8 +163,7 @@ the text that follows them on their lines:
   part of the value it was meant to cover.
 
 Then run `pdf search` for each value to confirm that none is left, and
-`review` the output: tell the user which pages `PDF_TEXT_COVERED` names, because
-their text is hidden there.
+`review` the output: tell the user which pages `PDF_TEXT_COVERED` names.
 
 The engine reads a visible gap between characters as a space, so extracted
 text can hold spaces the source never had: Word separates Chinese, Japanese or
@@ -237,13 +186,8 @@ is when `pdf create --from-images` places it with margins of up to an inch
 (72 points); a long, narrow image such as a receipt may cover less. Take its
 rectangle from a gridded render, never by eye:
 
-1. Render the page with a coordinate grid. `--grid 50` draws a line every 50
-   points and labels every 100 points along the top and left edges; the
-   result's `grid` states the spacing.
-2. Read the rectangle from the labels: `x` and `y` are the distances in points
-   from the top-left corner of the visible page (after rotation and crop), and
-   `width` and `height` extend right and down, exactly as `redact_area.rect`
-   takes them. On a scan, add a margin of a few points on every side.
+1. Render the page with a coordinate grid. `--grid 50` labels every 100 points along the top and left edges.
+2. Read the rectangle from the labels. On a scan, add a margin of a few points on every side.
 3. Apply `redact_area` to a copy, never to the only original.
 4. Render the result again with `--grid` at a higher `--dpi`, and check that
    nothing sensitive shows and that nothing that must stay is covered. Repeat
@@ -258,23 +202,17 @@ aspose-cli pdf render scan.redacted.pdf --pages 2 --grid 50 --dpi 200 --out scan
 ```
 
 The grid exists only in the rendered image; the PDF is never changed.
-`--grid` takes 10 to 500 points and applies to PNG and JPEG output.
 
 ## Other effects
 
-`optimize_document` can lower image quality and unembed fonts; compare file sizes and
-look at the affected pages. It cuts every embedded font down to what the
-document's characters need: a PDF that `pdf create` writes embeds font subsets
+After `optimize_document`, compare file sizes and
+look at the affected pages. A PDF that `pdf create` writes embeds font subsets
 still sized for the whole font, about 300 KB for a page of Chinese and English,
 and a merge of such files keeps each one, since different subsets are different
 streams. After optimizing, the page is about 50 KB; run it last, after stamping
 text. A document with a form field to fill keeps its fonts whole, so a value can
 still use any character: fill, then `flatten_forms` and `optimize_document` in
-one batch to cut them. A document with a signature field keeps its fonts whole
-too. On an encrypted document `optimize_document` needs `"compressStreams": false`,
-or `decrypt_document` before it and `encrypt_document` after it. Identical streams are stored once. `removeUnusedObjects` removes images a page lists but
-never draws. `unembedFonts` removes the fonts altogether, and the
+one batch to cut them. Identical streams are stored once. `unembedFonts` removes the fonts altogether, and the
 text then renders only where the reader has them installed (a CJK font on
 another operating system usually is not): tell the user before sending such a
-file outside. `add_attachment` stores the source file name, never
-its local path, when `name` is omitted.
+file outside.

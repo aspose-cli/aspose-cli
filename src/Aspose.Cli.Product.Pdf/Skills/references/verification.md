@@ -40,7 +40,7 @@ Every edit, with or without `--verify`, searches its output for the text of
 each `redact_text` before publishing, and writes nothing and exits 8 where it
 is still found, so a published `redact_text` is checked. A `redact_text` that
 matched nothing passes its check, and no check catches text a redaction moved
-under its cover; act on `OP_NO_EFFECT`, `REDACTION_TEXT_MOVED`,
+under its cover; act on `OP_NO_EFFECT` as its hint says, and on `REDACTION_TEXT_MOVED`,
 `REDACTION_NEARBY_TEXT_REMOVED` and the review's covered-text finding
 ([redaction](editing.md#redaction)).
 
