@@ -3562,6 +3562,7 @@ C-R30 | slides operations have samples
 C-R30 | slides replace_text
 C-R30 | slides set_background
 C-R30 | slides set_body
+C-R30 | slides set_body on a title slide's subtitle
 C-R30 | slides set_chart_data
 C-R30 | slides set_footer
 C-R30 | slides set_layout
@@ -4975,6 +4976,7 @@ executable-hint | slides read --password-env
 executable-hint | slides render --password-env --to jpeg
 executable-hint | slides render --password-env --to png
 executable-hint | slides render --password-env --to svg
+executable-hint | slides render --password-env --to tiff
 executable-hint | slides search --password-env
 executable-hint | words convert --password-env --to azw3
 executable-hint | words convert --password-env --to doc
@@ -5167,6 +5169,7 @@ output-reopens | slides convert pptx -> xps
 output-reopens | slides render pptx -> jpeg
 output-reopens | slides render pptx -> png
 output-reopens | slides render pptx -> svg
+output-reopens | slides render pptx -> tiff
 output-reopens | words convert azw3 -> docx
 output-reopens | words convert azw3 -> pdf
 output-reopens | words convert doc -> docx

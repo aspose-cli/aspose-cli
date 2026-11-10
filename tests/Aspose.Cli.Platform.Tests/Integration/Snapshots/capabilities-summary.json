@@ -298,6 +298,7 @@
       "renderFormats": [
         "png",
         "jpeg",
+        "tiff",
         "svg"
       ],
       "commands": [
