@@ -623,6 +623,21 @@ Reproductions: [SlidesKnownIssueTests](tests/Aspose.Cli.Product.Slides.Tests/Sli
   it as an explicit value, in its private copy of the presentation, so the Markdown keeps the
   list items and their levels.
 
+### SLIDES-TIFF-ONE-FRAME
+
+- **Defect:** saving a presentation, or selected slides, as TIFF writes one frame, the first
+  slide's, with or without `TiffOptions`, although `SaveFormat.Tiff` is documented as a
+  multi-page TIFF. One slide drawn with `ISlide.GetImage` and saved as a TIFF image is a correct
+  frame.
+- **CLI behavior:** `slides convert --to tiff` of more than one slide fails with
+  `FEATURE_UNSUPPORTED` (`details.reason` `engine-defect`) before anything is written; its hint
+  runs `slides render --to tiff`, which draws each slide into a TIFF of its own, or a convert to
+  PDF and then `pdf convert --to tiff`, which writes one multi-page TIFF. One slide converts as
+  before, and the invariant cases convert their fixture with `--slides 1` (the `SupportedUse`
+  row of `InvariantCases`). Once the SDK writes every slide, delete the refusal, that row and
+  this section together.
+- **Workaround:** the commands of the hint.
+
 ## Aspose.Words 26.9.0
 
 Reproductions: [WordsKnownIssueTests](tests/Aspose.Cli.Product.Words.Tests/WordsKnownIssueTests.cs).

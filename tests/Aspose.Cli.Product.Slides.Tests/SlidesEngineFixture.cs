@@ -57,6 +57,25 @@ public sealed class SlidesEngineFixture : IDisposable
         return stream.ToArray();
     }
 
+    /// <summary>The number of image file directories in a TIFF, one per frame.</summary>
+    internal static int TiffFrames(byte[] tiff)
+    {
+        bool little = tiff[0] == (byte)'I';
+        uint Read32(long at) => little
+            ? System.Buffers.Binary.BinaryPrimitives.ReadUInt32LittleEndian(tiff.AsSpan((int)at))
+            : System.Buffers.Binary.BinaryPrimitives.ReadUInt32BigEndian(tiff.AsSpan((int)at));
+        int Read16(long at) => little
+            ? System.Buffers.Binary.BinaryPrimitives.ReadUInt16LittleEndian(tiff.AsSpan((int)at))
+            : System.Buffers.Binary.BinaryPrimitives.ReadUInt16BigEndian(tiff.AsSpan((int)at));
+        int count = 0;
+        for (long offset = Read32(4); offset != 0; offset = Read32(offset + 2 + (12L * Read16(offset))))
+        {
+            count++;
+        }
+
+        return count;
+    }
+
     public TempDirectory Temp { get; } = new();
     public string File(string name) => Temp.File(name);
 

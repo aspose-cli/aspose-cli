@@ -37,7 +37,7 @@ public sealed class SlidesEngineFormatsTests
     public void EveryRenderFormat_HasASlideWriter(string id)
     {
         SlidesEngineFormat? engine = Engine(id);
-        Assert.True(engine is { Save: null, Loads.Length: 0 }, $"'{id}' is declared a render format but has no slide image row.");
+        Assert.True(engine is { SlideImage: not null } or { Save: null, Loads.Length: 0 }, $"'{id}' is declared a render format but has no slide image row.");
         SlidesEngineFormats.SlideImageOf(id);
     }
 

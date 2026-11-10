@@ -215,12 +215,13 @@ public sealed class MistakeRecoveryCliTests : IDisposable
     /// <summary>
     /// An image command given an extension close to a format only another command writes, such as
     /// <c>.gif</c> beside the <c>.tif</c> of convert, suggests only extensions it writes; the hint
-    /// still names the command that writes the other format.
+    /// still names the command that writes the other format. Each row lists the extensions its
+    /// product's render writes.
     /// </summary>
     [Theory]
-    [InlineData("pdf render a.pdf --out x.gif", "pdf convert", "a.pdf", "--to tiff --out x.tif")]
-    [InlineData("slides render a.pptx --out x.gifx", "slides convert", "a.pptx", "--to gif --out x.gif")]
-    public void RenderOutputCloseToAnotherCommandsFormat_SuggestsOnlyExtensionsRenderWrites(string commandLine, string producer, string input, string options)
+    [InlineData("pdf render a.pdf --out x.gif", "pdf convert", "a.pdf", "--to tiff --out x.tif", ".png .jpg .jpeg .svg")]
+    [InlineData("slides render a.pptx --out x.gifx", "slides convert", "a.pptx", "--to gif --out x.gif", ".png .jpg .jpeg .svg .tiff .tif")]
+    public void RenderOutputCloseToAnotherCommandsFormat_SuggestsOnlyExtensionsRenderWrites(string commandLine, string producer, string input, string options, string rendered)
     {
         File.WriteAllText(_workspace.File("a.pdf"), "not a document");
         File.WriteAllText(_workspace.File("a.pptx"), "not a document");
@@ -231,7 +232,7 @@ public sealed class MistakeRecoveryCliTests : IDisposable
         JsonNode error = JsonNode.Parse(result.StdErr)!["error"]!;
         Assert.Equal("OPTION_INVALID", error["code"]!.GetValue<string>());
         string[] available = [.. error["details"]!["available"]!.AsArray().Select(static extension => extension!.GetValue<string>())];
-        Assert.Subset(new HashSet<string>([".png", ".jpg", ".jpeg", ".svg"]), new HashSet<string>(available));
+        Assert.Subset(new HashSet<string>(rendered.Split(' ')), new HashSet<string>(available));
         string[] suggestions = error["details"]!["suggestions"]?.AsArray().Select(static extension => extension!.GetValue<string>()).ToArray() ?? [];
         Assert.Subset(new HashSet<string>(available), new HashSet<string>(suggestions));
         string hint = error["hint"]!.GetValue<string>();
