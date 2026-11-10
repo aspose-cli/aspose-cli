@@ -498,22 +498,34 @@ public sealed class OperationCatalog<TOp>
 
     /// <summary>
     /// For a field of an operation whose value has the wrong kind, what the field is, from its
-    /// description, before the operation's hint (<see cref="HintFor"/>): an <c>at</c> that is a
-    /// section number in one operation and a block address in another is otherwise only "must be
-    /// a whole number".
+    /// description and the schema's description of its kind of value, such as the form of a page
+    /// range, before the operation's hint (<see cref="HintFor"/>): an <c>at</c> that is a section
+    /// number in one operation and a block address in another is otherwise only "must be a whole
+    /// number", and a <c>slides</c> given as an array only "must be a string".
     /// </summary>
     private string? KindHint(string? name, JsonException failure)
     {
         if (failure is not ValueKindException { Field: var field } || name is null
-            || _byName[name].Record.Properties.FirstOrDefault(property => property.Name == field) is not { Description: { Length: > 0 } description })
+            || _byName[name].Record.Properties.FirstOrDefault(property => property.Name == field) is not { Description: { Length: > 0 } description } property)
         {
             return null;
         }
 
-        string meaning = description.StartsWith("The ", StringComparison.Ordinal) || description.StartsWith("A ", StringComparison.Ordinal) || description.StartsWith("An ", StringComparison.Ordinal)
-            ? $"'{field}' is {char.ToLowerInvariant(description[0])}{description[1..]}"
-            : $"'{field}': {description}";
-        return $"{meaning.TrimEnd('.')}. {HintFor(name)}";
+        string meaning = Article(description) ? $"'{field}' is {Lowered(description)}" : $"'{field}': {description}";
+        string? form = property.Constraints.Where(static constraint => constraint.Depth == 0).Select(static constraint =>
+        {
+            var schema = new JsonObject();
+            constraint.Describe(schema);
+            return schema["description"]?.GetValue<string>();
+        }).FirstOrDefault(static text => !string.IsNullOrEmpty(text));
+        return form is null
+            ? $"{meaning.TrimEnd('.')}. {HintFor(name)}"
+            : $"{meaning.TrimEnd('.')}: {(Article(form) ? Lowered(form) : form).TrimEnd('.')}. {HintFor(name)}";
+
+        static bool Article(string text) =>
+            text.StartsWith("The ", StringComparison.Ordinal) || text.StartsWith("A ", StringComparison.Ordinal) || text.StartsWith("An ", StringComparison.Ordinal);
+
+        static string Lowered(string text) => $"{char.ToLowerInvariant(text[0])}{text[1..]}";
     }
 
     private string? KnownNameAt(JsonElement ops, int index) =>
