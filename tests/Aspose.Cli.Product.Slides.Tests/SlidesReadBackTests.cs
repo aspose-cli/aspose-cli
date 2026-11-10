@@ -158,7 +158,9 @@ public sealed class SlidesReadBackTests
         string input = fixture.File("blank.pptx");
         using (var presentation = new Presentation())
         {
+            // A blank layout has no body placeholder, so authoring gives the slide a box named Body.
             presentation.Slides[0].LayoutSlide = presentation.LayoutSlides.GetByType(SlideLayoutType.Blank);
+            SlidesAuthoring.Body(presentation.Slides[0]);
             presentation.Save(input, SaveFormat.Pptx);
         }
 

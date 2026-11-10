@@ -1,0 +1,72 @@
+{
+  "name": "slides set_body writes the subtitle of a title slide and refuses a slide with neither body nor subtitle",
+  "files": {
+    "input.pptx": { "fixture": "slides.pptx" },
+    "headings.md": { "text": "# Cover\n\n## Agenda\n" }
+  },
+  "steps": [
+    {
+      "args": ["slides", "edit", "input.pptx", "--ops", "{\"ops\":[{\"op\":\"set_body\",\"slide\":1,\"paragraphs\":[{\"text\":\"Sub\"}]}]}", "--out", "body.pptx", "--verify"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "applied[0].itemsAffected", "equals": 1 },
+          { "path": "applied[0].targets", "equals": ["slide/1/shape/3"] },
+          { "path": "verification.ok", "equals": true }
+        ],
+        "files": { "present": ["body.pptx"] }
+      }
+    },
+    {
+      "args": ["slides", "edit", "body.pptx", "--ops", "{\"ops\":[{\"op\":\"set_body\",\"slide\":1,\"paragraphs\":[{\"text\":\"Sub\"}]}]}", "--out", "again.pptx"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "applied[0].itemsAffected", "equals": 0 }
+        ],
+        "warnings": { "present": ["OP_NO_EFFECT"] }
+      }
+    },
+    {
+      "args": ["slides", "edit", "input.pptx", "--ops", "{\"ops\":[{\"op\":\"insert_slide\",\"layout\":\"Title Only\"},{\"op\":\"set_body\",\"slide\":3,\"paragraphs\":[{\"text\":\"Sub\"}]}]}", "--out", "title-only.pptx"],
+      "expect": {
+        "error": "PLACEHOLDER_NOT_FOUND",
+        "json": [
+          { "path": "error.details.requested", "equals": "body" }
+        ],
+        "files": { "absent": ["title-only.pptx"], "unchanged": ["input.pptx"] }
+      }
+    },
+    {
+      "args": ["slides", "create", "headings.pptx", "--from-markdown", "headings.md"],
+      "expect": { "exitCode": 0, "files": { "present": ["headings.pptx"] } }
+    },
+    {
+      "args": ["slides", "edit", "headings.pptx", "--ops", "{\"ops\":[{\"op\":\"set_body\",\"slide\":1,\"paragraphs\":[{\"text\":\"Sub\"}]}]}", "--out", "cover.pptx"],
+      "expect": {
+        "error": "PLACEHOLDER_NOT_FOUND",
+        "files": { "absent": ["cover.pptx"], "unchanged": ["headings.pptx"] }
+      }
+    },
+    {
+      "args": ["slides", "edit", "headings.pptx", "--ops", "{\"ops\":[{\"op\":\"set_body\",\"slide\":2,\"paragraphs\":[{\"text\":\"Sub\"}]}]}", "--out", "agenda.pptx"],
+      "expect": {
+        "error": "PLACEHOLDER_NOT_FOUND",
+        "json": [
+          { "path": "error.hint", "contains": "insert_shape" }
+        ],
+        "files": { "absent": ["agenda.pptx"], "unchanged": ["headings.pptx"] }
+      }
+    },
+    {
+      "args": ["slides", "edit", "headings.pptx", "--ops", "{\"ops\":[{\"op\":\"insert_shape\",\"slide\":2,\"geometry\":\"rectangle\",\"rect\":{\"x\":50,\"y\":100,\"width\":620,\"height\":260},\"text\":\"Sub\"}]}", "--out", "agenda.pptx"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "applied[0].itemsAffected", "equals": 1 }
+        ],
+        "files": { "present": ["agenda.pptx"] }
+      }
+    }
+  ]
+}

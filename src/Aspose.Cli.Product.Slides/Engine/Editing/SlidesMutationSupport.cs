@@ -77,6 +77,22 @@ internal static class SlidesMutationSupport
                 hint: $"Use a placeholder role from details.available, or address the shape by its 'shapeId' or 'shapeName'; {ShapeListing}.");
     }
 
+    /// <summary>
+    /// The shape whose paragraphs set_body replaces: the slide's first body placeholder, else its
+    /// subtitle, else the box authoring named Body where the layout had neither. A slide with none
+    /// of them is refused rather than given a box over whatever it shows.
+    /// </summary>
+    internal static IAutoShape ResolveBody(ISlide slide) =>
+        SlidesPlaceholders.Content(slide).FirstOrDefault()
+            ?? SlidesPlaceholders.Content(slide, includeSubtitle: true).FirstOrDefault()
+            ?? SlidesAuthoring.Named(slide, SlidesAuthoring.BodyName)
+            ?? throw CliErrors.NotFound(
+                SlidesDiagnostics.PlaceholderNotFound,
+                "placeholder",
+                SlidesPlaceholderRoles.Body,
+                Names(slide.Shapes.Select(PlaceholderRole)),
+                hint: $"set_body writes a body placeholder, or a subtitle where the slide has none, and this slide has neither: write the text into one of its shapes with set_text, or add a text box with insert_shape; {ShapeListing}.");
+
     internal static ILayoutSlide ResolveLayout(Presentation presentation, string name)
     {
         ILayoutSlide? layout = presentation.LayoutSlides.FirstOrDefault(item =>

@@ -182,7 +182,7 @@ internal sealed partial class SlidesMutationHandlers
     {
         // Bullets and spacing come from the placeholder's levels, as in PowerPoint.
         SlidesAuthoring.WriteParagraphs(
-            SlidesAuthoring.Body(Slide).TextFrame,
+            ((IAutoShape)Shape).TextFrame,
             operation.Paragraphs.Select(static input => new AuthoredParagraph(
                 [new AuthoredRun(input.Text)],
                 input.List is { } list ? list.Level - 1 : 0,

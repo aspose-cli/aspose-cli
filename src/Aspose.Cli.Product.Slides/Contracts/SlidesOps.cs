@@ -308,7 +308,7 @@ public sealed record SetTitleOp : SlideTargetOp
     public required string Text { get; init; }
 }
 
-/// <summary>Replaces the paragraphs of a slide's body placeholder.</summary>
+/// <summary>Replaces the paragraphs of a slide's body placeholder, or of its subtitle when it has no body placeholder.</summary>
 [Operation("set_body")]
 public sealed record SetBodyOp : SlideTargetOp
 {
