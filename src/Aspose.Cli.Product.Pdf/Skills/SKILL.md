@@ -98,7 +98,7 @@ keeps one on its first 4 pages warns `EVALUATION_INPUT_MARKED`.
 - Encrypting with `pdf convert`: it refuses `--encrypt-env`. Encrypt with
   `pdf edit`, and encrypt a copy of a PDF/A file, never the archive itself.
 - Trusting the black box: confirm a redaction with `pdf search`, and act on
-  `OP_NO_EFFECT`, `REDACTION_TEXT_MOVED`, `REDACTION_NEARBY_TEXT_REMOVED` and
+  `OP_NO_EFFECT` as its hint says, and on `REDACTION_TEXT_MOVED`, `REDACTION_NEARBY_TEXT_REMOVED` and
   `PDF_TEXT_COVERED`
   ([redaction](references/editing.md)).
 - Guessing rectangles: take them from a `pdf search` hit's `rect`, a field's
