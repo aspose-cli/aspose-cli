@@ -122,7 +122,7 @@ gives an operation's fields. A table in a Word, PDF or slide file is theirs.
 | `aspose-cli docs cells/financial-models` | Building a formula-driven model |
 | `aspose-cli docs cells/verification` | Verifying: the four tiers, render facts, `cells compare` |
 | `aspose-cli docs cells/preview` | Showing a workbook in the live viewer |
-| `aspose-cli docs cells/troubleshooting` | A Cells error or warning, CSV imports, evaluation-mode warning sheets |
+| `aspose-cli docs cells/troubleshooting` | A Cells error or warning, CSV tables that do not start at row 1, evaluation-mode warning sheets |
 
 Examples: [report from CSV](examples/report-from-csv/README.md),
 [recalculate and verify](examples/recalc-and-verify/README.md),
