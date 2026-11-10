@@ -283,6 +283,21 @@ Reproductions: [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownI
   `--from-markdown` leaves it empty; both leave the author and subject empty.
 - **Workaround:** set the other fields with a `set_properties` edit.
 
+### PDF-IMPORT-LINK-ADDRESSES
+
+- **Defect:** the HTML and Markdown importers resolve every relative link against a local folder,
+  the HTML's `BasePath` or else the process working directory, and write the `file:` address they
+  get into the link annotation's text and, for a link to another file, into its URI action, so
+  the PDF holds the absolute path of that folder; an absolute or share path becomes a `file:`
+  address there too. A link to an element `id` (`href="#part"`) gets neither a destination nor an
+  action; one to an `<a name="part">` anchor leads to its page. The importers write no other
+  action or file specification for a link.
+- **CLI behavior:** `pdf create --from-html` and `--from-markdown` take each `file:` address out
+  of a link's text and URI action: a link to a local file loses its action, and
+  `NAVIGATION_DEGRADED` counts the links that lead nowhere. Web and mail links are kept.
+- **Workaround:** mark each place a link leads to with `<a name="part"></a>`, and give a link to
+  another document its https address.
+
 ### PDF-HTML-FORM-NAMES
 
 - **Defect:** the HTML importer keeps the `name` of single-line text inputs only. It names check

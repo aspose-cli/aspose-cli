@@ -1,0 +1,30 @@
+{
+  "name": "pdf create from HTML or Markdown warns of the links that lead nowhere and keeps a web link",
+  "files": {
+    "contract.html": { "text": "<html><head><meta charset=\"utf-8\"><title>Contract</title></head><body><h1 id=\"c1\">General</h1><p>Contents: <a href=\"#c2\">Price</a> | <a href=\"annex.pdf\">Annex</a> | <a href=\"https://example.com/terms\">Terms</a></p><h1 id=\"c2\" style=\"page-break-before:always\">Price</h1><p>The price.</p></body></html>" },
+    "notes.md": { "text": "# Notes\n\nSee [the next part](#next) and [the annex](annex.md).\n\n# Next\n\nMore notes.\n" }
+  },
+  "steps": [
+    {
+      "args": ["pdf", "create", "contract.pdf", "--from-html", "contract.html"],
+      "expect": {
+        "exitCode": 0,
+        "warnings": { "present": ["NAVIGATION_DEGRADED"] }
+      }
+    },
+    {
+      "args": ["pdf", "inspect", "contract.pdf", "--detail", "links"],
+      "expect": {
+        "exitCode": 0,
+        "json": [{ "path": "links[0].url", "equals": "https://example.com/terms" }]
+      }
+    },
+    {
+      "args": ["pdf", "create", "notes.pdf", "--from-markdown", "notes.md"],
+      "expect": {
+        "exitCode": 0,
+        "warnings": { "present": ["NAVIGATION_DEGRADED"] }
+      }
+    }
+  ]
+}

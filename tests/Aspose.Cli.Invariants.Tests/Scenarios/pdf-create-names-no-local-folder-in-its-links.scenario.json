@@ -1,0 +1,17 @@
+{
+  "name": "pdf create from HTML or Markdown writes no folder of this machine into its links",
+  "files": {
+    "contract.html": { "text": "<html><head><meta charset=\"utf-8\"><title>Contract</title></head><body><h1 id=\"c1\">General</h1><p>Contents: <a href=\"#c2\">Price</a> | <a href=\"#n3\">Delivery</a> | <a href=\"annex.html\">Annex</a> | <a href=\"annex.pdf\">Annex PDF</a> | <a href=\"annex.pdf#page=2\">Its page 2</a> | <a href=\"data.csv\">Data</a> | <a href=\"https://example.com/terms\">Terms</a></p><h1 id=\"c2\" style=\"page-break-before:always\">Price</h1><p>The price.</p><h1 style=\"page-break-before:always\"><a name=\"n3\"></a>Delivery</h1><p>The delivery.</p></body></html>" },
+    "notes.md": { "text": "# Notes\n\nSee [the next part](#next), [the annex](annex.md), [its PDF](annex.pdf), [its page 2](annex.pdf#page=2) and [the data](data.csv).\n\n# Next\n\nMore notes.\n" }
+  },
+  "steps": [
+    {
+      "args": ["pdf", "create", "contract.pdf", "--from-html", "contract.html"],
+      "expect": { "exitCode": 0 }
+    },
+    {
+      "args": ["pdf", "create", "notes.pdf", "--from-markdown", "notes.md"],
+      "expect": { "exitCode": 0 }
+    }
+  ]
+}
