@@ -66,6 +66,13 @@ public sealed class SlidesStateGrainTests
     {
         using var fixture = new SlidesEngineFixture();
         string input = fixture.CreatePresentation("body.pptx", slides: 1);
+        using (var presentation = new Presentation(input))
+        {
+            // The slide has no body placeholder, so authoring gives it a box named Body.
+            SlidesAuthoring.Body(presentation.Slides[0]);
+            presentation.Save(input, SaveFormat.Pptx);
+        }
+
         SlidesEdit.Run(fixture.Session, new SlidesEditRequest
         {
             Input = input,
@@ -191,6 +198,36 @@ public sealed class SlidesStateGrainTests
     {
         presentation.Slides[0].SlideShowTransition.Type = type;
         presentation.Slides[0].SlideShowTransition.Duration = 500;
+    }
+
+    /// <summary>
+    /// set_body on a title slide, which has a subtitle and no body placeholder, writes the
+    /// subtitle, so the verification compares the subtitle's paragraphs.
+    /// </summary>
+    [Fact]
+    public void Verify_ComparesTheSubtitleSetBodyWritesOnATitleSlide()
+    {
+        using var fixture = new SlidesEngineFixture();
+        string markdown = fixture.File("cover.md");
+        File.WriteAllText(markdown, "# A\n\nsub\n");
+        string input = fixture.File("cover.pptx");
+        SlidesCreate.Run(fixture.Session, new SlidesCreateRequest { Output = TestOutput.At(input), Markdown = new SourceFile("--from-markdown", markdown) });
+        long subtitleId;
+        using (var presentation = new Presentation(input))
+        {
+            subtitleId = Subtitle(presentation).OfficeInteropShapeId;
+        }
+
+        VerificationFacts facts = Verify(
+            input,
+            new SetBodyOp { Id = "body", Slide = 1, Paragraphs = [new SlidesParagraphInput { Text = "x" }] },
+            static edited => Subtitle(edited).TextFrame.Text = "x",
+            static output => Subtitle(output).TextFrame.Text = "y");
+
+        Assert.Contains($"the paragraphs of shape {subtitleId} ", Assert.Single(facts.Issues).Message, StringComparison.Ordinal);
+
+        static IAutoShape Subtitle(Presentation presentation) =>
+            presentation.Slides[0].Shapes.OfType<IAutoShape>().Single(static shape => shape.Placeholder?.Type == PlaceholderType.Subtitle);
     }
 
     /// <summary>Records one operation against the presentation <paramref name="edit"/> leaves and verifies the one <paramref name="write"/> leaves.</summary>

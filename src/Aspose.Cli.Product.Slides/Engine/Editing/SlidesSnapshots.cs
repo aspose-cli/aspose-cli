@@ -68,7 +68,7 @@ internal sealed class SlidesSnapshots(
 
     public OperationSnapshot Apply(SetTitleOp operation) => Shapes(() => Whole(SlidesAuthoring.Title(Slide)));
 
-    public OperationSnapshot Apply(SetBodyOp operation) => Shapes(() => Whole(SlidesAuthoring.Body(Slide)));
+    public OperationSnapshot Apply(SetBodyOp operation) => Shapes(() => Whole(target.Shape!));
 
     public OperationSnapshot Apply(SetTextOp operation) => Shapes(() => Whole(target.Shape!));
 

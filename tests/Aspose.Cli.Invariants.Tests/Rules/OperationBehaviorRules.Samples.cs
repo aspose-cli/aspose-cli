@@ -8,7 +8,7 @@ namespace Aspose.Cli.Invariants.Tests;
 /// once leaves, an <c>add_</c> operation applied twice adds twice), C-R21 (the state fields
 /// read paths the ops schemas declare read back) and C-R30 (its outcome tells the truth). The schemas say what an operation accepts, not
 /// what the fixture holds, so the samples are written by hand against the fixtures: Sheet1 with
-/// A1:B3 filled, one PDF page, two slides whose second has a title (shape 2) and a body (shape 3),
+/// A1:B3 filled, one PDF page, two slides, a title slide with a subtitle (shape 3) and a second with a title (shape 2) and a body (shape 3),
 /// and five Word blocks. Operations that read a file name <c>other.&lt;format&gt;</c> (the fixture
 /// again), <c>image.png</c> or <c>note.txt</c>; a secret field names <see cref="RuleWorkspace.SecretVariable"/>.
 /// </summary>
@@ -189,6 +189,9 @@ internal static class OperationSamples
         new("slides", """{"op":"move_slide","slide":2,"to":1}"""),
         new("slides", """{"op":"replace_text","find":"Second","replace":"Next"}"""),
         new("slides", """{"op":"set_background","slides":"1","color":"#336699"}"""),
+        // The subtitle sample writes text alone and comes first, so C-R39 round-trips the text
+        // through a title slide's subtitle and the lists through a body placeholder.
+        new("slides", """{"op":"set_body","slide":1,"paragraphs":[{"text":"Sub"}]}""", Label: "a title slide's subtitle"),
         new("slides", """{"op":"set_body","slide":2,"paragraphs":[{"text":"First"},{"text":"Inner","list":{"kind":"number","level":2}}]}"""),
         new("slides", """{"op":"set_footer","slides":"1-2","text":"Foot","showNumber":true,"showDate":true}"""),
         new("slides", """{"op":"set_notes","slide":1,"text":"Notes"}"""),

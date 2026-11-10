@@ -7,9 +7,11 @@ namespace Aspose.Cli.Product.Slides.Engine;
 
 /// <summary>
 /// The one way authored titles, body text and pictures are placed on a slide, shared by
-/// Markdown authoring and edit operations. Text goes into the layout's placeholders; a
-/// layout without one gets an unstyled box placed proportionally on the canvas,
-/// named so later operations find the same box again.
+/// Markdown authoring and edit operations. Text goes into the layout's placeholders. Where a
+/// layout has none, Markdown authoring and set_title give the slide an unstyled box placed
+/// proportionally on the canvas, named so later operations find the same box again; set_body
+/// adds no box, and writes only a body placeholder, a subtitle or such a box
+/// (<see cref="Editing.SlidesMutationSupport.ResolveBody"/>).
 /// </summary>
 internal static class SlidesAuthoring
 {
@@ -169,7 +171,7 @@ internal static class SlidesAuthoring
             size.Height * fraction.Height);
     }
 
-    private static IAutoShape? Named(ISlide slide, string name) =>
+    internal static IAutoShape? Named(ISlide slide, string name) =>
         slide.Shapes.OfType<IAutoShape>().FirstOrDefault(shape =>
             shape.Placeholder is null
             && shape.TextFrame is not null

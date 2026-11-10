@@ -54,7 +54,7 @@ internal sealed partial class SlidesMutationHandlers : ISlidesOpHandler<ValueTup
     /// <summary>The resolved target slide of a slide or shape operation.</summary>
     private ISlide Slide => _target.Slide!;
 
-    /// <summary>The resolved target shape of a shape operation.</summary>
+    /// <summary>The resolved target shape of a shape operation, or the body set_body writes.</summary>
     private IShape Shape => _target.Shape!;
 
     /// <summary>The resolved target slides of a multi-slide operation.</summary>
@@ -88,9 +88,12 @@ internal sealed partial class SlidesMutationHandlers : ISlidesOpHandler<ValueTup
                 : throw SlideNotFound(value.At, presentation.Slides.Count),
             _ => null,
         };
-        IShape? shape = op is ShapeTargetOp shapeTarget
-            ? ResolveShape(slide!, shapeTarget)
-            : null;
+        IShape? shape = op switch
+        {
+            ShapeTargetOp shapeTarget => ResolveShape(slide!, shapeTarget),
+            SetBodyOp => ResolveBody(slide!),
+            _ => null,
+        };
         IReadOnlyList<ISlide>? slides = op switch
         {
             DeleteSlidesOp value => ResolveSlides(presentation, value.Slides),

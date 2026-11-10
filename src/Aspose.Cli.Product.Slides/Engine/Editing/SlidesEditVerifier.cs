@@ -101,8 +101,7 @@ internal sealed class SlidesEditVerifier : IEditVerifier<SlidesOp>
                 ExpectText(id, text, $"shape/{shapeId}", $"the text of shape {Invariant(shapeId)}",
                     slide => slide.Shapes.FirstOrDefault(shape => shape.OfficeInteropShapeId == shapeId) is { } shape ? ShapeText(shape) : null);
                 break;
-            case SetBodyOp body when _targets(body).Slide is { } bodySlide:
-                long bodyId = SlidesAuthoring.Body(bodySlide).OfficeInteropShapeId;
+            case SetBodyOp body when _targets(body).ShapeId is long bodyId:
                 ExpectText(id, body, $"shape/{bodyId}", $"the paragraphs of shape {Invariant(bodyId)}",
                     slide => slide.Shapes.FirstOrDefault(shape => shape.OfficeInteropShapeId == bodyId) is { } shape
                         ? ParagraphState(shape)

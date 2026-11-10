@@ -16,7 +16,7 @@ public sealed class SlidesOpTargetTests
 
     /// <summary>
     /// One sample of every operation that resolves, then the variants whose address takes another
-    /// branch: a slide, slide id, shape or range the deck lacks, and
+    /// branch: a slide, slide id, shape or range the deck lacks, a slide without a body, and
     /// an operation that names no slide.
     /// </summary>
     private static readonly SlidesOp[] Samples =
@@ -31,7 +31,6 @@ public sealed class SlidesOpTargetTests
         new InsertSectionOp { Name = "Part", At = 2 },
         new ImportSlidesOp { Path = "other.pptx" },
         new SetTitleOp { Slide = 2, Text = "Title" },
-        new SetBodyOp { Slide = 1, Paragraphs = [new SlidesParagraphInput { Text = "Body" }] },
         new SetTextOp { Slide = 1, ShapeName = "Title 1", Text = "Text" },
         new SlidesReplaceTextOp { Find = "Slide", Replace = "Page" },
         new SetNotesOp { Slide = 1, Text = "Note" },
@@ -66,6 +65,7 @@ public sealed class SlidesOpTargetTests
         new CopySlideOp { SlideId = 99999 },
         new InsertSectionOp { Name = "Late", At = 9 },
         new SetTitleOp { Slide = 9, Text = "Title" },
+        new SetBodyOp { Slide = 1, Paragraphs = [new SlidesParagraphInput { Text = "Body" }] },
         new SetTextOp { Slide = 1, ShapeId = 999, Text = "Text" },
         new SetTextOp { Slide = 9, ShapeId = 5, Text = "Text" },
         new SlidesSetTableCellOp { Slide = 2, ShapeId = 999, Row = 1, Column = 1, Text = "Cell" },
@@ -89,7 +89,6 @@ public sealed class SlidesOpTargetTests
         "insert_section | section/Part",
         "import_slides | slide/all",
         "set_title | slide/2",
-        "set_body | slide/1",
         "set_text | slide/1/shape/2",
         "replace_text | slide/all",
         "set_notes | slide/1",
@@ -115,6 +114,7 @@ public sealed class SlidesOpTargetTests
         "copy_slide | slide/all",
         "insert_section | section/Late",
         "set_title | slide/9",
+        "set_body | slide/1",
         "set_text | slide/1/shape/999",
         "set_text | slide/9/shape/5",
         "set_table_cell | slide/2/shape/999",

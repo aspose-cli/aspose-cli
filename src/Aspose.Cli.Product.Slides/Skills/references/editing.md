@@ -63,7 +63,10 @@ comments a deck already has.
 ## Text and notes
 
 - `set_title`, `set_body` and `set_text` fill placeholders the layout already styles; prefer
-  them to `format_shape`, which overrides every run of one shape.
+  them to `format_shape`, which overrides every run of one shape. `set_body` fills a title
+  slide's subtitle, and refuses a slide with neither body nor subtitle with
+  `PLACEHOLDER_NOT_FOUND`, as a Markdown heading without content makes; add a text box there
+  with `insert_shape`.
 - `format_shape` `font` names one font for Latin, East Asian and complex-script text;
   `latinFont` and `eastAsianFont` set the font of their script in its place. `slides read
   --content full` reports a `font` given alone as each run's `font`; given with `latinFont`, it
