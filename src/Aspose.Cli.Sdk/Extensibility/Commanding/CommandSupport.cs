@@ -144,13 +144,25 @@ public static class JsonInputSource
         catch (CliException exception)
             when (exception.Code == ErrorCodes.FileNotFound)
         {
-            throw CliException.Create(
-                exception.Code,
-                exception.Message,
-                hint: $"{exception.Hint} To pass the JSON itself, start the value with {{ or [ (inline) or use '-' for stdin.",
-                details: exception.Details,
-                docs: exception.Docs);
+            throw NotFound(paths.ResolveOutput(source), option);
         }
+    }
+
+    /// <summary>
+    /// The file a JSON source names does not exist: the error names the option's file rather than
+    /// an input, and says how to pass the JSON itself.
+    /// </summary>
+    /// <param name="path">The resolved path of the file.</param>
+    /// <param name="option">The option whose value names the file, such as <c>--ops</c>.</param>
+    public static CliException NotFound(string path, string option)
+    {
+        CliException missing = CliErrors.FileNotFound(path, option);
+        return CliException.Create(
+            missing.Code,
+            missing.Message,
+            hint: $"{missing.Hint} To pass the JSON itself, start the value with {{ or [ (inline) or use '-' for stdin.",
+            details: missing.Details,
+            docs: missing.Docs);
     }
 
     /// <summary>Classifies JSON input using the same rules as the actual reader.</summary>

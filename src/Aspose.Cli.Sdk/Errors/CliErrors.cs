@@ -147,13 +147,16 @@ public static partial class CliErrors
 
     /// <summary>
     /// An input file that does not exist. Its details are the not-found details of a
-    /// <c>file</c>: the path as the caller wrote it and as it resolved.
+    /// <c>file</c>, or of the file an option names, such as an <c>ops file</c>: the path as the
+    /// caller wrote it and as it resolved.
     /// </summary>
-    public static CliException FileNotFound(string path) => CliException.Create(
+    /// <param name="path">The path of the file.</param>
+    /// <param name="option">The option that names a file the command reads besides its input, such as <c>--ops</c>; null for an input.</param>
+    public static CliException FileNotFound(string path, string? option = null) => CliException.Create(
         ErrorCodes.FileNotFound,
-        $"Input file not found: {path}",
+        option is null ? $"Input file not found: {path}" : $"The {option} file was not found: {path}",
         hint: "Check the path. Relative paths resolve against --workdir (or the current directory).",
-        details: FileNotFoundDetails("file", path));
+        details: FileNotFoundDetails(option is null ? "file" : $"{option.TrimStart('-')} file", path));
 
     /// <summary>
     /// A recent file the caller chose by its id that is no longer listed, so there is no path
