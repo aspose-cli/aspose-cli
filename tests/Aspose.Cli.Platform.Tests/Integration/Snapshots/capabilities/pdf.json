@@ -593,7 +593,7 @@
             ],
             "secret": false,
             "valueSource": "command-line",
-            "description": "Target PDF export format. Default: the --out extension's format, except pdfa-1b, pdfa-2b, pdfa-3b, which only --to chooses."
+            "description": "Target PDF export format. Default: the --out extension's format, except pdfa-1b, pdfa-2b, pdfa-3b, which only --to chooses. pdfa-1b, pdfa-2b, pdfa-3b write .pdf."
           }
         ],
         "arguments": [

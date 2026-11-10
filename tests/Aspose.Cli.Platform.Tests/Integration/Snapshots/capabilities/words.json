@@ -1278,7 +1278,7 @@
             ],
             "secret": false,
             "valueSource": "command-line",
-            "description": "Target document format. Default: the --out extension's format."
+            "description": "Target document format. Default: the --out extension's format. flatopc, wordml write .xml; openxps writes .oxps; html-fixed writes .html or .htm."
           }
         ],
         "arguments": [
