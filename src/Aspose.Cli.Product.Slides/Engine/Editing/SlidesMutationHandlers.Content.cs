@@ -69,8 +69,9 @@ internal sealed partial class SlidesMutationHandlers
     /// Names each chart on a slide, inside a group or not, whose title, axis titles or data hold a
     /// match, which replace_text leaves as it is: chart text is not text it reaches. The title
     /// warns as part <c>chart-title</c>, the axis titles as <c>axis-title</c>, the categories and
-    /// series names as <c>chart-data</c>; each matches as a paragraph of shape text does. The
-    /// message never repeats the find text or the chart's text.
+    /// series names as <c>chart-data</c>; each matches as a paragraph of shape text does, and is
+    /// named only if the chart is still in the presentation and that part of it still holds a
+    /// match once the batch has run. The message never repeats the find text or the chart's text.
     /// </summary>
     private void WarnUnreplacedChartText(SlidesReplaceTextOp operation, TextReplacement replacement)
     {
@@ -83,28 +84,30 @@ internal sealed partial class SlidesMutationHandlers
                     ? string.Create(CultureInfo.InvariantCulture, $"{chartName} on slide {number}")
                     : string.Create(CultureInfo.InvariantCulture, $"{chartName} in group '{group.Name}' (shapeId {group.OfficeInteropShapeId}) on slide {number}");
                 string location = SlidesStateProjection.ShapeAddress(number, chart.OfficeInteropShapeId);
+                Func<bool> Remains(Func<bool> holds) => () => _presentation.Slides
+                    .SelectMany(static slide => Charts(slide.Shapes, null)).Any(found => ReferenceEquals(found.Chart, chart)) && holds();
                 if (TitleMatches(chart, replacement))
                 {
-                    _warnings.Add(UnreplacedText.Warning(TextPart.ChartTitle, operation, "replace_text",
+                    _unreplaced.Add(UnreplacedText.Found(TextPart.ChartTitle, operation, "replace_text",
                         $"Operation {operation.Id} (replace_text) found a match in the title of {where} and left the title as it was: replace_text does not change chart titles or chart data.",
                         group is null ? RebuildHint(number, chart, "To change the title, rebuild the chart", "the same data, the new title") : GroupedChartHint,
-                        location));
+                        location, Remains(() => TitleMatches(chart, replacement))));
                 }
 
-                if (SlidesShapeFormats.AxisTitles(chart).Any(title => FrameMatches(title, replacement)))
+                if (AxisTitleMatches(chart, replacement))
                 {
-                    _warnings.Add(UnreplacedText.Warning(TextPart.AxisTitle, operation, "replace_text",
+                    _unreplaced.Add(UnreplacedText.Found(TextPart.AxisTitle, operation, "replace_text",
                         $"Operation {operation.Id} (replace_text) found a match in an axis title of {where} and left it as it was: replace_text does not change a chart's axis titles.",
                         AxisTitleHint,
-                        location));
+                        location, Remains(() => AxisTitleMatches(chart, replacement))));
                 }
 
                 if (DataMatched(chart, replacement) is { } data)
                 {
-                    _warnings.Add(UnreplacedText.Warning(TextPart.ChartData, operation, "replace_text",
+                    _unreplaced.Add(UnreplacedText.Found(TextPart.ChartData, operation, "replace_text",
                         $"Operation {operation.Id} (replace_text) found a match in the {data.Parts} of {where} and left them as they were: replace_text does not change chart titles or chart data.",
                         group is not null ? GroupedChartHint : DataHint(number, chart, data.Change),
-                        location));
+                        location, Remains(() => DataMatched(chart, replacement) is not null)));
                 }
             }
         }
@@ -162,6 +165,9 @@ internal sealed partial class SlidesMutationHandlers
 
     private static bool TitleMatches(IChart chart, TextReplacement replacement) =>
         chart.HasTitle && chart.ChartTitle.TextFrameForOverriding is { } title && FrameMatches(title, replacement);
+
+    private static bool AxisTitleMatches(IChart chart, TextReplacement replacement) =>
+        SlidesShapeFormats.AxisTitles(chart).Any(title => FrameMatches(title, replacement));
 
     // Whether a paragraph of a title holds a match, read as Replace reads a paragraph.
     private static bool FrameMatches(ITextFrame frame, TextReplacement replacement) =>

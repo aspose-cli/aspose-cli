@@ -47,21 +47,41 @@ public sealed class TextPart
 }
 
 /// <summary>
-/// Builds the <c>TEXT_NOT_REPLACED</c> of an operation that found its text in a part of the
-/// document it does not change and left it as it was: <c>details</c> names the operation by
-/// <c>id</c> and <c>op</c> and the kind of part in <c>part</c>, <c>location</c> the place.
+/// Text an operation found in a part of the document it does not change and left as it was, which
+/// a <c>TEXT_NOT_REPLACED</c> names: <c>details</c> names the operation by <c>id</c> and
+/// <c>op</c> and the kind of part in <c>part</c>, <c>location</c> the place. The warning is about
+/// the output: a product hands the text to the SDK runner (<see cref="Operations.IOperationModel{TOp}.Unreplaced"/>)
+/// with a check of whether what held it still holds a match, and the runner asks that check after
+/// the last operation of the batch and warns only when it does. So a later operation of the batch
+/// that changed or removed that text leaves no warning, and text a later operation wrote is not
+/// named. Only the runner reads the warning, so no product warns about it another way.
 /// </summary>
-public static class UnreplacedText
+public sealed class UnreplacedText
 {
-    /// <summary>The warning that <paramref name="operation"/> left the text it found in <paramref name="part"/>.</summary>
+    private readonly Func<bool> _remains;
+
+    private UnreplacedText(Warning warning, Func<bool> remains)
+    {
+        Warning = warning;
+        _remains = remains;
+    }
+
+    /// <summary>The warning, for the runner to report while the text remains.</summary>
+    internal Warning Warning { get; }
+
+    /// <summary>The text that <paramref name="operation"/> found in <paramref name="part"/> and left as it was.</summary>
     /// <param name="part">The kind of part that holds the text.</param>
     /// <param name="operation">The operation, with the id the batch gave it.</param>
     /// <param name="op">The op name of the operation, such as replace_text.</param>
     /// <param name="message">Where the operation found the text and that it left it, never repeating the text.</param>
     /// <param name="hint">How to change that text, such as the operation that does.</param>
     /// <param name="location">The address of the part, or of the unit that holds several.</param>
+    /// <param name="remains">
+    /// Whether the document as it is now still holds a match where the operation found one: read
+    /// only from the objects that held a match then, and false for one no longer in the document.
+    /// </param>
     /// <param name="docs">The topic of <c>aspose-cli docs</c> with background, or null.</param>
-    public static Warning Warning(TextPart part, BoundedOperation operation, string op, string message, string hint, string location, string? docs = null)
+    public static UnreplacedText Found(TextPart part, BoundedOperation operation, string op, string message, string hint, string location, Func<bool> remains, string? docs = null)
     {
         ArgumentNullException.ThrowIfNull(part);
         string id = operation?.Id ?? throw new ArgumentException("The operation has no id; warn about operations of a prepared batch.", nameof(operation));
@@ -69,12 +89,26 @@ public static class UnreplacedText
         ArgumentException.ThrowIfNullOrWhiteSpace(message);
         ArgumentException.ThrowIfNullOrWhiteSpace(hint);
         ArgumentException.ThrowIfNullOrWhiteSpace(location);
-        return new Warning(WarningCodes.TextNotReplaced, message)
+        ArgumentNullException.ThrowIfNull(remains);
+        return new UnreplacedText(new Warning(WarningCodes.TextNotReplaced, message)
         {
             Hint = hint,
             Location = location,
             Docs = docs,
             Details = new JsonObject { ["id"] = id, ["op"] = op, ["part"] = part.Token },
-        };
+        }, remains);
+    }
+
+    /// <summary>Whether the text is still there; a check that fails cannot tell that it is gone, so the text counts as there.</summary>
+    internal bool Remains()
+    {
+        try
+        {
+            return _remains();
+        }
+        catch (Exception exception) when (exception is not (OperationCanceledException or OutOfMemoryException))
+        {
+            return true;
+        }
     }
 }

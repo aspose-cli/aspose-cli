@@ -67,7 +67,7 @@ internal static class CellsEdit
             }
         }
 
-        Warning?[] editWarnings = [.. batchOutcome.Warnings, .. model.Warnings, skippedSheet, unenforced, relativeLinks, unknownFunctions];
+        Warning?[] editWarnings = [.. batchOutcome.Warnings, skippedSheet, unenforced, relativeLinks, unknownFunctions];
         // The save records what the format's limits lost; the verification reads it back.
         WorkbookSaveLoss? loss = null;
         TextTableSheet? textTable = null;

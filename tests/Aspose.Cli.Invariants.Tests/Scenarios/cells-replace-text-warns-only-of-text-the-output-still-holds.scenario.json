@@ -1,0 +1,56 @@
+{
+  "name": "cells edit warns TEXT_NOT_REPLACED only for the text the output of the batch still holds: a header a later set_page_setup rewrote is not named, a header nothing changed or a later operation left alone is, text a later operation wrote is not named, and neither is text whose sheet, comment or chart a later operation deleted",
+  "files": {
+    "rich.xlsx": { "fixture": "cells.rich" },
+    "header-left.json": { "text": "{\"ops\":[{\"op\":\"replace_text\",\"find\":\"ZqxHd\",\"replace\":\"New\"}]}" },
+    "header-rewritten.json": { "text": "{\"ops\":[{\"op\":\"replace_text\",\"find\":\"ZqxHd\",\"replace\":\"New\"},{\"op\":\"set_page_setup\",\"sheet\":\"Sheet1\",\"headerCenter\":\"New\"}]}" },
+    "footer-rewritten.json": { "text": "{\"ops\":[{\"op\":\"replace_text\",\"find\":\"ZqxHd\",\"replace\":\"New\"},{\"op\":\"set_page_setup\",\"sheet\":\"Sheet1\",\"footerCenter\":\"Other\"}]}" },
+    "match-written-elsewhere.json": { "text": "{\"ops\":[{\"op\":\"replace_text\",\"find\":\"ZqxHd\",\"replace\":\"New\"},{\"op\":\"set_page_setup\",\"sheet\":\"Sheet1\",\"headerCenter\":\"New\"},{\"op\":\"add_comment\",\"sheet\":\"Sheet1\",\"cell\":\"C3\",\"text\":\"ZqxHd\"}]}" },
+    "sheet-deleted.json": { "text": "{\"ops\":[{\"op\":\"insert_sheet\",\"name\":\"Other\"},{\"op\":\"replace_text\",\"sheet\":\"Sheet1\",\"find\":\"Zqx(Hd|Cm)\",\"regex\":true,\"replace\":\"New\"},{\"op\":\"delete_sheet\",\"sheet\":\"Sheet1\"}]}" },
+    "comment-deleted.json": { "text": "{\"ops\":[{\"op\":\"replace_text\",\"find\":\"ZqxCm\",\"replace\":\"New\"},{\"op\":\"delete_comment\",\"sheet\":\"Sheet1\",\"cell\":\"B2\"}]}" },
+    "chart-deleted.json": { "text": "{\"ops\":[{\"op\":\"replace_text\",\"find\":\"ZqxCt\",\"replace\":\"New\"},{\"op\":\"delete_chart\",\"sheet\":\"Sheet1\",\"index\":1}]}" },
+    "comment-left.json": { "text": "{\"ops\":[{\"op\":\"replace_text\",\"find\":\"ZqxCm\",\"replace\":\"New\"},{\"op\":\"delete_chart\",\"sheet\":\"Sheet1\",\"index\":1}]}" }
+  },
+  "steps": [
+    {
+      "args": ["cells", "edit", "rich.xlsx", "--ops", "header-rewritten.json", "--out", "rewritten.xlsx"],
+      "expect": { "exitCode": 0, "warnings": { "absent": ["TEXT_NOT_REPLACED"] } }
+    },
+    {
+      "args": ["cells", "edit", "rich.xlsx", "--ops", "header-rewritten.json", "--out", "rewritten-dry.xlsx", "--dry-run"],
+      "expect": { "exitCode": 0, "warnings": { "absent": ["TEXT_NOT_REPLACED"] } }
+    },
+    {
+      "args": ["cells", "edit", "rich.xlsx", "--ops", "match-written-elsewhere.json", "--out", "elsewhere.xlsx"],
+      "expect": { "exitCode": 0, "warnings": { "absent": ["TEXT_NOT_REPLACED"] } }
+    },
+    {
+      "args": ["cells", "edit", "rich.xlsx", "--ops", "sheet-deleted.json", "--out", "sheet-deleted.xlsx"],
+      "expect": { "exitCode": 0, "warnings": { "absent": ["TEXT_NOT_REPLACED"] } }
+    },
+    {
+      "args": ["cells", "edit", "rich.xlsx", "--ops", "comment-deleted.json", "--out", "comment-deleted.xlsx"],
+      "expect": { "exitCode": 0, "warnings": { "absent": ["TEXT_NOT_REPLACED"] } }
+    },
+    {
+      "args": ["cells", "edit", "rich.xlsx", "--ops", "chart-deleted.json", "--out", "chart-deleted.xlsx"],
+      "expect": { "exitCode": 0, "warnings": { "absent": ["TEXT_NOT_REPLACED"] } }
+    },
+    {
+      "args": ["cells", "edit", "rich.xlsx", "--ops", "comment-left.json", "--out", "comment-left.xlsx"],
+      "expect": { "exitCode": 0, "warnings": { "present": ["TEXT_NOT_REPLACED"] } }
+    },
+    {
+      "args": ["cells", "edit", "rich.xlsx", "--ops", "header-left.json", "--out", "left.xlsx"],
+      "expect": { "exitCode": 0, "warnings": { "present": ["TEXT_NOT_REPLACED"] } }
+    },
+    {
+      "args": ["cells", "edit", "rich.xlsx", "--ops", "footer-rewritten.json", "--out", "footer.xlsx"],
+      "expect": { "exitCode": 0, "warnings": { "present": ["TEXT_NOT_REPLACED"] } }
+    },
+    {
+      "args": ["cells", "edit", "rich.xlsx", "--ops", "footer-rewritten.json", "--out", "footer-dry.xlsx", "--dry-run"],
+      "expect": { "exitCode": 0, "warnings": { "present": ["TEXT_NOT_REPLACED"] } }
+    }
+  ]
+}

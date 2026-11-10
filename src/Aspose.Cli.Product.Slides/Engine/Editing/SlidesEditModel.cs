@@ -19,6 +19,7 @@ internal sealed class SlidesEditModel : IOperationModel<SlidesOp>
     private readonly IReadOnlyDictionary<string, Secret>? _secrets;
     private readonly Action _readInput;
     private readonly List<Warning> _warnings = [];
+    private readonly List<UnreplacedText> _unreplaced = [];
 
     // The operations that left text alone because evaluation mode read it cut short.
     private readonly HashSet<SlidesOp> _truncated = new(ReferenceEqualityComparer.Instance);
@@ -66,6 +67,9 @@ internal sealed class SlidesEditModel : IOperationModel<SlidesOp>
     /// <summary>What the operations reported about their results, such as a background they reset.</summary>
     internal IReadOnlyList<Warning> Warnings => _warnings;
 
+    /// <summary>The chart text each replace_text applied so far found and left, in batch order.</summary>
+    public IReadOnlyList<UnreplacedText> Unreplaced() => _unreplaced;
+
     public OperationSnapshot Snapshot(SlidesOp operation)
     {
         SlidesMutationHandlers.ResolvedSlidesOp target = Target(operation);
@@ -82,7 +86,7 @@ internal sealed class SlidesEditModel : IOperationModel<SlidesOp>
     public void Apply(SlidesOp operation)
     {
         _applied = operation;
-        new SlidesMutationHandlers(_inputs, _loader, _presentation, Target(operation), _warnings, _evaluation, _secrets, () =>
+        new SlidesMutationHandlers(_inputs, _loader, _presentation, Target(operation), _warnings, _unreplaced, _evaluation, _secrets, () =>
         {
             _truncated.Add(operation);
             _readInput();

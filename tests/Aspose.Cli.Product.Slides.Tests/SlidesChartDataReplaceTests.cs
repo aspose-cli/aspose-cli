@@ -298,6 +298,65 @@ public sealed class SlidesChartDataReplaceTests : IDisposable
         Assert.False(File.Exists(_workspace.File("set.pptx")));
     }
 
+    /// <summary>
+    /// The warning is about the output of the batch, not the moment replace_text ran: chart text a
+    /// later operation of the batch rewrote (set_chart_data) or removed with its chart
+    /// (delete_shape) is not named, with --dry-run too, and neither is the text of a chart a later
+    /// operation inserted; text nothing later changed, or that a later operation left alone while
+    /// it changed something else, still is, with the id, part and location replace_text gave it.
+    /// </summary>
+    [Theory]
+    [InlineData("Q2", "", false, "chart-data")]
+    [InlineData("Q2", """,{"op":"set_chart_data","slide":2,"shapeId":{chart},"categories":["Q1","Q9","Q3"]}""", false, null)]
+    [InlineData("Q2", """,{"op":"set_chart_data","slide":2,"shapeId":{chart},"categories":["Q1","Q9","Q3"]}""", true, null)]
+    [InlineData("Q2", """,{"op":"delete_shape","slide":2,"shapeId":{chart}}""", false, null)]
+    [InlineData("Rev", """,{"op":"delete_shape","slide":2,"shapeId":{chart}}""", false, null)]
+    [InlineData("Q2", """,{"op":"delete_shape","slide":2,"shapeId":{chart}},{"op":"insert_chart","slide":2,"kind":"column","rect":{"x":40,"y":120,"width":300,"height":200},"categories":["Q1","Q2"],"series":[{"name":"S1","values":[1,2]}]}""", false, null)]
+    [InlineData("Q2", """,{"op":"set_chart_data","slide":2,"shapeId":{chart},"series":[{"name":"T1","values":[1,2,3]}]}""", false, "chart-data")]
+    [InlineData("Q2", """,{"op":"set_chart_data","slide":2,"shapeId":{chart},"series":[{"name":"T1","values":[1,2,3]}]}""", true, "chart-data")]
+    [InlineData("Rev", """,{"op":"set_chart_data","slide":2,"shapeId":{chart},"categories":["Q1","Q9","Q3"]}""", false, "chart-title")]
+    [InlineData("Q2", """,{"op":"set_text","slide":2,"shapeName":"Box","text":"Other"}""", false, "chart-data")]
+    public void TheWarning_NamesOnlyWhatTheOutputOfTheBatchStillHolds(string find, string later, bool dryRun, string? part)
+    {
+        using var fixture = new SlidesEngineFixture();
+        long chartId = Deck(_workspace.File("deck.pptx"));
+        string[] edit = ["slides", "edit", "deck.pptx", "--out", "out.pptx", "--output-format", "json", "--ops",
+            $$"""[{"op":"replace_text","id":"r","find":"{{find}}","replace":"X"}{{later.Replace("{chart}", $"{chartId}", StringComparison.Ordinal)}}]"""];
+
+        CliResult result = _workspace.Run(dryRun ? [.. edit, "--dry-run"] : edit);
+
+        Assert.True(result.ExitCode == 0, result.StdErr);
+        JsonNode[] warnings = [.. (JsonNode.Parse(result.StdOut)!["warnings"] as JsonArray ?? [])
+            .Where(static warning => warning!["code"]!.GetValue<string>() == TextNotReplaced).OfType<JsonNode>()];
+        if (part is null)
+        {
+            Assert.Empty(warnings);
+            return;
+        }
+
+        JsonNode only = Assert.Single(warnings);
+        Assert.Equal($$"""{"id":"r","op":"replace_text","part":"{{part}}"}""", only["details"]!.ToJsonString());
+        Assert.Equal($"slide/2/shape/{chartId}", only["location"]!.GetValue<string>());
+    }
+
+    /// <summary>
+    /// A chart inside a group that a later delete_shape of the batch removed with the group, as
+    /// the warning about it says to, is not named.
+    /// </summary>
+    [Fact]
+    public void AChartALaterOperationRemovedWithItsGroup_IsNotNamed()
+    {
+        using var fixture = new SlidesEngineFixture();
+        (_, long groupId) = GroupedDeck(_workspace.File("grouped.pptx"));
+
+        CliResult result = _workspace.Run("slides", "edit", "grouped.pptx", "--out", "out.pptx", "--output-format", "json",
+            "--ops", $$"""[{"op":"replace_text","find":"Q2","replace":"Q9"},{"op":"delete_shape","slide":1,"shapeId":{{groupId}}}]""");
+
+        Assert.True(result.ExitCode == 0, result.StdErr);
+        Assert.DoesNotContain(JsonNode.Parse(result.StdOut)!["warnings"] as JsonArray ?? [],
+            static warning => warning!["code"]!.GetValue<string>() == TextNotReplaced);
+    }
+
     // Makes every point value of the chart's first series literal: a scatter point's x and y
     // values, any other point's value.
     private static void WriteLiteralPointValues(string path)
