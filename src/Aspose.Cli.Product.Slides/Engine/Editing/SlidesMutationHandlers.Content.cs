@@ -112,7 +112,11 @@ internal sealed partial class SlidesMutationHandlers
 
     // No operation addresses a shape inside a group, and slides read reports only a slide's own shapes.
     private const string GroupedChartHint =
-        "No operation addresses a shape inside a group, so the chart keeps that text: report it as unchanged, or ungroup the shapes in a presentation editor and run the edit again.";
+        "No operation addresses a shape inside a group, so the chart keeps that text: report it as unchanged, or " + RebuildGroupedChart + ".";
+
+    // A chart inside a group is rebuilt as any chart is (editing.md), with the group it was in.
+    private const string RebuildGroupedChart =
+        "rebuild the chart outside the group: apply delete_shape to the group, which removes everything the group holds, then insert_chart the chart as it should be and insert again what else the group held; 'slides read' does not report what a group holds";
 
     // No operation writes an axis title, and a chart insert_chart rebuilds has none.
     private const string AxisTitleHint =

@@ -185,6 +185,44 @@ public sealed class SlidesChartUpdateTests
         Assert.Equal(original, File.ReadAllBytes(seed));
     }
 
+    /// <summary>
+    /// No operation addresses a chart inside a group, so set_chart_data on the group says that the
+    /// shape is a group holding the chart, and how to rebuild the chart outside it.
+    /// </summary>
+    [Fact]
+    public void ChartData_OfAGroupThatHoldsAChart_SaysTheChartIsInsideTheGroup()
+    {
+        using var fixture = new SlidesEngineFixture();
+        string input = fixture.File("grouped.pptx");
+        long chartId;
+        long groupId;
+        using (var presentation = new Presentation())
+        {
+            IGroupShape group = presentation.Slides[0].Shapes.AddGroupShape();
+            group.Name = "Pair";
+            IChart chart = group.Shapes.AddChart(ChartType.ClusteredColumn, 40, 120, 300, 200);
+            chart.Name = "Sales";
+            chartId = chart.OfficeInteropShapeId;
+            groupId = group.OfficeInteropShapeId;
+            presentation.Save(input, SaveFormat.Pptx);
+        }
+
+        string output = fixture.File("grouped.out.pptx");
+        CliException error = Assert.Throws<CliException>(() => SlidesEdit.Run(fixture.Session, new SlidesEditRequest
+        {
+            Input = input,
+            Batch = new SlidesOpsBatch { Ops = [new SetChartDataOp { Slide = 1, ShapeName = "Pair", Categories = ["A", "B", "C"] }] },
+            Output = TestOutput.At(output),
+        }));
+
+        Assert.Contains(
+            $"Shape {groupId} is a group, not a chart: no operation addresses chart 'Sales' (shapeId {chartId}) inside it.",
+            error.Message,
+            StringComparison.Ordinal);
+        Assert.Contains("apply delete_shape to the group", error.Hint, StringComparison.Ordinal);
+        Assert.False(File.Exists(output));
+    }
+
     // A chart authored with the engine's own sample data, like one made in PowerPoint:
     // three categories and three series, laid out with series in columns.
     private static string SeedChart(SlidesEngineFixture fixture, ChartType type, Action<IChart> style)

@@ -157,7 +157,7 @@ public sealed class SlidesChartTitleReplaceTests : IDisposable
     /// <summary>
     /// A chart inside a group, or inside a group in a group, is checked too: its matching title
     /// stays as it was and warns at the chart's own address, naming the slide's group that holds
-    /// it, with a hint that no operation edits it rather than one to rebuild it.
+    /// it, with a hint that no operation edits it and that rebuilding it removes the group.
     /// </summary>
     [Theory]
     [InlineData(false)]
@@ -199,7 +199,8 @@ public sealed class SlidesChartTitleReplaceTests : IDisposable
             $"Operation year (replace_text) found a match in the title of chart 'Sales' (shapeId {chartId}) in group 'Pair' (shapeId {groupId}) on slide 1 and left the title as it was: replace_text does not change chart titles or chart data.",
             warning.Message);
         Assert.StartsWith("No operation addresses a shape inside a group", warning.Hint, StringComparison.Ordinal);
-        Assert.DoesNotContain("delete_shape", warning.Hint, StringComparison.Ordinal);
+        Assert.Contains("apply delete_shape to the group", warning.Hint, StringComparison.Ordinal);
+        Assert.DoesNotContain("presentation editor", warning.Hint, StringComparison.Ordinal);
         using var output = new Presentation(fixture.File("grouped.out.pptx"));
         IGroupShape outer = output.Slides[0].Shapes.OfType<IGroupShape>().Single();
         IChart grouped = (nested ? outer.Shapes.OfType<IGroupShape>().Single().Shapes : outer.Shapes).OfType<IChart>().Single();
