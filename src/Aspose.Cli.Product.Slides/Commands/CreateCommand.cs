@@ -12,7 +12,7 @@ internal static class CreateCommand
     {
         var markdown = new Option<string?>("--from-markdown") { Description = "Markdown outline to author." }.WithInput(InputKind.File);
         var template = new Option<string?>("--template") { Description = "Presentation whose masters, layouts and theme are reused." }.WithInput(InputKind.File);
-        var slideSize = new Option<string?>("--slide-size") { Description = "Slide aspect ratio; the template size is kept when omitted." }.WithInput(InputKind.None);
+        var slideSize = new Option<string?>("--slide-size") { Description = "Slide aspect ratio, at a width of 720 points; the template size is kept when omitted. Set any other size, such as 960 by 540 points, with the set_slide_size operation of 'slides edit'." }.WithInput(InputKind.None);
         slideSize.AcceptOnlyFromAmong([.. SlidesSlideSizePresets.All]);
         return new(
             "create",

@@ -988,7 +988,7 @@
             ],
             "secret": false,
             "valueSource": "command-line",
-            "description": "Slide aspect ratio; the template size is kept when omitted."
+            "description": "Slide aspect ratio, at a width of 720 points; the template size is kept when omitted. Set any other size, such as 960 by 540 points, with the set_slide_size operation of 'slides edit'."
           },
           {
             "name": "--template",
