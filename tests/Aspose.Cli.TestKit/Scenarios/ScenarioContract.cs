@@ -34,6 +34,12 @@ public static partial class ScenarioContract
     /// </summary>
     public const string TargetLocation = "target-location";
 
+    /// <summary>
+    /// No document a result names as its output holds the absolute path of the workspace, the
+    /// folder of the step's inputs: a document names no folder of the machine that made it.
+    /// </summary>
+    public const string LocalPath = "local-path";
+
     /// <summary>The lists whose items carry a <c>location</c>: warnings, verification issues and review findings.</summary>
     private static readonly string[] LocatedLists = ["warnings", "issues", "findings"];
 

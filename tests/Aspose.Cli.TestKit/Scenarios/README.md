@@ -85,6 +85,13 @@ Every step is also checked, whatever it expects, against the CLI's own catalog
   warning code is in the catalog. The raw `schema` and `docs` documents are exempt;
 - `target-location`: every `location` of an item of a result's `warnings`, `issues` or
   `findings` list is a target address `<unit>/<address>`, as `applied[].targets` write it;
+- `local-path`: no file of the result's `output.path`, `outputs[].path` and
+  `outputs[].output.path` holds the absolute path of the workspace, the folder of the step's
+  inputs, with either separator or escaped as a file URI or a JSON string writes it, as UTF-8 or
+  UTF-16 in its bytes or in an entry of the ZIP package it is. Only these outputs are documents
+  to hand on: the evidence a `review` writes is a report for this machine and records its input's
+  path, so it is not checked. The bytes are searched as written, so a path inside a compressed
+  stream or an encrypted output is not seen;
 - `executable-hint`: what each `error.hint` and `warnings[].hint` names runs as written
   (`ExecutableHints`): a quoted or unquoted `aspose-cli` command runs on the step's own files in
   a copy of its workspace, with `--dry-run` where the command has one, and must not fail with

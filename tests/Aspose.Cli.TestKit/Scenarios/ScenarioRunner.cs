@@ -72,6 +72,13 @@ public static partial class ScenarioRunner
             {
                 Report(ExecutableHints.Check, problem);
             }
+            foreach (string output in OutputPaths(document).Distinct(StringComparer.OrdinalIgnoreCase))
+            {
+                if (FolderPathIn(output, workspace.Path) is { } where)
+                {
+                    Report(ScenarioContract.LocalPath, $"{Normalize(Path.GetRelativePath(workspace.Path, output))}{where} holds the absolute path of the folder of the step's inputs");
+                }
+            }
             if (step.Expect is { } expect)
             {
                 CheckExpectation(expect, workspace, args, result, document, before, after, Report);
@@ -240,6 +247,20 @@ public static partial class ScenarioRunner
             // Not a readable package; its own bytes were searched.
         }
         return null;
+    }
+
+    /// <summary>
+    /// Where a file holds the absolute path of <paramref name="folder"/>, as <see cref="TextIn"/>
+    /// finds a text, or null. The path is searched from the separator after its drive, whose letter
+    /// a writer may change, with either separator and escaped as a file URI or a JSON string writes it.
+    /// </summary>
+    public static string? FolderPathIn(string path, string folder)
+    {
+        ArgumentNullException.ThrowIfNull(folder);
+        string tail = folder[Path.GetPathRoot(folder)!.TrimEnd('\\', '/').Length..];
+        string escaped = new Uri(folder).AbsolutePath;
+        string[] forms = [tail, tail.Replace('\\', '/'), escaped[escaped.IndexOf('/', 1)..], tail.Replace("\\", "\\\\", StringComparison.Ordinal)];
+        return forms.Distinct(StringComparer.Ordinal).Select(form => TextIn(path, form)).FirstOrDefault(static where => where is not null);
     }
 
     private static bool Holds(byte[] bytes, string text) =>
