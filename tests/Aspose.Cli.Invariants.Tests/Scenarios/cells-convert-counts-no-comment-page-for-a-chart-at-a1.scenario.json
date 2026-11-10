@@ -1,0 +1,23 @@
+{
+  "name": "a chart anchored at A1 of a sheet that prints its comments at its end is not reported as split across the comment page",
+  "steps": [
+    {
+      "args": ["cells", "create", "book.xlsx", "--sheet-names", "Sales"],
+      "expect": { "exitCode": 0 }
+    },
+    {
+      "args": [
+        "cells", "edit", "book.xlsx", "--in-place", "--ops",
+        "{\"ops\":[{\"op\":\"set_values\",\"sheet\":\"Sales\",\"range\":\"H1\",\"values\":[[\"Region\",\"Q1\",\"Q2\"],[\"North\",10,12],[\"South\",8,9]]},{\"op\":\"insert_chart\",\"sheet\":\"Sales\",\"kind\":\"column\",\"dataRange\":\"H1:J3\",\"at\":\"A1:F15\"},{\"op\":\"add_comment\",\"sheet\":\"Sales\",\"cell\":\"I2\",\"text\":\"Checked\"},{\"op\":\"set_page_setup\",\"sheet\":\"Sales\",\"printComments\":\"sheet-end\"}]}"
+      ],
+      "expect": { "exitCode": 0 }
+    },
+    {
+      "args": ["cells", "convert", "book.xlsx", "--to", "pdf", "--out", "book.pdf"],
+      "expect": {
+        "exitCode": 0,
+        "warnings": { "absent": ["CHART_SPLIT_ACROSS_PAGES", "LOSSY_CONVERSION"] }
+      }
+    }
+  ]
+}

@@ -548,6 +548,36 @@ public sealed class CellsKnownIssueTests
             + $"and the sheet copy {copied.Formula} = {copied.Value}, with the links [{string.Join(", ", links)}]");
     }
 
+    [LicensedFact]
+    public void SheetEndComments_BreakThePrintedPageAreas()
+    {
+        static Workbook Commented(string note)
+        {
+            var workbook = new Workbook();
+            Worksheet sheet = workbook.Worksheets[0];
+            sheet.Cells.ImportTwoDimensionArray(new object[,] { { "Region", "Q1" }, { "North", 10 }, { "South", 8 } }, 0, 0);
+            sheet.Comments[sheet.Comments.Add("B2")].Note = note;
+            sheet.PageSetup.PrintComments = PrintCommentsType.PrintSheetEnd;
+            return workbook;
+        }
+
+        using Workbook latin = Commented("Checked");
+        CellArea commentPage = latin.Worksheets[0].GetPrintingPageBreaks(new Aspose.Cells.Rendering.ImageOrPrintOptions())[^1];
+        using Workbook chinese = Commented("已复核");
+        Exception? failure = Record.Exception(() => chinese.Worksheets[0].GetPrintingPageBreaks(new Aspose.Cells.Rendering.ImageOrPrintOptions()));
+        using Workbook saved = Commented("已复核");
+        using var pdf = new MemoryStream();
+        saved.Save(pdf, SaveFormat.Pdf);
+
+        KnownIssue.Reproduces(
+            "CELLS-SHEET-END-COMMENT-PAGES",
+            failure is NullReferenceException
+                || (commentPage.StartRow == 0 && commentPage.EndRow == 0 && commentPage.StartColumn == 0 && commentPage.EndColumn == 0),
+            $"the page breaks of a sheet printing a Chinese comment at its end {(failure is null ? "were measured" : $"threw {failure.GetType().Name}")}, "
+            + $"its comment page of a Latin comment read rows {commentPage.StartRow}-{commentPage.EndRow}, columns {commentPage.StartColumn}-{commentPage.EndColumn}, "
+            + $"and the PDF saved {pdf.Length} bytes");
+    }
+
     private sealed class ChineseTotals : GlobalizationSettings
     {
         public ChineseTotals() => PivotSettings = new ChinesePivotTotals();

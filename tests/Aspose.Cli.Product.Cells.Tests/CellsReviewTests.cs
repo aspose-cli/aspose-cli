@@ -403,6 +403,43 @@ public sealed class CellsReviewTests
     }
 
     /// <summary>
+    /// A chart on one printed page counts that page alone, whichever way the sheet prints a Chinese
+    /// comment, and the sheet keeps its setting: the comment pages at the sheet's end hold no chart
+    /// (CELLS-SHEET-END-COMMENT-PAGES). Fitted to one page, a chart that would cross a page break at
+    /// full size stays on one page with the comments at the end too, as the PDF prints it.
+    /// </summary>
+    [Theory]
+    [InlineData(PrintCommentsType.PrintSheetEnd, false)]
+    [InlineData(PrintCommentsType.PrintSheetEnd, true)]
+    [InlineData(PrintCommentsType.PrintInPlace, false)]
+    public void ChartPages_CountOnlyTheCellPagesWhereverTheCommentsPrint(PrintCommentsType printComments, bool fitToOnePage)
+    {
+        Requires.Windows();
+        using var fixture = new CellsFixture();
+        using var workbook = new Workbook();
+        Worksheet sheet = workbook.Worksheets[0];
+        sheet.Cells.ImportTwoDimensionArray(new object[,] { { "Region", "Q1" }, { "North", 10 }, { "South", 8 } }, 0, 8);
+        sheet.Comments[sheet.Comments.Add("J2")].Note = "已复核";
+        if (fitToOnePage)
+        {
+            sheet.Cells[120, 9].PutValue("far below");
+            sheet.Charts.Add(ChartType.Column, 45, 0, 60, 6);
+            sheet.PageSetup.FitToPagesWide = 1;
+            sheet.PageSetup.FitToPagesTall = 1;
+        }
+        else
+        {
+            sheet.Charts.Add(ChartType.Column, 0, 0, 15, 6);
+        }
+        sheet.PageSetup.PrintComments = printComments;
+
+        IReadOnlyList<(Chart Chart, int Pages)> pages = PrintedPages.ChartPages(sheet);
+
+        Assert.Equal(1, Assert.Single(pages).Pages);
+        Assert.Equal(printComments, sheet.PageSetup.PrintComments);
+    }
+
+    /// <summary>
     /// A print area is excessive past both bounds its check states: 20 times the cells of the
     /// populated content and 1000 cells, so one cell printed with 1000 cells is not, and with
     /// 1010 is; the check's summary and the finding say both.

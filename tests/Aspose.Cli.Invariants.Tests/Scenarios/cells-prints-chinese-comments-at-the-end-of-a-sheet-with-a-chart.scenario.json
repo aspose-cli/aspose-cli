@@ -1,0 +1,57 @@
+{
+  "name": "a sheet with a chart prints its Chinese comments at its end as the LOSSY_CONVERSION hint says, to pdf, to xps and in review",
+  "steps": [
+    {
+      "args": ["cells", "create", "book.xlsx", "--sheet-names", "Sales"],
+      "expect": { "exitCode": 0 }
+    },
+    {
+      "args": [
+        "cells", "edit", "book.xlsx", "--in-place", "--ops",
+        "{\"ops\":[{\"op\":\"set_values\",\"sheet\":\"Sales\",\"range\":\"A1\",\"values\":[[\"Region\",\"Q1\",\"Q2\"],[\"North\",10,12],[\"South\",8,9]]},{\"op\":\"insert_chart\",\"sheet\":\"Sales\",\"kind\":\"column\",\"dataRange\":\"A1:C3\",\"at\":\"A5:F18\"},{\"op\":\"add_comment\",\"sheet\":\"Sales\",\"cell\":\"B2\",\"text\":\"已复核\"}]}"
+      ],
+      "expect": { "exitCode": 0 }
+    },
+    {
+      "args": ["cells", "convert", "book.xlsx", "--to", "pdf", "--out", "before.pdf"],
+      "expect": { "exitCode": 0, "warnings": { "present": ["LOSSY_CONVERSION"] } }
+    },
+    {
+      "args": [
+        "cells", "edit", "book.xlsx", "--in-place", "--ops",
+        "{\"ops\":[{\"op\":\"set_page_setup\",\"sheet\":\"Sales\",\"printComments\":\"sheet-end\"}]}"
+      ],
+      "expect": { "exitCode": 0 }
+    },
+    {
+      "args": ["cells", "convert", "book.xlsx", "--to", "pdf", "--out", "book.pdf", "--sheets", "1"],
+      "expect": {
+        "exitCode": 0,
+        "warnings": { "absent": ["LOSSY_CONVERSION", "CHART_SPLIT_ACROSS_PAGES"] },
+        "reopens": ["book.pdf"]
+      }
+    },
+    {
+      "args": ["pdf", "search", "book.pdf", "--pattern", "已复核"],
+      "expect": { "exitCode": 0, "json": [{ "path": "hits[0].text", "equals": "已复核" }] }
+    },
+    {
+      "args": ["cells", "convert", "book.xlsx", "--to", "xps", "--out", "book.xps"],
+      "expect": {
+        "exitCode": 0,
+        "warnings": { "absent": ["LOSSY_CONVERSION", "CHART_SPLIT_ACROSS_PAGES"] },
+        "reopens": ["book.xps"]
+      }
+    },
+    {
+      "args": ["review", "book.xlsx", "--out", "evidence"],
+      "expect": {
+        "exitCode": [0, 8],
+        "json": [
+          { "path": "product", "equals": "cells" },
+          { "path": "coverage.complete", "equals": true }
+        ]
+      }
+    }
+  ]
+}
