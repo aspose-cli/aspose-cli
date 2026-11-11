@@ -244,33 +244,10 @@ internal sealed class SlidesPresentationLoader
     /// the plot (known issue SLIDES-CHART-TITLE in KNOWN-ISSUES.md): it reports a title that
     /// overlays the plot and has no text of its own.
     /// </summary>
-    private static IReadOnlyList<(int Slide, string Chart)> ImplicitTitleCharts(Presentation presentation)
-    {
-        var charts = new List<(int Slide, string Chart)>();
-        for (int index = 0; index < presentation.Slides.Count; index++)
-        {
-            Collect(presentation.Slides[index].Shapes, index + 1);
-        }
-
-        return charts;
-
-        void Collect(IShapeCollection shapes, int slide)
-        {
-            foreach (IShape shape in shapes)
-            {
-                if (shape is IGroupShape group)
-                {
-                    Collect(group.Shapes, slide);
-                }
-                else if (shape is Aspose.Slides.Charts.IChart { HasTitle: true } chart
-                    && chart.ChartTitle.Overlay
-                    && chart.ChartTitle.TextFrameForOverriding is null)
-                {
-                    charts.Add((slide, chart.Name));
-                }
-            }
-        }
-    }
+    private static IReadOnlyList<(int Slide, string Chart)> ImplicitTitleCharts(Presentation presentation) =>
+        [.. presentation.Slides.SelectMany((slide, index) => SlidesTextUnits.Charts(slide.Shapes)
+            .Where(static found => found.Chart is { HasTitle: true, ChartTitle: { Overlay: true, TextFrameForOverriding: null } })
+            .Select(found => (index + 1, found.Chart.Name)))];
 }
 
 internal sealed record LoadedPresentation(Presentation Presentation, string FormatId, SlidesResourcePolicy Resources)

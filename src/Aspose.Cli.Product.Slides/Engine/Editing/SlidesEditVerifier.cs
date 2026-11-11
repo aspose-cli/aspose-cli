@@ -237,18 +237,14 @@ internal sealed class SlidesEditVerifier : IEditVerifier<SlidesOp>
         StringComparison comparison = replace.CaseSensitive ? StringComparison.Ordinal : StringComparison.OrdinalIgnoreCase;
         long found = 0;
         long replacements = 0;
-        foreach (ISlide slide in presentation.Slides)
+        // Each paragraph's text as stored, but the evaluation watermark's.
+        foreach (string text in SlidesTextUnits.Of(presentation, replace.Scope).Where(static unit => !unit.IsEvaluationWatermark)
+            .SelectMany(static unit => unit.Frames).SelectMany(static frame => frame.Paragraphs).Select(static paragraph => paragraph.Text).OfType<string>())
         {
-            foreach (string text in ParagraphTexts(
-                slide,
-                shapes: replace.Scope is SlidesSearchScopes.Shapes or SlidesSearchScopes.All,
-                notes: replace.Scope is SlidesSearchScopes.Notes or SlidesSearchScopes.All))
+            found += regex is not null ? regex.Matches(text).Count : Count(text, replace.Find, comparison);
+            if (!replace.Regex && replace.Replace.Length > 0)
             {
-                found += regex is not null ? regex.Matches(text).Count : Count(text, replace.Find, comparison);
-                if (!replace.Regex && replace.Replace.Length > 0)
-                {
-                    replacements += Count(text, replace.Replace, comparison);
-                }
+                replacements += Count(text, replace.Replace, comparison);
             }
         }
 

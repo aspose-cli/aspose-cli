@@ -1,5 +1,4 @@
 using Aspose.Slides;
-using static Aspose.Cli.Product.Slides.Engine.SlidesShapeText;
 
 namespace Aspose.Cli.Product.Slides.Engine;
 
@@ -40,9 +39,7 @@ internal static class SlidesEvaluationMarks
 
     /// <summary>Whether evaluation mode cut short text it read from the presentation, other than its own watermark.</summary>
     internal static bool EvaluationInputTruncated(Presentation presentation) =>
-        presentation.Slides.Any(static slide =>
-            slide.Shapes.Any(static shape => !IsEvaluationWatermark(shape) && CutByEvaluation(ShapeText(shape)))
-            || CutByEvaluation(Notes(slide)));
+        SlidesTextUnits.Of(presentation).Any(static unit => !unit.IsEvaluationWatermark && CutByEvaluation(unit.Text));
 
     /// <summary>Whether evaluation mode replaced the read text with its truncation notice.</summary>
     internal static bool CutByEvaluation(string? text) =>

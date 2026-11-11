@@ -5,7 +5,6 @@ using Aspose.Cli.Sdk.Licensing;
 using Aspose.Cli.Sdk.Results;
 using Aspose.Slides;
 using static Aspose.Cli.Product.Slides.Engine.SlidesResultParts;
-using static Aspose.Cli.Product.Slides.Engine.SlidesShapeText;
 using static Aspose.Cli.Product.Slides.Engine.SlidesSlideSelection;
 
 namespace Aspose.Cli.Product.Slides.Engine;
@@ -36,12 +35,9 @@ internal static class SlidesExtract
             session.Outputs.ReadInput(loaded.Presentation);
             foreach (int number in slides)
             {
-                ISlide slide = loaded.Presentation.Slides[number - 1];
-                string? text = request.What == SlidesExtractKinds.Notes
-                    ? Notes(slide)
-                    : string.Join(
-                        "\n",
-                        slide.Shapes.Select(ShapeText).Where(static value => value is not null));
+                string text = string.Join("\n", SlidesTextUnits
+                    .Of(loaded.Presentation.Slides[number - 1], number, request.What == SlidesExtractKinds.Notes ? SlidesSearchScopes.Notes : SlidesSearchScopes.Shapes)
+                    .Select(static unit => unit.Text).OfType<string>());
                 if (string.IsNullOrWhiteSpace(text))
                 {
                     continue;
