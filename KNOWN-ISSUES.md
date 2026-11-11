@@ -668,6 +668,18 @@ Reproductions: [SlidesKnownIssueTests](tests/Aspose.Cli.Product.Slides.Tests/Sli
 
 Reproductions: [WordsKnownIssueTests](tests/Aspose.Cli.Product.Words.Tests/WordsKnownIssueTests.cs).
 
+### WORDS-TABLE-STYLE-RESET
+
+- **Defect:** setting a table's style (`Table.Style`, `StyleName` or `StyleIdentifier`) clears
+  every setting the table makes itself, not only the borders, cell margins and cell spacing the
+  style decides: its alignment and left indent, text wrapping and position, right-to-left
+  layout, title and description and style options, each row's heading and row-break setting and
+  each cell's vertical alignment, which the document stores apart from the style it names.
+- **CLI behavior:** `set_table_style` reads these settings, changes the style away and back to
+  read what the old style alone gives, and writes back those the table set itself over the new
+  style. A setting the table set to the very value the old style gives cannot be told from the
+  style's and takes the new style's.
+
 ### WORDS-TEXT-COMMENTS
 
 - **Defect:** saving to plain text or Markdown writes each comment's text into the body, as a

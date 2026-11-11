@@ -47,6 +47,8 @@ internal sealed class WordsOpAddresses : IWordsOpHandler<WordsOpTraits>
 
     public WordsOpTraits Apply(SetTablePaginationOp operation) => Blocks(operation.Target);
 
+    public WordsOpTraits Apply(SetTableStyleOp operation) => Blocks(operation.Target);
+
     public WordsOpTraits Apply(InsertBookmarkOp operation) => Blocks(operation.Target) with { Trackable = true };
 
     // ----- fields: inserted as content, their results compared by the verification ------------

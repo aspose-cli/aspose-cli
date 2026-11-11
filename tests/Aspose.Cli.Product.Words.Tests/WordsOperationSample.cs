@@ -94,6 +94,11 @@ internal static class WordsOperationSample
                 HeaderRowCount = 1,
                 KeepWithNext = true,
             },
+            new SetTableStyleOp
+            {
+                Target = new WordsTarget { Block = 4 },
+                TableStyle = "Grid Table 4",
+            },
             new InsertTocOp
             {
                 At = new WordsTarget { Block = 1 },

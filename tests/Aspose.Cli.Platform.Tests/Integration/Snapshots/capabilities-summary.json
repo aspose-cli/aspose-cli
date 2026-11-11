@@ -511,6 +511,7 @@
             "set_style",
             "set_table_cell",
             "set_table_pagination",
+            "set_table_style",
             "set_text",
             "set_watermark",
             "unprotect_document"

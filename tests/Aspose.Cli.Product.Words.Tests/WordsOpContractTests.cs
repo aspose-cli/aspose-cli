@@ -35,6 +35,8 @@ public sealed class WordsOpContractTests
     [InlineData("""{"op":"set_default_font","fontSize":11}""")]
     [InlineData("""{"op":"set_table_pagination","target":{"block":1},"headerRowCount":-1}""")]
     [InlineData("""{"op":"set_table_pagination","target":{"block":1},"keepTogether":"yes"}""")]
+    [InlineData("""{"op":"set_table_style","target":{"block":1}}""")]
+    [InlineData("""{"op":"set_table_style","target":{"block":1},"tableStyle":""}""")]
     public void ParserAndSchema_RejectTheSameInvalidOperation(string operation)
     {
         string batch = $$"""{"ops":[{{operation}}]}""";
@@ -64,6 +66,7 @@ public sealed class WordsOpContractTests
     [InlineData("""{"op":"insert_hyperlink","at":{"block":1},"position":"after","text":"a","url":"mailto:team@example.com"}""")]
     [InlineData("""{"op":"set_table_pagination","target":{"find":"Agenda"},"keepTogether":true}""")]
     [InlineData("""{"op":"set_table_pagination","target":{"block":2},"headerRowCount":0,"allowRowBreakAcrossPages":true,"keepWithNext":false}""")]
+    [InlineData("""{"op":"set_table_style","target":{"find":"Agenda"},"tableStyle":"Grid Table 4"}""")]
     [InlineData("""{"op":"accept_revisions","revisions":[2,1]}""")]
     [InlineData("""{"op":"insert_bookmark","target":{"block":1},"name":"Mark"}""")]
     [InlineData("""{"op":"repeat_table_row","target":{"block":1},"items":[]}""")]

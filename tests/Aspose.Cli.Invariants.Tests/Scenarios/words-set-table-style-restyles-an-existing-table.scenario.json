@@ -1,0 +1,102 @@
+{
+  "name": "words set_table_style gives an existing table another table style, a built-in one included, and keeps its rows, cells and heading rows",
+  "files": {
+    "source.md": { "text": "# Report\n\nRevenue by line of business:\n\n| Line | Revenue |\n|---|---|\n| Retail | 120 |\n| Online | 80 |\n\nClosing paragraph.\n" },
+    "grid.json": { "text": "{\"ops\":[{\"op\":\"set_table_style\",\"target\":{\"block\":3},\"tableStyle\":\"Grid Table 4\"}]}" },
+    "unknown.json": { "text": "{\"ops\":[{\"op\":\"set_table_style\",\"target\":{\"block\":3},\"tableStyle\":\"No Such Table Style\"}]}" },
+    "paragraph-style.json": { "text": "{\"ops\":[{\"op\":\"set_table_style\",\"target\":{\"block\":3},\"tableStyle\":\"Heading 1\"}]}" }
+  },
+  "steps": [
+    {
+      "args": ["words", "create", "doc.docx", "--from-markdown", "source.md"],
+      "expect": { "exitCode": 0 }
+    },
+    {
+      "args": ["words", "inspect", "doc.docx", "--detail", "tables"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "tables[0].tableStyle", "equals": "Table Normal" },
+          { "path": "tables[0].headerRowCount", "equals": 1 }
+        ]
+      }
+    },
+    {
+      "args": ["words", "edit", "doc.docx", "--ops", "grid.json", "--out", "styled.docx"],
+      "expect": {
+        "exitCode": 0,
+        "warnings": { "absent": ["OP_NO_EFFECT"] },
+        "json": [
+          { "path": "applied[0].itemsAffected", "equals": 1 },
+          { "path": "applied[0].targets[0]", "equals": "block/3" }
+        ]
+      }
+    },
+    {
+      "args": ["words", "inspect", "styled.docx", "--detail", "tables"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "tables[0].tableStyle", "equals": "Grid Table 4" },
+          { "path": "tables[0].rowCount", "equals": 3 },
+          { "path": "tables[0].columnCount", "equals": 2 },
+          { "path": "tables[0].headerRowCount", "equals": 1 }
+        ]
+      }
+    },
+    {
+      "args": ["words", "read", "styled.docx", "--blocks", "3"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "blocks[0].values[0][0]", "equals": "Line" },
+          { "path": "blocks[0].values[1][0]", "equals": "Retail" },
+          { "path": "blocks[0].values[2][1]", "equals": "80" }
+        ]
+      }
+    },
+    {
+      "args": ["words", "edit", "styled.docx", "--ops", "grid.json", "--out", "again.docx"],
+      "expect": {
+        "exitCode": 0,
+        "warnings": { "present": ["OP_NO_EFFECT"] },
+        "json": [{ "path": "applied[0].itemsAffected", "equals": 0 }]
+      }
+    },
+    {
+      "args": ["words", "edit", "doc.docx", "--ops", "unknown.json", "--out", "unknown.docx"],
+      "expect": {
+        "error": "STYLE_NOT_FOUND",
+        "json": [
+          { "path": "error.details.subject", "equals": "table style" },
+          { "path": "error.details.available", "contains": "Table Normal" }
+        ],
+        "files": { "absent": ["unknown.docx"], "unchanged": ["doc.docx"] }
+      }
+    },
+    {
+      "args": ["words", "edit", "doc.docx", "--ops", "paragraph-style.json", "--out", "heading.docx"],
+      "expect": {
+        "error": "STYLE_NOT_FOUND",
+        "json": [
+          { "path": "error.details.subject", "equals": "table style" },
+          { "path": "error.details.available", "contains": "Table Normal" },
+          { "path": "error.details.available", "notContains": "Heading 1" }
+        ],
+        "files": { "absent": ["heading.docx"], "unchanged": ["doc.docx"] }
+      }
+    },
+    {
+      "args": ["words", "edit", "doc.docx", "--ops", "grid.json", "--out", "tracked.docx", "--track-changes", "--author", "Reviewer"],
+      "expect": {
+        "error": "OPTION_INVALID",
+        "json": [{ "path": "error.message", "contains": "set_table_style cannot be recorded as tracked changes" }],
+        "files": { "absent": ["tracked.docx"] }
+      }
+    },
+    {
+      "args": ["words", "edit", "doc.docx", "--ops", "grid.json", "--out", "verified.docx", "--verify"],
+      "expect": { "exitCode": 0, "json": [{ "path": "verification.ok", "equals": true }] }
+    }
+  ]
+}
