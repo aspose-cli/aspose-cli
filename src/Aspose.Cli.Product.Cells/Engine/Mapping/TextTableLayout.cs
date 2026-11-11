@@ -556,30 +556,30 @@ internal static class TextTableLayout
         bool holdsDate = false;
         foreach (Cell cell in row)
         {
-            if (cell.Type == CellValueType.IsNull)
+            CellValueType type = cell.Type;
+            string value = type == CellValueType.IsString ? cell.StringValue.Trim() : string.Empty;
+            if (type == CellValueType.IsNull || type == CellValueType.IsString && value.Length == 0)
             {
                 continue;
             }
 
-            if (cell.Type == CellValueType.IsNumeric && cell.Column < (numberColumn ?? int.MaxValue))
+            // Text the engine reads as a number or a date counts as one, such as an amount or an
+            // export time a text input keeps as written (CellsTextImport.Reads).
+            if (type == CellValueType.IsString)
+            {
+                type = CellsTextImport.ReadType(cell.StringValue);
+            }
+
+            if (type == CellValueType.IsNumeric && cell.Column < (numberColumn ?? int.MaxValue))
             {
                 numberColumn = cell.Column;
             }
 
-            holdsDate |= cell.Type == CellValueType.IsDateTime;
+            holdsDate |= type == CellValueType.IsDateTime;
 
-            if (cell.Type == CellValueType.IsString)
+            if (type == CellValueType.IsString && cell.Column < textColumn)
             {
-                string value = cell.StringValue.Trim();
-                if (value.Length == 0)
-                {
-                    continue;
-                }
-
-                if (cell.Column < textColumn)
-                {
-                    (textColumn, text) = (cell.Column, value);
-                }
+                (textColumn, text) = (cell.Column, value);
             }
 
             filled++;

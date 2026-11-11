@@ -124,9 +124,9 @@ internal sealed class CellsWorkbookLoader
 
     // Derived output is already bounded by publication; it is not a new user input, and its
     // text was written with invariant formats, so its quoted text fields are not re-judged.
-    // It is read as stored, since verification compares what was written. A copy of an input
-    // names the input as its resourceSource, which its links resolve against and its delimited
-    // text sheet is named after, as the input's is.
+    // It is read as stored, and its text as written, since verification compares what was
+    // written. A copy of an input names the input as its resourceSource, which its links resolve
+    // against and its delimited text sheet is named after, as the input's is.
     internal LoadedWorkbook OpenPublishedCandidate(string path, Secret? password, string? resourceSource = null) =>
         InputOpening.OpenPublished(() => OpenCore(path, PasswordSource.Option(password), textImport: null, published: true, calculateOnOpen: false, resourceSource));
 
@@ -154,7 +154,9 @@ internal sealed class CellsWorkbookLoader
             options.Password = password.Password?.Reveal();
             using (Stream input = OpenPackage(path, plan, resources))
             {
-                workbook = new Workbook(input, options);
+                workbook = plan.Separator is null
+                    ? new Workbook(input, options)
+                    : CellsTextImport.Invariant(() => new Workbook(input, options));
             }
             // A stream carries no name: relative links and resources resolve against the file
             // name, and a delimited text sheet is named after the file, as the path loader does;
@@ -184,6 +186,7 @@ internal sealed class CellsWorkbookLoader
                 CalculatedOnOpen = calculated,
                 EvaluationSheetSkipped = skipped,
                 IsDelimitedText = plan.Separator is not null,
+                ReadAsWritten = plan.Separator is not null && plan.TextCulture is null,
             };
         }
         catch (Exception exception) when (exception is not CliException and not OperationCanceledException
@@ -226,8 +229,8 @@ internal sealed class CellsWorkbookLoader
             return plan;
         }
 
-        (Encoding encoding, CultureInfo culture) = published
-            ? (new UTF8Encoding(encoderShouldEmitUTF8Identifier: false), CultureInfo.InvariantCulture)
+        (Encoding encoding, CultureInfo? culture) = published
+            ? (new UTF8Encoding(encoderShouldEmitUTF8Identifier: false), null)
             : CellsTextImport.Resolve(path, separator, textImport, _resourceBudgets);
         return plan with { TextEncoding = encoding, TextCulture = culture };
     }
@@ -439,8 +442,9 @@ internal sealed class CellsWorkbookLoader
     }
 
     /// <summary>
-    /// How one input is opened. A delimited text input always carries its separator, encoding
-    /// and culture, so neither the engine's guesses nor the machine's regional settings apply.
+    /// How one input is opened. A delimited text input always carries its separator and encoding,
+    /// and the culture named for it, if any (<see cref="CellsTextImport.LoadOptions"/>), so neither
+    /// the engine's guesses nor the machine's regional settings apply.
     /// </summary>
     private readonly record struct LoadPlan(char? Separator, bool Encrypted = false)
     {
@@ -456,18 +460,8 @@ internal sealed class CellsWorkbookLoader
 
         internal CultureInfo? TextCulture { get; init; }
 
-        internal LoadOptions ToLoadOptions()
-        {
-            if (Separator is { } separator)
-            {
-                return new TxtLoadOptions(LoadFormat.Csv)
-                {
-                    Separator = separator,
-                    Encoding = TextEncoding,
-                    CultureInfo = TextCulture,
-                };
-            }
-            return new LoadOptions();
-        }
+        internal LoadOptions ToLoadOptions() => Separator is { } separator
+            ? CellsTextImport.LoadOptions(separator, TextEncoding, TextCulture)
+            : new LoadOptions();
     }
 }

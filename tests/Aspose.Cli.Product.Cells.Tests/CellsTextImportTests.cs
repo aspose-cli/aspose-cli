@@ -52,17 +52,31 @@ public sealed class CellsTextImportTests : IClassFixture<CellsFixture>
         Assert.Equal(CellsCellValueTypes.DateTime, read.Sheet.Cells![1][3].T);
     }
 
+    /// <summary>
+    /// UTF-8 text, a thousands comma and a percent read without options, as the numbers they show;
+    /// a US date stays text, which en-US, the culture that writes it, reads as a date.
+    /// </summary>
     [Fact]
     public void ThousandsCommasAndUtf8_ReadWithoutOptions()
     {
         string path = _fixture.Temp.File("us.csv");
-        File.WriteAllText(path, "Region,Amount,Note\nNortheast,\"1,234.50\",Müller\n");
+        File.WriteAllText(path, "Region,Amount,Share,Opened,Note\nNortheast,\"1,234.50\",50%,1/2/2026,Müller\n");
 
         CellsReadResult read = CellsRead.Run(_fixture.Session, new CellsReadRequest { Input = path });
+        CellsReadResult imported = ImportAndRead(path, new CellsTextImportOptions { Culture = "en-US" });
 
-        Assert.Equal("1234.5", read.Sheet!.Cells![1][1].V?.ToString());
-        Assert.Equal("Müller", read.Sheet.Cells![1][2].V?.ToString());
+        Assert.Equal(
+            [(CellsCellValueTypes.Number, "1234.5"), (CellsCellValueTypes.Number, "0.5"), (CellsCellValueTypes.String, "1/2/2026")],
+            Values(read));
+        Assert.Equal("Müller", read.Sheet!.Cells![1][4].V?.ToString());
+        Assert.Equal(
+            [(CellsCellValueTypes.Number, "1234.5"), (CellsCellValueTypes.Number, "0.5"), (CellsCellValueTypes.DateTime, "2026-01-02")],
+            Values(imported));
     }
+
+    // The type and value of the amount, the share and the date of the first data row.
+    private static (string Type, string? Value)[] Values(CellsReadResult read) =>
+        [.. read.Sheet!.Cells![1].Skip(1).Take(3).Select(static cell => (cell.T, Convert.ToString(cell.V, System.Globalization.CultureInfo.InvariantCulture)))];
 
     [Theory]
     [InlineData("é", 1)]

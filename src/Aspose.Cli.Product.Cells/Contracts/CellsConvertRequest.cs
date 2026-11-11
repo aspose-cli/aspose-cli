@@ -52,6 +52,9 @@ public sealed record CellsTextImportOptions
     /// <summary>Text encoding name, such as <c>gb18030</c>; null reads a byte order mark or UTF-8.</summary>
     public string? Encoding { get; init; }
 
-    /// <summary>Culture name for numbers and dates, such as <c>de-DE</c>; null uses invariant formats.</summary>
+    /// <summary>
+    /// Culture name for numbers and dates, such as <c>de-DE</c>; null reads invariant formats and
+    /// keeps a number, a date or a boolean only where it shows as written, and any other value as text.
+    /// </summary>
     public string? Culture { get; init; }
 }
