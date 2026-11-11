@@ -49,12 +49,30 @@ internal sealed class CellsSavePipeline(OutputPipeline<Workbook> outputs)
     /// <summary>
     /// Writes the workbook. An evaluation save adds its warning sheet to the in-memory workbook
     /// too and activates it, which the write pipeline reports (<see cref="CellsEvaluationProfile"/>).
+    /// Delimited text is written within <see cref="CellsTextImport.Invariant"/>, its values as
+    /// they show when it was read as written, and its other dates as ISO 8601.
     /// </summary>
     private static void Produce(Workbook workbook, WorkbookSavePlan plan, string path)
     {
-        if (plan.WritesActiveSheetOnly)
-        { NormalizeDatesForTextExport(plan.TextSheet(workbook)); }
-        plan.Save(workbook, path);
+        if (!CellsFormats.IsDelimited(plan.FormatId))
+        {
+            if (plan.WritesActiveSheetOnly)
+            { NormalizeDatesForTextExport(plan.TextSheet(workbook)); }
+            plan.Save(workbook, path);
+            return;
+        }
+
+        CellsTextImport.Invariant(() =>
+        {
+            Worksheet sheet = plan.TextSheet(workbook);
+            if (plan.ReadAsWritten)
+            {
+                CellsTextImport.WriteAsShown(sheet);
+            }
+
+            NormalizeDatesForTextExport(sheet);
+            plan.Save(workbook, path);
+        });
     }
 
     /// <summary>

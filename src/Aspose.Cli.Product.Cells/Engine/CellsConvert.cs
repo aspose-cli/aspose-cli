@@ -91,7 +91,7 @@ internal static class CellsConvert
             : null;
         WorkbookSavePlan savePlan = WorkbookSavePlan.Create(request.Output.Format, licenseState,
             OutputProtection.For(request.Output.Format, request.EncryptPassword, loaded.Protection, request.Password),
-            selectedSheets, request.ByteOrderMark);
+            selectedSheets, request.ByteOrderMark, loaded.ReadAsWritten);
         if (CellsEngineFormats.WritesRecords(request.Output.Format.Id))
         {
             savePlan = savePlan with { Options = JsonOptions(workbook, jsonSheets) };

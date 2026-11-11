@@ -17,14 +17,28 @@ internal sealed record WorkbookSavePlan(string FormatId, SaveFormat Format, Save
     /// <summary>The most worksheets a <c>SHEETS_DROPPED</c> names one by one.</summary>
     private const int NamedSheets = 10;
 
+    /// <summary>
+    /// The plan of an output in <paramref name="output"/>'s format; <paramref name="readAsWritten"/>
+    /// says the workbook is a delimited text input read as written (<see cref="LoadedWorkbook.ReadAsWritten"/>).
+    /// </summary>
     internal static WorkbookSavePlan Create(FormatDescriptor output, LicenseState licenseState,
-        OutputProtection protection, IReadOnlyList<int>? selectedSheets = null, bool byteOrderMark = false)
+        OutputProtection protection, IReadOnlyList<int>? selectedSheets = null, bool byteOrderMark = false,
+        bool readAsWritten = false)
     {
         string formatId = output.Id;
         SaveFormat format = CellsEngineFormats.Save(formatId);
         SaveOptions? options = CellsEngineFormats.Options(formatId, byteOrderMark, selectedSheets);
-        return new WorkbookSavePlan(formatId, format, options, protection, licenseState == LicenseState.Evaluation, selectedSheets);
+        return new WorkbookSavePlan(formatId, format, options, protection, licenseState == LicenseState.Evaluation, selectedSheets)
+        {
+            ReadAsWritten = readAsWritten,
+        };
     }
+
+    /// <summary>
+    /// Whether the workbook is a delimited text input read as written, whose numbers and dates a
+    /// delimited text output writes as they show (<see cref="CellsTextImport.WriteAsShown"/>).
+    /// </summary>
+    internal bool ReadAsWritten { get; init; }
 
     /// <summary>True for the text formats (csv, tsv, md), which write only the active sheet.</summary>
     internal static bool WritesActiveSheetOnlyFor(string formatId) => CellsFormats.ActiveSheetOnly.Contains(formatId);

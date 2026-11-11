@@ -74,7 +74,7 @@ a date serial number, and give the cell a date format: `read` shows
 `"t": "number"` until the format is set and `"t": "datetime"` after.
 
 The CSV import is the exception, and the contrast decides how much work you
-owe: `convert` coerces ISO-8601 dates into real datetimes *and* applies
+owe: `convert` coerces `yyyy-mm-dd` dates into real datetimes *and* applies
 `yyyy-mm-dd` itself, so a CSV-sourced date column arrives finished.
 
 ```sh
@@ -84,9 +84,12 @@ aspose-cli cells read tickets.xlsx --sheet tickets --range B2 --content full --o
 # -> {"v":"2026-03-02","t":"datetime"}, style numberFormat "yyyy-mm-dd"
 ```
 
-The identical string through `set_values` stays `"t": "string"` forever. Only
-ISO-8601 input is verified here; ambiguous forms like `03/04/2026` are not —
-`read` the column back and check `t` rather than assuming either way.
+The identical string through `set_values` stays `"t": "string"` forever.
+Without `--culture` a CSV value is a number, date or boolean only where the
+cell shows it as written (`1200`, `19.90`, `1,234.50`, `50%`, `2026-03-02`,
+`TRUE`), and a csv output writes it back so. An id with leading zeros (`007`) stays
+text, and so does a date without its year first (`03/04/2026`) unless you
+convert with `--culture en-US`, or the culture that wrote the file.
 
 ## Fonts and headers
 
