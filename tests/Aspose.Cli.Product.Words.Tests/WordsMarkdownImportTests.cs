@@ -608,6 +608,51 @@ public sealed class WordsMarkdownImportTests
         Assert.EndsWith("logo.png", kept.ImageData.SourceFullName, StringComparison.Ordinal);
     }
 
+    /// <summary>
+    /// A Markdown table insert_markdown places right after a table is parted from it by an empty
+    /// paragraph, a block the operation reports among its targets, and stays a table of its own; a
+    /// table the Markdown ends with is parted from the next table by the Markdown's own last
+    /// paragraph, so nothing is added there. In evaluation mode the engine's banner leads the
+    /// imported Markdown and parts the tables itself, so this runs licensed.
+    /// </summary>
+    [LicensedFact]
+    public void InsertMarkdown_KeepsATableItPlacesBesideATableSeparate()
+    {
+        using var fixture = new WordsFixture();
+        string markdown = fixture.Temp.File("tables.md");
+        File.WriteAllText(markdown, "# Tables\n\nFirst paragraph.\n\n| A | B |\n|---|---|\n| 1 | 2 |\n\nMiddle paragraph.\n\n| C | D |\n|---|---|\n| 3 | 4 |\n\nLast paragraph.\n");
+        string created = fixture.Temp.File("tables.docx");
+        WordsCreate.Run(fixture.Session, new WordsCreateRequest { Output = TestOutput.At(created), Markdown = new SourceFile("--from-markdown", markdown) });
+        (IReadOnlyList<string> Targets, string[] Blocks) Insert(string name, int block, string position, string text)
+        {
+            string output = fixture.Temp.File(name);
+            WordsEditResult result = WordsEdit.Run(fixture.Session, new WordsEditRequest
+            {
+                Input = created,
+                Batch = new WordsOpsBatch { Ops = [new InsertMarkdownOp { At = new WordsTarget { Block = block }, Position = position, Markdown = text }] },
+                Output = TestOutput.At(output),
+            });
+            Document document = new(output);
+            return (Assert.Single(result.Applied).Targets, [.. document.FirstSection.Body.GetChildNodes(NodeType.Any, false).Cast<Node>().Select(static node => node switch
+            {
+                Aspose.Words.Tables.Table table => $"table {table.Rows.Count}x{table.FirstRow.Cells.Count} {table.FirstRow.FirstCell.GetText().Trim('\a', ' ')}",
+                _ => $"paragraph {node.GetText().Trim()}".TrimEnd(),
+            })]);
+        }
+
+        (IReadOnlyList<string> Targets, string[] Blocks) first = Insert("first.docx", 3, "after", "| X | Y |\n|---|---|\n| 7 | 8 |");
+        (IReadOnlyList<string> Targets, string[] Blocks) last = Insert("last.docx", 5, "before", "Lead in.\n\n| X | Y |\n|---|---|\n| 9 | 9 |");
+
+        Assert.Equal(["block/4", "block/5", "block/6"], first.Targets);
+        Assert.Equal(
+            ["paragraph Tables", "paragraph First paragraph.", "table 2x2 A", "paragraph", "table 2x2 X", "paragraph", "paragraph Middle paragraph.", "table 2x2 C", "paragraph Last paragraph."],
+            first.Blocks);
+        Assert.Equal(["block/5", "block/6", "block/7"], last.Targets);
+        Assert.Equal(
+            ["paragraph Tables", "paragraph First paragraph.", "table 2x2 A", "paragraph Middle paragraph.", "paragraph Lead in.", "table 2x2 X", "paragraph", "table 2x2 C", "paragraph Last paragraph."],
+            last.Blocks);
+    }
+
     private static string[] ListLabels(string path)
     {
         var document = new Document(path);

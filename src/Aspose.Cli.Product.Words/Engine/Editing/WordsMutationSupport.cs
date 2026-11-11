@@ -2,6 +2,7 @@ using System.Data;
 using System.Drawing;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Words;
+using Aspose.Words.Tables;
 
 namespace Aspose.Cli.Product.Words.Engine.Editing;
 
@@ -54,7 +55,13 @@ internal static class WordsMutationSupport
         return paragraph;
     }
 
-    internal static void InsertRelative(Node anchor, ref Node cursor, Node inserted, string position)
+    /// <summary>
+    /// Places a block before the anchor, or after the cursor, which then moves to it. A table
+    /// placed beside a table is parted from it (<see cref="Part"/>): from the block after it only
+    /// when it is the <paramref name="last"/> block an operation places, as the next one lands
+    /// right after it.
+    /// </summary>
+    internal static void InsertRelative(Node anchor, ref Node cursor, Node inserted, string position, bool last = true)
     {
         if (position == "before")
         {
@@ -64,6 +71,22 @@ internal static class WordsMutationSupport
         {
             cursor.ParentNode!.InsertAfter(inserted, cursor);
             cursor = inserted;
+        }
+
+        Part(inserted.PreviousSibling, inserted);
+        if (last)
+        {
+            Part(inserted, inserted.NextSibling);
+        }
+    }
+
+    // Two tables with nothing between them read as one table when the document is opened again,
+    // so an empty paragraph parts them, as the engine parts the tables of Markdown it loads.
+    private static void Part(Node? before, Node? after)
+    {
+        if (before is Table && after is Table)
+        {
+            before.ParentNode!.InsertAfter(new Paragraph(before.Document), before);
         }
     }
 

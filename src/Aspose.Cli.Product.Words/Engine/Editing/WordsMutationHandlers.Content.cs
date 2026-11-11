@@ -402,7 +402,7 @@ internal sealed partial class WordsMutationHandlers
         IReadOnlyList<Node> blocks = WordsMarkdownImport.Blocks(_document, markdown);
         foreach (Node block in blocks)
         {
-            InsertRelative(Anchor, ref cursor, block, operation.Position);
+            InsertRelative(Anchor, ref cursor, block, operation.Position, last: block == blocks[^1]);
         }
 
         return default;

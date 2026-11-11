@@ -210,7 +210,7 @@ public sealed record InsertMarkdownOp : WordsOp
     /// <summary>Whether the new content goes before or after the at block.</summary>
     [WordsPosition] public required string Position { get; init; }
 
-    /// <summary>The Markdown to import; its paragraphs and tables take the document's styles.</summary>
+    /// <summary>The Markdown to import; its paragraphs and tables take the document's styles, and a table of it beside a table of the document is parted from it by an empty paragraph, as insert_table parts them.</summary>
     [NotState]
     [MinLength(1)] public required string Markdown { get; init; }
 }
@@ -264,7 +264,11 @@ public sealed record InsertImageOp : WordsOp
     public bool Inline { get; init; } = true;
 }
 
-/// <summary>Inserts a table at a block boundary; values must fit the table's rows and columns.</summary>
+/// <summary>
+/// Inserts a table at a block boundary; values must fit the table's rows and columns. Beside
+/// another table it also adds an empty paragraph between the two, a block it reports among its
+/// targets, since two tables with nothing between them read as one.
+/// </summary>
 [Operation("insert_table")]
 public sealed record InsertTableOp : WordsOp
 {

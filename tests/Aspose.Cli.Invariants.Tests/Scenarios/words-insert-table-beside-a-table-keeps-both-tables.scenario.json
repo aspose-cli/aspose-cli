@@ -1,0 +1,229 @@
+{
+  "name": "words insert_table beside a table adds an empty paragraph between the two, which stay separate tables",
+  "files": {
+    "source.md": { "text": "# Tables\n\nFirst paragraph.\n\n| A | B |\n|---|---|\n| 1 | 2 |\n\nMiddle paragraph.\n\n| C | D |\n|---|---|\n| 3 | 4 |\n\nLast paragraph.\n" },
+    "after-table.json": { "text": "{\"ops\":[{\"op\":\"insert_table\",\"at\":{\"block\":3},\"position\":\"after\",\"rowCount\":1,\"columnCount\":2,\"values\":[[\"New\",\"Row\"]]}]}" },
+    "cell.json": { "text": "{\"ops\":[{\"op\":\"set_table_cell\",\"target\":{\"block\":5},\"row\":1,\"column\":1,\"text\":\"Changed\"}]}" },
+    "before-table.json": { "text": "{\"ops\":[{\"op\":\"insert_table\",\"at\":{\"block\":3},\"position\":\"before\",\"rowCount\":1,\"columnCount\":2,\"values\":[[\"New\",\"Row\"]]}]}" },
+    "before-next-table.json": { "text": "{\"ops\":[{\"op\":\"insert_table\",\"at\":{\"block\":4},\"position\":\"after\",\"rowCount\":1,\"columnCount\":2,\"values\":[[\"New\",\"Row\"]]}]}" },
+    "two-inserts.json": { "text": "{\"ops\":[{\"op\":\"insert_table\",\"at\":{\"block\":2},\"position\":\"after\",\"rowCount\":1,\"columnCount\":2,\"values\":[[\"Two\",\"Columns\"]]},{\"op\":\"insert_table\",\"at\":{\"block\":2},\"position\":\"after\",\"rowCount\":1,\"columnCount\":3,\"values\":[[\"Three\",\"Columns\",\"Here\"]]}]}" },
+    "styled.json": { "text": "{\"ops\":[{\"op\":\"insert_table\",\"at\":{\"block\":3},\"position\":\"after\",\"rowCount\":1,\"columnCount\":2,\"values\":[[\"New\",\"Row\"]],\"tableStyle\":\"Grid Table 4\"}]}" },
+    "between-paragraphs.json": { "text": "{\"ops\":[{\"op\":\"insert_table\",\"at\":{\"block\":1},\"position\":\"after\",\"rowCount\":1,\"columnCount\":2,\"values\":[[\"New\",\"Row\"]]}]}" },
+    "paragraph-after-table.json": { "text": "{\"ops\":[{\"op\":\"insert_paragraphs\",\"at\":{\"block\":3},\"position\":\"after\",\"paragraphs\":[{\"text\":\"Note\"}]}]}" },
+    "image-after-table.json": { "text": "{\"ops\":[{\"op\":\"insert_image\",\"at\":{\"block\":3},\"position\":\"after\",\"path\":\"pic.png\"}]}" },
+    "pic.png": { "base64": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=" },
+    "back-to-back.md": { "text": "# Back to back\n\n| A | B |\n|---|---|\n| 1 | 2 |\n\n| C | D | E |\n|---|---|---|\n| 3 | 4 | 5 |\n\nLast paragraph.\n" },
+    "reject.json": { "text": "{\"ops\":[{\"op\":\"reject_revisions\"}]}" }
+  },
+  "steps": [
+    {
+      "args": ["words", "create", "doc.docx", "--from-markdown", "source.md"],
+      "expect": { "exitCode": 0 }
+    },
+    {
+      "args": ["words", "edit", "doc.docx", "--ops", "after-table.json", "--out", "after.docx"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "applied[0].itemsAffected", "equals": 2 },
+          { "path": "applied[0].targets[0]", "equals": "block/4" },
+          { "path": "applied[0].targets[1]", "equals": "block/5" }
+        ]
+      }
+    },
+    {
+      "args": ["words", "read", "after.docx", "--blocks", "3-6"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "blocks[0].kind", "equals": "table" },
+          { "path": "blocks[0].rowCount", "equals": 2 },
+          { "path": "blocks[0].values[0][0]", "equals": "A" },
+          { "path": "blocks[1].kind", "equals": "paragraph" },
+          { "path": "blocks[1].text", "equals": "" },
+          { "path": "blocks[2].kind", "equals": "table" },
+          { "path": "blocks[2].rowCount", "equals": 1 },
+          { "path": "blocks[2].columnCount", "equals": 2 },
+          { "path": "blocks[2].values[0][1]", "equals": "Row" },
+          { "path": "blocks[3].text", "equals": "Middle paragraph." }
+        ]
+      }
+    },
+    {
+      "args": ["words", "edit", "after.docx", "--ops", "cell.json", "--out", "cell.docx"],
+      "expect": { "exitCode": 0, "json": [{ "path": "applied[0].targets[0]", "equals": "block/5" }] }
+    },
+    {
+      "args": ["words", "read", "cell.docx", "--blocks", "3-5"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "blocks[0].values[0][0]", "equals": "A" },
+          { "path": "blocks[2].values[0][0]", "equals": "Changed" }
+        ]
+      }
+    },
+    {
+      "args": ["words", "edit", "doc.docx", "--ops", "before-table.json", "--out", "before.docx"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "applied[0].itemsAffected", "equals": 2 },
+          { "path": "applied[0].targets[0]", "equals": "block/3" },
+          { "path": "applied[0].targets[1]", "equals": "block/4" }
+        ]
+      }
+    },
+    {
+      "args": ["words", "read", "before.docx", "--blocks", "2-5"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "blocks[0].text", "equals": "First paragraph." },
+          { "path": "blocks[1].kind", "equals": "table" },
+          { "path": "blocks[1].rowCount", "equals": 1 },
+          { "path": "blocks[1].values[0][0]", "equals": "New" },
+          { "path": "blocks[2].text", "equals": "" },
+          { "path": "blocks[3].kind", "equals": "table" },
+          { "path": "blocks[3].rowCount", "equals": 2 },
+          { "path": "blocks[3].values[0][0]", "equals": "A" }
+        ]
+      }
+    },
+    {
+      "args": ["words", "edit", "doc.docx", "--ops", "before-next-table.json", "--out", "next.docx"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "applied[0].itemsAffected", "equals": 2 },
+          { "path": "applied[0].targets[0]", "equals": "block/5" },
+          { "path": "applied[0].targets[1]", "equals": "block/6" }
+        ]
+      }
+    },
+    {
+      "args": ["words", "read", "next.docx", "--blocks", "4-7"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "blocks[0].text", "equals": "Middle paragraph." },
+          { "path": "blocks[1].rowCount", "equals": 1 },
+          { "path": "blocks[1].values[0][0]", "equals": "New" },
+          { "path": "blocks[2].text", "equals": "" },
+          { "path": "blocks[3].rowCount", "equals": 2 },
+          { "path": "blocks[3].values[0][0]", "equals": "C" }
+        ]
+      }
+    },
+    {
+      "args": ["words", "edit", "doc.docx", "--ops", "two-inserts.json", "--out", "two.docx"],
+      "expect": { "exitCode": 0 }
+    },
+    {
+      "args": ["words", "read", "two.docx", "--blocks", "3-7"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "blocks[0].kind", "equals": "table" },
+          { "path": "blocks[0].columnCount", "equals": 3 },
+          { "path": "blocks[0].values[0][2]", "equals": "Here" },
+          { "path": "blocks[1].text", "equals": "" },
+          { "path": "blocks[2].kind", "equals": "table" },
+          { "path": "blocks[2].columnCount", "equals": 2 },
+          { "path": "blocks[2].values[0][0]", "equals": "Two" },
+          { "path": "blocks[3].text", "equals": "" },
+          { "path": "blocks[4].kind", "equals": "table" },
+          { "path": "blocks[4].rowCount", "equals": 2 }
+        ]
+      }
+    },
+    {
+      "args": ["words", "edit", "doc.docx", "--ops", "styled.json", "--out", "styled.docx"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "applied[0].itemsAffected", "equals": 2 },
+          { "path": "applied[0].targets[1]", "equals": "block/5" }
+        ]
+      }
+    },
+    {
+      "args": ["words", "read", "styled.docx", "--blocks", "4-5"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "blocks[0].kind", "equals": "paragraph" },
+          { "path": "blocks[0].text", "equals": "" },
+          { "path": "blocks[1].kind", "equals": "table" },
+          { "path": "blocks[1].rowCount", "equals": 1 }
+        ]
+      }
+    },
+    {
+      "args": ["words", "edit", "doc.docx", "--ops", "between-paragraphs.json", "--out", "between.docx"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "applied[0].itemsAffected", "equals": 1 },
+          { "path": "applied[0].targets", "equals": ["block/2"] }
+        ]
+      }
+    },
+    {
+      "args": ["words", "edit", "doc.docx", "--ops", "paragraph-after-table.json", "--out", "paragraph.docx"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "applied[0].itemsAffected", "equals": 1 },
+          { "path": "applied[0].targets", "equals": ["block/4"] }
+        ]
+      }
+    },
+    {
+      "args": ["words", "edit", "doc.docx", "--ops", "image-after-table.json", "--out", "image.docx"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "applied[0].itemsAffected", "equals": 1 },
+          { "path": "applied[0].targets", "equals": ["block/4"] }
+        ]
+      }
+    },
+    {
+      "args": ["words", "edit", "doc.docx", "--ops", "after-table.json", "--out", "tracked.docx", "--track-changes", "--author", "Reviewer"],
+      "expect": { "exitCode": 0, "json": [{ "path": "applied[0].itemsAffected", "equals": 2 }] }
+    },
+    {
+      "args": ["words", "edit", "tracked.docx", "--ops", "reject.json", "--out", "rejected.docx"],
+      "expect": { "exitCode": 0 }
+    },
+    {
+      "args": ["words", "read", "rejected.docx"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "blockCount", "equals": 6 },
+          { "path": "blocks[2].kind", "equals": "table" },
+          { "path": "blocks[2].rowCount", "equals": 2 },
+          { "path": "blocks[3].text", "equals": "Middle paragraph." },
+          { "path": "blocks[4].kind", "equals": "table" }
+        ]
+      }
+    },
+    {
+      "args": ["words", "create", "back.docx", "--from-markdown", "back-to-back.md"],
+      "expect": { "exitCode": 0 }
+    },
+    {
+      "args": ["words", "inspect", "back.docx", "--detail", "tables"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "document.tableCount", "equals": 2 },
+          { "path": "tables[0].columnCount", "equals": 2 },
+          { "path": "tables[1].columnCount", "equals": 3 }
+        ]
+      }
+    }
+  ]
+}

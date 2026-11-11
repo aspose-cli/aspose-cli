@@ -49,7 +49,7 @@
         "command": "edit",
         "inputSchema": "v2/words/ops",
         "operationSchema": "aspose-cli schema v2/words/ops --operation <op>",
-        "contractFingerprint": "sha256:a2ae5e90099c5e5d487f9663b993dd76bee66d9992ea1b9bac74623662b0e0f0",
+        "contractFingerprint": "sha256:cce83c39ab808a1be92f3894f16cd63c1a3aa5e552049cb51948a3486a511e59",
         "maximumOperationCount": 10000,
         "ops": [
           "accept_revisions",
@@ -5330,7 +5330,7 @@
               "x-readBack": "not-state"
             },
             "markdown": {
-              "description": "The Markdown to import; its paragraphs and tables take the document's styles.",
+              "description": "The Markdown to import; its paragraphs and tables take the document's styles, and a table of it beside a table of the document is parted from it by an empty paragraph, as insert_table parts them.",
               "type": "string",
               "minLength": 1,
               "x-readBack": "not-state"
@@ -5408,7 +5408,7 @@
           }
         },
         "insert_table": {
-          "description": "Inserts a table at a block boundary; values must fit the table's rows and columns.",
+          "description": "Inserts a table at a block boundary; values must fit the table's rows and columns. Beside another table it also adds an empty paragraph between the two, a block it reports among its targets, since two tables with nothing between them read as one.",
           "type": "object",
           "required": [
             "op",
