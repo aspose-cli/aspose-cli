@@ -28,7 +28,7 @@ internal static class EditCommand
     public static CommandDefinition<CellsEditRequest, CellsEditResult> Create()
     {
         var noRecalc = new Option<bool>("--no-recalc") { Description = "Skip the automatic formula recalculation after applying the ops." };
-        BomOption bom = CellsInputs.TextOutputBom();
+        BomOption bom = CellsInputs.EditedTextBom();
         var bounded = new BoundedEditCommand<CellsOp, CellsOpsBatch>(Definition);
         return EditDefinition.Create<CellsOp, CellsOpsBatch, CellsEditRequest, CellsEditResult>(
             bounded,

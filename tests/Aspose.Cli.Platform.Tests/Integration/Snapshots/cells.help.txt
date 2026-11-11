@@ -149,7 +149,7 @@ Options:
   --best-effort                  Keep successful operations, report failures, and exit 8.
   --verify                       Verify the staged output and report its cell changes and formula errors. A warning with affectsCompleteness about content the edit lost is also an issue; uncheckedOps lists each operation not read back.
   --no-recalc                    Skip the automatic formula recalculation after applying the ops.
-  --bom                          Start a CSV or TSV output with a UTF-8 byte order mark, so Excel reads its non-English text correctly. Default: UTF-8 without one.
+  --bom                          Start a CSV or TSV output with a UTF-8 byte order mark, so Excel reads its non-English text correctly. Default: the input's mark when a CSV or TSV input is written back in its own format, as in place; otherwise UTF-8 without one.
   -o, --out <out>                Output path. Default: the input path with '.out' inserted before the extension.
   --overwrite                    Replace the output file if it already exists.
   --in-place                     Modify the input file itself atomically.

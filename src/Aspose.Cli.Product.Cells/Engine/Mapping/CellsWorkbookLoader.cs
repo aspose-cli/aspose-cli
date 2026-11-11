@@ -190,7 +190,9 @@ internal sealed class CellsWorkbookLoader
                 CalculatedOnOpen = calculated,
                 NumbersReadAsText = numbersAsText,
                 EvaluationSheetSkipped = skipped,
-                IsDelimitedText = plan.Separator is not null,
+                DelimitedText = plan.Separator is { } separator
+                    ? new DelimitedTextForm(CellsFormats.Delimited.NamedBy(resourceSource ?? path).FirstOrDefault()?.Id, separator, plan.TextByteOrderMark)
+                    : null,
                 ReadAsWritten = plan.Separator is not null && plan.TextCulture is null,
             };
         }
@@ -234,10 +236,11 @@ internal sealed class CellsWorkbookLoader
             return plan;
         }
 
-        (Encoding encoding, CultureInfo? culture) = published
-            ? (new UTF8Encoding(encoderShouldEmitUTF8Identifier: false), null)
+        // A read-back is never written again, so its byte order mark is not looked for.
+        (Encoding encoding, bool marked, CultureInfo? culture) = published
+            ? (new UTF8Encoding(encoderShouldEmitUTF8Identifier: false), false, null)
             : CellsTextImport.Resolve(path, textImport, _resourceBudgets);
-        return plan with { TextEncoding = encoding, TextCulture = culture };
+        return plan with { TextEncoding = encoding, TextCulture = culture, TextByteOrderMark = marked };
     }
 
     // The OpenDocument spreadsheet packages, whose SVG pictures the engine reads by path.
@@ -464,6 +467,8 @@ internal sealed class CellsWorkbookLoader
         internal Encoding? TextEncoding { get; init; }
 
         internal CultureInfo? TextCulture { get; init; }
+
+        internal bool TextByteOrderMark { get; init; }
 
         internal LoadOptions ToLoadOptions() => Separator is { } separator
             ? CellsTextImport.LoadOptions(separator, TextEncoding, TextCulture)

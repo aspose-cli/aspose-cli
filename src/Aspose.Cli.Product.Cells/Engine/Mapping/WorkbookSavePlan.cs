@@ -20,14 +20,21 @@ internal sealed record WorkbookSavePlan(string FormatId, SaveFormat Format, Save
     /// <summary>
     /// The plan of an output in <paramref name="output"/>'s format; <paramref name="readAsWritten"/>
     /// says the workbook is a delimited text input read as written (<see cref="LoadedWorkbook.ReadAsWritten"/>).
+    /// An edit passes how its delimited text input is written as <paramref name="editedInput"/>:
+    /// written back in the format the input's name gives it, the output keeps the input's separator
+    /// and UTF-8 byte order mark. Any other output, a conversion's included, has its format's
+    /// separator, and a delimited text output the mark only with <paramref name="byteOrderMark"/>
+    /// (<c>--bom</c>), which adds it to any of them.
     /// </summary>
     internal static WorkbookSavePlan Create(FormatDescriptor output, LicenseState licenseState,
         OutputProtection protection, IReadOnlyList<int>? selectedSheets = null, bool byteOrderMark = false,
-        bool readAsWritten = false)
+        bool readAsWritten = false, DelimitedTextForm? editedInput = null)
     {
         string formatId = output.Id;
         SaveFormat format = CellsEngineFormats.Save(formatId);
-        SaveOptions? options = CellsEngineFormats.Options(formatId, byteOrderMark, selectedSheets);
+        DelimitedTextForm? kept = editedInput?.FormatId == formatId ? editedInput : null;
+        SaveOptions? options = CellsEngineFormats.Options(
+            formatId, byteOrderMark || kept?.Utf8ByteOrderMark == true, kept?.Separator, selectedSheets);
         return new WorkbookSavePlan(formatId, format, options, protection, licenseState == LicenseState.Evaluation, selectedSheets)
         {
             ReadAsWritten = readAsWritten,

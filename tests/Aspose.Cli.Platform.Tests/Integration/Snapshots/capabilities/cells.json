@@ -1274,7 +1274,7 @@
             ],
             "secret": false,
             "valueSource": "command-line",
-            "description": "Start a CSV or TSV output with a UTF-8 byte order mark, so Excel reads its non-English text correctly. Default: UTF-8 without one."
+            "description": "Start a CSV or TSV output with a UTF-8 byte order mark, so Excel reads its non-English text correctly. Default: the input's mark when a CSV or TSV input is written back in its own format, as in place; otherwise UTF-8 without one."
           },
           {
             "name": "--dry-run",

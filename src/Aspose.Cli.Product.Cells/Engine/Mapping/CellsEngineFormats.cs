@@ -33,30 +33,30 @@ internal static class CellsEngineFormats
         new("csv")
         {
             Detected = FileFormatType.Csv, Save = SaveFormat.Csv, EvaluationMarks = CellsEvaluationMarkKind.DataRow, TextTable = true, Leaves = DelimitedTextLosses,
-            Options = static (byteOrderMark, _) => DelimitedText(SaveFormat.Csv, byteOrderMark),
+            Options = static (byteOrderMark, separator, _) => DelimitedText(SaveFormat.Csv, byteOrderMark, separator),
         },
         new("tsv")
         {
             Detected = FileFormatType.TabDelimited, Save = SaveFormat.TabDelimited, EvaluationMarks = CellsEvaluationMarkKind.DataRow, TextTable = true, Leaves = DelimitedTextLosses,
-            Options = static (byteOrderMark, _) => DelimitedText(SaveFormat.TabDelimited, byteOrderMark),
+            Options = static (byteOrderMark, separator, _) => DelimitedText(SaveFormat.TabDelimited, byteOrderMark, separator),
         },
         new("html")
         {
             Detected = FileFormatType.Html, Save = SaveFormat.Html, EvaluationMarks = CellsEvaluationMarkKind.Pages, Leaves = WebPageLosses,
-            Options = static (_, _) => new HtmlSaveOptions { SaveAsSingleFile = true, ExportImagesAsBase64 = true },
+            Options = static (_, _, _) => new HtmlSaveOptions { SaveAsSingleFile = true, ExportImagesAsBase64 = true },
         },
         new("mhtml") { Detected = FileFormatType.MHtml, Save = SaveFormat.MHtml, EvaluationMarks = CellsEvaluationMarkKind.Pages, Leaves = WebPageLosses },
         new("pdf")
         {
             Save = SaveFormat.Pdf, Paginated = true, EvaluationMarks = CellsEvaluationMarkKind.Pages, Leaves = CellsContentLoss.UnprintedComments,
-            Options = static (_, selectedSheets) => selectedSheets is { } sheets ? new PdfSaveOptions { SheetSet = new SheetSet([.. sheets]) } : null,
+            Options = static (_, _, selectedSheets) => selectedSheets is { } sheets ? new PdfSaveOptions { SheetSet = new SheetSet([.. sheets]) } : null,
         },
         new("xps") { Save = SaveFormat.Xps, Paginated = true, EvaluationMarks = CellsEvaluationMarkKind.Pages, Leaves = CellsContentLoss.UnprintedComments },
         new("json") { Detected = FileFormatType.Json, Save = SaveFormat.Json, WritesRecords = true, EvaluationMarks = CellsEvaluationMarkKind.JsonRecord },
         new("md")
         {
             Save = SaveFormat.Markdown, EvaluationMarks = CellsEvaluationMarkKind.MarkdownHeading, TextTable = true, Leaves = CellsContentLoss.FootnoteComments | CellsContentLoss.HeadersFooters,
-            Options = static (_, _) => new MarkdownSaveOptions { FormatStrategy = CellValueFormatStrategy.DisplayString },
+            Options = static (_, _, _) => new MarkdownSaveOptions { FormatStrategy = CellValueFormatStrategy.DisplayString },
         },
         new("png") { Image = ImageType.Png, EvaluationMarks = CellsEvaluationMarkKind.Pages },
         new("jpeg") { Image = ImageType.Jpeg, EvaluationMarks = CellsEvaluationMarkKind.Pages },
@@ -94,8 +94,8 @@ internal static class CellsEngineFormats
         All.FirstOrDefault(format => string.Equals(format.Id, formatId, StringComparison.Ordinal))?.EvaluationMarks;
 
     /// <summary>The engine save options of a convert format id, or null when its save format alone is enough.</summary>
-    public static SaveOptions? Options(string formatId, bool byteOrderMark, IReadOnlyList<int>? selectedSheets) =>
-        Find(formatId).Options?.Invoke(byteOrderMark, selectedSheets);
+    public static SaveOptions? Options(string formatId, bool byteOrderMark, char? separator, IReadOnlyList<int>? selectedSheets) =>
+        Find(formatId).Options?.Invoke(byteOrderMark, separator, selectedSheets);
 
     /// <summary>The format id of a format the engine detected.</summary>
     /// <remarks>
@@ -111,12 +111,22 @@ internal static class CellsEngineFormats
             ?? throw Missing(formatId);
 
     // The values as they are: no number formats applied, leading blank rows and columns kept,
-    // in UTF-8 with a byte order mark only on request.
-    private static TxtSaveOptions DelimitedText(SaveFormat format, bool byteOrderMark) => new(format)
+    // in UTF-8 with a byte order mark only on request, between the separator asked for or else
+    // the format's own.
+    private static TxtSaveOptions DelimitedText(SaveFormat format, bool byteOrderMark, char? separator)
     {
-        FormatStrategy = CellValueFormatStrategy.None, TrimLeadingBlankRowAndColumn = false,
-        Encoding = new UTF8Encoding(encoderShouldEmitUTF8Identifier: byteOrderMark),
-    };
+        var options = new TxtSaveOptions(format)
+        {
+            FormatStrategy = CellValueFormatStrategy.None, TrimLeadingBlankRowAndColumn = false,
+            Encoding = new UTF8Encoding(encoderShouldEmitUTF8Identifier: byteOrderMark),
+        };
+        if (separator is { } kept)
+        {
+            options.Separator = kept;
+        }
+
+        return options;
+    }
 
     private static ArgumentOutOfRangeException Missing(string formatId) =>
         new(nameof(formatId), formatId, "Format id is missing from the engine format table.");
@@ -175,9 +185,10 @@ internal sealed record CellsEngineFormat(string Id)
 }
 
 /// <summary>Creates the save options of one convert format.</summary>
-/// <param name="byteOrderMark">Whether a text output starts with a UTF-8 byte order mark (<c>--bom</c>).</param>
+/// <param name="byteOrderMark">Whether a text output starts with a UTF-8 byte order mark.</param>
+/// <param name="separator">The separator of a delimited text output, or null for its format's own.</param>
 /// <param name="selectedSheets">The zero-based sheets <c>--sheets</c> selected, or null for every sheet.</param>
-internal delegate SaveOptions? CellsSaveOptionsFactory(bool byteOrderMark, IReadOnlyList<int>? selectedSheets);
+internal delegate SaveOptions? CellsSaveOptionsFactory(bool byteOrderMark, char? separator, IReadOnlyList<int>? selectedSheets);
 
 /// <summary>The kinds of workbook content an output format does not hold as the workbook does (<see cref="CellsEngineFormat.Leaves"/>).</summary>
 [Flags]

@@ -39,8 +39,11 @@ internal sealed record LoadedWorkbook(Workbook Workbook, WorkbookResources Resou
     /// </summary>
     internal required FileFormatType SourceFormat { get; init; }
 
+    /// <summary>How the input is written when it was imported as delimited text (CSV, TSV); null for a workbook.</summary>
+    internal DelimitedTextForm? DelimitedText { get; init; }
+
     /// <summary>True when the input was imported as delimited text (CSV, TSV), not opened as a workbook.</summary>
-    internal bool IsDelimitedText { get; init; }
+    internal bool IsDelimitedText => DelimitedText is not null;
 
     /// <summary>
     /// True when the input was imported as delimited text with no culture named, so its values
@@ -91,3 +94,11 @@ internal sealed record LoadedWorkbook(Workbook Workbook, WorkbookResources Resou
         finally { Resources.Dispose(); }
     }
 }
+
+/// <summary>
+/// How a delimited text input is written: the format its name gives it, as an edit in place
+/// writes it (null when its name gives none), its separator, and whether it starts with a UTF-8
+/// byte order mark. An edit that writes it back in that format writes them again
+/// (<see cref="WorkbookSavePlan.Create"/>).
+/// </summary>
+internal sealed record DelimitedTextForm(string? FormatId, char Separator, bool Utf8ByteOrderMark);
