@@ -27,7 +27,8 @@ internal static class ConvertCommand
             Description = "Culture whose number and date formats a CSV or TSV input uses: de-DE for '1.234,56', en-US for "
                 + "'1/2/2026'. Default: a value is a number, date or boolean only where it shows as written ('19.90', "
                 + "'1,234.50', '50%', '2026-01-05', 'TRUE') and is written back so; '007', '1/2/2026', '1E5' and 'True' "
-                + "stay text, and a decimal comma is refused.",
+                + "stay text, and in a file that writes a decimal comma ('2,71') every number with a comma or a point "
+                + "does (NUMBERS_READ_AS_TEXT).",
         }.WithInput(InputKind.None);
         BomOption bom = CellsInputs.TextOutputBom();
         return new(

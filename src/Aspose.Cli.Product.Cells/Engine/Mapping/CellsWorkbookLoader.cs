@@ -166,6 +166,10 @@ internal sealed class CellsWorkbookLoader
             {
                 workbook.Worksheets[0].Name = stem.Replace('[', '(').Replace(']', ')')[..Math.Min(stem.Length, MaxSheetNameLength)];
             }
+
+            // A read-back reads its text as the input was read, but is no input to warn about.
+            Warning? numbersAsText = plan.Separator is null ? null
+                : CellsTextImport.KeepSeparatedNumbersAsText(options, workbook.Worksheets[0], published ? null : path);
             resources.MaterializeLinkedPictures(workbook);
             resources.CleanSvgPictures(workbook);
             resources.ThrowIfFailed();
@@ -184,6 +188,7 @@ internal sealed class CellsWorkbookLoader
             {
                 SourceFormat = plan.Detected ?? workbook.FileFormat,
                 CalculatedOnOpen = calculated,
+                NumbersReadAsText = numbersAsText,
                 EvaluationSheetSkipped = skipped,
                 IsDelimitedText = plan.Separator is not null,
                 ReadAsWritten = plan.Separator is not null && plan.TextCulture is null,
@@ -216,7 +221,7 @@ internal sealed class CellsWorkbookLoader
     private LoadPlan ResolveLoadPlan(string path, CellsTextImportOptions? textImport, bool published)
     {
         LoadPlan plan = ResolveFormatPlan(path, published);
-        if (plan.Separator is not { } separator)
+        if (plan.Separator is null)
         {
             if (textImport is { Encoding: not null } or { Culture: not null })
             {
@@ -231,7 +236,7 @@ internal sealed class CellsWorkbookLoader
 
         (Encoding encoding, CultureInfo? culture) = published
             ? (new UTF8Encoding(encoderShouldEmitUTF8Identifier: false), null)
-            : CellsTextImport.Resolve(path, separator, textImport, _resourceBudgets);
+            : CellsTextImport.Resolve(path, textImport, _resourceBudgets);
         return plan with { TextEncoding = encoding, TextCulture = culture };
     }
 

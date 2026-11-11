@@ -174,8 +174,8 @@ internal static class TextTableLayout
     /// <summary>
     /// The step before deleting rows the check only infers to be something other than data: a
     /// command that shows the zero-based rows <paramref name="first"/> to <paramref name="last"/>.
-    /// A text input imported with --encoding or --culture opens only with them, which no command
-    /// that reads or edits takes, so it is converted to a workbook first with the same options.
+    /// A text input imported with --encoding or --culture reads as it did only with them, which no
+    /// command that reads or edits takes, so it is converted to a workbook first with the same options.
     /// </summary>
     private static string ReadFirst(ContinuationInput input, CellsTextImportOptions? textImport, string sheetName, int first, int last, int lastColumn)
     {

@@ -142,7 +142,7 @@ aspose-cli capabilities --output-format json
   even one shared by many kinds of file such as `.html` or `.xml`, and
   `FORMAT_UNSUPPORTED` when none does or the CLI only writes its format, such
   as `.xps`; a product command, `review` and `review --product <id>` report
-  the same file with the same code. Find out what the file really is. When several products or readings fit
+  the same file with the same code. Find out what the file really is. When several products fit
   (`FORMAT_AMBIGUOUS`), pass what the hint names.
 - A password that is missing or wrong (`PASSWORD_REQUIRED`,
   `PASSWORD_INVALID`): ask the user; never guess. Pass it with

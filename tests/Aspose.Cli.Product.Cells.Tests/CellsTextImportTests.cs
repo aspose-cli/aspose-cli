@@ -6,8 +6,8 @@ using Xunit;
 namespace Aspose.Cli.Product.Cells.Tests;
 
 /// <summary>
-/// A delimited text input is never decoded or parsed by guesswork: text that UTF-8 or
-/// invariant number formats would change is refused, and cells convert reads it with the
+/// A delimited text input is never decoded or parsed by guesswork: text that UTF-8 would change
+/// is refused, a value is typed only as cells writes it, and cells convert reads it with the
 /// encoding and culture the caller names.
 /// </summary>
 public sealed class CellsTextImportTests : IClassFixture<CellsFixture>
@@ -35,16 +35,20 @@ public sealed class CellsTextImportTests : IClassFixture<CellsFixture>
         Assert.Equal("1234.5", read.Sheet!.Cells![1][1].V?.ToString());
     }
 
+    /// <summary>
+    /// Decimal commas and a German date read without options as the text they are, and the named
+    /// culture reads them as numbers and a date.
+    /// </summary>
     [Fact]
-    public void DecimalCommas_AreRefusedAndConvertReadsThemWithTheNamedCulture()
+    public void DecimalCommas_ReadAsTextAndConvertReadsThemWithTheNamedCulture()
     {
         string path = _fixture.Temp.File("partner.csv");
         File.WriteAllText(path, "Land;Preis;Betrag;Datum\nDE;2,71;1.253,96;20.08.2026\n", new UTF8Encoding(true));
 
-        CliException refused = Assert.Throws<CliException>(() => CellsRead.Run(_fixture.Session, new CellsReadRequest { Input = path }));
-        Assert.Equal(ErrorCodes.FormatAmbiguous, refused.Code);
-        Assert.Equal("2,71", refused.Details!["sample"]!.GetValue<string>());
-        Assert.Contains($"cells convert \"{path}\" --to xlsx --culture de-DE", refused.Hint, StringComparison.Ordinal);
+        CellsReadResult text = CellsRead.Run(_fixture.Session, new CellsReadRequest { Input = path });
+        Assert.Equal(
+            [(CellsCellValueTypes.String, "2,71"), (CellsCellValueTypes.String, "1.253,96"), (CellsCellValueTypes.String, "20.08.2026")],
+            Values(text));
 
         CellsReadResult read = ImportAndRead(path, new CellsTextImportOptions { Culture = "de-DE" });
         Assert.Equal("2.71", read.Sheet!.Cells![1][1].V?.ToString());
@@ -74,7 +78,7 @@ public sealed class CellsTextImportTests : IClassFixture<CellsFixture>
             Values(imported));
     }
 
-    // The type and value of the amount, the share and the date of the first data row.
+    // The type and value of the second to fourth cells of the first data row.
     private static (string Type, string? Value)[] Values(CellsReadResult read) =>
         [.. read.Sheet!.Cells![1].Skip(1).Take(3).Select(static cell => (cell.T, Convert.ToString(cell.V, System.Globalization.CultureInfo.InvariantCulture)))];
 

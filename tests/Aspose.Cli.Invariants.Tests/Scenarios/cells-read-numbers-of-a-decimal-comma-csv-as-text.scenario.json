@@ -1,0 +1,15 @@
+{
+  "name": "cells read keeps the numbers of a csv that writes decimal commas as text and warns NUMBERS_READ_AS_TEXT, whose import hint runs as written",
+  "files": {
+    "de preise.csv": { "text": "Artikel;Preis\r\nA;2,71\r\nB;1,234\r\nC;0,5\r\nD;12,500\r\n" }
+  },
+  "steps": [
+    {
+      "args": ["cells", "read", "de preise.csv"],
+      "expect": {
+        "exitCode": 0,
+        "warnings": { "present": ["NUMBERS_READ_AS_TEXT"] }
+      }
+    }
+  ]
+}

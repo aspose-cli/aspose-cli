@@ -72,7 +72,7 @@ internal static class CellsEdit
         WorkbookSaveLoss? loss = null;
         TextTableSheet? textTable = null;
         IReadOnlyList<Warning>? WrittenWarnings() => EnvelopeParts.CombineWarnings(
-            EnvelopeParts.CombineWarnings([.. loaded.Resources.Warnings, .. editWarnings, .. loss!.Warnings]),
+            EnvelopeParts.CombineWarnings([.. loaded.Warnings() ?? [], .. editWarnings, .. loss!.Warnings]),
             importSources.Warnings());
         EditPublication<CellsEditVerification> publication = session.Outputs.PublishEdit<CellsEditVerification>(
             output,
