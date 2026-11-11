@@ -2,7 +2,7 @@ using System.Text.Json.Serialization;
 
 namespace Aspose.Cli.Product.Slides.Contracts;
 
-/// <summary>Result of <c>slides search</c>: the matches in shape text and speaker notes.</summary>
+/// <summary>Result of <c>slides search</c>: the matches in the slides' text, notes, comments, layouts and masters.</summary>
 public sealed record SlidesSearchResult() : WindowedResultEnvelope("search-result")
 {
     /// <summary>The searched presentation.</summary>
@@ -20,7 +20,7 @@ public sealed record SlidesSearchResult() : WindowedResultEnvelope("search-resul
     public required IReadOnlyList<SlidesSearchHit> Hits { get; init; }
 }
 
-/// <summary>One match in a shape's text or a slide's speaker notes.</summary>
+/// <summary>One match in a slide's text: a shape's, its notes', a comment's, or its layout's or master's.</summary>
 public sealed record SlidesSearchHit
 {
     /// <summary>The 1-based slide number.</summary>
@@ -31,22 +31,25 @@ public sealed record SlidesSearchHit
     [Minimum(1)]
     public required uint SlideId { get; init; }
 
-    /// <summary>Whether the match is in a shape's text or in the speaker notes.</summary>
-    [AllowedValues("shapes", "notes")]
+    /// <summary>
+    /// Where the match is: in a shape (its text, alternative text or chart text), in the speaker
+    /// notes, in a comment, or outside the placeholders of the layout or master the slide shows.
+    /// </summary>
+    [AllowedValues("shapes", "notes", "comments", "layouts", "masters")]
     public required string Scope { get; init; }
 
-    /// <summary>A positive identifier persisted within the hit slide; omitted for a match in the notes.</summary>
+    /// <summary>A positive identifier persisted within the hit slide, of its own shape that holds the match; omitted outside a shape.</summary>
     [Minimum(1)]
     public long? ShapeId { get; init; }
 
-    /// <summary>The name of the matched shape; omitted for the notes and for a shape without a name.</summary>
+    /// <summary>The name of the matched shape; omitted outside a shape and for a shape without a name.</summary>
     public string? ShapeName { get; init; }
 
     /// <summary>The match itself.</summary>
     public required string Text { get; init; }
 
     /// <summary>
-    /// The shape's or the notes' text around the match, up to 40 characters on each side, with
+    /// The text around the match, up to 40 characters on each side, with
     /// line breaks as spaces and an ellipsis where it is cut.
     /// </summary>
     public required string Context { get; init; }

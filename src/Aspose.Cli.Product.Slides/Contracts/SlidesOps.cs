@@ -355,7 +355,10 @@ public sealed record SlidesReplaceTextOp : SlidesOp
     [NotState]
     public bool WholeWord { get; init; }
 
-    /// <summary>Where text is replaced: shapes on the slides, speaker notes, or all of both.</summary>
+    /// <summary>
+    /// Where text is replaced: shapes on the slides, speaker notes, or all of them. With comments,
+    /// layouts or masters it changes nothing and reports each match there in a TEXT_NOT_REPLACED.
+    /// </summary>
     [NotState]
     [AllowedValues(typeof(SlidesSearchScopes))] public string Scope { get; init; } = SlidesSearchScopes.All;
 

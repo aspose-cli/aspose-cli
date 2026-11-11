@@ -37,7 +37,7 @@ internal static class SlidesExtract
             {
                 string text = string.Join("\n", SlidesTextUnits
                     .Of(loaded.Presentation.Slides[number - 1], number, request.What == SlidesExtractKinds.Notes ? SlidesSearchScopes.Notes : SlidesSearchScopes.Shapes)
-                    .Select(static unit => unit.Text).OfType<string>());
+                    .Where(static unit => unit.Part is null).Select(static unit => unit.Text).OfType<string>());
                 if (string.IsNullOrWhiteSpace(text))
                 {
                     continue;

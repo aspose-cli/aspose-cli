@@ -230,15 +230,52 @@ public sealed class SlidesStateGrainTests
             presentation.Slides[0].Shapes.OfType<IAutoShape>().Single(static shape => shape.Placeholder?.Type == PlaceholderType.Subtitle);
     }
 
+    /// <summary>
+    /// replace_text is verified against what it should leave, worked out from its input: an output
+    /// that kept a match in a shape it writes fails, though the edited presentation and the output
+    /// agree, and one that replaced every match there passes.
+    /// </summary>
+    [Theory]
+    [InlineData(false, 1)]
+    [InlineData(true, 0)]
+    public void Verify_ReplaceText_ComparesWhatItsInputShouldLeave(bool everyMatch, int issues)
+    {
+        TestLicense.Require("Evaluation mode records no text expectation.");
+        using var fixture = new SlidesEngineFixture();
+        Action<Presentation> leave = presentation =>
+        {
+            foreach (IAutoShape shape in presentation.Slides.SelectMany(static slide => slide.Shapes).OfType<IAutoShape>().Where(static shape => shape.Name != "Title 2"))
+            {
+                shape.TextFrame.Text = shape.TextFrame.Text.Replace("Slide", "Page", StringComparison.Ordinal);
+            }
+
+            if (everyMatch)
+            {
+                IAutoShape kept = presentation.Slides[1].Shapes.OfType<IAutoShape>().Single(static shape => shape.Name == "Title 2");
+                kept.TextFrame.Text = kept.TextFrame.Text.Replace("Slide", "Page", StringComparison.Ordinal);
+            }
+        };
+
+        VerificationFacts facts = Verify(
+            fixture.CreatePresentation("replace.pptx", slides: 2),
+            new SlidesReplaceTextOp { Id = "replace", Find = "Slide", Replace = "Page", Scope = SlidesSearchScopes.Shapes },
+            leave,
+            leave);
+
+        Assert.Equal(issues, facts.Issues.Count);
+    }
+
     /// <summary>Records one operation against the presentation <paramref name="edit"/> leaves and verifies the one <paramref name="write"/> leaves.</summary>
     private static VerificationFacts Verify(string input, SlidesOp operation, Action<Presentation> edit, Action<Presentation> write)
     {
         using var edited = new Presentation(input);
         using var output = new Presentation(input);
+        SlidesMutationHandlers.ResolvedSlidesOp? target = null;
+        var verifier = new SlidesEditVerifier(edited, _ => target!, evaluation: false);
+        verifier.Before(operation);
         edit(edited);
         write(output);
-        SlidesMutationHandlers.ResolvedSlidesOp target = SlidesMutationHandlers.ResolveTarget(edited, operation);
-        var verifier = new SlidesEditVerifier(edited, _ => target, evaluation: false);
+        target = SlidesMutationHandlers.ResolveTarget(edited, operation);
         verifier.Record(operation, AppliedOperations.Changed(SlidesOp.Catalog, operation, 1));
         return verifier.Verify(output);
     }

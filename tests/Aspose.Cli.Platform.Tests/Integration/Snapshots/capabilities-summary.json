@@ -332,7 +332,7 @@
         },
         {
           "command": "search",
-          "description": "Search presentation shape and speaker-notes text."
+          "description": "Search the text of a presentation's shapes, notes, comments, layouts and masters."
         }
       ],
       "operations": [

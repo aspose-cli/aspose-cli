@@ -8,7 +8,7 @@ using static Aspose.Cli.Product.Slides.Engine.SlidesShapeText;
 
 namespace Aspose.Cli.Product.Slides.Engine;
 
-/// <summary>Bounded shape and speaker-notes text search.</summary>
+/// <summary>Bounded search of the text <see cref="SlidesTextUnits"/> gives: the slides' shapes, notes, comments, layouts and masters.</summary>
 internal static class SlidesSearch
 {
     /// <summary>The notice evaluation mode puts after the first characters of a text it cuts short.</summary>

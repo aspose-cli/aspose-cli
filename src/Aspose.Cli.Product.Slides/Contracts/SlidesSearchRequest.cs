@@ -2,7 +2,7 @@ using Aspose.Cli.Sdk.Text;
 
 namespace Aspose.Cli.Product.Slides.Contracts;
 
-/// <summary>Options for bounded shape and notes search.</summary>
+/// <summary>Options for a bounded search of the slides' shapes, notes, comments, layouts and masters.</summary>
 public sealed record SlidesSearchRequest
 {
     /// <summary>The presentation the command reads.</summary>

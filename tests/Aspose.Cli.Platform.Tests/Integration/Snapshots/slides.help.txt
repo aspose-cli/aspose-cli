@@ -8,7 +8,7 @@ Usage:
 Commands:
   inspect <file>  Show presentation structure, stable slide ids and metadata.
   read <file>     Read a bounded slide-content window.
-  search <file>   Search presentation shape and speaker-notes text.
+  search <file>   Search the text of a presentation's shapes, notes, comments, layouts and masters.
   convert <file>  Convert a presentation or selected slides.
   render <file>   Render one or more slides for visual verification.
   create <file>   Create a blank, template-based or Markdown-authored presentation.
@@ -268,7 +268,7 @@ Learn more:
 
 ## aspose-cli slides search --help
 Description:
-  Search presentation shape and speaker-notes text.
+  Search the text of a presentation's shapes, notes, comments, layouts and masters.
 
 Usage:
   aspose-cli slides search <file> --pattern <pattern> [options]
@@ -280,7 +280,7 @@ Options:
   --pattern <pattern> (REQUIRED)  Text to find, or a regular expression with --regex.
   --regex                         Treat the pattern as a culture-invariant regular expression with a one-second budget.
   --case-sensitive                Match letter case exactly.
-  --scope <all|notes|shapes>      Search scope: the shape text, the speaker notes or both. [default: all]
+  --scope <scope>                 Search scope: the shape text (with alternative and chart text), the speaker notes, the comments, the layouts or masters the slides show, or all of them. Values: all, comments, layouts, masters, notes, shapes. [default: all]
   --max-hits <max-hits>           Maximum returned hits. Range: 1-10000. [default: 100]
   --skip <skip>                   Matches to pass over before the returned hits; a truncated search's window.next sets it. [default: 0]
   --password <password>           Password for the presentation. Discouraged: visible in the process list; prefer --password-env.

@@ -35,7 +35,7 @@
         "command": "edit",
         "inputSchema": "v2/slides/ops",
         "operationSchema": "aspose-cli schema v2/slides/ops --operation <op>",
-        "contractFingerprint": "sha256:4e019581d8c8f0b9ab11e27b373ab64fcccd3fe12b565081f4c0934e14f19fe5",
+        "contractFingerprint": "sha256:c1b3406307099fbf3b197257f6dab33b88428a2b194b2b5b27c9a4aa38352c0c",
         "maximumOperationCount": 10000,
         "ops": [
           "copy_slide",
@@ -1944,7 +1944,7 @@
         "path": "slides search",
         "name": "search",
         "aliases": [],
-        "description": "Search presentation shape and speaker-notes text.",
+        "description": "Search the text of a presentation's shapes, notes, comments, layouts and masters.",
         "options": [
           {
             "name": "--case-sensitive",
@@ -2076,12 +2076,15 @@
             "default": "all",
             "allowedValues": [
               "all",
+              "comments",
+              "layouts",
+              "masters",
               "notes",
               "shapes"
             ],
             "secret": false,
             "valueSource": "command-line",
-            "description": "Search scope: the shape text, the speaker notes or both."
+            "description": "Search scope: the shape text (with alternative and chart text), the speaker notes, the comments, the layouts or masters the slides show, or all of them."
           },
           {
             "name": "--skip",
@@ -4058,11 +4061,14 @@
               "x-readBack": "not-state"
             },
             "scope": {
-              "description": "Where text is replaced: shapes on the slides, speaker notes, or all of both.",
+              "description": "Where text is replaced: shapes on the slides, speaker notes, or all of them. With comments, layouts or masters it changes nothing and reports each match there in a TEXT_NOT_REPLACED.",
               "type": "string",
               "enum": [
                 "shapes",
                 "notes",
+                "comments",
+                "layouts",
+                "masters",
                 "all"
               ],
               "default": "all",
@@ -5905,7 +5911,7 @@
     "v2/slides/search-result": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
       "$id": "https://schemas.aspose.com/aspose-cli/v2/slides/search-result.schema.json",
-      "description": "Result of slides search: the matches in shape text and speaker notes.",
+      "description": "Result of slides search: the matches in the slides' text, notes, comments, layouts and masters.",
       "type": "object",
       "required": [
         "schema",
@@ -5940,6 +5946,9 @@
           "enum": [
             "shapes",
             "notes",
+            "comments",
+            "layouts",
+            "masters",
             "all"
           ]
         },
@@ -5968,7 +5977,7 @@
       },
       "$defs": {
         "slidesSearchHit": {
-          "description": "One match in a shape's text or a slide's speaker notes.",
+          "description": "One match in a slide's text: a shape's, its notes', a comment's, or its layout's or master's.",
           "type": "object",
           "required": [
             "slide",
@@ -5990,20 +5999,23 @@
               "minimum": 1
             },
             "scope": {
-              "description": "Whether the match is in a shape's text or in the speaker notes.",
+              "description": "Where the match is: in a shape (its text, alternative text or chart text), in the speaker notes, in a comment, or outside the placeholders of the layout or master the slide shows.",
               "type": "string",
               "enum": [
                 "shapes",
-                "notes"
+                "notes",
+                "comments",
+                "layouts",
+                "masters"
               ]
             },
             "shapeId": {
-              "description": "A positive identifier persisted within the hit slide; omitted for a match in the notes.",
+              "description": "A positive identifier persisted within the hit slide, of its own shape that holds the match; omitted outside a shape.",
               "type": "integer",
               "minimum": 1
             },
             "shapeName": {
-              "description": "The name of the matched shape; omitted for the notes and for a shape without a name.",
+              "description": "The name of the matched shape; omitted outside a shape and for a shape without a name.",
               "type": "string"
             },
             "text": {
@@ -6011,7 +6023,7 @@
               "type": "string"
             },
             "context": {
-              "description": "The shape's or the notes' text around the match, up to 40 characters on each side, with line breaks as spaces and an ellipsis where it is cut.",
+              "description": "The text around the match, up to 40 characters on each side, with line breaks as spaces and an ellipsis where it is cut.",
               "type": "string"
             }
           }

@@ -13,8 +13,9 @@ A chart that cannot be updated in place fails with `CHART_DATA_INVALID`, whose m
 the cause; only then recreate it with `insert_chart` (Charts in [Slides editing](editing.md)).
 
 When `replace_text` changes nothing, its `OP_NO_EFFECT` warning has `details.reason`
-`no-match`: run `slides search` with the same pattern and scope. Chart text and alternative
-text are never matched.
+`no-match`: run `slides search` with the same pattern and scope. Chart text, alternative text,
+comments and the text of layouts and masters are never replaced; each one that matches is named
+by `TEXT_NOT_REPLACED`.
 
 `REMOTE_RESOURCES_BLOCKED` means a linked picture, linked media file or external chart workbook
 was left out of the output. Network addresses are never fetched; only ordinary files beneath

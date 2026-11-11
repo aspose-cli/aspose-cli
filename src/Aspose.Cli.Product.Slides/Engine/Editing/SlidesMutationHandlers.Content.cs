@@ -36,9 +36,8 @@ internal sealed partial class SlidesMutationHandlers
     {
         TextReplacement replacement = TextReplacement.Create(
             operation.Find, operation.Replace, operation.Regex, operation.CaseSensitive, operation.WholeWord);
-        // The watermark an evaluation save added is left alone.
         ITextFrame[] frames = [.. SlidesTextUnits.Of(_presentation, operation.Scope)
-            .Where(unit => !_evaluation || !unit.IsEvaluationWatermark).SelectMany(static unit => unit.Frames)];
+            .Where(unit => SlidesTextUnits.Writes(unit, _evaluation)).SelectMany(static unit => unit.Frames)];
         if (_evaluation && frames.Any(static frame => CutByEvaluation(frame.Text)))
         {
             _readInput();
@@ -58,61 +57,53 @@ internal sealed partial class SlidesMutationHandlers
             remaining -= Replace(paragraph, replacement, remaining);
         }
 
-        if (operation.Scope is SlidesSearchScopes.Shapes or SlidesSearchScopes.All)
+        // Each part it does not change that holds a match is named while the batch leaves one there.
+        foreach (SlidesTextUnit unit in SlidesTextUnits.Of(_presentation, operation.Scope).Where(unit => unit.Part is not null && Holds(unit)))
         {
-            WarnUnreplacedChartText(operation, replacement);
+            (string found, string left, string unchanged, string hint) = Unchanged(unit, replacement);
+            _unreplaced.Add(UnreplacedText.Found(unit.Part!, operation, "replace_text",
+                $"Operation {operation.Id} (replace_text) found a match in {found} and left {left}: replace_text does not change {unchanged}.",
+                hint, unit.Location!, () => SlidesTextUnits.Of(_presentation, operation.Scope)
+                    .Any(now => ReferenceEquals(now.Holder, unit.Holder) && now.Part == unit.Part && Holds(now))));
         }
 
         return default;
+
+        bool Holds(SlidesTextUnit unit) => unit.Texts.Any(text => text.Length > 0 && replacement.Matches(text, 1).Count > 0);
     }
 
     /// <summary>
-    /// Names each chart on a slide, inside a group or not, whose title, axis titles or data hold a
-    /// match, which replace_text leaves as it is: chart text is not text it reaches. The title
-    /// warns as part <c>chart-title</c>, the axis titles as <c>axis-title</c>, the categories and
-    /// series names as <c>chart-data</c>; each matches as a paragraph of shape text does, and is
-    /// named only if the chart is still in the presentation and that part of it still holds a
-    /// match once the batch has run. The message never repeats the find text or the chart's text.
+    /// How replace_text names text it found and left, by the kind of part that holds it: where it
+    /// found it, what it left, what it does not change and how to change that text. The message
+    /// never repeats the find text or the part's text.
     /// </summary>
-    private void WarnUnreplacedChartText(SlidesReplaceTextOp operation, TextReplacement replacement)
+    private static (string Found, string Left, string Unchanged, string Hint) Unchanged(SlidesTextUnit unit, TextReplacement replacement)
     {
-        for (int number = 1; number <= _presentation.Slides.Count; number++)
+        const string Charts = "chart titles or chart data";
+        IChart? chart = unit.Holder as IChart;
+        bool grouped = unit.Shape is IGroupShape;
+        if (unit.Part == TextPart.ChartTitle)
         {
-            foreach ((IChart chart, IGroupShape? group) in SlidesTextUnits.Charts(_presentation.Slides[number - 1].Shapes))
-            {
-                string chartName = string.Create(CultureInfo.InvariantCulture, $"chart '{chart.Name}' (shapeId {chart.OfficeInteropShapeId})");
-                string where = group is null
-                    ? string.Create(CultureInfo.InvariantCulture, $"{chartName} on slide {number}")
-                    : string.Create(CultureInfo.InvariantCulture, $"{chartName} in group '{group.Name}' (shapeId {group.OfficeInteropShapeId}) on slide {number}");
-                string location = SlidesStateProjection.ShapeAddress(number, chart.OfficeInteropShapeId);
-                Func<bool> Remains(Func<bool> holds) => () => _presentation.Slides
-                    .SelectMany(static slide => SlidesTextUnits.Charts(slide.Shapes)).Any(found => ReferenceEquals(found.Chart, chart)) && holds();
-                if (TitleMatches(chart, replacement))
-                {
-                    _unreplaced.Add(UnreplacedText.Found(TextPart.ChartTitle, operation, "replace_text",
-                        $"Operation {operation.Id} (replace_text) found a match in the title of {where} and left the title as it was: replace_text does not change chart titles or chart data.",
-                        group is null ? RebuildHint(number, chart, "To change the title, rebuild the chart", "the same data, the new title") : GroupedChartHint,
-                        location, Remains(() => TitleMatches(chart, replacement))));
-                }
-
-                if (AxisTitleMatches(chart, replacement))
-                {
-                    _unreplaced.Add(UnreplacedText.Found(TextPart.AxisTitle, operation, "replace_text",
-                        $"Operation {operation.Id} (replace_text) found a match in an axis title of {where} and left it as it was: replace_text does not change a chart's axis titles.",
-                        AxisTitleHint,
-                        location, Remains(() => AxisTitleMatches(chart, replacement))));
-                }
-
-                if (DataMatched(chart, replacement) is { } data)
-                {
-                    _unreplaced.Add(UnreplacedText.Found(TextPart.ChartData, operation, "replace_text",
-                        $"Operation {operation.Id} (replace_text) found a match in the {data.Parts} of {where} and left them as they were: replace_text does not change chart titles or chart data.",
-                        group is not null ? GroupedChartHint : DataHint(number, chart, data.Change),
-                        location, Remains(() => DataMatched(chart, replacement) is not null)));
-                }
-            }
+            return ($"the title of {unit.Where}", "the title as it was", Charts,
+                grouped ? GroupedChartHint : RebuildHint(unit.Slide, chart!, "To change the title, rebuild the chart", "the same data, the new title"));
         }
+
+        if (unit.Part == TextPart.ChartData)
+        {
+            (string parts, string change) = DataMatched(chart!, replacement);
+            return ($"the {parts} of {unit.Where}", "them as they were", Charts, grouped ? GroupedChartHint : DataHint(unit.Slide, chart!, change));
+        }
+
+        return unit.Part == TextPart.AxisTitle ? ($"an axis title of {unit.Where}", "it as it was", "a chart's axis titles", AxisTitleHint)
+            : unit.Part == TextPart.DataLabel ? ($"a data label of {unit.Where}", "it as it was", "a chart's data labels", Unchangeable("a chart's data labels"))
+            : unit.Part == TextPart.AltText ? ($"the alternative text of {unit.Where}", "it as it was", "alternative text", Unchangeable("the alternative text of a shape"))
+            : unit.Part == TextPart.Comment ? (unit.Where, "it as it was", "comments", Unchangeable("comments"))
+            : (unit.Where, "it as it was", "the text of layouts and masters", Unchangeable("the text of a layout or master, which every slide on it shows"));
     }
+
+    // The hint for text no operation changes.
+    private static string Unchangeable(string what) =>
+        $"No operation changes {what}, so it keeps that text: report it as unchanged, or change it in a presentation editor.";
 
     // No operation addresses a shape inside a group, and slides read reports only a slide's own shapes.
     private const string GroupedChartHint =
@@ -143,42 +134,21 @@ internal sealed partial class SlidesMutationHandlers
             $$"""{{change}}: read its kind, categories and series with 'slides read --slides {{number}} --content full', apply {"op":"delete_shape","slide":{{number}},"shapeId":{{chart.OfficeInteropShapeId}}}, then insert_chart on slide {{number}} with {{with}} and "rect":{{rect}}. The new chart takes the automatic chart style.""");
     }
 
-    private static bool TitleMatches(IChart chart, TextReplacement replacement) =>
-        chart.HasTitle && chart.ChartTitle.TextFrameForOverriding is { } title && FrameMatches(title, replacement);
-
-    private static bool AxisTitleMatches(IChart chart, TextReplacement replacement) =>
-        SlidesShapeFormats.AxisTitles(chart).Any(title => FrameMatches(title, replacement));
-
-    // Whether a paragraph of a title holds a match, read as Replace reads a paragraph.
-    private static bool FrameMatches(ITextFrame frame, TextReplacement replacement) =>
-        frame.Paragraphs.Any(paragraph =>
-            replacement.Matches(string.Concat(paragraph.Portions.Select(static portion => portion.Text ?? string.Empty)), 1).Count > 0);
-
     /// <summary>
     /// Which of the chart's data holds a match, its categories or its series names, as set_chart_data
-    /// would change them; null when neither does. A category is read as <c>slides read</c> reads it,
-    /// and a series name from its cells or, without them, as its literal text.
+    /// would change them, read as <see cref="SlidesTextUnits"/> reads them.
     /// </summary>
-    private static (string Parts, string Change)? DataMatched(IChart chart, TextReplacement replacement)
+    private static (string Parts, string Change) DataMatched(IChart chart, TextReplacement replacement)
     {
-        bool categories = chart.ChartData.Categories.Any(category => Matches(replacement, Text(category.Value)));
-        bool names = chart.ChartData.Series.Any(series => series.Name.DataSourceType == DataSourceType.Worksheet
-            ? series.Name.AsCells.Any(cell => Matches(replacement, Text(cell.Value)))
-            : Matches(replacement, series.Name.AsLiteralString));
-        return (categories, names) switch
+        return (SlidesTextUnits.CategoryTexts(chart).Any(Matches), SlidesTextUnits.SeriesNames(chart).Any(Matches)) switch
         {
             (true, true) => ("categories and series names", "the categories and every series as read, each changed where it matches"),
             (true, false) => ("categories", "the categories, changed where they match"),
-            (false, true) => ("series names", "every series as read, values and all, renamed where its name matches"),
-            _ => null,
+            _ => ("series names", "every series as read, values and all, renamed where its name matches"),
         };
 
-        static string? Text(object? value) => Convert.ToString(value, CultureInfo.InvariantCulture);
+        bool Matches(string? text) => !string.IsNullOrEmpty(text) && replacement.Matches(text, 1).Count > 0;
     }
-
-    // Whether a category or series name holds a match; an empty one holds no text.
-    private static bool Matches(TextReplacement replacement, string? text) =>
-        !string.IsNullOrEmpty(text) && replacement.Matches(text, 1).Count > 0;
 
     private static int Replace(IParagraph paragraph, TextReplacement replacement, int limit)
     {
