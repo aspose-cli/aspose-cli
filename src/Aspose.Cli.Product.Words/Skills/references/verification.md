@@ -65,7 +65,8 @@ about the Words findings that most often need action:
 When pages break badly, with a heading left at the foot of a page, a page
 nearly or wholly empty, or many manual breaks (the review names them, such as
 `WORDS_HEADING_ORPHANED` or `WORDS_PAGE_BLANK`), look for manual breaks and
-empty paragraphs and remove them rather than adding more breaks.
+empty paragraphs and remove them rather than adding more breaks; keep an empty
+paragraph between two tables, without which they read as one table.
 
 A table split across pages, such as a last row pushed onto the next page, is
 not a check: look for it on the rendered pages. Fix it with
