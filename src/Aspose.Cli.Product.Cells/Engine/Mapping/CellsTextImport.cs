@@ -21,12 +21,19 @@ internal static partial class CellsTextImport
 {
     static CellsTextImport() => Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
 
-    /// <summary>The input's encoding, and the culture the caller named for it, null when none.</summary>
-    internal static (Encoding Encoding, CultureInfo? Culture) Resolve(
+    /// <summary>
+    /// The input's encoding, whether it starts with a UTF-8 byte order mark, and the culture the
+    /// caller named for it, null when none.
+    /// </summary>
+    internal static (Encoding Encoding, bool Utf8ByteOrderMark, CultureInfo? Culture) Resolve(
         string path,
         CellsTextImportOptions? options,
-        ResourceBudgetLedger budgets) =>
-        (ResolveEncoding(path, options?.Encoding, budgets), options?.Culture is { } name ? ResolveCulture(name) : null);
+        ResourceBudgetLedger budgets)
+    {
+        Encoding? marked = ByteOrderMark(path);
+        return (ResolveEncoding(path, marked, options?.Encoding, budgets), marked is UTF8Encoding,
+            options?.Culture is { } name ? ResolveCulture(name) : null);
+    }
 
     /// <summary>
     /// The engine's options for a text input, loaded within <see cref="Invariant"/>. The engine
@@ -223,9 +230,8 @@ internal static partial class CellsTextImport
     [GeneratedRegex(@"^\d{4}[-/]\d{1,2}[-/]\d{1,2}(?:$|[ T])", RegexOptions.CultureInvariant)]
     private static partial Regex YearFirst();
 
-    private static Encoding ResolveEncoding(string path, string? name, ResourceBudgetLedger budgets)
+    private static Encoding ResolveEncoding(string path, Encoding? marked, string? name, ResourceBudgetLedger budgets)
     {
-        Encoding? marked = ByteOrderMark(path);
         if (name is null)
         {
             if (marked is null)

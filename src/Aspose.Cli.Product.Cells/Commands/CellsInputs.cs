@@ -9,6 +9,13 @@ internal static class CellsInputs
     /// <summary>The <c>--bom</c> of a command that can write CSV or TSV text.</summary>
     public static BomOption TextOutputBom() => new("a CSV or TSV output");
 
+    /// <summary>
+    /// The <c>--bom</c> of <c>cells edit</c>, which without the option keeps the mark of a CSV or
+    /// TSV input it writes back in the format the input's name gives it.
+    /// </summary>
+    public static BomOption EditedTextBom() => new("a CSV or TSV output",
+        byDefault: "the input's mark when a CSV or TSV input is written back in its own format, as in place; otherwise UTF-8 without one");
+
     /// <summary>Whether the caller asked for the mark on an output of <paramref name="format"/>.</summary>
     /// <exception cref="Aspose.Cli.Sdk.Errors.CliException"><c>OPTION_INVALID</c> when it did and the output is not CSV or TSV text.</exception>
     public static bool ReadBom(BomOption bom, ParseResult parse, string format) =>

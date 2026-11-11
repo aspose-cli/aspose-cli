@@ -5,8 +5,8 @@ namespace Aspose.Cli.Sdk.Extensibility.Commanding;
 
 /// <summary>
 /// The one <c>--bom</c> option of a command that writes CSV text: a UTF-8 byte order mark at the
-/// start of the text, off by default, in the standard wording with the product naming the text
-/// it starts and the condition it needs.
+/// start of the text, in the standard wording with the product naming the text it starts, the
+/// condition it needs and, when the text can carry a mark without it, what it does by default.
 /// </summary>
 public sealed class BomOption
 {
@@ -18,14 +18,15 @@ public sealed class BomOption
     /// <summary>Creates the option.</summary>
     /// <param name="what">The text the mark starts, such as <c>each table's CSV</c>.</param>
     /// <param name="onlyWith">The condition the option needs, such as <c>--what tables</c>, or null.</param>
-    public BomOption(string what, string? onlyWith = null)
+    /// <param name="byDefault">What the text starts with without the option, or null for UTF-8 without a mark.</param>
+    public BomOption(string what, string? onlyWith = null, string? byDefault = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(what);
         _bom = new Option<bool>(Name)
         {
             Description = $"Start {what} with a UTF-8 byte order mark, so Excel reads its non-English text correctly"
                 + (onlyWith is null ? string.Empty : $"; only with {onlyWith}")
-                + ". Default: UTF-8 without one.",
+                + $". Default: {byDefault ?? "UTF-8 without one"}.",
         };
         Options = [_bom];
     }

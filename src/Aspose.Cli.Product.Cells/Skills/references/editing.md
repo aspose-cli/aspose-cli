@@ -322,7 +322,9 @@ other output, csv, tsv, html, mhtml, pdf, xps, json and md included, cannot. A s
 `LOSSY_CONVERSION`, as it does for the sheet's comments and its headers and footers, which are
 no `--verify` issue. `cells create` and `cells convert` follow the same rules. A `.txt` output
 is written as csv; for tab-delimited text write a `.tsv` output, or run
-`cells convert book.xlsx --to tsv --out data.txt`.
+`cells convert book.xlsx --to tsv --out data.txt`. `cells edit` writing a csv or tsv input
+back in the format its name gives it, as in place, keeps its separator and its UTF-8 byte
+order mark; `cells convert` writes the format's own separator.
 
 ## Reading the outcome
 
