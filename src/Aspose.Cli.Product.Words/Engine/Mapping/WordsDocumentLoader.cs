@@ -204,7 +204,11 @@ internal sealed class WordsDocumentLoader
         }
     }
 
-    /// <summary>Imports inline Markdown using the owning document's resource boundary and lifetime.</summary>
+    /// <summary>
+    /// Imports inline Markdown using the owning document's resource boundary and lifetime. Its
+    /// blocks only ever join another document, so the banner evaluation mode adds as it loads the
+    /// Markdown is removed (<see cref="OutputPipeline{TDocument}.Neutralize"/>).
+    /// </summary>
     internal Document OpenMarkdown(string markdown, LoadedDocument owner)
     {
         ArgumentNullException.ThrowIfNull(markdown);
@@ -218,6 +222,7 @@ internal sealed class WordsDocumentLoader
             LoadFormat.Markdown, owner.Resources, "inline Markdown", password: default, Loading, warnings: null, onDisk: false);
         owner.Retain(document);
         _outputs?.ReadInput(document);
+        _outputs?.Neutralize(document);
         return document;
     }
 

@@ -1,0 +1,80 @@
+{
+  "name": "words Markdown an operation imports in evaluation mode joins the document without the banner the engine adds as it loads it",
+  "files": {
+    "source.md": { "text": "# Title\n\nFirst paragraph.\n\n| A | B |\n|---|---|\n| 1 | 2 |\n\nMiddle paragraph.\n\nLast paragraph.\n" },
+    "text.json": { "text": "{\"ops\":[{\"op\":\"insert_markdown\",\"at\":{\"block\":2},\"position\":\"after\",\"markdown\":\"Inserted one.\\n\\nInserted two.\"}]}" },
+    "header.json": { "text": "{\"ops\":[{\"op\":\"set_header\",\"markdown\":\"**Acme** report\"}]}" },
+    "table.json": { "text": "{\"ops\":[{\"op\":\"insert_markdown\",\"at\":{\"block\":3},\"position\":\"after\",\"markdown\":\"| X | Y |\\n|---|---|\\n| 5 | 6 |\\n\\nAfter the table.\"}]}" }
+  },
+  "steps": [
+    {
+      "args": ["words", "create", "doc.docx", "--from-markdown", "source.md", "--license-mode", "evaluation"],
+      "expect": { "exitCode": 0 }
+    },
+    {
+      "args": ["words", "search", "doc.docx", "--pattern", "evaluation copy of Aspose.Words", "--scope", "all", "--license-mode", "evaluation"],
+      "expect": { "exitCode": 0, "json": [{ "path": "window.returned", "equals": 1 }] }
+    },
+    {
+      "args": ["words", "edit", "doc.docx", "--ops", "text.json", "--out", "text.docx", "--license-mode", "evaluation"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "applied[0].itemsAffected", "equals": 2 },
+          { "path": "applied[0].targets", "equals": ["block/3", "block/4"] }
+        ]
+      }
+    },
+    {
+      "args": ["words", "read", "text.docx", "--blocks", "2-5", "--license-mode", "evaluation"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "blockCount", "equals": 7 },
+          { "path": "blocks[0].text", "equals": "First paragraph." },
+          { "path": "blocks[1].text", "equals": "Inserted one." },
+          { "path": "blocks[2].text", "equals": "Inserted two." },
+          { "path": "blocks[3].kind", "equals": "table" }
+        ]
+      }
+    },
+    {
+      "args": ["words", "edit", "doc.docx", "--ops", "header.json", "--out", "header.docx", "--license-mode", "evaluation"],
+      "expect": { "exitCode": 0 }
+    },
+    {
+      "args": ["words", "search", "header.docx", "--pattern", "evaluation copy of Aspose.Words", "--scope", "headers-footers", "--license-mode", "evaluation"],
+      "expect": { "exitCode": 0, "json": [{ "path": "window.returned", "equals": 0 }] }
+    },
+    {
+      "args": ["words", "search", "header.docx", "--pattern", "Acme report", "--scope", "headers-footers", "--license-mode", "evaluation"],
+      "expect": { "exitCode": 0, "json": [{ "path": "window.returned", "equals": 1 }] }
+    },
+    {
+      "args": ["words", "edit", "doc.docx", "--ops", "table.json", "--out", "table.docx", "--license-mode", "evaluation"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "applied[0].itemsAffected", "equals": 3 },
+          { "path": "applied[0].targets", "equals": ["block/4", "block/5", "block/6"] }
+        ]
+      }
+    },
+    {
+      "args": ["words", "read", "table.docx", "--blocks", "3-7", "--license-mode", "evaluation"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "blocks[0].kind", "equals": "table" },
+          { "path": "blocks[0].values[0][0]", "equals": "A" },
+          { "path": "blocks[1].kind", "equals": "paragraph" },
+          { "path": "blocks[1].text", "equals": "" },
+          { "path": "blocks[2].kind", "equals": "table" },
+          { "path": "blocks[2].values[0][0]", "equals": "X" },
+          { "path": "blocks[3].text", "equals": "After the table." },
+          { "path": "blocks[4].text", "equals": "Middle paragraph." }
+        ]
+      }
+    }
+  ]
+}
