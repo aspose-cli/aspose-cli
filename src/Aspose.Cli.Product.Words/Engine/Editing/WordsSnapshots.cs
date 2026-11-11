@@ -60,6 +60,8 @@ internal sealed partial class WordsSnapshots(LoadedDocument loaded) : IWordsOpHa
 
     public OperationSnapshot Apply(SetTablePaginationOp operation) => Blocks();
 
+    public OperationSnapshot Apply(SetTableStyleOp operation) => Blocks();
+
     public OperationSnapshot Apply(InsertTocOp operation) => Blocks();
 
     public OperationSnapshot Apply(InsertBookmarkOp operation) => Blocks();

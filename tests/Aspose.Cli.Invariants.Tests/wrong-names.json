@@ -95,7 +95,6 @@
 {"edit":"words","ops":[{"op":"remove_watermark"}],"wrong":"remove_watermark","suggests":"delete_watermark"},
 {"edit":"words","ops":[{"op":"replace_txt","find":"Hello","replace":"Hi"}],"wrong":"replace_txt","suggests":"replace_text"},
 {"edit":"words","ops":[{"op":"update_fields"}],"wrong":"update_fields","suggests":"refresh_fields"},
-{"edit":"words","first":[{"op":"insert_table","at":{"block":1},"position":"after","rowCount":1,"columnCount":1}],"ops":[{"op":"set_table_style","target":{"block":2},"tableStyle":"Grid Table 4"}],"wrong":"set_table_style","suggests":"insert_table","fixed":[{"op":"insert_table","at":{"block":2},"position":"after","rowCount":1,"columnCount":1,"tableStyle":"Grid Table 4"},{"op":"delete_blocks","target":{"block":2}}]},
 {"edit":"words","ops":[{"op":"insert_chart","kind":"column"}],"wrong":"insert_chart","suggests":null,"because":"a Word document takes no chart from this CLI"},
 // Words: fields
 {"edit":"words","first":"words edit a.docx --in-place --track-changes --author A --ops [{\"op\":\"replace_text\",\"find\":\"seed\",\"replace\":\"new\"}]","ops":[{"op":"accept_revisions","revision":[1]}],"wrong":"revision","suggests":"revisions"},
@@ -130,6 +129,8 @@
 {"edit":"words","ops":[{"op":"set_style","traget":{"block":1},"style":"Normal"}],"wrong":"traget","suggests":"target"},
 {"edit":"words","first":[{"op":"insert_table","at":{"block":1},"position":"after","rowCount":1,"columnCount":1}],"ops":[{"op":"set_table_cell","at":{"block":2},"row":1,"column":1,"text":"a"}],"wrong":"at","suggests":"target"},
 {"edit":"words","first":[{"op":"insert_table","at":{"block":1},"position":"after","rowCount":1,"columnCount":1}],"ops":[{"op":"set_table_cell","target":{"block":2},"row":1,"col":1,"text":"a"}],"wrong":"col","suggests":"column"},
+{"edit":"words","first":[{"op":"insert_paragraphs","at":{"block":2},"position":"before","paragraphs":[{"text":"按业务线列示"}]},{"op":"insert_table","at":{"block":2},"position":"before","rowCount":1,"columnCount":2,"values":[["业务线","收入"]]}],"ops":[{"op":"set_table_style","target":{"find":"业务线"},"style":"Grid Table 4"}],"wrong":"style","suggests":"tableStyle","fixed":[{"op":"set_table_style","target":{"block":3},"tableStyle":"Grid Table 4"}]},
+{"edit":"words","first":[{"op":"insert_table","at":{"block":1},"position":"after","rowCount":1,"columnCount":1}],"ops":[{"op":"set_table_style","at":{"block":2},"tableStyle":"Grid Table 4"}],"wrong":"at","suggests":"target"},
 {"edit":"words","ops":[{"op":"set_text","at":{"block":2},"text":"New"}],"wrong":"at","suggests":"target"},
 {"edit":"words","ops":[{"op":"set_list","target":{"block":2},"kind":"numbered"}],"wrong":"numbered","suggests":"number"},
 {"edit":"words","ops":[{"op":"format_text","target":{"block":1},"highlight":"#FFFF00"}],"wrong":"#FFFF00","suggests":"yellow","hint":"'color' takes any"},

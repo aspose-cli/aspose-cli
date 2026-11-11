@@ -1,0 +1,71 @@
+{
+  "name": "words set_table_style keeps the pagination set_table_pagination set, in a later batch and in the same one",
+  "files": {
+    "source.md": { "text": "# Plan\n\nFirst table:\n\n| A | B |\n|---|---|\n| 1 | 2 |\n| 3 | 4 |\n| 5 | 6 |\n\nSecond table:\n\n| C | D |\n|---|---|\n| 7 | 8 |\n" },
+    "paginate.json": { "text": "{\"ops\":[{\"op\":\"set_table_pagination\",\"target\":{\"block\":3},\"keepTogether\":true,\"headerRowCount\":2},{\"op\":\"set_table_pagination\",\"target\":{\"block\":5},\"allowRowBreakAcrossPages\":false}]}" },
+    "restyle.json": { "text": "{\"ops\":[{\"op\":\"set_table_style\",\"target\":{\"block\":3},\"tableStyle\":\"Grid Table 4\"},{\"op\":\"set_table_style\",\"target\":{\"block\":5},\"tableStyle\":\"Grid Table 4\"}]}" },
+    "both.json": { "text": "{\"ops\":[{\"op\":\"set_table_pagination\",\"target\":{\"block\":3},\"keepTogether\":true,\"headerRowCount\":2},{\"op\":\"set_table_pagination\",\"target\":{\"block\":5},\"allowRowBreakAcrossPages\":false},{\"op\":\"set_table_style\",\"target\":{\"block\":3},\"tableStyle\":\"Grid Table 4\"},{\"op\":\"set_table_style\",\"target\":{\"block\":5},\"tableStyle\":\"Grid Table 4\"}]}" }
+  },
+  "steps": [
+    {
+      "args": ["words", "create", "doc.docx", "--from-markdown", "source.md"],
+      "expect": { "exitCode": 0 }
+    },
+    {
+      "args": ["words", "edit", "doc.docx", "--ops", "paginate.json", "--out", "paged.docx"],
+      "expect": { "exitCode": 0 }
+    },
+    {
+      "args": ["words", "inspect", "paged.docx", "--detail", "tables"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "tables[0].keepTogether", "equals": true },
+          { "path": "tables[0].headerRowCount", "equals": 2 },
+          { "path": "tables[0].allowRowBreakAcrossPages", "equals": false },
+          { "path": "tables[1].allowRowBreakAcrossPages", "equals": false },
+          { "path": "tables[1].headerRowCount", "equals": 1 }
+        ]
+      }
+    },
+    {
+      "args": ["words", "edit", "paged.docx", "--ops", "restyle.json", "--out", "later.docx"],
+      "expect": { "exitCode": 0, "json": [{ "path": "applied[1].targets[0]", "equals": "block/5" }] }
+    },
+    {
+      "args": ["words", "inspect", "later.docx", "--detail", "tables"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "tables[0].tableStyle", "equals": "Grid Table 4" },
+          { "path": "tables[0].keepTogether", "equals": true },
+          { "path": "tables[0].headerRowCount", "equals": 2 },
+          { "path": "tables[0].allowRowBreakAcrossPages", "equals": false },
+          { "path": "tables[0].keepWithNext", "equals": false },
+          { "path": "tables[1].tableStyle", "equals": "Grid Table 4" },
+          { "path": "tables[1].allowRowBreakAcrossPages", "equals": false },
+          { "path": "tables[1].headerRowCount", "equals": 1 }
+        ]
+      }
+    },
+    {
+      "args": ["words", "edit", "doc.docx", "--ops", "both.json", "--out", "together.docx"],
+      "expect": { "exitCode": 0 }
+    },
+    {
+      "args": ["words", "inspect", "together.docx", "--detail", "tables"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "tables[0].tableStyle", "equals": "Grid Table 4" },
+          { "path": "tables[0].keepTogether", "equals": true },
+          { "path": "tables[0].headerRowCount", "equals": 2 },
+          { "path": "tables[0].allowRowBreakAcrossPages", "equals": false },
+          { "path": "tables[1].tableStyle", "equals": "Grid Table 4" },
+          { "path": "tables[1].allowRowBreakAcrossPages", "equals": false },
+          { "path": "tables[1].headerRowCount", "equals": 1 }
+        ]
+      }
+    }
+  ]
+}

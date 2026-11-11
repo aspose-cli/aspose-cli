@@ -117,7 +117,7 @@ The operations grouped by task; each one's description and fields are in
 | Change text | `replace_text`, `set_text`, `set_table_cell`, `repeat_table_row` |
 | Add content | `insert_paragraphs`, `insert_markdown` (also footnotes, see above), `insert_table`, `insert_image`, `insert_hyperlink`, `insert_field`, `insert_toc`, `insert_bookmark`, `import_sections` |
 | Remove content | `delete_blocks` |
-| Styles and formatting | `set_style`, `define_style`, `format_text`, `set_table_pagination`, `set_list`, `clear_list`, `set_default_font` |
+| Styles and formatting | `set_style`, `define_style`, `format_text`, `set_table_style`, `set_table_pagination`, `set_list`, `clear_list`, `set_default_font` |
 | Sections and pages | `insert_break`, `insert_section`, `delete_section`, `set_page_setup`, `set_header`, `set_footer`, `set_page_numbers`, `set_watermark`, `delete_watermark` |
 | Review annotations | `add_comment`, `delete_comments`, `accept_revisions`, `reject_revisions` |
 | Fields and data | `refresh_fields`, `mail_merge` ([mail merge](mail-merge.md)) |

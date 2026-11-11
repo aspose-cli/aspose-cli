@@ -408,7 +408,7 @@ public sealed record WordsTableData
     [Minimum(0)]
     public required int ColumnCount { get; init; }
 
-    /// <summary>The table style the table uses, Table Normal by default, accepted by insert_table's tableStyle.</summary>
+    /// <summary>The table style the table uses, Table Normal by default, accepted by the tableStyle of insert_table and set_table_style.</summary>
     [MinLength(1)]
     public required string TableStyle { get; init; }
 

@@ -266,7 +266,6 @@ public sealed record InsertImageOp : WordsOp
 
 /// <summary>Inserts a table at a block boundary; values must fit the table's rows and columns.</summary>
 [Operation("insert_table")]
-[MistakenFor("set_table_style")]
 public sealed record InsertTableOp : WordsOp
 {
     /// <summary>The block the new content goes next to.</summary>
@@ -395,6 +394,24 @@ public sealed record SetTablePaginationOp : WordsOp
             "keepTogether true stops rows breaking across pages and cannot be combined with allowRowBreakAcrossPages true");
         return this;
     }
+}
+
+/// <summary>
+/// Sets the table style of one table block. The borders, cell margins and cell spacing set on the
+/// whole table give way to the style; the formatting set on its cells, which shows over the style,
+/// and the table's other settings stay.
+/// </summary>
+[Operation("set_table_style")]
+public sealed record SetTableStyleOp : WordsOp
+{
+    /// <summary>The table block.</summary>
+    [MistakenFor("at")]
+    public required WordsTarget Target { get; init; }
+
+    /// <summary>An existing table style, or a table style Word has built in, by name, such as Table Grid or Grid Table 4.</summary>
+    [MistakenFor("style")]
+    [ReadBack("inspect-result.schema.json#/$defs/wordsTableData/properties/tableStyle")]
+    [MinLength(1)] public required string TableStyle { get; init; }
 }
 
 /// <summary>Inserts and updates a table of contents.</summary>
@@ -1086,6 +1103,7 @@ public sealed record RefreshFieldsOp : WordsOp
 [JsonSerializable(typeof(DeleteBlocksOp))]
 [JsonSerializable(typeof(DeleteSectionOp))]
 [JsonSerializable(typeof(SetTablePaginationOp))]
+[JsonSerializable(typeof(SetTableStyleOp))]
 [JsonSerializable(typeof(FormatTextOp))]
 [JsonSerializable(typeof(InsertBookmarkOp))]
 [JsonSerializable(typeof(InsertBreakOp))]

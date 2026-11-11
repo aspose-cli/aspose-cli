@@ -686,6 +686,7 @@ C-R17 | v2/words/ops#set_properties
 C-R17 | v2/words/ops#set_style
 C-R17 | v2/words/ops#set_table_cell
 C-R17 | v2/words/ops#set_table_pagination
+C-R17 | v2/words/ops#set_table_style
 C-R17 | v2/words/ops#set_text
 C-R17 | v2/words/ops#set_watermark
 C-R17 | v2/words/ops#unprotect_document
@@ -974,6 +975,7 @@ C-R18 | v2/words/ops#set_properties
 C-R18 | v2/words/ops#set_style
 C-R18 | v2/words/ops#set_table_cell
 C-R18 | v2/words/ops#set_table_pagination
+C-R18 | v2/words/ops#set_table_style
 C-R18 | v2/words/ops#set_text
 C-R18 | v2/words/ops#set_watermark
 C-R18 | v2/words/ops#unprotect_document
@@ -1186,6 +1188,7 @@ C-R19 | v2/words/ops#set_properties
 C-R19 | v2/words/ops#set_style
 C-R19 | v2/words/ops#set_table_cell
 C-R19 | v2/words/ops#set_table_pagination
+C-R19 | v2/words/ops#set_table_style
 C-R19 | v2/words/ops#set_text
 C-R19 | v2/words/ops#set_watermark
 C-R19 | v2/words/ops#unprotect_document
@@ -1200,6 +1203,7 @@ C-R19 | words set_properties applied twice
 C-R19 | words set_style applied twice
 C-R19 | words set_table_cell applied twice
 C-R19 | words set_table_pagination applied twice
+C-R19 | words set_table_style applied twice
 C-R19 | words set_text applied twice
 C-R19 | words set_watermark applied twice
 C-R20 | ops field alignment across products
@@ -2809,6 +2813,11 @@ C-R20 | v2/words/ops#set_table_pagination ranges
 C-R20 | v2/words/ops#set_table_pagination secrets
 C-R20 | v2/words/ops#set_table_pagination spelling
 C-R20 | v2/words/ops#set_table_pagination variants
+C-R20 | v2/words/ops#set_table_style fixednames
+C-R20 | v2/words/ops#set_table_style ranges
+C-R20 | v2/words/ops#set_table_style secrets
+C-R20 | v2/words/ops#set_table_style spelling
+C-R20 | v2/words/ops#set_table_style variants
 C-R20 | v2/words/ops#set_text fixednames
 C-R20 | v2/words/ops#set_text ranges
 C-R20 | v2/words/ops#set_text secrets
@@ -3239,6 +3248,8 @@ C-R21 | v2/words/ops#set_table_cell
 C-R21 | v2/words/ops#set_table_cell unclassified
 C-R21 | v2/words/ops#set_table_pagination
 C-R21 | v2/words/ops#set_table_pagination unclassified
+C-R21 | v2/words/ops#set_table_style
+C-R21 | v2/words/ops#set_table_style unclassified
 C-R21 | v2/words/ops#set_text
 C-R21 | v2/words/ops#set_text unclassified
 C-R21 | v2/words/ops#set_watermark
@@ -3266,6 +3277,7 @@ C-R21 | words set_page_setup reads back
 C-R21 | words set_properties reads back
 C-R21 | words set_style reads back
 C-R21 | words set_table_pagination reads back
+C-R21 | words set_table_style reads back
 C-R21 | words set_text reads back
 C-R21 | words set_watermark reads back
 C-R22 | cells edit --ops with a bare array
@@ -3621,6 +3633,7 @@ C-R30 | words set_properties
 C-R30 | words set_style
 C-R30 | words set_table_cell
 C-R30 | words set_table_pagination
+C-R30 | words set_table_style
 C-R30 | words set_text
 C-R30 | words set_watermark
 C-R30 | words targets read <unit>/<address>
@@ -4402,6 +4415,8 @@ C-R33 | v2/words/ops#set_table_cell names
 C-R33 | v2/words/ops#set_table_cell none
 C-R33 | v2/words/ops#set_table_pagination names
 C-R33 | v2/words/ops#set_table_pagination none
+C-R33 | v2/words/ops#set_table_style names
+C-R33 | v2/words/ops#set_table_style none
 C-R33 | v2/words/ops#set_text names
 C-R33 | v2/words/ops#set_text none
 C-R33 | v2/words/ops#set_watermark names
@@ -4701,6 +4716,7 @@ C-R39 | words set_page_setup round trip
 C-R39 | words set_properties round trip
 C-R39 | words set_style round trip
 C-R39 | words set_table_pagination round trip
+C-R39 | words set_table_style round trip
 C-R39 | words set_text round trip
 C-R39 | words set_watermark round trip
 C-R40 | compare file shape
@@ -5836,6 +5852,7 @@ unknown-field | words set_properties.title as titlee
 unknown-field | words set_style.target as traget
 unknown-field | words set_table_cell.target as traget
 unknown-field | words set_table_pagination.target as traget
+unknown-field | words set_table_style.target as traget
 unknown-field | words set_text.target as traget
 unknown-field | words set_watermark.text as textt
 unknown-field | words unprotect_document.passwordEnv as psaswordEnv
@@ -5994,6 +6011,7 @@ unknown-op | words set_properties as ste_properties
 unknown-op | words set_style as ste_style
 unknown-op | words set_table_cell as ste_table_cell
 unknown-op | words set_table_pagination as ste_table_pagination
+unknown-op | words set_table_style as ste_table_style
 unknown-op | words set_text as ste_text
 unknown-op | words set_watermark as ste_watermark
 unknown-op | words unprotect_document as upnrotect_document

@@ -1,7 +1,9 @@
 using System.Globalization;
 using Aspose.Cli.TestKit;
 using Aspose.Words;
+using Aspose.Words.Drawing;
 using Aspose.Words.Saving;
+using Aspose.Words.Tables;
 using Xunit;
 
 namespace Aspose.Cli.Product.Words.Tests;
@@ -315,5 +317,59 @@ public sealed class WordsKnownIssueTests
         using var stream = new MemoryStream();
         document.Save(stream, options);
         return System.Text.Encoding.UTF8.GetString(stream.ToArray());
+    }
+
+    /// <summary>
+    /// Setting a table's style clears each setting set_table_style writes back, every one set
+    /// alone on a table of its own, so an SDK that keeps any of them fails here.
+    /// </summary>
+    [Fact]
+    public void TableStyle_ClearsTheSettingsATableMakesItself()
+    {
+        using var fixture = new WordsFixture();
+        static void Float(Table table) => table.TextWrapping = Aspose.Words.Tables.TextWrapping.Around;
+        var settings = new (string Name, Action<Table> Set, Func<Table, object> Get)[]
+        {
+            ("alignment", static table => table.Alignment = TableAlignment.Center, static table => table.Alignment),
+            ("left indent", static table => table.LeftIndent = 36, static table => table.LeftIndent),
+            ("text wrapping", Float, static table => table.TextWrapping),
+            ("horizontal anchor", static table => { Float(table); table.HorizontalAnchor = RelativeHorizontalPosition.Page; }, static table => table.HorizontalAnchor),
+            ("vertical anchor", static table => { Float(table); table.VerticalAnchor = RelativeVerticalPosition.Page; }, static table => table.VerticalAnchor),
+            ("absolute horizontal distance", static table => { Float(table); table.AbsoluteHorizontalDistance = 72; }, static table => table.AbsoluteHorizontalDistance),
+            ("absolute vertical distance", static table => { Float(table); table.AbsoluteVerticalDistance = 90; }, static table => table.AbsoluteVerticalDistance),
+            ("relative horizontal alignment", static table => { Float(table); table.RelativeHorizontalAlignment = HorizontalAlignment.Right; }, static table => table.RelativeHorizontalAlignment),
+            ("relative vertical alignment", static table => { Float(table); table.RelativeVerticalAlignment = VerticalAlignment.Bottom; }, static table => table.RelativeVerticalAlignment),
+            ("distance left", static table => { Float(table); table.DistanceLeft = 10; }, static table => table.DistanceLeft),
+            ("distance right", static table => { Float(table); table.DistanceRight = 11; }, static table => table.DistanceRight),
+            ("distance top", static table => { Float(table); table.DistanceTop = 12; }, static table => table.DistanceTop),
+            ("distance bottom", static table => { Float(table); table.DistanceBottom = 13; }, static table => table.DistanceBottom),
+            ("right-to-left", static table => table.Bidi = true, static table => table.Bidi),
+            ("title", static table => table.Title = "Revenue", static table => table.Title),
+            ("description", static table => table.Description = "Revenue by line", static table => table.Description),
+            ("style options", static table => table.StyleOptions = TableStyleOptions.LastRow | TableStyleOptions.ColumnBands, static table => table.StyleOptions),
+            ("heading row", static table => table.FirstRow.RowFormat.HeadingFormat = true, static table => table.FirstRow.RowFormat.HeadingFormat),
+            ("row break", static table => table.FirstRow.RowFormat.AllowBreakAcrossPages = false, static table => table.FirstRow.RowFormat.AllowBreakAcrossPages),
+            ("cell vertical alignment", static table => table.FirstRow.FirstCell.CellFormat.VerticalAlignment = CellVerticalAlignment.Center, static table => table.FirstRow.FirstCell.CellFormat.VerticalAlignment),
+        };
+
+        string[] kept = [.. settings.Where(static setting =>
+        {
+            var document = new Document();
+            var builder = new DocumentBuilder(document);
+            Table table = builder.StartTable();
+            builder.InsertCell();
+            builder.Write("Cell");
+            builder.EndRow();
+            builder.EndTable();
+            setting.Set(table);
+            object before = setting.Get(table);
+            table.Style = document.Styles["Grid Table 4"];
+            return Equals(setting.Get(table), before);
+        }).Select(static setting => setting.Name)];
+
+        KnownIssue.Reproduces(
+            "WORDS-TABLE-STYLE-RESET",
+            kept.Length == 0,
+            kept.Length == 0 ? "every setting cleared" : $"kept: {string.Join(", ", kept)}");
     }
 }

@@ -4,6 +4,7 @@ using System.Text.RegularExpressions;
 using Aspose.Cli.Product.Words.Engine.Mapping;
 using Aspose.Cli.Sdk.Text;
 using Aspose.Words;
+using Aspose.Words.Drawing;
 using Aspose.Words.Lists;
 using Aspose.Words.Replacing;
 using Aspose.Words.Tables;
@@ -274,6 +275,89 @@ internal sealed partial class WordsMutationHandlers
             && cell.ParentRow == row
             && cell.LastParagraph == paragraph;
     }
+
+    /// <summary>The table's style; its own style again asks the engine for nothing, so it changes nothing.</summary>
+    public ValueTuple Apply(SetTableStyleOp operation)
+    {
+        Table table = TargetTable("set_table_style");
+        Style style = GetTableStyle(_document, operation.TableStyle);
+        if (table.StyleName != style.Name)
+        {
+            Restyle(table, style);
+        }
+
+        return default;
+    }
+
+    /// <summary>
+    /// Sets a table's style keeping the settings the table makes itself, which the engine clears
+    /// with the style (WORDS-TABLE-STYLE-RESET). They read once before, and once more on the old
+    /// style alone after a change away and back, which clears them; a value that differs from the
+    /// old style's is the table's own and is written back over the new style. A value the table
+    /// sets to what the old style gives reads as the style's, and gives way to the new one.
+    /// </summary>
+    private static void Restyle(Table table, Style style)
+    {
+        (Func<object> Get, Action<object> Set)[] settings = [.. TableOwnSettings(table)];
+        object[] own = [.. settings.Select(static setting => setting.Get())];
+        Style old = table.Style;
+        table.Style = style;
+        table.Style = old;
+        object[] inherited = [.. settings.Select(static setting => setting.Get())];
+        table.Style = style;
+        for (int index = 0; index < settings.Length; index++)
+        {
+            if (!Equals(own[index], inherited[index]))
+            {
+                settings[index].Set(own[index]);
+            }
+        }
+    }
+
+    // The settings Restyle keeps: the table's, each row's and each cell's, read and written in this order.
+    private static IEnumerable<(Func<object> Get, Action<object> Set)> TableOwnSettings(Table table) =>
+        KeptTableSettings.Select(setting => Bound(setting, table))
+            .Concat(table.Rows.Cast<Row>().SelectMany(row => KeptRowSettings.Select(setting => Bound(setting, row.RowFormat))))
+            .Concat(table.Rows.Cast<Row>().SelectMany(static row => row.Cells.Cast<Cell>())
+                .SelectMany(cell => KeptCellSettings.Select(setting => Bound(setting, cell.CellFormat))));
+
+    private static (Func<object> Get, Action<object> Set) Bound<T>((Func<T, object> Get, Action<T, object> Set) setting, T target) =>
+        (() => setting.Get(target), value => setting.Set(target, value));
+
+    // A table's own settings, but its borders, cell margins and cell spacing, which give way to the
+    // style. Wrapping comes before the position it floats by; an absolute distance and a relative
+    // alignment exclude each other, and only the one that differs from the old style's is written.
+    private static readonly (Func<Table, object> Get, Action<Table, object> Set)[] KeptTableSettings =
+    [
+        (static table => table.Alignment, static (table, value) => table.Alignment = (TableAlignment)value),
+        (static table => table.LeftIndent, static (table, value) => table.LeftIndent = (double)value),
+        (static table => table.TextWrapping, static (table, value) => table.TextWrapping = (TextWrapping)value),
+        (static table => table.HorizontalAnchor, static (table, value) => table.HorizontalAnchor = (RelativeHorizontalPosition)value),
+        (static table => table.VerticalAnchor, static (table, value) => table.VerticalAnchor = (RelativeVerticalPosition)value),
+        (static table => table.AbsoluteHorizontalDistance, static (table, value) => table.AbsoluteHorizontalDistance = (double)value),
+        (static table => table.AbsoluteVerticalDistance, static (table, value) => table.AbsoluteVerticalDistance = (double)value),
+        (static table => table.RelativeHorizontalAlignment, static (table, value) => table.RelativeHorizontalAlignment = (HorizontalAlignment)value),
+        (static table => table.RelativeVerticalAlignment, static (table, value) => table.RelativeVerticalAlignment = (VerticalAlignment)value),
+        (static table => table.DistanceLeft, static (table, value) => table.DistanceLeft = (double)value),
+        (static table => table.DistanceRight, static (table, value) => table.DistanceRight = (double)value),
+        (static table => table.DistanceTop, static (table, value) => table.DistanceTop = (double)value),
+        (static table => table.DistanceBottom, static (table, value) => table.DistanceBottom = (double)value),
+        (static table => table.Bidi, static (table, value) => table.Bidi = (bool)value),
+        (static table => table.Title, static (table, value) => table.Title = (string)value),
+        (static table => table.Description, static (table, value) => table.Description = (string)value),
+        (static table => table.StyleOptions, static (table, value) => table.StyleOptions = (TableStyleOptions)value),
+    ];
+
+    private static readonly (Func<RowFormat, object> Get, Action<RowFormat, object> Set)[] KeptRowSettings =
+    [
+        (static row => row.HeadingFormat, static (row, value) => row.HeadingFormat = (bool)value),
+        (static row => row.AllowBreakAcrossPages, static (row, value) => row.AllowBreakAcrossPages = (bool)value),
+    ];
+
+    private static readonly (Func<CellFormat, object> Get, Action<CellFormat, object> Set)[] KeptCellSettings =
+    [
+        (static cell => cell.VerticalAlignment, static (cell, value) => cell.VerticalAlignment = (CellVerticalAlignment)value),
+    ];
 
     public ValueTuple Apply(SetListOp operation)
     {
