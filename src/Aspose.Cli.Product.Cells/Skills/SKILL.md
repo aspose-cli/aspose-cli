@@ -91,10 +91,12 @@ gives an operation's fields. A table in a Word, PDF or slide file is theirs.
 - An open-ended request ("make me a sales sheet") gets the full deliverable:
   realistic data, a Detail sheet and a designed Dashboard sheet
   (`aspose-cli docs cells/design-system`).
-- A CSV or TSV in another encoding than UTF-8 (`INPUT_ENCODING_INVALID`) or
-  with decimal commas (`FORMAT_AMBIGUOUS`) is refused: import it once with
-  `cells convert data.csv --to xlsx` and the `--encoding` or `--culture` the
-  hint names. `TEXT_TABLE_LAYOUT` means the table does not start at row 1;
+- A CSV or TSV in another encoding than UTF-8 (`INPUT_ENCODING_INVALID`) is
+  refused: import it once with `cells convert data.csv --to xlsx` and the
+  `--encoding` the hint names. In a file that writes decimal commas (`2,71`)
+  every number with a comma or a point stays text (`NUMBERS_READ_AS_TEXT`):
+  convert with the `--culture` its hint names to read them as numbers.
+  `TEXT_TABLE_LAYOUT` means the table does not start at row 1;
   take its rows from the message (`aspose-cli docs cells/troubleshooting`).
 
 ## Common mistakes

@@ -16,6 +16,12 @@ internal sealed record LoadedWorkbook(Workbook Workbook, WorkbookResources Resou
     internal Warning? CalculatedOnOpen { get; init; }
 
     /// <summary>
+    /// Says that a delimited text input writes a decimal comma, so its numbers written with a comma
+    /// or a point are text (<see cref="CellsTextImport.KeepSeparatedNumbersAsText"/>); null otherwise.
+    /// </summary>
+    internal Warning? NumbersReadAsText { get; init; }
+
+    /// <summary>
     /// The evaluation warning sheet that was the active sheet and the sheet activated in memory
     /// in its place; null otherwise. Read its warning through <see cref="SkippedSheetWarning"/>,
     /// since it is true only of a command that defaulted to the active sheet.
@@ -75,7 +81,7 @@ internal sealed record LoadedWorkbook(Workbook Workbook, WorkbookResources Resou
     /// </summary>
     internal IReadOnlyList<Warning>? Warnings(params Warning?[] additional)
     {
-        Warning[] warnings = Resources.Warnings.Append(CalculatedOnOpen).Concat(additional).OfType<Warning>().ToArray();
+        Warning[] warnings = Resources.Warnings.Append(NumbersReadAsText).Append(CalculatedOnOpen).Concat(additional).OfType<Warning>().ToArray();
         return warnings.Length == 0 ? null : warnings;
     }
 

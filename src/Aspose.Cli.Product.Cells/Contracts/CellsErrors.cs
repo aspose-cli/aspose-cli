@@ -62,15 +62,7 @@ public static class CellsErrors
         $"Import it with its encoding: {Import(path).Option("--encoding", "gb18030")} "
             + "(Chinese Windows and ERP exports; use big5, shift_jis, windows-1252 or another name for other sources).");
 
-    /// <summary>A delimited text input writes numbers in a form invariant parsing would change.</summary>
-    internal static CliException TextNumbersAmbiguous(string path, string sample, int line) => CliErrors.NumberFormatAmbiguous(
-        path,
-        sample,
-        line,
-        $"Import it with its culture: {Import(path).Option("--culture", "de-DE")} "
-            + "(or another culture that writes a decimal comma). The culture also reads its dates.");
-
-    // The conversion of a delimited text input to a workbook, which a text input carries no password for.
-    private static ContinuationCommand Import(string path) =>
+    /// <summary>The conversion of a delimited text input to a workbook, which a text input carries no password for.</summary>
+    internal static ContinuationCommand Import(string path) =>
         new ContinuationInput(path).ContinuationAt("cells", "convert").Option("--to", "xlsx");
 }

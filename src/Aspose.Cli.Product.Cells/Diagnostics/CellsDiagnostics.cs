@@ -42,6 +42,12 @@ internal static class CellsDiagnostics
     /// </summary>
     internal static readonly WarningCode TextTableLayout = new("TEXT_TABLE_LAYOUT");
 
+    /// <summary>
+    /// A delimited text input read without a culture writes a decimal comma, so its numbers written
+    /// with a comma or a point were kept as text.
+    /// </summary>
+    internal static readonly WarningCode NumbersReadAsText = new("NUMBERS_READ_AS_TEXT");
+
     /// <summary>A PDF export splits a chart across pages.</summary>
     internal static readonly WarningCode ChartSplitAcrossPages = new("CHART_SPLIT_ACROSS_PAGES");
 
@@ -91,6 +97,7 @@ internal static class CellsDiagnostics
         DiagnosticDescriptor.Warning(RenderImageLarge),
         DiagnosticDescriptor.Warning(ActiveSheetSkipped),
         DiagnosticDescriptor.Warning(TextTableLayout),
+        DiagnosticDescriptor.Warning(NumbersReadAsText),
         DiagnosticDescriptor.Warning(ExternalLinkCacheMissing),
         DiagnosticDescriptor.Warning(ExternalLinkRelative),
         DiagnosticDescriptor.Warning(FormulaFunctionUnknown),

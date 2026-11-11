@@ -452,20 +452,6 @@ public static partial class CliErrors
         details: new JsonObject { ["path"] = path, ["offset"] = offset });
 
     /// <summary>
-    /// A text file whose numbers read differently in different cultures, such as a decimal
-    /// comma, so the caller must name its culture rather than have the CLI guess.
-    /// </summary>
-    /// <param name="path">The text file.</param>
-    /// <param name="sample">A number from the file that the invariant culture would change.</param>
-    /// <param name="line">The 1-based line of <paramref name="sample"/>.</param>
-    /// <param name="hint">How to name the file's culture to the command that reads it.</param>
-    public static CliException NumberFormatAmbiguous(string path, string sample, int line, string hint) => CliException.Create(
-        ErrorCodes.FormatAmbiguous,
-        $"'{Path.GetFileName(path)}' writes numbers such as '{sample}' (line {line}) with a decimal comma; read with invariant formats they would become different numbers.",
-        hint: hint,
-        details: new JsonObject { ["path"] = path, ["sample"] = sample, ["line"] = line });
-
-    /// <summary>
     /// A view's artifacts exceed one of their limits; the hint names <paramref name="variable"/>,
     /// the environment variable that sets the limit they reached (<c>ViewArtifactLimits</c>).
     /// </summary>

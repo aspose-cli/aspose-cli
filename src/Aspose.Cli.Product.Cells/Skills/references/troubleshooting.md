@@ -96,6 +96,16 @@ input: the JSON takes its keys from a sheet's first used row and writes every
 row below it as a record, so a title row makes the real header a record, an
 empty row a `null` record and a total row a record a sum counts twice.
 
+## Numbers with a decimal comma
+
+A CSV read without `--culture` that writes a decimal comma anywhere (`2,71`,
+`1.253,96`) keeps every number written with a comma or a point as text, since
+`1,234` may then be a decimal and `1.234` a thousand.
+Every command that reads the file warns `NUMBERS_READ_AS_TEXT` with one such
+cell, and its hint converts the file with `--culture de-DE`, which fits a file
+whose decimals all have a comma. If the file also writes a decimal point
+(`19.90`), a culture like en-US wrote it, and de-DE would read `19.90` as 1990.
+
 ## Evaluation mode in workbooks
 
 Without a Cells license, every saved workbook gains an "Evaluation Warning"

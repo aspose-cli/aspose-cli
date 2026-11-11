@@ -13,32 +13,20 @@ namespace Aspose.Cli.Product.Cells.Engine.Mapping;
 /// value read from it is written back. Nothing is left to the machine's regional settings: a text
 /// input is read with a byte order mark, a named encoding or strict UTF-8, and with a named
 /// culture or as written (<see cref="Reads"/>), which a delimited text output writes back as it
-/// shows (<see cref="WriteAsShown"/>). An input that UTF-8 reading would change, or that writes
-/// decimal commas, is refused with the options that read it.
+/// shows (<see cref="WriteAsShown"/>); in a file that writes a decimal comma, numbers with a comma
+/// or a point stay text (<see cref="KeepSeparatedNumbersAsText"/>). An input that UTF-8 reading
+/// would change is refused with the encoding that reads it.
 /// </summary>
 internal static partial class CellsTextImport
 {
-    private const int NumberScanCharacters = 1 << 20;
-    private const int NumberScanLines = 10_000;
-
     static CellsTextImport() => Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
 
     /// <summary>The input's encoding, and the culture the caller named for it, null when none.</summary>
     internal static (Encoding Encoding, CultureInfo? Culture) Resolve(
         string path,
-        char separator,
         CellsTextImportOptions? options,
-        ResourceBudgetLedger budgets)
-    {
-        Encoding encoding = ResolveEncoding(path, options?.Encoding, budgets);
-        if (options?.Culture is { } name)
-        {
-            return (encoding, ResolveCulture(name));
-        }
-
-        RejectDecimalCommas(path, separator, encoding);
-        return (encoding, null);
-    }
+        ResourceBudgetLedger budgets) =>
+        (ResolveEncoding(path, options?.Encoding, budgets), options?.Culture is { } name ? ResolveCulture(name) : null);
 
     /// <summary>
     /// The engine's options for a text input, loaded within <see cref="Invariant"/>. The engine
@@ -54,8 +42,56 @@ internal static partial class CellsTextImport
         ConvertNumericData = true,
         ConvertDateTimeData = true,
         LoadStyleStrategy = TxtLoadStyleStrategy.ExactFormat,
-        PreferredParsers = culture is null ? [AsWritten.Instance] : null,
+        PreferredParsers = culture is null ? [new AsWritten()] : null,
     };
+
+    /// <summary>
+    /// Keeps as text, once a text input loaded with <paramref name="options"/> as written wrote a
+    /// decimal comma anywhere (2,71, 1.253,96), every number of <paramref name="sheet"/> it wrote
+    /// with a comma or a point, whose meaning such a file leaves open: 1,234 may be a decimal number
+    /// and 1.234 a thousand. Returns the warning that says so, with the conversion that reads the
+    /// numbers in the culture that wrote them, for <paramref name="input"/>, a user's input; null
+    /// for a read-back or a file without a decimal comma.
+    /// </summary>
+    internal static Warning? KeepSeparatedNumbersAsText(LoadOptions options, Worksheet sheet, string? input) => Invariant(() =>
+    {
+        if (options is not TxtLoadOptions { PreferredParsers: [AsWritten { DecimalCommas: true }] })
+        {
+            return null;
+        }
+
+        var separated = new List<Cell>();
+        Cell? sample = null;
+        int count = 0;
+        foreach (Cell cell in sheet.Cells)
+        {
+            if (cell.Type == CellValueType.IsNumeric && cell.StringValue.IndexOfAny([',', '.']) >= 0)
+            {
+                separated.Add(cell);
+            }
+            else if (cell.Type == CellValueType.IsString && DecimalComma().IsMatch(cell.StringValue.Trim()))
+            {
+                sample ??= cell;
+                count++;
+            }
+        }
+
+        foreach (Cell cell in separated)
+        {
+            cell.PutValue(cell.StringValue);
+        }
+
+        return input is null || sample is null ? null : new Warning(CellsDiagnostics.NumbersReadAsText,
+            $"'{Path.GetFileName(input)}' writes numbers with a decimal comma, such as '{sample.StringValue}' in {sample.Name}, "
+                + $"so its {count + separated.Count} number(s) written with a comma or a point are kept as text rather than read by a guess.")
+        {
+            Hint = $"Read them as numbers with the culture that wrote them: {CellsErrors.Import(input).Option("--culture", "de-DE")}. "
+                + "That fits a file whose decimals all have a comma; if it also writes a decimal point, such as 19.90, "
+                + "a culture like en-US wrote it, and de-DE would read 19.90 as 1990.",
+            Docs = "cells/troubleshooting",
+            Location = CellsAddresses.At("cell", sheet.Name, sample.Name),
+        };
+    });
 
     /// <summary>
     /// Runs <paramref name="work"/> with the thread's culture set to the invariant one, then sets
@@ -158,16 +194,26 @@ internal static partial class CellsTextImport
 
     /// <summary>
     /// Reads a value as the number, date or boolean <see cref="Reads"/> gives it, which the engine
-    /// types as it loads; any other value is text.
+    /// types as it loads, and any other value as text, and notes whether the input writes a decimal
+    /// comma (<see cref="KeepSeparatedNumbersAsText"/>). One load uses one.
     /// </summary>
     private sealed class AsWritten : ICustomParser
     {
-        internal static readonly AsWritten Instance = new();
+        internal bool DecimalCommas { get; private set; }
 
-        public object? ParseObject(string value) => Reads(value) is null ? value : null;
+        public object? ParseObject(string value)
+        {
+            DecimalCommas = DecimalCommas || DecimalComma().IsMatch(value.Trim());
+            return Reads(value) is null ? value : null;
+        }
 
         public string GetFormat() => string.Empty;
     }
+
+    // A number written with a decimal comma: a comma before one, two, or four and more digits, or
+    // after dot thousands groups. A comma before exactly three digits may be a thousands separator.
+    [GeneratedRegex(@"^[-+]?(?:\d+,\d{1,2}|\d+,\d{4,}|\d{1,3}(?:\.\d{3})+,\d+)$", RegexOptions.CultureInvariant)]
+    private static partial Regex DecimalComma();
 
     // A zero followed by a digit after any leading spaces, currency symbols, parentheses and signs.
     [GeneratedRegex(@"^[\s(+\-\p{Sc}]*0\d", RegexOptions.CultureInvariant)]
@@ -275,55 +321,4 @@ internal static partial class CellsTextImport
             throw CellsErrors.TextEncodingInvalid(path, Math.Max(0, offset + exception.Index));
         }
     }
-
-    /// <summary>
-    /// Refuses a number that invariant parsing would change: a decimal comma ("2,71"), alone or
-    /// after dot thousands groups ("1.253,96"). A comma followed by exactly three digits stays
-    /// readable as a thousands separator, so "1,234" is not refused.
-    /// </summary>
-    private static void RejectDecimalCommas(string path, char separator, Encoding encoding)
-    {
-        using var reader = new StreamReader(InputFiles.OpenRead(path), encoding, detectEncodingFromByteOrderMarks: true);
-        char[] window = new char[NumberScanCharacters];
-        int length = reader.ReadBlock(window, 0, window.Length);
-        int lineNumber = 0;
-        foreach (string line in new string(window, 0, length).Split('\n').Take(NumberScanLines))
-        {
-            lineNumber++;
-            foreach (string field in Fields(line.TrimEnd('\r'), separator))
-            {
-                if (DecimalComma().IsMatch(field))
-                {
-                    throw CellsErrors.TextNumbersAmbiguous(path, field, lineNumber);
-                }
-            }
-        }
-    }
-
-    private static IEnumerable<string> Fields(string line, char separator)
-    {
-        var field = new StringBuilder();
-        bool quoted = false;
-        foreach (char character in line)
-        {
-            if (character == '"')
-            {
-                quoted = !quoted;
-            }
-            else if (character == separator && !quoted)
-            {
-                yield return field.ToString().Trim();
-                field.Clear();
-            }
-            else
-            {
-                field.Append(character);
-            }
-        }
-
-        yield return field.ToString().Trim();
-    }
-
-    [GeneratedRegex(@"^[-+]?(?:\d+,\d{1,2}|\d+,\d{4,}|\d{1,3}(?:\.\d{3})+,\d+)$", RegexOptions.CultureInvariant)]
-    private static partial Regex DecimalComma();
 }

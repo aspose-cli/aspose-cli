@@ -209,6 +209,129 @@ public sealed class CellsTextValuesAsWrittenTests : IDisposable
             new Dictionary<string, string?> { ["DOTNET_STARTUP_HOOKS"] = typeof(CellsTextValuesAsWrittenTests).Assembly.Location },
             TestLicense.Path is { } license ? [.. args, "--license", license] : args);
 
+    // German prices separated by semicolons: decimal commas (2,71, 0,5) beside numbers a comma
+    // would group into thousands elsewhere (1,234, 12,500), a whole number and a date.
+    private static readonly string[] GermanPrices =
+        ["Artikel;Preis", "A;2,71", "B;1,234", "C;0,5", "D;12,500", "E;20", "F;2026-01-05"];
+
+    /// <summary>
+    /// Decimal commas, and every number written with a comma in a file that writes them, are the
+    /// text they are without <c>--culture</c>: <c>cells read</c> reports them as written, and an
+    /// edit of another cell writes their rows back as the input did, warns, and verifies the one
+    /// change it made, since it reads its output as it read its input.
+    /// </summary>
+    [Fact]
+    public void DecimalCommas_ReadAndWriteBackAsTheInputWroteThem()
+    {
+        string[] rows = ["Land,Preis", "DE,\"2,71\"", "FR,\"1.253,96\"", "IT,\"1,23\"", "US,\"1,234\"", "UK,\"12,500\"", "CH,20"];
+        Write("prices.csv", rows);
+
+        CliResult read = Cli("cells", "read", "prices.csv", "--output-format", "json");
+        CliResult edited = Cli("cells", "edit", "prices.csv", "--out", "out.csv", "--verify", "--output-format", "json",
+            "--ops", """{"ops":[{"op":"set_values","range":"A1","values":[["Country"]]}]}""");
+
+        Assert.True(read.ExitCode == 0, $"exit {read.ExitCode}: {read.StdErr}{read.StdOut}");
+        Assert.Equal(
+            ["string 2,71", "string 1.253,96", "string 1,23", "string 1,234", "string 12,500", "number 20"],
+            read.Json()["sheet"]!["cells"]!.AsArray().Skip(1).Select(static row => $"{row![1]!["t"]} {row[1]!["v"]}"));
+        Assert.True(edited.ExitCode == 0, $"exit {edited.ExitCode}: {edited.StdErr}{edited.StdOut}");
+        Assert.Equal(["Country,Preis", .. rows[1..]], Written("out.csv"));
+        Assert.Contains("NUMBERS_READ_AS_TEXT", Warnings(edited));
+        JsonNode verification = edited.Json()["verification"]!;
+        Assert.True(verification["ok"]!.GetValue<bool>());
+        Assert.Equal(["A1"], verification["directChanges"]!.AsArray()
+            .Where(static change => !CellsEvaluation.IsNotice(change!["right"]?["v"]?.ToString()))
+            .Select(static change => change!["cell"]!.GetValue<string>()));
+    }
+
+    /// <summary>
+    /// In a csv that writes a decimal comma, before or after its other numbers, every number
+    /// written with a comma or a point is the text it is, while a whole number and a date keep
+    /// their type, and <c>cells read</c> says so in one NUMBERS_READ_AS_TEXT warning.
+    /// </summary>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void DecimalCommaFile_KeepsEveryNumberWithASeparatorAsText(bool decimalCommaLast)
+    {
+        string[] rows = decimalCommaLast ? [GermanPrices[0], .. GermanPrices[2..], GermanPrices[1]] : GermanPrices;
+        Write("prices.csv", rows);
+
+        CliResult read = Cli("cells", "read", "prices.csv", "--output-format", "json");
+
+        Assert.True(read.ExitCode == 0, $"exit {read.ExitCode}: {read.StdErr}{read.StdOut}");
+        Assert.Equal(
+            rows[1..].Select(static row => row.Split(';')[1] switch
+            {
+                "20" => "number 20",
+                "2026-01-05" => "datetime 2026-01-05",
+                var value => $"string {value}",
+            }),
+            read.Json()["sheet"]!["cells"]!.AsArray().Skip(1).Select(static row => $"{row![1]!["t"]} {row[1]!["v"]}"));
+        Assert.Single(Warnings(read), static code => code == "NUMBERS_READ_AS_TEXT");
+    }
+
+    /// <summary>A decimal comma past the first 10,000 rows keeps the numbers with a separator before it as text.</summary>
+    [Fact]
+    public void DecimalCommaFile_IsReadToItsEnd()
+    {
+        Write("long.csv", ["Artikel;Preis", .. Enumerable.Range(1, 10_050).Select(static row => $"R{row};1,234"), "Z;2,71"]);
+
+        CliResult read = Cli("cells", "read", "long.csv", "--range", "B2:B3", "--output-format", "json");
+
+        Assert.True(read.ExitCode == 0, $"exit {read.ExitCode}: {read.StdErr}{read.StdOut}");
+        Assert.Equal(["string 1,234", "string 1,234"],
+            read.Json()["sheet"]!["cells"]!.AsArray().Select(static row => $"{row![0]!["t"]} {row[0]!["v"]}"));
+        Assert.Contains("NUMBERS_READ_AS_TEXT", Warnings(read));
+    }
+
+    /// <summary>
+    /// The load raises the warning, so every command that reads such a file carries it, and the
+    /// workbook a conversion writes holds the numbers as the text cells it read.
+    /// </summary>
+    [Fact]
+    public void DecimalCommaFile_EveryCommandThatReadsItWarns()
+    {
+        Write("prices.csv", GermanPrices);
+        Write("copy.csv", GermanPrices);
+
+        CliResult[] runs =
+        [
+            Cli("cells", "read", "prices.csv", "--output-format", "json"),
+            Cli("cells", "inspect", "prices.csv", "--output-format", "json"),
+            Cli("cells", "search", "prices.csv", "--pattern", "2,71", "--output-format", "json"),
+            Cli("cells", "edit", "prices.csv", "--out", "edited.csv", "--output-format", "json",
+                "--ops", """{"ops":[{"op":"set_values","range":"A2","values":[["X"]]}]}"""),
+            Cli("cells", "convert", "prices.csv", "--to", "xlsx", "--out", "prices.xlsx", "--output-format", "json"),
+            Cli("cells", "compare", "prices.csv", "copy.csv", "--output-format", "json"),
+        ];
+
+        Assert.All(runs, static run => Assert.True(run.ExitCode == 0, $"exit {run.ExitCode}: {run.StdErr}{run.StdOut}"));
+        Assert.All(runs, static run => Assert.Contains("NUMBERS_READ_AS_TEXT", Warnings(run)));
+        Assert.Equal(["string 2,71", "string 1,234", "string 0,5", "string 12,500"], Cells("prices.xlsx", "prices", "B2", "B3", "B4", "B5"));
+    }
+
+    /// <summary>
+    /// Guardrail: a csv without a decimal comma reads its numbers with thousands separators as
+    /// the numbers they show, without the warning.
+    /// </summary>
+    [Fact]
+    public void FileWithoutADecimalComma_ReadsNumbersWithSeparatorsAsNumbers()
+    {
+        Write("us.csv", ["Region,Amount,Units", "East,\"1,234.50\",\"12,500\"", "West,980,\"2,000\""]);
+
+        CliResult read = Cli("cells", "read", "us.csv", "--output-format", "json");
+
+        Assert.True(read.ExitCode == 0, $"exit {read.ExitCode}: {read.StdErr}{read.StdOut}");
+        Assert.Equal(["number 1234.5", "number 12500", "number 980", "number 2000"],
+            read.Json()["sheet"]!["cells"]!.AsArray().Skip(1).SelectMany(static row => row!.AsArray().Skip(1)).Select(static cell => $"{cell!["t"]} {cell["v"]}"));
+        Assert.DoesNotContain("NUMBERS_READ_AS_TEXT", Warnings(read));
+    }
+
+    /// <summary>The codes of a result's warnings.</summary>
+    private static string[] Warnings(CliResult result) =>
+        [.. (result.Json()["warnings"]?.AsArray() ?? []).Select(static warning => warning!["code"]!.GetValue<string>())];
+
     /// <summary>
     /// Writes a table of a header, one row per value and a total row, every row two fields wide,
     /// and returns its rows.
