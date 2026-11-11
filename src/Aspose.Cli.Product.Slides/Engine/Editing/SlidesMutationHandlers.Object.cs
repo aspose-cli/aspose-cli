@@ -155,7 +155,7 @@ internal sealed partial class SlidesMutationHandlers
     {
         if (Shape is not IChart chart)
         {
-            throw Shape is IGroupShape group && Charts(group.Shapes, group).FirstOrDefault().Chart is { } grouped
+            throw Shape is IGroupShape group && SlidesTextUnits.Charts(group.Shapes).FirstOrDefault().Chart is { } grouped
                 ? new OperationInvalidException(
                     string.Create(CultureInfo.InvariantCulture, $"Shape {Shape.OfficeInteropShapeId} is a group, not a chart: no operation addresses chart '{grouped.Name}' (shapeId {grouped.OfficeInteropShapeId}) inside it."),
                     "To change its data, " + RebuildGroupedChart + ".")

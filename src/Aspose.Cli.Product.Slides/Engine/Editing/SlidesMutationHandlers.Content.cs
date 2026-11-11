@@ -4,7 +4,6 @@ using Aspose.Cli.Sdk.Text;
 using Aspose.Slides;
 using Aspose.Slides.Charts;
 using static Aspose.Cli.Product.Slides.Engine.SlidesEvaluationMarks;
-using static Aspose.Cli.Product.Slides.Engine.SlidesShapeText;
 
 namespace Aspose.Cli.Product.Slides.Engine.Editing;
 
@@ -37,14 +36,16 @@ internal sealed partial class SlidesMutationHandlers
     {
         TextReplacement replacement = TextReplacement.Create(
             operation.Find, operation.Replace, operation.Regex, operation.CaseSensitive, operation.WholeWord);
-        if (_evaluation && _presentation.Slides.SelectMany(slide => Frames(slide, operation.Scope)).Any(static frame => CutByEvaluation(frame.Text)))
+        // The watermark an evaluation save added is left alone.
+        ITextFrame[] frames = [.. SlidesTextUnits.Of(_presentation, operation.Scope)
+            .Where(unit => !_evaluation || !unit.IsEvaluationWatermark).SelectMany(static unit => unit.Frames)];
+        if (_evaluation && frames.Any(static frame => CutByEvaluation(frame.Text)))
         {
             _readInput();
         }
 
         int remaining = operation.MaxReplacementCount ?? int.MaxValue;
-        foreach (IParagraph paragraph in _presentation.Slides
-            .SelectMany(slide => Frames(slide, operation.Scope))
+        foreach (IParagraph paragraph in frames
             .SelectMany(static frame => frame.Paragraphs)
             .Where(paragraph => !_evaluation || !CutByEvaluation(paragraph.Text))
             .ToArray())
@@ -77,7 +78,7 @@ internal sealed partial class SlidesMutationHandlers
     {
         for (int number = 1; number <= _presentation.Slides.Count; number++)
         {
-            foreach ((IChart chart, IGroupShape? group) in Charts(_presentation.Slides[number - 1].Shapes, null))
+            foreach ((IChart chart, IGroupShape? group) in SlidesTextUnits.Charts(_presentation.Slides[number - 1].Shapes))
             {
                 string chartName = string.Create(CultureInfo.InvariantCulture, $"chart '{chart.Name}' (shapeId {chart.OfficeInteropShapeId})");
                 string where = group is null
@@ -85,7 +86,7 @@ internal sealed partial class SlidesMutationHandlers
                     : string.Create(CultureInfo.InvariantCulture, $"{chartName} in group '{group.Name}' (shapeId {group.OfficeInteropShapeId}) on slide {number}");
                 string location = SlidesStateProjection.ShapeAddress(number, chart.OfficeInteropShapeId);
                 Func<bool> Remains(Func<bool> holds) => () => _presentation.Slides
-                    .SelectMany(static slide => Charts(slide.Shapes, null)).Any(found => ReferenceEquals(found.Chart, chart)) && holds();
+                    .SelectMany(static slide => SlidesTextUnits.Charts(slide.Shapes)).Any(found => ReferenceEquals(found.Chart, chart)) && holds();
                 if (TitleMatches(chart, replacement))
                 {
                     _unreplaced.Add(UnreplacedText.Found(TextPart.ChartTitle, operation, "replace_text",
@@ -142,27 +143,6 @@ internal sealed partial class SlidesMutationHandlers
             $$"""{{change}}: read its kind, categories and series with 'slides read --slides {{number}} --content full', apply {"op":"delete_shape","slide":{{number}},"shapeId":{{chart.OfficeInteropShapeId}}}, then insert_chart on slide {{number}} with {{with}} and "rect":{{rect}}. The new chart takes the automatic chart style.""");
     }
 
-    /// <summary>Every chart among the shapes, a group's included, with the slide's own group that holds it, or null for a chart on the slide itself.</summary>
-    private static IEnumerable<(IChart Chart, IGroupShape? Group)> Charts(IShapeCollection shapes, IGroupShape? group)
-    {
-        foreach (IShape shape in shapes)
-        {
-            switch (shape)
-            {
-                case IChart chart:
-                    yield return (chart, group);
-                    break;
-                case IGroupShape inner:
-                    foreach ((IChart Chart, IGroupShape? Group) grouped in Charts(inner.Shapes, group ?? inner))
-                    {
-                        yield return grouped;
-                    }
-
-                    break;
-            }
-        }
-    }
-
     private static bool TitleMatches(IChart chart, TextReplacement replacement) =>
         chart.HasTitle && chart.ChartTitle.TextFrameForOverriding is { } title && FrameMatches(title, replacement);
 
@@ -199,18 +179,6 @@ internal sealed partial class SlidesMutationHandlers
     // Whether a category or series name holds a match; an empty one holds no text.
     private static bool Matches(TextReplacement replacement, string? text) =>
         !string.IsNullOrEmpty(text) && replacement.Matches(text, 1).Count > 0;
-
-    /// <summary>The text frames of a slide that a search scope reaches: its shapes, its speaker notes, or both.</summary>
-    private IEnumerable<ITextFrame> Frames(ISlide slide, string scope)
-    {
-        IEnumerable<ITextFrame> shapes = scope is SlidesSearchScopes.Shapes or SlidesSearchScopes.All
-            ? slide.Shapes.Where(shape => !_evaluation || !IsEvaluationWatermark(shape)).SelectMany(TextFrames)
-            : [];
-        return scope is SlidesSearchScopes.Notes or SlidesSearchScopes.All
-            && slide.NotesSlideManager.NotesSlide?.NotesTextFrame is { } notes
-            ? shapes.Append(notes)
-            : shapes;
-    }
 
     private static int Replace(IParagraph paragraph, TextReplacement replacement, int limit)
     {

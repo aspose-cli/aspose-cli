@@ -388,8 +388,7 @@ internal static partial class SlidesExport
             ? [.. shown.Where(number => holds(presentation.Slides[number - 1]))]
             : [];
 
-        static bool Has(IShapeCollection shapes, Func<IShape, bool> kind) =>
-            shapes.Any(shape => kind(shape) || (shape is IGroupShape group && Has(group.Shapes, kind)));
+        static bool Has(IShapeCollection shapes, Func<IShape, bool> kind) => SlidesTextUnits.Shapes(shapes).Any(found => kind(found.Shape));
     }
 
     internal static SlidesRenderResult Render(SlidesSession session, SlidesRenderRequest request)

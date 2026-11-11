@@ -332,14 +332,6 @@ internal static class SlidesStateProjection
             $"{paragraph.Text}|{paragraph.ParagraphFormat.GetEffective().Depth}|{paragraph.ParagraphFormat.GetEffective().Bullet.Type}")))
         : null;
 
-    /// <summary>Each paragraph's text as stored in a slide's shapes, but the evaluation watermark, and notes.</summary>
-    internal static IEnumerable<string> ParagraphTexts(ISlide slide, bool shapes, bool notes) =>
-        (shapes ? slide.Shapes.Where(static shape => !SlidesEvaluationMarks.IsEvaluationWatermark(shape)).SelectMany(TextFrames) : [])
-            .Concat(notes && slide.NotesSlideManager.NotesSlide?.NotesTextFrame is { } frame ? [frame] : [])
-            .SelectMany(static frame => frame.Paragraphs)
-            .Select(static paragraph => paragraph.Text)
-            .OfType<string>();
-
     /// <summary>A fill as stored: its type and color, or a picture fill's bytes by their digest.</summary>
     internal static string Fill(IFillFormat fill) =>
         fill.FillType == FillType.Picture
