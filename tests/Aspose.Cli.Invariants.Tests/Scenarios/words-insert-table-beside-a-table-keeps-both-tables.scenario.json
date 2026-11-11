@@ -13,7 +13,9 @@
     "image-after-table.json": { "text": "{\"ops\":[{\"op\":\"insert_image\",\"at\":{\"block\":3},\"position\":\"after\",\"path\":\"pic.png\"}]}" },
     "pic.png": { "base64": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=" },
     "back-to-back.md": { "text": "# Back to back\n\n| A | B |\n|---|---|\n| 1 | 2 |\n\n| C | D | E |\n|---|---|---|\n| 3 | 4 | 5 |\n\nLast paragraph.\n" },
-    "reject.json": { "text": "{\"ops\":[{\"op\":\"reject_revisions\"}]}" }
+    "reject.json": { "text": "{\"ops\":[{\"op\":\"reject_revisions\"}]}" },
+    "markdown-first.json": { "text": "{\"ops\":[{\"op\":\"insert_markdown\",\"at\":{\"block\":3},\"position\":\"after\",\"markdown\":\"| X | Y |\\n|---|---|\\n| 7 | 8 |\"}]}" },
+    "markdown-last.json": { "text": "{\"ops\":[{\"op\":\"insert_markdown\",\"at\":{\"block\":5},\"position\":\"before\",\"markdown\":\"Lead in.\\n\\n| X | Y |\\n|---|---|\\n| 9 | 9 |\"}]}" }
   },
   "steps": [
     {
@@ -222,6 +224,44 @@
           { "path": "document.tableCount", "equals": 2 },
           { "path": "tables[0].columnCount", "equals": 2 },
           { "path": "tables[1].columnCount", "equals": 3 }
+        ]
+      }
+    },
+    {
+      "args": ["words", "edit", "doc.docx", "--ops", "markdown-first.json", "--out", "markdown-first.docx"],
+      "expect": { "exitCode": 0, "json": [{ "path": "applied[0].targets", "equals": ["block/4", "block/5", "block/6"] }] }
+    },
+    {
+      "args": ["words", "read", "markdown-first.docx", "--blocks", "3-7"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "blocks[0].rowCount", "equals": 2 },
+          { "path": "blocks[0].values[0][0]", "equals": "A" },
+          { "path": "blocks[1].text", "equals": "" },
+          { "path": "blocks[2].kind", "equals": "table" },
+          { "path": "blocks[2].values[0][0]", "equals": "X" },
+          { "path": "blocks[3].text", "equals": "" },
+          { "path": "blocks[4].text", "equals": "Middle paragraph." }
+        ]
+      }
+    },
+    {
+      "args": ["words", "edit", "doc.docx", "--ops", "markdown-last.json", "--out", "markdown-last.docx"],
+      "expect": { "exitCode": 0, "json": [{ "path": "applied[0].targets", "equals": ["block/5", "block/6", "block/7"] }] }
+    },
+    {
+      "args": ["words", "read", "markdown-last.docx", "--blocks", "4-8"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "blocks[0].text", "equals": "Middle paragraph." },
+          { "path": "blocks[1].text", "equals": "Lead in." },
+          { "path": "blocks[2].kind", "equals": "table" },
+          { "path": "blocks[2].values[0][0]", "equals": "X" },
+          { "path": "blocks[3].text", "equals": "" },
+          { "path": "blocks[4].kind", "equals": "table" },
+          { "path": "blocks[4].values[0][0]", "equals": "C" }
         ]
       }
     }
