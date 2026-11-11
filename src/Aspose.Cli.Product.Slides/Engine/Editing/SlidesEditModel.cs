@@ -24,6 +24,9 @@ internal sealed class SlidesEditModel : IOperationModel<SlidesOp>
     // The operations that left text alone because evaluation mode read it cut short.
     private readonly HashSet<SlidesOp> _truncated = new(ReferenceEqualityComparer.Instance);
 
+    // The replace_text operations that found a match in a part they do not change.
+    private readonly HashSet<SlidesOp> _foundUnchanged = new(ReferenceEqualityComparer.Instance);
+
     // The operation that applied last: the snapshot after it reads what it left, even when it
     // deleted its own target.
     private SlidesOp? _applied;
@@ -64,6 +67,9 @@ internal sealed class SlidesEditModel : IOperationModel<SlidesOp>
         return target;
     }
 
+    /// <summary>Called with each operation just before it runs, as the verification needs it.</summary>
+    internal Action<SlidesOp>? Before { get; set; }
+
     /// <summary>What the operations reported about their results, such as a background they reset.</summary>
     internal IReadOnlyList<Warning> Warnings => _warnings;
 
@@ -76,6 +82,7 @@ internal sealed class SlidesEditModel : IOperationModel<SlidesOp>
         if (!ReferenceEquals(operation, _applied))
         {
             SlidesMutationHandlers.EnsureResolved(target);
+            Before?.Invoke(operation);
         }
 
         // After the operation, evaluation mode may read the text it wrote cut short.
@@ -86,11 +93,16 @@ internal sealed class SlidesEditModel : IOperationModel<SlidesOp>
     public void Apply(SlidesOp operation)
     {
         _applied = operation;
+        int unreplaced = _unreplaced.Count;
         new SlidesMutationHandlers(_inputs, _loader, _presentation, Target(operation), _warnings, _unreplaced, _evaluation, _secrets, () =>
         {
             _truncated.Add(operation);
             _readInput();
         }).Run();
+        if (_unreplaced.Count > unreplaced)
+        {
+            _foundUnchanged.Add(operation);
+        }
     }
 
     /// <summary>
@@ -140,12 +152,22 @@ internal sealed class SlidesEditModel : IOperationModel<SlidesOp>
                     _ => "Without one, set_text replaces a shape's whole text and set_notes a slide's whole speaker notes without reading them.",
                 },
         },
+        SlidesReplaceTextOp replace when _foundUnchanged.Contains(operation) => new NoEffect(NoEffectReasons.NoMatch,
+            $"Operation {operation.Id} (replace_text) replaced nothing: each match in scope '{replace.Scope}' is in a part it does not change, such as a chart, an alternative text, a comment, a layout or a master.")
+        {
+            Hint = "A TEXT_NOT_REPLACED warning names each such part the output still holds and how to change its text.",
+        },
         SlidesReplaceTextOp replace => new NoEffect(NoEffectReasons.NoMatch,
             $"Operation {operation.Id} (replace_text) matched no text in scope '{replace.Scope}', so nothing was replaced.")
         {
             Hint = "Search with 'slides search' and the same pattern and scope"
-                + (replace.Scope == SlidesSearchScopes.All ? ". " : ", or set \"scope\": \"all\" on the op to cover both shape text and speaker notes. ")
-                + "Chart text and alternative text are never matched.",
+                + replace.Scope switch
+                {
+                    SlidesSearchScopes.All => ". ",
+                    SlidesSearchScopes.Shapes or SlidesSearchScopes.Notes => ", or set \"scope\": \"all\" on the op to cover both shape text and speaker notes. ",
+                    _ => "; it replaces shape text and speaker notes, with scope shapes, notes or all. ",
+                }
+                + "A match outside shape text and notes, such as in a chart or an alternative text, is never replaced and is named by TEXT_NOT_REPLACED.",
         },
         _ => null,
     };

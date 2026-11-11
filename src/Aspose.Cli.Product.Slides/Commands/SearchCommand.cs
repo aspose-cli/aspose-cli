@@ -10,12 +10,12 @@ internal static class SearchCommand
     public static CommandDefinition<SlidesSearchRequest, SlidesSearchResult> Create()
     {
         var search = new SearchOptions(new SearchScopeGrammar(
-            "Search scope: the shape text, the speaker notes or both.",
+            "Search scope: the shape text (with alternative and chart text), the speaker notes, the comments, the layouts or masters the slides show, or all of them.",
             SlidesSearchScopes.Values,
             SlidesSearchScopes.All));
         return new(
             "search",
-            "Search presentation shape and speaker-notes text.",
+            "Search the text of a presentation's shapes, notes, comments, layouts and masters.",
             new CommandTraits { Input = SlidesInputs.Presentation },
             search.Options,
             (parse, standard) => new SlidesSearchRequest

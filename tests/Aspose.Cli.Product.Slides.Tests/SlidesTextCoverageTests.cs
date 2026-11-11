@@ -94,7 +94,7 @@ public sealed class SlidesTextCoverageTests
         // SLD-3: the sentences of the hint are joined with a space.
         Assert.Equal(
             "Search with 'slides search' and the same pattern and scope, or set \"scope\": \"all\" on the op to cover both shape text and speaker notes. "
-                + "Chart text and alternative text are never matched.",
+                + "A match outside shape text and notes, such as in a chart or an alternative text, is never replaced and is named by TEXT_NOT_REPLACED.",
             warning.Hint);
     }
 

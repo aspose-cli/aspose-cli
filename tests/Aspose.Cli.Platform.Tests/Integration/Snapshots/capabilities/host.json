@@ -2100,6 +2100,18 @@
                 {
                   "const": "text-box",
                   "description": "A text box, or another drawing that holds text."
+                },
+                {
+                  "const": "data-label",
+                  "description": "A data label of a chart."
+                },
+                {
+                  "const": "alt-text",
+                  "description": "The alternative text of a picture or shape, which screen readers and exported PDFs carry."
+                },
+                {
+                  "const": "layout",
+                  "description": "The text of a slide layout or master, which every slide on it shows."
                 }
               ]
             },

@@ -9,8 +9,9 @@ This page covers what is specific to presentations.
 each operation addressed when it ran; `--help` for `--verify` lists what it reads back, body
 paragraphs with their `list` included. The
 slide order covers `insert_slide`, `delete_slides`, `move_slide`, `copy_slide` and
-`import_slides`; for `replace_text` it compares how often the find text and the replacement
-occur in the operation's scope with what the operation did. `format_shape`, `set_shape_bounds`,
+`import_slides`; for `replace_text` it works out from the operation's input how often the find
+text should still match in the shape text and notes it writes once its replacements are made,
+and which parts it does not change keep a match, and compares the output with that. `format_shape`, `set_shape_bounds`,
 `set_background`, `delete_shape`, the inserted pictures, shapes, tables and charts,
 `set_table_cell` and `set_chart_data` are not read back: check them with the content reads and
 the review below.
@@ -20,7 +21,7 @@ holds it (each effect it does not hold is an issue). An operation a later one of
 changed again is left out, except for the slide order and the sections: their expectations
 build on each other, so an earlier `insert_slide`, `import_slides`, `move_slide` or
 `insert_section` is checked with the latest one. A `replace_text` is also left out when a later
-operation writes its find or replacement text in its scope. Every operation it leaves out is in
+operation changes how often its find text matches in its scope. Every operation it leaves out is in
 `uncheckedOps` with the reason, so `ok: true` says nothing about those. In evaluation mode no
 text is read back.
 

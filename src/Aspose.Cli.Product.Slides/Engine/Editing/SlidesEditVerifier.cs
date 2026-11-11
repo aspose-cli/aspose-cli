@@ -1,5 +1,4 @@
 using System.Globalization;
-using System.Text.RegularExpressions;
 using Aspose.Cli.Sdk.Diagnostics;
 using Aspose.Cli.Sdk.Text;
 using Aspose.Slides;
@@ -14,9 +13,10 @@ namespace Aspose.Cli.Product.Slides.Engine.Editing;
 /// each applied operation and turns the read-back into the verification. Only effects with a
 /// reliable read-back are recorded: the slide order, slide titles, shape text, body paragraphs
 /// with their levels and bullets, speaker notes, layouts, hidden slides, footers, transitions,
-/// sections, document properties, the slide size and, for replace_text, how often its find and
-/// replacement text occur in its scope, each as the operation left it in the edited
-/// presentation, on the slides it resolved when it ran. The batch is checked as a whole:
+/// sections, document properties and the slide size, each as the operation left it in the edited
+/// presentation, on the slides it resolved when it ran; for replace_text, what it should leave,
+/// worked out from its input: how often its find matches the text it writes once its
+/// replacements are made, and which parts it does not change hold a match. The batch is checked as a whole:
 /// an expectation that a later operation changes or removes is dropped and its operation stays
 /// unchecked, except that the slide order and the sections a later operation changes again carry
 /// the earlier operations into its expectation. An operation counts as checked when every effect
@@ -45,6 +45,8 @@ internal sealed class SlidesEditVerifier : IEditVerifier<SlidesOp>
     // Why each operation that cannot count as checked was left out.
     private readonly Dictionary<string, string> _incomplete = new(StringComparer.Ordinal);
     private readonly HashSet<string> _recorded = new(StringComparer.Ordinal);
+    // What each replace_text should leave, worked out from the presentation before it ran.
+    private readonly Dictionary<SlidesOp, string> _before = new(ReferenceEqualityComparer.Instance);
 
     /// <param name="presentation">The presentation the batch edits, which each record reads as the operation left it.</param>
     /// <param name="targets">Each operation's targets as resolved when it ran, which later operations may move.</param>
@@ -54,6 +56,15 @@ internal sealed class SlidesEditVerifier : IEditVerifier<SlidesOp>
         _presentation = presentation;
         _targets = targets;
         _evaluation = evaluation;
+    }
+
+    /// <summary>Works out what a replace_text should leave from the presentation before it runs.</summary>
+    internal void Before(SlidesOp operation)
+    {
+        if (operation is SlidesReplaceTextOp replace && !_evaluation)
+        {
+            _before[operation] = Left(_presentation, replace, _evaluation, replacing: true);
+        }
     }
 
     /// <summary>
@@ -69,7 +80,7 @@ internal sealed class SlidesEditVerifier : IEditVerifier<SlidesOp>
         // output should hold; its operations stay unchecked, or ride on the next cumulative one.
         foreach ((string key, Expectation expectation) in _expected.ToArray())
         {
-            if (expectation.Read(_presentation) != expectation.Value)
+            if (!expectation.Unmet && expectation.Read(_presentation) != expectation.Value)
             {
                 _expected.Remove(key);
                 Drop(key, expectation);
@@ -107,9 +118,9 @@ internal sealed class SlidesEditVerifier : IEditVerifier<SlidesOp>
                         ? ParagraphState(shape)
                         : null);
                 break;
-            case SlidesReplaceTextOp replace when !_evaluation:
+            case SlidesReplaceTextOp replace when !_evaluation && _before.Remove(operation, out string? left):
                 Expect(id, $"replace/{id}", SlidesDiagnostics.SlideContentMismatch, "the text replace_text left in its scope", AllSlides,
-                    presentation => Occurrences(presentation, replace));
+                    presentation => Left(presentation, replace, _evaluation, replacing: false), left);
                 break;
             case InsertSectionOp:
                 Expect(id, "sections", SlidesDiagnostics.SlideContentMismatch, "the sections", static _ => AllAddress("section"), static presentation =>
@@ -189,7 +200,7 @@ internal sealed class SlidesEditVerifier : IEditVerifier<SlidesOp>
     /// earlier expectation of the key; <paramref name="locate"/> gives the effect's target address
     /// in the output read back, which an issue reports as its location.
     /// </summary>
-    private void Expect(string id, string key, DiagnosticDescriptor code, string subject, Func<Presentation, string> locate, Func<Presentation, string?> read)
+    private void Expect(string id, string key, DiagnosticDescriptor code, string subject, Func<Presentation, string> locate, Func<Presentation, string?> read, string? expected = null)
     {
         if (_expected.Remove(key, out Expectation? earlier))
         {
@@ -198,7 +209,8 @@ internal sealed class SlidesEditVerifier : IEditVerifier<SlidesOp>
 
         List<string> ops = _carried.Remove(key, out List<string>? carried) ? carried : [];
         ops.Add(id);
-        _expected[key] = new Expectation(ops, code, subject, locate, read, read(_presentation));
+        string? now = read(_presentation);
+        _expected[key] = new Expectation(ops, code, subject, locate, read, expected ?? now) { Unmet = expected is not null && expected != now };
     }
 
     /// <summary>
@@ -228,38 +240,47 @@ internal sealed class SlidesEditVerifier : IEditVerifier<SlidesOp>
     private uint? TargetSlideId(SlideTargetOp operation) => _targets(operation).Slide?.SlideId;
 
     /// <summary>
-    /// How often replace_text's find text, and its replacement when it is literal text, occur in
-    /// the shapes and notes of its scope: the replaced text is gone and its replacement is there.
+    /// What replace_text leaves in its scope: how often its find matches the text it writes
+    /// (<see cref="SlidesTextUnits.Writes"/>), and which parts it does not change hold a match, by
+    /// location and part. <paramref name="replacing"/> first makes its replacements, as it would,
+    /// up to its most replacements, in the text it writes.
     /// </summary>
-    private static string Occurrences(Presentation presentation, SlidesReplaceTextOp replace)
+    private static string Left(Presentation presentation, SlidesReplaceTextOp replace, bool evaluation, bool replacing)
     {
-        Regex? regex = replace.Regex ? SafeRegex.Create(replace.Find, replace.CaseSensitive) : null;
-        StringComparison comparison = replace.CaseSensitive ? StringComparison.Ordinal : StringComparison.OrdinalIgnoreCase;
+        TextReplacement replacement = TextReplacement.Create(replace.Find, replace.Replace, replace.Regex, replace.CaseSensitive, replace.WholeWord);
+        int remaining = replace.MaxReplacementCount ?? int.MaxValue;
         long found = 0;
-        long replacements = 0;
-        // Each paragraph's text as stored, but the evaluation watermark's.
-        foreach (string text in SlidesTextUnits.Of(presentation, replace.Scope).Where(static unit => !unit.IsEvaluationWatermark)
-            .SelectMany(static unit => unit.Frames).SelectMany(static frame => frame.Paragraphs).Select(static paragraph => paragraph.Text).OfType<string>())
+        var parts = new SortedSet<string>(StringComparer.Ordinal);
+        foreach (SlidesTextUnit unit in SlidesTextUnits.Of(presentation, replace.Scope))
         {
-            found += regex is not null ? regex.Matches(text).Count : Count(text, replace.Find, comparison);
-            if (!replace.Regex && replace.Replace.Length > 0)
+            bool written = SlidesTextUnits.Writes(unit, evaluation);
+            if (unit.Part is null && !written)
             {
-                replacements += Count(text, replace.Replace, comparison);
+                continue;
+            }
+
+            foreach (string text in unit.Texts)
+            {
+                string after = text;
+                if (replacing && written && remaining > 0)
+                {
+                    (after, int replaced) = replacement.Replace(text, remaining);
+                    remaining -= replaced;
+                }
+
+                int count = after.Length == 0 ? 0 : replacement.Matches(after, int.MaxValue).Count;
+                if (written)
+                {
+                    found += count;
+                }
+                else if (count > 0)
+                {
+                    parts.Add($"{unit.Location}|{unit.Part}");
+                }
             }
         }
 
-        return string.Create(CultureInfo.InvariantCulture, $"{found}|{replacements}");
-    }
-
-    private static long Count(string text, string value, StringComparison comparison)
-    {
-        long count = 0;
-        for (int at = text.IndexOf(value, comparison); at >= 0; at = text.IndexOf(value, at + value.Length, comparison))
-        {
-            count++;
-        }
-
-        return count;
+        return string.Create(CultureInfo.InvariantCulture, $"{found}|{string.Join(",", parts)}");
     }
 
     private static ISlide? Slide(Presentation presentation, uint slideId) =>
@@ -274,5 +295,9 @@ internal sealed class SlidesEditVerifier : IEditVerifier<SlidesOp>
         string Subject,
         Func<Presentation, string> Locate,
         Func<Presentation, string?> Read,
-        string? Value);
+        string? Value)
+    {
+        /// <summary>Whether the presentation the operation left already differs from the value, which a later operation does not excuse.</summary>
+        public bool Unmet { get; init; }
+    }
 }

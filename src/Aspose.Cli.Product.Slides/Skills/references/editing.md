@@ -78,7 +78,10 @@ comments a deck already has.
   plain, as a Markdown paragraph is. `slides read --content full` reports each paragraph's
   `list` the same way. `set_text` keeps the placeholder's bullets on every line.
 - A shape's text in `slides read`, `slides search` and `extract --what text` includes its table
-  cells, group children and SmartArt nodes. Extracted text and notes put each paragraph on its
+  cells, group children and SmartArt nodes. `slides search` also finds a shape's alternative text
+  and a chart's title, axis titles, categories, series names and data labels; with `--scope all`
+  it finds the comments and the text outside the placeholders of the layouts and masters the
+  slides show, each also a scope of its own (`comments`, `layouts`, `masters`). Extracted text and notes put each paragraph on its
   own line; lines are separated by line feeds. `extract --what text` holds neither a shape's
   alternative text nor a chart's text: `slides read --content shapes` reports alternative
   text as each shape's `altText`, and `--content full` reports each chart's data.
@@ -86,8 +89,9 @@ comments a deck already has.
   matched characters change: the replacement takes the formatting of the first matched
   character, and other runs keep theirs. Its `itemsAffected` counts the shapes and notes whose
   text changed, not the replacements made in them. To check the replacements, run the edit
-  with `--verify`, which compares how often the find text and the replacement occur in the
-  output with what the operation did. In evaluation mode a paragraph that evaluation mode cut
+  with `--verify`, which works out from the operation's input how often the find text should
+  still match where it writes, and which parts it does not change keep a match, and compares the
+  output with that. In evaluation mode a paragraph that evaluation mode cut
   short is left as it is, and the result warns `EVALUATION_INPUT_TRUNCATED`.
 - `replace_text` does not change charts, neither their titles nor their data. With scope
   `shapes` or `all`, a chart whose title, categories or series names match stays as it was, and
@@ -101,14 +105,16 @@ comments a deck already has.
   ([charts](#charts)) as for its title. A chart inside a group warns as well, naming the group,
   but no operation addresses it. An axis title that matches stays too and warns with
   `details.part` `axis-title`; no operation changes an axis title, so report it as unchanged or
-  change it in a presentation editor.
+  change it in a presentation editor. A matching data label warns with `data-label`, an
+  alternative text with `alt-text`, a comment with `comment` and the text of a layout or master
+  with `layout`; none of them is changed.
 - `set_notes` replaces speaker-note text. `inspect --detail notes` reports only presence and
   character counts; read note text with `slides read --notes` or `extract --what notes`.
 - `set_footer` uses the layout's own footer, number and date placeholders; their position and
   style come from the template. A layout without them, as title layouts often hide footers,
   shows nothing, so its slides are left out of the operation's `targets`.
 - `slides read --content shapes` reports each shape's `altText`, which `replace_text` does not
-  reach. To replace a picture, `delete_shape` it and `insert_image` the new one at its `rect`
+  change. To replace a picture, `delete_shape` it and `insert_image` the new one at its `rect`
   with an `altText`.
 
 ## Charts

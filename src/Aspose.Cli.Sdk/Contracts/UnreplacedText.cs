@@ -39,8 +39,17 @@ public sealed class TextPart
     /// <summary>A text box.</summary>
     public static TextPart TextBox { get; } = new("text-box", "A text box, or another drawing that holds text.");
 
+    /// <summary>A chart's data label.</summary>
+    public static TextPart DataLabel { get; } = new("data-label", "A data label of a chart.");
+
+    /// <summary>The alternative text of a picture or shape.</summary>
+    public static TextPart AltText { get; } = new("alt-text", "The alternative text of a picture or shape, which screen readers and exported PDFs carry.");
+
+    /// <summary>The text of a slide layout or master, which every slide on it shows.</summary>
+    public static TextPart Layout { get; } = new("layout", "The text of a slide layout or master, which every slide on it shows.");
+
     /// <summary>Every part.</summary>
-    public static IReadOnlyList<TextPart> All { get; } = [HeaderFooter, Comment, ChartTitle, ChartData, AxisTitle, TextBox];
+    public static IReadOnlyList<TextPart> All { get; } = [HeaderFooter, Comment, ChartTitle, ChartData, AxisTitle, TextBox, DataLabel, AltText, Layout];
 
     /// <inheritdoc />
     public override string ToString() => Token;

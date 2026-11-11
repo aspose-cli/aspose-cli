@@ -77,7 +77,6 @@ with a license. Details: [evaluation mode](references/troubleshooting.md#evaluat
 - Splitting related changes over several edits; one batch can add a slide and fill it.
 - Trusting `--verify` alone: it does not read back formatting, geometry, inserted objects, table
   cells or chart data; read those with `slides read --content full` and look at the review.
-- Using `slides search` for chart text or alternative text: it does not see them.
 - Expecting speaker notes in a PDF or other export: read them with `slides read --notes`.
 - Delivering a converted file without its warnings: `HIDDEN_SLIDES_SKIPPED`, `ENCRYPTION_REMOVED`
   and `LOSSY_CONVERSION` change what the output holds
