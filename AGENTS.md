@@ -72,6 +72,16 @@ the check is its authority.
   `LocalServiceRuntimeTests`).
 - [SECURITY.md](SECURITY.md) names the tests behind each boundary it states, and
   `SecurityClaimsTests` keeps those names current.
+- An engine follows the habits of the Office program it models: it converts the types of text it
+  loads, joins tables that touch, clears settings when a style changes. The CLI promises its
+  caller, an agent that sees only results, to change what was asked and nothing else. So state
+  every engine load and save option that decides content, since a default is a decision nobody
+  made; and before an operation changes an existing object, find out with an engine-only example
+  what else the call changes and whether the result is the same after saving and opening again.
+- A check must not see through the eyes of what it checks. A verification expects what the
+  operation's input should leave, never the state read after the operation; a prediction and the
+  change it predicts share one rule; and a command that reads less than the document holds says
+  so through the owner of what it read (D15), not through each command that happens to notice.
 - The [gates](#gates) judge a change: never add a known violation to make a change pass. Code
   metrics (`eng/tools/CodeHealth`) are a diagnostic, never a target.
 
@@ -93,6 +103,7 @@ the check is its authority.
 | D12 | Path case: whether two local paths are the same, one is within another, or one is a UNC or device path | SDK `FilePaths` (`Comparer`, `Comparison`, `Same`, `IsWithin`, `IsRemoteOrDevice`), and the lock keys and the license identity derived from a path, whose bytes other distributions share (`LockKey`, `FoldedKey`) | `DecisionOwnershipTests` D12; `PathCaseTests`; `LockKeyBytesTests` |
 | D13 | Process identity and liveness: a process's start time, and whether a recorded process still runs | SDK `ProcessIdentity`; each caller states its own `ProcessLivenessPolicy` (access denied, vanishing, exit check, start tolerance, unknown start) | `DecisionOwnershipTests` D13; `ProcessIdentityTests` |
 | D14 | Continuation commands: a runnable command a hint, an error or a `window.next` names with a path or an option value in it | SDK `ContinuationCommand`, started on an input by `StandardInvocation.ContinuationAt` or `ContinuationInputExtensions.ContinuationAt`, which pass on the input's password variable; it quotes every value and asks for JSON. Text with placeholders only and the names of a command path splice no value | `DecisionOwnershipTests` D14 (`D14_RunnableCommandsWithValues_AreBuiltOnlyByContinuationCommand`); the `executable-hint` check (`ExecutableHints`), which in the scenarios and generated cases also runs the hints on an encrypted input, an input at a path with a space and an existing `--out` |
+| D15 | Text for its own sake: where a document holds the text a command finds, replaces, counts, extracts or checks for truncation, and whether a replacement writes it | Slides: `SlidesTextUnits`. A part a replacement does not change carries its `TextPart`, so the search finds it and `replace_text` names it without either listing the part; the replacement and the verification's prediction both ask `SlidesTextUnits.Writes`. A member that reads a shape's text for its structure, layout or state is listed with its reason. Planned: the same enumeration in Cells, Words and PDF, each merged first without a change of behavior | `SlidesTextUnitsOwnershipTests`; `SlidesTextSurfaceTests` (one marker in every part: found, and replaced or named) |
 
 ## Gates
 
