@@ -1,4 +1,5 @@
 using System.Data;
+using System.Globalization;
 using System.Text.RegularExpressions;
 using Aspose.Cli.Product.Words.Engine.Mapping;
 using Aspose.Cli.Sdk.Text;
@@ -50,11 +51,7 @@ internal sealed partial class WordsMutationHandlers
 
     public ValueTuple Apply(SetTableCellOp operation)
     {
-        if (Nodes.Count != 1 || Nodes[0] is not Table table)
-        {
-            throw Invalid("set_table_cell must target one table block");
-        }
-
+        Table table = TargetTable("set_table_cell");
         if (operation.Row > table.Rows.Count || operation.Column > table.Rows[operation.Row - 1].Cells.Count)
         {
             throw Invalid($"table cell {operation.Row},{operation.Column} is outside the table");
@@ -91,11 +88,7 @@ internal sealed partial class WordsMutationHandlers
 
     public ValueTuple Apply(RepeatTableRowOp operation)
     {
-        if (Nodes.Count != 1 || Nodes[0] is not Table table)
-        {
-            throw Invalid("repeat_table_row must target one table block");
-        }
-
+        Table table = TargetTable("repeat_table_row");
         Row template = TemplateRow(table, operation.Row);
         IReadOnlyList<IReadOnlyDictionary<string, string?>> items = WordsMergeData.Rows(operation.Items, operation.Path, _inputs);
         string[] keys = Placeholder.Matches(WordsText.Of(template))
@@ -161,6 +154,17 @@ internal sealed partial class WordsMutationHandlers
         RegexOptions.CultureInvariant,
         SafeRegex.DefaultTimeout);
 
+    /// <summary>
+    /// The one table block a table operation targets. Any other target is refused with what it
+    /// is: a paragraph, or how many blocks and how many of them tables, since a find text that a
+    /// cell holds often first matches a paragraph that holds it too.
+    /// </summary>
+    private Table TargetTable(string op) => Nodes is [Table table] ? table : throw Invalid(
+        Nodes.Count == 1
+            ? $"{op} must target one table block, but its target is 1 block, a paragraph"
+            : string.Create(CultureInfo.InvariantCulture, $"{op} must target one table block, but its target is {Nodes.Count} blocks, {Nodes.Count(static node => node is Table)} of them table(s)"),
+        "Address the table by its block number, as {\"block\": n}, which 'words inspect --detail tables' lists for each table.");
+
     private static Row TemplateRow(Table table, int? number)
     {
         if (number is int row)
@@ -215,11 +219,7 @@ internal sealed partial class WordsMutationHandlers
     /// </summary>
     public ValueTuple Apply(SetTablePaginationOp operation)
     {
-        if (Nodes.Count != 1 || Nodes[0] is not Table table)
-        {
-            throw Invalid("set_table_pagination must target one table block");
-        }
-
+        Table table = TargetTable("set_table_pagination");
         Row[] rows = table.Rows.Cast<Row>().ToArray();
         if (operation.HeaderRowCount > rows.Length)
         {

@@ -1,0 +1,68 @@
+{
+  "name": "words table operations refuse a target that is not one table block, saying what it is and where table block numbers are",
+  "files": {
+    "source.md": { "text": "# Report\n\nRevenue by line of business:\n\n| Line | Revenue |\n|---|---|\n| Retail | 120 |\n| {{code}} | {{name}} |\n\nClosing paragraph.\n" },
+    "find-revenue.json": { "text": "{\"ops\":[{\"op\":\"set_table_pagination\",\"target\":{\"find\":\"Revenue\"},\"headerRowCount\":1}]}" },
+    "by-block.json": { "text": "{\"ops\":[{\"op\":\"set_table_pagination\",\"target\":{\"block\":3},\"keepTogether\":true}]}" },
+    "cell-of-paragraph.json": { "text": "{\"ops\":[{\"op\":\"set_table_cell\",\"target\":{\"block\":2},\"row\":1,\"column\":1,\"text\":\"Segment\"}]}" },
+    "rows-of-two-blocks.json": { "text": "{\"ops\":[{\"op\":\"repeat_table_row\",\"target\":{\"blocks\":\"2-3\"},\"items\":[{\"code\":\"A\",\"name\":\"Alpha\"}]}]}" },
+    "find-retail.json": { "text": "{\"ops\":[{\"op\":\"set_table_pagination\",\"target\":{\"find\":\"Retail\"},\"keepTogether\":true}]}" },
+    "find-placeholder.json": { "text": "{\"ops\":[{\"op\":\"repeat_table_row\",\"target\":{\"find\":\"{{code}}\"},\"items\":[{\"code\":\"A\",\"name\":\"Alpha\"}]}]}" }
+  },
+  "steps": [
+    {
+      "args": ["words", "create", "doc.docx", "--from-markdown", "source.md"],
+      "expect": { "exitCode": 0 }
+    },
+    {
+      "args": ["words", "edit", "doc.docx", "--ops", "find-revenue.json", "--out", "a.docx"],
+      "expect": {
+        "error": "OPS_INVALID",
+        "json": [
+          { "path": "error.message", "contains": "set_table_pagination must target one table block, but its target is 1 block, a paragraph" },
+          { "path": "error.hint", "contains": "'words inspect --detail tables'" },
+          { "path": "error.hint", "contains": "block number" }
+        ],
+        "files": { "absent": ["a.docx"], "unchanged": ["doc.docx"] }
+      }
+    },
+    {
+      "args": ["words", "inspect", "doc.docx", "--detail", "tables"],
+      "expect": { "exitCode": 0, "json": [{ "path": "tables[0].block", "equals": 3 }] }
+    },
+    {
+      "args": ["words", "edit", "doc.docx", "--ops", "by-block.json", "--out", "a.docx"],
+      "expect": { "exitCode": 0, "json": [{ "path": "applied[0].targets[0]", "equals": "block/3" }] }
+    },
+    {
+      "args": ["words", "edit", "doc.docx", "--ops", "cell-of-paragraph.json", "--out", "b.docx"],
+      "expect": {
+        "error": "OPS_INVALID",
+        "json": [
+          { "path": "error.message", "contains": "set_table_cell must target one table block, but its target is 1 block, a paragraph" },
+          { "path": "error.hint", "contains": "'words inspect --detail tables'" }
+        ],
+        "files": { "absent": ["b.docx"] }
+      }
+    },
+    {
+      "args": ["words", "edit", "doc.docx", "--ops", "rows-of-two-blocks.json", "--out", "c.docx"],
+      "expect": {
+        "error": "OPS_INVALID",
+        "json": [
+          { "path": "error.message", "contains": "repeat_table_row must target one table block, but its target is 2 blocks, 1 of them table(s)" },
+          { "path": "error.hint", "contains": "'words inspect --detail tables'" }
+        ],
+        "files": { "absent": ["c.docx"] }
+      }
+    },
+    {
+      "args": ["words", "edit", "doc.docx", "--ops", "find-retail.json", "--out", "d.docx"],
+      "expect": { "exitCode": 0, "json": [{ "path": "applied[0].targets[0]", "equals": "block/3" }] }
+    },
+    {
+      "args": ["words", "edit", "doc.docx", "--ops", "find-placeholder.json", "--out", "e.docx"],
+      "expect": { "exitCode": 0, "json": [{ "path": "applied[0].targets[0]", "equals": "block/3" }] }
+    }
+  ]
+}
