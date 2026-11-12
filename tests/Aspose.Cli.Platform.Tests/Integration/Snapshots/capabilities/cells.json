@@ -38,7 +38,7 @@
         "command": "edit",
         "inputSchema": "v2/cells/ops",
         "operationSchema": "aspose-cli schema v2/cells/ops --operation <op>",
-        "contractFingerprint": "sha256:b1bd569060ab740c8331a6a2d47747a8de12c5287597ad506d865febdb6c03da",
+        "contractFingerprint": "sha256:192888c870ccc7ada9485d7ff5e0563924449ad586c2c21bac2798f91516c68c",
         "maximumOperationCount": 10000,
         "ops": [
           "add_comment",
@@ -2060,7 +2060,7 @@
         "path": "cells search",
         "name": "search",
         "aliases": [],
-        "description": "Find cells whose value or formula matches a pattern.",
+        "description": "Find the text of cells, formulas, comments, headers and footers, charts and drawings that matches a pattern.",
         "options": [
           {
             "name": "--case-sensitive",
@@ -2099,7 +2099,7 @@
             ],
             "secret": false,
             "valueSource": "command-line",
-            "description": "What to search: the cell results, the formula text or all of both."
+            "description": "What to search: what a reader sees (cell results, comments, headers and footers, chart and drawing text), the formula text or all of both."
           },
           {
             "name": "--max-hits",
@@ -6433,7 +6433,7 @@
           ]
         },
         "replace_text": {
-          "description": "Replaces literal or regular-expression text within the text values of a sheet's cells, in address order, row by row. Formulas, numbers, dates and Booleans are never changed; a cell's whole text is matched, not the text its number format shows.",
+          "description": "Replaces literal or regular-expression text within the text values of one sheet's cells, the operation's sheet or else the active sheet, in address order, row by row; other sheets stay as they are. Formulas, numbers, dates and Booleans are never changed; a cell's whole text is matched, not the text its number format shows.",
           "type": "object",
           "required": [
             "op",
@@ -8667,7 +8667,7 @@
     "v2/cells/search-result": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
       "$id": "https://schemas.aspose.com/aspose-cli/v2/cells/search-result.schema.json",
-      "description": "Result of aspose-cli cells search: one window of cell hits for a pattern. Hits are ordered by sheet then row-major, so output is deterministic; the envelope's window counts the returned hits and, when more match, carries the command that returns the next ones.",
+      "description": "Result of aspose-cli cells search: one window of hits for a pattern. Hits are ordered by sheet, its cells row-major then its other parts, so output is deterministic; the envelope's window counts the returned hits and, when more match, carries the command that returns the next ones.",
       "type": "object",
       "required": [
         "schema",
@@ -8696,7 +8696,7 @@
           "type": "string"
         },
         "hits": {
-          "description": "Matching cells.",
+          "description": "Matches, in cells and in the other parts of the sheets.",
           "type": "array",
           "items": {
             "$ref": "#/$defs/cellsSearchHit"
@@ -8720,26 +8720,37 @@
       },
       "$defs": {
         "cellsSearchHit": {
-          "description": "One matching cell.",
+          "description": "One match: in a cell, or in a part of a sheet outside its cells, such as a comment, a header, a chart's title or a text box. Values search what a reader sees, the cells and every such part; formulas, the text of formulas. Not searched: data validation messages and list items, hyperlink screen tips, sheet and defined names, the text of ActiveX controls, and pivot table captions that no cell shows.",
           "type": "object",
           "required": [
             "sheet",
-            "cell",
             "text",
             "context"
           ],
           "additionalProperties": false,
           "properties": {
             "sheet": {
-              "description": "Sheet the cell is on.",
+              "description": "Sheet the match is on.",
               "type": "string"
             },
             "cell": {
-              "description": "Cell address, e.g. B7.",
+              "description": "Cell address, e.g. B7, of a cell or of the cell a comment belongs to; omitted for other parts.",
+              "type": "string"
+            },
+            "part": {
+              "description": "Where the match is when it is not in a cell that holds text, which replace_text writes, as TEXT_NOT_REPLACED names it in details.part: formula, typed-value (a cell that shows it but holds a number, date, boolean or error), comment, header-footer, chart-title, axis-title, chart-data, data-label, text-box or alt-text; omitted for a text cell.",
+              "type": "string"
+            },
+            "location": {
+              "description": "The target address of a part outside the cells, such as chart/Sales/1, as TEXT_NOT_REPLACED gives it; omitted for a cell.",
+              "type": "string"
+            },
+            "linkedCell": {
+              "description": "For a title, series name, data label or text box that shows the text of a cell on a sheet the search does not reach, that cell, such as Data!B1; a search of every sheet finds the cell itself instead.",
               "type": "string"
             },
             "text": {
-              "description": "The match itself: the first one in the cell's value as read reports it, else in its display text, else in its formula.",
+              "description": "The match itself: the first one in a cell's value as read reports it, else in its display text, else in its formula; in a part, in its text.",
               "type": "string"
             },
             "context": {

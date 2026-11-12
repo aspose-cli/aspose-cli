@@ -113,23 +113,35 @@ Run `--dry-run` first for a large or destructive batch (`delete_sheet`,
   `#SPILL!` in every cell but the last.
 - Inserting or deleting rows and columns updates formula references as in
   Excel.
-- `replace_text` changes the text values of the cells of its sheet, or of its
-  `range`, and no text outside them. When the sheet's header or footer, a
-  comment, a chart title, an axis title or the text of a drawing such as a
-  text box holds a match, found by the same `regex`, `caseSensitive` and
-  `wholeWord`, that text stays as it was, and the edit warns
-  `TEXT_NOT_REPLACED` once for each of these parts. A header or
+- `replace_text` changes the text values of the cells of one sheet, its
+  `sheet` or else the active sheet, or of its `range`, and no other text; it
+  says nothing about the other sheets. Replace on each sheet that holds the
+  text, one operation per sheet, and check each with
+  `cells search --sheet <that sheet>`: a search without `--sheet` covers the
+  whole workbook. When other text a reader sees holds a match,
+  found by the same `regex`, `caseSensitive` and `wholeWord`, it stays as it
+  was, and the edit warns `TEXT_NOT_REPLACED` once for each kind of part,
+  named in `details.part`: a formula's text (`formula`), a cell that shows the
+  match but holds a number, date, boolean or error (`typed-value`), the header
+  or footer, a comment, a chart's title, axis titles (the secondary axis
+  included), series names (`chart-data`) and data labels, the text of a
+  drawing such as a text box, and alternative text. A header or
   footer is matched on the text it prints, not its font, size or page number
   codes, and the first page's or the even pages' own header and footer count
-  when the sheet has them; a title linked to a cell follows the cell and is
-  not named. With a `range`, only the comments of its cells are checked. The
+  when the sheet has them. A title, series name, data label or text box
+  linked to a cell shows that cell's text: linked to a cell of the same sheet,
+  it follows the cell and is not named; linked to another sheet, it is named
+  on its own, with the cell, which is where to replace it. With a `range`,
+  only the cells and the comments of its cells are checked. The
   edit still exits 0, and the warning is no `--verify` issue. Read that text
   with `cells inspect --detail layout`, `--detail comments` or
-  `--detail charts`, and change it with `set_page_setup` (`headerCenter`,
+  `--detail charts`, or find it with `cells search`, and change it with
+  `set_formula`, `set_values`, `set_page_setup` (`headerCenter`,
   `footerCenter`; no operation changes the left and right sections or the
   first-page and even-page headers and footers), `set_comment`, or
-  `set_chart` with its `title` or `axisTitles`. No operation reads or changes
-  the text of a drawing.
+  `set_chart` with its `title` or `axisTitles`. No operation changes the text
+  of a drawing, a series name, a data label, a secondary axis title or
+  alternative text.
 
 ## Combining workbooks
 

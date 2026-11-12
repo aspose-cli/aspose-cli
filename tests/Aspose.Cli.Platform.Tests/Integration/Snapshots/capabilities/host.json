@@ -2112,6 +2112,14 @@
                 {
                   "const": "layout",
                   "description": "The text of a slide layout or master, which every slide on it shows."
+                },
+                {
+                  "const": "formula",
+                  "description": "The formula of a cell, such as a text literal in it."
+                },
+                {
+                  "const": "typed-value",
+                  "description": "A cell that shows the text but holds a number, a date, a boolean or an error, not text."
                 }
               ]
             },

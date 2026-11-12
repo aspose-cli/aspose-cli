@@ -21,7 +21,7 @@ internal static class TextReplaceOps
         TextReplacement replacement = Replacement(op);
         int left = op.MaxReplacementCount ?? int.MaxValue;
         long replaced = 0;
-        foreach (CellsTextUnit cell in CellsTextUnits.Cells(sheet, Range(op)))
+        foreach (CellsTextUnit cell in CellsTextUnits.Cells(sheet, Range(op)).Where(static unit => unit.Part is null))
         {
             (string after, int matches) = replacement.Replace(cell.Text!, left);
             if (matches == 0)
@@ -42,30 +42,67 @@ internal static class TextReplaceOps
     }
 
     /// <summary>
-    /// The parts of the sheet outside its cells that hold a match of <paramref name="op"/>, which
-    /// <see cref="Replace"/> leaves as they are, matched as the operation matches a cell's text
-    /// (regex, caseSensitive and wholeWord): one <c>TEXT_NOT_REPLACED</c> warning for each kind of
-    /// part. A warning never repeats the find text or the text that holds the match. Each is
-    /// reported only if one of its parts still holds a match once the batch has run
-    /// (<see cref="UnreplacedText"/>).
+    /// The units of the range or sheet other than its text cells that hold a match of
+    /// <paramref name="op"/>, which <see cref="Replace"/> leaves as they are, matched as the
+    /// operation matches a cell's text (regex, caseSensitive and wholeWord) on what a reader sees,
+    /// or on a formula's text: one <c>TEXT_NOT_REPLACED</c> warning for each kind of unit, and one for
+    /// each part linked to a cell of another sheet. A warning never repeats the find text or the text
+    /// that holds the match. Each is reported only if one of its units still holds a match once the
+    /// batch has run (<see cref="UnreplacedText"/>).
     /// </summary>
     public static IReadOnlyList<UnreplacedText> Unreached(Worksheet sheet, ReplaceTextOp op)
     {
         TextReplacement replacement = Replacement(op);
-        bool Holds(CellsTextUnit unit) => unit.Text is { Length: > 0 } text && replacement.Matches(text, 1).Count > 0;
-        return [.. CellsTextUnits.Parts(sheet, Range(op)).Where(Holds).GroupBy(static unit => unit.Part!).Select(group =>
-        {
-            CellsTextUnit[] units = [.. group];
-            (string what, bool several, string hint, string location) = group.Key switch
+        bool Matches(string? text) => text is { Length: > 0 } && replacement.Matches(text, 1).Count > 0;
+        bool Holds(CellsTextUnit unit) => unit.Part == TextPart.Formula ? Matches(unit.FormulaText) : unit.Shown.Any(Matches);
+        return [.. CellsTextUnits.Cells(sheet, Range(op)).Where(static unit => unit.Part is not null)
+            .Concat(CellsTextUnits.Parts(sheet, Range(op), sheet.Name)).Where(Holds)
+            .GroupBy(static unit => unit.LinkedCell is null ? (object)unit.Part! : unit)
+            .OrderBy(static group => TextPart.All.TakeWhile(part => part != group.First().Part).Count())
+            .Select(group =>
             {
-                _ when group.Key == TextPart.HeaderFooter => HeaderFooter(sheet, units),
-                _ when group.Key == TextPart.Comment => Comments(sheet, units),
-                _ when group.Key == TextPart.ChartTitle => ChartTitles(sheet, units),
-                _ when group.Key == TextPart.AxisTitle => AxisTitles(sheet, units),
-                _ => Drawings(sheet, units),
-            };
-            return Found(op, sheet, group.Key, what, several, hint, location, () => units.Any(Holds));
-        })];
+                CellsTextUnit[] units = [.. group];
+                TextPart part = units[0].Part!;
+                (string what, bool several, string hint, string location) = group.Key switch
+                {
+                    CellsTextUnit linked => Linked(linked),
+                    _ when part == TextPart.HeaderFooter => HeaderFooter(sheet, units),
+                    _ when part == TextPart.Comment => Comments(sheet, units),
+                    _ when part == TextPart.ChartTitle => ChartTitles(sheet, units),
+                    _ when part == TextPart.AxisTitle => AxisTitles(sheet, units),
+                    _ when part == TextPart.TextBox => Drawings(sheet, units),
+                    _ => Others(sheet, part, units),
+                };
+                return Found(op, sheet, part, what, several, hint, location, () => units.Any(Holds));
+            })];
+    }
+
+    /// <summary>
+    /// The formulas, cells that show a number, date, boolean or error, series names, data labels and
+    /// alternative text that hold a match, by the names of what holds them, such as <c>the formulas of cells C1, C2</c>.
+    /// </summary>
+    private static (string, bool, string, string) Others(Worksheet sheet, TextPart part, CellsTextUnit[] units)
+    {
+        string[] names = [.. units.Select(static unit => unit.Name).Distinct()];
+        (string of, string hint) = part switch
+        {
+            _ when part == TextPart.Formula => (names.Length == 1 ? "the formula of cell" : "the formulas of cells", "Write each new formula with set_formula."),
+            _ when part == TextPart.TypedValue => (names.Length == 1 ? "cell" : "cells",
+                "They show the text but hold a number, a date, a boolean or an error: write each new value with set_values."),
+            _ when part == TextPart.ChartData => ("the series names of", "No operation changes a series name: tell the user it still holds the old text."),
+            _ when part == TextPart.DataLabel => ("the data labels of", "No operation changes the text of a data label: tell the user it still holds the old text."),
+            _ => ("the alternative text of", "No operation changes alternative text: tell the user it still holds the old text."),
+        };
+        return ($"{of} {Named(names)}", units.Length > 1, hint, names.Length == 1 ? units[0].Location : CellsAddresses.OfSheet("sheet", sheet.Name));
+    }
+
+    /// <summary>A title, series name, data label or text box that shows the text of a cell of another sheet.</summary>
+    private static (string, bool, string, string) Linked(CellsTextUnit unit)
+    {
+        string noun = unit.Part == TextPart.ChartTitle ? "title" : unit.Part == TextPart.AxisTitle ? "axis title"
+            : unit.Part == TextPart.ChartData ? "series name" : unit.Part == TextPart.DataLabel ? "data label" : "text";
+        return ($"the {noun} of {unit.Name}, which shows cell {unit.LinkedCell},", false,
+            $"Its text is that of cell {unit.LinkedCell}: replace it there, with replace_text on that cell's sheet or with set_values.", unit.Location);
     }
 
     /// <summary>The header and footer sections that hold a match, named by their part and section, such as <c>the header (center) and the first-page footer (left)</c>.</summary>
@@ -128,7 +165,8 @@ internal static class TextReplaceOps
             .GroupBy(static title => title.Chart).Select(static chart => (chart.Key, chart.Select(static title => title.Axis).ToArray()))];
         string charts = string.Join(", ", matched.Select(static chart => string.Create(CultureInfo.InvariantCulture, $"{chart.Chart + 1} ({string.Join(", ", chart.Axes)})")));
         return ($"the {(units.Length == 1 ? "axis title" : "axis titles")} of {(matched.Length == 1 ? "chart" : "charts")} {charts}", units.Length > 1,
-            "Read the axis titles with 'aspose-cli cells inspect <file> --detail charts', then set the new titles with set_chart, its axisTitles and the index of its chart.",
+            "Read the axis titles with 'aspose-cli cells inspect <file> --detail charts', then set the new titles with set_chart, its axisTitles and the index of its chart."
+                + (matched.Any(static chart => chart.Axes.Contains("secondary value")) ? " No operation changes the title of a secondary axis." : ""),
             matched.Length == 1 ? CellsAddresses.Indexed("chart", sheet.Name, matched[0].Chart) : CellsAddresses.OfSheet("sheet", sheet.Name));
     }
 
@@ -150,7 +188,8 @@ internal static class TextReplaceOps
     private static UnreplacedText Found(ReplaceTextOp op, Worksheet sheet, TextPart part, string what, bool several, string hint, string location, Func<bool> remains) =>
         UnreplacedText.Found(part, op, "replace_text",
             $"Operation {op.Id} (replace_text) found a match in {what} on worksheet '{sheet.Name}' and left "
-                + (several ? "them as they were" : "it as it was") + ": replace_text changes the text of cells only.",
+                + (several ? "them as they were" : "it as it was")
+                + (part == TextPart.Formula || part == TextPart.TypedValue ? ": replace_text changes only cells that hold text." : ": replace_text changes the text of cells only."),
             hint, location, () => sheet.Workbook.Worksheets.Contains(sheet, ReferenceEqualityComparer.Instance) && remains(), docs: "cells/editing");
 
     private static TextReplacement Replacement(ReplaceTextOp op) =>

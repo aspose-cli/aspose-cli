@@ -48,8 +48,14 @@ public sealed class TextPart
     /// <summary>The text of a slide layout or master, which every slide on it shows.</summary>
     public static TextPart Layout { get; } = new("layout", "The text of a slide layout or master, which every slide on it shows.");
 
+    /// <summary>The formula of a cell, such as a text literal in it.</summary>
+    public static TextPart Formula { get; } = new("formula", "The formula of a cell, such as a text literal in it.");
+
+    /// <summary>A cell that shows the text but holds a number, a date, a boolean or an error.</summary>
+    public static TextPart TypedValue { get; } = new("typed-value", "A cell that shows the text but holds a number, a date, a boolean or an error, not text.");
+
     /// <summary>Every part.</summary>
-    public static IReadOnlyList<TextPart> All { get; } = [HeaderFooter, Comment, ChartTitle, ChartData, AxisTitle, TextBox, DataLabel, AltText, Layout];
+    public static IReadOnlyList<TextPart> All { get; } = [HeaderFooter, Comment, ChartTitle, ChartData, AxisTitle, TextBox, DataLabel, AltText, Layout, Formula, TypedValue];
 
     /// <inheritdoc />
     public override string ToString() => Token;
