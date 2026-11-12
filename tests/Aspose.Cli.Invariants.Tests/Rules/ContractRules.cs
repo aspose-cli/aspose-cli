@@ -60,6 +60,7 @@ internal static partial class ContractRules
         new("C-R41", R41),
         new("C-R42", R42),
         new("C-R43", R43),
+        new("C-R44", R44Run),
     ];
 
     /// <summary>

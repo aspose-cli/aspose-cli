@@ -52,8 +52,28 @@ internal sealed record OperationSample(
     public string Subject => $"{Product} {Op}{(Label is null ? string.Empty : " on " + Label)}";
 }
 
+/// <summary>
+/// A document whose part an operation addresses holds nothing of the operation's own to write
+/// to, for C-R44: <paramref name="Setup"/> builds it from the product's fixture, and each
+/// property of <paramref name="Address"/> replaces the property of that name in a sample's
+/// operation, so the operation addresses the bare part.
+/// </summary>
+/// <param name="Target">The target address of the bare part, which a refused operation names, or names the start of.</param>
+/// <param name="Objects">The units of the objects an operation must not add to write its value into, such as <c>shape</c> in <c>slide/3/shape/4</c>.</param>
+internal sealed record BareSample(string Product, string Label, string Setup, string Address, string Target, string[] Objects);
+
 internal static class OperationSamples
 {
+    /// <summary>The bare documents C-R44 runs each set_ operation of their product on.</summary>
+    public static IReadOnlyList<BareSample> Bare { get; } =
+    [
+        new("slides", "a Blank slide with a text box",
+            """[{"op":"insert_slide","layout":"Blank"},{"op":"insert_shape","slide":3,"geometry":"rectangle","rect":{"x":40,"y":20,"width":640,"height":80},"text":"Box"}]""",
+            """{"slide":3,"slides":"3","shapeId":2}""",
+            "slide/3",
+            ["shape"]),
+    ];
+
     // rule-exemptions: begin
     /// <summary>
     /// Operations of the catalog that have no sample, each with the reason; an entry whose
