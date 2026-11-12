@@ -1,3 +1,4 @@
+using Aspose.Cli.Sdk.Errors;
 using Aspose.Slides;
 using Aspose.Slides.Export;
 using Xunit;
@@ -209,7 +210,7 @@ public sealed class SlidesAuthoringTests
     }
 
     [Fact]
-    public void SetTitle_WithoutATitlePlaceholder_NeverWritesIntoASubtitleAndReusesItsBox()
+    public void SetTitle_WithoutATitlePlaceholder_NeverWritesIntoASubtitleNorAddsABox()
     {
         using var fixture = new SlidesEngineFixture();
         string input = fixture.File("no-title.pptx");
@@ -228,25 +229,70 @@ public sealed class SlidesAuthoringTests
         }
 
         string output = fixture.File("titled.pptx");
-        SlidesEdit.Run(fixture.Session, new SlidesEditRequest
+        CliException refused = Assert.Throws<CliException>(() => SlidesEdit.Run(fixture.Session, new SlidesEditRequest
         {
             Input = input,
-            Batch = new SlidesOpsBatch
+            Batch = new SlidesOpsBatch { Ops = [new SetTitleOp { Slide = 1, Text = "One" }] },
+            Output = TestOutput.At(output),
+        }));
+
+        Assert.Equal("PLACEHOLDER_NOT_FOUND", refused.Code.Name);
+        Assert.Contains("set_text", refused.Hint, StringComparison.Ordinal);
+        Assert.False(File.Exists(output));
+        // With no title shape there is no title to read either: the text of another shape is not one.
+        SlidesReadResult read = SlidesRead.Run(fixture.Session, new SlidesReadRequest { Input = input, Content = SlidesReadContents.Shapes });
+        Assert.Null(read.Slides[0].Title);
+        Assert.Contains(read.Slides[0].Shapes, static shape => shape.Text == "Keep");
+    }
+
+    [Fact]
+    public void SetTitle_OnAMarkdownSlideWithoutATitlePlaceholder_WritesTheTitleBoxAuthoringAdded()
+    {
+        using var fixture = new SlidesEngineFixture();
+        string template = fixture.File("untitled-layouts.pptx");
+        using (var source = new Presentation())
+        {
+            foreach (ILayoutSlide layout in source.LayoutSlides)
             {
-                Ops = [new SetTitleOp { Slide = 1, Text = "One" }, new SetTitleOp { Slide = 1, Text = "Two" }],
-            },
+                foreach (IShape shape in layout.Shapes.Where(static shape => shape.Placeholder?.Type is PlaceholderType.Title or PlaceholderType.CenteredTitle).ToArray())
+                {
+                    layout.Shapes.Remove(shape);
+                }
+            }
+
+            source.Save(template, SaveFormat.Pptx);
+        }
+
+        string markdown = fixture.File("outline.md");
+        File.WriteAllText(markdown, "## Plan\n\n- one\n");
+        string deck = fixture.File("deck.pptx");
+        SlidesCreate.Run(fixture.Session, new SlidesCreateRequest
+        {
+            Output = TestOutput.At(deck),
+            Markdown = new SourceFile("--from-markdown", markdown),
+            Template = new SourceFile("--template", template),
+        });
+        string output = fixture.File("deck.titled.pptx");
+        SlidesEdit.Run(fixture.Session, new SlidesEditRequest
+        {
+            Input = deck,
+            Batch = new SlidesOpsBatch { Ops = [new SetTitleOp { Slide = 1, Text = "One" }, new SetTitleOp { Slide = 1, Text = "Two" }] },
             Output = TestOutput.At(output),
         });
 
-        using var deck = new Presentation(output);
-        IAutoShape[] shapes = deck.Slides[0].Shapes.OfType<IAutoShape>().ToArray();
-        Assert.Equal("Keep", shapes.Single(static shape => shape.Name == "Subtitle 2").TextFrame.Text);
-        IAutoShape title = Assert.Single(shapes, static shape => shape.Name == SlidesAuthoring.TitleName);
+        using (var created = new Presentation(deck))
+        {
+            Assert.Null(SlidesPlaceholders.Title(created.Slides[0]));
+        }
+
+        using var edited = new Presentation(output);
+        IAutoShape title = Assert.Single(edited.Slides[0].Shapes.OfType<IAutoShape>(), static shape => shape.Name == SlidesAuthoring.TitleName);
         Assert.Equal("Two", title.TextFrame.Text);
         Assert.Equal(FillType.NoFill, title.FillFormat.GetEffective().FillType);
         Assert.Equal(FillType.NoFill, title.LineFormat.GetEffective().FillFormat.FillType);
-        float width = deck.SlideSize.Size.Width;
-        Assert.InRange(title.X + title.Width, 0, width);
+        Assert.InRange(title.X + title.Width, 0, edited.SlideSize.Size.Width);
+        SlidesReadResult read = SlidesRead.Run(fixture.Session, new SlidesReadRequest { Input = output });
+        Assert.Equal("Two", read.Slides[0].Title);
     }
 
     [Fact]

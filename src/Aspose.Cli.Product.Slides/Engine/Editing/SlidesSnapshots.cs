@@ -66,7 +66,7 @@ internal sealed class SlidesSnapshots(
     /// <summary>The sections, each by the id of its first slide; a new section splits nothing else.</summary>
     public OperationSnapshot Apply(InsertSectionOp operation) => new OperationSnapshot().AddSequence("section", Sections(presentation));
 
-    public OperationSnapshot Apply(SetTitleOp operation) => Shapes(() => Whole(SlidesAuthoring.Title(Slide)));
+    public OperationSnapshot Apply(SetTitleOp operation) => Shapes(() => Whole(target.Shape!));
 
     public OperationSnapshot Apply(SetBodyOp operation) => Shapes(() => Whole(target.Shape!));
 

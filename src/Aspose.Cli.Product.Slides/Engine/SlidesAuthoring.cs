@@ -8,10 +8,9 @@ namespace Aspose.Cli.Product.Slides.Engine;
 /// <summary>
 /// The one way authored titles, body text and pictures are placed on a slide, shared by
 /// Markdown authoring and edit operations. Text goes into the layout's placeholders. Where a
-/// layout has none, Markdown authoring and set_title give the slide an unstyled box placed
-/// proportionally on the canvas, named so later operations find the same box again; set_body
-/// adds no box, and writes only a body placeholder, a subtitle or such a box
-/// (<see cref="Editing.SlidesMutationSupport.ResolveBody"/>).
+/// layout has none, Markdown authoring gives the slide an unstyled box placed proportionally on
+/// the canvas, named so later operations find the same box again; set_title and set_body add no
+/// box, and write only a placeholder or such a box (<see cref="Editing.SlidesMutationSupport"/>).
 /// </summary>
 internal static class SlidesAuthoring
 {
@@ -21,10 +20,16 @@ internal static class SlidesAuthoring
     // A code span or block is the one semantic that needs a typeface the theme does not name.
     private const string CodeFont = "Consolas";
 
-    internal static IAutoShape Title(ISlide slide) =>
-        SlidesPlaceholders.Title(slide)
-            ?? Named(slide, TitleName)
-            ?? AddBox(slide, TitleName, new RectangleF(0.07f, 0.06f, 0.86f, 0.16f), TextAnchorType.Center);
+    /// <summary>
+    /// The shape that holds a slide's title, which every command reads and set_title writes: the
+    /// slide's title placeholder, else the box Markdown authoring named Title; none on a slide
+    /// with neither, which has no title.
+    /// </summary>
+    internal static IAutoShape? Title(ISlide slide) => SlidesPlaceholders.Title(slide) ?? Named(slide, TitleName);
+
+    /// <summary>The slide's title shape, or a new box where its layout has no title placeholder.</summary>
+    internal static IAutoShape AuthoredTitle(ISlide slide) =>
+        Title(slide) ?? AddBox(slide, TitleName, new RectangleF(0.07f, 0.06f, 0.86f, 0.16f), TextAnchorType.Center);
 
     internal static IAutoShape Body(ISlide slide, bool includeSubtitle = false) =>
         SlidesPlaceholders.Content(slide, includeSubtitle).FirstOrDefault()

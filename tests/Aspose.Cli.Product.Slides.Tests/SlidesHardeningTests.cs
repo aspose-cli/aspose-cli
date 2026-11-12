@@ -30,9 +30,9 @@ public sealed class SlidesHardeningTests
     [InlineData("text", 4, true)]
     [InlineData("text", 5, true)]
     [InlineData("text", 10, true)]
-    [InlineData("text", 20, false)]
+    [InlineData("text", 15, false)]
     [InlineData("full", 35, true)]
-    [InlineData("full", 45, false)]
+    [InlineData("full", 40, false)]
     public void Read_AccountsForEveryContentProjectionAndExactBoundaries(string scope, int budget, bool truncated)
     {
         TestLicense.Require("Aspose.Slides evaluation mode saves a watermark text box into every slide, which exact budget accounting would count.");

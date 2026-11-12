@@ -16,7 +16,7 @@ public sealed class SlidesOpTargetTests
 
     /// <summary>
     /// One sample of every operation that resolves, then the variants whose address takes another
-    /// branch: a slide, slide id, shape or range the deck lacks, a slide without a body, and
+    /// branch: a slide, slide id, shape or range the deck lacks, a slide without a title or a body, and
     /// an operation that names no slide.
     /// </summary>
     private static readonly SlidesOp[] Samples =
@@ -65,6 +65,7 @@ public sealed class SlidesOpTargetTests
         new CopySlideOp { SlideId = 99999 },
         new InsertSectionOp { Name = "Late", At = 9 },
         new SetTitleOp { Slide = 9, Text = "Title" },
+        new SetTitleOp { Slide = 1, Text = "Title" },
         new SetBodyOp { Slide = 1, Paragraphs = [new SlidesParagraphInput { Text = "Body" }] },
         new SetTextOp { Slide = 1, ShapeId = 999, Text = "Text" },
         new SetTextOp { Slide = 9, ShapeId = 5, Text = "Text" },
@@ -88,7 +89,7 @@ public sealed class SlidesOpTargetTests
         "set_background | slide/2",
         "insert_section | section/Part",
         "import_slides | slide/all",
-        "set_title | slide/2",
+        "set_title | slide/2/shape/2",
         "set_text | slide/1/shape/2",
         "replace_text | slide/all",
         "set_notes | slide/1",
@@ -114,6 +115,7 @@ public sealed class SlidesOpTargetTests
         "copy_slide | slide/all",
         "insert_section | section/Late",
         "set_title | slide/9",
+        "set_title | slide/1",
         "set_body | slide/1",
         "set_text | slide/1/shape/999",
         "set_text | slide/9/shape/5",

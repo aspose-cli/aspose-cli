@@ -45,6 +45,15 @@ public sealed class SlidesViewLayoutTests
         Assert.Equal(1, blue.Zip(red).Count(static pair => pair.First.Digest != pair.Second.Digest));
     }
 
+    [Fact]
+    public void RenderView_LabelsASlideWithoutATitleByItsNumber_NotByTheTextOfAShape()
+    {
+        using var fixture = new SlidesEngineFixture();
+        (string path, _) = CreateDeck(fixture, "untitled.pptx", Color.SteelBlue);
+
+        Assert.Equal("Slide 1", Assert.Single(Render(fixture, path).Parts).Label);
+    }
+
     private static ViewManifest Render(SlidesEngineFixture fixture, string path) =>
         SlidesView.Render(
             fixture.Session,

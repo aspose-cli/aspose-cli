@@ -36,7 +36,7 @@ internal static partial class SlidesMarkdownBuilder
         foreach (MarkdownSlide item in model)
         {
             ISlide slide = presentation.Slides.AddEmptySlide(LayoutFor(presentation, item));
-            IAutoShape title = SlidesAuthoring.Title(slide);
+            IAutoShape title = SlidesAuthoring.AuthoredTitle(slide);
             title.Name = SlidesAuthoring.TitleName;
             title.TextFrame.Text = item.Title;
 

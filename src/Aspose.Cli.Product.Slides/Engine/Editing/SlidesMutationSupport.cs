@@ -10,7 +10,7 @@ namespace Aspose.Cli.Product.Slides.Engine.Editing;
 /// <summary>Resolves mutation targets and translates handler failures.</summary>
 internal static class SlidesMutationSupport
 {
-    private const string ShapeListing = "'slides read --content shapes' lists each shape's id, name and role";
+    private const string ShapeListing = "'slides read --content shapes' lists each shape's shapeId, shapeName and placeholder";
 
     internal static ISlide ResolveSlide(Presentation presentation, SlideTargetOp op)
     {
@@ -76,6 +76,20 @@ internal static class SlidesMutationSupport
                 Names(shapes.Select(PlaceholderRole)),
                 hint: $"Use a placeholder role from details.available, or address the shape by its 'shapeId' or 'shapeName'; {ShapeListing}.");
     }
+
+    /// <summary>
+    /// The shape whose text set_title replaces, the slide's title shape
+    /// (<see cref="SlidesAuthoring.Title"/>). A slide without one is refused rather than given a
+    /// box over whatever it shows.
+    /// </summary>
+    internal static IAutoShape ResolveTitle(ISlide slide) =>
+        SlidesAuthoring.Title(slide)
+            ?? throw CliErrors.NotFound(
+                SlidesDiagnostics.PlaceholderNotFound,
+                "placeholder",
+                SlidesPlaceholderRoles.Title,
+                Names(slide.Shapes.Select(PlaceholderRole)),
+                hint: $"set_title writes a slide's title placeholder, and this slide has none: write the text into one of its shapes with set_text, or add a text box with insert_shape; {ShapeListing}.");
 
     /// <summary>
     /// The shape whose paragraphs set_body replaces: the slide's first body placeholder, else its
