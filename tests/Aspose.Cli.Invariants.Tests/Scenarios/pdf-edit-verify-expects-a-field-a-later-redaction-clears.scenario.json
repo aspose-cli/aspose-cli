@@ -1,11 +1,14 @@
 {
-  "name": "pdf edit --verify expects a field a later redact_text of the batch clears to be clear, checks a value set after it or one it does not match, and keeps the redaction checked when the field was flattened or covered",
+  "name": "pdf edit --verify expects a field a later redact_text of the batch clears to be clear, checks a value set after it or one it does not match, keeps the redaction checked when the field was flattened or covered, and expects a field gone where a later redact_area holds the middle of its widget, and only there",
   "files": {
     "form.html": { "text": "<html><head><meta charset=\"utf-8\"><title>Registration</title></head><body><h1>Registration Form</h1><p>Name: <input type=\"text\" name=\"applicant\" value=\"\"></p><p>ID No.: <input type=\"text\" name=\"idno\" value=\"\"></p><p>Mobile: <input type=\"text\" name=\"mobile\" value=\"13812345678\"></p></body></html>" },
     "fill-then-redact.json": { "text": "{\"ops\":[{\"op\":\"set_form_field\",\"name\":\"idno\",\"value\":\"110101199003071234\"},{\"op\":\"redact_text\",\"find\":\"110101199003071234\"}]}" },
     "redact-then-fill.json": { "text": "{\"ops\":[{\"op\":\"set_form_field\",\"name\":\"idno\",\"value\":\"110101199003071234\"},{\"op\":\"redact_text\",\"find\":\"110101199003071234\"},{\"op\":\"set_form_field\",\"name\":\"idno\",\"value\":\"PENDING\"}]}" },
     "fill-flatten-redact.json": { "text": "{\"ops\":[{\"op\":\"set_form_field\",\"name\":\"idno\",\"value\":\"110101199003071234\"},{\"op\":\"flatten_forms\"},{\"op\":\"redact_text\",\"find\":\"110101199003071234\"}]}" },
     "fill-cover-redact.json": { "text": "{\"ops\":[{\"op\":\"set_form_field\",\"name\":\"applicant\",\"value\":\"Li Lei\"},{\"op\":\"set_form_field\",\"name\":\"idno\",\"value\":\"110101199003071234\"},{\"op\":\"redact_area\",\"page\":1,\"rect\":{\"x\":81,\"y\":114,\"width\":120,\"height\":18}},{\"op\":\"redact_text\",\"find\":\"Li Lei\"}]}" },
+    "fill-cover-middle.json": { "text": "{\"ops\":[{\"op\":\"set_form_field\",\"name\":\"idno\",\"value\":\"110101199003071234\"},{\"op\":\"redact_area\",\"page\":1,\"rect\":{\"x\":130,\"y\":112,\"width\":80,\"height\":22}}]}" },
+    "fill-cover-beside.json": { "text": "{\"ops\":[{\"op\":\"set_form_field\",\"name\":\"idno\",\"value\":\"110101199003071234\"},{\"op\":\"redact_area\",\"page\":1,\"rect\":{\"x\":90,\"y\":115,\"width\":45,\"height\":15}}]}" },
+    "fill-cover-elsewhere.json": { "text": "{\"ops\":[{\"op\":\"set_form_field\",\"name\":\"idno\",\"value\":\"110101199003071234\"},{\"op\":\"redact_area\",\"page\":1,\"rect\":{\"x\":300,\"y\":300,\"width\":50,\"height\":50}}]}" },
     "skill-example.json": { "text": "{ \"ops\": [\n  { \"op\": \"set_form_field\", \"name\": \"applicant\", \"value\": \"Li Lei\" },\n  { \"op\": \"redact_text\", \"find\": \"1[3-9]\\\\d{9}\", \"regex\": true },\n  { \"op\": \"add_page_numbers\", \"text\": \"{n} / {N}\" },\n  { \"op\": \"encrypt_document\", \"userPasswordEnv\": \"PASSWORD\", \"ownerPasswordEnv\": \"OWNERPASSWORD\", \"permissions\": { \"print\": true } }\n] }\n" }
   },
   "steps": [
@@ -69,9 +72,75 @@
     {
       "args": ["pdf", "edit", "form.pdf", "--ops", "fill-cover-redact.json", "--out", "covered.pdf", "--verify"],
       "expect": {
+        "exitCode": 0,
         "json": [
+          { "path": "verification.ok", "equals": true },
           { "path": "verification.checkedOps", "contains": "op-0001" },
+          { "path": "verification.checkedOps", "notContains": "op-0002" },
           { "path": "verification.checkedOps", "contains": "op-0004" }
+        ]
+      }
+    },
+    {
+      "args": ["pdf", "inspect", "covered.pdf", "--detail", "forms"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "forms.fieldCount", "equals": 2 },
+          { "path": "forms.fields[0].name", "equals": "applicant" },
+          { "path": "forms.fields[0].value", "equals": "" },
+          { "path": "forms.fields[1].name", "equals": "mobile" }
+        ]
+      }
+    },
+    {
+      "args": ["pdf", "edit", "form.pdf", "--ops", "fill-cover-middle.json", "--out", "middle.pdf", "--verify"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "verification.ok", "equals": true },
+          { "path": "verification.checkedOps", "notContains": "op-0001" },
+          { "path": "verification.uncheckedOps", "contains": { "id": "op-0002", "reason": "Only that the form fields an earlier set_form_field of the batch set and its area covers are gone was read back; render the page to confirm the cover." } }
+        ]
+      }
+    },
+    {
+      "args": ["pdf", "inspect", "middle.pdf", "--detail", "forms"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "forms.fieldCount", "equals": 2 },
+          { "path": "forms.fields[1].name", "equals": "mobile" }
+        ]
+      }
+    },
+    {
+      "args": ["pdf", "edit", "form.pdf", "--ops", "fill-cover-beside.json", "--out", "beside.pdf", "--verify"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "verification.ok", "equals": true },
+          { "path": "verification.checkedOps", "contains": "op-0001" }
+        ]
+      }
+    },
+    {
+      "args": ["pdf", "inspect", "beside.pdf", "--detail", "forms"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "forms.fields[1].name", "equals": "idno" },
+          { "path": "forms.fields[1].value", "equals": "110101199003071234" }
+        ]
+      }
+    },
+    {
+      "args": ["pdf", "edit", "form.pdf", "--ops", "fill-cover-elsewhere.json", "--out", "elsewhere.pdf", "--verify"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "verification.ok", "equals": true },
+          { "path": "verification.checkedOps", "contains": "op-0001" }
         ]
       }
     },

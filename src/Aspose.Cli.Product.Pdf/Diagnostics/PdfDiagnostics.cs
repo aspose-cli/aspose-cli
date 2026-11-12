@@ -61,7 +61,7 @@ internal static class PdfDiagnostics
     /// <summary>Filled form fields lie on the pages read, and their values are not page text.</summary>
     internal static readonly WarningCode FormValuesNotInText = new("FORM_VALUES_NOT_IN_TEXT");
 
-    /// <summary>A form field of the output does not hold the value set_form_field set.</summary>
+    /// <summary>A form field of the output does not hold the value set_form_field set, or is still there after a redact_area covered it.</summary>
     internal static readonly DiagnosticDescriptor FieldValueMismatch = DiagnosticDescriptor.Verification("FIELD_VALUE_MISMATCH");
 
     /// <summary>The output still has a form field that flatten_forms flattened.</summary>

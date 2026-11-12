@@ -379,6 +379,67 @@ public sealed class PdfEditVerificationTests
         Assert.Equal(["op-0002"], result.Verification.CheckedOps);
     }
 
+    /// <summary>
+    /// What a redact_area removes is predicted from the field's widget and the area, never read
+    /// from the edited document: recorded without either operation running, a redact_area beside
+    /// the widget's middle leaves the value checked and its mismatch reported. After a page
+    /// operation, which moves the widgets, any redact_area leaves the value unchecked.
+    /// </summary>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Verify_PredictsWhatARedactAreaRemovesFromTheWidgetAndTheArea(bool pagesMoved)
+    {
+        using var fixture = new PdfEngineFixture();
+        using var document = new Document(CreateDocument(fixture));
+        var verifier = new PdfEditVerifier(document);
+        PdfOp[] ops =
+        [
+            new SetFormFieldOp { Id = "op-0001", Name = "Customer", Value = "Contoso" },
+            .. pagesMoved ? [new MovePagesOp { Id = "op-0002", Pages = "2", To = 1 }] : Array.Empty<PdfOp>(),
+            new RedactAreaOp { Id = "op-0003", Page = 1, Rect = new PdfRectInput { X = 60, Y = 212, Width = 100, Height = 30 } },
+        ];
+        foreach (PdfOp op in ops)
+        {
+            verifier.Record(op, AppliedOperations.Changed(PdfOp.Catalog, op, 1));
+        }
+
+        VerificationFacts verification = verifier.Verify(document);
+
+        Assert.Equal(!pagesMoved, verification.Issues.Any(static issue => issue.Code == "FIELD_VALUE_MISMATCH" && issue.Location == "field/Customer"));
+        Assert.Equal(!pagesMoved, verification.Checked.Contains("op-0001"));
+    }
+
+    /// <summary>
+    /// A field whose only widget a redact_area covers must be gone from the output: recorded
+    /// without the redaction running, the field the output still holds is an issue of the
+    /// redact_area, which stays unchecked, while the value set before it is no longer checked.
+    /// </summary>
+    [Fact]
+    public void Verify_ReportsAFieldARedactAreaCoveredThatIsStillInTheOutput()
+    {
+        using var fixture = new PdfEngineFixture();
+        using var document = new Document(CreateDocument(fixture));
+        var verifier = new PdfEditVerifier(document);
+        PdfOp[] ops =
+        [
+            new SetFormFieldOp { Id = "op-0001", Name = "Customer", Value = "Draft" },
+            new RedactAreaOp { Id = "op-0002", Page = 1, Rect = new PdfRectInput { X = 150, Y = 215, Width = 60, Height = 20 } },
+        ];
+        foreach (PdfOp op in ops)
+        {
+            verifier.Record(op, AppliedOperations.Changed(PdfOp.Catalog, op, 1));
+        }
+
+        VerificationFacts verification = verifier.Verify(document);
+
+        VerificationIssue issue = Assert.Single(verification.Issues);
+        Assert.Equal("FIELD_VALUE_MISMATCH", issue.Code);
+        Assert.Equal("field/Customer", issue.Location);
+        Assert.StartsWith("Operation 'op-0002' (redact_area): form field 'Customer' is still in the output", issue.Message, StringComparison.Ordinal);
+        Assert.Empty(verification.Checked);
+    }
+
     /// <summary>Clearing the document information supersedes the properties set before it.</summary>
     [Fact]
     public void Verify_DropsPropertiesThatClearPropertiesRemoved()
