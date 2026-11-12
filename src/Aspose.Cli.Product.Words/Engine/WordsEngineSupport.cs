@@ -229,8 +229,8 @@ internal static class WordsEngineSupport
         string operations = "[" + string.Join(",", ops.Select(static op => $$"""{"op":"{{op}}"}""")) + "]";
         return ContinuationCommand.Steps(
         [
-            from.Input.ContinuationAt("words", "edit").Document("--ops", operations).Option("--out", copy),
-            from.Input.WrittenAs(copy).ContinuationAt("words", "convert").Option("--to", format).Option("--out", from.Output).Flag("--overwrite"),
+            from.Input.ContinuationAt("words", "edit").Document("--ops", operations).Out(ContinuationOutput.New(copy)),
+            from.Input.WrittenAs(copy).ContinuationAt("words", "convert").Option("--to", format).Out(ContinuationOutput.Written(from.Output)),
         ]);
     }
 

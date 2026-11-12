@@ -1,0 +1,73 @@
+{
+  "name": "the commands a hint names replace the output the caller allowed to be replaced, and refuse to replace a file the hint names itself",
+  "files": {
+    "book.xlsx": { "fixture": "cells.xlsx" },
+    "deck.pptx": { "fixture": "slides.pptx" },
+    "doc.docx": { "fixture": "words.docx" },
+    "locked.docx": { "fixture": "words.encrypted" },
+    "out.png": { "text": "an earlier image" },
+    "book.pdf": { "text": "an earlier pdf" },
+    "x.tiff": { "text": "an earlier tiff" },
+    "y.pdf": { "text": "a pdf of the user's" },
+    "cmp.encrypted.docx": { "text": "a copy of the user's" }
+  },
+  "steps": [
+    {
+      "args": ["cells", "convert", "book.xlsx", "--to", "png", "--out", "out.png", "--overwrite"],
+      "expect": {
+        "exitCode": 2,
+        "error": "OPTION_INVALID",
+        "json": [{ "path": "error.hint", "contains": "'aspose-cli cells render book.xlsx --to png --out out.png --overwrite --output-format json'" }],
+        "files": { "nothingWritten": true }
+      }
+    },
+    {
+      "args": ["cells", "render", "book.xlsx", "--out", "book.pdf", "--overwrite"],
+      "expect": {
+        "exitCode": 2,
+        "error": "OPTION_INVALID",
+        "json": [{ "path": "error.hint", "contains": " --to pdf --out book.pdf --overwrite --output-format json'" }],
+        "files": { "nothingWritten": true }
+      }
+    },
+    {
+      "args": ["slides", "convert", "deck.pptx", "--to", "tiff", "--out", "x.tiff", "--overwrite"],
+      "expect": {
+        "error": "FEATURE_UNSUPPORTED",
+        "json": [
+          { "path": "error.hint", "contains": "x.tiff\" --overwrite --output-format json', which writes them beside " },
+          { "path": "error.hint", "contains": "x.pdf\" --output-format json', then " }
+        ],
+        "files": { "unchanged": ["x.tiff"] }
+      }
+    },
+    {
+      "args": ["slides", "convert", "deck.pptx", "--to", "tiff", "--out", "y.tiff"],
+      "expect": {
+        "error": "FEATURE_UNSUPPORTED",
+        "json": [
+          { "path": "error.hint", "contains": "y.pdf\" --output-format json', then " },
+          { "path": "error.hint", "notContains": "--overwrite" }
+        ]
+      }
+    },
+    {
+      "args": ["slides", "convert", "deck.pptx", "--to", "pdf", "--out", "y.pdf"],
+      "expect": { "error": "OUTPUT_EXISTS", "files": { "unchanged": ["y.pdf"] } }
+    },
+    {
+      "args": ["words", "compare", "doc.docx", "locked.docx", "--right-password-env", "DOC_PASSWORD", "--out", "cmp.docx"],
+      "env": { "DOC_PASSWORD": "Invariant-Secret-5f1c9e7a" },
+      "expect": {
+        "exitCode": 0,
+        "warnings": { "present": ["ENCRYPTION_REMOVED"] },
+        "files": { "unchanged": ["cmp.encrypted.docx"] }
+      }
+    },
+    {
+      "args": ["words", "convert", "cmp.docx", "--to", "docx", "--out", "cmp.encrypted.docx", "--encrypt-env", "DOC_PASSWORD"],
+      "env": { "DOC_PASSWORD": "Invariant-Secret-5f1c9e7a" },
+      "expect": { "error": "OUTPUT_EXISTS", "files": { "unchanged": ["cmp.encrypted.docx"] } }
+    }
+  ]
+}

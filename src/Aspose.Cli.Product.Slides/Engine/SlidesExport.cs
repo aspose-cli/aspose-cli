@@ -71,13 +71,15 @@ internal static partial class SlidesExport
     {
         ContinuationInput input = request.Continuation ?? new ContinuationInput(request.Input);
         string tiff = request.Output.Path;
-        string pdf = Path.Combine(Path.GetDirectoryName(tiff)!, Path.GetFileNameWithoutExtension(tiff) + ".pdf");
+        var requested = ContinuationOutput.Requested(tiff, request.Output.Overwrite);
+        // The PDF between the two steps is a new file beside the TIFF.
+        var pdf = ContinuationOutput.New(Path.Combine(Path.GetDirectoryName(tiff)!, Path.GetFileNameWithoutExtension(tiff) + ".pdf"));
         static ContinuationCommand Selecting(ContinuationCommand command, string? slides) => slides is null ? command : command.Option("--slides", slides);
         ContinuationCommand render = Selecting(input.ContinuationAt("slides", "render"), request.Slides?.Text ?? (hiddenSkipped ? string.Join(",", shown) : null))
-            .Option("--to", request.Output.Format.Id).Option("--out", tiff).Flag("--overwrite", request.Output.Overwrite);
-        ContinuationCommand toPdf = Selecting(input.ContinuationAt("slides", "convert"), request.Slides?.Text).Option("--to", "pdf").Option("--out", pdf);
-        ContinuationCommand toTiff = new ContinuationInput(pdf).ContinuationAt("pdf", "convert")
-            .Option("--to", request.Output.Format.Id).Option("--out", tiff).Flag("--overwrite", request.Output.Overwrite);
+            .Option("--to", request.Output.Format.Id).Out(requested);
+        ContinuationCommand toPdf = Selecting(input.ContinuationAt("slides", "convert"), request.Slides?.Text).Option("--to", "pdf").Out(pdf);
+        ContinuationCommand toTiff = new ContinuationInput(pdf.Path).ContinuationAt("pdf", "convert")
+            .Option("--to", request.Output.Format.Id).Out(requested);
         string perSlide = shown.Count <= RenderSelection.MaximumParts
             ? $"For one TIFF per slide, run {render.Quoted()}, which writes them beside {tiff}"
             : $"For one TIFF per slide, run 'slides render' with --to tiff and --slides on at most {RenderSelection.MaximumParts} slides at a time";

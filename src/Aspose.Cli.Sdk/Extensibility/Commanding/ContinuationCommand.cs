@@ -9,7 +9,9 @@ namespace Aspose.Cli.Sdk.Extensibility.Commanding;
 /// Builds the ready-to-run follow-up command a bounded read advertises in its <c>next</c>
 /// field. The command names this executable, quotes every value that a POSIX shell,
 /// PowerShell or cmd would otherwise split or expand, and always asks for JSON, so an
-/// agent can run it verbatim instead of computing the next window itself.
+/// agent can run it verbatim instead of computing the next window itself. It names what it
+/// writes only through <see cref="Out"/> and <see cref="OutDir"/>, which give
+/// <c>--overwrite</c> by the rule of <see cref="ContinuationOutput"/>.
 /// </summary>
 public sealed class ContinuationCommand
 {
@@ -106,6 +108,28 @@ public sealed class ContinuationCommand
     internal ContinuationCommand PasswordVariable(string option, string? variable) =>
         Option(option, variable ?? PasswordPlaceholder);
 
+    /// <summary>Appends <c>--out</c> naming the file the command writes, with <c>--overwrite</c> when it replaces what is there (<see cref="ContinuationOutput"/>).</summary>
+    public ContinuationCommand Out(ContinuationOutput output) => Writing(StandardOptionNames.Out, output);
+
+    /// <summary>Appends <c>--out-dir</c> naming the directory the command writes in, with <c>--overwrite</c> when it replaces what is there (<see cref="ContinuationOutput"/>).</summary>
+    public ContinuationCommand OutDir(ContinuationOutput output) => Writing(StandardOptionNames.OutDir, output);
+
+    /// <summary>
+    /// Appends <c>--overwrite</c> when the command replaces <paramref name="output"/>, which its
+    /// command line names already, as a repeated command line keeps the output its invocation named.
+    /// </summary>
+    internal ContinuationCommand Overwriting(ContinuationOutput output)
+    {
+        ArgumentNullException.ThrowIfNull(output);
+        return Flag(StandardOptionNames.Overwrite, output.Replaces);
+    }
+
+    private ContinuationCommand Writing(string option, ContinuationOutput output)
+    {
+        ArgumentNullException.ThrowIfNull(output);
+        return Option(option, output.Path).Overwriting(output);
+    }
+
     /// <summary>Appends a switch when <paramref name="enabled"/> is true.</summary>
     public ContinuationCommand Flag(string name, bool enabled = true)
     {
@@ -162,6 +186,41 @@ public sealed class ContinuationCommand
         var replay = new CommandLineReplay(repeated, []);
         return replay.Append(parse.RootCommandResult) && replay.LeftOut.Count == 0 && replay.Piped is null ? repeated : null;
     }
+}
+
+/// <summary>
+/// A file or directory a command a hint names writes, and the one rule for whether the command
+/// replaces what is there: only what the caller agreed to replace, which is the output the
+/// invocation wrote, or the output the caller named for it with <c>--overwrite</c>. A file or
+/// directory the hint names itself, such as an encrypted copy beside the output, is written only
+/// where nothing is: a file of the caller's there is refused with <c>OUTPUT_EXISTS</c> rather than
+/// replaced, and so is the command run a second time.
+/// </summary>
+public sealed class ContinuationOutput
+{
+    private ContinuationOutput(string path, bool replaces)
+    {
+        ArgumentException.ThrowIfNullOrEmpty(path);
+        Path = path;
+        Replaces = replaces;
+    }
+
+    /// <summary>The file or directory, as the command names it.</summary>
+    public string Path { get; }
+
+    /// <summary>Whether the command replaces what is there.</summary>
+    internal bool Replaces { get; }
+
+    /// <summary>The output the invocation wrote, which the command replaces.</summary>
+    public static ContinuationOutput Written(string path) => new(path, replaces: true);
+
+    /// <summary>The output the caller named for the invocation, which it did not write: replaced when the caller allowed it.</summary>
+    /// <param name="path">The output.</param>
+    /// <param name="overwrite">Whether the caller gave <c>--overwrite</c>.</param>
+    public static ContinuationOutput Requested(string path, bool overwrite) => new(path, overwrite);
+
+    /// <summary>A file or directory the hint names itself, which the command writes only where nothing is.</summary>
+    public static ContinuationOutput New(string path) => new(path, replaces: false);
 }
 
 /// <summary>

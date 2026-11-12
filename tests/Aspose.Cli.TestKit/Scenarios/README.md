@@ -104,8 +104,12 @@ Every step is also checked, whatever it expects, against the CLI's own catalog
   must be one of the step's command, with an allowed value; an operation named must be one
   of the product's; and a password placeholder given to an option, as in
   `--password-env "<password-env>"`, must be in double quotes, which a shell passes as written.
-  Scenarios and generated cases also judge variants: a command that writes to
-  an `--out` that exists in the workspace runs for real and must not fail with `OUTPUT_EXISTS`;
+  Scenarios and generated cases also judge variants: a command that writes runs
+  for real, without `--dry-run`, and must not fail with `OUTPUT_EXISTS` when its `--out` or
+  `--out-dir` is the step's own output (what its result says it wrote, or the output it was
+  given with `--overwrite`), nor
+  replace any other existing file with `--overwrite`; run a second time over what it wrote, it
+  must succeed with `--overwrite` and may fail only with `OUTPUT_EXISTS` without it;
   a hint that says to run the command again with options runs the step again with them over what
   it wrote; and a step one of whose hints names its input runs again on an encrypted copy of that
   input opened with `--password-env`, on the same opened with `--password-stdin`, whose hints'

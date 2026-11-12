@@ -197,8 +197,7 @@ public partial class StandardInvocation
         ContinuationInput input = ContinuationOf(Input);
         ContinuationCommand Convert(ContinuationInput source) => source.ContinuationAt(converter)
             .Option(StandardOptionNames.To, format)
-            .Option(StandardOptionNames.Out, output)
-            .Flag(StandardOptionNames.Overwrite);
+            .Out(ContinuationOutput.Written(output));
         Symbol[] given = [.. _options.Own.Where(Gave)];
         if (given.Length == 0)
         {
@@ -216,12 +215,11 @@ public partial class StandardInvocation
         string part = new ResolvedDirectory(folder, overwrite: false).Parts(Path.GetFileNameWithoutExtension(Input), split.Extension, [1])[0];
         return new InputConversion(
         [
-            // The part may be one another hint of the same invocation wrote already, so it replaces it.
+            // The part is a new file beside the output, written only where nothing is.
             input.ContinuationAt(split.Path)
                 .Option(SplitOptions.ByOption, SplitPlan.Spell(SplitBy.Pages))
                 .Option(SplitOptions.GroupsOption, selection.Value)
-                .Option(StandardOptionNames.OutDir, folder)
-                .Flag(StandardOptionNames.Overwrite),
+                .OutDir(ContinuationOutput.New(folder)),
             Convert(input with { Document = part }),
         ], part);
     }
@@ -632,7 +630,7 @@ public partial class StandardInvocation
             ContinuationCommand line = (output is not null && _options.Input is not null
                 ? ContinuationAt(writer)
                 : new ContinuationCommand(writer).Placeholder("that file")).Option(StandardOptionNames.To, format.Id);
-            return output is null ? line : line.Option(StandardOptionNames.Out, output);
+            return output is null ? line : line.Out(ContinuationOutput.Requested(output, Overwrite));
         }
 
         return SiblingTargets()
@@ -721,8 +719,12 @@ internal sealed record RepeatedInvocation(ContinuationCommand Command, string? P
 /// <param name="Part">The part the split writes for the conversion to read, or null when the input itself is converted.</param>
 internal sealed record InputConversion(IReadOnlyList<ContinuationCommand> Commands, string? Part)
 {
-    /// <summary>What a hint says after the commands of the part they leave behind, which only the conversion reads; empty without one.</summary>
+    /// <summary>
+    /// What a hint says after the commands of the part they leave behind, which only the conversion
+    /// reads: to delete it, so that another hint that splits the same part, which it writes only
+    /// where nothing is, runs as written too; empty without one.
+    /// </summary>
     public string Leftover => Part is null
         ? string.Empty
-        : $"; once the conversion has run, {Path.GetFileName(Part)}, the part the split wrote beside the output, can be deleted";
+        : $"; once the conversion has run, delete {Path.GetFileName(Part)}, the part the split wrote beside the output";
 }

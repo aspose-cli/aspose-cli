@@ -641,7 +641,9 @@ internal sealed partial class ParsedInvocation
             .Option("--to", found.Format);
         if (Given("--out") is { } output)
         {
-            line.Option("--out", output);
+            // The output this command was asked to write, replaced only when the caller allowed it.
+            line.Out(ContinuationOutput.Requested(output,
+                Command.Options.FirstOrDefault(static candidate => candidate.Name == "--overwrite") is Option<bool> overwrite && ParseResult.GetValue(overwrite)));
         }
 
         return $"Run '{line}' for {found.Format}.";
