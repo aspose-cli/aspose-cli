@@ -9,9 +9,8 @@ namespace Aspose.Cli.Architecture.Tests;
 /// or counts text, which is every engine file of the Cells product that matches text with the
 /// SDK's <c>TextReplacement</c> or <c>TextSearch</c>, reads that text from the enumeration and never
 /// from the workbook itself. So such a file reaches none of the members the engine holds text in, or
-/// the collections that hold them (<see cref="Holders"/>), except in the members listed here, each
-/// with its reason. The rule reads member names only: a <c>Text</c> read from a shape or a title the
-/// file got some other way is not caught.
+/// the collections that hold them (<see cref="Holders"/>). The rule reads member names only: a
+/// <c>Text</c> read from a shape or a title the file got some other way is not caught.
 /// </summary>
 public sealed class CellsTextUnitsOwnershipTests
 {
@@ -21,32 +20,11 @@ public sealed class CellsTextUnitsOwnershipTests
         "StringValue", "DisplayStringValue", "Formula", "Note", "Title", "Comments", "Shapes", "Charts", "PageSetup", "InEffect", "Visible",
     };
 
-    // rule-exemptions: begin
-    /// <summary>The members of a file that matches text which read the workbook's text themselves, by file and member, with the reason.</summary>
-    private static readonly Dictionary<string, string> Readers = new(StringComparer.Ordinal)
-    {
-        ["SearchMatcher.cs: Find(ResourceBudgetLedger, Workbook, CellsSearchRequest, int?)"] =
-            "search still matches the value and the formula of each cell itself; reading CellsTextUnits instead changes what it finds, so it moves in a change of its own.",
-    };
-    // rule-exemptions: end
-
     [Fact]
     public void CellsText_IsReadForItselfOnlyThroughTheEnumeration()
     {
-        IEnumerable<string> violations = Reaches()
-            .Where(static found => !Readers.ContainsKey(found.Key))
-            .Select(static found => found.File.At(found.Node, found.Key));
-
-        OwnershipSourceFiles.AssertNone(violations,
-            "A Cells command reads the text it finds, replaces or counts from CellsTextUnits; a member that reads the workbook's text itself is listed with its reason:");
-    }
-
-    [Fact]
-    public void EveryListedReader_StillReadsText()
-    {
-        HashSet<string> found = [.. Reaches().Select(static found => found.Key)];
-        string[] stale = [.. Readers.Keys.Where(key => !found.Contains(key))];
-        Assert.True(stale.Length == 0, "Listed readers that no longer read text: " + string.Join(", ", stale));
+        OwnershipSourceFiles.AssertNone(Reaches().Select(static found => found.File.At(found.Node, found.Key)),
+            "A Cells command reads the text it finds, replaces or counts from CellsTextUnits, never from the workbook itself:");
     }
 
     /// <summary>
@@ -63,7 +41,7 @@ public sealed class CellsTextUnitsOwnershipTests
             .SelectMany(static file => file.Root.DescendantNodes().OfType<IdentifierNameSyntax>()
                 .Where(static name => Holders.Contains(name.Identifier.ValueText) && name.Parent switch
                 {
-                    MemberAccessExpressionSyntax access => access.Name == name,
+                    MemberAccessExpressionSyntax access => access.Name == name && access.Expression.ToString() != "TextPart",
                     MemberBindingExpressionSyntax binding => binding.Name == name,
                     _ => false,
                 })

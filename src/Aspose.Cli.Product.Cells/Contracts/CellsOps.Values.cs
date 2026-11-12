@@ -132,9 +132,10 @@ public sealed record UnmergeCellsOp : CellsSheetOp
 }
 
 /// <summary>
-/// Replaces literal or regular-expression text within the text values of a sheet's cells, in
-/// address order, row by row. Formulas, numbers, dates and Booleans are never changed; a cell's
-/// whole text is matched, not the text its number format shows.
+/// Replaces literal or regular-expression text within the text values of one sheet's cells, the
+/// operation's sheet or else the active sheet, in address order, row by row; other sheets stay as
+/// they are. Formulas, numbers, dates and Booleans are never changed; a cell's whole text is
+/// matched, not the text its number format shows.
 /// </summary>
 [Operation("replace_text")]
 [MistakenFor("find_replace", "replace")]

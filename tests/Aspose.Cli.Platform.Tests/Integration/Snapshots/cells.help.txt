@@ -8,7 +8,7 @@ Usage:
 Commands:
   inspect <file>          Show structure and metadata of a workbook.
   read <file>             Read cell data of one sheet as a windowed projection.
-  search <file>           Find cells whose value or formula matches a pattern.
+  search <file>           Find the text of cells, formulas, comments, headers and footers, charts and drawings that matches a pattern.
   create <file>           Create a new workbook.
   edit <file>             Apply a batch of edit ops atomically. Editable outputs: xlsx, xltx, xlsm, xltm, xlsb, xls, ods, csv, tsv.
   compare <left> <right>  Compare stored workbook values and optional formula text; dates are ISO 8601.
@@ -276,7 +276,7 @@ Learn more:
 
 ## aspose-cli cells search --help
 Description:
-  Find cells whose value or formula matches a pattern.
+  Find the text of cells, formulas, comments, headers and footers, charts and drawings that matches a pattern.
 
 Usage:
   aspose-cli cells search <file> --pattern <pattern> [options]
@@ -288,7 +288,7 @@ Options:
   --pattern <pattern> (REQUIRED)   Text to find, or a regular expression with --regex.
   --regex                          Treat the pattern as a culture-invariant regular expression with a one-second budget.
   --case-sensitive                 Match letter case exactly.
-  --content <all|formulas|values>  What to search: the cell results, the formula text or all of both. [default: values]
+  --content <all|formulas|values>  What to search: what a reader sees (cell results, comments, headers and footers, chart and drawing text), the formula text or all of both. [default: values]
   --max-hits <max-hits>            Maximum returned hits. Range: 1-10000. [default: 100]
   --skip <skip>                    Matches to pass over before the returned hits; a truncated search's window.next sets it. [default: 0]
   --sheet <sheet>                  Restrict to one sheet. Default: all sheets.

@@ -7,7 +7,7 @@ using static Aspose.Cli.Product.Cells.Engine.CellsEngineSupport;
 
 namespace Aspose.Cli.Product.Cells.Engine;
 
-/// <summary><c>cells search</c>: the budgeted cells whose value or formula matches a pattern.</summary>
+/// <summary><c>cells search</c>: the text units, budgeted cells and the parts outside them, that match a pattern.</summary>
 internal static class CellsSearch
 {
     public static CellsSearchResult Run(CellsSession session, CellsSearchRequest request)

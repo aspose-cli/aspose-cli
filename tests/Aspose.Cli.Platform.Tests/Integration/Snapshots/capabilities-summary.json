@@ -73,7 +73,7 @@
         },
         {
           "command": "search",
-          "description": "Find cells whose value or formula matches a pattern."
+          "description": "Find the text of cells, formulas, comments, headers and footers, charts and drawings that matches a pattern."
         }
       ],
       "operations": [

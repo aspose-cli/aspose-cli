@@ -122,8 +122,17 @@ aspose-cli cells search book.xlsx --pattern "TBD|TODO|xxx|\{\{" --regex --output
 
 `workbook.formulaErrors` must be empty; guard a division that can meet zero
 or an empty cell with `IFERROR` or an `IF` on the denominator. The search
-covers every sheet and matches values; `--content all` also searches formula
-text. `hits` must be empty, or each hit is an intentional token you explain.
+covers every sheet, or one with `--sheet`, and matches what a reader sees: cell values, comments,
+headers and footers, chart titles, axis titles, series names, data labels,
+the text of drawings and alternative text; a hit outside a cell names its
+`part` and `location`. `--content all` also searches formula text. It does
+not search data validation messages or list items, hyperlink screen tips,
+sheet or defined names, ActiveX control text, or pivot table captions no cell
+shows, so no hit there does not mean the text is absent.
+`replace_text` changes one sheet: check it with `--sheet` and that sheet's
+name, where what is left is what its `TEXT_NOT_REPLACED` names, and replace
+on each other sheet that still has hits; no warning names those.
+`hits` must be empty, or each hit is an intentional token you explain.
 Formula errors are not the only wrong numbers: a `SUM` over the wrong range
 returns a plausible value, so spot-check two or three computed cells against
 what they should roughly be.

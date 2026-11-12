@@ -19,14 +19,14 @@ internal static class SearchCommand
     public static CommandDefinition<CellsSearchRequest, CellsSearchResult> Create()
     {
         var search = new SearchOptions(new SearchScopeGrammar(
-            "What to search: the cell results, the formula text or all of both.",
+            "What to search: what a reader sees (cell results, comments, headers and footers, chart and drawing text), the formula text or all of both.",
             [InValues, InFormulas, InAll],
             InValues,
             "--content"));
         var sheet = new Option<string?>("--sheet") { Description = "Restrict to one sheet. Default: all sheets." }.WithInput(InputKind.None);
         return new(
             "search",
-            "Find cells whose value or formula matches a pattern.",
+            "Find the text of cells, formulas, comments, headers and footers, charts and drawings that matches a pattern.",
             new CommandTraits { Input = CellsInputs.Workbook("Workbook to search.") },
             [.. search.Options, sheet],
             (parse, standard) =>
@@ -87,7 +87,7 @@ internal static class SearchCommand
             var table = new TextTable("sheet", "cell", "text");
             foreach (CellsSearchHit hit in search.Hits)
             {
-                table.AddRow(hit.Sheet, hit.Cell, hit.Context);
+                table.AddRow(hit.Sheet, hit.Part is null ? hit.Cell : $"{hit.Cell ?? hit.Location} ({hit.Part})", hit.Context);
             }
 
             table.WriteTo(surface.Out, surface.Format);
