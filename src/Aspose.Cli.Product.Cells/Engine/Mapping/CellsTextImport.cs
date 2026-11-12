@@ -39,7 +39,9 @@ internal static partial class CellsTextImport
     /// The engine's options for a text input, loaded within <see cref="Invariant"/>. The engine
     /// types a number or a date as Excel imports text, with a number format that shows the text it
     /// read. With a named <paramref name="culture"/> it reads that culture's numbers and dates;
-    /// without one, invariant ones, and a value keeps a type only as written (<see cref="Reads"/>).
+    /// without one, invariant ones, and a value keeps a type only as written (<see cref="Reads"/>),
+    /// which keeps a number of more than 15 digits as text, as KeepPrecision does not (known issue
+    /// CELLS-CSV-KEEP-PRECISION, KNOWN-ISSUES.md).
     /// </summary>
     internal static TxtLoadOptions LoadOptions(char separator, Encoding? encoding, CultureInfo? culture) => new(LoadFormat.Csv)
     {
@@ -103,7 +105,9 @@ internal static partial class CellsTextImport
     /// <summary>
     /// Runs <paramref name="work"/> with the thread's culture set to the invariant one, then sets
     /// it back: the engine types the values of delimited text, and writes its numbers, by the
-    /// thread's culture, which would otherwise be the machine's regional settings.
+    /// thread's culture, which would otherwise be the machine's regional settings, whatever
+    /// culture its options name (known issues CELLS-CSV-SAVE-CULTURE and
+    /// CELLS-CSV-FRACTION-CULTURE, KNOWN-ISSUES.md).
     /// </summary>
     internal static T Invariant<T>(Func<T> work)
     {

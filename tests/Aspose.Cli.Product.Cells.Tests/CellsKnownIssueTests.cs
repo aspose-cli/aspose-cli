@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text;
 using Aspose.Cells;
 using Aspose.Cells.Charts;
@@ -79,6 +80,72 @@ public sealed class CellsKnownIssueTests
             "CELLS-SVG-ORPHAN",
             kept.Length > 0 && !referenced,
             kept.Length == 0 ? "the saved package holds no SVG of the removed picture" : $"the saved package holds {string.Join(", ", kept)}, {(referenced ? "referenced" : "unreferenced")}");
+    }
+
+    [LicensedFact]
+    public void CsvSaveWithoutFormatting_WritesNumbersInTheThreadsCulture()
+    {
+        using var fixture = new CellsFixture();
+        string input = fixture.Temp.File("price.csv");
+        string output = fixture.Temp.File("price-out.csv");
+        File.WriteAllText(input, "k,19.9\n");
+
+        string written = InCulture("de-DE", () =>
+        {
+            using var workbook = new Workbook(input, new TxtLoadOptions(LoadFormat.Csv) { CultureInfo = CultureInfo.InvariantCulture });
+            workbook.Settings.CultureInfo = CultureInfo.InvariantCulture;
+            workbook.Save(output, new TxtSaveOptions(SaveFormat.Csv) { FormatStrategy = CellValueFormatStrategy.None });
+            return File.ReadAllText(output).Trim();
+        });
+
+        KnownIssue.Reproduces("CELLS-CSV-SAVE-CULTURE", written.Contains("19,9", StringComparison.Ordinal), $"under de-DE the save wrote {written}");
+    }
+
+    [LicensedFact]
+    public void CsvLoad_OfAFraction_ThrowsUnderADecimalCommaCulture()
+    {
+        using var fixture = new CellsFixture();
+        string input = fixture.Temp.File("fraction.csv");
+        File.WriteAllText(input, "k,3 1/2\n");
+
+        Exception? failure = InCulture("de-DE", () => Record.Exception(() =>
+        {
+            using var workbook = new Workbook(input, new TxtLoadOptions(LoadFormat.Csv) { CultureInfo = CultureInfo.InvariantCulture });
+        }));
+
+        KnownIssue.Reproduces("CELLS-CSV-FRACTION-CULTURE", failure is FormatException, failure?.Message ?? "under de-DE the load read 3 1/2");
+    }
+
+    [LicensedFact]
+    public void CsvKeepPrecision_ReadsALongNumberAsANumberAllTheSame()
+    {
+        using var fixture = new CellsFixture();
+        string input = fixture.Temp.File("long.csv");
+        File.WriteAllText(input, "k,12345678901234567890\n");
+
+        (CellValueType type, string shows) = InCulture("en-US", () =>
+        {
+            using var workbook = new Workbook(input, new TxtLoadOptions(LoadFormat.Csv) { KeepPrecision = true });
+            Cell cell = workbook.Worksheets[0].Cells["B1"];
+            return (cell.Type, cell.StringValue);
+        });
+
+        KnownIssue.Reproduces("CELLS-CSV-KEEP-PRECISION", type == CellValueType.IsNumeric, $"with KeepPrecision the 20-digit value is read as {type}, {shows}");
+    }
+
+    // Runs work with the thread's culture set to the named one, then sets it back.
+    private static T InCulture<T>(string name, Func<T> work)
+    {
+        CultureInfo culture = CultureInfo.CurrentCulture;
+        CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo(name);
+        try
+        {
+            return work();
+        }
+        finally
+        {
+            CultureInfo.CurrentCulture = culture;
+        }
     }
 
     [LicensedFact]
