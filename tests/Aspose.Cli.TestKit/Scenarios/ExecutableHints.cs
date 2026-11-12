@@ -64,10 +64,13 @@ public sealed record HintRun(
 /// must be in double quotes: unquoted, a shell reads its angle brackets as a redirection, so the
 /// command pasted as written fails before the CLI runs.</item>
 /// <item>With <c>variants</c>, as the scenarios and the generated cases judge hints, a command that
-/// writes to an <c>--out</c> that exists in the invocation's workspace runs for real in the copy,
-/// without a dry run, and must not fail with <c>OUTPUT_EXISTS</c> either: a hint that names an
-/// existing file as its output means to replace it, while one that names a file that does not
-/// exist means to write a new one. A hint of a successful invocation that says to run the command
+/// writes and is not a dry run as written runs for real in the copy, without a dry run: it must
+/// not fail with <c>OUTPUT_EXISTS</c> either when its <c>--out</c> or <c>--out-dir</c> is the
+/// invocation's own output, what its result says it wrote or the output it was given with
+/// <c>--overwrite</c>, while any other file there is not the hint's to replace, so one that
+/// replaces an existing file with <c>--overwrite</c> is reported; and a command that names its output and succeeded runs a second
+/// time over what it wrote, which must succeed with <c>--overwrite</c> and may fail only with
+/// <c>OUTPUT_EXISTS</c> without it. A hint of a successful invocation that says to run the command
 /// again with options runs it again with them over what it wrote, under the same refusals. And an
 /// invocation one of whose hints names its input in a command runs again in a copy of its
 /// workspace on three variants of that input, and the commands its hints name on the variant must
@@ -304,14 +307,14 @@ public static partial class ExecutableHints
         Invocation invocation = Invocation.Of(catalog, run, document);
         return action.Kind switch
         {
-            HintKind.Command => PlanCommand(catalog, run, invocation, action.Tokens, variants),
+            HintKind.Command => PlanCommand(catalog, run, document, invocation, action.Tokens, variants),
             HintKind.Operations => PlanOperations(catalog, run, invocation, action.Text),
             HintKind.Option => PlanOption(catalog, run, invocation, action.Tokens),
             _ => Judgement.Static("operation " + action.Text, invocation.Product, OperationNameProblem(catalog, invocation, action.Text)),
         };
     }
 
-    private static Judgement PlanCommand(CliCatalog catalog, HintRun run, Invocation invocation, IReadOnlyList<string> tokens, bool variants)
+    private static Judgement PlanCommand(CliCatalog catalog, HintRun run, JsonNode? document, Invocation invocation, IReadOnlyList<string> tokens, bool variants)
     {
         CommandLine line = CommandLine.Parse(catalog, tokens);
         string subject = "command " + string.Join(Separator, tokens);
@@ -335,10 +338,16 @@ public static partial class ExecutableHints
         // network are left to the catalog check.
         bool unfilledFile = (line.Positionals.Count == 0 && invocation.Files.Count < required)
             || (invocation.Files.Count == 0 && line.Rest.SelectMany(static token => Placeholder().Matches(token)).Any(static placeholder => Fills(InputPlaceholders, placeholder)));
-        // With variants, a command that names an existing file as its output runs, for real when it
-        // has no dry run, and must replace that file rather than fail because it exists.
-        bool replaces = variants && ExistingOutput(run, line);
-        bool writesForReal = !replaces && !line.Command.Has("--dry-run") && (line.Command.Has("--out") || line.Command.Has("--out-dir") || line.Command.Has("--in-place"));
+        // With variants, a command that writes and is not a dry run as written runs for real, twice
+        // (Writing); a command that writes and has no dry run is otherwise left to the catalog.
+        bool writes = line.Command.Has("--out") || line.Command.Has("--out-dir") || line.Command.Has("--in-place");
+        bool real = variants && writes && !line.Rest.Contains("--dry-run");
+        bool writesForReal = !real && writes && !line.Command.Has("--dry-run");
+        bool own = real && OwnOutput(run, document, line);
+        if (real && !own && line.Rest.Contains("--overwrite") && ExistingOutput(run, line))
+        {
+            return Judgement.Static(subject, invocation.Product, "replaces an existing file that this invocation neither wrote nor was told to replace");
+        }
         string? variable = Variable(run);
         // A variable placeholder the run sets no variable for leaves the command to the catalog
         // and its operations to the ops schema.
@@ -376,7 +385,7 @@ public static partial class ExecutableHints
         }
         // A dry run does not open the input, so it cannot tell whether the command passes on the
         // input's password: with one given, the command runs for real, in the copy.
-        if (invocation.Password is null && !replaces && line.Command.Has("--dry-run") && !args.Contains("--dry-run"))
+        if (invocation.Password is null && !real && line.Command.Has("--dry-run") && !args.Contains("--dry-run"))
         {
             args.Add("--dry-run");
         }
@@ -384,7 +393,7 @@ public static partial class ExecutableHints
         {
             args.AddRange(["--output-format", "json"]);
         }
-        return replaces ? Replacing(run, invocation, invocation.Product, args) : Execution(run, invocation, invocation.Product, args);
+        return real ? Writing(run, invocation, invocation.Product, args, own) : Execution(run, invocation, invocation.Product, args);
     }
 
     private static Judgement PlanOperations(CliCatalog catalog, HintRun run, Invocation invocation, string json)
@@ -441,19 +450,24 @@ public static partial class ExecutableHints
         return new($"run\n{product}\n{string.Join(',', refused)}\n{ContentKey(run, invocation)}\n{piped}\n{string.Join(Separator, args)}", () =>
         {
             using var scratch = new Scratch(run);
-            var resolved = new List<string>();
-            foreach (string arg in args)
-            {
-                string value = scratch.Resolve(arg);
-                // An output outside the copy of the workspace is written into it instead.
-                if (resolved.Count > 0 && resolved[^1] is "--out" or "--out-dir" && Path.IsPathFullyQualified(value) && !scratch.Contains(value))
-                {
-                    value = Path.Combine(scratch.OutputDirectory, Path.GetFileName(value));
-                }
-                resolved.Add(value);
-            }
-            return scratch.Run(resolved, refused);
+            return scratch.Run(InCopy(scratch, args), refused);
         });
+    }
+
+    /// <summary>A logical command line with its markers resolved in the copy, and an output outside the copy written into it instead.</summary>
+    private static List<string> InCopy(Scratch scratch, IReadOnlyList<string> args)
+    {
+        var resolved = new List<string>();
+        foreach (string arg in args)
+        {
+            string value = scratch.Resolve(arg);
+            if (resolved.Count > 0 && resolved[^1] is "--out" or "--out-dir" && Path.IsPathFullyQualified(value) && !scratch.Contains(value))
+            {
+                value = Path.Combine(scratch.OutputDirectory, Path.GetFileName(value));
+            }
+            resolved.Add(value);
+        }
+        return resolved;
     }
 
     /// <summary>
@@ -900,9 +914,15 @@ public static partial class ExecutableHints
             System.IO.Path.GetFullPath(path).StartsWith(_directory.Path, StringComparison.OrdinalIgnoreCase);
 
         /// <summary>Runs the command line in the copy; the refusal among <paramref name="refused"/> it ends with, or null.</summary>
-        public string? Run(IReadOnlyList<string> args, IReadOnlyList<string> refused)
+        public string? Run(IReadOnlyList<string> args, IReadOnlyList<string> refused) =>
+            Invoke(args) is { } result && Failure(result) is var (code, problem) && refused.Contains(code) ? problem : null;
+
+        /// <summary>
+        /// Runs the command line in the copy with what the invocation piped to it on stdin; null when
+        /// it does not end in time, since only a refusal of the command line itself is judged.
+        /// </summary>
+        public CliResult? Invoke(IReadOnlyList<string> args)
         {
-            CliResult result;
             try
             {
                 // The user's profile is the copy's too, so nothing a hint runs reaches the real one.
@@ -911,20 +931,26 @@ public static partial class ExecutableHints
                     ["HOME"] = _home,
                     ["USERPROFILE"] = _home,
                 };
-                result = new CliProcess(CliRunner.ExecutablePath, CliEnvironment.Evaluation(_config, variables), TimeSpan.FromSeconds(60))
+                return new CliProcess(CliRunner.ExecutablePath, CliEnvironment.Evaluation(_config, variables), TimeSpan.FromSeconds(60))
                     .Run(_workspace, PipedInput(_run, args) ?? string.Empty, [.. args]);
             }
             catch (TimeoutException)
             {
-                return null; // Only a refusal of the command line itself is judged.
+                return null;
             }
-            if (result.ExitCode == 0 || Parse(result.StdErr)?["error"] is not JsonObject error
-                || Text(error["code"]) is not { } code || !refused.Contains(code))
+        }
+
+        /// <summary>The error code a failed run ends with and the problem that says so; null for a success.</summary>
+        public (string Code, string Problem)? Failure(CliResult result)
+        {
+            if (result.ExitCode == 0)
             {
                 return null;
             }
-            string message = Text(error["message"]) ?? string.Empty;
-            return $"fails with {code}: {ScenarioContract.Excerpt(message.Replace(_workspace, "<workspace>", StringComparison.OrdinalIgnoreCase))}";
+            JsonObject? error = Parse(result.StdErr)?["error"] as JsonObject;
+            string code = Text(error?["code"]) ?? $"exit code {result.ExitCode}";
+            string message = Text(error?["message"]) ?? string.Empty;
+            return (code, $"fails with {code}: {ScenarioContract.Excerpt(message.Replace(_workspace, "<workspace>", StringComparison.OrdinalIgnoreCase))}");
         }
 
         /// <summary>Runs a command line in the copy with these extra variables and that stdin; null when it does not end in time.</summary>

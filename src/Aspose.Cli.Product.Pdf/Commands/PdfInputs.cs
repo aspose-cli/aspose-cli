@@ -21,15 +21,15 @@ internal static class PdfInputs
 
     /// <summary>
     /// The command line, quoted for a hint, that extracts the text of the pages the invocation
-    /// selected from its input into <paramref name="directory"/>: <c>pdf extract &lt;input&gt;
-    /// --what text --out-dir &lt;directory&gt;</c>, with the input password's environment variable
-    /// when one gave it.
+    /// selected from its input into <paramref name="directory"/>, the one the invocation was given:
+    /// <c>pdf extract &lt;input&gt; --what text --out-dir &lt;directory&gt;</c>, with the input's
+    /// password passed on, replacing what is there only when the invocation was told to.
     /// </summary>
     public static string TextExtraction(StandardInvocation standard, ResolvedDirectory directory, string? pages)
     {
         ContinuationCommand command = standard.ContinuationAt("pdf", "extract")
             .Option("--what", PdfExtractKinds.Text)
-            .Option("--out-dir", directory.Path);
+            .OutDir(ContinuationOutput.Requested(directory.Path, standard.Overwrite));
         return (pages is null ? command : command.Option("--pages", pages)).Quoted();
     }
 

@@ -162,7 +162,7 @@ public sealed class PdfOutputFormatTests : IDisposable
         Assert.Contains(" --by pages --groups 2 ", commands[0], StringComparison.Ordinal);
         Assert.StartsWith("aspose-cli words convert ", commands[1], StringComparison.Ordinal);
         Assert.Contains(" --overwrite", commands[1], StringComparison.Ordinal);
-        Assert.EndsWith("' instead; once the conversion has run, three.1.pdf, the part the split wrote beside the output, can be deleted.", hint, StringComparison.Ordinal);
+        Assert.EndsWith("' instead; once the conversion has run, delete three.1.pdf, the part the split wrote beside the output.", hint, StringComparison.Ordinal);
 
         CliResult split = _workspace.RunCommandLine(commands[0]);
         Assert.True(split.ExitCode == 0, split.StdErr);

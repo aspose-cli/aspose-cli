@@ -47,6 +47,63 @@ public sealed partial class DecisionOwnershipTests
             "A runnable aspose-cli command with a path or an option value in it is built by ContinuationCommand, through StandardInvocation.ContinuationAt or ContinuationInputExtensions.ContinuationAt, which passes on the input's password variable, quotes every value and asks for JSON; no code splices a value into one:");
     }
 
+    /// <summary>
+    /// A command a hint names says what it writes only through <c>ContinuationCommand.Out</c> or
+    /// <c>OutDir</c>, given a <c>ContinuationOutput</c> that says whose file it is, which alone
+    /// decides <c>--overwrite</c>: no other code gives a continuation <c>--out</c>, <c>-o</c>,
+    /// <c>--out-dir</c> or <c>--overwrite</c>, written out, as a <c>StandardOptionNames</c> constant
+    /// or as the <c>Name</c> of the option a command declares.
+    /// </summary>
+    [Fact]
+    public void D14_TheOutputsOfContinuations_AreNamedOnlyThroughContinuationOutput()
+    {
+        string owner = Path.Combine(SdkRoot, "Extensibility", "Commanding", "ContinuationCommand.cs");
+        string[] violations = [.. Sources.Value
+            .Where(file => !string.Equals(file.Path, owner, StringComparison.OrdinalIgnoreCase))
+            .SelectMany(file => file.Root.DescendantNodes()
+                .OfType<InvocationExpressionSyntax>()
+                .Where(NamesAnOutput)
+                .Select(invocation => file.At(invocation, Excerpt(invocation))))];
+
+        AssertNone(violations,
+            "A continuation names what it writes with ContinuationCommand.Out or OutDir and a ContinuationOutput, the one rule for --overwrite; no other code gives it --out, --out-dir or --overwrite:");
+    }
+
+    /// <summary>The ways of naming an output option of a continuation that D14 reads, and the calls it leaves alone.</summary>
+    [Theory]
+    [InlineData("""_ = command.Option("--out", path);""", true)]
+    [InlineData("""_ = command.Flag("--overwrite", overwrite);""", true)]
+    [InlineData("""_ = command.Option(StandardOptionNames.OutDir, folder);""", true)]
+    [InlineData("""_ = command.Flag(options.Overwrite.Name);""", true)]
+    [InlineData("""_ = command.Flag(options.Overwrite!.Name, overwrite);""", true)]
+    [InlineData("""_ = command.Option(options.OutputFile.Option.Name, path);""", true)]
+    [InlineData("""_ = command.Option(options?.OutputDirectory?.Option.Name, folder);""", true)]
+    [InlineData("""_ = command.Out(ContinuationOutput.New(path));""", false)]
+    [InlineData("""_ = command.Option("--to", "pdf");""", false)]
+    [InlineData("""_ = command.Option(options.To.Name, "pdf");""", false)]
+    public void D14_TheOutputRule_ReadsEachWayOfNamingAnOutputOption(string statements, bool names)
+    {
+        SyntaxNode root = CSharpSyntaxTree.ParseText($"class C {{ void M() {{ {statements} }} }}").GetRoot();
+
+        Assert.Equal(names, root.DescendantNodes().OfType<InvocationExpressionSyntax>().Any(NamesAnOutput));
+    }
+
+    // A call that gives a command line an option with its first argument, as Option, Flag and
+    // Document do, when that argument names --out, -o, --out-dir or --overwrite.
+    private static bool NamesAnOutput(InvocationExpressionSyntax invocation) =>
+        invocation is { Expression: MemberAccessExpressionSyntax { Name.Identifier.ValueText: "Option" or "Flag" or "Document" } }
+        && invocation.ArgumentList.Arguments is [{ Expression: var option }, ..]
+        && option switch
+        {
+            LiteralExpressionSyntax literal => literal.Token.ValueText is "--out" or "-o" or "--out-dir" or "--overwrite",
+            MemberAccessExpressionSyntax { Expression: var type, Name.Identifier.ValueText: "Out" or "OutAlias" or "OutDir" or "Overwrite" }
+                when type.ToString().EndsWith("StandardOptionNames", StringComparison.Ordinal) => true,
+            // The Name of an output option a command declares, as in options.Overwrite.Name.
+            _ => option.ToString().EndsWith(".Name", StringComparison.Ordinal)
+                && option.DescendantNodesAndSelf().OfType<IdentifierNameSyntax>()
+                    .Any(static name => name.Identifier.ValueText is "Overwrite" or "OutputFile" or "OutputDirectory"),
+        };
+
     /// <summary>The ways of splicing a value into a command that D14 reads, and the texts it leaves alone.</summary>
     [Theory]
     [InlineData("""_ = $"Run 'aspose-cli cells convert {path} --to xlsx'.";""", true)]

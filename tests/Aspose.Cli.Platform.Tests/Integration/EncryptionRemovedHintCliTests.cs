@@ -124,7 +124,7 @@ public sealed partial class EncryptionRemovedHintCliTests : IDisposable
         Assert.Equal(2, commands.Length);
         Assert.StartsWith("aspose-cli pdf split " + Quoted(_workspace.File("locked.pdf")) + " --password-env " + Variable + " --by pages --groups 2 ", commands[0], StringComparison.OrdinalIgnoreCase);
         Assert.StartsWith("aspose-cli words convert " + Quoted(_workspace.File("locked.1.pdf")) + " ", commands[1], StringComparison.OrdinalIgnoreCase);
-        Assert.EndsWith("; once the conversion has run, locked.1.pdf, the part the split wrote beside the output, can be deleted.", hint, StringComparison.Ordinal);
+        Assert.EndsWith("; once the conversion has run, delete locked.1.pdf, the part the split wrote beside the output.", hint, StringComparison.Ordinal);
         Step(commands[0]);
         JsonNode converted = Step(commands[1]);
         // The part the hint says may be deleted is the one the split wrote and the conversion read.
@@ -411,9 +411,10 @@ public sealed partial class EncryptionRemovedHintCliTests : IDisposable
     }
 
     /// <summary>
-    /// The two hints of a page selection converted to docx split the same part: run one after the
-    /// other as written, the second replaces the part the first wrote and ends with an encrypted
-    /// docx of that page.
+    /// The two hints of a page selection converted to docx split the same part, a file each names
+    /// itself and each says to delete once converted. Done as they say, one after the other, both
+    /// run as written and end with an encrypted docx of that page; with the part left in place, the
+    /// second's split is refused rather than replacing it, and leaves it as it was.
     /// </summary>
     [Category(TestCategory.Slow)]
     [Fact]
@@ -426,12 +427,23 @@ public sealed partial class EncryptionRemovedHintCliTests : IDisposable
         Assert.True(result.ExitCode == 0, result.StdErr);
         string editable = result.Json()["warnings"]!.AsArray()
             .Single(static warning => warning!["code"]!.GetValue<string>() == "LOSSY_CONVERSION")!["hint"]!.GetValue<string>();
+        const string DeletePart = "; once the conversion has run, delete locked.1.pdf, the part the split wrote beside the output";
+        Assert.Contains(DeletePart, editable, StringComparison.Ordinal);
+        Assert.Contains(DeletePart, Hint(result), StringComparison.Ordinal);
         string[] commands = [.. Commands(editable), .. Commands(Hint(result))];
         Assert.Equal(4, commands.Length);
-        foreach (string command in commands)
-        {
-            Step(command);
-        }
+        Step(commands[0]);
+        Step(commands[1]);
+        string part = _workspace.File("locked.1.pdf");
+        byte[] written = File.ReadAllBytes(part);
+
+        CliResult split = _workspace.RunCommandLine(commands[2], Variables);
+        Assert.Equal("OUTPUT_EXISTS", JsonNode.Parse(split.StdErr)?["error"]?["code"]?.GetValue<string>());
+        Assert.Equal(written, File.ReadAllBytes(part));
+
+        File.Delete(part);
+        Step(commands[2]);
+        Step(commands[3]);
 
         AssertNeedsThePassword("words", _workspace.File("page.docx"));
         JsonNode inspected = Run("words", "inspect", "page.docx", "--password-env", Variable).Json();

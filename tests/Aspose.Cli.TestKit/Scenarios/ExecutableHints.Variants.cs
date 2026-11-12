@@ -5,7 +5,7 @@ namespace Aspose.Cli.TestKit.Scenarios;
 
 /// <summary>
 /// The variants the scenarios and the generated cases judge hints on as well: a command that
-/// replaces an existing output, the invocation run again with the options a hint says to run it
+/// writes, run for real twice, the invocation run again with the options a hint says to run it
 /// again with, and the invocation run again on an encrypted input, opened with a password from a
 /// variable and from stdin, and on an input at a path with a space.
 /// </summary>
@@ -34,29 +34,77 @@ public static partial class ExecutableHints
     /// <summary>Where the variant run writes the outputs the invocation names, which already hold the invocation's own.</summary>
     private const string VariantOutputFolder = "hint variant output";
 
-    /// <summary>Whether the command's <c>--out</c> names a file or directory that exists in the invocation's workspace.</summary>
+    /// <summary>The outputs a command line names with <c>--out</c> or <c>--out-dir</c>, as paths the invocation's workspace resolves.</summary>
+    private static IEnumerable<string> NamedOutputs(HintRun run, CommandLine line) =>
+        line.Values.Where(static pair => pair.Option.Name is "--out" or "--out-dir").Select(static pair => pair.Value)
+            .Where(static named => !Placeholder().IsMatch(named)).Select(named => Resolved(run, named)).OfType<string>();
+
+    /// <summary>Whether the command's <c>--out</c> or <c>--out-dir</c> names a file or directory that exists in the invocation's workspace.</summary>
     private static bool ExistingOutput(HintRun run, CommandLine line) =>
-        line.Values.Where(static pair => pair.Option.Name == "--out").Select(static pair => pair.Value).FirstOrDefault() is { } named
-        && !Placeholder().IsMatch(named)
-        && Resolved(run, named) is { } path
-        && InWorkspace(run, path)
-        && (File.Exists(path) || Directory.Exists(path));
+        NamedOutputs(run, line).Any(path => InWorkspace(run, path) && (File.Exists(path) || Directory.Exists(path)));
 
     /// <summary>Whether a full path lies in the invocation's workspace, whose copy a command runs in.</summary>
     private static bool InWorkspace(HintRun run, string path) =>
         path.StartsWith(Path.TrimEndingDirectorySeparator(Path.GetFullPath(run.Workspace)) + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase);
 
     /// <summary>
-    /// A command that replaces an existing output, run for real in a copy of the workspace as
-    /// <see cref="Execution"/> runs one, which must not fail with <c>OUTPUT_EXISTS</c> either.
+    /// Whether the command's <c>--out</c> or <c>--out-dir</c> names the invocation's own output,
+    /// which a hint may replace: a file or directory its result says it wrote (<c>output</c>, each
+    /// of <c>outputs[]</c> and the <c>output</c> of each, and a review's <c>outputDirectory</c> and
+    /// <c>indexPath</c>; not a <c>backup</c>, which nothing replaces), the <c>--out-dir</c> it wrote
+    /// into, or the <c>--out</c> or <c>--out-dir</c> it was given with <c>--overwrite</c>, which its
+    /// caller allowed to be replaced.
     /// </summary>
-    private static Judgement Replacing(HintRun run, Invocation invocation, string? product, IReadOnlyList<string> args)
+    private static bool OwnOutput(HintRun run, JsonNode? document, CommandLine line)
     {
-        string[] refused = [.. RefusedCodes, .. invocation.Password is null ? [] : PasswordCodes, OutputExists];
-        return new($"replace\n{Execution(run, invocation, product, args).Key}", () =>
+        string[] named = [.. NamedOutputs(run, line)];
+        if (named.Length == 0)
+        {
+            return false;
+        }
+        JsonObject? result = document is JsonObject { } root && !root.ContainsKey("error") ? root : null;
+        IEnumerable<JsonNode?> outputs = result is null ? [] : [result["output"], .. result["outputs"] as JsonArray ?? []];
+        IEnumerable<string?> own = outputs
+            .SelectMany(static output => new[] { Text(output?["path"]), Text(output?["output"]?["path"]) })
+            .Concat([Text(result?["outputDirectory"]), Text(result?["indexPath"])]);
+        CommandLine invoked = CommandLine.Parse(CliCatalog.Current, run.Args);
+        bool overwrite = run.Args.Contains("--overwrite");
+        own = own.Concat(invoked.Values
+            .Where(pair => pair.Option.Name == "--out-dir" ? overwrite || result is not null : pair.Option.Name == "--out" && overwrite)
+            .Select(static pair => pair.Value));
+        string[] files = [.. own.OfType<string>().Select(file => Resolved(run, file)).OfType<string>()];
+        return named.Any(path => files.Any(file => string.Equals(Path.TrimEndingDirectorySeparator(file), Path.TrimEndingDirectorySeparator(path), StringComparison.OrdinalIgnoreCase)));
+    }
+
+    /// <summary>
+    /// A command that writes, run for real in a copy of the workspace as <see cref="Execution"/>
+    /// runs one, twice. The first run must not fail with a refused code, nor with
+    /// <c>OUTPUT_EXISTS</c> when it writes the invocation's own output (<see cref="OwnOutput"/>);
+    /// any other file there is not the hint's to replace. A command that names what it writes with
+    /// <c>--out</c> or <c>--out-dir</c> and succeeded runs again over what it wrote, as a caller
+    /// running the hint twice would: with <c>--overwrite</c> it must succeed, and without it it may
+    /// fail only with <c>OUTPUT_EXISTS</c>.
+    /// </summary>
+    private static Judgement Writing(HintRun run, Invocation invocation, string? product, IReadOnlyList<string> args, bool own)
+    {
+        string[] refused = [.. RefusedCodes, .. invocation.Password is null ? [] : PasswordCodes, .. own ? [OutputExists] : Array.Empty<string>()];
+        string[] allowedAgain = args.Contains("--overwrite") ? [] : [OutputExists];
+        bool again = args.Any(static arg => arg is "--out" or "-o" or "--out-dir");
+        return new($"write\n{own}\n{Execution(run, invocation, product, args).Key}", () =>
         {
             using var scratch = new Scratch(run);
-            return scratch.Run([.. args.Select(scratch.Resolve)], refused);
+            List<string> resolved = InCopy(scratch, args);
+            if (scratch.Invoke(resolved) is not { } first)
+            {
+                return null;
+            }
+            if (scratch.Failure(first) is var (code, problem))
+            {
+                return refused.Contains(code) ? problem : null;
+            }
+            return again && scratch.Invoke(resolved) is { } second && scratch.Failure(second) is var (repeated, failure) && !allowedAgain.Contains(repeated)
+                ? $"run a second time over what it wrote, it {failure}"
+                : null;
         });
     }
 

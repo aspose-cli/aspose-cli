@@ -46,7 +46,7 @@ internal static class WordsCreate
         // the caller names: the input's password option without a variable, which is a placeholder.
         ContinuationCommand convert = new ContinuationInput(path, "--password-env").ContinuationAt("words", "convert")
             .Option("--to", "flatopc")
-            .Option("--out", copy);
+            .Out(ContinuationOutput.New(copy));
         return session.Loader.Open(path, PasswordSource.None(
             "'words create' cannot open an encrypted template. With its password, write an unencrypted copy: "
             + $"{convert.Quoted()}, "

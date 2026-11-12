@@ -322,7 +322,13 @@ internal static class ProtectionAdvice
                 return new Step(reason, $"run the command again with {option} naming an environment variable that holds a password{replacing}, {effect}", Copies: false);
             }
 
-            again.Command.PasswordVariable(option, variable).Flag(StandardOptionNames.Overwrite, overwrite is not null);
+            again.Command.PasswordVariable(option, variable);
+            if (overwrite is not null)
+            {
+                // The command writes again what this one wrote, where its command line names it.
+                again.Command.Overwriting(ContinuationOutput.Written(File));
+            }
+
             return new Step(reason, $"run {again.Command.Quoted()}{again.Repeating}, {effect}{Naming(Password)}", Copies: false);
         }
 
@@ -408,12 +414,12 @@ internal static class ProtectionAdvice
             ContinuationCommand? command = null;
             if (output is not null)
             {
-                string copy = Beside(output.Path, ".encrypted", Path.GetExtension(output.Path));
+                var copy = ContinuationOutput.New(Beside(output.Path, ".encrypted", Path.GetExtension(output.Path)));
                 command = edit is { } encrypting
-                    ? new ContinuationCommand(encryptor.Path).Argument(output.Path).Option(StandardOptionNames.Out, copy).Document(StandardOptionNames.Ops, encrypting.Document)
+                    ? new ContinuationCommand(encryptor.Path).Argument(output.Path).Out(copy).Document(StandardOptionNames.Ops, encrypting.Document)
                     : encryptor.Converts
                         ? new ContinuationCommand(encryptor.Path).Argument(output.Path)
-                            .Option(StandardOptionNames.To, format).Option(StandardOptionNames.Out, copy).PasswordVariable(encryptor.EncryptOption, variable)
+                            .Option(StandardOptionNames.To, format).Out(copy).PasswordVariable(encryptor.EncryptOption, variable)
                         : null;
             }
 
@@ -449,7 +455,7 @@ internal static class ProtectionAdvice
                     again.Command.Option(StandardOptionNames.To, format.Id);
                 }
 
-                again?.Command.Option(StandardOptionNames.Out, path).PasswordVariable(encrypt.EnvironmentOption, variable);
+                again?.Command.Out(ContinuationOutput.New(path)).PasswordVariable(encrypt.EnvironmentOption, variable);
             }
 
             return again is null

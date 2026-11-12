@@ -332,7 +332,7 @@ internal sealed class PdfViewAdapter : IProductViewAdapter<PdfSession>
         ContinuationCommand split = source.ContinuationAt("pdf", "split")
             .Option("--by", "pages")
             .Option("--groups", pages)
-            .Option("--out-dir", directory.Path);
+            .OutDir(ContinuationOutput.New(directory.Path));
         // The one part is named as pdf split names it.
         ContinuationCommand review = source.WrittenAs(directory.Parts(stem, "pdf", [1])[0]).ContinuationAt("review");
         return $"Review those pages on their own: split them out with {split}; then review that part with {review}";
