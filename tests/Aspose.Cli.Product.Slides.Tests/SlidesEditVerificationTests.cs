@@ -19,10 +19,10 @@ public sealed class SlidesEditVerificationTests
         using var fixture = new SlidesEngineFixture();
         string input = fixture.CreatePresentation("backup-twice.pptx");
         string backup = fixture.File("backup-twice.backup.pptx");
-        SlidesEditResult Edit(string title) => SlidesEdit.Run(fixture.Session, new SlidesEditRequest
+        SlidesEditResult Edit(string notes) => SlidesEdit.Run(fixture.Session, new SlidesEditRequest
         {
             Input = input,
-            Batch = new SlidesOpsBatch { Ops = [new SetTitleOp { Slide = 1, Text = title }] },
+            Batch = new SlidesOpsBatch { Ops = [new SetNotesOp { Slide = 1, Text = notes }] },
             Output = TestOutput.At(input, overwrite: true, backup: backup),
         });
 
@@ -81,7 +81,7 @@ public sealed class SlidesEditVerificationTests
         var operation = new SetTitleOp { Id = "title", Slide = 1, Text = "Changed" };
         SlidesMutationHandlers.ResolvedSlidesOp target = SlidesMutationHandlers.ResolveTarget(edited, operation);
         var verifier = new SlidesEditVerifier(edited, _ => target, evaluation: false);
-        SlidesAuthoring.Title(edited.Slides[0]).TextFrame.Text = "Changed";
+        SlidesPlaceholders.Title(edited.Slides[0])!.TextFrame.Text = "Changed";
 
         verifier.Record(operation, AppliedOperations.Changed(SlidesOp.Catalog, operation, 1));
         // The output read back still holds the original title.

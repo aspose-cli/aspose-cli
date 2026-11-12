@@ -299,7 +299,10 @@ public sealed record ImportSlidesOp : SlidesOp
     [SecretEnv] public string? SourcePasswordEnv { get; init; }
 }
 
-/// <summary>Sets the text of a slide's title placeholder.</summary>
+/// <summary>
+/// Sets the text of a slide's title placeholder, or of the title box a Markdown outline added
+/// where the layout has none. A slide with neither is refused, and no box is added.
+/// </summary>
 [Operation("set_title")]
 public sealed record SetTitleOp : SlideTargetOp
 {

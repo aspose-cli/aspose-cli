@@ -42,8 +42,9 @@ public sealed record SlidesSlideData
     public string? Layout { get; init; }
 
     /// <summary>
-    /// The text of the slide's title placeholder, or on a slide without one the text of its first
-    /// shape with text; omitted when there is none, such as an empty title placeholder.
+    /// The text of the shape set_title writes: the slide's title placeholder, or the title box a
+    /// Markdown outline added where the layout has none; omitted when that shape is empty or the
+    /// slide has neither, whatever text its other shapes hold.
     /// </summary>
     public string? Title { get; init; }
 

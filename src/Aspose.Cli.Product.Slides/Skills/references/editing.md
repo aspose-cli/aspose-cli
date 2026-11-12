@@ -63,10 +63,14 @@ comments a deck already has.
 ## Text and notes
 
 - `set_title`, `set_body` and `set_text` fill placeholders the layout already styles; prefer
-  them to `format_shape`, which overrides every run of one shape. `set_body` fills a title
-  slide's subtitle, and refuses a slide with neither body nor subtitle with
-  `PLACEHOLDER_NOT_FOUND`, as a Markdown heading without content makes; add a text box there
-  with `insert_shape`.
+  them to `format_shape`, which overrides every run of one shape. `set_title` writes the title
+  placeholder, or the title box a Markdown outline added where the layout has none. `set_body`
+  fills a title slide's subtitle. Each refuses a slide without its placeholder with
+  `PLACEHOLDER_NOT_FOUND` and adds no box: `set_title` a Blank slide, `set_body` one with neither
+  body nor subtitle, as a Markdown heading without content makes. Write into one of the slide's
+  shapes with `set_text`, or add a text box with `insert_shape`.
+- A slide's `title` in `slides read` and `inspect --sample` is the text of the shape `set_title`
+  writes; a slide without one reports no `title`, whatever its other shapes say.
 - `format_shape` `font` names one font for Latin, East Asian and complex-script text;
   `latinFont` and `eastAsianFont` set the font of their script in its place. `slides read
   --content full` reports a `font` given alone as each run's `font`; given with `latinFont`, it

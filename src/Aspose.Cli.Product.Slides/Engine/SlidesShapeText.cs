@@ -115,19 +115,10 @@ internal static class SlidesShapeText
     }
 
     /// <summary>
-    /// The slide's title: the text of its title placeholder, none when that placeholder is
-    /// empty; on a slide without a title placeholder, the text of its first shape with text.
+    /// The slide's title: the text of its title shape (<see cref="SlidesAuthoring.Title"/>); none
+    /// when that shape is empty or the slide has none.
     /// </summary>
-    internal static string? Title(ISlide slide)
-    {
-        IAutoShape[] shapes = [.. slide.Shapes.OfType<IAutoShape>()];
-        IAutoShape? title = shapes.Any(static shape => SlidesPlaceholders.IsTitle(shape.Placeholder))
-            ? shapes.FirstOrDefault(static shape =>
-                SlidesPlaceholders.IsTitle(shape.Placeholder)
-                && !string.IsNullOrWhiteSpace(shape.TextFrame?.Text))
-            : shapes.FirstOrDefault(static shape => !string.IsNullOrWhiteSpace(shape.TextFrame?.Text));
-        return EmptyToNull(title?.TextFrame?.Text);
-    }
+    internal static string? Title(ISlide slide) => EmptyToNull(SlidesAuthoring.Title(slide)?.TextFrame?.Text);
 
     internal static string? Notes(ISlide slide) =>
         EmptyToNull(Lines(slide.NotesSlideManager.NotesSlide?.NotesTextFrame?.Text));

@@ -174,7 +174,7 @@ internal sealed partial class SlidesMutationHandlers
 
     public ValueTuple Apply(SetTitleOp operation)
     {
-        SlidesAuthoring.Title(Slide).TextFrame.Text = operation.Text;
+        ((IAutoShape)Shape).TextFrame.Text = operation.Text;
         return default;
     }
 

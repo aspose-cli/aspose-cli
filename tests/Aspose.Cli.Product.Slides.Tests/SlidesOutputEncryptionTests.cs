@@ -105,7 +105,8 @@ public sealed class SlidesOutputEncryptionTests : IDisposable
             source.Save(_workspace.File("locked.ppt"), Aspose.Slides.Export.SaveFormat.Ppt);
         }
 
-        File.WriteAllText(_workspace.File("ops.json"), """{"ops":[{"op":"set_title","slide":1,"text":"Locked"}]}""");
+        // The engine's new presentation has a slide without placeholders, so the edit writes its notes.
+        File.WriteAllText(_workspace.File("ops.json"), """{"ops":[{"op":"set_notes","slide":1,"text":"Locked"}]}""");
         Assert.Equal("PASSWORD_REQUIRED", JsonNode.Parse(Run("slides", "inspect", "locked.ppt").StdErr)!["error"]!["code"]!.GetValue<string>());
 
         JsonNode result = Run("slides", "edit", "locked.ppt", "--password-env", "SLIDES_PASSWORD", "--ops", "ops.json", "--out", "edited.pptx").Json();

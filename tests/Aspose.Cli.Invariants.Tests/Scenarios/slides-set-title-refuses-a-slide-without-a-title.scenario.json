@@ -1,0 +1,141 @@
+{
+  "name": "slides set_title refuses a slide without a title placeholder as set_body does, adds no box, and read reports no title there",
+  "files": {
+    "input.pptx": { "fixture": "slides.pptx" }
+  },
+  "steps": [
+    {
+      "args": ["slides", "edit", "input.pptx", "--ops", "{\"ops\":[{\"op\":\"insert_slide\",\"layout\":\"Blank\"},{\"op\":\"insert_shape\",\"slide\":3,\"geometry\":\"rectangle\",\"rect\":{\"x\":40,\"y\":20,\"width\":640,\"height\":80},\"text\":\"Box\"}]}", "--out", "blank.pptx"],
+      "expect": { "exitCode": 0, "files": { "present": ["blank.pptx"] } }
+    },
+    {
+      "args": ["slides", "edit", "blank.pptx", "--ops", "{\"ops\":[{\"op\":\"set_title\",\"slide\":3,\"text\":\"Head\"}]}", "--out", "titled.pptx"],
+      "expect": {
+        "exitCode": 4,
+        "error": "PLACEHOLDER_NOT_FOUND",
+        "json": [
+          { "path": "error.details.requested", "equals": "title" },
+          { "path": "error.details.available", "equals": [] },
+          { "path": "error.hint", "contains": "set_text" },
+          { "path": "error.hint", "contains": "insert_shape" },
+          { "path": "error.hint", "contains": "shapeId, shapeName and placeholder" }
+        ],
+        "files": { "absent": ["titled.pptx"], "unchanged": ["blank.pptx"] }
+      }
+    },
+    {
+      "args": ["slides", "edit", "blank.pptx", "--ops", "{\"ops\":[{\"op\":\"set_title\",\"slide\":3,\"text\":\"Head\"}]}", "--in-place"],
+      "expect": {
+        "exitCode": 4,
+        "error": "PLACEHOLDER_NOT_FOUND",
+        "files": { "unchanged": ["blank.pptx"], "nothingWritten": true }
+      }
+    },
+    {
+      "args": ["slides", "edit", "blank.pptx", "--ops", "{\"ops\":[{\"op\":\"set_body\",\"slide\":3,\"paragraphs\":[{\"text\":\"Head\"}]}]}", "--out", "body.pptx"],
+      "expect": {
+        "exitCode": 4,
+        "error": "PLACEHOLDER_NOT_FOUND",
+        "json": [
+          { "path": "error.hint", "contains": "shapeId, shapeName and placeholder" }
+        ],
+        "files": { "absent": ["body.pptx"], "unchanged": ["blank.pptx"] }
+      }
+    },
+    {
+      "args": ["slides", "read", "blank.pptx", "--slides", "3", "--content", "shapes"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "slides[0].title", "exists": false },
+          { "path": "slides[0].shapes[0].shapeId", "equals": 2 },
+          { "path": "slides[0].shapes[0].text", "equals": "Box" }
+        ]
+      }
+    },
+    {
+      "args": ["slides", "inspect", "blank.pptx", "--sample"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "slides[2].title", "exists": false },
+          { "path": "slides[1].title", "exists": true }
+        ]
+      }
+    },
+    {
+      "args": ["slides", "edit", "blank.pptx", "--ops", "{\"ops\":[{\"op\":\"set_text\",\"slide\":3,\"shapeId\":2,\"text\":\"Head\"}]}", "--out", "text.pptx"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "applied[0].itemsAffected", "equals": 1 },
+          { "path": "applied[0].targets", "equals": ["slide/3/shape/2"] }
+        ],
+        "files": { "present": ["text.pptx"] }
+      }
+    },
+    {
+      "args": ["slides", "read", "text.pptx", "--slides", "3", "--content", "shapes"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "slides[0].title", "exists": false },
+          { "path": "slides[0].shapes[0].text", "equals": "Head" }
+        ]
+      }
+    },
+    {
+      "args": ["slides", "edit", "blank.pptx", "--ops", "{\"ops\":[{\"op\":\"insert_shape\",\"slide\":3,\"geometry\":\"rectangle\",\"rect\":{\"x\":40,\"y\":120,\"width\":640,\"height\":80},\"text\":\"Head\"}]}", "--out", "boxed.pptx"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "applied[0].itemsAffected", "equals": 1 }
+        ],
+        "files": { "present": ["boxed.pptx"] }
+      }
+    },
+    {
+      "args": ["slides", "edit", "blank.pptx", "--ops", "{\"ops\":[{\"op\":\"set_title\",\"slide\":2,\"text\":\"Head\"},{\"op\":\"insert_slide\",\"layout\":\"Title Only\"}]}", "--out", "placeholders.pptx", "--verify"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "applied[0].itemsAffected", "equals": 1 },
+          { "path": "applied[0].targets", "equals": ["slide/2/shape/2"] },
+          { "path": "verification.ok", "equals": true }
+        ],
+        "files": { "present": ["placeholders.pptx"] }
+      }
+    },
+    {
+      "args": ["slides", "read", "placeholders.pptx", "--slides", "2,4"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "slides[0].title", "equals": "Head" },
+          { "path": "slides[1].layout", "equals": "Title Only" },
+          { "path": "slides[1].title", "exists": false }
+        ]
+      }
+    },
+    {
+      "args": ["slides", "edit", "placeholders.pptx", "--ops", "{\"ops\":[{\"op\":\"set_title\",\"slide\":4,\"text\":\"Next\"}]}", "--out", "next.pptx", "--verify"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "applied[0].itemsAffected", "equals": 1 },
+          { "path": "verification.ok", "equals": true }
+        ],
+        "files": { "present": ["next.pptx"] }
+      }
+    },
+    {
+      "args": ["slides", "read", "next.pptx", "--slides", "4"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "slides[0].title", "equals": "Next" }
+        ]
+      }
+    }
+  ]
+}
