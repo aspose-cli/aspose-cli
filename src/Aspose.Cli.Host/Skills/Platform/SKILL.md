@@ -65,6 +65,10 @@ you parse a result. Every result names its `schema`, an id for
 codes and error codes you do not know; later versions add them. `--verbose`
 output is diagnostics for a person, not something to parse.
 
+Dates, numbers and amounts a command shows or calculates, in a formula result,
+a field or a converted page, follow en-US whatever the machine's regional
+settings.
+
 ## Files you did not make
 
 A file from outside can be built to exhaust the machine or to mislead you:

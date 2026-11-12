@@ -368,9 +368,12 @@ public sealed class CliWorkerTests
 
     /// <summary>
     /// A worker keeps the startup hooks of the run, such as the culture hook of
-    /// <c>scripts/test.ps1 -CiLike</c>: the hook runs in the worker, the culture it sets holds in
-    /// the commands and after them, and a command, with the processes it starts, sees the run's
-    /// hooks variable unchanged.
+    /// <c>scripts/test.ps1 -CiLike</c>: the hook runs in the worker, a command runs under the
+    /// culture the CLI pins at startup whatever culture the hook set, as a child process does, and
+    /// a command, with the processes it starts, sees the run's hooks variable unchanged. It is what
+    /// shows that the CLI pins en-US whatever culture its process starts with, and so that the
+    /// <c>--timeout</c> worker, a process the CLI starts through the same entry, calculates as
+    /// en-US too.
     /// </summary>
     [Fact]
     public void AWorker_KeepsTheStartupHooksOfTheRun()
@@ -395,7 +398,7 @@ public sealed class CliWorkerTests
 
         Assert.True(File.Exists(probe), "The run's startup hook did not run in the worker.");
         string[] lines = File.ReadAllLines(probe);
-        string expected = $" {HookProbe.Culture} {HookProbe.Culture} {typeof(HookProbe).Assembly.Location}";
+        string expected = $" en-US en-US {typeof(HookProbe).Assembly.Location}";
         Assert.Contains(lines, static line => line.StartsWith("load ", StringComparison.Ordinal));
         Assert.True(lines.Count(static line => line.StartsWith("error ", StringComparison.Ordinal)) >= 2, string.Join(Environment.NewLine, lines));
         Assert.All(lines, line => Assert.EndsWith(expected, line, StringComparison.Ordinal));

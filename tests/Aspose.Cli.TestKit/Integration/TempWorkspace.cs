@@ -122,6 +122,23 @@ public sealed class TempWorkspace : IDisposable
         => Execute(standardInput: null, variables, args);
 
     /// <summary>
+    /// Runs as <see cref="Run"/> does, in a child process that starts under
+    /// <paramref name="culture"/>, as on a machine set to those regional settings: the startup hook
+    /// of this assembly sets it before the CLI's entry point runs.
+    /// </summary>
+    public CliResult RunUnderCulture(string culture, params string[] args)
+    {
+        using (CliWorkers.ChildProcesses())
+        {
+            return Execute(standardInput: null, new Dictionary<string, string?>
+            {
+                [CliWorkerHost.HookVariable] = typeof(TempWorkspace).Assembly.Location,
+                [CliWorkerHost.CultureVariable] = culture,
+            }, args);
+        }
+    }
+
+    /// <summary>
     /// A start of the tested CLI in this workspace, under the same isolated evaluation
     /// environment as <see cref="Run"/>, for tests that supervise the process themselves.
     /// </summary>

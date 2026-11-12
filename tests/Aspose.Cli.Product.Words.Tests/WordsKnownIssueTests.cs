@@ -233,8 +233,9 @@ public sealed class WordsKnownIssueTests
         using var fixture = new WordsFixture();
         const string clause = "乙方向甲方供应数控加工中心 2 台，合同总价人民币 1,920,000.00 元（大写：壹佰玖拾贰万元整）。";
         string clauses = string.Concat(Enumerable.Repeat(clause, 4));
-        // The English case breaks against the rules only while the process culture is Chinese, as
-        // on a Chinese Windows; under an English culture the layout follows them.
+        // The English case breaks against the rules while the process culture is Chinese, as here,
+        // and on a Windows set to Chinese under any culture; on an English Windows under an
+        // English culture the layout follows them.
         CultureInfo previous = CultureInfo.CurrentCulture;
         CultureInfo previousUi = CultureInfo.CurrentUICulture;
         try

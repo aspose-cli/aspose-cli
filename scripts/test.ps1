@@ -466,8 +466,9 @@ $markedFilter = ($categories | ForEach-Object { "Category=$_" }) -join '|'
 $testEnvironment = @{}
 $ciArguments = @()
 if ($CiLike) {
-    # The startup hook gives every .NET process of the run the runner's culture; the Windows
-    # user locale has no per-process override, and no runtime variable sets the culture.
+    # The startup hook gives every .NET process of the run the runner's culture, which the test
+    # hosts compute with (the CLI pins en-US itself at startup); the Windows user locale has no
+    # per-process override, and no runtime variable sets the culture.
     $cultureHook = Join-Path $resultsRoot 'ci-like/CiLikeCulture.dll'
     [IO.Directory]::CreateDirectory((Split-Path -Parent $cultureHook)) | Out-Null
     Add-Type -OutputAssembly $cultureHook -OutputType Library -TypeDefinition @'

@@ -167,48 +167,6 @@ public sealed class CellsTextValuesAsWrittenTests : IDisposable
             Written("back.csv"));
     }
 
-    /// <summary>
-    /// Under German regional settings, which write a decimal comma and fail on a fraction such as
-    /// 3 1/2, a csv reads and writes as under any other: an edit leaves every other value as
-    /// written, a sum is written with a decimal point, and a workbook converted to csv writes its
-    /// stored numbers with a decimal point. Each command is a CLI process the startup hook of this
-    /// assembly (<c>StartupHook.cs</c>) starts under de-DE.
-    /// </summary>
-    [Fact]
-    public void UnderGermanRegionalSettings_TextReadsAndWritesAsUnderAnyOther()
-    {
-        string[] values = Table("values.csv", ',', [.. Values.Select(static value => value.Value)]);
-        Write("orders.csv", Orders);
-
-        CliResult[] runs;
-        using (CliWorkers.ChildProcesses())
-        {
-            runs =
-            [
-                German("cells", "edit", "values.csv", "--out", "values-out.csv", "--output-format", "json",
-                    "--ops", $$"""{"ops":[{"op":"set_values","range":"B{{values.Length}}","values":[["changed"]]}]}"""),
-                German("cells", "edit", "orders.csv", "--out", "total.csv", "--output-format", "json",
-                    "--ops", """{"ops":[{"op":"set_values","range":"A5","values":[["total"]]},{"op":"set_formula","range":"C5","formula":"=SUM(C2:C4)"}]}"""),
-                German("cells", "convert", "orders.csv", "--to", "xlsx", "--out", "orders.xlsx", "--output-format", "json"),
-                German("cells", "convert", "orders.xlsx", "--to", "csv", "--out", "stored.csv", "--output-format", "json"),
-            ];
-        }
-
-        Assert.All(runs, static run => Assert.True(run.ExitCode == 0, $"exit {run.ExitCode}: {run.StdErr}{run.StdOut}"));
-        Assert.Equal([.. values[..^1], "total,changed"], Written("values-out.csv"));
-        Assert.Equal([.. Orders, "total,,37.4,"], Written("total.csv"));
-        Assert.Equal(["order,item,price,qty", "007,Widget,19.9,2", "008,Gadget,5,1", "009,Cable,12.5,3"], Written("stored.csv"));
-    }
-
-    /// <summary>
-    /// Runs the CLI as <see cref="Cli"/> does, in a child process started under German regional
-    /// settings by the startup hook of this assembly.
-    /// </summary>
-    private CliResult German(params string[] args) =>
-        _workspace.RunWithEnv(
-            new Dictionary<string, string?> { ["DOTNET_STARTUP_HOOKS"] = typeof(CellsTextValuesAsWrittenTests).Assembly.Location },
-            TestLicense.Path is { } license ? [.. args, "--license", license] : args);
-
     // German prices separated by semicolons: decimal commas (2,71, 0,5) beside numbers a comma
     // would group into thousands elsewhere (1,234, 12,500), a whole number and a date.
     private static readonly string[] GermanPrices =

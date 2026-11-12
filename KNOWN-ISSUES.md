@@ -853,14 +853,18 @@ Reproductions: [WordsKnownIssueTests](tests/Aspose.Cli.Product.Words.Tests/Words
   turns on (`ParagraphFormat.FarEastLineBreakControl`). Text whose East Asian language is not
   Chinese, Japanese or Korean, such as the English that a new `Document` and many converted
   documents declare, may start a line with "，" or "。" while the process culture is Chinese,
-  as on a Chinese Windows. And in a document without Word 2013 compatibility mode, East Asian
-  text drawn in one font for all scripts, as PDF loading writes it, breaks only at spaces after
-  Latin text, so "人民币 1,920,000.00 元（大写：…）" ends its line after the number although the
-  rest would fit in part.
-- **CLI behavior:** the built-in design declares Chinese as its East Asian language, so
-  documents created without `--template` follow the rules. Other documents keep their own
-  language and compatibility settings, which no operation changes; the Words Skill tells
-  reviewers to disclose such lines.
+  and on a Windows set to Chinese whatever the process culture is: under en-US as well, in
+  process and through the CLI (seen on a Windows whose display language and regional format are
+  Chinese). And in a document without Word 2013 compatibility mode, East Asian text drawn in one
+  font for all scripts, as PDF loading writes it, breaks only at spaces after Latin text, so
+  "人民币 1,920,000.00 元（大写：…）" ends its line after the number although the rest would fit
+  in part.
+- **CLI behavior:** the CLI pins its process culture to en-US, which does not avoid the first
+  case on a Windows set to Chinese: there `words convert --to pdf` breaks such text as it did
+  under a Chinese process culture. The built-in design declares Chinese as its East Asian
+  language, so documents created without `--template` follow the rules. Other documents keep
+  their own language and compatibility settings, which no operation changes; the Words Skill
+  tells reviewers to disclose such lines.
 
 ### WORDS-TRACKED-DETACHED-TEXT
 

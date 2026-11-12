@@ -21,13 +21,13 @@ public static class CliHost
         ArgumentNullException.ThrowIfNull(args);
         ArgumentNullException.ThrowIfNull(catalogFactory);
         Invocation.WindowsProcessErrorMode.SuppressNativeErrorUi();
+        ConfigureCulture();
         try
         {
             ProductCatalog catalog = catalogFactory();
             using InvocationInputs? inputs = InvocationInputs.Receive();
             var host = new HostContext(catalog, TimeoutWorkerSupervisor.ReceiveOutputSession());
             ConfigureConsole();
-            ConfigureUiCulture();
             args = NormalizeInteractiveArguments(args, IsInteractiveDesktop(), host.Parser);
             return ProcessFailureBoundary.Run(host, args, arguments =>
             {
@@ -111,10 +111,17 @@ public static class CliHost
         }
     }
 
-    private static void ConfigureUiCulture()
+    /// <summary>
+    /// Pins the process's cultures, so what a command computes or shows does not change with the
+    /// machine's regional settings; a command that takes another culture does so by an option.
+    /// </summary>
+    private static void ConfigureCulture()
     {
         CultureInfo english = CultureInfo.GetCultureInfo("en");
         CultureInfo.DefaultThreadCurrentUICulture = english;
         Thread.CurrentThread.CurrentUICulture = english;
+        CultureInfo unitedStates = CultureInfo.GetCultureInfo("en-US");
+        CultureInfo.DefaultThreadCurrentCulture = unitedStates;
+        Thread.CurrentThread.CurrentCulture = unitedStates;
     }
 }
