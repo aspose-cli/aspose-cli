@@ -121,6 +121,8 @@ A file from outside can be built to exhaust the machine or to mislead you:
 - **Parallel writes.** Parallel reads are safe; serialize writes to one file.
 - **Overwriting by accident.** Existing outputs are replaced only with
   `--overwrite`; choose a new path unless replacing is intended.
+- **A CSV for Excel without `--bom`.** Text outputs are UTF-8 without a byte
+  order mark; add `--bom` to a CSV that Excel opens, so it reads non-English text.
 
 ## Ask the CLI, not this Skill
 

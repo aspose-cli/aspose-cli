@@ -57,15 +57,19 @@ public abstract class OutputPipeline : ILicenseState
     /// the engine derives from the documents, such as their text or tables, is an output of this
     /// invocation and disclosed as one. Files the documents embed, copied byte for byte as the
     /// document stores them (<see cref="ExtractionContent.EmbeddedFiles"/>), are no output of the
-    /// engine and carry nothing evaluation mode adds, so they are not disclosed.
+    /// engine and carry nothing evaluation mode adds, so they are not disclosed, and keep a byte
+    /// order mark they start with.
     /// </summary>
     /// <param name="root">The extraction directory, which may not exist yet.</param>
     /// <param name="overwrite">Whether an existing file in the directory may be replaced (<c>--overwrite</c>).</param>
     /// <param name="content">What the extraction writes.</param>
-    public ExtractionGuard BeginExtraction(string root, bool overwrite, ExtractionContent content = ExtractionContent.Derived) =>
+    /// <param name="byteOrderMark">Whether a derived file keeps the UTF-8 byte order mark its write starts it with (<see cref="ByteOrderMarks"/>).</param>
+    public ExtractionGuard BeginExtraction(string root, bool overwrite, ExtractionContent content = ExtractionContent.Derived,
+        bool byteOrderMark = false) =>
         new(Writer.ResourceBudgets, root, overwrite)
         {
             Committed = content == ExtractionContent.EmbeddedFiles ? null : () => Record(null),
+            KeepsByteOrderMark = content == ExtractionContent.EmbeddedFiles || byteOrderMark,
         };
 
     /// <summary>
@@ -571,14 +575,15 @@ public sealed class OutputPipeline<TDocument> : OutputPipeline
     /// format is a copy of the documents the command opened, and an unencrypted copy of an
     /// encrypted one is disclosed; an image or a data file never is.
     /// </param>
+    /// <param name="byteOrderMark">Whether the file keeps the UTF-8 byte order mark <paramref name="write"/> starts it with (<see cref="ByteOrderMarks"/>).</param>
     /// <returns>The facts of the published file.</returns>
     public PublishedFile Write(string targetPath, FormatDescriptor format, bool overwrite, TDocument? document, Action<string> write,
-        bool rendering = false, IEnumerable<int>? pages = null, bool encrypted = false)
+        bool rendering = false, IEnumerable<int>? pages = null, bool encrypted = false, bool byteOrderMark = false)
     {
         ArgumentNullException.ThrowIfNull(format);
         var inspector = new Inspector(_profile, document, format.Id, rendering);
         inspector.Shows(pages);
-        PublishedFile published = Writer.Write(targetPath, overwrite, inspector.After(write));
+        PublishedFile published = Writer.Write(targetPath, overwrite, inspector.After(ByteOrderMarks.Unless(byteOrderMark, write)));
         Record(inspector.Result, [targetPath]);
         RecordCopy(new Copy(format.Id, format.Image, encrypted));
         return published;
@@ -602,7 +607,7 @@ public sealed class OutputPipeline<TDocument> : OutputPipeline
         ArgumentNullException.ThrowIfNull(output);
         var inspector = new Inspector(_profile, document, output.Format.Id, rendering: false);
         inspector.Shows(pages);
-        IReadOnlyList<OutputInfo> written = Writer.Write(output, encrypted, inspector.After(write));
+        IReadOnlyList<OutputInfo> written = Writer.Write(output, encrypted, inspector.After(ByteOrderMarks.Unless(declared: false, write)));
         Record(inspector.Result, [output.Path]);
         RecordCopy(new Copy(output.Format.Id, output.Format.Image, encrypted));
         return written;
@@ -630,6 +635,7 @@ public sealed class OutputPipeline<TDocument> : OutputPipeline
     /// <param name="save">Saves the staged file and checks that it opens again.</param>
     /// <param name="verify">Reads the staged file back, or null when the edit is not verified. Issues are reported, not refused.</param>
     /// <param name="operation">The name of the publication, such as <c>pdf-edit</c>.</param>
+    /// <param name="byteOrderMark">Whether the output keeps the UTF-8 byte order mark <paramref name="save"/> starts it with (<see cref="ByteOrderMarks"/>).</param>
     public EditPublication<TVerification> PublishEdit<TVerification>(
         ResolvedOutput output,
         TDocument document,
@@ -638,7 +644,8 @@ public sealed class OutputPipeline<TDocument> : OutputPipeline
         bool encrypted,
         Action<string> save,
         Func<string, TVerification>? verify,
-        string operation)
+        string operation,
+        bool byteOrderMark = false)
         where TVerification : class
     {
         ArgumentNullException.ThrowIfNull(output);
@@ -657,7 +664,8 @@ public sealed class OutputPipeline<TDocument> : OutputPipeline
             save,
             backupPath: output.BackupPath,
             inputPrecondition: precondition,
-            encrypted: encrypted);
+            encrypted: encrypted,
+            byteOrderMark: byteOrderMark);
         BackupInfo? backup = staged.Backup;
         TVerification? verification = verify is null ? null : staged.Read(verify);
         transaction.Commit();
@@ -855,9 +863,11 @@ public sealed class OutputSet<TDocument> : IDisposable
     /// <paramref name="document"/>, such as a facade that signs it, so its marks are read from the
     /// file (<see cref="IEvaluationProfile{TDocument}.InspectSaved"/>) where the profile reads files.
     /// </param>
+    /// <param name="byteOrderMark">Whether the output keeps the UTF-8 byte order mark <paramref name="write"/> starts it with (<see cref="ByteOrderMarks"/>).</param>
     public StagedOutput Stage(string targetPath, FormatDescriptor format, bool overwrite, TDocument? document, Action<string> write,
         bool rendering = false, string? backupPath = null, FileWritePrecondition? inputPrecondition = null,
-        Action<string>? verify = null, IEnumerable<int>? pages = null, bool encrypted = false, bool saved = false)
+        Action<string>? verify = null, IEnumerable<int>? pages = null, bool encrypted = false, bool saved = false,
+        bool byteOrderMark = false)
     {
         ArgumentNullException.ThrowIfNull(format);
         OutputPipeline<TDocument>.Inspector? inspector = document is null || saved ? null
@@ -876,8 +886,9 @@ public sealed class OutputSet<TDocument> : IDisposable
 
         inspector?.Shows(pages);
 
+        Action<string> unmarked = ByteOrderMarks.Unless(byteOrderMark, write);
         StagedOutput staged = _transaction.Stage(targetPath, overwrite, backupPath, inputPrecondition,
-            inspector?.After(write) ?? write, verify);
+            inspector?.After(unmarked) ?? unmarked, verify);
         _staged.Add(staged);
         _copies.Add(new OutputPipeline.Copy(format.Id, format.Image, encrypted));
         return staged;

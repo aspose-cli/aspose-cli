@@ -96,6 +96,10 @@ Every step is also checked, whatever it expects, against the CLI's own catalog
   to hand on: the evidence a `review` writes is a report for this machine and records its input's
   path, so it is not checked. The bytes are searched as written, so a path inside a compressed
   stream or an encrypted output is not seen;
+- `byte-order-mark`: no file the step creates or changes starts with the UTF-8 byte order mark,
+  unless the step asks for one with `--bom`, edits an input that starts with one, or extracts the
+  files a document embeds (`pdf extract --what attachments`, `words extract --what images`,
+  `slides extract --what media`), which keep the bytes the document stores;
 - `executable-hint`: what each `error.hint` and `warnings[].hint` names runs as written
   (`ExecutableHints`): a quoted or unquoted `aspose-cli` command runs on the step's own files in
   a copy of its workspace, with `--dry-run` where the command has one, and must not fail with

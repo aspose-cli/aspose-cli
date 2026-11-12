@@ -25,7 +25,7 @@ internal static class WordsExtract
         using ExtractionGuard guard = session.Outputs.BeginExtraction(
             request.Output.Path,
             request.Output.Overwrite,
-            request.What == WordsExtractTargets.Images ? ExtractionContent.EmbeddedFiles : ExtractionContent.Derived);
+            request.What == WordsExtractTargets.Images ? ExtractionContent.EmbeddedFiles : ExtractionContent.Derived, request.ByteOrderMark);
         var index = new DocumentBlockIndex(loaded.Document, loaded.Evaluation);
         var outputs = new List<WordsExtractedOutput>();
         var warnings = new List<Warning>();

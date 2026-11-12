@@ -92,7 +92,8 @@ internal static class CellsEdit
             // out of an SVG, so the output lacks what the load left out: those warnings count too.
             request.Verify ? candidate => new CellsEditVerifier(session.Loader, session.Budgets).Verify(candidate, baseline!.Path, filePath,
                 request.Password, savePlan.Protection.Password, batch, activeSheet, batchOutcome, WrittenWarnings(), textTable) : null,
-            "cells-edit");
+            "cells-edit",
+            savePlan.ByteOrderMark);
         IReadOnlyList<Warning>? warnings = request.Options.DryRun
             ? EnvelopeParts.CombineWarnings(loaded.Warnings(editWarnings), importSources.Warnings())
             : EnvelopeParts.CombineWarnings(WrittenWarnings(), publication.BackupWarnings);

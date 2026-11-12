@@ -100,7 +100,7 @@ internal static class CellsConvert
         loaded.RestoreActiveSheet(savePlan);
         WorkbookSaveLoss? loss = null;
         PublishedFile written = saver.Write(request.Output, workbook, singleSheet: selectedSheets is not null,
-            savePlan.Encrypts, path => loss = saver.ProduceReporting(workbook, savePlan, path));
+            savePlan, path => loss = saver.ProduceReporting(workbook, savePlan, path));
         WorkbookSaveLoss lost = loss!;
 
         return new CellsConvertResult

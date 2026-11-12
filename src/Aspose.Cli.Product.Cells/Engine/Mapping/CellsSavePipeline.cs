@@ -78,15 +78,17 @@ internal sealed class CellsSavePipeline(OutputPipeline<Workbook> outputs)
     /// <summary>
     /// Publishes <paramref name="output"/> saved from <paramref name="workbook"/>, or from the one
     /// sheet of it that <paramref name="singleSheet"/> names, which carries no evaluation mark of
-    /// the workbook's; <paramref name="encrypted"/> says whether the file carries a password.
+    /// the workbook's; <paramref name="plan"/> says whether the file carries a password and keeps
+    /// a byte order mark.
     /// </summary>
     internal PublishedFile Write(
         ResolvedOutput output,
         Workbook workbook,
         bool singleSheet,
-        bool encrypted,
+        WorkbookSavePlan plan,
         Action<string> save) =>
-        _outputs.Write(output.Path, output.Format, output.Overwrite, singleSheet ? null : workbook, save, encrypted: encrypted);
+        _outputs.Write(output.Path, output.Format, output.Overwrite, singleSheet ? null : workbook, save,
+            encrypted: plan.Encrypts, byteOrderMark: plan.ByteOrderMark);
 
     private static void NormalizeDatesForTextExport(Worksheet sheet)
     {
