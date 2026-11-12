@@ -26,12 +26,13 @@ internal static class PdfExtract
         using LoadedPdf loaded = session.Loader.Open(filePath, request.Password);
         IReadOnlyList<int> pages = request.Pages?.Resolve(loaded.Document.Pages.Count)
             ?? Enumerable.Range(1, loaded.Document.Pages.Count).ToArray();
+        var reading = new TextReading(loaded.Document, request.FormsInspection);
         // An attachment is copied as the PDF stores it, so it carries nothing evaluation mode adds.
         using ExtractionGuard guard = session.Outputs.BeginExtraction(request.Output.Path, request.Output.Overwrite,
             request.What == PdfExtractKinds.Attachments ? ExtractionContent.EmbeddedFiles : ExtractionContent.Derived);
         IReadOnlyList<PdfExtractOutput> outputs = request.What == PdfExtractKinds.Attachments
             ? ExtractAttachments(loaded.Document, guard)
-            : [.. Extract(request, loaded, pages, guard, session.Budgets)
+            : [.. Extract(request, reading, loaded, pages, guard, session.Budgets)
                 .Select(static item => new PdfExtractOutput(FileObjects.Companion(item.File)) { Page = item.Page })];
         guard.Commit();
         return new PdfExtractResult
@@ -40,17 +41,18 @@ internal static class PdfExtract
             What = request.What,
             Outputs = outputs,
             License = EnvelopeParts.License(state),
-            Warnings = request.What == PdfExtractKinds.Tables && outputs.Count == 0 ? [TablesNotFound(request)] : null,
+            Warnings = EnvelopeParts.CombineWarnings(
+                request.What == PdfExtractKinds.Tables && outputs.Count == 0 ? TablesNotFound(request) : null, reading.FormValuesNotInText()),
         };
     }
 
     // The files of every kind but attachments, each with the page it comes from.
     private static IReadOnlyList<(PublishedFile File, int? Page)> Extract(
-        PdfExtractRequest request, LoadedPdf loaded, IReadOnlyList<int> pages, ExtractionGuard guard, ResourceBudgetLedger budgets) =>
+        PdfExtractRequest request, TextReading reading, LoadedPdf loaded, IReadOnlyList<int> pages, ExtractionGuard guard, ResourceBudgetLedger budgets) =>
         request.What switch
         {
             PdfExtractKinds.Images => ExtractImages(loaded.Document, pages, guard, budgets),
-            PdfExtractKinds.Text => [(guard.StageAllBytes("document.txt", Encoding.UTF8.GetBytes(DocumentText(loaded.Document, pages))), null)],
+            PdfExtractKinds.Text => [(guard.StageAllBytes("document.txt", Encoding.UTF8.GetBytes(reading.PlainText(pages))), null)],
             PdfExtractKinds.Tables => ExtractTables(loaded.Document, pages, guard, request.ByteOrderMark),
             PdfExtractKinds.Forms => [(PdfForms.Export(loaded.Document, request.FormFormat
                 ?? throw new InvalidOperationException("Form data is extracted in a format the command chose."), guard), null)],

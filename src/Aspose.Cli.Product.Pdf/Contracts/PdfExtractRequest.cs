@@ -32,6 +32,12 @@ public sealed record PdfExtractRequest
 
     /// <summary>The quoted command line that reviews the input, as <see cref="TextExtraction"/> names one; null likewise.</summary>
     public string? InputReview { get; init; }
+
+    /// <summary>
+    /// The quoted command line that reads the input's form fields with their values, which the
+    /// warning that the extracted text leaves out field values names; null likewise.
+    /// </summary>
+    public string? FormsInspection { get; init; }
 }
 
 /// <summary>What <c>pdf extract --what</c> takes out of a PDF.</summary>

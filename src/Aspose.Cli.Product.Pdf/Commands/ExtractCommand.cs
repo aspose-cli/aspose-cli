@@ -76,6 +76,7 @@ internal static class ExtractCommand
                     FormFormat = format,
                     TextExtraction = PdfInputs.TextExtraction(standard, directory, pageText),
                     InputReview = standard.ContinuationAt("review").Quoted(),
+                    FormsInspection = PdfInputs.FormsInspection(standard),
                 };
             },
             Table)

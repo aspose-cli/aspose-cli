@@ -1,0 +1,108 @@
+{
+  "name": "read, search and extract --what text warn FORM_VALUES_NOT_IN_TEXT only for the pages they read that hold a filled field, a search still finds the page text it holds beside the warning, and a search window cut before the page of the field warns only once its next window reads that page",
+  "files": {
+    "form.html": { "text": "<html><head><meta charset=\"utf-8\"><title>Application</title></head><body><h1>Application Form</h1><p>Name: <input type=\"text\" name=\"name\" value=\"\"></p><p>SSN: <input type=\"text\" name=\"ssn\" value=\"\"></p></body></html>" },
+    "fill.json": { "text": "{\"ops\":[{\"op\":\"set_form_field\",\"name\":\"name\",\"value\":\"SECRETALICE\"},{\"op\":\"import_pages\",\"path\":\"plain.pdf\",\"at\":2}]}" },
+    "ahead.json": { "text": "{\"ops\":[{\"op\":\"set_form_field\",\"name\":\"name\",\"value\":\"SECRETALICE\"},{\"op\":\"import_pages\",\"path\":\"plain.pdf\",\"at\":1},{\"op\":\"import_pages\",\"path\":\"plain.pdf\",\"at\":1}]}" },
+    "plain.pdf": { "fixture": "pdf.pdf" }
+  },
+  "steps": [
+    {
+      "args": ["pdf", "create", "form.pdf", "--from-html", "form.html"],
+      "expect": { "exitCode": 0 }
+    },
+    {
+      "args": ["pdf", "edit", "form.pdf", "--ops", "fill.json", "--out", "filled.pdf"],
+      "expect": { "exitCode": 0 }
+    },
+    {
+      "args": ["pdf", "search", "filled.pdf", "--pattern", "Application"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "hits[0].page", "equals": 1 },
+          { "path": "hits[0].text", "equals": "Application" },
+          { "path": "warnings[0].code", "equals": "FORM_VALUES_NOT_IN_TEXT" },
+          { "path": "warnings[0].location", "equals": "field/name" }
+        ]
+      }
+    },
+    {
+      "args": ["pdf", "search", "filled.pdf", "--pattern", "invariant", "--pages", "2"],
+      "expect": {
+        "exitCode": 0,
+        "json": [{ "path": "hits[0].page", "equals": 2 }],
+        "warnings": { "absent": ["FORM_VALUES_NOT_IN_TEXT"] }
+      }
+    },
+    {
+      "args": ["pdf", "read", "filled.pdf", "--pages", "2"],
+      "expect": { "exitCode": 0, "warnings": { "absent": ["FORM_VALUES_NOT_IN_TEXT"] } }
+    },
+    {
+      "args": ["pdf", "extract", "filled.pdf", "--what", "text", "--pages", "2", "--out-dir", "page-2"],
+      "expect": { "exitCode": 0, "warnings": { "absent": ["FORM_VALUES_NOT_IN_TEXT"] } }
+    },
+    {
+      "args": ["pdf", "edit", "form.pdf", "--ops", "ahead.json", "--out", "ahead.pdf"],
+      "expect": { "exitCode": 0 }
+    },
+    {
+      "args": ["pdf", "search", "ahead.pdf", "--pattern", "invariant", "--max-hits", "1"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "hits[0].page", "equals": 1 },
+          { "path": "window.truncated", "equals": true },
+          { "path": "window.next", "contains": "--skip 1" }
+        ],
+        "warnings": { "absent": ["FORM_VALUES_NOT_IN_TEXT"] }
+      }
+    },
+    {
+      "args": ["pdf", "search", "ahead.pdf", "--pattern", "invariant", "--max-hits", "1", "--skip", "1"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "hits[0].page", "equals": 2 },
+          { "path": "window.truncated", "equals": false },
+          { "path": "window.next", "exists": false },
+          { "path": "warnings[0].code", "equals": "FORM_VALUES_NOT_IN_TEXT" },
+          { "path": "warnings[0].location", "equals": "field/name" }
+        ]
+      }
+    },
+    {
+      "args": ["pdf", "search", "form.pdf", "--pattern", "Application"],
+      "expect": {
+        "exitCode": 0,
+        "json": [{ "path": "hits[0].text", "equals": "Application" }],
+        "warnings": { "absent": ["FORM_VALUES_NOT_IN_TEXT"] }
+      }
+    },
+    {
+      "args": ["pdf", "read", "form.pdf"],
+      "expect": { "exitCode": 0, "warnings": { "absent": ["FORM_VALUES_NOT_IN_TEXT"] } }
+    },
+    {
+      "args": ["pdf", "extract", "form.pdf", "--what", "text", "--out-dir", "empty-form"],
+      "expect": { "exitCode": 0, "warnings": { "absent": ["FORM_VALUES_NOT_IN_TEXT"] } }
+    },
+    {
+      "args": ["pdf", "search", "plain.pdf", "--pattern", "invariant"],
+      "expect": {
+        "exitCode": 0,
+        "json": [{ "path": "hits[0].page", "equals": 1 }],
+        "warnings": { "absent": ["FORM_VALUES_NOT_IN_TEXT"] }
+      }
+    },
+    {
+      "args": ["pdf", "read", "plain.pdf"],
+      "expect": { "exitCode": 0, "warnings": { "absent": ["FORM_VALUES_NOT_IN_TEXT"] } }
+    },
+    {
+      "args": ["pdf", "extract", "plain.pdf", "--what", "text", "--out-dir", "plain"],
+      "expect": { "exitCode": 0, "warnings": { "absent": ["FORM_VALUES_NOT_IN_TEXT"] } }
+    }
+  ]
+}

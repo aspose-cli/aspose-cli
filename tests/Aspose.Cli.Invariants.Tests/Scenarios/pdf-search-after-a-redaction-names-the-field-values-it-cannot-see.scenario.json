@@ -1,0 +1,60 @@
+{
+  "name": "confirming a redaction with pdf search as the PDF Skill says: a field that still holds a value is named by FORM_VALUES_NOT_IN_TEXT, and the inspect its hint gives reads the value",
+  "files": {
+    "form.html": { "text": "<html><head><meta charset=\"utf-8\"><title>Application</title></head><body><h1>Application Form</h1><p>Reference: CASE-7731</p><p>Name: <input type=\"text\" name=\"name\" value=\"\"></p><p>SSN: <input type=\"text\" name=\"ssn\" value=\"\"></p></body></html>" },
+    "fill.json": { "text": "{\"ops\":[{\"op\":\"set_form_field\",\"name\":\"name\",\"value\":\"SECRETALICE\"},{\"op\":\"set_form_field\",\"name\":\"ssn\",\"value\":\"SSN123456\"}]}" },
+    "redact.json": { "text": "{\"ops\":[{\"op\":\"redact_text\",\"find\":\"SSN123456\"},{\"op\":\"redact_text\",\"find\":\"CASE-7731\"}]}" }
+  },
+  "steps": [
+    {
+      "args": ["pdf", "create", "form.pdf", "--from-html", "form.html"],
+      "expect": { "exitCode": 0 }
+    },
+    {
+      "args": ["pdf", "edit", "form.pdf", "--ops", "fill.json", "--out", "filled.pdf"],
+      "expect": { "exitCode": 0 }
+    },
+    {
+      "args": ["pdf", "edit", "filled.pdf", "--ops", "redact.json", "--out", "redacted.pdf", "--verify"],
+      "expect": {
+        "exitCode": 0,
+        "json": [{ "path": "verification.ok", "equals": true }]
+      }
+    },
+    {
+      "args": ["pdf", "search", "redacted.pdf", "--pattern", "CASE-7731"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "window.returned", "equals": 0 },
+          { "path": "warnings[0].code", "equals": "FORM_VALUES_NOT_IN_TEXT" },
+          { "path": "warnings[0].message", "equals": "The page text leaves out the values of 1 filled form field on the pages read: 'name'." },
+          { "path": "warnings[0].location", "equals": "field/name" }
+        ]
+      }
+    },
+    {
+      "args": ["pdf", "search", "redacted.pdf", "--pattern", "SECRETALICE"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "window.returned", "equals": 0 },
+          { "path": "warnings[0].code", "equals": "FORM_VALUES_NOT_IN_TEXT" },
+          { "path": "warnings[0].location", "equals": "field/name" }
+        ]
+      }
+    },
+    {
+      "args": ["pdf", "inspect", "redacted.pdf", "--detail", "forms"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "forms.fields[0].name", "equals": "name" },
+          { "path": "forms.fields[0].value", "equals": "SECRETALICE" },
+          { "path": "forms.fields[1].name", "equals": "ssn" },
+          { "path": "forms.fields[1].value", "equals": "" }
+        ]
+      }
+    }
+  ]
+}
