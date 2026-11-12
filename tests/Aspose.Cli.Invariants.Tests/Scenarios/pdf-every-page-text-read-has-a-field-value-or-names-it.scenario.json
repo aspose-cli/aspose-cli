@@ -1,0 +1,77 @@
+{
+  "name": "every PDF command that reads page text either gives a filled field's value or warns that it leaves it out: read, search and extract --what text warn FORM_VALUES_NOT_IN_TEXT, a conversion to txt or md LOSSY_CONVERSION (its form-values are checked by PdfFormValueTextTests), and the inspect their hints give reads the value",
+  "files": {
+    "form.html": { "text": "<html><head><meta charset=\"utf-8\"><title>Application</title></head><body><h1>Application Form</h1><p>Name: <input type=\"text\" name=\"name\" value=\"\"></p><p>SSN: <input type=\"text\" name=\"ssn\" value=\"\"></p></body></html>" },
+    "fill.json": { "text": "{\"ops\":[{\"op\":\"set_form_field\",\"name\":\"name\",\"value\":\"SECRETALICE\"},{\"op\":\"set_form_field\",\"name\":\"ssn\",\"value\":\"SSN123456\"}]}" }
+  },
+  "steps": [
+    {
+      "args": ["pdf", "create", "form.pdf", "--from-html", "form.html"],
+      "expect": { "exitCode": 0 }
+    },
+    {
+      "args": ["pdf", "edit", "form.pdf", "--ops", "fill.json", "--out", "filled.pdf"],
+      "expect": { "exitCode": 0 }
+    },
+    {
+      "args": ["pdf", "read", "filled.pdf"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "pages[0].text", "notContains": "SECRETALICE" },
+          { "path": "warnings[0].code", "equals": "FORM_VALUES_NOT_IN_TEXT" },
+          { "path": "warnings[0].message", "equals": "The page text leaves out the values of 2 filled form fields on the pages read: 'name', 'ssn'." },
+          { "path": "warnings[0].hint", "startsWith": "A field's value is not page text: read the values with 'aspose-cli pdf inspect " }
+        ]
+      }
+    },
+    {
+      "args": ["pdf", "search", "filled.pdf", "--pattern", "SECRETALICE"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "window.returned", "equals": 0 },
+          { "path": "warnings[0].code", "equals": "FORM_VALUES_NOT_IN_TEXT" },
+          { "path": "warnings[0].message", "equals": "The page text leaves out the values of 2 filled form fields on the pages read: 'name', 'ssn'." },
+          { "path": "warnings[0].hint", "startsWith": "A field's value is not page text: read the values with 'aspose-cli pdf inspect " }
+        ]
+      }
+    },
+    {
+      "args": ["pdf", "extract", "filled.pdf", "--what", "text", "--out-dir", "text"],
+      "expect": {
+        "exitCode": 0,
+        "warnings": { "present": ["FORM_VALUES_NOT_IN_TEXT"] },
+        "hidden": ["SECRETALICE", "SSN123456"]
+      }
+    },
+    {
+      "args": ["pdf", "convert", "filled.pdf", "--to", "txt", "--out", "filled.txt"],
+      "expect": {
+        "exitCode": 0,
+        "warnings": { "present": ["LOSSY_CONVERSION"] },
+        "hidden": ["SECRETALICE", "SSN123456"]
+      }
+    },
+    {
+      "args": ["pdf", "convert", "filled.pdf", "--to", "md", "--out", "filled.md"],
+      "expect": {
+        "exitCode": 0,
+        "warnings": { "present": ["LOSSY_CONVERSION"] },
+        "hidden": ["SECRETALICE", "SSN123456"]
+      }
+    },
+    {
+      "args": ["pdf", "inspect", "filled.pdf", "--detail", "forms"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "forms.fields[0].name", "equals": "name" },
+          { "path": "forms.fields[0].value", "equals": "SECRETALICE" },
+          { "path": "forms.fields[1].name", "equals": "ssn" },
+          { "path": "forms.fields[1].value", "equals": "SSN123456" }
+        ]
+      }
+    }
+  ]
+}

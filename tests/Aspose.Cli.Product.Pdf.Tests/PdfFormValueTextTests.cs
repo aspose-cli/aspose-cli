@@ -11,8 +11,9 @@ namespace Aspose.Cli.Product.Pdf.Tests;
 /// <summary>
 /// A form field's value is not page text: a conversion to text or Markdown leaves the values out
 /// and names them as <c>form-values</c>, pointing to flattening the fields first or to
-/// <c>pdf inspect --detail forms</c>, and <c>pdf read</c> warns that its text holds none of them,
-/// pointing to that inspect.
+/// <c>pdf inspect --detail forms</c>, and <c>pdf read</c>, <c>pdf search</c> and
+/// <c>pdf extract --what text</c> warn that the text they read holds none of them, pointing to
+/// that inspect.
 /// </summary>
 public sealed class PdfFormValueTextTests
 {
@@ -49,11 +50,11 @@ public sealed class PdfFormValueTextTests
 
     /// <summary>
     /// On an encrypted form at a path with a space, opened with <c>--password-env</c>, the
-    /// conversion to text and the read each give one command that reads the values: it names the
-    /// input and its password variable, and run as written it reads them.
+    /// conversion to text, the read, the search and the text extraction each give one command that
+    /// reads the values: it names the input and its password variable, and run as written it reads them.
     /// </summary>
     [Fact]
-    public void ConvertAndRead_OfAnEncryptedForm_GiveAnInspectThatReadsTheValuesAsWritten()
+    public void PageTextCommands_OfAnEncryptedForm_GiveAnInspectThatReadsTheValuesAsWritten()
     {
         using var fixture = new PdfEngineFixture();
         using var workspace = new TempWorkspace();
@@ -64,19 +65,20 @@ public sealed class PdfFormValueTextTests
         }
 
         var variables = new Dictionary<string, string?>(StringComparer.Ordinal) { ["PDF_USER"] = "user-secret" };
-        CliResult converted = null!, read = null!;
+        CliResult converted = null!, read = null!, searched = null!, extracted = null!;
         Parallel.Invoke(
             () => converted = workspace.RunWithEnv(variables, "pdf", "convert", "locked form.pdf", "--password-env", "PDF_USER", "--to", "txt", "--out", "locked.txt", "--output-format", "json"),
-            () => read = workspace.RunWithEnv(variables, "pdf", "read", "locked form.pdf", "--password-env", "PDF_USER", "--output-format", "json"));
+            () => read = workspace.RunWithEnv(variables, "pdf", "read", "locked form.pdf", "--password-env", "PDF_USER", "--output-format", "json"),
+            () => searched = workspace.RunWithEnv(variables, "pdf", "search", "locked form.pdf", "--password-env", "PDF_USER", "--pattern", Applicant, "--output-format", "json"),
+            () => extracted = workspace.RunWithEnv(variables, "pdf", "extract", "locked form.pdf", "--password-env", "PDF_USER", "--what", "text", "--out-dir", "text", "--output-format", "json"));
 
-        Assert.True(converted.ExitCode == 0, converted.StdOut + converted.StdErr);
-        Assert.True(read.ExitCode == 0, read.StdOut + read.StdErr);
         string[] commands =
         [
-            InspectionIn(Assert.Single(converted.Json()["warnings"]!.AsArray(), static warning => warning!["details"]?["content"] is not null)!),
-            InspectionIn(Assert.Single(read.Json()["warnings"]!.AsArray(), static warning => warning!["code"]!.GetValue<string>() == "FORM_VALUES_NOT_IN_TEXT")!),
+            InspectionIn(Assert.Single(Succeeded(converted)["warnings"]!.AsArray(), static warning => warning!["details"]?["content"] is not null)!),
+            .. new[] { read, searched, extracted }.Select(static result => InspectionIn(Assert.Single(Succeeded(result)["warnings"]?.AsArray() ?? [],
+                static warning => warning!["code"]!.GetValue<string>() == "FORM_VALUES_NOT_IN_TEXT")!)),
         ];
-        // Both name the same command, which is run once as written.
+        // All name the same command, which is run once as written.
         string command = Assert.Single(commands.Distinct(StringComparer.Ordinal));
         Assert.Contains(" --password-env PDF_USER", command, StringComparison.Ordinal);
         Assert.EndsWith(" --output-format json", command, StringComparison.Ordinal);
@@ -85,6 +87,12 @@ public sealed class PdfFormValueTextTests
         JsonArray fields = inspected.Json()["forms"]!["fields"]!.AsArray();
         Assert.Equal(Applicant, fields.Single(static field => field!["name"]!.GetValue<string>() == "applicant")!["value"]!.GetValue<string>());
         Assert.Equal(City, fields.Single(static field => field!["name"]!.GetValue<string>() == "city")!["value"]!.GetValue<string>());
+    }
+
+    private static JsonNode Succeeded(CliResult result)
+    {
+        Assert.True(result.ExitCode == 0, result.StdOut + result.StdErr);
+        return result.Json();
     }
 
     // The one runnable command a warning's hint quotes.

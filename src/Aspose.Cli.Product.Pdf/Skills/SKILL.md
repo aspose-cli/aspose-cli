@@ -100,8 +100,10 @@ keeps one on its first 4 pages warns `EVALUATION_INPUT_MARKED`.
   `--to pdfa-2b`, then require `valid: true` from `pdf validate`.
 - Encrypting with `pdf convert`: it refuses `--encrypt-env`. Encrypt with
   `pdf edit`, and encrypt a copy of a PDF/A file, never the archive itself.
-- Trusting the black box: confirm a redaction with `pdf search`, and act on
-  `OP_NO_EFFECT` as its hint says, and on `REDACTION_TEXT_MOVED`, `REDACTION_NEARBY_TEXT_REMOVED` and
+- Trusting the black box: confirm a redaction with `pdf search`, which reads
+  page text alone: when it warns `FORM_VALUES_NOT_IN_TEXT`, read the fields it
+  names with `pdf inspect --detail forms`. Act on `OP_NO_EFFECT` as its hint
+  says, and on `REDACTION_TEXT_MOVED`, `REDACTION_NEARBY_TEXT_REMOVED` and
   `PDF_TEXT_COVERED`
   ([redaction](references/editing.md)).
 - Guessing rectangles: take them from a `pdf search` hit's `rect`, a field's

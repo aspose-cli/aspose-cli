@@ -15,6 +15,7 @@ internal static class PdfRead
         using LoadedPdf loaded = session.Loader.Open(filePath, request.Password);
         IReadOnlyList<int> requested = request.Pages?.Resolve(loaded.Document.Pages.Count)
             ?? Enumerable.Range(1, loaded.Document.Pages.Count).ToArray();
+        var reading = new TextReading(loaded.Document, request.FormsInspection);
         var pages = new List<PdfPageText>();
         var scanned = new List<int>();
         int remaining = request.MaxCharacters;
@@ -27,7 +28,7 @@ internal static class PdfRead
             }
 
             Page page = loaded.Document.Pages[pageNumber];
-            string text = ExtractText(page, request.Content);
+            string text = reading.Text(pageNumber, request.Content);
             bool truncated = text.Length > remaining;
             string projected = truncated ? text[..remaining] : text;
             pages.Add(new PdfPageText
@@ -56,7 +57,7 @@ internal static class PdfRead
             });
         }
 
-        if (FormValuesNotInText(loaded.Document, [.. pages.Select(static page => page.Page)], request.FormsInspection) is { } filled)
+        if (reading.FormValuesNotInText() is { } filled)
         {
             warnings.Add(filled);
         }
@@ -78,23 +79,6 @@ internal static class PdfRead
             License = EnvelopeParts.License(state),
             Warnings = warnings.Count == 0 ? null : warnings,
         };
-    }
-
-    /// <summary>
-    /// The warning that the text read leaves out the values of the filled fields on the pages
-    /// read, with the command that reads them, or null when none of them holds one.
-    /// </summary>
-    private static Warning? FormValuesNotInText(Document document, IReadOnlyCollection<int> read, string? inspection)
-    {
-        IReadOnlyList<string> filled = PdfForms.Filled(document, read);
-        return filled.Count == 0
-            ? null
-            : new Warning(PdfDiagnostics.FormValuesNotInText,
-                $"The page text leaves out the values of {filled.Count} filled form field{(filled.Count == 1 ? "" : "s")} on the pages read: {PdfForms.Listed(filled)}.")
-            {
-                Hint = $"A field's value is not page text: read the values with {PdfForms.Inspection(inspection)}, which gives each field's name, value, page and rect.",
-                Location = filled.Count == 1 ? PdfInfoProjection.Address("field", filled[0]) : null,
-            };
     }
 
     /// <summary>

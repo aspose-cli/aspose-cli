@@ -24,6 +24,7 @@ internal static class SearchCommand
                     Query = query,
                     Pages = pages.ReadRange(parse),
                     Password = standard.InputPassword,
+                    FormsInspection = PdfInputs.FormsInspection(standard),
                 };
             },
             Table)

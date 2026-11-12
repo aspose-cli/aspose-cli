@@ -101,7 +101,10 @@ Follow the destination checks in
 ## Redaction
 
 Redaction is destructive: keep the baseline, apply `redact_text` or
-`redact_area`, then verify with `pdf search` and `review`. One batch can fill a form, redact it, number the
+`redact_area`, then verify with `pdf search` and `review`. `pdf search` reads
+page text, which holds no form field's value: when it warns
+`FORM_VALUES_NOT_IN_TEXT`, read the values of the fields it names with
+`pdf inspect --detail forms`. One batch can fill a form, redact it, number the
 pages and encrypt the result:
 
 ```json
@@ -162,8 +165,10 @@ the text that follows them on their lines:
   the rest of the line and an area taken from the original would then miss
   part of the value it was meant to cover.
 
-Then run `pdf search` for each value to confirm that none is left, and
-`review` the output: tell the user which pages `PDF_TEXT_COVERED` names.
+Then run `pdf search` for each value to confirm that none is left in the page
+text, and when it warns `FORM_VALUES_NOT_IN_TEXT`, check the values of the
+fields it names with `pdf inspect --detail forms`. Then `review` the output:
+tell the user which pages `PDF_TEXT_COVERED` names.
 
 The engine reads a visible gap between characters as a space, so extracted
 text can hold spaces the source never had: Word separates Chinese, Japanese or

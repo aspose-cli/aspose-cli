@@ -23,13 +23,14 @@ internal static class PdfSearch
         IReadOnlyList<int> pages = request.Pages?.Resolve(loaded.Document.Pages.Count)
             ?? Enumerable.Range(1, loaded.Document.Pages.Count).ToArray();
         SearchHits<PdfSearchHit> hits = request.Query.Collect<PdfSearchHit>();
+        var reading = new TextReading(loaded.Document, request.FormsInspection);
         // The page text is searched with the expression the engine matched.
         Regex matching = TextPattern(text.Pattern, text.Expression is not null, text.CaseSensitive);
         foreach (int number in pages)
         {
             Page page = loaded.Document.Pages[number];
             int occurrence = 0;
-            TextFragmentCollection fragments = MatchText(page, text.Pattern, text.Expression is not null, text.CaseSensitive,
+            TextFragmentCollection fragments = reading.Match(number, text.Pattern, text.Expression is not null, text.CaseSensitive,
                 static reason => CliErrors.OptionInvalid(SearchOptions.PatternOption, reason, "Use a pattern that matches at least one character."));
             // The engine's hits carry no surrounding text; the page's plain text gives it when
             // it holds the same number of matches, which then pair up in reading order. A pair
@@ -40,7 +41,7 @@ internal static class PdfSearch
             {
                 if (pageText is null)
                 {
-                    pageText = ExtractText(page, PdfReadContents.Text);
+                    pageText = reading.Text(number, PdfReadContents.Text);
                     found = matching.Matches(pageText);
                 }
 
@@ -84,6 +85,7 @@ internal static class PdfSearch
             Hits = hits.Hits,
             Window = hits.Window(),
             License = EnvelopeParts.License(state),
+            Warnings = EnvelopeParts.CombineWarnings(reading.FormValuesNotInText()),
         };
     }
 }
