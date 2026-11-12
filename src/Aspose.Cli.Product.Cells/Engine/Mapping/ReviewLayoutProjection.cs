@@ -37,13 +37,14 @@ internal static class ReviewLayoutProjection
         var sheets = new List<CellsReviewSheetLayout>(loaded.Workbook.Worksheets.Count);
         foreach (Worksheet sheet in loaded.Workbook.Worksheets)
         {
-            // The notice row a load took out of a delimited text input is still in the file.
-            sheets.Add(InspectSheet(sheet, loaded.EvaluationNoticeRows is [int first, ..] ? first : CellsEvaluation.NoticeRow(sheet)));
+            // The notice rows a load took out of a delimited text input are still in the file.
+            sheets.Add(InspectSheet(sheet, loaded.EvaluationNoticeRows is [_, ..] rows ? rows
+                : CellsEvaluation.NoticeRow(sheet) is int row ? [row] : []));
         }
         return new CellsReviewLayout(sheets);
     }
 
-    private static CellsReviewSheetLayout InspectSheet(Worksheet sheet, int? noticeRow)
+    private static CellsReviewSheetLayout InspectSheet(Worksheet sheet, IReadOnlyList<int> noticeRows)
     {
         SheetContentScan content = ScanContent(sheet);
         DimensionScan columns = InspectColumns(sheet, content.OccupiedColumns);
@@ -62,7 +63,7 @@ internal static class ReviewLayoutProjection
             ContentRange = content.ContentRange is { } range ? A1.FormatRange(range) : null,
             HasVisualObjects = sheet.Shapes.Count > 0,
             IsEvaluationWarning = warningSheet,
-            EvaluationNoticeRow = warningSheet ? null : noticeRow,
+            EvaluationNoticeRows = warningSheet ? [] : noticeRows,
             HiddenPopulatedColumns = columns.Hidden.ToSet(),
             NarrowPopulatedColumns = columns.Small.ToSet(),
             WidePopulatedColumns = columns.Large.ToSet(),

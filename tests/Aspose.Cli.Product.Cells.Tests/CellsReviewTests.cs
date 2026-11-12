@@ -234,7 +234,8 @@ public sealed class CellsReviewTests
 
     /// <summary>
     /// A CSV an evaluation export wrote ends with the evaluation notice row; review reports it, with
-    /// or without a license, and nothing on a CSV without it.
+    /// or without a license, every one of them when an earlier evaluation edit left two, and nothing
+    /// on a CSV without it.
     /// </summary>
     [Fact]
     public void Review_ReportsTheEvaluationNoticeRowOfAnExportedCsv()
@@ -245,9 +246,14 @@ public sealed class CellsReviewTests
         string source = fixture.CreateSalesWorkbook("sales.xlsx");
         Assert.Equal(0, workspace.Run("cells", "convert", source, "--to", "csv", "--out", "marked.csv", "--license-mode", "evaluation").ExitCode);
         File.WriteAllText(workspace.File("plain.csv"), "Region,Q1\nEast,1200\nNote: Evaluation Only. Created with Aspose.Cells\n");
+        const string Notice = "Evaluation Only. Created with Aspose.Cells for .NET. Copyright 2003 - 2026 Aspose Pty Ltd.";
+        File.WriteAllText(workspace.File("twice.csv"), $"Region,Q1\r\nEast,1200\r\n{Notice},\r\n{Notice}");
 
         ReviewFinding notice = Assert.Single(Review(fixture, workspace.File("marked.csv")), static finding => finding.Code == "CELLS_EVALUATION_NOTICE");
         Assert.Equal("row/marked!4", notice.Location);
+        ReviewFinding twice = Assert.Single(Review(fixture, workspace.File("twice.csv")), static finding => finding.Code == "CELLS_EVALUATION_NOTICE");
+        Assert.Equal("row/twice!3:4", twice.Location);
+        Assert.StartsWith("Rows 3, 4 of 'twice' are each the evaluation notice", twice.Message, StringComparison.Ordinal);
         Assert.DoesNotContain(Review(fixture, workspace.File("plain.csv")), static finding => finding.Code == "CELLS_EVALUATION_NOTICE");
     }
 
