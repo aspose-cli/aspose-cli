@@ -226,7 +226,7 @@ internal sealed partial class PdfMutationHandlers
         Unrotated(page, () =>
         {
             ILookup<string, Point> before = TextRuns(page);
-            NoteBeside(operation.Page, Redact(page, [area], character => Contains(area, Middle(character)), ParseColor(operation.FillColor)));
+            NoteBeside(operation.Page, Redact(page, [area], character => Covers(area, character), ParseColor(operation.FillColor)));
             NoteMovedText(operation.Page, page, before);
         });
         return default;
@@ -355,6 +355,14 @@ internal sealed partial class PdfMutationHandlers
 
     private static (double, double, double, double) Key(Rectangle rectangle) =>
         (Math.Round(rectangle.LLX, 3), Math.Round(rectangle.LLY, 3), Math.Round(rectangle.URX, 3), Math.Round(rectangle.URY, 3));
+
+    /// <summary>
+    /// Whether redact_area's <paramref name="area"/> takes what lies in <paramref name="item"/>: its
+    /// middle lies inside the area. The characters it takes are the text the redaction is for, and
+    /// a form field whose widget it takes goes with the widget, which the engine removes by the
+    /// same rule.
+    /// </summary>
+    internal static bool Covers(Rectangle area, Rectangle item) => Contains(area, Middle(item));
 
     private static (double X, double Y) Middle(Rectangle rectangle) =>
         ((rectangle.LLX + rectangle.URX) / 2, (rectangle.LLY + rectangle.URY) / 2);

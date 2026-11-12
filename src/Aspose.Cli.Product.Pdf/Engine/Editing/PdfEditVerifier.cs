@@ -16,20 +16,26 @@ namespace Aspose.Cli.Product.Pdf.Engine.Editing;
 /// publishing, every edit searched the output for it (<see cref="PdfRedactionAudit"/>) and would
 /// have published nothing, so a redact_text that reaches this read-back is checked. The batch is checked as a whole: an
 /// expectation a later operation supersedes (the same field, key or attachment set again, the
-/// outline or the pages renumbered) is dropped, a field a later redact_text clears is expected
-/// clear, and an operation is reported as checked only
+/// outline or the pages renumbered, a field flattened or covered by a redact_area) is dropped, a
+/// field a later redact_text clears is expected clear, a field whose only widget a redact_area
+/// covers is expected gone, and an operation is reported as checked only
 /// when every effect it recorded was read back. The output is read as <c>pdf inspect</c> reads it
 /// (<see cref="PdfInfoProjection"/>), and an issue is located under the object's address there.
 /// </summary>
 internal sealed class PdfEditVerifier : IEditVerifier<PdfOp>
 {
     private const string LaterOperationChangedIt = "A later operation of the batch changed or renumbered what this one set, so its own effect could not be read back.";
+    private const string CoverNotReadBack = "Only that the form fields an earlier set_form_field of the batch set and its area covers are gone was read back; render the page to confirm the cover.";
 
     private readonly Document _document;
     private readonly List<(string Id, string Op)> _recorded = [];
     private readonly HashSet<string> _incomplete = new(StringComparer.Ordinal);
     private readonly HashSet<string> _checked = new(StringComparer.Ordinal);
     private readonly Expectations<string> _fields;
+    // Where the widgets of each field a set_form_field set lie, as it left them, until a page operation renumbers the pages.
+    private readonly Dictionary<string, (int? Page, Rectangle Rect)[]> _widgets = new(StringComparer.Ordinal);
+    // Each field a redact_area covers the only widget of, which the output must not hold, with the operation's id.
+    private readonly List<(string Name, string Id)> _covered = [];
     private readonly Expectations<string> _metadata;
     private readonly Expectations<long?> _addedAttachments;
     // A deletion expects only that no attachment of its name is left, so it keeps no value.
@@ -72,6 +78,7 @@ internal sealed class PdfEditVerifier : IEditVerifier<PdfOp>
     {
         _expectedPages += pages;
         _pageOps.Add(id);
+        _widgets.Clear();
         for (int index = 0; index < _bookmarks.Count; index++)
         {
             _incomplete.Add(_bookmarks[index].Id);
@@ -89,10 +96,13 @@ internal sealed class PdfEditVerifier : IEditVerifier<PdfOp>
         VerifyBookmarks(output, issues);
         VerifyMetadata(output, issues);
         VerifyAttachments(output, issues);
-        return new VerificationFacts(issues, [.. _checked.Where(id => !_incomplete.Contains(id))])
+        Dictionary<string, string> reasons = _incomplete.ToDictionary(static id => id, static _ => LaterOperationChangedIt, StringComparer.Ordinal);
+        foreach ((_, string id) in _covered)
         {
-            UncheckedReasons = _incomplete.ToDictionary(static id => id, static _ => LaterOperationChangedIt, StringComparer.Ordinal),
-        };
+            reasons.TryAdd(id, CoverNotReadBack);
+        }
+
+        return new VerificationFacts(issues, [.. _checked.Where(id => !_incomplete.Contains(id))]) { UncheckedReasons = reasons };
     }
 
     private void VerifyPages(Document output, List<VerificationIssue> issues)
@@ -135,6 +145,16 @@ internal sealed class PdfEditVerifier : IEditVerifier<PdfOp>
                     location: PdfInfoProjection.Address("field", name),
                     hint: "Read the field with 'pdf inspect --detail forms' and check the value against the field's options."));
             }
+        }
+
+        foreach ((string name, string id) in _covered.Where(cover => fields.ContainsKey(cover.Name)))
+        {
+            issues.Add(Issue(
+                PdfDiagnostics.FieldValueMismatch,
+                [id],
+                $"form field '{name}' is still in the output, although the area covers its only widget",
+                location: PdfInfoProjection.Address("field", name),
+                hint: "Read the field with 'pdf inspect --detail forms' and clear its value with set_form_field."));
         }
     }
 
@@ -347,6 +367,19 @@ internal sealed class PdfEditVerifier : IEditVerifier<PdfOp>
         {
             verifier._fields.Set(operation.Name, id,
                 operation.Value ?? PdfMutationSupport.ClearedFieldValue(PdfMutationSupport.FormField(Document, operation.Name)));
+            // A field the document does not hold has no widget to place, so a later redact_area leaves its value unchecked.
+            (int? Page, Rectangle Rect)[] widgets = [.. Document.Form.Fields
+                .Where(field => string.Equals(field.FullName, operation.Name, StringComparison.Ordinal))
+                .Select(static field => (PdfForms.PageOf(field), field.Rect))];
+            if (widgets.Length > 0)
+            {
+                verifier._widgets[operation.Name] = widgets;
+            }
+            else
+            {
+                verifier._widgets.Remove(operation.Name);
+            }
+
             return default;
         }
 
@@ -376,6 +409,34 @@ internal sealed class PdfEditVerifier : IEditVerifier<PdfOp>
                     && PdfMutationHandlers.Clears(field, expected.Value, pages, pattern)) is { } cleared)
                 {
                     verifier._fields.Expect(name, PdfMutationSupport.ClearedFieldValue(cleared));
+                }
+            }
+
+            return default;
+        }
+
+        /// <summary>
+        /// A field with a widget the area <see cref="PdfMutationHandlers.Covers"/> goes with it, so
+        /// the operation that set it is left unchecked, as after flatten_forms, and a field whose
+        /// only widget it covers must be gone from the output; a field whose widgets are not known,
+        /// because a page operation moved them or the field was not found, is left unchecked too. The cover itself has no reliable read-back, so the
+        /// operation stays unchecked.
+        /// </summary>
+        public ValueTuple Apply(RedactAreaOp operation)
+        {
+            Rectangle area = PdfGeometry.ToPdfRect(PdfPages.PageAt(Document, operation.Page), operation.Rect);
+            foreach (string name in verifier._fields.Keys.ToArray())
+            {
+                (int? Page, Rectangle Rect)[]? widgets = verifier._widgets.GetValueOrDefault(name);
+                bool[] covered = [.. (widgets ?? []).Select(widget => widget.Page == operation.Page && PdfMutationHandlers.Covers(area, widget.Rect))];
+                if (widgets is null || covered.Contains(true))
+                {
+                    verifier._fields.Drop(name);
+                }
+
+                if (covered is [true])
+                {
+                    verifier._covered.Add((name, id));
                 }
             }
 
@@ -450,6 +511,7 @@ internal sealed class PdfEditVerifier : IEditVerifier<PdfOp>
             // The inserted pages may bring form fields of their own.
             verifier._incomplete.UnionWith(verifier._flattened.Select(static flatten => flatten.Id));
             verifier._flattened.Clear();
+            verifier._covered.Clear();
             return default;
         }
 
@@ -486,8 +548,6 @@ internal sealed class PdfEditVerifier : IEditVerifier<PdfOp>
         public ValueTuple Apply(AddStampImageOp operation) => default;
 
         public ValueTuple Apply(AddHyperlinkOp operation) => default;
-
-        public ValueTuple Apply(RedactAreaOp operation) => default;
 
         public ValueTuple Apply(SetPageLabelsOp operation) => default;
 

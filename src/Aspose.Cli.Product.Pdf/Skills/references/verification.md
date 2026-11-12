@@ -30,6 +30,7 @@ edit exits 8; without it, it exits 0 with the warning alone. The
 | `set_form_field` | the field holds the value set, or is clear after `null` or a later `redact_text` that clears it |
 | `flatten_forms` | no field of a flattened name remains, or no field at all without `fields` |
 | `redact_text` | checked before publishing, with or without `--verify` ([redaction](editing.md#redaction)) |
+| `redact_area` | stays unchecked; a form field whose only widget it covers is gone, else `FIELD_VALUE_MISMATCH` |
 | `add_bookmark` | its address holds its title and page, and the bookmark count |
 | `delete_bookmarks` | the bookmark count |
 | `set_properties` | each document information entry set |
@@ -45,7 +46,8 @@ under its cover; act on `OP_NO_EFFECT` as its hint says, and on `REDACTION_TEXT_
 ([redaction](editing.md#redaction)).
 
 The batch is checked as a whole: only the last value set for a field, entry or
-attachment is checked, the value of a flattened field or a deleted page's fields is not, a
+attachment is checked, the value of a flattened field, of a field a `redact_area` covers or
+of a deleted page's fields is not, a
 bookmark position is not checked after `delete_bookmarks` renumbers the outline,
 and bookmark pages are not checked after a page operation renumbers the pages. `add_attachment` with a name the document already
 uses adds a second attachment of that name. Other operations (stamps,
