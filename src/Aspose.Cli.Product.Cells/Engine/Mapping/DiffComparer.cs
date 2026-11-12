@@ -53,7 +53,7 @@ internal static class DiffComparer
             int before = listing.Differing;
             List<CellsCellDiff> cells = listing.Cells(leftSheet, rightSheet,
                 includeFormulas ? FormulaScope.Compared : FormulaScope.None, shifts);
-            if (listing.Differing != before && shifts.Describe(rightSheet.Name, budgets.Deadline) is { } shifted)
+            if (listing.Differing != before && shifts.Describe(leftSheet.Name, rightSheet.Name, budgets.Deadline) is { } shifted)
             {
                 warnings.Add(shifted);
             }
