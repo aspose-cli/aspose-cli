@@ -4,7 +4,14 @@
   "steps": [
     {
       "args": ["cells", "edit", "book.xlsx", "--in-place", "--verify", "--ops", "{\"ops\":[{\"op\":\"set_formula\",\"range\":\"B1\",\"formula\":\"=1/0\"}]}"],
-      "expect": { "json": [{ "path": "verification.issues[0].location", "equals": "cell/Sheet1!B1" }] }
+      "expect": {
+        "exitCode": 8,
+        "json": [
+          { "path": "verification.ok", "equals": false },
+          { "path": "verification.issues[0].code", "equals": "FORMULA_ERRORS" },
+          { "path": "verification.issues[0].location", "equals": "cell/Sheet1!B1" }
+        ]
+      }
     }
   ]
 }
