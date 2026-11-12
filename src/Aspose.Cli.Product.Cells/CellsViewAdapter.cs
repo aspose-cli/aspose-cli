@@ -1,3 +1,4 @@
+using System.Globalization;
 using Aspose.Cli.Product.Cells.Engine.Mapping;
 using Aspose.Cli.Sdk.Extensibility;
 using Aspose.Cli.Sdk.Licensing;
@@ -144,12 +145,17 @@ internal sealed class CellsViewAdapter : IProductViewAdapter<CellsSession>
         }
         foreach (CellsReviewSheetLayout sheet in layout.Sheets)
         {
-            if (sheet.EvaluationNoticeRow is int row)
+            if (sheet.EvaluationNoticeRows is [int first, ..] notice)
             {
+                bool one = notice.Count == 1;
+                string rows = string.Join(", ", notice.Select(static row => (row + 1).ToString(CultureInfo.InvariantCulture)));
                 findings.Add(SheetFinding(CellsReviewChecks.EvaluationNotice, sheet.Name,
-                    $"Row {row + 1} of '{sheet.Name}' is the evaluation notice an Aspose.Cells CSV or TSV export without a license wrote after the data; it is not data.",
-                    location: CellsAddresses.Line(sheet.Name, rows: true, row),
-                    hint: "Tell the user. Delete the row before anything reads the file as data, or export it again with a license."));
+                    one
+                        ? $"Row {rows} of '{sheet.Name}' is the evaluation notice an Aspose.Cells CSV or TSV export without a license wrote after the data; it is not data."
+                        : $"Rows {rows} of '{sheet.Name}' are each the evaluation notice an Aspose.Cells CSV or TSV export without a license wrote after the data; they are not data.",
+                    location: one ? CellsAddresses.Line(sheet.Name, rows: true, first)
+                        : CellsAddresses.At("row", sheet.Name, string.Create(CultureInfo.InvariantCulture, $"{first + 1}:{notice[^1] + 1}")),
+                    hint: $"Tell the user. Delete the {(one ? "row" : "rows")} before anything reads the file as data, or export it again with a license."));
             }
         }
         if (info.Workbook.HasMacros)
