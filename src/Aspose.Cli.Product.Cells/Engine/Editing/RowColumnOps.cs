@@ -167,6 +167,46 @@ internal static class RowColumnOps
         else
         {
             sheet.AutoFitColumns(first, last);
+            WidenForGeneralNumbers(sheet.Cells, first, last);
+        }
+    }
+
+    /// <summary>
+    /// Widens an auto-fitted column a pixel at a time, by at most a standard column width in all,
+    /// until each General number in it shows in full, then one pixel more: auto-fit leaves such a
+    /// number rounded in some fonts, and rendering needs a pixel more than its display text
+    /// (CELLS-AUTOFIT-GENERAL-NUMBER, KNOWN-ISSUES.md). A number still rounded at the limit does not
+    /// widen the column. Merged cells, which auto-fit does not measure, and rotated or stacked
+    /// numbers, whose display text ignores the rotation, are left as they are.
+    /// </summary>
+    private static void WidenForGeneralNumbers(Aspose.Cells.Cells cells, int first, int last)
+    {
+        var fitted = new Dictionary<int, int>();
+        foreach (Cell cell in cells)
+        {
+            if (cell.Column < first || cell.Column > last || cell.Type != CellValueType.IsNumeric || cell.IsMerged
+                || cell.GetStyle() is not { Number: 0, Custom: null or "", ShrinkToFit: false, RotationAngle: 0 })
+            {
+                continue;
+            }
+
+            string full = cell.GetStringValue(CellValueFormatStrategy.CellStyle);
+            int start = cells.GetColumnWidthPixel(cell.Column), width = start;
+            int limit = (fitted.TryAdd(cell.Column, start) ? start : fitted[cell.Column]) + cells.StandardWidthPixels;
+            while (width < limit && cell.GetStringValue(CellValueFormatStrategy.DisplayString) != full)
+            {
+                cells.SetColumnWidthPixel(cell.Column, ++width);
+            }
+
+            if (width == limit && cell.GetStringValue(CellValueFormatStrategy.DisplayString) != full)
+            {
+                cells.SetColumnWidthPixel(cell.Column, start);
+            }
+        }
+
+        foreach (int column in fitted.Where(pair => cells.GetColumnWidthPixel(pair.Key) > pair.Value).Select(pair => pair.Key))
+        {
+            cells.SetColumnWidthPixel(column, cells.GetColumnWidthPixel(column) + 1);
         }
     }
 

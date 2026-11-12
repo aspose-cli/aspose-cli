@@ -211,6 +211,20 @@ Reproductions: [CellsKnownIssueTests](tests/Aspose.Cli.Product.Cells.Tests/Cells
   the largest run, and its hint says that auto-fit leaves it short.
 - **Workaround:** set the row height with `resize_rows` and `height`.
 
+### CELLS-AUTOFIT-GENERAL-NUMBER
+
+- **Defect:** `Worksheet.AutoFitColumn` and `AutoFitColumns` make a column holding a number in
+  the General format one to three pixels narrower than the engine needs to show it in full in
+  some fonts: DengXian 11, the default font of Chinese Excel, and Microsoft YaHei 10 for numbers
+  with decimals, and Calibri 11, Arial 10 or Times New Roman 12 for some negative ones.
+  `Cell.GetStringValue` with `DisplayString` then rounds the number, 15600.75 to 15600.8, and in
+  DengXian 11 rendering draws it in full only one pixel wider than that display text needs. No
+  `AutoFitterOptions` setting (`FormatStrategy`, `ForRendering`) changes the width; numbers in
+  other formats, dates and text are fitted in full.
+- **CLI behavior:** `resize_columns` without `widthChars` widens such a column a pixel at a time
+  until each General number in it shows in full, then one pixel more, so review's
+  `CELLS_VALUES_CLIPPED` no longer reports it and sheet images and PDF pages show the whole number.
+
 ### CELLS-SHEET-END-COMMENT-PAGES
 
 - **Defect:** on a sheet whose `PageSetup.PrintComments` is `PrintSheetEnd`,

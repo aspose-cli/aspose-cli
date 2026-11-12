@@ -431,6 +431,49 @@ public sealed class CellsKnownIssueTests
     }
 
     /// <summary>
+    /// In a workbook whose standard font is DengXian 11, auto-fit leaves the General number
+    /// 15600.75 shown as 15600.8; one pixel wider the cell shows it in full, but rendering still
+    /// draws it rounded.
+    /// </summary>
+    [LicensedFact]
+    public void AutoFitColumn_LeavesAGeneralNumberRoundedInDengXian()
+    {
+        Requires.Windows();
+        using var fixture = new CellsFixture();
+        _ = fixture.LicenseState;
+        using var created = new Workbook();
+        Style normal = created.DefaultStyle;
+        normal.Font.Name = "DengXian";
+        normal.Font.Size = 11;
+        created.DefaultStyle = normal;
+        using var saved = new MemoryStream();
+        created.Save(saved, SaveFormat.Xlsx);
+        saved.Position = 0;
+        // Loaded again, the standard column width is that of the new font.
+        using var workbook = new Workbook(saved);
+        Worksheet sheet = workbook.Worksheets[0];
+        Cell cell = sheet.Cells["A1"];
+        cell.PutValue(15600.75);
+
+        sheet.AutoFitColumn(0);
+        string fitted = cell.GetStringValue(CellValueFormatStrategy.DisplayString);
+        sheet.Cells.SetColumnWidthPixel(0, sheet.Cells.GetColumnWidthPixel(0) + 1);
+        string wider = cell.GetStringValue(CellValueFormatStrategy.DisplayString);
+        using var svg = new MemoryStream();
+        new Aspose.Cells.Rendering.SheetRender(sheet, new Aspose.Cells.Rendering.ImageOrPrintOptions
+        {
+            ImageType = Aspose.Cells.Drawing.ImageType.Svg,
+            OnePagePerSheet = true,
+        }).ToImage(0, svg);
+        bool renderedRounded = Encoding.UTF8.GetString(svg.ToArray()).Contains(">15600.8<", StringComparison.Ordinal);
+
+        KnownIssue.Reproduces(
+            "CELLS-AUTOFIT-GENERAL-NUMBER",
+            fitted == "15600.8" && wider == "15600.75" && renderedRounded,
+            $"auto-fit shows {fitted}, one pixel wider the cell shows {wider} and rendering draws it {(renderedRounded ? "rounded" : "in full")}");
+    }
+
+    /// <summary>
     /// In pivots whose column area holds more than one field, the item labels of a column field
     /// other than the innermost are drawn about 16 pixels at 96 DPI further right than the same
     /// text in a plain cell of the same width: the products over the value fields, and the regions

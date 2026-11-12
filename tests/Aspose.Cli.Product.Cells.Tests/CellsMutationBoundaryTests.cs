@@ -22,6 +22,63 @@ public sealed class CellsMutationBoundaryTests
         Assert.True(workbook.Worksheets["Data"].Cells.GetColumnWidth(0) > 30);
     }
 
+    /// <summary>
+    /// In an Arial 10 workbook, where auto-fit leaves the General number -15600.75 rounded
+    /// (CELLS-AUTOFIT-GENERAL-NUMBER), auto-fit widens only the column of such a number until it
+    /// shows in full: text, a General number that fits, a formatted number, a date, a merged
+    /// General number and General numbers rotated or stacked keep the width the engine's auto-fit
+    /// gives them. Arial comes with Windows, so no font is substituted.
+    /// </summary>
+    [Fact]
+    public void AutoFit_WidensOnlyTheColumnsOfGeneralNumbersTheEngineFitsRounded()
+    {
+        Requires.Windows();
+        using var fixture = new CellsFixture();
+        _ = fixture.LicenseState;
+        using var workspace = new TempWorkspace();
+        Assert.Equal(0, workspace.Run("cells", "create", "source.xlsx", "--sheet-names", "Data").ExitCode);
+        CliResult built = workspace.Run("cells", "edit", "source.xlsx", "--in-place", "--ops", """
+            {"ops":[
+              {"op":"set_default_font","font":"Arial","fontSize":10},
+              {"op":"set_values","sheet":"Data","range":"A1","values":[
+                ["Amount","Customer","Count","Total","Due","Merged","","Rotated","Stacked"],
+                [-15600.75,"Hengtong Trading Co.",21000,15600.75,46338,1234567.891,"",-15600.75,-15600.75]]},
+              {"op":"format_range","sheet":"Data","range":"D2","style":{"numberFormat":"#,##0.00"}},
+              {"op":"format_range","sheet":"Data","range":"E2","style":{"numberFormat":"yyyy-mm-dd"}},
+              {"op":"merge_cells","sheet":"Data","range":"F2:G2"}
+            ]}
+            """, "--output-format", "json");
+        Assert.True(built.ExitCode == 0, built.StdErr);
+        // No operation rotates text, so the engine turns H2 up and stacks I2.
+        using (var source = new Workbook(workspace.File("source.xlsx")))
+        {
+            foreach ((string name, int angle) in new[] { ("H2", 90), ("I2", 255) })
+            {
+                Cell cell = source.Worksheets["Data"].Cells[name];
+                Style style = cell.GetStyle();
+                style.RotationAngle = angle;
+                cell.SetStyle(style);
+            }
+            source.Save(workspace.File("source.xlsx"));
+        }
+
+        CliResult fitted = workspace.Run("cells", "edit", "source.xlsx", "--ops",
+            """{"ops":[{"op":"resize_columns","sheet":"Data","first":"A","last":"I"}]}""",
+            "--out", "fitted.xlsx", "--output-format", "json");
+
+        Assert.True(fitted.ExitCode == 0, fitted.StdErr);
+        using var engine = new Workbook(workspace.File("source.xlsx"));
+        Aspose.Cells.Cells expected = engine.Worksheets["Data"].Cells;
+        engine.Worksheets["Data"].AutoFitColumns(0, 8);
+        using var workbook = new Workbook(workspace.File("fitted.xlsx"));
+        Aspose.Cells.Cells cells = workbook.Worksheets["Data"].Cells;
+        Assert.Equal("-15600.8", expected["A2"].GetStringValue(CellValueFormatStrategy.DisplayString));
+        Assert.Equal("-15600.75", cells["A2"].GetStringValue(CellValueFormatStrategy.DisplayString));
+        Assert.Equal(
+            [.. Enumerable.Range(1, 8).Select(expected.GetColumnWidthPixel)],
+            [.. Enumerable.Range(1, 8).Select(cells.GetColumnWidthPixel)]);
+    }
+
     [Theory]
     [InlineData(false, false)]
     [InlineData(true, false)]
