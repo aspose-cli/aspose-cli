@@ -55,10 +55,13 @@ Every bounded read and search reports `window` after its payload
   the window as partial evidence.
 - `next` is the ready-to-run command for the following window; it is absent
   when nothing remains. Run it verbatim instead of composing the next page
-  yourself, adding again what it does not repeat: a password given with
-  `--password` or `--password-stdin`, and global options such as `--timeout`,
-  `--workdir` or `--license`. A password given with `--password-env` is
-  repeated.
+  yourself, adding again the global options it does not repeat, such as
+  `--timeout`, `--workdir` or `--license`. It never repeats a password: one
+  given with `--password-env` is passed on by the variable's name, and one
+  given another way shows as `--password-env "<password-env>"`; put the name
+  of an environment variable that holds the input's password in place of
+  `<password-env>`, or replace the option with `--password-stdin` and pipe
+  the password.
 - `total` is absent when the read stopped before counting every unit, as a
   search usually does.
 

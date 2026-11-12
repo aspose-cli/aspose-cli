@@ -141,7 +141,11 @@ name of an environment variable, never the secret. A missing or empty
 variable fails only the operation that names it. Command options follow the
 same rule: prefer the `-env` and `-stdin` forms, such as `--password-env`,
 `--encrypt-env` and `--password-stdin`; the plain forms are visible in the
-process list.
+process list. A command that a hint or a `next` names never repeats a
+password: an input's password given with `--password-env` is passed on by
+the variable's name, and one given another way shows as
+`--password-env "<password-env>"`, in which you put the name of an
+environment variable that holds it.
 
 An output made from an encrypted input takes the password an `--encrypt-env`
 style option gives. Without one, an output in a format the product can
@@ -161,10 +165,14 @@ edit that encrypts the file in place, such as `pdf edit` with an
 `encrypt_document` operation; or a conversion of the encrypted input itself
 with `--encrypt-env`. A step that writes an encrypted copy beside the
 unencrypted file ends by telling you to delete that file once the copy
-exists. In a command, `<password-env>` stands for the name of an environment
-variable that holds the password to set, and `<file>` for each file the
-command wrote. When that step does not suit the task, the other ways are to
-write the output in a format the product can encrypt, to encrypt a PDF with
+exists. In a command, `"<password-env>"` stands for the name of an
+environment variable: after `--password-env`, one that holds the input's
+password; after `--encrypt-env` or in an operation's `*Env` field, one that
+holds the password to set; a step that names it in both places means the
+same variable, so the output gets the input's password. `<file>` stands for
+each file the command wrote. When that step does not suit the task, the
+other ways are to write the output in a format the product can encrypt, to
+encrypt a PDF with
 `pdf edit` and `encrypt_document` passwords and permissions of your own, and
 to convert again from the encrypted input rather than from its unencrypted
 copy, since converting a file again can change it. A hint that says no command

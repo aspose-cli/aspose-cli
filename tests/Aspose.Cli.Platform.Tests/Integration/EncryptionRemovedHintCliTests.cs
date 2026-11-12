@@ -344,13 +344,13 @@ public sealed partial class EncryptionRemovedHintCliTests : IDisposable
     }
 
     /// <summary>
-    /// A password read from stdin is never repeated, by value or by option, as a continuation
-    /// leaves it out: the hint's command names no --password-stdin and says to give the password
-    /// again, and given it again it runs as written.
+    /// A password read from stdin is never repeated, by value or by stdin, which the command may
+    /// need for a document: the hint's command passes it on by a variable placeholder, with no
+    /// sentence of its own, and run as written with the placeholder filled, it needs no stdin.
     /// </summary>
     [Category(TestCategory.Slow)]
     [Fact]
-    public void WorkbookOpenedWithAPasswordOnStdin_HintLeavesThePasswordOptionOut()
+    public void WorkbookOpenedWithAPasswordOnStdin_HintPassesItOnByAVariablePlaceholder()
     {
         Created(Run("cells", "create", "locked.xlsx", "--encrypt-env", Variable));
 
@@ -359,20 +359,19 @@ public sealed partial class EncryptionRemovedHintCliTests : IDisposable
         string hint = Hint(result);
         Assert.DoesNotContain("--password-stdin", hint, StringComparison.Ordinal);
         Assert.DoesNotContain("hint-secret", hint, StringComparison.Ordinal);
-        Assert.Contains(", giving it again the password this command read from stdin, ", hint, StringComparison.Ordinal);
-        string command = Assert.Single(Commands(hint)).Replace("<password-env>", Variable, StringComparison.Ordinal) + " --password-stdin";
-        CliResult ran = _workspace.RunCommandLine(command, Variables, "hint-secret\n");
-        Assert.True(ran.ExitCode == 0, $"{command}\n{ran.StdErr}");
-        AssertNeedsThePassword("cells", Written(ran.Json()));
+        Assert.DoesNotContain("giving it again", hint, StringComparison.Ordinal);
+        string command = Assert.Single(Commands(hint));
+        Assert.Contains(" --password-env \"<password-env>\" ", command, StringComparison.Ordinal);
+        AssertNeedsThePassword("cells", Written(Step(command, ("<password-env>", Variable))));
     }
 
     /// <summary>
-    /// A password given literally is never repeated: the hint names no command that would carry
-    /// it, only the way in words.
+    /// A password given literally is never repeated: the hint's command passes it on by a variable
+    /// placeholder, as one read from stdin, and runs as written with the placeholder filled.
     /// </summary>
     [Category(TestCategory.Slow)]
     [Fact]
-    public void WorkbookOpenedWithALiteralPassword_HintNeverRepeatsIt()
+    public void WorkbookOpenedWithALiteralPassword_HintPassesItOnByAVariablePlaceholder()
     {
         Created(Run("cells", "create", "locked.xlsx", "--encrypt-env", Variable));
 
@@ -381,7 +380,9 @@ public sealed partial class EncryptionRemovedHintCliTests : IDisposable
         string hint = Hint(result);
         Assert.DoesNotContain("hint-secret", hint, StringComparison.Ordinal);
         Assert.DoesNotContain("--password ", hint, StringComparison.Ordinal);
-        Assert.Empty(Commands(hint));
+        string command = Assert.Single(Commands(hint));
+        Assert.Contains(" --password-env \"<password-env>\" ", command, StringComparison.Ordinal);
+        AssertNeedsThePassword("cells", Written(Step(command, ("<password-env>", Variable))));
     }
 
     /// <summary>

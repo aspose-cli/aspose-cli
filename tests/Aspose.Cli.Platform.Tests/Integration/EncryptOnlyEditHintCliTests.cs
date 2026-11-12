@@ -91,11 +91,12 @@ public sealed class EncryptOnlyEditHintCliTests : IDisposable
     }
 
     /// <summary>
-    /// A command line that gives a secret literally, here the input's password, keeps the hint it
-    /// had: the command that only encrypts would repeat the secret, which a hint never does.
+    /// A command line that gives the input's password literally never has it repeated: the command
+    /// that only encrypts passes it on by a placeholder for the variable that holds it, and run with
+    /// the placeholder filled in, it encrypts the file.
     /// </summary>
     [Fact]
-    public void PdfEditWithALiteralPassword_KeepsItsHintAndNeverRepeatsThePassword()
+    public void PdfEditWithALiteralPassword_HintPassesItOnByAPlaceholderAndNeverRepeatsIt()
     {
         const string Literal = "literal-input-secret";
         File.WriteAllText(_workspace.File("source.md"), "# One\n\nFirst part.\n");
@@ -104,10 +105,19 @@ public sealed class EncryptOnlyEditHintCliTests : IDisposable
         CliResult refused = Run("pdf", "edit", "plain.pdf", "--in-place", "--password", Literal, "--encrypt-env", Variable);
 
         Assert.Equal(2, refused.ExitCode);
+        Assert.DoesNotContain(Literal, refused.StdErr, StringComparison.Ordinal);
         JsonNode error = JsonNode.Parse(refused.StdErr)!["error"]!;
         Assert.Equal("USAGE_ERROR", error["code"]!.GetValue<string>());
-        Assert.Equal(UsageHint, error["hint"]!.GetValue<string>());
-        Assert.DoesNotContain(Literal, refused.StdErr, StringComparison.Ordinal);
+        string hint = error["hint"]!.GetValue<string>();
+        string shown = UsageHint + " To only encrypt, run `";
+        Assert.StartsWith(shown, hint, StringComparison.Ordinal);
+        string command = hint[shown.Length..].Split('`', 2)[0];
+        Assert.Contains(" --password-env \"<password-env>\" ", command, StringComparison.Ordinal);
+
+        CliResult encrypted = _workspace.RunCommandLine(command.Replace("<password-env>", Variable, StringComparison.Ordinal), Variables);
+
+        Assert.True(encrypted.ExitCode == 0, encrypted.StdErr);
+        Assert.Equal("PASSWORD_REQUIRED", JsonNode.Parse(Run("pdf", "inspect", "plain.pdf").StdErr)!["error"]!["code"]!.GetValue<string>());
     }
 
     /// <summary>

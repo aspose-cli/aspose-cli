@@ -90,6 +90,22 @@ public sealed class ContinuationCommand
         return this;
     }
 
+    /// <summary>
+    /// The placeholder a command names for the environment variable of a password the invocation
+    /// read some other way, or set none for, which the caller replaces with a variable that holds it.
+    /// </summary>
+    internal const string PasswordPlaceholder = "<password-env>";
+
+    /// <summary>
+    /// Appends <paramref name="option"/>, which names the environment variable of a password, with
+    /// <paramref name="variable"/>, or, for a password the invocation did not read from a variable,
+    /// with <see cref="PasswordPlaceholder"/> in double quotes, which a shell passes as written
+    /// rather than reading its angle brackets as a redirection: a command never repeats a password
+    /// itself, nor reads one from stdin, which a document the command pipes there may need.
+    /// </summary>
+    internal ContinuationCommand PasswordVariable(string option, string? variable) =>
+        Option(option, variable ?? PasswordPlaceholder);
+
     /// <summary>Appends a switch when <paramref name="enabled"/> is true.</summary>
     public ContinuationCommand Flag(string name, bool enabled = true)
     {
@@ -143,7 +159,7 @@ public sealed class ContinuationCommand
         }
 
         var repeated = new ContinuationCommand([.. path]);
-        var replay = new CommandLineReplay(repeated, [], passed: null);
+        var replay = new CommandLineReplay(repeated, []);
         return replay.Append(parse.RootCommandResult) && replay.LeftOut.Count == 0 && replay.Piped is null ? repeated : null;
     }
 }
@@ -154,8 +170,7 @@ public sealed class ContinuationCommand
 /// </summary>
 /// <param name="command">The command line appended to.</param>
 /// <param name="dropped">The parameters the caller replaces or leaves out.</param>
-/// <param name="passed">The name of an option the command line already gives, or null.</param>
-internal sealed class CommandLineReplay(ContinuationCommand command, IReadOnlyCollection<Symbol> dropped, string? passed)
+internal sealed class CommandLineReplay(ContinuationCommand command, IReadOnlyCollection<Symbol> dropped)
 {
     /// <summary>The option of a document the invocation read from stdin, or null.</summary>
     public string? Piped { get; private set; }
@@ -176,7 +191,7 @@ internal sealed class CommandLineReplay(ContinuationCommand command, IReadOnlyCo
                 }
             }
             else if (child is OptionResult { Implicit: false } option && !dropped.Contains(option.Option)
-                && option.Option.Name is not GlobalOptionNames.OutputFormat && option.Option.Name != passed)
+                && option.Option.Name is not GlobalOptionNames.OutputFormat)
             {
                 ParameterMetadata metadata = option.Option.GetParameterMetadata();
                 if (metadata.LiteralSecret)

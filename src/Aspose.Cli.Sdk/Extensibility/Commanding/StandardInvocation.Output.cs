@@ -125,7 +125,7 @@ public partial class StandardInvocation
             return null;
         }
 
-        string password = encrypt.EnvironmentName(_parse) ?? ProtectionAdvice.PasswordPlaceholder;
+        string password = encrypt.EnvironmentName(_parse) ?? ContinuationCommand.PasswordPlaceholder;
         return ProtectionAdvice.EncryptInPlace(_parse.RootCommandResult.Command, format.Id, Output.Path, password) is { } encrypted
             && Again([.. encrypt.Options]) is { } plain
                 ? $"Write the {format.Id} file without {option}, then encrypt it in place with a password to open it that grants every permission: "
@@ -141,13 +141,13 @@ public partial class StandardInvocation
     /// This invocation as a command line for a hint: <see cref="ContinuationAt"/> of its own
     /// command, or that command alone when it has no input, then every other argument and option the
     /// caller gave, as given, except <paramref name="dropped"/> and the output format, which every
-    /// such command line names itself. A password follows the rule of <see cref="ContinuationAt"/>:
-    /// one in an environment variable is passed on by the variable's name, one read from stdin is
-    /// left out, and one given literally is never repeated, so the result is null. A document read
-    /// from stdin keeps its <c>-</c>, which <see cref="RepeatedInvocation.Repeating"/> tells the
-    /// caller to pipe again, so a document that may hold secrets is never written into the hint.
-    /// The caller appends what it changes. Null, too, for a command parsed on its own, outside the
-    /// command tree, which has no path to repeat.
+    /// such command line names itself. The input's password is passed on as
+    /// <see cref="ContinuationOf"/> passes it, however the caller gave it; any other secret read from
+    /// stdin or given literally is never repeated, so the result is null. A document read from stdin keeps its
+    /// <c>-</c>, which <see cref="RepeatedInvocation.Repeating"/> tells the caller to pipe again, so
+    /// a document that may hold secrets is never written into the hint. The caller appends what it
+    /// changes. Null, too, for a command parsed on its own, outside the command tree, which has no
+    /// path to repeat.
     /// </summary>
     /// <param name="dropped">The parameters the caller replaces or leaves out; a null entry is ignored.</param>
     internal RepeatedInvocation? Again(params Symbol?[] dropped)
@@ -159,12 +159,22 @@ public partial class StandardInvocation
             return null;
         }
 
+        // ContinuationAt names the input and passes its password on; a command without an input
+        // passes the password of the files it reads on after them.
         ContinuationCommand again = _options.Input is null ? new ContinuationCommand(path) : ContinuationAt(path);
-        // ContinuationAt passes the input's password variable on itself.
-        string? passed = _options.Input is null ? null : _options.InputPassword?.EnvironmentOption;
-        Symbol[] named = _options.Input is null ? [] : [_options.Input];
-        var replay = new CommandLineReplay(again, [.. dropped.OfType<Symbol>(), .. named], passed);
-        return replay.Append(_parse.RootCommandResult) ? new RepeatedInvocation(again, replay.Piped, [.. replay.LeftOut]) : null;
+        Symbol[] named = [.. _options.Input is null ? [] : new Symbol[] { _options.Input }, .. _options.InputPassword?.Options ?? []];
+        var replay = new CommandLineReplay(again, [.. dropped.OfType<Symbol>(), .. named]);
+        if (!replay.Append(_parse.RootCommandResult) || replay.LeftOut.Count > 0)
+        {
+            return null;
+        }
+
+        if (_options.Input is null && _options.InputPassword?.Continued(_parse) is var (option, variable))
+        {
+            again.PasswordVariable(option, variable);
+        }
+
+        return new RepeatedInvocation(again, replay.Piped);
     }
 
     /// <summary>
@@ -688,22 +698,19 @@ public partial class StandardInvocation
 }
 
 /// <summary>
-/// An invocation as a command line for a hint (<see cref="StandardInvocation.Again"/>), with what
-/// it could not write into it.
+/// An invocation as a command line for a hint (<see cref="StandardInvocation.Again"/>), with the
+/// document it read from stdin, which it could not write into it.
 /// </summary>
 /// <param name="Command">The command line; the caller appends what it changes.</param>
 /// <param name="Piped">The option of a document the invocation read from stdin, which keeps its <c>-</c>; null for none.</param>
-/// <param name="LeftOut">The options of the passwords the invocation read from stdin, which the command line leaves out.</param>
-internal sealed record RepeatedInvocation(ContinuationCommand Command, string? Piped, IReadOnlyList<string> LeftOut)
+internal sealed record RepeatedInvocation(ContinuationCommand Command, string? Piped)
 {
     /// <summary>
     /// What a hint says right after the command of what it cannot repeat: the document to pipe
-    /// to it again on stdin, and that the passwords read from stdin, which it names neither by
-    /// value nor by option, are the caller's to give again; empty when it repeats everything.
+    /// to it again on stdin; empty when it repeats everything.
     /// </summary>
     public string Repeating =>
-        (Piped is null ? string.Empty : $", piping the same {Piped} document to it on stdin as this command read it")
-        + (LeftOut.Count == 0 ? string.Empty : ", giving it again the password this command read from stdin");
+        Piped is null ? string.Empty : $", piping the same {Piped} document to it on stdin as this command read it";
 }
 
 /// <summary>

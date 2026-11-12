@@ -8,7 +8,7 @@ using Xunit;
 namespace Aspose.Cli.Platform.Tests.Integration;
 
 /// <summary>
-/// The commands that an error's hint builds with <c>ContinuationCommand</c> (D14) run as written:
+/// The commands that an error's hint or a read's <c>window.next</c> builds with <c>ContinuationCommand</c> (D14) run as written:
 /// each value quoted as the shell needs it, and JSON asked for. A delimited text input carries no
 /// password, so its import has no encrypted variant.
 /// </summary>
@@ -108,7 +108,7 @@ public sealed partial class ContinuationHintCliTests : IDisposable
 
         JsonNode error = Error(_workspace.Run("words", "create", "letter.docx", "--template", template, "--output-format", "json"), code: null);
         string command = Command(error["hint"]!.GetValue<string>());
-        Assert.Contains("--password-env <password-env> ", command, StringComparison.Ordinal);
+        Assert.Contains("--password-env \"<password-env>\" ", command, StringComparison.Ordinal);
 
         CliResult run = _workspace.RunCommandLine(command.Replace("<password-env>", Variable, StringComparison.Ordinal), variables);
 
@@ -133,6 +133,48 @@ public sealed partial class ContinuationHintCliTests : IDisposable
         Assert.Equal(
             "Run 'aspose-cli app open \"my book.xlsx\" --output-format json' to open the file, or 'aspose-cli app open --welcome' for the guide.",
             error["hint"]!.GetValue<string>());
+    }
+
+    /// <summary>
+    /// The <c>window.next</c> of a read that stopped passes the input's password on as every
+    /// continuation does, never the password: by the variable the read named, or by the placeholder
+    /// for one, in double quotes, when the read got the password from stdin or literally. Run once
+    /// the placeholder names a variable that holds the password, it reads the next window. A read
+    /// of a plain input names no password.
+    /// </summary>
+    [Theory]
+    [InlineData("stdin", " --password-env \"<password-env>\" ")]
+    [InlineData("literal", " --password-env \"<password-env>\" ")]
+    [InlineData("variable", " --password-env " + Variable + " ")]
+    [InlineData("none", null)]
+    public void ReadWindowNext_PassesTheInputPasswordOnAsTheReadGotIt(string source, string? passed)
+    {
+        File.WriteAllBytes(_workspace.File("deck.pptx"), ScenarioFixtures.Read(source == "none" ? "slides.pptx" : "slides.encrypted"));
+        var variables = new Dictionary<string, string?> { [Variable] = ScenarioFixtures.Password };
+        string[] read = ["slides", "read", "deck.pptx", "--max-chars", "3", "--output-format", "json"];
+
+        CliResult result = source switch
+        {
+            "stdin" => _workspace.RunWithInput(ScenarioFixtures.Password + "\n", [.. read, "--password-stdin"]),
+            "literal" => _workspace.Run([.. read, "--password", ScenarioFixtures.Password]),
+            "variable" => _workspace.RunWithEnv(variables, [.. read, "--password-env", Variable]),
+            _ => _workspace.Run(read),
+        };
+
+        Assert.True(result.ExitCode == 0, result.StdErr);
+        string next = JsonNode.Parse(result.StdOut)!["window"]!["next"]!.GetValue<string>();
+        Assert.DoesNotContain(ScenarioFixtures.Password, next, StringComparison.Ordinal);
+        if (passed is null)
+        {
+            Assert.DoesNotContain("--password", next, StringComparison.Ordinal);
+        }
+        else
+        {
+            Assert.Contains(passed, next, StringComparison.Ordinal);
+        }
+
+        CliResult following = _workspace.RunCommandLine(next.Replace("<password-env>", Variable, StringComparison.Ordinal), variables);
+        Assert.True(following.ExitCode == 0, $"{next}{Environment.NewLine}{following.StdErr}");
     }
 
     private static JsonNode Error(CliResult result, string? code)
