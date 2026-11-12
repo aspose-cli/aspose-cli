@@ -17,7 +17,7 @@ internal static class EditCommand
         SetDirectives = new(
             "Set one cell as SHEET!CELL=VALUE; repeatable, applied after the --ops document. "
                 + "A VALUE starting with '=' is a formula; otherwise TRUE/FALSE and numbers are typed and "
-                + "anything else is text. Quote sheet names that need it: --set \"'My Sheet'!A1=5\". "
+                + "anything else is text, as is a number with leading zeros, a leading '+' or over 15 integer digits. Quote sheet names that need it: --set \"'My Sheet'!A1=5\". "
                 + "Example: --set \"Sales!B3=42\" --set \"Sales!G2==E2*F2\".",
             SetDirectiveParser.Parse,
             static ops => new CellsOpsBatch { Ops = ops }),

@@ -16,8 +16,10 @@ namespace Aspose.Cli.Product.Cells.Commands;
 /// multi-cell ranges are refused and redirected to <c>--ops</c>. A value
 /// starting with <c>=</c> is a formula kept verbatim (including that <c>=</c>);
 /// otherwise <c>TRUE</c>/<c>FALSE</c> in any casing is a boolean, an
-/// invariant-culture decimal number is a number, and anything else — including
-/// the empty string — is text. Compiled values use the same CLR shapes as ops
+/// invariant-culture decimal number is a number unless a number cell would drop
+/// some of its characters (leading zeros, a leading <c>+</c>, an integer part of
+/// more than 15 digits), and anything else — including the empty string — is
+/// text. Compiled values use the same CLR shapes as ops
 /// parsed from an <c>--ops</c> document (string/double/bool), so batching,
 /// dry runs, recalculation and the preview hint apply to them unchanged.
 /// </remarks>
@@ -98,7 +100,8 @@ internal static class SetDirectiveParser
     /// Types a non-formula value the way the same literal would type in an ops
     /// JSON document. Numbers are detected with an invariant-culture
     /// <see cref="decimal"/> parse and carried as <see cref="double"/>, the one
-    /// numeric shape of the ops pipeline (see <c>JsonValueMatrix</c>).
+    /// numeric shape of the ops pipeline (see <c>JsonValueMatrix</c>), unless a
+    /// number cell would not keep their characters (<see cref="DropsCharacters"/>).
     /// </summary>
     private static object TypedValue(string rawValue)
     {
@@ -107,12 +110,22 @@ internal static class SetDirectiveParser
             return flag;
         }
 
-        if (decimal.TryParse(rawValue, NumberStyles.Float, CultureInfo.InvariantCulture, out decimal number))
+        if (decimal.TryParse(rawValue, NumberStyles.Float, CultureInfo.InvariantCulture, out decimal number)
+            && !DropsCharacters(rawValue))
         {
             return (double)number;
         }
 
         return rawValue;
+    }
+
+    // A number cell drops leading zeros and a leading '+', and keeps 15 significant digits, so an
+    // integer part of more digits loses the rest.
+    private static bool DropsCharacters(string number)
+    {
+        string trimmed = number.Trim();
+        return NumberText.HasLeadingZeros(trimmed) || trimmed.StartsWith('+')
+            || trimmed.TrimStart('-').TakeWhile(char.IsAsciiDigit).Count() > 15;
     }
 
     private static CliException Invalid(string directive, string reason, string hint) =>

@@ -120,8 +120,8 @@ internal static partial class CellsTextImport
     /// The number, date or boolean the engine reads <paramref name="text"/> as when the cell it
     /// types shows <paramref name="text"/> again, so that writing the cell as it shows writes what
     /// was read; null when <paramref name="text"/> is read as text. Two choices keep text the engine
-    /// would type: a number written with leading zeros, such as an id (007, $007, (007)), and a
-    /// date without a four-digit year, a month and a day in that order (1/2/2026, 1/2, 12:30,
+    /// would type: a number written with leading zeros (<see cref="NumberText.HasLeadingZeros"/>),
+    /// and a date without a four-digit year, a month and a day in that order (1/2/2026, 1/2, 12:30,
     /// 2026-11), whose order of day and month, or whose day, the text does not say.
     /// </summary>
     internal static object? Reads(string text)
@@ -129,7 +129,7 @@ internal static partial class CellsTextImport
         (CellValueType type, string shows, object? value) = Typed(text);
         return shows == text
             && (type == CellValueType.IsBool
-                || type == CellValueType.IsNumeric && !LeadingZeros().IsMatch(text)
+                || type == CellValueType.IsNumeric && !NumberText.HasLeadingZeros(text)
                 || type == CellValueType.IsDateTime && YearFirst().IsMatch(text))
                 ? value
                 : null;
@@ -221,10 +221,6 @@ internal static partial class CellsTextImport
     // after dot thousands groups. A comma before exactly three digits may be a thousands separator.
     [GeneratedRegex(@"^[-+]?(?:\d+,\d{1,2}|\d+,\d{4,}|\d{1,3}(?:\.\d{3})+,\d+)$", RegexOptions.CultureInvariant)]
     private static partial Regex DecimalComma();
-
-    // A zero followed by a digit after any leading spaces, currency symbols, parentheses and signs.
-    [GeneratedRegex(@"^[\s(+\-\p{Sc}]*0\d", RegexOptions.CultureInvariant)]
-    private static partial Regex LeadingZeros();
 
     // A four-digit year, a month and a day, alone or before a time.
     [GeneratedRegex(@"^\d{4}[-/]\d{1,2}[-/]\d{1,2}(?:$|[ T])", RegexOptions.CultureInvariant)]

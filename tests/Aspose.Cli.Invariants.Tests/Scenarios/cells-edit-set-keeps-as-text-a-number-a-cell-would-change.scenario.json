@@ -1,0 +1,60 @@
+{
+  "name": "cells edit --set keeps as text a value a number cell would change (leading zeros, a leading plus, more than 15 integer digits), types the other numbers, booleans and formulas so a sum of them is right, verifies with the types it reads back, and leaves the types of --ops values as JSON gives them",
+  "files": {
+    "book.xlsx": { "fixture": "cells.xlsx" },
+    "ops.json": { "text": "{\"ops\":[{\"op\":\"set_values\",\"sheet\":\"Sheet1\",\"range\":\"G1:H1\",\"values\":[[\"007\",7]]}]}" }
+  },
+  "steps": [
+    {
+      "args": ["cells", "edit", "book.xlsx", "--in-place", "--verify",
+        "--set", "Sheet1!D2=007", "--set", "Sheet1!D3=12345678901234567890", "--set", "Sheet1!D5=+8613800001111",
+        "--set", "Sheet1!E1=1.50", "--set", "Sheet1!E2=-3", "--set", "Sheet1!E3=1e3", "--set", "Sheet1!E4=0.5", "--set", "Sheet1!E5=42",
+        "--set", "Sheet1!E6=007", "--set", "Sheet1!E7==SUM(E1:E6)", "--set", "Sheet1!F1=TRUE", "--set", "Sheet1!F2==E7*2"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "verification.ok", "equals": true },
+          { "path": "verification.directChanges", "contains": { "sheet": "Sheet1", "cell": "D2", "right": { "t": "string", "v": "007" } } },
+          { "path": "verification.directChanges", "contains": { "sheet": "Sheet1", "cell": "D3", "right": { "t": "string", "v": "12345678901234567890" } } },
+          { "path": "verification.directChanges", "contains": { "sheet": "Sheet1", "cell": "D5", "right": { "t": "string", "v": "+8613800001111" } } },
+          { "path": "verification.directChanges", "contains": { "sheet": "Sheet1", "cell": "E1", "right": { "t": "number", "v": 1.5 } } },
+          { "path": "verification.directChanges", "contains": { "sheet": "Sheet1", "cell": "E7", "right": { "t": "number", "v": 1041, "f": "=SUM(E1:E6)" } } }
+        ]
+      }
+    },
+    {
+      "args": ["cells", "read", "book.xlsx", "--sheet", "Sheet1", "--range", "D1:F7"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "sheet.cells[1][0]", "equals": { "v": "007", "t": "string" } },
+          { "path": "sheet.cells[2][0]", "equals": { "v": "12345678901234567890", "t": "string" } },
+          { "path": "sheet.cells[4][0]", "equals": { "v": "+8613800001111", "t": "string" } },
+          { "path": "sheet.cells[0][1]", "equals": { "v": 1.5, "t": "number" } },
+          { "path": "sheet.cells[1][1]", "equals": { "v": -3, "t": "number" } },
+          { "path": "sheet.cells[2][1]", "equals": { "v": 1000, "t": "number" } },
+          { "path": "sheet.cells[3][1]", "equals": { "v": 0.5, "t": "number" } },
+          { "path": "sheet.cells[4][1]", "equals": { "v": 42, "t": "number" } },
+          { "path": "sheet.cells[5][1]", "equals": { "v": "007", "t": "string" } },
+          { "path": "sheet.cells[6][1].v", "equals": 1041 },
+          { "path": "sheet.cells[0][2]", "equals": { "v": true, "t": "boolean" } },
+          { "path": "sheet.cells[1][2].v", "equals": 2082 }
+        ]
+      }
+    },
+    {
+      "args": ["cells", "edit", "book.xlsx", "--in-place", "--ops", "ops.json"],
+      "expect": { "exitCode": 0 }
+    },
+    {
+      "args": ["cells", "read", "book.xlsx", "--sheet", "Sheet1", "--range", "G1:H1"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "sheet.cells[0][0]", "equals": { "v": "007", "t": "string" } },
+          { "path": "sheet.cells[0][1]", "equals": { "v": 7, "t": "number" } }
+        ]
+      }
+    }
+  ]
+}
