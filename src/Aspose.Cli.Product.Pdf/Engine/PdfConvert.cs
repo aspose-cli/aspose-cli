@@ -102,6 +102,7 @@ internal static class PdfConvert
         ReadEveryPage(document);
         PdfEngineFormat target = PdfEngineFormats.Of(request.Output.Format.Id);
         SaveFormat format = PdfEngineFormats.Save(target.Id);
+        int removed = 0;
         PublishedFile written = session.Outputs.Write(
             request.Output.Path,
             request.Output.Format,
@@ -109,7 +110,11 @@ internal static class PdfConvert
             document,
             temp =>
             {
-                if (target.Options is { } options)
+                if (target.LeavesPictures)
+                {
+                    removed = PdfMarkdownText.Save(document, temp, request.PictureExtraction);
+                }
+                else if (target.Options is { } options)
                 {
                     document.Save(temp, options(document));
                 }
@@ -118,6 +123,14 @@ internal static class PdfConvert
                     document.Save(temp, format);
                 }
             });
+        if (removed > 0)
+        {
+            warnings.Add(ContentLoss.Warning([ContentKind.Pictures],
+                $"The {target.Id} output leaves out the {removed} picture{(removed == 1 ? "" : "s")} the converted pages show; it holds their text.",
+                $"To take the pictures out as image files, run {request.PictureExtraction ?? "'pdf extract --what images'"}, which takes out those the pages store as image objects; "
+                    + "a picture drawn inline in a page is not one of them, and 'pdf render' shows it."));
+        }
+
         return FileObjects.Output(written, request.Output.Format, encrypted: false);
     }
 
