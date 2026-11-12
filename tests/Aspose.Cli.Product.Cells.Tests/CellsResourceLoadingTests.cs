@@ -187,6 +187,44 @@ public sealed class CellsResourceLoadingTests
         Assert.True(server.RequestCount == 0, string.Join("; ", server.Requests));
     }
 
+    /// <summary>
+    /// The warning about an SVG picture that names a file says only what the saved package holds:
+    /// the picture replaced without the reference, or left out because it sits in a group, leaves
+    /// its SVG in the package as a part nothing refers to (CELLS-SVG-ORPHAN), so the warning does
+    /// not say the reference or the picture left the file.
+    /// </summary>
+    [Theory]
+    [InlineData(false, "REMOTE_RESOURCES_BLOCKED", "may still carry each original SVG")]
+    [InlineData(true, "IMAGES_SKIPPED", "may still carry their SVG")]
+    public void Edit_OfAnSvgPictureThatNamesAFile_WarnsOnlyWhatTheSavedPackageHolds(bool grouped, string code, string carried)
+    {
+        using var workspace = new TempWorkspace();
+        const string reference = "outside-the-folder.png";
+        using (var workbook = new Workbook())
+        {
+            byte[] svg = System.Text.Encoding.UTF8.GetBytes(
+                $"""<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="40" height="40"><image xlink:href="{reference}" width="40" height="40"/></svg>""");
+            Aspose.Cells.Drawing.ShapeCollection shapes = workbook.Worksheets[0].Shapes;
+            Aspose.Cells.Drawing.Shape picture = shapes.AddSvg(1, 0, 1, 0, 40, 40, svg, ResourceHttpServer.Image);
+            if (grouped)
+            {
+                shapes.Group([picture, shapes.AddRectangle(1, 0, 3, 0, 40, 40)]);
+            }
+
+            workbook.Save(workspace.File("book.xlsx"));
+        }
+
+        CliResult edited = workspace.Run("cells", "edit", "book.xlsx", "--set", "Sheet1!A1=Edited", "--out", "out.xlsx", "--output-format", "json");
+
+        Assert.True(edited.ExitCode == 0, edited.StdErr);
+        string message = System.Text.Json.Nodes.JsonNode.Parse(edited.StdOut)!["warnings"]!.AsArray()
+            .Single(warning => warning!["code"]!.GetValue<string>() == code)!["message"]!.GetValue<string>();
+        using System.IO.Compression.ZipArchive package = System.IO.Compression.ZipFile.OpenRead(workspace.File("out.xlsx"));
+        bool kept = package.Entries.Any(static entry => new StreamReader(entry.Open()).ReadToEnd().Contains(reference, StringComparison.Ordinal));
+        Assert.DoesNotContain("were removed", message, StringComparison.Ordinal);
+        Assert.True(!kept || message.Contains(carried, StringComparison.Ordinal), message);
+    }
+
     private static void AssertOmission(IReadOnlyList<Warning>? warnings) =>
         Assert.Contains(warnings ?? [], warning => warning.Code == WarningCodes.RemoteResourcesBlocked && warning.AffectsCompleteness);
 

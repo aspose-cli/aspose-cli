@@ -27,7 +27,8 @@ internal static class SvgPictures
         : new Warning(WarningCodes.RemoteResourcesBlocked,
             $"{omitted.Count + fromSvg} resource(s) the workbook references were omitted: "
             + (omitted.Count > 0 ? LocalDocumentResourceLoader.Describe(omitted) + ", and " : "")
-            + $"{fromSvg} reference(s) inside SVG images, which were removed from them.")
+            + $"{fromSvg} reference(s) inside SVG images, which the pictures no longer hold; a workbook package the command "
+            + "writes may still carry each original SVG, references included, as a part nothing in it refers to.")
         {
             Hint = "Embed an SVG image's images as base64 data: URIs (PNG, JPEG or GIF); copy other files the workbook needs into the input's folder, or a folder below it, and reference them by a relative path. Then review the incomplete output.",
             AffectsCompleteness = true,
@@ -75,7 +76,9 @@ internal static class SvgPictures
         return (references, pictures);
     }
 
-    // The engine cannot change an SVG picture's SVG: setting Data replaces only its raster image.
+    // The engine cannot change an SVG picture's SVG: setting Data writes the new SVG as its raster
+    // image. Removing the picture leaves its SVG in a saved package, unreferenced (known issue
+    // CELLS-SVG-ORPHAN, KNOWN-ISSUES.md), which the warning says.
     private static void Replace(Worksheet sheet, int index, byte[] svg)
     {
         Picture old = sheet.Pictures[index];

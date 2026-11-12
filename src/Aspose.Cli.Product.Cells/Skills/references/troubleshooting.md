@@ -69,7 +69,9 @@ out.
 An SVG picture of any input
 keeps only what it holds itself: references to other files or addresses are
 removed with `REMOTE_RESOURCES_BLOCKED`, and an SVG picture that does not parse
-or is compressed is left out with `IMAGES_SKIPPED`.
+or is compressed is left out with `IMAGES_SKIPPED`. An xlsx the command writes
+may still carry the original SVG, references included, as a file inside the
+package that nothing in the workbook uses.
 
 ## Formulas
 
