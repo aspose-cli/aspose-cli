@@ -389,6 +389,41 @@ public sealed class PdfKnownIssueTests
     }
 
     [LicensedFact]
+    public void MarkdownExport_WritesTheValueOfAFlattenedHtmlFormFieldTwice()
+    {
+        using var fixture = new PdfEngineFixture();
+        const string Value = "ZEBRA42";
+        string html = fixture.File("form.html");
+        File.WriteAllText(html, """<html><body><p>Name: <input type="text" name="name" value=""></p></body></html>""");
+        string filled = fixture.File("filled.pdf");
+        string flat = fixture.File("flat.pdf");
+        using (var document = new Document(html, new HtmlLoadOptions(fixture.Temp.Path + Path.DirectorySeparatorChar)))
+        {
+            document.Form.Fields.Single().Value = Value;
+            document.Save(filled);
+        }
+
+        using (var document = new Document(filled))
+        {
+            document.Form.Flatten();
+            document.Save(flat);
+        }
+
+        using var reopened = new Document(flat);
+        using var markdown = new MemoryStream();
+        reopened.Save(markdown, SaveFormat.Markdown);
+        var absorber = new Aspose.Pdf.Text.TextAbsorber();
+        reopened.Pages.Accept(absorber);
+        int written = Encoding.UTF8.GetString(markdown.ToArray()).Split(Value).Length - 1;
+        int read = absorber.Text.Split(Value).Length - 1;
+
+        KnownIssue.Reproduces(
+            "PDF-MD-FIELD-REPEATS",
+            written == 2 && read == 1,
+            $"the Markdown export wrote the flattened value {written} time(s) and TextAbsorber read it {read} time(s)");
+    }
+
+    [LicensedFact]
     public void HtmlImport_DrawsNoBoxForACheckBox()
     {
         using var fixture = new PdfEngineFixture();

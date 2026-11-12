@@ -61,7 +61,8 @@ internal static class PdfConvert
     /// <summary>
     /// The warning that an output of page text alone, such as text or Markdown, leaves out the
     /// values of the filled fields on the converted pages, which a flattened copy of an AcroForm
-    /// writes as page text, and the command that reads them.
+    /// writes as page text, and the command that reads them. The Markdown export of that copy may
+    /// write a value twice (PDF-MD-FIELD-REPEATS in KNOWN-ISSUES.md).
     /// </summary>
     private static Warning FormValuesLeftOut(string format, IReadOnlyList<string> filled, bool flattens, string? inspection) =>
         ContentLoss.Warning([ContentKind.FormValues],

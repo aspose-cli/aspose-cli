@@ -558,6 +558,29 @@ Reproductions: [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownI
   no output; its text cannot be read until the application that made it saves it without the
   form that draws itself.
 
+### PDF-MD-FIELD-REPEATS
+
+- **Defect:** the Markdown export writes the value of a flattened text field that the HTML
+  importer made, which it draws with a border, twice: as a one-cell table and in the line of text
+  the field sits in. `TextAbsorber` reads the value once on the same page. A bordered text field
+  made with `TextBoxField` is written once.
+
+  ```csharp
+  // form.html: <html><body><p>Name: <input type="text" name="name" value=""></p></body></html>
+  var html = new Document("form.html", new HtmlLoadOptions());
+  html.Form.Fields.Single().Value = "ZEBRA42"; html.Save("form.pdf");
+  var doc = new Document("form.pdf");
+  doc.Form.Flatten(); doc.Save("flat.pdf");
+  var re = new Document("flat.pdf");
+  re.Save("flat.md", SaveFormat.Markdown);  // ZEBRA42 twice: a one-cell table, then its line
+  var abs = new TextAbsorber(); re.Pages.Accept(abs);
+  Console.WriteLine(abs.Text);              // ZEBRA42 once
+  ```
+
+- **CLI behavior:** none: `pdf convert --to md` of such a form after `flatten_forms` writes each
+  value twice, and `--to txt` once.
+- **Workaround:** to search or count the values, convert the flattened file to `txt`.
+
 ## Aspose.Slides.NET6.CrossPlatform 26.9.0
 
 Reproductions: [SlidesKnownIssueTests](tests/Aspose.Cli.Product.Slides.Tests/SlidesKnownIssueTests.cs),
