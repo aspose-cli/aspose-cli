@@ -222,6 +222,55 @@ Reproductions: [CellsKnownIssueTests](tests/Aspose.Cli.Product.Cells.Tests/Cells
   `CELLS_CHART_SPLIT_ACROSS_PAGES`, are measured as if the sheet printed no comments, since its
   comment pages hold no chart; the output still prints the comments at the end of the sheet.
 
+### CELLS-CSV-SAVE-CULTURE
+
+- **Defect:** saving delimited text with `TxtSaveOptions.FormatStrategy` set to
+  `CellValueFormatStrategy.None` writes each number with the decimal separator of the thread's
+  culture, whatever culture `TxtLoadOptions.CultureInfo` or `WorkbookSettings.CultureInfo` names.
+
+  ```csharp
+  CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo("de-DE");
+  File.WriteAllText("p.csv", "k,19.9\n");
+  var workbook = new Workbook("p.csv", new TxtLoadOptions(LoadFormat.Csv) { CultureInfo = CultureInfo.InvariantCulture });
+  workbook.Save("out.csv", new TxtSaveOptions(SaveFormat.Csv) { FormatStrategy = CellValueFormatStrategy.None });
+  // out.csv holds k,"19,9"
+  ```
+
+- **CLI behavior:** none visible; the CLI loads and saves delimited text with the thread's culture
+  set to the invariant one.
+
+### CELLS-CSV-FRACTION-CULTURE
+
+- **Defect:** loading delimited text that holds a fraction, such as `3 1/2`, throws
+  `FormatException` when the thread's culture writes a decimal comma, whatever culture
+  `TxtLoadOptions.CultureInfo` names.
+
+  ```csharp
+  CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo("de-DE");
+  File.WriteAllText("f.csv", "k,3 1/2\n");
+  var workbook = new Workbook("f.csv", new TxtLoadOptions(LoadFormat.Csv) { CultureInfo = CultureInfo.InvariantCulture });
+  // throws FormatException: The input string '3,5' was not in a correct format.
+  ```
+
+- **CLI behavior:** none visible, as for CELLS-CSV-SAVE-CULTURE.
+
+### CELLS-CSV-KEEP-PRECISION
+
+- **Defect:** `TxtLoadOptions.KeepPrecision`, documented as whether a string value of length 15
+  is not parsed, changes nothing: with it, values of 15, 16 and 20 digits are read as numbers,
+  as without it, and keep 15 significant digits.
+
+  ```csharp
+  File.WriteAllText("p.csv", "k,12345678901234567890\n");
+  var options = new TxtLoadOptions(LoadFormat.Csv) { KeepPrecision = true };
+  Cell cell = new Workbook("p.csv", options).Worksheets[0].Cells["B1"];
+  // cell.Type is IsNumeric and cell.StringValue 1.23457E+19, not the text
+  ```
+
+- **CLI behavior:** none visible; the CLI does not set the option. A delimited text input's value
+  keeps a type only where the cell shows it as written, so a number of more than 15 digits stays
+  text.
+
 ## Aspose.PDF.Drawing 26.8.0
 
 Reproductions: [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownIssueTests.cs).
