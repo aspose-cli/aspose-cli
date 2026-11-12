@@ -178,6 +178,16 @@ public partial class StandardInvocation
     }
 
     /// <summary>
+    /// This invocation's command line again, without <paramref name="replaced"/>, for a hint of a
+    /// command that is not a product's, such as <c>review</c>, which appends what it changes: the
+    /// replay of <see cref="Again"/> itself, not a second one. Null where <see cref="Again"/> is,
+    /// and for an invocation that read a document from stdin.
+    /// </summary>
+    /// <param name="replaced">The parameters the caller replaces or leaves out; a null entry is ignored.</param>
+    public ContinuationCommand? Repeated(params Symbol?[] replaced) =>
+        Again(replaced) is { Piped: null } again ? again.Command : null;
+
+    /// <summary>
     /// The command lines, for a hint, that write a file of <paramref name="format"/> at
     /// <paramref name="output"/>, replacing it, from this command's input with the conversion at
     /// <paramref name="converter"/>: that conversion of the input itself, or, when the invocation

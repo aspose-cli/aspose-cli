@@ -240,7 +240,7 @@
         {
           "code": "CELLS_REVIEW_TRUNCATED",
           "severity": "warning",
-          "summary": "The artifact limit stopped rendering before every visible worksheet had an image."
+          "summary": "The review rendered only some parts, as many as --max-items or the preview snapshot budget allowed, so the rest have no image and were not checked."
         },
         {
           "code": "CELLS_SHEET_EMPTY",

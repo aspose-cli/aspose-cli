@@ -59,7 +59,7 @@ internal static class ReviewCommand
         var codes = new Option<string[]>("--code")
         {
             Description = "Report only findings of this check (a code from capabilities review.checks); repeat "
-                + "for several. Errors of other checks then do not fail the review.",
+                + "for several. Errors of other checks then do not fail the review; a review that left parts out still reports why.",
         }.WithInput(InputKind.None);
         codes.AcceptOnlyFromAmong(
             catalog.Products
@@ -149,7 +149,13 @@ internal static class ReviewCommand
                 // The evidence shows what the engine draws, so the product's write pipeline
                 // discloses it in review.json and index.html as in the command's output.
                 result => (ReviewResult)binding.Publishing.DiscloseRendered(result),
-                replace);
+                replace,
+                new ReviewTruncation(
+                    views.Views.Single(item => item.Id == selectedView).Label.ToLowerInvariant(),
+                    // The same review, as the caller gave it, of every part, into a new directory beside this one.
+                    count => invocation.Repeated(output, overwrite, maxItems)?
+                        .Option(maxItems.Name, count)
+                        .Out(ContinuationOutput.New(Path.TrimEndingDirectorySeparator(target) + "-all"))));
         }));
         return command;
     }

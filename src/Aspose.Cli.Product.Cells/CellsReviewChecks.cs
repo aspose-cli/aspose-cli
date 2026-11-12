@@ -131,11 +131,6 @@ internal static class CellsReviewChecks
         ReviewSeverities.Warning,
         "A worksheet's last row is the evaluation notice that a CSV or TSV export without a license wrote after the data.");
 
-    public static ReviewCheck ReviewTruncated { get; } = new(
-        "CELLS_REVIEW_TRUNCATED",
-        ReviewSeverities.Warning,
-        "The artifact limit stopped rendering before every visible worksheet had an image.");
-
     public static IReadOnlyList<ReviewCheck> All { get; } =
     [
         SheetHidden,
@@ -163,6 +158,5 @@ internal static class CellsReviewChecks
         VbaPresent,
         EvaluationSheet,
         EvaluationNotice,
-        ReviewTruncated,
     ];
 }

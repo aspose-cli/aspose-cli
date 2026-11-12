@@ -9,7 +9,8 @@ namespace Aspose.Cli.Platform.Tests.Integration;
 /// <summary>
 /// Every product's review renders each part while the snapshot budget, its manifest included,
 /// still holds it, instead of failing on the part that does not fit: the parts it rendered stay as
-/// evidence, the rest count as omitted, and the evidence never holds more bytes than the budget.
+/// evidence, the rest count as omitted and one finding names them and the budget's variable, and
+/// the evidence never holds more bytes than the budget.
 /// </summary>
 [Category(TestCategory.Slow)]
 public sealed class ReviewSnapshotBudgetTests
@@ -46,11 +47,24 @@ public sealed class ReviewSnapshotBudgetTests
         (JsonNode tight, string[] kept) = Review(workspace, file, "tight", parts.Sum() + manifest - 1, expectedExit: 8);
         Assert.Equal((parts.Length - 1, false), Rendered(tight));
         Assert.Equal([.. images[..^1], "view.json"], kept);
+        NamesTheBudget(tight, parts.Length - 1, parts.Length);
 
         (JsonNode stopped, string[] first) = Review(workspace, file, "stopped", parts[0] + manifest, expectedExit: 8);
         Assert.Equal((1, false), Rendered(stopped));
         Assert.Equal(parts.Length - 1, stopped["coverage"]!["omittedItemCount"]!.GetValue<int>());
         Assert.Equal([images[0], "view.json"], first);
+        NamesTheBudget(stopped, 1, parts.Length);
+    }
+
+    // One finding says how many parts of how many the budget let the review render, and names its variable.
+    private static void NamesTheBudget(JsonNode result, int rendered, int total)
+    {
+        JsonNode finding = Assert.Single(result["findings"]!.AsArray(), static finding => finding!["code"]!.GetValue<string>().EndsWith("_REVIEW_TRUNCATED", StringComparison.Ordinal))!;
+        string message = finding["message"]!.GetValue<string>();
+        Assert.Contains(string.Create(CultureInfo.InvariantCulture, $"rendered {rendered} of {total} "), message, StringComparison.Ordinal);
+        Assert.Contains($"{SnapshotBytes}, now ", message, StringComparison.Ordinal);
+        Assert.Contains("bytes, had no room for the next;", message, StringComparison.Ordinal);
+        Assert.Contains(SnapshotBytes, finding["hint"]!.GetValue<string>(), StringComparison.Ordinal);
     }
 
     /// <summary>
@@ -74,7 +88,7 @@ public sealed class ReviewSnapshotBudgetTests
         (result["coverage"]!["renderedItemCount"]!.GetValue<int>(), result["coverage"]!["complete"]!.GetValue<bool>());
 
     /// <summary>A workbook of three sheets, a document of three or four pages (as many as evaluation mode reads of a PDF), a deck of three slides, or that document as a PDF.</summary>
-    private static void CreateSample(TempWorkspace workspace, string file)
+    internal static void CreateSample(TempWorkspace workspace, string file)
     {
         switch (Path.GetExtension(file))
         {

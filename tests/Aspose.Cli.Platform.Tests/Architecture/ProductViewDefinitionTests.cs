@@ -64,7 +64,7 @@ public sealed class ProductViewDefinitionTests
             "test");
 
         Assert.Equal(
-            ["TEST_FONTS_MISSING_OR_SUBSTITUTED", "TEST_PAGE_BLANK"],
+            ["TEST_FONTS_MISSING_OR_SUBSTITUTED", "TEST_PAGE_BLANK", "TEST_REVIEW_TRUNCATED"],
             declaring.Checks.Select(static check => check.Code));
         Assert.Contains(
             declaring.Assess(binding, "file.test", request, declaring.Render(binding, "file.test", request, new RejectingSink())).Findings!,

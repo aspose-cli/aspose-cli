@@ -67,7 +67,6 @@ internal sealed class CellsViewAdapter : IProductViewAdapter<CellsSession>
             info,
             layout,
             visible,
-            rendered.Parts.Count,
             checkMarks: !evaluation);
         long usedCells = info.Workbook.Sheets.Sum(static sheet =>
             checked((long)sheet.RowCount * sheet.ColumnCount));
@@ -104,7 +103,6 @@ internal sealed class CellsViewAdapter : IProductViewAdapter<CellsSession>
         CellsInspectResult info,
         CellsReviewLayout layout,
         IReadOnlyList<CellsSheetInfo> visible,
-        int renderedCount,
         bool checkMarks)
     {
         var findings = new List<ReviewFinding>();
@@ -162,12 +160,6 @@ internal sealed class CellsViewAdapter : IProductViewAdapter<CellsSession>
         {
             findings.Add(CellsReviewChecks.VbaPresent.Finding(
                 "Workbook contains VBA; static PNG evidence does not exercise macros.",
-                hint: Hint));
-        }
-        if (renderedCount < visible.Count)
-        {
-            findings.Add(CellsReviewChecks.ReviewTruncated.Finding(
-                $"Rendered {renderedCount} of {visible.Count} visible worksheets because of the artifact limit.",
                 hint: Hint));
         }
         return findings;

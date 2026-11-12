@@ -3020,7 +3020,7 @@
           }
         },
         "filter": {
-          "description": "The --code filter applied to findings; omitted without one. Errors of checks outside the filter do not fail the review.",
+          "description": "The --code filter applied to findings; omitted without one. Errors of checks outside the filter do not fail the review, and a review that left parts out reports its <PRODUCT>_REVIEW_TRUNCATED finding whatever the filter, since those parts still fail it.",
           "$ref": "#/$defs/reviewFilter"
         },
         "license": {
@@ -4887,6 +4887,7 @@
             "SLIDES_EVALUATION_WATERMARK",
             "SLIDES_FONTS_MISSING_OR_SUBSTITUTED",
             "SLIDES_PLACEHOLDER_EMPTY",
+            "SLIDES_REVIEW_TRUNCATED",
             "SLIDES_SHAPES_OVERLAP",
             "SLIDES_SHAPE_OUTSIDE_SLIDE",
             "SLIDES_SLIDE_BLANK",
@@ -4905,13 +4906,14 @@
             "WORDS_PAGE_BLANK",
             "WORDS_PAGE_BREAKS_EXCESSIVE",
             "WORDS_PAGE_UTILIZATION_LOW",
+            "WORDS_REVIEW_TRUNCATED",
             "WORDS_REVISIONS_PRESENT",
             "WORDS_TEXT_TOO_LARGE",
             "WORDS_TEXT_TOO_SMALL"
           ],
           "secret": false,
           "valueSource": "command-line",
-          "description": "Report only findings of this check (a code from capabilities review.checks); repeat for several. Errors of other checks then do not fail the review."
+          "description": "Report only findings of this check (a code from capabilities review.checks); repeat for several. Errors of other checks then do not fail the review; a review that left parts out still reports why."
         },
         {
           "name": "--dry-run",

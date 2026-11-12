@@ -48,7 +48,8 @@ internal static class ReviewEvidenceWriter
         ResourceBudgetLedger budgets,
         IReadOnlyList<string>? codes = null,
         Func<ReviewResult, ReviewResult>? disclose = null,
-        bool overwrite = false)
+        bool overwrite = false,
+        ReviewTruncation? truncation = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(sourcePath);
         ArgumentException.ThrowIfNullOrWhiteSpace(productId);
@@ -93,7 +94,8 @@ internal static class ReviewEvidenceWriter
                 manifest,
                 assessment,
                 license,
-                codes));
+                codes,
+                (truncation ?? new ReviewTruncation("parts", null)).Finding(productId, manifest, maxItems, limits)));
 
             string index = Path.Combine(staging, IndexFile);
             File.WriteAllText(
@@ -142,7 +144,8 @@ internal static class ReviewEvidenceWriter
         ViewManifest manifest,
         ProductReviewAssessment assessment,
         LicenseState license,
-        IReadOnlyList<string>? codes)
+        IReadOnlyList<string>? codes,
+        ReviewFinding? truncated)
     {
         int expected = manifest.TotalPartCount;
         int rendered = manifest.Parts.Count;
@@ -189,10 +192,12 @@ internal static class ReviewEvidenceWriter
                 AffectsCompleteness = copies.Any(static warning => warning.AffectsCompleteness),
             })
             .ToArray();
-        IReadOnlyList<ReviewFinding> findings = AssociateEvidence(assessment.Findings ?? [], artifacts, manifest.Parts);
+        IReadOnlyList<ReviewFinding> findings = AssociateEvidence(
+            [.. assessment.Findings ?? [], .. truncated is null ? [] : new[] { truncated }], artifacts, manifest.Parts);
+        // A filter never hides why the review is incomplete: the parts it left out fail it whatever the filter.
         IReadOnlyList<ReviewFinding> reported = codes is null
             ? findings
-            : [.. findings.Where(finding => codes.Contains(finding.Code, StringComparer.Ordinal))];
+            : [.. findings.Where(finding => finding.Code == truncated?.Code || codes.Contains(finding.Code, StringComparer.Ordinal))];
         return new ReviewResult
         {
             Product = productId,
