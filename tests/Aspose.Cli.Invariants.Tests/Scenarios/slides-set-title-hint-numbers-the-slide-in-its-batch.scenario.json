@@ -1,0 +1,59 @@
+{
+  "name": "slides set_title by slideId after a move_slide in the same batch is refused with the set_layout that numbers the slide as the move left it; put before the set_title in that batch, it gives the moved slide its title and leaves the cover's layout and title as they were",
+  "files": {
+    "deck.md": { "text": "# Deck\n\n## Two\n\n- pt\n" }
+  },
+  "steps": [
+    {
+      "args": ["slides", "create", "deck.pptx", "--from-markdown", "deck.md"],
+      "expect": { "exitCode": 0 }
+    },
+    {
+      "args": ["slides", "edit", "deck.pptx", "--ops", "{\"ops\":[{\"op\":\"insert_slide\",\"layout\":\"Blank\"},{\"op\":\"insert_shape\",\"slide\":3,\"geometry\":\"rectangle\",\"rect\":{\"x\":40,\"y\":120,\"width\":640,\"height\":80},\"text\":\"Box\"}]}", "--out", "blank.pptx"],
+      "expect": { "exitCode": 0, "files": { "present": ["blank.pptx"] } }
+    },
+    {
+      "args": ["slides", "read", "blank.pptx", "--slides", "3"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "slides[0].slideId", "equals": 258 }
+        ]
+      }
+    },
+    {
+      "args": ["slides", "edit", "blank.pptx", "--ops", "{\"ops\":[{\"op\":\"move_slide\",\"slide\":3,\"to\":1},{\"op\":\"set_title\",\"slideId\":258,\"text\":\"Head\"}]}", "--out", "moved.pptx"],
+      "expect": {
+        "exitCode": 4,
+        "error": "PLACEHOLDER_NOT_FOUND",
+        "json": [
+          { "path": "error.hint", "contains": "put {\"op\":\"set_layout\",\"slides\":\"1\",\"layout\":\"Title Only\"} before this set_title in its batch" }
+        ],
+        "files": { "absent": ["moved.pptx"], "unchanged": ["blank.pptx"] }
+      }
+    },
+    {
+      "args": ["slides", "edit", "blank.pptx", "--ops", "{\"ops\":[{\"op\":\"move_slide\",\"slide\":3,\"to\":1},{\"op\":\"set_layout\",\"slides\":\"1\",\"layout\":\"Title Only\"},{\"op\":\"set_title\",\"slideId\":258,\"text\":\"Head\"}]}", "--out", "moved.pptx", "--verify"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "verification.ok", "equals": true }
+        ],
+        "files": { "present": ["moved.pptx"] }
+      }
+    },
+    {
+      "args": ["slides", "read", "moved.pptx", "--slides", "1,2"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "slides[0].slideId", "equals": 258 },
+          { "path": "slides[0].title", "equals": "Head" },
+          { "path": "slides[1].slideId", "equals": 256 },
+          { "path": "slides[1].layout", "equals": "Title Slide" },
+          { "path": "slides[1].title", "equals": "Deck" }
+        ]
+      }
+    }
+  ]
+}

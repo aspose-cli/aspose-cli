@@ -1,0 +1,58 @@
+{
+  "name": "slides set_title on a Blank slide is refused with the set_layout to put before it, which gives the slide a title placeholder: the batch with it applies, the slide reports the title, and the text box it had stays",
+  "files": {
+    "input.pptx": { "fixture": "slides.pptx" }
+  },
+  "steps": [
+    {
+      "args": ["slides", "edit", "input.pptx", "--ops", "{\"ops\":[{\"op\":\"insert_slide\",\"layout\":\"Blank\"},{\"op\":\"insert_shape\",\"slide\":3,\"geometry\":\"rectangle\",\"rect\":{\"x\":40,\"y\":120,\"width\":640,\"height\":80},\"text\":\"Box\"}]}", "--out", "blank.pptx"],
+      "expect": { "exitCode": 0, "files": { "present": ["blank.pptx"] } }
+    },
+    {
+      "args": ["slides", "edit", "blank.pptx", "--ops", "{\"ops\":[{\"op\":\"set_title\",\"slide\":3,\"text\":\"Head\"}]}", "--out", "titled.pptx"],
+      "expect": {
+        "exitCode": 4,
+        "error": "PLACEHOLDER_NOT_FOUND",
+        "json": [
+          { "path": "error.hint", "contains": "put {\"op\":\"set_layout\",\"slides\":\"3\",\"layout\":\"Title Only\"} before this set_title in its batch" },
+          { "path": "error.hint", "contains": "the slide keeps its shapes, so delete_shape a text box that stood for its title" }
+        ],
+        "files": { "absent": ["titled.pptx"], "unchanged": ["blank.pptx"] }
+      }
+    },
+    {
+      "args": ["slides", "edit", "blank.pptx", "--ops", "[{\"op\":\"set_layout\",\"slides\":\"3\",\"layout\":\"Title Only\"},{\"op\":\"set_title\",\"slide\":3,\"text\":\"Head\"}]", "--out", "titled.pptx", "--verify"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "applied[1].itemsAffected", "equals": 1 },
+          { "path": "verification.ok", "equals": true }
+        ],
+        "files": { "present": ["titled.pptx"] }
+      }
+    },
+    {
+      "args": ["slides", "read", "titled.pptx", "--slides", "3", "--content", "shapes"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "slides[0].title", "equals": "Head" },
+          { "path": "slides[0].layout", "equals": "Title Only" },
+          { "path": "slides[0].shapes[0].shapeId", "equals": 2 },
+          { "path": "slides[0].shapes[0].text", "equals": "Box" }
+        ]
+      }
+    },
+    {
+      "args": ["slides", "edit", "blank.pptx", "--ops", "{\"ops\":[{\"op\":\"set_title\",\"slide\":2,\"text\":\"Head\"}]}", "--out", "second.pptx", "--verify"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "applied[0].targets", "equals": ["slide/2/shape/2"] },
+          { "path": "verification.ok", "equals": true }
+        ],
+        "files": { "present": ["second.pptx"] }
+      }
+    }
+  ]
+}

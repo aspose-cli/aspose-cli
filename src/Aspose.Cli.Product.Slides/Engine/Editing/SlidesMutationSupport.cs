@@ -1,5 +1,7 @@
 using System.Drawing;
 using System.Globalization;
+using System.Text.Encodings.Web;
+using System.Text.Json;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Slides;
 using Aspose.Slides.Charts;
@@ -80,16 +82,35 @@ internal static class SlidesMutationSupport
     /// <summary>
     /// The shape whose text set_title replaces, the slide's title shape
     /// (<see cref="SlidesAuthoring.Title"/>). A slide without one is refused rather than given a
-    /// box over whatever it shows.
+    /// box over whatever it shows, and the refusal says how it gets one (<see cref="TitledBy"/>).
     /// </summary>
-    internal static IAutoShape ResolveTitle(ISlide slide) =>
+    internal static IAutoShape ResolveTitle(Presentation presentation, ISlide slide) =>
         SlidesAuthoring.Title(slide)
             ?? throw CliErrors.NotFound(
                 SlidesDiagnostics.PlaceholderNotFound,
                 "placeholder",
                 SlidesPlaceholderRoles.Title,
                 Names(slide.Shapes.Select(PlaceholderRole)),
-                hint: $"set_title writes a slide's title placeholder, and this slide has none: write the text into one of its shapes with set_text, or add a text box with insert_shape; {ShapeListing}.");
+                hint: $"set_title writes a slide's title placeholder, and this slide has none{TitledBy(presentation, slide)}. Text that set_text writes into one of its shapes, or a text box insert_shape adds, shows on the slide but is not its title; {ShapeListing}.");
+
+    /// <summary>
+    /// How the slide gets a title placeholder: the set_layout of a layout of its master with one,
+    /// its own first and Title Only next, that set_layout finds by its name and under which every
+    /// placeholder the slide has keeps its role (<see cref="SlidesPlaceholders.Keeps"/>), so that
+    /// set_title overwrites none of them. Where none keeps them, no operation is shown.
+    /// </summary>
+    private static string TitledBy(Presentation presentation, ISlide slide)
+    {
+        ILayoutSlide[] titled = [.. slide.LayoutSlide.MasterSlide.LayoutSlides
+            .Where(item => SlidesPlaceholders.HasTitle(item) && !string.IsNullOrWhiteSpace(item.Name) && ResolveLayout(presentation, item.Name) == item)
+            .OrderBy(item => item != slide.LayoutSlide).ThenBy(static item => item.LayoutType != SlideLayoutType.TitleOnly)];
+        ILayoutSlide? layout = titled.FirstOrDefault(item => slide.Shapes.All(shape => shape.Placeholder is not { } placeholder || SlidesPlaceholders.Keeps(item, placeholder)));
+        return layout is not null
+            ? $$""". To give it one, put {"op":"set_layout","slides":"{{Invariant(presentation.Slides.IndexOf(slide) + 1)}}","layout":"{{JsonEncodedText.Encode(layout.Name!, JavaScriptEncoder.UnsafeRelaxedJsonEscaping)}}"} before this set_title in its batch, where the slide's number counts the slides as the operations before it leave them; the slide keeps its shapes, so delete_shape a text box that stood for its title"""
+            : titled.Length > 0
+                ? ". A layout with one would give its title role to a placeholder the slide has, whose text set_title would then overwrite, so look at the slide's placeholders before you change its layout"
+                : ", and no layout of its master that set_layout can name has one";
+    }
 
     /// <summary>
     /// The shape whose paragraphs set_body replaces: the slide's first body placeholder, else its
