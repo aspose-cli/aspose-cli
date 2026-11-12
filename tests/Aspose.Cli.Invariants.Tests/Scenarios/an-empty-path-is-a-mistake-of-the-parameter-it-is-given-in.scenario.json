@@ -1,0 +1,78 @@
+{
+  "name": "an empty or blank path is a mistake of the argument or option it is given in, not an internal error",
+  "files": {
+    "book.xlsx": { "fixture": "cells.xlsx" },
+    "x.csv": { "text": "a,b\n1,2\n" },
+    "doc.docx": { "fixture": "words.docx" }
+  },
+  "steps": [
+    {
+      "args": ["cells", "read", ""],
+      "expect": {
+        "exitCode": 2,
+        "error": "OPTION_INVALID",
+        "json": [
+          { "path": "error.message", "equals": "Invalid use of file: the value is empty" },
+          { "path": "error.details.argument", "equals": "file" }
+        ],
+        "files": { "nothingWritten": true }
+      }
+    },
+    {
+      "args": ["pdf", "read", ""],
+      "expect": { "exitCode": 2, "error": "OPTION_INVALID", "json": [{ "path": "error.details.argument", "equals": "file" }] }
+    },
+    {
+      "args": ["words", "read", ""],
+      "expect": { "exitCode": 2, "error": "OPTION_INVALID", "json": [{ "path": "error.details.argument", "equals": "file" }] }
+    },
+    {
+      "args": ["slides", "read", ""],
+      "expect": { "exitCode": 2, "error": "OPTION_INVALID", "json": [{ "path": "error.details.argument", "equals": "file" }] }
+    },
+    {
+      "args": ["cells", "read", " "],
+      "expect": { "exitCode": 2, "error": "OPTION_INVALID", "json": [{ "path": "error.details.argument", "equals": "file" }] }
+    },
+    {
+      "args": ["cells", "compare", "book.xlsx", ""],
+      "expect": { "exitCode": 2, "error": "OPTION_INVALID", "json": [{ "path": "error.details.argument", "equals": "right" }] }
+    },
+    {
+      "args": ["cells", "edit", "x.csv", "--out", "", "--set", "x!A1=1"],
+      "expect": {
+        "exitCode": 2,
+        "error": "OPTION_INVALID",
+        "json": [
+          { "path": "error.message", "equals": "Invalid use of --out: the value is empty" },
+          { "path": "error.details.option", "equals": "--out" }
+        ],
+        "files": { "nothingWritten": true }
+      }
+    },
+    {
+      "args": ["words", "extract", "doc.docx", "--what", "text", "--out-dir", ""],
+      "expect": {
+        "exitCode": 2,
+        "error": "OPTION_INVALID",
+        "json": [{ "path": "error.details.option", "equals": "--out-dir" }],
+        "files": { "nothingWritten": true }
+      }
+    },
+    {
+      "args": ["cells", "read", "missing.xlsx"],
+      "expect": { "exitCode": 3, "error": "FILE_NOT_FOUND" }
+    },
+    {
+      "args": ["cells", "edit", "x.csv", "--ops", ""],
+      "expect": {
+        "exitCode": 2,
+        "error": "OPTION_INVALID",
+        "json": [
+          { "path": "error.message", "equals": "Invalid use of --ops: the value is empty" },
+          { "path": "error.hint", "equals": "Pass a path to the document, inline JSON starting with { or [, or '-' for stdin." }
+        ]
+      }
+    }
+  ]
+}

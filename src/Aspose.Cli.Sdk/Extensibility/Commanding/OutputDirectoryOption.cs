@@ -87,7 +87,7 @@ public static class OutputDirectories
         ArgumentNullException.ThrowIfNull(value);
         ArgumentException.ThrowIfNullOrWhiteSpace(parameter);
         OutputFileOption.RefuseStandardStream(value, parameter, directory: true);
-        string path = paths.ResolveOutput(value);
+        string path = paths.ResolveOutput(value, parameter);
         string trimmed = value.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
         string extension = Path.GetExtension(trimmed);
         if (extension.Length > 1 && !Directory.Exists(path) && !File.Exists(path)

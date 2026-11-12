@@ -57,7 +57,7 @@ internal static class LicenseCommandGroup
         install.SetAction(parse => executor.Run(parse, globals, context =>
         {
             string? requestedProduct = parse.GetValue(product);
-            string source = context.Paths.ResolveInput(parse.GetRequiredValue(file));
+            string source = context.Paths.ResolveInput(parse.GetRequiredValue(file), file.Name);
             // A dry run checks that the file exists and names the files an installation may
             // write; it does not validate the license, which needs the engines.
             return parse.GetValue(dryRun)

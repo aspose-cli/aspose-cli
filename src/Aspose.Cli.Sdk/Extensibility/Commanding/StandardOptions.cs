@@ -946,7 +946,7 @@ public partial class StandardInvocation
         }
 
         _inputChecked = true;
-        return [.. Values(parameter).OfType<string>().Select(Paths.ResolveInput)];
+        return [.. Values(parameter).OfType<string>().Select(value => Paths.ResolveInput(value, parameter.Name))];
     }
 
     // Every file named by a parameter the command declares as InputKind.File, and every JSON
