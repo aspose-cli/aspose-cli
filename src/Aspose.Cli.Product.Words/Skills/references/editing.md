@@ -212,7 +212,8 @@ give the whole document one header and footer, follow with `set_header` and
 A `set_page_numbers` `start` restarts numbering in each selected section; name
 a `section` when only one should restart. Its `text` replaces what the
 paragraph that holds the number held, in that paragraph's font, so the number
-stays in one line with its words.
+stays in one line with its words. Moved to the other `location` without
+`text`, the number takes its words along, such as `Page {n} of {N}`.
 
 ## Protection and encryption
 

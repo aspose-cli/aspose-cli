@@ -592,8 +592,9 @@ public sealed record SetPageNumbersOp : WordsOp
     /// number and {N} the document's page count, and {PAGE}, {NUMPAGES} and {SECTIONPAGES}, as a
     /// read shows those fields, are refused. A paragraph that also holds an image or another
     /// object is refused, and moving the number to the other location clears the paragraph it leaves. Without text, a new
-    /// number takes a paragraph of its own and an existing one keeps its paragraph. A text without
-    /// {n} goes in a new paragraph and leaves any page number where it is.
+    /// number takes a paragraph of its own, an existing one keeps its paragraph, and one moved from
+    /// the other location takes its paragraph's words along unless this location already holds a
+    /// number. A text without {n} goes in a new paragraph and leaves any page number where it is.
     /// </summary>
     [ReadBack("inspect-result.schema.json#/$defs/wordsPageNumbersData/properties/text")]
     [MinLength(1)] public string? Text { get; init; }

@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Text.Json.Nodes;
 using Aspose.Cli.Product.Words.Engine.Mapping;
+using Aspose.Cli.Sdk.Diagnostics;
 using Aspose.Words;
 
 namespace Aspose.Cli.Product.Words.Engine.Editing;
@@ -17,6 +18,20 @@ namespace Aspose.Cli.Product.Words.Engine.Editing;
 internal sealed class WordsPageNumberLosses
 {
     private readonly List<Replacement> _replaced = [];
+    private readonly List<(string Op, int Section, string Text)> _moved = [];
+
+    /// <summary>Records the words a set_page_numbers without text moved with the number of a section, by its index, read before it ran.</summary>
+    internal void Moved(SetPageNumbersOp operation, int section, string text) => _moved.Add((operation.Id!, section, text));
+
+    /// <summary>The operations other than <paramref name="lastOp"/> that moved words, which <see cref="Unmoved"/> does not read back.</summary>
+    internal IReadOnlySet<string> Unread(string lastOp) => _moved.Select(static item => item.Op).Where(op => op != lastOp).ToHashSet(StringComparer.Ordinal);
+
+    /// <summary>An issue for each section whose page numbers in <paramref name="reopened"/> do not read as the words <paramref name="lastOp"/>, the batch's last operation, moved; a later operation may change an earlier one's.</summary>
+    internal IEnumerable<VerificationIssue> Unmoved(Document reopened, string lastOp) => _moved
+        .Where(item => item.Op == lastOp && item.Section < reopened.Sections.Count && WordsReadBack.PageNumbers(reopened.Sections[item.Section]).Text != item.Text)
+        .Select(static item => VerificationIssues.Of(WordsDiagnostics.PageNumbersMismatch, string.Create(CultureInfo.InvariantCulture,
+            $"set_page_numbers moved the page number of section {item.Section + 1} with the words '{item.Text}', and the output's page numbers do not read so."),
+            string.Create(CultureInfo.InvariantCulture, $"section/{item.Section + 1}"), "Read the headers and footers with 'aspose-cli words inspect <file> --detail sections'."));
 
     /// <summary>Records that an operation replaced a section's primary header or footer, which held page numbers.</summary>
     internal void Replaced(HeaderFooterOp operation, Section section, bool isHeader) =>

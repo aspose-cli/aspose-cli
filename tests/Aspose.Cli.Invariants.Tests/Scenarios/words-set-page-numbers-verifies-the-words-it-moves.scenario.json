@@ -1,0 +1,50 @@
+{
+  "name": "words set_page_numbers without text moves the number with its words, which --verify reads back when the move ends the batch and leaves unchecked, with the reason, when another operation follows",
+  "files": {
+    "source.md": { "text": "# Contract\n\nOriginal clause.\n" },
+    "number.json": { "text": "{\"ops\":[{\"op\":\"set_page_numbers\",\"text\":\"第 {n} 页\"}]}" },
+    "move.json": { "text": "{\"ops\":[{\"op\":\"set_page_numbers\",\"location\":\"header\"}]}" },
+    "move-then-edit.json": { "text": "{\"ops\":[{\"op\":\"set_page_numbers\",\"location\":\"header\"},{\"op\":\"replace_text\",\"find\":\"Original\",\"replace\":\"Revised\"}]}" }
+  },
+  "steps": [
+    {
+      "args": ["words", "create", "plain.docx", "--from-markdown", "source.md"],
+      "expect": { "exitCode": 0 }
+    },
+    {
+      "args": ["words", "edit", "plain.docx", "--ops", "number.json", "--out", "numbered.docx"],
+      "expect": { "exitCode": 0 }
+    },
+    {
+      "args": ["words", "edit", "numbered.docx", "--ops", "move.json", "--out", "moved.docx", "--verify"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "verification.ok", "equals": true },
+          { "path": "verification.checkedOps", "equals": ["op-0001"] }
+        ]
+      }
+    },
+    {
+      "args": ["words", "inspect", "moved.docx", "--detail", "sections"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "sections[0].pageNumbers.location", "equals": "header" },
+          { "path": "sections[0].pageNumbers.text", "equals": "第 {n} 页" }
+        ]
+      }
+    },
+    {
+      "args": ["words", "edit", "numbered.docx", "--ops", "move-then-edit.json", "--out", "moved-then-edited.docx", "--verify"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "verification.ok", "equals": true },
+          { "path": "verification.uncheckedOps[0].id", "equals": "op-0001" },
+          { "path": "verification.uncheckedOps[0].reason", "startsWith": "The verification reads back the words set_page_numbers moves with the number only when it ends the batch" }
+        ]
+      }
+    }
+  ]
+}

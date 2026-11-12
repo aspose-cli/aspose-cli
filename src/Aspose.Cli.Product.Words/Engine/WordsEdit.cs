@@ -23,6 +23,7 @@ namespace Aspose.Cli.Product.Words.Engine;
 internal static class WordsEdit
 {
     private const string NotCompared = "The verification compares the field count, the revision count and the protection, and this operation sets none of them; read the output to confirm it.";
+    private const string WordsNotReadBack = "The verification reads back the words set_page_numbers moves with the number only when it ends the batch, since a later operation may change them; read the headers and footers to confirm them.";
 
     /// <summary>Applies a validated operation batch and commits it atomically.</summary>
     internal static WordsEditResult Run(WordsSession session, WordsEditRequest request)
@@ -70,12 +71,14 @@ internal static class WordsEdit
         bool revisionsKept = inputHadRevisions && KeepsRevisions(loaded.Document, format);
         IReadOnlyList<Warning>? Mutation() => MutationWarnings(loaded.Document, format, loaded.Evaluation, revisionsKept, inputWasSigned, inputProtection);
         // The verification takes what the batch and the save left out of the output, read after
-        // the save, which may omit more resources.
-        VerifiedBatch Verified(IReadOnlyList<VerificationIssue> issues) => applied.Verified(new VerificationFacts(issues, VerifiedOps(batch.Ops, request.TrackChanges))
+        // the save, which may omit more resources. The words a set_page_numbers moved are read
+        // back only when it ends the batch; earlier, it is not checked.
+        string lastOp = batch.Ops[^1].Id!;
+        VerifiedBatch Verified(IReadOnlyList<VerificationIssue> issues) => applied.Verified(new VerificationFacts(issues, [.. VerifiedOps(batch.Ops, request.TrackChanges).Except(pageNumbers.Unread(lastOp))])
         {
             Warnings = EnvelopeParts.CombineWarnings([.. SaveWarnings(loaded, format)], operationWarnings, Mutation(),
                 Omitted(loaded.OmittedResources.Where(resource => !inputOmissions.Contains(resource.Reference)))),
-            UncheckedReasons = batch.Ops.ToDictionary(static op => op.Id!, static _ => NotCompared, StringComparer.Ordinal),
+            UncheckedReasons = batch.Ops.ToDictionary(static op => op.Id!, op => pageNumbers.Unread(lastOp).Contains(op.Id!) ? WordsNotReadBack : NotCompared, StringComparer.Ordinal),
         });
 
         EditPublication<WordsEditVerification> publication = Persist(
@@ -88,7 +91,8 @@ internal static class WordsEdit
             written,
             saveOptions,
             protection,
-            Verified);
+            Verified,
+            reopened => pageNumbers.Unmoved(reopened, lastOp));
         baseline?.Cleanup();
         var outputWarnings = new List<Warning>();
         outputWarnings.AddRange(SaveWarnings(loaded, format));
@@ -170,7 +174,8 @@ internal static class WordsEdit
         FormatDescriptor written,
         SaveOptions saveOptions,
         OutputProtection protection,
-        Func<IReadOnlyList<VerificationIssue>, VerifiedBatch> verified)
+        Func<IReadOnlyList<VerificationIssue>, VerifiedBatch> verified,
+        Func<Document, IEnumerable<VerificationIssue>> readBack)
     {
         ResolvedOutput output = request.Output;
         return session.Outputs.PublishEdit<WordsEditVerification>(
@@ -190,7 +195,7 @@ internal static class WordsEdit
                 }
             },
             request.Verify
-                ? candidate => Verify(session, candidate, written.Id, protection.Password, baseline!, WordsReadBack.Saved(document), verified)
+                ? candidate => Verify(session, candidate, written.Id, protection.Password, baseline!, WordsReadBack.Saved(document), verified, readBack)
                 : null,
             "words-edit");
     }
@@ -321,7 +326,8 @@ internal static class WordsEdit
     /// Reports save-and-reopen evidence for the staged candidate. A comparison that
     /// finds no body change is evidence, not a fault: whether an operation did
     /// anything is already answered, authoritatively, by its own outcome. The core of the result
-    /// comes from <paramref name="verified"/>, which takes the issues found here.
+    /// comes from <paramref name="verified"/>, which takes the issues found here and those
+    /// <paramref name="readBack"/> finds by reading back what the operations expected.
     /// </summary>
     private static WordsEditVerification Verify(
         WordsSession session,
@@ -330,11 +336,11 @@ internal static class WordsEdit
         Secret? outputPassword,
         Document baseline,
         WordsSavedState expected,
-        Func<IReadOnlyList<VerificationIssue>, VerifiedBatch> verified)
+        Func<IReadOnlyList<VerificationIssue>, VerifiedBatch> verified,
+        Func<Document, IEnumerable<VerificationIssue>> readBack)
     {
-        var issues = new List<VerificationIssue>();
-
         using LoadedDocument reopened = session.Loader.OpenPublishedCandidate(candidatePath, outputPassword);
+        var issues = new List<VerificationIssue>(readBack(reopened.Document));
         WordsSavedState found = WordsReadBack.Saved(reopened.Document);
         if (found.FieldCount > expected.FieldCount)
         {

@@ -225,7 +225,12 @@ internal sealed partial class WordsMutationHandlers
     {
         // A text without {n} shows no page number: nothing moves and the number stays where it is.
         bool numbers = operation.Text?.Contains(WordsReadBack.PageNumberPlaceholder, StringComparison.Ordinal) != false;
-        foreach (Section section in Sections)
+        HeaderFooterType other = operation.Location == "header" ? HeaderFooterType.FooterPrimary : HeaderFooterType.HeaderPrimary;
+        // The page numbers move: their PAGE field leaves the other primary header or footer with
+        // the words of its paragraph, which are the number's text. A text replaces them; without
+        // one they go along, read before any are cleared, since a section can show an earlier one's.
+        string?[] shown = [.. Sections.Select(section => PageNumberWords(WordsHeadersFooters.Continued(section, other)))];
+        foreach ((Section section, string? words) in Sections.Zip(shown))
         {
             HeaderFooterType type = operation.Location == "header" ? HeaderFooterType.HeaderPrimary : HeaderFooterType.FooterPrimary;
             HeaderFooter? container = section.HeadersFooters[type];
@@ -235,24 +240,28 @@ internal sealed partial class WordsMutationHandlers
                 section.HeadersFooters.Add(container);
             }
 
-            // The page numbers move: their PAGE field leaves the other primary header or footer,
-            // and with a text, which is its paragraph's whole content, so does that paragraph's.
-            HeaderFooterType other = operation.Location == "header" ? HeaderFooterType.FooterPrimary : HeaderFooterType.HeaderPrimary;
+            Field? existingPage = numbers
+                ? container.Range.Fields.Cast<Field>().FirstOrDefault(static field => field.Type == FieldType.FieldPage)
+                : null;
+            // Without a text, a number the new location already holds keeps its own words.
+            string? text = operation.Text ?? (existingPage is null ? words : null);
+            if (operation.Text is null && text is not null)
+            {
+                _pageNumbers.Moved(operation, _document.Sections.IndexOf(section), text);
+            }
+
             if (numbers && section.HeadersFooters[other] is { } previous)
             {
-                if (operation.Text is null)
+                if (operation.Text is null && words is null)
                 {
                     RemovePageFields(previous);
                 }
                 else
                 {
-                    ClearPageNumberParagraphs(previous);
+                    ClearPageNumberParagraphs(previous, carried: operation.Text is null && existingPage is null);
                 }
             }
 
-            Field? existingPage = numbers
-                ? container.Range.Fields.Cast<Field>().FirstOrDefault(static field => field.Type == FieldType.FieldPage)
-                : null;
             Paragraph paragraph;
             if (existingPage is null)
             {
@@ -264,7 +273,7 @@ internal sealed partial class WordsMutationHandlers
                 paragraph = (Paragraph)existingPage.Start.GetAncestor(NodeType.Paragraph);
             }
 
-            if (operation.Text is { } text)
+            if (text is not null)
             {
                 WritePageNumberText(paragraph, text);
             }
@@ -332,10 +341,21 @@ internal sealed partial class WordsMutationHandlers
     private static partial Regex PageNumberPlaceholders();
 
     /// <summary>
-    /// Empties each paragraph of a header or footer that holds a PAGE field, and removes it when
-    /// it is not the last, so that a text moving the number elsewhere leaves none of its words.
+    /// The text of the paragraph that holds a header's or footer's PAGE field, as set_page_numbers
+    /// writes it, or null when it holds none or the number alone.
     /// </summary>
-    private void ClearPageNumberParagraphs(HeaderFooter headerFooter)
+    private static string? PageNumberWords(HeaderFooter? headerFooter) =>
+        headerFooter?.Range.Fields.Cast<Field>().FirstOrDefault(static field => field.Type == FieldType.FieldPage)?.Start.GetAncestor(NodeType.Paragraph) is Paragraph paragraph
+        && WordsReadBack.PageNumberText(paragraph) is var text && text != WordsReadBack.PageNumberPlaceholder
+            ? text
+            : null;
+
+    /// <summary>
+    /// Empties each paragraph of a header or footer that holds a PAGE field, and removes it when
+    /// it is not the last, so that a number moving elsewhere leaves none of its words. Words
+    /// <paramref name="carried"/> to the new location as text keep no field but the page number and count.
+    /// </summary>
+    private void ClearPageNumberParagraphs(HeaderFooter headerFooter, bool carried)
     {
         Paragraph[] paragraphs = [.. headerFooter.Range.Fields.Cast<Field>()
             .Where(static field => field.Type == FieldType.FieldPage)
@@ -343,7 +363,7 @@ internal sealed partial class WordsMutationHandlers
             .Distinct()];
         foreach (Paragraph paragraph in paragraphs)
         {
-            RequireOnlyTextAndFields(paragraph);
+            RequireOnlyTextAndFields(paragraph, moving: true, carried);
             RemoveInlines([.. paragraph.Range.Fields.Cast<Field>()], [.. paragraph.GetChildNodes(NodeType.Any, isDeep: false).Cast<Node>()]);
             if (paragraph.ParentNode is HeaderFooter && headerFooter.Paragraphs.Count > 1)
             {
@@ -353,22 +373,33 @@ internal sealed partial class WordsMutationHandlers
     }
 
     /// <summary>
-    /// Refuses to overwrite a paragraph that holds what a text cannot carry, such as an image, a
-    /// logo or a shape. A bookmark shows nothing, and evaluation mode draws its watermark again at
-    /// every save.
+    /// Refuses to overwrite or clear a paragraph that holds what a text cannot carry, such as an
+    /// image, a logo or a shape, and when its words are <paramref name="carried"/> as text, a field
+    /// other than the page number and count. A bookmark shows nothing, and evaluation mode draws
+    /// its watermark again at every save.
     /// </summary>
-    private void RequireOnlyTextAndFields(Paragraph paragraph)
+    private void RequireOnlyTextAndFields(Paragraph paragraph, bool moving = false, bool carried = false)
     {
+        bool isHeader = ((HeaderFooter)paragraph.GetAncestor(NodeType.HeaderFooter)).IsHeader;
+        string location = isHeader ? WordsHeaderFooterLocations.Header : WordsHeaderFooterLocations.Footer;
+        if (carried && paragraph.Range.Fields.Cast<Field>().FirstOrDefault(static field => field.Type is not (FieldType.FieldPage or FieldType.FieldNumPages)) is { } field)
+        {
+            string name = field.GetFieldCode().Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? field.Type.ToString();
+            throw new OperationInvalidException(
+                $"the {location} paragraph that holds the page number also holds a {name} field, which the number's words cannot take along: a page number's text writes no field but {{n}} and {{N}}",
+                $"Give text to write the number's words anew, which clears that paragraph and drops its {name} field, or rewrite the {location} with {(isHeader ? "set_header" : "set_footer")} first and then number the pages.");
+        }
+
         if (paragraph.GetChildNodes(NodeType.Any, isDeep: false).Cast<Node>().All(IsTextOrField))
         {
             return;
         }
 
-        bool isHeader = ((HeaderFooter)paragraph.GetAncestor(NodeType.HeaderFooter)).IsHeader;
-        string location = isHeader ? WordsHeaderFooterLocations.Header : WordsHeaderFooterLocations.Footer;
         throw new OperationInvalidException(
-            $"the {location} paragraph that holds the page number also holds an image or another object that text cannot carry, and text replaces the whole paragraph",
-            $"Rewrite the {location} with {(isHeader ? "set_header" : "set_footer")} first so that the page number stands in a paragraph of its own, or omit text to keep the paragraph as it is.");
+            $"the {location} paragraph that holds the page number also holds an image or another object that text cannot carry, and "
+                + (moving ? "moving the number clears that whole paragraph" : "text replaces the whole paragraph"),
+            $"Rewrite the {location} with {(isHeader ? "set_header" : "set_footer")} first so that the page number stands in a paragraph of its own"
+                + (moving ? "." : ", or omit text to keep the paragraph as it is."));
     }
 
     private bool IsTextOrField(Node node) =>

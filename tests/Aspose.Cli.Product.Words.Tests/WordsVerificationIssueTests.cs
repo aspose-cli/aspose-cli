@@ -98,7 +98,7 @@ public sealed class WordsVerificationIssueTests
     [Fact]
     public void VerificationCodes_AreDeclaredVerificationDiagnostics()
     {
-        foreach (string code in new[] { "FIELD_COUNT_MISMATCH", "REVISION_COUNT_MISMATCH", "PROTECTION_MISMATCH" })
+        foreach (string code in new[] { "FIELD_COUNT_MISMATCH", "REVISION_COUNT_MISMATCH", "PROTECTION_MISMATCH", "PAGE_NUMBERS_MISMATCH" })
         {
             Assert.Contains(WordsDiagnostics.All, descriptor =>
                 descriptor.Code == code && descriptor.Category == "verification");

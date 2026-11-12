@@ -26,6 +26,7 @@ internal static class WordsDiagnostics
     internal static readonly DiagnosticDescriptor RevisionCountMismatch = DiagnosticDescriptor.Verification("REVISION_COUNT_MISMATCH");
     internal static readonly DiagnosticDescriptor ProtectionMismatch = DiagnosticDescriptor.Verification("PROTECTION_MISMATCH");
     internal static readonly DiagnosticDescriptor OutputTruncated = DiagnosticDescriptor.Verification("OUTPUT_TRUNCATED");
+    internal static readonly DiagnosticDescriptor PageNumbersMismatch = DiagnosticDescriptor.Verification("PAGE_NUMBERS_MISMATCH");
 
     internal static IReadOnlyList<DiagnosticDescriptor> All { get; } =
     [
@@ -47,6 +48,7 @@ internal static class WordsDiagnostics
         RevisionCountMismatch,
         ProtectionMismatch,
         OutputTruncated,
+        PageNumbersMismatch,
     ];
 
     private static ErrorCode Validation(string code) =>
