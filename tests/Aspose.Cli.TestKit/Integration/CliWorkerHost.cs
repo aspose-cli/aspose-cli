@@ -11,12 +11,18 @@ using System.Text;
 /// warm worker of <see cref="Aspose.Cli.TestKit.CliWorkers"/>. A process started without the
 /// worker's pipe variable, such as a child the CLI starts itself, runs its own command line. The
 /// run's own startup hooks run before this one, and the hooks variable gets back their value, so
-/// no process the worker starts inherits this hook and every one inherits the run's.
+/// no process the worker starts inherits this hook and every one inherits the run's. A process
+/// started with the culture variable starts under that culture, as on a machine set to those
+/// regional settings (<see cref="Aspose.Cli.TestKit.TempWorkspace.RunUnderCulture"/>).
 /// </summary>
 public static class StartupHook
 {
     public static void Initialize()
     {
+        if (Environment.GetEnvironmentVariable(Aspose.Cli.TestKit.CliWorkerHost.CultureVariable) is { Length: > 0 } culture)
+        {
+            CultureInfo.DefaultThreadCurrentCulture = CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo(culture);
+        }
         string? pipe = Environment.GetEnvironmentVariable(Aspose.Cli.TestKit.CliWorkerHost.PipeVariable);
         string? hooks = Environment.GetEnvironmentVariable(Aspose.Cli.TestKit.CliWorkerHost.HooksBeforeVariable);
         Environment.SetEnvironmentVariable(Aspose.Cli.TestKit.CliWorkerHost.HookVariable, hooks);
@@ -51,6 +57,9 @@ namespace Aspose.Cli.TestKit
 
         /// <summary>The startup hooks variable of the run, which the worker's hook puts back.</summary>
         internal const string HooksBeforeVariable = "ASPOSE_CLI_TEST_WORKER_HOOKS";
+
+        /// <summary>The variable that names the culture the hook starts a process under.</summary>
+        internal const string CultureVariable = "ASPOSE_CLI_TEST_CULTURE";
 
         /// <summary>The first field of every request and response.</summary>
         internal const int Magic = 0x41435752;

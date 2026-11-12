@@ -78,6 +78,11 @@ the check is its authority.
   every engine load and save option that decides content, since a default is a decision nobody
   made; and before an operation changes an existing object, find out with an engine-only example
   what else the call changes and whether the result is the same after saving and opening again.
+- The process's culture is pinned to en-US at startup (`CliHost`), so what a command computes
+  and shows, a recalculated formula, a field result or a formatted date or amount, does not
+  change with the machine's regional settings; a command that needs another culture takes it
+  as an explicit option, such as `cells convert --culture` (`CellsRegionalSettingsTests`,
+  `WordsRegionalSettingsTests`).
 - A check must not see through the eyes of what it checks. A verification expects what the
   operation's input should leave, never the state read after the operation; a prediction and the
   change it predicts share one rule; and a command that reads less than the document holds says
