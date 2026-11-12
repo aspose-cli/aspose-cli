@@ -18,12 +18,17 @@ namespace Aspose.Cli.TestKit.Scenarios;
 /// What the invocation read from stdin, such as its operations given as <c>--ops -</c>, which a
 /// hint's command that reads stdin as well is given again; null for none.
 /// </param>
+/// <param name="PasswordVariable">
+/// The variable among <paramref name="Variables"/> that holds the password the invocation read for
+/// its input from stdin, which the commands of its hints pass on in its place; null for none.
+/// </param>
 public sealed record HintRun(
     IReadOnlyList<string> Args,
     string Workspace,
     string ConfigRoot,
     IReadOnlyDictionary<string, string?>? Variables,
-    string? StandardInput = null);
+    string? StandardInput = null,
+    string? PasswordVariable = null);
 
 /// <summary>
 /// The hints of a result or an error envelope (<c>error.hint</c> and <c>warnings[].hint</c>) tell
@@ -55,6 +60,9 @@ public sealed record HintRun(
 /// it is not running text, one of its allowed values.</item>
 /// <item>A named operation must be one of the product's operations; a word counts as one when it is
 /// in snake case and starts with a verb some operation of the catalog starts with.</item>
+/// <item>A password placeholder given to an option, as in <c>--password-env "&lt;password-env&gt;"</c>,
+/// must be in double quotes: unquoted, a shell reads its angle brackets as a redirection, so the
+/// command pasted as written fails before the CLI runs.</item>
 /// <item>With <c>variants</c>, as the scenarios and the generated cases judge hints, a command that
 /// writes to an <c>--out</c> that exists in the invocation's workspace runs for real in the copy,
 /// without a dry run, and must not fail with <c>OUTPUT_EXISTS</c> either: a hint that names an
@@ -62,10 +70,13 @@ public sealed record HintRun(
 /// exist means to write a new one. A hint of a successful invocation that says to run the command
 /// again with options runs it again with them over what it wrote, under the same refusals. And an
 /// invocation one of whose hints names its input in a command runs again in a copy of its
-/// workspace on two variants of that input, and the commands its hints name on the variant must
-/// run as written too: an encrypted copy, opened with <c>--password-env</c> (a command without that
-/// option, an input already opened with a password and a format that carries none are skipped),
-/// and a copy at a path with a space (paths with <c>$</c> or a backtick are not tried). An
+/// workspace on three variants of that input, and the commands its hints name on the variant must
+/// run as written too: an encrypted copy opened with <c>--password-env</c>, the same opened with
+/// <c>--password-stdin</c>, whose hints' commands get the password in a variable the check sets for
+/// their <c>&lt;...-env&gt;</c> placeholder and must not fail with <see cref="PasswordCodes"/>
+/// either (a command without that option, an input already opened with a password and a format
+/// that carries none are skipped, and so is an invocation whose stdin holds a document), and a
+/// copy at a path with a space (paths with <c>$</c> or a backtick are not tried). An
 /// invocation run again is given again the JSON document it read from stdin, as a hint's command
 /// is (<see cref="PipedInput"/>); one that read a secret there, or a document the check was not
 /// given, is not run again.</item>
@@ -145,6 +156,10 @@ public static partial class ExecutableHints
         var commands = new List<HintAction>();
         foreach ((string source, string hint) in hints)
         {
+            foreach (Match unquoted in UnquotedPasswordPlaceholder().Matches(hint))
+            {
+                problems.Add($"the {source} hint gives '{unquoted.Value}' with its placeholder outside double quotes, which a shell reads as a redirection");
+            }
             foreach (HintAction action in Extract(catalog, hint))
             {
                 Judgement judgement = Plan(catalog, run, document, action, variants);
@@ -489,11 +504,16 @@ public static partial class ExecutableHints
         placeholder.Groups[1].Value.Split(' ', '-')[^1] == EnvironmentPlaceholder;
 
     /// <summary>
-    /// The environment variable a hint's <c>&lt;...-env&gt;</c> placeholder takes: the one the
-    /// invocation names with a <c>*-env</c> option, else one the run sets; null when there is none.
+    /// The environment variable a hint's <c>&lt;...-env&gt;</c> placeholder takes: the one that
+    /// holds the password the invocation read from stdin, else the one it names with a
+    /// <c>*-env</c> option, else one the run sets; null when there is none.
     /// </summary>
     private static string? Variable(HintRun run)
     {
+        if (run.PasswordVariable is { } read)
+        {
+            return read;
+        }
         for (int index = 0; index + 1 < run.Args.Count; index++)
         {
             if (run.Args[index].StartsWith("--", StringComparison.Ordinal) && run.Args[index].EndsWith("-env", StringComparison.Ordinal))
@@ -713,9 +733,14 @@ public static partial class ExecutableHints
     [GeneratedRegex(@"<([a-z][a-z0-9-]*(?: [a-z][a-z0-9-]*)*)>")]
     private static partial Regex Placeholder();
 
+    /// <summary>An option given a password placeholder outside double quotes, as in <c>--password-env &lt;password-env&gt;</c>.</summary>
+    [GeneratedRegex(@"(?<![\w-])--[a-z][a-z0-9-]*[ =]<(?:[a-z]+-)*password-env>")]
+    private static partial Regex UnquotedPasswordPlaceholder();
+
     /// <summary>
     /// The invocation a hint came from: its product, its input files, as it named them, and the
-    /// environment variable it gives the password of its input in, or null.
+    /// environment variable it gives the password of its input in, or that holds the one it read
+    /// from stdin (<see cref="HintRun.PasswordVariable"/>), or null.
     /// </summary>
     private sealed record Invocation(string? Product, IReadOnlyList<string> Files, string? Password)
     {
@@ -741,7 +766,7 @@ public static partial class ExecutableHints
             }
             string? product = line.Command.Product
                 ?? (files.Count > 0 ? catalog.ReaderOf(Path.IsPathFullyQualified(files[0]) ? files[0] : Path.Combine(run.Workspace, files[0])) : null);
-            return new Invocation(product, files, line.Values.FirstOrDefault(pair => OpensInput(line.Command, pair.Option)).Value);
+            return new Invocation(product, files, line.Values.FirstOrDefault(pair => OpensInput(line.Command, pair.Option)).Value ?? run.PasswordVariable);
         }
 
         /// <summary>

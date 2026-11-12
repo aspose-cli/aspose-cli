@@ -42,12 +42,11 @@ internal static class WordsCreate
     private static LoadedDocument OpenTemplate(WordsSession session, string path)
     {
         string copy = Path.Combine(Path.GetDirectoryName(path) ?? string.Empty, Path.GetFileNameWithoutExtension(path) + ".unencrypted.xml");
-        // This command takes no password for its template, so the variable is the caller's to name.
-        ContinuationCommand convert = new ContinuationInput(path).ContinuationAt("words", "convert")
+        // This command takes no password for its template, so the convert opens it with a variable
+        // the caller names: the input's password option without a variable, which is a placeholder.
+        ContinuationCommand convert = new ContinuationInput(path, "--password-env").ContinuationAt("words", "convert")
             .Option("--to", "flatopc")
-            .Option("--out", copy)
-            .Flag("--password-env")
-            .Placeholder("password-env");
+            .Option("--out", copy);
         return session.Loader.Open(path, PasswordSource.None(
             "'words create' cannot open an encrypted template. With its password, write an unencrypted copy: "
             + $"{convert.Quoted()}, "

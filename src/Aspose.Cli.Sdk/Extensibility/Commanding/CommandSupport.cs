@@ -434,6 +434,15 @@ public sealed class PasswordOptions
     internal string? EnvironmentName(ParseResult parseResult) => parseResult.GetValue(_fromEnvironment);
 
     /// <summary>
+    /// How a command that continues the invocation passes this password on: the option that names
+    /// its variable, with the variable the caller named, or with none when the caller gave the
+    /// password on stdin or literally, which a printed command never repeats, so the command names
+    /// a placeholder for a variable instead; null when no password was given.
+    /// </summary>
+    internal (string Option, string? Variable)? Continued(ParseResult parseResult) =>
+        SelectedOption(parseResult) is null ? null : (EnvironmentOption, EnvironmentName(parseResult));
+
+    /// <summary>
     /// Returns the option that supplies the secret, or null when none was given, so an error
     /// about the secret's use names the option the caller actually passed.
     /// </summary>

@@ -717,35 +717,39 @@ public partial class StandardInvocation
 
     /// <summary>
     /// Starts the command that continues this invocation for a result's <c>window.next</c>: the
-    /// same command path and input, and the input password's environment variable when it came
-    /// from one (the variable's name is not a secret). The product appends its own options. A
-    /// password given literally or on stdin is not repeated, so the caller supplies it again.
+    /// same command path and input, and the input's password passed on as
+    /// <see cref="ContinuationOf"/> passes it. The product appends its own options.
     /// </summary>
     public ContinuationCommand Continuation() => ContinuationAt(CommandPath());
 
     /// <summary>
     /// Starts the command at <paramref name="path"/>, such as <c>cells render</c>, on this
-    /// invocation's input, with the input password's environment variable when it came from one,
-    /// as <see cref="Continuation()"/> repeats them: the one way a hint names a command on the
-    /// input, so the command opens the input as this one did. The caller appends its own options.
+    /// invocation's input, with the input's password passed on as <see cref="ContinuationOf"/>
+    /// passes it: the one way a hint names a command on the input, so the command opens the input
+    /// as this one did. The caller appends its own options.
     /// </summary>
     /// <param name="path">The command path below the root.</param>
     /// <exception cref="CliException">The input does not exist.</exception>
     public ContinuationCommand ContinuationAt(params string[] path) => ContinuationOf(Input).ContinuationAt(path);
 
     /// <summary>
-    /// <paramref name="document"/> as a command that continues this invocation names it: with the
-    /// input password's environment variable when it came from one, as <see cref="ContinuationAt"/>
-    /// repeats it, never the password. A view rendered for this invocation carries it
+    /// <paramref name="document"/> as a command that continues this invocation names it, with the
+    /// input's password passed on, never the password itself: by the environment variable the
+    /// caller named for it, or, when the caller gave it on stdin or literally, by a
+    /// <c>&lt;password-env&gt;</c> placeholder the caller replaces with a variable that holds it
+    /// (<see cref="ContinuationInput"/>). A view rendered for this invocation carries it
     /// (<see cref="Views.ViewRenderRequest.Continuation"/>), so the commands its hints name open the
     /// document as this invocation does.
     /// </summary>
     /// <param name="document">The document, as the command names it.</param>
-    public ContinuationInput ContinuationOf(string document)
+    public ContinuationInput ContinuationOf(string document) => InputOf(_options, _parse, document);
+
+    /// <summary>The rule of <see cref="ContinuationOf(string)"/> for the command <paramref name="parse"/> holds, created with <paramref name="options"/> or by other means.</summary>
+    internal static ContinuationInput InputOf(StandardOptions? options, ParseResult parse, string document)
     {
         ArgumentException.ThrowIfNullOrEmpty(document);
-        return _options.InputPassword is { } password && password.EnvironmentName(_parse) is { } variable
-            ? new ContinuationInput(document, password.EnvironmentOption, variable)
+        return options?.InputPassword?.Continued(parse) is var (option, variable)
+            ? new ContinuationInput(document, option, variable)
             : new ContinuationInput(document);
     }
 

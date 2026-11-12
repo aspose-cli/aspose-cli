@@ -600,7 +600,8 @@ public sealed class CommandDefinitionTests : IDisposable
         Assert.StartsWith("aspose-cli run ", fromVariable, StringComparison.Ordinal);
         Assert.EndsWith("report.test\" --password-env LEFT --output-format json", fromVariable, StringComparison.Ordinal);
         Assert.DoesNotContain("secret", literal, StringComparison.Ordinal);
-        Assert.DoesNotContain("--password", literal, StringComparison.Ordinal);
+        // A password given literally is passed on by a placeholder for the variable that holds it.
+        Assert.EndsWith("report.test\" --password-env \"<password-env>\" --output-format json", literal, StringComparison.Ordinal);
     }
 
     [Fact]

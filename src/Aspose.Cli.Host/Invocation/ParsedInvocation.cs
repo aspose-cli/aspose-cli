@@ -601,8 +601,8 @@ internal sealed partial class ParsedInvocation
     /// A format given to <c>--to</c> that the command does not write but a command beside it
     /// writes through its own <c>--to</c>, as <c>png</c> given to a convert that leaves images to
     /// render, or a name that <c>--to</c> declares it stands for, as <c>jpg</c> for <c>jpeg</c>:
-    /// the advice to run that command on the same input, with the same <c>--password-env</c>, and to
-    /// the same <c>--out</c>; null otherwise.
+    /// the advice to run that command on the same input, with its password passed on as every
+    /// command on the input passes it (<c>ContinuationOf</c>), and to the same <c>--out</c>; null otherwise.
     /// </summary>
     private string? SiblingTarget(Option option, string value)
     {
@@ -623,17 +623,20 @@ internal sealed partial class ParsedInvocation
             return null;
         }
 
-        // The input as the caller wrote it, with the variable its password came from when the
-        // command beside this one takes the same option, so that command opens the input as this one would.
+        // The input as the caller wrote it, with its password passed on as every command on the
+        // input passes it when the command beside this one takes the same option, so that command
+        // opens the input as this one would.
         string input = Command.Arguments.FirstOrDefault() is { } argument
             && ParseResult.GetResult(argument) is { Tokens: [var token, ..] }
             ? token.Value
             : "<file>";
-        string? variable = Given(PasswordEnvironment) is { } named
-            && found.Command.Options.Any(static candidate => candidate.Name == PasswordEnvironment)
-            ? named
-            : null;
-        ContinuationCommand line = new ContinuationInput(input, variable is null ? null : PasswordEnvironment, variable)
+        ContinuationInput source = ParseResult.ContinuationOf(input);
+        if (source.PasswordOption is { } passed && !found.Command.Options.Any(candidate => candidate.Name == passed))
+        {
+            source = new ContinuationInput(input);
+        }
+
+        ContinuationCommand line = source
             .ContinuationAt([.. CommandPath.SkipLast(1).Select(static command => command.Name), found.Command.Name])
             .Option("--to", found.Format);
         if (Given("--out") is { } output)
@@ -659,9 +662,6 @@ internal sealed partial class ParsedInvocation
                 : null;
         }
     }
-
-    /// <summary>The option that names the environment variable of the input's password.</summary>
-    private const string PasswordEnvironment = "--password-env";
 
     /// <summary>
     /// A file format given to <c>--output-format</c>, which selects how results are printed:

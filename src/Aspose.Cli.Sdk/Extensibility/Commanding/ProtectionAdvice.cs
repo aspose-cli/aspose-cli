@@ -53,9 +53,6 @@ internal sealed record PermissionsReader(string Field, string Command, IReadOnly
 /// </summary>
 internal static class ProtectionAdvice
 {
-    /// <summary>The placeholder a step names for the variable of a password the invocation named none for.</summary>
-    internal const string PasswordPlaceholder = "<password-env>";
-
     private const string OwnerPasswordPlaceholder = "<owner-password-env>";
 
     // The placeholder for each of several files the command wrote.
@@ -296,7 +293,7 @@ internal static class ProtectionAdvice
     private sealed class Context(StandardInvocation invocation, StandardOptions? options, ResolvedOutput? output, string? variable, bool openPassword)
     {
         // The variable a step encrypts with: the input's password variable, else a placeholder.
-        private string Password => variable ?? PasswordPlaceholder;
+        private string Password => variable ?? ContinuationCommand.PasswordPlaceholder;
 
         // The file a step acts on: the output, or each of the files the command wrote.
         private string File => output?.Path ?? EachFile;
@@ -325,7 +322,7 @@ internal static class ProtectionAdvice
                 return new Step(reason, $"run the command again with {option} naming an environment variable that holds a password{replacing}, {effect}", Copies: false);
             }
 
-            again.Command.Option(option, Password).Flag(StandardOptionNames.Overwrite, overwrite is not null);
+            again.Command.PasswordVariable(option, variable).Flag(StandardOptionNames.Overwrite, overwrite is not null);
             return new Step(reason, $"run {again.Command.Quoted()}{again.Repeating}, {effect}{Naming(Password)}", Copies: false);
         }
 
@@ -396,7 +393,7 @@ internal static class ProtectionAdvice
                 return null;
             }
 
-            conversion.Commands[^1].Option(converter.EncryptOption, Password);
+            conversion.Commands[^1].PasswordVariable(converter.EncryptOption, variable);
             string effect = conversion.Part is null
                 ? $"which converts the {source} input itself and replaces the {format} file with an encrypted one"
                 : $"which split the selected pages from the {source} input and convert them, replacing the {format} file with an encrypted one";
@@ -416,7 +413,7 @@ internal static class ProtectionAdvice
                     ? new ContinuationCommand(encryptor.Path).Argument(output.Path).Option(StandardOptionNames.Out, copy).Document(StandardOptionNames.Ops, encrypting.Document)
                     : encryptor.Converts
                         ? new ContinuationCommand(encryptor.Path).Argument(output.Path)
-                            .Option(StandardOptionNames.To, format).Option(StandardOptionNames.Out, copy).Option(encryptor.EncryptOption, Password)
+                            .Option(StandardOptionNames.To, format).Option(StandardOptionNames.Out, copy).PasswordVariable(encryptor.EncryptOption, variable)
                         : null;
             }
 
@@ -452,7 +449,7 @@ internal static class ProtectionAdvice
                     again.Command.Option(StandardOptionNames.To, format.Id);
                 }
 
-                again?.Command.Option(StandardOptionNames.Out, path).Option(encrypt.EnvironmentOption, Password);
+                again?.Command.Option(StandardOptionNames.Out, path).PasswordVariable(encrypt.EnvironmentOption, variable);
             }
 
             return again is null

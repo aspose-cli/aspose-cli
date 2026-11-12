@@ -6,8 +6,8 @@ namespace Aspose.Cli.TestKit.Scenarios;
 /// <summary>
 /// The variants the scenarios and the generated cases judge hints on as well: a command that
 /// replaces an existing output, the invocation run again with the options a hint says to run it
-/// again with, and the invocation run again on an encrypted input and on an input at a path with a
-/// space.
+/// again with, and the invocation run again on an encrypted input, opened with a password from a
+/// variable and from stdin, and on an input at a path with a space.
 /// </summary>
 public static partial class ExecutableHints
 {
@@ -20,10 +20,14 @@ public static partial class ExecutableHints
     /// <summary>The password of the encrypted variant's input; the encrypted fixtures' own.</summary>
     private const string VariantPassword = ScenarioFixtures.Password;
 
+    /// <summary>The option that reads the input's password from stdin.</summary>
+    private const string PasswordStdinOption = "--password-stdin";
+
     /// <summary>The folder of the copy of the workspace each variant's input is written in; its name marks the commands that name it.</summary>
     private static readonly (string Name, string Folder, string Description)[] InputVariants =
     [
         ("encrypted", "hint-variant-encrypted", "on an encrypted copy of its input opened with --password-env"),
+        ("stdin", "hint-variant-stdin", "on an encrypted copy of its input opened with --password-stdin"),
         ("spaced", "hint variant spaced", "on its input at a path with a space"),
     ];
 
@@ -189,10 +193,15 @@ public static partial class ExecutableHints
     private static string? JudgeVariant(CliCatalog catalog, HintRun run, Invocation invocation, string input, string full, string name, string folder, string description)
     {
         CommandLine line = CommandLine.Parse(catalog, run.Args);
-        if (name == "encrypted" && (invocation.Password is not null || !line.Command.Has(PasswordOption)
+        bool encrypted = name is "encrypted" or "stdin";
+        if (encrypted && (invocation.Password is not null || !line.Command.Has(name == "stdin" ? PasswordStdinOption : PasswordOption)
             || run.Args.Any(static arg => arg.StartsWith("--password", StringComparison.Ordinal))))
         {
             return null; // The input already opens with a password, or the command takes none.
+        }
+        if (name == "stdin" && PipedInput(run, run.Args) is not null)
+        {
+            return null; // Stdin holds the invocation's document.
         }
         if (name == "spaced" && input.Contains(' ', StringComparison.Ordinal))
         {
@@ -204,7 +213,7 @@ public static partial class ExecutableHints
         Directory.CreateDirectory(directory);
         string variant = Path.Combine(directory, Path.GetFileName(full));
         var variables = new Dictionary<string, string?>(run.Variables ?? new Dictionary<string, string?>(), StringComparer.OrdinalIgnoreCase);
-        if (name == "encrypted")
+        if (encrypted)
         {
             if (!Encrypt(catalog, scratch, source, variant))
             {
@@ -248,13 +257,20 @@ public static partial class ExecutableHints
         {
             args.AddRange([PasswordOption, VariantVariable]);
         }
-        if (scratch.Execute(args, variables, PipedInput(run, args)) is not { } result)
+        else if (name == "stdin")
+        {
+            args.Add(PasswordStdinOption);
+        }
+        if (scratch.Execute(args, variables, name == "stdin" ? VariantPassword + "\n" : PipedInput(run, args)) is not { } result)
         {
             return null;
         }
 
-        // The commands that name the variant's input, judged in the copy as the invocation's own are.
-        var variantRun = new HintRun(args, scratch.Workspace, scratch.Config, variables, run.StandardInput);
+        // The commands that name the variant's input, judged in the copy as the invocation's own
+        // are; a password read from stdin is passed on in the variable that holds it, never on stdin.
+        var variantRun = name == "stdin"
+            ? new HintRun(args, scratch.Workspace, scratch.Config, variables, PasswordVariable: VariantVariable)
+            : new HintRun(args, scratch.Workspace, scratch.Config, variables, run.StandardInput);
         JsonNode? document = Parse(string.IsNullOrWhiteSpace(result.StdOut) ? result.StdErr : result.StdOut);
         var problems = new List<string>();
         foreach ((string code, string hint) in Hints(document))
