@@ -52,6 +52,36 @@ public sealed class CellsKnownIssueTests
     }
 
     [LicensedFact]
+    public void RemovingAnSvgPicture_LeavesItsSvgInTheSavedPackageUnreferenced()
+    {
+        using var fixture = new CellsFixture();
+        string input = fixture.Temp.File("svg.xlsx");
+        string output = fixture.Temp.File("removed.xlsx");
+        using (var workbook = new Workbook())
+        {
+            byte[] svg = Encoding.UTF8.GetBytes("""<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40"><desc>orphan marker</desc></svg>""");
+            workbook.Worksheets[0].Shapes.AddSvg(1, 0, 1, 0, 40, 40, svg, null);
+            workbook.Save(input);
+        }
+
+        using (var workbook = new Workbook(input))
+        {
+            workbook.Worksheets[0].Pictures.RemoveAt(0);
+            workbook.Save(output);
+        }
+
+        using System.IO.Compression.ZipArchive package = System.IO.Compression.ZipFile.OpenRead(output);
+        static string Read(System.IO.Compression.ZipArchiveEntry entry) => new StreamReader(entry.Open()).ReadToEnd();
+        string[] kept = [.. package.Entries.Where(entry => Read(entry).Contains("orphan marker", StringComparison.Ordinal)).Select(static entry => entry.FullName)];
+        bool referenced = package.Entries.Where(static entry => entry.FullName.EndsWith(".rels", StringComparison.Ordinal))
+            .Any(entry => kept.Any(part => Read(entry).Contains(Path.GetFileName(part), StringComparison.Ordinal)));
+        KnownIssue.Reproduces(
+            "CELLS-SVG-ORPHAN",
+            kept.Length > 0 && !referenced,
+            kept.Length == 0 ? "the saved package holds no SVG of the removed picture" : $"the saved package holds {string.Join(", ", kept)}, {(referenced ? "referenced" : "unreferenced")}");
+    }
+
+    [LicensedFact]
     public void OneCallSparklineAdd_RejectsASheetNameWithAnApostrophe()
     {
         using var fixture = new CellsFixture();

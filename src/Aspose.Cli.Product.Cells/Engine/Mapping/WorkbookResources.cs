@@ -105,7 +105,8 @@ internal sealed class WorkbookResources(string path, ResourceBudgetLedger budget
     }
 
     private Warning? SvgPicturesWarning => _svgPictures > 0
-        ? new Warning(CellsDiagnostics.ImagesSkipped, $"{_svgPictures} SVG picture(s) were left out: their SVG is compressed or does not parse as XML, or they sit in a group.")
+        ? new Warning(CellsDiagnostics.ImagesSkipped, $"{_svgPictures} SVG picture(s) were left out: their SVG is compressed or does not parse as XML, or they sit in a group. "
+            + "A workbook package the command writes may still carry their SVG as a part nothing in it refers to.")
         {
             Hint = "Replace each such picture with a PNG, or with an SVG that parses and is not grouped, using insert_image.",
             AffectsCompleteness = true,

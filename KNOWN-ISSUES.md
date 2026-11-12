@@ -42,6 +42,30 @@ Reproductions: [CellsKnownIssueTests](tests/Aspose.Cli.Product.Cells.Tests/Cells
   it; save an HTML table as xlsx or csv in the application it came from, then open
   that.
 
+### CELLS-SVG-ORPHAN
+
+- **Defect:** removing a picture whose SVG came with a loaded workbook (`Pictures.RemoveAt`,
+  `Shapes.Remove`, `Shapes.Clear` alike) leaves its SVG in the saved package as a part no
+  relationship refers to, while its raster image goes. No call changes the SVG of a picture in
+  place: setting `Picture.Data` to an SVG stores it as the raster image and keeps the old SVG,
+  and `Picture.Copy` replaces only the raster image.
+
+  ```csharp
+  var workbook = new Workbook("has-svg.xlsx");      // one SVG picture
+  workbook.Worksheets[0].Pictures.RemoveAt(0);
+  workbook.Save("out.xlsx");
+  // out.xlsx keeps xl/media/image1.svg, and no .rels file refers to it
+  ```
+
+- **CLI behavior:** an SVG picture replaced without its references (CELLS-SVG-EGRESS) leaves its
+  original SVG, references included, in an xlsx, xlsm, xltx or xltm output as such a part.
+  `REMOTE_RESOURCES_BLOCKED` says the pictures no longer hold the references and that a workbook
+  package the command writes may still carry each original SVG, rather than that the references
+  left the file. An SVG picture left out because it does not parse or sits in a group leaves its
+  SVG the same way, and `IMAGES_SKIPPED` says so.
+- **Workaround:** embed an SVG's images as base64 `data:` URIs (PNG, JPEG or GIF) before giving
+  the workbook to the CLI, so that no picture is replaced.
+
 ### CELLS-SPARKLINE-APOSTROPHE
 
 - **Defect:** `SparklineGroups.Add(type, dataRange, isVertical, locationRange)` throws
