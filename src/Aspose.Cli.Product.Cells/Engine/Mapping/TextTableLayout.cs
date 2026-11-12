@@ -52,9 +52,9 @@ internal sealed record TextTableFinding(
 /// <summary>
 /// Warns when a delimited text input is not a plain table that starts at row 1: a title or
 /// query-condition rows before the header, empty rows inside the table, or a total row at its
-/// end, as ERP and report exports write them, and the evaluation notice row an unlicensed export
-/// writes last. The import itself stays unchanged; the warnings
-/// only tell the caller which rows are data. A JSON export, which takes each sheet's first used
+/// end, as ERP and report exports write them. The import itself stays unchanged; the warnings
+/// only tell the caller which rows are data. The evaluation notice row an unlicensed export writes
+/// last is the load's to take out (<see cref="CellsEvaluation.TakeNoticeRows"/>). A JSON export, which takes each sheet's first used
 /// row for its keys, is checked the same way for every sheet it writes. The detector is a pure
 /// function over row shapes, kept apart from the workbook access that reads them.
 /// </summary>
@@ -121,9 +121,16 @@ internal static class TextTableLayout
                 continue;
             }
 
-            (IReadOnlyList<TextRowShape> head, IReadOnlyList<TextRowShape> tail) = ReadShapes(sheet, used, budgets);
+            // A workbook made from an evaluation export may still end a sheet with its notice row,
+            // which is no row of the table above it.
+            int? notice = CellsEvaluation.NoticeRow(sheet);
+            (IReadOnlyList<TextRowShape> head, IReadOnlyList<TextRowShape> tail) = ReadShapes(sheet,
+                notice is int last && last > used.Start.Row ? new RangeRef(used.Start, new CellRef(last - 1, used.End.Column)) : used, budgets);
             int firstUsed = head.FirstOrDefault(static shape => shape.Filled > 0) is { Filled: > 0 } first ? first.Row : 0;
-            warnings.AddRange(Detect(head, tail)
+            IEnumerable<TextTableFinding> findings = notice is int row
+                ? Detect(head, tail).Append(new TextTableFinding(TextTableFindingKind.EvaluationNotice, 0, row, [row], []))
+                : Detect(head, tail);
+            warnings.AddRange(findings
                 .Where(finding => finding.Kind != TextTableFindingKind.Preamble || finding.HeaderRow > firstUsed)
                 .Select(finding => JsonWarning(finding, sheet.Name, firstUsed, used.End.Column, capped: tail.Count > 0, input, textImport)));
         }
@@ -217,16 +224,9 @@ internal static class TextTableLayout
     internal static IReadOnlyList<TextTableFinding> Detect(IReadOnlyList<TextRowShape> head, IReadOnlyList<TextRowShape> tail)
     {
         TextRowShape[] filled = [.. head.Concat(tail).Where(static shape => shape.Filled > 0)];
-        TextTableFinding? notice = null;
-        if (filled is [.., { Filled: 1 } last] && CellsEvaluation.IsNotice(last.FirstText))
-        {
-            notice = new TextTableFinding(TextTableFindingKind.EvaluationNotice, 0, last.Row, [last.Row], []);
-            filled = filled[..^1];
-        }
-
         if (filled.Length == 0)
         {
-            return notice is null ? [] : [notice];
+            return [];
         }
 
         int width = filled.Max(static shape => shape.Filled);
@@ -271,11 +271,6 @@ internal static class TextTableLayout
                 [.. totals.Select(static shape => shape.FirstText!).Distinct(StringComparer.Ordinal)],
                 totals[0].NumberColumn,
                 dataEnd));
-        }
-
-        if (notice is not null)
-        {
-            findings.Add(notice);
         }
 
         return findings;
@@ -447,8 +442,7 @@ internal static class TextTableLayout
         {
             TextTableFindingKind.Preamble => Preamble(finding, sheetName, last),
             TextTableFindingKind.BlankRows => BlankRows(finding, sheetName, last, capped),
-            TextTableFindingKind.TotalRows => TotalRows(finding, sheetName),
-            _ => EvaluationNotice(finding, sheetName),
+            _ => TotalRows(finding, sheetName),
         })];
     }
 
@@ -493,15 +487,6 @@ internal static class TextTableLayout
                 ? $"End data ranges at row {end}{example}, and leave row {first} out of sorts, pivots and charts."
                 : $"Leave row {first} out of formulas, sorts, pivots and charts.",
             sheetName, string.Join(",", finding.Rows.Select(static row => RowReference(row + 1, row + 1))));
-    }
-
-    private static Warning EvaluationNotice(TextTableFinding finding, string sheetName)
-    {
-        int row = finding.LastRow + 1;
-        return Build(
-            $"Row {row} is not data: it is the evaluation notice an Aspose.Cells export without a license wrote after the data.",
-            $"Tell the user, and leave row {row} out of every range, or delete it with the delete_rows operation of 'cells edit' after converting to xlsx.",
-            sheetName, RowReference(row, row));
     }
 
     /// <summary>A layout warning located at the <paramref name="rows"/> of sheet <paramref name="sheetName"/>, such as <c>row/Sales!1:3</c>.</summary>

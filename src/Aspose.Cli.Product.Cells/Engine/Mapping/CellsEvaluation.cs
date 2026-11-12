@@ -1,16 +1,18 @@
+using System.Globalization;
 using System.Text.RegularExpressions;
 using Aspose.Cells;
 
 namespace Aspose.Cli.Product.Cells.Engine.Mapping;
 
 /// <summary>
-/// The one place that recognizes the worksheet Aspose.Cells evaluation mode adds to every
-/// workbook it saves: an "Evaluation Warning" sheet (or "Evaluation Warning (1)", ... when the
-/// name is taken) that holds only the evaluation notice and becomes the active sheet. In
-/// evaluation mode commands skip the sheet as their default; with a license a sheet of that
-/// name is the workbook's own. Review and the write pipeline (<see cref="CellsEvaluationProfile"/>)
-/// report it in any mode (<see cref="IsWarningSheet"/>), because licensed commands read and
-/// re-save workbooks that evaluation saves produced.
+/// The one place that recognizes what Aspose.Cells evaluation mode leaves in a file: the
+/// worksheet it adds to every workbook it saves, an "Evaluation Warning" sheet (or "Evaluation
+/// Warning (1)", ... when the name is taken) that holds only the evaluation notice and becomes the
+/// active sheet, which commands skip as their default in any mode; and the notice it writes as the
+/// last row of a CSV or TSV export, which a load takes out (<see cref="TakeNoticeRows"/>). Review
+/// and the write pipeline (<see cref="CellsEvaluationProfile"/>) report the sheet in any mode
+/// (<see cref="IsWarningSheet"/>), because licensed commands read and re-save workbooks that
+/// evaluation saves produced.
 /// </summary>
 internal static partial class CellsEvaluation
 {
@@ -63,12 +65,15 @@ internal static partial class CellsEvaluation
         }
     }
 
-    /// <summary>Whether <paramref name="text"/> is the evaluation notice.</summary>
+    /// <summary>Whether <paramref name="text"/> starts as the evaluation notice does, as the only text of an evaluation warning sheet (<see cref="IsWarningSheet"/>).</summary>
     internal static bool IsNotice(string? text) => text?.StartsWith(Notice, StringComparison.Ordinal) == true;
 
     /// <summary>
-    /// The zero-based last row of <paramref name="sheet"/> when it holds only the evaluation
-    /// notice, as the last row of an evaluation CSV or TSV export does; otherwise null.
+    /// The zero-based last row of <paramref name="sheet"/> when it is the notice row an evaluation
+    /// CSV or TSV export writes after the data: column A holds that whole sentence and nothing
+    /// else (<see cref="NoticeLine"/>), and no other cell of the row holds anything; otherwise
+    /// null. A row that holds more than the sentence, or holds it in another column, is data,
+    /// which a load must not take out (<see cref="TakeNoticeRows"/>).
     /// </summary>
     internal static int? NoticeRow(Worksheet sheet)
     {
@@ -77,8 +82,43 @@ internal static partial class CellsEvaluation
             return null;
         }
 
-        Cell[] values = [.. row.Cast<Cell>().Where(static cell => cell.Type != CellValueType.IsNull)];
-        return values is [{ IsFormula: false } cell] && IsNotice(cell.StringValue) ? row.Index : null;
+        Cell[] values = [.. row.Cast<Cell>().Where(static cell => cell.Type != CellValueType.IsNull && cell.StringValue.Length > 0)];
+        return values is [{ IsFormula: false, Column: 0 } cell] && NoticeLine().IsMatch(cell.StringValue) ? row.Index : null;
+    }
+
+    /// <summary>
+    /// Takes the notice rows an unlicensed CSV or TSV export wrote after the data out of
+    /// <paramref name="sheet"/>, a delimited text input as loaded, so that no command reads them
+    /// as data or writes them back: the last row while it is one (<see cref="NoticeRow"/>), since
+    /// an evaluation edit of such a file once wrote the old notice back before its own. Returns
+    /// their zero-based rows, first to last; none when the sheet does not end with one.
+    /// </summary>
+    internal static IReadOnlyList<int> TakeNoticeRows(Worksheet sheet)
+    {
+        var rows = new List<int>();
+        while (NoticeRow(sheet) is int row)
+        {
+            sheet.Cells.DeleteRow(row);
+            rows.Insert(0, row);
+        }
+
+        return rows;
+    }
+
+    /// <summary>The warning that the notice <paramref name="rows"/> (zero-based) of <paramref name="sheet"/> were taken out.</summary>
+    internal static Warning NoticeTaken(string sheet, IReadOnlyList<int> rows)
+    {
+        string[] numbers = [.. rows.Select(static row => (row + 1).ToString(CultureInfo.InvariantCulture))];
+        bool one = numbers.Length == 1;
+        return new(CellsDiagnostics.TextTableLayout,
+            $"{(one ? "Row" : "Rows")} {string.Join(", ", numbers)} of the input {(one ? "is" : "are")} not data: {(one ? "it is" : "each is")} the evaluation notice "
+                + $"'{Notice}...' an Aspose.Cells export without a license wrote after the data, so the load took {(one ? "it" : "them")} out: "
+                + $"commands do not read {(one ? "it" : "them")}, and a file written from this input does not hold {(one ? "it" : "them")}.")
+        {
+            Hint = "Tell the user the file was written without a license.",
+            Docs = "cells/troubleshooting",
+            Location = CellsAddresses.At("row", sheet, one ? numbers[0] : $"{numbers[0]}:{numbers[^1]}"),
+        };
     }
 
     /// <summary>Whether <paramref name="sheet"/> is named like a warning sheet and holds only the notice.</summary>
@@ -107,4 +147,8 @@ internal static partial class CellsEvaluation
 
     [GeneratedRegex(@"^Evaluation Warning( \(\d+\))?$", RegexOptions.CultureInvariant)]
     private static partial Regex WarningSheetName();
+
+    // The whole notice an evaluation export writes as a row, as Aspose.Cells 26.9.0 writes it.
+    [GeneratedRegex(@"^Evaluation Only\. Created with Aspose\.Cells for \.NET\. Copyright 2003 - \d{4} Aspose Pty Ltd\.$", RegexOptions.CultureInvariant)]
+    private static partial Regex NoticeLine();
 }

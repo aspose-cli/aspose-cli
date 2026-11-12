@@ -22,6 +22,15 @@ internal sealed record LoadedWorkbook(Workbook Workbook, WorkbookResources Resou
     internal Warning? NumbersReadAsText { get; init; }
 
     /// <summary>
+    /// The zero-based rows of the evaluation notice the load took out of a delimited text input
+    /// (<see cref="CellsEvaluation.TakeNoticeRows"/>), first to last; none when it ended with none.
+    /// </summary>
+    internal IReadOnlyList<int> EvaluationNoticeRows { get; init; } = [];
+
+    /// <summary>Says that the load took the notice rows out (<see cref="EvaluationNoticeRows"/>); null otherwise and for a read-back.</summary>
+    internal Warning? EvaluationNotice { get; init; }
+
+    /// <summary>
     /// The evaluation warning sheet that was the active sheet and the sheet activated in memory
     /// in its place; null otherwise. Read its warning through <see cref="SkippedSheetWarning"/>,
     /// since it is true only of a command that defaulted to the active sheet.
@@ -84,7 +93,7 @@ internal sealed record LoadedWorkbook(Workbook Workbook, WorkbookResources Resou
     /// </summary>
     internal IReadOnlyList<Warning>? Warnings(params Warning?[] additional)
     {
-        Warning[] warnings = Resources.Warnings.Append(NumbersReadAsText).Append(CalculatedOnOpen).Concat(additional).OfType<Warning>().ToArray();
+        Warning[] warnings = Resources.Warnings.Append(EvaluationNotice).Append(NumbersReadAsText).Append(CalculatedOnOpen).Concat(additional).OfType<Warning>().ToArray();
         return warnings.Length == 0 ? null : warnings;
     }
 

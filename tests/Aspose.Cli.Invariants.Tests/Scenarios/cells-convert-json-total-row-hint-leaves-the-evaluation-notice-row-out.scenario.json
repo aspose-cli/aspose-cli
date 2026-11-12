@@ -1,0 +1,28 @@
+{
+  "name": "cells convert --to json of a workbook sheet that ends with a total row and then the evaluation notice row names the notice row apart and reads the total row alone: the notice row is no row of the table",
+  "files": {
+    "ops.json": { "text": "{\"ops\":[{\"op\":\"set_values\",\"sheet\":\"Data\",\"range\":\"A1:C5\",\"values\":[[\"Region\",\"Q1\",\"Q2\"],[\"North\",1,2],[\"South\",3,4],[\"Total\",4,6],[\"Evaluation Only. Created with Aspose.Cells for .NET. Copyright 2003 - 2026 Aspose Pty Ltd.\",null,null]]}]}" }
+  },
+  "steps": [
+    {
+      "args": ["cells", "create", "book.xlsx", "--sheet-names", "Data", "--license-mode", "evaluation"],
+      "expect": { "exitCode": 0 }
+    },
+    {
+      "args": ["cells", "edit", "book.xlsx", "--in-place", "--ops", "ops.json", "--license-mode", "evaluation"],
+      "expect": { "exitCode": 0 }
+    },
+    {
+      "args": ["cells", "convert", "book.xlsx", "--to", "json", "--out", "book.json", "--license-mode", "evaluation"],
+      "expect": {
+        "exitCode": 0,
+        "warnings": { "present": ["TEXT_TABLE_LAYOUT"] },
+        "json": [
+          { "path": "warnings[1].message", "startsWith": "Row 4 of sheet 'Data' is a total row" },
+          { "path": "warnings[1].hint", "contains": "--sheet Data --range A4:C4 --output-format json" },
+          { "path": "warnings[2].message", "startsWith": "Row 5 of sheet 'Data' is not data: it is the evaluation notice" }
+        ]
+      }
+    }
+  ]
+}

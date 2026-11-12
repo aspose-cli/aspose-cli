@@ -236,6 +236,6 @@ internal static class CellsView
         ArgumentException.ThrowIfNullOrEmpty(filePath);
         _ = session.Outputs.License;
         using LoadedWorkbook loaded = session.Loader.Open(filePath, password);
-        return ReviewLayoutProjection.Inspect(loaded.Workbook) with { Warnings = loaded.Warnings() };
+        return ReviewLayoutProjection.Inspect(loaded) with { Warnings = loaded.Warnings() };
     }
 }

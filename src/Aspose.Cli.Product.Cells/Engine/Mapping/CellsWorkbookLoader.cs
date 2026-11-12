@@ -13,9 +13,9 @@ namespace Aspose.Cli.Product.Cells.Engine.Mapping;
 /// <summary>
 /// Owns content-driven workbook detection, password application and guarded
 /// open policy. No query, rendering or mutation behavior belongs here. With the write pipeline,
-/// a workbook opened in evaluation mode skips its active evaluation warning sheet, and the
-/// pipeline learns whether each opened input is encrypted; without one (font inspection) it
-/// opens as stored.
+/// a workbook opened skips its active evaluation warning sheet and the pipeline learns whether
+/// each opened input is encrypted; without one (font inspection) it opens as stored. A delimited
+/// text input loses the evaluation notice row an unlicensed export wrote after its data.
 /// </summary>
 internal sealed class CellsWorkbookLoader
 {
@@ -96,9 +96,9 @@ internal sealed class CellsWorkbookLoader
     /// <summary>
     /// Opens a user input. A workbook that asks to be calculated when opened is calculated, as
     /// Excel does, unless <paramref name="calculateOnOpen"/> is false because the caller
-    /// recalculates itself or was told not to. In evaluation mode an active evaluation warning
-    /// sheet gives way to the workbook's content (<see cref="CellsEvaluation.SkipActiveWarningSheet"/>);
-    /// with a license a sheet of that name is the workbook's own and stays active.
+    /// recalculates itself or was told not to. An active evaluation warning sheet gives way to the
+    /// workbook's content (<see cref="CellsEvaluation.SkipActiveWarningSheet"/>), and a delimited
+    /// text input to its data without the evaluation notice rows (<see cref="CellsEvaluation.TakeNoticeRows"/>).
     /// </summary>
     internal LoadedWorkbook Open(
         string path,
@@ -168,6 +168,7 @@ internal sealed class CellsWorkbookLoader
             }
 
             // A read-back reads its text as the input was read, but is no input to warn about.
+            IReadOnlyList<int> notice = plan.Separator is null ? [] : CellsEvaluation.TakeNoticeRows(workbook.Worksheets[0]);
             Warning? numbersAsText = plan.Separator is null ? null
                 : CellsTextImport.KeepSeparatedNumbersAsText(options, workbook.Worksheets[0], published ? null : path);
             resources.MaterializeLinkedPictures(workbook);
@@ -180,7 +181,7 @@ internal sealed class CellsWorkbookLoader
                 "items", "post-load");
             resources.ThrowIfFailed();
             Warning? calculated = calculateOnOpen ? CellsOpenCalculation.Apply(workbook, _resourceBudgets) : null;
-            CellsEvaluation.SkippedWarningSheet? skipped = published || _outputs?.IsEvaluation != true
+            CellsEvaluation.SkippedWarningSheet? skipped = published || _outputs is null
                 ? null
                 : CellsEvaluation.SkipActiveWarningSheet(workbook);
             transferred = true;
@@ -189,6 +190,8 @@ internal sealed class CellsWorkbookLoader
                 SourceFormat = plan.Detected ?? workbook.FileFormat,
                 CalculatedOnOpen = calculated,
                 NumbersReadAsText = numbersAsText,
+                EvaluationNoticeRows = notice,
+                EvaluationNotice = notice.Count > 0 && !published ? CellsEvaluation.NoticeTaken(workbook.Worksheets[0].Name, notice) : null,
                 EvaluationSheetSkipped = skipped,
                 DelimitedText = plan.Separator is { } separator
                     ? new DelimitedTextForm(CellsFormats.Delimited.NamedBy(resourceSource ?? path).FirstOrDefault()?.Id, separator, plan.TextByteOrderMark)

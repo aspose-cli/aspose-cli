@@ -31,17 +31,19 @@ internal static class ReviewLayoutProjection
     private const int PivotLabelIndentPixels = 16;
     private const double PivotLabelIndentUnits = 3;
 
-    public static CellsReviewLayout Inspect(Workbook workbook)
+    /// <summary>The layout facts of the sheets of <paramref name="loaded"/>, as the load left them.</summary>
+    public static CellsReviewLayout Inspect(LoadedWorkbook loaded)
     {
-        var sheets = new List<CellsReviewSheetLayout>(workbook.Worksheets.Count);
-        foreach (Worksheet sheet in workbook.Worksheets)
+        var sheets = new List<CellsReviewSheetLayout>(loaded.Workbook.Worksheets.Count);
+        foreach (Worksheet sheet in loaded.Workbook.Worksheets)
         {
-            sheets.Add(InspectSheet(sheet));
+            // The notice row a load took out of a delimited text input is still in the file.
+            sheets.Add(InspectSheet(sheet, loaded.EvaluationNoticeRows is [int first, ..] ? first : CellsEvaluation.NoticeRow(sheet)));
         }
         return new CellsReviewLayout(sheets);
     }
 
-    private static CellsReviewSheetLayout InspectSheet(Worksheet sheet)
+    private static CellsReviewSheetLayout InspectSheet(Worksheet sheet, int? noticeRow)
     {
         SheetContentScan content = ScanContent(sheet);
         DimensionScan columns = InspectColumns(sheet, content.OccupiedColumns);
@@ -60,7 +62,7 @@ internal static class ReviewLayoutProjection
             ContentRange = content.ContentRange is { } range ? A1.FormatRange(range) : null,
             HasVisualObjects = sheet.Shapes.Count > 0,
             IsEvaluationWarning = warningSheet,
-            EvaluationNoticeRow = warningSheet ? null : CellsEvaluation.NoticeRow(sheet),
+            EvaluationNoticeRow = warningSheet ? null : noticeRow,
             HiddenPopulatedColumns = columns.Hidden.ToSet(),
             NarrowPopulatedColumns = columns.Small.ToSet(),
             WidePopulatedColumns = columns.Large.ToSet(),
