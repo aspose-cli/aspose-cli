@@ -1,0 +1,63 @@
+{
+  "name": "pdf extract copies an attachment that starts with a byte order mark byte for byte",
+  "files": {
+    "report.pdf": {
+      "fixture": "pdf.pdf"
+    },
+    "marked.csv": {
+      "base64": "77u/cmVnaW9uLDEwCg=="
+    },
+    "ops.json": {
+      "text": "{\"ops\":[{\"op\":\"add_attachment\",\"path\":\"marked.csv\"}]}"
+    }
+  },
+  "steps": [
+    {
+      "args": [
+        "pdf",
+        "edit",
+        "report.pdf",
+        "--ops",
+        "ops.json",
+        "--out",
+        "attached.pdf"
+      ],
+      "expect": {
+        "exitCode": 0
+      }
+    },
+    {
+      "args": [
+        "pdf",
+        "extract",
+        "attached.pdf",
+        "--what",
+        "attachments",
+        "--out-dir",
+        "files"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          {
+            "path": "outputs[0].sizeBytes",
+            "equals": 13
+          },
+          {
+            "path": "outputs[0].fingerprint.sha256",
+            "equals": "6582488875fcc4ee09ed1284de6a8d2c16521d21384d0eadac5bbd72ed2af10d"
+          }
+        ],
+        "files": {
+          "present": [
+            "files/attachment-0001.csv"
+          ],
+          "unchanged": [
+            "attached.pdf",
+            "marked.csv"
+          ]
+        }
+      }
+    }
+  ]
+}

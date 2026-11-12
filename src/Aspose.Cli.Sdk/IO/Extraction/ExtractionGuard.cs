@@ -111,10 +111,11 @@ public sealed class ExtractionGuard : IDisposable
             FilePublicationSnapshot original = FilePublicationSnapshot.Capture(target);
             StagedOutput output = _transaction.StagePrepared(target, _overwrite, requestedBackup: null, original, staged =>
             {
-                using var file = new FileStream(staged, FileMode.Truncate, FileAccess.Write, FileShare.None);
+                using var file = new FileStream(staged, FileMode.Truncate, FileAccess.ReadWrite, FileShare.None);
                 using Stream bounded = _budget.Bound(file, limit, name);
                 write(bounded);
                 bounded.Flush();
+                ByteOrderMarks.Unless(KeepsByteOrderMark, file);
                 _budget.Reconcile(reserved, bounded.Length);
                 FilePublicationSnapshot current = FilePublicationSnapshot.Capture(target);
                 if (!original.VersionEquals(current)) { throw PublicationErrors.OutputConflict(target, original, current); }
@@ -126,6 +127,12 @@ public sealed class ExtractionGuard : IDisposable
 
     /// <summary>Runs after the extraction is published; the write pipeline records the publication.</summary>
     internal Action? Committed { get; init; }
+
+    /// <summary>
+    /// Whether a file keeps the UTF-8 byte order mark its write starts it with
+    /// (<see cref="ByteOrderMarks"/>); the write pipeline decides it for the extraction it begins.
+    /// </summary>
+    internal bool KeepsByteOrderMark { get; init; } = true;
 
     public void Commit()
     {

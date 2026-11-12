@@ -33,13 +33,17 @@ internal sealed record WorkbookSavePlan(string FormatId, SaveFormat Format, Save
         string formatId = output.Id;
         SaveFormat format = CellsEngineFormats.Save(formatId);
         DelimitedTextForm? kept = editedInput?.FormatId == formatId ? editedInput : null;
-        SaveOptions? options = CellsEngineFormats.Options(
-            formatId, byteOrderMark || kept?.Utf8ByteOrderMark == true, kept?.Separator, selectedSheets);
+        bool marked = byteOrderMark || kept?.Utf8ByteOrderMark == true;
+        SaveOptions? options = CellsEngineFormats.Options(formatId, marked, kept?.Separator, selectedSheets);
         return new WorkbookSavePlan(formatId, format, options, protection, licenseState == LicenseState.Evaluation, selectedSheets)
         {
             ReadAsWritten = readAsWritten,
+            ByteOrderMark = marked,
         };
     }
+
+    /// <summary>Whether a delimited text output keeps the UTF-8 byte order mark its save writes, which the write pipeline is told.</summary>
+    internal bool ByteOrderMark { get; init; }
 
     /// <summary>
     /// Whether the workbook is a delimited text input read as written, whose numbers and dates a

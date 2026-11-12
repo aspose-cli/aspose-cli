@@ -65,9 +65,15 @@ public static partial class ScenarioRunner
             bool installation = step.Expect?.Files?.NothingInstalled == true;
             IReadOnlyDictionary<string, string> before = Snapshot(workspace, installation);
             string[] args = WithJsonOutput(step.Args);
+            bool marks = KeepsByteOrderMarks(workspace, args);
             CliResult result = Execute(workspace, args, step.Env, step.Stdin);
             IReadOnlyDictionary<string, string> after = Snapshot(workspace, installation);
             JsonNode? document = ScenarioContract.Check(args, result, Report);
+            foreach (string written in after.Keys.Where(path => !marks && !path.StartsWith('<')
+                && (!before.TryGetValue(path, out string? hash) || hash != after[path]) && StartsWithByteOrderMark(workspace.File(path))))
+            {
+                Report(ScenarioContract.ByteOrderMark, $"{written} starts with a UTF-8 byte order mark the step did not ask for and copied from no document");
+            }
             foreach (string problem in ExecutableHints.Problems(new HintRun(args, workspace.Path, Path.GetDirectoryName(workspace.ConfigDirectory)!, Variables(step.Env)), document, variants: true))
             {
                 Report(ExecutableHints.Check, problem);
@@ -536,6 +542,42 @@ public static partial class ScenarioRunner
             }
         }
         return files;
+    }
+
+    /// <summary>
+    /// Whether the files a step writes may start with a UTF-8 byte order mark
+    /// (<see cref="ScenarioContract.ByteOrderMark"/>): the step asks for one with <c>--bom</c>,
+    /// edits an input that starts with one, or extracts the files a document embeds, which keep
+    /// the bytes the document stores.
+    /// </summary>
+    private static bool KeepsByteOrderMarks(TempWorkspace workspace, IReadOnlyList<string> args) =>
+        args.Contains("--bom")
+        || args.Count > 2 && args[1] == "edit" && File.Exists(workspace.File(args[2])) && StartsWithByteOrderMark(workspace.File(args[2]))
+        || args.Count > 1 && args[1] == "extract" && EmbeddedFileKinds.Contains((args[0], What(args)));
+
+    /// <summary>
+    /// The <c>extract --what</c> kinds of each product that copy the files a document embeds as it
+    /// stores them, the ones its extract handler names <c>ExtractionContent.EmbeddedFiles</c>.
+    /// </summary>
+    private static readonly HashSet<(string Product, string? What)> EmbeddedFileKinds =
+        [("pdf", "attachments"), ("words", "images"), ("slides", "media")];
+
+    /// <summary>The value of a step's <c>--what</c>, null without one.</summary>
+    private static string? What(IReadOnlyList<string> args)
+    {
+        for (int index = 0; index < args.Count; index++)
+        {
+            if (args[index] == "--what" && index + 1 < args.Count) { return args[index + 1]; }
+            if (args[index].StartsWith("--what=", StringComparison.Ordinal)) { return args[index]["--what=".Length..]; }
+        }
+        return null;
+    }
+
+    private static bool StartsWithByteOrderMark(string path)
+    {
+        Span<byte> head = stackalloc byte[3];
+        using FileStream file = File.OpenRead(path);
+        return file.ReadAtLeast(head, head.Length, throwOnEndOfStream: false) == head.Length && head.SequenceEqual(Encoding.UTF8.Preamble);
     }
 
     private const string ConfigurationPrefix = "<config>/";

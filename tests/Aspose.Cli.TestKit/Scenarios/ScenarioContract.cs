@@ -40,6 +40,14 @@ public static partial class ScenarioContract
     /// </summary>
     public const string LocalPath = "local-path";
 
+    /// <summary>
+    /// No file a step creates or changes starts with the UTF-8 byte order mark unless the step
+    /// asks for it: with <c>--bom</c>, or as an edit of an input that starts with one, which a
+    /// text output written back in the input's format keeps; or unless the step extracts the
+    /// files a document embeds, which keep the bytes the document stores.
+    /// </summary>
+    public const string ByteOrderMark = "byte-order-mark";
+
     /// <summary>The lists whose items carry a <c>location</c>: warnings, verification issues and review findings.</summary>
     private static readonly string[] LocatedLists = ["warnings", "issues", "findings"];
 

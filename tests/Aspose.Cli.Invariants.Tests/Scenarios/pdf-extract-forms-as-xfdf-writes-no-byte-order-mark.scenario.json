@@ -1,0 +1,40 @@
+{
+  "name": "pdf extract writes form data as XFDF without the byte order mark the engine starts it with",
+  "files": {
+    "form.pdf": {
+      "fixture": "pdf.rich"
+    }
+  },
+  "steps": [
+    {
+      "args": [
+        "pdf",
+        "extract",
+        "form.pdf",
+        "--what",
+        "forms",
+        "--form-format",
+        "xfdf",
+        "--out-dir",
+        "data"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          {
+            "path": "outputs[0].format",
+            "equals": "xfdf"
+          }
+        ],
+        "files": {
+          "present": [
+            "data/form.xfdf"
+          ],
+          "unchanged": [
+            "form.pdf"
+          ]
+        }
+      }
+    }
+  ]
+}

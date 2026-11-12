@@ -29,7 +29,7 @@ internal static class PdfExtract
         var reading = new TextReading(loaded.Document, request.FormsInspection);
         // An attachment is copied as the PDF stores it, so it carries nothing evaluation mode adds.
         using ExtractionGuard guard = session.Outputs.BeginExtraction(request.Output.Path, request.Output.Overwrite,
-            request.What == PdfExtractKinds.Attachments ? ExtractionContent.EmbeddedFiles : ExtractionContent.Derived);
+            request.What == PdfExtractKinds.Attachments ? ExtractionContent.EmbeddedFiles : ExtractionContent.Derived, request.ByteOrderMark);
         IReadOnlyList<PdfExtractOutput> outputs = request.What == PdfExtractKinds.Attachments
             ? ExtractAttachments(loaded.Document, guard)
             : [.. Extract(request, reading, loaded, pages, guard, session.Budgets)

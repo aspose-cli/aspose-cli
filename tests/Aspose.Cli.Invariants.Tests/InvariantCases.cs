@@ -74,6 +74,7 @@ internal static class InvariantCases
         [ScenarioContract.ResultEnvelope] = "C-R33",
         [ScenarioContract.TargetLocation] = "C-R27",
         [ScenarioContract.LocalPath] = ScenarioContract.LocalPath,
+        [ScenarioContract.ByteOrderMark] = ScenarioContract.ByteOrderMark,
         [ExecutableHints.Check] = "C-R26",
         [MissingInput] = "C-R24",
         [CorruptInput] = "C-R24",
