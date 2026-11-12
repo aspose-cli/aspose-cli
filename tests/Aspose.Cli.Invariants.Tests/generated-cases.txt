@@ -4815,6 +4815,19 @@ C-R42 | words edit docx -> .xml
 C-R43 | cells replace_text
 C-R43 | slides replace_text
 C-R43 | words replace_text
+C-R44 | slides set_background on a Blank slide with a text box
+C-R44 | slides set_body on a Blank slide with a text box
+C-R44 | slides set_chart_data on a Blank slide with a text box
+C-R44 | slides set_footer on a Blank slide with a text box
+C-R44 | slides set_layout on a Blank slide with a text box
+C-R44 | slides set_notes on a Blank slide with a text box
+C-R44 | slides set_properties on a Blank slide with a text box
+C-R44 | slides set_shape_bounds on a Blank slide with a text box
+C-R44 | slides set_slide_hidden on a Blank slide with a text box
+C-R44 | slides set_slide_size on a Blank slide with a text box
+C-R44 | slides set_text on a Blank slide with a text box
+C-R44 | slides set_title on a Blank slide with a text box
+C-R44 | slides set_transition on a Blank slide with a text box
 corrupt-input | cells compare
 corrupt-input | cells convert
 corrupt-input | cells edit
