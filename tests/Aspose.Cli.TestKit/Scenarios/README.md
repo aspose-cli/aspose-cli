@@ -72,6 +72,10 @@ one-operation document for the product's `edit --ops`; `markdown` and `text` are
 | `reopens` | Each file opens again with `<product> inspect`; the product is the one routing assigns to the file's extension, else the command's own product when it reads the extension, or `product:path` names it. Any other file must be non-empty and carry its format's signature where one is known (images, PDF, PostScript, HTML, SVG and the ZIP packages XPS and EPUB), since a product that only declares an unrouted extension does not judge another product's output. `@result` stands for every file of the result's `output.path`, `outputs[].path` and `outputs[].output.path` |
 | `hidden` | None of the texts, such as secret values, appears in stdout, stderr or a file the step created or changed, as UTF-8 or UTF-16 in its bytes or in an entry of the ZIP package it is |
 
+A step that passes `--verify` states its `exitCode` and asserts `verification.ok` with `equals`
+(`ScenarioTests.VerifyingSteps_StateTheirExitCodeAndVerificationOk`), so a verification that fails
+is never recorded as passing by a step that asserts something else.
+
 ## Contract checks
 
 Every step is also checked, whatever it expects, against the CLI's own catalog

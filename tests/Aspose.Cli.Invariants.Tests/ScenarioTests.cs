@@ -22,6 +22,24 @@ public sealed class ScenarioTests
     public void ScenarioPasses(string file) =>
         ScenarioRunner.Run(Path.Combine(Directory, file)).AssertPassed();
 
+    /// <summary>
+    /// A step that passes <c>--verify</c> states the exit code it ends with and whether its
+    /// verification passed (<c>verification.ok</c> with <c>equals</c>), so an edit whose
+    /// verification fails is never recorded as passing by a step that asserts something else.
+    /// </summary>
+    [Fact]
+    public void VerifyingSteps_StateTheirExitCodeAndVerificationOk()
+    {
+        string[] unstated = [.. System.IO.Directory.EnumerateFiles(Directory, "*.scenario.json").Order(StringComparer.Ordinal)
+            .SelectMany(static path => Scenario.Load(path).Steps.Select((step, index) => (File: Path.GetFileName(path), Number: index + 1, Step: step)))
+            .Where(static item => item.Step.Args.Any(static arg => arg == "--verify" || arg.StartsWith("--verify=", StringComparison.Ordinal))
+                && (item.Step.Expect?.ExitCode is null
+                    || item.Step.Expect.Json?.Any(static assertion => assertion.Path == "verification.ok" && assertion.Value is not null) != true))
+            .Select(static item => $"{item.File} step {item.Number}")];
+
+        Assert.True(unstated.Length == 0, "Steps that pass --verify without expect.exitCode and a verification.ok equals assertion: " + string.Join(", ", unstated));
+    }
+
     [Fact]
     public void FailedExpectations_AreAllReported()
     {
