@@ -115,10 +115,17 @@ internal static class SlidesShapeText
     }
 
     /// <summary>
-    /// The slide's title: the text of its title shape (<see cref="SlidesAuthoring.Title"/>); none
-    /// when that shape is empty or the slide has none.
+    /// Text an operation writes as a read reports it once a shape or the notes hold it: each
+    /// paragraph and line break a line, as <see cref="Clean"/> leaves it.
     /// </summary>
-    internal static string? Title(ISlide slide) => EmptyToNull(SlidesAuthoring.Title(slide)?.TextFrame?.Text);
+    internal static string? AsRead(string? text) => Clean(Lines(text));
+
+    /// <summary>
+    /// The slide's title: the text of its title shape (<see cref="SlidesAuthoring.Title"/>), one
+    /// line per paragraph or line break as the shape's own text; none when that shape is empty or
+    /// the slide has none.
+    /// </summary>
+    internal static string? Title(ISlide slide) => EmptyToNull(Lines(SlidesAuthoring.Title(slide)?.TextFrame?.Text));
 
     internal static string? Notes(ISlide slide) =>
         EmptyToNull(Lines(slide.NotesSlideManager.NotesSlide?.NotesTextFrame?.Text));

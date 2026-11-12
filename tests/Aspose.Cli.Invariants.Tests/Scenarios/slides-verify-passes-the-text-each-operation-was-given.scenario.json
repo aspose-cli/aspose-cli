@@ -1,0 +1,44 @@
+{
+  "name": "slides --verify passes set_title, set_text and set_notes for any text they were given, and for batches whose later operations change or remove what they wrote",
+  "files": {
+    "input.pptx": { "fixture": "slides.pptx" }
+  },
+  "steps": [
+    {
+      "args": ["slides", "edit", "input.pptx", "--ops", "{\"ops\":[{\"op\":\"set_title\",\"slide\":1,\"text\":\"Two\\nlines\"},{\"op\":\"set_text\",\"slide\":2,\"shapeId\":3,\"text\":\"Two\\r\\nlines\"},{\"op\":\"set_notes\",\"slide\":1,\"text\":\"Two\\nlines\"}]}", "--out", "lines.pptx", "--verify"],
+      "expect": { "exitCode": 0, "json": [{ "path": "verification.ok", "equals": true }, { "path": "verification.issues", "equals": [] }] }
+    },
+    {
+      "args": ["slides", "edit", "input.pptx", "--ops", "{\"ops\":[{\"op\":\"set_title\",\"slide\":1,\"text\":\"  padded  \"},{\"op\":\"set_text\",\"slide\":2,\"shapeId\":3,\"text\":\"  padded  \"},{\"op\":\"set_notes\",\"slide\":1,\"text\":\"  padded  \"}]}", "--out", "padded.pptx", "--verify"],
+      "expect": { "exitCode": 0, "json": [{ "path": "verification.ok", "equals": true }, { "path": "verification.issues", "equals": [] }] }
+    },
+    {
+      "args": ["slides", "edit", "input.pptx", "--ops", "{\"ops\":[{\"op\":\"set_title\",\"slide\":1,\"text\":\"\"},{\"op\":\"set_text\",\"slide\":2,\"shapeId\":3,\"text\":\"\"},{\"op\":\"set_notes\",\"slide\":1,\"text\":\"\"}]}", "--out", "empty.pptx", "--verify"],
+      "expect": { "exitCode": 0, "json": [{ "path": "verification.ok", "equals": true }, { "path": "verification.issues", "equals": [] }] }
+    },
+    {
+      "args": ["slides", "edit", "input.pptx", "--ops", "{\"ops\":[{\"op\":\"set_title\",\"slide\":1,\"text\":\"a\\tb\"},{\"op\":\"set_text\",\"slide\":2,\"shapeId\":3,\"text\":\"a\\tb\"},{\"op\":\"set_notes\",\"slide\":1,\"text\":\"a\\tb\"}]}", "--out", "tab.pptx", "--verify"],
+      "expect": { "exitCode": 0, "json": [{ "path": "verification.ok", "equals": true }, { "path": "verification.issues", "equals": [] }] }
+    },
+    {
+      "args": ["slides", "edit", "input.pptx", "--ops", "{\"ops\":[{\"op\":\"set_title\",\"slide\":1,\"text\":\"季度回顾 四半期\"},{\"op\":\"set_text\",\"slide\":2,\"shapeId\":3,\"text\":\"季度回顾 四半期\"},{\"op\":\"set_notes\",\"slide\":1,\"text\":\"季度回顾 四半期\"}]}", "--out", "cjk.pptx", "--verify"],
+      "expect": { "exitCode": 0, "json": [{ "path": "verification.ok", "equals": true }, { "path": "verification.issues", "equals": [] }] }
+    },
+    {
+      "args": ["slides", "edit", "input.pptx", "--ops", "{\"ops\":[{\"op\":\"set_title\",\"slide\":1,\"text\":\"Revenue grew in every region this quarter, led by the north, while costs held flat and the margin widened for the third quarter in a row; the board asked for a plan to keep that pace through the next year without new hires, and the team proposed three steps that the following slides describe in turn.\"},{\"op\":\"set_text\",\"slide\":2,\"shapeId\":3,\"text\":\"Revenue grew in every region this quarter, led by the north, while costs held flat and the margin widened for the third quarter in a row; the board asked for a plan to keep that pace through the next year without new hires, and the team proposed three steps that the following slides describe in turn.\"},{\"op\":\"set_notes\",\"slide\":1,\"text\":\"Revenue grew in every region this quarter, led by the north, while costs held flat and the margin widened for the third quarter in a row; the board asked for a plan to keep that pace through the next year without new hires, and the team proposed three steps that the following slides describe in turn.\"}]}", "--out", "long.pptx", "--verify"],
+      "expect": { "exitCode": 0, "json": [{ "path": "verification.ok", "equals": true }, { "path": "verification.issues", "equals": [] }] }
+    },
+    {
+      "args": ["slides", "edit", "input.pptx", "--ops", "{\"ops\":[{\"op\":\"set_text\",\"slide\":2,\"shapeId\":3,\"text\":\"One\"},{\"op\":\"set_text\",\"slide\":2,\"shapeId\":3,\"text\":\"Two\"}]}", "--out", "twice.pptx", "--verify"],
+      "expect": { "exitCode": 0, "json": [{ "path": "verification.ok", "equals": true }, { "path": "verification.issues", "equals": [] }] }
+    },
+    {
+      "args": ["slides", "edit", "input.pptx", "--ops", "{\"ops\":[{\"op\":\"set_title\",\"slide\":2,\"text\":\"Gone\"},{\"op\":\"delete_shape\",\"slide\":2,\"shapeId\":2}]}", "--out", "shape-gone.pptx", "--verify"],
+      "expect": { "exitCode": 0, "json": [{ "path": "verification.ok", "equals": true }, { "path": "verification.issues", "equals": [] }] }
+    },
+    {
+      "args": ["slides", "edit", "input.pptx", "--ops", "{\"ops\":[{\"op\":\"set_title\",\"slide\":2,\"text\":\"Gone\"},{\"op\":\"set_notes\",\"slide\":2,\"text\":\"Gone\"},{\"op\":\"delete_slides\",\"slides\":\"2\"}]}", "--out", "slide-gone.pptx", "--verify"],
+      "expect": { "exitCode": 0, "json": [{ "path": "verification.ok", "equals": true }, { "path": "verification.issues", "equals": [] }] }
+    }
+  ]
+}

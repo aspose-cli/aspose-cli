@@ -103,6 +103,47 @@ public sealed class SlidesEditVerificationTests
     }
 
     /// <summary>
+    /// The text set_title, set_text and set_notes should leave is the text each was given: an
+    /// operation that left other text fails the verification although the output holds what it
+    /// left.
+    /// </summary>
+    [Theory]
+    [InlineData("set_title")]
+    [InlineData("set_text")]
+    [InlineData("set_notes")]
+    public void Verify_ExpectsTheTextTheOperationWasGiven_NotTheTextItLeft(string op)
+    {
+        TestLicense.Require("Evaluation mode records no text expectation.");
+        using var fixture = new SlidesEngineFixture();
+        string input = Outline(fixture, $"given-{op}.pptx");
+        using var edited = new Presentation(input);
+        SlidesOp operation = op switch
+        {
+            "set_title" => new SetTitleOp { Id = "op", Slide = 1, Text = "Asked" },
+            "set_text" => new SetTextOp { Id = "op", Slide = 1, Placeholder = "title", Text = "Asked" },
+            _ => new SetNotesOp { Id = "op", Slide = 1, Text = "Asked" },
+        };
+        SlidesMutationHandlers.ResolvedSlidesOp target = SlidesMutationHandlers.ResolveTarget(edited, operation);
+        var verifier = new SlidesEditVerifier(edited, _ => target, evaluation: false);
+        // The operation wrote other text than it was given.
+        if (operation is SetNotesOp)
+        {
+            edited.Slides[0].NotesSlideManager.AddNotesSlide().NotesTextFrame!.Text = "Other";
+        }
+        else
+        {
+            SlidesPlaceholders.Title(edited.Slides[0])!.TextFrame.Text = "Other";
+        }
+
+        verifier.Record(operation, AppliedOperations.Changed(SlidesOp.Catalog, operation, 1));
+        VerificationFacts facts = verifier.Verify(edited);
+
+        VerificationIssue issue = Assert.Single(facts.Issues);
+        Assert.Equal("SLIDE_CONTENT_MISMATCH", issue.Code);
+        Assert.Equal("slide/1", issue.Location);
+    }
+
+    /// <summary>
     /// An effect on no one slide is located by the address its targets use: a document property
     /// by its escaped name, the slide order by every slide.
     /// </summary>
