@@ -22,15 +22,23 @@ internal sealed class RowShifts
     private readonly Dictionary<int, Row> _left = [];
     private readonly Dictionary<int, Row> _right = [];
 
+    // The columns of the compared cells and the rows the shifts name, zero-based.
+    private int _firstColumn = int.MaxValue, _lastColumn, _firstRow = int.MaxValue, _lastRow;
+
     /// <summary>Adds one compared address; call in row, then column order.</summary>
     internal void Add(int row, int column, Cell? left, Cell? right)
     {
+        _firstColumn = Math.Min(_firstColumn, column);
+        _lastColumn = Math.Max(_lastColumn, column);
         Append(_left, row, column, left);
         Append(_right, row, column, right);
     }
 
-    /// <summary>The shifts of sheet <paramref name="sheet"/>, or null when no row shifted.</summary>
-    internal Warning? Describe(string sheet, OperationDeadline deadline)
+    /// <summary>
+    /// The shifts of sheet <paramref name="leftSheet"/> of the left workbook against sheet
+    /// <paramref name="sheet"/> of the right one, or null when no row shifted.
+    /// </summary>
+    internal Warning? Describe(string leftSheet, string sheet, OperationDeadline deadline)
     {
         var ids = new Dictionary<string, int>(StringComparer.Ordinal);
         int[] left = Ids(_left, ids);
@@ -84,14 +92,18 @@ internal sealed class RowShifts
         return shifts.Count == 0 ? null : new Warning(CellsDiagnostics.RowsShifted, $"Rows of sheet '{sheet}' appear shifted: {string.Join("; ", shifts)}. Cells are compared by address, "
                 + "so the cells below a shift are compared with the row that held their address before, and their differences are not edits.")
         {
-            Hint = "The shift is inferred by matching rows, so read the rows it names in both workbooks first with 'aspose-cli cells read --range'. "
-                + "To compare row for row, apply the same insert_rows or delete_rows to a copy of the left workbook with 'aspose-cli cells edit --out', and compare that copy.",
+            Hint = $"The shift is inferred by matching rows, so read the rows it names in both workbooks first: {ContinuationCommand.Steps([Read("left workbook", leftSheet), Read("right workbook", sheet)])}. "
+                + "To compare row for row, apply the same insert_rows or delete_rows to a copy of the left workbook with the edit command, and compare that copy.",
             Location = CellsAddresses.OfSheet("sheet", sheet),
         };
     }
 
+    // One read per workbook, each of the sheet by its own name, which a renamed sheet does not share.
+    private ContinuationCommand Read(string workbook, string sheet) => new ContinuationCommand("cells", "read").Placeholder(workbook)
+        .Option("--sheet", sheet).Option("--range", A1.FormatRange(new(new(_firstRow, _firstColumn), new(_lastRow, _lastColumn))));
+
     // first: zero-based first row of each side's unmatched run; count: its length.
-    private static void AddShift(List<string> shifts, int leftFirst, int leftCount, int rightFirst, int rightCount)
+    private void AddShift(List<string> shifts, int leftFirst, int leftCount, int rightFirst, int rightCount)
     {
         if (rightCount > leftCount)
         {
@@ -103,8 +115,10 @@ internal sealed class RowShifts
         }
     }
 
-    private static string Describe(int count, string change, string side, int first, int length, bool exact)
+    private string Describe(int count, string change, string side, int first, int length, bool exact)
     {
+        _firstRow = Math.Min(_firstRow, first);
+        _lastRow = Math.Max(_lastRow, first + length - 1);
         string rows = length == 1 ? $"row {first + 1}" : $"rows {first + 1}-{first + length}";
         return $"{count} row{(count == 1 ? string.Empty : "s")} {change} {(exact ? "at" : "within")} {side} {rows}";
     }

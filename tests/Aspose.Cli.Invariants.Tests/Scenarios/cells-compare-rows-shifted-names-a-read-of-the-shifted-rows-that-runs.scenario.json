@@ -1,0 +1,57 @@
+{
+  "name": "cells compare warns ROWS_SHIFTED with a cells read of the rows it names, by sheet and a range with column letters, one read per workbook, each with its own sheet name, that runs as written, the renamed sheet's on the right workbook too",
+  "files": {
+    "left.xlsx": { "fixture": "cells.xlsx" },
+    "insert.json": { "text": "{\"ops\":[{\"op\":\"insert_rows\",\"sheet\":\"Sheet1\",\"at\":3},{\"op\":\"set_values\",\"sheet\":\"Sheet1\",\"range\":\"A3:B3\",\"values\":[[\"Inserted\",9]]}]}" },
+    "rename.json": { "text": "{\"ops\":[{\"op\":\"rename_sheet\",\"sheet\":\"Sheet1\",\"name\":\"My Data\"}]}" }
+  },
+  "steps": [
+    {
+      "args": ["cells", "edit", "left.xlsx", "--ops", "insert.json", "--out", "right.xlsx"],
+      "expect": { "exitCode": 0 }
+    },
+    {
+      "args": ["cells", "compare", "left.xlsx", "right.xlsx"],
+      "expect": {
+        "exitCode": 0,
+        "warnings": { "present": ["ROWS_SHIFTED"] },
+        "json": [
+          { "path": "warnings[0].message", "contains": "1 row inserted at right row 3" },
+          { "path": "warnings[0].hint", "contains": "'aspose-cli cells read <left workbook> --sheet Sheet1 --range A3:B3 --output-format json', then 'aspose-cli cells read <right workbook> --sheet Sheet1 --range A3:B3 --output-format json'" }
+        ]
+      }
+    },
+    {
+      "args": ["cells", "compare", "right.xlsx", "left.xlsx"],
+      "expect": {
+        "exitCode": 0,
+        "warnings": { "present": ["ROWS_SHIFTED"] },
+        "json": [
+          { "path": "warnings[0].message", "contains": "1 row deleted at left row 3" },
+          { "path": "warnings[0].hint", "contains": "'aspose-cli cells read <left workbook> --sheet Sheet1 --range A3:B3 --output-format json', then 'aspose-cli cells read <right workbook> --sheet Sheet1 --range A3:B3 --output-format json'" }
+        ]
+      }
+    },
+    {
+      "args": ["cells", "edit", "right.xlsx", "--ops", "rename.json", "--out", "renamed.xlsx"],
+      "expect": { "exitCode": 0 }
+    },
+    {
+      "args": ["cells", "compare", "left.xlsx", "renamed.xlsx"],
+      "expect": {
+        "exitCode": 0,
+        "warnings": { "present": ["ROWS_SHIFTED"] },
+        "json": [
+          { "path": "warnings[0].hint", "contains": "'aspose-cli cells read <left workbook> --sheet Sheet1 --range A3:B3 --output-format json', then 'aspose-cli cells read <right workbook> --sheet \"My Data\" --range A3:B3 --output-format json'" }
+        ]
+      }
+    },
+    {
+      "args": ["cells", "read", "renamed.xlsx", "--sheet", "My Data", "--range", "A3:B3"],
+      "expect": {
+        "exitCode": 0,
+        "json": [ { "path": "sheet.cells[0][0].v", "equals": "Inserted" } ]
+      }
+    }
+  ]
+}
