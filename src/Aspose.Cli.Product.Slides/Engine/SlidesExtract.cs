@@ -108,7 +108,12 @@ internal static class SlidesExtract
         }
     }
 
-    private static HashSet<object> ShownMedia(Presentation presentation, IReadOnlyList<int> slides)
+    /// <summary>
+    /// The media the slides show, each once: the pictures, picture fills and own background of each
+    /// slide, a group's included, and its audio and video, but not what its layout or master shows.
+    /// A convert that leaves the pictures out counts the pictures here, as many as this extracts.
+    /// </summary>
+    internal static HashSet<object> ShownMedia(Presentation presentation, IReadOnlyList<int> slides)
     {
         var shown = new HashSet<object>(ReferenceEqualityComparer.Instance);
         foreach (int number in slides)

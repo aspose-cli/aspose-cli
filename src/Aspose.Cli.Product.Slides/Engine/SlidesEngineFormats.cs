@@ -40,7 +40,8 @@ internal static class SlidesEngineFormats
         // SLIDES-TIFF-ONE-FRAME: a save writes the first slide alone; each slide is drawn as one.
         new("tiff", [], SaveFormat.Tiff) { SlideImage = ImageFormat.Tiff, SavesOneSlide = true },
         new("gif", [], SaveFormat.Gif),
-        new("md", [], SaveFormat.Md) { Lossy = true, HoldsReadText = true },
+        // The Markdown export writes the slides' text alone (MarkdownExportType.TextOnly).
+        new("md", [], SaveFormat.Md) { Lossy = true, HoldsReadText = true, Loses = SlidesContentLoss.Pictures },
         new("png", []) { SlideImage = ImageFormat.Png },
         new("jpeg", []) { SlideImage = ImageFormat.Jpeg },
         new("svg", []),
@@ -143,4 +144,10 @@ internal enum SlidesContentLoss
     /// text formatting its style gives it.
     /// </summary>
     TableStyles = 8,
+
+    /// <summary>
+    /// The pictures, of which an output of the slides' text holds none: a convert names them with
+    /// the speaker notes, which it leaves out as well.
+    /// </summary>
+    Pictures = 16,
 }

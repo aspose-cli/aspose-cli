@@ -178,3 +178,9 @@ master or layout art); each item keeps its presentation-wide `index`.
   handout or notes-page layout, so speaker notes are not in it: a `convert` to one warns
   `LOSSY_CONVERSION` with the numbers of the converted slides that have notes. PPT, PPTX, PPTM
   and ODP keep the notes. Read them with `slides read --notes` or `slides extract --what notes`.
+- A Markdown output holds the slides' text alone, with tables and charts as tables of their
+  values, and none of their pictures: a `convert` to it warns `LOSSY_CONVERSION` with
+  `details.content` `["pictures"]`, naming the converted slides with pictures and how many
+  pictures they show, a slide's background and the picture fills of its shapes included and a
+  picture shown twice counted once; its hint's `slides extract --what media` writes each of them
+  as one `media.image` file. A layout's or master's picture is not counted on a slide.
