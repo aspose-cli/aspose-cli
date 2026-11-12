@@ -1,0 +1,25 @@
+{
+  "name": "words compare refuses an input that already holds tracked changes and writes no redline, so a redline never mixes earlier revisions with its own",
+  "files": {
+    "source.md": { "text": "The notice period is thirty days.\n" },
+    "change.json": { "text": "{\"ops\":[{\"op\":\"replace_text\",\"find\":\"thirty\",\"replace\":\"sixty\"}]}" }
+  },
+  "steps": [
+    {
+      "args": ["words", "create", "plain.docx", "--from-markdown", "source.md"],
+      "expect": { "exitCode": 0 }
+    },
+    {
+      "args": ["words", "edit", "plain.docx", "--ops", "change.json", "--track-changes", "--author", "Ann", "--out", "revised.docx"],
+      "expect": { "exitCode": 0 }
+    },
+    {
+      "args": ["words", "compare", "plain.docx", "revised.docx", "--out", "redline.md"],
+      "expect": { "error": "REVISIONS_UNRESOLVED", "files": { "absent": ["redline.md"] } }
+    },
+    {
+      "args": ["words", "compare", "revised.docx", "plain.docx", "--out", "redline.pdf"],
+      "expect": { "error": "REVISIONS_UNRESOLVED", "files": { "absent": ["redline.pdf"] } }
+    }
+  ]
+}

@@ -81,8 +81,7 @@ internal static class WordsCompare
             License = EnvelopeParts.License(state),
             Warnings = EnvelopeParts.CombineWarnings(
                 CompareWarnings(leftLoaded, rightLoaded),
-                format is null ? null : [.. SaveWarnings(leftLoaded, format)],
-                format is null ? null : EnvelopeParts.CombineWarnings(HeadersFootersLeftOut(compared, format, leftLoaded.Evaluation)),
+                format is null ? null : [.. ConversionWarnings(compared, format, leftLoaded.Evaluation, redline: true), .. SaveWarnings(leftLoaded, format)],
                 revisions.Length > SampleLimit
                     ? [EnvelopeParts.ListTruncated("samples", SampleLimit, revisions.Length, "Write the redline with --out to review every revision.")]
                     : null),
