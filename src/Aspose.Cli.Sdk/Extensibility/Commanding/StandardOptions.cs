@@ -548,7 +548,7 @@ public sealed class StandardOptions
         {
             Description = target.Description,
             Required = target.Required,
-        }.WithInput(InputKind.None);
+        }.WithInput(InputKind.None).MistakenFor("--format");
         option.CompletionSources.Add([.. target.Offered.Select(static format => format.Id)]);
         string names = string.Join(", ", target.Offered.SelectMany(static format => format.Aliases.Prepend(format.Id)));
         option.Validators.Add(result =>
