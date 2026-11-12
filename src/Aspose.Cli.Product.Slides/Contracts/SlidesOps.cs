@@ -304,6 +304,7 @@ public sealed record ImportSlidesOp : SlidesOp
 /// where the layout has none. A slide with neither is refused, and no box is added.
 /// </summary>
 [Operation("set_title")]
+[MistakenFor("set_slide_title")]
 public sealed record SetTitleOp : SlideTargetOp
 {
     /// <summary>The new title text, which replaces the placeholder's text.</summary>

@@ -35,6 +35,7 @@
 {"edit":"slides","ops":[{"op":"set_shape_style","slide":1,"placeholder":"title","style":{"bold":true}}],"wrong":"set_shape_style","suggests":"format_shape"},
 {"edit":"slides","ops":[{"op":"set_titel","slide":1,"text":"T"}],"wrong":"set_titel","suggests":"set_title"},
 {"edit":"slides","ops":[{"op":"set_tittle","slide":1,"text":"T"}],"wrong":"set_tittle","suggests":"set_title"},
+{"edit":"slides","ops":[{"op":"set_slide_title","slide":1,"text":"T"}],"wrong":"set_slide_title","suggests":"set_title"},
 {"edit":"slides","ops":[{"op":"update_chart_data","slide":1,"shapeName":"Sales","categories":["A"],"series":[{"name":"S","values":[2]}]}],"wrong":"update_chart_data","suggests":"set_chart_data","fixed":[{"op":"insert_slide","layout":"Blank"},{"op":"insert_chart","slide":3,"kind":"column","rect":{"x":10,"y":10,"width":300,"height":200},"categories":["A"],"series":[{"name":"S","values":[1]}]},{"op":"set_chart_data","slide":3,"shapeId":2,"categories":["A"],"series":[{"name":"S","values":[2]}]}]},
 {"edit":"slides","ops":{"operations":[{"op":"set_title","slide":1,"text":"T"}]},"wrong":"operations","suggests":"ops"},
 // Slides: fields
@@ -285,6 +286,10 @@
 {"run":"cells search b.xlsx --scope formulas --pattern total","wrong":"--scope","suggests":"--content"},
 {"run":"pdf merge c.pdf c2.pdf --out merged.pdf --bookmark drop","wrong":"--bookmark","suggests":"--bookmarks"},
 {"run":"pdf render c.pdf --page 1 --out p.png","wrong":"--page","suggests":"--pages"},
+{"run":"pdf render c.pdf --format png --out f.png","wrong":"--format","suggests":"--to"},
+{"run":"slides render d.pptx --format jpeg --out f.jpg","wrong":"--format","suggests":"--to"},
+{"run":"cells convert b.xlsx --format md --out f.md","wrong":"--format","suggests":"--to"},
+{"run":"words convert a.docx --format md --out f.md","wrong":"--format","suggests":"--to"},
 {"run":"pdf search c.pdf --query total","wrong":"--query","suggests":"--pattern"},
 {"run":"pdf search c.pdf --find total","wrong":"--find","suggests":"--pattern"},
 {"run":"pdf extract c.pdf --what text --out x","wrong":"--out","suggests":"--out-dir"},
