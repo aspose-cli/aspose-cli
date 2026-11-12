@@ -14,8 +14,9 @@ namespace Aspose.Cli.Product.Slides.Engine.Editing;
 /// reliable read-back are recorded: the slide order, slide titles, shape text, body paragraphs
 /// with their levels and bullets, speaker notes, layouts, hidden slides, footers, transitions,
 /// sections, document properties and the slide size, each as the operation left it in the edited
-/// presentation, on the slides it resolved when it ran; for replace_text, what it should leave,
-/// worked out from its input: how often its find matches the text it writes once its
+/// presentation, on the slides it resolved when it ran. What an operation writes as text is
+/// worked out from its input instead: the text set_title, set_text and set_notes were given, as a
+/// read reports it; for replace_text, how often its find matches the text it writes once its
 /// replacements are made, and which parts it does not change hold a match. The batch is checked as a whole:
 /// an expectation that a later operation changes or removes is dropped and its operation stays
 /// unchecked, except that the slide order and the sections a later operation changes again carry
@@ -103,24 +104,24 @@ internal sealed class SlidesEditVerifier : IEditVerifier<SlidesOp>
                 ExpectSlides(id, operation, "transition", "the slide's transition", TransitionState);
                 break;
             case SetTitleOp title:
-                ExpectText(id, title, "title", "the slide's title", static slide => Title(slide));
+                ExpectText(id, title, title.Text, "title", "the slide's title", static slide => Title(slide));
                 break;
             case SetNotesOp notes:
-                ExpectText(id, notes, "notes", "the slide's speaker notes", static slide => Notes(slide));
+                ExpectText(id, notes, notes.Text, "notes", "the slide's speaker notes", static slide => Notes(slide));
                 break;
             case SetTextOp text when _targets(text).ShapeId is long shapeId:
-                ExpectText(id, text, $"shape/{shapeId}", $"the text of shape {Invariant(shapeId)}",
+                ExpectText(id, text, text.Text, $"shape/{shapeId}", $"the text of shape {Invariant(shapeId)}",
                     slide => slide.Shapes.FirstOrDefault(shape => shape.OfficeInteropShapeId == shapeId) is { } shape ? ShapeText(shape) : null);
                 break;
             case SetBodyOp body when _targets(body).ShapeId is long bodyId:
-                ExpectText(id, body, $"shape/{bodyId}", $"the paragraphs of shape {Invariant(bodyId)}",
+                ExpectOnSlide(id, body, $"shape/{bodyId}", $"the paragraphs of shape {Invariant(bodyId)}",
                     slide => slide.Shapes.FirstOrDefault(shape => shape.OfficeInteropShapeId == bodyId) is { } shape
                         ? ParagraphState(shape)
                         : null);
                 break;
             case SlidesReplaceTextOp replace when !_evaluation && _before.Remove(operation, out string? left):
                 Expect(id, $"replace/{id}", SlidesDiagnostics.SlideContentMismatch, "the text replace_text left in its scope", AllSlides,
-                    presentation => Left(presentation, replace, _evaluation, replacing: false), left);
+                    presentation => Left(presentation, replace, _evaluation, replacing: false), new Given(left));
                 break;
             case InsertSectionOp:
                 Expect(id, "sections", SlidesDiagnostics.SlideContentMismatch, "the sections", static _ => AllAddress("section"), static presentation =>
@@ -170,7 +171,15 @@ internal sealed class SlidesEditVerifier : IEditVerifier<SlidesOp>
         return new VerificationFacts(issues, checkedOps) { UncheckedReasons = _incomplete };
     }
 
-    private void ExpectText(string id, SlideTargetOp operation, string part, string subject, Func<ISlide, string?> read)
+    /// <summary>
+    /// Expects the text an operation was given, as a read reports it (<see cref="AsRead"/>), where
+    /// <paramref name="read"/> finds it on the slide the operation resolved.
+    /// </summary>
+    private void ExpectText(string id, SlideTargetOp operation, string written, string part, string subject, Func<ISlide, string?> read) =>
+        ExpectOnSlide(id, operation, part, subject, slide => Clean(read(slide)), new Given(AsRead(written)));
+
+    /// <summary>Expects on the slide the operation resolved what <paramref name="read"/> reads there, or <paramref name="expected"/>.</summary>
+    private void ExpectOnSlide(string id, SlideTargetOp operation, string part, string subject, Func<ISlide, string?> read, Given? expected = null)
     {
         if (_evaluation || TargetSlideId(operation) is not uint slideId)
         {
@@ -178,7 +187,7 @@ internal sealed class SlidesEditVerifier : IEditVerifier<SlidesOp>
             return;
         }
 
-        ExpectSlide(id, part, subject, slideId, read);
+        ExpectSlide(id, part, subject, slideId, read, expected);
     }
 
     /// <summary>Expects what <paramref name="read"/> reads on each slide a multi-slide operation selected when it ran.</summary>
@@ -190,17 +199,19 @@ internal sealed class SlidesEditVerifier : IEditVerifier<SlidesOp>
         }
     }
 
-    private void ExpectSlide(string id, string part, string subject, uint slideId, Func<ISlide, string?> read) =>
+    private void ExpectSlide(string id, string part, string subject, uint slideId, Func<ISlide, string?> read, Given? expected = null) =>
         Expect(id, $"{part}/{slideId}", SlidesDiagnostics.SlideContentMismatch, subject,
             presentation => Slide(presentation, slideId) is { } slide ? SlideAddress(presentation.Slides.IndexOf(slide) + 1) : AllSlides(presentation),
-            presentation => Slide(presentation, slideId) is { } slide ? read(slide) : null);
+            presentation => Slide(presentation, slideId) is { } slide ? read(slide) : null,
+            expected);
 
     /// <summary>
-    /// Expects the value <paramref name="read"/> reads now under <paramref name="key"/>, replacing an
-    /// earlier expectation of the key; <paramref name="locate"/> gives the effect's target address
-    /// in the output read back, which an issue reports as its location.
+    /// Expects under <paramref name="key"/> the value worked out from the operation's input, or
+    /// without one the value <paramref name="read"/> reads now, replacing an earlier expectation of
+    /// the key; <paramref name="locate"/> gives the effect's target address in the output read
+    /// back, which an issue reports as its location.
     /// </summary>
-    private void Expect(string id, string key, DiagnosticDescriptor code, string subject, Func<Presentation, string> locate, Func<Presentation, string?> read, string? expected = null)
+    private void Expect(string id, string key, DiagnosticDescriptor code, string subject, Func<Presentation, string> locate, Func<Presentation, string?> read, Given? expected = null)
     {
         if (_expected.Remove(key, out Expectation? earlier))
         {
@@ -210,7 +221,9 @@ internal sealed class SlidesEditVerifier : IEditVerifier<SlidesOp>
         List<string> ops = _carried.Remove(key, out List<string>? carried) ? carried : [];
         ops.Add(id);
         string? now = read(_presentation);
-        _expected[key] = new Expectation(ops, code, subject, locate, read, expected ?? now) { Unmet = expected is not null && expected != now };
+        _expected[key] = expected is { } given
+            ? new Expectation(ops, code, subject, locate, read, given.Value) { Unmet = given.Value != now }
+            : new Expectation(ops, code, subject, locate, read, now);
     }
 
     /// <summary>
@@ -287,6 +300,9 @@ internal sealed class SlidesEditVerifier : IEditVerifier<SlidesOp>
         presentation.Slides.FirstOrDefault(slide => slide.SlideId == slideId);
 
     private static string Invariant(long value) => value.ToString(CultureInfo.InvariantCulture);
+
+    /// <summary>A value worked out from an operation's input, which may be none, such as text that reads as nothing.</summary>
+    private readonly record struct Given(string? Value);
 
     /// <summary>One effect the output should hold: the operations it checks, where it is, what reads it, and the value they left.</summary>
     private sealed record Expectation(

@@ -60,7 +60,7 @@ internal static class InspectCommand
             table.AddRow(
                 TableText.Int(slide.Slide),
                 slide.SlideId.ToString(CultureInfo.InvariantCulture),
-                slide.Title ?? slide.Name,
+                (slide.Title ?? slide.Name)?.ReplaceLineEndings(" "),
                 slide.Layout,
                 TableText.Int(slide.ShapeCount),
                 string.Join(", ", new[]

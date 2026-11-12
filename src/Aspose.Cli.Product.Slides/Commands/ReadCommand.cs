@@ -60,7 +60,7 @@ internal static class ReadCommand
         foreach (SlidesSlideData slide in result.Slides)
         {
             surface.Out.WriteLine();
-            surface.Out.WriteLine($"--- slide {slide.Slide} [{slide.SlideId}] {slide.Title ?? slide.Name ?? string.Empty} ---");
+            surface.Out.WriteLine($"--- slide {slide.Slide} [{slide.SlideId}] {(slide.Title ?? slide.Name ?? string.Empty).ReplaceLineEndings(" ")} ---");
             foreach (string text in slide.Text ?? [])
             {
                 surface.Out.WriteLine(text);
