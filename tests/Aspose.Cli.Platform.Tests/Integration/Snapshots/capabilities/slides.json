@@ -135,6 +135,11 @@
           "summary": "An empty placeholder is invisible in a slide show but shows its prompt text when the deck is edited."
         },
         {
+          "code": "SLIDES_REVIEW_TRUNCATED",
+          "severity": "warning",
+          "summary": "The review rendered only some parts, as many as --max-items or the preview snapshot budget allowed, so the rest have no image and were not checked."
+        },
+        {
           "code": "SLIDES_SHAPES_OVERLAP",
           "severity": "warning",
           "summary": "An opaque foreground shape covers at least 80% of a content shape."

@@ -76,7 +76,6 @@ internal sealed class PdfViewAdapter : IProductViewAdapter<PdfSession>
         {
             AnalyzeUnreadPages(read, source, findings);
         }
-        AnalyzeOmittedPages(request, rendered, source, findings);
         IReadOnlyList<int> scannedPages = AnalyzeScannedPages(read?.ScannedPagesSuspected ?? [], findings);
         FormAnalysis forms = AnalyzeForms(
             session,
@@ -278,43 +277,6 @@ internal sealed class PdfViewAdapter : IProductViewAdapter<PdfSession>
             $"Text analysis reached its extraction budget {reached}, so the text of page(s) {pages} was not fully analyzed; visual evidence remains available but structural text checks are incomplete.",
             $"page/{pages}",
             ReviewOnTheirOwn(source, pages),
-            [.. Enumerable.Range(first, last - first + 1).Select(PdfViews.PagePart)]));
-    }
-
-    /// <summary>
-    /// The pages the review left without an image, and so unchecked: those beyond the
-    /// <c>--max-items</c> bound, or, when the preview snapshot budget stopped the rendering
-    /// earlier, the first page it had no room for and those after it.
-    /// </summary>
-    private static void AnalyzeOmittedPages(
-        ViewRenderRequest request,
-        ViewManifest rendered,
-        ContinuationInput source,
-        ICollection<ReviewFinding> findings)
-    {
-        int count = rendered.Parts.Count;
-        int first = count + 1;
-        int last = rendered.TotalPartCount;
-        if (last < first)
-        {
-            return;
-        }
-        string pages = Pages(first, last);
-        string missed = $"page(s) {pages} have no image and were not checked.";
-        // The rendering stops before the bound only when the snapshot has no room for the next page.
-        bool budget = count < Math.Min(last, request.MaxPartCount);
-        string message = !budget
-            ? string.Create(CultureInfo.InvariantCulture, $"The review rendered {count} of {last} pages, the most --max-items allows; {missed}")
-            : count == 0
-                ? string.Create(CultureInfo.InvariantCulture, $"The review rendered none of {last} pages: the preview snapshot budget, {ViewArtifactLimits.SnapshotBytesVariable}, has no room for page 1; {missed}")
-                : string.Create(CultureInfo.InvariantCulture, $"The review rendered {count} of {last} pages: the preview snapshot budget, {ViewArtifactLimits.SnapshotBytesVariable}, had no room for page {first}; {missed}");
-        findings.Add(PdfReviewChecks.ReviewTruncated.Finding(
-            message,
-            $"page/{pages}",
-            budget && count == 0
-                // Reviewing fewer pages renders none either: only a larger budget holds a page.
-                ? $"Unset {ViewArtifactLimits.SnapshotBytesVariable} for its default, or raise it, and review again."
-                : ReviewOnTheirOwn(source, pages),
             [.. Enumerable.Range(first, last - first + 1).Select(PdfViews.PagePart)]));
     }
 

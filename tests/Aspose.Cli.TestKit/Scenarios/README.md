@@ -100,7 +100,7 @@ Every step is also checked, whatever it expects, against the CLI's own catalog
   unless the step asks for one with `--bom`, edits an input that starts with one, or extracts the
   files a document embeds (`pdf extract --what attachments`, `words extract --what images`,
   `slides extract --what media`), which keep the bytes the document stores;
-- `executable-hint`: what each `error.hint` and `warnings[].hint` names runs as written
+- `executable-hint`: what each `error.hint`, `warnings[].hint` and, of a review, `findings[].hint` names runs as written
   (`ExecutableHints`): a quoted or unquoted `aspose-cli` command runs on the step's own files in
   a copy of its workspace, with `--dry-run` where the command has one, and must not fail with
   `USAGE_ERROR`, `OPTION_INVALID` or `OPS_INVALID`. When the step gives the password of its

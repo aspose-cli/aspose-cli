@@ -39,7 +39,12 @@ source; write evidence to a scratch directory instead of the user's folder.
    `severity`, `location`, `hint` and the `evidence` images it concerns.
 2. Read `coverage`. `--max-items` caps the images, and so does the snapshot
    budget in `aspose-cli docs preview`; anything omitted is unreviewed, and
-   incomplete coverage fails the review. `input.encrypted`
+   incomplete coverage fails the review. A `<PRODUCT>_REVIEW_TRUNCATED`
+   finding, reported whatever `--code` selects, then says how many parts were
+   rendered of how many, which were left out and which limit stopped it; when
+   `--max-items` did and one review can hold every part, its hint is that
+   review, into a new directory, to run as written, and when one cannot, it
+   says to split the document. `input.encrypted`
    says whether the reviewed file is encrypted, as evidence for a delivery
    that must be.
 3. Open every evidence image with your image-reading tool and look. Findings

@@ -9,8 +9,9 @@ namespace Aspose.Cli.Product.Pdf.Tests;
 /// <summary>
 /// A review renders no more pages than <c>--max-items</c> allows, nor than the preview snapshot
 /// budget has room for: it stops there instead of failing, keeps the pages it rendered as evidence,
-/// and names the rest in one finding whose commands, run as written, review them on their own and
-/// open the document as the review did.
+/// and names the rest in one finding: with the review of every page, which runs as written and opens
+/// the document as the review did, when <c>--max-items</c> stopped it, and with the variable to
+/// raise when the budget did.
 /// </summary>
 public sealed partial class PdfReviewOmittedPagesCliTests : IDisposable
 {
@@ -32,10 +33,10 @@ public sealed partial class PdfReviewOmittedPagesCliTests : IDisposable
 
     /// <summary>
     /// PDF-006: three pages reviewed with <c>--max-items 1</c> name pages 2-3 and say why; the
-    /// split and the review the hint gives run as written and review both pages.
+    /// review the hint gives runs as written and reviews all three pages.
     /// </summary>
     [Fact]
-    public void Review_BeyondMaxItems_NamesThePagesLeftAndCommandsThatReviewThem()
+    public void Review_BeyondMaxItems_NamesThePagesLeftAndTheReviewOfEveryPage()
     {
         CreateDocument("plain.pdf", pages: 3);
 
@@ -45,18 +46,20 @@ public sealed partial class PdfReviewOmittedPagesCliTests : IDisposable
         JsonNode result = JsonNode.Parse(review.StdOut)!;
         Assert.False(result["coverage"]!["complete"]!.GetValue<bool>());
         JsonNode finding = Omitted(result);
-        Assert.Equal("page/2-3", finding["location"]!.GetValue<string>());
-        Assert.Contains("--max-items", finding["message"]!.GetValue<string>(), StringComparison.Ordinal);
-        (string split, string part) = Commands(finding);
-        Assert.DoesNotContain("--password-env", split + part, StringComparison.Ordinal);
-        RunsAsWritten(split, part, variables: null, expectedPages: 2);
+        Assert.Null(finding["location"]);
+        Assert.Contains("rendered 1 of 3 pages, the most --max-items allows", finding["message"]!.GetValue<string>(), StringComparison.Ordinal);
+        Assert.Contains("(2-3 in the view's order)", finding["message"]!.GetValue<string>(), StringComparison.Ordinal);
+        string again = Command(finding);
+        Assert.DoesNotContain("--password-env", again, StringComparison.Ordinal);
+        RunsAsWritten(again, variables: null, expectedPages: 3);
     }
 
     /// <summary>
-    /// An encrypted document of four pages read with <c>--password-env</c>, whose snapshot budget
-    /// holds two of its pages and the manifest: the review stops at the page that does not fit,
-    /// keeps both images, and names pages 3-4 and the snapshot variable; its commands pass the same
-    /// variable on, never the password, and run as written in the same environment.
+    /// An encrypted document of four pages read with <c>--password-env</c>: under a snapshot budget
+    /// that holds two of its pages and the manifest, the review stops at the page that does not fit,
+    /// keeps both images, and names pages 3-4 and the snapshot variable with its value, which the
+    /// hint says to raise. Reviewed with <c>--max-items 2</c>, the review its hint gives passes the
+    /// same variable on, never the password, and runs as written in the same environment.
     /// </summary>
     [Fact]
     [Category(TestCategory.Slow)]
@@ -84,14 +87,20 @@ public sealed partial class PdfReviewOmittedPagesCliTests : IDisposable
             ["page-0001.png", "page-0002.png", "view.json"],
             Directory.EnumerateFiles(_workspace.File(Path.Combine("enc.review", "artifacts"))).Select(static file => Path.GetFileName(file)).Order(StringComparer.Ordinal));
         JsonNode finding = Omitted(result);
-        Assert.Equal("page/3-4", finding["location"]!.GetValue<string>());
-        Assert.Contains(SnapshotBytes, finding["message"]!.GetValue<string>(), StringComparison.Ordinal);
+        Assert.Contains("(3-4 in the view's order)", finding["message"]!.GetValue<string>(), StringComparison.Ordinal);
+        Assert.Contains($"{SnapshotBytes}, now {budget[SnapshotBytes]} bytes", finding["message"]!.GetValue<string>(), StringComparison.Ordinal);
+        Assert.Contains(SnapshotBytes, finding["hint"]!.GetValue<string>(), StringComparison.Ordinal);
+        Assert.DoesNotContain("aspose-cli", finding["hint"]!.GetValue<string>(), StringComparison.Ordinal);
         Assert.DoesNotContain(FileBytes, review.StdOut, StringComparison.Ordinal);
-        (string split, string part) = Commands(finding);
-        Assert.Contains($" --password-env {Variable} ", split, StringComparison.Ordinal);
-        Assert.Contains($" --password-env {Variable} ", part, StringComparison.Ordinal);
-        Assert.DoesNotContain(Password, review.StdOut + review.StdErr, StringComparison.Ordinal);
-        RunsAsWritten(split, part, budget, expectedPages: 2);
+
+        CliResult capped = _workspace.RunWithEnv(password,
+            "review", "enc.pdf", "--password-env", Variable, "--max-items", "2", "--out", "capped.review", "--output-format", "json");
+
+        Assert.True(capped.ExitCode == 8, capped.StdOut + capped.StdErr);
+        string again = Command(Omitted(JsonNode.Parse(capped.StdOut)!));
+        Assert.Contains($" --password-env {Variable} ", again, StringComparison.Ordinal);
+        Assert.DoesNotContain(Password, review.StdOut + review.StdErr + capped.StdOut + capped.StdErr, StringComparison.Ordinal);
+        RunsAsWritten(again, password, expectedPages: 4);
     }
 
     /// <summary>
@@ -112,10 +121,10 @@ public sealed partial class PdfReviewOmittedPagesCliTests : IDisposable
         JsonNode result = JsonNode.Parse(review.StdOut)!;
         Assert.Equal((1, false), (result["coverage"]!["renderedItemCount"]!.GetValue<int>(), result["coverage"]!["complete"]!.GetValue<bool>()));
         JsonNode finding = Omitted(result);
-        Assert.Equal("page/2-3", finding["location"]!.GetValue<string>());
+        Assert.Contains("(2-3 in the view's order)", finding["message"]!.GetValue<string>(), StringComparison.Ordinal);
         Assert.Contains(SnapshotBytes, finding["message"]!.GetValue<string>(), StringComparison.Ordinal);
+        Assert.Contains("split the document", finding["hint"]!.GetValue<string>(), StringComparison.Ordinal);
         Assert.DoesNotContain(FileBytes, review.StdOut + review.StdErr, StringComparison.Ordinal);
-        Commands(finding);
     }
 
     /// <summary>
@@ -135,8 +144,10 @@ public sealed partial class PdfReviewOmittedPagesCliTests : IDisposable
         JsonNode result = JsonNode.Parse(review.StdOut)!;
         Assert.Equal(0, result["coverage"]!["renderedItemCount"]!.GetValue<int>());
         JsonNode finding = Omitted(result);
-        Assert.Equal("page/1-3", finding["location"]!.GetValue<string>());
+        Assert.Contains("rendered 0 of 3 pages", finding["message"]!.GetValue<string>(), StringComparison.Ordinal);
+        Assert.Contains("bytes, had no room for the first;", finding["message"]!.GetValue<string>(), StringComparison.Ordinal);
         Assert.Contains(SnapshotBytes, finding["message"]!.GetValue<string>(), StringComparison.Ordinal);
+        Assert.DoesNotContain("split", finding["hint"]!.GetValue<string>(), StringComparison.Ordinal);
         Assert.Contains(SnapshotBytes, finding["hint"]!.GetValue<string>(), StringComparison.Ordinal);
         Assert.DoesNotContain(FileBytes, review.StdOut + review.StdErr, StringComparison.Ordinal);
     }
@@ -215,26 +226,24 @@ public sealed partial class PdfReviewOmittedPagesCliTests : IDisposable
         result["findings"]!.AsArray(),
         static finding => finding!["code"]!.GetValue<string>() == "PDF_REVIEW_TRUNCATED")!;
 
-    /// <summary>The split and the review of its part that a finding's hint names, in that order.</summary>
-    private static (string Split, string Part) Commands(JsonNode finding)
+    /// <summary>The one command, the review of every page, that a finding's hint names.</summary>
+    private static string Command(JsonNode finding)
     {
         string hint = finding["hint"]!.GetValue<string>();
-        string[] commands = [.. CommandPattern().Matches(hint).Select(static match => match.Value)];
-        Assert.True(commands.Length == 2, hint);
-        Assert.StartsWith("aspose-cli pdf split ", commands[0], StringComparison.Ordinal);
-        Assert.StartsWith("aspose-cli review ", commands[1], StringComparison.Ordinal);
-        return (commands[0], commands[1]);
+        string command = Assert.Single(CommandPattern().Matches(hint)).Value;
+        Assert.StartsWith("aspose-cli review ", command, StringComparison.Ordinal);
+        return command;
     }
 
-    // The split writes one part; its review renders every page of it.
-    private void RunsAsWritten(string split, string part, IReadOnlyDictionary<string, string?>? variables, int expectedPages)
+    // The review renders every page, and the same command again finds the directory it wrote.
+    private void RunsAsWritten(string command, IReadOnlyDictionary<string, string?>? variables, int expectedPages)
     {
-        CliResult splitRun = _workspace.RunCommandLine(split, variables);
-        Assert.True(splitRun.ExitCode == 0, $"{split}{Environment.NewLine}{splitRun.StdErr}");
-        CliResult partRun = _workspace.RunCommandLine(part, variables);
-        Assert.True(partRun.ExitCode == 0, $"{part}{Environment.NewLine}{partRun.StdOut}{partRun.StdErr}");
-        JsonNode coverage = JsonNode.Parse(partRun.StdOut)!["coverage"]!;
+        CliResult run = _workspace.RunCommandLine(command, variables);
+        Assert.True(run.ExitCode == 0, $"{command}{Environment.NewLine}{run.StdOut}{run.StdErr}");
+        JsonNode coverage = JsonNode.Parse(run.StdOut)!["coverage"]!;
         Assert.Equal((expectedPages, true), (coverage["renderedItemCount"]!.GetValue<int>(), coverage["complete"]!.GetValue<bool>()));
+        CliResult again = _workspace.RunCommandLine(command, variables);
+        Assert.Equal("OUTPUT_EXISTS", JsonNode.Parse(again.StdErr)!["error"]!["code"]!.GetValue<string>());
     }
 
     private static string Text(long value) => value.ToString(CultureInfo.InvariantCulture);

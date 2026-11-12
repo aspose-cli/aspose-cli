@@ -47,7 +47,7 @@ public interface IProductViewAdapter<TSession>
 
     /// <summary>
     /// Every check <see cref="Assess"/> can report, each declared once; codes start with the
-    /// product id in upper case. The SDK adds its font check (<see cref="ReviewChecks"/>).
+    /// product id in upper case. The SDK adds the checks every review reports (<see cref="ReviewChecks"/>).
     /// </summary>
     IReadOnlyList<ReviewCheck> Checks { get; }
 

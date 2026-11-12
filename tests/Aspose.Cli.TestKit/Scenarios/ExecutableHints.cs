@@ -195,7 +195,7 @@ public static partial class ExecutableHints
         }
     }
 
-    /// <summary>Every hint of an error envelope or a result, with the code it belongs to.</summary>
+    /// <summary>Every hint of an error envelope or a result, its warnings' and a review's findings', with the code it belongs to.</summary>
     internal static IEnumerable<(string Source, string Text)> Hints(JsonNode? document)
     {
         if (document is not JsonObject root)
@@ -211,6 +211,13 @@ public static partial class ExecutableHints
             if (Text(warning?["hint"]) is { } warningHint)
             {
                 yield return (Text(warning!["code"]) ?? "warning", warningHint);
+            }
+        }
+        foreach (JsonNode? finding in root["findings"] as JsonArray ?? [])
+        {
+            if (Text(finding?["hint"]) is { } findingHint)
+            {
+                yield return (Text(finding!["code"]) ?? "finding", findingHint);
             }
         }
     }

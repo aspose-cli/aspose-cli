@@ -185,6 +185,11 @@
           "summary": "A page after the first holds only a sliver of visible content, such as a stranded line."
         },
         {
+          "code": "WORDS_REVIEW_TRUNCATED",
+          "severity": "warning",
+          "summary": "The review rendered only some parts, as many as --max-items or the preview snapshot budget allowed, so the rest have no image and were not checked."
+        },
+        {
           "code": "WORDS_REVISIONS_PRESENT",
           "severity": "info",
           "summary": "The document contains tracked revisions, which a visual-only repair must not accept."

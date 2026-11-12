@@ -42,7 +42,8 @@ public sealed record ReviewResult() : EngineResultEnvelope("review"), IPartialOu
 
     /// <summary>
     /// The <c>--code</c> filter applied to <see cref="Findings"/>; omitted without one. Errors of
-    /// checks outside the filter do not fail the review.
+    /// checks outside the filter do not fail the review, and a review that left parts out reports
+    /// its <c>&lt;PRODUCT&gt;_REVIEW_TRUNCATED</c> finding whatever the filter, since those parts still fail it.
     /// </summary>
     public ReviewFilter? Filter { get; init; }
 
