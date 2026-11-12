@@ -144,7 +144,7 @@ Arguments:
 
 Options:
   --ops <ops>                    The ops JSON, an object with ops or the bare array of operations: a path to the document, '-' to read it from stdin, or the document itself when the value starts with { or [ (inline). To name a file whose name starts with '[', prefix it with ./ . At most 10000 operations. Vocabulary: aspose-cli schema v2/cells/ops.
-  --set <set>                    Set one cell as SHEET!CELL=VALUE; repeatable, applied after the --ops document. A VALUE starting with '=' is a formula; otherwise TRUE/FALSE and numbers are typed and anything else is text. Quote sheet names that need it: --set "'My Sheet'!A1=5". Example: --set "Sales!B3=42" --set "Sales!G2==E2*F2".
+  --set <set>                    Set one cell as SHEET!CELL=VALUE; repeatable, applied after the --ops document. A VALUE starting with '=' is a formula; otherwise TRUE/FALSE and numbers are typed and anything else is text, as is a number with leading zeros, a leading '+' or over 15 integer digits. Quote sheet names that need it: --set "'My Sheet'!A1=5". Example: --set "Sales!B3=42" --set "Sales!G2==E2*F2".
   --if-match <if-match>          Require the current input SHA-256 fingerprint before editing.
   --best-effort                  Keep successful operations, report failures, and exit 8.
   --verify                       Verify the staged output and report its cell changes and formula errors. A warning with affectsCompleteness about content the edit lost is also an issue; uncheckedOps lists each operation not read back.
