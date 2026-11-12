@@ -27,4 +27,11 @@ public sealed record PdfConvertRequest
     /// leaves out field values names; null for a conversion made without a command line.
     /// </summary>
     public string? FormsInspection { get; init; }
+
+    /// <summary>
+    /// The quoted command line that extracts the pictures of the selected pages of the input into a
+    /// new folder beside the output, which the warning that the output leaves out its pictures
+    /// names; null for a conversion made without a command line.
+    /// </summary>
+    public string? PictureExtraction { get; init; }
 }

@@ -35,7 +35,7 @@ internal static class PdfEngineFormats
             LossyHint = "Open the HTML in a browser and compare it with the PDF before relying on exact pagination, forms or annotations; review does not lay out HTML made from a PDF, so review the PDF itself.",
         },
         new("epub") { Write = PdfEngineWrite.Document, Save = SaveFormat.Epub, Lossy = true },
-        new("md") { Write = PdfEngineWrite.Document, Save = SaveFormat.Markdown, Lossy = true, LeavesFormValues = true },
+        new("md") { Write = PdfEngineWrite.Document, Save = SaveFormat.Markdown, Lossy = true, LeavesFormValues = true, LeavesPictures = true },
         new("xps") { Write = PdfEngineWrite.Document, Save = SaveFormat.Xps },
         new("txt") { Write = PdfEngineWrite.Text, Lossy = true, LeavesFormValues = true },
         new("pdfa-1b") { Write = PdfEngineWrite.Archive, Archive = PdfFormat.PDF_A_1B, AppearanceClause = "6.5.3", AttachmentRule = "PDF/A-1 does not allow attachments" },
@@ -148,6 +148,12 @@ internal sealed record PdfEngineFormat(string Id)
     /// holds only page text, and a field's value is not page text until the field is flattened.
     /// </summary>
     public bool LeavesFormValues { get; init; }
+
+    /// <summary>
+    /// Whether a conversion to this format leaves out the pictures: its export writes each one as a
+    /// file beside the output, which is published alone, so the conversion links none of them.
+    /// </summary>
+    public bool LeavesPictures { get; init; }
 
     /// <summary>
     /// Why an archive profile does not keep every attachment; null for a profile that keeps any

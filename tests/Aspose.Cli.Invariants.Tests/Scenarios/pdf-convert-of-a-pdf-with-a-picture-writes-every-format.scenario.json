@@ -1,0 +1,33 @@
+{
+  "name": "a PDF with a picture converts to every format pdf convert writes; md keeps the text, writes no picture file beside it and names the picture in a LOSSY_CONVERSION whose pdf extract runs as written",
+  "files": {
+    "pic.md": { "text": "# Report\n\nText before.\n\n![dot](dot.png)\n\nText after.\n" },
+    "dot.png": { "base64": "iVBORw0KGgoAAAANSUhEUgAAACgAAAAoCAIAAAADnC86AAAAMElEQVR4nO3NMQ0AAAgDsCmZfynIwgQJT5P+zbQvIhaLxWKxWCwWi8VisVgsFvcsXhHvWVsvWSOBAAAAAElFTkSuQmCC" }
+  },
+  "steps": [
+    {
+      "args": ["pdf", "create", "pic.pdf", "--from-markdown", "pic.md"],
+      "expect": { "exitCode": 0 }
+    },
+    {
+      "args": ["pdf", "convert", "pic.pdf", "--to", "md", "--out", "pic.out.md"],
+      "expect": {
+        "exitCode": 0,
+        "json": [{ "path": "outputs[1]", "exists": false }],
+        "warnings": { "present": ["LOSSY_CONVERSION"] },
+        "files": { "present": ["pic.out.md"], "absent": ["image_1.png"] }
+      }
+    },
+    { "args": ["pdf", "convert", "pic.pdf", "--to", "txt", "--out", "pic.out.txt"], "expect": { "exitCode": 0 } },
+    { "args": ["pdf", "convert", "pic.pdf", "--to", "html", "--out", "pic.out.html"], "expect": { "exitCode": 0 } },
+    { "args": ["pdf", "convert", "pic.pdf", "--to", "docx", "--out", "pic.out.docx"], "expect": { "exitCode": 0 } },
+    { "args": ["pdf", "convert", "pic.pdf", "--to", "xlsx", "--out", "pic.out.xlsx"], "expect": { "exitCode": 0 } },
+    { "args": ["pdf", "convert", "pic.pdf", "--to", "pptx", "--out", "pic.out.pptx"], "expect": { "exitCode": 0 } },
+    { "args": ["pdf", "convert", "pic.pdf", "--to", "epub", "--out", "pic.out.epub"], "expect": { "exitCode": 0 } },
+    { "args": ["pdf", "convert", "pic.pdf", "--to", "xps", "--out", "pic.out.xps"], "expect": { "exitCode": 0 } },
+    { "args": ["pdf", "convert", "pic.pdf", "--to", "pdfa-1b", "--out", "pic.out.pdfa-1b.pdf"], "expect": { "exitCode": 0 } },
+    { "args": ["pdf", "convert", "pic.pdf", "--to", "pdfa-2b", "--out", "pic.out.pdfa-2b.pdf"], "expect": { "exitCode": 0 } },
+    { "args": ["pdf", "convert", "pic.pdf", "--to", "pdfa-3b", "--out", "pic.out.pdfa-3b.pdf"], "expect": { "exitCode": 0 } },
+    { "args": ["pdf", "convert", "pic.pdf", "--to", "tiff", "--out", "pic.out.tiff"], "expect": { "exitCode": 0 } }
+  ]
+}
