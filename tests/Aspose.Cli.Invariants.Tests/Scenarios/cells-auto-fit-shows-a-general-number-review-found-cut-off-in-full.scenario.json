@@ -1,0 +1,45 @@
+{
+  "name": "resize_columns without a width, as review's CELLS_VALUES_CLIPPED says, shows in full a negative General number that an Arial 10 workbook showed rounded",
+  "steps": [
+    {
+      "args": ["cells", "create", "ledger.xlsx", "--sheet-names", "Ledger"],
+      "expect": { "exitCode": 0 }
+    },
+    {
+      "args": [
+        "cells", "edit", "ledger.xlsx", "--in-place", "--ops",
+        "{\"ops\":[{\"op\":\"set_default_font\",\"font\":\"Arial\",\"fontSize\":10},{\"op\":\"set_values\",\"sheet\":\"Ledger\",\"range\":\"A1\",\"values\":[[\"Amount\"],[-15600.75]]},{\"op\":\"resize_columns\",\"sheet\":\"Ledger\",\"first\":\"A\",\"widthChars\":5}]}"
+      ],
+      "expect": { "exitCode": 0 }
+    },
+    {
+      "args": ["review", "ledger.xlsx", "--out", "before", "--code", "CELLS_VALUES_CLIPPED"],
+      "expect": {
+        "exitCode": [0, 8],
+        "json": [
+          { "path": "findings[0].code", "equals": "CELLS_VALUES_CLIPPED" },
+          { "path": "findings[0].message", "contains": "resize_columns without a width auto-fits" }
+        ]
+      }
+    },
+    {
+      "args": [
+        "cells", "edit", "ledger.xlsx", "--in-place", "--ops",
+        "{\"ops\":[{\"op\":\"resize_columns\",\"sheet\":\"Ledger\",\"first\":\"A\"}]}"
+      ],
+      "expect": { "exitCode": 0 }
+    },
+    {
+      "args": ["review", "ledger.xlsx", "--out", "after", "--code", "CELLS_VALUES_CLIPPED"],
+      "expect": { "exitCode": [0, 8], "json": [{ "path": "findings", "equals": [] }] }
+    },
+    {
+      "args": ["cells", "convert", "ledger.xlsx", "--to", "pdf", "--out", "ledger.pdf", "--sheets", "1"],
+      "expect": { "exitCode": 0 }
+    },
+    {
+      "args": ["pdf", "search", "ledger.pdf", "--pattern", "15600.75"],
+      "expect": { "exitCode": 0, "json": [{ "path": "hits[0].text", "equals": "15600.75" }] }
+    }
+  ]
+}
