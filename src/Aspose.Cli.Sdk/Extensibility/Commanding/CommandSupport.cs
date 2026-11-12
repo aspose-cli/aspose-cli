@@ -506,7 +506,10 @@ public sealed class PasswordOptions
             return null;
         }
 
-        string line = inputs.ReadSecretLine(Console.In);
+        // Piped or redirected, stdin holds bytes, read as UTF-8 as every value on stdin is; at a console, what is typed.
+        string line = Console.IsInputRedirected
+            ? inputs.ReadSecretLine(Console.OpenStandardInput(), $"{_prefix}-stdin", EnvironmentOption)
+            : inputs.ReadSecretLine(Console.In);
         return !string.IsNullOrEmpty(line)
             ? new Secret(line)
             : throw CliErrors.OptionInvalid(

@@ -13,7 +13,9 @@ using System.Text;
 /// run's own startup hooks run before this one, and the hooks variable gets back their value, so
 /// no process the worker starts inherits this hook and every one inherits the run's. A process
 /// started with the culture variable starts under that culture, as on a machine set to those
-/// regional settings (<see cref="Aspose.Cli.TestKit.TempWorkspace.RunUnderCulture"/>).
+/// regional settings (<see cref="Aspose.Cli.TestKit.TempWorkspace.RunUnderCulture"/>), and one
+/// started with the console input variable reads its console's text in that encoding, as on a
+/// machine whose console input code page it is.
 /// </summary>
 public static class StartupHook
 {
@@ -22,6 +24,11 @@ public static class StartupHook
         if (Environment.GetEnvironmentVariable(Aspose.Cli.TestKit.CliWorkerHost.CultureVariable) is { Length: > 0 } culture)
         {
             CultureInfo.DefaultThreadCurrentCulture = CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo(culture);
+        }
+        if (Environment.GetEnvironmentVariable(Aspose.Cli.TestKit.CliWorkerHost.ConsoleInputVariable) is { Length: > 0 } encoding)
+        {
+            // The reader the console gives a redirected stdin, which looks for no byte order mark.
+            Console.SetIn(new StreamReader(Console.OpenStandardInput(), Encoding.GetEncoding(encoding), detectEncodingFromByteOrderMarks: false));
         }
         string? pipe = Environment.GetEnvironmentVariable(Aspose.Cli.TestKit.CliWorkerHost.PipeVariable);
         string? hooks = Environment.GetEnvironmentVariable(Aspose.Cli.TestKit.CliWorkerHost.HooksBeforeVariable);
@@ -60,6 +67,9 @@ namespace Aspose.Cli.TestKit
 
         /// <summary>The variable that names the culture the hook starts a process under.</summary>
         internal const string CultureVariable = "ASPOSE_CLI_TEST_CULTURE";
+
+        /// <summary>The variable that names the encoding in which the hook makes the console read standard input.</summary>
+        internal const string ConsoleInputVariable = "ASPOSE_CLI_TEST_CONSOLE_INPUT_ENCODING";
 
         /// <summary>The first field of every request and response.</summary>
         internal const int Magic = 0x41435752;
