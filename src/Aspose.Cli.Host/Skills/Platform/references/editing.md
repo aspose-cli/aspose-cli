@@ -141,7 +141,9 @@ name of an environment variable, never the secret. A missing or empty
 variable fails only the operation that names it. Command options follow the
 same rule: prefer the `-env` and `-stdin` forms, such as `--password-env`,
 `--encrypt-env` and `--password-stdin`; the plain forms are visible in the
-process list. A command that a hint or a `next` names never repeats a
+process list. A `-stdin` form reads the password as the first line of stdin,
+as UTF-8 text whatever the console's code page, and refuses other bytes with
+`OPTION_INVALID`. A command that a hint or a `next` names never repeats a
 password: an input's password given with `--password-env` is passed on by
 the variable's name, and one given another way shows as
 `--password-env "<password-env>"`, in which you put the name of an
