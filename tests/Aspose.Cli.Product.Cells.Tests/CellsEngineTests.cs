@@ -668,12 +668,12 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
     }
 
     /// <summary>
-    /// In evaluation mode an active evaluation warning sheet gives way to the workbook's content
-    /// as every active-sheet default, while a sheet of that name holding anything else stays the
-    /// active default; with a license the active sheet stays the default whatever its name.
+    /// An active evaluation warning sheet gives way to the workbook's content as every
+    /// active-sheet default, with or without a license, while a sheet of that name holding
+    /// anything else stays the active default.
     /// </summary>
     [Fact]
-    public void EvaluationDefaults_SkipTheActiveEvaluationWarningSheetAndLicensedDefaultsDoNot()
+    public void EvaluationDefaults_SkipTheActiveEvaluationWarningSheetWithOrWithoutALicense()
     {
         string marked = WorkbookWithActiveSheet("marked.xlsx", "Evaluation Only. Created with Aspose.Cells for .NET.");
         string lookalike = WorkbookWithActiveSheet("lookalike.xlsx", "notes");
@@ -707,8 +707,8 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
             new CellsEditRequest { Input = marked, Batch = ParseOps("""{"ops":[{"op":"set_values","range":"A2","values":[["edited"]]}]}"""), Output = TestOutput.At(_fixture.Temp.File("marked-edited.csv"), overwrite: true) });
         CellsReadResult kept = CellsRead.Run(Session(), new CellsReadRequest { Input = lookalike });
 
-        Assert.Equal("Evaluation Warning", licensed.Sheet!.Name);
-        Assert.Null(licensed.Warnings);
+        Assert.Equal("Data", licensed.Sheet!.Name);
+        Assert.Equal("ACTIVE_SHEET_SKIPPED", Assert.Single(licensed.Warnings!).Code.Name);
         Assert.Equal("Data", read.Sheet!.Name);
         Warning skipped = Assert.Single(read.Warnings!);
         Assert.Equal("ACTIVE_SHEET_SKIPPED", skipped.Code.Name);

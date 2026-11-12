@@ -116,13 +116,13 @@ handle these effects:
   option keeps your active sheet (`set_active_sheet` included). The
   `EVALUATION_MODE` message names the warning sheets the output carries and which
   of them is active.
-- When a workbook's active sheet is such a warning sheet, in evaluation mode
-  every command that defaults to the active sheet (`read` without `--sheet`,
+- When a workbook's active sheet is such a warning sheet, with or without a
+  license, every command that defaults to the active sheet (`read` without `--sheet`,
   `convert` to CSV, TSV or Markdown without `--sheets`, an operation without
   `"sheet"`, the workbook preview) uses the first other sheet instead,
   preferring a visible one, and warns `ACTIVE_SHEET_SKIPPED` with the skipped
-  sheet in `location`. With a license the active sheet stays the default,
-  whatever its name. Only the default changes: the input file is not changed, and an edit
+  sheet in `location`. A sheet of that name that holds anything besides the
+  notice is the workbook's own and stays the default. Only the default changes: the input file is not changed, and an edit
   or `convert` to a multi-sheet format keeps the warning sheet active unless
   a `set_active_sheet` in the batch succeeded. A command that names its sheet
   or covers every sheet does not warn.
@@ -139,6 +139,10 @@ handle these effects:
   row after the data, Markdown a closing `# Evaluation Only. ...` heading, and
   JSON a `{"watermark": ...}` record after the records of each sheet with data
   rows; a JSON output leaves the warning sheets out. Remove it before anything reads the output as data.
+  Every `cells` command that opens such a CSV or TSV leaves out its last rows
+  while each is that whole notice alone in column A, so they are neither read
+  nor written back, and warns `TEXT_TABLE_LAYOUT` with the rows in `location`;
+  a row that holds more than the notice, or holds it elsewhere, is data.
 - A whole-workbook PDF, XPS, HTML or MHTML export prints the warning sheets an
   earlier evaluation save added as extra pages that hold only the notice; the
   `EVALUATION_MODE` message, or with a license `EVALUATION_INPUT_MARKED`, names them, and

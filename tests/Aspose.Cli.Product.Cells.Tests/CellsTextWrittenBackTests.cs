@@ -115,7 +115,30 @@ public sealed class CellsTextWrittenBackTests : IDisposable
         Assert.Equal(["a,c"], Written("edited.csv", mark: false));
     }
 
-    private const string SetC3 = """{"ops":[{"op":"set_values","range":"C3","values":[["changed"]]}]}""";
+    /// <summary>
+    /// A last row that only looks like the notice an evaluation export writes after the data (it
+    /// holds more than the notice, holds it in column B, or holds part of it), and a notice row
+    /// with data below it, are data: an edit of another cell writes every row back as it was.
+    /// </summary>
+    [Theory]
+    [InlineData("Evaluation Only. Created with Aspose.Cells - we decided to keep this tool,")]
+    [InlineData(",Evaluation Only. Created with Aspose.Cells for .NET. Copyright 2003 - 2026 Aspose Pty Ltd.")]
+    [InlineData("\"Evaluation Only. Created with Aspose.Cells for .NET. Copyright 2003 - 2026 Aspose Pty Ltd., we kept it\",")]
+    [InlineData("Evaluation Only. Created with Aspose.Cells,")]
+    [InlineData("Evaluation Only. Created with Aspose.Cells for .NET. Copyright 2003 - 2026 Aspose Pty Ltd.,\r\nlast,row")]
+    public void Edit_WritesBackALastRowThatOnlyLooksLikeTheEvaluationNotice(string last)
+    {
+        string[] rows = ["name,note", "first,plain", .. last.Split("\r\n")];
+        Write("table.csv", rows, mark: false);
+
+        CliResult edited = Edit("table.csv", "--out", "out.csv", "--ops", SetB2);
+
+        Assert.True(edited.ExitCode == 0, $"exit {edited.ExitCode}: {edited.StdErr}{edited.StdOut}");
+        Assert.Equal(["name,note", "first,changed", .. rows[2..]], Written("out.csv", mark: false));
+        Assert.Equal(["table!B2 plain -> changed"], DirectChanges(edited));
+    }
+
+    private const string SetC3 ="""{"ops":[{"op":"set_values","range":"C3","values":[["changed"]]}]}""";
 
     private const string SetB2 = """{"ops":[{"op":"set_values","range":"B2","values":[["changed"]]}]}""";
 

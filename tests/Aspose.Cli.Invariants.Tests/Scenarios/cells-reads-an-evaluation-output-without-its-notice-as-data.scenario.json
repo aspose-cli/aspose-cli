@@ -1,0 +1,119 @@
+{
+  "name": "cells commands that read what evaluation mode wrote take no evaluation mark for data: a csv's last notice row is left out by read, inspect, search, convert and edit, which warn TEXT_TABLE_LAYOUT, and an edit writes only the notice of its own save; an xlsx's active warning sheet gives way to the user's sheet with ACTIVE_SHEET_SKIPPED and is still read by name; steps without --license-mode run licensed when the run has a license. A notice text elsewhere in the data and a last row that holds more stay data",
+  "files": {
+    "in.csv": { "text": "Name,Qty\r\nWidget,5\r\nGadget,7\r\n" },
+    "mid.csv": { "text": "Name,Note\r\nA,Evaluation Only. Created with Aspose.Cells for .NET.\r\nB,ok\r\n" },
+    "last.csv": { "text": "Name,Note\r\nA,ok\r\nEvaluation Only. Created with Aspose.Cells for .NET.,more\r\n" }
+  },
+  "steps": [
+    {
+      "args": ["cells", "edit", "in.csv", "--license-mode", "evaluation", "--set", "in!B2=6", "--out", "eval.csv"],
+      "expect": { "exitCode": 0, "warnings": { "absent": ["TEXT_TABLE_LAYOUT"] } }
+    },
+    {
+      "args": ["cells", "edit", "eval.csv", "--license-mode", "evaluation", "--set", "eval!B3=8", "--out", "eval2.csv", "--verify"],
+      "expect": {
+        "exitCode": 0,
+        "warnings": { "present": ["TEXT_TABLE_LAYOUT"] },
+        "json": [
+          { "path": "verification.ok", "equals": true },
+          { "path": "verification.otherChanges", "equals": [] }
+        ]
+      }
+    },
+    {
+      "args": ["cells", "read", "eval2.csv", "--license-mode", "evaluation"],
+      "expect": {
+        "exitCode": 0,
+        "warnings": { "present": ["TEXT_TABLE_LAYOUT"] },
+        "json": [
+          { "path": "sheet.usedRange", "equals": "A1:B3" },
+          { "path": "warnings[0].location", "equals": "row/eval2!4" }
+        ]
+      }
+    },
+    {
+      "args": ["cells", "read", "eval2.csv"],
+      "expect": {
+        "exitCode": 0,
+        "warnings": { "present": ["TEXT_TABLE_LAYOUT"] },
+        "json": [ { "path": "sheet.usedRange", "equals": "A1:B3" } ]
+      }
+    },
+    {
+      "args": ["cells", "inspect", "eval.csv", "--license-mode", "evaluation"],
+      "expect": {
+        "exitCode": 0,
+        "warnings": { "present": ["TEXT_TABLE_LAYOUT"] },
+        "json": [ { "path": "workbook.sheets[0].usedRange", "equals": "A1:B3" } ]
+      }
+    },
+    {
+      "args": ["cells", "search", "eval.csv", "--pattern", "Evaluation Only", "--license-mode", "evaluation"],
+      "expect": {
+        "exitCode": 0,
+        "warnings": { "present": ["TEXT_TABLE_LAYOUT"] },
+        "json": [ { "path": "hits", "equals": [] } ]
+      }
+    },
+    {
+      "args": ["cells", "convert", "eval.csv", "--to", "md", "--out", "eval.md", "--license-mode", "evaluation"],
+      "expect": { "exitCode": 0, "warnings": { "present": ["TEXT_TABLE_LAYOUT"] } }
+    },
+    {
+      "args": ["cells", "convert", "eval.csv", "--to", "xlsx", "--out", "eval.xlsx", "--license-mode", "evaluation"],
+      "expect": { "exitCode": 0, "warnings": { "present": ["TEXT_TABLE_LAYOUT"] } }
+    },
+    {
+      "args": ["cells", "read", "eval.xlsx"],
+      "expect": {
+        "exitCode": 0,
+        "warnings": { "present": ["ACTIVE_SHEET_SKIPPED"] },
+        "json": [
+          { "path": "sheet.name", "equals": "eval" },
+          { "path": "sheet.usedRange", "equals": "A1:B3" }
+        ]
+      }
+    },
+    {
+      "args": ["cells", "read", "eval.xlsx", "--license-mode", "evaluation"],
+      "expect": {
+        "exitCode": 0,
+        "warnings": { "present": ["ACTIVE_SHEET_SKIPPED"] },
+        "json": [ { "path": "sheet.name", "equals": "eval" } ]
+      }
+    },
+    {
+      "args": ["cells", "read", "eval.xlsx", "--sheet", "Evaluation Warning"],
+      "expect": {
+        "exitCode": 0,
+        "warnings": { "absent": ["ACTIVE_SHEET_SKIPPED"] },
+        "json": [ { "path": "sheet.name", "equals": "Evaluation Warning" } ]
+      }
+    },
+    {
+      "args": ["cells", "edit", "eval.csv", "--set", "eval!B2=9", "--out", "written.csv"],
+      "expect": { "exitCode": 0, "warnings": { "present": ["TEXT_TABLE_LAYOUT"] } }
+    },
+    {
+      "args": ["cells", "read", "written.csv"],
+      "expect": { "exitCode": 0, "json": [ { "path": "sheet.usedRange", "equals": "A1:B3" } ] }
+    },
+    {
+      "args": ["cells", "read", "mid.csv"],
+      "expect": {
+        "exitCode": 0,
+        "warnings": { "absent": ["TEXT_TABLE_LAYOUT"] },
+        "json": [ { "path": "sheet.usedRange", "equals": "A1:B3" } ]
+      }
+    },
+    {
+      "args": ["cells", "read", "last.csv"],
+      "expect": {
+        "exitCode": 0,
+        "warnings": { "absent": ["TEXT_TABLE_LAYOUT"] },
+        "json": [ { "path": "sheet.usedRange", "equals": "A1:B3" } ]
+      }
+    }
+  ]
+}

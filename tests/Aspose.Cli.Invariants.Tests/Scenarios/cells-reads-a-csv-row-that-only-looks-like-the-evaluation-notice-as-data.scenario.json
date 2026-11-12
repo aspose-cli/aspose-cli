@@ -1,0 +1,94 @@
+{
+  "name": "cells read keeps as data a last csv row that only looks like the evaluation notice (more text after it, in column B, quoted with more text, only its first half) and a notice row with data below it, and takes out only rows that are the engine's whole notice alone in column A, one or the two an evaluation edit once left, naming their rows; an edit of such a file keeps the rows that are data",
+  "files": {
+    "prefix.csv": { "text": "name,note\r\nfirst,plain\r\nEvaluation Only. Created with Aspose.Cells - we decided to keep this tool,\r\n" },
+    "colb.csv": { "text": "name,note\r\nfirst,plain\r\n,Evaluation Only. Created with Aspose.Cells for .NET. Copyright 2003 - 2026 Aspose Pty Ltd.\r\n" },
+    "quoted.csv": { "text": "name,note\r\nfirst,plain\r\n\"Evaluation Only. Created with Aspose.Cells for .NET. Copyright 2003 - 2026 Aspose Pty Ltd., we kept it\",\r\n" },
+    "half.csv": { "text": "name,note\r\nfirst,plain\r\nEvaluation Only. Created with Aspose.Cells,\r\n" },
+    "earlier.csv": { "text": "name,note\r\nfirst,plain\r\nEvaluation Only. Created with Aspose.Cells for .NET. Copyright 2003 - 2026 Aspose Pty Ltd.,\r\nlast,row\r\n" },
+    "one.csv": { "text": "name,note\r\nfirst,plain\r\nEvaluation Only. Created with Aspose.Cells for .NET. Copyright 2003 - 2026 Aspose Pty Ltd." },
+    "two.csv": { "text": "name,note\r\nfirst,plain\r\nEvaluation Only. Created with Aspose.Cells for .NET. Copyright 2003 - 2026 Aspose Pty Ltd.,\r\nEvaluation Only. Created with Aspose.Cells for .NET. Copyright 2003 - 2026 Aspose Pty Ltd." }
+  },
+  "steps": [
+    {
+      "args": ["cells", "read", "prefix.csv"],
+      "expect": {
+        "exitCode": 0,
+        "warnings": { "absent": ["TEXT_TABLE_LAYOUT"] },
+        "json": [
+          { "path": "sheet.usedRange", "equals": "A1:B3" },
+          { "path": "sheet.cells[2][0].v", "equals": "Evaluation Only. Created with Aspose.Cells - we decided to keep this tool" }
+        ]
+      }
+    },
+    {
+      "args": ["cells", "read", "colb.csv"],
+      "expect": {
+        "exitCode": 0,
+        "warnings": { "absent": ["TEXT_TABLE_LAYOUT"] },
+        "json": [ { "path": "sheet.usedRange", "equals": "A1:B3" } ]
+      }
+    },
+    {
+      "args": ["cells", "read", "quoted.csv"],
+      "expect": {
+        "exitCode": 0,
+        "warnings": { "absent": ["TEXT_TABLE_LAYOUT"] },
+        "json": [ { "path": "sheet.usedRange", "equals": "A1:B3" } ]
+      }
+    },
+    {
+      "args": ["cells", "read", "half.csv"],
+      "expect": {
+        "exitCode": 0,
+        "warnings": { "absent": ["TEXT_TABLE_LAYOUT"] },
+        "json": [ { "path": "sheet.usedRange", "equals": "A1:B3" } ]
+      }
+    },
+    {
+      "args": ["cells", "read", "earlier.csv"],
+      "expect": {
+        "exitCode": 0,
+        "warnings": { "absent": ["TEXT_TABLE_LAYOUT"] },
+        "json": [ { "path": "sheet.usedRange", "equals": "A1:B4" } ]
+      }
+    },
+    {
+      "args": ["cells", "edit", "prefix.csv", "--set", "prefix!B2=changed", "--out", "prefix-out.csv", "--verify"],
+      "expect": { "exitCode": 0, "json": [ { "path": "verification.ok", "equals": true } ] }
+    },
+    {
+      "args": ["cells", "read", "prefix-out.csv"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "sheet.usedRange", "equals": "A1:B3" },
+          { "path": "sheet.cells[2][0].v", "equals": "Evaluation Only. Created with Aspose.Cells - we decided to keep this tool" }
+        ]
+      }
+    },
+    {
+      "args": ["cells", "read", "one.csv"],
+      "expect": {
+        "exitCode": 0,
+        "warnings": { "present": ["TEXT_TABLE_LAYOUT"] },
+        "json": [
+          { "path": "sheet.usedRange", "equals": "A1:B2" },
+          { "path": "warnings[0].location", "equals": "row/one!3" }
+        ]
+      }
+    },
+    {
+      "args": ["cells", "read", "two.csv"],
+      "expect": {
+        "exitCode": 0,
+        "warnings": { "present": ["TEXT_TABLE_LAYOUT"] },
+        "json": [
+          { "path": "sheet.usedRange", "equals": "A1:B2" },
+          { "path": "warnings[0].location", "equals": "row/two!3:4" },
+          { "path": "warnings[0].message", "startsWith": "Rows 3, 4 of the input are not data" }
+        ]
+      }
+    }
+  ]
+}
