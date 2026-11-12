@@ -127,12 +127,16 @@ internal static class WordsEngineSupport
         Hint = "Disclose them and accept or reject only when explicitly requested.",
     };
 
+    // A redline in plain text, which shows its changes unmarked, points to the formats that mark them.
+    private const string RedlineMarked = "To see what changed, write the redline as DOCX, PDF or HTML, which mark the changes.";
+
     /// <summary>Whether a document saved in a format keeps its revisions as revisions.</summary>
     internal static bool KeepsRevisions(Document document, string format) =>
         document.Revisions.Count > 0 && WordsFormats.KeepsRevisions(format);
 
     /// <summary>
-    /// The warnings for saving a document to a format that cannot hold every Word feature: one
+    /// The warnings for saving a document to a format that cannot hold every Word feature, which
+    /// convert, edit and the redline of compare report: one
     /// for the format, which names no kind of content; and, each naming its kind in
     /// <c>details.content</c>, one for revisions the format cannot store, which a format laid
     /// out on pages draws as markup; one for the editing restrictions a format other than Word's
@@ -145,9 +149,11 @@ internal static class WordsEngineSupport
     /// for a document with both kinds the revisions' commands delete the comments too, since two
     /// edits of the input would each put back what the other left out. Under
     /// <paramref name="evaluation"/>, what evaluation mode wrote into the headers and footers is
-    /// not their content.
+    /// not their content. A <paramref name="redline"/>, compare's output, shows its revisions on
+    /// purpose: it is not told that a format that marks them cannot keep them as revisions, and in
+    /// plain text, which cannot mark them, the hints name the formats that do.
     /// </summary>
-    internal static IEnumerable<Warning> ConversionWarnings(Document document, string format, bool evaluation, (ContinuationInput Input, string Output)? converted = null)
+    internal static IEnumerable<Warning> ConversionWarnings(Document document, string format, bool evaluation, (ContinuationInput Input, string Output)? converted = null, bool redline = false)
     {
         bool text = WordsEngineFormats.Has(format, static entry => entry.PlainText);
         if (WordsEngineFormats.Has(format, static entry => entry.Lossy))
@@ -158,7 +164,7 @@ internal static class WordsEngineSupport
         bool revised = document.Revisions.Count > 0;
         bool mixed = text && document.Revisions.Cast<Revision>()
             .Any(static revision => revision.RevisionType is RevisionType.Deletion or RevisionType.Moving);
-        if (revised && !mixed && !WordsFormats.KeepsRevisions(format))
+        if (revised && !mixed && !(redline && !text) && !WordsFormats.KeepsRevisions(format))
         {
             yield return WordsEngineFormats.LaysOutPages(format)
                 ? ContentLoss.Warning([ContentKind.Revisions],
@@ -166,7 +172,7 @@ internal static class WordsEngineSupport
                     "Disclose the tracked changes; when the user decides, accept or reject them with 'aspose-cli words edit' before converting, so the pages show one version, or keep a DOCX, RTF or ODT copy to keep them reviewable.")
                 : ContentLoss.Warning([ContentKind.Revisions],
                     $"The {format} output cannot keep tracked changes as revisions that can be accepted or rejected.",
-                    "Disclose the tracked changes; keep a DOCX, RTF or ODT copy to keep them reviewable.");
+                    redline ? RedlineMarked : "Disclose the tracked changes; keep a DOCX, RTF or ODT copy to keep them reviewable.");
         }
 
         if (document.ProtectionType != ProtectionType.NoProtection && !WordsFormats.IsWord(format))
@@ -208,7 +214,8 @@ internal static class WordsEngineSupport
             string[] deleting = both ? ["delete_comments"] : [];
             yield return ContentLoss.Warning([ContentKind.Revisions],
                 $"The {format} output writes the deleted and moved-from text of tracked changes beside the text that replaces it, so it reads as neither the original nor the revised document.",
-                converted is not { } from
+                redline ? RedlineMarked
+                : converted is not { } from
                     ? $"Disclose the revisions; when the user decides, accept or reject them in an edit that writes a Word format such as docx, then convert that file to {format}, or keep a DOCX copy."
                     : $"Disclose the revisions; when the user decides, run {Rewritten(from, format, [.. deleting, "accept_revisions"])} to accept them or "
                         + $"{Rewritten(from, format, [.. deleting, "reject_revisions"])} to reject them, or keep a DOCX copy."
@@ -236,10 +243,9 @@ internal static class WordsEngineSupport
 
     /// <summary>
     /// The warning naming the headers and footers with content that a format without pages leaves
-    /// out, with the reason for the format, or null: convert and edit report it with the other
-    /// conversion warnings, compare for its redline.
+    /// out, with the reason for the format, or null.
     /// </summary>
-    internal static Warning? HeadersFootersLeftOut(Document document, string format, bool evaluation)
+    private static Warning? HeadersFootersLeftOut(Document document, string format, bool evaluation)
     {
         if (!WordsEngineFormats.Has(format, static entry => entry.LeavesOutHeadersFooters)
             || HeadersFootersWithContent(document, evaluation) is not { } leftOut)
@@ -278,9 +284,10 @@ internal static class WordsEngineSupport
     /// define them, such as <c>the headers and footers of section(s) 1</c> or <c>the headers of
     /// section(s) 1, 2 and the footers of section(s) 2</c>; null when every one is empty or no page
     /// shows it, as a first-page header of a section without a different first page. Content is
-    /// text or a drawing. A page number or page count is not: an output without pages has none to
-    /// number. Under <paramref name="evaluation"/>, neither are the banner, footer sentence and
-    /// watermark evaluation mode writes.
+    /// text, a tracked deletion's struck-through text included, or a drawing. A page number or
+    /// page count is not: an output without pages has none to number. Under
+    /// <paramref name="evaluation"/>, neither are the banner, footer sentence and watermark
+    /// evaluation mode writes.
     /// </summary>
     private static string? HeadersFootersWithContent(Document document, bool evaluation)
     {
@@ -305,7 +312,7 @@ internal static class WordsEngineSupport
         bool HoldsContent(HeaderFooter story) =>
             story.GetChildNodes(NodeType.Paragraph, true).Cast<Paragraph>()
                 .Any(paragraph => !(evaluation && WordsEvaluation.IsMark(paragraph))
-                    && WordsText.VisibleRuns(paragraph).Any(static run => !string.IsNullOrWhiteSpace(run.Text)))
+                    && WordsText.VisibleRuns(paragraph, deleted: true).Any(static run => !string.IsNullOrWhiteSpace(run.Text)))
             || story.GetChildNodes(NodeType.Shape, true).Cast<Aspose.Words.Drawing.Shape>()
                 .Any(shape => !(evaluation && WordsEvaluation.IsWatermark(shape)));
     }

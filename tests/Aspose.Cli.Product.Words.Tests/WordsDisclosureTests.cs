@@ -925,18 +925,157 @@ public sealed class WordsDisclosureTests
         Assert.Contains("the headers of section(s) 1", warning.Message, StringComparison.Ordinal);
         Assert.DoesNotContain("Running head", new Document(compared.Output!.Path).GetText(), StringComparison.Ordinal);
 
-        string Headed(string name, string body)
+        string Headed(string name, string body) => HeadedDocument(fixture, name, body);
+    }
+
+    /// <summary>
+    /// A redline names what its format loses or mixes in as a convert of the same redline to that
+    /// format does, the headers and footers once where the format leaves them out, but for the
+    /// revisions it is written to show: a format that marks them (struck through, or as HTML
+    /// del and ins) is not told it cannot keep them as revisions, as a convert is. Plain text and
+    /// Markdown cannot mark them, whether the redline replaces, only inserts or only formats
+    /// text, so they warn as a convert does, with a hint that names the formats that mark them
+    /// instead of telling to accept or reject them.
+    /// </summary>
+    [Theory]
+    [InlineData("md", "replace", 1)]
+    [InlineData("txt", "replace", 1)]
+    [InlineData("md", "insert", 1)]
+    [InlineData("md", "format", 1)]
+    [InlineData("mobi", "replace", 1)]
+    [InlineData("epub", "replace", 1)]
+    [InlineData("html", "replace", 0)]
+    [InlineData("pdf", "replace", 0)]
+    public void ComparingIntoAFormat_WarnsAsAConvertOfTheRedlineDoes_ButOfTheRevisionsItShows(string format, string change, int headersFooters)
+    {
+        const string RevisionsDetails = """{"content":["revisions"]}""";
+        bool text = format is "md" or "txt";
+        using var fixture = new WordsFixture();
+        string left = HeadedDocument(fixture, "left.docx", "The notice period is thirty days.");
+        string right = change switch
         {
-            var document = new Document();
-            var builder = new DocumentBuilder(document);
-            builder.Write(body);
-            builder.MoveToHeaderFooter(HeaderFooterType.HeaderPrimary);
-            builder.Write("Running head");
-            string path = fixture.Temp.File(name);
-            document.Save(path, SaveFormat.Docx);
-            return path;
+            "replace" => HeadedDocument(fixture, "right.docx", "The notice period is sixty days."),
+            "insert" => HeadedDocument(fixture, "right.docx", "The notice period is thirty days today."),
+            _ => HeadedDocument(fixture, "right.docx", "The notice period is thirty days.", bold: true),
+        };
+
+        WordsCompareResult compared = Compared(fixture, left, right, format);
+
+        Assert.Equal(
+            change switch { "replace" => (true, true, false), "insert" => (true, false, false), _ => (false, false, true) },
+            (compared.Revisions.InsertionCount > 0, compared.Revisions.DeletionCount > 0, compared.Revisions.FormatChangeCount > 0));
+        string[] converted = Lossy(ConvertedRedline(fixture, left, right, format));
+        string revisions = Assert.Single(converted, static warning => warning.EndsWith(RevisionsDetails, StringComparison.Ordinal));
+        Assert.Equal(headersFooters, converted.Count(static warning => warning.EndsWith("""{"content":["headers-footers"]}""", StringComparison.Ordinal)));
+        string[] expected = text ? converted : [.. converted.Where(warning => warning != revisions)];
+        Assert.Equal(expected, Lossy(compared.Warnings));
+        if (text)
+        {
+            Warning shown = Assert.Single(compared.Warnings!, static warning => warning.Details?.ToJsonString() == RevisionsDetails);
+            Assert.Equal("To see what changed, write the redline as DOCX, PDF or HTML, which mark the changes.", shown.Hint);
         }
     }
+
+    /// <summary>
+    /// A header whose text a tracked change deletes still shows it struck through, so a convert
+    /// to Markdown names it as left out; once the deletion is accepted the header is empty and
+    /// nothing is named.
+    /// </summary>
+    [Theory]
+    [InlineData(false, true)]
+    [InlineData(true, false)]
+    public void ConvertingAHeaderWithADeletion_NamesItUntilTheDeletionIsAccepted(bool accepted, bool named)
+    {
+        using var fixture = new WordsFixture();
+        var source = new Document();
+        var builder = new DocumentBuilder(source);
+        builder.Write("Body text.");
+        builder.MoveToHeaderFooter(HeaderFooterType.HeaderPrimary);
+        builder.Write("Running head");
+        source.StartTrackRevisions("Ann", DateTime.Now);
+        source.FirstSection.HeadersFooters[HeaderFooterType.HeaderPrimary].Range.Replace("Running head", string.Empty);
+        source.StopTrackRevisions();
+        Assert.Equal(1, source.Revisions.Count);
+        if (accepted)
+        {
+            source.AcceptAllRevisions();
+        }
+
+        string input = fixture.Temp.File("deleted-head.docx");
+        source.Save(input, SaveFormat.Docx);
+
+        WordsConvertResult converted = WordsConvert.Run(fixture.Session, new WordsConvertRequest
+        {
+            Input = input,
+            Output = TestOutput.At(fixture.Temp.File("deleted-head.md"), format: "md"),
+        });
+
+        Assert.Equal(named ? 1 : 0, LeftOut(converted.Warnings).Length);
+    }
+
+    /// <summary>
+    /// A comparison without a redline, a Word redline and a PDF one, which draws the revisions as
+    /// markup as asked, lose nothing and warn of no loss.
+    /// </summary>
+    [Theory]
+    [InlineData(null)]
+    [InlineData("docx")]
+    [InlineData("pdf")]
+    public void ComparingWithoutARedlineOrIntoAWordOrPdfFormat_WarnsOfNoLoss(string? format)
+    {
+        using var fixture = new WordsFixture();
+        string left = HeadedDocument(fixture, "left.docx", "The notice period is thirty days.");
+        string right = HeadedDocument(fixture, "right.docx", "The notice period is sixty days.");
+
+        WordsCompareResult compared = Compared(fixture, left, right, format);
+
+        Assert.Empty(Lossy(compared.Warnings));
+    }
+
+    /// <summary>A document whose body is <paramref name="body"/>, in bold if <paramref name="bold"/>, under the primary header "Running head".</summary>
+    private static string HeadedDocument(WordsFixture fixture, string name, string body, bool bold = false)
+    {
+        var document = new Document();
+        var builder = new DocumentBuilder(document);
+        builder.Font.Bold = bold;
+        builder.Write(body);
+        builder.Font.Bold = false;
+        builder.MoveToHeaderFooter(HeaderFooterType.HeaderPrimary);
+        builder.Write("Running head");
+        string path = fixture.Temp.File(name);
+        document.Save(path, SaveFormat.Docx);
+        return path;
+    }
+
+    private static WordsCompareResult Compared(WordsFixture fixture, string left, string right, string? format) =>
+        WordsCompare.Run(fixture.Session, new WordsCompareRequest
+        {
+            Left = left,
+            Right = right,
+            Output = format is null ? null : TestOutput.At(fixture.Temp.File($"redline.{format}"), format: format),
+        });
+
+    /// <summary>The warnings of a convert to <paramref name="format"/> of the Word redline of two documents.</summary>
+    private static IReadOnlyList<Warning>? ConvertedRedline(WordsFixture fixture, string left, string right, string format)
+    {
+        string redline = fixture.Temp.File("word-redline.docx");
+        WordsCompare.Run(fixture.Session, new WordsCompareRequest { Left = left, Right = right, Output = TestOutput.At(redline) });
+        return WordsConvert.Run(fixture.Session, new WordsConvertRequest
+        {
+            Input = redline,
+            Output = TestOutput.At(fixture.Temp.File($"converted-redline.{format}"), format: format),
+        }).Warnings;
+    }
+
+    /// <summary>The LOSSY_CONVERSION warnings by message and details, in order.</summary>
+    private static string[] Lossy(IReadOnlyList<Warning>? warnings) =>
+        [.. (warnings ?? []).Where(static warning => warning.Code == WarningCodes.LossyConversion)
+            .Select(static warning => warning.Message + " " + warning.Details?.ToJsonString()).Order(StringComparer.Ordinal)];
+
+    /// <summary>The LOSSY_CONVERSION warnings that name headers and footers left out.</summary>
+    private static Warning[] LeftOut(IReadOnlyList<Warning>? warnings) =>
+        [.. (warnings ?? []).Where(static warning => warning.Code == WarningCodes.LossyConversion
+            && warning.Message.Contains("leaves out", StringComparison.Ordinal))];
 
     /// <summary>
     /// An edit's verification reports a resource that loading left out as an issue only when the

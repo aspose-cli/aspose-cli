@@ -161,17 +161,18 @@ internal static class WordsText
 
     /// <summary>
     /// The runs whose text <see cref="Of"/> reads from a node, in order; without
-    /// <paramref name="fieldResults"/>, only those outside fields, such as a hyperlink's text.
+    /// <paramref name="fieldResults"/>, only those outside fields, such as a hyperlink's text; with
+    /// <paramref name="deleted"/>, also those a tracked change deletes, which a page shows struck through.
     /// </summary>
-    internal static IReadOnlyList<Run> VisibleRuns(Node node, bool fieldResults = true)
+    internal static IReadOnlyList<Run> VisibleRuns(Node node, bool fieldResults = true, bool deleted = false)
     {
         var runs = new List<Run>();
-        Walk(node, runs.Add, paragraphStart: null, paragraphEnd: null, fieldResults);
+        Walk(node, runs.Add, paragraphStart: null, paragraphEnd: null, fieldResults, deleted: deleted);
         return runs;
     }
 
     private static void Walk(
-        Node node, Action<Run> visible, Action<Paragraph>? paragraphStart, Action? paragraphEnd, bool fieldResults = true, Action<string>? placeholder = null)
+        Node node, Action<Run> visible, Action<Paragraph>? paragraphStart, Action? paragraphEnd, bool fieldResults = true, Action<string>? placeholder = null, bool deleted = false)
     {
         var fields = new FieldNesting();
         Append(node, isRoot: true);
@@ -205,7 +206,7 @@ internal static class WordsText
                 case FieldEnd when fields.End():
                     return;
                 case Run run:
-                    if (!fields.InCode && (fieldResults || !fields.InField) && !run.IsDeleteRevision)
+                    if (!fields.InCode && (fieldResults || !fields.InField) && (deleted || !run.IsDeleteRevision))
                     {
                         visible(run);
                     }

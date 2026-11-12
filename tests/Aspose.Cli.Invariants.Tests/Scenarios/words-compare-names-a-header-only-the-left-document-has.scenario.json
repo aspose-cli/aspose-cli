@@ -1,0 +1,53 @@
+{
+  "name": "words compare names a header only the left document has as left out of a Markdown or e-book redline, and so does a convert of the Word redline: its deleted text still shows struck through",
+  "files": {
+    "body.md": { "text": "The notice period is thirty days.\n" },
+    "header.json": { "text": "{\"ops\":[{\"op\":\"set_header\",\"paragraphs\":[{\"text\":\"Running head\"}]}]}" }
+  },
+  "steps": [
+    {
+      "args": ["words", "create", "plain.docx", "--from-markdown", "body.md"],
+      "expect": { "exitCode": 0 }
+    },
+    {
+      "args": ["words", "edit", "plain.docx", "--ops", "header.json", "--out", "headed.docx"],
+      "expect": { "exitCode": 0 }
+    },
+    {
+      "args": ["words", "compare", "headed.docx", "plain.docx", "--out", "redline.md", "--license-mode", "evaluation"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "warnings[0].code", "equals": "EVALUATION_MODE" },
+          { "path": "warnings[2].details.content", "equals": ["headers-footers"] },
+          { "path": "warnings[2].message", "contains": "the headers of section(s) 1" }
+        ]
+      }
+    },
+    {
+      "args": ["words", "compare", "headed.docx", "plain.docx", "--out", "redline.mobi", "--license-mode", "evaluation"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "warnings[1].details.content", "equals": ["headers-footers"] },
+          { "path": "warnings[1].message", "contains": "the headers of section(s) 1" },
+          { "path": "warnings[2]", "exists": false }
+        ]
+      }
+    },
+    {
+      "args": ["words", "compare", "headed.docx", "plain.docx", "--out", "redline.docx"],
+      "expect": { "exitCode": 0, "warnings": { "absent": ["LOSSY_CONVERSION"] } }
+    },
+    {
+      "args": ["words", "convert", "redline.docx", "--to", "md", "--out", "converted.md", "--license-mode", "evaluation"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "warnings[2].details.content", "equals": ["headers-footers"] },
+          { "path": "warnings[2].message", "contains": "the headers of section(s) 1" }
+        ]
+      }
+    }
+  ]
+}

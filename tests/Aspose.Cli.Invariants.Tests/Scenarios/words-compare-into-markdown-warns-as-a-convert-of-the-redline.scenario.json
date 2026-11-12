@@ -1,0 +1,47 @@
+{
+  "name": "words compare into Markdown warns of the revisions it mixes into the text, as a convert of the redline does, and names the headers and footers once",
+  "files": {
+    "left.docx": { "fixture": "words.rich" },
+    "change.json": { "text": "{\"ops\":[{\"op\":\"replace_text\",\"find\":\"ZqxBd\",\"replace\":\"ZqxBe\"}]}" }
+  },
+  "steps": [
+    {
+      "args": ["words", "edit", "left.docx", "--ops", "change.json", "--out", "right.docx"],
+      "expect": { "exitCode": 0 }
+    },
+    {
+      "args": ["words", "compare", "left.docx", "right.docx", "--out", "redline.md", "--license-mode", "evaluation"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "warnings[0].code", "equals": "EVALUATION_MODE" },
+          { "path": "warnings[1].message", "equals": "Conversion to md cannot preserve every Word feature." },
+          { "path": "warnings[2].details.content", "equals": ["headers-footers"] },
+          { "path": "warnings[3].details.content", "equals": ["comments"] },
+          { "path": "warnings[4].details.content", "equals": ["revisions"] },
+          { "path": "warnings[4].message", "startsWith": "The md output writes the deleted and moved-from text of tracked changes" },
+          { "path": "warnings[4].hint", "equals": "To see what changed, write the redline as DOCX, PDF or HTML, which mark the changes." },
+          { "path": "warnings[5]", "exists": false }
+        ]
+      }
+    },
+    {
+      "args": ["words", "compare", "left.docx", "right.docx", "--out", "redline.docx"],
+      "expect": { "exitCode": 0, "warnings": { "absent": ["LOSSY_CONVERSION"] } }
+    },
+    {
+      "args": ["words", "convert", "redline.docx", "--to", "md", "--out", "converted.md", "--license-mode", "evaluation"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "warnings[0].code", "equals": "EVALUATION_MODE" },
+          { "path": "warnings[1].message", "equals": "Conversion to md cannot preserve every Word feature." },
+          { "path": "warnings[2].details.content", "equals": ["headers-footers"] },
+          { "path": "warnings[3].details.content", "equals": ["comments"] },
+          { "path": "warnings[4].details.content", "equals": ["revisions"] },
+          { "path": "warnings[5]", "exists": false }
+        ]
+      }
+    }
+  ]
+}
