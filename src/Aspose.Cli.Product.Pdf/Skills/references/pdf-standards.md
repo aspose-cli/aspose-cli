@@ -74,7 +74,9 @@ the values of filled fields; a `LOSSY_CONVERSION` with `details.content`
 `["form-values"]` counts and names those fields. To convert the values as text,
 flatten the fields with `flatten_forms` in a `pdf edit` to a new `--out` file,
 which ends their fillability, and convert that file; to read the values, use
-`pdf inspect --detail forms`.
+`pdf inspect --detail forms`. To search or count the values, convert the
+flattened file to `txt`: `md` writes each value of a form that
+`pdf create --from-html` made twice.
 
 HTML output is one self-contained file that places every line of text
 absolutely and embeds subsets of the PDF's fonts; its `<title>` is the PDF
