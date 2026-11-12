@@ -15,6 +15,17 @@ internal static class SlidesPlaceholders
     internal static IAutoShape? Title(ISlide slide) =>
         slide.Shapes.OfType<IAutoShape>().FirstOrDefault(static shape => IsTitle(shape.Placeholder));
 
+    /// <summary>Whether the layout has a title placeholder, which a slide that takes the layout gets.</summary>
+    internal static bool HasTitle(ILayoutSlide layout) => layout.Shapes.Any(static shape => IsTitle(shape.Placeholder));
+
+    /// <summary>
+    /// Whether a slide's placeholder keeps its role when the slide takes the layout: the layout
+    /// has one of its type and index. Without one the engine gives it a role of the layout the
+    /// slide has no placeholder for, the title first.
+    /// </summary>
+    internal static bool Keeps(ILayoutSlide layout, IPlaceholder placeholder) =>
+        layout.Shapes.Any(shape => shape.Placeholder is { } own && own.Type == placeholder.Type && own.Index == placeholder.Index);
+
     /// <summary>Content placeholders in layout order; a title slide's subtitle counts when requested.</summary>
     internal static IAutoShape[] Content(ISlide slide, bool includeSubtitle = false) =>
         slide.Shapes
@@ -31,8 +42,7 @@ internal static class SlidesPlaceholders
     internal static ILayoutSlide Layout(Presentation presentation, SlideLayoutType type) =>
         presentation.LayoutSlides.GetByType(type)
             ?? presentation.LayoutSlides.GetByType(SlideLayoutType.TitleAndObject)
-            ?? presentation.LayoutSlides.FirstOrDefault(static layout =>
-                layout.Shapes.Any(static shape => IsTitle(shape.Placeholder)))
+            ?? presentation.LayoutSlides.FirstOrDefault(HasTitle)
             ?? presentation.LayoutSlides[0];
 
     /// <summary>

@@ -67,8 +67,14 @@ comments a deck already has.
   placeholder, or the title box a Markdown outline added where the layout has none. `set_body`
   fills a title slide's subtitle. Each refuses a slide without its placeholder with
   `PLACEHOLDER_NOT_FOUND` and adds no box: `set_title` a Blank slide, `set_body` one with neither
-  body nor subtitle, as a Markdown heading without content makes. Write into one of the slide's
-  shapes with `set_text`, or add a text box with `insert_shape`.
+  body nor subtitle, as a Markdown heading without content makes. To give a slide a title,
+  `set_layout` it to a layout with a title placeholder, then `set_title` it. A placeholder the
+  slide has, such as its body or footer, can take the new layout's title role, and `set_title`
+  then overwrites its text: the refusal's hint shows the `set_layout` to put before the
+  `set_title` in its batch only where every placeholder keeps its role, the slide's own layout
+  first. The slide keeps its shapes, so `delete_shape` a text box that stood for its title. Text
+  that `set_text` writes into a shape, or a text box `insert_shape` adds, shows on the slide but
+  is not its title; write a body there where the slide has no placeholder for it.
 - A slide's `title` in `slides read` and `inspect --sample` is the text of the shape `set_title`
   writes; a slide without one reports no `title`, whatever its other shapes say.
 - `format_shape` `font` names one font for Latin, East Asian and complex-script text;

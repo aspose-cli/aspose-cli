@@ -95,7 +95,7 @@ internal sealed partial class SlidesMutationHandlers : ISlidesOpHandler<ValueTup
         IShape? shape = op switch
         {
             ShapeTargetOp shapeTarget => ResolveShape(slide!, shapeTarget),
-            SetTitleOp => ResolveTitle(slide!),
+            SetTitleOp => ResolveTitle(presentation, slide!),
             SetBodyOp => ResolveBody(slide!),
             _ => null,
         };

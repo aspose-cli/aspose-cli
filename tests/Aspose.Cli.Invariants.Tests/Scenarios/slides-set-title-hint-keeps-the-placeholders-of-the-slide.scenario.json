@@ -1,0 +1,66 @@
+{
+  "name": "slides set_title on a slide whose title was deleted is refused with the set_layout of its own layout, after which the body keeps its text and the slide reports the title; on a Blank slide with a footer, which a layout with a title would make the title, the hint shows no set_layout",
+  "files": {
+    "deck.md": { "text": "# Deck\n\n## Two\n\n- pt\n" }
+  },
+  "steps": [
+    {
+      "args": ["slides", "create", "deck.pptx", "--from-markdown", "deck.md"],
+      "expect": { "exitCode": 0 }
+    },
+    {
+      "args": ["slides", "edit", "deck.pptx", "--ops", "{\"ops\":[{\"op\":\"delete_shape\",\"slide\":2,\"shapeId\":2}]}", "--out", "untitled.pptx"],
+      "expect": { "exitCode": 0, "files": { "present": ["untitled.pptx"] } }
+    },
+    {
+      "args": ["slides", "edit", "untitled.pptx", "--ops", "{\"ops\":[{\"op\":\"set_title\",\"slide\":2,\"text\":\"Head\"}]}", "--out", "titled.pptx"],
+      "expect": {
+        "exitCode": 4,
+        "error": "PLACEHOLDER_NOT_FOUND",
+        "json": [
+          { "path": "error.hint", "contains": "put {\"op\":\"set_layout\",\"slides\":\"2\",\"layout\":\"Title and Content\"} before this set_title in its batch" }
+        ],
+        "files": { "absent": ["titled.pptx"], "unchanged": ["untitled.pptx"] }
+      }
+    },
+    {
+      "args": ["slides", "edit", "untitled.pptx", "--ops", "{\"ops\":[{\"op\":\"set_layout\",\"slides\":\"2\",\"layout\":\"Title and Content\"},{\"op\":\"set_title\",\"slide\":2,\"text\":\"Head\"}]}", "--out", "titled.pptx", "--verify"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "verification.ok", "equals": true }
+        ],
+        "files": { "present": ["titled.pptx"] }
+      }
+    },
+    {
+      "args": ["slides", "read", "titled.pptx", "--slides", "2", "--content", "shapes"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "slides[0].title", "equals": "Head" },
+          { "path": "slides[0].layout", "equals": "Title and Content" },
+          { "path": "slides[0].shapes[0].placeholder", "equals": "body" },
+          { "path": "slides[0].shapes[0].text", "equals": "pt" }
+        ]
+      }
+    },
+    {
+      "args": ["slides", "edit", "deck.pptx", "--ops", "{\"ops\":[{\"op\":\"insert_slide\",\"layout\":\"Blank\"},{\"op\":\"set_footer\",\"slides\":\"3\",\"text\":\"Foot\"}]}", "--out", "footed.pptx"],
+      "expect": { "exitCode": 0, "files": { "present": ["footed.pptx"] } }
+    },
+    {
+      "args": ["slides", "edit", "footed.pptx", "--ops", "{\"ops\":[{\"op\":\"set_title\",\"slide\":3,\"text\":\"Head\"}]}", "--out", "never.pptx"],
+      "expect": {
+        "exitCode": 4,
+        "error": "PLACEHOLDER_NOT_FOUND",
+        "json": [
+          { "path": "error.hint", "contains": "would give its title role to a placeholder the slide has" },
+          { "path": "error.hint", "notContains": "\"op\":\"set_layout\"" },
+          { "path": "error.hint", "notContains": "keeps its shapes" }
+        ],
+        "files": { "absent": ["never.pptx"], "unchanged": ["footed.pptx"] }
+      }
+    }
+  ]
+}
