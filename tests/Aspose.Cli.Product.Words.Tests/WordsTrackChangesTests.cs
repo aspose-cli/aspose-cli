@@ -443,6 +443,33 @@ public sealed class WordsTrackChangesTests
         Assert.Equal("Alice signs.", Assert.Single(info.Revisions!).Text);
     }
 
+    /// <summary>
+    /// A change that starts inside a field's code and runs on past a paragraph mark keeps only
+    /// what follows the code, although the SDK lists the paragraph mark's revision first.
+    /// </summary>
+    [Theory]
+    [InlineData("del", "delInstrText", "delText", "deletion")]
+    [InlineData("ins", "instrText", "t", "insertion")]
+    public void InspectRevisions_ReadsAChangeStartingInAFieldCodeAcrossAParagraphMarkFromTheResultOn(string change, string code, string text, string kind)
+    {
+        using var fixture = new WordsFixture();
+        string Changed(int id, string run) => $"""<w:{change} w:id="{id}" {Reviewer}><w:r>{run}</w:r></w:{change}>""";
+        string Text(string value) => $"""<w:{text} xml:space="preserve">{value}</w:{text}>""";
+        string changedCode = Changed(2, $"""<w:{code} xml:space="preserve">"abc" </w:{code}>""")
+            + Changed(3, """<w:fldChar w:fldCharType="separate"/>""") + Changed(4, Text("abc"))
+            + Changed(5, """<w:fldChar w:fldCharType="end"/>""") + Changed(6, Text(" tail"));
+        string input = WriteDocx(fixture.Temp.File("code-across-mark.docx"), $"""
+            <w:p><w:pPr><w:rPr><w:{change} w:id="1" {Reviewer}/></w:rPr></w:pPr><w:r><w:t xml:space="preserve">Intro </w:t></w:r><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> QUOTE </w:instrText></w:r>{changedCode}</w:p>
+            <w:p>{Changed(7, Text("Next "))}<w:r><w:t>kept.</w:t></w:r></w:p>
+            """);
+
+        WordsInspectResult info = WordsInspect.Run(fixture.Session, new WordsInspectRequest { Input = input, Details = ["revisions"] });
+
+        WordsRevisionData revision = Assert.Single(info.Revisions!);
+        Assert.Equal(kind, revision.Kind);
+        Assert.Equal("abc tail\nNext ", revision.Text);
+    }
+
     /// <summary>A sample per revision node: a field's marks and code have no text, its result does.</summary>
     [Fact]
     public void Compare_SamplesAFieldByItsResultAlone()

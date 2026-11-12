@@ -181,6 +181,16 @@ internal static class InfoProjection
         Revision[] revisions = document.Revisions.Cast<Revision>().ToArray();
         IReadOnlySet<Node> fieldCode = WordsText.FieldCodeRuns(document);
         Dictionary<Revision, RevisionChange> moves = Moves(document, revisions, fieldCode);
+        // Where a group's text starts: its first inline node, since the SDK lists a paragraph's mark before its runs.
+        var starts = new Dictionary<RevisionGroup, Node>(ReferenceEqualityComparer.Instance);
+        foreach (Revision revision in revisions)
+        {
+            if (revision is { Group: { } group, ParentNode: not Paragraph })
+            {
+                starts.TryAdd(group, revision.ParentNode);
+            }
+        }
+
         var groups = new Dictionary<RevisionGroup, List<Revision>>(ReferenceEqualityComparer.Instance);
         var changes = new List<RevisionChange>();
         foreach (Revision revision in revisions)
@@ -209,8 +219,8 @@ internal static class InfoProjection
 
             changes.Add(new RevisionChange(revision, revision.RevisionType switch
             {
-                RevisionType.Insertion or RevisionType.Deletion => revision.Group?.Text is { } groupText
-                    ? WordsText.WithoutFieldCodes(groupText, startsInCode: fieldCode.Contains(revision.ParentNode))
+                RevisionType.Insertion or RevisionType.Deletion => revision.Group is { Text: { } groupText } textGroup
+                    ? WordsText.WithoutFieldCodes(groupText, startsInCode: starts.TryGetValue(textGroup, out Node? start) && fieldCode.Contains(start))
                     : NodeText(revision, fieldCode),
                 // Format changes carry a description of the formatting, not document text.
                 _ => null,
