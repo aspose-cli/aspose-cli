@@ -1,0 +1,76 @@
+{
+  "name": "slides convert to md holds the slides' text alone, so it warns LOSSY_CONVERSION with details.content pictures, naming the slides with pictures and how many pictures they show, and the slides extract its hint gives writes them, as many files as it names; a selection without pictures, a pdf and a deck without pictures give no such warning",
+  "files": {
+    "deck.md": { "text": "# Deck\n\n## Two\n\n- pt\n" },
+    "dot.png": { "base64": "iVBORw0KGgoAAAANSUhEUgAAACgAAAAoCAIAAAADnC86AAAAMElEQVR4nO3NMQ0AAAgDsCmZfynIwgQJT5P+zbQvIhaLxWKxWCwWi8VisVgsFvcsXhHvWVsvWSOBAAAAAElFTkSuQmCC" }
+  },
+  "steps": [
+    {
+      "args": ["slides", "create", "deck.pptx", "--from-markdown", "deck.md"],
+      "expect": { "exitCode": 0 }
+    },
+    {
+      "args": ["slides", "edit", "deck.pptx", "--ops", "{\"ops\":[{\"op\":\"insert_image\",\"slide\":2,\"path\":\"dot.png\",\"rect\":{\"x\":100,\"y\":200,\"width\":80,\"height\":80}}]}", "--out", "pictured.pptx"],
+      "expect": { "exitCode": 0 }
+    },
+    {
+      "args": ["slides", "convert", "pictured.pptx", "--to", "md", "--out", "pictured.md", "--license-mode", "evaluation"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "warnings[0].code", "equals": "EVALUATION_MODE" },
+          { "path": "warnings[1].message", "equals": "Slides conversion to md may not preserve every presentation feature." },
+          { "path": "warnings[2].code", "equals": "LOSSY_CONVERSION" },
+          { "path": "warnings[2].details.content", "equals": ["pictures"] },
+          { "path": "warnings[2].message", "equals": "The md output holds the slides' text alone and leaves out the 1 picture(s) shown on slide(s) 2." },
+          { "path": "warnings[2].hint", "startsWith": "Extract them with 'aspose-cli slides extract " },
+          { "path": "warnings[2].hint", "contains": " --what media --slides 2 --out-dir " },
+          { "path": "warnings[2].hint", "contains": "pictured.pictures" },
+          { "path": "warnings[3]", "exists": false }
+        ],
+        "files": { "present": ["pictured.md"] }
+      }
+    },
+    {
+      "args": ["slides", "extract", "pictured.pptx", "--what", "media", "--slides", "2", "--out-dir", "pictured.pictures"],
+      "expect": {
+        "exitCode": 0,
+        "files": { "present": ["pictured.pictures/media.image.1.png"] },
+        "reopens": ["@result"]
+      }
+    },
+    {
+      "args": ["slides", "convert", "pictured.pptx", "--to", "md", "--slides", "1", "--out", "first.md"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "warnings[0].details.content", "notContains": "pictures" },
+          { "path": "warnings[1].details.content", "notContains": "pictures" },
+          { "path": "warnings[2].details.content", "notContains": "pictures" }
+        ]
+      }
+    },
+    {
+      "args": ["slides", "convert", "pictured.pptx", "--to", "pdf", "--out", "pictured.pdf"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "warnings[0].details.content", "notContains": "pictures" },
+          { "path": "warnings[1].details.content", "notContains": "pictures" },
+          { "path": "warnings[2].details.content", "notContains": "pictures" }
+        ]
+      }
+    },
+    {
+      "args": ["slides", "convert", "deck.pptx", "--to", "md", "--out", "deck.out.md"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "warnings[0].details.content", "notContains": "pictures" },
+          { "path": "warnings[1].details.content", "notContains": "pictures" },
+          { "path": "warnings[2].details.content", "notContains": "pictures" }
+        ]
+      }
+    }
+  ]
+}

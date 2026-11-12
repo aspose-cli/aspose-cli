@@ -48,8 +48,14 @@ internal static partial class SlidesExport
         // Read before the save, which removes the unselected slides from this private copy for a
         // presentation format, so the slides keep their numbers in the deck.
         Warning? lost = ContentLost(presentation, formatId, shown);
+        Warning? pictures = PicturesLeftOut(loaded, request, shown);
         IReadOnlyList<SlidesConvertOutput> outputs = ConvertOutputs(session, loaded, request, selection);
         List<Warning> warnings = BuildConvertWarnings(loaded, formatId, skipped, shown, lost);
+        if (pictures is not null)
+        {
+            warnings.Add(pictures);
+        }
+
         return new SlidesConvertResult
         {
             Input = Source(request.Input, loaded),
@@ -221,6 +227,7 @@ internal static partial class SlidesExport
         {
             var options = new MarkdownSaveOptions
             {
+                ExportType = MarkdownExportType.TextOnly,
                 ShowSlideNumber = true,
                 SlideNumberFormat = "<!-- slide {0} -->",
                 BasePath = scratch.FullName,
@@ -338,6 +345,32 @@ internal static partial class SlidesExport
         }
 
         return warnings;
+    }
+
+    /// <summary>
+    /// The warning that an output of the slides' text holds none of the pictures they show
+    /// (<see cref="SlidesContentLoss.Pictures"/>), counted as the extract its hint names writes
+    /// them, each once (<see cref="SlidesExtract.ShownMedia"/>); null when the format keeps them or
+    /// the shown slides have none.
+    /// </summary>
+    private static Warning? PicturesLeftOut(LoadedPresentation loaded, SlidesConvertRequest request, IReadOnlyList<int> shown)
+    {
+        string format = request.Output.Format.Id;
+        int[] pictured = SlidesEngineFormats.Losses(format).HasFlag(SlidesContentLoss.Pictures)
+            ? [.. shown.Where(number => SlidesExtract.ShownMedia(loaded.Presentation, [number]).OfType<IPPImage>().Any())]
+            : [];
+        if (pictured.Length == 0)
+        {
+            return null;
+        }
+
+        string md = request.Output.Path;
+        ContinuationCommand extract = (request.Continuation ?? new ContinuationInput(request.Input)).ContinuationAt("slides", "extract")
+            .Option("--what", SlidesExtractKinds.Media).Option("--slides", string.Join(",", pictured))
+            .OutDir(ContinuationOutput.New(Path.Combine(Path.GetDirectoryName(md)!, Path.GetFileNameWithoutExtension(md) + ".pictures")));
+        return ContentLoss.Warning([ContentKind.Pictures],
+            $"The {format} output holds the slides' text alone and leaves out the {SlidesExtract.ShownMedia(loaded.Presentation, pictured).OfType<IPPImage>().Count()} picture(s) shown on slide(s) {string.Join(", ", pictured)}.",
+            $"Extract them with {extract.Quoted()}, which writes each of them once as a media.image file, beside the audio and video of those slides; a pptx output keeps them.");
     }
 
     // What a save in the format does not keep of the slides it shows (SlidesEngineFormat.Loses),
