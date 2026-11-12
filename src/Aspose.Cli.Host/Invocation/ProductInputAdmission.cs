@@ -29,7 +29,7 @@ internal static class ProductInputAdmission
                 }
                 try
                 {
-                    budgets.AdmitFile(paths.ResolveInput(value));
+                    budgets.AdmitFile(paths.ResolveInput(value, parameter.Symbol.Name));
                 }
                 catch (CliException missing)
                     when (missing.Code == ErrorCodes.FileNotFound && parameter.Metadata.InputKind == InputKind.JsonSource)

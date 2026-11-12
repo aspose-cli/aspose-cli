@@ -107,7 +107,7 @@ internal static class SkillCommandGroup
             }
 
             string parent = explicitTarget is not null
-                ? context.Paths.ResolveOutput(explicitTarget)
+                ? context.Paths.ResolveOutput(explicitTarget, targetOption.Name)
                 : ResolveHostParent(
                     host!,
                     parseResult.GetValue(userOption),

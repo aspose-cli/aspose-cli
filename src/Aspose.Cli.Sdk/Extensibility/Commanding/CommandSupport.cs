@@ -288,7 +288,7 @@ internal sealed class OutputFileOption
     {
         ArgumentNullException.ThrowIfNull(paths);
         RefuseStandardStream(output, parameter);
-        string resolved = paths.ResolveOutput(output);
+        string resolved = paths.ResolveOutput(output, parameter);
         EnsureNotInput(resolved, parameter, inPlaceAvailable, inputPaths);
         return resolved;
     }
