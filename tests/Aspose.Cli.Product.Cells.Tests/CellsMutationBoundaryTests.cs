@@ -80,6 +80,64 @@ public sealed class CellsMutationBoundaryTests
     }
 
     /// <summary>
+    /// Auto-fit leaves alone what the sheet hides, which the engine's own auto-fit shows: a
+    /// hidden column, one of no width, columns a collapsed group hides, a hidden row, one of no
+    /// height and rows a collapsed group hides each keep their state and size, while the visible
+    /// columns and rows around them still fit their text.
+    /// </summary>
+    [Fact]
+    public void AutoFit_LeavesHiddenRowsAndColumnsHidden()
+    {
+        using var fixture = new CellsFixture();
+        _ = fixture.LicenseState;
+        using var workspace = new TempWorkspace();
+        using (var source = new Workbook())
+        {
+            Worksheet sheet = source.Worksheets[0];
+            sheet.Name = "Data";
+            Aspose.Cells.Cells cells = sheet.Cells;
+            for (int index = 0; index < 7; index++)
+            {
+                cells[0, index].PutValue($"a header long enough to widen column {index}");
+                Cell lines = cells[index + 1, 0];
+                lines.PutValue("line one\nline two\nline three");
+                Style style = lines.GetStyle();
+                style.IsTextWrapped = true;
+                lines.SetStyle(style);
+            }
+
+            cells.HideColumn(1);
+            cells.SetColumnWidth(2, 0);
+            cells.GroupColumns(3, 4, true);
+            cells.HideRow(2);
+            cells.SetRowHeight(3, 0);
+            cells.GroupRows(4, 5, true);
+            source.Save(workspace.File("source.xlsx"));
+        }
+
+        CliResult fitted = workspace.Run("cells", "edit", "source.xlsx", "--ops",
+            """{"ops":[{"op":"resize_columns","sheet":"Data","first":"A","last":"G"},{"op":"resize_rows","sheet":"Data","first":1,"last":8}]}""",
+            "--out", "fitted.xlsx", "--verify", "--output-format", "json");
+
+        Assert.True(fitted.ExitCode == 0, fitted.StdErr);
+        using var before = new Workbook(workspace.File("source.xlsx"));
+        using var after = new Workbook(workspace.File("fitted.xlsx"));
+        Aspose.Cells.Cells was = before.Worksheets["Data"].Cells, now = after.Worksheets["Data"].Cells;
+        foreach (int column in new[] { 1, 2, 3, 4 })
+        {
+            Assert.Equal((true, was.GetColumnWidth(column)), (now.IsColumnHidden(column), now.GetColumnWidth(column)));
+        }
+
+        foreach (int row in new[] { 2, 3, 4, 5 })
+        {
+            Assert.Equal((true, was.GetRowHeight(row)), (now.IsRowHidden(row), now.GetRowHeight(row)));
+        }
+
+        Assert.All(new[] { 0, 5, 6 }, column => Assert.True(now.GetColumnWidth(column) > was.GetColumnWidth(column)));
+        Assert.All(new[] { 1, 6, 7 }, row => Assert.True(now.GetRowHeight(row) > was.GetRowHeight(row)));
+    }
+
+    /// <summary>
     /// set_values keeps the text #N/A with a quote prefix, which a number written over it drops,
     /// as typing a number over '#N/A in Excel does, while the text beside it keeps its prefix.
     /// </summary>

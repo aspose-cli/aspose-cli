@@ -19,6 +19,11 @@ internal static class RowColumnOps
     // structural operations therefore ask the engine to update references.
     private static readonly InsertOptions UpdateAll = new() { UpdateReference = true };
 
+    // Auto-fit shows a hidden row or column, one of no size and those a collapsed group hides,
+    // which the user hid; it leaves them as they are only when told to ignore hidden ones
+    // (probed on 26.9.0). Every other option keeps the engine's default.
+    private static readonly AutoFitterOptions ShownOnly = new() { IgnoreHidden = true };
+
     public static void InsertRows(Worksheet sheet, InsertRowsOp op)
     {
         int last = sheet.Cells.MaxDataRow;
@@ -148,7 +153,7 @@ internal static class RowColumnOps
         }
         else
         {
-            sheet.AutoFitRows(first, last);
+            sheet.AutoFitRows(first, last, ShownOnly);
         }
     }
 
@@ -166,7 +171,7 @@ internal static class RowColumnOps
         }
         else
         {
-            sheet.AutoFitColumns(first, last);
+            sheet.AutoFitColumns(first, last, ShownOnly);
             WidenForGeneralNumbers(sheet.Cells, first, last);
         }
     }
@@ -176,15 +181,15 @@ internal static class RowColumnOps
     /// until each General number in it shows in full, then one pixel more: auto-fit leaves such a
     /// number rounded in some fonts, and rendering needs a pixel more than its display text
     /// (CELLS-AUTOFIT-GENERAL-NUMBER, KNOWN-ISSUES.md). A number still rounded at the limit does not
-    /// widen the column. Merged cells, which auto-fit does not measure, and rotated or stacked
-    /// numbers, whose display text ignores the rotation, are left as they are.
+    /// widen the column. Merged cells, which auto-fit does not measure, rotated or stacked numbers,
+    /// whose display text ignores the rotation, and hidden columns are left as they are.
     /// </summary>
     private static void WidenForGeneralNumbers(Aspose.Cells.Cells cells, int first, int last)
     {
         var fitted = new Dictionary<int, int>();
         foreach (Cell cell in cells)
         {
-            if (cell.Column < first || cell.Column > last || cell.Type != CellValueType.IsNumeric || cell.IsMerged
+            if (cell.Column < first || cell.Column > last || cell.Type != CellValueType.IsNumeric || cell.IsMerged || cells.IsColumnHidden(cell.Column)
                 || cell.GetStyle() is not { Number: 0, Custom: null or "", ShrinkToFit: false, RotationAngle: 0 })
             {
                 continue;
