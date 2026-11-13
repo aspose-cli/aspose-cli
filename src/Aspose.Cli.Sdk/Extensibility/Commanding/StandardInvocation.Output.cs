@@ -191,17 +191,18 @@ public partial class StandardInvocation
     /// The command lines, for a hint, that write a file of <paramref name="format"/> at
     /// <paramref name="output"/>, replacing it, from this command's input with the conversion at
     /// <paramref name="converter"/>: that conversion of the input itself, or, when the invocation
-    /// selected pages with a range option, this product's split of those pages into the output's
-    /// folder, then that conversion of the part, so the file holds only the pages selected. Each
-    /// starts from the input as <see cref="ContinuationOf"/> names it, the part as the input with
-    /// another document, since the split keeps the input's password; the caller may append options
-    /// to the last. Null when the invocation gave the command other arguments or options of its own,
-    /// which the conversion might not take, or selected pages its product has no split by groups for.
+    /// selected pages with a range option, this product's split of those pages into a folder of its
+    /// own beside the output, then that conversion of the part, so the file holds only the pages
+    /// selected. Each starts from the input as <see cref="ContinuationOf"/> names it, the part as the
+    /// input with another document, since the split keeps the input's password; the caller may append
+    /// options to the last. Null when the invocation gave the command other arguments or options of
+    /// its own, which the conversion might not take, or selected pages its product has no split by groups for.
     /// </summary>
     /// <param name="converter">The command path of the conversion.</param>
     /// <param name="format">The format id the conversion writes.</param>
     /// <param name="output">The file the conversion writes.</param>
-    internal InputConversion? FromInput(string[] converter, string format, string output)
+    /// <param name="purpose">What the conversion is for, such as <c>editable</c>, which names the folder of the part.</param>
+    internal InputConversion? FromInput(string[] converter, string format, string output, string purpose)
     {
         ArgumentNullException.ThrowIfNull(converter);
         ContinuationInput input = ContinuationOf(Input);
@@ -221,11 +222,19 @@ public partial class StandardInvocation
             return null;
         }
 
-        string folder = Path.GetDirectoryName(output)!;
+        // A folder named for the purpose that names nothing yet, so the split creates it and meets
+        // no file of the caller's there, and the hints of one invocation split into folders apart.
+        string named = Path.Combine(Path.GetDirectoryName(output)!, $"{Path.GetFileNameWithoutExtension(output)}-{purpose}-part");
+        string folder = named;
+        for (int number = 2; File.Exists(folder) || Directory.Exists(folder); number++)
+        {
+            folder = $"{named}-{number}";
+        }
+
         string part = new ResolvedDirectory(folder, overwrite: false).Parts(Path.GetFileNameWithoutExtension(Input), split.Extension, [1])[0];
         return new InputConversion(
         [
-            // The part is a new file beside the output, written only where nothing is.
+            // The part is a new file in a new folder, written only where nothing is.
             input.ContinuationAt(split.Path)
                 .Option(SplitOptions.ByOption, SplitPlan.Spell(SplitBy.Pages))
                 .Option(SplitOptions.GroupsOption, selection.Value)
@@ -659,15 +668,15 @@ public partial class StandardInvocation
     /// with the input and its password's environment variable as <see cref="Continuation()"/>
     /// repeats them, then <c>--to</c> the format, <c>--out</c> this command's output and
     /// <c>--overwrite</c>, so it replaces that file. A selection of pages is split from the input
-    /// first and the part converted, so the file keeps only those pages, and the part may be
-    /// deleted once converted. The text ends with <c>instead</c> and what to delete, as in
+    /// first and the part converted, so the file keeps only those pages, and the folder of the part
+    /// may be deleted once converted. The text ends with <c>instead</c> and what to delete, as in
     /// <c>run 'a', then 'b' instead; …</c>. Null when the format names no such product, this build
     /// has no such command, or the command was given other options of its own.
     /// </summary>
     public string? EditableConversion()
     {
         ResolvedOutput output = Output;
-        return Editor(output.Format, CommandPath()[^1]) is { } path && FromInput(path, output.Format.Id, output.Path) is { } conversion
+        return Editor(output.Format, CommandPath()[^1]) is { } path && FromInput(path, output.Format.Id, output.Path, "editable") is { } conversion
             ? $"{ContinuationCommand.Steps(conversion.Commands)} instead{conversion.Leftover}"
             : null;
     }
@@ -726,15 +735,16 @@ internal sealed record RepeatedInvocation(ContinuationCommand Command, string? P
 /// (<see cref="StandardInvocation.FromInput"/>), run one after the other.
 /// </summary>
 /// <param name="Commands">The command lines; the caller may append options to the last.</param>
-/// <param name="Part">The part the split writes for the conversion to read, or null when the input itself is converted.</param>
+/// <param name="Part">The part the split writes for the conversion to read, in a folder the split creates, or null when the input itself is converted.</param>
 internal sealed record InputConversion(IReadOnlyList<ContinuationCommand> Commands, string? Part)
 {
     /// <summary>
-    /// What a hint says after the commands of the part they leave behind, which only the conversion
-    /// reads: to delete it, so that another hint that splits the same part, which it writes only
-    /// where nothing is, runs as written too; empty without one.
+    /// What a hint says after the commands of the folder they leave behind, which holds only the
+    /// part the conversion reads: to delete it, by its full path quoted as the commands quote it, a
+    /// folder that named nothing when the hint was made, so it never holds a file of the caller's;
+    /// empty without one.
     /// </summary>
     public string Leftover => Part is null
         ? string.Empty
-        : $"; once the conversion has run, delete {Path.GetFileName(Part)}, the part the split wrote beside the output";
+        : $"; once the conversion has run, delete {CommandLineText.Quote(Path.GetDirectoryName(Part)!)}, the folder the split created beside the output for the part";
 }
