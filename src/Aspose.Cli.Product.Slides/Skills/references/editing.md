@@ -83,7 +83,8 @@ comments a deck already has.
   footer's.
 - `set_layout` looks a name up in each slide's own master first, so a slide never leaves its master
   for a name it has, also after a `keep-source` import (`use-destination` puts imported slides on
-  the deck's master). For a name only another master has, it warns `SLIDE_MASTER_CHANGED` with
+  the deck's master); `insert_slide` looks it up in the master of the slide before the new one (the
+  one after it at the start). For a name only another master has, either warns `SLIDE_MASTER_CHANGED` with
   `details.fromMaster` and `details.toMaster`, positions in `inspect --detail masters`; the hint
   names the layouts that take the slide back, if any.
 - A slide's `title` in `slides read` and `inspect --sample` is the text of the shape `set_title`

@@ -56,6 +56,35 @@ public sealed class SlidesLayoutMasterTests
         Assert.StartsWith("No layout name takes the slide back to master 1:", moved.Hint, StringComparison.Ordinal);
     }
 
+    /// <summary>
+    /// insert_slide looks a layout name up in the master of the slide before the new one, so a
+    /// name only another master has adds the slide to that master, which the edit names as
+    /// set_layout does.
+    /// </summary>
+    [Fact]
+    public void InsertSlide_TakesALayoutOfAnotherMasterOnlyForANameTheMasterBesideItHasNoneOf()
+    {
+        using var fixture = new SlidesEngineFixture();
+        string input = Deck(fixture, static second => second.LayoutSlides.GetByType(SlideLayoutType.TitleOnly).Name = "Heading Only");
+        string output = fixture.File("inserted.pptx");
+
+        SlidesEditResult result = Edit(fixture, input, output,
+            new InsertSlideOp { Layout = "Heading Only", At = 2 },
+            new InsertSlideOp { Layout = "Title Only", At = 2 });
+
+        using (var inserted = new Presentation(output))
+        {
+            // Slide 1 is on master 1, which has a Title Only layout and no Heading Only.
+            Assert.Equal(["Blank", "Title Only", "Heading Only", "Title and Content"], inserted.Slides.Select(static slide => slide.LayoutSlide.Name));
+            Assert.Equal([0, 0, 1, 1], inserted.Slides.Select(slide => Array.IndexOf([.. inserted.Masters], slide.LayoutSlide.MasterSlide)));
+        }
+
+        Warning added = Assert.Single(result.Warnings!, static warning => warning.Code.Name == "SLIDE_MASTER_CHANGED");
+        Assert.Equal("slide/2", added.Location);
+        Assert.Equal(1, (int)added.Details!["fromMaster"]!);
+        Assert.Equal(2, (int)added.Details!["toMaster"]!);
+    }
+
     // A deck whose slide 1 is on the first master and slide 2 on a copy of it that the action changes.
     private static string Deck(SlidesEngineFixture fixture, Action<IMasterSlide> change)
     {
