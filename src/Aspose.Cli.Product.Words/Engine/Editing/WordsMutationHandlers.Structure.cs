@@ -321,7 +321,10 @@ internal sealed partial class WordsMutationHandlers
                 builder.InsertField("PAGE");
             }
 
-            paragraph.ParagraphFormat.Alignment = AlignmentOf(operation.Alignment);
+            if (operation.Alignment is not null || existingPage is null)
+            {
+                paragraph.ParagraphFormat.Alignment = AlignmentOf(operation.Alignment ?? SetPageNumbersOp.NewNumberAlignment);
+            }
             SetPageNumbering(section, operation);
         }
 

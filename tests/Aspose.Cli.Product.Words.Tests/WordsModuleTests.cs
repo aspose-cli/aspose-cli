@@ -139,7 +139,7 @@ public sealed class WordsModuleTests
     [InlineData("""{"op":"insert_toc","at":{"block":1},"position":"after"}""", """{"maxLevel":3}""")]
     [InlineData("""{"op":"set_header","paragraphs":[{"text":"Header"}]}""", """{"kind":"primary"}""")]
     [InlineData("""{"op":"set_footer","paragraphs":[{"text":"Footer"}]}""", """{"kind":"primary"}""")]
-    [InlineData("""{"op":"set_page_numbers"}""", """{"location":"footer","alignment":"center"}""")]
+    [InlineData("""{"op":"set_page_numbers"}""", """{"location":"footer","alignment":null}""")]
     [InlineData("""{"op":"import_sections","path":"other.docx"}""", """{"formatting":"keep-source"}""")]
     [InlineData("""{"op":"refresh_fields"}""", """{"what":"all"}""")]
     [InlineData("""{"op":"set_list","target":{"block":1},"kind":"bullet"}""", """{"level":1}""")]

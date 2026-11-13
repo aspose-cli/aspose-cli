@@ -589,9 +589,15 @@ public sealed record SetPageNumbersOp : WordsOp
     [ReadBack("inspect-result.schema.json#/$defs/wordsPageNumbersData/properties/location")]
     [AllowedValues(typeof(WordsHeaderFooterLocations))] public string Location { get; init; } = WordsHeaderFooterLocations.Footer;
 
-    /// <summary>The alignment of the paragraph that holds the number.</summary>
+    /// <summary>
+    /// The alignment of the paragraph that holds the number; when omitted, a number the location
+    /// already holds keeps its alignment and a new one is centered.
+    /// </summary>
     [ReadBack("inspect-result.schema.json#/$defs/wordsPageNumbersData/properties/alignment")]
-    [AllowedValues("left", "center", "right")] public string Alignment { get; init; } = "center";
+    [AllowedValues("left", "center", "right")] public string? Alignment { get; init; }
+
+    /// <summary>The alignment of a new number's paragraph when the operation gives none.</summary>
+    internal const string NewNumberAlignment = "center";
 
     /// <summary>
     /// The text of the paragraph that holds the number, replacing what it holds; {n} is the page

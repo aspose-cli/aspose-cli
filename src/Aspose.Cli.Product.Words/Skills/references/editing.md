@@ -214,7 +214,8 @@ After `import_sections`, check the result with `inspect --detail sections`; to
 give the whole document one header and footer, follow with `set_header` and
 `set_footer` without a `section`.
 A `set_page_numbers` `start` restarts numbering in each selected section; name
-a `section` when only one should restart. A section that continues an earlier
+a `section` when only one should restart. Without `alignment`, a number the
+location already holds keeps its alignment and a new one is centered. A section that continues an earlier
 section's header or footer is numbered with it when the operation numbers that
 section too, and otherwise on a copy of what it shows, which becomes its own;
 either way it keeps showing what it showed. Moved to the other `location`, the

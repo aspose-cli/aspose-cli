@@ -132,7 +132,7 @@ internal sealed class WordsPageNumberLosses(IReadOnlyList<Section> input)
         }
 
         bool there = before.Read.Location == location;
-        if (there && before.Read.Alignment is { } alignment && alignment != new SetPageNumbersOp().Alignment)
+        if (there && before.Read.Alignment is { } alignment && alignment != SetPageNumbersOp.NewNumberAlignment)
         {
             operation["alignment"] = alignment;
         }
