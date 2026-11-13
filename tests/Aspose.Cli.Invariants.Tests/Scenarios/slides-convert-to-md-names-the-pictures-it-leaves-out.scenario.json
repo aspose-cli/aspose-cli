@@ -14,19 +14,17 @@
       "expect": { "exitCode": 0 }
     },
     {
-      "args": ["slides", "convert", "pictured.pptx", "--to", "md", "--out", "pictured.md", "--license-mode", "evaluation"],
+      "args": ["slides", "convert", "pictured.pptx", "--to", "md", "--out", "pictured.md"],
       "expect": {
         "exitCode": 0,
+        "warnings": { "only": ["LOSSY_CONVERSION", "LOSSY_CONVERSION"] },
         "json": [
-          { "path": "warnings[0].code", "equals": "EVALUATION_MODE" },
-          { "path": "warnings[1].message", "equals": "Slides conversion to md may not preserve every presentation feature." },
-          { "path": "warnings[2].code", "equals": "LOSSY_CONVERSION" },
-          { "path": "warnings[2].details.content", "equals": ["pictures"] },
-          { "path": "warnings[2].message", "equals": "The md output holds the slides' text alone and leaves out the 1 picture(s) shown on slide(s) 2." },
-          { "path": "warnings[2].hint", "startsWith": "Extract them with 'aspose-cli slides extract " },
-          { "path": "warnings[2].hint", "contains": " --what media --slides 2 --out-dir " },
-          { "path": "warnings[2].hint", "contains": "pictured.pictures" },
-          { "path": "warnings[3]", "exists": false }
+          { "path": "warnings[code=LOSSY_CONVERSION][0].message", "equals": "Slides conversion to md may not preserve every presentation feature." },
+          { "path": "warnings[code=LOSSY_CONVERSION][1].details.content", "equals": ["pictures"] },
+          { "path": "warnings[code=LOSSY_CONVERSION][1].message", "equals": "The md output holds the slides' text alone and leaves out the 1 picture(s) shown on slide(s) 2." },
+          { "path": "warnings[code=LOSSY_CONVERSION][1].hint", "startsWith": "Extract them with 'aspose-cli slides extract " },
+          { "path": "warnings[code=LOSSY_CONVERSION][1].hint", "contains": " --what media --slides 2 --out-dir " },
+          { "path": "warnings[code=LOSSY_CONVERSION][1].hint", "contains": "pictured.pictures" }
         ],
         "files": { "present": ["pictured.md"] }
       }

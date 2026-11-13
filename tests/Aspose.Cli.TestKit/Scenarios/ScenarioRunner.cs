@@ -156,17 +156,9 @@ public static partial class ScenarioRunner
         {
             report(ErrorCheck, $"{error}: {Message(document, result)}, expected success or {string.Join(" or ", refusals)}");
         }
-        if (expect.Warnings is { } warnings)
+        foreach (string problem in WarningProblems(expect.Warnings, document?["warnings"]))
         {
-            string[] codes = [.. ScenarioContract.Codes(document?["warnings"])];
-            foreach (string missing in (warnings.Present ?? []).Where(code => !codes.Contains(code)))
-            {
-                report(WarningsCheck, $"warning {missing} is missing; the result warns [{string.Join(", ", codes)}]");
-            }
-            foreach (string present in (warnings.Absent ?? []).Where(code => codes.Contains(code)))
-            {
-                report(WarningsCheck, $"warning {present} is present");
-            }
+            report(WarningsCheck, problem);
         }
         foreach (JsonAssertion assertion in expect.Json ?? [])
         {
@@ -479,7 +471,44 @@ public static partial class ScenarioRunner
 
     private static string Show(JsonNode? value) => ScenarioContract.Excerpt(value?.ToJsonString() ?? "null");
 
-    /// <summary>Resolves <c>a.b[0].c</c>; true when every segment exists.</summary>
+    /// <summary>What a result's warnings break of the codes a step expects of them.</summary>
+    internal static IEnumerable<string> WarningProblems(ScenarioCodes? expected, JsonNode? warnings)
+    {
+        if (expected is null)
+        {
+            yield break;
+        }
+        string[] codes = [.. ScenarioContract.Codes(warnings)];
+        foreach (string missing in (expected.Present ?? []).Where(code => !codes.Contains(code)))
+        {
+            yield return $"warning {missing} is missing; the result warns [{string.Join(", ", codes)}]";
+        }
+        foreach (string present in (expected.Absent ?? []).Where(code => codes.Contains(code)))
+        {
+            yield return $"warning {present} is present";
+        }
+        if (expected.Only is not { } only)
+        {
+            yield break;
+        }
+        string[] other = [.. codes.Where(static code => code != EvaluationMode).Order(StringComparer.Ordinal)];
+        if (!other.SequenceEqual(only.Order(StringComparer.Ordinal)))
+        {
+            yield return $"the warnings other than {EvaluationMode} are [{string.Join(", ", other)}], expected only [{string.Join(", ", only)}]";
+        }
+        if (codes.Count(static code => code == EvaluationMode) > 1)
+        {
+            yield return $"{EvaluationMode} is warned more than once";
+        }
+    }
+
+    private const string EvaluationMode = "EVALUATION_MODE";
+
+    /// <summary>
+    /// Resolves <c>a.b[0].c</c>, where <c>[name=value]</c> keeps, in their order, the items of an
+    /// array whose <c>name</c> is the string <c>value</c>, such as
+    /// <c>warnings[code=LOSSY_CONVERSION][0]</c>; true when every segment exists.
+    /// </summary>
     internal static bool TryResolve(JsonNode? root, string path, out JsonNode? value)
     {
         value = root;
@@ -498,15 +527,30 @@ public static partial class ScenarioRunner
             for (int open = bracket; open >= 0; open = segment.IndexOf('[', open + 1))
             {
                 int close = segment.IndexOf(']', open);
-                int index = int.Parse(segment[(open + 1)..close], NumberStyles.None, CultureInfo.InvariantCulture);
-                if (value is not JsonArray array || index >= array.Count)
+                if (value is not JsonArray array || !TrySelect(array, segment[(open + 1)..close], out value))
                 {
                     value = null;
                     return false;
                 }
-                value = array[index];
             }
         }
+        return true;
+    }
+
+    /// <summary>The item an index names in an array, or the array of the items a <c>name=value</c> filter keeps.</summary>
+    private static bool TrySelect(JsonArray array, string selector, out JsonNode? item)
+    {
+        int equals = selector.IndexOf('=', StringComparison.Ordinal);
+        if (equals < 0)
+        {
+            int index = int.Parse(selector, NumberStyles.None, CultureInfo.InvariantCulture);
+            item = index < array.Count ? array[index] : null;
+            return index < array.Count;
+        }
+        item = new JsonArray([.. array
+            .Where(element => element is JsonObject obj && obj[selector[..equals]] is JsonValue key
+                && key.TryGetValue(out string? text) && text == selector[(equals + 1)..])
+            .Select(static element => element!.DeepClone())]);
         return true;
     }
 

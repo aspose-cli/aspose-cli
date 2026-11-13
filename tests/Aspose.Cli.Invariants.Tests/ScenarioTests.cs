@@ -146,11 +146,40 @@ public sealed class ScenarioTests
     [InlineData("error.details.suggestions[2]", false, null)]
     [InlineData("error.code", true, "\"USAGE_ERROR\"")]
     [InlineData("error.missing", false, null)]
+    [InlineData("warnings[code=LOSSY_CONVERSION][1].details.content[0]", true, "\"pictures\"")]
+    [InlineData("warnings[code=LOSSY_CONVERSION][2]", false, null)]
+    [InlineData("warnings[code=FONTS_MISSING][0]", false, null)]
+    [InlineData("error.details.suggestions[code=a]", true, "[]")]
     public void JsonPath_ResolvesNamesAndIndexes(string path, bool found, string? expected)
     {
-        JsonNode document = JsonNode.Parse("""{"error":{"code":"USAGE_ERROR","details":{"suggestions":["a","b"]}}}""")!;
+        JsonNode document = JsonNode.Parse("""
+            {"error":{"code":"USAGE_ERROR","details":{"suggestions":["a","b"]}},
+             "warnings":[{"code":"EVALUATION_MODE"},{"code":"LOSSY_CONVERSION"},{"code":"LOSSY_CONVERSION","details":{"content":["pictures"]}}]}
+            """)!;
 
         Assert.Equal(found, ScenarioRunner.TryResolve(document, path, out JsonNode? value));
         Assert.Equal(expected, value?.ToJsonString());
+    }
+
+    /// <summary>
+    /// <c>only</c> holds with or without the one warning an evaluation run adds, and fails on
+    /// another code, one more or one fewer of the same, or that warning twice.
+    /// </summary>
+    [Theory]
+    [InlineData("LOSSY_CONVERSION LOSSY_CONVERSION", "LOSSY_CONVERSION LOSSY_CONVERSION", true)]
+    [InlineData("LOSSY_CONVERSION LOSSY_CONVERSION", "EVALUATION_MODE LOSSY_CONVERSION LOSSY_CONVERSION", true)]
+    [InlineData("LOSSY_CONVERSION LOSSY_CONVERSION", "EVALUATION_MODE LOSSY_CONVERSION LOSSY_CONVERSION FONTS_SUBSTITUTED", false)]
+    [InlineData("LOSSY_CONVERSION LOSSY_CONVERSION", "LOSSY_CONVERSION LOSSY_CONVERSION LOSSY_CONVERSION", false)]
+    [InlineData("LOSSY_CONVERSION LOSSY_CONVERSION", "LOSSY_CONVERSION", false)]
+    [InlineData("LOSSY_CONVERSION LOSSY_CONVERSION", "EVALUATION_MODE EVALUATION_MODE LOSSY_CONVERSION LOSSY_CONVERSION", false)]
+    [InlineData("", "", true)]
+    [InlineData("", "EVALUATION_MODE", true)]
+    [InlineData("", "FONTS_SUBSTITUTED", false)]
+    public void OnlyCodes_AreEveryCodeButEvaluationMode(string expected, string warned, bool holds)
+    {
+        JsonArray warnings = [.. warned.Split(' ', StringSplitOptions.RemoveEmptyEntries).Select(static code => new JsonObject { ["code"] = code })];
+        var codes = new ScenarioCodes { Only = expected.Split(' ', StringSplitOptions.RemoveEmptyEntries) };
+
+        Assert.Equal(holds, !ScenarioRunner.WarningProblems(codes, warnings).Any());
     }
 }
