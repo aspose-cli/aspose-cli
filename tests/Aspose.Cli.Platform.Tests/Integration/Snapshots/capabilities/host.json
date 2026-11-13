@@ -2052,9 +2052,6 @@
             "limit": {
               "description": "The budget's limit, in unit."
             },
-            "line": {
-              "description": "The line of a text input the error is about."
-            },
             "list": {
               "description": "The result field holding a list that was capped, such as outline."
             },
@@ -2163,9 +2160,6 @@
             },
             "resource": {
               "description": "The budget's resource kind."
-            },
-            "sample": {
-              "description": "An excerpt of the input the error is about."
             },
             "sheet": {
               "description": "The worksheet the error is about."
