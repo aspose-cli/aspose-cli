@@ -1,0 +1,52 @@
+{
+  "name": "words set_footer over a footer numbered 'Page {n} of {N}' on the right reports PAGE_NUMBERS_REMOVED with a hint that writes the number as it read, which run as given numbers the pages so again",
+  "files": {
+    "footer.rtf": { "text": "{\\rtf1\\ansi{\\footer\\pard\\qr Page {\\field{\\*\\fldinst PAGE}{\\fldrslt 1}} of {\\field{\\*\\fldinst NUMPAGES}{\\fldrslt 1}}\\par}\\pard Body text.\\par}" },
+    "confidential.json": { "text": "{\"ops\":[{\"op\":\"set_footer\",\"paragraphs\":[{\"text\":\"Confidential\"}]}]}" },
+    "renumbered.json": { "text": "{\"ops\":[{\"op\":\"set_footer\",\"paragraphs\":[{\"text\":\"Confidential\"}]},{\"op\":\"set_page_numbers\",\"location\":\"footer\",\"alignment\":\"right\",\"text\":\"Page {n} of {N}\"}]}" }
+  },
+  "steps": [
+    {
+      "args": ["words", "edit", "footer.rtf", "--ops", "confidential.json", "--out", "confidential.docx", "--verify"],
+      "expect": {
+        "exitCode": 8,
+        "warnings": { "present": ["PAGE_NUMBERS_REMOVED"] },
+        "json": [
+          { "path": "verification.ok", "equals": false },
+          { "path": "verification.issues[0].code", "equals": "PAGE_NUMBERS_REMOVED" },
+          { "path": "verification.issues[0].hint", "contains": "{\"op\":\"set_page_numbers\",\"location\":\"footer\",\"alignment\":\"right\",\"text\":\"Page {n} of {N}\"}" }
+        ]
+      }
+    },
+    {
+      "args": ["words", "inspect", "confidential.docx", "--detail", "sections"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "sections[0].pageNumbers.location", "exists": false }
+        ]
+      }
+    },
+    {
+      "args": ["words", "edit", "footer.rtf", "--ops", "renumbered.json", "--out", "renumbered.docx", "--verify"],
+      "expect": {
+        "exitCode": 0,
+        "warnings": { "absent": ["PAGE_NUMBERS_REMOVED"] },
+        "json": [
+          { "path": "verification.ok", "equals": true }
+        ]
+      }
+    },
+    {
+      "args": ["words", "inspect", "renumbered.docx", "--detail", "sections"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "sections[0].pageNumbers.location", "equals": "footer" },
+          { "path": "sections[0].pageNumbers.alignment", "equals": "right" },
+          { "path": "sections[0].pageNumbers.text", "equals": "Page {n} of {N}" }
+        ]
+      }
+    }
+  ]
+}

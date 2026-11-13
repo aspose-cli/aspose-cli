@@ -338,7 +338,7 @@ public sealed class WordsPageNumberTextTests : IDisposable
 
         CliResult refused = Edit($$"""{"ops":[{"op":"set_page_numbers","location":"{{location}}"{{written}}}]}""", "--out", "moved.docx");
 
-        AssertRefused(refused, $"a {other} field", "rewrite the footer with set_footer first", $"writes no {other} field", "set_page_numbers without text in the footer");
+        AssertRefused(refused, $"a {other} field", "rewrite the footer with set_footer first", $"writes no {other} field", "{\"op\":\"set_page_numbers\",\"location\":\"footer\",\"alignment\":\"", "keeps that paragraph, its words and its");
         Assert.DoesNotContain("image", JsonNode.Parse(refused.StdErr)!["error"]!["message"]!.GetValue<string>(), StringComparison.Ordinal);
         Assert.False(File.Exists(_workspace.File("moved.docx")));
         Assert.Equal(before, File.ReadAllBytes(_workspace.File("input.docx")));
@@ -385,7 +385,7 @@ public sealed class WordsPageNumberTextTests : IDisposable
     [Fact]
     public void Verify_ReadsBackTheWordsTheNumberMoved()
     {
-        var moves = new Aspose.Cli.Product.Words.Engine.Editing.WordsPageNumberLosses();
+        var moves = new Aspose.Cli.Product.Words.Engine.Editing.WordsPageNumberLosses([]);
         moves.Moved(new SetPageNumbersOp { Id = "op-0002", Location = "header" }, 0, "第 {n} 页");
         static Document Output(bool moved)
         {

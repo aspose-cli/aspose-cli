@@ -120,20 +120,40 @@ internal sealed partial class WordsMutationHandlers
     /// Replaces one kind of header or footer in each section with plain paragraphs or imported
     /// Markdown. Plain paragraphs keep the format of the first paragraph and run the section
     /// shows, such as a right alignment, or take Word's Header or Footer style when there is none. A
-    /// first-page or even-page kind also turns on the section setting that shows it. A replaced
-    /// primary header or footer that held page numbers is recorded, to report them removed when
-    /// the batch leaves the section without one.
+    /// first-page or even-page kind also turns on the section setting that shows it. Each section
+    /// that shows a replaced primary header or footer, a later one that continues it too, is
+    /// recorded, to report its page numbers removed when the batch leaves it without one.
     /// </summary>
     private void SetHeaderFooter(HeaderFooterOp operation, bool isHeader)
     {
         string kind = operation.Kind;
         Document? markdown = operation.Markdown is null ? null : _loader.OpenMarkdown(operation.Markdown, _loaded);
         HeaderFooterType type = HeaderFooterTypeOf(kind, isHeader);
-        // Before the first replacement: a section without its own continues an earlier one's.
-        Section[] numbered = kind == WordsHeaderFooterKinds.Primary
-            ? [.. Sections.Where(section => WordsHeadersFooters.HoldsPageNumbers(WordsHeadersFooters.Continued(section, type)))]
+        // Before the first replacement: each section that will show a replaced story, and whether the
+        // story it shows now holds page numbers. After it, a section shows the story of the nearest
+        // section, itself or an earlier one, that is replaced or keeps its own.
+        Section[] targets = [.. Sections];
+        (Section Section, HeaderFooter? Story)[] shown = kind == WordsHeaderFooterKinds.Primary
+            ? [.. _document.Sections.Cast<Section>().Where(section => Shows(section) is { } owner && targets.Contains(owner))
+                .Select(section => (section, WordsHeadersFooters.Continued(section, type)))]
             : [];
-        foreach (Section section in Sections)
+        Section? Shows(Section section)
+        {
+            Section? current = section;
+            while (current is not null && !targets.Contains(current) && current.HeadersFooters[type] is null)
+            {
+                current = current.PreviousSibling as Section;
+            }
+
+            return current;
+        }
+
+        foreach ((Section section, HeaderFooter? story) in shown)
+        {
+            _pageNumbers.Replaced(operation, section, isHeader, WordsHeadersFooters.HoldsPageNumbers(story), owner: targets.Contains(section));
+        }
+
+        foreach (Section section in targets)
         {
             Paragraph? replaced = ShownParagraph(section, type);
             section.HeadersFooters[type]?.Remove();
@@ -159,11 +179,6 @@ internal sealed partial class WordsMutationHandlers
             else if (kind == "even")
             {
                 section.PageSetup.OddAndEvenPagesHeaderFooter = true;
-            }
-
-            if (numbered.Contains(section))
-            {
-                _pageNumbers.Replaced(operation, section, isHeader);
             }
         }
     }
@@ -381,13 +396,13 @@ internal sealed partial class WordsMutationHandlers
     {
         bool isHeader = ((HeaderFooter)paragraph.GetAncestor(NodeType.HeaderFooter)).IsHeader;
         string location = isHeader ? WordsHeaderFooterLocations.Header : WordsHeaderFooterLocations.Footer;
-        if (paragraph.Range.Fields.Cast<Field>().FirstOrDefault(static field => field.Type is not (FieldType.FieldPage or FieldType.FieldNumPages)) is { } field)
+        if (WordsReadBack.UnwrittenField(paragraph) is { } name)
         {
-            string name = field.GetFieldCode().Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? field.Type.ToString();
+            string aligned = WordsReadBack.AlignmentName(paragraph) is { } alignment ? $",\"alignment\":\"{alignment}\"" : string.Empty;
             throw new OperationInvalidException(
                 $"the {location} paragraph that holds the page number also holds a {name} field, which {(moving ? "moving the number would clear" : "text would replace")} with that paragraph: a page number's text, given or taken along, writes no field but {{n}} and {{N}}",
                 $"To {(moving ? "move the number" : "write the number's words")}, rewrite the {location} with {(isHeader ? "set_header" : "set_footer")} first, which writes no {name} field, and then number the pages; "
-                    + $"set_page_numbers without text in the {location} keeps that paragraph's words and its {name} field.");
+                    + $"{{\"op\":\"set_page_numbers\",\"location\":\"{location}\"{aligned}}} keeps that paragraph, its words and its {name} field as they are.");
         }
 
         if (paragraph.GetChildNodes(NodeType.Any, isDeep: false).Cast<Node>().All(IsTextOrField))

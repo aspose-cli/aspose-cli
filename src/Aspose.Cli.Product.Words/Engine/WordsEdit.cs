@@ -56,11 +56,11 @@ internal static class WordsEdit
         tracking?.Start();
         var operationWarnings = new List<Warning>();
         var pageFields = new List<Field>();
-        var pageNumbers = new WordsPageNumberLosses();
+        var pageNumbers = new WordsPageNumberLosses(sectionsBefore);
         AppliedBatch applied = ApplyOperations(session, loaded, resolved, request, operationInputs, tracking, operationWarnings, pageFields, pageNumbers);
         IReadOnlyList<BoundedOperationOutcome> outcomes = applied.Outcomes;
         tracking?.Stop();
-        operationWarnings.AddRange(pageNumbers.Warnings(loaded.Document, sectionsBefore));
+        operationWarnings.AddRange(pageNumbers.Warnings(loaded.Document));
         UpdatePageFields(loaded.Document, pageFields);
         IReadOnlyList<int> pagesTouched = TouchedPages(loaded.Document, blocksBefore, applied.Changed);
 

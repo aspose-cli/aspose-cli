@@ -77,27 +77,26 @@ internal static class WordsReadBack
         }));
 
     /// <summary>A section's page numbering and the PAGE field of its primary header, else footer.</summary>
-    internal static WordsPageNumbersData PageNumbers(Section section)
+    internal static WordsPageNumbersData PageNumbers(Section section) => PageNumbers(section, out _);
+
+    /// <summary>A section's page numbering, and the field beside its number that no text writes (<see cref="UnwrittenField"/>).</summary>
+    internal static WordsPageNumbersData PageNumbers(Section section, out string? unwritten)
     {
         PageSetup setup = section.PageSetup;
         (string Location, HeaderFooterType Type)[] places = [("header", HeaderFooterType.HeaderPrimary), ("footer", HeaderFooterType.FooterPrimary)];
         string? location = null;
         string? alignment = null;
         string? text = null;
+        unwritten = null;
         foreach ((string place, HeaderFooterType type) in places)
         {
-            if (section.HeadersFooters[type]?.Range.Fields.Cast<Field>().FirstOrDefault(static field => field.Type == FieldType.FieldPage) is { } page)
+            if (WordsHeadersFooters.Continued(section, type)?.Range.Fields.Cast<Field>().FirstOrDefault(static field => field.Type == FieldType.FieldPage) is { } page)
             {
                 location = place;
                 var paragraph = page.Start.GetAncestor(NodeType.Paragraph) as Paragraph;
-                alignment = paragraph?.ParagraphFormat.Alignment switch
-                {
-                    ParagraphAlignment.Left => "left",
-                    ParagraphAlignment.Center => "center",
-                    ParagraphAlignment.Right => "right",
-                    _ => null,
-                };
+                alignment = paragraph is null ? null : AlignmentName(paragraph);
                 text = paragraph is null || PageNumberText(paragraph) is not { } written || written == PageNumberPlaceholder ? null : written;
+                unwritten = paragraph is null ? null : UnwrittenField(paragraph);
                 break;
             }
         }
@@ -117,6 +116,24 @@ internal static class WordsReadBack
 
     /// <summary>What a page number's text writes for the NUMPAGES field.</summary>
     internal const string PageCountPlaceholder = "{N}";
+
+    /// <summary>A paragraph's alignment as set_page_numbers names it; null for one it cannot set.</summary>
+    internal static string? AlignmentName(Paragraph paragraph) => paragraph.ParagraphFormat.Alignment switch
+    {
+        ParagraphAlignment.Left => "left",
+        ParagraphAlignment.Center => "center",
+        ParagraphAlignment.Right => "right",
+        _ => null,
+    };
+
+    /// <summary>
+    /// The name of the first field of a page number's paragraph that its text cannot write, any
+    /// but PAGE and NUMPAGES, which it writes as {n} and {N}; null when it holds none.
+    /// </summary>
+    internal static string? UnwrittenField(Paragraph paragraph) =>
+        paragraph.Range.Fields.Cast<Field>().FirstOrDefault(static field => field.Type is not (FieldType.FieldPage or FieldType.FieldNumPages)) is { } field
+            ? field.GetFieldCode().Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? field.Type.ToString()
+            : null;
 
     /// <summary>The text of a header or footer paragraph as set_page_numbers writes it, with its PAGE and NUMPAGES fields as placeholders.</summary>
     internal static string PageNumberText(Paragraph paragraph) =>

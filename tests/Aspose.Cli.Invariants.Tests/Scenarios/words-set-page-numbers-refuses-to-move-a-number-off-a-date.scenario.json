@@ -39,7 +39,7 @@
         "error": "OPS_INVALID",
         "json": [
           { "path": "error.message", "contains": "also holds a DATE field, which text would replace" },
-          { "path": "error.hint", "contains": "set_page_numbers without text in the footer keeps that paragraph's words and its DATE field" }
+          { "path": "error.hint", "contains": "{\"op\":\"set_page_numbers\",\"location\":\"footer\",\"alignment\":\"right\"} keeps that paragraph, its words and its DATE field as they are" }
         ],
         "files": { "absent": ["text-in-place.docx"], "unchanged": ["footer.rtf"] }
       }
@@ -49,8 +49,8 @@
       "expect": { "exitCode": 0 }
     },
     {
-      "args": ["words", "inspect", "in-place.docx", "--detail", "fields", "--license-mode", "evaluation"],
-      "expect": { "exitCode": 0, "json": [{ "path": "fields[3].code", "startsWith": "DATE" }] }
+      "args": ["words", "inspect", "in-place.docx", "--detail", "fields", "--detail", "sections", "--license-mode", "evaluation"],
+      "expect": { "exitCode": 0, "json": [{ "path": "fields[3].code", "startsWith": "DATE" }, { "path": "sections[0].pageNumbers.alignment", "equals": "right" }] }
     },    {
       "args": ["words", "inspect", "footer.rtf", "--detail", "fields", "--license-mode", "evaluation"],
       "expect": {

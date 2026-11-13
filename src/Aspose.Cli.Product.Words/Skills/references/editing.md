@@ -204,7 +204,11 @@ continues from an earlier section. Apply footer text before `set_page_numbers`.
 Neither writes a page number: when the primary header or footer they replace
 held one (a PAGE, NUMPAGES or SECTIONPAGES field) and the batch leaves the
 section's primary header and footer without one, the edit reports
-`PAGE_NUMBERS_REMOVED`. A first-page or even-page kind is not checked, since
+`PAGE_NUMBERS_REMOVED`, naming each section that showed it, a later section
+that continues it too. Its hint gives the `set_page_numbers` that numbers the
+sections whose header or footer the operation wrote, which those that continue
+it follow, and writes the number as it read; words beside a field such as
+`DATE` it names instead, since no `text` writes that field. A first-page or even-page kind is not checked, since
 no operation numbers those pages again.
 After `import_sections`, check the result with `inspect --detail sections`; to
 give the whole document one header and footer, follow with `set_header` and

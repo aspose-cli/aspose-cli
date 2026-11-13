@@ -4235,7 +4235,7 @@
           "additionalProperties": false,
           "properties": {
             "location": {
-              "description": "Whether the primary header or, without one there, the primary footer holds the PAGE field; absent when neither does.",
+              "description": "Whether the primary header or, without one there, the primary footer the section shows, its own or one it continues from an earlier section, holds the PAGE field; absent when neither does.",
               "type": "string",
               "enum": [
                 "header",
