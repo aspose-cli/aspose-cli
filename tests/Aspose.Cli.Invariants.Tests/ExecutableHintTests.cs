@@ -80,6 +80,25 @@ public sealed class ExecutableHintTests : IDisposable
         Assert.Contains("cannot fill <that sheet>", Assert.Single(ErrorHint("Then run 'aspose-cli cells read <file> --sheet <that sheet>'.")), StringComparison.Ordinal);
     }
 
+    /// <summary>
+    /// A password placeholder outside double quotes, which a shell reads as a redirection, is
+    /// reported in an error's hint and in a bounded read's window.next alike, for any placeholder of
+    /// a variable; one in double quotes is not.
+    /// </summary>
+    [Theory]
+    [InlineData(false, "--password-env <password-env>", true)]
+    [InlineData(false, "--encrypt-env <encrypt-env>", true)]
+    [InlineData(true, "--password-env <password-env>", true)]
+    [InlineData(true, "--password-env \"<password-env>\"", false)]
+    public void APasswordPlaceholderOutsideDoubleQuotes_IsReported(bool next, string option, bool reported)
+    {
+        HintRun create = new(["cells", "create", "new.xlsx", "--output-format", "json"], _workspace.Path, Path.GetDirectoryName(_workspace.ConfigDirectory)!, Variables: null);
+        string line = $"aspose-cli cells create other.xlsx {option} --output-format json";
+        JsonNode document = next ? new JsonObject { ["window"] = new JsonObject { ["next"] = line } } : Error($"Run '{line}'.");
+
+        Assert.Equal(reported, ExecutableHints.Problems(create, document).Any(static problem => problem.Contains("outside double quotes", StringComparison.Ordinal)));
+    }
+
     [Fact]
     public void FileTheInvocationDoesNotHave_LeavesTheCommandToTheCatalog()
     {
