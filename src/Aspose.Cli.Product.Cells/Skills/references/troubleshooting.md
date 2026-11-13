@@ -106,7 +106,8 @@ A CSV read without `--culture` that writes a decimal comma anywhere (`2,71`,
 `1.253,96`) keeps every number written with a comma or a point as text, since
 `1,234` may then be a decimal and `1.234` a thousand. A CSV separated by
 semicolons counts `1,234` as a decimal comma too, unless it also writes a
-number with a decimal point (`19.90`): then `1,234` is a thousand.
+number with a decimal point (`19.90`, `20.00`, `$1,234.50`, `12.5%`): then `1,234` is a
+thousand. A point before exactly three digits (`1.500`) does not count.
 Every command that reads the file warns `NUMBERS_READ_AS_TEXT` with one such
 cell, and its hint converts the file with `--culture de-DE`, which fits a file
 whose decimals all have a comma. If the file also writes a decimal point

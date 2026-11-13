@@ -277,8 +277,9 @@ internal static partial class CellsTextImport
             string trimmed = value.Trim();
             _decimalComma = _decimalComma || DecimalComma().IsMatch(trimmed);
             _commaNumber = _commaNumber || separator == ';' && CommaNumber().IsMatch(trimmed);
-            _decimalPoint = _decimalPoint || DecimalPoint().IsMatch(trimmed);
-            return Reads(value) is null ? value : null;
+            object? read = Reads(value);
+            _decimalPoint = _decimalPoint || DecimalPoint().IsMatch(trimmed) && ReadType(value) == CellValueType.IsNumeric;
+            return read is null ? value : null;
         }
 
         public string GetFormat() => string.Empty;
@@ -293,8 +294,9 @@ internal static partial class CellsTextImport
     [GeneratedRegex(@"^[-+]?\d+,\d+$", RegexOptions.CultureInvariant)]
     private static partial Regex CommaNumber();
 
-    // A number with a decimal point and no comma: a point before one, two, or four and more digits.
-    [GeneratedRegex(@"^[-+]?\d+\.(?:\d{1,2}|\d{4,})$", RegexOptions.CultureInvariant)]
+    // The writing of a number with a decimal point: one point, after any comma, before anything but
+    // exactly three digits, which may be a thousands separator (20.00, $1,234.50, +19.90, not 1.500).
+    [GeneratedRegex(@"^[^.]*\.(?!\d{3}(?!\d))[^,.]*$", RegexOptions.CultureInvariant)]
     private static partial Regex DecimalPoint();
 
     // A four-digit year, a month and a day, alone or before a time.
