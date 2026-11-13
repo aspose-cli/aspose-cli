@@ -2,7 +2,6 @@ using Aspose.Cells;
 using Aspose.Cells.Charts;
 using Aspose.Cells.Drawing;
 using Aspose.Cells.Pivot;
-using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Extensibility.Output;
 
 namespace Aspose.Cli.Product.Cells.Engine.Mapping;
@@ -460,15 +459,17 @@ internal static class ReviewLayoutProjection
         RangeRef? contentRange)
     {
         string? printArea = Normalize(sheet.PageSetup.PrintArea);
-        (IReadOnlyList<RangeRef> printRanges, bool invalid) = ParsePrintArea(printArea);
+        (IReadOnlyList<(RangeRef Range, bool Band)> blocks, bool invalid) = SheetLayoutProjection.PrintBlocks(printArea);
+        IReadOnlyList<RangeRef> printRanges = [.. blocks.Select(static block => block.Range)];
         bool excludesContent = contentRange is { } content
             && printRanges.Count > 0
             && !printRanges.Any(area => Contains(area, content));
         long contentAreaCells = contentRange is { } contentBounds
             ? checked((long)contentBounds.RowCount * contentBounds.ColumnCount)
             : 0;
-        long printAreaCells = printRanges.Sum(static area =>
-            checked((long)area.RowCount * area.ColumnCount));
+        // Whole rows or columns print only the cells they hold, so only a bounded block can be too large.
+        long printAreaCells = blocks.Where(static block => !block.Band).Sum(static block =>
+            checked((long)block.Range.RowCount * block.Range.ColumnCount));
         bool excessivePrintArea = contentAreaCells > 0
             && printAreaCells > Math.Max(ExcessivePrintAreaMinimumCells, checked(contentAreaCells * ExcessivePrintAreaContentFactor));
         return new PrintAreaScan(
@@ -549,30 +550,6 @@ internal static class ReviewLayoutProjection
         bool Invalid,
         bool ExcludesContent,
         bool Excessive);
-
-    private static (IReadOnlyList<RangeRef> Ranges, bool Invalid) ParsePrintArea(
-        string? printArea)
-    {
-        if (printArea is null)
-        {
-            return ([], false);
-        }
-        var ranges = new List<RangeRef>();
-        try
-        {
-            foreach (string part in printArea.Split(
-                         ',',
-                         StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
-            {
-                ranges.Add(A1.ParseRange(part.TrimStart('=')).Range);
-            }
-            return (ranges, ranges.Count == 0);
-        }
-        catch (CliException)
-        {
-            return ([], true);
-        }
-    }
 
     private static bool AnchoredInHiddenCells(Worksheet sheet, RangeRef range) =>
         sheet.Cells.IsRowHidden(range.Start.Row)

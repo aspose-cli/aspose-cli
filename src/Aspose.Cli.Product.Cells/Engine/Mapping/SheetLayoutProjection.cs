@@ -1,4 +1,6 @@
+using System.Globalization;
 using Aspose.Cells;
+using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.IO.Budgets;
 
 namespace Aspose.Cli.Product.Cells.Engine.Mapping;
@@ -100,6 +102,49 @@ internal static class SheetLayoutProjection
         return range is null && rows is null && columns is null
             ? null
             : new CellsPrintAreaInfo { Range = range, TitleRows = rows, TitleColumns = columns };
+    }
+
+    /// <summary>
+    /// The blocks of a print area as the engine stores it (A1:H50, several separated by commas, a
+    /// sheet name or <c>$</c> markers in each or not, an <c>=</c> before it or not), each with whether
+    /// it is a band of whole columns (A:C) or whole rows (1:5), which spans every row or column of
+    /// them; invalid when an item is neither. No blocks for no print area.
+    /// </summary>
+    internal static (IReadOnlyList<(RangeRef Range, bool Band)> Blocks, bool Invalid) PrintBlocks(string? printArea)
+    {
+        var blocks = new List<(RangeRef Range, bool Band)>();
+        try
+        {
+            foreach (string item in string.IsNullOrWhiteSpace(printArea) ? [] : A1.SplitList(printArea.Trim().TrimStart('=')))
+            {
+                string text = item.Trim();
+                string[] ends = text[(text.LastIndexOf('!') + 1)..].Replace("$", string.Empty, StringComparison.Ordinal).Split(':');
+                blocks.Add(ends is [var first, var last] && first.Length > 0 && last.Length > 0
+                    && (ends.All(static end => end.All(char.IsAsciiDigit)) || ends.All(static end => end.All(char.IsAsciiLetter)))
+                    ? (Band(first, last), true)
+                    : (A1.ParseRange(text).Range, false));
+            }
+
+            return (blocks, false);
+        }
+        catch (CliException)
+        {
+            return ([], true);
+        }
+
+        // The range a band spans: its rows across every column, or its columns down every row. The
+        // row band parser refuses a row past the sheet's last, and the column parser a column.
+        static RangeRef Band(string first, string last)
+        {
+            if (!char.IsAsciiDigit(first[0]))
+            {
+                return new RangeRef(new CellRef(0, A1.ParseColumn(first)), new CellRef(A1.MaxRows - 1, A1.ParseColumn(last)));
+            }
+
+            _ = A1.ParseRowBand($"{first}:{last}");
+            return new RangeRef(new CellRef(int.Parse(first, CultureInfo.InvariantCulture) - 1, 0),
+                new CellRef(int.Parse(last, CultureInfo.InvariantCulture) - 1, A1.MaxColumns - 1));
+        }
     }
 
     /// <summary>

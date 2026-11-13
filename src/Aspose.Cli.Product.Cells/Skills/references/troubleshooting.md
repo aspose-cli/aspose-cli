@@ -47,6 +47,10 @@ A PDF or XPS prints only the comments its page setup prints, by default none,
 and warns `LOSSY_CONVERSION` with how many comments each sheet it prints has.
 To print them, set `printComments` to `sheet-end` with `set_page_setup` on the
 sheet and convert again: they follow its last page, and the warning goes away.
+A print area prints only the comments on the cells of its bounded ranges, such
+as `A1:H50`, and none for whole rows or columns (CELLS-PRINT-AREA-BAND-COMMENTS),
+so the warning counts the others: clear it with `clear_print_area`, or set
+bounded ranges that cover them.
 An ods file does not keep that setting, so save an ods workbook as xlsx first:
 an edit or convert that writes ods from a sheet with the setting warns
 `LOSSY_CONVERSION`, and a `--verify` edit that set it fails.

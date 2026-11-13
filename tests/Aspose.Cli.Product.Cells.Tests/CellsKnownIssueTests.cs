@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Text;
 using Aspose.Cells;
 using Aspose.Cells.Charts;
+using Aspose.Cells.Rendering;
 using Aspose.Cli.TestKit;
 using Xunit;
 
@@ -168,6 +169,27 @@ public sealed class CellsKnownIssueTests
         PrintCommentsType read = reopened.Worksheets[0].PageSetup.PrintComments;
 
         KnownIssue.Reproduces("CELLS-ODS-PRINT-COMMENTS", read == PrintCommentsType.PrintNoComments, $"an ods saved to print comments at the sheet's end reads back {read}");
+    }
+
+    [LicensedFact]
+    public void PrintAreaBand_PrintsNoComments()
+    {
+        using var fixture = new CellsFixture();
+        static int Pages(string area)
+        {
+            using var workbook = new Workbook();
+            Worksheet sheet = workbook.Worksheets[0];
+            sheet.Cells["A1"].PutValue("noted");
+            sheet.Comments[sheet.Comments.Add("A1")].Note = "a note";
+            sheet.PageSetup.PrintComments = PrintCommentsType.PrintSheetEnd;
+            sheet.PageSetup.PrintArea = area;
+            return new SheetRender(sheet, new ImageOrPrintOptions()).PageCount;
+        }
+
+        (int bounded, int columns, int rows) = (Pages("A1:A5"), Pages("A:A"), Pages("1:5"));
+
+        KnownIssue.Reproduces("CELLS-PRINT-AREA-BAND-COMMENTS", bounded == 2 && columns == 1 && rows == 1,
+            $"a sheet whose comment prints at its end has {bounded} page(s) with the print area A1:A5, {columns} with A:A and {rows} with 1:5");
     }
 
     // Returns every value as the text it is.

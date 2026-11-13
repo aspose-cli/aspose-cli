@@ -227,6 +227,39 @@ public sealed class CellsPrintCommentsTests : IDisposable
     }
 
     /// <summary>
+    /// A print area prints only the comments on the cells of its bounded ranges: a band of whole
+    /// columns or rows prints none of them (CELLS-PRINT-AREA-BAND-COMMENTS), so a pdf of a sheet set
+    /// to print its comments at its end names every comment a band holds as left out, and the hint
+    /// says the ranges must be bounded.
+    /// </summary>
+    [Theory]
+    [InlineData("A:C", 4)]
+    [InlineData("1:5", 4)]
+    [InlineData("A1:B2,H:H", 3)]
+    public void PrintAreaOfWholeColumnsOrRows_NamesTheCommentsItLeavesOut(string area, int unprinted)
+    {
+        using (var workbook = new Workbook())
+        {
+            Worksheet sheet = workbook.Worksheets[0];
+            sheet.Name = "Data";
+            foreach (string cell in new[] { "A1", "B30", "H3", "H20" })
+            {
+                sheet.Cells[cell].PutValue("ZqxCell" + cell);
+                sheet.Comments[sheet.Comments.Add(cell)].Note = "ZqxNote" + cell;
+            }
+
+            sheet.PageSetup.PrintComments = PrintCommentsType.PrintSheetEnd;
+            sheet.PageSetup.PrintArea = area;
+            workbook.Save(_workspace.File("book.xlsx"), SaveFormat.Xlsx);
+        }
+
+        JsonNode lossy = Assert.Single(Lossy(Convert("pdf")));
+
+        Assert.Contains($"leaves out {unprinted} comment(s)", Text(lossy, "message"), StringComparison.Ordinal);
+        Assert.Contains("none for whole rows or columns", Text(lossy, "hint"), StringComparison.Ordinal);
+    }
+
+    /// <summary>
     /// Summary holds cells, a page setup that stores a pageSetup element and comments on two cells;
     /// Notes holds a cell and one comment. Cell text starts with ZqxCell and comment text with ZqxNote.
     /// </summary>
