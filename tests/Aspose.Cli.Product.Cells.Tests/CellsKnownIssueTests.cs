@@ -133,6 +133,31 @@ public sealed class CellsKnownIssueTests
         KnownIssue.Reproduces("CELLS-CSV-KEEP-PRECISION", type == CellValueType.IsNumeric, $"with KeepPrecision the 20-digit value is read as {type}, {shows}");
     }
 
+    [LicensedFact]
+    public void CsvErrorText_IsTypedAsTheErrorWhateverTheParserReturns()
+    {
+        using var fixture = new CellsFixture();
+        string input = fixture.Temp.File("errors.csv");
+        File.WriteAllText(input, "k,#N/A\n");
+
+        using var workbook = new Workbook(input, new TxtLoadOptions(LoadFormat.Csv) { PreferredParsers = [new TextParser()] });
+        Cell loaded = workbook.Worksheets[0].Cells["B1"];
+        Cell put = workbook.Worksheets[0].Cells["C1"];
+        put.PutValue("#DIV/0!", false);
+
+        KnownIssue.Reproduces("CELLS-CSV-ERROR-TEXT",
+            loaded.Type == CellValueType.IsError && put.Type == CellValueType.IsError,
+            $"the parser's text #N/A loads as {loaded.Type}, and #DIV/0! put without conversion as {put.Type}");
+    }
+
+    // Returns every value as the text it is.
+    private sealed class TextParser : ICustomParser
+    {
+        public object ParseObject(string value) => value;
+
+        public string GetFormat() => string.Empty;
+    }
+
     // Runs work with the thread's culture set to the named one, then sets it back.
     private static T InCulture<T>(string name, Func<T> work)
     {

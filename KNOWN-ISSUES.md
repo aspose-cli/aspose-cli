@@ -285,6 +285,29 @@ Reproductions: [CellsKnownIssueTests](tests/Aspose.Cli.Product.Cells.Tests/Cells
   keeps a type only where the cell shows it as written, so a number of more than 15 digits stays
   text.
 
+### CELLS-CSV-ERROR-TEXT
+
+- **Defect:** loading delimited text types the text of an error value, such as `#N/A`, `#DIV/0!`
+  or `#REF!`, as that error even where the load's `ICustomParser` returns the text as the string
+  it is, and `Cell.PutValue(text, isConverted: false)` types it the same way.
+
+  ```csharp
+  File.WriteAllText("e.csv", "k,#N/A\n");
+  var options = new TxtLoadOptions(LoadFormat.Csv) { PreferredParsers = [new TextParser()] };
+  Cell cell = new Workbook("e.csv", options).Worksheets[0].Cells["B1"];
+  // TextParser.ParseObject returns the value it is given; cell.Type is IsError, not IsString
+  ```
+
+  Excel itself opens such a csv with the error values, so reading them as text is the CLI's
+  choice; the defect is only that the engine overrides what the parser returns.
+
+- **CLI behavior:** a delimited text input holds no formula, and its values write back as they
+  were written, so the CLI puts each error value a load typed back as the text it was written
+  as, with a quote prefix (`'#N/A`), which keeps it text and which a delimited text output does
+  not write. A verified edit to csv or tsv reads such
+  text back as the error only where the input did not hold the same text, so a formula error the
+  edit left is still reported.
+
 ## Aspose.PDF.Drawing 26.8.0
 
 Reproductions: [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownIssueTests.cs).

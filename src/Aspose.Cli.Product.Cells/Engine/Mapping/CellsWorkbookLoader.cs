@@ -169,6 +169,11 @@ internal sealed class CellsWorkbookLoader
 
             // A read-back reads its text as the input was read, but is no input to warn about.
             IReadOnlyList<int> notice = plan.Separator is null ? [] : CellsEvaluation.TakeNoticeRows(workbook.Worksheets[0]);
+            if (plan.Separator is not null)
+            {
+                CellsTextImport.KeepErrorsAsText(workbook.Worksheets[0]);
+            }
+
             Warning? numbersAsText = plan.Separator is null ? null
                 : CellsTextImport.KeepSeparatedNumbersAsText(options, workbook.Worksheets[0], published ? null : path);
             resources.MaterializeLinkedPictures(workbook);
