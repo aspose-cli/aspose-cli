@@ -204,6 +204,13 @@ internal sealed partial class SlidesMutationHandlers
             throw new OperationInvalidException($"Section '{operation.Name}' already exists.");
         }
 
+        if (_presentation.Sections.FirstOrDefault(section => section.StartedFromSlide == Slide) is { } starting)
+        {
+            throw new OperationInvalidException(
+                string.Create(CultureInfo.InvariantCulture, $"Section '{starting.Name}' already starts at slide {operation.At}, and a slide starts one section at most."),
+                "Give 'at' a slide no section starts at; 'slides inspect --detail sections' lists each section's startSlide. A section inserted at a later slide of a presentation without sections gives the slides before it a section named 'Default Section', so insert the section of slide 1 first in the batch. A section the input already holds stays, since no operation renames or deletes one: then give 'at' another slide.");
+        }
+
         _presentation.Sections.AddSection(operation.Name, Slide);
         return default;
     }

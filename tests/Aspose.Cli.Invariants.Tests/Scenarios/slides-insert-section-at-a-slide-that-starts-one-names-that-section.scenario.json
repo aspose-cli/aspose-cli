@@ -1,0 +1,76 @@
+{
+  "name": "slides insert_section at a slide that already starts a section is refused as invalid, naming that section, rather than reported as an engine failure, also where the engine added a Default Section at slide 1 for a section inserted later, in the batch or in an earlier edit, which no operation renames or deletes; inserting the section of slide 1 first, as the hint says, writes both",
+  "files": {
+    "deck.md": { "text": "# Deck\n\n## Two\n\n- pt\n\n## Three\n\n- more\n" }
+  },
+  "steps": [
+    {
+      "args": ["slides", "create", "deck.pptx", "--from-markdown", "deck.md"],
+      "expect": { "exitCode": 0 }
+    },
+    {
+      "args": ["slides", "edit", "deck.pptx", "--ops", "{\"ops\":[{\"op\":\"insert_section\",\"name\":\"A\",\"at\":2},{\"op\":\"insert_section\",\"name\":\"B\",\"at\":2}]}", "--out", "twice.pptx"],
+      "expect": {
+        "exitCode": 4,
+        "error": "OPS_INVALID",
+        "json": [
+          { "path": "error.details.id", "equals": "op-0002" },
+          { "path": "error.message", "contains": "Section 'A' already starts at slide 2" },
+          { "path": "error.hint", "contains": "Give 'at' a slide no section starts at" },
+          { "path": "error.hint", "contains": "A section the input already holds stays, since no operation renames or deletes one: then give 'at' another slide." }
+        ],
+        "files": { "absent": ["twice.pptx"] }
+      }
+    },
+    {
+      "args": ["slides", "edit", "deck.pptx", "--ops", "{\"ops\":[{\"op\":\"insert_section\",\"name\":\"Later\",\"at\":3},{\"op\":\"insert_section\",\"name\":\"First\",\"at\":1}]}", "--out", "default.pptx"],
+      "expect": {
+        "exitCode": 4,
+        "error": "OPS_INVALID",
+        "json": [
+          { "path": "error.message", "contains": "Section 'Default Section' already starts at slide 1" },
+          { "path": "error.hint", "contains": "so insert the section of slide 1 first in the batch" }
+        ],
+        "files": { "absent": ["default.pptx"] }
+      }
+    },
+    {
+      "args": ["slides", "edit", "deck.pptx", "--ops", "{\"ops\":[{\"op\":\"insert_section\",\"name\":\"Later\",\"at\":3}]}", "--out", "later.pptx"],
+      "expect": { "exitCode": 0, "files": { "present": ["later.pptx"] } }
+    },
+    {
+      "args": ["slides", "edit", "later.pptx", "--ops", "{\"ops\":[{\"op\":\"insert_section\",\"name\":\"First\",\"at\":1}]}", "--out", "kept.pptx"],
+      "expect": {
+        "exitCode": 4,
+        "error": "OPS_INVALID",
+        "json": [
+          { "path": "error.message", "contains": "Section 'Default Section' already starts at slide 1" },
+          { "path": "error.hint", "contains": "A section the input already holds stays, since no operation renames or deletes one: then give 'at' another slide." }
+        ],
+        "files": { "absent": ["kept.pptx"] }
+      }
+    },
+    {
+      "args": ["slides", "edit", "deck.pptx", "--ops", "{\"ops\":[{\"op\":\"insert_section\",\"name\":\"First\",\"at\":1},{\"op\":\"insert_section\",\"name\":\"Later\",\"at\":3}]}", "--out", "sections.pptx", "--verify"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "verification.ok", "equals": true }
+        ]
+      }
+    },
+    {
+      "args": ["slides", "inspect", "sections.pptx", "--detail", "sections"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "sections[0].name", "equals": "First" },
+          { "path": "sections[0].startSlide", "equals": 1 },
+          { "path": "sections[1].name", "equals": "Later" },
+          { "path": "sections[1].startSlide", "equals": 3 },
+          { "path": "sections[2]", "exists": false }
+        ]
+      }
+    }
+  ]
+}
