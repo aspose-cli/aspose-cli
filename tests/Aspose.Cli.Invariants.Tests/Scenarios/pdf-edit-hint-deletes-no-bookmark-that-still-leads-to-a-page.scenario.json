@@ -35,7 +35,7 @@
         "exitCode": 0,
         "json": [
           { "path": "verification.ok", "equals": true },
-          { "path": "warnings", "contains": { "code": "NAVIGATION_DEGRADED", "message": "1 bookmark(s), 0 link(s) and 0 named destination(s) lead to pages the edit deleted.", "hint": "The pages they led to were deleted as the batch asked. Bookmark(s) 4 of the output lost their page but hold bookmarks that still lead to theirs: deleting one deletes those too, so keep it or tell the user." } }
+          { "path": "warnings", "contains": { "code": "NAVIGATION_DEGRADED", "message": "1 bookmark(s), 0 link(s) and 0 named destination(s) lead to pages the edit deleted.", "hint": "The pages they led to were deleted as the batch asked. Bookmark(s) 4 of the output lost their page but hold other bookmarks, which deleting them deletes too, so keep them or tell the user." } }
         ]
       }
     },

@@ -182,7 +182,7 @@ internal sealed record PdfNavigationLoss(PdfNavigationCensus Stranded, PdfNaviga
         Deletion(StrandedBookmarks, "the bookmarks the outline of the output shows without a page with delete_bookmarks") is { } deletion
             ? $"In the same batch, after the page operations, delete {deletion} and add them again with add_bookmark at the numbers their pages have in the output."
             : null,
-        Held(StrandedBookmarks),
+        Held(StrandedBookmarks, "and add_bookmark adds only a bookmark that opens a page, so what they hold cannot always be added back: tell the user which no longer open their page"),
         Stranded.Links + Stranded.NamedDestinations == 0
             ? null
             : "No operation re-creates links or named destinations: tell the user which no longer lead to their page.");
@@ -190,7 +190,7 @@ internal sealed record PdfNavigationLoss(PdfNavigationCensus Stranded, PdfNaviga
     private string DeletedHint() => Sentences(
         "The pages they led to were deleted as the batch asked.",
         Deletion(RemovedBookmarks, "delete_bookmarks") is { } deletion ? $"Bookmarks you no longer need can be removed with {deletion}." : null,
-        Held(RemovedBookmarks),
+        Held(RemovedBookmarks, "so keep them or tell the user"),
         Removed.Links + Removed.NamedDestinations == 0 ? null : "No operation deletes links or named destinations: tell the user they lead nowhere.");
 
     // The delete_bookmarks operation of the bookmarks at the addresses that hold no kept bookmark, without those another of
@@ -204,9 +204,9 @@ internal sealed record PdfNavigationLoss(PdfNavigationCensus Stranded, PdfNaviga
     }
 
     // The bookmarks at the addresses that hold a kept bookmark, which deleting them would delete too.
-    private string? Held(IReadOnlyList<string> bookmarks) =>
+    private string? Held(IReadOnlyList<string> bookmarks, string advice) =>
         bookmarks.Where(address => KeptBookmarks.Any(kept => Under(kept, address))).ToArray() is { Length: > 0 } held
-            ? $"Bookmark(s) {string.Join(", ", held)} of the output lost their page but hold bookmarks that still lead to theirs: deleting one deletes those too, so keep it or tell the user."
+            ? $"Bookmark(s) {string.Join(", ", held)} of the output lost their page but hold other bookmarks, which deleting them deletes too, {advice}."
             : null;
 
     private static bool Under(string address, string parent) => address.StartsWith(parent + "/", StringComparison.Ordinal);

@@ -111,8 +111,10 @@ in it: no operation sets that place, so tell the user if it matters. The
 warnings of `pdf edit` name the bookmarks by their address in the output's
 outline, as a `delete_bookmarks` operation that deletes no bookmark still
 leading to a page; remove the ones you no longer need with it. A bookmark that
-lost its page but holds bookmarks that still lead to theirs is named apart,
-since deleting it deletes them too: keep it or tell the user.
+lost its page but holds other bookmarks is named apart, since deleting it
+deletes them too: keep it or tell the user. Stranded by a move, it stays an issue
+of `--verify`: `add_bookmark` adds only a bookmark that opens a page, so what it
+holds cannot always be added back; tell the user it no longer opens its page.
 `pdf inspect --detail links` lists the links to web addresses as `links`
 and the links to places in the document as `documentLinks`, each with the
 `targetPage` it opens; one without `targetPage` leads nowhere.
