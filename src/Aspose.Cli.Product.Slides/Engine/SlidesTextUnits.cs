@@ -138,7 +138,7 @@ internal static class SlidesTextUnits
 
     // A frame's paragraphs, each as replace_text reads it: the text of its runs.
     private static IEnumerable<string> Paragraphs(ITextFrame frame) =>
-        frame.Paragraphs.Select(static paragraph => string.Concat(paragraph.Portions.Select(static portion => portion.Text ?? string.Empty)));
+        frame.Paragraphs.Select(ParagraphText);
 
     /// <summary>
     /// Whether replace_text writes a unit: text it changes, but in evaluation mode the watermark
@@ -196,7 +196,7 @@ internal sealed record SlidesTextUnit(int Slide, ISlide Owner, string Scope, ISh
 
     /// <summary>The text one paragraph, category or name at a time, as replace_text reads it.</summary>
     public IEnumerable<string> Texts => Reads is null
-        ? Frames.SelectMany(static frame => frame.Paragraphs).Select(static paragraph => string.Concat(paragraph.Portions.Select(static portion => portion.Text ?? string.Empty)))
+        ? Frames.SelectMany(static frame => frame.Paragraphs).Select(ParagraphText)
         : Reads().OfType<string>();
 
     /// <summary>The text as results report it, one line per paragraph or line break; null when it shows none.</summary>

@@ -13,8 +13,9 @@ internal static class SlidesShapeText
     internal static string? Take(string? value, ref int remaining, ref bool truncated) => TakeText(Clean(value), ref remaining, ref truncated);
 
     /// <summary>
-    /// A slide's title, a shape's text or the notes, as <see cref="Title"/>, <see cref="ShapeText"/>
-    /// and <see cref="Notes"/> give them and inspect, search and replace_text see them, within the budget.
+    /// A slide's title, a shape's text, one of its paragraphs or the notes, as <see cref="Title"/>,
+    /// <see cref="ShapeText"/>, <see cref="ParagraphText"/> and <see cref="Notes"/> give them and
+    /// inspect, search and replace_text see them, within the budget, never cutting a character in two.
     /// </summary>
     internal static string? TakeText(string? value, ref int remaining, ref bool truncated)
     {
@@ -30,14 +31,14 @@ internal static class SlidesShapeText
         }
 
         truncated = true;
-        string result = remaining == 0 ? string.Empty : value[..remaining];
+        string result = value[..(remaining > 0 && char.IsHighSurrogate(value[remaining - 1]) ? remaining - 1 : remaining)];
         remaining = 0;
         return result;
     }
 
     /// <summary>
-    /// A part of a shape's text as a read reports it apart, such as a paragraph, a run, a table cell
-    /// or chart data: each line keeps its words, one space apart, and the lines stay apart; null
+    /// A part of a shape's text as a read reports it apart, such as a run, a table cell or chart
+    /// data: each line keeps its words, one space apart, and the lines stay apart; null
     /// for text that shows nothing.
     /// </summary>
     internal static string? Clean(string? value) =>
@@ -134,6 +135,9 @@ internal static class SlidesShapeText
     /// the slide has none.
     /// </summary>
     internal static string? Title(ISlide slide) => EmptyToNull(Lines(SlidesAuthoring.Title(slide)?.TextFrame?.Text));
+
+    /// <summary>A paragraph's text as replace_text matches it and a read reports it: the text of its runs, each line break a line feed.</summary>
+    internal static string ParagraphText(IParagraph paragraph) => string.Concat(paragraph.Portions.Select(static portion => portion.Text ?? string.Empty)).Replace('\v', '\n');
 
     internal static string? Notes(ISlide slide) =>
         EmptyToNull(Lines(slide.NotesSlideManager.NotesSlide?.NotesTextFrame?.Text));
