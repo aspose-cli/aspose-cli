@@ -74,7 +74,7 @@ internal static class EditCommand
             surface,
             edit.Verification,
             edit.Verification is { } verification
-                ? $"{verification.DirectChanges.Count} direct, {verification.FormulaResultChanges.Count} formula-result, "
+                ? $"{verification.DirectChangeCount ?? verification.DirectChanges.Count} direct, {verification.FormulaResultChanges.Count} formula-result, "
                     + $"{verification.FormulaErrors.Count} formula error(s)"
                 : null);
     }

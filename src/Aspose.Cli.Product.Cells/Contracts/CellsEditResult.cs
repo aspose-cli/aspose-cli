@@ -79,9 +79,13 @@ public sealed record CellsEditVerification : EditVerification
     /// Changes inside a requested operation target. A cell that kept its formula, or in a csv or tsv
     /// output held one, is one only where an operation writes every cell of its target, such as
     /// set_values or sort_range, and not where a replace_text found nothing to replace in it or a
-    /// rename_sheet renamed its sheet.
+    /// rename_sheet renamed its sheet. It lists the first 100 when there are more.
     /// </summary>
     public required IReadOnlyList<CellsVerifiedCellChange> DirectChanges { get; init; }
+
+    /// <summary>How many direct changes there are when directChanges lists only the first 100; omitted when it lists them all.</summary>
+    [Minimum(0)]
+    public int? DirectChangeCount { get; init; }
 
     /// <summary>
     /// Cells whose formula text stayed the same while the calculated result changed, and which no
@@ -96,8 +100,9 @@ public sealed record CellsEditVerification : EditVerification
     public required IReadOnlyList<CellsCellError> FormulaErrors { get; init; }
 
     /// <summary>
-    /// <c>true</c> when the edit changed more than 1000 cells, so the change lists hold only the
-    /// first 1000; the checks behind <c>ok</c> still cover every cell.
+    /// <c>true</c> when the edit changed more than 1000 cells besides its direct changes, so
+    /// formulaResultChanges and otherChanges hold only the first 1000; the checks behind <c>ok</c>
+    /// still cover every cell.
     /// </summary>
     public required bool Truncated { get; init; }
 }

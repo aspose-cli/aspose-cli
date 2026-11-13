@@ -15,6 +15,8 @@ internal sealed class CellsEditVerifier(CellsWorkbookLoader loader, ResourceBudg
 {
     private const int MaxDiffs = 1000;
 
+    private const int MaxDirectChanges = 100;
+
     internal CellsEditVerification Verify(string candidatePath,
         string baselinePath, string originalPath, Secret? inputPassword,
         Secret? outputPassword, CellsOpsBatch batch, string activeSheet, AppliedBatch applied,
@@ -40,12 +42,21 @@ internal sealed class CellsEditVerifier(CellsWorkbookLoader loader, ResourceBudg
         var formulaResults = new List<CellsVerifiedCellChange>();
         var other = new List<CellsVerificationOtherChange>();
         var issues = new List<VerificationIssue>();
+        // A direct change is inside a target an operation wrote. A cell that kept its formula, or
+        // held one in an output that holds values only, is one only inside a target whose every cell
+        // an operation writes: a replace_text that found nothing in it, or a rename of its sheet, did
+        // not write its new result. The diff lists the first of them and counts them all.
+        var directs = new DiffComparer.Sample((sheet, from, cell) =>
+        {
+            IReadOnlyList<CellsEditTarget> writers = IsFormulaResult(cell, valuesOnly) ? rewritten : written;
+            return IsRequested(sheet, cell.Cell, writers) || (from is not null && IsRequested(from, cell.Cell, writers));
+        }, MaxDirectChanges);
         DiffComparer.Result diff = textTable is null
-            ? DiffComparer.Compare(budgets, baseline.Workbook, candidate.Workbook, includeFormulas: true, MaxDiffs)
-            : DiffComparer.CompareTextTable(budgets, baseline.Workbook, candidate.Workbook, textTable, MaxDiffs);
-        // The change lists are evidence capped at MaxDiffs cells (Truncated); they decide nothing,
-        // so a large edit such as a sort still passes when the checks below find no issue.
-        Classify(diff, written, rewritten, direct, formulaResults, other, valuesOnly);
+            ? DiffComparer.Compare(budgets, baseline.Workbook, candidate.Workbook, includeFormulas: true, MaxDiffs, directs)
+            : DiffComparer.CompareTextTable(budgets, baseline.Workbook, candidate.Workbook, textTable, MaxDiffs, directs);
+        // The change lists are evidence, the other changes capped at MaxDiffs cells (Truncated); they
+        // decide nothing, so a large edit such as a sort still passes when the checks below find no issue.
+        Classify(diff, directs, direct, formulaResults, other, valuesOnly);
         (IReadOnlyList<CellsCellError> errors, int errorTotal) = InfoProjection.ScanFormulaErrors(budgets, candidate.Workbook);
         errors = errors.Select(error => IsPreexisting(error, baseline.Workbook, candidate.Workbook, valuesOnly)
             ? error with { Preexisting = true } : error).ToArray();
@@ -84,7 +95,8 @@ internal sealed class CellsEditVerifier(CellsWorkbookLoader loader, ResourceBudg
             CheckedOps = verified.CheckedOps,
             UncheckedOps = verified.UncheckedOps,
             RequestedTargets = footprint.Select(static target => new CellsVerificationTarget { Sheet = target.Sheet, Range = target.Range }).ToArray(),
-            DirectChanges = direct, FormulaResultChanges = formulaResults, OtherChanges = other,
+            DirectChanges = direct, DirectChangeCount = diff.Sampled > MaxDirectChanges ? diff.Sampled : null,
+            FormulaResultChanges = formulaResults, OtherChanges = other,
             FormulaErrors = errors,
             Truncated = diff.Truncated,
         };
@@ -107,16 +119,12 @@ internal sealed class CellsEditVerifier(CellsWorkbookLoader loader, ResourceBudg
     }
 
     /// <summary>
-    /// Sorts each changed cell into the direct changes, inside a target an operation wrote, the
-    /// formula results, and the other changes. A cell that kept its formula, or held one in an
-    /// output that holds values only, is a direct change only inside a target whose every cell an
-    /// operation writes (<paramref name="rewritten"/>): a replace_text that found nothing in it, or
-    /// a rename of its sheet, did not write its new result.
+    /// Sorts each changed cell into the direct changes, those <paramref name="directs"/> takes, the
+    /// formula results, and the other changes.
     /// </summary>
     private static void Classify(
         DiffComparer.Result diff,
-        IReadOnlyList<CellsEditTarget> targets,
-        IReadOnlyList<CellsEditTarget> rewritten,
+        DiffComparer.Sample directs,
         ICollection<CellsVerifiedCellChange> direct,
         ICollection<CellsVerifiedCellChange> formulaResults,
         ICollection<CellsVerificationOtherChange> other,
@@ -139,9 +147,7 @@ internal sealed class CellsEditVerifier(CellsWorkbookLoader loader, ResourceBudg
                     Left = cell.Left,
                     Right = cell.Right,
                 };
-                IReadOnlyList<CellsEditTarget> writers = IsFormulaResult(cell, valuesOnly) ? rewritten : targets;
-                if (IsRequested(sheet.Name, cell.Cell, writers)
-                    || (sheet.From is not null && IsRequested(sheet.From, cell.Cell, writers)))
+                if (directs.Takes(sheet.Name, sheet.From, cell))
                 {
                     direct.Add(change);
                 }
