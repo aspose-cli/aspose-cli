@@ -1156,16 +1156,25 @@ public static partial class CliErrors
         $"Invalid use of {option}: {SecretMissingReason(variable)}",
         hint: standardInputOption is null
             ? SecretMissingHint(variable)
-            : $"Set {variable} to the secret and run the command again, or pass the secret as the first line of standard input with {standardInputOption} instead of {option}.",
+            : $"{SetVariable(variable)} and run the command again, or pass the secret as the first line of standard input with {standardInputOption} instead of {option}.",
         details: new JsonObject { ["option"] = option, ["variable"] = variable });
 
-    /// <summary>The reason of a <see cref="SecretMissing"/> mistake.</summary>
-    internal static string SecretMissingReason(string variable) =>
-        $"environment variable '{variable}' is not set or is empty";
+    /// <summary>The reason of a <see cref="SecretMissing"/> mistake: a placeholder a command line was run with, such as <c>&lt;password-env&gt;</c>, is named as one.</summary>
+    internal static string SecretMissingReason(string variable) => IsPlaceholder(variable)
+        ? $"'{variable}' is a placeholder for the name of an environment variable"
+        : $"environment variable '{variable}' is not set or is empty";
 
     /// <summary>The hint of a <see cref="SecretMissing"/> mistake.</summary>
     internal static string SecretMissingHint(string variable) =>
-        $"Set {variable} to the secret, then run the command again.";
+        $"{SetVariable(variable)}, then run the command again.";
+
+    // What to do about the variable: set it, or name one in place of a placeholder.
+    private static string SetVariable(string variable) => IsPlaceholder(variable)
+        ? $"Replace {variable} with the name of an environment variable that holds the secret"
+        : $"Set {variable} to the secret";
+
+    // A placeholder of a printed command, in angle brackets, as no environment variable is named.
+    private static bool IsPlaceholder(string variable) => variable is ['<', .., '>'];
 
     /// <summary>
     /// An option or argument value that names none of the values it accepts; the details list
