@@ -101,7 +101,7 @@ internal static class SetDirectiveParser
     /// JSON document. Numbers are detected with an invariant-culture
     /// <see cref="decimal"/> parse and carried as <see cref="double"/>, the one
     /// numeric shape of the ops pipeline (see <c>JsonValueMatrix</c>), unless a
-    /// number cell would not keep their characters (<see cref="DropsCharacters"/>).
+    /// number cell would not keep their characters (<see cref="NumberText.DropsCharacters"/>).
     /// </summary>
     private static object TypedValue(string rawValue)
     {
@@ -111,21 +111,12 @@ internal static class SetDirectiveParser
         }
 
         if (decimal.TryParse(rawValue, NumberStyles.Float, CultureInfo.InvariantCulture, out decimal number)
-            && !DropsCharacters(rawValue))
+            && !NumberText.DropsCharacters(rawValue))
         {
             return (double)number;
         }
 
         return rawValue;
-    }
-
-    // A number cell drops leading zeros and a leading '+', and keeps 15 significant digits, so an
-    // integer part of more digits loses the rest.
-    private static bool DropsCharacters(string number)
-    {
-        string trimmed = number.Trim();
-        return NumberText.HasLeadingZeros(trimmed) || trimmed.StartsWith('+')
-            || trimmed.TrimStart('-').TakeWhile(char.IsAsciiDigit).Count() > 15;
     }
 
     private static CliException Invalid(string directive, string reason, string hint) =>

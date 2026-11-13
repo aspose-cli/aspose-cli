@@ -10,7 +10,9 @@ internal static class JsonValueMatrix
 {
     /// <summary>
     /// Converts a raw deserialized matrix, which the contract keeps non-empty, into strings,
-    /// doubles, booleans and nulls. Rejects ragged matrices and non-scalar entries.
+    /// doubles, booleans and nulls; a JSON number a number cell would not keep in full stays the
+    /// text it is written as (<see cref="NumberText.DropsCharacters"/>), as a <c>--set</c> value
+    /// does. Rejects ragged matrices and non-scalar entries.
     /// </summary>
     public static IReadOnlyList<IReadOnlyList<object?>> Normalize(
         IReadOnlyList<IReadOnlyList<object?>> values,
@@ -55,7 +57,7 @@ internal static class JsonValueMatrix
         {
             JsonValueKind.Null => null,
             JsonValueKind.String => element.GetString(),
-            JsonValueKind.Number => element.GetDouble(),
+            JsonValueKind.Number => NumberText.DropsCharacters(element.GetRawText()) ? element.GetRawText() : element.GetDouble(),
             JsonValueKind.True => true,
             JsonValueKind.False => false,
             _ => throw invalid(
