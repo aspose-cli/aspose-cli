@@ -304,7 +304,8 @@ Reproductions: [CellsKnownIssueTests](tests/Aspose.Cli.Product.Cells.Tests/Cells
 - **CLI behavior:** a delimited text input holds no formula, and its values write back as they
   were written, so the CLI puts each error value a load typed back as the text it was written
   as, with a quote prefix (`'#N/A`), which keeps it text and which a delimited text output does
-  not write. A verified edit to csv or tsv reads such
+  not write. `set_values` and `--set` write such a string with a quote prefix too, as typing
+  `'#N/A` in Excel does. A verified edit to csv or tsv reads such
   text back as the error only where the input did not hold the same text, so a formula error the
   edit left is still reported.
 
