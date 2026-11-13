@@ -131,6 +131,54 @@ public sealed partial class WordsContinuedPageNumbersTests : IClassFixture<Words
     private static string Joined(JsonNode values) => string.Join(",", values.AsArray().Select(static value => value!.ToString()));
 
     /// <summary>
+    /// The words a number takes along to the other location keep their font: Arial 9 bold in the
+    /// footer is Arial 9 bold in the header, the number's field too. One section with its own
+    /// footer, so this runs without a license too.
+    /// </summary>
+    [Fact]
+    public void MovingTheNumber_KeepsTheFontOfItsWords()
+    {
+        File.WriteAllText(_workspace.File("continued.rtf"),
+            @"{\rtf1\ansi{\fonttbl{\f0 Arial;}{\f1 Times New Roman;}}{\footer\pard\plain\f0\fs18\b Page {\field{\*\fldinst PAGE}{\fldrslt 1}}\par}\pard\plain\f1 Section 1.\par}");
+
+        CliResult edited = Edit("""{"op":"set_page_numbers","location":"header"}""");
+
+        Assert.True(edited.ExitCode == 0, edited.StdErr + edited.StdOut);
+        Assert.True(JsonNode.Parse(edited.StdOut)!["verification"]!["ok"]!.GetValue<bool>());
+        Assert.Equal("Page {n}", Sections("numbered.docx")[0]["pageNumbers"]!["text"]!.GetValue<string>());
+        Paragraph number = new Document(_workspace.File("numbered.docx")).FirstSection.HeadersFooters[HeaderFooterType.HeaderPrimary].Range.Fields
+            .Cast<Field>().Single(static field => field.Type == FieldType.FieldPage).Start.ParentParagraph;
+        Assert.All(number.Runs.Cast<Run>(), static run => Assert.Equal(("Arial", 9.0, true), (run.Font.Name, run.Font.Size, run.Font.Bold)));
+    }
+
+    /// <summary>
+    /// The words keep the font they show when it comes from their paragraph's style: the Footer
+    /// style's Arial 9 bold stays Arial 9 bold in the header, whose style gives another font.
+    /// </summary>
+    [Fact]
+    public void MovingTheNumber_KeepsTheFontItsStyleGave()
+    {
+        var document = new Document();
+        Style footer = document.Styles[StyleIdentifier.Footer];
+        (footer.Font.Name, footer.Font.Size, footer.Font.Bold) = ("Arial", 9, true);
+        var builder = new DocumentBuilder(document);
+        builder.Writeln("Body.");
+        builder.MoveToHeaderFooter(HeaderFooterType.FooterPrimary);
+        builder.ParagraphFormat.StyleIdentifier = StyleIdentifier.Footer;
+        builder.Write("Page ");
+        builder.InsertField("PAGE");
+        document.Save(_workspace.File("styled.docx"));
+
+        CliResult edited = _workspace.RunWithInput("""{"ops":[{"op":"set_page_numbers","location":"header"}]}""",
+            ["words", "edit", "styled.docx", "--ops", "-", "--out", "numbered.docx", "--verify", "--output-format", "json", .. License()]);
+
+        Assert.True(edited.ExitCode == 0, edited.StdErr + edited.StdOut);
+        Paragraph number = new Document(_workspace.File("numbered.docx")).FirstSection.HeadersFooters[HeaderFooterType.HeaderPrimary].Range.Fields
+            .Cast<Field>().Single(static field => field.Type == FieldType.FieldPage).Start.ParentParagraph;
+        Assert.All(number.Runs.Cast<Run>(), static run => Assert.Equal(("Arial", 9.0, true), (run.Font.Name, run.Font.Size, run.Font.Bold)));
+    }
+
+    /// <summary>
     /// Without an alignment, a number the footer already holds keeps its own, right here, while a
     /// new one is centered; an alignment given is written. One section with its own footer, so
     /// this runs without a license too.

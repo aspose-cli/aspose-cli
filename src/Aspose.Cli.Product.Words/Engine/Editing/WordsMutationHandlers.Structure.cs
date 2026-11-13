@@ -245,10 +245,10 @@ internal sealed partial class WordsMutationHandlers
         // the words of its paragraph, which are the number's text. A text replaces them; without
         // one they go along, read before any are cleared, since a section can show an earlier one's.
         Section[] targets = [.. Sections];
-        string?[] shown = [.. targets.Select(section => PageNumberWords(WordsHeadersFooters.Continued(section, other)))];
+        (string? Words, Run? Font)[] shown = [.. targets.Select(section => PageNumberWords(WordsHeadersFooters.Continued(section, other)))];
         HeaderFooterType type = operation.Location == "header" ? HeaderFooterType.HeaderPrimary : HeaderFooterType.FooterPrimary;
         // Refused before anything changes: what a move would clear, or a text replace, that no text writes.
-        foreach ((Section section, string? words) in targets.Zip(shown))
+        foreach ((Section section, (string? words, _)) in targets.Zip(shown))
         {
             foreach (Paragraph paragraph in numbers && (operation.Text is not null || words is not null) ? PageNumberParagraphs(WordsHeadersFooters.Continued(section, other)) : [])
             {
@@ -262,7 +262,7 @@ internal sealed partial class WordsMutationHandlers
             }
         }
 
-        foreach ((Section section, string? words) in targets.Zip(shown))
+        foreach ((Section section, (string? words, Run? font)) in targets.Zip(shown))
         {
             if (numbers && PageNumberParagraphs(WordsHeadersFooters.Continued(section, other)).Length > 0 && OwnStory(section, other, targets) is { } previous)
             {
@@ -304,6 +304,11 @@ internal sealed partial class WordsMutationHandlers
             {
                 paragraph = new Paragraph(_document);
                 container.AppendChild(paragraph);
+                if (operation.Text is null && text is not null && font is not null)
+                {
+                    // Words taken along are written in their own font, over a run in it.
+                    paragraph.AppendChild(font);
+                }
             }
             else
             {
@@ -420,13 +425,23 @@ internal sealed partial class WordsMutationHandlers
 
     /// <summary>
     /// The text of the paragraph that holds a header's or footer's PAGE field, as set_page_numbers
-    /// writes it, or null when it holds none or the number alone.
+    /// writes it, or null when it holds none or the number alone, and an empty copy of its first
+    /// run, in whose font the words are written again.
     /// </summary>
-    private static string? PageNumberWords(HeaderFooter? headerFooter) =>
+    private static (string? Words, Run? Font) PageNumberWords(HeaderFooter? headerFooter) =>
         headerFooter?.Range.Fields.Cast<Field>().FirstOrDefault(static field => field.Type == FieldType.FieldPage)?.Start.GetAncestor(NodeType.Paragraph) is Paragraph paragraph
         && WordsReadBack.PageNumberText(paragraph) is var text && text != WordsReadBack.PageNumberPlaceholder
-            ? text
-            : null;
+            ? (text, paragraph.Runs.Count > 0 ? EmptyCopy(paragraph.Runs[0]) : null)
+            : (null, null);
+
+    // A run in another's font that holds no text: its format, and the font it shows from its style too.
+    private static Run EmptyCopy(Run run)
+    {
+        var copy = (Run)run.Clone(isCloneChildren: true);
+        copy.Text = string.Empty;
+        (copy.Font.Name, copy.Font.Size, copy.Font.Bold, copy.Font.Italic, copy.Font.Color) = (run.Font.Name, run.Font.Size, run.Font.Bold, run.Font.Italic, run.Font.Color);
+        return copy;
+    }
 
     // The paragraphs of a header or footer that hold a PAGE field, each once.
     private static Paragraph[] PageNumberParagraphs(HeaderFooter? story) => story is null ? [] : [.. story.Range.Fields.Cast<Field>()

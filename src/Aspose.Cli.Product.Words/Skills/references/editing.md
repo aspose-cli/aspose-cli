@@ -226,7 +226,8 @@ the number too, and `targets` lists it with the sections that show a changed
 header or footer. Its `text` replaces what the
 paragraph that holds the number held, in that paragraph's font, so the number
 stays in one line with its words. Moved to the other `location` without
-`text`, the number takes its words along, such as `Page {n} of {N}`. A number
+`text`, the number takes its words along, such as `Page {n} of {N}`, in their
+font. A number
 whose paragraph also holds another field, such as `DATE`, neither moves, with
 `text` or without, nor takes `text` where it is, since a move clears that
 paragraph and a text replaces it: rewrite that header or footer with
