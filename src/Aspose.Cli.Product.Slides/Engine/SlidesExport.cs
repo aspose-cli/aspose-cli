@@ -219,7 +219,7 @@ internal static partial class SlidesExport
             markdown = lineEnd < 0 ? string.Empty : markdown[(lineEnd + 1)..];
         }
 
-        File.WriteAllText(temp, SeparatorAfterMarker().Replace(markdown, "$1"), new System.Text.UTF8Encoding(false));
+        File.WriteAllText(temp, SeparatorAfterMarker().Replace(markdown, "$1"));
     }
 
     // The export also puts a separator line after every slide's comment, parting the comment
