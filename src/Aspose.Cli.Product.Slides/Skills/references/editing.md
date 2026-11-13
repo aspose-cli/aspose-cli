@@ -86,7 +86,8 @@ comments a deck already has.
   `details.fromMaster` and `details.toMaster`, positions in `inspect --detail masters`; the hint
   names the layouts that take the slide back, if any.
 - A slide's `title` in `slides read` and `inspect --sample` is the text of the shape `set_title`
-  writes; a slide without one reports no `title`, whatever its other shapes say.
+  writes; a slide without one reports no `title`, whatever its other shapes say. Its spaces, like
+  those of a shape's `text` and the notes, read as stored, which is what `slides search` finds.
 - `format_shape` `font` names one font for Latin, East Asian and complex-script text;
   `latinFont` and `eastAsianFont` set the font of their script in its place. `slides read
   --content full` reports a `font` given alone as each run's `font`; given with `latinFont`, it
