@@ -14,7 +14,7 @@
         "files": { "present": ["noted.csv"] },
         "json": [
           { "path": "verification.ok", "equals": false },
-          { "path": "verification.issues", "equals": [{ "code": "LOSSY_CONVERSION", "message": "The csv output leaves out 1 comment(s): 1 on worksheet 'noted'. This edit added 1 of them, and a csv file cannot hold them.", "location": "sheet/noted", "hint": "To keep what the edit added, write it with --out to a format that holds it, such as xlsx." }] }
+          { "path": "verification.issues", "equals": [{ "code": "LOSSY_CONVERSION", "message": "The csv output leaves out 1 comment(s): 1 on worksheet 'noted'. This edit added or changed 1 of them, and a csv file cannot hold them.", "location": "sheet/noted", "hint": "To keep what the edit added or changed, write it with --out to a format that holds it, such as xlsx." }] }
         ]
       }
     },
@@ -24,7 +24,7 @@
         "exitCode": 0,
         "files": { "present": ["notes-out.csv"] },
         "json": [
-          { "path": "warnings", "contains": { "code": "LOSSY_CONVERSION", "message": "The csv output leaves out 1 comment(s): 1 on worksheet 'notes'. This edit added 1 of them, and a csv file cannot hold them.", "hint": "To keep what the edit added, write it with --out to a format that holds it, such as xlsx.", "location": "sheet/notes", "details": { "content": ["comments"] }, "affectsCompleteness": true } }
+          { "path": "warnings", "contains": { "code": "LOSSY_CONVERSION", "message": "The csv output leaves out 1 comment(s): 1 on worksheet 'notes'. This edit added or changed 1 of them, and a csv file cannot hold them.", "hint": "To keep what the edit added or changed, write it with --out to a format that holds it, such as xlsx.", "location": "sheet/notes", "details": { "content": ["comments"] }, "affectsCompleteness": true } }
         ]
       }
     },
@@ -89,11 +89,11 @@
     },
     {
       "args": ["cells", "edit", "cm.xlsx", "--out", "moved.csv", "--verify", "--ops", "{\"ops\":[{\"op\":\"delete_comment\",\"sheet\":\"Sheet1\",\"cell\":\"A1\"},{\"op\":\"add_comment\",\"sheet\":\"Sheet1\",\"cell\":\"B2\",\"text\":\"new\"}]}"],
-      "expect": { "exitCode": 8, "json": [{ "path": "verification.ok", "equals": false }, { "path": "verification.issues", "equals": [{ "code": "LOSSY_CONVERSION", "message": "The csv output leaves out 2 comment(s): 2 on worksheet 'Sheet1'. This edit added 1 of them, and a csv file cannot hold them.", "location": "sheet/Sheet1", "hint": "To keep what the edit added, write it with --out to a format that holds it, such as xlsx." }] }] }
+      "expect": { "exitCode": 8, "json": [{ "path": "verification.ok", "equals": false }, { "path": "verification.issues", "equals": [{ "code": "LOSSY_CONVERSION", "message": "The csv output leaves out 2 comment(s): 2 on worksheet 'Sheet1'. This edit added or changed 1 of them, and a csv file cannot hold them.", "location": "sheet/Sheet1", "hint": "To keep what the edit added or changed, write it with --out to a format that holds it, such as xlsx." }] }] }
     },
     {
       "args": ["cells", "edit", "cm.xlsx", "--out", "appended.csv", "--verify", "--ops", "{\"ops\":[{\"op\":\"add_comment\",\"sheet\":\"Sheet1\",\"cell\":\"A1\",\"text\":\"more\"}]}"],
-      "expect": { "exitCode": 8, "json": [{ "path": "verification.ok", "equals": false }, { "path": "verification.issues", "equals": [{ "code": "LOSSY_CONVERSION", "message": "The csv output leaves out 2 comment(s): 2 on worksheet 'Sheet1'. This edit added 1 of them, and a csv file cannot hold them.", "location": "sheet/Sheet1", "hint": "To keep what the edit added, write it with --out to a format that holds it, such as xlsx." }] }] }
+      "expect": { "exitCode": 8, "json": [{ "path": "verification.ok", "equals": false }, { "path": "verification.issues", "equals": [{ "code": "LOSSY_CONVERSION", "message": "The csv output leaves out 2 comment(s): 2 on worksheet 'Sheet1'. This edit added or changed 1 of them, and a csv file cannot hold them.", "location": "sheet/Sheet1", "hint": "To keep what the edit added or changed, write it with --out to a format that holds it, such as xlsx." }] }] }
     },
     {
       "args": ["cells", "edit", "cm.xlsx", "--out", "undone.csv", "--verify", "--ops", "{\"ops\":[{\"op\":\"add_comment\",\"sheet\":\"Sheet1\",\"cell\":\"C3\",\"text\":\"draft\"},{\"op\":\"delete_comment\",\"sheet\":\"Sheet1\",\"cell\":\"C3\"}]}"],
@@ -114,6 +114,18 @@
     {
       "args": ["cells", "edit", "two.xlsx", "--out", "only-noted.csv", "--verify", "--ops", "{\"ops\":[{\"op\":\"delete_sheet\",\"sheet\":\"Plain\"},{\"op\":\"delete_sheet\",\"sheet\":\"Extra\"}]}"],
       "expect": { "exitCode": 0, "json": [{ "path": "verification.ok", "equals": true }] }
+    },
+    {
+      "args": ["cells", "create", "headed.xlsx", "--sheet-names", "Report"],
+      "expect": { "exitCode": 0 }
+    },
+    {
+      "args": ["cells", "edit", "headed.xlsx", "--in-place", "--ops", "{\"ops\":[{\"op\":\"set_values\",\"sheet\":\"Report\",\"range\":\"A1\",\"values\":[[\"total\"]]},{\"op\":\"set_page_setup\",\"sheet\":\"Report\",\"headerCenter\":\"Draft\"}]}"],
+      "expect": { "exitCode": 0 }
+    },
+    {
+      "args": ["cells", "edit", "headed.xlsx", "--out", "headed.csv", "--verify", "--ops", "{\"ops\":[{\"op\":\"set_page_setup\",\"sheet\":\"Report\",\"headerCenter\":\"Final\"}]}"],
+      "expect": { "exitCode": 8, "json": [{ "path": "verification.ok", "equals": false }, { "path": "verification.issues", "equals": [{ "code": "LOSSY_CONVERSION", "message": "The csv output leaves out the headers and footers of worksheet 'Report': a table of cells has no pages to print them on. This edit added or changed 1 of them, and a csv file cannot hold them.", "location": "sheet/Report", "hint": "To keep what the edit added or changed, write it with --out to a format that holds it, such as xlsx." }] }] }
     }
   ]
 }
