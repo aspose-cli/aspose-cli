@@ -255,18 +255,20 @@ internal static class PdfInfoProjection
     private static string? FormKind(Document document) =>
         document.Form.HasXfa ? PdfFormKinds.Xfa : document.Form.Count > 0 ? PdfFormKinds.Acro : null;
 
-    /// <summary>The links of every page that open a web address, in page order.</summary>
+    /// <summary>The links of every page that open a web address or another file, in page order.</summary>
     internal static IEnumerable<PdfLinkInfo> Links(Document document) =>
         Enumerable.Range(1, document.Pages.Count).SelectMany(number =>
         {
             Page page = document.Pages[number];
             return page.Annotations.OfType<Aspose.Pdf.Annotations.LinkAnnotation>()
-                .Where(static link => link.Action is Aspose.Pdf.Annotations.GoToURIAction { URI.Length: > 0 })
+                .Where(static link => link.Action is Aspose.Pdf.Annotations.GoToURIAction { URI.Length: > 0 } or Aspose.Pdf.Annotations.GoToRemoteAction)
                 .Select(link => new PdfLinkInfo
                 {
                     Page = number,
                     Rect = PdfGeometry.ToContractRect(page, link.Rect),
-                    Url = ((Aspose.Pdf.Annotations.GoToURIAction)link.Action).URI,
+                    Url = (link.Action as Aspose.Pdf.Annotations.GoToURIAction)?.URI,
+                    File = (link.Action as Aspose.Pdf.Annotations.GoToRemoteAction)?.File?.Name,
+                    TargetPage = (link.Action as Aspose.Pdf.Annotations.GoToRemoteAction)?.Destination is Aspose.Pdf.Annotations.ExplicitDestination { PageNumber: > 0 } target ? target.PageNumber : null,
                 });
         });
 

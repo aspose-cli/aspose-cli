@@ -115,8 +115,9 @@ lost its page but holds other bookmarks is named apart, since deleting it
 deletes them too: keep it or tell the user. Stranded by a move, it stays an issue
 of `--verify`: `add_bookmark` adds only a bookmark that opens a page, so what it
 holds cannot always be added back; tell the user it no longer opens its page.
-`pdf inspect --detail links` lists the links to web addresses as `links`
-and the links to places in the document as `documentLinks`, each with the
+`pdf inspect --detail links` lists the links out of the document as `links`, a web
+address with its `url` and another file with its `file` and the `targetPage` of it
+it opens, and the links to places in the document as `documentLinks`, each with the
 `targetPage` it opens; one without `targetPage` leads nowhere.
 Follow the destination checks in
 [verification](verification.md).
