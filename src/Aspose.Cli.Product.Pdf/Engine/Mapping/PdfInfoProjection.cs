@@ -31,16 +31,8 @@ internal static class PdfInfoProjection
         HashSet<string> details = new(request.Details ?? [], StringComparer.Ordinal);
         bool includePages = request.IncludePreview;
         var warnings = new List<Warning>();
-        PdfLinkInfo[]? links = details.Contains(PdfInspectDetails.Links) ? [.. Links(document).Take(PdfInspectResult.LinkLimit + 1)] : null;
-        if (links?.Length > PdfInspectResult.LinkLimit)
-        {
-            warnings.Add(EnvelopeParts.ListTruncated(
-                "links",
-                PdfInspectResult.LinkLimit,
-                Links(document).Count(),
-                "Inspect a split part of the document, such as 'aspose-cli pdf split --by pages --every 50', to see the rest."));
-            links = links[..PdfInspectResult.LinkLimit];
-        }
+        PdfLinkInfo[]? links = details.Contains(PdfInspectDetails.Links) ? Capped(Links(document), "links") : null;
+        PdfDocumentLinkInfo[]? documentLinks = details.Contains(PdfInspectDetails.Links) ? Capped(DocumentLinks(document), "documentLinks") : null;
 
         bool fieldsTruncated = false;
         PdfFormInfo? form = details.Contains(PdfInspectDetails.Forms) ? PdfForms.Project(document, out fieldsTruncated) : null;
@@ -94,6 +86,7 @@ internal static class PdfInfoProjection
             PageLabels = PageLabels(document),
             Outline = outline,
             Links = links,
+            DocumentLinks = documentLinks,
             Forms = form,
             Attachments = details.Contains(PdfInspectDetails.Attachments) ? Attachments(document) : null,
             Fonts = details.Contains(PdfInspectDetails.Fonts) ? Fonts(document) : null,
@@ -107,6 +100,19 @@ internal static class PdfInfoProjection
         // Reading the structure tree rewrites the document's metadata and PDF/A identification
         // (PDF-TAGGED-CONTENT-WRITES), so it is read last; the inspected document is never saved.
         return result with { Pdf = result.Pdf with { Tagged = IsTagged(document) } };
+
+        T[] Capped<T>(IEnumerable<T> items, string list)
+        {
+            T[] taken = [.. items.Take(PdfInspectResult.LinkLimit + 1)];
+            if (taken.Length <= PdfInspectResult.LinkLimit)
+            {
+                return taken;
+            }
+
+            warnings.Add(EnvelopeParts.ListTruncated(list, PdfInspectResult.LinkLimit, items.Count(),
+                "Inspect a split part of the document, such as 'aspose-cli pdf split --by pages --every 50', to see the rest."));
+            return taken[..PdfInspectResult.LinkLimit];
+        }
     }
 
     public static InputInfo Source(string path, LoadedPdf loaded) => FileObjects.Input(path, "pdf", loaded.Encrypted);
@@ -261,6 +267,26 @@ internal static class PdfInfoProjection
                     Page = number,
                     Rect = PdfGeometry.ToContractRect(page, link.Rect),
                     Url = ((Aspose.Pdf.Annotations.GoToURIAction)link.Action).URI,
+                });
+        });
+
+    /// <summary>
+    /// The links of every page that lead to a place in the document, or have no action at all and
+    /// so lead to none, in page order: each the navigation counts of <see cref="PdfNavigationCensus"/> read.
+    /// </summary>
+    private static IEnumerable<PdfDocumentLinkInfo> DocumentLinks(Document document) =>
+        Enumerable.Range(1, document.Pages.Count).SelectMany(number =>
+        {
+            Page page = document.Pages[number];
+            return page.Annotations.OfType<Aspose.Pdf.Annotations.LinkAnnotation>()
+                .Where(static link => link.Action is null or Aspose.Pdf.Annotations.GoToAction)
+                .Select(link => new PdfDocumentLinkInfo
+                {
+                    Page = number,
+                    Rect = PdfGeometry.ToContractRect(page, link.Rect),
+                    TargetPage = PdfNavigationCensus.PageNumber(document, PdfNavigationCensus.Target(link.Destination, link.Action)) is > 0 and int target
+                        ? target
+                        : null,
                 });
         });
 
