@@ -14,8 +14,9 @@ namespace Aspose.Cli.Product.Cells.Engine.Mapping;
 /// input is read with a byte order mark, a named encoding or strict UTF-8, and with a named
 /// culture or as written (<see cref="Reads"/>), which a delimited text output writes back as it
 /// shows (<see cref="WriteAsShown"/>); in a file that writes a decimal comma, numbers with a comma
-/// or a point stay text (<see cref="KeepSeparatedNumbersAsText"/>). An input that UTF-8 reading
-/// would change is refused with the encoding that reads it.
+/// or a point stay text (<see cref="KeepSeparatedNumbersAsText"/>), and an error value is always
+/// text (<see cref="KeepErrorsAsText"/>). An input that UTF-8 reading would change is refused with
+/// the encoding that reads it.
 /// </summary>
 internal static partial class CellsTextImport
 {
@@ -101,6 +102,45 @@ internal static partial class CellsTextImport
             Location = CellsAddresses.At("cell", sheet.Name, sample.Name),
         };
     });
+
+    /// <summary>
+    /// Keeps as text each error value of <paramref name="sheet"/>, such as #N/A, which a delimited
+    /// text input, holding no formula, can only have written as text: the engine types it as the
+    /// error whatever the load's parser returns (known issue CELLS-CSV-ERROR-TEXT, KNOWN-ISSUES.md),
+    /// so it is put back with a quote prefix, which keeps it text and which a text output omits.
+    /// </summary>
+    internal static void KeepErrorsAsText(Worksheet sheet) =>
+        PutValues(sheet, static cell => cell is { Type: CellValueType.IsError, IsFormula: false } ? "'" + cell.StringValue : null);
+
+    /// <summary>
+    /// Types as the error it writes each text of <paramref name="table"/>, a text table an edit
+    /// wrote and a load read back, that writes an error value, such as #DIV/0!, unless
+    /// <paramref name="before"/>, the sheet it was written from as the edit found it, held that
+    /// text: a text table holds an error value as its text, which a load keeps as text.
+    /// </summary>
+    internal static void TypeErrors(Worksheet table, Worksheet? before) =>
+        PutValues(table, cell => cell.Type == CellValueType.IsString && cell.StringValue.StartsWith('#')
+            && ReadType(cell.StringValue) == CellValueType.IsError
+            && !(before?.Cells.CheckCell(cell.Row, cell.Column) is { Type: CellValueType.IsString } held && held.StringValue == cell.StringValue)
+            ? cell.StringValue : null);
+
+    // Puts into each cell of the sheet the value the function gives it, if any, once all are read.
+    private static void PutValues(Worksheet sheet, Func<Cell, string?> value)
+    {
+        var put = new List<(Cell Cell, string Value)>();
+        foreach (Cell cell in sheet.Cells)
+        {
+            if (value(cell) is { } text)
+            {
+                put.Add((cell, text));
+            }
+        }
+
+        foreach ((Cell cell, string text) in put)
+        {
+            cell.PutValue(text);
+        }
+    }
 
     /// <summary>
     /// Runs <paramref name="work"/> with the thread's culture set to the invariant one, then sets

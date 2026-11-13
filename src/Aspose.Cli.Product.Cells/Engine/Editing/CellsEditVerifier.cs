@@ -26,6 +26,10 @@ internal sealed class CellsEditVerifier(CellsWorkbookLoader loader, ResourceBudg
         // name it was written from, and its values alone are compared.
         textTable?.Rename(candidate.Workbook);
         bool valuesOnly = textTable is not null;
+        if (textTable is not null)
+        {
+            CellsTextImport.TypeErrors(candidate.Workbook.Worksheets[0], textTable.Before(baseline.Workbook));
+        }
         // Targets as the batch found the workbook before its first operation: an operation that
         // names no sheet ran on the sheet active then. The changes are classified, and the
         // operations checked, by the same targets of the operations the diff compares.

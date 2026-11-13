@@ -1,0 +1,61 @@
+{
+  "name": "cells reads the text #N/A, #DIV/0! and #REF! of a csv as text, so a verified edit of another cell passes and writes them back, while a formula error an edit makes is still reported in an xlsx and a csv output",
+  "files": {
+    "results.csv": { "text": "test,result\nalpha,#N/A\nbeta,#DIV/0!\ngamma,#REF!\ndelta,1\n" }
+  },
+  "steps": [
+    {
+      "args": ["cells", "read", "results.csv", "--range", "B2:B4"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "sheet.cells[0][0]", "equals": { "v": "#N/A", "t": "string" } },
+          { "path": "sheet.cells[1][0]", "equals": { "v": "#DIV/0!", "t": "string" } },
+          { "path": "sheet.cells[2][0]", "equals": { "v": "#REF!", "t": "string" } }
+        ]
+      }
+    },
+    {
+      "args": ["cells", "edit", "results.csv", "--set", "results!B5=2", "--out", "out.csv", "--verify"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "verification.ok", "equals": true },
+          { "path": "verification.formulaErrors", "equals": [] },
+          { "path": "verification.directChanges", "contains": { "sheet": "results", "cell": "B5", "left": { "t": "number", "v": 1 }, "right": { "t": "number", "v": 2 } } }
+        ]
+      }
+    },
+    {
+      "args": ["cells", "read", "out.csv", "--range", "B2:B4"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "sheet.cells[0][0]", "equals": { "v": "#N/A", "t": "string" } },
+          { "path": "sheet.cells[1][0]", "equals": { "v": "#DIV/0!", "t": "string" } },
+          { "path": "sheet.cells[2][0]", "equals": { "v": "#REF!", "t": "string" } }
+        ]
+      }
+    },
+    {
+      "args": ["cells", "edit", "results.csv", "--set", "results!C2==NA()", "--out", "na.csv", "--verify"],
+      "expect": {
+        "exitCode": 8,
+        "json": [
+          { "path": "verification.ok", "equals": false },
+          { "path": "verification.formulaErrors", "equals": [{ "sheet": "results", "cell": "C2", "error": "#N/A" }] }
+        ]
+      }
+    },
+    {
+      "args": ["cells", "edit", "results.csv", "--set", "results!C2==1/0", "--out", "div.xlsx", "--verify"],
+      "expect": {
+        "exitCode": 8,
+        "json": [
+          { "path": "verification.ok", "equals": false },
+          { "path": "verification.formulaErrors", "equals": [{ "sheet": "results", "cell": "C2", "error": "#DIV/0!" }] }
+        ]
+      }
+    }
+  ]
+}
