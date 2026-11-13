@@ -29,7 +29,7 @@ internal static class CellsEngineFormats
         new("xltm") { Detected = FileFormatType.Xltm, Save = SaveFormat.Xltm, KeepsSheetProtection = true, EvaluationMarks = CellsEvaluationMarkKind.Workbook },
         new("xlsb") { Detected = FileFormatType.Xlsb, Save = SaveFormat.Xlsb, KeepsSheetProtection = true, EvaluationMarks = CellsEvaluationMarkKind.Workbook },
         new("xls") { Detected = FileFormatType.Excel97To2003, Save = SaveFormat.Excel97To2003, KeepsSheetProtection = true, EvaluationMarks = CellsEvaluationMarkKind.Workbook },
-        new("ods") { Detected = FileFormatType.Ods, Save = SaveFormat.Ods, KeepsSheetProtection = true, EvaluationMarks = CellsEvaluationMarkKind.Workbook },
+        new("ods") { Detected = FileFormatType.Ods, Save = SaveFormat.Ods, KeepsSheetProtection = true, EvaluationMarks = CellsEvaluationMarkKind.Workbook, Leaves = CellsContentLoss.PrintCommentsSetting },
         new("csv")
         {
             Detected = FileFormatType.Csv, Save = SaveFormat.Csv, EvaluationMarks = CellsEvaluationMarkKind.DataRow, TextTable = true, Leaves = DelimitedTextLosses,
@@ -85,6 +85,9 @@ internal static class CellsEngineFormats
 
     /// <inheritdoc cref="CellsEngineFormat.Leaves"/>
     public static CellsContentLoss Leaves(string formatId) => Find(formatId).Leaves;
+
+    /// <summary>What a file of a format the engine detected leaves out, as <see cref="Leaves"/> says; none for a format the table does not map.</summary>
+    public static CellsContentLoss LeavesDetected(FileFormatType type) => All.FirstOrDefault(format => format.Detected == type)?.Leaves ?? CellsContentLoss.None;
 
     /// <summary>
     /// The evaluation marks an output in <paramref name="formatId"/> carries; null for an id the
@@ -228,6 +231,9 @@ internal enum CellsContentLoss
     /// <see cref="PrintHeadersFooters"/>, one that prints only the page number or page count is no loss.
     /// </summary>
     HeadersFooters = 32,
+
+    /// <summary>A sheet's setting to print its comments, which the engine does not keep (known issue CELLS-ODS-PRINT-COMMENTS).</summary>
+    PrintCommentsSetting = 64,
 }
 
 /// <summary>What evaluation mode leaves in an output, as <see cref="CellsEvaluationProfile"/> names it.</summary>

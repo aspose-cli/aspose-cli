@@ -150,6 +150,26 @@ public sealed class CellsKnownIssueTests
             $"the parser's text #N/A loads as {loaded.Type}, and #DIV/0! put without conversion as {put.Type}");
     }
 
+    [LicensedFact]
+    public void OdsSave_DropsTheSettingToPrintComments()
+    {
+        using var fixture = new CellsFixture();
+        string path = fixture.Temp.File("print-comments.ods");
+        using (var workbook = new Workbook())
+        {
+            Worksheet sheet = workbook.Worksheets[0];
+            sheet.Cells["A1"].PutValue("noted");
+            sheet.Comments[sheet.Comments.Add("A1")].Note = "a note";
+            sheet.PageSetup.PrintComments = PrintCommentsType.PrintSheetEnd;
+            workbook.Save(path, SaveFormat.Ods);
+        }
+
+        using var reopened = new Workbook(path);
+        PrintCommentsType read = reopened.Worksheets[0].PageSetup.PrintComments;
+
+        KnownIssue.Reproduces("CELLS-ODS-PRINT-COMMENTS", read == PrintCommentsType.PrintNoComments, $"an ods saved to print comments at the sheet's end reads back {read}");
+    }
+
     // Returns every value as the text it is.
     private sealed class TextParser : ICustomParser
     {

@@ -30,7 +30,8 @@ drawings, and warns `LOSSY_CONVERSION` with how many of each: convert to xlsx
 or pdf to keep them, or `cells render` an image of the sheet. `cells convert`
 and a `cells edit` that writes csv or tsv also warn `LOSSY_CONVERSION` for the
 headers and footers of that sheet, which the table leaves out, and for its
-comments. These warnings are no `--verify` issue. A target grid
+comments. These warnings are no `--verify` issue, except for comments or
+headers and footers the edit itself added, which no file then keeps. A target grid
 smaller than the data, such as xls with 65,536 rows, warns `DATA_TRUNCATED`,
 and formulas that referenced the lost cells become `#REF!` with
 `FORMULAS_BROKEN`: save to xlsx, xlsb or ods instead.
@@ -46,6 +47,7 @@ A PDF or XPS prints only the comments its page setup prints, by default none,
 and warns `LOSSY_CONVERSION` with how many comments each sheet it prints has.
 To print them, set `printComments` to `sheet-end` with `set_page_setup` on the
 sheet and convert again: they follow its last page, and the warning goes away.
+An ods file does not keep that setting, so save an ods workbook as xlsx first.
 An html or mhtml page holds no comments, shows the charts as pictures and
 keeps the headers and footers only as Excel print data that a browser neither
 shows nor prints; it warns `LOSSY_CONVERSION` for each of these the sheets

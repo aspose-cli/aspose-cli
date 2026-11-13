@@ -1,0 +1,119 @@
+{
+  "name": "cells edit fails --verify, and still writes the output, when it adds a comment or a header that its csv output cannot hold, says so without claiming a workbook keeps them, and keeps the warning of content its xlsx input already had, which the input keeps; a pdf of an ods says the ods does not keep the print setting",
+  "files": {
+    "notes.csv": { "text": "item,qty\na,1\n" },
+    "noted.csv": { "text": "item,qty\na,1\n" },
+    "header.csv": { "text": "item,qty\na,1\n" },
+    "values.csv": { "text": "item,qty\na,1\n" }
+  },
+  "steps": [
+    {
+      "args": ["cells", "edit", "noted.csv", "--in-place", "--verify", "--ops", "{\"ops\":[{\"op\":\"add_comment\",\"cell\":\"B2\",\"text\":\"check\"}]}"],
+      "expect": {
+        "exitCode": 8,
+        "files": { "present": ["noted.csv"] },
+        "json": [
+          { "path": "verification.ok", "equals": false },
+          { "path": "verification.issues", "equals": [{ "code": "LOSSY_CONVERSION", "message": "The csv output leaves out 1 comment(s): 1 on worksheet 'noted'. This edit added 1 of them, and a csv file cannot hold them.", "location": "sheet/noted", "hint": "To keep what the edit added, write it with --out to a format that holds it, such as xlsx." }] }
+        ]
+      }
+    },
+    {
+      "args": ["cells", "edit", "notes.csv", "--out", "notes-out.csv", "--ops", "{\"ops\":[{\"op\":\"add_comment\",\"cell\":\"B2\",\"text\":\"check\"}]}"],
+      "expect": {
+        "exitCode": 0,
+        "files": { "present": ["notes-out.csv"] },
+        "json": [
+          { "path": "warnings", "contains": { "code": "LOSSY_CONVERSION", "message": "The csv output leaves out 1 comment(s): 1 on worksheet 'notes'. This edit added 1 of them, and a csv file cannot hold them.", "hint": "To keep what the edit added, write it with --out to a format that holds it, such as xlsx.", "location": "sheet/notes", "details": { "content": ["comments"] }, "affectsCompleteness": true } }
+        ]
+      }
+    },
+    {
+      "args": ["cells", "edit", "header.csv", "--in-place", "--verify", "--ops", "{\"ops\":[{\"op\":\"set_page_setup\",\"headerCenter\":\"Report\"}]}"],
+      "expect": {
+        "exitCode": 8,
+        "json": [
+          { "path": "verification.ok", "equals": false },
+          { "path": "verification.issues[0].code", "equals": "LOSSY_CONVERSION" },
+          { "path": "verification.issues[0].message", "startsWith": "The csv output leaves out the headers and footers of worksheet 'header'" }
+        ]
+      }
+    },
+    {
+      "args": ["cells", "edit", "values.csv", "--in-place", "--verify", "--set", "values!B2=2"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "verification.ok", "equals": true }
+        ]
+      }
+    },
+    {
+      "args": ["cells", "create", "book.xlsx", "--sheet-names", "Sales"],
+      "expect": { "exitCode": 0 }
+    },
+    {
+      "args": ["cells", "edit", "book.xlsx", "--in-place", "--ops", "{\"ops\":[{\"op\":\"set_values\",\"sheet\":\"Sales\",\"range\":\"A1\",\"values\":[[\"item\",\"qty\"],[\"a\",1]]},{\"op\":\"add_comment\",\"sheet\":\"Sales\",\"cell\":\"B2\",\"text\":\"kept\"},{\"op\":\"set_page_setup\",\"sheet\":\"Sales\",\"printComments\":\"sheet-end\"}]}"],
+      "expect": { "exitCode": 0 }
+    },
+    {
+      "args": ["cells", "edit", "book.xlsx", "--out", "sales.csv", "--verify", "--set", "Sales!B2=2"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "verification.ok", "equals": true },
+          { "path": "warnings", "contains": { "code": "LOSSY_CONVERSION", "message": "The csv output leaves out 1 comment(s): 1 on worksheet 'Sales'.", "hint": "Read the comments with 'aspose-cli cells inspect <file> --detail comments'; the workbook keeps them.", "location": "sheet/Sales", "details": { "content": ["comments"] } } }
+        ]
+      }
+    },
+    {
+      "args": ["cells", "convert", "book.xlsx", "--to", "ods", "--out", "book.ods"],
+      "expect": { "exitCode": 0 }
+    },
+    {
+      "args": ["cells", "convert", "book.ods", "--to", "pdf", "--out", "book.pdf", "--sheets", "1"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "warnings", "contains": { "code": "LOSSY_CONVERSION", "message": "The pdf output leaves out 1 comment(s), which the page setup of their worksheet does not print: 1 on worksheet 'Sales'.", "hint": "Read the comments with 'aspose-cli cells inspect <file> --detail comments'. To keep them in the output, set printComments to sheet-end with set_page_setup on the worksheet and convert again: they print after its last page. This workbook's format does not keep that setting, so save the workbook as xlsx first and set it there.", "location": "sheet/Sales", "details": { "content": ["comments"] } } }
+        ]
+      }
+    },
+    {
+      "args": ["cells", "create", "cm.xlsx", "--sheet-names", "Sheet1"],
+      "expect": { "exitCode": 0 }
+    },
+    {
+      "args": ["cells", "edit", "cm.xlsx", "--in-place", "--ops", "{\"ops\":[{\"op\":\"set_values\",\"sheet\":\"Sheet1\",\"range\":\"A1\",\"values\":[[\"a\",\"b\"]]},{\"op\":\"add_comment\",\"sheet\":\"Sheet1\",\"cell\":\"A1\",\"text\":\"first\"},{\"op\":\"add_comment\",\"sheet\":\"Sheet1\",\"cell\":\"B1\",\"text\":\"second\"}]}"],
+      "expect": { "exitCode": 0 }
+    },
+    {
+      "args": ["cells", "edit", "cm.xlsx", "--out", "moved.csv", "--verify", "--ops", "{\"ops\":[{\"op\":\"delete_comment\",\"sheet\":\"Sheet1\",\"cell\":\"A1\"},{\"op\":\"add_comment\",\"sheet\":\"Sheet1\",\"cell\":\"B2\",\"text\":\"new\"}]}"],
+      "expect": { "exitCode": 8, "json": [{ "path": "verification.ok", "equals": false }, { "path": "verification.issues", "equals": [{ "code": "LOSSY_CONVERSION", "message": "The csv output leaves out 2 comment(s): 2 on worksheet 'Sheet1'. This edit added 1 of them, and a csv file cannot hold them.", "location": "sheet/Sheet1", "hint": "To keep what the edit added, write it with --out to a format that holds it, such as xlsx." }] }] }
+    },
+    {
+      "args": ["cells", "edit", "cm.xlsx", "--out", "appended.csv", "--verify", "--ops", "{\"ops\":[{\"op\":\"add_comment\",\"sheet\":\"Sheet1\",\"cell\":\"A1\",\"text\":\"more\"}]}"],
+      "expect": { "exitCode": 8, "json": [{ "path": "verification.ok", "equals": false }, { "path": "verification.issues", "equals": [{ "code": "LOSSY_CONVERSION", "message": "The csv output leaves out 2 comment(s): 2 on worksheet 'Sheet1'. This edit added 1 of them, and a csv file cannot hold them.", "location": "sheet/Sheet1", "hint": "To keep what the edit added, write it with --out to a format that holds it, such as xlsx." }] }] }
+    },
+    {
+      "args": ["cells", "edit", "cm.xlsx", "--out", "undone.csv", "--verify", "--ops", "{\"ops\":[{\"op\":\"add_comment\",\"sheet\":\"Sheet1\",\"cell\":\"C3\",\"text\":\"draft\"},{\"op\":\"delete_comment\",\"sheet\":\"Sheet1\",\"cell\":\"C3\"}]}"],
+      "expect": { "exitCode": 0, "json": [{ "path": "verification.ok", "equals": true }, { "path": "warnings", "contains": { "code": "LOSSY_CONVERSION", "message": "The csv output leaves out 2 comment(s): 2 on worksheet 'Sheet1'.", "hint": "Read the comments with 'aspose-cli cells inspect <file> --detail comments'; the workbook keeps them.", "location": "sheet/Sheet1", "details": { "content": ["comments"] } } }] }
+    },
+    {
+      "args": ["cells", "edit", "cm.xlsx", "--out", "renamed.csv", "--verify", "--ops", "{\"ops\":[{\"op\":\"rename_sheet\",\"sheet\":\"Sheet1\",\"name\":\"Ledger\"},{\"op\":\"insert_rows\",\"sheet\":\"Ledger\",\"at\":1,\"count\":2}]}"],
+      "expect": { "exitCode": 0, "json": [{ "path": "verification.ok", "equals": true }] }
+    },
+    {
+      "args": ["cells", "create", "two.xlsx", "--sheet-names", "Plain,Noted,Extra"],
+      "expect": { "exitCode": 0 }
+    },
+    {
+      "args": ["cells", "edit", "two.xlsx", "--in-place", "--ops", "{\"ops\":[{\"op\":\"add_comment\",\"sheet\":\"Noted\",\"cell\":\"A1\",\"text\":\"one\"},{\"op\":\"add_comment\",\"sheet\":\"Noted\",\"cell\":\"A2\",\"text\":\"two\"},{\"op\":\"add_comment\",\"sheet\":\"Extra\",\"cell\":\"A1\",\"text\":\"three\"}]}"],
+      "expect": { "exitCode": 0 }
+    },
+    {
+      "args": ["cells", "edit", "two.xlsx", "--out", "only-noted.csv", "--verify", "--ops", "{\"ops\":[{\"op\":\"delete_sheet\",\"sheet\":\"Plain\"},{\"op\":\"delete_sheet\",\"sheet\":\"Extra\"}]}"],
+      "expect": { "exitCode": 0, "json": [{ "path": "verification.ok", "equals": true }] }
+    }
+  ]
+}

@@ -309,6 +309,23 @@ Reproductions: [CellsKnownIssueTests](tests/Aspose.Cli.Product.Cells.Tests/Cells
   text back as the error only where the input did not hold the same text, so a formula error the
   edit left is still reported.
 
+### CELLS-ODS-PRINT-COMMENTS
+
+- **Defect:** an ods save drops a sheet's `PageSetup.PrintComments`, though an ODF page layout
+  can print annotations: set to print at the sheet's end or in place, it reads back as
+  `PrintNoComments`. xlsx, xls and xlsb keep it.
+
+  ```csharp
+  sheet.PageSetup.PrintComments = PrintCommentsType.PrintSheetEnd;
+  workbook.Save("c.ods", SaveFormat.Ods);
+  // new Workbook("c.ods").Worksheets[0].PageSetup.PrintComments is PrintNoComments
+  ```
+
+- **CLI behavior:** `set_page_setup printComments` written to an ods is read back as `none`, as
+  `cells inspect --detail layout` reports. A printout of an ods input warns of the comments it
+  leaves out, and its hint, which names that setting, adds that the ods does not keep it and to
+  save the workbook as xlsx first.
+
 ## Aspose.PDF.Drawing 26.8.0
 
 Reproductions: [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownIssueTests.cs).
