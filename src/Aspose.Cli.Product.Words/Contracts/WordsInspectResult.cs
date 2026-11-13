@@ -429,7 +429,7 @@ public sealed record WordsTableData
 /// <summary>A section's page numbering, as set_page_numbers sets it.</summary>
 public sealed record WordsPageNumbersData
 {
-    /// <summary>Whether the primary header or, without one there, the primary footer holds the PAGE field; absent when neither does.</summary>
+    /// <summary>Whether the primary header or, without one there, the primary footer the section shows, its own or one it continues from an earlier section, holds the PAGE field; absent when neither does.</summary>
     [AllowedValues(typeof(WordsHeaderFooterLocations))]
     public string? Location { get; init; }
 
