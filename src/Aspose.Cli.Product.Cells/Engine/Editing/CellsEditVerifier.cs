@@ -30,7 +30,7 @@ internal sealed class CellsEditVerifier(CellsWorkbookLoader loader, ResourceBudg
         bool valuesOnly = textTable is not null;
         if (textTable is not null)
         {
-            CellsTextImport.TypeErrors(candidate.Workbook.Worksheets[0], textTable.Before(baseline.Workbook));
+            CellsTextImport.TypeErrors(candidate.Workbook.Worksheets[0], textTable);
         }
         // Targets as the batch found the workbook before its first operation: an operation that
         // names no sheet ran on the sheet active then. The changes are classified, and the

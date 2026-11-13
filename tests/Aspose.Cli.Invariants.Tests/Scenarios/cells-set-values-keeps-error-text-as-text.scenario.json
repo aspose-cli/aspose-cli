@@ -1,7 +1,10 @@
 {
-  "name": "cells edit writes the strings #N/A and #DIV/0! of set_values and --set as the text they are, so --verify passes, while a formula that evaluates to #N/A is still a formula error, the strings 007 and =1+1 stay text, a string that starts with an apostrophe keeps it, in a workbook and a csv, and a number written over the text reads back as the number",
+  "name": "cells edit writes the strings #N/A and #DIV/0! of set_values and --set as the text they are, so --verify passes, also of a csv or tsv output that writes them as that text, or a csv whose own #N/A text moved to another row, while a formula that evaluates to #N/A is still a formula error, in a csv too, the strings 007 and =1+1 stay text, a string that starts with an apostrophe keeps it, in a workbook and a csv, and a number written over the text reads back as the number",
   "files": {
-    "list.csv": { "text": "k,v\na,1\n" }
+    "list.csv": { "text": "k,v\na,1\n" },
+    "base.csv": { "text": "h1,h2\nx,h2\n" },
+    "moved.csv": { "text": "h1,h2\n#N/A,1\n" },
+    "tabs.tsv": { "text": "h1\th2\nx\th2\n" }
   },
   "steps": [
     {
@@ -109,6 +112,26 @@
     {
       "args": ["cells", "read", "set.csv", "--range", "A3:B3"],
       "expect": { "exitCode": 0, "json": [{ "path": "sheet.cells[0]", "equals": [{ "v": "'abc", "t": "string" }, { "v": "'", "t": "string" }] }] }
+    },
+    {
+      "args": ["cells", "edit", "base.csv", "--ops", "{\"ops\":[{\"op\":\"set_values\",\"range\":\"A1\",\"values\":[[\"#N/A\"]]}]}", "--out", "na new.csv", "--verify"],
+      "expect": { "exitCode": 0, "json": [{ "path": "verification.ok", "equals": true }, { "path": "verification.formulaErrors", "equals": [] }, { "path": "verification.directChanges", "contains": { "sheet": "base", "cell": "A1", "left": { "t": "string", "v": "h1" }, "right": { "t": "string", "v": "#N/A" } } }] }
+    },
+    {
+      "args": ["cells", "edit", "tabs.tsv", "--ops", "{\"ops\":[{\"op\":\"set_values\",\"range\":\"A1\",\"values\":[[\"#DIV/0!\"]]}]}", "--out", "tabs-out.tsv", "--verify"],
+      "expect": { "exitCode": 0, "json": [{ "path": "verification.ok", "equals": true }, { "path": "verification.directChanges", "contains": { "sheet": "tabs", "cell": "A1", "left": { "t": "string", "v": "h1" }, "right": { "t": "string", "v": "#DIV/0!" } } }] }
+    },
+    {
+      "args": ["cells", "edit", "base.csv", "--ops", "{\"ops\":[{\"op\":\"replace_text\",\"find\":\"x\",\"replace\":\"#N/A\"}]}", "--out", "replaced.csv", "--verify"],
+      "expect": { "exitCode": 0, "json": [{ "path": "verification.ok", "equals": true }, { "path": "verification.formulaErrors", "equals": [] }] }
+    },
+    {
+      "args": ["cells", "edit", "base.csv", "--ops", "{\"ops\":[{\"op\":\"set_formula\",\"range\":\"B2\",\"formula\":\"=NA()\"}]}", "--out", "na-formula.csv", "--verify"],
+      "expect": { "exitCode": 8, "json": [{ "path": "verification.ok", "equals": false }, { "path": "verification.formulaErrors", "equals": [{ "sheet": "base", "cell": "B2", "error": "#N/A" }] }] }
+    },
+    {
+      "args": ["cells", "edit", "moved.csv", "--ops", "{\"ops\":[{\"op\":\"insert_rows\",\"at\":2,\"count\":1}]}", "--out", "moved-out.csv", "--verify"],
+      "expect": { "exitCode": 0, "json": [{ "path": "verification.ok", "equals": true }, { "path": "verification.formulaErrors", "equals": [] }] }
     }
   ]
 }
