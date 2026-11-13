@@ -16,11 +16,11 @@ namespace Aspose.Cli.Product.Cells.Commands;
 /// multi-cell ranges are refused and redirected to <c>--ops</c>. A value
 /// starting with <c>=</c> is a formula kept verbatim (including that <c>=</c>);
 /// otherwise <c>TRUE</c>/<c>FALSE</c> in any casing is a boolean, an
-/// invariant-culture decimal number is a number unless a number cell would drop
+/// invariant-culture number a double holds is a number unless a number cell would drop
 /// some of its characters (leading zeros, a leading <c>+</c>, an integer part of
 /// more than 15 digits), and anything else — including the empty string — is
 /// text. Compiled values use the CLR shapes of ops parsed from an
-/// <c>--ops</c> document (string/bool, a number as a decimal), so batching,
+/// <c>--ops</c> document (string/bool, a number as a decimal or a double), so batching,
 /// dry runs, recalculation and the preview hint apply to them unchanged.
 /// </remarks>
 internal static class SetDirectiveParser
@@ -98,10 +98,11 @@ internal static class SetDirectiveParser
 
     /// <summary>
     /// Types a non-formula value the way the same literal would type in an ops
-    /// JSON document. Numbers are detected with an invariant-culture
-    /// <see cref="decimal"/> parse and carried as that decimal, which keeps the
-    /// digits they were written with (1.50), unless a number cell would not keep
-    /// their characters (<see cref="NumberText.DropsCharacters"/>).
+    /// JSON document. Numbers are detected with an invariant-culture parse and
+    /// carried as a <see cref="decimal"/>, which keeps the digits they were written
+    /// with (1.50), or as the double a number cell holds when a decimal cannot hold
+    /// them (1E-30, 1e30); text a number cell would not keep the characters of
+    /// (<see cref="NumberText.DropsCharacters"/>) or a double cannot hold (1e400) stays text.
     /// </summary>
     private static object TypedValue(string rawValue)
     {
@@ -110,13 +111,14 @@ internal static class SetDirectiveParser
             return flag;
         }
 
-        if (decimal.TryParse(rawValue, NumberStyles.Float, CultureInfo.InvariantCulture, out decimal number)
-            && !NumberText.DropsCharacters(rawValue))
+        if (NumberText.DropsCharacters(rawValue)
+            || !double.TryParse(rawValue, NumberStyles.Float, CultureInfo.InvariantCulture, out double number) || !double.IsFinite(number))
         {
-            return number;
+            return rawValue;
         }
 
-        return rawValue;
+        return decimal.TryParse(rawValue, NumberStyles.Float, CultureInfo.InvariantCulture, out decimal written)
+            && Math.Abs((double)written - number) <= Math.Abs(number) * 1e-15 ? written : number;
     }
 
     private static CliException Invalid(string directive, string reason, string hint) =>
