@@ -306,8 +306,8 @@ Reproductions: [CellsKnownIssueTests](tests/Aspose.Cli.Product.Cells.Tests/Cells
   as, with a quote prefix (`'#N/A`), which keeps it text and which a delimited text output does
   not write. `set_values` and `--set` write such a string with a quote prefix too, as typing
   `'#N/A` in Excel does. A verified edit to csv or tsv reads such
-  text back as the error only where the input did not hold the same text, so a formula error the
-  edit left is still reported.
+  text back as the error only in a cell where the edited workbook held an error value, so a
+  formula error the edit left is still reported and text that only looks like one is not.
 
 ### CELLS-ODS-PRINT-COMMENTS
 

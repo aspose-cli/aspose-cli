@@ -118,15 +118,12 @@ internal static partial class CellsTextImport
 
     /// <summary>
     /// Types as the error it writes each text of <paramref name="table"/>, a text table an edit
-    /// wrote and a load read back, that writes an error value, such as #DIV/0!, unless
-    /// <paramref name="before"/>, the sheet it was written from as the edit found it, held that
-    /// text: a text table holds an error value as its text, which a load keeps as text.
+    /// wrote and a load read back, in a cell where the edited workbook held an error value
+    /// (<see cref="TextTableSheet.Errors"/>): a text table holds an error value as its text, which
+    /// a load keeps as text, as it keeps text that only looks like one.
     /// </summary>
-    internal static void TypeErrors(Worksheet table, Worksheet? before) =>
-        PutValues(table, cell => cell.Type == CellValueType.IsString && cell.StringValue.StartsWith('#')
-            && ReadType(cell.StringValue) == CellValueType.IsError
-            && !(before?.Cells.CheckCell(cell.Row, cell.Column) is { Type: CellValueType.IsString } held && held.StringValue == cell.StringValue)
-            ? cell.StringValue : null);
+    internal static void TypeErrors(Worksheet table, TextTableSheet written) =>
+        PutValues(table, cell => cell.Type == CellValueType.IsString && written.Errors.Contains((cell.Row, cell.Column)) ? cell.StringValue : null);
 
     // Puts into each cell of the sheet the value the function gives it, if any, once all are read.
     private static void PutValues(Worksheet sheet, Func<Cell, string?> value)

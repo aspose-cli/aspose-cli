@@ -161,7 +161,10 @@ internal sealed record WorkbookSavePlan(string FormatId, SaveFormat Format, Save
         }
 
         Worksheet sheet = TextSheet(workbook);
-        return new TextTableSheet(sheet.Name, sheet.TabId);
+        return new TextTableSheet(sheet.Name, sheet.TabId)
+        {
+            Errors = sheet.Cells.Cast<Cell>().Where(static cell => cell.Type == CellValueType.IsError).Select(static cell => (cell.Row, cell.Column)).ToHashSet(),
+        };
     }
 
     internal void Save(Workbook workbook, string path)
@@ -179,6 +182,12 @@ internal sealed record WorkbookSavePlan(string FormatId, SaveFormat Format, Save
 /// </summary>
 internal sealed record TextTableSheet(string Name, int TabId)
 {
+    /// <summary>
+    /// The cells of the sheet that hold an error value, which the table writes as its text, as
+    /// the save found them; a cell of text that looks like one is not among them.
+    /// </summary>
+    internal IReadOnlySet<(int Row, int Column)> Errors { get; init; } = new HashSet<(int Row, int Column)>();
+
     /// <summary>Names the one sheet of <paramref name="table"/>, the text table read back, as this sheet.</summary>
     internal void Rename(Workbook table) => table.Worksheets[0].Name = Name;
 
