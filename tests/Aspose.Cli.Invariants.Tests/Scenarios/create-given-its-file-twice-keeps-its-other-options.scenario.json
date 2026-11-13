@@ -70,6 +70,65 @@
     {
       "args": ["cells", "inspect", "made.xlsx"],
       "expect": { "error": "PASSWORD_REQUIRED" }
+    },
+    {
+      "args": ["cells", "create", "--sheet-names", "Data", "--out", "other.xlsx", "y.xlsx"],
+      "expect": {
+        "error": "USAGE_ERROR",
+        "json": [
+          { "path": "error.details.suggestions[0]", "equals": "aspose-cli cells create <file> --sheet-names Data --output-format json" },
+          { "path": "error.hint", "contains": "The command was given two files to create, 'y.xlsx' and 'other.xlsx': write the one to create in place of <file>." }
+        ],
+        "files": { "nothingWritten": true }
+      }
+    },
+    {
+      "args": ["words", "create", "same.docx", "--from-markdown", "outline.md", "--out", "same.docx"],
+      "expect": {
+        "error": "USAGE_ERROR",
+        "json": [
+          { "path": "error.details.suggestions[0]", "equals": "aspose-cli words create same.docx --from-markdown outline.md --output-format json" },
+          { "path": "error.hint", "contains": "The command was given 'same.docx' twice." },
+          { "path": "error.hint", "notContains": "'same.docx' and 'same.docx'" }
+        ],
+        "files": { "nothingWritten": true }
+      }
+    },
+    {
+      "args": ["words", "create", "same.docx", "--from-markdown", "outline.md"],
+      "expect": { "exitCode": 0, "files": { "present": ["same.docx"] } }
+    },
+    {
+      "args": ["cells", "create", "--out", "made.xlsx", "--password", "Sec-Ret-999"],
+      "expect": {
+        "error": "USAGE_ERROR",
+        "json": [
+          { "path": "error.hint", "notContains": "two files to create" }
+        ],
+        "files": { "nothingWritten": true },
+        "hidden": ["Sec-Ret-999"]
+      }
+    },
+    {
+      "args": ["cells", "create", "--password", "Sec-Ret-999", "--out", "made.xlsx", "x.xlsx"],
+      "expect": {
+        "error": "USAGE_ERROR",
+        "json": [
+          { "path": "error.hint", "contains": "'x.xlsx' and 'made.xlsx'" }
+        ],
+        "files": { "nothingWritten": true },
+        "hidden": ["Sec-Ret-999"]
+      }
+    },
+    {
+      "args": ["cells", "create", "--out=made.xlsx", "x.xlsx"],
+      "expect": {
+        "error": "USAGE_ERROR",
+        "json": [
+          { "path": "error.hint", "contains": "'x.xlsx' and 'made.xlsx'" }
+        ],
+        "files": { "nothingWritten": true }
+      }
     }
   ]
 }
