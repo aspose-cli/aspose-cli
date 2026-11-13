@@ -164,8 +164,10 @@ public sealed class ContinuationCommand
 
     /// <summary>
     /// The command line <paramref name="parse"/> holds, as the caller gave it, for a mistake whose
-    /// correction is that line; null when it gives a secret on the command line or on stdin, reads
-    /// a document from stdin, which a printed command cannot repeat, or names no command.
+    /// correction is that line, with each password it read from stdin passed on as every command
+    /// passes one it did not read from a variable (<see cref="PasswordVariable"/>), by the option of
+    /// its environment variable; null when it gives a secret on the command line, reads a document
+    /// from stdin, which a printed command cannot repeat, or names no command.
     /// </summary>
     /// <param name="parse">A command line that parses.</param>
     public static ContinuationCommand? Repeating(ParseResult parse)
@@ -184,7 +186,19 @@ public sealed class ContinuationCommand
 
         var repeated = new ContinuationCommand([.. path]);
         var replay = new CommandLineReplay(repeated, []);
-        return replay.Append(parse.RootCommandResult) && replay.LeftOut.Count == 0 && replay.Piped is null ? repeated : null;
+        if (!replay.Append(parse.RootCommandResult) || replay.Piped is not null)
+        {
+            return null;
+        }
+
+        // A line that names the password's variable as well keeps the one it names.
+        foreach (string variable in replay.LeftOut.Select(static option => option[..^StandardOptionNames.StandardInputSuffix.Length] + StandardOptionNames.EnvironmentSuffix)
+            .Where(variable => !parse.CommandResult.Children.OfType<OptionResult>().Any(given => given.Option.Name == variable)))
+        {
+            repeated.PasswordVariable(variable, null);
+        }
+
+        return repeated;
     }
 }
 
@@ -234,7 +248,7 @@ internal sealed class CommandLineReplay(ContinuationCommand command, IReadOnlyCo
     /// <summary>The option of a document the invocation read from stdin, or null.</summary>
     public string? Piped { get; private set; }
 
-    /// <summary>The options of the secrets the invocation read from stdin.</summary>
+    /// <summary>The options of the secrets the invocation read from stdin, each <c>…-stdin</c> beside the <c>…-env</c> of its password (<see cref="PasswordOptions"/>).</summary>
     public List<string> LeftOut { get; } = [];
 
     /// <summary>Appends what <paramref name="result"/> and its subcommands hold; false when an option holds a secret given literally.</summary>
