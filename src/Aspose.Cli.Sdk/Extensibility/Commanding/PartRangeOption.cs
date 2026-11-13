@@ -27,7 +27,8 @@ public sealed class PartRangeOption
     /// SDK may offer one; false for an output made by removing the other parts from the document,
     /// which reads them. Null when the engine reads only the selected parts whatever the command writes.
     /// </param>
-    public PartRangeOption(string part, string defaultText, string? onlyWith = null, Func<FormatDescriptor, bool>? narrowsReads = null)
+    /// <param name="formats">The ids of the only output formats that hold a selection (<see cref="ParameterMetadata.Formats"/>), or null for every one.</param>
+    public PartRangeOption(string part, string defaultText, string? onlyWith = null, Func<FormatDescriptor, bool>? narrowsReads = null, IReadOnlyList<string>? formats = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(part);
         ArgumentException.ThrowIfNullOrWhiteSpace(defaultText);
@@ -37,7 +38,7 @@ public sealed class PartRangeOption
             Description = $"{char.ToUpperInvariant(parts[0])}{parts[1..]} to process: 1-based numbers and ranges such as 1-3,7,9-, or all. "
                 + $"Default: {defaultText}."
                 + (onlyWith is null ? string.Empty : $" Only with {onlyWith}."),
-        }.WithInput(InputKind.None);
+        }.WithInput(InputKind.None, formats: formats);
         Options = [_range];
         Narrowings.Add(_range, new Narrowing(narrowsReads));
     }
@@ -63,6 +64,9 @@ public sealed class PartRangeOption
 
     /// <summary>The option name, such as <c>--pages</c>.</summary>
     public string Name => _range.Name;
+
+    /// <summary>Whether an output in format <paramref name="format"/> holds a selection, as the option declares.</summary>
+    public bool AppliesTo(string format) => _range.GetParameterMetadata().AppliesTo(format);
 
     /// <summary>
     /// What to do instead of a selection that is not one, such as naming the part through another

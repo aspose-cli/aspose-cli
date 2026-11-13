@@ -15,6 +15,12 @@ public sealed record ParameterMetadata(
     ParameterValueSource ValueSource = ParameterValueSource.CommandLine,
     bool Secret = false)
 {
+    /// <summary>The ids of the output formats the option applies to, such as a selection only they hold; null for every one.</summary>
+    public IReadOnlyList<string>? Formats { get; init; }
+
+    /// <summary>Whether the option applies to an output in format <paramref name="format"/>.</summary>
+    public bool AppliesTo(string format) => Formats is null || Formats.Contains(format, StringComparer.Ordinal);
+
     /// <summary>
     /// Whether the value written on the command line is the secret itself, rather than the name of
     /// the variable that holds it: no output repeats it.
@@ -32,10 +38,11 @@ public static class ParameterMetadataExtensions
         this T symbol,
         InputKind inputKind,
         ParameterValueSource valueSource = ParameterValueSource.CommandLine,
-        bool secret = false) where T : Symbol
+        bool secret = false,
+        IReadOnlyList<string>? formats = null) where T : Symbol
     {
         ArgumentNullException.ThrowIfNull(symbol);
-        var metadata = new ParameterMetadata(inputKind, valueSource, secret);
+        var metadata = new ParameterMetadata(inputKind, valueSource, secret) { Formats = formats };
         Validate(symbol, metadata);
         try
         {

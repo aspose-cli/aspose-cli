@@ -142,6 +142,34 @@ public sealed class ContinuationCommand
         return this;
     }
 
+    /// <summary>
+    /// Appends each option given on <paramref name="parse"/>'s command line, every value as given,
+    /// that <paramref name="command"/>, run instead to write <paramref name="format"/>, takes by the
+    /// same name, but <paramref name="except"/>, the input's password and those it leaves out (<see cref="LeftOut"/>).
+    /// </summary>
+    public ContinuationCommand Carrying(ParseResult parse, Command command, string format, params string[] except)
+    {
+        ArgumentNullException.ThrowIfNull(parse);
+        ArgumentNullException.ThrowIfNull(command);
+        foreach (OptionResult given in parse.CommandResult.Children.OfType<OptionResult>().Where(given => !given.Implicit
+            && !except.Contains(given.Option.Name) && command.Options.Any(option => option.Name == given.Option.Name)
+            && given.Option.GetParameterMetadata() is { ValueSource: ParameterValueSource.CommandLine, Secret: false }))
+        {
+            if (!command.Options.First(option => option.Name == given.Option.Name).GetParameterMetadata().AppliesTo(format))
+            {
+                LeftOut += $" It leaves out {given.Option.Name}: a '{format}' output holds the whole document.";
+                continue;
+            }
+
+            _ = given.Tokens.Count == 0 ? Flag(given.Option.Name) : given.Tokens.Aggregate(this, (line, token) => line.Option(given.Option.Name, token.Value));
+        }
+
+        return this;
+    }
+
+    /// <summary>A sentence for each option <see cref="Carrying"/> left out, and why, to follow the command in a hint; empty for none.</summary>
+    public string LeftOut { get; private set; } = string.Empty;
+
     /// <summary>Returns the command line, ending with <c>--output-format json</c>.</summary>
     public override string ToString() => string.Join(' ', _tokens.Append(GlobalOptionNames.OutputFormat).Append("json"));
 

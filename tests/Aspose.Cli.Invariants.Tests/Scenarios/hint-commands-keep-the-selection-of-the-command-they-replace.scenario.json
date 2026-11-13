@@ -1,0 +1,141 @@
+{
+  "name": "the render a convert hint names for a format only render writes, given by --to or by the --out extension alone, keeps every value of each option the convert was given that render takes, such as the selection and each --font-dir, and the input's password, by its variable or a placeholder; run as written it renders only the selection, in Slides, PDF, Cells and Words",
+  "files": {
+    "locked.pptx": { "fixture": "slides.encrypted" },
+    "doc.pdf": { "fixture": "pdf.pdf" },
+    "book.xlsx": { "fixture": "cells.xlsx" },
+    "doc.docx": { "fixture": "words.docx" },
+    "fa/keep.txt": { "text": "a font folder" },
+    "fb/keep.txt": { "text": "another font folder" }
+  },
+  "steps": [
+    {
+      "args": ["slides", "convert", "locked.pptx", "--password-env", "DECK_PASSWORD", "--to", "png", "--out", "x y.png", "--slides", "2", "--font-dir", "fa", "--font-dir", "fb"],
+      "env": { "DECK_PASSWORD": "Invariant-Secret-5f1c9e7a" },
+      "expect": {
+        "exitCode": 2,
+        "error": "OPTION_INVALID",
+        "json": [
+          { "path": "error.hint", "contains": "'aspose-cli slides render locked.pptx --password-env DECK_PASSWORD --to png --slides 2 --font-dir fa --font-dir fb --out \"x y.png\" --output-format json'" }
+        ],
+        "files": { "nothingWritten": true },
+        "hidden": ["Invariant-Secret-5f1c9e7a"]
+      }
+    },
+    {
+      "args": ["slides", "render", "locked.pptx", "--password-env", "DECK_PASSWORD", "--to", "png", "--slides", "2", "--font-dir", "fa", "--font-dir", "fb", "--out", "x y.png"],
+      "env": { "DECK_PASSWORD": "Invariant-Secret-5f1c9e7a" },
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "outputs[0].path", "equals": "<workspace>/x y.png" },
+          { "path": "outputs[1]", "exists": false }
+        ],
+        "files": { "present": ["x y.png"], "absent": ["x y.1.png", "x y.2.png"] }
+      }
+    },
+    {
+      "args": ["slides", "convert", "locked.pptx", "--password-stdin", "--to", "png", "--out", "x.png", "--slides", "2"],
+      "stdin": "Invariant-Secret-5f1c9e7a\n",
+      "expect": {
+        "exitCode": 2,
+        "error": "OPTION_INVALID",
+        "json": [
+          { "path": "error.hint", "contains": "locked.pptx --password-env \"<password-env>\" --to png --slides 2 --out x.png " },
+          { "path": "error.hint", "notContains": "--password-stdin" }
+        ],
+        "files": { "nothingWritten": true },
+        "hidden": ["Invariant-Secret-5f1c9e7a"]
+      }
+    },
+    {
+      "args": ["slides", "convert", "locked.pptx", "--password-env", "DECK_PASSWORD", "--out", "w.png", "--slides", "2"],
+      "env": { "DECK_PASSWORD": "Invariant-Secret-5f1c9e7a" },
+      "expect": {
+        "exitCode": 2,
+        "error": "OPTION_INVALID",
+        "json": [
+          { "path": "error.hint", "contains": "locked.pptx\" --password-env DECK_PASSWORD --slides 2 --to png --out w.png --output-format json' for png." }
+        ],
+        "files": { "nothingWritten": true },
+        "hidden": ["Invariant-Secret-5f1c9e7a"]
+      }
+    },
+    {
+      "args": ["slides", "render", "locked.pptx", "--password-env", "DECK_PASSWORD", "--slides", "2", "--to", "png", "--out", "w.png"],
+      "env": { "DECK_PASSWORD": "Invariant-Secret-5f1c9e7a" },
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "outputs[0].slide", "equals": 2 },
+          { "path": "outputs[1]", "exists": false }
+        ],
+        "files": { "present": ["w.png"], "absent": ["w.1.png", "w.2.png"] }
+      }
+    },
+    {
+      "args": ["slides", "convert", "locked.pptx", "--password-stdin", "--out", "w.png", "--slides", "2"],
+      "stdin": "Invariant-Secret-5f1c9e7a\n",
+      "expect": {
+        "exitCode": 2,
+        "error": "OPTION_INVALID",
+        "json": [
+          { "path": "error.hint", "contains": "locked.pptx\" --password-env \"<password-env>\" --slides 2 --to png --out w.png " },
+          { "path": "error.hint", "notContains": "--password-stdin" }
+        ],
+        "hidden": ["Invariant-Secret-5f1c9e7a"]
+      }
+    },
+    {
+      "args": ["pdf", "convert", "doc.pdf", "--out", "p.png", "--pages", "1"],
+      "expect": {
+        "exitCode": 2,
+        "error": "OPTION_INVALID",
+        "json": [{ "path": "error.hint", "contains": "doc.pdf\" --pages 1 --to png --out p.png --output-format json' for png." }],
+        "files": { "nothingWritten": true }
+      }
+    },
+    {
+      "args": ["pdf", "render", "doc.pdf", "--pages", "1", "--to", "png", "--out", "p.png"],
+      "expect": {
+        "exitCode": 0,
+        "json": [{ "path": "outputs[1]", "exists": false }],
+        "files": { "present": ["p.png"] }
+      }
+    },
+    {
+      "args": ["cells", "convert", "book.xlsx", "--out", "c.png", "--sheets", "1"],
+      "expect": {
+        "exitCode": 2,
+        "error": "OPTION_INVALID",
+        "json": [{ "path": "error.hint", "contains": "book.xlsx\" --sheets 1 --to png --out c.png --output-format json' for png." }],
+        "files": { "nothingWritten": true }
+      }
+    },
+    {
+      "args": ["cells", "render", "book.xlsx", "--sheets", "1", "--to", "png", "--out", "c.png"],
+      "expect": {
+        "exitCode": 0,
+        "json": [{ "path": "outputs[1]", "exists": false }],
+        "files": { "present": ["c.png"] }
+      }
+    },
+    {
+      "args": ["words", "convert", "doc.docx", "--out", "w.jpg", "--pages", "1"],
+      "expect": {
+        "exitCode": 2,
+        "error": "OPTION_INVALID",
+        "json": [{ "path": "error.hint", "contains": "doc.docx\" --pages 1 --to jpeg --out w.jpg --output-format json' for jpeg." }],
+        "files": { "nothingWritten": true }
+      }
+    },
+    {
+      "args": ["words", "render", "doc.docx", "--pages", "1", "--to", "jpeg", "--out", "w.jpg"],
+      "expect": {
+        "exitCode": 0,
+        "json": [{ "path": "outputs[1]", "exists": false }],
+        "files": { "present": ["w.jpg"] }
+      }
+    }
+  ]
+}

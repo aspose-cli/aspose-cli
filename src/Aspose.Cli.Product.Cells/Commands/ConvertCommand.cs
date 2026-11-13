@@ -14,7 +14,7 @@ internal static class ConvertCommand
     public static CommandDefinition<CellsConvertRequest, CellsConvertResult> Create()
     {
         var sheets = new PartRangeOption("sheet", "every sheet, except a CSV, TSV or Markdown output, which holds "
-            + "the active sheet and takes one selected sheet; a PDF takes any selection")
+            + "the active sheet and takes one selected sheet; a PDF takes any selection", formats: CellsFormats.SheetScoped)
         {
         };
         var encoding = new Option<string?>(CellsOptionNames.Encoding)
@@ -54,7 +54,7 @@ internal static class ConvertCommand
                 string? cultureName = parse.GetValue(culture);
                 (PageRange? read, string? text) = CellsInputs.SheetSelection(sheets, parse);
                 PageRange? selection = read is { } range && !ReferenceEquals(range, PageRange.All) ? range : null;
-                if ((selection is not null || text is not null) && !CellsFormats.SheetScoped.Contains(format))
+                if ((selection is not null || text is not null) && !sheets.AppliesTo(format))
                 {
                     throw CliErrors.OptionInvalid(
                         sheets.Name,
