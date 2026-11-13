@@ -1,0 +1,41 @@
+{
+  "name": "the correction of a line that read its ops from stdin is a command line, which runs with the same ops piped to it again",
+  "steps": [
+    {
+      "args": ["cells", "create", "plain.xlsx"],
+      "expect": { "exitCode": 0 }
+    },
+    {
+      "args": ["edit", "plain.xlsx", "--ops", "-", "--out", "x.xlsx"],
+      "stdin": "{\"ops\":[{\"op\":\"set_values\",\"sheet\":\"Sheet1\",\"range\":\"A1\",\"values\":[[1]]}]}",
+      "expect": {
+        "error": "USAGE_ERROR",
+        "json": [
+          { "path": "error.hint", "contains": "Run 'aspose-cli cells edit plain.xlsx --ops - --out x.xlsx" }
+        ],
+        "files": { "nothingWritten": true }
+      }
+    },
+    {
+      "args": ["cells", "edit", "plain.xlsx", "--ops", "-", "--out", "x.xlsx"],
+      "stdin": "{\"ops\":[{\"op\":\"set_values\",\"sheet\":\"Sheet1\",\"range\":\"A1\",\"values\":[[1]]}]}",
+      "expect": { "exitCode": 0, "files": { "present": ["x.xlsx"] } }
+    },
+    {
+      "args": ["cells", "edit", "file", "plain.xlsx", "--ops", "-", "--out", "y.xlsx"],
+      "stdin": "{\"ops\":[{\"op\":\"set_values\",\"sheet\":\"Sheet1\",\"range\":\"A1\",\"values\":[[1]]}]}",
+      "expect": {
+        "error": "USAGE_ERROR",
+        "json": [
+          { "path": "error.hint", "contains": "Run 'aspose-cli cells edit plain.xlsx --ops - --out y.xlsx" }
+        ],
+        "files": { "nothingWritten": true }
+      }
+    },
+    {
+      "args": ["cells", "edit", "plain.xlsx", "--ops", "-", "--out", "y.xlsx"],
+      "stdin": "{\"ops\":[{\"op\":\"set_values\",\"sheet\":\"Sheet1\",\"range\":\"A1\",\"values\":[[1]]}]}",
+      "expect": { "exitCode": 0, "files": { "present": ["y.xlsx"] } }
+    }
+  ]
+}

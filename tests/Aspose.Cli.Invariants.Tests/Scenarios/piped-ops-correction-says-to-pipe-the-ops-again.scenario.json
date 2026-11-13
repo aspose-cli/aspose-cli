@@ -1,0 +1,39 @@
+{
+  "name": "the correction of a line that read its ops from stdin keeps --ops - and says to pipe the same document again, and passes a password from stdin on by its variable",
+  "steps": [
+    {
+      "args": ["cells", "create", "plain.xlsx"],
+      "expect": { "exitCode": 0 }
+    },
+    {
+      "args": ["edit", "plain.xlsx", "--ops", "-", "--out", "x.xlsx"],
+      "stdin": "{\"ops\":[{\"op\":\"set_values\",\"sheet\":\"Sheet1\",\"range\":\"A1\",\"values\":[[1]]}]}",
+      "expect": {
+        "error": "USAGE_ERROR",
+        "json": [
+          { "path": "error.hint", "equals": "Did you mean 'cells edit'? Run 'aspose-cli cells edit plain.xlsx --ops - --out x.xlsx --output-format json', piping the same --ops document to it on stdin as this command read it." }
+        ]
+      }
+    },
+    {
+      "args": ["cells", "edit", "file", "plain.xlsx", "--ops", "-", "--out", "y.xlsx"],
+      "stdin": "{\"ops\":[{\"op\":\"set_values\",\"sheet\":\"Sheet1\",\"range\":\"A1\",\"values\":[[1]]}]}",
+      "expect": {
+        "error": "USAGE_ERROR",
+        "json": [
+          { "path": "error.hint", "equals": "Run 'aspose-cli cells edit plain.xlsx --ops - --out y.xlsx --output-format json', piping the same --ops document to it on stdin as this command read it." }
+        ]
+      }
+    },
+    {
+      "args": ["cells", "edit", "file", "plain.xlsx", "--ops", "-", "--password-stdin", "--out", "z.xlsx"],
+      "stdin": "{\"ops\":[{\"op\":\"set_values\",\"sheet\":\"Sheet1\",\"range\":\"A1\",\"values\":[[1]]}]}",
+      "expect": {
+        "error": "USAGE_ERROR",
+        "json": [
+          { "path": "error.hint", "equals": "Run 'aspose-cli cells edit plain.xlsx --ops - --out z.xlsx --password-env \"<password-env>\" --output-format json', piping the same --ops document to it on stdin as this command read it." }
+        ]
+      }
+    }
+  ]
+}

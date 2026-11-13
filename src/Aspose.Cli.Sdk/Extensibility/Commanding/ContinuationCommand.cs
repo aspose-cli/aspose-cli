@@ -164,13 +164,13 @@ public sealed class ContinuationCommand
 
     /// <summary>
     /// The command line <paramref name="parse"/> holds, as the caller gave it, for a mistake whose
-    /// correction is that line, with each password it read from stdin passed on as every command
-    /// passes one it did not read from a variable (<see cref="PasswordVariable"/>), by the option of
-    /// its environment variable; null when it gives a secret on the command line, reads a document
-    /// from stdin, which a printed command cannot repeat, or names no command.
+    /// correction is that line, with each password it gave on stdin or literally passed on as every
+    /// command passes one it did not read from a variable (<see cref="PasswordVariable"/>), by the
+    /// option of its environment variable, and a document it read from stdin kept as <c>-</c>, which
+    /// <see cref="RepeatedInvocation.Repeating"/> says to pipe again; null when it names no command.
     /// </summary>
     /// <param name="parse">A command line that parses.</param>
-    public static ContinuationCommand? Repeating(ParseResult parse)
+    public static RepeatedInvocation? Repeating(ParseResult parse)
     {
         ArgumentNullException.ThrowIfNull(parse);
         var path = new List<string>();
@@ -186,19 +186,16 @@ public sealed class ContinuationCommand
 
         var repeated = new ContinuationCommand([.. path]);
         var replay = new CommandLineReplay(repeated, []);
-        if (!replay.Append(parse.RootCommandResult) || replay.Piped is not null)
-        {
-            return null;
-        }
+        replay.Append(parse.RootCommandResult);
 
         // A line that names the password's variable as well keeps the one it names.
-        foreach (string variable in replay.LeftOut.Select(static option => option[..^StandardOptionNames.StandardInputSuffix.Length] + StandardOptionNames.EnvironmentSuffix)
+        foreach (string variable in replay.LeftOut.Distinct(StringComparer.Ordinal)
             .Where(variable => !parse.CommandResult.Children.OfType<OptionResult>().Any(given => given.Option.Name == variable)))
         {
             repeated.PasswordVariable(variable, null);
         }
 
-        return repeated;
+        return new RepeatedInvocation(repeated, replay.Piped);
     }
 }
 
@@ -248,33 +245,30 @@ internal sealed class CommandLineReplay(ContinuationCommand command, IReadOnlyCo
     /// <summary>The option of a document the invocation read from stdin, or null.</summary>
     public string? Piped { get; private set; }
 
-    /// <summary>The options of the secrets the invocation read from stdin, each <c>…-stdin</c> beside the <c>…-env</c> of its password (<see cref="PasswordOptions"/>).</summary>
+    /// <summary>
+    /// The <c>…-env</c> options of the passwords the invocation gave on stdin or literally, which a
+    /// printed command never repeats: the option beside the <c>…-stdin</c> or literal one of the
+    /// same password (<see cref="PasswordOptions"/>).
+    /// </summary>
     public List<string> LeftOut { get; } = [];
 
-    /// <summary>Appends what <paramref name="result"/> and its subcommands hold; false when an option holds a secret given literally.</summary>
-    public bool Append(CommandResult result)
+    /// <summary>Appends what <paramref name="result"/> and its subcommands hold, but the passwords it leaves out.</summary>
+    public void Append(CommandResult result)
     {
         foreach (SymbolResult child in result.Children)
         {
             if (child is CommandResult subcommand)
             {
-                if (!Append(subcommand))
-                {
-                    return false;
-                }
+                Append(subcommand);
             }
             else if (child is OptionResult { Implicit: false } option && !dropped.Contains(option.Option)
                 && option.Option.Name is not GlobalOptionNames.OutputFormat)
             {
                 ParameterMetadata metadata = option.Option.GetParameterMetadata();
-                if (metadata.LiteralSecret)
+                if (metadata.LiteralSecret || metadata.ValueSource == ParameterValueSource.StandardInput)
                 {
-                    return false;
-                }
-
-                if (metadata.ValueSource == ParameterValueSource.StandardInput)
-                {
-                    LeftOut.Add(option.Option.Name);
+                    string name = option.Option.Name;
+                    LeftOut.Add((metadata.LiteralSecret ? name : name[..^StandardOptionNames.StandardInputSuffix.Length]) + StandardOptionNames.EnvironmentSuffix);
                     continue;
                 }
 
@@ -296,7 +290,5 @@ internal sealed class CommandLineReplay(ContinuationCommand command, IReadOnlyCo
                 }
             }
         }
-
-        return true;
     }
 }

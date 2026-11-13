@@ -25,9 +25,9 @@ public static partial class CliErrors
     /// <param name="problems">Each problem, one sentence each.</param>
     /// <param name="mistake">The first unknown command, option or value, if any.</param>
     /// <param name="corrected">
-    /// The arguments of the command line without the mistake, when that alone corrects it: the
-    /// hint ends with the command line they make, ready to run, in place of the advice to read help.
-    /// They are repeated as written, so they hold no secret.
+    /// The command line without the mistake, when that alone corrects it, quoted as a hint quotes a
+    /// command (<c>ContinuationCommand.Repeating</c>, which passes on no secret): the hint ends with
+    /// it, ready to run, in place of the advice to read help.
     /// </param>
     /// <param name="parameter">
     /// The option or argument the first problem is about, such as an unknown or missing option,
@@ -40,7 +40,7 @@ public static partial class CliErrors
     public static CliException Usage(
         IReadOnlyList<string> problems,
         Mistake? mistake = null,
-        IReadOnlyList<string>? corrected = null,
+        string? corrected = null,
         string? parameter = null,
         string? hint = null)
     {
@@ -63,7 +63,7 @@ public static partial class CliErrors
             message = $"{message} {mistake.MustBeOneOf()}";
         }
 
-        string next = corrected is not null ? $"Run '{CommandLineText.Of(corrected)}'." : hint ?? UsageHint;
+        string next = corrected is not null ? $"Run {corrected}." : hint ?? UsageHint;
         return CliException.Create(ErrorCodes.UsageError, message, mistake?.Hint(next) ?? next, details.Count == 0 ? null : details);
     }
 

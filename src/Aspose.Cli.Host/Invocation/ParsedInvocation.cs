@@ -190,9 +190,10 @@ internal sealed partial class ParsedInvocation
     /// The name of an argument written in place of its value beside the value itself, such as
     /// <c>words read file a.docx</c>, as a usage line reads: the name is taken as the value and
     /// the value is left over. The command line without the name is parsed again: when it
-    /// parses it is the correction, ready to run, unless it gives a password that no output
-    /// repeats, when the hint says what to leave out; otherwise its own problems are reported
-    /// beside the name. Null when no argument holds its own name while a token is left over.
+    /// parses it is the correction, ready to run, as <see cref="ContinuationCommand.Repeating"/>
+    /// writes it, saying to pipe again a document it read from stdin; otherwise its own problems
+    /// are reported beside the name. Null when no argument holds its own name while a token is
+    /// left over.
     /// </summary>
     private Refusal? Placeholder()
     {
@@ -215,15 +216,15 @@ internal sealed partial class ParsedInvocation
             string[] corrected = [.. values[..index], .. values[(index + 1)..]];
             ParsedInvocation line = Reparsed(corrected);
             Refusal? rest = line.Problems();
-            bool holdsSecret = rest is null && line.GivesLiteralSecret();
+            string? repeated = rest is null ? ContinuationCommand.Repeating(line.ParseResult)?.Quoted() : null;
             return new(
                 [$"'{placeholder.Value}' stands for the <{name}> argument, whose value follows it.", .. rest?.Problems ?? []],
                 rest?.Mistake,
                 name,
                 ValuesOnly: false,
-                Corrected: rest is null && !holdsSecret ? corrected : null)
+                Corrected: repeated)
             {
-                Hint = holdsSecret ? $"Write the command line again without '{placeholder.Value}'." : null,
+                Hint = rest is null && repeated is null ? $"Write the command line again without '{placeholder.Value}'." : null,
             };
         }
 
@@ -235,7 +236,7 @@ internal sealed partial class ParsedInvocation
         new(ParseResult.RootCommandResult.Command.Parse(tokens, InvocationParser.Configuration), _globals, catalog: _catalog);
 
     /// <summary>What fails a command line; see <see cref="Problems"/>. <c>Corrected</c> is the command line that fixes it, when one is known and holds no secret.</summary>
-    private sealed record Refusal(string[] Problems, Mistake? Mistake, string? Parameter, bool ValuesOnly, IReadOnlyList<string>? Corrected = null)
+    private sealed record Refusal(string[] Problems, Mistake? Mistake, string? Parameter, bool ValuesOnly, string? Corrected = null)
     {
         /// <summary>The hint the command declares for the unknown option, in place of the advice to read help.</summary>
         public string? Hint { get; init; }
@@ -370,7 +371,7 @@ internal sealed partial class ParsedInvocation
         string parent = string.Join(' ', [DistributionInfo.CommandName, .. CommandPath.Select(static command => command.Name)]);
         Command[] declaring = [.. Command.Subcommands
             .Where(command => !command.Hidden && command.MistakenNames().Contains(token, StringComparer.Ordinal))];
-        (string Path, IReadOnlyList<string>? Corrected)? product = token is "help" or "version" ? null : ProductCommand(token, written);
+        (string Path, string? Corrected)? product =token is "help" or "version" ? null : ProductCommand(token, written);
         string? root = RootCommandLine(token);
         string[] meant = token switch
         {
@@ -415,12 +416,12 @@ internal sealed partial class ParsedInvocation
     /// <summary>
     /// The product command <paramref name="token"/>, typed at the root, stands for: the command of
     /// that name of the product whose format the extension of the first file after it names, as
-    /// the catalog routes the file, and the command line with the product written before it when
-    /// that line parses, or reads once the name of an argument written before its value is
-    /// dropped, and gives no password that no output repeats. Null below the root, without a
+    /// the catalog routes the file, and the command line with the product written before it, as
+    /// <see cref="ContinuationCommand.Repeating"/> writes it, when that line parses, or reads once
+    /// the name of an argument written before its value is dropped. Null below the root, without a
     /// file, or for an extension no product with that command claims.
     /// </summary>
-    private (string Path, IReadOnlyList<string>? Corrected)? ProductCommand(string token, string[]? written)
+    private (string Path, string? Corrected)? ProductCommand(string token, string[]? written)
     {
         if (CommandPath.Count > 0 || _catalog is null
             || ParseResult.UnmatchedTokens.Skip(1).FirstOrDefault(static value => !value.StartsWith('-') && System.IO.Path.GetExtension(value).Length > 1) is not { } file
@@ -440,7 +441,7 @@ internal sealed partial class ParsedInvocation
         string[] corrected = [.. values[..index], group.Name, .. values[index..]];
         ParsedInvocation line = Reparsed(corrected);
         Refusal? rest = line.Problems();
-        return ($"{group.Name} {token}", rest is not null ? rest.Corrected : line.GivesLiteralSecret() ? null : corrected);
+        return ($"{group.Name} {token}", rest is not null ? rest.Corrected : ContinuationCommand.Repeating(line.ParseResult)?.Quoted());
     }
 
     /// <summary>

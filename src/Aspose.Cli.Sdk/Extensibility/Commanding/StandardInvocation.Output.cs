@@ -164,7 +164,8 @@ public partial class StandardInvocation
         ContinuationCommand again = _options.Input is null ? new ContinuationCommand(path) : ContinuationAt(path);
         Symbol[] named = [.. _options.Input is null ? [] : new Symbol[] { _options.Input }, .. _options.InputPassword?.Options ?? []];
         var replay = new CommandLineReplay(again, [.. dropped.OfType<Symbol>(), .. named]);
-        if (!replay.Append(_parse.RootCommandResult) || replay.LeftOut.Count > 0)
+        replay.Append(_parse.RootCommandResult);
+        if (replay.LeftOut.Count > 0)
         {
             return null;
         }
@@ -715,12 +716,13 @@ public partial class StandardInvocation
 }
 
 /// <summary>
-/// An invocation as a command line for a hint (<see cref="StandardInvocation.Again"/>), with the
-/// document it read from stdin, which it could not write into it.
+/// An invocation as a command line for a hint (<see cref="StandardInvocation.Again"/>,
+/// <see cref="ContinuationCommand.Repeating"/>), with the document it read from stdin, which it
+/// could not write into it.
 /// </summary>
 /// <param name="Command">The command line; the caller appends what it changes.</param>
 /// <param name="Piped">The option of a document the invocation read from stdin, which keeps its <c>-</c>; null for none.</param>
-internal sealed record RepeatedInvocation(ContinuationCommand Command, string? Piped)
+public sealed record RepeatedInvocation(ContinuationCommand Command, string? Piped)
 {
     /// <summary>
     /// What a hint says right after the command of what it cannot repeat: the document to pipe
@@ -728,6 +730,9 @@ internal sealed record RepeatedInvocation(ContinuationCommand Command, string? P
     /// </summary>
     public string Repeating =>
         Piped is null ? string.Empty : $", piping the same {Piped} document to it on stdin as this command read it";
+
+    /// <summary>The command as a hint's prose quotes it (<see cref="ContinuationCommand.Quoted"/>), then <see cref="Repeating"/>.</summary>
+    public string Quoted() => Command.Quoted() + Repeating;
 }
 
 /// <summary>

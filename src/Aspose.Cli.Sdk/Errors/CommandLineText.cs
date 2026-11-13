@@ -8,10 +8,6 @@ namespace Aspose.Cli.Sdk.Errors;
 /// </summary>
 internal static class CommandLineText
 {
-    /// <summary>The executable name followed by <paramref name="arguments"/>, each quoted as needed.</summary>
-    internal static string Of(IEnumerable<string> arguments) =>
-        string.Join(' ', arguments.Select(Quote).Prepend(DistributionInfo.CommandName));
-
     /// <summary>
     /// Leaves a token bare when it holds only characters no common shell treats specially;
     /// otherwise wraps it in double quotes and escapes the characters that stay special there.

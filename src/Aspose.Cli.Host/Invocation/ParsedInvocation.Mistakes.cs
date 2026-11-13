@@ -98,10 +98,6 @@ internal sealed partial class ParsedInvocation
     private IEnumerable<OptionResult> OptionResults() =>
         AcceptedOptions().Select(ParseResult.GetResult).OfType<OptionResult>().Where(static result => !result.Implicit);
 
-    /// <summary>Whether the command line gives a secret itself, rather than the name of the variable that holds it, so no output repeats the line.</summary>
-    private bool GivesLiteralSecret() =>
-        OptionResults().Any(static result => result.Option.GetParameterMetadata().LiteralSecret);
-
     /// <summary>Whether an option holds <paramref name="token"/> as its value.</summary>
     private bool TakenByAnOption(Token token) =>
         OptionResults().Any(result => result.Tokens.Any(value => ReferenceEquals(value, token)));
@@ -299,12 +295,12 @@ internal sealed partial class ParsedInvocation
 
     /// <summary>
     /// The command line <paramref name="tokens"/> hold, as the builder writes a command to run, or
-    /// <paramref name="fallback"/> when they do not parse or hold what a printed command cannot
-    /// repeat (<see cref="ContinuationCommand.Repeating"/>).
+    /// <paramref name="fallback"/> when they do not parse or read a document from stdin, which a
+    /// suggestion, a command line alone, cannot say to pipe again (<see cref="ContinuationCommand.Repeating"/>).
     /// </summary>
     private string Repeated(IReadOnlyList<string> tokens, ContinuationCommand fallback)
     {
         ParsedInvocation line = Reparsed(tokens);
-        return (line.Problems() is null ? ContinuationCommand.Repeating(line.ParseResult) : null)?.ToString() ?? fallback.ToString();
+        return (line.Problems() is null && ContinuationCommand.Repeating(line.ParseResult) is { Piped: null } again ? again.Command : fallback).ToString();
     }
 }
