@@ -26,6 +26,9 @@ internal static class SlidesDiagnostics
     /// <summary>A slide that took another design lost its own background.</summary>
     internal static readonly WarningCode SlideBackgroundReset = new("SLIDE_BACKGROUND_RESET");
 
+    /// <summary>A placeholder of a slide that took another layout stands for another role.</summary>
+    internal static readonly WarningCode PlaceholderRoleChanged = new("PLACEHOLDER_ROLE_CHANGED");
+
     /// <summary>The verified output does not hold the slides in the order the batch left them.</summary>
     internal static readonly DiagnosticDescriptor SlideOrderMismatch = DiagnosticDescriptor.Verification("SLIDE_ORDER_MISMATCH");
 
@@ -45,6 +48,7 @@ internal static class SlidesDiagnostics
         DiagnosticDescriptor.Warning(ChartTitleOverlaid),
         DiagnosticDescriptor.Warning(TableOverflow),
         DiagnosticDescriptor.Warning(SlideBackgroundReset),
+        DiagnosticDescriptor.Warning(PlaceholderRoleChanged),
         DiagnosticDescriptor.Warning(HiddenSlidesSkipped),
         DiagnosticDescriptor.Warning(HiddenSlidesRendered),
         SlideOrderMismatch,

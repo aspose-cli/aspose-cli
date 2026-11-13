@@ -1,0 +1,176 @@
+{
+  "name": "slides set_layout warns PLACEHOLDER_ROLE_CHANGED at each placeholder the new layout gives another role, a footer or a body that becomes the title, and says the slide's title is now its text; a layout that keeps every role, a slide without placeholders, insert_slide and copy_slide, and set_layout with set_title give no such warning, and the background reset still warns; the set_title hint on a slide with a footer, or a footer, slide number and date, done as it says, gives the title and sets them again without that warning",
+  "files": {
+    "deck.md": { "text": "# Deck\n\n## Two\n\n- pt\n" }
+  },
+  "steps": [
+    {
+      "args": ["slides", "create", "deck.pptx", "--from-markdown", "deck.md"],
+      "expect": { "exitCode": 0 }
+    },
+    {
+      "args": ["slides", "edit", "deck.pptx", "--ops", "{\"ops\":[{\"op\":\"insert_slide\",\"layout\":\"Blank\"},{\"op\":\"insert_shape\",\"slide\":3,\"geometry\":\"rectangle\",\"rect\":{\"x\":40,\"y\":120,\"width\":640,\"height\":80},\"text\":\"Box\"}]}", "--out", "boxed.pptx"],
+      "expect": { "exitCode": 0, "files": { "present": ["boxed.pptx"] } }
+    },
+    {
+      "args": ["slides", "edit", "deck.pptx", "--ops", "{\"ops\":[{\"op\":\"insert_slide\",\"layout\":\"Blank\"},{\"op\":\"insert_shape\",\"slide\":3,\"geometry\":\"rectangle\",\"rect\":{\"x\":40,\"y\":120,\"width\":640,\"height\":80},\"text\":\"Box\"},{\"op\":\"set_footer\",\"slides\":\"3\",\"text\":\"Foot\"}]}", "--out", "footed.pptx"],
+      "expect": { "exitCode": 0, "files": { "present": ["footed.pptx"] } }
+    },
+    {
+      "args": ["slides", "edit", "footed.pptx", "--ops", "{\"ops\":[{\"op\":\"set_layout\",\"slides\":\"3\",\"layout\":\"Title Only\"}]}", "--out", "retitled.pptx", "--verify", "--license-mode", "evaluation"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "verification.ok", "equals": true },
+          { "path": "warnings[0].code", "equals": "EVALUATION_MODE" },
+          { "path": "warnings[1].code", "equals": "PLACEHOLDER_ROLE_CHANGED" },
+          { "path": "warnings[1].location", "equals": "slide/3/shape/3" },
+          { "path": "warnings[1].details.shapeId", "equals": 3 },
+          { "path": "warnings[1].details.from", "equals": "footer" },
+          { "path": "warnings[1].details.to", "equals": "title" },
+          { "path": "warnings[1].message", "contains": "so the slide's title is now the text of that shape" },
+          { "path": "warnings[2]", "exists": false }
+        ],
+        "files": { "present": ["retitled.pptx"] }
+      }
+    },
+    {
+      "args": ["slides", "read", "retitled.pptx", "--slides", "3", "--content", "shapes"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "slides[0].title", "equals": "Foot" }
+        ]
+      }
+    },
+    {
+      "args": ["slides", "edit", "deck.pptx", "--ops", "{\"ops\":[{\"op\":\"delete_shape\",\"slide\":2,\"shapeId\":2},{\"op\":\"set_layout\",\"slides\":\"2\",\"layout\":\"Title Only\"}]}", "--out", "bodytitle.pptx", "--license-mode", "evaluation"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "warnings[1].code", "equals": "PLACEHOLDER_ROLE_CHANGED" },
+          { "path": "warnings[1].location", "equals": "slide/2/shape/3" },
+          { "path": "warnings[1].details.from", "equals": "body" },
+          { "path": "warnings[1].details.to", "equals": "title" },
+          { "path": "warnings[2]", "exists": false }
+        ]
+      }
+    },
+    {
+      "args": ["slides", "edit", "deck.pptx", "--ops", "{\"ops\":[{\"op\":\"delete_shape\",\"slide\":2,\"shapeId\":2},{\"op\":\"set_layout\",\"slides\":\"2\",\"layout\":\"Title and Content\"}]}", "--out", "own.pptx", "--license-mode", "evaluation"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "warnings[0].code", "equals": "EVALUATION_MODE" },
+          { "path": "warnings[1]", "exists": false }
+        ]
+      }
+    },
+    {
+      "args": ["slides", "edit", "deck.pptx", "--ops", "{\"ops\":[{\"op\":\"set_layout\",\"slides\":\"2\",\"layout\":\"Two Content\"}]}", "--out", "two.pptx", "--license-mode", "evaluation"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "warnings[0].code", "equals": "EVALUATION_MODE" },
+          { "path": "warnings[1]", "exists": false }
+        ]
+      }
+    },
+    {
+      "args": ["slides", "read", "two.pptx", "--slides", "2", "--content", "shapes"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "slides[0].title", "equals": "Two" },
+          { "path": "slides[0].shapes[1].placeholder", "equals": "body" },
+          { "path": "slides[0].shapes[1].text", "equals": "pt" }
+        ]
+      }
+    },
+    {
+      "args": ["slides", "edit", "boxed.pptx", "--ops", "{\"ops\":[{\"op\":\"set_background\",\"slides\":\"3\",\"color\":\"#336699\"},{\"op\":\"set_layout\",\"slides\":\"3\",\"layout\":\"Title Only\"},{\"op\":\"set_title\",\"slide\":3,\"text\":\"Head\"},{\"op\":\"insert_slide\",\"layout\":\"Title Only\"},{\"op\":\"copy_slide\",\"slide\":2}]}", "--out", "quiet.pptx", "--license-mode", "evaluation"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "warnings[0].code", "equals": "EVALUATION_MODE" },
+          { "path": "warnings[1].code", "equals": "SLIDE_BACKGROUND_RESET" },
+          { "path": "warnings[1].location", "equals": "slide/3" },
+          { "path": "warnings[2]", "exists": false }
+        ]
+      }
+    },
+    {
+      "args": ["slides", "edit", "footed.pptx", "--ops", "{\"ops\":[{\"op\":\"delete_shape\",\"slide\":3,\"shapeId\":3},{\"op\":\"set_layout\",\"slides\":\"3\",\"layout\":\"Title Only\"},{\"op\":\"set_title\",\"slide\":3,\"text\":\"Head\"},{\"op\":\"set_footer\",\"slides\":\"3\",\"text\":\"Foot\",\"showNumber\":false,\"showDate\":false}]}", "--out", "route.pptx", "--verify", "--license-mode", "evaluation"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "verification.ok", "equals": true },
+          { "path": "warnings[0].code", "equals": "EVALUATION_MODE" },
+          { "path": "warnings[1]", "exists": false }
+        ]
+      }
+    },
+    {
+      "args": ["slides", "read", "route.pptx", "--slides", "3", "--content", "full"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "slides[0].title", "equals": "Head" },
+          { "path": "slides[0].footer.text", "equals": "Foot" },
+          { "path": "slides[0].footer.showNumber", "equals": false },
+          { "path": "slides[0].footer.showDate", "equals": false }
+        ]
+      }
+    },
+    {
+      "args": ["slides", "edit", "deck.pptx", "--ops", "{\"ops\":[{\"op\":\"insert_slide\",\"layout\":\"Blank\"},{\"op\":\"insert_shape\",\"slide\":3,\"geometry\":\"rectangle\",\"rect\":{\"x\":40,\"y\":120,\"width\":640,\"height\":80},\"text\":\"Box\"},{\"op\":\"set_footer\",\"slides\":\"3\",\"text\":\"Foot\",\"showNumber\":true,\"showDate\":true}]}", "--out", "trio.pptx"],
+      "expect": { "exitCode": 0, "files": { "present": ["trio.pptx"] } }
+    },
+    {
+      "args": ["slides", "read", "trio.pptx", "--slides", "3", "--content", "shapes"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "slides[0].shapes[1].placeholder", "equals": "footer" },
+          { "path": "slides[0].shapes[2].placeholder", "equals": "slide-number" },
+          { "path": "slides[0].shapes[3].placeholder", "equals": "date" }
+        ]
+      }
+    },
+    {
+      "args": ["slides", "edit", "trio.pptx", "--ops", "{\"ops\":[{\"op\":\"set_title\",\"slide\":3,\"text\":\"Head\"}]}", "--out", "never.pptx"],
+      "expect": {
+        "exitCode": 4,
+        "error": "PLACEHOLDER_NOT_FOUND",
+        "json": [
+          { "path": "error.hint", "contains": "first delete_shape each footer, date and slide-number placeholder of the slide, then put {\"op\":\"set_layout\",\"slides\":\"3\",\"layout\":\"Title Only\"} before this set_title in its batch" },
+          { "path": "error.hint", "contains": "after the set_title set them again with one set_footer that gives the footer's text, showNumber and showDate" }
+        ],
+        "files": { "absent": ["never.pptx"] }
+      }
+    },
+    {
+      "args": ["slides", "edit", "trio.pptx", "--ops", "{\"ops\":[{\"op\":\"delete_shape\",\"slide\":3,\"shapeId\":3},{\"op\":\"delete_shape\",\"slide\":3,\"shapeId\":4},{\"op\":\"delete_shape\",\"slide\":3,\"shapeId\":5},{\"op\":\"set_layout\",\"slides\":\"3\",\"layout\":\"Title Only\"},{\"op\":\"set_title\",\"slide\":3,\"text\":\"Head\"},{\"op\":\"set_footer\",\"slides\":\"3\",\"text\":\"Foot\",\"showNumber\":true,\"showDate\":true}]}", "--out", "trio-route.pptx", "--verify", "--license-mode", "evaluation"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "verification.ok", "equals": true },
+          { "path": "warnings[0].code", "equals": "EVALUATION_MODE" },
+          { "path": "warnings[1]", "exists": false }
+        ]
+      }
+    },
+    {
+      "args": ["slides", "read", "trio-route.pptx", "--slides", "3", "--content", "full"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "slides[0].title", "equals": "Head" },
+          { "path": "slides[0].footer.text", "equals": "Foot" },
+          { "path": "slides[0].footer.showNumber", "equals": true },
+          { "path": "slides[0].footer.showDate", "equals": true }
+        ]
+      }
+    }
+  ]
+}

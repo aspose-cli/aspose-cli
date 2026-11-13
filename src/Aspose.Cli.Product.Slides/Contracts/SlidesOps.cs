@@ -232,7 +232,11 @@ public sealed record SetSlideHiddenOp : SlidesOp
     public required bool Hidden { get; init; }
 }
 
-/// <summary>Sets the layout of slides, which drop their own background to show the layout's.</summary>
+/// <summary>
+/// Sets the layout of slides, which drop their own background to show the layout's. A placeholder
+/// of a slide that the layout has none of the same type and place for may take a role of the
+/// layout the slide has no placeholder for, the title first, and the edit then warns PLACEHOLDER_ROLE_CHANGED.
+/// </summary>
 [Operation("set_layout")]
 [MistakenFor("apply_layout")]
 public sealed record SetLayoutOp : SlidesOp

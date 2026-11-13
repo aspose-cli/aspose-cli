@@ -12,7 +12,7 @@ namespace Aspose.Cli.Product.Slides.Engine.Editing;
 /// <summary>Resolves mutation targets and translates handler failures.</summary>
 internal static class SlidesMutationSupport
 {
-    private const string ShapeListing = "'slides read --content shapes' lists each shape's shapeId, shapeName and placeholder";
+    internal const string ShapeListing = "'slides read --content shapes' lists each shape's shapeId, shapeName and placeholder";
 
     internal static ISlide ResolveSlide(Presentation presentation, SlideTargetOp op)
     {
@@ -94,21 +94,25 @@ internal static class SlidesMutationSupport
                 hint: $"set_title writes a slide's title placeholder, and this slide has none{TitledBy(presentation, slide)}. Text that set_text writes into one of its shapes, or a text box insert_shape adds, shows on the slide but is not its title; {ShapeListing}.");
 
     /// <summary>
-    /// How the slide gets a title placeholder: the set_layout of a layout of its master with one,
-    /// its own first and Title Only next, that set_layout finds by its name and under which every
-    /// placeholder the slide has keeps its role (<see cref="SlidesPlaceholders.Keeps"/>), so that
-    /// set_title overwrites none of them. Where none keeps them, no operation is shown.
+    /// How the slide gets a title placeholder that overwrites none it has: the set_layout of a layout
+    /// of its master with one, its own first and Title Only next, that set_layout finds by its name
+    /// and that keeps the role of each placeholder (<see cref="SlidesPlaceholders.Keeps"/>), or of
+    /// each but the footers, dates and slide numbers, which the batch deletes and set_footer sets again.
     /// </summary>
     private static string TitledBy(Presentation presentation, ISlide slide)
     {
         ILayoutSlide[] titled = [.. slide.LayoutSlide.MasterSlide.LayoutSlides
             .Where(item => SlidesPlaceholders.HasTitle(item) && !string.IsNullOrWhiteSpace(item.Name) && ResolveLayout(presentation, item.Name) == item)
             .OrderBy(item => item != slide.LayoutSlide).ThenBy(static item => item.LayoutType != SlideLayoutType.TitleOnly)];
-        ILayoutSlide? layout = titled.FirstOrDefault(item => slide.Shapes.All(shape => shape.Placeholder is not { } placeholder || SlidesPlaceholders.Keeps(item, placeholder)));
+        IEnumerable<bool> Moved(ILayoutSlide layout) => // whether each placeholder it would not keep is a footer, date or slide number
+            slide.Shapes.Where(shape => shape.Placeholder is { } placeholder && !SlidesPlaceholders.Keeps(layout, placeholder))
+            .Select(static shape => PlaceholderRole(shape) is SlidesPlaceholderRoles.Footer or SlidesPlaceholderRoles.Date or SlidesPlaceholderRoles.SlideNumber);
+        ILayoutSlide? layout = titled.FirstOrDefault(item => !Moved(item).Any()) ?? titled.FirstOrDefault(item => Moved(item).All(static footer => footer));
+        bool footers = layout is not null && Moved(layout).Any();
         return layout is not null
-            ? $$""". To give it one, put {"op":"set_layout","slides":"{{Invariant(presentation.Slides.IndexOf(slide) + 1)}}","layout":"{{JsonEncodedText.Encode(layout.Name!, JavaScriptEncoder.UnsafeRelaxedJsonEscaping)}}"} before this set_title in its batch, where the slide's number counts the slides as the operations before it leave them; the slide keeps its shapes, so delete_shape a text box that stood for its title"""
+            ? $$""". To give it one, {{(footers ? "first delete_shape each footer, date and slide-number placeholder of the slide, then " : "")}}put {"op":"set_layout","slides":"{{Invariant(presentation.Slides.IndexOf(slide) + 1)}}","layout":"{{JsonEncodedText.Encode(layout.Name!, JavaScriptEncoder.UnsafeRelaxedJsonEscaping)}}"} before this set_title in its batch, where the slide's number counts the slides as the operations before it leave them{{(footers ? ", and after the set_title set them again with one set_footer that gives the footer's text, showNumber and showDate" : "")}}; the slide keeps its {{(footers ? "other " : "")}}shapes, so delete_shape a text box that stood for its title"""
             : titled.Length > 0
-                ? ". A layout with one would give its title role to a placeholder the slide has, whose text set_title would then overwrite, so look at the slide's placeholders before you change its layout"
+                ? ". A layout with one could give the title role to a placeholder the slide has other than a footer, date or slide number, whose text set_title would then overwrite, so look at its placeholders before you change its layout"
                 : ", and no layout of its master that set_layout can name has one";
     }
 
@@ -139,7 +143,7 @@ internal static class SlidesMutationSupport
             Names(presentation.LayoutSlides.Select(static item => item.Name)));
     }
 
-    private static string? PlaceholderRole(IShape shape) => SlidesPlaceholders.Role(shape.Placeholder?.Type);
+    internal static string? PlaceholderRole(IShape shape) => SlidesPlaceholders.Role(shape.Placeholder?.Type);
 
     private static IShape? Unique(IEnumerable<IShape> matches, string description)
     {
