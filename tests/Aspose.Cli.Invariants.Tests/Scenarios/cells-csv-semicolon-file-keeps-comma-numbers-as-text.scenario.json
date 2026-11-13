@@ -1,0 +1,92 @@
+{
+  "name": "cells read keeps as text, with NUMBERS_READ_AS_TEXT, the numbers of a semicolon-separated csv that all have three decimals after a comma, as it does in one with a 2,71, while a comma-separated csv still reads \"1,234\" as 1234, and a semicolon one reads its numbers when it has no comma or also writes a decimal point, as 19.90",
+  "files": {
+    "three.csv": { "text": "k;v\na;1,234\nb;2,500\n" },
+    "mixed.csv": { "text": "k;v\na;2,71\nb;1,234\n" },
+    "grouped.csv": { "text": "k,v\na,\"1,234\"\nb,20\n" },
+    "points.csv": { "text": "k;v\na;1.234,56\nb;20\nc;2,5\n" },
+    "plain.csv": { "text": "k;v\na;19.90\nb;20\n" },
+    "english.csv": { "text": "k;v\na;1,234\nb;19.90\n" },
+    "tabs.tsv": { "text": "k\tv\na\t1,234\nb\t19.90\n" }
+  },
+  "steps": [
+    {
+      "args": ["cells", "read", "three.csv", "--range", "B2:B3"],
+      "expect": {
+        "exitCode": 0,
+        "warnings": { "present": ["NUMBERS_READ_AS_TEXT"] },
+        "json": [
+          { "path": "sheet.cells[0][0]", "equals": { "v": "1,234", "t": "string" } },
+          { "path": "sheet.cells[1][0]", "equals": { "v": "2,500", "t": "string" } }
+        ]
+      }
+    },
+    {
+      "args": ["cells", "read", "mixed.csv", "--range", "B2:B3"],
+      "expect": {
+        "exitCode": 0,
+        "warnings": { "present": ["NUMBERS_READ_AS_TEXT"] },
+        "json": [
+          { "path": "sheet.cells[0][0]", "equals": { "v": "2,71", "t": "string" } },
+          { "path": "sheet.cells[1][0]", "equals": { "v": "1,234", "t": "string" } }
+        ]
+      }
+    },
+    {
+      "args": ["cells", "read", "grouped.csv", "--range", "B2:B3"],
+      "expect": {
+        "exitCode": 0,
+        "warnings": { "absent": ["NUMBERS_READ_AS_TEXT"] },
+        "json": [
+          { "path": "sheet.cells[0][0]", "equals": { "v": 1234, "t": "number" } },
+          { "path": "sheet.cells[1][0]", "equals": { "v": 20, "t": "number" } }
+        ]
+      }
+    },
+    {
+      "args": ["cells", "read", "points.csv", "--range", "B2:B4"],
+      "expect": {
+        "exitCode": 0,
+        "warnings": { "present": ["NUMBERS_READ_AS_TEXT"] },
+        "json": [
+          { "path": "sheet.cells[0][0]", "equals": { "v": "1.234,56", "t": "string" } },
+          { "path": "sheet.cells[1][0]", "equals": { "v": 20, "t": "number" } },
+          { "path": "sheet.cells[2][0]", "equals": { "v": "2,5", "t": "string" } }
+        ]
+      }
+    },
+    {
+      "args": ["cells", "read", "plain.csv", "--range", "B2:B3"],
+      "expect": {
+        "exitCode": 0,
+        "warnings": { "absent": ["NUMBERS_READ_AS_TEXT"] },
+        "json": [
+          { "path": "sheet.cells[0][0]", "equals": { "v": 19.9, "t": "number" } },
+          { "path": "sheet.cells[1][0]", "equals": { "v": 20, "t": "number" } }
+        ]
+      }
+    },
+    {
+      "args": ["cells", "read", "english.csv", "--range", "B2:B3"],
+      "expect": {
+        "exitCode": 0,
+        "warnings": { "absent": ["NUMBERS_READ_AS_TEXT"] },
+        "json": [
+          { "path": "sheet.cells[0][0]", "equals": { "v": 1234, "t": "number" } },
+          { "path": "sheet.cells[1][0]", "equals": { "v": 19.9, "t": "number" } }
+        ]
+      }
+    },
+    {
+      "args": ["cells", "read", "tabs.tsv", "--range", "B2:B3"],
+      "expect": {
+        "exitCode": 0,
+        "warnings": { "absent": ["NUMBERS_READ_AS_TEXT"] },
+        "json": [
+          { "path": "sheet.cells[0][0]", "equals": { "v": 1234, "t": "number" } },
+          { "path": "sheet.cells[1][0]", "equals": { "v": 19.9, "t": "number" } }
+        ]
+      }
+    }
+  ]
+}
