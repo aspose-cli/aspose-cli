@@ -7,7 +7,7 @@ namespace Aspose.Cli.Product.Pdf.Engine;
 /// <summary>
 /// The in-document navigation an output lost, by why, and the one place that decides whether a
 /// loss leaves the output incomplete. An entry that led to a page the caller left out of the
-/// output, which an edit deleted, <c>--pages</c> did not select or a split put in another part,
+/// output, which an edit deleted, <c>--pages</c> did not select or a split left out of a part,
 /// is the result the caller asked for. An entry whose page is still in the output but which no
 /// longer leads to it, such as a destination whose top reads 0 on a moved page
 /// (PDF-MOVE-BOOKMARK) or one through a named destination the output does not carry, is damage
@@ -43,12 +43,22 @@ internal sealed record PdfNavigationLoss(PdfNavigationCensus Stranded, PdfNaviga
 
     /// <summary>
     /// The bookmarks of <paramref name="document"/>, and its links and named destinations that
-    /// lead within it, each with the page it leads to, or none when it leads to no page.
+    /// lead within it, each with the page it leads to, or none when it leads to no page. A link's
+    /// page destination read before a page deletion keeps the number it had (PDF-LINK-STALE-PAGE),
+    /// so with <paramref name="before"/>, the capture of the same document before it changed in
+    /// memory, such a link leads to the page it led to then while the document still holds it.
     /// </summary>
-    internal static IReadOnlyList<Entry> Capture(Document document)
+    internal static IReadOnlyList<Entry> Capture(Document document, IReadOnlyList<Entry>? before = null)
     {
         var entries = new List<Entry>();
         CaptureOutline(document, document.Outlines, null, entries);
+        Dictionary<object, Page?> read = new(ReferenceEqualityComparer.Instance);
+        foreach (Entry entry in (before ?? []).Where(static entry => entry.Read is not null))
+        {
+            read.TryAdd(entry.Read!, entry.Target);
+        }
+
+        HashSet<Page> held = new(Enumerable.Range(1, document.Pages.Count).Select(number => document.Pages[number]), ReferenceEqualityComparer.Instance);
         for (int number = 1; number <= document.Pages.Count; number++)
         {
             foreach (Annotation annotation in document.Pages[number].Annotations)
@@ -56,8 +66,10 @@ internal sealed record PdfNavigationLoss(PdfNavigationCensus Stranded, PdfNaviga
                 if (annotation is LinkAnnotation link && PdfNavigationCensus.Target(link.Destination, link.Action) is { } target)
                 {
                     Rectangle area = link.Rect;
+                    Page? page = target is not ExplicitDestination || !read.TryGetValue(target, out Page? led) ? PageOf(document, target)
+                        : led is not null && held.Contains(led) ? led : null;
                     entries.Add(new Entry(Kind.Link, string.Create(CultureInfo.InvariantCulture,
-                        $"{area.LLX} {area.LLY} {area.URX} {area.URY} {Describe(target)}"), PageOf(document, target)));
+                        $"{area.LLX} {area.LLY} {area.URX} {area.URY} {Describe(target)}"), page) { Read = target });
                 }
             }
         }
@@ -255,5 +267,8 @@ internal sealed record PdfNavigationLoss(PdfNavigationCensus Stranded, PdfNaviga
     {
         /// <summary>A bookmark's address in the outline it was read from, as <c>pdf inspect</c> reports it.</summary>
         internal string? Address { get; init; }
+
+        /// <summary>A link's destination as the engine read it, which it keeps for the link.</summary>
+        internal IAppointment? Read { get; init; }
     }
 }

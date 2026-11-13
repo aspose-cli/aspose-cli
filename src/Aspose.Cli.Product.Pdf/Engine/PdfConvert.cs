@@ -93,8 +93,7 @@ internal static class PdfConvert
         PdfConvertRequest request,
         List<Warning> warnings)
     {
-        PdfNavigationCensus degraded = DeleteUnselected(document, pages);
-        if (UnselectedNavigation(degraded) is { } navigation)
+        if (UnselectedNavigation(DeleteUnselected(document, pages)) is { } navigation)
         {
             warnings.Add(navigation);
         }
@@ -160,22 +159,26 @@ internal static class PdfConvert
 
     /// <summary>
     /// Deletes the pages --pages did not select from the opened document, and counts the
-    /// navigation that led to them.
+    /// navigation that led to them. None of what leads to a selected page stops leading there, so
+    /// nothing is <see cref="PdfNavigationLoss.Stranded"/>: a deletion renumbers bookmarks and named
+    /// destinations, a link through a name follows it, and a link read before leads to the page it
+    /// read (<see cref="PdfNavigationLoss.Capture"/>).
     /// </summary>
-    private static PdfNavigationCensus DeleteUnselected(Document document, IReadOnlyList<int> pages)
+    private static PdfNavigationLoss DeleteUnselected(Document document, IReadOnlyList<int> pages)
     {
         int[] excluded = Enumerable.Range(1, document.Pages.Count).Except(pages).ToArray();
         if (excluded.Length == 0)
         {
-            return default;
+            return new PdfNavigationLoss(default, default);
         }
 
-        PdfNavigationCensus before = PdfNavigationCensus.Unresolved(document);
+        IReadOnlyList<PdfNavigationLoss.Entry> before = PdfNavigationLoss.Capture(document);
+        Page[] selected = [.. pages.Select(number => document.Pages[number])];
         document.Pages.Delete(excluded);
-        return PdfNavigationCensus.Degraded(before, PdfNavigationCensus.Unresolved(document));
+        return PdfNavigationLoss.Between(before, PdfNavigationLoss.Capture(document, before), selected.Contains);
     }
 
-    private static Warning? UnselectedNavigation(PdfNavigationCensus degraded) => new PdfNavigationLoss(default, degraded).RemovedWarning(
+    private static Warning? UnselectedNavigation(PdfNavigationLoss loss) => loss.RemovedWarning(
         "lead to pages that --pages did not select",
         "Select every page the navigation needs, or delete those bookmarks and links in a 'pdf edit' batch before converting.");
 
@@ -206,7 +209,7 @@ internal static class PdfConvert
 
         // Navigation is counted around the page deletion alone; a bookmark the conversion
         // removes is reported with the outline below.
-        PdfNavigationCensus degraded = DeleteUnselected(opened, pages);
+        PdfNavigationLoss degraded = DeleteUnselected(opened, pages);
         Document document = opened;
 
         // PDF/A forbids encryption; the engine cannot convert an encrypted document.

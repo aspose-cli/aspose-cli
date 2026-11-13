@@ -46,7 +46,7 @@ internal static class PdfSplit
                 // A part keeps the bookmarks of its pages; what leads elsewhere is counted.
                 repositioned += CopyOutline(source, source.Outlines, selected.Outlines, selected,
                     page => Array.IndexOf(pages, page) + 1);
-                // A link the part broke led to a page of another part, or else to one of its own.
+                // A link the part broke led to a page it does not hold, or else to one of its own.
                 int broken = Math.Max(0, PdfNavigationCensus.UnresolvedLinks(selected, Enumerable.Range(1, pages.Length))
                     - PdfNavigationCensus.UnresolvedLinks(source, pages));
                 int elsewhere = Math.Min(broken, PdfNavigationCensus.LinkTargets(source, pages).Count(page => page > 0 && !pages.Contains(page)));
@@ -79,8 +79,8 @@ internal static class PdfSplit
                 "no longer lead to their page, although their part holds it: the parts carry no named destinations, so what led there through one leads nowhere",
                 "No operation re-creates links or named destinations: tell the user which no longer lead to their page."),
             navigation.RemovedWarning(
-                "lead to a page of another part, so they lead nowhere in their own",
-                "The pages they led to are in other parts, as the split asked; tell the user they lead nowhere in the parts."),
+                "lead to a page their part does not hold, so they lead nowhere in it",
+                "The pages they led to are in other parts or in none, as the split asked; tell the user they lead nowhere in the parts."),
             PdfNavigationLoss.Repositioned(repositioned, "parts"),
         }.OfType<Warning>());
         return new PdfSplitResult
