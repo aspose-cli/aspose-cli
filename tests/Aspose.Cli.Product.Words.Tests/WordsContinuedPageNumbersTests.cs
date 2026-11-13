@@ -92,6 +92,27 @@ public sealed partial class WordsContinuedPageNumbersTests : IClassFixture<Words
     }
 
     /// <summary>
+    /// Without an alignment, a number the footer already holds keeps its own, right here, while a
+    /// new one is centered; an alignment given is written. One section with its own footer, so
+    /// this runs without a license too.
+    /// </summary>
+    [Theory]
+    [InlineData(@"\qr Page {\field{\*\fldinst PAGE}{\fldrslt 1}}", """{"op":"set_page_numbers"}""", "right")]
+    [InlineData(@"\qr Page {\field{\*\fldinst PAGE}{\fldrslt 1}}", """{"op":"set_page_numbers","text":"Page {n} of {N}"}""", "right")]
+    [InlineData("Y", """{"op":"set_page_numbers"}""", "center")]
+    [InlineData(@"\qr Page {\field{\*\fldinst PAGE}{\fldrslt 1}}", """{"op":"set_page_numbers","alignment":"left"}""", "left")]
+    public void Alignment_WhenOmitted_KeepsAnExistingNumbersOwn(string footer, string operation, string expected)
+    {
+        File.WriteAllText(_workspace.File("continued.rtf"), @"{\rtf1\ansi{\footer\pard " + footer + @"\par}\pard Section 1.\par}");
+
+        CliResult edited = Edit(operation);
+
+        Assert.True(edited.ExitCode == 0, edited.StdErr + edited.StdOut);
+        Assert.True(JsonNode.Parse(edited.StdOut)!["verification"]!["ok"]!.GetValue<bool>());
+        Assert.Equal(expected, Sections("numbered.docx")[0]["pageNumbers"]!["alignment"]!.GetValue<string>());
+    }
+
+    /// <summary>
     /// A section whose footer's fields an operation really changes is reported, whether text
     /// replaces the page number or a number is added; only the page a PAGE field last showed is
     /// no change. One section with its own footer, so this runs without a license too.
