@@ -42,7 +42,7 @@ public sealed record PdfInspectResult() : EngineResultEnvelope("inspect-result")
     public IReadOnlyList<PdfOutlineItem>? Outline { get; init; }
 
     /// <summary>
-    /// The links to web addresses in page order, with <c>--detail links</c>; a
+    /// The links to web addresses and to other files in page order, with <c>--detail links</c>; a
     /// <c>LIST_TRUNCATED</c> warning names the total when there are more.
     /// </summary>
     [MaxItems(LinkLimit)]
@@ -281,7 +281,7 @@ public sealed record PdfFormField
     public PdfRect? Rect { get; init; }
 }
 
-/// <summary>One link to a web address.</summary>
+/// <summary>One link out of the document: to a web address (<c>url</c>) or to another file (<c>file</c>).</summary>
 public sealed record PdfLinkInfo
 {
     /// <summary>The 1-based page the link is on.</summary>
@@ -291,8 +291,15 @@ public sealed record PdfLinkInfo
     /// <summary>The link's area on its page, in points from the top-left corner of the visible page.</summary>
     public required PdfRect Rect { get; init; }
 
-    /// <summary>The web address the link opens.</summary>
-    public required string Url { get; init; }
+    /// <summary>The web address the link opens; absent for a link to another file.</summary>
+    public string? Url { get; init; }
+
+    /// <summary>The file the link opens, as the link names it; absent for a link to a web address.</summary>
+    public string? File { get; init; }
+
+    /// <summary>The 1-based page of <c>file</c> the link opens; absent when it names none, as with a named destination.</summary>
+    [Minimum(1)]
+    public int? TargetPage { get; init; }
 }
 
 /// <summary>One link to a place in the document.</summary>

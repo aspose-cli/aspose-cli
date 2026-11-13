@@ -1380,7 +1380,7 @@
             ],
             "secret": false,
             "valueSource": "command-line",
-            "description": "Extra sections to include; repeat for more. outline: bookmarks, up to 200; links: links to web addresses and to places in the document, up to 500 of each; forms: form kind and each field's value, up to 500 fields; layers: optional content layer names; properties: document information such as title and author."
+            "description": "Extra sections to include; repeat for more. outline: bookmarks, up to 200; links: links to web addresses, other files and places in the document, up to 500 out of it and 500 within; forms: form kind and each field's value, up to 500 fields; layers: optional content layer names; properties: document information such as title and author."
           },
           {
             "name": "--password",
@@ -3417,7 +3417,7 @@
           }
         },
         "links": {
-          "description": "The links to web addresses in page order, with --detail links; a LIST_TRUNCATED warning names the total when there are more.",
+          "description": "The links to web addresses and to other files in page order, with --detail links; a LIST_TRUNCATED warning names the total when there are more.",
           "type": "array",
           "maxItems": 500,
           "items": {
@@ -3664,12 +3664,11 @@
           }
         },
         "pdfLinkInfo": {
-          "description": "One link to a web address.",
+          "description": "One link out of the document: to a web address (url) or to another file (file).",
           "type": "object",
           "required": [
             "page",
-            "rect",
-            "url"
+            "rect"
           ],
           "additionalProperties": false,
           "properties": {
@@ -3683,8 +3682,17 @@
               "$ref": "#/$defs/pdfRect"
             },
             "url": {
-              "description": "The web address the link opens.",
+              "description": "The web address the link opens; absent for a link to another file.",
               "type": "string"
+            },
+            "file": {
+              "description": "The file the link opens, as the link names it; absent for a link to a web address.",
+              "type": "string"
+            },
+            "targetPage": {
+              "description": "The 1-based page of file the link opens; absent when it names none, as with a named destination.",
+              "type": "integer",
+              "minimum": 1
             }
           }
         },
