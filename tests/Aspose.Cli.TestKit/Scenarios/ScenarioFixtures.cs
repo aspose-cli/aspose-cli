@@ -19,7 +19,7 @@ namespace Aspose.Cli.TestKit.Scenarios;
 /// <item><c>slides.media</c> and <c>pdf.media</c>: the primary document with media every value of
 /// its <c>extract --what</c> writes a file from.</item>
 /// <item><c>&lt;product&gt;.rich</c>: the primary format with one marker text in each kind of
-/// content the product makes (<see cref="RichMarkers"/>).</item>
+/// content the product makes (<see cref="RichMarkers"/>), and in the PDF a picture.</item>
 /// <item><c>markdown</c> and <c>text</c>: source text that holds <see cref="SampleText"/>.</item>
 /// <item><c>certificate.pfx</c>: a self-signed signing certificate protected by <see cref="Password"/>.</item>
 /// </list>
@@ -212,10 +212,17 @@ public static class ScenarioFixtures
     }
 
     /// <summary>
+    /// A 40-pixel PNG square that the PDF rich fixture shows, so that every output written from it
+    /// has a picture to carry or name: no read reports a picture, so it holds no marker.
+    /// </summary>
+    private const string RichPicture =
+        "iVBORw0KGgoAAAANSUhEUgAAACgAAAAoCAIAAAADnC86AAAAMElEQVR4nO3NMQ0AAAgDsCmZfynIwgQJT5P+zbQvIhaLxWKxWCwWi8VisVgsFvcsXhHvWVsvWSOBAAAAAElFTkSuQmCC";
+
+    /// <summary>
     /// A document of the product's primary format with each marker of <see cref="RichMarkers"/> in
     /// the kind of content it names, built with the product's own create and edit: the body text,
     /// and a header, footer, comment, chart title, form field value, slide footer, speaker notes or
-    /// shape text where the product makes one.
+    /// shape text where the product makes one. The PDF also shows a picture (<see cref="RichPicture"/>).
     /// </summary>
     private static byte[] Rich(string product, string primary)
     {
@@ -236,8 +243,9 @@ public static class ScenarioFixtures
                     """;
                 break;
             case "pdf":
+                File.WriteAllBytes(workspace.File("picture.png"), System.Convert.FromBase64String(RichPicture));
                 File.WriteAllText(workspace.File("rich.html"),
-                    $"""<html><body><h1>Rich seed</h1><p>{Marker("body")}</p><form><input type="text" name="field" value="seed"></form></body></html>""");
+                    $"""<html><body><h1>Rich seed</h1><p>{Marker("body")}</p><img src="picture.png" width="40"><form><input type="text" name="field" value="seed"></form></body></html>""");
                 Require(workspace.Run("pdf", "create", file, "--from-html", "rich.html", "--output-format", "json"));
                 operations = $$"""
                     [{"op":"set_form_field","name":"field","value":"{{Marker("form field value")}}"},
