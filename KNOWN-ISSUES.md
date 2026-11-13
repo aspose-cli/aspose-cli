@@ -377,9 +377,11 @@ Reproductions: [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownI
   after a page deletion in memory a link read before it still names the number its page had:
   one to a deleted page can name a page the document still holds. Bookmarks and named destinations
   read their new numbers, and the saved file leads to the right page, or to none.
-- **CLI behavior:** `pdf convert --pages`, which counts the navigation a deletion breaks in the
-  document in memory, takes a link read before it to lead to the page it led to then, and to none
-  when that page is gone, so it counts what `pdf edit` reads from the output it publishes.
+- **CLI behavior:** `pdf convert --pages` and `pdf edit --dry-run`, which count the navigation a
+  deletion breaks in the document in memory, take a link read before it to lead to the page it
+  led to then, and to none when that page is gone, so they count what `pdf edit` reads from the
+  output it publishes. A link the batch itself pointed at a moved page, whose page a later
+  operation deletes, still reads the number it had in a dry run.
 
 ### PDF-REDACT-CALCULATED
 

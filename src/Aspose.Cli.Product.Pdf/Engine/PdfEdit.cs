@@ -61,12 +61,13 @@ internal static class PdfEdit
         EncryptDocumentOp? encryptCopy = batch.Ops.Any(static op => op is SetPropertiesOp)
             && PdfOutputEncryption.InformationBeyondLatin1(loaded.Document) ? model.Encryption : null;
         // The navigation the batch left leading to no page, as the published output reads it: the
-        // engine keeps the page numbers of the destinations it read before a page deletion, so the
-        // edited document itself can name the wrong ones. A dry run publishes nothing to read.
+        // engine keeps the page numbers of the link destinations it read before a page deletion
+        // (PDF-LINK-STALE-PAGE). A dry run publishes nothing to read, so it reads the edited
+        // document with what was read before the batch.
         IReadOnlyList<PdfNavigationLoss.Entry>? navigationAfter = null;
         PdfNavigationLoss? navigation = null;
         PdfNavigationLoss Navigation() => navigation ??= PdfNavigationLoss.Between(
-            navigationBefore, navigationAfter ?? PdfNavigationLoss.Capture(loaded.Document), model.Keeps);
+            navigationBefore, navigationAfter ?? PdfNavigationLoss.Capture(loaded.Document, navigationBefore), model.Keeps);
 
         // What the batch left: the verification reports each warning that leaves the output
         // incomplete as an issue.
