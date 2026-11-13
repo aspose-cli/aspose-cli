@@ -78,7 +78,7 @@ internal sealed partial class SlidesMutationHandlers : ISlidesOpHandler<ValueTup
         }
         catch (Exception failure) when (failure is CliException or OperationInvalidException)
         {
-            return new ResolvedSlidesOp(op, null, null, null, null, null, failure);
+            return new ResolvedSlidesOp(op, null, null, null, null, failure);
         }
     }
 
@@ -109,15 +109,15 @@ internal sealed partial class SlidesMutationHandlers : ISlidesOpHandler<ValueTup
             SetTransitionOp value => ResolveSlides(presentation, value.Slides),
             _ => null,
         };
-        ILayoutSlide? layout = op switch
+        _ = op switch // refuses a layout name no master has as the targets resolve; each handler looks it up by its own master
         {
             InsertSlideOp { Layout: not null } value => ResolveLayout(presentation, value.Layout),
-            SetLayoutOp value => ResolveLayout(presentation, value.Layout), // refuses a name no master has; each slide takes it from its own master first
+            SetLayoutOp value => ResolveLayout(presentation, value.Layout),
             _ => null,
         };
         // Detached shapes may no longer expose their SDK identity. Keep the receipt target
         // aligned with the original presentation used to resolve every operation.
-        return new ResolvedSlidesOp(op, slide, shape, slides, layout, shape?.OfficeInteropShapeId);
+        return new ResolvedSlidesOp(op, slide, shape, slides, shape?.OfficeInteropShapeId);
     }
 
     /// <summary>
@@ -159,7 +159,6 @@ internal sealed partial class SlidesMutationHandlers : ISlidesOpHandler<ValueTup
         ISlide? Slide,
         IShape? Shape,
         IReadOnlyList<ISlide>? Slides,
-        ILayoutSlide? Layout,
         long? ShapeId,
         Exception? Failure = null);
 }

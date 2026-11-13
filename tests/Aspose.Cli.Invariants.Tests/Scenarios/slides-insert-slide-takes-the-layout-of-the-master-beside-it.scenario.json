@@ -1,0 +1,62 @@
+{
+  "name": "slides insert_slide with a layout name takes that layout of the master of the slide before the new one, or after it at the start: after a keep-source import that duplicated the master, a slide inserted after or among the imported slides joins their master and one inserted among the deck's own slides the deck's master, with no warning",
+  "files": {
+    "deck.md": { "text": "# One\n\n## Two\n\n- b\n\n## Three\n\n- c\n" }
+  },
+  "steps": [
+    {
+      "args": ["slides", "create", "deck.pptx", "--from-markdown", "deck.md"],
+      "expect": { "exitCode": 0 }
+    },
+    {
+      "args": ["slides", "edit", "deck.pptx", "--ops", "{\"ops\":[{\"op\":\"import_slides\",\"path\":\"deck.pptx\",\"formatting\":\"keep-source\"}]}", "--out", "two.pptx"],
+      "expect": { "exitCode": 0 }
+    },
+    {
+      "args": ["slides", "edit", "two.pptx", "--ops", "{\"ops\":[{\"op\":\"insert_slide\",\"layout\":\"Title Only\"}]}", "--out", "end.pptx", "--verify"],
+      "expect": {
+        "exitCode": 0,
+        "json": [{ "path": "verification.ok", "equals": true }],
+        "warnings": { "absent": ["SLIDE_MASTER_CHANGED"] }
+      }
+    },
+    {
+      "args": ["slides", "inspect", "end.pptx", "--detail", "masters"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "masters[0].slideCount", "equals": 3 },
+          { "path": "masters[1].slideCount", "equals": 4 }
+        ]
+      }
+    },
+    {
+      "args": ["slides", "edit", "two.pptx", "--ops", "{\"ops\":[{\"op\":\"insert_slide\",\"layout\":\"Title Only\",\"at\":5}]}", "--out", "among.pptx"],
+      "expect": { "exitCode": 0, "warnings": { "absent": ["SLIDE_MASTER_CHANGED"] } }
+    },
+    {
+      "args": ["slides", "inspect", "among.pptx", "--detail", "masters"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "masters[0].slideCount", "equals": 3 },
+          { "path": "masters[1].slideCount", "equals": 4 }
+        ]
+      }
+    },
+    {
+      "args": ["slides", "edit", "two.pptx", "--ops", "{\"ops\":[{\"op\":\"insert_slide\",\"layout\":\"Title Only\",\"at\":2},{\"op\":\"insert_slide\",\"layout\":\"Title Only\",\"at\":1}]}", "--out", "own.pptx"],
+      "expect": { "exitCode": 0, "warnings": { "absent": ["SLIDE_MASTER_CHANGED"] } }
+    },
+    {
+      "args": ["slides", "inspect", "own.pptx", "--detail", "masters"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "masters[0].slideCount", "equals": 5 },
+          { "path": "masters[1].slideCount", "equals": 3 }
+        ]
+      }
+    }
+  ]
+}

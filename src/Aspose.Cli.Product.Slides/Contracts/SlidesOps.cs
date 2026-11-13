@@ -185,7 +185,10 @@ public sealed record SlidesChartSeriesInput
 [MistakenFor("add_slide")]
 public sealed record InsertSlideOp : SlidesOp
 {
-    /// <summary>The layout name, matched case-insensitively; the first layout when omitted.</summary>
+    /// <summary>
+    /// The layout name, matched case-insensitively among the layouts of the master of the slide
+    /// before the new one first, the slide after it at the start; the first layout when omitted.
+    /// </summary>
     [ReadBack("inspect-result.schema.json#/$defs/slidesSlideInfo/properties/layout")]
     [Pattern(@"\S")] public string? Layout { get; init; }
 

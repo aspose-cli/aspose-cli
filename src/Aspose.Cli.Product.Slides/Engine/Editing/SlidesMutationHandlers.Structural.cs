@@ -17,10 +17,17 @@ internal sealed partial class SlidesMutationHandlers
             throw SlideNotFound(at, _presentation.Slides.Count + 1, "slide position");
         }
 
-        ISlide slide = _presentation.Slides.AddEmptySlide(_target.Layout ?? _presentation.LayoutSlides[0]);
+        // A layout name names one of the master of the slide before the new one first, or after it at the start.
+        IMasterSlide? beside = _presentation.Slides.Count == 0 ? null : _presentation.Slides[Math.Max(at - 2, 0)].LayoutSlide.MasterSlide;
+        ISlide slide = _presentation.Slides.AddEmptySlide(operation.Layout is { } name ? ResolveLayout(_presentation, name, beside) : _presentation.LayoutSlides[0]);
         if (at <= _presentation.Slides.Count)
         {
             _presentation.Slides.Reorder(at - 1, slide);
+        }
+
+        if (operation.Layout is not null && beside is not null)
+        {
+            NameMasterChange(slide, beside);
         }
 
         return default;
@@ -114,8 +121,9 @@ internal sealed partial class SlidesMutationHandlers
     }
 
     /// <summary>
-    /// Names a slide that set_layout moved to another master: the layout name named none of its own
-    /// master's (<see cref="ResolveLayout"/>), and the slide now shows the other master's theme and art.
+    /// Names a slide that set_layout moved, or insert_slide added, to another master than its own or
+    /// the one beside it: the layout name named none of that master's (<see cref="ResolveLayout"/>),
+    /// and the slide shows the other master's theme and art.
     /// </summary>
     private void NameMasterChange(ISlide slide, IMasterSlide was)
     {
