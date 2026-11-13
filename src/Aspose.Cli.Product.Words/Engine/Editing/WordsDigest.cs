@@ -28,9 +28,11 @@ internal static class WordsDigest
     }
 
     /// <summary>
-    /// The state of a section without its body: its page setup and its headers and footers. In
-    /// <paramref name="evaluation"/> mode the marks evaluation mode writes into them, its footer
-    /// sentence and its watermark, are no state: it writes them again at every save.
+    /// The state of a section without its body: its page setup and its headers and footers, its
+    /// own and those its pages show from an earlier section, so that a change to one a section
+    /// continues changes it too. In <paramref name="evaluation"/> mode the marks evaluation mode
+    /// writes into them, its footer sentence and its watermark, are no state: it writes them again
+    /// at every save.
     /// </summary>
     internal static string OfSection(Section section, bool evaluation)
     {
@@ -40,10 +42,14 @@ internal static class WordsDigest
             setup.LeftMargin, setup.HeaderDistance, setup.FooterDistance, setup.TextColumns.Count, setup.SectionStart,
             setup.DifferentFirstPageHeaderFooter, setup.OddAndEvenPagesHeaderFooter, setup.RestartPageNumbering,
             setup.PageStartingNumber, setup.PageNumberStyle);
-        foreach (HeaderFooter headerFooter in section.HeadersFooters.Cast<HeaderFooter>().OrderBy(static item => item.HeaderFooterType))
+        foreach (HeaderFooterType type in Enum.GetValues<HeaderFooterType>().Order())
         {
-            text.Append('[').Append(headerFooter.HeaderFooterType).Append(']');
-            Append(text, headerFooter, evaluation);
+            HeaderFooter? own = section.HeadersFooters[type];
+            if ((own ?? (WordsHeadersFooters.Shown(section, type) ? WordsHeadersFooters.Continued(section, type) : null)) is { } story)
+            {
+                text.Append('[').Append(type).Append(own is null ? "~" : string.Empty).Append(']');
+                Append(text, story, evaluation);
+            }
         }
 
         return Hash(text);

@@ -577,7 +577,7 @@ public sealed record SetFooterOp : HeaderFooterOp;
 /// that shows an earlier section's header or footer keeps showing it: numbered with that section
 /// when this numbers it too, else on a copy of it that becomes the section's own, and a number
 /// moved to the other location leaves what the section showed there the same way. A section not
-/// selected that continues a numbered one shows the number too, and the targets do not list it.
+/// selected that continues a numbered one shows the number too.
 /// </summary>
 [Operation("set_page_numbers")]
 public sealed record SetPageNumbersOp : WordsOp

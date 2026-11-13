@@ -50,7 +50,8 @@ fonts and `paragraphFormat` (indents, spacing, alignment) with its neighbours'.
 the output of the whole batch holds them: a body block as `block/<n>`, numbered as
 `words read` numbers the output even when a later operation moved it, and a
 block the batch removed by its number in the input; a section whose page
-setup, headers or footers changed as `section/<n>`, a style as
+setup, headers or footers changed as `section/<n>`, including one that shows a
+changed header or footer from an earlier section, a style as
 `style/<name>`, a document property as `property/<name>`, the watermark as
 `watermark/1` and the editing restriction as `protection/document`. A block
 the batch removed and a block it changed can share a number, one in the input
