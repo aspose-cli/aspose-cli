@@ -1,0 +1,48 @@
+{
+  "name": "pdf edit --verify reads back the web link add_hyperlink adds, with its address and area as pdf inspect --detail links reads them, and leaves it unchecked once a later operation changes its page's geometry or covers an area of its page",
+  "files": {
+    "nav.pdf": { "base64": "JVBERi0xLjcKMSAwIG9iago8PCAvVHlwZSAvQ2F0YWxvZyAvUGFnZXMgMiAwIFIgL091dGxpbmVzIDkgMCBSIC9OYW1lcyA8PCAvRGVzdHMgPDwgL05hbWVzIFsoYXBwZW5kaXgpIFs1IDAgUiAvWFlaIDIwIDcwMCAwXV0gPj4gPj4gPj4KZW5kb2JqCjIgMCBvYmoKPDwgL1R5cGUgL1BhZ2VzIC9LaWRzIFszIDAgUiA0IDAgUiA1IDAgUl0gL0NvdW50IDMgPj4KZW5kb2JqCjMgMCBvYmoKPDwgL1R5cGUgL1BhZ2UgL1BhcmVudCAyIDAgUiAvTWVkaWFCb3ggWzAgMCA2MTIgNzkyXSAvUmVzb3VyY2VzIDw8IC9Gb250IDw8IC9GMSA2IDAgUiA+PiA+PiAvQ29udGVudHMgNyAwIFIgL0Fubm90cyBbMTIgMCBSIDEzIDAgUl0gPj4KZW5kb2JqCjQgMCBvYmoKPDwgL1R5cGUgL1BhZ2UgL1BhcmVudCAyIDAgUiAvTWVkaWFCb3ggWzAgMCA2MTIgNzkyXSAvUmVzb3VyY2VzIDw8IC9Gb250IDw8IC9GMSA2IDAgUiA+PiA+PiAvQ29udGVudHMgOCAwIFIgPj4KZW5kb2JqCjUgMCBvYmoKPDwgL1R5cGUgL1BhZ2UgL1BhcmVudCAyIDAgUiAvTWVkaWFCb3ggWzAgMCA2MTIgNzkyXSAvUmVzb3VyY2VzIDw8IC9Gb250IDw8IC9GMSA2IDAgUiA+PiA+PiAvQ29udGVudHMgMTQgMCBSID4+CmVuZG9iago2IDAgb2JqCjw8IC9UeXBlIC9Gb250IC9TdWJ0eXBlIC9UeXBlMSAvQmFzZUZvbnQgL0hlbHZldGljYSA+PgplbmRvYmoKNyAwIG9iago8PCAvTGVuZ3RoIDYyID4+CnN0cmVhbQpCVCAvRjEgMTIgVGYgNzIgNzIwIFRkIChQYWdlIDE6IHRvIHR3bywgdG8gdGhlIGFwcGVuZGl4KSBUaiBFVAplbmRzdHJlYW0KZW5kb2JqCjggMCBvYmoKPDwgL0xlbmd0aCAzNyA+PgpzdHJlYW0KQlQgL0YxIDEyIFRmIDcyIDcyMCBUZCAoUGFnZSAyKSBUaiBFVAplbmRzdHJlYW0KZW5kb2JqCjkgMCBvYmoKPDwgL1R5cGUgL091dGxpbmVzIC9GaXJzdCAxMCAwIFIgL0xhc3QgMTEgMCBSIC9Db3VudCAyID4+CmVuZG9iagoxMCAwIG9iago8PCAvVGl0bGUgKFR3bykgL1BhcmVudCA5IDAgUiAvTmV4dCAxMSAwIFIgL0Rlc3QgWzQgMCBSIC9YWVogNzIgNzAwIDBdID4+CmVuZG9iagoxMSAwIG9iago8PCAvVGl0bGUgKE5hbWVkKSAvUGFyZW50IDkgMCBSIC9QcmV2IDEwIDAgUiAvRGVzdCAoYXBwZW5kaXgpID4+CmVuZG9iagoxMiAwIG9iago8PCAvVHlwZSAvQW5ub3QgL1N1YnR5cGUgL0xpbmsgL1JlY3QgWzcyIDcxNSAxNTAgNzM1XSAvQm9yZGVyIFswIDAgMF0gL0Rlc3QgWzQgMCBSIC9GaXRdID4+CmVuZG9iagoxMyAwIG9iago8PCAvVHlwZSAvQW5ub3QgL1N1YnR5cGUgL0xpbmsgL1JlY3QgWzE2MCA3MTUgMzAwIDczNV0gL0JvcmRlciBbMCAwIDBdIC9EZXN0IChhcHBlbmRpeCkgPj4KZW5kb2JqCjE0IDAgb2JqCjw8IC9MZW5ndGggNDcgPj4Kc3RyZWFtCkJUIC9GMSAxMiBUZiA3MiA3MjAgVGQgKFBhZ2UgMzogYXBwZW5kaXgpIFRqIEVUCmVuZHN0cmVhbQplbmRvYmoKeHJlZgowIDE1CjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwOSAwMDAwMCBuIAowMDAwMDAwMTQyIDAwMDAwIG4gCjAwMDAwMDAyMTEgMDAwMDAgbiAKMDAwMDAwMDM2MSAwMDAwMCBuIAowMDAwMDAwNDg3IDAwMDAwIG4gCjAwMDAwMDA2MTQgMDAwMDAgbiAKMDAwMDAwMDY4NCAwMDAwMCBuIAowMDAwMDAwNzk2IDAwMDAwIG4gCjAwMDAwMDA4ODMgMDAwMDAgbiAKMDAwMDAwMDk1NiAwMDAwMCBuIAowMDAwMDAxMDQ2IDAwMDAwIG4gCjAwMDAwMDExMjcgMDAwMDAgbiAKMDAwMDAwMTIzNSAwMDAwMCBuIAowMDAwMDAxMzQyIDAwMDAwIG4gCnRyYWlsZXIKPDwgL1NpemUgMTUgL1Jvb3QgMSAwIFIgPj4Kc3RhcnR4cmVmCjE0NDAKJSVFT0YK" }
+  },
+  "steps": [
+    {
+      "args": ["pdf", "edit", "nav.pdf", "--ops", "[{\"op\":\"add_hyperlink\",\"page\":2,\"rect\":{\"x\":72.5,\"y\":100.25,\"width\":120,\"height\":18},\"url\":\"https://example.org/terms\"}]", "--out", "linked.pdf", "--verify"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "verification.ok", "equals": true },
+          { "path": "verification.checkedOps", "equals": ["op-0001"] },
+          { "path": "verification.uncheckedOps", "exists": false }
+        ]
+      }
+    },
+    {
+      "args": ["pdf", "inspect", "linked.pdf", "--detail", "links"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "links[0]", "equals": { "page": 2, "rect": { "x": 72.5, "y": 100.25, "width": 120, "height": 18 }, "url": "https://example.org/terms" } }
+        ]
+      }
+    },
+    {
+      "args": ["pdf", "edit", "nav.pdf", "--ops", "[{\"op\":\"add_hyperlink\",\"page\":2,\"rect\":{\"x\":72.5,\"y\":100.25,\"width\":120,\"height\":18},\"url\":\"https://example.org/terms\"},{\"op\":\"redact_area\",\"page\":2,\"rect\":{\"x\":60,\"y\":90,\"width\":200,\"height\":40}}]", "--out", "covered.pdf", "--verify"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "verification.ok", "equals": true },
+          { "path": "verification.uncheckedOps[0].id", "equals": "op-0001" }
+        ]
+      }
+    },
+    {
+      "args": ["pdf", "edit", "nav.pdf", "--ops", "[{\"op\":\"add_hyperlink\",\"page\":2,\"rect\":{\"x\":72.5,\"y\":100.25,\"width\":120,\"height\":18},\"url\":\"https://example.org/terms\"},{\"op\":\"redact_area\",\"page\":1,\"rect\":{\"x\":60,\"y\":90,\"width\":200,\"height\":40}}]", "--out", "elsewhere.pdf", "--verify"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "verification.ok", "equals": true },
+          { "path": "verification.checkedOps", "contains": "op-0001" }
+        ]
+      }
+    }
+  ]
+}

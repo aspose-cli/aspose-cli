@@ -82,6 +82,9 @@ internal static class PdfDiagnostics
     /// <summary>The output's page count differs from what the page operations left.</summary>
     internal static readonly DiagnosticDescriptor PageCountMismatch = DiagnosticDescriptor.Verification("PAGE_COUNT_MISMATCH");
 
+    /// <summary>A page of the output has no link to the address add_hyperlink gave over the area it gave.</summary>
+    internal static readonly DiagnosticDescriptor LinkMismatch = DiagnosticDescriptor.Verification("LINK_MISMATCH");
+
     /// <summary>A PDF/A check found a problem: the issue code of <c>pdf validate</c>.</summary>
     internal static readonly DiagnosticDescriptor PdfaNonconformance = DiagnosticDescriptor.Verification(PdfComplianceIssue.NonconformanceCode);
 
@@ -98,6 +101,7 @@ internal static class PdfDiagnostics
         PropertiesMismatch,
         AttachmentMismatch,
         PageCountMismatch,
+        LinkMismatch,
         VerificationIncomplete,
         DiagnosticDescriptor.Error(SignCertInvalid),
         DiagnosticDescriptor.Error(FormXfaUnsupported),

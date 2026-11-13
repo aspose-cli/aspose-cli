@@ -37,6 +37,7 @@ by their address, as a `delete_bookmarks` operation ([page changes](editing.md))
 | `delete_bookmarks` | the bookmark count |
 | `set_properties` | each document information entry set |
 | `add_attachment`, `delete_attachment` | an attachment of the name holds the embedded length, or none has the name |
+| `add_hyperlink` | its page has a link to its `url` over its `rect`, as `pdf inspect --detail links` reads it |
 | `insert_page`, `import_pages`, `delete_pages`, `move_pages` | the page count |
 
 Every edit, with or without `--verify`, searches its output for the text of
@@ -51,9 +52,10 @@ The batch is checked as a whole: only the last value set for a field, entry or
 attachment is checked, the value of a flattened field, of a field a `redact_area` covers or
 of a deleted page's fields is not, a
 bookmark position is not checked after `delete_bookmarks` renumbers the outline,
-and bookmark pages are not checked after a page operation renumbers the pages. `add_attachment` with a name the document already
+and bookmark pages are not checked after a page operation renumbers the pages; a link is not checked
+after a page operation, a change of page geometry or a `redact_area` on its page. `add_attachment` with a name the document already
 uses adds a second attachment of that name. Other operations (stamps,
-watermarks, links, `redact_area`, page geometry, page labels,
+watermarks, `redact_area`, page geometry, page labels,
 `clear_properties`, encryption, `optimize_document`) are not checked: render,
 inspect or search the output for them. In evaluation mode the matches inside the
 watermark sentence the engine stamps on each page do not count as remaining

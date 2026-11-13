@@ -2869,6 +2869,13 @@
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
+      "code": "LINK_MISMATCH",
+      "owner": "pdf",
+      "severity": "warning",
+      "category": "verification",
+      "detailsSchemaId": "v2/common/diagnostic-details"
+    },
+    {
       "code": "METADATA_REWRITTEN",
       "owner": "pdf",
       "severity": "warning",

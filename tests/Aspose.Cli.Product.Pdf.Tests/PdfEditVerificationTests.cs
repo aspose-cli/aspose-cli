@@ -269,6 +269,7 @@ public sealed class PdfEditVerificationTests
         "delete_attachment",
         "insert_page",
         "delete_pages",
+        "add_hyperlink",
     ];
 
     /// <summary>
@@ -296,6 +297,7 @@ public sealed class PdfEditVerificationTests
             "delete_attachment" => (new DeleteAttachmentOp { Name = "old.txt" }, 1L, "ATTACHMENT_MISMATCH"),
             "insert_page" => (new InsertPageOp { At = 3 }, 1L, "PAGE_COUNT_MISMATCH"),
             "delete_pages" => (new DeletePagesOp { Pages = "2" }, 1L, "PAGE_COUNT_MISMATCH"),
+            "add_hyperlink" => (new AddHyperlinkOp { Page = 1, Rect = Area, Url = "https://example.com" }, 1L, "LINK_MISMATCH"),
             _ => throw new ArgumentOutOfRangeException(nameof(operation)),
         };
 
@@ -488,7 +490,6 @@ public sealed class PdfEditVerificationTests
         "add_header_text",
         "add_footer_text",
         "add_stamp_image",
-        "add_hyperlink",
         "redact_area",
         "set_page_labels",
         "encrypt_document",
@@ -529,7 +530,6 @@ public sealed class PdfEditVerificationTests
             "add_header_text" => new AddHeaderTextOp { Text = "Header" },
             "add_footer_text" => new AddFooterTextOp { Text = "Footer" },
             "add_stamp_image" => new AddStampImageOp { Page = 1, Path = "logo.png", Rect = Area },
-            "add_hyperlink" => new AddHyperlinkOp { Page = 1, Rect = Area, Url = "https://example.com" },
             "redact_area" => new RedactAreaOp { Page = 1, Rect = Area },
             "set_page_labels" => new SetPageLabelsOp { Ranges = [new PdfPageLabelRange { StartPage = 1, Prefix = "A-" }] },
             "encrypt_document" => new EncryptDocumentOp { OwnerPasswordEnv = "OWNER_PASSWORD" },
