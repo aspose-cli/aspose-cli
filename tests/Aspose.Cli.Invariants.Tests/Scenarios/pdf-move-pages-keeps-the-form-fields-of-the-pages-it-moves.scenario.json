@@ -1,0 +1,445 @@
+{
+  "name": "pdf edit move_pages keeps the form fields of the pages it moves: after any move the fields keep their names, values and widgets on the moved page, a value set after the move is the one the page shows, a redact_area over it leaves the value nowhere; a field with widgets on pages the move leaves is refused, and import_pages still names the fields it brings apart",
+  "files": {
+    "form.html": {
+      "text": "<html><head><meta charset=\"utf-8\"><title>Registration</title></head><body><h1>Registration Form</h1><p>Name: <input type=\"text\" name=\"applicant\" value=\"\"></p><p>ID No.: <input type=\"text\" name=\"idno\" value=\"\"></p><p>Mobile: <input type=\"text\" name=\"mobile\" value=\"13812345678\"></p></body></html>"
+    },
+    "span.pdf": {
+      "base64": "JVBERi0xLjcKMSAwIG9iago8PCAvVHlwZSAvQ2F0YWxvZyAvUGFnZXMgMiAwIFIgL0Fjcm9Gb3JtIDw8IC9GaWVsZHMgWzcgMCBSIDEwIDAgUl0gL0RBICgvSGVsdiAwIFRmIDAgZykgL0RSIDw8IC9Gb250IDw8IC9IZWx2IDExIDAgUiA+PiA+PiA+PiA+PgplbmRvYmoKMiAwIG9iago8PCAvVHlwZSAvUGFnZXMgL0tpZHMgWzMgMCBSIDQgMCBSXSAvQ291bnQgMiA+PgplbmRvYmoKMyAwIG9iago8PCAvVHlwZSAvUGFnZSAvUGFyZW50IDIgMCBSIC9NZWRpYUJveCBbMCAwIDYxMiA3OTJdIC9Db250ZW50cyA1IDAgUiAvQW5ub3RzIFs4IDAgUiAxMCAwIFJdID4+CmVuZG9iago0IDAgb2JqCjw8IC9UeXBlIC9QYWdlIC9QYXJlbnQgMiAwIFIgL01lZGlhQm94IFswIDAgNjEyIDc5Ml0gL0NvbnRlbnRzIDYgMCBSIC9Bbm5vdHMgWzkgMCBSXSA+PgplbmRvYmoKNSAwIG9iago8PCAvTGVuZ3RoIDQxID4+CnN0cmVhbQpCVCAvSGVsdiAxMiBUZiA3MiA3MjAgVGQgKFBhZ2Ugb25lKSBUaiBFVAplbmRzdHJlYW0KZW5kb2JqCjYgMCBvYmoKPDwgL0xlbmd0aCA0MSA+PgpzdHJlYW0KQlQgL0hlbHYgMTIgVGYgNzIgNzIwIFRkIChQYWdlIHR3bykgVGogRVQKZW5kc3RyZWFtCmVuZG9iago3IDAgb2JqCjw8IC9GVCAvVHggL1QgKGRhdGUpIC9WICgyMDI2LTExLTEyKSAvS2lkcyBbOCAwIFIgOSAwIFJdID4+CmVuZG9iago4IDAgb2JqCjw8IC9UeXBlIC9Bbm5vdCAvU3VidHlwZSAvV2lkZ2V0IC9QYXJlbnQgNyAwIFIgL1JlY3QgWzcyIDYwMCAyNzIgNjIwXSAvUCAzIDAgUiA+PgplbmRvYmoKOSAwIG9iago8PCAvVHlwZSAvQW5ub3QgL1N1YnR5cGUgL1dpZGdldCAvUGFyZW50IDcgMCBSIC9SZWN0IFs3MiA2MDAgMjcyIDYyMF0gL1AgNCAwIFIgPj4KZW5kb2JqCjEwIDAgb2JqCjw8IC9UeXBlIC9Bbm5vdCAvU3VidHlwZSAvV2lkZ2V0IC9GVCAvVHggL1QgKHNvbG8pIC9WIChvbmx5KSAvUmVjdCBbNzIgNTAwIDI3MiA1MjBdIC9QIDMgMCBSID4+CmVuZG9iagoxMSAwIG9iago8PCAvVHlwZSAvRm9udCAvU3VidHlwZSAvVHlwZTEgL0Jhc2VGb250IC9IZWx2ZXRpY2EgPj4KZW5kb2JqCnhyZWYKMCAxMgowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDkgMDAwMDAgbiAKMDAwMDAwMDE1MyAwMDAwMCBuIAowMDAwMDAwMjE2IDAwMDAwIG4gCjAwMDAwMDAzMjYgMDAwMDAgbiAKMDAwMDAwMDQyOSAwMDAwMCBuIAowMDAwMDAwNTIwIDAwMDAwIG4gCjAwMDAwMDA2MTEgMDAwMDAgbiAKMDAwMDAwMDY4NiAwMDAwMCBuIAowMDAwMDAwNzgzIDAwMDAwIG4gCjAwMDAwMDA4ODAgMDAwMDAgbiAKMDAwMDAwMDk5MiAwMDAwMCBuIAp0cmFpbGVyCjw8IC9TaXplIDEyIC9Sb290IDEgMCBSID4+CnN0YXJ0eHJlZgoxMDYzCiUlRU9GCg=="
+    }
+  },
+  "steps": [
+    {
+      "args": [
+        "pdf",
+        "create",
+        "form.pdf",
+        "--from-html",
+        "form.html"
+      ],
+      "expect": {
+        "exitCode": 0
+      }
+    },
+    {
+      "args": [
+        "pdf",
+        "edit",
+        "form.pdf",
+        "--ops",
+        "[{\"op\":\"insert_page\",\"at\":1}]",
+        "--out",
+        "inserted.pdf"
+      ],
+      "expect": {
+        "exitCode": 0
+      }
+    },
+    {
+      "args": [
+        "pdf",
+        "inspect",
+        "inserted.pdf",
+        "--detail",
+        "forms"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          {
+            "path": "forms.fieldCount",
+            "equals": 3
+          },
+          {
+            "path": "forms.fields[0].name",
+            "equals": "applicant"
+          },
+          {
+            "path": "forms.fields[0].page",
+            "equals": 2
+          },
+          {
+            "path": "forms.fields[1].name",
+            "equals": "idno"
+          },
+          {
+            "path": "forms.fields[1].page",
+            "equals": 2
+          },
+          {
+            "path": "forms.fields[2].name",
+            "equals": "mobile"
+          },
+          {
+            "path": "forms.fields[2].page",
+            "equals": 2
+          },
+          {
+            "path": "forms.fields[2].value",
+            "equals": "13812345678"
+          }
+        ]
+      }
+    },
+    {
+      "args": [
+        "pdf",
+        "edit",
+        "form.pdf",
+        "--ops",
+        "[{\"op\":\"insert_page\",\"at\":2},{\"op\":\"move_pages\",\"pages\":\"2\",\"to\":1}]",
+        "--out",
+        "blank-moved.pdf"
+      ],
+      "expect": {
+        "exitCode": 0
+      }
+    },
+    {
+      "args": [
+        "pdf",
+        "inspect",
+        "blank-moved.pdf",
+        "--detail",
+        "forms"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          {
+            "path": "forms.fieldCount",
+            "equals": 3
+          },
+          {
+            "path": "forms.fields[0].name",
+            "equals": "applicant"
+          },
+          {
+            "path": "forms.fields[0].page",
+            "equals": 2
+          },
+          {
+            "path": "forms.fields[1].name",
+            "equals": "idno"
+          },
+          {
+            "path": "forms.fields[1].page",
+            "equals": 2
+          },
+          {
+            "path": "forms.fields[2].name",
+            "equals": "mobile"
+          },
+          {
+            "path": "forms.fields[2].page",
+            "equals": 2
+          },
+          {
+            "path": "forms.fields[2].value",
+            "equals": "13812345678"
+          }
+        ]
+      }
+    },
+    {
+      "args": [
+        "pdf",
+        "edit",
+        "form.pdf",
+        "--ops",
+        "[{\"op\":\"insert_page\",\"at\":2},{\"op\":\"move_pages\",\"pages\":\"1\",\"to\":2}]",
+        "--out",
+        "form-moved-down.pdf"
+      ],
+      "expect": {
+        "exitCode": 0
+      }
+    },
+    {
+      "args": [
+        "pdf",
+        "inspect",
+        "form-moved-down.pdf",
+        "--detail",
+        "forms"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          {
+            "path": "forms.fieldCount",
+            "equals": 3
+          },
+          {
+            "path": "forms.fields[0].name",
+            "equals": "applicant"
+          },
+          {
+            "path": "forms.fields[0].page",
+            "equals": 2
+          },
+          {
+            "path": "forms.fields[1].name",
+            "equals": "idno"
+          },
+          {
+            "path": "forms.fields[1].page",
+            "equals": 2
+          },
+          {
+            "path": "forms.fields[2].name",
+            "equals": "mobile"
+          },
+          {
+            "path": "forms.fields[2].page",
+            "equals": 2
+          },
+          {
+            "path": "forms.fields[2].value",
+            "equals": "13812345678"
+          }
+        ]
+      }
+    },
+    {
+      "args": [
+        "pdf",
+        "edit",
+        "form.pdf",
+        "--ops",
+        "[{\"op\":\"insert_page\",\"at\":1},{\"op\":\"move_pages\",\"pages\":\"2\",\"to\":1}]",
+        "--out",
+        "form-moved-up.pdf"
+      ],
+      "expect": {
+        "exitCode": 0
+      }
+    },
+    {
+      "args": [
+        "pdf",
+        "inspect",
+        "form-moved-up.pdf",
+        "--detail",
+        "forms"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          {
+            "path": "forms.fieldCount",
+            "equals": 3
+          },
+          {
+            "path": "forms.fields[0].name",
+            "equals": "applicant"
+          },
+          {
+            "path": "forms.fields[0].page",
+            "equals": 1
+          },
+          {
+            "path": "forms.fields[1].name",
+            "equals": "idno"
+          },
+          {
+            "path": "forms.fields[1].page",
+            "equals": 1
+          },
+          {
+            "path": "forms.fields[2].name",
+            "equals": "mobile"
+          },
+          {
+            "path": "forms.fields[2].page",
+            "equals": 1
+          },
+          {
+            "path": "forms.fields[2].value",
+            "equals": "13812345678"
+          }
+        ]
+      }
+    },
+    {
+      "args": [
+        "pdf",
+        "edit",
+        "form.pdf",
+        "--ops",
+        "[{\"op\":\"insert_page\",\"at\":1},{\"op\":\"move_pages\",\"pages\":\"2\",\"to\":1},{\"op\":\"set_form_field\",\"name\":\"idno\",\"value\":\"110101199003071234\"}]",
+        "--out",
+        "filled.pdf",
+        "--verify"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          {
+            "path": "verification.ok",
+            "equals": true
+          },
+          {
+            "path": "verification.checkedOps",
+            "contains": "op-0003"
+          }
+        ]
+      }
+    },
+    {
+      "args": [
+        "pdf",
+        "inspect",
+        "filled.pdf",
+        "--detail",
+        "forms"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          {
+            "path": "forms.fieldCount",
+            "equals": 3
+          },
+          {
+            "path": "forms.fields[1].name",
+            "equals": "idno"
+          },
+          {
+            "path": "forms.fields[1].value",
+            "equals": "110101199003071234"
+          },
+          {
+            "path": "forms.fields[1].page",
+            "equals": 1
+          }
+        ]
+      }
+    },
+    {
+      "args": [
+        "pdf",
+        "edit",
+        "form.pdf",
+        "--ops",
+        "[{\"op\":\"set_form_field\",\"name\":\"idno\",\"value\":\"110101199003071234\"},{\"op\":\"insert_page\",\"at\":1},{\"op\":\"move_pages\",\"pages\":\"2\",\"to\":1},{\"op\":\"redact_area\",\"page\":1,\"rect\":{\"x\":130,\"y\":112,\"width\":80,\"height\":22}}]",
+        "--out",
+        "covered.pdf",
+        "--verify"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          {
+            "path": "verification.ok",
+            "equals": true
+          }
+        ]
+      }
+    },
+    {
+      "args": [
+        "pdf",
+        "inspect",
+        "covered.pdf",
+        "--detail",
+        "forms"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          {
+            "path": "forms.fieldCount",
+            "equals": 2
+          },
+          {
+            "path": "forms.fields[0].name",
+            "equals": "applicant"
+          },
+          {
+            "path": "forms.fields[1].name",
+            "equals": "mobile"
+          }
+        ]
+      }
+    },
+    {
+      "args": [
+        "pdf",
+        "search",
+        "covered.pdf",
+        "--pattern",
+        "110101199003071234"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          {
+            "path": "hits",
+            "equals": []
+          }
+        ]
+      }
+    },
+    {
+      "args": [
+        "pdf",
+        "edit",
+        "span.pdf",
+        "--ops",
+        "[{\"op\":\"move_pages\",\"pages\":\"1\",\"to\":2}]",
+        "--out",
+        "span-moved.pdf"
+      ],
+      "expect": {
+        "exitCode": 4,
+        "error": "OPS_INVALID",
+        "files": {
+          "absent": [
+            "span-moved.pdf"
+          ]
+        }
+      }
+    },
+    {
+      "args": [
+        "pdf",
+        "edit",
+        "form.pdf",
+        "--ops",
+        "[{\"op\":\"import_pages\",\"path\":\"form.pdf\",\"at\":2}]",
+        "--out",
+        "imported.pdf"
+      ],
+      "expect": {
+        "exitCode": 0
+      }
+    },
+    {
+      "args": [
+        "pdf",
+        "inspect",
+        "imported.pdf",
+        "--detail",
+        "forms"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          {
+            "path": "forms.fieldCount",
+            "equals": 6
+          },
+          {
+            "path": "forms.fields[1].name",
+            "equals": "applicant1"
+          },
+          {
+            "path": "forms.fields[1].page",
+            "equals": 2
+          }
+        ]
+      }
+    }
+  ]
+}

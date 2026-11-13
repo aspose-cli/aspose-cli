@@ -55,6 +55,21 @@ public sealed class PdfKnownIssueTests
             $"HTML made {htmlRequests} request(s) past a refusing loader, Markdown {markdownRequests}");
     }
 
+    [Fact]
+    public void PageCopy_NamesTheCopiedFieldApartAndKeepsTheOriginal()
+    {
+        using var document = new Document();
+        document.Form.Add(new Aspose.Pdf.Forms.TextBoxField(document.Pages.Add(), new Rectangle(72, 650, 280, 680)) { PartialName = "ssn", Value = "123" });
+        document.Pages.Add();
+        using var copy = new Document();
+        copy.Pages.Add(document.Pages[1]);
+        document.Pages.Delete([1]);
+        document.Pages.Insert(2, copy.Pages.ToArray());
+        string[] fields = [.. document.Form.Fields.Select(static field => $"{field.FullName}@{field.PageIndex}")];
+
+        KnownIssue.Reproduces("PDF-PAGE-COPY-FIELDS", fields.SequenceEqual(["ssn@0", "ssn1@2"]), string.Join(", ", fields));
+    }
+
     [LicensedFact]
     public void Destinations_ReadAnOmittedCoordinateAsZero()
     {

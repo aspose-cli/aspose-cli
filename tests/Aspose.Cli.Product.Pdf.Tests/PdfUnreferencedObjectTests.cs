@@ -109,6 +109,93 @@ public sealed class PdfUnreferencedObjectTests
         Assert.Equal(kept, reopened.Pages[1].Resources.Images.Count);
     }
 
+    /// <summary>
+    /// A field on a page the batch moved is the field a later redact_area covers: pages that are not
+    /// one run move by copying the field's page, and the move names the copy back and deletes the
+    /// original, so the value is nowhere in the file, as an uncompressed stream or a Flate one.
+    /// </summary>
+    [Fact]
+    public void RedactArea_AfterMovePages_LeavesTheFieldValueNowhereInTheFile()
+    {
+        using var fixture = new PdfEngineFixture();
+        string input = fixture.File("moved-form.pdf");
+        using (var document = new Document())
+        {
+            Page page = document.Pages.Add();
+            page.Paragraphs.Add(new TextFragment("ID number"));
+            document.Form.Add(new TextBoxField(page, new Rectangle(72, 650, 280, 680)) { PartialName = FieldName });
+            document.Save(input);
+        }
+
+        string redacted = fixture.File("moved-form.redacted.pdf");
+        PdfEditResult result = PdfEdit.Run(fixture.Session, new PdfEditRequest
+        {
+            Input = input,
+            Batch = new PdfOpsBatch
+            {
+                Ops =
+                [
+                    new SetFormFieldOp { Name = FieldName, Value = Secret },
+                    new InsertPageOp { At = 2 },
+                    new InsertPageOp { At = 3 },
+                    new MovePagesOp { Pages = "1,3", To = 2 },
+                    new RedactAreaOp { Page = 2, Rect = new PdfRectInput { X = 62, Y = 150, Width = 228, Height = 60 } },
+                ],
+            },
+            Output = TestOutput.At(redacted),
+            Verify = true,
+        });
+
+        Assert.True(result.Verification!.Ok, string.Join("; ", result.Verification.Issues.Select(static issue => issue.Message)));
+        using (var reopened = new Document(redacted))
+        {
+            Assert.Empty(reopened.Form.Fields);
+        }
+
+        Assert.Equal(0, Occurrences(File.ReadAllBytes(redacted), Secret));
+    }
+
+    /// <summary>
+    /// A field with a parent in its name on the page that moves stays one field, since the move
+    /// copies the page it passes: covered after the move, its value is nowhere in the file.
+    /// </summary>
+    [Fact]
+    public void RedactArea_AfterMovingThePageOfAFieldWithAParent_LeavesTheValueNowhereInTheFile()
+    {
+        using var fixture = new PdfEngineFixture();
+        string input = fixture.File("hierarchy.pdf");
+        PdfEngineFixture.WriteRawPdf(input,
+        [
+            "<< /Type /Catalog /Pages 2 0 R /AcroForm << /Fields [5 0 R 8 0 R] >> >>",
+            "<< /Type /Pages /Kids [3 0 R 4 0 R] /Count 2 >>",
+            "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Annots [7 0 R] >>",
+            "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Annots [8 0 R] >>",
+            "<< /T (form) /Kids [6 0 R] >>",
+            "<< /T (person) /Parent 5 0 R /Kids [7 0 R] >>",
+            $"<< /Type /Annot /Subtype /Widget /FT /Tx /T (name) /V ({Secret}) /Parent 6 0 R /Rect [72 600 272 620] /P 3 0 R >>",
+            "<< /Type /Annot /Subtype /Widget /FT /Tx /T (other) /V (Kept) /Rect [72 600 272 620] /P 4 0 R >>",
+        ]);
+
+        string redacted = fixture.File("hierarchy.redacted.pdf");
+        PdfEditResult result = PdfEdit.Run(fixture.Session, new PdfEditRequest
+        {
+            Input = input,
+            Batch = new PdfOpsBatch
+            {
+                Ops =
+                [
+                    new MovePagesOp { Pages = "1", To = 2 },
+                    new RedactAreaOp { Page = 2, Rect = new PdfRectInput { X = 60, Y = 160, Width = 230, Height = 45 } },
+                ],
+            },
+            Output = TestOutput.At(redacted),
+            Verify = true,
+        });
+
+        Assert.True(result.Verification!.Ok, string.Join("; ", result.Verification.Issues.Select(static issue => issue.Message)));
+        Assert.Equal(0, Occurrences(File.ReadAllBytes(redacted), Secret));
+    }
+
     private static string Flatten(PdfEngineFixture fixture)
     {
         string input = fixture.File("form.pdf");

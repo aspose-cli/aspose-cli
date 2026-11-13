@@ -353,6 +353,24 @@ Reproductions: [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownI
   `pdf inspect --detail outline` of the input; no operation re-creates a link or a named
   destination, so tell the user which no longer lead to their page.
 
+### PDF-PAGE-COPY-FIELDS
+
+- **Defect:** no public API changes the order of a document's pages: `PageCollection` has no
+  move, `Remove` throws `NotSupportedException`, inserting a page the document holds copies it with
+  each field's widget still on the original page, and inserting one deleted from it throws. Copied
+  into another document and inserted back, a page brings each of its form fields under a new
+  top-level name (`ssn1` beside `ssn`, `form1.person.name` beside `form.person.name`), while the
+  original field stays in the form without a widget and with its value.
+- **CLI behavior:** `move_pages` copies pages without a widget where it can: moving a run of pages
+  orders them as moving the pages it passes the other way does. Otherwise it copies pages whose
+  every field has no parent in its name and has all its widgets on them, gives each copy its
+  field's name and deletes the original. Any other move is refused with `OPS_INVALID`, naming the
+  field, before it changes anything.
+- **Workaround:** move the pages without form fields around the pages that hold them instead,
+  which gives the same order without copying a field, and move the pages that hold one field's
+  widgets together; where neither gives the order, as with fields that have parents in their names
+  on both sides of a move, tell the user the move cannot keep the form.
+
 ### PDF-PDFA-ATTACHMENT-TYPE
 
 - **Defect:** `Document.Convert` to PDF/A-3B gives every attachment that has no media type the

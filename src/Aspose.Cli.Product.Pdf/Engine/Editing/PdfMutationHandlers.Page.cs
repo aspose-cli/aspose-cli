@@ -46,17 +46,19 @@ internal sealed partial class PdfMutationHandlers
         // The moved pages must fit from the position to the end.
         EnsurePagePosition(operation.To, _document.Pages.Count - pages.Length + 1);
 
-        // The SDK has no page move: the pages are copied and the originals deleted, and the
-        // navigation that targeted the originals is pointed at the copies.
-        var navigation = PdfNavigationRetarget.Capture(_document, pages);
-        Page[] originals = [.. pages.Select(page => _document.Pages[page])];
-        using Document selected = Select(_document, pages);
-        int at = operation.To;
-        _document.Pages.Delete(pages);
+        // The SDK has no page move: the pages the plan chose, which may be those the moved ones pass,
+        // are copied and the originals deleted, and the navigation that targeted the originals is
+        // pointed at the copies.
+        (int[] copied, int at, PdfMovedFields fields) = PdfMovedFields.Plan(_document, pages, operation.To);
+        var navigation = PdfNavigationRetarget.Capture(_document, copied);
+        Page[] originals = [.. copied.Select(page => _document.Pages[page])];
+        using Document selected = Select(_document, copied);
+        _document.Pages.Delete(copied);
         _document.Pages.Insert(at, selected.Pages.ToArray());
-        navigation.Retarget(_document, page => Array.IndexOf(pages, page) is var moved and >= 0
+        fields.Restore(_document, at);
+        navigation.Retarget(_document, page => Array.IndexOf(copied, page) is var moved and >= 0
             ? at + moved
-            : Renumber(page, pages, at));
+            : Renumber(page, copied, at));
         for (int index = 0; index < originals.Length; index++)
         {
             _pages.Carry(originals[index], _document.Pages[at + index]);
