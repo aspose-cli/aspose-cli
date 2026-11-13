@@ -1,0 +1,56 @@
+{
+  "name": "cells read and a csv output give a date its fraction of a second, and serial 60 the 29 February 1900 Excel counts, while a date of whole seconds reads and writes as before",
+  "files": {
+    "times.csv": { "text": "event,at\nstart,2026-01-05 10:00:00.5\nleap,1900-02-29\nwhole,2026-01-05 10:00:00\n" }
+  },
+  "steps": [
+    {
+      "args": ["cells", "create", "times.xlsx", "--sheet-names", "Log"],
+      "expect": { "exitCode": 0 }
+    },
+    {
+      "args": ["cells", "edit", "times.xlsx", "--in-place", "--ops",
+        "{\"ops\":[{\"op\":\"set_values\",\"sheet\":\"Log\",\"range\":\"A1\",\"values\":[[46027.416672453704],[60],[46027.416666666664],[60.5]]},{\"op\":\"format_range\",\"sheet\":\"Log\",\"range\":\"A1:A4\",\"style\":{\"numberFormat\":\"yyyy-mm-dd hh:mm:ss.000\"}}]}"],
+      "expect": { "exitCode": 0 }
+    },
+    {
+      "args": ["cells", "read", "times.xlsx", "--sheet", "Log", "--range", "A1:A4"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "sheet.cells[0][0]", "equals": { "v": "2026-01-05T10:00:00.5", "t": "datetime" } },
+          { "path": "sheet.cells[1][0]", "equals": { "v": "1900-02-29", "t": "datetime" } },
+          { "path": "sheet.cells[2][0]", "equals": { "v": "2026-01-05T10:00:00", "t": "datetime" } },
+          { "path": "sheet.cells[3][0]", "equals": { "v": "1900-02-29T12:00:00", "t": "datetime" } }
+        ]
+      }
+    },
+    {
+      "args": ["cells", "convert", "times.xlsx", "--to", "csv", "--out", "Log.csv"],
+      "expect": { "exitCode": 0 }
+    },
+    {
+      "args": ["cells", "read", "Log.csv", "--range", "A1:A4"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "sheet.cells[0][0]", "equals": { "v": "2026-01-05T10:00:00.5", "t": "string" } },
+          { "path": "sheet.cells[1][0]", "equals": { "v": "1900-02-29", "t": "datetime" } },
+          { "path": "sheet.cells[2][0]", "equals": { "v": "2026-01-05T10:00:00", "t": "string" } },
+          { "path": "sheet.cells[3][0]", "equals": { "v": "1900-02-29T12:00:00", "t": "string" } }
+        ]
+      }
+    },
+    {
+      "args": ["cells", "read", "times.csv", "--range", "B2:B4"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "sheet.cells[0][0]", "equals": { "v": "2026-01-05T10:00:00.5", "t": "datetime" } },
+          { "path": "sheet.cells[1][0]", "equals": { "v": "1900-02-29", "t": "datetime" } },
+          { "path": "sheet.cells[2][0]", "equals": { "v": "2026-01-05T10:00:00", "t": "datetime" } }
+        ]
+      }
+    }
+  ]
+}

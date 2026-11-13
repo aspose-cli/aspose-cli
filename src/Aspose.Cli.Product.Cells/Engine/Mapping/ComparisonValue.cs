@@ -47,6 +47,6 @@ internal readonly record struct ComparisonValue(string Type, object? Value)
     internal CellsCellSide? Side(Cell? cell, string? formula) =>
         Type == CellsCellValueTypes.Empty && formula is null ? null
             : cell?.Type == CellValueType.IsDateTime
-                ? new CellsCellSide { T = CellsCellSideTypes.DateTime, V = CellMapper.FormatDateTime(cell.DateTimeValue), F = formula }
+                ? new CellsCellSide { T = CellsCellSideTypes.DateTime, V = CellMapper.FormatDateTime(cell), F = formula }
                 : new CellsCellSide { T = Type, V = Value, F = formula };
 }
