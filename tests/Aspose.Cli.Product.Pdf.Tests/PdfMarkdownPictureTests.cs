@@ -43,7 +43,7 @@ public sealed partial class PdfMarkdownPictureTests
         Assert.Contains("Text after.", markdown, StringComparison.Ordinal);
         Assert.DoesNotContain("](", markdown, StringComparison.Ordinal);
         JsonNode lost = Assert.Single(converted.Json()["warnings"]!.AsArray(), static warning => warning!["details"]?["content"]?.ToJsonString() == """["pictures"]""")!;
-        Assert.Contains("leaves out the 1 picture", lost["message"]!.GetValue<string>(), StringComparison.Ordinal);
+        Assert.Contains("1 of them stored as image objects", lost["message"]!.GetValue<string>(), StringComparison.Ordinal);
 
         CliResult extracted = workspace.RunCommandLine(Assert.Single(QuotedCommand().Matches(lost["hint"]!.GetValue<string>())).Groups[1].Value);
 
@@ -51,6 +51,35 @@ public sealed partial class PdfMarkdownPictureTests
         string picture = Assert.Single(extracted.Json()["outputs"]!.AsArray())!["path"]!.GetValue<string>();
         Assert.True(File.Exists(picture), picture);
         Assert.EndsWith(".png", picture, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// The warning counts the pictures as the extraction its hint gives writes them: the two in
+    /// table cells, which the export writes no file for, as well as the two in the text. A scenario
+    /// cannot state the count, since its warning is found by its place in the list and evaluation
+    /// mode puts its own warning first, and the hint holds the workspace's path.
+    /// </summary>
+    [Fact]
+    public void ConvertToMarkdown_CountsThePicturesItsExtractionWrites()
+    {
+        using var workspace = new TempWorkspace();
+        File.WriteAllBytes(workspace.File("dot.png"), Convert.FromBase64String(Png));
+        File.WriteAllText(workspace.File("cells.html"), """
+            <html><body><p>Before <img src="dot.png" width="60" height="80"></p>
+            <table border="1"><tr><td>Cell A <img src="dot.png" width="40" height="50"></td><td>Cell B <img src="dot.png" width="40" height="50"></td></tr></table>
+            <p>After <img src="dot.png" width="60" height="80"></p></body></html>
+            """);
+        CliResult created = workspace.Run("pdf", "create", "cells.pdf", "--from-html", "cells.html", "--output-format", "json");
+        Assert.True(created.ExitCode == 0, created.StdOut + created.StdErr);
+
+        CliResult converted = workspace.Run("pdf", "convert", "cells.pdf", "--to", "md", "--out", "cells.md", "--output-format", "json");
+
+        Assert.True(converted.ExitCode == 0, converted.StdOut + converted.StdErr);
+        JsonNode lost = Assert.Single(converted.Json()["warnings"]!.AsArray(), static warning => warning!["details"]?["content"]?.ToJsonString() == """["pictures"]""")!;
+        Assert.Contains("4 of them stored as image objects", lost["message"]!.GetValue<string>(), StringComparison.Ordinal);
+        CliResult extracted = workspace.RunCommandLine(Assert.Single(QuotedCommand().Matches(lost["hint"]!.GetValue<string>())).Groups[1].Value);
+        Assert.True(extracted.ExitCode == 0, extracted.StdOut + extracted.StdErr);
+        Assert.Equal(4, extracted.Json()["outputs"]!.AsArray().Count);
     }
 
     /// <summary>
@@ -127,7 +156,7 @@ public sealed partial class PdfMarkdownPictureTests
 
         Assert.Equal(["out.md"], Directory.GetFileSystemEntries(folder).Select(Path.GetFileName));
         Warning named = Assert.Single(result.Warnings!, static warning => warning.Details?["content"]?.ToJsonString() == """["pictures"]""");
-        Assert.Contains("leaves out the 1 picture", named.Message, StringComparison.Ordinal);
+        Assert.Contains("1 of them stored as image objects", named.Message, StringComparison.Ordinal);
     }
 
     /// <summary>The value of a flattened field, which a form draws, stays in the md beside the picture left out.</summary>
@@ -171,7 +200,7 @@ public sealed partial class PdfMarkdownPictureTests
         Assert.DoesNotContain("](", markdown, StringComparison.Ordinal);
         Assert.Matches("(?s)First line.*Second line.*Third line", markdown);
         Warning named = Assert.Single(result.Warnings!, static warning => warning.Details?["content"]?.ToJsonString() == """["pictures"]""");
-        Assert.Contains("leaves out the 3 pictures", named.Message, StringComparison.Ordinal);
+        Assert.Contains("3 of them stored as image objects", named.Message, StringComparison.Ordinal);
     }
 
     /// <summary>Text that reads like a link to the picture's file stays: only the export's own links go.</summary>
