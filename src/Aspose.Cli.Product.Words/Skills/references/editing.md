@@ -213,7 +213,12 @@ A `set_page_numbers` `start` restarts numbering in each selected section; name
 a `section` when only one should restart. Its `text` replaces what the
 paragraph that holds the number held, in that paragraph's font, so the number
 stays in one line with its words. Moved to the other `location` without
-`text`, the number takes its words along, such as `Page {n} of {N}`.
+`text`, the number takes its words along, such as `Page {n} of {N}`. A number
+whose paragraph also holds another field, such as `DATE`, neither moves, with
+`text` or without, nor takes `text` where it is, since a move clears that
+paragraph and a text replaces it: rewrite that header or footer with
+`set_header` or `set_footer` first, or leave the number where it is without
+`text`.
 
 ## Protection and encryption
 

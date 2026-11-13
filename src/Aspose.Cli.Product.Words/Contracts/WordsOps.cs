@@ -590,8 +590,9 @@ public sealed record SetPageNumbersOp : WordsOp
     /// <summary>
     /// The text of the paragraph that holds the number, replacing what it holds; {n} is the page
     /// number and {N} the document's page count, and {PAGE}, {NUMPAGES} and {SECTIONPAGES}, as a
-    /// read shows those fields, are refused. A paragraph that also holds an image or another
-    /// object is refused, and moving the number to the other location clears the paragraph it leaves. Without text, a new
+    /// read shows those fields, are refused. Moving the number to the other location clears the
+    /// paragraph it leaves; text over, or a move from, a paragraph that also holds an image,
+    /// another object or a field other than the page number and count is refused. Without text, a new
     /// number takes a paragraph of its own, an existing one keeps its paragraph, and one moved from
     /// the other location takes its paragraph's words along unless this location already holds a
     /// number. A text without {n} goes in a new paragraph and leaves any page number where it is.

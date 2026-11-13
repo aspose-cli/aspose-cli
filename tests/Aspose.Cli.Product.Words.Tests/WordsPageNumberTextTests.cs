@@ -310,15 +310,19 @@ public sealed class WordsPageNumberTextTests : IDisposable
     }
 
     /// <summary>
-    /// Without text, words that stand beside a field other than the page number and count are
-    /// refused, naming the field, and nothing is written. The hint's two ways out each work: a
-    /// text writes the words anew and drops the field with the paragraph it leaves; rewriting the
-    /// footer first leaves a number with no words to move.
+    /// Moving the number off a paragraph that also holds a field other than the page number and
+    /// count is refused with text as without, and so is text over it where it is, naming the
+    /// field, and nothing is written. The hint's way out works: rewriting the footer first leaves
+    /// a number with no paragraph to clear or replace.
     /// </summary>
     [Theory]
-    [InlineData("DATE")]
-    [InlineData("SECTIONPAGES")]
-    public void WithoutText_MovingTheNumberBesideAnotherField_IsRefusedWithBothWaysOut(string other)
+    [InlineData("DATE", null, "header")]
+    [InlineData("DATE", "第 {n} 页 共 {N} 页", "header")]
+    [InlineData("SECTIONPAGES", null, "header")]
+    [InlineData("SECTIONPAGES", "第 {n} 页", "header")]
+    [InlineData("DATE", "第 {n} 页", "footer")]
+    [InlineData("SECTIONPAGES", "第 {n} 页", "footer")]
+    public void ReplacingOrMovingTheNumberBesideAnotherField_IsRefused(string other, string? text, string location)
     {
         CreateFooter(builder =>
         {
@@ -330,33 +334,29 @@ public sealed class WordsPageNumberTextTests : IDisposable
             builder.InsertField(other);
         });
         byte[] before = File.ReadAllBytes(_workspace.File("input.docx"));
+        string written = text is null ? string.Empty : $",\"text\":\"{text}\"";
 
-        CliResult refused = Edit("""{"ops":[{"op":"set_page_numbers","location":"header"}]}""", "--out", "moved.docx");
+        CliResult refused = Edit($$"""{"ops":[{"op":"set_page_numbers","location":"{{location}}"{{written}}}]}""", "--out", "moved.docx");
 
-        AssertRefused(refused, $"a {other} field", "Give text", $"drops its {other} field", "rewrite the footer with set_footer first");
+        AssertRefused(refused, $"a {other} field", "rewrite the footer with set_footer first", $"writes no {other} field", "set_page_numbers without text in the footer");
         Assert.DoesNotContain("image", JsonNode.Parse(refused.StdErr)!["error"]!["message"]!.GetValue<string>(), StringComparison.Ordinal);
         Assert.False(File.Exists(_workspace.File("moved.docx")));
         Assert.Equal(before, File.ReadAllBytes(_workspace.File("input.docx")));
 
-        CliResult withText = Edit("""{"ops":[{"op":"set_page_numbers","location":"header","text":"第 {n} 页 共 {N} 页"}]}""", "--out", "text.docx", "--verify");
-        Assert.True(withText.ExitCode == 0, withText.StdErr + withText.StdOut);
-        Assert.Contains("第 {PAGE} 页 共 {NUMPAGES} 页", Lines("text.docx", "header"));
-        Assert.Empty(new Document(_workspace.File("text.docx")).FirstSection.HeadersFooters[HeaderFooterType.FooterPrimary].Range.Fields.Cast<Field>());
-
         CliResult rewritten = Edit(
-            """{"ops":[{"op":"set_footer","paragraphs":[{"text":"Printed copy"}]},{"op":"set_page_numbers","location":"header"}]}""",
+            $$"""{"ops":[{"op":"set_footer","paragraphs":[{"text":"Printed copy"}]},{"op":"set_page_numbers","location":"{{location}}"{{written}}}]}""",
             "--out", "rewritten.docx", "--verify");
         Assert.True(rewritten.ExitCode == 0, rewritten.StdErr + rewritten.StdOut);
-        Assert.Contains("{PAGE}", Lines("rewritten.docx", "header"));
-        Assert.Equal(["Printed copy"], FooterLines("rewritten.docx"));
+        Assert.Contains(Lines("rewritten.docx", location), static line => line.Contains("{PAGE}", StringComparison.Ordinal));
+        Assert.Equal("Printed copy", FooterLines("rewritten.docx")[0]);
     }
 
     /// <summary>
-    /// Without text, a number moved where one already is takes no words along, so the paragraph
-    /// it leaves is cleared even when it holds another field, as with text, rather than refused.
+    /// Without text, a number moved where one already is takes no words along, but the paragraph
+    /// it leaves would be cleared, so one that holds another field is refused as with text.
     /// </summary>
     [Fact]
-    public void WithoutText_MovingTheNumberWhereOneIs_ClearsAParagraphWithAnotherField()
+    public void WithoutText_MovingTheNumberWhereOneIs_RefusesAParagraphWithAnotherField()
     {
         CreateFooter(static builder =>
         {
@@ -372,10 +372,8 @@ public sealed class WordsPageNumberTextTests : IDisposable
 
         CliResult edited = Edit("""{"ops":[{"op":"set_page_numbers","location":"header"}]}""", "--out", "moved.docx", "--verify");
 
-        Assert.True(edited.ExitCode == 0, edited.StdErr + edited.StdOut);
-        Assert.Equal(["第 {PAGE} 页"], Lines("moved.docx", "header"));
-        Assert.DoesNotContain(FooterLines("moved.docx"), static line => line.Length > 0);
-        Assert.Empty(new Document(_workspace.File("moved.docx")).FirstSection.HeadersFooters[HeaderFooterType.FooterPrimary].Range.Fields.Cast<Field>());
+        AssertRefused(edited, "a DATE field", "set_footer");
+        Assert.False(File.Exists(_workspace.File("moved.docx")));
     }
 
     /// <summary>

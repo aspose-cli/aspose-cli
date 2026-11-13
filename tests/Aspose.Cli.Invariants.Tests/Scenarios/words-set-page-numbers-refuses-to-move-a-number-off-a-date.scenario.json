@@ -1,0 +1,83 @@
+{
+  "name": "words set_page_numbers refuses to move the number off a paragraph that also holds a DATE field, with text as without, or to write text over it where it is, keeps it without text, and the rewrite its hint gives moves it",
+  "files": {
+    "footer.rtf": { "text": "{\\rtf1\\ansi{\\footer\\pard\\qr Page {\\field{\\*\\fldinst PAGE}{\\fldrslt 1}} of {\\field{\\*\\fldinst NUMPAGES}{\\fldrslt 1}} | {\\field{\\*\\fldinst DATE \\\\@ \"yyyy-MM-dd\"}{\\fldrslt 2026-01-01}}\\par}\\pard Body text.\\par}" },
+    "move-with-text.json": { "text": "{\"ops\":[{\"op\":\"set_page_numbers\",\"location\":\"header\",\"text\":\"Pg {n}\"}]}" },
+    "move.json": { "text": "{\"ops\":[{\"op\":\"set_page_numbers\",\"location\":\"header\"}]}" },
+    "text-in-place.json": { "text": "{\"ops\":[{\"op\":\"set_page_numbers\",\"location\":\"footer\",\"text\":\"Pg {n}\"}]}" },
+    "in-place.json": { "text": "{\"ops\":[{\"op\":\"set_page_numbers\",\"location\":\"footer\",\"alignment\":\"right\"}]}" },
+    "rewrite-then-move.json": { "text": "{\"ops\":[{\"op\":\"set_footer\",\"paragraphs\":[{\"text\":\"Printed copy\"}]},{\"op\":\"set_page_numbers\",\"location\":\"header\",\"text\":\"Pg {n}\"}]}" }
+  },
+  "steps": [
+    {
+      "args": ["words", "edit", "footer.rtf", "--ops", "move-with-text.json", "--out", "moved-with-text.docx"],
+      "expect": {
+        "exitCode": 4,
+        "error": "OPS_INVALID",
+        "json": [
+          { "path": "error.message", "contains": "also holds a DATE field" },
+          { "path": "error.hint", "contains": "rewrite the footer with set_footer first" }
+        ],
+        "files": { "absent": ["moved-with-text.docx"], "unchanged": ["footer.rtf"] }
+      }
+    },
+    {
+      "args": ["words", "edit", "footer.rtf", "--ops", "move.json", "--out", "moved.docx"],
+      "expect": {
+        "exitCode": 4,
+        "error": "OPS_INVALID",
+        "json": [
+          { "path": "error.message", "contains": "also holds a DATE field" }
+        ],
+        "files": { "absent": ["moved.docx"], "unchanged": ["footer.rtf"] }
+      }
+    },
+    {
+      "args": ["words", "edit", "footer.rtf", "--ops", "text-in-place.json", "--out", "text-in-place.docx"],
+      "expect": {
+        "exitCode": 4,
+        "error": "OPS_INVALID",
+        "json": [
+          { "path": "error.message", "contains": "also holds a DATE field, which text would replace" },
+          { "path": "error.hint", "contains": "set_page_numbers without text in the footer keeps that paragraph's words and its DATE field" }
+        ],
+        "files": { "absent": ["text-in-place.docx"], "unchanged": ["footer.rtf"] }
+      }
+    },
+    {
+      "args": ["words", "edit", "footer.rtf", "--ops", "in-place.json", "--out", "in-place.docx", "--license-mode", "evaluation"],
+      "expect": { "exitCode": 0 }
+    },
+    {
+      "args": ["words", "inspect", "in-place.docx", "--detail", "fields", "--license-mode", "evaluation"],
+      "expect": { "exitCode": 0, "json": [{ "path": "fields[3].code", "startsWith": "DATE" }] }
+    },    {
+      "args": ["words", "inspect", "footer.rtf", "--detail", "fields", "--license-mode", "evaluation"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "fields[3].code", "startsWith": "DATE" }
+        ]
+      }
+    },
+    {
+      "args": ["words", "edit", "footer.rtf", "--ops", "rewrite-then-move.json", "--out", "rewritten.docx", "--verify"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "verification.ok", "equals": true }
+        ]
+      }
+    },
+    {
+      "args": ["words", "inspect", "rewritten.docx", "--detail", "sections"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "sections[0].pageNumbers.location", "equals": "header" },
+          { "path": "sections[0].pageNumbers.text", "equals": "Pg {n}" }
+        ]
+      }
+    }
+  ]
+}
