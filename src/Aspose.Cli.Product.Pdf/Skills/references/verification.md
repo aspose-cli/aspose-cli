@@ -32,7 +32,7 @@ by their address, as a `delete_bookmarks` operation ([page changes](editing.md))
 | `set_form_field` | the field holds the value set, or is clear after `null` or a later `redact_text` that clears it |
 | `flatten_forms` | no field of a flattened name remains, or no field at all without `fields` |
 | `redact_text` | checked before publishing, with or without `--verify` ([redaction](editing.md#redaction)) |
-| `redact_area` | stays unchecked; a form field whose only widget it covers is gone, else `FIELD_VALUE_MISMATCH` |
+| `redact_area` | stays unchecked; a form field of the input or the batch whose every widget it covers is gone, else `FIELD_VALUE_MISMATCH` |
 | `add_bookmark` | its address holds its title and page, and the bookmark count |
 | `delete_bookmarks` | the bookmark count |
 | `set_properties` | each document information entry set |
