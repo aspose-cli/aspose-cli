@@ -33,12 +33,12 @@ public sealed partial class WordsContinuedPageNumbersTests : IClassFixture<Words
     /// sections whose own story or numbering changed, not one that only shows another's.
     /// </summary>
     [Theory]
-    [InlineData("footer", """{"op":"set_page_numbers"}""", "own:Y / #|continues:Y / #|continues:Y / #", "section/1")]
+    [InlineData("footer", """{"op":"set_page_numbers"}""", "own:Y / #|continues:Y / #|continues:Y / #", "section/1,section/2,section/3")]
     [InlineData("footer", """{"op":"set_page_numbers","start":5}""", "own:Y / #|continues:Y / #|continues:Y / #", "section/1,section/2,section/3")]
     [InlineData("footer", """{"op":"set_page_numbers","section":3}""", "own:Y|continues:Y|own:Y / #", "section/3")]
-    [InlineData("footer", """{"op":"set_page_numbers","section":2}""", "own:Y|own:Y / #|continues:Y / #", "section/2")]
-    [InlineData("header", """{"op":"set_page_numbers","location":"header"}""", "own:Y / #|continues:Y / #|continues:Y / #", "section/1")]
-    [InlineData("footer", """{"op":"set_page_numbers","text":"Page {n} of {N}"}""", "own:Y / Page # of #|continues:Y / Page # of #|continues:Y / Page # of #", "section/1")]
+    [InlineData("footer", """{"op":"set_page_numbers","section":2}""", "own:Y|own:Y / #|continues:Y / #", "section/2,section/3")]
+    [InlineData("header", """{"op":"set_page_numbers","location":"header"}""", "own:Y / #|continues:Y / #|continues:Y / #", "section/1,section/2,section/3")]
+    [InlineData("footer", """{"op":"set_page_numbers","text":"Page {n} of {N}"}""", "own:Y / Page # of #|continues:Y / Page # of #|continues:Y / Page # of #", "section/1,section/2,section/3")]
     [InlineData("footer", """{"op":"set_page_numbers","section":3,"alignment":"right"}""", "own:Y|continues:Y|own:Y / #", "section/3")]
     public void SetPageNumbers_KeepsWhatEachSectionShows(string location, string operation, string expected, string targets)
     {
@@ -74,7 +74,7 @@ public sealed partial class WordsContinuedPageNumbersTests : IClassFixture<Words
     /// </summary>
     [Theory]
     [InlineData("""{"op":"set_page_numbers","section":3,"location":"header"}""", "own:Y #|continues:Y #|own:", "continues:|continues:|own:Y #", "section/3")]
-    [InlineData("""{"op":"set_page_numbers","section":2,"location":"header"}""", "own:Y #|own:|continues:", "continues:|own:Y #|continues:Y #", "section/2")]
+    [InlineData("""{"op":"set_page_numbers","section":2,"location":"header"}""", "own:Y #|own:|continues:", "continues:|own:Y #|continues:Y #", "section/2,section/3")]
     [InlineData("""{"op":"set_page_numbers","section":3,"location":"header"},{"op":"set_page_numbers","section":2,"location":"header"}""", "own:Y #|own:|own:", "continues:|own:Y #|own:Y #", "section/3|section/2")]
     public void MovingTheNumber_ClearsWhatEachSectionShowedWhereItLeft(string operations, string footers, string headers, string targets)
     {
@@ -90,6 +90,45 @@ public sealed partial class WordsContinuedPageNumbersTests : IClassFixture<Words
         Assert.Equal(footers, Shown("numbered.docx", HeaderFooterType.FooterPrimary));
         Assert.Equal(headers, Shown("numbered.docx", HeaderFooterType.HeaderPrimary));
     }
+
+    /// <summary>
+    /// The targets and pages touched are every section that shows the story an operation changed:
+    /// numbering the footer sections 2 and 3 continue, or replacing it, reports all three sections
+    /// and their pages.
+    /// </summary>
+    [Theory]
+    [InlineData("""{"op":"set_page_numbers"}""")]
+    [InlineData("""{"op":"set_footer","section":1,"paragraphs":[{"text":"Z"}]}""")]
+    public void ChangingAContinuedStory_ReportsEverySectionThatShowsIt(string operation)
+    {
+        TestLicense.Require(Continuation);
+        File.WriteAllText(_workspace.File("continued.rtf"), Continued("footer", "Y"));
+
+        CliResult edited = Edit(operation);
+
+        Assert.True(edited.ExitCode == 0, edited.StdErr + edited.StdOut);
+        JsonNode result = JsonNode.Parse(edited.StdOut)!;
+        Assert.Equal(("section/1,section/2,section/3", "1,2,3"), (Joined(result["applied"]![0]!["targets"]!), Joined(result["pagesTouched"]!)));
+    }
+
+    /// <summary>
+    /// Replacing the footer of a section that no other continues reports that section and its page
+    /// alone. Every section has a footer of its own, so this runs without a license too.
+    /// </summary>
+    [Fact]
+    public void ReplacingAFooterNoSectionContinues_ReportsItsSectionAlone()
+    {
+        File.WriteAllText(_workspace.File("continued.rtf"),
+            @"{\rtf1\ansi{\footer\pard A\par}\pard Section 1.\par\sect\sectd{\footer\pard B\par}\pard Section 2.\par\sect\sectd{\footer\pard C\par}\pard Section 3.\par}");
+
+        CliResult edited = Edit("""{"op":"set_footer","section":2,"paragraphs":[{"text":"Z"}]}""");
+
+        Assert.True(edited.ExitCode == 0, edited.StdErr + edited.StdOut);
+        JsonNode result = JsonNode.Parse(edited.StdOut)!;
+        Assert.Equal(("section/2", "2"), (Joined(result["applied"]![0]!["targets"]!), Joined(result["pagesTouched"]!)));
+    }
+
+    private static string Joined(JsonNode values) => string.Join(",", values.AsArray().Select(static value => value!.ToString()));
 
     /// <summary>
     /// Without an alignment, a number the footer already holds keeps its own, right here, while a

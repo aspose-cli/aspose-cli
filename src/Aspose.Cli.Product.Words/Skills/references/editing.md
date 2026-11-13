@@ -222,7 +222,8 @@ either way it keeps showing what it showed. Moved to the other `location`, the
 number leaves what each selected section showed where it was the same way: the
 story of a selected section, or a copy of one it continues. A section not selected that
 continues a numbered one, such as sections 2 and 3 after `"section": 1`, shows
-the number too, and `targets` does not list it. Its `text` replaces what the
+the number too, and `targets` lists it with the sections that show a changed
+header or footer. Its `text` replaces what the
 paragraph that holds the number held, in that paragraph's font, so the number
 stays in one line with its words. Moved to the other `location` without
 `text`, the number takes its words along, such as `Page {n} of {N}`. A number
