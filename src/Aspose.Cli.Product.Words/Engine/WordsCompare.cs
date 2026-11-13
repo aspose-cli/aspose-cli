@@ -42,7 +42,7 @@ internal static class WordsCompare
             Granularity = request.Granularity == "char" ? Granularity.CharLevel : Granularity.WordLevel,
         });
         Revision[] revisions = compared.Revisions.Cast<Revision>().ToArray();
-        IReadOnlySet<Node> fieldCode = WordsText.FieldCodeRuns(compared);
+        IReadOnlyDictionary<Node, int> fieldCode = WordsText.FieldCodeNodes(compared);
         OutputInfo? output = null;
         string? format = null;
         if (request.Output is { } redline)

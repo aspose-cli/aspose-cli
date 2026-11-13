@@ -94,14 +94,14 @@ internal static class WordsText
     /// <summary>
     /// Raw SDK text, such as a field's result or a tracked change's, as a reader sees it: each
     /// field shows its result, without its code and marks. The marks of a field opened before
-    /// the text are dropped too; <paramref name="startsInCode"/> says the text starts inside the
-    /// code of such a field.
+    /// the text are dropped too; <paramref name="codes"/> is the number of such fields whose code
+    /// the text starts inside, more than one in the code of a field nested in another's.
     /// </summary>
-    internal static string WithoutFieldCodes(string raw, bool startsInCode = false)
+    internal static string WithoutFieldCodes(string raw, int codes = 0)
     {
         var text = new StringBuilder(raw.Length);
         var fields = new FieldNesting();
-        if (startsInCode)
+        for (int code = 0; code < codes; code++)
         {
             fields.Start();
         }
@@ -132,13 +132,22 @@ internal static class WordsText
         return text.ToString();
     }
 
-    /// <summary>The runs that hold a field's code, in every story of the document.</summary>
-    internal static IReadOnlySet<Node> FieldCodeRuns(Document document)
+    /// <summary>
+    /// The nodes inside a field's code, in every story of the document, such as the runs that
+    /// hold it, each with the number of fields whose code it is inside, counted before a field
+    /// mark opens or closes one.
+    /// </summary>
+    internal static IReadOnlyDictionary<Node, int> FieldCodeNodes(Document document)
     {
-        var runs = new HashSet<Node>(ReferenceEqualityComparer.Instance);
+        var nodes = new Dictionary<Node, int>(ReferenceEqualityComparer.Instance);
         var fields = new FieldNesting();
         foreach (Node node in document.GetChildNodes(NodeType.Any, true))
         {
+            if (fields.Codes > 0)
+            {
+                nodes[node] = fields.Codes;
+            }
+
             switch (node)
             {
                 case FieldStart:
@@ -150,13 +159,10 @@ internal static class WordsText
                 case FieldEnd:
                     fields.End();
                     break;
-                case Run when fields.InCode:
-                    runs.Add(node);
-                    break;
             }
         }
 
-        return runs;
+        return nodes;
     }
 
     /// <summary>
@@ -267,6 +273,8 @@ internal static class WordsText
         private int _codes;
 
         internal bool InCode => _codes > 0;
+
+        internal int Codes => _codes;
 
         /// <summary>The end of a page-varying header or footer field being skipped, code and result alike.</summary>
         internal FieldEnd? Skipping { get; set; }
