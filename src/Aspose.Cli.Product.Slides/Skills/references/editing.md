@@ -64,7 +64,8 @@ comments a deck already has.
 
 - `set_title`, `set_body` and `set_text` fill placeholders the layout already styles; prefer
   them to `format_shape`, which overrides every run of one shape. `set_title` writes the title
-  placeholder, or the title box a Markdown outline added where the layout has none. `set_body`
+  placeholder, or the title box a Markdown outline added where the layout has none, the shape
+  `"placeholder": "title"` addresses too. `set_body`
   fills a title slide's subtitle. Each refuses a slide without its placeholder with
   `PLACEHOLDER_NOT_FOUND` and adds no box: `set_title` a Blank slide, `set_body` one with neither
   body nor subtitle, as a Markdown heading without content makes. To give a slide a title,

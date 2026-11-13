@@ -71,6 +71,7 @@ internal static class SlidesMutationSupport
 
         string role = op.Placeholder!;
         return Unique(shapes.Where(item => PlaceholderRole(item) == role), $"Placeholder role '{role}'")
+            ?? (role == SlidesPlaceholderRoles.Title ? SlidesAuthoring.Title(slide) : null)
             ?? throw CliErrors.NotFound(
                 SlidesDiagnostics.PlaceholderNotFound,
                 "placeholder",
