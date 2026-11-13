@@ -30,11 +30,11 @@ internal sealed class CellsOpFootprints : ICellsOpHandler<CellsOpTraits>
 
     public CellsOpTraits Apply(SetFormulaOp operation) => Diffed(operation.Sheet, operation.Range) with { WritesContents = true };
 
-    public CellsOpTraits Apply(ClearRangeOp operation) =>
-        Diffed(operation.Sheet, operation.Range) with { WritesContents = operation.What == CellsClearTargets.Contents };
+    public CellsOpTraits Apply(ClearRangeOp operation) => Diffed(operation.Sheet, operation.Range) with
+    { WritesContents = operation.What == CellsClearTargets.Contents, WritesCells = operation.What != CellsClearTargets.Formats };
 
-    // Without a range it replaces anywhere in the sheet.
-    public CellsOpTraits Apply(ReplaceTextOp operation) => Diffed(operation.Sheet, operation.Range);
+    // Without a range it replaces anywhere in the sheet, and writes only the text it finds.
+    public CellsOpTraits Apply(ReplaceTextOp operation) => Diffed(operation.Sheet, operation.Range) with { WritesCells = false };
 
     public CellsOpTraits Apply(SortRangeOp operation) => Diffed(operation.Sheet, operation.Range);
 
@@ -43,11 +43,11 @@ internal sealed class CellsOpFootprints : ICellsOpHandler<CellsOpTraits>
     // A copy changes its destination and is charged for its source; the destination anchor may
     // be sheet-qualified and then overrides the operation's sheet.
     public CellsOpTraits Apply(CopyRangeOp operation) =>
-        new(CopyTarget(operation.Sheet, operation.To, from: null), Diffed: true, CellsProtectionScope.Sheet) { Source = operation.From };
+        Diffed(CopyTarget(operation.Sheet, operation.To, from: null)) with { Source = operation.From };
 
     // An import spotlights the whole range it wrote.
     public CellsOpTraits Apply(ImportRangeOp operation) =>
-        new(CopyTarget(operation.Sheet, operation.To, operation.From), Diffed: true, CellsProtectionScope.Sheet) { Source = operation.From };
+        Diffed(CopyTarget(operation.Sheet, operation.To, operation.From)) with { Source = operation.From };
 
     // ----- formatting and objects over a range ------------------------------------------------
 
@@ -117,20 +117,23 @@ internal sealed class CellsOpFootprints : ICellsOpHandler<CellsOpTraits>
     // ----- sheets: the sheet as a whole, for an add or rename the one that exists after it ----
 
     public CellsOpTraits Apply(InsertSheetOp operation) =>
-        new(new CellsEditTarget(operation.Name, null), Diffed: true, CellsProtectionScope.Structure)
+        Diffed(operation.Name, range: null) with
         {
+            Protection = CellsProtectionScope.Structure,
             WorkbookAddress = CellsAddresses.OfSheet("sheet", operation.Name),
         };
 
     // An imported sheet is named after its source sheet unless it is given a name; the source's
     // first sheet is known only once the source is open.
     public CellsOpTraits Apply(ImportSheetOp operation) =>
-        new(new CellsEditTarget(operation.Name ?? operation.SourceSheet, null), Diffed: true, CellsProtectionScope.Structure)
+        Diffed(operation.Name ?? operation.SourceSheet, range: null) with
         {
+            Protection = CellsProtectionScope.Structure,
             WorkbookAddress = CellsAddresses.OfSheet("sheet", operation.Name ?? operation.SourceSheet ?? Path.GetFileNameWithoutExtension(operation.Path)),
         };
 
-    public CellsOpTraits Apply(RenameSheetOp operation) => Diffed(operation.Name, range: null) with { Protection = CellsProtectionScope.Structure };
+    // A rename writes no cell.
+    public CellsOpTraits Apply(RenameSheetOp operation) => Diffed(operation.Name, range: null) with { Protection = CellsProtectionScope.Structure, WritesCells = false };
 
     public CellsOpTraits Apply(DeleteSheetOp operation) => Diffed(operation.Sheet, range: null) with { Protection = CellsProtectionScope.Structure };
 
@@ -193,8 +196,10 @@ internal sealed class CellsOpFootprints : ICellsOpHandler<CellsOpTraits>
 
     public CellsOpTraits Apply(UnprotectWorkbookOp operation) => Workbook(CellsAddresses.WorkbookProtection, CellsProtectionScope.None);
 
-    private static CellsOpTraits Diffed(string? sheet, string? range) =>
-        new(new CellsEditTarget(sheet, range), Diffed: true, CellsProtectionScope.Sheet);
+    private static CellsOpTraits Diffed(string? sheet, string? range) => Diffed(new CellsEditTarget(sheet, range));
+
+    private static CellsOpTraits Diffed(CellsEditTarget target) =>
+        new(target, Diffed: true, CellsProtectionScope.Sheet) { WritesCells = true };
 
     private static CellsOpTraits Unseen(string? sheet, string? range) =>
         new(new CellsEditTarget(sheet, range), Diffed: false, CellsProtectionScope.Sheet);
@@ -297,6 +302,12 @@ internal sealed record CellsOpTraits(CellsEditTarget? Target, bool Diffed, Cells
 
     /// <summary>Whether the operation changes only the contents of its cells, which Excel allows in unlocked cells of a protected sheet.</summary>
     public bool WritesContents { get; init; }
+
+    /// <summary>
+    /// Whether the operation writes, moves or copies the value and formula of every cell of its
+    /// target, so that a cell there that keeps its formula holds the result the operation left.
+    /// </summary>
+    public bool WritesCells { get; init; }
 }
 
 /// <summary>What protection an operation goes through.</summary>

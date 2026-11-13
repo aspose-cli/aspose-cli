@@ -32,6 +32,15 @@ internal readonly record struct ComparisonValue(string Type, object? Value)
         _ => CellsCellValueTypes.String + "|" + cell.StringValue,
     };
 
+    /// <summary>
+    /// Whether this value, read back from a text table, holds <paramref name="written"/>: a number
+    /// with more significant digits than a number cell shows is written in full, and reads back as
+    /// that text (<see cref="CellsTextImport.Reads"/>).
+    /// </summary>
+    internal bool Holds(ComparisonValue written) =>
+        Type == CellsCellValueTypes.String && written is { Type: CellsCellValueTypes.Number, Value: double number }
+        && Value as string == number.ToString("R", CultureInfo.InvariantCulture);
+
     /// <summary>One side of a difference: a date reported as ISO 8601, as a read reports it.</summary>
     /// <param name="cell">The cell the value came from.</param>
     /// <param name="formula">The cell's formula, when in scope.</param>

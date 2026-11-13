@@ -27,9 +27,11 @@ internal sealed class CellsEditVerifier(CellsWorkbookLoader loader, ResourceBudg
         textTable?.Rename(candidate.Workbook);
         bool valuesOnly = textTable is not null;
         // Targets as the batch found the workbook before its first operation: an operation that
-        // names no sheet ran on the sheet active then.
+        // names no sheet ran on the sheet active then. The changes are classified, and the
+        // operations checked, by the same targets of the operations the diff compares.
         IReadOnlyList<CellsEditTarget> footprint = OpsFootprint.Collect(batch, activeSheet);
         IReadOnlyList<CellsEditTarget> written = OpsFootprint.Collect(batch, activeSheet, cellsOnly: true);
+        IReadOnlyList<CellsEditTarget> rewritten = OpsFootprint.Rewritten(batch, written, activeSheet);
         var direct = new List<CellsVerifiedCellChange>();
         var formulaResults = new List<CellsVerifiedCellChange>();
         var other = new List<CellsVerificationOtherChange>();
@@ -39,7 +41,7 @@ internal sealed class CellsEditVerifier(CellsWorkbookLoader loader, ResourceBudg
             : DiffComparer.CompareTextTable(budgets, baseline.Workbook, candidate.Workbook, textTable, MaxDiffs);
         // The change lists are evidence capped at MaxDiffs cells (Truncated); they decide nothing,
         // so a large edit such as a sort still passes when the checks below find no issue.
-        Classify(diff, written, direct, formulaResults, other, valuesOnly);
+        Classify(diff, written, rewritten, direct, formulaResults, other, valuesOnly);
         (IReadOnlyList<CellsCellError> errors, int errorTotal) = InfoProjection.ScanFormulaErrors(budgets, candidate.Workbook);
         errors = errors.Select(error => IsPreexisting(error, baseline.Workbook, candidate.Workbook, valuesOnly)
             ? error with { Preexisting = true } : error).ToArray();
@@ -65,11 +67,11 @@ internal sealed class CellsEditVerifier(CellsWorkbookLoader loader, ResourceBudg
                         ? " #NAME? means a formula names a function or name the workbook does not know. " + CellOps.EnglishFormulaHint
                         : "")));
         }
-        IReadOnlyList<CellsEditTarget> held = Held(footprint, textTable, baseline.Workbook);
+        IReadOnlyList<CellsEditTarget> held = Held(written, textTable, baseline.Workbook);
         VerifiedBatch verified = applied.Verified(new VerificationFacts(issues, OpsFootprint.Checked(batch, held, activeSheet))
         {
             Warnings = EnvelopeParts.CombineWarnings(warnings, candidate.Warnings()),
-            UncheckedReasons = OpsFootprint.UncheckedReasons(batch, footprint, held, activeSheet),
+            UncheckedReasons = OpsFootprint.UncheckedReasons(batch, written, held, activeSheet),
         });
         return new CellsEditVerification
         {
@@ -100,9 +102,17 @@ internal sealed class CellsEditVerifier(CellsWorkbookLoader loader, ResourceBudg
         return [.. footprint.Where(target => names.Contains(target.Sheet, StringComparer.OrdinalIgnoreCase))];
     }
 
+    /// <summary>
+    /// Sorts each changed cell into the direct changes, inside a target an operation wrote, the
+    /// formula results, and the other changes. A cell that kept its formula, or held one in an
+    /// output that holds values only, is a direct change only inside a target whose every cell an
+    /// operation writes (<paramref name="rewritten"/>): a replace_text that found nothing in it, or
+    /// a rename of its sheet, did not write its new result.
+    /// </summary>
     private static void Classify(
         DiffComparer.Result diff,
         IReadOnlyList<CellsEditTarget> targets,
+        IReadOnlyList<CellsEditTarget> rewritten,
         ICollection<CellsVerifiedCellChange> direct,
         ICollection<CellsVerifiedCellChange> formulaResults,
         ICollection<CellsVerificationOtherChange> other,
@@ -125,8 +135,9 @@ internal sealed class CellsEditVerifier(CellsWorkbookLoader loader, ResourceBudg
                     Left = cell.Left,
                     Right = cell.Right,
                 };
-                if (IsRequested(sheet.Name, cell.Cell, targets)
-                    || (sheet.From is not null && IsRequested(sheet.From, cell.Cell, targets)))
+                IReadOnlyList<CellsEditTarget> writers = IsFormulaResult(cell, valuesOnly) ? rewritten : targets;
+                if (IsRequested(sheet.Name, cell.Cell, writers)
+                    || (sheet.From is not null && IsRequested(sheet.From, cell.Cell, writers)))
                 {
                     direct.Add(change);
                 }
