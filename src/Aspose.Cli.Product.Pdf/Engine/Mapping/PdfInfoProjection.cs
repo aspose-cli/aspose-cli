@@ -256,7 +256,7 @@ internal static class PdfInfoProjection
         document.Form.HasXfa ? PdfFormKinds.Xfa : document.Form.Count > 0 ? PdfFormKinds.Acro : null;
 
     /// <summary>The links of every page that open a web address, in page order.</summary>
-    private static IEnumerable<PdfLinkInfo> Links(Document document) =>
+    internal static IEnumerable<PdfLinkInfo> Links(Document document) =>
         Enumerable.Range(1, document.Pages.Count).SelectMany(number =>
         {
             Page page = document.Pages[number];

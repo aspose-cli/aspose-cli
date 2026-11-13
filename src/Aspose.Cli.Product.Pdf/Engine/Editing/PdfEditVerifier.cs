@@ -12,11 +12,12 @@ namespace Aspose.Cli.Product.Pdf.Engine.Editing;
 /// staged output back and reports every expectation it does not meet; the SDK runner records
 /// each applied operation and turns the read-back into the verification. Only effects with a
 /// reliable read-back are recorded: form field values, flattened fields, bookmarks, document
-/// information, attachments and the page count. Redacted text needs no record: before
+/// information, attachments, web links and the page count. Redacted text needs no record: before
 /// publishing, every edit searched the output for it (<see cref="PdfRedactionAudit"/>) and would
 /// have published nothing, so a redact_text that reaches this read-back is checked. The batch is checked as a whole: an
 /// expectation a later operation supersedes (the same field, key or attachment set again, the
-/// outline or the pages renumbered, a field flattened or covered by a redact_area) is dropped, a
+/// outline or the pages renumbered, a field flattened or covered by a redact_area, a link's page
+/// changed or redacted) is dropped, a
 /// field a later redact_text clears is expected clear, a field whose only widget a redact_area
 /// covers is expected gone, and an operation is reported as checked only
 /// when every effect it recorded was read back. The output is read as <c>pdf inspect</c> reads it
@@ -44,6 +45,8 @@ internal sealed class PdfEditVerifier : IEditVerifier<PdfOp>
     private readonly List<BookmarkExpectation> _bookmarks = [];
     private readonly List<string> _pageOps = [];
     private readonly List<string> _bookmarkOps = [];
+    // Each web link an add_hyperlink added, as its operation gave it, until a later operation moves or redacts its page.
+    private readonly List<(string Id, AddHyperlinkOp Link)> _links = [];
     private int _expectedPages;
     private int _expectedBookmarks;
 
@@ -79,6 +82,7 @@ internal sealed class PdfEditVerifier : IEditVerifier<PdfOp>
         _expectedPages += pages;
         _pageOps.Add(id);
         _widgets.Clear();
+        DropLinks();
         for (int index = 0; index < _bookmarks.Count; index++)
         {
             _incomplete.Add(_bookmarks[index].Id);
@@ -96,6 +100,7 @@ internal sealed class PdfEditVerifier : IEditVerifier<PdfOp>
         VerifyBookmarks(output, issues);
         VerifyMetadata(output, issues);
         VerifyAttachments(output, issues);
+        VerifyLinks(output, issues);
         Dictionary<string, string> reasons = _incomplete.ToDictionary(static id => id, static _ => LaterOperationChangedIt, StringComparer.Ordinal);
         foreach ((_, string id) in _covered)
         {
@@ -218,6 +223,39 @@ internal sealed class PdfEditVerifier : IEditVerifier<PdfOp>
                     hint: "Compare 'pdf inspect --detail outline' of the output with the batch."));
             }
         }
+    }
+
+    /// <summary>
+    /// Changing a page's geometry or covering an area of it moves or may remove the links on it, so
+    /// no link of <paramref name="page"/>, or of any page when null, is expected.
+    /// </summary>
+    private void DropLinks(int? page = null)
+    {
+        _incomplete.UnionWith(_links.Where(link => page is null || link.Link.Page == page).Select(static link => link.Id));
+        _links.RemoveAll(link => page is null || link.Link.Page == page);
+    }
+
+    /// <summary>Each added link is a web link of its page in the output, as <c>pdf inspect --detail links</c> reads it, with its address and area.</summary>
+    private void VerifyLinks(Document output, List<VerificationIssue> issues)
+    {
+        ILookup<int, PdfLinkInfo> links = PdfInfoProjection.Links(output).ToLookup(static link => link.Page);
+        foreach ((string id, AddHyperlinkOp expected) in _links)
+        {
+            _checked.Add(id);
+            if (!links[expected.Page].Any(link => link.Url == expected.Url && Near(link.Rect, expected.Rect)))
+            {
+                issues.Add(Issue(
+                    PdfDiagnostics.LinkMismatch,
+                    [id],
+                    $"page {expected.Page} of the output has no link to '{expected.Url}' over the area the operation gave",
+                    location: $"page/{expected.Page}",
+                    hint: "Compare 'pdf inspect --detail links' of the output with the batch."));
+            }
+        }
+
+        // A read reports points to the hundredth.
+        static bool Near(PdfRect read, PdfRectInput given) =>
+            new[] { read.X - given.X, read.Y - given.Y, read.Width - given.Width, read.Height - given.Height }.All(static difference => Math.Abs(difference) <= 0.01);
     }
 
     private void VerifyMetadata(Document output, List<VerificationIssue> issues)
@@ -424,6 +462,7 @@ internal sealed class PdfEditVerifier : IEditVerifier<PdfOp>
         /// </summary>
         public ValueTuple Apply(RedactAreaOp operation)
         {
+            verifier.DropLinks(operation.Page);
             Rectangle area = PdfGeometry.ToPdfRect(PdfPages.PageAt(Document, operation.Page), operation.Rect);
             foreach (string name in verifier._fields.Keys.ToArray())
             {
@@ -528,12 +567,19 @@ internal sealed class PdfEditVerifier : IEditVerifier<PdfOp>
             return default;
         }
 
-        // No reliable read-back: these record nothing and stay unchecked.
-        public ValueTuple Apply(RotatePagesOp operation) => default;
+        public ValueTuple Apply(AddHyperlinkOp operation)
+        {
+            verifier._links.Add((id, operation));
+            return default;
+        }
 
-        public ValueTuple Apply(CropPagesOp operation) => default;
+        // No reliable read-back: these record nothing and stay unchecked. A change of a page's
+        // geometry moves the area of its links.
+        public ValueTuple Apply(RotatePagesOp operation) => Drop();
 
-        public ValueTuple Apply(SetPageSizeOp operation) => default;
+        public ValueTuple Apply(CropPagesOp operation) => Drop();
+
+        public ValueTuple Apply(SetPageSizeOp operation) => Drop();
 
         public ValueTuple Apply(AddWatermarkTextOp operation) => default;
 
@@ -547,8 +593,6 @@ internal sealed class PdfEditVerifier : IEditVerifier<PdfOp>
 
         public ValueTuple Apply(AddStampImageOp operation) => default;
 
-        public ValueTuple Apply(AddHyperlinkOp operation) => default;
-
         public ValueTuple Apply(SetPageLabelsOp operation) => default;
 
         public ValueTuple Apply(EncryptDocumentOp operation) => default;
@@ -556,5 +600,11 @@ internal sealed class PdfEditVerifier : IEditVerifier<PdfOp>
         public ValueTuple Apply(DecryptDocumentOp operation) => default;
 
         public ValueTuple Apply(OptimizeDocumentOp operation) => default;
+
+        private ValueTuple Drop()
+        {
+            verifier.DropLinks();
+            return default;
+        }
     }
 }
