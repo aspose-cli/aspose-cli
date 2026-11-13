@@ -1,0 +1,94 @@
+{
+  "name": "a page operation's hint names a bookmark that lost its page but holds others, whose children have a page or not, instead of deleting it with them: after a page deletion it may be kept, and after a move that strands it the hint says why the batch cannot put it back",
+  "files": {
+    "held.pdf": {
+      "base64": "JVBERi0xLjcKMSAwIG9iago8PCAvVHlwZSAvQ2F0YWxvZyAvUGFnZXMgMiAwIFIgL091dGxpbmVzIDEwIDAgUiA+PgplbmRvYmoKMiAwIG9iago8PCAvVHlwZSAvUGFnZXMgL0tpZHMgWzMgMCBSIDQgMCBSIDUgMCBSXSAvQ291bnQgMyA+PgplbmRvYmoKMyAwIG9iago8PCAvVHlwZSAvUGFnZSAvUGFyZW50IDIgMCBSIC9NZWRpYUJveCBbMCAwIDYxMiA3OTJdIC9SZXNvdXJjZXMgPDwgL0ZvbnQgPDwgL0YxIDYgMCBSID4+ID4+IC9Db250ZW50cyA3IDAgUiA+PgplbmRvYmoKNCAwIG9iago8PCAvVHlwZSAvUGFnZSAvUGFyZW50IDIgMCBSIC9NZWRpYUJveCBbMCAwIDYxMiA3OTJdIC9SZXNvdXJjZXMgPDwgL0ZvbnQgPDwgL0YxIDYgMCBSID4+ID4+IC9Db250ZW50cyA4IDAgUiA+PgplbmRvYmoKNSAwIG9iago8PCAvVHlwZSAvUGFnZSAvUGFyZW50IDIgMCBSIC9NZWRpYUJveCBbMCAwIDYxMiA3OTJdIC9SZXNvdXJjZXMgPDwgL0ZvbnQgPDwgL0YxIDYgMCBSID4+ID4+IC9Db250ZW50cyA5IDAgUiA+PgplbmRvYmoKNiAwIG9iago8PCAvVHlwZSAvRm9udCAvU3VidHlwZSAvVHlwZTEgL0Jhc2VGb250IC9IZWx2ZXRpY2EgPj4KZW5kb2JqCjcgMCBvYmoKPDwgL0xlbmd0aCAzNyA+PgpzdHJlYW0KQlQgL0YxIDE4IFRmIDcyIDcyMCBUZCAoUGFnZSAxKSBUaiBFVAplbmRzdHJlYW0KZW5kb2JqCjggMCBvYmoKPDwgL0xlbmd0aCAzNyA+PgpzdHJlYW0KQlQgL0YxIDE4IFRmIDcyIDcyMCBUZCAoUGFnZSAyKSBUaiBFVAplbmRzdHJlYW0KZW5kb2JqCjkgMCBvYmoKPDwgL0xlbmd0aCAzNyA+PgpzdHJlYW0KQlQgL0YxIDE4IFRmIDcyIDcyMCBUZCAoUGFnZSAzKSBUaiBFVAplbmRzdHJlYW0KZW5kb2JqCjEwIDAgb2JqCjw8IC9UeXBlIC9PdXRsaW5lcyAvRmlyc3QgMTEgMCBSIC9MYXN0IDEzIDAgUiAvQ291bnQgNCA+PgplbmRvYmoKMTEgMCBvYmoKPDwgL1RpdGxlIChBKSAvUGFyZW50IDEwIDAgUiAvTmV4dCAxMyAwIFIgL0ZpcnN0IDEyIDAgUiAvTGFzdCAxMiAwIFIgL0NvdW50IDEgL0Rlc3QgWzUgMCBSIC9YWVogNzIgMCAwXSA+PgplbmRvYmoKMTIgMCBvYmoKPDwgL1RpdGxlIChBMSkgL1BhcmVudCAxMSAwIFIgL0Rlc3QgWzMgMCBSIC9GaXRdID4+CmVuZG9iagoxMyAwIG9iago8PCAvVGl0bGUgKEIpIC9QYXJlbnQgMTAgMCBSIC9QcmV2IDExIDAgUiAvRmlyc3QgMTQgMCBSIC9MYXN0IDE0IDAgUiAvQ291bnQgMSAvRGVzdCBbNCAwIFIgL0ZpdF0gPj4KZW5kb2JqCjE0IDAgb2JqCjw8IC9UaXRsZSAoQjEpIC9QYXJlbnQgMTMgMCBSIC9BIDw8IC9TIC9VUkkgL1VSSSAoaHR0cHM6Ly9leGFtcGxlLmNvbS8pID4+ID4+CmVuZG9iagp4cmVmCjAgMTUKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDA5IDAwMDAwIG4gCjAwMDAwMDAwNzUgMDAwMDAgbiAKMDAwMDAwMDE0NCAwMDAwMCBuIAowMDAwMDAwMjcwIDAwMDAwIG4gCjAwMDAwMDAzOTYgMDAwMDAgbiAKMDAwMDAwMDUyMiAwMDAwMCBuIAowMDAwMDAwNTkyIDAwMDAwIG4gCjAwMDAwMDA2NzkgMDAwMDAgbiAKMDAwMDAwMDc2NiAwMDAwMCBuIAowMDAwMDAwODUzIDAwMDAwIG4gCjAwMDAwMDA5MjcgMDAwMDAgbiAKMDAwMDAwMTA1MCAwMDAwMCBuIAowMDAwMDAxMTE4IDAwMDAwIG4gCjAwMDAwMDEyMzQgMDAwMDAgbiAKdHJhaWxlcgo8PCAvU2l6ZSAxNSAvUm9vdCAxIDAgUiA+PgpzdGFydHhyZWYKMTMyOAolJUVPRgo="
+    }
+  },
+  "steps": [
+    {
+      "args": [
+        "pdf",
+        "edit",
+        "held.pdf",
+        "--ops",
+        "[{\"op\":\"move_pages\",\"pages\":\"3\",\"to\":1}]",
+        "--out",
+        "moved.pdf",
+        "--verify"
+      ],
+      "expect": {
+        "exitCode": 8,
+        "json": [
+          {
+            "path": "verification.ok",
+            "equals": false
+          },
+          {
+            "path": "verification.issues[0].code",
+            "equals": "NAVIGATION_DEGRADED"
+          },
+          {
+            "path": "verification.issues[0].hint",
+            "contains": "Bookmark(s) 1 of the output lost their page but hold other bookmarks, which deleting them deletes too, and add_bookmark adds only a bookmark that opens a page, so what they hold cannot always be added back: tell the user which no longer open their page."
+          },
+          {
+            "path": "verification.issues[0].hint",
+            "notContains": "delete_bookmarks"
+          }
+        ]
+      }
+    },
+    {
+      "args": [
+        "pdf",
+        "edit",
+        "held.pdf",
+        "--ops",
+        "[{\"op\":\"delete_pages\",\"pages\":\"2\"}]",
+        "--out",
+        "deleted.pdf",
+        "--verify"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          {
+            "path": "verification.ok",
+            "equals": true
+          },
+          {
+            "path": "warnings",
+            "contains": {
+              "code": "NAVIGATION_DEGRADED",
+              "message": "1 bookmark(s), 0 link(s) and 0 named destination(s) lead to pages the edit deleted.",
+              "hint": "The pages they led to were deleted as the batch asked. Bookmark(s) 2 of the output lost their page but hold other bookmarks, which deleting them deletes too, so keep them or tell the user."
+            }
+          }
+        ]
+      }
+    },
+    {
+      "args": [
+        "pdf",
+        "inspect",
+        "deleted.pdf",
+        "--detail",
+        "outline"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          {
+            "path": "outline[3]",
+            "equals": {
+              "title": "B1",
+              "level": 2,
+              "bookmark": "2/1"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}
