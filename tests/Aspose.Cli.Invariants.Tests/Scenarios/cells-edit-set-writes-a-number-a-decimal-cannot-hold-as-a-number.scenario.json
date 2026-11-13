@@ -1,0 +1,59 @@
+{
+  "name": "cells edit --set writes a number too small or too large for a decimal (1E-30, 1e-29, 1e30, 1.5e300) as the number it is, in xlsx and csv, keeps the digits of 1.50, and still keeps as text what a number cell would change or a double cannot hold (007, 20 digits, 1e400)",
+  "files": {
+    "book.xlsx": { "fixture": "cells.xlsx" },
+    "data.csv": { "text": "h\r\n" }
+  },
+  "steps": [
+    {
+      "args": ["cells", "edit", "book.xlsx", "--in-place", "--verify",
+        "--set", "Sheet1!J1=1E-30", "--set", "Sheet1!J2=1e-29", "--set", "Sheet1!J3=1e30", "--set", "Sheet1!J4=1.5e300",
+        "--set", "Sheet1!J5=1.50", "--set", "Sheet1!J6=007", "--set", "Sheet1!J7=12345678901234567890", "--set", "Sheet1!J8=1e400"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "verification.ok", "equals": true }
+        ]
+      }
+    },
+    {
+      "args": ["cells", "read", "book.xlsx", "--sheet", "Sheet1", "--range", "J1:J8"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "sheet.cells[0][0]", "equals": { "v": 1E-30, "t": "number" } },
+          { "path": "sheet.cells[1][0]", "equals": { "v": 1E-29, "t": "number" } },
+          { "path": "sheet.cells[2][0]", "equals": { "v": 1E+30, "t": "number" } },
+          { "path": "sheet.cells[3][0]", "equals": { "v": 1.5E+300, "t": "number" } },
+          { "path": "sheet.cells[4][0]", "equals": { "v": 1.5, "t": "number" } },
+          { "path": "sheet.cells[5][0]", "equals": { "v": "007", "t": "string" } },
+          { "path": "sheet.cells[6][0]", "equals": { "v": "12345678901234567890", "t": "string" } },
+          { "path": "sheet.cells[7][0]", "equals": { "v": "1e400", "t": "string" } }
+        ]
+      }
+    },
+    {
+      "args": ["cells", "edit", "data.csv", "--in-place", "--verify",
+        "--set", "data!A2=1E-30", "--set", "data!A3=1e-29", "--set", "data!A4=1e30", "--set", "data!A5=1.5e300", "--set", "data!A6=1e400"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "verification.ok", "equals": true }
+        ]
+      }
+    },
+    {
+      "args": ["cells", "read", "data.csv", "--range", "A2:A6"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "sheet.cells[0][0]", "equals": { "v": 1E-30, "t": "number" } },
+          { "path": "sheet.cells[1][0]", "equals": { "v": 1E-29, "t": "number" } },
+          { "path": "sheet.cells[2][0]", "equals": { "v": 1E+30, "t": "number" } },
+          { "path": "sheet.cells[3][0]", "equals": { "v": 1.5E+300, "t": "number" } },
+          { "path": "sheet.cells[4][0]", "equals": { "v": "1e400", "t": "string" } }
+        ]
+      }
+    }
+  ]
+}
