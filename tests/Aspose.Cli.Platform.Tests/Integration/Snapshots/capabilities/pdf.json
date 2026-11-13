@@ -1380,7 +1380,7 @@
             ],
             "secret": false,
             "valueSource": "command-line",
-            "description": "Extra sections to include; repeat for more. outline: bookmarks, up to 200; links: links to web addresses, up to 500; forms: form kind and each field's value, up to 500 fields; layers: optional content layer names; properties: document information such as title and author."
+            "description": "Extra sections to include; repeat for more. outline: bookmarks, up to 200; links: links to web addresses and to places in the document, up to 500 of each; forms: form kind and each field's value, up to 500 fields; layers: optional content layer names; properties: document information such as title and author."
           },
           {
             "name": "--password",
@@ -3417,6 +3417,14 @@
             "$ref": "#/$defs/pdfLinkInfo"
           }
         },
+        "documentLinks": {
+          "description": "The links to places in the document in page order, with --detail links, those that lead to no page included; a LIST_TRUNCATED warning names the total when there are more.",
+          "type": "array",
+          "maxItems": 500,
+          "items": {
+            "$ref": "#/$defs/pdfDocumentLinkInfo"
+          }
+        },
         "forms": {
           "description": "The interactive form and its fields' values, with --detail forms.",
           "$ref": "#/$defs/pdfFormInfo"
@@ -3500,6 +3508,31 @@
             "description": {
               "description": "The attachment's description; absent when the file states none.",
               "type": "string"
+            }
+          }
+        },
+        "pdfDocumentLinkInfo": {
+          "description": "One link to a place in the document.",
+          "type": "object",
+          "required": [
+            "page",
+            "rect"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "page": {
+              "description": "The 1-based page the link is on.",
+              "type": "integer",
+              "minimum": 1
+            },
+            "rect": {
+              "description": "The link's area on its page, in points from the top-left corner of the visible page.",
+              "$ref": "#/$defs/pdfRect"
+            },
+            "targetPage": {
+              "description": "The 1-based page the link opens; absent when it leads to no page of the document.",
+              "type": "integer",
+              "minimum": 1
             }
           }
         },

@@ -11,7 +11,7 @@ public sealed record PdfInspectResult() : EngineResultEnvelope("inspect-result")
     /// <summary>The most bookmarks <see cref="Outline"/> lists.</summary>
     public const int OutlineLimit = 200;
 
-    /// <summary>The most links <see cref="Links"/> lists.</summary>
+    /// <summary>The most links <see cref="Links"/> and <see cref="DocumentLinks"/> each list.</summary>
     public const int LinkLimit = 500;
 
     /// <summary>The most form fields <see cref="PdfFormInfo.Fields"/> lists.</summary>
@@ -47,6 +47,13 @@ public sealed record PdfInspectResult() : EngineResultEnvelope("inspect-result")
     /// </summary>
     [MaxItems(LinkLimit)]
     public IReadOnlyList<PdfLinkInfo>? Links { get; init; }
+
+    /// <summary>
+    /// The links to places in the document in page order, with <c>--detail links</c>, those that
+    /// lead to no page included; a <c>LIST_TRUNCATED</c> warning names the total when there are more.
+    /// </summary>
+    [MaxItems(LinkLimit)]
+    public IReadOnlyList<PdfDocumentLinkInfo>? DocumentLinks { get; init; }
 
     /// <summary>The interactive form and its fields' values, with <c>--detail forms</c>.</summary>
     public PdfFormInfo? Forms { get; init; }
@@ -286,6 +293,21 @@ public sealed record PdfLinkInfo
 
     /// <summary>The web address the link opens.</summary>
     public required string Url { get; init; }
+}
+
+/// <summary>One link to a place in the document.</summary>
+public sealed record PdfDocumentLinkInfo
+{
+    /// <summary>The 1-based page the link is on.</summary>
+    [Minimum(1)]
+    public required int Page { get; init; }
+
+    /// <summary>The link's area on its page, in points from the top-left corner of the visible page.</summary>
+    public required PdfRect Rect { get; init; }
+
+    /// <summary>The 1-based page the link opens; absent when it leads to no page of the document.</summary>
+    [Minimum(1)]
+    public int? TargetPage { get; init; }
 }
 
 /// <summary>One embedded file.</summary>

@@ -105,6 +105,9 @@ outline, as a `delete_bookmarks` operation that deletes no bookmark still
 leading to a page; remove the ones you no longer need with it. A bookmark that
 lost its page but holds bookmarks that still lead to theirs is named apart,
 since deleting it deletes them too: keep it or tell the user.
+`pdf inspect --detail links` lists the links to web addresses as `links`
+and the links to places in the document as `documentLinks`, each with the
+`targetPage` it opens; one without `targetPage` leads nowhere.
 Follow the destination checks in
 [verification](verification.md).
 

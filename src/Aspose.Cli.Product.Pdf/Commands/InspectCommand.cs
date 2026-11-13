@@ -9,7 +9,7 @@ internal static class InspectCommand
     private static readonly Dictionary<string, string> DetailNotes = new(StringComparer.Ordinal)
     {
         [PdfInspectDetails.Outline] = $"bookmarks, up to {PdfInspectResult.OutlineLimit}",
-        [PdfInspectDetails.Links] = $"links to web addresses, up to {PdfInspectResult.LinkLimit}",
+        [PdfInspectDetails.Links] = $"links to web addresses and to places in the document, up to {PdfInspectResult.LinkLimit} of each",
         [PdfInspectDetails.Forms] = $"form kind and each field's value, up to {PdfInspectResult.FieldLimit} fields",
         [PdfInspectDetails.Layers] = "optional content layer names",
         [PdfInspectDetails.Properties] = "document information such as title and author",
@@ -106,6 +106,9 @@ internal static class InspectCommand
 
         ResultText.Table(surface, "links", result.Links, ["page", "rectangle", "url"],
             static link => [link.Page.ToString(CultureInfo.InvariantCulture), PdfText.Rectangle(link.Rect), link.Url]);
+
+        ResultText.Table(surface, "document links", result.DocumentLinks, ["page", "rectangle", "target page"],
+            static link => [link.Page.ToString(CultureInfo.InvariantCulture), PdfText.Rectangle(link.Rect), link.TargetPage?.ToString(CultureInfo.InvariantCulture)]);
 
         if (result.Forms is { } forms)
         {
