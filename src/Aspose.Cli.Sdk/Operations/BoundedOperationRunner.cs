@@ -303,8 +303,15 @@ public static class BoundedOperationRunner
         }
 
         ChangedObject[] all = [.. byIdentity.Values, .. byAddress.Values];
-        string[] order = [.. InOrder(all.Select(static item => item.Address))];
-        return [.. all.OrderBy(item => Array.IndexOf(order, item.Address))];
+        // Each address's place in that order, looked up once per object rather than searched for.
+        IReadOnlyList<string> order = InOrder(all.Select(static item => item.Address));
+        var rank = new Dictionary<string, int>(order.Count, StringComparer.Ordinal);
+        for (int index = 0; index < order.Count; index++)
+        {
+            rank[order[index]] = index;
+        }
+
+        return [.. all.OrderBy(item => rank[item.Address])];
     }
 
     /// <summary>Addresses once each, unit by unit in the order the units first appear, and by number within a unit.</summary>
