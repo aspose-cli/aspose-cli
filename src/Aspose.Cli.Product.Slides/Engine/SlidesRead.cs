@@ -73,7 +73,7 @@ internal static class SlidesRead
     {
         bool includeShapes = content is SlidesReadContents.Shapes or SlidesReadContents.Full;
         bool contentTruncated = false;
-        string? title = Take(Title(slide), ref remaining, ref contentTruncated);
+        string? title = TakeText(Title(slide), ref remaining, ref contentTruncated);
         var textBlocks = content == SlidesReadContents.Text ? new List<string>() : null;
         var shapes = new List<SlidesShapeData>();
         bool full = content == SlidesReadContents.Full;
@@ -85,7 +85,7 @@ internal static class SlidesRead
                 contentTruncated = true;
                 break;
             }
-            string? text = Take(sourceText, ref remaining, ref contentTruncated);
+            string? text = TakeText(sourceText, ref remaining, ref contentTruncated);
             if (textBlocks is not null && !string.IsNullOrEmpty(text))
             {
                 textBlocks.Add(text);
@@ -95,7 +95,7 @@ internal static class SlidesRead
                 shapes.Add(Shape(shape, text, full, ref remaining, ref contentTruncated));
             }
         }
-        string? notes = full || includeNotes ? Take(Notes(slide), ref remaining, ref contentTruncated) : null;
+        string? notes = full || includeNotes ? TakeText(Notes(slide), ref remaining, ref contentTruncated) : null;
         var read = new SlidesSlideData
         {
             Slide = number,

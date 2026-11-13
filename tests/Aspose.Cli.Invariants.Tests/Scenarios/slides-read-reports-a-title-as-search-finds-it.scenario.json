@@ -1,0 +1,68 @@
+{
+  "name": "slides read reports a title with a run of spaces as the document holds it, as inspect --sample does, so the title copied from read is what search finds and replace_text replaces; a title without one reads as before. The title is short enough for evaluation mode to read it whole",
+  "files": {
+    "deck.md": { "text": "# Deck\n\nSub\n\n## Two\n\n- pt\n\n## Three\n\n- more\n" }
+  },
+  "steps": [
+    {
+      "args": ["slides", "create", "deck.pptx", "--from-markdown", "deck.md"],
+      "expect": { "exitCode": 0 }
+    },
+    {
+      "args": ["slides", "edit", "deck.pptx", "--ops", "{\"ops\":[{\"op\":\"set_title\",\"slide\":2,\"text\":\"A  B\"}]}", "--out", "spaced.pptx"],
+      "expect": { "exitCode": 0, "files": { "present": ["spaced.pptx"] } }
+    },
+    {
+      "args": ["slides", "read", "spaced.pptx", "--content", "shapes"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "slides[1].title", "equals": "A  B" },
+          { "path": "slides[1].shapes[0].text", "equals": "A  B" },
+          { "path": "slides[2].title", "equals": "Three" }
+        ]
+      }
+    },
+    {
+      "args": ["slides", "inspect", "spaced.pptx", "--sample"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "slides[1].title", "equals": "A  B" },
+          { "path": "slides[2].title", "equals": "Three" }
+        ]
+      }
+    },
+    {
+      "args": ["slides", "search", "spaced.pptx", "--pattern", "A  B"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "hits[0].slide", "equals": 2 },
+          { "path": "hits[0].text", "equals": "A  B" },
+          { "path": "hits[1]", "exists": false }
+        ]
+      }
+    },
+    {
+      "args": ["slides", "edit", "spaced.pptx", "--ops", "{\"ops\":[{\"op\":\"replace_text\",\"find\":\"A  B\",\"replace\":\"Bye\"}]}", "--out", "replaced.pptx", "--verify"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "verification.ok", "equals": true },
+          { "path": "applied[0].itemsAffected", "equals": 1 }
+        ],
+        "warnings": { "absent": ["OP_NO_EFFECT"] }
+      }
+    },
+    {
+      "args": ["slides", "read", "replaced.pptx", "--slides", "2"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "slides[0].title", "equals": "Bye" }
+        ]
+      }
+    }
+  ]
+}

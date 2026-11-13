@@ -9,28 +9,36 @@ namespace Aspose.Cli.Product.Slides.Engine;
 /// </summary>
 internal static class SlidesShapeText
 {
-    internal static string? Take(string? value, ref int remaining, ref bool truncated)
+    /// <summary>A part of a shape's text a read reports apart, as <see cref="Clean"/> leaves it, within the budget.</summary>
+    internal static string? Take(string? value, ref int remaining, ref bool truncated) => TakeText(Clean(value), ref remaining, ref truncated);
+
+    /// <summary>
+    /// A slide's title, a shape's text or the notes, as <see cref="Title"/>, <see cref="ShapeText"/>
+    /// and <see cref="Notes"/> give them and inspect, search and replace_text see them, within the budget.
+    /// </summary>
+    internal static string? TakeText(string? value, ref int remaining, ref bool truncated)
     {
-        if (Clean(value) is not { } clean)
+        if (value is null)
         {
             return null;
         }
 
-        if (clean.Length <= remaining)
+        if (value.Length <= remaining)
         {
-            remaining -= clean.Length;
-            return clean;
+            remaining -= value.Length;
+            return value;
         }
 
         truncated = true;
-        string result = remaining == 0 ? string.Empty : clean[..remaining];
+        string result = remaining == 0 ? string.Empty : value[..remaining];
         remaining = 0;
         return result;
     }
 
     /// <summary>
-    /// Text as results report it: each line keeps its words, one space apart, and the lines stay
-    /// apart, as inspect and search show them; null for text that shows nothing.
+    /// A part of a shape's text as a read reports it apart, such as a paragraph, a run, a table cell
+    /// or chart data: each line keeps its words, one space apart, and the lines stay apart; null
+    /// for text that shows nothing.
     /// </summary>
     internal static string? Clean(string? value) =>
         string.IsNullOrWhiteSpace(value)
@@ -115,8 +123,8 @@ internal static class SlidesShapeText
     }
 
     /// <summary>
-    /// Text an operation writes as a read reports it once a shape or the notes hold it: each
-    /// paragraph and line break a line, as <see cref="Clean"/> leaves it.
+    /// Text an operation writes as the verification compares it with what a shape or the notes
+    /// hold: each paragraph and line break a line, as <see cref="Clean"/> leaves it.
     /// </summary>
     internal static string? AsRead(string? text) => Clean(Lines(text));
 

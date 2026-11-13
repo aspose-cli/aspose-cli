@@ -41,7 +41,7 @@ internal static class SlidesReviewLayout
             ShapeName = EmptyToNull(shape.Name),
             Kind = ShapeKind(shape),
             Placeholder = SlidesPlaceholders.Role(shape.Placeholder?.Type),
-            Text = Clean(ShapeText(shape)),
+            Text = ShapeText(shape),
             Runs = Runs(shape),
             Rect = new SlidesRect { X = shape.X, Y = shape.Y, Width = shape.Width, Height = shape.Height },
             ZOrder = zOrder,
