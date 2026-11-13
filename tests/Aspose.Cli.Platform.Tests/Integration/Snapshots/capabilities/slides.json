@@ -35,7 +35,7 @@
         "command": "edit",
         "inputSchema": "v2/slides/ops",
         "operationSchema": "aspose-cli schema v2/slides/ops --operation <op>",
-        "contractFingerprint": "sha256:a060ec52abc3f58b8b0aaf439d537e42f65705453b6016f18947c77e5216c8cc",
+        "contractFingerprint": "sha256:5854fceccc55c4c5291b054cd4b4ec92934e88fc262f7258a7949eea33b950fa",
         "maximumOperationCount": 10000,
         "ops": [
           "copy_slide",
@@ -5219,7 +5219,7 @@
           ]
         },
         "slidesSlideSizeInput": {
-          "description": "The size of the slides in points (72 per inch): a preset, or both the width and the height, each 72 through 7200 points.",
+          "description": "The size of the slides in points (72 per inch): a preset, or both the width and the height, each 72 through 4032 points (1 through 56 inches), the sizes Office Open XML allows.",
           "type": "object",
           "additionalProperties": false,
           "properties": {
@@ -5235,13 +5235,13 @@
               "description": "The slide width in points, given with the height instead of a preset.",
               "type": "number",
               "minimum": 72,
-              "maximum": 7200
+              "maximum": 4032
             },
             "height": {
               "description": "The slide height in points, given with the width instead of a preset.",
               "type": "number",
               "minimum": 72,
-              "maximum": 7200
+              "maximum": 4032
             }
           },
           "allOf": [

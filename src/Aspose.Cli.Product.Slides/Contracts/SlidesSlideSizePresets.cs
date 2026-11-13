@@ -9,11 +9,11 @@ public static class SlidesSlideSizePresets
     public const string Widescreen = "16x9";
     public const string Standard = "4x3";
 
-    /// <summary>The shortest slide side in points an operation sets.</summary>
+    /// <summary>The shortest slide side in points an operation sets: an inch, the least Office Open XML allows.</summary>
     internal const double MinimumSide = 72;
 
-    /// <summary>The longest slide side in points an operation sets.</summary>
-    internal const double MaximumSide = 7200;
+    /// <summary>The longest slide side in points an operation sets: 56 inches, the most Office Open XML allows.</summary>
+    internal const double MaximumSide = 4032;
 
     // How far, in points, a dimension may be from a preset's and still match it.
     private const double Tolerance = 1;

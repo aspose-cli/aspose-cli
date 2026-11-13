@@ -12,14 +12,15 @@ public sealed class SlidesContractDriftTests
     [InlineData("4x3", null, null, true)]
     [InlineData(null, 800.0, 450.0, true)]
     [InlineData(null, 800.5, 450.25, true)]
-    [InlineData(null, 72.0, 7200.0, true)]
+    [InlineData(null, 72.0, 4032.0, true)]
     [InlineData("16x9", 800.0, 450.0, false)]
     [InlineData(null, 800.0, null, false)]
     [InlineData(null, null, 450.0, false)]
     [InlineData(null, null, null, false)]
     [InlineData("a4", null, null, false)]
     [InlineData(null, 71.0, 450.0, false)]
-    [InlineData(null, 800.0, 7201.0, false)]
+    [InlineData(null, 800.0, 4033.0, false)]
+    [InlineData(null, 7200.0, 7200.0, false)]
     public void SetSlideSize_AcceptsAPresetOrBothSides(string? preset, double? width, double? height, bool valid)
     {
         var batch = new SlidesOpsBatch
