@@ -65,6 +65,93 @@ public sealed partial class WordsContinuedPageNumbersTests : IClassFixture<Words
     }
 
     /// <summary>
+    /// Section 1's footer "Y" holds the page number and sections 2 and 3 continue it. Moving a
+    /// section's number to the header clears it from the footer that section shows, a copy when
+    /// another section owns that footer, so each page shows its number once, and section 1 keeps
+    /// its footer; two moves in one batch each clear theirs. Each operation's targets are its own
+    /// sections, not section 1, whose footer now numbers fewer pages. The lines read back are the
+    /// footers, then the headers, each section's own or the one it continues, page numbers as #.
+    /// </summary>
+    [Theory]
+    [InlineData("""{"op":"set_page_numbers","section":3,"location":"header"}""", "own:Y #|continues:Y #|own:", "continues:|continues:|own:Y #", "section/3")]
+    [InlineData("""{"op":"set_page_numbers","section":2,"location":"header"}""", "own:Y #|own:|continues:", "continues:|own:Y #|continues:Y #", "section/2")]
+    [InlineData("""{"op":"set_page_numbers","section":3,"location":"header"},{"op":"set_page_numbers","section":2,"location":"header"}""", "own:Y #|own:|own:", "continues:|own:Y #|own:Y #", "section/3|section/2")]
+    public void MovingTheNumber_ClearsWhatEachSectionShowedWhereItLeft(string operations, string footers, string headers, string targets)
+    {
+        TestLicense.Require(Continuation);
+        File.WriteAllText(_workspace.File("continued.rtf"), Continued("footer", @"Y {\field{\*\fldinst PAGE}{\fldrslt 1}}"));
+
+        CliResult edited = Edit(operations);
+
+        Assert.True(edited.ExitCode == 0, edited.StdErr + edited.StdOut);
+        JsonNode result = JsonNode.Parse(edited.StdOut)!;
+        Assert.True(result["verification"]!["ok"]!.GetValue<bool>());
+        Assert.Equal(targets, string.Join("|", result["applied"]!.AsArray().Select(static applied => string.Join(",", applied!["targets"]!.AsArray().Select(static target => target!.GetValue<string>())))));
+        Assert.Equal(footers, Shown("numbered.docx", HeaderFooterType.FooterPrimary));
+        Assert.Equal(headers, Shown("numbered.docx", HeaderFooterType.HeaderPrimary));
+    }
+
+    /// <summary>
+    /// A section whose footer's fields an operation really changes is reported, whether text
+    /// replaces the page number or a number is added; only the page a PAGE field last showed is
+    /// no change. One section with its own footer, so this runs without a license too.
+    /// </summary>
+    [Theory]
+    [InlineData(@"Page {\field{\*\fldinst PAGE}{\fldrslt 1}}", """{"op":"set_footer","paragraphs":[{"text":"Z"}]}""")]
+    [InlineData("Y", """{"op":"set_page_numbers"}""")]
+    public void ChangingAFootersFields_ReportsItsSection(string footer, string operation)
+    {
+        File.WriteAllText(_workspace.File("continued.rtf"), @"{\rtf1\ansi{\footer\pard " + footer + @"\par}\pard Section 1.\par}");
+
+        CliResult edited = Edit(operation);
+
+        Assert.True(edited.ExitCode is 0 or 8, edited.StdErr + edited.StdOut);
+        Assert.Equal(["section/1"], JsonNode.Parse(edited.StdOut)!["applied"]![0]!["targets"]!.AsArray().Select(static target => target!.GetValue<string>()));
+    }
+
+    /// <summary>
+    /// --verify reads back where each set_page_numbers left a section's number: an output that
+    /// still shows a page number in that location is a PAGE_NUMBERS_MISMATCH issue at the section,
+    /// one that shows none is no issue, and a later set_page_numbers for the section decides instead.
+    /// </summary>
+    [Fact]
+    public void Verify_ReadsBackTheLocationTheNumberLeft()
+    {
+        static Document Output(bool header, bool footer)
+        {
+            var document = new Document();
+            var builder = new DocumentBuilder(document);
+            builder.MoveToHeaderFooter(HeaderFooterType.HeaderPrimary);
+            builder.Write("H ");
+            if (header)
+            {
+                builder.InsertField("PAGE");
+            }
+
+            builder.MoveToHeaderFooter(HeaderFooterType.FooterPrimary);
+            builder.Write("F ");
+            if (footer)
+            {
+                builder.InsertField("PAGE");
+            }
+
+            return document;
+        }
+
+        Document edited = Output(header: true, footer: false);
+        var numbers = new Aspose.Cli.Product.Words.Engine.Editing.WordsPageNumberLosses([]);
+        numbers.Numbered(new SetPageNumbersOp { Id = "op-0001", Location = "header" }, edited.FirstSection, HeaderFooterType.FooterPrimary);
+
+        var issue = Assert.Single(numbers.Uncleared(Output(header: true, footer: true)));
+        Assert.Equal(("PAGE_NUMBERS_MISMATCH", "section/1"), (issue.Code, issue.Location));
+        Assert.Contains("footer there still shows a page number", issue.Message, StringComparison.Ordinal);
+        Assert.Empty(numbers.Uncleared(Output(header: true, footer: false)));
+        numbers.Numbered(new SetPageNumbersOp { Id = "op-0002", Location = "footer" }, edited.FirstSection, HeaderFooterType.HeaderPrimary);
+        Assert.Empty(numbers.Uncleared(Output(header: false, footer: true)));
+        Assert.Single(numbers.Uncleared(Output(header: true, footer: true)));
+    }
+
+    /// <summary>
     /// A copy keeps no bookmark: its name marks one place in the document, which the story it was
     /// copied from keeps, so that section still holds it and is not reported changed.
     /// </summary>
@@ -149,8 +236,89 @@ public sealed partial class WordsContinuedPageNumbersTests : IClassFixture<Words
                 ["paragraphs"]!.AsArray().Select(static paragraph => paragraph!["text"]!.GetValue<string>())))));
     }
 
-    private CliResult Edit(string operation) =>
-        _workspace.RunWithInput($$"""{"ops":[{{operation}}]}""", ["words", "edit", "continued.rtf", "--ops", "-", "--out", "numbered.docx", "--verify", "--output-format", "json", .. License()]);
+    /// <summary>
+    /// A PAGE or NUMPAGES field in the body is content: refreshing its result or making the text
+    /// of it bold reports its block, while only the page a header's or footer's number last
+    /// showed is no change. One section, so this runs without a license too.
+    /// </summary>
+    [Theory]
+    [InlineData(@"\pard This report has {\field{\*\fldinst NUMPAGES}{\fldrslt 9}} pages.\par\pard Two.\par", """{"op":"refresh_fields"}""")]
+    [InlineData(@"\pard Total: {\field{\*\fldinst NUMPAGES}{\fldrslt 1}}\par\pard Two.\par", """{"op":"format_text","target":{"block":1},"match":"1","bold":true}""")]
+    public void ChangingAPageFieldInTheBody_ReportsItsBlock(string body, string operation)
+    {
+        File.WriteAllText(_workspace.File("continued.rtf"), @"{\rtf1\ansi" + body + "}");
+
+        CliResult edited = Edit(operation);
+
+        Assert.True(edited.ExitCode == 0, edited.StdErr + edited.StdOut);
+        JsonNode result = JsonNode.Parse(edited.StdOut)!;
+        Assert.Equal(["block/1"], result["applied"]![0]!["targets"]!.AsArray().Select(static target => target!.GetValue<string>()));
+        Assert.DoesNotContain(result["warnings"]?.AsArray() ?? [], static warning => warning!["code"]!.GetValue<string>() == "OP_NO_EFFECT");
+    }
+
+    /// <summary>
+    /// Under --best-effort, a set_page_numbers refused for a DATE field beside the number leaves
+    /// --verify nothing to read back for it: the number stays in the footer, and no
+    /// PAGE_NUMBERS_MISMATCH says it is still there. One section, so this runs without a license too.
+    /// </summary>
+    [Fact]
+    public void ARefusedMove_LeavesNothingToReadBack()
+    {
+        File.WriteAllText(_workspace.File("continued.rtf"), @"{\rtf1\ansi{\footer\pard " + NumberAndDate + @"\par}\pard Body.\par}");
+
+        CliResult edited = Edit("""{"op":"set_page_numbers","location":"header"}""", "--best-effort");
+
+        Assert.True(edited.ExitCode == 8, edited.StdErr + edited.StdOut);
+        JsonNode result = JsonNode.Parse(edited.StdOut)!;
+        Assert.Equal("failed", result["applied"]![0]!["status"]!.GetValue<string>());
+        Assert.DoesNotContain(result["verification"]!["issues"]!.AsArray(), static issue => issue!["code"]!.GetValue<string>() == "PAGE_NUMBERS_MISMATCH");
+        Assert.Equal("footer", Sections("numbered.docx")[0]["pageNumbers"]!["location"]!.GetValue<string>());
+    }
+
+    /// <summary>
+    /// Under --best-effort, the same refusal for section 3, which continues section 1's footer,
+    /// changes nothing: section 3 gains no header or footer of its own and still continues, and no
+    /// PAGE_NUMBERS_MISMATCH is read back for it.
+    /// </summary>
+    [Fact]
+    public void ARefusedMove_LeavesTheSectionContinuing()
+    {
+        TestLicense.Require(Continuation);
+        File.WriteAllText(_workspace.File("continued.rtf"), Continued("footer", NumberAndDate));
+
+        CliResult edited = Edit("""{"op":"set_page_numbers","section":3,"location":"header"}""", "--best-effort");
+
+        Assert.True(edited.ExitCode == 8, edited.StdErr + edited.StdOut);
+        JsonNode result = JsonNode.Parse(edited.StdOut)!;
+        Assert.Equal("failed", result["applied"]![0]!["status"]!.GetValue<string>());
+        Assert.DoesNotContain(result["verification"]!["issues"]!.AsArray(), static issue => issue!["code"]!.GetValue<string>() == "PAGE_NUMBERS_MISMATCH");
+        Assert.Empty(Sections("numbered.docx")[2]["headersFooters"]!.AsArray());
+    }
+
+    // A page number and a DATE field in one paragraph, which a move refuses to clear.
+    private const string NumberAndDate = @"Page {\field{\*\fldinst PAGE}{\fldrslt 1}} | {\field{\*\fldinst DATE \\@ ""yyyy-MM-dd""}{\fldrslt 2026-01-01}}";
+
+    /// <summary>
+    /// --verify reads back each operation's sections: moving the whole document's number to the
+    /// header and then section 1's back to the footer brings sections 2 and 3, which continue
+    /// section 1, back with it, where the first operation left them no number, so the edit exits 8
+    /// naming them.
+    /// </summary>
+    [Fact]
+    public void Verify_ReportsSectionsALaterMoveBroughtBack()
+    {
+        TestLicense.Require(Continuation);
+        File.WriteAllText(_workspace.File("continued.rtf"), Continued("footer", @"Y {\field{\*\fldinst PAGE}{\fldrslt 1}}"));
+
+        CliResult edited = Edit("""{"op":"set_page_numbers","location":"header"},{"op":"set_page_numbers","section":1,"location":"footer"}""");
+
+        Assert.True(edited.ExitCode == 8, edited.StdErr + edited.StdOut);
+        Assert.Equal(["PAGE_NUMBERS_MISMATCH@section/2", "PAGE_NUMBERS_MISMATCH@section/3"], JsonNode.Parse(edited.StdOut)!["verification"]!["issues"]!.AsArray()
+            .Select(static issue => $"{issue!["code"]}@{issue["location"]}"));
+    }
+
+    private CliResult Edit(string operation, params string[] options) =>
+        _workspace.RunWithInput($$"""{"ops":[{{operation}}]}""", ["words", "edit", "continued.rtf", "--ops", "-", "--out", "numbered.docx", "--verify", "--output-format", "json", .. options, .. License()]);
 
     private JsonNode[] Sections(string path)
     {

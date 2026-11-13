@@ -5,6 +5,7 @@ using System.Text.Json.Nodes;
 using Aspose.Cli.Product.Words.Engine.Mapping;
 using Aspose.Cli.Sdk.Diagnostics;
 using Aspose.Words;
+using Aspose.Words.Fields;
 
 namespace Aspose.Cli.Product.Words.Engine.Editing;
 
@@ -22,11 +23,31 @@ internal sealed class WordsPageNumberLosses(IReadOnlyList<Section> input)
 {
     private readonly List<Replacement> _replaced = [];
     private readonly List<(string Op, int Section, string Text)> _moved = [];
+    private readonly List<(SetPageNumbersOp Operation, Section Section, HeaderFooterType Left)> _numbered = [];
 
     // Before the batch: whether each section's primary header and footer, its own or continued,
     // held page numbers, how they read, and the field beside the number that no text writes.
     private readonly Dictionary<Section, Before> _before = input.ToDictionary(static section => section, static section => new Before(
         Holds(section, HeaderFooterType.HeaderPrimary), Holds(section, HeaderFooterType.FooterPrimary), WordsReadBack.PageNumbers(section, out string? unwritten), unwritten));
+
+    /// <summary>
+    /// Records that a set_page_numbers numbered a section in one location, so that the other,
+    /// <paramref name="left"/>, shows none after the batch; a later one for the same section decides instead.
+    /// </summary>
+    internal void Numbered(SetPageNumbersOp operation, Section section, HeaderFooterType left)
+    {
+        _numbered.RemoveAll(item => item.Section == section);
+        _numbered.Add((operation, section, left));
+    }
+
+    /// <summary>An issue for each section whose output still shows a page number where the batch's last set_page_numbers for it left none.</summary>
+    internal IEnumerable<VerificationIssue> Uncleared(Document reopened) => _numbered
+        .Select(item => (item.Operation, item.Left, Number: item.Section.ParentNode is null ? 0 : ((Document)item.Section.Document).Sections.IndexOf(item.Section) + 1))
+        .Where(item => item.Number > 0 && item.Number <= reopened.Sections.Count
+            && WordsHeadersFooters.Continued(reopened.Sections[item.Number - 1], item.Left)?.Range.Fields.Cast<Field>().Any(static field => field.Type == FieldType.FieldPage) == true)
+        .Select(static item => VerificationIssues.Of(WordsDiagnostics.PageNumbersMismatch, string.Create(CultureInfo.InvariantCulture,
+            $"set_page_numbers numbered section {item.Number} in the {item.Operation.Location}, and the output's {(item.Left == HeaderFooterType.HeaderPrimary ? "header" : "footer")} there still shows a page number."),
+            string.Create(CultureInfo.InvariantCulture, $"section/{item.Number}"), "Read the headers and footers with 'aspose-cli words inspect <file> --detail sections'."));
 
     /// <summary>Records the words a set_page_numbers without text moved with the number of a section, by its index, read before it ran.</summary>
     internal void Moved(SetPageNumbersOp operation, int section, string text) => _moved.Add((operation.Id!, section, text));

@@ -92,7 +92,7 @@ internal static class WordsEdit
             saveOptions,
             protection,
             Verified,
-            reopened => pageNumbers.Unmoved(reopened, lastOp));
+            reopened => pageNumbers.Unmoved(reopened, lastOp).Concat(pageNumbers.Uncleared(reopened)));
         baseline?.Cleanup();
         var outputWarnings = new List<Warning>();
         outputWarnings.AddRange(SaveWarnings(loaded, format));

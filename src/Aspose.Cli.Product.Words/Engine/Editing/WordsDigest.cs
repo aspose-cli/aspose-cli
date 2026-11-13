@@ -137,10 +137,13 @@ internal static class WordsDigest
             // as a replacement of a text by itself splits the run it lands in.
             string? format = null;
             var runText = new StringBuilder();
+            // The result of a field such as PAGE is the page it was last laid out on, which is no state.
+            FieldEnd? skipping = null;
             foreach (Node child in composite.GetChildNodes(NodeType.Any, false))
             {
-                if (evaluation && IsEvaluationMark(child))
+                if (skipping is not null || (evaluation && IsEvaluationMark(child)))
                 {
+                    skipping = ReferenceEquals(child, skipping) ? null : skipping;
                     continue;
                 }
 
@@ -164,6 +167,11 @@ internal static class WordsDigest
                 }
 
                 Append(text, child, evaluation);
+                if (child is FieldStart start && start.GetAncestor(NodeType.HeaderFooter) is not null
+                    && start.GetField() is { } field && WordsText.VariesByPage(field) && field.End.ParentNode == composite)
+                {
+                    skipping = field.End;
+                }
             }
 
             if (format is not null)
