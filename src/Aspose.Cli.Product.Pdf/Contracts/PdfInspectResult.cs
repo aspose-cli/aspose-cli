@@ -203,7 +203,7 @@ public sealed record PdfOutlineItem
     [Pattern("^[1-9][0-9]*(/[1-9][0-9]*)*$")]
     public required string Bookmark { get; init; }
 
-    /// <summary>The page the bookmark opens; omitted when its destination is not a page of the document.</summary>
+    /// <summary>The page the bookmark opens, also through a named destination; omitted when its destination is not a page of the document.</summary>
     [Minimum(1)]
     public int? Page { get; init; }
 }

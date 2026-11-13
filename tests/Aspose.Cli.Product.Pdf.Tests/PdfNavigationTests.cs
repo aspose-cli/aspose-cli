@@ -52,9 +52,9 @@ public sealed class PdfNavigationTests
         Assert.Null(warning["affectsCompleteness"]);
         Assert.Equal("1 bookmark(s), 1 link(s) and 0 named destination(s) lead to pages the edit deleted.", warning["message"]!.GetValue<string>());
         string hint = warning["hint"]!.GetValue<string>();
-        Assert.Contains("delete_bookmarks", hint, StringComparison.Ordinal);
+        // The hint names the bookmark by its address in the output, as pdf inspect reports it.
+        Assert.Contains("""{"op":"delete_bookmarks","bookmarks":["1"]}""", hint, StringComparison.Ordinal);
         Assert.Contains("No operation deletes links or named destinations", hint, StringComparison.Ordinal);
-        Assert.DoesNotContain("{", hint, StringComparison.Ordinal);
 
         CliResult cleaned = workspace.Run("pdf", "edit", "chapters.pdf", "--out", "cleaned.pdf", "--verify", "--output-format", "json", "--ops",
             """[{"op":"delete_pages","pages":"2"},{"op":"delete_bookmarks","bookmarks":["1"]}]""");
@@ -88,9 +88,8 @@ public sealed class PdfNavigationTests
         JsonNode warning = Assert.Single(result["warnings"]!.AsArray(), static item => item!["code"]!.GetValue<string>() == "NAVIGATION_DEGRADED")!;
         Assert.True(warning["affectsCompleteness"]!.GetValue<bool>());
         string hint = warning["hint"]!.GetValue<string>();
-        Assert.Contains("delete_bookmarks", hint, StringComparison.Ordinal);
+        Assert.Contains("""{"op":"delete_bookmarks","bookmarks":["3"]}""", hint, StringComparison.Ordinal);
         Assert.Contains("add_bookmark", hint, StringComparison.Ordinal);
-        Assert.DoesNotContain("{", hint, StringComparison.Ordinal);
         Assert.Equal(3, OpenedPage(workspace.RunCommandLine(InspectionIn(hint)), "Chapter 3"));
 
         CliResult fixedUp = workspace.Run("pdf", "edit", "chapters.pdf", "--out", "fixed.pdf", "--verify", "--output-format", "json", "--ops",
@@ -135,9 +134,8 @@ public sealed class PdfNavigationTests
         JsonNode warning = Assert.Single(JsonNode.Parse(moved.StdOut)!["warnings"]!.AsArray(), static item => item!["code"]!.GetValue<string>() == "NAVIGATION_DEGRADED")!;
         Assert.StartsWith("4 bookmark(s), 0 link(s)", warning["message"]!.GetValue<string>(), StringComparison.Ordinal);
         string hint = warning["hint"]!.GetValue<string>();
-        Assert.Contains("delete_bookmarks", hint, StringComparison.Ordinal);
+        Assert.Contains("""{"op":"delete_bookmarks","bookmarks":["1","2","3","4"]}""", hint, StringComparison.Ordinal);
         Assert.Contains("add_bookmark", hint, StringComparison.Ordinal);
-        Assert.DoesNotContain("{", hint, StringComparison.Ordinal);
         Assert.DoesNotContain("Part A/B", hint, StringComparison.Ordinal);
         Assert.Equal(3, OpenedPage(workspace.RunCommandLine(InspectionIn(hint)), "Part A/B"));
     }
@@ -572,9 +570,10 @@ public sealed class PdfNavigationTests
             InputPaths = [first, second],
         });
 
-        // "Two" was Fit and survives; "Three" (XYZ) becomes Fit and "Named" loses its name.
-        Warning warning = Assert.Single(result.Warnings!, static item => item.Code.Name == "NAVIGATION_DEGRADED");
-        Assert.StartsWith("2 bookmark(s), 1 link(s) and 1 named destination(s)", warning.Message, StringComparison.Ordinal);
+        // "Two" was Fit and survives; the named link and "appendix" lead nowhere although the
+        // merged document holds their page; "Three" (XYZ) and "Named", which opened its page
+        // through "appendix", still open their page, as a whole.
+        AssertMergedNavigation(result);
         using var merged = new Document(result.Output.Path);
         Assert.Equal(3, merged.Outlines.Count);
     }
@@ -596,10 +595,21 @@ public sealed class PdfNavigationTests
             InputPaths = [first, second],
         });
 
-        Warning warning = Assert.Single(result.Warnings!, static item => item.Code.Name == "NAVIGATION_DEGRADED");
-        Assert.StartsWith("2 bookmark(s), 1 link(s) and 1 named destination(s)", warning.Message, StringComparison.Ordinal);
+        AssertMergedNavigation(result);
         using var merged = new Document(result.Output.Path);
         Assert.Single(merged.EmbeddedFiles);
+    }
+
+    private static void AssertMergedNavigation(PdfMergeResult result)
+    {
+        Warning[] warnings = [.. result.Warnings!.Where(static item => item.Code.Name == "NAVIGATION_DEGRADED")];
+        Assert.Equal(2, warnings.Length);
+        Assert.StartsWith("0 bookmark(s), 1 link(s) and 1 named destination(s) no longer lead to their page", warnings[0].Message, StringComparison.Ordinal);
+        Assert.True(warnings[0].AffectsCompleteness);
+        Assert.DoesNotContain("add_bookmark", warnings[0].Hint, StringComparison.Ordinal);
+        Assert.StartsWith("2 bookmark(s) of the merged document open their page as a whole", warnings[1].Message, StringComparison.Ordinal);
+        Assert.False(warnings[1].AffectsCompleteness);
+        Assert.DoesNotContain("add_bookmark", warnings[1].Hint, StringComparison.Ordinal);
     }
 
     /// <summary>

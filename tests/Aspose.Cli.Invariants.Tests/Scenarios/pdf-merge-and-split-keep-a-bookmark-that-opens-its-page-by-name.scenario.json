@@ -1,0 +1,57 @@
+{
+  "name": "a bookmark that opens its page through a named destination has that page in pdf inspect --detail outline, keeps it in a merge, after the pages of the inputs before it, and in the part that holds it, which split --by bookmarks also starts there, and no warning tells the agent to add it again",
+  "files": {
+    "one.pdf": { "fixture": "pdf.pdf" },
+    "nav.pdf": { "base64": "JVBERi0xLjcKMSAwIG9iago8PCAvVHlwZSAvQ2F0YWxvZyAvUGFnZXMgMiAwIFIgL091dGxpbmVzIDkgMCBSIC9OYW1lcyA8PCAvRGVzdHMgPDwgL05hbWVzIFsoYXBwZW5kaXgpIFs1IDAgUiAvWFlaIDIwIDcwMCAwXV0gPj4gPj4gPj4KZW5kb2JqCjIgMCBvYmoKPDwgL1R5cGUgL1BhZ2VzIC9LaWRzIFszIDAgUiA0IDAgUiA1IDAgUl0gL0NvdW50IDMgPj4KZW5kb2JqCjMgMCBvYmoKPDwgL1R5cGUgL1BhZ2UgL1BhcmVudCAyIDAgUiAvTWVkaWFCb3ggWzAgMCA2MTIgNzkyXSAvUmVzb3VyY2VzIDw8IC9Gb250IDw8IC9GMSA2IDAgUiA+PiA+PiAvQ29udGVudHMgNyAwIFIgL0Fubm90cyBbMTIgMCBSIDEzIDAgUl0gPj4KZW5kb2JqCjQgMCBvYmoKPDwgL1R5cGUgL1BhZ2UgL1BhcmVudCAyIDAgUiAvTWVkaWFCb3ggWzAgMCA2MTIgNzkyXSAvUmVzb3VyY2VzIDw8IC9Gb250IDw8IC9GMSA2IDAgUiA+PiA+PiAvQ29udGVudHMgOCAwIFIgPj4KZW5kb2JqCjUgMCBvYmoKPDwgL1R5cGUgL1BhZ2UgL1BhcmVudCAyIDAgUiAvTWVkaWFCb3ggWzAgMCA2MTIgNzkyXSAvUmVzb3VyY2VzIDw8IC9Gb250IDw8IC9GMSA2IDAgUiA+PiA+PiAvQ29udGVudHMgMTQgMCBSID4+CmVuZG9iago2IDAgb2JqCjw8IC9UeXBlIC9Gb250IC9TdWJ0eXBlIC9UeXBlMSAvQmFzZUZvbnQgL0hlbHZldGljYSA+PgplbmRvYmoKNyAwIG9iago8PCAvTGVuZ3RoIDYyID4+CnN0cmVhbQpCVCAvRjEgMTIgVGYgNzIgNzIwIFRkIChQYWdlIDE6IHRvIHR3bywgdG8gdGhlIGFwcGVuZGl4KSBUaiBFVAplbmRzdHJlYW0KZW5kb2JqCjggMCBvYmoKPDwgL0xlbmd0aCAzNyA+PgpzdHJlYW0KQlQgL0YxIDEyIFRmIDcyIDcyMCBUZCAoUGFnZSAyKSBUaiBFVAplbmRzdHJlYW0KZW5kb2JqCjkgMCBvYmoKPDwgL1R5cGUgL091dGxpbmVzIC9GaXJzdCAxMCAwIFIgL0xhc3QgMTEgMCBSIC9Db3VudCAyID4+CmVuZG9iagoxMCAwIG9iago8PCAvVGl0bGUgKFR3bykgL1BhcmVudCA5IDAgUiAvTmV4dCAxMSAwIFIgL0Rlc3QgWzQgMCBSIC9YWVogNzIgNzAwIDBdID4+CmVuZG9iagoxMSAwIG9iago8PCAvVGl0bGUgKE5hbWVkKSAvUGFyZW50IDkgMCBSIC9QcmV2IDEwIDAgUiAvRGVzdCAoYXBwZW5kaXgpID4+CmVuZG9iagoxMiAwIG9iago8PCAvVHlwZSAvQW5ub3QgL1N1YnR5cGUgL0xpbmsgL1JlY3QgWzcyIDcxNSAxNTAgNzM1XSAvQm9yZGVyIFswIDAgMF0gL0Rlc3QgWzQgMCBSIC9GaXRdID4+CmVuZG9iagoxMyAwIG9iago8PCAvVHlwZSAvQW5ub3QgL1N1YnR5cGUgL0xpbmsgL1JlY3QgWzE2MCA3MTUgMzAwIDczNV0gL0JvcmRlciBbMCAwIDBdIC9EZXN0IChhcHBlbmRpeCkgPj4KZW5kb2JqCjE0IDAgb2JqCjw8IC9MZW5ndGggNDcgPj4Kc3RyZWFtCkJUIC9GMSAxMiBUZiA3MiA3MjAgVGQgKFBhZ2UgMzogYXBwZW5kaXgpIFRqIEVUCmVuZHN0cmVhbQplbmRvYmoKeHJlZgowIDE1CjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwOSAwMDAwMCBuIAowMDAwMDAwMTQyIDAwMDAwIG4gCjAwMDAwMDAyMTEgMDAwMDAgbiAKMDAwMDAwMDM2MSAwMDAwMCBuIAowMDAwMDAwNDg3IDAwMDAwIG4gCjAwMDAwMDA2MTQgMDAwMDAgbiAKMDAwMDAwMDY4NCAwMDAwMCBuIAowMDAwMDAwNzk2IDAwMDAwIG4gCjAwMDAwMDA4ODMgMDAwMDAgbiAKMDAwMDAwMDk1NiAwMDAwMCBuIAowMDAwMDAxMDQ2IDAwMDAwIG4gCjAwMDAwMDExMjcgMDAwMDAgbiAKMDAwMDAwMTIzNSAwMDAwMCBuIAowMDAwMDAxMzQyIDAwMDAwIG4gCnRyYWlsZXIKPDwgL1NpemUgMTUgL1Jvb3QgMSAwIFIgPj4Kc3RhcnR4cmVmCjE0NDAKJSVFT0YK" }
+  },
+  "steps": [
+    {
+      "args": ["pdf", "inspect", "nav.pdf", "--detail", "outline"],
+      "expect": {
+        "exitCode": 0,
+        "json": [{ "path": "outline[1]", "equals": { "title": "Named", "level": 1, "bookmark": "2", "page": 3 } }]
+      }
+    },
+    {
+      "args": ["pdf", "merge", "one.pdf", "nav.pdf", "--out", "merged.pdf"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "warnings", "contains": { "code": "NAVIGATION_DEGRADED", "message": "0 bookmark(s), 1 link(s) and 1 named destination(s) no longer lead to their page, although the merged document holds it: it carries no named destinations, so what led there through one leads nowhere.", "hint": "No operation re-creates links or named destinations: tell the user which no longer lead to their page.", "affectsCompleteness": true } }
+        ]
+      }
+    },
+    {
+      "args": ["pdf", "inspect", "merged.pdf", "--detail", "outline"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "pdf.pageCount", "equals": 4 },
+          { "path": "outline", "equals": [{ "title": "Two", "level": 1, "bookmark": "1", "page": 3 }, { "title": "Named", "level": 1, "bookmark": "2", "page": 4 }] }
+        ]
+      }
+    },
+    {
+      "args": ["pdf", "split", "nav.pdf", "--by", "pages", "--out-dir", "parts"],
+      "expect": { "exitCode": 0 }
+    },
+    {
+      "args": ["pdf", "inspect", "parts/nav.3.pdf", "--detail", "outline"],
+      "expect": {
+        "exitCode": 0,
+        "json": [{ "path": "outline", "equals": [{ "title": "Named", "level": 1, "bookmark": "1", "page": 1 }] }]
+      }
+    },
+    {
+      "args": ["pdf", "inspect", "parts/nav.1.pdf", "--detail", "outline"],
+      "expect": { "exitCode": 0, "json": [{ "path": "outline", "equals": [] }] }
+    },
+    {
+      "args": ["pdf", "split", "nav.pdf", "--by", "bookmarks", "--out-dir", "chapters"],
+      "expect": {
+        "exitCode": 0,
+        "json": [{ "path": "outputs[2].pages", "equals": "3" }]
+      }
+    }
+  ]
+}

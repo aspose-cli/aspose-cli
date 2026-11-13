@@ -27,8 +27,8 @@ internal static class PdfSplit
             : [.. parts.Select(static part => part.Index)];
         IReadOnlyList<string> paths = request.Output.Parts(Path.GetFileNameWithoutExtension(filePath), "pdf", numbers);
         var targets = new List<(SplitPart Part, string Path, bool Encrypted)>();
-        int bookmarks = 0;
-        int links = 0;
+        int repositioned = 0;
+        (int Stranded, int Removed) links = default;
         int namedDestinations = 0;
         foreach ((SplitPart part, string target) in parts.Zip(paths))
         {
@@ -44,10 +44,13 @@ internal static class PdfSplit
                 // Each part carries every attachment of the source; a part starts with none, so none is left out.
                 CopyAttachments(source, selected);
                 // A part keeps the bookmarks of its pages; what leads elsewhere is counted.
-                bookmarks += CopyOutline(source, source.Outlines, selected.Outlines, selected,
+                repositioned += CopyOutline(source, source.Outlines, selected.Outlines, selected,
                     page => Array.IndexOf(pages, page) + 1);
-                links += Math.Max(0, PdfNavigationCensus.UnresolvedLinks(selected, Enumerable.Range(1, pages.Length))
+                // A link the part broke led to a page of another part, or else to one of its own.
+                int broken = Math.Max(0, PdfNavigationCensus.UnresolvedLinks(selected, Enumerable.Range(1, pages.Length))
                     - PdfNavigationCensus.UnresolvedLinks(source, pages));
+                int elsewhere = Math.Min(broken, PdfNavigationCensus.LinkTargets(source, pages).Count(page => page > 0 && !pages.Contains(page)));
+                links = (links.Stranded + broken - elsewhere, links.Removed + elsewhere);
                 namedDestinations += PdfNavigationCensus.NamedDestinationNames(source).Count(name =>
                     source.NamedDestinations[name] is ExplicitDestination destination
                     && pages.Contains(destination.PageNumber));
@@ -68,13 +71,18 @@ internal static class PdfSplit
             warnings.Add(kept);
         }
 
-        if (new PdfNavigationCensus(bookmarks, links, namedDestinations).ToWarning(
-                "lost their exact target in the parts: bookmarks open their page at Fit zoom, links to a page of another part lead nowhere, and named destinations are not carried into the parts",
-                "Re-create location-sensitive bookmarks (add_bookmark) and links (add_hyperlink) on the parts that need them.")
-            is { } degraded)
+        var navigation = new PdfNavigationLoss(
+            new PdfNavigationCensus(0, links.Stranded, namedDestinations), new PdfNavigationCensus(0, links.Removed, 0));
+        warnings.AddRange(new[]
         {
-            warnings.Add(degraded);
-        }
+            navigation.StrandedWarning(
+                "no longer lead to their page, although their part holds it: the parts carry no named destinations, so what led there through one leads nowhere",
+                "No operation re-creates links or named destinations: tell the user which no longer lead to their page."),
+            navigation.RemovedWarning(
+                "lead to a page of another part, so they lead nowhere in their own",
+                "The pages they led to are in other parts, as the split asked; tell the user they lead nowhere in the parts."),
+            PdfNavigationLoss.Repositioned(repositioned, "parts"),
+        }.OfType<Warning>());
         return new PdfSplitResult
         {
             Input = PdfInfoProjection.Source(filePath, loaded),
@@ -96,7 +104,7 @@ internal static class PdfSplit
         }
 
         var bookmarks = document.Outlines
-            .Select(static item => (Title: item.Title ?? string.Empty, Page: PdfNavigationCensus.DestinationPage(item)))
+            .Select(item => (Title: item.Title ?? string.Empty, Page: PdfNavigationCensus.DestinationPage(document, item)))
             .Where(static item => item.Page > 0)
             .OrderBy(static item => item.Page)
             .GroupBy(static item => item.Page)

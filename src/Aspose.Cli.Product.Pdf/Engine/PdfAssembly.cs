@@ -206,11 +206,11 @@ internal static class PdfAssembly
 
     /// <summary>
     /// Copies an outline into a document assembled from copied pages, pointing each bookmark at
-    /// its page there with a Fit destination, and returns how many working bookmarks lost
-    /// fidelity: a location or zoom other than Fit, or a named destination the document does not
-    /// carry. <paramref name="pageOf"/> maps a source page to its page in the document, or to 0
-    /// when the document does not hold it; such a bookmark is left out and its children take
-    /// its place.
+    /// its page there, also one it opened through a named destination, with a Fit destination,
+    /// and returns how many bookmarks opened their page at a location or zoom other than Fit,
+    /// which they lost. <paramref name="pageOf"/> maps a source page to its page in the document,
+    /// or to 0 when the document does not hold it; such a bookmark is left out and its children
+    /// take its place.
     /// </summary>
     internal static int CopyOutline(
         Document source,
@@ -219,14 +219,14 @@ internal static class PdfAssembly
         Document document,
         Func<int, int> pageOf)
     {
-        int degraded = 0;
+        int repositioned = 0;
         foreach (OutlineItemCollection item in items)
         {
-            int page = PdfNavigationCensus.DestinationPage(item);
+            int page = PdfNavigationCensus.DestinationPage(source, item);
             int copiedPage = page > 0 ? pageOf(page) : 0;
             if (page > 0 && copiedPage == 0)
             {
-                degraded += CopyOutline(source, item, target, document, pageOf);
+                repositioned += CopyOutline(source, item, target, document, pageOf);
                 continue;
             }
 
@@ -243,16 +243,15 @@ internal static class PdfAssembly
             }
 
             IAppointment? destination = PdfNavigationCensus.Target(item.Destination, item.Action);
-            if (PdfNavigationCensus.Resolves(source, destination)
-                && (page == 0 || destination is not FitExplicitDestination))
+            if (page > 0 && (destination is NamedDestination named ? PdfNavigationCensus.NamedTarget(source, named.Name) : destination) is not FitExplicitDestination)
             {
-                degraded++;
+                repositioned++;
             }
 
-            degraded += CopyOutline(source, item, copied, document, pageOf);
+            repositioned += CopyOutline(source, item, copied, document, pageOf);
             target.Add(copied);
         }
 
-        return degraded;
+        return repositioned;
     }
 }

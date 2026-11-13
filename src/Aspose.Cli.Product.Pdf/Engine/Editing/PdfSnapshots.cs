@@ -269,10 +269,10 @@ internal sealed class PdfSnapshots(Document document, PdfPageIdentities pages, F
     /// <summary>
     /// The bookmarks of <paramref name="outline"/>, below the bookmark at <paramref name="parent"/>
     /// (the top level when null), in outline order down to <paramref name="levels"/> levels, each
-    /// by its level, title and stored destination page.
+    /// by its level, title and destination page.
     /// </summary>
-    private static OperationSnapshot Bookmarks(IEnumerable<OutlineItemCollection> outline, string? parent, int levels) =>
-        new OperationSnapshot().AddSequence("bookmark", PdfInfoProjection.Outline(outline, parent, levels, int.MaxValue)
+    private OperationSnapshot Bookmarks(IEnumerable<OutlineItemCollection> outline, string? parent, int levels) =>
+        new OperationSnapshot().AddSequence("bookmark", PdfInfoProjection.Outline(document, outline, parent, levels, int.MaxValue)
             .Select(static entry => ($"bookmark/{entry.Item.Bookmark}",
                 string.Create(CultureInfo.InvariantCulture, $"{entry.Item.Level}|{entry.Item.Title}|{entry.Destination}"))));
 

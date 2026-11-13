@@ -26,24 +26,17 @@ internal readonly record struct PdfNavigationCensus(int Bookmarks, int Links, in
     }
 
     /// <summary>The link annotations on the pages whose destination does not lead to a page.</summary>
-    internal static int UnresolvedLinks(Document document, IEnumerable<int> pages)
-    {
-        int links = 0;
-        foreach (int page in pages)
-        {
-            foreach (Annotation annotation in document.Pages[page].Annotations)
-            {
-                if (annotation is LinkAnnotation link
-                    && Target(link.Destination, link.Action) is { } target
-                    && !Resolves(document, target))
-                {
-                    links++;
-                }
-            }
-        }
+    internal static int UnresolvedLinks(Document document, IEnumerable<int> pages) =>
+        LinkTargets(document, pages).Count(static page => page == 0);
 
-        return links;
-    }
+    /// <summary>
+    /// The page each link annotation on the pages that leads within the document leads to
+    /// (<see cref="PageNumber"/>), or 0 when it leads to none.
+    /// </summary>
+    internal static IEnumerable<int> LinkTargets(Document document, IEnumerable<int> pages) =>
+        pages.SelectMany(page => document.Pages[page].Annotations.OfType<LinkAnnotation>())
+            .Select(static link => Target(link.Destination, link.Action)).OfType<IAppointment>()
+            .Select(target => PageNumber(document, target));
 
     /// <summary>
     /// The names of the document's named destinations. The engine throws
@@ -80,28 +73,19 @@ internal readonly record struct PdfNavigationCensus(int Bookmarks, int Links, in
         Math.Max(0, after.Links - before.Links),
         Math.Max(0, after.NamedDestinations - before.NamedDestinations));
 
-    /// <summary>
-    /// The warning for degraded navigation, or null when nothing degraded; it leaves the output
-    /// incomplete unless the navigation led to what the caller asked to remove.
-    /// </summary>
-    internal Warning? ToWarning(string cause, string hint, bool affectsCompleteness = true) => Total == 0 ? null : new Warning(PdfDiagnostics.NavigationDegraded, $"{Bookmarks} bookmark(s), {Links} link(s) and {NamedDestinations} named destination(s) {cause}.")
-    {
-        AffectsCompleteness = affectsCompleteness,
-        Hint = hint,
-    };
-
     /// <summary>The destination an outline item or link points at, or null when it points outside the document.</summary>
     internal static IAppointment? Target(IAppointment? destination, PdfAction? action) =>
         destination ?? (action as GoToAction)?.Destination;
 
     /// <summary>True when the destination, followed through its name, lands on an existing page.</summary>
-    internal static bool Resolves(Document document, IAppointment? destination) => destination switch
+    internal static bool Resolves(Document document, IAppointment? destination) => PageNumber(document, destination) > 0;
+
+    /// <summary>The existing page the destination, followed through its name, lands on, or 0 when it lands on none.</summary>
+    internal static int PageNumber(Document document, IAppointment? destination) => destination switch
     {
-        ExplicitDestination explicitDestination =>
-            explicitDestination.PageNumber >= 1 && explicitDestination.PageNumber <= document.Pages.Count,
-        NamedDestination named => NamedTarget(document, named.Name) is ExplicitDestination resolved
-            && Resolves(document, resolved),
-        _ => false,
+        ExplicitDestination target when target.PageNumber >= 1 && target.PageNumber <= document.Pages.Count => target.PageNumber,
+        NamedDestination named => NamedTarget(document, named.Name) is ExplicitDestination resolved ? PageNumber(document, resolved) : 0,
+        _ => 0,
     };
 
     private static int CountUnresolved(Document document, IEnumerable<OutlineItemCollection> items)
@@ -120,16 +104,7 @@ internal readonly record struct PdfNavigationCensus(int Bookmarks, int Links, in
         return count;
     }
 
-    /// <summary>The page an outline item's explicit destination names, or 0 when it has none.</summary>
-    internal static int DestinationPage(OutlineItemCollection item)
-    {
-        if (item.Destination is ExplicitDestination direct)
-        {
-            return direct.PageNumber;
-        }
-
-        return item.Action is GoToAction { Destination: ExplicitDestination action }
-            ? action.PageNumber
-            : 0;
-    }
+    /// <summary>The page an outline item leads to, followed through its name (<see cref="PageNumber"/>), or 0 when it leads to none.</summary>
+    internal static int DestinationPage(Document document, OutlineItemCollection item) =>
+        PageNumber(document, Target(item.Destination, item.Action));
 }
