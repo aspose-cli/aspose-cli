@@ -34,7 +34,7 @@
         "command": "edit",
         "inputSchema": "v2/slides/ops",
         "operationSchema": "aspose-cli schema v2/slides/ops --operation <op>",
-        "contractFingerprint": "sha256:5854fceccc55c4c5291b054cd4b4ec92934e88fc262f7258a7949eea33b950fa",
+        "contractFingerprint": "sha256:759305672f526d042bbcdf030589c46115a5624ca86c90eecd6a67ed43376e75",
         "maximumOperationCount": 10000,
         "ops": [
           "copy_slide",
@@ -3423,7 +3423,7 @@
               "x-readBack": "not-state"
             },
             "placeholder": {
-              "description": "The placeholder role, as slides read reports it.",
+              "description": "The placeholder role, as slides read reports it; title also names the title box a Markdown outline added, the slide's title in slides read.",
               "type": "string",
               "enum": [
                 "title",
@@ -3534,7 +3534,7 @@
               "x-readBack": "not-state"
             },
             "placeholder": {
-              "description": "The placeholder role, as slides read reports it.",
+              "description": "The placeholder role, as slides read reports it; title also names the title box a Markdown outline added, the slide's title in slides read.",
               "type": "string",
               "enum": [
                 "title",
@@ -4246,7 +4246,7 @@
               "x-readBack": "not-state"
             },
             "placeholder": {
-              "description": "The placeholder role, as slides read reports it.",
+              "description": "The placeholder role, as slides read reports it; title also names the title box a Markdown outline added, the slide's title in slides read.",
               "type": "string",
               "enum": [
                 "title",
@@ -4576,7 +4576,7 @@
               "x-readBack": "not-state"
             },
             "placeholder": {
-              "description": "The placeholder role, as slides read reports it.",
+              "description": "The placeholder role, as slides read reports it; title also names the title box a Markdown outline added, the slide's title in slides read.",
               "type": "string",
               "enum": [
                 "title",
@@ -4771,7 +4771,7 @@
               "x-readBack": "not-state"
             },
             "placeholder": {
-              "description": "The placeholder role, as slides read reports it.",
+              "description": "The placeholder role, as slides read reports it; title also names the title box a Markdown outline added, the slide's title in slides read.",
               "type": "string",
               "enum": [
                 "title",
@@ -4877,7 +4877,7 @@
               "x-readBack": "not-state"
             },
             "placeholder": {
-              "description": "The placeholder role, as slides read reports it.",
+              "description": "The placeholder role, as slides read reports it; title also names the title box a Markdown outline added, the slide's title in slides read.",
               "type": "string",
               "enum": [
                 "title",

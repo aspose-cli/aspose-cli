@@ -295,6 +295,50 @@ public sealed class SlidesAuthoringTests
         Assert.Equal("Two", read.Slides[0].Title);
     }
 
+    /// <summary>
+    /// The placeholder role title addresses the shape a read reports as the slide's title: on a
+    /// slide whose layout has no title placeholder, the title box a Markdown outline added.
+    /// </summary>
+    [Fact]
+    public void SetText_ByTheTitleRole_WritesTheTitleBoxAuthoringAdded()
+    {
+        using var fixture = new SlidesEngineFixture();
+        string template = fixture.File("untitled-layouts.pptx");
+        using (var source = new Presentation())
+        {
+            foreach (ILayoutSlide layout in source.LayoutSlides)
+            {
+                foreach (IShape shape in layout.Shapes.Where(static shape => SlidesPlaceholders.IsTitle(shape.Placeholder)).ToArray())
+                {
+                    layout.Shapes.Remove(shape);
+                }
+            }
+
+            source.Save(template, SaveFormat.Pptx);
+        }
+
+        string markdown = fixture.File("outline.md");
+        File.WriteAllText(markdown, "## Plan\n\n- one\n");
+        string deck = fixture.File("deck.pptx");
+        SlidesCreate.Run(fixture.Session, new SlidesCreateRequest
+        {
+            Output = TestOutput.At(deck),
+            Markdown = new SourceFile("--from-markdown", markdown),
+            Template = new SourceFile("--template", template),
+        });
+        string output = fixture.File("deck.retitled.pptx");
+
+        SlidesEditResult result = SlidesEdit.Run(fixture.Session, new SlidesEditRequest
+        {
+            Input = deck,
+            Batch = new SlidesOpsBatch { Ops = [new SetTextOp { Slide = 1, Placeholder = SlidesPlaceholderRoles.Title, Text = "Next" }] },
+            Output = TestOutput.At(output),
+        });
+
+        Assert.Equal(1, Assert.Single(result.Applied).ItemsAffected);
+        Assert.Equal("Next", SlidesRead.Run(fixture.Session, new SlidesReadRequest { Input = output }).Slides[0].Title);
+    }
+
     [Fact]
     public void SetBody_InheritsTheLayoutBulletsInsteadOfForcingThem()
     {

@@ -40,7 +40,7 @@ public abstract record ShapeTargetOp : SlideTargetOp
     /// <summary>The shape name, matched case-sensitively.</summary>
     [Pattern(@"\S")] public string? ShapeName { get; init; }
 
-    /// <summary>The placeholder role, as <c>slides read</c> reports it.</summary>
+    /// <summary>The placeholder role, as <c>slides read</c> reports it; title also names the title box a Markdown outline added, the slide's title in <c>slides read</c>.</summary>
     [AllowedValues(typeof(SlidesPlaceholderRoles))] public string? Placeholder { get; init; }
 }
 
