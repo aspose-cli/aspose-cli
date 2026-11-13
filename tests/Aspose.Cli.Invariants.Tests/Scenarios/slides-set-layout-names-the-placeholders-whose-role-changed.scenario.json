@@ -17,19 +17,17 @@
       "expect": { "exitCode": 0, "files": { "present": ["footed.pptx"] } }
     },
     {
-      "args": ["slides", "edit", "footed.pptx", "--ops", "{\"ops\":[{\"op\":\"set_layout\",\"slides\":\"3\",\"layout\":\"Title Only\"}]}", "--out", "retitled.pptx", "--verify", "--license-mode", "evaluation"],
+      "args": ["slides", "edit", "footed.pptx", "--ops", "{\"ops\":[{\"op\":\"set_layout\",\"slides\":\"3\",\"layout\":\"Title Only\"}]}", "--out", "retitled.pptx", "--verify"],
       "expect": {
         "exitCode": 0,
+        "warnings": { "only": ["PLACEHOLDER_ROLE_CHANGED"] },
         "json": [
           { "path": "verification.ok", "equals": true },
-          { "path": "warnings[0].code", "equals": "EVALUATION_MODE" },
-          { "path": "warnings[1].code", "equals": "PLACEHOLDER_ROLE_CHANGED" },
-          { "path": "warnings[1].location", "equals": "slide/3/shape/3" },
-          { "path": "warnings[1].details.shapeId", "equals": 3 },
-          { "path": "warnings[1].details.from", "equals": "footer" },
-          { "path": "warnings[1].details.to", "equals": "title" },
-          { "path": "warnings[1].message", "contains": "so the slide's title is now the text of that shape" },
-          { "path": "warnings[2]", "exists": false }
+          { "path": "warnings[code=PLACEHOLDER_ROLE_CHANGED][0].location", "equals": "slide/3/shape/3" },
+          { "path": "warnings[code=PLACEHOLDER_ROLE_CHANGED][0].details.shapeId", "equals": 3 },
+          { "path": "warnings[code=PLACEHOLDER_ROLE_CHANGED][0].details.from", "equals": "footer" },
+          { "path": "warnings[code=PLACEHOLDER_ROLE_CHANGED][0].details.to", "equals": "title" },
+          { "path": "warnings[code=PLACEHOLDER_ROLE_CHANGED][0].message", "contains": "so the slide's title is now the text of that shape" }
         ],
         "files": { "present": ["retitled.pptx"] }
       }
@@ -44,36 +42,29 @@
       }
     },
     {
-      "args": ["slides", "edit", "deck.pptx", "--ops", "{\"ops\":[{\"op\":\"delete_shape\",\"slide\":2,\"shapeId\":2},{\"op\":\"set_layout\",\"slides\":\"2\",\"layout\":\"Title Only\"}]}", "--out", "bodytitle.pptx", "--license-mode", "evaluation"],
+      "args": ["slides", "edit", "deck.pptx", "--ops", "{\"ops\":[{\"op\":\"delete_shape\",\"slide\":2,\"shapeId\":2},{\"op\":\"set_layout\",\"slides\":\"2\",\"layout\":\"Title Only\"}]}", "--out", "bodytitle.pptx"],
       "expect": {
         "exitCode": 0,
+        "warnings": { "only": ["PLACEHOLDER_ROLE_CHANGED"] },
         "json": [
-          { "path": "warnings[1].code", "equals": "PLACEHOLDER_ROLE_CHANGED" },
-          { "path": "warnings[1].location", "equals": "slide/2/shape/3" },
-          { "path": "warnings[1].details.from", "equals": "body" },
-          { "path": "warnings[1].details.to", "equals": "title" },
-          { "path": "warnings[2]", "exists": false }
+          { "path": "warnings[code=PLACEHOLDER_ROLE_CHANGED][0].location", "equals": "slide/2/shape/3" },
+          { "path": "warnings[code=PLACEHOLDER_ROLE_CHANGED][0].details.from", "equals": "body" },
+          { "path": "warnings[code=PLACEHOLDER_ROLE_CHANGED][0].details.to", "equals": "title" }
         ]
       }
     },
     {
-      "args": ["slides", "edit", "deck.pptx", "--ops", "{\"ops\":[{\"op\":\"delete_shape\",\"slide\":2,\"shapeId\":2},{\"op\":\"set_layout\",\"slides\":\"2\",\"layout\":\"Title and Content\"}]}", "--out", "own.pptx", "--license-mode", "evaluation"],
+      "args": ["slides", "edit", "deck.pptx", "--ops", "{\"ops\":[{\"op\":\"delete_shape\",\"slide\":2,\"shapeId\":2},{\"op\":\"set_layout\",\"slides\":\"2\",\"layout\":\"Title and Content\"}]}", "--out", "own.pptx"],
       "expect": {
         "exitCode": 0,
-        "json": [
-          { "path": "warnings[0].code", "equals": "EVALUATION_MODE" },
-          { "path": "warnings[1]", "exists": false }
-        ]
+        "warnings": { "only": [] }
       }
     },
     {
-      "args": ["slides", "edit", "deck.pptx", "--ops", "{\"ops\":[{\"op\":\"set_layout\",\"slides\":\"2\",\"layout\":\"Two Content\"}]}", "--out", "two.pptx", "--license-mode", "evaluation"],
+      "args": ["slides", "edit", "deck.pptx", "--ops", "{\"ops\":[{\"op\":\"set_layout\",\"slides\":\"2\",\"layout\":\"Two Content\"}]}", "--out", "two.pptx"],
       "expect": {
         "exitCode": 0,
-        "json": [
-          { "path": "warnings[0].code", "equals": "EVALUATION_MODE" },
-          { "path": "warnings[1]", "exists": false }
-        ]
+        "warnings": { "only": [] }
       }
     },
     {
@@ -88,25 +79,22 @@
       }
     },
     {
-      "args": ["slides", "edit", "boxed.pptx", "--ops", "{\"ops\":[{\"op\":\"set_background\",\"slides\":\"3\",\"color\":\"#336699\"},{\"op\":\"set_layout\",\"slides\":\"3\",\"layout\":\"Title Only\"},{\"op\":\"set_title\",\"slide\":3,\"text\":\"Head\"},{\"op\":\"insert_slide\",\"layout\":\"Title Only\"},{\"op\":\"copy_slide\",\"slide\":2}]}", "--out", "quiet.pptx", "--license-mode", "evaluation"],
+      "args": ["slides", "edit", "boxed.pptx", "--ops", "{\"ops\":[{\"op\":\"set_background\",\"slides\":\"3\",\"color\":\"#336699\"},{\"op\":\"set_layout\",\"slides\":\"3\",\"layout\":\"Title Only\"},{\"op\":\"set_title\",\"slide\":3,\"text\":\"Head\"},{\"op\":\"insert_slide\",\"layout\":\"Title Only\"},{\"op\":\"copy_slide\",\"slide\":2}]}", "--out", "quiet.pptx"],
       "expect": {
         "exitCode": 0,
+        "warnings": { "only": ["SLIDE_BACKGROUND_RESET"] },
         "json": [
-          { "path": "warnings[0].code", "equals": "EVALUATION_MODE" },
-          { "path": "warnings[1].code", "equals": "SLIDE_BACKGROUND_RESET" },
-          { "path": "warnings[1].location", "equals": "slide/3" },
-          { "path": "warnings[2]", "exists": false }
+          { "path": "warnings[code=SLIDE_BACKGROUND_RESET][0].location", "equals": "slide/3" }
         ]
       }
     },
     {
-      "args": ["slides", "edit", "footed.pptx", "--ops", "{\"ops\":[{\"op\":\"delete_shape\",\"slide\":3,\"shapeId\":3},{\"op\":\"set_layout\",\"slides\":\"3\",\"layout\":\"Title Only\"},{\"op\":\"set_title\",\"slide\":3,\"text\":\"Head\"},{\"op\":\"set_footer\",\"slides\":\"3\",\"text\":\"Foot\",\"showNumber\":false,\"showDate\":false}]}", "--out", "route.pptx", "--verify", "--license-mode", "evaluation"],
+      "args": ["slides", "edit", "footed.pptx", "--ops", "{\"ops\":[{\"op\":\"delete_shape\",\"slide\":3,\"shapeId\":3},{\"op\":\"set_layout\",\"slides\":\"3\",\"layout\":\"Title Only\"},{\"op\":\"set_title\",\"slide\":3,\"text\":\"Head\"},{\"op\":\"set_footer\",\"slides\":\"3\",\"text\":\"Foot\",\"showNumber\":false,\"showDate\":false}]}", "--out", "route.pptx", "--verify"],
       "expect": {
         "exitCode": 0,
+        "warnings": { "only": [] },
         "json": [
-          { "path": "verification.ok", "equals": true },
-          { "path": "warnings[0].code", "equals": "EVALUATION_MODE" },
-          { "path": "warnings[1]", "exists": false }
+          { "path": "verification.ok", "equals": true }
         ]
       }
     },
@@ -150,13 +138,12 @@
       }
     },
     {
-      "args": ["slides", "edit", "trio.pptx", "--ops", "{\"ops\":[{\"op\":\"delete_shape\",\"slide\":3,\"shapeId\":3},{\"op\":\"delete_shape\",\"slide\":3,\"shapeId\":4},{\"op\":\"delete_shape\",\"slide\":3,\"shapeId\":5},{\"op\":\"set_layout\",\"slides\":\"3\",\"layout\":\"Title Only\"},{\"op\":\"set_title\",\"slide\":3,\"text\":\"Head\"},{\"op\":\"set_footer\",\"slides\":\"3\",\"text\":\"Foot\",\"showNumber\":true,\"showDate\":true}]}", "--out", "trio-route.pptx", "--verify", "--license-mode", "evaluation"],
+      "args": ["slides", "edit", "trio.pptx", "--ops", "{\"ops\":[{\"op\":\"delete_shape\",\"slide\":3,\"shapeId\":3},{\"op\":\"delete_shape\",\"slide\":3,\"shapeId\":4},{\"op\":\"delete_shape\",\"slide\":3,\"shapeId\":5},{\"op\":\"set_layout\",\"slides\":\"3\",\"layout\":\"Title Only\"},{\"op\":\"set_title\",\"slide\":3,\"text\":\"Head\"},{\"op\":\"set_footer\",\"slides\":\"3\",\"text\":\"Foot\",\"showNumber\":true,\"showDate\":true}]}", "--out", "trio-route.pptx", "--verify"],
       "expect": {
         "exitCode": 0,
+        "warnings": { "only": [] },
         "json": [
-          { "path": "verification.ok", "equals": true },
-          { "path": "warnings[0].code", "equals": "EVALUATION_MODE" },
-          { "path": "warnings[1]", "exists": false }
+          { "path": "verification.ok", "equals": true }
         ]
       }
     },

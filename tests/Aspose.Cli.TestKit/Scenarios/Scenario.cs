@@ -134,6 +134,12 @@ public sealed record ScenarioCodes
     public IReadOnlyList<string>? Present { get; init; }
 
     public IReadOnlyList<string>? Absent { get; init; }
+
+    /// <summary>
+    /// Every code but <c>EVALUATION_MODE</c>, which only an evaluation run adds and then once,
+    /// each as many times as it is listed, in any order.
+    /// </summary>
+    public IReadOnlyList<string>? Only { get; init; }
 }
 
 /// <summary>Workspace expectations; paths are workspace-relative.</summary>
