@@ -24,11 +24,11 @@ public sealed partial class CellsRegionalSettingsTests : IDisposable
     /// An edit of B1 recalculates <c>TEXT</c>, <c>VALUE</c> and a concatenation of B1 as under
     /// en-US, and its verification passes: <c>cells read</c>, which calculates the workbook again
     /// as it loads it, reports what it reports under en-US, and the workbook saves the results
-    /// en-US calculates, for a program that shows them without calculating. Guardrail: with
-    /// <c>--timeout</c> the edit, which then runs in a worker process that the culture of this
-    /// run does not reach, saves the same results. That the CLI calculates as en-US whatever
-    /// culture its process starts with, the worker's included, is
-    /// <c>CliWorkerTests.AWorker_KeepsTheStartupHooksOfTheRun</c>.
+    /// en-US calculates, for a program that shows them without calculating. With
+    /// <c>--timeout</c> the edit runs in a worker process that <c>TimeoutWorkerSupervisor</c>
+    /// starts from the same executable and <c>Main</c>, which pins the culture as this process
+    /// does; no case here starts that worker under German settings, since it starts with only the
+    /// environment variables the CLI lists, and the test's culture hook is not one of them.
     /// </summary>
     [Fact]
     public void EditUnderGermanRegionalSettings_RecalculatesAsUnderEnglish()
@@ -38,12 +38,10 @@ public sealed partial class CellsRegionalSettingsTests : IDisposable
             """{"op":"set_formula","sheet":"Sheet1","range":"D1","formula":"=VALUE(\"1.5\")"}""",
             """{"op":"set_formula","sheet":"Sheet1","range":"E1","formula":"=B1&\"\""}""");
 
-        (string Culture, string Out, string[] Options)[] edits =
-            [("en-US", "english.xlsx", []), ("de-DE", "german.xlsx", []), ("de-DE", "worker.xlsx", ["--timeout", "300"])];
-        foreach ((string culture, string output, string[] options) in edits)
+        foreach ((string culture, string output) in new[] { ("en-US", "english.xlsx"), ("de-DE", "german.xlsx") })
         {
             CliResult edited = _workspace.RunUnderCulture(culture,
-                ["cells", "edit", "book.xlsx", "--set", "Sheet1!B1=19.9", "--verify", "--out", output, "--output-format", "json", .. options]);
+                ["cells", "edit", "book.xlsx", "--set", "Sheet1!B1=19.9", "--verify", "--out", output, "--output-format", "json"]);
             Assert.True(edited.ExitCode == 0, $"{culture} {output}: {edited.StdErr}{edited.StdOut}");
             Assert.True(edited.Json()["verification"]!["ok"]!.GetValue<bool>(), edited.StdOut);
         }
@@ -54,7 +52,6 @@ public sealed partial class CellsRegionalSettingsTests : IDisposable
         string[] saved = Saved("english.xlsx");
         Assert.Equal(["19.90", "1.5", "19.9"], saved);
         Assert.Equal(saved, Saved("german.xlsx"));
-        Assert.Equal(saved, Saved("worker.xlsx"));
     }
 
     /// <summary>A conversion to HTML shows a date, an amount, a number and a percentage as under en-US.</summary>

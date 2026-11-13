@@ -370,10 +370,8 @@ public sealed class CliWorkerTests
     /// A worker keeps the startup hooks of the run, such as the culture hook of
     /// <c>scripts/test.ps1 -CiLike</c>: the hook runs in the worker, a command runs under the
     /// culture the CLI pins at startup whatever culture the hook set, as a child process does, and
-    /// a command, with the processes it starts, sees the run's hooks variable unchanged. It is what
-    /// shows that the CLI pins en-US whatever culture its process starts with, and so that the
-    /// <c>--timeout</c> worker, a process the CLI starts through the same entry, calculates as
-    /// en-US too.
+    /// a command, with the processes it starts, sees the run's hooks variable unchanged. It shows
+    /// that the CLI pins en-US whatever culture its process starts with.
     /// </summary>
     [Fact]
     public void AWorker_KeepsTheStartupHooksOfTheRun()
