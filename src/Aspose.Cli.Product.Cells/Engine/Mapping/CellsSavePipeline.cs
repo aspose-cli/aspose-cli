@@ -102,7 +102,7 @@ internal sealed class CellsSavePipeline(OutputPipeline<Workbook> outputs)
         }
         foreach (Cell cell in dateCells)
         {
-            cell.PutValue(CellMapper.FormatDateTime(cell.DateTimeValue));
+            cell.PutValue(CellMapper.FormatDateTime(cell));
         }
     }
 

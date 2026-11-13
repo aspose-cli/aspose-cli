@@ -25,7 +25,7 @@ internal static class CellMapper
         (object? value, string type) = cell.Type switch
         {
             CellValueType.IsNumeric => ((object?)cell.DoubleValue, CellsCellValueTypes.Number),
-            CellValueType.IsDateTime => (FormatDateTime(cell.DateTimeValue), CellsCellValueTypes.DateTime),
+            CellValueType.IsDateTime => (FormatDateTime(cell), CellsCellValueTypes.DateTime),
             CellValueType.IsBool => (cell.BoolValue, CellsCellValueTypes.Boolean),
             CellValueType.IsError => (cell.StringValue, CellsCellValueTypes.Error),
             _ => (cell.StringValue, CellsCellValueTypes.String),
@@ -44,18 +44,25 @@ internal static class CellMapper
     internal static string? RawValueString(Cell cell) => cell.Type switch
     {
         CellValueType.IsNumeric => cell.DoubleValue.ToString(CultureInfo.InvariantCulture),
-        CellValueType.IsDateTime => FormatDateTime(cell.DateTimeValue),
+        CellValueType.IsDateTime => FormatDateTime(cell),
         _ => null,
     };
 
     /// <summary>
     /// Excel date/time values are timezone-naive; they serialize as local
-    /// ISO 8601 without an offset, exactly as a user would read them. Shared with
+    /// ISO 8601 without an offset, exactly as a user would read them, with the
+    /// milliseconds Excel keeps when a time has any. Shared with
     /// the text-export path so <c>convert --to csv</c> and <c>read</c> render a
     /// date identically (and both invariantly, not in the machine's locale).
+    /// Serial 60 of the 1900 date system is 29 February 1900, a day Excel counts
+    /// for compatibility with Lotus 1-2-3 and DateTime has not, which the cell's
+    /// DateTimeValue gives as the day before.
     /// </summary>
-    internal static string FormatDateTime(DateTime value) =>
-        value.ToString(
-            value.TimeOfDay == TimeSpan.Zero ? "yyyy-MM-dd" : "yyyy-MM-ddTHH:mm:ss",
-            CultureInfo.InvariantCulture);
+    internal static string FormatDateTime(Cell cell)
+    {
+        DateTime value = cell.DateTimeValue;
+        string day = cell.DoubleValue is >= 60 and < 61 && !cell.Worksheet.Workbook.Settings.Date1904
+            ? "1900-02-29" : value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+        return value.TimeOfDay == TimeSpan.Zero ? day : day + value.ToString("THH:mm:ss.FFF", CultureInfo.InvariantCulture);
+    }
 }
