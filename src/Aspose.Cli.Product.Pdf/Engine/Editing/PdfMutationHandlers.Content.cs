@@ -223,14 +223,59 @@ internal sealed partial class PdfMutationHandlers
     {
         Page page = PageAt(_document, operation.Page);
         Rectangle area = ToPdfRect(page, operation.Rect);
+        // The fields whose every widget the cover takes go with it; one with a widget it leaves keeps
+        // its value. The engine keeps one that the calculation order names in the file
+        // (PDF-REDACT-CALCULATED), so each is cleared, value and look, first, and an order that no
+        // field left can use is emptied.
+        string[] covered = [.. _document.Form.Fields.GroupBy(static field => field.FullName, StringComparer.Ordinal)
+            .Where(group => PdfForms.Widgets(_document, group) is { Length: > 0 } widgets && Uncovered(widgets, (int?)operation.Page, area).Length == 0)
+            .Select(static group => group.Key)];
+        bool calculated = covered.Any(name => ((Field)_document.Form[name]).Actions?.OnCalculate is not null);
+        Field[] cleared = [.. _document.Form.Fields.Where(field => covered.Contains(field.FullName) && field is not (ButtonField or SignatureField))];
+        // A radio group still counting a button an earlier redaction took refuses a value
+        // (PDF-REDACT-RADIO-BUTTONS); its deletion below takes the value out of the file.
+        foreach (Field field in cleared.Where(static field => PdfForms.RadioGroup(field) is not { } group || group.Count == group.Options.Count))
+        {
+            Clear(field);
+        }
+
+        // The looks go once every value is set: the engine reads a radio button's to set its group's.
+        foreach (Field field in cleared)
+        {
+            field.Appearance.Clear();
+        }
+
         Unrotated(page, () =>
         {
             ILookup<string, Point> before = TextRuns(page);
             NoteBeside(operation.Page, Redact(page, [area], character => Covers(area, character), ParseColor(operation.FillColor)));
             NoteMovedText(operation.Page, page, before);
         });
+        if (calculated && !_document.Form.Fields.Any(field => !covered.Contains(field.FullName) && field.Actions?.OnCalculate is not null))
+        {
+            _document.Form.CalculatedFields = [];
+        }
+
+        // The engine leaves a field that holds its widgets apart from itself, as children or as the
+        // buttons of a radio group, without them, and a parent the covered fields were all the
+        // children of, as fields of their own (PDF-REDACT-EMPTY-PARENT).
+        foreach (string name in covered.Where(_document.Form.HasField))
+        {
+            _document.Form.Delete(name);
+        }
+
+        foreach (string parent in covered.Select(name => Emptied(name, covered)).OfType<string>().Distinct(StringComparer.Ordinal))
+        {
+            _document.Form.Delete(parent);
+        }
+
         return default;
     }
+
+    // The highest parent of the field all of whose fields the cover takes, or null when there is none.
+    private string? Emptied(string name, string[] covered) =>
+        Enumerable.Range(1, name.Count(static character => character == '.')).Select(depth => string.Join('.', name.Split('.').Take(depth)))
+            .FirstOrDefault(parent => _document.Form.Fields.Where(field => field.FullName.StartsWith(parent + ".", StringComparison.Ordinal)).All(field => covered.Contains(field.FullName)));
 
     /// <summary>
     /// Covers each rectangle and removes what lies under it, in the order given. The cover is
@@ -332,9 +377,12 @@ internal sealed partial class PdfMutationHandlers
     {
         foreach (Field field in _document.Form.Fields.Where(field => Clears(field, PdfForms.State(field).Value, pages, pattern)))
         {
-            (PdfForms.RadioGroup(field) ?? field).Value = ClearedFieldValue(field);
+            Clear(field);
         }
     }
+
+    // Clears a field as set_form_field clears it: the whole value, a radio button's in its group.
+    private static void Clear(Field field) => (PdfForms.RadioGroup(field) ?? field).Value = ClearedFieldValue(field);
 
     /// <summary>
     /// Whether redact_text clears a field that holds <paramref name="value"/>: one with a value
@@ -363,6 +411,14 @@ internal sealed partial class PdfMutationHandlers
     /// same rule.
     /// </summary>
     internal static bool Covers(Rectangle area, Rectangle item) => Contains(area, Middle(item));
+
+    /// <summary>
+    /// The widgets of a field that a redact_area over <paramref name="area"/> on
+    /// <paramref name="page"/> leaves (<see cref="Covers"/>): one that leaves none of them removes
+    /// the field. The operation and the verification's prediction of it both ask this.
+    /// </summary>
+    internal static (TPage Page, Rectangle Rect)[] Uncovered<TPage>(IEnumerable<(TPage Page, Rectangle Rect)> widgets, TPage page, Rectangle area) =>
+        [.. widgets.Where(widget => !EqualityComparer<TPage>.Default.Equals(widget.Page, page) || !Covers(area, widget.Rect))];
 
     private static (double X, double Y) Middle(Rectangle rectangle) =>
         ((rectangle.LLX + rectangle.URX) / 2, (rectangle.LLY + rectangle.URY) / 2);

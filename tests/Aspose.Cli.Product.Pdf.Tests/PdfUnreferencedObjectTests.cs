@@ -196,6 +196,58 @@ public sealed class PdfUnreferencedObjectTests
         Assert.Equal(0, Occurrences(File.ReadAllBytes(redacted), Secret));
     }
 
+    /// <summary>
+    /// A field the calculation order names, which the engine keeps in the file when a redaction
+    /// removes it (PDF-REDACT-CALCULATED): covered whole, a field's value and look are nowhere in the
+    /// file. The order is emptied once no field left calculates and kept while one does: covering qty
+    /// keeps it naming total, and covering total beside tax, which also calculates, keeps total's
+    /// object without its value or look.
+    /// </summary>
+    [Theory]
+    [InlineData("total", false, 262, false)]
+    [InlineData("qty", false, 162, true)]
+    [InlineData("total", true, 262, true)]
+    public void RedactArea_OfAFieldTheCalculationOrderNames_LeavesTheValueNowhereInTheFile(string covered, bool tax, int top, bool ordered)
+    {
+        using var fixture = new PdfEngineFixture();
+        string input = fixture.File("calculated.pdf");
+        PdfEngineFixture.WriteRawPdf(input,
+        [
+            $"<< /Type /Catalog /Pages 2 0 R /AcroForm << /Fields [4 0 R 5 0 R 6 0 R] /CO [5 0 R{(tax ? " 6 0 R" : "")}] >> >>",
+            "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+            "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Annots [4 0 R 5 0 R 6 0 R] >>",
+            "<< /Type /Annot /Subtype /Widget /FT /Tx /T (qty) /V (2) /Rect [72 600 272 620] /P 3 0 R >>",
+            "<< /Type /Annot /Subtype /Widget /FT /Tx /T (total) /V (4) /Rect [72 500 272 520] /P 3 0 R /AP << /N 7 0 R >> /AA << /C << /S /JavaScript /JS (event.value = 4;) >> >> >>",
+            $"<< /Type /Annot /Subtype /Widget /FT /Tx /T (tax) /V (1) /Rect [72 400 272 420] /P 3 0 R{(tax ? " /AA << /C << /S /JavaScript /JS (event.value = 1;) >> >>" : "")} >>",
+            "<< /Type /XObject /Subtype /Form /BBox [0 0 200 20] /Length 18 >>\nstream\nBT (OLDLOOK) Tj ET\nendstream",
+        ]);
+
+        string redacted = fixture.File("calculated.redacted.pdf");
+        PdfEditResult result = PdfEdit.Run(fixture.Session, new PdfEditRequest
+        {
+            Input = input,
+            Batch = new PdfOpsBatch
+            {
+                Ops =
+                [
+                    new SetFormFieldOp { Name = covered, Value = Secret },
+                    new RedactAreaOp { Page = 1, Rect = new PdfRectInput { X = 60, Y = top, Width = 230, Height = 40 } },
+                ],
+            },
+            Output = TestOutput.At(redacted),
+            Verify = true,
+        });
+
+        Assert.True(result.Verification!.Ok, string.Join("; ", result.Verification.Issues.Select(static issue => issue.Message)));
+        byte[] bytes = File.ReadAllBytes(redacted);
+        Assert.Equal(0, Occurrences(bytes, Secret));
+        Assert.Equal(covered == "qty" ? 0 : 1, Occurrences(bytes, "(qty)"));
+        Assert.Equal(covered == "total" ? 0 : 1, Occurrences(bytes, "OLDLOOK"));
+        string text = string.Concat(InflatedStreams(bytes).Prepend(bytes).Select(Encoding.Latin1.GetString));
+        Assert.Equal(ordered, System.Text.RegularExpressions.Regex.IsMatch(text, @"/CO\s*\[\s*\d+ 0 R"));
+        Assert.Equal(ordered ? 1 : 0, Occurrences(bytes, "(total)"));
+    }
+
     private static string Flatten(PdfEngineFixture fixture)
     {
         string input = fixture.File("form.pdf");

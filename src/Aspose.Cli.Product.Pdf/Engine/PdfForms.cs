@@ -3,6 +3,7 @@ using Aspose.Cli.Sdk.Formats;
 using Aspose.Cli.Sdk.IO.Extraction;
 using Aspose.Cli.Sdk.IO.Output;
 using Aspose.Pdf;
+using Aspose.Pdf.Annotations;
 using Aspose.Pdf.Forms;
 using static Aspose.Cli.Product.Pdf.Engine.PdfGeometry;
 
@@ -128,18 +129,31 @@ internal static class PdfForms
             .Distinct(StringComparer.Ordinal)
             .Count();
 
-    /// <summary>The page of the field's widget, or null when it has none or evaluation mode hides it.</summary>
-    internal static int? PageOf(Field field)
+    /// <summary>The page of the widget, or null when it has none or evaluation mode hides it.</summary>
+    internal static int? PageOf(WidgetAnnotation widget)
     {
         try
         {
-            return field.PageIndex > 0 ? field.PageIndex : null;
+            return widget.PageIndex > 0 ? widget.PageIndex : null;
         }
         catch (Exception exception) when (PdfEvaluationProfile.IsPageLimit(exception))
         {
             return null;
         }
     }
+
+    /// <summary>
+    /// The page and rectangle of each widget of the fields: each child of a field that holds its
+    /// widgets as children, whose own rectangle and page are its first widget's or all of theirs, and
+    /// each button of a radio group, which the engine lists as a field of the group's name. A widget
+    /// its page no longer holds, as a redaction leaves one in its field, is not; one whose page
+    /// evaluation mode hides is, without a page.
+    /// </summary>
+    internal static (int? Page, Rectangle Rect)[] Widgets(Document document, IEnumerable<Field> fields) =>
+        [.. fields.SelectMany(static field => field.Count > 1 ? Enumerable.Range(1, field.Count).Select(index => field[index]) : new WidgetAnnotation[] { field })
+            .Select(static widget => (Widget: widget, Page: PageOf(widget)))
+            .Where(widget => widget.Page is not int page || document.Pages[page].Annotations.Contains(widget.Widget))
+            .Select(static widget => (widget.Page, widget.Widget.Rect))];
 
     /// <summary>The check box state that leaves it unchecked.</summary>
     private const string CheckboxOff = "Off";

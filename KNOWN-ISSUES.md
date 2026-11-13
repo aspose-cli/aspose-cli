@@ -371,6 +371,41 @@ Reproductions: [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownI
   `pdf inspect --detail outline` of the input; no operation re-creates a link or a named
   destination, so tell the user which no longer lead to their page.
 
+### PDF-REDACT-CALCULATED
+
+- **Defect:** a redaction that removes a form field leaves the form's calculation order (`/CO`)
+  naming it, so the field's object, with its value and appearance, stays in the saved file. Nor can
+  the order be repaired through the public API: `Form.CalculatedFields` has no getter, and setting
+  it to any fields writes no order at all.
+- **CLI behavior:** `redact_area` clears the value and the appearance of each field whose every
+  widget it covers before the engine removes it, and empties the calculation order when no field
+  left has a calculate action, so neither the value nor a reference to the removed field stays.
+  When another field still calculates, the order is kept and still names the removed field's
+  object, now without a value or an appearance, but with the default value (`/DV`) the input gave
+  it, which no public API writes.
+
+### PDF-REDACT-EMPTY-PARENT
+
+- **Defect:** a redaction that removes every widget of a field that holds them apart from itself,
+  as children or as the buttons of a radio group, leaves the field in the form without a widget and
+  with its value; one that removes the only field under a parent in the form's hierarchy, such as
+  `form.person.name` under `form.person`, leaves the parent in the form as a field of its own,
+  without a value or a widget.
+- **CLI behavior:** `redact_area` deletes such a field once it covers every widget of it, and keeps
+  one with a widget it leaves, with its value; it deletes such a parent once the fields it covers
+  were every field under it, and keeps a parent that still holds another field.
+
+### PDF-REDACT-RADIO-BUTTONS
+
+- **Defect:** a redaction that removes some buttons of a radio group whose form was read before
+  it leaves the group counting them while its options lose them, and setting the group's value
+  then writes it and throws `IndexOutOfRangeException`.
+- **CLI behavior:** `redact_area` that covers the last buttons of such a group deletes it without
+  writing its value first, so the value leaves the file with the group unless the calculation
+  order keeps it (PDF-REDACT-CALCULATED); `set_form_field` on such a group later in the same
+  batch fails with `FEATURE_UNSUPPORTED`, and nothing is written.
+- **Workaround:** set the group's value in an edit of its own after the redaction.
+
 ### PDF-PAGE-COPY-FIELDS
 
 - **Defect:** no public API changes the order of a document's pages: `PageCollection` has no
