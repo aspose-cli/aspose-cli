@@ -286,7 +286,15 @@ internal sealed partial class ParsedInvocation
             : null;
         int after = Array.FindLastIndex(tokens, static token => token.Type == TokenType.Command) + 1;
         Argument argument = Command.Arguments.First(candidate => candidate.Name == refused.Argument);
-        Token? given = ParseResult.GetResult(argument) is { Tokens: [var first, ..] } && !ReferenceEquals(first, tokens[index]) ? first : null;
+        // The file given as well, before the option or after it: a word after the command that no
+        // option holds and that is neither the option nor its value, nor follows an option the
+        // command does not take, whose value, a secret maybe, is never repeated.
+        string[] accepted = [.. AcceptedOptions().SelectMany(static option => option.Aliases.Prepend(option.Name))];
+        Token? given = tokens.Skip(after).Where((token, at) => !token.Value.StartsWith('-') && !TakenByAnOption(token)
+            && !ReferenceEquals(token, tokens[index]) && (joined || index + 1 >= tokens.Length || !ReferenceEquals(token, tokens[index + 1]))
+            && !(tokens[after + at - 1] is var previous && !ReferenceEquals(previous, tokens[index])
+                && previous.Value.StartsWith('-') && !accepted.Contains(OptionName(previous.Value))))
+            .FirstOrDefault();
         if (value is null || index < after)
         {
             return (template.ToString(), null);
@@ -296,6 +304,8 @@ internal sealed partial class ParsedInvocation
         string[] rest = values[(index + (joined ? 1 : 2))..];
         return given is null
             ? (Repeated([.. values[..after], value, .. values[after..index], .. rest], template), null)
+            : Aspose.Cli.Sdk.FilePaths.Same(given.Value, value)
+                ? (Repeated([.. values[..index], .. rest], template), $"The command was given '{value}' twice.")
             : (Repeated([.. values[..index], .. rest], template, argument),
                 $"The command was given two files to create, '{given.Value}' and '{value}': write the one to create in place of <{argument.Name}>.");
     }
