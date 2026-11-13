@@ -19,8 +19,8 @@ namespace Aspose.Cli.Product.Cells.Commands;
 /// invariant-culture decimal number is a number unless a number cell would drop
 /// some of its characters (leading zeros, a leading <c>+</c>, an integer part of
 /// more than 15 digits), and anything else — including the empty string — is
-/// text. Compiled values use the same CLR shapes as ops
-/// parsed from an <c>--ops</c> document (string/double/bool), so batching,
+/// text. Compiled values use the CLR shapes of ops parsed from an
+/// <c>--ops</c> document (string/bool, a number as a decimal), so batching,
 /// dry runs, recalculation and the preview hint apply to them unchanged.
 /// </remarks>
 internal static class SetDirectiveParser
@@ -99,9 +99,9 @@ internal static class SetDirectiveParser
     /// <summary>
     /// Types a non-formula value the way the same literal would type in an ops
     /// JSON document. Numbers are detected with an invariant-culture
-    /// <see cref="decimal"/> parse and carried as <see cref="double"/>, the one
-    /// numeric shape of the ops pipeline (see <c>JsonValueMatrix</c>), unless a
-    /// number cell would not keep their characters (<see cref="NumberText.DropsCharacters"/>).
+    /// <see cref="decimal"/> parse and carried as that decimal, which keeps the
+    /// digits they were written with (1.50), unless a number cell would not keep
+    /// their characters (<see cref="NumberText.DropsCharacters"/>).
     /// </summary>
     private static object TypedValue(string rawValue)
     {
@@ -113,7 +113,7 @@ internal static class SetDirectiveParser
         if (decimal.TryParse(rawValue, NumberStyles.Float, CultureInfo.InvariantCulture, out decimal number)
             && !NumberText.DropsCharacters(rawValue))
         {
-            return (double)number;
+            return number;
         }
 
         return rawValue;

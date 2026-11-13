@@ -16,13 +16,16 @@ internal sealed class CellsMutationHandlers : ICellsOpHandler<ValueTuple>
     private readonly IReadOnlyDictionary<string, Secret>? _secrets;
     private readonly InputResourceScope _inputs;
     private readonly CellsImportSources _sources;
+    private readonly bool _readAsWritten;
 
     internal CellsMutationHandlers(
         Workbook workbook,
         IReadOnlyDictionary<string, Secret>? secrets,
         InputResourceScope inputs,
-        CellsImportSources sources)
+        CellsImportSources sources,
+        bool readAsWritten)
     {
+        _readAsWritten = readAsWritten;
         _workbook = workbook;
         _secrets = secrets;
         _inputs = inputs;
@@ -425,7 +428,7 @@ internal sealed class CellsMutationHandlers : ICellsOpHandler<ValueTuple>
 
     public ValueTuple Apply(SetValuesOp operation)
     {
-        CellOps.SetValues(Sheet(operation), operation);
+        CellOps.SetValues(Sheet(operation), operation, _readAsWritten);
         return default;
     }
 

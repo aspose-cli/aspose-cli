@@ -11,7 +11,7 @@ namespace Aspose.Cli.Product.Cells.Engine.Editing;
 /// </summary>
 internal static class CellOps
 {
-    public static void SetValues(Worksheet sheet, SetValuesOp op)
+    public static void SetValues(Worksheet sheet, SetValuesOp op, bool readAsWritten)
     {
         CellRef anchor = Range(op.Range).Start;
         for (int row = 0; row < op.Values.Count; row++)
@@ -19,7 +19,7 @@ internal static class CellOps
             IReadOnlyList<object?> line = op.Values[row];
             for (int column = 0; column < line.Count; column++)
             {
-                ValueWriter.Write(sheet.Cells[anchor.Row + row, anchor.Column + column], line[column]);
+                ValueWriter.Write(sheet.Cells[anchor.Row + row, anchor.Column + column], line[column], readAsWritten);
             }
         }
     }

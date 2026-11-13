@@ -148,6 +148,31 @@ public sealed class CellsTextValuesAsWrittenTests : IDisposable
     }
 
     /// <summary>
+    /// A <c>--set</c> number into a csv is written as it was set, as the csv's own numbers are:
+    /// 1.50 stays 1.50, also in a cell that showed 2 or a new row. Text, a date and an id with
+    /// leading zeros are written as before, the other lines as the input wrote them, and the same
+    /// <c>--set</c> into an xlsx writes the number 1.5 without a number format.
+    /// </summary>
+    [Fact]
+    public void SetNumberIntoCsv_IsWrittenAsSet()
+    {
+        Write("price.csv", ["item,price", "a,19.90", "b,2", "c,abc"]);
+        Assert.Equal(0, Cli("cells", "create", "price.xlsx", "--sheet-names", "price").ExitCode);
+
+        CliResult edited = Cli("cells", "edit", "price.csv", "--out", "out.csv", "--output-format", "json",
+            "--set", "price!B3=1.50", "--set", "price!B4=3.10", "--set", "price!B5=4.00", "--set", "price!C2=0.50",
+            "--set", "price!A5=007", "--set", "price!C3=2026-01-05", "--set", "price!C4=note");
+        CliResult workbook = Cli("cells", "edit", "price.xlsx", "--in-place", "--set", "price!B3=1.50", "--output-format", "json");
+
+        Assert.True(edited.ExitCode == 0, $"exit {edited.ExitCode}: {edited.StdErr}{edited.StdOut}");
+        Assert.Equal(["item,price,", "a,19.90,0.50", "b,1.50,2026-01-05", "c,3.10,note", "007,4.00,"], Written("out.csv"));
+        Assert.True(workbook.ExitCode == 0, $"exit {workbook.ExitCode}: {workbook.StdErr}{workbook.StdOut}");
+        Assert.Equal(["number 1.5"], Cells("price.xlsx", "price", "B3"));
+        using var saved = new Aspose.Cells.Workbook(_workspace.File("price.xlsx"));
+        Assert.Equal(0, saved.Worksheets["price"].Cells["B3"].GetStyle().Number);
+    }
+
+    /// <summary>
     /// A csv converted to xlsx and back holds every text value as the input wrote it and every
     /// number and date as the workbook stores it, as any workbook converted to csv does.
     /// </summary>
