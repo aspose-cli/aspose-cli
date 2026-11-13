@@ -51,6 +51,12 @@ internal sealed record WorkbookSavePlan(string FormatId, SaveFormat Format, Save
     /// </summary>
     internal bool ReadAsWritten { get; init; }
 
+    /// <summary>
+    /// For an edit, the content its input had as it was loaded (<see cref="UnwrittenContent.Inventory"/>),
+    /// which the input keeps; null for any other save.
+    /// </summary>
+    internal IReadOnlyList<string>? InputContent { get; init; }
+
     /// <summary>True for the text formats (csv, tsv, md), which write only the active sheet.</summary>
     internal static bool WritesActiveSheetOnlyFor(string formatId) => CellsFormats.ActiveSheetOnly.Contains(formatId);
 

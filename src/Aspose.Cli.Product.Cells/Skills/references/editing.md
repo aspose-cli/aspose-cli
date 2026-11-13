@@ -332,7 +332,8 @@ deliver xlsx, which uses AES. Every
 other output, csv, tsv, html, mhtml, pdf, xps, json and md included, cannot. A single-sheet output of a multi-sheet workbook reports
 `SHEETS_DROPPED`, and a csv or tsv output of a sheet with charts, pictures or other drawings
 `LOSSY_CONVERSION`, as it does for the sheet's comments and its headers and footers, which are
-no `--verify` issue. `cells create` and `cells convert` follow the same rules. A `.txt` output
+no `--verify` issue unless the edit added them: then no file keeps them, and the issue exits 8.
+`cells create` and `cells convert` follow the same rules. A `.txt` output
 is written as csv; for tab-delimited text write a `.tsv` output, or run
 `cells convert book.xlsx --to tsv --out data.txt`. `cells edit` writing a csv or tsv input
 back in the format its name gives it, as in place, keeps its separator and its UTF-8 byte

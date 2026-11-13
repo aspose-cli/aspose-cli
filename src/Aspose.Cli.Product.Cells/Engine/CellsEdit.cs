@@ -37,6 +37,8 @@ internal static class CellsEdit
         WorkbookSavePlan savePlan = WorkbookSavePlan.Create(output.Format, licenseState,
             OutputProtection.For(output.Format, request.EncryptPassword, loaded.Protection, request.Password),
             byteOrderMark: request.ByteOrderMark, readAsWritten: loaded.ReadAsWritten, editedInput: loaded.DelimitedText);
+        // What the output leaves out that the input already had is still in the input; the rest the batch added.
+        savePlan = savePlan with { InputContent = UnwrittenContent.Inventory(workbook) };
         using var importSources = new CellsImportSources(session.Loader, session.Budgets, request.OpSecrets);
         var protection = new CellsProtectionTracker();
         string[] linksBefore = LinkSources(workbook);
