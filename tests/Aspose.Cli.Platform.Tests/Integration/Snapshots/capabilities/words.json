@@ -49,7 +49,7 @@
         "command": "edit",
         "inputSchema": "v2/words/ops",
         "operationSchema": "aspose-cli schema v2/words/ops --operation <op>",
-        "contractFingerprint": "sha256:8486e70b11ce9a9f25087bfd3a41d905601f299bdbbdf4e6648575e44d7f1be4",
+        "contractFingerprint": "sha256:1db175a16f02ac1c9b960cca490cfa550eaf221ba66a1b3873232d81d2d80105",
         "maximumOperationCount": 10000,
         "ops": [
           "accept_revisions",
@@ -6095,7 +6095,7 @@
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/inspect-result.schema.json#/$defs/wordsPageNumbersData/properties/alignment"
             },
             "text": {
-              "description": "The text of the paragraph that holds the number, replacing what it holds; {n} is the page number and {N} the document's page count, and {PAGE}, {NUMPAGES} and {SECTIONPAGES}, as a read shows those fields, are refused. A paragraph that also holds an image or another object is refused, and moving the number to the other location clears the paragraph it leaves. Without text, a new number takes a paragraph of its own, an existing one keeps its paragraph, and one moved from the other location takes its paragraph's words along unless this location already holds a number. A text without {n} goes in a new paragraph and leaves any page number where it is.",
+              "description": "The text of the paragraph that holds the number, replacing what it holds; {n} is the page number and {N} the document's page count, and {PAGE}, {NUMPAGES} and {SECTIONPAGES}, as a read shows those fields, are refused. Moving the number to the other location clears the paragraph it leaves; text over, or a move from, a paragraph that also holds an image, another object or a field other than the page number and count is refused. Without text, a new number takes a paragraph of its own, an existing one keeps its paragraph, and one moved from the other location takes its paragraph's words along unless this location already holds a number. A text without {n} goes in a new paragraph and leaves any page number where it is.",
               "type": "string",
               "minLength": 1,
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/inspect-result.schema.json#/$defs/wordsPageNumbersData/properties/text"
