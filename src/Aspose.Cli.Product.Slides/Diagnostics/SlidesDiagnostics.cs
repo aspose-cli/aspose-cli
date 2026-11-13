@@ -29,6 +29,9 @@ internal static class SlidesDiagnostics
     /// <summary>A placeholder of a slide that took another layout stands for another role.</summary>
     internal static readonly WarningCode PlaceholderRoleChanged = new("PLACEHOLDER_ROLE_CHANGED");
 
+    /// <summary>A slide shows no footer text, slide number or date that set_footer was given, since its layout has no placeholder for it.</summary>
+    internal static readonly WarningCode FooterNotShown = new("FOOTER_NOT_SHOWN");
+
     /// <summary>The verified output does not hold the slides in the order the batch left them.</summary>
     internal static readonly DiagnosticDescriptor SlideOrderMismatch = DiagnosticDescriptor.Verification("SLIDE_ORDER_MISMATCH");
 
@@ -49,6 +52,7 @@ internal static class SlidesDiagnostics
         DiagnosticDescriptor.Warning(TableOverflow),
         DiagnosticDescriptor.Warning(SlideBackgroundReset),
         DiagnosticDescriptor.Warning(PlaceholderRoleChanged),
+        DiagnosticDescriptor.Warning(FooterNotShown),
         DiagnosticDescriptor.Warning(HiddenSlidesSkipped),
         DiagnosticDescriptor.Warning(HiddenSlidesRendered),
         SlideOrderMismatch,

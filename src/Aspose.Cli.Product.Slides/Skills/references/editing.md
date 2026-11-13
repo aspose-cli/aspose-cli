@@ -127,7 +127,9 @@ comments a deck already has.
   character counts; read note text with `slides read --notes` or `extract --what notes`.
 - `set_footer` uses the layout's own footer, number and date placeholders; their position and
   style come from the template. A layout without them, as title layouts often hide footers,
-  shows nothing, so its slides are left out of the operation's `targets`.
+  shows nothing, so its slides are left out of the operation's `targets` and each warns
+  `FOOTER_NOT_SHOWN` with `details.fields`. Leave it so, as a title slide usually is; where it must
+  show them, its hint names layouts that have them, and `set_layout` to one changes its look.
 - `slides read --content shapes` reports each shape's `altText`, which `replace_text` does not
   change. To replace a picture, `delete_shape` it and `insert_image` the new one at its `rect`
   with an `altText`.

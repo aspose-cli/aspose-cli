@@ -1,0 +1,92 @@
+{
+  "name": "slides set_footer on every slide warns FOOTER_NOT_SHOWN once at the title slide, whose layout has no footer, slide-number or date placeholder, naming the fields it could not show, while the slides that show them warn nothing; the hint's set_layout and set_footer give that slide all three",
+  "files": {
+    "deck.md": { "text": "# Deck\n\nSub\n\n## Two\n\n- pt\n\n## Three\n\n- more\n" }
+  },
+  "steps": [
+    {
+      "args": ["slides", "create", "deck.pptx", "--from-markdown", "deck.md"],
+      "expect": { "exitCode": 0 }
+    },
+    {
+      "args": ["slides", "edit", "deck.pptx", "--ops", "{\"ops\":[{\"op\":\"set_footer\",\"text\":\"Foot\",\"showNumber\":true,\"showDate\":true}]}", "--out", "footed.pptx", "--verify", "--license-mode", "evaluation"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "verification.ok", "equals": true },
+          { "path": "warnings[0].code", "equals": "EVALUATION_MODE" },
+          { "path": "warnings[1].code", "equals": "FOOTER_NOT_SHOWN" },
+          { "path": "warnings[1].location", "equals": "slide/1" },
+          { "path": "warnings[1].details.fields", "equals": ["text", "showNumber", "showDate"] },
+          { "path": "warnings[1].message", "contains": "its layout 'Title Slide' has no footer or slide-number or date placeholder" },
+          { "path": "warnings[1].hint", "startsWith": "set_footer shows footer text, a slide number and a date only in the placeholders of a slide's layout, and a layout such as a title slide's often has none, so that the slide shows none of them: leave the slide so. Only where this slide must show them, set_layout it to a layout of its master that has them ('Title and Content'" },
+          { "path": "warnings[1].hint", "contains": "that changes the slide's layout and look" },
+          { "path": "warnings[2]", "exists": false }
+        ],
+        "files": { "present": ["footed.pptx"] }
+      }
+    },
+    {
+      "args": ["slides", "read", "footed.pptx", "--content", "full"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "slides[0].footer.showNumber", "equals": false },
+          { "path": "slides[0].footer.showDate", "equals": false },
+          { "path": "slides[0].footer.text", "exists": false },
+          { "path": "slides[1].footer.text", "equals": "Foot" },
+          { "path": "slides[1].footer.showNumber", "equals": true },
+          { "path": "slides[2].footer.showDate", "equals": true }
+        ]
+      }
+    },
+    {
+      "args": ["slides", "edit", "deck.pptx", "--ops", "{\"ops\":[{\"op\":\"set_footer\",\"showNumber\":true}]}", "--out", "numbered.pptx", "--license-mode", "evaluation"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "warnings[1].code", "equals": "FOOTER_NOT_SHOWN" },
+          { "path": "warnings[1].location", "equals": "slide/1" },
+          { "path": "warnings[1].details.fields", "equals": ["showNumber"] },
+          { "path": "warnings[2]", "exists": false }
+        ]
+      }
+    },
+    {
+      "args": ["slides", "edit", "deck.pptx", "--ops", "{\"ops\":[{\"op\":\"set_footer\",\"slides\":\"2-3\",\"text\":\"Foot\",\"showNumber\":true,\"showDate\":true},{\"op\":\"set_footer\",\"showNumber\":false,\"showDate\":false}]}", "--out", "quiet.pptx", "--verify", "--license-mode", "evaluation"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "verification.ok", "equals": true },
+          { "path": "warnings[0].code", "equals": "EVALUATION_MODE" },
+          { "path": "warnings[1]", "exists": false }
+        ]
+      }
+    },
+    {
+      "args": ["slides", "edit", "footed.pptx", "--ops", "{\"ops\":[{\"op\":\"set_layout\",\"slides\":\"1\",\"layout\":\"Title and Content\"},{\"op\":\"set_footer\",\"slides\":\"1\",\"text\":\"Foot\",\"showNumber\":true,\"showDate\":true}]}", "--out", "route.pptx", "--verify", "--license-mode", "evaluation"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "verification.ok", "equals": true },
+          { "path": "warnings[1].code", "equals": "PLACEHOLDER_ROLE_CHANGED" },
+          { "path": "warnings[1].details.from", "equals": "subtitle" },
+          { "path": "warnings[1].details.to", "equals": "body" },
+          { "path": "warnings[2]", "exists": false }
+        ]
+      }
+    },
+    {
+      "args": ["slides", "read", "route.pptx", "--slides", "1", "--content", "full"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "slides[0].title", "equals": "Deck" },
+          { "path": "slides[0].footer.text", "equals": "Foot" },
+          { "path": "slides[0].footer.showNumber", "equals": true },
+          { "path": "slides[0].footer.showDate", "equals": true }
+        ]
+      }
+    }
+  ]
+}

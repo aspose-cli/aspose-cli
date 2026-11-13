@@ -1,3 +1,5 @@
+using System.Globalization;
+using System.Text.Json.Nodes;
 using Aspose.Slides;
 using Aspose.Slides.SlideShow;
 using static Aspose.Cli.Product.Slides.Engine.Editing.SlidesMutationSupport;
@@ -134,9 +136,46 @@ internal sealed partial class SlidesMutationHandlers
             }
 
             FillEmptyFooters(slide, operation);
+            NameUnshown(slide, operation);
         }
 
         return default;
+    }
+
+    /// <summary>
+    /// Names, once per slide, what set_footer was given to show and the slide does not show after
+    /// it: the engine shows footer text, a slide number or a date only in a placeholder of the
+    /// slide's layout, and where the layout has none it adds none and leaves the slide as it was.
+    /// </summary>
+    private void NameUnshown(ISlide slide, SetFooterOp operation)
+    {
+        ISlideHeaderFooterManager shows = slide.HeaderFooterManager;
+        (string Field, string Name, string Role, PlaceholderType Type)[] unshown = [.. new (bool Unshown, string Field, string Name, string Role, PlaceholderType Type)[]
+        {
+            (operation.Text is not null && !shows.IsFooterVisible, "text", "footer text", SlidesPlaceholderRoles.Footer, PlaceholderType.Footer),
+            (operation.ShowNumber is true && !shows.IsSlideNumberVisible, "showNumber", "slide number", SlidesPlaceholderRoles.SlideNumber, PlaceholderType.SlideNumber),
+            (operation.ShowDate is true && !shows.IsDateTimeVisible, "showDate", "date", SlidesPlaceholderRoles.Date, PlaceholderType.DateAndTime),
+        }.Where(static item => item.Unshown).Select(static item => (item.Field, item.Name, item.Role, item.Type))];
+        if (unshown.Length == 0)
+        {
+            return;
+        }
+
+        int number = _presentation.Slides.IndexOf(slide) + 1;
+        string names = string.Join(" or ", unshown.Select(static item => item.Name));
+        string[] layouts = [.. slide.LayoutSlide.MasterSlide.LayoutSlides
+            .Where(layout => unshown.All(item => layout.Shapes.Any(shape => shape.Placeholder?.Type == item.Type)))
+            .Select(static layout => $"'{layout.Name}'")];
+        _warnings.Add(new Warning(SlidesDiagnostics.FooterNotShown, string.Create(CultureInfo.InvariantCulture,
+            $"Slide {number} shows no {names} after set_footer: its layout '{slide.LayoutSlide.Name}' has no {string.Join(" or ", unshown.Select(static item => item.Role))} placeholder."))
+        {
+            Hint = "set_footer shows footer text, a slide number and a date only in the placeholders of a slide's layout, and a layout such as a title slide's often has none, so that the slide shows none of them: leave the slide so. "
+                + (layouts.Length == 0
+                    ? "No layout of the slide's master has them."
+                    : $"Only where this slide must show them, set_layout it to a layout of its master that has them ({string.Join(", ", layouts)}) and set_footer it again: that changes the slide's layout and look, and may give its placeholders other roles, which set_layout warns about with PLACEHOLDER_ROLE_CHANGED."),
+            Location = SlidesStateProjection.SlideAddress(number),
+            Details = new JsonObject { ["fields"] = new JsonArray([.. unshown.Select(static item => JsonValue.Create(item.Field))]) },
+        });
     }
 
     // A footer placeholder activated from the layout starts empty; give it the requested text.
