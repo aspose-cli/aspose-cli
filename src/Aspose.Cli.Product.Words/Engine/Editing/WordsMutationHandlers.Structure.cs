@@ -246,9 +246,25 @@ internal sealed partial class WordsMutationHandlers
         // one they go along, read before any are cleared, since a section can show an earlier one's.
         Section[] targets = [.. Sections];
         string?[] shown = [.. targets.Select(section => PageNumberWords(WordsHeadersFooters.Continued(section, other)))];
+        HeaderFooterType type = operation.Location == "header" ? HeaderFooterType.HeaderPrimary : HeaderFooterType.FooterPrimary;
+        // Refused before anything changes: what a move would clear, or a text replace, that no text writes.
         foreach ((Section section, string? words) in targets.Zip(shown))
         {
-            if (numbers && section.HeadersFooters[other] is { } previous)
+            foreach (Paragraph paragraph in numbers && (operation.Text is not null || words is not null) ? PageNumberParagraphs(WordsHeadersFooters.Continued(section, other)) : [])
+            {
+                RequireOnlyTextAndFields(paragraph, moving: true);
+            }
+
+            if (numbers && operation.Text is { } given && PageNumberParagraphs(WordsHeadersFooters.Continued(section, type)).FirstOrDefault() is { } replaced
+                && WordsReadBack.PageNumberText(replaced) != given)
+            {
+                RequireOnlyTextAndFields(replaced);
+            }
+        }
+
+        foreach ((Section section, string? words) in targets.Zip(shown))
+        {
+            if (numbers && PageNumberParagraphs(WordsHeadersFooters.Continued(section, other)).Length > 0 && OwnStory(section, other, targets) is { } previous)
             {
                 if (operation.Text is null && words is null)
                 {
@@ -260,13 +276,8 @@ internal sealed partial class WordsMutationHandlers
                 }
             }
 
-            // A section that shows an earlier section's story is numbered with it when the operation
-            // numbers that section too, and else numbers a copy of it, as Word copies a story whose
-            // link to the previous section is undone, so that it still shows what it showed.
-            HeaderFooterType type = operation.Location == "header" ? HeaderFooterType.HeaderPrimary : HeaderFooterType.FooterPrimary;
-            HeaderFooter? container = section.HeadersFooters[type];
-            HeaderFooter? continued = container is null ? WordsHeadersFooters.Continued(section, type) : null;
-            if (continued is not null && targets.Contains(continued.ParentSection))
+            HeaderFooter? container = OwnStory(section, type, targets);
+            if (container is null && WordsHeadersFooters.Continued(section, type) is not null)
             {
                 SetPageNumbering(section, operation);
                 continue;
@@ -274,13 +285,7 @@ internal sealed partial class WordsMutationHandlers
 
             if (container is null)
             {
-                container = continued is null ? new HeaderFooter(_document, type) : (HeaderFooter)continued.Clone(isCloneChildren: true);
-                // A bookmark's name marks one place in the document, which the original keeps.
-                foreach (Node mark in container.GetChildNodes(NodeType.BookmarkStart, true).Cast<Node>().Concat(container.GetChildNodes(NodeType.BookmarkEnd, true).Cast<Node>()).ToArray())
-                {
-                    mark.Remove();
-                }
-
+                container = new HeaderFooter(_document, type);
                 section.HeadersFooters.Add(container);
             }
 
@@ -320,8 +325,40 @@ internal sealed partial class WordsMutationHandlers
             SetPageNumbering(section, operation);
         }
 
+        Array.ForEach(numbers ? targets : [], section => _pageNumbers.Numbered(operation, section, other));
+
         _document.UpdatePageLayout();
         return default;
+    }
+
+    /// <summary>
+    /// The story of a type a section shows, as one the operation may change for that section: its
+    /// own, or a copy of one it continues from a section the operation does not select, as Word
+    /// copies a story whose link to the previous section is undone, so that the section still shows
+    /// what it showed; null when it continues a selected section's, which the operation changes with
+    /// that section, or shows none.
+    /// </summary>
+    private static HeaderFooter? OwnStory(Section section, HeaderFooterType type, Section[] targets)
+    {
+        if (section.HeadersFooters[type] is { } own)
+        {
+            return own;
+        }
+
+        if (WordsHeadersFooters.Continued(section, type) is not { } continued || targets.Contains(continued.ParentSection))
+        {
+            return null;
+        }
+
+        var copy = (HeaderFooter)continued.Clone(isCloneChildren: true);
+        // A bookmark's name marks one place in the document, which the original keeps.
+        foreach (Node mark in copy.GetChildNodes(NodeType.BookmarkStart, true).Cast<Node>().Concat(copy.GetChildNodes(NodeType.BookmarkEnd, true).Cast<Node>()).ToArray())
+        {
+            mark.Remove();
+        }
+
+        section.HeadersFooters.Add(copy);
+        return copy;
     }
 
     // A section's own numbering: where it starts and how its numbers are written.
@@ -388,19 +425,20 @@ internal sealed partial class WordsMutationHandlers
             ? text
             : null;
 
+    // The paragraphs of a header or footer that hold a PAGE field, each once.
+    private static Paragraph[] PageNumberParagraphs(HeaderFooter? story) => story is null ? [] : [.. story.Range.Fields.Cast<Field>()
+        .Where(static field => field.Type == FieldType.FieldPage)
+        .Select(static field => (Paragraph)field.Start.GetAncestor(NodeType.Paragraph))
+        .Distinct()];
+
     /// <summary>
     /// Empties each paragraph of a header or footer that holds a PAGE field, and removes it when
     /// it is not the last, so that a number moving elsewhere leaves none of its words.
     /// </summary>
-    private void ClearPageNumberParagraphs(HeaderFooter headerFooter)
+    private static void ClearPageNumberParagraphs(HeaderFooter headerFooter)
     {
-        Paragraph[] paragraphs = [.. headerFooter.Range.Fields.Cast<Field>()
-            .Where(static field => field.Type == FieldType.FieldPage)
-            .Select(static field => (Paragraph)field.Start.GetAncestor(NodeType.Paragraph))
-            .Distinct()];
-        foreach (Paragraph paragraph in paragraphs)
+        foreach (Paragraph paragraph in PageNumberParagraphs(headerFooter))
         {
-            RequireOnlyTextAndFields(paragraph, moving: true);
             RemoveInlines([.. paragraph.Range.Fields.Cast<Field>()], [.. paragraph.GetChildNodes(NodeType.Any, isDeep: false).Cast<Node>()]);
             if (paragraph.ParentNode is HeaderFooter && headerFooter.Paragraphs.Count > 1)
             {

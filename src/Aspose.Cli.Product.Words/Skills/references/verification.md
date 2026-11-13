@@ -20,7 +20,10 @@ again. A count that grew instead means the format stored content as fields,
 such as a linked picture in RTF. When the batch ends with a `set_page_numbers`
 without `text` that moved the number with its words, the page numbers must
 read as those words, or the issue is `PAGE_NUMBERS_MISMATCH`; such a move
-earlier in the batch is in `uncheckedOps`. In evaluation mode, an output that ends with
+earlier in the batch is in `uncheckedOps`. Every `set_page_numbers` also leaves
+the other location of each section it numbers without a page number, unless a
+later one numbers that section again; one still shown there is
+`PAGE_NUMBERS_MISMATCH` at that section. In evaluation mode, an output that ends with
 the engine's truncation notice is the issue `OUTPUT_TRUNCATED`: the content
 after it is missing. A warning about what the batch left out that leaves the
 output incomplete (`affectsCompleteness`), such as `PAGE_NUMBERS_REMOVED`, or
