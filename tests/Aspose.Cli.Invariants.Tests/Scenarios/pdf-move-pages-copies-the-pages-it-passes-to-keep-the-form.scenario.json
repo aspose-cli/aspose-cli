@@ -1,0 +1,653 @@
+{
+  "name": "pdf edit move_pages copies the pages it passes rather than those it moves where that keeps the form: a field with a parent in its name stays one field, filled and covered as the page shows it; a move that must copy one is refused naming it, and in --best-effort the field stays where it was; a field split between pages moves when the pages the hint names move together; pages that are not one run move as before",
+  "files": {
+    "hier.pdf": {
+      "base64": "JVBERi0xLjcKMSAwIG9iago8PCAvVHlwZSAvQ2F0YWxvZyAvUGFnZXMgMiAwIFIgL0Fjcm9Gb3JtIDw8IC9GaWVsZHMgWzEwMCAwIFIgMTAzIDAgUl0gL0RBICgvSGVsdiAwIFRmIDAgZykgL0RSIDw8IC9Gb250IDw8IC9IZWx2IDUgMCBSID4+ID4+ICA+PiAgPj4KZW5kb2JqCjIgMCBvYmoKPDwgL1R5cGUgL1BhZ2VzIC9LaWRzIFsxMCAwIFIgMTEgMCBSXSAvQ291bnQgMiA+PgplbmRvYmoKNSAwIG9iago8PCAvVHlwZSAvRm9udCAvU3VidHlwZSAvVHlwZTEgL0Jhc2VGb250IC9IZWx2ZXRpY2EgPj4KZW5kb2JqCjEwIDAgb2JqCjw8IC9UeXBlIC9QYWdlIC9QYXJlbnQgMiAwIFIgL01lZGlhQm94IFswIDAgNjEyIDc5Ml0gL1Jlc291cmNlcyA8PCAvRm9udCA8PCAvSGVsdiA1IDAgUiA+PiA+PiAvQ29udGVudHMgMzAgMCBSIC9Bbm5vdHMgWzEwMiAwIFJdID4+CmVuZG9iagoxMSAwIG9iago8PCAvVHlwZSAvUGFnZSAvUGFyZW50IDIgMCBSIC9NZWRpYUJveCBbMCAwIDYxMiA3OTJdIC9SZXNvdXJjZXMgPDwgL0ZvbnQgPDwgL0hlbHYgNSAwIFIgPj4gPj4gL0NvbnRlbnRzIDMxIDAgUiAvQW5ub3RzIFsxMDMgMCBSXSA+PgplbmRvYmoKMzAgMCBvYmoKPDwgL0xlbmd0aCAzOSA+PgpzdHJlYW0KQlQgL0hlbHYgMTIgVGYgNzIgNzQwIFRkIChQYWdlIDEpIFRqIEVUCmVuZHN0cmVhbQplbmRvYmoKMzEgMCBvYmoKPDwgL0xlbmd0aCAzOSA+PgpzdHJlYW0KQlQgL0hlbHYgMTIgVGYgNzIgNzQwIFRkIChQYWdlIDIpIFRqIEVUCmVuZHN0cmVhbQplbmRvYmoKMTAwIDAgb2JqCjw8IC9UIChmb3JtKSAvS2lkcyBbMTAxIDAgUl0gPj4KZW5kb2JqCjEwMSAwIG9iago8PCAvVCAocGVyc29uKSAvUGFyZW50IDEwMCAwIFIgL0tpZHMgWzEwMiAwIFJdID4+CmVuZG9iagoxMDIgMCBvYmoKPDwgL1R5cGUgL0Fubm90IC9TdWJ0eXBlIC9XaWRnZXQgL0ZUIC9UeCAvVCAobmFtZSkgL1YgKEFsaWNlKSAvUGFyZW50IDEwMSAwIFIgL1JlY3QgWzcyIDYwMCAyNzIgNjIwXSAvUCAxMCAwIFIgPj4KZW5kb2JqCjEwMyAwIG9iago8PCAvVHlwZSAvQW5ub3QgL1N1YnR5cGUgL1dpZGdldCAvRlQgL1R4IC9UIChvdGhlcikgL1YgKE90aGVyVikgL1JlY3QgWzcyIDYwMCAyNzIgNjIwXSAvUCAxMSAwIFIgPj4KZW5kb2JqCnhyZWYKMCAxMDQKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDA5IDAwMDAwIG4gCjAwMDAwMDAxNTcgMDAwMDAgbiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAyMjIgMDAwMDAgbiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMjkyIDAwMDAwIG4gCjAwMDAwMDA0NDAgMDAwMDAgbiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDU4OCAwMDAwMCBuIAowMDAwMDAwNjc4IDAwMDAwIG4gCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwNzY4IDAwMDAwIG4gCjAwMDAwMDA4MTcgMDAwMDAgbiAKMDAwMDAwMDg4NCAwMDAwMCBuIAowMDAwMDAxMDE1IDAwMDAwIG4gCnRyYWlsZXIKPDwgL1NpemUgMTA0IC9Sb290IDEgMCBSID4+CnN0YXJ0eHJlZgoxMTMyCiUlRU9GCg=="
+    },
+    "hier2.pdf": {
+      "base64": "JVBERi0xLjcKMSAwIG9iago8PCAvVHlwZSAvQ2F0YWxvZyAvUGFnZXMgMiAwIFIgL0Fjcm9Gb3JtIDw8IC9GaWVsZHMgWzEwMCAwIFJdIC9EQSAoL0hlbHYgMCBUZiAwIGcpIC9EUiA8PCAvRm9udCA8PCAvSGVsdiA1IDAgUiA+PiA+PiAgPj4gID4+CmVuZG9iagoyIDAgb2JqCjw8IC9UeXBlIC9QYWdlcyAvS2lkcyBbMTAgMCBSIDExIDAgUl0gL0NvdW50IDIgPj4KZW5kb2JqCjUgMCBvYmoKPDwgL1R5cGUgL0ZvbnQgL1N1YnR5cGUgL1R5cGUxIC9CYXNlRm9udCAvSGVsdmV0aWNhID4+CmVuZG9iagoxMCAwIG9iago8PCAvVHlwZSAvUGFnZSAvUGFyZW50IDIgMCBSIC9NZWRpYUJveCBbMCAwIDYxMiA3OTJdIC9SZXNvdXJjZXMgPDwgL0ZvbnQgPDwgL0hlbHYgNSAwIFIgPj4gPj4gL0NvbnRlbnRzIDMwIDAgUiAvQW5ub3RzIFsxMDEgMCBSXSA+PgplbmRvYmoKMTEgMCBvYmoKPDwgL1R5cGUgL1BhZ2UgL1BhcmVudCAyIDAgUiAvTWVkaWFCb3ggWzAgMCA2MTIgNzkyXSAvUmVzb3VyY2VzIDw8IC9Gb250IDw8IC9IZWx2IDUgMCBSID4+ID4+IC9Db250ZW50cyAzMSAwIFIgL0Fubm90cyBbMTAyIDAgUl0gPj4KZW5kb2JqCjMwIDAgb2JqCjw8IC9MZW5ndGggMzkgPj4Kc3RyZWFtCkJUIC9IZWx2IDEyIFRmIDcyIDc0MCBUZCAoUGFnZSAxKSBUaiBFVAplbmRzdHJlYW0KZW5kb2JqCjMxIDAgb2JqCjw8IC9MZW5ndGggMzkgPj4Kc3RyZWFtCkJUIC9IZWx2IDEyIFRmIDcyIDc0MCBUZCAoUGFnZSAyKSBUaiBFVAplbmRzdHJlYW0KZW5kb2JqCjEwMCAwIG9iago8PCAvVCAoZm9ybSkgL0tpZHMgWzEwMSAwIFIgMTAyIDAgUl0gPj4KZW5kb2JqCjEwMSAwIG9iago8PCAvVHlwZSAvQW5ub3QgL1N1YnR5cGUgL1dpZGdldCAvRlQgL1R4IC9UIChhKSAvViAoQWxwaGFWKSAvUGFyZW50IDEwMCAwIFIgL1JlY3QgWzcyIDYwMCAyNzIgNjIwXSAvUCAxMCAwIFIgPj4KZW5kb2JqCjEwMiAwIG9iago8PCAvVHlwZSAvQW5ub3QgL1N1YnR5cGUgL1dpZGdldCAvRlQgL1R4IC9UIChiKSAvViAoQmV0YVYpIC9QYXJlbnQgMTAwIDAgUiAvUmVjdCBbNzIgNjAwIDI3MiA2MjBdIC9QIDExIDAgUiA+PgplbmRvYmoKeHJlZgowIDEwMwowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDkgMDAwMDAgbiAKMDAwMDAwMDE0OSAwMDAwMCBuIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDIxNCAwMDAwMCBuIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAyODQgMDAwMDAgbiAKMDAwMDAwMDQzMiAwMDAwMCBuIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwNTgwIDAwMDAwIG4gCjAwMDAwMDA2NzAgMDAwMDAgbiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDA3NjAgMDAwMDAgbiAKMDAwMDAwMDgxNyAwMDAwMCBuIAowMDAwMDAwOTQ2IDAwMDAwIG4gCnRyYWlsZXIKPDwgL1NpemUgMTAzIC9Sb290IDEgMCBSID4+CnN0YXJ0eHJlZgoxMDc0CiUlRU9GCg=="
+    },
+    "two.pdf": {
+      "base64": "JVBERi0xLjcKMSAwIG9iago8PCAvVHlwZSAvQ2F0YWxvZyAvUGFnZXMgMiAwIFIgL0Fjcm9Gb3JtIDw8IC9GaWVsZHMgWzEwMCAwIFJdIC9EQSAoL0hlbHYgMCBUZiAwIGcpIC9EUiA8PCAvRm9udCA8PCAvSGVsdiA1IDAgUiA+PiA+PiAgPj4gID4+CmVuZG9iagoyIDAgb2JqCjw8IC9UeXBlIC9QYWdlcyAvS2lkcyBbMTAgMCBSIDExIDAgUiAxMiAwIFJdIC9Db3VudCAzID4+CmVuZG9iago1IDAgb2JqCjw8IC9UeXBlIC9Gb250IC9TdWJ0eXBlIC9UeXBlMSAvQmFzZUZvbnQgL0hlbHZldGljYSA+PgplbmRvYmoKMTAgMCBvYmoKPDwgL1R5cGUgL1BhZ2UgL1BhcmVudCAyIDAgUiAvTWVkaWFCb3ggWzAgMCA2MTIgNzkyXSAvUmVzb3VyY2VzIDw8IC9Gb250IDw8IC9IZWx2IDUgMCBSID4+ID4+IC9Db250ZW50cyAzMCAwIFIgL0Fubm90cyBbMTAxIDAgUl0gPj4KZW5kb2JqCjExIDAgb2JqCjw8IC9UeXBlIC9QYWdlIC9QYXJlbnQgMiAwIFIgL01lZGlhQm94IFswIDAgNjEyIDc5Ml0gL1Jlc291cmNlcyA8PCAvRm9udCA8PCAvSGVsdiA1IDAgUiA+PiA+PiAvQ29udGVudHMgMzEgMCBSIC9Bbm5vdHMgWzEwMiAwIFJdID4+CmVuZG9iagoxMiAwIG9iago8PCAvVHlwZSAvUGFnZSAvUGFyZW50IDIgMCBSIC9NZWRpYUJveCBbMCAwIDYxMiA3OTJdIC9SZXNvdXJjZXMgPDwgL0ZvbnQgPDwgL0hlbHYgNSAwIFIgPj4gPj4gL0NvbnRlbnRzIDMyIDAgUiAvQW5ub3RzIFtdID4+CmVuZG9iagozMCAwIG9iago8PCAvTGVuZ3RoIDM5ID4+CnN0cmVhbQpCVCAvSGVsdiAxMiBUZiA3MiA3NDAgVGQgKFBhZ2UgMSkgVGogRVQKZW5kc3RyZWFtCmVuZG9iagozMSAwIG9iago8PCAvTGVuZ3RoIDM5ID4+CnN0cmVhbQpCVCAvSGVsdiAxMiBUZiA3MiA3NDAgVGQgKFBhZ2UgMikgVGogRVQKZW5kc3RyZWFtCmVuZG9iagozMiAwIG9iago8PCAvTGVuZ3RoIDM5ID4+CnN0cmVhbQpCVCAvSGVsdiAxMiBUZiA3MiA3NDAgVGQgKFBhZ2UgMykgVGogRVQKZW5kc3RyZWFtCmVuZG9iagoxMDAgMCBvYmoKPDwgL0ZUIC9UeCAvVCAoZCkgL1YgKERWKSAvS2lkcyBbMTAxIDAgUiAxMDIgMCBSXSA+PgplbmRvYmoKMTAxIDAgb2JqCjw8IC9UeXBlIC9Bbm5vdCAvU3VidHlwZSAvV2lkZ2V0IC9QYXJlbnQgMTAwIDAgUiAvUmVjdCBbNzIgNjAwIDI3MiA2MjBdIC9QIDEwIDAgUiA+PgplbmRvYmoKMTAyIDAgb2JqCjw8IC9UeXBlIC9Bbm5vdCAvU3VidHlwZSAvV2lkZ2V0IC9QYXJlbnQgMTAwIDAgUiAvUmVjdCBbNzIgNjAwIDI3MiA2MjBdIC9QIDExIDAgUiA+PgplbmRvYmoKeHJlZgowIDEwMwowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDkgMDAwMDAgbiAKMDAwMDAwMDE0OSAwMDAwMCBuIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDIyMSAwMDAwMCBuIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAyOTEgMDAwMDAgbiAKMDAwMDAwMDQzOSAwMDAwMCBuIAowMDAwMDAwNTg3IDAwMDAwIG4gCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwNzI4IDAwMDAwIG4gCjAwMDAwMDA4MTggMDAwMDAgbiAKMDAwMDAwMDkwOCAwMDAwMCBuIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDA5OTggMDAwMDAgbiAKMDAwMDAwMTA2OCAwMDAwMCBuIAowMDAwMDAxMTcwIDAwMDAwIG4gCnRyYWlsZXIKPDwgL1NpemUgMTAzIC9Sb290IDEgMCBSID4+CnN0YXJ0eHJlZgoxMjcyCiUlRU9GCg=="
+    },
+    "formx.pdf": {
+      "base64": "JVBERi0xLjcKMSAwIG9iago8PCAvVHlwZSAvQ2F0YWxvZyAvUGFnZXMgMiAwIFIgL0Fjcm9Gb3JtIDw8IC9GaWVsZHMgWzEyIDAgUl0gL0RBICgvSGVsdiAwIFRmIDAgZykgL0RSIDw8IC9Gb250IDw8IC9IZWx2IDcgMCBSID4+ID4+ID4+ID4+CmVuZG9iagoyIDAgb2JqCjw8IC9UeXBlIC9QYWdlcyAvS2lkcyBbMyAwIFIgNCAwIFIgNSAwIFIgNiAwIFJdIC9Db3VudCA0ID4+CmVuZG9iagozIDAgb2JqCjw8IC9UeXBlIC9QYWdlIC9QYXJlbnQgMiAwIFIgL01lZGlhQm94IFswIDAgNjEyIDc5Ml0gL1Jlc291cmNlcyA8PCAvRm9udCA8PCAvRjEgNyAwIFIgPj4gPj4gL0NvbnRlbnRzIDggMCBSIC9Bbm5vdHMgWzEzIDAgUl0gPj4KZW5kb2JqCjQgMCBvYmoKPDwgL1R5cGUgL1BhZ2UgL1BhcmVudCAyIDAgUiAvTWVkaWFCb3ggWzAgMCA2MTIgNzkyXSAvUmVzb3VyY2VzIDw8IC9Gb250IDw8IC9GMSA3IDAgUiA+PiA+PiAvQ29udGVudHMgOSAwIFIgPj4KZW5kb2JqCjUgMCBvYmoKPDwgL1R5cGUgL1BhZ2UgL1BhcmVudCAyIDAgUiAvTWVkaWFCb3ggWzAgMCA2MTIgNzkyXSAvUmVzb3VyY2VzIDw8IC9Gb250IDw8IC9GMSA3IDAgUiA+PiA+PiAvQ29udGVudHMgMTAgMCBSID4+CmVuZG9iago2IDAgb2JqCjw8IC9UeXBlIC9QYWdlIC9QYXJlbnQgMiAwIFIgL01lZGlhQm94IFswIDAgNjEyIDc5Ml0gL1Jlc291cmNlcyA8PCAvRm9udCA8PCAvRjEgNyAwIFIgPj4gPj4gL0NvbnRlbnRzIDExIDAgUiA+PgplbmRvYmoKNyAwIG9iago8PCAvVHlwZSAvRm9udCAvU3VidHlwZSAvVHlwZTEgL0Jhc2VGb250IC9IZWx2ZXRpY2EgPj4KZW5kb2JqCjggMCBvYmoKPDwgL0xlbmd0aCAzNyA+PgpzdHJlYW0KQlQgL0YxIDE4IFRmIDcyIDcyMCBUZCAoUGFnZSAxKSBUaiBFVAplbmRzdHJlYW0KZW5kb2JqCjkgMCBvYmoKPDwgL0xlbmd0aCAzNyA+PgpzdHJlYW0KQlQgL0YxIDE4IFRmIDcyIDcyMCBUZCAoUGFnZSAyKSBUaiBFVAplbmRzdHJlYW0KZW5kb2JqCjEwIDAgb2JqCjw8IC9MZW5ndGggMzcgPj4Kc3RyZWFtCkJUIC9GMSAxOCBUZiA3MiA3MjAgVGQgKFBhZ2UgMykgVGogRVQKZW5kc3RyZWFtCmVuZG9iagoxMSAwIG9iago8PCAvTGVuZ3RoIDM3ID4+CnN0cmVhbQpCVCAvRjEgMTggVGYgNzIgNzIwIFRkIChQYWdlIDQpIFRqIEVUCmVuZHN0cmVhbQplbmRvYmoKMTIgMCBvYmoKPDwgL1QgKGZvcm0pIC9LaWRzIFsxMyAwIFJdID4+CmVuZG9iagoxMyAwIG9iago8PCAvVHlwZSAvQW5ub3QgL1N1YnR5cGUgL1dpZGdldCAvRlQgL1R4IC9UICh4KSAvViAoWFYpIC9QYXJlbnQgMTIgMCBSIC9SZWN0IFs3MiA2MDAgMjcyIDYyMF0gL1AgMyAwIFIgPj4KZW5kb2JqCnhyZWYKMCAxNAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDkgMDAwMDAgbiAKMDAwMDAwMDE0NiAwMDAwMCBuIAowMDAwMDAwMjIxIDAwMDAwIG4gCjAwMDAwMDAzNjQgMDAwMDAgbiAKMDAwMDAwMDQ5MCAwMDAwMCBuIAowMDAwMDAwNjE3IDAwMDAwIG4gCjAwMDAwMDA3NDQgMDAwMDAgbiAKMDAwMDAwMDgxNCAwMDAwMCBuIAowMDAwMDAwOTAxIDAwMDAwIG4gCjAwMDAwMDA5ODggMDAwMDAgbiAKMDAwMDAwMTA3NiAwMDAwMCBuIAowMDAwMDAxMTY0IDAwMDAwIG4gCjAwMDAwMDEyMTEgMDAwMDAgbiAKdHJhaWxlcgo8PCAvU2l6ZSAxNCAvUm9vdCAxIDAgUiA+PgpzdGFydHhyZWYKMTMzMwolJUVPRgo="
+    },
+    "nav4.pdf": {
+      "base64": "JVBERi0xLjcKMSAwIG9iago8PCAvVHlwZSAvQ2F0YWxvZyAvUGFnZXMgMiAwIFIgL091dGxpbmVzIDEyIDAgUiA+PgplbmRvYmoKMiAwIG9iago8PCAvVHlwZSAvUGFnZXMgL0tpZHMgWzMgMCBSIDQgMCBSIDUgMCBSIDYgMCBSXSAvQ291bnQgNCA+PgplbmRvYmoKMyAwIG9iago8PCAvVHlwZSAvUGFnZSAvUGFyZW50IDIgMCBSIC9NZWRpYUJveCBbMCAwIDYxMiA3OTJdIC9SZXNvdXJjZXMgPDwgL0ZvbnQgPDwgL0YxIDcgMCBSID4+ID4+IC9Db250ZW50cyA4IDAgUiAvQW5ub3RzIFsxNiAwIFJdID4+CmVuZG9iago0IDAgb2JqCjw8IC9UeXBlIC9QYWdlIC9QYXJlbnQgMiAwIFIgL01lZGlhQm94IFswIDAgNjEyIDc5Ml0gL1Jlc291cmNlcyA8PCAvRm9udCA8PCAvRjEgNyAwIFIgPj4gPj4gL0NvbnRlbnRzIDkgMCBSIC9Bbm5vdHMgW10gPj4KZW5kb2JqCjUgMCBvYmoKPDwgL1R5cGUgL1BhZ2UgL1BhcmVudCAyIDAgUiAvTWVkaWFCb3ggWzAgMCA2MTIgNzkyXSAvUmVzb3VyY2VzIDw8IC9Gb250IDw8IC9GMSA3IDAgUiA+PiA+PiAvQ29udGVudHMgMTAgMCBSIC9Bbm5vdHMgWzE3IDAgUl0gPj4KZW5kb2JqCjYgMCBvYmoKPDwgL1R5cGUgL1BhZ2UgL1BhcmVudCAyIDAgUiAvTWVkaWFCb3ggWzAgMCA2MTIgNzkyXSAvUmVzb3VyY2VzIDw8IC9Gb250IDw8IC9GMSA3IDAgUiA+PiA+PiAvQ29udGVudHMgMTEgMCBSIC9Bbm5vdHMgWzE4IDAgUl0gPj4KZW5kb2JqCjcgMCBvYmoKPDwgL1R5cGUgL0ZvbnQgL1N1YnR5cGUgL1R5cGUxIC9CYXNlRm9udCAvSGVsdmV0aWNhID4+CmVuZG9iago4IDAgb2JqCjw8IC9MZW5ndGggMzcgPj4Kc3RyZWFtCkJUIC9GMSAxOCBUZiA3MiA3MjAgVGQgKFBhZ2UgMSkgVGogRVQKZW5kc3RyZWFtCmVuZG9iago5IDAgb2JqCjw8IC9MZW5ndGggMzcgPj4Kc3RyZWFtCkJUIC9GMSAxOCBUZiA3MiA3MjAgVGQgKFBhZ2UgMikgVGogRVQKZW5kc3RyZWFtCmVuZG9iagoxMCAwIG9iago8PCAvTGVuZ3RoIDM3ID4+CnN0cmVhbQpCVCAvRjEgMTggVGYgNzIgNzIwIFRkIChQYWdlIDMpIFRqIEVUCmVuZHN0cmVhbQplbmRvYmoKMTEgMCBvYmoKPDwgL0xlbmd0aCAzNyA+PgpzdHJlYW0KQlQgL0YxIDE4IFRmIDcyIDcyMCBUZCAoUGFnZSA0KSBUaiBFVAplbmRzdHJlYW0KZW5kb2JqCjEyIDAgb2JqCjw8IC9UeXBlIC9PdXRsaW5lcyAvRmlyc3QgMTMgMCBSIC9MYXN0IDE1IDAgUiAvQ291bnQgMyA+PgplbmRvYmoKMTMgMCBvYmoKPDwgL1RpdGxlIChCMSkgL1BhcmVudCAxMiAwIFIgL05leHQgMTQgMCBSIC9EZXN0IFszIDAgUiAvRml0XSA+PgplbmRvYmoKMTQgMCBvYmoKPDwgL1RpdGxlIChCMykgL1BhcmVudCAxMiAwIFIgL1ByZXYgMTMgMCBSIC9OZXh0IDE1IDAgUiAvRGVzdCBbNSAwIFIgL1hZWiA3MiA3MDAgMF0gPj4KZW5kb2JqCjE1IDAgb2JqCjw8IC9UaXRsZSAoQjQpIC9QYXJlbnQgMTIgMCBSIC9QcmV2IDE0IDAgUiAvRGVzdCBbNiAwIFIgL0ZpdEggNzAwXSA+PgplbmRvYmoKMTYgMCBvYmoKPDwgL1R5cGUgL0Fubm90IC9TdWJ0eXBlIC9MaW5rIC9SZWN0IFs3MiA2MDAgMjAwIDYyMF0gL0JvcmRlciBbMCAwIDBdIC9EZXN0IFs2IDAgUiAvRml0XSA+PgplbmRvYmoKMTcgMCBvYmoKPDwgL1R5cGUgL0Fubm90IC9TdWJ0eXBlIC9MaW5rIC9SZWN0IFs3MiA2MDAgMjAwIDYyMF0gL0JvcmRlciBbMCAwIDBdIC9EZXN0IFszIDAgUiAvRml0XSA+PgplbmRvYmoKMTggMCBvYmoKPDwgL1R5cGUgL0Fubm90IC9TdWJ0eXBlIC9MaW5rIC9SZWN0IFs3MiA2MDAgMjAwIDYyMF0gL0JvcmRlciBbMCAwIDBdIC9EZXN0IFs0IDAgUiAvWFlaIDcyIDcwMCAwXSA+PgplbmRvYmoKMTkgMCBvYmoKPDwgL1R5cGUgL0Fubm90IC9TdWJ0eXBlIC9XaWRnZXQgL0ZUIC9UeCAvVCAoZjMpIC9WIChGM1YpIC9SZWN0IFs3MiA1MDAgMjcyIDUyMF0gL1AgNSAwIFIgPj4KZW5kb2JqCnhyZWYKMCAyMAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDkgMDAwMDAgbiAKMDAwMDAwMDA3NSAwMDAwMCBuIAowMDAwMDAwMTUwIDAwMDAwIG4gCjAwMDAwMDAyOTMgMDAwMDAgbiAKMDAwMDAwMDQzMCAwMDAwMCBuIAowMDAwMDAwNTc0IDAwMDAwIG4gCjAwMDAwMDA3MTggMDAwMDAgbiAKMDAwMDAwMDc4OCAwMDAwMCBuIAowMDAwMDAwODc1IDAwMDAwIG4gCjAwMDAwMDA5NjIgMDAwMDAgbiAKMDAwMDAwMTA1MCAwMDAwMCBuIAowMDAwMDAxMTM4IDAwMDAwIG4gCjAwMDAwMDEyMTIgMDAwMDAgbiAKMDAwMDAwMTI5MyAwMDAwMCBuIAowMDAwMDAxMzk2IDAwMDAwIG4gCjAwMDAwMDE0ODIgMDAwMDAgbiAKMDAwMDAwMTU5MCAwMDAwMCBuIAowMDAwMDAxNjk4IDAwMDAwIG4gCjAwMDAwMDE4MTUgMDAwMDAgbiAKdHJhaWxlcgo8PCAvU2l6ZSAyMCAvUm9vdCAxIDAgUiA+PgpzdGFydHhyZWYKMTkyNAolJUVPRgo="
+    },
+    "nav4f.pdf": {
+      "base64": "JVBERi0xLjcKMSAwIG9iago8PCAvVHlwZSAvQ2F0YWxvZyAvUGFnZXMgMiAwIFIgL091dGxpbmVzIDEyIDAgUiAvQWNyb0Zvcm0gPDwgL0ZpZWxkcyBbMTkgMCBSXSAvREEgKC9IZWx2IDAgVGYgMCBnKSAvRFIgPDwgL0ZvbnQgPDwgL0hlbHYgNyAwIFIgPj4gPj4gPj4gPj4KZW5kb2JqCjIgMCBvYmoKPDwgL1R5cGUgL1BhZ2VzIC9LaWRzIFszIDAgUiA0IDAgUiA1IDAgUiA2IDAgUl0gL0NvdW50IDQgPj4KZW5kb2JqCjMgMCBvYmoKPDwgL1R5cGUgL1BhZ2UgL1BhcmVudCAyIDAgUiAvTWVkaWFCb3ggWzAgMCA2MTIgNzkyXSAvUmVzb3VyY2VzIDw8IC9Gb250IDw8IC9GMSA3IDAgUiA+PiA+PiAvQ29udGVudHMgOCAwIFIgL0Fubm90cyBbMTYgMCBSXSA+PgplbmRvYmoKNCAwIG9iago8PCAvVHlwZSAvUGFnZSAvUGFyZW50IDIgMCBSIC9NZWRpYUJveCBbMCAwIDYxMiA3OTJdIC9SZXNvdXJjZXMgPDwgL0ZvbnQgPDwgL0YxIDcgMCBSID4+ID4+IC9Db250ZW50cyA5IDAgUiAvQW5ub3RzIFtdID4+CmVuZG9iago1IDAgb2JqCjw8IC9UeXBlIC9QYWdlIC9QYXJlbnQgMiAwIFIgL01lZGlhQm94IFswIDAgNjEyIDc5Ml0gL1Jlc291cmNlcyA8PCAvRm9udCA8PCAvRjEgNyAwIFIgPj4gPj4gL0NvbnRlbnRzIDEwIDAgUiAvQW5ub3RzIFsxNyAwIFIgMTkgMCBSXSA+PgplbmRvYmoKNiAwIG9iago8PCAvVHlwZSAvUGFnZSAvUGFyZW50IDIgMCBSIC9NZWRpYUJveCBbMCAwIDYxMiA3OTJdIC9SZXNvdXJjZXMgPDwgL0ZvbnQgPDwgL0YxIDcgMCBSID4+ID4+IC9Db250ZW50cyAxMSAwIFIgL0Fubm90cyBbMTggMCBSXSA+PgplbmRvYmoKNyAwIG9iago8PCAvVHlwZSAvRm9udCAvU3VidHlwZSAvVHlwZTEgL0Jhc2VGb250IC9IZWx2ZXRpY2EgPj4KZW5kb2JqCjggMCBvYmoKPDwgL0xlbmd0aCAzNyA+PgpzdHJlYW0KQlQgL0YxIDE4IFRmIDcyIDcyMCBUZCAoUGFnZSAxKSBUaiBFVAplbmRzdHJlYW0KZW5kb2JqCjkgMCBvYmoKPDwgL0xlbmd0aCAzNyA+PgpzdHJlYW0KQlQgL0YxIDE4IFRmIDcyIDcyMCBUZCAoUGFnZSAyKSBUaiBFVAplbmRzdHJlYW0KZW5kb2JqCjEwIDAgb2JqCjw8IC9MZW5ndGggMzcgPj4Kc3RyZWFtCkJUIC9GMSAxOCBUZiA3MiA3MjAgVGQgKFBhZ2UgMykgVGogRVQKZW5kc3RyZWFtCmVuZG9iagoxMSAwIG9iago8PCAvTGVuZ3RoIDM3ID4+CnN0cmVhbQpCVCAvRjEgMTggVGYgNzIgNzIwIFRkIChQYWdlIDQpIFRqIEVUCmVuZHN0cmVhbQplbmRvYmoKMTIgMCBvYmoKPDwgL1R5cGUgL091dGxpbmVzIC9GaXJzdCAxMyAwIFIgL0xhc3QgMTUgMCBSIC9Db3VudCAzID4+CmVuZG9iagoxMyAwIG9iago8PCAvVGl0bGUgKEIxKSAvUGFyZW50IDEyIDAgUiAvTmV4dCAxNCAwIFIgL0Rlc3QgWzMgMCBSIC9GaXRdID4+CmVuZG9iagoxNCAwIG9iago8PCAvVGl0bGUgKEIzKSAvUGFyZW50IDEyIDAgUiAvUHJldiAxMyAwIFIgL05leHQgMTUgMCBSIC9EZXN0IFs1IDAgUiAvWFlaIDcyIDcwMCAwXSA+PgplbmRvYmoKMTUgMCBvYmoKPDwgL1RpdGxlIChCNCkgL1BhcmVudCAxMiAwIFIgL1ByZXYgMTQgMCBSIC9EZXN0IFs2IDAgUiAvRml0SCA3MDBdID4+CmVuZG9iagoxNiAwIG9iago8PCAvVHlwZSAvQW5ub3QgL1N1YnR5cGUgL0xpbmsgL1JlY3QgWzcyIDYwMCAyMDAgNjIwXSAvQm9yZGVyIFswIDAgMF0gL0Rlc3QgWzYgMCBSIC9GaXRdID4+CmVuZG9iagoxNyAwIG9iago8PCAvVHlwZSAvQW5ub3QgL1N1YnR5cGUgL0xpbmsgL1JlY3QgWzcyIDYwMCAyMDAgNjIwXSAvQm9yZGVyIFswIDAgMF0gL0Rlc3QgWzMgMCBSIC9GaXRdID4+CmVuZG9iagoxOCAwIG9iago8PCAvVHlwZSAvQW5ub3QgL1N1YnR5cGUgL0xpbmsgL1JlY3QgWzcyIDYwMCAyMDAgNjIwXSAvQm9yZGVyIFswIDAgMF0gL0Rlc3QgWzQgMCBSIC9YWVogNzIgNzAwIDBdID4+CmVuZG9iagoxOSAwIG9iago8PCAvVHlwZSAvQW5ub3QgL1N1YnR5cGUgL1dpZGdldCAvRlQgL1R4IC9UIChmMykgL1YgKEYzVikgL1JlY3QgWzcyIDUwMCAyNzIgNTIwXSAvUCA1IDAgUiA+PgplbmRvYmoKeHJlZgowIDIwCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwOSAwMDAwMCBuIAowMDAwMDAwMTYzIDAwMDAwIG4gCjAwMDAwMDAyMzggMDAwMDAgbiAKMDAwMDAwMDM4MSAwMDAwMCBuIAowMDAwMDAwNTE4IDAwMDAwIG4gCjAwMDAwMDA2NjkgMDAwMDAgbiAKMDAwMDAwMDgxMyAwMDAwMCBuIAowMDAwMDAwODgzIDAwMDAwIG4gCjAwMDAwMDA5NzAgMDAwMDAgbiAKMDAwMDAwMTA1NyAwMDAwMCBuIAowMDAwMDAxMTQ1IDAwMDAwIG4gCjAwMDAwMDEyMzMgMDAwMDAgbiAKMDAwMDAwMTMwNyAwMDAwMCBuIAowMDAwMDAxMzg4IDAwMDAwIG4gCjAwMDAwMDE0OTEgMDAwMDAgbiAKMDAwMDAwMTU3NyAwMDAwMCBuIAowMDAwMDAxNjg1IDAwMDAwIG4gCjAwMDAwMDE3OTMgMDAwMDAgbiAKMDAwMDAwMTkxMCAwMDAwMCBuIAp0cmFpbGVyCjw8IC9TaXplIDIwIC9Sb290IDEgMCBSID4+CnN0YXJ0eHJlZgoyMDE5CiUlRU9GCg=="
+    },
+    "form.html": {
+      "text": "<html><head><meta charset=\"utf-8\"><title>Registration</title></head><body><h1>Registration Form</h1><p>Name: <input type=\"text\" name=\"applicant\" value=\"\"></p><p>ID No.: <input type=\"text\" name=\"idno\" value=\"\"></p><p>Mobile: <input type=\"text\" name=\"mobile\" value=\"13812345678\"></p></body></html>"
+    }
+  },
+  "steps": [
+    {
+      "args": [
+        "pdf",
+        "edit",
+        "hier.pdf",
+        "--ops",
+        "[{\"op\":\"move_pages\",\"pages\":\"1\",\"to\":2}]",
+        "--out",
+        "hier-moved.pdf"
+      ],
+      "expect": {
+        "exitCode": 0
+      }
+    },
+    {
+      "args": [
+        "pdf",
+        "inspect",
+        "hier-moved.pdf",
+        "--detail",
+        "forms"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          {
+            "path": "forms.fieldCount",
+            "equals": 2
+          },
+          {
+            "path": "forms.fields[0].name",
+            "equals": "form.person.name"
+          },
+          {
+            "path": "forms.fields[0].value",
+            "equals": "Alice"
+          },
+          {
+            "path": "forms.fields[0].page",
+            "equals": 2
+          },
+          {
+            "path": "forms.fields[1].name",
+            "equals": "other"
+          },
+          {
+            "path": "forms.fields[1].page",
+            "equals": 1
+          }
+        ]
+      }
+    },
+    {
+      "args": [
+        "pdf",
+        "edit",
+        "hier.pdf",
+        "--ops",
+        "[{\"op\":\"move_pages\",\"pages\":\"1\",\"to\":2},{\"op\":\"set_form_field\",\"name\":\"form.person.name\",\"value\":\"Bob\"}]",
+        "--out",
+        "hier-set.pdf",
+        "--verify"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          {
+            "path": "verification.ok",
+            "equals": true
+          },
+          {
+            "path": "verification.checkedOps",
+            "contains": "op-0002"
+          }
+        ]
+      }
+    },
+    {
+      "args": [
+        "pdf",
+        "inspect",
+        "hier-set.pdf",
+        "--detail",
+        "forms"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          {
+            "path": "forms.fields[0].name",
+            "equals": "form.person.name"
+          },
+          {
+            "path": "forms.fields[0].value",
+            "equals": "Bob"
+          },
+          {
+            "path": "forms.fields[0].page",
+            "equals": 2
+          }
+        ]
+      }
+    },
+    {
+      "args": [
+        "pdf",
+        "edit",
+        "hier.pdf",
+        "--ops",
+        "[{\"op\":\"move_pages\",\"pages\":\"1\",\"to\":2},{\"op\":\"redact_area\",\"page\":2,\"rect\":{\"x\":60,\"y\":160,\"width\":230,\"height\":45}}]",
+        "--out",
+        "hier-covered.pdf",
+        "--verify"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          {
+            "path": "verification.ok",
+            "equals": true
+          }
+        ]
+      }
+    },
+    {
+      "args": [
+        "pdf",
+        "search",
+        "hier-covered.pdf",
+        "--pattern",
+        "Alice"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          {
+            "path": "hits",
+            "equals": []
+          }
+        ]
+      }
+    },
+    {
+      "args": [
+        "pdf",
+        "edit",
+        "hier2.pdf",
+        "--ops",
+        "[{\"op\":\"move_pages\",\"pages\":\"1\",\"to\":2}]",
+        "--out",
+        "hier2-moved.pdf"
+      ],
+      "expect": {
+        "exitCode": 4,
+        "error": "OPS_INVALID",
+        "json": [
+          {
+            "path": "error.message",
+            "contains": "form field 'form.a' on page 1 has a parent in its name, and this move copies that page"
+          },
+          {
+            "path": "error.hint",
+            "equals": "Move the pages without form fields around page 1 instead, which can give the same order without copying the field; if no such move does, tell the user."
+          }
+        ],
+        "files": {
+          "absent": [
+            "hier2-moved.pdf"
+          ],
+          "nothingWritten": true
+        }
+      }
+    },
+    {
+      "args": [
+        "pdf",
+        "edit",
+        "formx.pdf",
+        "--ops",
+        "[{\"op\":\"move_pages\",\"pages\":\"1,3\",\"to\":3}]",
+        "--out",
+        "formx-refused.pdf"
+      ],
+      "expect": {
+        "exitCode": 4,
+        "error": "OPS_INVALID",
+        "json": [
+          {
+            "path": "error.message",
+            "contains": "form field 'form.x' on page 1 has a parent in its name, and this move copies that page"
+          },
+          {
+            "path": "error.hint",
+            "equals": "Move the pages without form fields around page 1 instead, which can give the same order without copying the field; if no such move does, tell the user."
+          }
+        ]
+      }
+    },
+    {
+      "args": [
+        "pdf",
+        "edit",
+        "formx.pdf",
+        "--ops",
+        "[{\"op\":\"move_pages\",\"pages\":\"2,4\",\"to\":1}]",
+        "--out",
+        "formx-moved.pdf"
+      ],
+      "expect": {
+        "exitCode": 0
+      }
+    },
+    {
+      "args": [
+        "pdf",
+        "read",
+        "formx-moved.pdf"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          {
+            "path": "pages[0].text",
+            "contains": "Page 2"
+          },
+          {
+            "path": "pages[1].text",
+            "contains": "Page 4"
+          },
+          {
+            "path": "pages[2].text",
+            "contains": "Page 1"
+          },
+          {
+            "path": "pages[3].text",
+            "contains": "Page 3"
+          },
+          {
+            "path": "pages[4]",
+            "exists": false
+          }
+        ]
+      }
+    },
+    {
+      "args": [
+        "pdf",
+        "inspect",
+        "formx-moved.pdf",
+        "--detail",
+        "forms"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          {
+            "path": "forms.fieldCount",
+            "equals": 1
+          },
+          {
+            "path": "forms.fields[0].name",
+            "equals": "form.x"
+          },
+          {
+            "path": "forms.fields[0].page",
+            "equals": 3
+          }
+        ]
+      }
+    },
+    {
+      "args": [
+        "pdf",
+        "edit",
+        "hier2.pdf",
+        "--ops",
+        "[{\"op\":\"move_pages\",\"pages\":\"1\",\"to\":2},{\"op\":\"set_form_field\",\"name\":\"form.a\",\"value\":\"Changed\"}]",
+        "--out",
+        "hier2-best.pdf",
+        "--best-effort"
+      ],
+      "expect": {
+        "exitCode": 8,
+        "json": [
+          {
+            "path": "applied[0].status",
+            "equals": "failed"
+          },
+          {
+            "path": "applied[1].status",
+            "equals": "ok"
+          }
+        ]
+      }
+    },
+    {
+      "args": [
+        "pdf",
+        "inspect",
+        "hier2-best.pdf",
+        "--detail",
+        "forms"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          {
+            "path": "forms.fields[0].name",
+            "equals": "form.a"
+          },
+          {
+            "path": "forms.fields[0].value",
+            "equals": "Changed"
+          },
+          {
+            "path": "forms.fields[0].page",
+            "equals": 1
+          }
+        ]
+      }
+    },
+    {
+      "args": [
+        "pdf",
+        "edit",
+        "two.pdf",
+        "--ops",
+        "[{\"op\":\"move_pages\",\"pages\":\"1\",\"to\":3}]",
+        "--out",
+        "two-split.pdf"
+      ],
+      "expect": {
+        "exitCode": 4,
+        "error": "OPS_INVALID",
+        "json": [
+          {
+            "path": "error.hint",
+            "equals": "Move pages 1, 2 together, or move the pages without form fields around them instead, which can give the same order without copying the field; if no such move does, tell the user."
+          }
+        ]
+      }
+    },
+    {
+      "args": [
+        "pdf",
+        "edit",
+        "two.pdf",
+        "--ops",
+        "[{\"op\":\"move_pages\",\"pages\":\"1-2\",\"to\":2}]",
+        "--out",
+        "two-moved.pdf"
+      ],
+      "expect": {
+        "exitCode": 0
+      }
+    },
+    {
+      "args": [
+        "pdf",
+        "inspect",
+        "two-moved.pdf",
+        "--detail",
+        "forms"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          {
+            "path": "forms.fieldCount",
+            "equals": 1
+          },
+          {
+            "path": "forms.fields[0].name",
+            "equals": "d"
+          }
+        ]
+      }
+    },
+    {
+      "args": [
+        "pdf",
+        "edit",
+        "nav4f.pdf",
+        "--ops",
+        "[{\"op\":\"move_pages\",\"pages\":\"3\",\"to\":2}]",
+        "--out",
+        "nav4f-moved.pdf"
+      ],
+      "expect": {
+        "exitCode": 0
+      }
+    },
+    {
+      "args": [
+        "pdf",
+        "inspect",
+        "nav4f-moved.pdf",
+        "--detail",
+        "forms"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          {
+            "path": "forms.fieldCount",
+            "equals": 1
+          },
+          {
+            "path": "forms.fields[0].name",
+            "equals": "f3"
+          },
+          {
+            "path": "forms.fields[0].page",
+            "equals": 2
+          }
+        ]
+      }
+    },
+    {
+      "args": [
+        "pdf",
+        "edit",
+        "nav4.pdf",
+        "--ops",
+        "[{\"op\":\"move_pages\",\"pages\":\"1,3\",\"to\":3}]",
+        "--out",
+        "nav4-apart.pdf"
+      ],
+      "expect": {
+        "exitCode": 0
+      }
+    },
+    {
+      "args": [
+        "pdf",
+        "read",
+        "nav4-apart.pdf"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          {
+            "path": "pages[0].text",
+            "contains": "Page 2"
+          },
+          {
+            "path": "pages[1].text",
+            "contains": "Page 4"
+          },
+          {
+            "path": "pages[2].text",
+            "contains": "Page 1"
+          },
+          {
+            "path": "pages[3].text",
+            "contains": "Page 3"
+          },
+          {
+            "path": "pages[4]",
+            "exists": false
+          }
+        ]
+      }
+    },
+    {
+      "args": [
+        "pdf",
+        "edit",
+        "nav4f.pdf",
+        "--ops",
+        "[{\"op\":\"move_pages\",\"pages\":\"1,3\",\"to\":3}]",
+        "--out",
+        "nav4f-apart.pdf"
+      ],
+      "expect": {
+        "exitCode": 0
+      }
+    },
+    {
+      "args": [
+        "pdf",
+        "inspect",
+        "nav4f-apart.pdf",
+        "--detail",
+        "forms"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          {
+            "path": "forms.fieldCount",
+            "equals": 1
+          },
+          {
+            "path": "forms.fields[0].name",
+            "equals": "f3"
+          },
+          {
+            "path": "forms.fields[0].page",
+            "equals": 4
+          }
+        ]
+      }
+    },
+    {
+      "args": [
+        "pdf",
+        "edit",
+        "nav4f.pdf",
+        "--ops",
+        "[{\"op\":\"move_pages\",\"pages\":\"1,3\",\"to\":3},{\"op\":\"redact_area\",\"page\":4,\"rect\":{\"x\":60,\"y\":262,\"width\":230,\"height\":40}}]",
+        "--out",
+        "nav4f-covered.pdf",
+        "--verify"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          {
+            "path": "verification.ok",
+            "equals": true
+          }
+        ]
+      }
+    },
+    {
+      "args": [
+        "pdf",
+        "inspect",
+        "nav4f-covered.pdf",
+        "--detail",
+        "forms"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          {
+            "path": "forms.fieldCount",
+            "equals": 0
+          }
+        ]
+      }
+    },
+    {
+      "args": [
+        "pdf",
+        "search",
+        "nav4f-covered.pdf",
+        "--pattern",
+        "F3V"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          {
+            "path": "hits",
+            "equals": []
+          }
+        ]
+      }
+    },
+    {
+      "args": [
+        "pdf",
+        "create",
+        "form.pdf",
+        "--from-html",
+        "form.html"
+      ],
+      "expect": {
+        "exitCode": 0
+      }
+    },
+    {
+      "args": [
+        "pdf",
+        "edit",
+        "form.pdf",
+        "--ops",
+        "[{\"op\":\"insert_page\",\"at\":2},{\"op\":\"insert_page\",\"at\":3},{\"op\":\"move_pages\",\"pages\":\"1,3\",\"to\":2}]",
+        "--out",
+        "form-apart.pdf"
+      ],
+      "expect": {
+        "exitCode": 0
+      }
+    },
+    {
+      "args": [
+        "pdf",
+        "inspect",
+        "form-apart.pdf",
+        "--detail",
+        "forms"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          {
+            "path": "forms.fieldCount",
+            "equals": 3
+          },
+          {
+            "path": "forms.fields[0].name",
+            "equals": "applicant"
+          },
+          {
+            "path": "forms.fields[0].page",
+            "equals": 2
+          },
+          {
+            "path": "forms.fields[1].name",
+            "equals": "idno"
+          },
+          {
+            "path": "forms.fields[2].name",
+            "equals": "mobile"
+          },
+          {
+            "path": "forms.fields[2].value",
+            "equals": "13812345678"
+          }
+        ]
+      }
+    }
+  ]
+}

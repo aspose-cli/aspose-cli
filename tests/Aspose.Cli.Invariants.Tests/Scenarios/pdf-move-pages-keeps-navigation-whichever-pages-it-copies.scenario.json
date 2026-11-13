@@ -1,0 +1,357 @@
+{
+  "name": "pdf edit move_pages leaves the page order, the pages of the bookmarks and the target pages of the links the same whichever pages it copies: those it moves or, beside a form field, those it passes",
+  "files": {
+    "nav4.pdf": {
+      "base64": "JVBERi0xLjcKMSAwIG9iago8PCAvVHlwZSAvQ2F0YWxvZyAvUGFnZXMgMiAwIFIgL091dGxpbmVzIDEyIDAgUiA+PgplbmRvYmoKMiAwIG9iago8PCAvVHlwZSAvUGFnZXMgL0tpZHMgWzMgMCBSIDQgMCBSIDUgMCBSIDYgMCBSXSAvQ291bnQgNCA+PgplbmRvYmoKMyAwIG9iago8PCAvVHlwZSAvUGFnZSAvUGFyZW50IDIgMCBSIC9NZWRpYUJveCBbMCAwIDYxMiA3OTJdIC9SZXNvdXJjZXMgPDwgL0ZvbnQgPDwgL0YxIDcgMCBSID4+ID4+IC9Db250ZW50cyA4IDAgUiAvQW5ub3RzIFsxNiAwIFJdID4+CmVuZG9iago0IDAgb2JqCjw8IC9UeXBlIC9QYWdlIC9QYXJlbnQgMiAwIFIgL01lZGlhQm94IFswIDAgNjEyIDc5Ml0gL1Jlc291cmNlcyA8PCAvRm9udCA8PCAvRjEgNyAwIFIgPj4gPj4gL0NvbnRlbnRzIDkgMCBSIC9Bbm5vdHMgW10gPj4KZW5kb2JqCjUgMCBvYmoKPDwgL1R5cGUgL1BhZ2UgL1BhcmVudCAyIDAgUiAvTWVkaWFCb3ggWzAgMCA2MTIgNzkyXSAvUmVzb3VyY2VzIDw8IC9Gb250IDw8IC9GMSA3IDAgUiA+PiA+PiAvQ29udGVudHMgMTAgMCBSIC9Bbm5vdHMgWzE3IDAgUl0gPj4KZW5kb2JqCjYgMCBvYmoKPDwgL1R5cGUgL1BhZ2UgL1BhcmVudCAyIDAgUiAvTWVkaWFCb3ggWzAgMCA2MTIgNzkyXSAvUmVzb3VyY2VzIDw8IC9Gb250IDw8IC9GMSA3IDAgUiA+PiA+PiAvQ29udGVudHMgMTEgMCBSIC9Bbm5vdHMgWzE4IDAgUl0gPj4KZW5kb2JqCjcgMCBvYmoKPDwgL1R5cGUgL0ZvbnQgL1N1YnR5cGUgL1R5cGUxIC9CYXNlRm9udCAvSGVsdmV0aWNhID4+CmVuZG9iago4IDAgb2JqCjw8IC9MZW5ndGggMzcgPj4Kc3RyZWFtCkJUIC9GMSAxOCBUZiA3MiA3MjAgVGQgKFBhZ2UgMSkgVGogRVQKZW5kc3RyZWFtCmVuZG9iago5IDAgb2JqCjw8IC9MZW5ndGggMzcgPj4Kc3RyZWFtCkJUIC9GMSAxOCBUZiA3MiA3MjAgVGQgKFBhZ2UgMikgVGogRVQKZW5kc3RyZWFtCmVuZG9iagoxMCAwIG9iago8PCAvTGVuZ3RoIDM3ID4+CnN0cmVhbQpCVCAvRjEgMTggVGYgNzIgNzIwIFRkIChQYWdlIDMpIFRqIEVUCmVuZHN0cmVhbQplbmRvYmoKMTEgMCBvYmoKPDwgL0xlbmd0aCAzNyA+PgpzdHJlYW0KQlQgL0YxIDE4IFRmIDcyIDcyMCBUZCAoUGFnZSA0KSBUaiBFVAplbmRzdHJlYW0KZW5kb2JqCjEyIDAgb2JqCjw8IC9UeXBlIC9PdXRsaW5lcyAvRmlyc3QgMTMgMCBSIC9MYXN0IDE1IDAgUiAvQ291bnQgMyA+PgplbmRvYmoKMTMgMCBvYmoKPDwgL1RpdGxlIChCMSkgL1BhcmVudCAxMiAwIFIgL05leHQgMTQgMCBSIC9EZXN0IFszIDAgUiAvRml0XSA+PgplbmRvYmoKMTQgMCBvYmoKPDwgL1RpdGxlIChCMykgL1BhcmVudCAxMiAwIFIgL1ByZXYgMTMgMCBSIC9OZXh0IDE1IDAgUiAvRGVzdCBbNSAwIFIgL1hZWiA3MiA3MDAgMF0gPj4KZW5kb2JqCjE1IDAgb2JqCjw8IC9UaXRsZSAoQjQpIC9QYXJlbnQgMTIgMCBSIC9QcmV2IDE0IDAgUiAvRGVzdCBbNiAwIFIgL0ZpdEggNzAwXSA+PgplbmRvYmoKMTYgMCBvYmoKPDwgL1R5cGUgL0Fubm90IC9TdWJ0eXBlIC9MaW5rIC9SZWN0IFs3MiA2MDAgMjAwIDYyMF0gL0JvcmRlciBbMCAwIDBdIC9EZXN0IFs2IDAgUiAvRml0XSA+PgplbmRvYmoKMTcgMCBvYmoKPDwgL1R5cGUgL0Fubm90IC9TdWJ0eXBlIC9MaW5rIC9SZWN0IFs3MiA2MDAgMjAwIDYyMF0gL0JvcmRlciBbMCAwIDBdIC9EZXN0IFszIDAgUiAvRml0XSA+PgplbmRvYmoKMTggMCBvYmoKPDwgL1R5cGUgL0Fubm90IC9TdWJ0eXBlIC9MaW5rIC9SZWN0IFs3MiA2MDAgMjAwIDYyMF0gL0JvcmRlciBbMCAwIDBdIC9EZXN0IFs0IDAgUiAvWFlaIDcyIDcwMCAwXSA+PgplbmRvYmoKMTkgMCBvYmoKPDwgL1R5cGUgL0Fubm90IC9TdWJ0eXBlIC9XaWRnZXQgL0ZUIC9UeCAvVCAoZjMpIC9WIChGM1YpIC9SZWN0IFs3MiA1MDAgMjcyIDUyMF0gL1AgNSAwIFIgPj4KZW5kb2JqCnhyZWYKMCAyMAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDkgMDAwMDAgbiAKMDAwMDAwMDA3NSAwMDAwMCBuIAowMDAwMDAwMTUwIDAwMDAwIG4gCjAwMDAwMDAyOTMgMDAwMDAgbiAKMDAwMDAwMDQzMCAwMDAwMCBuIAowMDAwMDAwNTc0IDAwMDAwIG4gCjAwMDAwMDA3MTggMDAwMDAgbiAKMDAwMDAwMDc4OCAwMDAwMCBuIAowMDAwMDAwODc1IDAwMDAwIG4gCjAwMDAwMDA5NjIgMDAwMDAgbiAKMDAwMDAwMTA1MCAwMDAwMCBuIAowMDAwMDAxMTM4IDAwMDAwIG4gCjAwMDAwMDEyMTIgMDAwMDAgbiAKMDAwMDAwMTI5MyAwMDAwMCBuIAowMDAwMDAxMzk2IDAwMDAwIG4gCjAwMDAwMDE0ODIgMDAwMDAgbiAKMDAwMDAwMTU5MCAwMDAwMCBuIAowMDAwMDAxNjk4IDAwMDAwIG4gCjAwMDAwMDE4MTUgMDAwMDAgbiAKdHJhaWxlcgo8PCAvU2l6ZSAyMCAvUm9vdCAxIDAgUiA+PgpzdGFydHhyZWYKMTkyNAolJUVPRgo="
+    },
+    "nav4f.pdf": {
+      "base64": "JVBERi0xLjcKMSAwIG9iago8PCAvVHlwZSAvQ2F0YWxvZyAvUGFnZXMgMiAwIFIgL091dGxpbmVzIDEyIDAgUiAvQWNyb0Zvcm0gPDwgL0ZpZWxkcyBbMTkgMCBSXSAvREEgKC9IZWx2IDAgVGYgMCBnKSAvRFIgPDwgL0ZvbnQgPDwgL0hlbHYgNyAwIFIgPj4gPj4gPj4gPj4KZW5kb2JqCjIgMCBvYmoKPDwgL1R5cGUgL1BhZ2VzIC9LaWRzIFszIDAgUiA0IDAgUiA1IDAgUiA2IDAgUl0gL0NvdW50IDQgPj4KZW5kb2JqCjMgMCBvYmoKPDwgL1R5cGUgL1BhZ2UgL1BhcmVudCAyIDAgUiAvTWVkaWFCb3ggWzAgMCA2MTIgNzkyXSAvUmVzb3VyY2VzIDw8IC9Gb250IDw8IC9GMSA3IDAgUiA+PiA+PiAvQ29udGVudHMgOCAwIFIgL0Fubm90cyBbMTYgMCBSXSA+PgplbmRvYmoKNCAwIG9iago8PCAvVHlwZSAvUGFnZSAvUGFyZW50IDIgMCBSIC9NZWRpYUJveCBbMCAwIDYxMiA3OTJdIC9SZXNvdXJjZXMgPDwgL0ZvbnQgPDwgL0YxIDcgMCBSID4+ID4+IC9Db250ZW50cyA5IDAgUiAvQW5ub3RzIFtdID4+CmVuZG9iago1IDAgb2JqCjw8IC9UeXBlIC9QYWdlIC9QYXJlbnQgMiAwIFIgL01lZGlhQm94IFswIDAgNjEyIDc5Ml0gL1Jlc291cmNlcyA8PCAvRm9udCA8PCAvRjEgNyAwIFIgPj4gPj4gL0NvbnRlbnRzIDEwIDAgUiAvQW5ub3RzIFsxNyAwIFIgMTkgMCBSXSA+PgplbmRvYmoKNiAwIG9iago8PCAvVHlwZSAvUGFnZSAvUGFyZW50IDIgMCBSIC9NZWRpYUJveCBbMCAwIDYxMiA3OTJdIC9SZXNvdXJjZXMgPDwgL0ZvbnQgPDwgL0YxIDcgMCBSID4+ID4+IC9Db250ZW50cyAxMSAwIFIgL0Fubm90cyBbMTggMCBSXSA+PgplbmRvYmoKNyAwIG9iago8PCAvVHlwZSAvRm9udCAvU3VidHlwZSAvVHlwZTEgL0Jhc2VGb250IC9IZWx2ZXRpY2EgPj4KZW5kb2JqCjggMCBvYmoKPDwgL0xlbmd0aCAzNyA+PgpzdHJlYW0KQlQgL0YxIDE4IFRmIDcyIDcyMCBUZCAoUGFnZSAxKSBUaiBFVAplbmRzdHJlYW0KZW5kb2JqCjkgMCBvYmoKPDwgL0xlbmd0aCAzNyA+PgpzdHJlYW0KQlQgL0YxIDE4IFRmIDcyIDcyMCBUZCAoUGFnZSAyKSBUaiBFVAplbmRzdHJlYW0KZW5kb2JqCjEwIDAgb2JqCjw8IC9MZW5ndGggMzcgPj4Kc3RyZWFtCkJUIC9GMSAxOCBUZiA3MiA3MjAgVGQgKFBhZ2UgMykgVGogRVQKZW5kc3RyZWFtCmVuZG9iagoxMSAwIG9iago8PCAvTGVuZ3RoIDM3ID4+CnN0cmVhbQpCVCAvRjEgMTggVGYgNzIgNzIwIFRkIChQYWdlIDQpIFRqIEVUCmVuZHN0cmVhbQplbmRvYmoKMTIgMCBvYmoKPDwgL1R5cGUgL091dGxpbmVzIC9GaXJzdCAxMyAwIFIgL0xhc3QgMTUgMCBSIC9Db3VudCAzID4+CmVuZG9iagoxMyAwIG9iago8PCAvVGl0bGUgKEIxKSAvUGFyZW50IDEyIDAgUiAvTmV4dCAxNCAwIFIgL0Rlc3QgWzMgMCBSIC9GaXRdID4+CmVuZG9iagoxNCAwIG9iago8PCAvVGl0bGUgKEIzKSAvUGFyZW50IDEyIDAgUiAvUHJldiAxMyAwIFIgL05leHQgMTUgMCBSIC9EZXN0IFs1IDAgUiAvWFlaIDcyIDcwMCAwXSA+PgplbmRvYmoKMTUgMCBvYmoKPDwgL1RpdGxlIChCNCkgL1BhcmVudCAxMiAwIFIgL1ByZXYgMTQgMCBSIC9EZXN0IFs2IDAgUiAvRml0SCA3MDBdID4+CmVuZG9iagoxNiAwIG9iago8PCAvVHlwZSAvQW5ub3QgL1N1YnR5cGUgL0xpbmsgL1JlY3QgWzcyIDYwMCAyMDAgNjIwXSAvQm9yZGVyIFswIDAgMF0gL0Rlc3QgWzYgMCBSIC9GaXRdID4+CmVuZG9iagoxNyAwIG9iago8PCAvVHlwZSAvQW5ub3QgL1N1YnR5cGUgL0xpbmsgL1JlY3QgWzcyIDYwMCAyMDAgNjIwXSAvQm9yZGVyIFswIDAgMF0gL0Rlc3QgWzMgMCBSIC9GaXRdID4+CmVuZG9iagoxOCAwIG9iago8PCAvVHlwZSAvQW5ub3QgL1N1YnR5cGUgL0xpbmsgL1JlY3QgWzcyIDYwMCAyMDAgNjIwXSAvQm9yZGVyIFswIDAgMF0gL0Rlc3QgWzQgMCBSIC9YWVogNzIgNzAwIDBdID4+CmVuZG9iagoxOSAwIG9iago8PCAvVHlwZSAvQW5ub3QgL1N1YnR5cGUgL1dpZGdldCAvRlQgL1R4IC9UIChmMykgL1YgKEYzVikgL1JlY3QgWzcyIDUwMCAyNzIgNTIwXSAvUCA1IDAgUiA+PgplbmRvYmoKeHJlZgowIDIwCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwOSAwMDAwMCBuIAowMDAwMDAwMTYzIDAwMDAwIG4gCjAwMDAwMDAyMzggMDAwMDAgbiAKMDAwMDAwMDM4MSAwMDAwMCBuIAowMDAwMDAwNTE4IDAwMDAwIG4gCjAwMDAwMDA2NjkgMDAwMDAgbiAKMDAwMDAwMDgxMyAwMDAwMCBuIAowMDAwMDAwODgzIDAwMDAwIG4gCjAwMDAwMDA5NzAgMDAwMDAgbiAKMDAwMDAwMTA1NyAwMDAwMCBuIAowMDAwMDAxMTQ1IDAwMDAwIG4gCjAwMDAwMDEyMzMgMDAwMDAgbiAKMDAwMDAwMTMwNyAwMDAwMCBuIAowMDAwMDAxMzg4IDAwMDAwIG4gCjAwMDAwMDE0OTEgMDAwMDAgbiAKMDAwMDAwMTU3NyAwMDAwMCBuIAowMDAwMDAxNjg1IDAwMDAwIG4gCjAwMDAwMDE3OTMgMDAwMDAgbiAKMDAwMDAwMTkxMCAwMDAwMCBuIAp0cmFpbGVyCjw8IC9TaXplIDIwIC9Sb290IDEgMCBSID4+CnN0YXJ0eHJlZgoyMDE5CiUlRU9GCg=="
+    }
+  },
+  "steps": [
+    {
+      "args": [
+        "pdf",
+        "edit",
+        "nav4.pdf",
+        "--ops",
+        "[{\"op\":\"move_pages\",\"pages\":\"3\",\"to\":2}]",
+        "--out",
+        "nav4-3-2.pdf"
+      ],
+      "expect": {
+        "exitCode": 0
+      }
+    },
+    {
+      "args": [
+        "pdf",
+        "read",
+        "nav4-3-2.pdf"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          {
+            "path": "pages[0].text",
+            "contains": "Page 1"
+          },
+          {
+            "path": "pages[1].text",
+            "contains": "Page 3"
+          },
+          {
+            "path": "pages[2].text",
+            "contains": "Page 2"
+          },
+          {
+            "path": "pages[3].text",
+            "contains": "Page 4"
+          },
+          {
+            "path": "pages[4]",
+            "exists": false
+          }
+        ]
+      }
+    },
+    {
+      "args": [
+        "pdf",
+        "inspect",
+        "nav4-3-2.pdf",
+        "--detail",
+        "outline",
+        "--detail",
+        "links"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          {
+            "path": "outline[0].page",
+            "equals": 1
+          },
+          {
+            "path": "outline[1].page",
+            "equals": 2
+          },
+          {
+            "path": "outline[2].page",
+            "equals": 4
+          },
+          {
+            "path": "documentLinks[0].targetPage",
+            "equals": 4
+          },
+          {
+            "path": "documentLinks[1].targetPage",
+            "equals": 1
+          },
+          {
+            "path": "documentLinks[2].targetPage",
+            "equals": 3
+          }
+        ]
+      }
+    },
+    {
+      "args": [
+        "pdf",
+        "edit",
+        "nav4.pdf",
+        "--ops",
+        "[{\"op\":\"move_pages\",\"pages\":\"2\",\"to\":3}]",
+        "--out",
+        "nav4-2-3.pdf"
+      ],
+      "expect": {
+        "exitCode": 0
+      }
+    },
+    {
+      "args": [
+        "pdf",
+        "read",
+        "nav4-2-3.pdf"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          {
+            "path": "pages[0].text",
+            "contains": "Page 1"
+          },
+          {
+            "path": "pages[1].text",
+            "contains": "Page 3"
+          },
+          {
+            "path": "pages[2].text",
+            "contains": "Page 2"
+          },
+          {
+            "path": "pages[3].text",
+            "contains": "Page 4"
+          },
+          {
+            "path": "pages[4]",
+            "exists": false
+          }
+        ]
+      }
+    },
+    {
+      "args": [
+        "pdf",
+        "inspect",
+        "nav4-2-3.pdf",
+        "--detail",
+        "outline",
+        "--detail",
+        "links"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          {
+            "path": "outline[0].page",
+            "equals": 1
+          },
+          {
+            "path": "outline[1].page",
+            "equals": 2
+          },
+          {
+            "path": "outline[2].page",
+            "equals": 4
+          },
+          {
+            "path": "documentLinks[0].targetPage",
+            "equals": 4
+          },
+          {
+            "path": "documentLinks[1].targetPage",
+            "equals": 1
+          },
+          {
+            "path": "documentLinks[2].targetPage",
+            "equals": 3
+          }
+        ]
+      }
+    },
+    {
+      "args": [
+        "pdf",
+        "edit",
+        "nav4f.pdf",
+        "--ops",
+        "[{\"op\":\"move_pages\",\"pages\":\"3\",\"to\":2}]",
+        "--out",
+        "nav4f-3-2.pdf"
+      ],
+      "expect": {
+        "exitCode": 0
+      }
+    },
+    {
+      "args": [
+        "pdf",
+        "read",
+        "nav4f-3-2.pdf"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          {
+            "path": "pages[0].text",
+            "contains": "Page 1"
+          },
+          {
+            "path": "pages[1].text",
+            "contains": "Page 3"
+          },
+          {
+            "path": "pages[2].text",
+            "contains": "Page 2"
+          },
+          {
+            "path": "pages[3].text",
+            "contains": "Page 4"
+          },
+          {
+            "path": "pages[4]",
+            "exists": false
+          }
+        ]
+      }
+    },
+    {
+      "args": [
+        "pdf",
+        "inspect",
+        "nav4f-3-2.pdf",
+        "--detail",
+        "outline",
+        "--detail",
+        "links"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          {
+            "path": "outline[0].page",
+            "equals": 1
+          },
+          {
+            "path": "outline[1].page",
+            "equals": 2
+          },
+          {
+            "path": "outline[2].page",
+            "equals": 4
+          },
+          {
+            "path": "documentLinks[0].targetPage",
+            "equals": 4
+          },
+          {
+            "path": "documentLinks[1].targetPage",
+            "equals": 1
+          },
+          {
+            "path": "documentLinks[2].targetPage",
+            "equals": 3
+          }
+        ]
+      }
+    },
+    {
+      "args": [
+        "pdf",
+        "edit",
+        "nav4f.pdf",
+        "--ops",
+        "[{\"op\":\"move_pages\",\"pages\":\"2\",\"to\":3}]",
+        "--out",
+        "nav4f-2-3.pdf"
+      ],
+      "expect": {
+        "exitCode": 0
+      }
+    },
+    {
+      "args": [
+        "pdf",
+        "read",
+        "nav4f-2-3.pdf"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          {
+            "path": "pages[0].text",
+            "contains": "Page 1"
+          },
+          {
+            "path": "pages[1].text",
+            "contains": "Page 3"
+          },
+          {
+            "path": "pages[2].text",
+            "contains": "Page 2"
+          },
+          {
+            "path": "pages[3].text",
+            "contains": "Page 4"
+          },
+          {
+            "path": "pages[4]",
+            "exists": false
+          }
+        ]
+      }
+    },
+    {
+      "args": [
+        "pdf",
+        "inspect",
+        "nav4f-2-3.pdf",
+        "--detail",
+        "outline",
+        "--detail",
+        "links"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          {
+            "path": "outline[0].page",
+            "equals": 1
+          },
+          {
+            "path": "outline[1].page",
+            "equals": 2
+          },
+          {
+            "path": "outline[2].page",
+            "equals": 4
+          },
+          {
+            "path": "documentLinks[0].targetPage",
+            "equals": 4
+          },
+          {
+            "path": "documentLinks[1].targetPage",
+            "equals": 1
+          },
+          {
+            "path": "documentLinks[2].targetPage",
+            "equals": 3
+          }
+        ]
+      }
+    }
+  ]
+}

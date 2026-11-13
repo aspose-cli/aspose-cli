@@ -74,7 +74,14 @@ or from the moved pages, with their destination type, coordinates and zoom. The
 SDK reads an omitted coordinate as 0: an XYZ destination whose left reads 0 is
 kept with a left of 0, which opens the page at much the same place, but one whose
 top reads 0, or a fit to the page's height whose left reads 0, is left without a
-target, because the CLI would have to invent the position.
+target, because the CLI would have to invent the position. It also keeps the form
+fields of the moved pages, with their names, values and settings, so a later
+`set_form_field` or `redact_area` reaches the field the page shows. It refuses
+(`OPS_INVALID`), naming the field, a move that would split a field's widgets between
+pages it moves and pages it leaves, or move a field with a parent in its name, as in
+forms converted from XFA, unless only pages without fields need to move around it.
+Moving the pages without form fields around the form's pages instead gives the same
+order without copying a field; tell the user when no such move does.
 `delete_pages` leaves navigation to deleted pages without a target. `pdf merge`
 points each copied bookmark at its page with Fit zoom (other locations and zooms
 are lost), also one that opened it through a named destination, and does not
