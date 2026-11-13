@@ -59,7 +59,7 @@ internal static class SlidesView
             parts.Add(new ViewPart
             {
                 Id = SlidesViews.PartId(slide.SlideId),
-                Label = Title(slide) ?? string.Create(CultureInfo.InvariantCulture, $"Slide {number}"),
+                Label = OneLine(Title(slide)) ?? string.Create(CultureInfo.InvariantCulture, $"Slide {number}"),
                 File = file,
                 Kind = ViewPartKinds.Image,
                 Width = cssWidth,
