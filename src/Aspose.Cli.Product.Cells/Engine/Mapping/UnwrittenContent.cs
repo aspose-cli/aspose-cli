@@ -30,8 +30,8 @@ internal static class UnwrittenContent
         {
             int added = plan.InputContent is { } before ? Added(counts.SelectMany(static sheet => sheet.Items), before) : 0;
             yield return added <= 0 ? ContentLoss.Warning([kind], message, hint, OneSheet(counts))
-                : ContentLoss.Warning([kind], $"{message} This edit added {added} of them, and a {plan.FormatId} file cannot hold them.",
-                    "To keep what the edit added, write it with --out to a format that holds it, such as xlsx.", OneSheet(counts), affectsCompleteness: true);
+                : ContentLoss.Warning([kind], $"{message} This edit added or changed {added} of them, and a {plan.FormatId} file cannot hold them.",
+                    "To keep what the edit added or changed, write it with --out to a format that holds it, such as xlsx.", OneSheet(counts), affectsCompleteness: true);
         }
     }
 
