@@ -22,7 +22,8 @@ public static class ContinuationInputExtensions
     {
         ArgumentNullException.ThrowIfNull(input);
         ContinuationCommand next = new ContinuationCommand(path).Argument(input.Document);
-        return input.PasswordOption is { } option ? next.PasswordVariable(option, input.PasswordVariable) : next;
+        next = input.PasswordOption is { } option ? next.PasswordVariable(option, input.PasswordVariable) : next;
+        return input.WorkDir is { } workDir ? next.Option(GlobalOptionNames.WorkDir, workDir) : next;
     }
 
     /// <summary>

@@ -742,15 +742,38 @@ public partial class StandardInvocation
     /// document as this invocation does.
     /// </summary>
     /// <param name="document">The document, as the command names it.</param>
-    public ContinuationInput ContinuationOf(string document) => InputOf(_options, _parse, document);
+    public ContinuationInput ContinuationOf(string document) => InputOf(_options, _parse, document, Paths.BaseDirectory);
 
-    /// <summary>The rule of <see cref="ContinuationOf(string)"/> for the command <paramref name="parse"/> holds, created with <paramref name="options"/> or by other means.</summary>
-    internal static ContinuationInput InputOf(StandardOptions? options, ParseResult parse, string document)
+    /// <summary>
+    /// The rule of <see cref="ContinuationOf(string)"/> for the command <paramref name="parse"/> holds,
+    /// created with <paramref name="options"/> or by other means. The <c>--workdir</c> it passes on is
+    /// absolute, so the command runs from any directory as it would from this one:
+    /// <paramref name="workDirectory"/>, the directory the invocation resolved it to, or, for a
+    /// command line refused before its command ran, the value resolved against the current directory.
+    /// </summary>
+    internal static ContinuationInput InputOf(StandardOptions? options, ParseResult parse, string document, string? workDirectory = null)
     {
         ArgumentException.ThrowIfNullOrEmpty(document);
+        string? workDir = WorkDirOf(parse)?.Tokens.FirstOrDefault()?.Value is { Length: > 0 } given
+            ? workDirectory ?? new IO.Paths.PathResolver(Directory.GetCurrentDirectory()).ResolveOutput(given)
+            : null;
         return options?.InputPassword?.Continued(parse) is var (option, variable)
-            ? new ContinuationInput(document, option, variable)
-            : new ContinuationInput(document);
+            ? new ContinuationInput(document, option, variable, workDir)
+            : new ContinuationInput(document, WorkDir: workDir);
+    }
+
+    /// <summary>The <c>--workdir</c> the command line <paramref name="parse"/> holds gives, wherever it stands; null for none.</summary>
+    internal static OptionResult? WorkDirOf(ParseResult parse)
+    {
+        for (CommandResult? command = parse.CommandResult; command is not null; command = command.Parent as CommandResult)
+        {
+            if (command.Children.OfType<OptionResult>().FirstOrDefault(static result => result is { Implicit: false, Option.Name: GlobalOptionNames.WorkDir }) is { } workDir)
+            {
+                return workDir;
+            }
+        }
+
+        return null;
     }
 
     /// <summary>The password for <see cref="Other"/>, or null when none was given.</summary>
