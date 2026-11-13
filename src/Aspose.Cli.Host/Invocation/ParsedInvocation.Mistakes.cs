@@ -253,13 +253,14 @@ internal sealed partial class ParsedInvocation
             if (!TakenByAnOption(tokens[index])
                 && Command.RefusedOptions().FirstOrDefault(option => option.Argument is not null && option.Names.Contains(name, StringComparer.Ordinal)) is { } refused)
             {
+                (string line, string? both) = WithValueAsArgument(refused, tokens, index);
                 return new(
                     [$"'{name}' is not an option of '{Path()}'."],
-                    Mistake.Of(name, [], [WithValueAsArgument(refused, tokens, index)], closest: false),
+                    Mistake.Of(name, [], [line], closest: false),
                     name,
                     ValuesOnly: false)
                 {
-                    Hint = refused.Hint,
+                    Hint = both is null ? refused.Hint : $"{refused.Hint} {both}",
                 };
             }
         }
@@ -269,10 +270,12 @@ internal sealed partial class ParsedInvocation
 
     /// <summary>
     /// The command line with the value of the refused option at <paramref name="index"/> as the
-    /// argument it stands for, or the command with a placeholder for that argument when the
-    /// option has no value, the argument is given as well or the line would not parse.
+    /// argument it stands for; when the argument is given as well, the line without the option,
+    /// with a placeholder for the argument, and the sentence that names both values as what it
+    /// stands for; or the command with a placeholder for that argument when the option has no
+    /// value or the line would not parse.
     /// </summary>
-    private string WithValueAsArgument(RefusedOption refused, Token[] tokens, int index)
+    private (string Line, string? Both) WithValueAsArgument(RefusedOption refused, Token[] tokens, int index)
     {
         var template = new ContinuationCommand([.. CommandPath.Select(static command => command.Name)]).Placeholder(refused.Argument!);
         string text = tokens[index].Value;
@@ -283,24 +286,29 @@ internal sealed partial class ParsedInvocation
             : null;
         int after = Array.FindLastIndex(tokens, static token => token.Type == TokenType.Command) + 1;
         Argument argument = Command.Arguments.First(candidate => candidate.Name == refused.Argument);
-        bool given = ParseResult.GetResult(argument) is { Tokens: [var first, ..] } && !ReferenceEquals(first, tokens[index]);
-        if (value is null || given || index < after)
+        Token? given = ParseResult.GetResult(argument) is { Tokens: [var first, ..] } && !ReferenceEquals(first, tokens[index]) ? first : null;
+        if (value is null || index < after)
         {
-            return template.ToString();
+            return (template.ToString(), null);
         }
 
         string[] values = [.. tokens.Select(static token => token.Value)];
-        return Repeated([.. values[..after], value, .. values[after..index], .. values[(index + (joined ? 1 : 2))..]], template);
+        string[] rest = values[(index + (joined ? 1 : 2))..];
+        return given is null
+            ? (Repeated([.. values[..after], value, .. values[after..index], .. rest], template), null)
+            : (Repeated([.. values[..index], .. rest], template, argument),
+                $"The command was given two files to create, '{given.Value}' and '{value}': write the one to create in place of <{argument.Name}>.");
     }
 
     /// <summary>
     /// The command line <paramref name="tokens"/> hold, as the builder writes a command to run, or
     /// <paramref name="fallback"/> when they do not parse or read a document from stdin, which a
-    /// suggestion, a command line alone, cannot say to pipe again (<see cref="ContinuationCommand.Repeating"/>).
+    /// suggestion, a command line alone, cannot say to pipe again (<see cref="ContinuationCommand.Repeating"/>),
+    /// with <paramref name="placeholder"/>, when given, written as its placeholder.
     /// </summary>
-    private string Repeated(IReadOnlyList<string> tokens, ContinuationCommand fallback)
+    private string Repeated(IReadOnlyList<string> tokens, ContinuationCommand fallback, Argument? placeholder = null)
     {
         ParsedInvocation line = Reparsed(tokens);
-        return (line.Problems() is null && ContinuationCommand.Repeating(line.ParseResult) is { Piped: null } again ? again.Command : fallback).ToString();
+        return (line.Problems() is null && ContinuationCommand.Repeating(line.ParseResult, placeholder) is { Piped: null } again ? again.Command : fallback).ToString();
     }
 }

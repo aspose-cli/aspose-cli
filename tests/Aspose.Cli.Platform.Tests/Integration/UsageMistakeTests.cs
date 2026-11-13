@@ -369,14 +369,16 @@ public sealed class UsageMistakeTests : IDisposable
     }
 
     /// <summary>
-    /// With no value to move, or the file already given, the command is shown with a placeholder;
-    /// the options that merely look like the refused one are never suggested.
+    /// The command is shown with a placeholder for its file when the option has no value to move,
+    /// when the line would not parse, or when the file is given as well, where the line without
+    /// the option, here with no other option, is repeated with the placeholder; the options that
+    /// merely look like the refused one are never suggested.
     /// </summary>
     [Theory]
     [InlineData("cells create y.xlsx --out z.xlsx", "aspose-cli cells create <file> --output-format json")]
     [InlineData("cells create --out", "aspose-cli cells create <file> --output-format json")]
     [InlineData("pdf create --out new.pdf --from-markdown in.md --bogus", "aspose-cli pdf create <file> --output-format json")]
-    public void ACreateGivenItsFileAsAnOption_ThatCouldNotBeRepeated_ShowsThePlaceholder(string commandLine, string line)
+    public void ACreateGivenItsFileAsAnOption_WithoutAValueToTakeAsItsFile_ShowsThePlaceholder(string commandLine, string line)
     {
         CliResult result = _workspace.Run([.. commandLine.Split(' '), "--output-format", "json"]);
 
