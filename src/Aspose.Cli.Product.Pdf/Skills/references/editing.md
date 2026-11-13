@@ -84,8 +84,9 @@ Moving the pages without form fields around the form's pages instead gives the s
 order without copying a field; tell the user when no such move does.
 `delete_pages` leaves navigation to deleted pages without a target. `pdf merge`
 points each copied bookmark at its page with Fit zoom (other locations and zooms
-are lost), also one that opened it through a named destination, and does not
-carry named destinations. `pdf split` does the same with
+are lost), also one that opened it through a named destination, keeps the
+action of one that opens a web address or another file, which has no `page` in
+`pdf inspect --detail outline`, and does not carry named destinations. `pdf split` does the same with
 the bookmarks of each part's pages; a bookmark whose parent opens a page of
 another part moves up in its place, and links to another part lead nowhere.
 Each part keeps the page labels its pages had, such as `South-1` to `South-3`,

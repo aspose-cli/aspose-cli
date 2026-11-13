@@ -279,7 +279,7 @@ internal static class PdfInfoProjection
         {
             Page page = document.Pages[number];
             return page.Annotations.OfType<Aspose.Pdf.Annotations.LinkAnnotation>()
-                .Where(static link => link.Action is null or Aspose.Pdf.Annotations.GoToAction)
+                .Where(static link => link.Action is null or Aspose.Pdf.Annotations.GoToAction and not Aspose.Pdf.Annotations.GoToRemoteAction)
                 .Select(link => new PdfDocumentLinkInfo
                 {
                     Page = number,

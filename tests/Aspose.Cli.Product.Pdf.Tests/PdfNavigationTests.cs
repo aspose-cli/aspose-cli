@@ -557,6 +557,48 @@ public sealed class PdfNavigationTests
         return path;
     }
 
+    /// <summary>
+    /// A bookmark that opens a web address or a page of another file keeps its action when merge
+    /// and split copy the outline. The command line reads no bookmark's action, so the scenario
+    /// pdf-bookmarks-that-lead-outside-the-document-have-no-page shows only that it has no page.
+    /// </summary>
+    [Fact]
+    public void MergeAndSplit_KeepTheActionOfABookmarkThatLeadsOutsideTheDocument()
+    {
+        using var fixture = new PdfEngineFixture();
+        string input = fixture.File("outside.pdf");
+        PdfEngineFixture.WriteRawPdf(input,
+        [
+            "<< /Type /Catalog /Pages 2 0 R /Outlines 5 0 R >>",
+            "<< /Type /Pages /Kids [3 0 R 4 0 R] /Count 2 >>",
+            "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] >>",
+            "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] >>",
+            "<< /Type /Outlines /First 6 0 R /Last 7 0 R /Count 2 >>",
+            "<< /Title (Web) /Parent 5 0 R /Next 7 0 R /A << /S /URI /URI (https://example.com/) >> >>",
+            "<< /Title (Remote) /Parent 5 0 R /Prev 6 0 R /A << /S /GoToR /F (other.pdf) /D [1 /Fit] >> >>",
+        ]);
+
+        PdfMergeResult merged = PdfMerge.Run(fixture.Session, new PdfMergeRequest
+        {
+            Output = TestOutput.At(fixture.File("merged.pdf")),
+            InputPaths = [fixture.CreateDocument("first.pdf", pages: 1), input],
+        });
+        PdfSplitResult split = PdfSplit.Run(fixture.Session, new PdfSplitRequest
+        {
+            Input = input,
+            Output = new ResolvedDirectory(fixture.File("parts")),
+            Plan = new Sdk.Addressing.SplitPlan(Sdk.Addressing.SplitBy.Pages, 1, null, null),
+        });
+
+        foreach (string path in (string[])[merged.Output.Path, .. split.Outputs.Select(static part => part.Path)])
+        {
+            using var document = new Document(path);
+            Assert.Equal(2, document.Outlines.Count);
+            Assert.Equal("https://example.com/", Assert.IsType<GoToURIAction>(document.Outlines[1].Action).URI);
+            Assert.Equal("other.pdf", Assert.IsType<GoToRemoteAction>(document.Outlines[2].Action).File.Name);
+        }
+    }
+
     [Fact]
     public void Merge_CountsBookmarksReducedToFitAndDroppedNamedDestinations()
     {
