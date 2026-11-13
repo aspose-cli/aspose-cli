@@ -185,38 +185,40 @@ public sealed class InputSource
         }
     }
 
+    /// <summary>
+    /// Decodes text in the encoding its byte order mark names, UTF-8 without one, and refuses the
+    /// bytes that encoding cannot decode rather than replace them; the mark is not part of the text.
+    /// </summary>
     private string ReadText(
         Stream stream,
         string characterBudget,
         string phase)
     {
         using (stream)
-        using (var reader = new StreamReader(
-                   stream,
-                   StrictUtf8,
-                   detectEncodingFromByteOrderMarks: true,
-                   bufferSize: 4096,
-                   leaveOpen: false))
         {
+            byte[] bytes = new byte[4096];
+            int count = stream.ReadAtLeast(bytes, 4, throwOnEndOfStream: false);
+            (Encoding encoding, int start) = MarkedEncoding(bytes.AsSpan(0, count));
+            Decoder decoder = encoding.GetDecoder();
+            char[] buffer = new char[encoding.GetMaxCharCount(bytes.Length)];
             long limit = _budgets.Limit(characterBudget);
             var result = new StringBuilder((int)Math.Min(limit, 8192));
-            char[] buffer = new char[4096];
             try
             {
                 while (true)
                 {
                     _budgets.Deadline.ThrowIfExpired(phase);
-                    int read = reader.Read(buffer, 0, buffer.Length);
-                    if (read == 0)
+                    int read = decoder.GetChars(bytes, start, count - start, buffer, 0, flush: count == 0);
+                    if (read > 0)
+                    {
+                        _budgets.Consume(characterBudget, read, "characters", phase);
+                        result.Append(buffer, 0, read);
+                    }
+                    if (count == 0)
                     {
                         return result.ToString();
                     }
-                    _budgets.Consume(
-                        characterBudget,
-                        read,
-                        "characters",
-                        phase);
-                    result.Append(buffer, 0, read);
+                    (start, count) = (0, stream.Read(bytes, 0, bytes.Length));
                 }
             }
             catch (DecoderFallbackException exception)
@@ -225,4 +227,15 @@ public sealed class InputSource
             }
         }
     }
+
+    /// <summary>The strict encoding of the byte order mark that starts <paramref name="start"/>, as a StreamReader detects one, and the mark's length.</summary>
+    private static (Encoding Encoding, int Length) MarkedEncoding(ReadOnlySpan<byte> start) => start switch
+    {
+        [0xEF, 0xBB, 0xBF, ..] => (StrictUtf8, 3),
+        [0xFF, 0xFE, 0, 0, ..] => (new UTF32Encoding(bigEndian: false, byteOrderMark: true, throwOnInvalidCharacters: true), 4),
+        [0, 0, 0xFE, 0xFF, ..] => (new UTF32Encoding(bigEndian: true, byteOrderMark: true, throwOnInvalidCharacters: true), 4),
+        [0xFF, 0xFE, ..] => (new UnicodeEncoding(bigEndian: false, byteOrderMark: true, throwOnInvalidBytes: true), 2),
+        [0xFE, 0xFF, ..] => (new UnicodeEncoding(bigEndian: true, byteOrderMark: true, throwOnInvalidBytes: true), 2),
+        _ => (StrictUtf8, 0),
+    };
 }
