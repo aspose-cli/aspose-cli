@@ -184,6 +184,7 @@
 {"edit":"pdf","ops":[{"op":"set_page_labels","ranges":[{"startPage":1,"startingValue":3}]}],"wrong":"startingValue","suggests":"start"},
 {"edit":"pdf","ops":[{"op":"set_page_labels","ranges":[{"startPage":1,"style":"roman-upper"}]}],"wrong":"style","suggests":"numberStyle"},
 {"edit":"pdf","ops":[{"op":"set_page_size","pages":"1","pageSise":{"preset":"a5"}}],"wrong":"pageSise","suggests":"pageSize"},
+{"edit":"pdf","ops":[{"op":"set_page_size","pages":"1","pageSzie":{"preset":"a5"}}],"wrong":"pageSzie","suggests":"pageSize"},
 {"edit":"pdf","ops":[{"op":"add_page_numbers","placement":"bottom-middle"}],"wrong":"bottom-middle","suggests":"bottom-center"},
 {"edit":"pdf","ops":[{"op":"set_properties","tittle":"T"}],"wrong":"tittle","suggests":"title"},
 // Cells: operations
