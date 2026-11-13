@@ -41,9 +41,7 @@ internal static class SlidesViewLayout
 
     private static string? Label(IShape shape)
     {
-        string? text = ShapeText(shape) is { } value
-            ? string.Join(' ', value.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries))
-            : EmptyToNull(shape.Name);
+        string? text = OneLine(ShapeText(shape)) ?? EmptyToNull(shape.Name);
         return text is { Length: > LabelLength } ? text[..LabelLength] : text;
     }
 

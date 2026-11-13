@@ -1,0 +1,30 @@
+{
+  "name": "review labels a slide's page with the slide's title on one line: a line break in the title is a space in the label, while slides read still reports the title as stored",
+  "files": {
+    "deck.md": { "text": "# T\n" }
+  },
+  "steps": [
+    {
+      "args": ["slides", "create", "deck.pptx", "--from-markdown", "deck.md"],
+      "expect": { "exitCode": 0 }
+    },
+    {
+      "args": ["slides", "edit", "deck.pptx", "--in-place", "--ops", "{\"ops\":[{\"op\":\"set_title\",\"slide\":1,\"text\":\"P\\u000bQ\"}]}"],
+      "expect": { "exitCode": 0 }
+    },
+    {
+      "args": ["slides", "read", "deck.pptx"],
+      "expect": { "exitCode": 0, "json": [{ "path": "slides[0].title", "equals": "P\nQ" }] }
+    },
+    {
+      "args": ["review", "deck.pptx", "--out", "review"],
+      "expect": {
+        "exitCode": [0, 8],
+        "json": [
+          { "path": "artifacts[3].path", "equals": "artifacts/slide-0001.png" },
+          { "path": "artifacts[3].label", "equals": "P Q" }
+        ]
+      }
+    }
+  ]
+}

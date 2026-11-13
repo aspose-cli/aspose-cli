@@ -139,6 +139,9 @@ internal static class SlidesShapeText
     /// <summary>A paragraph's text as replace_text matches it and a read reports it: the text of its runs, each line break a line feed.</summary>
     internal static string ParagraphText(IParagraph paragraph) => string.Concat(paragraph.Portions.Select(static portion => portion.Text ?? string.Empty)).Replace('\v', '\n');
 
+    /// <summary>Text on one line, as a label shows it: each run of white space and each line break one space.</summary>
+    internal static string? OneLine(string? text) => text is null ? null : string.Join(' ', text.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries));
+
     internal static string? Notes(ISlide slide) =>
         EmptyToNull(Lines(slide.NotesSlideManager.NotesSlide?.NotesTextFrame?.Text));
 
