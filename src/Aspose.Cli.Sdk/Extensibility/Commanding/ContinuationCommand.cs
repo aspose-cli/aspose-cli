@@ -170,7 +170,8 @@ public sealed class ContinuationCommand
     /// <see cref="RepeatedInvocation.Repeating"/> says to pipe again; null when it names no command.
     /// </summary>
     /// <param name="parse">A command line that parses.</param>
-    public static RepeatedInvocation? Repeating(ParseResult parse)
+    /// <param name="placeholder">An argument written as its placeholder right after the command, in place of what the line gives it; null for none.</param>
+    public static RepeatedInvocation? Repeating(ParseResult parse, Argument? placeholder = null)
     {
         ArgumentNullException.ThrowIfNull(parse);
         var path = new List<string>();
@@ -185,7 +186,12 @@ public sealed class ContinuationCommand
         }
 
         var repeated = new ContinuationCommand([.. path]);
-        var replay = new CommandLineReplay(repeated, []);
+        if (placeholder is not null)
+        {
+            repeated.Placeholder(placeholder.Name);
+        }
+
+        var replay = new CommandLineReplay(repeated, placeholder is null ? [] : [placeholder]);
         replay.Append(parse.RootCommandResult);
 
         // A line that names the password's variable as well keeps the one it names.

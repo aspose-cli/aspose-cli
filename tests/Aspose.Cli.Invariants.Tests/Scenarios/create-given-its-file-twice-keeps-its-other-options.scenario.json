@@ -1,0 +1,75 @@
+{
+  "name": "a create given its file both as its argument and with --out is corrected with every other option it was given, a placeholder for the file, and both files named",
+  "files": {
+    "outline.md": { "text": "# Title\n\nBody text.\n" },
+    "text.txt": { "text": "Hello\n" }
+  },
+  "steps": [
+    {
+      "args": ["words", "create", "x.docx", "--from-markdown", "outline.md", "--out", "made.docx"],
+      "expect": {
+        "error": "USAGE_ERROR",
+        "json": [
+          { "path": "error.details.suggestions[0]", "equals": "aspose-cli words create <file> --from-markdown outline.md --output-format json" },
+          { "path": "error.hint", "contains": "The command was given two files to create, 'x.docx' and 'made.docx': write the one to create in place of <file>." }
+        ],
+        "files": { "nothingWritten": true }
+      }
+    },
+    {
+      "args": ["words", "create", "made.docx", "--from-markdown", "outline.md"],
+      "expect": { "exitCode": 0, "files": { "present": ["made.docx"], "absent": ["x.docx"] } }
+    },
+    {
+      "args": ["slides", "create", "x.pptx", "--from-markdown", "outline.md", "--out", "made.pptx"],
+      "expect": {
+        "error": "USAGE_ERROR",
+        "json": [
+          { "path": "error.details.suggestions[0]", "equals": "aspose-cli slides create <file> --from-markdown outline.md --output-format json" },
+          { "path": "error.hint", "contains": "'x.pptx' and 'made.pptx'" }
+        ],
+        "files": { "nothingWritten": true }
+      }
+    },
+    {
+      "args": ["slides", "create", "made.pptx", "--from-markdown", "outline.md"],
+      "expect": { "exitCode": 0, "files": { "present": ["made.pptx"] } }
+    },
+    {
+      "args": ["pdf", "create", "x.pdf", "--from-text", "text.txt", "--out", "made.pdf"],
+      "expect": {
+        "error": "USAGE_ERROR",
+        "json": [
+          { "path": "error.details.suggestions[0]", "equals": "aspose-cli pdf create <file> --from-text text.txt --output-format json" },
+          { "path": "error.hint", "contains": "'x.pdf' and 'made.pdf'" }
+        ],
+        "files": { "nothingWritten": true }
+      }
+    },
+    {
+      "args": ["pdf", "create", "x.pdf", "--from-text", "text.txt"],
+      "expect": { "exitCode": 0, "files": { "present": ["x.pdf"] } }
+    },
+    {
+      "args": ["cells", "create", "x.xlsx", "--sheet-names", "Data", "--out", "made.xlsx", "--encrypt-env", "SCENARIO_PASSWORD"],
+      "env": { "SCENARIO_PASSWORD": "Create-Twice-3d1e" },
+      "expect": {
+        "error": "USAGE_ERROR",
+        "json": [
+          { "path": "error.details.suggestions[0]", "equals": "aspose-cli cells create <file> --sheet-names Data --encrypt-env SCENARIO_PASSWORD --output-format json" },
+          { "path": "error.hint", "contains": "'x.xlsx' and 'made.xlsx'" }
+        ],
+        "files": { "nothingWritten": true }
+      }
+    },
+    {
+      "args": ["cells", "create", "made.xlsx", "--sheet-names", "Data", "--encrypt-env", "SCENARIO_PASSWORD"],
+      "env": { "SCENARIO_PASSWORD": "Create-Twice-3d1e" },
+      "expect": { "exitCode": 0 }
+    },
+    {
+      "args": ["cells", "inspect", "made.xlsx"],
+      "expect": { "error": "PASSWORD_REQUIRED" }
+    }
+  ]
+}
