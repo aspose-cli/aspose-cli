@@ -1,5 +1,5 @@
 {
-  "name": "cells read keeps as text, with NUMBERS_READ_AS_TEXT, the numbers of a semicolon-separated csv that all have three decimals after a comma, as it does in one with a 2,71, while a comma-separated csv still reads \"1,234\" as 1234, and a semicolon one reads its numbers when it has no comma or also writes a decimal point, as 19.90",
+  "name": "cells read keeps as text, with NUMBERS_READ_AS_TEXT, the numbers of a semicolon-separated csv that all have three decimals after a comma, as it does in one with a 2,71, while a comma-separated csv still reads \"1,234\" as 1234, and a semicolon one reads its numbers when it has no comma or also writes a number with a decimal point, as 19.90, 20.00, $19.90, 1,234.50 or 12.5%, but not 1.500",
   "files": {
     "three.csv": { "text": "k;v\na;1,234\nb;2,500\n" },
     "mixed.csv": { "text": "k;v\na;2,71\nb;1,234\n" },
@@ -7,6 +7,15 @@
     "points.csv": { "text": "k;v\na;1.234,56\nb;20\nc;2,5\n" },
     "plain.csv": { "text": "k;v\na;19.90\nb;20\n" },
     "english.csv": { "text": "k;v\na;1,234\nb;19.90\n" },
+    "prices.csv": { "text": "item;qty;price\na;1,234;20.00\nb;2,500;15.00\n" },
+    "zero.csv": { "text": "k;v\na;1,234\nb;0.00\n" },
+    "grouped-point.csv": { "text": "k;v\na;1,234\nb;1,234.50\n" },
+    "usd.csv": { "text": "k;v\na;1,234\nb;$19.90\n" },
+    "percent.csv": { "text": "k;v\na;1,234\nb;12.5%\n" },
+    "thousand.csv": { "text": "k;v\na;1,234\nb;1.500\n" },
+    "dated.csv": { "text": "k;v\na;1,234\nb;2026-01-05\n" },
+    "version.csv": { "text": "k;v\na;1,234\nb;v1.5\n" },
+    "address.csv": { "text": "k;v\na;1,234\nb;10.0.0.1\n" },
     "tabs.tsv": { "text": "k\tv\na\t1,234\nb\t19.90\n" }
   },
   "steps": [
@@ -74,6 +83,102 @@
         "json": [
           { "path": "sheet.cells[0][0]", "equals": { "v": 1234, "t": "number" } },
           { "path": "sheet.cells[1][0]", "equals": { "v": 19.9, "t": "number" } }
+        ]
+      }
+    },
+    {
+      "args": ["cells", "read", "usd.csv", "--range", "B2:B3"],
+      "expect": {
+        "exitCode": 0,
+        "warnings": { "absent": ["NUMBERS_READ_AS_TEXT"] },
+        "json": [
+          { "path": "sheet.cells[0][0]", "equals": { "v": 1234, "t": "number" } },
+          { "path": "sheet.cells[1][0]", "equals": { "v": 19.9, "t": "number" } }
+        ]
+      }
+    },
+    {
+      "args": ["cells", "read", "percent.csv", "--range", "B2:B3"],
+      "expect": {
+        "exitCode": 0,
+        "warnings": { "absent": ["NUMBERS_READ_AS_TEXT"] },
+        "json": [
+          { "path": "sheet.cells[0][0]", "equals": { "v": 1234, "t": "number" } },
+          { "path": "sheet.cells[1][0]", "equals": { "v": 0.125, "t": "number" } }
+        ]
+      }
+    },
+    {
+      "args": ["cells", "read", "thousand.csv", "--range", "B2:B3"],
+      "expect": {
+        "exitCode": 0,
+        "warnings": { "present": ["NUMBERS_READ_AS_TEXT"] },
+        "json": [
+          { "path": "sheet.cells[0][0]", "equals": { "v": "1,234", "t": "string" } },
+          { "path": "sheet.cells[1][0]", "equals": { "v": "1.500", "t": "string" } }
+        ]
+      }
+    },
+    {
+      "args": ["cells", "read", "dated.csv", "--range", "B2:B3"],
+      "expect": {
+        "exitCode": 0,
+        "warnings": { "present": ["NUMBERS_READ_AS_TEXT"] },
+        "json": [
+          { "path": "sheet.cells[0][0]", "equals": { "v": "1,234", "t": "string" } },
+          { "path": "sheet.cells[1][0]", "equals": { "v": "2026-01-05", "t": "datetime" } }
+        ]
+      }
+    },
+    {
+      "args": ["cells", "read", "version.csv", "--range", "B2:B3"],
+      "expect": {
+        "exitCode": 0,
+        "warnings": { "present": ["NUMBERS_READ_AS_TEXT"] },
+        "json": [
+          { "path": "sheet.cells[0][0]", "equals": { "v": "1,234", "t": "string" } },
+          { "path": "sheet.cells[1][0]", "equals": { "v": "v1.5", "t": "string" } }
+        ]
+      }
+    },
+    {
+      "args": ["cells", "read", "address.csv", "--range", "B2:B3"],
+      "expect": {
+        "exitCode": 0,
+        "warnings": { "present": ["NUMBERS_READ_AS_TEXT"] },
+        "json": [
+          { "path": "sheet.cells[0][0]", "equals": { "v": "1,234", "t": "string" } },
+          { "path": "sheet.cells[1][0]", "equals": { "v": "10.0.0.1", "t": "string" } }
+        ]
+      }
+    },
+    {
+      "args": ["cells", "read", "prices.csv", "--range", "B2:C3"],
+      "expect": {
+        "exitCode": 0,
+        "warnings": { "absent": ["NUMBERS_READ_AS_TEXT"] },
+        "json": [
+          { "path": "sheet.cells", "equals": [[{ "v": 1234, "t": "number" }, { "v": 20, "t": "number" }], [{ "v": 2500, "t": "number" }, { "v": 15, "t": "number" }]] }
+        ]
+      }
+    },
+    {
+      "args": ["cells", "read", "zero.csv", "--range", "B2:B3"],
+      "expect": {
+        "exitCode": 0,
+        "warnings": { "absent": ["NUMBERS_READ_AS_TEXT"] },
+        "json": [
+          { "path": "sheet.cells", "equals": [[{ "v": 1234, "t": "number" }], [{ "v": 0, "t": "number" }]] }
+        ]
+      }
+    },
+    {
+      "args": ["cells", "read", "grouped-point.csv", "--range", "B2:B3"],
+      "expect": {
+        "exitCode": 0,
+        "warnings": { "absent": ["NUMBERS_READ_AS_TEXT"] },
+        "json": [
+          { "path": "sheet.cells", "equals": [[{ "v": 1234, "t": "number" }], [{ "v": 1234.5, "t": "number" }]] }
         ]
       }
     },
