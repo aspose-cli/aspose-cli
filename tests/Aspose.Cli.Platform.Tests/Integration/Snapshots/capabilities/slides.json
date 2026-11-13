@@ -35,7 +35,7 @@
         "command": "edit",
         "inputSchema": "v2/slides/ops",
         "operationSchema": "aspose-cli schema v2/slides/ops --operation <op>",
-        "contractFingerprint": "sha256:a27486b66b8737040a997ce19e1c23fba5b12c5a15c6a10d0407940362a9a2f0",
+        "contractFingerprint": "sha256:fc7122b49a451a773fb33e9d7c29c5992525a2d3697e3a864c3160b6a66680d5",
         "maximumOperationCount": 10000,
         "ops": [
           "copy_slide",
@@ -2329,6 +2329,13 @@
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
+      "code": "FOOTER_NOT_SHOWN",
+      "owner": "slides",
+      "severity": "warning",
+      "category": "warning",
+      "detailsSchemaId": "v2/common/diagnostic-details"
+    },
+    {
       "code": "HIDDEN_SLIDES_RENDERED",
       "owner": "slides",
       "severity": "warning",
@@ -4319,7 +4326,7 @@
           ]
         },
         "set_footer": {
-          "description": "Shows footer text, slide numbers or dates through the layout's own placeholders; it must set at least one of text, showNumber and showDate.",
+          "description": "Shows footer text, slide numbers or dates through the layout's own placeholders; it must set at least one of text, showNumber and showDate. A slide whose layout has no placeholder for what it shows is left without it, and the edit warns FOOTER_NOT_SHOWN.",
           "type": "object",
           "required": [
             "op"

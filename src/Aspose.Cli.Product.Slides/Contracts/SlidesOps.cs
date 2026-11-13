@@ -603,7 +603,8 @@ public sealed record SetShapeBoundsOp : ShapeTargetOp
 
 /// <summary>
 /// Shows footer text, slide numbers or dates through the layout's own placeholders; it must
-/// set at least one of text, showNumber and showDate.
+/// set at least one of text, showNumber and showDate. A slide whose layout has no placeholder
+/// for what it shows is left without it, and the edit warns FOOTER_NOT_SHOWN.
 /// </summary>
 [Operation("set_footer")]
 [AtLeastOneOf("text", "showNumber", "showDate")]
