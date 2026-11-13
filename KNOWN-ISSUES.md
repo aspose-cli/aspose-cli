@@ -806,12 +806,22 @@ Reproductions: [WordsKnownIssueTests](tests/Aspose.Cli.Product.Words.Tests/Words
 - **Defect:** setting a table's style (`Table.Style`, `StyleName` or `StyleIdentifier`) clears
   every setting the table makes itself, not only the borders, cell margins and cell spacing the
   style decides: its alignment and left indent, text wrapping and position, right-to-left
-  layout, title and description and style options, each row's heading and row-break setting and
-  each cell's vertical alignment, which the document stores apart from the style it names.
+  layout, title and description and style options, each row's heading, row-break and hidden
+  setting and each cell's vertical alignment, which the document stores apart from the style it
+  names.
 - **CLI behavior:** `set_table_style` reads these settings, changes the style away and back to
   read what the old style alone gives, and writes back those the table set itself over the new
   style. A setting the table set to the very value the old style gives cannot be told from the
-  style's and takes the new style's.
+  style's and takes the new style's. Writing a row's hidden setting back also hides the text of
+  its runs and paragraph marks, so each of those that changed is set back to what it was.
+
+### WORDS-ROW-HIDDEN-UNSAVED
+
+- **Defect:** setting `Row.Hidden` on a row the document has held only in memory, one
+  `DocumentBuilder` or `new Row` made or a clone of one, throws `NullReferenceException` until the
+  document is saved once.
+- **CLI behavior:** no operation hides or shows a row; `set_table_style` writes a row's hidden
+  setting back only on a row that held one, which a row made in memory never does.
 
 ### WORDS-TEXT-COMMENTS
 

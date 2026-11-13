@@ -351,6 +351,7 @@ public sealed class WordsKnownIssueTests
             ("heading row", static table => table.FirstRow.RowFormat.HeadingFormat = true, static table => table.FirstRow.RowFormat.HeadingFormat),
             ("row break", static table => table.FirstRow.RowFormat.AllowBreakAcrossPages = false, static table => table.FirstRow.RowFormat.AllowBreakAcrossPages),
             ("cell vertical alignment", static table => table.FirstRow.FirstCell.CellFormat.VerticalAlignment = CellVerticalAlignment.Center, static table => table.FirstRow.FirstCell.CellFormat.VerticalAlignment),
+            ("hidden row", static table => { SaveOnce((Document)table.Document); table.FirstRow.Hidden = true; }, static table => table.FirstRow.Hidden),
         };
 
         string[] kept = [.. settings.Where(static setting =>
@@ -372,5 +373,37 @@ public sealed class WordsKnownIssueTests
             "WORDS-TABLE-STYLE-RESET",
             kept.Length == 0,
             kept.Length == 0 ? "every setting cleared" : $"kept: {string.Join(", ", kept)}");
+    }
+
+    /// <summary>
+    /// Row.Hidden's setter throws on a row the document has only held in memory and takes the
+    /// value once the document is saved, so an SDK whose setter works on a new row fails here.
+    /// </summary>
+    [Fact]
+    public void RowHidden_ThrowsOnARowNotYetSaved()
+    {
+        using var fixture = new WordsFixture();
+        var document = new Document();
+        var builder = new DocumentBuilder(document);
+        Table table = builder.StartTable();
+        builder.InsertCell();
+        builder.EndRow();
+        builder.EndTable();
+
+        Exception? failure = Record.Exception(() => table.FirstRow.Hidden = true);
+        SaveOnce(document);
+        table.FirstRow.Hidden = true;
+
+        KnownIssue.Reproduces(
+            "WORDS-ROW-HIDDEN-UNSAVED",
+            failure is NullReferenceException && table.FirstRow.Hidden,
+            failure is null ? "the setter took the value on a new row" : $"{failure.GetType().Name}; after a save the row reads hidden: {table.FirstRow.Hidden}");
+    }
+
+    // Row.Hidden takes a value only once the document has been saved (WORDS-ROW-HIDDEN-UNSAVED).
+    private static void SaveOnce(Document document)
+    {
+        using var saved = new MemoryStream();
+        document.Save(saved, SaveFormat.Docx);
     }
 }

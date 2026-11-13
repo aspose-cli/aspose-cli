@@ -317,7 +317,7 @@ internal sealed partial class WordsMutationHandlers
     // The settings Restyle keeps: the table's, each row's and each cell's, read and written in this order.
     private static IEnumerable<(Func<object> Get, Action<object> Set)> TableOwnSettings(Table table) =>
         KeptTableSettings.Select(setting => Bound(setting, table))
-            .Concat(table.Rows.Cast<Row>().SelectMany(row => KeptRowSettings.Select(setting => Bound(setting, row.RowFormat))))
+            .Concat(table.Rows.Cast<Row>().SelectMany(row => KeptRowSettings.Select(setting => Bound(setting, row))))
             .Concat(table.Rows.Cast<Row>().SelectMany(static row => row.Cells.Cast<Cell>())
                 .SelectMany(cell => KeptCellSettings.Select(setting => Bound(setting, cell.CellFormat))));
 
@@ -348,11 +348,28 @@ internal sealed partial class WordsMutationHandlers
         (static table => table.StyleOptions, static (table, value) => table.StyleOptions = (TableStyleOptions)value),
     ];
 
-    private static readonly (Func<RowFormat, object> Get, Action<RowFormat, object> Set)[] KeptRowSettings =
+    private static readonly (Func<Row, object> Get, Action<Row, object> Set)[] KeptRowSettings =
     [
-        (static row => row.HeadingFormat, static (row, value) => row.HeadingFormat = (bool)value),
-        (static row => row.AllowBreakAcrossPages, static (row, value) => row.AllowBreakAcrossPages = (bool)value),
+        (static row => row.RowFormat.HeadingFormat, static (row, value) => row.RowFormat.HeadingFormat = (bool)value),
+        (static row => row.RowFormat.AllowBreakAcrossPages, static (row, value) => row.RowFormat.AllowBreakAcrossPages = (bool)value),
+        (static row => row.Hidden, static (row, value) => Hide(row, (bool)value)),
     ];
+
+    // Row.Hidden also hides the text of the row's runs and paragraph marks, which keep what they
+    // were. Its setter throws on a row made in memory until the document is saved
+    // (WORDS-ROW-HIDDEN-UNSAVED), but such a row reads as not hidden on every style, so Restyle never writes it.
+    private static void Hide(Row row, bool hidden)
+    {
+        Aspose.Words.Font[] fonts = [.. row.GetChildNodes(NodeType.Any, true).Cast<Node>()
+            .Select(static node => node switch { Inline inline => inline.Font, Paragraph paragraph => paragraph.ParagraphBreakFont, _ => null })
+            .OfType<Aspose.Words.Font>()];
+        bool[] was = [.. fonts.Select(static font => font.Hidden)];
+        row.Hidden = hidden;
+        foreach ((Aspose.Words.Font font, bool before) in fonts.Zip(was).Where(static pair => pair.First.Hidden != pair.Second))
+        {
+            font.Hidden = before;
+        }
+    }
 
     private static readonly (Func<CellFormat, object> Get, Action<CellFormat, object> Set)[] KeptCellSettings =
     [
