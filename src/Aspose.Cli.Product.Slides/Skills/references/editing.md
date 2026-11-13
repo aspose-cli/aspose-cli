@@ -118,7 +118,8 @@ comments a deck already has.
   `shapes` or `all`, a chart whose title, categories or series names match stays as it was, and
   the edit warns `TEXT_NOT_REPLACED` at the chart's `location`, such as `slide/2/shape/5`: once
   with `details.part` `chart-title` for the title and once with `chart-data` for the categories
-  and series names. To change the title, rebuild the chart: read its kind, categories and series
+  and series names, naming those that still hold a match when the batch ends. To change the
+  title, rebuild the chart: read its kind, categories and series
   with `slides read --content full`, `delete_shape` it, then `insert_chart` the same data with
   the new `title` at its `rect`; the new chart takes the automatic chart style. To change the
   data, read it the same way and give `set_chart_data` the changed categories, or every series
