@@ -230,6 +230,11 @@ public static partial class ExecutableHints
                 yield return (Text(finding!["code"]) ?? "finding", findingHint);
             }
         }
+        // The command a bounded read names to read on, a whole command line.
+        if (Text(root["window"]?["next"]) is { } next)
+        {
+            yield return ("window.next", next);
+        }
     }
 
     /// <summary>What a hint names: its commands, its JSON operations and its operation names.</summary>
