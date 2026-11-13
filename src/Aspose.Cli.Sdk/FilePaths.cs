@@ -68,4 +68,22 @@ public static class FilePaths
     /// <summary>Whether a path is a device path (<c>\\?\</c>, <c>\\.\</c>, also written with <c>/</c>), as opposed to a UNC path.</summary>
     public static bool IsDevice(string path) =>
         IsRemoteOrDevice(path) && path.Length > 3 && path[2] is '?' or '.' && path[3] is '\\' or '/';
+
+    /// <summary>
+    /// The plain path a device path spells, <c>C:\x</c> for <c>\\?\C:\x</c> and <c>\\s\p</c> for
+    /// <c>\\?\UNC\s\p</c>, and any other path itself; null for a device path that spells no plain
+    /// path, such as <c>\\.\PhysicalDrive0</c>.
+    /// </summary>
+    public static string? Plain(string path)
+    {
+        if (!IsDevice(path))
+        {
+            return path;
+        }
+
+        string rest = path[4..];
+        return rest is ['U' or 'u', 'N' or 'n', 'C' or 'c', '\\' or '/', _, ..] ? @"\\" + rest[4..]
+            : rest is [var drive, ':', '\\' or '/', ..] && char.IsAsciiLetter(drive) ? rest
+            : null;
+    }
 }
