@@ -125,7 +125,9 @@ public partial class StandardInvocation
             return null;
         }
 
-        string password = encrypt.EnvironmentName(_parse) ?? ContinuationCommand.PasswordPlaceholder;
+        // The output's password is not the input's: beside one, it has a placeholder of its own.
+        string password = encrypt.EnvironmentName(_parse) ?? (_options.InputPassword?.Continued(_parse) is null
+            ? ContinuationCommand.PasswordPlaceholder : ContinuationCommand.PasswordPlaceholderOf(encrypt.EnvironmentOption));
         return ProtectionAdvice.EncryptInPlace(_parse.RootCommandResult.Command, format.Id, Output.Path, password) is { } encrypted
             && Again([.. encrypt.Options]) is { } plain
                 ? $"Write the {format.Id} file without {option}, then encrypt it in place with a password to open it that grants every permission: "

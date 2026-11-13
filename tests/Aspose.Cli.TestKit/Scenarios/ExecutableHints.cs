@@ -117,6 +117,14 @@ public static partial class ExecutableHints
     /// <summary>The last word of a placeholder that names an environment variable, such as <c>&lt;owner-password-env&gt;</c>.</summary>
     private const string EnvironmentPlaceholder = "env";
 
+    /// <summary>The placeholder of the input's password, in a command line that holds others of their own.</summary>
+    private const string PasswordPlaceholder = "<password-env>";
+
+    /// <summary>The prefix of the variables, and their password, the check sets for the other password placeholders of one command line.</summary>
+    private const string OtherVariable = "HINT_OTHER_PASSWORD_";
+
+    private const string OtherPassword = "hint-other-secret";
+
     private static readonly string[] CommandPlaceholders = ["command", "subcommand"];
 
     /// <summary>Words that follow an option in running text rather than being its value, as in <c>--sheet or</c>.</summary>
@@ -368,6 +376,23 @@ public static partial class ExecutableHints
                     .Select(pair => OperationsSchemaProblem(catalog, line.Command.Product, pair.Value)).FirstOrDefault(static problem => problem is not null));
         }
 
+        // Several password placeholders stand for passwords given apart: <password-env>, the input's,
+        // takes the run's variable, and each other one a variable of its own, set to another password.
+        string[] passwords = [.. line.Rest.SelectMany(static token => Placeholder().Matches(token)).Where(NamesVariable)
+            .Select(static placeholder => placeholder.Value).Distinct(StringComparer.Ordinal)];
+        string Filled(string placeholder) =>
+            passwords.Length < 2 || placeholder == PasswordPlaceholder ? variable! : OtherVariable + Array.IndexOf(passwords, placeholder);
+        if (passwords.Length > 1)
+        {
+            var others = new Dictionary<string, string?>(run.Variables ?? new Dictionary<string, string?>(), StringComparer.OrdinalIgnoreCase);
+            foreach (string password in passwords.Where(static password => password != PasswordPlaceholder))
+            {
+                others[Filled(password)] = OtherPassword;
+            }
+
+            run = run with { Variables = others };
+        }
+
         var args = new List<string>(line.Path);
         bool fillsInput = line.Positionals.Count == 0 && required > 0;
         if (fillsInput)
@@ -381,7 +406,7 @@ public static partial class ExecutableHints
             {
                 fillsInput |= Fills(InputPlaceholders, placeholder);
                 value = value.Replace(placeholder.Value,
-                    NamesVariable(placeholder) ? variable!
+                    NamesVariable(placeholder) ? Filled(placeholder.Value)
                     : Fills(InputPlaceholders, placeholder) ? Logical(run, invocation.Files[0])
                     : OutputMarker, StringComparison.Ordinal);
             }
@@ -765,8 +790,8 @@ public static partial class ExecutableHints
     [GeneratedRegex(@"<([a-z][a-z0-9-]*(?: [a-z][a-z0-9-]*)*)>")]
     private static partial Regex Placeholder();
 
-    /// <summary>An option given a password placeholder outside double quotes, as in <c>--password-env &lt;password-env&gt;</c>.</summary>
-    [GeneratedRegex(@"(?<![\w-])--[a-z][a-z0-9-]*[ =]<(?:[a-z]+-)*password-env>")]
+    /// <summary>An option given a password placeholder outside double quotes, as in <c>--password-env &lt;password-env&gt;</c> or <c>--encrypt-env &lt;encrypt-env&gt;</c>.</summary>
+    [GeneratedRegex(@"(?<![\w-])--[a-z][a-z0-9-]*[ =]<(?:[a-z]+-)*env>")]
     private static partial Regex UnquotedPasswordPlaceholder();
 
     /// <summary>
