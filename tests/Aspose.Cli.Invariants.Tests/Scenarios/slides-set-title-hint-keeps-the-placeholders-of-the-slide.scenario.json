@@ -1,5 +1,5 @@
 {
-  "name": "slides set_title on a slide whose title was deleted is refused with the set_layout of its own layout, after which the body keeps its text and the slide reports the title; on a Blank slide with a footer, which a layout with a title would make the title, the hint shows no set_layout",
+  "name": "slides set_title on a slide whose title was deleted is refused with the set_layout of its own layout, after which the body keeps its text and the slide reports the title; on a Blank slide with a footer, which a layout with a title would make the title, the hint has the footer placeholders deleted first and set again with set_footer; where a body would become the title, the hint shows no set_layout",
   "files": {
     "deck.md": { "text": "# Deck\n\n## Two\n\n- pt\n" }
   },
@@ -55,11 +55,27 @@
         "exitCode": 4,
         "error": "PLACEHOLDER_NOT_FOUND",
         "json": [
-          { "path": "error.hint", "contains": "would give its title role to a placeholder the slide has" },
+          { "path": "error.hint", "contains": "first delete_shape each footer, date and slide-number placeholder of the slide, then put {\"op\":\"set_layout\",\"slides\":\"3\",\"layout\":\"Title Only\"} before this set_title in its batch" },
+          { "path": "error.hint", "contains": "after the set_title set them again with one set_footer that gives the footer's text, showNumber and showDate" }
+        ],
+        "files": { "absent": ["never.pptx"], "unchanged": ["footed.pptx"] }
+      }
+    },
+    {
+      "args": ["slides", "edit", "deck.pptx", "--ops", "{\"ops\":[{\"op\":\"insert_slide\",\"layout\":\"Two Content\"},{\"op\":\"delete_shape\",\"slide\":3,\"shapeId\":2},{\"op\":\"set_text\",\"slide\":3,\"shapeId\":4,\"text\":\"Right\"},{\"op\":\"set_layout\",\"slides\":\"3\",\"layout\":\"Title Only\"},{\"op\":\"delete_shape\",\"slide\":3,\"shapeId\":3}]}", "--out", "orphan.pptx"],
+      "expect": { "exitCode": 0, "files": { "present": ["orphan.pptx"] } }
+    },
+    {
+      "args": ["slides", "edit", "orphan.pptx", "--ops", "{\"ops\":[{\"op\":\"set_title\",\"slide\":3,\"text\":\"Head\"}]}", "--out", "never.pptx"],
+      "expect": {
+        "exitCode": 4,
+        "error": "PLACEHOLDER_NOT_FOUND",
+        "json": [
+          { "path": "error.hint", "contains": "could give the title role to a placeholder the slide has other than a footer, date or slide number" },
           { "path": "error.hint", "notContains": "\"op\":\"set_layout\"" },
           { "path": "error.hint", "notContains": "keeps its shapes" }
         ],
-        "files": { "absent": ["never.pptx"], "unchanged": ["footed.pptx"] }
+        "files": { "absent": ["never.pptx"], "unchanged": ["orphan.pptx"] }
       }
     }
   ]

@@ -20,8 +20,8 @@ internal static class SlidesPlaceholders
 
     /// <summary>
     /// Whether a slide's placeholder keeps its role when the slide takes the layout: the layout
-    /// has one of its type and index. Without one the engine gives it a role of the layout the
-    /// slide has no placeholder for, the title first.
+    /// has one of its type and index. Without one the engine may give it a role of the layout the
+    /// slide has no placeholder for, the title first, or leave it without a place in the layout.
     /// </summary>
     internal static bool Keeps(ILayoutSlide layout, IPlaceholder placeholder) =>
         layout.Shapes.Any(shape => shape.Placeholder is { } own && own.Type == placeholder.Type && own.Index == placeholder.Index);

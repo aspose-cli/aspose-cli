@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Text.Json.Nodes;
 using Aspose.Cli.Sdk.IO.Input;
 using Aspose.Slides;
 using static Aspose.Cli.Product.Slides.Engine.Editing.SlidesMutationSupport;
@@ -79,11 +80,35 @@ internal sealed partial class SlidesMutationHandlers
     {
         foreach (ISlide slide in Slides)
         {
+            (IShape Shape, string? Role)[] placeholders = [.. slide.Shapes.Where(static shape => shape.Placeholder is not null).Select(static shape => (shape, PlaceholderRole(shape)))];
             slide.LayoutSlide = _target.Layout!;
+            NameRoleChanges(slide, placeholders);
         }
 
         FollowLayoutBackgrounds(Slides);
         return default;
+    }
+
+    /// <summary>
+    /// Names each placeholder of the slide whose role, as a read reports it, its new layout changed:
+    /// the engine may give a placeholder the layout has none of the same type and index for a role of
+    /// the layout the slide has no placeholder for, the title first, and its text then stands for it.
+    /// </summary>
+    private void NameRoleChanges(ISlide slide, (IShape Shape, string? Role)[] placeholders)
+    {
+        int number = _presentation.Slides.IndexOf(slide) + 1;
+        // One warning per shape, so each location is one shape's address.
+        foreach ((IShape shape, string? was) in placeholders.Where(static item => PlaceholderRole(item.Shape) != item.Role))
+        {
+            string? now = PlaceholderRole(shape);
+            _warnings.Add(new Warning(SlidesDiagnostics.PlaceholderRoleChanged, string.Create(CultureInfo.InvariantCulture,
+                $"Shape {shape.OfficeInteropShapeId} on slide {number} was its {was} placeholder and is its {now} placeholder under layout '{_target.Layout!.Name}'{(now == SlidesPlaceholderRoles.Title ? ", so the slide's title is now the text of that shape" : "")}."))
+            {
+                Hint = $"The layout has no {was} placeholder in that place. Check the slide's placeholders: set_title or set_text rewrites the shape's text, delete_shape removes it, and set_footer sets a footer, date or slide number again; {ShapeListing}.",
+                Location = SlidesStateProjection.ShapeAddress(number, shape.OfficeInteropShapeId),
+                Details = new JsonObject { ["shapeId"] = shape.OfficeInteropShapeId, ["from"] = was, ["to"] = now },
+            });
+        }
     }
 
     /// <summary>

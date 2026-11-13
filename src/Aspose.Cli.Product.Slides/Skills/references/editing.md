@@ -72,9 +72,14 @@ comments a deck already has.
   slide has, such as its body or footer, can take the new layout's title role, and `set_title`
   then overwrites its text: the refusal's hint shows the `set_layout` to put before the
   `set_title` in its batch only where every placeholder keeps its role, the slide's own layout
-  first. The slide keeps its shapes, so `delete_shape` a text box that stood for its title. Text
+  first, or every one but the footer, date and slide number, which it has you delete first and
+  set again with one `set_footer`. The slide keeps its shapes, so `delete_shape` a text box that stood for its title. Text
   that `set_text` writes into a shape, or a text box `insert_shape` adds, shows on the slide but
   is not its title; write a body there where the slide has no placeholder for it.
+- A placeholder that the new layout of `set_layout` has none of its type in its place for may
+  take a role of the layout the slide has no placeholder for, the title first, and the edit then
+  warns `PLACEHOLDER_ROLE_CHANGED` at that shape with `details.from` and `details.to`. Where `to` is `title`, the slide's title is now that shape's text, such as its
+  footer's.
 - A slide's `title` in `slides read` and `inspect --sample` is the text of the shape `set_title`
   writes; a slide without one reports no `title`, whatever its other shapes say.
 - `format_shape` `font` names one font for Latin, East Asian and complex-script text;

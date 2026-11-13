@@ -35,7 +35,7 @@
         "command": "edit",
         "inputSchema": "v2/slides/ops",
         "operationSchema": "aspose-cli schema v2/slides/ops --operation <op>",
-        "contractFingerprint": "sha256:ce903d0926e97df8b73af3e6af38bace596d7c1da1818eaf6f49a7bb5a8775f6",
+        "contractFingerprint": "sha256:a27486b66b8737040a997ce19e1c23fba5b12c5a15c6a10d0407940362a9a2f0",
         "maximumOperationCount": 10000,
         "ops": [
           "copy_slide",
@@ -2359,6 +2359,13 @@
       "detailsSchemaId": "v2/common/not-found-details"
     },
     {
+      "code": "PLACEHOLDER_ROLE_CHANGED",
+      "owner": "slides",
+      "severity": "warning",
+      "category": "warning",
+      "detailsSchemaId": "v2/common/diagnostic-details"
+    },
+    {
       "code": "PRESENTATION_SETTING_MISMATCH",
       "owner": "slides",
       "severity": "warning",
@@ -4369,7 +4376,7 @@
           ]
         },
         "set_layout": {
-          "description": "Sets the layout of slides, which drop their own background to show the layout's.",
+          "description": "Sets the layout of slides, which drop their own background to show the layout's. A placeholder of a slide that the layout has none of the same type and place for may take a role of the layout the slide has no placeholder for, the title first, and the edit then warns PLACEHOLDER_ROLE_CHANGED.",
           "type": "object",
           "required": [
             "op",
