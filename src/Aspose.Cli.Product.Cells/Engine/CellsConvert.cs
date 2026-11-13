@@ -45,7 +45,7 @@ internal static class CellsConvert
                 {
                     throw CliErrors.OptionInvalid(
                         CellsOptionNames.Sheets,
-                        $"a '{request.Output.Format.Id}' output holds one sheet, but the selection holds {selected.Count}",
+                        $"'{request.Output.Format.Id}' output holds one sheet, but the selection holds {selected.Count}",
                         "Select one sheet, such as --sheets 2, or convert to a multi-sheet format.");
                 }
 

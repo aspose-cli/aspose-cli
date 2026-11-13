@@ -19,7 +19,7 @@ internal static class CellsInputs
     /// <summary>Whether the caller asked for the mark on an output of <paramref name="format"/>.</summary>
     /// <exception cref="Aspose.Cli.Sdk.Errors.CliException"><c>OPTION_INVALID</c> when it did and the output is not CSV or TSV text.</exception>
     public static bool ReadBom(BomOption bom, ParseResult parse, string format) =>
-        bom.Read(parse, CellsFormats.IsDelimited(format) ? null : $"a '{format}' output is not CSV or TSV text");
+        bom.Read(parse, CellsFormats.IsDelimited(format) ? null : $"'{format}' output is not CSV or TSV text");
 
     /// <summary>
     /// A <c>--sheets</c> value as a selection of positions, as <see cref="PageRange"/> reads it,

@@ -1210,7 +1210,7 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
 
         Assert.Equal(ErrorCodes.FileCorrupt, error.Code);
         Assert.Equal(
-            $"its content is delimited text, but {named} spreadsheet input; give it a .csv, .tsv, .txt extension to import it as text",
+            $"its content is delimited text, but {named} spreadsheet input; give it one of the extensions .csv, .tsv, .txt to import it as text",
             error.Explanation);
         Assert.Equal(
             writtenOnly

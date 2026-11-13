@@ -130,7 +130,7 @@ internal static class ProtectionAdvice
             else if (encryptor is not null)
             {
                 step ??= context.Again(
-                    $"The input opens without a password, but only a password to open it protects a {format} file.",
+                    $"The input opens without a password, but only a password to open them protects {format} files.",
                     "which writes the output again encrypted with a password to open it, although the input opens without one",
                     encryptor: null);
             }
@@ -425,7 +425,7 @@ internal static class ProtectionAdvice
 
             (string effect, string naming) = edit is { } found ? (found.Effect, found.Naming) : ("a password to open it", Naming(Password));
             return command is null
-                ? new Step(reason, reason is null ? $"encrypt a {format} copy of it with '{encryptor.Line}'" : $"encrypt the {format} file with '{encryptor.Line}'", Copies: true)
+                ? new Step(reason, reason is null ? $"encrypt a copy of it in the {format} format with '{encryptor.Line}'" : $"encrypt the {format} file with '{encryptor.Line}'", Copies: true)
                 : new Step(reason, $"run {command.Quoted()}, which writes an encrypted {format} copy of it with {effect}{naming}", Copies: true) { Note = edit?.Note };
         }
 

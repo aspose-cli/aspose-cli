@@ -164,7 +164,7 @@ public sealed class ContinuationCommand
         {
             if (!command.Options.First(option => option.Name == given.Option.Name).GetParameterMetadata().AppliesTo(format))
             {
-                LeftOut += $" It leaves out {given.Option.Name}: a '{format}' output holds the whole document.";
+                LeftOut += $" It leaves out {given.Option.Name}: '{format}' output holds the whole document.";
                 continue;
             }
 
