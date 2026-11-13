@@ -99,6 +99,13 @@ public sealed class ContinuationCommand
     internal const string PasswordPlaceholder = "<password-env>";
 
     /// <summary>
+    /// The placeholder of the password <paramref name="option"/> names the variable of, such as
+    /// <c>&lt;encrypt-env&gt;</c> for <c>--encrypt-env</c>, for a line that passes on several
+    /// passwords the caller gave apart, so no one variable stands for two of them.
+    /// </summary>
+    internal static string PasswordPlaceholderOf(string option) => $"<{option.TrimStart('-')}>";
+
+    /// <summary>
     /// Appends <paramref name="option"/>, which names the environment variable of a password, with
     /// <paramref name="variable"/>, or, for a password the invocation did not read from a variable,
     /// with <see cref="PasswordPlaceholder"/> in double quotes, which a shell passes as written
@@ -194,7 +201,8 @@ public sealed class ContinuationCommand
     /// The command line <paramref name="parse"/> holds, as the caller gave it, for a mistake whose
     /// correction is that line, with each password it gave on stdin or literally passed on as every
     /// command passes one it did not read from a variable (<see cref="PasswordVariable"/>), by the
-    /// option of its environment variable, and a document it read from stdin kept as <c>-</c>, which
+    /// option of its environment variable, with a placeholder of its own when the line holds several
+    /// passwords (<see cref="PasswordPlaceholderOf"/>), and a document it read from stdin kept as <c>-</c>, which
     /// <see cref="RepeatedInvocation.Repeating"/> says to pipe again; null when it names no command.
     /// </summary>
     /// <param name="parse">A command line that parses.</param>
@@ -222,11 +230,14 @@ public sealed class ContinuationCommand
         var replay = new CommandLineReplay(repeated, placeholder is null ? [] : [placeholder]);
         replay.Append(parse.RootCommandResult);
 
-        // A line that names the password's variable as well keeps the one it names.
-        foreach (string variable in replay.LeftOut.Distinct(StringComparer.Ordinal)
-            .Where(variable => !parse.CommandResult.Children.OfType<OptionResult>().Any(given => given.Option.Name == variable)))
+        // A line that names the password's variable as well keeps the one it names; a line with
+        // several passwords gives each left out its own placeholder.
+        OptionResult[] given = [.. parse.CommandResult.Children.OfType<OptionResult>()];
+        string[] leftOut = [.. replay.LeftOut.Distinct(StringComparer.Ordinal).Where(variable => !given.Any(option => option.Option.Name == variable))];
+        bool several = leftOut.Length + given.Count(static option => option.Option.GetParameterMetadata() is { Secret: true, ValueSource: ParameterValueSource.EnvironmentVariableName }) > 1;
+        foreach (string variable in leftOut)
         {
-            repeated.PasswordVariable(variable, null);
+            repeated.PasswordVariable(variable, several ? PasswordPlaceholderOf(variable) : null);
         }
 
         return new RepeatedInvocation(repeated, replay.Piped);
