@@ -79,6 +79,34 @@ public sealed class CellsMutationBoundaryTests
             [.. Enumerable.Range(1, 8).Select(cells.GetColumnWidthPixel)]);
     }
 
+    /// <summary>
+    /// set_values keeps the text #N/A with a quote prefix, which a number written over it drops,
+    /// as typing a number over '#N/A in Excel does, while the text beside it keeps its prefix.
+    /// </summary>
+    [Fact]
+    public void SetValues_NumberOverErrorText_DropsTheQuotePrefix()
+    {
+        using var workspace = new TempWorkspace();
+        Assert.Equal(0, workspace.Run("cells", "create", "book.xlsx", "--sheet-names", "S").ExitCode);
+        CliResult text = workspace.Run("cells", "edit", "book.xlsx", "--in-place", "--ops",
+            """{"ops":[{"op":"set_values","sheet":"S","range":"A1","values":[["#N/A","#N/A"]]}]}""");
+        Assert.True(text.ExitCode == 0, text.StdErr);
+        using (var written = new Workbook(workspace.File("book.xlsx")))
+        {
+            Cell cell = written.Worksheets["S"].Cells["A1"];
+            Assert.Equal((CellValueType.IsString, "#N/A", true), (cell.Type, cell.StringValue, cell.GetStyle().QuotePrefix));
+        }
+
+        CliResult number = workspace.Run("cells", "edit", "book.xlsx", "--in-place", "--ops",
+            """{"ops":[{"op":"set_values","sheet":"S","range":"A1","values":[[5]]}]}""");
+
+        Assert.True(number.ExitCode == 0, number.StdErr);
+        using var reopened = new Workbook(workspace.File("book.xlsx"));
+        Cell five = reopened.Worksheets["S"].Cells["A1"];
+        Assert.Equal((CellValueType.IsNumeric, 5d, false), (five.Type, five.DoubleValue, five.GetStyle().QuotePrefix));
+        Assert.True(reopened.Worksheets["S"].Cells["B1"].GetStyle().QuotePrefix);
+    }
+
     [Theory]
     [InlineData(false, false)]
     [InlineData(true, false)]
