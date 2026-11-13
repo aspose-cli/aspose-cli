@@ -1,4 +1,3 @@
-using System.Text;
 using Aspose.Cli.Sdk.Formats;
 using Aspose.Cli.Sdk.IO.Output;
 using Aspose.Cli.Sdk.Licensing;
@@ -185,7 +184,7 @@ internal static class PdfConvert
     private static OutputInfo ConvertText(PdfSession session, Document source, IReadOnlyList<int> pages, PdfConvertRequest request)
     {
         PublishedFile written = session.Outputs.Write(request.Output.Path, request.Output.Format, request.Output.Overwrite, source, temp =>
-            File.WriteAllText(temp, DocumentText(pages.Select(number => source.Pages[number])), new UTF8Encoding(encoderShouldEmitUTF8Identifier: false)), rendering: true, pages: pages);
+            File.WriteAllText(temp, DocumentText(pages.Select(number => source.Pages[number]))), rendering: true, pages: pages);
         return FileObjects.Output(written, request.Output.Format, encrypted: false);
     }
 
