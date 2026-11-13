@@ -87,7 +87,8 @@ internal static class SlidesTextUnits
         {
             yield return Unit(TextPart.ChartTitle, () => chart.HasTitle && chart.ChartTitle.TextFrameForOverriding is { } title ? Paragraphs(title) : []);
             yield return Unit(TextPart.AxisTitle, () => SlidesShapeFormats.AxisTitles(chart).SelectMany(Paragraphs));
-            yield return Unit(TextPart.ChartData, () => [.. CategoryTexts(chart), .. SeriesNames(chart)]);
+            yield return Unit(TextPart.ChartData, () => CategoryTexts(chart)) with { ChartData = Categories };
+            yield return Unit(TextPart.ChartData, () => SeriesNames(chart)) with { ChartData = SeriesNamesData };
             yield return Unit(TextPart.DataLabel, () => chart.ChartData.Series.SelectMany(static series => series.DataPoints)
                 .Select(static point => point.Label?.TextFrameForOverriding).OfType<ITextFrame>().SelectMany(Paragraphs));
         }
@@ -147,6 +148,12 @@ internal static class SlidesTextUnits
     internal static bool Writes(SlidesTextUnit unit, bool evaluation) =>
         unit.Part is null && (!evaluation || !unit.IsEvaluationWatermark);
 
+    /// <summary>The chart data of a unit that holds a chart's categories, as a warning names them.</summary>
+    internal const string Categories = "categories";
+
+    /// <summary>The chart data of a unit that holds a chart's series names, as a warning names them.</summary>
+    internal const string SeriesNamesData = "series names";
+
     /// <summary>A chart's categories, each as <c>slides read</c> reads it.</summary>
     internal static IEnumerable<string?> CategoryTexts(IChart chart) =>
         chart.ChartData.Categories.Select(static category => Convert.ToString(category.Value, CultureInfo.InvariantCulture));
@@ -172,8 +179,11 @@ internal sealed record SlidesTextUnit(int Slide, ISlide Owner, string Scope, ISh
     /// <summary>For text replace_text does not change, the kind of part it names; null for text it writes.</summary>
     public TextPart? Part { get; init; }
 
-    /// <summary>For text replace_text does not change, the object that holds it, which tells the same unit apart in a later read.</summary>
+    /// <summary>For text replace_text does not change, the object that holds it, which with <see cref="ChartData"/> tells the same unit apart in a later read.</summary>
     public object? Holder { get; init; }
+
+    /// <summary>For a chart's data, which of it the unit holds: <see cref="SlidesTextUnits.Categories"/> or <see cref="SlidesTextUnits.SeriesNamesData"/>.</summary>
+    public string? ChartData { get; init; }
 
     /// <summary>For text replace_text does not change, how it reads now.</summary>
     public Func<IEnumerable<string?>>? Reads { get; init; }

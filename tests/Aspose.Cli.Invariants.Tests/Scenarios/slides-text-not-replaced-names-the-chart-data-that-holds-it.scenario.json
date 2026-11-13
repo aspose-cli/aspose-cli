@@ -1,0 +1,80 @@
+{
+  "name": "slides replace_text names in one TEXT_NOT_REPLACED per chart the chart data that still holds a match when the batch ends: the categories and series names when nothing changed them, the series names once set_chart_data changed the categories, the categories once it renamed the series, and nothing once it changed both. Texts are short enough for evaluation mode to read them whole",
+  "files": {
+    "deck.md": { "text": "# Q1\n\n## Two\n\n- pt\n" }
+  },
+  "steps": [
+    {
+      "args": ["slides", "create", "deck.pptx", "--from-markdown", "deck.md"],
+      "expect": { "exitCode": 0 }
+    },
+    {
+      "args": ["slides", "edit", "deck.pptx", "--ops", "{\"ops\":[{\"op\":\"insert_slide\",\"layout\":\"Blank\"},{\"op\":\"insert_chart\",\"slide\":3,\"kind\":\"column\",\"rect\":{\"x\":72,\"y\":120,\"width\":400,\"height\":250},\"categories\":[\"Q1\",\"Q2\"],\"series\":[{\"name\":\"Q1\",\"values\":[1,2]}]}]}", "--out", "chart.pptx"],
+      "expect": { "exitCode": 0, "files": { "present": ["chart.pptx"] } }
+    },
+    {
+      "args": ["slides", "edit", "chart.pptx", "--ops", "{\"ops\":[{\"op\":\"replace_text\",\"find\":\"Q1\",\"replace\":\"X\"}]}", "--out", "both.pptx", "--verify", "--license-mode", "evaluation"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "verification.ok", "equals": true },
+          { "path": "warnings[1].code", "equals": "TEXT_NOT_REPLACED" },
+          { "path": "warnings[1].details.part", "equals": "chart-data" },
+          { "path": "warnings[1].message", "contains": "found a match in the categories and series names of chart 'chart 2' (shapeId 2) on slide 3" },
+          { "path": "warnings[1].hint", "contains": "with the categories and every series as read, each changed where it matches" },
+          { "path": "warnings[2]", "exists": false }
+        ]
+      }
+    },
+    {
+      "args": ["slides", "edit", "chart.pptx", "--ops", "{\"ops\":[{\"op\":\"replace_text\",\"find\":\"Q1\",\"replace\":\"X\"},{\"op\":\"set_chart_data\",\"slide\":3,\"shapeId\":2,\"categories\":[\"A\",\"B\"]}]}", "--out", "named.pptx", "--verify", "--license-mode", "evaluation"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "verification.ok", "equals": true },
+          { "path": "warnings[0].code", "equals": "EVALUATION_MODE" },
+          { "path": "warnings[1].code", "equals": "TEXT_NOT_REPLACED" },
+          { "path": "warnings[1].location", "equals": "slide/3/shape/2" },
+          { "path": "warnings[1].details.part", "equals": "chart-data" },
+          { "path": "warnings[1].message", "contains": "found a match in the series names of chart 'chart 2' (shapeId 2) on slide 3" },
+          { "path": "warnings[1].hint", "contains": "with every series as read, values and all, renamed where its name matches" },
+          { "path": "warnings[2]", "exists": false }
+        ]
+      }
+    },
+    {
+      "args": ["slides", "read", "named.pptx", "--slides", "3", "--content", "full", "--license-mode", "evaluation"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "slides[0].shapes[0].chart.categories", "equals": ["A", "B"] },
+          { "path": "slides[0].shapes[0].chart.series[0].name", "equals": "Q1" }
+        ]
+      }
+    },
+    {
+      "args": ["slides", "edit", "chart.pptx", "--ops", "{\"ops\":[{\"op\":\"replace_text\",\"find\":\"Q1\",\"replace\":\"X\"},{\"op\":\"set_chart_data\",\"slide\":3,\"shapeId\":2,\"series\":[{\"name\":\"Sum\",\"values\":[1,2]}]}]}", "--out", "categories.pptx", "--verify", "--license-mode", "evaluation"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "verification.ok", "equals": true },
+          { "path": "warnings[1].code", "equals": "TEXT_NOT_REPLACED" },
+          { "path": "warnings[1].message", "contains": "found a match in the categories of chart 'chart 2' (shapeId 2) on slide 3" },
+          { "path": "warnings[1].hint", "contains": "with the categories, changed where they match" },
+          { "path": "warnings[2]", "exists": false }
+        ]
+      }
+    },
+    {
+      "args": ["slides", "edit", "chart.pptx", "--ops", "{\"ops\":[{\"op\":\"replace_text\",\"find\":\"Q1\",\"replace\":\"X\"},{\"op\":\"set_chart_data\",\"slide\":3,\"shapeId\":2,\"categories\":[\"A\",\"B\"],\"series\":[{\"name\":\"Sum\",\"values\":[1,2]}]}]}", "--out", "changed.pptx", "--verify", "--license-mode", "evaluation"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "verification.ok", "equals": true },
+          { "path": "warnings[0].code", "equals": "EVALUATION_MODE" },
+          { "path": "warnings[1]", "exists": false }
+        ]
+      }
+    }
+  ]
+}
