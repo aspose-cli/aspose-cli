@@ -112,7 +112,7 @@ internal static class SlidesStateProjection
             IParagraphFormatEffectiveData format = paragraph.ParagraphFormat.GetEffective();
             paragraphs.Add(new SlidesParagraphData
             {
-                Text = Take(paragraph.Text, ref remaining, ref truncated) ?? string.Empty,
+                Text = TakeText(EmptyToNull(ParagraphText(paragraph)), ref remaining, ref truncated) ?? string.Empty,
                 List = format.Bullet.Type switch
                 {
                     BulletType.None or BulletType.NotDefined => null,

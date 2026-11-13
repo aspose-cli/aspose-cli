@@ -156,7 +156,7 @@ internal sealed partial class SlidesMutationHandlers
 
         string[] original = portions.Select(static portion => portion.Text ?? string.Empty).ToArray();
         IReadOnlyList<(int Start, int Length, string Replacement)> matches =
-            replacement.Matches(string.Concat(original), limit);
+            replacement.Matches(SlidesShapeText.ParagraphText(paragraph), limit);
         if (matches.Count == 0)
         {
             return 0;

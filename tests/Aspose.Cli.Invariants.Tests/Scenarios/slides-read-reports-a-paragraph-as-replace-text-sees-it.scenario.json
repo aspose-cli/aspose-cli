@@ -1,0 +1,96 @@
+{
+  "name": "slides read --content full reports each paragraph's text with its runs of spaces and its tabs as stored and each line break in it as a line feed, as it reports the title and the shape's text, so a paragraph copied from read is what search finds and replace_text replaces. Texts are short enough for evaluation mode to read them whole",
+  "files": {
+    "deck.md": { "text": "# T\n\n## Two\n\n- pt\n" }
+  },
+  "steps": [
+    {
+      "args": ["slides", "create", "deck.pptx", "--from-markdown", "deck.md"],
+      "expect": { "exitCode": 0 }
+    },
+    {
+      "args": ["slides", "edit", "deck.pptx", "--ops", "{\"ops\":[{\"op\":\"set_title\",\"slide\":2,\"text\":\"A  B\"},{\"op\":\"set_body\",\"slide\":2,\"paragraphs\":[{\"text\":\"c\\td\"}]}]}", "--out", "spaced.pptx"],
+      "expect": { "exitCode": 0 }
+    },
+    {
+      "args": ["slides", "read", "spaced.pptx", "--slides", "2", "--content", "full"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "slides[0].title", "equals": "A  B" },
+          { "path": "slides[0].shapes[0].paragraphs[0].text", "equals": "A  B" },
+          { "path": "slides[0].shapes[1].text", "equals": "c\td" },
+          { "path": "slides[0].shapes[1].paragraphs[0].text", "equals": "c\td" }
+        ]
+      }
+    },
+    {
+      "args": ["slides", "search", "spaced.pptx", "--pattern", "c\td"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "hits[0].slide", "equals": 2 },
+          { "path": "hits[1]", "exists": false }
+        ]
+      }
+    },
+    {
+      "args": ["slides", "edit", "spaced.pptx", "--ops", "{\"ops\":[{\"op\":\"replace_text\",\"find\":\"c\\td\",\"replace\":\"Z\"},{\"op\":\"replace_text\",\"find\":\"A  B\",\"replace\":\"Y\"}]}", "--out", "replaced.pptx", "--verify"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "verification.ok", "equals": true },
+          { "path": "applied[0].itemsAffected", "equals": 1 },
+          { "path": "applied[1].itemsAffected", "equals": 1 }
+        ],
+        "warnings": { "absent": ["OP_NO_EFFECT"] }
+      }
+    },
+    {
+      "args": ["slides", "read", "replaced.pptx", "--slides", "2", "--content", "full"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "slides[0].title", "equals": "Y" },
+          { "path": "slides[0].shapes[1].paragraphs[0].text", "equals": "Z" }
+        ]
+      }
+    },
+    {
+      "args": ["slides", "edit", "deck.pptx", "--ops", "{\"ops\":[{\"op\":\"set_body\",\"slide\":2,\"paragraphs\":[{\"text\":\"A B\\u000bC\"}]}]}", "--out", "broken.pptx"],
+      "expect": { "exitCode": 0 }
+    },
+    {
+      "args": ["slides", "read", "broken.pptx", "--slides", "2", "--content", "full"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "slides[0].shapes[1].text", "equals": "A B\nC" },
+          { "path": "slides[0].shapes[1].paragraphs[0].text", "equals": "A B\nC" },
+          { "path": "slides[0].shapes[1].paragraphs[1]", "exists": false }
+        ]
+      }
+    },
+    {
+      "args": ["slides", "search", "broken.pptx", "--pattern", "A B\nC"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "hits[0].slide", "equals": 2 },
+          { "path": "hits[1]", "exists": false }
+        ]
+      }
+    },
+    {
+      "args": ["slides", "edit", "broken.pptx", "--ops", "{\"ops\":[{\"op\":\"replace_text\",\"find\":\"A B\\nC\",\"replace\":\"Z\"}]}", "--out", "joined.pptx", "--verify"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "verification.ok", "equals": true },
+          { "path": "applied[0].itemsAffected", "equals": 1 }
+        ],
+        "warnings": { "absent": ["OP_NO_EFFECT"] }
+      }
+    }
+  ]
+}
