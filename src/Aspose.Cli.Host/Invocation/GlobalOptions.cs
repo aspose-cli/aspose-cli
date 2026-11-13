@@ -5,6 +5,7 @@ using Aspose.Cli.Host.Output;
 using Aspose.Cli.Sdk;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.IO.Budgets;
+using Aspose.Cli.Sdk.IO.Paths;
 
 namespace Aspose.Cli.Host.Invocation;
 
@@ -130,7 +131,10 @@ internal sealed class GlobalOptions
 
         inherited ??= InvocationInputs.Current?.Inherited;
         string baseDirectory = inherited?.WorkDir ?? Directory.GetCurrentDirectory();
-        string workDirectory = Path.GetFullPath(parseResult.GetValue(WorkDir) ?? baseDirectory, baseDirectory);
+        // An empty value names no directory, so it is refused as every empty path is (PathResolver).
+        string workDirectory = parseResult.GetValue(WorkDir) is { } workDir
+            ? new PathResolver(baseDirectory).ResolveOutput(workDir, GlobalOptionNames.WorkDir)
+            : Path.GetFullPath(baseDirectory);
         string? explicitLicense = parseResult.GetValue(License);
         if (explicitLicense is not null && string.IsNullOrWhiteSpace(explicitLicense))
         {
