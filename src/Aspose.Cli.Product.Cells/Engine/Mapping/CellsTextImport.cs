@@ -52,12 +52,14 @@ internal static partial class CellsTextImport
         ConvertNumericData = true,
         ConvertDateTimeData = true,
         LoadStyleStrategy = TxtLoadStyleStrategy.ExactFormat,
-        PreferredParsers = culture is null ? [new AsWritten()] : null,
+        PreferredParsers = culture is null ? [new AsWritten(separator)] : null,
     };
 
     /// <summary>
     /// Keeps as text, once a text input loaded with <paramref name="options"/> as written wrote a
-    /// decimal comma anywhere (2,71, 1.253,96), every number of <paramref name="sheet"/> it wrote
+    /// decimal comma anywhere (2,71, 1.253,96, or in a file of semicolons any number with one comma
+    /// and no point, such as 1,234, unless the file also writes a decimal point, such as 19.90),
+    /// every number of <paramref name="sheet"/> it wrote
     /// with a comma or a point, whose meaning such a file leaves open: 1,234 may be a decimal number
     /// and 1.234 a thousand. Returns the warning that says so, with the conversion that reads the
     /// numbers in the culture that wrote them, for <paramref name="input"/>, a user's input; null
@@ -90,6 +92,8 @@ internal static partial class CellsTextImport
         {
             cell.PutValue(cell.StringValue);
         }
+
+        sample ??= separated.FirstOrDefault();
 
         return input is null || sample is null ? null : new Warning(CellsDiagnostics.NumbersReadAsText,
             $"'{Path.GetFileName(input)}' writes numbers with a decimal comma, such as '{sample.StringValue}' in {sample.Name}, "
@@ -248,13 +252,18 @@ internal static partial class CellsTextImport
     /// types as it loads, and any other value as text, and notes whether the input writes a decimal
     /// comma (<see cref="KeepSeparatedNumbersAsText"/>). One load uses one.
     /// </summary>
-    private sealed class AsWritten : ICustomParser
+    private sealed class AsWritten(char separator) : ICustomParser
     {
-        internal bool DecimalCommas { get; private set; }
+        private bool _decimalComma, _commaNumber, _decimalPoint;
+
+        internal bool DecimalCommas => _decimalComma || _commaNumber && !_decimalPoint;
 
         public object? ParseObject(string value)
         {
-            DecimalCommas = DecimalCommas || DecimalComma().IsMatch(value.Trim());
+            string trimmed = value.Trim();
+            _decimalComma = _decimalComma || DecimalComma().IsMatch(trimmed);
+            _commaNumber = _commaNumber || separator == ';' && CommaNumber().IsMatch(trimmed);
+            _decimalPoint = _decimalPoint || DecimalPoint().IsMatch(trimmed);
             return Reads(value) is null ? value : null;
         }
 
@@ -265,6 +274,14 @@ internal static partial class CellsTextImport
     // after dot thousands groups. A comma before exactly three digits may be a thousands separator.
     [GeneratedRegex(@"^[-+]?(?:\d+,\d{1,2}|\d+,\d{4,}|\d{1,3}(?:\.\d{3})+,\d+)$", RegexOptions.CultureInvariant)]
     private static partial Regex DecimalComma();
+
+    // A number with one comma and no point, such as 1,234, which a file of semicolons writes with a decimal comma.
+    [GeneratedRegex(@"^[-+]?\d+,\d+$", RegexOptions.CultureInvariant)]
+    private static partial Regex CommaNumber();
+
+    // A number with a decimal point and no comma: a point before one, two, or four and more digits.
+    [GeneratedRegex(@"^[-+]?\d+\.(?:\d{1,2}|\d{4,})$", RegexOptions.CultureInvariant)]
+    private static partial Regex DecimalPoint();
 
     // A four-digit year, a month and a day, alone or before a time.
     [GeneratedRegex(@"^\d{4}[-/]\d{1,2}[-/]\d{1,2}(?:$|[ T])", RegexOptions.CultureInvariant)]
