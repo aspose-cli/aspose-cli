@@ -1,0 +1,40 @@
+{
+  "name": "pdf edit --verify reports the text a redaction moved under its cover as an issue and exits 8, publishing the output; without --verify it warns and exits 0, and a redaction with nothing after it on its line moves nothing",
+  "files": {
+    "runs.pdf": { "base64": "JVBERi0xLjcKMSAwIG9iago8PCAvVHlwZSAvQ2F0YWxvZyAvUGFnZXMgMiAwIFIgPj4KZW5kb2JqCjIgMCBvYmoKPDwgL1R5cGUgL1BhZ2VzIC9LaWRzIFszIDAgUl0gL0NvdW50IDEgPj4KZW5kb2JqCjMgMCBvYmoKPDwgL1R5cGUgL1BhZ2UgL1BhcmVudCAyIDAgUiAvTWVkaWFCb3ggWzAgMCA2MTIgNzkyXSAvUmVzb3VyY2VzIDw8IC9Gb250IDw8IC9GMSA1IDAgUiA+PiA+PiAvQ29udGVudHMgNCAwIFIgPj4KZW5kb2JqCjQgMCBvYmoKPDwgL0xlbmd0aCA3NSA+PgpzdHJlYW0KQlQgL0YxIDEyIFRmIDcyIDcyMCBUZCAoTmFtZTogKSBUaiAoSmFuZSBSb2UpIFRqICggc2lnbmVkIHRoZSBvcmRlci4pIFRqIEVUCmVuZHN0cmVhbQplbmRvYmoKNSAwIG9iago8PCAvVHlwZSAvRm9udCAvU3VidHlwZSAvVHlwZTEgL0Jhc2VGb250IC9IZWx2ZXRpY2EgPj4KZW5kb2JqCnhyZWYKMCA2CjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwOSAwMDAwMCBuIAowMDAwMDAwMDU4IDAwMDAwIG4gCjAwMDAwMDAxMTUgMDAwMDAgbiAKMDAwMDAwMDI0MSAwMDAwMCBuIAowMDAwMDAwMzY2IDAwMDAwIG4gCnRyYWlsZXIKPDwgL1NpemUgNiAvUm9vdCAxIDAgUiA+PgpzdGFydHhyZWYKNDM2CiUlRU9GCg==" }
+  },
+  "steps": [
+    {
+      "args": ["pdf", "edit", "runs.pdf", "--ops", "[{\"op\":\"redact_text\",\"find\":\"Jane Roe\"}]", "--out", "verified.pdf", "--verify"],
+      "expect": {
+        "exitCode": 8,
+        "warnings": { "present": ["REDACTION_TEXT_MOVED"] },
+        "json": [
+          { "path": "verification.ok", "equals": false },
+          { "path": "verification.issues[0].code", "equals": "REDACTION_TEXT_MOVED" }
+        ],
+        "files": { "present": ["verified.pdf"], "unchanged": ["runs.pdf"] },
+        "reopens": ["verified.pdf"]
+      }
+    },
+    {
+      "args": ["pdf", "edit", "runs.pdf", "--ops", "[{\"op\":\"redact_text\",\"find\":\"Jane Roe\"}]", "--out", "unverified.pdf"],
+      "expect": {
+        "exitCode": 0,
+        "warnings": { "present": ["REDACTION_TEXT_MOVED"] },
+        "files": { "present": ["unverified.pdf"] }
+      }
+    },
+    {
+      "args": ["pdf", "edit", "runs.pdf", "--ops", "[{\"op\":\"redact_text\",\"find\":\"the order.\"}]", "--out", "last.pdf", "--verify"],
+      "expect": {
+        "exitCode": 0,
+        "warnings": { "absent": ["REDACTION_TEXT_MOVED"] },
+        "json": [
+          { "path": "verification.ok", "equals": true },
+          { "path": "verification.checkedOps", "contains": "op-0001" }
+        ]
+      }
+    }
+  ]
+}

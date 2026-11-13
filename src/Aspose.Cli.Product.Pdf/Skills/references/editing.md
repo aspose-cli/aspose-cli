@@ -140,7 +140,9 @@ The engine removes redacted text without keeping its width, so text on the
 same line that was written to follow it, without a position of its own, moves
 left under the cover and no longer shows on the page. Word-made PDFs write
 their lines that way, so labels and punctuation after a value, such as
-`，手机号：`, disappear under the black box. The `REDACTION_TEXT_MOVED` check follows runs that keep their whole text, so a run
+`，手机号：`, disappear under the black box. A `REDACTION_TEXT_MOVED` warning
+names each operation and page where that happened, and with `--verify` the
+edit exits 8 on it while still writing the output. The check follows runs that keep their whole text, so a run
 that the redaction cut can move unnoticed: no warning does not prove that
 nothing moved. The moved text is still in the file and searchable, and
 nothing in the PDF can move it back: to keep the line visible, redact the

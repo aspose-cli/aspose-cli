@@ -17,7 +17,8 @@ operation is in `uncheckedOps`, even when part of its effect was read back.
 
 A warning of the edit with `affectsCompleteness: true` is an issue too, with the
 same code, message, location and hint: `REDACTION_NEARBY_TEXT_REMOVED` when a
-cover removed characters beside what a redaction selected, and
+cover removed characters beside what a redaction selected, `REDACTION_TEXT_MOVED`
+when a redaction moved the text after it on its line under its cover, and
 `NAVIGATION_DEGRADED` when bookmarks, links or named destinations no longer
 lead to their page although it is still in the output, as when `move_pages`
 moves a page they open at a top that reads 0. With `--verify` such an
@@ -40,8 +41,8 @@ edit exits 8; without it, it exits 0 with the warning alone. The
 Every edit, with or without `--verify`, searches its output for the text of
 each `redact_text` before publishing, and writes nothing and exits 8 where it
 is still found, so a published `redact_text` is checked. A `redact_text` that
-matched nothing passes its check, and no check catches text a redaction moved
-under its cover; act on `OP_NO_EFFECT` as its hint says, and on `REDACTION_TEXT_MOVED`,
+matched nothing passes its check, and `REDACTION_TEXT_MOVED` follows only runs
+that keep their whole text; act on `OP_NO_EFFECT` as its hint says, and on `REDACTION_TEXT_MOVED`,
 `REDACTION_NEARBY_TEXT_REMOVED` and the review's covered-text finding
 ([redaction](editing.md#redaction)).
 
