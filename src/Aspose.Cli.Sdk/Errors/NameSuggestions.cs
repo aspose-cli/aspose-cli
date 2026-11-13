@@ -7,8 +7,8 @@ namespace Aspose.Cli.Sdk.Errors;
 /// a word another spelling or synonym of one of theirs, whichever side has it (<c>bottom-middle</c>
 /// for <c>bottom-center</c> and <c>center</c> for <c>middle</c>), then names that contain the
 /// request or are a whole word of it, then names within a small edit distance, which in a name
-/// joined by underscores or hyphens, such as an operation's, stays within each word; ties keep the
-/// candidates' order.
+/// joined by underscores or hyphens, such as an operation's, stays within each word; of names that
+/// rank alike, the one fewer edits away comes first, and ties keep the candidates' order.
 /// </summary>
 internal static class NameSuggestions
 {
@@ -54,7 +54,7 @@ internal static class NameSuggestions
         }
 
         int allowedDistance = AllowedEdits(wanted);
-        var ranked = new List<(int Rank, int Order, string Name)>();
+        var ranked = new List<(int Rank, int Edits, int Order, string Name)>();
         var seen = new HashSet<string>(StringComparer.Ordinal);
         int order = 0;
         foreach (string candidate in candidates.Take(MaximumCandidates))
@@ -73,7 +73,7 @@ internal static class NameSuggestions
                 : null;
             if (rank is int value)
             {
-                ranked.Add((value, order, candidate));
+                ranked.Add((value, Distance(wanted, name, allowedDistance) ?? int.MaxValue, order, candidate));
             }
 
             order++;
@@ -81,6 +81,7 @@ internal static class NameSuggestions
 
         return ranked
             .OrderBy(static item => item.Rank)
+            .ThenBy(static item => item.Edits)
             .ThenBy(static item => item.Order)
             .Take(MaximumSuggestions)
             .Select(static item => item.Name)
@@ -151,14 +152,15 @@ internal static class NameSuggestions
 
     // A compound field name says what it is in its last word: a contained name that ends the
     // other comes first ("size" for "fontSize"), then one that shares the start, including a
-    // field the request only inflects ("replace" for "replacement"), then one that holds the
-    // request inside another word ("maxReplacementCount"), then small edits.
+    // field the request only inflects ("replace" for "replacement"), or that is one typo away
+    // ("pageSize" for "pageSzie"), then one that holds the request inside another word
+    // ("maxReplacementCount"), then small edits.
     private static int? FieldRank(string requested, string candidate, string wanted, string name, int allowedDistance)
     {
         bool stem = Math.Min(wanted.Length, name.Length) >= MinimumOverlap
             && (wanted.StartsWith(name, StringComparison.Ordinal) || name.StartsWith(wanted, StringComparison.Ordinal));
         return EndsWithEither(wanted, name) && Overlaps(requested, candidate) ? 1
-            : stem ? 2
+            : stem || Distance(wanted, name, 1) is not null ? 2
             : Overlaps(requested, candidate) ? 3
             : Distance(wanted, name, allowedDistance) is int distance ? 3 + distance
             : null;
