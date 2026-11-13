@@ -29,7 +29,7 @@ internal static class TextReplaceOps
                 continue;
             }
 
-            ((Cell)cell.Holder).PutValue(after);
+            ValueWriter.WriteText((Cell)cell.Holder, after);
             replaced += matches;
             left -= matches;
             if (left == 0)
