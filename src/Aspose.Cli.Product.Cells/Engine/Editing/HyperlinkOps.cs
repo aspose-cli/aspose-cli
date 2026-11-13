@@ -24,13 +24,17 @@ internal static class HyperlinkOps
             }
         }
 
-        // The cell shows the caller's text, never the rebuilt reference. It is written into the
-        // cell first: on an empty cell the engine stores a display set after the link with the
-        // apostrophe of the reference it put there, which a read would report (probed on 26.9.0).
+        // The cell shows the caller's text, never the rebuilt reference. The display is the cell's
+        // text, which setting it types as PutValue does (#N/A an error, 'abc as abc), so the cell is
+        // then written as the text it is, as set_values writes it. Its quote prefix is the display's
+        // alone: on an empty cell the engine writes a quoted internal target with one, which writing
+        // the display does not drop (probed on 26.9.0).
         string display = op.Display ?? op.Url ?? op.Target!;
-        sheet.Cells[cell.Row, cell.Column].PutValue(display);
         int index = sheet.Hyperlinks.Add(cell.Row, cell.Column, 1, 1, address);
         sheet.Hyperlinks[index].TextToDisplay = display;
+        Cell shown = sheet.Cells[cell.Row, cell.Column];
+        ValueWriter.DropQuotePrefix(shown);
+        ValueWriter.WriteText(shown, display);
     }
 
     public static void RemoveHyperlink(Worksheet sheet, DeleteHyperlinkOp op)

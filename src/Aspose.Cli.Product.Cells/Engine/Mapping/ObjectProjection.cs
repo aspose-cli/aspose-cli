@@ -431,9 +431,18 @@ internal static class ObjectProjection
             Range = Area(link.Area),
             Url = internalLink ? null : Text(link.Address),
             Target = internalLink ? Reference(sheet, link.Address) ?? Text(link.Address) : null,
-            Display = Text(link.TextToDisplay),
+            Display = Text(Displayed(sheet, link)),
         };
     }
+
+    /// <summary>
+    /// The text a link shows, which is its cell's text as a read of the cell reports it: the engine
+    /// puts an apostrophe before the text of a cell with a quote prefix, which is not part of it.
+    /// </summary>
+    private static string? Displayed(Worksheet sheet, Hyperlink link) =>
+        link.TextToDisplay is ['\'', .. var text] && sheet.Cells.CheckCell(link.Area.StartRow, link.Area.StartColumn)?.GetStyle().QuotePrefix == true
+            ? text
+            : link.TextToDisplay;
 
     public static IReadOnlyList<CellsMergeInfo> Merges(ResourceBudgetLedger budgets, Workbook workbook) =>
         [.. Each(budgets, workbook, "merges",

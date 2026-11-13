@@ -138,6 +138,55 @@ public sealed class CellsMutationBoundaryTests
     }
 
     /// <summary>
+    /// The quote prefix of a hyperlink's cell is its display's alone: an internal link with the
+    /// display Go, on an empty cell, where the engine writes the quoted target with a quote prefix,
+    /// and on a filled one, saves a cell without a prefix and a link that shows Go, while the display
+    /// 'abc keeps its prefix and reads back as 'abc from the cell and from the link.
+    /// </summary>
+    [Fact]
+    public void SetHyperlink_LeavesTheCellTheQuotePrefixOfItsDisplayAlone()
+    {
+        using var fixture = new CellsFixture();
+        _ = fixture.LicenseState;
+        using var workspace = new TempWorkspace();
+        using (var source = new Workbook())
+        {
+            source.Worksheets[0].Name = "Sheet1";
+            source.Worksheets.Add("My Sheet");
+            source.Worksheets[0].Cells["B2"].PutValue("old");
+            source.Save(workspace.File("links.xlsx"));
+        }
+
+        CliResult linked = workspace.Run("cells", "edit", "links.xlsx", "--in-place", "--verify", "--output-format", "json", "--ops", """
+            {"ops":[
+              {"op":"set_hyperlink","sheet":"Sheet1","cell":"A1","target":"'My Sheet'!A1","display":"Go"},
+              {"op":"set_hyperlink","sheet":"Sheet1","cell":"A2","target":"Sheet1!A1","display":"Go"},
+              {"op":"set_hyperlink","sheet":"Sheet1","cell":"B2","target":"'My Sheet'!A1","display":"Go"},
+              {"op":"set_hyperlink","sheet":"Sheet1","cell":"A3","url":"https://example.com/","display":"'abc"}
+            ]}
+            """);
+
+        Assert.True(linked.ExitCode == 0, linked.StdErr + linked.StdOut);
+        using (var saved = new Workbook(workspace.File("links.xlsx")))
+        {
+            Worksheet sheet = saved.Worksheets["Sheet1"];
+            foreach (string name in new[] { "A1", "A2", "B2" })
+            {
+                Hyperlink link = sheet.Hyperlinks.Cast<Hyperlink>().Single(item => CellsHelper.CellIndexToName(item.Area.StartRow, item.Area.StartColumn) == name);
+                Assert.Equal((name, "Go", false, "Go"), (name, sheet.Cells[name].StringValue, sheet.Cells[name].GetStyle().QuotePrefix, link.TextToDisplay));
+            }
+
+            Assert.Equal(("'abc", true), (sheet.Cells["A3"].StringValue, sheet.Cells["A3"].GetStyle().QuotePrefix));
+        }
+
+        CliResult read = workspace.Run("cells", "read", "links.xlsx", "--sheet", "Sheet1", "--range", "A3", "--output-format", "json");
+        Assert.Equal("'abc", JsonNode.Parse(read.StdOut)!["sheet"]!["cells"]![0]![0]!["v"]!.GetValue<string>());
+        CliResult inspected = workspace.Run("cells", "inspect", "links.xlsx", "--detail", "hyperlinks", "--output-format", "json");
+        Assert.Equal("'abc", JsonNode.Parse(inspected.StdOut)!["workbook"]!["hyperlinks"]!.AsArray()
+            .Single(link => link!["range"]!.GetValue<string>() == "A3")!["display"]!.GetValue<string>());
+    }
+
+    /// <summary>
     /// set_values keeps the text #N/A with a quote prefix, which a number written over it drops,
     /// as typing a number over '#N/A in Excel does, while the text beside it keeps its prefix.
     /// </summary>

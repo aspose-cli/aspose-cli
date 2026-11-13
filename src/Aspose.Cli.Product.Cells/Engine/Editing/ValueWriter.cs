@@ -20,10 +20,9 @@ internal static class ValueWriter
 {
     public static void Write(Cell cell, object? value, bool readAsWritten)
     {
-        if (value is double or decimal or bool && cell.GetStyle() is { QuotePrefix: true } quoted)
+        if (value is double or decimal or bool)
         {
-            quoted.QuotePrefix = false;
-            cell.SetStyle(quoted);
+            DropQuotePrefix(cell);
         }
 
         switch (value)
@@ -58,4 +57,14 @@ internal static class ValueWriter
     /// </summary>
     public static void WriteText(Cell cell, string text) =>
         cell.PutValue(text.StartsWith('\'') || text.StartsWith('#') && CellsTextImport.ReadType(text) == CellValueType.IsError ? "'" + text : text);
+
+    /// <summary>Drops the quote prefix of a cell, which writing text without one keeps.</summary>
+    public static void DropQuotePrefix(Cell cell)
+    {
+        if (cell.GetStyle() is { QuotePrefix: true } quoted)
+        {
+            quoted.QuotePrefix = false;
+            cell.SetStyle(quoted);
+        }
+    }
 }
