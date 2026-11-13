@@ -31,11 +31,6 @@ public sealed partial class DecisionOwnershipTests
         string[] owners =
         [
             Path.Combine(SdkRoot, "Extensibility", "Commanding", "ContinuationCommand.cs"),
-            // CommandLineText quotes the builder's values, and its Of repeats the caller's own
-            // command line, corrected, for a mistake (D3): not a continuation, it keeps every
-            // option as the caller gave it, its password variable and output format included, so
-            // the builder, which adds JSON output, does not write it.
-            Path.Combine(SdkRoot, "Errors", "CommandLineText.cs"),
         ];
         var reader = new CommandReader(CliCatalog.Current);
         string[] violations = [.. Sources.Value

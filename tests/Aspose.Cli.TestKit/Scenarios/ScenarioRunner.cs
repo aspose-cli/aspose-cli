@@ -74,7 +74,8 @@ public static partial class ScenarioRunner
             {
                 Report(ScenarioContract.ByteOrderMark, $"{written} starts with a UTF-8 byte order mark the step did not ask for and copied from no document");
             }
-            foreach (string problem in ExecutableHints.Problems(new HintRun(args, workspace.Path, Path.GetDirectoryName(workspace.ConfigDirectory)!, Variables(step.Env)), document, variants: true))
+            // The hints' commands that read a document from stdin get the step's again, as TempWorkspace gives a run's.
+            foreach (string problem in ExecutableHints.Problems(new HintRun(args, workspace.Path, Path.GetDirectoryName(workspace.ConfigDirectory)!, Variables(step.Env), step.Stdin), document, variants: true))
             {
                 Report(ExecutableHints.Check, problem);
             }

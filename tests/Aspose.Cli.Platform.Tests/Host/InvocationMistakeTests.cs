@@ -21,13 +21,13 @@ public sealed class InvocationMistakeTests
         // An unknown command: the closest, a command declaring the name, a product command at the root.
         { "cells inpsect a.xlsx", "USAGE_ERROR", "'inpsect' is not a command of 'aspose-cli cells'.", "Did you mean 'cells inspect'?", "cells inspect" },
         { "words merge a.docx b.docx", "USAGE_ERROR", "'merge' is not a command of 'aspose-cli words'.", "import_sections operation", "words edit" },
-        { "read a.docx", "USAGE_ERROR", "'read' is not a command of 'aspose-cli'.", "Run 'aspose-cli words read a.docx'.", "words read" },
+        { "read a.docx", "USAGE_ERROR", "'read' is not a command of 'aspose-cli'.", "Run 'aspose-cli words read a.docx --output-format json'.", "words read" },
 
         // The same, with a later value spelled like a command: the file's product still decides.
-        { "convert a.docx --to pdf", "USAGE_ERROR", "'convert' is not a command of 'aspose-cli'.", "Run 'aspose-cli words convert a.docx --to pdf'.", "words convert" },
-        { "convert a.xlsx --to pdf --out a.pdf", "USAGE_ERROR", "'convert' is not a command of 'aspose-cli'.", "Run 'aspose-cli cells convert a.xlsx --to pdf --out a.pdf'.", "cells convert" },
-        { "convert deck.pptx --to pdf", "USAGE_ERROR", "'convert' is not a command of 'aspose-cli'.", "Run 'aspose-cli slides convert deck.pptx --to pdf'.", "slides convert" },
-        { "--output-format json convert a.docx --to pdf", "USAGE_ERROR", "'convert' is not a command of 'aspose-cli'.", "Run 'aspose-cli --output-format json words convert a.docx --to pdf'.", "words convert" },
+        { "convert a.docx --to pdf", "USAGE_ERROR", "'convert' is not a command of 'aspose-cli'.", "Run 'aspose-cli words convert a.docx --to pdf --output-format json'.", "words convert" },
+        { "convert a.xlsx --to pdf --out a.pdf", "USAGE_ERROR", "'convert' is not a command of 'aspose-cli'.", "Run 'aspose-cli cells convert a.xlsx --to pdf --out a.pdf --output-format json'.", "cells convert" },
+        { "convert deck.pptx --to pdf", "USAGE_ERROR", "'convert' is not a command of 'aspose-cli'.", "Run 'aspose-cli slides convert deck.pptx --to pdf --output-format json'.", "slides convert" },
+        { "--output-format json convert a.docx --to pdf", "USAGE_ERROR", "'convert' is not a command of 'aspose-cli'.", "Run 'aspose-cli words convert a.docx --to pdf --output-format json'.", "words convert" },
         { "convert a.docx pdf", "USAGE_ERROR", "'convert' is not a command of 'aspose-cli'.", "Did you mean 'words convert'?", "words convert" },
 
         // A word typed before the command it belongs to is still about that command.
@@ -40,7 +40,7 @@ public sealed class InvocationMistakeTests
         { "cells inspect a.xlsx help", "USAGE_ERROR", "'help' is not a command of 'aspose-cli cells inspect'; help is the --help option.", "Did you mean 'cells inspect --help'?", "cells inspect --help" },
 
         // An argument's name written before its value.
-        { "words read file a.docx", "USAGE_ERROR", "'file' stands for the <file> argument, whose value follows it.", "Run 'aspose-cli words read a.docx'.", null },
+        { "words read file a.docx", "USAGE_ERROR", "'file' stands for the <file> argument, whose value follows it.", "Run 'aspose-cli words read a.docx --output-format json'.", null },
 
         // A refused value: outside the list, the value it stands for, a sibling's format, a number.
         { "words inspect a.docx --detail bogus", "OPTION_INVALID", "'bogus' is not a value of --detail.", "--help", null },

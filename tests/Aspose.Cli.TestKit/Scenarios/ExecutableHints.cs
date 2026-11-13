@@ -163,9 +163,11 @@ public static partial class ExecutableHints
             {
                 problems.Add($"the {source} hint gives '{unquoted.Value}' with its placeholder outside double quotes, which a shell reads as a redirection");
             }
-            foreach (HintAction action in Extract(catalog, hint))
+            HintAction[] actions = [.. Extract(catalog, hint)];
+            HintAction[] quoted = [.. actions.Where(static action => action.Kind == HintKind.Command)];
+            foreach (HintAction action in actions)
             {
-                Judgement judgement = Plan(catalog, run, document, action, variants);
+                Judgement judgement = Plan(catalog, run, document, action, variants, quoted);
                 if (Outcomes.GetOrAdd(judgement.Key, _ => new Lazy<string?>(judgement.Judge)).Value is { } problem)
                 {
                     problems.Add($"the {source} hint {action}: {problem}");
@@ -309,14 +311,14 @@ public static partial class ExecutableHints
             new($"static\n{product}\n{subject}", () => problem);
     }
 
-    private static Judgement Plan(CliCatalog catalog, HintRun run, JsonNode? document, HintAction action, bool variants = false)
+    private static Judgement Plan(CliCatalog catalog, HintRun run, JsonNode? document, HintAction action, bool variants = false, IReadOnlyList<HintAction>? quoted = null)
     {
         Invocation invocation = Invocation.Of(catalog, run, document);
         return action.Kind switch
         {
             HintKind.Command => PlanCommand(catalog, run, document, invocation, action.Tokens, variants),
             HintKind.Operations => PlanOperations(catalog, run, invocation, action.Text),
-            HintKind.Option => PlanOption(catalog, run, invocation, action.Tokens),
+            HintKind.Option => PlanOption(catalog, run, invocation, action.Tokens, quoted ?? []),
             _ => Judgement.Static("operation " + action.Text, invocation.Product, OperationNameProblem(catalog, invocation, action.Text)),
         };
     }
@@ -430,10 +432,19 @@ public static partial class ExecutableHints
             [product, "edit", Logical(run, invocation.Files[0]), .. invocation.PasswordFor(edit), "--ops", ops, "--dry-run", "--output-format", "json"]);
     }
 
-    /// <summary>An option a hint names alone, such as <c>--dpi</c> or <c>--scope all</c>: the invocation's command must have it and allow the value.</summary>
-    private static Judgement PlanOption(CliCatalog catalog, HintRun run, Invocation invocation, IReadOnlyList<string> tokens)
+    /// <summary>
+    /// An option a hint names alone, such as <c>--dpi</c> or <c>--scope all</c>: the invocation's
+    /// command must have it and allow the value; for an invocation that named no command, such as a
+    /// product command typed without its product, the command the hint quotes as its correction.
+    /// </summary>
+    private static Judgement PlanOption(CliCatalog catalog, HintRun run, Invocation invocation, IReadOnlyList<string> tokens, IReadOnlyList<HintAction> quoted)
     {
         CommandLine command = CommandLine.Parse(catalog, run.Args);
+        if (command.Path.Count == 0 && quoted.Count > 0)
+        {
+            command = CommandLine.Parse(catalog, quoted[0].Tokens);
+        }
+
         CommandLine line = CommandLine.Parse(catalog, [.. command.Path, tokens[0]]);
         string? problem = line.UnknownOptions.Count > 0 ? $"'{line.Command}' has no option {line.UnknownOptions[0]}" : null;
         // The word after a flag is running text, not its value.
@@ -870,8 +881,8 @@ public static partial class ExecutableHints
                     values.Add((option, token[(equals + 1)..]));
                     continue;
                 }
-                // Each occurrence takes one value, as the CLI parses it; a repeatable option is repeated.
-                if (option.MaximumArity > 0 && index + 1 < tokens.Count && !tokens[index + 1].StartsWith('-') && TakesValue(option, tokens[index + 1]))
+                // Each occurrence takes one value, as the CLI parses it, '-' for stdin included; a repeatable option is repeated.
+                if (option.MaximumArity > 0 && index + 1 < tokens.Count && (tokens[index + 1] == "-" || !tokens[index + 1].StartsWith('-')) && TakesValue(option, tokens[index + 1]))
                 {
                     values.Add((option, tokens[++index]));
                 }
