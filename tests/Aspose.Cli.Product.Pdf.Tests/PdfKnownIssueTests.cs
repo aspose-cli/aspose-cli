@@ -56,6 +56,93 @@ public sealed class PdfKnownIssueTests
     }
 
     [Fact]
+    public void Redaction_LeavesARemovedFieldInTheCalculationOrder()
+    {
+        using var fixture = new PdfEngineFixture();
+        string input = fixture.File("calculated.pdf"), output = fixture.File("calculated.redacted.pdf");
+        PdfEngineFixture.WriteRawPdf(input,
+        [
+            "<< /Type /Catalog /Pages 2 0 R /AcroForm << /Fields [4 0 R] /CO [4 0 R] >> >>",
+            "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+            "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Annots [4 0 R] >>",
+            "<< /Type /Annot /Subtype /Widget /FT /Tx /T (total) /V (TOTALSECRET) /Rect [72 500 272 520] /P 3 0 R /AA << /C << /S /JavaScript /JS (event.value = 4;) >> >> >>",
+        ]);
+        using (var document = new Document(input))
+        {
+            var redaction = new RedactionAnnotation(document.Pages[1], new Rectangle(62, 490, 282, 530));
+            document.Pages[1].Annotations.Add(redaction);
+            redaction.Redact();
+            document.Save(output);
+        }
+
+        using var reopened = new Document(output);
+        string bytes = Encoding.Latin1.GetString(File.ReadAllBytes(output));
+        KnownIssue.Reproduces(
+            "PDF-REDACT-CALCULATED",
+            reopened.Form.Count == 0 && System.Text.RegularExpressions.Regex.IsMatch(bytes, @"/CO\s*\[\s*\d+ 0 R") && bytes.Contains("TOTALSECRET", StringComparison.Ordinal),
+            $"{reopened.Form.Count} field(s) left; the order and the value are{(bytes.Contains("/CO", StringComparison.Ordinal) ? "" : " not")} in the file");
+    }
+
+    [Fact]
+    public void Redaction_LeavesAFieldOrParentWithoutItsWidgetsAsAField()
+    {
+        using var fixture = new PdfEngineFixture();
+        string input = fixture.File("parent.pdf"), output = fixture.File("parent.redacted.pdf");
+        PdfEngineFixture.WriteRawPdf(input,
+        [
+            "<< /Type /Catalog /Pages 2 0 R /AcroForm << /Fields [4 0 R 6 0 R] >> >>",
+            "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+            "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Annots [5 0 R 7 0 R 8 0 R] >>",
+            "<< /T (person) /Kids [5 0 R] >>",
+            "<< /Type /Annot /Subtype /Widget /FT /Tx /T (name) /V (Ann) /Parent 4 0 R /Rect [72 500 160 520] /P 3 0 R >>",
+            "<< /FT /Tx /T (code) /V (C1) /Kids [7 0 R 8 0 R] >>",
+            "<< /Type /Annot /Subtype /Widget /Parent 6 0 R /Rect [180 500 220 520] /P 3 0 R >>",
+            "<< /Type /Annot /Subtype /Widget /Parent 6 0 R /Rect [230 500 270 520] /P 3 0 R >>",
+        ]);
+        using (var document = new Document(input))
+        {
+            var redaction = new RedactionAnnotation(document.Pages[1], new Rectangle(62, 490, 282, 530));
+            document.Pages[1].Annotations.Add(redaction);
+            redaction.Redact();
+            document.Save(output);
+        }
+
+        using var reopened = new Document(output);
+        string[] fields = [.. reopened.Form.Fields.Select(static field => $"{field.FullName}={field.Value}").Order(StringComparer.Ordinal)];
+        KnownIssue.Reproduces("PDF-REDACT-EMPTY-PARENT", fields.SequenceEqual(["code=C1", "person="]), $"the form holds {string.Join(", ", fields)}");
+    }
+
+    [Fact]
+    public void Redaction_LeavesARadioGroupCountingTheButtonItTook()
+    {
+        using var fixture = new PdfEngineFixture();
+        string input = fixture.File("radio.pdf");
+        PdfEngineFixture.WriteRawPdf(input,
+        [
+            "<< /Type /Catalog /Pages 2 0 R /AcroForm << /Fields [4 0 R] >> >>",
+            "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+            "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Annots [5 0 R 6 0 R] >>",
+            "<< /FT /Btn /Ff 49152 /T (r) /V /A /Kids [5 0 R 6 0 R] >>",
+            "<< /Type /Annot /Subtype /Widget /Parent 4 0 R /Rect [72 600 92 620] /P 3 0 R /AS /A /AP << /N << /A 7 0 R /Off 7 0 R >> >> >>",
+            "<< /Type /Annot /Subtype /Widget /Parent 4 0 R /Rect [72 560 92 580] /P 3 0 R /AS /Off /AP << /N << /B 7 0 R /Off 7 0 R >> >> >>",
+            "<< /Type /XObject /Subtype /Form /BBox [0 0 20 20] /Length 0 >>\nstream\n\nendstream",
+        ]);
+        using var document = new Document(input);
+        // The form is read before the redaction, as an edit reads it before its operations.
+        Assert.Equal(2, document.Form.Fields.Length);
+        var redaction = new RedactionAnnotation(document.Pages[1], new Rectangle(62, 590, 102, 630));
+        document.Pages[1].Annotations.Add(redaction);
+        redaction.Redact();
+        var group = (Aspose.Pdf.Forms.RadioButtonField)document.Form["r"];
+        Exception? thrown = Record.Exception(() => group.Value = "Off");
+
+        KnownIssue.Reproduces(
+            "PDF-REDACT-RADIO-BUTTONS",
+            thrown is IndexOutOfRangeException,
+            $"{group.Count} buttons and {group.Options.Count} options; setting the value {(thrown is null ? "succeeded" : $"threw {thrown.GetType().Name}")}");
+    }
+
+    [Fact]
     public void PageCopy_NamesTheCopiedFieldApartAndKeepsTheOriginal()
     {
         using var document = new Document();

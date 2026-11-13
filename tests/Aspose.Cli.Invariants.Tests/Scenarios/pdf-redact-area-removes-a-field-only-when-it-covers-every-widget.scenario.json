@@ -1,0 +1,423 @@
+{
+  "name": "pdf edit redact_area removes a field only when it covers every widget of it: a text field with two widgets keeps its value and its other widget when one is covered, on another page or the same one, and goes with its value once both are, and a radio group keeps its value until the area covers both of its buttons, also when each area of one batch covers one of them",
+  "files": {
+    "two-pages.pdf": {
+      "base64": "JVBERi0xLjcKMSAwIG9iago8PCAvVHlwZSAvQ2F0YWxvZyAvUGFnZXMgMiAwIFIgL0Fjcm9Gb3JtIDw8IC9GaWVsZHMgWzggMCBSXSAvREEgKC9IZWx2IDAgVGYgMCBnKSAvRFIgPDwgL0ZvbnQgPDwgL0hlbHYgNSAwIFIgPj4gPj4gPj4gPj4KZW5kb2JqCjIgMCBvYmoKPDwgL1R5cGUgL1BhZ2VzIC9LaWRzIFszIDAgUiA0IDAgUl0gL0NvdW50IDIgPj4KZW5kb2JqCjMgMCBvYmoKPDwgL1R5cGUgL1BhZ2UgL1BhcmVudCAyIDAgUiAvTWVkaWFCb3ggWzAgMCA2MTIgNzkyXSAvUmVzb3VyY2VzIDw8IC9Gb250IDw8IC9GMSA1IDAgUiA+PiA+PiAvQ29udGVudHMgNiAwIFIgL0Fubm90cyBbOSAwIFJdID4+CmVuZG9iago0IDAgb2JqCjw8IC9UeXBlIC9QYWdlIC9QYXJlbnQgMiAwIFIgL01lZGlhQm94IFswIDAgNjEyIDc5Ml0gL1Jlc291cmNlcyA8PCAvRm9udCA8PCAvRjEgNSAwIFIgPj4gPj4gL0NvbnRlbnRzIDcgMCBSIC9Bbm5vdHMgWzEwIDAgUl0gPj4KZW5kb2JqCjUgMCBvYmoKPDwgL1R5cGUgL0ZvbnQgL1N1YnR5cGUgL1R5cGUxIC9CYXNlRm9udCAvSGVsdmV0aWNhID4+CmVuZG9iago2IDAgb2JqCjw8IC9MZW5ndGggMzcgPj4Kc3RyZWFtCkJUIC9GMSAxOCBUZiA3MiA3MjAgVGQgKFBhZ2UgMSkgVGogRVQKZW5kc3RyZWFtCmVuZG9iago3IDAgb2JqCjw8IC9MZW5ndGggMzcgPj4Kc3RyZWFtCkJUIC9GMSAxOCBUZiA3MiA3MjAgVGQgKFBhZ2UgMikgVGogRVQKZW5kc3RyZWFtCmVuZG9iago4IDAgb2JqCjw8IC9GVCAvVHggL1QgKG4pIC9WIChLRUVQKSAvS2lkcyBbOSAwIFIgMTAgMCBSXSAvREEgKC9IZWx2IDEyIFRmIDAgZykgPj4KZW5kb2JqCjkgMCBvYmoKPDwgL1R5cGUgL0Fubm90IC9TdWJ0eXBlIC9XaWRnZXQgL1BhcmVudCA4IDAgUiAvUmVjdCBbNzIgNjAwIDI3MiA2MjBdIC9QIDMgMCBSID4+CmVuZG9iagoxMCAwIG9iago8PCAvVHlwZSAvQW5ub3QgL1N1YnR5cGUgL1dpZGdldCAvUGFyZW50IDggMCBSIC9SZWN0IFs3MiA2MDAgMjcyIDYyMF0gL1AgNCAwIFIgPj4KZW5kb2JqCnhyZWYKMCAxMQowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDkgMDAwMDAgbiAKMDAwMDAwMDE0NSAwMDAwMCBuIAowMDAwMDAwMjA4IDAwMDAwIG4gCjAwMDAwMDAzNTAgMDAwMDAgbiAKMDAwMDAwMDQ5MyAwMDAwMCBuIAowMDAwMDAwNTYzIDAwMDAwIG4gCjAwMDAwMDA2NTAgMDAwMDAgbiAKMDAwMDAwMDczNyAwMDAwMCBuIAowMDAwMDAwODI2IDAwMDAwIG4gCjAwMDAwMDA5MjMgMDAwMDAgbiAKdHJhaWxlcgo8PCAvU2l6ZSAxMSAvUm9vdCAxIDAgUiA+PgpzdGFydHhyZWYKMTAyMQolJUVPRgo="
+    },
+    "one-page.pdf": {
+      "base64": "JVBERi0xLjcKMSAwIG9iago8PCAvVHlwZSAvQ2F0YWxvZyAvUGFnZXMgMiAwIFIgL0Fjcm9Gb3JtIDw8IC9GaWVsZHMgWzYgMCBSXSAvREEgKC9IZWx2IDAgVGYgMCBnKSAvRFIgPDwgL0ZvbnQgPDwgL0hlbHYgNCAwIFIgPj4gPj4gPj4gPj4KZW5kb2JqCjIgMCBvYmoKPDwgL1R5cGUgL1BhZ2VzIC9LaWRzIFszIDAgUl0gL0NvdW50IDEgPj4KZW5kb2JqCjMgMCBvYmoKPDwgL1R5cGUgL1BhZ2UgL1BhcmVudCAyIDAgUiAvTWVkaWFCb3ggWzAgMCA2MTIgNzkyXSAvUmVzb3VyY2VzIDw8IC9Gb250IDw8IC9GMSA0IDAgUiA+PiA+PiAvQ29udGVudHMgNSAwIFIgL0Fubm90cyBbNyAwIFIgOCAwIFJdID4+CmVuZG9iago0IDAgb2JqCjw8IC9UeXBlIC9Gb250IC9TdWJ0eXBlIC9UeXBlMSAvQmFzZUZvbnQgL0hlbHZldGljYSA+PgplbmRvYmoKNSAwIG9iago8PCAvTGVuZ3RoIDM3ID4+CnN0cmVhbQpCVCAvRjEgMTggVGYgNzIgNzIwIFRkIChQYWdlIDEpIFRqIEVUCmVuZHN0cmVhbQplbmRvYmoKNiAwIG9iago8PCAvRlQgL1R4IC9UIChuKSAvViAoS0VFUCkgL0tpZHMgWzcgMCBSIDggMCBSXSAvREEgKC9IZWx2IDEyIFRmIDAgZykgPj4KZW5kb2JqCjcgMCBvYmoKPDwgL1R5cGUgL0Fubm90IC9TdWJ0eXBlIC9XaWRnZXQgL1BhcmVudCA2IDAgUiAvUmVjdCBbNzIgNjAwIDI3MiA2MjBdIC9QIDMgMCBSID4+CmVuZG9iago4IDAgb2JqCjw8IC9UeXBlIC9Bbm5vdCAvU3VidHlwZSAvV2lkZ2V0IC9QYXJlbnQgNiAwIFIgL1JlY3QgWzcyIDUwMCAyNzIgNTIwXSAvUCAzIDAgUiA+PgplbmRvYmoKeHJlZgowIDkKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDA5IDAwMDAwIG4gCjAwMDAwMDAxNDUgMDAwMDAgbiAKMDAwMDAwMDIwMiAwMDAwMCBuIAowMDAwMDAwMzUwIDAwMDAwIG4gCjAwMDAwMDA0MjAgMDAwMDAgbiAKMDAwMDAwMDUwNyAwMDAwMCBuIAowMDAwMDAwNTk1IDAwMDAwIG4gCjAwMDAwMDA2OTIgMDAwMDAgbiAKdHJhaWxlcgo8PCAvU2l6ZSA5IC9Sb290IDEgMCBSID4+CnN0YXJ0eHJlZgo3ODkKJSVFT0YK"
+    },
+    "radio.pdf": {
+      "base64": "JVBERi0xLjcKMSAwIG9iago8PCAvVHlwZSAvQ2F0YWxvZyAvUGFnZXMgMiAwIFIgL0Fjcm9Gb3JtIDw8IC9GaWVsZHMgWzYgMCBSXSAvREEgKC9IZWx2IDAgVGYgMCBnKSAvRFIgPDwgL0ZvbnQgPDwgL0hlbHYgNCAwIFIgPj4gPj4gPj4gPj4KZW5kb2JqCjIgMCBvYmoKPDwgL1R5cGUgL1BhZ2VzIC9LaWRzIFszIDAgUl0gL0NvdW50IDEgPj4KZW5kb2JqCjMgMCBvYmoKPDwgL1R5cGUgL1BhZ2UgL1BhcmVudCAyIDAgUiAvTWVkaWFCb3ggWzAgMCA2MTIgNzkyXSAvUmVzb3VyY2VzIDw8IC9Gb250IDw8IC9GMSA0IDAgUiA+PiA+PiAvQ29udGVudHMgNSAwIFIgL0Fubm90cyBbNyAwIFIgOCAwIFJdID4+CmVuZG9iago0IDAgb2JqCjw8IC9UeXBlIC9Gb250IC9TdWJ0eXBlIC9UeXBlMSAvQmFzZUZvbnQgL0hlbHZldGljYSA+PgplbmRvYmoKNSAwIG9iago8PCAvTGVuZ3RoIDM3ID4+CnN0cmVhbQpCVCAvRjEgMTggVGYgNzIgNzIwIFRkIChQYWdlIDEpIFRqIEVUCmVuZHN0cmVhbQplbmRvYmoKNiAwIG9iago8PCAvRlQgL0J0biAvRmYgNDkxNTIgL1QgKHIpIC9WIC9BIC9LaWRzIFs3IDAgUiA4IDAgUl0gPj4KZW5kb2JqCjcgMCBvYmoKPDwgL1R5cGUgL0Fubm90IC9TdWJ0eXBlIC9XaWRnZXQgL1BhcmVudCA2IDAgUiAvUmVjdCBbNzIgNjAwIDkyIDYyMF0gL1AgMyAwIFIgL0FTIC9BIC9BUCA8PCAvTiA8PCAvQSA5IDAgUiAvT2ZmIDEwIDAgUiA+PiA+PiA+PgplbmRvYmoKOCAwIG9iago8PCAvVHlwZSAvQW5ub3QgL1N1YnR5cGUgL1dpZGdldCAvUGFyZW50IDYgMCBSIC9SZWN0IFs3MiA1NjAgOTIgNTgwXSAvUCAzIDAgUiAvQVMgL09mZiAvQVAgPDwgL04gPDwgL0IgOSAwIFIgL09mZiAxMCAwIFIgPj4gPj4gPj4KZW5kb2JqCjkgMCBvYmoKPDwgL0xlbmd0aCAxOCAvVHlwZSAvWE9iamVjdCAvU3VidHlwZSAvRm9ybSAvQkJveCBbMCAwIDIwIDIwXSA+PgpzdHJlYW0KMCBnIDUgNSAxMCAxMCByZSBmCmVuZHN0cmVhbQplbmRvYmoKMTAgMCBvYmoKPDwgL0xlbmd0aCAwIC9UeXBlIC9YT2JqZWN0IC9TdWJ0eXBlIC9Gb3JtIC9CQm94IFswIDAgMjAgMjBdID4+CnN0cmVhbQoKZW5kc3RyZWFtCmVuZG9iagp4cmVmCjAgMTEKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDA5IDAwMDAwIG4gCjAwMDAwMDAxNDUgMDAwMDAgbiAKMDAwMDAwMDIwMiAwMDAwMCBuIAowMDAwMDAwMzUwIDAwMDAwIG4gCjAwMDAwMDA0MjAgMDAwMDAgbiAKMDAwMDAwMDUwNyAwMDAwMCBuIAowMDAwMDAwNTgwIDAwMDAwIG4gCjAwMDAwMDA3MjMgMDAwMDAgbiAKMDAwMDAwMDg2OCAwMDAwMCBuIAowMDAwMDAwOTg0IDAwMDAwIG4gCnRyYWlsZXIKPDwgL1NpemUgMTEgL1Jvb3QgMSAwIFIgPj4Kc3RhcnR4cmVmCjEwODIKJSVFT0YK"
+    }
+  },
+  "steps": [
+    {
+      "args": [
+        "pdf",
+        "edit",
+        "two-pages.pdf",
+        "--ops",
+        "[{\"op\":\"redact_area\",\"page\":1,\"rect\":{\"x\":62,\"y\":162,\"width\":220,\"height\":40}}]",
+        "--out",
+        "two-pages-first.pdf",
+        "--verify"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          {
+            "path": "verification.ok",
+            "equals": true
+          },
+          {
+            "path": "verification.issues[0]",
+            "exists": false
+          }
+        ]
+      }
+    },
+    {
+      "args": [
+        "pdf",
+        "inspect",
+        "two-pages-first.pdf",
+        "--detail",
+        "forms"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          {
+            "path": "forms.fieldCount",
+            "equals": 1
+          },
+          {
+            "path": "forms.fields[0].name",
+            "equals": "n"
+          },
+          {
+            "path": "forms.fields[0].value",
+            "equals": "KEEP"
+          },
+          {
+            "path": "forms.fields[0].page",
+            "equals": 2
+          }
+        ]
+      }
+    },
+    {
+      "args": [
+        "pdf",
+        "edit",
+        "one-page.pdf",
+        "--ops",
+        "[{\"op\":\"redact_area\",\"page\":1,\"rect\":{\"x\":62,\"y\":162,\"width\":220,\"height\":40}}]",
+        "--out",
+        "one-page-first.pdf",
+        "--verify"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          {
+            "path": "verification.ok",
+            "equals": true
+          },
+          {
+            "path": "verification.issues[0]",
+            "exists": false
+          }
+        ]
+      }
+    },
+    {
+      "args": [
+        "pdf",
+        "inspect",
+        "one-page-first.pdf",
+        "--detail",
+        "forms"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          {
+            "path": "forms.fieldCount",
+            "equals": 1
+          },
+          {
+            "path": "forms.fields[0].name",
+            "equals": "n"
+          },
+          {
+            "path": "forms.fields[0].value",
+            "equals": "KEEP"
+          },
+          {
+            "path": "forms.fields[0].page",
+            "equals": 1
+          }
+        ]
+      }
+    },
+    {
+      "args": [
+        "pdf",
+        "edit",
+        "one-page.pdf",
+        "--ops",
+        "[{\"op\":\"redact_area\",\"page\":1,\"rect\":{\"x\":62,\"y\":162,\"width\":220,\"height\":140}}]",
+        "--out",
+        "one-page-both.pdf",
+        "--verify"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          {
+            "path": "verification.ok",
+            "equals": true
+          },
+          {
+            "path": "verification.issues[0]",
+            "exists": false
+          }
+        ],
+        "hidden": [
+          "KEEP"
+        ]
+      }
+    },
+    {
+      "args": [
+        "pdf",
+        "inspect",
+        "one-page-both.pdf",
+        "--detail",
+        "forms"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          {
+            "path": "forms.fieldCount",
+            "equals": 0
+          }
+        ]
+      }
+    },
+    {
+      "args": [
+        "pdf",
+        "edit",
+        "radio.pdf",
+        "--ops",
+        "[{\"op\":\"redact_area\",\"page\":1,\"rect\":{\"x\":62,\"y\":167,\"width\":40,\"height\":30}}]",
+        "--out",
+        "radio-first.pdf",
+        "--verify"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          {
+            "path": "verification.ok",
+            "equals": true
+          },
+          {
+            "path": "verification.issues[0]",
+            "exists": false
+          }
+        ]
+      }
+    },
+    {
+      "args": [
+        "pdf",
+        "inspect",
+        "radio-first.pdf",
+        "--detail",
+        "forms"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          {
+            "path": "forms.fieldCount",
+            "equals": 1
+          },
+          {
+            "path": "forms.fields[0].name",
+            "equals": "r"
+          },
+          {
+            "path": "forms.fields[0].value",
+            "equals": "A"
+          }
+        ]
+      }
+    },
+    {
+      "args": [
+        "pdf",
+        "edit",
+        "radio.pdf",
+        "--ops",
+        "[{\"op\":\"redact_area\",\"page\":1,\"rect\":{\"x\":62,\"y\":167,\"width\":40,\"height\":70}}]",
+        "--out",
+        "radio-both.pdf",
+        "--verify"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          {
+            "path": "verification.ok",
+            "equals": true
+          },
+          {
+            "path": "verification.issues[0]",
+            "exists": false
+          }
+        ]
+      }
+    },
+    {
+      "args": [
+        "pdf",
+        "inspect",
+        "radio-both.pdf",
+        "--detail",
+        "forms"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          {
+            "path": "forms.fieldCount",
+            "equals": 0
+          }
+        ]
+      }
+    },
+    {
+      "args": [
+        "pdf",
+        "edit",
+        "two-pages.pdf",
+        "--ops",
+        "[{\"op\":\"redact_area\",\"page\":1,\"rect\":{\"x\":62,\"y\":162,\"width\":220,\"height\":40}},{\"op\":\"redact_area\",\"page\":2,\"rect\":{\"x\":62,\"y\":162,\"width\":220,\"height\":40}}]",
+        "--out",
+        "two-pages-each.pdf",
+        "--verify"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          {
+            "path": "verification.ok",
+            "equals": true
+          },
+          {
+            "path": "verification.issues[0]",
+            "exists": false
+          }
+        ],
+        "hidden": [
+          "KEEP"
+        ]
+      }
+    },
+    {
+      "args": [
+        "pdf",
+        "inspect",
+        "two-pages-each.pdf",
+        "--detail",
+        "forms"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          {
+            "path": "forms.fieldCount",
+            "equals": 0
+          }
+        ]
+      }
+    },
+    {
+      "args": [
+        "pdf",
+        "edit",
+        "two-pages.pdf",
+        "--ops",
+        "[{\"op\":\"redact_area\",\"page\":1,\"rect\":{\"x\":62,\"y\":162,\"width\":220,\"height\":40}},{\"op\":\"redact_area\",\"page\":2,\"rect\":{\"x\":62,\"y\":162,\"width\":220,\"height\":40}}]",
+        "--out",
+        "two-pages-each-unverified.pdf"
+      ],
+      "expect": {
+        "exitCode": 0
+      }
+    },
+    {
+      "args": [
+        "pdf",
+        "inspect",
+        "two-pages-each-unverified.pdf",
+        "--detail",
+        "forms"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          {
+            "path": "forms.fieldCount",
+            "equals": 0
+          }
+        ]
+      }
+    },
+    {
+      "args": [
+        "pdf",
+        "edit",
+        "one-page.pdf",
+        "--ops",
+        "[{\"op\":\"redact_area\",\"page\":1,\"rect\":{\"x\":62,\"y\":162,\"width\":220,\"height\":40}},{\"op\":\"redact_area\",\"page\":1,\"rect\":{\"x\":62,\"y\":262,\"width\":220,\"height\":40}}]",
+        "--out",
+        "one-page-each.pdf"
+      ],
+      "expect": {
+        "exitCode": 0
+      }
+    },
+    {
+      "args": [
+        "pdf",
+        "inspect",
+        "one-page-each.pdf",
+        "--detail",
+        "forms"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          {
+            "path": "forms.fieldCount",
+            "equals": 0
+          }
+        ]
+      }
+    },
+    {
+      "args": [
+        "pdf",
+        "edit",
+        "radio.pdf",
+        "--ops",
+        "[{\"op\":\"redact_area\",\"page\":1,\"rect\":{\"x\":62,\"y\":167,\"width\":40,\"height\":30}},{\"op\":\"redact_area\",\"page\":1,\"rect\":{\"x\":62,\"y\":207,\"width\":40,\"height\":30}}]",
+        "--out",
+        "radio-each.pdf"
+      ],
+      "expect": {
+        "exitCode": 0
+      }
+    },
+    {
+      "args": [
+        "pdf",
+        "inspect",
+        "radio-each.pdf",
+        "--detail",
+        "forms"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          {
+            "path": "forms.fieldCount",
+            "equals": 0
+          }
+        ]
+      }
+    },
+    {
+      "args": [
+        "pdf",
+        "edit",
+        "two-pages.pdf",
+        "--ops",
+        "[{\"op\":\"redact_area\",\"page\":1,\"rect\":{\"x\":62,\"y\":162,\"width\":220,\"height\":40}},{\"op\":\"redact_area\",\"page\":2,\"rect\":{\"x\":62,\"y\":162,\"width\":220,\"height\":40}},{\"op\":\"set_form_field\",\"name\":\"n\",\"value\":\"NEW\"}]",
+        "--out",
+        "two-pages-each-set.pdf"
+      ],
+      "expect": {
+        "exitCode": 4,
+        "error": "FIELD_NOT_FOUND"
+      }
+    }
+  ]
+}
