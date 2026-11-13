@@ -32,7 +32,7 @@ internal static class ValueWriter
                 cell.PutValue((string?)null);
                 break;
             case string text:
-                cell.PutValue(text.StartsWith('\'') || text.StartsWith('#') && CellsTextImport.ReadType(text) == CellValueType.IsError ? "'" + text : text);
+                WriteText(cell, text);
                 break;
             case decimal written when readAsWritten:
                 CellsTextImport.PutAsWritten(cell, written.ToString(CultureInfo.InvariantCulture));
@@ -51,4 +51,11 @@ internal static class ValueWriter
                     $"Unnormalized value of type {value.GetType().Name} reached the engine.");
         }
     }
+
+    /// <summary>
+    /// Writes <paramref name="text"/> as the text it is, so that the cell reads back as it: the
+    /// text set_values, --set and replace_text write, which a caller gave, is written here.
+    /// </summary>
+    public static void WriteText(Cell cell, string text) =>
+        cell.PutValue(text.StartsWith('\'') || text.StartsWith('#') && CellsTextImport.ReadType(text) == CellValueType.IsError ? "'" + text : text);
 }

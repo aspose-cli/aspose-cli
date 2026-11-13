@@ -148,6 +148,23 @@ public sealed class CellsTextValuesAsWrittenTests : IDisposable
     }
 
     /// <summary>
+    /// replace_text in a csv writes the text it makes as it is: a leading apostrophe stays, the
+    /// text #N/A replaced to #REF! is written as that text, and a number it does not touch, and
+    /// every other line, are written as the input wrote them.
+    /// </summary>
+    [Fact]
+    public void ReplaceTextInCsv_WritesTheTextAsMade()
+    {
+        Write("texts.csv", ["k,v", "'abc,1", "#N/A,2", "7,3"]);
+
+        CliResult edited = Cli("cells", "edit", "texts.csv", "--out", "out.csv", "--output-format", "json", "--ops",
+            """{"ops":[{"op":"replace_text","find":"abc","replace":"xyz"},{"op":"replace_text","find":"N/A","replace":"REF!"},{"op":"replace_text","find":"7","replace":"8"}]}""");
+
+        Assert.True(edited.ExitCode == 0, $"exit {edited.ExitCode}: {edited.StdErr}{edited.StdOut}");
+        Assert.Equal(["k,v", "'xyz,1", "#REF!,2", "7,3"], Written("out.csv"));
+    }
+
+    /// <summary>
     /// A <c>--set</c> number into a csv is written as it was set, as the csv's own numbers are:
     /// 1.50 stays 1.50, also in a cell that showed 2 or a new row. Text, a date and an id with
     /// leading zeros are written as before, the other lines as the input wrote them, and the same
