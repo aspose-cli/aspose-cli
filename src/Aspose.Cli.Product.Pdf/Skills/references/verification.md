@@ -24,7 +24,8 @@ lead to their page although it is still in the output, as when `move_pages`
 moves a page they open at a top that reads 0. With `--verify` such an
 edit exits 8; without it, it exits 0 with the warning alone. The
 `NAVIGATION_DEGRADED` of navigation that led to a page the batch deleted has no
-`affectsCompleteness` and is no issue ([page changes](editing.md)).
+`affectsCompleteness` and is no issue; its hint names the bookmarks among them
+by their address, as a `delete_bookmarks` operation ([page changes](editing.md)).
 
 | Operation | Read back |
 | --- | --- |

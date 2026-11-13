@@ -203,7 +203,7 @@ internal static class PdfInfoProjection
     private static double Round(double value) => Math.Round(value, 3, MidpointRounding.AwayFromZero);
 
     private static PdfOutlineItem[] Outline(Document document) =>
-        [.. Outline(document.Outlines, parent: null, levels: int.MaxValue, PdfInspectResult.OutlineLimit).Select(static entry => entry.Item)];
+        [.. Outline(document, document.Outlines, parent: null, levels: int.MaxValue, PdfInspectResult.OutlineLimit).Select(static entry => entry.Item)];
 
     /// <summary>
     /// The bookmarks of <paramref name="items"/>, which lie below the bookmark at
@@ -212,7 +212,7 @@ internal static class PdfInfoProjection
     /// <paramref name="items"/> is 1. Each comes with the page its destination stores, which is
     /// not 1 or more when it opens no page of the document (<see cref="PdfOutlineItem.Page"/> is then null).
     /// </summary>
-    internal static List<(PdfOutlineItem Item, int Destination)> Outline(IEnumerable<OutlineItemCollection> items, string? parent, int levels, int limit)
+    internal static List<(PdfOutlineItem Item, int Destination)> Outline(Document document, IEnumerable<OutlineItemCollection> items, string? parent, int levels, int limit)
     {
         var results = new List<(PdfOutlineItem Item, int Destination)>();
         Append(items, parent, depth: 1);
@@ -229,7 +229,7 @@ internal static class PdfInfoProjection
                 }
 
                 string index = PdfOutlineAddresses.OutlineIndex(above, ++position);
-                int destination = PdfNavigationCensus.DestinationPage(item);
+                int destination = PdfNavigationCensus.DestinationPage(document, item);
                 results.Add((new PdfOutlineItem
                 {
                     Title = item.Title ?? string.Empty,

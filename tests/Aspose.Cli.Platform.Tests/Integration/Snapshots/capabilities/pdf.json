@@ -3673,7 +3673,7 @@
               "pattern": "^[1-9][0-9]*(/[1-9][0-9]*)*$"
             },
             "page": {
-              "description": "The page the bookmark opens; omitted when its destination is not a page of the document.",
+              "description": "The page the bookmark opens, also through a named destination; omitted when its destination is not a page of the document.",
               "type": "integer",
               "minimum": 1
             }

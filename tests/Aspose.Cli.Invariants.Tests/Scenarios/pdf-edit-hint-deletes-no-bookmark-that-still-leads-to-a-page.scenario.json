@@ -1,0 +1,75 @@
+{
+  "name": "the delete_bookmarks operation a page deletion's hint gives, appended to the batch as written, deletes the bookmarks that lost their page and no other: a child under a listed parent is not listed again, and a parent that holds a bookmark that still leads to its page is named instead of deleted",
+  "files": {
+    "tree.pdf": { "base64": "JVBERi0xLjcKMSAwIG9iago8PCAvVHlwZSAvQ2F0YWxvZyAvUGFnZXMgMiAwIFIgL091dGxpbmVzIDEyIDAgUiA+PgplbmRvYmoKMiAwIG9iago8PCAvVHlwZSAvUGFnZXMgL0tpZHMgWzMgMCBSIDQgMCBSIDUgMCBSIDYgMCBSXSAvQ291bnQgNCA+PgplbmRvYmoKMyAwIG9iago8PCAvVHlwZSAvUGFnZSAvUGFyZW50IDIgMCBSIC9NZWRpYUJveCBbMCAwIDYxMiA3OTJdIC9SZXNvdXJjZXMgPDwgL0ZvbnQgPDwgL0YxIDcgMCBSID4+ID4+IC9Db250ZW50cyA4IDAgUiA+PgplbmRvYmoKNCAwIG9iago8PCAvVHlwZSAvUGFnZSAvUGFyZW50IDIgMCBSIC9NZWRpYUJveCBbMCAwIDYxMiA3OTJdIC9SZXNvdXJjZXMgPDwgL0ZvbnQgPDwgL0YxIDcgMCBSID4+ID4+IC9Db250ZW50cyA5IDAgUiA+PgplbmRvYmoKNSAwIG9iago8PCAvVHlwZSAvUGFnZSAvUGFyZW50IDIgMCBSIC9NZWRpYUJveCBbMCAwIDYxMiA3OTJdIC9SZXNvdXJjZXMgPDwgL0ZvbnQgPDwgL0YxIDcgMCBSID4+ID4+IC9Db250ZW50cyAxMCAwIFIgPj4KZW5kb2JqCjYgMCBvYmoKPDwgL1R5cGUgL1BhZ2UgL1BhcmVudCAyIDAgUiAvTWVkaWFCb3ggWzAgMCA2MTIgNzkyXSAvUmVzb3VyY2VzIDw8IC9Gb250IDw8IC9GMSA3IDAgUiA+PiA+PiAvQ29udGVudHMgMTEgMCBSID4+CmVuZG9iago3IDAgb2JqCjw8IC9UeXBlIC9Gb250IC9TdWJ0eXBlIC9UeXBlMSAvQmFzZUZvbnQgL0hlbHZldGljYSA+PgplbmRvYmoKOCAwIG9iago8PCAvTGVuZ3RoIDM3ID4+CnN0cmVhbQpCVCAvRjEgMTggVGYgNzIgNzIwIFRkIChQYWdlIDEpIFRqIEVUCmVuZHN0cmVhbQplbmRvYmoKOSAwIG9iago8PCAvTGVuZ3RoIDM3ID4+CnN0cmVhbQpCVCAvRjEgMTggVGYgNzIgNzIwIFRkIChQYWdlIDIpIFRqIEVUCmVuZHN0cmVhbQplbmRvYmoKMTAgMCBvYmoKPDwgL0xlbmd0aCAzNyA+PgpzdHJlYW0KQlQgL0YxIDE4IFRmIDcyIDcyMCBUZCAoUGFnZSAzKSBUaiBFVAplbmRzdHJlYW0KZW5kb2JqCjExIDAgb2JqCjw8IC9MZW5ndGggMzcgPj4Kc3RyZWFtCkJUIC9GMSAxOCBUZiA3MiA3MjAgVGQgKFBhZ2UgNCkgVGogRVQKZW5kc3RyZWFtCmVuZG9iagoxMiAwIG9iago8PCAvVHlwZSAvT3V0bGluZXMgL0ZpcnN0IDEzIDAgUiAvTGFzdCAxNiAwIFIgL0NvdW50IDUgPj4KZW5kb2JqCjEzIDAgb2JqCjw8IC9UaXRsZSAoQjEpIC9QYXJlbnQgMTIgMCBSIC9OZXh0IDE0IDAgUiAvRGVzdCBbMyAwIFIgL0ZpdF0gPj4KZW5kb2JqCjE0IDAgb2JqCjw8IC9UaXRsZSAoQjIpIC9QYXJlbnQgMTIgMCBSIC9QcmV2IDEzIDAgUiAvTmV4dCAxNSAwIFIgL0Rlc3QgWzQgMCBSIC9GaXRdID4+CmVuZG9iagoxNSAwIG9iago8PCAvVGl0bGUgKEIzKSAvUGFyZW50IDEyIDAgUiAvUHJldiAxNCAwIFIgL05leHQgMTYgMCBSIC9EZXN0IFs1IDAgUiAvRml0XSA+PgplbmRvYmoKMTYgMCBvYmoKPDwgL1RpdGxlIChCNCkgL1BhcmVudCAxMiAwIFIgL1ByZXYgMTUgMCBSIC9GaXJzdCAxNyAwIFIgL0xhc3QgMTcgMCBSIC9Db3VudCAxIC9EZXN0IFs2IDAgUiAvRml0XSA+PgplbmRvYmoKMTcgMCBvYmoKPDwgL1RpdGxlIChCNGEpIC9QYXJlbnQgMTYgMCBSIC9EZXN0IFszIDAgUiAvRml0XSA+PgplbmRvYmoKeHJlZgowIDE4CjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwOSAwMDAwMCBuIAowMDAwMDAwMDc1IDAwMDAwIG4gCjAwMDAwMDAxNTAgMDAwMDAgbiAKMDAwMDAwMDI3NiAwMDAwMCBuIAowMDAwMDAwNDAyIDAwMDAwIG4gCjAwMDAwMDA1MjkgMDAwMDAgbiAKMDAwMDAwMDY1NiAwMDAwMCBuIAowMDAwMDAwNzI2IDAwMDAwIG4gCjAwMDAwMDA4MTMgMDAwMDAgbiAKMDAwMDAwMDkwMCAwMDAwMCBuIAowMDAwMDAwOTg4IDAwMDAwIG4gCjAwMDAwMDEwNzYgMDAwMDAgbiAKMDAwMDAwMTE1MCAwMDAwMCBuIAowMDAwMDAxMjMxIDAwMDAwIG4gCjAwMDAwMDEzMjUgMDAwMDAgbiAKMDAwMDAwMTQxOSAwMDAwMCBuIAowMDAwMDAxNTM2IDAwMDAwIG4gCnRyYWlsZXIKPDwgL1NpemUgMTggL1Jvb3QgMSAwIFIgPj4Kc3RhcnR4cmVmCjE2MDUKJSVFT0YK" }
+  },
+  "steps": [
+    {
+      "args": ["pdf", "edit", "tree.pdf", "--ops", "[{\"op\":\"delete_pages\",\"pages\":\"1,4\"}]", "--out", "both.pdf", "--verify"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "verification.ok", "equals": true },
+          { "path": "warnings", "contains": { "code": "NAVIGATION_DEGRADED", "message": "3 bookmark(s), 0 link(s) and 0 named destination(s) lead to pages the edit deleted.", "hint": "The pages they led to were deleted as the batch asked. Bookmarks you no longer need can be removed with {\"op\":\"delete_bookmarks\",\"bookmarks\":[\"1\",\"4\"]}." } }
+        ]
+      }
+    },
+    {
+      "args": ["pdf", "edit", "tree.pdf", "--ops", "[{\"op\":\"delete_pages\",\"pages\":\"1,4\"},{\"op\":\"delete_bookmarks\",\"bookmarks\":[\"1\",\"4\"]}]", "--out", "both-cleaned.pdf", "--verify"],
+      "expect": {
+        "exitCode": 0,
+        "warnings": { "absent": ["NAVIGATION_DEGRADED"] },
+        "json": [{ "path": "verification.ok", "equals": true }]
+      }
+    },
+    {
+      "args": ["pdf", "inspect", "both-cleaned.pdf", "--detail", "outline"],
+      "expect": {
+        "exitCode": 0,
+        "json": [{ "path": "outline", "equals": [{ "title": "B2", "level": 1, "bookmark": "1", "page": 1 }, { "title": "B3", "level": 1, "bookmark": "2", "page": 2 }] }]
+      }
+    },
+    {
+      "args": ["pdf", "edit", "tree.pdf", "--ops", "[{\"op\":\"delete_pages\",\"pages\":\"4\"}]", "--out", "parent.pdf", "--verify"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "verification.ok", "equals": true },
+          { "path": "warnings", "contains": { "code": "NAVIGATION_DEGRADED", "message": "1 bookmark(s), 0 link(s) and 0 named destination(s) lead to pages the edit deleted.", "hint": "The pages they led to were deleted as the batch asked. Bookmark(s) 4 of the output lost their page but hold bookmarks that still lead to theirs: deleting one deletes those too, so keep it or tell the user." } }
+        ]
+      }
+    },
+    {
+      "args": ["pdf", "inspect", "parent.pdf", "--detail", "outline"],
+      "expect": {
+        "exitCode": 0,
+        "json": [{ "path": "outline[4]", "equals": { "title": "B4a", "level": 2, "bookmark": "4/1", "page": 1 } }]
+      }
+    },
+    {
+      "args": ["pdf", "edit", "tree.pdf", "--ops", "[{\"op\":\"delete_pages\",\"pages\":\"1\"}]", "--out", "child.pdf", "--verify"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "verification.ok", "equals": true },
+          { "path": "warnings", "contains": { "code": "NAVIGATION_DEGRADED", "message": "2 bookmark(s), 0 link(s) and 0 named destination(s) lead to pages the edit deleted.", "hint": "The pages they led to were deleted as the batch asked. Bookmarks you no longer need can be removed with {\"op\":\"delete_bookmarks\",\"bookmarks\":[\"1\",\"4/1\"]}." } }
+        ]
+      }
+    },
+    {
+      "args": ["pdf", "edit", "tree.pdf", "--ops", "[{\"op\":\"delete_pages\",\"pages\":\"1\"},{\"op\":\"delete_bookmarks\",\"bookmarks\":[\"1\",\"4/1\"]}]", "--out", "child-cleaned.pdf", "--verify"],
+      "expect": {
+        "exitCode": 0,
+        "warnings": { "absent": ["NAVIGATION_DEGRADED"] },
+        "json": [{ "path": "verification.ok", "equals": true }]
+      }
+    },
+    {
+      "args": ["pdf", "inspect", "child-cleaned.pdf", "--detail", "outline"],
+      "expect": {
+        "exitCode": 0,
+        "json": [{ "path": "outline", "equals": [{ "title": "B2", "level": 1, "bookmark": "1", "page": 1 }, { "title": "B3", "level": 1, "bookmark": "2", "page": 2 }, { "title": "B4", "level": 1, "bookmark": "3", "page": 3 }] }]
+      }
+    }
+  ]
+}

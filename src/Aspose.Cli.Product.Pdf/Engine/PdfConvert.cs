@@ -166,7 +166,7 @@ internal static class PdfConvert
         return PdfNavigationCensus.Degraded(before, PdfNavigationCensus.Unresolved(document));
     }
 
-    private static Warning? UnselectedNavigation(PdfNavigationCensus degraded) => degraded.ToWarning(
+    private static Warning? UnselectedNavigation(PdfNavigationCensus degraded) => new PdfNavigationLoss(default, degraded).RemovedWarning(
         "lead to pages that --pages did not select",
         "Select every page the navigation needs, or delete those bookmarks and links in a 'pdf edit' batch before converting.");
 

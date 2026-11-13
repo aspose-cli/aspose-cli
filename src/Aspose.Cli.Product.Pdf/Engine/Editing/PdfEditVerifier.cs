@@ -200,7 +200,7 @@ internal sealed class PdfEditVerifier : IEditVerifier<PdfOp>
                 hint: "Compare 'pdf inspect --detail outline' of the input and the output."));
         }
 
-        Dictionary<string, (PdfOutlineItem Item, int Destination)> outline = PdfInfoProjection.Outline(output.Outlines, parent: null, int.MaxValue, int.MaxValue)
+        Dictionary<string, (PdfOutlineItem Item, int Destination)> outline = PdfInfoProjection.Outline(output, output.Outlines, parent: null, int.MaxValue, int.MaxValue)
             .ToDictionary(static entry => entry.Item.Bookmark, StringComparer.Ordinal);
         foreach (BookmarkExpectation bookmark in _bookmarks)
         {

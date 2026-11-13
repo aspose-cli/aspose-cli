@@ -1,0 +1,59 @@
+{
+  "name": "navigation a command lost leaves the output incomplete only where the page it led to is still in the output: a split, a convert of selected pages and a page deletion leave out what the caller asked, a merge and a create lose what they hold; a bookmark that opened its page through a named destination still opens it, one that only lost its place in its page is said apart, and an edit's warning names the bookmarks by their address",
+  "files": {
+    "one.pdf": { "fixture": "pdf.pdf" },
+    "nav.pdf": { "base64": "JVBERi0xLjcKMSAwIG9iago8PCAvVHlwZSAvQ2F0YWxvZyAvUGFnZXMgMiAwIFIgL091dGxpbmVzIDkgMCBSIC9OYW1lcyA8PCAvRGVzdHMgPDwgL05hbWVzIFsoYXBwZW5kaXgpIFs1IDAgUiAvWFlaIDIwIDcwMCAwXV0gPj4gPj4gPj4KZW5kb2JqCjIgMCBvYmoKPDwgL1R5cGUgL1BhZ2VzIC9LaWRzIFszIDAgUiA0IDAgUiA1IDAgUl0gL0NvdW50IDMgPj4KZW5kb2JqCjMgMCBvYmoKPDwgL1R5cGUgL1BhZ2UgL1BhcmVudCAyIDAgUiAvTWVkaWFCb3ggWzAgMCA2MTIgNzkyXSAvUmVzb3VyY2VzIDw8IC9Gb250IDw8IC9GMSA2IDAgUiA+PiA+PiAvQ29udGVudHMgNyAwIFIgL0Fubm90cyBbMTIgMCBSIDEzIDAgUl0gPj4KZW5kb2JqCjQgMCBvYmoKPDwgL1R5cGUgL1BhZ2UgL1BhcmVudCAyIDAgUiAvTWVkaWFCb3ggWzAgMCA2MTIgNzkyXSAvUmVzb3VyY2VzIDw8IC9Gb250IDw8IC9GMSA2IDAgUiA+PiA+PiAvQ29udGVudHMgOCAwIFIgPj4KZW5kb2JqCjUgMCBvYmoKPDwgL1R5cGUgL1BhZ2UgL1BhcmVudCAyIDAgUiAvTWVkaWFCb3ggWzAgMCA2MTIgNzkyXSAvUmVzb3VyY2VzIDw8IC9Gb250IDw8IC9GMSA2IDAgUiA+PiA+PiAvQ29udGVudHMgMTQgMCBSID4+CmVuZG9iago2IDAgb2JqCjw8IC9UeXBlIC9Gb250IC9TdWJ0eXBlIC9UeXBlMSAvQmFzZUZvbnQgL0hlbHZldGljYSA+PgplbmRvYmoKNyAwIG9iago8PCAvTGVuZ3RoIDYyID4+CnN0cmVhbQpCVCAvRjEgMTIgVGYgNzIgNzIwIFRkIChQYWdlIDE6IHRvIHR3bywgdG8gdGhlIGFwcGVuZGl4KSBUaiBFVAplbmRzdHJlYW0KZW5kb2JqCjggMCBvYmoKPDwgL0xlbmd0aCAzNyA+PgpzdHJlYW0KQlQgL0YxIDEyIFRmIDcyIDcyMCBUZCAoUGFnZSAyKSBUaiBFVAplbmRzdHJlYW0KZW5kb2JqCjkgMCBvYmoKPDwgL1R5cGUgL091dGxpbmVzIC9GaXJzdCAxMCAwIFIgL0xhc3QgMTEgMCBSIC9Db3VudCAyID4+CmVuZG9iagoxMCAwIG9iago8PCAvVGl0bGUgKFR3bykgL1BhcmVudCA5IDAgUiAvTmV4dCAxMSAwIFIgL0Rlc3QgWzQgMCBSIC9YWVogNzIgNzAwIDBdID4+CmVuZG9iagoxMSAwIG9iago8PCAvVGl0bGUgKE5hbWVkKSAvUGFyZW50IDkgMCBSIC9QcmV2IDEwIDAgUiAvRGVzdCAoYXBwZW5kaXgpID4+CmVuZG9iagoxMiAwIG9iago8PCAvVHlwZSAvQW5ub3QgL1N1YnR5cGUgL0xpbmsgL1JlY3QgWzcyIDcxNSAxNTAgNzM1XSAvQm9yZGVyIFswIDAgMF0gL0Rlc3QgWzQgMCBSIC9GaXRdID4+CmVuZG9iagoxMyAwIG9iago8PCAvVHlwZSAvQW5ub3QgL1N1YnR5cGUgL0xpbmsgL1JlY3QgWzE2MCA3MTUgMzAwIDczNV0gL0JvcmRlciBbMCAwIDBdIC9EZXN0IChhcHBlbmRpeCkgPj4KZW5kb2JqCjE0IDAgb2JqCjw8IC9MZW5ndGggNDcgPj4Kc3RyZWFtCkJUIC9GMSAxMiBUZiA3MiA3MjAgVGQgKFBhZ2UgMzogYXBwZW5kaXgpIFRqIEVUCmVuZHN0cmVhbQplbmRvYmoKeHJlZgowIDE1CjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwOSAwMDAwMCBuIAowMDAwMDAwMTQyIDAwMDAwIG4gCjAwMDAwMDAyMTEgMDAwMDAgbiAKMDAwMDAwMDM2MSAwMDAwMCBuIAowMDAwMDAwNDg3IDAwMDAwIG4gCjAwMDAwMDA2MTQgMDAwMDAgbiAKMDAwMDAwMDY4NCAwMDAwMCBuIAowMDAwMDAwNzk2IDAwMDAwIG4gCjAwMDAwMDA4ODMgMDAwMDAgbiAKMDAwMDAwMDk1NiAwMDAwMCBuIAowMDAwMDAxMDQ2IDAwMDAwIG4gCjAwMDAwMDExMjcgMDAwMDAgbiAKMDAwMDAwMTIzNSAwMDAwMCBuIAowMDAwMDAxMzQyIDAwMDAwIG4gCnRyYWlsZXIKPDwgL1NpemUgMTUgL1Jvb3QgMSAwIFIgPj4Kc3RhcnR4cmVmCjE0NDAKJSVFT0YK" },
+    "contract.html": { "text": "<html><head><meta charset=\"utf-8\"><title>Contract</title></head><body><h1 id=\"c1\">General</h1><p>Contents: <a href=\"#c2\">Price</a> | <a href=\"annex.pdf\">Annex</a> | <a href=\"https://example.com/terms\">Terms</a></p><h1 id=\"c2\" style=\"page-break-before:always\">Price</h1><p>The price.</p></body></html>" }
+  },
+  "steps": [
+    {
+      "args": ["pdf", "split", "nav.pdf", "--by", "pages", "--out-dir", "parts"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "warnings", "contains": { "code": "NAVIGATION_DEGRADED", "message": "0 bookmark(s), 0 link(s) and 1 named destination(s) no longer lead to their page, although their part holds it: the parts carry no named destinations, so what led there through one leads nowhere.", "hint": "No operation re-creates links or named destinations: tell the user which no longer lead to their page.", "affectsCompleteness": true } },
+          { "path": "warnings", "contains": { "code": "NAVIGATION_DEGRADED", "message": "0 bookmark(s), 2 link(s) and 0 named destination(s) lead to a page of another part, so they lead nowhere in their own.", "hint": "The pages they led to are in other parts, as the split asked; tell the user they lead nowhere in the parts." } },
+          { "path": "warnings", "contains": { "code": "NAVIGATION_DEGRADED", "message": "2 bookmark(s) of the parts open their page as a whole, not at the place in it they opened in the input.", "hint": "They still open their page. No operation sets the place in a page a bookmark opens at: tell the user if that place matters." } }
+        ]
+      }
+    },
+    {
+      "args": ["pdf", "convert", "nav.pdf", "--to", "docx", "--pages", "1", "--out", "first.docx"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "warnings", "contains": { "code": "NAVIGATION_DEGRADED", "message": "2 bookmark(s), 2 link(s) and 1 named destination(s) lead to pages that --pages did not select.", "hint": "Select every page the navigation needs, or delete those bookmarks and links in a 'pdf edit' batch before converting." } }
+        ]
+      }
+    },
+    {
+      "args": ["pdf", "merge", "nav.pdf", "one.pdf", "--out", "merged.pdf"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "warnings", "contains": { "code": "NAVIGATION_DEGRADED", "message": "0 bookmark(s), 1 link(s) and 1 named destination(s) no longer lead to their page, although the merged document holds it: it carries no named destinations, so what led there through one leads nowhere.", "hint": "No operation re-creates links or named destinations: tell the user which no longer lead to their page.", "affectsCompleteness": true } },
+          { "path": "warnings", "contains": { "code": "NAVIGATION_DEGRADED", "message": "2 bookmark(s) of the merged document open their page as a whole, not at the place in it they opened in the input.", "hint": "They still open their page. No operation sets the place in a page a bookmark opens at: tell the user if that place matters." } }
+        ]
+      }
+    },
+    {
+      "args": ["pdf", "edit", "nav.pdf", "--ops", "[{\"op\":\"delete_pages\",\"pages\":\"3\"}]", "--out", "deleted.pdf", "--verify"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "verification.ok", "equals": true },
+          { "path": "warnings", "contains": { "code": "NAVIGATION_DEGRADED", "message": "1 bookmark(s), 1 link(s) and 1 named destination(s) lead to pages the edit deleted.", "hint": "The pages they led to were deleted as the batch asked. Bookmarks you no longer need can be removed with {\"op\":\"delete_bookmarks\",\"bookmarks\":[\"2\"]}. No operation deletes links or named destinations: tell the user they lead nowhere." } }
+        ]
+      }
+    },
+    {
+      "args": ["pdf", "create", "contract.pdf", "--from-html", "contract.html"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "warnings", "contains": { "code": "NAVIGATION_DEGRADED", "message": "0 bookmark(s), 2 link(s) and 0 named destination(s) lead nowhere: the importer gives a link to an element id or to a local file no target.", "hint": "Mark each place a link leads to with <a name=\"...\"></a>, which the importer links to, give a link to another document its https address, and create the PDF again.", "affectsCompleteness": true } }
+        ]
+      }
+    }
+  ]
+}

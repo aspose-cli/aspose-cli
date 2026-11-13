@@ -192,8 +192,10 @@ public sealed class PdfArtifactWorkflowTests
         Assert.Equal(
             ["East(1)", "East details(1)", "South(1)", "South details(1)"],
             byPage.Outputs.Select(static part => Outline(part.Path)));
+        // "South details" (XYZ) still opens its page, at Fit: the parts are complete.
         Warning degraded = Assert.Single(byBookmarks.Warnings!, static warning => warning.Code.Name == "NAVIGATION_DEGRADED");
-        Assert.StartsWith("1 bookmark(s), 0 link(s) and 0 named destination(s)", degraded.Message, StringComparison.Ordinal);
+        Assert.StartsWith("1 bookmark(s) of the parts open their page as a whole", degraded.Message, StringComparison.Ordinal);
+        Assert.False(degraded.AffectsCompleteness);
     }
 
     /// <summary>

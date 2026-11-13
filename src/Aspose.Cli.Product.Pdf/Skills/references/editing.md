@@ -77,7 +77,8 @@ top reads 0, or a fit to the page's height whose left reads 0, is left without a
 target, because the CLI would have to invent the position.
 `delete_pages` leaves navigation to deleted pages without a target. `pdf merge`
 points each copied bookmark at its page with Fit zoom (other locations and zooms
-are lost) and does not carry named destinations. `pdf split` does the same with
+are lost), also one that opened it through a named destination, and does not
+carry named destinations. `pdf split` does the same with
 the bookmarks of each part's pages; a bookmark whose parent opens a page of
 another part moves up in its place, and links to another part lead nowhere.
 Each part keeps the page labels its pages had, such as `South-1` to `South-3`,
@@ -91,10 +92,19 @@ A merge keeps each page's size and warns `PAGE_SIZES_MIXED`, listing the sizes,
 when the inputs' paper differs, such as A4 and Letter: set one paper size in the
 sources before converting them to PDF.
 Each publishes its output with
-a `NAVIGATION_DEGRADED` warning that counts the entries that no longer lead where
-they did. In `pdf edit` the entries whose page the batch deleted, as asked, have
-a warning of their own; remove the bookmarks you no longer need with
-`delete_bookmarks`.
+`NAVIGATION_DEGRADED` warnings that count the entries that no longer lead where
+they did, by why. Entries that still lead nowhere although the output holds
+their page, such as the links and named destinations a merge or a part does
+not carry, have `affectsCompleteness: true`. Entries that led to a page
+the command was asked to leave out (deleted by the batch, not selected by
+`--pages`, in another part of a split) have a warning without it, and so do
+bookmarks that still open their page, only as a whole rather than at their place
+in it: no operation sets that place, so tell the user if it matters. The
+warnings of `pdf edit` name the bookmarks by their address in the output's
+outline, as a `delete_bookmarks` operation that deletes no bookmark still
+leading to a page; remove the ones you no longer need with it. A bookmark that
+lost its page but holds bookmarks that still lead to theirs is named apart,
+since deleting it deletes them too: keep it or tell the user.
 Follow the destination checks in
 [verification](verification.md).
 

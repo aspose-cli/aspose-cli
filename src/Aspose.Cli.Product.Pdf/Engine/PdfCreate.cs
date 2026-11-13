@@ -336,7 +336,8 @@ internal static class PdfCreate
             }
         }
 
-        return new PdfNavigationCensus(0, nowhere, 0).ToWarning(
+        // The place a link led to is in the document, but the link no longer leads there.
+        return new PdfNavigationLoss(new PdfNavigationCensus(0, nowhere, 0), default).StrandedWarning(
             "lead nowhere: the importer gives a link to an element id or to a local file no target",
             "Mark each place a link leads to with <a name=\"...\"></a>, which the importer links to, give a link to another document its https address, and create the PDF again.");
     }

@@ -113,7 +113,7 @@ internal static class PdfRedactionAudit
             return;
         }
 
-        foreach ((PdfOutlineItem item, _) in PdfInfoProjection.Outline(output.Outlines, parent: null, int.MaxValue, int.MaxValue))
+        foreach ((PdfOutlineItem item, _) in PdfInfoProjection.Outline(output, output.Outlines, parent: null, int.MaxValue, int.MaxValue))
         {
             if (Matches(redaction.Pattern, [item.Title]))
             {

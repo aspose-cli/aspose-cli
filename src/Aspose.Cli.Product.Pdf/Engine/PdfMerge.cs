@@ -27,7 +27,7 @@ internal static class PdfMerge
 
         var inputs = new List<InputInfo>(request.InputPaths.Count);
         using var merged = new Document();
-        int bookmarks = 0;
+        int repositioned = 0;
         int brokenInputLinks = 0;
         int namedDestinations = 0;
         List<Warning> warnings = [];
@@ -61,7 +61,7 @@ internal static class PdfMerge
 
             if (request.PreserveBookmarks)
             {
-                bookmarks += CopyOutline(source, source.Outlines, merged.Outlines, merged, page => offset + page);
+                repositioned += CopyOutline(source, source.Outlines, merged.Outlines, merged, page => offset + page);
             }
 
             // An attachment keeps the name it has in the first input that holds that name.
@@ -94,10 +94,11 @@ internal static class PdfMerge
             warnings.Add(mixed);
         }
 
-        var navigation = new PdfNavigationCensus(
-            bookmarks,
+        // The merged document holds every page, so all the navigation it lost is stranded.
+        var navigation = new PdfNavigationLoss(new PdfNavigationCensus(
+            0,
             Math.Max(0, PdfNavigationCensus.Unresolved(merged).Links - brokenInputLinks),
-            namedDestinations);
+            namedDestinations), default);
         (PdfOutputPasswords? passwords, Warning? kept) = PdfOutputEncryption.Kept(request.EncryptPassword, request.Password, security);
         bool encrypted = PdfOutputEncryption.Encrypted(merged, passwords);
         PublishedFile written = session.Outputs.Write(request.Output.Path, request.Output.Format, request.Output.Overwrite, merged,
@@ -106,13 +107,13 @@ internal static class PdfMerge
         {
             warnings.Add(kept);
         }
-        if (navigation.ToWarning(
-                "lost their exact target: merged bookmarks open their page at Fit zoom, and named destinations are not carried into the merged document",
-                "Re-create location-sensitive bookmarks (add_bookmark) and links (add_hyperlink) on the merged PDF.")
-            is { } degraded)
+        warnings.AddRange(new[]
         {
-            warnings.Add(degraded);
-        }
+            navigation.StrandedWarning(
+                "no longer lead to their page, although the merged document holds it: it carries no named destinations, so what led there through one leads nowhere",
+                "No operation re-creates links or named destinations: tell the user which no longer lead to their page."),
+            PdfNavigationLoss.Repositioned(repositioned, "merged document"),
+        }.OfType<Warning>());
 
         return new PdfMergeResult
         {
