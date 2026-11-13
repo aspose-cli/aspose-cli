@@ -158,7 +158,7 @@ public sealed class InputLoading
         string named = extension.Length > 1 ? $"its {extension} extension names no" : "it has no extension that names a";
         string extensions = string.Join(", ", importing.SelectMany(static format => format.Extensions)
             .Distinct(StringComparer.OrdinalIgnoreCase).Order(StringComparer.Ordinal));
-        return Unreadable(path, $"its content is {content}, but {named} {Document} input; give it a {extensions} extension to import it {importedAs}");
+        return Unreadable(path, $"its content is {content}, but {named} {Document} input; give it one of the extensions {extensions} to import it {importedAs}");
     }
 
     // Engine messages can be multi-line; the first line carries the fact.

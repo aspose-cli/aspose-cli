@@ -105,7 +105,7 @@ internal static class CorruptInputDetection
         string next = sameCommand is null
             ? $"Use the '{DistributionInfo.CommandName} {match.ProductId}' commands for it"
             : $"Use '{sameCommand}' for it";
-        return $"The content of '{fileName}' looks like a {format} document, not a file this command reads. "
+        return $"The content of '{fileName}' looks like that of {format} documents, not of a file this command reads. "
             + $"{next}, or give the file its real extension.";
     }
 

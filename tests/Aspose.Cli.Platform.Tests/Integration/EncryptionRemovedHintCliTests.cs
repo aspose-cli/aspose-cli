@@ -339,7 +339,7 @@ public sealed partial class EncryptionRemovedHintCliTests : IDisposable
         CliResult result = Run("words", "convert", "restricted.pdf", "--to", "docx", "--out", "restricted.docx");
 
         string hint = Hint(result);
-        Assert.StartsWith("The input opens without a password, but only a password to open it protects a docx file. "
+        Assert.StartsWith("The input opens without a password, but only a password to open them protects docx files. "
             + "If the output must stay protected, run 'aspose-cli words convert ", hint, StringComparison.Ordinal);
         Assert.Contains("although the input opens without one", hint, StringComparison.Ordinal);
         JsonNode written = Step(Assert.Single(Commands(hint)), ("<password-env>", Variable));

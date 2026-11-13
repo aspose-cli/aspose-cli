@@ -39,7 +39,7 @@
           },
           {
             "path": "error.hint",
-            "contains": "looks like a words document"
+            "contains": "looks like that of words documents"
           },
           {
             "path": "error.hint",
@@ -83,7 +83,7 @@
           },
           {
             "path": "error.hint",
-            "contains": "looks like a words document"
+            "contains": "looks like that of words documents"
           },
           {
             "path": "error.hint",

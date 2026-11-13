@@ -31,7 +31,7 @@ internal static class ConvertCommand
                 string? pageText = pages.Read(parse);
                 if (pageText is not null && !pages.AppliesTo(format))
                 {
-                    throw CliErrors.OptionInvalid(pages.Name, $"a '{format}' output holds the whole document", $"Use {pages.Name} only with {fixedPageTargets}.");
+                    throw CliErrors.OptionInvalid(pages.Name, $"'{format}' output holds the whole document", $"Use {pages.Name} only with {fixedPageTargets}.");
                 }
 
                 Secret? encryptPassword = standard.EncryptPassword();

@@ -52,7 +52,7 @@ public sealed class WordsConvertCliTests : IDisposable
         Assert.Equal("OPTION_INVALID", error["code"]!.GetValue<string>());
         string message = error["message"]!.GetValue<string>();
         Assert.DoesNotContain("flow format", message, StringComparison.Ordinal);
-        Assert.Contains($"a '{format}' output holds the whole document", message, StringComparison.Ordinal);
+        Assert.Contains($"'{format}' output holds the whole document", message, StringComparison.Ordinal);
     }
 
     /// <summary>A fixed-layout HTML output is a fixed-page format, so --pages writes only the pages it names.</summary>

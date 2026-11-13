@@ -95,7 +95,7 @@ public static class OutputDirectories
         {
             throw CliErrors.OptionInvalid(
                 parameter,
-                $"'{value}' names a directory, but its {extension} extension is that of a {format.Id} file",
+                $"'{value}' names a directory, but {extension} is the extension of {format.Id} files",
                 $"{parameter} names the directory that receives the files; name it without the file extension, "
                     + $"as in {parameter} {trimmed[..^extension.Length]}.");
         }

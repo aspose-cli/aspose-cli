@@ -12,7 +12,7 @@
         "exitCode": 2,
         "error": "OPTION_INVALID",
         "json": [
-          { "path": "error.hint", "contains": "doc.docx\" --to md --out d.md --output-format json' for md. It leaves out --pages: a 'md' output holds the whole document." },
+          { "path": "error.hint", "contains": "doc.docx\" --to md --out d.md --output-format json' for md. It leaves out --pages: 'md' output holds the whole document." },
           { "path": "error.hint", "notContains": "--pages 1" }
         ],
         "files": { "nothingWritten": true }
@@ -28,7 +28,7 @@
         "exitCode": 2,
         "error": "OPTION_INVALID",
         "json": [
-          { "path": "error.hint", "contains": "doc.docx\" --to html --out d.html --output-format json' for html. It leaves out --pages: a 'html' output holds the whole document." }
+          { "path": "error.hint", "contains": "doc.docx\" --to html --out d.html --output-format json' for html. It leaves out --pages: 'html' output holds the whole document." }
         ]
       }
     },
@@ -38,7 +38,7 @@
         "exitCode": 2,
         "error": "OPTION_INVALID",
         "json": [
-          { "path": "error.hint", "contains": "'aspose-cli words convert doc.docx --to md --out e.md --output-format json' for md. It leaves out --pages: a 'md' output holds the whole document." }
+          { "path": "error.hint", "contains": "'aspose-cli words convert doc.docx --to md --out e.md --output-format json' for md. It leaves out --pages: 'md' output holds the whole document." }
         ]
       }
     },
@@ -53,7 +53,7 @@
         "error": "OPTION_INVALID",
         "json": [
           { "path": "error.hint", "contains": "aspose-cli words convert " },
-          { "path": "error.hint", "contains": "doc.pdf\" --to docx --out x.docx --output-format json' for docx. It leaves out --pages: a 'docx' output holds the whole document." }
+          { "path": "error.hint", "contains": "doc.pdf\" --to docx --out x.docx --output-format json' for docx. It leaves out --pages: 'docx' output holds the whole document." }
         ]
       }
     },
@@ -67,7 +67,7 @@
         "exitCode": 2,
         "error": "OPTION_INVALID",
         "json": [
-          { "path": "error.hint", "contains": "book.xlsx\" --to html --out c.html --output-format json' for html. It leaves out --sheets: a 'html' output holds the whole document." }
+          { "path": "error.hint", "contains": "book.xlsx\" --to html --out c.html --output-format json' for html. It leaves out --sheets: 'html' output holds the whole document." }
         ]
       }
     },
@@ -111,7 +111,7 @@
         "exitCode": 2,
         "error": "OPTION_INVALID",
         "json": [
-          { "path": "error.message", "contains": "Invalid use of --pages: a 'md' output holds the whole document" },
+          { "path": "error.message", "contains": "Invalid use of --pages: 'md' output holds the whole document" },
           { "path": "error.hint", "equals": "Use --pages only with --to pdf, xps, openxps, ps, pcl or html-fixed." }
         ],
         "files": { "nothingWritten": true }
