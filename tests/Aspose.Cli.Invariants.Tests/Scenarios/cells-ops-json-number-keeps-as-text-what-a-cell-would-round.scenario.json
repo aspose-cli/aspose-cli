@@ -1,0 +1,47 @@
+{
+  "name": "cells edit --ops keeps as text a JSON number whose integer part has more than 15 digits, which a number cell would round, as --set does with the same text, and writes the other JSON numbers as numbers",
+  "steps": [
+    {
+      "args": ["cells", "create", "ids.xlsx", "--sheet-names", "Data"],
+      "expect": { "exitCode": 0 }
+    },
+    {
+      "args": ["cells", "edit", "ids.xlsx", "--in-place", "--verify", "--ops",
+        "{\"ops\":[{\"op\":\"set_values\",\"sheet\":\"Data\",\"range\":\"A1\",\"values\":[[12345678901234567890,-12345678901234567890,1234567890123456,123456789012345,1.2345678901234567e+19,0.1]]}]}"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "verification.ok", "equals": true },
+          { "path": "verification.directChanges", "contains": { "sheet": "Data", "cell": "A1", "right": { "t": "string", "v": "12345678901234567890" } } },
+          { "path": "verification.directChanges", "contains": { "sheet": "Data", "cell": "D1", "right": { "t": "number", "v": 123456789012345 } } }
+        ]
+      }
+    },
+    {
+      "args": ["cells", "edit", "ids.xlsx", "--in-place",
+        "--set", "Data!A2=12345678901234567890", "--set", "Data!B2=-12345678901234567890", "--set", "Data!C2=1234567890123456",
+        "--set", "Data!D2=123456789012345", "--set", "Data!E2=1.2345678901234567e+19", "--set", "Data!F2=0.1"],
+      "expect": { "exitCode": 0 }
+    },
+    {
+      "args": ["cells", "read", "ids.xlsx", "--sheet", "Data", "--range", "A1:F2"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "sheet.cells[0][0]", "equals": { "v": "12345678901234567890", "t": "string" } },
+          { "path": "sheet.cells[0][1]", "equals": { "v": "-12345678901234567890", "t": "string" } },
+          { "path": "sheet.cells[0][2]", "equals": { "v": "1234567890123456", "t": "string" } },
+          { "path": "sheet.cells[0][3]", "equals": { "v": 123456789012345, "t": "number" } },
+          { "path": "sheet.cells[0][4].t", "equals": "number" },
+          { "path": "sheet.cells[0][5]", "equals": { "v": 0.1, "t": "number" } },
+          { "path": "sheet.cells[1][0]", "equals": { "v": "12345678901234567890", "t": "string" } },
+          { "path": "sheet.cells[1][1]", "equals": { "v": "-12345678901234567890", "t": "string" } },
+          { "path": "sheet.cells[1][2]", "equals": { "v": "1234567890123456", "t": "string" } },
+          { "path": "sheet.cells[1][3]", "equals": { "v": 123456789012345, "t": "number" } },
+          { "path": "sheet.cells[1][4].t", "equals": "number" },
+          { "path": "sheet.cells[1][5]", "equals": { "v": 0.1, "t": "number" } }
+        ]
+      }
+    }
+  ]
+}
