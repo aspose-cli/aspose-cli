@@ -176,16 +176,18 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
     [Fact]
     public void VerificationOfALargeEditListsTheFirstChangesAndStillChecksEveryCell()
     {
-        // A sort or a large write cannot be split; the change lists are capped, while the
-        // formula-error scan that decides verification still covers the whole workbook.
+        // A sort or a large write cannot be split; the direct changes list the first 100 and count
+        // them all, while the formula-error scan that decides verification still covers the whole
+        // workbook.
         string source = _fixture.CreateSalesWorkbook("verify-diff-truncated.xlsx");
         string rows = string.Join(",", Enumerable.Range(1, 1001).Select(static value => $"[{value}]"));
         CellsEditResult result = CellsEdit.Run(_fixture.Session,
             new CellsEditRequest { Input = source, Batch = ParseOps($$"""{"ops":[{"op":"set_values","sheet":"Second","range":"B1","values":[{{rows}}]}]}"""), Output = TestOutput.At(_fixture.Temp.File("verify-diff-truncated.out.xlsx")), Verify = true });
 
         Assert.True(result.Verification!.Ok);
-        Assert.True(result.Verification.Truncated);
-        Assert.Equal(1000, result.Verification.DirectChanges.Count);
+        Assert.Equal(100, result.Verification.DirectChanges.Count);
+        Assert.Equal(1001, result.Verification.DirectChangeCount);
+        Assert.False(result.Verification.Truncated);
         Assert.Empty(result.Verification.Issues);
 
         CellsEditResult broken = CellsEdit.Run(_fixture.Session,

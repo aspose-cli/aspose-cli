@@ -3221,11 +3221,16 @@
               }
             },
             "directChanges": {
-              "description": "Changes inside a requested operation target. A cell that kept its formula, or in a csv or tsv output held one, is one only where an operation writes every cell of its target, such as set_values or sort_range, and not where a replace_text found nothing to replace in it or a rename_sheet renamed its sheet.",
+              "description": "Changes inside a requested operation target. A cell that kept its formula, or in a csv or tsv output held one, is one only where an operation writes every cell of its target, such as set_values or sort_range, and not where a replace_text found nothing to replace in it or a rename_sheet renamed its sheet. It lists the first 100 when there are more.",
               "type": "array",
               "items": {
                 "$ref": "#/$defs/cellsVerifiedCellChange"
               }
+            },
+            "directChangeCount": {
+              "description": "How many direct changes there are when directChanges lists only the first 100; omitted when it lists them all.",
+              "type": "integer",
+              "minimum": 0
             },
             "formulaResultChanges": {
               "description": "Cells whose formula text stayed the same while the calculated result changed, and which no operation wrote.",
@@ -3249,7 +3254,7 @@
               }
             },
             "truncated": {
-              "description": "true when the edit changed more than 1000 cells, so the change lists hold only the first 1000; the checks behind ok still cover every cell.",
+              "description": "true when the edit changed more than 1000 cells besides its direct changes, so formulaResultChanges and otherChanges hold only the first 1000; the checks behind ok still cover every cell.",
               "type": "boolean"
             }
           }

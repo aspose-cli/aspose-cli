@@ -379,7 +379,9 @@ output has no linked picture the CLI could not read. `FORMULA_ERRORS` is the com
 After changing input values, read
 `verification.formulaResultChanges` for the totals and other results the change
 moved, each with its `left` (before) and `right` (after) side, and report those
-instead of working them out.
+instead of working them out. `directChanges` lists the cells the operations
+wrote, the first 100 when there are more, with `directChangeCount` then saying
+how many.
 
 A csv or tsv output holds the values of one sheet and no formulas, so
 `--verify` compares only that sheet, under the name it was written from, value

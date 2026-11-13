@@ -12,11 +12,19 @@ internal static class DiffComparer
     /// <param name="Identical">Whether the workbooks have the same sheets and no differing cells.</param>
     /// <param name="Truncated">Whether more cells differ than are listed.</param>
     /// <param name="Warnings">The row shifts of each modified sheet (ROWS_SHIFTED).</param>
+    /// <param name="Sampled">How many differing cells the comparison's <see cref="Sample"/> took.</param>
     public sealed record Result(
-        IReadOnlyList<CellsSheetDiff> Sheets, CellsCompareSummary Summary, bool Identical, bool Truncated, IReadOnlyList<Warning> Warnings);
+        IReadOnlyList<CellsSheetDiff> Sheets, CellsCompareSummary Summary, bool Identical, bool Truncated, IReadOnlyList<Warning> Warnings, int Sampled = 0);
+
+    /// <summary>
+    /// Differing cells a comparison counts apart from the others, outside their cap, and lists the
+    /// first <paramref name="Max"/> of: those <paramref name="Takes"/> takes, given their sheet's
+    /// name, its name before a rename when it was renamed, and the difference.
+    /// </summary>
+    public sealed record Sample(Func<string, string?, CellsCellDiff, bool> Takes, int Max);
 
     public static Result Compare(
-        ResourceBudgetLedger budgets, Workbook left, Workbook right, bool includeFormulas, int maxDiffs)
+        ResourceBudgetLedger budgets, Workbook left, Workbook right, bool includeFormulas, int maxDiffs, Sample? sample = null)
     {
         ArgumentOutOfRangeException.ThrowIfNegative(maxDiffs);
         var sheets = new List<CellsSheetDiff>();
@@ -24,7 +32,7 @@ internal static class DiffComparer
         int removed = 0;
         int renamed = 0;
         int modified = 0;
-        var listing = new CellListing(budgets, maxDiffs);
+        var listing = new CellListing(budgets, maxDiffs, sample);
         var warnings = new List<Warning>();
         Dictionary<Worksheet, Worksheet> renames = Renames(left, right);
 
@@ -81,7 +89,8 @@ internal static class DiffComparer
         return new Result(sheets, summary,
             added == 0 && removed == 0 && renamed == 0 && listing.Differing == 0,
             listing.Truncated,
-            warnings);
+            warnings,
+            listing.Sampled);
     }
 
     /// <summary>
@@ -95,11 +104,11 @@ internal static class DiffComparer
     /// cannot hold them, and the save named them (<see cref="WorkbookSavePlan.DetectSheetLoss"/>).
     /// </summary>
     public static Result CompareTextTable(
-        ResourceBudgetLedger budgets, Workbook left, Workbook table, TextTableSheet written, int maxDiffs)
+        ResourceBudgetLedger budgets, Workbook left, Workbook table, TextTableSheet written, int maxDiffs, Sample? sample = null)
     {
         ArgumentOutOfRangeException.ThrowIfNegative(maxDiffs);
         budgets.Deadline.ThrowIfExpired("compare");
-        var listing = new CellListing(budgets, maxDiffs);
+        var listing = new CellListing(budgets, maxDiffs, sample);
         Worksheet? leftSheet = written.Before(left);
         List<CellsCellDiff>? cells = leftSheet is null ? null : listing.Cells(leftSheet, table.Worksheets[0], FormulaScope.Left, shifts: null);
         CellsSheetDiff? sheet = leftSheet is null
@@ -115,7 +124,7 @@ internal static class DiffComparer
             SheetsModified = sheet?.Status == CellsSheetChangeStatuses.Modified ? 1 : 0,
             CellsDiffering = listing.Differing,
         };
-        return new Result(sheet is null ? [] : [sheet], summary, Identical: sheet is null, listing.Truncated, []);
+        return new Result(sheet is null ? [] : [sheet], summary, Identical: sheet is null, listing.Truncated, [], listing.Sampled);
     }
 
     /// <summary>
@@ -148,15 +157,18 @@ internal static class DiffComparer
     }
 
     /// <summary>The differing cells of the sheet pairs of one comparison, listed up to its cap.</summary>
-    private sealed class CellListing(ResourceBudgetLedger budgets, int maxDiffs)
+    private sealed class CellListing(ResourceBudgetLedger budgets, int maxDiffs, Sample? sample)
     {
         private int _listed;
 
         /// <summary>The differing cells so far, listed or not.</summary>
         internal int Differing { get; private set; }
 
-        /// <summary>Whether more cells differ than are listed.</summary>
-        internal bool Truncated => _listed < Differing;
+        /// <summary>The differing cells the sample took so far, listed or not.</summary>
+        internal int Sampled { get; private set; }
+
+        /// <summary>Whether more cells differ, beside those the sample took, than are listed.</summary>
+        internal bool Truncated => _listed < Differing - Sampled;
 
         /// <summary>
         /// The differing cells of <paramref name="left"/> and <paramref name="right"/> while the
@@ -185,15 +197,23 @@ internal static class DiffComparer
                 }
 
                 Differing++;
-                if (_listed < maxDiffs)
+                CellsCellDiff? diff = sample is null && _listed >= maxDiffs ? null : new CellsCellDiff
+                {
+                    Cell = A1.FormatCell(new CellRef(row, column)),
+                    Left = leftValue.Side(a, leftFormula),
+                    Right = rightValue.Side(b, rightFormula),
+                };
+                if (diff is not null && sample?.Takes(right.Name, left.Name == right.Name ? null : left.Name, diff) == true)
+                {
+                    if (Sampled++ < sample.Max)
+                    {
+                        cells.Add(diff);
+                    }
+                }
+                else if (diff is not null && _listed < maxDiffs)
                 {
                     _listed++;
-                    cells.Add(new CellsCellDiff
-                    {
-                        Cell = A1.FormatCell(new CellRef(row, column)),
-                        Left = leftValue.Side(a, leftFormula),
-                        Right = rightValue.Side(b, rightFormula),
-                    });
+                    cells.Add(diff);
                 }
             }
 
