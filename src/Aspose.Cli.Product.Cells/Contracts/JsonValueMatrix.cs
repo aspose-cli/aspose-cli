@@ -47,7 +47,7 @@ internal static class JsonValueMatrix
         object? value, int row, int column, Func<string, Exception> invalid) => value switch
         {
             null => null,
-            string or bool or double => value,
+            string or bool or double or decimal => value,
             JsonElement element => NormalizeElement(element, row, column, invalid),
             _ => throw invalid($"cell [{row},{column}] has unsupported type {value.GetType().Name}"),
         };

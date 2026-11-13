@@ -27,18 +27,20 @@ internal sealed class CellsEditModel : IOperationModel<CellsOp>
     /// <param name="inputs">Reads and charges the files that operations read.</param>
     /// <param name="sources">Opens the workbooks that operations import from.</param>
     /// <param name="protection">Records each change to a protected sheet or structure.</param>
+    /// <param name="readAsWritten">Whether the workbook is a delimited text input read as written.</param>
     internal CellsEditModel(
         ResourceBudgetLedger budgets,
         Workbook workbook,
         IReadOnlyDictionary<string, Secret>? secrets,
         InputResourceScope inputs,
         CellsImportSources sources,
-        CellsProtectionTracker protection)
+        CellsProtectionTracker protection,
+        bool readAsWritten = false)
     {
         _budgets = budgets;
         _workbook = workbook;
         _protection = protection;
-        _handlers = new CellsMutationHandlers(workbook, secrets, inputs, sources);
+        _handlers = new CellsMutationHandlers(workbook, secrets, inputs, sources, readAsWritten);
         _snapshots = new CellsSnapshots(workbook, _applied.Contains);
     }
 

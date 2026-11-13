@@ -42,7 +42,7 @@ internal static class CellsEdit
         string[] linksBefore = LinkSources(workbook);
         // The sheet an operation that names none addresses, as the batch finds it.
         string activeSheet = Sheets.Resolve(workbook, sheetName: null).Name;
-        var model = new CellsEditModel(session.Budgets, workbook, request.OpSecrets, operationInputs, importSources, protection);
+        var model = new CellsEditModel(session.Budgets, workbook, request.OpSecrets, operationInputs, importSources, protection, loaded.ReadAsWritten);
         AppliedBatch batchOutcome = BoundedOperationRunner.Run(
             CellsOp.Catalog, batch.Ops, request.Options.BestEffort, session.Budgets.Deadline, model);
         IReadOnlyList<BoundedOperationOutcome> applied = batchOutcome.Outcomes;

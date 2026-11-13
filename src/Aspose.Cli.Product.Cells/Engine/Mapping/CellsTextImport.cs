@@ -183,6 +183,23 @@ internal static partial class CellsTextImport
                 : null;
     }
 
+    /// <summary>
+    /// Writes <paramref name="text"/> into <paramref name="cell"/> as a load as written reads it:
+    /// the number, date or boolean that shows it again (<see cref="Reads"/>), with the number format
+    /// that shows it, and as text otherwise.
+    /// </summary>
+    internal static void PutAsWritten(Cell cell, string text) => Invariant(() =>
+    {
+        if (Reads(text) is null)
+        {
+            cell.PutValue(text);
+        }
+        else
+        {
+            cell.PutValue(text, isConverted: true, setStyle: true);
+        }
+    });
+
     /// <summary>The type the engine reads <paramref name="text"/> as, whatever the cell it types shows.</summary>
     internal static CellValueType ReadType(string text) => Typed(text).Type;
 
