@@ -64,4 +64,8 @@ public static class FilePaths
         ArgumentNullException.ThrowIfNull(path);
         return path.StartsWith(@"\\", StringComparison.Ordinal) || path.StartsWith("//", StringComparison.Ordinal);
     }
+
+    /// <summary>Whether a path is a device path (<c>\\?\</c>, <c>\\.\</c>, also written with <c>/</c>), as opposed to a UNC path.</summary>
+    public static bool IsDevice(string path) =>
+        IsRemoteOrDevice(path) && path.Length > 3 && path[2] is '?' or '.' && path[3] is '\\' or '/';
 }

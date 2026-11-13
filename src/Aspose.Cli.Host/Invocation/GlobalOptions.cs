@@ -135,6 +135,12 @@ internal sealed class GlobalOptions
         string workDirectory = parseResult.GetValue(WorkDir) is { } workDir
             ? new PathResolver(baseDirectory).ResolveOutput(workDir, GlobalOptionNames.WorkDir)
             : Path.GetFullPath(baseDirectory);
+        if (FilePaths.IsDevice(workDirectory))
+        {
+            // The files below it would be device paths, which no output takes (OutputPathValidator).
+            throw CliErrors.OptionInvalid(GlobalOptionNames.WorkDir, @"a device path, such as one that starts with \\?\, is not accepted",
+                @"Pass the directory without the \\?\ prefix, such as C:\work or \\server\share.");
+        }
         string? explicitLicense = parseResult.GetValue(License);
         if (explicitLicense is not null && string.IsNullOrWhiteSpace(explicitLicense))
         {
