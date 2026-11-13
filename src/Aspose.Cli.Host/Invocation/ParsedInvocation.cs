@@ -639,7 +639,8 @@ internal sealed partial class ParsedInvocation
 
         ContinuationCommand line = source
             .ContinuationAt([.. CommandPath.SkipLast(1).Select(static command => command.Name), found.Command.Name])
-            .Option("--to", found.Format);
+            .Option("--to", found.Format)
+            .Carrying(ParseResult, found.Command, found.Format, "--to", "--out", "--overwrite");
         if (Given("--out") is { } output)
         {
             // The output this command was asked to write, replaced only when the caller allowed it.
@@ -647,7 +648,7 @@ internal sealed partial class ParsedInvocation
                 Command.Options.FirstOrDefault(static candidate => candidate.Name == "--overwrite") is Option<bool> overwrite && ParseResult.GetValue(overwrite)));
         }
 
-        return $"Run '{line}' for {found.Format}.";
+        return $"Run '{line}' for {found.Format}.{line.LeftOut}";
 
         // The first value the caller gave the command's option of this name, or null.
         string? Given(string name) =>

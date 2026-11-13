@@ -592,8 +592,8 @@ public partial class StandardInvocation
             : $"Give {(option ? parameter : "the " + parameter)} one of these extensions";
         string hint = producer switch
         {
-            { } line when fromInput && !derived => $"{fix}, or run {Run(line.Commands)} for {Listed(line.Formats)}.",
-            { } line => $"{fix}, then run {Run(line.Commands)} for {Listed(line.Formats)}.",
+            { } line when fromInput && !derived => $"{fix}, or run {Run(line.Commands)} for {Listed(line.Formats)}.{string.Concat(line.Commands.Select(static command => command.LeftOut))}",
+            { } line => $"{fix}, then run {Run(line.Commands)} for {Listed(line.Formats)}.{string.Concat(line.Commands.Select(static command => command.LeftOut))}",
             _ => fix + ".",
         };
         return CliErrors.OutputExtensionInvalid(
@@ -648,7 +648,8 @@ public partial class StandardInvocation
         ContinuationCommand Line(string[] writer, FormatDescriptor format)
         {
             ContinuationCommand line = (output is not null && _options.Input is not null
-                ? ContinuationAt(writer)
+                ? ContinuationAt(writer).Carrying(_parse, writer.Aggregate(_parse.RootCommandResult.Command, static (command, name) => Visible(command, name)!), format.Id,
+                    StandardOptionNames.To, StandardOptionNames.Out, StandardOptionNames.Overwrite)
                 : new ContinuationCommand(writer).Placeholder("that file")).Option(StandardOptionNames.To, format.Id);
             return output is null ? line : line.Out(ContinuationOutput.Requested(output, Overwrite));
         }

@@ -1,0 +1,132 @@
+{
+  "name": "the convert a render hint names for an output that holds the whole document, such as Words md, html or docx and Cells html, leaves out the selection the render was given, says so after the command, and run as written writes the whole document; a fixed-page output keeps the selection, and the converts' own refusals of a selection stay as they were",
+  "files": {
+    "doc.docx": { "fixture": "words.docx" },
+    "doc.pdf": { "fixture": "pdf.pdf" },
+    "book.xlsx": { "fixture": "cells.xlsx" }
+  },
+  "steps": [
+    {
+      "args": ["words", "render", "doc.docx", "--pages", "1", "--out", "d.md"],
+      "expect": {
+        "exitCode": 2,
+        "error": "OPTION_INVALID",
+        "json": [
+          { "path": "error.hint", "contains": "doc.docx\" --to md --out d.md --output-format json' for md. It leaves out --pages: a 'md' output holds the whole document." },
+          { "path": "error.hint", "notContains": "--pages 1" }
+        ],
+        "files": { "nothingWritten": true }
+      }
+    },
+    {
+      "args": ["words", "convert", "doc.docx", "--to", "md", "--out", "d.md"],
+      "expect": { "exitCode": 0, "files": { "present": ["d.md"] } }
+    },
+    {
+      "args": ["words", "render", "doc.docx", "--pages", "1", "--out", "d.html"],
+      "expect": {
+        "exitCode": 2,
+        "error": "OPTION_INVALID",
+        "json": [
+          { "path": "error.hint", "contains": "doc.docx\" --to html --out d.html --output-format json' for html. It leaves out --pages: a 'html' output holds the whole document." }
+        ]
+      }
+    },
+    {
+      "args": ["words", "render", "doc.docx", "--pages", "1", "--to", "md", "--out", "e.md"],
+      "expect": {
+        "exitCode": 2,
+        "error": "OPTION_INVALID",
+        "json": [
+          { "path": "error.hint", "contains": "'aspose-cli words convert doc.docx --to md --out e.md --output-format json' for md. It leaves out --pages: a 'md' output holds the whole document." }
+        ]
+      }
+    },
+    {
+      "args": ["words", "convert", "doc.docx", "--to", "md", "--out", "e.md"],
+      "expect": { "exitCode": 0, "files": { "present": ["e.md"] } }
+    },
+    {
+      "args": ["pdf", "render", "doc.pdf", "--pages", "1", "--out", "x.docx"],
+      "expect": {
+        "exitCode": 2,
+        "error": "OPTION_INVALID",
+        "json": [
+          { "path": "error.hint", "contains": "aspose-cli words convert " },
+          { "path": "error.hint", "contains": "doc.pdf\" --to docx --out x.docx --output-format json' for docx. It leaves out --pages: a 'docx' output holds the whole document." }
+        ]
+      }
+    },
+    {
+      "args": ["words", "convert", "doc.pdf", "--to", "docx", "--out", "x.docx"],
+      "expect": { "exitCode": 0, "files": { "present": ["x.docx"] } }
+    },
+    {
+      "args": ["cells", "render", "book.xlsx", "--sheets", "1", "--out", "c.html"],
+      "expect": {
+        "exitCode": 2,
+        "error": "OPTION_INVALID",
+        "json": [
+          { "path": "error.hint", "contains": "book.xlsx\" --to html --out c.html --output-format json' for html. It leaves out --sheets: a 'html' output holds the whole document." }
+        ]
+      }
+    },
+    {
+      "args": ["cells", "convert", "book.xlsx", "--to", "html", "--out", "c.html"],
+      "expect": { "exitCode": 0, "files": { "present": ["c.html"] } }
+    },
+    {
+      "args": ["words", "render", "doc.docx", "--pages", "1", "--out", "d.pdf"],
+      "expect": {
+        "exitCode": 2,
+        "error": "OPTION_INVALID",
+        "json": [
+          { "path": "error.hint", "contains": "doc.docx\" --pages 1 --to pdf --out d.pdf --output-format json' for pdf." },
+          { "path": "error.hint", "notContains": "leaves out" }
+        ]
+      }
+    },
+    {
+      "args": ["words", "convert", "doc.docx", "--pages", "1", "--to", "pdf", "--out", "d.pdf"],
+      "expect": { "exitCode": 0, "files": { "present": ["d.pdf"] } }
+    },
+    {
+      "args": ["pdf", "render", "doc.pdf", "--to", "docx", "--pages", "1", "--out", "p.docx"],
+      "expect": {
+        "exitCode": 2,
+        "error": "OPTION_INVALID",
+        "json": [
+          { "path": "error.hint", "contains": "'aspose-cli pdf convert doc.pdf --to docx --pages 1 --out p.docx --output-format json' for docx." },
+          { "path": "error.hint", "notContains": "leaves out" }
+        ]
+      }
+    },
+    {
+      "args": ["pdf", "convert", "doc.pdf", "--to", "docx", "--pages", "1", "--out", "p.docx"],
+      "expect": { "exitCode": 0, "files": { "present": ["p.docx"] } }
+    },
+    {
+      "args": ["words", "convert", "doc.docx", "--pages", "1", "--to", "md"],
+      "expect": {
+        "exitCode": 2,
+        "error": "OPTION_INVALID",
+        "json": [
+          { "path": "error.message", "contains": "Invalid use of --pages: a 'md' output holds the whole document" },
+          { "path": "error.hint", "equals": "Use --pages only with --to pdf, xps, openxps, ps, pcl or html-fixed." }
+        ],
+        "files": { "nothingWritten": true }
+      }
+    },
+    {
+      "args": ["cells", "convert", "book.xlsx", "--sheets", "1", "--to", "html"],
+      "expect": {
+        "exitCode": 2,
+        "error": "OPTION_INVALID",
+        "json": [
+          { "path": "error.message", "contains": "Invalid use of --sheets: the 'html' format always converts the whole workbook" }
+        ],
+        "files": { "nothingWritten": true }
+      }
+    }
+  ]
+}
