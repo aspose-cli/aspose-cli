@@ -207,7 +207,8 @@ internal static class PdfAssembly
     /// <summary>
     /// Copies an outline into a document assembled from copied pages, pointing each bookmark at
     /// its page there, also one it opened through a named destination, with a Fit destination,
-    /// and returns how many bookmarks opened their page at a location or zoom other than Fit,
+    /// and each that leads outside the document with its action, and returns how many bookmarks
+    /// opened their page at a location or zoom other than Fit,
     /// which they lost. <paramref name="pageOf"/> maps a source page to its page in the document,
     /// or to 0 when the document does not hold it; such a bookmark is left out and its children
     /// take its place.
@@ -240,6 +241,11 @@ internal static class PdfAssembly
             if (copiedPage > 0)
             {
                 copied.Destination = new FitExplicitDestination(document.Pages[copiedPage]);
+            }
+            else if (item.Action is { } action && PdfNavigationCensus.Target(null, action) is null)
+            {
+                // What opens a web address or another file goes on doing so.
+                copied.Action = action;
             }
 
             IAppointment? destination = PdfNavigationCensus.Target(item.Destination, item.Action);

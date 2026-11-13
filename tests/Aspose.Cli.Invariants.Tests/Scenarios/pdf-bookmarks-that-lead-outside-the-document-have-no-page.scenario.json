@@ -1,0 +1,246 @@
+{
+  "name": "a bookmark that opens a web address or a page of another file has no page of the document: pdf inspect --detail outline reports none, merge and split keep it without pointing it at a local page, split --by bookmarks does not start a part there, and move_pages moves the page its remote destination names",
+  "files": {
+    "one.pdf": {
+      "fixture": "pdf.pdf"
+    },
+    "links.pdf": {
+      "base64": "JVBERi0xLjcKMSAwIG9iago8PCAvVHlwZSAvQ2F0YWxvZyAvUGFnZXMgMiAwIFIgL091dGxpbmVzIDEyIDAgUiAvTmFtZXMgPDwgL0Rlc3RzIDw8IC9OYW1lcyBbKGFwcGVuZGl4KSBbNSAwIFIgL0ZpdF1dID4+ID4+ID4+CmVuZG9iagoyIDAgb2JqCjw8IC9UeXBlIC9QYWdlcyAvS2lkcyBbMyAwIFIgNCAwIFIgNSAwIFJdIC9Db3VudCAzID4+CmVuZG9iagozIDAgb2JqCjw8IC9UeXBlIC9QYWdlIC9QYXJlbnQgMiAwIFIgL01lZGlhQm94IFswIDAgNjEyIDc5Ml0gL1Jlc291cmNlcyA8PCAvRm9udCA8PCAvRjEgNyAwIFIgPj4gPj4gL0NvbnRlbnRzIDggMCBSID4+CmVuZG9iago0IDAgb2JqCjw8IC9UeXBlIC9QYWdlIC9QYXJlbnQgMiAwIFIgL01lZGlhQm94IFswIDAgNjEyIDc5Ml0gL1Jlc291cmNlcyA8PCAvRm9udCA8PCAvRjEgNyAwIFIgPj4gPj4gL0NvbnRlbnRzIDkgMCBSID4+CmVuZG9iago1IDAgb2JqCjw8IC9UeXBlIC9QYWdlIC9QYXJlbnQgMiAwIFIgL01lZGlhQm94IFswIDAgNjEyIDc5Ml0gL1Jlc291cmNlcyA8PCAvRm9udCA8PCAvRjEgNyAwIFIgPj4gPj4gL0NvbnRlbnRzIDEwIDAgUiA+PgplbmRvYmoKNiAwIG9iago8PCAvVHlwZSAvRm9udCAvU3VidHlwZSAvVHlwZTEgL0Jhc2VGb250IC9IZWx2ZXRpY2EgPj4KZW5kb2JqCjcgMCBvYmoKPDwgL1R5cGUgL0ZvbnQgL1N1YnR5cGUgL1R5cGUxIC9CYXNlRm9udCAvSGVsdmV0aWNhID4+CmVuZG9iago4IDAgb2JqCjw8IC9MZW5ndGggMzcgPj4Kc3RyZWFtCkJUIC9GMSAxOCBUZiA3MiA3MjAgVGQgKFBhZ2UgMSkgVGogRVQKZW5kc3RyZWFtCmVuZG9iago5IDAgb2JqCjw8IC9MZW5ndGggMzcgPj4Kc3RyZWFtCkJUIC9GMSAxOCBUZiA3MiA3MjAgVGQgKFBhZ2UgMikgVGogRVQKZW5kc3RyZWFtCmVuZG9iagoxMCAwIG9iago8PCAvTGVuZ3RoIDM3ID4+CnN0cmVhbQpCVCAvRjEgMTggVGYgNzIgNzIwIFRkIChQYWdlIDMpIFRqIEVUCmVuZHN0cmVhbQplbmRvYmoKMTEgMCBvYmoKPDwgL0xlbmd0aCAzNyA+PgpzdHJlYW0KQlQgL0YxIDE4IFRmIDcyIDcyMCBUZCAoUGFnZSA0KSBUaiBFVAplbmRzdHJlYW0KZW5kb2JqCjEyIDAgb2JqCjw8IC9UeXBlIC9PdXRsaW5lcyAvRmlyc3QgMTMgMCBSIC9MYXN0IDE2IDAgUiAvQ291bnQgNCA+PgplbmRvYmoKMTMgMCBvYmoKPDwgL1RpdGxlIChQYWdlKSAvUGFyZW50IDEyIDAgUiAvTmV4dCAxNCAwIFIgL0Rlc3QgWzUgMCBSIC9GaXRdID4+CmVuZG9iagoxNCAwIG9iago8PCAvVGl0bGUgKE5hbWVkKSAvUGFyZW50IDEyIDAgUiAvUHJldiAxMyAwIFIgL05leHQgMTUgMCBSIC9EZXN0IChhcHBlbmRpeCkgPj4KZW5kb2JqCjE1IDAgb2JqCjw8IC9UaXRsZSAoV2ViKSAvUGFyZW50IDEyIDAgUiAvUHJldiAxNCAwIFIgL05leHQgMTYgMCBSIC9BIDw8IC9TIC9VUkkgL1VSSSAoaHR0cHM6Ly9leGFtcGxlLmNvbS8pID4+ID4+CmVuZG9iagoxNiAwIG9iago8PCAvVGl0bGUgKFJlbW90ZSkgL1BhcmVudCAxMiAwIFIgL1ByZXYgMTUgMCBSIC9BIDw8IC9TIC9Hb1RvUiAvRiAob3RoZXIucGRmKSAvRCBbMSAvRml0XSA+PiA+PgplbmRvYmoKeHJlZgowIDE3CjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwOSAwMDAwMCBuIAowMDAwMDAwMTM0IDAwMDAwIG4gCjAwMDAwMDAyMDMgMDAwMDAgbiAKMDAwMDAwMDMyOSAwMDAwMCBuIAowMDAwMDAwNDU1IDAwMDAwIG4gCjAwMDAwMDA1ODIgMDAwMDAgbiAKMDAwMDAwMDY1MiAwMDAwMCBuIAowMDAwMDAwNzIyIDAwMDAwIG4gCjAwMDAwMDA4MDkgMDAwMDAgbiAKMDAwMDAwMDg5NiAwMDAwMCBuIAowMDAwMDAwOTg0IDAwMDAwIG4gCjAwMDAwMDEwNzIgMDAwMDAgbiAKMDAwMDAwMTE0NiAwMDAwMCBuIAowMDAwMDAxMjI5IDAwMDAwIG4gCjAwMDAwMDEzMjQgMDAwMDAgbiAKMDAwMDAwMTQ0NSAwMDAwMCBuIAp0cmFpbGVyCjw8IC9TaXplIDE3IC9Sb290IDEgMCBSID4+CnN0YXJ0eHJlZgoxNTU3CiUlRU9GCg=="
+    }
+  },
+  "steps": [
+    {
+      "args": [
+        "pdf",
+        "inspect",
+        "links.pdf",
+        "--detail",
+        "outline"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          {
+            "path": "outline",
+            "equals": [
+              {
+                "title": "Page",
+                "level": 1,
+                "bookmark": "1",
+                "page": 3
+              },
+              {
+                "title": "Named",
+                "level": 1,
+                "bookmark": "2",
+                "page": 3
+              },
+              {
+                "title": "Web",
+                "level": 1,
+                "bookmark": "3"
+              },
+              {
+                "title": "Remote",
+                "level": 1,
+                "bookmark": "4"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "args": [
+        "pdf",
+        "merge",
+        "one.pdf",
+        "links.pdf",
+        "--out",
+        "merged.pdf"
+      ],
+      "expect": {
+        "exitCode": 0
+      }
+    },
+    {
+      "args": [
+        "pdf",
+        "inspect",
+        "merged.pdf",
+        "--detail",
+        "outline"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          {
+            "path": "outline",
+            "equals": [
+              {
+                "title": "Page",
+                "level": 1,
+                "bookmark": "1",
+                "page": 4
+              },
+              {
+                "title": "Named",
+                "level": 1,
+                "bookmark": "2",
+                "page": 4
+              },
+              {
+                "title": "Web",
+                "level": 1,
+                "bookmark": "3"
+              },
+              {
+                "title": "Remote",
+                "level": 1,
+                "bookmark": "4"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "args": [
+        "pdf",
+        "split",
+        "links.pdf",
+        "--by",
+        "pages",
+        "--out-dir",
+        "parts"
+      ],
+      "expect": {
+        "exitCode": 0
+      }
+    },
+    {
+      "args": [
+        "pdf",
+        "inspect",
+        "parts/links.3.pdf",
+        "--detail",
+        "outline"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          {
+            "path": "outline",
+            "equals": [
+              {
+                "title": "Page",
+                "level": 1,
+                "bookmark": "1",
+                "page": 1
+              },
+              {
+                "title": "Named",
+                "level": 1,
+                "bookmark": "2",
+                "page": 1
+              },
+              {
+                "title": "Web",
+                "level": 1,
+                "bookmark": "3"
+              },
+              {
+                "title": "Remote",
+                "level": 1,
+                "bookmark": "4"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "args": [
+        "pdf",
+        "split",
+        "links.pdf",
+        "--by",
+        "bookmarks",
+        "--out-dir",
+        "chapters"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          {
+            "path": "outputs[0].pages",
+            "equals": "1-2"
+          },
+          {
+            "path": "outputs[1].pages",
+            "equals": "3"
+          },
+          {
+            "path": "outputs[2]",
+            "exists": false
+          }
+        ]
+      }
+    },
+    {
+      "args": [
+        "pdf",
+        "edit",
+        "links.pdf",
+        "--ops",
+        "[{\"op\":\"move_pages\",\"pages\":\"2\",\"to\":1}]",
+        "--out",
+        "moved.pdf"
+      ],
+      "expect": {
+        "exitCode": 0
+      }
+    },
+    {
+      "args": [
+        "pdf",
+        "inspect",
+        "moved.pdf",
+        "--detail",
+        "outline"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          {
+            "path": "outline",
+            "equals": [
+              {
+                "title": "Page",
+                "level": 1,
+                "bookmark": "1",
+                "page": 3
+              },
+              {
+                "title": "Named",
+                "level": 1,
+                "bookmark": "2",
+                "page": 3
+              },
+              {
+                "title": "Web",
+                "level": 1,
+                "bookmark": "3"
+              },
+              {
+                "title": "Remote",
+                "level": 1,
+                "bookmark": "4"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

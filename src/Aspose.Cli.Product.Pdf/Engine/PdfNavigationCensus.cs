@@ -73,9 +73,12 @@ internal readonly record struct PdfNavigationCensus(int Bookmarks, int Links, in
         Math.Max(0, after.Links - before.Links),
         Math.Max(0, after.NamedDestinations - before.NamedDestinations));
 
-    /// <summary>The destination an outline item or link points at, or null when it points outside the document.</summary>
+    /// <summary>
+    /// The destination an outline item or link points at, or null when it points outside the
+    /// document: a web address, another file (the SDK's remote GoTo is a GoTo), any other action.
+    /// </summary>
     internal static IAppointment? Target(IAppointment? destination, PdfAction? action) =>
-        destination ?? (action as GoToAction)?.Destination;
+        action is null or GoToAction and not GoToRemoteAction ? destination ?? (action as GoToAction)?.Destination : null;
 
     /// <summary>True when the destination, followed through its name, lands on an existing page.</summary>
     internal static bool Resolves(Document document, IAppointment? destination) => PageNumber(document, destination) > 0;
