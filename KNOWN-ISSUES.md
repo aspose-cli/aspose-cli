@@ -321,10 +321,11 @@ Reproductions: [CellsKnownIssueTests](tests/Aspose.Cli.Product.Cells.Tests/Cells
   // new Workbook("c.ods").Worksheets[0].PageSetup.PrintComments is PrintNoComments
   ```
 
-- **CLI behavior:** `set_page_setup printComments` written to an ods is read back as `none`, as
-  `cells inspect --detail layout` reports. A printout of an ods input warns of the comments it
-  leaves out, and its hint, which names that setting, adds that the ods does not keep it and to
-  save the workbook as xlsx first.
+- **CLI behavior:** an edit or convert that writes ods from a sheet with the setting warns
+  `LOSSY_CONVERSION` that the ods leaves it out and an xlsx workbook keeps it; when the edit's
+  batch set it, the setting is in no file, so `--verify` fails. A
+  printout of an ods input warns of the comments it leaves out, and its hint, which names that
+  setting, adds that the ods does not keep it and to save the workbook as xlsx first.
 
 ## Aspose.PDF.Drawing 26.8.0
 
