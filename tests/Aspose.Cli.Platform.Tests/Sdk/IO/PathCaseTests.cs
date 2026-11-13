@@ -301,6 +301,17 @@ public sealed class PathCaseTests : IDisposable
     public void FilePaths_IsRemoteOrDevice_RecognisesUncAndDevicePaths(string path, bool remote) =>
         Assert.Equal(remote, FilePaths.IsRemoteOrDevice(path));
 
+    [Theory]
+    [InlineData(@"\\?\C:\a.txt", true)]
+    [InlineData(@"\\.\PhysicalDrive0", true)]
+    [InlineData("//?/C:/a.txt", true)]
+    [InlineData(@"\\?\UNC\server\share\a.txt", true)]
+    [InlineData(@"\\server\share\a.txt", false)]
+    [InlineData(@"\\?", false)]
+    [InlineData(@"C:\a.txt", false)]
+    public void FilePaths_IsDevice_RecognisesDevicePathsAlone(string path, bool device) =>
+        Assert.Equal(device, FilePaths.IsDevice(path));
+
     [Fact]
     public void FilePaths_TwoSpellingsOfOnePath_AreTheSamePath()
     {
