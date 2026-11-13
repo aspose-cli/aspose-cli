@@ -414,19 +414,22 @@ public sealed class PdfEditVerificationTests
     }
 
     /// <summary>
-    /// A field whose only widget a redact_area covers must be gone from the output: recorded
-    /// without the redaction running, the field the output still holds is an issue of the
-    /// redact_area, which stays unchecked, while the value set before it is no longer checked.
+    /// A field whose only widget a redact_area covers must be gone from the output, whether the
+    /// batch set it or it came with the input: recorded without the redaction running, the field the
+    /// output still holds is an issue of the redact_area, which stays unchecked since its cover is not
+    /// read back, while a value set before it is no longer checked.
     /// </summary>
-    [Fact]
-    public void Verify_ReportsAFieldARedactAreaCoveredThatIsStillInTheOutput()
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void Verify_ReportsAFieldARedactAreaCoveredThatIsStillInTheOutput(bool set)
     {
         using var fixture = new PdfEngineFixture();
         using var document = new Document(CreateDocument(fixture));
         var verifier = new PdfEditVerifier(document);
         PdfOp[] ops =
         [
-            new SetFormFieldOp { Id = "op-0001", Name = "Customer", Value = "Draft" },
+            .. set ? [new SetFormFieldOp { Id = "op-0001", Name = "Customer", Value = "Draft" }] : Array.Empty<PdfOp>(),
             new RedactAreaOp { Id = "op-0002", Page = 1, Rect = new PdfRectInput { X = 150, Y = 215, Width = 60, Height = 20 } },
         ];
         foreach (PdfOp op in ops)
@@ -441,6 +444,41 @@ public sealed class PdfEditVerificationTests
         Assert.Equal("field/Customer", issue.Location);
         Assert.StartsWith("Operation 'op-0002' (redact_area): form field 'Customer' is still in the output", issue.Message, StringComparison.Ordinal);
         Assert.Empty(verification.Checked);
+        Assert.Equal(
+            "Only that the form fields its area covers are gone was read back; render the page to confirm the cover.",
+            verification.UncheckedReasons!["op-0002"]);
+    }
+
+    /// <summary>
+    /// A field that holds its two widgets as children is gone only once a redact_area covers both:
+    /// recorded without the redaction running, the field the output still holds is an issue when
+    /// the area covers both widgets, and none when it leaves one, with which the field keeps its value.
+    /// </summary>
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void Verify_ExpectsAFieldGoneOnlyWhenARedactAreaCoversEveryWidget(bool both)
+    {
+        using var fixture = new PdfEngineFixture();
+        string input = fixture.File("widgets.pdf");
+        PdfEngineFixture.WriteRawPdf(input,
+        [
+            "<< /Type /Catalog /Pages 2 0 R /AcroForm << /Fields [4 0 R] >> >>",
+            "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+            "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Annots [5 0 R 6 0 R] >>",
+            "<< /FT /Tx /T (n) /V (KEEP) /Kids [5 0 R 6 0 R] >>",
+            "<< /Type /Annot /Subtype /Widget /Parent 4 0 R /Rect [72 600 272 620] /P 3 0 R >>",
+            "<< /Type /Annot /Subtype /Widget /Parent 4 0 R /Rect [72 500 272 520] /P 3 0 R >>",
+        ]);
+        using var document = new Document(input);
+        var verifier = new PdfEditVerifier(document);
+        var op = new RedactAreaOp { Id = "op-0001", Page = 1, Rect = new PdfRectInput { X = 62, Y = 162, Width = 220, Height = both ? 140 : 40 } };
+        verifier.Record(op, AppliedOperations.Changed(PdfOp.Catalog, op, 1));
+
+        VerificationFacts verification = verifier.Verify(document);
+
+        string[] expected = both ? ["field/n"] : [];
+        Assert.Equal(expected, verification.Issues.Select(static issue => issue.Location));
     }
 
     /// <summary>Clearing the document information supersedes the properties set before it.</summary>

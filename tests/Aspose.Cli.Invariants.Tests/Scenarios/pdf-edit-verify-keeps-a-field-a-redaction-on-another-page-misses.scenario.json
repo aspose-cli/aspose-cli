@@ -29,7 +29,7 @@
           { "path": "verification.ok", "equals": true },
           { "path": "verification.checkedOps", "notContains": "op-0001" },
           { "path": "verification.uncheckedOps[1].id", "equals": "op-0003" },
-          { "path": "verification.uncheckedOps[1].reason", "equals": "Only that the form fields an earlier set_form_field of the batch set and its area covers are gone was read back; render the page to confirm the cover." }
+          { "path": "verification.uncheckedOps[1].reason", "equals": "Only that the form fields its area covers are gone was read back; render the page to confirm the cover." }
         ]
       }
     },

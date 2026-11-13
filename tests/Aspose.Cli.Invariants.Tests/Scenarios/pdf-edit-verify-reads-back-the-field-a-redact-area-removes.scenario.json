@@ -1,0 +1,89 @@
+{
+  "name": "pdf edit --verify reads back that a redact_area removes the field of the input whose only widget it covers, and leaves the operation unchecked, saying only the fields were read back, as it leaves a cover over no field",
+  "files": {
+    "calc.pdf": {
+      "base64": "JVBERi0xLjcKMSAwIG9iago8PCAvVHlwZSAvQ2F0YWxvZyAvUGFnZXMgMiAwIFIgL0Fjcm9Gb3JtIDw8IC9GaWVsZHMgWzEwMCAwIFIgMTAxIDAgUiAxMDIgMCBSXSAvREEgKC9IZWx2IDAgVGYgMCBnKSAvRFIgPDwgL0ZvbnQgPDwgL0hlbHYgNSAwIFIgPj4gPj4gL0NPIFsxMDEgMCBSXSAvTmVlZEFwcGVhcmFuY2VzIHRydWUgPj4gID4+CmVuZG9iagoyIDAgb2JqCjw8IC9UeXBlIC9QYWdlcyAvS2lkcyBbMTAgMCBSIDExIDAgUl0gL0NvdW50IDIgPj4KZW5kb2JqCjUgMCBvYmoKPDwgL1R5cGUgL0ZvbnQgL1N1YnR5cGUgL1R5cGUxIC9CYXNlRm9udCAvSGVsdmV0aWNhID4+CmVuZG9iagoxMCAwIG9iago8PCAvVHlwZSAvUGFnZSAvUGFyZW50IDIgMCBSIC9NZWRpYUJveCBbMCAwIDYxMiA3OTJdIC9SZXNvdXJjZXMgPDwgL0ZvbnQgPDwgL0hlbHYgNSAwIFIgPj4gPj4gL0NvbnRlbnRzIDMwIDAgUiAvQW5ub3RzIFsxMDAgMCBSIDEwMSAwIFIgMTAyIDAgUl0gPj4KZW5kb2JqCjExIDAgb2JqCjw8IC9UeXBlIC9QYWdlIC9QYXJlbnQgMiAwIFIgL01lZGlhQm94IFswIDAgNjEyIDc5Ml0gL1Jlc291cmNlcyA8PCAvRm9udCA8PCAvSGVsdiA1IDAgUiA+PiA+PiAvQ29udGVudHMgMzEgMCBSIC9Bbm5vdHMgW10gPj4KZW5kb2JqCjMwIDAgb2JqCjw8IC9MZW5ndGggMzkgPj4Kc3RyZWFtCkJUIC9IZWx2IDEyIFRmIDcyIDc0MCBUZCAoUGFnZSAxKSBUaiBFVAplbmRzdHJlYW0KZW5kb2JqCjMxIDAgb2JqCjw8IC9MZW5ndGggMzkgPj4Kc3RyZWFtCkJUIC9IZWx2IDEyIFRmIDcyIDc0MCBUZCAoUGFnZSAyKSBUaiBFVAplbmRzdHJlYW0KZW5kb2JqCjEwMCAwIG9iago8PCAvVHlwZSAvQW5ub3QgL1N1YnR5cGUgL1dpZGdldCAvRlQgL1R4IC9UIChxdHkpIC9WICgyKSAvUmVjdCBbNzIgNjAwIDI3MiA2MjBdIC9QIDEwIDAgUiA+PgplbmRvYmoKMTAxIDAgb2JqCjw8IC9UeXBlIC9Bbm5vdCAvU3VidHlwZSAvV2lkZ2V0IC9GVCAvVHggL1QgKHRvdGFsKSAvViAoNCkgL1JlY3QgWzcyIDUwMCAyNzIgNTIwXSAvUCAxMCAwIFIgL0FBIDw8IC9DIDw8IC9TIC9KYXZhU2NyaXB0IC9KUyAoZXZlbnQudmFsdWUgPSB0aGlzLmdldEZpZWxkXCgicXR5IlwpLnZhbHVlICogMjspID4+ID4+ID4+CmVuZG9iagoxMDIgMCBvYmoKPDwgL1R5cGUgL0Fubm90IC9TdWJ0eXBlIC9XaWRnZXQgL0ZUIC9TaWcgL1QgKHNpZykgL1JlY3QgWzcyIDQwMCAyNzIgNDQwXSAvUCAxMCAwIFIgPj4KZW5kb2JqCnhyZWYKMCAxMDMKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDA5IDAwMDAwIG4gCjAwMDAwMDAyMDAgMDAwMDAgbiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAyNjUgMDAwMDAgbiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMzM1IDAwMDAwIG4gCjAwMDAwMDA0OTkgMDAwMDAgbiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDY0MCAwMDAwMCBuIAowMDAwMDAwNzMwIDAwMDAwIG4gCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwODIwIDAwMDAwIG4gCjAwMDAwMDA5MzAgMDAwMDAgbiAKMDAwMDAwMTEzMCAwMDAwMCBuIAp0cmFpbGVyCjw8IC9TaXplIDEwMyAvUm9vdCAxIDAgUiA+PgpzdGFydHhyZWYKMTIzNAolJUVPRgo="
+    }
+  },
+  "steps": [
+    {
+      "args": [
+        "pdf",
+        "edit",
+        "calc.pdf",
+        "--ops",
+        "[{\"op\":\"redact_area\",\"page\":1,\"rect\":{\"x\":60,\"y\":262,\"width\":230,\"height\":40}}]",
+        "--out",
+        "covered.pdf",
+        "--verify"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          {
+            "path": "verification.ok",
+            "equals": true
+          },
+          {
+            "path": "verification.checkedOps",
+            "notContains": "op-0001"
+          },
+          {
+            "path": "verification.uncheckedOps",
+            "contains": {
+              "id": "op-0001",
+              "reason": "Only that the form fields its area covers are gone was read back; render the page to confirm the cover."
+            }
+          }
+        ]
+      }
+    },
+    {
+      "args": [
+        "pdf",
+        "inspect",
+        "covered.pdf",
+        "--detail",
+        "forms"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          {
+            "path": "forms.fieldCount",
+            "equals": 2
+          }
+        ]
+      }
+    },
+    {
+      "args": [
+        "pdf",
+        "edit",
+        "calc.pdf",
+        "--ops",
+        "[{\"op\":\"redact_area\",\"page\":1,\"rect\":{\"x\":400,\"y\":10,\"width\":50,\"height\":50}}]",
+        "--out",
+        "corner.pdf",
+        "--verify"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          {
+            "path": "verification.ok",
+            "equals": true
+          },
+          {
+            "path": "verification.uncheckedOps[0].id",
+            "equals": "op-0001"
+          },
+          {
+            "path": "verification.uncheckedOps[0].reason",
+            "equals": "The verification did not read this operation's effect back from the output; read the output to confirm it."
+          }
+        ]
+      }
+    }
+  ]
+}

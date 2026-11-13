@@ -100,7 +100,7 @@
         "json": [
           { "path": "verification.ok", "equals": true },
           { "path": "verification.checkedOps", "notContains": "op-0001" },
-          { "path": "verification.uncheckedOps", "contains": { "id": "op-0002", "reason": "Only that the form fields an earlier set_form_field of the batch set and its area covers are gone was read back; render the page to confirm the cover." } }
+          { "path": "verification.uncheckedOps", "contains": { "id": "op-0002", "reason": "Only that the form fields its area covers are gone was read back; render the page to confirm the cover." } }
         ]
       }
     },
