@@ -1,0 +1,73 @@
+{
+  "name": "cells edit --verify files a total that another sheet's replace_text moved under formulaResultChanges even inside a replace_text range, checks an operation whose cells it lists as direct changes past sixteen format targets, and finds no change in a result of more than 15 digits that a csv holds in full",
+  "steps": [
+    {
+      "args": ["cells", "create", "sales.xlsx", "--sheet-names", "Data,Summary"],
+      "expect": { "exitCode": 0 }
+    },
+    {
+      "args": ["cells", "edit", "sales.xlsx", "--in-place", "--ops",
+        "{\"ops\":[{\"op\":\"set_values\",\"sheet\":\"Data\",\"range\":\"A1\",\"values\":[[\"East\",100.5],[\"West\",200],[\"East\",50]]},{\"op\":\"set_values\",\"sheet\":\"Summary\",\"range\":\"A1\",\"values\":[[\"East total\"]]},{\"op\":\"set_formula\",\"sheet\":\"Summary\",\"range\":\"B1\",\"formula\":\"=SUMIF(Data!A1:A3,\\\"East\\\",Data!B1:B3)\"},{\"op\":\"set_formula\",\"sheet\":\"Summary\",\"range\":\"C1\",\"formula\":\"=Data!B1*2\"}]}"],
+      "expect": { "exitCode": 0 }
+    },
+    {
+      "args": ["cells", "edit", "sales.xlsx", "--out", "renamed.xlsx", "--verify", "--ops",
+        "{\"ops\":[{\"op\":\"replace_text\",\"sheet\":\"Data\",\"find\":\"East\",\"replace\":\"Est\"},{\"op\":\"replace_text\",\"sheet\":\"Summary\",\"find\":\"total\",\"replace\":\"sum\"},{\"op\":\"set_values\",\"sheet\":\"Data\",\"range\":\"B2\",\"values\":[[250]]}]}"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "verification.ok", "equals": true },
+          { "path": "verification.formulaResultChanges", "contains": { "sheet": "Summary", "cell": "B1", "left": { "t": "number", "v": 150.5, "f": "=SUMIF(Data!A1:A3,\"East\",Data!B1:B3)" }, "right": { "t": "number", "v": 0, "f": "=SUMIF(Data!A1:A3,\"East\",Data!B1:B3)" } } },
+          { "path": "verification.directChanges", "notContains": { "sheet": "Summary", "cell": "B1", "left": { "t": "number", "v": 150.5, "f": "=SUMIF(Data!A1:A3,\"East\",Data!B1:B3)" }, "right": { "t": "number", "v": 0, "f": "=SUMIF(Data!A1:A3,\"East\",Data!B1:B3)" } } },
+          { "path": "verification.directChanges", "contains": { "sheet": "Summary", "cell": "A1", "left": { "t": "string", "v": "East total" }, "right": { "t": "string", "v": "East sum" } } },
+          { "path": "verification.directChanges", "contains": { "sheet": "Data", "cell": "A1", "left": { "t": "string", "v": "East" }, "right": { "t": "string", "v": "Est" } } },
+          { "path": "verification.directChanges", "contains": { "sheet": "Data", "cell": "B2", "left": { "t": "number", "v": 200 }, "right": { "t": "number", "v": 250 } } }
+        ]
+      }
+    },
+    {
+      "args": ["cells", "edit", "sales.xlsx", "--out", "rewritten.xlsx", "--verify", "--ops",
+        "{\"ops\":[{\"op\":\"set_values\",\"sheet\":\"Data\",\"range\":\"B1\",\"values\":[[1]]},{\"op\":\"set_formula\",\"sheet\":\"Summary\",\"range\":\"B1\",\"formula\":\"=SUMIF(Data!A1:A3,\\\"East\\\",Data!B1:B3)\"}]}"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "verification.ok", "equals": true },
+          { "path": "verification.directChanges", "contains": { "sheet": "Summary", "cell": "B1", "left": { "t": "number", "v": 150.5, "f": "=SUMIF(Data!A1:A3,\"East\",Data!B1:B3)" }, "right": { "t": "number", "v": 51, "f": "=SUMIF(Data!A1:A3,\"East\",Data!B1:B3)" } } },
+          { "path": "verification.formulaResultChanges", "equals": [{ "sheet": "Summary", "cell": "C1", "left": { "t": "number", "v": 201, "f": "=Data!B1*2" }, "right": { "t": "number", "v": 2, "f": "=Data!B1*2" } }] }
+        ]
+      }
+    },
+    {
+      "args": ["cells", "edit", "sales.xlsx", "--out", "bold.xlsx", "--verify", "--ops",
+        "{\"ops\":[{\"op\":\"format_range\",\"sheet\":\"Data\",\"range\":\"D1\",\"style\":{\"bold\":true}},{\"op\":\"format_range\",\"sheet\":\"Data\",\"range\":\"D2\",\"style\":{\"bold\":true}},{\"op\":\"format_range\",\"sheet\":\"Data\",\"range\":\"D3\",\"style\":{\"bold\":true}},{\"op\":\"format_range\",\"sheet\":\"Data\",\"range\":\"D4\",\"style\":{\"bold\":true}},{\"op\":\"format_range\",\"sheet\":\"Data\",\"range\":\"D5\",\"style\":{\"bold\":true}},{\"op\":\"format_range\",\"sheet\":\"Data\",\"range\":\"D6\",\"style\":{\"bold\":true}},{\"op\":\"format_range\",\"sheet\":\"Data\",\"range\":\"D7\",\"style\":{\"bold\":true}},{\"op\":\"format_range\",\"sheet\":\"Data\",\"range\":\"D8\",\"style\":{\"bold\":true}},{\"op\":\"format_range\",\"sheet\":\"Data\",\"range\":\"D9\",\"style\":{\"bold\":true}},{\"op\":\"format_range\",\"sheet\":\"Data\",\"range\":\"D10\",\"style\":{\"bold\":true}},{\"op\":\"format_range\",\"sheet\":\"Data\",\"range\":\"D11\",\"style\":{\"bold\":true}},{\"op\":\"format_range\",\"sheet\":\"Data\",\"range\":\"D12\",\"style\":{\"bold\":true}},{\"op\":\"format_range\",\"sheet\":\"Data\",\"range\":\"D13\",\"style\":{\"bold\":true}},{\"op\":\"format_range\",\"sheet\":\"Data\",\"range\":\"D14\",\"style\":{\"bold\":true}},{\"op\":\"format_range\",\"sheet\":\"Data\",\"range\":\"D15\",\"style\":{\"bold\":true}},{\"op\":\"format_range\",\"sheet\":\"Data\",\"range\":\"D16\",\"style\":{\"bold\":true}},{\"id\":\"total\",\"op\":\"set_values\",\"sheet\":\"Data\",\"range\":\"C1\",\"values\":[[5]]}]}"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "verification.ok", "equals": true },
+          { "path": "verification.directChanges", "contains": { "sheet": "Data", "cell": "C1", "right": { "t": "number", "v": 5 } } },
+          { "path": "verification.checkedOps", "equals": ["total"] }
+        ]
+      }
+    },
+    {
+      "args": ["cells", "create", "thirds.xlsx", "--sheet-names", "thirds"],
+      "expect": { "exitCode": 0 }
+    },
+    {
+      "args": ["cells", "edit", "thirds.xlsx", "--in-place", "--ops",
+        "{\"ops\":[{\"op\":\"set_formula\",\"sheet\":\"thirds\",\"range\":\"A1\",\"formula\":\"=1/3\"},{\"op\":\"set_formula\",\"sheet\":\"thirds\",\"range\":\"A2\",\"formula\":\"=2/3*PI()\"}]}"],
+      "expect": { "exitCode": 0 }
+    },
+    {
+      "args": ["cells", "edit", "thirds.xlsx", "--set", "thirds!B1=1", "--out", "thirds.csv", "--verify"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "verification.ok", "equals": true },
+          { "path": "verification.formulaResultChanges", "equals": [] },
+          { "path": "verification.directChanges", "contains": { "sheet": "thirds", "cell": "B1", "right": { "t": "number", "v": 1 } } }
+        ]
+      }
+    }
+  ]
+}

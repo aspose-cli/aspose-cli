@@ -178,7 +178,7 @@ internal static class DiffComparer
                 ComparisonValue rightValue = ComparisonValue.From(b);
                 string? leftFormula = formulas != FormulaScope.None && a?.IsFormula == true ? a.Formula : null;
                 string? rightFormula = formulas == FormulaScope.Compared && b?.IsFormula == true ? b.Formula : null;
-                if (leftValue == rightValue
+                if ((leftValue == rightValue || formulas == FormulaScope.Left && rightValue.Holds(leftValue))
                     && (formulas == FormulaScope.Left || string.Equals(leftFormula, rightFormula, StringComparison.Ordinal)))
                 {
                     continue;

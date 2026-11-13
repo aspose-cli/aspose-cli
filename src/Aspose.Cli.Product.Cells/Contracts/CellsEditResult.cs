@@ -75,10 +75,18 @@ public sealed record CellsEditVerification : EditVerification
     /// <summary>Targets requested by the operations in this invocation.</summary>
     public required IReadOnlyList<CellsVerificationTarget> RequestedTargets { get; init; }
 
-    /// <summary>Changes inside a requested operation target.</summary>
+    /// <summary>
+    /// Changes inside a requested operation target. A cell that kept its formula, or in a csv or tsv
+    /// output held one, is one only where an operation writes every cell of its target, such as
+    /// set_values or sort_range, and not where a replace_text found nothing to replace in it or a
+    /// rename_sheet renamed its sheet.
+    /// </summary>
     public required IReadOnlyList<CellsVerifiedCellChange> DirectChanges { get; init; }
 
-    /// <summary>Cells whose formula text stayed the same while the calculated result changed.</summary>
+    /// <summary>
+    /// Cells whose formula text stayed the same while the calculated result changed, and which no
+    /// operation wrote.
+    /// </summary>
     public required IReadOnlyList<CellsVerifiedCellChange> FormulaResultChanges { get; init; }
 
     /// <summary>Changes that could not be reliably attributed to a requested target or formula recalculation.</summary>

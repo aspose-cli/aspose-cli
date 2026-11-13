@@ -366,8 +366,8 @@ lines are not counted.
 staged output before publishing and reports `verification`
 (`aspose-cli schema v2/cells/edit-result`). `checkedOps` lists the operations
 whose changes the comparison read back: those that write cell values or
-formulas, or add, remove or rename a sheet, among the first 16 targets of the
-batch. An operation that names no
+formulas, or add, remove or rename a sheet, among the first 16 targets of those
+operations. An operation that names no
 sheet is checked on the sheet that was active when the batch started. Formula
 errors, sheet loss, grid truncation, imported formulas whose results changed or
 an incomplete scan keep the edited file and exit 8 with

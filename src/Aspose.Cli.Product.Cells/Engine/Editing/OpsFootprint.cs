@@ -58,6 +58,18 @@ internal static class OpsFootprint
     }
 
     /// <summary>
+    /// Those of the <paramref name="written"/> targets that an operation writes every cell of
+    /// (<see cref="CellsOpTraits.WritesCells"/>): a cell there that keeps its formula holds the
+    /// result that operation left, while one under a replace_text holds a result it did not write.
+    /// </summary>
+    /// <param name="batch">The ops batch that was applied.</param>
+    /// <param name="written">The targets <see cref="Collect"/> returned for the batch with cellsOnly.</param>
+    /// <param name="activeSheet">The sheet an operation that names none ran on, as the batch found it.</param>
+    internal static IReadOnlyList<CellsEditTarget> Rewritten(CellsOpsBatch batch, IReadOnlyList<CellsEditTarget> written, string? activeSheet) =>
+        [.. batch.Ops.Where(static op => CellsOpFootprints.Of(op).WritesCells)
+            .Select(op => DiffedTarget(op, activeSheet)).OfType<CellsEditTarget>().Where(target => Contains(written, target))];
+
+    /// <summary>
     /// The ids, in batch order, of the operations whose changes verification reads back: each
     /// operation that writes cell values or formulas or adds, removes or renames a sheet, which
     /// the diff of the staged output compares, and whose target names a sheet and is one of the
@@ -66,7 +78,7 @@ internal static class OpsFootprint
     /// are not checked; an operation that names no sheet counts on <paramref name="activeSheet"/>.
     /// </summary>
     /// <param name="batch">The ops batch that was applied.</param>
-    /// <param name="footprint">The targets <see cref="Collect"/> returned for the batch.</param>
+    /// <param name="footprint">The targets <see cref="Collect"/> returned for the batch with cellsOnly, which the diff classifies by.</param>
     /// <param name="activeSheet">The sheet an operation that names none ran on, as the batch found it.</param>
     internal static IReadOnlyList<string> Checked(
         CellsOpsBatch batch,
@@ -85,7 +97,7 @@ internal static class OpsFootprint
     /// does not hold.
     /// </summary>
     /// <param name="batch">The ops batch that was applied.</param>
-    /// <param name="footprint">The targets <see cref="Collect"/> returned for the batch.</param>
+    /// <param name="footprint">The targets <see cref="Collect"/> returned for the batch with cellsOnly.</param>
     /// <param name="held">Those of the targets on the sheets the output holds.</param>
     /// <param name="activeSheet">The sheet an operation that names none ran on, as the batch found it.</param>
     internal static IReadOnlyDictionary<string, string> UncheckedReasons(
@@ -100,7 +112,7 @@ internal static class OpsFootprint
         {
             CellsEditTarget? target = DiffedTarget(op, activeSheet);
             string? reason = target is null ? "The comparison reads back cell values, formulas and sheets; this operation changes something else, so read the output to confirm it."
-                : !Contains(footprint, target) ? $"The comparison reads back the first {MaxTargets} targets of a batch, and this operation's target is beyond them."
+                : !Contains(footprint, target) ? $"The comparison reads back the first {MaxTargets} targets of the operations that write cells or sheets, and this operation's target is beyond them."
                 : !Contains(held, target) ? "The output holds one sheet and this operation changed another, so its effect is not in the output."
                 : null;
             if (reason is not null)
