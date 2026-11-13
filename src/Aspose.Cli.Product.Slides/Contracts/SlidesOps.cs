@@ -64,7 +64,7 @@ public sealed record SlidesRectInput
 
 /// <summary>
 /// The size of the slides in points (72 per inch): a preset, or both the width and the height,
-/// each 72 through 7200 points.
+/// each 72 through 4032 points (1 through 56 inches), the sizes Office Open XML allows.
 /// </summary>
 [ExactlyOneOf("preset", "width")]
 [DependentRequired("width", "height")]
