@@ -29,12 +29,13 @@ internal sealed class PdfEditVerifier : IEditVerifier<PdfOp>
     private const string CoverNotReadBack = "Only that the form fields an earlier set_form_field of the batch set and its area covers are gone was read back; render the page to confirm the cover.";
 
     private readonly Document _document;
+    private readonly PdfPageIdentities _pages;
     private readonly List<(string Id, string Op)> _recorded = [];
     private readonly HashSet<string> _incomplete = new(StringComparer.Ordinal);
     private readonly HashSet<string> _checked = new(StringComparer.Ordinal);
     private readonly Expectations<string> _fields;
-    // Where the widgets of each field a set_form_field set lie, as it left them, until a page operation renumbers the pages.
-    private readonly Dictionary<string, (int? Page, Rectangle Rect)[]> _widgets = new(StringComparer.Ordinal);
+    // Where the widgets of each field a set_form_field set lie, as it left them: on a page by its identity, which page operations keep.
+    private readonly Dictionary<string, (PdfPageIdentity? Page, Rectangle Rect)[]> _widgets = new(StringComparer.Ordinal);
     // Each field a redact_area covers the only widget of, which the output must not hold, with the operation's id.
     private readonly List<(string Name, string Id)> _covered = [];
     private readonly Expectations<string> _metadata;
@@ -51,9 +52,11 @@ internal sealed class PdfEditVerifier : IEditVerifier<PdfOp>
     private int _expectedBookmarks;
 
     /// <param name="document">The document the batch edits, which each record reads as the operation left it.</param>
-    internal PdfEditVerifier(Document document)
+    /// <param name="pages">The identities of its pages, which the batch's page operations keep; a set of its own when omitted.</param>
+    internal PdfEditVerifier(Document document, PdfPageIdentities? pages = null)
     {
         _document = document;
+        _pages = pages ?? new PdfPageIdentities();
         _fields = new(_incomplete);
         _metadata = new(_incomplete);
         _addedAttachments = new(_incomplete);
@@ -75,13 +78,12 @@ internal sealed class PdfEditVerifier : IEditVerifier<PdfOp>
 
     /// <summary>
     /// Counts the pages a page operation leaves. Page numbers recorded before it name other pages
-    /// now, so a bookmark's page can no longer be checked.
+    /// now, so a bookmark's page can no longer be checked; a widget's page is known by its identity.
     /// </summary>
     private void InvalidatePositions(string id, int pages)
     {
         _expectedPages += pages;
         _pageOps.Add(id);
-        _widgets.Clear();
         DropLinks();
         for (int index = 0; index < _bookmarks.Count; index++)
         {
@@ -406,9 +408,9 @@ internal sealed class PdfEditVerifier : IEditVerifier<PdfOp>
             verifier._fields.Set(operation.Name, id,
                 operation.Value ?? PdfMutationSupport.ClearedFieldValue(PdfMutationSupport.FormField(Document, operation.Name)));
             // A field the document does not hold has no widget to place, so a later redact_area leaves its value unchecked.
-            (int? Page, Rectangle Rect)[] widgets = [.. Document.Form.Fields
+            (PdfPageIdentity? Page, Rectangle Rect)[] widgets = [.. Document.Form.Fields
                 .Where(field => string.Equals(field.FullName, operation.Name, StringComparison.Ordinal))
-                .Select(static field => (PdfForms.PageOf(field), field.Rect))];
+                .Select(field => (PdfForms.PageOf(field) is { } page ? verifier._pages.Of(Document.Pages[page]) : null, field.Rect))];
             if (widgets.Length > 0)
             {
                 verifier._widgets[operation.Name] = widgets;
@@ -457,17 +459,19 @@ internal sealed class PdfEditVerifier : IEditVerifier<PdfOp>
         /// A field with a widget the area <see cref="PdfMutationHandlers.Covers"/> goes with it, so
         /// the operation that set it is left unchecked, as after flatten_forms, and a field whose
         /// only widget it covers must be gone from the output; a field whose widgets are not known,
-        /// because a page operation moved them or the field was not found, is left unchecked too. The cover itself has no reliable read-back, so the
+        /// because the field was not found or pages were imported beside it, is left unchecked too. The cover itself has no reliable read-back, so the
         /// operation stays unchecked.
         /// </summary>
         public ValueTuple Apply(RedactAreaOp operation)
         {
             verifier.DropLinks(operation.Page);
-            Rectangle area = PdfGeometry.ToPdfRect(PdfPages.PageAt(Document, operation.Page), operation.Rect);
+            Page page = PdfPages.PageAt(Document, operation.Page);
+            Rectangle area = PdfGeometry.ToPdfRect(page, operation.Rect);
+            PdfPageIdentity identity = verifier._pages.Of(page);
             foreach (string name in verifier._fields.Keys.ToArray())
             {
-                (int? Page, Rectangle Rect)[]? widgets = verifier._widgets.GetValueOrDefault(name);
-                bool[] covered = [.. (widgets ?? []).Select(widget => widget.Page == operation.Page && PdfMutationHandlers.Covers(area, widget.Rect))];
+                (PdfPageIdentity? Page, Rectangle Rect)[]? widgets = verifier._widgets.GetValueOrDefault(name);
+                bool[] covered = [.. (widgets ?? []).Select(widget => widget.Page == identity && PdfMutationHandlers.Covers(area, widget.Rect))];
                 if (widgets is null || covered.Contains(true))
                 {
                     verifier._fields.Drop(name);
@@ -547,7 +551,8 @@ internal sealed class PdfEditVerifier : IEditVerifier<PdfOp>
         public ValueTuple Apply(ImportPagesOp operation)
         {
             verifier.InvalidatePositions(id, pages: (int)affected);
-            // The inserted pages may bring form fields of their own.
+            // The inserted pages may bring form fields of their own, with widgets of their names.
+            verifier._widgets.Clear();
             verifier._incomplete.UnionWith(verifier._flattened.Select(static flatten => flatten.Id));
             verifier._flattened.Clear();
             verifier._covered.Clear();

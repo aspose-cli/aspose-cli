@@ -384,8 +384,8 @@ public sealed class PdfEditVerificationTests
     /// <summary>
     /// What a redact_area removes is predicted from the field's widget and the area, never read
     /// from the edited document: recorded without either operation running, a redact_area beside
-    /// the widget's middle leaves the value checked and its mismatch reported. After a page
-    /// operation, which moves the widgets, any redact_area leaves the value unchecked.
+    /// the widget's middle leaves the value checked and its mismatch reported. A page operation
+    /// before it changes nothing of that: the widget is known by its page, wherever the page went.
     /// </summary>
     [Theory]
     [InlineData(false)]
@@ -408,8 +408,9 @@ public sealed class PdfEditVerificationTests
 
         VerificationFacts verification = verifier.Verify(document);
 
-        Assert.Equal(!pagesMoved, verification.Issues.Any(static issue => issue.Code == "FIELD_VALUE_MISMATCH" && issue.Location == "field/Customer"));
-        Assert.Equal(!pagesMoved, verification.Checked.Contains("op-0001"));
+        Assert.Contains(verification.Issues, static issue => issue.Code == "FIELD_VALUE_MISMATCH" && issue.Location == "field/Customer");
+        Assert.Contains("op-0001", verification.Checked);
+        Assert.Equal(pagesMoved, verification.Checked.Contains("op-0002"));
     }
 
     /// <summary>
