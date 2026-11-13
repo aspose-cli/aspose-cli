@@ -179,7 +179,7 @@ internal static class InfoProjection
     internal static IReadOnlyList<RevisionChange> RevisionChanges(Document document)
     {
         Revision[] revisions = document.Revisions.Cast<Revision>().ToArray();
-        IReadOnlySet<Node> fieldCode = WordsText.FieldCodeRuns(document);
+        IReadOnlyDictionary<Node, int> fieldCode = WordsText.FieldCodeNodes(document);
         Dictionary<Revision, RevisionChange> moves = Moves(document, revisions, fieldCode);
         // Where a group's text starts: its first inline node, since the SDK lists a paragraph's mark before its runs.
         var starts = new Dictionary<RevisionGroup, Node>(ReferenceEqualityComparer.Instance);
@@ -220,7 +220,7 @@ internal static class InfoProjection
             changes.Add(new RevisionChange(revision, revision.RevisionType switch
             {
                 RevisionType.Insertion or RevisionType.Deletion => revision.Group is { Text: { } groupText } textGroup
-                    ? WordsText.WithoutFieldCodes(groupText, startsInCode: starts.TryGetValue(textGroup, out Node? start) && fieldCode.Contains(start))
+                    ? WordsText.WithoutFieldCodes(groupText, codes: starts.TryGetValue(textGroup, out Node? start) && fieldCode.TryGetValue(start, out int codes) ? codes : 0)
                     : NodeText(revision, fieldCode),
                 // Format changes carry a description of the formatting, not document text.
                 _ => null,
@@ -236,10 +236,10 @@ internal static class InfoProjection
     /// paragraph's text, and a field shows only its result, not its marks or the runs of its code
     /// (<paramref name="fieldCode"/>).
     /// </summary>
-    internal static string? NodeText(Revision revision, IReadOnlySet<Node> fieldCode) => revision.ParentNode switch
+    internal static string? NodeText(Revision revision, IReadOnlyDictionary<Node, int> fieldCode) => revision.ParentNode switch
     {
         null or Paragraph or FieldChar => null,
-        Run run when fieldCode.Contains(run) => null,
+        Run run when fieldCode.ContainsKey(run) => null,
         Node node => WordsText.WithoutFieldCodes(node.GetText()),
     };
 
@@ -253,7 +253,7 @@ internal static class InfoProjection
     /// with the move's text: its runs' text outside field codes, with a paragraph break for each
     /// moved mark.
     /// </summary>
-    private static Dictionary<Revision, RevisionChange> Moves(Document document, Revision[] revisions, IReadOnlySet<Node> fieldCode)
+    private static Dictionary<Revision, RevisionChange> Moves(Document document, Revision[] revisions, IReadOnlyDictionary<Node, int> fieldCode)
     {
         var moves = new Dictionary<Revision, RevisionChange>(ReferenceEqualityComparer.Instance);
         var byNode = new Dictionary<Node, Revision>(ReferenceEqualityComparer.Instance);
@@ -307,7 +307,7 @@ internal static class InfoProjection
             // The text is cut to the limit when listed, so collecting stops just past it.
             if (text.Length <= RevisionTextLimit)
             {
-                text.Append(node is Run run && !fieldCode.Contains(run) ? run.Text : node is Paragraph ? "\r" : string.Empty);
+                text.Append(node is Run run && !fieldCode.ContainsKey(run) ? run.Text : node is Paragraph ? "\r" : string.Empty);
             }
         }
 

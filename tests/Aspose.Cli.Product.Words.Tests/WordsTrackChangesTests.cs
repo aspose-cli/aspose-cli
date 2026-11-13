@@ -444,19 +444,30 @@ public sealed class WordsTrackChangesTests
     }
 
     /// <summary>
-    /// A change that starts inside a field's code and runs on past a paragraph mark keeps only
-    /// what follows the code, although the SDK lists the paragraph mark's revision first.
+    /// A change that starts inside a field's code, at its separator or at the start of a field
+    /// nested in that code, and runs on past a paragraph mark keeps only what follows the code,
+    /// the nested field's result included, although the SDK lists the paragraph mark's revision first.
     /// </summary>
     [Theory]
-    [InlineData("del", "delInstrText", "delText", "deletion")]
-    [InlineData("ins", "instrText", "t", "insertion")]
-    public void InspectRevisions_ReadsAChangeStartingInAFieldCodeAcrossAParagraphMarkFromTheResultOn(string change, string code, string text, string kind)
+    [InlineData("del", "delInstrText", "delText", "deletion", "code", "abc tail\nNext ")]
+    [InlineData("ins", "instrText", "t", "insertion", "code", "abc tail\nNext ")]
+    [InlineData("del", "delInstrText", "delText", "deletion", "separator", "abc tail\nNext ")]
+    [InlineData("del", "delInstrText", "delText", "deletion", "nested", "inx tail\nNext ")]
+    public void InspectRevisions_ReadsAChangeStartingInAFieldCodeAcrossAParagraphMarkFromTheResultOn(string change, string code, string text, string kind, string from, string expected)
     {
         using var fixture = new WordsFixture();
         string Changed(int id, string run) => $"""<w:{change} w:id="{id}" {Reviewer}><w:r>{run}</w:r></w:{change}>""";
         string Text(string value) => $"""<w:{text} xml:space="preserve">{value}</w:{text}>""";
-        string changedCode = Changed(2, $"""<w:{code} xml:space="preserve">"abc" </w:{code}>""")
-            + Changed(3, """<w:fldChar w:fldCharType="separate"/>""") + Changed(4, Text("abc"))
+        string Code(string value) => $"""<w:{code} xml:space="preserve">{value}</w:{code}>""";
+        string changedCode = from switch
+        {
+            "separator" => """<w:r><w:instrText xml:space="preserve">"abc" </w:instrText></w:r>""",
+            "nested" => Changed(2, """<w:fldChar w:fldCharType="begin"/>""") + Changed(8, Code(" QUOTE \"in\" "))
+                + Changed(9, """<w:fldChar w:fldCharType="separate"/>""") + Changed(10, Code("in"))
+                + Changed(11, """<w:fldChar w:fldCharType="end"/>""") + Changed(12, Code(" \"x\" ")),
+            _ => Changed(2, Code("\"abc\" ")),
+        }
+            + Changed(3, """<w:fldChar w:fldCharType="separate"/>""") + Changed(4, Text(from == "nested" ? "inx" : "abc"))
             + Changed(5, """<w:fldChar w:fldCharType="end"/>""") + Changed(6, Text(" tail"));
         string input = WriteDocx(fixture.Temp.File("code-across-mark.docx"), $"""
             <w:p><w:pPr><w:rPr><w:{change} w:id="1" {Reviewer}/></w:rPr></w:pPr><w:r><w:t xml:space="preserve">Intro </w:t></w:r><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> QUOTE </w:instrText></w:r>{changedCode}</w:p>
@@ -467,7 +478,7 @@ public sealed class WordsTrackChangesTests
 
         WordsRevisionData revision = Assert.Single(info.Revisions!);
         Assert.Equal(kind, revision.Kind);
-        Assert.Equal("abc tail\nNext ", revision.Text);
+        Assert.Equal(expected, revision.Text);
     }
 
     /// <summary>A sample per revision node: a field's marks and code have no text, its result does.</summary>
