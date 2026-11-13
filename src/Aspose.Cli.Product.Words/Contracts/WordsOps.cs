@@ -572,7 +572,12 @@ public sealed record SetHeaderOp : HeaderFooterOp;
 [Operation("set_footer")]
 public sealed record SetFooterOp : HeaderFooterOp;
 
-/// <summary>Adds or aligns a PAGE field in the primary header or footer and sets page numbering.</summary>
+/// <summary>
+/// Adds or aligns a PAGE field in the primary header or footer and sets page numbering. A section
+/// that shows an earlier section's header or footer keeps showing it: numbered with that section
+/// when this numbers it too, else on a copy of it that becomes the section's own. A section not
+/// selected that continues a numbered one shows the number too, and the targets do not list it.
+/// </summary>
 [Operation("set_page_numbers")]
 public sealed record SetPageNumbersOp : WordsOp
 {
