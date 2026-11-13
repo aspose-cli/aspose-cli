@@ -252,7 +252,6 @@ public sealed class UsageMistakeTests : IDisposable
     [InlineData("cells review")]
     [InlineData("cells review b.xlsx --sheets 1")]
     [InlineData("cells review b.xlsx --password hunter2")]
-    [InlineData("cells review b.xlsx --password-stdin")]
     public void ReviewBelowAProduct_ThatCouldNotBeRepeated_ShowsThePlaceholder(string commandLine)
     {
         CliResult result = _workspace.Run([.. commandLine.Split(' '), "--output-format", "json"]);
@@ -260,6 +259,15 @@ public sealed class UsageMistakeTests : IDisposable
         JsonNode error = Error(result, "USAGE_ERROR");
         Assert.Equal(["aspose-cli review <file> --output-format json"], Suggestions(error));
         Assert.DoesNotContain("hunter2", result.StdErr, StringComparison.Ordinal);
+    }
+
+    /// <summary>A password the line read from stdin is passed on by the quoted placeholder of its variable, as every printed command passes one on.</summary>
+    [Fact]
+    public void ReviewBelowAProduct_OfAPasswordOnStdin_PassesItOnByAVariable()
+    {
+        CliResult result = _workspace.Run("cells", "review", "b.xlsx", "--password-stdin", "--output-format", "json");
+
+        Assert.Equal(["aspose-cli review b.xlsx --password-env \"<password-env>\" --output-format json"], Suggestions(Error(result, "USAGE_ERROR")));
     }
 
     /// <summary>A command of the root that reads no product's file, and a mistyped command, keep what they said.</summary>
