@@ -371,6 +371,16 @@ Reproductions: [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownI
   `pdf inspect --detail outline` of the input; no operation re-creates a link or a named
   destination, so tell the user which no longer lead to their page.
 
+### PDF-LINK-STALE-PAGE
+
+- **Defect:** a link annotation keeps the destination it read first, page number included, so
+  after a page deletion in memory a link read before it still names the number its page had:
+  one to a deleted page can name a page the document still holds. Bookmarks and named destinations
+  read their new numbers, and the saved file leads to the right page, or to none.
+- **CLI behavior:** `pdf convert --pages`, which counts the navigation a deletion breaks in the
+  document in memory, takes a link read before it to lead to the page it led to then, and to none
+  when that page is gone, so it counts what `pdf edit` reads from the output it publishes.
+
 ### PDF-REDACT-CALCULATED
 
 - **Defect:** a redaction that removes a form field leaves the form's calculation order (`/CO`)

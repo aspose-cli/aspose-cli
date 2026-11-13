@@ -12,7 +12,7 @@
         "exitCode": 0,
         "json": [
           { "path": "warnings", "contains": { "code": "NAVIGATION_DEGRADED", "message": "0 bookmark(s), 0 link(s) and 1 named destination(s) no longer lead to their page, although their part holds it: the parts carry no named destinations, so what led there through one leads nowhere.", "hint": "No operation re-creates links or named destinations: tell the user which no longer lead to their page.", "affectsCompleteness": true } },
-          { "path": "warnings", "contains": { "code": "NAVIGATION_DEGRADED", "message": "0 bookmark(s), 2 link(s) and 0 named destination(s) lead to a page of another part, so they lead nowhere in their own.", "hint": "The pages they led to are in other parts, as the split asked; tell the user they lead nowhere in the parts." } },
+          { "path": "warnings", "contains": { "code": "NAVIGATION_DEGRADED", "message": "0 bookmark(s), 2 link(s) and 0 named destination(s) lead to a page their part does not hold, so they lead nowhere in it.", "hint": "The pages they led to are in other parts or in none, as the split asked; tell the user they lead nowhere in the parts." } },
           { "path": "warnings", "contains": { "code": "NAVIGATION_DEGRADED", "message": "2 bookmark(s) of the parts open their page as a whole, not at the place in it they opened in the input.", "hint": "They still open their page. No operation sets the place in a page a bookmark opens at: tell the user if that place matters." } }
         ]
       }

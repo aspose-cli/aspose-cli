@@ -67,12 +67,6 @@ internal readonly record struct PdfNavigationCensus(int Bookmarks, int Links, in
             ? document.NamedDestinations[name]
             : null;
 
-    /// <summary>What <paramref name="after"/> has broken that <paramref name="before"/> had not.</summary>
-    internal static PdfNavigationCensus Degraded(PdfNavigationCensus before, PdfNavigationCensus after) => new(
-        Math.Max(0, after.Bookmarks - before.Bookmarks),
-        Math.Max(0, after.Links - before.Links),
-        Math.Max(0, after.NamedDestinations - before.NamedDestinations));
-
     /// <summary>
     /// The destination an outline item or link points at, or null when it points outside the
     /// document: a web address, another file (the SDK's remote GoTo is a GoTo), any other action.

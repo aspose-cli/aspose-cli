@@ -56,6 +56,39 @@ public sealed class PdfKnownIssueTests
     }
 
     [Fact]
+    public void LinkDestination_KeepsItsPageNumberAfterAPageDeletion()
+    {
+        using var fixture = new PdfEngineFixture();
+        string input = fixture.File("link.pdf");
+        PdfEngineFixture.WriteRawPdf(input,
+        [
+            "<< /Type /Catalog /Pages 2 0 R /Outlines 7 0 R >>",
+            "<< /Type /Pages /Kids [3 0 R 4 0 R 5 0 R] /Count 3 >>",
+            "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] >>",
+            "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] >>",
+            "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Annots [6 0 R] >>",
+            "<< /Type /Annot /Subtype /Link /Rect [72 600 272 620] /Dest [3 0 R /XYZ 0 700 0] >>",
+            "<< /Type /Outlines /First 8 0 R /Last 8 0 R /Count 1 >>",
+            "<< /Title (One) /Parent 7 0 R /Dest [3 0 R /XYZ 0 700 0] >>",
+        ]);
+        using var document = new Document(input);
+        LinkAnnotation link = document.Pages[3].Annotations.OfType<LinkAnnotation>().Single();
+        int before = ((ExplicitDestination)link.Destination).PageNumber;
+        document.Pages.Delete([1]);
+        int after = ((ExplicitDestination)link.Destination).PageNumber;
+        int bookmark = ((ExplicitDestination)document.Outlines[1].Destination).PageNumber;
+        using var saved = new MemoryStream();
+        document.Save(saved);
+        using var reopened = new Document(saved);
+        int written = reopened.Pages[2].Annotations.OfType<LinkAnnotation>().Single().Destination is ExplicitDestination { PageNumber: var page } ? page : 0;
+
+        KnownIssue.Reproduces(
+            "PDF-LINK-STALE-PAGE",
+            before == 1 && after == 1 && bookmark < 1 && written < 1,
+            $"the link read page {before}, then {after} once that page was deleted, while the bookmark to it read {bookmark} and the saved link {written}");
+    }
+
+    [Fact]
     public void Redaction_LeavesARemovedFieldInTheCalculationOrder()
     {
         using var fixture = new PdfEngineFixture();

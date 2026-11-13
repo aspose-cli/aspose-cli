@@ -88,7 +88,7 @@ are lost), also one that opened it through a named destination, keeps the
 action of one that opens a web address or another file, which has no `page` in
 `pdf inspect --detail outline`, and does not carry named destinations. `pdf split` does the same with
 the bookmarks of each part's pages; a bookmark whose parent opens a page of
-another part moves up in its place, and links to another part lead nowhere.
+another part moves up in its place, and links to a page the part does not hold lead nowhere.
 Each part keeps the page labels its pages had, such as `South-1` to `South-3`,
 the input's document information and every attachment of the input. A merge
 keeps the document information of the first input and the page labels of each
@@ -105,7 +105,7 @@ they did, by why. Entries that still lead nowhere although the output holds
 their page, such as the links and named destinations a merge or a part does
 not carry, have `affectsCompleteness: true`. Entries that led to a page
 the command was asked to leave out (deleted by the batch, not selected by
-`--pages`, in another part of a split) have a warning without it, and so do
+`--pages`, outside a part of a split) have a warning without it, and so do
 bookmarks that still open their page, only as a whole rather than at their place
 in it: no operation sets that place, so tell the user if it matters. The
 warnings of `pdf edit` name the bookmarks by their address in the output's
