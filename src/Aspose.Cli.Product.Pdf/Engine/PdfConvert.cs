@@ -123,12 +123,21 @@ internal static class PdfConvert
                     document.Save(temp, format);
                 }
             });
-        if (removed > 0)
+        // The pictures are counted as the extraction the hint names writes them; the export also
+        // links the pictures drawn inline, and none in a table cell.
+        int? pictures = target.LeavesPictures ? PdfExtract.PictureCount(document, Enumerable.Range(1, document.Pages.Count)) : 0;
+        if (pictures > 0 || removed > 0)
         {
             warnings.Add(ContentLoss.Warning([ContentKind.Pictures],
-                $"The {target.Id} output leaves out the {removed} picture{(removed == 1 ? "" : "s")} the converted pages show; it holds their text.",
-                $"To take the pictures out as image files, run {request.PictureExtraction ?? "'pdf extract --what images'"}, which takes out those the pages store as image objects; "
-                    + "a picture drawn inline in a page is not one of them, and 'pdf render' shows it."));
+                $"The {target.Id} output leaves out the pictures the converted pages show, "
+                    + (pictures is { } count ? $"{count} of them stored as image objects" : "whose image objects the engine cannot read") + "; it holds their text.",
+                pictures switch
+                {
+                    > 0 => $"To take the pictures stored as image objects out as image files, run {request.PictureExtraction ?? "'pdf extract --what images'"}; "
+                        + "a picture drawn inline in a page is not one of them, and 'pdf render' shows it.",
+                    0 => "They are drawn inline in a page, not stored as image objects that 'pdf extract --what images' takes out; 'pdf render' shows them.",
+                    _ => "'pdf extract --what images' cannot read the pictures of these pages either; 'pdf render' shows them.",
+                }));
         }
 
         return FileObjects.Output(written, request.Output.Format, encrypted: false);

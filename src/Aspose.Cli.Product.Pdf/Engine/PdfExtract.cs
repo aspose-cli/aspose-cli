@@ -78,28 +78,52 @@ internal static class PdfExtract
     {
         var items = new List<(PublishedFile File, int? Page)>();
         int number = 0;
-        foreach (int pageNumber in pages)
+        foreach ((ImagePlacement placement, int pageNumber) in Pictures(document, pages))
         {
-            var absorber = new ImagePlacementAbsorber { IsReadOnlyMode = true };
-            document.Pages[pageNumber].Accept(absorber);
-            foreach (ImagePlacement placement in absorber.ImagePlacements)
-            {
-                // The image's own dimensions bound the decode, so check them before decoding.
-                // The SDK's PNG encoder resizes its target stream, which the budgeted
-                // extraction stream does not allow, so the bounded image is encoded in memory
-                // and then written through the extraction budget.
-                XImage image = placement.Image;
-                RenderPixelGuard.EnsureFits(budgets, image.Width, image.Height, dpi: null,
-                    hint: $"The image on page {pageNumber} is too large to decode; extract the other pages with --pages.");
+            // The image's own dimensions bound the decode, so check them before decoding.
+            // The SDK's PNG encoder resizes its target stream, which the budgeted
+            // extraction stream does not allow, so the bounded image is encoded in memory
+            // and then written through the extraction budget.
+            XImage image = placement.Image;
+            RenderPixelGuard.EnsureFits(budgets, image.Width, image.Height, dpi: null,
+                hint: $"The image on page {pageNumber} is too large to decode; extract the other pages with --pages.");
 
-                using var encoded = new MemoryStream();
-                placement.Save(encoded, DrawingImageFormat.Png);
-                byte[] bytes = encoded.ToArray();
-                items.Add((guard.StageAllBytes($"image-{++number:000}.png", bytes), pageNumber));
-            }
+            using var encoded = new MemoryStream();
+            placement.Save(encoded, DrawingImageFormat.Png);
+            byte[] bytes = encoded.ToArray();
+            items.Add((guard.StageAllBytes($"image-{++number:000}.png", bytes), pageNumber));
         }
 
         return items;
+    }
+
+    /// <summary>
+    /// The pictures <c>pdf extract --what images</c> writes, one file each: every placement of an
+    /// image object on the pages, in page order, with its page. A picture drawn inline in a page
+    /// is not an image object.
+    /// </summary>
+    internal static IEnumerable<(ImagePlacement Placement, int Page)> Pictures(Document document, IEnumerable<int> pages) =>
+        pages.SelectMany(page =>
+        {
+            var absorber = new ImagePlacementAbsorber { IsReadOnlyMode = true };
+            document.Pages[page].Accept(absorber);
+            return absorber.ImagePlacements.Select(placement => (placement, page));
+        });
+
+    /// <summary>
+    /// How many files <c>pdf extract --what images</c> writes of the pages (<see cref="Pictures"/>),
+    /// or null when the engine cannot read their content, which fails that extraction.
+    /// </summary>
+    internal static int? PictureCount(Document document, IEnumerable<int> pages)
+    {
+        try
+        {
+            return Pictures(document, pages).Count();
+        }
+        catch (Exception exception) when (exception.GetType().Assembly.GetName().Name == "Aspose.PDF")
+        {
+            return null;
+        }
     }
 
     // Each attachment as attachment-0001 and on, in name order; its own name, which the

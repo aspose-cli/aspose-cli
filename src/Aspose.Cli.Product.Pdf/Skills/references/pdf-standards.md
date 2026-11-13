@@ -79,11 +79,11 @@ flattened file to `txt`: `md` writes each value of a form that
 `pdf create --from-html` made twice.
 
 `--to md` writes the text of the pages as one file and leaves out their
-pictures: a `LOSSY_CONVERSION` with `details.content` `["pictures"]` counts
-each time a page shows one, and its hint gives the `pdf extract --what images`
-command, which writes as image files the pictures the pages store as image
-objects; a picture drawn inline in a page is not one of them, and `pdf render`
-shows it.
+pictures: a `LOSSY_CONVERSION` with `details.content` `["pictures"]` counts the
+pictures the pages store as image objects, those in table cells included, one
+for each time a page shows one, and its hint gives the `pdf extract --what images`
+command, which writes each of them as an image file; a picture drawn inline in a
+page is not one of them, and `pdf render` shows it.
 
 HTML output is one self-contained file that places every line of text
 absolutely and embeds subsets of the PDF's fonts; its `<title>` is the PDF
