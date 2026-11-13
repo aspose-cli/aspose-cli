@@ -2057,8 +2057,11 @@ public sealed class PdfMutateTests
             Verify = true,
         });
 
-        Assert.True(result.Verification!.Ok);
+        // The text that moved under a cover is no longer seen, so the verification reports it.
+        Assert.False(result.Verification!.Ok);
+        Assert.Equal("REDACTION_TEXT_MOVED", Assert.Single(result.Verification.Issues).Code);
         Warning warning = Assert.Single(result.Warnings!, static warning => warning.Code.Name == "REDACTION_TEXT_MOVED");
+        Assert.True(warning.AffectsCompleteness);
         Assert.Contains("'op-0001' (redact_text) on page 1", warning.Message, StringComparison.Ordinal);
         Assert.Contains("'op-0002' (redact_area) on page 2", warning.Message, StringComparison.Ordinal);
         Assert.DoesNotContain("op-0003", warning.Message, StringComparison.Ordinal);
@@ -2087,7 +2090,8 @@ public sealed class PdfMutateTests
             Verify = true,
         });
 
-        Assert.True(result.Verification!.Ok);
+        // Every match is gone; the text after them moved left, which is the only issue.
+        Assert.Equal(["REDACTION_TEXT_MOVED"], result.Verification!.Issues.Select(static issue => issue.Code));
         // Both matches lie on the one page the operation changed.
         Assert.Equal(1, Assert.Single(result.Applied).ItemsAffected);
         Assert.Equal(["page/1"], result.Applied[0].Targets);
