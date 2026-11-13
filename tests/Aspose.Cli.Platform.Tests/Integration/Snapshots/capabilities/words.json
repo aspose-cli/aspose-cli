@@ -49,7 +49,7 @@
         "command": "edit",
         "inputSchema": "v2/words/ops",
         "operationSchema": "aspose-cli schema v2/words/ops --operation <op>",
-        "contractFingerprint": "sha256:1db175a16f02ac1c9b960cca490cfa550eaf221ba66a1b3873232d81d2d80105",
+        "contractFingerprint": "sha256:288d82aca03348e42abc64447db2da3bf53c1f42bb31bbd9a9d3037d15c40d2f",
         "maximumOperationCount": 10000,
         "ops": [
           "accept_revisions",
@@ -6054,7 +6054,7 @@
           }
         },
         "set_page_numbers": {
-          "description": "Adds or aligns a PAGE field in the primary header or footer and sets page numbering.",
+          "description": "Adds or aligns a PAGE field in the primary header or footer and sets page numbering. A section that shows an earlier section's header or footer keeps showing it: numbered with that section when this numbers it too, else on a copy of it that becomes the section's own. A section not selected that continues a numbered one shows the number too, and the targets do not list it.",
           "type": "object",
           "required": [
             "op"

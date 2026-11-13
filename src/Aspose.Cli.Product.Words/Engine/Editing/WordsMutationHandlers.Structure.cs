@@ -244,14 +244,43 @@ internal sealed partial class WordsMutationHandlers
         // The page numbers move: their PAGE field leaves the other primary header or footer with
         // the words of its paragraph, which are the number's text. A text replaces them; without
         // one they go along, read before any are cleared, since a section can show an earlier one's.
-        string?[] shown = [.. Sections.Select(section => PageNumberWords(WordsHeadersFooters.Continued(section, other)))];
-        foreach ((Section section, string? words) in Sections.Zip(shown))
+        Section[] targets = [.. Sections];
+        string?[] shown = [.. targets.Select(section => PageNumberWords(WordsHeadersFooters.Continued(section, other)))];
+        foreach ((Section section, string? words) in targets.Zip(shown))
         {
+            if (numbers && section.HeadersFooters[other] is { } previous)
+            {
+                if (operation.Text is null && words is null)
+                {
+                    RemovePageFields(previous);
+                }
+                else
+                {
+                    ClearPageNumberParagraphs(previous);
+                }
+            }
+
+            // A section that shows an earlier section's story is numbered with it when the operation
+            // numbers that section too, and else numbers a copy of it, as Word copies a story whose
+            // link to the previous section is undone, so that it still shows what it showed.
             HeaderFooterType type = operation.Location == "header" ? HeaderFooterType.HeaderPrimary : HeaderFooterType.FooterPrimary;
             HeaderFooter? container = section.HeadersFooters[type];
+            HeaderFooter? continued = container is null ? WordsHeadersFooters.Continued(section, type) : null;
+            if (continued is not null && targets.Contains(continued.ParentSection))
+            {
+                SetPageNumbering(section, operation);
+                continue;
+            }
+
             if (container is null)
             {
-                container = new HeaderFooter(_document, type);
+                container = continued is null ? new HeaderFooter(_document, type) : (HeaderFooter)continued.Clone(isCloneChildren: true);
+                // A bookmark's name marks one place in the document, which the original keeps.
+                foreach (Node mark in container.GetChildNodes(NodeType.BookmarkStart, true).Cast<Node>().Concat(container.GetChildNodes(NodeType.BookmarkEnd, true).Cast<Node>()).ToArray())
+                {
+                    mark.Remove();
+                }
+
                 section.HeadersFooters.Add(container);
             }
 
@@ -263,18 +292,6 @@ internal sealed partial class WordsMutationHandlers
             if (operation.Text is null && text is not null)
             {
                 _pageNumbers.Moved(operation, _document.Sections.IndexOf(section), text);
-            }
-
-            if (numbers && section.HeadersFooters[other] is { } previous)
-            {
-                if (operation.Text is null && words is null)
-                {
-                    RemovePageFields(previous);
-                }
-                else
-                {
-                    ClearPageNumberParagraphs(previous);
-                }
             }
 
             Paragraph paragraph;
@@ -300,20 +317,26 @@ internal sealed partial class WordsMutationHandlers
             }
 
             paragraph.ParagraphFormat.Alignment = AlignmentOf(operation.Alignment);
-            if (operation.Start is int start)
-            {
-                section.PageSetup.RestartPageNumbering = true;
-                section.PageSetup.PageStartingNumber = start;
-            }
-
-            if (operation.NumberStyle is not null)
-            {
-                section.PageSetup.PageNumberStyle = WordsReadBack.NumberStyleOf(operation.NumberStyle);
-            }
+            SetPageNumbering(section, operation);
         }
 
         _document.UpdatePageLayout();
         return default;
+    }
+
+    // A section's own numbering: where it starts and how its numbers are written.
+    private static void SetPageNumbering(Section section, SetPageNumbersOp operation)
+    {
+        if (operation.Start is int start)
+        {
+            section.PageSetup.RestartPageNumbering = true;
+            section.PageSetup.PageStartingNumber = start;
+        }
+
+        if (operation.NumberStyle is not null)
+        {
+            section.PageSetup.PageNumberStyle = WordsReadBack.NumberStyleOf(operation.NumberStyle);
+        }
     }
 
     /// <summary>
