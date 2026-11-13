@@ -112,7 +112,7 @@ internal sealed partial class SlidesMutationHandlers : ISlidesOpHandler<ValueTup
         ILayoutSlide? layout = op switch
         {
             InsertSlideOp { Layout: not null } value => ResolveLayout(presentation, value.Layout),
-            SetLayoutOp value => ResolveLayout(presentation, value.Layout),
+            SetLayoutOp value => ResolveLayout(presentation, value.Layout), // refuses a name no master has; each slide takes it from its own master first
             _ => null,
         };
         // Detached shapes may no longer expose their SDK identity. Keep the receipt target

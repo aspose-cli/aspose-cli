@@ -35,7 +35,7 @@
         "command": "edit",
         "inputSchema": "v2/slides/ops",
         "operationSchema": "aspose-cli schema v2/slides/ops --operation <op>",
-        "contractFingerprint": "sha256:fc7122b49a451a773fb33e9d7c29c5992525a2d3697e3a864c3160b6a66680d5",
+        "contractFingerprint": "sha256:a060ec52abc3f58b8b0aaf439d537e42f65705453b6016f18947c77e5216c8cc",
         "maximumOperationCount": 10000,
         "ops": [
           "copy_slide",
@@ -2402,6 +2402,13 @@
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
+      "code": "SLIDE_MASTER_CHANGED",
+      "owner": "slides",
+      "severity": "warning",
+      "category": "warning",
+      "detailsSchemaId": "v2/common/diagnostic-details"
+    },
+    {
       "code": "SLIDE_NOT_FOUND",
       "owner": "slides",
       "severity": "error",
@@ -4383,7 +4390,7 @@
           ]
         },
         "set_layout": {
-          "description": "Sets the layout of slides, which drop their own background to show the layout's. A placeholder of a slide that the layout has none of the same type and place for may take a role of the layout the slide has no placeholder for, the title first, and the edit then warns PLACEHOLDER_ROLE_CHANGED.",
+          "description": "Sets the layout of slides, which drop their own background to show the layout's. A placeholder of a slide that the layout has none of the same type and place for may take a role of the layout the slide has no placeholder for, the title first, and the edit then warns PLACEHOLDER_ROLE_CHANGED. A slide takes a layout of another master only where its own has none of that name, and the edit then warns SLIDE_MASTER_CHANGED.",
           "type": "object",
           "required": [
             "op",
@@ -4404,7 +4411,7 @@
               "x-readBack": "not-state"
             },
             "layout": {
-              "description": "The layout name, matched case-insensitively.",
+              "description": "The layout name, matched case-insensitively among the layouts of each slide's own master first.",
               "type": "string",
               "pattern": "\\S",
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/slides/inspect-result.schema.json#/$defs/slidesSlideInfo/properties/layout"

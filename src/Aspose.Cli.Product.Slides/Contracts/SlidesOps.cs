@@ -236,6 +236,8 @@ public sealed record SetSlideHiddenOp : SlidesOp
 /// Sets the layout of slides, which drop their own background to show the layout's. A placeholder
 /// of a slide that the layout has none of the same type and place for may take a role of the
 /// layout the slide has no placeholder for, the title first, and the edit then warns PLACEHOLDER_ROLE_CHANGED.
+/// A slide takes a layout of another master only where its own has none of that name, and the
+/// edit then warns SLIDE_MASTER_CHANGED.
 /// </summary>
 [Operation("set_layout")]
 [MistakenFor("apply_layout")]
@@ -244,7 +246,7 @@ public sealed record SetLayoutOp : SlidesOp
     /// <summary>The slides that take the layout.</summary>
     [PageRange] public required string Slides { get; init; }
 
-    /// <summary>The layout name, matched case-insensitively.</summary>
+    /// <summary>The layout name, matched case-insensitively among the layouts of each slide's own master first.</summary>
     [ReadBack("inspect-result.schema.json#/$defs/slidesSlideInfo/properties/layout")]
     [Pattern(@"\S")] public required string Layout { get; init; }
 }

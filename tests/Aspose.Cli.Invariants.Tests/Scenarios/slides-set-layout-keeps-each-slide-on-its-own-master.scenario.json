@@ -1,0 +1,88 @@
+{
+  "name": "slides set_layout gives each slide the layout of its own master by that name, so after a keep-source import that duplicated the master the imported slides stay on their master; the set_title hint on such a slide gives the set_layout of its own layout, which done as it says titles the slide and keeps it there",
+  "files": {
+    "deck.md": { "text": "# Deck\n\nSub\n\n## Two\n\n- pt\n\n## Three\n\n- more\n" }
+  },
+  "steps": [
+    {
+      "args": ["slides", "create", "deck.pptx", "--from-markdown", "deck.md"],
+      "expect": { "exitCode": 0 }
+    },
+    {
+      "args": ["slides", "edit", "deck.pptx", "--ops", "{\"ops\":[{\"op\":\"import_slides\",\"path\":\"deck.pptx\",\"formatting\":\"keep-source\"}]}", "--out", "two.pptx"],
+      "expect": { "exitCode": 0, "files": { "present": ["two.pptx"] } }
+    },
+    {
+      "args": ["slides", "inspect", "two.pptx", "--detail", "masters"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "masters[0].slideCount", "equals": 3 },
+          { "path": "masters[1].slideCount", "equals": 3 }
+        ]
+      }
+    },
+    {
+      "args": ["slides", "edit", "two.pptx", "--ops", "{\"ops\":[{\"op\":\"set_layout\",\"slides\":\"5\",\"layout\":\"Title Only\"},{\"op\":\"set_layout\",\"slides\":\"1-6\",\"layout\":\"Title and Content\"}]}", "--out", "relaid.pptx", "--verify"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "verification.ok", "equals": true }
+        ],
+        "warnings": { "absent": ["SLIDE_MASTER_CHANGED"] }
+      }
+    },
+    {
+      "args": ["slides", "inspect", "relaid.pptx", "--detail", "masters"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "masters[0].slideCount", "equals": 3 },
+          { "path": "masters[1].slideCount", "equals": 3 }
+        ]
+      }
+    },
+    {
+      "args": ["slides", "edit", "two.pptx", "--ops", "{\"ops\":[{\"op\":\"delete_shape\",\"slide\":5,\"shapeId\":2},{\"op\":\"set_title\",\"slide\":5,\"text\":\"Head\"}]}", "--out", "never.pptx"],
+      "expect": {
+        "exitCode": 4,
+        "error": "PLACEHOLDER_NOT_FOUND",
+        "json": [
+          { "path": "error.hint", "contains": "put {\"op\":\"set_layout\",\"slides\":\"5\",\"layout\":\"Title and Content\"} before this set_title in its batch" }
+        ],
+        "files": { "absent": ["never.pptx"] }
+      }
+    },
+    {
+      "args": ["slides", "edit", "two.pptx", "--ops", "{\"ops\":[{\"op\":\"delete_shape\",\"slide\":5,\"shapeId\":2},{\"op\":\"set_layout\",\"slides\":\"5\",\"layout\":\"Title and Content\"},{\"op\":\"set_title\",\"slide\":5,\"text\":\"Head\"}]}", "--out", "titled.pptx", "--verify"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "verification.ok", "equals": true }
+        ],
+        "warnings": { "absent": ["SLIDE_MASTER_CHANGED", "PLACEHOLDER_ROLE_CHANGED"] }
+      }
+    },
+    {
+      "args": ["slides", "read", "titled.pptx", "--slides", "5", "--content", "shapes"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "slides[0].title", "equals": "Head" },
+          { "path": "slides[0].shapes[0].placeholder", "equals": "body" },
+          { "path": "slides[0].shapes[0].text", "equals": "pt" }
+        ]
+      }
+    },
+    {
+      "args": ["slides", "inspect", "titled.pptx", "--detail", "masters"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "masters[0].slideCount", "equals": 3 },
+          { "path": "masters[1].slideCount", "equals": 3 }
+        ]
+      }
+    }
+  ]
+}

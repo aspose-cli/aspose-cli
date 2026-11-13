@@ -80,6 +80,11 @@ comments a deck already has.
   take a role of the layout the slide has no placeholder for, the title first, and the edit then
   warns `PLACEHOLDER_ROLE_CHANGED` at that shape with `details.from` and `details.to`. Where `to` is `title`, the slide's title is now that shape's text, such as its
   footer's.
+- `set_layout` looks a name up in each slide's own master first, so a slide never leaves its master
+  for a name it has, also after a `keep-source` import (`use-destination` puts imported slides on
+  the deck's master). For a name only another master has, it warns `SLIDE_MASTER_CHANGED` with
+  `details.fromMaster` and `details.toMaster`, positions in `inspect --detail masters`; the hint
+  names the layouts that take the slide back, if any.
 - A slide's `title` in `slides read` and `inspect --sample` is the text of the shape `set_title`
   writes; a slide without one reports no `title`, whatever its other shapes say.
 - `format_shape` `font` names one font for Latin, East Asian and complex-script text;
