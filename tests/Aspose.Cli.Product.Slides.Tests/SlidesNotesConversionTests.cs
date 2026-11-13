@@ -17,7 +17,7 @@ public sealed class SlidesNotesConversionTests
 
     /// <summary>
     /// An export warns once, names slide 2 and leaves its notes out; a presentation format keeps
-    /// the notes and does not warn. A TIFF holds slide 2 alone (SLIDES-TIFF-ONE-FRAME).
+    /// the notes and does not warn.
     /// </summary>
     [Theory]
     [InlineData("pdf", "pdf", true, null)]
@@ -25,7 +25,6 @@ public sealed class SlidesNotesConversionTests
     [InlineData("html", "html", true, null)]
     [InlineData("html5", "html", true, null)]
     [InlineData("md", "md", true, null)]
-    [InlineData("tiff", "tiff", true, "2")]
     [InlineData("gif", "gif", true, null)]
     [InlineData("pptx", "pptx", false, null)]
     [InlineData("pptm", "pptm", false, null)]
@@ -63,7 +62,7 @@ public sealed class SlidesNotesConversionTests
             Assert.Contains("T2", text, StringComparison.Ordinal);
             Assert.DoesNotContain(NotesText, text, StringComparison.Ordinal);
         }
-        else if (format is "tiff" or "gif")
+        else if (format is "gif")
         {
             string plain = fixture.File($"plain.{extension}");
             SlidesExport.Convert(fixture.Session, new SlidesConvertRequest

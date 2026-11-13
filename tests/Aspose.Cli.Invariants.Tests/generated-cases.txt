@@ -4988,7 +4988,6 @@ executable-hint | slides convert --password-env --to pdf
 executable-hint | slides convert --password-env --to ppt
 executable-hint | slides convert --password-env --to pptm
 executable-hint | slides convert --password-env --to pptx
-executable-hint | slides convert --password-env --to tiff
 executable-hint | slides convert --password-env --to xps
 executable-hint | slides edit --password-env
 executable-hint | slides extract --password-env
@@ -5193,7 +5192,6 @@ output-reopens | slides convert pptx -> pdf
 output-reopens | slides convert pptx -> ppt
 output-reopens | slides convert pptx -> pptm
 output-reopens | slides convert pptx -> pptx
-output-reopens | slides convert pptx -> tiff
 output-reopens | slides convert pptx -> xps
 output-reopens | slides render pptx -> jpeg
 output-reopens | slides render pptx -> png
@@ -6514,7 +6512,6 @@ unwritable-output | slides convert --to ppt --out out.xlsx
 unwritable-output | slides convert --to pptm --out out.xlsx
 unwritable-output | slides convert --to pptx --out out.doc
 unwritable-output | slides convert --to pptx --out out.xlsx
-unwritable-output | slides convert --to tiff --out out.xlsx
 unwritable-output | slides convert --to xps --out out.xlsx
 unwritable-output | slides create out.xlsx
 unwritable-output | slides edit --out out.xlsx

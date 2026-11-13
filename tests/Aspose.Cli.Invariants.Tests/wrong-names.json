@@ -328,6 +328,7 @@
 {"run":"pdf extract m.pdf --what table --out-dir o","wrong":"table","suggests":"tables"},
 {"run":"slides read d.pptx --content shape","wrong":"shape","suggests":"shapes"},
 {"run":"slides convert d.pptx --to jpg --out x.jpg","wrong":"jpg","suggests":null,"because":"images are another command, which the hint shows","hint":"aspose-cli slides render d.pptx --to jpeg --out x.jpg","fixed":"slides render d.pptx --to jpeg --out x.jpg"},
+{"run":"slides convert d.pptx --to tiff --out x.tiff","wrong":"tiff","suggests":null,"because":"images are another command, which the hint shows","hint":"aspose-cli slides render d.pptx --to tiff --out x.tiff","fixed":"slides render d.pptx --to tiff --out x.tiff"},
 {"run":"pdf convert c.pdf --to png --out x.png","wrong":"png","suggests":null,"because":"images are another command, which the hint shows","hint":"aspose-cli pdf render c.pdf --to png --out x.png","fixed":"pdf render c.pdf --to png --out x.png"},
 {"run":"words compare a.docx a2.docx --granularity character","wrong":"character","suggests":null,"because":"the error lists the two granularities","fixed":"words compare a.docx a2.docx --granularity char"}
 ]
