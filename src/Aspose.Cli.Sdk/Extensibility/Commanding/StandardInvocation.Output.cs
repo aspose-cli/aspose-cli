@@ -161,10 +161,15 @@ public partial class StandardInvocation
             return null;
         }
 
-        // ContinuationAt names the input and passes its password on; a command without an input
-        // passes the password of the files it reads on after them.
+        // ContinuationAt names the input, passes its password on and keeps --workdir; a command
+        // without an input passes the password of the files it reads on after them.
         ContinuationCommand again = _options.Input is null ? new ContinuationCommand(path) : ContinuationAt(path);
-        Symbol[] named = [.. _options.Input is null ? [] : new Symbol[] { _options.Input }, .. _options.InputPassword?.Options ?? []];
+        Symbol[] named =
+        [
+            .. _options.Input is null ? [] : new Symbol[] { _options.Input },
+            .. _options.InputPassword?.Options ?? [],
+            .. _options.Input is not null && WorkDirOf(_parse) is { } workDir ? new Symbol[] { workDir.Option } : [],
+        ];
         var replay = new CommandLineReplay(again, [.. dropped.OfType<Symbol>(), .. named]);
         replay.Append(_parse.RootCommandResult);
         if (replay.LeftOut.Count > 0)

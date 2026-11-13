@@ -634,7 +634,7 @@ internal sealed partial class ParsedInvocation
         ContinuationInput source = ParseResult.ContinuationOf(input);
         if (source.PasswordOption is { } passed && !found.Command.Options.Any(candidate => candidate.Name == passed))
         {
-            source = new ContinuationInput(input);
+            source = source with { PasswordOption = null, PasswordVariable = null };
         }
 
         ContinuationCommand line = source

@@ -12,4 +12,5 @@ namespace Aspose.Cli.Sdk;
 /// <param name="Document">The document, as the command names it.</param>
 /// <param name="PasswordOption">The option that names the password's variable, such as <c>--password-env</c>; null when the document opens without a password.</param>
 /// <param name="PasswordVariable">The environment variable that holds the password; null when the password came another way, which the command names a placeholder for, or there is none.</param>
-public sealed record ContinuationInput(string Document, string? PasswordOption = null, string? PasswordVariable = null);
+/// <param name="WorkDir">The directory the invocation's <c>--workdir</c> names, as an absolute path, against which the command's paths, written as the caller wrote them, resolve; null for none.</param>
+public sealed record ContinuationInput(string Document, string? PasswordOption = null, string? PasswordVariable = null, string? WorkDir = null);

@@ -56,7 +56,7 @@ Every bounded read and search reports `window` after its payload
 - `next` is the ready-to-run command for the following window; it is absent
   when nothing remains. Run it verbatim instead of composing the next page
   yourself, adding again the global options it does not repeat, such as
-  `--timeout`, `--workdir` or `--license`. It never repeats a password: one
+  `--timeout` or `--license`. It never repeats a password: one
   given with `--password-env` is passed on by the variable's name, and one
   given another way shows as `--password-env "<password-env>"`; put the name
   of an environment variable that holds the input's password in place of
