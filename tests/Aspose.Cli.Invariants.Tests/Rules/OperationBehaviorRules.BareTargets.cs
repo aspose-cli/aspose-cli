@@ -11,7 +11,8 @@ internal static partial class ContractRules
     /// Every set_ operation with a read path (<see cref="ReadPaths"/>), through each of its samples,
     /// on each bare document of its product (<see cref="OperationSamples.Bare"/>). Refused, it holds
     /// once the sample is shown to address the bare part: the document's address replaced one of
-    /// its properties, and the refusal names targets at the bare part (<see cref="BareSample.Target"/>).
+    /// its properties and every one by which it addresses an object (<see cref="BareSample.Addressing"/>),
+    /// and the refusal names targets at the bare part (<see cref="BareSample.Target"/>).
     /// Applied, each value it writes reads back at a new place, and not only on objects it added
     /// of the units the document names (<see cref="BareSample.Objects"/>), as the reads before and
     /// after name objects (<see cref="RoundTripAddress"/>).
@@ -38,6 +39,16 @@ internal static partial class ContractRules
 
     private static IEnumerable<string> OnBare(CliProduct product, BareSample bare, OperationSample sample, (string Field, string Path)[] fields)
     {
+        JsonObject operation = OperationRuns.Operation(sample);
+        JsonObject address = JsonNode.Parse(bare.Address)!.AsObject();
+        // A field the address leaves keeps addressing the fixture's object, so a refusal could be
+        // for that object being missing from the bare part, not for the part being bare.
+        string[] kept = [.. bare.Addressing.Where(name => operation.ContainsKey(name) && !address.ContainsKey(name))];
+        if (kept.Length > 0)
+        {
+            yield return $"{sample.Subject}: the sample addresses by {string.Join(", ", kept)}, which the address of {bare.Label} does not replace";
+            yield break;
+        }
         using var workspace = new RuleWorkspace();
         string extension = OperationRuns.Extension(bare.Product);
         string document = "bare." + extension;
@@ -50,13 +61,12 @@ internal static partial class ContractRules
             }
             yield break;
         }
-        JsonObject operation = OperationRuns.Operation(sample);
         int addressed = 0;
-        foreach ((string name, JsonNode? address) in JsonNode.Parse(bare.Address)!.AsObject())
+        foreach ((string name, JsonNode? value) in address)
         {
             if (operation.ContainsKey(name))
             {
-                operation[name] = address?.DeepClone();
+                operation[name] = value?.DeepClone();
                 addressed++;
             }
         }

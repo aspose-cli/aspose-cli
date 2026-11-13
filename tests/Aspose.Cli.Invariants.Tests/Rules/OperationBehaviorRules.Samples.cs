@@ -60,7 +60,8 @@ internal sealed record OperationSample(
 /// </summary>
 /// <param name="Target">The target address of the bare part, which a refused operation names, or names the start of.</param>
 /// <param name="Objects">The units of the objects an operation must not add to write its value into, such as <c>shape</c> in <c>slide/3/shape/4</c>.</param>
-internal sealed record BareSample(string Product, string Label, string Setup, string Address, string Target, string[] Objects);
+/// <param name="Addressing">The fields by which an operation of the product addresses an object, each of which <paramref name="Address"/> must replace where a sample gives it.</param>
+internal sealed record BareSample(string Product, string Label, string Setup, string Address, string Target, string[] Objects, string[] Addressing);
 
 internal static class OperationSamples
 {
@@ -71,7 +72,8 @@ internal static class OperationSamples
             """[{"op":"insert_slide","layout":"Blank"},{"op":"insert_shape","slide":3,"geometry":"rectangle","rect":{"x":40,"y":20,"width":640,"height":80},"text":"Box"}]""",
             """{"slide":3,"slides":"3","shapeId":2}""",
             "slide/3",
-            ["shape"]),
+            ["shape"],
+            ["slide", "slideId", "slides", "shapeId", "shapeName", "placeholder"]),
     ];
 
     // rule-exemptions: begin
