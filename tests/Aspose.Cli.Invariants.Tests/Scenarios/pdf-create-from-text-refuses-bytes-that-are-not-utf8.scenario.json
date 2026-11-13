@@ -1,0 +1,30 @@
+{
+  "name": "pdf create --from-text reads its text as words create does: bytes that are not UTF-8 are refused and nothing is written, and UTF-8 text with or without a byte order mark is laid out",
+  "files": {
+    "latin1.txt": { "base64": "Y2Fm6SBvawo=" },
+    "utf8.txt": { "text": "café ok\n\tTabbed\n" },
+    "marked.txt": { "base64": "77u/Y2Fmw6kgbWFya2VkCg==" }
+  },
+  "steps": [
+    {
+      "args": ["pdf", "create", "latin1.pdf", "--from-text", "latin1.txt"],
+      "expect": {
+        "exitCode": 3,
+        "error": "INPUT_ENCODING_INVALID",
+        "files": { "absent": ["latin1.pdf"], "nothingWritten": true }
+      }
+    },
+    {
+      "args": ["words", "create", "latin1.docx", "--from-text", "latin1.txt"],
+      "expect": { "exitCode": 3, "error": "INPUT_ENCODING_INVALID" }
+    },
+    {
+      "args": ["pdf", "create", "utf8.pdf", "--from-text", "utf8.txt"],
+      "expect": { "exitCode": 0, "reopens": ["utf8.pdf"] }
+    },
+    {
+      "args": ["pdf", "create", "marked.pdf", "--from-text", "marked.txt"],
+      "expect": { "exitCode": 0, "reopens": ["marked.pdf"] }
+    }
+  ]
+}

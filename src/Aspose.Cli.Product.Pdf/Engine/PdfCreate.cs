@@ -34,8 +34,8 @@ internal static class PdfCreate
         {
             PdfImageSource images => CreateFromImages([.. images.Files.Select(static file => file.Path)], imageContents, request, warnings),
             PdfHtmlSource page => CreateFromHtml(page.File.Path, request, resources!),
-            PdfMarkdownSource notes => CreateFromText(notes.File.Path, markdown: true, request),
-            PdfTextSource text => CreateFromText(text.File.Path, markdown: false, request),
+            PdfMarkdownSource notes => CreateFromText(notes.File.Path, markdown: true, request, session.Budgets.Inputs),
+            PdfTextSource text => CreateFromText(text.File.Path, markdown: false, request, session.Budgets.Inputs),
             _ => throw new UnreachableException(),
         };
         resources?.ThrowIfFailed();
@@ -344,7 +344,7 @@ internal static class PdfCreate
 
     private static bool IsLocal(string? address) => Uri.TryCreate(address, UriKind.Absolute, out Uri? uri) && uri.IsFile;
 
-    private static Document CreateFromText(string path, bool markdown, PdfCreateRequest request)
+    private static Document CreateFromText(string path, bool markdown, PdfCreateRequest request, InputSource inputs)
     {
         string fullPath = Path.GetFullPath(path);
         if (!File.Exists(fullPath))
@@ -357,7 +357,7 @@ internal static class PdfCreate
         var pageInfo = new PageInfo { Width = width, Height = height, Margin = Margin(request.Margins) };
         return markdown
             ? CreateFromMarkdown(fullPath, pageInfo)
-            : CreateFromPlainText(fullPath, pageInfo);
+            : CreateFromPlainText(fullPath, pageInfo, inputs);
     }
 
     /// <summary>The importer reads the whole Markdown while it constructs the document.</summary>
@@ -372,15 +372,16 @@ internal static class PdfCreate
     /// SDK's text loader has no page settings and fixes its own page and origin, so
     /// resizing its pages afterwards leaves the text where the loader put it.
     /// </summary>
-    private static Document CreateFromPlainText(string path, PageInfo pageInfo)
+    private static Document CreateFromPlainText(string path, PageInfo pageInfo, InputSource inputs)
     {
+        // The SDK reads the text within the input budgets and refuses bytes that are not UTF-8.
+        using var reader = new StringReader(inputs.ReadTextFile(path));
         var document = new Document();
         try
         {
             Page page = document.Pages.Add();
             page.SetPageSize(pageInfo.Width, pageInfo.Height);
             page.PageInfo.Margin = pageInfo.Margin;
-            using var reader = new StreamReader(InputFiles.OpenRead(path));
             while (reader.ReadLine() is { } line)
             {
                 page.Paragraphs.Add(new TextFragment(ExpandTabs(line)));
