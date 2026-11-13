@@ -255,7 +255,11 @@ internal static class PdfAssembly
             }
 
             repositioned += CopyOutline(source, item, copied, document, pageOf);
-            target.Add(copied);
+            // A heading that leads nowhere itself is left out where none of the bookmarks below it are.
+            if (copiedPage > 0 || copied.Action is not null || item.Count == 0 || copied.Count > 0)
+            {
+                target.Add(copied);
+            }
         }
 
         return repositioned;
