@@ -41,7 +41,7 @@ internal static class UnwrittenContent
     /// </summary>
     internal static string[] Inventory(Workbook workbook) =>
         [.. workbook.Worksheets.Cast<Worksheet>().Where(static sheet => !CellsEvaluation.IsWarningSheet(sheet))
-            .SelectMany(static sheet => Comments(sheet, static _ => true).Concat(Charts(sheet)).Concat(Headers(sheet)))];
+            .SelectMany(static sheet => Comments(sheet, static _ => true).Concat(Charts(sheet)).Concat(Headers(sheet)).Concat(PrintsComments(sheet)))];
 
     // How many of the items the input did not have: of each item, the copies beyond those it had.
     private static int Added(IEnumerable<string> items, IReadOnlyList<string> before)
@@ -68,6 +68,14 @@ internal static class UnwrittenContent
                     + "set printComments to sheet-end with set_page_setup on the worksheet and convert again: they print after its last page."
                     + (CellsEngineFormats.LeavesDetected(workbook.FileFormat).HasFlag(CellsContentLoss.PrintCommentsSetting)
                         ? " This workbook's format does not keep that setting, so save the workbook as xlsx first and set it there." : ""));
+        }
+
+        if (leaves.HasFlag(CellsContentLoss.PrintCommentsSetting) && Counted(written, PrintsComments) is { Count: > 0 } settings)
+        {
+            yield return (ContentKind.Comments, settings,
+                $"The {formatId} output leaves out {Total(settings)} setting(s) to print comments: {PerSheet(settings)}. "
+                    + $"The {formatId} format does not keep that setting; an xlsx workbook keeps it.",
+                "Read the setting with 'aspose-cli cells inspect <file> --detail layout'; the workbook keeps it.");
         }
 
         if (leaves.HasFlag(CellsContentLoss.Comments) && Counted(written, static sheet => Comments(sheet, static _ => true)) is { Count: > 0 } comments)
@@ -119,6 +127,9 @@ internal static class UnwrittenContent
 
     private static IEnumerable<string> Charts(Worksheet sheet) =>
         sheet.Charts.Cast<Aspose.Cells.Charts.Chart>().Select(chart => Key("chart", sheet, chart.Name + '\u001F' + chart.Title?.Text));
+
+    private static IEnumerable<string> PrintsComments(Worksheet sheet) => sheet.PageSetup.PrintComments is not PrintCommentsType.PrintNoComments and var setting
+        ? [Key("print-comments", sheet, setting.ToString())] : [];
 
     private static IEnumerable<string> Headers(Worksheet sheet) => HasHeaderOrFooter(sheet.PageSetup)
         ? [Key("header", sheet, string.Join('\u001F', HeaderFooterText.InEffect(sheet.PageSetup).Select(static section => section.Text)))] : [];

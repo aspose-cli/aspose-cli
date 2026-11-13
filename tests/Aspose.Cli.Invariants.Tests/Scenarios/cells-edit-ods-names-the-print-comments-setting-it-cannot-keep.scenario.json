@@ -1,0 +1,60 @@
+{
+  "name": "cells edit that writes ods warns that the printComments setting its batch set is left out, which fails --verify, while the same edit of an xlsx keeps it and passes, and writing an xlsx that has the setting to ods warns without affecting completeness",
+  "files": {
+    "ops.json": { "text": "{\"ops\":[{\"op\":\"set_page_setup\",\"sheet\":\"S\",\"printComments\":\"sheet-end\"}]}" }
+  },
+  "steps": [
+    {
+      "args": ["cells", "create", "book.ods", "--sheet-names", "S"],
+      "expect": { "exitCode": 0 }
+    },
+    {
+      "args": ["cells", "edit", "book.ods", "--in-place", "--verify", "--ops", "ops.json"],
+      "expect": {
+        "exitCode": 8,
+        "warnings": { "present": ["LOSSY_CONVERSION"] },
+        "json": [
+          { "path": "verification.ok", "equals": false },
+          { "path": "warnings[code=LOSSY_CONVERSION][0].details.content", "equals": ["comments"] },
+          { "path": "warnings[code=LOSSY_CONVERSION][0].message", "contains": "1 setting(s) to print comments: 1 on worksheet 'S'" },
+          { "path": "warnings[code=LOSSY_CONVERSION][0].message", "contains": "The ods format does not keep that setting; an xlsx workbook keeps it." },
+          { "path": "verification.issues[0].message", "contains": "setting(s) to print comments" }
+        ]
+      }
+    },
+    {
+      "args": ["cells", "create", "book.xlsx", "--sheet-names", "S"],
+      "expect": { "exitCode": 0 }
+    },
+    {
+      "args": ["cells", "edit", "book.xlsx", "--in-place", "--verify", "--ops", "ops.json"],
+      "expect": {
+        "exitCode": 0,
+        "warnings": { "only": [] },
+        "json": [
+          { "path": "verification.ok", "equals": true }
+        ]
+      }
+    },
+    {
+      "args": ["cells", "inspect", "book.xlsx", "--detail", "layout"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "workbook.layouts[0].pageSetup.printComments", "equals": "sheet-end" }
+        ]
+      }
+    },
+    {
+      "args": ["cells", "edit", "book.xlsx", "--verify", "--set", "S!A1=1", "--out", "copy.ods"],
+      "expect": {
+        "exitCode": 0,
+        "warnings": { "only": ["LOSSY_CONVERSION"] },
+        "json": [
+          { "path": "verification.ok", "equals": true },
+          { "path": "warnings[code=LOSSY_CONVERSION][0].details.content", "equals": ["comments"] }
+        ]
+      }
+    }
+  ]
+}
