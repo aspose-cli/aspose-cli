@@ -194,10 +194,12 @@ master or layout art); each item keeps its presentation-wide `index`.
   slides with charts. An HTML output holds a chart's text.
 - These warnings name only the slides a `convert` converts, by their numbers in the deck, also
   with `--slides`.
-- A PDF or other export (XPS, HTML, HTML5, Markdown, TIFF, GIF) holds the slides alone, with no
+- A PDF or other export (XPS, HTML, HTML5, Markdown, GIF) holds the slides alone, with no
   handout or notes-page layout, so speaker notes are not in it: a `convert` to one warns
   `LOSSY_CONVERSION` with the numbers of the converted slides that have notes. PPT, PPTX, PPTM
   and ODP keep the notes. Read them with `slides read --notes` or `slides extract --what notes`.
+- `render` writes PNG, JPEG, SVG and TIFF, one file per slide. For one multi-page TIFF,
+  `slides convert --to pdf`, then `pdf convert --to tiff` the PDF: one page per slide converted.
 - A Markdown output holds the slides' text alone, with tables and charts as tables of their
   values, and none of their pictures: a `convert` to it warns `LOSSY_CONVERSION` with
   `details.content` `["pictures"]`, naming the converted slides with pictures and how many

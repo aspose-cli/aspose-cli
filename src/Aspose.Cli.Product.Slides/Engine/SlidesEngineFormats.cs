@@ -37,13 +37,12 @@ internal static class SlidesEngineFormats
         new("html", [], SaveFormat.Html) { Lossy = true },
         // The HTML5 export draws each native chart as a picture, whose text no reader finds.
         new("html5", [], SaveFormat.Html5) { Lossy = true, Loses = SlidesContentLoss.Charts },
-        // SLIDES-TIFF-ONE-FRAME: a save writes the first slide alone; each slide is drawn as one.
-        new("tiff", [], SaveFormat.Tiff) { SlideImage = ImageFormat.Tiff, SavesOneSlide = true },
         new("gif", [], SaveFormat.Gif),
         // The Markdown export writes the slides' text alone (MarkdownExportType.TextOnly).
         new("md", [], SaveFormat.Md) { Lossy = true, HoldsReadText = true, Loses = SlidesContentLoss.Pictures },
         new("png", []) { SlideImage = ImageFormat.Png },
         new("jpeg", []) { SlideImage = ImageFormat.Jpeg },
+        new("tiff", []) { SlideImage = ImageFormat.Tiff },
         new("svg", []),
     ];
 
@@ -64,9 +63,6 @@ internal static class SlidesEngineFormats
         Find(id) is { } row && (row.SlideImage is not null || row is { Save: null, Loads.Length: 0 })
             ? row.SlideImage
             : throw new InvalidOperationException($"'{id}' is not a slide image format.");
-
-    /// <summary>Whether a save in a format id writes only the first of the slides it is given.</summary>
-    internal static bool SavesOneSlide(string id) => Find(id)?.SavesOneSlide == true;
 
     /// <summary>Whether a format id is a PowerPoint 97-2003 binary file: a presentation, show or template.</summary>
     internal static bool IsBinaryPpt(string id) => Find(id)?.BinaryPpt == true;
@@ -97,12 +93,6 @@ internal sealed record SlidesEngineFormat(string Id, LoadFormat[] Loads, SaveFor
     /// SVG, or the format is not rendered.
     /// </summary>
     public ImageFormat? SlideImage { get; init; }
-
-    /// <summary>
-    /// Whether a save writes only the first of the slides it is given, so a convert of several
-    /// slides to the format is refused before anything is written.
-    /// </summary>
-    public bool SavesOneSlide { get; init; }
 
     /// <summary>
     /// Whether the export may not keep every presentation feature (layout, animation,

@@ -73,44 +73,6 @@ public sealed class SlidesConvertKnownIssueTests
     }
 
     /// <summary>
-    /// A TIFF save, of the whole presentation or of selected slides, with or without TIFF options,
-    /// writes one frame, the first slide's, though <c>SaveFormat.Tiff</c> is documented as a
-    /// multi-page TIFF. One slide drawn alone and saved as a TIFF image is one frame that decodes
-    /// at the slide's size, which is how 'slides render' writes TIFF.
-    /// </summary>
-    [Fact]
-    public void TiffSave_WritesOneFrameForSeveralSlides()
-    {
-        using var fixture = new SlidesEngineFixture();
-        _ = fixture.LicenseState;
-        using var deck = new Presentation();
-        deck.Slides.AddEmptySlide(deck.LayoutSlides[0]);
-        deck.Slides.AddEmptySlide(deck.LayoutSlides[0]);
-        string whole = fixture.File("whole.tiff");
-        deck.Save(whole, SaveFormat.Tiff);
-        string selected = fixture.File("selected.tiff");
-        deck.Save(selected, [2, 3], SaveFormat.Tiff, new TiffOptions());
-        int wholeFrames = SlidesEngineFixture.TiffFrames(File.ReadAllBytes(whole));
-        int selectedFrames = SlidesEngineFixture.TiffFrames(File.ReadAllBytes(selected));
-
-        using (IImage drawn = deck.Slides[1].GetImage(1f, 1f))
-        using (var stream = new MemoryStream())
-        {
-            drawn.Save(stream, ImageFormat.Tiff);
-            Assert.Equal(1, SlidesEngineFixture.TiffFrames(stream.ToArray()));
-            stream.Position = 0;
-            using IImage decoded = Images.FromStream(stream);
-            Assert.Equal((int)deck.SlideSize.Size.Width, decoded.Width);
-        }
-
-        KnownIssue.Reproduces(
-            "SLIDES-TIFF-ONE-FRAME",
-            wholeFrames == 1 && selectedFrames == 1,
-            $"a TIFF save of three slides has {wholeFrames} frame(s), and of slides 2-3 {selectedFrames}; "
-                + "also delete the refusal in SlidesExport and the row of InvariantCases.SupportedUse that names the issue");
-    }
-
-    /// <summary>
     /// A body placeholder's paragraphs take their bullets from the master. Markdown export writes
     /// them as plain lines, while the same paragraphs with explicit bullets become a list.
     /// </summary>

@@ -44,8 +44,8 @@ internal static partial class ContractRules
     /// cannot read, such as the frameset of a Cells MHTML archive that Words reads as an empty
     /// document, so the markers that file holds as text count instead. A convert target no product
     /// reads is skipped; today these are the Cells
-    /// <c>json</c> and <c>xps</c>, the PDF <c>tiff</c> and <c>xps</c>, the Slides <c>gif</c>,
-    /// <c>tiff</c> and <c>xps</c>, and the Words <c>openxps</c>, <c>pcl</c>, <c>ps</c> and <c>xps</c>.
+    /// <c>json</c> and <c>xps</c>, the PDF <c>tiff</c> and <c>xps</c>, the Slides <c>gif</c> and
+    /// <c>xps</c>, and the Words <c>openxps</c>, <c>pcl</c>, <c>ps</c> and <c>xps</c>.
     /// </summary>
     private static IEnumerable<InvariantCase> R42(CliCatalog catalog)
     {

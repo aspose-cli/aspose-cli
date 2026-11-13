@@ -473,17 +473,16 @@ public sealed partial class SlidesConvertCliTests : IDisposable
     }
 
     /// <summary>
-    /// SLIDES-TIFF-ONE-FRAME: a convert of several slides to TIFF, which the engine would write
-    /// with the first slide alone, is refused before anything is written, and each command its
-    /// hint gives runs as written: the render writes each slide into a TIFF of one frame that
-    /// decodes, and the convert to PDF, then the PDF's convert, one TIFF with a frame per slide.
-    /// The same holds on a deck at a path with a space, for a selection, and on an encrypted deck.
+    /// A convert to TIFF, a format only render writes, is refused before anything is written, and
+    /// the render its hint gives runs as written: it writes each slide the convert selected into a
+    /// TIFF of one frame that decodes, on a deck at a path with a space, for a selection, and on an
+    /// encrypted deck.
     /// </summary>
     [Theory]
     [InlineData("with space", null, false, new[] { 1, 2, 3, 4 })]
     [InlineData("plain", "2-3", false, new[] { 2, 3 })]
-    [InlineData("locked", null, true, new[] { 1, 2, 3, 4 })]
-    public void SeveralSlidesToTiff_AreRefused_AndTheHintsCommandsWriteEverySlide(string folder, string? slides, bool encrypted, int[] written)
+    [InlineData("locked", "2", true, new[] { 2 })]
+    public void TiffConvert_IsRefused_AndTheRenderItsHintGivesWritesTheSelectedSlides(string folder, string? slides, bool encrypted, int[] written)
     {
         const string Variable = "SLIDES_TIFF_PASSWORD";
         var variables = new Dictionary<string, string?> { [Variable] = "Tiff-Secret-7c2e" };
@@ -496,23 +495,20 @@ public sealed partial class SlidesConvertCliTests : IDisposable
 
         CliResult refused = _workspace.RunWithEnv(variables, ["slides", "convert", deck, .. open, "--to", "tiff", .. select, "--output-format", "json"]);
 
+        Assert.Equal(2, refused.ExitCode);
         JsonNode error = JsonNode.Parse(refused.StdErr)!["error"]!;
-        Assert.Equal("FEATURE_UNSUPPORTED", error["code"]!.GetValue<string>());
-        Assert.Equal("engine-defect", error["details"]!["reason"]!.GetValue<string>());
+        Assert.Equal("OPTION_INVALID", error["code"]!.GetValue<string>());
         Assert.Equal(["deck.pptx"], Directory.EnumerateFiles(_workspace.File(folder)).Select(Path.GetFileName));
-        string[] commands = [.. HintCommand().Matches(error["hint"]!.GetValue<string>()).Select(static match => match.Groups[1].Value)];
-        Assert.Equal(3, commands.Length);
-        foreach (string command in commands)
-        {
-            CliResult run = _workspace.RunCommandLine(command, variables);
-            Assert.True(run.ExitCode == 0, $"{command}{Environment.NewLine}{run.StdErr}");
-        }
+        string command = Assert.Single(HintCommand().Matches(error["hint"]!.GetValue<string>())).Groups[1].Value;
+        Assert.StartsWith("aspose-cli slides render ", command, StringComparison.Ordinal);
+        CliResult run = _workspace.RunCommandLine(command, variables);
+        Assert.True(run.ExitCode == 0, $"{command}{Environment.NewLine}{run.StdErr}");
 
         string stem = Path.Combine(_workspace.File(folder), "deck");
-        Assert.Equal(written.Length, SlidesEngineFixture.TiffFrames(File.ReadAllBytes(stem + ".tiff")));
-        foreach (int number in written)
+        string[] images = written.Length == 1 ? [stem + ".tiff"] : [.. written.Select(number => $"{stem}.{number}.tiff")];
+        Assert.Equal(images.Order(StringComparer.Ordinal), Directory.EnumerateFiles(_workspace.File(folder), "*.tiff").Order(StringComparer.Ordinal));
+        foreach (string image in images)
         {
-            string image = $"{stem}.{number}.tiff";
             Assert.Equal(1, SlidesEngineFixture.TiffFrames(File.ReadAllBytes(image)));
             using IImage decoded = Images.FromFile(image);
             Assert.True(decoded.Width > 0);

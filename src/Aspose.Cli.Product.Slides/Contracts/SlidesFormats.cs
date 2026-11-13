@@ -37,7 +37,7 @@ public static class SlidesFormats
         FormatDescriptor.Routed("html5", FormatUse.Convert, ".html", ".htm") with { CompanionFiles = true },
         FormatDescriptor.Routed("png", FormatUse.Render, ".png") with { Raster = true },
         FormatDescriptor.Routed("jpeg", FormatUse.Render, ".jpg", ".jpeg") with { Raster = true },
-        FormatDescriptor.Routed("tiff", FormatUse.Convert | FormatUse.Render, ".tiff", ".tif") with { Raster = true },
+        FormatDescriptor.Routed("tiff", FormatUse.Render, ".tiff", ".tif") with { Raster = true },
         FormatDescriptor.Routed("gif", FormatUse.Convert, ".gif") with { Raster = true },
         FormatDescriptor.Routed("svg", FormatUse.Render, ".svg"),
         FormatDescriptor.Routed("md", FormatUse.Convert, ".md", ".markdown"),

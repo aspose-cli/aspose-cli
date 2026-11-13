@@ -478,26 +478,10 @@ internal static class InvariantCases
         }
     }
 
-    /// <summary>
-    /// The arguments a command needs, by its words and its <c>--to</c> target, for its run on a
-    /// fixture to be a use the product supports: the fixtures hold several pages, which these
-    /// targets refuse. Each row lasts as long as the known issue its comment names.
-    /// </summary>
-    private static readonly Dictionary<(string Command, string Target), string[]> SupportedUse = new()
-    {
-        // SLIDES-TIFF-ONE-FRAME: a TIFF of several slides is refused; delete this row with the
-        // refusal and the issue once the SDK writes every slide.
-        [("slides convert", "tiff")] = ["--slides", "1"],
-    };
-
-    /// <summary>What <see cref="SupportedUse"/> adds to the command's run with the target; empty for most.</summary>
-    private static string[] SupportedUseOf(string command, string target) =>
-        SupportedUse.GetValueOrDefault((command, target)) ?? [];
-
     private static InvariantCase Conversion(string product, string verb, string source, string target, string shard, bool slow)
     {
         string input = "input." + source;
-        var invocation = new Invocation([product, verb, input, "--to", target, .. SupportedUseOf($"{product} {verb}", target)]);
+        var invocation = new Invocation([product, verb, input, "--to", target]);
         invocation.Files[input] = new ScenarioFile { Fixture = $"{product}.{source}" };
         return Case(OutputReopens, $"{product} {verb} {source} -> {target}", shard, slow, invocation, new ScenarioExpectation
         {
@@ -559,8 +543,7 @@ internal static class InvariantCases
             string[][] details = [.. (command.Option("--detail")?.AllowedValues ?? []).Select(static value => new[] { "--detail", value })];
             foreach (string[] variant in targets.Concat(details))
             {
-                Invocation invocation = Invocation.For(command, omit: variant.FirstOrDefault()).Add(variant)
-                    .Add(variant is ["--to", var target] ? SupportedUseOf(command.Words, target) : []);
+                Invocation invocation = Invocation.For(command, omit: variant.FirstOrDefault()).Add(variant);
                 Protect(invocation, password);
                 Pass(invocation, password, ScenarioFixtures.Password);
                 yield return Case(ExecutableHints.Check, string.Join(' ', [command.Words, password.Name, .. variant]), ShardOf(command), slow: false,

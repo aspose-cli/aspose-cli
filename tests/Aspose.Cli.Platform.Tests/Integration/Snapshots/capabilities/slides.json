@@ -20,7 +20,6 @@
       "xps",
       "html",
       "html5",
-      "tiff",
       "gif",
       "md"
     ],
@@ -593,7 +592,6 @@
         ],
         "aliases": [],
         "uses": [
-          "convert",
           "render"
         ],
         "operations": [],
@@ -832,7 +830,6 @@
               "ppt",
               "pptm",
               "pptx",
-              "tiff",
               "xps"
             ],
             "secret": false,

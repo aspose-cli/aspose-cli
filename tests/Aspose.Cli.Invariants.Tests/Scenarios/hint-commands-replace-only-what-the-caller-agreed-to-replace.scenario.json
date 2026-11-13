@@ -33,10 +33,10 @@
     {
       "args": ["slides", "convert", "deck.pptx", "--to", "tiff", "--out", "x.tiff", "--overwrite"],
       "expect": {
-        "error": "FEATURE_UNSUPPORTED",
+        "exitCode": 2,
+        "error": "OPTION_INVALID",
         "json": [
-          { "path": "error.hint", "contains": "x.tiff\" --overwrite --output-format json', which writes them beside " },
-          { "path": "error.hint", "contains": "x.pdf\" --output-format json', then " }
+          { "path": "error.hint", "contains": "'aspose-cli slides render deck.pptx --to tiff --out x.tiff --overwrite --output-format json'" }
         ],
         "files": { "unchanged": ["x.tiff"] }
       }
@@ -44,9 +44,10 @@
     {
       "args": ["slides", "convert", "deck.pptx", "--to", "tiff", "--out", "y.tiff"],
       "expect": {
-        "error": "FEATURE_UNSUPPORTED",
+        "exitCode": 2,
+        "error": "OPTION_INVALID",
         "json": [
-          { "path": "error.hint", "contains": "y.pdf\" --output-format json', then " },
+          { "path": "error.hint", "contains": "'aspose-cli slides render deck.pptx --to tiff --out y.tiff --output-format json'" },
           { "path": "error.hint", "notContains": "--overwrite" }
         ]
       }
