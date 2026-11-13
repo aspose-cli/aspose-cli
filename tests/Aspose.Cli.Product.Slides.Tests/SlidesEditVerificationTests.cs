@@ -237,8 +237,12 @@ public sealed class SlidesEditVerificationTests
         Assert.Equal(1, Assert.Single(result.Applied).ItemsAffected);
     }
 
+    /// <summary>
+    /// A layout name names a layout of the slide's own master first, so a name both masters have
+    /// leaves the slide on its master, and the batch changed nothing.
+    /// </summary>
     [Fact]
-    public void SetLayout_ToTheSameNamedLayoutOfAnotherMaster_ChangesTheSlide()
+    public void SetLayout_ToALayoutNameItsOwnMasterHas_KeepsTheSlideOnItsMaster()
     {
         using var fixture = new SlidesEngineFixture();
         string input = fixture.File("masters.pptx");
@@ -259,7 +263,9 @@ public sealed class SlidesEditVerificationTests
             Output = TestOutput.At(fixture.File("masters.out.pptx")),
         });
 
-        Assert.Equal(1, Assert.Single(result.Applied).ItemsAffected);
+        Assert.Equal(0, Assert.Single(result.Applied).ItemsAffected);
+        using var output = new Presentation(fixture.File("masters.out.pptx"));
+        Assert.Same(output.Masters[1], output.Slides[0].LayoutSlide.MasterSlide);
     }
 
     [Fact]

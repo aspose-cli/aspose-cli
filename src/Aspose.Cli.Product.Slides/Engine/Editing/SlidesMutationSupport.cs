@@ -102,7 +102,7 @@ internal static class SlidesMutationSupport
     private static string TitledBy(Presentation presentation, ISlide slide)
     {
         ILayoutSlide[] titled = [.. slide.LayoutSlide.MasterSlide.LayoutSlides
-            .Where(item => SlidesPlaceholders.HasTitle(item) && !string.IsNullOrWhiteSpace(item.Name) && ResolveLayout(presentation, item.Name) == item)
+            .Where(item => SlidesPlaceholders.HasTitle(item) && !string.IsNullOrWhiteSpace(item.Name) && ResolveLayout(presentation, item.Name, item.MasterSlide) == item)
             .OrderBy(item => item != slide.LayoutSlide).ThenBy(static item => item.LayoutType != SlideLayoutType.TitleOnly)];
         IEnumerable<bool> Moved(ILayoutSlide layout) => // whether each placeholder it would not keep is a footer, date or slide number
             slide.Shapes.Where(shape => shape.Placeholder is { } placeholder && !SlidesPlaceholders.Keeps(layout, placeholder))
@@ -132,9 +132,13 @@ internal static class SlidesMutationSupport
                 Names(slide.Shapes.Select(PlaceholderRole)),
                 hint: $"set_body writes a body placeholder, or a subtitle where the slide has none, and this slide has neither: write the text into one of its shapes with set_text, or add a text box with insert_shape; {ShapeListing}.");
 
-    internal static ILayoutSlide ResolveLayout(Presentation presentation, string name)
+    /// <summary>
+    /// The layout a name names, case-insensitively: a layout of <paramref name="master"/>, a
+    /// slide's own, by that name first, else the first layout of the presentation by that name.
+    /// </summary>
+    internal static ILayoutSlide ResolveLayout(Presentation presentation, string name, IMasterSlide? master = null)
     {
-        ILayoutSlide? layout = presentation.LayoutSlides.FirstOrDefault(item =>
+        ILayoutSlide? layout = (master?.LayoutSlides ?? Enumerable.Empty<ILayoutSlide>()).Concat(presentation.LayoutSlides).FirstOrDefault(item =>
             string.Equals(item.Name, name, StringComparison.OrdinalIgnoreCase));
         return layout ?? throw CliErrors.NotFound(
             SlidesDiagnostics.LayoutNotFound,

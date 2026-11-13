@@ -81,8 +81,10 @@ internal sealed partial class SlidesMutationHandlers
         foreach (ISlide slide in Slides)
         {
             (IShape Shape, string? Role)[] placeholders = [.. slide.Shapes.Where(static shape => shape.Placeholder is not null).Select(static shape => (shape, PlaceholderRole(shape)))];
-            slide.LayoutSlide = _target.Layout!;
+            IMasterSlide master = slide.LayoutSlide.MasterSlide;
+            slide.LayoutSlide = ResolveLayout(_presentation, operation.Layout, master);
             NameRoleChanges(slide, placeholders);
+            NameMasterChange(slide, master);
         }
 
         FollowLayoutBackgrounds(Slides);
@@ -102,13 +104,43 @@ internal sealed partial class SlidesMutationHandlers
         {
             string? now = PlaceholderRole(shape);
             _warnings.Add(new Warning(SlidesDiagnostics.PlaceholderRoleChanged, string.Create(CultureInfo.InvariantCulture,
-                $"Shape {shape.OfficeInteropShapeId} on slide {number} was its {was} placeholder and is its {now} placeholder under layout '{_target.Layout!.Name}'{(now == SlidesPlaceholderRoles.Title ? ", so the slide's title is now the text of that shape" : "")}."))
+                $"Shape {shape.OfficeInteropShapeId} on slide {number} was its {was} placeholder and is its {now} placeholder under layout '{slide.LayoutSlide.Name}'{(now == SlidesPlaceholderRoles.Title ? ", so the slide's title is now the text of that shape" : "")}."))
             {
                 Hint = $"The layout has no {was} placeholder in that place. Check the slide's placeholders: set_title or set_text rewrites the shape's text, delete_shape removes it, and set_footer sets a footer, date or slide number again; {ShapeListing}.",
                 Location = SlidesStateProjection.ShapeAddress(number, shape.OfficeInteropShapeId),
                 Details = new JsonObject { ["shapeId"] = shape.OfficeInteropShapeId, ["from"] = was, ["to"] = now },
             });
         }
+    }
+
+    /// <summary>
+    /// Names a slide that set_layout moved to another master: the layout name named none of its own
+    /// master's (<see cref="ResolveLayout"/>), and the slide now shows the other master's theme and art.
+    /// </summary>
+    private void NameMasterChange(ISlide slide, IMasterSlide was)
+    {
+        IMasterSlide now = slide.LayoutSlide.MasterSlide;
+        if (now == was)
+        {
+            return;
+        }
+
+        int number = _presentation.Slides.IndexOf(slide) + 1;
+        IMasterSlide[] masters = [.. _presentation.Masters];
+        (int from, int to) = (Array.IndexOf(masters, was) + 1, Array.IndexOf(masters, now) + 1);
+        // The names set_layout, which looks a name up in the slide's own master first, takes back to its former master.
+        string[] back = [.. was.LayoutSlides
+            .Where(layout => !string.IsNullOrWhiteSpace(layout.Name) && ResolveLayout(_presentation, layout.Name, now).MasterSlide == was)
+            .Select(static layout => $"'{layout.Name}'")];
+        _warnings.Add(new Warning(SlidesDiagnostics.SlideMasterChanged, string.Create(CultureInfo.InvariantCulture,
+            $"Slide {number} took layout '{slide.LayoutSlide.Name}' of master {to} '{now.Name}', since its master {from} '{was.Name}' has no layout of that name, and now shows the theme and art of master {to}."))
+        {
+            Hint = back.Length > 0
+                ? string.Create(CultureInfo.InvariantCulture, $"To take the slide back to master {from}, set_layout it to one of {string.Join(", ", back)}, the layouts of master {from} whose names master {to} has none of; 'slides inspect --detail masters' lists the masters in order.")
+                : string.Create(CultureInfo.InvariantCulture, $"No layout name takes the slide back to master {from}: set_layout looks a name up in the slide's own master first, then takes the first layout of the presentation by that name, and none of those is a layout of master {from}."),
+            Location = SlidesStateProjection.SlideAddress(number),
+            Details = new JsonObject { ["fromMaster"] = from, ["toMaster"] = to },
+        });
     }
 
     /// <summary>
