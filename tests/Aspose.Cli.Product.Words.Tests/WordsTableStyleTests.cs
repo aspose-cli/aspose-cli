@@ -91,6 +91,44 @@ public sealed class WordsTableStyleTests : IClassFixture<WordsFixture>, IDisposa
     }
 
     /// <summary>
+    /// A row hidden as Word hides one, with its text, and a row hidden with its text shown stay
+    /// hidden through a verified restyle, and every run and paragraph mark keeps whether its text
+    /// is hidden, hidden text in a shown row too. No read of the CLI reports a hidden row, and only
+    /// the SDK makes one, so this is no scenario.
+    /// </summary>
+    [Fact]
+    public void RestyledTables_KeepTheirHiddenRowsAndTheTextTheyHide()
+    {
+        var builder = new DocumentBuilder(new Document());
+        builder.Writeln("The next table follows.");
+        Build(builder, "hidden");
+        builder.Writeln("After the table.");
+        builder.Document.Save(_workspace.File("built.docx"));
+        var document = new Document(_workspace.File("built.docx"));
+        Table table = (Table)document.GetChild(NodeType.Table, 0, true);
+        table.Rows[1].Hidden = true;
+        table.Rows[2].Hidden = true;
+        foreach (Aspose.Words.Font font in Fonts(table.Rows[2]))
+        {
+            font.Hidden = false;
+        }
+
+        table.Rows[0].Cells[1].FirstParagraph.Runs[0].Font.Hidden = true;
+        document.Save(_workspace.File("tables.docx"));
+        string[] before = Hiding(Find(_workspace.File("tables.docx"), "hidden"));
+        File.WriteAllText(_workspace.File("restyle.json"), """{"ops":[{"op":"set_table_style","target":{"find":"hidden"},"tableStyle":"Grid Table 4"}]}""");
+
+        CliResult result = _workspace.Run("words", "edit", "tables.docx", "--ops", "restyle.json", "--out", "restyled.docx", "--verify", "--output-format", "json");
+
+        Require(result);
+        Assert.True(result.Json()["verification"]!["ok"]!.GetValue<bool>());
+        Table restyled = Find(_workspace.File("restyled.docx"), "hidden");
+        Assert.Equal("Grid Table 4", restyled.StyleName);
+        Assert.Equal(["False:False,False,False,True", "True:True,True,True,True", "True:False,False,False,False"], before);
+        Assert.Equal(before, Hiding(restyled));
+    }
+
+    /// <summary>
     /// A table insert_table built without a style and then restyled has the borders, cell margins,
     /// cell spacing, alignment and style options of one it built with that style, and a table
     /// from Markdown takes the style's borders too.
@@ -209,6 +247,14 @@ public sealed class WordsTableStyleTests : IClassFixture<WordsFixture>, IDisposa
         .. table.Rows.Cast<Row>().Select(static row => $"{row.RowFormat.HeadingFormat}/{row.RowFormat.AllowBreakAcrossPages}"),
         .. table.Rows.Cast<Row>().SelectMany(static row => row.Cells.Cast<Cell>()).Select(static cell => $"{cell.CellFormat.VerticalAlignment}"),
     ];
+
+    // Each row's hidden setting, then whether each of its paragraph marks and runs hides its text.
+    private static string[] Hiding(Table table) =>
+        [.. table.Rows.Cast<Row>().Select(static row => $"{row.Hidden}:{string.Join(",", Fonts(row).Select(static font => font.Hidden))}")];
+
+    private static IEnumerable<Aspose.Words.Font> Fonts(Row row) =>
+        row.GetChildNodes(NodeType.Paragraph, true).Cast<Paragraph>()
+            .SelectMany(static paragraph => paragraph.Runs.Cast<Run>().Select(static run => run.Font).Prepend(paragraph.ParagraphBreakFont));
 
     // What a table style decides of a table, as the SDK reads it.
     private static Dictionary<string, string> Look(Table table)
