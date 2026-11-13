@@ -312,6 +312,20 @@ public sealed class PathCaseTests : IDisposable
     public void FilePaths_IsDevice_RecognisesDevicePathsAlone(string path, bool device) =>
         Assert.Equal(device, FilePaths.IsDevice(path));
 
+    [Theory]
+    [InlineData(@"\\?\C:\a.txt", @"C:\a.txt")]
+    [InlineData(@"\\.\C:\a.txt", @"C:\a.txt")]
+    [InlineData("//?/C:/a.txt", "C:/a.txt")]
+    [InlineData(@"\\?\UNC\server\share\a.txt", @"\\server\share\a.txt")]
+    [InlineData(@"\\?\unc\server\share", @"\\server\share")]
+    [InlineData(@"\\.\PhysicalDrive0", null)]
+    [InlineData(@"\\?\C:", null)]
+    [InlineData(@"\\server\share\a.txt", @"\\server\share\a.txt")]
+    [InlineData(@"C:\a.txt", @"C:\a.txt")]
+    [InlineData("a.txt", "a.txt")]
+    public void FilePaths_Plain_IsThePlainPathADevicePathSpells(string path, string? plain) =>
+        Assert.Equal(plain, FilePaths.Plain(path));
+
     [Fact]
     public void FilePaths_TwoSpellingsOfOnePath_AreTheSamePath()
     {

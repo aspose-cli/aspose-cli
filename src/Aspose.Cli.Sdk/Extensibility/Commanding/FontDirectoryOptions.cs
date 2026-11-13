@@ -63,17 +63,19 @@ internal sealed class FontDirectoryOptions
             throw Invalid(value, "is empty");
         }
 
+        // A device path is read as the plain path it spells, which the checks of local paths know.
+        string plain = FilePaths.Plain(value) ?? value;
         string fullPath;
         try
         {
-            fullPath = Path.TrimEndingDirectorySeparator(Path.GetFullPath(value, baseDirectory));
+            fullPath = Path.TrimEndingDirectorySeparator(Path.GetFullPath(plain, baseDirectory));
         }
         catch (Exception exception) when (
             exception is ArgumentException or NotSupportedException or PathTooLongException)
         {
             throw Invalid(value, "is not a valid local path");
         }
-        if (FilePaths.IsRemoteOrDevice(value) || FilePaths.IsRemoteOrDevice(fullPath))
+        if (FilePaths.IsRemoteOrDevice(plain) || FilePaths.IsRemoteOrDevice(fullPath))
         {
             throw Invalid(value, "must be a local path");
         }

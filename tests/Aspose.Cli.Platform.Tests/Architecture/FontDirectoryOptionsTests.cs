@@ -130,6 +130,20 @@ public sealed class FontDirectoryOptionsTests
     }
 
     [Fact]
+    public void Read_ReadsADevicePathAsThePlainDirectoryItSpells()
+    {
+        using var temp = new TempDirectory();
+        string root = Path.GetFullPath(temp.Path);
+        var options = new FontDirectoryOptions();
+        var command = new Command("render");
+        options.AddTo(command);
+
+        FontSearchProfile profile = options.Read(command.Parse(["--font-dir", @"\\?\" + root]), Paths);
+
+        Assert.Equal(root, Assert.Single(profile.Directories));
+    }
+
+    [Fact]
     public void Read_DoesNotConsumeTheFollowingPositionalFile()
     {
         using var temp = new TempDirectory();
@@ -175,7 +189,8 @@ public sealed class FontDirectoryOptionsTests
     [Theory]
     [InlineData("missing-relative-fonts")]
     [InlineData(@"\\server\fonts")]
-    [InlineData(@"\\?\C:\fonts")]
+    [InlineData(@"\\?\UNC\server\fonts")]
+    [InlineData(@"\\.\PhysicalDrive0")]
     public void Read_RejectsMissingOrNonLocalDirectories(string value)
     {
         var options = new FontDirectoryOptions();

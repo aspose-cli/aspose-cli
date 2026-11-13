@@ -7,7 +7,8 @@ namespace Aspose.Cli.Sdk.IO.Paths;
 /// Resolves user-supplied paths against the working directory (the
 /// <c>--workdir</c> option, defaulting to the process working directory). A path the caller gave
 /// in a parameter that is empty or only white space names no file, so it is refused as a mistake
-/// of that parameter rather than resolved to the working directory.
+/// of that parameter rather than resolved to the working directory. A device path is resolved as
+/// the plain path it spells (<see cref="FilePaths.Plain"/>), and one that spells none is refused too.
 /// </summary>
 public sealed class PathResolver
 {
@@ -73,6 +74,10 @@ public sealed class PathResolver
         }
 
         ArgumentException.ThrowIfNullOrEmpty(path);
-        return Path.GetFullPath(path, BaseDirectory);
+        // A device path is read as the plain path it spells, which the checks of local paths know.
+        string plain = FilePaths.Plain(path) ?? (parameter is null ? path
+            : throw CliErrors.OptionInvalid(parameter, @"a device path that spells no plain path, such as \\.\PhysicalDrive0, is not accepted",
+                @"Pass the file or directory by its plain path, such as C:\work or \\server\share."));
+        return Path.GetFullPath(plain, BaseDirectory);
     }
 }
