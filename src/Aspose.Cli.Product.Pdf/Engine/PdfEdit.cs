@@ -46,9 +46,9 @@ internal static class PdfEdit
             : null;
         bool openPassword = userPermissions is not null && loaded.HasOpenPassword;
         IReadOnlyList<PdfNavigationLoss.Entry> navigationBefore = PdfNavigationLoss.Capture(loaded.Document);
-        PdfEditVerifier? verifier = request.Verify ? new PdfEditVerifier(loaded.Document) : null;
         var model = new PdfEditModel(
             session.Loader, operationInputs, loaded.Document, batch.Ops, request.Password, request.EncryptPassword is not null, request.OpSecrets);
+        PdfEditVerifier? verifier = request.Verify ? new PdfEditVerifier(loaded.Document, model.PageIdentities) : null;
         AppliedBatch applied = BoundedOperationRunner.Run(
             PdfOp.Catalog, batch.Ops, request.Options.BestEffort, deadline: null, model, verifier, PdfSnapshots.PageUnit);
         if (batch.Ops.Any(static op => op is DecryptDocumentOp))

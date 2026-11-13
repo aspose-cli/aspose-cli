@@ -86,6 +86,9 @@ internal sealed class PdfEditModel : IOperationModel<PdfOp>
     /// <summary>The ids of the <c>redact_text</c> operations the batch applied, in batch order.</summary>
     internal IReadOnlyList<string> Redactions => [.. _redactions.Select(static redaction => redaction.Id)];
 
+    /// <summary>The identity of each page the batch sees, which it keeps wherever the batch moves the page.</summary>
+    internal PdfPageIdentities PageIdentities => _pages;
+
     /// <summary>Whether a page the document had before the batch is still in it, wherever the batch moved it.</summary>
     internal bool Keeps(Page original) => _pages.Order(_document).Contains(_pages.Of(original));
 
