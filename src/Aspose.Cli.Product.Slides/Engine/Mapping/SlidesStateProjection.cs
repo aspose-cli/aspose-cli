@@ -242,8 +242,7 @@ internal static class SlidesStateProjection
     /// <summary>The footer text, slide number and date a slide shows.</summary>
     internal static SlidesFooterData Footer(ISlide slide, ref int remaining, ref bool truncated)
     {
-        string? text = slide.Shapes
-            .Where(static shape => shape.Placeholder?.Type == PlaceholderType.Footer)
+        string? text = SlidesPlaceholders.Footers(slide)
             .Select(static shape => (shape as IAutoShape)?.TextFrame?.Text)
             .FirstOrDefault(static value => !string.IsNullOrWhiteSpace(value));
         return new SlidesFooterData
@@ -322,9 +321,7 @@ internal static class SlidesStateProjection
     /// <summary>A slide's footer as stored: whether it shows the footer, number and date, and the text of every footer placeholder.</summary>
     internal static string FooterState(ISlide slide) =>
         $"{slide.HeaderFooterManager.IsFooterVisible}|{slide.HeaderFooterManager.IsSlideNumberVisible}|{slide.HeaderFooterManager.IsDateTimeVisible}|"
-        + string.Join("\n", slide.Shapes
-            .Where(static shape => shape.Placeholder?.Type == PlaceholderType.Footer)
-            .Select(static shape => (shape as IAutoShape)?.TextFrame?.Text));
+        + string.Join("\n", SlidesPlaceholders.Footers(slide).Select(static shape => (shape as IAutoShape)?.TextFrame?.Text));
 
     /// <summary>The paragraphs of a shape's own text frame as stored, each with its effective level and bullet, or null without a frame.</summary>
     internal static string? ParagraphState(IShape shape) => shape is IAutoShape { TextFrame: { } frame }

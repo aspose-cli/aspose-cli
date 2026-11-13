@@ -15,6 +15,9 @@ internal static class SlidesPlaceholders
     internal static IAutoShape? Title(ISlide slide) =>
         slide.Shapes.OfType<IAutoShape>().FirstOrDefault(static shape => IsTitle(shape.Placeholder));
 
+    /// <summary>The slide's footer placeholders, which read, the verification and set_footer look at.</summary>
+    internal static IEnumerable<IShape> Footers(ISlide slide) => slide.Shapes.Where(static shape => shape.Placeholder?.Type == PlaceholderType.Footer);
+
     /// <summary>Whether the layout has a title placeholder, which a slide that takes the layout gets.</summary>
     internal static bool HasTitle(ILayoutSlide layout) => layout.Shapes.Any(static shape => IsTitle(shape.Placeholder));
 

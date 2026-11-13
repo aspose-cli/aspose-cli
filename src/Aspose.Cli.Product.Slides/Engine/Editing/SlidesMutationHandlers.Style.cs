@@ -186,13 +186,9 @@ internal sealed partial class SlidesMutationHandlers
             return;
         }
 
-        foreach (IShape shape in slide.Shapes.Where(static shape => shape.Placeholder?.Type == PlaceholderType.Footer))
+        foreach (IAutoShape footer in SlidesPlaceholders.Footers(slide).OfType<IAutoShape>().Where(static footer => footer.TextFrame is { Text: "" or null }))
         {
-            if (shape is IAutoShape { TextFrame: not null } footer
-                && string.IsNullOrEmpty(footer.TextFrame.Text))
-            {
-                footer.TextFrame.Text = op.Text;
-            }
+            footer.TextFrame.Text = op.Text;
         }
     }
 
