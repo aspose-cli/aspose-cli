@@ -162,11 +162,11 @@ public sealed class PdfOutputFormatTests : IDisposable
         Assert.Contains(" --by pages --groups 2 ", commands[0], StringComparison.Ordinal);
         Assert.StartsWith("aspose-cli words convert ", commands[1], StringComparison.Ordinal);
         Assert.Contains(" --overwrite", commands[1], StringComparison.Ordinal);
-        Assert.EndsWith("' instead; once the conversion has run, delete three.1.pdf, the part the split wrote beside the output.", hint, StringComparison.Ordinal);
+        Assert.EndsWith($"' instead; once the conversion has run, delete \"{_workspace.File("page-editable-part")}\", the folder the split created beside the output for the part.", hint, StringComparison.OrdinalIgnoreCase);
 
         CliResult split = _workspace.RunCommandLine(commands[0]);
         Assert.True(split.ExitCode == 0, split.StdErr);
-        AssertWordsReplaces(_workspace.RunCommandLine(commands[1]), "three.1.pdf", "page.docx");
+        AssertWordsReplaces(_workspace.RunCommandLine(commands[1]), Path.Combine("page-editable-part", "three.1.pdf"), "page.docx");
         JsonNode inspected = Run("words", "inspect", "page.docx").Json();
         Assert.Equal(1, inspected["document"]!["pageCount"]!.GetValue<int>());
         string text = Run("words", "read", "page.docx").StdOut;

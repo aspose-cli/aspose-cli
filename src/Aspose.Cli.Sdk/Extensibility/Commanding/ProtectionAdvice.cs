@@ -394,7 +394,7 @@ internal static class ProtectionAdvice
         /// </summary>
         public Step? FromInput(Encryptor converter, string format, string source)
         {
-            if (invocation.FromInput(converter.Path, format, output!.Path) is not { } conversion)
+            if (invocation.FromInput(converter.Path, format, output!.Path, "encrypted") is not { } conversion)
             {
                 return null;
             }
