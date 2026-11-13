@@ -327,6 +327,24 @@ Reproductions: [CellsKnownIssueTests](tests/Aspose.Cli.Product.Cells.Tests/Cells
   printout of an ods input warns of the comments it leaves out, and its hint, which names that
   setting, adds that the ods does not keep it and to save the workbook as xlsx first.
 
+### CELLS-PRINT-AREA-BAND-COMMENTS
+
+- **Defect:** a print area that is a band of whole columns (`A:C`) or whole rows (`1:5`), alone
+  or beside bounded ranges, prints none of the comments on the band's cells, at the sheet's end
+  or in place, though Excel prints them; a bounded print area (`A1:C5`) prints the comments on
+  its cells. A PDF and `SheetRender` alike.
+
+  ```csharp
+  sheet.Comments[sheet.Comments.Add("A1")].Note = "a note";
+  sheet.PageSetup.PrintComments = PrintCommentsType.PrintSheetEnd;
+  sheet.PageSetup.PrintArea = "A:A";   // with "A1:A5" the comment prints on a page of its own
+  new SheetRender(sheet, new ImageOrPrintOptions()).PageCount;   // 1: no page of comments
+  ```
+
+- **CLI behavior:** a printout counts the comments a band holds as left out and warns
+  `LOSSY_CONVERSION` with them; its hint says a print area prints only the comments on its
+  bounded ranges.
+
 ## Aspose.PDF.Drawing 26.8.0
 
 Reproductions: [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownIssueTests.cs).

@@ -467,6 +467,36 @@ public sealed class CellsReviewTests
         }
     }
 
+    /// <summary>
+    /// Whole columns or rows print only the cells they hold, so a print area of them over the
+    /// content A1:C20 is neither invalid nor excessive, however many cells they span.
+    /// </summary>
+    [Theory]
+    [InlineData("A:C")]
+    [InlineData("1:20")]
+    public void Review_APrintAreaOfWholeColumnsOrRows_IsNeitherInvalidNorExcessive(string printArea)
+    {
+        Requires.Windows();
+        using var fixture = new CellsFixture();
+        string path = fixture.Temp.File("print-band.xlsx");
+        using (var workbook = new Workbook())
+        {
+            Worksheet data = workbook.Worksheets[0];
+            for (int row = 0; row < 20; row++)
+            {
+                for (int column = 0; column < 3; column++)
+                {
+                    data.Cells[row, column].PutValue(row * 3 + column);
+                }
+            }
+            data.PageSetup.PrintArea = printArea;
+            workbook.Save(path);
+        }
+
+        Assert.DoesNotContain(Review(fixture, path),
+            static finding => finding.Code is "CELLS_PRINT_AREA_INVALID" or "CELLS_PRINT_AREA_EXCESSIVE");
+    }
+
     private static string OneCellPrinting(CellsFixture fixture, string printArea)
     {
         string path = fixture.Temp.File($"print-{printArea.Replace(':', '-')}.xlsx");

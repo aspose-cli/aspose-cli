@@ -1,0 +1,45 @@
+{
+  "name": "cells convert to pdf of a sheet that prints its comments at its end names the comment outside its print area, which the pdf leaves out, and says why; without the print area every comment prints and nothing is named",
+  "steps": [
+    {
+      "args": ["cells", "create", "book.xlsx", "--sheet-names", "Sales"],
+      "expect": { "exitCode": 0 }
+    },
+    {
+      "args": [
+        "cells", "edit", "book.xlsx", "--in-place", "--ops",
+        "{\"ops\":[{\"op\":\"set_values\",\"sheet\":\"Sales\",\"range\":\"A1\",\"values\":[[\"Region\",\"Q1\"],[\"North\",10]]},{\"op\":\"set_values\",\"sheet\":\"Sales\",\"range\":\"H20\",\"values\":[[\"Total\"]]},{\"op\":\"add_comment\",\"sheet\":\"Sales\",\"cell\":\"A1\",\"text\":\"InsideNote\"},{\"op\":\"add_comment\",\"sheet\":\"Sales\",\"cell\":\"H20\",\"text\":\"OutsideNote\"},{\"op\":\"set_page_setup\",\"sheet\":\"Sales\",\"printComments\":\"sheet-end\"},{\"op\":\"set_print_area\",\"sheet\":\"Sales\",\"range\":\"A1:B2\"}]}"
+      ],
+      "expect": { "exitCode": 0 }
+    },
+    {
+      "args": ["cells", "convert", "book.xlsx", "--to", "pdf", "--out", "area.pdf", "--sheets", "1"],
+      "expect": {
+        "exitCode": 0,
+        "warnings": { "present": ["LOSSY_CONVERSION"] },
+        "json": [
+          { "path": "warnings[code=LOSSY_CONVERSION][0].message", "contains": "leaves out 1 comment(s)" },
+          { "path": "warnings[code=LOSSY_CONVERSION][0].details.content", "equals": ["comments"] },
+          { "path": "warnings[code=LOSSY_CONVERSION][0].hint", "contains": "A print area prints only the comments on the cells of its bounded ranges" },
+          { "path": "warnings[code=LOSSY_CONVERSION][1]", "exists": false }
+        ]
+      }
+    },
+    {
+      "args": ["pdf", "search", "area.pdf", "--pattern", "InsideNote"],
+      "expect": { "exitCode": 0, "json": [{ "path": "hits[0].text", "equals": "InsideNote" }] }
+    },
+    {
+      "args": ["cells", "edit", "book.xlsx", "--in-place", "--ops", "{\"ops\":[{\"op\":\"clear_print_area\",\"sheet\":\"Sales\"}]}"],
+      "expect": { "exitCode": 0 }
+    },
+    {
+      "args": ["cells", "convert", "book.xlsx", "--to", "pdf", "--out", "all.pdf", "--sheets", "1"],
+      "expect": { "exitCode": 0, "warnings": { "absent": ["LOSSY_CONVERSION"] } }
+    },
+    {
+      "args": ["pdf", "search", "all.pdf", "--pattern", "OutsideNote"],
+      "expect": { "exitCode": 0, "json": [{ "path": "hits[0].text", "equals": "OutsideNote" }] }
+    }
+  ]
+}

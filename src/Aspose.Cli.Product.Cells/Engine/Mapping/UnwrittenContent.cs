@@ -66,6 +66,8 @@ internal static class UnwrittenContent
                 $"The {formatId} output leaves out {Total(unprinted)} comment(s), which the page setup of their worksheet does not print: {PerSheet(unprinted)}.",
                 "Read the comments with 'aspose-cli cells inspect <file> --detail comments'. To keep them in the output, "
                     + "set printComments to sheet-end with set_page_setup on the worksheet and convert again: they print after its last page."
+                    + (written.Any(sheet => sheet.PageSetup.PrintArea is { Length: > 0 } && unprinted.Any(item => item.Sheet == sheet.Name))
+                        ? " A print area prints only the comments on the cells of its bounded ranges, such as A1:H50, and none for whole rows or columns: clear it with clear_print_area, or set bounded ranges that cover them." : "")
                     + (CellsEngineFormats.LeavesDetected(workbook.FileFormat).HasFlag(CellsContentLoss.PrintCommentsSetting)
                         ? " This workbook's format does not keep that setting, so save the workbook as xlsx first and set it there." : ""));
         }
@@ -112,14 +114,17 @@ internal static class UnwrittenContent
 
     /// <summary>
     /// Whether the page setup of a sheet prints a comment of it: every one at the end of the sheet,
-    /// the ones shown in place, and none otherwise.
+    /// the ones shown in place, and none otherwise; with a print area, only those on the cells of its
+    /// bounded blocks, since a band of whole rows or columns prints none (known issue
+    /// CELLS-PRINT-AREA-BAND-COMMENTS, KNOWN-ISSUES.md), and none of a print area that does not read.
     /// </summary>
     private static bool Printed(Worksheet sheet, Comment comment) => sheet.PageSetup.PrintComments switch
     {
         PrintCommentsType.PrintSheetEnd => true,
         PrintCommentsType.PrintInPlace => comment.IsVisible,
         _ => false,
-    };
+    } && (string.IsNullOrWhiteSpace(sheet.PageSetup.PrintArea) || SheetLayoutProjection.PrintBlocks(sheet.PageSetup.PrintArea).Blocks.Any(block => !block.Band
+        && comment.Row >= block.Range.Start.Row && comment.Row <= block.Range.End.Row && comment.Column >= block.Range.Start.Column && comment.Column <= block.Range.End.Column));
 
     // A sheet's items of each kind, keyed by Key.
     private static IEnumerable<string> Comments(Worksheet sheet, Func<Comment, bool> which) =>
