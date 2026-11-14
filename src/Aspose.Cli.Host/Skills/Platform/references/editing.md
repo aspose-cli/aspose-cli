@@ -147,7 +147,11 @@ as UTF-8 text whatever the console's code page, and refuses other bytes with
 password: an input's password given with `--password-env` is passed on by
 the variable's name, and one given another way shows as
 `--password-env "<password-env>"`, in which you put the name of an
-environment variable that holds it.
+environment variable that holds it. Another password given another way than
+its `-env` option shows as a placeholder named after that option, such as
+`"<encrypt-env>"` for the output's password or
+`"<certificate-password-env>"` for a certificate's: put there the name of a
+variable that holds that password, not the input's.
 
 An output made from an encrypted input takes the password an `--encrypt-env`
 style option gives. Without one, an output in a format the product can
