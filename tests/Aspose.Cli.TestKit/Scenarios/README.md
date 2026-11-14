@@ -100,7 +100,7 @@ Every step is also checked, whatever it expects, against the CLI's own catalog
   unless the step asks for one with `--bom`, edits an input that starts with one, or extracts the
   files a document embeds (`pdf extract --what attachments`, `words extract --what images`,
   `slides extract --what media`), which keep the bytes the document stores;
-- `executable-hint`: what each `error.hint`, `warnings[].hint` and, of a review, `findings[].hint` names runs as written
+- `executable-hint`: what each `error.hint`, `warnings[].hint`, `window.next` and, of a review, `findings[].hint` names runs as written
   (`ExecutableHints`): a quoted or unquoted `aspose-cli` command runs on the step's own files in
   a copy of its workspace, with `--dry-run` where the command has one, and must not fail with
   `USAGE_ERROR`, `OPTION_INVALID` or `OPS_INVALID`. When the step gives the password of its
@@ -121,7 +121,8 @@ Every step is also checked, whatever it expects, against the CLI's own catalog
   a hint that says to run the command again with options runs the step again with them over what
   it wrote; and a step one of whose hints names its input runs again on an encrypted copy of that
   input opened with `--password-env`, on the same opened with `--password-stdin`, whose hints'
-  commands get the password in a variable the check sets for their `<…-env>` placeholder and must
+  commands get the input's password in a variable the check sets for `<password-env>`, and each
+  other `<…-env>` placeholder a variable of its own that holds another password, and must
   not fail with `PASSWORD_REQUIRED` or `PASSWORD_INVALID`, and on one at a path with a space, and
   the commands its hints name there must run as written too.
 
