@@ -300,6 +300,61 @@ public sealed class CellsOperationsTests : IClassFixture<CellsFixture>
         Assert.Equal(5, charts[1].NSeries[0].Points.Cast<ChartPoint>().Select(static point => point.Area.ForegroundColor.ToArgb()).Distinct().Count());
     }
 
+    /// <summary>
+    /// A column of text after the first of a chart's data joins the categories rather than being
+    /// plotted as a series of zeros, in columns and in rows, through insert_chart and set_chart,
+    /// while a column of text after a column of numbers stays a series, as the engine makes it. A
+    /// set_chart onto data of the same shape keeps the colors insert_chart gave by position, and a
+    /// scatter chart, whose first column is the X values, keeps the series the engine makes.
+    /// </summary>
+    [Fact]
+    public void CreateChart_TextColumnsAfterTheFirstJoinTheCategories()
+    {
+        string source = _fixture.CreateSalesWorkbook("text-categories.xlsx");
+        string output = Apply(
+            source,
+            """
+            { "ops": [
+              { "op": "set_values", "sheet": "Data", "range": "A1:D4", "values": [
+                ["Region","Rep","Q1","Q2"],["East","Ann",10,12],["West","Bob",20,18],["North","Cy",15,16]] },
+              { "op": "set_values", "sheet": "Data", "range": "F1:I4", "values": [
+                ["Region","Q1","Rep","Q2"],["East",10,"Ann",12],["West",20,"Bob",18],["North",15,"Cy",16]] },
+              { "op": "set_values", "sheet": "Data", "range": "A10:D13", "values": [
+                ["Region","East","West","North"],["Rep","Ann","Bob","Cy"],["Q1",10,20,15],["Q2",12,18,16]] },
+              { "op": "insert_chart", "sheet": "Data", "kind": "column", "dataRange": "A1:D4", "at": "K1:R15" },
+              { "op": "insert_chart", "sheet": "Data", "kind": "column", "dataRange": "F1:I4", "at": "K17:R31" },
+              { "op": "insert_chart", "sheet": "Data", "kind": "column", "dataRange": "A10:D13", "seriesInRows": true, "at": "K33:R47" },
+              { "op": "insert_chart", "sheet": "Data", "kind": "column", "dataRange": "F1:I4", "at": "K49:R63" },
+              { "op": "set_chart", "sheet": "Data", "index": 4, "dataRange": "A1:D4" },
+              { "op": "set_values", "sheet": "Data", "range": "A20:D23", "values": [
+                ["Area","Owner","H1","H2"],["A","x",1,2],["B","y",3,4],["C","z",5,6]] },
+              { "op": "insert_chart", "sheet": "Data", "kind": "column", "dataRange": "A1:D4", "at": "K65:R79" },
+              { "op": "set_chart", "sheet": "Data", "index": 5, "dataRange": "A20:D23" },
+              { "op": "insert_chart", "sheet": "Data", "kind": "scatter", "dataRange": "A1:D4", "at": "K81:R95" }
+            ] }
+            """,
+            "text-categories.out.xlsx").Output!.Path;
+
+        using var workbook = new Workbook(output);
+        ChartCollection charts = workbook.Worksheets["Data"].Charts;
+        static string Plotted(Chart chart) =>
+            string.Join(" | ", chart.NSeries.Cast<Series>().Select(static series => $"{series.Name} {series.Values} {series.XValues}"));
+        string columns = "=Data!$C$1 =Data!$C$2:$C$4 =Data!$A$2:$B$4 | =Data!$D$1 =Data!$D$2:$D$4 =Data!$A$2:$B$4";
+        Assert.Equal(columns, Plotted(charts[0]));
+        Assert.Equal(
+            "=Data!$G$1 =Data!$G$2:$G$4 =Data!$F$2:$F$4 | =Data!$H$1 =Data!$H$2:$H$4 =Data!$F$2:$F$4 | =Data!$I$1 =Data!$I$2:$I$4 =Data!$F$2:$F$4",
+            Plotted(charts[1]));
+        Assert.Equal("=Data!$A$12 =Data!$B$12:$D$12 =Data!$B$10:$D$11 | =Data!$A$13 =Data!$B$13:$D$13 =Data!$B$10:$D$11", Plotted(charts[2]));
+        Assert.Equal(columns, Plotted(charts[3]));
+        static int[] Colors(Chart chart) => [.. chart.NSeries.Cast<Series>().Select(static series => series.Area.ForegroundColor.ToArgb())];
+        Assert.Equal("=Data!$C$20 =Data!$C$21:$C$23 =Data!$A$21:$B$23 | =Data!$D$20 =Data!$D$21:$D$23 =Data!$A$21:$B$23", Plotted(charts[4]));
+        Assert.Equal(Colors(charts[0]), Colors(charts[4]));
+        using var engine = new Workbook(output);
+        Chart scatter = engine.Worksheets["Data"].Charts[engine.Worksheets["Data"].Charts.Add(ChartType.Scatter, 100, 10, 114, 17)];
+        scatter.SetChartDataRange("Data!A1:D4", true);
+        Assert.Equal(Plotted(scatter), Plotted(charts[5]));
+    }
+
     [Fact]
     public void FormulaConditionalFormat_PreservesTheCellsNumberFormat()
     {

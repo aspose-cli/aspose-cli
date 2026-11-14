@@ -196,6 +196,10 @@ cells:
 - `dataRange` is one contiguous block including headers; a multi-area
   reference is refused. To chart non-adjacent rows, mirror them into a helper
   block with formulas (`aspose-cli docs cells/workbook-standards`, Limits).
+- The first column (row, with `seriesInRows`) and the text columns right
+  after it are the categories, and every other column is a series: put the
+  label columns first and the value columns after them, since a text column
+  after a value column is plotted as a series of zeros.
 - An `at` of about 8
   columns by 15 rows reads well.
 - A bar chart plots the first source row at the bottom: list a ranking's rows
