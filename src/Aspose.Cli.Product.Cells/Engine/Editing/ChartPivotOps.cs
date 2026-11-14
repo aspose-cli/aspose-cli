@@ -43,6 +43,7 @@ internal static class ChartPivotOps
         // Series-from-columns is the default; SetChartDataRange derives
         // series and category axes from the headers in the range.
         chart.SetChartDataRange(dataRange, isVertical: !op.SeriesInRows);
+        TextCategories(chart, sheet, dataRange, op.SeriesInRows);
 
         if (op.Title is { } title)
         {
@@ -53,6 +54,71 @@ internal static class ChartPivotOps
         ApplyModernDefaults(chart, op.Kind, sheet.Workbook);
         ApplyCosmetics(chart, op.Legend, op.AxisTitles, op.SeriesColors, op.DataLabels);
         EnsureHonestValueAxis(chart);
+    }
+
+    /// <summary>
+    /// Makes the lines of text that follow the first of a chart's data categories with it, as
+    /// several category columns are in Excel: the engine takes only the first column (row, for
+    /// series in rows) for the categories and plots each other one of text as a series of zeros.
+    /// A line of text after a line of numbers stays a series, and one series at least stays
+    /// (probed on 26.9.0). Each series left keeps the format of its place, so a set_chart that
+    /// changes the data keeps the colors by position. A scatter or bubble chart, whose first column
+    /// is the X values, is left as the engine makes it.
+    /// </summary>
+    private static void TextCategories(Chart chart, Worksheet opSheet, string dataRange, bool inRows)
+    {
+        (Worksheet sheet, RangeRef range) = Sheets.ResolveRange(opSheet, dataRange);
+        (int lines, int length) = inRows ? (range.RowCount, range.ColumnCount) : (range.ColumnCount, range.RowCount);
+        if (chart.NSeries.Count != lines - 1 || length < 2 || IsFamily(chart.Type, "Scatter") || IsFamily(chart.Type, "Bubble"))
+        {
+            return;
+        }
+
+        // The data of a line, after its header.
+        RangeRef Line(int index) => inRows
+            ? new RangeRef(new CellRef(range.Start.Row + index, range.Start.Column + 1), new CellRef(range.Start.Row + index, range.End.Column))
+            : new RangeRef(new CellRef(range.Start.Row + 1, range.Start.Column + index), new CellRef(range.End.Row, range.Start.Column + index));
+        int text = 0;
+        while (text < lines - 2 && IsText(sheet, Line(text + 1)))
+        {
+            text++;
+        }
+
+        if (text > 0)
+        {
+            for (int index = 0; index + text < chart.NSeries.Count; index++)
+            {
+                (chart.NSeries[index].Values, chart.NSeries[index].Name) = (chart.NSeries[index + text].Values, chart.NSeries[index + text].Name);
+            }
+
+            for (int index = 0; index < text; index++)
+            {
+                chart.NSeries.RemoveAt(chart.NSeries.Count - 1);
+            }
+
+            chart.NSeries.CategoryData = Sheets.Reference(sheet, new RangeRef(Line(0).Start, Line(text).End));
+        }
+    }
+
+    // A line with text and nothing a chart plots: no number, Boolean or error.
+    private static bool IsText(Worksheet sheet, RangeRef line)
+    {
+        bool text = false;
+        for (int row = line.Start.Row; row <= line.End.Row; row++)
+        {
+            for (int column = line.Start.Column; column <= line.End.Column; column++)
+            {
+                CellValueType type = sheet.Cells.CheckCell(row, column)?.Type ?? CellValueType.IsNull;
+                if (type is not (CellValueType.IsNull or CellValueType.IsString))
+                {
+                    return false;
+                }
+
+                text |= type == CellValueType.IsString;
+            }
+        }
+
+        return text;
     }
 
     public static void CreatePivot(Worksheet sheet, InsertPivotOp op)
@@ -381,6 +447,7 @@ internal static class ChartPivotOps
             && (current.DataRange != ObjectProjection.Reference(sheet, dataRange) || current.SeriesInRows != inRows))
         {
             chart.SetChartDataRange(dataRange, isVertical: !inRows);
+            TextCategories(chart, sheet, dataRange, inRows);
         }
 
         if (op.Title is { } title)
