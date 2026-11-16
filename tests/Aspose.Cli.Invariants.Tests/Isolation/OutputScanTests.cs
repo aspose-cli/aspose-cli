@@ -56,9 +56,12 @@ public sealed class OutputScanTests
         Assert.Null(FindInCreatedPdf(workspace, "clean", "ISOLATION-OTHER"));
     }
 
-    [Fact]
-    public void AFailedPdfRead_IsAFinding() =>
-        Assert.NotNull(OutputScan.FindInPdfRead("output.pdf", new CliResult(5, string.Empty, "refused"), Marker));
+    /// <summary>A read that fails, or returns part of the text without the marker, has not shown the marker absent.</summary>
+    [Theory]
+    [InlineData(5, "")]
+    [InlineData(0, """{"window":{"truncated":true},"pages":[{"text":"Heading"}]}""")]
+    public void APdfReadThatFailsOrStopsShort_IsAFinding(int exitCode, string stdOut) =>
+        Assert.NotNull(OutputScan.FindInPdfRead("output.pdf", new CliResult(exitCode, stdOut, "refused"), Marker));
 
     private static string? FindInCreatedPdf(TempWorkspace workspace, string name, string text)
     {
