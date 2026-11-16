@@ -194,14 +194,23 @@ internal sealed record SlidesTextUnit(int Slide, ISlide Owner, string Scope, ISh
     /// <summary>For text replace_text does not change, the target address a warning names.</summary>
     public string? Location { get; init; }
 
-    /// <summary>The text one paragraph, category or name at a time, as replace_text reads it.</summary>
+    /// <summary>The text one paragraph, category or name at a time, as search and replace_text match it.</summary>
     public IEnumerable<string> Texts => Reads is null
         ? Frames.SelectMany(static frame => frame.Paragraphs).Select(ParagraphText)
         : Reads().OfType<string>();
 
-    /// <summary>The text as results report it, one line per paragraph or line break; null when it shows none.</summary>
+    /// <summary>The texts <see cref="Text"/> joins, one paragraph, category or name at a time: none of a frame, category or name that shows nothing.</summary>
+    public IEnumerable<string> Shown => Reads is null
+        ? Frames.Where(static frame => !string.IsNullOrWhiteSpace(frame.Text)).SelectMany(static frame => frame.Paragraphs).Select(ParagraphText)
+        : Texts.Where(static text => !string.IsNullOrWhiteSpace(text));
+
+    /// <summary>
+    /// The text as results report it, one line per paragraph or line break; null when it shows
+    /// none. A shape's and the notes' text is their frames' own, as <c>slides read</c> reads it, not
+    /// <see cref="Shown"/> joined: evaluation mode cuts a frame's text short once, but each run apart.
+    /// </summary>
     public string? Text => Reads is not null
-        ? EmptyToNull(string.Join("\n", Texts.Where(static text => !string.IsNullOrWhiteSpace(text))))
+        ? EmptyToNull(string.Join("\n", Shown))
         : Shape is null ? Notes(Owner) : ShapeText(Shape);
 
     /// <summary>Whether the unit is the watermark text box an evaluation save adds to every slide.</summary>

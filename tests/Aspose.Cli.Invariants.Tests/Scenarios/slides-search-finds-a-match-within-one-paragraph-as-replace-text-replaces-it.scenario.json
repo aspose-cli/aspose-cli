@@ -1,0 +1,97 @@
+{
+  "name": "slides search finds a match within one paragraph, as replace_text replaces it: the text of a shape of two paragraphs copied from read is no hit and replace_text replaces nothing there, so the search OP_NO_EFFECT names finds nothing either, while a match within a paragraph is one hit with the shape's text around it and one replacement. Two table cells are apart as two paragraphs are, and the context is the text as read reports it, without a blank first line, the leading spaces or an empty cell. A regular expression is matched against one paragraph at a time by both commands, so ^ and $ are a paragraph's ends, a lookbehind does not see the paragraph before, and both find as many matches",
+  "files": {
+    "deck.md": { "text": "# T\n\n## Two\n\n- a1\n- b2\n" }
+  },
+  "steps": [
+    {
+      "args": ["slides", "create", "deck.pptx", "--from-markdown", "deck.md"],
+      "expect": { "exitCode": 0 }
+    },
+    {
+      "args": ["slides", "read", "deck.pptx", "--slides", "2"],
+      "expect": { "exitCode": 0, "json": [{ "path": "slides[0].shapes[1].text", "equals": "a1\nb2" }] }
+    },
+    {
+      "args": ["slides", "search", "deck.pptx", "--pattern", "a1\nb2"],
+      "expect": { "exitCode": 0, "json": [{ "path": "hits[0]", "exists": false }] }
+    },
+    {
+      "args": ["slides", "edit", "deck.pptx", "--out", "same.pptx", "--ops", "{\"ops\":[{\"op\":\"replace_text\",\"find\":\"a1\\nb2\",\"replace\":\"Z\"}]}"],
+      "expect": {
+        "exitCode": 0,
+        "json": [{ "path": "applied[0].itemsAffected", "equals": 0 }],
+        "warnings": { "present": ["OP_NO_EFFECT"] }
+      }
+    },
+    {
+      "args": ["slides", "search", "deck.pptx", "--pattern", "b2"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "hits[0].context", "equals": "a1 b2" },
+          { "path": "hits[1]", "exists": false }
+        ]
+      }
+    },
+    {
+      "args": ["slides", "edit", "deck.pptx", "--out", "replaced.pptx", "--verify", "--ops", "{\"ops\":[{\"op\":\"replace_text\",\"find\":\"b2\",\"replace\":\"Z\"}]}"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "verification.ok", "equals": true },
+          { "path": "applied[0].itemsAffected", "equals": 1 }
+        ],
+        "warnings": { "absent": ["OP_NO_EFFECT"] }
+      }
+    },
+    {
+      "args": ["slides", "edit", "deck.pptx", "--out", "cells.pptx", "--ops", "{\"ops\":[{\"op\":\"insert_shape\",\"slide\":2,\"geometry\":\"ellipse\",\"rect\":{\"x\":10,\"y\":300,\"width\":200,\"height\":60},\"text\":\"\\n c3\"},{\"op\":\"insert_table\",\"slide\":2,\"rect\":{\"x\":10,\"y\":380,\"width\":300,\"height\":40},\"rowCount\":1,\"columnCount\":3,\"values\":[[\"d4\",\"\",\"e5\"]]}]}"],
+      "expect": { "exitCode": 0 }
+    },
+    {
+      "args": ["slides", "search", "cells.pptx", "--pattern", "c3"],
+      "expect": { "exitCode": 0, "json": [{ "path": "hits[0].context", "equals": "c3" }, { "path": "hits[1]", "exists": false }] }
+    },
+    {
+      "args": ["slides", "search", "cells.pptx", "--pattern", "d4"],
+      "expect": { "exitCode": 0, "json": [{ "path": "hits[0].context", "equals": "d4 e5" }, { "path": "hits[1]", "exists": false }] }
+    },
+    {
+      "args": ["slides", "search", "cells.pptx", "--pattern", "4\ne"],
+      "expect": { "exitCode": 0, "json": [{ "path": "hits[0]", "exists": false }] }
+    },
+    {
+      "args": ["slides", "edit", "deck.pptx", "--out", "anchors.pptx", "--ops", "{\"ops\":[{\"op\":\"insert_shape\",\"slide\":2,\"geometry\":\"ellipse\",\"rect\":{\"x\":10,\"y\":300,\"width\":200,\"height\":60},\"text\":\"  k9 \"}]}"],
+      "expect": { "exitCode": 0 }
+    },
+    {
+      "args": ["slides", "search", "anchors.pptx", "--regex", "--pattern", "(?<=a1\\n)b2"],
+      "expect": { "exitCode": 0, "json": [{ "path": "hits[0]", "exists": false }] }
+    },
+    {
+      "args": ["slides", "search", "anchors.pptx", "--regex", "--pattern", "^k9"],
+      "expect": { "exitCode": 0, "json": [{ "path": "hits[0]", "exists": false }] }
+    },
+    {
+      "args": ["slides", "search", "anchors.pptx", "--regex", "--pattern", "^b2"],
+      "expect": { "exitCode": 0, "json": [{ "path": "hits[0].context", "equals": "a1 b2" }, { "path": "hits[1]", "exists": false }] }
+    },
+    {
+      "args": ["slides", "search", "anchors.pptx", "--regex", "--pattern", "a1$"],
+      "expect": { "exitCode": 0, "json": [{ "path": "hits[0].context", "equals": "a1 b2" }, { "path": "hits[1]", "exists": false }] }
+    },
+    {
+      "args": ["slides", "edit", "anchors.pptx", "--out", "anchored.pptx", "--ops", "{\"ops\":[{\"op\":\"replace_text\",\"find\":\"(?<=a1\\\\n)b2\",\"replace\":\"Z\",\"regex\":true},{\"op\":\"replace_text\",\"find\":\"^k9\",\"replace\":\"Z\",\"regex\":true},{\"op\":\"replace_text\",\"find\":\"^b2\",\"replace\":\"Z\",\"regex\":true},{\"op\":\"replace_text\",\"find\":\"a1$\",\"replace\":\"Z\",\"regex\":true}]}"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "applied[0].itemsAffected", "equals": 0 },
+          { "path": "applied[1].itemsAffected", "equals": 0 },
+          { "path": "applied[2].itemsAffected", "equals": 1 },
+          { "path": "applied[3].itemsAffected", "equals": 1 }
+        ]
+      }
+    }
+  ]
+}
