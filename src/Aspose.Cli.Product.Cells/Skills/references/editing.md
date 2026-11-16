@@ -342,7 +342,12 @@ is written as csv; for tab-delimited text write a `.tsv` output, or run
 `cells convert book.xlsx --to tsv --out data.txt`. `cells edit` writing a csv or tsv input
 back in the format its name gives it, as in place, keeps its separator and its encoding, UTF-8
 with or without a byte order mark or UTF-16 with one; `cells convert` writes the format's own
-separator in UTF-8.
+separator in UTF-8. Such an edit keeps every value but not every byte, since the engine writes
+the whole table again: each line ends in CRLF, the last one too; a row shorter than the widest
+gets empty fields up to its width; a value is quoted only where it must be (`"y"` becomes
+`y`, `"q,r"` stays quoted); and a number the edit writes with an exponent is written the
+engine's way, `1e30` as `1E+30`, with its value unchanged. A diff of the file's text shows
+those lines as changed.
 
 ## Reading the outcome
 

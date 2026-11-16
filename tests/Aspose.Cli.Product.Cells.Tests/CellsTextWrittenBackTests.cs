@@ -104,6 +104,42 @@ public sealed class CellsTextWrittenBackTests : IDisposable
     }
 
     /// <summary>
+    /// What the Skill says an edit leaves of a csv's bytes, which the engine writes again with no
+    /// option to keep them: lines that ended in LF, and the last line that ended in none, end in
+    /// CRLF; a row shorter than the widest gets empty fields up to its width; and quotes a value
+    /// does not need are dropped while those it needs stay. The values are as they were.
+    /// </summary>
+    [Fact]
+    public void Edit_WritesTheTableAgainInCrlfWithShortRowsPaddedAndOnlyTheQuotesItNeeds()
+    {
+        File.WriteAllText(_workspace.File("table.csv"), "a,b,c\nx,\"y\"\nlast,\"q,r\",plain", new UTF8Encoding(false));
+
+        CliResult edited = Edit("table.csv", "--in-place", "--ops", SetC3);
+
+        Assert.True(edited.ExitCode == 0, $"exit {edited.ExitCode}: {edited.StdErr}{edited.StdOut}");
+        Assert.Equal(["a,b,c", "x,y,", "last,\"q,r\",changed"], Written("table.csv", mark: false));
+        Assert.Equal(["table!C3 plain -> changed"], DirectChanges(edited));
+    }
+
+    /// <summary>
+    /// What the Skill says of a number with an exponent an edit writes into a csv: the engine
+    /// writes it its own way, 1e30 as 1E+30, and a read finds the number that was set.
+    /// </summary>
+    [Fact]
+    public void SetNumberWithAnExponent_IsWrittenTheEnginesWayAndReadsBackAsTheNumber()
+    {
+        Write("table.csv", ["k,v", "a,1", "b,2"], mark: false);
+
+        CliResult edited = Edit("table.csv", "--in-place", "--set", "table!B2=1e30", "--set", "table!B3=-2.5e-40");
+        CliResult read = Cli("cells", "read", "table.csv", "--range", "B2:B3", "--output-format", "json");
+
+        Assert.True(edited.ExitCode == 0, $"exit {edited.ExitCode}: {edited.StdErr}{edited.StdOut}");
+        Assert.Equal(["k,v", "a,1E+30", "b,-2.5E-40"], Written("table.csv", mark: false));
+        Assert.Equal([1e30, -2.5e-40], JsonNode.Parse(read.StdOut)!["sheet"]!["cells"]!.AsArray()
+            .Select(static row => row![0]!["v"]!.GetValue<double>()));
+    }
+
+    /// <summary>
     /// Guardrails: a conversion writes its format's separator in UTF-8 and no mark without
     /// <c>--bom</c>, whatever the input's separator, mark and encoding, to csv as to tsv; an edit of
     /// a .tsv keeps its tabs; a csv without the mark gets it only with <c>--bom</c>, which writes a
