@@ -21,16 +21,16 @@ namespace Aspose.Cli.Product.Pdf.Engine;
 /// zoom of 0 means the same as an omitted zoom, and FitR coordinates are never omitted, so neither
 /// is ambiguous. Destinations are built with <see cref="ExplicitDestination.CreateDestination(Page, ExplicitDestinationType, double[])"/>:
 /// one constructed from a page reports page number 0 until the document is saved, which the
-/// census would count as lost.
+/// census would count as lost. They are built through <see cref="PdfLinkPages.Build"/>, so a later
+/// operation of the batch reads a rebuilt link's page as it was built.
 /// </remarks>
 internal sealed class PdfNavigationRetarget
 {
     private readonly List<Entry> _entries = [];
     private readonly List<(int HostPage, int Annotation, Entry Entry)> _linksOnReplacedPages = [];
+    private readonly PdfLinkPages _links;
 
-    private PdfNavigationRetarget()
-    {
-    }
+    private PdfNavigationRetarget(PdfLinkPages links) => _links = links;
 
     /// <summary>
     /// Records the navigation that <paramref name="replaced"/> (page numbers) would lose when
@@ -39,7 +39,7 @@ internal sealed class PdfNavigationRetarget
     /// </summary>
     internal static PdfNavigationRetarget Capture(Document document, IReadOnlyCollection<int> replaced, PdfLinkPages links)
     {
-        var retarget = new PdfNavigationRetarget();
+        var retarget = new PdfNavigationRetarget(links);
         var pages = new HashSet<int>(replaced);
         retarget.CaptureOutlines(document.Outlines, pages);
 
@@ -89,7 +89,7 @@ internal sealed class PdfNavigationRetarget
     {
         foreach (Entry entry in _entries)
         {
-            entry.Set(entry.Rebuild(document, renumber));
+            entry.Set(entry.Rebuild(document, renumber, _links));
         }
 
         foreach ((int hostPage, int annotation, Entry entry) in _linksOnReplacedPages)
@@ -97,7 +97,7 @@ internal sealed class PdfNavigationRetarget
             AnnotationCollection annotations = document.Pages[renumber(hostPage)].Annotations;
             if (annotation <= annotations.Count && annotations[annotation] is LinkAnnotation link)
             {
-                Setter(link)(entry.Rebuild(document, renumber));
+                Setter(link)(entry.Rebuild(document, renumber, _links));
             }
         }
     }
@@ -144,7 +144,7 @@ internal sealed class PdfNavigationRetarget
     {
         public Action<IAppointment> Set { get; init; } = static _ => { };
 
-        public ExplicitDestination Rebuild(Document document, Func<int, int> renumber) =>
-            ExplicitDestination.CreateDestination(document.Pages[renumber(Page)], Type, Values);
+        public ExplicitDestination Rebuild(Document document, Func<int, int> renumber, PdfLinkPages links) =>
+            links.Build(document.Pages[renumber(Page)], Type, Values);
     }
 }
