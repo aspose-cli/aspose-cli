@@ -434,9 +434,13 @@ Reproductions: [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownI
   then writes it and throws `IndexOutOfRangeException`.
 - **CLI behavior:** `redact_area` that covers the last buttons of such a group deletes it without
   writing its value first, so the value leaves the file with the group unless the calculation
-  order keeps it (PDF-REDACT-CALCULATED); `set_form_field` on such a group later in the same
-  batch fails with `FEATURE_UNSUPPORTED`, and nothing is written.
-- **Workaround:** set the group's value in an edit of its own after the redaction.
+  order keeps it (PDF-REDACT-CALCULATED). `set_form_field` on such a group later in the same
+  batch, and `redact_area` that covers its selected button but not its last, which clears its
+  value, are refused with `OPS_INVALID` before they change anything, naming the group; the hint
+  says to run them, and the operations after them, in a second `pdf edit` of the output of the
+  operations before them.
+- **Workaround:** set the group's value, or redact its selected button, in an edit of its own
+  after the redaction.
 
 ### PDF-PAGE-COPY-FIELDS
 

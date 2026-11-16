@@ -145,15 +145,18 @@ internal static class PdfForms
     /// <summary>
     /// The page and rectangle of each widget of the fields: each child of a field that holds its
     /// widgets as children, whose own rectangle and page are its first widget's or all of theirs, and
-    /// each button of a radio group, which the engine lists as a field of the group's name. A widget
-    /// its page no longer holds, as a redaction leaves one in its field, is not; one whose page
-    /// evaluation mode hides is, without a page.
+    /// each button of a radio group, which the engine lists as a field of the group's name, with the
+    /// value a check box's or radio button's widget shows when on: the state of its look other than
+    /// Off. A widget its page no longer holds, as a redaction leaves one in its field, is not; one
+    /// whose page evaluation mode hides is, without a page.
     /// </summary>
-    internal static (int? Page, Rectangle Rect)[] Widgets(Document document, IEnumerable<Field> fields) =>
-        [.. fields.SelectMany(static field => field.Count > 1 ? Enumerable.Range(1, field.Count).Select(index => field[index]) : new WidgetAnnotation[] { field })
-            .Select(static widget => (Widget: widget, Page: PageOf(widget)))
+    internal static (int? Page, Rectangle Rect, string? Option)[] Widgets(Document document, IEnumerable<Field> fields) =>
+        [.. fields.SelectMany(static field => (field.Count > 1 ? Enumerable.Range(1, field.Count).Select(index => field[index]) : new WidgetAnnotation[] { field })
+                .Select(widget => (Widget: widget, Option: field is CheckboxField or RadioButtonOptionField
+                    ? widget.Appearance.Keys.FirstOrDefault(static key => key.StartsWith("N.", StringComparison.Ordinal) && key != "N." + CheckboxOff)?[2..] : null)))
+            .Select(static widget => (widget.Widget, widget.Option, Page: PageOf(widget.Widget)))
             .Where(widget => widget.Page is not int page || document.Pages[page].Annotations.Contains(widget.Widget))
-            .Select(static widget => (widget.Page, widget.Widget.Rect))];
+            .Select(static widget => (widget.Page, widget.Widget.Rect, widget.Option))];
 
     /// <summary>The check box state that leaves it unchecked.</summary>
     private const string CheckboxOff = "Off";

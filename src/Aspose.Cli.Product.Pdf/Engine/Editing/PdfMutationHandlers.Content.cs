@@ -224,17 +224,21 @@ internal sealed partial class PdfMutationHandlers
         Page page = PageAt(_document, operation.Page);
         Rectangle area = ToPdfRect(page, operation.Rect);
         // The fields whose every widget the cover takes go with it; one with a widget it leaves keeps
-        // its value. The engine keeps one that the calculation order names in the file
-        // (PDF-REDACT-CALCULATED), so each is cleared, value and look, first, and an order that no
-        // field left can use is emptied.
+        // its value, unless the cover takes every widget that shows it. The engine keeps one that the
+        // calculation order names in the file (PDF-REDACT-CALCULATED), so each is cleared, value and
+        // look, first, and an order that no field left can use is emptied.
         string[] covered = [.. _document.Form.Fields.GroupBy(static field => field.FullName, StringComparer.Ordinal)
             .Where(group => PdfForms.Widgets(_document, group) is { Length: > 0 } widgets && Uncovered(widgets, (int?)operation.Page, area).Length == 0)
             .Select(static group => group.Key)];
         bool calculated = covered.Any(name => ((Field)_document.Form[name]).Actions?.OnCalculate is not null);
         Field[] cleared = [.. _document.Form.Fields.Where(field => covered.Contains(field.FullName) && field is not (ButtonField or SignatureField))];
-        // A radio group still counting a button an earlier redaction took refuses a value
-        // (PDF-REDACT-RADIO-BUTTONS); its deletion below takes the value out of the file.
-        foreach (Field field in cleared.Where(static field => PdfForms.RadioGroup(field) is not { } group || group.Count == group.Options.Count))
+        // A field that keeps a widget loses the value whose every widget the cover takes (TakesSelection),
+        // refused before anything changes where the engine cannot clear it (Settable). A covered radio group
+        // that lost a button refuses a value too, and its deletion below takes the value out of the file.
+        Field[] deselected = [.. _document.Form.Fields.GroupBy(static field => field.FullName, StringComparer.Ordinal).Where(group => !covered.Contains(group.Key)
+            && TakesSelection(PdfForms.Widgets(_document, group), PdfForms.State(group.First()).Value, (int?)operation.Page, area))
+            .Select(static group => Settable(group.First(), "redact_area", "which this redact_area clears, since it covers the button of the value"))];
+        foreach (Field field in cleared.Where(static field => PdfForms.RadioGroup(field) is not { } group || group.Count == group.Options.Count).Concat(deselected))
         {
             Clear(field);
         }
@@ -384,6 +388,14 @@ internal sealed partial class PdfMutationHandlers
     // Clears a field as set_form_field clears it: the whole value, a radio button's in its group.
     private static void Clear(Field field) => (PdfForms.RadioGroup(field) ?? field).Value = ClearedFieldValue(field);
 
+    // The field, unless it is a radio group a redaction earlier in the batch took a button of, whose value the engine
+    // cannot change until the batch is saved (PDF-REDACT-RADIO-BUTTONS): an operation that would is refused before it changes anything.
+    private static Field Settable(Field field, string operation, string change) => PdfForms.RadioGroup(field) is { } group && group.Count != group.Options.Count
+        ? throw new OperationInvalidException(
+            $"a redaction earlier in this batch took a button of radio group '{field.FullName}', after which the engine cannot change the group's value, {change}",
+            $"Run the operations before this {operation} in one 'pdf edit', then this {operation} and the operations after it in a second 'pdf edit' of that output.")
+        : field;
+
     /// <summary>
     /// Whether redact_text clears a field that holds <paramref name="value"/>: one with a value
     /// the pattern matches and, with <paramref name="pages"/>, only on them.
@@ -417,8 +429,18 @@ internal sealed partial class PdfMutationHandlers
     /// <paramref name="page"/> leaves (<see cref="Covers"/>): one that leaves none of them removes
     /// the field. The operation and the verification's prediction of it both ask this.
     /// </summary>
-    internal static (TPage Page, Rectangle Rect)[] Uncovered<TPage>(IEnumerable<(TPage Page, Rectangle Rect)> widgets, TPage page, Rectangle area) =>
+    internal static (TPage Page, Rectangle Rect, string? Option)[] Uncovered<TPage>(IEnumerable<(TPage Page, Rectangle Rect, string? Option)> widgets, TPage page, Rectangle area) =>
         [.. widgets.Where(widget => !EqualityComparer<TPage>.Default.Equals(widget.Page, page) || !Covers(area, widget.Rect))];
+
+    /// <summary>
+    /// Whether a redact_area over <paramref name="area"/> on <paramref name="page"/> takes every widget
+    /// that shows <paramref name="value"/>: the radio buttons or check box widgets whose on state it is,
+    /// so the field no longer shows it and loses it, as set_form_field clears it; one that leaves one of
+    /// them, or takes only others, leaves it. A text field's widgets all show its value, so it goes only
+    /// with the field. The operation and the verification's prediction of it both ask this.
+    /// </summary>
+    internal static bool TakesSelection<TPage>(IEnumerable<(TPage Page, Rectangle Rect, string? Option)> widgets, string? value, TPage page, Rectangle area) =>
+        widgets.Where(widget => widget.Option is { } option && option == value).ToArray() is { Length: > 0 } showing && Uncovered(showing, page, area).Length == 0;
 
     private static (double X, double Y) Middle(Rectangle rectangle) =>
         ((rectangle.LLX + rectangle.URX) / 2, (rectangle.LLY + rectangle.URY) / 2);

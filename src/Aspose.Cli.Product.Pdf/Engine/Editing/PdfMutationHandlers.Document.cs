@@ -155,7 +155,7 @@ internal sealed partial class PdfMutationHandlers
     public ValueTuple Apply(SetFormFieldOp operation)
     {
         EnsureAcroForm(_document);
-        Field field = FormField(_document, operation.Name);
+        Field field = Settable(FormField(_document, operation.Name), "set_form_field", "which this set_form_field sets");
         RequireValueField(field);
         if (operation.Value is not null && RejectedFieldValue(field, operation.Value) is { } rejected)
         {
