@@ -514,6 +514,17 @@ Reproductions: [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownI
   name is looked up only when it is listed, so `pdf edit`, `pdf merge`, `pdf split` and
   `pdf convert --to pdfa-*` accept it.
 
+### PDF-NAMES-BESIDE-DESTS
+
+- **Defect:** when the catalog has both a `Dests` dictionary and a name tree of destinations
+  (`Names` → `Dests`), `Document.NamedDestinations` reads only the dictionary: a name only the
+  tree holds is not listed and its lookup returns null, so a link or bookmark that leads through
+  it reads as leading to no page, while a reader follows the tree. The saved file keeps both.
+- **CLI behavior:** `pdf inspect --detail links` and `--detail outline` show such a link or
+  bookmark without a page, and since it read so before an edit as well, the edit's
+  `NAVIGATION_DEGRADED` does not count it, even when the edit deletes or moves the page the tree
+  leads it to.
+
 ### PDF-TAGGED-CONTENT-WRITES
 
 - **Defect:** reading `Document.TaggedContent` rewrites the loaded document: it sets an empty

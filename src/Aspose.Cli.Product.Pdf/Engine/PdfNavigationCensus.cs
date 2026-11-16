@@ -60,7 +60,8 @@ internal readonly record struct PdfNavigationCensus(int Bookmarks, int Links, in
     /// <summary>
     /// The destination a name leads to, or null when the document has none of that name. The
     /// engine's lookup throws for a name tree without a Dests entry (PDF-NAMES-WITHOUT-DESTS),
-    /// such as the one a document assembled from copied pages gets with its attachments.
+    /// such as the one a document assembled from copied pages gets with its attachments, and finds
+    /// no name of a name tree beside a Dests dictionary (PDF-NAMES-BESIDE-DESTS).
     /// </summary>
     internal static IAppointment? NamedTarget(Document document, string name) =>
         NamedDestinationNames(document).Contains(name, StringComparer.Ordinal)
