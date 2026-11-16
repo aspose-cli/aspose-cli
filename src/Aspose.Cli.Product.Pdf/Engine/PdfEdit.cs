@@ -45,9 +45,10 @@ internal static class PdfEdit
             ? (Permissions)loaded.Document.Permissions
             : null;
         bool openPassword = userPermissions is not null && loaded.HasOpenPassword;
-        IReadOnlyList<PdfNavigationLoss.Entry> navigationBefore = PdfNavigationLoss.Capture(loaded.Document);
+        var links = new PdfLinkPages();
+        IReadOnlyList<PdfNavigationLoss.Entry> navigationBefore = PdfNavigationLoss.Capture(loaded.Document, links);
         var model = new PdfEditModel(
-            session.Loader, operationInputs, loaded.Document, batch.Ops, request.Password, request.EncryptPassword is not null, request.OpSecrets);
+            session.Loader, operationInputs, loaded.Document, batch.Ops, request.Password, request.EncryptPassword is not null, request.OpSecrets, links);
         PdfEditVerifier? verifier = request.Verify ? new PdfEditVerifier(loaded.Document, model.PageIdentities) : null;
         AppliedBatch applied = BoundedOperationRunner.Run(
             PdfOp.Catalog, batch.Ops, request.Options.BestEffort, deadline: null, model, verifier, PdfSnapshots.PageUnit);
@@ -63,11 +64,11 @@ internal static class PdfEdit
         // The navigation the batch left leading to no page, as the published output reads it: the
         // engine keeps the page numbers of the link destinations it read before a page deletion
         // (PDF-LINK-STALE-PAGE). A dry run publishes nothing to read, so it reads the edited
-        // document with what was read before the batch.
+        // document with the links' pages as the batch read them.
         IReadOnlyList<PdfNavigationLoss.Entry>? navigationAfter = null;
         PdfNavigationLoss? navigation = null;
         PdfNavigationLoss Navigation() => navigation ??= PdfNavigationLoss.Between(
-            navigationBefore, navigationAfter ?? PdfNavigationLoss.Capture(loaded.Document, navigationBefore), model.Keeps);
+            navigationBefore, navigationAfter ?? PdfNavigationLoss.Capture(loaded.Document, links), model.Keeps);
 
         // What the batch left: the verification reports each warning that leaves the output
         // incomplete as an issue.

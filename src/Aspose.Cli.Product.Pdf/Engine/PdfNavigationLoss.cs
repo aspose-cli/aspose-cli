@@ -44,21 +44,14 @@ internal sealed record PdfNavigationLoss(PdfNavigationCensus Stranded, PdfNaviga
     /// <summary>
     /// The bookmarks of <paramref name="document"/>, and its links and named destinations that
     /// lead within it, each with the page it leads to, or none when it leads to no page. A link's
-    /// page destination read before a page deletion keeps the number it had (PDF-LINK-STALE-PAGE),
-    /// so with <paramref name="before"/>, the capture of the same document before it changed in
-    /// memory, such a link leads to the page it led to then while the document still holds it.
+    /// page is read through <paramref name="links"/>: the capture of a document before and after it
+    /// changed in memory reads both with the same.
     /// </summary>
-    internal static IReadOnlyList<Entry> Capture(Document document, IReadOnlyList<Entry>? before = null)
+    internal static IReadOnlyList<Entry> Capture(Document document, PdfLinkPages? links = null)
     {
+        links ??= new PdfLinkPages();
         var entries = new List<Entry>();
         CaptureOutline(document, document.Outlines, null, entries);
-        Dictionary<object, Page?> read = new(ReferenceEqualityComparer.Instance);
-        foreach (Entry entry in (before ?? []).Where(static entry => entry.Read is not null))
-        {
-            read.TryAdd(entry.Read!, entry.Target);
-        }
-
-        HashSet<Page> held = new(Enumerable.Range(1, document.Pages.Count).Select(number => document.Pages[number]), ReferenceEqualityComparer.Instance);
         for (int number = 1; number <= document.Pages.Count; number++)
         {
             foreach (Annotation annotation in document.Pages[number].Annotations)
@@ -66,10 +59,8 @@ internal sealed record PdfNavigationLoss(PdfNavigationCensus Stranded, PdfNaviga
                 if (annotation is LinkAnnotation link && PdfNavigationCensus.Target(link.Destination, link.Action) is { } target)
                 {
                     Rectangle area = link.Rect;
-                    Page? page = target is not ExplicitDestination || !read.TryGetValue(target, out Page? led) ? PageOf(document, target)
-                        : led is not null && held.Contains(led) ? led : null;
                     entries.Add(new Entry(Kind.Link, string.Create(CultureInfo.InvariantCulture,
-                        $"{area.LLX} {area.LLY} {area.URX} {area.URY} {Describe(target)}"), page) { Read = target });
+                        $"{area.LLX} {area.LLY} {area.URX} {area.URY} {Describe(target)}"), links.Number(document, target) is > 0 and int page ? document.Pages[page] : null));
                 }
             }
         }
@@ -267,8 +258,5 @@ internal sealed record PdfNavigationLoss(PdfNavigationCensus Stranded, PdfNaviga
     {
         /// <summary>A bookmark's address in the outline it was read from, as <c>pdf inspect</c> reports it.</summary>
         internal string? Address { get; init; }
-
-        /// <summary>A link's destination as the engine read it, which it keeps for the link.</summary>
-        internal IAppointment? Read { get; init; }
     }
 }

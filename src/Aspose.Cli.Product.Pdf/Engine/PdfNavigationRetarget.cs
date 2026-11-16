@@ -34,9 +34,10 @@ internal sealed class PdfNavigationRetarget
 
     /// <summary>
     /// Records the navigation that <paramref name="replaced"/> (page numbers) would lose when
-    /// they are copied together and the originals deleted.
+    /// they are copied together and the originals deleted, the page of each link as
+    /// <paramref name="links"/> reads it.
     /// </summary>
-    internal static PdfNavigationRetarget Capture(Document document, IReadOnlyCollection<int> replaced)
+    internal static PdfNavigationRetarget Capture(Document document, IReadOnlyCollection<int> replaced, PdfLinkPages links)
     {
         var retarget = new PdfNavigationRetarget();
         var pages = new HashSet<int>(replaced);
@@ -58,9 +59,9 @@ internal sealed class PdfNavigationRetarget
             {
                 index++;
                 if (annotation is not LinkAnnotation link
-                    || Exact(PdfNavigationCensus.Target(link.Destination, link.Action)) is not { } target
-                    || target.Page < 1
-                    || target.Page > document.Pages.Count
+                    || PdfNavigationCensus.Target(link.Destination, link.Action) is not { } destination
+                    || Exact(destination) is not { } exact
+                    || (exact with { Page = links.Number(document, destination) }) is not { Page: > 0 } target
                     || pages.Contains(target.Page) == hostReplaced)
                 {
                     continue;

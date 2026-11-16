@@ -50,7 +50,7 @@ internal sealed partial class PdfMutationHandlers
         // are copied and the originals deleted, and the navigation that targeted the originals is
         // pointed at the copies.
         (int[] copied, int at, PdfMovedFields fields) = PdfMovedFields.Plan(_document, pages, operation.To);
-        var navigation = PdfNavigationRetarget.Capture(_document, copied);
+        var navigation = PdfNavigationRetarget.Capture(_document, copied, _links);
         Page[] originals = [.. copied.Select(page => _document.Pages[page])];
         using Document selected = Select(_document, copied);
         _document.Pages.Delete(copied);
