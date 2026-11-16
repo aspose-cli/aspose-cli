@@ -144,7 +144,9 @@ A black rectangle or zero search
 hits alone is not proof that all sensitive content was removed; a raw-byte
 absence check for a known literal is additional evidence only, because PDF text
 can be encoded or compressed. A field `flatten_forms` flattened or an attachment
-`delete_attachment` deleted no longer holds its value in the file.
+`delete_attachment` deleted no longer holds its value in the file, nor does a field
+whose every widget `redact_area` covers, or a radio group or check box whose every
+button that shows its value it covers.
 
 Before publishing, every edit with `redact_text`, with or without `--verify`,
 searches the output again: the text of the pages it searched, their fields and their

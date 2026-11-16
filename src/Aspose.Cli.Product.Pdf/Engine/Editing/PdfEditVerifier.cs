@@ -34,8 +34,9 @@ internal sealed class PdfEditVerifier : IEditVerifier<PdfOp>
     private readonly HashSet<string> _incomplete = new(StringComparer.Ordinal);
     private readonly HashSet<string> _checked = new(StringComparer.Ordinal);
     private readonly Expectations<string> _fields;
-    // Where the widgets of each field lie, as the input or a set_form_field left them: on a page by its identity, which page operations keep.
-    private readonly Dictionary<string, (PdfPageIdentity? Page, Rectangle Rect)[]> _widgets = new(StringComparer.Ordinal);
+    // Where the widgets of each field lie, as the input or a set_form_field left them: on a page by its identity, which page operations keep,
+    // with the value a check box's or radio button's widget shows when on.
+    private readonly Dictionary<string, (PdfPageIdentity? Page, Rectangle Rect, string? Option)[]> _widgets = new(StringComparer.Ordinal);
     // Each field a redact_area covers every widget of, which the output must not hold, with the operation's id.
     private readonly List<(string Name, string Id)> _covered = [];
     private readonly Expectations<string> _metadata;
@@ -83,8 +84,8 @@ internal sealed class PdfEditVerifier : IEditVerifier<PdfOp>
         }
     }
 
-    private (PdfPageIdentity? Page, Rectangle Rect)[] Placed(IEnumerable<Field> fields) =>
-        [.. PdfForms.Widgets(_document, fields).Select(widget => (widget.Page is int page ? _pages.Of(_document.Pages[page]) : null, widget.Rect))];
+    private (PdfPageIdentity? Page, Rectangle Rect, string? Option)[] Placed(IEnumerable<Field> fields) =>
+        [.. PdfForms.Widgets(_document, fields).Select(widget => (widget.Page is int page ? _pages.Of(_document.Pages[page]) : null, widget.Rect, widget.Option))];
 
     /// <summary>
     /// Records the effect of one operation that applied, against the document it left. An effect
@@ -469,9 +470,11 @@ internal sealed class PdfEditVerifier : IEditVerifier<PdfOp>
         /// A field of the input or the batch whose every widget the area covers
         /// (<see cref="PdfMutationHandlers.Uncovered"/>) must be gone from the output, so a value set
         /// before is no longer checked, as after flatten_forms; a field with a widget it leaves keeps
-        /// its value, and its other widgets. A set field whose widgets are not known, because the field
-        /// was not found or pages were imported beside it, is left unchecked. The cover itself has no
-        /// reliable read-back, so the operation stays unchecked.
+        /// its value, and its other widgets, unless the area takes every widget that shows a value set
+        /// before (<see cref="PdfMutationHandlers.TakesSelection"/>), which is then expected clear. A
+        /// set field whose widgets are not known, because the field was not found or pages were
+        /// imported beside it, is left unchecked. The cover itself has no reliable read-back, so the
+        /// operation stays unchecked.
         /// </summary>
         public ValueTuple Apply(RedactAreaOp operation)
         {
@@ -479,12 +482,16 @@ internal sealed class PdfEditVerifier : IEditVerifier<PdfOp>
             Page page = PdfPages.PageAt(Document, operation.Page);
             Rectangle area = PdfGeometry.ToPdfRect(page, operation.Rect);
             PdfPageIdentity identity = verifier._pages.Of(page);
-            foreach ((string name, (PdfPageIdentity? Page, Rectangle Rect)[] widgets) in verifier._widgets.ToArray())
+            foreach ((string name, (PdfPageIdentity? Page, Rectangle Rect, string? Option)[] widgets) in verifier._widgets.ToArray())
             {
-                (PdfPageIdentity? Page, Rectangle Rect)[] left = PdfMutationHandlers.Uncovered(widgets, identity, area);
+                (PdfPageIdentity? Page, Rectangle Rect, string? Option)[] left = PdfMutationHandlers.Uncovered(widgets, identity, area);
                 if (left.Length > 0)
                 {
                     verifier._widgets[name] = left;
+                    if (verifier._fields.FirstOrDefault(field => field.Key == name).Value is { } set && PdfMutationHandlers.TakesSelection(widgets, set.Value, identity, area))
+                    {
+                        verifier._fields.Expect(name, PdfMutationSupport.ClearedFieldValue(PdfMutationSupport.FormField(Document, name)));
+                    }
                 }
                 else if (widgets.Length > 0)
                 {

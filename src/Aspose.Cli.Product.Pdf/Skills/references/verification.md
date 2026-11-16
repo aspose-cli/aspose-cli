@@ -29,7 +29,7 @@ by their address, as a `delete_bookmarks` operation ([page changes](editing.md))
 
 | Operation | Read back |
 | --- | --- |
-| `set_form_field` | the field holds the value set, or is clear after `null` or a later `redact_text` that clears it |
+| `set_form_field` | the field holds the value set, or is clear after `null`, a later `redact_text` that clears it or a later `redact_area` over every button that shows the value set |
 | `flatten_forms` | no field of a flattened name remains, or no field at all without `fields` |
 | `redact_text` | checked before publishing, with or without `--verify` ([redaction](editing.md#redaction)) |
 | `redact_area` | stays unchecked; a form field of the input or the batch whose every widget it covers is gone, else `FIELD_VALUE_MISMATCH` |
