@@ -1,5 +1,5 @@
 {
-  "name": "slides create --from-markdown writes the paragraph under a deck's title into the title slide's subtitle, as the outline guide says, when the template's Title Slide layout also has a body placeholder beside its subtitle, such as a presenter or date box",
+  "name": "slides create --from-markdown writes the paragraph under a deck's title into the title slide's subtitle, as the outline guide says, when the template's Title Slide layout also has a body placeholder beside its subtitle, such as a presenter or date box; set_body then writes that subtitle, the one shape the slide keeps for it",
   "files": {
     "template.pptx": { "copy": "Assets/slides-title-slide-with-a-body-placeholder.pptx" },
     "deck.md": { "text": "# One\n\nsub\n" }
@@ -18,6 +18,20 @@
           { "path": "slides[0].shapes[0].placeholder", "equals": "title" },
           { "path": "slides[0].shapes[1].placeholder", "equals": "subtitle" },
           { "path": "slides[0].shapes[1].text", "equals": "sub" }
+        ]
+      }
+    },
+    {
+      "args": ["slides", "edit", "deck.pptx", "--ops", "{\"ops\":[{\"op\":\"set_body\",\"slide\":1,\"paragraphs\":[{\"text\":\"NEW\"}]}]}", "--out", "set.pptx", "--verify"],
+      "expect": { "exitCode": 0, "json": [{ "path": "verification.ok", "equals": true }] }
+    },
+    {
+      "args": ["slides", "read", "set.pptx", "--slides", "1"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "slides[0].shapes[1].placeholder", "equals": "subtitle" },
+          { "path": "slides[0].shapes[1].text", "equals": "NEW" }
         ]
       }
     }
