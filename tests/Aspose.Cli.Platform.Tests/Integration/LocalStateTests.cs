@@ -47,13 +47,9 @@ public sealed class LocalStateTests
         var environment = new Dictionary<string, string?> { ["LOCALAPPDATA"] = local };
         Assert.Equal(0, workspace.Run("cells", "create", "book.xlsx", "--output-format", "json").ExitCode);
 
-        CliResult review = workspace.RunWithEnv(environment,
-            "review", "book.xlsx", "--out", "evidence", "--timeout", TestDeadline.CliTimeout, "--output-format", "json");
         CliResult convert = workspace.RunWithEnv(environment,
             "cells", "convert", "book.xlsx", "--to", "csv", "--out", "book.csv", "--timeout", TestDeadline.CliTimeout, "--output-format", "json");
 
-        Assert.True(review.ExitCode == 0, review.StdErr);
-        Assert.True(File.Exists(workspace.File(Path.Combine("evidence", "review.json"))));
         Assert.True(convert.ExitCode == 0, convert.StdErr);
         Assert.True(File.Exists(workspace.File("book.csv")));
         Assert.True(Directory.Exists(Path.Combine(target, "local", DistributionInfo.Id, "worker")));

@@ -29,7 +29,7 @@ public sealed class PdfFontDirectoryTests
 
     [Category(TestCategory.Slow)]
     [Fact]
-    public void Cli_FontsCheckAndReviewUseTheFontDirectory()
+    public void Cli_FontsCheckUsesTheFontDirectory()
     {
         using var fixture = new PdfEngineFixture();
         using var workspace = new TempWorkspace();

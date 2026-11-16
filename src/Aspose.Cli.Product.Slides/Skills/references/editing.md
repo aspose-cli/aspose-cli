@@ -48,11 +48,10 @@ by 405 and the `4x3` preset 720 by 540, and a deck made in PowerPoint is usually
 
 Inserted shapes, pictures, tables and charts are named by their geometry or kind and their
 shapeId, such as `rectangle 5`. `set_shape_bounds` moves or resizes a shape in place, keeping its id, name,
-style and text; omitted sides keep their values. Use it when a review finding asks to move or
-enlarge a shape. `insert_table` reports a table whose rows grow past its `rect` as a
+style and text; omitted sides keep their values. `insert_table` reports a table whose rows grow past its `rect` as a
 `TABLE_OVERFLOW` warning; `format_shape` on a table styles every cell, so a smaller `fontSize`
 lets a long table fit. The warning measures the table as `insert_table` left it, so it stays
-when a later operation of the same batch shrinks the text; review the slide instead. On a chart, `format_shape` styles the title, legend, axis and
+when a later operation of the same batch shrinks the text; render the slide and look at it instead. On a chart, `format_shape` styles the title, legend, axis and
 data-label text. A picture has no text, so a text style on it fails with `OPS_INVALID`.
 The `format_shape` `lineColor` is only the solid outline color; no operation sets an outline's
 width, dash or transparency.
@@ -186,8 +185,8 @@ master or layout art); each item keeps its presentation-wide `index`.
   warns `ENCRYPTION_REMOVED`; the slide images `render` writes do not warn.
 - A `convert` without `--slides` to a format other than PPT, PPTX, PPTM or ODP leaves out the
   hidden slides, as PowerPoint's export does, and warns `HIDDEN_SLIDES_SKIPPED` with their
-  numbers; the hidden slides `--slides` names are converted. `render` and `review` draw hidden
-  slides and warn `HIDDEN_SLIDES_RENDERED` with their numbers: unhide them with
+  numbers; the hidden slides `--slides` names are converted. `render` draws hidden
+  slides and warns `HIDDEN_SLIDES_RENDERED` with their numbers: unhide them with
   `set_slide_hidden`, or leave them out of what you report as the deck.
 - An ODP output turns native charts into pictures and drops slide transitions and sections, and
   warns `LOSSY_CONVERSION` (SLIDES-ODP-NATIVE-CONTENT); keep the PPTX for further edits.

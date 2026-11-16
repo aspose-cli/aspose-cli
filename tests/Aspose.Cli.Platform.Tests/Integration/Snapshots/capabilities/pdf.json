@@ -91,80 +91,6 @@
       ],
       "background": true
     },
-    "review": {
-      "defaultView": "pages",
-      "views": [
-        "pages"
-      ],
-      "visualInspectionRequired": true,
-      "checks": [
-        {
-          "code": "PDF_EVALUATION_WATERMARK",
-          "severity": "warning",
-          "summary": "A page carries the evaluation watermark that an Aspose product (PDF, Cells, Words or Slides) saving without a license stamped into the file; a license does not remove it."
-        },
-        {
-          "code": "PDF_FONTS_MISSING_OR_SUBSTITUTED",
-          "severity": "error",
-          "summary": "A font the document uses is unavailable or substituted, so the rendering may differ from the author's."
-        },
-        {
-          "code": "PDF_FONTS_NOT_EMBEDDED",
-          "severity": "warning",
-          "summary": "Font resources other than the standard 14 PDF fonts are not embedded, so rendering can vary between machines."
-        },
-        {
-          "code": "PDF_FORM_APPEARANCE_REVIEW_REQUIRED",
-          "severity": "info",
-          "summary": "The document contains form fields whose rendered appearances must be inspected for stale, clipped or missing values."
-        },
-        {
-          "code": "PDF_FORM_FIELD_PAGE_UNRESOLVED",
-          "severity": "warning",
-          "summary": "Form fields cannot be associated with a valid page of the document."
-        },
-        {
-          "code": "PDF_PAGE_SIZE_UNUSUAL",
-          "severity": "warning",
-          "summary": "A page is narrower or shorter than 72 pt, or wider or taller than 2880 pt, and may preview poorly."
-        },
-        {
-          "code": "PDF_PAGE_UTILIZATION_LOW",
-          "severity": "warning",
-          "summary": "A page carries very little readable text and no images covering a quarter of it, which may indicate an unintended sparse page or pagination break."
-        },
-        {
-          "code": "PDF_PAGE_WITHOUT_READABLE_CONTENT",
-          "severity": "warning",
-          "summary": "A page has no readable text, no images covering a quarter of it and does not look scanned, so it may be unintentionally blank."
-        },
-        {
-          "code": "PDF_PAGE_WITHOUT_TEXT_LAYER",
-          "severity": "info",
-          "summary": "A page has no extractable text and an image fills its width or height, as on a scan, so search and redact_text do not reach its content."
-        },
-        {
-          "code": "PDF_REVIEW_TRUNCATED",
-          "severity": "warning",
-          "summary": "The review rendered only some parts, as many as --max-items or the preview snapshot budget allowed, so the rest have no image and were not checked."
-        },
-        {
-          "code": "PDF_TEXT_ANALYSIS_TRUNCATED",
-          "severity": "warning",
-          "summary": "Text extraction reached its budget, so the structural text checks of a page are incomplete."
-        },
-        {
-          "code": "PDF_TEXT_COVERED",
-          "severity": "warning",
-          "summary": "Text lies under an opaque box painted over it, such as a redaction cover, so it is in the file but not visible on the page."
-        },
-        {
-          "code": "PDF_TEXT_OUTSIDE_PAGE",
-          "severity": "warning",
-          "summary": "Text fragments extend beyond the page rectangle and may be clipped."
-        }
-      ]
-    },
     "formats": [
       {
         "id": "docx",
@@ -3645,7 +3571,7 @@
               ]
             },
             "fieldCount": {
-              "description": "The number of field names, so a radio group is one field however many buttons it has; review counts fields the same way.",
+              "description": "The number of field names, so a radio group is one field however many buttons it has.",
               "type": "integer",
               "minimum": 0
             },

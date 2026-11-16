@@ -480,11 +480,7 @@ internal static partial class ContractRules
                     static group => group.Key,
                     static group => new HashSet<string>(group.SelectMany(static option => option.AllowedValues), StringComparer.Ordinal),
                     StringComparer.Ordinal);
-            _codes =
-            [
-                .. catalog.Diagnostics.Keys,
-                .. catalog.Products.SelectMany(product => ReviewCodes(catalog, product.Id)),
-            ];
+            _codes = [.. catalog.Diagnostics.Keys];
             _operations =
             [
                 .. catalog.Document["products"]!.AsArray()
@@ -669,7 +665,7 @@ internal static partial class ContractRules
                 kinds.Add("code");
                 if (!match.Value.StartsWith("ASPOSE_", StringComparison.Ordinal) && !Inside(variables, match.Index) && !Known(match.Value, _codes, exempted))
                 {
-                    problems.Add($"'{match.Value}' is no diagnostic or review check");
+                    problems.Add($"'{match.Value}' is no diagnostic");
                 }
             }
             foreach (Match match in LowerToken().Matches(text))

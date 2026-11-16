@@ -786,7 +786,7 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
 
     /// <summary>
     /// A licensed whole-workbook pdf export prints the warning sheets an earlier evaluation save
-    /// added and the write pipeline says so, as review does; an unmarked workbook exports without
+    /// added and the write pipeline says so; an unmarked workbook exports without
     /// the warning.
     /// </summary>
     [Fact]

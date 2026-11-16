@@ -75,7 +75,6 @@ internal static class ExtractCommand
                     ByteOrderMark = byteOrderMark,
                     FormFormat = format,
                     TextExtraction = PdfInputs.TextExtraction(standard, directory, pageText),
-                    InputReview = standard.ContinuationAt("review").Quoted(),
                     FormsInspection = PdfInputs.FormsInspection(standard),
                 };
             },

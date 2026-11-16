@@ -1,34 +1,12 @@
 using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
-using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Errors;
-using Aspose.Cli.Sdk.Rendering;
 using Aspose.Cli.Sdk.Views;
 
 namespace Aspose.Cli.Sdk.Extensibility;
 
-/// <summary>Product-owned review facts derived from one rendered view.</summary>
-public sealed record ProductReviewAssessment
-{
-    /// <summary>Deterministic structural or semantic observations.</summary>
-    public IReadOnlyList<ReviewFinding>? Findings { get; init; }
-
-    /// <summary>Warnings raised while inspecting the source.</summary>
-    public IReadOnlyList<Warning>? Warnings { get; init; }
-
-    /// <summary>Product-owned coverage measurements.</summary>
-    public IReadOnlyList<ReviewCoverageMetric>? Coverage { get; init; }
-
-    /// <summary>Whether every deterministic check ran to completion.</summary>
-    public bool Complete { get; init; } = true;
-}
-
-/// <summary>
-/// The one rendering contract of a product: the same views serve static
-/// review evidence and live display, so what people watch is exactly what
-/// agents review.
-/// </summary>
+/// <summary>The one rendering contract of a product: the views of its live display.</summary>
 /// <typeparam name="TSession">The product's engine session.</typeparam>
 public interface IProductViewAdapter<TSession>
     where TSession : class
@@ -36,20 +14,8 @@ public interface IProductViewAdapter<TSession>
     /// <summary>Views the product renders.</summary>
     IReadOnlyList<ProductView> Views { get; }
 
-    /// <summary>View used for static review evidence; it must render image parts.</summary>
-    string ReviewView { get; }
-
     /// <summary>View used for live display.</summary>
     string LiveView { get; }
-
-    /// <summary>Whether review evidence always requires human or AI visual inspection.</summary>
-    bool VisualInspectionRequired { get; }
-
-    /// <summary>
-    /// Every check <see cref="Assess"/> can report, each declared once; codes start with the
-    /// product id in upper case. The SDK adds the checks every review reports (<see cref="ReviewChecks"/>).
-    /// </summary>
-    IReadOnlyList<ReviewCheck> Checks { get; }
 
     /// <summary>Renders the parts of one view into the bounded sink, opening the source once.</summary>
     ViewManifest Render(
@@ -57,47 +23,27 @@ public interface IProductViewAdapter<TSession>
         string filePath,
         ViewRenderRequest request,
         IViewArtifactSink artifacts);
-
-    /// <summary>Inspects the source for review findings and coverage beyond the rendered parts.</summary>
-    ProductReviewAssessment Assess(
-        TSession session,
-        string filePath,
-        ViewRenderRequest request,
-        ViewManifest rendered);
 }
 
 /// <summary>Type-erased host boundary for one strongly typed view adapter.</summary>
 public sealed partial class ProductViewDefinition
 {
     private readonly Func<object, string, ViewRenderRequest, IViewArtifactSink, ViewManifest> _render;
-    private readonly Func<object, string, ViewRenderRequest, ViewManifest, ProductReviewAssessment> _assess;
     private readonly Lazy<ViewPresentation> _presentation;
 
     private ProductViewDefinition(
         Type sessionType,
         string productId,
         IReadOnlyList<ProductView> views,
-        string reviewView,
         string liveView,
-        bool visualInspectionRequired,
-        IReadOnlyList<ReviewCheck> checks,
         Func<object, string, ViewRenderRequest, IViewArtifactSink, ViewManifest> render,
-        Func<object, string, ViewRenderRequest, ViewManifest, ProductReviewAssessment> assess,
         Assembly presenterAssembly)
     {
         SessionType = sessionType;
         ProductId = productId;
         Views = Array.AsReadOnly(views.ToArray());
-        ReviewView = reviewView;
         LiveView = liveView;
-        ReviewViews = Array.AsReadOnly(Views
-            .Where(static view => view.PartKind == ViewPartKinds.Image)
-            .Select(static view => view.Id)
-            .ToArray());
-        VisualInspectionRequired = visualInspectionRequired;
-        Checks = checks;
         _render = render;
-        _assess = assess;
         _presentation = new Lazy<ViewPresentation>(() => ReadPresentation(presenterAssembly, productId));
     }
 
@@ -110,20 +56,8 @@ public sealed partial class ProductViewDefinition
     /// <summary>Every view the product renders.</summary>
     public IReadOnlyList<ProductView> Views { get; }
 
-    /// <summary>Default view of static review evidence.</summary>
-    public string ReviewView { get; }
-
     /// <summary>Default view of live display.</summary>
     public string LiveView { get; }
-
-    /// <summary>Views whose image parts can serve as review evidence.</summary>
-    public IReadOnlyList<string> ReviewViews { get; }
-
-    /// <summary>Whether review evidence always requires visual inspection.</summary>
-    public bool VisualInspectionRequired { get; }
-
-    /// <summary>Every check a review of this product can report, ordered by code.</summary>
-    public IReadOnlyList<ReviewCheck> Checks { get; }
 
     /// <summary>
     /// The product presenter embedded as <c>Presenter/presenter.js</c> and the
@@ -159,43 +93,6 @@ public sealed partial class ProductViewDefinition
             && !(manifest.Warnings ?? []).Any(warning => warning.Code == truncated.Code)
             ? manifest with { Warnings = [.. manifest.Warnings ?? [], truncated] }
             : manifest;
-    }
-
-    /// <summary>Runs the product's review checks and the shared font check.</summary>
-    public ProductReviewAssessment Assess(
-        ProductBinding binding,
-        string filePath,
-        ViewRenderRequest request,
-        ViewManifest rendered)
-    {
-        ArgumentNullException.ThrowIfNull(request);
-        ArgumentNullException.ThrowIfNull(binding);
-        ArgumentNullException.ThrowIfNull(rendered);
-        ProductReviewAssessment assessment = binding.Publishing.ReportingEvaluationLimits(() => _assess(Session(binding), filePath, request, rendered))
-            ?? throw new InvalidOperationException(
-                $"Product '{ProductId}' returned no review assessment.");
-        EnsureDeclared(assessment.Findings);
-        return AppendFontFindings(
-            ProductId,
-            assessment,
-            binding.FontEnvironment.CheckFonts(filePath, new FontCheckRequest
-            {
-                Password = request.Password,
-            }));
-    }
-
-    // A finding must come from a declared check with that check's severity; anything else is a
-    // product defect, because callers filter and gate on the declared codes.
-    private void EnsureDeclared(IReadOnlyList<ReviewFinding>? findings)
-    {
-        foreach (ReviewFinding finding in findings ?? [])
-        {
-            if (!Checks.Any(check => check.Code == finding.Code && check.Severity == finding.Severity))
-            {
-                throw new InvalidOperationException(
-                    $"Product '{ProductId}' reported finding '{finding.Code}' ({finding.Severity}), which is not a declared check.");
-            }
-        }
     }
 
     private static ViewPresentation ReadPresentation(Assembly assembly, string productId) =>
@@ -246,39 +143,6 @@ public sealed partial class ProductViewDefinition
         }
     }
 
-    private static ProductReviewAssessment AppendFontFindings(
-        string productId,
-        ProductReviewAssessment assessment,
-        FontCheckResult fonts)
-    {
-        FontAvailability[] unavailable = fonts.Fonts
-            .Where(static font => !font.Available)
-            .ToArray();
-        if (unavailable.Length == 0)
-        {
-            return assessment;
-        }
-
-        string summary = string.Join(
-            ", ",
-            unavailable.Take(8).Select(static font => font.SubstitutedBy is null
-                ? font.Name
-                : $"{font.Name} -> {font.SubstitutedBy}"));
-        if (unavailable.Length > 8)
-        {
-            summary += $", and {unavailable.Length - 8} more";
-        }
-        ReviewFinding finding = ReviewChecks.FontsMissingOrSubstituted(productId).Finding(
-            $"{unavailable.Length} used font(s) are unavailable or substituted: {summary}.",
-            null,
-            "Install the required fonts or deliberately replace them, then save and run review again in a new directory.");
-        return assessment with
-        {
-            Findings = [.. assessment.Findings ?? [], finding],
-            Complete = false,
-        };
-    }
-
     internal static ProductViewDefinition Create<TSession>(
         IProductViewAdapter<TSession> adapter,
         string productId,
@@ -297,35 +161,20 @@ public sealed partial class ProductViewDefinition
             throw new InvalidOperationException(
                 $"Product '{productId}' must declare uniquely named views with a label and a known part kind.");
         }
-        if (!views.Any(view => view.Id == adapter.ReviewView && view.PartKind == ViewPartKinds.Image)
-            || !views.Any(view => view.Id == adapter.LiveView))
+        if (!views.Any(view => view.Id == adapter.LiveView))
         {
             throw new InvalidOperationException(
-                $"Product '{productId}' must declare an image review view and a live view.");
-        }
-        string prefix = ReviewChecks.Prefix(productId);
-        ReviewCheck[] checks = [.. adapter.Checks, .. ReviewChecks.Shared(productId)];
-        if (adapter.Checks.Any(check => !check.Code.StartsWith(prefix, StringComparison.Ordinal))
-            || checks.Select(static check => check.Code).Distinct(StringComparer.Ordinal).Count() != checks.Length)
-        {
-            throw new InvalidOperationException(
-                $"Product '{productId}' must declare uniquely coded review checks that start with '{prefix}'.");
+                $"Product '{productId}' must declare a live view.");
         }
         return new ProductViewDefinition(
             typeof(TSession),
             productId,
             views,
-            adapter.ReviewView,
             adapter.LiveView,
-            adapter.VisualInspectionRequired,
-            Array.AsReadOnly(checks.OrderBy(static check => check.Code, StringComparer.Ordinal).ToArray()),
             // The product guard wraps every adapter call, as it wraps every command handler.
             (session, path, request, artifacts) => guard is null
                 ? adapter.Render((TSession)session, path, request, artifacts)
                 : (ViewManifest)guard(session, () => adapter.Render((TSession)session, path, request, artifacts))!,
-            (session, path, request, rendered) => guard is null
-                ? adapter.Assess((TSession)session, path, request, rendered)
-                : (ProductReviewAssessment)guard(session, () => adapter.Assess((TSession)session, path, request, rendered))!,
             adapter.GetType().Assembly);
     }
 

@@ -96,35 +96,6 @@ public sealed class CellsResourceLoadingTests
     }
 
     [Fact]
-    public async Task Review_OmissionsMakeEvidenceIncomplete()
-    {
-        Requires.Windows();
-        using var fixture = new CellsFixture();
-        await using var server = new ResourceHttpServer();
-        string input = LinkedWorkbook(fixture.Temp.File("review.xlsx"), server.Url + "/image.png");
-        var adapter = new CellsViewAdapter();
-        var request = new ViewRenderRequest
-        {
-            View = CellsViews.Sheets,
-            MaxPartCount = 10,
-            Purpose = ViewPurpose.Evidence,
-        };
-        var sink = new MemoryArtifactSink();
-        ViewManifest rendered = adapter.Render(fixture.Session, input, request, sink);
-        Assert.All(sink.Paths, path => Assert.NotEmpty(sink.Bytes(path)));
-        ProductReviewAssessment assessment = adapter.Assess(fixture.Session, input, request, rendered);
-        // The review counts a warning that affects completeness against its coverage, and reports
-        // the omission once: each load the assessment makes repeats the view's warning word for word.
-        AssertOmission(rendered.Warnings);
-        AssertOmission(assessment.Warnings);
-        string omission = rendered.Warnings!.Single(static warning => warning.Code == WarningCodes.RemoteResourcesBlocked).Message;
-        Assert.All(
-            assessment.Warnings!.Where(static warning => warning.Code == WarningCodes.RemoteResourcesBlocked),
-            warning => Assert.Equal(omission, warning.Message));
-        Assert.Equal(0, server.RequestCount);
-    }
-
-    [Fact]
     public async Task EditVerification_ReportsSourceResourceOmissions()
     {
         Requires.Windows();
@@ -224,9 +195,6 @@ public sealed class CellsResourceLoadingTests
         Assert.DoesNotContain("were removed", message, StringComparison.Ordinal);
         Assert.True(!kept || message.Contains(carried, StringComparison.Ordinal), message);
     }
-
-    private static void AssertOmission(IReadOnlyList<Warning>? warnings) =>
-        Assert.Contains(warnings ?? [], warning => warning.Code == WarningCodes.RemoteResourcesBlocked && warning.AffectsCompleteness);
 
     // A workbook whose one picture links to reference and stores no copy of it.
     private static string LinkedWorkbook(string path, string reference)

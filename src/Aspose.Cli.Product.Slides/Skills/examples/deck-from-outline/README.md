@@ -6,9 +6,9 @@ examples/deck-from-outline. [notes.md](notes.md) contains a synthetic quarterly 
 ```powershell
 aspose-cli slides create qbr.pptx --from-markdown notes.md --output-format json
 aspose-cli slides inspect qbr.pptx --sample --detail layouts --detail fonts --detail notes --output-format json
-aspose-cli review qbr.pptx --out qbr.review --output-format json
+aspose-cli slides render qbr.pptx --out qbr.png --output-format json
 ```
 
 The result has three slides: Quarterly update, Highlights and Next steps.
 The built-in design supplies the 16:9 size, theme and layout geometry.
-Open every image the review lists before delivery and disclose evaluation output.
+Look at the rendered images before delivery and disclose evaluation output.

@@ -9,8 +9,8 @@ namespace Aspose.Cli.Product.Cells.Engine.Mapping;
 /// worksheet it adds to every workbook it saves, an "Evaluation Warning" sheet (or "Evaluation
 /// Warning (1)", ... when the name is taken) that holds only the evaluation notice and becomes the
 /// active sheet, which commands skip as their default in any mode; and the notice it writes as the
-/// last row of a CSV or TSV export, which a load takes out (<see cref="TakeNoticeRows"/>). Review
-/// and the write pipeline (<see cref="CellsEvaluationProfile"/>) report the sheet in any mode
+/// last row of a CSV or TSV export, which a load takes out (<see cref="TakeNoticeRows"/>). The
+/// write pipeline (<see cref="CellsEvaluationProfile"/>) reports the sheet in any mode
 /// (<see cref="IsWarningSheet"/>), because licensed commands read and re-save workbooks that
 /// evaluation saves produced.
 /// </summary>

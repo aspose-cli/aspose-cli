@@ -36,7 +36,7 @@ public sealed class CellsSvgPictureTests : IDisposable
     /// loads the workbook and reads the PNG its image names by a bare path.
     /// </summary>
     [Fact]
-    public void LoadedSvgPicture_NeverPutsTheFileItNamesIntoRenderPdfOrReview()
+    public void LoadedSvgPicture_NeverPutsTheFileItNamesIntoRenderOrPdf()
     {
         using var workspace = new TempWorkspace();
         File.WriteAllBytes(workspace.File("book.ods"), OdsWithPicture(Svg(Image(_secret))));
@@ -50,12 +50,6 @@ public sealed class CellsSvgPictureTests : IDisposable
         Assert.True(pdf.ExitCode == 0, pdf.StdErr);
         Assert.False(PdfHasSecretPixels(workspace.File("book.pdf")), "the PDF holds the file the SVG names");
         Assert.True(Warned(pdf.StdOut, WarningCodes.RemoteResourcesBlocked.Name), pdf.StdOut);
-
-        CliResult review = workspace.Run("review", "book.ods", "--out", "review", "--output-format", "json");
-        string[] images = Directory.GetFiles(workspace.File("review"), "*.png", SearchOption.AllDirectories);
-        Assert.True(images.Length > 0, review.StdOut + review.StdErr);
-        Assert.All(images, image => Assert.False(HasSecretPixels(image), $"{image} holds the file the SVG names"));
-        Assert.True(Warned(review.StdOut, WarningCodes.RemoteResourcesBlocked.Name), review.StdOut);
     }
 
     /// <summary>

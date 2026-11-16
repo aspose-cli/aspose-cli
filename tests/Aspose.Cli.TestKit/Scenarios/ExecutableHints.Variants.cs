@@ -50,8 +50,8 @@ public static partial class ExecutableHints
     /// <summary>
     /// Whether the command's <c>--out</c> or <c>--out-dir</c> names the invocation's own output,
     /// which a hint may replace: a file or directory its result says it wrote (<c>output</c>, each
-    /// of <c>outputs[]</c> and the <c>output</c> of each, and a review's <c>outputDirectory</c> and
-    /// <c>indexPath</c>; not a <c>backup</c>, which nothing replaces), the <c>--out-dir</c> it wrote
+    /// of <c>outputs[]</c> and the <c>output</c> of each; not a <c>backup</c>, which nothing
+    /// replaces), the <c>--out-dir</c> it wrote
     /// into, or the <c>--out</c> or <c>--out-dir</c> it was given with <c>--overwrite</c>, which its
     /// caller allowed to be replaced.
     /// </summary>
@@ -65,8 +65,7 @@ public static partial class ExecutableHints
         JsonObject? result = document is JsonObject { } root && !root.ContainsKey("error") ? root : null;
         IEnumerable<JsonNode?> outputs = result is null ? [] : [result["output"], .. result["outputs"] as JsonArray ?? []];
         IEnumerable<string?> own = outputs
-            .SelectMany(static output => new[] { Text(output?["path"]), Text(output?["output"]?["path"]) })
-            .Concat([Text(result?["outputDirectory"]), Text(result?["indexPath"])]);
+            .SelectMany(static output => new[] { Text(output?["path"]), Text(output?["output"]?["path"]) });
         CommandLine invoked = CommandLine.Parse(CliCatalog.Current, run.Args);
         bool overwrite = run.Args.Contains("--overwrite");
         own = own.Concat(invoked.Values

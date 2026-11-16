@@ -14,72 +14,23 @@ overview adds the checks specific to its documents.
 [ ] Leftovers: `<product> search` finds no TBD / TODO / {{...}}
     placeholders
 [ ] Product checks: the semantic checks the product Skill names pass
-[ ] Visual: review ran into a new directory and every image it lists was
-    opened; its coverage is complete, or the gap is reported
+[ ] Visual: `<product> render` ran and every image it wrote was looked at
 [ ] Fonts: fonts check shows no missing font, or the substitution is reported
 [ ] Session diff: against the backup, only intended changes remain
 [ ] Warnings: evaluation marks, removed encryption and lossy conversion
     disclosed with the delivered file
 ```
 
-## The review protocol
+## Looking at the output
 
 ```text
-aspose-cli review <file> --out <new-dir> --output-format json
+aspose-cli <product> render <file> --out <image> --output-format json
 ```
 
-`review` renders the document into an evidence directory: `index.html` for a
-person, `review.json` (the same result the command prints) and one image per
-sheet, page or slide. Without `--out` it writes `<filename>.review` beside the
-source; write evidence to a scratch directory instead of the user's folder.
-`aspose-cli schema v2/common/review` describes every field of the result.
-
-1. Read the result. `artifacts[]` lists each image with the sheet, page or
-   slide it shows. `findings[]` point at likely defects, each with its
-   `severity`, `location`, `hint` and the `evidence` images it concerns.
-2. Read `coverage`. `--max-items` caps the images, and so does the snapshot
-   budget in `aspose-cli docs preview`; anything omitted is unreviewed, and
-   incomplete coverage fails the review. A `<PRODUCT>_REVIEW_TRUNCATED`
-   finding, reported whatever `--code` selects, then says how many parts were
-   rendered of how many, which were left out and which limit stopped it; when
-   `--max-items` did and one review can hold every part, its hint is that
-   review, into a new directory, to run as written, and when one cannot, it
-   says to split the document. `input.encrypted`
-   says whether the reviewed file is encrypted, as evidence for a delivery
-   that must be.
-3. Open every evidence image with your image-reading tool and look. Findings
-   do not replace looking. Check clipping, overlap, missing glyphs, contrast,
-   charts against their data, and page or slide order.
-4. Fix, then review again into a new directory, or pass `--overwrite` to
-   replace the earlier evidence; `--overwrite` replaces only an empty
-   directory or earlier evidence left exactly as its `review.json` records
-   it, with no file added, removed or changed; anything else is refused with
-   `OUTPUT_EXISTS` and left as it is.
-5. Stop after three rounds and report what remains.
-
-`review` exits 8, with the evidence still written, when coverage is incomplete
-or a reported finding has `error` severity. Never claim a visual pass for an
-image you did not open; state the coverage you actually inspected.
-
-## Review checks
-
-Findings come from declared checks. `aspose-cli capabilities <product>` lists
-the product's checks under `review.checks`, each with its code, severity and
-summary.
-
-`review --code <code>` (repeat it for several checks) reports only the findings
-of the named checks, and among findings only theirs decide exit 8; incomplete
-coverage still fails the review, and a missing or substituted font makes the
-evidence incomplete whatever the filter. The result's `filter` says how many
-findings were left out. The images are still the full set: a filtered review
-narrows the findings, not the look.
-
-A run without a license saves its own marks into the file, such as warning
-sheets, page notices, watermark text boxes or banner lines. A review in
-evaluation mode leaves the marks of the input out of its layout checks and
-counts them in the coverage metric `excludedEvaluationMarks`, in the unit of
-what it left out; with a license it checks them like any content and omits the
-metric.
+Render the output with the product's `render` command and open every image
+it writes with your image-reading tool. Check clipping, overlap, missing
+glyphs, contrast, charts against their data, and page or slide order. Never
+claim a visual pass for an image you did not open.
 
 ## Fonts
 
@@ -94,13 +45,11 @@ aspose-cli fonts check <file> --output-format json
 here and, when known, the font the engine draws instead; it exits 8 when a
 font is not available. It answers whether the declared font names are
 installed, not whether every glyph renders: non-Latin text in a font without
-those glyphs can still pass, so the visual pass remains the proof. `review`
-reports a missing or substituted font with the product's
-`<PRODUCT>_FONTS_MISSING_OR_SUBSTITUTED` check.
+those glyphs can still pass, so the visual pass remains the proof.
 
 Fonts delivered beside the document reach the engine only through
 `--font-dir <dir>`, which adds to the system fonts and can repeat. Pass the
-same directories to `fonts check`, `review` and every command whose output
+same directories to `fonts check` and every command whose output
 depends on layout; `capabilities` shows which commands accept `--font-dir`.
 `aspose-cli fonts list` shows each engine's font sources and default fallback
 font.

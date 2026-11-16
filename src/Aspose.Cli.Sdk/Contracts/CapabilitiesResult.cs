@@ -117,9 +117,6 @@ public sealed record ProductCapabilities
     /// <summary>Live-preview views and lifecycle support exposed by this product.</summary>
     public ProductPreviewCapabilities? Preview { get; init; }
 
-    /// <summary>Static review evidence capabilities exposed by this product.</summary>
-    public ProductReviewCapabilities? Review { get; init; }
-
     /// <summary>Canonical input/output format declarations.</summary>
     public IReadOnlyList<ProductFormatCapabilities> Formats { get; init; } = [];
 
@@ -246,22 +243,6 @@ public sealed record ProductPreviewCapabilities
 
     /// <summary>Whether the product can run as a discoverable background preview.</summary>
     public required bool Background { get; init; }
-}
-
-/// <summary>Static review evidence capabilities of one product.</summary>
-public sealed record ProductReviewCapabilities
-{
-    /// <summary>View a review renders when the caller names none.</summary>
-    public required string DefaultView { get; init; }
-
-    /// <summary>Stable view identifiers a review accepts.</summary>
-    public required IReadOnlyList<string> Views { get; init; }
-
-    /// <summary>Whether the rendered evidence must be looked at, because the checks alone cannot judge it.</summary>
-    public required bool VisualInspectionRequired { get; init; }
-
-    /// <summary>Every check a review can report, ordered by code; <c>review --code</c> filters by them.</summary>
-    public required IReadOnlyList<ReviewCheck> Checks { get; init; }
 }
 
 /// <summary>Resolved generic-routing contract for this distribution.</summary>

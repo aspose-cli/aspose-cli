@@ -428,7 +428,6 @@ public sealed class PdfEngineTests
     public void Create_FromImages_WithDefaultMarginsReadsAsScannedPages()
     {
         using var fixture = new PdfEngineFixture();
-        using var workspace = new TempWorkspace();
         string[] images = [fixture.File("a4.bmp"), fixture.File("wide.bmp"), fixture.File("square.bmp"), fixture.File("tall.bmp")];
         File.WriteAllBytes(images[0], Bitmap(210, 297));
         File.WriteAllBytes(images[1], Bitmap(300, 100));
@@ -437,15 +436,9 @@ public sealed class PdfEngineTests
         PdfCreateResult created = PdfCreate.Run(fixture.Session, new PdfCreateRequest { Output = TestOutput.At(fixture.File("scans.pdf")), Source = new PdfImageSource([.. images.Select(static path => new SourceFile("--from-images", path))]) });
 
         PdfReadResult read = PdfRead.Run(fixture.Session, new PdfReadRequest { Input = created.Output.Path });
-        CliResult review = workspace.Run(["review", created.Output.Path, "--out", workspace.File("review"), "--output-format", "json"]);
 
         Assert.Equal([1, 2, 3, 4], read.ScannedPagesSuspected);
         Assert.Contains(read.Warnings!, static warning => warning.Code.Name == "SCANNED_PAGES_SUSPECTED");
-        Assert.Equal(
-            ["page/1", "page/2", "page/3", "page/4"],
-            review.Json()["findings"]!.AsArray()
-                .Where(static item => item!["code"]!.GetValue<string>() == "PDF_PAGE_WITHOUT_TEXT_LAYER")
-                .Select(static item => item!["location"]!.GetValue<string>()));
     }
 
     /// <summary>

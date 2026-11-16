@@ -78,31 +78,18 @@ internal sealed record AppPreviewCapabilityView(
     [property: MinLength(1)] string DefaultView,
     [property: MinItems(1)] IReadOnlyList<AppPreviewView> Views);
 
-/// <summary>How a product renders review evidence.</summary>
-/// <param name="Fidelity">Whether the evidence is rendered by the engine or a semantic projection.</param>
-/// <param name="DefaultView">View a review renders when none is chosen.</param>
-/// <param name="Views">Views a review can render.</param>
-/// <param name="VisualInspectionRequired">Whether the rendered evidence must be looked at.</param>
-internal sealed record AppReviewCapabilityView(
-    [property: AllowedValues("rendered", "semantic")] string Fidelity,
-    [property: MinLength(1)] string DefaultView,
-    [property: MinItems(1)] IReadOnlyList<AppPreviewView> Views,
-    bool VisualInspectionRequired);
-
 /// <summary>One product the App can open documents with.</summary>
 /// <param name="Id">Product id, e.g. <c>cells</c>.</param>
 /// <param name="Name">Human-readable product name.</param>
 /// <param name="Formats">Formats the product reads or writes.</param>
 /// <param name="Verbs">Commands the product offers.</param>
 /// <param name="Preview">How the product previews documents.</param>
-/// <param name="Review">How the product renders review evidence.</param>
 internal sealed record AppProductView(
     [property: MinLength(1)] string Id,
     [property: MinLength(1)] string Name,
     [property: MinItems(1)] IReadOnlyList<AppFormatView> Formats,
     [property: MinItems(1), MinLength(1)] IReadOnlyList<string> Verbs,
-    AppPreviewCapabilityView Preview,
-    AppReviewCapabilityView Review);
+    AppPreviewCapabilityView Preview);
 
 /// <summary>Deterministic state the loopback-only browser workspace of <c>aspose-cli app</c> reads.</summary>
 /// <param name="Version">CLI version.</param>

@@ -69,9 +69,8 @@ internal static class OwnershipCases
     private const string Foreign = "A file aspose-cli did not write.";
 
     /// <summary>
-    /// The unmarked sample that every run checks: a converter writing its own format, an extraction
-    /// of attachments and the review evidence folder, each through a junction, by the same path and
-    /// into a folder that looks like an earlier output, the review's also holding its input.
+    /// The unmarked sample that every run checks: a converter writing its own format and an
+    /// extraction of attachments, each through a junction and by the same path.
     /// </summary>
     private static readonly (string Command, string? Variant, OwnershipCheck Check)[] SampleCases =
     [
@@ -79,8 +78,6 @@ internal static class OwnershipCases
         ("words convert", null, OwnershipCheck.Same),
         ("pdf extract", "attachments", OwnershipCheck.Same),
         ("pdf extract", "attachments", OwnershipCheck.Junction),
-        ("review", null, OwnershipCheck.SentinelOverwrite),
-        ("review", null, OwnershipCheck.InputInside),
     ];
 
     /// <summary>
@@ -88,7 +85,7 @@ internal static class OwnershipCases
     /// which, so every <c>--out</c> case checks its command against this list
     /// (<see cref="Verify"/>) and a command that changes kind fails until it is listed.
     /// </summary>
-    private static readonly HashSet<string> FolderOutputs = new(StringComparer.Ordinal) { "review" };
+    private static readonly HashSet<string> FolderOutputs = new(StringComparer.Ordinal);
 
     private static readonly Lazy<IReadOnlyDictionary<string, OwnershipCase>> Generated = new(Generate);
     private static readonly ConcurrentDictionary<string, Lazy<Probe>> Probes = new(StringComparer.Ordinal);
@@ -409,7 +406,7 @@ internal static class OwnershipCases
             {
                 return new Probe($"exit {first.ExitCode}: {Truncate(first.StdErr + first.StdOut)}", false, [], string.Empty, null);
             }
-            // A command that writes a folder by default (review) takes a folder name, one that
+            // A command that writes a folder by default takes a folder name, one that
             // writes a file takes that file's extension, and one that writes nothing without --out
             // (compare) writes its input's format.
             string? parent = written is null ? null : Path.GetDirectoryName(written)!.Replace('\\', '/');

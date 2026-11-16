@@ -62,14 +62,13 @@ public sealed class DirectoryOutputContractTests
 
     /// <summary>
     /// A directory output named like a file of a format some command writes, such as
-    /// <c>parts.pdf</c> or <c>evidence.png</c>, is refused before anything is created, with the
+    /// <c>parts.pdf</c> or <c>images.png</c>, is refused before anything is created, with the
     /// name without that extension as the fix; a directory name with a dot in it that names no
     /// format still works.
     /// </summary>
     [Theory]
     [InlineData("pdf split input.pdf --by pages --out-dir parts.pdf", "--out-dir", "parts.pdf", "--out-dir parts")]
     [InlineData("pdf extract input.pdf --what images --out-dir images.png", "--out-dir", "images.png", "--out-dir images")]
-    [InlineData("review input.pdf --out evidence.png", "--out", "evidence.png", "--out evidence")]
     public void ADirectoryNamedLikeAFile_IsRefused(string commandLine, string option, string directory, string fix)
     {
         using var workspace = new TempWorkspace();
@@ -92,7 +91,6 @@ public sealed class DirectoryOutputContractTests
 
     [Theory]
     [InlineData("pdf split input.pdf --by pages --out-dir parts.v1 --dry-run")]
-    [InlineData("review input.pdf --out input.review-1 --dry-run")]
     public void ADirectoryNameWithADotNamingNoFormat_IsAccepted(string commandLine)
     {
         using var workspace = new TempWorkspace();

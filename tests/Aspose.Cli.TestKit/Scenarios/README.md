@@ -87,20 +87,18 @@ Every step is also checked, whatever it expects, against the CLI's own catalog
   code and whose details conform to the catalog's details schema;
 - `result-envelope`: a result is one JSON document conforming to the schema it names, and each
   warning code is in the catalog. The raw `schema` and `docs` documents are exempt;
-- `target-location`: every `location` of an item of a result's `warnings`, `issues` or
-  `findings` list is a target address `<unit>/<address>`, as `applied[].targets` write it;
+- `target-location`: every `location` of an item of a result's `warnings` or `issues` list is a
+  target address `<unit>/<address>`, as `applied[].targets` write it;
 - `local-path`: no file of the result's `output.path`, `outputs[].path` and
   `outputs[].output.path` holds the absolute path of the workspace, the folder of the step's
   inputs, with either separator or escaped as a file URI or a JSON string writes it, as UTF-8 or
-  UTF-16 in its bytes or in an entry of the ZIP package it is. Only these outputs are documents
-  to hand on: the evidence a `review` writes is a report for this machine and records its input's
-  path, so it is not checked. The bytes are searched as written, so a path inside a compressed
+  UTF-16 in its bytes or in an entry of the ZIP package it is. The bytes are searched as written, so a path inside a compressed
   stream or an encrypted output is not seen;
 - `byte-order-mark`: no file the step creates or changes starts with the UTF-8 byte order mark,
   unless the step asks for one with `--bom`, edits an input that starts with one, or extracts the
   files a document embeds (`pdf extract --what attachments`, `words extract --what images`,
   `slides extract --what media`), which keep the bytes the document stores;
-- `executable-hint`: what each `error.hint`, `warnings[].hint`, `window.next` and, of a review, `findings[].hint` names runs as written
+- `executable-hint`: what each `error.hint`, `warnings[].hint` and `window.next` names runs as written
   (`ExecutableHints`): a quoted or unquoted `aspose-cli` command runs on the step's own files in
   a copy of its workspace, with `--dry-run` where the command has one, and must not fail with
   `USAGE_ERROR`, `OPTION_INVALID` or `OPS_INVALID`. When the step gives the password of its

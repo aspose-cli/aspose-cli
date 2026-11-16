@@ -32,7 +32,7 @@ internal static class PdfEngineFormats
                 Title = document.Info.Title ?? string.Empty,
             },
             Lossy = true,
-            LossyHint = "Open the HTML in a browser and compare it with the PDF before relying on exact pagination, forms or annotations; review does not lay out HTML made from a PDF, so review the PDF itself.",
+            LossyHint = "Open the HTML in a browser and compare it with the PDF before relying on exact pagination, forms or annotations.",
         },
         new("epub") { Write = PdfEngineWrite.Document, Save = SaveFormat.Epub, Lossy = true },
         new("md") { Write = PdfEngineWrite.Document, Save = SaveFormat.Markdown, Lossy = true, LeavesFormValues = true, LeavesPictures = true },

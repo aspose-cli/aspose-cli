@@ -24,7 +24,6 @@ public sealed class SlidesSkillExampleTests
         AssertText("Highlights", Text(deck.Slides[1]), evaluation);
         AssertText("Next steps", Text(deck.Slides[2]), evaluation);
         Assert.Equal(template.Presentation.SlideSize.Size, deck.SlideSize.Size);
-        Assert.True(File.Exists(Path.Combine(directory, "qbr.review/review.json")));
     }
 
     [Fact]
@@ -46,7 +45,6 @@ public sealed class SlidesSkillExampleTests
         Assert.NotNull(notes);
         AssertText("Launch approved.", string.Join("\n", notes.Shapes.OfType<IAutoShape>()
             .Select(shape => shape.TextFrame?.Text)), evaluation);
-        Assert.True(File.Exists(Path.Combine(directory, "deck.review/review.json")));
     }
 
     [Fact]
@@ -65,7 +63,6 @@ public sealed class SlidesSkillExampleTests
             chart.ChartData.Categories.Select(category => category.AsCell.Value.ToString()));
         Assert.Equal([120d, 90d, 75d, 60d],
             chart.ChartData.Series[0].DataPoints.Select(point => Convert.ToDouble(point.Value.Data)));
-        Assert.True(File.Exists(Path.Combine(directory, "metrics.review/review.json")));
     }
 
     private static bool AssertEvaluationDisclosed(InstalledSkillExampleResult run)

@@ -229,13 +229,4 @@ internal static class CellsView
     private static readonly byte[] BlankPng = System.Convert.FromBase64String(
         "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Wl2VQAAAABJRU5ErkJggg==");
 
-    /// <summary>The sheet, dimension, print-area and chart layout facts the review checks.</summary>
-    public static CellsReviewLayout Layout(CellsSession session, string filePath, Secret? password)
-    {
-        ArgumentNullException.ThrowIfNull(session);
-        ArgumentException.ThrowIfNullOrEmpty(filePath);
-        _ = session.Outputs.License;
-        using LoadedWorkbook loaded = session.Loader.Open(filePath, password);
-        return ReviewLayoutProjection.Inspect(loaded) with { Warnings = loaded.Warnings() };
-    }
 }

@@ -231,9 +231,6 @@ internal sealed class AppStatusQuery
         ProductPreviewCapabilities preview = capabilities.Preview
             ?? throw new InvalidOperationException(
                 $"Product '{capabilities.Id}' has no preview capabilities.");
-        ProductReviewCapabilities review = capabilities.Review
-            ?? throw new InvalidOperationException(
-                $"Product '{capabilities.Id}' has no review capabilities.");
         return new AppProductView(
             capabilities.Id,
             product.Manifest.DisplayName,
@@ -247,12 +244,7 @@ internal sealed class AppStatusQuery
             new AppPreviewCapabilityView(
                 fidelity,
                 preview.DefaultView,
-                Views(product, preview.Views)),
-            new AppReviewCapabilityView(
-                fidelity,
-                review.DefaultView,
-                Views(product, review.Views),
-                review.VisualInspectionRequired));
+                Views(product, preview.Views)));
     }
 
     private AppRecentView RecentView(AppRecentFile file)

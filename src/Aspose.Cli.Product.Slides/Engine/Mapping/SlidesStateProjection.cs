@@ -20,8 +20,8 @@ internal static class SlidesStateProjection
     internal const string SlideUnit = "slide";
 
     // Addresses: slide/3, slide/3/notes, slide/3/shape/7 (by shape id), section/Q3 plan,
-    // property/title (by escaped name), presentation/slide-size and <unit>/all. Warnings,
-    // verification issues and review findings locate what they report by the same addresses.
+    // property/title (by escaped name), presentation/slide-size and <unit>/all. Warnings and
+    // verification issues locate what they report by the same addresses.
     internal const string SlideSizeAddress = "presentation/slide-size";
 
     internal static string SlideAddress(int number) => string.Create(CultureInfo.InvariantCulture, $"{SlideUnit}/{number}");

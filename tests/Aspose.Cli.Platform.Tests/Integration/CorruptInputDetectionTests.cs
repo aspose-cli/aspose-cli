@@ -66,18 +66,14 @@ public sealed class CorruptInputDetectionTests
         using var workspace = new TempWorkspace();
         File.WriteAllText(workspace.File(file), content);
 
-        CliResult inspected = workspace.Run("words", "inspect", file, "--output-format", "json");
-        CliResult reviewed = workspace.Run("review", file, "--output-format", "json");
+        CliResult result = workspace.Run("words", "inspect", file, "--output-format", "json");
 
         // The extension names words and no product recognizes the content: a damaged file, not a renamed one.
-        foreach (CliResult result in new[] { inspected, reviewed })
-        {
-            Assert.Equal(3, result.ExitCode);
-            JsonNode error = JsonNode.Parse(result.StdErr)!["error"]!;
-            Assert.Equal("FILE_CORRUPT", error["code"]!.GetValue<string>());
-            Assert.Equal(workspace.File(file), error["details"]!["path"]!.GetValue<string>());
-            Assert.Null(error["details"]!["reason"]);
-        }
+        Assert.Equal(3, result.ExitCode);
+        JsonNode error = JsonNode.Parse(result.StdErr)!["error"]!;
+        Assert.Equal("FILE_CORRUPT", error["code"]!.GetValue<string>());
+        Assert.Equal(workspace.File(file), error["details"]!["path"]!.GetValue<string>());
+        Assert.Null(error["details"]!["reason"]);
     }
 
     // A Word document named renamed.pdf in the workspace.

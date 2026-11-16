@@ -11,8 +11,8 @@ namespace Aspose.Cli.Product.Pdf.Engine;
 /// <see cref="PdfEvaluation.VisiblePages"/> pages are read, of the document or of the pages a
 /// rendering shows: reading the text of every page of a
 /// long document would cost seconds, and evaluation mode cannot read the later ones anyway. A
-/// notice only on a later page, as in a PDF merged from a clean and a marked one, is not found;
-/// review reports every page. In evaluation mode a document with more pages than it can read
+/// notice only on a later page, as in a PDF merged from a clean and a marked one, is not found.
+/// In evaluation mode a document with more pages than it can read
 /// counts as cut short, and reading a later page throws, which the SDK reports as the
 /// evaluation limit (<see cref="RecognizeLimit"/>).
 /// </summary>

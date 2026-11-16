@@ -11,8 +11,8 @@ namespace Aspose.Cli.Product.Words.Engine.Mapping;
 /// The one text projection of document content: the text a reader sees with tracked changes
 /// applied. A field shows its result, never its code; text a revision deletes is gone; and a
 /// comment or footnote belongs to its own story, not to the paragraph that anchors it; and a
-/// numbered list paragraph starts with its number. Blocks, search snippets, text addresses,
-/// outlines and review labels all read text through here.
+/// numbered list paragraph starts with its number. Blocks, search snippets, text addresses and
+/// outlines all read text through here.
 /// </summary>
 internal static class WordsText
 {

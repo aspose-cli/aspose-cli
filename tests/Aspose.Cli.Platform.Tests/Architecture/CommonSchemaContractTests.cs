@@ -206,7 +206,6 @@ public sealed class CommonSchemaContractTests
             "license-status",
             "preview-session",
             "preview-status",
-            "review",
             "schema-list",
             "skill-install",
             "skill-list",

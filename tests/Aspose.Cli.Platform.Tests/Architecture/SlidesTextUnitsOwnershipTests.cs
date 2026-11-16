@@ -31,8 +31,6 @@ public sealed class SlidesTextUnitsOwnershipTests
         ["SlidesSnapshots.cs: Whole(IShape)"] = Snapshot,
         ["SlidesEditVerifier.cs: Record(SlidesOp, AppliedOperation)"] = "--verify reads set_text and set_notes back from the one shape or slide they wrote.",
         ["SlidesMutationHandlers.Content.cs: Apply(SetNotesOp)"] = "set_notes writes the slide's notes frame.",
-        ["SlidesReviewLayout.cs: Runs(IShape)"] = "review measures where a shape's text sits.",
-        ["SlidesReviewLayout.cs: Shape(ISlide, IShape, int)"] = "review measures where a shape's text sits.",
         ["SlidesViewLayout.cs: Label(IShape)"] = "A view labels a shape by its text.",
         ["SlidesView.cs: Render(SlidesSession, string, ViewRenderRequest, IViewArtifactSink)"] = "A view reports a slide's notes.",
         ["SlidesInfo.cs: Run(SlidesSession, SlidesInspectRequest)"] = "inspect reports whether each slide has notes and how long they are.",

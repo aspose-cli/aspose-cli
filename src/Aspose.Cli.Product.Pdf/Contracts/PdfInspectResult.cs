@@ -223,8 +223,7 @@ public sealed record PdfFormInfo
     public string? Kind { get; init; }
 
     /// <summary>
-    /// The number of field names, so a radio group is one field however many buttons it has;
-    /// review counts fields the same way.
+    /// The number of field names, so a radio group is one field however many buttons it has.
     /// </summary>
     [Minimum(0)]
     public required int FieldCount { get; init; }

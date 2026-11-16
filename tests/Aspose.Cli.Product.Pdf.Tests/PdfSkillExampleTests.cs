@@ -29,6 +29,5 @@ public sealed class PdfSkillExampleTests
         }
         Assert.Equal("Quarterly Review", ((TextBoxField)archive.Form["ReportTitle"]).Value);
         Assert.Equal("Executive Committee", ((TextBoxField)archive.Form["PreparedFor"]).Value);
-        Assert.True(File.Exists(Path.Combine(result.Directory, "review.archive.review/review.json")));
     }
 }

@@ -383,7 +383,6 @@ public sealed class CliContractTests : IDisposable
     /// option column of every row; capabilities still list every value.
     /// </summary>
     [Theory]
-    [InlineData("--code <code>", "Accepts ", "review")]
     [InlineData("--to <to>", "Values: azw3, doc, ", "words", "convert")]
     public void Help_KeepsLongValueListsOutOfTheOptionColumn(string label, string description, params string[] command)
     {

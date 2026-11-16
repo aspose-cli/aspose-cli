@@ -5,15 +5,12 @@ namespace Aspose.Cli.TestKit;
 
 /// <summary>
 /// Proves through the real CLI that a relative <c>--font-dir</c> makes the
-/// fixture family available to <c>fonts check</c>, <c>review</c> and the
+/// fixture family available to <c>fonts check</c> and the
 /// commands that lay out and save documents, and that the family is missing
 /// again as soon as the option is omitted.
 /// </summary>
 public static class FontDirectoryContract
 {
-    /// <summary>The end of the shared review check's code, which begins with the product's prefix.</summary>
-    private const string MissingFontsFinding = "_FONTS_MISSING_OR_SUBSTITUTED";
-
     /// <param name="workspace">Workspace whose working directory holds <paramref name="fileName"/>.</param>
     /// <param name="fileName">Document that uses <see cref="FontFixtures.UniqueFamily"/>.</param>
     public static void Verify(TempWorkspace workspace, string fileName)
@@ -24,11 +21,6 @@ public static class FontDirectoryContract
         Assert.False(FixtureAvailable(workspace, ["fonts", "check", fileName]));
         Assert.True(FixtureAvailable(workspace, ["fonts", "check", fileName, "--font-dir", "fonts"]));
         Assert.False(FixtureAvailable(workspace, ["fonts", "check", fileName]));
-
-        Assert.Contains(ReviewFindings(workspace, fileName, "ambient.review"), MissingFonts);
-        Assert.DoesNotContain(
-            ReviewFindings(workspace, fileName, "fonts.review", "--font-dir", "fonts"),
-            MissingFonts);
     }
 
     /// <summary>
@@ -72,22 +64,7 @@ public static class FontDirectoryContract
         return font["available"]!.GetValue<bool>();
     }
 
-    private static bool MissingFonts(string code) => code.EndsWith(MissingFontsFinding, StringComparison.Ordinal);
-
-    private static string[] ReviewFindings(
-        TempWorkspace workspace,
-        string fileName,
-        string output,
-        params string[] extra)
-    {
-        JsonNode result = Succeed(workspace.Run(
-            ["review", fileName, "--out", output, "--output-format", "json", .. extra]));
-        return result["findings"]!.AsArray()
-            .Select(static finding => finding!["code"]!.GetValue<string>())
-            .ToArray();
-    }
-
-    /// <summary>A result on stdout: complete (0), or partial (8) when review reports an error finding or a checked font is missing.</summary>
+    /// <summary>A result on stdout: complete (0), or partial (8) when a checked font is missing.</summary>
     private static JsonNode Succeed(CliResult result)
     {
         Assert.True(result.ExitCode is 0 or 8, $"exit {result.ExitCode}: {result.StdErr}");

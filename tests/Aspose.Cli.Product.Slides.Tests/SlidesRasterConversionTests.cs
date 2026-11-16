@@ -113,26 +113,6 @@ public sealed class SlidesRasterConversionTests(SlidesRasterConversionTests.Crea
         Assert.True(File.Exists(output));
         Assert.Empty(Directory.GetFiles(directory, "*.stage"));
     }
-    [Fact]
-    public void Review_RendersLongPublicationPathsThroughRealCli()
-    {
-        using var workspace = new TempWorkspace();
-        created.CopyTo(workspace.File("deck.pptx"));
-        string directory = workspace.File(Path.Combine(new string('a', 90), new string('b', 90), new string('c', 90)));
-        Directory.CreateDirectory(directory);
-        string output = Path.Combine(directory, "review");
-        Assert.True(output.Length > 260);
-        CliResult reviewed = workspace.Run("review", "deck.pptx", "--out", output, "--max-items", "1", "--output-format", "json");
-        Assert.True(reviewed.ExitCode == 0, reviewed.StdErr);
-        JsonNode manifest = JsonNode.Parse(reviewed.StdOut)!;
-        string relativeImage = Assert.Single(manifest["artifacts"]!.AsArray(),
-            static artifact => artifact!["mediaType"]!.GetValue<string>() == "image/png")!["path"]!.GetValue<string>();
-        string imagePath = Path.Combine(output, relativeImage);
-        using FileStream stream = File.OpenRead(imagePath);
-        using IImage image = Images.FromStream(stream);
-        Assert.Equal(1600, image.Width);
-        Assert.Equal(900, image.Height);
-    }
     /// <summary>
     /// The deck the real-CLI tests start from, created once through the built CLI from a
     /// Markdown outline; each test works on its own copy.

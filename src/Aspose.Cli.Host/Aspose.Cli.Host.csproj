@@ -42,7 +42,7 @@
   </ItemGroup>
 
   <ItemGroup Label="Platform Agent Skill">
-    <!-- The platform Skill: what every product shares (App, preview, review, licensing, errors). -->
+    <!-- The platform Skill: what every product shares (App, preview, licensing, errors). -->
     <EmbeddedResource Include="Skills\Platform\**\*.*">
       <LogicalName>skill/$(AsposeCliSkillPrefix)platform/%(RecursiveDir)%(Filename)%(Extension)</LogicalName>
     </EmbeddedResource>

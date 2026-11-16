@@ -48,30 +48,6 @@ public sealed class MistakeRecoveryCliTests : IDisposable
         Assert.Equal("add_stamp_image", error["details"]!["suggestions"]![0]!.GetValue<string>());
     }
 
-    /// <summary>
-    /// A file in a format this CLI only writes, such as the xps a cells convert wrote, is no
-    /// product's to choose with --product: the hint points to a format a product reads, while a
-    /// file whose content shows nothing keeps the advice to name its product.
-    /// </summary>
-    [Fact]
-    public void ReviewOfAFormatNoProductReads_PointsToAPdfOfTheSameContent()
-    {
-        Assert.Equal(0, _workspace.Run("cells", "create", "book.xlsx", "--output-format", "json").ExitCode);
-        Assert.Equal(0, _workspace.Run("cells", "convert", "book.xlsx", "--to", "xps", "--out", "sales.xps", "--output-format", "json").ExitCode);
-        File.WriteAllText(_workspace.File("unknown.bin"), "not a document");
-
-        CliResult written = _workspace.Run("review", "sales.xps", "--out", "review", "--output-format", "json");
-        CliResult unknown = _workspace.Run("review", "unknown.bin", "--out", "review", "--output-format", "json");
-
-        JsonNode error = JsonNode.Parse(written.StdErr)!["error"]!;
-        Assert.Equal("FORMAT_UNSUPPORTED", error["code"]!.GetValue<string>());
-        string hint = error["hint"]!.GetValue<string>();
-        Assert.DoesNotContain("--product", hint, StringComparison.Ordinal);
-        Assert.Contains("'aspose-cli cells convert <document> --to pdf'", hint, StringComparison.Ordinal);
-        Assert.Contains("'aspose-cli review'", hint, StringComparison.Ordinal);
-        Assert.Contains("--product", JsonNode.Parse(unknown.StdErr)!["error"]!["hint"]!.GetValue<string>(), StringComparison.Ordinal);
-    }
-
     /// <summary>A <c>--to</c> format the command does not write but a command beside it does points to that command.</summary>
     [Theory]
     [InlineData("cells convert a.xlsx --to png", "Run 'aspose-cli cells render a.xlsx --to png --output-format json' for png.")]

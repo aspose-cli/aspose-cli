@@ -87,7 +87,7 @@ public sealed class SlidesVerifyCoverageTests : IDisposable
 
     /// <summary>
     /// Every save draws a chart's implicit title over its plot, whatever the batch does, so the
-    /// warning remains, still marked for a review, and the verification passes.
+    /// warning remains, and the verification passes.
     /// </summary>
     [Fact]
     public void Verify_OfADeckWithAnImplicitChartTitle_PassesAndWarns()

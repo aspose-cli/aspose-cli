@@ -1,5 +1,5 @@
 {
-  "name": "a Word document named .pdf is FORMAT_MISMATCH naming words and its command, supervised or not, through pdf inspect, review and pdf merge",
+  "name": "a Word document named .pdf is FORMAT_MISMATCH naming words and its command, supervised or not, through pdf inspect and pdf merge",
   "files": {
     "renamed.pdf": {
       "fixture": "words.docx"
@@ -88,39 +88,6 @@
           {
             "path": "error.hint",
             "contains": "'aspose-cli words inspect'"
-          }
-        ],
-        "files": {
-          "nothingWritten": true
-        }
-      }
-    },
-    {
-      "args": [
-        "review",
-        "renamed.pdf"
-      ],
-      "expect": {
-        "exitCode": 6,
-        "error": "FORMAT_MISMATCH",
-        "json": [
-          {
-            "path": "error.details.declared",
-            "equals": "pdf"
-          },
-          {
-            "path": "error.details.detected",
-            "equals": [
-              "words"
-            ]
-          },
-          {
-            "path": "error.details.path",
-            "equals": "<workspace>/renamed.pdf"
-          },
-          {
-            "path": "error.message",
-            "equals": "By its content, 'renamed.pdf' is a words document; it is not a pdf document."
           }
         ],
         "files": {

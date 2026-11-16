@@ -34,7 +34,7 @@ internal sealed class SlidesEditVerifier : IEditVerifier<SlidesOp>
     /// <summary>The location of an effect on every slide, or on a slide the output no longer holds.</summary>
     private static readonly Func<Presentation, string> AllSlides = static _ => AllAddress(SlideUnit);
 
-    private const string NoReadBack = "The verification has no read-back for this operation's effect; check it with 'slides read --content full' or 'aspose-cli review'.";
+    private const string NoReadBack = "The verification has no read-back for this operation's effect; check it with 'slides read --content full'.";
     private const string EvaluationCutsText = "Evaluation mode reads text cut short, so no text is read back; a license lifts the cut.";
     private const string LaterOperationChangedIt = "A later operation of the batch changed what this one set, so its own effect could not be read back.";
 

@@ -56,7 +56,7 @@ out of its `targets` and warns `METADATA_REWRITTEN`. A `set_properties` `custom`
 key must not hold characters beyond Latin-1 (Aspose.PDF writes such a
 name garbled; the value may hold any text).
 
-Reinspect geometry and review
+Reinspect geometry
 after changing crop, size or rotation, because later rectangles follow the new
 box. A second crop cuts into the first.
 
@@ -125,7 +125,7 @@ Follow the destination checks in
 ## Redaction
 
 Redaction is destructive: keep the baseline, apply `redact_text` or
-`redact_area`, then verify with `pdf search` and `review`. `pdf search` reads
+`redact_area`, then verify with `pdf search` and `pdf render`. `pdf search` reads
 page text, which holds no form field's value: when it warns
 `FORM_VALUES_NOT_IN_TEXT`, read the values of the fields it names with
 `pdf inspect --detail forms`. One batch can fill a form, redact it, number the
@@ -195,8 +195,8 @@ the text that follows them on their lines:
 
 Then run `pdf search` for each value to confirm that none is left in the page
 text, and when it warns `FORM_VALUES_NOT_IN_TEXT`, check the values of the
-fields it names with `pdf inspect --detail forms`. Then `review` the output:
-tell the user which pages `PDF_TEXT_COVERED` names.
+fields it names with `pdf inspect --detail forms`. Then render the output with
+`pdf render` and look at the images.
 
 The engine reads a visible gap between characters as a space, so extracted
 text can hold spaces the source never had: Word separates Chinese, Japanese or
@@ -211,8 +211,8 @@ expression is matched as written: allow the gaps with ` *`, for example
 ### Scanned pages
 
 A page without a text layer (`pdf read` reports
-`SCANNED_PAGES_SUSPECTED`, and `review` `PDF_PAGE_WITHOUT_TEXT_LAYER`) can only
-be redacted with `redact_area`. Both name a page that has no extractable text
+`SCANNED_PAGES_SUSPECTED`) can only
+be redacted with `redact_area`. It names a page that has no extractable text
 and one image spanning at least three quarters of its width or height and
 covering at least a quarter of it, as a scan of usual page-like proportions
 is when `pdf create --from-images` places it with margins of up to an inch
@@ -224,8 +224,7 @@ rectangle from a gridded render, never by eye:
 3. Apply `redact_area` to a copy, never to the only original.
 4. Render the result again with `--grid` at a higher `--dpi`, and check that
    nothing sensitive shows and that nothing that must stay is covered. Repeat
-   from step 2 with a corrected rectangle when either check fails, then
-   `review` the output.
+   from step 2 with a corrected rectangle when either check fails.
 
 ```powershell
 aspose-cli pdf read scan.pdf --output-format json

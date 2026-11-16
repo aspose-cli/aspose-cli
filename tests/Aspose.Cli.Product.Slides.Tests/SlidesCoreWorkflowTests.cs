@@ -29,7 +29,7 @@ public sealed class SlidesCoreWorkflowTests
         string input = fixture.CreatePresentation("view.pptx", slides: 2, password);
         var artifacts = new MemoryArtifactSink();
 
-        // The SDK view definition renders through the product's adapter, as preview and review do,
+        // The SDK view definition renders through the product's adapter, as preview does,
         // in evaluation mode as requested.
         using var work = new TempDirectory();
         ResourceBudgetLedger budgets = ProductTestBudgets.Create<SlidesModule>();

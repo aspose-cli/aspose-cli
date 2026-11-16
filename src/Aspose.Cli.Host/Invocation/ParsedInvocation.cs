@@ -349,7 +349,7 @@ internal sealed partial class ParsedInvocation
     /// a command that no longer exists, suggests those commands first. A product's command written
     /// without its product, such as <c>read a.docx</c>, suggests that command of the product whose
     /// format the file's extension names, with the command line that runs it, and a command of the
-    /// root written below a product, such as <c>review</c> after a product's name, the command
+    /// root written below a product, such as <c>preview</c> after a product's name, the command
     /// line that runs it (<see cref="RootCommandLine"/>). <paramref name="written"/> is the whole
     /// command line when this one is only the part of it before a value taken for a command
     /// (<see cref="BeforeValueTakenForCommand"/>).

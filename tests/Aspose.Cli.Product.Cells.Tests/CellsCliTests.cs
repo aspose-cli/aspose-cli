@@ -430,36 +430,6 @@ public sealed class CellsCliTests : IDisposable
             static warning => warning!["code"]!.GetValue<string>() == "CHART_SPLIT_ACROSS_PAGES");
     }
 
-    [Fact]
-    public void Review_ReportsAChartSplitAcrossPrintedPages()
-    {
-        CellsReviewTests.CreateWideChartWorkbook(_workspace.File("split.xlsx"), fitToOnePageWide: false);
-
-        // The image of that sheet alone is the evidence.
-        CliResult review = _workspace.Run("review", "split.xlsx", "--out", _workspace.File("review"), "--output-format", "json");
-        Assert.True(review.ExitCode == 0, review.StdErr);
-        JsonNode finding = Assert.Single(JsonNode.Parse(review.StdOut)!["findings"]!.AsArray(),
-            static finding => finding!["code"]!.GetValue<string>() == "CELLS_CHART_SPLIT_ACROSS_PAGES")!;
-        string evidence = Assert.Single(finding["evidence"]!.AsArray())!.GetValue<string>();
-        Assert.EndsWith("sheet-0001.png", evidence, StringComparison.Ordinal);
-    }
-
-    /// <summary>
-    /// A review loads the workbook more than once, and volatile formulas recalculate to other
-    /// results on each load; the calculated-on-open warning still appears once.
-    /// </summary>
-    [Fact]
-    public void Review_ReportsTheCalculatedOnOpenWarningOnceForVolatileFormulas()
-    {
-        CellsOpenCalculationTests.CreateVolatileWorkbook(_workspace.File("volatile.xlsx"));
-
-        CliResult review = _workspace.Run("review", "volatile.xlsx", "--out", _workspace.File("review"), "--output-format", "json");
-
-        Assert.True(review.ExitCode == 0, review.StdErr);
-        Assert.Single(JsonNode.Parse(review.StdOut)!["warnings"]!.AsArray(),
-            static warning => warning!["code"]!.GetValue<string>() == "FORMULAS_CALCULATED_ON_OPEN");
-    }
-
     /// <summary>
     /// Formulas stored without results: saving the workbook with an edit, as the hint of
     /// <c>FORMULAS_CALCULATED_ON_OPEN</c> says, stores their results, so the next read warns no more.
@@ -677,72 +647,6 @@ public sealed class CellsCliTests : IDisposable
         Assert.DoesNotContain("--sheet", edit, StringComparison.Ordinal);
         Assert.Contains("--sheet ", read, StringComparison.Ordinal);
         Assert.Contains("name", read, StringComparison.Ordinal);
-    }
-
-    /// <summary>
-    /// A title enlarged with format_range in a row of the default height is cut off at the top:
-    /// review reports that row, and nothing once resize_rows has fitted it. Body rows of 11 point
-    /// Chinese and English text at the default height are not reported.
-    /// </summary>
-    [Fact]
-    public void Review_ReportsARowTooShortForItsEnlargedTitleUntilTheRowIsFitted()
-    {
-        Assert.Equal(0, _workspace.Run("cells", "create", "title.xlsx", "--sheet-names", "汇总").ExitCode);
-        File.WriteAllText(_workspace.File("title.json"), """
-            {"ops":[
-            {"op":"set_values","range":"A1:B4","values":[["2026 年销售汇总 Sales Summary",null],["单位：人民币元",null],["华东 East","1,200"],["华南 South Region",980]]},
-            {"op":"format_range","range":"A1","style":{"bold":true,"fontSize":28}}
-            ]}
-            """);
-        File.WriteAllText(_workspace.File("fit.json"), """{"ops":[{"op":"resize_rows","first":1}]}""");
-        Assert.Equal(0, _workspace.Run("cells", "edit", "title.xlsx", "--ops", "title.json", "--in-place").ExitCode);
-
-        JsonNode[] cut = TallTextFindings("cut");
-        Assert.Equal(0, _workspace.Run("cells", "edit", "title.xlsx", "--ops", "fit.json", "--in-place").ExitCode);
-        JsonNode[] fitted = TallTextFindings("fitted");
-
-        JsonNode finding = Assert.Single(cut);
-        Assert.Equal("warning", finding["severity"]!.GetValue<string>());
-        Assert.Equal("row/汇总!1", finding["location"]!.GetValue<string>());
-        Assert.Matches(@"^1 row\(s\) .*; sample: 1 \([\d.]+ pt tall, 28 pt text\)\.$", finding["message"]!.GetValue<string>());
-        Assert.Contains("resize_rows", finding["hint"]!.GetValue<string>(), StringComparison.Ordinal);
-        Assert.Empty(fitted);
-    }
-
-    /// <summary>
-    /// Text wrapped in a column too narrow for one line, at the default row height, shows only
-    /// its first lines: review reports that row with the height the text needs, and nothing once
-    /// the hint's resize_rows has fitted it.
-    /// </summary>
-    [Fact]
-    public void Review_ReportsARowTooShortForItsWrappedTextUntilTheRowIsFitted()
-    {
-        Assert.Equal(0, _workspace.Run("cells", "create", "title.xlsx", "--sheet-names", "Data").ExitCode);
-        File.WriteAllText(_workspace.File("wrap.json"), """
-            {"ops":[
-            {"op":"set_values","sheet":"Data","range":"A1:A2","values":[["Notes"],["This is a long wrapped text that will need several lines to show in a narrow column"]]},
-            {"op":"format_range","sheet":"Data","range":"A2","style":{"wrap":true}}
-            ]}
-            """);
-        File.WriteAllText(_workspace.File("fit.json"), """{"ops":[{"op":"resize_rows","sheet":"Data","first":2}]}""");
-        Assert.Equal(0, _workspace.Run("cells", "edit", "title.xlsx", "--ops", "wrap.json", "--in-place").ExitCode);
-
-        JsonNode finding = Assert.Single(TallTextFindings("cut"));
-        Assert.Equal("row/Data!2", finding["location"]!.GetValue<string>());
-        Assert.Matches(@"^1 row\(s\) are too short for their text, which they cut off; sample: 2 \(12\.75 pt tall, wrapped text needs [\d.]+ pt\)\.$", finding["message"]!.GetValue<string>());
-        Assert.Contains("""{"op":"resize_rows","sheet":"Data","first":2}""", finding["hint"]!.GetValue<string>(), StringComparison.Ordinal);
-
-        Assert.Equal(0, _workspace.Run("cells", "edit", "title.xlsx", "--ops", "fit.json", "--in-place").ExitCode);
-        Assert.Empty(TallTextFindings("fitted"));
-    }
-
-    private JsonNode[] TallTextFindings(string name)
-    {
-        CliResult review = _workspace.Run("review", "title.xlsx", "--out", _workspace.File(name), "--output-format", "json");
-        Assert.True(review.ExitCode == 0, review.StdErr);
-        return [.. JsonNode.Parse(review.StdOut)!["findings"]!.AsArray()
-            .Where(static finding => finding!["code"]!.GetValue<string>() == "CELLS_TEXT_TALLER_THAN_ROW")
-            .Select(static finding => finding!)];
     }
 
     /// <summary>

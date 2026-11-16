@@ -54,7 +54,6 @@ public sealed class SlidesModule : IProductModule
             "slides inspect deck.pptx --sample --detail masters --detail layouts --detail fonts --detail notes",
             "slides read deck.pptx --slides 1-5 --content full --notes --output-format json",
             "slides edit deck.pptx --ops deck-ops.json --out revised.pptx",
-            "review revised.pptx --out revised.review",
         ],
         [
             CommandHelpLink.Docs(Manifest, "editing", "atomic presentation operations"),

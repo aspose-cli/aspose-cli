@@ -35,7 +35,7 @@ public enum ExitCode
 
     /// <summary>
     /// The command printed its result, but the result did not pass: a failed operation under
-    /// --best-effort, a failed verification, review or check. No error envelope has this code.
+    /// --best-effort, a failed verification or check. No error envelope has this code.
     /// </summary>
     PartialFailure = 8,
 

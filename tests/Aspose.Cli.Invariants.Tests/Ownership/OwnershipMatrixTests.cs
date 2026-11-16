@@ -22,5 +22,5 @@ public sealed class OwnershipMatrixTests
 
     /// <summary>The sample names cases the matrix still generates, so a renamed command or check cannot empty it.</summary>
     [Fact]
-    public void Sample_IsGenerated() => Assert.Equal(6, OwnershipCases.Sample.Count);
+    public void Sample_IsGenerated() => Assert.Equal(4, OwnershipCases.Sample.Count);
 }

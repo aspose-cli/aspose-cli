@@ -29,7 +29,7 @@ aspose-cli slides create qbr.pptx --from-markdown notes.md --template brand.pptx
 The template's existing slides are replaced; its masters, layouts, theme and
 slide size are kept. A layout type the template lacks falls back to Title and
 Content. Unused placeholders are removed. Body placeholders are set to shrink
-text on overflow; still check review for overflow and split a crowded slide
+text on overflow; still check a render for overflow and split a crowded slide
 rather than rely on shrinking. Wrap an image path that contains spaces in angle
 brackets. An image is read only from an ordinary file beneath the Markdown
 file's directory, by relative path; any other image, a missing or remote one

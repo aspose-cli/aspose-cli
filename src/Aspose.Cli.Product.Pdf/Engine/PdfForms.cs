@@ -118,17 +118,6 @@ internal static class PdfForms
         };
     }
 
-    /// <summary>
-    /// How many field names have a widget, or a radio button, that lies on no page among the
-    /// first <paramref name="pages"/>: review reports them as unresolved.
-    /// </summary>
-    internal static int FieldsWithoutPage(Document document, int pages) =>
-        document.Form.Fields
-            .Where(field => PageOf(field) is not int page || page > pages)
-            .Select(static field => field.FullName)
-            .Distinct(StringComparer.Ordinal)
-            .Count();
-
     /// <summary>The page of the widget, or null when it has none or evaluation mode hides it.</summary>
     internal static int? PageOf(WidgetAnnotation widget)
     {

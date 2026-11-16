@@ -7,9 +7,7 @@ namespace Aspose.Cli.Sdk.Extensibility.Commanding;
 
 /// <summary>
 /// The one <c>--out-dir</c> option of commands that publish a set of files into a directory
-/// that may exist. It has no alias: <c>--out</c> always names one output, a file or, for
-/// <c>review</c>, its evidence directory as a whole: one that does not exist yet, or with
-/// <c>--overwrite</c> an empty one or an earlier evidence, which it replaces.
+/// that may exist. It has no alias: <c>--out</c> always names one output file.
 /// </summary>
 internal sealed class OutputDirectoryOption
 {
@@ -61,10 +59,10 @@ internal sealed class OutputDirectoryOption
 }
 
 /// <summary>
-/// The one decision on the name of a directory output, <c>--out-dir</c> and the evidence
-/// directory of <c>review --out</c> alike: it is never <c>-</c>, and a directory to be created is
-/// never named like a file of a format some command of the tree writes, such as
-/// <c>parts.html</c>, which is most likely a file name given where a directory belongs.
+/// The one decision on the name of a directory output, <c>--out-dir</c>: it is never <c>-</c>,
+/// and a directory to be created is never named like a file of a format some command of the tree
+/// writes, such as <c>parts.html</c>, which is most likely a file name given where a directory
+/// belongs.
 /// </summary>
 public static class OutputDirectories
 {

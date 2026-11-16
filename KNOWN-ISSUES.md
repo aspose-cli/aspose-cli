@@ -3,8 +3,8 @@
 Confirmed defects in the commercial Aspose SDKs this CLI runs on, and how the CLI handles each.
 Each issue is recorded once under its id, below a heading with the SDK version `eng/products.json`
 pins. One test in the `*KnownIssueTests` classes named under that heading reproduces it with the
-SDK alone through `KnownIssue.Reproduces`, and the code that handles it names the id in a comment;
-`KnownIssueCatalogTests` keeps this file true. To update an SDK, change its version in
+SDK alone through `KnownIssue.Reproduces`, and the code that handles it, if any, names the id in a
+comment; `KnownIssueCatalogTests` keeps this file true. To update an SDK, change its version in
 `eng/products.json`, run `scripts/sync.ps1` and the `Full` scope; for each reproduction that now
 fails, delete the issue's section, the code that names it and the test, then update the headings.
 The last section, on memory, is a limit no single SDK version owns, and has no id.
@@ -118,10 +118,7 @@ Reproductions: [CellsKnownIssueTests](tests/Aspose.Cli.Product.Cells.Tests/Cells
   as Calibri or Arial, while `AutoFitColumn` and rendering draw them with a fallback font. The
   measured width is then up to half the drawn width, or, for mixed text such as
   `配件 Accessories`, can exceed the auto-fitted column by a pixel.
-- **CLI behavior:** review's `CELLS_VALUES_CLIPPED` measures with `GetWidthOfValue`, so it can
-  miss East Asian text that is cut off or list mixed text that fits; when its samples hold East
-  Asian text, its message says the measurement is unreliable for them and asks to check the
-  sheet image.
+- **CLI behavior:** none.
 - **Workaround:** give such text a font with East Asian glyphs (for example Microsoft YaHei),
   which all three measure alike, or set the column width explicitly.
 
@@ -133,11 +130,8 @@ Reproductions: [CellsKnownIssueTests](tests/Aspose.Cli.Product.Cells.Tests/Cells
   layout sizes columns apart from the cell model (a few percent wider with Microsoft YaHei), so
   the edge falls elsewhere in the print-area layout of `OnlyArea = true`, which also draws text
   that ends on an edge in full.
-- **CLI behavior:** `cells render` of a whole sheet and review's sheet images can cut such text,
-  while `cells render --range` shows it whole; PDF export lays out its own pages, so check its
-  pages the same way. No public API measures the page layout, so review lists text that spills
-  over empty cells and ends within about 6% of a column edge, the most page layout moves an
-  edge, with the info finding `CELLS_TEXT_OVERFLOWS`, and asks to check its end in the image.
+- **CLI behavior:** none: `cells render` of a whole sheet can cut such text, while
+  `cells render --range` shows it whole; PDF export lays out its own pages.
 - **Workaround:** widen the column the text starts in by one or two characters, or wrap the
   text.
 
@@ -172,9 +166,7 @@ Reproductions: [CellsKnownIssueTests](tests/Aspose.Cli.Product.Cells.Tests/Cells
   and grand total labels and the innermost field's items are drawn like plain cells.
   `AutoFitColumns` leaves the indent out, so an auto-fitted column is as wide as for the text
   alone and the label is cut.
-- **CLI behavior:** review measures those labels with the indent and reports one that does not
-  fit as `CELLS_VALUES_CLIPPED`, with a hint to give its column an explicit width; auto-fit
-  (`resize_columns` without `widthChars`) leaves the label cut.
+- **CLI behavior:** none: auto-fit (`resize_columns` without `widthChars`) leaves the label cut.
 - **Workaround:** set the column width with `resize_columns` and `widthChars`, a few characters
   wider than the label.
 
@@ -207,8 +199,7 @@ Reproductions: [CellsKnownIssueTests](tests/Aspose.Cli.Product.Cells.Tests/Cells
 - **Defect:** `Worksheet.AutoFitRows` fits a row to the cell's font when the cell holds rich text
   that does not wrap, so a run larger than that font is cut off, though
   `Cell.GetHeightOfValue` measures the run, and wrapped rich text is fitted.
-- **CLI behavior:** review reports such a row as `CELLS_TEXT_TALLER_THAN_ROW` with the font of
-  the largest run, and its hint says that auto-fit leaves it short.
+- **CLI behavior:** none.
 - **Workaround:** set the row height with `resize_rows` and `height`.
 
 ### CELLS-AUTOFIT-GENERAL-NUMBER
@@ -222,8 +213,8 @@ Reproductions: [CellsKnownIssueTests](tests/Aspose.Cli.Product.Cells.Tests/Cells
   `AutoFitterOptions` setting (`FormatStrategy`, `ForRendering`) changes the width; numbers in
   other formats, dates and text are fitted in full.
 - **CLI behavior:** `resize_columns` without `widthChars` widens such a column a pixel at a time
-  until each General number in it shows in full, then one pixel more, so review's
-  `CELLS_VALUES_CLIPPED` no longer reports it and sheet images and PDF pages show the whole number.
+  until each General number in it shows in full, then one pixel more, so sheet images and PDF
+  pages show the whole number.
 
 ### CELLS-SHEET-END-COMMENT-PAGES
 
@@ -232,9 +223,8 @@ Reproductions: [CellsKnownIssueTests](tests/Aspose.Cli.Product.Cells.Tests/Cells
   throws a `NullReferenceException` when a comment holds a character such as Chinese, Japanese or
   an emoji. Saving the same sheet as PDF or XPS, and `SheetRender`, print its comments at the end.
 - **CLI behavior:** the printed pages of a sheet's charts, which `cells convert` to pdf or xps
-  warns about with `CHART_SPLIT_ACROSS_PAGES` and `review` checks with
-  `CELLS_CHART_SPLIT_ACROSS_PAGES`, are measured as if the sheet printed no comments, since its
-  comment pages hold no chart; the output still prints the comments at the end of the sheet.
+  warns about with `CHART_SPLIT_ACROSS_PAGES`, are measured as if the sheet printed no comments,
+  since its comment pages hold no chart; the output still prints the comments at the end of the sheet.
 
 ### CELLS-CSV-SAVE-CULTURE
 
@@ -642,8 +632,7 @@ Reproductions: [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownI
   runs of each redacted page start before and after, and a `REDACTION_TEXT_MOVED` warning names
   the operations and pages on which a run moved left. Only runs that keep their whole text are
   followed, so the rest of a run the redaction cut can move without a warning: no warning does
-  not prove that nothing moved. `review` reports `PDF_TEXT_COVERED` on every page where text
-  lies under a redaction cover. The moved text is still in the file but no longer visible.
+  not prove that nothing moved. The moved text is still in the file but no longer visible.
 - **Workaround:** redact the source document and create the PDF again. With only the PDF, the
   values can all be removed, with `redact_text` or with `redact_area` on search rectangles
   without a margin, the areas of a line from right to left, but the text that follows them on
@@ -791,11 +780,11 @@ Reproductions: [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownI
 - **CLI behavior:** a command that reads the text of such a page ends the same way, and so does
   every command whose evaluation-notice check reaches it: licensed or not, that check reads the
   text of up to four pages of every document a PDF command writes or renders. `pdf read`,
-  `pdf edit`, `pdf convert`, `pdf render` and `review` are among them. Without `--timeout` the
+  `pdf edit`, `pdf convert` and `pdf render` are among them. Without `--timeout` the
   command runs in the CLI's own process: it exits with `0xC00000FD`, with nothing on stdout and
   the runtime's `Stack overflow.` and stack trace on stderr. An output published before the check
-  stays, as `pdf render`'s image does; one only staged, as the outputs of `pdf edit`,
-  `pdf convert` and `review` are, is not published, but its `.aspose-publication-*` staging stays
+  stays, as `pdf render`'s image does; one only staged, as the outputs of `pdf edit` and
+  `pdf convert` are, is not published, but its `.aspose-publication-*` staging stays
   in the output's directory until the next command that writes there removes it. With
   `--timeout`, and for every command the MCP server runs, the command runs in a worker process:
   a worker that ends with an exit code the CLI does not use has its output withheld and its
@@ -839,8 +828,7 @@ Reproductions: [SlidesKnownIssueTests](tests/Aspose.Cli.Product.Slides.Tests/Sli
   laid-out lines that end past the right edge of the frame once the text overflows, while
   rendering shrinks the text and draws every line inside the frame. The runs' rectangles
   (`IPortion.GetRect`) follow the shrunk text as rendering draws it.
-- **CLI behavior:** none visible; `review` measures where text sits from the rectangles of its
-  runs, so a body that shrinks its long lines is not reported as cut off by the slide edge.
+- **CLI behavior:** none.
 
 ### SLIDES-CHART-TITLE
 

@@ -41,16 +41,6 @@ public sealed class HostCatalogIsolationTests
             "aspose-cli capabilities alpha --output-format json",
         ],
             metadata!.Examples);
-
-        Command review = alphaRoot.Subcommands.Single(
-            static command => command.Name == "review");
-        Assert.True(review.TryGetHelpMetadata(out metadata));
-        Assert.Equal(
-        [
-            "aspose-cli review report.docx",
-            "aspose-cli review report.docx --out evidence --max-items 50 --output-format json",
-        ],
-            metadata!.Examples);
     }
 
     private static ProductCatalog Catalog(string id, string extension)

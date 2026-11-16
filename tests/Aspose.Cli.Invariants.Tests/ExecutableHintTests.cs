@@ -302,44 +302,6 @@ public sealed class ExecutableHintTests : IDisposable
     }
 
     /// <summary>
-    /// The review findings of a Words document's tracked changes and comments locate nothing
-    /// narrower than the document, so each hint names the read that gives every item's block. That
-    /// command runs as written, for real, on the input as the review named it: a plain file, one
-    /// at a path with a space, and an encrypted one, with the review's password variable.
-    /// </summary>
-    [Theory]
-    [InlineData("marked.docx", false)]
-    [InlineData("two words/marked copy.docx", false)]
-    [InlineData("locked.docx", true)]
-    public void ReviewFindingHints_OfTrackedChangesAndComments_RunAsWritten(string input, bool encrypted)
-    {
-        const string Variable = "DOC_PASSWORD";
-        var variables = new Dictionary<string, string?> { [Variable] = ScenarioFixtures.Password };
-        WriteTrackedDocument(input, encrypted ? Variable : null, variables);
-        string[] review = ["review", input, .. encrypted ? new[] { "--password-env", Variable } : [], "--out", "evidence", "--output-format", "json"];
-
-        JsonNode reviewed = _workspace.RunWithEnv(variables, review).Json();
-
-        string[] password = encrypted ? ["--password-env", Variable] : [];
-        foreach ((string code, string detail, int block) in new[] { ("WORDS_REVISIONS_PRESENT", "revisions", 2), ("WORDS_COMMENTS_PRESENT", "comments", 3) })
-        {
-            string hint = reviewed["findings"]!.AsArray().Single(finding => finding!["code"]!.GetValue<string>() == code)!["hint"]!.GetValue<string>();
-            HintAction command = Assert.Single(ExecutableHints.Extract(CliCatalog.Current, hint), static action => action.Kind == HintKind.Command);
-            Assert.Equal(["words", "inspect", Path.GetFullPath(_workspace.File(input)), .. password, "--detail", detail, "--output-format", "json"], command.Tokens);
-
-            CliResult listed = _workspace.RunWithEnv(variables, [.. command.Tokens]);
-
-            Assert.True(listed.ExitCode == 0, listed.StdErr);
-            Assert.All(listed.Json()[detail]!.AsArray(), item => Assert.Equal(block, item!["block"]!.GetValue<int>()));
-            Assert.NotEmpty(listed.Json()[detail]!.AsArray());
-            // The hint's operation names are the document's own, as a warning's are judged.
-            Assert.Empty(ExecutableHints.Problems(
-                new HintRun(review, _workspace.Path, Path.GetDirectoryName(_workspace.ConfigDirectory)!, variables),
-                Warning(hint)));
-        }
-    }
-
-    /// <summary>
     /// A plain-text or Markdown convert writes a comment and the deleted text of a tracked change
     /// into its body, and warns of each. The commands of each decision the hints offer run as
     /// written, in order, for real, each decision in a workspace of its own, on a plain input and
@@ -416,10 +378,6 @@ public sealed class ExecutableHintTests : IDisposable
         }
         return decisions;
     }
-
-    /// <summary>A Words document with a tracked change in block 2 and a comment on block 3, encrypted with <paramref name="encryptWith"/> when it is given.</summary>
-    private void WriteTrackedDocument(string name, string? encryptWith, Dictionary<string, string?> variables) =>
-        WriteMarkedDocument(_workspace, name, encryptWith, variables, comment: true, revision: true);
 
     /// <summary>
     /// A Words document in <paramref name="workspace"/> with, as asked, a tracked change of

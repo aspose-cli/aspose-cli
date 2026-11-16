@@ -732,7 +732,7 @@ public abstract class ProductContractTests<TModule>
             string.Join(
                 "|",
                 $"{definition.View.ProductId}:{definition.View.SessionType.AssemblyQualifiedName}",
-                $"{definition.View.ReviewView}:{definition.View.LiveView}:{definition.View.VisualInspectionRequired}",
+                definition.View.LiveView,
                 string.Join(
                     ",",
                     definition.View.Views.Select(

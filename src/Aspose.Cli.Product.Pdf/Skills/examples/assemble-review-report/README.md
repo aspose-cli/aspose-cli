@@ -8,7 +8,7 @@ page with the form fields `ReportTitle` and `PreparedFor`, and
 The workflow creates both PDFs, merges them, stamps page numbers and a DRAFT
 watermark with [assemble-ops.json](assemble-ops.json), fills the cover form with
 [cover-values.json](cover-values.json), produces a PDF/A-2b candidate, validates
-it and reviews it.
+it and renders it.
 
 ```powershell
 aspose-cli pdf create cover.pdf --from-html cover.html --output-format json
@@ -20,7 +20,7 @@ aspose-cli pdf edit review.pdf --ops cover-values.json --out review.filled.pdf -
 aspose-cli pdf convert review.filled.pdf --to pdfa-2b --out review.archive.pdf --output-format json
 aspose-cli pdf validate review.archive.pdf --profile pdfa-2b --output-format json
 aspose-cli pdf read review.archive.pdf --output-format json
-aspose-cli review review.archive.pdf --out review.archive.review --output-format json
+aspose-cli pdf render review.archive.pdf --out review.archive.png --output-format json
 ```
 
 With your own documents, read a page of each input first: a PDF converted from a
@@ -33,5 +33,5 @@ convert `review.pdf` instead.
 The archive has two pages, each stamped `Page n of 2` and DRAFT, and the cover
 fields hold the filled values. Require `valid: true` from validation, compare
 the archive with `review.filled.pdf` because PDF/A conversion can remove content,
-open every page image the review lists, and disclose evaluation output when
+look at the rendered images, and disclose evaluation output when
 applicable. Sign, if required, only after these checks pass.

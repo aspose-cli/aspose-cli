@@ -209,19 +209,8 @@ public sealed class ProductFileRouter
             candidates,
             recognitions,
             InputReaders(extension),
-            OnlyWritten(extension),
-            PdfWriter(extension));
+            OnlyWritten(extension));
     }
-
-    /// <summary>
-    /// The first product that writes files of <paramref name="extension"/> with its convert and
-    /// converts to PDF too, which writes the same content in a format a product reads; null for none.
-    /// </summary>
-    private string? PdfWriter(string extension) =>
-        _catalog.Products.FirstOrDefault(product =>
-            product.Formats.Any(format => format.Uses.HasFlag(FormatUse.Convert) && format.Extensions.Any(candidate => string.Equals(
-                ProductCatalog.NormalizeExtension(candidate), extension, StringComparison.Ordinal)))
-            && product.Formats.Any(static format => format.Id == "pdf" && format.Uses.HasFlag(FormatUse.Convert)))?.Manifest.Id;
 
     /// <summary>
     /// The commands that write files of <paramref name="extension"/> when no product reads that
@@ -328,8 +317,7 @@ public sealed class ProductFileRouter
         IReadOnlyList<ProductDefinition> candidates,
         IReadOnlyList<RecognitionEntry> recognitions,
         IReadOnlyList<string> readers,
-        IReadOnlyList<string> writers,
-        string? pdfWriter)
+        IReadOnlyList<string> writers)
     {
         RecognitionEntry[] matches = StrongMatches(recognitions);
         if (matches.Length > 0)
@@ -356,7 +344,7 @@ public sealed class ProductFileRouter
         throw detected.Count == 0 && readers.Count > 0
             ? CliErrors.ContentUnrecognized(fullPath, readers)
             : detected.Count == 0 && writers.Count > 0
-            ? CliErrors.FormatOnlyWritten(fullPath, writers, pdfWriter, operation, CandidateIds(candidates))
+            ? CliErrors.FormatOnlyWritten(fullPath, writers, CandidateIds(candidates))
             : CliErrors.FormatUnrecognized(
                 fullPath,
                 declaredProduct: null,

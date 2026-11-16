@@ -23,7 +23,7 @@ aspose-cli cells read model.xlsx --sheet Model --range B1:B3 --output-format jso
 #    -> B3 v: 125000
 
 # 5. Look at it the way a human would.
-aspose-cli review model.xlsx --out model.review --output-format json
+aspose-cli cells render model.xlsx --sheets all --out model.png --output-format json
 ```
 
 Deliver values from step 4's `read` output — they came from the engine's

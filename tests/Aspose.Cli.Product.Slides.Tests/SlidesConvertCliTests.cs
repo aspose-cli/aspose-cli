@@ -107,21 +107,6 @@ public sealed partial class SlidesConvertCliTests : IDisposable
         Assert.DoesNotContain("HIDDEN_SLIDES_RENDERED", ResultWarnings.Codes(result));
     }
 
-    /// <summary>A review draws a hidden slide and names it in a warning, so its evidence is not read as the show.</summary>
-    [Fact]
-    public void Review_DrawsAHiddenSlideAndWarns()
-    {
-        HiddenSecondSlide();
-
-        CliResult review = _workspace.Run("review", "deck.pptx", "--out", "evidence", "--output-format", "json");
-
-        Assert.True(review.ExitCode is 0 or 8, review.StdErr);
-        JsonNode result = JsonNode.Parse(review.StdOut)!;
-        JsonNode warning = Assert.Single(result["warnings"] as JsonArray ?? [], static warning => warning!["code"]!.GetValue<string>() == "HIDDEN_SLIDES_RENDERED")!;
-        Assert.Contains("slide(s) 2 are hidden", warning["message"]!.GetValue<string>(), StringComparison.Ordinal);
-        Assert.Contains("""{"op":"set_slide_hidden","slides":"2","hidden":false}""", warning["hint"]!.GetValue<string>(), StringComparison.Ordinal);
-    }
-
     /// <summary>A PDF export holds the slides alone: the speaker notes are not in it.</summary>
     [Fact]
     public void PdfExport_LeavesSpeakerNotesOut()

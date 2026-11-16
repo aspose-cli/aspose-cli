@@ -90,6 +90,4 @@ evaluation mode lays out and saves (about 200 paragraphs, as with a mail merge
 of many records), the output keeps only its first sections and ends with the
 engine's truncation notice, which the `EVALUATION_MODE` message names;
 `--verify` then reports `OUTPUT_TRUNCATED`, and the result is incomplete
-whatever `itemsAffected` says. A licensed `review` reports marks an earlier
-unlicensed save left in a file as `WORDS_EVALUATION_MARKS`
-([verification](verification.md#visual-review)).
+whatever `itemsAffected` says.
