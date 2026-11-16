@@ -35,6 +35,23 @@ public sealed class WordsKnownIssueTests
     }
 
     [Fact]
+    public void MarkdownSave_EscapesANumberThatStartsAParagraphAsAListMarker()
+    {
+        using var fixture = new WordsFixture();
+        var document = new Document();
+        var builder = new DocumentBuilder(document);
+        builder.Writeln("22.75");
+        builder.Write("22) total");
+        string markdown = SaveText(document, new MarkdownSaveOptions { ExportImagesAsBase64 = true });
+
+        // CommonMark: digits and a period start a list only before a space, and a backslash before a digit is text.
+        KnownIssue.Reproduces(
+            "WORDS-MD-NUMBER-ESCAPE",
+            markdown.Contains(@"22\.75", StringComparison.Ordinal) && markdown.Contains(@"\22) total", StringComparison.Ordinal),
+            markdown);
+    }
+
+    [Fact]
     public void RegexReplace_AnchorsOnlyAtTheStartOfTheRange()
     {
         using var fixture = new WordsFixture();

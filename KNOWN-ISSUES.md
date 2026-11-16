@@ -1094,6 +1094,19 @@ Reproductions: [WordsKnownIssueTests](tests/Aspose.Cli.Product.Words.Tests/Words
 - **Workaround:** write every `[^id]: text` definition at the end of the Markdown, after the
   last heading.
 
+### WORDS-MD-NUMBER-ESCAPE
+
+- **Defect:** saving to Markdown escapes a paragraph or table cell that starts with digits and a
+  period or closing parenthesis as an ordered-list marker, whatever follows: `22.75` becomes
+  `22\.75`, which renders right but gives a script that reads the bytes a backslash, though
+  CommonMark takes digits and a period as a marker only before a space or the line end; and
+  `22) total` becomes `\22) total`, whose backslash before a digit CommonMark keeps as text.
+  `MarkdownSaveOptions` has no option to turn the escaping off.
+- **CLI behavior:** `words convert --to md` and a Markdown redline of `words compare` write the
+  Markdown as the SDK escapes it; the Words Skill says to read exact numbers with `words read`.
+- **Workaround:** read the numbers with `words read`, or a table's with `words extract --what
+  tables`, which give the text as the document holds it.
+
 ## Memory on untrusted documents
 
 - **Limit:** an SDK expands a document in memory while it loads it, before the CLI's resource

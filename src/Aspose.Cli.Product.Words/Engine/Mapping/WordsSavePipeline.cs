@@ -85,6 +85,7 @@ internal static class WordsSavePipeline
             case SvgSaveOptions svg:
                 svg.ExportEmbeddedImages = true;
                 break;
+            // WORDS-MD-NUMBER-ESCAPE: written as the SDK escapes it; the Words Skill says how to read numbers.
             case MarkdownSaveOptions markdown:
                 markdown.ExportImagesAsBase64 = true;
                 markdown.OfficeMathExportMode = MarkdownOfficeMathExportMode.Text;

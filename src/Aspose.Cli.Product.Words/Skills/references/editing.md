@@ -315,7 +315,9 @@ aligned columns. An `md` output holds the text alone: it leaves out the
 pictures, charts, shapes and text boxes, keeps the text of shapes and text
 boxes after the paragraph that held them, and reports `LOSSY_CONVERSION` naming
 them, with the `words extract --what images` command that writes the pictures
-as image files. A convert to a page format (`pdf`, `xps`, `openxps`, `ps`,
+as image files. Its text escapes a number that starts
+a paragraph or table cell, such as `22\.75` (known SDK issue
+`WORDS-MD-NUMBER-ESCAPE`): read exact numbers with `words read`. A convert to a page format (`pdf`, `xps`, `openxps`, `ps`,
 `pcl`, `html-fixed`) and a `words render` draw the tracked changes on the pages as
 markup and the comments in balloons in a margin that narrows the pages; each
 is reported by its own `LOSSY_CONVERSION` (a render reports only the
