@@ -146,9 +146,11 @@ internal static partial class CellsTextImport
     /// <summary>
     /// Runs <paramref name="work"/> with the thread's culture set to the invariant one, then sets
     /// it back: the engine types the values of delimited text, and writes its numbers, by the
-    /// thread's culture, which would otherwise be the machine's regional settings, whatever
-    /// culture its options name (known issues CELLS-CSV-SAVE-CULTURE and
-    /// CELLS-CSV-FRACTION-CULTURE, KNOWN-ISSUES.md).
+    /// thread's culture, whatever culture its options name (known issues CELLS-CSV-SAVE-CULTURE
+    /// and CELLS-CSV-FRACTION-CULTURE, KNOWN-ISSUES.md). The CLI's process is pinned to en-US
+    /// (CliHost), under which the engine reads and writes delimited text as under the invariant
+    /// culture; this keeps a caller that does not start through CliHost, such as a test process
+    /// under the machine's regional settings, to the same reading and writing.
     /// </summary>
     internal static T Invariant<T>(Func<T> work)
     {
