@@ -508,7 +508,8 @@ public static partial class ScenarioRunner
     /// <summary>
     /// Resolves <c>a.b[0].c</c>, where <c>[name=value]</c> keeps, in their order, the items of an
     /// array whose <c>name</c> is the string <c>value</c>, such as
-    /// <c>warnings[code=LOSSY_CONVERSION][0]</c>; true when every segment exists.
+    /// <c>warnings[code=LOSSY_CONVERSION][0]</c>, and exists when it keeps one; true when every
+    /// segment exists.
     /// </summary>
     internal static bool TryResolve(JsonNode? root, string path, out JsonNode? value)
     {
@@ -548,11 +549,12 @@ public static partial class ScenarioRunner
             item = index < array.Count ? array[index] : null;
             return index < array.Count;
         }
-        item = new JsonArray([.. array
+        JsonArray kept = [.. array
             .Where(element => element is JsonObject obj && obj[selector[..equals]] is JsonValue key
                 && key.TryGetValue(out string? text) && text == selector[(equals + 1)..])
-            .Select(static element => element!.DeepClone())]);
-        return true;
+            .Select(static element => element!.DeepClone())];
+        item = kept.Count > 0 ? kept : null;
+        return kept.Count > 0;
     }
 
     /// <summary>

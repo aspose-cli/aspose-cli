@@ -26,7 +26,8 @@ public sealed class CliCatalog
             static diagnostic => diagnostic!["code"]!.GetValue<string>(),
             static diagnostic => new CliDiagnostic(
                 diagnostic!["exitCode"]?.GetValue<int>(),
-                diagnostic["detailsSchemaId"]?.GetValue<string>()),
+                diagnostic["detailsSchemaId"]?.GetValue<string>(),
+                diagnostic["severity"]?.GetValue<string>()),
             StringComparer.Ordinal);
         Routes = document["routing"]!["routes"]!.AsArray().ToDictionary(
             static route => route!["extension"]!.GetValue<string>(),
@@ -194,5 +195,5 @@ public sealed record CliProduct(
     string? OpsSchemaId,
     IReadOnlyList<string> Ops);
 
-/// <summary>One diagnostic of the catalog; an error has an exit code.</summary>
-public sealed record CliDiagnostic(int? ExitCode, string? DetailsSchemaId);
+/// <summary>One diagnostic of the catalog; an error has an exit code, and <paramref name="Severity"/> is <c>error</c> or <c>warning</c>.</summary>
+public sealed record CliDiagnostic(int? ExitCode, string? DetailsSchemaId, string? Severity);

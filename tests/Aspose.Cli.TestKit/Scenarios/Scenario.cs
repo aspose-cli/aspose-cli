@@ -53,8 +53,20 @@ public sealed record Scenario
                 throw new InvalidDataException($"Scenario file '{path}' must name exactly one of fixture, text, base64 or copy.");
             }
         }
+        // A code the CLI does not warn keeps no warning, so a misspelt one would hold any exists: false.
+        string[] unknown = [.. scenario.Steps.SelectMany(static step => step.Expect?.Json ?? [])
+            .SelectMany(static assertion => WarningSelector.Matches(assertion.Path).Select(static match => match.Groups["code"].Value))
+            .Distinct(StringComparer.Ordinal)
+            .Where(static code => !(CliCatalog.Current.Diagnostics.TryGetValue(code, out CliDiagnostic? diagnostic) && diagnostic.Severity == "warning"))];
+        if (unknown.Length > 0)
+        {
+            throw new InvalidDataException($"Scenario '{scenario.Name}' selects warnings by a code the CLI does not warn: {string.Join(", ", unknown)}.");
+        }
         return scenario with { BaseDirectory = baseDirectory };
     }
+
+    private static readonly System.Text.RegularExpressions.Regex WarningSelector =
+        new(@"(?:^|\.)warnings\[code=(?<code>[^\]]*)\]", System.Text.RegularExpressions.RegexOptions.CultureInvariant);
 }
 
 /// <summary>One seed file; exactly one source is set.</summary>

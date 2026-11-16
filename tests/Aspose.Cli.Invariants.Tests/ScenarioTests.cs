@@ -141,6 +141,24 @@ public sealed class ScenarioTests
     public void InvalidScenario_IsRejected(string json) =>
         Assert.ThrowsAny<Exception>(() => Scenario.Parse(json));
 
+    /// <summary>
+    /// A warning selector names a code the CLI warns: a misspelt code, or an error's, would keep no
+    /// warning and so hold any <c>exists: false</c>, and the scenario fails as it loads.
+    /// </summary>
+    [Theory]
+    [InlineData("LOSSY_CONVERSON")]
+    [InlineData("FILE_NOT_FOUND")]
+    public void WarningSelector_OfACodeTheCliDoesNotWarn_IsRejected(string code)
+    {
+        InvalidDataException rejected = Assert.Throws<InvalidDataException>(() => Scenario.Parse($$$"""
+            {"name":"a selector of a code no warning has","files":{"brief.md":{"text":"# Brief"}},
+             "steps":[{"args":["words","create","brief.docx","--from-markdown","brief.md"],
+               "expect":{"exitCode":0,"json":[{"path":"warnings[code={{{code}}}][0]","exists":false}]}}]}
+            """));
+
+        Assert.Contains(code, rejected.Message, StringComparison.Ordinal);
+    }
+
     [Theory]
     [InlineData("error.details.suggestions[1]", true, "\"b\"")]
     [InlineData("error.details.suggestions[2]", false, null)]
@@ -149,7 +167,8 @@ public sealed class ScenarioTests
     [InlineData("warnings[code=LOSSY_CONVERSION][1].details.content[0]", true, "\"pictures\"")]
     [InlineData("warnings[code=LOSSY_CONVERSION][2]", false, null)]
     [InlineData("warnings[code=FONTS_MISSING][0]", false, null)]
-    [InlineData("error.details.suggestions[code=a]", true, "[]")]
+    [InlineData("error.details.suggestions[code=a]", false, null)]
+    [InlineData("warnings[code=EVALUATION_MODE]", true, """[{"code":"EVALUATION_MODE"}]""")]
     public void JsonPath_ResolvesNamesAndIndexes(string path, bool found, string? expected)
     {
         JsonNode document = JsonNode.Parse("""
