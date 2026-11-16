@@ -75,7 +75,7 @@ public static class CliRunner
         }
         if (Directory.Exists(Path.Combine(root, "eng")))
         {
-            foreach (string path in Directory.EnumerateFiles(Path.Combine(root, "eng"), "*", SearchOption.AllDirectories))
+            foreach (string path in Directory.EnumerateFiles(Path.Combine(root, "eng"), "*", SearchOption.AllDirectories).Where(path => !IsBuildOutput(root, path)))
             {
                 yield return path;
             }
