@@ -1,7 +1,11 @@
 {
-  "name": "cells read keeps the numbers of a csv that writes decimal commas as text and warns NUMBERS_READ_AS_TEXT, whose import hint runs as written",
+  "name": "cells read keeps the numbers of a csv that writes decimal commas as text and warns NUMBERS_READ_AS_TEXT, whose import hint runs as written; a file that also writes a decimal point, such as a version 2.5 or 0.1 beside a quoted \"1,5\", keeps every number with a comma or a point as text too, and the warning names the first decimal comma",
   "files": {
-    "de preise.csv": { "text": "Artikel;Preis\r\nA;2,71\r\nB;1,234\r\nC;0,5\r\nD;12,500\r\n" }
+    "de preise.csv": { "text": "Artikel;Preis\r\nA;2,71\r\nB;1,234\r\nC;0,5\r\nD;12,500\r\n" },
+    "produkt.csv": { "text": "Produkt;Version;Menge;Preis\r\nA;2.5;1.234;3,50\r\nB;3.1;2.000;12,99\r\n" },
+    "grouped.csv": { "text": "k;v\r\na;1.253,96\r\nb;19.90\r\n" },
+    "mixed.csv": { "text": "k;v;w\r\na;3,14;1.234\r\nb;2.5;x\r\n" },
+    "quoted.csv": { "text": "k,v\r\na,\"1,5\"\r\nb,0.1\r\nc,.5\r\nd,1.50\r\n" }
   },
   "steps": [
     {
@@ -9,6 +13,60 @@
       "expect": {
         "exitCode": 0,
         "warnings": { "present": ["NUMBERS_READ_AS_TEXT"] }
+      }
+    },
+    {
+      "args": ["cells", "read", "produkt.csv", "--range", "B2:D3"],
+      "expect": {
+        "exitCode": 0,
+        "warnings": { "only": ["NUMBERS_READ_AS_TEXT"] },
+        "json": [
+          { "path": "sheet.cells[0]", "equals": [{ "v": "2.5", "t": "string" }, { "v": "1.234", "t": "string" }, { "v": "3,50", "t": "string" }] },
+          { "path": "sheet.cells[1]", "equals": [{ "v": "3.1", "t": "string" }, { "v": "2.000", "t": "string" }, { "v": "12,99", "t": "string" }] },
+          { "path": "warnings[code=NUMBERS_READ_AS_TEXT][0].location", "equals": "cell/produkt!D2" },
+          { "path": "warnings[code=NUMBERS_READ_AS_TEXT][0].message", "contains": "such as '3,50' in D2, so its 6 number(s)" }
+        ]
+      }
+    },
+    {
+      "args": ["cells", "read", "grouped.csv", "--range", "B2:B3"],
+      "expect": {
+        "exitCode": 0,
+        "warnings": { "only": ["NUMBERS_READ_AS_TEXT"] },
+        "json": [
+          { "path": "sheet.cells[0][0]", "equals": { "v": "1.253,96", "t": "string" } },
+          { "path": "sheet.cells[1][0]", "equals": { "v": "19.90", "t": "string" } },
+          { "path": "warnings[code=NUMBERS_READ_AS_TEXT][0].location", "equals": "cell/grouped!B2" },
+          { "path": "warnings[code=NUMBERS_READ_AS_TEXT][0].message", "contains": "such as '1.253,96' in B2, so its 2 number(s)" }
+        ]
+      }
+    },
+    {
+      "args": ["cells", "read", "mixed.csv", "--range", "B2:C3"],
+      "expect": {
+        "exitCode": 0,
+        "warnings": { "only": ["NUMBERS_READ_AS_TEXT"] },
+        "json": [
+          { "path": "sheet.cells[0]", "equals": [{ "v": "3,14", "t": "string" }, { "v": "1.234", "t": "string" }] },
+          { "path": "sheet.cells[1]", "equals": [{ "v": "2.5", "t": "string" }, { "v": "x", "t": "string" }] },
+          { "path": "warnings[code=NUMBERS_READ_AS_TEXT][0].location", "equals": "cell/mixed!B2" },
+          { "path": "warnings[code=NUMBERS_READ_AS_TEXT][0].message", "contains": "such as '3,14' in B2, so its 3 number(s)" }
+        ]
+      }
+    },
+    {
+      "args": ["cells", "read", "quoted.csv", "--range", "B2:B5"],
+      "expect": {
+        "exitCode": 0,
+        "warnings": { "only": ["NUMBERS_READ_AS_TEXT"] },
+        "json": [
+          { "path": "sheet.cells[0][0]", "equals": { "v": "1,5", "t": "string" } },
+          { "path": "sheet.cells[1][0]", "equals": { "v": "0.1", "t": "string" } },
+          { "path": "sheet.cells[2][0]", "equals": { "v": ".5", "t": "string" } },
+          { "path": "sheet.cells[3][0]", "equals": { "v": "1.50", "t": "string" } },
+          { "path": "warnings[code=NUMBERS_READ_AS_TEXT][0].location", "equals": "cell/quoted!B2" },
+          { "path": "warnings[code=NUMBERS_READ_AS_TEXT][0].message", "contains": "such as '1,5' in B2, so its 4 number(s)" }
+        ]
       }
     }
   ]
