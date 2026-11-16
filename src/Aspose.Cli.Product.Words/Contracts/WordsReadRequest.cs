@@ -1,3 +1,5 @@
+using Aspose.Cli.Sdk;
+
 namespace Aspose.Cli.Product.Words.Contracts;
 
 /// <summary>Options for a budgeted canonical block read.</summary>
@@ -5,6 +7,8 @@ public sealed record WordsReadRequest
 {
     /// <summary>The document to open.</summary>
     public required string Input { get; init; }
+    /// <summary>The document as a command a hint names opens it, with the variable of its password; null names it by <see cref="Input"/>.</summary>
+    public ContinuationInput? Continuation { get; init; }
     public PageRange? Blocks { get; init; }
     public int? Section { get; init; }
     /// <summary>How much of each block to return, one of <see cref="WordsReadContents"/>.</summary>

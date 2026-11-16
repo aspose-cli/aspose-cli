@@ -29,6 +29,7 @@ internal static class ExtractCommand
                 return new WordsExtractRequest
                 {
                     Input = standard.Input,
+                    Continuation = standard.ContinuationOf(standard.Input),
                     What = kind,
                     Output = standard.DirectoryOutput,
                     ByteOrderMark = byteOrderMark,
