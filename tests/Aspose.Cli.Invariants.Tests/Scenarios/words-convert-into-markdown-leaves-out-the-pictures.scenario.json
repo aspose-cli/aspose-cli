@@ -1,0 +1,60 @@
+{
+  "name": "words convert into Markdown holds the text alone, as the Markdown of a PDF or a deck does: it names the pictures it leaves out, with the extract that writes them, and a docx or pdf output keeps them",
+  "files": {
+    "one.png": { "base64": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==" },
+    "two.png": { "base64": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==" },
+    "source.md": { "text": "# Report\n\nFirst paragraph.\n\n![one](one.png)\n\nSecond paragraph.\n\n![two](two.png)\n" }
+  },
+  "steps": [
+    {
+      "args": ["words", "create", "pictured.docx", "--from-markdown", "source.md"],
+      "expect": { "exitCode": 0 }
+    },
+    {
+      "args": ["words", "convert", "pictured.docx", "--to", "md"],
+      "expect": {
+        "exitCode": 0,
+        "warnings": { "only": ["LOSSY_CONVERSION", "LOSSY_CONVERSION"] },
+        "json": [
+          { "path": "outputs[0].path", "equals": "<workspace>/pictured.md" },
+          { "path": "warnings[code=LOSSY_CONVERSION][1].details.content", "equals": ["pictures"] },
+          { "path": "warnings[code=LOSSY_CONVERSION][1].message", "equals": "The md output holds the text alone and leaves out 2 picture(s)." },
+          { "path": "warnings[code=LOSSY_CONVERSION][1].hint", "contains": " --what images --out-dir " }
+        ],
+        "files": { "present": ["pictured.md"], "absent": ["pictured.001.png", "pictured-images"] },
+        "hidden": ["data:", "!["]
+      }
+    },
+    {
+      "args": ["words", "read", "pictured.md"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "blocks[1].text", "equals": "First paragraph." },
+          { "path": "blocks[1].images", "equals": [] },
+          { "path": "blocks[2].text", "equals": "Second paragraph." },
+          { "path": "blocks[2].images", "equals": [] },
+          { "path": "blocks[3]", "exists": false }
+        ]
+      }
+    },
+    {
+      "args": ["words", "extract", "pictured.docx", "--what", "images", "--out-dir", "pictured-images"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "outputs[1].path", "exists": true },
+          { "path": "outputs[2]", "exists": false }
+        ]
+      }
+    },
+    {
+      "args": ["words", "convert", "pictured.docx", "--to", "docx", "--out", "copy.docx"],
+      "expect": { "exitCode": 0, "warnings": { "absent": ["LOSSY_CONVERSION"] } }
+    },
+    {
+      "args": ["words", "convert", "pictured.docx", "--to", "pdf", "--out", "copy.pdf"],
+      "expect": { "exitCode": 0, "warnings": { "absent": ["LOSSY_CONVERSION"] } }
+    }
+  ]
+}

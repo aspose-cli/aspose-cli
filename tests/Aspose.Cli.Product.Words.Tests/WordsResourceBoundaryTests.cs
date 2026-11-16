@@ -83,7 +83,8 @@ public sealed class WordsResourceBoundaryTests
     }
 
     // Supervised runs publish from a worker whose staging directory is removed afterwards;
-    // direct runs save with the same options and have no such cleanup to survive.
+    // direct runs save with the same options and have no such cleanup to survive. Markdown
+    // holds the text alone and leaves the picture out, naming it.
     [Theory]
     [InlineData("html")]
     [InlineData("html-fixed")]
@@ -104,7 +105,7 @@ public sealed class WordsResourceBoundaryTests
         Assert.True(result.ExitCode == 0, result.StdErr);
         Assert.Equal([Path.GetFileName(output)], Directory.GetFiles(Path.GetDirectoryName(output)!).Select(Path.GetFileName));
         string text = File.ReadAllText(output);
-        Assert.Contains("data:image/", text, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal(format != "md", text.Contains("data:image/", StringComparison.OrdinalIgnoreCase));
         Assert.DoesNotContain("output.stage", text, StringComparison.Ordinal);
     }
 }

@@ -311,7 +311,11 @@ deleted text beside inserted text, each reported by its own
 `LOSSY_CONVERSION`; run `delete_comments`, and `accept_revisions` or
 `reject_revisions` as the reviewer decides, in the edit before it to leave
 them out. A `txt` output lays each table row out on one line with its cells in
-aligned columns. A convert to a page format (`pdf`, `xps`, `openxps`, `ps`,
+aligned columns. An `md` output holds the text alone: it leaves out the
+pictures, charts, shapes and text boxes, keeps the text of shapes and text
+boxes after the paragraph that held them, and reports `LOSSY_CONVERSION` naming
+them, with the `words extract --what images` command that writes the pictures
+as image files. A convert to a page format (`pdf`, `xps`, `openxps`, `ps`,
 `pcl`, `html-fixed`) and a `words render` draw the tracked changes on the pages as
 markup and the comments in balloons in a margin that narrows the pages; each
 is reported by its own `LOSSY_CONVERSION` (a render reports only the

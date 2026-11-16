@@ -27,7 +27,7 @@ internal static class WordsEngineFormats
         new("odt") { Load = LoadFormat.Odt, Save = SaveFormat.Odt },
         new("ott") { Load = LoadFormat.Ott, Save = SaveFormat.Ott },
         new("txt") { Load = LoadFormat.Text, Save = SaveFormat.Text, Lossy = true, PlainText = true, LeavesOutHeadersFooters = true },
-        new("md") { Load = LoadFormat.Markdown, Save = SaveFormat.Markdown, Lossy = true, PlainText = true, LeavesOutHeadersFooters = true },
+        new("md") { Load = LoadFormat.Markdown, Save = SaveFormat.Markdown, Lossy = true, PlainText = true, LeavesOutHeadersFooters = true, LeavesOutDrawings = true },
         new("pdf") { Load = LoadFormat.Pdf, Save = SaveFormat.Pdf, ReflowsOnLoad = true, EncryptionUndetected = true },
         new("epub") { Load = LoadFormat.Epub, Save = SaveFormat.Epub, LeavesOutHeadersFooters = true },
         new("mobi") { Load = LoadFormat.Mobi, Save = SaveFormat.Mobi, LeavesOutHeadersFooters = true },
@@ -91,6 +91,9 @@ internal sealed record WordsEngineFormat(string Id)
     /// section with their page numbers frozen, and convert discloses the ones that hold content.
     /// </summary>
     public bool LeavesOutHeadersFooters { get; init; }
+
+    /// <summary>A save in this format would write each drawing as a picture, so it leaves them out (<see cref="WordsSavePipeline.LeaveOutDrawings"/>).</summary>
+    public bool LeavesOutDrawings { get; init; }
 
     /// <summary>Loading rebuilds the fixed pages as flowing text and guesses the headers and footers.</summary>
     public bool ReflowsOnLoad { get; init; }

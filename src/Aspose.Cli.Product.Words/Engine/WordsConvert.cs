@@ -20,13 +20,14 @@ internal static class WordsConvert
         OutputProtection protection = OutputProtection.For(request.Output.Format, request.EncryptPassword, loaded.Protection, request.Password);
         SaveOptions options = WordsSavePipeline.Options(request.Output.Format.Id, protection.Password, pages);
         WordsSavePipeline.RemoveMacrosUnlessKept(loaded.Document, request.Output.Format.Id);
+        IReadOnlyList<Warning> conversion = PrepareConversion(loaded.Document, request.Output.Format.Id, loaded.Evaluation,
+            (request.Continuation ?? new ContinuationInput(request.Input), request.Output.Path));
         PublishedFile written = session.Outputs.Write(request.Output.Path, request.Output.Format, request.Output.Overwrite, loaded.Document, temp =>
         {
             try { loaded.Document.Save(temp, options); }
             finally { loaded.Resources.ThrowIfFailed(); }
         }, encrypted: protection.Encrypted);
-        var warnings = WrittenWarnings(loaded, request.Output.Format.Id,
-            converted: (request.Continuation ?? new ContinuationInput(request.Input), request.Output.Path));
+        var warnings = WrittenWarnings(loaded, request.Output.Format.Id, conversion: conversion);
         return new WordsConvertResult
         {
             Input = InfoProjection.Source(request.Input, loaded),

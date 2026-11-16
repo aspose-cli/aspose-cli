@@ -39,16 +39,16 @@ internal static class WordsEngineSupport
     /// evaluation disclosure. A page render passes <paramref name="rendered"/>: an image shows
     /// the document as it looks and is never a copy of it, so it is not told that it drops the
     /// source's revisions or macros, only that comment balloons narrow its pages. A convert passes
-    /// the input it read and the file it wrote as <paramref name="converted"/>.
+    /// the <paramref name="conversion"/> warnings <see cref="PrepareConversion"/> read.
     /// </summary>
-    internal static IReadOnlyList<Warning>? WrittenWarnings(LoadedDocument loaded, string format, bool rendered = false, (ContinuationInput Input, string Output)? converted = null)
+    internal static IReadOnlyList<Warning>? WrittenWarnings(LoadedDocument loaded, string format, bool rendered = false, IReadOnlyList<Warning>? conversion = null)
     {
         var extra = new List<Warning>();
         extra.AddRange(InputWarnings(loaded) ?? []);
 
         if (!rendered)
         {
-            extra.AddRange(ConversionWarnings(loaded.Document, format, loaded.Evaluation, converted));
+            extra.AddRange(conversion ?? ConversionWarnings(loaded.Document, format, loaded.Evaluation));
             extra.AddRange(PdfInputWarnings(loaded) ?? []);
         }
         else if (CommentBalloons(loaded.Document, format) is { } balloons)
@@ -224,6 +224,17 @@ internal static class WordsEngineSupport
     }
 
     /// <summary>
+    /// The <see cref="ConversionWarnings"/> of a document about to be saved in a format, read
+    /// first, as a revision or comment may sit on or in a drawing; then the warning naming the
+    /// drawings the format leaves out, which it takes out (<see cref="WordsSavePipeline.LeaveOutDrawings"/>).
+    /// Convert and compare call it right before they save; a redline names the pictures of the
+    /// <paramref name="revised"/> document, or without it says how to take them out in words.
+    /// </summary>
+    internal static IReadOnlyList<Warning> PrepareConversion(Document document, string format, bool evaluation, (ContinuationInput Input, string Output)? converted = null, bool redline = false, (ContinuationInput Input, string Output)? revised = null) =>
+        [.. ConversionWarnings(document, format, evaluation, converted, redline),
+            .. EnvelopeParts.CombineWarnings(DrawingsLeftOut(WordsSavePipeline.LeaveOutDrawings(document, format), format, redline ? revised : converted, redline)) ?? []];
+
+    /// <summary>
     /// The commands that leave out of a converted file what <paramref name="ops"/> remove: the edit
     /// of the input that applies them and writes a Word copy beside that file, since an edit writes
     /// no format a convert alone writes, then the convert of the copy, opened as the input is, that
@@ -239,6 +250,33 @@ internal static class WordsEngineSupport
             from.Input.ContinuationAt("words", "edit").Document("--ops", operations).Out(ContinuationOutput.New(copy)),
             from.Input.WrittenAs(copy).ContinuationAt("words", "convert").Option("--to", format).Out(ContinuationOutput.Written(from.Output)),
         ]);
+    }
+
+    /// <summary>
+    /// The warning naming the drawings a save left out (<see cref="WordsSavePipeline.LeaveOutDrawings"/>)
+    /// as it counted them, saying whether their text stayed, with the command that extracts their
+    /// pictures, or null for none.
+    /// </summary>
+    private static Warning? DrawingsLeftOut(WordsDrawingsLeftOut drawings, string format, (ContinuationInput Input, string Output)? source, bool redline)
+    {
+        (ContentKind Kind, int Count, string Noun)[] left = [.. new[] { (ContentKind.Pictures, drawings.Pictures, "picture(s)"), (ContentKind.Charts, drawings.Charts, "chart(s)"),
+            (ContentKind.Shapes, drawings.Others, "other drawing(s), such as shapes, text boxes, WordArt and SmartArt") }.Where(static kind => kind.Item2 > 0)];
+        if (left.Length == 0)
+        {
+            return null;
+        }
+
+        string[] counts = [.. left.Select(static kind => $"{kind.Count} {kind.Noun}")];
+        string pictures = source is not { } from ? "Its pictures are those of the revised document, which 'words extract' takes out of it with its own password; "
+            : $"Extract the pictures{(redline ? ", those of the revised document," : string.Empty)} with "
+                + from.Input.ContinuationAt("words", "extract").Option("--what", WordsExtractTargets.Images)
+                    .OutDir(ContinuationOutput.New(Path.Combine(Path.GetDirectoryName(from.Output) ?? string.Empty, Path.GetFileNameWithoutExtension(from.Output) + "-images"))).Quoted()
+                + ", which writes each of them as an image file; ";
+        return ContentLoss.Warning([.. left.Select(static kind => kind.Kind)],
+            $"The {format} output holds the text alone and leaves out {string.Join(", ", counts[..^1])}{(counts.Length > 1 ? " and " : "")}{counts[^1]}"
+                + (drawings.KeptText ? "; the text of shapes and text boxes stays in the body." : "."),
+            (drawings.Pictures > 0 ? pictures : string.Empty) + (drawings.Charts + drawings.Others > 0 ? "'words render' shows the drawings on their pages; " : string.Empty)
+                + "a docx output keeps them.");
     }
 
     /// <summary>
