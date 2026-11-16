@@ -1,0 +1,66 @@
+{
+  "name": "slides insert_slide without a layout name takes the first layout of the master of the slide before the new one, or after it at the start: after a keep-source import that duplicated the master, a slide inserted after the imported slides, or first before one of them, joins their master, and one inserted among the deck's own slides the deck's master, with no warning",
+  "files": {
+    "deck.md": { "text": "# One\n\n## Two\n\n- b\n\n## Three\n\n- c\n" }
+  },
+  "steps": [
+    {
+      "args": ["slides", "create", "deck.pptx", "--from-markdown", "deck.md"],
+      "expect": { "exitCode": 0 }
+    },
+    {
+      "args": ["slides", "edit", "deck.pptx", "--ops", "{\"ops\":[{\"op\":\"import_slides\",\"path\":\"deck.pptx\",\"formatting\":\"keep-source\"}]}", "--out", "two.pptx"],
+      "expect": { "exitCode": 0 }
+    },
+    {
+      "args": ["slides", "edit", "two.pptx", "--ops", "{\"ops\":[{\"op\":\"insert_slide\"}]}", "--out", "end.pptx", "--verify"],
+      "expect": {
+        "exitCode": 0,
+        "json": [{ "path": "verification.ok", "equals": true }],
+        "warnings": { "absent": ["SLIDE_MASTER_CHANGED"] }
+      }
+    },
+    {
+      "args": ["slides", "inspect", "end.pptx", "--detail", "masters"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "masters[0].slideCount", "equals": 3 },
+          { "path": "masters[1].slideCount", "equals": 4 }
+        ]
+      }
+    },
+    {
+      "args": ["slides", "read", "end.pptx", "--slides", "7"],
+      "expect": { "exitCode": 0, "json": [{ "path": "slides[0].layout", "equals": "Title Slide" }] }
+    },
+    {
+      "args": ["slides", "edit", "two.pptx", "--ops", "{\"ops\":[{\"op\":\"move_slide\",\"slide\":4,\"to\":1},{\"op\":\"insert_slide\",\"at\":1}]}", "--out", "start.pptx"],
+      "expect": { "exitCode": 0, "warnings": { "absent": ["SLIDE_MASTER_CHANGED"] } }
+    },
+    {
+      "args": ["slides", "inspect", "start.pptx", "--detail", "masters"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "masters[0].slideCount", "equals": 3 },
+          { "path": "masters[1].slideCount", "equals": 4 }
+        ]
+      }
+    },
+    {
+      "args": ["slides", "edit", "two.pptx", "--ops", "{\"ops\":[{\"op\":\"insert_slide\",\"at\":2}]}", "--out", "own.pptx"],
+      "expect": { "exitCode": 0, "warnings": { "absent": ["SLIDE_MASTER_CHANGED"] } }
+    },
+    {
+      "args": ["slides", "inspect", "own.pptx", "--detail", "masters"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "masters[0].slideCount", "equals": 4 },
+          { "path": "masters[1].slideCount", "equals": 3 }
+        ]
+      }
+    }
+  ]
+}
