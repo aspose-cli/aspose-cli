@@ -304,10 +304,7 @@ internal sealed class CellsWorkbookLoader
             return LoadPlan.Auto with { Encrypted = true };
         }
 
-        return ResolveDetectedFormatPlan(path, detected.FileFormatType) with
-        {
-            Detected = detected.FileFormatType == FileFormatType.Unknown ? null : detected.FileFormatType,
-        };
+        return ResolveDetectedFormatPlan(path, detected.FileFormatType);
     }
 
     private static LoadPlan ResolveDetectedFormatPlan(string path, FileFormatType detected)
@@ -325,18 +322,20 @@ internal sealed class CellsWorkbookLoader
                     ?? (detected == FileFormatType.TabDelimited
                         ? '\t'
                         : ',');
-                return new LoadPlan(separator);
+                return new LoadPlan(separator) { Detected = detected };
             }
 
-            return LoadPlan.Auto;
+            return LoadPlan.Auto with { Detected = detected };
         }
 
-        if (detected == FileFormatType.Unknown)
+        // Content no format recognizes is delimited text under a name delimited text has, and so
+        // is content the engine takes for Markdown, which it guesses at from plain lines of text
+        // (CELLS-MARKDOWN-DETECTION), under a name delimited text claims: not .txt, which is
+        // plain text's, so the guess stands there and the file goes to the product that reads it.
+        if (detected == FileFormatType.Unknown && CellsFormats.Delimited.NamedBy(path).Count > 0
+            || detected == FileFormatType.Markdown && CellsFormats.Delimited.Claiming(path).Count > 0)
         {
-            if (CellsFormats.Delimited.NamedBy(path).Count > 0)
-            {
-                return new LoadPlan(DetectDelimiter(path) ?? ',');
-            }
+            return new LoadPlan(DetectDelimiter(path) ?? ',');
         }
 
         // HTML and MHTML, which cells writes but does not read whatever the file's name: reading
@@ -468,7 +467,8 @@ internal sealed class CellsWorkbookLoader
 
         /// <summary>
         /// The on-disk format detection saw; null when detection cannot see it, for an encrypted
-        /// container or content no format recognizes, so the loaded workbook's format stands.
+        /// container or content no format recognizes or that it takes for Markdown, so the loaded
+        /// workbook's format stands.
         /// </summary>
         internal FileFormatType? Detected { get; init; }
 

@@ -1,0 +1,77 @@
+{
+  "name": "cells reads and edits a csv the engine's detection takes for Markdown, two values with a dash on CRLF lines, a list and two numbers, as the csv its name says (CELLS-MARKDOWN-DETECTION)",
+  "files": {
+    "dash.csv": { "text": "a-b\r\nc-d\r\n" },
+    "list.csv": { "text": "- one\n- two\n" },
+    "exp.csv": { "text": "1E-30\r\n1E-29\r\n" }
+  },
+  "steps": [
+    {
+      "args": ["cells", "read", "dash.csv"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "input.format", "equals": "csv" },
+          { "path": "sheet.cells[0][0]", "equals": { "v": "a-b", "t": "string" } },
+          { "path": "sheet.cells[1][0]", "equals": { "v": "c-d", "t": "string" } }
+        ]
+      }
+    },
+    {
+      "args": ["cells", "read", "list.csv"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "sheet.cells[0][0]", "equals": { "v": "- one", "t": "string" } },
+          { "path": "sheet.cells[1][0]", "equals": { "v": "- two", "t": "string" } }
+        ]
+      }
+    },
+    {
+      "args": ["cells", "read", "exp.csv"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "sheet.cells[0][0]", "equals": { "v": 1E-30, "t": "number" } },
+          { "path": "sheet.cells[1][0]", "equals": { "v": 1E-29, "t": "number" } }
+        ]
+      }
+    },
+    {
+      "args": ["cells", "edit", "dash.csv", "--in-place", "--set", "dash!A2=x-y", "--verify"],
+      "expect": { "exitCode": 0, "json": [{ "path": "verification.ok", "equals": true }] }
+    },
+    {
+      "args": ["cells", "read", "dash.csv"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "sheet.cells[0][0]", "equals": { "v": "a-b", "t": "string" } },
+          { "path": "sheet.cells[1][0]", "equals": { "v": "x-y", "t": "string" } }
+        ]
+      }
+    },
+    {
+      "args": ["cells", "edit", "list.csv", "--in-place", "--set", "list!A2=- three", "--verify"],
+      "expect": { "exitCode": 0, "json": [{ "path": "verification.ok", "equals": true }] }
+    },
+    {
+      "args": ["cells", "read", "list.csv"],
+      "expect": { "exitCode": 0, "json": [{ "path": "sheet.cells[1][0]", "equals": { "v": "- three", "t": "string" } }] }
+    },
+    {
+      "args": ["cells", "edit", "exp.csv", "--in-place", "--set", "exp!A2=5", "--verify"],
+      "expect": { "exitCode": 0, "json": [{ "path": "verification.ok", "equals": true }] }
+    },
+    {
+      "args": ["cells", "read", "exp.csv"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "sheet.cells[0][0]", "equals": { "v": 1E-30, "t": "number" } },
+          { "path": "sheet.cells[1][0]", "equals": { "v": 5, "t": "number" } }
+        ]
+      }
+    }
+  ]
+}

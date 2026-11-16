@@ -192,6 +192,20 @@ public sealed class CellsKnownIssueTests
             $"a sheet whose comment prints at its end has {bounded} page(s) with the print area A1:A5, {columns} with A:A and {rows} with 1:5");
     }
 
+    [Fact]
+    public void MarkdownDetection_TakesLinesOfDataForMarkdownByTheirLineEnds()
+    {
+        static FileFormatType Detect(string text) =>
+            FileFormatUtil.DetectFileFormat(new MemoryStream(Encoding.UTF8.GetBytes(text))).FileFormatType;
+
+        (FileFormatType lf, FileFormatType crlf, FileFormatType numbers, FileFormatType table) =
+            (Detect("a-b\nc-d\n"), Detect("a-b\r\nc-d\r\n"), Detect("1E-30\n1E-29\n"), Detect("| a | b |\n|---|---|\n| 1 | 2 |\n"));
+
+        KnownIssue.Reproduces("CELLS-MARKDOWN-DETECTION",
+            lf == FileFormatType.Unknown && crlf == FileFormatType.Markdown && numbers == FileFormatType.Markdown && table != FileFormatType.Markdown,
+            $"a-b and c-d on lines that end in LF are detected as {lf}, in CRLF as {crlf}; two numbers as {numbers}; a Markdown table as {table}");
+    }
+
     // Returns every value as the text it is.
     private sealed class TextParser : ICustomParser
     {

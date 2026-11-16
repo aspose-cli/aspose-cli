@@ -278,6 +278,13 @@ public static class FormatDescriptorExtensions
         return Array.AsReadOnly(descriptors.Where(format => format.Names(path)).ToArray());
     }
 
+    /// <summary>
+    /// The formats of <see cref="NamedBy"/> that also claim the file name for generic routing:
+    /// those for which the extension it carries is not one of their <see cref="FormatDescriptor.UnroutedExtensions"/>.
+    /// </summary>
+    public static IReadOnlyList<FormatDescriptor> Claiming(this IEnumerable<FormatDescriptor> descriptors, string path) =>
+        [.. descriptors.NamedBy(path).Where(format => format.RoutedExtensions.Contains(Path.GetExtension(path), StringComparer.OrdinalIgnoreCase))];
+
     private static IEnumerable<FormatDescriptor> Ordered(
         IEnumerable<FormatDescriptor> descriptors,
         FormatUse use)
