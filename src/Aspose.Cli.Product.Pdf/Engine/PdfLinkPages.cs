@@ -7,9 +7,9 @@ namespace Aspose.Cli.Product.Pdf.Engine;
 /// The page each link of a document in memory leads to, the one judgment of it while an edit
 /// changes the document. A link keeps the destination it read first, page number included, so after
 /// a page deletion it can name the number another page took (PDF-LINK-STALE-PAGE). A link's
-/// explicit destination is therefore told by the page it led to when it was first read here, and
-/// leads to no page once the document no longer holds that page; any other destination is read as
-/// it is.
+/// explicit destination is therefore told by the page it led to when it was first read here, or
+/// that it was built for (<see cref="Build"/>), and leads to no page once the document no longer
+/// holds that page; any other destination is read as it is.
 /// </summary>
 internal sealed class PdfLinkPages
 {
@@ -29,5 +29,13 @@ internal sealed class PdfLinkPages
         }
 
         return page is null ? 0 : document.Pages.IndexOf(page);
+    }
+
+    /// <summary>A destination of the type and coordinates on <paramref name="page"/>, which leads there while the document holds it.</summary>
+    internal ExplicitDestination Build(Page page, ExplicitDestinationType type, double[] values)
+    {
+        ExplicitDestination destination = ExplicitDestination.CreateDestination(page, type, values);
+        _pages[destination] = page;
+        return destination;
     }
 }
