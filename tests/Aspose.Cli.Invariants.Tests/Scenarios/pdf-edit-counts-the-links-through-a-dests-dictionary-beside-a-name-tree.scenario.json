@@ -1,0 +1,100 @@
+{
+  "name": "pdf edit counts the links and bookmarks through a name of the Dests dictionary that a page deletion breaks, and none that a deletion of another page leaves, when the catalog also has a name tree of destinations, which the engine does not read beside the dictionary (PDF-NAMES-BESIDE-DESTS): four pages, a link and a bookmark on page 1 to 'intree' (page 2, in the name tree) and to 'indict' (page 3, in the dictionary)",
+  "files": {
+    "names.pdf": {
+      "base64": "JVBERi0xLjcKMSAwIG9iago8PCAvVHlwZSAvQ2F0YWxvZyAvUGFnZXMgMiAwIFIgL091dGxpbmVzIDEyIDAgUiAvTmFtZXMgPDwgL0Rlc3RzIDw8IC9OYW1lcyBbKGludHJlZSkgWzQgMCBSIC9GaXRdXSA+PiA+PiAvRGVzdHMgPDwgL2luZGljdCBbNSAwIFIgL0ZpdF0gPj4gPj4KZW5kb2JqCjIgMCBvYmoKPDwgL1R5cGUgL1BhZ2VzIC9LaWRzIFszIDAgUiA0IDAgUiA1IDAgUiA2IDAgUl0gL0NvdW50IDQgPj4KZW5kb2JqCjMgMCBvYmoKPDwgL1R5cGUgL1BhZ2UgL1BhcmVudCAyIDAgUiAvTWVkaWFCb3ggWzAgMCA2MTIgNzkyXSAvUmVzb3VyY2VzIDw8IC9Gb250IDw8IC9GMSA3IDAgUiA+PiA+PiAvQ29udGVudHMgOCAwIFIgL0Fubm90cyBbMTUgMCBSIDE2IDAgUl0gPj4KZW5kb2JqCjQgMCBvYmoKPDwgL1R5cGUgL1BhZ2UgL1BhcmVudCAyIDAgUiAvTWVkaWFCb3ggWzAgMCA2MTIgNzkyXSAvUmVzb3VyY2VzIDw8IC9Gb250IDw8IC9GMSA3IDAgUiA+PiA+PiAvQ29udGVudHMgOSAwIFIgPj4KZW5kb2JqCjUgMCBvYmoKPDwgL1R5cGUgL1BhZ2UgL1BhcmVudCAyIDAgUiAvTWVkaWFCb3ggWzAgMCA2MTIgNzkyXSAvUmVzb3VyY2VzIDw8IC9Gb250IDw8IC9GMSA3IDAgUiA+PiA+PiAvQ29udGVudHMgMTAgMCBSID4+CmVuZG9iago2IDAgb2JqCjw8IC9UeXBlIC9QYWdlIC9QYXJlbnQgMiAwIFIgL01lZGlhQm94IFswIDAgNjEyIDc5Ml0gL1Jlc291cmNlcyA8PCAvRm9udCA8PCAvRjEgNyAwIFIgPj4gPj4gL0NvbnRlbnRzIDExIDAgUiA+PgplbmRvYmoKNyAwIG9iago8PCAvVHlwZSAvRm9udCAvU3VidHlwZSAvVHlwZTEgL0Jhc2VGb250IC9IZWx2ZXRpY2EgPj4KZW5kb2JqCjggMCBvYmoKPDwgL0xlbmd0aCAzNyA+PgpzdHJlYW0KQlQgL0YxIDE4IFRmIDcyIDcyMCBUZCAoUGFnZSAxKSBUaiBFVAplbmRzdHJlYW0KZW5kb2JqCjkgMCBvYmoKPDwgL0xlbmd0aCAzNyA+PgpzdHJlYW0KQlQgL0YxIDE4IFRmIDcyIDcyMCBUZCAoUGFnZSAyKSBUaiBFVAplbmRzdHJlYW0KZW5kb2JqCjEwIDAgb2JqCjw8IC9MZW5ndGggMzcgPj4Kc3RyZWFtCkJUIC9GMSAxOCBUZiA3MiA3MjAgVGQgKFBhZ2UgMykgVGogRVQKZW5kc3RyZWFtCmVuZG9iagoxMSAwIG9iago8PCAvTGVuZ3RoIDM3ID4+CnN0cmVhbQpCVCAvRjEgMTggVGYgNzIgNzIwIFRkIChQYWdlIDQpIFRqIEVUCmVuZHN0cmVhbQplbmRvYmoKMTIgMCBvYmoKPDwgL1R5cGUgL091dGxpbmVzIC9GaXJzdCAxMyAwIFIgL0xhc3QgMTQgMCBSIC9Db3VudCAyID4+CmVuZG9iagoxMyAwIG9iago8PCAvVGl0bGUgKFRyZWUpIC9QYXJlbnQgMTIgMCBSIC9OZXh0IDE0IDAgUiAvRGVzdCAoaW50cmVlKSA+PgplbmRvYmoKMTQgMCBvYmoKPDwgL1RpdGxlIChEaWN0KSAvUGFyZW50IDEyIDAgUiAvUHJldiAxMyAwIFIgL0Rlc3QgL2luZGljdCA+PgplbmRvYmoKMTUgMCBvYmoKPDwgL1R5cGUgL0Fubm90IC9TdWJ0eXBlIC9MaW5rIC9SZWN0IFs3MiA2MDAgMjAwIDYyMF0gL0JvcmRlciBbMCAwIDBdIC9EZXN0IChpbnRyZWUpID4+CmVuZG9iagoxNiAwIG9iago8PCAvVHlwZSAvQW5ub3QgL1N1YnR5cGUgL0xpbmsgL1JlY3QgWzcyIDU2MCAyMDAgNTgwXSAvQm9yZGVyIFswIDAgMF0gL0Rlc3QgL2luZGljdCA+PgplbmRvYmoKeHJlZgowIDE3CjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwOSAwMDAwMCBuIAowMDAwMDAwMTY2IDAwMDAwIG4gCjAwMDAwMDAyNDEgMDAwMDAgbiAKMDAwMDAwMDM5MSAwMDAwMCBuIAowMDAwMDAwNTE3IDAwMDAwIG4gCjAwMDAwMDA2NDQgMDAwMDAgbiAKMDAwMDAwMDc3MSAwMDAwMCBuIAowMDAwMDAwODQxIDAwMDAwIG4gCjAwMDAwMDA5MjggMDAwMDAgbiAKMDAwMDAwMTAxNSAwMDAwMCBuIAowMDAwMDAxMTAzIDAwMDAwIG4gCjAwMDAwMDExOTEgMDAwMDAgbiAKMDAwMDAwMTI2NSAwMDAwMCBuIAowMDAwMDAxMzQ0IDAwMDAwIG4gCjAwMDAwMDE0MjIgMDAwMDAgbiAKMDAwMDAwMTUyNiAwMDAwMCBuIAp0cmFpbGVyCjw8IC9TaXplIDE3IC9Sb290IDEgMCBSID4+CnN0YXJ0eHJlZgoxNjI5CiUlRU9GCg=="
+    }
+  },
+  "steps": [
+    {
+      "args": [
+        "pdf",
+        "edit",
+        "names.pdf",
+        "--ops",
+        "[{\"op\":\"delete_pages\",\"pages\":\"4\"}]",
+        "--out",
+        "deleted-4.pdf",
+        "--verify"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          {
+            "path": "verification.ok",
+            "equals": true
+          },
+          {
+            "path": "warnings[code=NAVIGATION_DEGRADED][0]",
+            "exists": false
+          }
+        ]
+      }
+    },
+    {
+      "args": [
+        "pdf",
+        "inspect",
+        "deleted-4.pdf",
+        "--detail",
+        "outline",
+        "--detail",
+        "links"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          {
+            "path": "documentLinks[1].page",
+            "equals": 1
+          },
+          {
+            "path": "documentLinks[1].targetPage",
+            "equals": 3
+          },
+          {
+            "path": "outline[1].title",
+            "equals": "Dict"
+          },
+          {
+            "path": "outline[1].page",
+            "equals": 3
+          }
+        ]
+      }
+    },
+    {
+      "args": [
+        "pdf",
+        "edit",
+        "names.pdf",
+        "--ops",
+        "[{\"op\":\"delete_pages\",\"pages\":\"3\"}]",
+        "--out",
+        "deleted-3.pdf",
+        "--verify"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          {
+            "path": "verification.ok",
+            "equals": true
+          },
+          {
+            "path": "warnings[code=NAVIGATION_DEGRADED][0].message",
+            "equals": "1 bookmark(s), 1 link(s) and 1 named destination(s) lead to pages the edit deleted."
+          },
+          {
+            "path": "warnings[code=NAVIGATION_DEGRADED][0].affectsCompleteness",
+            "exists": false
+          },
+          {
+            "path": "warnings[code=NAVIGATION_DEGRADED][1]",
+            "exists": false
+          }
+        ]
+      }
+    }
+  ]
+}

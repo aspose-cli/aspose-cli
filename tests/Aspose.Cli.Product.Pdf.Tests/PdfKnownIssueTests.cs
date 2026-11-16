@@ -387,6 +387,30 @@ public sealed class PdfKnownIssueTests
             $"for a name tree with only EmbeddedFiles, Names threw {names?.GetType().Name ?? "nothing"}, Count threw {count?.GetType().Name ?? "nothing"} and the name lookup threw {lookup?.GetType().Name ?? "nothing"}");
     }
 
+    [Fact]
+    public void NamedDestinations_ReadOnlyTheDestsDictionaryBesideANameTree()
+    {
+        using var fixture = new PdfEngineFixture();
+        string both = fixture.File("both.pdf"), tree = fixture.File("tree.pdf");
+        static string[] Objects(string dests) =>
+        [
+            "<< /Type /Catalog /Pages 2 0 R /Names << /Dests << /Names [(intree) [3 0 R /Fit]] >> >>" + dests + " >>",
+            "<< /Type /Pages /Kids [3 0 R 4 0 R] /Count 2 >>",
+            "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] >>",
+            "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] >>",
+        ];
+        PdfEngineFixture.WriteRawPdf(both, Objects(" /Dests << /indict [4 0 R /Fit] >>"));
+        PdfEngineFixture.WriteRawPdf(tree, Objects(string.Empty));
+        using var document = new Document(both);
+        using var alone = new Document(tree);
+
+        KnownIssue.Reproduces(
+            "PDF-NAMES-BESIDE-DESTS",
+            document.NamedDestinations["indict"] is ExplicitDestination && document.NamedDestinations["intree"] is null
+                && alone.NamedDestinations["intree"] is ExplicitDestination { PageNumber: 1 },
+            $"beside the Dests dictionary the names read [{string.Join(", ", document.NamedDestinations.Names)}], the name tree alone [{string.Join(", ", alone.NamedDestinations.Names)}]");
+    }
+
     [LicensedFact]
     public void TaggedContent_RewritesTheDocumentWhenRead()
     {
