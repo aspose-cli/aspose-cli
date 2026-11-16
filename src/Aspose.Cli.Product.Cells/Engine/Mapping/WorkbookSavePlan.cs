@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Text;
 using Aspose.Cli.Sdk.Formats;
 using Aspose.Cli.Sdk.IO.Output;
 using Aspose.Cli.Sdk.Licensing;
@@ -22,9 +23,10 @@ internal sealed record WorkbookSavePlan(string FormatId, SaveFormat Format, Save
     /// says the workbook is a delimited text input read as written (<see cref="LoadedWorkbook.ReadAsWritten"/>).
     /// An edit passes how its delimited text input is written as <paramref name="editedInput"/>:
     /// written back in the format the input's name gives it, the output keeps the input's separator
-    /// and UTF-8 byte order mark. Any other output, a conversion's included, has its format's
-    /// separator, and a delimited text output the mark only with <paramref name="byteOrderMark"/>
-    /// (<c>--bom</c>), which adds it to any of them.
+    /// and the encoding its byte order mark names, UTF-8 or UTF-16. Any other output, a
+    /// conversion's included, has its format's separator and is UTF-8, and a delimited text output
+    /// has the mark only with <paramref name="byteOrderMark"/> (<c>--bom</c>), which writes any of
+    /// them as UTF-8 with the mark.
     /// </summary>
     internal static WorkbookSavePlan Create(FormatDescriptor output, LicenseState licenseState,
         OutputProtection protection, IReadOnlyList<int>? selectedSheets = null, bool byteOrderMark = false,
@@ -33,8 +35,9 @@ internal sealed record WorkbookSavePlan(string FormatId, SaveFormat Format, Save
         string formatId = output.Id;
         SaveFormat format = CellsEngineFormats.Save(formatId);
         DelimitedTextForm? kept = editedInput?.FormatId == formatId ? editedInput : null;
-        bool marked = byteOrderMark || kept?.Utf8ByteOrderMark == true;
-        SaveOptions? options = CellsEngineFormats.Options(formatId, marked, kept?.Separator, selectedSheets);
+        bool marked = byteOrderMark || kept?.Marked is not null;
+        Encoding encoding = !byteOrderMark && kept?.Marked is UnicodeEncoding utf16 ? utf16 : new UTF8Encoding(encoderShouldEmitUTF8Identifier: marked);
+        SaveOptions? options = CellsEngineFormats.Options(formatId, encoding, kept?.Separator, selectedSheets);
         return new WorkbookSavePlan(formatId, format, options, protection, licenseState == LicenseState.Evaluation, selectedSheets)
         {
             ReadAsWritten = readAsWritten,
@@ -42,7 +45,7 @@ internal sealed record WorkbookSavePlan(string FormatId, SaveFormat Format, Save
         };
     }
 
-    /// <summary>Whether a delimited text output keeps the UTF-8 byte order mark its save writes, which the write pipeline is told.</summary>
+    /// <summary>Whether a delimited text output keeps the byte order mark its save writes, which the write pipeline is told.</summary>
     internal bool ByteOrderMark { get; init; }
 
     /// <summary>

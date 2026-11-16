@@ -23,16 +23,16 @@ internal static partial class CellsTextImport
     static CellsTextImport() => Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
 
     /// <summary>
-    /// The input's encoding, whether it starts with a UTF-8 byte order mark, and the culture the
-    /// caller named for it, null when none.
+    /// The input's encoding, the encoding the byte order mark it starts with names, null without
+    /// one, and the culture the caller named for it, null when none.
     /// </summary>
-    internal static (Encoding Encoding, bool Utf8ByteOrderMark, CultureInfo? Culture) Resolve(
+    internal static (Encoding Encoding, Encoding? Marked, CultureInfo? Culture) Resolve(
         string path,
         CellsTextImportOptions? options,
         ResourceBudgetLedger budgets)
     {
         Encoding? marked = ByteOrderMark(path);
-        return (ResolveEncoding(path, marked, options?.Encoding, budgets), marked is UTF8Encoding,
+        return (ResolveEncoding(path, marked, options?.Encoding, budgets), marked,
             options?.Culture is { } name ? ResolveCulture(name) : null);
     }
 
@@ -354,7 +354,8 @@ internal static partial class CellsTextImport
         }
     }
 
-    private static Encoding? ByteOrderMark(string path)
+    /// <summary>The encoding the byte order mark a file starts with names: UTF-8 or UTF-16; null without one.</summary>
+    internal static Encoding? ByteOrderMark(string path)
     {
         Span<byte> prefix = stackalloc byte[3];
         using FileStream stream = InputFiles.OpenRead(path);
