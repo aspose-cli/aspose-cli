@@ -27,36 +27,47 @@ internal static class SlidesSearch
         SearchHits<SlidesSearchHit> hits = request.Query.Collect<SlidesSearchHit>();
         foreach (SlidesTextUnit unit in SlidesTextUnits.Of(loaded.Presentation, scope))
         {
-            if (unit.Text is { } source && !Offer(unit, source))
+            if (!Offer(unit, [.. unit.Shown]))
             {
                 break;
             }
         }
 
-        // Offers every match in one unit's text; false once the hit window is full.
-        bool Offer(SlidesTextUnit unit, string source)
+        // Offers every match in each paragraph, category or name of the text a unit shows, found in
+        // it alone as replace_text finds it, with the unit's text as a result reports it, its ends
+        // trimmed, around the match as context; false once the hit window is full.
+        bool Offer(SlidesTextUnit unit, string[] texts)
         {
-            IReadOnlyList<(int Start, int Length)> notices = EvaluationNotices(source);
-            foreach ((int start, int length) in text.Find(source))
+            string joined = string.Join('\n', texts);
+            string source = joined.Trim();
+            int at = source.Length - joined.TrimEnd().Length; // where a part starts in the source
+            foreach (string part in texts)
             {
-                if (notices.Any(notice => start < notice.Start + notice.Length && notice.Start < start + length))
+                IReadOnlyList<(int Start, int Length)> notices = EvaluationNotices(part);
+                foreach ((int start, int length) in text.Find(part))
                 {
-                    continue;
+                    int from = Math.Clamp(at + start, 0, source.Length), to = Math.Clamp(at + start + length, from, source.Length);
+                    if (notices.Any(notice => start < notice.Start + notice.Length && notice.Start < start + length))
+                    {
+                        continue;
+                    }
+
+                    if (!hits.Offer(() => new SlidesSearchHit
+                    {
+                        Slide = unit.Slide,
+                        SlideId = unit.Owner.SlideId,
+                        Scope = unit.Scope,
+                        ShapeId = unit.Shape?.OfficeInteropShapeId,
+                        ShapeName = EmptyToNull(unit.Shape?.Name),
+                        Text = part.Substring(start, length),
+                        Context = TextSearch.Context(source, from, to - from),
+                    }))
+                    {
+                        return false;
+                    }
                 }
 
-                if (!hits.Offer(() => new SlidesSearchHit
-                {
-                    Slide = unit.Slide,
-                    SlideId = unit.Owner.SlideId,
-                    Scope = unit.Scope,
-                    ShapeId = unit.Shape?.OfficeInteropShapeId,
-                    ShapeName = EmptyToNull(unit.Shape?.Name),
-                    Text = source.Substring(start, length),
-                    Context = TextSearch.Context(source, start, length),
-                }))
-                {
-                    return false;
-                }
+                at += part.Length + 1;
             }
 
             return true;

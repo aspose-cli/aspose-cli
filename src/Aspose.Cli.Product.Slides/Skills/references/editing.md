@@ -108,7 +108,11 @@ comments a deck already has.
   own line; lines are separated by line feeds. `extract --what text` holds neither a shape's
   alternative text nor a chart's text: `slides read --content shapes` reports alternative
   text as each shape's `altText`, and `--content full` reports each chart's data.
-- `replace_text` matches within one paragraph at a time, in shapes and speaker notes. Only the
+- `replace_text` matches within one paragraph at a time, in shapes and speaker notes, and
+  `slides search` matches as it does: a match never spans two paragraphs, and with a regular
+  expression `^` and `$` are a paragraph's start and end. A shape's `paragraphs[].text` is one
+  paragraph; a line feed in a shape's `text`, a table's `values` or `notes.text` may part two
+  paragraphs, so find or replace such text one line at a time. Only the
   matched characters change: the replacement takes the formatting of the first matched
   character, and other runs keep theirs. Its `itemsAffected` counts the shapes and notes whose
   text changed, not the replacements made in them. To check the replacements, run the edit
