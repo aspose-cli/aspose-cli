@@ -9,8 +9,12 @@ namespace Aspose.Cli.Product.Slides.Engine;
 /// </summary>
 internal static class SlidesShapeText
 {
-    /// <summary>A part of a shape's text a read reports apart, as <see cref="Clean"/> leaves it, within the budget.</summary>
-    internal static string? Take(string? value, ref int remaining, ref bool truncated) => TakeText(Clean(value), ref remaining, ref truncated);
+    /// <summary>
+    /// A part of a shape's text a read reports apart, such as a run, a table cell, chart data, the
+    /// alternative text, a comment or the footer, as stored and as search and replace_text see
+    /// it, each line break a line feed, within the budget; null for text that shows nothing.
+    /// </summary>
+    internal static string? Take(string? value, ref int remaining, ref bool truncated) => TakeText(EmptyToNull(Lines(value)), ref remaining, ref truncated);
 
     /// <summary>
     /// A slide's title, a shape's text, one of its paragraphs or the notes, as <see cref="Title"/>,
@@ -37,9 +41,9 @@ internal static class SlidesShapeText
     }
 
     /// <summary>
-    /// A part of a shape's text as a read reports it apart, such as a run, a table cell or chart
-    /// data: each line keeps its words, one space apart, and the lines stay apart; null
-    /// for text that shows nothing.
+    /// Text as the verification compares what an operation wrote with what the output holds:
+    /// each line keeps its words, one space apart, and the lines stay apart; null for text that
+    /// shows nothing.
     /// </summary>
     internal static string? Clean(string? value) =>
         string.IsNullOrWhiteSpace(value)

@@ -1,0 +1,82 @@
+{
+  "name": "slides read --content full reports a table cell, a run, the alternative text, chart data, the footer and the notes as stored, runs of spaces and tabs and all, so each text copied from read is what search finds once and what replace_text replaces in the parts it writes. The alternative text holds no tab, which the engine drops when it saves one there; texts are short enough for evaluation mode to read them whole",
+  "files": {
+    "deck.md": { "text": "# T\n\n## Two\n\n- pt\n" },
+    "dot.png": { "base64": "iVBORw0KGgoAAAANSUhEUgAAACgAAAAoCAIAAAADnC86AAAAMElEQVR4nO3NMQ0AAAgDsCmZfynIwgQJT5P+zbQvIhaLxWKxWCwWi8VisVgsFvcsXhHvWVsvWSOBAAAAAElFTkSuQmCC" }
+  },
+  "steps": [
+    {
+      "args": ["slides", "create", "deck.pptx", "--from-markdown", "deck.md"],
+      "expect": { "exitCode": 0 }
+    },
+    {
+      "args": ["slides", "edit", "deck.pptx", "--out", "spaced.pptx", "--ops", "{\"ops\":[{\"op\":\"insert_table\",\"slide\":2,\"rect\":{\"x\":50,\"y\":300,\"width\":200,\"height\":40},\"rowCount\":1,\"columnCount\":1,\"values\":[[\"t  \\t1\"]]},{\"op\":\"insert_shape\",\"slide\":2,\"geometry\":\"ellipse\",\"rect\":{\"x\":300,\"y\":300,\"width\":150,\"height\":60},\"text\":\"r  \\t2\"},{\"op\":\"insert_image\",\"slide\":2,\"path\":\"dot.png\",\"rect\":{\"x\":500,\"y\":300,\"width\":40,\"height\":40},\"altText\":\"a  b\"},{\"op\":\"insert_chart\",\"slide\":2,\"kind\":\"column\",\"rect\":{\"x\":50,\"y\":360,\"width\":300,\"height\":150},\"categories\":[\"c  \\t5\"],\"series\":[{\"name\":\"S\",\"values\":[1]}]},{\"op\":\"set_footer\",\"slides\":\"2\",\"text\":\"f  \\t3\"},{\"op\":\"set_notes\",\"slide\":2,\"text\":\"n  \\t4\"}]}"],
+      "expect": { "exitCode": 0 }
+    },
+    {
+      "args": ["slides", "read", "spaced.pptx", "--slides", "2", "--content", "full"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "slides[0].shapes[kind=table][0].values[0][0]", "equals": "t  \t1" },
+          { "path": "slides[0].shapes[kind=table][0].runs[0].text", "equals": "t  \t1" },
+          { "path": "slides[0].shapes[geometry=ellipse][0].runs[0].text", "equals": "r  \t2" },
+          { "path": "slides[0].shapes[kind=image][0].altText", "equals": "a  b" },
+          { "path": "slides[0].shapes[kind=chart][0].chart.categories[0]", "equals": "c  \t5" },
+          { "path": "slides[0].footer.text", "equals": "f  \t3" },
+          { "path": "slides[0].notes.text", "equals": "n  \t4" }
+        ]
+      }
+    },
+    {
+      "args": ["slides", "search", "spaced.pptx", "--pattern", "t  \t1"],
+      "expect": { "exitCode": 0, "json": [{ "path": "hits[0].slide", "equals": 2 }, { "path": "hits[1]", "exists": false }] }
+    },
+    {
+      "args": ["slides", "search", "spaced.pptx", "--pattern", "r  \t2"],
+      "expect": { "exitCode": 0, "json": [{ "path": "hits[0].slide", "equals": 2 }, { "path": "hits[1]", "exists": false }] }
+    },
+    {
+      "args": ["slides", "search", "spaced.pptx", "--pattern", "a  b"],
+      "expect": { "exitCode": 0, "json": [{ "path": "hits[0].slide", "equals": 2 }, { "path": "hits[1]", "exists": false }] }
+    },
+    {
+      "args": ["slides", "search", "spaced.pptx", "--pattern", "c  \t5"],
+      "expect": { "exitCode": 0, "json": [{ "path": "hits[0].slide", "equals": 2 }, { "path": "hits[1]", "exists": false }] }
+    },
+    {
+      "args": ["slides", "search", "spaced.pptx", "--pattern", "f  \t3"],
+      "expect": { "exitCode": 0, "json": [{ "path": "hits[0].slide", "equals": 2 }, { "path": "hits[1]", "exists": false }] }
+    },
+    {
+      "args": ["slides", "search", "spaced.pptx", "--pattern", "n  \t4"],
+      "expect": { "exitCode": 0, "json": [{ "path": "hits[0].scope", "equals": "notes" }, { "path": "hits[1]", "exists": false }] }
+    },
+    {
+      "args": ["slides", "edit", "spaced.pptx", "--out", "replaced.pptx", "--verify", "--ops", "{\"ops\":[{\"op\":\"replace_text\",\"find\":\"t  \\t1\",\"replace\":\"T\"},{\"op\":\"replace_text\",\"find\":\"r  \\t2\",\"replace\":\"R\"},{\"op\":\"replace_text\",\"find\":\"f  \\t3\",\"replace\":\"F\"},{\"op\":\"replace_text\",\"find\":\"n  \\t4\",\"replace\":\"N\"}]}"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "verification.ok", "equals": true },
+          { "path": "applied[0].itemsAffected", "equals": 1 },
+          { "path": "applied[1].itemsAffected", "equals": 1 },
+          { "path": "applied[2].itemsAffected", "equals": 1 },
+          { "path": "applied[3].itemsAffected", "equals": 1 }
+        ],
+        "warnings": { "absent": ["OP_NO_EFFECT"] }
+      }
+    },
+    {
+      "args": ["slides", "read", "replaced.pptx", "--slides", "2", "--content", "full"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "slides[0].shapes[kind=table][0].values[0][0]", "equals": "T" },
+          { "path": "slides[0].shapes[geometry=ellipse][0].runs[0].text", "equals": "R" },
+          { "path": "slides[0].footer.text", "equals": "F" },
+          { "path": "slides[0].notes.text", "equals": "N" }
+        ]
+      }
+    }
+  ]
+}
