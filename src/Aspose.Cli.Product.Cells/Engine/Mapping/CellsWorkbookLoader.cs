@@ -190,16 +190,19 @@ internal sealed class CellsWorkbookLoader
                 ? null
                 : CellsEvaluation.SkipActiveWarningSheet(workbook);
             transferred = true;
+            // Delimited text is the format its name gives it, as an output's name gives an output's
+            // and an edit writes it back; detection decides only where the name gives none.
+            string? named = plan.Separator is null ? null : CellsFormats.Delimited.NamedBy(resourceSource ?? path).FirstOrDefault()?.Id;
             return new LoadedWorkbook(workbook, resources, plan.Encrypted)
             {
-                SourceFormat = plan.Detected ?? workbook.FileFormat,
+                SourceFormat = CellsEngineFormats.DetectedAs(named) ?? plan.Detected ?? workbook.FileFormat,
                 CalculatedOnOpen = calculated,
                 NumbersReadAsText = numbersAsText,
                 EvaluationNoticeRows = notice,
                 EvaluationNotice = notice.Count > 0 && !published ? CellsEvaluation.NoticeTaken(workbook.Worksheets[0].Name, notice) : null,
                 EvaluationSheetSkipped = skipped,
                 DelimitedText = plan.Separator is { } separator
-                    ? new DelimitedTextForm(CellsFormats.Delimited.NamedBy(resourceSource ?? path).FirstOrDefault()?.Id, separator, plan.TextMarked)
+                    ? new DelimitedTextForm(named, separator, plan.TextMarked)
                     : null,
                 ReadAsWritten = plan.Separator is not null && plan.TextCulture is null,
             };
