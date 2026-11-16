@@ -1,0 +1,27 @@
+{
+  "name": "cells names the format of a delimited text input by the file's name, as it names an output's: a .tsv is tsv whatever separates its values, a .csv is csv, and an edit in place reads and writes the same format",
+  "files": {
+    "commas.tsv": { "text": "a,b\r\n1,2\r\n" },
+    "one.tsv": { "text": "a\r\n1\r\n" },
+    "tabs.tsv": { "text": "a\tb\r\n1\t2\r\n" },
+    "tabs.csv": { "text": "a\tb\r\n1\t2\r\n" },
+    "semi.csv": { "text": "a;b\r\n1;2\r\n" }
+  },
+  "steps": [
+    { "args": ["cells", "read", "commas.tsv"], "expect": { "exitCode": 0, "json": [{ "path": "input.format", "equals": "tsv" }] } },
+    { "args": ["cells", "read", "one.tsv"], "expect": { "exitCode": 0, "json": [{ "path": "input.format", "equals": "tsv" }] } },
+    { "args": ["cells", "read", "tabs.tsv"], "expect": { "exitCode": 0, "json": [{ "path": "input.format", "equals": "tsv" }] } },
+    { "args": ["cells", "read", "tabs.csv"], "expect": { "exitCode": 0, "json": [{ "path": "input.format", "equals": "csv" }] } },
+    { "args": ["cells", "read", "semi.csv"], "expect": { "exitCode": 0, "json": [{ "path": "input.format", "equals": "csv" }] } },
+    {
+      "args": ["cells", "edit", "commas.tsv", "--in-place", "--set", "commas!A2=x"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "input.format", "equals": "tsv" },
+          { "path": "output.format", "equals": "tsv" }
+        ]
+      }
+    }
+  ]
+}

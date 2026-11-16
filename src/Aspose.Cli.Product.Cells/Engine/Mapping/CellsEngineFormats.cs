@@ -109,6 +109,9 @@ internal static class CellsEngineFormats
     public static string IdOf(FileFormatType type) =>
         All.FirstOrDefault(format => format.Detected == type)?.Id ?? type.ToString().ToLowerInvariant();
 
+    /// <summary>The format a file of <paramref name="formatId"/> is detected as; null for none or an id never read.</summary>
+    public static FileFormatType? DetectedAs(string? formatId) => All.FirstOrDefault(format => format.Id == formatId)?.Detected;
+
     private static CellsEngineFormat Find(string formatId) =>
         All.FirstOrDefault(format => string.Equals(format.Id, formatId, StringComparison.Ordinal))
             ?? throw Missing(formatId);
