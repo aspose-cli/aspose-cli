@@ -1,3 +1,4 @@
+using Aspose.Cli.Sdk;
 using Aspose.Cli.Sdk.IO.Output;
 
 namespace Aspose.Cli.Product.Words.Contracts;
@@ -7,6 +8,8 @@ public sealed record WordsExtractRequest
 {
     /// <summary>The document to open.</summary>
     public required string Input { get; init; }
+    /// <summary>The document as a command a hint names opens it, with the variable of its password; null names it by <see cref="Input"/>.</summary>
+    public ContinuationInput? Continuation { get; init; }
     public required string What { get; init; }
     /// <summary>The resolved directory that receives the files.</summary>
     public required ResolvedDirectory Output { get; init; }

@@ -3144,6 +3144,13 @@
       "detailsSchemaId": "v2/common/not-found-details"
     },
     {
+      "code": "COMMENTS_NOT_IN_TEXT",
+      "owner": "words",
+      "severity": "warning",
+      "category": "warning",
+      "detailsSchemaId": "v2/common/diagnostic-details"
+    },
+    {
       "code": "FIELD_COUNT_MISMATCH",
       "owner": "words",
       "severity": "warning",

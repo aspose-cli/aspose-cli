@@ -1,5 +1,7 @@
 using System.Text.Json;
+using Aspose.Cli.Sdk;
 using Aspose.Cli.Sdk.Errors;
+using Aspose.Cli.Sdk.Results;
 using Aspose.Words;
 using Aspose.Words.Drawing;
 using Aspose.Words.Tables;
@@ -68,6 +70,7 @@ internal static class ReadProjection
                 Total = candidates.Count,
                 Truncated = blocks.Count < candidates.Count || blocks.Any(static block => block.ContentTruncated),
             },
+            Warnings = EnvelopeParts.CombineWarnings(WordsText.CommentsLeftOut(candidates.Take(blocks.Count).Select(static entry => entry.Node), request.Continuation ?? new ContinuationInput(path))),
         };
     }
 

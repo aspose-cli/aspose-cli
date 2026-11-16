@@ -20,7 +20,8 @@ reading`. What Words adds:
   `NUMPAGES`, `SECTIONPAGES`) reads as its placeholder, such as `{PAGE}`.
   Read comments and footnotes with `inspect --detail comments` or
   `search --scope`, and tracked changes with `inspect --detail revisions`
-  ([revisions](revisions.md)).
+  ([revisions](revisions.md)); `read` and `extract --what text` warn
+  `COMMENTS_NOT_IN_TEXT` when comments are anchored in the text they return.
 - A search pattern anchored with `^` must allow for the number of a numbered
   paragraph, and `set_text` changes only the text after it.
 - `search --pattern ".+" --regex --scope all` returns the text of every scope

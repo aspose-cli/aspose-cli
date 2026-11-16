@@ -13,10 +13,11 @@ internal static class WordsRead
     {
         LicenseState state = session.Outputs.License;
         using LoadedDocument loaded = session.Loader.Open(request.Input, request.Password);
-        return ReadProjection.Project(loaded, request.Input, request) with
+        WordsReadResult read = ReadProjection.Project(loaded, request.Input, request);
+        return read with
         {
             License = EnvelopeParts.License(state),
-            Warnings = InputWarnings(loaded),
+            Warnings = EnvelopeParts.CombineWarnings(InputWarnings(loaded), read.Warnings),
         };
     }
 }

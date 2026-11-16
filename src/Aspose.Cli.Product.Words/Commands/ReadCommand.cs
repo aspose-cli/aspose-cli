@@ -31,6 +31,7 @@ internal static class ReadCommand
                 return new WordsReadRequest
                 {
                     Input = standard.Input,
+                    Continuation = standard.ContinuationOf(standard.Input),
                     Blocks = range is null ? null : PageRange.ParseOption(blocks.Name, range),
                     Section = parse.GetValue(section),
                     Content = parse.GetValue(content) ?? WordsReadContents.Text,
