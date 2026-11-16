@@ -122,11 +122,10 @@ public sealed class PdfOutputEncryptionTests : IDisposable
     [Fact]
     public void MergeAndSplitOfAnInputWithAnOpenPassword_KeepThatPassword()
     {
-        JsonNode merged = null!, split = null!;
-        Parallel.Invoke(
-            () => merged = Run("pdf", "merge", "locked.pdf", "plain.pdf", "--password-env", "PDF_USER", "--out", "merged.pdf").Json(),
-            () => split = Run("pdf", "split", "locked.pdf", "--password-env", "PDF_USER",
-                "--by", "pages", "--every", "1", "--out-dir", "parts").Json());
+        // One after another: the hint check of each run copies the workspace, which a run publishing into it would break.
+        JsonNode merged = Run("pdf", "merge", "locked.pdf", "plain.pdf", "--password-env", "PDF_USER", "--out", "merged.pdf").Json();
+        JsonNode split = Run("pdf", "split", "locked.pdf", "--password-env", "PDF_USER",
+            "--by", "pages", "--every", "1", "--out-dir", "parts").Json();
 
         Assert.True(merged["output"]!["encrypted"]!.GetValue<bool>());
         Assert.Equal([true, true], PartsEncrypted(split));
@@ -149,11 +148,10 @@ public sealed class PdfOutputEncryptionTests : IDisposable
     [Fact]
     public void MergeAndSplitOpenedWithTheOwnerPassword_DiscloseThatItBecomesTheOpenPassword()
     {
-        JsonNode merged = null!, split = null!;
-        Parallel.Invoke(
-            () => merged = Run("pdf", "merge", "locked.pdf", "plain.pdf", "--password-env", "PDF_OWNER", "--out", "merged.pdf").Json(),
-            () => split = Run("pdf", "split", "locked.pdf", "--password-env", "PDF_OWNER",
-                "--by", "pages", "--every", "1", "--out-dir", "parts").Json());
+        // One after another: the hint check of each run copies the workspace, which a run publishing into it would break.
+        JsonNode merged = Run("pdf", "merge", "locked.pdf", "plain.pdf", "--password-env", "PDF_OWNER", "--out", "merged.pdf").Json();
+        JsonNode split = Run("pdf", "split", "locked.pdf", "--password-env", "PDF_OWNER",
+            "--by", "pages", "--every", "1", "--out-dir", "parts").Json();
 
         string[] written = [_workspace.File("merged.pdf"), .. Directory.GetFiles(_workspace.File("parts"))];
         Assert.All(written, path => OpensOnlyWith(path, OwnerPassword));
@@ -174,10 +172,9 @@ public sealed class PdfOutputEncryptionTests : IDisposable
     [Fact]
     public void OnePasswordThatIsAlsoTheOwnerPassword_IsReportedAsTheOwnerPassword()
     {
-        JsonNode merged = null!;
-        Parallel.Invoke(
-            () => Run("pdf", "edit", "plain.pdf", "--ops", Metadata, "--out", "same.pdf", "--encrypt-env", "PDF_NEW").Json(),
-            () => merged = Run("pdf", "merge", "locked.pdf", "plain.pdf", "--password-env", "PDF_OWNER", "--out", "merged.pdf").Json());
+        // One after another: the hint check of each run copies the workspace, which a run publishing into it would break.
+        Run("pdf", "edit", "plain.pdf", "--ops", Metadata, "--out", "same.pdf", "--encrypt-env", "PDF_NEW").Json();
+        JsonNode merged = Run("pdf", "merge", "locked.pdf", "plain.pdf", "--password-env", "PDF_OWNER", "--out", "merged.pdf").Json();
         Warning(merged, "PROTECTION_NOT_ENFORCED", "which is also its owner password");
         JsonNode remerged = Run("pdf", "merge", "same.pdf", "plain.pdf", "--password-env", "PDF_NEW", "--out", "remerged.pdf").Json();
 
@@ -208,12 +205,14 @@ public sealed class PdfOutputEncryptionTests : IDisposable
         }
 
         Encrypt("form.pdf", "locked-form.pdf", user: UserPassword);
-        JsonNode[] results = new JsonNode[4];
-        Parallel.Invoke(
-            () => results[0] = Run("pdf", "extract", "locked-form.pdf", "--password-env", "PDF_USER", "--what", "forms", "--form-format", "json", "--out-dir", "fields").Json(),
-            () => results[1] = Run("pdf", "extract", "locked.pdf", "--password-env", "PDF_USER", "--what", "text", "--out-dir", "text").Json(),
-            () => results[2] = Run("pdf", "convert", "locked.pdf", "--password-env", "PDF_USER", "--to", "tiff", "--out", "pages.tiff").Json(),
-            () => results[3] = Run("pdf", "render", "locked.pdf", "--password-env", "PDF_USER", "--out", "render.png").Json());
+        // One after another: the hint check of each run copies the workspace, which a run publishing into it would break.
+        JsonNode[] results =
+        [
+            Run("pdf", "extract", "locked-form.pdf", "--password-env", "PDF_USER", "--what", "forms", "--form-format", "json", "--out-dir", "fields").Json(),
+            Run("pdf", "extract", "locked.pdf", "--password-env", "PDF_USER", "--what", "text", "--out-dir", "text").Json(),
+            Run("pdf", "convert", "locked.pdf", "--password-env", "PDF_USER", "--to", "tiff", "--out", "pages.tiff").Json(),
+            Run("pdf", "render", "locked.pdf", "--password-env", "PDF_USER", "--out", "render.png").Json(),
+        ];
 
         Assert.All(results, result => Assert.DoesNotContain("ENCRYPTION_REMOVED", ResultWarnings.Codes(result)));
         // Images, text and form data cannot carry a password, so their files report no encryption.
@@ -244,13 +243,14 @@ public sealed class PdfOutputEncryptionTests : IDisposable
     public void Encrypt_ProtectsEveryWrittenPdfWithItsPassword()
     {
         File.WriteAllText(_workspace.File("text.txt"), "Created text.\n");
-        // The four writes are independent, so they run at once.
-        JsonNode[] results = new JsonNode[4];
-        Parallel.Invoke(
-            () => results[0] = Run("pdf", "create", "created.pdf", "--from-text", "text.txt", "--encrypt-env", "PDF_NEW").Json(),
-            () => results[1] = Run("pdf", "edit", "owner-only.pdf", "--ops", Metadata, "--out", "edited.pdf", "--encrypt-env", "PDF_NEW").Json(),
-            () => results[2] = Run("pdf", "merge", "locked.pdf", "plain.pdf", "--password-env", "PDF_USER", "--out", "merged.pdf", "--encrypt-env", "PDF_NEW").Json(),
-            () => results[3] = Run("pdf", "split", "plain.pdf", "--by", "pages", "--every", "1", "--out-dir", "parts", "--encrypt-env", "PDF_NEW").Json());
+        // One after another: the hint check of each run copies the workspace, which a run publishing into it would break.
+        JsonNode[] results =
+        [
+            Run("pdf", "create", "created.pdf", "--from-text", "text.txt", "--encrypt-env", "PDF_NEW").Json(),
+            Run("pdf", "edit", "owner-only.pdf", "--ops", Metadata, "--out", "edited.pdf", "--encrypt-env", "PDF_NEW").Json(),
+            Run("pdf", "merge", "locked.pdf", "plain.pdf", "--password-env", "PDF_USER", "--out", "merged.pdf", "--encrypt-env", "PDF_NEW").Json(),
+            Run("pdf", "split", "plain.pdf", "--by", "pages", "--every", "1", "--out-dir", "parts", "--encrypt-env", "PDF_NEW").Json(),
+        ];
 
         string[] written =
         [

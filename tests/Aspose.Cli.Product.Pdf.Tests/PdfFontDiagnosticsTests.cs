@@ -59,11 +59,9 @@ public sealed class PdfFontDiagnosticsTests
         byte[] original = File.ReadAllBytes(input);
         string output = workspace.File("review");
         string[] supervision = worker ? ["--timeout", TestDeadline.CliTimeout] : [];
-        // Both commands only read the input, so they run at once.
-        CliResult fonts = null!, review = null!;
-        Parallel.Invoke(
-            () => fonts = workspace.Run(["fonts", "check", input, "--output-format", "json", .. supervision]),
-            () => review = workspace.Run(["review", input, "--out", output, "--output-format", "json", .. supervision]));
+        // One after another: the hint check of each run copies the workspace, which a run publishing into it would break.
+        CliResult fonts = workspace.Run(["fonts", "check", input, "--output-format", "json", .. supervision]);
+        CliResult review = workspace.Run(["review", input, "--out", output, "--output-format", "json", .. supervision]);
 
         Assert.True(fonts.ExitCode == 0, fonts.StdErr);
         Assert.Empty(JsonNode.Parse(fonts.StdOut)!["fonts"]!.AsArray());
