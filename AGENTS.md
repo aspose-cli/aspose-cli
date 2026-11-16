@@ -8,292 +8,133 @@ the fixed distribution identity; the generated projections and the solution come
 This guide holds only what the code and its checks cannot tell you; where a check owns a rule,
 the check is its authority.
 
-## Boundaries
+## What the tool is
+
+The caller is an AI agent such as Claude Code or Codex. It has its own judgment, reads the
+results and retries, and no run of it is deterministic. The CLI is a file-format tool and
+nothing more. It makes three promises, and each holds whatever a document contains:
+
+1. **Read.** What a file holds, as the engine reads it.
+2. **Write.** Only the change that was named. A target that does not exist is an error, a
+   parameter that was not given is not set, and an engine error is reported as it is. After the
+   write the CLI reads the changed place back from the saved file and returns it, without a
+   verdict.
+3. **Convert and render.** The engine's conversion and rendering, with every option stated by
+   the caller.
+
+Most earlier defects came from promises of another kind: a warning, a hint, a check or a
+fallback that had to be right for every document, and each fix added one more.
+
+## Boundary
+
+| Who | Owns |
+|---|---|
+| The engine (the Aspose SDK) | How a file is parsed, what the object model holds, what else a property changes when it is set, what a save or a conversion loses, how a page renders |
+| The agent | What to change and in which order, whether the result is good, what to do next, how to recover from its own mistake, how to combine steps |
+| The CLI | The command line, opening and saving, one table of names, the report |
+
+- **The command line**: a fixed vocabulary, checks of an argument's form, errors that state facts.
+- **Opening and saving**: paths, passwords and the license; a write goes to a temporary file that
+  then replaces the target, never over a file the caller did not allow; no network and no file
+  outside the input's folder.
+- **The table**: a name for an engine object or member. A read gets the member and a write sets
+  it, under the same name.
+- **The report**: the exit code and what was observed.
+
+A feature or a fix is not the CLI's when any of these is true:
+
+1. Whether it is right depends on what the document contains. Returning what was read does not.
+2. It speaks of the future or of intent: what will happen, what should, what to try next.
+3. It mends, hides or changes what the engine does.
+4. The agent can do it with two or three calls the CLI already has.
+
+So the CLI does not verify or review a result, predict one, suggest a next step or a corrected
+name, infer a type, a target or a default, combine several engine calls into one operation, work
+around the engine, serve a user interface, update itself, or teach how to design a document.
+
+Only two things are added. A **row** of the table is one name for one engine member, which is
+read, or read and set. An **action** is one name for one engine call whose parameters the caller
+states. Whatever needs an "if" about the document to work is not added. A row returns what the
+engine returns, untrimmed, sets only its own member, and writes its value in one fixed form.
+
+## Defects
+
+Sort every report before changing code.
+
+| Kind | What to do |
+|---|---|
+| The engine's behavior | One entry in [KNOWN-ISSUES.md](KNOWN-ISSUES.md) with a minimal SDK-only reproduction, reported to the SDK team. No refusal, workaround or warning in the CLI |
+| The agent's mistake | No code; at most a sentence of documentation |
+| A promise the CLI broke: a read that differs from the engine's, a write to a member other than the named one, a change nobody named, an error that was not reported | Fix it by correcting or deleting code, never by adding a warning, a hint or a check |
+
+Before changing code around an engine, verify the official API and reproduce the behavior with a
+minimal SDK-only case.
+
+## Version 2.0 is in progress
+
+`master` still holds what this direction removes, each part until the change that deletes it:
+the local App, Preview and viewer services, `review`, `update`, `mcp` and `doctor`; hints and
+continuation commands; wrong-name recovery; `--verify`, `--dry-run`, `--best-effort`,
+`--if-match`, `--backup` and `--timeout`; publication recovery; per-operation snapshots,
+verifiers and warnings; operations that choose for the caller; workarounds for engine defects.
+Do not extend or repair these parts, except for a wrong result. 2.0 keeps no compatibility with
+1.x: delete cleanly, with no alias, compatibility layer or transitional path.
+
+## Structure
 
 - Launcher -> Host -> SDK; launcher -> active Products; Products -> SDK, never another Product.
-  SDK types of a document engine stay inside its Product's Engine adapter. Enforced by
-  `CommercialDependencyRulesTests`, `RepositoryProjectGraphTests`, `DependencyRulesTests`,
-  `EngineSdkIsolationTests` and analyzers `APCLI006`, `APCLI009` and `APCLI010`.
-- Inside a Product, `APCLI009` keeps Contracts <- Commands and Contracts <- Engine, and inside
-  the Engine `Engine.Mapping` (loading, format and vocabulary names, read projections,
-  addresses) <- `Engine.Editing` (operation handlers, snapshots, verification): what both read
-  and write lives in Mapping. The module's namespace is the composition root; the layers reach
-  it only for its build metadata, diagnostics, budget domains, format recognition and manifest.
-- Host carries no product-specific branch: product ids come from the catalog, and distribution
-  metadata identifies this executable (`DependencyRulesTests`, `HostCatalogIsolationTests`).
-- A Product's module definitions are pure and deterministic (`APCLI007`). Its schemas are
-  generated from its records and their documentation comments; nothing hand-writes a schema.
-- What every product shares lives once, in the Host's `aspose-cli-platform` Skill; a product
-  Skill holds only product knowledge and points to the generated schema instead of restating it
-  (`PlatformSkillPointerTests`).
+  The types of a document engine stay inside its Product's Engine adapter.
+- Host carries no product-specific branch: product ids come from the catalog.
+- What Products share lives once in the SDK, and what their Skills share once in the Host's
+  `aspose-cli-platform` Skill. A decision has one owner; the architecture tests refuse a second.
+- Extend at compile time through the catalog and explicit registration: no runtime plugin
+  loading, reflection scanning, dependency-injection container or command source generator.
+- Schemas, help and capabilities are generated from one source; nothing hand-writes a copy.
 - Source, project references, build imports, tests and publishing tools stay inside this
   project. Never reference a parent workspace or another CLI project.
+- Do not adopt raw XML or XPath write layers, a whole-document export replayed as a batch,
+  in-memory sessions with deferred writes, partially successful batches, out-of-process plugins,
+  or a home-grown renderer or formula engine. The table is explicit typed rows, not a string
+  property bag, and a read's output is a view, never the input of a replay.
+- The process's culture is pinned to en-US at startup, so a result does not change with the
+  machine's regional settings; a command that needs another culture takes it as an option.
 
-## Design rules
+## Contract
 
-- Every behavior has one owner. Behavior shared by Products belongs in the SDK, not in copies.
-  The owner implements the decision with a type, a pipeline or a generator so that nothing else
-  can make it, and analyzers, architecture tests and invariants enforce that; the same decision
-  made in several places is this repository's main source of defects. See
-  [Decision owners](#decision-owners).
-- Extend at compile time through the catalog and explicit registration; no runtime plugin
-  loading, reflection scanning or dependency-injection containers. Commands are written by hand:
-  no command source generator, runtime reflection binding, reflection-based JSON, or generic
-  session type in the SDK.
-- The command tree built from the product menus is the registry: capabilities, help, schemas and
-  documentation checks are projections of it, so keep no separate registration data. A product
-  session holds only the write pipeline, the resource budgets and the loader; a product-specific
-  concern that wraps every handler is a `.Guard` on the module.
-- Do not adopt string property bags with regex dispatch, parallel dispatch paths, in-memory
-  sessions with deferred writes, partially successful batches, ambiguous exit codes, raw XML or
-  XPath write layers, whole-document export as a replayable batch, self-update or
-  auto-install, out-of-process plugins, or a home-grown renderer or formula engine. They break
-  one source of truth, atomic publication, local-only operation or files as primary, or move an
-  SDK's job into the CLI.
-- Derive contracts from one source: generate what can be generated and test that it is current,
-  rather than keeping hand-written copies in sync.
-- Prefer deleting unused surface to preserving it.
-- Processing a document reaches neither the network nor a file outside its input's folder. The
-  SDK's process-level `NetworkGate`, each product's single loading entry and `SvgReferences`
-  enforce it, never a scan of the content for addresses (`APCLI015`, `PdfResourceLoadingTests`,
-  `CellsSvgPictureTests`, `SvgReferencesTests`, the product `*ResourceLoadingTests`).
-- The CLI replaces or deletes only what it can prove it wrote, by file identity or recorded hash,
-  never by name (`PublicationOwnershipTests`, `OutputIsInputContractTests`,
-  `ReviewOverwriteOwnershipTests`, `ViewerStorageTests`, `UserStorageTests`).
-- A security-relevant result (encryption kept or removed, redaction, omitted or blocked
-  resources) reports only what an independent re-check of the output establishes
-  (`OutputPipelineEncryptionTests`, `PdfEditVerificationTests`, `PdfRedactionReachTests`,
-  `PdfSignTests`, `PdfResourceLoadingTests`; D7).
-- Per-user state and local services are reachable only by the current user: per-user state lives
-  under `UserStorage` (`APCLI016`, `UserStorageTests`), every file that holds a secret (a license,
-  a service's control secret) is written through `CurrentUserFileAccess` whatever its folder's
-  rules (`LicenseInstallerTests`, `LicenseManagementTests`), and the services answer only their
-  session and control secret over a current-user pipe (`AppHttpSecurityTests`,
-  `LocalServiceRuntimeTests`).
-- [SECURITY.md](SECURITY.md) names the tests behind each boundary it states, and
-  `SecurityClaimsTests` keeps those names current.
-- An engine follows the habits of the Office program it models: it converts the types of text it
-  loads, joins tables that touch, clears settings when a style changes. The CLI promises its
-  caller, an agent that sees only results, to change what was asked and nothing else. So state
-  every engine load and save option that decides content, since a default is a decision nobody
-  made; and before an operation changes an existing object, find out with an engine-only example
-  what else the call changes and whether the result is the same after saving and opening again.
-- The process's culture is pinned to en-US at startup (`CliHost`), so what a command computes
-  and shows, a recalculated formula, a field result or a formatted date or amount, does not
-  change with the machine's regional settings; a command that needs another culture takes it
-  as an explicit option, such as `cells convert --culture` (`CellsRegionalSettingsTests`,
-  `WordsRegionalSettingsTests`).
-- A check must not see through the eyes of what it checks. A verification expects what the
-  operation's input should leave, never the state read after the operation; a prediction and the
-  change it predicts share one rule; and a command that reads less than the document holds says
-  so through the owner of what it read (D15), not through each command that happens to notice.
-- The [gates](#gates) judge a change: never add a known violation to make a change pass. Code
-  metrics (`eng/tools/CodeHealth`) are a diagnostic, never a target.
+The command line follows the habits an agent already has: POSIX and GNU argument conventions,
+results on stdout and diagnostics on stderr, the vocabulary of git, kubectl and gh. Commands are
+product first, `aspose-cli <product> <verb>`. The mechanical rules are numbered `C-Rnn` and
+checked by `tests/Aspose.Cli.Invariants.Tests/Rules`, which is their authority. What a test
+cannot judge:
 
-### Decision owners
-
-| # | Decision | Owner | Enforced by |
-|---|---|---|---|
-| D1 | Output: path, format, overwrite, encryption, byte order mark, part names, staging, reported file objects | The SDK resolves a `ResolvedOutput`; SDK `OutputProtection` decides the password an output carries (PDF: `PdfOutputEncryption`); SDK `FileObjects` builds the `input` and `output` objects; SDK `FileWritePrecondition.Admit` admits an edit's loaded input (unchanged while loading, then `--if-match`); only the SDK write pipeline warns `ENCRYPTION_REMOVED`, and it removes a UTF-8 byte order mark from what it publishes, an extraction's files included, unless the write declares one or copies a file a document embeds (`ByteOrderMarks`) | `DecisionOwnershipTests` D1; invariant C-R41 and the compiler (`FileFingerprints.Ensure*` is internal); the scenario check `byte-order-mark` |
-| D2 | Format capabilities | Each product's Contracts `*Formats` descriptor tables (`Definitions` and side tables such as `PdfFormats.Certificates`), mapped to the engine by its `*EngineFormats`; product commands and engines compare no value with a format id; no product source file reads a file extension, which only the SDK matches against the tables (`FormatDescriptorExtensions.NamedBy`); a warning names the kinds of content an output leaves out only through SDK `ContentLoss`, from the closed `ContentKind` set (`details.content`) | `CellsEngineFormatTests`, `PdfEngineFormatTests`, `SlidesEngineFormatsTests`, `WordsEngineFormatsTests`; `DecisionOwnershipTests` D2 (format id literals, `D2_LostContentKinds_AreNamedOnlyByContentLoss`) and D1 `D1_Products_DeriveNoFormatFromAnExtension` (extensions, no exceptions) |
-| D3 | Mistake suggestions | SDK `Mistake` | `DecisionOwnershipTests` D3; invariants |
-| D4 | Error construction | SDK error factories | `DecisionOwnershipTests` D4; `FreeTextErrorFactoryTests` |
-| D5 | Secrets | SDK `Secret`, revealed only in an engine adapter; the Host's frames and files carry `WireSecret` | `DecisionOwnershipTests` D5; `HostSecretTests` |
-| D6 | Evaluation detection and disclosure | The SDK write pipeline; a product supplies only its evaluation-mark recognizer and, for an extraction, its `ExtractionContent` | `EvaluationOwnershipTests`; the evaluation invariant |
-| D7 | Truthful results: affected counts, targets, pages, no match, and whether a verified edit passed | The SDK runner, from the snapshots of the product's `IOperationModel` and, with `--verify`, its `IEditVerifier`; only the SDK constructs `AppliedOperation`; only `AppliedBatch.Verified` makes an `affectsCompleteness` warning an issue and names the operations not read back | `OperationSnapshotTests`, `BoundedOperationModelTests`; `DecisionOwnershipTests` D7; invariant C-R30 |
-| D8 | Input loading: recognition, passwords, corruption | The SDK load result and error translation; a product supplies the engine call and an exception classifier | `InputLoadingOwnershipTests` |
-| D9 | Read and write vocabulary | Each operation field's read-back declaration, published as `x-readBack`. Planned: one object model per product, where the fields an operation writes are a subset of the read result with the same names and meanings | `APCLI012`; invariants C-R21, C-R39 |
-| D10 | Human-readable output | SDK `ResultText` | `ResultTextTests`, the product renderer golden tests, `TableRendererCoverageTests`, `ProductRendererCoverageTests` |
-| D11 | Structure | Three places per command (Contracts, Commands, Engine handler) paired on the product menu; one-way SDK layers, IO checked by its sub-areas; one-way Host subsystem layers; one-way product layers | `SdkLayeringTests`, `HostLayeringTests`, `APCLI009`, `ContractFileLayoutTests`, `ProductMenuCompletenessTests` |
-| D12 | Path case: whether two local paths are the same, one is within another, or one is a UNC or device path, and the plain path a device path spells | SDK `FilePaths` (`Comparer`, `Comparison`, `Same`, `IsWithin`, `IsRemoteOrDevice`, `Plain`), and the lock keys and the license identity derived from a path, whose bytes other distributions share (`LockKey`, `FoldedKey`) | `DecisionOwnershipTests` D12; `PathCaseTests`; `LockKeyBytesTests` |
-| D13 | Process identity and liveness: a process's start time, and whether a recorded process still runs | SDK `ProcessIdentity`; each caller states its own `ProcessLivenessPolicy` (access denied, vanishing, exit check, start tolerance, unknown start) | `DecisionOwnershipTests` D13; `ProcessIdentityTests` |
-| D14 | Continuation commands: a runnable command a hint, an error or a `window.next` names with a path or an option value in it | SDK `ContinuationCommand`, started on an input by `StandardInvocation.ContinuationAt` or `ContinuationInputExtensions.ContinuationAt`, which pass on the input's password by the variable the caller named, or by the placeholder `"<password-env>"`, in double quotes, when the caller gave it on stdin or literally; it quotes every value and asks for JSON. It names what a command writes only by `Out` or `OutDir` with a `ContinuationOutput`: `--overwrite` only for the output the invocation wrote or the `--out` the caller allowed to replace, never for a file the hint names itself. Text with placeholders only and the names of a command path splice no value | `DecisionOwnershipTests` D14 (`D14_RunnableCommandsWithValues_AreBuiltOnlyByContinuationCommand`, `D14_TheOutputsOfContinuations_AreNamedOnlyThroughContinuationOutput`); the `executable-hint` check (`ExecutableHints`), which in the scenarios and generated cases also runs the hints on an encrypted input opened with `--password-env` and with `--password-stdin`, and an input at a path with a space, runs a hint command that writes for real and a second time over what it wrote, where it must replace the invocation's own output and no other existing file, and reports a password placeholder outside double quotes |
-| D15 | Text for its own sake: where a document holds the text a command finds, replaces, counts, extracts or checks for truncation, and whether a replacement writes it | Slides: `SlidesTextUnits`. A part a replacement does not change carries its `TextPart`, so the search finds it and `replace_text` names it without either listing the part; the replacement and the verification's prediction both ask `SlidesTextUnits.Writes`. A member that reads a shape's text for its structure, layout or state is listed with its reason. Cells: `CellsTextUnits`, every cell and part `search` finds, each with what it is in `TextPart` terms, which the hit and `TEXT_NOT_REPLACED` both name; `replace_text` writes the text cells and names the rest, and a part linked to a cell is the cell's unless the command does not reach that cell's sheet. A file that matches text with `TextReplacement` or `TextSearch` reads no workbook text itself. Planned: the same enumeration in Words and PDF, each merged first without a change of behavior | `SlidesTextUnitsOwnershipTests`; `SlidesTextSurfaceTests` (one marker in every part: found, and replaced or named); `CellsTextUnitsOwnershipTests` |
+- A verb does the same kind of work in every product.
+- A name, a value and a unit follow the engine's object model; a field measured in anything but
+  points names its unit.
+- A field name has one type and one meaning within and across products.
+- Two error codes never name the same fact, and one code never covers two.
+- A Skill describes the tool, and says of a result only what a check establishes.
 
 ## Gates
 
-They judge a change without a reviewer reading it. Fix the product or the code to pass them; never
-weaken a check or remove a supported operation to make a test pass.
-
-- **Scenarios and invariants.** Add a reproduction or example as a `*.scenario.json` in
-  `tests/Aspose.Cli.Invariants.Tests/Scenarios` (format in
-  `tests/Aspose.Cli.TestKit/Scenarios/README.md`). The `*InvariantTests` generate their cases from
-  `capabilities` and each ops schema. A wrong name a UAT turns up is one more row of
-  `tests/Aspose.Cli.Invariants.Tests/wrong-names.json` (`WrongNameTests`).
-- **Known violations.** `tests/Aspose.Cli.Invariants.Tests/known-violations.json` lists today's
-  product defects, and `generated-cases.txt` beside it every generated case id
-  (`KnownViolationsTests`, `GeneratedCaseListTests`). Delete an entry when its defect is fixed.
-  Adding an entry, widening its `modes`, or deleting a case id needs the owner's
-  `quality-exception` label.
-- **Rule exemptions.** A test's list of cases a rule excuses (such as `RoundTripExempt`,
-  `SameNameOptions.Exemptions` or a product's `Homonyms`) sits between
-  `// rule-exemptions: begin` and `// rule-exemptions: end` lines in a file `.github/CODEOWNERS`
-  names. Adding or editing an exemption, taking one out of its block, or removing or moving a
-  marker is adding a known violation and needs the same label; deleting an exemption does not.
-  `scripts/require-approval.ps1` checks both lists for the pull request.
-- **Analyzers.** Production code builds with the analyzers in the `[src/**.cs]` section of
-  `.editorconfig` as errors; fix a violation rather than suppressing it.
-
-## Contracts
-
-- **Operations** are records with `[Operation("name")]` under the product's
-  `[OperationVocabulary]` base. The record is the contract: attributes state its constraints, and
-  a `Validated()` override, stated in its summary, the rest. Summaries are the schema's
-  descriptions. Every field declares its read-back (D9); a selector, a source or a parameter is
-  `[NotState]`, and so are the drawing parameters of an operation that leaves no object the file
-  can be read back by. `APCLI012` rejects an incomplete contract. What every operation is
-  classified by — its address or targets, its footprint and protection scope, whether
-  `--track-changes` admits it, whether the verification compares its state — dispatches through
-  the generated `I{Vocabulary}Handler<T>` visitor with one method per operation and no default
-  branch, so a new operation does not compile until it is placed (`CellsOpFootprints`,
-  `WordsOpAddresses`, `PdfEditVerifier.Recording`). A no-effect explanation that only a few
-  operations have (`Explain`, the Words review authors) is not such a classification.
-- **Results** pass only their relative schema id to a result envelope; ids are
-  `v2/common/` for the SDK and Host, `v2/<product>/` for a product. `APCLI013` rejects a record it
-  cannot describe. An edit's `verification` derives from the SDK `EditVerification` core and
-  declares only the product's evidence.
-- **JSON input** defaults are tested through the production source-generated serializer,
-  including omitted fields and explicit `false`, `0` and `null`. It
-  [does not preserve init-only initializers](https://github.com/dotnet/runtime/issues/84484), so an
-  input record outside an operation vocabulary takes scalar defaults as optional constructor
-  parameters.
-- **Error codes** shared by products or the Host are declared once in the SDK's `ErrorCodes`; a
-  product declares its own in its `*Diagnostics` class (`ProductDiagnosticDeclarationTests`). A
-  missing target is built with `CliErrors.NotFound` or `CliErrors.NotFoundAt`; a name several
-  targets share is refused.
-- **Command parameters** declare their input role, value sources and secret handling on the
-  symbol; the Host reads only these declarations. Reserved names are checked by `APCLI008`, and
-  `APCLI011` keeps products off `StandardOptions`. An SDK option type (`PartRangeOption`,
-  `SampleOption`, `DetailOption`, `BomOption`, the render options) exists only for options with
-  the same name and meaning across commands; any other option is a plain `new Option<T>`.
-  Same-named options agree (`SameNameOptions`, C-R07), a bounded integer option uses `InRange`
-  and `GetInRange` (`OptionRangeHelpTests`), and a description does not restate a default the
-  parser applies.
-- **Targets** in an operation outcome are `<unit>/<address>` addresses, at most
-  `BoundedOperationOutcome.MaximumTargets`; beyond that an outcome reports one range per unit that
-  covers them all, such as `page/1-150` (`<unit>/all` for named objects). The SDK derives targets
-  and counts from the product's snapshots; a product counts nothing. An object is numbered by its
-  position in the output of the whole batch, or in its input when the batch removed it, so a
-  removed object and a changed one can share an address and the targets list one fewer than
-  `itemsAffected`. The number comes from the instance the product names in `Positions()` (a Words
-  block or section, a PDF page, a Slides slide, which also numbers `slide/3/shape/7` and
-  `page/1/image/1`); numbered objects without one keep the number their operation saw: the Cells
-  objects numbered within a sheet (`chart/Sheet/2`, `image/…`, `conditional-format/…`) and the
-  PDF bookmarks and page labels. Names in addresses are escaped only by `TargetName.Escape`,
-  whose summary states what it escapes (`TargetNameTests`, `TargetNameOwnershipTests`).
-  A snapshot's state may hold what no read result reports, such as the PDF `Unreported`
-  properties: it only decides whether an object changed, enters no result, and so needs no
-  read-back.
-
-## Contract conventions
-
-The command-line contract aims to let an agent guess right from the habits it already has: POSIX
-and GNU argument conventions, the Unix split of results on stdout and diagnostics on stderr, the
-shared vocabulary of git, kubectl and gh, and [clig.dev](https://clig.dev/). Follow the common
-practice, not an older tool that breaks it. The rules are numbered `C-Rnn`; their mechanical
-parts are checked by `tests/Aspose.Cli.Invariants.Tests/Rules`, which is their authority, and
-today's violations are entries in `known-violations.json` until a contract change clears them.
-This section holds only what a test cannot judge.
-
-- **Verbs mean one thing (C-R02).** A product verb does the same kind of work in every product.
-  A missing verb is a gap to fill, never a reason to give another verb a second meaning.
-- **Plural nouns (C-R19).** An operation whose noun is plural (`delete_rows`) acts on a set;
-  a singular noun acts on one object.
-- **Units in names (C-R20).** A field or option measured in anything but points names its unit
-  (`widthChars`, `scalePercent`, `durationMs`, `dpi`). A measured op field declares its unit with
-  `[Measured]`, which the rule reads and the schema does not publish.
-- **One name, one shape (C-R20).** A field name has one type within and across products, except
-  a field that takes the shape of the object it names (`ShapedByTheirObject` in `SchemaRules`);
-  adding a name to those exceptions is a decision, not a default.
-- **One fact, one code (C-R28).** Two codes never name the same fact, and one code never covers
-  two: `ANCHOR_NOT_FOUND` (a search found nothing) and `BLOCK_NOT_FOUND` (a block number beyond
-  the document) stay separate.
-- **Skills claim only what is tested (C-R38).** What a Skill says about a result's meaning has a
-  behavior check behind it. A product Skill need not show every command.
-- **Name what is left behind (C-R42, C-R43).** A convert or edit whose output loses content, and
-  a `replace_text` that leaves a match in place, warn and name what they left. The rules check it
-  by kind on each product's `<product>.rich` fixture: each kind whose marker is gone after a
-  convert or edit must be in a `LOSSY_CONVERSION`'s `details.content`, and each kind whose marker
-  is left after a replacement in a `TEXT_NOT_REPLACED`'s `details.part`, by the tokens of
-  `ScenarioFixtures.Kinds`. Whether the message and hint say it well is for review.
-
-Kept on purpose:
-
-- Commands are product first, `aspose-cli <product> <verb>`, not verb first: each product owns its
-  verbs, options and formats, and the top level holds only the commands that serve every product
-  (C-R01 checks it).
-- `capabilities`, `schema` and `docs` stay three self-description entry points: the command tree,
-  the JSON Schemas and the guides (C-R01).
-- The positional argument of `create` is the file to create (C-R05).
-- `--set` keeps one address syntax per product, `SHEET!CELL=VALUE` in Cells and
-  `bookmark:NAME=TEXT` in Words; `--author` means the same in both of its places, and `--port`
-  keeps the two descriptions of its two commands (C-R07). The other per-product differences are
-  the exemptions in `SameNameOptions`, each with its reason.
-- `--grid` is PDF only and `--width` Slides only; which commands take `--font-dir` is decided by
-  `FontDirectoryOptionsTests` (C-R08).
-- `--timeout` takes seconds without a unit in its name, as command-line timeouts do (C-R20).
-- The PDF `rotation` fields take degrees without a unit in their name, as rotation angles do
-  (C-R20).
-- `--scan-range` stays hidden, only the carrier of `window.next` (C-R04).
-- In JSON mode warnings are part of the stdout envelope, and redirected output defaults to JSON
-  (C-R23).
-- `compare` exits 0 when the files differ; the differences are its result (C-R24).
-- Help and the version are `--help` and `--version` only; no `help` or `version` subcommand
-  (C-R35).
-- `capabilities` lists no `examples[]` or `errorDetailsKeys[]`: examples belong to help (C-R34),
-  and the error `details` keys are described once, in the error envelope schema (C-R25).
-- On an encrypted PDF input, `set_properties` with text beyond Latin-1 and no later
-  `encrypt_document` or `--encrypt-env` is still refused rather than reported applied while the
-  engine writes garbled text ([PDF-ENCRYPTED-INFO-TEXT](KNOWN-ISSUES.md#pdf-encrypted-info-text),
-  C-R30).
-
-## Tests
-
-- Tests call handlers directly with real requests; production code carries no test shims.
+- Never weaken a check or add a known violation to make a change pass. Adding or widening an
+  entry of `known-violations.json`, deleting a generated case id, or adding a rule exemption
+  needs the owner's `quality-exception` label.
+- Production code builds with the analyzers as errors; fix a violation rather than suppress it.
+- A reproduction or an example is a `*.scenario.json` in
+  `tests/Aspose.Cli.Invariants.Tests/Scenarios`. Tests call handlers directly with real requests;
+  production code carries no test shims.
 - A test that changes process-wide state joins its serial collection in
-  `tests/TestAssemblyFixture.cs`. A test project that reads a repository file outside the
-  projects lists it as a `RepositoryInput` item (`RepositoryInputTests`).
-- Slow, installer and browser tests carry their category; `scripts/test.ps1` reports an
-  uncategorized test over its slow-test limit.
-- Keep license contents out of logs and fixtures.
+  `tests/TestAssemblyFixture.cs`. Keep license contents out of logs and fixtures.
 
 ## Must not break
 
-- Every boundary in [SECURITY.md](SECURITY.md): local services, MCP, network, files and secrets.
-- Worker cancellation and rollback.
-- The resource-based interprocess locks, which other Aspose CLI distributions on the machine
-  share.
-- Licensed and evaluation behavior, including honest disclosure of evaluation output changes.
+- Every boundary in [SECURITY.md](SECURITY.md): network, files and secrets.
 - Existing user files and uncommitted changes you did not make. Never clean unknown files.
 - Files stay primary: never round-trip an entire document through JSON.
-- The update handoff, frozen for every version after 1.0 because each installed version updates
-  from the latest release: the `RELEASE-MANIFEST.json` at `releases/latest` keeps
-  `schemaVersion: 1` and its required fields (`productId`, `runtimeIdentifier`, `artifactVersion`,
-  `sourceRevision`, `archive.path`, `archive.size`, `archive.sha256`), which a release may only add
-  to (`ReleaseManifest` ignores other fields); the archive keeps `install.ps1` at its root, which
-  `update install` runs with `-PackageRoot`, `-InstallDirectory`, `-Update`, `-WaitForProcessId`,
-  `-CleanupRoot` and `-StatusPath`, whose cleanup root is the
-  `%LOCALAPPDATA%\aspose-cli\updates\aspose-cli-update-*` directory the CLI stages the package in,
-  named by the path it resolves to, and the only one `install.ps1` accepts; an installed executable's `preview stop` without an id, which
-  `install.ps1` runs to close every document and stop the service before it uninstalls that
-  installation; and the status file keeps `schemaVersion: 1`, `state`
-  (`pending`, `running`, `succeeded`, `failed`), `installerProcessId`, `message`, `log` and
-  `updatedAt` (`UpdateStatus`, `UpdateHandoffTests`).
+- A run without a license says so in its result.
 
 ## Conventions
 
 Use only the corresponding commercial Aspose SDK packages; no FOSS source, gitlinks or
 Git LFS. License-free products live in a separate repository; every product here is licensed.
 Code comments, diagnostics, documentation and Skills are English and describe present behavior.
-The contract follows the Compatibility section of [README.md](README.md#compatibility): a
-breaking change ships only in a major version, and a minor or patch release only adds. Update
-code, schemas, Skills and tests together for an intentional contract change. Never add
-old-command aliases, legacy installer or Skill readers, historical version baselines, historical
-trust allowlists, or migration frameworks.
-
-Before changing code around a commercial SDK, verify the official API usage and reproduce
-suspected engine behavior with a minimal SDK-only case. Correct our misuse in the owning
-adapter. Record each confirmed SDK defect only in [KNOWN-ISSUES.md](KNOWN-ISSUES.md) as
-its introduction describes, without reporting it upstream, and handle it openly with a
-refusal, a workaround through other public API, or a warning. Never hide a defect with implicit
-default rewrites, file-format patches, or product, producer or version special cases.
