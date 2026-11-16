@@ -309,6 +309,25 @@ Reproductions: [CellsKnownIssueTests](tests/Aspose.Cli.Product.Cells.Tests/Cells
   text back as the error only in a cell where the edited workbook held an error value, so a
   formula error the edit left is still reported and text that only looks like one is not.
 
+### CELLS-MARKDOWN-DETECTION
+
+- **Defect:** `FileFormatUtil.DetectFileFormat` takes lines of plain data for Markdown by their
+  line ends and characters, not by any Markdown they hold: two lines `a-b` and `c-d` are
+  `Unknown` when they end in LF and `Markdown` in CRLF, two numbers `1E-30` and `1E-29` are
+  `Markdown`, and a Markdown table is `Unknown`.
+
+  ```csharp
+  FileFormatType Detect(string text) => FileFormatUtil.DetectFileFormat(new MemoryStream(Encoding.UTF8.GetBytes(text))).FileFormatType;
+  Detect("a-b\nc-d\n");                         // Unknown
+  Detect("a-b\r\nc-d\r\n");                     // Markdown
+  Detect("1E-30\n1E-29\n");                     // Markdown
+  Detect("| a | b |\n|---|---|\n| 1 | 2 |\n");  // Unknown
+  ```
+
+- **CLI behavior:** a file named `.csv` or `.tsv` that the detection takes for Markdown is read
+  as the delimited text its name says, as one it recognizes as no format is. Under `.txt`, which
+  plain text owns, the detection stands, and the file is refused as another product's document.
+
 ### CELLS-ODS-PRINT-COMMENTS
 
 - **Defect:** an ods save drops a sheet's `PageSetup.PrintComments`, though an ODF page layout
