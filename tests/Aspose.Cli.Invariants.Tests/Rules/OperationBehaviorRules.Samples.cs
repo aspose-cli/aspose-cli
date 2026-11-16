@@ -214,7 +214,8 @@ internal static class OperationSamples
         // The subtitle sample writes text alone and comes first, so C-R39 round-trips the text
         // through a title slide's subtitle and the lists through a body placeholder.
         new("slides", """{"op":"set_body","slide":1,"paragraphs":[{"text":"Sub"}]}""", Label: "a title slide's subtitle"),
-        new("slides", """{"op":"set_body","slide":2,"paragraphs":[{"text":"First"},{"text":"Inner","list":{"kind":"number","level":2}}]}"""),
+        // An evaluation read cuts a shape's whole text after five characters, so both paragraphs together stay within them.
+        new("slides", """{"op":"set_body","slide":2,"paragraphs":[{"text":"Ab"},{"text":"Cd","list":{"kind":"number","level":2}}]}"""),
         new("slides", """{"op":"set_footer","slides":"1-2","text":"Foot","showNumber":true,"showDate":true}"""),
         new("slides", """{"op":"set_notes","slide":1,"text":"Notes"}"""),
         new("slides", """{"op":"set_properties","title":"Edited","author":"Tester","subject":"Subj","keywords":"Keys","company":"Corp"}"""),
