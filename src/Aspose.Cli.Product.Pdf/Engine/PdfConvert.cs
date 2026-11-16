@@ -171,10 +171,11 @@ internal static class PdfConvert
             return new PdfNavigationLoss(default, default);
         }
 
-        IReadOnlyList<PdfNavigationLoss.Entry> before = PdfNavigationLoss.Capture(document);
+        var links = new PdfLinkPages();
+        IReadOnlyList<PdfNavigationLoss.Entry> before = PdfNavigationLoss.Capture(document, links);
         Page[] selected = [.. pages.Select(number => document.Pages[number])];
         document.Pages.Delete(excluded);
-        return PdfNavigationLoss.Between(before, PdfNavigationLoss.Capture(document, before), selected.Contains);
+        return PdfNavigationLoss.Between(before, PdfNavigationLoss.Capture(document, links), selected.Contains);
     }
 
     private static Warning? UnselectedNavigation(PdfNavigationLoss loss) => loss.RemovedWarning(

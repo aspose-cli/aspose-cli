@@ -16,6 +16,7 @@ internal sealed partial class PdfMutationHandlers : IPdfOpHandler<ValueTuple>
     private readonly Document _document;
     private readonly IReadOnlyDictionary<string, Secret>? _secrets;
     private readonly PdfPageIdentities _pages;
+    private readonly PdfLinkPages _links;
     private readonly ISet<int> _textMoved;
     private readonly ICollection<(int Page, int Lines, int Characters)> _beside;
     private readonly ISet<int> _numbered;
@@ -26,6 +27,7 @@ internal sealed partial class PdfMutationHandlers : IPdfOpHandler<ValueTuple>
     /// <param name="document">The document being edited.</param>
     /// <param name="secrets">The operations' secrets by environment variable name.</param>
     /// <param name="pages">The identities of the document's pages, which a moved page keeps.</param>
+    /// <param name="links">The page each link leads to, which a page move reads.</param>
     /// <param name="textMoved">Receives the pages on which a redaction moved the remaining text.</param>
     /// <param name="beside">Receives, by page, how many characters on how many lines a redaction took beside its selection.</param>
     /// <param name="numbered">Receives the pages add_page_numbers numbered whose header or footer already showed a page number.</param>
@@ -35,6 +37,7 @@ internal sealed partial class PdfMutationHandlers : IPdfOpHandler<ValueTuple>
         Document document,
         IReadOnlyDictionary<string, Secret>? secrets,
         PdfPageIdentities pages,
+        PdfLinkPages links,
         ISet<int> textMoved,
         ICollection<(int Page, int Lines, int Characters)> beside,
         ISet<int> numbered)
@@ -44,6 +47,7 @@ internal sealed partial class PdfMutationHandlers : IPdfOpHandler<ValueTuple>
         _document = document;
         _secrets = secrets;
         _pages = pages;
+        _links = links;
         _textMoved = textMoved;
         _beside = beside;
         _numbered = numbered;

@@ -41,6 +41,7 @@ internal sealed class PdfEditModel : IOperationModel<PdfOp>
     /// <param name="password">The input's password, which the output keeps unless an operation changes the encryption.</param>
     /// <param name="encryptOption">Whether <c>--encrypt</c> replaces the encryption the operations leave.</param>
     /// <param name="secrets">The operations' secrets by environment variable name.</param>
+    /// <param name="links">The page each link leads to, as the navigation of the batch reads it.</param>
     internal PdfEditModel(
         PdfDocumentLoader loader,
         InputResourceScope inputs,
@@ -48,14 +49,15 @@ internal sealed class PdfEditModel : IOperationModel<PdfOp>
         IReadOnlyList<PdfOp> batch,
         Secret? password,
         bool encryptOption,
-        IReadOnlyDictionary<string, Secret>? secrets)
+        IReadOnlyDictionary<string, Secret>? secrets,
+        PdfLinkPages links)
     {
         _document = document;
         _batch = batch;
         _encryptOption = encryptOption;
         _secrets = secrets;
         OutputPassword = password;
-        _handlers = new PdfMutationHandlers(loader, inputs, document, secrets, _pages, _movedPages, _besidePages, _numberedPages);
+        _handlers = new PdfMutationHandlers(loader, inputs, document, secrets, _pages, links, _movedPages, _besidePages, _numberedPages);
         _snapshots = new PdfSnapshots(document, _pages, () => _encryption);
     }
 
