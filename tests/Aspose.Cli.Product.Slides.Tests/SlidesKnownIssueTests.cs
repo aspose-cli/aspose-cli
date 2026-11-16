@@ -227,6 +227,26 @@ public sealed class SlidesKnownIssueTests
             failure is null ? "the save succeeded with a REG_DWORD font value" : failure.ToString());
     }
 
+    [LicensedFact]
+    public void AlternativeText_LosesItsTabsOnceSaved()
+    {
+        using var fixture = new SlidesEngineFixture();
+        string path = fixture.File("alt.pptx");
+        using (var presentation = new Presentation())
+        {
+            presentation.Slides[0].Shapes.AddAutoShape(ShapeType.Rectangle, 10, 10, 50, 50).AlternativeText = "a  b\tc";
+            presentation.Save(path, SaveFormat.Pptx);
+        }
+
+        using var loaded = new Presentation(path);
+        string read = loaded.Slides[0].Shapes[0].AlternativeText;
+
+        KnownIssue.Reproduces(
+            "SLIDES-ALT-TEXT-TAB",
+            read == "a  bc",
+            $"alternative text saved as \"a  b\\tc\" reads back as \"{read.Replace("\t", "\\t", StringComparison.Ordinal)}\"");
+    }
+
     [Fact]
     public void AnOutputOfAChartWithAnImplicitTitle_WarnsWithTheChartsSlide()
     {
