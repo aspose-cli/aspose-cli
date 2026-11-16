@@ -17,9 +17,12 @@ internal sealed partial class SlidesMutationHandlers
             throw SlideNotFound(at, _presentation.Slides.Count + 1, "slide position");
         }
 
-        // A layout name names one of the master of the slide before the new one first, or after it at the start.
+        // A layout name names one of the master of the slide before the new one first, or after it at the start;
+        // without a name the new slide takes that master's first layout.
         IMasterSlide? beside = _presentation.Slides.Count == 0 ? null : _presentation.Slides[Math.Max(at - 2, 0)].LayoutSlide.MasterSlide;
-        ISlide slide = _presentation.Slides.AddEmptySlide(operation.Layout is { } name ? ResolveLayout(_presentation, name, beside) : _presentation.LayoutSlides[0]);
+        ISlide slide = _presentation.Slides.AddEmptySlide(operation.Layout is { } name
+            ? ResolveLayout(_presentation, name, beside)
+            : beside?.LayoutSlides[0] ?? _presentation.LayoutSlides[0]);
         if (at <= _presentation.Slides.Count)
         {
             _presentation.Slides.Reorder(at - 1, slide);
