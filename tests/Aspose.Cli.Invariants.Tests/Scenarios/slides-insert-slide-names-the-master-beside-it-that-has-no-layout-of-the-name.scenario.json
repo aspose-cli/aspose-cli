@@ -1,0 +1,42 @@
+{
+  "name": "slides insert_slide with a layout name the master beside the new slide has none of takes the deck's layout of that name and warns SLIDE_MASTER_CHANGED, naming the master as the one of the slide before the new one, or after it at the start, which the new slide never had",
+  "files": {
+    "template.pptx": { "copy": "Assets/slides-only-a-title-slide-layout.pptx" },
+    "deck.md": { "text": "# One\n\n## Two\n\n- b\n" },
+    "small.md": { "text": "# X\n" }
+  },
+  "steps": [
+    {
+      "args": ["slides", "create", "deck.pptx", "--from-markdown", "deck.md"],
+      "expect": { "exitCode": 0 }
+    },
+    {
+      "args": ["slides", "create", "small.pptx", "--from-markdown", "small.md", "--template", "template.pptx"],
+      "expect": { "exitCode": 0 }
+    },
+    {
+      "args": ["slides", "edit", "deck.pptx", "--ops", "{\"ops\":[{\"op\":\"import_slides\",\"path\":\"small.pptx\",\"formatting\":\"keep-source\"}]}", "--out", "mixed.pptx"],
+      "expect": { "exitCode": 0 }
+    },
+    {
+      "args": ["slides", "edit", "mixed.pptx", "--ops", "{\"ops\":[{\"op\":\"insert_slide\",\"layout\":\"Title Only\"}]}", "--out", "end.pptx"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "warnings[code=SLIDE_MASTER_CHANGED][0].message", "equals": "Slide 4 took layout 'Title Only' of master 1 'Office Theme', since master 2 'Office Theme' of the slide before it has no layout of that name, and now shows the theme and art of master 1." },
+          { "path": "warnings[code=SLIDE_MASTER_CHANGED][0].details.fromMaster", "equals": 2 },
+          { "path": "warnings[code=SLIDE_MASTER_CHANGED][0].details.toMaster", "equals": 1 }
+        ]
+      }
+    },
+    {
+      "args": ["slides", "edit", "mixed.pptx", "--ops", "{\"ops\":[{\"op\":\"move_slide\",\"slide\":3,\"to\":1},{\"op\":\"insert_slide\",\"layout\":\"Title Only\",\"at\":1}]}", "--out", "start.pptx"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "warnings[code=SLIDE_MASTER_CHANGED][0].message", "equals": "Slide 1 took layout 'Title Only' of master 1 'Office Theme', since master 2 'Office Theme' of the slide after it has no layout of that name, and now shows the theme and art of master 1." }
+        ]
+      }
+    }
+  ]
+}

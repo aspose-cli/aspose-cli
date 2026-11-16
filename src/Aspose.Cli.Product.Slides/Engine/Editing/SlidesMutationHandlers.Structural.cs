@@ -27,7 +27,7 @@ internal sealed partial class SlidesMutationHandlers
 
         if (operation.Layout is not null && beside is not null)
         {
-            NameMasterChange(slide, beside);
+            NameMasterChange(slide, beside, at > 1 ? "before" : "after");
         }
 
         return default;
@@ -123,9 +123,10 @@ internal sealed partial class SlidesMutationHandlers
     /// <summary>
     /// Names a slide that set_layout moved, or insert_slide added, to another master than its own or
     /// the one beside it: the layout name named none of that master's (<see cref="ResolveLayout"/>),
-    /// and the slide shows the other master's theme and art.
+    /// and the slide shows the other master's theme and art. <paramref name="beside"/> says, for an
+    /// inserted slide, whether that master is the one of the slide before it or after it.
     /// </summary>
-    private void NameMasterChange(ISlide slide, IMasterSlide was)
+    private void NameMasterChange(ISlide slide, IMasterSlide was, string? beside = null)
     {
         IMasterSlide now = slide.LayoutSlide.MasterSlide;
         if (now == was)
@@ -141,7 +142,7 @@ internal sealed partial class SlidesMutationHandlers
             .Where(layout => !string.IsNullOrWhiteSpace(layout.Name) && ResolveLayout(_presentation, layout.Name, now).MasterSlide == was)
             .Select(static layout => $"'{layout.Name}'")];
         _warnings.Add(new Warning(SlidesDiagnostics.SlideMasterChanged, string.Create(CultureInfo.InvariantCulture,
-            $"Slide {number} took layout '{slide.LayoutSlide.Name}' of master {to} '{now.Name}', since its master {from} '{was.Name}' has no layout of that name, and now shows the theme and art of master {to}."))
+            $"Slide {number} took layout '{slide.LayoutSlide.Name}' of master {to} '{now.Name}', since {(beside is null ? "its " : "")}master {from} '{was.Name}'{(beside is null ? "" : $" of the slide {beside} it")} has no layout of that name, and now shows the theme and art of master {to}."))
         {
             Hint = back.Length > 0
                 ? string.Create(CultureInfo.InvariantCulture, $"To take the slide back to master {from}, set_layout it to one of {string.Join(", ", back)}, the layouts of master {from} whose names master {to} has none of; 'slides inspect --detail masters' lists the masters in order.")
