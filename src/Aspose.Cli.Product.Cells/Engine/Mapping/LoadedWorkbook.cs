@@ -106,8 +106,8 @@ internal sealed record LoadedWorkbook(Workbook Workbook, WorkbookResources Resou
 
 /// <summary>
 /// How a delimited text input is written: the format its name gives it, as an edit in place
-/// writes it (null when its name gives none), its separator, and whether it starts with a UTF-8
-/// byte order mark. An edit that writes it back in that format writes them again
-/// (<see cref="WorkbookSavePlan.Create"/>).
+/// writes it (null when its name gives none), its separator, and the encoding the byte order mark
+/// it starts with names, UTF-8 or UTF-16, null without one. An edit that writes it back in that
+/// format writes them again (<see cref="WorkbookSavePlan.Create"/>).
 /// </summary>
-internal sealed record DelimitedTextForm(string? FormatId, char Separator, bool Utf8ByteOrderMark);
+internal sealed record DelimitedTextForm(string? FormatId, char Separator, System.Text.Encoding? Marked);

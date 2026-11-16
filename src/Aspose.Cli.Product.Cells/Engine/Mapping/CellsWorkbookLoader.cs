@@ -199,7 +199,7 @@ internal sealed class CellsWorkbookLoader
                 EvaluationNotice = notice.Count > 0 && !published ? CellsEvaluation.NoticeTaken(workbook.Worksheets[0].Name, notice) : null,
                 EvaluationSheetSkipped = skipped,
                 DelimitedText = plan.Separator is { } separator
-                    ? new DelimitedTextForm(CellsFormats.Delimited.NamedBy(resourceSource ?? path).FirstOrDefault()?.Id, separator, plan.TextByteOrderMark)
+                    ? new DelimitedTextForm(CellsFormats.Delimited.NamedBy(resourceSource ?? path).FirstOrDefault()?.Id, separator, plan.TextMarked)
                     : null,
                 ReadAsWritten = plan.Separator is not null && plan.TextCulture is null,
             };
@@ -244,11 +244,11 @@ internal sealed class CellsWorkbookLoader
             return plan;
         }
 
-        // A read-back is never written again, so its byte order mark is not looked for.
-        (Encoding encoding, bool marked, CultureInfo? culture) = published
-            ? (new UTF8Encoding(encoderShouldEmitUTF8Identifier: false), false, null)
+        // A read-back is never written again, so its byte order mark only names its encoding.
+        (Encoding encoding, Encoding? marked, CultureInfo? culture) = published
+            ? (CellsTextImport.ByteOrderMark(path) ?? new UTF8Encoding(encoderShouldEmitUTF8Identifier: false), null, null)
             : CellsTextImport.Resolve(path, textImport, _resourceBudgets);
-        return plan with { TextEncoding = encoding, TextCulture = culture, TextByteOrderMark = marked };
+        return plan with { TextEncoding = encoding, TextCulture = culture, TextMarked = marked };
     }
 
     // The OpenDocument spreadsheet packages, whose SVG pictures the engine reads by path.
@@ -476,7 +476,7 @@ internal sealed class CellsWorkbookLoader
 
         internal CultureInfo? TextCulture { get; init; }
 
-        internal bool TextByteOrderMark { get; init; }
+        internal Encoding? TextMarked { get; init; }
 
         internal LoadOptions ToLoadOptions() => Separator is { } separator
             ? CellsTextImport.LoadOptions(separator, TextEncoding, TextCulture)

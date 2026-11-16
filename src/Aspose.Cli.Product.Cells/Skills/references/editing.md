@@ -340,8 +340,9 @@ no `--verify` issue unless the edit added or changed them: then no file keeps th
 `cells create` and `cells convert` follow the same rules. A `.txt` output
 is written as csv; for tab-delimited text write a `.tsv` output, or run
 `cells convert book.xlsx --to tsv --out data.txt`. `cells edit` writing a csv or tsv input
-back in the format its name gives it, as in place, keeps its separator and its UTF-8 byte
-order mark; `cells convert` writes the format's own separator.
+back in the format its name gives it, as in place, keeps its separator and its encoding, UTF-8
+with or without a byte order mark or UTF-16 with one; `cells convert` writes the format's own
+separator in UTF-8.
 
 ## Reading the outcome
 

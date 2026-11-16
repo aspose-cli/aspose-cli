@@ -33,12 +33,12 @@ internal static class CellsEngineFormats
         new("csv")
         {
             Detected = FileFormatType.Csv, Save = SaveFormat.Csv, EvaluationMarks = CellsEvaluationMarkKind.DataRow, TextTable = true, Leaves = DelimitedTextLosses,
-            Options = static (byteOrderMark, separator, _) => DelimitedText(SaveFormat.Csv, byteOrderMark, separator),
+            Options = static (encoding, separator, _) => DelimitedText(SaveFormat.Csv, encoding, separator),
         },
         new("tsv")
         {
             Detected = FileFormatType.TabDelimited, Save = SaveFormat.TabDelimited, EvaluationMarks = CellsEvaluationMarkKind.DataRow, TextTable = true, Leaves = DelimitedTextLosses,
-            Options = static (byteOrderMark, separator, _) => DelimitedText(SaveFormat.TabDelimited, byteOrderMark, separator),
+            Options = static (encoding, separator, _) => DelimitedText(SaveFormat.TabDelimited, encoding, separator),
         },
         new("html")
         {
@@ -97,8 +97,8 @@ internal static class CellsEngineFormats
         All.FirstOrDefault(format => string.Equals(format.Id, formatId, StringComparison.Ordinal))?.EvaluationMarks;
 
     /// <summary>The engine save options of a convert format id, or null when its save format alone is enough.</summary>
-    public static SaveOptions? Options(string formatId, bool byteOrderMark, char? separator, IReadOnlyList<int>? selectedSheets) =>
-        Find(formatId).Options?.Invoke(byteOrderMark, separator, selectedSheets);
+    public static SaveOptions? Options(string formatId, Encoding encoding, char? separator, IReadOnlyList<int>? selectedSheets) =>
+        Find(formatId).Options?.Invoke(encoding, separator, selectedSheets);
 
     /// <summary>The format id of a format the engine detected.</summary>
     /// <remarks>
@@ -114,14 +114,12 @@ internal static class CellsEngineFormats
             ?? throw Missing(formatId);
 
     // The values as they are: no number formats applied, leading blank rows and columns kept,
-    // in UTF-8 with a byte order mark only on request, between the separator asked for or else
-    // the format's own.
-    private static TxtSaveOptions DelimitedText(SaveFormat format, bool byteOrderMark, char? separator)
+    // in the encoding the save plan chose, between the separator asked for or else the format's own.
+    private static TxtSaveOptions DelimitedText(SaveFormat format, Encoding encoding, char? separator)
     {
         var options = new TxtSaveOptions(format)
         {
-            FormatStrategy = CellValueFormatStrategy.None, TrimLeadingBlankRowAndColumn = false,
-            Encoding = new UTF8Encoding(encoderShouldEmitUTF8Identifier: byteOrderMark),
+            FormatStrategy = CellValueFormatStrategy.None, TrimLeadingBlankRowAndColumn = false, Encoding = encoding,
         };
         if (separator is { } kept)
         {
@@ -188,10 +186,10 @@ internal sealed record CellsEngineFormat(string Id)
 }
 
 /// <summary>Creates the save options of one convert format.</summary>
-/// <param name="byteOrderMark">Whether a text output starts with a UTF-8 byte order mark.</param>
+/// <param name="encoding">The encoding of a delimited text output, whose preamble it starts with.</param>
 /// <param name="separator">The separator of a delimited text output, or null for its format's own.</param>
 /// <param name="selectedSheets">The zero-based sheets <c>--sheets</c> selected, or null for every sheet.</param>
-internal delegate SaveOptions? CellsSaveOptionsFactory(bool byteOrderMark, char? separator, IReadOnlyList<int>? selectedSheets);
+internal delegate SaveOptions? CellsSaveOptionsFactory(Encoding encoding, char? separator, IReadOnlyList<int>? selectedSheets);
 
 /// <summary>The kinds of workbook content an output format does not hold as the workbook does (<see cref="CellsEngineFormat.Leaves"/>).</summary>
 [Flags]

@@ -7,8 +7,8 @@ namespace Aspose.Cli.Product.Cells.Tests;
 
 /// <summary>
 /// An edit that writes a delimited text input back in the format its name gives it keeps its
-/// separator and its UTF-8 byte order mark; a conversion, and any other output, has its format's
-/// separator, and the mark only with <c>--bom</c>. The checks read the bytes the commands write.
+/// separator and the encoding its byte order mark names, UTF-8 or UTF-16; a conversion, and any
+/// other output, has its format's separator, and the mark only with <c>--bom</c>. The checks read the bytes the commands write.
 /// The commands run with the test license when the run has one, and in evaluation mode otherwise,
 /// whose notice row the comparisons leave aside.
 /// </summary>
@@ -81,14 +81,42 @@ public sealed class CellsTextWrittenBackTests : IDisposable
     }
 
     /// <summary>
-    /// Guardrails: a conversion writes its format's separator and no mark without <c>--bom</c>,
-    /// whatever the input's separator and mark, to csv as to tsv; an edit of a .tsv keeps its tabs;
-    /// a csv without the mark gets it only with <c>--bom</c>; and a workbook written as csv has
-    /// commas and no mark.
+    /// An edit in place of a csv in UTF-16, little or big endian, with its byte order mark writes
+    /// it back in that encoding with that mark and every other row as it was; its verification
+    /// reads the output back with the one change, and a read finds the text beyond ASCII as it was.
+    /// </summary>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void EditInPlace_KeepsTheUtf16EncodingOfTheInput(bool bigEndian)
+    {
+        Encoding encoding = new UnicodeEncoding(bigEndian, byteOrderMark: true);
+        string[] rows = ["地区,金额,备注", "Zürich,1200,首批", "华北,900,plain"];
+        Write("table.csv", rows, encoding);
+
+        CliResult edited = Edit("table.csv", "--in-place", "--ops", SetC3);
+        CliResult read = Cli("cells", "read", "table.csv", "--range", "A2", "--output-format", "json");
+
+        Assert.True(edited.ExitCode == 0, $"exit {edited.ExitCode}: {edited.StdErr}{edited.StdOut}");
+        Assert.Equal([.. rows[..2], "华北,900,changed"], Written("table.csv", encoding));
+        Assert.Equal(["table!C3 plain -> changed"], DirectChanges(edited));
+        Assert.Equal("Zürich", JsonNode.Parse(read.StdOut)!["sheet"]!["cells"]![0]![0]!["v"]!.ToString());
+    }
+
+    /// <summary>
+    /// Guardrails: a conversion writes its format's separator in UTF-8 and no mark without
+    /// <c>--bom</c>, whatever the input's separator, mark and encoding, to csv as to tsv; an edit of
+    /// a .tsv keeps its tabs; a csv without the mark gets it only with <c>--bom</c>, which writes a
+    /// UTF-16 one as UTF-8 with the mark; and a workbook written as csv has commas and no mark.
     /// </summary>
     [Fact]
     public void ConversionsAndOtherOutputs_HaveTheirFormatsSeparatorAndTheMarkOnlyWithBom()
     {
+        Write("wide.csv", ["a,b", "1,2"], new UnicodeEncoding(bigEndian: false, byteOrderMark: true));
+        Assert.Equal(0, Cli("cells", "convert", "wide.csv", "--to", "csv", "--out", "wide-out.csv").ExitCode);
+        Assert.Equal(0, Edit("wide.csv", "--out", "wide-bom.csv", "--bom", "--ops", SetB2).ExitCode);
+        Assert.Equal(["a,b", "1,2"], Written("wide-out.csv", mark: false));
+        Assert.Equal(["a,b", "1,changed"], Written("wide-bom.csv", mark: true));
         Write("semi.csv", ["a;b", "1;2"], mark: true);
         Write("tabs.txt", ["a\tb", "1\t2"], mark: false);
         Write("tabs.tsv", ["a\tb", "1\t2"], mark: false);
@@ -146,19 +174,31 @@ public sealed class CellsTextWrittenBackTests : IDisposable
         Cli(["cells", "edit", input, .. args, "--verify", "--output-format", "json"]);
 
     /// <summary>Writes <paramref name="rows"/> as UTF-8, each ended by CRLF, after a byte order mark when <paramref name="mark"/>.</summary>
-    private void Write(string name, string[] rows, bool mark) =>
-        File.WriteAllText(_workspace.File(name), string.Concat(rows.Select(static row => row + "\r\n")), new UTF8Encoding(mark));
+    private void Write(string name, string[] rows, bool mark) => Write(name, rows, new UTF8Encoding(mark));
+
+    /// <summary>Writes <paramref name="rows"/> in <paramref name="encoding"/>, each ended by CRLF, after its preamble.</summary>
+    private void Write(string name, string[] rows, Encoding encoding) =>
+        File.WriteAllText(_workspace.File(name), string.Concat(rows.Select(static row => row + "\r\n")), encoding);
 
     /// <summary>
     /// The rows of a written text table, each ended by CRLF, without the notice row evaluation
     /// mode writes last, after checking that the file starts with a byte order mark exactly when
     /// <paramref name="mark"/>.
     /// </summary>
-    private string[] Written(string name, bool mark)
+    private string[] Written(string name, bool mark) => Written(name, new UTF8Encoding(mark));
+
+    /// <summary>
+    /// The rows of a text table written in <paramref name="encoding"/>, as <see cref="Written(string, bool)"/>
+    /// reads them, after checking that the file starts with that encoding's preamble, or with no
+    /// UTF-8 byte order mark when it has none.
+    /// </summary>
+    private string[] Written(string name, Encoding encoding)
     {
         byte[] bytes = File.ReadAllBytes(_workspace.File(name));
-        Assert.True(bytes.AsSpan().StartsWith(Mark) == mark, $"{name} {(mark ? "does not start" : "starts")} with a byte order mark");
-        string text = new UTF8Encoding(false).GetString(bytes[(mark ? Mark.Length : 0)..]);
+        byte[] preamble = encoding.GetPreamble();
+        Assert.True(preamble.Length > 0 ? bytes.AsSpan().StartsWith(preamble) : !bytes.AsSpan().StartsWith(Mark),
+            $"{name} does not start with {(preamble.Length > 0 ? Convert.ToHexString(preamble) : "something other than a byte order mark")}");
+        string text = encoding.GetString(bytes[preamble.Length..]);
         int notice = text.LastIndexOf("\r\n", StringComparison.Ordinal) + 2;
         if (notice >= 2 && CellsEvaluation.IsNotice(text[notice..].TrimStart('"')))
         {
