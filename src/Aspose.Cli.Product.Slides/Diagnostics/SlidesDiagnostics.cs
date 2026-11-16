@@ -35,6 +35,9 @@ internal static class SlidesDiagnostics
     /// <summary>A slide shows no footer text, slide number or date that set_footer was given, since its layout has no placeholder for it.</summary>
     internal static readonly WarningCode FooterNotShown = new("FOOTER_NOT_SHOWN");
 
+    /// <summary>Alternative text insert_image was given holds a tab, which the saved presentation does not keep.</summary>
+    internal static readonly WarningCode AltTextTabsDropped = new("ALT_TEXT_TABS_DROPPED");
+
     /// <summary>The verified output does not hold the slides in the order the batch left them.</summary>
     internal static readonly DiagnosticDescriptor SlideOrderMismatch = DiagnosticDescriptor.Verification("SLIDE_ORDER_MISMATCH");
 
@@ -56,6 +59,7 @@ internal static class SlidesDiagnostics
         DiagnosticDescriptor.Warning(SlideBackgroundReset),
         DiagnosticDescriptor.Warning(PlaceholderRoleChanged),
         DiagnosticDescriptor.Warning(FooterNotShown),
+        DiagnosticDescriptor.Warning(AltTextTabsDropped),
         DiagnosticDescriptor.Warning(SlideMasterChanged),
         DiagnosticDescriptor.Warning(HiddenSlidesSkipped),
         DiagnosticDescriptor.Warning(HiddenSlidesRendered),

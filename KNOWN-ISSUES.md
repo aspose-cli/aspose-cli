@@ -933,10 +933,11 @@ Reproductions: [SlidesKnownIssueTests](tests/Aspose.Cli.Product.Slides.Tests/Sli
   using var loaded = new Presentation("alt.pptx");  // Shapes[0].AlternativeText is "a  bc"
   ```
 
-- **CLI behavior:** `insert_image` writes the `altText` it is given, and the output holds it
-  without its tabs: `slides read` reports the alternative text the file holds, as `slides search`
-  finds it, without them. `slides edit --verify` reads no alternative text back, so it passes and
-  lists the `insert_image` among the operations it did not check; no warning names the lost tab.
+- **CLI behavior:** `insert_image` writes the `altText` it is given and, when it holds a tab,
+  warns `ALT_TEXT_TABS_DROPPED` at the picture's `location`. The output holds the text without
+  its tabs, as `slides read` reports it and `slides search` finds it; `slides edit --verify` reads
+  no alternative text back, so the warning is what names the change. An image's alt text in a
+  Markdown outline is written the same way, without the warning.
 - **Workaround:** write spaces in place of tabs in alternative text.
 
 ## Aspose.Words 26.9.0

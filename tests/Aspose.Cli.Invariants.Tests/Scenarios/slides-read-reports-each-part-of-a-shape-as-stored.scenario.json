@@ -1,5 +1,5 @@
 {
-  "name": "slides read --content full reports a table cell, a run, the alternative text, chart data, the footer and the notes as stored, runs of spaces and tabs and all, so each text copied from read is what search finds once and what replace_text replaces in the parts it writes. The alternative text holds no tab, which the engine drops when it saves one there; texts are short enough for evaluation mode to read them whole",
+  "name": "slides read --content full reports a table cell, a run, the alternative text, chart data, the footer and the notes as stored, runs of spaces and tabs and all, so each text copied from read is what search finds once and what replace_text replaces in the parts it writes. The alternative text holds no tab, which the engine drops when it saves one there, so its insert_image gives no ALT_TEXT_TABS_DROPPED; texts are short enough for evaluation mode to read them whole",
   "files": {
     "deck.md": { "text": "# T\n\n## Two\n\n- pt\n" },
     "dot.png": { "base64": "iVBORw0KGgoAAAANSUhEUgAAACgAAAAoCAIAAAADnC86AAAAMElEQVR4nO3NMQ0AAAgDsCmZfynIwgQJT5P+zbQvIhaLxWKxWCwWi8VisVgsFvcsXhHvWVsvWSOBAAAAAElFTkSuQmCC" }
@@ -11,7 +11,7 @@
     },
     {
       "args": ["slides", "edit", "deck.pptx", "--out", "spaced.pptx", "--ops", "{\"ops\":[{\"op\":\"insert_table\",\"slide\":2,\"rect\":{\"x\":50,\"y\":300,\"width\":200,\"height\":40},\"rowCount\":1,\"columnCount\":1,\"values\":[[\"t  \\t1\"]]},{\"op\":\"insert_shape\",\"slide\":2,\"geometry\":\"ellipse\",\"rect\":{\"x\":300,\"y\":300,\"width\":150,\"height\":60},\"text\":\"r  \\t2\"},{\"op\":\"insert_image\",\"slide\":2,\"path\":\"dot.png\",\"rect\":{\"x\":500,\"y\":300,\"width\":40,\"height\":40},\"altText\":\"a  b\"},{\"op\":\"insert_chart\",\"slide\":2,\"kind\":\"column\",\"rect\":{\"x\":50,\"y\":360,\"width\":300,\"height\":150},\"categories\":[\"c  \\t5\"],\"series\":[{\"name\":\"S\",\"values\":[1]}]},{\"op\":\"set_footer\",\"slides\":\"2\",\"text\":\"f  \\t3\"},{\"op\":\"set_notes\",\"slide\":2,\"text\":\"n  \\t4\"}]}"],
-      "expect": { "exitCode": 0 }
+      "expect": { "exitCode": 0, "warnings": { "absent": ["ALT_TEXT_TABS_DROPPED"] } }
     },
     {
       "args": ["slides", "read", "spaced.pptx", "--slides", "2", "--content", "full"],
