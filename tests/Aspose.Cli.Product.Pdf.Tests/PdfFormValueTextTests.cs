@@ -65,12 +65,11 @@ public sealed class PdfFormValueTextTests
         }
 
         var variables = new Dictionary<string, string?>(StringComparer.Ordinal) { ["PDF_USER"] = "user-secret" };
-        CliResult converted = null!, read = null!, searched = null!, extracted = null!;
-        Parallel.Invoke(
-            () => converted = workspace.RunWithEnv(variables, "pdf", "convert", "locked form.pdf", "--password-env", "PDF_USER", "--to", "txt", "--out", "locked.txt", "--output-format", "json"),
-            () => read = workspace.RunWithEnv(variables, "pdf", "read", "locked form.pdf", "--password-env", "PDF_USER", "--output-format", "json"),
-            () => searched = workspace.RunWithEnv(variables, "pdf", "search", "locked form.pdf", "--password-env", "PDF_USER", "--pattern", Applicant, "--output-format", "json"),
-            () => extracted = workspace.RunWithEnv(variables, "pdf", "extract", "locked form.pdf", "--password-env", "PDF_USER", "--what", "text", "--out-dir", "text", "--output-format", "json"));
+        // One after another: the hint check of each run copies the workspace, which a run publishing into it would break.
+        CliResult converted = workspace.RunWithEnv(variables, "pdf", "convert", "locked form.pdf", "--password-env", "PDF_USER", "--to", "txt", "--out", "locked.txt", "--output-format", "json");
+        CliResult read = workspace.RunWithEnv(variables, "pdf", "read", "locked form.pdf", "--password-env", "PDF_USER", "--output-format", "json");
+        CliResult searched = workspace.RunWithEnv(variables, "pdf", "search", "locked form.pdf", "--password-env", "PDF_USER", "--pattern", Applicant, "--output-format", "json");
+        CliResult extracted = workspace.RunWithEnv(variables, "pdf", "extract", "locked form.pdf", "--password-env", "PDF_USER", "--what", "text", "--out-dir", "text", "--output-format", "json");
 
         string[] commands =
         [

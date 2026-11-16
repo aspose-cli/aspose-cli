@@ -365,16 +365,11 @@ public sealed class PdfCliWorkflowTests : IDisposable
             </form></body></html>
             """);
 
-        // The three documents are independent, so they are created at once.
-        CliResult form = null!, fields = null!, text = null!, contact = null!;
-        Parallel.Invoke(
-            () =>
-            {
-                form = _workspace.Run("pdf", "create", "form.pdf", "--from-html", "form.html", "--output-format", "json");
-                fields = _workspace.Run("pdf", "inspect", "form.pdf", "--detail", "forms", "--output-format", "json");
-            },
-            () => text = _workspace.Run("pdf", "create", "text.pdf", "--from-html", "text.html", "--output-format", "json"),
-            () => contact = _workspace.Run("pdf", "create", "contact.pdf", "--from-html", "contact.html", "--output-format", "json"));
+        // One after another: the hint check of each run copies the workspace, which a run publishing into it would break.
+        CliResult form = _workspace.Run("pdf", "create", "form.pdf", "--from-html", "form.html", "--output-format", "json");
+        CliResult fields = _workspace.Run("pdf", "inspect", "form.pdf", "--detail", "forms", "--output-format", "json");
+        CliResult text = _workspace.Run("pdf", "create", "text.pdf", "--from-html", "text.html", "--output-format", "json");
+        CliResult contact = _workspace.Run("pdf", "create", "contact.pdf", "--from-html", "contact.html", "--output-format", "json");
 
         JsonNode lossy = Assert.Single(
             form.Json()["warnings"]!.AsArray(),

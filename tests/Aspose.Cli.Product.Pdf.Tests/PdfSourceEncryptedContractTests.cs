@@ -37,22 +37,18 @@ public sealed class PdfSourceEncryptedContractTests : IDisposable
         _workspace.Run("pdf", "create", "plain.pdf", "--from-text", "text.txt", "--license", license, "--output-format", "json").Succeeded();
         _workspace.RunWithEnv(passwords, "pdf", "edit", "plain.pdf", "--ops", "encrypt.json", "--out", "locked.pdf", "--license", license, "--output-format", "json").Succeeded();
 
-        // The runs are independent, so they run at once, beside the load of the published schemas.
-        (string Name, bool Encrypted, CliResult Result)[] runs = [];
-        Parallel.Invoke(
-            () => _ = PublishedSchemas.Ids,
-            () => runs =
-            [
-                .. new[] { (File: "plain.pdf", Encrypted: false), (File: "locked.pdf", Encrypted: true) }
-                    .SelectMany(static input => Commands(input.File), static (input, command) => (input.Encrypted, Command: command))
-                    .AsParallel().AsOrdered()
-                    .Select(run => (
-                        string.Join(' ', run.Command),
-                        run.Encrypted,
-                        _workspace.RunWithEnv(
-                            passwords,
-                            [.. run.Command, "--license", license, "--output-format", "json", .. run.Encrypted ? new[] { "--password-env", UserPassword } : []]))),
-            ]);
+        // One after another: the hint check of each run copies the workspace, which a run publishing into it would break.
+        (string Name, bool Encrypted, CliResult Result)[] runs =
+        [
+            .. new[] { (File: "plain.pdf", Encrypted: false), (File: "locked.pdf", Encrypted: true) }
+                .SelectMany(static input => Commands(input.File), static (input, command) => (input.Encrypted, Command: command))
+                .Select(run => (
+                    string.Join(' ', run.Command),
+                    run.Encrypted,
+                    _workspace.RunWithEnv(
+                        passwords,
+                        [.. run.Command, "--license", license, "--output-format", "json", .. run.Encrypted ? new[] { "--password-env", UserPassword } : []]))),
+        ];
 
         var problems = new List<string>();
         foreach ((string name, bool encrypted, CliResult result) in runs)
