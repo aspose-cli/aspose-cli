@@ -919,6 +919,26 @@ Reproductions: [SlidesKnownIssueTests](tests/Aspose.Cli.Product.Slides.Tests/Sli
   it as an explicit value, in its private copy of the presentation, so the Markdown keeps the
   list items and their levels.
 
+### SLIDES-ALT-TEXT-TAB
+
+- **Defect:** saving a shape's alternative text writes a tab in it unescaped into the `descr`
+  attribute, and loading the file reads the text without the tab.
+
+  ```csharp
+  using (var deck = new Presentation())
+  {
+      deck.Slides[0].Shapes.AddAutoShape(ShapeType.Rectangle, 10, 10, 50, 50).AlternativeText = "a  b\tc";
+      deck.Save("alt.pptx", SaveFormat.Pptx);       // descr="a  b<tab>c"
+  }
+  using var loaded = new Presentation("alt.pptx");  // Shapes[0].AlternativeText is "a  bc"
+  ```
+
+- **CLI behavior:** `insert_image` writes the `altText` it is given, and the output holds it
+  without its tabs: `slides read` reports the alternative text the file holds, as `slides search`
+  finds it, without them. `slides edit --verify` reads no alternative text back, so it passes and
+  lists the `insert_image` among the operations it did not check; no warning names the lost tab.
+- **Workaround:** write spaces in place of tabs in alternative text.
+
 ## Aspose.Words 26.9.0
 
 Reproductions: [WordsKnownIssueTests](tests/Aspose.Cli.Product.Words.Tests/WordsKnownIssueTests.cs).

@@ -21,6 +21,7 @@ internal sealed partial class SlidesMutationHandlers
         NameInserted(picture, "picture");
         if (operation.AltText is not null)
         {
+            // Saved as given; the tabs in it are lost on saving (known issue SLIDES-ALT-TEXT-TAB).
             picture.AlternativeText = operation.AltText;
         }
 
