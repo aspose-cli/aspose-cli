@@ -43,6 +43,7 @@ internal static class CompareCommand
                 {
                     Left = standard.Input,
                     Right = standard.Other,
+                    Revised = standard.InputPassword is null && standard.OtherPassword is null ? standard.ContinuationOf(standard.Other) : null,
                     IgnoreFormatting = parse.GetValue(ignoreFormatting),
                     Granularity = parse.GetValue(granularity)!,
                     Author = name,

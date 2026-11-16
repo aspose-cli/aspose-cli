@@ -1,0 +1,48 @@
+{
+  "name": "words compare into Markdown leaves out the pictures as a convert does and names the extract of the revised document's pictures, as a command when neither document has a password and in words when one has",
+  "files": {
+    "one.png": { "base64": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==" },
+    "left.md": { "text": "# Report\n\nFirst paragraph.\n\n![one](one.png)\n" },
+    "right.md": { "text": "# Report\n\nFirst paragraph, changed.\n\n![one](one.png)\n" }
+  },
+  "steps": [
+    {
+      "args": ["words", "create", "left.docx", "--from-markdown", "left.md"],
+      "expect": { "exitCode": 0 }
+    },
+    {
+      "args": ["words", "create", "right.docx", "--from-markdown", "right.md"],
+      "expect": { "exitCode": 0 }
+    },
+    {
+      "args": ["words", "compare", "left.docx", "right.docx", "--out", "redline.md"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "warnings[code=LOSSY_CONVERSION][2].details.content", "equals": ["pictures"] },
+          { "path": "warnings[code=LOSSY_CONVERSION][2].message", "equals": "The md output holds the text alone and leaves out 1 picture(s)." },
+          { "path": "warnings[code=LOSSY_CONVERSION][2].hint", "startsWith": "Extract the pictures, those of the revised document, with 'aspose-cli words extract " },
+          { "path": "warnings[code=LOSSY_CONVERSION][2].hint", "contains": "right.docx\" --what images --out-dir " }
+        ],
+        "hidden": ["data:", "!["]
+      }
+    },
+    {
+      "args": ["words", "convert", "left.docx", "--to", "docx", "--out", "locked.docx", "--encrypt-env", "DOC_PASSWORD"],
+      "env": { "DOC_PASSWORD": "Scenario-Password-41d7" },
+      "expect": { "exitCode": 0 }
+    },
+    {
+      "args": ["words", "compare", "locked.docx", "right.docx", "--left-password-env", "DOC_PASSWORD", "--out", "locked-redline.md"],
+      "env": { "DOC_PASSWORD": "Scenario-Password-41d7" },
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "warnings[code=LOSSY_CONVERSION][2].details.content", "equals": ["pictures"] },
+          { "path": "warnings[code=LOSSY_CONVERSION][2].hint", "equals": "Its pictures are those of the revised document, which 'words extract' takes out of it with its own password; a docx output keeps them." }
+        ],
+        "hidden": ["data:", "![", "Scenario-Password-41d7"]
+      }
+    }
+  ]
+}

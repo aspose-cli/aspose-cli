@@ -9,4 +9,7 @@
   <ItemGroup>
     <PackageReference Include="Aspose.Words" />
   </ItemGroup>
+  <ItemGroup>
+    <RepositoryInput Include="..\Aspose.Cli.Invariants.Tests\Scenarios\Assets\words-every-kind-of-drawing.docx" />
+  </ItemGroup>
 </Project>

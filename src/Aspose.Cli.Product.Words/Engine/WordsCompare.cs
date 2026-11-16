@@ -45,6 +45,7 @@ internal static class WordsCompare
         IReadOnlyDictionary<Node, int> fieldCode = WordsText.FieldCodeNodes(compared);
         OutputInfo? output = null;
         string? format = null;
+        IReadOnlyList<Warning>? conversion = null;
         if (request.Output is { } redline)
         {
             FormatDescriptor written = redline.Keeping(leftLoaded.FormatId);
@@ -53,6 +54,7 @@ internal static class WordsCompare
             OutputProtection protection = OutputProtection.For(written, encrypt: null, leftLoaded.Protection, request.LeftPassword);
             SaveOptions options = WordsSavePipeline.Options(format, protection.Password);
             WordsSavePipeline.RemoveMacrosUnlessKept(compared, format);
+            conversion = PrepareConversion(compared, format, leftLoaded.Evaluation, redline: true, revised: request.Revised is { } revised ? (revised, redline.Path) : null);
             PublishedFile file = session.Outputs.Write(redline.Path, written, redline.Overwrite, compared, temp => compared.Save(temp, options),
                 encrypted: protection.Encrypted);
             output = FileObjects.Output(file, written, encrypted: protection.Encrypted);
@@ -81,7 +83,7 @@ internal static class WordsCompare
             License = EnvelopeParts.License(state),
             Warnings = EnvelopeParts.CombineWarnings(
                 CompareWarnings(leftLoaded, rightLoaded),
-                format is null ? null : [.. ConversionWarnings(compared, format, leftLoaded.Evaluation, redline: true), .. SaveWarnings(leftLoaded, format)],
+                format is null ? null : [.. conversion!, .. SaveWarnings(leftLoaded, format)],
                 revisions.Length > SampleLimit
                     ? [EnvelopeParts.ListTruncated("samples", SampleLimit, revisions.Length, "Write the redline with --out to review every revision.")]
                     : null),

@@ -1,4 +1,5 @@
 using Aspose.Words;
+using Aspose.Words.Drawing;
 using Aspose.Words.Fonts;
 using Aspose.Words.Saving;
 
@@ -18,6 +19,23 @@ internal static class WordsSavePipeline
         {
             document.RemoveMacros();
         }
+    }
+
+    /// <summary>
+    /// Takes out of a document about to be saved in a format that leaves out its drawings each
+    /// one the save would write as a picture: every drawing outside a group and outside the
+    /// headers and footers such a format leaves out, but a horizontal rule, which the save writes
+    /// as a line. The save writes a text box, WordArt and SmartArt as a picture alone; the
+    /// paragraphs and tables in a drawing move into the body instead.
+    /// </summary>
+    public static WordsDrawingsLeftOut LeaveOutDrawings(Document document, string formatId)
+    {
+        var left = new WordsDrawingsLeftOut();
+        Array.ForEach<ShapeBase>(WordsEngineFormats.Has(formatId, static entry => entry.LeavesOutDrawings)
+            ? [.. document.GetChildNodes(NodeType.Any, true).OfType<ShapeBase>()
+                .Where(static drawing => drawing.IsTopLevel && !drawing.IsHorizontalRule && drawing.GetAncestor(NodeType.HeaderFooter) is null)]
+            : [], left.Take);
+        return left;
     }
 
     /// <summary>
@@ -69,6 +87,7 @@ internal static class WordsSavePipeline
                 break;
             case MarkdownSaveOptions markdown:
                 markdown.ExportImagesAsBase64 = true;
+                markdown.OfficeMathExportMode = MarkdownOfficeMathExportMode.Text;
                 break;
             // Plain text is the body text: a table keeps its rows and columns.
             case TxtSaveOptions text:
@@ -129,5 +148,42 @@ internal static class WordsSavePipeline
         }
 
         return options;
+    }
+}
+
+/// <summary>
+/// What <see cref="WordsSavePipeline.LeaveOutDrawings"/> took out, counted as it took each out:
+/// each shape by what it is, a group by the shapes in it, and whether any held text that stayed.
+/// </summary>
+internal sealed class WordsDrawingsLeftOut
+{
+    public int Pictures { get; private set; }
+
+    public int Charts { get; private set; }
+
+    public int Others { get; private set; }
+
+    public bool KeptText { get; private set; }
+
+    /// <summary>
+    /// Counts a drawing, moves the paragraphs and tables of its shapes as they are, with their
+    /// revisions, lists and comments, after the paragraph that holds it, and removes it. A drawing
+    /// in a text box is one of its own, counted and moved when it is taken out.
+    /// </summary>
+    internal void Take(ShapeBase drawing)
+    {
+        KeptText |= WordsText.Of(drawing).Length > 0;
+        Node after = drawing.ParentParagraph;
+        IEnumerable<Shape> shapes = drawing is Shape own ? [own] : [.. drawing.GetChildNodes(NodeType.Shape, true).Cast<Shape>().Where(static shape => !shape.IsTopLevel)];
+        foreach (Shape shape in shapes)
+        {
+            (Pictures, Charts, Others) = shape.HasImage ? (Pictures + 1, Charts, Others) : shape.HasChart ? (Pictures, Charts + 1, Others) : (Pictures, Charts, Others + 1);
+            foreach (Node block in shape.GetChildNodes(NodeType.Any, false).ToArray())
+            {
+                after = after.ParentNode.InsertAfter(block, after);
+            }
+        }
+
+        drawing.Remove();
     }
 }
