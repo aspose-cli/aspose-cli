@@ -29,7 +29,7 @@ internal static class SlidesDiagnostics
     /// <summary>A placeholder of a slide that took another layout stands for another role.</summary>
     internal static readonly WarningCode PlaceholderRoleChanged = new("PLACEHOLDER_ROLE_CHANGED");
 
-    /// <summary>A slide took a layout of another master, since its own has none of the name set_layout gave.</summary>
+    /// <summary>A slide took a layout of another master, since its own, or for insert_slide the one of the slide beside it, has none of the name the operation gave.</summary>
     internal static readonly WarningCode SlideMasterChanged = new("SLIDE_MASTER_CHANGED");
 
     /// <summary>A slide shows no footer text, slide number or date that set_footer was given, since its layout has no placeholder for it.</summary>
