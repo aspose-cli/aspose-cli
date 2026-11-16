@@ -21,8 +21,15 @@ internal sealed partial class SlidesMutationHandlers
         NameInserted(picture, "picture");
         if (operation.AltText is not null)
         {
-            // Saved as given; the tabs in it are lost on saving (known issue SLIDES-ALT-TEXT-TAB).
             picture.AlternativeText = operation.AltText;
+            if (operation.AltText.Contains('\t', StringComparison.Ordinal))
+            {
+                _warnings.Add(new Warning(SlidesDiagnostics.AltTextTabsDropped, "The alternative text given to the picture holds a tab, which the saved presentation does not keep (known issue SLIDES-ALT-TEXT-TAB), so the words on either side of it run together.")
+                {
+                    Hint = "To keep them apart, delete_shape the picture, then insert_image it again with a space in place of each tab in altText.",
+                    Location = SlidesStateProjection.ShapeAddress(_presentation.Slides.IndexOf(Slide) + 1, picture.OfficeInteropShapeId),
+                });
+            }
         }
 
         return default;

@@ -2311,6 +2311,13 @@
   ],
   "diagnostics": [
     {
+      "code": "ALT_TEXT_TABS_DROPPED",
+      "owner": "slides",
+      "severity": "warning",
+      "category": "warning",
+      "detailsSchemaId": "v2/common/diagnostic-details"
+    },
+    {
       "code": "CHART_DATA_INVALID",
       "owner": "slides",
       "severity": "error",
