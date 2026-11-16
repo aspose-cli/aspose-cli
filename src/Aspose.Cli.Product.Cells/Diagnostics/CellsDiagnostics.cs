@@ -52,8 +52,8 @@ internal static class CellsDiagnostics
     internal static readonly WarningCode ChartSplitAcrossPages = new("CHART_SPLIT_ACROSS_PAGES");
 
     /// <summary>
-    /// How to keep a chart on one page, shared by the conversion warning and the review finding,
-    /// after "Fit the sheet on fewer pages with" and the operation.
+    /// How to keep a chart on one page, in the conversion warning after "Fit the sheet on fewer
+    /// pages with" and the operation.
     /// </summary>
     internal const string ChartSplitRemedy = "(fitToWidth 1 and fitToHeight 0, or orientation landscape, with pageSize {\"preset\":\"a4\"} or the paper of the report the pages join), or move or resize the chart";
 

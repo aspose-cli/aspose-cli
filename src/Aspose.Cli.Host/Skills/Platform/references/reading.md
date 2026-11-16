@@ -19,7 +19,7 @@ diffed.
 | 1. Structure | `<product> inspect` | Counts, names, ids, properties; `--detail` adds the sections you name and, where offered, `--sample` a bounded sample |
 | 2. Window | `<product> read` | The content of a selected range, pages, slides or blocks |
 | 3. Search | `<product> search` | Where a pattern occurs |
-| 4. Look | `review`, `<product> render` | What data cannot show: layout, clipping, overlap, charts |
+| 4. Look | `<product> render` | What data cannot show: layout, clipping, overlap, charts |
 
 Take addresses (sheet names, page, slide and block numbers) from rung 1
 before reading rung 2; a read reports the finer ones, such as shape ids.

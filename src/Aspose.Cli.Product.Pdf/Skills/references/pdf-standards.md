@@ -87,18 +87,15 @@ page is not one of them, and `pdf render` shows it.
 
 HTML output is one self-contained file that places every line of text
 absolutely and embeds subsets of the PDF's fonts; its `<title>` is the PDF
-title. Only a browser lays it out as the pages look: `review` does not take it
-(`FORMAT_UNSUPPORTED`), and `review --product words` reflows it into one column of
-plain lines and reports the embedded fonts as missing, so neither shows what a
-reader sees. Review the source PDF instead, then open the HTML in a browser and
-compare the pages.
+title. Only a browser lays it out as the pages look: render the source PDF,
+then open the HTML in a browser and compare the pages.
 
 Table extraction is best effort: each extracted table names the page it comes
 from, and nothing scores how well it was recognized, so check the values against
 the source. Tables are recognized by their ruling lines: when none is
 recognized, `outputs` is empty and a `TABLES_NOT_FOUND` warning says so, which
 happens to a table drawn without lines, such as one laid out from Markdown; read
-it from `pdf extract --what text` or `review` instead. Each table is a UTF-8 CSV file without a byte order mark; add `--bom` when a person will open it in Excel, which otherwise reads
+it from `pdf extract --what text` or `pdf render` instead. Each table is a UTF-8 CSV file without a byte order mark; add `--bom` when a person will open it in Excel, which otherwise reads
 non-English text in the system code page.
 
 The CLI does not linearize PDFs; `pdf inspect` reports an existing file's

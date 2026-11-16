@@ -57,13 +57,6 @@ internal static class ProductCapabilityDeriver
                     product.View.Views.Select(static view => view.Id).ToArray()),
                 Background = capabilities.Preview?.Background ?? true,
             },
-            Review = new ProductReviewCapabilities
-            {
-                DefaultView = product.View.ReviewView,
-                Views = product.View.ReviewViews,
-                VisualInspectionRequired = product.View.VisualInspectionRequired,
-                Checks = product.View.Checks,
-            },
         };
 
         return capabilities;

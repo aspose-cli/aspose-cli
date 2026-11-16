@@ -95,7 +95,7 @@ correct a design paragraph by paragraph.
 - Keep headers, footers and page numbers consistent across linked sections.
 - Set the document title with `--title` or `set_properties`.
 
-## What to look for in review
+## What to look for in the rendered pages
 
 Heading hierarchy, paragraph flow, widows and orphans, table widths and header
 rows, list numbering, image placement and captions, headers, footers and page

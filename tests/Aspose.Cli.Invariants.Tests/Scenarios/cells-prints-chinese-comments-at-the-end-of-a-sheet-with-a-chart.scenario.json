@@ -1,5 +1,5 @@
 {
-  "name": "a sheet with a chart prints its Chinese comments at its end as the LOSSY_CONVERSION hint says, to pdf, to xps and in review",
+  "name": "a sheet with a chart prints its Chinese comments at its end as the LOSSY_CONVERSION hint says, to pdf and to xps",
   "steps": [
     {
       "args": ["cells", "create", "book.xlsx", "--sheet-names", "Sales"],
@@ -41,16 +41,6 @@
         "exitCode": 0,
         "warnings": { "absent": ["LOSSY_CONVERSION", "CHART_SPLIT_ACROSS_PAGES"] },
         "reopens": ["book.xps"]
-      }
-    },
-    {
-      "args": ["review", "book.xlsx", "--out", "evidence"],
-      "expect": {
-        "exitCode": [0, 8],
-        "json": [
-          { "path": "product", "equals": "cells" },
-          { "path": "coverage.complete", "equals": true }
-        ]
       }
     }
   ]

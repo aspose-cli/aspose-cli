@@ -38,18 +38,6 @@ public sealed partial class PdfExtractTablesHintTests : IDisposable
     }
 
     [Fact]
-    public void NoTableFound_TheReviewItNamesRunsAsWritten()
-    {
-        File.WriteAllBytes(_workspace.File("plain.pdf"), ScenarioFixtures.Read("pdf.pdf"));
-
-        string line = Named(Hint(_workspace.Run("pdf", "extract", "plain.pdf", "--what", "tables", "--out-dir", "tables", "--output-format", "json")), "review");
-
-        CliResult ran = _workspace.RunCommandLine(line);
-        Assert.True(ran.ExitCode is 0 or 8, ran.StdErr);
-        Assert.True(File.Exists(Path.Combine(_workspace.File("plain.pdf.review"), "review.json")));
-    }
-
-    [Fact]
     public void NoTableFound_OnAnEncryptedInput_TheCommandsItNamesPassThePasswordVariableOn()
     {
         File.WriteAllBytes(_workspace.File("locked.pdf"), ScenarioFixtures.Read("pdf.encrypted"));
@@ -59,7 +47,6 @@ public sealed partial class PdfExtractTablesHintTests : IDisposable
 
         string extraction = Named(hint, "pdf extract");
         Assert.Contains($"--password-env {Variable}", extraction, StringComparison.Ordinal);
-        Assert.Contains($"--password-env {Variable}", Named(hint, "review"), StringComparison.Ordinal);
         CliResult ran = _workspace.RunCommandLine(extraction, password);
         Assert.True(ran.ExitCode == 0, ran.StdErr);
         Assert.True(new FileInfo(_workspace.File("tables/document.txt")).Length > 0);
@@ -79,6 +66,6 @@ public sealed partial class PdfExtractTablesHintTests : IDisposable
         return match.Groups["line"].Value;
     }
 
-    [GeneratedRegex(@"'(?<line>aspose-cli (?<path>pdf extract|review) [^']+)'")]
+    [GeneratedRegex(@"'(?<line>aspose-cli (?<path>pdf extract) [^']+)'")]
     private static partial Regex QuotedCommand();
 }

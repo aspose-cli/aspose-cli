@@ -28,7 +28,7 @@ public sealed class SlidesFontDirectoryTests
 
     [Category(TestCategory.Slow)]
     [Fact]
-    public void Cli_FontsCheckAndReviewUseTheFontDirectory()
+    public void Cli_FontsCheckUsesTheFontDirectory()
     {
         using var fixture = new SlidesEngineFixture();
         using var workspace = new TempWorkspace();

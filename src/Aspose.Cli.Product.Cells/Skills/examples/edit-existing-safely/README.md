@@ -1,7 +1,7 @@
 # Example: edit an existing workbook safely
 
 The protocol for a file the user hands you and cares about: one backup
-copy before the first write, in-place edits, read-back, a review, and a
+copy before the first write, in-place edits, read-back, a render, and a
 report built from a real diff. Input: [update-ops.json](update-ops.json).
 Run from this directory.
 
@@ -19,8 +19,8 @@ aspose-cli cells edit quarterly.xlsx --set "Q3!B3=500" --in-place --verify --out
 aspose-cli cells read quarterly.xlsx --range Q3!A1:B4 --content formulas --output-format json
 #    -> B1 1240, B2 44.5, B3 500; B4 v: 54680, f: "=B1*B2-B3"
 
-# 4. Review the result and open every sheet image it lists.
-aspose-cli review quarterly.xlsx --out quarterly.review --output-format json
+# 4. Render the result and look at the rendered images.
+aspose-cli cells render quarterly.xlsx --sheets all --out quarterly.png --output-format json
 
 # 5. The session's exact change inventory: diff against the backup.
 aspose-cli cells compare quarterly.backup.xlsx quarterly.xlsx --output-format json

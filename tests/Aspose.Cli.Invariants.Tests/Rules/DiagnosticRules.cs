@@ -126,28 +126,10 @@ internal static partial class ContractRules
             .Where(static diagnostic => (diagnostic.Code.StartsWith("RELEASE_", StringComparison.Ordinal) || diagnostic.Code.StartsWith("UPDATE_", StringComparison.Ordinal))
                 && diagnostic.Owner != HostOwner)
             .Select(static diagnostic => $"{diagnostic.Code} is owned by {diagnostic.Owner}, not {HostOwner}"));
-        foreach (CliProduct product in catalog.Products)
-        {
-            string prefix = product.Id.ToUpperInvariant() + "_";
-            yield return Check("C-R28", $"{product.Id} review check codes", () => ReviewCodes(catalog, product.Id)
-                .SelectMany(code => ReviewNameProblems(code, prefix)));
-        }
-        yield return Check("C-R28", "codes declared once", () =>
-        {
-            var problems = new List<string>();
-            problems.AddRange(diagnostics
-                .GroupBy(static diagnostic => diagnostic.Code, StringComparer.Ordinal)
-                .Where(static group => group.Count() > 1)
-                .Select(static group => $"{group.Key} is declared {group.Count()} times, by {string.Join(", ", group.Select(static diagnostic => diagnostic.Owner))}"));
-            HashSet<string> codes = [.. diagnostics.Select(static diagnostic => diagnostic.Code)];
-            problems.AddRange(catalog.Products
-                .SelectMany(product => ReviewCodes(catalog, product.Id))
-                .Distinct(StringComparer.Ordinal)
-                .Where(codes.Contains)
-                .Order(StringComparer.Ordinal)
-                .Select(static code => $"review check {code} is also a diagnostic code"));
-            return problems;
-        });
+        yield return Check("C-R28", "codes declared once", () => diagnostics
+            .GroupBy(static diagnostic => diagnostic.Code, StringComparer.Ordinal)
+            .Where(static group => group.Count() > 1)
+            .Select(static group => $"{group.Key} is declared {group.Count()} times, by {string.Join(", ", group.Select(static diagnostic => diagnostic.Owner))}"));
     }
 
     // ----- helpers -------------------------------------------------------------------------
@@ -209,26 +191,6 @@ internal static partial class ContractRules
             yield return $"{diagnostic.Code}: {kind} code carries no product prefix ({prefix})";
         }
     }
-
-    private static IEnumerable<string> ReviewNameProblems(string code, string prefix)
-    {
-        if (!CodeName.IsMatch(code))
-        {
-            yield return $"{code} is not UPPER_SNAKE <PRODUCT>_<SUBJECT>_<PROBLEM>";
-        }
-        if (!code.StartsWith(prefix, StringComparison.Ordinal))
-        {
-            yield return $"review check {code} does not begin with {prefix}";
-        }
-    }
-
-    /// <summary>The codes of the review checks capabilities publishes for a product.</summary>
-    private static string[] ReviewCodes(CliCatalog catalog, string product) =>
-    [
-        .. (catalog.Document["products"]!.AsArray()
-                .Single(node => node!["id"]!.GetValue<string>() == product)!["review"]?["checks"] as JsonArray ?? [])
-            .Select(static check => check!["code"]!.GetValue<string>()),
-    ];
 
     /// <summary>
     /// The differences between an envelope schema's object, the schema itself or one of its

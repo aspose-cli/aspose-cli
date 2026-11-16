@@ -27,7 +27,7 @@ public static partial class ScenarioContract
     public const string ResultEnvelope = "result-envelope";
 
     /// <summary>
-    /// Every <c>location</c> of a warning, a verification issue or a review finding in a result is
+    /// Every <c>location</c> of a warning or a verification issue in a result is
     /// a target address, <c>&lt;unit&gt;/&lt;address&gt;</c>, as <c>applied[].targets</c> write it:
     /// a lowercase kebab-case unit that names no product, then an address with no white space at
     /// either end and no control character, which <c>TargetName.Escape</c> escapes.
@@ -48,8 +48,8 @@ public static partial class ScenarioContract
     /// </summary>
     public const string ByteOrderMark = "byte-order-mark";
 
-    /// <summary>The lists whose items carry a <c>location</c>: warnings, verification issues and review findings.</summary>
-    private static readonly string[] LocatedLists = ["warnings", "issues", "findings"];
+    /// <summary>The lists whose items carry a <c>location</c>: warnings and verification issues.</summary>
+    private static readonly string[] LocatedLists = ["warnings", "issues"];
 
     private const string SchemaPrefix = "https://schemas.aspose.com/aspose-cli/";
     private const string SchemaSuffix = ".schema.json";

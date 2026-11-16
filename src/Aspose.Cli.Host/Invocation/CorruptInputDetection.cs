@@ -68,8 +68,7 @@ internal static class CorruptInputDetection
     /// <summary>
     /// Whether generic routing refuses the file as <c>FORMAT_UNSUPPORTED</c>: content no product
     /// recognizes under an extension no product owns as an input, or a format the CLI only
-    /// writes, such as <c>.xps</c>. A product command and <c>review</c> then refuse the file with
-    /// one code; under an extension a product owns as an input, routing too reports the
+    /// writes, such as <c>.xps</c>. A product command then refuses the file with one code; under an extension a product owns as an input, routing too reports the
     /// product's damaged file.
     /// </summary>
     private static bool RoutedAsUnsupported(string path, ProductCatalog catalog)

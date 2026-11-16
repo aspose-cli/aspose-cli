@@ -293,10 +293,9 @@ public sealed class ProductMenuTests : IDisposable
         ProductBinding<TestSession> binding = TestBindings.Create(Manifest.Id, static () => new TestSession(Log));
         var request = new ViewRenderRequest { View = "document", MaxPartCount = 1, Purpose = ViewPurpose.Evidence };
 
-        ViewManifest rendered = view.Render(binding, "doc.test", request, new NoArtifacts());
-        _ = view.Assess(binding, "doc.test", request, rendered);
+        _ = view.Render(binding, "doc.test", request, new NoArtifacts());
 
-        Assert.Equal(["guard >", "guard <", "guard >", "guard <"], Log);
+        Assert.Equal(["guard >", "guard <"], Log);
     }
 
     /// <summary>

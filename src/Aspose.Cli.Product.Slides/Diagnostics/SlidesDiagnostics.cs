@@ -20,7 +20,7 @@ internal static class SlidesDiagnostics
     /// <summary>A conversion of every slide to an export format left the hidden slides out.</summary>
     internal static readonly WarningCode HiddenSlidesSkipped = new("HIDDEN_SLIDES_SKIPPED");
 
-    /// <summary>A render or review drew slides that a slide show and a conversion of every slide leave out.</summary>
+    /// <summary>A render drew slides that a slide show and a conversion of every slide leave out.</summary>
     internal static readonly WarningCode HiddenSlidesRendered = new("HIDDEN_SLIDES_RENDERED");
 
     /// <summary>A slide that took another design lost its own background.</summary>

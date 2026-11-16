@@ -431,10 +431,6 @@ public sealed class SlidesMutationAndSecurityTests
                     slideHeight);
             }
         }
-
-        Assert.DoesNotContain(
-            fixture.Review(output).Findings!,
-            static finding => finding.Code == SlidesReviewChecks.ShapeOutsideSlide.Code);
     }
 
     private static IShape Placeholder(ISlide slide, PlaceholderType type) =>

@@ -87,11 +87,4 @@ internal static class SlidesView
         };
     }
 
-    /// <summary>The layout of the first <paramref name="slides"/> slides, which the review of a rendered view checks.</summary>
-    internal static SlidesReviewDeck ReviewLayout(SlidesSession session, string filePath, ViewRenderRequest request, int slides)
-    {
-        using LoadedPresentation loaded = session.Loader.Open(filePath, request.Password);
-        session.Outputs.ReadInput(loaded.Presentation);
-        return SlidesReviewLayout.Project(loaded.Presentation, slides);
-    }
 }

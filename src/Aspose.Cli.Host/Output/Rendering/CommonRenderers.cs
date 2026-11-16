@@ -299,20 +299,6 @@ internal static class CommonRenderers
         RenderPreviewSessions(preview.Sessions, surface);
     }
 
-    public static void Render(ReviewResult review, TableSurface surface)
-    {
-        surface.Out.WriteLine($"review:  {review.OutputDirectory}");
-        surface.Out.WriteLine($"product: {review.Product}");
-        surface.Out.WriteLine($"view:    {review.View}");
-        surface.Out.WriteLine($"input:   {review.Input.Path} ({review.Input.Format}, encrypted: {TableText.YesNo(review.Input.Encrypted)})");
-        surface.Out.WriteLine($"index:   {review.IndexPath}");
-        surface.Out.WriteLine($"manifest:{review.Manifest}");
-        surface.Out.WriteLine(
-            $"evidence:{review.Coverage.ReportedItemCount}/{review.Coverage.DiscoveredItemCount} artifacts");
-        surface.Out.WriteLine(
-            $"visual inspection required: {review.VisualInspectionRequired.ToString().ToLowerInvariant()}");
-    }
-
     private static void RenderPreviewSessions(
         IReadOnlyList<ProductPreviewSessionInfo> sessions,
         TableSurface surface)

@@ -8,8 +8,7 @@ namespace Aspose.Cli.Product.Cells.Tests;
 /// <summary>
 /// What a command computes and shows does not change with the machine's regional settings: under
 /// German ones, which write a decimal comma and read "1.5" as a date, an edit recalculates the
-/// workbook's formulas, a conversion shows dates, amounts and percentages, and a review words its
-/// findings as under en-US. Each such command is a CLI process started under the culture it names
+/// workbook's formulas and a conversion shows dates, amounts and percentages as under en-US. Each such command is a CLI process started under the culture it names
 /// (<see cref="TempWorkspace.RunUnderCulture"/>).
 /// </summary>
 public sealed partial class CellsRegionalSettingsTests : IDisposable
@@ -71,22 +70,6 @@ public sealed partial class CellsRegionalSettingsTests : IDisposable
         Assert.Equal(english, Converted("de-DE", "german"));
     }
 
-    /// <summary>A review's finding that a used area is sparse writes its percentage as under en-US.</summary>
-    [Fact]
-    public void ReviewUnderGermanRegionalSettings_WordsAFindingAsUnderEnglish()
-    {
-        // Three cells of the 320 in A1:J32.
-        Workbook("sparse.xlsx",
-            """{"op":"set_values","sheet":"Sheet1","range":"A1","values":[["a"]]}""",
-            """{"op":"set_values","sheet":"Sheet1","range":"B2","values":[["b"]]}""",
-            """{"op":"set_values","sheet":"Sheet1","range":"J32","values":[["z"]]}""");
-
-        string[] english = Findings("en-US", "english.review");
-
-        Assert.Equal(["Only 0.94% of the 320 cells in the used area contain data; inspect for stray far-away content or excessive whitespace."], english);
-        Assert.Equal(english, Findings("de-DE", "german.review"));
-    }
-
     /// <summary>Creates a workbook and applies <paramref name="operations"/> to it.</summary>
     private void Workbook(string name, params string[] operations)
     {
@@ -129,14 +112,5 @@ public sealed partial class CellsRegionalSettingsTests : IDisposable
             "cells", "convert", "shown.xlsx", "--to", "html", "--out", Path.Combine(folder, "shown.html"), "--output-format", "json");
         Assert.True(converted.ExitCode == 0, $"{culture}: {converted.StdErr}{converted.StdOut}");
         return File.ReadAllText(_workspace.File(Path.Combine(folder, "shown.html")));
-    }
-
-    /// <summary>The messages of the sparse-area findings of a review in a process under <paramref name="culture"/>.</summary>
-    private string[] Findings(string culture, string evidence)
-    {
-        CliResult review = _workspace.RunUnderCulture(culture,
-            "review", "sparse.xlsx", "--code", "CELLS_USED_RANGE_SPARSE", "--out", evidence, "--output-format", "json");
-        Assert.True(review.ExitCode == 0, review.StdErr);
-        return [.. review.Json()["findings"]!.AsArray().Select(static finding => finding!["message"]!.GetValue<string>())];
     }
 }

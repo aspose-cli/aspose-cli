@@ -160,23 +160,6 @@ public sealed class UsageMistakeTests : IDisposable
 
     // -- A command of the root written below a product -------------------------------------------
 
-    [Theory]
-    [InlineData("cells", "cells.xlsx")]
-    [InlineData("pdf", "pdf.pdf")]
-    [InlineData("slides", "slides.pptx")]
-    [InlineData("words", "words.docx")]
-    public void ReviewBelowAProduct_ShowsTheLineThatRunsIt(string product, string file)
-    {
-        File.WriteAllBytes(_workspace.File(file), ScenarioFixtures.Read(file));
-        string line = $"aspose-cli review {file} --output-format json";
-
-        JsonNode error = Refused($"{product} review {file}", "USAGE_ERROR");
-
-        Assert.Equal([line], Suggestions(error));
-        Assert.Contains($"'{line}'", error["hint"]!.GetValue<string>(), StringComparison.Ordinal);
-        Reviewed(_workspace.RunCommandLine(line), _workspace.File(file + ".review"));
-    }
-
     /// <summary>
     /// A word after preview that names one of its commands is that command, any other is the file
     /// its open reads; the line is only parsed, by the command tree, since preview starts a service.
@@ -199,76 +182,6 @@ public sealed class UsageMistakeTests : IDisposable
         Assert.Empty(parsed.ParseResult.Errors);
         Assert.Equal(command, string.Join(' ', parsed.CommandPath.Select(static item => item.Name)));
         Assert.Equal(file, parsed.ParseResult.CommandResult.Children.OfType<ArgumentResult>().SelectMany(static argument => argument.Tokens).FirstOrDefault()?.Value);
-    }
-
-    /// <summary>A file another product owns by default stays with the product written, and a product the caller also gave is kept.</summary>
-    [Theory]
-    [InlineData("cells review data.txt", "aspose-cli review data.txt --product cells --output-format json", "cells", "data.txt")]
-    [InlineData("words review pdf.pdf", "aspose-cli review pdf.pdf --product words --output-format json", "words", "pdf.pdf")]
-    [InlineData("cells review data.txt --product words", "aspose-cli review data.txt --product words --output-format json", "words", "data.txt")]
-    public void ReviewBelowAProduct_OfAFileAnotherProductOwnsByDefault_KeepsTheProduct(string commandLine, string line, string product, string file)
-    {
-        File.WriteAllText(_workspace.File("data.txt"), "Name\tScore\nAnn\t5\nBob\t7\n");
-        File.WriteAllBytes(_workspace.File("pdf.pdf"), ScenarioFixtures.Read("pdf.pdf"));
-
-        JsonNode error = Refused(commandLine, "USAGE_ERROR");
-
-        Assert.Equal([line], Suggestions(error));
-        CliResult ran = _workspace.RunCommandLine(line);
-        Reviewed(ran, _workspace.File(file + ".review"));
-        Assert.Equal(product, JsonNode.Parse(ran.StdOut)!["product"]!.GetValue<string>());
-    }
-
-    /// <summary>The input's password variable and the other options the command takes are passed on, so it runs as the caller meant.</summary>
-    [Fact]
-    public void ReviewBelowAProduct_OfAnEncryptedInput_PassesItsPasswordVariableOn()
-    {
-        Dictionary<string, string?> password = Encrypted("book.xlsx");
-        const string Line = "aspose-cli review book.xlsx --password-env BOOK_PASSWORD --out evidence --output-format json";
-
-        CliResult result = _workspace.RunWithEnv(password,
-            "cells", "review", "book.xlsx", "--password-env", BookPassword, "--out", "evidence", "--output-format", "json");
-
-        JsonNode error = Error(result, "USAGE_ERROR");
-        Assert.Equal([Line], Suggestions(error));
-        Reviewed(_workspace.RunCommandLine(Line, password), _workspace.File("evidence"));
-    }
-
-    [Fact]
-    public void ReviewBelowAProduct_OfAPathWithASpace_QuotesIt()
-    {
-        File.WriteAllBytes(_workspace.File("my book.xlsx"), ScenarioFixtures.Read("cells.xlsx"));
-        const string Line = "aspose-cli review \"my book.xlsx\" --output-format json";
-
-        CliResult result = _workspace.Run("cells", "review", "my book.xlsx", "--output-format", "json");
-
-        JsonNode error = Error(result, "USAGE_ERROR");
-        Assert.Equal([Line], Suggestions(error));
-        Reviewed(_workspace.RunCommandLine(Line), _workspace.File("my book.xlsx.review"));
-    }
-
-    /// <summary>A line that would not run is not shown; the command with a placeholder is.</summary>
-    [Theory]
-    [InlineData("cells review")]
-    [InlineData("cells review b.xlsx --sheets 1")]
-    public void ReviewBelowAProduct_ThatCouldNotBeRepeated_ShowsThePlaceholder(string commandLine)
-    {
-        CliResult result = _workspace.Run([.. commandLine.Split(' '), "--output-format", "json"]);
-
-        JsonNode error = Error(result, "USAGE_ERROR");
-        Assert.Equal(["aspose-cli review <file> --output-format json"], Suggestions(error));
-    }
-
-    /// <summary>A password the line gave on stdin or literally is passed on by the quoted placeholder of its variable, as every printed command passes one on, and never repeated.</summary>
-    [Theory]
-    [InlineData("cells review b.xlsx --password-stdin")]
-    [InlineData("cells review b.xlsx --password hunter2")]
-    public void ReviewBelowAProduct_OfAPassword_PassesItOnByAVariable(string commandLine)
-    {
-        CliResult result = _workspace.Run([.. commandLine.Split(' '), "--output-format", "json"]);
-
-        Assert.Equal(["aspose-cli review b.xlsx --password-env \"<password-env>\" --output-format json"], Suggestions(Error(result, "USAGE_ERROR")));
-        Assert.DoesNotContain("hunter2", result.StdErr, StringComparison.Ordinal);
     }
 
     /// <summary>A command of the root that reads no product's file, and a mistyped command, keep what they said.</summary>
@@ -496,24 +409,6 @@ public sealed class UsageMistakeTests : IDisposable
 
     private void Created(string product, string file) =>
         Assert.Equal(0, _workspace.Run(product, "create", file, "--output-format", "json").ExitCode);
-
-    /// <summary>The fixture workbook written as <paramref name="file"/>, encrypted; returns the variable that opens it.</summary>
-    private Dictionary<string, string?> Encrypted(string file)
-    {
-        var password = new Dictionary<string, string?> { [BookPassword] = "review-hint-secret-3a1f" };
-        File.WriteAllBytes(_workspace.File("plain.xlsx"), ScenarioFixtures.Read("cells.xlsx"));
-        CliResult created = _workspace.RunWithEnv(password,
-            "cells", "convert", "plain.xlsx", "--to", "xlsx", "--out", file, "--encrypt-env", BookPassword, "--output-format", "json");
-        Assert.True(created.ExitCode == 0, created.StdErr);
-        return password;
-    }
-
-    /// <summary>A review ran: exit 8 is a review whose checks found errors, and it still writes its evidence.</summary>
-    private static void Reviewed(CliResult result, string evidence)
-    {
-        Assert.True(result.ExitCode is 0 or 8, result.StdErr);
-        Assert.True(File.Exists(Path.Combine(evidence, "review.json")));
-    }
 
     private JsonNode Refused(string commandLine, string code) =>
         Error(_workspace.Run([.. commandLine.Split(' '), "--output-format", "json"]), code);

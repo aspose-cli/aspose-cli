@@ -302,7 +302,6 @@
 {"run":"words extract a.docx --what text --out x","wrong":"--out","suggests":"--out-dir"},
 {"run":"words edit a.docx --ops [{\"op\":\"set_properties\",\"title\":\"T\"}] --out o.docx --verfy","wrong":"--verfy","suggests":"--verify"},
 {"run":"words edit a.docx --ops [{\"op\":\"set_properties\",\"title\":\"T\"}] --outt o.docx","wrong":"--outt","suggests":"--out"},
-{"run":"review c.pdf --out-dir evidence","wrong":"--out-dir","suggests":"--out"},
 {"run":"pdf split c.pdf --by-bookmarks --out-dir o","first":"pdf edit c.pdf --in-place --ops [{\"op\":\"add_bookmark\",\"title\":\"One\",\"page\":1}]","wrong":"--by-bookmarks","suggests":"--by","fixed":"pdf split c.pdf --by bookmarks --out-dir o"},
 {"run":"cells render b.xlsx --all-sheets --out r.png","wrong":"--all-sheets","suggests":"--sheets","fixed":"cells render b.xlsx --sheets all --out r.png"},
 {"run":"pdf render c.pdf --all-pages --out p.png","wrong":"--all-pages","suggests":"--pages","fixed":"pdf render c.pdf --pages all --out p.png"},

@@ -23,7 +23,6 @@ public sealed class LockedInputTests
             results =
             [
                 workspace.Run("cells", "inspect", "book.xlsx", "--output-format", "json"),
-                workspace.Run("review", "book.xlsx", "--output-format", "json"),
                 workspace.Run("fonts", "check", "book.xlsx", "--output-format", "json"),
             ];
         }

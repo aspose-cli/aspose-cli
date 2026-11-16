@@ -12,7 +12,7 @@ internal static class HostHelpMetadata
     private static readonly CommandHelpLink App = new("aspose-cli docs app", "welcome, files, preview, settings and lifecycle");
     private static readonly CommandHelpLink Preview = new("aspose-cli docs preview", "live preview of a document while it changes");
     private static readonly CommandHelpLink Licensing = new("aspose-cli docs licensing", "license sources, installation and evaluation mode");
-    private static readonly CommandHelpLink Verification = new("aspose-cli docs verification", "the delivery checklist, the review protocol and font checks");
+    private static readonly CommandHelpLink Verification = new("aspose-cli docs verification", "the delivery checklist and font checks");
     private static readonly CommandHelpLink Troubleshooting = new("aspose-cli docs troubleshooting", "recovering from errors and environment problems");
     private static readonly CommandHelpLink Capabilities = new("aspose-cli capabilities --summary", "each product's commands, formats and operations");
     private static readonly CommandHelpLink Schemas = new("aspose-cli schema", "the available JSON Schema identifiers");
@@ -24,7 +24,6 @@ internal static class HostHelpMetadata
             [
                 "app open",
                 .. narrowCapabilities.TakeLast(1),
-                "review report.docx --max-items 50",
                 "schema",
             ],
             [Overview, Schemas, Capabilities]);
@@ -54,12 +53,6 @@ internal static class HostHelpMetadata
             [Preview]);
         Find(preview, "status").WithExamples(["preview status", "preview status --output-format json"], [Preview]);
         Find(preview, "stop").WithExamples(["preview stop", "preview stop --output-format json"], [Preview]);
-        Find(root, "review").WithExamples(
-            [
-                "review report.docx",
-                "review report.docx --out evidence --max-items 50 --output-format json",
-            ],
-            [Verification]);
         if (FindOptional(root, "license") is { } license)
         {
             license.WithExamples(

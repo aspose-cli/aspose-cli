@@ -25,7 +25,6 @@ public sealed class WordsSkillExampleTests
         Assert.Contains("Cost", table.Range.Text, StringComparison.Ordinal);
         Assert.Equal(template.FirstSection.PageSetup.PageWidth, report.FirstSection.PageSetup.PageWidth);
         Assert.Equal(template.FirstSection.PageSetup.PageHeight, report.FirstSection.PageSetup.PageHeight);
-        Assert.True(File.Exists(Path.Combine(directory, "report.review/review.json")));
     }
 
     [Fact]
@@ -43,7 +42,6 @@ public sealed class WordsSkillExampleTests
         changed.AcceptAllRevisions();
         Assert.Contains("forty-five (45) days", changed.Range.Text, StringComparison.Ordinal);
         Assert.DoesNotContain("thirty (30) days", changed.Range.Text, StringComparison.Ordinal);
-        Assert.True(File.Exists(Path.Combine(directory, "contract.review/review.json")));
     }
 
     [Fact]
@@ -66,6 +64,5 @@ public sealed class WordsSkillExampleTests
         Assert.Contains("125.00", letters.Range.Text, StringComparison.Ordinal);
         Assert.Contains("80.00", letters.Range.Text, StringComparison.Ordinal);
         Assert.DoesNotContain(letters.Range.Fields.Cast<Field>(), field => field.Type == FieldType.FieldMergeField);
-        Assert.True(File.Exists(Path.Combine(directory, "letters.review/review.json")));
     }
 }

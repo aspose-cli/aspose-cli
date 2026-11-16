@@ -433,11 +433,11 @@ one depends on it:
 4. borders (section 5)
 5. freeze panes → tab colors + `move_sheet` order → `set_sheet_view`
 6. print setup (`set_page_setup` + `set_print_area`, every deliverable sheet)
-7. **review the workbook and LOOK at every sheet image** — then fix and
-   review again until every box below ticks, for at most three rounds.
+7. **render the workbook and LOOK at every sheet image** — then fix and
+   render again until every box below ticks, for at most three rounds.
 
 ```sh
-aspose-cli review book.xlsx --out scratch/book.review-1 --output-format json
+aspose-cli cells render book.xlsx --sheets all --out scratch/book.png --overwrite --output-format json
 aspose-cli cells render book.xlsx --range Data!A1:I12 --out scratch/data.png --overwrite
 aspose-cli cells inspect book.xlsx --detail errors --output-format json
 ```

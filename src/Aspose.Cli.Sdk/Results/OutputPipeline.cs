@@ -454,8 +454,7 @@ internal static class EvaluationDisclosure
     {
         Hint = $"Do not treat the result as complete; apply an {engine} license and run the command again.",
         Docs = "licensing",
-        // What a command covers stays complete, as a review's page images show the full content;
-        // the warning says the content it read is not.
+        // What a command covers stays complete; the warning says the content it read is not.
     };
 
     /// <summary>The outputs named by their files, such as <c>The output 'a.2.pdf'</c> or <c>The outputs 'a.1.pdf' and 'a.2.pdf'</c>.</summary>

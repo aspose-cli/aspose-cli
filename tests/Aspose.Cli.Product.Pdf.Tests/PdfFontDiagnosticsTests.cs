@@ -51,29 +51,17 @@ public sealed class PdfFontDiagnosticsTests
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public void Review_BlankPageIsRenderedAndReportedWithoutInternalError(bool worker)
+    public void FontsCheck_BlankPageIsReportedWithoutInternalError(bool worker)
     {
         using var fixture = new PdfEngineFixture();
         using var workspace = new TempWorkspace();
         string input = fixture.CreateRawDocument("blank.pdf", pages: 1, textPages: new HashSet<int>());
         byte[] original = File.ReadAllBytes(input);
-        string output = workspace.File("review");
         string[] supervision = worker ? ["--timeout", TestDeadline.CliTimeout] : [];
-        // One after another: the hint check of each run copies the workspace, which a run publishing into it would break.
         CliResult fonts = workspace.Run(["fonts", "check", input, "--output-format", "json", .. supervision]);
-        CliResult review = workspace.Run(["review", input, "--out", output, "--output-format", "json", .. supervision]);
 
         Assert.True(fonts.ExitCode == 0, fonts.StdErr);
         Assert.Empty(JsonNode.Parse(fonts.StdOut)!["fonts"]!.AsArray());
-        Assert.True(review.ExitCode == 0, review.StdErr);
-        JsonNode result = JsonNode.Parse(review.StdOut)!;
-        Assert.Equal(1, result["coverage"]!["renderedItemCount"]!.GetValue<int>());
-        Assert.Equal(0, result["coverage"]!["omittedItemCount"]!.GetValue<int>());
-        Assert.Contains(result["findings"]!.AsArray(),
-            finding => finding!["code"]!.GetValue<string>() == "PDF_PAGE_WITHOUT_READABLE_CONTENT");
-        Assert.DoesNotContain(result["findings"]!.AsArray(),
-            finding => finding!["code"]!.GetValue<string>() == "PDF_FONTS_MISSING_OR_SUBSTITUTED");
-        Assert.True(File.Exists(Path.Combine(output, "artifacts", "page-0001.png")));
         Assert.Equal(original, File.ReadAllBytes(input));
     }
 }

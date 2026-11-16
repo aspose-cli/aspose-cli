@@ -38,7 +38,7 @@ exits non-zero:
 Warnings do not fail a command. They appear in the result's `warnings` array
 with a `code`, `message` and, when there is one, `hint` and `details`, and on
 stderr in human output. A warning with `affectsCompleteness: true` leaves the
-output or its evidence incomplete; report it.
+output incomplete; report it.
 
 A `LOSSY_CONVERSION` that names what the output leaves out lists the kinds of
 content in `details.content`; one without it names no kind, such as one that
@@ -57,9 +57,9 @@ Branch on the exit code first, then on the code in the envelope:
 - 0: the command succeeded. Its warnings can still need action.
 - 8: the command finished and printed its result, but the result did not pass
   or is incomplete: a failed operation under `--best-effort`, failed
-  verification, a failed review, a missing font in `fonts check`, a failed
-  `doctor` check. Read the result; it says what failed. Exit 8 means only
-  this: no error envelope ever comes with it.
+  verification, a missing font in `fonts check`, a failed `doctor` check.
+  Read the result; it says what failed. Exit 8 means only this: no error
+  envelope ever comes with it.
 - 130: the command was cancelled with Ctrl+C, with or without --timeout. The
   work stops, nothing is published, its staging is removed and no error is
   written. A second Ctrl+C ends the process at once; the next command that
@@ -137,12 +137,11 @@ aspose-cli capabilities --output-format json
   renaming a file does not change its format. When the extension disagrees
   with the content (`FORMAT_MISMATCH`), `details.detected` names the products
   the content looks like and the hint names its command: use it, rename the
-  file, or pass `--product <id>` to `review` or `preview open`. Content no
+  file, or pass `--product <id>` to `preview open`. Content no
   product recognizes is `FILE_CORRUPT` when any product reads its extension,
   even one shared by many kinds of file such as `.html` or `.xml`, and
   `FORMAT_UNSUPPORTED` when none does or the CLI only writes its format, such
-  as `.xps`; a product command, `review` and `review --product <id>` report
-  the same file with the same code. Find out what the file really is. When several products fit
+  as `.xps`. Find out what the file really is. When several products fit
   (`FORMAT_AMBIGUOUS`), pass what the hint names.
 - A password that is missing or wrong (`PASSWORD_REQUIRED`,
   `PASSWORD_INVALID`): ask the user; never guess. Pass it with

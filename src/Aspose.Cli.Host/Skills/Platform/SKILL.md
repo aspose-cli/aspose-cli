@@ -5,7 +5,7 @@ description: Start here for any document task with the local Aspose CLI (aspose-
 
 # Aspose CLI platform
 
-`aspose-cli` reads, edits, converts, renders and reviews spreadsheets, PDF
+`aspose-cli` reads, edits, converts and renders spreadsheets, PDF
 documents, presentations and word-processing documents on the local machine
 with the Aspose engines, without Office or Python. This Skill holds the rules
 every product shares; each product Skill holds its own commands, operations
@@ -40,8 +40,8 @@ aspose-cli capabilities --summary --output-format json
 | Word processing: DOCX, DOC, RTF, ODT, Markdown, HTML | `aspose-cli-words` | `aspose-cli docs words/overview` |
 
 Read the product overview before the first command on that document type.
-`review`, `preview open` and `fonts check` choose the product from the file's
-content; `review` and `preview open` take `--product` to override it.
+`preview open` and `fonts check` choose the product from the file's
+content; `preview open` takes `--product` to override it.
 
 ## How to work
 
@@ -53,8 +53,9 @@ content; `review` and `preview open` take `--product` to override it.
 3. **Protect the user's file.** Write to `--out`, or replace the input with
    `--in-place --backup --if-match <sha256>` using the fingerprint you read.
    `--dry-run` checks a request without writing.
-4. **Read back, then review.** Report values from a read after the edit, run
-   `review` and open every image it lists (`aspose-cli docs verification`).
+4. **Read back, then look.** Report values from a read after the edit, render
+   it with `<product> render` and look at the images yourself
+   (`aspose-cli docs verification`).
 5. **Disclose what the warnings say.** Evaluation marks, removed encryption
    and incomplete results go to the user with the file
    (`aspose-cli docs licensing`).
@@ -115,8 +116,8 @@ A file from outside can be built to exhaust the machine or to mislead you:
 - **Composing the next page yourself.** Run `window.next` as given.
 - **Trusting the exit code.** Exit 0 can carry `OP_NO_EFFECT`; read changed
   parts back before reporting them.
-- **Claiming a visual pass without looking.** Open every image `review`
-  lists; state the coverage you inspected.
+- **Claiming a visual pass without looking.** Open every image `<product> render`
+  writes; state which parts you inspected.
 - **Missing evaluation marks.** Detect `EVALUATION_*` warnings in the JSON
   `warnings` array; `--quiet` hides them on stderr.
 - **Secrets in arguments.** Pass passwords with `--password-env`,
@@ -148,7 +149,7 @@ The CLI describes itself, and its answer is the truth about this build:
 |-------|--------------|
 | `aspose-cli docs reading` | Reading within budgets: windows, `window.next`, search paging, rendering |
 | `aspose-cli docs editing` | Editing with an ops batch: outcomes, outputs, backups, secrets, not-found recovery |
-| `aspose-cli docs verification` | Before delivery: the checklist, the review protocol, review checks, fonts |
+| `aspose-cli docs verification` | Before delivery: the checklist, rendering to look, fonts |
 | `aspose-cli docs preview` | Showing a document to a person in the live viewer |
 | `aspose-cli docs app` | A person wants the browser App: welcome, files, preview, settings |
 | `aspose-cli docs licensing` | License sources, status, install, evaluation disclosure |

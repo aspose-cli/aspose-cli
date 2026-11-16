@@ -45,12 +45,6 @@ internal static class RootCommandFactory
             catalog,
             capabilities,
             globals));
-        root.Subcommands.Add(ReviewCommand.Create(
-            executor,
-            catalog,
-            host.ContractJson,
-            globals)
-            .WithInvocationPolicy(new CommandInvocationPolicy(McpAllowed: true)));
         GlobalOptions options = globals;
         foreach (ProductDefinition product in catalog.Products)
         {

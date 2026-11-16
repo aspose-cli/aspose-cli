@@ -360,8 +360,7 @@ internal static class InvariantCases
 
     private static IEnumerable<InvariantCase> ReadOnlyCases(CliCommand command)
     {
-        bool review = command.Verb == "review";
-        if (!review && (command.Has("--out") || command.Has("--out-dir") || command.Has("--in-place")))
+        if (command.Has("--out") || command.Has("--out-dir") || command.Has("--in-place"))
         {
             yield break;
         }
@@ -370,10 +369,7 @@ internal static class InvariantCases
             // The smallest valid invocation of a read-only command completes, so a check that
             // nothing was written is never met by a command that failed before it could write.
             ExitCode = Completed(command),
-            // Review writes its evidence next to the input; every other read-only command writes nothing.
-            Files = review
-                ? new ScenarioFiles { Unchanged = [.. invocation.Files.Keys] }
-                : new ScenarioFiles { NothingWritten = true },
+            Files = new ScenarioFiles { NothingWritten = true },
         };
         Invocation plain = Invocation.For(command);
         yield return Case(ReadOnly, $"{command}", ShardOf(command), slow: false, plain, Unchanged(plain));
@@ -668,12 +664,11 @@ internal static class InvariantCases
     /// Every product command that writes a document, run as its smallest valid invocation: in
     /// evaluation mode it succeeds and its result warns <see cref="EvaluationWarning"/>, so the
     /// marks the engine saved into the output are disclosed; with a license it does not claim them.
-    /// Review writes evidence, not a deliverable, and is left out.
     /// </summary>
     private static IEnumerable<InvariantCase> EvaluationDisclosedCases(CliCommand command)
     {
         bool writes = command.Verb == "create" || command.Has("--out") || command.Has("--out-dir") || command.Has("--in-place");
-        if (command.Product is not { } product || command.Verb == "review" || !writes)
+        if (command.Product is not { } product || !writes)
         {
             yield break;
         }

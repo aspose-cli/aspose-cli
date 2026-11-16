@@ -1139,7 +1139,6 @@ public sealed class PdfMutateTests
         Warning warning = Assert.Single(tables.Warnings!, static warning => warning.Code.Name == "TABLES_NOT_FOUND");
         Assert.Contains("ruling lines", warning.Message, StringComparison.Ordinal);
         Assert.Contains("pdf extract --what text", warning.Hint, StringComparison.Ordinal);
-        Assert.Contains("review", warning.Hint, StringComparison.Ordinal);
 
         // A ruled table is found, and then nothing warns.
         PdfExtractResult ruled = PdfExtract.Run(fixture.Session, new PdfExtractRequest
@@ -2066,7 +2065,6 @@ public sealed class PdfMutateTests
         Assert.Contains("'op-0002' (redact_area) on page 2", warning.Message, StringComparison.Ordinal);
         Assert.DoesNotContain("op-0003", warning.Message, StringComparison.Ordinal);
         Assert.DoesNotContain("Jane", warning.Message + warning.Hint, StringComparison.Ordinal);
-        Assert.Contains("review", warning.Hint, StringComparison.Ordinal);
     }
 
     /// <summary>

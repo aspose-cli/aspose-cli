@@ -1,9 +1,9 @@
 # PDF verification
 
-Follow the delivery checklist and review protocol in `aspose-cli docs verification`.
+Follow the delivery checklist in `aspose-cli docs verification`.
 Every `pdf edit` reopens its output before publishing it; this page adds the
-PDF evidence to collect. `aspose-cli capabilities pdf` lists the verification and
-review codes.
+PDF evidence to collect. `aspose-cli capabilities pdf` lists the verification
+codes.
 
 ## Edit verification
 
@@ -44,8 +44,8 @@ Every edit, with or without `--verify`, searches its output for the text of
 each `redact_text` before publishing, and writes nothing and exits 8 where it
 is still found, so a published `redact_text` is checked. A `redact_text` that
 matched nothing passes its check, and `REDACTION_TEXT_MOVED` follows only runs
-that keep their whole text; act on `OP_NO_EFFECT` as its hint says, and on `REDACTION_TEXT_MOVED`,
-`REDACTION_NEARBY_TEXT_REMOVED` and the review's covered-text finding
+that keep their whole text; act on `OP_NO_EFFECT` as its hint says, and on `REDACTION_TEXT_MOVED`
+and `REDACTION_NEARBY_TEXT_REMOVED`
 ([redaction](editing.md#redaction)).
 
 The batch is checked as a whole: only the last value set for a field, entry or
@@ -74,7 +74,7 @@ expected content. Search is not OCR. `aspose-cli schema v2/pdf/inspect-result`
 describes every inspected field, including how property dates are written.
 
 For redaction, search every relevant page, inspect the redacted regions in the
-review images, and check images, annotations, properties and attachments as
+rendered images, and check images, annotations, properties and attachments as
 needed. Search provides no redaction certification.
 
 After `move_pages`, `delete_pages`, `pdf merge` or `pdf split`, check each affected bookmark,
@@ -97,7 +97,7 @@ signing, not that the signer is trusted ([forms and security](forms-security.md)
 ## Appearance
 
 ```powershell
-aspose-cli review report.final.pdf --out report.review-1 --output-format json
+aspose-cli pdf render report.final.pdf --out report.final.png --output-format json
 aspose-cli fonts check report.pdf --font-dir fonts --output-format json
 ```
 
@@ -108,13 +108,9 @@ change touched (`aspose-cli docs preview`).
 Check page order and size, crop and rotation, clipping, images, tables, headers
 and footers, stamps, form field appearances, annotations, redaction appearance
 and contrast. The engine drops some thin glyph strokes, such as the underscores
-of a signature line, when it renders below about 300 DPI. Review images are
-150 DPI, scaled down from a 300 DPI render unless the page is too large for
-that, so such a line shows as a light grey line; `pdf render` draws exactly the
-`--dpi` it is given, so render with `--dpi 300` to look at thin lines or small
-print closely.
-
-What the PDF review findings ask of you:
+of a signature line, when it renders below about 300 DPI. `pdf render` draws
+exactly the `--dpi` it is given, so render with `--dpi 300` to look at thin
+lines or small print closely.
 
 A font the PDF uses without embedding it is drawn from the fonts installed here
 or in `--font-dir` (`aspose-cli docs verification`); HTML and text sources of
@@ -126,17 +122,4 @@ For a PDF with form fields, open the pages with fields and look for stale,
 clipped or missing values.
 
 A run without a license saves its watermark into the page; regenerate the file
-as `aspose-cli docs licensing` says. The check matches the notice from "Created with Aspose.<product>"
-to its "Copyright … Aspose Pty Ltd" in the page text, in the order it is drawn,
-so a notice drawn over a title is found too; a PDF that `cells`, `words` or
-`slides` saved is flagged as well, and the finding names the product whose
-license is needed.
-
-Text under an opaque box painted over it, such as the cover a redaction leaves,
-means the file holds text the page does not show; after a redaction it is the
-text the engine moved under the cover ([redaction](editing.md#redaction)).
-
-A page with no or very little text, no image covering a quarter of it and no
-look of a scan may be unintentionally blank or sparse; look at it. A page with no
-extractable text and an image that fills its width or height is reported for
-information ([scanned pages](editing.md#scanned-pages)).
+as `aspose-cli docs licensing` says.

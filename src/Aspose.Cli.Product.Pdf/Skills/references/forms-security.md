@@ -41,8 +41,8 @@ A `button` or `signature` field holds no value, so `set_form_field` refuses it
 with `OPS_INVALID`. To put a picture where a form has a photo or image button,
 use `add_stamp_image` with that field's `page` and `rect` from
 `pdf inspect --detail forms`; a signature field is filled by `pdf sign`.
-Fields are counted by name: `fieldCount` of `pdf inspect --detail forms` and the
-count `review` reports take a radio group as one field.
+Fields are counted by name: `fieldCount` of `pdf inspect --detail forms` takes a
+radio group as one field.
 
 ```json
 { "ops": [

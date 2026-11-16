@@ -8,9 +8,9 @@ namespace Aspose.Cli.Product.Words.Engine.Mapping;
 /// The one place that recognizes what Aspose.Words evaluation mode adds to a document: the
 /// banner paragraph before the first block, the truncation notice, and the watermark text
 /// in the page layout. Callers skip such content only when the license state is evaluation, so
-/// a licensed document that merely quotes these phrases never loses blocks; with a license,
-/// review and the write pipeline (<see cref="WordsEvaluationProfile"/>) report the marks an
-/// earlier unlicensed save left.
+/// a licensed document that merely quotes these phrases never loses blocks; with a license, the
+/// write pipeline (<see cref="WordsEvaluationProfile"/>) reports the marks an earlier unlicensed
+/// save left.
 /// </summary>
 internal static class WordsEvaluation
 {
@@ -68,10 +68,6 @@ internal static class WordsEvaluation
         return image;
     }
 
-    /// <summary>The paragraphs of a document that are <see cref="IsMark">evaluation marks</see>.</summary>
-    internal static int MarkCount(Document document) =>
-        document.GetChildNodes(NodeType.Paragraph, true).Cast<Paragraph>().Count(IsMark);
-
     /// <summary>
     /// The banner paragraphs an evaluation-saved document carries before its first block.
     /// Evaluation mode writes one at the start of every document it saves, unless one is there.
@@ -104,11 +100,4 @@ internal static class WordsEvaluation
             .Any(static text =>
                 text.Contains("document was truncated", StringComparison.OrdinalIgnoreCase)
                 && text.Contains("evaluation", StringComparison.OrdinalIgnoreCase));
-
-    /// <summary>Whether laid-out text is an evaluation watermark or banner rather than content.</summary>
-    internal static bool IsLayoutMark(string text) =>
-        text.Contains("Evaluation Only", StringComparison.OrdinalIgnoreCase)
-        || text.Contains("Created with Aspose.Words", StringComparison.OrdinalIgnoreCase)
-        || text.Contains("Aspose.Words Evaluation", StringComparison.OrdinalIgnoreCase)
-        || text.Contains("evaluation copy of Aspose.Words", StringComparison.OrdinalIgnoreCase);
 }

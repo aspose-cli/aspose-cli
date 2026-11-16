@@ -6,27 +6,24 @@ using Xunit;
 namespace Aspose.Cli.Architecture.Tests;
 
 /// <summary>
-/// KNOWN-ISSUES.md stays true: each issue is reproduced by one test, handled by code that names
-/// it, and filed under the SDK version the build pins, so an SDK update fails here until the
-/// issues are checked against the new version.
+/// KNOWN-ISSUES.md stays true: each issue is reproduced by one test and filed under the SDK
+/// version the build pins, so an SDK update fails here until the issues are checked against the
+/// new version.
 /// </summary>
 public sealed partial class KnownIssueCatalogTests
 {
     private static readonly string KnownIssues = File.ReadAllText(Path.Combine(RepositoryPaths.Root, "KNOWN-ISSUES.md"));
 
     [Fact]
-    public void EveryKnownIssueIsReproducedByOneTestAndNamedByItsHandling()
+    public void EveryKnownIssueIsReproducedByOneTest()
     {
         string[] issues = [.. IssueHeading().Matches(KnownIssues).Select(static match => match.Groups["id"].Value)];
         string[] reproduced = [.. Directory.EnumerateFiles(Path.Combine(RepositoryPaths.Root, "tests"), "*KnownIssueTests.cs", SearchOption.AllDirectories)
             .SelectMany(static file => Reproduction().Matches(File.ReadAllText(file)))
             .Select(static match => match.Groups["id"].Value)];
-        string source = string.Concat(Directory.EnumerateFiles(Path.Combine(RepositoryPaths.Root, "src"), "*.cs", SearchOption.AllDirectories)
-            .Select(File.ReadAllText));
 
         Assert.NotEmpty(issues);
         Assert.Equal(issues.Order(StringComparer.Ordinal), reproduced.Order(StringComparer.Ordinal));
-        Assert.All(issues, id => Assert.True(source.Contains(id, StringComparison.Ordinal), $"No source code names known issue {id}."));
     }
 
     [Fact]

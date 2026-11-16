@@ -607,55 +607,6 @@ public static partial class CliErrors
         details: new JsonObject { ["path"] = path });
 
     /// <summary>
-    /// An output published as one directory names a directory or file that already exists, and
-    /// the caller did not ask to replace it.
-    /// </summary>
-    public static CliException OutputDirectoryExists(string path) => CliException.Create(
-        ErrorCodes.OutputExists,
-        $"Output directory already exists: {path}",
-        hint: "Pass --overwrite to replace it, or choose a path that does not exist yet with --out.",
-        details: new JsonObject { ["path"] = path });
-
-    /// <summary>
-    /// An output published as one directory names an existing directory that <c>--overwrite</c>
-    /// may not replace: it is neither empty nor an earlier output of the command, which alone it
-    /// replaces. It is the fact <see cref="OutputDirectoryExists"/> states, an output in the way,
-    /// so it has its code; only the way out differs.
-    /// </summary>
-    /// <param name="path">The existing directory.</param>
-    /// <param name="owned">What an earlier output of the command holds, such as <c>review evidence (review.json)</c>.</param>
-    public static CliException OutputDirectoryNotOwned(string path, string owned) => CliException.Create(
-        ErrorCodes.OutputExists,
-        $"Output directory already exists and is not an earlier {owned}: {path}",
-        hint: $"--overwrite replaces only an empty directory or an earlier {owned}; choose another path with --out.",
-        details: new JsonObject { ["path"] = path });
-
-    /// <summary>
-    /// A product view that <c>review</c> cannot render as evidence, because its parts are no
-    /// images, such as the Cells <c>workbook</c> view; <c>preview open</c> shows it.
-    /// </summary>
-    /// <param name="view">The requested view.</param>
-    /// <param name="product">The product that reads the file.</param>
-    /// <param name="reviewViews">The product's views that review can render.</param>
-    public static CliException ViewNotReviewable(string view, string product, IReadOnlyList<string> reviewViews)
-    {
-        ArgumentException.ThrowIfNullOrWhiteSpace(view);
-        ArgumentException.ThrowIfNullOrWhiteSpace(product);
-        ArgumentNullException.ThrowIfNull(reviewViews);
-        return CliException.Create(
-            ErrorCodes.FeatureUnsupported,
-            $"Review cannot use the '{view}' view of {product}: its parts are not images.",
-            hint: $"Use {string.Join(" or ", reviewViews.Select(static item => "--view " + item))}, or show the '{view}' view with '{DistributionInfo.CommandName} preview open'.",
-            details: new JsonObject
-            {
-                ["option"] = "--view",
-                ["feature"] = $"review --view {view}",
-                ["product"] = product,
-                ["available"] = Strings(reviewViews),
-            });
-    }
-
-    /// <summary>
     /// An output that the CLI manages, such as an installed Skill, holds content it did not
     /// write, so updating it could destroy that content.
     /// </summary>
@@ -993,19 +944,14 @@ public static partial class CliErrors
     /// <summary>
     /// Creates the error for a file in a format this CLI only writes, such as the <c>.xps</c> a
     /// convert wrote: <c>FORMAT_UNSUPPORTED</c>, as for content no product recognizes, but the hint
-    /// names the commands that write the format and, for <c>review</c>, the PDF of the same
-    /// content to review instead, since naming a product cannot help.
+    /// names the commands that write the format, since naming a product cannot help.
     /// </summary>
     /// <param name="path">The file.</param>
     /// <param name="writers">The commands that write the format, as <c>product verb</c>.</param>
-    /// <param name="pdfWriter">A product whose convert writes both the format and PDF; null for none.</param>
-    /// <param name="operation">The generic operation that tried to read it, such as <c>review</c>.</param>
     /// <param name="candidates">The products that take part in the operation.</param>
     public static CliException FormatOnlyWritten(
         string path,
         IReadOnlyList<string> writers,
-        string? pdfWriter,
-        string operation,
         IReadOnlyList<string> candidates)
     {
         ArgumentNullException.ThrowIfNull(writers);
@@ -1016,14 +962,10 @@ public static partial class CliErrors
 
         string extension = Path.GetExtension(path);
         string listed = string.Join(", ", writers.Select(static writer => $"'{DistributionInfo.CommandName} {writer}'"));
-        string next = operation == "review" && pdfWriter is not null
-            ? $" Review the same content as a PDF instead: write it from the source document, as with '{DistributionInfo.CommandName} {pdfWriter} convert <document> --to pdf', "
-                + $"then run '{DistributionInfo.CommandName} review' on that PDF."
-            : " Use the source document, or the same content in a format a product reads, such as PDF.";
         return CliException.Create(
             ErrorCodes.FormatUnsupported,
             $"No product reads '{Path.GetFileName(path)}': {DistributionInfo.CommandName} writes {extension} files but reads none.",
-            hint: $"{extension} files are only written, by {listed}.{next}",
+            hint: $"{extension} files are only written, by {listed}. Use the source document, or the same content in a format a product reads, such as PDF.",
             details: new JsonObject
             {
                 ["path"] = path,

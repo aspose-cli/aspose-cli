@@ -303,14 +303,6 @@ public sealed class AppCommandTests : IDisposable
                 capability["preview"]!["defaultView"]!.GetValue<string>(),
                 app["preview"]!["defaultView"]!.GetValue<string>());
             Assert.Equal(
-                capability["review"]!["defaultView"]!.GetValue<string>(),
-                app["review"]!["defaultView"]!.GetValue<string>());
-            Assert.Equal(
-                capability["review"]!["visualInspectionRequired"]!
-                    .GetValue<bool>(),
-                app["review"]!["visualInspectionRequired"]!
-                    .GetValue<bool>());
-            Assert.Equal(
                 capability["renderFormats"]!.AsArray().Count > 0
                     ? "rendered"
                     : "semantic",

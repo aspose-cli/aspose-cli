@@ -32,7 +32,7 @@ again, for imported slides in a later batch.
 
 What every product shares is in `aspose-cli docs licensing`. In Slides:
 
-- Reads cut text longer than five characters short, so reads, reviews and `extract` of text or
+- Reads cut text longer than five characters short, so reads and `extract` of text or
   notes warn `EVALUATION_INPUT_TRUNCATED`. A Markdown conversion holds a truncation notice in
   place of the cut text, which its `EVALUATION_MODE` message says without naming that text; the
   presentations, PDFs and images evaluation mode saves keep the full text.
@@ -41,6 +41,5 @@ What every product shares is in `aspose-cli docs licensing`. In Slides:
   `EVALUATION_INPUT_TRUNCATED`, even when it wrote the same text again, since the cut read cannot
   show the difference.
 - Each evaluation save adds another watermark text box to every slide, which reads list as
-  content. A review reports each slide that carries one as `SLIDES_EVALUATION_WATERMARK`,
-  licensed or not, and a licensed command whose output keeps them warns
+  content. A licensed command whose output keeps them warns
   `EVALUATION_INPUT_MARKED`. A license does not remove them, so rebuild the deck with a license.

@@ -75,7 +75,6 @@ C-R06 | pdf sign
 C-R06 | pdf split
 C-R06 | pdf validate
 C-R06 | preview open
-C-R06 | review
 C-R06 | schema
 C-R06 | skill install
 C-R06 | slides convert
@@ -126,7 +125,6 @@ C-R08 | pdf sign
 C-R08 | pdf split
 C-R08 | pdf validate
 C-R08 | preview open
-C-R08 | review
 C-R08 | schema
 C-R08 | skill install
 C-R08 | slides convert
@@ -183,7 +181,6 @@ C-R10 | pdf split --encrypt-stdin with --password-stdin
 C-R10 | pdf split declared
 C-R10 | pdf validate declared
 C-R10 | preview open declared
-C-R10 | review declared
 C-R10 | slides convert --encrypt-stdin with --password-stdin
 C-R10 | slides convert declared
 C-R10 | slides create declared
@@ -230,8 +227,6 @@ C-R11 | pdf merge --dry-run
 C-R11 | pdf render --dry-run
 C-R11 | pdf sign --dry-run
 C-R11 | pdf split --dry-run
-C-R11 | review --dry-run
-C-R11 | review declared
 C-R11 | skill install --dry-run
 C-R11 | skill install declared
 C-R11 | slides convert --dry-run
@@ -256,7 +251,6 @@ C-R12 | pdf render of every unit by default
 C-R12 | pdf render one unit
 C-R12 | pdf split --by pages --every 1
 C-R12 | pdf split --by pages --every 1 of ten pages
-C-R12 | review declared
 C-R12 | slides render of every unit by default
 C-R12 | slides render one unit
 C-R12 | words render of every unit by default
@@ -300,7 +294,6 @@ C-R14 | pdf inspect -- -input.pdf
 C-R14 | pdf merge --out -
 C-R14 | pdf render --out -
 C-R14 | pdf sign --out -
-C-R14 | review --out -
 C-R14 | slides convert --out -
 C-R14 | slides edit --out -
 C-R14 | slides inspect -- -input.pptx
@@ -410,7 +403,6 @@ C-R17 | pdf render values
 C-R17 | pdf split values
 C-R17 | pdf validate values
 C-R17 | preview open values
-C-R17 | review values
 C-R17 | skill install values
 C-R17 | slides convert values
 C-R17 | slides create values
@@ -533,7 +525,6 @@ C-R17 | v2/common/page-size
 C-R17 | v2/common/preview-session
 C-R17 | v2/common/preview-status
 C-R17 | v2/common/result-window
-C-R17 | v2/common/review
 C-R17 | v2/common/schema-list
 C-R17 | v2/common/skill-install
 C-R17 | v2/common/skill-list
@@ -822,7 +813,6 @@ C-R18 | v2/common/page-size
 C-R18 | v2/common/preview-session
 C-R18 | v2/common/preview-status
 C-R18 | v2/common/result-window
-C-R18 | v2/common/review
 C-R18 | v2/common/schema-list
 C-R18 | v2/common/skill-install
 C-R18 | v2/common/skill-list
@@ -1902,9 +1892,6 @@ C-R20 | v2/common/preview-status variants
 C-R20 | v2/common/result-window fixednames
 C-R20 | v2/common/result-window spelling
 C-R20 | v2/common/result-window variants
-C-R20 | v2/common/review fixednames
-C-R20 | v2/common/review spelling
-C-R20 | v2/common/review variants
 C-R20 | v2/common/schema-list fixednames
 C-R20 | v2/common/schema-list spelling
 C-R20 | v2/common/schema-list variants
@@ -3426,7 +3413,6 @@ C-R27 | warning envelope shape
 C-R27 | words warning codes
 C-R28 | cells code names
 C-R28 | cells not-found details
-C-R28 | cells review check codes
 C-R28 | codes declared once
 C-R28 | common code names
 C-R28 | common not-found details
@@ -3435,14 +3421,11 @@ C-R28 | host code names
 C-R28 | host not-found details
 C-R28 | pdf code names
 C-R28 | pdf not-found details
-C-R28 | pdf review check codes
 C-R28 | release and update codes belong to host
 C-R28 | slides code names
 C-R28 | slides not-found details
-C-R28 | slides review check codes
 C-R28 | words code names
 C-R28 | words not-found details
-C-R28 | words review check codes
 C-R29 | cells edit
 C-R29 | pdf edit
 C-R29 | slides edit
@@ -3711,8 +3694,6 @@ C-R31 | v2/common/preview-status fields
 C-R31 | v2/common/preview-status outputs
 C-R31 | v2/common/result-window fields
 C-R31 | v2/common/result-window outputs
-C-R31 | v2/common/review fields
-C-R31 | v2/common/review outputs
 C-R31 | v2/common/schema-list fields
 C-R31 | v2/common/schema-list outputs
 C-R31 | v2/common/skill-install fields
@@ -4072,9 +4053,6 @@ C-R33 | v2/common/preview-status none
 C-R33 | v2/common/result-window envelope
 C-R33 | v2/common/result-window names
 C-R33 | v2/common/result-window none
-C-R33 | v2/common/review envelope
-C-R33 | v2/common/review names
-C-R33 | v2/common/review none
 C-R33 | v2/common/schema-list envelope
 C-R33 | v2/common/schema-list names
 C-R33 | v2/common/schema-list none
@@ -4483,7 +4461,6 @@ C-R34 | pdf validate
 C-R34 | preview open
 C-R34 | preview status
 C-R34 | preview stop
-C-R34 | review
 C-R34 | schema
 C-R34 | skill install
 C-R34 | skill list
@@ -4554,7 +4531,6 @@ C-R35 | preview --help
 C-R35 | preview open --help
 C-R35 | preview status --help
 C-R35 | preview stop --help
-C-R35 | review --help
 C-R35 | schema --help
 C-R35 | skill --help
 C-R35 | skill install --help
@@ -4847,7 +4823,6 @@ corrupt-input | pdf search
 corrupt-input | pdf sign
 corrupt-input | pdf split
 corrupt-input | pdf validate
-corrupt-input | review
 corrupt-input | slides convert
 corrupt-input | slides edit
 corrupt-input | slides extract
@@ -4978,7 +4953,6 @@ executable-hint | pdf search --password-env
 executable-hint | pdf sign --password-env
 executable-hint | pdf split --password-env
 executable-hint | pdf validate --password-env
-executable-hint | review --password-env
 executable-hint | slides convert --password-env --to gif
 executable-hint | slides convert --password-env --to html
 executable-hint | slides convert --password-env --to html5
@@ -5073,9 +5047,6 @@ invalid-enum | pdf split --by bookmarkss
 invalid-enum | pdf validate --profile pfda-1b
 invalid-enum | preview open --product cellss
 invalid-enum | preview open --view autoo
-invalid-enum | review --code CLELS_CHART_ANCHORED_IN_HIDDEN_CELLS
-invalid-enum | review --product cellss
-invalid-enum | review --view autoo
 invalid-enum | skill install --host calude-code
 invalid-enum | slides convert --to giff
 invalid-enum | slides create --slide-size 16x99
@@ -5111,7 +5082,6 @@ missing-input | pdf search
 missing-input | pdf sign
 missing-input | pdf split
 missing-input | pdf validate
-missing-input | review
 missing-input | slides convert
 missing-input | slides edit
 missing-input | slides extract
@@ -5292,7 +5262,6 @@ read-only | pdf inspect --detail signatures
 read-only | pdf read
 read-only | pdf search
 read-only | pdf validate
-read-only | review
 read-only | slides inspect
 read-only | slides inspect --detail comments
 read-only | slides inspect --detail fonts
@@ -5369,7 +5338,6 @@ same-name-option | --slides
 same-name-option | --template
 same-name-option | --to
 same-name-option | --verify
-same-name-option | --view
 same-name-option | --what
 secret-hidden | cells compare --left-password
 secret-hidden | cells compare --left-password with a wrong password
@@ -5515,12 +5483,6 @@ secret-hidden | pdf validate --password-env
 secret-hidden | pdf validate --password-env with a wrong password
 secret-hidden | pdf validate --password-stdin
 secret-hidden | pdf validate --password-stdin with a wrong password
-secret-hidden | review --password
-secret-hidden | review --password with a wrong password
-secret-hidden | review --password-env
-secret-hidden | review --password-env with a wrong password
-secret-hidden | review --password-stdin
-secret-hidden | review --password-stdin with a wrong password
 secret-hidden | slides convert --encrypt
 secret-hidden | slides convert --encrypt-env
 secret-hidden | slides convert --encrypt-stdin
@@ -5682,7 +5644,6 @@ unknown-command | preview as perview
 unknown-command | preview open as openn
 unknown-command | preview status as sattus
 unknown-command | preview stop as stopp
-unknown-command | review as rveiew
 unknown-command | schema as shcema
 unknown-command | skill as skilll
 unknown-command | skill install as isntall
@@ -6264,17 +6225,6 @@ unknown-option | preview open --password-stdin as --psasword-stdin
 unknown-option | preview open --port as --portt
 unknown-option | preview open --product as --porduct
 unknown-option | preview open --view as --vieww
-unknown-option | review --code as --codee
-unknown-option | review --dry-run as --dyr-run
-unknown-option | review --font-dir as --fnot-dir
-unknown-option | review --max-items as --mxa-items
-unknown-option | review --out as --outt
-unknown-option | review --overwrite as --oevrwrite
-unknown-option | review --password as --psasword
-unknown-option | review --password-env as --psasword-env
-unknown-option | review --password-stdin as --psasword-stdin
-unknown-option | review --product as --porduct
-unknown-option | review --view as --vieww
 unknown-option | schema --operation as --oepration
 unknown-option | skill install --dir as --dirr
 unknown-option | skill install --dry-run as --dyr-run

@@ -352,8 +352,7 @@ internal static class PdfEdit
             warnings.Add(new Warning(PdfDiagnostics.RedactionTextMoved, (textMoved.Count == 1 ? "Operation " : "Operations ") + string.Join(", ", textMoved)
                     + " moved the text that followed what was removed on its line to the left, so part of it may now lie under the cover.")
             {
-                Hint = "Run 'aspose-cli review' on the output: PDF_TEXT_COVERED names the pages where text lies hidden under a cover. "
-                    + "The moved text is still in the file and searchable; to keep the line visible, redact the source document and create the PDF again. "
+                Hint = "The moved text is still in the file and searchable; to keep the line visible, redact the source document and create the PDF again. "
                     + "When only the PDF exists, tell the user that text after the redacted values on those pages may be hidden.",
                 AffectsCompleteness = true,
             });

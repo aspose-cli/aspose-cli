@@ -1,6 +1,6 @@
 ---
 name: aspose-cli-words
-description: Create, inspect, edit, compare, convert and review Word documents with the local Aspose CLI. Markdown or text content is poured into a template's styles, edits are atomic batches with semantic verification, and review renders every page for visual checks.
+description: Create, inspect, edit, compare, convert and render Word documents with the local Aspose CLI. Markdown or text content is poured into a template's styles, and edits are atomic batches with semantic verification.
 ---
 
 # Aspose Words
@@ -52,7 +52,8 @@ operation fields: `aspose-cli schema v2/words/ops --operation <op>`.
 
 4. **Verify:** read the changed blocks back, confirm
    `words search output.docx --pattern "{{" --scope all` finds nothing (the
-   pattern is literal unless `--regex`), then review every page ([verification](references/verification.md)).
+   pattern is literal unless `--regex`), then render every page with `words render` and look at the
+   images yourself ([verification](references/verification.md)).
 
 ## Document model
 
@@ -109,10 +110,10 @@ operation fields: `aspose-cli schema v2/words/ops --operation <op>`.
 ## References
 
 - [Editing](references/editing.md): reading, addresses, batches, operations, tables, headers, protection, saving.
-- [Document standards](references/document-standards.md): templates, the built-in design, Markdown, review.
+- [Document standards](references/document-standards.md): templates, the built-in design, Markdown, what to look for.
 - [Revisions and comparison](references/revisions.md): tracked changes and `words compare`.
 - [Mail merge](references/mail-merge.md): merge data, regions, one file per record.
-- [Verification](references/verification.md): `--verify`, reading `applied[]` back, review findings.
+- [Verification](references/verification.md): `--verify`, reading `applied[]` back, looking at the pages.
 - [What the viewer shows](references/preview.md): the live preview.
 - [Troubleshooting](references/troubleshooting.md): failed addresses, no-effect operations, PDF inputs, warnings, evaluation mode.
 

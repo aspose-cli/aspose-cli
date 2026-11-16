@@ -24,56 +24,6 @@ public sealed class ProductViewDefinitionTests
         Assert.Equal(ErrorCodes.OptionInvalid, failure.Code);
     }
 
-    [Fact]
-    public void ViewDefinition_MissingFontsCannotRemainComplete()
-    {
-        ProductViewDefinition views = ProductViewDefinition.Create(
-            new TestProductViewAdapter<ITestSession>(),
-            "test");
-        ProductBinding<ITestSession> binding = TestBindings.Create<ITestSession>(
-            "test", static () => new TestSession(), static () => new MissingFonts());
-        ViewRenderRequest request = Request("document");
-
-        ViewManifest rendered = views.Render(binding, "file.test", request, new RejectingSink());
-        ProductReviewAssessment assessment = views.Assess(binding, "file.test", request, rendered);
-
-        Assert.False(assessment.Complete);
-        Assert.Contains(
-            assessment.Findings!,
-            static finding => finding.Code == "TEST_FONTS_MISSING_OR_SUBSTITUTED"
-                && finding.Severity == "error");
-    }
-
-    [Fact]
-    public void ViewDefinition_RequiresProductPrefixedChecksAndReportsOnlyDeclaredFindings()
-    {
-        var declared = new ReviewCheck("TEST_PAGE_BLANK", ReviewSeverities.Warning, "A page has no content.");
-        ProductBinding<ITestSession> binding = TestBindings.Create<ITestSession>(
-            "test", static () => new TestSession(), static () => new MissingFonts());
-        ViewRenderRequest request = Request("document");
-
-        Assert.Throws<InvalidOperationException>(() => ProductViewDefinition.Create(
-            new TestProductViewAdapter<ITestSession>([new ReviewCheck("OTHER_PAGE_BLANK", ReviewSeverities.Info, "x")]),
-            "test"));
-        ProductViewDefinition declaring = ProductViewDefinition.Create(
-            new TestProductViewAdapter<ITestSession>([declared], [declared.Finding("Page 2 is blank.", "page/2")]),
-            "test");
-        ProductViewDefinition undeclared = ProductViewDefinition.Create(
-            new TestProductViewAdapter<ITestSession>(
-                [declared], [declared.Finding("x") with { Severity = ReviewSeverities.Error }]),
-            "test");
-
-        Assert.Equal(
-            ["TEST_FONTS_MISSING_OR_SUBSTITUTED", "TEST_PAGE_BLANK", "TEST_REVIEW_TRUNCATED"],
-            declaring.Checks.Select(static check => check.Code));
-        Assert.Contains(
-            declaring.Assess(binding, "file.test", request, declaring.Render(binding, "file.test", request, new RejectingSink())).Findings!,
-            static finding => finding.Code == "TEST_PAGE_BLANK");
-        Assert.Throws<InvalidOperationException>(() => undeclared.Assess(
-            binding, "file.test", request, undeclared.Render(binding, "file.test", request, new RejectingSink())));
-        Assert.Throws<ArgumentException>(() => new ReviewCheck("page blank", ReviewSeverities.Info, "x"));
-    }
-
     private static ViewRenderRequest Request(string view) => new()
     {
         View = view,
@@ -96,26 +46,4 @@ public sealed class ProductViewDefinitionTests
     private interface ITestSession;
 
     private sealed class TestSession : ITestSession;
-
-    private sealed class MissingFonts : IFontEnvironment
-    {
-        public EngineFonts ListFonts() => new() { Sources = [] };
-
-        public FontCheckResult CheckFonts(string filePath, FontCheckRequest request) => new()
-        {
-            Input = new InputInfo
-            {
-                Path = filePath,
-                Format = "test",
-                SizeBytes = 0,
-                Fingerprint = new FileFingerprint { Sha256 = new string('0', 64) },
-                Encrypted = false,
-            },
-            AllAvailable = false,
-            Fonts = [new FontAvailability { Name = "Missing", Available = false }],
-        };
-
-        public IDisposable UseFonts(Aspose.Cli.Sdk.Rendering.FontSearchProfile profile) =>
-            Aspose.Cli.Sdk.Rendering.FontScope.Enter(profile, static _ => static () => { });
-    }
 }

@@ -27,7 +27,7 @@ public sealed class CellsFontDirectoryTests
 
     [Category(TestCategory.Slow)]
     [Fact]
-    public void Cli_FontsCheckAndReviewUseTheFontDirectory()
+    public void Cli_FontsCheckUsesTheFontDirectory()
     {
         using var fixture = new CellsFixture();
         using var workspace = new TempWorkspace();

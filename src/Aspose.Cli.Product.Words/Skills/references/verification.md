@@ -1,6 +1,6 @@
 # Verification
 
-The delivery checklist, the review protocol and font checks are in
+The delivery checklist and font checks are in
 `aspose-cli docs verification`. This page covers what Words adds.
 
 ## Semantic verification
@@ -64,47 +64,44 @@ section whose page setup, headers or footers changed; every page for the
 watermark; and the pages of the text in a changed style. A batch that changed
 nothing on a page, such as only properties, has no `pagesTouched`.
 
-## Visual review
+## Rendered pages
 
-`aspose-cli review output.docx --out <new-dir>` renders every page. What to do
-about the Words findings that most often need action:
+`aspose-cli words render output.docx --out <image>` renders every page of a
+document of at most 20 pages. One run takes at most 20 pages: on a longer
+document it refuses the default selection, and any other of more than 20
+pages, with `OPTION_INVALID` and writes no image, so render it in runs of
+`--pages 1-20`, `--pages 21-40` and so on. Look at each image yourself.
 
 When pages break badly, with a heading left at the foot of a page, a page
-nearly or wholly empty, or many manual breaks (the review names them, such as
-`WORDS_HEADING_ORPHANED` or `WORDS_PAGE_BLANK`), look for manual breaks and
+nearly or wholly empty, or many manual breaks, look for manual breaks and
 empty paragraphs and remove them rather than adding more breaks; keep an empty
 paragraph between two tables, without which they read as one table.
 
-A table split across pages, such as a last row pushed onto the next page, is
-not a check: look for it on the rendered pages. Fix it with
+A table split across pages, such as a last row pushed onto the next page,
+shows on the rendered pages. Fix it with
 `set_table_pagination` and `keepTogether: true` (or `headerRowCount` for a long
-table) rather than a page break, then run `review` again
+table) rather than a page break, then render again
 ([editing](editing.md)).
 
-An `html-fixed` output cannot be reviewed as delivered: Words reads it as
-flowing HTML, so its pages are reflowed and the review reports
-`LOSSY_CONVERSION`. Review the source document (the `.docx`) it was converted
-from instead.
+An `html-fixed` output cannot be rendered as delivered: Words reads it as
+flowing HTML, so its pages are reflowed. Render the source document (the
+`.docx`) it was converted from instead.
 
 No operation moves a floating image or shape, so when one crosses the page
-edge (`WORDS_OBJECT_OUTSIDE_PAGE`), open the rendered page and tell the user
+edge, open the rendered page and tell the user
 what is cut off instead of delivering the page as right.
 
-When the document keeps tracked revisions or comments, the review reports
-them as information (`WORDS_REVISIONS_PRESENT`, `WORDS_COMMENTS_PRESENT`).
 Never accept revisions as a visual repair: disclose them, and accept or reject
 them only as the user decides. Disclose comments (`document.commentCount` in
 `words inspect`) too, and remove them with `delete_comments` only when the
 user asks.
 
 When an unlicensed run saved its banner, footer sentence and watermark into
-the file (`WORDS_EVALUATION_MARKS`), a license does not remove them:
+the file, a license does not remove them:
 regenerate the document from its original inputs with the license before
 delivery. When the message says evaluation mode cut the document short, the
 content after its truncation notice, such as later merge records, is
-missing, so removing the marks does not repair it. Only a licensed review
-checks this, because opening a document without a license adds the marks
-itself.
+missing, so removing the marks does not repair it.
 
 `words render` exports page images for delivery. It takes the format from
 `--to`, or from the `--out` extension when `--to` is omitted.

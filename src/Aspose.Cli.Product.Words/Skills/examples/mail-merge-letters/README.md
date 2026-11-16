@@ -9,7 +9,7 @@ contains two fictional recipients; [merge-ops.json](merge-ops.json) fills them.
 aspose-cli words convert letter-template.rtf --to docx --out letter-template.docx --output-format json
 aspose-cli words edit letter-template.docx --ops merge-ops.json --out letters.docx --verify --output-format json
 aspose-cli words read letters.docx --blocks 1- --content text --output-format json
-aspose-cli review letters.docx --out letters.review --output-format json
+aspose-cli words render letters.docx --out letters.png --output-format json
 ```
 
 The result holds one letter per recipient, Ava Stone and Noah Chen, each in

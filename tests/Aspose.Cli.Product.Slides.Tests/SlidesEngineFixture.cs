@@ -108,41 +108,5 @@ public sealed class SlidesEngineFixture : IDisposable
         return path;
     }
 
-    /// <summary>
-    /// Reviews a presentation through the view adapter, as the review command does: it renders
-    /// every slide, then assesses the slides it rendered.
-    /// </summary>
-    internal ProductReviewAssessment Review(string path)
-    {
-        var adapter = new SlidesViewAdapter();
-        var request = new ViewRenderRequest { View = SlidesViews.Slides, MaxPartCount = 100, Purpose = ViewPurpose.Evidence };
-        SlidesSession session = Session;
-        ViewManifest rendered = adapter.Render(session, path, request, new DiscardedArtifacts());
-        return adapter.Assess(session, path, request, rendered);
-    }
-
-    /// <summary>A review's coverage metric, or null when the review does not report it.</summary>
-    internal static long? Metric(ProductReviewAssessment review, string name) =>
-        review.Coverage?.FirstOrDefault(metric => metric.Name == name)?.Value;
-
-    private sealed class DiscardedArtifacts : IViewArtifactSink
-    {
-        public void Write(string relativePath, Action<Stream> contentWriter)
-        {
-            using var stream = new MemoryStream();
-            contentWriter(stream);
-        }
-
-        public void WriteText(string relativePath, string content)
-        {
-        }
-
-        public bool TryWritePart(string relativePath, Action<Stream> contentWriter)
-        {
-            Write(relativePath, contentWriter);
-            return true;
-        }
-    }
-
     public void Dispose() => Temp.Dispose();
 }

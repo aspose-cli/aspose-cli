@@ -265,38 +265,6 @@ internal static class CommonSchemaSamples
         Sessions = [],
     };
 
-    public static ReviewResult Review { get; } = new()
-    {
-        Product = "synthetic",
-        Input = new InputInfo
-        {
-            Path = "D:/data/sample.bin",
-            Format = "bin",
-            SizeBytes = 4096,
-            Fingerprint = new FileFingerprint { Sha256 = new string('0', 64) },
-            Encrypted = false,
-        },
-        OutputDirectory = "D:/data/sample.review",
-        IndexPath = "D:/data/sample.review/index.html",
-        Manifest = "D:/data/sample.review/review.json",
-        View = "default",
-        VisualInspectionRequired = true,
-        Coverage = new ReviewCoverage
-        {
-            MaxItemCount = 256,
-            DiscoveredItemCount = 2,
-            ReportedItemCount = 2,
-            Truncated = false,
-            ExpectedItemCount = 1,
-            RenderedItemCount = 1,
-            OmittedItemCount = 0,
-            Complete = true,
-            Metrics = [],
-        },
-        Artifacts = [],
-        Findings = [],
-    };
-
     public static IReadOnlyList<CommonSchemaSample> All { get; } =
     [
         new(Error.Schema, Error),
@@ -314,6 +282,5 @@ internal static class CommonSchemaSamples
         new(ProductPreviewStart.Schema, ProductPreviewStart),
         new(ProductPreviewStatus.Schema, ProductPreviewStatus),
         new(ProductPreviewStop.Schema, ProductPreviewStop),
-        new(Review.Schema, Review),
     ];
 }

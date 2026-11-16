@@ -67,7 +67,7 @@ Each boundary names the tests that check it, and `SecurityClaimsTests` keeps tho
   Checked by: `HostSecretTests`, `McpSecretExecutionTests`,
   `DecisionOwnershipTests.D5_SecretType_RedactsItsTextAndJson`,
   `LicenseManagementTests.LicenseContents_NeverEnterResultsOrDiagnostics`, `LicenseFingerprintTests`,
-  `EvaluationMarkDisclosureTests`, `ReviewEvaluationDisclosureTests`, `EvaluationOwnershipTests`.
+  `EvaluationMarkDisclosureTests`, `EvaluationOwnershipTests`.
 
 ## Releases
 

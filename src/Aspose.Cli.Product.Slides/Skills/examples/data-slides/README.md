@@ -9,10 +9,10 @@ aspose-cli slides create metrics.pptx --from-markdown metrics.md --output-format
 aspose-cli slides edit metrics.pptx --ops data-ops.json --out metrics.review.pptx --output-format json
 aspose-cli slides read metrics.review.pptx --content shapes --output-format json
 aspose-cli slides convert metrics.review.pptx --to md --slides 2 --out metrics.review.md --output-format json
-aspose-cli review metrics.review.pptx --out metrics.review --output-format json
+aspose-cli slides render metrics.review.pptx --out metrics.review.png --output-format json
 ```
 
 The chart shows North, South, East and West revenue of 120, 90, 75 and 60
 synthetic units. `metrics.review.md` lists the chart's values by category and
 series, so compare them with `data-ops.json`, then check the rendered labels
-and bars. Open every review image and disclose evaluation output.
+and bars. Look at the rendered images and disclose evaluation output.

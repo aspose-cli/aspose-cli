@@ -36,8 +36,7 @@ public sealed class HostLayeringTests
     /// HostContext.</item>
     /// <item>Viewer: view bundles, the page around them and the warm render worker with the
     /// frame protocol it serves.</item>
-    /// <item>The viewer service, which renders through that worker, and review, which renders
-    /// in process.</item>
+    /// <item>The viewer service, which renders through that worker.</item>
     /// <item>App: the local Web App, mounted on the viewer service's origin.</item>
     /// <item>Commands: the command adapters, which compose everything below.</item>
     /// </list>
@@ -51,7 +50,7 @@ public sealed class HostLayeringTests
         [$"{Root}.Licensing", $"{Root}.Updating", $"{Root}.Mcp"],
         [Root],
         [$"{Root}.Viewer"],
-        [$"{Root}.ViewerService", $"{Root}.Review"],
+        [$"{Root}.ViewerService"],
         [$"{Root}.App"],
         [$"{Root}.Commands"],
     ];

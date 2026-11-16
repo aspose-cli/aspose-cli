@@ -9,13 +9,13 @@ aspose-cli slides create deck.pptx --from-markdown deck.md --output-format json
 aspose-cli slides read deck.pptx --slides 2 --content shapes --output-format json
 aspose-cli slides edit deck.pptx --ops deck-ops.json --out deck.revised.pptx --output-format json
 aspose-cli slides read deck.revised.pptx --slides 2 --content full --notes --output-format json
-aspose-cli review deck.revised.pptx --out deck.review --output-format json
+aspose-cli slides render deck.revised.pptx --out deck.revised.png --output-format json
 ```
 
 The shape read shows the second slide's `title` and `body` placeholders, which the operations
 address by role. The source keeps its Delivery plan title. The revised second slide is titled
 Confirmed delivery plan, its body reads "Validation is complete; the release is approved.", and
-its speaker note is "Launch approved." Open every review image before delivery and disclose
+its speaker note is "Launch approved." Look at the rendered images before delivery and disclose
 evaluation output.
 
 For a user's existing deck, read its actual slide and shape addresses before editing. Use

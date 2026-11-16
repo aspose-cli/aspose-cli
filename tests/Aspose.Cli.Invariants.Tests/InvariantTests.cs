@@ -11,7 +11,7 @@ namespace Aspose.Cli.Invariants.Tests;
 // rest of the matrix. The slow cases a known violation names run unmarked in *ListedInvariantTests
 // classes of their own, so every run checks every entry of its license mode beside the samples.
 
-/// <summary>The platform commands: the root, review, fonts, license, skills and the other host commands.</summary>
+/// <summary>The platform commands: the root, fonts, license, skills and the other host commands.</summary>
 public sealed class PlatformInvariantTests
 {
     [Theory]

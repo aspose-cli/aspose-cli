@@ -210,7 +210,7 @@ internal static class IsolationCases
         Assert.True(result.ExitCode is 0 or 8, Describe("The control, which references only files of its own folder, did not succeed."));
         // A command that draws the document shows whether it kept the resource; another, such as an
         // extraction of embedded media, writes pictures that never held it.
-        string[] pictures = item.Command.Verb is "render" or "review" && !KeepsNoResource.ContainsKey((item.Product, item.Format))
+        string[] pictures = item.Command.Verb is "render" && !KeepsNoResource.ContainsKey((item.Product, item.Format))
             ? [.. written.Where(static file => Path.GetExtension(file).ToLowerInvariant() is ".png" or ".jpg" or ".jpeg")]
             : [];
         if (pictures.Length > 0)

@@ -8,7 +8,7 @@ license: MIT
 
 Use `aspose-cli cells` for workbooks: XLSX, XLSM, XLSB, XLS, ODS, CSV and TSV.
 The shared rules (session start, reading windows, operation batches, secrets,
-review, licensing, errors) are in `aspose-cli docs overview`; this Skill adds
+licensing, errors) are in `aspose-cli docs overview`; this Skill adds
 what is specific to workbooks. `aspose-cli capabilities cells` lists commands,
 formats, operations and codes; `aspose-cli schema v2/cells/ops --operation <op>`
 gives an operation's fields. A table in a Word, PDF or slide file is theirs.
@@ -65,7 +65,7 @@ gives an operation's fields. A table in a Word, PDF or slide file is theirs.
    | tier | check |
    |------|-------|
    | values | `cells read` every changed range |
-   | visual | `aspose-cli review book.xlsx --out <new-dir> --output-format json`, then open every sheet image; judge widths from `cells render --range Sales!A1:G20` |
+   | visual | `aspose-cli cells render book.xlsx --sheets all --out <image> --output-format json`, then look at every sheet image yourself; judge widths from `cells render --range Sales!A1:G20` |
    | semantic | `cells inspect --detail errors` reports no formula errors; `cells search` finds no placeholders |
    | session | `cells compare book.backup.xlsx book.xlsx` lists only intended value and formula changes |
 

@@ -48,7 +48,6 @@ public sealed class McpCommandTests
     [InlineData("app", "status")]
     [InlineData("license", "status")]
     [InlineData("skill", "list")]
-    [InlineData("review", "input.xlsx", "--out", "evidence")]
     public void Execute_AllowsDocumentCommandsAndHostCommandsThatOnlyPublishOutputs(
         params string[] args)
     {
@@ -82,7 +81,7 @@ public sealed class McpCommandTests
         // Widening MCP access is a security decision: a new entry must change this list.
         string[] expected =
         [
-            "review", "doctor", "schema", "docs", "fonts list", "fonts check",
+            "doctor", "schema", "docs", "fonts list", "fonts check",
             "license status", "skill list", "preview status", "app status",
         ];
         IReadOnlyList<string> allowed = ActualCommandTree.Host.Parser.McpHostCommands();

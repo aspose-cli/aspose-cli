@@ -60,12 +60,9 @@ shows nor prints; it warns `LOSSY_CONVERSION` for each of these the sheets
 have.
 
 A PDF or XPS that prints a chart across two or more pages warns
-`CHART_SPLIT_ACROSS_PAGES` with each chart and its page count, and `review`
-reports such a workbook as `CELLS_CHART_SPLIT_ACROSS_PAGES`. Fit the sheet
+`CHART_SPLIT_ACROSS_PAGES` with each chart and its page count. Fit the sheet
 with `set_page_setup` (`fitToWidth` 1 and `fitToHeight` 0, or `orientation`
-landscape), or move or resize the chart, and convert again. No product reads
-xps, so `review` cannot open an xps deliverable: review the PDF the same
-workbook converts to instead. `cells convert --to xltx` saves an Excel
+landscape), or move or resize the chart, and convert again. `cells convert --to xltx` saves an Excel
 template (`xltm` keeps macros) that new workbooks made in Excel start from.
 
 A JSON output of a sheet whose data is a single row, which the engine takes
@@ -158,9 +155,7 @@ handle these effects:
   a row that holds more than the notice, or holds it elsewhere, is data.
 - A whole-workbook PDF, XPS, HTML or MHTML export prints the warning sheets an
   earlier evaluation save added as extra pages that hold only the notice; the
-  `EVALUATION_MODE` message, or with a license `EVALUATION_INPUT_MARKED`, names them, and
-  `review` then reports findings on those pages. Export the content sheets with `--sheets` (PDF).
+  `EVALUATION_MODE` message, or with a license `EVALUATION_INPUT_MARKED`, names them.
+  Export the content sheets with `--sheets` (PDF).
 - CSV, TSV and Markdown export only the first worksheet. Without `--sheets` the
   first sheet is written even when another one is active.
-- `review` reports each warning sheet as `CELLS_EVALUATION_SHEET`, with or
-  without a license.

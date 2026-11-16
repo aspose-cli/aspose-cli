@@ -23,7 +23,6 @@ public sealed class CellsSkillExampleTests
         Assert.Equal(54680d, q3["B4"].DoubleValue);
         using var backup = new Workbook(Path.Combine(directory, "quarterly.backup.xlsx"));
         Assert.Equal(1180d, backup.Worksheets["Q3"].Cells["B1"].DoubleValue);
-        Assert.True(File.Exists(Path.Combine(directory, "quarterly.review/review.json")));
     }
 
     [Fact]
@@ -36,7 +35,6 @@ public sealed class CellsSkillExampleTests
         Aspose.Cells.Cells cells = model.Worksheets["Model"].Cells;
         Assert.Equal("=B1*(1+B2)", cells["B3"].Formula);
         Assert.Equal(125000d, cells["B3"].DoubleValue, 6);
-        Assert.True(File.Exists(Path.Combine(directory, "model.review/review.json")));
     }
 
     [Fact]

@@ -1,12 +1,12 @@
 ---
 name: aspose-cli-pdf
-description: Inspect, assemble, edit, fill, redact, secure, sign, convert, validate and review PDF documents with the local Aspose CLI. Edits are atomic batches that reopen their output before publishing, and review renders every page for visual checks.
+description: Inspect, assemble, edit, fill, redact, secure, sign, convert, validate and render PDF documents with the local Aspose CLI. Edits are atomic batches that reopen their output before publishing.
 ---
 
 # Aspose PDF
 
 Use `aspose-cli pdf` for fixed-layout PDF work. The shared rules (session start,
-reading windows, operation batches, secrets, review protocol, licensing, errors)
+reading windows, operation batches, secrets, licensing, errors)
 are in `aspose-cli docs overview`; this Skill adds only what is specific to PDF.
 `aspose-cli capabilities pdf` lists the commands, formats, operations and codes,
 and `aspose-cli schema v2/pdf/<id>` describes each result and the operations.
@@ -86,9 +86,9 @@ a later page. Any other command that needs a later page fails with
 `EVALUATION_LIMIT` (exit 7, `details.limit` 4) before writing anything, `render`
 of every page included: limit it with `--pages 1-4`, keep the inputs of a `merge`
 to 4 pages in total, or tell the user a PDF license is needed. A `convert` of a
-longer PDF to a document format fails even with `--pages`. `review` reports a
-saved notice as `PDF_EVALUATION_WATERMARK`, and a licensed command whose output
-keeps one on its first 4 pages warns `EVALUATION_INPUT_MARKED`.
+longer PDF to a document format fails even with `--pages`. A licensed command
+whose output keeps a saved notice on its first 4 pages warns
+`EVALUATION_INPUT_MARKED`.
 
 ## Common mistakes
 
@@ -103,8 +103,7 @@ keeps one on its first 4 pages warns `EVALUATION_INPUT_MARKED`.
 - Trusting the black box: confirm a redaction with `pdf search`, which reads
   page text alone: when it warns `FORM_VALUES_NOT_IN_TEXT`, read the fields it
   names with `pdf inspect --detail forms`. Act on `OP_NO_EFFECT` as its hint
-  says, and on `REDACTION_TEXT_MOVED`, `REDACTION_NEARBY_TEXT_REMOVED` and
-  `PDF_TEXT_COVERED`
+  says, and on `REDACTION_TEXT_MOVED` and `REDACTION_NEARBY_TEXT_REMOVED`
   ([redaction](references/editing.md)).
 - Guessing rectangles: take them from a `pdf search` hit's `rect`, a field's
   `rect` or a `pdf render --grid` image.
@@ -124,7 +123,7 @@ keeps one on its first 4 pages warns `EVALUATION_INPUT_MARKED`.
 - [PDF/A and conversion](references/pdf-standards.md): profiles, validation,
   images to PDF, other formats and table extraction
 - [Verification](references/verification.md): what `--verify` reads back,
-  content, navigation and appearance checks, PDF review findings
+  content, navigation and appearance checks
 - [Troubleshooting](references/troubleshooting.md): refused network sources,
   permissions the engine does not enforce
 

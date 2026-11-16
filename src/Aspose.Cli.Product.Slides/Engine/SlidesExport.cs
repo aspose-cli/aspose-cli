@@ -412,7 +412,7 @@ internal static partial class SlidesExport
     }
 
     /// <summary>
-    /// The warning that a render or review drew hidden slides, which a slide show and a
+    /// The warning that a render drew hidden slides, which a slide show and a
     /// conversion of every slide leave out; null when none of the drawn slides is hidden.
     /// </summary>
     internal static IReadOnlyList<Warning>? HiddenRendered(Presentation presentation, IEnumerable<int> slides)

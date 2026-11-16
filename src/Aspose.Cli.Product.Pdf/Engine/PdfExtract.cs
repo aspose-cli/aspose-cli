@@ -67,7 +67,7 @@ internal static class PdfExtract
         PdfDiagnostics.TablesNotFound,
         "No table was recognized on the selected pages; a table drawn without ruling lines, such as one laid out from Markdown, may not be recognized.")
     {
-        Hint = $"Compare with {request.TextExtraction ?? "'pdf extract --what text'"} or {request.InputReview ?? "'aspose-cli review'"}, and take the table from the text if it is there.",
+        Hint = $"Compare with {request.TextExtraction ?? "'pdf extract --what text'"}, and take the table from the text if it is there.",
     };
 
     private static IReadOnlyList<(PublishedFile File, int? Page)> ExtractImages(

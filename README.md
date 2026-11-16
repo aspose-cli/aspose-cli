@@ -33,9 +33,8 @@ project by default or for the user with `--user`.
   published, or nothing changes. `--in-place` replaces the input (`--backup` keeps a copy first),
   `--if-match` refuses a file that changed since it was read, and `--dry-run` writes nothing.
   No other command writes over one of its inputs.
-- **Verification.** `aspose-cli review <file>` writes an evidence directory with an image of
-  every sheet, slide or page and its layout findings; `edit --verify` reads the staged output back
-  and reports semantic evidence before publication.
+- **Verification.** `edit --verify` reads the staged output back and reports semantic evidence
+  before publication.
 - **A stable contract.** In JSON mode a command writes one result to stdout or one error to
   stderr, with a stable code and exit code; [Compatibility](#compatibility) says what stays stable.
 - **Bounded work.** Inputs, rendering and extraction are held to the budgets that `capabilities`

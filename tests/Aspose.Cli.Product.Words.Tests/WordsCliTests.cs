@@ -70,35 +70,6 @@ public sealed class WordsCliTests : IClassFixture<WordsFixture>, IDisposable
     }
 
     [Fact]
-    public void Review_ListStyleDocument_ProducesCompleteEvidence()
-    {
-        string input = _workspace.File("list-style.docx");
-        var document = new Document();
-        Style listStyle = document.Styles.Add(StyleType.List, "Review checklist");
-        Aspose.Words.Lists.List list = document.Lists.Add(listStyle);
-        var builder = new DocumentBuilder(document);
-        builder.ListFormat.List = list;
-        builder.Writeln("Confirm the commercial terms.");
-        builder.ListFormat.RemoveNumbers();
-        document.Save(input);
-
-        CliResult reviewed = _workspace.Run(
-            "review", "list-style.docx", "--out", "evidence",
-            "--max-items", "10", "--output-format", "json");
-
-        Assert.True(reviewed.ExitCode == 0, reviewed.StdErr);
-        Assert.DoesNotContain("HOST-COMMAND-0001", reviewed.StdErr, StringComparison.Ordinal);
-        JsonNode result = JsonNode.Parse(reviewed.StdOut)!;
-        Assert.Equal("words", result["product"]!.GetValue<string>());
-        Assert.True(result["coverage"]!["complete"]!.GetValue<bool>());
-        Assert.Equal(
-            result["coverage"]!["expectedItemCount"]!.GetValue<int>(),
-            result["coverage"]!["renderedItemCount"]!.GetValue<int>());
-        Assert.True(File.Exists(_workspace.File("evidence/index.html")));
-        Assert.True(File.Exists(_workspace.File("evidence/review.json")));
-    }
-
-    [Fact]
     public void WordsCommands_ReadADocumentByItsContentWhateverItsExtension()
     {
         var document = new Document();
@@ -107,99 +78,9 @@ public sealed class WordsCliTests : IClassFixture<WordsFixture>, IDisposable
 
         CliResult converted = _workspace.Run(
             "words", "convert", "contract.pdf", "--to", "docx", "--out", "contract.docx", "--output-format", "json");
-        CliResult reviewed = _workspace.Run("review", "contract.pdf", "--out", "evidence", "--output-format", "json");
 
         Assert.True(converted.ExitCode == 0, converted.StdErr);
         Assert.Equal("docx", JsonNode.Parse(converted.StdOut)!["input"]!["format"]!.GetValue<string>());
-        Assert.Equal("FORMAT_MISMATCH", JsonNode.Parse(reviewed.StdErr)!["error"]!["code"]!.GetValue<string>());
-    }
-
-    [Fact]
-    public void Review_ReportsDeclaredChecksAndFiltersThemByCode()
-    {
-        var document = new Document();
-        var builder = new DocumentBuilder(document);
-        builder.Font.Name = "Times New Roman";
-        builder.Font.Size = 5;
-        builder.Writeln("Fine print.");
-        builder.Font.Size = 80;
-        builder.Writeln("Banner");
-        document.StartTrackRevisions("Reviewer", DateTime.UnixEpoch);
-        builder.Font.Size = 12;
-        builder.Writeln("Tracked clause.");
-        document.StopTrackRevisions();
-        var comment = new Comment(document, "Reviewer", "R", DateTime.UnixEpoch);
-        comment.SetText("Confirm the clause.");
-        builder.CurrentParagraph.AppendChild(comment);
-        builder.InsertBreak(BreakType.PageBreak);
-        builder.Write("Second page.");
-        document.Save(_workspace.File("findings.docx"));
-
-        CliResult reviewed = _workspace.Run(
-            "review", "findings.docx", "--out", "evidence", "--output-format", "json");
-
-        Assert.True(reviewed.ExitCode is 0 or 8, reviewed.StdErr);
-        JsonArray findings = JsonNode.Parse(reviewed.StdOut)!["findings"]!.AsArray();
-        string[] codes = findings
-            .Select(static finding => finding!["code"]!.GetValue<string>())
-            .ToArray();
-        Assert.Contains("WORDS_TEXT_TOO_SMALL", codes);
-        Assert.Contains("WORDS_TEXT_TOO_LARGE", codes);
-        Assert.Contains("WORDS_REVISIONS_PRESENT", codes);
-        Assert.Contains("WORDS_COMMENTS_PRESENT", codes);
-        // A page finding's evidence is its page's image; a document finding's is every page.
-        string[] Evidence(string code) => findings
-            .Single(finding => finding!["code"]!.GetValue<string>() == code)!["evidence"]!.AsArray()
-            .Select(static path => Path.GetFileName(path!.GetValue<string>()))
-            .ToArray();
-        Assert.Equal(["page-0001.png"], Evidence("WORDS_TEXT_TOO_SMALL"));
-        Assert.Equal(["page-0001.png", "page-0002.png"], Evidence("WORDS_REVISIONS_PRESENT"));
-        Assert.Equal(
-            $"Disclose the revisions; accept or reject them with accept_revisions or reject_revisions only when the user decides. 'aspose-cli words inspect \"{Path.GetFullPath(_workspace.File("findings.docx"))}\" --detail revisions --output-format json' lists each one with its block.",
-            findings.Single(static finding => finding!["code"]!.GetValue<string>() == "WORDS_REVISIONS_PRESENT")!["hint"]!.GetValue<string>());
-
-        CliResult filtered = _workspace.Run(
-            "review", "findings.docx", "--out", "filtered", "--code", "WORDS_TEXT_TOO_SMALL", "--output-format", "json");
-
-        Assert.True(filtered.ExitCode is 0 or 8, filtered.StdErr);
-        JsonNode result = JsonNode.Parse(filtered.StdOut)!;
-        Assert.All(result["findings"]!.AsArray(), static finding =>
-            Assert.Equal("WORDS_TEXT_TOO_SMALL", finding!["code"]!.GetValue<string>()));
-        Assert.Equal(codes.Count(static code => code != "WORDS_TEXT_TOO_SMALL"),
-            result["filter"]!["omittedFindingCount"]!.GetValue<int>());
-    }
-
-    /// <summary>
-    /// A review finding is located as an operation's targets are: a page finding at
-    /// <c>page/2</c>, a heading at its <c>block/2</c>, and a document finding nowhere narrower.
-    /// </summary>
-    [Fact]
-    public void Review_LocatesFindingsWithTargetAddresses()
-    {
-        var document = new Document();
-        var builder = new DocumentBuilder(document);
-        builder.Writeln("Introduction.");
-        builder.ParagraphFormat.StyleIdentifier = StyleIdentifier.Heading2;
-        builder.Writeln("Terms");
-        builder.ParagraphFormat.StyleIdentifier = StyleIdentifier.Normal;
-        builder.InsertBreak(BreakType.SectionBreakNewPage);
-        builder.Font.Size = 5;
-        builder.Write("Fine print.");
-        var comment = new Comment(document, "Reviewer", "R", DateTime.UnixEpoch);
-        comment.SetText("Confirm the clause.");
-        builder.CurrentParagraph.AppendChild(comment);
-        document.Save(_workspace.File("located.docx"));
-
-        CliResult reviewed = _workspace.Run(
-            "review", "located.docx", "--out", "evidence", "--output-format", "json");
-
-        Assert.True(reviewed.ExitCode is 0 or 8, reviewed.StdErr);
-        JsonArray findings = JsonNode.Parse(reviewed.StdOut)!["findings"]!.AsArray();
-        string? Location(string code) => findings
-            .Single(finding => finding!["code"]!.GetValue<string>() == code)!["location"]?.GetValue<string>();
-        Assert.Equal("page/2", Location("WORDS_TEXT_TOO_SMALL"));
-        Assert.Equal("block/2", Location("WORDS_HEADING_ORPHANED"));
-        Assert.Null(Location("WORDS_COMMENTS_PRESENT"));
     }
 
     [Category(TestCategory.Slow)]
@@ -237,24 +118,6 @@ public sealed class WordsCliTests : IClassFixture<WordsFixture>, IDisposable
         Assert.Equal(["OUTPUT_TRUNCATED"], verification["issues"]!.AsArray().Select(static issue => issue!["code"]!.GetValue<string>()));
         Assert.True(result.ExitCode == 8, result.StdErr + result.StdOut);
         Assert.True(File.Exists(_workspace.File("letters.docx")));
-    }
-
-    [Category(TestCategory.Slow)]
-    [Fact]
-    public void Review_OpensAPasswordEncryptedDocument()
-    {
-        var document = new Document();
-        new DocumentBuilder(document).Writeln("Confidential clause.");
-        document.Save(_workspace.File("secret.docx"), new Aspose.Words.Saving.OoxmlSaveOptions(SaveFormat.Docx) { Password = "review-secret" });
-
-        CliResult reviewed = _workspace.RunWithEnv(
-            new Dictionary<string, string?> { ["REVIEW_PASSWORD"] = "review-secret" },
-            "review", "secret.docx", "--password-env", "REVIEW_PASSWORD", "--output-format", "json");
-        CliResult locked = _workspace.Run("review", "secret.docx", "--out", "locked.review", "--output-format", "json");
-
-        Assert.True(reviewed.ExitCode == 0, reviewed.StdErr + reviewed.StdOut);
-        Assert.True(File.Exists(Path.Combine(_workspace.File("secret.docx.review"), "review.json")));
-        Assert.Equal("PASSWORD_REQUIRED", JsonNode.Parse(locked.StdErr)!["error"]!["code"]!.GetValue<string>());
     }
 
     /// <summary>
@@ -300,48 +163,6 @@ public sealed class WordsCliTests : IClassFixture<WordsFixture>, IDisposable
             Assert.False(part.AsSpan().SequenceEqual(sentinel), entry.FullName);
             Assert.DoesNotContain("sentinel", System.Text.Encoding.Latin1.GetString(part), StringComparison.OrdinalIgnoreCase);
         }
-    }
-
-    /// <summary>
-    /// A picture stored only as a link has no image bytes once loaded: review completes on it, as
-    /// render does, whether the link names a picture beside the document or a resource the
-    /// Markdown import omitted.
-    /// </summary>
-    [Category(TestCategory.Slow)]
-    [Theory]
-    [InlineData("beside")]
-    [InlineData("omitted")]
-    public void Review_OfADocumentWithALinkedPicture_Completes(string link)
-    {
-        if (link == "beside")
-        {
-            File.WriteAllBytes(_workspace.File("control.png"), Convert.FromBase64String(
-                "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGP4z8DwHwAFAAH/iZk9HQAAAABJRU5ErkJggg=="));
-            var document = new Document();
-            var builder = new DocumentBuilder(document);
-            builder.Writeln("Linked picture.");
-            var linked = new Aspose.Words.Drawing.Shape(document, Aspose.Words.Drawing.ShapeType.Image)
-            {
-                Width = 40,
-                Height = 40,
-                WrapType = Aspose.Words.Drawing.WrapType.Inline,
-            };
-            linked.ImageData.SourceFullName = "control.png";
-            builder.InsertNode(linked);
-            document.Save(_workspace.File("linked.docx"), SaveFormat.Docx);
-        }
-        else
-        {
-            File.WriteAllText(_workspace.File("linked.md"), "text <img src=x onerror=alert(7)>\n");
-            CliResult created = _workspace.Run("words", "create", "linked.docx", "--from-markdown", "linked.md", "--output-format", "json");
-            Assert.True(created.ExitCode == 0, created.StdErr);
-        }
-
-        CliResult reviewed = _workspace.Run("review", "linked.docx", "--output-format", "json");
-
-        Assert.DoesNotContain("INTERNAL_ERROR", reviewed.StdErr + reviewed.StdOut, StringComparison.Ordinal);
-        Assert.True(reviewed.ExitCode is 0 or 8, $"exit {reviewed.ExitCode}: {reviewed.StdErr}");
-        Assert.True(File.Exists(Path.Combine(_workspace.File("linked.docx.review"), "review.json")));
     }
 
     /// <summary>

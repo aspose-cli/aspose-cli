@@ -13,7 +13,7 @@ aspose-cli cells edit report.xlsx --ops ops.json --in-place --output-format json
 aspose-cli cells read report.xlsx --sheet sales --range E1:E6 --content formulas --output-format json
 
 # 4. ...and visually, then deliver as PDF.
-aspose-cli review report.xlsx --out report.review --output-format json
+aspose-cli cells render report.xlsx --sheets all --out report.png --output-format json
 aspose-cli cells convert report.xlsx --to pdf --sheets 1 --overwrite --output-format json
 ```
 

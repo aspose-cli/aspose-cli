@@ -1,14 +1,14 @@
 ---
 name: aspose-cli-slides
-description: Create, inspect, edit, convert and review PowerPoint presentations with the local Aspose CLI. Markdown outlines fill real template layouts, edits are atomic batches, and review renders every slide for visual checks.
+description: Create, inspect, edit, convert and render PowerPoint presentations with the local Aspose CLI. Markdown outlines fill real template layouts, and edits are atomic batches.
 ---
 
 # Aspose Slides
 
 Use `aspose-cli slides` for PPTX, PPT, ODP and related presentation formats. The shared rules
-(session start, reading windows, operation batches, secrets, review protocol, licensing, errors)
+(session start, reading windows, operation batches, secrets, licensing, errors)
 are in `aspose-cli docs overview`; this Skill adds only what is specific to presentations.
-`aspose-cli capabilities slides` lists the commands, formats, review checks and codes, and
+`aspose-cli capabilities slides` lists the commands, formats and codes, and
 `aspose-cli schema v2/slides/ops --operation <op>` describes each operation's fields.
 A deck exported to PDF is a PDF: edit that file with the PDF Skill (`aspose-cli docs pdf/overview`).
 
@@ -39,11 +39,12 @@ A deck exported to PDF is a PDF: edit that file with the PDF Skill (`aspose-cli 
    aspose-cli slides edit deck.pptx --ops deck-ops.json --out deck.revised.pptx --verify --output-format json
    ```
 
-5. Read the changes back and review every slide ([Slides verification](references/verification.md),
-   then the checklist in `aspose-cli docs verification`):
+5. Read the changes back, render every slide and look at the images yourself
+   ([Slides verification](references/verification.md), then the checklist in
+   `aspose-cli docs verification`):
 
    ```powershell
-   aspose-cli review deck.revised.pptx --out deck.review-1 --output-format json
+   aspose-cli slides render deck.revised.pptx --out deck.revised.png --output-format json
    ```
 
 ## Addressing
@@ -65,8 +66,8 @@ Details: [design system](references/design-system.md).
 
 Without a Slides license (`aspose-cli docs licensing`), reads return text longer than five
 characters cut short and warn `EVALUATION_INPUT_TRUNCATED`, while the presentations, PDFs and
-images it saves keep the full text. Each evaluation save adds another watermark text box to every slide, which `review`
-reports as `SLIDES_EVALUATION_WATERMARK`; a license does not remove them, so rebuild the deck
+images it saves keep the full text. Each evaluation save adds another watermark text box to every
+slide; a license does not remove them, so rebuild the deck
 with a license. Details: [evaluation mode](references/troubleshooting.md#evaluation-mode).
 
 ## Common mistakes
@@ -76,12 +77,12 @@ with a license. Details: [evaluation mode](references/troubleshooting.md#evaluat
 - Restyling text with `format_shape` slide by slide instead of fixing the template once.
 - Splitting related changes over several edits; one batch can add a slide and fill it.
 - Trusting `--verify` alone: it does not read back formatting, geometry, inserted objects, table
-  cells or chart data; read those with `slides read --content full` and look at the review.
+  cells or chart data; read those with `slides read --content full` and look at a render.
 - Expecting speaker notes in a PDF or other export: read them with `slides read --notes`.
 - Delivering a converted file without its warnings: `HIDDEN_SLIDES_SKIPPED`, `ENCRYPTION_REMOVED`
   and `LOSSY_CONVERSION` change what the output holds
   ([outputs](references/editing.md#outputs-and-conversion)).
-- Passing different `--font-dir` folders to `create`, `edit`, `convert`, `render` and `review`:
+- Passing different `--font-dir` folders to `create`, `edit`, `convert` and `render`:
   saving shrinks auto-fit text with the fonts it finds.
 
 ## References
@@ -91,7 +92,7 @@ with a license. Details: [evaluation mode](references/troubleshooting.md#evaluat
 - [Outline authoring](references/outline-authoring.md): the Markdown grammar and how it maps to layouts
 - [Design system](references/design-system.md): choosing the template and content rules
 - [Slides verification](references/verification.md): what `--verify` reads back, content reads,
-  review checks, chart fidelity
+  chart fidelity
 - [Slides preview](references/preview.md): what the viewer shows
 - [Slides troubleshooting](references/troubleshooting.md): failed or odd-looking edits and
   evaluation-mode output
