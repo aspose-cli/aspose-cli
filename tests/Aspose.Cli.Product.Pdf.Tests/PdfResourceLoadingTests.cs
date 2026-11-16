@@ -352,7 +352,7 @@ public sealed class PdfResourceLoadingTests
             ? workspace.Run("pdf", "create", "in/output.pdf", "--from-images", "in/image.svg", "--output-format", "json")
             : workspace.Run("pdf", "edit", "in/notes.pdf", "--ops", $$"""{"ops":[{{operation}}]}""", "--out", "in/output.pdf", "--output-format", "json");
 
-        AssertNoSentinel(workspace, result);
+        AssertNoSentinel(workspace, result, svg: true);
     }
 
     // A regression guard: the HTML importer reads none of these files on the stage branch either.
@@ -375,7 +375,8 @@ public sealed class PdfResourceLoadingTests
 
         CliResult result = workspace.Run("pdf", "create", "in/output.pdf", "--from-html", "in/input.html", "--output-format", "json");
 
-        AssertNoSentinel(workspace, result);
+        // A data URI image is blocked as a remote resource (REMOTE_RESOURCES_BLOCKED), so it draws no SVG.
+        AssertNoSentinel(workspace, result, svg: use is not "img" and not "data-svg");
     }
 
     private static readonly SkiaSharp.SKColor SentinelColor = new(19, 215, 165);
@@ -435,10 +436,11 @@ public sealed class PdfResourceLoadingTests
     }
 
     private static string SvgNaming(string reference) =>
-        $"""<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="200" height="200"><image xlink:href="{System.Security.SecurityElement.Escape(reference)}" x="0" y="0" width="200" height="200"/></svg>""";
+        $"""<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="200" height="200"><rect width="200" height="200" fill="rgb(40,70,210)"/><image xlink:href="{System.Security.SecurityElement.Escape(reference)}" x="0" y="0" width="200" height="200"/></svg>""";
 
-    // A refused command writes nothing; a written output must not show the sentinel's pixels.
-    private static void AssertNoSentinel(TempWorkspace workspace, CliResult result)
+    // A refused command writes nothing; a written output must not show the sentinel's pixels, and
+    // shows the SVG's own control rectangle where it draws the SVG, so the SVG was not dropped whole.
+    private static void AssertNoSentinel(TempWorkspace workspace, CliResult result, bool svg)
     {
         string output = workspace.File("in/output.pdf");
         if (result.ExitCode != 0)
@@ -454,6 +456,8 @@ public sealed class PdfResourceLoadingTests
             Math.Abs(pixel.Red - SentinelColor.Red) < 8 && Math.Abs(pixel.Green - SentinelColor.Green) < 8
             && Math.Abs(pixel.Blue - SentinelColor.Blue) < 8);
         Assert.True(sentinel == 0, $"The output shows {sentinel} pixels of the sentinel image outside the input directory.");
+        int control = page.Pixels.Count(static pixel => Math.Abs(pixel.Red - 40) < 8 && Math.Abs(pixel.Green - 70) < 8 && Math.Abs(pixel.Blue - 210) < 8);
+        Assert.True(!svg || control > 0, "The output shows none of the SVG's own rectangle, so the SVG itself was left out.");
     }
 
     /// <summary>A TLS endpoint with a self-signed certificate that counts the connections it accepts.</summary>
