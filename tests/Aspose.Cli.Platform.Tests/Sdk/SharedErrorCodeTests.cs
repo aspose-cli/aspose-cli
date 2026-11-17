@@ -65,15 +65,6 @@ public sealed class SharedErrorCodeTests
     }
 
     [Fact]
-    public void FromRemote_RestatesTheErrorAnotherProcessReported()
-    {
-        CliException error = CliErrors.FromRemote("FILE_CORRUPT", ExitCode.InputError, "Damaged.", "Check it.");
-
-        Assert.Equal(ErrorCodes.FileCorrupt, error.Code);
-        Assert.Equal(("Damaged.", "Check it."), (error.Message, error.Hint));
-    }
-
-    [Fact]
     public void InputUnreadable_AlwaysNamesTheFullPath()
     {
         string path = Path.Combine(Path.GetTempPath(), "missing", "deck.pptx");

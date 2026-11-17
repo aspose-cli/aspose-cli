@@ -18,8 +18,6 @@ Options:
   --version                                      Show version information
 
 Commands:
-  app                               Open the local file workspace in a browser.
-  preview                           Watch files in the local viewer and follow every change.
   cells                             Spreadsheet operations (Excel and friends) with engine-grade fidelity.
   pdf                               PDF automation with page, security and fixed-layout semantics.
   slides                            Presentation automation with slide, layout and notes semantics.
@@ -32,10 +30,8 @@ Commands:
   docs <topic>                      Print an offline reference document bundled with this binary.
   fonts                             Diagnose the font environment used for rendering.
   mcp                               Expose this CLI to a local MCP client over stdio.
-  update                            Check or install a CLI release; no background checks are performed.
 
 Examples:
-  aspose-cli app open
   aspose-cli capabilities cells edit --output-format json
   aspose-cli schema
 
@@ -43,97 +39,6 @@ Learn more:
   aspose-cli docs                    offline documentation bundled in this binary
   aspose-cli schema                  the available JSON Schema identifiers
   aspose-cli capabilities --summary  each product's commands, formats and operations
-
-
-## aspose-cli app --help
-Description:
-  Open the local file workspace in a browser.
-
-Usage:
-  aspose-cli app [command]
-
-Commands:
-  open <file>  Start or activate the local App and open a file, its home page or its guide.
-  status       Show whether the local App is running.
-  stop         Stop the local App, its documents and the viewer service.
-
-Global options:
-  -h/--help, --output-format, -q/--quiet, -v/--verbose, --license, --license-mode, --workdir, --timeout, --max-input-bytes (see aspose-cli --help)
-
-Examples:
-  aspose-cli app open
-  aspose-cli app open report.docx
-  aspose-cli app open --welcome
-  aspose-cli app open --foreground --port 4680
-  aspose-cli app status --output-format json
-
-Learn more:
-  aspose-cli docs app  welcome, files, preview, settings and lifecycle
-
-
-## aspose-cli app open --help
-Description:
-  Start or activate the local App and open a file, its home page or its guide.
-
-Usage:
-  aspose-cli app open [<file>] [options]
-
-Arguments:
-  <file>  File to open in the local App; without one the App opens on its home page.
-
-Options:
-  --welcome      Open the first-run workspace guide instead of a file.
-  --foreground   Keep the App in this process for debugging, containers and tests.
-  --port <port>  Loopback port; 0 chooses a free port. Range: 0-65535. [default: 0]
-  --no-open      Start or activate the App without opening a browser.
-
-Global options:
-  -h/--help, --output-format, -q/--quiet, -v/--verbose, --license, --license-mode, --workdir, --timeout, --max-input-bytes (see aspose-cli --help)
-
-Examples:
-  aspose-cli app open
-  aspose-cli app open report.docx
-  aspose-cli app open --welcome --no-open
-  aspose-cli app open --foreground --port 4680
-
-Learn more:
-  aspose-cli docs app  welcome, files, preview, settings and lifecycle
-
-
-## aspose-cli app status --help
-Description:
-  Show whether the local App is running.
-
-Usage:
-  aspose-cli app status
-
-Global options:
-  -h/--help, --output-format, -q/--quiet, -v/--verbose, --license, --license-mode, --workdir, --timeout, --max-input-bytes (see aspose-cli --help)
-
-Examples:
-  aspose-cli app status
-  aspose-cli app status --output-format json
-
-Learn more:
-  aspose-cli docs app  welcome, files, preview, settings and lifecycle
-
-
-## aspose-cli app stop --help
-Description:
-  Stop the local App, its documents and the viewer service.
-
-Usage:
-  aspose-cli app stop
-
-Global options:
-  -h/--help, --output-format, -q/--quiet, -v/--verbose, --license, --license-mode, --workdir, --timeout, --max-input-bytes (see aspose-cli --help)
-
-Examples:
-  aspose-cli app stop
-  aspose-cli app stop --output-format json
-
-Learn more:
-  aspose-cli docs app  welcome, files, preview, settings and lifecycle
 
 
 ## aspose-cli capabilities --help
@@ -394,104 +299,6 @@ Learn more:
   aspose-cli docs  offline documentation bundled in this binary
 
 
-## aspose-cli preview --help
-Description:
-  Watch files in the local viewer and follow every change.
-
-Usage:
-  aspose-cli preview [command]
-
-Commands:
-  open <file>  Open a file in the local viewer and follow every change.
-  status <id>  List the documents the local viewer has open.
-  stop <id>    Close one document, or stop the local viewer service.
-
-Global options:
-  -h/--help, --output-format, -q/--quiet, -v/--verbose, --license, --license-mode, --workdir, --timeout, --max-input-bytes (see aspose-cli --help)
-
-Examples:
-  aspose-cli preview open report.docx --output-format json
-  aspose-cli preview status --output-format json
-  aspose-cli preview stop --output-format json
-
-Learn more:
-  aspose-cli docs preview  live preview of a document while it changes
-
-
-## aspose-cli preview open --help
-Description:
-  Open a file in the local viewer and follow every change.
-
-Usage:
-  aspose-cli preview open [<file>] [options]
-
-Arguments:
-  <file>  File to preview; content detection selects the product unless --product is supplied.
-
-Options:
-  --port <port>                               Loopback port; 0 chooses a free port. Range: 0-65535. [default: 0]
-  --product <cells|pdf|slides|words>          Product that reads the file; by default, the one whose format the file's content matches.
-  --view <auto|pages|sheets|slides|workbook>  Product view; auto uses the product's own view. [default: auto]
-  --no-open                                   Do not open the viewer in the default browser.
-  --fx <fx>                                   Presentation effect for live demonstrations (for example 'demo').
-  --password <password>                       Password for the file. Discouraged: visible in the process list; prefer --password-env.
-  --password-env <password-env>               Name of an environment variable holding the password for the file.
-  --password-stdin                            Read the password for the file from the first line of stdin.
-  --font-dir <font-dir>                       Local font directory searched in addition to the system fonts; repeat for more.
-
-Global options:
-  -h/--help, --output-format, -q/--quiet, -v/--verbose, --license, --license-mode, --workdir, --timeout, --max-input-bytes (see aspose-cli --help)
-
-Examples:
-  aspose-cli preview open report.docx
-  aspose-cli preview open report.docx --no-open --output-format json
-
-Learn more:
-  aspose-cli docs preview  live preview of a document while it changes
-
-
-## aspose-cli preview status --help
-Description:
-  List the documents the local viewer has open.
-
-Usage:
-  aspose-cli preview status [<id>]
-
-Arguments:
-  <id>  Optional document id.
-
-Global options:
-  -h/--help, --output-format, -q/--quiet, -v/--verbose, --license, --license-mode, --workdir, --timeout, --max-input-bytes (see aspose-cli --help)
-
-Examples:
-  aspose-cli preview status
-  aspose-cli preview status --output-format json
-
-Learn more:
-  aspose-cli docs preview  live preview of a document while it changes
-
-
-## aspose-cli preview stop --help
-Description:
-  Close one document, or stop the local viewer service.
-
-Usage:
-  aspose-cli preview stop [<id>]
-
-Arguments:
-  <id>  Document id to close; without one, every document closes and the service stops.
-
-Global options:
-  -h/--help, --output-format, -q/--quiet, -v/--verbose, --license, --license-mode, --workdir, --timeout, --max-input-bytes (see aspose-cli --help)
-
-Examples:
-  aspose-cli preview stop
-  aspose-cli preview stop --output-format json
-
-Learn more:
-  aspose-cli docs preview  live preview of a document while it changes
-
-
 ## aspose-cli schema --help
 Description:
   List schema ids as an envelope, or print one raw JSON Schema document when an id is supplied.
@@ -583,59 +390,5 @@ Examples:
 
 Learn more:
   aspose-cli docs  offline documentation bundled in this binary
-
-
-## aspose-cli update --help
-Description:
-  Check or install a CLI release; no background checks are performed.
-
-Usage:
-  aspose-cli update [command]
-
-Commands:
-  check    Check whether a newer release is available.
-  install  Install a newer release after checking its archive against the release manifest.
-
-Global options:
-  -h/--help, --output-format, -q/--quiet, -v/--verbose, --license, --license-mode, --workdir, --timeout, --max-input-bytes (see aspose-cli --help)
-
-
-## aspose-cli update check --help
-Description:
-  Check whether a newer release is available.
-
-Usage:
-  aspose-cli update check
-
-Global options:
-  -h/--help, --output-format, -q/--quiet, -v/--verbose, --license, --license-mode, --workdir, --timeout, --max-input-bytes (see aspose-cli --help)
-
-Examples:
-  aspose-cli update check
-  aspose-cli update check --output-format json
-
-Learn more:
-  aspose-cli docs troubleshooting  recovering from errors and environment problems
-
-
-## aspose-cli update install --help
-Description:
-  Install a newer release after checking its archive against the release manifest.
-
-Usage:
-  aspose-cli update install [options]
-
-Options:
-  --dry-run  Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds.
-
-Global options:
-  -h/--help, --output-format, -q/--quiet, -v/--verbose, --license, --license-mode, --workdir, --timeout, --max-input-bytes (see aspose-cli --help)
-
-Examples:
-  aspose-cli update install --dry-run
-  aspose-cli update install
-
-Learn more:
-  aspose-cli docs troubleshooting  recovering from errors and environment problems
 
 

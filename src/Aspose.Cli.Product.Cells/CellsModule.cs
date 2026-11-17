@@ -34,7 +34,6 @@ public sealed class CellsModule : IProductModule
             .Formats(CellsFormats.Definitions)
             .Diagnostics(CellsDiagnostics.All)
             .Json(ProductJsonContext.Definition)
-            .View(new CellsViewAdapter())
             .Describe("Spreadsheet operations (Excel and friends) with engine-grade fidelity.", Help)
             .Command(InspectCommand.Create, CellsInfo.Run)
             .Command(ReadCommand.Create, CellsRead.Run)

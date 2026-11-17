@@ -158,17 +158,6 @@ public static partial class CliErrors
         hint: "Check the path. Relative paths resolve against --workdir (or the current directory).",
         details: FileNotFoundDetails(option is null ? "file" : $"{option.TrimStart('-')} file", path));
 
-    /// <summary>
-    /// A recent file the caller chose by its id that is no longer listed, so there is no path
-    /// to name; the details state the id.
-    /// </summary>
-    /// <param name="id">The recent file's id as the caller gave it.</param>
-    public static CliException RecentFileNotFound(string id) => CliException.Create(
-        ErrorCodes.FileNotFound,
-        $"The recent file '{id}' is no longer listed.",
-        hint: "Choose the file again; the recent list keeps only files that still exist.",
-        details: new JsonObject { ["subject"] = "recent file", ["requested"] = id });
-
     private static JsonObject FileNotFoundDetails(string subject, string path) => new()
     {
         ["subject"] = subject,
@@ -451,41 +440,6 @@ public static partial class CliErrors
         hint: hint,
         details: new JsonObject { ["path"] = path, ["offset"] = offset });
 
-    /// <summary>
-    /// A view's artifacts exceed one of their limits; the hint names <paramref name="variable"/>,
-    /// the environment variable that sets the limit they reached (<c>ViewArtifactLimits</c>).
-    /// </summary>
-    public static CliException PreviewBudgetExceeded(
-        string resource,
-        long actual,
-        long limit,
-        string variable) => CliException.Create(
-        ErrorCodes.PreviewBudgetExceeded,
-        $"The preview {resource} exceeds its resource budget.",
-        hint:
-            $"Reduce the rendered document or raise {variable} within its safety maximum.",
-        details: new JsonObject
-        {
-            ["resource"] = resource,
-            ["actual"] = actual,
-            ["limit"] = limit,
-        });
-
-    public static CliException UploadBudgetExceeded(
-        string resource,
-        long actual,
-        long limit) => CliException.Create(
-        ErrorCodes.UploadBudgetExceeded,
-        $"The App upload {resource} exceeds its session budget.",
-        hint:
-            $"Remove prior uploads, upload a smaller file, or raise the matching {DistributionInfo.EnvironmentVariablePrefix}APP_MAX_UPLOAD_* limit within its safety maximum.",
-        details: new JsonObject
-        {
-            ["resource"] = resource,
-            ["actual"] = actual,
-            ["limit"] = limit,
-        });
-
     public static CliException RenderTooLarge(long width, long height, int? dpi, long maxPixels, string hint)
     {
         string megabytes = ((double)width * height * 4d / 1_048_576d)
@@ -726,35 +680,6 @@ public static partial class CliErrors
         },
         innerException: inner,
         explanation: reason);
-
-    public static CliException LoopbackPortInUse(int port) => CliException.Create(
-        ErrorCodes.LoopbackPortInUse,
-        port == 0
-            ? "No available ephemeral loopback HTTP port could be bound."
-            : $"Loopback port {port} is already in use by another process.",
-        hint: port == 0
-            ? "Close unused local services, verify loopback networking, and retry."
-            : "Pass --port 0 to bind a free ephemeral port, or choose a different port with --port.",
-        details: new JsonObject { ["port"] = port });
-
-    public static CliException LoopbackListenerUnavailable(
-        bool permissionDenied,
-        Exception innerException) => CliException.Create(
-        ErrorCodes.LoopbackListenerUnavailable,
-        permissionDenied
-            ? "The current user is not permitted to create the loopback HTTP listener."
-            : "The platform could not create the loopback HTTP listener.",
-        hint: permissionDenied
-            ? "Allow the current user to bind loopback HTTP listeners, then retry."
-            : $"Run '{DistributionInfo.CommandName} doctor', verify loopback networking, and retry.",
-        details: new JsonObject
-        {
-            ["phase"] = "listener",
-            ["reason"] = permissionDenied
-                ? "permission-denied"
-                : "listener-unavailable",
-        },
-        innerException: innerException);
 
     /// <summary>A format id that names none of <paramref name="supported"/>; the details list them and the closest ones.</summary>
     public static CliException FormatUnsupported(string requested, IReadOnlyList<string> supported)

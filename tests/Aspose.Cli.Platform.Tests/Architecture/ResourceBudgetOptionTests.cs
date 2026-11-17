@@ -45,7 +45,6 @@ public sealed class ResourceBudgetOptionTests
             .Formats([FormatDescriptor.Input("alpha", 0, RouteOwnership.Explicit, ".alpha")])
             .Diagnostics([])
             .Json(new ProductJsonDefinition("alpha", SdkJsonContext.Default))
-            .View(new TestProductViewAdapter<ITestSession>())
             .WithCommand<ITestSession, TestResult>("read", new Option<int>("--max-items"))
             .Activator(static _ =>
                 throw new InvalidOperationException("Budget validation must not activate a product session."))

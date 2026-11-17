@@ -17,25 +17,4 @@ internal static class LocalFileCleanup
             return false;
         }
     }
-
-    public static bool DeleteDirectory(
-        string path,
-        bool recursive = true)
-    {
-        try
-        {
-            if (Directory.Exists(path))
-            {
-                Directory.Delete(path, recursive);
-            }
-
-            return true;
-        }
-        catch (Exception exception) when (
-            exception is IOException
-                or UnauthorizedAccessException)
-        {
-            return false;
-        }
-    }
 }

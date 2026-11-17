@@ -92,17 +92,6 @@ internal static class CommonSchemaSamples
         Commands = [],
     };
 
-    public static AppResult App { get; } = new()
-    {
-        Running = true,
-        Url = "http://127.0.0.1:4680/preview?t=0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
-        Port = 4680,
-        Pid = 4242,
-        Reused = false,
-        Route = AppRoutes.Preview,
-        File = "sample.bin",
-    };
-
     public static CapabilitiesSummaryResult CapabilitiesSummary { get; } = new()
     {
         CliVersion = "1.0.0",
@@ -222,55 +211,11 @@ internal static class CommonSchemaSamples
         License = Evaluation,
     };
 
-    public static ProductPreviewStartResult ProductPreviewStart { get; } = new()
-    {
-        Id = "fedcba9876543210fedcba9876543210",
-        Product = "synthetic",
-        Url = "http://127.0.0.1:54322/d/0123456789abcdef0123456789abcdef/?t=0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
-        Pid = 4243,
-        File = "D:/data/sample.bin",
-        View = "default",
-        Reused = false,
-    };
-
-    public static ProductPreviewStatusResult ProductPreviewStatus { get; } = new()
-    {
-        Sessions =
-        [
-            new ProductPreviewSessionInfo
-            {
-                Id = "0123456789abcdef0123456789abcdef",
-                Product = "synthetic",
-                Url = "http://127.0.0.1:54321/d/00112233445566778899aabbccddeeff/?t=0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
-                Pid = 4242,
-                File = "D:/data/sample.bin",
-                View = "default",
-                Revision = 3,
-            },
-            new ProductPreviewSessionInfo
-            {
-                Id = "fedcba9876543210fedcba9876543210",
-                Product = "synthetic",
-                Url = "http://127.0.0.1:54322/d/0123456789abcdef0123456789abcdef/?t=0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
-                Pid = 4243,
-                File = "D:/data/other.bin",
-                View = "default",
-            },
-        ],
-    };
-
-    public static ProductPreviewStatusResult ProductPreviewStop { get; } = new()
-    {
-        Stopped = ["fedcba9876543210fedcba9876543210"],
-        Sessions = [],
-    };
-
     public static IReadOnlyList<CommonSchemaSample> All { get; } =
     [
         new(Error.Schema, Error),
         new(Capabilities.Schema, Capabilities),
         new(CapabilitiesSummary.Schema, CapabilitiesSummary),
-        new(App.Schema, App),
         new(LicenseStatus.Schema, LicenseStatus),
         new(Doctor.Schema, Doctor),
         new(Version.Schema, Version),
@@ -279,8 +224,5 @@ internal static class CommonSchemaSamples
         new(SkillList.Schema, SkillList),
         new(FontList.Schema, FontList),
         new(FontCheck.Schema, FontCheck),
-        new(ProductPreviewStart.Schema, ProductPreviewStart),
-        new(ProductPreviewStatus.Schema, ProductPreviewStatus),
-        new(ProductPreviewStop.Schema, ProductPreviewStop),
     ];
 }

@@ -114,9 +114,6 @@ public sealed record ProductCapabilities
     /// <summary>Engine ids available in this build.</summary>
     public IReadOnlyList<string> AvailableEngines { get; init; } = [];
 
-    /// <summary>Live-preview views and lifecycle support exposed by this product.</summary>
-    public ProductPreviewCapabilities? Preview { get; init; }
-
     /// <summary>Canonical input/output format declarations.</summary>
     public IReadOnlyList<ProductFormatCapabilities> Formats { get; init; } = [];
 
@@ -230,19 +227,6 @@ public sealed record ProductEngineCapabilities
     /// <summary>The engine SDK package version.</summary>
     [MinLength(1)]
     public required string SdkVersion { get; init; }
-}
-
-/// <summary>Live-preview capabilities of one product.</summary>
-public sealed record ProductPreviewCapabilities
-{
-    /// <summary>View selected when the caller requests automatic preview routing.</summary>
-    public required string DefaultView { get; init; }
-
-    /// <summary>Stable view identifiers accepted by this product.</summary>
-    public required IReadOnlyList<string> Views { get; init; }
-
-    /// <summary>Whether the product can run as a discoverable background preview.</summary>
-    public required bool Background { get; init; }
 }
 
 /// <summary>Resolved generic-routing contract for this distribution.</summary>

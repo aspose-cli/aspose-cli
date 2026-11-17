@@ -85,24 +85,6 @@ public sealed class CommonSchemaContractTests
     }
 
     [Theory]
-    [InlineData("http://127.0.0.1:54322/d/0123456789abcdef0123456789abcdef/?t=0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef", true)]
-    [InlineData("http://127.0.0.1:54322/d/0123456789abcdef0123456789abcdef/", false)]
-    [InlineData("http://127.0.0.1:54322/d/0123456789abcdef0123456789abcdef/?t=0123", false)]
-    [InlineData("http://127.0.0.1:54322/", false)]
-    [InlineData("http://127.0.0.1:54322/d/0123456789abcdef0123456789abcdef/extra", false)]
-    [InlineData("http://127.0.0.1:54322/d/0123456789abcdef0123456789abcdef/?token=value", false)]
-    [InlineData("http://example.com:54322/d/0123456789abcdef0123456789abcdef/", false)]
-    [InlineData("https://127.0.0.1:54322/d/0123456789abcdef0123456789abcdef/", false)]
-    public void PreviewSessionUrl_RequiresOneLoopbackDocumentWithAnEntryTicket(string url, bool valid)
-    {
-        ProductPreviewStartResult sample = CommonSchemaSamples.ProductPreviewStart with { Url = url };
-        string json = CommonSerializer.Serialize(sample);
-        using JsonDocument instance = JsonDocument.Parse(json);
-        JsonSchema schema = CommonSchema(ResultEnvelope.SchemaUri("common", "preview-session"));
-        Assert.Equal(valid, schema.Evaluate(instance.RootElement).IsValid);
-    }
-
-    [Theory]
     [InlineData("licensed", true)]
     [InlineData("evaluation", true)]
     [InlineData("invalid", true)]
@@ -154,9 +136,6 @@ public sealed class CommonSchemaContractTests
             (
                 "v2/common/file-fingerprint",
                 """{"sha256":"0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"}"""),
-            (
-                "v2/common/view",
-                """{"schema":"https://schemas.aspose.com/aspose-cli/v2/common/view.schema.json","schemaVersion":2,"view":"pages","sourceFormat":"docx","sourceSizeBytes":10,"sourceEncrypted":false,"totalPartCount":2,"parts":[{"id":"page-1","label":"Page 1","file":"page-0001.png","kind":"image","width":816,"height":1056,"hidden":false,"digest":"sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef","properties":{"notes":"Speaker notes"},"elements":[{"id":"shape-3","kind":"paragraph","box":{"x":96,"y":96.5,"width":624,"height":20},"digest":"f00d","label":"Hello","level":1}]}]}"""),
         ];
 
         foreach ((string id, string json) in contracts)
@@ -198,14 +177,11 @@ public sealed class CommonSchemaContractTests
     {
         string[] results =
         [
-            "app-result",
             "capabilities-summary",
             "doctor",
             "font-check",
             "font-list",
             "license-status",
-            "preview-session",
-            "preview-status",
             "schema-list",
             "skill-install",
             "skill-list",
@@ -291,7 +267,6 @@ public sealed class CommonSchemaContractTests
             ])
             .Diagnostics([])
             .Json(new ProductJsonDefinition(productId, SdkJsonContext.Default))
-            .View(new TestProductViewAdapter<ITestSession>())
             .Describe("A test product.")
             .Command(
                 () => new CommandDefinition<TestMenu.TestRequest, TestResult>(

@@ -330,7 +330,6 @@ public sealed class ResultSchemaSetTests
     {
         Assert.True(SdkSchemaCatalog.TryRead(DiagnosticDetails.CatalogId, out _));
         Assert.True(SdkSchemaCatalog.TryRead(NotFoundDetails.CatalogId, out _));
-        Assert.True(SdkSchemaCatalog.TryRead(ResultSchemaSet.Id("common", Aspose.Cli.Sdk.Views.ViewManifest.Id), out _));
         Assert.True(SdkSchemaCatalog.TryRead(ResultSchemaSet.Id("common", ErrorEnvelope.Id), out string? error));
         Assert.Equal(ErrorEnvelope.SchemaUri, JsonNode.Parse(error)!["$id"]!.GetValue<string>());
     }

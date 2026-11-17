@@ -22,7 +22,7 @@ public sealed class SdkMetadataNamesTests
 
         Assert.Equal("Aspose.Cli.Sdk", sdk.GetName().Name);
         Assert.Equal(sdk.GetName().Name, Assert.Single(Names(Table()), static name => name.Field == "SdkAssembly").Value);
-        Assert.True(Names(Table()).Length > 60, "The table must list the SDK types the analyzers recognize.");
+        Assert.True(Names(Table()).Length > 50, "The table must list the SDK types the analyzers recognize.");
         Assert.True(unresolved.Length == 0, "Names the SDK does not declare: " + string.Join(", ", unresolved));
     }
 

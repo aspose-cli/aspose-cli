@@ -53,9 +53,7 @@ product it covers or only for `--product`. `license remove` removes installed
 user licenses, all of them or one product's; environment variables and project
 files stay untouched. Neither overrides a higher source: a `--license` option
 or an environment variable keeps priority. License content is never displayed
-or logged. People can do the same in the App (`aspose-cli docs app`). After a
-change, the viewer service applies the new license on its next render
-(`aspose-cli docs preview`).
+or logged.
 
 ## License errors
 

@@ -105,7 +105,7 @@ public static class CellsSheetVisibilities
 
 /// <summary>
 /// Makes the visible sheet the operation's sheet field names the active sheet. The choice
-/// survives saving and is the initial tab of the HTML preview.
+/// survives saving.
 /// </summary>
 [Operation("set_active_sheet")]
 [AtLeastOneOf("sheet")]

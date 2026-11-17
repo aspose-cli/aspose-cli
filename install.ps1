@@ -35,21 +35,7 @@ param(
 
     [switch] $RemoveConfiguration,
 
-    [switch] $DevelopmentPackage,
-
-    # Update handoff only: the CLI's 'update install' passes it; do not pass it yourself.
-    [Parameter(DontShow)]
-    [int] $WaitForProcessId,
-
-    # Update handoff only: the CLI's 'update install' passes it; do not pass it yourself.
-    [Parameter(DontShow)]
-    [string] $CleanupRoot,
-
-    # Update handoff only: the CLI's 'update install' passes it; do not pass it yourself.
-    # Every released version passes these three, so their names and meanings never change
-    # (AGENTS.md, Must not break).
-    [Parameter(DontShow)]
-    [string] $StatusPath
+    [switch] $DevelopmentPackage
 )
 
 $isDotSourced = $MyInvocation.InvocationName -ceq '.'
@@ -73,29 +59,6 @@ namespace AsposeFileInstaller {
         public static extern System.IntPtr SendMessageTimeout(
             System.IntPtr window, uint message, System.UIntPtr wParam, string lParam,
             uint flags, uint timeout, out System.UIntPtr result);
-
-        // The drive path the file system reaches a directory by, every link and redirection
-        // resolved; null when it cannot be opened or has no drive path.
-        public static string FinalDirectoryPath(string path) {
-            using (Microsoft.Win32.SafeHandles.SafeFileHandle handle = CreateFile(
-                @"\\?\" + path, 0x80u, 7u, System.IntPtr.Zero, 3u, 0x02000000u, System.IntPtr.Zero)) {
-                if (handle.IsInvalid) { return null; }
-                System.Text.StringBuilder buffer = new System.Text.StringBuilder(32768);
-                uint length = GetFinalPathNameByHandle(handle, buffer, (uint)buffer.Capacity, 0u);
-                if (length == 0 || length >= buffer.Capacity) { return null; }
-                string value = buffer.ToString();
-                return value.StartsWith(@"\\?\") && value.Length >= 7 && value[5] == ':' && value[6] == '\\'
-                    ? value.Substring(4).TrimEnd('\\')
-                    : null;
-            }
-        }
-
-        [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
-        private static extern Microsoft.Win32.SafeHandles.SafeFileHandle CreateFile(
-            string path, uint access, uint share, System.IntPtr security, uint disposition, uint flags, System.IntPtr template);
-        [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
-        private static extern uint GetFinalPathNameByHandle(
-            Microsoft.Win32.SafeHandles.SafeFileHandle handle, System.Text.StringBuilder path, uint capacity, uint flags);
     }
 
     public sealed class BoundedWriteStream : System.IO.Stream {
@@ -282,23 +245,6 @@ namespace AsposeFileInstaller {
 $existingErrorMode = [AsposeFileInstaller.NativeMethods]::GetErrorMode()
 [void][AsposeFileInstaller.NativeMethods]::SetErrorMode($existingErrorMode -bor 0x00008003)
 $env:DOTNET_EnableCrashReport = '0'
-
-if ($WaitForProcessId -gt 0 -and $WaitForProcessId -ne $PID) {
-    while ($true) {
-        $parent = $null
-        try {
-            $parent = [Diagnostics.Process]::GetProcessById($WaitForProcessId)
-            if ($parent.HasExited) { break }
-            Start-Sleep -Milliseconds 100
-        }
-        catch [ArgumentException] {
-            break
-        }
-        finally {
-            if ($null -ne $parent) { $parent.Dispose() }
-        }
-    }
-}
 
 # <generated-distribution-identity>
 $script:ProductId = 'aspose-cli'
@@ -1943,76 +1889,6 @@ function Get-ReleasePackage {
     return $package
 }
 
-function Resolve-CleanupRoot {
-    param([AllowEmptyString()][string] $Root)
-    if ([string]::IsNullOrWhiteSpace($Root)) { return '' }
-    $directory = Assert-LocalAbsolutePath $Root 'update staging directory'
-    # The CLI stages an update in its per-user state below the local application data folder,
-    # found as the CLI finds it: the LOCALAPPDATA variable, or the known folder without it.
-    $localAppData = $env:LOCALAPPDATA
-    if ([string]::IsNullOrWhiteSpace($localAppData) -or $localAppData -notmatch '^(?:[A-Za-z]:\\|\\\\)') {
-        $localAppData = [Environment]::GetFolderPath([Environment+SpecialFolder]::LocalApplicationData, [Environment+SpecialFolderOption]::DoNotVerify)
-    }
-    $stagingRoot = [IO.Path]::GetFullPath([IO.Path]::Combine($localAppData, $script:ProductId, 'updates')).TrimEnd('\') + '\'
-    $staged = $directory.StartsWith($stagingRoot, [StringComparison]::OrdinalIgnoreCase)
-    if (-not $staged) {
-        # The CLI names its state by the path the file system reaches it by, which a junction in
-        # the folder's path or the AppData redirection of an MSIX-packaged host makes differ from
-        # the variable: the directory is staged when the one of its name in the staging
-        # directory resolves to it.
-        $alias = [AsposeFileInstaller.NativeMethods]::FinalDirectoryPath([IO.Path]::Combine($stagingRoot, [IO.Path]::GetFileName($directory)))
-        $resolved = [AsposeFileInstaller.NativeMethods]::FinalDirectoryPath($directory)
-        $staged = $null -ne $alias -and [string]::Equals($alias, $resolved, [StringComparison]::OrdinalIgnoreCase)
-    }
-    if ((-not $staged) -or
-        (-not [IO.Path]::GetFileName($directory).StartsWith($script:ProductId + '-update-', [StringComparison]::OrdinalIgnoreCase))) {
-        throw "-CleanupRoot must be a $($script:ProductId)-update-* directory in the update staging directory $stagingRoot"
-    }
-    return $directory
-}
-
-# The status file tells a later CLI run how a detached installer run ended. The CLI may have
-# written it first (state 'pending', with the versions involved); those fields are kept.
-function Start-InstallerStatus {
-    param([Parameter(Mandatory)][string] $Path)
-    $full = Assert-LocalAbsolutePath $Path 'installer status file'
-    if ([IO.Path]::GetExtension($full) -cne '.json' -or -not (Test-Path -LiteralPath (Split-Path -Parent $full) -PathType Container)) {
-        throw '-StatusPath must name a .json file in an existing directory.'
-    }
-    $status = $null
-    if (Test-Path -LiteralPath $full -PathType Leaf) {
-        try { $status = Read-StrictJson $full 'installer status' } catch { $status = $null }
-    }
-    if ($status -isnot [Management.Automation.PSCustomObject]) { $status = [pscustomobject]@{} }
-    $context = [pscustomobject]@{ Path = $full; Log = [IO.Path]::ChangeExtension($full, '.log'); Status = $status; Transcript = $false }
-    Set-InstallerStatus $context 'running' $null
-    try {
-        Start-Transcript -LiteralPath $context.Log -Force | Out-Null
-        $context.Transcript = $true
-    }
-    catch { Write-Warning "The installer log could not be started at '$($context.Log)': $($_.Exception.Message)" }
-    return $context
-}
-
-function Set-InstallerStatus {
-    # $Message stays untyped: a [string] parameter would turn $null into an empty string.
-    param($Context, [string] $State, $Message)
-    if ($null -eq $Context) { return }
-    $values = [ordered]@{
-        schemaVersion = 1
-        state = $State
-        installerProcessId = $PID
-        message = $Message
-        log = $Context.Log
-        updatedAt = [DateTime]::UtcNow.ToString('o', [Globalization.CultureInfo]::InvariantCulture)
-    }
-    foreach ($entry in $values.GetEnumerator()) {
-        $Context.Status | Add-Member -NotePropertyName $entry.Key -NotePropertyValue $entry.Value -Force
-    }
-    try { Write-JsonAtomic $Context.Path $Context.Status }
-    catch { Write-Warning "The installer status could not be written to '$($Context.Path)': $($_.Exception.Message)" }
-}
-
 # Pristine Skill copies that this installation's executable installed at the recorded places.
 function Get-OwnedSkillCopies {
     param([Parameter(Mandatory)] $Choices, [Parameter(Mandatory)][string] $ExecutableSha256)
@@ -2227,19 +2103,6 @@ function Install-Release {
                 if ($licenseResult.ExitCode -ne 0) { throw "License validation failed with exit code $($licenseResult.ExitCode): $(Get-ChildProcessDiagnostic $licenseResult)" }
             }
             finally { [Environment]::SetEnvironmentVariable($configurationVariable,$previousConfig,'Process') }
-        }
-
-        if ($null -ne $existingState) {
-            # The package executable is the caller-selected, checksum-verified
-            # authority. Never execute the replaceable old installation merely
-            # because its marker and manifest are self-consistent.
-            $serviceExecutable = Join-Path $stage $script:ExecutableName
-            # One service holds the App and every open document, so one stop ends
-            # everything that could still be using the installation.
-            $stopResult = Invoke-CliChildProcess $serviceExecutable @('preview','stop','--output-format','json')
-            if ($stopResult.ExitCode -ne 0) { throw "Existing local service could not be stopped safely with exit code $($stopResult.ExitCode): $(Get-ChildProcessDiagnostic $stopResult)" }
-            $rechecked = Get-ManagedInstallState $installRoot
-            if ($rechecked.Snapshot -cne $existingState.Snapshot) { throw 'Existing installation changed while services were stopping.' }
         }
 
         $oldUserPath = Get-UserPath
@@ -2462,23 +2325,6 @@ function Uninstall-Installation {
         else {
             $state = Get-ManagedInstallState $installRoot
             $executable = Join-Path $installRoot $script:ExecutableName
-            # One service holds the App and every open document. The verified installed
-            # executable is the only one available to stop it; no package is involved here.
-            $stopFailure = $null
-            try {
-                $stopResult = Invoke-CliChildProcess $executable @('preview','stop','--output-format','json')
-                if ($stopResult.ExitCode -ne 0) { $stopFailure = "exit code $($stopResult.ExitCode): $(Get-ChildProcessDiagnostic $stopResult)" }
-            }
-            catch { $stopFailure = $_.Exception.Message }
-            if ($null -ne $stopFailure) {
-                $users = @(Get-ProcessesUsingDirectory $installRoot)
-                if ($users.Count -ne 0) {
-                    throw "Local services of the installation could not be stopped ($stopFailure). Running from it: $($users -join ', '). Close them, including AI agents that started '$($script:CommandName) mcp serve', then retry."
-                }
-                Write-Warning "Local services could not be stopped ($stopFailure), but no program runs from the installation; uninstall continues."
-            }
-            $rechecked = Get-ManagedInstallState $installRoot
-            if ($rechecked.Snapshot -cne $state.Snapshot) { throw 'The installation changed while its services were stopping.' }
             $customSkillsRoot = ''
             if ($state.Choices.skills -ceq 'custom') { $customSkillsRoot = [string]$state.Choices.skillsRoot }
             $skillCopies = @(Get-OwnedSkillCopies $state.Choices (Get-FileSha256 $executable))
@@ -2570,11 +2416,8 @@ function Uninstall-Installation {
 if ($isDotSourced) { return }
 
 $script:ScriptParameters = $PSBoundParameters
-$statusContext = $null
-if (-not [string]::IsNullOrWhiteSpace($StatusPath)) { $statusContext = Start-InstallerStatus $StatusPath }
 $cleanupDirectory = ''
 try {
-    $cleanupDirectory = Resolve-CleanupRoot $CleanupRoot
     if ($Uninstall) {
         if ($Update) { throw '-Uninstall cannot be combined with -Update.' }
         Uninstall-Installation
@@ -2587,25 +2430,16 @@ try {
         if (-not $PSBoundParameters.ContainsKey('PackageRoot')) {
             $PackageRoot = $PSScriptRoot
             if ([string]::IsNullOrWhiteSpace($PackageRoot) -or -not (Test-Path -LiteralPath (Join-Path $PackageRoot $script:ExecutableName) -PathType Leaf)) {
-                if (-not [string]::IsNullOrWhiteSpace($cleanupDirectory)) { throw '-CleanupRoot applies only to an installer run beside its package.' }
                 $cleanupDirectory = Join-Path ([IO.Path]::GetTempPath()) ("$($script:ProductId)-install-" + [Guid]::NewGuid().ToString('N'))
                 $PackageRoot = Get-ReleasePackage $cleanupDirectory
             }
         }
         Install-Release
     }
-    Set-InstallerStatus $statusContext 'succeeded' $null
-}
-catch {
-    Set-InstallerStatus $statusContext 'failed' $_.Exception.Message
-    throw
 }
 finally {
     if (-not [string]::IsNullOrWhiteSpace($cleanupDirectory)) {
         try { Remove-DirectoryWithRetry $cleanupDirectory $true }
         catch { Write-Warning "Temporary update staging remains at '$cleanupDirectory'." }
-    }
-    if ($null -ne $statusContext -and $statusContext.Transcript) {
-        try { Stop-Transcript | Out-Null } catch { }
     }
 }

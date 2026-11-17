@@ -93,7 +93,6 @@ with a license. Details: [evaluation mode](references/troubleshooting.md#evaluat
 - [Design system](references/design-system.md): choosing the template and content rules
 - [Slides verification](references/verification.md): what `--verify` reads back, content reads,
   chart fidelity
-- [Slides preview](references/preview.md): what the viewer shows
 - [Slides troubleshooting](references/troubleshooting.md): failed or odd-looking edits and
   evaluation-mode output
 

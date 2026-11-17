@@ -697,10 +697,8 @@ Reproductions: [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownI
 - **Defect:** `PngDevice` and the other raster devices leave out thin glyph strokes, such as
   the underscores of SimSun, at some positions on the page below about 300 DPI: the line is not
   drawn at all, not even as grey. Paths of the same thickness are drawn.
-- **CLI behavior:** `review` renders its 150 DPI evidence at 300 DPI and scales it down, so such
-  a line shows as grey; a page whose 300 DPI raster exceeds the pixel budget is rendered at
-  150 DPI. `pdf render`, `pdf convert --to tiff` and the `preview` pages draw at the resolution
-  they use.
+- **CLI behavior:** none: `pdf render` and `pdf convert --to tiff` draw at the resolution they
+  use.
 - **Workaround:** render the page with `pdf render --dpi 300` or higher.
 
 ### PDF-CONCURRENT-SAVE-MODDATE
@@ -709,8 +707,8 @@ Reproductions: [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownI
   information of a PDF it saves, but may leave it out when other documents of the same process
   are being saved at the same time. How many of the concurrent outputs lose it varies from run
   to run; saved one at a time, every output has it.
-- **CLI behavior:** none visible: every command runs in its own process, and the MCP server and
-  the app run each command in a child process of its own.
+- **CLI behavior:** none visible: every command runs in its own process, and the MCP server
+  runs each command in a child process of its own.
 
 ### PDF-SIGN-RECT-ROTATED
 
@@ -857,7 +855,7 @@ Reproductions: [SlidesKnownIssueTests](tests/Aspose.Cli.Product.Slides.Tests/Sli
 - **Defect:** every rendering or export that uses a font fallback rule writes
   `Updating of Inner rules` to `Console.Out`.
 - **CLI behavior:** none visible; every Slides engine call runs with `Console.Out` muted, so the
-  JSON result and the render worker's messages stay intact.
+  JSON result stays intact.
 
 ### SLIDES-FONT-REGISTRY
 

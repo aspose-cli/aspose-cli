@@ -68,7 +68,7 @@ public sealed class SdkLayeringTests
         [Root],
         [$"{Root}.Contracts"],
         [$"{Root}.Errors"],
-        [$"{Root}.Text", $"{Root}.Addressing", $"{Root}.Configuration", $"{Root}.Views", $"{Root}.Extensibility.Output"],
+        [$"{Root}.Text", $"{Root}.Addressing", $"{Root}.Configuration", $"{Root}.Extensibility.Output"],
         [$"{Root}.IO.Files"],
         [$"{Root}.Formats", $"{Root}.IO.Budgets"],
         [$"{Root}.IO.Paths"],

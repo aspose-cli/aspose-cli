@@ -134,8 +134,7 @@ public sealed record CellsSheetInfo
     public required int ColumnCount { get; init; }
 
     /// <summary>
-    /// visible, hidden (Excel's Unhide shows it) or very-hidden (hidden from Excel's Unhide too);
-    /// review and preview show only visible sheets.
+    /// visible, hidden (Excel's Unhide shows it) or very-hidden (hidden from Excel's Unhide too).
     /// </summary>
     [AllowedValues(typeof(CellsSheetVisibilities))]
     public required string Visibility { get; init; }

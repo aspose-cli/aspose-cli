@@ -11,10 +11,8 @@ public sealed class LocalDocumentResourceLoaderTests : IDisposable
         "aspose-cli-resource-tests",
         Guid.NewGuid().ToString("N"));
 
-    [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public void TryRead_AllowsOnlyGuardedLocalFiles(bool snapshot)
+    [Fact]
+    public void TryRead_AllowsOnlyGuardedLocalFiles()
     {
         Directory.CreateDirectory(_root);
         string document = Path.Combine(_root, "input.html");
@@ -23,16 +21,7 @@ public sealed class LocalDocumentResourceLoaderTests : IDisposable
         File.WriteAllBytes(local, [1, 2, 3]);
         using var deadline = OperationDeadline.Start(null);
         var budgets = new ResourceBudgetLedger(deadline);
-        string loaded = document;
-        if (snapshot)
-        {
-            string directory = Path.Combine(_root, "private");
-            Directory.CreateDirectory(directory);
-            loaded = Path.Combine(directory, "input.html");
-            File.Copy(document, loaded);
-            budgets.Inputs.SetSnapshotOrigin(loaded, document);
-        }
-        using var loader = new LocalDocumentResourceLoader(loaded, budgets);
+        using var loader = new LocalDocumentResourceLoader(document, budgets);
 
         Assert.True(loader.TryRead("image.bin", out byte[] bytes));
         Assert.Equal([1, 2, 3], bytes);
@@ -40,11 +29,6 @@ public sealed class LocalDocumentResourceLoaderTests : IDisposable
         Assert.Equal([1, 2, 3], bytes);
         Assert.False(loader.TryRead("../outside.bin", out _));
         Assert.False(loader.TryRead("https://example.invalid/image.bin", out _));
-        if (snapshot)
-        {
-            using var unrelated = new LocalDocumentResourceLoader(Path.Combine(_root, "private", "other.html"), budgets);
-            Assert.False(unrelated.TryRead("image.bin", out _));
-        }
     }
 
     [Theory]

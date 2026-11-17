@@ -129,7 +129,7 @@ handle these effects:
 - When a workbook's active sheet is such a warning sheet, with or without a
   license, every command that defaults to the active sheet (`read` without `--sheet`,
   `convert` to CSV, TSV or Markdown without `--sheets`, an operation without
-  `"sheet"`, the workbook preview) uses the first other sheet instead,
+  `"sheet"`) uses the first other sheet instead,
   preferring a visible one, and warns `ACTIVE_SHEET_SKIPPED` with the skipped
   sheet in `location`. A sheet of that name that holds anything besides the
   notice is the workbook's own and stays the default. Only the default changes: the input file is not changed, and an edit
@@ -139,8 +139,7 @@ handle these effects:
   The sheet you made active is not recorded anywhere, so name any other one
   yourself: `--sheets` with the sheet's `position` for `convert` and `render`,
   and the sheet's `name` for `read --sheet` and an operation's `"sheet"` in
-  `edit`; the workbook preview shows the active sheet, so read another one with
-  `cells read --sheet`. Take both from `inspect`; never guess a position from
+  `edit`. Take both from `inspect`; never guess a position from
   the order you created the sheets in.
 - Each further save adds another ("Evaluation Warning (1)", ...); `inspect`
   lists them. Do not delete them.

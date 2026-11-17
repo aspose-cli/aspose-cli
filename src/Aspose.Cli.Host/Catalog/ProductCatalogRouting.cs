@@ -6,21 +6,6 @@ namespace Aspose.Cli.Host.Catalog;
 /// <summary>Host routing and user-facing lookup over the compiled catalog.</summary>
 internal static class ProductCatalogRouting
 {
-    public static string DefaultProductId(this ProductCatalog catalog)
-    {
-        return catalog.DefaultProduct?.Manifest.Id
-            ?? throw CliErrors.OptionInvalid(
-                "--product",
-                "this distribution has no declared default product",
-                "Specify --product explicitly; catalog ordering is never used as a default.");
-    }
-
-    public static IReadOnlyList<string> DefaultOwnerFormats(
-        this ProductCatalog catalog) =>
-        catalog.DefaultOwnerExtensions
-            .Select(static extension => extension.TrimStart('.'))
-            .ToArray();
-
     /// <summary>
     /// The product that opens an existing file. A file the system will not let it read is the
     /// input error a product command reports for it, such as <c>FILE_LOCKED</c>.

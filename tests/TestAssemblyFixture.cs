@@ -25,8 +25,9 @@ public sealed class ProcessRedirectionCollection
 }
 
 /// <summary>
-/// Tests that set a license variable in the process environment. They run alone, after the
-/// parallel tests, so no other test resolves a license while the variable changes.
+/// Tests that set a license variable or the configuration directory, where installed licenses
+/// live, in the process environment. They run alone, after the parallel tests, so no other test
+/// resolves a license while the variable changes.
 /// </summary>
 [Xunit.CollectionDefinition(Name, DisableParallelization = true)]
 public sealed class ProcessLicenseEnvironmentCollection

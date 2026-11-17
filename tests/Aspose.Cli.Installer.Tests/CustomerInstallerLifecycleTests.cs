@@ -2,8 +2,6 @@ using System.Diagnostics;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
-using Aspose.Cli.Host.Invocation;
-using Aspose.Cli.Host.Updating;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.TestKit;
 using Xunit;
@@ -85,49 +83,6 @@ public sealed partial class CustomerInstallerPowerShellTests
         PowerShellResult keys = RunInstallerFunctions(
             $"(Get-TransactionKey (Resolve-InstallRoot {PowerShellLiteral(install + "\\")})) -ceq (Get-TransactionKey (Resolve-InstallRoot {PowerShellLiteral(install)}))");
         Assert.Equal("True", keys.StdOut.Trim());
-    }
-
-    [Fact]
-    public void StatusFile_ReportsEveryOutcomeToTheCli()
-    {
-        Requires.Windows();
-        string install = Path.Combine(_root, "status-install");
-        string status = Path.Combine(_root, "status-" + Guid.NewGuid().ToString("N") + ".json");
-        _package.CopyInstallation(install);
-        string before = Snapshot(install);
-
-        PowerShellResult succeeded = RunInstaller(_package.Path, install, arguments: ["-Update", "-StatusPath", status],
-            skipPath: false, skipSkills: false);
-        Assert.True(succeeded.ExitCode == 0, succeeded.StdErr + succeeded.StdOut);
-        Assert.Equal("succeeded", JsonNode.Parse(File.ReadAllText(status))!["state"]!.GetValue<string>());
-        Assert.Null(UpdateStatus.ReadWarning(status));
-        // The same build replaying the same choices publishes an identical tree...
-        Assert.Equal(before, Snapshot(install));
-
-        // ...so the rollback finds the original already in place and removes the verified
-        // duplicate backup.
-        PowerShellResult failed = RunInstaller(_package.Path, install,
-            new Dictionary<string, string?> { ["ASPOSE_CLI_INSTALL_FAULT"] = "newPublished" },
-            arguments: ["-Update", "-StatusPath", status], skipPath: false, skipSkills: false);
-        Assert.NotEqual(0, failed.ExitCode);
-        Assert.Equal(before, Snapshot(install));
-        Assert.Empty(Directory.GetFiles(_root, ".aspose-cli-transaction-*.json"));
-        Assert.Empty(Directory.GetDirectories(_root, ".aspose-cli-backup-*"));
-        JsonNode record = JsonNode.Parse(File.ReadAllText(status))!;
-        Assert.Equal("failed", record["state"]!.GetValue<string>());
-        string log = record["log"]!.GetValue<string>();
-        Assert.Equal(Path.ChangeExtension(status, ".log"), log);
-        Assert.Contains("Injected installer failure at 'newPublished'", File.ReadAllText(log), StringComparison.Ordinal);
-        Warning warning = UpdateStatus.ReadWarning(status)!;
-        Assert.Equal(HostDiagnostics.UpdateFailed, warning.Code);
-        Assert.Contains("Injected installer failure", warning.Message, StringComparison.Ordinal);
-
-        PowerShellResult crashed = RunInstaller(_package.Path, install,
-            new Dictionary<string, string?> { ["ASPOSE_CLI_INSTALL_CRASH"] = "oldMoved" },
-            arguments: ["-Update", "-StatusPath", status], skipPath: false, skipSkills: false);
-        Assert.Equal(97, crashed.ExitCode);
-        Assert.Equal("running", JsonNode.Parse(File.ReadAllText(status))!["state"]!.GetValue<string>());
-        Assert.Contains("stopped before", UpdateStatus.ReadWarning(status)!.Message, StringComparison.Ordinal);
     }
 
     [Fact]

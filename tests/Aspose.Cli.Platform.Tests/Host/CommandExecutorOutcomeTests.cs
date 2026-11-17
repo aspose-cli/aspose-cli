@@ -16,22 +16,6 @@ namespace Aspose.Cli.Host.Tests;
 public sealed class CommandExecutorOutcomeTests
 {
     [Fact]
-    public void HostedService_EndingOnItsDeadline_KeepsItsStartupResultAsTheOnlyEnvelope()
-    {
-        Outcome outcome = Invoke((executor, globals) => new Command("hosted-test")
-            .WithAction(parse => executor.RunHosted(parse, globals, _ => new HostedCommandLifecycle(
-                new ProductPreviewStatusResult { Sessions = [] },
-                static (_, _) => WaitOutcome.DeadlineExpired,
-                static () => { }))),
-            "hosted-test", "--timeout", "30", "--output-format", "json");
-
-        Assert.Equal((int)ExitCode.OperationTimeout, outcome.ExitCode);
-        Assert.NotNull(JsonNode.Parse(outcome.StdOut)!["sessions"]);
-        Assert.DoesNotContain("\"error\"", outcome.StdErr, StringComparison.Ordinal);
-        Assert.Contains(ErrorCodes.OperationTimeout.Name, outcome.StdErr, StringComparison.Ordinal);
-    }
-
-    [Fact]
     public void ForeignCancellation_IsAnInternalErrorWithAnEnvelope()
     {
         Outcome outcome = Invoke((executor, globals) => new Command("cancel-test")

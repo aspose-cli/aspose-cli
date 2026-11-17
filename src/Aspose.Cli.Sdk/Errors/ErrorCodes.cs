@@ -85,10 +85,6 @@ public static partial class ErrorCodes
     /// <summary>A named style does not exist in the document.</summary>
     public static readonly ErrorCode StyleNotFound = ErrorCode.NotFound("STYLE_NOT_FOUND");
     public static readonly ErrorCode ExtractBudgetExceeded = new("EXTRACT_BUDGET_EXCEEDED", ExitCode.ValidationError);
-    public static readonly ErrorCode PreviewBudgetExceeded =
-        new("PREVIEW_BUDGET_EXCEEDED", ExitCode.ValidationError);
-    public static readonly ErrorCode UploadBudgetExceeded =
-        new("UPLOAD_BUDGET_EXCEEDED", ExitCode.ValidationError);
     // -- Output problems (exit 5) --------------------------------------------
 
     /// <summary>The output file already exists and --overwrite was not given.</summary>
@@ -111,18 +107,6 @@ public static partial class ErrorCodes
     /// number of files of one output set.
     /// </summary>
     public static readonly ErrorCode OutputBudgetExceeded = new("OUTPUT_BUDGET_EXCEEDED", ExitCode.OutputError);
-
-    /// <summary>The requested live-preview port is already bound by another process.</summary>
-    public static readonly ErrorCode LoopbackPortInUse = new("LOOPBACK_PORT_IN_USE", ExitCode.OutputError);
-
-    /// <summary>The platform refused or could not create a loopback HTTP listener.</summary>
-    public static readonly ErrorCode LoopbackListenerUnavailable = new("LOOPBACK_LISTENER_UNAVAILABLE", ExitCode.OutputError);
-
-    /// <summary>
-    /// The App, or the per-user service that hosts it and live previews, is
-    /// transitioning or held by another instance and cannot take the request.
-    /// </summary>
-    public static readonly ErrorCode AppBusy = new("APP_BUSY", ExitCode.OutputError);
 
     // -- Format problems (exit 6) --------------------------------------------
 
@@ -194,17 +178,12 @@ public static partial class ErrorCodes
         BookmarkNotFound,
         StyleNotFound,
         ExtractBudgetExceeded,
-        PreviewBudgetExceeded,
-        UploadBudgetExceeded,
         OutputExists,
         OutputUnwritable,
         OutputConflict,
         OutputPublicationFailed,
         OutputPublicationPartial,
         OutputBudgetExceeded,
-        LoopbackPortInUse,
-        LoopbackListenerUnavailable,
-        AppBusy,
         FormatUnsupported,
         FormatMismatch,
         FormatAmbiguous,

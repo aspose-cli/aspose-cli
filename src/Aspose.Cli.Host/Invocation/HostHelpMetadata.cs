@@ -9,8 +9,6 @@ namespace Aspose.Cli.Host.Invocation;
 internal static class HostHelpMetadata
 {
     private static readonly CommandHelpLink Overview = new("aspose-cli docs", "offline documentation bundled in this binary");
-    private static readonly CommandHelpLink App = new("aspose-cli docs app", "welcome, files, preview, settings and lifecycle");
-    private static readonly CommandHelpLink Preview = new("aspose-cli docs preview", "live preview of a document while it changes");
     private static readonly CommandHelpLink Licensing = new("aspose-cli docs licensing", "license sources, installation and evaluation mode");
     private static readonly CommandHelpLink Verification = new("aspose-cli docs verification", "the delivery checklist and font checks");
     private static readonly CommandHelpLink Troubleshooting = new("aspose-cli docs troubleshooting", "recovering from errors and environment problems");
@@ -22,37 +20,10 @@ internal static class HostHelpMetadata
         string[] narrowCapabilities = NarrowCapabilities(root, catalog);
         root.WithExamples(
             [
-                "app open",
                 .. narrowCapabilities.TakeLast(1),
                 "schema",
             ],
             [Overview, Schemas, Capabilities]);
-        Command app = Find(root, "app").WithExamples(
-            [
-                "app open",
-                "app open report.docx",
-                "app open --welcome",
-                "app open --foreground --port 4680",
-                "app status --output-format json",
-            ],
-            [App]);
-        Find(app, "open").WithExamples(
-            ["app open", "app open report.docx", "app open --welcome --no-open", "app open --foreground --port 4680"],
-            [App]);
-        Find(app, "status").WithExamples(["app status", "app status --output-format json"], [App]);
-        Find(app, "stop").WithExamples(["app stop", "app stop --output-format json"], [App]);
-        Command preview = Find(root, "preview").WithExamples(
-            [
-                "preview open report.docx --output-format json",
-                "preview status --output-format json",
-                "preview stop --output-format json",
-            ],
-            [Preview]);
-        Find(preview, "open").WithExamples(
-            ["preview open report.docx", "preview open report.docx --no-open --output-format json"],
-            [Preview]);
-        Find(preview, "status").WithExamples(["preview status", "preview status --output-format json"], [Preview]);
-        Find(preview, "stop").WithExamples(["preview stop", "preview stop --output-format json"], [Preview]);
         if (FindOptional(root, "license") is { } license)
         {
             license.WithExamples(
@@ -98,12 +69,6 @@ internal static class HostHelpMetadata
         if (FindOptional(root, "mcp") is { } mcp)
         {
             Find(mcp, "serve").WithExamples(["mcp serve", "mcp serve --license-mode evaluation"], [Overview]);
-        }
-
-        if (FindOptional(root, "update") is { } update)
-        {
-            Find(update, "check").WithExamples(["update check", "update check --output-format json"], [Troubleshooting]);
-            Find(update, "install").WithExamples(["update install --dry-run", "update install"], [Troubleshooting]);
         }
     }
 

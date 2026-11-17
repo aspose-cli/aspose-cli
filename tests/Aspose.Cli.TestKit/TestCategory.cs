@@ -11,9 +11,6 @@ public enum TestCategory
     /// <summary>Runs the customer installer under Windows PowerShell against a package.</summary>
     Installer,
 
-    /// <summary>Drives the App or a viewer page in the pinned Chromium.</summary>
-    Browser,
-
     /// <summary>Takes several seconds by nature, such as full workflows or lock waits.</summary>
     Slow,
 }

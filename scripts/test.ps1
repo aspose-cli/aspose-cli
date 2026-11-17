@@ -3,8 +3,7 @@
 Builds the repository once and runs the catalog test projects at one of four scopes.
 
 .DESCRIPTION
-Tests marked [Category(Installer)], [Category(Browser)] or [Category(Slow)] are left out of
-the fast feedback loop:
+Tests marked [Category(Installer)] or [Category(Slow)] are left out of the fast feedback loop:
 
 - Fast (default) runs every unmarked test.
 - Changed runs the unmarked tests of only the test projects a change reaches, plus
@@ -16,7 +15,7 @@ the fast feedback loop:
   as scripts/documentation-paths.json lists them) reach nothing, and any other change (build
   inputs, .editorconfig, whose analyzer severities are build input, eng/, scripts/, install.ps1)
   reaches every project. Pull-request CI uses it; master pushes run Fast.
-- Affected adds the Browser and Slow tests of the projects a change reaches: a change under src/
+- Affected adds the Slow tests of the projects a change reaches: a change under src/
   or to the TestKit adds them to every test project, a change inside a test project to that
   project, and a change to a RepositoryInput to the test projects that list it. Installer inputs
   add the installer tests, other documentation adds nothing, and any other change (build inputs,
@@ -41,8 +40,7 @@ every check of the whole run. CI plans the scope once and runs each project in i
 Test projects run one at a time, each with its log beside its TRX result, so the machine stays
 usable during a run; -TestThreads and -BuildParallelism raise or lower the defaults. Prerequisites
 are checked first: PowerShell 7.4 (tests start pwsh.exe from PATH), and only when the scope needs
-them Windows PowerShell 5.1 (the customer installer's runtime), the pinned Chromium that the
-built playwright.ps1 provisions, and the license.
+them Windows PowerShell 5.1 (the customer installer's runtime) and the license.
 
 Skipped tests are listed after the run, with licensed cases called out, and so is every test
 without a category that ran longer than the slow-test limit, $slowTestSeconds below, the one
@@ -116,7 +114,7 @@ $builtExecutable = Join-Path $layout.SourceRoot (
     "Aspose.Cli/bin/$Configuration/net10.0/$executableName")
 $env:ASPOSE_CLI_TEST_EXECUTABLE = $builtExecutable
 
-$categories = @('Installer', 'Browser', 'Slow')
+$categories = @('Installer', 'Slow')
 # The slow-test limit: an uncategorized test that runs longer is reported to be marked Slow.
 $slowTestSeconds = 10
 # The customer installer tests and their inputs.
@@ -242,7 +240,7 @@ switch ($Scope) {
                 foreach ($project in $testProjects) { [void]$included[$project].Add('Installer') }
             }
             foreach ($project in $testProjects) {
-                if ((Test-PathPrefix $path $scopes[$project]) -or $inputs[$project].Contains($path)) { $included[$project].UnionWith([string[]]@('Browser', 'Slow')) }
+                if ((Test-PathPrefix $path $scopes[$project]) -or $inputs[$project].Contains($path)) { $included[$project].UnionWith([string[]]@('Slow')) }
             }
             if (-not (Test-PathPrefix $path $projectDirectories) -and -not $installerInput -and -not $documentation.Contains($path)) {
                 foreach ($project in $testProjects) { $included[$project].UnionWith([string[]]$categories) }
@@ -314,7 +312,6 @@ if ($selected.Count -eq 0 -and $categoryOnly.Count -eq 0) {
 }
 
 $runsInstaller = @($selected | Where-Object { $included[$_].Contains('Installer') }).Count -ne 0
-$runsBrowser = @($selected | Where-Object { $included[$_].Contains('Browser') }).Count -ne 0
 $requireLicense = $Scope -eq 'Full'
 
 $missing = @()
@@ -390,17 +387,6 @@ foreach ($project in $categoryOnly.Keys) {
 if ($selected.Count -eq 0) {
     Write-Host "PASS $Scope scope: no test project to run besides the category-only checks."
     return
-}
-
-if ($runsBrowser) {
-    $browserInstaller = Join-Path $repoRoot "tests/Aspose.Cli.Platform.Tests/bin/$Configuration/net10.0/playwright.ps1"
-    if (-not (Test-Path -LiteralPath $browserInstaller -PathType Leaf)) {
-        throw "The built browser test installer is missing: $browserInstaller. Build the solution first (omit -NoBuild)."
-    }
-    & $browserInstaller install chromium
-    if ($LASTEXITCODE -ne 0) {
-        throw "The pinned Chromium for App browser tests could not be provisioned (exit code $LASTEXITCODE). It downloads from the Playwright CDN; allow that network access or provision PLAYWRIGHT_BROWSERS_PATH, then retry."
-    }
 }
 
 # Starts dotnet with its output copied to a log file.

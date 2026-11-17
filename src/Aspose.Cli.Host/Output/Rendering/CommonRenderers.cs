@@ -8,26 +8,6 @@ namespace Aspose.Cli.Host.Output.Rendering;
 /// </summary>
 internal static class CommonRenderers
 {
-    public static void Render(AppResult app, TableSurface surface)
-    {
-        surface.Out.WriteLine(app.Running ? "app:     running" : "app:     stopped");
-        if (app.Url is { } url)
-        {
-            surface.Out.WriteLine($"url:     {url}");
-        }
-
-        if (app.Pid is { } pid)
-        {
-            surface.Out.WriteLine($"pid:     {pid}");
-        }
-
-        surface.Out.WriteLine($"route:   {app.Route}");
-        if (app.File is { } file)
-        {
-            surface.Out.WriteLine($"file:    {file}");
-        }
-    }
-
     public static void Render(LicenseStatusResult status, TableSurface surface)
     {
         if (status.Products is { Count: > 0 } products)
@@ -233,28 +213,6 @@ internal static class CommonRenderers
         table.WriteTo(surface.Out, surface.Format);
     }
 
-    public static void Render(UpdateResult update, TableSurface surface)
-    {
-        surface.Out.WriteLine($"status:    {update.Status}");
-        surface.Out.WriteLine($"current:   {update.CurrentVersion}");
-        WriteIfPresent(surface, "available: ", update.AvailableVersion);
-        WriteIfPresent(surface, "source:    ", update.SourceRevision);
-        WriteIfPresent(surface, "feed:      ", update.Feed);
-        WriteIfPresent(surface, "sha256:    ", update.ArchiveSha256);
-        if (update.Pid is { } pid)
-        {
-            surface.Out.WriteLine($"installer: pid {TableText.Int(pid)}");
-        }
-    }
-
-    private static void WriteIfPresent(TableSurface surface, string label, string? value)
-    {
-        if (value is not null)
-        {
-            surface.Out.WriteLine(label + value);
-        }
-    }
-
     public static void Render(DryRunResult dryRun, TableSurface surface)
     {
         surface.Out.WriteLine($"dry run: checked {string.Join(", ", dryRun.Checked)}; nothing was written");
@@ -273,53 +231,6 @@ internal static class CommonRenderers
         foreach (SkillPackageInfo skill in result.Skills)
         {
             table.AddRow(skill.Name, string.Join(", ", skill.Hosts), skill.Description);
-        }
-
-        table.WriteTo(surface.Out, surface.Format);
-    }
-
-    public static void Render(ProductPreviewStartResult preview, TableSurface surface)
-    {
-        surface.Out.WriteLine($"{(preview.Reused ? "reused" : "started")} {preview.Product} preview {preview.Id}");
-        surface.Out.WriteLine($"  url:      {preview.Url}");
-        surface.Out.WriteLine($"  file:     {preview.File}");
-        surface.Out.WriteLine($"  view:     {preview.View}");
-        surface.Out.WriteLine($"  pid:      {TableText.Int(preview.Pid)}");
-    }
-
-    public static void Render(ProductPreviewStatusResult preview, TableSurface surface)
-    {
-        if (preview.Stopped is { } stopped)
-        {
-            surface.Out.WriteLine(stopped.Count == 0
-                ? "no matching preview session was running"
-                : $"stopped: {string.Join(", ", stopped)}");
-        }
-
-        RenderPreviewSessions(preview.Sessions, surface);
-    }
-
-    private static void RenderPreviewSessions(
-        IReadOnlyList<ProductPreviewSessionInfo> sessions,
-        TableSurface surface)
-    {
-        if (sessions.Count == 0)
-        {
-            surface.Out.WriteLine("no background previews are running");
-            return;
-        }
-
-        var table = new TextTable("id", "product", "pid", "revision", "view", "file", "url");
-        foreach (ProductPreviewSessionInfo session in sessions)
-        {
-            table.AddRow(
-                session.Id,
-                session.Product,
-                TableText.Int(session.Pid),
-                session.Revision?.ToString(System.Globalization.CultureInfo.InvariantCulture),
-                session.View,
-                session.File,
-                session.Url);
         }
 
         table.WriteTo(surface.Out, surface.Format);

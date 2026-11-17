@@ -160,30 +160,6 @@ public sealed class UsageMistakeTests : IDisposable
 
     // -- A command of the root written below a product -------------------------------------------
 
-    /// <summary>
-    /// A word after preview that names one of its commands is that command, any other is the file
-    /// its open reads; the line is only parsed, by the command tree, since preview starts a service.
-    /// </summary>
-    [Theory]
-    [InlineData("cells preview stop", "aspose-cli preview stop --output-format json", "preview stop", null)]
-    [InlineData("cells preview status", "aspose-cli preview status --output-format json", "preview status", null)]
-    [InlineData("cells preview open", "aspose-cli preview open <file> --output-format json", "preview open", "<file>")]
-    [InlineData("cells preview", "aspose-cli preview open <file> --output-format json", "preview open", "<file>")]
-    [InlineData("cells preview open b.xlsx", "aspose-cli preview open b.xlsx --output-format json", "preview open", "b.xlsx")]
-    [InlineData("cells preview b.xlsx", "aspose-cli preview open b.xlsx --output-format json", "preview open", "b.xlsx")]
-    [InlineData("cells preview data.txt", "aspose-cli preview open data.txt --product cells --output-format json", "preview open", "data.txt")]
-    public void PreviewBelowAProduct_ShowsTheLineThatParsesAsTheCommandMeant(string commandLine, string line, string command, string? file)
-    {
-        JsonNode error = Refused(commandLine, "USAGE_ERROR");
-
-        Assert.Equal([line], Suggestions(error));
-        Assert.Contains($"'{line}'", error["hint"]!.GetValue<string>(), StringComparison.Ordinal);
-        ParsedInvocation parsed = ActualCommandTree.Parser.Parse(line.Split(' ')[1..]);
-        Assert.Empty(parsed.ParseResult.Errors);
-        Assert.Equal(command, string.Join(' ', parsed.CommandPath.Select(static item => item.Name)));
-        Assert.Equal(file, parsed.ParseResult.CommandResult.Children.OfType<ArgumentResult>().SelectMany(static argument => argument.Tokens).FirstOrDefault()?.Value);
-    }
-
     /// <summary>A command of the root that reads no product's file, and a mistyped command, keep what they said.</summary>
     [Theory]
     [InlineData("cells doctor", null)]

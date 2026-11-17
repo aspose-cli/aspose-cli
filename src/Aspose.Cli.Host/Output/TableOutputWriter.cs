@@ -52,9 +52,6 @@ internal sealed class TableOutputWriter : IOutputWriter
         {
             switch (result)
             {
-                case AppResult app: CommonRenderers.Render(app, surface); break;
-                case ProductPreviewStartResult preview: CommonRenderers.Render(preview, surface); break;
-                case ProductPreviewStatusResult preview: CommonRenderers.Render(preview, surface); break;
                 case LicenseStatusResult status: CommonRenderers.Render(status, surface); break;
                 case CapabilitiesResult capabilities: CommonRenderers.Render(capabilities, surface); break;
                 case CapabilitiesSummaryResult summary: CommonRenderers.Render(summary, surface); break;
@@ -66,7 +63,6 @@ internal sealed class TableOutputWriter : IOutputWriter
                 case DryRunResult dryRun: CommonRenderers.Render(dryRun, surface); break;
                 case SkillInstallResult skill: CommonRenderers.Render(skill, surface); break;
                 case SkillListResult skills: CommonRenderers.Render(skills, surface); break;
-                case UpdateResult update: CommonRenderers.Render(update, surface); break;
                 default:
                     // Never hide data: unknown result families render as JSON.
                     output.WriteLine(_serializer.Serialize(result));

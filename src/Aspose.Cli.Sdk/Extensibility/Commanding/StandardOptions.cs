@@ -737,9 +737,7 @@ public partial class StandardInvocation
     /// input's password passed on, never the password itself: by the environment variable the
     /// caller named for it, or, when the caller gave it on stdin or literally, by a
     /// <c>&lt;password-env&gt;</c> placeholder the caller replaces with a variable that holds it
-    /// (<see cref="ContinuationInput"/>). A view rendered for this invocation carries it
-    /// (<see cref="Views.ViewRenderRequest.Continuation"/>), so the commands its hints name open the
-    /// document as this invocation does.
+    /// (<see cref="ContinuationInput"/>).
     /// </summary>
     /// <param name="document">The document, as the command names it.</param>
     public ContinuationInput ContinuationOf(string document) => InputOf(_options, _parse, document, Paths.BaseDirectory);

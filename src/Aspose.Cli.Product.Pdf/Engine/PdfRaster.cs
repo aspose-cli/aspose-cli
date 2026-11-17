@@ -1,9 +1,7 @@
-using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.IO.Budgets;
 using Aspose.Cli.Sdk.Rendering;
 using Aspose.Pdf;
 using Aspose.Pdf.Devices;
-using SkiaSharp;
 using static Aspose.Cli.Product.Pdf.Engine.PdfAssembly;
 
 namespace Aspose.Cli.Product.Pdf.Engine;
@@ -57,37 +55,6 @@ internal static class PdfRaster
 
         using Document selected = Select(document, [pageNumber]);
         selected.Save(stream, PdfEngineFormats.Save(format));
-    }
-
-    /// <summary>
-    /// PDF-RENDER-THIN-GLYPH: the engine drops thin glyph strokes, such as the underscores of a
-    /// signature line, at some positions below about 300 DPI. Review evidence is rendered at twice
-    /// its resolution and scaled down by averaging, so such a stroke shows as grey at the
-    /// evidence size. A page whose double-size raster exceeds the pixel budget renders directly.
-    /// </summary>
-    internal static void RenderEvidencePage(ResourceBudgetLedger budgets, Document document, int pageNumber, int dpi, Stream stream)
-    {
-        Page page = document.Pages[pageNumber];
-        int sampled = dpi * 2;
-        (long width, long height) = PagePixels(page, sampled);
-        long maxPixels = budgets.Limit(ResourceBudgetKinds.RasterPixels);
-        if (width <= 0 || height <= 0 || width > maxPixels / height)
-        {
-            RenderPage(budgets, document, pageNumber, "png", dpi, stream);
-            return;
-        }
-
-        using var raster = new MemoryStream();
-        new PngDevice(new Resolution(sampled)).Process(page, raster);
-        raster.Position = 0;
-        using SKBitmap full = SKBitmap.Decode(raster)
-            ?? throw new InvalidOperationException("The rendered page image could not be decoded.");
-        // At exactly half the size, linear filtering averages each 2 x 2 block of pixels.
-        var info = new SKImageInfo((full.Width + 1) / 2, (full.Height + 1) / 2, full.ColorType, full.AlphaType);
-        using SKBitmap scaled = full.Resize(info, new SKSamplingOptions(SKFilterMode.Linear, SKMipmapMode.None))
-            ?? throw new InvalidOperationException("The rendered page image could not be scaled.");
-        using SKData encoded = scaled.Encode(SKEncodedImageFormat.Png, 100);
-        encoded.SaveTo(stream);
     }
 
     internal static void EnsurePageFits(ResourceBudgetLedger budgets, Page page, int dpi)

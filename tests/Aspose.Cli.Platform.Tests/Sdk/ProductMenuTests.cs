@@ -12,7 +12,6 @@ using Aspose.Cli.Sdk.Formats;
 using Aspose.Cli.Sdk.Rendering;
 using Aspose.Cli.Sdk.Serialization;
 using Aspose.Cli.Sdk.Tests;
-using Aspose.Cli.Sdk.Views;
 using Aspose.Cli.TestKit;
 using Xunit;
 using ExtProduct = Aspose.Cli.Sdk.Extensibility.Product;
@@ -286,18 +285,6 @@ public sealed class ProductMenuTests : IDisposable
         Assert.Equal("secret", copied.Value);
     }
 
-    [Fact]
-    public void Guard_WrapsEveryViewAdapterCall()
-    {
-        ProductViewDefinition view = Menu().Build().View;
-        ProductBinding<TestSession> binding = TestBindings.Create(Manifest.Id, static () => new TestSession(Log));
-        var request = new ViewRenderRequest { View = "document", MaxPartCount = 1, Purpose = ViewPurpose.Evidence };
-
-        _ = view.Render(binding, "doc.test", request, new NoArtifacts());
-
-        Assert.Equal(["guard >", "guard <"], Log);
-    }
-
     /// <summary>
     /// A failure is attributed to the product whose module defined it, not to the assembly of its
     /// session type, which may be a type the product does not own.
@@ -311,7 +298,6 @@ public sealed class ProductMenuTests : IDisposable
             .Formats([])
             .Diagnostics([])
             .Json(new ProductJsonDefinition(Manifest.Id, SdkJsonContext.Default))
-            .View(new TestProductViewAdapter<StringBuilder>())
             .Activator(static _ => throw new InvalidOperationException("Not activated."))
             .Build();
 
@@ -615,18 +601,6 @@ public sealed class ProductMenuTests : IDisposable
         }
     }
 
-    private sealed class NoArtifacts : IViewArtifactSink
-    {
-        public void Write(string relativePath, Action<Stream> contentWriter) =>
-            throw new InvalidOperationException("The test view writes no artifacts.");
-
-        public void WriteText(string relativePath, string content) =>
-            throw new InvalidOperationException("The test view writes no artifacts.");
-
-        public bool TryWritePart(string relativePath, Action<Stream> contentWriter) =>
-            throw new InvalidOperationException("The test view writes no artifacts.");
-    }
-
     private sealed class StaticModule(ProductDefinition definition) : IProductModule
     {
         public ProductDefinition Define() => definition;
@@ -642,6 +616,5 @@ internal static class ProductMenuTestDefinitions
             .Formats([])
             .Diagnostics([])
             .Json(new ProductJsonDefinition("menu", SdkJsonContext.Default))
-            .View(new TestProductViewAdapter<ProductMenuTests.TestSession>())
             .Activator(static _ => throw new InvalidOperationException("The tests bind through their host."));
 }

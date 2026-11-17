@@ -120,22 +120,6 @@ public sealed partial class ContinuationHintCliTests : IDisposable
     }
 
     /// <summary>
-    /// <c>app open</c> given a file and <c>--welcome</c> names the command that opens the file, with
-    /// the file as one argument; the App itself is not started here, so the catalog checks the command.
-    /// </summary>
-    [Fact]
-    public void AppOpenWelcomeHint_NamesTheFileAsOneArgument()
-    {
-        File.WriteAllText(_workspace.File("my book.xlsx"), "not opened");
-
-        JsonNode error = Error(_workspace.Run("app", "open", "my book.xlsx", "--welcome", "--no-open", "--output-format", "json"), "OPTION_INVALID");
-
-        Assert.Equal(
-            "Run 'aspose-cli app open \"my book.xlsx\" --output-format json' to open the file, or 'aspose-cli app open --welcome' for the guide.",
-            error["hint"]!.GetValue<string>());
-    }
-
-    /// <summary>
     /// The <c>window.next</c> of a read that stopped passes the input's password on as every
     /// continuation does, never the password: by the variable the read named, or by the placeholder
     /// for one, in double quotes, when the read got the password from stdin or literally. Run once

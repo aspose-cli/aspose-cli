@@ -275,7 +275,7 @@ public abstract class ProductContractTests<TModule>
         }
     }
 
-    /// <summary>Ensures schema, presenter, and Skill resources travel with the product.</summary>
+    /// <summary>Ensures schema and Skill resources travel with the product.</summary>
     [Fact]
     public void Resources_AreProductOwnedAndConventionBased()
     {
@@ -289,8 +289,6 @@ public abstract class ProductContractTests<TModule>
             "aspose-cli-" + definition.Manifest.Id,
             resources.SkillName);
         Assert.False(string.IsNullOrWhiteSpace(resources.SkillDescription));
-        Assert.Contains("Presenter/presenter.js", resources.ResourceNames);
-        Assert.Contains("Presenter/presenter.css", resources.ResourceNames);
         Assert.NotEmpty(resources.SchemaIds);
     }
 
@@ -729,14 +727,6 @@ public abstract class ProductContractTests<TModule>
                         .Select(static converter =>
                             converter.GetType().AssemblyQualifiedName)
                         .Order(StringComparer.Ordinal))),
-            string.Join(
-                "|",
-                $"{definition.View.ProductId}:{definition.View.SessionType.AssemblyQualifiedName}",
-                definition.View.LiveView,
-                string.Join(
-                    ",",
-                    definition.View.Views.Select(
-                        static view => $"{view.Id}:{view.Label}:{view.PartKind}"))),
             FactoryFingerprint(definition, "CommandFactory"),
             FactoryFingerprint(definition, "BindingFactory"));
     }
@@ -862,7 +852,6 @@ public abstract class ProductContractTests<TModule>
         string Formats,
         string Diagnostics,
         string? Json,
-        string? View,
         string? CommandFactory,
         string? BindingFactory);
 

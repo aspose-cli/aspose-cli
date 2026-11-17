@@ -9,7 +9,7 @@ namespace Aspose.Cli.Sdk.Extensibility;
 /// </summary>
 public sealed record FileRouteDefinition
 {
-    /// <summary>Extensions owned by generic app and preview routing.</summary>
+    /// <summary>Extensions owned by generic routing.</summary>
     public IReadOnlyList<string> DefaultOwnerExtensions { get; init; } = [];
 
     /// <summary>Additional extensions accepted by explicit product commands.</summary>

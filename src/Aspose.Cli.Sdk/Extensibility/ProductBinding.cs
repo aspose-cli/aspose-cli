@@ -58,13 +58,11 @@ public sealed class ProductActivationContext
 /// </summary>
 public abstract class ProductBinding
 {
-    private readonly Func<object> _session;
     private readonly Lazy<IFontEnvironment> _fontEnvironment;
 
     internal ProductBinding(
         string productId,
         Type sessionType,
-        Func<object> session,
         ILicenseGate licenseGate,
         Lazy<IFontEnvironment> fontEnvironment,
         OutputPipeline outputs)
@@ -72,7 +70,6 @@ public abstract class ProductBinding
         ArgumentException.ThrowIfNullOrWhiteSpace(productId);
         ProductId = productId;
         SessionType = sessionType ?? throw new ArgumentNullException(nameof(sessionType));
-        _session = session ?? throw new ArgumentNullException(nameof(session));
         LicenseGate = licenseGate
             ?? throw new ArgumentNullException(nameof(licenseGate));
         _fontEnvironment = fontEnvironment ?? throw new ArgumentNullException(nameof(fontEnvironment));
@@ -96,8 +93,6 @@ public abstract class ProductBinding
 
     /// <summary>The product's font environment, created on first use.</summary>
     public IFontEnvironment FontEnvironment => _fontEnvironment.Value;
-
-    internal object UntypedSession => _session();
 
     /// <summary>
     /// The one entry through which a command applies a font profile to this product's engine:
@@ -158,7 +153,7 @@ public sealed class ProductBinding<TSession> : ProductBinding
         ILicenseGate licenseGate,
         Lazy<IFontEnvironment> fontEnvironment,
         OutputPipeline outputs)
-        : base(productId, typeof(TSession), () => session.Value, licenseGate, fontEnvironment, outputs)
+        : base(productId, typeof(TSession), licenseGate, fontEnvironment, outputs)
     {
         _session = session ?? throw new ArgumentNullException(nameof(session));
     }

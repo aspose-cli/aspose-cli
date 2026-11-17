@@ -42,8 +42,6 @@ internal static partial class ContractRules
     {
         ["build_property"] = "the MSBuild property prefix an analyzer reads",
         ["field_1"] = "a name Aspose.Pdf gives a form field it creates, in a KNOWN-ISSUES.md entry",
-        ["HTTPS_PROXY"] = "the environment variable that sets the proxy of release downloads",
-        ["index_files"] = "the folder Excel's HTML export writes beside the page",
         ["PDF_A_2B"] = "the Aspose.Pdf conformance name that pdfa-2b maps to",
         ["REG_BINARY"] = "a Windows registry value type, in a KNOWN-ISSUES.md entry",
         ["REG_DWORD"] = "a Windows registry value type, in a KNOWN-ISSUES.md entry",
@@ -67,9 +65,7 @@ internal static partial class ContractRules
     /// <summary>Text that reads like a command, after a noun product id or as a whole C# text, but is prose, with where.</summary>
     private static readonly Dictionary<string, string> ProsePhrases = new(StringComparer.Ordinal)
     {
-        ["app stop"] = "\"app stop requested\", a line the app service writes to its log",
         ["cells read"] = "\"table cells read it before the text\" in a Words result description",
-        ["cells stop"] = "\"the listed cells stop at the diff budget\" in a Cells compare result description",
     };
     // rule-exemptions: end
 

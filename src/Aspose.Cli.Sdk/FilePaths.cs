@@ -33,16 +33,6 @@ public static class FilePaths
     }
 
     /// <summary>
-    /// The spelling of a path in a key that older versions fold to upper case (invariant) on
-    /// every platform, such as the update status file name. Its bytes never change.
-    /// </summary>
-    public static string FoldedKey(string path)
-    {
-        ArgumentNullException.ThrowIfNull(path);
-        return path.ToUpperInvariant();
-    }
-
-    /// <summary>
     /// Whether <paramref name="path"/> is below <paramref name="root"/>, or is the root itself when
     /// <paramref name="allowEqual"/>. A root that ends in a separator, such as a drive root
     /// <c>C:\</c>, is not given a second one, and <c>C:\ab</c> is not below <c>C:\a</c>.

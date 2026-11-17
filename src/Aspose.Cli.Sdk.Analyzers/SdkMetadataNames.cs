@@ -32,8 +32,6 @@ internal static class SdkMetadataNames
     internal const string ResourceBudgetCapabilities = ContractsNamespace + ".ResourceBudgetCapabilities";
     internal const string ErrorCode = "Aspose.Cli.Sdk.Errors.ErrorCode";
     internal const string DiagnosticDescriptor = "Aspose.Cli.Sdk.Diagnostics.DiagnosticDescriptor";
-    internal const string ViewPartKinds = "Aspose.Cli.Sdk.Views.ViewPartKinds";
-    internal const string ProductView = "Aspose.Cli.Sdk.Views.ProductView";
     internal const string ProductJsonDefinition = "Aspose.Cli.Sdk.Serialization.ProductJsonDefinition";
     internal const string ProductJsonRootAttribute = "Aspose.Cli.Sdk.Serialization.ProductJsonRootAttribute";
 

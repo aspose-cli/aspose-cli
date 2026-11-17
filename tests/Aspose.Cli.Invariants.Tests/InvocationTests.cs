@@ -56,16 +56,6 @@ public sealed class InvocationTests
         Assert.Contains("cells create creates its argument from file options none of the invocation rules names", problems);
     }
 
-    [Fact]
-    public void AnOpenCommandWhoseNoOpenWasRenamed_FailsRatherThanOpeningABrowser()
-    {
-        CliCommand open = Command("preview open", Option("--no-browser")) with { Product = null };
-
-        Assert.Contains("preview open opens a browser and has no --no-open", Invocation.ImpliedRulesMatchTheCatalog([open]));
-        Assert.Throws<InvalidOperationException>(() => Invocation.For(open));
-        Assert.Equal(Invocation.NoOpen, Invocation.For(Command("preview open", Option(Invocation.NoOpen)) with { Product = null }).Args[^1]);
-    }
-
     private static CliCommand Command(string words, params CliOption[] options) =>
         new(words, words.Split(' ')[0], options, [new CliArgument("file", 1, true)], []);
 

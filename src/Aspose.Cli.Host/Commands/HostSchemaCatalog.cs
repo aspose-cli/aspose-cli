@@ -1,5 +1,4 @@
 using System.Diagnostics.CodeAnalysis;
-using Aspose.Cli.Host.App;
 using Aspose.Cli.Sdk.Serialization;
 
 namespace Aspose.Cli.Host.Commands;
@@ -9,13 +8,10 @@ namespace Aspose.Cli.Host.Commands;
 /// </summary>
 internal sealed class HostSchemaCatalog
 {
-    /// <summary>The schemas the host itself publishes under <c>v2/common</c>, such as the App status.</summary>
+    /// <summary>The schemas the host itself publishes under <c>v2/common</c>.</summary>
     private static readonly ResultSchemaSet HostSchemas = new(
         "common",
-        [
-            .. SdkSchemaCatalog.ResultRecordsOf(HostResultJsonContext.Default),
-            .. SdkSchemaCatalog.ResultRecordsOf(AppJsonContext.Default),
-        ],
+        [.. SdkSchemaCatalog.ResultRecordsOf(HostResultJsonContext.Default)],
         SdkSchemaCatalog.Schemas);
 
     /// <summary>Every <c>v2/common</c> schema id, the SDK's and the host's, in ordinal order.</summary>

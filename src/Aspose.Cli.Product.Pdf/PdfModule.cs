@@ -31,7 +31,6 @@ public sealed class PdfModule : IProductModule
             .Formats(PdfFormats.Definitions)
             .Diagnostics(PdfDiagnostics.All)
             .Json(ProductJsonContext.Definition)
-            .View(new PdfViewAdapter())
             .Describe("PDF automation with page, security and fixed-layout semantics.", Help)
             .Command(InspectCommand.Create, PdfInfo.Run)
             .Command(ReadCommand.Create, PdfRead.Run)

@@ -28,7 +28,6 @@ public static class CliHost
             using InvocationInputs? inputs = InvocationInputs.Receive();
             var host = new HostContext(catalog, TimeoutWorkerSupervisor.ReceiveOutputSession());
             ConfigureConsole();
-            args = NormalizeInteractiveArguments(args, IsInteractiveDesktop(), host.Parser);
             return ProcessFailureBoundary.Run(host, args, arguments =>
             {
                 ParsedInvocation invocation = host.Parser.Parse(arguments);
@@ -40,7 +39,7 @@ public static class CliHost
                 }
 
                 invocation.EnsureValid();
-                // Every process that runs a command, a worker and a render worker included, gets here first.
+                // Every process that runs a command, a worker included, gets here first.
                 NetworkGate.Admit(invocation.NetworkAccess);
                 StartupLicenseNotice.Write(host, invocation, Console.Error);
                 return TimeoutWorkerSupervisor.Run(host, arguments, invocation,
@@ -60,42 +59,6 @@ public static class CliHost
         {
             EnableDefaultExceptionHandler = false,
         });
-
-    private static bool IsInteractiveDesktop() =>
-        !Console.IsInputRedirected
-        && !Console.IsOutputRedirected
-        && !Console.IsErrorRedirected
-        && Environment.UserInteractive
-        && string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("CI"))
-        && string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("GITHUB_ACTIONS"));
-
-    /// <summary>
-    /// A double-click, or dropping a file on the executable, opens the App. A
-    /// lone argument names a file to open only when it is not already a
-    /// command line, so <c>aspose-cli doctor</c> stays the doctor even in a
-    /// folder that holds a file named <c>doctor</c>.
-    /// </summary>
-    internal static string[] NormalizeInteractiveArguments(
-        string[] args,
-        bool interactiveDesktop,
-        InvocationParser parser)
-    {
-        if (!interactiveDesktop)
-        {
-            return args;
-        }
-
-        if (args.Length == 0)
-        {
-            return ["app", "open"];
-        }
-
-        return args.Length == 1
-            && File.Exists(args[0])
-            && parser.Parse(args).ParseResult.Errors.Count > 0
-            ? ["app", "open", args[0]]
-            : args;
-    }
 
     private static void ConfigureConsole()
     {

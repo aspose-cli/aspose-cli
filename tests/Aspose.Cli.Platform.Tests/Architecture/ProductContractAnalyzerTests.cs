@@ -316,67 +316,6 @@ public sealed class ProductContractAnalyzerTests
     }
 
     [Fact]
-    public async Task Apcli007_AllowsTypedViewAdapterRegistration()
-    {
-        string source = ProductSource(
-            """
-            public interface ISession { }
-
-            public sealed class ViewAdapter : IProductViewAdapter<ISession>
-            {
-                public System.Collections.Generic.IReadOnlyList<Aspose.Cli.Sdk.Views.ProductView> Views =>
-                    new[]
-                    {
-                        new Aspose.Cli.Sdk.Views.ProductView(
-                            "document",
-                            "Document",
-                            Aspose.Cli.Sdk.Views.ViewPartKinds.Image),
-                    };
-                public string LiveView => "document";
-                public Aspose.Cli.Sdk.Views.ViewManifest Render(
-                    ISession session,
-                    string filePath,
-                    Aspose.Cli.Sdk.Views.ViewRenderRequest request,
-                    Aspose.Cli.Sdk.Views.IViewArtifactSink artifacts) =>
-                    new Aspose.Cli.Sdk.Views.ViewManifest
-                    {
-                        View = "document",
-                        SourceFormat = "test",
-                        SourceSizeBytes = 0,
-                        SourceEncrypted = false,
-                        TotalPartCount = 0,
-                        Parts = System.Array.Empty<Aspose.Cli.Sdk.Views.ViewPart>(),
-                    };
-            }
-
-            public sealed class ReviewModule : IProductModule
-            {
-                public ProductDefinition Define() =>
-                    Product.Define<ISession>(new ProductManifest
-                    {
-                        Id = "review",
-                        DisplayName = "Review",
-                        Engine = new Aspose.Cli.Sdk.Contracts.ProductEngineCapabilities
-                        {
-                            Id = "aspose",
-                            Sdk = "Aspose.Test",
-                            SdkVersion = "1.0.0",
-                        },
-                        AvailableEngines = new[] { "aspose" },
-                    })
-                    .View(new ViewAdapter())
-                    .Build();
-            }
-            """);
-
-        ImmutableArray<Diagnostic> diagnostics = await Analyze(source);
-
-        Assert.DoesNotContain(
-            diagnostics,
-            static item => item.Id == "APCLI007");
-    }
-
-    [Fact]
     public async Task Apcli007_AllowsPureDeferredDefinition()
     {
         string source = ProductSource(

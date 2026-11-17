@@ -5,7 +5,7 @@
     <RootNamespace>Aspose.Cli.Host</RootNamespace>
     <Description>
       Shared Aspose CLI host: command-line surface, output
-      rendering, App and viewer service lifecycle, and explicit composition root.
+      rendering and explicit composition root.
     </Description>
     <IsPackable>false</IsPackable>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
@@ -13,7 +13,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Aspose.Cli.Sdk\Aspose.Cli.Sdk.csproj" />
-    <!-- The contract generator describes the host's App status, which the host publishes under v2/common. -->
+    <!-- The contract generator describes the host's results, which the host publishes under v2/common. -->
     <ProjectReference Include="..\Aspose.Cli.Sdk.Analyzers\Aspose.Cli.Sdk.Analyzers.csproj"
                       OutputItemType="Analyzer"
                       ReferenceOutputAssembly="false"
@@ -29,20 +29,10 @@
   <ItemGroup>
     <!-- The renderer-coverage drift test constructs the internal TableOutputWriter. -->
     <InternalsVisibleTo Include="Aspose.Cli.Platform.Tests" />
-    <!-- The installer lifecycle tests read the update status the Host records. -->
-    <InternalsVisibleTo Include="Aspose.Cli.Installer.Tests" />
-  </ItemGroup>
-
-  <ItemGroup Label="Embedded local Web App">
-    <EmbeddedResource Include="App\assets\app.html" LogicalName="app/app.html" />
-    <EmbeddedResource Include="App\assets\app.css" LogicalName="app/app.css" />
-    <EmbeddedResource Include="App\assets\app.js" LogicalName="app/app.js" />
-    <EmbeddedResource Include="Viewer\kit.js" LogicalName="viewer/kit.js" />
-    <EmbeddedResource Include="Viewer\kit.css" LogicalName="viewer/kit.css" />
   </ItemGroup>
 
   <ItemGroup Label="Platform Agent Skill">
-    <!-- The platform Skill: what every product shares (App, preview, licensing, errors). -->
+    <!-- The platform Skill: what every product shares (licensing, errors). -->
     <EmbeddedResource Include="Skills\Platform\**\*.*">
       <LogicalName>skill/$(AsposeCliSkillPrefix)platform/%(RecursiveDir)%(Filename)%(Extension)</LogicalName>
     </EmbeddedResource>

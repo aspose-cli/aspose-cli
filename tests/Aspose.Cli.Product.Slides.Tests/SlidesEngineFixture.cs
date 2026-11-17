@@ -4,7 +4,6 @@ using Aspose.Cli.TestKit;
 using Aspose.Cli.Sdk.Extensibility;
 using Aspose.Cli.Sdk.Licensing;
 using Aspose.Cli.Sdk.Results;
-using Aspose.Cli.Sdk.Views;
 using Aspose.Slides;
 using Aspose.Slides.Export;
 

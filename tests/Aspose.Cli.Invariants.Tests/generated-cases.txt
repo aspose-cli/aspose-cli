@@ -7,8 +7,6 @@ C-R02 | cells
 C-R02 | pdf
 C-R02 | slides
 C-R02 | words
-C-R03 | app declared
-C-R03 | app without a subcommand
 C-R03 | aspose-cli declared
 C-R03 | aspose-cli without a subcommand
 C-R03 | cells declared
@@ -21,14 +19,10 @@ C-R03 | mcp declared
 C-R03 | mcp without a subcommand
 C-R03 | pdf declared
 C-R03 | pdf without a subcommand
-C-R03 | preview declared
-C-R03 | preview without a subcommand
 C-R03 | skill declared
 C-R03 | skill without a subcommand
 C-R03 | slides declared
 C-R03 | slides without a subcommand
-C-R03 | update declared
-C-R03 | update without a subcommand
 C-R03 | words declared
 C-R03 | words without a subcommand
 C-R04 | --scan-range
@@ -46,7 +40,6 @@ C-R05 | cells
 C-R05 | pdf
 C-R05 | slides
 C-R05 | words
-C-R06 | app open
 C-R06 | aspose-cli
 C-R06 | capabilities
 C-R06 | cells compare
@@ -74,7 +67,6 @@ C-R06 | pdf search
 C-R06 | pdf sign
 C-R06 | pdf split
 C-R06 | pdf validate
-C-R06 | preview open
 C-R06 | schema
 C-R06 | skill install
 C-R06 | slides convert
@@ -85,7 +77,6 @@ C-R06 | slides inspect
 C-R06 | slides read
 C-R06 | slides render
 C-R06 | slides search
-C-R06 | update install
 C-R06 | words compare
 C-R06 | words convert
 C-R06 | words create
@@ -96,7 +87,6 @@ C-R06 | words read
 C-R06 | words render
 C-R06 | words search
 C-R06 | words split
-C-R08 | app open
 C-R08 | aspose-cli
 C-R08 | capabilities
 C-R08 | cells compare
@@ -124,7 +114,6 @@ C-R08 | pdf search
 C-R08 | pdf sign
 C-R08 | pdf split
 C-R08 | pdf validate
-C-R08 | preview open
 C-R08 | schema
 C-R08 | skill install
 C-R08 | slides convert
@@ -135,7 +124,6 @@ C-R08 | slides inspect
 C-R08 | slides read
 C-R08 | slides render
 C-R08 | slides search
-C-R08 | update install
 C-R08 | words compare
 C-R08 | words convert
 C-R08 | words create
@@ -146,7 +134,6 @@ C-R08 | words read
 C-R08 | words render
 C-R08 | words search
 C-R08 | words split
-C-R09 | --no-open
 C-R09 | --no-recalc
 C-R10 | cells compare --left-password-stdin with --right-password-stdin
 C-R10 | cells compare declared
@@ -180,7 +167,6 @@ C-R10 | pdf sign declared
 C-R10 | pdf split --encrypt-stdin with --password-stdin
 C-R10 | pdf split declared
 C-R10 | pdf validate declared
-C-R10 | preview open declared
 C-R10 | slides convert --encrypt-stdin with --password-stdin
 C-R10 | slides convert declared
 C-R10 | slides create declared
@@ -235,8 +221,6 @@ C-R11 | slides create declared
 C-R11 | slides edit --dry-run
 C-R11 | slides extract --dry-run
 C-R11 | slides render --dry-run
-C-R11 | update install --dry-run
-C-R11 | update install declared
 C-R11 | words compare --dry-run
 C-R11 | words convert --dry-run
 C-R11 | words create --dry-run
@@ -402,7 +386,6 @@ C-R17 | pdf read values
 C-R17 | pdf render values
 C-R17 | pdf split values
 C-R17 | pdf validate values
-C-R17 | preview open values
 C-R17 | skill install values
 C-R17 | slides convert values
 C-R17 | slides create values
@@ -502,8 +485,6 @@ C-R17 | v2/cells/ops#webLink
 C-R17 | v2/cells/read-result
 C-R17 | v2/cells/render-result
 C-R17 | v2/cells/search-result
-C-R17 | v2/common/app-result
-C-R17 | v2/common/app-status
 C-R17 | v2/common/backup
 C-R17 | v2/common/capabilities
 C-R17 | v2/common/capabilities-summary
@@ -522,18 +503,14 @@ C-R17 | v2/common/not-found-details
 C-R17 | v2/common/operation-outcome
 C-R17 | v2/common/output
 C-R17 | v2/common/page-size
-C-R17 | v2/common/preview-session
-C-R17 | v2/common/preview-status
 C-R17 | v2/common/result-window
 C-R17 | v2/common/schema-list
 C-R17 | v2/common/skill-install
 C-R17 | v2/common/skill-list
 C-R17 | v2/common/source-input
 C-R17 | v2/common/unchecked-operation
-C-R17 | v2/common/update-result
 C-R17 | v2/common/verification-issue
 C-R17 | v2/common/version
-C-R17 | v2/common/view
 C-R17 | v2/common/warning
 C-R17 | v2/pdf/convert-result
 C-R17 | v2/pdf/create-result
@@ -790,8 +767,6 @@ C-R18 | v2/cells/ops#webLink
 C-R18 | v2/cells/read-result
 C-R18 | v2/cells/render-result
 C-R18 | v2/cells/search-result
-C-R18 | v2/common/app-result
-C-R18 | v2/common/app-status
 C-R18 | v2/common/backup
 C-R18 | v2/common/capabilities
 C-R18 | v2/common/capabilities-summary
@@ -810,18 +785,14 @@ C-R18 | v2/common/not-found-details
 C-R18 | v2/common/operation-outcome
 C-R18 | v2/common/output
 C-R18 | v2/common/page-size
-C-R18 | v2/common/preview-session
-C-R18 | v2/common/preview-status
 C-R18 | v2/common/result-window
 C-R18 | v2/common/schema-list
 C-R18 | v2/common/skill-install
 C-R18 | v2/common/skill-list
 C-R18 | v2/common/source-input
 C-R18 | v2/common/unchecked-operation
-C-R18 | v2/common/update-result
 C-R18 | v2/common/verification-issue
 C-R18 | v2/common/version
-C-R18 | v2/common/view
 C-R18 | v2/common/warning
 C-R18 | v2/pdf/convert-result
 C-R18 | v2/pdf/create-result
@@ -1823,12 +1794,6 @@ C-R20 | v2/cells/render-result variants
 C-R20 | v2/cells/search-result fixednames
 C-R20 | v2/cells/search-result spelling
 C-R20 | v2/cells/search-result variants
-C-R20 | v2/common/app-result fixednames
-C-R20 | v2/common/app-result spelling
-C-R20 | v2/common/app-result variants
-C-R20 | v2/common/app-status fixednames
-C-R20 | v2/common/app-status spelling
-C-R20 | v2/common/app-status variants
 C-R20 | v2/common/backup fixednames
 C-R20 | v2/common/backup spelling
 C-R20 | v2/common/backup variants
@@ -1883,12 +1848,6 @@ C-R20 | v2/common/output variants
 C-R20 | v2/common/page-size fixednames
 C-R20 | v2/common/page-size spelling
 C-R20 | v2/common/page-size variants
-C-R20 | v2/common/preview-session fixednames
-C-R20 | v2/common/preview-session spelling
-C-R20 | v2/common/preview-session variants
-C-R20 | v2/common/preview-status fixednames
-C-R20 | v2/common/preview-status spelling
-C-R20 | v2/common/preview-status variants
 C-R20 | v2/common/result-window fixednames
 C-R20 | v2/common/result-window spelling
 C-R20 | v2/common/result-window variants
@@ -1907,18 +1866,12 @@ C-R20 | v2/common/source-input variants
 C-R20 | v2/common/unchecked-operation fixednames
 C-R20 | v2/common/unchecked-operation spelling
 C-R20 | v2/common/unchecked-operation variants
-C-R20 | v2/common/update-result fixednames
-C-R20 | v2/common/update-result spelling
-C-R20 | v2/common/update-result variants
 C-R20 | v2/common/verification-issue fixednames
 C-R20 | v2/common/verification-issue spelling
 C-R20 | v2/common/verification-issue variants
 C-R20 | v2/common/version fixednames
 C-R20 | v2/common/version spelling
 C-R20 | v2/common/version variants
-C-R20 | v2/common/view fixednames
-C-R20 | v2/common/view spelling
-C-R20 | v2/common/view variants
 C-R20 | v2/common/warning fixednames
 C-R20 | v2/common/warning spelling
 C-R20 | v2/common/warning variants
@@ -3290,7 +3243,6 @@ C-R24 | cells exit codes follow their category
 C-R24 | common exit codes follow their category
 C-R24 | doctor with a missing license file
 C-R24 | fonts check of a document whose font is missing
-C-R24 | host exit codes follow their category
 C-R24 | input file errors exit 3
 C-R24 | internal errors exit 1
 C-R24 | license errors exit 7
@@ -3406,7 +3358,6 @@ C-R26 | words op accept_revisions field author as atuhor
 C-R26 | words op protect_document protection read-only as raed-only
 C-R27 | cells warning codes
 C-R27 | common warning codes
-C-R27 | host warning codes
 C-R27 | pdf warning codes
 C-R27 | slides warning codes
 C-R27 | warning envelope shape
@@ -3417,8 +3368,6 @@ C-R28 | codes declared once
 C-R28 | common code names
 C-R28 | common not-found details
 C-R28 | evaluation codes
-C-R28 | host code names
-C-R28 | host not-found details
 C-R28 | pdf code names
 C-R28 | pdf not-found details
 C-R28 | release and update codes belong to host
@@ -3648,10 +3597,6 @@ C-R31 | v2/cells/render-result fields
 C-R31 | v2/cells/render-result outputs
 C-R31 | v2/cells/search-result fields
 C-R31 | v2/cells/search-result outputs
-C-R31 | v2/common/app-result fields
-C-R31 | v2/common/app-result outputs
-C-R31 | v2/common/app-status fields
-C-R31 | v2/common/app-status outputs
 C-R31 | v2/common/backup fields
 C-R31 | v2/common/backup outputs
 C-R31 | v2/common/capabilities fields
@@ -3688,10 +3633,6 @@ C-R31 | v2/common/output fields
 C-R31 | v2/common/output outputs
 C-R31 | v2/common/page-size fields
 C-R31 | v2/common/page-size outputs
-C-R31 | v2/common/preview-session fields
-C-R31 | v2/common/preview-session outputs
-C-R31 | v2/common/preview-status fields
-C-R31 | v2/common/preview-status outputs
 C-R31 | v2/common/result-window fields
 C-R31 | v2/common/result-window outputs
 C-R31 | v2/common/schema-list fields
@@ -3704,14 +3645,10 @@ C-R31 | v2/common/source-input fields
 C-R31 | v2/common/source-input outputs
 C-R31 | v2/common/unchecked-operation fields
 C-R31 | v2/common/unchecked-operation outputs
-C-R31 | v2/common/update-result fields
-C-R31 | v2/common/update-result outputs
 C-R31 | v2/common/verification-issue fields
 C-R31 | v2/common/verification-issue outputs
 C-R31 | v2/common/version fields
 C-R31 | v2/common/version outputs
-C-R31 | v2/common/view fields
-C-R31 | v2/common/view outputs
 C-R31 | v2/common/warning fields
 C-R31 | v2/common/warning outputs
 C-R31 | v2/pdf/convert-result fields
@@ -3984,12 +3921,6 @@ C-R33 | v2/cells/render-result none
 C-R33 | v2/cells/search-result envelope
 C-R33 | v2/cells/search-result names
 C-R33 | v2/cells/search-result none
-C-R33 | v2/common/app-result envelope
-C-R33 | v2/common/app-result names
-C-R33 | v2/common/app-result none
-C-R33 | v2/common/app-status envelope
-C-R33 | v2/common/app-status names
-C-R33 | v2/common/app-status none
 C-R33 | v2/common/backup envelope
 C-R33 | v2/common/backup names
 C-R33 | v2/common/backup none
@@ -4044,12 +3975,6 @@ C-R33 | v2/common/output none
 C-R33 | v2/common/page-size envelope
 C-R33 | v2/common/page-size names
 C-R33 | v2/common/page-size none
-C-R33 | v2/common/preview-session envelope
-C-R33 | v2/common/preview-session names
-C-R33 | v2/common/preview-session none
-C-R33 | v2/common/preview-status envelope
-C-R33 | v2/common/preview-status names
-C-R33 | v2/common/preview-status none
 C-R33 | v2/common/result-window envelope
 C-R33 | v2/common/result-window names
 C-R33 | v2/common/result-window none
@@ -4068,18 +3993,12 @@ C-R33 | v2/common/source-input none
 C-R33 | v2/common/unchecked-operation envelope
 C-R33 | v2/common/unchecked-operation names
 C-R33 | v2/common/unchecked-operation none
-C-R33 | v2/common/update-result envelope
-C-R33 | v2/common/update-result names
-C-R33 | v2/common/update-result none
 C-R33 | v2/common/verification-issue envelope
 C-R33 | v2/common/verification-issue names
 C-R33 | v2/common/verification-issue none
 C-R33 | v2/common/version envelope
 C-R33 | v2/common/version names
 C-R33 | v2/common/version none
-C-R33 | v2/common/view envelope
-C-R33 | v2/common/view names
-C-R33 | v2/common/view none
 C-R33 | v2/common/warning envelope
 C-R33 | v2/common/warning names
 C-R33 | v2/common/warning none
@@ -4425,9 +4344,6 @@ C-R33 | v2/words/search-result none
 C-R33 | v2/words/split-result envelope
 C-R33 | v2/words/split-result names
 C-R33 | v2/words/split-result none
-C-R34 | app open
-C-R34 | app status
-C-R34 | app stop
 C-R34 | capabilities
 C-R34 | cells compare
 C-R34 | cells convert
@@ -4458,9 +4374,6 @@ C-R34 | pdf search
 C-R34 | pdf sign
 C-R34 | pdf split
 C-R34 | pdf validate
-C-R34 | preview open
-C-R34 | preview status
-C-R34 | preview stop
 C-R34 | schema
 C-R34 | skill install
 C-R34 | skill list
@@ -4472,8 +4385,6 @@ C-R34 | slides inspect
 C-R34 | slides read
 C-R34 | slides render
 C-R34 | slides search
-C-R34 | update check
-C-R34 | update install
 C-R34 | usage lists required options
 C-R34 | value lists
 C-R34 | words compare
@@ -4488,10 +4399,6 @@ C-R34 | words search
 C-R34 | words split
 C-R35 | --version
 C-R35 | --version in JSON mode
-C-R35 | app --help
-C-R35 | app open --help
-C-R35 | app status --help
-C-R35 | app stop --help
 C-R35 | aspose-cli --help
 C-R35 | capabilities --help
 C-R35 | cells --help
@@ -4527,10 +4434,6 @@ C-R35 | pdf search --help
 C-R35 | pdf sign --help
 C-R35 | pdf split --help
 C-R35 | pdf validate --help
-C-R35 | preview --help
-C-R35 | preview open --help
-C-R35 | preview status --help
-C-R35 | preview stop --help
 C-R35 | schema --help
 C-R35 | skill --help
 C-R35 | skill install --help
@@ -4544,9 +4447,6 @@ C-R35 | slides inspect --help
 C-R35 | slides read --help
 C-R35 | slides render --help
 C-R35 | slides search --help
-C-R35 | update --help
-C-R35 | update check --help
-C-R35 | update install --help
 C-R35 | words --help
 C-R35 | words compare --help
 C-R35 | words convert --help
@@ -5045,8 +4945,6 @@ invalid-enum | pdf read --content lyaout
 invalid-enum | pdf render --to jpegg
 invalid-enum | pdf split --by bookmarkss
 invalid-enum | pdf validate --profile pfda-1b
-invalid-enum | preview open --product cellss
-invalid-enum | preview open --view autoo
 invalid-enum | skill install --host calude-code
 invalid-enum | slides convert --to giff
 invalid-enum | slides create --slide-size 16x99
@@ -5311,7 +5209,6 @@ same-name-option | --left-password-env
 same-name-option | --left-password-stdin
 same-name-option | --max-chars
 same-name-option | --max-hits
-same-name-option | --no-open
 same-name-option | --ops
 same-name-option | --out
 same-name-option | --out-dir
@@ -5321,7 +5218,6 @@ same-name-option | --password
 same-name-option | --password-env
 same-name-option | --password-stdin
 same-name-option | --pattern
-same-name-option | --port
 same-name-option | --product
 same-name-option | --range
 same-name-option | --regex
@@ -5602,10 +5498,6 @@ secret-hidden | words split --password-env
 secret-hidden | words split --password-env with a wrong password
 secret-hidden | words split --password-stdin
 secret-hidden | words split --password-stdin with a wrong password
-unknown-command | app as appp
-unknown-command | app open as openn
-unknown-command | app status as sattus
-unknown-command | app stop as stopp
 unknown-command | capabilities as cpaabilities
 unknown-command | cells as cellss
 unknown-command | cells compare as cmopare
@@ -5640,10 +5532,6 @@ unknown-command | pdf search as saerch
 unknown-command | pdf sign as signn
 unknown-command | pdf split as splitt
 unknown-command | pdf validate as vlaidate
-unknown-command | preview as perview
-unknown-command | preview open as openn
-unknown-command | preview status as sattus
-unknown-command | preview stop as stopp
 unknown-command | schema as shcema
 unknown-command | skill as skilll
 unknown-command | skill install as isntall
@@ -5657,9 +5545,6 @@ unknown-command | slides inspect as isnpect
 unknown-command | slides read as readd
 unknown-command | slides render as rneder
 unknown-command | slides search as saerch
-unknown-command | update as udpate
-unknown-command | update check as checkk
-unknown-command | update install as isntall
 unknown-command | words as wordss
 unknown-command | words compare as cmopare
 unknown-command | words convert as cnovert
@@ -5987,10 +5872,6 @@ unknown-op | words set_table_style as ste_table_style
 unknown-op | words set_text as ste_text
 unknown-op | words set_watermark as ste_watermark
 unknown-op | words unprotect_document as upnrotect_document
-unknown-option | app open --foreground as --froeground
-unknown-option | app open --no-open as --n-oopen
-unknown-option | app open --port as --portt
-unknown-option | app open --welcome as --wlecome
 unknown-option | aspose-cli --help as --helpp
 unknown-option | aspose-cli --license as --lciense
 unknown-option | aspose-cli --license-mode as --lciense-mode
@@ -6216,15 +6097,6 @@ unknown-option | pdf validate --password as --psasword
 unknown-option | pdf validate --password-env as --psasword-env
 unknown-option | pdf validate --password-stdin as --psasword-stdin
 unknown-option | pdf validate --profile as --porfile
-unknown-option | preview open --font-dir as --fnot-dir
-unknown-option | preview open --fx as --fxx
-unknown-option | preview open --no-open as --n-oopen
-unknown-option | preview open --password as --psasword
-unknown-option | preview open --password-env as --psasword-env
-unknown-option | preview open --password-stdin as --psasword-stdin
-unknown-option | preview open --port as --portt
-unknown-option | preview open --product as --porduct
-unknown-option | preview open --view as --vieww
 unknown-option | schema --operation as --oepration
 unknown-option | skill install --dir as --dirr
 unknown-option | skill install --dry-run as --dyr-run
@@ -6308,7 +6180,6 @@ unknown-option | slides search --pattern as --ptatern
 unknown-option | slides search --regex as --regexx
 unknown-option | slides search --scope as --scopee
 unknown-option | slides search --skip as --skipp
-unknown-option | update install --dry-run as --dyr-run
 unknown-option | words compare --author as --atuhor
 unknown-option | words compare --dry-run as --dyr-run
 unknown-option | words compare --font-dir as --fnot-dir

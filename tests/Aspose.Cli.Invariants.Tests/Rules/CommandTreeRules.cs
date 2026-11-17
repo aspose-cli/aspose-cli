@@ -280,7 +280,6 @@ internal static partial class ContractRules
     [
         ("license install", "An installation puts the license in place and replaces the installed one; that is what install means."),
         ("skill install", "An installation puts the Skill in place and replaces the version this CLI installed; that is what install means."),
-        ("update install", "An installation puts the release in place and replaces the installed one; that is what install means."),
     ];
     // rule-exemptions: end
 

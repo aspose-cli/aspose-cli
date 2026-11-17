@@ -6,8 +6,7 @@ vulnerabilities through [SECURITY.md](SECURITY.md). Code rules are in [AGENTS.md
 ## Prerequisites
 
 Windows x64 with a .NET 10 SDK at or above the version in `global.json`, PowerShell 7.4 or later
-(`pwsh`), Windows PowerShell 5.1 (it runs the customer installer) and access to the Playwright CDN
-(the browser tests download a pinned Chromium).
+(`pwsh`) and Windows PowerShell 5.1 (it runs the customer installer).
 
 ## Build and test
 

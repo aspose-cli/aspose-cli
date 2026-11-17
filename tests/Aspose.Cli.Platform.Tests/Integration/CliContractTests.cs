@@ -97,86 +97,6 @@ public sealed class CliContractTests : IDisposable
     }
 
     [Fact]
-    public void Capabilities_KeepPreviewOwnershipAndLogicalViewsUnambiguous()
-    {
-        var expectedPreviewViews = new Dictionary<
-            string,
-            (string DefaultView, string[] Views)>(StringComparer.Ordinal)
-        {
-            ["cells"] = ("workbook", ["sheets", "workbook"]),
-            ["pdf"] = ("pages", ["pages"]),
-            ["slides"] = ("slides", ["slides"]),
-            ["words"] = ("pages", ["pages"]),
-        };
-        CliResult result = _workspace.Run("capabilities", "--output-format", "json");
-
-        Assert.Equal(0, result.ExitCode);
-        JsonNode capabilities = Parse(result.StdOut);
-        JsonArray products = capabilities["products"]!.AsArray();
-        string[] schemas = capabilities["schemas"]!.AsArray()
-            .Select(static schema => schema!.GetValue<string>())
-            .ToArray();
-        string[] ids = products
-            .Select(static product => product!["id"]!.GetValue<string>())
-            .ToArray();
-        Assert.NotEmpty(ids);
-        Assert.Equal(
-            ids.Length,
-            ids.Distinct(StringComparer.Ordinal).Count());
-        Assert.Equal(
-            expectedPreviewViews.Keys.Order(StringComparer.Ordinal),
-            ids.Order(StringComparer.Ordinal));
-
-        JsonArray commands = capabilities["commands"]!.AsArray();
-        Assert.Contains(
-            commands,
-            static command => command!["path"]!.GetValue<string>() ==
-                "aspose-cli preview");
-        foreach (JsonNode? product in products)
-        {
-            string id = product!["id"]!.GetValue<string>();
-            string[] verbs = product["verbs"]!.AsArray()
-                .Select(static verb => verb!.GetValue<string>())
-                .ToArray();
-            Assert.DoesNotContain("preview", verbs);
-            JsonArray operations = product["operations"]!.AsArray();
-            Assert.NotEmpty(operations);
-            foreach (JsonNode? operation in operations)
-            {
-                string command = operation!["command"]!.GetValue<string>();
-                Assert.Contains(
-                    product["commands"]!.AsArray(),
-                    candidate => candidate!["path"]!.GetValue<string>() ==
-                        $"{id} {command}");
-                Assert.Contains(
-                    operation["inputSchema"]!.GetValue<string>(),
-                    schemas);
-                Assert.True(operation["maximumOperationCount"]!.GetValue<int>() > 0);
-                Assert.NotEmpty(operation["ops"]!.AsArray());
-            }
-
-            (string defaultView, string[] views) = expectedPreviewViews[id];
-            JsonNode preview = product["preview"]!;
-            Assert.Equal(
-                defaultView,
-                preview["defaultView"]!.GetValue<string>());
-            Assert.Equal(
-                views,
-                preview["views"]!.AsArray()
-                    .Select(static view => view!.GetValue<string>()));
-        }
-        Assert.Contains(
-            commands,
-            static command => command!["path"]!.GetValue<string>() ==
-                "aspose-cli license");
-        JsonNode rootCommand = commands.Single(command =>
-            command!["path"]!.GetValue<string>() == "aspose-cli")!;
-        Assert.Contains(
-            rootCommand["options"]!.AsArray(),
-            option => option!["name"]!.GetValue<string>() == "--license");
-    }
-
-    [Fact]
     public void Capabilities_ExposeTheCurrentDeterministicSourceRevision()
     {
         CliResult first = _workspace.Run("capabilities", "--output-format", "json");
@@ -664,9 +584,7 @@ public sealed class CliContractTests : IDisposable
     [InlineData("-? cells", "-?")]
     [InlineData("cells inspect a.xlsx /h", "/h")]
     [InlineData("cells inspect a.xlsx --preview", "--preview")]
-    [InlineData("preview open a.xlsx --open", "--open")]
     [InlineData("skill install aspose-cli-platform --host codex --scope user", "--scope")]
-    [InlineData("preview stop --all", "--all")]
     public void RemovedNames_AreUnknownOptions(string commandLine, string removed)
     {
         CliResult result = _workspace.Run(commandLine.Split(' '));
@@ -692,7 +610,6 @@ public sealed class CliContractTests : IDisposable
         JsonNode capabilities = Parse(result.StdOut);
 
         string[] paths = [.. capabilities["commands"]!.AsArray().Select(static item => item!["path"]!.GetValue<string>())];
-        Assert.Contains("aspose-cli update", paths);
         Assert.DoesNotContain(paths, static path => path.Contains("__", StringComparison.Ordinal));
         Assert.DoesNotContain(capabilities["commands"]!.AsArray(), static command => command!.AsObject().ContainsKey("hidden"));
         Assert.DoesNotContain(
@@ -832,99 +749,6 @@ public sealed class CliContractTests : IDisposable
         JsonNode error = Parse(result.StdErr)["error"]!;
         Assert.Equal("OPTION_INVALID", error["code"]!.GetValue<string>());
         Assert.Contains("--timeout", error["message"]!.GetValue<string>());
-    }
-
-    [Fact]
-    public void UpdateCheck_ReportsTheReleaseAManifestDescribes()
-    {
-        string manifest = WriteReleaseManifest(_workspace.File("feed"), "release.zip", 1, new string('a', 64));
-
-        CliResult result = _workspace.RunWithEnv(UpdateFeed(manifest), "update", "check", "--output-format", "json");
-
-        Assert.Equal(0, result.ExitCode);
-        JsonNode update = Parse(result.StdOut);
-        Assert.Equal("available", update["status"]!.GetValue<string>());
-        Assert.Equal("99.0.0", update["availableVersion"]!.GetValue<string>());
-    }
-
-    [Fact]
-    public void UpdateInstall_RejectsAnArchiveThatDoesNotMatchItsManifest()
-    {
-        string root = _workspace.File("feed");
-        Directory.CreateDirectory(root);
-        File.WriteAllText(Path.Combine(root, "release.zip"), "tampered", Encoding.UTF8);
-        string manifest = WriteReleaseManifest(root, "release.zip", 8, new string('a', 64));
-
-        CliResult result = _workspace.RunWithEnv(UpdateFeed(manifest), "update", "install", "--output-format", "json");
-
-        Assert.Equal(5, result.ExitCode);
-        Assert.Equal("RELEASE_VERIFICATION_FAILED", Parse(result.StdErr)["error"]!["code"]!.GetValue<string>());
-    }
-
-    [Fact]
-    public void UpdateInstall_RejectsUnsafeZipEntriesBeforeInstallerHandoff()
-    {
-        Requires.Windows();
-
-        string root = _workspace.File("feed");
-        Directory.CreateDirectory(root);
-        string archive = Path.Combine(root, "release.zip");
-        string escapeName = "aspose-update-escape-" + Guid.NewGuid().ToString("N") + ".txt";
-        string escaped = Path.Combine(Path.GetTempPath(), escapeName);
-        using (FileStream stream = File.Create(archive))
-        using (var zip = new ZipArchive(stream, ZipArchiveMode.Create))
-        {
-            zip.CreateEntry("../" + escapeName);
-        }
-
-        string manifest = WriteReleaseManifest(root, "release.zip", new FileInfo(archive).Length, HashFile(archive));
-        CliResult result = _workspace.RunWithEnv(UpdateFeed(manifest), "update", "install", "--output-format", "json");
-
-        Assert.Equal(5, result.ExitCode);
-        Assert.Equal("RELEASE_VERIFICATION_FAILED", Parse(result.StdErr)["error"]!["code"]!.GetValue<string>());
-        Assert.False(File.Exists(escaped));
-    }
-
-    /// <summary>
-    /// The update commands take no feed: they read the official release, which only the
-    /// internal test variable replaces. A feed given as an argument is a usage error, before
-    /// anything is read or run.
-    /// </summary>
-    [Theory]
-    [InlineData("check")]
-    [InlineData("install")]
-    public void UpdateCommands_RefuseAFeedArgument(string command)
-    {
-        const string Feed = "https://evil.example/RELEASE-MANIFEST.json";
-
-        CliResult result = _workspace.Run("update", command, Feed, "--output-format", "json");
-
-        Assert.Equal(2, result.ExitCode);
-        JsonNode error = Parse(result.StdErr)["error"]!;
-        Assert.Contains(Feed, error["message"]!.GetValue<string>(), StringComparison.Ordinal);
-        Assert.NotEqual("RELEASE_FEED_UNAVAILABLE", error["code"]!.GetValue<string>());
-    }
-
-    // The internal variable that names a test feed in place of the official release.
-    private static Dictionary<string, string?> UpdateFeed(string manifest) => new() { ["ASPOSE_CLI_UPDATE_FEED"] = manifest };
-
-    private static string WriteReleaseManifest(string root, string archive, long size, string sha256)
-    {
-        Directory.CreateDirectory(root);
-        string path = Path.Combine(root, "RELEASE-MANIFEST.json");
-        File.WriteAllText(
-            path,
-            JsonSerializer.Serialize(new
-            {
-                schemaVersion = 1,
-                productId = Aspose.Cli.Sdk.DistributionInfo.Id,
-                runtimeIdentifier = "win-x64",
-                artifactVersion = "99.0.0",
-                sourceRevision = new string('a', 40),
-                archive = new { path = archive, size, sha256 },
-            }),
-            Encoding.UTF8);
-        return path;
     }
 
     /// <summary>Set to 1 to rewrite the snapshots under Integration/Snapshots from the current build.</summary>

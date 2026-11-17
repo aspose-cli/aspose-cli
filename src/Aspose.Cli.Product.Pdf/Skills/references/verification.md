@@ -101,10 +101,6 @@ aspose-cli pdf render report.final.pdf --out report.final.png --output-format js
 aspose-cli fonts check report.pdf --font-dir fonts --output-format json
 ```
 
-To show a person the PDF, `aspose-cli preview open report.pdf` opens the `pages`
-view: pages, thumbnails, the size of the page in view, zoom and a mark on what a
-change touched (`aspose-cli docs preview`).
-
 Check page order and size, crop and rotation, clipping, images, tables, headers
 and footers, stamps, form field appearances, annotations, redaction appearance
 and contrast. The engine drops some thin glyph strokes, such as the underscores

@@ -105,7 +105,7 @@ public sealed partial class DecisionOwnershipTests
     [InlineData("""_ = "Run 'aspose-cli cells convert " + path + " --to xlsx'.";""", true)]
     [InlineData("""_ = $"Convert it: aspose-cli cells convert \"{path}\" --to xlsx (or another format).";""", true)]
     [InlineData("""_ = $"Run 'aspose-cli cells convert <file> --to {format}'.";""", true)]
-    [InlineData("""_ = $"Run '{DistributionInfo.CommandName} app open {file}'.";""", true)]
+    [InlineData("""_ = $"Run '{DistributionInfo.CommandName} cells inspect {file}'.";""", true)]
     [InlineData("""_ = $"Run 'aspose-cli {string.Join(' ', arguments)}' to see why.";""", true)]
     [InlineData("""_ = string.Join(' ', [DistributionInfo.CommandName, "cells", "convert", path]);""", true)]
     [InlineData("""string[] group = [DistributionInfo.CommandName, .. CommandPath()]; _ = string.Join(' ', [.. group, "--to", format]);""", true)]

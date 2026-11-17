@@ -238,7 +238,7 @@ internal sealed class CliCapabilitySnapshot
             ResourceBudgets = ResourceBudgetDefaults.Global
                 .OrderBy(static budget => budget.Kind, StringComparer.Ordinal)
                 .ToArray(),
-            Diagnostics = catalog.Diagnostics.With(HostDiagnostics.All, HostDiagnostics.Owner).All
+            Diagnostics = catalog.Diagnostics.All
                 .OrderBy(static descriptor => descriptor.Code, StringComparer.Ordinal)
                 .Select(static descriptor => new DiagnosticCapabilities
                 {

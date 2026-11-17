@@ -125,13 +125,6 @@
     "availableEngines": [
       "aspose"
     ],
-    "preview": {
-      "defaultView": "pages",
-      "views": [
-        "pages"
-      ],
-      "background": true
-    },
     "formats": [
       {
         "id": "azw3",
@@ -144,11 +137,8 @@
           "convert"
         ],
         "operations": [
-          "app",
           "fonts",
-          "open",
-          "preview",
-          "review"
+          "open"
         ],
         "declaredOwnership": "default",
         "finalOwner": "words",
@@ -167,11 +157,8 @@
           "input"
         ],
         "operations": [
-          "app",
           "fonts",
-          "open",
-          "preview",
-          "review"
+          "open"
         ],
         "declaredOwnership": "default",
         "finalOwner": "words",
@@ -191,11 +178,8 @@
           "convert"
         ],
         "operations": [
-          "app",
           "fonts",
-          "open",
-          "preview",
-          "review"
+          "open"
         ],
         "declaredOwnership": "default",
         "finalOwner": "words",
@@ -215,11 +199,8 @@
           "convert"
         ],
         "operations": [
-          "app",
           "fonts",
-          "open",
-          "preview",
-          "review"
+          "open"
         ],
         "declaredOwnership": "default",
         "finalOwner": "words",
@@ -239,11 +220,8 @@
           "convert"
         ],
         "operations": [
-          "app",
           "fonts",
-          "open",
-          "preview",
-          "review"
+          "open"
         ],
         "declaredOwnership": "default",
         "finalOwner": "words",
@@ -263,11 +241,8 @@
           "convert"
         ],
         "operations": [
-          "app",
           "fonts",
-          "open",
-          "preview",
-          "review"
+          "open"
         ],
         "declaredOwnership": "default",
         "finalOwner": "words",
@@ -287,11 +262,8 @@
           "convert"
         ],
         "operations": [
-          "app",
           "fonts",
-          "open",
-          "preview",
-          "review"
+          "open"
         ],
         "declaredOwnership": "default",
         "finalOwner": "words",
@@ -311,11 +283,8 @@
           "convert"
         ],
         "operations": [
-          "app",
           "fonts",
-          "open",
-          "preview",
-          "review"
+          "open"
         ],
         "declaredOwnership": "default",
         "finalOwner": "words",
@@ -335,11 +304,8 @@
           "convert"
         ],
         "operations": [
-          "app",
           "fonts",
-          "open",
-          "preview",
-          "review"
+          "open"
         ],
         "declaredOwnership": "default",
         "finalOwner": "words",
@@ -359,11 +325,8 @@
           "convert"
         ],
         "operations": [
-          "app",
           "fonts",
-          "open",
-          "preview",
-          "review"
+          "open"
         ],
         "declaredOwnership": "default",
         "finalOwner": "words",
@@ -384,11 +347,8 @@
           "convert"
         ],
         "operations": [
-          "app",
           "fonts",
-          "open",
-          "preview",
-          "review"
+          "open"
         ],
         "declaredOwnership": "explicit",
         "genericAvailable": false,
@@ -436,11 +396,8 @@
           "convert"
         ],
         "operations": [
-          "app",
           "fonts",
-          "open",
-          "preview",
-          "review"
+          "open"
         ],
         "declaredOwnership": "default",
         "finalOwner": "words",
@@ -460,11 +417,8 @@
           "convert"
         ],
         "operations": [
-          "app",
           "fonts",
-          "open",
-          "preview",
-          "review"
+          "open"
         ],
         "declaredOwnership": "explicit",
         "genericAvailable": false,
@@ -481,11 +435,8 @@
           "convert"
         ],
         "operations": [
-          "app",
           "fonts",
-          "open",
-          "preview",
-          "review"
+          "open"
         ],
         "declaredOwnership": "default",
         "finalOwner": "words",
@@ -505,11 +456,8 @@
           "convert"
         ],
         "operations": [
-          "app",
           "fonts",
-          "open",
-          "preview",
-          "review"
+          "open"
         ],
         "declaredOwnership": "default",
         "finalOwner": "words",
@@ -543,11 +491,8 @@
           "convert"
         ],
         "operations": [
-          "app",
           "fonts",
-          "open",
-          "preview",
-          "review"
+          "open"
         ],
         "declaredOwnership": "default",
         "finalOwner": "words",
@@ -581,11 +526,8 @@
           "convert"
         ],
         "operations": [
-          "app",
           "fonts",
-          "open",
-          "preview",
-          "review"
+          "open"
         ],
         "declaredOwnership": "explicit",
         "finalOwner": "pdf",
@@ -631,11 +573,8 @@
           "convert"
         ],
         "operations": [
-          "app",
           "fonts",
-          "open",
-          "preview",
-          "review"
+          "open"
         ],
         "declaredOwnership": "default",
         "finalOwner": "words",
@@ -669,11 +608,8 @@
           "convert"
         ],
         "operations": [
-          "app",
           "fonts",
-          "open",
-          "preview",
-          "review"
+          "open"
         ],
         "declaredOwnership": "default",
         "finalOwner": "words",
@@ -693,11 +629,8 @@
           "convert"
         ],
         "operations": [
-          "app",
           "fonts",
-          "open",
-          "preview",
-          "review"
+          "open"
         ],
         "declaredOwnership": "default",
         "finalOwner": "words",
@@ -2817,11 +2750,8 @@
       "extension": ".azw3",
       "product": "words",
       "operations": [
-        "app",
         "fonts",
-        "open",
-        "preview",
-        "review"
+        "open"
       ],
       "requiresContentProbe": true,
       "recognizerStrategy": "standard-signature-v1",
@@ -2831,11 +2761,8 @@
       "extension": ".chm",
       "product": "words",
       "operations": [
-        "app",
         "fonts",
-        "open",
-        "preview",
-        "review"
+        "open"
       ],
       "requiresContentProbe": true,
       "recognizerStrategy": "standard-signature-v1",
@@ -2845,11 +2772,8 @@
       "extension": ".doc",
       "product": "words",
       "operations": [
-        "app",
         "fonts",
-        "open",
-        "preview",
-        "review"
+        "open"
       ],
       "requiresContentProbe": true,
       "recognizerStrategy": "standard-signature-v1",
@@ -2859,11 +2783,8 @@
       "extension": ".docm",
       "product": "words",
       "operations": [
-        "app",
         "fonts",
-        "open",
-        "preview",
-        "review"
+        "open"
       ],
       "requiresContentProbe": true,
       "recognizerStrategy": "standard-signature-v1",
@@ -2873,11 +2794,8 @@
       "extension": ".docx",
       "product": "words",
       "operations": [
-        "app",
         "fonts",
-        "open",
-        "preview",
-        "review"
+        "open"
       ],
       "requiresContentProbe": true,
       "recognizerStrategy": "standard-signature-v1",
@@ -2887,11 +2805,8 @@
       "extension": ".dot",
       "product": "words",
       "operations": [
-        "app",
         "fonts",
-        "open",
-        "preview",
-        "review"
+        "open"
       ],
       "requiresContentProbe": true,
       "recognizerStrategy": "standard-signature-v1",
@@ -2901,11 +2816,8 @@
       "extension": ".dotm",
       "product": "words",
       "operations": [
-        "app",
         "fonts",
-        "open",
-        "preview",
-        "review"
+        "open"
       ],
       "requiresContentProbe": true,
       "recognizerStrategy": "standard-signature-v1",
@@ -2915,11 +2827,8 @@
       "extension": ".dotx",
       "product": "words",
       "operations": [
-        "app",
         "fonts",
-        "open",
-        "preview",
-        "review"
+        "open"
       ],
       "requiresContentProbe": true,
       "recognizerStrategy": "standard-signature-v1",
@@ -2929,11 +2838,8 @@
       "extension": ".epub",
       "product": "words",
       "operations": [
-        "app",
         "fonts",
-        "open",
-        "preview",
-        "review"
+        "open"
       ],
       "requiresContentProbe": true,
       "recognizerStrategy": "standard-signature-v1",
@@ -2943,11 +2849,8 @@
       "extension": ".markdown",
       "product": "words",
       "operations": [
-        "app",
         "fonts",
-        "open",
-        "preview",
-        "review"
+        "open"
       ],
       "requiresContentProbe": true,
       "recognizerStrategy": "standard-signature-v1",
@@ -2957,11 +2860,8 @@
       "extension": ".md",
       "product": "words",
       "operations": [
-        "app",
         "fonts",
-        "open",
-        "preview",
-        "review"
+        "open"
       ],
       "requiresContentProbe": true,
       "recognizerStrategy": "standard-signature-v1",
@@ -2971,11 +2871,8 @@
       "extension": ".mobi",
       "product": "words",
       "operations": [
-        "app",
         "fonts",
-        "open",
-        "preview",
-        "review"
+        "open"
       ],
       "requiresContentProbe": true,
       "recognizerStrategy": "standard-signature-v1",
@@ -2985,11 +2882,8 @@
       "extension": ".odt",
       "product": "words",
       "operations": [
-        "app",
         "fonts",
-        "open",
-        "preview",
-        "review"
+        "open"
       ],
       "requiresContentProbe": true,
       "recognizerStrategy": "standard-signature-v1",
@@ -2999,11 +2893,8 @@
       "extension": ".ott",
       "product": "words",
       "operations": [
-        "app",
         "fonts",
-        "open",
-        "preview",
-        "review"
+        "open"
       ],
       "requiresContentProbe": true,
       "recognizerStrategy": "standard-signature-v1",
@@ -3013,11 +2904,8 @@
       "extension": ".rtf",
       "product": "words",
       "operations": [
-        "app",
         "fonts",
-        "open",
-        "preview",
-        "review"
+        "open"
       ],
       "requiresContentProbe": true,
       "recognizerStrategy": "standard-signature-v1",
@@ -3027,11 +2915,8 @@
       "extension": ".txt",
       "product": "words",
       "operations": [
-        "app",
         "fonts",
-        "open",
-        "preview",
-        "review"
+        "open"
       ],
       "requiresContentProbe": true,
       "recognizerStrategy": "standard-signature-v1",
@@ -3041,11 +2926,8 @@
       "extension": ".xml",
       "product": "words",
       "operations": [
-        "app",
         "fonts",
-        "open",
-        "preview",
-        "review"
+        "open"
       ],
       "requiresContentProbe": true,
       "recognizerStrategy": "standard-signature-v1",

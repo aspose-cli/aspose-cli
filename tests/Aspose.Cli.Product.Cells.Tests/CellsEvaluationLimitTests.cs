@@ -12,7 +12,7 @@ namespace Aspose.Cli.Product.Cells.Tests;
 
 /// <summary>
 /// Aspose.Cells evaluation mode refuses to open a file once its process has opened 100, which
-/// only a long-lived process such as a preview's render worker reaches. The SDK reports that
+/// only a long-lived process reaches. The SDK reports that
 /// refusal as the one <c>EVALUATION_LIMIT</c> every product shares; a licensed engine never
 /// raises it, so with a license the call is not translated.
 /// </summary>

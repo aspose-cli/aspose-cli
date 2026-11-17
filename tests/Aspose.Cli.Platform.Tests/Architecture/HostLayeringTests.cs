@@ -23,21 +23,16 @@ public sealed class HostLayeringTests
     /// </summary>
     /// <remarks>
     /// <list type="number">
-    /// <item>Leaves: the Host result contracts, the local service runtime (loopback HTTP,
-    /// control channels, owned processes, Windows PowerShell) and the product routing over the
-    /// catalog.</item>
+    /// <item>Leaves: the Host result contracts, the owned child processes and the product
+    /// routing over the catalog.</item>
     /// <item>The table renderer and the Skill and docs catalogs, over the contracts.</item>
     /// <item>Output: the writers for each output mode.</item>
     /// <item>Invocation: parsing, the command context and composition root, execution and
     /// the process boundary every command runs under.</item>
-    /// <item>Services commands call: licensing (and the startup license notice), updating and
-    /// the MCP server.</item>
+    /// <item>Services commands call: licensing (and the startup license notice) and the MCP
+    /// server.</item>
     /// <item>The root: CliHost, the process entry, which reaches the commands only through
     /// HostContext.</item>
-    /// <item>Viewer: view bundles, the page around them and the warm render worker with the
-    /// frame protocol it serves.</item>
-    /// <item>The viewer service, which renders through that worker.</item>
-    /// <item>App: the local Web App, mounted on the viewer service's origin.</item>
     /// <item>Commands: the command adapters, which compose everything below.</item>
     /// </list>
     /// </remarks>
@@ -47,11 +42,8 @@ public sealed class HostLayeringTests
         [$"{Root}.Output.Rendering", $"{Root}.Skills"],
         [$"{Root}.Output"],
         [$"{Root}.Invocation"],
-        [$"{Root}.Licensing", $"{Root}.Updating", $"{Root}.Mcp"],
+        [$"{Root}.Licensing", $"{Root}.Mcp"],
         [Root],
-        [$"{Root}.Viewer"],
-        [$"{Root}.ViewerService"],
-        [$"{Root}.App"],
         [$"{Root}.Commands"],
     ];
 

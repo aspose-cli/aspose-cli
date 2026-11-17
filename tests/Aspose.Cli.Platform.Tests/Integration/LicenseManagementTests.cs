@@ -118,22 +118,6 @@ public sealed class LicenseManagementTests
         Assert.Equal(directory, error["details"]!["path"]!.GetValue<string>());
     }
 
-    [Fact]
-    public void SelectedConfigurationDirectoryWithForeignFiles_IsRefusedAndLeftUntouched()
-    {
-        using var workspace = new TempWorkspace();
-        Directory.CreateDirectory(workspace.ConfigDirectory);
-        string foreign = Path.Combine(workspace.ConfigDirectory, "notes.txt");
-        File.WriteAllText(foreign, "user data");
-
-        CliResult result = workspace.Run("preview", "status", "--output-format", "json");
-
-        Assert.Equal(2, result.ExitCode);
-        Assert.Contains("OPTION_INVALID", result.StdErr, StringComparison.Ordinal);
-        Assert.Equal("user data", File.ReadAllText(foreign));
-        Assert.False(File.Exists(Path.Combine(workspace.ConfigDirectory, ".aspose-cli-config.json")));
-    }
-
     /// <summary>
     /// `license install` leaves every copy of the license readable only by the current user, even
     /// in a configuration directory that lets everyone read what is created inside it: installed

@@ -114,7 +114,6 @@ operation fields: `aspose-cli schema v2/words/ops --operation <op>`.
 - [Revisions and comparison](references/revisions.md): tracked changes and `words compare`.
 - [Mail merge](references/mail-merge.md): merge data, regions, one file per record.
 - [Verification](references/verification.md): `--verify`, reading `applied[]` back, looking at the pages.
-- [What the viewer shows](references/preview.md): the live preview.
 - [Troubleshooting](references/troubleshooting.md): failed addresses, no-effect operations, PDF inputs, warnings, evaluation mode.
 
 Examples: [report from Markdown](examples/report-from-markdown/README.md),

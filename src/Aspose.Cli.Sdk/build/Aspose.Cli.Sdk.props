@@ -23,9 +23,6 @@
       Include="$(MSBuildThisFileDirectory)..\analyzers\dotnet\cs\Aspose.Cli.Sdk.Analyzers.dll"
       Condition="Exists('$(MSBuildThisFileDirectory)..\analyzers\dotnet\cs\Aspose.Cli.Sdk.Analyzers.dll')" />
 
-    <EmbeddedResource Include="$(MSBuildProjectDirectory)\Presenter\*.*">
-      <LogicalName>Presenter/%(Filename)%(Extension)</LogicalName>
-    </EmbeddedResource>
     <EmbeddedResource Include="$(MSBuildProjectDirectory)\Skills\**\*.*">
       <LogicalName>skill/$(AsposeCliSkillPrefix)$(AsposeProductId)/%(RecursiveDir)%(Filename)%(Extension)</LogicalName>
     </EmbeddedResource>

@@ -6,12 +6,9 @@ namespace Aspose.Cli.Sdk.Extensibility;
 /// <summary>Validated immutable aggregate of common and compiled-product diagnostics.</summary>
 public sealed class DiagnosticCatalog
 {
-    private readonly ProductResourceCatalog _resources;
-
-    private DiagnosticCatalog(IReadOnlyList<DiagnosticDescriptor> descriptors, ProductResourceCatalog resources)
+    private DiagnosticCatalog(IReadOnlyList<DiagnosticDescriptor> descriptors)
     {
         All = descriptors;
-        _resources = resources;
         Errors = Array.AsReadOnly(All
             .Where(static item => item.Severity == DiagnosticSeverity.Error)
             .ToArray());
@@ -28,24 +25,6 @@ public sealed class DiagnosticCatalog
 
     /// <summary>Non-fatal diagnostics in deterministic code order.</summary>
     public IReadOnlyList<DiagnosticDescriptor> Warnings { get; }
-
-    /// <summary>
-    /// This catalog with the diagnostics of another owner, such as the host, checked as the
-    /// catalog checks its own: one owner and one severity per code, and a known details schema.
-    /// </summary>
-    /// <exception cref="InvalidOperationException">A descriptor breaks one of those rules.</exception>
-    public DiagnosticCatalog With(IEnumerable<DiagnosticDescriptor> descriptors, string owner)
-    {
-        ArgumentNullException.ThrowIfNull(descriptors);
-        ArgumentException.ThrowIfNullOrWhiteSpace(owner);
-        var byCode = All.ToDictionary(static descriptor => Key(descriptor.Severity, descriptor.Code), StringComparer.Ordinal);
-        foreach (DiagnosticDescriptor descriptor in descriptors)
-        {
-            Register(descriptor, owner, _resources, byCode);
-        }
-
-        return Create(byCode, _resources);
-    }
 
     internal static DiagnosticCatalog Build(
         IReadOnlyList<ProductDefinition> products,
@@ -69,17 +48,15 @@ public sealed class DiagnosticCatalog
             }
         }
 
-        return Create(byCode, resources);
+        return Create(byCode);
     }
 
     private static DiagnosticCatalog Create(
-        Dictionary<string, DiagnosticDescriptor> byCode,
-        ProductResourceCatalog resources) =>
+        Dictionary<string, DiagnosticDescriptor> byCode) =>
         new(
             Array.AsReadOnly(byCode.Values
                 .OrderBy(static descriptor => descriptor.Code, StringComparer.Ordinal)
-                .ToArray()),
-            resources);
+                .ToArray()));
 
     private static void Register(
         DiagnosticDescriptor descriptor,

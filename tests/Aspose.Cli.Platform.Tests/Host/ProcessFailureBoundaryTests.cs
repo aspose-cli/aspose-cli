@@ -294,7 +294,6 @@ public sealed class ProcessFailureBoundaryTests
     [Theory]
     [InlineData("--timeout 30 doctor", "doctor")]
     [InlineData("cells --timeout=30 inspect input.xlsx", "cells inspect")]
-    [InlineData("--output-format json app status", "app status")]
     public void TimeoutSupervisor_ResolvesCommandPathAroundGlobalOptions(
         string commandLine,
         string expected)
