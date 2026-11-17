@@ -21,7 +21,7 @@ public sealed class CellsResourceLoadingTests
         using var fixture = new CellsFixture();
         string input = fixture.Temp.File("book.csv");
         File.WriteAllText(input, "Region,Revenue\nEast,1\n");
-        var loader = CellsWorkbookLoader.ForFontInspection(ProductTestBudgets.Create<CellsModule>());
+        var loader = CellsFixture.Loader(ProductTestBudgets.Create<CellsModule>());
 
         using (new FileStream(input, FileMode.Open, FileAccess.Read,
                    FileShare.ReadWrite | FileShare.Delete, 1, FileOptions.DeleteOnClose))
@@ -47,7 +47,7 @@ public sealed class CellsResourceLoadingTests
         using var fixture = new CellsFixture();
         string input = fixture.Temp.File(name);
         File.WriteAllText(input, "Region,Revenue\nEast,1\n");
-        var loader = CellsWorkbookLoader.ForFontInspection(ProductTestBudgets.Create<CellsModule>());
+        var loader = CellsFixture.Loader(ProductTestBudgets.Create<CellsModule>());
 
         using LoadedWorkbook loaded = loader.Open(input, null);
 

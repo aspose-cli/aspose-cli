@@ -61,7 +61,7 @@ public sealed class WordsResourceBoundaryTests
         var limits = WordsModule.Manifest.ResourceBudgets.ToDictionary(item => item.Kind, item => item.Default);
         limits[ResourceBudgetKinds.MemoryBufferBytes] = 8;
         var budgets = new ResourceBudgetLedger(deadline, limits);
-        var loader = WordsDocumentLoader.ForFontInspection(budgets);
+        var loader = WordsFixture.Loader(budgets);
         using LoadedDocument loaded = loader.Open(input, null);
 
         CliException error = Assert.Throws<CliException>(() => loader.OpenMarkdown(new string('a', 9), loaded));

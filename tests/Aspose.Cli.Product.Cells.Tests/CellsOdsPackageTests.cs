@@ -39,7 +39,7 @@ public sealed class CellsOdsPackageTests
         // Listening from here: making the workbook drew its picture, which opened the pipe.
         using var pipe = new CountingPipe(name);
 
-        using (LoadedWorkbook loaded = CellsWorkbookLoader.ForFontInspection(ProductTestBudgets.Create<CellsModule>()).Open(path, null))
+        using (LoadedWorkbook loaded = CellsFixture.Loader(ProductTestBudgets.Create<CellsModule>()).Open(path, null))
         {
             Assert.Single(loaded.Workbook.Worksheets[0].Pictures);
             Assert.Contains(loaded.Warnings() ?? [], static warning => warning.Code == WarningCodes.RemoteResourcesBlocked);
@@ -59,7 +59,7 @@ public sealed class CellsOdsPackageTests
         Compress(path);
         using var pipe = new CountingPipe(name);
 
-        using (LoadedWorkbook loaded = CellsWorkbookLoader.ForFontInspection(ProductTestBudgets.Create<CellsModule>()).Open(path, null))
+        using (LoadedWorkbook loaded = CellsFixture.Loader(ProductTestBudgets.Create<CellsModule>()).Open(path, null))
         {
             Assert.Contains(loaded.Warnings() ?? [], static warning => warning.Code.Name == "IMAGES_SKIPPED");
         }
@@ -78,7 +78,7 @@ public sealed class CellsOdsPackageTests
         using var pipe = new CountingPipe(name);
 
         CliException refused = Assert.Throws<CliException>(() =>
-            CellsWorkbookLoader.ForFontInspection(ProductTestBudgets.Create<CellsModule>()).Open(path, new Secret("secret")).Dispose());
+            CellsFixture.Loader(ProductTestBudgets.Create<CellsModule>()).Open(path, new Secret("secret")).Dispose());
 
         Assert.Equal(ErrorCodes.FeatureUnsupported, refused.Code);
         Assert.Equal(0, pipe.Settled());
@@ -112,7 +112,7 @@ public sealed class CellsOdsPackageTests
         Rewrite(path, (entryName, data) => entryName.EndsWith(".svg", StringComparison.Ordinal) ? replacement : data);
         using var pipe = new CountingPipe(name);
 
-        using (LoadedWorkbook loaded = CellsWorkbookLoader.ForFontInspection(ProductTestBudgets.Create<CellsModule>()).Open(path, null))
+        using (LoadedWorkbook loaded = CellsFixture.Loader(ProductTestBudgets.Create<CellsModule>()).Open(path, null))
         {
             if (entry.StartsWith("broken", StringComparison.Ordinal))
             {
@@ -145,7 +145,7 @@ public sealed class CellsOdsPackageTests
         Rewrite(path, (entryName, data) => entryName == "content.xml" ? Inline(data, picture!) : data);
         using var pipe = new CountingPipe(name);
 
-        using (LoadedWorkbook loaded = CellsWorkbookLoader.ForFontInspection(ProductTestBudgets.Create<CellsModule>()).Open(path, null))
+        using (LoadedWorkbook loaded = CellsFixture.Loader(ProductTestBudgets.Create<CellsModule>()).Open(path, null))
         {
             Assert.Contains(loaded.Warnings() ?? [], static warning => warning.Code == WarningCodes.RemoteResourcesBlocked);
         }

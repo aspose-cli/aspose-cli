@@ -92,18 +92,6 @@ public sealed class InputOpeningTests
     }
 
     [Fact]
-    public void Open_WithoutAPipeline_OpensTheInputAsIs()
-    {
-        using var temp = new TempDirectory();
-        string path = temp.File("in.bin");
-        File.WriteAllBytes(path, new byte[4]);
-        var input = new Input(protection: null);
-
-        Assert.Same(input, InputOpening.Open(outputs: null, TestBudgets.Create(), path, () => input));
-        Assert.False(input.Disposed);
-    }
-
-    [Fact]
     public void OpenPublished_NeitherAdmitsNorRecords()
     {
         using var temp = new TempDirectory();

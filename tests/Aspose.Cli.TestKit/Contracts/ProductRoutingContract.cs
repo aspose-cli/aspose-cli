@@ -38,7 +38,6 @@ public static class ProductRoutingContract
                     new FileRouteRequest(path));
                 Assert.Equal(product.Manifest.Id, result.Product.Manifest.Id);
                 Assert.Equal(format.Id, result.FormatId);
-                Assert.False(result.Explicit);
                 Assert.False(string.IsNullOrWhiteSpace(result.Evidence));
             }
             finally

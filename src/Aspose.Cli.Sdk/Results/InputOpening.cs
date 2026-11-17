@@ -16,7 +16,7 @@ public static class InputOpening
     /// records its protection with <paramref name="outputs"/>. When recording fails, the opened
     /// document is disposed before the failure propagates.
     /// </summary>
-    /// <param name="outputs">The invocation's write pipeline; null only for a loader that inspects fonts and publishes nothing.</param>
+    /// <param name="outputs">The invocation's write pipeline.</param>
     /// <param name="resourceBudgets">The invocation's resource budgets, which admitted the input.</param>
     /// <param name="path">The input file.</param>
     /// <param name="open">The product's engine call that opens the file.</param>
@@ -24,19 +24,15 @@ public static class InputOpening
     /// <c>FILE_TOO_LARGE</c> above the input byte limit; <c>INPUT_CHANGED</c> after admission;
     /// any error of <paramref name="open"/>.
     /// </exception>
-    public static T Open<T>(OutputPipeline? outputs, ResourceBudgetLedger resourceBudgets, string path, Func<T> open)
+    public static T Open<T>(OutputPipeline outputs, ResourceBudgetLedger resourceBudgets, string path, Func<T> open)
         where T : IOpenedInput, IDisposable
     {
+        ArgumentNullException.ThrowIfNull(outputs);
         ArgumentNullException.ThrowIfNull(resourceBudgets);
         ArgumentException.ThrowIfNullOrEmpty(path);
         ArgumentNullException.ThrowIfNull(open);
         InputSizeGuard.Ensure(resourceBudgets, path);
         T opened = open();
-        if (outputs is null)
-        {
-            return opened;
-        }
-
         try
         {
             outputs.Opened(opened.Protection);

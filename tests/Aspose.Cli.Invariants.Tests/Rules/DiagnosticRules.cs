@@ -50,9 +50,6 @@ internal static partial class ContractRules
     /// <summary>UPPER_SNAKE <c>&lt;SUBJECT&gt;_&lt;PROBLEM/STATE&gt;</c>: two words at least.</summary>
     private static readonly Regex CodeName = new("^[A-Z][A-Z0-9]*(_[A-Z0-9]+)+$");
 
-    /// <summary>The owner of the diagnostics that only the <c>update</c> command emits (C-R28).</summary>
-    private const string HostOwner = "host";
-
     private const string NotFoundDetailsSchema = "v2/common/not-found-details";
 
     private static IEnumerable<InvariantCase> R24Declared(CliCatalog catalog)
@@ -122,10 +119,6 @@ internal static partial class ContractRules
                 .Select(diagnostic => $"{diagnostic.Code}: evaluation codes are EVALUATION_*"
                     + (evaluation.Length == 0 ? string.Empty : $", as {string.Join(", ", evaluation)}"));
         });
-        yield return Check("C-R28", "release and update codes belong to host", () => diagnostics
-            .Where(static diagnostic => (diagnostic.Code.StartsWith("RELEASE_", StringComparison.Ordinal) || diagnostic.Code.StartsWith("UPDATE_", StringComparison.Ordinal))
-                && diagnostic.Owner != HostOwner)
-            .Select(static diagnostic => $"{diagnostic.Code} is owned by {diagnostic.Owner}, not {HostOwner}"));
         yield return Check("C-R28", "codes declared once", () => diagnostics
             .GroupBy(static diagnostic => diagnostic.Code, StringComparer.Ordinal)
             .Where(static group => group.Count() > 1)

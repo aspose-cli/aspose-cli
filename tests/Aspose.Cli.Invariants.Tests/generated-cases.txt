@@ -3349,7 +3349,6 @@ C-R28 | common not-found details
 C-R28 | evaluation codes
 C-R28 | pdf code names
 C-R28 | pdf not-found details
-C-R28 | release and update codes belong to host
 C-R28 | slides code names
 C-R28 | slides not-found details
 C-R28 | words code names

@@ -11,23 +11,15 @@ namespace Aspose.Cli.Product.Slides.Engine.Mapping;
 internal sealed class SlidesPresentationLoader
 {
     private readonly ResourceBudgetLedger _resourceBudgets;
-    private readonly OutputPipeline? _outputs;
+    private readonly OutputPipeline _outputs;
 
     /// <param name="resourceBudgets">The invocation's resource budgets.</param>
     /// <param name="outputs">The write pipeline, which learns whether each opened input is encrypted.</param>
     internal SlidesPresentationLoader(ResourceBudgetLedger resourceBudgets, OutputPipeline outputs)
-        : this(resourceBudgets)
-    {
-        _outputs = outputs ?? throw new ArgumentNullException(nameof(outputs));
-    }
-
-    private SlidesPresentationLoader(ResourceBudgetLedger resourceBudgets)
     {
         _resourceBudgets = resourceBudgets ?? throw new ArgumentNullException(nameof(resourceBudgets));
+        _outputs = outputs ?? throw new ArgumentNullException(nameof(outputs));
     }
-
-    /// <summary>A loader for font inspection, which publishes nothing.</summary>
-    internal static SlidesPresentationLoader ForFontInspection(ResourceBudgetLedger resourceBudgets) => new(resourceBudgets);
 
     /// <summary>
     /// How a presentation input that does not load is reported: Aspose.Slides raises

@@ -34,12 +34,6 @@ public sealed record FileRouteRequest
 
     /// <summary>Input path.</summary>
     public string Path { get; }
-
-    /// <summary>Stable operation name, such as open.</summary>
-    public string Operation { get; init; } = "open";
-
-    /// <summary>Explicit product selection, which bypasses owner competition.</summary>
-    public string? ExplicitProductId { get; init; }
 }
 
 /// <summary>Immutable result of one content-backed routing decision.</summary>
@@ -50,9 +44,6 @@ public sealed record FileRouteResult
 
     /// <summary>Requested operation.</summary>
     public required string Operation { get; init; }
-
-    /// <summary>Whether the caller selected the product explicitly.</summary>
-    public required bool Explicit { get; init; }
 
     /// <summary>Content format reported by the recognizer, when known.</summary>
     public string? FormatId { get; init; }
@@ -98,14 +89,13 @@ public sealed class ProductFileRouter
         }
     }
 
-    /// <summary>Resolves one explicit or generic operation-aware request.</summary>
+    /// <summary>Resolves one generic request to open a file.</summary>
     public async ValueTask<FileRouteResult> ResolveAsync(
         FileRouteRequest request,
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(request);
-        ArgumentException.ThrowIfNullOrWhiteSpace(request.Operation);
-        string operation = request.Operation.Trim().ToLowerInvariant();
+        const string operation = "open";
         string fullPath = Path.GetFullPath(request.Path);
         if (!File.Exists(fullPath))
         {
@@ -115,16 +105,6 @@ public sealed class ProductFileRouter
         FileProbeSession session = await CreateSessionAsync(
             fullPath,
             cancellationToken).ConfigureAwait(false);
-        if (request.ExplicitProductId is { } explicitId)
-        {
-            ProductDefinition product = _catalog.Get(explicitId);
-            return await ValidateExplicitAsync(
-                product,
-                session,
-                operation,
-                cancellationToken).ConfigureAwait(false);
-        }
-
         return await ResolveGenericAsync(
             session,
             operation,
@@ -259,8 +239,7 @@ public sealed class ProductFileRouter
 
         return Result(
             ownerRecognition,
-            operation,
-            explicitSelection: false);
+            operation);
     }
 
     private static bool ExtensionIsShared(ProductDefinition owner, string extension)
@@ -293,8 +272,7 @@ public sealed class ProductFileRouter
             {
                 return Result(
                     winners[0],
-                    operation,
-                    explicitSelection: false);
+                    operation);
             }
             throw CliErrors.FormatAmbiguous(
                 fullPath,
@@ -312,100 +290,6 @@ public sealed class ProductFileRouter
                 declaredProduct: null,
                 detected,
                 CandidateIds(candidates));
-    }
-
-    private async ValueTask<FileRouteResult> ValidateExplicitAsync(
-        ProductDefinition product,
-        FileProbeSession session,
-        string operation,
-        CancellationToken cancellationToken)
-    {
-        string extension = session.Extension;
-        bool acceptsExtension = !string.IsNullOrWhiteSpace(extension)
-            && product.Files.AcceptedInputExtensions.Any(
-                candidate => string.Equals(
-                    ProductCatalog.NormalizeExtension(candidate),
-                    ProductCatalog.NormalizeExtension(extension),
-                    StringComparison.Ordinal));
-        if (!acceptsExtension)
-        {
-            throw CliErrors.FormatUnsupported(
-                extension.TrimStart('.'),
-                product.Files.AcceptedInputExtensions
-                    .Select(static value => value.TrimStart('.'))
-                    .Order(StringComparer.Ordinal)
-                    .ToArray());
-        }
-
-        // Content is checked against the rules of the formats this extension declares. A format
-        // without any rule leaves the content to the engine; a format with rules never skips them.
-        FormatDescriptor[] declared = product.Formats
-            .Where(format => format.Uses.HasFlag(FormatUse.Input)
-                && format.Extensions.Any(candidate => string.Equals(
-                    ProductCatalog.NormalizeExtension(candidate),
-                    ProductCatalog.NormalizeExtension(extension),
-                    StringComparison.Ordinal)))
-            .ToArray();
-        bool customRules = declared.Any(static format => format.Recognizer is not null);
-        FormatDescriptor[] declarativeRules = declared
-            .Where(static format => format.Recognition is not null)
-            .ToArray();
-        if (!customRules && declarativeRules.Length == 0)
-        {
-            return new FileRouteResult
-            {
-                Product = product,
-                Operation = operation,
-                Explicit = true,
-                Evidence = "explicit product; engine validation required",
-            };
-        }
-
-        RecognitionEntry entry = customRules
-            ? (await RecognizeAsync([product], session, cancellationToken).ConfigureAwait(false)).Single()
-            : new RecognitionEntry(product, Strongest(declarativeRules
-                .Select(format => format.Recognition!.Evaluate(format.Id, session.Prefix.Span))));
-        // The explicit selection settles evidence that is real but not conclusive; content
-        // that contradicts the product still fails closed, as generic routing reports the file.
-        if (entry.Recognition.Kind is not (FileRecognitionKind.Match or FileRecognitionKind.Indeterminate))
-        {
-            throw await ContradictedAsync(product, session, operation, cancellationToken).ConfigureAwait(false);
-        }
-        return Result(entry, operation, explicitSelection: true);
-    }
-
-    /// <summary>
-    /// The error for content that contradicts an explicitly selected product: the one generic
-    /// routing reports for the file, so that selecting the product changes no code. Content
-    /// generic routing gives to another product is <c>FORMAT_MISMATCH</c> naming it in
-    /// <c>details.detected</c>; any other content is the selected product's damaged file, since
-    /// the product declares the extension.
-    /// </summary>
-    private async ValueTask<CliException> ContradictedAsync(
-        ProductDefinition product,
-        FileProbeSession session,
-        string operation,
-        CancellationToken cancellationToken)
-    {
-        FileRouteResult routed;
-        try
-        {
-            routed = await ResolveGenericAsync(session, operation, cancellationToken).ConfigureAwait(false);
-        }
-        catch (CliException refused) when (refused.Code == ErrorCodes.FormatMismatch)
-        {
-            return refused;
-        }
-        catch (CliException)
-        {
-            // The selected product reads the extension, so content no product recognizes is
-            // its damaged file, named after it.
-            return CliErrors.ContentUnrecognized(session.FullPath, product.Manifest.Id);
-        }
-
-        return routed.Product == product
-            ? CliErrors.ContentUnrecognized(session.FullPath, product.Manifest.Id)
-            : CliErrors.FormatMismatch(session.FullPath, product.Manifest.Id, [routed.Product.Manifest.Id]);
     }
 
     private async ValueTask<FileProbeSession> CreateSessionAsync(
@@ -587,19 +471,6 @@ public sealed class ProductFileRouter
             .OrderByDescending(static entry => entry.Recognition.Confidence)
             .ThenBy(static entry => entry.Product.Manifest.Id, StringComparer.Ordinal);
 
-    /// <summary>The strongest of several rule results: a match, then indeterminate evidence, then no match.</summary>
-    private static FileRecognition Strongest(IEnumerable<FileRecognition> results) =>
-        results
-            .OrderBy(static result => result.Kind switch
-            {
-                FileRecognitionKind.Match => 0,
-                FileRecognitionKind.Indeterminate => 1,
-                _ => 2,
-            })
-            .ThenByDescending(static result => result.Confidence)
-            .ThenBy(static result => result.FormatId, StringComparer.Ordinal)
-            .First();
-
     private static IReadOnlyList<string> CandidateIds(
         IEnumerable<ProductDefinition> products) =>
         products.Select(static product => product.Manifest.Id)
@@ -608,13 +479,11 @@ public sealed class ProductFileRouter
 
     private static FileRouteResult Result(
         RecognitionEntry entry,
-        string operation,
-        bool explicitSelection) =>
+        string operation) =>
         new()
         {
             Product = entry.Product,
             Operation = operation,
-            Explicit = explicitSelection,
             FormatId = entry.Recognition.FormatId,
             Evidence = entry.Recognition.Evidence,
         };
