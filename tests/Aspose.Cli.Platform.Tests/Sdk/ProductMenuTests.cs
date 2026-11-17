@@ -79,63 +79,6 @@ public sealed class ProductMenuTests : IDisposable
     }
 
     [Fact]
-    public void Command_CarriesTheNamesItsDefinitionIsMistakenFor()
-    {
-        Command product = Menu().Build().CreateCommand(_hosts.Run);
-
-        Assert.Equal(
-            [[], ["query"], ["query"], ["merge"]],
-            product.Subcommands.Select(static command => command.MistakenNames()));
-    }
-
-    /// <summary>A name an edit declares through <see cref="EditDefinition"/> is refused and suggests the edit.</summary>
-    [Fact]
-    public void EditMistakenFor_SuggestsTheEdit()
-    {
-        var root = new RootCommand();
-        root.Subcommands.Add(Menu().Build().CreateCommand(_hosts.Run));
-
-        ParsedInvocation invocation = new InvocationParser(root, new GlobalOptions()).Parse(["menu", "merge", "doc.test"]);
-        CliException error = Assert.Throws<CliException>(invocation.EnsureValid);
-
-        Assert.Equal(ErrorCodes.UsageError, error.Code);
-        Assert.Equal("menu edit", error.Details!["suggestions"]![0]!.GetValue<string>());
-    }
-
-    [Fact]
-    public void CreateCommand_RefusesANameMistakenForThatASiblingAnswersTo()
-    {
-        ProductDefinition definition = ExtProduct.Define<TestSession>(Manifest)
-            .Describe("A product in a menu.")
-            .Command(InspectCommand.Create, TestHandlers.Info)
-            .Command(MistakenForInspectCommand.Create, TestHandlers.Info)
-            .Complete()
-            .Build();
-
-        InvalidOperationException error = Assert.Throws<InvalidOperationException>(() => definition.CreateCommand(_hosts.Run));
-
-        Assert.Contains("'menu other' is mistaken for 'inspect'", error.Message, StringComparison.Ordinal);
-    }
-
-    [Theory]
-    [InlineData(" ")]
-    [InlineData("")]
-    public void MistakenFor_RefusesABlankName(string name)
-    {
-        InvalidOperationException error = Assert.Throws<InvalidOperationException>(() => CommandMistakes.Declare(new Command("read"), ["query", name]));
-
-        Assert.Contains("blank or its own name", error.Message, StringComparison.Ordinal);
-    }
-
-    [Fact]
-    public void MistakenFor_RefusesTheCommandsOwnName()
-    {
-        InvalidOperationException error = Assert.Throws<InvalidOperationException>(() => CommandMistakes.Declare(new Command("read"), ["read"]));
-
-        Assert.Contains("'read' is mistaken for 'read'", error.Message, StringComparison.Ordinal);
-    }
-
-    [Fact]
     public void Command_ChecksTheFontsThenBindsThenRunsTheGuardedHandlerAndFinishesInsideTheFontScope()
     {
         Command product = Menu().Build().CreateCommand(_hosts.Run);
@@ -452,7 +395,6 @@ public sealed class ProductMenuTests : IDisposable
             static (_, standard) => new InfoRequest { Input = standard.Input },
             TestTables.Text)
         {
-            MistakenFor = ["query"],
         };
     }
 
@@ -467,23 +409,7 @@ public sealed class ProductMenuTests : IDisposable
             static (_, standard) => new InfoRequest { Input = standard.Input },
             table: null)
         {
-            MistakenFor = ["query"],
             Renderers = [ProductOutputDefinition.Create<TextResult>(TestTables.Text), ProductOutputDefinition.Create<FoundResult>(TestTables.Found)],
-        };
-    }
-
-    /// <summary>A command mistaken for the name of <see cref="InspectCommand"/>, which that command answers to.</summary>
-    private static class MistakenForInspectCommand
-    {
-        public static CommandDefinition<InfoRequest, TextResult> Create() => new(
-            "other",
-            "Reads the document again.",
-            new CommandTraits { Input = Document },
-            [],
-            static (_, standard) => new InfoRequest { Input = standard.Input },
-            TestTables.Text)
-        {
-            MistakenFor = ["inspect"],
         };
     }
 
@@ -531,7 +457,6 @@ public sealed class ProductMenuTests : IDisposable
                 [strict],
                 static (_, batch, _) => new EditRequest(batch.Batch.Ops.Count, batch.Options.DryRun),
                 TestTables.Edited,
-                mistakenFor: ["merge"],
                 checkUsage: parse =>
                 {
                     if (parse.GetValue(strict))

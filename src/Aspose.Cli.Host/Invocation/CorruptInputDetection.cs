@@ -3,21 +3,15 @@ using System.CommandLine.Parsing;
 using System.Text.Json.Nodes;
 using Aspose.Cli.Sdk;
 using Aspose.Cli.Sdk.Errors;
-using Aspose.Cli.Sdk.Formats;
 using Aspose.Cli.Sdk.IO.Paths;
 
 namespace Aspose.Cli.Host.Invocation;
 
 /// <summary>
-/// Explains a <c>FILE_CORRUPT</c> from a product command: when the file's content looks like a
-/// format another product reads, such as a Word document renamed to <c>.pdf</c>, the error becomes
-/// the <c>FORMAT_MISMATCH</c> that generic routing reports for the same file, names that product in
-/// <c>details.detected</c> and says so in its message. The product's own details stay; content
-/// no product recognizes, or in a format this product reads, leaves the error unchanged, except
-/// where generic routing reports the same file as <c>FORMAT_UNSUPPORTED</c>: the product's error
-/// then takes that code and keeps its message and details, which speak in the product's terms. A command with
-/// several inputs is explained only when the product names the
-/// failing file in <c>details.path</c>.
+/// Explains a <c>FILE_CORRUPT</c> from a product command where generic routing reports the same
+/// file as <c>FORMAT_UNSUPPORTED</c>: the product's error then takes that code and keeps its
+/// message and details, which speak in the product's terms. A command with several inputs is
+/// explained only when the product names the failing file in <c>details.path</c>.
 /// </summary>
 internal static class CorruptInputDetection
 {
@@ -39,28 +33,12 @@ internal static class CorruptInputDetection
             return exception;
         }
 
-        // A format this product reads, such as a damaged PDF given to 'words convert', is the
-        // product's own corrupt input, not a renamed file.
-        ProductDefinition product = catalog.Get(productId);
-        FileDetection[] detected = new ProductFileRouter(catalog).DetectAsync(path).AsTask().GetAwaiter().GetResult()
-            .Where(detection => detection.ProductId != productId
-                && (detection.FormatId is null || product.Formats.Named(FormatUse.Input, detection.FormatId) is null))
-            .ToArray();
-        if (detected.Length == 0)
-        {
-            // Only a document the command takes as an argument is compared with generic routing;
-            // a file an option names, such as an image of 'pdf create --from-images', is no
-            // document a product routes, so a damaged one stays a corrupt input.
-            return IsDocumentArgument(path, parseResult, globals) && RoutedAsUnsupported(path, catalog)
-                ? CliErrors.FormatUnsupported(error)
-                : exception;
-        }
-
-        return CliErrors.FormatMismatch(
-            error,
-            path,
-            productId,
-            [.. detected.Select(static item => item.ProductId)]);
+        // Only a document the command takes as an argument is compared with generic routing;
+        // a file an option names, such as an image of 'pdf create --from-images', is no
+        // document a product routes, so a damaged one stays a corrupt input.
+        return IsDocumentArgument(path, parseResult, globals) && RoutedAsUnsupported(path, catalog)
+            ? CliErrors.FormatUnsupported(error)
+            : exception;
     }
 
     /// <summary>

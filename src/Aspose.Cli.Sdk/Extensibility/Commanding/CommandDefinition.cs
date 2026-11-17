@@ -44,32 +44,6 @@ namespace Aspose.Cli.Sdk.Extensibility.Commanding;
 /// <item>Tests call the handlers directly with a session and a request; there are no test shims
 /// standing in for the engine.</item>
 /// </list>
-/// <para>
-/// How a command declares the mistakes a caller may make on its command line. The host's parser
-/// recognises each kind by a strategy of its own and builds the suggestions with the SDK
-/// <see cref="Mistake"/>:
-/// </para>
-/// <list type="table">
-/// <listheader><term>Declaration</term><description>What a caller types, and what the error suggests</description></listheader>
-/// <item><term><see cref="MistakenFor"/></term><description>A command name no command of the
-/// product has, such as <c>merge</c>: every command that declares it, first
-/// (<c>USAGE_ERROR</c>).</description></item>
-/// <item><term><c>option.MistakenFor(names)</c></term><description>An option name that names no
-/// option, such as a text option for a search's <c>--pattern</c>: the declaring option, first
-/// (<c>USAGE_ERROR</c>).</description></item>
-/// <item><term><c>option.MistakenForArgument()</c></term><description>The value of a required
-/// option given as a bare argument, such as <c>search &lt;file&gt; speaker</c> for <c>--pattern speaker</c>: the option
-/// (<c>USAGE_ERROR</c>).</description></item>
-/// <item><term>A format's <c>MistakenFor</c></term><description>A value of <c>--to</c> that names
-/// the format another way, such as <c>word</c>: the format's id (<c>OPTION_INVALID</c>).</description></item>
-/// </list>
-/// <para>
-/// Without any declaration the parser still recognises an unknown command or option by its
-/// closest names, <c>help</c> and <c>version</c> typed as commands, an argument's name written
-/// before its value, an option without its value or with more values than it takes, a value
-/// outside an option's list or a number that does not parse, and a command of the root that
-/// reads any product's file written below a product.
-/// </para>
 /// </remarks>
 /// <typeparam name="TRequest">The request <c>bind</c> produces and the handler receives.</typeparam>
 /// <typeparam name="TResult">The result the handler returns.</typeparam>
@@ -127,13 +101,6 @@ public sealed class CommandDefinition<TRequest, TResult>
     /// </summary>
     public Func<ParseResult, TRequest, TResult, StandardInvocation, TResult>? Finish { get; init; }
 
-    /// <summary>
-    /// The names a caller may type for this command that name no command of its product, such as
-    /// a command that no longer exists. The parser refuses such a name, and the error suggests
-    /// first every command that declares it, in menu order; the name never runs a command.
-    /// </summary>
-    public IReadOnlyList<string> MistakenFor { get; init; } = [];
-
     /// <summary>Help examples, written after the executable name.</summary>
     public IReadOnlyList<string> Examples { get; init; } = [];
 
@@ -173,7 +140,6 @@ public sealed class CommandDefinition<TRequest, TResult>
         var options = new StandardOptions(_traits);
         Command command = options.CreateCommand(Name, Description, _parameters);
         command.SetAction(parse => context.Run(parse, scope => Execute(options, parse, scope, context, handler)));
-        CommandMistakes.Declare(command, MistakenFor);
         return Examples.Count == 0 && Links.Count == 0 ? command : command.WithExamples(Examples, Links);
     }
 
@@ -249,11 +215,6 @@ public static class EditDefinition
     /// <param name="name">The command name.</param>
     /// <param name="examples">The help examples.</param>
     /// <param name="links">The help's further-reading links.</param>
-    /// <param name="mistakenFor">
-    /// The names a caller may type for this edit that name no command of its product, such as
-    /// <c>merge</c> for an edit that imports another document (see
-    /// <see cref="CommandDefinition{TRequest, TResult}.MistakenFor"/>).
-    /// </param>
     public static CommandDefinition<TRequest, TResult> Create<TOp, TBatch, TRequest, TResult>(
         BoundedEditCommand<TOp, TBatch> edit,
         string description,
@@ -264,8 +225,7 @@ public static class EditDefinition
         Action<ParseResult>? checkUsage = null,
         string name = "edit",
         IReadOnlyList<string>? examples = null,
-        IReadOnlyList<CommandHelpLink>? links = null,
-        IReadOnlyList<string>? mistakenFor = null)
+        IReadOnlyList<CommandHelpLink>? links = null)
         where TOp : BoundedOperation, IOperationVocabulary<TOp>
         where TBatch : BoundedOperationEnvelope<TOp>
         where TResult : ResultEnvelope
@@ -287,7 +247,6 @@ public static class EditDefinition
         {
             Examples = examples ?? [],
             Links = links ?? [],
-            MistakenFor = mistakenFor ?? [],
             Operations = TOp.Catalog.Describe,
         };
     }

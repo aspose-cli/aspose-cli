@@ -55,7 +55,7 @@ A PDF batch, for example:
 - **Atomic (default).** If any operation fails, nothing is written. The error
   names the failing operation in `details.id` and `details.op`, and its
   message says why; a misspelled field, operation or value lists the valid
-  ones in `details.available` and the likely ones in `details.suggestions`.
+  ones in `details.available`.
   When several entries fail the same check, `details.errors` lists each of
   them. Fix those entries and run the whole batch again.
 - **`--best-effort`.** Successful operations are kept and saved; each failed
@@ -160,10 +160,9 @@ outputs can be encrypted.
 
 A not-found error (a `*_NOT_FOUND` code) states what exists, so you can
 correct the request without another inspection: `details.requested` echoes
-what you asked for, `details.available` lists the existing names and
-`details.suggestions` the closest ones; `aspose-cli schema
-v2/common/not-found-details` describes every field. Operation errors add
-`details.id` and `details.op`, and a best-effort failure keeps the same
-object in its `error.details`. A name that several targets share is refused
+what you asked for and `details.available` lists the existing names;
+`aspose-cli schema v2/common/not-found-details` describes every field.
+Operation errors add `details.id` and `details.op`, and a best-effort failure
+keeps the same object in its `error.details`. A name that several targets share is refused
 with `OPS_INVALID` instead of picking one; address the target by its stable id
 or number.

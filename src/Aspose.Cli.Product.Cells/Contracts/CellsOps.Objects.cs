@@ -11,11 +11,9 @@ namespace Aspose.Cli.Product.Cells.Contracts;
 /// axisTitles; legend, axisTitles and dataLabels each set at least one field.
 /// </summary>
 [Operation("insert_chart")]
-[MistakenFor("create_chart", "add_chart")]
 public sealed record InsertChartOp : CellsSheetOp
 {
     /// <summary>The chart type: column has vertical bars, bar horizontal ones.</summary>
-    [MistakenFor("type")]
     [ReadBack("inspect-result.schema.json#/$defs/cellsChartInfo/properties/kind")]
     [AllowedValues(typeof(CellsChartTypes))] public required string Kind { get; init; }
 
@@ -115,7 +113,6 @@ public sealed record CellsChartDataLabels
     public bool? Visible { get; init; }
 
     /// <summary>The number format code of the labels, such as #,##0.</summary>
-    [MistakenFor("format")]
     public string? NumberFormat { get; init; }
 }
 
@@ -127,7 +124,6 @@ public sealed record CellsChartDataLabels
 /// Excel refuses it.
 /// </summary>
 [Operation("insert_pivot")]
-[MistakenFor("create_pivot", "add_pivot")]
 public sealed record InsertPivotOp : CellsSheetOp
 {
     /// <summary>The source data including headers; it may name another sheet, such as Data!A1:D100.</summary>
@@ -198,7 +194,6 @@ public static class CellsPivotFunctions
 
 /// <summary>Inserts a picture from a file, anchored at a cell.</summary>
 [Operation("insert_image")]
-[MistakenFor("add_image", "add_picture", "insert_picture")]
 public sealed record InsertImageOp : CellsSheetOp
 {
     /// <summary>
@@ -239,7 +234,6 @@ public sealed record RefreshPivotOp : CellsSheetOp
 
 /// <summary>Defines a range as a native table with filtering, an optional table style and an optional totals row.</summary>
 [Operation("define_table")]
-[MistakenFor("create_table", "add_table")]
 public sealed record DefineTableOp : CellsSheetOp
 {
     /// <summary>The range to convert, including its header row, such as A1:D20.</summary>
@@ -257,7 +251,6 @@ public sealed record DefineTableOp : CellsSheetOp
     /// A built-in table style (TableStyleLight1-21, TableStyleMedium1-28, TableStyleDark1-11),
     /// such as TableStyleMedium2, or a custom table style the workbook defines.
     /// </summary>
-    [MistakenFor("style")]
     [ReadBack("inspect-result.schema.json#/$defs/cellsTableInfo/properties/tableStyle")]
     [MinLength(1)] public string? TableStyle { get; init; }
 
@@ -331,7 +324,6 @@ public sealed record DefineTableOp : CellsSheetOp
 /// addresses keeps its range.
 /// </summary>
 [Operation("resize_table")]
-[MistakenFor("extend_table", "expand_table")]
 public sealed record ResizeTableOp : CellsSheetOp
 {
     /// <summary>The name of the table, as inspect lists it.</summary>
@@ -353,7 +345,6 @@ public sealed record ResizeTableOp : CellsSheetOp
 /// only together with dataRange; legend, axisTitles and dataLabels each set at least one field.
 /// </summary>
 [Operation("set_chart")]
-[MistakenFor("update_chart")]
 [ExactlyOneOf("index", "name")]
 [AtLeastOneOf("title", "dataRange", "kind", "legend", "axisTitles", "seriesColors", "dataLabels")]
 [DependentRequired("seriesInRows", "dataRange")]
@@ -375,7 +366,6 @@ public sealed record SetChartOp : CellsSheetOp
     [A1Reference] public string? DataRange { get; init; }
 
     /// <summary>The new chart type; unchanged when omitted.</summary>
-    [MistakenFor("type")]
     [ReadBack("inspect-result.schema.json#/$defs/cellsChartInfo/properties/kind")]
     [AllowedValues(typeof(CellsChartTypes))] public string? Kind { get; init; }
 

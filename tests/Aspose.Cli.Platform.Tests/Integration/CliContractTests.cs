@@ -544,32 +544,18 @@ public sealed class CliContractTests : IDisposable
         Assert.EndsWith($"Must be one of: {string.Join(", ", available)}", message, StringComparison.Ordinal);
     }
 
-    [Fact]
-    public void UnknownOption_SuggestsTheClosestOptionsOfTheCommand()
-    {
-        CliResult result = _workspace.Run("cells", "compare", "a.xlsx", "b.xlsx", "--password-env", "PASSWORD");
-
-        Assert.Equal(2, result.ExitCode);
-        JsonNode error = Parse(result.StdErr)["error"]!;
-        Assert.Equal("USAGE_ERROR", error["code"]!.GetValue<string>());
-        Assert.Equal(
-            ["--left-password-env", "--right-password-env"],
-            error["details"]!["suggestions"]!.AsArray().Select(static item => item!.GetValue<string>()));
-    }
-
     [Theory]
     [InlineData("cells inspect a.xlsx --detail cahrts", "charts")]
     [InlineData("--license-mode autoo cells inspect a.xlsx", "auto")]
     [InlineData("skill install aspose-cli-platform --host calude-code", "claude-code")]
-    public void UnknownValue_ListsTheAllowedValuesAndSuggestsTheClosest(string commandLine, string suggestion)
+    public void UnknownValue_ListsTheAllowedValues(string commandLine, string value)
     {
         CliResult result = _workspace.Run([.. commandLine.Split(' '), "--output-format", "json"]);
 
         Assert.Equal(2, result.ExitCode);
         JsonNode error = Parse(result.StdErr)["error"]!;
         Assert.Equal("OPTION_INVALID", error["code"]!.GetValue<string>());
-        Assert.Contains(suggestion, error["details"]!["available"]!.AsArray().Select(static item => item!.GetValue<string>()));
-        Assert.Equal(suggestion, error["details"]!["suggestions"]![0]!.GetValue<string>());
+        Assert.Contains(value, error["details"]!["available"]!.AsArray().Select(static item => item!.GetValue<string>()));
     }
 
     [Theory]
@@ -629,13 +615,12 @@ public sealed class CliContractTests : IDisposable
 
     [Theory]
     [InlineData("cells read a.xlsx --sacn-range", "--scan-range")]
-    public void UnknownOption_NeverSuggestsAHiddenOption(string commandLine, string hidden)
+    public void UnknownOption_NeverListsAHiddenOption(string commandLine, string hidden)
     {
         CliResult result = _workspace.Run([.. commandLine.Split(' '), "--output-format", "json"]);
 
         Assert.Equal(2, result.ExitCode);
         JsonNode error = Parse(result.StdErr)["error"]!;
-        Assert.DoesNotContain(hidden, (error["details"]!["suggestions"]?.AsArray() ?? []).Select(static item => item!.GetValue<string>()));
         Assert.DoesNotContain(hidden, error["details"]!["available"]!.AsArray().Select(static item => item!.GetValue<string>()));
     }
 
@@ -649,7 +634,6 @@ public sealed class CliContractTests : IDisposable
         JsonNode error = Parse(result.StdErr)["error"]!;
         Assert.Equal("USAGE_ERROR", error["code"]!.GetValue<string>());
         Assert.Contains("--bookmark", error["message"]!.GetValue<string>(), StringComparison.Ordinal);
-        Assert.Equal(["--bookmarks"], error["details"]!["suggestions"]!.AsArray().Select(static item => item!.GetValue<string>()));
         Assert.Equal("FILE_NOT_FOUND", Parse(escaped.StdErr)["error"]!["code"]!.GetValue<string>());
     }
 

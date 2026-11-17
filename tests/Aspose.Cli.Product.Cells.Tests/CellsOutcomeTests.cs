@@ -658,32 +658,8 @@ public sealed class CellsOutcomeTests : IClassFixture<CellsFixture>
         Assert.Contains("only visible sheet", error.Message, StringComparison.Ordinal);
     }
 
-    [Theory]
-    [InlineData("hide_sheet")]
-    [InlineData("unhide_sheet")]
-    [InlineData("show_sheet")]
-    public void AHideOrShowSheetOperation_SuggestsSetSheetVisibility(string op)
-    {
-        CliException error = Assert.Throws<CliException>(() => CellsOp.Catalog.Parse<CellsOpsBatch>(
-            $$"""{"ops":[{"op":"{{op}}","sheet":"Second"}]}""", Aspose.Cli.Generated.ProductJsonContext.Definition));
-
-        Assert.Equal("OPS_INVALID", error.Code.Name);
-        Assert.Equal("set_sheet_visibility", error.Details!["suggestions"]![0]!.GetValue<string>());
-    }
-
     [Fact]
-    public void ACamelCaseVisibility_SuggestsTheKebabCaseValueFirst()
-    {
-        CliException error = Assert.Throws<CliException>(() => Apply(
-            _fixture.CreateSalesWorkbook($"camel-{Guid.NewGuid():N}.xlsx"),
-            """{"ops":[{"op":"set_sheet_visibility","sheet":"Second","visibility":"veryHidden"}]}"""));
-
-        Assert.Equal("OPS_INVALID", error.Code.Name);
-        Assert.Equal("very-hidden", error.Details!["suggestions"]![0]!.GetValue<string>());
-    }
-
-    [Fact]
-    public void TheBooleanHiddenField_SuggestsVisibility()
+    public void TheBooleanHiddenField_IsRefused()
     {
         CliException error = Assert.Throws<CliException>(() => CellsOp.Catalog.Parse<CellsOpsBatch>(
             """{"ops":[{"op":"set_sheet_visibility","sheet":"Second","hidden":true}]}""", Aspose.Cli.Generated.ProductJsonContext.Definition));
@@ -752,7 +728,7 @@ public sealed class CellsOutcomeTests : IClassFixture<CellsFixture>
     }
 
     [Fact]
-    public void ACommonNameForTheNumberFormat_SuggestsNumberFormat()
+    public void ACommonNameForTheNumberFormat_IsRefused()
     {
         CliException error = Assert.Throws<CliException>(() => CellsOp.Catalog.Parse<CellsOpsBatch>(
             """{"ops":[{"op":"format_range","range":"A1","style":{"numFmt":"0.00"}}]}""", Aspose.Cli.Generated.ProductJsonContext.Definition));

@@ -84,7 +84,6 @@ public sealed record SetValidationOp : CellsSheetOp
     /// What a cell may hold: list a dropdown item; whole-number, decimal, date or text-length a
     /// value (or length) compared by operator; custom any value its formula accepts.
     /// </summary>
-    [MistakenFor("type")]
     [ReadBack("inspect-result.schema.json#/$defs/cellsValidationInfo/properties/kind")]
     [AllowedValues(typeof(CellsValidationTypes))] public required string Kind { get; init; }
 
@@ -164,7 +163,6 @@ public sealed record ClearValidationOp : CellsSheetOp
 
 /// <summary>Removes duplicate rows from a range, comparing every column or the listed ones.</summary>
 [Operation("delete_duplicates")]
-[MistakenFor("remove_duplicates")]
 public sealed record DeleteDuplicatesOp : CellsSheetOp
 {
     /// <summary>The range to de-duplicate, including any header row, such as A1:D100.</summary>

@@ -24,7 +24,7 @@ exits non-zero:
   every error and warning code of this build under `diagnostics`, with its
   category and exit code.
 - `details` carries structured context: the resolved path, the option or
-  argument at fault, the valid alternatives (`available`, `suggestions`), the
+  argument at fault, the valid alternatives (`available`), the
   failing operation's `id` and `op`. `aspose-cli schema v2/common/error-payload`
   describes every key; `errors` appears only when there are several problems.
   `details.reason`, when present, is a short kebab-case token such as
@@ -98,7 +98,7 @@ aspose-cli capabilities --output-format json
   parse, is `OPTION_INVALID`. Both name the option in `details.option`, or the
   positional argument in `details.argument`.
 - An unknown command, option, value, operation or field lists what exists in
-  `details.available` and the closest names in `details.suggestions`. A
+  `details.available`. A
   command that only groups others, run without one, is a `USAGE_ERROR` that
   lists its commands in `details.available`; with human output it prints its
   help to stderr instead.
@@ -107,9 +107,8 @@ aspose-cli capabilities --output-format json
 - `-` names standard input only: `--out -` is refused, so name a file. An
   `--out` that resolves to the input is refused too: use `--in-place`.
 - An output whose extension is not one of its format's is refused before
-  anything is read, listing the accepted extensions in `details.available`
-  and, for a mistyped one such as `.docz`, the closest in
-  `details.suggestions`. `convert` and `render` write the format their `--out`
+  anything is read, listing the accepted extensions in `details.available`.
+  `convert` and `render` write the format their `--out`
   extension names when `--to` is absent; a `convert` with neither is refused.
 - A selection such as `--pages` takes 1-based ranges such as `1-3,7,9-`, or
   `all`; a number past the end fails with the product's not-found code and
@@ -122,13 +121,11 @@ aspose-cli capabilities --output-format json
 - A file another application holds (`FILE_LOCKED`): ask the user to close it
   and retry the same command; nothing was written.
 - A file that is not a readable document of its type (`FILE_CORRUPT`):
-  renaming a file does not change its format. When the extension disagrees
-  with the content (`FORMAT_MISMATCH`), `details.detected` names the products
-  the content looks like. Content no product recognizes is `FILE_CORRUPT`
-  when any product reads its extension, even one shared by many kinds of file
-  such as `.html` or `.xml`, and `FORMAT_UNSUPPORTED` when none does or the
-  CLI only writes its format, such as `.xps`. Find out what the file really
-  is. Content several products recognize is `FORMAT_AMBIGUOUS`.
+  renaming a file does not change its format. Content no product recognizes
+  is `FILE_CORRUPT` when any product reads its extension, even one shared by
+  many kinds of file such as `.html` or `.xml`, and `FORMAT_UNSUPPORTED` when
+  none does or the CLI only writes its format, such as `.xps`. Find out what
+  the file really is. Content several products recognize is `FORMAT_AMBIGUOUS`.
 - A password that is missing or wrong (`PASSWORD_REQUIRED`,
   `PASSWORD_INVALID`): ask the user; never guess. Pass it with
   `--password-env <VAR>` or `--password-stdin`. A command that reads two

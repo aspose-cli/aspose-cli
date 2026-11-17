@@ -217,7 +217,7 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
     }
 
     [Fact]
-    public void MissingNamedTargets_ListTheAvailableNamesAndTheClosest()
+    public void MissingNamedTargets_ListTheAvailableNames()
     {
         string input = _fixture.Temp.File("named-targets.docx");
         var document = new Document();
@@ -243,7 +243,6 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
         Assert.Equal(ErrorCodes.BookmarkNotFound, bookmark.Code);
         Assert.Equal("Sumary", bookmark.Details!["requested"]!.GetValue<string>());
         Assert.Equal(["Summary"], Names(bookmark, "available"));
-        Assert.Equal(["Summary"], Names(bookmark, "suggestions"));
         Assert.Equal(WordsDiagnostics.AnchorNotFound, heading.Code);
         Assert.Equal(["Quarterly report"], Names(heading, "available"));
         Assert.Equal(ErrorCodes.StyleNotFound, style.Code);

@@ -16,7 +16,7 @@ public static class WordsFormats
     [
         FormatDescriptor.Declare("doc", FormatUse.Input | FormatUse.Convert, true, ".doc") with { Protectable = true, Recognition = WordsFormatRecognition.CompoundDocument },
         FormatDescriptor.Declare("dot", FormatUse.Input | FormatUse.Convert, true, ".dot") with { Protectable = true, Recognition = WordsFormatRecognition.CompoundDocument },
-        FormatDescriptor.Declare("docx", FormatUse.Input | FormatUse.Convert, true, ".docx") with { Protectable = true, MistakenFor = ["word"], Recognition = WordsFormatRecognition.OpenXmlDocument },
+        FormatDescriptor.Declare("docx", FormatUse.Input | FormatUse.Convert, true, ".docx") with { Protectable = true, Recognition = WordsFormatRecognition.OpenXmlDocument },
         FormatDescriptor.Declare("docm", FormatUse.Input | FormatUse.Convert, true, ".docm") with { Protectable = true, Recognition = WordsFormatRecognition.OpenXmlDocument },
         FormatDescriptor.Declare("dotx", FormatUse.Input | FormatUse.Convert, true, ".dotx") with { Protectable = true, Recognition = WordsFormatRecognition.OpenXmlDocument },
         FormatDescriptor.Declare("dotm", FormatUse.Input | FormatUse.Convert, true, ".dotm") with { Protectable = true, Recognition = WordsFormatRecognition.OpenXmlDocument },

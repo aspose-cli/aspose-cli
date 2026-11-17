@@ -542,11 +542,9 @@ internal static partial class ContractRules
     /// command checks itself), an operation, an operation field and an operation enum value; a top-level command; and a
     /// target name, a cells sheet, and the positional names of <c>capabilities</c> (a product)
     /// and <c>docs</c> (a topic). The <c>unknown-*</c> and <c>invalid-enum</c> invariants already
-    /// check the exit code, the error code and that <c>details.suggestions</c> holds the intended
-    /// name; this rule adds that <c>details.available</c> lists at most 50 names and
-    /// <c>details.suggestions</c> is present, and the message
-    /// is one line saying "Must be one of: a, b" with exactly <c>details.available</c>. The kinds
-    /// no invariant covers, enum values and target names, also check the suggestion.
+    /// check the exit code and the error code; this rule adds that <c>details.available</c> lists
+    /// at most 50 names, and the message is one line saying "Must be one of: a, b" with exactly
+    /// <c>details.available</c>.
     /// </summary>
     private static IEnumerable<InvariantCase> R26(CliCatalog catalog)
     {
@@ -561,13 +559,13 @@ internal static partial class ContractRules
             string name = siblings[0];
             string commandTypo = InvariantCases.Typo(name, siblings);
             yield return R26Case(output, $"{product} command {name} as {commandTypo}", product,
-                new Invocation([product, commandTypo]), Join(product, name), suggests: false);
+                new Invocation([product, commandTypo]));
             if (catalog.Commands.FirstOrDefault(command => command.Words == $"{product} inspect") is { } inspect
                 && inspect.Options.FirstOrDefault(static option => !option.Hidden) is { } option)
             {
                 string typo = "--" + InvariantCases.Typo(option.Name.TrimStart('-'), inspect.Options.Select(static candidate => candidate.Name.TrimStart('-')));
                 yield return R26Case(output, $"{inspect} option {option.Name} as {typo}", product,
-                    new Invocation([.. inspect.Tokens, typo]), option.Name, suggests: false);
+                    new Invocation([.. inspect.Tokens, typo]));
             }
             if (catalog.Commands.FirstOrDefault(command => command.Words == $"{product} inspect") is { } described
                 && described.Options.FirstOrDefault(static option => !option.Hidden && option.Type != "boolean" && option.AllowedValues.Count > 0) is { } choice)
@@ -575,7 +573,7 @@ internal static partial class ContractRules
                 string value = choice.AllowedValues[0];
                 string typo = InvariantCases.Typo(value, choice.AllowedValues);
                 yield return R26Case(output, $"{described} {choice.Name} {value} as {typo}", product,
-                    Invocation.For(described).Add(choice.Name, typo), value, suggests: false);
+                    Invocation.For(described).Add(choice.Name, typo));
             }
             if (catalog.Commands.FirstOrDefault(command => command.Words == $"{product} convert") is { } convert
                 && convert.Option("--to") is { AllowedValues.Count: > 0 } to)
@@ -583,14 +581,14 @@ internal static partial class ContractRules
                 string value = to.AllowedValues[0];
                 string typo = InvariantCases.Typo(value, to.AllowedValues);
                 yield return R26Case(output, $"{convert} --to {value} as {typo}", product,
-                    Invocation.For(convert, "--to").Add("--to", typo), value, suggests: false);
+                    Invocation.For(convert, "--to").Add("--to", typo));
 
                 // An --out extension names the format a convert writes when --to is omitted.
                 string[] extensions = [.. Extensions(catalog, product, to.AllowedValues)];
                 string extension = Extensions(catalog, product, [value]).First();
                 string extensionTypo = "." + InvariantCases.Typo(extension[1..], extensions.Select(static candidate => candidate[1..]));
                 yield return R26Case(output, $"{convert} --out extension {extension} as {extensionTypo}", product,
-                    Invocation.For(convert, "--to").Add("--out", "output" + extensionTypo), extension, suggests: true);
+                    Invocation.For(convert, "--to").Add("--out", "output" + extensionTypo));
             }
             foreach (InvariantCase item in R26Operations(catalog, output, catalog.Product(product)))
             {
@@ -601,15 +599,15 @@ internal static partial class ContractRules
         string[] commands = [.. catalog.Commands.Single(static command => command.Words.Length == 0).Subcommands];
         string rootTypo = InvariantCases.Typo(first, commands);
         yield return R26Case(output, $"command {first} as {rootTypo}", InvariantCases.Platform,
-            new Invocation([rootTypo]), first, suggests: false);
+            new Invocation([rootTypo]));
         string[] products = [.. catalog.Products.Select(static product => product.Id)];
         string productTypo = InvariantCases.Typo(first, products);
         yield return R26Case(output, $"capabilities product {first} as {productTypo}", InvariantCases.Platform,
-            new Invocation(["capabilities", productTypo]), first, suggests: true);
+            new Invocation(["capabilities", productTypo]));
         // editing is the platform guide every build ships (aspose-cli docs lists the topics).
         const string Topic = "editing";
         yield return R26Case(output, $"docs topic {Topic} as {InvariantCases.Typo(Topic, [Topic])}", InvariantCases.Platform,
-            new Invocation(["docs", InvariantCases.Typo(Topic, [Topic])]), Topic, suggests: true);
+            new Invocation(["docs", InvariantCases.Typo(Topic, [Topic])]));
         if (catalog.Commands.FirstOrDefault(static command => command.Product == "cells" && command.Has("--sheet") && !command.Has("--out")
             && command.Arguments.Any(static argument => argument.Required && argument.InputKind == "file")) is { } sheets)
         {
@@ -617,7 +615,7 @@ internal static partial class ContractRules
             const string Sheet = "Sheet1";
             string typo = InvariantCases.Typo(Sheet, [Sheet]);
             yield return R26Case(output, $"{sheets} --sheet {Sheet} as {typo}", "cells",
-                Invocation.For(sheets).Add("--sheet", typo), Sheet, suggests: true);
+                Invocation.For(sheets).Add("--sheet", typo));
         }
     }
 
@@ -640,7 +638,7 @@ internal static partial class ContractRules
         string op = product.Ops[0];
         string opTypo = InvariantCases.Typo(op, product.Ops);
         yield return R26Case(output, $"{product.Id} op {op} as {opTypo}", product.Id,
-            R26Edit(edit, new JsonObject { ["op"] = opTypo }), op, suggests: false);
+            R26Edit(edit, new JsonObject { ["op"] = opTypo }));
 
         foreach (string candidate in product.Ops)
         {
@@ -655,7 +653,7 @@ internal static partial class ContractRules
             }
             string fieldTypo = InvariantCases.Typo(fields[0], fields);
             yield return R26Case(output, $"{product.Id} op {candidate} field {fields[0]} as {fieldTypo}", product.Id,
-                R26Edit(edit, new JsonObject { ["op"] = candidate, [fieldTypo] = "x" }), fields[0], suggests: false);
+                R26Edit(edit, new JsonObject { ["op"] = candidate, [fieldTypo] = "x" }));
             break;
         }
 
@@ -683,7 +681,7 @@ internal static partial class ContractRules
             string valueTypo = InvariantCases.Typo(values[0], values);
             operation[field] = valueTypo;
             yield return R26Case(output, $"{product.Id} op {candidate} {field} {values[0]} as {valueTypo}", product.Id,
-                R26Edit(edit, operation), values[0], suggests: true);
+                R26Edit(edit, operation));
             break;
         }
     }
@@ -699,10 +697,10 @@ internal static partial class ContractRules
         return invocation;
     }
 
-    private static InvariantCase R26Case(string output, string subject, string shard, Invocation invocation, string intended, bool suggests) =>
-        Runs("C-R26", subject, shard, slow: false, invocation, session => R26Problems(session.Run(output, "json"), intended, suggests));
+    private static InvariantCase R26Case(string output, string subject, string shard, Invocation invocation) =>
+        Runs("C-R26", subject, shard, slow: false, invocation, session => R26Problems(session.Run(output, "json")));
 
-    private static IEnumerable<string> R26Problems(CliResult result, string intended, bool suggests)
+    private static IEnumerable<string> R26Problems(CliResult result)
     {
         const string Marker = "Must be one of: ";
         if (ParseJson(result.StdErr)?["error"] is not JsonObject error)
@@ -711,7 +709,6 @@ internal static partial class ContractRules
             yield break;
         }
         string[]? available = Strings(error["details"]?["available"]);
-        string[]? suggestions = Strings(error["details"]?["suggestions"]);
         if (available is null)
         {
             yield return "details.available is missing";
@@ -719,14 +716,6 @@ internal static partial class ContractRules
         else if (available.Length > 50)
         {
             yield return $"details.available lists {available.Length} names, more than 50";
-        }
-        if (suggestions is not { Length: > 0 })
-        {
-            yield return "details.suggestions is missing or empty";
-        }
-        else if (suggests && !suggestions.Contains(intended, StringComparer.Ordinal))
-        {
-            yield return $"details.suggestions [{string.Join(", ", suggestions)}] leaves out '{intended}'";
         }
         string message = error["message"]?.GetValue<string>() ?? string.Empty;
         int lines = message.ReplaceLineEndings("\n").Split('\n').Length;

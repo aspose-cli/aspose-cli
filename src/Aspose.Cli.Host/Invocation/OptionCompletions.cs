@@ -5,7 +5,7 @@ namespace Aspose.Cli.Host.Invocation;
 
 /// <summary>
 /// The values an option or argument declares through its completions, read for capabilities,
-/// help and the suggestions for a value the parser refused.
+/// help and the error for a value the parser refused.
 /// </summary>
 internal static class OptionCompletions
 {

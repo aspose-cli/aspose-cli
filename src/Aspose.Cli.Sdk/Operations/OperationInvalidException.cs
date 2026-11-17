@@ -18,7 +18,7 @@ public sealed class OperationInvalidException : Exception
         Mistake = mistake;
     }
 
-    /// <summary>A value that names none of the values it may take, with the closest ones; null otherwise.</summary>
+    /// <summary>A value that names none of the values it may take, with those values; null otherwise.</summary>
     public Mistake? Mistake { get; }
 
     /// <summary>The file the operation reads that the rejection is about, stated in <c>details.path</c>; null for none.</summary>

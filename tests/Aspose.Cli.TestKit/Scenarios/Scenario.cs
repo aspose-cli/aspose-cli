@@ -179,7 +179,7 @@ public sealed record ScenarioFiles
 
 /// <summary>
 /// One assertion on a JSON value addressed by a dotted path with indexes, such as
-/// <c>error.details.suggestions</c> or <c>outputs[0].format</c>.
+/// <c>error.details.available</c> or <c>outputs[0].format</c>.
 /// </summary>
 public sealed record JsonAssertion
 {

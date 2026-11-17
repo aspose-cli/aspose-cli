@@ -1,5 +1,4 @@
 using System.Globalization;
-using Aspose.Cli.Sdk.Errors;
 using Aspose.Words;
 using Aspose.Words.Fields;
 
@@ -59,10 +58,6 @@ internal static class WordsMergeGaps
         IReadOnlyList<IReadOnlyDictionary<string, string?>> rows)
     {
         var gaps = new List<string>();
-        string[] unused = rows.SelectMany(static row => row.Keys)
-            .Where(key => !fields.Contains(key, StringComparer.OrdinalIgnoreCase))
-            .Distinct(StringComparer.Ordinal)
-            .ToArray();
         foreach (string field in fields)
         {
             int[] records = Enumerable.Range(0, rows.Count)
@@ -71,7 +66,7 @@ internal static class WordsMergeGaps
                 .ToArray();
             if (records.Length > 0)
             {
-                gaps.Add($"{field}: {Records(records)}{Suggestion(field, unused, "the unused data field")}");
+                gaps.Add($"{field}: {Records(records)}");
             }
         }
 
@@ -79,14 +74,6 @@ internal static class WordsMergeGaps
                 CultureInfo.InvariantCulture,
                 $"mail_merge had no value for {gaps.Count} template merge field(s) in some records: {string.Join("; ", gaps)}."));
     }
-
-    /// <summary>
-    /// Names the unused data keys closest to a template field, such as a misspelled column, as an
-    /// aside that follows the field (see <see cref="Mistake.Aside"/>), or returns an empty string
-    /// when none is close.
-    /// </summary>
-    internal static string Suggestion(string field, IEnumerable<string> unused, string kind) =>
-        Mistake.Of(field, unused).Aside(kind);
 
     private static string? Value(IReadOnlyDictionary<string, string?> row, string field) =>
         row.TryGetValue(field, out string? value)

@@ -82,11 +82,11 @@ public sealed class ScenarioTests
                   "expect": {
                     "json": [
                       { "path": "error.code", "startsWith": "USAGE_" },
-                      { "path": "error.details.suggestions", "notContains": "--verbose" },
+                      { "path": "error.details.available", "notContains": "--verbose" },
                       { "path": "error.message", "notContains": "--verbose" },
                       { "path": "error.details.errors", "notContains": "anything" },
                       { "path": "error.code", "startsWith": "Run" },
-                      { "path": "error.details.suggestions", "notContains": "--version" },
+                      { "path": "error.details.available", "notContains": "cells" },
                       { "path": "error.message", "notContains": "vresion" },
                       { "path": "error.details", "notContains": "--version" },
                       { "path": "error.details.missing", "startsWith": "x" }
@@ -100,7 +100,7 @@ public sealed class ScenarioTests
         ScenarioOutcome outcome = ScenarioRunner.Run(scenario);
 
         Assert.Equal(
-            ["error.code", "error.details.suggestions", "error.message", "error.details", "error.details.missing"],
+            ["error.code", "error.details.available", "error.message", "error.details", "error.details.missing"],
             outcome.Problems.Select(static problem => problem.Message.Split(' ')[0]));
         Assert.All(outcome.Problems, static problem => Assert.Equal(ScenarioRunner.JsonCheck, problem.Check));
     }
@@ -160,19 +160,19 @@ public sealed class ScenarioTests
     }
 
     [Theory]
-    [InlineData("error.details.suggestions[1]", true, "\"b\"")]
-    [InlineData("error.details.suggestions[2]", false, null)]
+    [InlineData("error.details.available[1]", true, "\"b\"")]
+    [InlineData("error.details.available[2]", false, null)]
     [InlineData("error.code", true, "\"USAGE_ERROR\"")]
     [InlineData("error.missing", false, null)]
     [InlineData("warnings[code=LOSSY_CONVERSION][1].details.content[0]", true, "\"pictures\"")]
     [InlineData("warnings[code=LOSSY_CONVERSION][2]", false, null)]
     [InlineData("warnings[code=FONTS_MISSING][0]", false, null)]
-    [InlineData("error.details.suggestions[code=a]", false, null)]
+    [InlineData("error.details.available[code=a]", false, null)]
     [InlineData("warnings[code=EVALUATION_MODE]", true, """[{"code":"EVALUATION_MODE"}]""")]
     public void JsonPath_ResolvesNamesAndIndexes(string path, bool found, string? expected)
     {
         JsonNode document = JsonNode.Parse("""
-            {"error":{"code":"USAGE_ERROR","details":{"suggestions":["a","b"]}},
+            {"error":{"code":"USAGE_ERROR","details":{"available":["a","b"]}},
              "warnings":[{"code":"EVALUATION_MODE"},{"code":"LOSSY_CONVERSION"},{"code":"LOSSY_CONVERSION","details":{"content":["pictures"]}}]}
             """)!;
 

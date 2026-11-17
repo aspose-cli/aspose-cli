@@ -48,7 +48,6 @@ public sealed class SplitOptions
             Description = "How to divide the document: " + string.Join("; ", divisions.OrderBy(SplitPlan.Spell, StringComparer.Ordinal).Select(division => "one part " + Describe(division, groups))) + ".",
         }.WithInput(InputKind.None);
         _by.AcceptOnlyFromAmong([.. divisions.Select(SplitPlan.Spell)]);
-        _by.MistakenFor("--by-bookmarks");
         var options = new List<Option> { _by };
         if (pages)
         {
@@ -59,7 +58,7 @@ public sealed class SplitOptions
                 _groups = new Option<string[]>(GroupsOption)
                 {
                     Description = "A page group with --by pages, one part each; repeat for more, such as --groups 1-3 --groups 4-6.",
-                }.WithInput(InputKind.None).MistakenFor("--ranges");
+                }.WithInput(InputKind.None);
                 options.Add(_groups);
             }
 

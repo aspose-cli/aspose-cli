@@ -423,13 +423,4 @@ public sealed class SlidesCliWorkflowTests : IDisposable
         Assert.DoesNotContain("Unknown", error["message"]!.GetValue<string>(), StringComparison.Ordinal);
         Assert.Contains("incomplete", error["message"]!.GetValue<string>(), StringComparison.Ordinal);
     }
-
-    [Fact]
-    public void SlidesMerge_SuggestsEdit()
-    {
-        CliResult merge = _workspace.Run("slides", "merge", "a.pptx", "b.pptx", "--output-format", "json");
-
-        JsonNode error = JsonNode.Parse(merge.StdErr)!["error"]!;
-        Assert.Equal("slides edit", error["details"]!["suggestions"]!.AsArray()[0]!.GetValue<string>());
-    }
 }

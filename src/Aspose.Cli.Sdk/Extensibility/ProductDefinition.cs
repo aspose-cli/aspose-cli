@@ -300,7 +300,6 @@ public sealed class ProductDefinitionBuilder<TSession>
             product.Subcommands.Add(entry.Create(context));
         }
 
-        CommandMistakes.EnsureUnclaimed(product);
         ProductReads.Declare(product, [.. _formats.Where(static format => format.Uses.HasFlag(FormatUse.Input))]);
         return _help?.Invoke() is { } help ? product.WithExamples(help.Examples, help.Links) : product;
     }

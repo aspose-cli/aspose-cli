@@ -16,8 +16,8 @@ namespace Aspose.Cli.Architecture.Tests;
 /// Each decision a command makes has one owner, and nothing else can make it. These rules read
 /// the source and the live capabilities, not the owner's implementation: D1 outputs (the SDK
 /// resolves the output path, its format, encryption and part names), D2 format capabilities
-/// (a product declares no input it cannot read), D3 mistakes (one SDK type writes every
-/// suggestion), D4 errors (shared codes come only from SDK factories) and D5 secrets (an SDK
+/// (a product declares no input it cannot read), D3 mistakes (a mistyped command is never read
+/// as an argument), D4 errors (shared codes come only from SDK factories) and D5 secrets (an SDK
 /// secret type that only an engine adapter reveals).
 /// </summary>
 public sealed partial class DecisionOwnershipTests
@@ -300,12 +300,12 @@ public sealed partial class DecisionOwnershipTests
         bool IsOwner(SourceFile file) => string.Equals(file.Path, owner, StringComparison.OrdinalIgnoreCase);
         string[] violations = [.. Sources.Value
             .Where(file => !IsOwner(file))
-            .SelectMany(static file => SuggestionWrites(file, "content")
+            .SelectMany(static file => DetailWrites(file, "content")
                 .Where(static write => write.Parent is not InitializerExpressionSyntax { Parent: ObjectCreationExpressionSyntax creation }
                     || LastIdentifier(creation.Type) == "JsonObject")
                 .Select(node => file.At(node, node.ToString().Split('\n')[0].Trim())))];
 
-        Assert.NotEmpty(SuggestionWrites(Assert.Single(Sources.Value, IsOwner), "content"));
+        Assert.NotEmpty(DetailWrites(Assert.Single(Sources.Value, IsOwner), "content"));
         AssertNone(violations,
             "details.content is written only by the SDK's ContentLoss, from the ContentKind set; name a lost kind with ContentLoss.Warning:");
     }
@@ -338,40 +338,6 @@ public sealed partial class DecisionOwnershipTests
     // -- D3 Mistakes -------------------------------------------------------------------------
 
     [Fact]
-    public void D3_DidYouMeanText_HasOneSdkOwner()
-    {
-        string[] owners = DidYouMeanFiles();
-
-        Assert.True(
-            owners.Length == 1 && IsUnder(owners[0], SdkRoot),
-            "Exactly one SDK type writes \"did you mean\" text; it is written in:" + Environment.NewLine
-            + string.Join(Environment.NewLine, owners.Select(Relative)));
-    }
-
-    [Fact]
-    public void D3_SuggestionDetails_AreWrittenOnlyByTheMistakeOwner()
-    {
-        string[] writers = [.. Sources.Value.Where(static file => SuggestionWrites(file, "suggestions").Any()).Select(static file => file.Path)];
-        string[] owners = DidYouMeanFiles();
-
-        Assert.True(
-            writers.Length == 1 && owners.SequenceEqual(writers, StringComparer.OrdinalIgnoreCase),
-            "details.suggestions is written by the one SDK type that writes \"did you mean\" text."
-            + Environment.NewLine + "suggestions writers: " + string.Join(", ", writers.Select(Relative))
-            + Environment.NewLine + "did you mean writers: " + string.Join(", ", owners.Select(Relative)));
-    }
-
-    [Fact]
-    public void D3_NoError_WritesASingleSuggestion()
-    {
-        string[] violations = [.. Sources.Value.SelectMany(file => SuggestionWrites(file, "suggestion")
-            .Select(node => file.At(node, node.ToString())))];
-
-        AssertNone(violations,
-            "Every mistake publishes details.suggestions as an array; no error writes a single details.suggestion:");
-    }
-
-    [Fact]
     public void D3_ACommandWithSubcommands_TakesNoArgument()
     {
         string[] violations = [.. CliCatalog.Current.Commands
@@ -379,7 +345,7 @@ public sealed partial class DecisionOwnershipTests
             .Select(static command => $"{command} takes {command.Arguments.Count} argument(s) beside its commands {string.Join(", ", command.Subcommands)}")];
 
         AssertNone(violations,
-            "A command with subcommands takes no positional argument, so a mistyped subcommand is a usage error with suggestions:");
+            "A command with subcommands takes no positional argument, so a mistyped subcommand is a usage error that lists the commands:");
     }
 
     [Theory]
@@ -398,7 +364,7 @@ public sealed partial class DecisionOwnershipTests
     }
 
     [Fact]
-    public void D3_AHiddenOption_IsNeverSuggested()
+    public void D3_AHiddenOption_IsNeverListed()
     {
         using var workspace = new TempWorkspace();
 
@@ -725,19 +691,8 @@ public sealed partial class DecisionOwnershipTests
                 && (path == "aspose-cli " + words || path.StartsWith("aspose-cli " + words + " ", StringComparison.Ordinal)))
             .SelectMany(static command => command["options"]!.AsArray().OfType<JsonObject>());
 
-    private static string[] DidYouMeanFiles() =>
-        [.. Sources.Value
-            .Where(static file => file.Root.DescendantTokens().Any(static token =>
-                (token.IsKind(SyntaxKind.StringLiteralToken)
-                    || token.IsKind(SyntaxKind.InterpolatedStringTextToken)
-                    || token.IsKind(SyntaxKind.SingleLineRawStringLiteralToken)
-                    || token.IsKind(SyntaxKind.MultiLineRawStringLiteralToken))
-                && token.ValueText.Contains("did you mean", StringComparison.OrdinalIgnoreCase)))
-            .Select(static file => file.Path)
-            .Order(StringComparer.OrdinalIgnoreCase)];
-
     /// <summary>Assignments and initializers that set a JSON member with the given literal name.</summary>
-    private static IEnumerable<SyntaxNode> SuggestionWrites(SourceFile file, string key) =>
+    private static IEnumerable<SyntaxNode> DetailWrites(SourceFile file, string key) =>
         file.Root.DescendantNodes().Where(node => node switch
         {
             AssignmentExpressionSyntax { Left: ElementAccessExpressionSyntax access } =>

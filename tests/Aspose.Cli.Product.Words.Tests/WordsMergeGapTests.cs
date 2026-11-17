@@ -159,27 +159,6 @@ public sealed class WordsMergeGapTests
     }
 
     [Fact]
-    public void MailMerge_SuggestsAnUnusedDataFieldCloseToABlankTemplateField()
-    {
-        using var fixture = new WordsFixture();
-        string input = Template(fixture, "Name", "Salary");
-        string path = fixture.Temp.File("typo.csv");
-        File.WriteAllText(path, "Name,Salery\nAva,100\nNoah,200\n");
-
-        WordsEditResult result = WordsEdit.Run(
-            fixture.Session,
-            new WordsEditRequest
-            {
-                Input = input,
-                Batch = new WordsOpsBatch { Ops = [new MailMergeOp { Path = path }] },
-                Output = TestOutput.At(fixture.Temp.File("merged.docx")),
-            });
-
-        Warning warning = Assert.Single(result.Warnings ?? [], static w => w.Code == WordsDiagnostics.MergeValueMissing);
-        Assert.Contains("Salary: records 1, 2 (did you mean the unused data field 'Salery'?).", warning.Message, StringComparison.Ordinal);
-    }
-
-    [Fact]
     public void MailMerge_CutsALongRecordList()
     {
         using var fixture = new WordsFixture();

@@ -16,9 +16,9 @@ public static class PdfFormats
         },
         // Words rebuilds a PDF as flowing paragraphs; this product's export keeps each line in a
         // positioned frame that is hard to edit.
-        FormatDescriptor.Routed("docx", FormatUse.Convert, ".docx") with { MistakenFor = ["word"] },
-        FormatDescriptor.Routed("xlsx", FormatUse.Convert, ".xlsx") with { MistakenFor = ["excel"] },
-        FormatDescriptor.Routed("pptx", FormatUse.Convert, ".pptx") with { MistakenFor = ["powerpoint"] },
+        FormatDescriptor.Routed("docx", FormatUse.Convert, ".docx") with { },
+        FormatDescriptor.Routed("xlsx", FormatUse.Convert, ".xlsx") with { },
+        FormatDescriptor.Routed("pptx", FormatUse.Convert, ".pptx") with { },
         FormatDescriptor.Routed("html", FormatUse.Convert, ".html", ".htm"),
         FormatDescriptor.Routed("epub", FormatUse.Convert, ".epub"),
         FormatDescriptor.Routed("txt", FormatUse.Convert, ".txt"),

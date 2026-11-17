@@ -42,7 +42,6 @@ public sealed record DeleteRowsOp : CellsSheetOp
 /// the latest, and the columns they push right must not hold data past it.
 /// </summary>
 [Operation("insert_columns")]
-[MistakenFor("insert_cols")]
 public sealed record InsertColumnsOp : CellsSheetOp
 {
     /// <summary>The column to insert before, such as C.</summary>
@@ -58,7 +57,6 @@ public sealed record InsertColumnsOp : CellsSheetOp
 
 /// <summary>Deletes columns starting at a column, up to the sheet's last column, XFD.</summary>
 [Operation("delete_columns")]
-[MistakenFor("delete_cols")]
 public sealed record DeleteColumnsOp : CellsSheetOp
 {
     /// <summary>The first column to delete, such as C.</summary>
@@ -98,11 +96,9 @@ internal static class LineSpan
 public sealed record ResizeRowsOp : CellsSheetOp
 {
     /// <summary>The 1-based first row.</summary>
-    [MistakenFor("from")]
     [Minimum(1)] public required int First { get; init; }
 
     /// <summary>The 1-based last row, not above first; first when omitted.</summary>
-    [MistakenFor("to")]
     [Minimum(1)] public int? Last { get; init; }
 
     /// <summary>The height in points; omitted auto-fits.</summary>
@@ -118,15 +114,12 @@ public sealed record ResizeRowsOp : CellsSheetOp
 public sealed record ResizeColumnsOp : CellsSheetOp
 {
     /// <summary>The first column.</summary>
-    [MistakenFor("from")]
     [A1Column] public required string First { get; init; }
 
     /// <summary>The last column, not left of first; first when omitted.</summary>
-    [MistakenFor("to")]
     [A1Column] public string? Last { get; init; }
 
     /// <summary>The width in characters of the default font's digit 0; omitted auto-fits.</summary>
-    [MistakenFor("width")]
     [ReadBack("inspect-result.schema.json#/$defs/cellsColumnWidthInfo/properties/widthChars")]
     [Measured(MeasureUnit.Characters), Minimum(0)] public double? WidthChars { get; init; }
 

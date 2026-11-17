@@ -13,82 +13,14 @@ public sealed class NotFoundErrorTests
 {
     private static readonly ErrorCode SheetNotFound = ErrorCode.NotFound("SHEET_NOT_FOUND");
 
-    [Theory]
-    [InlineData("sales ", new[] { "Sales", "Sales 2026" })]
-    [InlineData("Salez", new[] { "Sales" })]
-    [InlineData("Slaes", new[] { "Sales" })]
-    [InlineData("2026", new[] { "Sales 2026" })]
-    [InlineData("Q1", new[] { "Q4" })]
-    [InlineData("Inventory", new string[0])]
-    public void Closest_RanksCaseSlipsThenContainmentThenSmallEdits(string requested, string[] expected) =>
-        Assert.Equal(expected, NameSuggestions.Closest(requested, ["Summary", "Sales", "Q4", "Sales 2026"]));
-
-    [Theory]
-    [InlineData("add_image_stamp", new[] { "add_stamp_image", "add_image" })]
-    [InlineData("image_add", new[] { "add_image" })]
-    [InlineData("stamp_add", new string[0])]
-    public void Closest_FindsTheSameWordsInAnotherOrder(string requested, string[] expected) =>
-        Assert.Equal(expected, NameSuggestions.Closest(requested, ["add_watermark_text", "add_stamp_image", "add_image"]));
-
-    /// <summary>A word of the same meaning is found whichever side spells it the other way.</summary>
-    [Theory]
-    [InlineData("center", new[] { "top", "middle", "bottom" }, new[] { "middle" })]
-    [InlineData("bottom-center", new[] { "bottom-middle", "top-middle" }, new[] { "bottom-middle" })]
-    [InlineData("color", new[] { "colour", "font" }, new[] { "colour" })]
-    [InlineData("gray", new[] { "grey", "font" }, new[] { "grey" })]
-    [InlineData("centre", new[] { "top", "middle", "bottom" }, new[] { "middle" })]
-    public void Closest_FindsAWordOfTheSameMeaningOnTheCandidatesSide(string requested, string[] candidates, string[] expected) =>
-        Assert.Equal(expected, NameSuggestions.Closest(requested, candidates));
-
-    /// <summary>What the request spells another way is still found, and a name of another meaning is not.</summary>
-    [Theory]
-    [InlineData("middle", new[] { "left", "center", "right" }, new[] { "center" })]
-    [InlineData("centre", new[] { "left", "center", "right" }, new[] { "center" })]
-    [InlineData("bottom-middle", new[] { "bottom-center", "top-center" }, new[] { "bottom-center" })]
-    [InlineData("colour", new[] { "color", "font" }, new[] { "color" })]
-    [InlineData("grey", new[] { "gray", "font" }, new[] { "gray" })]
-    [InlineData("center", new[] { "top", "bottom" }, new string[0])]
-    [InlineData("left", new[] { "top", "middle", "bottom" }, new string[0])]
-    public void Closest_FindsAWordOfTheSameMeaningOnTheRequestsSide(string requested, string[] candidates, string[] expected) =>
-        Assert.Equal(expected, NameSuggestions.Closest(requested, candidates));
-
-    [Theory]
-    [InlineData("fontSize", new[] { "size", "font" })]
-    [InlineData("fontName", new[] { "name", "font" })]
-    [InlineData("borderColor", new[] { "color", "border" })]
-    [InlineData("italicFont", new[] { "font" })]
-    public void Closest_PrefersTheContainedNameThatEndsACompoundFieldName(string requested, string[] expected) =>
-        Assert.Equal(expected, NameSuggestions.Closest(requested, ["font", "name", "size", "color", "border", "bold"], fieldNames: true));
-
-    [Theory]
-    [InlineData("replacement", new[] { "replace", "maxReplacementCount" })]
-    [InlineData("replaceWith", new[] { "replace" })]
-    [InlineData("count", new[] { "maxReplacementCount" })]
-    public void Closest_PrefersTheFieldNameSharingTheRequestsStemOverOneThatHoldsItInside(string requested, string[] expected) =>
-        Assert.Equal(expected, NameSuggestions.Closest(requested, ["find", "maxReplacementCount", "replace"], fieldNames: true));
-
-    [Theory]
-    [InlineData("subtitle", new[] { "title", "body" }, new string[0])]
-    [InlineData("Sub title", new[] { "title" }, new[] { "title" })]
-    [InlineData("Quarter", new[] { "Quarterly report" }, new[] { "Quarterly report" })]
-    [InlineData("销售额汇总表", new[] { "销售额", "利润表" }, new[] { "销售额" })]
-    public void Closest_SuggestsANameInsideTheRequestOnlyWhenItIsAWholeWordOfIt(
-        string requested, string[] candidates, string[] expected) =>
-        Assert.Equal(expected, NameSuggestions.Closest(requested, candidates));
-
     [Fact]
-    public void Closest_KeepsTheOrderOfContainingNamesOtherThanFieldNames() =>
-        Assert.Equal(["Sales 2026", "Old Sales"], NameSuggestions.Closest("Sales", ["Sales 2026", "Old Sales"]));
-
-    [Fact]
-    public void NotFound_ListsBoundedAvailableNamesAndSuggestionsThatMatchTheSchema()
+    public void NotFound_ListsBoundedAvailableNamesThatMatchTheSchema()
     {
         string[] names = [.. Enumerable.Range(1, 60).Select(static index => $"Sheet{index}"), "Sales"];
 
         CliException error = CliErrors.NotFound(SheetNotFound, "sheet", "Salez", names);
         Assert.Equal(61, error.Details!["availableCount"]!.GetValue<int>());
         Assert.Equal(CliErrors.MaximumAvailableNames, error.Details["available"]!.AsArray().Count);
-        Assert.Equal("Sales", error.Details["suggestions"]![0]!.GetValue<string>());
         JsonSchema schema = JsonSchema.FromText(SdkSchemaCatalog.Read(NotFoundDetails.CatalogId));
         using JsonDocument details = JsonDocument.Parse(error.Details.ToJsonString());
         Assert.True(schema.Evaluate(details.RootElement).IsValid);

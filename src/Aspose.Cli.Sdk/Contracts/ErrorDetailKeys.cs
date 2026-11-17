@@ -6,7 +6,7 @@ namespace Aspose.Cli.Sdk.Contracts;
 /// <summary>
 /// The dictionary of <c>error.details</c> keys: one key per concept, each with the description
 /// the error schema publishes for it. Budgets state <c>limit</c>, <c>actual</c> and <c>unit</c>;
-/// collections state <c>available</c> and <c>suggestions</c>; an operation error states the
+/// collections state <c>available</c>; an operation error states the
 /// operation's <c>id</c> and <c>op</c>; a positional argument is <c>argument</c>, an option
 /// <c>option</c>. A details object holds no key outside it and no null value. A key whose
 /// values are tokens publishes their pattern (<see cref="Patterns"/>), or, when they form a
@@ -69,7 +69,6 @@ public static class ErrorDetailKeys
         ("sheet", "The worksheet the error is about."),
         ("source", "The source of a value, such as a variable or file."),
         ("subject", "What was looked up, such as sheet, page or file."),
-        ("suggestions", "The accepted names closest to the request, best first."),
         ("target", "The target the error is about."),
         ("targets", "The publication targets and their state."),
         ("timeoutSeconds", "The timeout that elapsed, in seconds."),

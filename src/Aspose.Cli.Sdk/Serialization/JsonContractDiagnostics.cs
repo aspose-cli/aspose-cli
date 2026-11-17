@@ -88,7 +88,7 @@ internal static class JsonContractDiagnostics
             {
                 if (strict)
                 {
-                    return UnknownField(value, info, names, path, member.Name);
+                    return UnknownField(info, path, member.Name);
                 }
 
                 continue;
@@ -184,15 +184,8 @@ internal static class JsonContractDiagnostics
     }
 
     /// <summary>Rejects a member the object's contract does not declare.</summary>
-    private static AllowedFieldsException UnknownField(
-        JsonElement value, JsonTypeInfo info, StringComparer names, string path, string name)
-    {
-        string[] allowed = [.. info.Properties.Select(static property => property.Name)];
-        string[] missing = [.. info.Properties
-            .Where(property => property.IsRequired && !Declares(value, property.Name, names))
-            .Select(static property => property.Name)];
-        return AllowedFieldsException.UnknownField(path, name, allowed, missing);
-    }
+    private static AllowedFieldsException UnknownField(JsonTypeInfo info, string path, string name) =>
+        AllowedFieldsException.UnknownField(path, name, [.. info.Properties.Select(static property => property.Name)]);
 
     /// <summary>
     /// Rejects an object that omits the required field <paramref name="field"/>, naming the

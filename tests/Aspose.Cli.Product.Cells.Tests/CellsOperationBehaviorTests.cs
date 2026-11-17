@@ -427,25 +427,25 @@ public sealed class CellsOperationBehaviorTests : IClassFixture<CellsFixture>
     [InlineData("""
         { "op": "add_comment", "sheet": "Data", "cell": "C3", "text": "x" },
         { "op": "set_comment", "sheet": "Data", "cell": "B2", "text": "x" }
-        """, "COMMENT_NOT_FOUND", "B2", "C3", null)]
+        """, "COMMENT_NOT_FOUND", "B2", "C3")]
     [InlineData("""
         { "op": "add_comment", "sheet": "Data", "cell": "C3", "text": "x" },
         { "op": "delete_comment", "sheet": "Data", "cell": "B2" }
-        """, "COMMENT_NOT_FOUND", "B2", "C3", null)]
+        """, "COMMENT_NOT_FOUND", "B2", "C3")]
     [InlineData("""
         { "op": "set_hyperlink", "sheet": "Data", "cell": "E1", "url": "https://example.com" },
         { "op": "delete_hyperlink", "sheet": "Data", "cell": "B2" }
-        """, "HYPERLINK_NOT_FOUND", "B2", "E1", null)]
+        """, "HYPERLINK_NOT_FOUND", "B2", "E1")]
     [InlineData("""
         { "op": "define_name", "name": "Rate", "refersTo": "Data!$B$2" },
         { "op": "delete_name", "name": "Rates" }
-        """, "NAME_NOT_FOUND", "Rates", "Rate", "Rate")]
+        """, "NAME_NOT_FOUND", "Rates", "Rate")]
     [InlineData("""
         { "op": "insert_pivot", "sheet": "Second", "sourceRange": "Data!A1:C2", "at": "D1", "name": "Sales", "rows": ["Region"], "values": [{ "field": "Q1" }] },
         { "op": "refresh_pivot", "sheet": "Second", "name": "Ghost" }
-        """, "PIVOT_NOT_FOUND", "Ghost", "Sales", null)]
+        """, "PIVOT_NOT_FOUND", "Ghost", "Sales")]
     public void AnOperationWithoutItsTarget_ListsTheTargetsTheDocumentHas(
-        string operations, string code, string requested, string available, string? suggestion)
+        string operations, string code, string requested, string available)
     {
         CliException error = Assert.Throws<CliException>(() =>
             Apply(_fixture.CreateSalesWorkbook("missing-target.xlsx"), operations, "missing-target.out.xlsx"));
@@ -454,7 +454,6 @@ public sealed class CellsOperationBehaviorTests : IClassFixture<CellsFixture>
         Assert.Equal("op-0002", error.Details!["id"]!.GetValue<string>());
         Assert.Equal(requested, error.Details["requested"]!.GetValue<string>());
         Assert.Equal(available, Assert.Single(error.Details["available"]!.AsArray())!.GetValue<string>());
-        Assert.Equal(suggestion, error.Details["suggestions"]?.AsArray().Single()!.GetValue<string>());
     }
 
     [Fact]

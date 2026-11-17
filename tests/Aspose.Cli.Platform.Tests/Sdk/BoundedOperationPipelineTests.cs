@@ -36,19 +36,19 @@ public sealed class BoundedOperationPipelineTests
 
     [Theory]
     [InlineData("""{"ops":[{"op":"set","vlaue":1}]}""", "set",
-        "unknown field 'vlaue'", "op,id,value", "value")]
+        "unknown field 'vlaue'", "op,id,value")]
     [InlineData("""{"ops":[{"op":"set","amount":1}]}""", "set",
-        "unknown field 'amount'", "op,id,value", "value")]
+        "unknown field 'amount'", "op,id,value")]
     [InlineData("""{"ops":[{"op":"note","text":"a","colour":"red"}]}""", "note",
-        "unknown field 'colour'", "op,id,text,pinned", null)]
+        "unknown field 'colour'", "op,id,text,pinned")]
     [InlineData("""{"ops":[{"op":"place","pages":"1","all":true,"box":{"widht":2}}]}""", "place",
-        "unknown field 'box.widht'", "width", "width")]
+        "unknown field 'box.widht'", "width")]
     [InlineData("""{"ops":[{"op":"place","pages":"1","all":true,"style":{"FontWeight":true}}]}""", "place",
-        "unknown field 'style.FontWeight'", "font,size,bold", "bold")]
+        "unknown field 'style.FontWeight'", "font,size,bold")]
     [InlineData("""{"ops":[{"op":"place","pages":"1","all":true,"style":{"typeface":"Arial"}}]}""", "place",
-        "unknown field 'style.typeface'", "font,size,bold", "font")]
+        "unknown field 'style.typeface'", "font,size,bold")]
     public void Parse_NamesTheAcceptedFieldsOfAnUnknownFieldOnce(
-        string document, string op, string reason, string allowed, string? suggestion)
+        string document, string op, string reason, string allowed)
     {
         CliException error = Assert.Throws<CliException>(() => Catalog.Parse<TestBatch>(document, TestContracts.Json));
 
@@ -59,7 +59,6 @@ public sealed class BoundedOperationPipelineTests
         Assert.Equal(reason["unknown field '".Length..^1], error.Details["field"]!.GetValue<string>());
         Assert.Equal(allowed.Split(','), error.Details["available"]!.AsArray().Select(static item => item!.GetValue<string>()));
         Assert.Null(error.Details["allowedFields"]);
-        Assert.Equal(suggestion, error.Details["suggestions"]?[0]?.GetValue<string>());
         Assert.Equal($"Operation op-0001 ({op}) is invalid: {reason}. Must be one of: {allowed.Replace(",", ", ", StringComparison.Ordinal)}", error.Message);
     }
 
@@ -94,7 +93,6 @@ public sealed class BoundedOperationPipelineTests
         Assert.Equal("wrong-type", errors[1]!["reason"]!.GetValue<string>());
         Assert.Equal("value", errors[1]!["field"]!.GetValue<string>());
         Assert.Equal("unknown-op", errors[2]!["reason"]!.GetValue<string>());
-        Assert.Equal(["set"], errors[2]!["suggestions"]!.AsArray().Select(static item => item!.GetValue<string>()));
     }
 
     [Fact]
@@ -109,10 +107,10 @@ public sealed class BoundedOperationPipelineTests
     }
 
     [Theory]
-    [InlineData("sett", "set")]
-    [InlineData("Note", "note")]
-    [InlineData("rotate", null)]
-    public void Parse_ListsTheOperationsAndTheClosestForAnUnknownOp(string name, string? suggestion)
+    [InlineData("sett")]
+    [InlineData("Note")]
+    [InlineData("rotate")]
+    public void Parse_ListsTheOperationsForAnUnknownOp(string name)
     {
         CliException error = Assert.Throws<CliException>(() => Catalog.Parse<TestBatch>(
             $$"""{"ops":[{"op":"{{name}}","value":1}]}""", TestContracts.Json));
@@ -126,36 +124,6 @@ public sealed class BoundedOperationPipelineTests
         string[] available = [.. error.Details["available"]!.AsArray().Select(static item => item!.GetValue<string>())];
         Assert.Equal(Catalog.Names.Order(StringComparer.Ordinal), available.Order(StringComparer.Ordinal));
         Assert.Equal($"Operation op-0001 is invalid: unknown op '{name}'. Must be one of: {string.Join(", ", available)}", error.Message);
-        Assert.Equal(suggestion, error.Details["suggestions"]?[0]?.GetValue<string>());
-        if (suggestion is not null)
-        {
-            Assert.Equal(suggestion, available[0]);
-        }
-    }
-
-    [Fact]
-    public void Parse_ListsTheOperationsThatShareAWordWithAnUnknownOpFirst()
-    {
-        CliException error = Assert.Throws<CliException>(() => Catalog.Parse<TestBatch>(
-            """{"ops":[{"op":"zoom_text","value":1}]}""", TestContracts.Json));
-
-        string[] available = [.. error.Details!["available"]!.AsArray().Select(static item => item!.GetValue<string>())];
-        Assert.Equal("stamp_text", available[0]);
-        Assert.Equal(Catalog.Names.Where(static name => name != "stamp_text"), available.Skip(1));
-    }
-
-    [Theory]
-    [InlineData("""{"op":"stamp","text":"DRAFT"}""", "stamp_text")]
-    [InlineData("""{"op":"stamp","image":"seal.png","id":"a"}""", "stamp_image")]
-    [InlineData("""{"op":"stamp"}""", "stamp_image")]
-    [InlineData("""{"op":"stamp","colour":"red"}""", "stamp_image")]
-    [InlineData("""{"op":"Seal","text":"DRAFT"}""", "stamp_image")]
-    public void Parse_SuggestsTheDeclaredOrClosestOperationThatAcceptsTheGivenFields(string operation, string suggestion)
-    {
-        CliException error = Assert.Throws<CliException>(() => Catalog.Parse<TestBatch>(
-            $$"""{"ops":[{{operation}}]}""", TestContracts.Json));
-
-        Assert.Equal(suggestion, error.Details!["suggestions"]?[0]?.GetValue<string>());
     }
 
     [Theory]
@@ -174,14 +142,13 @@ public sealed class BoundedOperationPipelineTests
         Assert.Equal(reason[..reason.IndexOf(' ', StringComparison.Ordinal)], error.Details["field"]!.GetValue<string>());
         Assert.EndsWith($"is invalid: {reason}", error.Message, StringComparison.Ordinal);
         Assert.Equal(allowed.Split(','), error.Details["available"]!.AsArray().Select(static item => item!.GetValue<string>()));
-        Assert.Null(error.Details["suggestions"]);
     }
 
     [Theory]
-    [InlineData("""{"ops":[{"op":"set","value":1}],"extra":1}""", "unknown field 'extra'", null)]
-    [InlineData("""{"op":[{"op":"set","value":1}]}""", "unknown field 'op'", "ops")]
-    [InlineData("""{"steps":[{"op":"set","value":1}]}""", "unknown field 'steps'", "ops")]
-    public void Parse_NamesTheAcceptedFieldsOfAnUnknownDocumentField(string document, string reason, string? suggestion)
+    [InlineData("""{"ops":[{"op":"set","value":1}],"extra":1}""", "unknown field 'extra'")]
+    [InlineData("""{"op":[{"op":"set","value":1}]}""", "unknown field 'op'")]
+    [InlineData("""{"steps":[{"op":"set","value":1}]}""", "unknown field 'steps'")]
+    public void Parse_NamesTheAcceptedFieldsOfAnUnknownDocumentField(string document, string reason)
     {
         CliException error = Assert.Throws<CliException>(() => Catalog.Parse<TestBatch>(document, TestContracts.Json));
 
@@ -191,7 +158,6 @@ public sealed class BoundedOperationPipelineTests
         Assert.Equal(reason["unknown field '".Length..^1], error.Details["field"]!.GetValue<string>());
         Assert.Equal(["schema", "schemaVersion", "ifMatch", "ops"],
             error.Details["available"]!.AsArray().Select(static item => item!.GetValue<string>()));
-        Assert.Equal(suggestion, error.Details["suggestions"]?[0]?.GetValue<string>());
         Assert.EndsWith($"{reason}. Must be one of: schema, schemaVersion, ifMatch, ops", error.Message, StringComparison.Ordinal);
     }
 

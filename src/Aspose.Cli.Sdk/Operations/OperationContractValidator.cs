@@ -72,10 +72,6 @@ internal static class OperationContractValidator
         }
     }
 
-    /// <summary>A value without its word separators, so <c>very-hidden</c> and <c>veryHidden</c> compare alike.</summary>
-    private static string Bare(string value) => value.Replace("-", string.Empty, StringComparison.Ordinal).Replace("_", string.Empty, StringComparison.Ordinal);
-
-
     private static void CheckValue(OperationValue shape, IReadOnlyList<PlacedConstraint> constraints, object value, string path)
     {
         (IReadOnlyList<ValueConstraintAttribute> here, IReadOnlyList<PlacedConstraint> items) = Place(shape, constraints, path);
@@ -122,17 +118,13 @@ internal static class OperationContractValidator
 
     /// <summary>
     /// A name among fixed values is a mistake: the operation error lists the values once, in
-    /// details.available and the message, so the reason leaves them out. A value spelled with
-    /// other case or separators, such as veryHidden for very-hidden, is meant first; a
-    /// <c>#RRGGBB</c> color given for a palette's color names means the closest of them.
+    /// details.available and the message, so the reason leaves them out.
     /// </summary>
     private static OperationInvalidException NotAllowed(AllowedValuesAttribute allowed, string text, string path)
     {
-        string[] spelled = [.. allowed.Spelled.Where(spelled => string.Equals(Bare(spelled), Bare(text), StringComparison.OrdinalIgnoreCase))];
-        string? color = spelled.Length == 0 ? allowed.ClosestColor(text) : null;
         return new OperationInvalidException(
             $"{path} does not accept '{text}'",
-            Mistake.Of(text, allowed.Spelled, color is null ? spelled : [color]))
+            Mistake.Of(text, allowed.Spelled))
         {
             Field = path,
         };
