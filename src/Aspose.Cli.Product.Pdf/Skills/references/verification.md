@@ -98,7 +98,6 @@ signing, not that the signer is trusted ([forms and security](forms-security.md)
 
 ```powershell
 aspose-cli pdf render report.final.pdf --out report.final.png --output-format json
-aspose-cli fonts check report.pdf --font-dir fonts --output-format json
 ```
 
 Check page order and size, crop and rotation, clipping, images, tables, headers
@@ -111,8 +110,7 @@ lines or small print closely.
 A font the PDF uses without embedding it is drawn from the fonts installed here
 or in `--font-dir` (`aspose-cli docs verification`); HTML and text sources of
 `pdf create` also resolve CSS `font-family` from `--font-dir`. Text operations that name a
-`font`, and a visible signature, need that font here. A blank or image-only page
-has no font resources, so `fonts check` returns an empty `fonts` array for it.
+`font`, and a visible signature, need that font here.
 
 For a PDF with form fields, open the pages with fields and look for stale,
 clipped or missing values.

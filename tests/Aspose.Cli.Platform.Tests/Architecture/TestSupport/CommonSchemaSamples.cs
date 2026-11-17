@@ -137,26 +137,6 @@ internal static class CommonSchemaSamples
         }],
     };
 
-    public static DoctorResult Doctor { get; } = new()
-    {
-        Ok = true,
-        Checks =
-        [
-            new DoctorCheck { Name = "cli", Status = "ok", Detail = "development build" },
-            new DoctorCheck { Name = "runtime", Status = "ok", Detail = ".NET 10.0.0" },
-            new DoctorCheck
-            {
-                Name = "license",
-                Status = "warn",
-                Detail = "evaluation mode",
-                Hint = "Produced files carry an Aspose watermark. "
-                    + "Set ASPOSE_LICENSE_B64 (or pass --license) to run licensed.",
-            },
-            new DoctorCheck { Name = "output", Status = "ok", Detail = "writable: /work" },
-        ],
-        Products = [],
-    };
-
     public static SchemaListResult SchemaList { get; } = new()
     {
         Schemas = ["v2/common/error", "v2/common/schema-list"],
@@ -199,30 +179,16 @@ internal static class CommonSchemaSamples
         ],
     };
 
-    public static FontCheckResult FontCheck { get; } = new()
-    {
-        Input = new InputInfo { Path = "D:/data/sample.bin", Format = "bin", SizeBytes = 24576, Fingerprint = new FileFingerprint { Sha256 = new string('0', 64) }, Encrypted = false },
-        AllAvailable = false,
-        Fonts =
-        [
-            new FontAvailability { Name = "Calibri", Available = true },
-            new FontAvailability { Name = "Custom Sans", Available = false, SubstitutedBy = "Calibri" },
-        ],
-        License = Evaluation,
-    };
-
     public static IReadOnlyList<CommonSchemaSample> All { get; } =
     [
         new(Error.Schema, Error),
         new(Capabilities.Schema, Capabilities),
         new(CapabilitiesSummary.Schema, CapabilitiesSummary),
         new(LicenseStatus.Schema, LicenseStatus),
-        new(Doctor.Schema, Doctor),
         new(Version.Schema, Version),
         new(SchemaList.Schema, SchemaList),
         new(SkillInstall.Schema, SkillInstall),
         new(SkillList.Schema, SkillList),
         new(FontList.Schema, FontList),
-        new(FontCheck.Schema, FontCheck),
     ];
 }

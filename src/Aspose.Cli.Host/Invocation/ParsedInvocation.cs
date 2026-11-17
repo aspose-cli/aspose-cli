@@ -30,9 +30,6 @@ internal sealed partial class ParsedInvocation
         path.Reverse();
         CommandPath = path.AsReadOnly();
         ProductId = path.Select(static command => command.Policy().ProductId).FirstOrDefault(static id => id is not null);
-        Execution = path.Select(static command => command.Policy().Execution)
-            .FirstOrDefault(static value => value != CommandExecutionOwnership.Worker);
-        McpAllowed = ProductId is not null || parse.CommandResult.Command.Policy().McpAllowed;
     }
 
     public ParseResult ParseResult { get; }
@@ -40,16 +37,13 @@ internal sealed partial class ParsedInvocation
     public IReadOnlyList<Command> CommandPath { get; }
     public Command Command => ParseResult.CommandResult.Command;
     public string? ProductId { get; }
-    public CommandExecutionOwnership Execution { get; }
-    public bool McpAllowed { get; }
 
     /// <summary>
-    /// What the invocation may reach through the <see cref="NetworkGate"/>: the web for a host
-    /// command that requests it or a set network opt-in flag, and nothing otherwise.
+    /// What the invocation may reach through the <see cref="NetworkGate"/>: the web for a set
+    /// network opt-in flag, and nothing otherwise.
     /// </summary>
     public NetworkAccess NetworkAccess =>
-        Command.Policy().ReachesNetwork
-        || CommandPath.SelectMany(static command => command.Options).OfType<Option<bool>>()
+        CommandPath.SelectMany(static command => command.Options).OfType<Option<bool>>()
             .Any(option => option.IsNetworkOptIn() && ParseResult.GetResult(option) is not null && ParseResult.GetValue(option))
             ? NetworkAccess.Web
             : NetworkAccess.None;
@@ -677,14 +671,14 @@ internal sealed partial class ParsedInvocation
             : null;
 }
 
-/// <summary>One command tree for CLI execution, supervision and MCP authorization.</summary>
+/// <summary>One command tree for CLI execution and supervision.</summary>
 /// <param name="root">The command tree.</param>
 /// <param name="globals">The global options of the tree.</param>
 /// <param name="catalog">The product catalog, whose formats name the product of a file a mistaken command line names; null for none.</param>
 internal sealed class InvocationParser(RootCommand root, GlobalOptions globals, ProductCatalog? catalog = null)
 {
     // Tokens are always literal. Response-file expansion would read a file relative to
-    // whichever process parses, so a supervisor, worker or MCP child could each resolve
+    // whichever process parses, so a supervisor or worker could each resolve
     // a different command from the same arguments, and '@'-prefixed file names would
     // be unusable.
     internal static readonly ParserConfiguration Configuration = new() { ResponseFileTokenReplacer = null };
@@ -702,23 +696,4 @@ internal sealed class InvocationParser(RootCommand root, GlobalOptions globals, 
             Output = output,
             EnableDefaultExceptionHandler = false,
         });
-
-    /// <summary>The host commands MCP <c>execute</c> may run, as command paths in tree order.</summary>
-    internal IReadOnlyList<string> McpHostCommands()
-    {
-        var paths = new List<string>();
-        Collect(root, prefix: null);
-        return paths;
-
-        void Collect(Command command, string? prefix)
-        {
-            foreach (Command child in command.Subcommands)
-            {
-                if (child.Policy().ProductId is not null) { continue; }
-                string path = prefix is null ? child.Name : prefix + " " + child.Name;
-                if (child.Policy().McpAllowed) { paths.Add(path); }
-                Collect(child, path);
-            }
-        }
-    }
 }

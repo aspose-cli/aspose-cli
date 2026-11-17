@@ -5,7 +5,7 @@ using Microsoft.Win32.SafeHandles;
 
 namespace Aspose.Cli.Host.LocalServices;
 
-/// <summary>Kills an MCP-owned Windows process tree when its parent scope closes.</summary>
+/// <summary>Kills an owned Windows process tree when its parent scope closes.</summary>
 internal sealed class WindowsProcessJob : IDisposable
 {
     private const uint KillOnJobClose = 0x00002000;

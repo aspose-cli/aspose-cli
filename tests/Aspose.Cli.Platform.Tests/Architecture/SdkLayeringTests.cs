@@ -54,7 +54,7 @@ public sealed class SdkLayeringTests
     /// result schemas written from the contract descriptors. Converters for the operation
     /// vocabulary belong to Operations.</item>
     /// <item>Operations: the operation vocabulary, its catalog and its runner; and the
-    /// services the products bind: licensing, diagnostics and font checks. They take product
+    /// services the products bind: licensing, diagnostics and fonts. They take product
     /// data as values, never a Product* type from Extensibility.</item>
     /// <item>Results: the write pipeline (OutputPipeline, OutputSet) and the envelope parts it fills.</item>
     /// <item>Extensibility: product modules, definitions and the catalog, which compose

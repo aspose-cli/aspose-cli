@@ -103,7 +103,7 @@ public static partial class ExecutableHints
     public static IReadOnlyList<string> PasswordCodes { get; } = ["PASSWORD_REQUIRED", "PASSWORD_INVALID"];
 
     /// <summary>The top-level commands that start or stop a service or reach the network; they are only checked against the catalog.</summary>
-    public static IReadOnlyList<string> StaticOnly { get; } = ["doctor", "mcp"];
+    public static IReadOnlyList<string> StaticOnly { get; } = [];
 
     private const string Executable = "aspose-cli";
 

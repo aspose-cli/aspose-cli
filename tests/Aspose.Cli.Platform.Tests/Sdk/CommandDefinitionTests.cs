@@ -767,8 +767,6 @@ public sealed class CommandDefinitionTests : IDisposable
 
         public EngineFonts ListFonts() => throw new NotSupportedException();
 
-        public FontCheckResult CheckFonts(string filePath, FontCheckRequest request) => throw new NotSupportedException();
-
         public IDisposable UseFonts(FontSearchProfile profile)
         {
             _active = profile;

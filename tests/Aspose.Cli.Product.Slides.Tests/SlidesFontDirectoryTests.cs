@@ -9,34 +9,6 @@ namespace Aspose.Cli.Product.Slides.Tests;
 [Collection(ProcessFontSourcesCollection.Name)]
 public sealed class SlidesFontDirectoryTests
 {
-    [Fact]
-    public void UseFonts_AddsTheDirectoryOnlyForTheScope()
-    {
-        using var fixture = new SlidesEngineFixture();
-        string fonts = fixture.File("fonts");
-        FontFixtures.WriteUniqueFont(fonts);
-        string input = CreatePresentation(fixture, fixture.File("fixture.pptx"));
-        var environment = new SlidesFontEnvironment(fixture.Outputs(ProductTestBudgets.Start<SlidesModule>().Writer), ProductTestBudgets.Create<SlidesModule>());
-
-        Assert.False(FontFixtures.Available(environment, input));
-        using (environment.UseFonts(FontSearchProfile.Explicit([fonts])))
-        {
-            Assert.True(FontFixtures.Available(environment, input));
-        }
-        Assert.False(FontFixtures.Available(environment, input));
-    }
-
-    [Category(TestCategory.Slow)]
-    [Fact]
-    public void Cli_FontsCheckUsesTheFontDirectory()
-    {
-        using var fixture = new SlidesEngineFixture();
-        using var workspace = new TempWorkspace();
-        CreatePresentation(fixture, workspace.File("fixture.pptx"));
-
-        FontDirectoryContract.Verify(workspace, "fixture.pptx");
-    }
-
     [Category(TestCategory.Slow)]
     [Fact]
     public void Cli_ConvertLaysOutWithTheFontDirectory()

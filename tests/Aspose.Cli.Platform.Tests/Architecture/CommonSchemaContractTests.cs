@@ -64,7 +64,6 @@ public sealed class CommonSchemaContractTests
     public void EveryCommonSchema_ParsesAndHasCanonicalIdentity()
     {
         Assert.Contains("v2/common/error", HostCommonSchemas.Ids);
-        Assert.Contains("v2/common/doctor", HostCommonSchemas.Ids);
         foreach (string id in HostCommonSchemas.Ids)
         {
             Assert.StartsWith("v2/common/", id, StringComparison.Ordinal);
@@ -82,28 +81,6 @@ public sealed class CommonSchemaContractTests
                 Assert.True(version["const"]?.GetValue<int>() == 2, $"{id} states schemaVersion {version["const"]}, not the 2 of its v2 id.");
             }
         }
-    }
-
-    [Theory]
-    [InlineData("licensed", true)]
-    [InlineData("evaluation", true)]
-    [InlineData("invalid", true)]
-    [InlineData("not-applicable", false)]
-    [InlineData("unknown", false)]
-    public void DoctorProducts_ValidateTheReportedLicenseMode(string mode, bool valid)
-    {
-        DoctorResult sample = CommonSchemaSamples.Doctor with
-        {
-            Products = [new DoctorProductStatus { Product = "cells", Engine = "aspose", LicenseMode = mode }],
-        };
-        string json = CommonSerializer.Serialize(sample);
-        JsonObject instance = JsonNode.Parse(json)!.AsObject();
-        JsonSchema schema = CommonSchema(ResultEnvelope.SchemaUri("common", "doctor"));
-        using JsonDocument complete = JsonDocument.Parse(json);
-        Assert.Equal(valid, schema.Evaluate(complete.RootElement).IsValid);
-        instance["products"]![0]!.AsObject().Remove("engine");
-        using JsonDocument missingEngine = JsonDocument.Parse(instance.ToJsonString());
-        Assert.False(schema.Evaluate(missingEngine.RootElement).IsValid);
     }
 
     [Fact]
@@ -178,8 +155,6 @@ public sealed class CommonSchemaContractTests
         string[] results =
         [
             "capabilities-summary",
-            "doctor",
-            "font-check",
             "font-list",
             "license-status",
             "schema-list",

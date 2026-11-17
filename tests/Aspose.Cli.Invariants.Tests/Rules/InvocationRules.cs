@@ -370,8 +370,8 @@ internal static partial class ContractRules
     }
 
     /// <summary>
-    /// The streams of a successful and a failed run of each product's <c>inspect</c> and of
-    /// <c>doctor</c>: a success writes its result to stdout, in table and in JSON mode, and with
+    /// The streams of a successful and a failed run of each product's <c>inspect</c>: a success
+    /// writes its result to stdout, in table and in JSON mode, and with
     /// a license and no warning leaves stderr empty, and a licensed JSON result carries no license
     /// block (C-R33); a failure in table mode leaves stdout empty.
     /// A failure in JSON mode is the <c>error-envelope</c> check of every scenario. JSON-mode
@@ -448,7 +448,7 @@ internal static partial class ContractRules
         }
     }
 
-    /// <summary>The commands whose streams C-R23 and C-R37 judge: each product's <c>inspect</c> and the platform's <c>doctor</c>.</summary>
+    /// <summary>The commands whose streams C-R23 and C-R37 judge: each product's <c>inspect</c>.</summary>
     private static IEnumerable<(string Shard, CliCommand Command)> R23Samples(CliCatalog catalog)
     {
         foreach (string product in ScenarioFixtures.Products)
@@ -457,10 +457,6 @@ internal static partial class ContractRules
             {
                 yield return (product, inspect);
             }
-        }
-        if (catalog.Commands.FirstOrDefault(static command => command.Words == "doctor") is { } doctor)
-        {
-            yield return (InvariantCases.Platform, doctor);
         }
     }
 
@@ -479,8 +475,7 @@ internal static partial class ContractRules
 
     /// <summary>
     /// A command that completes with a result that fails its check exits 8: a PDF that is not
-    /// PDF/A (<c>pdf validate</c>), a document whose font is missing (<c>fonts check</c>), and a
-    /// <c>doctor</c> whose license check fails. And Ctrl+C without <c>--timeout</c> cancels a
+    /// PDF/A (<c>pdf validate</c>). And Ctrl+C without <c>--timeout</c> cancels a
     /// command with exit 130 and leaves no staged output behind; that case runs a helper process
     /// with a console of its own, so it is slow.
     /// </summary>
@@ -490,37 +485,6 @@ internal static partial class ContractRules
         {
             yield return InvariantCases.Case("C-R24", $"{validate} of a PDF that is not PDF/A", "pdf", slow: false, Invocation.For(validate),
                 new ScenarioExpectation { ExitCode = [8], Json = [new JsonAssertion { Path = "valid", Value = false }] });
-        }
-        if (catalog.Commands.FirstOrDefault(static command => command.Words == "fonts check") is { } check
-            && ScenarioFixtures.Products.Contains("words"))
-        {
-            // A Words document whose default font no machine has.
-            const string Document = "missing-font.docx";
-            const string Operations = """{"ops":[{"op":"set_default_font","font":"Invariant Missing Font"}]}""";
-            string id = $"C-R24 | {check} of a document whose font is missing";
-            var scenario = new Scenario
-            {
-                Name = id,
-                Files = new Dictionary<string, ScenarioFile>
-                {
-                    ["input.docx"] = new() { Fixture = "words.docx" },
-                    ["ops.json"] = new() { Text = Operations },
-                },
-                Steps =
-                [
-                    new ScenarioStep
-                    {
-                        Args = ["words", "edit", "input.docx", "--ops", "ops.json", "--out", Document],
-                        Expect = new ScenarioExpectation { ExitCode = [0] },
-                    },
-                    new ScenarioStep
-                    {
-                        Args = [.. check.Tokens, Document],
-                        Expect = new ScenarioExpectation { ExitCode = [8], Json = [new JsonAssertion { Path = "allAvailable", Value = false }] },
-                    },
-                ],
-            };
-            yield return new InvariantCase(id, "C-R24", InvariantCases.Platform, Slow: false, scenario);
         }
         if (catalog.Commands.FirstOrDefault(static command => command.Words == "words create") is { } create)
         {
@@ -563,12 +527,6 @@ internal static partial class ContractRules
                 }
                 return problems;
             });
-        }
-        if (catalog.Commands.FirstOrDefault(static command => command.Words == "doctor") is { } doctor)
-        {
-            yield return InvariantCases.Case("C-R24", $"{doctor} with a missing license file", InvariantCases.Platform, slow: false,
-                new Invocation(doctor.Tokens).Add("--license", "missing.lic"),
-                new ScenarioExpectation { ExitCode = [8], Json = [new JsonAssertion { Path = "ok", Value = false }] });
         }
     }
 

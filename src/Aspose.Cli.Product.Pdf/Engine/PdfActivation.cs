@@ -14,7 +14,7 @@ internal static class PdfActivation
             ApplyLicense,
             new PdfEvaluationProfile(),
             outputs => Session(outputs, context.ResourceBudgets),
-            outputs => new PdfFontEnvironment(outputs, context.ResourceBudgets));
+            _ => new PdfFontEnvironment());
 
     /// <summary>The session of one invocation's write pipeline and budgets.</summary>
     internal static PdfSession Session(OutputPipeline<Aspose.Pdf.Document> outputs, ResourceBudgetLedger budgets) =>

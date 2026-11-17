@@ -1,8 +1,5 @@
 using Aspose.Cli.Sdk.Errors;
-using Aspose.Cli.Sdk.IO.Budgets;
-using Aspose.Cli.Sdk.Licensing;
 using Aspose.Cli.Sdk.Rendering;
-using Aspose.Cli.Sdk.Results;
 using Aspose.Slides;
 using Microsoft.Win32;
 
@@ -11,17 +8,6 @@ namespace Aspose.Cli.Product.Slides.Engine;
 /// <summary>Aspose.Slides font diagnostics behind the product-neutral <see cref="IFontEnvironment"/>.</summary>
 internal sealed class SlidesFontEnvironment : IFontEnvironment
 {
-    private readonly ILicenseState _license;
-    private readonly SlidesPresentationLoader _loader;
-
-    public SlidesFontEnvironment(
-        ILicenseState license,
-        ResourceBudgetLedger resourceBudgets)
-    {
-        _license = license ?? throw new ArgumentNullException(nameof(license));
-        _loader = SlidesPresentationLoader.ForFontInspection(resourceBudgets);
-    }
-
     /// <inheritdoc />
     public EngineFonts ListFonts() =>
         new EngineFonts
@@ -75,36 +61,5 @@ internal sealed class SlidesFontEnvironment : IFontEnvironment
                 $@"The per-user font registry key HKCU\{FontsKey} holds {unreadable.Length} value(s) that are not strings, {names}, which the Slides engine cannot read.",
                 $@"Remove {names} from HKCU\{FontsKey}; Windows writes only string values there.");
         }
-    }
-
-    /// <inheritdoc />
-    // Loading and laying out run with standard output muted (known issue SLIDES-FALLBACK-STDOUT).
-    public FontCheckResult CheckFonts(string filePath, FontCheckRequest request) =>
-        SlidesStandardOutput.Muted(() => CheckFontsCore(filePath, request));
-
-    private FontCheckResult CheckFontsCore(string filePath, FontCheckRequest request)
-    {
-        LicenseState state = _license.License;
-        using LoadedPresentation loaded = _loader.Open(filePath, request.Password);
-        Dictionary<string, string> substitutions = loaded.Presentation.FontsManager.GetSubstitutions()
-            .ToDictionary(static item => item.OriginalFontName, static item => item.SubstitutedFontName, StringComparer.Ordinal);
-        FontAvailability[] fonts = loaded.Presentation.FontsManager.GetFonts()
-            .Select(static font => font.FontName)
-            .Distinct(StringComparer.Ordinal)
-            .Order(StringComparer.Ordinal)
-            .Select(name => new FontAvailability
-            {
-                Name = name,
-                Available = !substitutions.ContainsKey(name),
-                SubstitutedBy = substitutions.GetValueOrDefault(name),
-            })
-            .ToArray();
-        return new FontCheckResult
-        {
-            Input = SlidesResultParts.Source(filePath, loaded),
-            AllAvailable = fonts.All(static font => font.Available),
-            Fonts = fonts,
-            License = EnvelopeParts.License(state),
-        };
     }
 }

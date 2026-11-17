@@ -162,7 +162,6 @@ public sealed class UsageMistakeTests : IDisposable
 
     /// <summary>A command of the root that reads no product's file, and a mistyped command, keep what they said.</summary>
     [Theory]
-    [InlineData("cells doctor", null)]
     [InlineData("cells reed b.xlsx", "cells read")]
     public void AnotherUnknownCommandBelowAProduct_KeepsItsSuggestions(string commandLine, string? suggestion)
     {
@@ -175,7 +174,6 @@ public sealed class UsageMistakeTests : IDisposable
 
     [Theory]
     [InlineData("--help --output-format bogus", "--output-format")]
-    [InlineData("doctor --help --output-format bogus", "--output-format")]
     [InlineData("cells inspect --help --output-format bogus", "--output-format")]
     [InlineData("--help --timeout abc", "--timeout")]
     [InlineData("cells inspect --output-format bogus --help", "--output-format")]
@@ -188,7 +186,6 @@ public sealed class UsageMistakeTests : IDisposable
 
     [Theory]
     [InlineData("--help --output-format table")]
-    [InlineData("doctor --help")]
     [InlineData("cells inspect --help --timeout 5")]
     [InlineData("cells inspect -h")]
     public void HelpBesideAcceptedGlobalValues_PrintsHelp(string commandLine)

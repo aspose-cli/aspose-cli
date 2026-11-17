@@ -137,7 +137,6 @@
           "convert"
         ],
         "operations": [
-          "fonts",
           "open"
         ],
         "declaredOwnership": "default",
@@ -157,7 +156,6 @@
           "input"
         ],
         "operations": [
-          "fonts",
           "open"
         ],
         "declaredOwnership": "default",
@@ -178,7 +176,6 @@
           "convert"
         ],
         "operations": [
-          "fonts",
           "open"
         ],
         "declaredOwnership": "default",
@@ -199,7 +196,6 @@
           "convert"
         ],
         "operations": [
-          "fonts",
           "open"
         ],
         "declaredOwnership": "default",
@@ -220,7 +216,6 @@
           "convert"
         ],
         "operations": [
-          "fonts",
           "open"
         ],
         "declaredOwnership": "default",
@@ -241,7 +236,6 @@
           "convert"
         ],
         "operations": [
-          "fonts",
           "open"
         ],
         "declaredOwnership": "default",
@@ -262,7 +256,6 @@
           "convert"
         ],
         "operations": [
-          "fonts",
           "open"
         ],
         "declaredOwnership": "default",
@@ -283,7 +276,6 @@
           "convert"
         ],
         "operations": [
-          "fonts",
           "open"
         ],
         "declaredOwnership": "default",
@@ -304,7 +296,6 @@
           "convert"
         ],
         "operations": [
-          "fonts",
           "open"
         ],
         "declaredOwnership": "default",
@@ -325,7 +316,6 @@
           "convert"
         ],
         "operations": [
-          "fonts",
           "open"
         ],
         "declaredOwnership": "default",
@@ -347,7 +337,6 @@
           "convert"
         ],
         "operations": [
-          "fonts",
           "open"
         ],
         "declaredOwnership": "explicit",
@@ -396,7 +385,6 @@
           "convert"
         ],
         "operations": [
-          "fonts",
           "open"
         ],
         "declaredOwnership": "default",
@@ -417,7 +405,6 @@
           "convert"
         ],
         "operations": [
-          "fonts",
           "open"
         ],
         "declaredOwnership": "explicit",
@@ -435,7 +422,6 @@
           "convert"
         ],
         "operations": [
-          "fonts",
           "open"
         ],
         "declaredOwnership": "default",
@@ -456,7 +442,6 @@
           "convert"
         ],
         "operations": [
-          "fonts",
           "open"
         ],
         "declaredOwnership": "default",
@@ -491,7 +476,6 @@
           "convert"
         ],
         "operations": [
-          "fonts",
           "open"
         ],
         "declaredOwnership": "default",
@@ -526,7 +510,6 @@
           "convert"
         ],
         "operations": [
-          "fonts",
           "open"
         ],
         "declaredOwnership": "explicit",
@@ -573,7 +556,6 @@
           "convert"
         ],
         "operations": [
-          "fonts",
           "open"
         ],
         "declaredOwnership": "default",
@@ -608,7 +590,6 @@
           "convert"
         ],
         "operations": [
-          "fonts",
           "open"
         ],
         "declaredOwnership": "default",
@@ -629,7 +610,6 @@
           "convert"
         ],
         "operations": [
-          "fonts",
           "open"
         ],
         "declaredOwnership": "default",
@@ -2750,7 +2730,6 @@
       "extension": ".azw3",
       "product": "words",
       "operations": [
-        "fonts",
         "open"
       ],
       "requiresContentProbe": true,
@@ -2761,7 +2740,6 @@
       "extension": ".chm",
       "product": "words",
       "operations": [
-        "fonts",
         "open"
       ],
       "requiresContentProbe": true,
@@ -2772,7 +2750,6 @@
       "extension": ".doc",
       "product": "words",
       "operations": [
-        "fonts",
         "open"
       ],
       "requiresContentProbe": true,
@@ -2783,7 +2760,6 @@
       "extension": ".docm",
       "product": "words",
       "operations": [
-        "fonts",
         "open"
       ],
       "requiresContentProbe": true,
@@ -2794,7 +2770,6 @@
       "extension": ".docx",
       "product": "words",
       "operations": [
-        "fonts",
         "open"
       ],
       "requiresContentProbe": true,
@@ -2805,7 +2780,6 @@
       "extension": ".dot",
       "product": "words",
       "operations": [
-        "fonts",
         "open"
       ],
       "requiresContentProbe": true,
@@ -2816,7 +2790,6 @@
       "extension": ".dotm",
       "product": "words",
       "operations": [
-        "fonts",
         "open"
       ],
       "requiresContentProbe": true,
@@ -2827,7 +2800,6 @@
       "extension": ".dotx",
       "product": "words",
       "operations": [
-        "fonts",
         "open"
       ],
       "requiresContentProbe": true,
@@ -2838,7 +2810,6 @@
       "extension": ".epub",
       "product": "words",
       "operations": [
-        "fonts",
         "open"
       ],
       "requiresContentProbe": true,
@@ -2849,7 +2820,6 @@
       "extension": ".markdown",
       "product": "words",
       "operations": [
-        "fonts",
         "open"
       ],
       "requiresContentProbe": true,
@@ -2860,7 +2830,6 @@
       "extension": ".md",
       "product": "words",
       "operations": [
-        "fonts",
         "open"
       ],
       "requiresContentProbe": true,
@@ -2871,7 +2840,6 @@
       "extension": ".mobi",
       "product": "words",
       "operations": [
-        "fonts",
         "open"
       ],
       "requiresContentProbe": true,
@@ -2882,7 +2850,6 @@
       "extension": ".odt",
       "product": "words",
       "operations": [
-        "fonts",
         "open"
       ],
       "requiresContentProbe": true,
@@ -2893,7 +2860,6 @@
       "extension": ".ott",
       "product": "words",
       "operations": [
-        "fonts",
         "open"
       ],
       "requiresContentProbe": true,
@@ -2904,7 +2870,6 @@
       "extension": ".rtf",
       "product": "words",
       "operations": [
-        "fonts",
         "open"
       ],
       "requiresContentProbe": true,
@@ -2915,7 +2880,6 @@
       "extension": ".txt",
       "product": "words",
       "operations": [
-        "fonts",
         "open"
       ],
       "requiresContentProbe": true,
@@ -2926,7 +2890,6 @@
       "extension": ".xml",
       "product": "words",
       "operations": [
-        "fonts",
         "open"
       ],
       "requiresContentProbe": true,

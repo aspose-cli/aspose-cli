@@ -707,8 +707,7 @@ Reproductions: [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownI
   information of a PDF it saves, but may leave it out when other documents of the same process
   are being saved at the same time. How many of the concurrent outputs lose it varies from run
   to run; saved one at a time, every output has it.
-- **CLI behavior:** none visible: every command runs in its own process, and the MCP server
-  runs each command in a child process of its own.
+- **CLI behavior:** none visible: every command runs in its own process.
 
 ### PDF-SIGN-RECT-ROTATED
 
@@ -784,7 +783,7 @@ Reproductions: [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownI
   stays, as `pdf render`'s image does; one only staged, as the outputs of `pdf edit` and
   `pdf convert` are, is not published, but its `.aspose-publication-*` staging stays
   in the output's directory until the next command that writes there removes it. With
-  `--timeout`, and for every command the MCP server runs, the command runs in a worker process:
+  `--timeout`, the command runs in a worker process:
   a worker that ends with an exit code the CLI does not use has its output withheld and its
   staging removed, and the command reports `INTERNAL_ERROR` (exit 1) with the worker's exit code
   in its message.
@@ -1101,9 +1100,8 @@ Reproductions: [WordsKnownIssueTests](tests/Aspose.Cli.Product.Words.Tests/Words
   before `INPUT_BUDGET_EXCEEDED` refuses it, and a 500 KB XLSX of 8 million cells reaches 0.76 GB
   and loads.
 - **CLI behavior:** `--max-input-bytes` admits a document by the size of its file, which such a
-  document passes. A command has no deadline unless it is given `--timeout`, or is run by the MCP
-  server's `execute`, whose `timeoutSeconds` defaults to 120. `--timeout` stops the worker by
-  time only and sets no memory limit.
+  document passes. A command has no deadline unless it is given `--timeout`. `--timeout` stops the
+  worker by time only and sets no memory limit.
 - **Workaround:** on an untrusted document pass `--timeout` and `--max-input-bytes` on every
   command, and to cap memory run the CLI under an operating-system limit on the process, such as
   a Windows job object.

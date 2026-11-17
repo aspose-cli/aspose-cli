@@ -1,29 +1,11 @@
-using Aspose.Cells;
 using Aspose.Cli.Product.Cells.Engine.Mapping;
-using Aspose.Cli.Sdk.IO.Budgets;
-using Aspose.Cli.Sdk.Licensing;
 using Aspose.Cli.Sdk.Rendering;
-using Aspose.Cli.Sdk.Results;
-using static Aspose.Cli.Product.Cells.Engine.CellsEngineSupport;
 
 namespace Aspose.Cli.Product.Cells.Engine;
 
 /// <summary>Aspose.Cells font diagnostics behind the product-neutral <see cref="IFontEnvironment"/>.</summary>
 internal sealed class CellsFontEnvironment : IFontEnvironment
 {
-    private readonly ILicenseState _license;
-    private readonly CellsWorkbookLoader _loader;
-
-    public CellsFontEnvironment(
-        ILicenseState license,
-        ResourceBudgetLedger resourceBudgets)
-    {
-        ArgumentNullException.ThrowIfNull(license);
-        ArgumentNullException.ThrowIfNull(resourceBudgets);
-        _license = license;
-        _loader = CellsWorkbookLoader.ForFontInspection(resourceBudgets);
-    }
-
     /// <inheritdoc />
     /// <remarks>
     /// Font configuration is global to the engine and license-independent, so
@@ -33,25 +15,4 @@ internal sealed class CellsFontEnvironment : IFontEnvironment
 
     /// <inheritdoc />
     public IDisposable UseFonts(FontSearchProfile profile) => FontOps.Use(profile);
-
-    /// <inheritdoc />
-    public FontCheckResult CheckFonts(string filePath, FontCheckRequest request)
-    {
-        ArgumentException.ThrowIfNullOrEmpty(filePath);
-        ArgumentNullException.ThrowIfNull(request);
-
-        LicenseState licenseState = _license.License;
-        using LoadedWorkbook loaded = _loader.Open(filePath, request.Password);
-        Workbook workbook = loaded.Workbook;
-
-        IReadOnlyList<FontAvailability> fonts = FontOps.CheckAvailability(FontOps.UsedFonts(workbook));
-        return new FontCheckResult
-        {
-            Input = BuildSource(filePath, loaded),
-            AllAvailable = fonts.All(static font => font.Available),
-            Fonts = fonts,
-            License = EnvelopeParts.License(licenseState),
-            Warnings = loaded.Warnings(),
-        };
-    }
 }

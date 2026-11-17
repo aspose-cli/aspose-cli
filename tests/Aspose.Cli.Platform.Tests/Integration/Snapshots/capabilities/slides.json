@@ -100,7 +100,6 @@
           "input"
         ],
         "operations": [
-          "fonts",
           "open"
         ],
         "declaredOwnership": "default",
@@ -196,7 +195,6 @@
           "convert"
         ],
         "operations": [
-          "fonts",
           "open"
         ],
         "declaredOwnership": "default",
@@ -216,7 +214,6 @@
           "input"
         ],
         "operations": [
-          "fonts",
           "open"
         ],
         "declaredOwnership": "default",
@@ -265,7 +262,6 @@
           "input"
         ],
         "operations": [
-          "fonts",
           "open"
         ],
         "declaredOwnership": "default",
@@ -285,7 +281,6 @@
           "input"
         ],
         "operations": [
-          "fonts",
           "open"
         ],
         "declaredOwnership": "default",
@@ -305,7 +300,6 @@
           "input"
         ],
         "operations": [
-          "fonts",
           "open"
         ],
         "declaredOwnership": "default",
@@ -325,7 +319,6 @@
           "input"
         ],
         "operations": [
-          "fonts",
           "open"
         ],
         "declaredOwnership": "default",
@@ -345,7 +338,6 @@
           "input"
         ],
         "operations": [
-          "fonts",
           "open"
         ],
         "declaredOwnership": "default",
@@ -365,7 +357,6 @@
           "input"
         ],
         "operations": [
-          "fonts",
           "open"
         ],
         "declaredOwnership": "default",
@@ -386,7 +377,6 @@
           "convert"
         ],
         "operations": [
-          "fonts",
           "open"
         ],
         "declaredOwnership": "default",
@@ -407,7 +397,6 @@
           "convert"
         ],
         "operations": [
-          "fonts",
           "open"
         ],
         "declaredOwnership": "default",
@@ -428,7 +417,6 @@
           "convert"
         ],
         "operations": [
-          "fonts",
           "open"
         ],
         "declaredOwnership": "default",
@@ -2012,7 +2000,6 @@
       "extension": ".fodp",
       "product": "slides",
       "operations": [
-        "fonts",
         "open"
       ],
       "requiresContentProbe": true,
@@ -2023,7 +2010,6 @@
       "extension": ".odp",
       "product": "slides",
       "operations": [
-        "fonts",
         "open"
       ],
       "requiresContentProbe": true,
@@ -2034,7 +2020,6 @@
       "extension": ".otp",
       "product": "slides",
       "operations": [
-        "fonts",
         "open"
       ],
       "requiresContentProbe": true,
@@ -2045,7 +2030,6 @@
       "extension": ".pot",
       "product": "slides",
       "operations": [
-        "fonts",
         "open"
       ],
       "requiresContentProbe": true,
@@ -2056,7 +2040,6 @@
       "extension": ".potm",
       "product": "slides",
       "operations": [
-        "fonts",
         "open"
       ],
       "requiresContentProbe": true,
@@ -2067,7 +2050,6 @@
       "extension": ".potx",
       "product": "slides",
       "operations": [
-        "fonts",
         "open"
       ],
       "requiresContentProbe": true,
@@ -2078,7 +2060,6 @@
       "extension": ".pps",
       "product": "slides",
       "operations": [
-        "fonts",
         "open"
       ],
       "requiresContentProbe": true,
@@ -2089,7 +2070,6 @@
       "extension": ".ppsm",
       "product": "slides",
       "operations": [
-        "fonts",
         "open"
       ],
       "requiresContentProbe": true,
@@ -2100,7 +2080,6 @@
       "extension": ".ppsx",
       "product": "slides",
       "operations": [
-        "fonts",
         "open"
       ],
       "requiresContentProbe": true,
@@ -2111,7 +2090,6 @@
       "extension": ".ppt",
       "product": "slides",
       "operations": [
-        "fonts",
         "open"
       ],
       "requiresContentProbe": true,
@@ -2122,7 +2100,6 @@
       "extension": ".pptm",
       "product": "slides",
       "operations": [
-        "fonts",
         "open"
       ],
       "requiresContentProbe": true,
@@ -2133,7 +2110,6 @@
       "extension": ".pptx",
       "product": "slides",
       "operations": [
-        "fonts",
         "open"
       ],
       "requiresContentProbe": true,

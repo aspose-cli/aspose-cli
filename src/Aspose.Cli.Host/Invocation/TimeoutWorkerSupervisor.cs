@@ -21,7 +21,7 @@ internal delegate Task<ChildProcessResult> ChildRunner(
     CancellationToken cancellationToken,
     Func<Process, CancellationToken, IReadOnlyList<Task>>? companions);
 
-/// <summary>CLI and MCP share one deadline, terminable producer and parent-owned publication.</summary>
+/// <summary>One deadline, terminable producer and parent-owned publication for a supervised command.</summary>
 internal static class TimeoutWorkerSupervisor
 {
     internal const int MaximumOutputBytes = 4 * 1024 * 1024;
@@ -43,7 +43,7 @@ internal static class TimeoutWorkerSupervisor
     public static int Run(HostContext host, string[] args, ParsedInvocation invocation, Func<int> inProcess)
     {
         if (invocation.GlobalValues?.TimeoutSeconds is not > 0
-            || host.WorkerOutputs is not null || invocation.Execution != CommandExecutionOwnership.Worker) { return inProcess(); }
+            || host.WorkerOutputs is not null) { return inProcess(); }
         return ConsoleInterrupt.Run(cancellationToken =>
         {
             InvocationProcessResult result;

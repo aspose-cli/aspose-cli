@@ -7,7 +7,7 @@ namespace Aspose.Cli.Sdk.Extensibility.Commanding;
 
 /// <summary>
 /// The one repeatable <c>--font-dir</c> option of every command whose result depends on
-/// the fonts available to the engine: rendering, conversion, layout and font checks.
+/// the fonts available to the engine: rendering, conversion and layout.
 /// </summary>
 internal sealed class FontDirectoryOptions
 {

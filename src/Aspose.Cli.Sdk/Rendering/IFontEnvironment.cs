@@ -13,12 +13,9 @@ public interface IFontEnvironment
     /// <summary>Reports the engine's font environment: the sources it scans and the default fallback.</summary>
     EngineFonts ListFonts();
 
-    /// <summary>Reports whether a document's fonts are available here, and what they substitute to.</summary>
-    FontCheckResult CheckFonts(string filePath, FontCheckRequest request);
-
     /// <summary>
     /// Makes the profile's directories available, in addition to the system
-    /// fonts, to every render, layout and font check of this engine until the
+    /// fonts, to every render and layout of this engine until the
     /// returned scope is disposed. Implementations enter through
     /// <see cref="FontScope.Enter"/>, so scopes never overlap within a process
     /// and each one restores the engine's previous fonts when it ends.
@@ -34,11 +31,4 @@ public sealed record EngineFonts
 
     /// <summary>The font sources the engine scans, in configured order; empty for the platform defaults.</summary>
     public required IReadOnlyList<FontSource> Sources { get; init; }
-}
-
-/// <summary>Options of <c>aspose-cli fonts check</c>.</summary>
-public sealed record FontCheckRequest
-{
-    /// <summary>Password for an encrypted document.</summary>
-    public Secret? Password { get; init; }
 }

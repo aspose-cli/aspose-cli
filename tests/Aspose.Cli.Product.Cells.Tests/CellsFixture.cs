@@ -82,7 +82,7 @@ public sealed class CellsFixture : IDisposable
         {
             TestLicense.Require(EvaluationLimit);
             return ProductTestBudgets.StartEngine<CellsModule, CellsFontEnvironment>(
-                (budgets, writer) => new CellsFontEnvironment(Outputs(writer), budgets));
+                (_, _) => new CellsFontEnvironment());
         }
     }
 

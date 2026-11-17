@@ -56,8 +56,8 @@ Branch on the exit code first, then on the code in the envelope:
 
 - 0: the command succeeded. Its warnings can still need action.
 - 8: the command finished and printed its result, but the result did not pass
-  or is incomplete: a failed operation under `--best-effort`, failed
-  verification, a missing font in `fonts check`, a failed `doctor` check.
+  or is incomplete: a failed operation under `--best-effort` or failed
+  verification.
   Read the result; it says what failed. Exit 8 means only this: no error
   envelope ever comes with it.
 - 130: the command was cancelled with Ctrl+C, with or without --timeout. The
@@ -83,7 +83,6 @@ Branch on the exit code first, then on the code in the envelope:
 ## Diagnosis
 
 ```powershell
-aspose-cli doctor --output-format json
 aspose-cli license status --output-format json
 aspose-cli capabilities --output-format json
 ```
@@ -91,8 +90,6 @@ aspose-cli capabilities --output-format json
 - `--verbose` writes structured JSONL diagnostics (timings, error codes) to
   stderr and leaves stdout untouched.
 - `aspose-cli schema <id>` prints the exact schema of any input or result.
-- `aspose-cli fonts check <file>` explains most rendering and layout
-  surprises (`aspose-cli docs verification`).
 
 ## Recovering from common errors
 
@@ -177,9 +174,8 @@ aspose-cli capabilities --output-format json
   otherwise read; the input can still be valid. Reduce the selection or check
   fonts. `RENDER_TOO_LARGE`: lower `--dpi` or render less.
 - Slides rendering needs the Microsoft Visual C++ Redistributable (x64),
-  which the package does not carry. When it is missing, the `native-runtime`
-  check of `aspose-cli doctor` warns and Slides commands that need its native
-  drawing library fail. Ask the user to install it from
+  which the package does not carry. When it is missing, Slides commands that
+  need its native drawing library fail. Ask the user to install it from
   https://aka.ms/vs/17/release/vc_redist.x64.exe.
 - `OPERATION_TIMEOUT` with `details.phase` `regex`: a regular expression you
   supplied exceeded its own budget, which `--timeout` does not raise; simplify

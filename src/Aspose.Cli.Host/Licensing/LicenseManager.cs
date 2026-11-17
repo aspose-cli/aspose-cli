@@ -10,8 +10,8 @@ using Aspose.Cli.Sdk.Licensing;
 namespace Aspose.Cli.Host.Licensing;
 
 /// <summary>
-/// Owns license status, installation and removal for the <c>license</c> and
-/// <c>doctor</c> commands and the startup notice.
+/// Owns license status, installation and removal for the <c>license</c> commands and the
+/// startup notice.
 /// </summary>
 internal static class LicenseManager
 {

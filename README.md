@@ -1,8 +1,7 @@
 # Aspose CLI
 
 Local-first automation of spreadsheets, PDFs, presentations and Word documents for people and
-AI agents. `aspose-cli` provides a CLI, a loopback browser workspace and a local MCP endpoint;
-documents are processed on your machine. Windows x64 is the supported platform.
+AI agents. `aspose-cli` provides a CLI; documents are processed on your machine. Windows x64 is the supported platform.
 
 The CLI source is MIT-licensed and grants no rights to the commercial Aspose SDKs it runs on, which
 have their own [license terms](https://about.aspose.com/legal/eula/); without a license they run
@@ -12,7 +11,6 @@ in evaluation mode, and the CLI discloses every evaluation effect on its output.
 
 ```powershell
 aspose-cli capabilities --summary --output-format json
-aspose-cli doctor --output-format json
 aspose-cli skill list
 aspose-cli docs cells/editing
 aspose-cli skill install aspose-cli-platform --host codex
@@ -50,8 +48,7 @@ From 1.0 the machine contract changes only by adding, except in a major version.
 is what a script or agent depends on: commands, options and positional arguments with their
 defaults and accepted values; edit operation names and fields; result field names, types and
 units; error codes, warning codes and exit codes; schema ids; the environment variables listed
-below; the configuration and installation directories; the Skill names; and the MCP tool names
-`capabilities` and `execute`.
+below; the configuration and installation directories; and the Skill names.
 
 A breaking change removes or renames any of these, changes its type or meaning, narrows the
 input it accepts, or changes a default or an exit code; it happens only in a major version.
@@ -78,15 +75,6 @@ Evaluation mode changes output as the Aspose SDKs decide; the CLI reports each e
 `EVALUATION_*` warning, but the evaluation output itself is not covered. 1.0 has no experimental
 features: everything it exposes is covered.
 
-## MCP
-
-```powershell
-aspose-cli mcp serve
-```
-
-The MCP server `aspose-cli` offers the tools `capabilities` and `execute`. [SECURITY.md](SECURITY.md) describes
-what each may do.
-
 ## Licensing
 
 ```powershell
@@ -111,24 +99,20 @@ verifies it ([SECURITY.md](SECURITY.md#releases)), then installs per user into
 `%LOCALAPPDATA%\Aspose\CLI` in one transaction. It adds the directory to the user PATH, installs
 the Agent Skills for the Codex, Claude Code and OpenCode setups it finds, and offers to install a
 license. Agents that run
-commands need nothing more: the Skills teach them the CLI. It changes no agent's MCP
-configuration unless you ask with `-Mcp`, which also registers the `aspose-cli mcp serve` server
-with those hosts (a host it cannot register produces only a warning). To install without
+commands need nothing more: the Skills teach them the CLI. To install without
 downloading, run `install.ps1` from an extracted release archive.
 
 Slides rendering needs the [Microsoft Visual C++ Redistributable (x64)](https://aka.ms/vs/17/release/vc_redist.x64.exe),
-which the package does not carry. Without it,
-`aspose-cli doctor` warns in its `native-runtime` check and Slides commands that need its native
-drawing library fail.
+which the package does not carry. Without it, Slides commands that need its native drawing library
+fail.
 
 Switches apply to `install.ps1` run from an extracted archive, or to the downloaded script, as in
-`& ([scriptblock]::Create((irm <install.ps1 URL>))) -Mcp`:
+`& ([scriptblock]::Create((irm <install.ps1 URL>))) -SkipPath`:
 
 | Switch | Effect |
 | --- | --- |
 | `-InstallDirectory <path>` | Install somewhere other than `%LOCALAPPDATA%\Aspose\CLI`. An install directory it creates is open only to you, SYSTEM and the administrators; parent folders it creates can be read by other users but not changed. An existing directory keeps its access rules, with a warning if other accounts can write to the install directory, since they could replace the executable. |
 | `-SkipPath`, `-SkipSkills` | Leave PATH or the Skills alone. |
-| `-Mcp` | Also register the MCP server with the detected agent hosts. |
 | `-SkillsRoot <path>` | Install the Skills into this directory instead of the detected hosts. |
 | `-LicensePath <file>`, `-LicenseProduct <id>` | Install a license, optionally for one product. |
 | `-SkipLicensePrompt` | Do not ask for a license. |

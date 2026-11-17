@@ -16,7 +16,7 @@ internal static class WordsActivation
             ApplyLicense,
             new WordsEvaluationProfile(),
             outputs => Session(outputs, context.ResourceBudgets),
-            outputs => new WordsFontEnvironment(outputs, context.ResourceBudgets));
+            _ => new WordsFontEnvironment());
 
     /// <summary>The session of one invocation's write pipeline and budgets.</summary>
     internal static WordsSession Session(OutputPipeline<Document> outputs, ResourceBudgetLedger budgets) =>

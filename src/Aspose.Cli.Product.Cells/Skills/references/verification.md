@@ -1,6 +1,6 @@
 # Verifying spreadsheet work
 
-The delivery checklist and font checks are shared by
+The delivery checklist and fonts are shared by
 every product: `aspose-cli docs verification`. This page adds the workbook
 tiers and the render facts that decide what a Cells check can see.
 
@@ -82,8 +82,7 @@ A digit inside a CJK string renders through the substituted CJK font and
 loses its strokes too, while a Latin-only `2026-07-17` beside it stays crisp.
 At 150 and 192 DPI the strokes are solid. When text looks corrupt, read the
 cell first; if the value is right, check the DPI, font availability and layout
-before diagnosing corruption. A CJK sheet declaring only Arial passes
-`fonts check` with `allAvailable: true` and renders through substitution.
+before diagnosing corruption.
 
 While looking, check for:
 

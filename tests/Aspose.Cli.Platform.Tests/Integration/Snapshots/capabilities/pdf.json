@@ -171,7 +171,6 @@
           "input"
         ],
         "operations": [
-          "fonts",
           "open"
         ],
         "declaredOwnership": "default",
@@ -2706,7 +2705,6 @@
       "extension": ".pdf",
       "product": "pdf",
       "operations": [
-        "fonts",
         "open"
       ],
       "requiresContentProbe": true,

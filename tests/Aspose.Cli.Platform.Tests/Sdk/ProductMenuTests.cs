@@ -587,8 +587,6 @@ public sealed class ProductMenuTests : IDisposable
     {
         public EngineFonts ListFonts() => throw new NotSupportedException();
 
-        public FontCheckResult CheckFonts(string filePath, FontCheckRequest request) => throw new NotSupportedException();
-
         public IDisposable UseFonts(FontSearchProfile profile)
         {
             Log.Add("fonts " + string.Join(';', profile.Directories));

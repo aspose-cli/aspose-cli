@@ -37,7 +37,7 @@ internal static class FontOps
         });
 
     /// <summary>The distinct font names a workbook uses, sorted — the input to
-    /// both <c>cells inspect --detail fonts</c> and the <c>fonts check</c> diagnostic.</summary>
+    /// <c>cells inspect --detail fonts</c>.</summary>
     public static IReadOnlyList<string> UsedFonts(Workbook workbook) =>
         workbook.GetFonts()
             .Select(font => font.Name)
@@ -46,40 +46,10 @@ internal static class FontOps
             .OrderBy(name => name, StringComparer.Ordinal)
             .ToArray();
 
-    /// <summary>
-    /// Availability of each used font, with the substitute a render would pick
-    /// for any that is missing — the actionable half of the font diagnostics.
-    /// </summary>
-    public static IReadOnlyList<FontAvailability> CheckAvailability(IEnumerable<string> usedFonts)
-    {
-        var result = new List<FontAvailability>();
-        foreach (string name in usedFonts)
-        {
-            bool available = FontConfigs.IsFontAvailable(name);
-            result.Add(new FontAvailability
-            {
-                Name = name,
-                Available = available,
-                SubstitutedBy = available ? null : PredictSubstitute(name),
-            });
-        }
-
-        return result;
-    }
-
     private static FontSource ToSource(FontSourceBase source) => source switch
     {
         FolderFontSource folder => new FontSource { Kind = "folder", Location = folder.FolderPath },
         FileFontSource file => new FontSource { Kind = "file", Location = file.FilePath },
         _ => new FontSource { Kind = "memory" },
     };
-
-    // A configured substitute wins; otherwise fall back to the engine default
-    // when one is configured. Null means "unavailable, engine picks a fallback"
-    // — honest when no substitution is queryable, rather than inventing one.
-    private static string? PredictSubstitute(string name)
-    {
-        string[] substitutes = FontConfigs.GetFontSubstitutes(name);
-        return substitutes is { Length: > 0 } ? substitutes[0] : FontConfigs.DefaultFontName;
-    }
 }

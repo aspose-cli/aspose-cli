@@ -34,4 +34,3 @@ restyle them.
   comprehension; keep legends and gridlines quiet.
 - Keep charts in the theme's accent colors so every slide agrees.
 - Keep speaker notes short and in `set_notes`, not on the slide.
-- For CJK content, run `aspose-cli fonts check deck.pptx` before rendering.

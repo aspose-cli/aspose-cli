@@ -10,8 +10,7 @@ internal static class HostHelpMetadata
 {
     private static readonly CommandHelpLink Overview = new("aspose-cli docs", "offline documentation bundled in this binary");
     private static readonly CommandHelpLink Licensing = new("aspose-cli docs licensing", "license sources, installation and evaluation mode");
-    private static readonly CommandHelpLink Verification = new("aspose-cli docs verification", "the delivery checklist and font checks");
-    private static readonly CommandHelpLink Troubleshooting = new("aspose-cli docs troubleshooting", "recovering from errors and environment problems");
+    private static readonly CommandHelpLink Verification = new("aspose-cli docs verification", "the delivery checklist and fonts");
     private static readonly CommandHelpLink Capabilities = new("aspose-cli capabilities --summary", "each product's commands, formats and operations");
     private static readonly CommandHelpLink Schemas = new("aspose-cli schema", "the available JSON Schema identifiers");
 
@@ -37,14 +36,10 @@ internal static class HostHelpMetadata
             Find(license, "remove").WithExamples(["license remove --dry-run", "license remove"], [Licensing]);
         }
 
-        Find(root, "doctor").WithExamples(["doctor", "doctor --output-format json"], [Troubleshooting]);
         if (FindOptional(root, "fonts") is { } fonts)
         {
             fonts.WithExamples(["fonts list --output-format json"], [Verification]);
             Find(fonts, "list").WithExamples(["fonts list", "fonts list --output-format json"], [Verification]);
-            Find(fonts, "check").WithExamples(
-                ["fonts check report.docx", "fonts check report.docx --font-dir fonts --output-format json"],
-                [Verification]);
         }
 
         Find(root, "docs").WithExamples(["docs", "docs verification"], [Overview]);
@@ -66,10 +61,6 @@ internal static class HostHelpMetadata
         Find(skill, "install").WithExamples(
             ["skill install aspose-cli-platform --host codex", "skill install aspose-cli-platform --host claude-code --user --dry-run"],
             [Overview]);
-        if (FindOptional(root, "mcp") is { } mcp)
-        {
-            Find(mcp, "serve").WithExamples(["mcp serve", "mcp serve --license-mode evaluation"], [Overview]);
-        }
     }
 
     // Narrowing capabilities to one product, and to its edit command, keeps the answer small.

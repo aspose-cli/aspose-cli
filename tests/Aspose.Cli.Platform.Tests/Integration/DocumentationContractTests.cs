@@ -36,8 +36,6 @@ public sealed class DocumentationContractTests(DocumentationContractFixture fixt
     [InlineData("aspose-cli docs pdf/security")]
     [InlineData("aspose-cli --output-format json docs unknown-topic")]
     [InlineData("aspose-cli schema v2/pdf/info")]
-    [InlineData("aspose-cli fonts check --product pdf")]
-    [InlineData("aspose-cli fonts check deck.pptx --product slides")]
     public void Validator_RejectsInvalidSubcommandsAndLiteralReferences(string command) =>
         Assert.NotNull(fixture.Validator.ValidateCommand(command));
 

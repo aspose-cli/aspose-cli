@@ -159,12 +159,6 @@ internal sealed class GlobalOptions
         long? requestedInputBytes = parseResult.GetInRange(
             MaxInputBytes,
             "Use the default for ordinary files, or choose a positive byte limit within the advertised range.");
-        if (inherited is not null && requestedInputBytes > inherited.MaxInputBytes)
-        {
-            throw CliErrors.OptionInvalid(GlobalOptionNames.MaxInputBytes,
-                "the value exceeds the MCP host input budget",
-                "Choose a limit within the budget selected when the MCP server was started.");
-        }
         long maxInputBytes = ResolveMaxInputBytes(requestedInputBytes ?? inherited?.MaxInputBytes);
         return new GlobalValues(
             MapOutputFormat(parseResult.GetValue(OutputFormat)),

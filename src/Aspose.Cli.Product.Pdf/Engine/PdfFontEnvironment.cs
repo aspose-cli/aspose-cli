@@ -1,8 +1,4 @@
-using Aspose.Cli.Sdk.IO.Budgets;
-using Aspose.Cli.Sdk.Licensing;
 using Aspose.Cli.Sdk.Rendering;
-using Aspose.Cli.Sdk.Results;
-using Aspose.Pdf;
 using Aspose.Pdf.Text;
 
 namespace Aspose.Cli.Product.Pdf.Engine;
@@ -10,17 +6,6 @@ namespace Aspose.Cli.Product.Pdf.Engine;
 /// <summary>Aspose.PDF font diagnostics behind the product-neutral <see cref="IFontEnvironment"/>.</summary>
 internal sealed class PdfFontEnvironment : IFontEnvironment
 {
-    private readonly ILicenseState _license;
-    private readonly PdfDocumentLoader _loader;
-
-    public PdfFontEnvironment(
-        ILicenseState license,
-        ResourceBudgetLedger resourceBudgets)
-    {
-        _license = license ?? throw new ArgumentNullException(nameof(license));
-        _loader = PdfDocumentLoader.ForFontInspection(resourceBudgets);
-    }
-
     /// <inheritdoc />
     public EngineFonts ListFonts() => new()
     {
@@ -47,51 +32,10 @@ internal sealed class PdfFontEnvironment : IFontEnvironment
             };
         });
 
-    /// <inheritdoc />
-    public FontCheckResult CheckFonts(string filePath, FontCheckRequest request)
-    {
-        ArgumentException.ThrowIfNullOrEmpty(filePath);
-        ArgumentNullException.ThrowIfNull(request);
-
-        LicenseState state = _license.License;
-        using LoadedPdf loaded = _loader.Open(filePath, request.Password);
-        IReadOnlyList<FontAvailability> fonts = UsedFonts(loaded.Document)
-            .Select(static font => new FontAvailability
-            {
-                Name = font.Name,
-                Available = font.Available,
-            })
-            .ToArray();
-        return new FontCheckResult
-        {
-            Input = PdfInfoProjection.Source(filePath, loaded),
-            AllAvailable = fonts.All(static font => font.Available),
-            Fonts = fonts,
-            License = EnvelopeParts.License(state),
-        };
-    }
-
-    private static IReadOnlyList<UsedFont> UsedFonts(Document document)
-    {
-        var fonts = new Dictionary<string, bool>(StringComparer.Ordinal);
-        foreach (Font font in PdfFontResources.Enumerate(document))
-        {
-            string name = font.DecodedFontName ?? font.FontName ?? "unknown";
-            fonts[name] = fonts.GetValueOrDefault(name) || font.IsEmbedded || font.IsAccessible;
-        }
-
-        return fonts
-            .OrderBy(static pair => pair.Key, StringComparer.Ordinal)
-            .Select(static pair => new UsedFont(pair.Key, pair.Value))
-            .ToArray();
-    }
-
     private static Aspose.Cli.Sdk.Contracts.FontSource ToContract(Aspose.Pdf.Text.FontSource source) => source switch
     {
         FolderFontSource folder => new Aspose.Cli.Sdk.Contracts.FontSource { Kind = "folder", Location = folder.FolderPath },
         SystemFontSource => new Aspose.Cli.Sdk.Contracts.FontSource { Kind = "system" },
         _ => new Aspose.Cli.Sdk.Contracts.FontSource { Kind = "other" },
     };
-
-    private sealed record UsedFont(string Name, bool Available);
 }

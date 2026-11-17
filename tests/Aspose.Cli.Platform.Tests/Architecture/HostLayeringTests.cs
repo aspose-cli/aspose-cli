@@ -29,8 +29,7 @@ public sealed class HostLayeringTests
     /// <item>Output: the writers for each output mode.</item>
     /// <item>Invocation: parsing, the command context and composition root, execution and
     /// the process boundary every command runs under.</item>
-    /// <item>Services commands call: licensing (and the startup license notice) and the MCP
-    /// server.</item>
+    /// <item>Services commands call: licensing (and the startup license notice).</item>
     /// <item>The root: CliHost, the process entry, which reaches the commands only through
     /// HostContext.</item>
     /// <item>Commands: the command adapters, which compose everything below.</item>
@@ -42,7 +41,7 @@ public sealed class HostLayeringTests
         [$"{Root}.Output.Rendering", $"{Root}.Skills"],
         [$"{Root}.Output"],
         [$"{Root}.Invocation"],
-        [$"{Root}.Licensing", $"{Root}.Mcp"],
+        [$"{Root}.Licensing"],
         [Root],
         [$"{Root}.Commands"],
     ];

@@ -20,7 +20,6 @@ internal static class StartupLicenseNotice
             || globals.Quiet
             || globals.Verbose
             || InvocationInputs.Current is not null
-            || invocation.CommandPath.FirstOrDefault()?.Name == "mcp"
             || invocation.CommandPath.Any(static command => command.Hidden))
         {
             return;
