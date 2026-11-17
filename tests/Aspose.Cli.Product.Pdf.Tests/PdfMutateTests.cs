@@ -1165,7 +1165,7 @@ public sealed class PdfMutateTests
     }
 
     [Fact]
-    public void SetFormField_UnknownNameListsTheFieldsAndSuggestsTheClosest()
+    public void SetFormField_UnknownNameListsTheFields()
     {
         using var fixture = new PdfEngineFixture();
         string input = FormDocument(fixture);
@@ -1180,7 +1180,6 @@ public sealed class PdfMutateTests
         Assert.Equal("FIELD_NOT_FOUND", error.Code.Name);
         Assert.Equal("customer", error.Details!["requested"]!.GetValue<string>());
         Assert.Equal(["Customer"], error.Details["available"]!.AsArray().Select(static name => name!.GetValue<string>()));
-        Assert.Equal("Customer", error.Details["suggestions"]![0]!.GetValue<string>());
         Assert.Equal("op-0001", error.Details["id"]!.GetValue<string>());
     }
 

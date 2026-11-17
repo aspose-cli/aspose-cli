@@ -1,5 +1,5 @@
 {
-  "name": "cells edit names the accepted fields of an unknown field and the likely one when there is one",
+  "name": "cells edit names the accepted fields of an unknown field",
   "steps": [
     { "args": ["cells", "create", "book.xlsx", "--sheet-names", "Data"], "expect": { "exitCode": 0 } },
     {
@@ -10,8 +10,7 @@
         "json": [
           { "path": "error.details.reason", "equals": "unknown-field" },
           { "path": "error.details.field", "equals": "to" },
-          { "path": "error.details.available", "equals": ["op", "id", "sheet", "name"] },
-          { "path": "error.details.suggestions", "equals": ["name"] }
+          { "path": "error.details.available", "equals": ["op", "id", "sheet", "name"] }
         ],
         "files": { "nothingWritten": true }
       }
@@ -24,8 +23,7 @@
         "json": [
           { "path": "error.details.reason", "equals": "unknown-field" },
           { "path": "error.details.field", "equals": "by[0].direction" },
-          { "path": "error.details.available", "equals": ["column", "order"] },
-          { "path": "error.details.suggestions", "exists": false }
+          { "path": "error.details.available", "equals": ["column", "order"] }
         ],
         "files": { "nothingWritten": true }
       }

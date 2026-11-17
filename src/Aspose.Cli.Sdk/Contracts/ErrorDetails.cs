@@ -60,10 +60,6 @@ public sealed record NotFoundDetails
     [MaxItems(50)]
     public IReadOnlyList<string>? Available { get; init; }
 
-    /// <summary>The existing names closest to the request, best first; present only when some name is close.</summary>
-    [MaxItems(3)]
-    public IReadOnlyList<string>? Suggestions { get; init; }
-
     /// <summary>The id of the failing operation, as its applied[] entry states it; present only for an operation error.</summary>
     [Pattern("^[A-Za-z][A-Za-z0-9._-]{0,63}$")]
     public string? Id { get; init; }

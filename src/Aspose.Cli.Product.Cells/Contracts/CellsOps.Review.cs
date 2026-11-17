@@ -25,7 +25,6 @@ public sealed record AddCommentOp : CellsSheetOp
 
 /// <summary>Replaces the text of a cell's comment.</summary>
 [Operation("set_comment")]
-[MistakenFor("edit_comment")]
 public sealed record SetCommentOp : CellsSheetOp
 {
     /// <summary>The cell whose comment changes.</summary>

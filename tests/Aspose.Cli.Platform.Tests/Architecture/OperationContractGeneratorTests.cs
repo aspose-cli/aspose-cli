@@ -43,7 +43,6 @@ public sealed class OperationContractGeneratorTests
             /// <summary>Moves <c>pages</c>
             /// quickly.</summary>
             [Operation("move")]
-            [MistakenFor("shift", "relocate")]
             public sealed record MoveOp : TargetOp
             {
                 /// <summary>The source sheet.</summary>
@@ -64,7 +63,7 @@ public sealed class OperationContractGeneratorTests
         string source = Assert.Single(Assert.Single(result.Results).GeneratedSources).SourceText.ToString();
         Assert.Contains("TResult Apply(global::Sample.MoveOp operation);", source, StringComparison.Ordinal);
         Assert.Contains("global::Sample.MoveOp operation => handler.Apply(operation),", source, StringComparison.Ordinal);
-        Assert.Contains("Description = \"Moves pages quickly.\", MistakenFor = [\"shift\", \"relocate\"]", source, StringComparison.Ordinal);
+        Assert.Contains("Description = \"Moves pages quickly.\"", source, StringComparison.Ordinal);
         // Inherited members come first and the base record's rule applies to the operation.
         Assert.True(
             source.IndexOf("Name = \"path\"", StringComparison.Ordinal) < source.IndexOf("Name = \"mode\"", StringComparison.Ordinal),
@@ -321,7 +320,6 @@ public sealed class OperationContractGeneratorTests
 
             public static class Letters { public const char A = 'a'; }
 
-            [MistakenFor("crate")]
             public sealed record Box { public double Width { get; init; } }
 
             [ExactlyOneOf("missing", "title")]
@@ -378,7 +376,6 @@ public sealed class OperationContractGeneratorTests
         Assert.Contains(reported, static item => item.Message.Contains("an empty object or collection", StringComparison.Ordinal) && item.At == "Tags");
         Assert.Contains(reported, static item => item.Message.Contains("'Letters' must declare public string", StringComparison.Ordinal) && item.At.StartsWith("AllowedValues", StringComparison.Ordinal));
         Assert.Contains(reported, static item => item.Message.Contains("the schema definition 'box', which 'Box' already has", StringComparison.Ordinal) && item.At == "Second");
-        Assert.Contains(reported, static item => item.Message.Contains("[MistakenFor] on 'Box' names mistaken operation names, but 'Box' is not an operation", StringComparison.Ordinal) && item.At == "Box");
         Assert.Contains(reported, static item => item.Message.Contains("not as a positional record parameter", StringComparison.Ordinal));
         Assert.Contains(reported, static item => item.Message.Contains("'Loose.Mode': [AllowedValues(typeof(...))] is expanded only", StringComparison.Ordinal) && item.At.StartsWith("AllowedValues", StringComparison.Ordinal));
         Assert.Empty(Assert.Single(result.Results).GeneratedSources);

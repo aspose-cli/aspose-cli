@@ -101,9 +101,8 @@ internal sealed partial class WordsMutationHandlers
             string[] missing = keys.Where(key => !items[index].ContainsKey(key)).ToArray();
             if (missing.Length > 0)
             {
-                string[] unused = items[index].Keys.Where(key => !keys.Contains(key, StringComparer.Ordinal)).ToArray();
                 throw new OperationInvalidException(
-                    $"item {index + 1} has no value for {string.Join(", ", missing.Select(key => "{{" + key + "}}" + WordsMergeGaps.Suggestion(key, unused, "its unused key")))} in the template row");
+                    $"item {index + 1} has no value for {string.Join(", ", missing.Select(key => "{{" + key + "}}"))} in the template row");
             }
         }
 

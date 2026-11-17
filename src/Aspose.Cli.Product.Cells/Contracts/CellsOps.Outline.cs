@@ -9,15 +9,12 @@ namespace Aspose.Cli.Product.Cells.Contracts;
 public sealed record GroupRowsOp : CellsSheetOp
 {
     /// <summary>The first row of the group (1-based).</summary>
-    [MistakenFor("from")]
     [Minimum(1)] public required int First { get; init; }
 
     /// <summary>The last row of the group (1-based), not above first; first when omitted.</summary>
-    [MistakenFor("to")]
     [Minimum(1)] public int? Last { get; init; }
 
     /// <summary>Whether the new group is collapsed.</summary>
-    [MistakenFor("collapse")]
     [ReadBack("inspect-result.schema.json#/$defs/cellsRowGroupInfo/properties/collapsed")]
     public bool Collapsed { get; init; }
 
@@ -30,11 +27,9 @@ public sealed record GroupRowsOp : CellsSheetOp
 public sealed record UngroupRowsOp : CellsSheetOp
 {
     /// <summary>The first row of the span (1-based).</summary>
-    [MistakenFor("from")]
     [Minimum(1)] public required int First { get; init; }
 
     /// <summary>The last row of the span (1-based), not above first; first when omitted.</summary>
-    [MistakenFor("to")]
     [Minimum(1)] public int? Last { get; init; }
 
     /// <inheritdoc />
@@ -46,15 +41,12 @@ public sealed record UngroupRowsOp : CellsSheetOp
 public sealed record GroupColumnsOp : CellsSheetOp
 {
     /// <summary>The first column of the group.</summary>
-    [MistakenFor("from")]
     [A1Column] public required string First { get; init; }
 
     /// <summary>The last column of the group, not left of first; first when omitted.</summary>
-    [MistakenFor("to")]
     [A1Column] public string? Last { get; init; }
 
     /// <summary>Whether the new group is collapsed.</summary>
-    [MistakenFor("collapse")]
     [ReadBack("inspect-result.schema.json#/$defs/cellsColumnGroupInfo/properties/collapsed")]
     public bool Collapsed { get; init; }
 
@@ -67,11 +59,9 @@ public sealed record GroupColumnsOp : CellsSheetOp
 public sealed record UngroupColumnsOp : CellsSheetOp
 {
     /// <summary>The first column of the span.</summary>
-    [MistakenFor("from")]
     [A1Column] public required string First { get; init; }
 
     /// <summary>The last column of the span, not left of first; first when omitted.</summary>
-    [MistakenFor("to")]
     [A1Column] public string? Last { get; init; }
 
     /// <inheritdoc />

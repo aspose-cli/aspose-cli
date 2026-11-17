@@ -20,9 +20,6 @@
       "expect": {
         "exitCode": 2,
         "error": "OPTION_INVALID",
-        "json": [
-          { "path": "error.details.suggestions", "notContains": ".pdf" }
-        ],
         "files": { "absent": ["archive.pfd", "archive.pdf"], "nothingWritten": true }
       }
     },

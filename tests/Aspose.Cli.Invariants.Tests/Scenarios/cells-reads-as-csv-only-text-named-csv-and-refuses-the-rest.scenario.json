@@ -1,5 +1,5 @@
 {
-  "name": "cells refuses a list named .txt or .md as a words document, reads an xlsx named .csv as the xlsx it is, and refuses a damaged xlsx as corrupt",
+  "name": "cells refuses a list named .txt or .md as Markdown it does not read, reads an xlsx named .csv as the xlsx it is, and refuses a damaged xlsx as corrupt",
   "files": {
     "list.txt": { "text": "- one\n- two\n" },
     "list.md": { "text": "- one\n- two\n" },
@@ -9,11 +9,11 @@
   "steps": [
     {
       "args": ["cells", "read", "list.txt"],
-      "expect": { "exitCode": 6, "error": "FORMAT_MISMATCH", "json": [{ "path": "error.details.detected", "equals": ["words"] }] }
+      "expect": { "exitCode": 3, "error": "FILE_CORRUPT" }
     },
     {
       "args": ["cells", "read", "list.md"],
-      "expect": { "exitCode": 6, "error": "FORMAT_MISMATCH", "json": [{ "path": "error.details.detected", "equals": ["words"] }] }
+      "expect": { "exitCode": 3, "error": "FILE_CORRUPT" }
     },
     {
       "args": ["cells", "read", "renamed.csv"],

@@ -12,7 +12,7 @@ namespace Aspose.Cli.Sdk.Operations;
 /// The wire protocol of an operation vocabulary; declare it on the vocabulary's base record
 /// with <c>[JsonConverter(typeof(OperationJsonConverter&lt;TOp&gt;))]</c>. It reads the
 /// <c>op</c> discriminator, rejects unknown, null and duplicated members in wire terms (an
-/// unknown member with the fields its object accepts and the closest ones), and
+/// unknown member with the fields its object accepts), and
 /// writes every omitted member that has a default before the payload is read, so the schema's
 /// <c>default</c> is exactly the value applied.
 /// </summary>
@@ -149,7 +149,7 @@ public sealed class OperationJsonConverter<TOp> : JsonConverter<TOp>
             {
                 if (!(isOperation && member.NameEquals("id")))
                 {
-                    unknown.Add(UnknownField(value, record, path, member.Name, isOperation));
+                    unknown.Add(UnknownField(record, path, member.Name, isOperation));
                     continue;
                 }
 
@@ -185,20 +185,11 @@ public sealed class OperationJsonConverter<TOp> : JsonConverter<TOp>
 
     /// <summary>
     /// Rejects a member the record does not declare; an operation also accepts <c>op</c> and
-    /// <c>id</c>. A member that declares the name a common mistake for it is the one meant.
+    /// <c>id</c>.
     /// </summary>
-    private static AllowedFieldsException UnknownField(
-        JsonElement value, OperationRecord record, string path, string name, bool isOperation)
-    {
-        string[] allowed = [.. isOperation ? ["op", "id"] : Array.Empty<string>(),
-            .. record.Properties.Select(static property => property.Name)];
-        string[] missing = [.. record.Properties
-            .Where(property => property.Required && !value.TryGetProperty(property.Name, out _))
-            .Select(static property => property.Name)];
-        string? meant = record.Properties
-            .FirstOrDefault(property => property.MistakenFor.Contains(name, StringComparer.OrdinalIgnoreCase))?.Name;
-        return AllowedFieldsException.UnknownField(path, name, allowed, missing, meant);
-    }
+    private static AllowedFieldsException UnknownField(OperationRecord record, string path, string name, bool isOperation) =>
+        AllowedFieldsException.UnknownField(path, name, [.. isOperation ? ["op", "id"] : Array.Empty<string>(),
+            .. record.Properties.Select(static property => property.Name)]);
 
     private static void WriteValue(Utf8JsonWriter writer, JsonElement value, OperationValue shape, string path, List<AllowedFieldsException> unknown)
     {

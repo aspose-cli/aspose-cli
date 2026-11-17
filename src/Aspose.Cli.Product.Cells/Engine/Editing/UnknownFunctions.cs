@@ -1,7 +1,6 @@
 using System.Text.RegularExpressions;
 using Aspose.Cells;
 using Aspose.Cli.Product.Cells.Engine.Mapping;
-using Aspose.Cli.Sdk.Errors;
 
 namespace Aspose.Cli.Product.Cells.Engine.Editing;
 
@@ -14,7 +13,6 @@ namespace Aspose.Cli.Product.Cells.Engine.Editing;
 internal static partial class UnknownFunctions
 {
     private const int ListedCells = 5;
-    private const string NameCharacters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.";
 
     // The most arguments the probe passes, enough for the argument count nearly every known
     // function accepts; a known function that requires more is reported as unknown.
@@ -43,7 +41,6 @@ internal static partial class UnknownFunctions
         Cell probe = scratch.Worksheets[0].Cells[0, 0];
         string[] findings = [.. cells.Select(cell => (Cell: cell, Names: Called(cell.Formula)
                 .Where(name => !defined.Contains(name) && !IsFunction(probe, name))
-                .Select(name => name + Mistake.Of(name, [], meant: Closest(probe, name)).Aside())
                 .ToArray()))
             .Where(static entry => entry.Names.Length > 0)
             .Select(static entry => $"{Sheets.QuotedName(entry.Cell.Worksheet.Name)}!{entry.Cell.Name}: {string.Join(", ", entry.Names)}")];
@@ -65,18 +62,6 @@ internal static partial class UnknownFunctions
             .Append("LET").Append("LAMBDA").ToHashSet(StringComparer.OrdinalIgnoreCase);
         return FunctionCall().Matches(code).Select(static match => match.Groups[1].Value)
             .Where(name => !skipped.Contains(name)).Distinct(StringComparer.OrdinalIgnoreCase);
-    }
-
-    // The first known function one deletion, swap, replacement or insertion away.
-    private static string? Closest(Cell probe, string name)
-    {
-        string word = name.ToUpperInvariant();
-        IEnumerable<string> edits = Enumerable.Range(0, word.Length).Select(i => word.Remove(i, 1))
-            .Concat(Enumerable.Range(0, word.Length - 1).Select(i => word[..i] + word[i + 1] + word[i] + word[(i + 2)..]))
-            .Concat(Enumerable.Range(0, word.Length).SelectMany(i => NameCharacters.Select(c => word[..i] + c + word[(i + 1)..])))
-            .Concat(Enumerable.Range(0, word.Length + 1).SelectMany(i => NameCharacters.Select(c => word[..i] + c + word[i..])));
-        return edits.Where(static edit => edit != string.Empty && char.IsAsciiLetter(edit[0]) && !CellName().IsMatch(edit))
-            .Distinct(StringComparer.Ordinal).FirstOrDefault(edit => edit != word && IsFunction(probe, edit));
     }
 
     private static bool IsFunction(Cell probe, string name)
@@ -107,8 +92,4 @@ internal static partial class UnknownFunctions
 
     [GeneratedRegex(@"""[^""]*""|'[^']*'")]
     private static partial Regex QuotedText();
-
-    // A name the parser reads as a cell reference, such as SUM1.
-    [GeneratedRegex(@"^[A-Z]{1,3}[0-9]+$")]
-    private static partial Regex CellName();
 }

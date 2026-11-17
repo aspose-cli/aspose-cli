@@ -27,12 +27,10 @@ public sealed record AddSparklineOp : CellsSheetOp
     /// one data block, the cell count must match its row count (one per row) or column count
     /// (one per column); over a list of data ranges, its range count.
     /// </summary>
-    [MistakenFor("location")]
     [ReadBack("inspect-result.schema.json#/$defs/cellsSparklineInfo/properties/at")]
     [A1RangeList] public required string At { get; init; }
 
     /// <summary>win-loss draws equal-height columns above or below the axis by sign.</summary>
-    [MistakenFor("type")]
     [ReadBack("inspect-result.schema.json#/$defs/cellsSparklineInfo/properties/kind")]
     [AllowedValues(typeof(CellsSparklineTypes))] public string Kind { get; init; } = CellsSparklineTypes.Line;
 

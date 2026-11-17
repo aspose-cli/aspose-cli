@@ -26,7 +26,6 @@ public sealed record CellsConditionalStyle
     [HexColor] public string? Color { get; init; }
 
     /// <summary>The solid background fill color.</summary>
-    [MistakenFor("bg", "backgroundColor", "bgColor", "background", "fill")]
     [HexColor] public string? FillColor { get; init; }
 
     /// <summary>The number format code, such as 0.0%.</summary>

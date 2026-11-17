@@ -27,7 +27,6 @@ public sealed record SetHyperlinkOp : CellsSheetOp
 
 /// <summary>Removes the hyperlink covering a cell.</summary>
 [Operation("delete_hyperlink")]
-[MistakenFor("remove_hyperlink")]
 public sealed record DeleteHyperlinkOp : CellsSheetOp
 {
     /// <summary>A cell the hyperlink covers, such as B2.</summary>

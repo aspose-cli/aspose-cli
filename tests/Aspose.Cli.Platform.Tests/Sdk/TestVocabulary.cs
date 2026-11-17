@@ -37,11 +37,11 @@ public sealed record Box
 [MinProperties(1), DependentRequired("size", "font")]
 public sealed record Style
 {
-    [MistakenFor("typeface")] public string? Font { get; init; }
+    public string? Font { get; init; }
 
     public double? Size { get; init; }
 
-    [MistakenFor("fontWeight", "strong")] public bool? Bold { get; init; }
+    public bool? Bold { get; init; }
 }
 
 /// <summary>Places boxes.</summary>
@@ -113,7 +113,6 @@ public sealed record SecretOp : TestOp
 }
 
 [Operation("stamp_image")]
-[MistakenFor("seal")]
 public sealed record StampImageOp : TestOp
 {
     [MinLength(1)] public required string Image { get; init; }

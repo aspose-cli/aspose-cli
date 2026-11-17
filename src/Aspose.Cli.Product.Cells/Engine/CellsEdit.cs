@@ -124,8 +124,7 @@ internal static class CellsEdit
     /// Discloses links the batch added whose target is a file name without a folder, which the
     /// output stores relative to its own folder. A link written with the full path of a file in
     /// the input's folder is stored this way too (known issue CELLS-LINK-RELATIVE-TARGET,
-    /// KNOWN-ISSUES.md). A reference to a sheet the workbook does not have becomes such a link,
-    /// so a target close to a sheet name is named as the likely typo.
+    /// KNOWN-ISSUES.md). A reference to a sheet the workbook does not have becomes such a link.
     /// </summary>
     private static Warning? RelativeLinkWarning(Workbook workbook, string[] before)
     {
@@ -144,16 +143,5 @@ internal static class CellsEdit
         {
             Docs = "cells/editing",
         };
-    }
-
-    /// <summary>
-    /// Whether a link source names no file extension: no dot after its last folder separator,
-    /// or only a final one, as in <c>Sheet.</c>. This tells a sheet name from a file name; it
-    /// decides no format.
-    /// </summary>
-    internal static bool HasNoExtension(string source)
-    {
-        int dot = source.LastIndexOf('.');
-        return dot < 0 || dot == source.Length - 1 || source.IndexOfAny(['\\', '/'], dot) >= 0;
     }
 }

@@ -13,8 +13,7 @@ public sealed record CellsOpsBatch : BoundedOperationEnvelope<CellsOp>;
 /// the active sheet; rows are 1-based numbers, columns are letters, and cells and ranges use A1
 /// notation on that sheet unless a field says it may name another sheet.
 /// </summary>
-[OperationVocabulary("ops", JsonContext = typeof(CellsOpsJsonContext), Addresses = new[] { "sheet", "sourceSheet", "range", "cell", "at", "from", "to", "first", "last", "index", "path", "passwordEnv", "sourcePasswordEnv" },
-    Common = new[] { "set_values", "set_formula", "format_range", "resize_columns", "insert_chart", "insert_sheet", "rename_sheet", "freeze_panes", "set_borders", "merge_cells", "set_autofilter", "define_table", "sort_range", "add_conditional_format", "set_validation", "insert_pivot", "set_page_setup" })]
+[OperationVocabulary("ops", JsonContext = typeof(CellsOpsJsonContext), Addresses = new[] { "sheet", "sourceSheet", "range", "cell", "at", "from", "to", "first", "last", "index", "path", "passwordEnv", "sourcePasswordEnv" })]
 [JsonConverter(typeof(OperationJsonConverter<CellsOp>))]
 public abstract partial record CellsOp : BoundedOperation
 {

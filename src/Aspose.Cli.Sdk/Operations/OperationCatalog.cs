@@ -20,8 +20,6 @@ public sealed class OperationCatalog<TOp>
 {
     private readonly Dictionary<string, OperationDescriptor> _byName = new(StringComparer.Ordinal);
     private readonly Dictionary<Type, OperationDescriptor> _byType = [];
-    private readonly Dictionary<string, string> _byMistakenName = new(StringComparer.OrdinalIgnoreCase);
-    private readonly string[] _common;
     private readonly GeneratedOperationSchema _schema;
 
     /// <summary>
@@ -63,24 +61,6 @@ public sealed class OperationCatalog<TOp>
         }
 
         Names = [.. ordered.Select(static operation => operation.Record.Name)];
-        _common = (typeof(TOp).GetCustomAttributes(typeof(OperationVocabularyAttribute), inherit: false)
-            .OfType<OperationVocabularyAttribute>().FirstOrDefault()?.Common) ?? [];
-        if (_common.FirstOrDefault(name => !_byName.ContainsKey(name)) is { } unknown)
-        {
-            throw new ArgumentException($"The vocabulary's common operation '{unknown}' is not one of its operations.", nameof(operations));
-        }
-        foreach (OperationRecord record in ordered.Select(static operation => operation.Record))
-        {
-            foreach (string mistaken in record.MistakenFor)
-            {
-                if (Names.Contains(mistaken, StringComparer.OrdinalIgnoreCase) || !_byMistakenName.TryAdd(mistaken, record.Name))
-                {
-                    throw new ArgumentException(
-                        $"Operation '{record.Name}' declares the mistaken name '{mistaken}', which names an operation or is declared twice.",
-                        nameof(operations));
-                }
-            }
-        }
 
         OperationRecord[] records = [.. ordered.Select(static operation => operation.Record)];
         _schema = new GeneratedOperationSchema(() => OperationSchemaWriter.Write(SchemaId, description, records), Names);
@@ -237,31 +217,6 @@ public sealed class OperationCatalog<TOp>
         }
 
         return (TBatch)((BoundedOperationEnvelope<TOp>)batch with { SchemaVersion = 2, Ops = validated });
-    }
-
-    /// <summary>
-    /// The operation most likely meant by an entry whose op name the vocabulary does not declare,
-    /// or null: the operation that declares the name a common mistake for it; else, among the
-    /// names closest to it, the first whose operation accepts every field the entry gives, else
-    /// the closest name. A name alone cannot tell <c>set_watermark</c> with a text field from one
-    /// with an image; the fields the caller wrote can.
-    /// </summary>
-    /// <param name="name">The unknown op name.</param>
-    /// <param name="entry">The entry that names it.</param>
-    internal string? Closest(string name, JsonElement entry)
-    {
-        if (_byMistakenName.TryGetValue(name.Trim(), out string? meant))
-        {
-            return meant;
-        }
-
-        IReadOnlyList<string> closest = NameSuggestions.Closest(name, Names);
-        string[] given = entry.ValueKind == JsonValueKind.Object
-            ? [.. entry.EnumerateObject().Select(static field => field.Name).Where(static field => field is not ("op" or "id"))]
-            : [];
-        return closest.FirstOrDefault(candidate => given.All(field =>
-                _byName[candidate].Record.Properties.Any(property => property.Name == field)))
-            ?? closest.FirstOrDefault();
     }
 
     /// <summary>
@@ -439,28 +394,14 @@ public sealed class OperationCatalog<TOp>
     /// <summary>
     /// Rejects the entry at <paramref name="index"/> of <paramref name="ops"/> that the
     /// serializer could not read, by the id <paramref name="ids"/> gives it. An entry whose op
-    /// names no operation lists the operations and the closest one.
+    /// names no operation lists the operations.
     /// </summary>
     private CliException InvalidAt(JsonElement ops, IReadOnlyList<string> ids, int index, JsonException failure) =>
         NameAt(ops, index) is { } name && !_byName.ContainsKey(name)
             ? OperationErrors.UnknownAt(ids[index], failure.Message,
-                Mistake.Of(name, ByRelevance(name), meant: Closest(name, ops[index])))
+                Mistake.Of(name, Names))
             : OperationErrors.InvalidAt(ids[index], KnownNameAt(ops, index), failure);
 
-    /// <summary>
-    /// The operation names in the order an error for the unknown <paramref name="name"/> lists
-    /// them: the closest names, then the vocabulary's common operations, then the names that share
-    /// a word with it, such as its verb or its noun, then the rest in published order.
-    /// </summary>
-    private IEnumerable<string> ByRelevance(string name)
-    {
-        string[] words = name.Split('_', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-        return NameSuggestions.Closest(name, Names)
-            .Concat(_common)
-            .Concat(Names.Where(candidate => candidate.Split('_').Intersect(words, StringComparer.OrdinalIgnoreCase).Any()))
-            .Concat(Names)
-            .Distinct(StringComparer.Ordinal);
-    }
 
     private string? KnownNameAt(JsonElement ops, int index) =>
         NameAt(ops, index) is { } name && _byName.ContainsKey(name) ? name : null;

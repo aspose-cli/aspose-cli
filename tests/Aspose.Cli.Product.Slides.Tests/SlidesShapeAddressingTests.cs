@@ -46,7 +46,7 @@ public sealed class SlidesShapeAddressingTests
     }
 
     [Fact]
-    public void DeleteMissingName_ListsShapeNamesAndSuggestsTheCasingSlip()
+    public void DeleteMissingName_ListsShapeNames()
     {
         using var fixture = new SlidesEngineFixture();
         string input = fixture.CreatePresentation();
@@ -67,7 +67,6 @@ public sealed class SlidesShapeAddressingTests
         Assert.Equal("op-0001", (string)error.Details!["id"]!);
         Assert.Equal("title 2", (string?)error.Details["requested"]);
         Assert.Contains("Title 2", error.Details["available"]!.AsArray().Select(static name => (string?)name));
-        Assert.Equal("Title 2", (string?)error.Details["suggestions"]![0]);
         Assert.Equal(original, File.ReadAllBytes(input));
         Assert.False(File.Exists(output));
     }
@@ -143,7 +142,6 @@ public sealed class SlidesShapeAddressingTests
         ErrorPayload error = result.Applied[0].Error!;
         Assert.Equal(SlidesDiagnostics.LayoutNotFound.Name, error.Code);
         Assert.Equal("Title Onyl", (string?)error.Details!["requested"]);
-        Assert.Equal("Title Only", (string?)error.Details["suggestions"]![0]);
     }
 
     [Fact]

@@ -101,8 +101,7 @@ A file from outside can be built to exhaust the machine or to mislead you:
 ## Common mistakes
 
 - **Guessing names.** A mistyped command, option, value, operation or field
-  fails with the valid names in `details.available` and the closest in
-  `details.suggestions`; use them.
+  fails with the valid names in `details.available`; use them.
 - **Retrying unchanged input.** Read `error.message` and `error.details`, change
   the request, then retry (`aspose-cli docs troubleshooting`).
 - **Inline ops JSON in PowerShell.** Shells mangle quotes and non-ASCII text;

@@ -74,8 +74,7 @@ internal static class Sheets
     {
         string[] names = [.. workbook.Worksheets.Cast<Worksheet>().Select(static sheet => sheet.Name)];
         string[] listed = [.. names.Select(static (name, index) => string.Create(CultureInfo.InvariantCulture, $"{index + 1}: {name}"))];
-        static string NameOf(string entry) => entry.IndexOf(": ", StringComparison.Ordinal) is var colon and >= 0 ? entry[(colon + 2)..] : entry;
-        var mistake = Mistake.Of(text, listed, keyOf: NameOf);
+        var mistake = Mistake.Of(text, listed);
         return CliErrors.OptionInvalid(
             CellsOptionNames.Sheets,
             $"'{text}' names a sheet, but --sheets selects sheets by position",

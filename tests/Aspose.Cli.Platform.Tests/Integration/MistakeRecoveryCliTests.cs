@@ -5,18 +5,18 @@ using Xunit;
 
 namespace Aspose.Cli.IntegrationTests;
 
-/// <summary>Common mistakes in each product's edit are answered with the one fix that works.</summary>
+/// <summary>Common mistakes in each product's commands are refused with what the command takes.</summary>
 public sealed class MistakeRecoveryCliTests : IDisposable
 {
     private readonly TempWorkspace _workspace = new();
 
     public void Dispose() => _workspace.Dispose();
 
-    /// <summary>Every unknown field of one operation is reported at once, each with the field meant.</summary>
+    /// <summary>Every unknown field of one operation is reported at once.</summary>
     [Theory]
-    [InlineData("slides", "a.pptx", """{"op":"format_shape","slide":1,"shapeId":4,"style":{"fill":"#FF0000","size":20}}""", "fillColor", "fontSize")]
-    [InlineData("pdf", "a.pdf", """{"op":"add_page_numbers","txet":"{n}","placment":"bottom-center"}""", "text", "placement")]
-    public void SeveralUnknownFieldsOfOneOperation_AreListedTogether(string product, string file, string operation, string first, string second)
+    [InlineData("slides", "a.pptx", """{"op":"format_shape","slide":1,"shapeId":4,"style":{"fill":"#FF0000","size":20}}""")]
+    [InlineData("pdf", "a.pdf", """{"op":"add_page_numbers","txet":"{n}","placment":"bottom-center"}""")]
+    public void SeveralUnknownFieldsOfOneOperation_AreListedTogether(string product, string file, string operation)
     {
         File.WriteAllText(_workspace.File(file), "not a document");
         File.WriteAllText(_workspace.File("ops.json"), $$"""{"ops":[{{operation}}]}""");
@@ -28,13 +28,12 @@ public sealed class MistakeRecoveryCliTests : IDisposable
         JsonArray errors = error["details"]!["errors"]!.AsArray();
         Assert.Equal(2, errors.Count);
         Assert.All(errors, item => Assert.Equal("op-0001", item!["id"]!.GetValue<string>()));
-        Assert.Equal([first, second], errors.Select(static item => item!["suggestions"]![0]!.GetValue<string>()));
         Assert.StartsWith("2 problems make one operation invalid", error["message"]!.GetValue<string>(), StringComparison.Ordinal);
     }
 
-    /// <summary>An unknown op names the entry by the op it wrote, and the same words in another order are the name meant.</summary>
+    /// <summary>An unknown op names the entry by the op it wrote.</summary>
     [Fact]
-    public void UnknownOperation_StatesTheOpItWroteAndSuggestsTheReorderedName()
+    public void UnknownOperation_StatesTheOpItWrote()
     {
         File.WriteAllText(_workspace.File("a.pdf"), "not a document");
         File.WriteAllText(_workspace.File("ops.json"), """{"ops":[{"op":"add_image_stamp","image":"x.png"}]}""");
@@ -45,7 +44,6 @@ public sealed class MistakeRecoveryCliTests : IDisposable
         Assert.Equal("OPS_INVALID", error["code"]!.GetValue<string>());
         Assert.Equal("op-0001", error["details"]!["id"]!.GetValue<string>());
         Assert.Equal("add_image_stamp", error["details"]!["op"]!.GetValue<string>());
-        Assert.Equal("add_stamp_image", error["details"]!["suggestions"]![0]!.GetValue<string>());
     }
 
     /// <summary>A <c>--to</c> format the command does not write but a command beside it does points to that command.</summary>
@@ -120,7 +118,7 @@ public sealed class MistakeRecoveryCliTests : IDisposable
     [InlineData("pdf convert a.pdf --out t3.dox", ".docx")]
     [InlineData("cells convert a.xlsx --out b.xslx", ".xlsx")]
     [InlineData("cells edit a.xlsx --set Sheet1!A1=5 --out b.xslx", ".xlsx")]
-    public void MistypedOutputExtension_SuggestsTheExtensionMeant(string commandLine, string suggestion)
+    public void MistypedOutputExtension_ListsTheExtensionMeant(string commandLine, string extension)
     {
         File.WriteAllText(_workspace.File("a.docx"), "not a document");
         File.WriteAllText(_workspace.File("a.pdf"), "not a document");
@@ -131,44 +129,17 @@ public sealed class MistakeRecoveryCliTests : IDisposable
         Assert.Equal(2, result.ExitCode);
         JsonNode error = JsonNode.Parse(result.StdErr)!["error"]!;
         Assert.Equal("OPTION_INVALID", error["code"]!.GetValue<string>());
-        Assert.Contains(suggestion, error["details"]!["suggestions"]!.AsArray().Select(static extension => extension!.GetValue<string>()));
-        Assert.Contains(suggestion, error["details"]!["available"]!.AsArray().Select(static extension => extension!.GetValue<string>()));
+        Assert.Contains(extension, error["details"]!["available"]!.AsArray().Select(static item => item!.GetValue<string>()));
     }
 
     /// <summary>
-    /// An extension close to none the command writes but to one a sibling command writes, such as
-    /// <c>.pfd</c> beside the <c>.pdf</c> of convert, names the sibling that writes it, but
-    /// suggests no extension the command itself cannot write.
-    /// </summary>
-    [Theory]
-    [InlineData("words edit a.docx --ops words.json --out x.pfd")]
-    [InlineData("cells edit a.xlsx --set Sheet1!A1=5 --out x.pfd")]
-    public void MistypedExtensionOfASiblingsFormat_NamesTheSiblingAndSuggestsNothingItCannotWrite(string commandLine)
-    {
-        File.WriteAllText(_workspace.File("a.docx"), "not a document");
-        File.WriteAllText(_workspace.File("a.xlsx"), "not a document");
-        File.WriteAllText(_workspace.File("words.json"), """{"ops":[{"op":"set_properties","title":"x"}]}""");
-
-        CliResult result = _workspace.Run([.. commandLine.Split(' '), "--output-format", "json"]);
-
-        Assert.Equal(2, result.ExitCode);
-        JsonNode error = JsonNode.Parse(result.StdErr)!["error"]!;
-        Assert.Equal("OPTION_INVALID", error["code"]!.GetValue<string>());
-        Assert.Null(error["details"]!["suggestions"]);
-        Assert.Equal("pdf", error["details"]!["format"]!.GetValue<string>());
-        Assert.False(File.Exists(_workspace.File("x.pfd")));
-    }
-
-    /// <summary>
-    /// An image command given an extension close to a format only another command writes, such as
-    /// <c>.gif</c> beside the <c>.tif</c> of convert, suggests only extensions it writes; the hint
-    /// still names the command that writes the other format. Each row lists the extensions its
-    /// product's render writes.
+    /// An image command given an extension it does not write lists only extensions it writes. Each
+    /// row lists the extensions its product's render writes.
     /// </summary>
     [Theory]
     [InlineData("pdf render a.pdf --out x.gif", ".png .jpg .jpeg .svg")]
     [InlineData("slides render a.pptx --out x.gifx", ".png .jpg .jpeg .svg .tiff .tif")]
-    public void RenderOutputCloseToAnotherCommandsFormat_SuggestsOnlyExtensionsRenderWrites(string commandLine, string rendered)
+    public void RenderOutputOfAnotherCommandsFormat_ListsOnlyExtensionsRenderWrites(string commandLine, string rendered)
     {
         File.WriteAllText(_workspace.File("a.pdf"), "not a document");
         File.WriteAllText(_workspace.File("a.pptx"), "not a document");
@@ -180,8 +151,6 @@ public sealed class MistakeRecoveryCliTests : IDisposable
         Assert.Equal("OPTION_INVALID", error["code"]!.GetValue<string>());
         string[] available = [.. error["details"]!["available"]!.AsArray().Select(static extension => extension!.GetValue<string>())];
         Assert.Subset(new HashSet<string>(rendered.Split(' ')), new HashSet<string>(available));
-        string[] suggestions = error["details"]!["suggestions"]?.AsArray().Select(static extension => extension!.GetValue<string>()).ToArray() ?? [];
-        Assert.Subset(new HashSet<string>(available), new HashSet<string>(suggestions));
     }
 
     /// <summary>
@@ -208,46 +177,6 @@ public sealed class MistakeRecoveryCliTests : IDisposable
         Assert.Equal("--to", error["details"]!["option"]!.GetValue<string>());
     }
 
-    /// <summary>
-    /// A fixed value of an operation field written with a word of the same meaning, such as
-    /// <c>middle</c> for <c>center</c>, or mistyped, suggests the value meant, in every product.
-    /// </summary>
-    [Theory]
-    [InlineData("pdf", "a.pdf", """{"op":"add_page_numbers","placement":"bottom-middle"}""", "bottom-center")]
-    [InlineData("pdf", "a.pdf", """{"op":"add_page_numbers","placement":"bottm-left"}""", "bottom-left")]
-    [InlineData("cells", "a.xlsx", """{"op":"set_borders","range":"A1:B2","edges":["all"],"lineStyle":"thinn"}""", "thin")]
-    [InlineData("words", "a.docx", """{"op":"set_page_numbers","alignment":"centre"}""", "center")]
-    public void MisspelledFixedValueOfAnOperation_SuggestsTheValueMeant(string product, string file, string operation, string meant)
-    {
-        File.WriteAllText(_workspace.File(file), "not a document");
-        File.WriteAllText(_workspace.File("ops.json"), $$"""{"ops":[{{operation}}]}""");
-
-        CliResult result = _workspace.Run(product, "edit", file, "--ops", "ops.json", "--out", "out" + Path.GetExtension(file), "--output-format", "json");
-
-        JsonNode error = JsonNode.Parse(result.StdErr)!["error"]!;
-        Assert.Equal("OPS_INVALID", error["code"]!.GetValue<string>());
-        Assert.Contains(meant, error["details"]!["suggestions"]!.AsArray().Select(static value => value!.GetValue<string>()));
-    }
-
-    /// <summary>
-    /// A vertical alignment written with the word of the horizontal axis, and the other way round,
-    /// suggests the word this field uses.
-    /// </summary>
-    [Theory]
-    [InlineData("""{"op":"format_range","range":"A1","style":{"verticalAlignment":"center"}}""", "middle")]
-    [InlineData("""{"op":"format_range","range":"A1","style":{"alignment":"middle"}}""", "center")]
-    public void AnAlignmentWrittenWithTheWordOfTheOtherAxis_SuggestsTheWordOfThisField(string operation, string meant)
-    {
-        File.WriteAllText(_workspace.File("a.xlsx"), "not a document");
-        File.WriteAllText(_workspace.File("ops.json"), $$"""{"ops":[{{operation}}]}""");
-
-        CliResult result = _workspace.Run("cells", "edit", "a.xlsx", "--ops", "ops.json", "--out", "out.xlsx", "--output-format", "json");
-
-        JsonNode error = JsonNode.Parse(result.StdErr)!["error"]!;
-        Assert.Equal("OPS_INVALID", error["code"]!.GetValue<string>());
-        Assert.Equal(meant, error["details"]!["suggestions"]![0]!.GetValue<string>());
-    }
-
     /// <summary>A missing required array of fixed values says it is an array and shows one.</summary>
     [Fact]
     public void MissingRequiredArrayOfFixedValues_SaysItIsAnArrayAndShowsOne()
@@ -263,25 +192,6 @@ public sealed class MistakeRecoveryCliTests : IDisposable
         string message = error["message"]!.GetValue<string>();
         Assert.Contains("array", message, StringComparison.Ordinal);
         Assert.Contains("\"edges\": [\"outline\"]", message, StringComparison.Ordinal);
-    }
-
-    /// <summary>
-    /// A file whose content is another product's document is named by what it is and by the
-    /// product that expected another, whichever way the command was chosen.
-    /// </summary>
-    [Theory]
-    [InlineData("words.docx", "report2.docx", "pdf merge report2.docx summary.pdf --out x.pdf", "By its content, 'report2.docx' is a words document; it is not a pdf document.")]
-    [InlineData("cells.xlsx", "a.xlsx", "words inspect a.xlsx", "By its content, 'a.xlsx' is a cells document; it is not a words document.")]
-    public void DocumentOfAnotherProduct_IsNamedByWhatItIs(string fixture, string file, string commandLine, string message)
-    {
-        File.WriteAllBytes(_workspace.File(file), ScenarioFixtures.Read(fixture));
-        File.WriteAllBytes(_workspace.File("summary.pdf"), ScenarioFixtures.Read("pdf.pdf"));
-
-        CliResult result = _workspace.Run([.. commandLine.Split(' '), "--output-format", "json"]);
-
-        JsonNode error = JsonNode.Parse(result.StdErr)!["error"]!;
-        Assert.Equal("FORMAT_MISMATCH", error["code"]!.GetValue<string>());
-        Assert.Equal(message, error["message"]!.GetValue<string>());
     }
 
     [Theory]
@@ -305,7 +215,6 @@ public sealed class MistakeRecoveryCliTests : IDisposable
         JsonNode error = JsonNode.Parse(result.StdErr)!["error"]!;
         Assert.Equal("OPTION_INVALID", error["code"]!.GetValue<string>());
         Assert.Contains("has no extension", error["message"]!.GetValue<string>(), StringComparison.Ordinal);
-        Assert.Null(error["details"]!["suggestions"]);
         Assert.NotEmpty(error["details"]!["available"]!.AsArray());
         Assert.False(File.Exists(_workspace.File(output)));
     }

@@ -185,12 +185,12 @@ internal static class InvariantCases
         });
     }
 
-    // ----- (c) mistakes carry a suggestion and write nothing --------------------------------
+    // ----- (c) mistakes are refused and write nothing ----------------------------------------
 
     private static IEnumerable<InvariantCase> UnknownOptionCases(CliCommand command)
     {
         string[] names = [.. command.Options.Select(static option => option.Name.TrimStart('-'))];
-        // A hidden option is never suggested, so a typo of one has no suggestion to check.
+        // Each option help shows is mistyped once.
         CliOption[] visible = [.. command.Options.Where(static option => !option.Hidden)];
         for (int index = 0; index < visible.Length; index++)
         {
@@ -203,7 +203,6 @@ internal static class InvariantCases
                 {
                     ExitCode = [2],
                     Error = ["USAGE_ERROR"],
-                    Json = [new JsonAssertion { Path = "error.details.suggestions", Contains = option.Name }],
                     Files = new ScenarioFiles { NothingWritten = true },
                 });
         }
@@ -221,7 +220,6 @@ internal static class InvariantCases
                 {
                     ExitCode = [2],
                     Error = ["USAGE_ERROR"],
-                    Json = [new JsonAssertion { Path = "error.details.suggestions", Contains = Join(command.Words, name) }],
                     Files = new ScenarioFiles { NothingWritten = true },
                 });
         }
@@ -241,7 +239,6 @@ internal static class InvariantCases
                 {
                     ExitCode = [2],
                     Error = ["USAGE_ERROR", "OPTION_INVALID"],
-                    Json = [new JsonAssertion { Path = "error.details.suggestions", Contains = value }],
                     Files = new ScenarioFiles { NothingWritten = true },
                 });
         }
@@ -268,7 +265,6 @@ internal static class InvariantCases
                 {
                     ExitCode = [4],
                     Error = ["OPS_INVALID"],
-                    Json = [new JsonAssertion { Path = "error.details.suggestions", Contains = op }],
                     Files = new ScenarioFiles { NothingWritten = true },
                 });
 
@@ -287,7 +283,6 @@ internal static class InvariantCases
                 {
                     ExitCode = [4],
                     Error = ["OPS_INVALID"],
-                    Json = [new JsonAssertion { Path = "error.details.suggestions", Contains = field }],
                     Files = new ScenarioFiles { NothingWritten = true },
                 });
         }

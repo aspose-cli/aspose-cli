@@ -87,24 +87,20 @@ public static partial class CliErrors
     /// A command that only groups other commands, run without one: it does nothing on its own, so
     /// the error lists its commands in <c>details.available</c> by their path below the root.
     /// Options it does not know, given after the group, are problems before the missing
-    /// command; the first one is stated in <c>details.option</c> and the options closest to it
-    /// lead the suggestions.
+    /// command; the first one is stated in <c>details.option</c>.
     /// </summary>
     /// <param name="command">The group as the caller typed it, such as <c>aspose-cli cells</c>.</param>
     /// <param name="commands">Its visible commands by their path below the root, such as <c>cells inspect</c>.</param>
     /// <param name="unknownOptions">The tokens given to the group that name none of its options, in order.</param>
-    /// <param name="meantOptions">The options the first unknown one most likely meant, best first.</param>
     public static CliException CommandRequired(
         string command,
         IReadOnlyList<string> commands,
-        IReadOnlyList<string>? unknownOptions = null,
-        IReadOnlyList<string>? meantOptions = null)
+        IReadOnlyList<string>? unknownOptions = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(command);
         ArgumentNullException.ThrowIfNull(commands);
         unknownOptions ??= [];
-        // Only the options are compared with the unknown one; the commands are what the group needs.
-        var mistake = Mistake.Of(string.Empty, commands, meantOptions ?? []);
+        var mistake = Mistake.Of(string.Empty, commands);
         var details = new JsonObject();
         if (unknownOptions.Count > 0)
         {
@@ -570,7 +566,7 @@ public static partial class CliErrors
         innerException: inner,
         explanation: reason);
 
-    /// <summary>A format id that names none of <paramref name="supported"/>; the details list them and the closest ones.</summary>
+    /// <summary>A format id that names none of <paramref name="supported"/>; the details list them.</summary>
     public static CliException FormatUnsupported(string requested, IReadOnlyList<string> supported)
     {
         var mistake = Mistake.Of(requested, supported);
@@ -592,31 +588,17 @@ public static partial class CliErrors
     /// <param name="subject">The start of the message naming the file, such as <c>--out 'x.ppt'</c>.</param>
     /// <param name="problem">What is wrong with its extension, completing a sentence about the subject.</param>
     /// <param name="extensions">The extensions the output may have, which <c>details.available</c> lists.</param>
-    /// <param name="mistyped">
-    /// Whether the extension names no format at all, so it is a mistake for the closest of
-    /// <paramref name="extensions"/>, which <c>details.suggestions</c> lists; false for a missing
-    /// extension or one of a format the command does not write.
-    /// </param>
     /// <param name="facts">The format that decided <paramref name="extensions"/>, or the one the extension names.</param>
-    /// <remarks>
-    /// <c>details.suggestions</c> holds only names among <paramref name="extensions"/>, which
-    /// this command writes: an extension that stands for a format another command writes, such
-    /// as <c>.pfd</c> for the <c>.pdf</c> of convert, is named by <paramref name="problem"/>,
-    /// never suggested for this one.
-    /// </remarks>
     internal static CliException OutputExtensionInvalid(
         string parameter,
         string output,
         string subject,
         string problem,
         IReadOnlyList<string> extensions,
-        bool mistyped,
         JsonObject facts)
     {
         string extension = Path.GetExtension(output);
-        // Only a mistyped extension is compared; an empty request is close to nothing.
-        var mistake = Mistake.Of(mistyped ? extension : string.Empty, extensions,
-            keyOf: static name => name.TrimStart('.').ToLowerInvariant());
+        var mistake = Mistake.Of(extension, extensions);
         facts[ParameterKey(parameter)] = parameter;
         facts["extension"] = extension;
         mistake.WriteTo(facts);
@@ -643,40 +625,6 @@ public static partial class CliErrors
                 ["declared"] = declaredProduct,
                 ["detected"] = detected,
             });
-    }
-
-    /// <summary>
-    /// Restates a product's <c>FILE_CORRUPT</c> about a file whose content has the format of
-    /// other products, such as a Word document renamed to <c>.pdf</c>, as the mismatch generic
-    /// routing reports for the same file, with the same message. The product's details stay.
-    /// </summary>
-    /// <param name="corrupt">The product's <c>FILE_CORRUPT</c>.</param>
-    /// <param name="path">The file, when the details do not name it already.</param>
-    /// <param name="declaredProduct">The product that could not read the file.</param>
-    /// <param name="detectedProducts">The products whose format the content has.</param>
-    public static CliException FormatMismatch(
-        CliException corrupt,
-        string path,
-        string declaredProduct,
-        IReadOnlyList<string> detectedProducts)
-    {
-        ArgumentNullException.ThrowIfNull(corrupt);
-        if (corrupt.Code != ErrorCodes.FileCorrupt)
-        {
-            throw new ArgumentException($"{corrupt.Code.Name} is not a corrupt input.", nameof(corrupt));
-        }
-
-        JsonObject details = corrupt.Details?.DeepClone().AsObject() ?? [];
-        details["path"] ??= path;
-        details["declared"] = declaredProduct;
-        details["detected"] = Strings(detectedProducts);
-        string file = details["path"]!.GetValue<string>();
-        return CliException.Create(
-            ErrorCodes.FormatMismatch,
-            Mismatch(file, declaredProduct, detectedProducts),
-            details: details,
-            docs: corrupt.Docs,
-            innerException: corrupt.InnerException);
     }
 
     /// <summary>
@@ -870,7 +818,7 @@ public static partial class CliErrors
 
     /// <summary>
     /// An option or argument value that names none of the values it accepts; the details list
-    /// them and the closest ones, and the message ends with the same values.
+    /// them, and the message ends with the same values.
     /// </summary>
     public static CliException OptionInvalid(string option, string reason, Mistake mistake)
     {
@@ -994,8 +942,7 @@ public static partial class CliErrors
 
     /// <summary>
     /// The error for a named target the document does not contain. The details list the names
-    /// that exist (at most <see cref="MaximumAvailableNames"/>) and the closest ones, so the
-    /// caller can correct the request directly; the message ends with the same names.
+    /// that exist (at most <see cref="MaximumAvailableNames"/>); the message ends with the same names.
     /// </summary>
     /// <param name="code">A code declared with <see cref="ErrorCode.NotFound"/>.</param>
     /// <param name="subject">What was looked up, e.g. <c>sheet</c> or <c>bookmark</c>.</param>
@@ -1012,7 +959,7 @@ public static partial class CliErrors
     /// <summary>
     /// The error for a text a search did not find, such as a heading or a find text. The texts
     /// searched are not names to choose from, so the message does not list them; the details
-    /// state them and the closest ones as <see cref="NotFound"/> does.
+    /// state them as <see cref="NotFound"/> does.
     /// </summary>
     /// <param name="code">A code declared with <see cref="ErrorCode.NotFound"/>.</param>
     /// <param name="subject">What was searched for, e.g. <c>text</c> or <c>heading</c>.</param>

@@ -34,35 +34,7 @@ public sealed class UsageErrorTests : IDisposable
     [Fact]
     public void AnUnknownCommand_IsAUsageError()
     {
-        JsonNode error = Refused("words inspct a.docx", "USAGE_ERROR");
-
-        Assert.Equal("words inspect", error["details"]!["suggestions"]![0]!.GetValue<string>());
-    }
-
-    /// <summary>
-    /// A product's command written without its product, such as <c>read a.docx</c>, suggests the
-    /// command of the product whose format the file's extension names, ready to run.
-    /// </summary>
-    [Theory]
-    [InlineData("read file a.docx", "words read")]
-    [InlineData("read a.docx", "words read")]
-    [InlineData("inspect b.xlsx", "cells inspect")]
-    public void AProductCommandWithoutItsProduct_SuggestsTheProductOfItsFile(string commandLine, string suggestion)
-    {
-        Assert.Equal(0, _workspace.Run("cells", "create", "b.xlsx", "--output-format", "json").ExitCode);
-
-        JsonNode error = Refused(commandLine, "USAGE_ERROR");
-
-        Assert.Equal(suggestion, error["details"]!["suggestions"]![0]!.GetValue<string>());
-    }
-
-    /// <summary>A file whose extension no product claims suggests no product's command.</summary>
-    [Fact]
-    public void AProductCommandWithoutItsProduct_SuggestsNoProductForAnUnknownExtension()
-    {
-        JsonNode error = Refused("read a.zzq", "USAGE_ERROR");
-
-        Assert.Null(error["details"]!["suggestions"]);
+        Refused("words inspct a.docx", "USAGE_ERROR");
     }
 
     [Theory]
@@ -122,44 +94,6 @@ public sealed class UsageErrorTests : IDisposable
         Assert.Contains(help.ReplaceLineEndings("\n").Trim(), table.StdErr.ReplaceLineEndings("\n"), StringComparison.Ordinal);
     }
 
-    [Theory]
-    [InlineData("-?", "--help")]
-    [InlineData("-o json", "--output-format")]
-    public void AShortOptionTheRootDoesNotKnow_SuggestsTheLongOne(string commandLine, string suggestion)
-    {
-        JsonNode error = Refused(commandLine, "USAGE_ERROR");
-
-        Assert.Equal(suggestion, error["details"]!["suggestions"]![0]!.GetValue<string>());
-    }
-
-    [Fact]
-    public void AnArgumentsNameWrittenBeforeItsValue_HintsTheCommandLineWithoutIt()
-    {
-        JsonNode error = Refused("words read file a.docx", "USAGE_ERROR");
-
-        Assert.Equal("'file' stands for the <file> argument, whose value follows it.", error["message"]!.GetValue<string>());
-        Assert.Equal(0, _workspace.Run("words", "read", "a.docx", "--output-format", "json").ExitCode);
-    }
-
-    [Theory]
-    [InlineData("words convert a.docx --to markdown", "md")]
-    [InlineData("words inspect a.docx --detail all", "--detail bookmarks --detail comments --detail fields --detail fonts --detail images --detail outline --detail properties --detail revisions --detail sections --detail styles --detail tables")]
-    public void AValueStandingForAnother_SuggestsIt(string commandLine, string suggestion)
-    {
-        JsonNode error = Refused(commandLine, "OPTION_INVALID");
-
-        Assert.Equal(suggestion, error["details"]!["suggestions"]![0]!.GetValue<string>());
-    }
-
-    [Fact]
-    public void HelpAsACommand_SaysHelpIsAnOption()
-    {
-        JsonNode error = Refused("words help edit", "USAGE_ERROR");
-
-        Assert.Equal("'help' is not a command of 'aspose-cli words'; help is the --help option.", error["message"]!.GetValue<string>());
-        Assert.Equal("words edit --help", error["details"]!["suggestions"]![0]!.GetValue<string>());
-    }
-
     [Fact]
     public void AnOptionBesideTheVersion_ListsOnlyTheOptionTheVersionTakes()
     {
@@ -172,18 +106,19 @@ public sealed class UsageErrorTests : IDisposable
     /// <summary>
     /// The value written after an unknown option, or joined to it by '=' or ':', may be a secret
     /// meant for the option the caller mistyped: no output repeats it, the verbose diagnostics
-    /// included, and the option it was meant for is still suggested.
+    /// included.
     /// </summary>
     [Theory]
-    [InlineData("pdf edit x.pdf --encryptt S3cretPw", "S3cretPw", "--encryptt", "--encrypt")]
-    [InlineData("pdf edit x.pdf --encryptt=S3cretPw", "S3cretPw", "--encryptt", "--encrypt")]
-    [InlineData("pdf edit x.pdf --encryptt:S3cretPw", "S3cretPw", "--encryptt", "--encrypt")]
-    [InlineData("words create b.docx --pasword hunter2", "hunter2", "--pasword", null)]
-    [InlineData("words create b.docx --pasword=hunter2", "hunter2", "--pasword", null)]
-    [InlineData("words create b.docx --pasword:hunter2", "hunter2", "--pasword", null)]
-    [InlineData("pdf merge a.pdf --encryptt=S3cretPw b.pdf --out o.pdf", "S3cretPw", "--encryptt", "--encrypt")]
-    [InlineData("pdf --encryptt=S3cretPw", "S3cretPw", "--encryptt", null)]
-    public void TheValueOfAnUnknownOption_IsNotRepeated(string commandLine, string value, string option, string? suggestion)
+    [InlineData("pdf edit x.pdf --encryptt S3cretPw", "S3cretPw", "--encryptt")]
+    [InlineData("pdf edit x.pdf --encryptt=S3cretPw", "S3cretPw", "--encryptt")]
+    [InlineData("pdf edit x.pdf --encryptt:S3cretPw", "S3cretPw", "--encryptt")]
+    [InlineData("words create b.docx --pasword hunter2", "hunter2", "--pasword")]
+    [InlineData("words create b.docx --pasword=hunter2", "hunter2", "--pasword")]
+    [InlineData("words create b.docx --pasword:hunter2", "hunter2", "--pasword")]
+    [InlineData("pdf merge a.pdf --encryptt=S3cretPw b.pdf --out o.pdf", "S3cretPw", "--encryptt")]
+    [InlineData("pdf --encryptt=S3cretPw", "S3cretPw", "--encryptt")]
+    [InlineData("cells read b.xlsx --content --password S3cretPw", "S3cretPw", "--content")]
+    public void TheValueOfAnUnknownOption_IsNotRepeated(string commandLine, string value, string option)
     {
         foreach (string[] extra in (string[][])[["--output-format", "json"], ["--output-format", "json", "-v"], ["--output-format", "compact", "-v"], ["--output-format", "table"]])
         {
@@ -198,7 +133,6 @@ public sealed class UsageErrorTests : IDisposable
                 JsonNode error = JsonNode.Parse(result.StdErr)!["error"]!;
                 Assert.Equal("USAGE_ERROR", error["code"]!.GetValue<string>());
                 Assert.Equal(option, error["details"]!["option"]!.GetValue<string>());
-                Assert.Equal(suggestion, error["details"]!["suggestions"]?[0]?.GetValue<string>());
             }
         }
     }

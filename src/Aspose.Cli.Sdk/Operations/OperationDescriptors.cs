@@ -80,9 +80,6 @@ public sealed class OperationRecord
 
     /// <summary>Rules over several members, such as <see cref="ExactlyOneOfAttribute"/>.</summary>
     public IReadOnlyList<RecordRuleAttribute> Constraints { get; init; } = [];
-
-    /// <summary>The op names commonly written for this operation (see <see cref="MistakenForAttribute"/>).</summary>
-    public IReadOnlyList<string> MistakenFor { get; init; } = [];
 }
 
 /// <summary>One member of a contract record.</summary>
@@ -108,9 +105,6 @@ public sealed class OperationProperty
 
     /// <summary>The member's declared constraints.</summary>
     public IReadOnlyList<ValueConstraintAttribute> Constraints { get; init; } = [];
-
-    /// <summary>The field names commonly written for this member (see <see cref="MistakenForAttribute"/>).</summary>
-    public IReadOnlyList<string> MistakenFor { get; init; } = [];
 
     /// <summary>
     /// Where the state the member writes reads back (C-R21): a read path, or one of

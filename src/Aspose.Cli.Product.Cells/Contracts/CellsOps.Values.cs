@@ -93,7 +93,6 @@ public sealed record CopyRangeOp : CellsSheetOp
 /// formatting is preserved. The style must set at least one field.
 /// </summary>
 [Operation("format_range")]
-[MistakenFor("set_style", "format_cells")]
 public sealed record FormatRangeOp : CellsSheetOp
 {
     /// <summary>The range to format, such as B2:D10.</summary>
@@ -136,7 +135,6 @@ public sealed record UnmergeCellsOp : CellsSheetOp
 /// matched, not the text its number format shows.
 /// </summary>
 [Operation("replace_text")]
-[MistakenFor("find_replace", "replace")]
 public sealed record ReplaceTextOp : CellsSheetOp
 {
     /// <summary>The range to replace in, such as A1:D20; every cell of the sheet when omitted.</summary>
@@ -147,7 +145,6 @@ public sealed record ReplaceTextOp : CellsSheetOp
     [MinLength(1)] public required string Find { get; init; }
 
     /// <summary>With regex, .NET substitutions such as $1 and ${name} apply; write $$ for a literal $.</summary>
-    [MistakenFor("replacement", "replaceWith")]
     [NotState]
     public required string Replace { get; init; }
 
@@ -156,7 +153,6 @@ public sealed record ReplaceTextOp : CellsSheetOp
     public bool Regex { get; init; }
 
     /// <summary>Whether a match must have the same letter case as find.</summary>
-    [MistakenFor("matchCase")]
     [NotState]
     public bool CaseSensitive { get; init; }
 

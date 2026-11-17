@@ -14,7 +14,6 @@ public sealed record CellsStyleData
     [Pattern(@"\S")] public string? Font { get; init; }
 
     /// <summary>The font size in points; fractional sizes such as 10.5 are kept.</summary>
-    [MistakenFor("size")]
     [ReadBack("read-result.schema.json#/$defs/cellsStyleData/properties/fontSize")]
     [Measured(MeasureUnit.Points), Minimum(1), Maximum(409)] public double? FontSize { get; init; }
 
@@ -31,22 +30,18 @@ public sealed record CellsStyleData
     [HexColor] public string? Color { get; init; }
 
     /// <summary>The solid background fill color.</summary>
-    [MistakenFor("bg", "backgroundColor", "bgColor", "background", "fill")]
     [ReadBack("read-result.schema.json#/$defs/cellsStyleData/properties/fillColor")]
     [HexColor] public string? FillColor { get; init; }
 
     /// <summary>The number format code, such as 0.0%.</summary>
-    [MistakenFor("numFmt", "numberFmt", "format", "formatCode")]
     [ReadBack("read-result.schema.json#/$defs/cellsStyleData/properties/numberFormat")]
     [MinLength(1)] public string? NumberFormat { get; init; }
 
     /// <summary>The horizontal alignment of the text.</summary>
-    [MistakenFor("hAlign", "horizontalAlignment", "align", "textAlign")]
     [ReadBack("read-result.schema.json#/$defs/cellsStyleData/properties/alignment")]
     [AllowedValues(typeof(CellsHorizontalAlignments))] public string? Alignment { get; init; }
 
     /// <summary>The vertical alignment of the text.</summary>
-    [MistakenFor("vAlign", "valign")]
     [ReadBack("read-result.schema.json#/$defs/cellsStyleData/properties/verticalAlignment")]
     [AllowedValues(typeof(CellsVerticalAlignments))] public string? VerticalAlignment { get; init; }
 

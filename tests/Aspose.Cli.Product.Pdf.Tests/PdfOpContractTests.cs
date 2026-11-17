@@ -178,50 +178,6 @@ public sealed class PdfOpContractTests
     }
 
     [Theory]
-    [InlineData("add_link", "add_hyperlink")]
-    [InlineData("add_image_stamp", "add_stamp_image")]
-    [InlineData("add_image_watermark", "add_watermark_image")]
-    [InlineData("decrypt", "decrypt_document")]
-    [InlineData("encrypt", "encrypt_document")]
-    [InlineData("optimize", "optimize_document")]
-    [InlineData("insert_blank_page", "insert_page")]
-    [InlineData("insert_pages_from", "import_pages")]
-    [InlineData("remove_attachment", "delete_attachment")]
-    [InlineData("remove_metadata", "clear_properties")]
-    [InlineData("set_metadata", "set_properties")]
-    public void RenamedOperation_RefusesItsOldNameAndSuggestsTheNewOne(string old, string renamed)
-    {
-        CliException error = Assert.Throws<CliException>(() => Parse($$"""{"ops":[{"op":"{{old}}"}]}"""));
-
-        Assert.Equal(ErrorCodes.OpsInvalid, error.Code);
-        Assert.Equal(renamed, error.Details!["suggestions"]!.AsArray()[0]!.GetValue<string>());
-    }
-
-    [Theory]
-    [InlineData("""{"op":"rotate_pages","pages":"1","angle":90}""", "rotation")]
-    [InlineData("""{"op":"set_page_size","pages":"1","size":"a4"}""", "pageSize")]
-    [InlineData("""{"op":"insert_page","at":1,"size":"a4"}""", "pageSize")]
-    [InlineData("""{"op":"add_watermark_text","text":"DRAFT","size":12}""", "fontSize")]
-    [InlineData("""{"op":"add_page_numbers","format":"{n}"}""", "text")]
-    [InlineData("""{"op":"add_header_text","text":"Head","position":"left"}""", "alignment")]
-    [InlineData("""{"op":"add_footer_text","text":"Foot","position":"left"}""", "alignment")]
-    [InlineData("""{"op":"add_header_text","text":"Head","placement":"top-left"}""", "alignment")]
-    [InlineData("""{"op":"add_footer_text","text":"Foot","placement":"bottom-left"}""", "alignment")]
-    [InlineData("""{"op":"set_page_labels","ranges":[{"startPage":1,"startingValue":3}]}""", "start")]
-    [InlineData("""{"op":"add_page_numbers","position":"bottom-left"}""", "placement")]
-    [InlineData("""{"op":"import_pages","path":"other.pdf","at":1,"passwordEnv":"SOURCE"}""", "sourcePasswordEnv")]
-    [InlineData("""{"op":"delete_bookmarks","indexes":["1"]}""", "bookmarks")]
-    [InlineData("""{"op":"redact_text","pattern":"secret"}""", "find")]
-    [InlineData("""{"op":"set_page_labels","ranges":[{"startPage":1,"style":"decimal"}]}""", "numberStyle")]
-    public void RenamedField_RefusesItsOldNameAndSuggestsTheNewOne(string operation, string renamed)
-    {
-        CliException error = Assert.Throws<CliException>(() => Parse($$"""{"ops":[{{operation}}]}"""));
-
-        Assert.Equal(ErrorCodes.OpsInvalid, error.Code);
-        Assert.Equal(renamed, error.Details!["suggestions"]!.AsArray()[0]!.GetValue<string>());
-    }
-
-    [Theory]
     [InlineData("Title")]
     [InlineData("AUTHOR")]
     [InlineData("producer")]
@@ -266,19 +222,6 @@ public sealed class PdfOpContractTests
 
         Assert.False(Assert.IsType<RedactTextOp>(both[0]).CaseSensitive);
         Assert.True(Assert.IsType<RedactTextOp>(both[1]).CaseSensitive);
-    }
-
-    /// <summary>
-    /// An import that names its file with source, as other tools do, is refused with path as the
-    /// first suggestion and a hint that names it.
-    /// </summary>
-    [Theory]
-    [InlineData("""{"op":"import_pages","source":"a.pdf","at":1}""")]
-    public void AnImportThatNamesItsFileSource_SuggestsPath(string operation)
-    {
-        CliException error = Assert.Throws<CliException>(() => Parse($$"""{"ops":[{{operation}}]}"""));
-
-        Assert.Equal("path", error.Details!["suggestions"]!.AsArray()[0]!.GetValue<string>());
     }
 
     private static PdfOpsBatch Parse(string json) =>

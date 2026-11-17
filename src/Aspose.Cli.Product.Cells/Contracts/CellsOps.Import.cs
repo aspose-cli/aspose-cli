@@ -20,7 +20,6 @@ namespace Aspose.Cli.Product.Cells.Contracts;
 public sealed record ImportRangeOp : CellsSheetOp
 {
     /// <summary>The source workbook file, relative to the working directory.</summary>
-    [MistakenFor("source")]
     [InputPath, Pattern(@"\S")] public required string Path { get; init; }
 
     /// <summary>The source range; it may name a source sheet, such as Sheet1!A1:D20, and otherwise lies on the source's first sheet.</summary>
@@ -38,7 +37,6 @@ public sealed record ImportRangeOp : CellsSheetOp
     [AllowedValues(typeof(CellsImportContents))] public string Content { get; init; } = CellsImportContents.Values;
 
     /// <summary>The environment variable that holds the source's open password, for an encrypted source.</summary>
-    [MistakenFor("passwordEnv")]
     [SecretEnv] public string? SourcePasswordEnv { get; init; }
 
     /// <inheritdoc />
@@ -72,12 +70,10 @@ public static class CellsImportContents
 public sealed record ImportSheetOp : CellsOp
 {
     /// <summary>The source sheet to copy, in the source workbook; the source's first sheet when omitted.</summary>
-    [MistakenFor("sheet")]
     [NotState]
     [Pattern(@"\S")] public string? SourceSheet { get; init; }
 
     /// <summary>The source workbook file, relative to the working directory.</summary>
-    [MistakenFor("source")]
     [InputPath, Pattern(@"\S")] public required string Path { get; init; }
 
     /// <summary>
@@ -91,11 +87,9 @@ public sealed record ImportSheetOp : CellsOp
     /// The 1-based position of the new sheet in the tab order, as inspect reports a sheet's
     /// position; appended when omitted, or when past the last sheet.
     /// </summary>
-    [MistakenFor("position")]
     [Minimum(1)] public int? At { get; init; }
 
     /// <summary>The environment variable that holds the source's open password, for an encrypted source.</summary>
-    [MistakenFor("passwordEnv")]
     [SecretEnv] public string? SourcePasswordEnv { get; init; }
 
     /// <inheritdoc />

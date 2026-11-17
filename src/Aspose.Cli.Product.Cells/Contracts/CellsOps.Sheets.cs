@@ -6,7 +6,6 @@ namespace Aspose.Cli.Product.Cells.Contracts;
 
 /// <summary>Adds a sheet.</summary>
 [Operation("insert_sheet")]
-[MistakenFor("add_sheet")]
 public sealed record InsertSheetOp : CellsOp
 {
     /// <summary>The name of the new sheet, as Excel allows it (see <see cref="CellsSheetNames"/>).</summary>
@@ -17,7 +16,6 @@ public sealed record InsertSheetOp : CellsOp
     /// The 1-based position in the tab order, as inspect reports a sheet's position; appended when
     /// omitted, or when past the last sheet.
     /// </summary>
-    [MistakenFor("position")]
     [Minimum(1)] public int? At { get; init; }
 
     /// <inheritdoc />
@@ -34,7 +32,6 @@ public sealed record InsertSheetOp : CellsOp
 public sealed record RenameSheetOp : CellsSheetOp
 {
     /// <summary>The new name, as Excel allows it (see <see cref="CellsSheetNames"/>).</summary>
-    [MistakenFor("to")]
     [ReadBack("inspect-result.schema.json#/$defs/cellsSheetInfo/properties/name")]
     [Pattern(@"\S"), MaxLength(CellsSheetNames.MaxLength)] public required string Name { get; init; }
 
@@ -81,7 +78,6 @@ public sealed record DeleteSheetOp : CellsSheetOp;
 /// visible sheet cannot be hidden.
 /// </summary>
 [Operation("set_sheet_visibility")]
-[MistakenFor("hide_sheet", "unhide_sheet", "show_sheet")]
 [AtLeastOneOf("sheet")]
 public sealed record SetSheetVisibilityOp : CellsSheetOp
 {
@@ -89,7 +85,6 @@ public sealed record SetSheetVisibilityOp : CellsSheetOp
     /// visible shows the tab; hidden hides it, and Excel's Unhide shows it again; very-hidden hides
     /// it from Excel's Unhide too.
     /// </summary>
-    [MistakenFor("hidden", "visible")]
     [ReadBack("inspect-result.schema.json#/$defs/cellsSheetInfo/properties/visibility")]
     [AllowedValues(typeof(CellsSheetVisibilities))] public required string Visibility { get; init; }
 }
@@ -122,7 +117,6 @@ public sealed record MoveSheetOp : CellsSheetOp
     /// The 1-based destination in the tab order, as inspect reports a sheet's position; a value
     /// past the last sheet moves it to the end.
     /// </summary>
-    [MistakenFor("position")]
     [Minimum(1)] public required int To { get; init; }
 }
 
@@ -166,7 +160,6 @@ public sealed record SetPageSetupOp : CellsSheetOp
     /// The paper size: a preset, turned by the orientation, or a width and height in points whose
     /// longer side is the width in landscape and the height in portrait, as a read reports it.
     /// </summary>
-    [MistakenFor("paperSize")]
     [ReadBack("inspect-result.schema.json#/$defs/cellsPageSetupInfo/properties/pageSize")]
     public PageSizeInput? PageSize { get; init; }
 
@@ -179,7 +172,6 @@ public sealed record SetPageSetupOp : CellsSheetOp
     [Minimum(0)] public int? FitToHeight { get; init; }
 
     /// <summary>The zoom percentage; ignored when the printout fits to pages.</summary>
-    [MistakenFor("scale")]
     [ReadBack("inspect-result.schema.json#/$defs/cellsPageSetupInfo/properties/scalePercent")]
     [Measured(MeasureUnit.Percent), Minimum(10), Maximum(400)] public int? ScalePercent { get; init; }
 
@@ -196,12 +188,10 @@ public sealed record SetPageSetupOp : CellsSheetOp
     [Measured(MeasureUnit.Points), Minimum(0)] public double? FooterMargin { get; init; }
 
     /// <summary>The center header text, with Excel codes such as &amp;P (page) and &amp;N (pages).</summary>
-    [MistakenFor("header")]
     [ReadBack("inspect-result.schema.json#/$defs/cellsPageSetupInfo/properties/headerCenter")]
     public string? HeaderCenter { get; init; }
 
     /// <summary>The center footer text, with Excel codes such as &amp;P and &amp;N.</summary>
-    [MistakenFor("footer")]
     [ReadBack("inspect-result.schema.json#/$defs/cellsPageSetupInfo/properties/footerCenter")]
     public string? FooterCenter { get; init; }
 

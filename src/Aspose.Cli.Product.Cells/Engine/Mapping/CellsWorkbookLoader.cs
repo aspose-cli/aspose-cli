@@ -323,7 +323,7 @@ internal sealed class CellsWorkbookLoader
         // Content no format recognizes is delimited text under a name delimited text has, and so
         // is content the engine takes for Markdown, which it guesses at from plain lines of text
         // (CELLS-MARKDOWN-DETECTION), under a name delimited text claims: not .txt, which is
-        // plain text's, so the guess stands there and the file goes to the product that reads it.
+        // plain text's, so the guess stands there.
         if (detected == FileFormatType.Unknown && CellsFormats.Delimited.NamedBy(path).Count > 0
             || detected == FileFormatType.Markdown && CellsFormats.Delimited.Claiming(path).Count > 0)
         {

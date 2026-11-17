@@ -50,10 +50,6 @@
           {
             "path": "error.details.format",
             "exists": true
-          },
-          {
-            "path": "error.details.suggestions",
-            "exists": false
           }
         ],
         "files": {
@@ -92,10 +88,6 @@
           {
             "path": "error.details.format",
             "exists": true
-          },
-          {
-            "path": "error.details.suggestions",
-            "exists": false
           }
         ],
         "files": {
@@ -132,10 +124,6 @@
           {
             "path": "error.details.format",
             "exists": true
-          },
-          {
-            "path": "error.details.suggestions",
-            "exists": false
           }
         ],
         "files": {
@@ -170,10 +158,6 @@
           {
             "path": "error.details.format",
             "exists": true
-          },
-          {
-            "path": "error.details.suggestions",
-            "exists": false
           }
         ],
         "files": {
@@ -212,10 +196,6 @@
           {
             "path": "error.details.format",
             "exists": true
-          },
-          {
-            "path": "error.details.suggestions",
-            "exists": false
           }
         ],
         "files": {
@@ -252,10 +232,6 @@
           {
             "path": "error.details.format",
             "exists": true
-          },
-          {
-            "path": "error.details.suggestions",
-            "exists": false
           }
         ],
         "files": {
@@ -294,10 +270,6 @@
           {
             "path": "error.details.format",
             "exists": true
-          },
-          {
-            "path": "error.details.suggestions",
-            "exists": false
           }
         ],
         "files": {
@@ -336,10 +308,6 @@
           {
             "path": "error.details.format",
             "exists": true
-          },
-          {
-            "path": "error.details.suggestions",
-            "exists": false
           }
         ],
         "files": {
@@ -376,10 +344,6 @@
           {
             "path": "error.details.format",
             "exists": true
-          },
-          {
-            "path": "error.details.suggestions",
-            "exists": false
           }
         ],
         "files": {
@@ -416,10 +380,6 @@
           {
             "path": "error.details.format",
             "exists": true
-          },
-          {
-            "path": "error.details.suggestions",
-            "exists": false
           }
         ],
         "files": {
@@ -456,10 +416,6 @@
           {
             "path": "error.details.format",
             "exists": true
-          },
-          {
-            "path": "error.details.suggestions",
-            "exists": false
           }
         ],
         "files": {
@@ -496,10 +452,6 @@
           {
             "path": "error.details.format",
             "exists": true
-          },
-          {
-            "path": "error.details.suggestions",
-            "exists": false
           }
         ],
         "files": {
@@ -536,10 +488,6 @@
           {
             "path": "error.details.format",
             "exists": true
-          },
-          {
-            "path": "error.details.suggestions",
-            "exists": false
           }
         ],
         "files": {
@@ -576,10 +524,6 @@
           {
             "path": "error.details.format",
             "exists": true
-          },
-          {
-            "path": "error.details.suggestions",
-            "exists": false
           }
         ],
         "files": {
@@ -616,10 +560,6 @@
           {
             "path": "error.details.format",
             "exists": true
-          },
-          {
-            "path": "error.details.suggestions",
-            "exists": false
           }
         ],
         "files": {

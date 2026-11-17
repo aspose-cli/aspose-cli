@@ -100,38 +100,6 @@ public sealed class WordsOpContractTests
         Assert.Equal(ErrorCodes.OpsInvalid, error.Code);
     }
 
-    /// <summary>
-    /// A highlight is a color of Word's palette, so a #RRGGBB highlight suggests the palette
-    /// color closest to it, the same one for an exact match, and the hint names the field that
-    /// takes any #RRGGBB.
-    /// </summary>
-    [Theory]
-    [InlineData("#FFFF00", "yellow")]
-    [InlineData("#FFC000", "yellow")]
-    [InlineData("#000081", "dark-blue")]
-    [InlineData("#c0c0c0", "light-gray")]
-    public void FormatText_HexHighlight_SuggestsTheClosestPaletteColorAndNamesColor(string highlight, string closest)
-    {
-        CliException error = Assert.Throws<CliException>(() => Parse(
-            $$"""{"ops":[{"op":"format_text","target":{"block":1},"highlight":"{{highlight}}"}]}"""));
-
-        Assert.Equal(ErrorCodes.OpsInvalid, error.Code);
-        Assert.Equal(closest, error.Details!["suggestions"]![0]!.GetValue<string>());
-    }
-
-    /// <summary>
-    /// An import that names its file with source, as other tools do, is refused with path as the
-    /// first suggestion and a hint that names it.
-    /// </summary>
-    [Theory]
-    [InlineData("""{"op":"import_sections","source":"a.docx"}""")]
-    public void AnImportThatNamesItsFileSource_SuggestsPath(string operation)
-    {
-        CliException error = Assert.Throws<CliException>(() => Parse($$"""{"ops":[{{operation}}]}"""));
-
-        Assert.Equal("path", error.Details!["suggestions"]!.AsArray()[0]!.GetValue<string>());
-    }
-
     private static WordsOpsBatch Parse(string json) =>
         WordsOp.Catalog.Parse<WordsOpsBatch>(json, Aspose.Cli.Generated.ProductJsonContext.Definition);
 }

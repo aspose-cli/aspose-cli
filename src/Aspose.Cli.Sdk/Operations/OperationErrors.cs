@@ -19,8 +19,7 @@ internal static class OperationErrors
 {
     /// <summary>
     /// Rejects the document as a whole. An unknown field, or another kind of value where an
-    /// object belongs, lists the fields the object accepts in <c>available</c> and, when some
-    /// are likely meant, names them in <c>suggestions</c>.
+    /// object belongs, lists the fields the object accepts in <c>available</c>.
     /// </summary>
     /// <param name="reason">One of <see cref="OpsInvalidReasons"/>.</param>
     /// <param name="explanation">Why, completing the message.</param>
@@ -40,8 +39,7 @@ internal static class OperationErrors
     /// <summary>
     /// Rejects one operation; <paramref name="name"/> is null when the entry names no known
     /// operation. An unknown or mistyped field adds details as the document's rejection does,
-    /// and a value that names none of its allowed values adds them as <c>available</c> with the
-    /// closest as <c>suggestions</c>.
+    /// and a value that names none of its allowed values adds them as <c>available</c>.
     /// </summary>
     internal static CliException InvalidAt(
         string id, string? name, string reason, string explanation, string? field = null, ErrorCode? cause = null,
@@ -93,8 +91,7 @@ internal static class OperationErrors
 
     /// <summary>
     /// Rejects an entry whose op names no operation of the vocabulary, listing the operations in
-    /// <c>available</c> and, when some are likely meant, naming them in <c>suggestions</c>;
-    /// <c>details.op</c> is the op name as the entry wrote it, so the caller finds the entry.
+    /// <c>available</c>; <c>details.op</c> is the op name as the entry wrote it, so the caller finds the entry.
     /// </summary>
     internal static CliException UnknownAt(string id, string explanation, Mistake operation)
     {

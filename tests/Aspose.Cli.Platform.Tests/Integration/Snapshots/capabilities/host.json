@@ -349,7 +349,7 @@
               "type": "boolean"
             },
             "hidden": {
-              "description": "Whether help leaves the option out; a hidden option is never suggested for a mistyped one.",
+              "description": "Whether help leaves the option out.",
               "type": "boolean"
             },
             "hasDefault": {
@@ -1418,9 +1418,6 @@
             "subject": {
               "description": "What was looked up, such as sheet, page or file."
             },
-            "suggestions": {
-              "description": "The accepted names closest to the request, best first."
-            },
             "target": {
               "description": "The target the error is about."
             },
@@ -1753,14 +1750,6 @@
           "description": "The names that exist, in document order; present for named targets and truncated to 50 when availableCount is larger.",
           "type": "array",
           "maxItems": 50,
-          "items": {
-            "type": "string"
-          }
-        },
-        "suggestions": {
-          "description": "The existing names closest to the request, best first; present only when some name is close.",
-          "type": "array",
-          "maxItems": 3,
           "items": {
             "type": "string"
           }

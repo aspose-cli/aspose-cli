@@ -28,9 +28,8 @@ public sealed class SdkLayeringTests
     /// form of a contract value, such as the UTC timestamp converter, lives with the
     /// contracts that name it in their [JsonConverter] attributes.</item>
     /// <item>Errors: the error vocabulary and its factories over the contract shapes. Limits
-    /// and name suggestions it reports are passed in or live here, not read from IO or
-    /// Text.</item>
-    /// <item>Primitives built on errors: text search and name suggestions, cell and page
+    /// it reports are passed in or live here, not read from IO or Text.</item>
+    /// <item>Primitives built on errors: text search, cell and page
     /// addressing, configuration paths, view manifests and the human-readable output
     /// helpers.</item>
     /// <item>IO.Files: one file at a time: the open policy for reading an input file, the

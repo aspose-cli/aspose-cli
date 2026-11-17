@@ -176,60 +176,6 @@ public sealed class WordsModuleTests
         $$"""{"ops":[{"op":"set_watermark","{{field}}":"{{new string('x', length)}}"}]}""";
 
     [Theory]
-    [InlineData("add_section", "insert_section")]
-    [InlineData("append_document", "import_sections")]
-    [InlineData("apply_list", "set_list")]
-    [InlineData("protect", "protect_document")]
-    [InlineData("unprotect", "unprotect_document")]
-    [InlineData("remove_comments", "delete_comments")]
-    [InlineData("remove_watermark", "delete_watermark")]
-    [InlineData("add_watermark", "set_watermark")]
-    [InlineData("update_fields", "refresh_fields")]
-    [InlineData("format_table", "set_table_pagination")]
-    [InlineData("highlight_text", "format_text")]
-    [InlineData("remove_list", "clear_list")]
-    public void RenamedOperation_IsRefusedWithItsNewName(string old, string renamed)
-    {
-        CliException error = Assert.Throws<CliException>(() => Parse($$"""{"ops":[{"op":"{{old}}"}]}"""));
-
-        Assert.Equal(ErrorCodes.OpsInvalid, error.Code);
-        Assert.Equal(renamed, (string?)error.Details!["suggestions"]![0]);
-    }
-
-    [Theory]
-    [InlineData("""{"op":"insert_section","after":1,"position":"after"}""", "at")]
-    [InlineData("""{"op":"import_sections","path":"a.docx","importFormatMode":"keepSource"}""", "formatting")]
-    [InlineData("""{"op":"import_sections","path":"a.docx","passwordEnv":"P"}""", "sourcePasswordEnv")]
-    [InlineData("""{"op":"protect_document","mode":"read-only"}""", "protection")]
-    [InlineData("""{"op":"set_watermark","imagePath":"a.png"}""", "path")]
-    [InlineData("""{"op":"set_table_cell","target":{"block":1},"row":1,"col":1,"text":"a"}""", "column")]
-    [InlineData("""{"op":"set_table_cell","at":{"block":1},"row":1,"column":1,"text":"a"}""", "target")]
-    [InlineData("""{"op":"set_text","at":{"block":1},"text":"a"}""", "target")]
-    [InlineData("""{"op":"add_comment","at":{"block":1},"author":"A","text":"a"}""", "target")]
-    [InlineData("""{"op":"set_table_pagination","at":{"block":1},"keepTogether":true}""", "target")]
-    [InlineData("""{"op":"repeat_table_row","at":{"block":1},"items":[]}""", "target")]
-    [InlineData("""{"op":"insert_bookmark","at":{"block":1},"name":"Mark"}""", "target")]
-    [InlineData("""{"op":"insert_table","at":{"block":1},"position":"after","rowCount":1,"columnCount":1,"cells":[["a"]]}""", "values")]
-    [InlineData("""{"op":"insert_table","at":{"block":1},"position":"after","rowCount":1,"columnCount":1,"style":"Table Grid"}""", "tableStyle")]
-    [InlineData("""{"op":"replace_text","find":"a","replace":"b","matchCase":true}""", "caseSensitive")]
-    [InlineData("""{"op":"mail_merge","inline":[{"a":"b"}]}""", "items")]
-    [InlineData("""{"op":"format_text","target":{"block":1},"size":12}""", "fontSize")]
-    [InlineData("""{"op":"define_style","name":"A","size":12}""", "fontSize")]
-    [InlineData("""{"op":"set_default_font","font":"Arial","size":12}""", "fontSize")]
-    [InlineData("""{"op":"set_page_setup","size":"a4"}""", "pageSize")]
-    [InlineData("""{"op":"set_page_numbers","format":"decimal"}""", "numberStyle")]
-    [InlineData("""{"op":"insert_paragraphs","at":{"block":1},"position":"after","paragraphs":[{"text":"a","listLevel":1}]}""", "list")]
-    [InlineData("""{"op":"set_header","text":"H"}""", "paragraphs")]
-    [InlineData("""{"op":"set_footer","content":"F"}""", "paragraphs")]
-    public void RenamedField_IsRefusedWithItsNewName(string operation, string renamed)
-    {
-        CliException error = Assert.Throws<CliException>(() => Parse($$"""{"ops":[{{operation}}]}"""));
-
-        Assert.Equal(ErrorCodes.OpsInvalid, error.Code);
-        Assert.Equal(renamed, (string?)error.Details!["suggestions"]![0]);
-    }
-
-    [Theory]
     [InlineData("""{"op":"format_text","target":{"block":1},"color":"red"}""")]
     [InlineData("""{"op":"format_text","target":{"block":1},"highlight":"#FFFF00"}""")]
     [InlineData("""{"op":"set_list","target":{"block":1},"kind":"bullet","level":0}""")]

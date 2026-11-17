@@ -176,18 +176,6 @@ internal sealed class VocabularyWriter(
             code.Append(", Description = ").Append(Literal(description));
         }
 
-        if (Find(type, SdkMetadataNames.MistakenForAttribute) is { } mistaken)
-        {
-            if (isOperation)
-            {
-                code.Append(", MistakenFor = ").Append(MistakenNames(mistaken));
-            }
-            else
-            {
-                Report(type, $"[MistakenFor] on '{type.Name}' names mistaken operation names, but '{type.Name}' is not an operation; declare it on a member instead.");
-            }
-        }
-
         // One member per line keeps the generated file reviewable.
         code.Append(", Properties = [").Append(string.Concat(members.Select(static member => "\n                " + member.Code + ",")))
             .Append(members.Count == 0 ? "]" : "\n            ]");
@@ -353,11 +341,6 @@ internal sealed class VocabularyWriter(
             code.Append(", Constraints = [").Append(string.Join(", ", constraints)).Append(']');
         }
 
-        if (Find(property, SdkMetadataNames.MistakenForAttribute) is { } mistaken)
-        {
-            code.Append(", MistakenFor = ").Append(MistakenNames(mistaken));
-        }
-
         if (new[] { _readBack, _notReadBack, _byPosition, _notState }.Count(attribute => Has(property, attribute)) > 1)
         {
             Invalid(property, "declare one read-back classification");
@@ -446,10 +429,6 @@ internal sealed class VocabularyWriter(
         _classifiedRecords[record] = classified;
         return classified;
     }
-
-    /// <summary>The collection expression of the names a <c>[MistakenFor]</c> attribute declares.</summary>
-    private static string MistakenNames(AttributeData mistaken) =>
-        "[" + string.Join(", ", mistaken.ConstructorArguments[0].Values.Select(static name => Literal((string)name.Value!))) + "]";
 
     /// <summary>The JSON literal an omitted member takes, or null when it has none.</summary>
     private string? Default(IPropertySymbol property, PropertyDeclarationSyntax declaration)

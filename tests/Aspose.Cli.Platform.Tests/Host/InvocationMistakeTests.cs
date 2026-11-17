@@ -6,9 +6,8 @@ using Xunit;
 namespace Aspose.Cli.Host.Tests;
 
 /// <summary>
-/// Each way the parser recognises a mistaken command line, on the real command tree: a command
-/// line, the error it gets, a fragment of its message and hint, and the first suggestion (null
-/// when the error suggests nothing).
+/// A command line the parser refuses, on the real command tree, does not repeat a password
+/// written on it.
 /// </summary>
 public sealed class InvocationMistakeTests
 {
@@ -19,7 +18,6 @@ public sealed class InvocationMistakeTests
 
         CliException error = Assert.Throws<CliException>(invocation.EnsureValid);
 
-        Assert.Equal("words convert", error.Details?["suggestions"]?.AsArray().FirstOrDefault()?.GetValue<string>());
         Assert.DoesNotContain("hunter2", error.Message + error.Details?.ToJsonString(), StringComparison.Ordinal);
     }
 }

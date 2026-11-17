@@ -1,5 +1,5 @@
 {
-  "name": "an unknown command suggests the closest commands and does not report the tokens after it",
+  "name": "an unknown command does not report the tokens after it",
   "steps": [
     {
       "args": [
@@ -23,10 +23,6 @@
           {
             "path": "error.message",
             "notContains": ".pdf"
-          },
-          {
-            "path": "error.details.suggestions[0]",
-            "equals": "pdf inspect"
           }
         ]
       }
@@ -55,10 +51,6 @@
           {
             "path": "error.message",
             "notContains": ".pdf"
-          },
-          {
-            "path": "error.details.suggestions[0]",
-            "equals": "pdf extract"
           }
         ]
       }
@@ -85,10 +77,6 @@
           {
             "path": "error.message",
             "notContains": ".pdf"
-          },
-          {
-            "path": "error.details.suggestions[0]",
-            "equals": "words"
           }
         ]
       }

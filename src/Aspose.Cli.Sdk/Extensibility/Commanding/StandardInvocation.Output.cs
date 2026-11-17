@@ -238,7 +238,7 @@ public partial class StandardInvocation
         {
             if (named is var (parameter, value) && !requested.Names(value))
             {
-                throw NotTheFormatsExtension(parameter, value, requested, writes);
+                throw NotTheFormatsExtension(parameter, value, requested);
             }
 
             return (requested, []);
@@ -320,8 +320,7 @@ public partial class StandardInvocation
     private static CliException NotTheFormatsExtension(
         string parameter,
         string output,
-        FormatDescriptor format,
-        IReadOnlyList<FormatDescriptor> writes)
+        FormatDescriptor format)
     {
         string extension = Path.GetExtension(output);
         string problem = extension.Length > 1
@@ -333,7 +332,6 @@ public partial class StandardInvocation
             $"{StandardOptionNames.To} {format.Id} contradicts {parameter} '{output}':",
             problem,
             format.Extensions,
-            mistyped: extension.Length > 1 && Writing(writes, output).Length == 0,
             new JsonObject { ["format"] = format.Id });
     }
 
@@ -356,21 +354,10 @@ public partial class StandardInvocation
             && string.Equals(Path.GetExtension(given), extension, StringComparison.OrdinalIgnoreCase);
         string[] extensions = [.. writes.SelectMany(static format => format.Extensions).Distinct(StringComparer.OrdinalIgnoreCase)];
         IReadOnlyList<FormatDescriptor>? producer = extension.Length > 1 && !inputs ? Producer(extension) : null;
-        // A mistyped extension close to none the command writes may stand for one a sibling
-        // writes, as .htlm stands for the .html of convert: that extension is answered as itself.
-        string? meant = extension.Length > 1 && !inputs && producer is null
-            && Mistake.Of(extension, extensions, keyOf: ExtensionKey).Suggestions.Count == 0
-            ? Mistake.Of(extension, SiblingExtensions(), keyOf: ExtensionKey).Suggestions.FirstOrDefault()
-            : null;
-        if (meant is not null)
-        {
-            producer = Producer(meant);
-        }
 
         string problem = (extension.Length > 1, producer) switch
         {
             _ when inputs => $"has the {extension} extension of its input, which already is that file; {command} writes only images",
-            (true, { } other) when meant is not null => $"has the {extension} extension, which names no format; the closest, {meant}, names {Listed(other, conjunction: "and")}, which {command} does not write",
             (true, { } other) => $"has the {extension} extension of {Listed(other, conjunction: "and")}, which {command} does not write",
             (true, null) => $"has the {extension} extension, which names no format {command} writes",
             _ => $"has no extension, which names the format {command} writes",
@@ -383,12 +370,8 @@ public partial class StandardInvocation
             derived ? $"The input '{output}', whose name the output keeps without {parameter}," : $"{(option ? parameter : "The " + parameter)} '{output}'",
             problem,
             extensions,
-            mistyped: extension.Length > 1 && producer is null && !inputs,
             producer is [var named] ? new JsonObject { ["format"] = named.Id } : []);
     }
-
-    // An extension as a mistake compares it: without its dot, ignoring case.
-    private static string ExtensionKey(string extension) => extension.TrimStart('.').ToLowerInvariant();
 
     // The visible commands beside this one, with the formats each writes through its --to.
     private IEnumerable<(string Command, TargetFormat Target)> SiblingTargets() =>
@@ -400,13 +383,6 @@ public partial class StandardInvocation
                     .Select(StandardOptions.TargetOf)
                     .OfType<TargetFormat>()
                     .Select(target => (command.Name, target)));
-
-    // The extensions of the formats the commands beside this one write, in declared order.
-    private string[] SiblingExtensions() =>
-        [.. SiblingTargets()
-            .SelectMany(static sibling => sibling.Target.Offered)
-            .SelectMany(static format => format.Extensions)
-            .Distinct(StringComparer.OrdinalIgnoreCase)];
 
     /// <summary>
     /// The format an extension chooses among those the commands beside this one write through

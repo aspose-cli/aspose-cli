@@ -54,11 +54,9 @@ public sealed record SlidesRectInput
     [Measured(MeasureUnit.Points), Minimum(0)] public required double Y { get; init; }
 
     /// <summary>The width, to the right of x.</summary>
-    [MistakenFor("w")]
     [Measured(MeasureUnit.Points), ExclusiveMinimum(0)] public required double Width { get; init; }
 
     /// <summary>The height, down from y.</summary>
-    [MistakenFor("h")]
     [Measured(MeasureUnit.Points), ExclusiveMinimum(0)] public required double Height { get; init; }
 }
 
@@ -93,7 +91,6 @@ public sealed record SlidesParagraphInput
     /// placeholder defines for that level (a bullet of its own where the level defines none), or
     /// numbered; without it the paragraph is plain text at the top level.
     /// </summary>
-    [MistakenFor("bullet", "level", "listLevel")]
     public SlidesListInput? List { get; init; }
 }
 
@@ -114,12 +111,10 @@ public sealed record SlidesListInput
 public sealed record SlidesShapeStyleInput
 {
     /// <summary>The solid fill color of the shape.</summary>
-    [MistakenFor("fill")]
     [ReadBack("read-result.schema.json#/$defs/slidesShapeData/properties/fillColor")]
     [HexColor] public string? FillColor { get; init; }
 
     /// <summary>The solid outline color of the shape.</summary>
-    [MistakenFor("line")]
     [ReadBack("read-result.schema.json#/$defs/slidesShapeData/properties/lineColor")]
     [HexColor] public string? LineColor { get; init; }
 
@@ -149,7 +144,6 @@ public sealed record SlidesShapeStyleInput
     public string? EastAsianFont { get; init; }
 
     /// <summary>The font size in points.</summary>
-    [MistakenFor("size")]
     [ReadBack("read-result.schema.json#/$defs/slidesTextRunData/properties/fontSize")]
     [Measured(MeasureUnit.Points), ExclusiveMinimum(0), Maximum(400)] public double? FontSize { get; init; }
 
@@ -182,7 +176,6 @@ public sealed record SlidesChartSeriesInput
 
 /// <summary>Inserts an empty slide.</summary>
 [Operation("insert_slide")]
-[MistakenFor("add_slide")]
 public sealed record InsertSlideOp : SlidesOp
 {
     /// <summary>
@@ -215,7 +208,6 @@ public sealed record MoveSlideOp : SlideTargetOp
 
 /// <summary>Inserts a copy of one slide.</summary>
 [Operation("copy_slide")]
-[MistakenFor("duplicate_slide")]
 public sealed record CopySlideOp : SlideTargetOp
 {
     /// <summary>The 1-based position of the copy, at most the slide count plus one; the end when omitted.</summary>
@@ -224,7 +216,6 @@ public sealed record CopySlideOp : SlideTargetOp
 
 /// <summary>Hides or shows slides in a slide show.</summary>
 [Operation("set_slide_hidden")]
-[MistakenFor("hide_slide", "hide_slides", "unhide_slide", "show_slide")]
 public sealed record SetSlideHiddenOp : SlidesOp
 {
     /// <summary>The slides to hide or show.</summary>
@@ -243,7 +234,6 @@ public sealed record SetSlideHiddenOp : SlidesOp
 /// edit then warns SLIDE_MASTER_CHANGED.
 /// </summary>
 [Operation("set_layout")]
-[MistakenFor("apply_layout")]
 public sealed record SetLayoutOp : SlidesOp
 {
     /// <summary>The slides that take the layout.</summary>
@@ -267,13 +257,11 @@ public sealed record SetBackgroundOp : SlidesOp
     [HexColor] public string? Color { get; init; }
 
     /// <summary>The picture, relative to the working directory.</summary>
-    [MistakenFor("imagePath")]
     [InputPath] public string? Path { get; init; }
 }
 
 /// <summary>Inserts a new section that starts at a slide; section names are unique.</summary>
 [Operation("insert_section")]
-[MistakenFor("add_section")]
 public sealed record InsertSectionOp : SlidesOp
 {
     /// <summary>The section name, unique among the presentation's sections.</summary>
@@ -281,29 +269,24 @@ public sealed record InsertSectionOp : SlidesOp
     [Pattern(@"\S")] public required string Name { get; init; }
 
     /// <summary>The 1-based number of the section's first slide, at most the slide count.</summary>
-    [MistakenFor("startSlide")]
     [Minimum(1)] public required int At { get; init; }
 }
 
 /// <summary>Inserts every slide of another presentation at the end.</summary>
 [Operation("import_slides")]
-[MistakenFor("append_presentation")]
 public sealed record ImportSlidesOp : SlidesOp
 {
     /// <summary>The source presentation, relative to the working directory.</summary>
-    [MistakenFor("source")]
     [InputPath] public required string Path { get; init; }
 
     /// <summary>
     /// Whether imported slides keep their own masters (keep-source), or take the destination's
     /// first master and show its layouts' backgrounds instead of their own (use-destination).
     /// </summary>
-    [MistakenFor("masterPolicy")]
     [NotState]
     [AllowedValues(typeof(FormattingModes))] public string Formatting { get; init; } = FormattingModes.KeepSource;
 
     /// <summary>The environment variable that holds the source presentation's open password, for an encrypted source.</summary>
-    [MistakenFor("passwordEnv")]
     [NotState]
     [SecretEnv] public string? SourcePasswordEnv { get; init; }
 }
@@ -313,7 +296,6 @@ public sealed record ImportSlidesOp : SlidesOp
 /// where the layout has none. A slide with neither is refused, and no box is added.
 /// </summary>
 [Operation("set_title")]
-[MistakenFor("set_slide_title")]
 public sealed record SetTitleOp : SlideTargetOp
 {
     /// <summary>The new title text, which replaces the placeholder's text.</summary>
@@ -351,7 +333,6 @@ public sealed record SlidesReplaceTextOp : SlidesOp
     [MinLength(1)] public required string Find { get; init; }
 
     /// <summary>The replacement; with regex it honors .NET substitutions such as $1, and $$ is a literal $.</summary>
-    [MistakenFor("replacement", "replaceWith")]
     [NotState]
     public required string Replace { get; init; }
 
@@ -360,7 +341,6 @@ public sealed record SlidesReplaceTextOp : SlidesOp
     public bool Regex { get; init; }
 
     /// <summary>Whether find matches letter case exactly.</summary>
-    [MistakenFor("matchCase")]
     [NotState]
     public bool CaseSensitive { get; init; }
 
@@ -393,7 +373,6 @@ public sealed record SlidesReplaceTextOp : SlidesOp
 
 /// <summary>Replaces a slide's speaker-note text.</summary>
 [Operation("set_notes")]
-[MistakenFor("add_notes")]
 public sealed record SetNotesOp : SlideTargetOp
 {
     /// <summary>The new speaker-note text, which replaces the slide's notes.</summary>
@@ -403,7 +382,6 @@ public sealed record SetNotesOp : SlideTargetOp
 
 /// <summary>Inserts a picture.</summary>
 [Operation("insert_image")]
-[MistakenFor("insert_picture", "add_picture", "add_image")]
 public sealed record SlidesInsertImageOp : SlideTargetOp
 {
     /// <summary>The picture, relative to the working directory.</summary>
@@ -411,7 +389,6 @@ public sealed record SlidesInsertImageOp : SlideTargetOp
 
     /// <summary>Where the picture goes; when omitted it keeps its aspect ratio, centered in 80% by 75% of the slide.</summary>
     [ReadBack("read-result.schema.json#/$defs/slidesShapeData/properties/rect")]
-    [MistakenFor("position")]
     public SlidesRectInput? Rect { get; init; }
 
     /// <summary>The picture's alternative text, which screen readers and exported PDFs carry.</summary>
@@ -421,16 +398,13 @@ public sealed record SlidesInsertImageOp : SlideTargetOp
 
 /// <summary>Inserts a shape.</summary>
 [Operation("insert_shape")]
-[MistakenFor("add_shape", "add_text", "add_textbox")]
 public sealed record InsertShapeOp : SlideTargetOp
 {
     /// <summary>The shape's geometry.</summary>
-    [MistakenFor("kind", "type", "shapeType")]
     [ReadBack("read-result.schema.json#/$defs/slidesShapeData/properties/geometry")]
     [AllowedValues(typeof(SlidesShapeGeometries))] public required string Geometry { get; init; }
 
     /// <summary>Where the shape goes and its size.</summary>
-    [MistakenFor("box", "bounds", "position")]
     [ReadBack("read-result.schema.json#/$defs/slidesShapeData/properties/rect")]
     public required SlidesRectInput Rect { get; init; }
 
@@ -444,7 +418,6 @@ public sealed record InsertShapeOp : SlideTargetOp
 
 /// <summary>Inserts a table with equal rows and columns; values fill it from the top-left cell.</summary>
 [Operation("insert_table")]
-[MistakenFor("add_table")]
 public sealed record SlidesInsertTableOp : SlideTargetOp
 {
     /// <summary>The most rows a slide table holds, shared by Markdown tables.</summary>
@@ -454,7 +427,6 @@ public sealed record SlidesInsertTableOp : SlideTargetOp
     internal const int MaxCols = 50;
 
     /// <summary>Where the table goes and its size, which its rows and columns share equally.</summary>
-    [MistakenFor("position")]
     [ReadBack("read-result.schema.json#/$defs/slidesShapeData/properties/rect")]
     public required SlidesRectInput Rect { get; init; }
 
@@ -467,7 +439,6 @@ public sealed record SlidesInsertTableOp : SlideTargetOp
     [Minimum(1), Maximum(MaxCols)] public required int ColumnCount { get; init; }
 
     /// <summary>Cell text by row, at most rowCount rows of at most columnCount cells each.</summary>
-    [MistakenFor("data")]
     [ReadBack("read-result.schema.json#/$defs/slidesShapeData/properties/values")]
     public IReadOnlyList<IReadOnlyList<string>>? Values { get; init; }
 
@@ -502,16 +473,13 @@ public sealed record SlidesSetTableCellOp : ShapeTargetOp
 /// value per value.
 /// </summary>
 [Operation("insert_chart")]
-[MistakenFor("add_chart", "create_chart")]
 public sealed record InsertChartOp : SlideTargetOp
 {
     /// <summary>The chart type: column has vertical bars, bar horizontal ones.</summary>
-    [MistakenFor("type", "chartType")]
     [ReadBack("read-result.schema.json#/$defs/slidesChartData/properties/kind")]
     [AllowedValues(typeof(SlidesChartKinds))] public required string Kind { get; init; }
 
     /// <summary>Where the chart goes and its size.</summary>
-    [MistakenFor("box", "bounds", "position")]
     [ReadBack("read-result.schema.json#/$defs/slidesShapeData/properties/rect")]
     public required SlidesRectInput Rect { get; init; }
 
@@ -542,7 +510,6 @@ public sealed record InsertChartOp : SlideTargetOp
 /// every series has one value per category.
 /// </summary>
 [Operation("set_chart_data")]
-[MistakenFor("update_chart_data")]
 [AtLeastOneOf("categories", "series")]
 public sealed record SetChartDataOp : ShapeTargetOp
 {
@@ -572,7 +539,6 @@ public sealed record DeleteShapeOp : ShapeTargetOp;
 /// legend, axes and data labels. A shape without text, such as a picture, refuses text styles.
 /// </summary>
 [Operation("format_shape")]
-[MistakenFor("set_shape_style")]
 public sealed record FormatShapeOp : ShapeTargetOp
 {
     /// <summary>The styling to apply; each field left out keeps the shape's current value.</summary>
@@ -596,12 +562,10 @@ public sealed record SetShapeBoundsOp : ShapeTargetOp
     [Measured(MeasureUnit.Points), Minimum(0)] public double? Y { get; init; }
 
     /// <summary>The new width.</summary>
-    [MistakenFor("w")]
     [ReadBack("read-result.schema.json#/$defs/slidesRect/properties/width")]
     [Measured(MeasureUnit.Points), ExclusiveMinimum(0)] public double? Width { get; init; }
 
     /// <summary>The new height.</summary>
-    [MistakenFor("h")]
     [ReadBack("read-result.schema.json#/$defs/slidesRect/properties/height")]
     [Measured(MeasureUnit.Points), ExclusiveMinimum(0)] public double? Height { get; init; }
 }
@@ -623,7 +587,6 @@ public sealed record SetFooterOp : SlidesOp
     public string? Text { get; init; }
 
     /// <summary>Whether the slide number shows; unchanged when omitted.</summary>
-    [MistakenFor("slideNumber")]
     [ReadBack("read-result.schema.json#/$defs/slidesFooterData/properties/showNumber")]
     public bool? ShowNumber { get; init; }
 
@@ -680,7 +643,6 @@ public sealed record SlidesSetPropertiesOp : SlidesOp
 public sealed record SetSlideSizeOp : SlidesOp
 {
     /// <summary>The new slide size.</summary>
-    [MistakenFor("size")]
     [ReadBack("inspect-result.schema.json#/$defs/slidesPresentationSummary/properties/slideSize")]
     public required SlidesSlideSizeInput SlideSize { get; init; }
 

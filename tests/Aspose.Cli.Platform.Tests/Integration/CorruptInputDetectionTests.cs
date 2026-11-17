@@ -1,56 +1,15 @@
 using System.Text.Json.Nodes;
-using Aspose.Cli.Host.Invocation;
-using Aspose.Cli.Host.Output;
-using Aspose.Cli.Host.Tests;
-using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.TestKit;
 using Xunit;
 
 namespace Aspose.Cli.Platform.Tests.Integration;
 
 /// <summary>
-/// A product that cannot open its input as its own format names the product whose format the
-/// content actually has, so a renamed file leads straight to the command that reads it.
+/// A product command whose input it cannot open reports its own corrupt input.
 /// </summary>
 [Category(TestCategory.Slow)]
 public sealed class CorruptInputDetectionTests
 {
-    [Fact]
-    public void MultiInputCommand_UsesTheFileTheProductNames()
-    {
-        using var workspace = new TempWorkspace();
-        WriteWordDocumentNamedPdf(workspace);
-        File.WriteAllText(workspace.File("other.pdf"), "%PDF-1.7\n");
-        ParsedInvocation invocation = ActualCommandTree.Parser.Parse(
-            ["pdf", "merge", "other.pdf", "renamed.pdf", "--out", "merged.pdf"]);
-        GlobalValues globals = Globals(workspace);
-        CliException named = CliErrors.InputUnreadable(
-            workspace.File("renamed.pdf"), "PDF document", "the PDF header was not found");
-
-        var explained = Assert.IsType<CliException>(CorruptInputDetection.Explain(
-            named, invocation.ParseResult, globals, ActualCommandTree.Host.Catalog));
-
-        Assert.Equal(ErrorCodes.FormatMismatch, explained.Code);
-        Assert.Equal("words", Assert.Single(explained.Details!["detected"]!.AsArray())!.GetValue<string>());
-    }
-
-    [Fact]
-    public void RelativeReportedPath_IsResolvedAgainstTheWorkDirNotTheProcessDirectory()
-    {
-        using var workspace = new TempWorkspace();
-        WriteWordDocumentNamedPdf(workspace);
-        Assert.False(File.Exists(Path.Combine(Directory.GetCurrentDirectory(), "renamed.pdf")));
-        ParsedInvocation invocation = ActualCommandTree.Parser.Parse(["pdf", "inspect", "renamed.pdf"]);
-        GlobalValues globals = Globals(workspace);
-        CliException corrupt = CliErrors.ContentUnrecognized("renamed.pdf", "pdf");
-
-        var explained = Assert.IsType<CliException>(CorruptInputDetection.Explain(
-            corrupt, invocation.ParseResult, globals, ActualCommandTree.Host.Catalog));
-
-        Assert.Equal(ErrorCodes.FormatMismatch, explained.Code);
-        Assert.Equal("words", Assert.Single(explained.Details!["detected"]!.AsArray())!.GetValue<string>());
-    }
-
     [Theory]
     [InlineData("empty.docx", "")]
     [InlineData("damaged.docx", "PK\u0003\u0004 truncated header")]
@@ -68,16 +27,4 @@ public sealed class CorruptInputDetectionTests
         Assert.Equal(workspace.File(file), error["details"]!["path"]!.GetValue<string>());
         Assert.Null(error["details"]!["reason"]);
     }
-
-    // A Word document named renamed.pdf in the workspace.
-    private static void WriteWordDocumentNamedPdf(TempWorkspace workspace)
-    {
-        File.WriteAllText(workspace.File("doc.md"), "# Title\n\nFirst paragraph.\n");
-        workspace.Run("words", "create", "doc.docx", "--from-markdown", "doc.md", "--output-format", "json").Succeeded();
-        File.Move(workspace.File("doc.docx"), workspace.File("renamed.pdf"));
-    }
-
-    private static GlobalValues Globals(TempWorkspace workspace) =>
-        new(OutputMode.Json, Quiet: true, Verbose: false, LicensePath: null,
-            workspace.Path, TimeoutSeconds: null, MaxInputBytes: 1024 * 1024);
 }

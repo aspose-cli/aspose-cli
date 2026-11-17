@@ -15,7 +15,7 @@ public sealed class SampleOption
     public SampleOption(string what)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(what);
-        _sample = new Option<bool>("--sample") { Description = $"Include a bounded sample: {what}. Default: off." }.MistakenFor("--preview");
+        _sample = new Option<bool>("--sample") { Description = $"Include a bounded sample: {what}. Default: off." };
         Options = [_sample];
     }
 

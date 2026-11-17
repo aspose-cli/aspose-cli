@@ -316,7 +316,7 @@ Reproductions: [CellsKnownIssueTests](tests/Aspose.Cli.Product.Cells.Tests/Cells
 
 - **CLI behavior:** a file named `.csv` or `.tsv` that the detection takes for Markdown is read
   as the delimited text its name says, as one it recognizes as no format is. Under `.txt`, which
-  plain text owns, the detection stands, and the file is refused as another product's document.
+  plain text owns, the detection stands, and the file is refused as Markdown (`FILE_CORRUPT`).
 
 ### CELLS-ODS-PRINT-COMMENTS
 

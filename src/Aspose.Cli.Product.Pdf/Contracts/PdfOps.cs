@@ -77,7 +77,6 @@ public sealed record PdfPageLabelRange
 
     /// <summary>How the label numbers are written; <c>none</c> labels the pages with the prefix alone.</summary>
     [AllowedValues(typeof(PageNumberStyles))]
-    [MistakenFor("style")]
     [ReadBack("inspect-result.schema.json#/$defs/pdfPageLabelInfo/properties/numberStyle")]
     public string NumberStyle { get; init; } = PageNumberStyles.Decimal;
 
@@ -87,7 +86,6 @@ public sealed record PdfPageLabelRange
 
     /// <summary>The label value of the start page.</summary>
     [ReadBack("inspect-result.schema.json#/$defs/pdfPageLabelInfo/properties/start")]
-    [MistakenFor("startingValue")]
     [Minimum(0)] public int Start { get; init; } = 1;
 }
 
@@ -126,7 +124,6 @@ public sealed record RotatePagesOp : PdfOp
 
     /// <summary>The rotation in degrees, clockwise, a quarter turn at a time: 0, 90, 180 or 270; 0 sets a page upright.</summary>
     [ReadBack("inspect-result.schema.json#/$defs/pdfPageInfo/properties/rotation")]
-    [MistakenFor("angle")]
     [Minimum(0), Maximum(270), MultipleOf(90)] public required double Rotation { get; init; }
 }
 
@@ -155,11 +152,9 @@ public sealed record MovePagesOp : PdfOp
 
 /// <summary>Inserts pages of another PDF.</summary>
 [Operation("import_pages")]
-[MistakenFor("insert_pages_from")]
 public sealed record ImportPagesOp : PdfOp
 {
     /// <summary>The source PDF, relative to the working directory.</summary>
-    [MistakenFor("source")]
     [InputPath] public required string Path { get; init; }
 
     /// <summary>The source pages; every page when omitted.</summary>
@@ -169,13 +164,11 @@ public sealed record ImportPagesOp : PdfOp
     [Minimum(1)] public required int At { get; init; }
 
     /// <summary>The environment variable that holds the source PDF's password.</summary>
-    [MistakenFor("passwordEnv")]
     [SecretEnv] public string? SourcePasswordEnv { get; init; }
 }
 
 /// <summary>Inserts one blank page.</summary>
 [Operation("insert_page")]
-[MistakenFor("insert_blank_page")]
 public sealed record InsertPageOp : PdfOp
 {
     /// <summary>The 1-based position of the new page, at most the page count plus one.</summary>
@@ -183,7 +176,6 @@ public sealed record InsertPageOp : PdfOp
 
     /// <summary>The size of the new page; an a4 page when omitted.</summary>
     [ReadBack("inspect-result.schema.json#/$defs/pdfPageInfo/properties/pageSize")]
-    [MistakenFor("size")]
     public PageSizeInput? PageSize { get; init; }
 }
 
@@ -216,7 +208,6 @@ public sealed record SetPageSizeOp : PdfOp
 
     /// <summary>The new page size, a preset or a width and height in points.</summary>
     [ReadBack("inspect-result.schema.json#/$defs/pdfPageInfo/properties/pageSize")]
-    [MistakenFor("size", "pageSise")]
     public required PageSizeInput PageSize { get; init; }
 
     /// <summary>Whether the content is scaled to the new size rather than kept at its position.</summary>
@@ -241,7 +232,6 @@ public sealed record AddWatermarkTextOp : PdfOp
 
     /// <summary>The font size in points.</summary>
     [NotState]
-    [MistakenFor("size")]
     [Measured(MeasureUnit.Points), ExclusiveMinimum(0)] public double FontSize { get; init; } = 48;
 
     /// <summary>The text color.</summary>
@@ -263,7 +253,6 @@ public sealed record AddWatermarkTextOp : PdfOp
 
 /// <summary>Stamps an image across the middle of pages.</summary>
 [Operation("add_watermark_image")]
-[MistakenFor("add_image_watermark")]
 public sealed record AddWatermarkImageOp : PdfOp
 {
     /// <summary>The pages to stamp; every page when omitted.</summary>
@@ -278,7 +267,6 @@ public sealed record AddWatermarkImageOp : PdfOp
 
     /// <summary>The size of the image as a whole-number percentage of its own size, such as 50.</summary>
     [NotState]
-    [MistakenFor("scale")]
     [Minimum(1)] public int ScalePercent { get; init; } = 50;
 
     /// <summary>Whether the watermark is drawn over the page content or under it, where opaque content hides it.</summary>
@@ -295,12 +283,10 @@ public sealed record AddPageNumbersOp : PdfOp
 
     /// <summary>The text; {n} is the number, counted over the selected pages from start, and {N} the document's page count.</summary>
     [NotState]
-    [MistakenFor("format")]
     public string Text { get; init; } = "Page {n} of {N}";
 
     /// <summary>The margin corner or center the number sits in.</summary>
     [NotState]
-    [MistakenFor("position")]
     [AllowedValues(typeof(PdfPlacements))] public string Placement { get; init; } = PdfPlacements.BottomCenter;
 
     /// <summary>The number of the first selected page.</summary>
@@ -325,7 +311,6 @@ public sealed record AddHeaderTextOp : PdfOp
 
     /// <summary>Where across the top margin the text sits.</summary>
     [NotState]
-    [MistakenFor("position", "placement")]
     [AllowedValues(typeof(PdfMarginAlignments))] public string Alignment { get; init; } = PdfMarginAlignments.Center;
 
     /// <summary>An installed font name; the default font when omitted.</summary>
@@ -346,7 +331,6 @@ public sealed record AddFooterTextOp : PdfOp
 
     /// <summary>Where across the bottom margin the text sits.</summary>
     [NotState]
-    [MistakenFor("position", "placement")]
     [AllowedValues(typeof(PdfMarginAlignments))] public string Alignment { get; init; } = PdfMarginAlignments.Center;
 
     /// <summary>An installed font name; the default font when omitted.</summary>
@@ -356,7 +340,6 @@ public sealed record AddFooterTextOp : PdfOp
 
 /// <summary>Stamps an image into a rectangle of one page.</summary>
 [Operation("add_stamp_image")]
-[MistakenFor("add_image_stamp")]
 public sealed record AddStampImageOp : PdfOp
 {
     /// <summary>The 1-based page to stamp.</summary>
@@ -372,7 +355,6 @@ public sealed record AddStampImageOp : PdfOp
 
 /// <summary>Adds a clickable link area to one page.</summary>
 [Operation("add_hyperlink")]
-[MistakenFor("add_link")]
 public sealed record AddHyperlinkOp : PdfOp
 {
     /// <summary>The 1-based page that gets the link.</summary>
@@ -405,7 +387,6 @@ public sealed record RedactTextOp : PdfOp
     /// East Asian, such as a digit or Latin letter, as extracted text can hold there.
     /// </summary>
     [NotState]
-    [MistakenFor("pattern")]
     [MinLength(1)] public required string Find { get; init; }
 
     /// <summary>Whether find is a .NET regular expression rather than literal text.</summary>
@@ -413,7 +394,6 @@ public sealed record RedactTextOp : PdfOp
     public bool Regex { get; init; }
 
     /// <summary>Whether find matches only text in the same case; any case matches when omitted.</summary>
-    [MistakenFor("matchCase")]
     [NotState]
     public bool CaseSensitive { get; init; }
 
@@ -466,7 +446,6 @@ public sealed record RedactAreaOp : PdfOp
 
 /// <summary>Sets document information entries; omitted entries keep their values.</summary>
 [Operation("set_properties")]
-[MistakenFor("set_metadata")]
 public sealed record SetPropertiesOp : PdfOp
 {
     /// <summary>The document title.</summary>
@@ -570,7 +549,6 @@ internal static class PdfPropertyNames
 
 /// <summary>Clears the document properties: the document information entries and the XMP metadata.</summary>
 [Operation("clear_properties")]
-[MistakenFor("remove_metadata")]
 public sealed record ClearPropertiesOp : PdfOp
 {
     /// <summary>Whether the XMP metadata stream is removed.</summary>
@@ -621,7 +599,6 @@ public sealed record DeleteBookmarksOp : PdfOp
     /// later operations in the batch address the renumbered outline.
     /// </summary>
     [MinItems(1), Pattern(BookmarkAddress.Pattern, Meaning = BookmarkAddress.Meaning)]
-    [MistakenFor("indexes", "index")]
     [NotState]
     public IReadOnlyList<string>? Bookmarks { get; init; }
 
@@ -684,7 +661,6 @@ public sealed record AddAttachmentOp : PdfOp
 
 /// <summary>Deletes a document attachment by name.</summary>
 [Operation("delete_attachment")]
-[MistakenFor("remove_attachment")]
 public sealed record DeleteAttachmentOp : PdfOp
 {
     /// <summary>The attachment name, as <c>pdf inspect --detail attachments</c> reports it.</summary>
@@ -739,7 +715,6 @@ public sealed record FlattenFormsOp : PdfOp
 
 /// <summary>Encrypts the document with AES-256; the published file needs the user password to open when one is set.</summary>
 [Operation("encrypt_document")]
-[MistakenFor("encrypt")]
 public sealed record EncryptDocumentOp : PdfOp
 {
     /// <summary>The environment variable that holds the password to open the document; anyone can open it when omitted.</summary>
@@ -756,12 +731,10 @@ public sealed record EncryptDocumentOp : PdfOp
 
 /// <summary>Removes the document's encryption; an unencrypted document is unchanged.</summary>
 [Operation("decrypt_document")]
-[MistakenFor("decrypt")]
 public sealed record DecryptDocumentOp : PdfOp;
 
 /// <summary>Optimizes the document's resources: embedded fonts keep only what the document's characters need unless a form field is left to fill or a signature field signs it, and image options recompress images.</summary>
 [Operation("optimize_document")]
-[MistakenFor("optimize")]
 public sealed record OptimizeDocumentOp : PdfOp
 {
     /// <summary>The largest image resolution kept, in dots per inch.</summary>

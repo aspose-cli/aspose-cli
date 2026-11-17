@@ -25,7 +25,6 @@ public sealed record AddConditionalFormatOp : CellsSheetOp
     public required CellsConditionalRule Rule { get; init; }
 
     /// <summary>The style matching cells receive.</summary>
-    [MistakenFor("style")]
     [ReadBack("inspect-result.schema.json#/$defs/cellsConditionalFormatInfo/properties/matchStyle")]
     public CellsConditionalStyle? MatchStyle { get; init; }
 
@@ -136,7 +135,6 @@ public sealed record CellsConditionalRule
     public bool Percent { get; init; }
 
     /// <summary>Whether a top-bottom rule marks the bottom rather than the top.</summary>
-    [MistakenFor("bottom")]
     public bool FromBottom { get; init; }
 
     /// <summary>The icons of an icon-set rule.</summary>

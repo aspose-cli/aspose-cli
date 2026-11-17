@@ -263,7 +263,7 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
     }
 
     [Fact]
-    public void AMisspelledFunctionIsNamedWithTheClosestFunction()
+    public void AMisspelledFunctionIsNamed()
     {
         string source = _fixture.CreateSalesWorkbook("function-typo.xlsx");
 
@@ -280,7 +280,7 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
 
         Warning warning = Assert.Single(result.Warnings!, static warning => warning.Code.Name == "FORMULA_FUNCTION_UNKNOWN");
         Assert.StartsWith(
-            "Aspose.Cells does not know the function(s) in 'Data'!E2: summ (did you mean 'SUM'?); 'Data'!E5: VLOKUP (did you mean 'VLOOKUP'?); 'Data'!E6: FOOBAR.",
+            "Aspose.Cells does not know the function(s) in 'Data'!E2: summ; 'Data'!E5: VLOKUP; 'Data'!E6: FOOBAR.",
             warning.Message,
             StringComparison.Ordinal);
     }
@@ -322,7 +322,7 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
 
         Warning warning = Assert.Single(result.Warnings!, static warning => warning.Code.Name == "FORMULA_FUNCTION_UNKNOWN");
         Assert.StartsWith(
-            "Aspose.Cells does not know the function(s) in 'Data'!E4: summ (did you mean 'SUM'?); 'Notes'!B1: VLOKUP (did you mean 'VLOOKUP'?).",
+            "Aspose.Cells does not know the function(s) in 'Data'!E4: summ; 'Notes'!B1: VLOKUP.",
             warning.Message,
             StringComparison.Ordinal);
     }

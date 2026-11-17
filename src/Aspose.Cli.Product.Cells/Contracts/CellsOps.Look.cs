@@ -18,7 +18,6 @@ public sealed record SetDefaultFontOp : CellsOp
     [Pattern(@"\S")] public required string Font { get; init; }
 
     /// <summary>The font size in points; unchanged when omitted.</summary>
-    [MistakenFor("size")]
     [ReadBack("inspect-result.schema.json#/$defs/cellsDefaultFontInfo/properties/fontSize")]
     [Measured(MeasureUnit.Points), Minimum(1), Maximum(409)] public double? FontSize { get; init; }
 
@@ -53,7 +52,6 @@ public sealed record SetSheetViewOp : CellsSheetOp
     public bool? Gridlines { get; init; }
 
     /// <summary>The zoom percentage; unchanged when omitted.</summary>
-    [MistakenFor("zoom")]
     [ReadBack("inspect-result.schema.json#/$defs/cellsSheetViewInfo/properties/zoomPercent")]
     [Measured(MeasureUnit.Percent), Minimum(10), Maximum(400)] public int? ZoomPercent { get; init; }
 

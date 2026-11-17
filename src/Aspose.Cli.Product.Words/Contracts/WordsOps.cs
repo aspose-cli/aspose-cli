@@ -64,7 +64,6 @@ public sealed record WordsParagraphInput
     [MinLength(1)] public string? Style { get; init; }
 
     /// <summary>Makes the paragraph a list item at the list's 1-based level. When the anchor is a list item, it joins the anchor's list if that list defines the level, else the list of the nearest item at this level under the same parent, and without style continues that list's nearest existing item at this level, if any, with the indents it sets on itself. When the anchor is no list item, or no such list exists, it joins one new list of the list's kind, bullets by default. A header or footer paragraph takes no list.</summary>
-    [MistakenFor("listLevel")]
     public WordsListInput? List { get; init; }
 }
 
@@ -84,7 +83,6 @@ public sealed record WordsListInput
 public sealed record WordsPageSetupInput
 {
     /// <summary>The page size: a preset, or its width and height in points; the orientation decides which side is long, so a landscape page is wider than it is high.</summary>
-    [MistakenFor("size")]
     [ReadBack("inspect-result.schema.json#/$defs/wordsSectionData/properties/pageSize")]
     public PageSizeInput? PageSize { get; init; }
 
@@ -133,7 +131,6 @@ public sealed record ReplaceTextOp : WordsOp
     [MinLength(1)] public required string Find { get; init; }
 
     /// <summary>With regex, .NET substitutions such as $1 and ${name} apply; write $$ for a literal $.</summary>
-    [MistakenFor("replacement", "replaceWith")]
     [NotState]
     public required string Replace { get; init; }
 
@@ -142,7 +139,6 @@ public sealed record ReplaceTextOp : WordsOp
     public bool Regex { get; init; }
 
     /// <summary>Whether a match must have the same letter case as find.</summary>
-    [MistakenFor("matchCase")]
     [NotState]
     public bool CaseSensitive { get; init; }
 
@@ -178,7 +174,6 @@ public sealed record ReplaceTextOp : WordsOp
 public sealed record SetTextOp : WordsOp
 {
     /// <summary>The paragraph blocks, or the bookmark, whose text is replaced.</summary>
-    [MistakenFor("at")]
     public required WordsTarget Target { get; init; }
 
     /// <summary>The new text, in the font of the first text it replaces; a paragraph keeps its own format.</summary>
@@ -287,12 +282,10 @@ public sealed record InsertTableOp : WordsOp
     [Minimum(1), Maximum(63)] public required int ColumnCount { get; init; }
 
     /// <summary>Cell text by row, then column; cells beyond it stay empty.</summary>
-    [MistakenFor("cells")]
     [ReadBack("read-result.schema.json#/$defs/wordsBlockData/properties/values")]
     public IReadOnlyList<IReadOnlyList<string>>? Values { get; init; }
 
     /// <summary>An existing table style, or a table style Word has built in, by name, such as Table Grid or Grid Table 4.</summary>
-    [MistakenFor("style")]
     [ReadBack("inspect-result.schema.json#/$defs/wordsTableData/properties/tableStyle")]
     [MinLength(1)] public string? TableStyle { get; init; }
 
@@ -310,7 +303,6 @@ public sealed record InsertTableOp : WordsOp
 public sealed record SetTableCellOp : WordsOp
 {
     /// <summary>The table block.</summary>
-    [MistakenFor("at")]
     public required WordsTarget Target { get; init; }
 
     /// <summary>The 1-based row of the cell.</summary>
@@ -318,7 +310,6 @@ public sealed record SetTableCellOp : WordsOp
     [Minimum(1)] public required int Row { get; init; }
 
     /// <summary>The 1-based column of the cell.</summary>
-    [MistakenFor("col")]
     [NotState]
     [Minimum(1)] public required int Column { get; init; }
 
@@ -338,7 +329,6 @@ public sealed record SetTableCellOp : WordsOp
 public sealed record RepeatTableRowOp : WordsOp
 {
     /// <summary>The table block that holds the template row.</summary>
-    [MistakenFor("at")]
     public required WordsTarget Target { get; init; }
 
     /// <summary>The 1-based template row; when omitted, the table's one row that contains a <c>{{key}}</c> placeholder.</summary>
@@ -362,12 +352,10 @@ public sealed record RepeatTableRowOp : WordsOp
 /// allowRowBreakAcrossPages true.
 /// </summary>
 [Operation("set_table_pagination")]
-[MistakenFor("format_table")]
 [AtLeastOneOf("keepTogether", "allowRowBreakAcrossPages", "headerRowCount", "keepWithNext")]
 public sealed record SetTablePaginationOp : WordsOp
 {
     /// <summary>The table block.</summary>
-    [MistakenFor("at")]
     public required WordsTarget Target { get; init; }
 
     /// <summary>
@@ -409,11 +397,9 @@ public sealed record SetTablePaginationOp : WordsOp
 public sealed record SetTableStyleOp : WordsOp
 {
     /// <summary>The table block.</summary>
-    [MistakenFor("at")]
     public required WordsTarget Target { get; init; }
 
     /// <summary>An existing table style, or a table style Word has built in, by name, such as Table Grid or Grid Table 4.</summary>
-    [MistakenFor("style")]
     [ReadBack("inspect-result.schema.json#/$defs/wordsTableData/properties/tableStyle")]
     [MinLength(1)] public required string TableStyle { get; init; }
 }
@@ -438,7 +424,6 @@ public sealed record InsertTocOp : WordsOp
 public sealed record InsertBookmarkOp : WordsOp
 {
     /// <summary>The paragraph block whose visible text the bookmark encloses.</summary>
-    [MistakenFor("at")]
     public required WordsTarget Target { get; init; }
 
     /// <summary>The bookmark name.</summary>
@@ -482,11 +467,9 @@ public sealed record InsertFieldOp : WordsOp
 
 /// <summary>Inserts an empty section before or after a section.</summary>
 [Operation("insert_section")]
-[MistakenFor("add_section")]
 public sealed record InsertSectionOp : WordsOp
 {
     /// <summary>The 1-based section number the new section goes before or after, as position says.</summary>
-    [MistakenFor("after")]
     [Minimum(1)] public required int At { get; init; }
 
     /// <summary>Whether the new section goes before or after section at.</summary>
@@ -513,7 +496,6 @@ public sealed record SetPageSetupOp : WordsOp
     [Minimum(1)] public int? Section { get; init; }
 
     /// <summary>The page size: a preset, or its width and height in points; the orientation decides which side is long, so a landscape page is wider than it is high.</summary>
-    [MistakenFor("size", "setup")]
     [ReadBack("inspect-result.schema.json#/$defs/wordsSectionData/properties/pageSize")]
     public PageSizeInput? PageSize { get; init; }
 
@@ -545,7 +527,6 @@ public abstract record HeaderFooterOp : WordsOp
     [AllowedValues(typeof(WordsHeaderFooterKinds))] public string Kind { get; init; } = WordsHeaderFooterKinds.Primary;
 
     /// <summary>The paragraphs, one per item, in the paragraph and character format of the first paragraph they replace, such as its alignment, or in Word's Header or Footer style when there is none; a style given replaces that paragraph format.</summary>
-    [MistakenFor("text", "content")]
     [ReadBack("inspect-result.schema.json#/$defs/wordsHeaderFooterData/properties/paragraphs")]
     public IReadOnlyList<WordsParagraphInput>? Paragraphs { get; init; }
 
@@ -612,7 +593,6 @@ public sealed record SetPageNumbersOp : WordsOp
     [MinLength(1)] public string? Text { get; init; }
 
     /// <summary>How the page numbers are written; the section's numbering keeps its style when omitted.</summary>
-    [MistakenFor("format")]
     [ReadBack("inspect-result.schema.json#/$defs/wordsPageNumbersData/properties/numberStyle")]
     [AllowedValues(typeof(PageNumberStyles))] public string? NumberStyle { get; init; }
 
@@ -635,7 +615,6 @@ public sealed record SetPageNumbersOp : WordsOp
 /// matches there; omitted settings keep their values. Regex, caseSensitive and wholeWord true need match.
 /// </summary>
 [Operation("format_text")]
-[MistakenFor("highlight_text")]
 public sealed record FormatTextOp : WordsOp
 {
     /// <summary>The blocks whose text is formatted.</summary>
@@ -656,7 +635,6 @@ public sealed record FormatTextOp : WordsOp
     public bool Regex { get; init; }
 
     /// <summary>Whether a match must have the same letter case as match.</summary>
-    [MistakenFor("matchCase")]
     [NotState]
     public bool CaseSensitive { get; init; }
 
@@ -677,7 +655,6 @@ public sealed record FormatTextOp : WordsOp
     public bool? Underline { get; init; }
 
     /// <summary>The font size in points.</summary>
-    [MistakenFor("size")]
     [ReadBack("read-result.schema.json#/$defs/wordsRunData/properties/fontSize")]
     [Measured(MeasureUnit.Points), ExclusiveMinimum(0)] public double? FontSize { get; init; }
 
@@ -752,7 +729,6 @@ public sealed record DefineStyleOp : WordsOp
     [MinLength(1)] public string? EastAsianFont { get; init; }
 
     /// <summary>The font size in points.</summary>
-    [MistakenFor("size")]
     [ReadBack("inspect-result.schema.json#/$defs/wordsStyleData/properties/fontSize")]
     [Measured(MeasureUnit.Points), ExclusiveMinimum(0)] public double? FontSize { get; init; }
 
@@ -779,7 +755,6 @@ public sealed record DefineStyleOp : WordsOp
 /// than its own.
 /// </summary>
 [Operation("set_list")]
-[MistakenFor("apply_list")]
 public sealed record SetListOp : WordsOp
 {
     /// <summary>The blocks whose paragraphs become the list's items.</summary>
@@ -798,7 +773,6 @@ public sealed record SetListOp : WordsOp
     /// style in a new numbered list: decimal at levels 1, 4 and 7, letters-lower at levels 2, 5
     /// and 8, and roman-lower at levels 3, 6 and 9.
     /// </summary>
-    [MistakenFor("format")]
     [ReadBack("read-result.schema.json#/$defs/wordsListData/properties/numberStyle")]
     [AllowedValues(typeof(WordsListNumberStyles))] public string? NumberStyle { get; init; }
 
@@ -843,7 +817,6 @@ public sealed record SetListOp : WordsOp
 
 /// <summary>Takes the paragraphs of target blocks out of their lists; they keep their text and style.</summary>
 [Operation("clear_list")]
-[MistakenFor("remove_list")]
 public sealed record ClearListOp : WordsOp
 {
     /// <summary>The blocks whose paragraphs leave their lists.</summary>
@@ -868,7 +841,6 @@ public sealed record SetDefaultFontOp : WordsOp
     [MinLength(1)] public string? EastAsianFont { get; init; }
 
     /// <summary>The font size in points; sizes are kept when omitted.</summary>
-    [MistakenFor("size")]
     [ReadBack("inspect-result.schema.json#/$defs/wordsStyleData/properties/fontSize")]
     [Measured(MeasureUnit.Points), ExclusiveMinimum(0)] public double? FontSize { get; init; }
 }
@@ -933,7 +905,6 @@ public sealed record SetPropertiesOp : WordsOp
 
 /// <summary>Sets the text or image watermark, replacing any the document has; color and font apply to a text watermark only.</summary>
 [Operation("set_watermark")]
-[MistakenFor("add_watermark")]
 [ExactlyOneOf("text", "path")]
 [DependentRequired("color", "text")]
 [DependentRequired("font", "text")]
@@ -944,7 +915,6 @@ public sealed record SetWatermarkOp : WordsOp
     [MinLength(1), MaxLength(200)] public string? Text { get; init; }
 
     /// <summary>The watermark image, relative to the working directory.</summary>
-    [MistakenFor("imagePath")]
     [NotState]
     [InputPath] public string? Path { get; init; }
 
@@ -963,16 +933,13 @@ public sealed record SetWatermarkOp : WordsOp
 
 /// <summary>Deletes the document watermark.</summary>
 [Operation("delete_watermark")]
-[MistakenFor("remove_watermark")]
 public sealed record DeleteWatermarkOp : WordsOp;
 
 /// <summary>Restricts editing of the document.</summary>
 [Operation("protect_document")]
-[MistakenFor("protect")]
 public sealed record ProtectDocumentOp : WordsOp
 {
     /// <summary>The editing restriction.</summary>
-    [MistakenFor("mode")]
     [AllowedValues(typeof(WordsProtectionModes))]
     [ReadBack("inspect-result.schema.json#/$defs/wordsDocumentSummary/properties/protection")]
     public required string Protection { get; init; }
@@ -983,7 +950,6 @@ public sealed record ProtectDocumentOp : WordsOp
 
 /// <summary>Removes document protection.</summary>
 [Operation("unprotect_document")]
-[MistakenFor("unprotect")]
 public sealed record UnprotectDocumentOp : WordsOp
 {
     /// <summary>The environment variable that holds the protection password.</summary>
@@ -1030,7 +996,6 @@ public sealed record RejectRevisionsOp : RevisionDecisionOp;
 public sealed record AddCommentOp : WordsOp
 {
     /// <summary>The paragraph block the comment is anchored to.</summary>
-    [MistakenFor("at")]
     public required WordsTarget Target { get; init; }
 
     /// <summary>The comment author's name.</summary>
@@ -1044,7 +1009,6 @@ public sealed record AddCommentOp : WordsOp
 
 /// <summary>Deletes comments: all, or one author's.</summary>
 [Operation("delete_comments")]
-[MistakenFor("remove_comments")]
 public sealed record DeleteCommentsOp : WordsOp
 {
     /// <summary>The author whose comments are deleted; a name no comment has changes nothing and reports OP_NO_EFFECT.</summary>
@@ -1054,20 +1018,16 @@ public sealed record DeleteCommentsOp : WordsOp
 
 /// <summary>Appends the sections of a local document, each with the headers and footers it defines; a kind it does not define continues from the section before it.</summary>
 [Operation("import_sections")]
-[MistakenFor("append_document")]
 public sealed record ImportSectionsOp : WordsOp
 {
     /// <summary>The document, relative to the working directory.</summary>
-    [MistakenFor("source")]
     [InputPath] public required string Path { get; init; }
 
     /// <summary>Which definition a style both documents name takes: the imported document's (keep-source) or this document's (use-destination). Headers and footers are not styles and come with their sections either way.</summary>
-    [MistakenFor("importFormatMode")]
     [NotState]
     [AllowedValues(typeof(FormattingModes))] public string Formatting { get; init; } = FormattingModes.KeepSource;
 
     /// <summary>The environment variable that holds the source document's open password, for an encrypted source.</summary>
-    [MistakenFor("passwordEnv")]
     [NotState]
     [SecretEnv] public string? SourcePasswordEnv { get; init; }
 }
@@ -1081,7 +1041,6 @@ public sealed record MailMergeOp : WordsOp
     [InputPath] public string? Path { get; init; }
 
     /// <summary>Merge rows of field values by field name, read as a data file's are: a number or Boolean merges as its JSON text.</summary>
-    [MistakenFor("inline")]
     [NotState]
     [MinItems(1), JsonScalar] public IReadOnlyList<IReadOnlyDictionary<string, object?>>? Items { get; init; }
 
@@ -1092,7 +1051,6 @@ public sealed record MailMergeOp : WordsOp
 
 /// <summary>Refreshes the tables of contents, or every field and the page layout.</summary>
 [Operation("refresh_fields")]
-[MistakenFor("update_fields")]
 public sealed record RefreshFieldsOp : WordsOp
 {
     /// <summary>toc refreshes the tables of contents; all refreshes every field and the page layout.</summary>

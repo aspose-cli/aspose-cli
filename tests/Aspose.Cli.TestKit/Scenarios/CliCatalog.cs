@@ -164,7 +164,7 @@ public sealed record CliCommand(
 }
 
 /// <summary>
-/// One option of a command; a hidden one is left out of help and suggestions, and a recursive one
+/// One option of a command; a hidden one is left out of help, and a recursive one
 /// is taken by every command below its own. <see cref="MaximumArity"/> is the number of values it
 /// takes, 0 for a flag; <see cref="Aliases"/> are its other spellings, such as <c>-q</c>.
 /// <see cref="InputKind"/> says what its value names when the command reads it, such as

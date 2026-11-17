@@ -8,290 +8,15 @@ namespace Aspose.Cli.Invariants.Tests;
 
 /// <summary>
 /// C-R38 for the names that a caller once wrote, or commonly writes, and that this build refuses.
-/// Each comes from where the build declares it: an operation or field name from the
-/// <c>[MistakenFor]</c> declarations in the product sources, read from their C# text, so a name
-/// added there joins the table; a removed command, option or option value from the command tree
-/// of capabilities, which lists every name that is still accepted, so anything it does not list
-/// is removed. A text names an operation's fields when it writes the operation as JSON
+/// A removed command, option or option value is found from the command tree of capabilities,
+/// which lists every name that is still accepted, so anything it does not list is removed. A text
+/// names an operation's fields when it writes the operation as JSON
 /// (<c>{"op":"set_slide_size","slideSize":...}</c>): each key, at every depth, must be a field of
 /// that operation at that place, judged by the operation's definition in its product's ops schema,
-/// since a mistaken name of one operation is often a field of another (<c>size</c>).
+/// since a field one operation lacks is often a field of another (<c>size</c>).
 /// </summary>
 internal static partial class ContractRules
 {
-    /// <summary>What a mistaken name stands for.</summary>
-    internal enum MistakenKind
-    {
-        /// <summary>An operation, by its name.</summary>
-        Operation,
-
-        /// <summary>A field, by its JSON name.</summary>
-        Field,
-
-        /// <summary>A command, by its path such as <c>cells read</c>.</summary>
-        Command,
-
-        /// <summary>A format a product converts to, by its id such as <c>docx</c>.</summary>
-        Format,
-    }
-
-    /// <summary>
-    /// One name a product declares mistaken: the product, the name, what it stands for and the
-    /// file that declares it.
-    /// </summary>
-    internal sealed record MistakenName(string? Product, string Name, string Meant, MistakenKind Kind, string Where)
-    {
-        public bool IsOperation => Kind == MistakenKind.Operation;
-    }
-
-    /// <summary>The <c>[MistakenFor]</c> declarations of the product sources, and the problems reading them.</summary>
-    internal sealed record MistakenNames(IReadOnlyList<MistakenName> Names, IReadOnlyList<string> Problems)
-    {
-        private static readonly Lazy<MistakenNames> Sources = new(static () => Read(Path.Combine(RepositoryPaths.Root, "src")));
-
-        /// <summary>The declarations of this repository's sources.</summary>
-        public static MistakenNames Current => Sources.Value;
-
-        /// <summary>The operation a mistaken operation name stands for in a product, or null.</summary>
-        public string? Operation(string? product, string name) =>
-            Names.FirstOrDefault(mistaken => mistaken.IsOperation && Same(mistaken.Product, product)
-                && string.Equals(mistaken.Name, name, StringComparison.OrdinalIgnoreCase))?.Meant;
-
-        /// <summary>The fields a mistaken field name stands for in a product.</summary>
-        public IEnumerable<string> Fields(string? product, string name) =>
-            Names.Where(mistaken => mistaken.Kind == MistakenKind.Field && Same(mistaken.Product, product)
-                    && string.Equals(mistaken.Name, name, StringComparison.OrdinalIgnoreCase))
-                .Select(static mistaken => mistaken.Meant)
-                .Distinct(StringComparer.Ordinal);
-
-        /// <summary>The commands of <paramref name="parent"/>, such as <c>cells</c>, that a mistaken command name stands for.</summary>
-        public IEnumerable<string> Commands(string parent, string name) =>
-            Names.Where(mistaken => mistaken.Kind == MistakenKind.Command && mistaken.Name == name
-                    && ParentCommand(mistaken.Meant) == parent)
-                .Select(static mistaken => mistaken.Meant)
-                .Distinct(StringComparer.Ordinal);
-
-        /// <summary>The path of the command a command path is below, such as <c>license</c> of <c>license status</c>; empty at the top level.</summary>
-        public static string ParentCommand(string path) =>
-            path.LastIndexOf(' ') is var space and >= 0 ? path[..space] : string.Empty;
-
-        private static bool Same(string? declared, string? product) => product is null || declared is null || declared == product;
-
-        /// <summary>Reads every C# file under <paramref name="sources"/>, its bin and obj folders left out.</summary>
-        public static MistakenNames Read(string sources)
-        {
-            var names = new List<MistakenName>();
-            var problems = new List<string>();
-            foreach ((string file, string relative) in SourceFiles(sources, "*.cs"))
-            {
-                names.AddRange(ReadFile(ProductOf(relative.Split('/')[0]), "src/" + relative, File.ReadAllText(file), problems));
-            }
-            return new MistakenNames(names, problems);
-        }
-
-        /// <summary>
-        /// Reads the declarations of one file, by their syntax rather than by the name alone, so a
-        /// method named <c>MistakenFor</c> declares nothing. A <c>[MistakenFor(...)]</c> attribute
-        /// applies to the declaration it is written before, on its line or on the lines above: a
-        /// record or class declaration is an operation that its <c>[Operation("...")]</c> names,
-        /// any other declaration a property whose JSON name is its <c>[JsonPropertyName]</c> or its
-        /// camel-cased name. Every such attribute of the text must be read, so a declaration this
-        /// reading cannot place is a problem rather than a name silently left out. A
-        /// <c>MistakenFor = [...]</c> initializer belongs to the format that a <c>FormatDescriptor</c>
-        /// factory on its line declares, named by its first string, or else to the command definition
-        /// the nearest <c>new(</c> before it creates, named by its full command path: its first string
-        /// under the names of the commands that add it with <c>Subcommands.Add</c>, under the product,
-        /// or from the top level for a platform command, which has no product; a
-        /// <c>mistakenFor: [...]</c> argument, to the edit command <c>EditDefinition.Create</c> defines.
-        /// </summary>
-        public static IEnumerable<MistakenName> ReadFile(string? product, string where, string source, List<string> problems)
-        {
-            var names = new List<MistakenName>();
-            var attributes = new List<string>();
-            int read = 0;
-            string pending = string.Empty;
-            foreach (string raw in source.ReplaceLineEndings("\n").Split('\n'))
-            {
-                string line = pending.Length > 0 ? pending + " " + raw.Trim() : raw.Trim();
-                pending = string.Empty;
-                if (line.Length == 0 || line.StartsWith("//", StringComparison.Ordinal))
-                {
-                    continue;
-                }
-                string rest = line;
-                while (rest.StartsWith('['))
-                {
-                    int end = AttributeEnd(rest);
-                    if (end < 0)
-                    {
-                        break;
-                    }
-                    attributes.Add(rest[1..end]);
-                    rest = rest[(end + 1)..].TrimStart();
-                }
-                if (rest.StartsWith('['))
-                {
-                    // An attribute list that continues on the next line.
-                    pending = rest;
-                    continue;
-                }
-                if (rest.Length == 0)
-                {
-                    continue;
-                }
-                string[] mistaken = [.. attributes.Where(static attribute => MistakenAttribute().IsMatch(attribute))
-                    .SelectMany(static attribute => MistakenAttribute().Matches(attribute))
-                    .SelectMany(static match => Literal().Matches(match.Groups["names"].Value).Select(static literal => literal.Groups["text"].Value))];
-                read += attributes.Sum(static attribute => MistakenAttribute().Matches(attribute).Count);
-                if (mistaken.Length > 0)
-                {
-                    if (TypeDeclaration().IsMatch(rest))
-                    {
-                        string? operation = attributes.Select(static attribute => OperationAttribute().Match(attribute))
-                            .FirstOrDefault(static match => match.Success)?.Groups["name"].Value;
-                        if (operation is null)
-                        {
-                            problems.Add($"{where}: [MistakenFor({string.Join(", ", mistaken)})] is on a type with no [Operation(\"...\")]");
-                        }
-                        else
-                        {
-                            names.AddRange(mistaken.Select(name => new MistakenName(product, name, operation, MistakenKind.Operation, where)));
-                        }
-                    }
-                    else if (PropertyName().Match(rest) is { Success: true } property)
-                    {
-                        string field = attributes.Select(static attribute => JsonNameAttribute().Match(attribute))
-                            .FirstOrDefault(static match => match.Success)?.Groups["name"].Value
-                            ?? JsonNamingPolicy.CamelCase.ConvertName(property.Groups["name"].Value);
-                        names.AddRange(mistaken.Select(name => new MistakenName(product, name, field, MistakenKind.Field, where)));
-                    }
-                    else
-                    {
-                        problems.Add($"{where}: [MistakenFor({string.Join(", ", mistaken)})] is before '{rest}', which reads as no type or property");
-                    }
-                }
-                attributes.Clear();
-            }
-            int written = MistakenAttributeInSource().Matches(source).Count;
-            if (written != read)
-            {
-                problems.Add($"{where}: writes [MistakenFor(...)] {written} time(s) but {read} were read before a declaration");
-            }
-            foreach (Match initializer in MistakenInitializer().Matches(source))
-            {
-                string[] declaredNames = [.. Literal().Matches(initializer.Groups["names"].Value).Select(static literal => literal.Groups["text"].Value)];
-                int lineStart = initializer.Index == 0 ? 0 : source.LastIndexOf('\n', initializer.Index - 1) + 1;
-                if (product is not null && !initializer.Groups["edit"].Success
-                    && FormatCreation().Match(source[lineStart..initializer.Index]) is { Success: true } format)
-                {
-                    names.AddRange(declaredNames.Select(name => new MistakenName(product, name, format.Groups["name"].Value, MistakenKind.Format, where)));
-                    continue;
-                }
-                                string? command = initializer.Groups["edit"].Success
-                    ? product is not null && EditCreation().Matches(source[..initializer.Index]).Count > 0 ? $"{product} edit" : null
-                    : CommandPath(product, source, initializer.Index);
-                if (command is null)
-                {
-                    problems.Add($"{where}: {initializer.Value} initializes no command definition");
-                    continue;
-                }
-                names.AddRange(declaredNames.Select(name => new MistakenName(product, name, command, MistakenKind.Command, where)));
-            }
-            return names;
-        }
-
-        /// <summary>
-        /// The path of the command whose definition the nearest <c>new(</c> before
-        /// <paramref name="index"/> creates: its name under the name of each command that adds it
-        /// with <c>Subcommands.Add</c>, by the variable it is assigned to or the method that creates
-        /// it, under the product, or from the top level for a platform command; null when no
-        /// definition comes before the index.
-        /// </summary>
-        private static string? CommandPath(string? product, string source, int index)
-        {
-            Method[] methods = [.. MethodDeclaration().Matches(source).Select(static match => new Method(match.Index, match.Groups["method"].Value))];
-            Method? MethodAt(int at) => methods.LastOrDefault(method => method.Index < at);
-            Creation[] creations =
-            [
-                .. DefinitionCreation().Matches(source).Select(match => new Creation(
-                    match.Index, match.Groups["name"].Value, match.Groups["variable"].Success ? match.Groups["variable"].Value : null, MethodAt(match.Index))),
-            ];
-            Creation? current = creations.LastOrDefault(creation => creation.Index < index);
-            if (current is null)
-            {
-                return null;
-            }
-            (string Parent, string Child, bool Call, Method? Method, int Index)[] additions =
-            [
-                .. SubcommandAddition().Matches(source).Select(match => (match.Groups["parent"].Value, match.Groups["child"].Value,
-                    match.Groups["call"].Success, MethodAt(match.Index), match.Index)),
-            ];
-            var path = new List<string> { current.Name };
-            var seen = new HashSet<Creation> { current };
-            while (true)
-            {
-                Creation child = current;
-                // The first command a method creates is the one it returns to its callers.
-                bool returned = child.Method is not null && creations.First(creation => creation.Method == child.Method) == child;
-                Creation? parent = additions
-                    .Where(addition => addition.Call
-                        ? returned && addition.Child == child.Method!.Name
-                        : addition.Child == child.Variable && addition.Method == child.Method)
-                    .Select(addition => creations.LastOrDefault(creation =>
-                        creation.Variable == addition.Parent && creation.Method == addition.Method && creation.Index < addition.Index))
-                    .FirstOrDefault(static parent => parent is not null);
-                if (parent is null || !seen.Add(parent))
-                {
-                    break;
-                }
-                path.Insert(0, parent.Name);
-                current = parent;
-            }
-            return string.Join(' ', product is null ? path : path.Prepend(product));
-        }
-
-        /// <summary>A method declaration: where it starts and its name.</summary>
-        private sealed record Method(int Index, string Name);
-
-        /// <summary>A command creation: where it starts, its name, the variable it is assigned to and the method it is in.</summary>
-        private sealed record Creation(int Index, string Name, string? Variable, Method? Method);
-
-        /// <summary>The index of the bracket that closes the attribute list at the start of <paramref name="text"/>, or -1.</summary>
-        private static int AttributeEnd(string text)
-        {
-            int depth = 0;
-            bool quoted = false;
-            for (int index = 0; index < text.Length; index++)
-            {
-                char current = text[index];
-                if (quoted)
-                {
-                    if (current == '\\')
-                    {
-                        index++;
-                    }
-                    else if (current == '"')
-                    {
-                        quoted = false;
-                    }
-                }
-                else if (current == '"')
-                {
-                    quoted = true;
-                }
-                else if (current == '[')
-                {
-                    depth++;
-                }
-                else if (current == ']' && --depth == 0)
-                {
-                    return index;
-                }
-            }
-            return -1;
-        }
-    }
-
     private const string ProductProject = "Aspose.Cli.Product.";
 
     /// <summary>The fields of each product's operations, read from its ops schema.</summary>
@@ -362,7 +87,7 @@ internal static partial class ContractRules
     /// The operations a text writes as JSON and the problems of their names: an <c>op</c> that is
     /// no operation of the product, and a key that is no field of the operation at its place.
     /// </summary>
-    private static IEnumerable<string> CheckOperationJson(string text, string? product, OperationFields fields, MistakenNames mistaken, HashSet<string> kinds)
+    private static IEnumerable<string> CheckOperationJson(string text, string? product, OperationFields fields, HashSet<string> kinds)
     {
         foreach (WrittenObject operation in WrittenJson.Operations(text))
         {
@@ -375,20 +100,16 @@ internal static partial class ContractRules
             CliProduct[] owners = fields.Owners(product, op);
             if (owners.Length == 0)
             {
-                // A snake_case name that no product has, or that this product declares mistaken, is
-                // reported as an operation name already; the JSON adds the names of one word and
-                // another product's operations.
-                string? meant = mistaken.Operation(product, op);
-                if (!LowerSnake().IsMatch(op) || (fields.Owners(null, op).Length > 0 && meant is null))
+                // A snake_case name that no product has is reported as an operation name already;
+                // the JSON adds the names of one word and another product's operations.
+                if (!LowerSnake().IsMatch(op) || fields.Owners(null, op).Length > 0)
                 {
                     string owner = product is null ? "any product" : product;
-                    yield return meant is null
-                        ? $"'{op}' is no operation of {owner}"
-                        : $"'{op}' is no operation of {owner}; it is a mistaken name of '{meant}'";
+                    yield return $"'{op}' is no operation of {owner}";
                 }
                 continue;
             }
-            foreach (string problem in CheckMembers(operation, [], owners, op, fields, mistaken, kinds))
+            foreach (string problem in CheckMembers(operation, [], owners, op, fields, kinds))
             {
                 yield return problem;
             }
@@ -401,7 +122,7 @@ internal static partial class ContractRules
     /// would be: each name must be a field of the operation at its place. A dotted name whose
     /// first part is no operation of the product, such as a file name, is not read.
     /// </summary>
-    private static IEnumerable<string> CheckDottedFields(string text, string? product, OperationFields fields, MistakenNames mistaken, HashSet<string> kinds)
+    private static IEnumerable<string> CheckDottedFields(string text, string? product, OperationFields fields, HashSet<string> kinds)
     {
         foreach (Match match in DottedField().Matches(text))
         {
@@ -416,7 +137,7 @@ internal static partial class ContractRules
             {
                 written = new WrittenObject([new WrittenMember(key, null, written is null ? [] : [written])]);
             }
-            foreach (string problem in CheckMembers(written!, [], owners, op, fields, mistaken, kinds))
+            foreach (string problem in CheckMembers(written!, [], owners, op, fields, kinds))
             {
                 yield return problem;
             }
@@ -428,7 +149,7 @@ internal static partial class ContractRules
     private static partial Regex DottedField();
 
     private static IEnumerable<string> CheckMembers(
-        WrittenObject written, List<string> path, CliProduct[] owners, string op, OperationFields fields, MistakenNames mistaken, HashSet<string> kinds)
+        WrittenObject written, List<string> path, CliProduct[] owners, string op, OperationFields fields, HashSet<string> kinds)
     {
         HashSet<string>?[] known = [.. owners.Select(owner => fields.At(owner, op, path))];
         foreach (WrittenMember member in written.Members)
@@ -446,17 +167,12 @@ internal static partial class ContractRules
             string place = string.Join('.', path.Append(member.Key));
             if (!known.Any(names => names!.Contains(member.Key)))
             {
-                string[] meant = [.. owners.SelectMany(owner => mistaken.Fields(owner.Id, member.Key))
-                    .Where(name => known.Any(names => names!.Contains(name)))
-                    .Distinct(StringComparer.Ordinal)];
-                yield return meant.Length > 0
-                    ? $"'{op}' has no field '{place}'; it is a mistaken name of '{string.Join("' or '", meant)}'"
-                    : $"'{op}' has no field '{place}'";
+                yield return $"'{op}' has no field '{place}'";
                 continue;
             }
             foreach (WrittenObject child in member.Objects)
             {
-                foreach (string problem in CheckMembers(child, [.. path, member.Key], owners, op, fields, mistaken, kinds))
+                foreach (string problem in CheckMembers(child, [.. path, member.Key], owners, op, fields, kinds))
                 {
                     yield return problem;
                 }
@@ -684,55 +400,4 @@ internal static partial class ContractRules
         }
     }
 
-    /// <summary>A <c>MistakenFor(...)</c> attribute inside an attribute list, first or after another, and its name literals.</summary>
-    [GeneratedRegex(@"(?<=^|,)\s*MistakenFor\((?<names>[^)]*)\)")]
-    private static partial Regex MistakenAttribute();
-
-    /// <summary>A <c>MistakenFor(</c> attribute in a source: in an attribute list, after its <c>[</c> or the attributes before it.</summary>
-    [GeneratedRegex(@"\[\s*(?:[\w.]+(?:\([^()]*\))?\s*,\s*)*MistakenFor\(")]
-    private static partial Regex MistakenAttributeInSource();
-
-    /// <summary>A <c>MistakenFor = [...]</c> property initializer or a <c>mistakenFor: [...]</c> argument of an edit definition, and its name literals.</summary>
-    [GeneratedRegex(@"(?<![\w.])(?:MistakenFor\s*=|(?<edit>mistakenFor\s*:))\s*\[(?<names>[^\]]*)\]")]
-    private static partial Regex MistakenInitializer();
-
-    /// <summary>The creation of an edit command definition, <c>EditDefinition.Create&lt;...&gt;(</c>.</summary>
-    [GeneratedRegex(@"\bEditDefinition\.Create<")]
-    private static partial Regex EditCreation();
-
-    /// <summary>The declaration of a format by a factory, <c>FormatDescriptor.Routed("docx"</c>, with its id.</summary>
-    [GeneratedRegex(@"\bFormatDescriptor\.\w+\(\s*""(?<name>[a-z][a-z0-9-]*)""")]
-    private static partial Regex FormatCreation();
-
-    /// <summary>
-    /// The creation of a command or its definition, <c>new(</c>, <c>new Command(</c> or
-    /// <c>new CommandDefinition&lt;...&gt;(</c>, the command name it starts with and the variable
-    /// it is assigned to.
-    /// </summary>
-    [GeneratedRegex(@"(?:\b(?<variable>\w+)\s*=\s*)?\bnew(?:\s+\w+(?:<[^>]*>)?)?\(\s*""(?<name>[a-z][a-z0-9-]*)""")]
-    private static partial Regex DefinitionCreation();
-
-    /// <summary>A method declaration with its modifiers, and the method's name.</summary>
-    [GeneratedRegex(@"(?:\b(?:public|private|internal|protected|static)\s+)+[\w<>\[\],.?\s]*?\b(?<method>[A-Z]\w*)\s*\(")]
-    private static partial Regex MethodDeclaration();
-
-    /// <summary>A <c>parent.Subcommands.Add(child</c> that adds a variable's command, or a method's when a call follows.</summary>
-    [GeneratedRegex(@"\b(?<parent>\w+)\.Subcommands\.Add\(\s*(?<child>\w+)(?<call>\s*\()?")]
-    private static partial Regex SubcommandAddition();
-
-    [GeneratedRegex(@"(?<![\w.])Operation\(\s*""(?<name>[^""]+)""\s*\)")]
-    private static partial Regex OperationAttribute();
-
-    [GeneratedRegex(@"(?<![\w.])JsonPropertyName\(\s*""(?<name>[^""]+)""\s*\)")]
-    private static partial Regex JsonNameAttribute();
-
-    [GeneratedRegex(@"""(?<text>(?:[^""\\]|\\.)*)""")]
-    private static partial Regex Literal();
-
-    [GeneratedRegex(@"\b(?:record|class|struct|interface)\s+[A-Z]\w*")]
-    private static partial Regex TypeDeclaration();
-
-    /// <summary>The name of a property declaration: the identifier before its accessors, initializer or arrow.</summary>
-    [GeneratedRegex(@"(?<name>[A-Za-z_]\w*)\s*(?:\{|=>|=(?!=)|;)")]
-    private static partial Regex PropertyName();
 }

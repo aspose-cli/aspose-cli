@@ -172,8 +172,7 @@ internal static class WordsAnchorResolver
     }
 
     /// <summary>
-    /// The error for a heading or find text no candidate block contains. A name close to it among
-    /// the candidates is suggested as for any name.
+    /// The error for a heading or find text no candidate block contains.
     /// </summary>
     private static CliException AnchorMissing(string subject, string needle, BlockEntry[] candidates)
     {

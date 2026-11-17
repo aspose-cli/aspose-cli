@@ -367,7 +367,7 @@ public sealed record CommandOptionCapabilities
     /// <summary>Whether the option applies to the command's subcommands too.</summary>
     public required bool Recursive { get; init; }
 
-    /// <summary>Whether help leaves the option out; a hidden option is never suggested for a mistyped one.</summary>
+    /// <summary>Whether help leaves the option out.</summary>
     public required bool Hidden { get; init; }
 
     /// <summary>Whether the option has a default value.</summary>

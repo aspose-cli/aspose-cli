@@ -47,9 +47,8 @@ such files as text when that matters.
 
 - `find` matches blocks whose visible text contains the given text, and
   `heading` does the same among heading paragraphs. When nothing matches,
-  `ANCHOR_NOT_FOUND` suggests a close heading, or names the
-  block that holds the longest leading part of the text, heading or not,
-  ignoring spaces and preferring body text to table of contents entries. Prefer
+  `ANCHOR_NOT_FOUND` lists the text of the blocks searched in
+  `details.available`. Prefer
   bookmarks and headings in automation; read block numbers again immediately
   before using them.
 - There is no character-offset addressing.

@@ -226,35 +226,12 @@ public sealed class CellsOpContractTests : IClassFixture<CellsFixture>
     [InlineData("""{"op":"insert_sheet","name":"Summary","position":0}""", "at")]
     [InlineData("""{"op":"import_sheet","path":"eu.xlsx","position":0}""", "at")]
     [InlineData("""{"op":"move_sheet","sheet":"Data","position":0}""", "to")]
-    public void ARenamedSheetPositionField_IsRefusedAndSuggestsItsNewName(string operation, string field)
+    public void ARenamedSheetPositionField_IsRefusedAndListsItsNewName(string operation, string field)
     {
         CliException error = Assert.Throws<CliException>(() => Parse($$"""{"ops":[{{operation}}]}"""));
 
         Assert.Equal("OPS_INVALID", error.Code.Name);
         Assert.Contains(field, error.Details!.ToJsonString(), StringComparison.Ordinal);
-    }
-
-    [Theory]
-    [InlineData("create_chart", "insert_chart")]
-    [InlineData("create_pivot", "insert_pivot")]
-    [InlineData("create_table", "define_table")]
-    [InlineData("edit_comment", "set_comment")]
-    [InlineData("remove_duplicates", "delete_duplicates")]
-    [InlineData("remove_hyperlink", "delete_hyperlink")]
-    [InlineData("update_chart", "set_chart")]
-    [InlineData("add_sheet", "insert_sheet")]
-    [InlineData("add_chart", "insert_chart")]
-    [InlineData("add_pivot", "insert_pivot")]
-    [InlineData("add_table", "define_table")]
-    [InlineData("add_image", "insert_image")]
-    [InlineData("add_name", "define_name")]
-    [InlineData("extend_table", "resize_table")]
-    public void ARenamedOperation_IsRefusedAndSuggestsItsNewName(string old, string renamed)
-    {
-        CliException error = Assert.Throws<CliException>(() => Parse($$"""{"ops":[{"op":"{{old}}"}]}"""));
-
-        Assert.Equal("OPS_INVALID", error.Code.Name);
-        Assert.Equal(renamed, error.Details!["suggestions"]!.AsArray()[0]!.GetValue<string>());
     }
 
     [Theory]
@@ -272,16 +249,6 @@ public sealed class CellsOpContractTests : IClassFixture<CellsFixture>
         Assert.Contains(reason, error.Message, StringComparison.Ordinal);
     }
 
-    [Fact]
-    public void AnUnknownOperation_ListsTheCommonOperationsFirst()
-    {
-        CliException error = Assert.Throws<CliException>(() => Parse("""{"ops":[{"op":"write_cells"}]}"""));
-
-        string[] available = [.. error.Details!["available"]!.AsArray().Select(static name => name!.GetValue<string>())];
-        Assert.True(error.Details["availableCount"]!.GetValue<int>() > available.Length);
-        Assert.True(Array.IndexOf(available, "set_values") is >= 0 and < 5, string.Join(", ", available));
-    }
-
     [Theory]
     [InlineData("""{"op":"set_autofilter","sheet":"Data","off":true}""")]
     [InlineData("""{"op":"set_tab_color","sheet":"Data"}""")]
@@ -292,20 +259,6 @@ public sealed class CellsOpContractTests : IClassFixture<CellsFixture>
         CliException error = Assert.Throws<CliException>(() => Parse($$"""{"ops":[{{operation}}]}"""));
 
         Assert.Equal("OPS_INVALID", error.Code.Name);
-    }
-
-    /// <summary>
-    /// An import that names its file with source, as other tools do, is refused with path as the
-    /// first suggestion and a hint that names it.
-    /// </summary>
-    [Theory]
-    [InlineData("""{"op":"import_range","source":"a.xlsx","from":"Sheet1!A1","to":"Sheet1!B1"}""")]
-    [InlineData("""{"op":"import_sheet","source":"a.xlsx"}""")]
-    public void AnImportThatNamesItsFileSource_SuggestsPath(string operation)
-    {
-        CliException error = Assert.Throws<CliException>(() => Parse($$"""{"ops":[{{operation}}]}"""));
-
-        Assert.Equal("path", error.Details!["suggestions"]!.AsArray()[0]!.GetValue<string>());
     }
 
     private static CellsOpsBatch Parse(string json) =>
