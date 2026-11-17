@@ -31,7 +31,6 @@ internal static class ConvertCommand
                     Input = standard.Input,
                     Output = output,
                     Slides = slides.ReadRange(parse),
-                    Continuation = standard.ContinuationOf(standard.Input),
                     Password = standard.InputPassword,
                     EncryptPassword = encryptPassword,
                 };

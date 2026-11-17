@@ -129,8 +129,7 @@ internal static class WordsEdit
         {
             throw CliErrors.OptionInvalid(
                 WordsOptionNames.TrackChanges,
-                $"{string.Join(", ", untracked)} cannot be recorded as tracked changes",
-                "Apply these operations in a separate batch without --track-changes; only content insertions and deletions are tracked.");
+                $"{string.Join(", ", untracked)} cannot be recorded as tracked changes");
         }
     }
 
@@ -195,7 +194,7 @@ internal static class WordsEdit
                 }
             },
             request.Verify
-                ? candidate => Verify(session, candidate, written.Id, protection.Password, baseline!, WordsReadBack.Saved(document), verified, readBack)
+                ? candidate => Verify(session, candidate, protection.Password, baseline!, WordsReadBack.Saved(document), verified, readBack)
                 : null,
             "words-edit");
     }
@@ -332,7 +331,6 @@ internal static class WordsEdit
     private static WordsEditVerification Verify(
         WordsSession session,
         string candidatePath,
-        string format,
         Secret? outputPassword,
         Document baseline,
         WordsSavedState expected,
@@ -347,24 +345,22 @@ internal static class WordsEdit
             // Some formats store content as fields, such as RTF a linked picture as INCLUDEPICTURE.
             issues.Add(VerificationIssues.Of(
                 WordsDiagnostics.FieldCountMismatch,
-                $"Field count changed during save/reopen: expected {expected.FieldCount}, found {found.FieldCount}.",
-                hint: GainedFieldsHint(format)));
+                $"Field count changed during save/reopen: expected {expected.FieldCount}, found {found.FieldCount}."));
         }
         else
         {
-            Compare(WordsDiagnostics.FieldCountMismatch, "Field count", expected.FieldCount, found.FieldCount, "fields", WordsFormats.WordIds);
+            Compare(WordsDiagnostics.FieldCountMismatch, "Field count", expected.FieldCount, found.FieldCount);
         }
         // Evaluation mode cuts a long document short at its truncation notice, at this save or an earlier one.
         if (reopened.Evaluation && WordsEvaluation.IsTruncated(reopened.Document))
         {
             issues.Add(VerificationIssues.Of(
                 WordsDiagnostics.OutputTruncated,
-                $"Evaluation mode cut the output short: it keeps only its first {reopened.Document.Sections.Count} section(s) and ends with the engine's truncation notice; the content after it is missing.",
-                hint: "Do not deliver this output as complete; apply an Aspose.Words license and run the edit again."));
+                $"Evaluation mode cut the output short: it keeps only its first {reopened.Document.Sections.Count} section(s) and ends with the engine's truncation notice; the content after it is missing."));
         }
 
-        Compare(WordsDiagnostics.RevisionCountMismatch, "Revision count", expected.RevisionCount, found.RevisionCount, "tracked revisions", WordsFormats.RevisionIds);
-        Compare(WordsDiagnostics.ProtectionMismatch, "Protection", expected.Protection ?? "none", found.Protection ?? "none", "protection", WordsFormats.WordIds);
+        Compare(WordsDiagnostics.RevisionCountMismatch, "Revision count", expected.RevisionCount, found.RevisionCount);
+        Compare(WordsDiagnostics.ProtectionMismatch, "Protection", expected.Protection ?? "none", found.Protection ?? "none");
 
         Document comparisonBaseline = baseline.Clone();
         Document comparisonOutput = reopened.Document.Clone();
@@ -388,30 +384,15 @@ internal static class WordsEdit
             Protection = found.Protection,
         };
 
-        void Compare<T>(DiagnosticDescriptor descriptor, string what, T wanted, T kept, string state, IReadOnlyList<string> keeping)
+        void Compare<T>(DiagnosticDescriptor descriptor, string what, T wanted, T kept)
         {
             if (!EqualityComparer<T>.Default.Equals(wanted, kept))
             {
                 issues.Add(VerificationIssues.Of(
-                    descriptor, $"{what} changed during save/reopen: expected {wanted}, found {kept}.", hint: KeepStateHint(state, format, keeping)));
+                    descriptor, $"{what} changed during save/reopen: expected {wanted}, found {kept}."));
             }
         }
     }
-
-    /// <summary>
-    /// The hint for state lost in <paramref name="format"/>. Advises another format only when
-    /// <paramref name="format"/> is not one of <paramref name="keepingFormats"/>; otherwise a
-    /// format that can keep the state lost it, and saving to another would not help.
-    /// </summary>
-    internal static string KeepStateHint(string state, string format, IReadOnlyList<string> keepingFormats) =>
-        keepingFormats.Contains(format, StringComparer.Ordinal)
-            ? $"The {state} did not survive save and reopen in {format}; check the output with 'aspose-cli words inspect' before relying on it."
-            : $"{format} may not keep {state}; save to docx or another Word format and verify again.";
-
-    /// <summary>The hint for a reopened output with more fields than the edited document had: the format wrote content as fields.</summary>
-    internal static string GainedFieldsHint(string format) =>
-        $"Saving to {format} stored content as fields the edited document did not have, such as a linked picture as an INCLUDEPICTURE field; "
-            + "the fields are kept, not lost. Check them with 'aspose-cli words inspect --detail fields' before relying on the output.";
 
     private static IReadOnlyList<Warning>? MutationWarnings(
         Document document,
@@ -429,19 +410,13 @@ internal static class WordsEdit
 
         if (inputWasSigned)
         {
-            extra.Add(new Warning(WarningCodes.SignatureInvalidated, "Editing invalidates the document's digital signature.") { Hint = "Re-sign the produced document after review." });
+            extra.Add(new Warning(WarningCodes.SignatureInvalidated, "Editing invalidates the document's digital signature."));
         }
 
         if (inputProtection != ProtectionType.NoProtection)
         {
             // Editing restrictions guide Word's UI; they are not encryption and do not bind the SDK.
-            extra.Add(new Warning(WarningCodes.ProtectionNotEnforced, $"The input has {WordsProtection.ToMode(inputProtection)} editing restrictions; the edit was applied through them.")
-            {
-                // LOSSY_CONVERSION discloses restrictions a non-Word output cannot keep.
-                Hint = WordsFormats.IsWord(format)
-                    ? "Confirm the change is authorized. The output keeps the restrictions unless the batch changed them with protect_document or unprotect_document."
-                    : "Confirm the change is authorized.",
-            });
+            extra.Add(new Warning(WarningCodes.ProtectionNotEnforced, $"The input has {WordsProtection.ToMode(inputProtection)} editing restrictions; the edit was applied through them."));
         }
 
         extra.AddRange(ConversionWarnings(document, format, evaluation));

@@ -458,7 +458,7 @@ public sealed class CellsOperationBehaviorTests : IClassFixture<CellsFixture>
     }
 
     [Fact]
-    public void SetCommentOnACellWithoutOne_PointsToAddComment()
+    public void SetCommentOnACellWithoutOne_IsCommentNotFound()
     {
         CliException error = Assert.Throws<CliException>(() => Apply(
             _fixture.CreateSalesWorkbook($"set-comment-{Guid.NewGuid():N}.xlsx"),
@@ -466,7 +466,6 @@ public sealed class CellsOperationBehaviorTests : IClassFixture<CellsFixture>
             $"set-comment-{Guid.NewGuid():N}.out.xlsx"));
 
         Assert.Equal("COMMENT_NOT_FOUND", error.Code.Name);
-        Assert.Contains("use add_comment", error.Hint, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -483,7 +482,6 @@ public sealed class CellsOperationBehaviorTests : IClassFixture<CellsFixture>
         Assert.Equal(CellsDiagnostics.ChartNotFound, error.Code);
         Assert.Equal("2", error.Details!["requested"]!.GetValue<string>());
         Assert.Equal(1, error.Details["availableCount"]!.GetValue<int>());
-        Assert.Contains("1 through 1", error.Hint, StringComparison.Ordinal);
     }
 
     [Fact]

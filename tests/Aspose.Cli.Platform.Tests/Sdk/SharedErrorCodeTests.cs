@@ -5,7 +5,7 @@ namespace Aspose.Cli.Platform.Tests.Sdk;
 
 /// <summary>
 /// A shared code of <see cref="ErrorCodes"/> is built only by an SDK error factory, such as
-/// <see cref="CliErrors"/>, so each situation has one message, hint and details shape; a product
+/// <see cref="CliErrors"/>, so each situation has one message and details shape; a product
 /// builds its own codes.
 /// </summary>
 public sealed class SharedErrorCodeTests
@@ -24,17 +24,6 @@ public sealed class SharedErrorCodeTests
     }
 
     /// <summary>
-    /// <c>OUTPUT_EXISTS</c> names the option that chooses another path only when it is known: a
-    /// publication, which may write a file or a directory's parts, names none.
-    /// </summary>
-    [Fact]
-    public void OutputExists_NamesOnlyTheOptionItKnows()
-    {
-        Assert.Equal("Pass --overwrite to replace it, or choose a different output path.", CliErrors.OutputExists("a.pdf").Hint);
-        Assert.Equal("Pass --overwrite to replace it, or choose a different path with --out-dir.", CliErrors.OutputExists("a.pdf", "--out-dir").Hint);
-    }
-
-    /// <summary>
     /// The free-text factories of <c>FEATURE_UNSUPPORTED</c> say which kind of refusal they are
     /// in <c>details.reason</c>, so a caller can tell them apart without reading the message.
     /// </summary>
@@ -43,10 +32,10 @@ public sealed class SharedErrorCodeTests
     {
         (CliException Error, string Reason)[] cases =
         [
-            (CliErrors.ResourceRefused("The input names a network address.", "Embed it."), "resource-refused"),
-            (CliErrors.ContentUnsupported("The table is too large.", "Split it."), "content-too-large"),
-            (CliErrors.EnvironmentUnsupported("The font registry is unreadable.", "Repair it."), "environment"),
-            (CliErrors.EngineDefect("The engine writes invalid JSON.", "Add a data row."), "engine-defect"),
+            (CliErrors.ResourceRefused("The input names a network address."), "resource-refused"),
+            (CliErrors.ContentUnsupported("The table is too large."), "content-too-large"),
+            (CliErrors.EnvironmentUnsupported("The font registry is unreadable."), "environment"),
+            (CliErrors.EngineDefect("The engine writes invalid JSON."), "engine-defect"),
         ];
 
         Assert.All(cases, static item =>
@@ -69,7 +58,7 @@ public sealed class SharedErrorCodeTests
     {
         string path = Path.Combine(Path.GetTempPath(), "missing", "deck.pptx");
 
-        CliException error = CliErrors.InputUnreadable(path, "supported presentation", "detected format is Unknown", "Check it.");
+        CliException error = CliErrors.InputUnreadable(path, "supported presentation", "detected format is Unknown");
 
         Assert.Equal(ErrorCodes.FileCorrupt, error.Code);
         Assert.Equal(path, error.Details!["path"]!.GetValue<string>());

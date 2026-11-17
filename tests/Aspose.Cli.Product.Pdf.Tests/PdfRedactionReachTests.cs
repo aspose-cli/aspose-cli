@@ -222,11 +222,11 @@ public sealed class PdfRedactionReachTests
     }
 
     /// <summary>
-    /// A date the document's XMP holds is the document's text: a redaction of digits is refused
-    /// with a hint naming clear_properties, and publishes once clear_properties comes before it.
+    /// A date the document's XMP holds is the document's text: a redaction of digits is refused,
+    /// and publishes once clear_properties comes before it.
     /// </summary>
     [Fact]
-    public void RedactText_MatchingTheDocumentsXmp_NamesClearPropertiesAndPublishesWithIt()
+    public void RedactText_MatchingTheDocumentsXmp_FailsAndPublishesWithClearProperties()
     {
         using var fixture = new PdfEngineFixture();
         string input = Described(fixture);
@@ -241,8 +241,7 @@ public sealed class PdfRedactionReachTests
         Assert.True(refused.HasFailures);
         Assert.Null(refused.Output);
         Assert.False(File.Exists(fixture.File("digits.pdf")));
-        VerificationIssue modified = Assert.Single(refused.Verification!.Issues, static issue => issue.Location == "property/xmp:xmp:ModifyDate");
-        Assert.Contains("clear_properties", modified.Hint, StringComparison.Ordinal);
+        Assert.Single(refused.Verification!.Issues, static issue => issue.Location == "property/xmp:xmp:ModifyDate");
 
         PdfEditResult cleared = Redact("cleared.pdf", new ClearPropertiesOp());
         Assert.False(cleared.HasFailures, string.Join("; ", cleared.Verification?.Issues.Select(static issue => issue.Location) ?? []));

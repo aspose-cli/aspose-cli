@@ -37,8 +37,6 @@ internal sealed class SlidesPresentationLoader
     /// </summary>
     internal static readonly InputLoading Loading = new(
         "supported presentation",
-        "Check that the file is complete, not truncated by an interrupted copy or download, and opens in a presentation editor. "
-            + $"A file merely renamed to a presentation extension ({string.Join(", ", SlidesFormats.LoadIds)}) does not load either.",
         Classify);
 
     private static LoadFailureKind Classify(Exception exception) => exception switch

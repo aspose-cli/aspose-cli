@@ -235,7 +235,7 @@ internal sealed class CellsOpFootprints : ICellsOpHandler<CellsOpTraits>
         catch (CliException)
         {
             // Best effort: an unparsable destination (conceivable under
-            // --best-effort) still hints at the op's sheet.
+            // --best-effort) still names the op's sheet.
             return new CellsEditTarget(sheet, null);
         }
     }

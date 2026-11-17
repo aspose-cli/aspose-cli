@@ -29,12 +29,12 @@ public sealed class SlidesChartTitleReplaceTests : IDisposable
 
     /// <summary>
     /// A replace over every scope changes the text box and leaves the chart title, and warns once
-    /// for the title, at the chart's shape address, with a hint that rebuilds the chart at its
-    /// rect, and once more for the chart's first category, which matches too; the edit still exits
+    /// for the title, at the chart's shape address, and once more for the chart's first category,
+    /// which matches too; the edit still exits
     /// 0 and its verification passes.
     /// </summary>
     [Fact]
-    public void ReplaceText_LeavesAMatchingChartTitleAndWarnsHowToRebuildIt()
+    public void ReplaceText_LeavesAMatchingChartTitleAndWarns()
     {
         // The fixture applies the test license state before the deck is authored.
         using var fixture = new SlidesEngineFixture();
@@ -65,13 +65,6 @@ public sealed class SlidesChartTitleReplaceTests : IDisposable
         Assert.Equal("year", warning["details"]!["id"]!.GetValue<string>());
         Assert.Equal("replace_text", warning["details"]!["op"]!.GetValue<string>());
         Assert.Null(warning["affectsCompleteness"]);
-        string hint = warning["hint"]!.GetValue<string>();
-        Assert.Contains($$"""{"op":"delete_shape","slide":2,"shapeId":{{chartId}}}""", hint, StringComparison.Ordinal);
-        Assert.Contains("insert_chart", hint, StringComparison.Ordinal);
-        Assert.Contains("new title", hint, StringComparison.Ordinal);
-        Assert.Contains("""
-            "rect":{"x":40,"y":120,"width":300,"height":200}
-            """, hint, StringComparison.Ordinal);
 
         using var output = new Presentation(_workspace.File("out.pptx"));
         ISlide slide = output.Slides[1];
@@ -157,7 +150,7 @@ public sealed class SlidesChartTitleReplaceTests : IDisposable
     /// <summary>
     /// A chart inside a group, or inside a group in a group, is checked too: its matching title
     /// stays as it was and warns at the chart's own address, naming the slide's group that holds
-    /// it, with a hint that no operation edits it and that rebuilding it removes the group.
+    /// it.
     /// </summary>
     [Theory]
     [InlineData(false)]
@@ -198,9 +191,6 @@ public sealed class SlidesChartTitleReplaceTests : IDisposable
         Assert.Equal(
             $"Operation year (replace_text) found a match in the title of chart 'Sales' (shapeId {chartId}) in group 'Pair' (shapeId {groupId}) on slide 1 and left the title as it was: replace_text does not change chart titles or chart data.",
             warning.Message);
-        Assert.StartsWith("No operation addresses a shape inside a group", warning.Hint, StringComparison.Ordinal);
-        Assert.Contains("apply delete_shape to the group", warning.Hint, StringComparison.Ordinal);
-        Assert.DoesNotContain("presentation editor", warning.Hint, StringComparison.Ordinal);
         using var output = new Presentation(fixture.File("grouped.out.pptx"));
         IGroupShape outer = output.Slides[0].Shapes.OfType<IGroupShape>().Single();
         IChart grouped = (nested ? outer.Shapes.OfType<IGroupShape>().Single().Shapes : outer.Shapes).OfType<IChart>().Single();

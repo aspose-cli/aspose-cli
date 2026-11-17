@@ -73,7 +73,6 @@ public sealed class ImageInputTests : IDisposable
             () => OperationImages.Read(Budgets().Inputs, path));
 
         Assert.True(refused.Message.Contains(path, StringComparison.Ordinal), kind);
-        Assert.NotNull(refused.Hint);
     }
 
     // A compressed image would be an SVGZ, whose references no one can remove: refused with the

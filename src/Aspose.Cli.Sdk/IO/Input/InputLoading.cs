@@ -33,33 +33,27 @@ public sealed class InputLoading
     private readonly Func<Exception, LoadFailureKind> _classify;
 
     /// <param name="document">What an input is, completing "not a valid ...", such as <c>spreadsheet</c>.</param>
-    /// <param name="hint">How to check a file that does not load, in the product's terms.</param>
     /// <param name="classify">
     /// What an exception the engine raised while loading means, decided by its type or code,
     /// never by its message. I/O exceptions never reach it.
     /// </param>
-    public InputLoading(string document, string hint, Func<Exception, LoadFailureKind> classify)
+    public InputLoading(string document, Func<Exception, LoadFailureKind> classify)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(document);
-        ArgumentException.ThrowIfNullOrWhiteSpace(hint);
         ArgumentNullException.ThrowIfNull(classify);
         Document = document;
-        Hint = hint;
         _classify = classify;
     }
 
     /// <summary>What an input is, such as <c>spreadsheet</c>.</summary>
     public string Document { get; }
 
-    /// <summary>How to check a file that does not load.</summary>
-    public string Hint { get; }
-
     /// <summary>
     /// Runs one engine call that reads <paramref name="path"/> and translates its failure.
     /// A <see cref="CliException"/> and a cancellation pass unchanged.
     /// </summary>
     /// <param name="path">The input file.</param>
-    /// <param name="password">The password the input was opened with and where it comes from.</param>
+    /// <param name="password">The password the input was opened with.</param>
     /// <param name="load">The engine call.</param>
     public T Load<T>(string path, PasswordSource password, Func<T> load)
     {
@@ -118,8 +112,7 @@ public sealed class InputLoading
 
     /// <summary>
     /// An encrypted input that <paramref name="password"/> does not open: <c>PASSWORD_REQUIRED</c>
-    /// without a password, <c>PASSWORD_INVALID</c> with one, with the hint of where the password
-    /// comes from (<see cref="PasswordSource.Refused"/>).
+    /// without a password, <c>PASSWORD_INVALID</c> with one (<see cref="PasswordSource.Refused"/>).
     /// </summary>
     public static CliException PasswordRefused(string path, PasswordSource password) => password.Refused(path);
 
@@ -128,7 +121,7 @@ public sealed class InputLoading
     /// <param name="reason">Why it is not one, completing a sentence.</param>
     /// <param name="innerException">The engine failure, if any.</param>
     public CliException Unreadable(string path, string reason, Exception? innerException = null) =>
-        CliErrors.InputUnreadable(path, Document, reason, Hint, innerException);
+        CliErrors.InputUnreadable(path, Document, reason, innerException);
 
     /// <summary>
     /// An input whose format is recognized but cannot be loaded as this product's document,

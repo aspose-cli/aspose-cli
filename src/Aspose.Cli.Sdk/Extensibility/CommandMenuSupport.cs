@@ -40,13 +40,11 @@ internal sealed record MenuContext<TSession>(
         Func<TSession, TRequest, TResult> handler,
         TSession session,
         TRequest request,
-        OutputPipeline outputs,
-        Func<string, string?> selection) =>
+        OutputPipeline outputs) =>
         outputs.ReportingEvaluationLimits(
             () => Guard is null
                 ? handler(session, request)
-                : (TResult)Guard(session, () => handler(session, request))!,
-            selection);
+                : (TResult)Guard(session, () => handler(session, request))!);
 }
 
 /// <summary>The formats each product reads as input documents, declared once on the product's command.</summary>

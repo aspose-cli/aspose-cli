@@ -20,9 +20,7 @@ schema describes. To hand field values to another program, read them with
 `pdf search` and `pdf extract --what text` return or find none, and warn
 `FORM_VALUES_NOT_IN_TEXT` naming the filled fields on the pages they read, and a
 conversion to text or Markdown leaves the values out
-([conversions](pdf-standards.md)). The hint of each warning gives the
-`pdf inspect --detail forms` command for the input, with its `--password-env`
-when it was opened with one.
+([conversions](pdf-standards.md)).
 
 `set_form_field` addresses an AcroForm field by its exact full name. Each field's
 `kind` is one of `text` (including date, number, password and rich-text boxes),
@@ -96,11 +94,7 @@ password to keep, and a convert writes formats that cannot carry one: a convert
 to a document or text format, a `decrypt_document`, and a merge or split of an
 input with only an owner password warn `ENCRYPTION_REMOVED`
 (`aspose-cli docs editing`). Pass `--encrypt-env` where the output must stay
-protected. The warning's hint gives the command that protects the output, ready
-to run, such as `pdf edit` with an `encrypt_document` that sets only an owner
-password for an input that had only one; that operation grants readers nothing
-until you copy into its `permissions` what `pdf inspect <original> --detail
-permissions` reads from the input. To encrypt a PDF afterwards with passwords and
+protected. To encrypt a PDF afterwards with passwords and
 permissions of its own, apply an `encrypt_document` operation: `ownerPasswordEnv`
 names the variable that holds the owner password, `userPasswordEnv` the one that
 holds the password to open it (omit it to keep the file opening without a
@@ -113,13 +107,7 @@ original beside the file, as asked and without a warning.
 aspose-cli pdf edit report.pdf --in-place --ops '{"ops":[{"op":"encrypt_document","userPasswordEnv":"PASSWORD","ownerPasswordEnv":"OWNERPASSWORD","permissions":{"print":true,"copy":true}}]}' --output-format json
 ```
 
-An edit given `--encrypt-env` and no operation is refused, and its hint shows the
-edit that only encrypts: an `encrypt_document` whose `userPasswordEnv` and
-`ownerPasswordEnv` both name that variable and whose `permissions` allow every
-permission, so it writes what `--encrypt-env` writes. To restrict readers, delete
-the permissions they should not have, and name another variable in
-`ownerPasswordEnv`: a password that is also the owner password lifts every
-restriction.
+An edit given `--encrypt-env` and no operation is refused.
 
 Inspect protected
 output with `pdf inspect --detail permissions`: `print`, `copy` and the other

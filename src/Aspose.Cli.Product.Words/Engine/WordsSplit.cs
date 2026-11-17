@@ -65,7 +65,7 @@ internal static class WordsSplit
             Outputs = outputs,
             License = EnvelopeParts.License(state),
             Warnings = request.Plan.By == SplitBy.Pages
-                ? EnvelopeParts.CombineWarnings(WrittenWarnings(loaded, "docx"), [new Warning(WordsDiagnostics.LayoutMayDiffer, "Page extraction can slightly reflow complex layouts.") { Hint = "Visually inspect the split pages." }])
+                ? EnvelopeParts.CombineWarnings(WrittenWarnings(loaded, "docx"), [new Warning(WordsDiagnostics.LayoutMayDiffer, "Page extraction can slightly reflow complex layouts.")])
                 : EnvelopeParts.CombineWarnings(WrittenWarnings(loaded, "docx"), singleHeading is null ? null : [singleHeading]),
         };
     }
@@ -115,15 +115,11 @@ internal static class WordsSplit
             .Select(static entry => entry.Index).ToList();
         if (starts.Count == 0)
         {
-            throw CliErrors.NotFoundAt(WordsDiagnostics.AnchorNotFound, "Heading 1 paragraph", "1", 0,
-                "Use --by sections or --by pages, or apply Heading 1 styles first.");
+            throw CliErrors.NotFoundAt(WordsDiagnostics.AnchorNotFound, "Heading 1 paragraph", "1", 0);
         }
 
         Warning? single = starts.Count == 1
             ? new Warning(WordsDiagnostics.SplitSingleHeading, "The document has one Heading 1 paragraph, so it was split only where that heading starts.")
-            {
-                Hint = "Apply Heading 1 to each chapter's title with aspose-cli words edit, one op per title such as {\"op\":\"set_style\",\"target\":{\"block\":5},\"style\":\"Heading 1\"}, or split with --by sections or --by pages.",
-            }
             : null;
         if (starts[0] > 1)
         {

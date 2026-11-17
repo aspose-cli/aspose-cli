@@ -5,7 +5,7 @@ namespace Aspose.Cli.Product.Cells.Contracts;
 // Ops for the data-cleaning pipeline: filtering, sorting and validation.
 
 /// <summary>Sets the sheet's AutoFilter over a range; clear_autofilter removes it.</summary>
-[Operation("set_autofilter", Hint = "To remove the AutoFilter, use clear_autofilter.")]
+[Operation("set_autofilter")]
 public sealed record SetAutoFilterOp : CellsSheetOp
 {
     /// <summary>The range to filter, including its header row, such as A1:D20.</summary>
@@ -135,8 +135,7 @@ public sealed record SetValidationOp : CellsSheetOp
                 {
                     // Excel stores the items as one quoted, comma-separated literal of at most 255 characters.
                     int length = items.Sum(static item => item.Length) + items.Count - 1;
-                    OperationInvalidException.Require(length <= 255, $"'listItems' joined with commas is {length} characters; Excel allows 255",
-                        "Put the items in cells and give 'listSource' instead, e.g. \"Lists!A1:A40\".");
+                    OperationInvalidException.Require(length <= 255, $"'listItems' joined with commas is {length} characters; Excel allows 255");
                 }
 
                 break;

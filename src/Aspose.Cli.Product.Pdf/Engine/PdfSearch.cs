@@ -23,7 +23,7 @@ internal static class PdfSearch
         IReadOnlyList<int> pages = request.Pages?.Resolve(loaded.Document.Pages.Count)
             ?? Enumerable.Range(1, loaded.Document.Pages.Count).ToArray();
         SearchHits<PdfSearchHit> hits = request.Query.Collect<PdfSearchHit>();
-        var reading = new TextReading(loaded.Document, request.FormsInspection);
+        var reading = new TextReading(loaded.Document);
         // The page text is searched with the expression the engine matched.
         Regex matching = TextPattern(text.Pattern, text.Expression is not null, text.CaseSensitive);
         foreach (int number in pages)
@@ -31,7 +31,7 @@ internal static class PdfSearch
             Page page = loaded.Document.Pages[number];
             int occurrence = 0;
             TextFragmentCollection fragments = reading.Match(number, text.Pattern, text.Expression is not null, text.CaseSensitive,
-                static reason => CliErrors.OptionInvalid(SearchOptions.PatternOption, reason, "Use a pattern that matches at least one character."));
+                static reason => CliErrors.OptionInvalid(SearchOptions.PatternOption, reason));
             // The engine's hits carry no surrounding text; the page's plain text gives it when
             // it holds the same number of matches, which then pair up in reading order. A pair
             // whose texts differ gets none. The text is extracted only for a hit that is kept.

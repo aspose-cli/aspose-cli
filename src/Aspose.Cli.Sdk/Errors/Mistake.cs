@@ -105,10 +105,6 @@ public sealed class Mistake
         return new Mistake(requested, names, suggestions);
     }
 
-    /// <summary>The hint for the mistake: the <see cref="Question"/>, when there is one, before <paramref name="next"/>.</summary>
-    /// <param name="next">The next step that holds whether or not a name is close.</param>
-    public string Hint(string next) => Question is { } question ? $"{question} {next}" : next;
-
     /// <summary>
     /// The suggestions as an aside that follows a name in running text, such as
     /// <c> (did you mean 'Sales'?)</c>, or an empty string when none is close.

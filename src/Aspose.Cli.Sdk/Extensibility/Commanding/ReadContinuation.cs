@@ -1,4 +1,6 @@
+using System.Globalization;
 using Aspose.Cli.Sdk.Addressing;
+using Aspose.Cli.Sdk.Contracts;
 
 namespace Aspose.Cli.Sdk.Extensibility.Commanding;
 
@@ -12,6 +14,11 @@ public readonly record struct ReadPart(int Number, bool Truncated);
 /// <param name="MaxCharacters">The character budget the next read needs.</param>
 public sealed record ReadContinuation(string Parts, int MaxCharacters)
 {
+    /// <summary>The <c>next</c> of a read's window: the unread parts under <paramref name="partsOption"/> and the character budget.</summary>
+    /// <param name="partsOption">The option that selects the parts, such as <c>--pages</c>.</param>
+    public IReadOnlyDictionary<string, string> Next(string partsOption) =>
+        ResultWindow.Options((partsOption, Parts), (MaxCharactersOption.Name, MaxCharacters.ToString(CultureInfo.InvariantCulture)));
+
     /// <summary>The largest character budget a read accepts.</summary>
     internal const int MaximumCharacters = 10_000_000;
 

@@ -19,8 +19,7 @@
           { "path": "warnings[code=LOSSY_CONVERSION][1].details.content", "equals": ["headers-footers"] },
           { "path": "warnings[code=LOSSY_CONVERSION][2].details.content", "equals": ["comments"] },
           { "path": "warnings[code=LOSSY_CONVERSION][3].details.content", "equals": ["revisions"] },
-          { "path": "warnings[code=LOSSY_CONVERSION][3].message", "startsWith": "The md output writes the deleted and moved-from text of tracked changes" },
-          { "path": "warnings[code=LOSSY_CONVERSION][3].hint", "equals": "To see what changed, write the redline as DOCX, PDF or HTML, which mark the changes." }
+          { "path": "warnings[code=LOSSY_CONVERSION][3].message", "startsWith": "The md output writes the deleted and moved-from text of tracked changes" }
         ]
       }
     },

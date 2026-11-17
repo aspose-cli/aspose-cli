@@ -12,14 +12,13 @@ namespace Aspose.Cli.Sdk.Contracts;
 [SchemaId("verification-issue")]
 public sealed record VerificationIssue
 {
-    internal VerificationIssue(string code, string message, string? location, string? hint)
+    internal VerificationIssue(string code, string message, string? location)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(code);
         ArgumentNullException.ThrowIfNull(message);
         Code = code;
         Message = message;
         Location = location;
-        Hint = hint;
     }
 
     /// <summary>Stable SCREAMING_SNAKE_CASE identifier an agent can branch on.</summary>
@@ -36,13 +35,10 @@ public sealed record VerificationIssue
     /// </summary>
     public string? Location { get; }
 
-    /// <summary>Recommended next action for the caller.</summary>
-    public string? Hint { get; }
-
-    /// <summary>Carries a warning into verification, keeping its code, message, location and hint.</summary>
+    /// <summary>Carries a warning into verification, keeping its code, message and location.</summary>
     public static VerificationIssue From(Warning warning)
     {
         ArgumentNullException.ThrowIfNull(warning);
-        return new VerificationIssue(warning.Code.Name, warning.Message, warning.Location, warning.Hint);
+        return new VerificationIssue(warning.Code.Name, warning.Message, warning.Location);
     }
 }

@@ -183,10 +183,6 @@
           {
             "path": "error.message",
             "contains": "form field 'form.a' on page 1 has a parent in its name, and this move copies that page"
-          },
-          {
-            "path": "error.hint",
-            "equals": "Move the pages without form fields around page 1 instead, which can give the same order without copying the field; if no such move does, tell the user."
           }
         ],
         "files": {
@@ -214,10 +210,6 @@
           {
             "path": "error.message",
             "contains": "form field 'form.x' on page 1 has a parent in its name, and this move copies that page"
-          },
-          {
-            "path": "error.hint",
-            "equals": "Move the pages without form fields around page 1 instead, which can give the same order without copying the field; if no such move does, tell the user."
           }
         ]
       }
@@ -357,13 +349,7 @@
       ],
       "expect": {
         "exitCode": 4,
-        "error": "OPS_INVALID",
-        "json": [
-          {
-            "path": "error.hint",
-            "equals": "Move pages 1, 2 together, or move the pages without form fields around them instead, which can give the same order without copying the field; if no such move does, tell the user."
-          }
-        ]
+        "error": "OPS_INVALID"
       }
     },
     {

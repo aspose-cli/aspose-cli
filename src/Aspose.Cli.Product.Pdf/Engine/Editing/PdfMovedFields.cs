@@ -40,9 +40,7 @@ internal sealed class PdfMovedFields(HashSet<string> names, List<(string Name, s
             string holding = string.Join(", ", widgets.Where(page => page.Contains(field)).Select(static page => page.Key));
             throw new OperationInvalidException(field.Contains('.', StringComparison.Ordinal)
                     ? $"form field '{field}' on page {holding} has a parent in its name, and this move copies that page, which leaves a second copy of the field beside it"
-                    : $"form field '{field}' has widgets on pages {holding}, and this move copies some of them but not all, which leaves a second copy of the field",
-                (field.Contains('.', StringComparison.Ordinal) ? $"Move the pages without form fields around page {holding} instead" : $"Move pages {holding} together, or move the pages without form fields around them instead")
-                    + ", which can give the same order without copying the field; if no such move does, tell the user.");
+                    : $"form field '{field}' has widgets on pages {holding}, and this move copies some of them but not all, which leaves a second copy of the field");
         }
 
         HashSet<string> moved = [.. chosen.Pages.SelectMany(page => widgets[page])];

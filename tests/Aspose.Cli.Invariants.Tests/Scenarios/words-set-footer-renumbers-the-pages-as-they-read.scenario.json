@@ -13,8 +13,7 @@
         "warnings": { "present": ["PAGE_NUMBERS_REMOVED"] },
         "json": [
           { "path": "verification.ok", "equals": false },
-          { "path": "verification.issues[0].code", "equals": "PAGE_NUMBERS_REMOVED" },
-          { "path": "verification.issues[0].hint", "contains": "{\"op\":\"set_page_numbers\",\"location\":\"footer\",\"alignment\":\"right\",\"text\":\"Page {n} of {N}\"}" }
+          { "path": "verification.issues[0].code", "equals": "PAGE_NUMBERS_REMOVED" }
         ]
       }
     },

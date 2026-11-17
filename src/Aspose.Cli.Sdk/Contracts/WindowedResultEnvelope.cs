@@ -4,7 +4,7 @@ namespace Aspose.Cli.Sdk.Contracts;
 
 /// <summary>
 /// Base of the result of a bounded read or search, which always states its window: how much it
-/// returned and the command that continues it.
+/// returned and the option values that continue it.
 /// </summary>
 public abstract record WindowedResultEnvelope : EngineResultEnvelope
 {
@@ -16,7 +16,7 @@ public abstract record WindowedResultEnvelope : EngineResultEnvelope
     {
     }
 
-    /// <summary>The window of the read or search: how much it returned and how to continue.</summary>
+    /// <summary>The window of the read or search: how much it returned and the option values that continue it.</summary>
     [JsonPropertyOrder(800)]
     public required ResultWindow Window { get; init; }
 }

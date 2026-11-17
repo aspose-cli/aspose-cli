@@ -44,7 +44,6 @@ public sealed class RenderResolutionTests
         Assert.Equal("OPTION_INVALID", error["code"]!.GetValue<string>());
         Assert.Equal(option, error["details"]!["option"]!.GetValue<string>());
         Assert.Contains("svg", error["message"]!.GetValue<string>(), StringComparison.OrdinalIgnoreCase);
-        Assert.Contains($"Drop {option}", error["hint"]!.GetValue<string>(), StringComparison.Ordinal);
         Assert.True(
             !Directory.EnumerateFiles(workspace.Path, "page*").Any(),
             $"{call} writes nothing: [{string.Join(", ", Directory.EnumerateFiles(workspace.Path).Select(Path.GetFileName))}]");

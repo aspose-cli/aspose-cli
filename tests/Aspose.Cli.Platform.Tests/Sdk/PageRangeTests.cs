@@ -33,9 +33,7 @@ public sealed class PageRangeTests
         CliException none = Assert.Throws<CliException>(() => PageRange.Parse("1").Resolve(0));
 
         Assert.Equal(ErrorCodes.PageNotFound, past.Code);
-        Assert.Equal("Use a page from 1 through 2.", past.Hint);
         Assert.Equal(ErrorCodes.PageNotFound, none.Code);
-        Assert.Contains("no page", none.Hint, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -64,7 +62,6 @@ public sealed class PageRangeTests
         Assert.Equal(ExitCode.Usage, error.Code.ExitCode);
         Assert.Equal("--slides", error.Details!["option"]!.GetValue<string>());
         Assert.Contains(reason, error.Message, StringComparison.Ordinal);
-        Assert.Contains("all", error.Hint, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -99,7 +96,6 @@ public sealed class PageRangeTests
         Assert.Equal(20, error.Details["limit"]!.GetValue<int>());
         Assert.Equal(21, error.Details["actual"]!.GetValue<int>());
         Assert.Null(error.Details["errors"]);
-        Assert.Contains("--slides 1-20", error.Hint, StringComparison.Ordinal);
     }
 
     [Fact]

@@ -24,21 +24,11 @@ internal static class SearchCommand
                     Query = query,
                     Pages = pages.ReadRange(parse),
                     Password = standard.InputPassword,
-                    FormsInspection = PdfInputs.FormsInspection(standard),
                 };
             },
             Table)
         {
-            Finish = (parse, request, result, standard) =>
-            {
-                ContinuationCommand resume = standard.Continuation();
-                if (pages.Read(parse) is { } range)
-                {
-                    resume.Option(pages.Name, range);
-                }
-
-                return result with { Window = SearchOptions.Continue(request.Query, result.Window, resume) };
-            },
+            Finish = static (_, request, result, _) => result with { Window = SearchOptions.Continue(request.Query, result.Window) },
             Examples =
             [
                 "pdf search report.pdf --pattern invoice --output-format json",

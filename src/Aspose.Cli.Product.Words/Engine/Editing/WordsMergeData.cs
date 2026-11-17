@@ -13,15 +13,10 @@ namespace Aspose.Cli.Product.Words.Engine.Editing;
 /// </summary>
 internal static class WordsMergeData
 {
-    /// <summary>The hint for merge data whose shape is wrong.</summary>
-    internal const string Shape =
-        "Use a JSON array of flat objects, or a CSV file with a header row.";
-
     /// <summary>The merge data of mail_merge or repeat_table_row cannot be read as rows.</summary>
-    internal static CliException Invalid(string reason, string hint) => new(
+    internal static CliException Invalid(string reason) => new(
         WordsDiagnostics.MergeDataInvalid,
-        $"Merge data is invalid: {reason}.",
-        hint: hint);
+        $"Merge data is invalid: {reason}.");
 
     /// <summary>The op's inline items, or else the rows of its data file.</summary>
     internal static IReadOnlyList<IReadOnlyDictionary<string, string?>> Rows(
@@ -65,13 +60,13 @@ internal static class WordsMergeData
     {
         if (records.Count == 0)
         {
-            throw Invalid("the CSV has no header row", Shape);
+            throw Invalid("the CSV has no header row");
         }
 
         string[] header = records[0];
         if (header.GroupBy(static name => name, StringComparer.Ordinal).FirstOrDefault(static names => names.Count() > 1) is { } repeated)
         {
-            throw Invalid($"the CSV header names the column '{repeated.Key}' more than once", "Give each column of the CSV header row its own name.");
+            throw Invalid($"the CSV header names the column '{repeated.Key}' more than once");
         }
 
         return records.Skip(1).Select(record => (IReadOnlyDictionary<string, string?>)header
@@ -86,14 +81,14 @@ internal static class WordsMergeData
             using JsonDocument json = JsonDocument.Parse(text);
             if (json.RootElement.ValueKind != JsonValueKind.Array)
             {
-                throw Invalid("JSON merge data must be an array of objects", Shape);
+                throw Invalid("JSON merge data must be an array of objects");
             }
 
             return json.RootElement.EnumerateArray().Select(JsonRow).ToArray();
         }
         catch (JsonException exception)
         {
-            throw Invalid(exception.Message, "Fix the JSON syntax at the reported position; merge data is an array of flat objects.");
+            throw Invalid(exception.Message);
         }
     }
 
@@ -101,7 +96,7 @@ internal static class WordsMergeData
     {
         if (element.ValueKind != JsonValueKind.Object)
         {
-            throw Invalid("each merge row must be an object", Shape);
+            throw Invalid("each merge row must be an object");
         }
 
         var row = new Dictionary<string, string?>(StringComparer.Ordinal);
@@ -109,7 +104,7 @@ internal static class WordsMergeData
         {
             if (!row.TryAdd(property.Name, Value(property.Value)))
             {
-                throw Invalid($"a merge row names the property '{property.Name}' more than once", "Give each property of a merge row its own name.");
+                throw Invalid($"a merge row names the property '{property.Name}' more than once");
             }
         }
 
@@ -131,7 +126,7 @@ internal static class WordsMergeData
         JsonValueKind.Null => null,
         JsonValueKind.String => value.GetString(),
         JsonValueKind.Number or JsonValueKind.True or JsonValueKind.False => value.GetRawText(),
-        _ => throw Invalid("a merge value must be a string, number, Boolean or null", Shape),
+        _ => throw Invalid("a merge value must be a string, number, Boolean or null"),
     };
 
     /// <summary>
@@ -200,7 +195,7 @@ internal static class WordsMergeData
                 }
             }
 
-            throw Invalid("the CSV ends inside a quoted field", "Close every quoted CSV field, and double each quote inside one.");
+            throw Invalid("the CSV ends inside a quoted field");
         }
 
         private void SkipLineFeedAfter(char current)

@@ -50,12 +50,11 @@ internal static class SignCommand
                 {
                     throw CliErrors.OptionInvalid(
                         PdfOptionNames.Rect,
-                        "a rectangle has no effect on an invisible signature",
-                        "Pass --visible with --rect, or omit --rect.");
+                        "a rectangle has no effect on an invisible signature");
                 }
 
                 int pageNumber = parse.GetValue(page);
-                OptionGuards.EnsureInRange("--page", pageNumber, 1, int.MaxValue, "Use a 1-based page number.");
+                OptionGuards.EnsureInRange("--page", pageNumber, 1, int.MaxValue);
                 string input = standard.Input;
                 string certificatePath = standard.RequiredInputFile(certificate);
                 ResolvedOutput output = standard.Output;
@@ -100,13 +99,12 @@ internal static class SignCommand
 
     internal static PdfSignatureRect ParseRect(string text)
     {
-        double[] values = PdfNumberList.Parse(text, PdfOptionNames.Rect, "Use x,y,width,height in PDF points from the page's top-left corner.");
+        double[] values = PdfNumberList.Parse(text, PdfOptionNames.Rect);
         if (values.Length != 4 || values[2] <= 0 || values[3] <= 0)
         {
             throw CliErrors.OptionInvalid(
                 PdfOptionNames.Rect,
-                $"'{text}' must contain x,y and positive width,height",
-                "Use x,y,width,height in PDF points from the page's top-left corner, for example 36,36,180,60.");
+                $"'{text}' must contain x,y and positive width,height");
         }
 
         return new PdfSignatureRect(values[0], values[1], values[2], values[3]);

@@ -349,9 +349,6 @@ internal sealed class CliCapabilitySnapshot
         return CliErrors.OptionInvalid(
             selection,
             $"unknown {selection} '{requested}' for {scope}",
-            selection == "product"
-                ? "Choose a product from details.available."
-                : "Choose a product-relative command path from details.available.",
             Mistake.Of(requested, available.Order(StringComparer.Ordinal)));
     }
 

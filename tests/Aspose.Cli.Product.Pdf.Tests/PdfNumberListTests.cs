@@ -10,7 +10,7 @@ public sealed class PdfNumberListTests
     [Fact]
     public void Parse_ReturnsTheNumbersInOrder()
     {
-        Assert.Equal([1.5, -2, 3e2], PdfNumberList.Parse(" 1.5, -2 ,3e2", "--rect", "hint"));
+        Assert.Equal([1.5, -2, 3e2], PdfNumberList.Parse(" 1.5, -2 ,3e2", "--rect"));
     }
 
     [Theory]
@@ -21,7 +21,7 @@ public sealed class PdfNumberListTests
     [InlineData("1e400")]
     public void Parse_RefusesAnEntryThatIsNotAFiniteNumber(string text)
     {
-        CliException error = Assert.Throws<CliException>(() => PdfNumberList.Parse(text, "--rect", "hint"));
+        CliException error = Assert.Throws<CliException>(() => PdfNumberList.Parse(text, "--rect"));
 
         Assert.Equal("OPTION_INVALID", error.Code.Name);
         Assert.Equal("--rect", error.Details!["option"]!.GetValue<string>());

@@ -70,12 +70,9 @@ comments a deck already has.
   body nor subtitle, as a Markdown heading without content makes. To give a slide a title,
   `set_layout` it to a layout with a title placeholder, then `set_title` it. A placeholder the
   slide has, such as its body or footer, can take the new layout's title role, and `set_title`
-  then overwrites its text: the refusal's hint shows the `set_layout` to put before the
-  `set_title` in its batch only where every placeholder keeps its role, the slide's own layout
-  first, or every one but the footer, date and slide number, which it has you delete first and
-  set again with one `set_footer`. The slide keeps its shapes, so `delete_shape` a text box that stood for its title. Text
-  that `set_text` writes into a shape, or a text box `insert_shape` adds, shows on the slide but
-  is not its title; write a body there where the slide has no placeholder for it.
+  then overwrites its text. The slide keeps its shapes, so `delete_shape` a text box that
+  stood for its title. Text that `set_text` writes into a shape, or a text box `insert_shape`
+  adds, shows on the slide but is not its title; write a body there where the slide has no placeholder for it.
 - A placeholder that the new layout of `set_layout` has none of its type in its place for may
   take a role of the layout the slide has no placeholder for, the title first, and the edit then
   warns `PLACEHOLDER_ROLE_CHANGED` at that shape with `details.from` and `details.to`. Where `to` is `title`, the slide's title is now that shape's text, such as its
@@ -84,8 +81,7 @@ comments a deck already has.
   for a name it has, also after a `keep-source` import (`use-destination` puts imported slides on
   the deck's master); `insert_slide` looks it up in the master of the slide before the new one (the
   one after it at the start), and without a name takes that master's first layout. For a name only another master has, either warns `SLIDE_MASTER_CHANGED` with
-  `details.fromMaster` and `details.toMaster`, positions in `inspect --detail masters`; the hint
-  names the layouts that take the slide back, if any.
+  `details.fromMaster` and `details.toMaster`, positions in `inspect --detail masters`.
 - A slide's `title` in `slides read` and `inspect --sample` is the text of the shape `set_title`
   writes; a slide without one reports no `title`, whatever its other shapes say. Its spaces, like
   those of a shape's `text` and the notes, read as stored, which is what `slides search` finds.
@@ -140,8 +136,7 @@ comments a deck already has.
 - `set_footer` uses the layout's own footer, number and date placeholders; their position and
   style come from the template. A layout without them, as title layouts often hide footers,
   shows nothing, so its slides are left out of the operation's `targets` and each warns
-  `FOOTER_NOT_SHOWN` with `details.fields`. Leave it so, as a title slide usually is; where it must
-  show them, its hint names layouts that have them, and `set_layout` to one changes its look.
+  `FOOTER_NOT_SHOWN` with `details.fields`. Leave it so, as a title slide usually is.
 - `slides read --content shapes` reports each shape's `altText`, which `replace_text` does not
   change. To replace a picture, `delete_shape` it and `insert_image` the new one at its `rect`
   with an `altText`.
@@ -209,5 +204,4 @@ master or layout art); each item keeps its presentation-wide `index`.
   values, and none of their pictures: a `convert` to it warns `LOSSY_CONVERSION` with
   `details.content` `["pictures"]`, naming the converted slides with pictures and how many
   pictures they show, a slide's background and the picture fills of its shapes included and a
-  picture shown twice counted once; its hint's `slides extract --what media` writes each of them
-  as one `media.image` file. A layout's or master's picture is not counted on a slide.
+  picture shown twice counted once. A layout's or master's picture is not counted on a slide.

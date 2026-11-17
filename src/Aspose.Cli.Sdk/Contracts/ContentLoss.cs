@@ -104,14 +104,12 @@ public static class ContentLoss
     /// <summary>The warning that the output leaves out content of the kinds in <paramref name="content"/>.</summary>
     /// <param name="content">The kinds the output leaves out, at least one, each once, in the order the message names them.</param>
     /// <param name="message">What the output leaves out, where and how much.</param>
-    /// <param name="hint">How to read or keep what was left out.</param>
     /// <param name="location">The address of the one item the loss concerns, or null.</param>
     /// <param name="affectsCompleteness">Whether the loss leaves the output incomplete (<see cref="Warning.AffectsCompleteness"/>).</param>
-    public static Warning Warning(IReadOnlyCollection<ContentKind> content, string message, string hint, string? location = null, bool affectsCompleteness = false)
+    public static Warning Warning(IReadOnlyCollection<ContentKind> content, string message, string? location = null, bool affectsCompleteness = false)
     {
         ArgumentNullException.ThrowIfNull(content);
         ArgumentException.ThrowIfNullOrWhiteSpace(message);
-        ArgumentException.ThrowIfNullOrWhiteSpace(hint);
         if (content.Count == 0)
         {
             throw new ArgumentException("A content loss names at least one kind of content.", nameof(content));
@@ -124,7 +122,6 @@ public static class ContentLoss
 
         return new Warning(WarningCodes.LossyConversion, message)
         {
-            Hint = hint,
             Location = location,
             AffectsCompleteness = affectsCompleteness,
             Details = new JsonObject { ["content"] = new JsonArray([.. content.Select(static kind => (JsonNode?)kind.Token)]) },

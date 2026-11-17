@@ -54,7 +54,7 @@
         "json": [
           { "path": "hits[0].page", "equals": 1 },
           { "path": "window.truncated", "equals": true },
-          { "path": "window.next", "contains": "--skip 1" }
+          { "path": "window.next.skip", "equals": "1" }
         ],
         "warnings": { "absent": ["FORM_VALUES_NOT_IN_TEXT"] }
       }

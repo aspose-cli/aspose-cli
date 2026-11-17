@@ -65,19 +65,18 @@ public sealed class TextReplacementTests
     [InlineData("a?")]
     public void Problem_RefusesAnExpressionThatMatchesAnEmptyString(string find)
     {
-        Assert.Equal("find matches an empty string", TextReplacement.Problem(find, regex: true, caseSensitive: false)?.Reason);
+        Assert.Equal("find matches an empty string", TextReplacement.Problem(find, regex: true, caseSensitive: false));
         Assert.Null(TextReplacement.Problem(find, regex: false, caseSensitive: false));
         Assert.Throws<ArgumentException>(() => TextReplacement.Create(find, "y", regex: true, caseSensitive: false, wholeWord: false));
     }
 
     [Fact]
-    public void Problem_ExplainsAnInvalidExpressionWithAHint()
+    public void Problem_ExplainsAnInvalidExpression()
     {
-        (string Reason, string Hint)? problem = TextReplacement.Problem("(", regex: true, caseSensitive: false);
+        string? problem = TextReplacement.Problem("(", regex: true, caseSensitive: false);
 
         Assert.NotNull(problem);
-        Assert.StartsWith("find is not a valid .NET regular expression: ", problem.Value.Reason, StringComparison.Ordinal);
-        Assert.Contains("set regex to false", problem.Value.Hint, StringComparison.Ordinal);
+        Assert.StartsWith("find is not a valid .NET regular expression: ", problem, StringComparison.Ordinal);
         Assert.Null(TextReplacement.Problem("(", regex: false, caseSensitive: false));
         Assert.NotNull(TextReplacement.Problem(string.Empty, regex: false, caseSensitive: false));
     }

@@ -6,7 +6,6 @@ using Aspose.Cli.Sdk.IO.Output;
 using Aspose.Cli.Sdk.Licensing;
 using Aspose.Cli.Sdk.Operations;
 using Aspose.Cli.Sdk.Results;
-using Aspose.Cli.Sdk.Errors;
 
 namespace Aspose.Cli.Product.Cells.Engine;
 
@@ -50,8 +49,8 @@ internal static class CellsEdit
         IReadOnlyList<BoundedOperationOutcome> applied = batchOutcome.Outcomes;
         bool defaultedToActiveSheet = model.DefaultedToActiveSheet;
         IReadOnlyList<Cell> formulaAnchors = model.FormulaAnchors;
-        Warning? skippedSheet = loaded.SkippedSheetWarning(defaultedToActiveSheet, "Give each operation its \"sheet\", the sheet's name from inspect, to address another sheet.");
-        Warning? unenforced = protection.Warning(output.Format);
+        Warning? skippedSheet = loaded.SkippedSheetWarning(defaultedToActiveSheet);
+        Warning? unenforced = protection.Warning();
         Warning? relativeLinks = RelativeLinkWarning(workbook, linksBefore);
         Warning? unknownFunctions = UnknownFunctions.Warning(workbook, formulaAnchors);
         if (request.Recalculate)
@@ -140,22 +139,12 @@ internal static class CellsEdit
             return null;
         }
 
-        string typos = string.Concat(added.Select(source => SheetTypo(workbook, source)));
         return new Warning(CellsDiagnostics.ExternalLinkRelative, $"The output stores the target of its new link(s) as {string.Join(", ", added)}: a file name without a folder, "
                 + "relative to the output's folder. A link written with the full path of a file in the input's folder is stored this way too.")
         {
-            Hint = typos + (typos.Length > 0 ? "For a real link, keep" : "Keep")
-                + " the linked workbook(s) in the same folder as the output, or bring their values in with import_range instead of a link.",
             Docs = "cells/editing",
         };
     }
-
-    // A workbook file name has an extension; a mistyped sheet name has none.
-    private static string SheetTypo(Workbook workbook, string source) =>
-        HasNoExtension(source)
-        && Mistake.Of(source, workbook.Worksheets.Cast<Worksheet>().Select(static sheet => sheet.Name)) is { Question: { } question }
-            ? $"No sheet is named '{source}'. {question} Correct the formula's sheet name. "
-            : string.Empty;
 
     /// <summary>
     /// Whether a link source names no file extension: no dot after its last folder separator,

@@ -9,8 +9,7 @@ namespace Aspose.Cli.TestKit.Scenarios;
 /// <summary>
 /// Runs a <see cref="Scenario"/> against the built CLI in a fresh <see cref="TempWorkspace"/>
 /// under the run's license mode (<see cref="ScenarioLicense"/>) and reports every unmet
-/// expectation, contract check (<see cref="ScenarioContract"/>) and hint that does not run
-/// (<see cref="ExecutableHints"/>) as a problem, rather than
+/// expectation and contract check (<see cref="ScenarioContract"/>) as a problem, rather than
 /// stopping at the first one.
 /// </summary>
 public static partial class ScenarioRunner
@@ -73,11 +72,6 @@ public static partial class ScenarioRunner
                 && (!before.TryGetValue(path, out string? hash) || hash != after[path]) && StartsWithByteOrderMark(workspace.File(path))))
             {
                 Report(ScenarioContract.ByteOrderMark, $"{written} starts with a UTF-8 byte order mark the step did not ask for and copied from no document");
-            }
-            // The hints' commands that read a document from stdin get the step's again, as TempWorkspace gives a run's.
-            foreach (string problem in ExecutableHints.Problems(new HintRun(args, workspace.Path, Path.GetDirectoryName(workspace.ConfigDirectory)!, Variables(step.Env), step.Stdin), document, variants: true))
-            {
-                Report(ExecutableHints.Check, problem);
             }
             foreach (string output in OutputPaths(document).Distinct(StringComparer.OrdinalIgnoreCase))
             {

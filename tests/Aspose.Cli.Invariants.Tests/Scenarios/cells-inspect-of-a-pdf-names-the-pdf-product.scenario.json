@@ -9,7 +9,7 @@
       "expect": {
         "exitCode": 6,
         "error": "FORMAT_MISMATCH",
-        "json": [{ "path": "error.details.detected", "contains": "pdf" }, { "path": "error.hint", "contains": "aspose-cli pdf inspect" }],
+        "json": [{ "path": "error.details.detected", "contains": "pdf" }],
         "files": { "nothingWritten": true }
       }
     }

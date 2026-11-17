@@ -86,8 +86,6 @@ public sealed class NotFoundErrorTests
         string[] names = [.. Enumerable.Range(1, 60).Select(static index => $"Sheet{index}"), "Sales"];
 
         CliException error = CliErrors.NotFound(SheetNotFound, "sheet", "Salez", names);
-
-        Assert.Equal("Did you mean 'Sales'?", error.Hint);
         Assert.Equal(61, error.Details!["availableCount"]!.GetValue<int>());
         Assert.Equal(CliErrors.MaximumAvailableNames, error.Details["available"]!.AsArray().Count);
         Assert.Equal("Sales", error.Details["suggestions"]![0]!.GetValue<string>());

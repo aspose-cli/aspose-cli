@@ -60,7 +60,7 @@ internal static class OperationContractValidator
                 set.Add(property.Name, value);
             }
 
-            CheckValue(property.Value, PlacedConstraint.Declared(property.Constraints), value, Join(path, property.Name), AnyColor(record, path));
+            CheckValue(property.Value, PlacedConstraint.Declared(property.Constraints), value, Join(path, property.Name));
         }
 
         foreach (RecordRuleAttribute constraint in record.Constraints)
@@ -75,13 +75,8 @@ internal static class OperationContractValidator
     /// <summary>A value without its word separators, so <c>very-hidden</c> and <c>veryHidden</c> compare alike.</summary>
     private static string Bare(string value) => value.Replace("-", string.Empty, StringComparison.Ordinal).Replace("_", string.Empty, StringComparison.Ordinal);
 
-    /// <summary>The wire path of the record's member that takes any <c>#RRGGBB</c> color, or null for none.</summary>
-    private static string? AnyColor(OperationRecord record, string path) =>
-        record.Properties.FirstOrDefault(static property => property.Constraints.OfType<HexColorAttribute>().Any()) is { } color
-            ? Join(path, color.Name)
-            : null;
 
-    private static void CheckValue(OperationValue shape, IReadOnlyList<PlacedConstraint> constraints, object value, string path, string? anyColor = null)
+    private static void CheckValue(OperationValue shape, IReadOnlyList<PlacedConstraint> constraints, object value, string path)
     {
         (IReadOnlyList<ValueConstraintAttribute> here, IReadOnlyList<PlacedConstraint> items) = Place(shape, constraints, path);
         foreach (ValueConstraintAttribute constraint in here)
@@ -89,7 +84,7 @@ internal static class OperationContractValidator
             if (constraint.Check(value) is { } reason)
             {
                 throw constraint is AllowedValuesAttribute allowed && value is string text
-                    ? NotAllowed(allowed, text, path, anyColor)
+                    ? NotAllowed(allowed, text, path)
                     : new OperationInvalidException($"{path} {reason}") { Field = path };
             }
         }
@@ -129,19 +124,14 @@ internal static class OperationContractValidator
     /// A name among fixed values is a mistake: the operation error lists the values once, in
     /// details.available and the message, so the reason leaves them out. A value spelled with
     /// other case or separators, such as veryHidden for very-hidden, is meant first; a
-    /// <c>#RRGGBB</c> color given for a palette's color names means the closest of them, and the
-    /// hint names the member of the record that takes any color, <paramref name="anyColor"/>.
+    /// <c>#RRGGBB</c> color given for a palette's color names means the closest of them.
     /// </summary>
-    private static OperationInvalidException NotAllowed(AllowedValuesAttribute allowed, string text, string path, string? anyColor)
+    private static OperationInvalidException NotAllowed(AllowedValuesAttribute allowed, string text, string path)
     {
         string[] spelled = [.. allowed.Spelled.Where(spelled => string.Equals(Bare(spelled), Bare(text), StringComparison.OrdinalIgnoreCase))];
         string? color = spelled.Length == 0 ? allowed.ClosestColor(text) : null;
-        string? hint = color is null
-            ? null
-            : $"'{path}' takes only the named colors{(anyColor is null ? "." : $"; '{anyColor}' takes any #RRGGBB color.")}";
         return new OperationInvalidException(
             $"{path} does not accept '{text}'",
-            hint,
             Mistake.Of(text, allowed.Spelled, color is null ? spelled : [color]))
         {
             Field = path,

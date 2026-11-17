@@ -85,7 +85,6 @@ public sealed class PdfOpContractTests
 
         Assert.Equal(ErrorCodes.OpsInvalid, error.Code);
         Assert.Contains("scalePercent must be a whole number", error.Message, StringComparison.Ordinal);
-        Assert.Contains("whole-number percentage", error.Hint, StringComparison.Ordinal);
     }
 
     [Theory]
@@ -223,33 +222,31 @@ public sealed class PdfOpContractTests
     }
 
     [Theory]
-    [InlineData("Title", "Set it with the title field instead.")]
-    [InlineData("AUTHOR", "Set it with the author field instead.")]
-    [InlineData("producer", "drop it from custom")]
-    [InlineData("modificationDate", "drop it from custom")]
-    [InlineData("info:Department", "without the info: or xmp: prefix")]
-    [InlineData("XMP:dc:title", "without the info: or xmp: prefix")]
-    public void SetProperties_RefusesACustomKeyThatAStandardEntryOrAReportedNameTakes(string key, string hint)
+    [InlineData("Title")]
+    [InlineData("AUTHOR")]
+    [InlineData("producer")]
+    [InlineData("modificationDate")]
+    [InlineData("info:Department")]
+    [InlineData("XMP:dc:title")]
+    public void SetProperties_RefusesACustomKeyThatAStandardEntryOrAReportedNameTakes(string key)
     {
         CliException error = Assert.Throws<CliException>(() => Parse(
             $$$"""{"ops":[{"op":"set_properties","custom":{"{{{key}}}":"value"}}]}"""));
 
         Assert.Equal(ErrorCodes.OpsInvalid, error.Code);
-        Assert.Contains(hint, error.Hint, StringComparison.Ordinal);
     }
 
     [Theory]
-    [InlineData("", "empty name", "Give each custom entry a name.")]
-    [InlineData("项目编号", "beyond Latin-1", "its value may hold any text")]
-    [InlineData("Projekt Ā", "beyond Latin-1", "its value may hold any text")]
-    public void SetProperties_RefusesAnEmptyCustomNameOrOneTheEngineWritesGarbled(string key, string message, string hint)
+    [InlineData("", "empty name")]
+    [InlineData("项目编号", "beyond Latin-1")]
+    [InlineData("Projekt Ā", "beyond Latin-1")]
+    public void SetProperties_RefusesAnEmptyCustomNameOrOneTheEngineWritesGarbled(string key, string message)
     {
         CliException error = Assert.Throws<CliException>(() => Parse(
             $$$"""{"ops":[{"op":"set_properties","custom":{"{{{key}}}":"value"}}]}"""));
 
         Assert.Equal(ErrorCodes.OpsInvalid, error.Code);
         Assert.Contains(message, error.Message, StringComparison.Ordinal);
-        Assert.Contains(hint, error.Hint, StringComparison.Ordinal);
         Assert.Equal("set_properties", error.Details!["op"]!.GetValue<string>());
     }
 
@@ -282,7 +279,6 @@ public sealed class PdfOpContractTests
         CliException error = Assert.Throws<CliException>(() => Parse($$"""{"ops":[{{operation}}]}"""));
 
         Assert.Equal("path", error.Details!["suggestions"]!.AsArray()[0]!.GetValue<string>());
-        Assert.StartsWith("Did you mean 'path'", error.Hint, StringComparison.Ordinal);
     }
 
     private static PdfOpsBatch Parse(string json) =>

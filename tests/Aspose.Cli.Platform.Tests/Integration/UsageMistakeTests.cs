@@ -17,8 +17,6 @@ namespace Aspose.Cli.IntegrationTests;
 /// </summary>
 public sealed class UsageMistakeTests : IDisposable
 {
-    private const string BookPassword = "BOOK_PASSWORD";
-
     private readonly TempWorkspace _workspace = new();
 
     public UsageMistakeTests() => ScenarioLicense.Project(_workspace.Path);
@@ -122,7 +120,6 @@ public sealed class UsageMistakeTests : IDisposable
 
         Assert.Equal(message, error["message"]!.GetValue<string>());
         Assert.Equal(option, error["details"]!["option"]!.GetValue<string>());
-        Assert.Contains(option, error["hint"]!.GetValue<string>(), StringComparison.Ordinal);
     }
 
     [Fact]
@@ -198,81 +195,6 @@ public sealed class UsageMistakeTests : IDisposable
 
     // -- A create given its file as an option ----------------------------------------------------
 
-    [Theory]
-    [InlineData("pdf create --from-markdown in.md --out new.pdf", "aspose-cli pdf create new.pdf --from-markdown in.md --output-format json", "new.pdf")]
-    [InlineData("words create --from-markdown in.md --out new.docx", "aspose-cli words create new.docx --from-markdown in.md --output-format json", "new.docx")]
-    [InlineData("slides create --from-markdown in.md --output new.pptx", "aspose-cli slides create new.pptx --from-markdown in.md --output-format json", "new.pptx")]
-    [InlineData("cells create --sheet-names Data -o new.xlsx", "aspose-cli cells create new.xlsx --sheet-names Data --output-format json", "new.xlsx")]
-    [InlineData("cells create --out=new.xlsx", "aspose-cli cells create new.xlsx --output-format json", "new.xlsx")]
-    [InlineData("cells create -o=new.xlsx", "aspose-cli cells create new.xlsx --output-format json", "new.xlsx")]
-    public void ACreateGivenItsFileAsAnOption_ShowsTheLineWithTheFileAsItsArgument(string commandLine, string line, string file)
-    {
-        File.WriteAllText(_workspace.File("in.md"), "# Title\n\nBody\n");
-
-        JsonNode error = Refused(commandLine, "USAGE_ERROR");
-
-        Assert.Equal([line], Suggestions(error));
-        Assert.Contains($"'{line}'", error["hint"]!.GetValue<string>(), StringComparison.Ordinal);
-        Assert.False(File.Exists(_workspace.File(file)));
-        Assert.Empty(Directory.GetFiles(_workspace.Path, "-*"));
-        CliResult ran = _workspace.RunCommandLine(line);
-        Assert.True(ran.ExitCode == 0, ran.StdErr);
-        Assert.True(File.Exists(_workspace.File(file)));
-    }
-
-    /// <summary>
-    /// The line keeps the output's password by its variable, or, for a password written on the
-    /// command line, which it never repeats, by the placeholder of one, so what it creates with a
-    /// variable in its place is protected.
-    /// </summary>
-    [Theory]
-    [InlineData("--encrypt-env", BookPassword, BookPassword)]
-    [InlineData("--encrypt", "create-hint-secret-77c1", "\"<password-env>\"")]
-    public void ACreateGivenItsFileAsAnOption_KeepsTheEncryption(string option, string value, string variable)
-    {
-        var password = new Dictionary<string, string?> { [BookPassword] = "create-hint-secret-77c1" };
-        string line = $"aspose-cli cells create new.xlsx --encrypt-env {variable} --output-format json";
-
-        CliResult result = _workspace.RunWithEnv(password, "cells", "create", "--out", "new.xlsx", option, value, "--output-format", "json");
-
-        Assert.Equal([line], Suggestions(Error(result, "USAGE_ERROR")));
-        Assert.DoesNotContain("create-hint-secret-77c1", result.StdErr, StringComparison.Ordinal);
-        CliResult ran = _workspace.RunCommandLine(line.Replace("\"<password-env>\"", BookPassword, StringComparison.Ordinal), password);
-        Assert.True(ran.ExitCode == 0, ran.StdErr);
-        Error(_workspace.Run("cells", "inspect", "new.xlsx", "--output-format", "json"), "PASSWORD_REQUIRED", exitCode: 3);
-    }
-
-    [Fact]
-    public void ACreateGivenItsFileAsAnOption_QuotesAPathWithASpace()
-    {
-        const string Line = "aspose-cli cells create \"my book.xlsx\" --output-format json";
-
-        JsonNode error = Error(_workspace.Run("cells", "create", "--out", "my book.xlsx", "--output-format", "json"), "USAGE_ERROR");
-
-        Assert.Equal([Line], Suggestions(error));
-        Assert.True(_workspace.RunCommandLine(Line).ExitCode == 0);
-        Assert.True(File.Exists(_workspace.File("my book.xlsx")));
-    }
-
-    /// <summary>
-    /// The command is shown with a placeholder for its file when the option has no value to move,
-    /// when the line would not parse, or when the file is given as well, where the line without
-    /// the option, here with no other option, is repeated with the placeholder; the options that
-    /// merely look like the refused one are never suggested.
-    /// </summary>
-    [Theory]
-    [InlineData("cells create y.xlsx --out z.xlsx", "aspose-cli cells create <file> --output-format json")]
-    [InlineData("cells create --out", "aspose-cli cells create <file> --output-format json")]
-    [InlineData("pdf create --out new.pdf --from-markdown in.md --bogus", "aspose-cli pdf create <file> --output-format json")]
-    public void ACreateGivenItsFileAsAnOption_WithoutAValueToTakeAsItsFile_ShowsThePlaceholder(string commandLine, string line)
-    {
-        CliResult result = _workspace.Run([.. commandLine.Split(' '), "--output-format", "json"]);
-
-        JsonNode error = Error(result, "USAGE_ERROR");
-        Assert.Equal([line], Suggestions(error));
-        Assert.Equal("--out", error["details"]!["option"]!.GetValue<string>());
-    }
-
     /// <summary>A create that names its file as its argument, and a value that only looks like the refused option, are left alone.</summary>
     [Fact]
     public void ACreate_WrittenAsItShouldBe_StillRuns()
@@ -299,7 +221,6 @@ public sealed class UsageMistakeTests : IDisposable
         JsonNode error = Refused(commandLine, "USAGE_ERROR");
 
         Assert.Equal("--pattern", error["details"]!["suggestions"]![0]!.GetValue<string>());
-        Assert.StartsWith("Did you mean '--pattern'?", error["hint"]!.GetValue<string>(), StringComparison.Ordinal);
     }
 
     [Fact]
@@ -310,9 +231,6 @@ public sealed class UsageMistakeTests : IDisposable
         JsonNode error = Refused("cells search b.xlsx --scope formulas --pattern total", "USAGE_ERROR");
 
         Assert.Equal("--content", error["details"]!["suggestions"]![0]!.GetValue<string>());
-        string hint = error["hint"]!.GetValue<string>();
-        Assert.Contains("--content values|formulas|all", hint, StringComparison.Ordinal);
-        Assert.Contains("--sheet", hint, StringComparison.Ordinal);
         Assert.Equal(0, _workspace.Run("cells", "search", "b.xlsx", "--content", "formulas", "--pattern", "total", "--output-format", "json").ExitCode);
     }
 
@@ -329,16 +247,15 @@ public sealed class UsageMistakeTests : IDisposable
 
     /// <summary>A password written on the command line is not repeated by the correction, which passes it on by the placeholder of its variable.</summary>
     [Theory]
-    [InlineData("cells read file b.xlsx --password hunter2", "Run 'aspose-cli cells read b.xlsx --password-env \"<password-env>\" --output-format json'.")]
-    [InlineData("cells read file b.xlsx --password=hunter2", "Run 'aspose-cli cells read b.xlsx --password-env \"<password-env>\" --output-format json'.")]
-    [InlineData("words create file new.docx --encrypt hunter2", "Run 'aspose-cli words create new.docx --encrypt-env \"<password-env>\" --output-format json'.")]
-    public void AnArgumentsNameBeforeItsValue_BesideALiteralPassword_PassesItOnByAVariableAndDoesNotRepeatIt(string commandLine, string hint)
+    [InlineData("cells read file b.xlsx --password hunter2")]
+    [InlineData("cells read file b.xlsx --password=hunter2")]
+    [InlineData("words create file new.docx --encrypt hunter2")]
+    public void AnArgumentsNameBeforeItsValue_BesideALiteralPassword_PassesItOnByAVariableAndDoesNotRepeatIt(string commandLine)
     {
         CliResult result = _workspace.Run([.. commandLine.Split(' '), "--output-format", "json"]);
 
         JsonNode error = Error(result, "USAGE_ERROR");
         Assert.Equal("'file' stands for the <file> argument, whose value follows it.", error["message"]!.GetValue<string>());
-        Assert.Equal(hint, error["hint"]!.GetValue<string>());
         Assert.DoesNotContain("hunter2", result.StdErr, StringComparison.Ordinal);
         Assert.DoesNotContain("hunter2", result.StdOut, StringComparison.Ordinal);
     }
@@ -354,28 +271,8 @@ public sealed class UsageMistakeTests : IDisposable
 
         JsonNode error = Error(result, "USAGE_ERROR");
         Assert.Equal(suggestion, error["details"]!["suggestions"]![0]!.GetValue<string>());
-        Assert.StartsWith($"Did you mean '{suggestion}'?", error["hint"]!.GetValue<string>(), StringComparison.Ordinal);
-        Assert.Contains(" --password-env \"<password-env>\" ", error["hint"]!.GetValue<string>(), StringComparison.Ordinal);
         Assert.DoesNotContain("hunter2", result.StdErr, StringComparison.Ordinal);
         Assert.DoesNotContain("hunter2", result.StdOut, StringComparison.Ordinal);
-    }
-
-    /// <summary>The name of a variable is no secret, a password on stdin is passed on by the placeholder of its variable, and a line without a password is repeated as before.</summary>
-    [Theory]
-    [InlineData("cells read file b.xlsx --password-env BOOK_PASSWORD", "Run 'aspose-cli cells read b.xlsx --password-env BOOK_PASSWORD --output-format json'.")]
-    [InlineData("words create file new.docx --encrypt-env BOOK_PASSWORD", "Run 'aspose-cli words create new.docx --encrypt-env BOOK_PASSWORD --output-format json'.")]
-    [InlineData("read b.xlsx --password-env BOOK_PASSWORD", "Did you mean 'cells read'? Run 'aspose-cli cells read b.xlsx --password-env BOOK_PASSWORD --output-format json'.")]
-    [InlineData("cells read file b.xlsx --password-stdin", "Run 'aspose-cli cells read b.xlsx --password-env \"<password-env>\" --output-format json'.")]
-    [InlineData("cells read file b.xlsx --range A1", "Run 'aspose-cli cells read b.xlsx --range A1 --output-format json'.")]
-    [InlineData("read b.xlsx --range A1", "Did you mean 'cells read'? Run 'aspose-cli cells read b.xlsx --range A1 --output-format json'.")]
-    public void ACorrectionThatHoldsNoLiteralSecret_RepeatsTheCommandLine(string commandLine, string hint)
-    {
-        var password = new Dictionary<string, string?> { [BookPassword] = "correction-hint-secret-90be" };
-
-        CliResult result = _workspace.RunWithEnv(password, [.. commandLine.Split(' '), "--output-format", "json"]);
-
-        JsonNode error = Error(result, "USAGE_ERROR");
-        Assert.Equal(hint, error["hint"]!.GetValue<string>());
     }
 
     // -- Support ------------------------------------------------------------------------------------
@@ -393,7 +290,4 @@ public sealed class UsageMistakeTests : IDisposable
         Assert.Equal(code, error["code"]!.GetValue<string>());
         return error;
     }
-
-    private static string[] Suggestions(JsonNode error) =>
-        [.. error["details"]!["suggestions"]!.AsArray().Select(static suggestion => suggestion!.GetValue<string>())];
 }

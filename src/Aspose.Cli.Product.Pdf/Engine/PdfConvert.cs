@@ -24,7 +24,6 @@ internal static class PdfConvert
         PdfEngineFormat target = PdfEngineFormats.Of(request.Output.Format.Id);
         // Read before a conversion deletes the pages --pages did not select.
         IReadOnlyList<string> filled = target.LeavesFormValues ? PdfForms.Filled(loaded.Document, pages) : [];
-        bool flattens = PdfForms.IsAcroForm(loaded.Document);
         IReadOnlyList<PdfConvertOutput> outputs = target.Write switch
         {
             PdfEngineWrite.Tiff => [new(ConvertTiff(session, loaded.Document, pages, request))],
@@ -36,15 +35,12 @@ internal static class PdfConvert
 
         if (filled.Count > 0)
         {
-            warnings.Add(FormValuesLeftOut(request.Output.Format.Id, filled, flattens, request.FormsInspection));
+            warnings.Add(FormValuesLeftOut(request.Output.Format.Id, filled));
         }
 
         if (target.Lossy)
         {
-            warnings.Add(new Warning(WarningCodes.LossyConversion, $"PDF conversion to {request.Output.Format.Id} may not preserve every layout or interactive feature.")
-            {
-                Hint = (target.LossyHint ?? "Inspect the produced file before relying on exact pagination, forms or annotations.") + Editable(request),
-            });
+            warnings.Add(new Warning(WarningCodes.LossyConversion, $"PDF conversion to {request.Output.Format.Id} may not preserve every layout or interactive feature."));
         }
 
         return new PdfConvertResult
@@ -63,23 +59,10 @@ internal static class PdfConvert
     /// writes as page text, and the command that reads them. The Markdown export of that copy may
     /// write a value twice (PDF-MD-FIELD-REPEATS in KNOWN-ISSUES.md).
     /// </summary>
-    private static Warning FormValuesLeftOut(string format, IReadOnlyList<string> filled, bool flattens, string? inspection) =>
+    private static Warning FormValuesLeftOut(string format, IReadOnlyList<string> filled) =>
         ContentLoss.Warning([ContentKind.FormValues],
             $"The {format} output leaves out the values of {filled.Count} filled form field{(filled.Count == 1 ? "" : "s")}: {PdfForms.Listed(filled)}.",
-            "A field's value is not page text. "
-                + (flattens
-                    ? "To keep the values, flatten the fields first: an edit with a flatten_forms operation and a new --out file "
-                        + "writes them as page text and ends their fillability; then convert that file. "
-                    : "The form has XFA, which is read-only, so its fields cannot be flattened into page text. ")
-                + $"To read the values, run {PdfForms.Inspection(inspection)}.",
-            filled.Count == 1 ? PdfInfoProjection.Address("field", filled[0]) : null);
-
-    // The conversion of the input, or of the selected pages split from it, that writes an editable
-    // file of the output's format, when another product writes one; otherwise nothing.
-    private static string Editable(PdfConvertRequest request) =>
-        request.EditableConversion is { } commands
-            ? $" For an editable document, run {commands}."
-            : string.Empty;
+            location: filled.Count == 1 ? PdfInfoProjection.Address("field", filled[0]) : null);
 
     /// <summary>
     /// Converts the opened document itself, which this command never saves back, so the
@@ -110,7 +93,7 @@ internal static class PdfConvert
             {
                 if (target.LeavesPictures)
                 {
-                    removed = PdfMarkdownText.Save(document, temp, request.PictureExtraction);
+                    removed = PdfMarkdownText.Save(document, temp);
                 }
                 else if (target.Options is { } options)
                 {
@@ -121,21 +104,14 @@ internal static class PdfConvert
                     document.Save(temp, format);
                 }
             });
-        // The pictures are counted as the extraction the hint names writes them; the export also
+        // The pictures are counted as 'pdf extract --what images' writes them; the export also
         // links the pictures drawn inline, and none in a table cell.
         int? pictures = target.LeavesPictures ? PdfExtract.PictureCount(document, Enumerable.Range(1, document.Pages.Count)) : 0;
         if (pictures > 0 || removed > 0)
         {
             warnings.Add(ContentLoss.Warning([ContentKind.Pictures],
                 $"The {target.Id} output leaves out the pictures the converted pages show, "
-                    + (pictures is { } count ? $"{count} of them stored as image objects" : "whose image objects the engine cannot read") + "; it holds their text.",
-                pictures switch
-                {
-                    > 0 => $"To take the pictures stored as image objects out as image files, run {request.PictureExtraction ?? "'pdf extract --what images'"}; "
-                        + "a picture drawn inline in a page is not one of them, and 'pdf render' shows it.",
-                    0 => "They are drawn inline in a page, not stored as image objects that 'pdf extract --what images' takes out; 'pdf render' shows them.",
-                    _ => "'pdf extract --what images' cannot read the pictures of these pages either; 'pdf render' shows them.",
-                }));
+                    + (pictures is { } count ? $"{count} of them stored as image objects" : "whose image objects the engine cannot read") + "; it holds their text."));
         }
 
         return FileObjects.Output(written, request.Output.Format, encrypted: false);
@@ -179,8 +155,7 @@ internal static class PdfConvert
     }
 
     private static Warning? UnselectedNavigation(PdfNavigationLoss loss) => loss.RemovedWarning(
-        "lead to pages that --pages did not select",
-        "Select every page the navigation needs, or delete those bookmarks and links in a 'pdf edit' batch before converting.");
+        "lead to pages that --pages did not select");
 
     private static OutputInfo ConvertText(PdfSession session, Document source, IReadOnlyList<int> pages, PdfConvertRequest request)
     {
@@ -249,10 +224,7 @@ internal static class PdfConvert
         {
             warnings.Add(ContentLoss.Warning([ContentKind.Attachments],
                 $"Attachment '{removed}' was removed: {target.AttachmentRule ?? $"the engine could not make it conform to {profile}"}.",
-                target.AttachmentRule is null
-                    ? "Deliver the file alongside the archive."
-                    : "Convert to pdfa-3b to keep attachments, or deliver the file alongside the archive.",
-                PdfInfoProjection.Address("attachment", removed)));
+                location: PdfInfoProjection.Address("attachment", removed)));
         }
 
         int lostBookmarks = bookmarks - PdfOutlineAddresses.CountOutline(document.Outlines);
@@ -260,8 +232,7 @@ internal static class PdfConvert
         {
             warnings.Add(ContentLoss.Warning([ContentKind.Bookmarks],
                 $"{lostBookmarks} bookmark(s) were removed by the conversion to {profile}.",
-                "Compare 'pdf inspect --detail outline' of both files and re-create the missing bookmarks with add_bookmark.",
-                "bookmark/all"));
+                location: "bookmark/all"));
         }
 
         if (UnselectedNavigation(degraded) is { } navigation)
@@ -271,10 +242,7 @@ internal static class PdfConvert
 
         if (changed > 0)
         {
-            warnings.Add(new Warning(WarningCodes.LossyConversion, $"Conversion to {profile} changed {changed} item(s) the profile does not allow, such as fonts that were not embedded, transparency, actions or prohibited annotation entries.")
-            {
-                Hint = $"Run 'pdf validate <original> --profile {profile}' to list them, and compare the pages of both files.",
-            });
+            warnings.Add(new Warning(WarningCodes.LossyConversion, $"Conversion to {profile} changed {changed} item(s) the profile does not allow, such as fonts that were not embedded, transparency, actions or prohibited annotation entries."));
         }
 
         return FileObjects.Output(written, request.Output.Format, encrypted: false);

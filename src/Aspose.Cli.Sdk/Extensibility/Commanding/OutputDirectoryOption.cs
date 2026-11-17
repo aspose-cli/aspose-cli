@@ -48,14 +48,14 @@ internal sealed class OutputDirectoryOption
 
         string path = OutputDirectories.Resolve(parse, paths, value, Name);
         return File.Exists(path)
-            ? throw CliErrors.OptionInvalid(Name, $"a file already exists at '{path}'", "Pass a directory path.")
+            ? throw CliErrors.OptionInvalid(Name, $"a file already exists at '{path}'")
             : path;
     }
 
     /// <summary>Resolves a required directory.</summary>
     public string ResolveRequired(ParseResult parse, PathResolver paths) =>
         Resolve(parse, paths)
-            ?? throw CliErrors.OptionInvalid(Name, "is required", "Pass the directory that receives the files.");
+            ?? throw CliErrors.OptionInvalid(Name, "is required");
 }
 
 /// <summary>
@@ -84,7 +84,7 @@ public static class OutputDirectories
         ArgumentNullException.ThrowIfNull(paths);
         ArgumentNullException.ThrowIfNull(value);
         ArgumentException.ThrowIfNullOrWhiteSpace(parameter);
-        OutputFileOption.RefuseStandardStream(value, parameter, directory: true);
+        OutputFileOption.RefuseStandardStream(value, parameter);
         string path = paths.ResolveOutput(value, parameter);
         string trimmed = value.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
         string extension = Path.GetExtension(trimmed);
@@ -93,9 +93,7 @@ public static class OutputDirectories
         {
             throw CliErrors.OptionInvalid(
                 parameter,
-                $"'{value}' names a directory, but {extension} is the extension of {format.Id} files",
-                $"{parameter} names the directory that receives the files; name it without the file extension, "
-                    + $"as in {parameter} {trimmed[..^extension.Length]}.");
+                $"'{value}' names a directory, but {extension} is the extension of {format.Id} files");
         }
 
         return path;

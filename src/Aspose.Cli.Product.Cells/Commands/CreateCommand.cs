@@ -64,15 +64,13 @@ internal static class CreateCommand
         if (names.Any(string.IsNullOrEmpty))
         {
             throw CliErrors.OptionInvalid(
-                "--sheet-names", "sheet names must not be empty",
-                "Pass a comma-separated list such as \"Data,Summary\".");
+                "--sheet-names", "sheet names must not be empty");
         }
 
         if (names.Distinct(StringComparer.OrdinalIgnoreCase).Count() != names.Length)
         {
             throw CliErrors.OptionInvalid(
-                "--sheet-names", "sheet names must be unique (case-insensitive)",
-                "Rename the duplicates; Excel does not allow two sheets with the same name.");
+                "--sheet-names", "sheet names must be unique (case-insensitive)");
         }
 
         return names;

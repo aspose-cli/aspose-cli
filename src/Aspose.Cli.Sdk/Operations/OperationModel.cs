@@ -81,14 +81,10 @@ public sealed record NamedScopes(IReadOnlyCollection<string> Units, IReadOnlyLis
 /// <param name="InOutput">Whether the object is in the output.</param>
 public sealed record ChangedObject(string Address, object? Identity, bool InOutput);
 
-/// <summary>Why an operation changed nothing: the <c>details.reason</c>, message and hint of its <c>OP_NO_EFFECT</c> warning.</summary>
+/// <summary>Why an operation changed nothing: the <c>details.reason</c> and message of its <c>OP_NO_EFFECT</c> warning.</summary>
 /// <param name="Reason">One of <see cref="NoEffectReasons"/>.</param>
 /// <param name="Message">What the operation did not find or change; it never repeats a value the caller may keep private, such as find text.</param>
-public sealed record NoEffect(string Reason, string Message)
-{
-    /// <summary>How to make the operation take effect, or null.</summary>
-    public string? Hint { get; init; }
-}
+public sealed record NoEffect(string Reason, string Message);
 
 /// <summary>
 /// Records what each applied operation should leave in the output so that, after the batch,

@@ -47,10 +47,6 @@ public sealed record ProductLicenseStatus
     [MinLength(1)]
     public string? Problem { get; init; }
 
-    /// <summary>How to fix the license; omitted when nothing needs fixing.</summary>
-    [MinLength(1)]
-    public string? Hint { get; init; }
-
     /// <summary>Whether a user license for this product is installed.</summary>
     public bool UserLicenseInstalled { get; init; }
 }

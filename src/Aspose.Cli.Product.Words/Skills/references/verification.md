@@ -28,8 +28,8 @@ the engine's truncation notice is the issue `OUTPUT_TRUNCATED`: the content
 after it is missing. A warning about what the batch left out that leaves the
 output incomplete (`affectsCompleteness`), such as `PAGE_NUMBERS_REMOVED`, or
 `REMOTE_RESOURCES_BLOCKED` for a picture an operation's Markdown names on the
-network, is also an issue, with the warning's code, message, location and
-hint. A resource the input already referenced without it being loaded, such as
+network, is also an issue, with the warning's code, message and location. A
+resource the input already referenced without it being loaded, such as
 a linked picture, stays a reference in the output: it is reported, not an issue.
 
 `--verify` cannot be combined with `--dry-run`.

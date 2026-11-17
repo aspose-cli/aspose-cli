@@ -424,7 +424,7 @@ public sealed class CellsOperationsTests : IClassFixture<CellsFixture>
             """{"ops":[{"op":"add_sparkline","sheet":"Data","dataRange":"B2:E2","at":"F2","kind":"winloss"}]}"""));
 
         Assert.Equal(ErrorCodes.OpsInvalid, error.Code);
-        Assert.Contains("win-loss", error.Message + error.Hint, StringComparison.Ordinal);
+        Assert.Contains("win-loss", error.Message, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -574,8 +574,6 @@ public sealed class CellsOperationsTests : IClassFixture<CellsFixture>
 
         Assert.Equal(ErrorCodes.OpsInvalid, error.Code);
         Assert.Contains("the workbook already has a sheet named 'Second'", error.Message, StringComparison.Ordinal);
-        Assert.Contains("another name", error.Hint, StringComparison.Ordinal);
-        Assert.Contains("rename or delete the existing sheet first", error.Hint, StringComparison.Ordinal);
         Assert.False(File.Exists(output));
     }
 
@@ -604,8 +602,6 @@ public sealed class CellsOperationsTests : IClassFixture<CellsFixture>
 
         Assert.Equal(ErrorCodes.OpsInvalid, error.Code);
         Assert.Contains("totals row", error.Message, StringComparison.Ordinal);
-        Assert.Contains("A1:D5", error.Hint, StringComparison.Ordinal);
-        Assert.Contains("cannot shrink a table with a totals row", error.Hint, StringComparison.Ordinal);
         Assert.False(File.Exists(output));
     }
 
@@ -627,8 +623,6 @@ public sealed class CellsOperationsTests : IClassFixture<CellsFixture>
 
         Assert.Equal(ErrorCodes.OpsInvalid, error.Code);
         Assert.Contains("row 6", error.Message, StringComparison.Ordinal);
-        Assert.Contains("such as A1:D7", error.Hint, StringComparison.Ordinal);
-        Assert.Contains("old row 4 becomes an empty data row", error.Hint, StringComparison.Ordinal);
         Assert.False(File.Exists(output));
     }
 
@@ -757,13 +751,13 @@ public sealed class CellsOperationsTests : IClassFixture<CellsFixture>
     }
 
     [Theory]
-    [InlineData("B1:D5", false, "A1:D5")]
-    [InlineData("A2:D5", false, "A1:D5")]
-    [InlineData("A1:E5", false, "A1:D5")]
-    [InlineData("A1:C3", false, "A1:D3")]
-    [InlineData("A1:D1", false, "A1:D2")]
-    [InlineData("B1:D2", true, "A1:D4")]
-    public void ResizeTable_RefusesARangeThatChangesTheHeaderRowOrLeavesNoDataRow(string range, bool totalsRow, string suggested)
+    [InlineData("B1:D5", false)]
+    [InlineData("A2:D5", false)]
+    [InlineData("A1:E5", false)]
+    [InlineData("A1:C3", false)]
+    [InlineData("A1:D1", false)]
+    [InlineData("B1:D2", true)]
+    public void ResizeTable_RefusesARangeThatChangesTheHeaderRowOrLeavesNoDataRow(string range, bool totalsRow)
     {
         string name = $"resize-table-{range.Replace(':', '-')}-{totalsRow}";
         string source = CreateTableWorkbook($"{name}.xlsx", totalsRow);
@@ -774,7 +768,6 @@ public sealed class CellsOperationsTests : IClassFixture<CellsFixture>
 
         Assert.Equal(ErrorCodes.OpsInvalid, error.Code);
         Assert.Contains(totalsRow ? "the table covers A1:D4" : "the table covers A1:D3", error.Message, StringComparison.Ordinal);
-        Assert.EndsWith($"such as {suggested}.", error.Hint, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -788,7 +781,6 @@ public sealed class CellsOperationsTests : IClassFixture<CellsFixture>
 
         Assert.Equal("TABLE_NOT_FOUND", error.Code.Name);
         Assert.Contains("Sales", error.Message, StringComparison.Ordinal);
-        Assert.Contains("'aspose-cli cells inspect <file> --detail tables'", error.Hint, StringComparison.Ordinal);
     }
 
     /// <summary>Data!A1:D3 as the styled table Sales, with a Total column that adds Q1 and Q2, and optionally a totals row below.</summary>

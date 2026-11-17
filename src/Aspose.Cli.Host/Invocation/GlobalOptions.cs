@@ -139,15 +139,13 @@ internal sealed class GlobalOptions
         {
             // An empty path would otherwise resolve to the work directory.
             throw CliErrors.OptionInvalid(GlobalOptionNames.License,
-                "the value is empty",
-                "Pass the path of an Aspose license file, or omit --license to use the other license sources.");
+                "the value is empty");
         }
         string? requestedMode = parseResult.GetValue(LicenseMode);
         if (requestedMode == EvaluationLicenseMode && explicitLicense is not null)
         {
             throw CliErrors.OptionInvalid(GlobalOptionNames.LicenseMode,
-                "evaluation mode reads no license, so it cannot be combined with --license",
-                "Drop --license to run in evaluation mode, or drop --license-mode to apply the license.");
+                "evaluation mode reads no license, so it cannot be combined with --license");
         }
         // A value given on this command replaces the inherited one, as --license does.
         bool evaluationRequested = requestedMode is null
@@ -157,8 +155,7 @@ internal sealed class GlobalOptions
             : explicitLicense is null ? inherited?.LicensePath
             : Path.GetFullPath(explicitLicense, workDirectory);
         long? requestedInputBytes = parseResult.GetInRange(
-            MaxInputBytes,
-            "Use the default for ordinary files, or choose a positive byte limit within the advertised range.");
+            MaxInputBytes);
         long maxInputBytes = ResolveMaxInputBytes(requestedInputBytes ?? inherited?.MaxInputBytes);
         return new GlobalValues(
             MapOutputFormat(parseResult.GetValue(OutputFormat)),
@@ -176,8 +173,7 @@ internal sealed class GlobalOptions
     /// <summary>The refusal of <c>--license-mode evaluation</c> by a command whose effect outlives it.</summary>
     internal static CliException EvaluationRequestRefused(string command) =>
         CliErrors.OptionInvalid(GlobalOptionNames.LicenseMode,
-            $"'{command}' does not run one command's documents, so evaluation mode cannot apply to it",
-            $"Drop --license-mode from '{command}'; use it on the document commands whose output you check.");
+            $"'{command}' does not run one command's documents, so evaluation mode cannot apply to it");
 
     /// <summary>
     /// Best-effort read of the output mode and quiet flag for rendering a parse

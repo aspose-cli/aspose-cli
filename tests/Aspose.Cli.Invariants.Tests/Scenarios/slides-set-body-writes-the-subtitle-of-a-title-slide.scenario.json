@@ -52,9 +52,6 @@
       "args": ["slides", "edit", "headings.pptx", "--ops", "{\"ops\":[{\"op\":\"set_body\",\"slide\":2,\"paragraphs\":[{\"text\":\"Sub\"}]}]}", "--out", "agenda.pptx"],
       "expect": {
         "error": "PLACEHOLDER_NOT_FOUND",
-        "json": [
-          { "path": "error.hint", "contains": "insert_shape" }
-        ],
         "files": { "absent": ["agenda.pptx"], "unchanged": ["headings.pptx"] }
       }
     },

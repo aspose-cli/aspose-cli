@@ -33,8 +33,6 @@ public abstract class OutputPipeline : ILicenseState
     private bool _watermarked;
     private Warning? _inputTruncated;
     private bool _encryptedInput;
-    private bool _openPassword;
-    private bool _decrypted;
     private readonly SortedSet<string> _plainCopies = new(StringComparer.Ordinal);
 
     private protected OutputPipeline(ILicenseGate licenseGate, SafeFileWriter writer)
@@ -85,16 +83,6 @@ public abstract class OutputPipeline : ILicenseState
         lock (_sync)
         {
             _encryptedInput |= protection.Encrypted;
-            _openPassword |= protection.Encrypted && protection.OpenPassword;
-        }
-    }
-
-    /// <summary>Records that the command removed the encryption because it was asked to, such as by an operation that decrypts.</summary>
-    public void Decrypted()
-    {
-        lock (_sync)
-        {
-            _decrypted = true;
         }
     }
 
@@ -103,20 +91,12 @@ public abstract class OutputPipeline : ILicenseState
     /// that evaluation mode cut short, and the encryption it removed, to its result, before the
     /// result's own warnings; returns the result unchanged when there is nothing to disclose.
     /// </summary>
-    public ResultEnvelope Disclose(ResultEnvelope result) => DiscloseWith(result, protection: null);
-
-    /// <inheritdoc cref="Disclose(ResultEnvelope)"/>
-    /// <param name="result">The result.</param>
-    /// <param name="protection">
-    /// The hint of <c>ENCRYPTION_REMOVED</c> for the format ids of the unencrypted copies: the
-    /// ways the command's tree offers to protect them; null for the general advice.
-    /// </param>
-    internal ResultEnvelope DiscloseWith(ResultEnvelope result, Func<EncryptionLoss, string>? protection)
+    public ResultEnvelope Disclose(ResultEnvelope result)
     {
         ArgumentNullException.ThrowIfNull(result);
         // A result that carries a disclosure already, such as a review whose view manifest
         // carried the input's truncation, is not told twice.
-        Warning[] disclosure = [.. (Disclosure() ?? []).Append(EncryptionRemoved(protection)).OfType<Warning>().Where(warning =>
+        Warning[] disclosure = [.. (Disclosure() ?? []).Append(EncryptionRemoved()).OfType<Warning>().Where(warning =>
             !(result.Warnings ?? []).Any(present => present.Code == warning.Code))];
         return disclosure.Length == 0
             ? result
@@ -127,12 +107,9 @@ public abstract class OutputPipeline : ILicenseState
     /// <c>ENCRYPTION_REMOVED</c> when the command opened an encrypted document and published a
     /// copy of it without encryption; otherwise null.
     /// </summary>
-    /// <param name="protection">Writes the hint for the format ids of the unencrypted copies; null for the general advice.</param>
-    internal Warning? EncryptionRemoved(Func<EncryptionLoss, string>? protection = null)
+    internal Warning? EncryptionRemoved()
     {
         string[] formats;
-        bool openPassword;
-        bool decrypted;
         lock (_sync)
         {
             if (!_encryptedInput || _plainCopies.Count == 0)
@@ -141,16 +118,11 @@ public abstract class OutputPipeline : ILicenseState
             }
 
             formats = [.. _plainCopies];
-            openPassword = _openPassword;
-            decrypted = _decrypted;
         }
 
         return new Warning(
             WarningCodes.EncryptionRemoved,
-            $"The {string.Join(", ", formats.Select(static format => $"'{format}'"))} output is not encrypted, although an input it was made from is: it opens without a password.")
-        {
-            Hint = protection?.Invoke(new EncryptionLoss(formats, openPassword, decrypted)) ?? "If the output must stay protected, write it in a format that can carry a password.",
-        };
+            $"The {string.Join(", ", formats.Select(static format => $"'{format}'"))} output is not encrypted, although an input it was made from is: it opens without a password.");
     }
 
     /// <summary>
@@ -206,18 +178,10 @@ public abstract class OutputPipeline : ILicenseState
     /// the engine raised in it as <c>EVALUATION_LIMIT</c>: in evaluation mode, an exception that
     /// is not already a CLI error and that the product's evaluation profile recognizes. This is
     /// the one place that translates an engine's evaluation exception; the error keeps it as its
-    /// inner exception. Its hint offers a selection only when <paramref name="selection"/> names
-    /// one the command takes over the limit's unit, which keeps the engine from reading the
-    /// parts it leaves out. When the caller asked for evaluation mode, the hint of every
-    /// <c>EVALUATION_LIMIT</c>, the product's own refusals included, ends by saying how to
-    /// apply the configured license instead (<see cref="DropRequestedEvaluation"/>).
+    /// inner exception.
     /// </summary>
     /// <param name="run">The handler or view call.</param>
-    /// <param name="selection">
-    /// The selection option of the command that narrows what the engine reads, for a unit such
-    /// as <c>pages</c>, such as <c>--pages</c>; null for none.
-    /// </param>
-    internal T ReportingEvaluationLimits<T>(Func<T> run, Func<string, string?>? selection = null)
+    internal T ReportingEvaluationLimits<T>(Func<T> run)
     {
         ArgumentNullException.ThrowIfNull(run);
         try
@@ -225,49 +189,25 @@ public abstract class OutputPipeline : ILicenseState
             return run();
         }
         catch (Exception exception) when (exception is not OperationCanceledException
-            && EvaluationLimitOf(exception, selection) is { } limit)
+            && EvaluationLimitOf(exception) is { } limit)
         {
             throw limit;
         }
     }
 
     /// <summary>
-    /// The sentence that ends the hint of an <c>EVALUATION_LIMIT</c> when the caller asked for
-    /// evaluation mode with <c>--license-mode evaluation</c>.
-    /// </summary>
-    internal const string DropRequestedEvaluation =
-        "Evaluation mode was requested: drop --license-mode evaluation to apply the configured license.";
-
-    /// <summary>
     /// The <c>EVALUATION_LIMIT</c> error to report for <paramref name="exception"/>: the engine's
     /// limit its profile recognizes, or a product's own refusal with the request named, or null
     /// to let the exception through unchanged.
     /// </summary>
-    private CliException? EvaluationLimitOf(Exception exception, Func<string, string?>? selection)
+    private CliException? EvaluationLimitOf(Exception exception) => exception switch
     {
-        bool requested = _licenseGate.Resolution.Kind == LicenseSourceKind.EvaluationRequested;
-        CliException? limit = exception switch
-        {
-            CliException { Code: var code } refusal when code == ErrorCodes.EvaluationLimit => requested ? refusal : null,
-            CliException => null,
-            _ => EngineEvaluationLimitOf(exception, selection),
-        };
-        if (limit is null || !requested || limit.Hint?.EndsWith(DropRequestedEvaluation, StringComparison.Ordinal) == true)
-        {
-            return limit;
-        }
-
-        return CliException.Create(
-            limit.Code,
-            limit.Message,
-            limit.Hint is null ? DropRequestedEvaluation : $"{limit.Hint} {DropRequestedEvaluation}",
-            limit.Details,
-            limit.Docs,
-            limit.InnerException);
-    }
+        CliException => null,
+        _ => EngineEvaluationLimitOf(exception),
+    };
 
     /// <summary>The <c>EVALUATION_LIMIT</c> error for an engine exception, or null when it reports no evaluation limit.</summary>
-    private protected abstract CliException? EngineEvaluationLimitOf(Exception exception, Func<string, string?>? selection);
+    private protected abstract CliException? EngineEvaluationLimitOf(Exception exception);
 
     /// <summary>Keeps the <c>EVALUATION_INPUT_TRUNCATED</c> warning, once, for <see cref="Disclose"/>.</summary>
     private protected void RecordInputTruncated(Warning warning)
@@ -350,7 +290,6 @@ internal static class EvaluationDisclosure
             (false, false) => EnvelopeParts.EvaluationWatermark with
             {
                 Message = "Evaluation mode: some operations are limited.",
-                Hint = "Tell the user the output is limited. A license lifts the limits: set ASPOSE_LICENSE_PATH or pass --license.",
             },
         };
         string message = disclosure.Message;
@@ -391,7 +330,6 @@ internal static class EvaluationDisclosure
         sentences.Add("The license does not remove them.");
         return new Warning(WarningCodes.EvaluationInputMarked, string.Join(" ", sentences))
         {
-            Hint = "Tell the user. Regenerate the deliverable from the original, unmarked inputs with a license; editing this file keeps the marks.",
             Docs = "licensing",
             AffectsCompleteness = kept.IsTruncated,
         };
@@ -407,7 +345,6 @@ internal static class EvaluationDisclosure
         WarningCodes.EvaluationInputTruncated,
         $"{engine} evaluation mode {truncation}, so this result does not hold all of the input's content.")
     {
-        Hint = $"Do not treat the result as complete; apply an {engine} license and run the command again.",
         Docs = "licensing",
         // What a command covers stays complete; the warning says the content it read is not.
     };
@@ -477,24 +414,10 @@ public sealed class OutputPipeline<TDocument> : OutputPipeline
         }
     }
 
-    private protected override CliException? EngineEvaluationLimitOf(Exception exception, Func<string, string?>? selection)
-    {
-        if (_profile.RecognizeLimit(exception) is not { } limit || !IsEvaluation)
-        {
-            return null;
-        }
-
-        // A selection is offered only where the command takes one that keeps the engine within
-        // the limit; otherwise the hint names no way around it that would fail the same way.
-        string[] alternatives =
-        [
-            .. selection?.Invoke(limit.Unit) is { } option
-                ? new[] { string.Create(System.Globalization.CultureInfo.InvariantCulture, $"pass {option} 1-{limit.Limit}") }
-                : [],
-            .. limit.Alternative is { } alternative ? new[] { alternative } : [],
-        ];
-        return CliErrors.EngineEvaluationLimit(_profile.Engine, limit.Allows, limit.Limit, limit.Unit, alternatives, exception);
-    }
+    private protected override CliException? EngineEvaluationLimitOf(Exception exception) =>
+        _profile.RecognizeLimit(exception) is { } limit && IsEvaluation
+            ? CliErrors.EngineEvaluationLimit(_profile.Engine, limit.Allows, limit.Limit, limit.Unit, exception)
+            : null;
 
     /// <summary>
     /// In evaluation mode, removes the marks evaluation mode added when it opened the document,

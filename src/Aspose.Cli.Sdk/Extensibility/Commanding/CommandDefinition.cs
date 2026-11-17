@@ -54,13 +54,6 @@ namespace Aspose.Cli.Sdk.Extensibility.Commanding;
 /// <item><term><see cref="MistakenFor"/></term><description>A command name no command of the
 /// product has, such as <c>merge</c>: every command that declares it, first
 /// (<c>USAGE_ERROR</c>).</description></item>
-/// <item><term><see cref="MistakenForHint"/></term><description>The same name: the hint says how
-/// the declaring command does what the name stands for.</description></item>
-/// <item><term><see cref="RefusedOptions"/></term><description>An option the command does not
-/// have, such as <c>--encrypt</c>: only the options that declare it a mistake for them, with the
-/// declared hint in place of the advice to read help (<c>USAGE_ERROR</c>). Every <c>create</c>
-/// refuses the output options this way, and its error shows the command line with their value
-/// as the file argument.</description></item>
 /// <item><term><c>option.MistakenFor(names)</c></term><description>An option name that names no
 /// option, such as a text option for a search's <c>--pattern</c>: the declaring option, first
 /// (<c>USAGE_ERROR</c>).</description></item>
@@ -128,8 +121,8 @@ public sealed class CommandDefinition<TRequest, TResult>
     public Action<TResult, TableSurface>? Table { get; }
 
     /// <summary>
-    /// Completes the result with what only the command line knows, such as the continuation of a
-    /// truncated read that repeats the caller's own options; it runs after the handler, inside the
+    /// Completes the result with what only the command line knows, such as the option values that
+    /// continue a truncated read; it runs after the handler, inside the
     /// font scope, and receives the same parse, request and invocation as <c>bind</c>.
     /// </summary>
     public Func<ParseResult, TRequest, TResult, StandardInvocation, TResult>? Finish { get; init; }
@@ -140,21 +133,6 @@ public sealed class CommandDefinition<TRequest, TResult>
     /// first every command that declares it, in menu order; the name never runs a command.
     /// </summary>
     public IReadOnlyList<string> MistakenFor { get; init; } = [];
-
-    /// <summary>
-    /// How this command does what <see cref="MistakenFor"/> names, such as the operation of an edit
-    /// that merges documents; the error that refuses such a name gives it as its hint. Null for the
-    /// advice to read help.
-    /// </summary>
-    public string? MistakenForHint { get; init; }
-
-    /// <summary>
-    /// Options the command does not have that a caller may reach for, such as <c>--encrypt</c> on a
-    /// command that never encrypts, each with the hint that names what does it instead. The
-    /// parser refuses them as any unknown option, with that hint and without the options that
-    /// merely look like them; help and capabilities do not list them.
-    /// </summary>
-    public IReadOnlyList<RefusedOption> RefusedOptions { get; init; } = [];
 
     /// <summary>Help examples, written after the executable name.</summary>
     public IReadOnlyList<string> Examples { get; init; } = [];
@@ -173,12 +151,6 @@ public sealed class CommandDefinition<TRequest, TResult>
     /// <see cref="EditDefinition"/> sets it from the vocabulary's catalog.
     /// </summary>
     internal Func<string, ProductOperationCommand>? Operations { get; init; }
-
-    /// <summary>For an edit, whether its vocabulary has an operation that encrypts the edited document.</summary>
-    internal bool Encrypts { get; init; }
-
-    /// <summary>For an edit that <see cref="Encrypts"/>, the operation documents that only encrypt; <see cref="EditDefinition"/> sets them.</summary>
-    internal EncryptionOperations? Encryption { get; init; }
 
     /// <summary>Every renderer the definition declares.</summary>
     internal IEnumerable<ProductOutputDefinition> Outputs()
@@ -201,13 +173,7 @@ public sealed class CommandDefinition<TRequest, TResult>
         var options = new StandardOptions(_traits);
         Command command = options.CreateCommand(Name, Description, _parameters);
         command.SetAction(parse => context.Run(parse, scope => Execute(options, parse, scope, context, handler)));
-        CommandMistakes.Declare(command, MistakenFor, MistakenForHint);
-        CommandMistakes.DeclareRefused(command, [.. RefusedOptions, .. options.RefusedOutputOptions]);
-        if (Encrypts)
-        {
-            ProtectionAdvice.Declare(command, Encryption ?? new EncryptionOperations(null, null));
-        }
-
+        CommandMistakes.Declare(command, MistakenFor);
         return Examples.Count == 0 && Links.Count == 0 ? command : command.WithExamples(Examples, Links);
     }
 
@@ -244,15 +210,14 @@ public sealed class CommandDefinition<TRequest, TResult>
 
             using IDisposable? fontScope = fonts is null ? null : scope.Binding.UseFonts(fonts);
             TSession session = ((ProductBinding<TSession>)scope.Binding).Session;
-            TResult result = context.Guarded(handler, session, request, scope.Binding.Publishing,
-                unit => PartRangeOption.NarrowingOption(parse.CommandResult.Command, unit, () => invocation.Output.Format));
+            TResult result = context.Guarded(handler, session, request, scope.Binding.Publishing);
             if (Finish is not null)
             {
                 result = Finish(parse, request, result, invocation);
             }
 
             // The write pipeline discloses evaluation output for every product command alike.
-            return scope.Binding.Publishing.DiscloseWith(result, loss => ProtectionAdvice.Hint(parse, invocation, loss));
+            return scope.Binding.Publishing.Disclose(result);
         }
         catch (CliException error) when (invocation.ForPairedInput(error) is var restated && restated != error)
         {
@@ -289,7 +254,6 @@ public static class EditDefinition
     /// <c>merge</c> for an edit that imports another document (see
     /// <see cref="CommandDefinition{TRequest, TResult}.MistakenFor"/>).
     /// </param>
-    /// <param name="mistakenForHint">How the edit does what <paramref name="mistakenFor"/> names (<see cref="CommandDefinition{TRequest, TResult}.MistakenForHint"/>).</param>
     public static CommandDefinition<TRequest, TResult> Create<TOp, TBatch, TRequest, TResult>(
         BoundedEditCommand<TOp, TBatch> edit,
         string description,
@@ -301,8 +265,7 @@ public static class EditDefinition
         string name = "edit",
         IReadOnlyList<string>? examples = null,
         IReadOnlyList<CommandHelpLink>? links = null,
-        IReadOnlyList<string>? mistakenFor = null,
-        string? mistakenForHint = null)
+        IReadOnlyList<string>? mistakenFor = null)
         where TOp : BoundedOperation, IOperationVocabulary<TOp>
         where TBatch : BoundedOperationEnvelope<TOp>
         where TResult : ResultEnvelope
@@ -325,10 +288,7 @@ public static class EditDefinition
             Examples = examples ?? [],
             Links = links ?? [],
             MistakenFor = mistakenFor ?? [],
-            MistakenForHint = mistakenForHint,
             Operations = TOp.Catalog.Describe,
-            Encrypts = TOp.Catalog.Encrypts,
-            Encryption = edit.Encryption,
         };
     }
 }

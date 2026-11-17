@@ -48,22 +48,7 @@ internal static class SearchCommand
             },
             Table)
         {
-            Finish = static (_, request, result, standard) =>
-            {
-                ContinuationCommand resume = standard.Continuation();
-                if (request.SheetName is { } sheetName)
-                {
-                    resume.Option("--sheet", sheetName);
-                }
-
-                return result with { Window = SearchOptions.Continue(request.Query, result.Window, resume) };
-            },
-            RefusedOptions =
-            [
-                new RefusedOption(
-                    ["--scope"],
-                    $"Choose what to search with --content {InValues}|{InFormulas}|{InAll}, and restrict it to one sheet with --sheet."),
-            ],
+            Finish = static (_, request, result, _) => result with { Window = SearchOptions.Continue(request.Query, result.Window) },
             Examples =
             [
                 "cells search book.xlsx --pattern TODO --output-format json",

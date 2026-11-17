@@ -34,26 +34,11 @@ public sealed class SlidesLayoutMasterTests
         Assert.Equal("slide/1", moved.Location);
         Assert.Equal(1, (int)moved.Details!["fromMaster"]!);
         Assert.Equal(2, (int)moved.Details!["toMaster"]!);
-        // Master 2 has every name of master 1 but Title Only, so only Title Only takes the slide back.
-        Assert.StartsWith("To take the slide back to master 1, set_layout it to one of 'Title Only', the layouts of master 1 whose names master 2 has none of;", moved.Hint, StringComparison.Ordinal);
 
         string back = fixture.File("back.pptx");
         Edit(fixture, output, back, new SetLayoutOp { Slides = "1", Layout = "Title Only" });
         using var returned = new Presentation(back);
         Assert.Same(returned.Masters[0], returned.Slides[0].LayoutSlide.MasterSlide);
-    }
-
-    [Fact]
-    public void SetLayout_SaysThatNoNameTakesTheSlideBackWhereItsNewMasterHasEveryNameOfItsOld()
-    {
-        using var fixture = new SlidesEngineFixture();
-        // The second master is a copy of the first with one more layout.
-        string input = Deck(fixture, static second => second.LayoutSlides.Add(SlideLayoutType.TitleOnly, "Heading Only"));
-
-        SlidesEditResult result = Edit(fixture, input, fixture.File("relaid.pptx"), new SetLayoutOp { Slides = "1", Layout = "Heading Only" });
-
-        Warning moved = Assert.Single(result.Warnings!, static warning => warning.Code.Name == "SLIDE_MASTER_CHANGED");
-        Assert.StartsWith("No layout name takes the slide back to master 1:", moved.Hint, StringComparison.Ordinal);
     }
 
     /// <summary>

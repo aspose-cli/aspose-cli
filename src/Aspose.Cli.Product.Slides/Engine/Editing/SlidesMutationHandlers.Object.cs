@@ -26,7 +26,6 @@ internal sealed partial class SlidesMutationHandlers
             {
                 _warnings.Add(new Warning(SlidesDiagnostics.AltTextTabsDropped, "The alternative text given to the picture holds a tab, which the saved presentation does not keep (known issue SLIDES-ALT-TEXT-TAB), so the words on either side of it run together.")
                 {
-                    Hint = "To keep them apart, delete_shape the picture, then insert_image it again with a space in place of each tab in altText.",
                     Location = SlidesStateProjection.ShapeAddress(_presentation.Slides.IndexOf(Slide) + 1, picture.OfficeInteropShapeId),
                 });
             }
@@ -165,8 +164,7 @@ internal sealed partial class SlidesMutationHandlers
         {
             throw Shape is IGroupShape group && SlidesTextUnits.Charts(group.Shapes).FirstOrDefault().Chart is { } grouped
                 ? new OperationInvalidException(
-                    string.Create(CultureInfo.InvariantCulture, $"Shape {Shape.OfficeInteropShapeId} is a group, not a chart: no operation addresses chart '{grouped.Name}' (shapeId {grouped.OfficeInteropShapeId}) inside it."),
-                    "To change its data, " + RebuildGroupedChart + ".")
+                    string.Create(CultureInfo.InvariantCulture, $"Shape {Shape.OfficeInteropShapeId} is a group, not a chart: no operation addresses chart '{grouped.Name}' (shapeId {grouped.OfficeInteropShapeId}) inside it."))
                 : new OperationInvalidException($"Shape {Shape.OfficeInteropShapeId} is not a chart.");
         }
 

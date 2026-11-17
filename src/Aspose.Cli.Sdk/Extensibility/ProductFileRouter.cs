@@ -344,7 +344,7 @@ public sealed class ProductFileRouter
         throw detected.Count == 0 && readers.Count > 0
             ? CliErrors.ContentUnrecognized(fullPath, readers)
             : detected.Count == 0 && writers.Count > 0
-            ? CliErrors.FormatOnlyWritten(fullPath, writers, CandidateIds(candidates))
+            ? CliErrors.FormatOnlyWritten(fullPath, CandidateIds(candidates))
             : CliErrors.FormatUnrecognized(
                 fullPath,
                 declaredProduct: null,

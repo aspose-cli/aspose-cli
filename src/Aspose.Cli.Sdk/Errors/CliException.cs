@@ -9,7 +9,7 @@ namespace Aspose.Cli.Sdk.Errors;
 /// command executor turns it into the error envelope and the exit code.
 /// A product builds its own codes with the constructor; a shared code of
 /// <see cref="ErrorCodes"/> is built only by an SDK error factory, such as
-/// <see cref="CliErrors"/>, so each situation has one message, hint and details shape.
+/// <see cref="CliErrors"/>, so each situation has one message and details shape.
 /// </summary>
 public sealed class CliException : Exception
 {
@@ -18,11 +18,10 @@ public sealed class CliException : Exception
     public CliException(
         ErrorCode code,
         string message,
-        string? hint = null,
         JsonObject? details = null,
         string? docs = null,
         Exception? innerException = null)
-        : this(message, innerException, RefuseShared(code), hint, details, docs, explanation: null)
+        : this(message, innerException, RefuseShared(code), details, docs, explanation: null)
     {
     }
 
@@ -30,7 +29,6 @@ public sealed class CliException : Exception
         string message,
         Exception? innerException,
         ErrorCode code,
-        string? hint,
         JsonObject? details,
         string? docs,
         string? explanation)
@@ -46,7 +44,6 @@ public sealed class CliException : Exception
         }
 
         Code = code;
-        Hint = hint;
         Details = WithoutNulls(details);
         Docs = docs;
         Explanation = explanation;
@@ -72,11 +69,10 @@ public sealed class CliException : Exception
     internal static CliException Create(
         ErrorCode code,
         string message,
-        string? hint = null,
         JsonObject? details = null,
         string? docs = null,
         Exception? innerException = null,
-        string? explanation = null) => new(message, innerException, code, hint, details, docs, explanation);
+        string? explanation = null) => new(message, innerException, code, details, docs, explanation);
 
     private static ErrorCode RefuseShared(ErrorCode code)
     {
@@ -89,9 +85,6 @@ public sealed class CliException : Exception
 
     /// <summary>The stable error code.</summary>
     public ErrorCode Code { get; }
-
-    /// <summary>Recommended next action for the caller.</summary>
-    public string? Hint { get; }
 
     /// <summary>Structured context for the error.</summary>
     public JsonObject? Details { get; }
@@ -122,7 +115,6 @@ public sealed class CliException : Exception
             Code = Code.Name,
             Message = Message,
             Details = Details,
-            Hint = Hint,
             Docs = Docs,
         },
     };

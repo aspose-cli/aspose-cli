@@ -132,20 +132,6 @@ public sealed class BoundedEditCommandTests : IDisposable
     }
 
     [Fact]
-    public void Read_ExplainsAnInlineDocumentWhoseQuotesTheShellRemoved()
-    {
-        CliException withDirectives = Assert.Throws<CliException>(
-            () => Read(WithDirectives(), "--ops", "{ops:[{op:set,value:1}]}"));
-        CliException plain = Assert.Throws<CliException>(
-            () => Read(Plain(), "--ops", "{ops:[{op:set,value:1}]}"));
-
-        Assert.Equal(ErrorCodes.OpsInvalid, withDirectives.Code);
-        Assert.Contains("Windows PowerShell", withDirectives.Hint, StringComparison.Ordinal);
-        Assert.Contains("--set", withDirectives.Hint, StringComparison.Ordinal);
-        Assert.DoesNotContain("--set", plain.Hint, StringComparison.Ordinal);
-    }
-
-    [Fact]
     public void Read_ReplacesTheInputOnlyInPlace()
     {
         CliException error = Assert.Throws<CliException>(() => Read(
@@ -153,7 +139,6 @@ public sealed class BoundedEditCommandTests : IDisposable
 
         Assert.Equal(ErrorCodes.OptionInvalid, error.Code);
         Assert.Equal("--out", error.Details!["option"]!.GetValue<string>());
-        Assert.Contains("--in-place", error.Hint, StringComparison.Ordinal);
         Assert.Equal(_input, Read(Plain(), "--ops", Document, "--in-place").Output.Path);
     }
 
@@ -168,7 +153,6 @@ public sealed class BoundedEditCommandTests : IDisposable
             command.Parse(["--out", "BOOK.TEST"]), new PathResolver(_temp.Path), _input));
 
         Assert.Equal(ErrorCodes.OptionInvalid, error.Code);
-        Assert.DoesNotContain("--in-place", error.Hint, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -271,7 +255,6 @@ public sealed class BoundedEditCommandTests : IDisposable
         {
             Assert.Equal(ErrorCodes.OptionInvalid, error.Code);
             Assert.Equal("--out", error.Details!["option"]!.GetValue<string>());
-            Assert.Contains("--in-place", error.Hint, StringComparison.Ordinal);
         });
         Assert.Equal(_input, Read(linking, "--ops", image, "--in-place").Output.Path);
         Assert.Equal(_temp.File("copy.test"), Read(linking, "--ops", image, "--out", "copy.test").Output.Path);
@@ -322,7 +305,7 @@ public sealed class BoundedEditCommandTests : IDisposable
             {
                 if (parse.GetValue(fast))
                 {
-                    throw CliErrors.OptionInvalid("--fast", "is refused", "Drop --fast.");
+                    throw CliErrors.OptionInvalid("--fast", "is refused");
                 }
             });
 
@@ -453,7 +436,7 @@ public sealed class BoundedEditCommandTests : IDisposable
             "Set a value.",
             static text => int.TryParse(text, out int value)
                 ? new SetOp { Value = value }
-                : throw CliErrors.OptionInvalid("--set", $"'{text}' is not a number", "Pass an integer."),
+                : throw CliErrors.OptionInvalid("--set", $"'{text}' is not a number"),
             static ops => new TestBatch { Ops = ops }),
     });
 

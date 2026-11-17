@@ -178,7 +178,6 @@ public sealed class ProductMenuTests : IDisposable
 
         Assert.Equal(ErrorCodes.PasswordRequired, error.Code);
         Assert.Equal("right", error.Details!["argument"]!.GetValue<string>());
-        Assert.Contains("--right-password-env", error.Hint, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -537,7 +536,7 @@ public sealed class ProductMenuTests : IDisposable
                 {
                     if (parse.GetValue(strict))
                     {
-                        throw CliErrors.OptionInvalid("--strict", "refuses every operation document", "Omit --strict.");
+                        throw CliErrors.OptionInvalid("--strict", "refuses every operation document");
                     }
                 });
         }

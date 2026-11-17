@@ -36,14 +36,6 @@
           {
             "path": "error.message",
             "equals": "By its content, 'renamed.pdf' is a words document; it is not a pdf document."
-          },
-          {
-            "path": "error.hint",
-            "contains": "looks like that of words documents"
-          },
-          {
-            "path": "error.hint",
-            "contains": "'aspose-cli words inspect'"
           }
         ],
         "files": {
@@ -80,14 +72,6 @@
           {
             "path": "error.message",
             "equals": "By its content, 'renamed.pdf' is a words document; it is not a pdf document."
-          },
-          {
-            "path": "error.hint",
-            "contains": "looks like that of words documents"
-          },
-          {
-            "path": "error.hint",
-            "contains": "'aspose-cli words inspect'"
           }
         ],
         "files": {

@@ -82,7 +82,6 @@ internal static class ProcessFailureBoundary
                         Code = ErrorCodes.Internal.Name,
                         Message = "The CLI could not complete process startup.",
                         Details = new JsonObject { ["diagnosticId"] = HostDiagnosticIds.BootstrapFailure },
-                        Hint = "Retry once; if startup still fails, report the diagnostic id and command without including secrets.",
                     },
                 },
                 SdkJsonContext.Default.ErrorEnvelope));

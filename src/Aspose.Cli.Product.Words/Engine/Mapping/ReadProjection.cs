@@ -1,5 +1,4 @@
 using System.Text.Json;
-using Aspose.Cli.Sdk;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Results;
 using Aspose.Words;
@@ -23,14 +22,11 @@ internal static class ReadProjection
             // Block numbers run through the whole document, so a range can miss the section.
             if (request.Blocks is not null && candidates.Count == 0)
             {
-                int[] held = index.Entries.Where(entry => entry.Section == section).Select(static entry => entry.Index).ToArray();
-                throw CliErrors.NotFoundAt(
+                throw CliErrors.NotFound(
                     WordsDiagnostics.BlockNotFound,
                     "block",
                     request.Blocks.Text,
-                    index.Count,
-                    $"Section {section} holds block{(held.Length == 1 ? "" : "s")} {PageRange.Describe(held)}; "
-                    + "use a range inside it, or drop --blocks to read the whole section.");
+                    [.. index.Entries.Where(entry => entry.Section == section).Select(static entry => entry.Index.ToString(System.Globalization.CultureInfo.InvariantCulture))]);
             }
         }
 
@@ -70,7 +66,7 @@ internal static class ReadProjection
                 Total = candidates.Count,
                 Truncated = blocks.Count < candidates.Count || blocks.Any(static block => block.ContentTruncated),
             },
-            Warnings = EnvelopeParts.CombineWarnings(WordsText.CommentsLeftOut(candidates.Take(blocks.Count).Select(static entry => entry.Node), request.Continuation ?? new ContinuationInput(path))),
+            Warnings = EnvelopeParts.CombineWarnings(WordsText.CommentsLeftOut(candidates.Take(blocks.Count).Select(static entry => entry.Node))),
         };
     }
 

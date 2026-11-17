@@ -1,6 +1,4 @@
 using System.Globalization;
-using System.Text.Encodings.Web;
-using System.Text.Json;
 using Aspose.Cli.Product.Words.Engine.Mapping;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Text;
@@ -62,10 +60,7 @@ internal static class WordsAnchorResolver
                 WordsDiagnostics.RevisionNotFound,
                 "revision",
                 missing.ToString(CultureInfo.InvariantCulture),
-                changes.Count,
-                hint: changes.Count == 0
-                    ? "The document has no tracked revisions."
-                    : $"Use a revision from 1 through {changes.Count}, as 'words inspect --detail revisions' numbers them.");
+                changes.Count);
         }
 
         int[] wanted = [.. numbers.Distinct().Order()];
@@ -88,8 +83,7 @@ internal static class WordsAnchorResolver
             if (together.Except(wanted).Any())
             {
                 throw new OperationInvalidException(
-                    $"revisions {string.Join(" and ", together)} change the same node in the same way and can only be decided together",
-                    "List all of them in revisions, or none.");
+                    $"revisions {string.Join(" and ", together)} change the same node in the same way and can only be decided together");
             }
         }
 
@@ -110,7 +104,7 @@ internal static class WordsAnchorResolver
             || operation.Sections.Any(section => !ReferenceEquals(section.ParentNode, document)))
         {
             throw new OperationInvalidException(
-                "it references an object deleted by an earlier operation", DeleteConflictHint);
+                "it references an object deleted by an earlier operation");
         }
     }
 
@@ -147,8 +141,7 @@ internal static class WordsAnchorResolver
             if (entry is null)
             {
                 throw new OperationInvalidException(
-                    $"bookmark '{target.Bookmark}' is not inside a body block, so it cannot address one",
-                    "Target a bookmark in the document body, or address the block by number, heading or text.");
+                    $"bookmark '{target.Bookmark}' is not inside a body block, so it cannot address one");
             }
 
             return [entry.Node];
@@ -164,7 +157,7 @@ internal static class WordsAnchorResolver
             .ToArray();
         if (matches.Length == 0)
         {
-            throw AnchorMissing(index, target.Heading is null ? "text" : "heading", needle, candidates);
+            throw AnchorMissing(target.Heading is null ? "text" : "heading", needle, candidates);
         }
 
         int nth = target.Nth ?? 1;
@@ -180,76 +173,21 @@ internal static class WordsAnchorResolver
 
     /// <summary>
     /// The error for a heading or find text no candidate block contains. A name close to it among
-    /// the candidates is suggested as for any name; otherwise the hint names the block that
-    /// contains the longest leading part of the text, at least half of it, as a clause title
-    /// remembered as "第六条 合同解除" leads to "第六条 合同的解除和终止". A missing heading looks
-    /// among the headings first, so "终止条款" leads to the heading "4. 终止 Termination" rather
-    /// than to a body paragraph that mentions 终止, and among all blocks only when no heading holds
-    /// such a part.
+    /// the candidates is suggested as for any name.
     /// </summary>
-    private static CliException AnchorMissing(DocumentBlockIndex index, string subject, string needle, BlockEntry[] candidates)
+    private static CliException AnchorMissing(string subject, string needle, BlockEntry[] candidates)
     {
         // Each block's text as far as it can name the block; a paragraph can be long.
         string[] available = [.. candidates
             .Select(static entry => TextSearch.Truncate(WordsText.Of(entry.Node).Trim(), 80))
             .Where(static text => text.Length > 0)];
-        string? hint = null;
-        if (Mistake.Of(needle, available).Suggestions.Count == 0)
-        {
-            if (subject == "heading" && Closest(candidates, needle) is { } heading)
-            {
-                string text = WordsText.Of(heading.Node).Trim();
-                hint = $"Heading '{text}' holds the closest text; "
-                    + $"address it with {{\"heading\": {JsonSerializer.Serialize(text, Readable)}}}.";
-            }
-            else if (Closest(index.Entries, needle) is { } closest)
-            {
-                string text = WordsText.Of(closest.Node).Trim();
-                string notHeading = subject == "heading" ? ", but it is not a heading" : string.Empty;
-                hint = $"Block {closest.Index} holds the closest text: '{TextSearch.Truncate(text, 80)}'{notHeading}; "
-                    + $"address it with {{\"block\": {closest.Index}}} or a \"find\" text it contains.";
-            }
-        }
-
-        return CliErrors.TextNotFound(WordsDiagnostics.AnchorNotFound, subject, needle, available, hint);
+        return CliErrors.TextNotFound(WordsDiagnostics.AnchorNotFound, subject, needle, available);
     }
-
-    private static readonly JsonSerializerOptions Readable = new() { Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping };
-
-    // The first block that contains the longest leading part of the text, at least half of it.
-    // Spaces do not count, as a half-width space typed for a full-width one is a common slip,
-    // and body blocks come before table of contents entries, which repeat the headings' text.
-    private static BlockEntry? Closest(IEnumerable<BlockEntry> entries, string needle)
-    {
-        string wanted = WithoutSpaces(needle);
-        (BlockEntry Entry, string Text)[] blocks = [.. entries
-            .OrderBy(static entry => entry.Node is Paragraph
-            {
-                ParagraphFormat.StyleIdentifier: >= StyleIdentifier.Toc1 and <= StyleIdentifier.Toc9,
-            })
-            .Select(static entry => (entry, WithoutSpaces(WordsText.Of(entry.Node))))];
-        for (int length = wanted.Length; length >= Math.Max(2, (wanted.Length + 1) / 2); length--)
-        {
-            string part = wanted[..length];
-            foreach ((BlockEntry entry, string text) in blocks)
-            {
-                if (text.Contains(part, StringComparison.OrdinalIgnoreCase))
-                {
-                    return entry;
-                }
-            }
-        }
-
-        return null;
-    }
-
-    private static string WithoutSpaces(string text) => string.Concat(text.Where(static c => !char.IsWhiteSpace(c)));
 
     /// <summary>The addresses of the original blocks that hold <paramref name="nodes"/>, as <c>block/{n}</c>.</summary>
     internal static IReadOnlyList<string> Targets(DocumentBlockIndex index, IReadOnlyList<Node> nodes) =>
         [.. nodes.Select(index.FindBlock).OfType<int>().Distinct().Order().Select(static block => $"block/{block}")];
 
-    private const string DeleteConflictHint = "Split conflicting deletes and dependent edits into separate batches.";
 }
 
 internal sealed record ResolvedWordsOp(

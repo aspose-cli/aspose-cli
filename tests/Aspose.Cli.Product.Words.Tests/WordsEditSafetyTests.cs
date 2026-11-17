@@ -148,7 +148,6 @@ public sealed class WordsEditSafetyTests
             }));
         // A wrong protection password is the same mistake as a wrong open password.
         Assert.Equal(ErrorCodes.PasswordInvalid, wrong.Code);
-        Assert.Contains("\"passwordEnv\"", wrong.Hint, StringComparison.Ordinal);
         WordsEdit.Run(
             fixture.Session,
             new WordsEditRequest

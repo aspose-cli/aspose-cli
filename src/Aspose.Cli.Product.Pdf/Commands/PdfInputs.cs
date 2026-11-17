@@ -1,5 +1,3 @@
-using Aspose.Cli.Sdk.IO.Output;
-
 namespace Aspose.Cli.Product.Pdf.Commands;
 
 /// <summary>The input documents PDF commands declare.</summary>
@@ -10,52 +8,4 @@ internal static class PdfInputs
 
     /// <summary>The password a writing command can put on the PDF it writes.</summary>
     public static readonly EncryptedOutput EncryptedPdf = new("the output PDF");
-
-    /// <summary>
-    /// The command line, quoted for a hint, that reads the form fields of the invocation's input
-    /// with their values: <c>pdf inspect &lt;input&gt; --detail forms</c>, with the input
-    /// password's environment variable when one gave it.
-    /// </summary>
-    public static string FormsInspection(StandardInvocation standard) =>
-        standard.ContinuationAt("pdf", "inspect").Option("--detail", PdfInspectDetails.Forms).Quoted();
-
-    /// <summary>
-    /// The command line, quoted for a hint, that extracts the text of the pages the invocation
-    /// selected from its input into <paramref name="directory"/>, the one the invocation was given:
-    /// <c>pdf extract &lt;input&gt; --what text --out-dir &lt;directory&gt;</c>, with the input's
-    /// password passed on, replacing what is there only when the invocation was told to.
-    /// </summary>
-    public static string TextExtraction(StandardInvocation standard, ResolvedDirectory directory, string? pages)
-    {
-        ContinuationCommand command = standard.ContinuationAt("pdf", "extract")
-            .Option("--what", PdfExtractKinds.Text)
-            .OutDir(ContinuationOutput.Requested(directory.Path, standard.Overwrite));
-        return (pages is null ? command : command.Option("--pages", pages)).Quoted();
-    }
-
-    /// <summary>
-    /// The command line, quoted for a hint, that extracts the pictures of the pages a conversion
-    /// selected from its input into a new folder beside <paramref name="output"/>: <c>pdf extract
-    /// &lt;input&gt; --what images --out-dir &lt;output name&gt;-images</c>, with the input password's
-    /// environment variable when one gave it.
-    /// </summary>
-    public static string PictureExtraction(StandardInvocation standard, ResolvedOutput output, string? pages)
-    {
-        string folder = Path.Combine(Path.GetDirectoryName(output.Path) ?? string.Empty, Path.GetFileNameWithoutExtension(output.Path) + "-images");
-        ContinuationCommand command = standard.ContinuationAt("pdf", "extract")
-            .Option("--what", PdfExtractKinds.Images)
-            .OutDir(ContinuationOutput.New(folder));
-        return (pages is null ? command : command.Option("--pages", pages)).Quoted();
-    }
-
-    /// <summary>
-    /// The command line, quoted for a hint, that reads the bookmarks of the edited document as
-    /// they were before the edit: <c>pdf inspect &lt;file&gt; --detail outline</c> on its input, or
-    /// on the backup of an in-place edit, which replaces the input; null for an in-place edit
-    /// without a backup, which leaves no file to read them from.
-    /// </summary>
-    public static string? OutlineInspection(StandardInvocation standard, ResolvedOutput output) =>
-        (output.InPlace ? output.BackupPath : standard.Input) is { } document
-            ? standard.ContinuationOf(document).ContinuationAt("pdf", "inspect").Option("--detail", PdfInspectDetails.Outline).Quoted()
-            : null;
 }

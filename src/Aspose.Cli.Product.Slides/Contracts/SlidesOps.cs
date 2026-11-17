@@ -384,7 +384,7 @@ public sealed record SlidesReplaceTextOp : SlidesOp
     {
         if (TextReplacement.Problem(Find, Regex, CaseSensitive) is { } problem)
         {
-            throw new OperationInvalidException(problem.Reason, problem.Hint);
+            throw new OperationInvalidException(problem);
         }
 
         return this;
@@ -583,7 +583,7 @@ public sealed record FormatShapeOp : ShapeTargetOp
 /// Moves or resizes one shape in presentation points from the slide's top-left corner; omitted
 /// sides keep their values. It must set at least one of x, y, width and height.
 /// </summary>
-[Operation("set_shape_bounds", Hint = "The bounds are the fields x, y, width and height themselves, not a rect.")]
+[Operation("set_shape_bounds")]
 [AtLeastOneOf("x", "y", "width", "height")]
 public sealed record SetShapeBoundsOp : ShapeTargetOp
 {

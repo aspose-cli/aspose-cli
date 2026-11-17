@@ -32,8 +32,7 @@ internal static class PdfValidate
                 ? [EnvelopeParts.ListTruncated(
                     "issues",
                     ListedIssues,
-                    problems.Count,
-                    "Fix the listed issues and validate again; 'pdf convert --to <profile>' fixes the ones it can.")]
+                    problems.Count)]
                 : null,
         };
     }

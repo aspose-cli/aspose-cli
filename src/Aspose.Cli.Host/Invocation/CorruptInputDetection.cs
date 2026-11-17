@@ -12,11 +12,10 @@ namespace Aspose.Cli.Host.Invocation;
 /// Explains a <c>FILE_CORRUPT</c> from a product command: when the file's content looks like a
 /// format another product reads, such as a Word document renamed to <c>.pdf</c>, the error becomes
 /// the <c>FORMAT_MISMATCH</c> that generic routing reports for the same file, names that product in
-/// <c>details.detected</c>, says so in its message, and its hint points to that product's
-/// command. The product's own details stay; content no product recognizes, or in a format this
-/// product reads, leaves the error unchanged, except where generic routing reports the same
-/// file as <c>FORMAT_UNSUPPORTED</c>: the product's error then takes that code and keeps its
-/// message, hint and details, which speak in the product's terms. A command with
+/// <c>details.detected</c> and says so in its message. The product's own details stay; content
+/// no product recognizes, or in a format this product reads, leaves the error unchanged, except
+/// where generic routing reports the same file as <c>FORMAT_UNSUPPORTED</c>: the product's error
+/// then takes that code and keeps its message and details, which speak in the product's terms. A command with
 /// several inputs is explained only when the product names the
 /// failing file in <c>details.path</c>.
 /// </summary>
@@ -61,8 +60,7 @@ internal static class CorruptInputDetection
             error,
             path,
             productId,
-            [.. detected.Select(static item => item.ProductId)],
-            Hint(detected, productCommand!, parseResult.CommandResult, path));
+            [.. detected.Select(static item => item.ProductId)]);
     }
 
     /// <summary>
@@ -82,51 +80,6 @@ internal static class CorruptInputDetection
         {
             return routed.Code == ErrorCodes.FormatUnsupported;
         }
-    }
-
-    private static string Hint(
-        IReadOnlyList<FileDetection> detected,
-        CommandResult productCommand,
-        CommandResult command,
-        string path)
-    {
-        string fileName = Path.GetFileName(path);
-        if (detected.Count > 1)
-        {
-            return $"The content of '{fileName}' looks like a document of another product: "
-                + $"{string.Join(", ", detected.Select(static item => item.ProductId))}. Use that product's commands, "
-                + "or give the file its real extension.";
-        }
-
-        FileDetection match = detected[0];
-        string format = match.FormatId is null ? match.ProductId : $"{match.ProductId} ({match.FormatId})";
-        string? sameCommand = SameCommand(productCommand, command, match.ProductId);
-        string next = sameCommand is null
-            ? $"Use the '{DistributionInfo.CommandName} {match.ProductId}' commands for it"
-            : $"Use '{sameCommand}' for it";
-        return $"The content of '{fileName}' looks like that of {format} documents, not of a file this command reads. "
-            + $"{next}, or give the file its real extension.";
-    }
-
-    // The detected product's command at the same path, such as 'words inspect' for 'pdf inspect'.
-    private static string? SameCommand(CommandResult productCommand, CommandResult command, string productId)
-    {
-        var names = new Stack<string>();
-        for (CommandResult? current = command; current is not null && current != productCommand;
-            current = current.Parent as CommandResult)
-        {
-            names.Push(current.Command.Name);
-        }
-
-        Command? target = (productCommand.Parent as CommandResult)?.Command.Subcommands
-            .FirstOrDefault(candidate => candidate.Policy().ProductId == productId);
-        foreach (string name in names)
-        {
-            target = target?.Subcommands.FirstOrDefault(candidate => candidate.Name == name);
-        }
-        return target is null
-            ? null
-            : string.Join(' ', [DistributionInfo.CommandName, productId, .. names]);
     }
 
     private static CommandResult? ProductCommand(CommandResult command)

@@ -28,8 +28,7 @@ internal static class WordsMailMerge
         if (rows.Count == 0)
         {
             throw WordsMergeData.Invalid(
-                "mail_merge needs at least one row",
-                "Supply a JSON array with at least one object, or a CSV file with a data row after its header.");
+                "mail_merge needs at least one row");
         }
 
         return regions
@@ -82,10 +81,9 @@ internal static class WordsMailMerge
     }
 
     /// <summary>The template's merge regions cannot take the flat merge rows.</summary>
-    private static CliException RegionInvalid(string reason, string hint) => new(
+    private static CliException RegionInvalid(string reason) => new(
         WordsDiagnostics.MergeDataInvalid,
-        $"The mail merge template cannot be merged with regions: {reason}.",
-        hint: hint);
+        $"The mail merge template cannot be merged with regions: {reason}.");
 
     /// <summary>
     /// The one merge region the flat rows feed. Several regions would need hierarchical data,
@@ -102,15 +100,12 @@ internal static class WordsMailMerge
         return regions switch
         {
             [] => throw RegionInvalid(
-                "it has no TableStart merge field",
-                "Put TableStart:Name and TableEnd:Name merge fields around the content to repeat, or set regions to false to merge one copy of the document per row."),
+                "it has no TableStart merge field"),
             [var region] when !string.IsNullOrWhiteSpace(region) => region,
             [_] => throw RegionInvalid(
-                "its TableStart merge field has no region name",
-                "Name the region in both fields, such as TableStart:Items and TableEnd:Items."),
+                "its TableStart merge field has no region name"),
             _ => throw RegionInvalid(
-                $"it has {regions.Length} merge regions ({string.Join(", ", regions)}) but flat merge rows feed exactly one",
-                "Split the template so each copy has one region, and merge each copy with its own rows."),
+                $"it has {regions.Length} merge regions ({string.Join(", ", regions)}) but flat merge rows feed exactly one"),
         };
     }
 
@@ -123,8 +118,7 @@ internal static class WordsMailMerge
         FieldMergeField end = fields.FirstOrDefault(field =>
                 string.Equals(field.FieldName, "TableEnd:" + region, StringComparison.OrdinalIgnoreCase))
             ?? throw RegionInvalid(
-                $"region '{region}' has no TableEnd:{region} merge field",
-                $"Add a TableEnd:{region} merge field after the content the region repeats.");
+                $"region '{region}' has no TableEnd:{region} merge field");
         if (start.Start.GetAncestor(NodeType.Row) is Row first
             && end.End.GetAncestor(NodeType.Row) is Row last
             && ReferenceEquals(first.ParentTable, last.ParentTable))

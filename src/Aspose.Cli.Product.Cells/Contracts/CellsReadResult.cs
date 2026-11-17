@@ -5,8 +5,8 @@ namespace Aspose.Cli.Product.Cells.Contracts;
 /// <summary>
 /// Result of <c>aspose-cli cells read</c>: a budgeted projection of one sheet's
 /// cell data. The envelope's window counts cells: how many the read returned, how many
-/// the read covers, and for a read over the cell budget the ready-to-run command that
-/// returns the next page. The file on disk remains the primary artifact — this JSON is a
+/// the read covers, and for a read over the cell budget the option values that return the
+/// next page. The file on disk remains the primary artifact — this JSON is a
 /// view of it, never a round-trip format.
 /// </summary>
 public sealed record CellsReadResult() : WindowedResultEnvelope("read-result")

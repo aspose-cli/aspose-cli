@@ -409,7 +409,6 @@ public sealed class SlidesCreationTests
 
         Warning warning = Assert.Single(result.Warnings!, static item => item.Code == SlidesDiagnostics.TableOverflow);
         Assert.Equal("slide/2", warning.Location);
-        Assert.NotNull(warning.Hint);
     }
 
     [Theory]

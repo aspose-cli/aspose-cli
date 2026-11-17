@@ -1,6 +1,5 @@
 using Aspose.Cells;
 using Aspose.Cli.Product.Cells.Engine.Mapping;
-using Aspose.Cli.Sdk;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.IO.Output;
 using Aspose.Cli.Sdk.Licensing;
@@ -24,7 +23,7 @@ internal static class CellsConvert
         Workbook workbook = loaded.Workbook;
         if (request.Sheets is null && request.SheetsText is { } byName)
         {
-            throw Sheets.SelectedByName(workbook, byName, range: false);
+            throw Sheets.SelectedByName(workbook, byName);
         }
 
         // Capture before saving: Workbook.FileFormat mutates to the target
@@ -32,7 +31,7 @@ internal static class CellsConvert
         InputInfo input = BuildSource(request.Input, loaded);
 
         IReadOnlyList<Worksheet>? selected = request.Sheets is { } selection
-            ? [.. Sheets.Selected(workbook, request.SheetsText, range: false,
+            ? [.. Sheets.Selected(workbook, request.SheetsText,
                 () => selection.Resolve(workbook.Worksheets.Count, CellsDiagnostics.SheetNotFound, "sheet")).Distinct().Order().Select(position => workbook.Worksheets[position - 1])]
             : null;
         IReadOnlyList<int>? selectedSheets = null;
@@ -45,8 +44,7 @@ internal static class CellsConvert
                 {
                     throw CliErrors.OptionInvalid(
                         CellsOptionNames.Sheets,
-                        $"'{request.Output.Format.Id}' output holds one sheet, but the selection holds {selected.Count}",
-                        "Select one sheet, such as --sheets 2, or convert to a multi-sheet format.");
+                        $"'{request.Output.Format.Id}' output holds one sheet, but the selection holds {selected.Count}");
                 }
 
                 // Text formats export the active sheet.
@@ -83,7 +81,7 @@ internal static class CellsConvert
         // Say which rows are not table data: the rows a text input brought over as they are, or,
         // in a JSON output, the rows each sheet writes as records.
         IReadOnlyList<Warning> textLayout = CellsEngineFormats.WritesRecords(request.Output.Format.Id)
-            ? TextTableLayout.JsonWarnings(jsonSheets, session.Budgets, request.Continuation ?? new ContinuationInput(request.Input), request.TextImport)
+            ? TextTableLayout.JsonWarnings(jsonSheets, session.Budgets)
             : TextTableLayout.Warnings(loaded, session.Budgets);
 
         Warning? chartsSplit = CellsEngineFormats.IsPaginated(request.Output.Format.Id)
@@ -112,10 +110,7 @@ internal static class CellsConvert
             // Only a text export without --sheets writes one sheet chosen by default; the other
             // formats write every sheet.
             Warnings = EnvelopeParts.CombineWarnings([.. loaded.Warnings() ?? [],
-                loaded.SkippedSheetWarning(selected is null && savePlan.WritesActiveSheetOnly, licenseState == LicenseState.Evaluation
-                    // The evaluation SDK writes only the first sheet to a text format.
-                    ? $"Evaluation mode exports only the first sheet to {request.Output.Format.Id}; converting another sheet needs an Aspose.Cells license, then --sheets with the sheet's position from inspect."
-                    : "Pass --sheets with the sheet's position from inspect to convert another sheet."), lost.SheetsDropped, lost.DrawingsDropped, headerOnlySkipped, lost.Truncated, lost.FormulasBroken, chartsSplit,
+                loaded.SkippedSheetWarning(selected is null && savePlan.WritesActiveSheetOnly), lost.SheetsDropped, lost.DrawingsDropped, headerOnlySkipped, lost.Truncated, lost.FormulasBroken, chartsSplit,
                 .. lost.Unwritten, .. textLayout]),
         };
     }
@@ -151,8 +146,7 @@ internal static class CellsConvert
         if (headerOnly.Length > 0 && headerOnly.Length == own.Length)
         {
             throw CliErrors.EngineDefect(
-                $"Aspose.Cells writes invalid JSON for a sheet whose data is a single header row, as in {names}, and the workbook has no other sheet to write; nothing was written.",
-                "Add at least one data row below the header, or convert to csv, which writes the header alone.");
+                $"Aspose.Cells writes invalid JSON for a sheet whose data is a single header row, as in {names}, and the workbook has no other sheet to write; nothing was written.");
         }
 
         bool one = headerOnly.Length == 1;
@@ -160,7 +154,6 @@ internal static class CellsConvert
             $"{(one ? "Worksheet" : "Worksheets")} {names} {(one ? "was" : "were")} not exported: {(one ? "it holds" : "each holds")} "
             + "only a header row and no records, which Aspose.Cells cannot write as JSON.")
         {
-            Hint = "Convert the sheet to csv with --sheets and its position from inspect to keep its column names, or add data rows below its header.",
             AffectsCompleteness = true,
         };
         return ([.. own.Except(headerOnly)], skipped);

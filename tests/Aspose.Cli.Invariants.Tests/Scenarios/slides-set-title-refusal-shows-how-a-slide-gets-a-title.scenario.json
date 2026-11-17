@@ -13,10 +13,6 @@
       "expect": {
         "exitCode": 4,
         "error": "PLACEHOLDER_NOT_FOUND",
-        "json": [
-          { "path": "error.hint", "contains": "put {\"op\":\"set_layout\",\"slides\":\"3\",\"layout\":\"Title Only\"} before this set_title in its batch" },
-          { "path": "error.hint", "contains": "the slide keeps its shapes, so delete_shape a text box that stood for its title" }
-        ],
         "files": { "absent": ["titled.pptx"], "unchanged": ["blank.pptx"] }
       }
     },

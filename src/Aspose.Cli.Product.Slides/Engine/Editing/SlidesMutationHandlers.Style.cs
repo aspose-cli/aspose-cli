@@ -44,8 +44,7 @@ internal sealed partial class SlidesMutationHandlers
         if (styleText && text is null)
         {
             throw new OperationInvalidException(
-                $"Shape {shape.OfficeInteropShapeId} has no text to style.",
-                "Give a picture or other object only 'fillColor' and 'line'; text styles apply to shapes with text, tables and charts.");
+                $"Shape {shape.OfficeInteropShapeId} has no text to style.");
         }
 
         if (style.FillColor is not null)
@@ -163,16 +162,9 @@ internal sealed partial class SlidesMutationHandlers
 
         int number = _presentation.Slides.IndexOf(slide) + 1;
         string names = string.Join(" or ", unshown.Select(static item => item.Name));
-        string[] layouts = [.. slide.LayoutSlide.MasterSlide.LayoutSlides
-            .Where(layout => unshown.All(item => layout.Shapes.Any(shape => shape.Placeholder?.Type == item.Type)))
-            .Select(static layout => $"'{layout.Name}'")];
         _warnings.Add(new Warning(SlidesDiagnostics.FooterNotShown, string.Create(CultureInfo.InvariantCulture,
             $"Slide {number} shows no {names} after set_footer: its layout '{slide.LayoutSlide.Name}' has no {string.Join(" or ", unshown.Select(static item => item.Role))} placeholder."))
         {
-            Hint = "set_footer shows footer text, a slide number and a date only in the placeholders of a slide's layout, and a layout such as a title slide's often has none, so that the slide shows none of them: leave the slide so. "
-                + (layouts.Length == 0
-                    ? "No layout of the slide's master has them."
-                    : $"Only where this slide must show them, set_layout it to a layout of its master that has them ({string.Join(", ", layouts)}) and set_footer it again: that changes the slide's layout and look, and may give its placeholders other roles, which set_layout warns about with PLACEHOLDER_ROLE_CHANGED."),
             Location = SlidesStateProjection.SlideAddress(number),
             Details = new JsonObject { ["fields"] = new JsonArray([.. unshown.Select(static item => JsonValue.Create(item.Field))]) },
         });

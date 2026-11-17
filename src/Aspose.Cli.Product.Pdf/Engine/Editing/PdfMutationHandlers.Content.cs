@@ -237,7 +237,7 @@ internal sealed partial class PdfMutationHandlers
         // that lost a button refuses a value too, and its deletion below takes the value out of the file.
         Field[] deselected = [.. _document.Form.Fields.GroupBy(static field => field.FullName, StringComparer.Ordinal).Where(group => !covered.Contains(group.Key)
             && TakesSelection(PdfForms.Widgets(_document, group), PdfForms.State(group.First()).Value, (int?)operation.Page, area))
-            .Select(static group => Settable(group.First(), "redact_area", "which this redact_area clears, since it covers the button of the value"))];
+            .Select(static group => Settable(group.First(), "which this redact_area clears, since it covers the button of the value"))];
         foreach (Field field in cleared.Where(static field => PdfForms.RadioGroup(field) is not { } group || group.Count == group.Options.Count).Concat(deselected))
         {
             Clear(field);
@@ -390,10 +390,9 @@ internal sealed partial class PdfMutationHandlers
 
     // The field, unless it is a radio group a redaction earlier in the batch took a button of, whose value the engine
     // cannot change until the batch is saved (PDF-REDACT-RADIO-BUTTONS): an operation that would is refused before it changes anything.
-    private static Field Settable(Field field, string operation, string change) => PdfForms.RadioGroup(field) is { } group && group.Count != group.Options.Count
+    private static Field Settable(Field field, string change) => PdfForms.RadioGroup(field) is { } group && group.Count != group.Options.Count
         ? throw new OperationInvalidException(
-            $"a redaction earlier in this batch took a button of radio group '{field.FullName}', after which the engine cannot change the group's value, {change}",
-            $"Run the operations before this {operation} in one 'pdf edit', then this {operation} and the operations after it in a second 'pdf edit' of that output.")
+            $"a redaction earlier in this batch took a button of radio group '{field.FullName}', after which the engine cannot change the group's value, {change}")
         : field;
 
     /// <summary>

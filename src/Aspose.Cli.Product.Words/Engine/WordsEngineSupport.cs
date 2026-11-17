@@ -1,6 +1,5 @@
 using System.Globalization;
 using Aspose.Cli.Product.Words.Engine.Mapping;
-using Aspose.Cli.Sdk;
 using Aspose.Cli.Sdk.IO.Input;
 using Aspose.Cli.Sdk.Results;
 using Aspose.Words;
@@ -29,10 +28,7 @@ internal static class WordsEngineSupport
 
     // The SDK reads no fixed-layout format: an html-fixed page rendition loads as flowing HTML,
     // and its absolutely positioned page containers break apart.
-    private static Warning FixedPageHtmlReflowed { get; } = new(WarningCodes.LossyConversion, "The input is an html-fixed page rendition, which loads as flowing HTML: its pages are reflowed, so the page count, tables, headers, footers and layout differ from the delivered file.")
-    {
-        Hint = "Review and edit the source document the html-fixed file was converted from, such as its .docx, instead of the html-fixed file.",
-    };
+    private static Warning FixedPageHtmlReflowed { get; } = new(WarningCodes.LossyConversion, "The input is an html-fixed page rendition, which loads as flowing HTML: its pages are reflowed, so the page count, tables, headers, footers and layout differ from the delivered file.");
 
     /// <summary>
     /// The warnings for writing a loaded document to a format; the write pipeline adds the
@@ -90,10 +86,7 @@ internal static class WordsEngineSupport
 
     // PDF-DOCX-EMBED-FONTS: Aspose.PDF writes a docx that asks to embed its fonts but embeds
     // few or none; the SDK honours the request, which the CLI keeps and discloses rather than rewrites.
-    private static Warning FontsEmbedded { get; } = new(WordsDiagnostics.FontsEmbedded, "The input's settings ask every save to embed its TrueType and system fonts, and the input does not embed every font its text uses, so this output embeds the missing fonts and can be megabytes larger than the input.")
-    {
-        Hint = "No option turns the setting off, so a saved copy stays this large and shows its fonts the same on every computer. To keep it small, deliver the input as it is; when 'pdf convert --to docx' wrote it, write the docx with 'aspose-cli words convert <pdf> --to docx' instead, which asks for no embedded fonts.",
-    };
+    private static Warning FontsEmbedded { get; } = new(WordsDiagnostics.FontsEmbedded, "The input's settings ask every save to embed its TrueType and system fonts, and the input does not embed every font its text uses, so this output embeds the missing fonts and can be megabytes larger than the input.");
 
     /// <summary>
     /// The warnings for a document saved from a PDF input, or null. PDF loading rebuilds the
@@ -105,30 +98,18 @@ internal static class WordsEngineSupport
         : WordsFonts.HasEastAsian(loaded.Document.GetText()) ? [PdfInputReflowed, PdfInputLineEnds]
         : [PdfInputReflowed];
 
-    private static Warning PdfInputLineEnds { get; } = new(WarningCodes.LossyConversion, "The Chinese, Japanese or Korean text of the PDF input has a space wherever a line ended on its page, and lines of separate paragraphs, such as a heading and the clause after it, may be merged into one paragraph.")
-    {
-        Hint = "Read the blocks before editing, and find a phrase with a regex that allows a space where a line may have ended, such as '甲 ?乙双方'; remove a space only where you read it.",
-    };
+    private static Warning PdfInputLineEnds { get; } = new(WarningCodes.LossyConversion, "The Chinese, Japanese or Korean text of the PDF input has a space wherever a line ended on its page, and lines of separate paragraphs, such as a heading and the clause after it, may be merged into one paragraph.");
 
-    private static Warning PdfInputReflowed { get; } = new(WarningCodes.LossyConversion, "A PDF input is rebuilt as flowing text, and its headers and footers are guessed: they may become body text, or headers and footers in which a number, such as a version number, becomes a page-number field; the new layout may add pages.")
-    {
-        Hint = "Check the headers, footers and fields with 'aspose-cli words inspect <file> --detail sections --detail fields' and the body with 'words read'; correct them with 'words edit' and set_header, set_footer, set_page_numbers or delete_blocks.",
-    };
+    private static Warning PdfInputReflowed { get; } = new(WarningCodes.LossyConversion, "A PDF input is rebuilt as flowing text, and its headers and footers are guessed: they may become body text, or headers and footers in which a number, such as a version number, becomes a page-number field; the new layout may add pages.");
 
     /// <summary>The warning for a source with macros saved to a format that drops them, or null.</summary>
     private static Warning? MacrosDropped(LoadedDocument source, string format) =>
         source.Format.HasMacros && !WordsFormats.KeepsMacros(format)
-            ? new Warning(WordsDiagnostics.MacrosDropped, "The source contains macros which the target format does not preserve.") { Hint = "Save to docm or dotm to preserve macros." }
+            ? new Warning(WordsDiagnostics.MacrosDropped, "The source contains macros which the target format does not preserve.")
             : null;
 
     /// <summary>Discloses the revisions an output that stores them still contains.</summary>
-    internal static Warning TrackedChangesPresent { get; } = new(WordsDiagnostics.TrackedChangesPresent, "The input has tracked changes, and the output still contains tracked changes.")
-    {
-        Hint = "Disclose them and accept or reject only when explicitly requested.",
-    };
-
-    // A redline in plain text, which shows its changes unmarked, points to the formats that mark them.
-    private const string RedlineMarked = "To see what changed, write the redline as DOCX, PDF or HTML, which mark the changes.";
+    internal static Warning TrackedChangesPresent { get; } = new(WordsDiagnostics.TrackedChangesPresent, "The input has tracked changes, and the output still contains tracked changes.");
 
     /// <summary>Whether a document saved in a format keeps its revisions as revisions.</summary>
     internal static bool KeepsRevisions(Document document, string format) =>
@@ -144,21 +125,17 @@ internal static class WordsEngineSupport
     /// out; for a format laid out on pages one for the comments it draws in balloons; and for
     /// plain text and Markdown one for each kind of text the SDK mixes into the body
     /// (WORDS-TEXT-COMMENTS, WORDS-TEXT-DELETIONS), which also stands for the revisions such an
-    /// output drops. Their hints give the commands that leave it out of the file
-    /// <paramref name="converted"/> names, a convert's output, or without it say the same in words;
-    /// for a document with both kinds the revisions' commands delete the comments too, since two
-    /// edits of the input would each put back what the other left out. Under
-    /// <paramref name="evaluation"/>, what evaluation mode wrote into the headers and footers is
-    /// not their content. A <paramref name="redline"/>, compare's output, shows its revisions on
-    /// purpose: it is not told that a format that marks them cannot keep them as revisions, and in
-    /// plain text, which cannot mark them, the hints name the formats that do.
+    /// output drops. Under <paramref name="evaluation"/>, what evaluation mode wrote into the
+    /// headers and footers is not their content. A <paramref name="redline"/>, compare's output,
+    /// shows its revisions on purpose: it is not told that a format that marks them cannot keep
+    /// them as revisions.
     /// </summary>
-    internal static IEnumerable<Warning> ConversionWarnings(Document document, string format, bool evaluation, (ContinuationInput Input, string Output)? converted = null, bool redline = false)
+    internal static IEnumerable<Warning> ConversionWarnings(Document document, string format, bool evaluation, bool redline = false)
     {
         bool text = WordsEngineFormats.Has(format, static entry => entry.PlainText);
         if (WordsEngineFormats.Has(format, static entry => entry.Lossy))
         {
-            yield return new Warning(WarningCodes.LossyConversion, $"Conversion to {format} cannot preserve every Word feature.") { Hint = "Keep a DOCX copy when styles, headers, fields or revisions matter." };
+            yield return new Warning(WarningCodes.LossyConversion, $"Conversion to {format} cannot preserve every Word feature.");
         }
 
         bool revised = document.Revisions.Count > 0;
@@ -168,18 +145,15 @@ internal static class WordsEngineSupport
         {
             yield return WordsEngineFormats.LaysOutPages(format)
                 ? ContentLoss.Warning([ContentKind.Revisions],
-                    $"The {format} output draws the tracked changes on its pages as markup, such as struck-through deletions, and cannot keep tracked changes as revisions that can be accepted or rejected.",
-                    "Disclose the tracked changes; when the user decides, accept or reject them with 'aspose-cli words edit' before converting, so the pages show one version, or keep a DOCX, RTF or ODT copy to keep them reviewable.")
+                    $"The {format} output draws the tracked changes on its pages as markup, such as struck-through deletions, and cannot keep tracked changes as revisions that can be accepted or rejected.")
                 : ContentLoss.Warning([ContentKind.Revisions],
-                    $"The {format} output cannot keep tracked changes as revisions that can be accepted or rejected.",
-                    redline ? RedlineMarked : "Disclose the tracked changes; keep a DOCX, RTF or ODT copy to keep them reviewable.");
+                    $"The {format} output cannot keep tracked changes as revisions that can be accepted or rejected.");
         }
 
         if (document.ProtectionType != ProtectionType.NoProtection && !WordsFormats.IsWord(format))
         {
             yield return ContentLoss.Warning([ContentKind.EditingRestrictions],
-                $"The {format} output cannot keep the {WordsProtection.ToMode(document.ProtectionType)} editing restrictions of the document.",
-                "Keep a DOCX copy to keep them; restrict a PDF with the encrypt operation of 'aspose-cli pdf edit'.");
+                $"The {format} output cannot keep the {WordsProtection.ToMode(document.ProtectionType)} editing restrictions of the document.");
         }
 
         if (HeadersFootersLeftOut(document, format, evaluation) is { } headersFooters)
@@ -198,28 +172,16 @@ internal static class WordsEngineSupport
         }
 
         int comments = CommentCount(document);
-        bool both = comments > 0 && mixed;
         if (comments > 0)
         {
             yield return ContentLoss.Warning([ContentKind.Comments],
-                string.Create(CultureInfo.InvariantCulture, $"The {format} output writes the text of {comments} comment(s) into the body text, where it reads as document text."),
-                converted is not { } from
-                    ? $"To leave the comments out, apply delete_comments in an edit that writes a Word format such as docx, then convert that file to {format}; keep a DOCX copy to keep them."
-                    : both ? "To leave the comments out, run the commands of the warning about the tracked changes, whose edit deletes the comments too; keep a DOCX copy to keep them."
-                    : $"To leave the comments out, run {Rewritten(from, format, "delete_comments")}; keep a DOCX copy to keep them.");
+                string.Create(CultureInfo.InvariantCulture, $"The {format} output writes the text of {comments} comment(s) into the body text, where it reads as document text."));
         }
 
         if (mixed)
         {
-            string[] deleting = both ? ["delete_comments"] : [];
             yield return ContentLoss.Warning([ContentKind.Revisions],
-                $"The {format} output writes the deleted and moved-from text of tracked changes beside the text that replaces it, so it reads as neither the original nor the revised document.",
-                redline ? RedlineMarked
-                : converted is not { } from
-                    ? $"Disclose the revisions; when the user decides, accept or reject them in an edit that writes a Word format such as docx, then convert that file to {format}, or keep a DOCX copy."
-                    : $"Disclose the revisions; when the user decides, run {Rewritten(from, format, [.. deleting, "accept_revisions"])} to accept them or "
-                        + $"{Rewritten(from, format, [.. deleting, "reject_revisions"])} to reject them, or keep a DOCX copy."
-                        + (both ? " Either edit deletes the comments too." : string.Empty));
+                $"The {format} output writes the deleted and moved-from text of tracked changes beside the text that replaces it, so it reads as neither the original nor the revised document.");
         }
     }
 
@@ -227,37 +189,17 @@ internal static class WordsEngineSupport
     /// The <see cref="ConversionWarnings"/> of a document about to be saved in a format, read
     /// first, as a revision or comment may sit on or in a drawing; then the warning naming the
     /// drawings the format leaves out, which it takes out (<see cref="WordsSavePipeline.LeaveOutDrawings"/>).
-    /// Convert and compare call it right before they save; a redline names the pictures of the
-    /// <paramref name="revised"/> document, or without it says how to take them out in words.
+    /// Convert and compare call it right before they save.
     /// </summary>
-    internal static IReadOnlyList<Warning> PrepareConversion(Document document, string format, bool evaluation, (ContinuationInput Input, string Output)? converted = null, bool redline = false, (ContinuationInput Input, string Output)? revised = null) =>
-        [.. ConversionWarnings(document, format, evaluation, converted, redline),
-            .. EnvelopeParts.CombineWarnings(DrawingsLeftOut(WordsSavePipeline.LeaveOutDrawings(document, format), format, redline ? revised : converted, redline)) ?? []];
-
-    /// <summary>
-    /// The commands that leave out of a converted file what <paramref name="ops"/> remove: the edit
-    /// of the input that applies them and writes a Word copy beside that file, since an edit writes
-    /// no format a convert alone writes, then the convert of the copy, opened as the input is, that
-    /// replaces the file.
-    /// </summary>
-    private static string Rewritten((ContinuationInput Input, string Output) from, string format, params string[] ops)
-    {
-        string copy = Path.Combine(Path.GetDirectoryName(from.Output) ?? string.Empty,
-            Path.GetFileNameWithoutExtension(from.Input.Document) + ".out" + WordsSplitWriter.Docx.Extensions[0]);
-        string operations = "[" + string.Join(",", ops.Select(static op => $$"""{"op":"{{op}}"}""")) + "]";
-        return ContinuationCommand.Steps(
-        [
-            from.Input.ContinuationAt("words", "edit").Document("--ops", operations).Out(ContinuationOutput.New(copy)),
-            from.Input.WrittenAs(copy).ContinuationAt("words", "convert").Option("--to", format).Out(ContinuationOutput.Written(from.Output)),
-        ]);
-    }
+    internal static IReadOnlyList<Warning> PrepareConversion(Document document, string format, bool evaluation, bool redline = false) =>
+        [.. ConversionWarnings(document, format, evaluation, redline),
+            .. EnvelopeParts.CombineWarnings(DrawingsLeftOut(WordsSavePipeline.LeaveOutDrawings(document, format), format)) ?? []];
 
     /// <summary>
     /// The warning naming the drawings a save left out (<see cref="WordsSavePipeline.LeaveOutDrawings"/>)
-    /// as it counted them, saying whether their text stayed, with the command that extracts their
-    /// pictures, or null for none.
+    /// as it counted them, saying whether their text stayed, or null for none.
     /// </summary>
-    private static Warning? DrawingsLeftOut(WordsDrawingsLeftOut drawings, string format, (ContinuationInput Input, string Output)? source, bool redline)
+    private static Warning? DrawingsLeftOut(WordsDrawingsLeftOut drawings, string format)
     {
         (ContentKind Kind, int Count, string Noun)[] left = [.. new[] { (ContentKind.Pictures, drawings.Pictures, "picture(s)"), (ContentKind.Charts, drawings.Charts, "chart(s)"),
             (ContentKind.Shapes, drawings.Others, "other drawing(s), such as shapes, text boxes, WordArt and SmartArt") }.Where(static kind => kind.Item2 > 0)];
@@ -267,16 +209,9 @@ internal static class WordsEngineSupport
         }
 
         string[] counts = [.. left.Select(static kind => $"{kind.Count} {kind.Noun}")];
-        string pictures = source is not { } from ? "Its pictures are those of the revised document, which 'words extract' takes out of it with its own password; "
-            : $"Extract the pictures{(redline ? ", those of the revised document," : string.Empty)} with "
-                + from.Input.ContinuationAt("words", "extract").Option("--what", WordsExtractTargets.Images)
-                    .OutDir(ContinuationOutput.New(Path.Combine(Path.GetDirectoryName(from.Output) ?? string.Empty, Path.GetFileNameWithoutExtension(from.Output) + "-images"))).Quoted()
-                + ", which writes each of them as an image file; ";
         return ContentLoss.Warning([.. left.Select(static kind => kind.Kind)],
             $"The {format} output holds the text alone and leaves out {string.Join(", ", counts[..^1])}{(counts.Length > 1 ? " and " : "")}{counts[^1]}"
-                + (drawings.KeptText ? "; the text of shapes and text boxes stays in the body." : "."),
-            (drawings.Pictures > 0 ? pictures : string.Empty) + (drawings.Charts + drawings.Others > 0 ? "'words render' shows the drawings on their pages; " : string.Empty)
-                + "a docx output keeps them.");
+                + (drawings.KeptText ? "; the text of shapes and text boxes stays in the body." : "."));
     }
 
     /// <summary>
@@ -295,8 +230,7 @@ internal static class WordsEngineSupport
             ? "a text file holds the body text alone, without pages"
             : "an e-book flows its text without pages";
         return ContentLoss.Warning([ContentKind.HeadersFooters],
-            $"The {format} output leaves out {leftOut}: {reason}, so it has no headers or footers.",
-            "Read them from the source with 'aspose-cli words inspect <file> --detail sections'; keep a DOCX or PDF copy to keep them.");
+            $"The {format} output leaves out {leftOut}: {reason}, so it has no headers or footers.");
     }
 
     /// <summary>
@@ -309,8 +243,7 @@ internal static class WordsEngineSupport
         return comments > 0 && WordsEngineFormats.LaysOutPages(format)
             && document.LayoutOptions.CommentDisplayMode == CommentDisplayMode.ShowInBalloons
             ? ContentLoss.Warning([ContentKind.Comments],
-                string.Create(CultureInfo.InvariantCulture, $"The {format} output draws {comments} comment(s) in balloons in a margin beside the text, which narrows its pages."),
-                "When the user has decided on them, apply delete_comments with 'aspose-cli words edit' first, with accept_revisions or reject_revisions for tracked changes, so the pages keep their full width; keep a DOCX copy to keep the comments.")
+                string.Create(CultureInfo.InvariantCulture, $"The {format} output draws {comments} comment(s) in balloons in a margin beside the text, which narrows its pages."))
             : null;
     }
 

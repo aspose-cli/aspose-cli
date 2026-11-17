@@ -60,7 +60,7 @@ internal static class PdfRaster
     internal static void EnsurePageFits(ResourceBudgetLedger budgets, Page page, int dpi)
     {
         (long width, long height) = PagePixels(page, dpi);
-        RenderPixelGuard.EnsureFits(budgets, width, height, dpi, "Render fewer or smaller pages, or lower --dpi.");
+        RenderPixelGuard.EnsureFits(budgets, width, height, dpi);
     }
 
     /// <summary>The pixel size of <paramref name="page"/> rendered at <paramref name="dpi"/>.</summary>

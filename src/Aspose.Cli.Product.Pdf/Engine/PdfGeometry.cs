@@ -15,8 +15,7 @@ internal static class PdfGeometry
         if (rect.X < 0 || rect.Y < 0 || rect.X + rect.Width > box.Width || rect.Y + rect.Height > box.Height)
         {
             throw new OperationInvalidException(
-                string.Create(CultureInfo.InvariantCulture, $"rect lies outside the visible page, which is {box.Width:0.##} x {box.Height:0.##} points"),
-                "Measure rect in points from the top-left corner of the visible page; 'pdf inspect' reports each page's size.");
+                string.Create(CultureInfo.InvariantCulture, $"rect lies outside the visible page, which is {box.Width:0.##} x {box.Height:0.##} points"));
         }
         return FromContractRect(page, rect.X, rect.Y, rect.Width, rect.Height);
     }

@@ -355,8 +355,6 @@ public sealed class ProductFileRouterTests
             Assert.Equal("file-routing", (string)error.Details!["phase"]!);
             Assert.Contains("2s", error.Message, StringComparison.Ordinal);
             Assert.Contains("routing", error.Message, StringComparison.Ordinal);
-            // --timeout does not govern the routing budget, so the hint must not tell the caller to raise it.
-            Assert.DoesNotContain("Raise --timeout", error.Hint ?? "", StringComparison.Ordinal);
         }
         finally
         {
@@ -488,7 +486,6 @@ public sealed class ProductFileRouterTests
 
             Assert.Equal(ErrorCodes.FormatMismatch, error.Code);
             Assert.Equal("ambiguous-format", Assert.Single(error.Details!["detected"]!.AsArray())!.GetValue<string>());
-            Assert.Contains("--product ambiguous-format", error.Hint, StringComparison.Ordinal);
         }
         finally
         {

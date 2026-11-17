@@ -15,7 +15,6 @@ namespace Aspose.Cli.Product.Words.Engine;
 /// <summary>Serves <c>words render</c>.</summary>
 internal static class WordsRender
 {
-    private const string RenderHint = "Render fewer or smaller pages, or lower --dpi.";
 
     /// <summary>Renders selected pages; a raster page stays within the pixel budget.</summary>
     internal static WordsRenderResult Run(WordsSession session, WordsRenderRequest request)
@@ -33,7 +32,7 @@ internal static class WordsRender
                 PageInfo info = loaded.Document.GetPageInfo(page - 1);
                 long width = (long)Math.Ceiling(info.WidthInPoints / 72d * request.Dpi);
                 long height = (long)Math.Ceiling(info.HeightInPoints / 72d * request.Dpi);
-                RenderPixelGuard.EnsureFits(session.Budgets, width, height, request.Dpi, RenderHint);
+                RenderPixelGuard.EnsureFits(session.Budgets, width, height, request.Dpi);
             }
 
             SaveOptions options = WordsSavePipeline.Options(request.Output.Format.Id, pages: [page], dpi: request.Dpi);

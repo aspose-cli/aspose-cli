@@ -193,7 +193,6 @@ public sealed class WordsOutputEncryptionTests : IDisposable
 
         JsonNode warning = Assert.Single(result["warnings"]?.AsArray() ?? [], static warning => warning!["code"]!.GetValue<string>() == "FONTS_EMBEDDED")!;
         Assert.Contains("larger", warning["message"]!.GetValue<string>(), StringComparison.Ordinal);
-        Assert.False(string.IsNullOrWhiteSpace(warning["hint"]?.GetValue<string>()));
     }
 
     [Category(TestCategory.Slow)]

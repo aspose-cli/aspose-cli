@@ -38,27 +38,19 @@ public sealed class PageRange
     public static PageRange Parse(string text) =>
         TryParse(text, out PageRange? range, out string? reason)
             ? range
-            : throw CliErrors.OperationValueInvalid($"Invalid selection '{text}': {reason}.", reason, Hint);
+            : throw CliErrors.OperationValueInvalid($"Invalid selection '{text}': {reason}.", reason);
 
     /// <summary>Parses the value of a selection option, such as <c>--pages</c>.</summary>
     /// <param name="option">The option, such as <c>--pages</c>.</param>
     /// <param name="text">Its value.</param>
     /// <exception cref="CliException"><c>OPTION_INVALID</c> when the value is not a selection.</exception>
-    public static PageRange ParseOption(string option, string text) => ParseOption(option, text, lead: null);
-
-    /// <summary>
-    /// Parses an option's selection like <see cref="ParseOption(string, string)"/>, with
-    /// <paramref name="lead"/> before the hint of an invalid one, such as another way to name a part.
-    /// </summary>
-    public static PageRange ParseOption(string option, string text, string? lead)
+    public static PageRange ParseOption(string option, string text)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(option);
         return TryParse(text, out PageRange? range, out string? reason)
             ? range
-            : throw CliErrors.OptionInvalid(option, $"'{text}' is not a selection: {reason}", lead is null ? Hint : lead + " " + Hint);
+            : throw CliErrors.OptionInvalid(option, $"'{text}' is not a selection: {reason}");
     }
-
-    private const string Hint = "Use 1-based numbers and ranges such as 1-3,7,9-, or all.";
 
     /// <summary>
     /// Parses a selection: <c>all</c>, or 1-based numbers and ranges such as <c>1-3,7,9-</c>,

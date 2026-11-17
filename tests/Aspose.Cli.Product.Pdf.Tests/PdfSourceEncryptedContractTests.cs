@@ -37,7 +37,6 @@ public sealed class PdfSourceEncryptedContractTests : IDisposable
         _workspace.Run("pdf", "create", "plain.pdf", "--from-text", "text.txt", "--license", license, "--output-format", "json").Succeeded();
         _workspace.RunWithEnv(passwords, "pdf", "edit", "plain.pdf", "--ops", "encrypt.json", "--out", "locked.pdf", "--license", license, "--output-format", "json").Succeeded();
 
-        // One after another: the hint check of each run copies the workspace, which a run publishing into it would break.
         (string Name, bool Encrypted, CliResult Result)[] runs =
         [
             .. new[] { (File: "plain.pdf", Encrypted: false), (File: "locked.pdf", Encrypted: true) }

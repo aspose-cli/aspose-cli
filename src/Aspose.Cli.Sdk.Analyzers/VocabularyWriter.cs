@@ -188,18 +188,6 @@ internal sealed class VocabularyWriter(
             }
         }
 
-        if (Find(type, SdkMetadataNames.EncryptsOutputAttribute) is not null)
-        {
-            if (isOperation)
-            {
-                code.Append(", EncryptsOutput = true");
-            }
-            else
-            {
-                Report(type, $"[EncryptsOutput] on '{type.Name}' marks an operation, but '{type.Name}' is not an operation.");
-            }
-        }
-
         // One member per line keeps the generated file reviewable.
         code.Append(", Properties = [").Append(string.Concat(members.Select(static member => "\n                " + member.Code + ",")))
             .Append(members.Count == 0 ? "]" : "\n            ]");

@@ -76,11 +76,9 @@ internal static class PdfSplit
         warnings.AddRange(new[]
         {
             navigation.StrandedWarning(
-                "no longer lead to their page, although their part holds it: the parts carry no named destinations, so what led there through one leads nowhere",
-                "No operation re-creates links or named destinations: tell the user which no longer lead to their page."),
+                "no longer lead to their page, although their part holds it: the parts carry no named destinations, so what led there through one leads nowhere"),
             navigation.RemovedWarning(
-                "lead to a page their part does not hold, so they lead nowhere in it",
-                "The pages they led to are in other parts or in none, as the split asked; tell the user they lead nowhere in the parts."),
+                "lead to a page their part does not hold, so they lead nowhere in it"),
             PdfNavigationLoss.Repositioned(repositioned, "parts"),
         }.OfType<Warning>());
         return new PdfSplitResult
@@ -114,9 +112,7 @@ internal static class PdfSplit
         {
             throw CliErrors.OptionInvalid(
                 SplitOptions.ByOption,
-                "the document has no top-level bookmarks with page destinations",
-                "Use --by pages, or first bookmark the first page of each part with a 'pdf edit' batch of add_bookmark operations, "
-                + "such as {\"op\":\"add_bookmark\",\"title\":\"Part 1\",\"page\":1}; headings, such as those of Markdown, are not bookmarks.");
+                "the document has no top-level bookmarks with page destinations");
         }
 
         var parts = new List<SplitPart>();

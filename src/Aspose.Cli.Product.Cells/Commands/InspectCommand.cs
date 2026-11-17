@@ -35,13 +35,12 @@ internal static class InspectCommand
             [.. sample.Options, sampleRows, .. detail.Options],
             (parse, standard) =>
             {
-                int rows = parse.GetInRange(sampleRows, "Pass a smaller sample size; samples are meant to be cheap to read.");
+                int rows = parse.GetInRange(sampleRows);
                 if (!sample.Read(parse) && parse.GetResult(sampleRows) is { Implicit: false })
                 {
                     throw CliErrors.OptionInvalid(
                         sampleRows.Name,
-                        "--sample-rows sizes the sample, which only --sample includes",
-                        "Add --sample to include the sample, or drop --sample-rows.");
+                        "--sample-rows sizes the sample, which only --sample includes");
                 }
                 return new CellsInspectRequest
                 {

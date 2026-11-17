@@ -75,22 +75,16 @@ public sealed class CellsCliTests : IDisposable
                 window["returned"]!.GetValue<int>(),
                 window["total"]!.GetValue<int>(),
                 window["truncated"]!.GetValue<bool>()));
-            Assert.EndsWith(
-                " --range A4:C6 --scan-range A1:C10 --content values --max-cells 10 --output-format json",
-                window["next"]!.GetValue<string>(),
-                StringComparison.Ordinal);
+            Assert.Equal(("A4:C6", "A1:C10"), (window["next"]!["range"]!.GetValue<string>(), window["next"]!["scan-range"]!.GetValue<string>()));
             Assert.True(read.StdErr.Length == 0, read.StdErr);
         }
 
         CliResult first = _workspace.Run("cells", "read", "grid.csv", "--max-cells", "10", "--output-format", "json");
-        CliResult second = _workspace.RunCommandLine(JsonNode.Parse(first.StdOut)!["window"]!["next"]!.GetValue<string>());
+        CliResult second = _workspace.RunNext(JsonNode.Parse(first.StdOut)!["window"]!["next"]!, "cells", "read", "grid.csv", "--max-cells", "10", "--output-format", "json");
         Assert.True(second.ExitCode == 0, second.StdErr);
         JsonNode page = JsonNode.Parse(second.StdOut)!;
         Assert.Equal("A4:C6", page["sheet"]!["range"]!.GetValue<string>());
-        Assert.EndsWith(
-            " --range A7:C9 --scan-range A1:C10 --content values --max-cells 10 --output-format json",
-            page["window"]!["next"]!.GetValue<string>(),
-            StringComparison.Ordinal);
+        Assert.Equal(("A7:C9", "A1:C10"), (page["window"]!["next"]!["range"]!.GetValue<string>(), page["window"]!["next"]!["scan-range"]!.GetValue<string>()));
 
         CliResult last = _workspace.Run(
             "cells", "read", "grid.csv", "--range", "A10:C10", "--scan-range", "A1:C10", "--max-cells", "10", "--output-format", "json");
@@ -118,15 +112,15 @@ public sealed class CellsCliTests : IDisposable
             window["unit"]!.GetValue<string>(),
             window["returned"]!.GetValue<int>(),
             window["truncated"]!.GetValue<bool>()));
-        string next = window["next"]!.GetValue<string>();
-        Assert.Contains(" --skip 2 ", next, StringComparison.Ordinal);
+        JsonNode next = window["next"]!;
+        Assert.Equal("2", next["skip"]!.GetValue<string>());
 
-        CliResult second = _workspace.RunCommandLine(next);
+        CliResult second = _workspace.RunNext(next, "cells", "search", "hits.csv", "--pattern", "HIT-", "--max-hits", "2", "--output-format", "json");
         Assert.True(second.ExitCode == 0, second.StdErr);
         JsonNode secondPayload = JsonNode.Parse(second.StdOut)!;
         Assert.Equal(["A3", "A4"], secondPayload["hits"]!.AsArray().Select(static hit => hit!["cell"]!.GetValue<string>()));
 
-        CliResult third = _workspace.RunCommandLine(secondPayload["window"]!["next"]!.GetValue<string>());
+        CliResult third = _workspace.RunNext(secondPayload["window"]!["next"]!, "cells", "search", "hits.csv", "--pattern", "HIT-", "--max-hits", "2", "--skip", "2", "--output-format", "json");
         Assert.True(third.ExitCode == 0, third.StdErr);
         JsonNode thirdPayload = JsonNode.Parse(third.StdOut)!;
         Assert.Equal("A5", Assert.Single(thirdPayload["hits"]!.AsArray())!["cell"]!.GetValue<string>());
@@ -135,7 +129,7 @@ public sealed class CellsCliTests : IDisposable
     }
 
     [Fact]
-    public void Edit_BestEffortTablePrintsTheFailedOperationErrorAndHint()
+    public void Edit_BestEffortTablePrintsTheFailedOperationError()
     {
         Assert.Equal(0, _workspace.Run("cells", "create", "book.xlsx", "--sheet-names", "Data").ExitCode);
 
@@ -147,7 +141,6 @@ public sealed class CellsCliTests : IDisposable
         Assert.Contains("1 of 2 op(s) applied, 1 failed", edited.StdOut, StringComparison.Ordinal);
         Assert.Contains("[op-0002] set_values: failed", edited.StdOut, StringComparison.Ordinal);
         Assert.Contains("      SHEET_NOT_FOUND: ", edited.StdOut, StringComparison.Ordinal);
-        Assert.Contains("      hint: ", edited.StdOut, StringComparison.Ordinal);
     }
 
     [Theory]
@@ -163,7 +156,6 @@ public sealed class CellsCliTests : IDisposable
         JsonNode error = JsonNode.Parse(taken.StdErr)!["error"]!;
         Assert.Equal("OPS_INVALID", error["code"]!.GetValue<string>());
         Assert.Contains("already has a sheet named 'Rates'", error["message"]!.GetValue<string>(), StringComparison.Ordinal);
-        Assert.Contains("another name", error["hint"]!.GetValue<string>(), StringComparison.Ordinal);
         Assert.False(File.Exists(_workspace.File("edited.xlsx")));
     }
 
@@ -201,11 +193,11 @@ public sealed class CellsCliTests : IDisposable
     }
 
     [Theory]
-    [InlineData("render", "x.png", "预算, 2026 H1", 1)]
-    [InlineData("convert", "x.pdf", "预算, 2026 H1", 1)]
-    [InlineData("render", "x.png", "lists", 2)]
-    [InlineData("convert", "x.csv", "Lists", 2)]
-    public void ASheetSelectionByName_ListsEachSheetWithItsPosition(string verb, string output, string name, int position)
+    [InlineData("render", "x.png", "预算, 2026 H1")]
+    [InlineData("convert", "x.pdf", "预算, 2026 H1")]
+    [InlineData("render", "x.png", "lists")]
+    [InlineData("convert", "x.csv", "Lists")]
+    public void ASheetSelectionByName_ListsEachSheetWithItsPosition(string verb, string output, string name)
     {
         Assert.Equal(0, _workspace.Run("cells", "create", "named.xlsx", "--sheet-names", "Budget,Lists").ExitCode);
         File.WriteAllText(_workspace.File("rename.json"), """{"ops":[{"op":"rename_sheet","sheet":"Budget","name":"预算, 2026 H1"}]}""");
@@ -214,13 +206,9 @@ public sealed class CellsCliTests : IDisposable
         CliResult result = _workspace.Run("cells", verb, "named.xlsx", "--sheets", name, "--out", output, "--output-format", "json");
 
         JsonNode error = JsonNode.Parse(result.StdErr)!["error"]!;
-        string hint = error["hint"]!.GetValue<string>();
         Assert.Equal("OPTION_INVALID", error["code"]!.GetValue<string>());
         Assert.Contains($"'{name}'", error["message"]!.GetValue<string>(), StringComparison.Ordinal);
         Assert.Equal(["1: 预算, 2026 H1", "2: Lists"], error["details"]!["available"]!.AsArray().Select(static item => item!.GetValue<string>()).Take(2));
-        Assert.Contains($"--sheets {position}", hint, StringComparison.Ordinal);
-        Assert.Contains("details.available", hint, StringComparison.Ordinal);
-        Assert.Equal(verb == "render", hint.Contains("--range", StringComparison.Ordinal));
     }
 
     [Theory]
@@ -235,7 +223,6 @@ public sealed class CellsCliTests : IDisposable
         JsonNode error = JsonNode.Parse(result.StdErr)!["error"]!;
         Assert.Equal("OPTION_INVALID", error["code"]!.GetValue<string>());
         Assert.Contains("3: 2024", error["details"]!["available"]!.AsArray().Select(static item => item!.GetValue<string>()));
-        Assert.Contains("--sheets 3", error["hint"]!.GetValue<string>(), StringComparison.Ordinal);
     }
 
     [Fact]
@@ -375,13 +362,11 @@ public sealed class CellsCliTests : IDisposable
         JsonNode error = JsonNode.Parse(refused.StdErr)!["error"]!;
         Assert.Equal("EVALUATION_LIMIT", error["code"]!.GetValue<string>());
         Assert.Equal("Dashboard", Assert.Single(error["details"]!["available"]!.AsArray())!.GetValue<string>());
-        Assert.Contains("license", error["hint"]!.GetValue<string>(), StringComparison.OrdinalIgnoreCase);
         Assert.Empty(refused.StdOut);
         Assert.Equal("existing report", File.ReadAllText(_workspace.File("report.csv")));
         Assert.True(converted.ExitCode == 0, converted.StdErr);
         JsonNode result = JsonNode.Parse(converted.StdOut)!;
         Assert.Equal("evaluation", result["license"]!["mode"]!.GetValue<string>());
-        Assert.False(string.IsNullOrWhiteSpace(Warning(result, "EVALUATION_MODE")["hint"]?.GetValue<string>()));
         // Without --sheets the first sheet is exported, and the evaluation notice becomes its last row.
         Assert.Contains("Only worksheet 'Dashboard' was exported",
             Warning(result, "SHEETS_DROPPED")["message"]!.GetValue<string>(), StringComparison.Ordinal);
@@ -422,17 +407,16 @@ public sealed class CellsCliTests : IDisposable
         JsonNode warning = Warning(split, "CHART_SPLIT_ACROSS_PAGES");
         Assert.Equal("sheet/Data", warning["location"]!.GetValue<string>());
         Assert.Contains("'Wide' on sheet 'Data' (2 pages)", warning["message"]!.GetValue<string>(), StringComparison.Ordinal);
-        Assert.Contains("pageSize", warning["hint"]!.GetValue<string>(), StringComparison.Ordinal);
         Assert.DoesNotContain(fitted["warnings"]?.AsArray() ?? [],
             static warning => warning!["code"]!.GetValue<string>() == "CHART_SPLIT_ACROSS_PAGES");
     }
 
     /// <summary>
-    /// Formulas stored without results: saving the workbook with an edit, as the hint of
-    /// <c>FORMULAS_CALCULATED_ON_OPEN</c> says, stores their results, so the next read warns no more.
+    /// Formulas stored without results: saving the workbook with an edit stores their results, so
+    /// the next read warns no more.
     /// </summary>
     [Fact]
-    public void CalculatedOnOpen_SavedWithAnEditAsTheHintSays_ReadsWithoutTheWarning()
+    public void CalculatedOnOpen_SavedWithAnEdit_ReadsWithoutTheWarning()
     {
         using (var workbook = new Aspose.Cells.Workbook())
         {
@@ -446,7 +430,6 @@ public sealed class CellsCliTests : IDisposable
 
         JsonNode read = _workspace.Run("cells", "read", "uncalculated.xlsx", "--output-format", "json").Json();
         JsonNode warning = Assert.Single(read["warnings"]!.AsArray(), static warning => warning!["code"]!.GetValue<string>() == "FORMULAS_CALCULATED_ON_OPEN")!;
-        Assert.Contains("Save the workbook with 'cells edit'", warning["hint"]!.GetValue<string>(), StringComparison.Ordinal);
 
         CliResult saved = _workspace.Run("cells", "edit", "uncalculated.xlsx", "--in-place", "--set", "Sheet1!E1=1", "--output-format", "json");
 
@@ -567,83 +550,6 @@ public sealed class CellsCliTests : IDisposable
         double[] margins = [left / (double)image.Width, (image.Width - 1 - right) / (double)image.Width, top / (double)image.Height, (image.Height - 1 - bottom) / (double)image.Height];
         Assert.True(margins.All(static margin => margin <= 0.1),
             $"A {image.Width} x {image.Height} image leaves margins (left, right, top, bottom) of {string.Join(", ", margins.Select(static margin => margin.ToString("P0", System.Globalization.CultureInfo.InvariantCulture)))} around the range.");
-    }
-
-    /// <summary>
-    /// The hint of an empty sheet's <c>RENDER_EMPTY</c> names the <c>--sheets</c> position of a
-    /// sheet that has data, and the render it gives succeeds.
-    /// </summary>
-    [Fact]
-    public void Render_OfAnEmptySheet_HintsTheSheetsSelectionOfOneWithData()
-    {
-        File.WriteAllText(_workspace.File("ops.json"), """{"ops":[{"op":"set_values","sheet":"Data","range":"A1","values":[["data"]]}]}""");
-        Assert.Equal(0, _workspace.Run("cells", "create", "book.xlsx", "--sheet-names", "Blank,Data", "--output-format", "json").ExitCode);
-        Assert.Equal(0, _workspace.Run("cells", "edit", "book.xlsx", "--ops", "ops.json", "--in-place", "--output-format", "json").ExitCode);
-
-        CliResult empty = _workspace.Run("cells", "render", "book.xlsx", "--sheets", "1", "--out", "blank.png", "--output-format", "json");
-
-        JsonNode error = JsonNode.Parse(empty.StdErr)!["error"]!;
-        Assert.Equal("RENDER_EMPTY", error["code"]!.GetValue<string>());
-        System.Text.RegularExpressions.Match hinted = System.Text.RegularExpressions.Regex.Match(error["hint"]!.GetValue<string>(), @"--sheets (\S+) for 'Data'");
-        Assert.True(hinted.Success, error["hint"]!.GetValue<string>());
-        JsonNode rendered = _workspace.Run("cells", "render", "book.xlsx", "--sheets", hinted.Groups[1].Value, "--out", "data.png", "--output-format", "json").Json();
-        Assert.Equal("Data", Assert.Single(rendered["outputs"]!.AsArray())!["sheet"]!.GetValue<string>());
-    }
-
-    /// <summary>
-    /// Beside an empty sheet, the warning sheet an evaluation save adds holds only the notice, which
-    /// is not data: the hint of <c>RENDER_EMPTY</c> says no other sheet has data instead of pointing to it.
-    /// </summary>
-    [Fact]
-    public void Render_OfAnEmptySheet_DoesNotHintTheEvaluationWarningSheet()
-    {
-        using (var workbook = new Aspose.Cells.Workbook())
-        {
-            workbook.Worksheets[0].Name = "Blank";
-            Aspose.Cells.Worksheet warning = workbook.Worksheets[workbook.Worksheets.Add()];
-            warning.Name = "Evaluation Warning";
-            warning.Cells["A1"].PutValue("Evaluation Only. Created with Aspose.Cells for .NET.");
-            workbook.Save(_workspace.File("book.xlsx"));
-        }
-
-        CliResult empty = _workspace.Run("cells", "render", "book.xlsx", "--sheets", "1", "--out", "blank.png", "--output-format", "json");
-
-        JsonNode error = JsonNode.Parse(empty.StdErr)!["error"]!;
-        string hint = error["hint"]!.GetValue<string>();
-        Assert.Equal("RENDER_EMPTY", error["code"]!.GetValue<string>());
-        Assert.StartsWith("No other sheet has data to render", hint, StringComparison.Ordinal);
-        Assert.DoesNotContain("--sheets", hint, StringComparison.Ordinal);
-    }
-
-    /// <summary>
-    /// When an evaluation save left its warning sheet active, the hint of the
-    /// <c>ACTIVE_SHEET_SKIPPED</c> each command warns names the way that command chooses a sheet:
-    /// <c>--sheets</c> for a convert, an operation's <c>"sheet"</c> for an edit, and <c>--sheet</c>
-    /// for a read.
-    /// </summary>
-    [Fact]
-    public void Evaluation_TheSkippedSheetHintNamesHowEachCommandChoosesASheet()
-    {
-        _ = _workspace.Run("cells", "create", "book.xlsx", "--sheet-names", "One,Two", "--output-format", "json").Json();
-        File.WriteAllText(_workspace.File("ops.json"), """{"ops":[{"op":"set_values","range":"A1","values":[["edited"]]}]}""");
-
-        string Hint(params string[] args) =>
-            Warning(_workspace.Run([.. args, "--output-format", "json"]).Json(), "ACTIVE_SHEET_SKIPPED")["hint"]!.GetValue<string>();
-        string convert = Hint("cells", "convert", "book.xlsx", "--to", "csv", "--out", "book.csv");
-        string edit = Hint("cells", "edit", "book.xlsx", "--ops", "ops.json", "--out", "edited.xlsx");
-        string read = Hint("cells", "read", "book.xlsx");
-
-        Assert.Contains("--sheets", convert, StringComparison.Ordinal);
-        Assert.Contains("position", convert, StringComparison.Ordinal);
-        // Done as the hint says, with the position inspect gives, the convert writes that sheet;
-        // evaluation mode exports only the first worksheet to a text format.
-        JsonNode sheets = _workspace.Run("cells", "inspect", "book.xlsx", "--output-format", "json").Json()["workbook"]!["sheets"]!;
-        string position = sheets.AsArray().Single(static sheet => sheet!["name"]!.GetValue<string>() == "One")!["position"]!.ToJsonString();
-        Assert.Equal(0, _workspace.Run("cells", "convert", "book.xlsx", "--to", "csv", "--sheets", position, "--out", "one.csv", "--output-format", "json").ExitCode);
-        Assert.Contains("\"sheet\"", edit, StringComparison.Ordinal);
-        Assert.DoesNotContain("--sheet", edit, StringComparison.Ordinal);
-        Assert.Contains("--sheet ", read, StringComparison.Ordinal);
-        Assert.Contains("name", read, StringComparison.Ordinal);
     }
 
     /// <summary>

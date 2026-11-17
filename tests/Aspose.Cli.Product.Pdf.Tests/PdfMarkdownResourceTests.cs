@@ -182,7 +182,6 @@ public sealed class PdfMarkdownResourceTests
             new MarkdownImportResources(markdown, ProductTestBudgets.Create<PdfModule>(), fixture.Temp.Path).Dispose());
 
         Assert.Equal(ErrorCodes.FeatureUnsupported, refused.Code);
-        Assert.Contains("working directory", refused.Hint, StringComparison.Ordinal);
     }
 
     [Fact]

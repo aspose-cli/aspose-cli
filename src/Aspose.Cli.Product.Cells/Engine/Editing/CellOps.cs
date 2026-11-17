@@ -32,14 +32,11 @@ internal static class CellOps
         }
         catch (CellsException exception) when (exception.Code == ExceptionType.Formula)
         {
-            throw new OperationInvalidException($"the formula {op.Formula} does not parse: {exception.Message}",
-                EnglishFormulaHint);
+            throw new OperationInvalidException($"the formula {op.Formula} does not parse: {exception.Message}");
         }
     }
 
     /// <summary>How to write a formula the engine reads; a localized function name parses but yields #NAME?.</summary>
-    internal const string EnglishFormulaHint = "Write the formula as Excel's English formula bar shows it: English function names and commas "
-        + "between arguments, as in =SUM(B2:B10).";
 
     private static void WriteFormula(Worksheet sheet, SetFormulaOp op, out Cell anchor)
     {

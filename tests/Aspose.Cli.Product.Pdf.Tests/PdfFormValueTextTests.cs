@@ -22,12 +22,11 @@ public sealed class PdfFormValueTextTests
     private const string City = "Springfield";
 
     /// <summary>
-    /// From the command line: every command, option and operation the hints of the conversion and
-    /// the read name exists (the workspace checks the hints of each JSON result), and the
-    /// flattened copy the conversion's hint describes converts with the values.
+    /// From the command line: the conversion and the read warn of the values, and a flattened copy
+    /// converts with them.
     /// </summary>
     [Fact]
-    public void ConvertAndRead_OfAFilledForm_GiveHintsThatRun()
+    public void ConvertAndRead_OfAFilledForm_WarnOfTheValues()
     {
         using var fixture = new PdfEngineFixture();
         using var workspace = new TempWorkspace();
@@ -49,58 +48,8 @@ public sealed class PdfFormValueTextTests
     }
 
     /// <summary>
-    /// On an encrypted form at a path with a space, opened with <c>--password-env</c>, the
-    /// conversion to text, the read, the search and the text extraction each give one command that
-    /// reads the values: it names the input and its password variable, and run as written it reads them.
-    /// </summary>
-    [Fact]
-    public void PageTextCommands_OfAnEncryptedForm_GiveAnInspectThatReadsTheValuesAsWritten()
-    {
-        using var fixture = new PdfEngineFixture();
-        using var workspace = new TempWorkspace();
-        using (var document = new Document(Form(fixture, "filled.pdf", Applicant, City)))
-        {
-            document.Encrypt("user-secret", "owner-secret", DocumentPrivilege.ForbidAll, CryptoAlgorithm.AESx256, usePdf20: false);
-            document.Save(workspace.File("locked form.pdf"));
-        }
-
-        var variables = new Dictionary<string, string?>(StringComparer.Ordinal) { ["PDF_USER"] = "user-secret" };
-        // One after another: the hint check of each run copies the workspace, which a run publishing into it would break.
-        CliResult converted = workspace.RunWithEnv(variables, "pdf", "convert", "locked form.pdf", "--password-env", "PDF_USER", "--to", "txt", "--out", "locked.txt", "--output-format", "json");
-        CliResult read = workspace.RunWithEnv(variables, "pdf", "read", "locked form.pdf", "--password-env", "PDF_USER", "--output-format", "json");
-        CliResult searched = workspace.RunWithEnv(variables, "pdf", "search", "locked form.pdf", "--password-env", "PDF_USER", "--pattern", Applicant, "--output-format", "json");
-        CliResult extracted = workspace.RunWithEnv(variables, "pdf", "extract", "locked form.pdf", "--password-env", "PDF_USER", "--what", "text", "--out-dir", "text", "--output-format", "json");
-
-        string[] commands =
-        [
-            InspectionIn(Assert.Single(Succeeded(converted)["warnings"]!.AsArray(), static warning => warning!["details"]?["content"] is not null)!),
-            .. new[] { read, searched, extracted }.Select(static result => InspectionIn(Assert.Single(Succeeded(result)["warnings"]?.AsArray() ?? [],
-                static warning => warning!["code"]!.GetValue<string>() == "FORM_VALUES_NOT_IN_TEXT")!)),
-        ];
-        // All name the same command, which is run once as written.
-        string command = Assert.Single(commands.Distinct(StringComparer.Ordinal));
-        Assert.Contains(" --password-env PDF_USER", command, StringComparison.Ordinal);
-        Assert.EndsWith(" --output-format json", command, StringComparison.Ordinal);
-        CliResult inspected = workspace.RunCommandLine(command, variables);
-        Assert.True(inspected.ExitCode == 0, inspected.StdOut + inspected.StdErr);
-        JsonArray fields = inspected.Json()["forms"]!["fields"]!.AsArray();
-        Assert.Equal(Applicant, fields.Single(static field => field!["name"]!.GetValue<string>() == "applicant")!["value"]!.GetValue<string>());
-        Assert.Equal(City, fields.Single(static field => field!["name"]!.GetValue<string>() == "city")!["value"]!.GetValue<string>());
-    }
-
-    private static JsonNode Succeeded(CliResult result)
-    {
-        Assert.True(result.ExitCode == 0, result.StdOut + result.StdErr);
-        return result.Json();
-    }
-
-    // The one runnable command a warning's hint quotes.
-    private static string InspectionIn(JsonNode warning) =>
-        Assert.Single(System.Text.RegularExpressions.Regex.Matches(warning["hint"]!.GetValue<string>(), "'(aspose-cli [^']+)'")).Groups[1].Value;
-
-    /// <summary>
     /// The conversion names the two filled fields, not the empty one or the unchecked check box,
-    /// and following its hint, flattening the fields first, writes their values into the output.
+    /// and flattening the fields first writes their values into the output.
     /// </summary>
     [Theory]
     [InlineData("txt")]
@@ -119,8 +68,6 @@ public sealed class PdfFormValueTextTests
         Assert.Contains("2 filled form fields: 'applicant', 'city'.", lost.Message, StringComparison.Ordinal);
         Assert.DoesNotContain("notes", lost.Message, StringComparison.Ordinal);
         Assert.DoesNotContain("agree", lost.Message, StringComparison.Ordinal);
-        Assert.Contains("flatten_forms", lost.Hint, StringComparison.Ordinal);
-        Assert.Contains("'pdf inspect --detail forms'", lost.Hint, StringComparison.Ordinal);
         Assert.Null(lost.Location);
         Assert.DoesNotContain(Applicant, File.ReadAllText(output), StringComparison.Ordinal);
 
@@ -195,12 +142,9 @@ public sealed class PdfFormValueTextTests
         Assert.DoesNotContain(signature.Name, lost.Message, StringComparison.Ordinal);
     }
 
-    /// <summary>
-    /// A form with XFA beside its AcroForm fields is read-only and its fields cannot be flattened:
-    /// the hint of its conversion gives only the command that reads the values.
-    /// </summary>
+    /// <summary>The conversion of a form with XFA beside its AcroForm fields names the fields.</summary>
     [Fact]
-    public void Convert_OfAnXfaForm_GivesNoFlatteningInItsHint()
+    public void Convert_OfAnXfaForm_NamesTheFieldsItLeavesOut()
     {
         using var fixture = new PdfEngineFixture();
         string input = fixture.File("xfa.pdf");
@@ -228,8 +172,6 @@ public sealed class PdfFormValueTextTests
 
         Warning lost = Assert.Single(result.Warnings!, static warning => warning.Details?["content"] is not null);
         Assert.Contains("'applicant'", lost.Message, StringComparison.Ordinal);
-        Assert.DoesNotContain("flatten_forms", lost.Hint, StringComparison.Ordinal);
-        Assert.Contains("'pdf inspect --detail forms'", lost.Hint, StringComparison.Ordinal);
     }
 
     /// <summary>
@@ -304,7 +246,6 @@ public sealed class PdfFormValueTextTests
         Assert.DoesNotContain(Applicant, read.Pages[0].Text, StringComparison.Ordinal);
         Warning warning = Assert.Single(read.Warnings ?? [], static warning => warning.Code.Name == "FORM_VALUES_NOT_IN_TEXT");
         Assert.Contains("2 filled form fields on the pages read: 'applicant', 'city'.", warning.Message, StringComparison.Ordinal);
-        Assert.Contains("'pdf inspect --detail forms'", warning.Hint, StringComparison.Ordinal);
         Assert.False(warning.AffectsCompleteness);
 
         PdfInspectResult inspected = PdfInfo.Run(fixture.Session, new PdfInspectRequest { Input = input, Details = ["forms"] });

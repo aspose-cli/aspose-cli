@@ -77,8 +77,7 @@ internal static class PdfComplianceLog
         throw Failed(
             profile,
             remaining,
-            $"{remaining.Length} problem(s) cannot be fixed automatically",
-            "Fix the reported problems in the source (for example embed its fonts or remove its encryption), or convert to plain PDF.");
+            $"{remaining.Length} problem(s) cannot be fixed automatically");
     }
 
     /// <summary>
@@ -99,25 +98,22 @@ internal static class PdfComplianceLog
         string[] fields = [.. problems
             .Where(problem => appearanceClause is not null && problem.Clause == appearanceClause && problem.Page is not null)
             .SelectMany(problem => buttonFieldsOnPage(problem.Page!.Value))
-            .Distinct(StringComparer.Ordinal)
-            .Select(static name => $"'{name}'")];
+            .Distinct(StringComparer.Ordinal)];
         throw Failed(
             profile,
             problems,
             $"the converted file still has {problems.Length} problem(s) the conversion did not fix",
-            fields.Length > 0
-                ? $"The button fields {string.Join(", ", fields)} have one appearance for all their states, which the profile rejects. Flatten them first, with a 'pdf edit' batch of flatten_forms (the fields stop being fillable), then convert again."
-                : "Fix the reported problems in the source, or convert to plain PDF.");
+            fields);
     }
 
-    private static CliException Failed(string profile, IReadOnlyList<PdfComplianceProblem> problems, string cause, string hint) => new(
+    private static CliException Failed(string profile, IReadOnlyList<PdfComplianceProblem> problems, string cause, string[]? fields = null) => new(
         PdfDiagnostics.PdfaConversionFailed,
         $"The document could not be converted to {profile}: {cause}" + (problems.Count > 0 ? $"; first: {problems[0]}" : "."),
-        hint: hint,
         details: new JsonObject
         {
             ["profile"] = profile,
             ["problems"] = new JsonArray(problems.Take(20).Select(static problem => (JsonNode?)problem.ToDetails()).ToArray()),
+            ["fields"] = fields is { Length: > 0 } ? new JsonArray([.. fields.Select(static name => (JsonNode)name)]) : null,
         });
 
     /// <summary>

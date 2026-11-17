@@ -321,8 +321,7 @@ internal sealed class MarkdownImportResources : IDisposable
     }
 
     private CliException Refusal(string reference, string source, string reason) => CliErrors.ResourceRefused(
-        $"The reference '{Shorten(reference)}' in {source} {reason}. The PDF Markdown importer has no resource policy, so a Markdown import may read only ordinary files beneath the Markdown file's directory, {_root}.",
-        "Place images and stylesheets beneath the Markdown file's directory, reference them by relative path, and run the command from that directory: the importer resolves the Markdown's relative paths against the working directory.");
+        $"The reference '{Shorten(reference)}' in {source} {reason}. The PDF Markdown importer has no resource policy, so a Markdown import may read only ordinary files beneath the Markdown file's directory, {_root}.");
 
     private static string Shorten(string reference) =>
         reference.Length <= 120 ? reference : reference[..120] + "...";

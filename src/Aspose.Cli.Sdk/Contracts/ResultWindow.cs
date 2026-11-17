@@ -1,8 +1,8 @@
 namespace Aspose.Cli.Sdk.Contracts;
 
 /// <summary>
-/// How much of a larger collection a bounded read or search returned, and the ready-to-run
-/// command that continues it. Every windowed result carries it as <c>window</c>, written after
+/// How much of a larger collection a bounded read or search returned, and the option values
+/// that continue it. Every windowed result carries it as <c>window</c>, written after
 /// the payload and before <c>license</c> and <c>warnings</c>, so an agent always finds it in
 /// the same place.
 /// </summary>
@@ -23,6 +23,14 @@ public sealed record ResultWindow
     /// <summary>Whether units remain after the returned ones, or the last one was cut short.</summary>
     public required bool Truncated { get; init; }
 
-    /// <summary>The command that returns the next window; omitted when nothing remains.</summary>
-    public string? Next { get; init; }
+    /// <summary>
+    /// The values of the command's options that return the next window, by option name without its
+    /// leading dashes: the same command with these values returns it. Omitted when nothing remains.
+    /// </summary>
+    public IReadOnlyDictionary<string, string>? Next { get; init; }
+
+    /// <summary>The values of <see cref="Next"/>, each under its option's name without the leading dashes.</summary>
+    /// <param name="options">Each option, as in <c>--skip</c>, and its value.</param>
+    public static IReadOnlyDictionary<string, string> Options(params (string Option, string Value)[] options) =>
+        options.ToDictionary(static option => option.Option.TrimStart('-'), static option => option.Value, StringComparer.Ordinal);
 }

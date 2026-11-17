@@ -64,7 +64,7 @@ internal sealed class CellsEditVerifier(CellsWorkbookLoader loader, ResourceBudg
         if (errorsCapped)
         {
             issues.Add(VerificationIssue.From(EnvelopeParts.ListTruncated(
-                "verification.formulaErrors", errors.Count, errorTotal, InfoProjection.FormulaErrorsCappedHint)));
+                "verification.formulaErrors", errors.Count, errorTotal)));
         }
         if (errorTotal > 0)
         {
@@ -74,13 +74,7 @@ internal sealed class CellsEditVerifier(CellsWorkbookLoader loader, ResourceBudg
                     ? $"The edited workbook contains {errorTotal} formula error(s); formulaErrors lists the first {errors.Count}."
                     : $"The edited workbook contains {errorTotal} formula error(s).")
                 + (preexisting > 0 ? $" {preexisting} of the listed error(s) were already in the input." : ""),
-                location: errorTotal == 1 ? CellsAddresses.At("cell", errors[0].Sheet, errors[0].Cell) : null,
-                hint: (errorsCapped
-                    ? "Fix the cells listed in formulaErrors, then edit again with --verify to list the rest."
-                    : "Fix the cells listed in formulaErrors, then edit again with --verify.")
-                    + (errors.Any(static error => error.Error == "#NAME?")
-                        ? " #NAME? means a formula names a function or name the workbook does not know. " + CellOps.EnglishFormulaHint
-                        : "")));
+                location: errorTotal == 1 ? CellsAddresses.At("cell", errors[0].Sheet, errors[0].Cell) : null));
         }
         IReadOnlyList<CellsEditTarget> held = Held(written, textTable, baseline.Workbook);
         VerifiedBatch verified = applied.Verified(new VerificationFacts(issues, OpsFootprint.Checked(batch, held, activeSheet))

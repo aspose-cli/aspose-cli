@@ -25,14 +25,13 @@ public sealed class CorruptInputDetectionTests
             ["pdf", "merge", "other.pdf", "renamed.pdf", "--out", "merged.pdf"]);
         GlobalValues globals = Globals(workspace);
         CliException named = CliErrors.InputUnreadable(
-            workspace.File("renamed.pdf"), "PDF document", "the PDF header was not found", "Check the file.");
+            workspace.File("renamed.pdf"), "PDF document", "the PDF header was not found");
 
         var explained = Assert.IsType<CliException>(CorruptInputDetection.Explain(
             named, invocation.ParseResult, globals, ActualCommandTree.Host.Catalog));
 
         Assert.Equal(ErrorCodes.FormatMismatch, explained.Code);
         Assert.Equal("words", Assert.Single(explained.Details!["detected"]!.AsArray())!.GetValue<string>());
-        Assert.Contains("'aspose-cli words", explained.Hint, StringComparison.Ordinal);
     }
 
     [Fact]

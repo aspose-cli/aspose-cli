@@ -523,7 +523,6 @@ internal sealed record BundledSkill(
             "The Skill target",
             target,
             reason,
-            "Preserve custom files and choose a different --target, or restore the managed contents before retrying.",
             inner);
 
     private sealed record SkillFileEntry(string Path, long Size, string Sha256);

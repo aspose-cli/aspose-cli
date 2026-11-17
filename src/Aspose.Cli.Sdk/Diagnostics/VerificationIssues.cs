@@ -14,8 +14,7 @@ public static class VerificationIssues
     public static VerificationIssue Of(
         DiagnosticDescriptor descriptor,
         string message,
-        string? location = null,
-        string? hint = null)
+        string? location = null)
     {
         ArgumentNullException.ThrowIfNull(descriptor);
         if (descriptor.Category != DiagnosticDescriptor.VerificationCategory)
@@ -25,6 +24,6 @@ public static class VerificationIssues
                 nameof(descriptor));
         }
 
-        return new VerificationIssue(descriptor.Code, message, location, hint);
+        return new VerificationIssue(descriptor.Code, message, location);
     }
 }

@@ -19,19 +19,16 @@ namespace Aspose.Cli.Product.Cells.Engine.Mapping;
 /// </summary>
 internal static class UnwrittenContent
 {
-    private const string ReadComments = "Read the comments with 'aspose-cli cells inspect <file> --detail comments'; the workbook keeps them.";
-
     /// <summary>The warnings of a save of <paramref name="workbook"/> by <paramref name="plan"/>, in the order of <see cref="CellsContentLoss"/>.</summary>
     /// <param name="workbook">The workbook as the save is about to write it.</param>
     /// <param name="plan">How the output is saved: its format, the sheets <c>--sheets</c> selected and the sheet a table of cells writes.</param>
     internal static IEnumerable<Warning> Warnings(Workbook workbook, WorkbookSavePlan plan)
     {
-        foreach ((ContentKind kind, List<(string Sheet, string[] Items)> counts, string message, string hint) in Losses(workbook, plan))
+        foreach ((ContentKind kind, List<(string Sheet, string[] Items)> counts, string message) in Losses(workbook, plan))
         {
             int added = plan.InputContent is { } before ? Added(counts.SelectMany(static sheet => sheet.Items), before) : 0;
-            yield return added <= 0 ? ContentLoss.Warning([kind], message, hint, OneSheet(counts))
-                : ContentLoss.Warning([kind], $"{message} This edit added or changed {added} of them, and {plan.FormatId} files cannot hold them.",
-                    "To keep what the edit added or changed, write it with --out to a format that holds it, such as xlsx.", OneSheet(counts), affectsCompleteness: true);
+            yield return added <= 0 ? ContentLoss.Warning([kind], message, location: OneSheet(counts))
+                : ContentLoss.Warning([kind], $"{message} This edit added or changed {added} of them, and {plan.FormatId} files cannot hold them.", location: OneSheet(counts), affectsCompleteness: true);
         }
     }
 
@@ -50,7 +47,7 @@ internal static class UnwrittenContent
         return items.CountBy(static item => item).Sum(item => Math.Max(0, item.Value - had.GetValueOrDefault(item.Key)));
     }
 
-    private static IEnumerable<(ContentKind Kind, List<(string Sheet, string[] Items)> Counts, string Message, string Hint)> Losses(Workbook workbook, WorkbookSavePlan plan)
+    private static IEnumerable<(ContentKind Kind, List<(string Sheet, string[] Items)> Counts, string Message)> Losses(Workbook workbook, WorkbookSavePlan plan)
     {
         string formatId = plan.FormatId;
         IReadOnlyList<int>? selectedSheets = plan.SelectedSheets;
@@ -63,40 +60,31 @@ internal static class UnwrittenContent
             && Counted(written.Where(sheet => selectedSheets is not null || sheet.IsVisible), static sheet => Comments(sheet, comment => !Printed(sheet, comment))) is { Count: > 0 } unprinted)
         {
             yield return (ContentKind.Comments, unprinted,
-                $"The {formatId} output leaves out {Total(unprinted)} comment(s), which the page setup of their worksheet does not print: {PerSheet(unprinted)}.",
-                "Read the comments with 'aspose-cli cells inspect <file> --detail comments'. To keep them in the output, "
-                    + "set printComments to sheet-end with set_page_setup on the worksheet and convert again: they print after its last page."
-                    + (written.Any(sheet => sheet.PageSetup.PrintArea is { Length: > 0 } && unprinted.Any(item => item.Sheet == sheet.Name))
-                        ? " A print area prints only the comments on the cells of its bounded ranges, such as A1:H50, and none for whole rows or columns: clear it with clear_print_area, or set bounded ranges that cover them." : "")
-                    + (CellsEngineFormats.LeavesDetected(workbook.FileFormat).HasFlag(CellsContentLoss.PrintCommentsSetting)
-                        ? " This workbook's format does not keep that setting, so save the workbook as xlsx first and set it there." : ""));
+                $"The {formatId} output leaves out {Total(unprinted)} comment(s), which the page setup of their worksheet does not print: {PerSheet(unprinted)}.");
         }
 
         if (leaves.HasFlag(CellsContentLoss.PrintCommentsSetting) && Counted(written, PrintsComments) is { Count: > 0 } settings)
         {
             yield return (ContentKind.Comments, settings,
                 $"The {formatId} output leaves out {Total(settings)} setting(s) to print comments: {PerSheet(settings)}. "
-                    + $"The {formatId} format does not keep that setting; an xlsx workbook keeps it.",
-                "Read the setting with 'aspose-cli cells inspect <file> --detail layout'; the workbook keeps it.");
+                    + $"The {formatId} format does not keep that setting; an xlsx workbook keeps it.");
         }
 
         if (leaves.HasFlag(CellsContentLoss.Comments) && Counted(written, static sheet => Comments(sheet, static _ => true)) is { Count: > 0 } comments)
         {
-            yield return (ContentKind.Comments, comments, $"The {formatId} output leaves out {Total(comments)} comment(s): {PerSheet(comments)}.", ReadComments);
+            yield return (ContentKind.Comments, comments, $"The {formatId} output leaves out {Total(comments)} comment(s): {PerSheet(comments)}.");
         }
 
         if (leaves.HasFlag(CellsContentLoss.FootnoteComments) && Counted(written, static sheet => Comments(sheet, static _ => true)) is { Count: > 0 } footnotes)
         {
             yield return (ContentKind.Comments, footnotes,
-                $"The {formatId} output writes {Total(footnotes)} comment(s) only as footnote definitions no cell refers to, which a Markdown reader does not get: {PerSheet(footnotes)}.",
-                ReadComments);
+                $"The {formatId} output writes {Total(footnotes)} comment(s) only as footnote definitions no cell refers to, which a Markdown reader does not get: {PerSheet(footnotes)}.");
         }
 
         if (leaves.HasFlag(CellsContentLoss.ChartPictures) && Counted(written, Charts) is { Count: > 0 } charts)
         {
             yield return (ContentKind.Charts, charts,
-                $"The {formatId} output shows {Total(charts)} chart(s) as pictures, whose titles, labels and data are not text: {PerSheet(charts)}.",
-                "Read the chart titles and data ranges with 'aspose-cli cells inspect <file> --detail charts'; the workbook keeps the charts editable.");
+                $"The {formatId} output shows {Total(charts)} chart(s) as pictures, whose titles, labels and data are not text: {PerSheet(charts)}.");
         }
 
         bool printData = leaves.HasFlag(CellsContentLoss.PrintHeadersFooters);
@@ -107,8 +95,7 @@ internal static class UnwrittenContent
             yield return (ContentKind.HeadersFooters, headed,
                 printData
                     ? $"The {formatId} output keeps the headers and footers of {names} only as Excel print data in its styles, which a browser neither shows nor prints."
-                    : $"The {formatId} output leaves out the headers and footers of {names}: a table of cells has no pages to print them on.",
-                "Read the headers and footers with 'aspose-cli cells inspect <file> --detail layout'; a PDF of the workbook prints them on every page.");
+                    : $"The {formatId} output leaves out the headers and footers of {names}: a table of cells has no pages to print them on.");
         }
     }
 

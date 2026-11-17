@@ -95,7 +95,7 @@ internal static partial class ContractRules
         yield return Check("C-R27", "warning envelope shape", () => EnvelopeShapeProblems(
             catalog, "v2/common/warning", definition: null, "the warning",
             required: ["code", "message"],
-            properties: ["code", "message", "hint", "docs", "location", "affectsCompleteness"],
+            properties: ["code", "message", "docs", "location", "affectsCompleteness"],
             optional: ["details"]));
     }
 

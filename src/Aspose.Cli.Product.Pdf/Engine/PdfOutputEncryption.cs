@@ -67,10 +67,7 @@ internal static class PdfOutputEncryption
         {
             return (new PdfOutputPasswords(password, password, Permissions: null), new Warning(WarningCodes.ProtectionNotEnforced,
                 "The input was opened with its owner password, so the output opens with that password, which is also its owner password: "
-                + "the output grants every permission to whoever opens it, and the input's open password does not open it.")
-            {
-                Hint = "Protect the output with the intended open password through --encrypt-env, or run the command with the input's open password to keep its permissions.",
-            });
+                + "the output grants every permission to whoever opens it, and the input's open password does not open it."));
         }
 
         Permissions granted = protectedInputs.Where(static input => !input.OpenPasswordIsOwner)
@@ -78,10 +75,7 @@ internal static class PdfOutputEncryption
         var owner = new Secret(Convert.ToHexString(RandomNumberGenerator.GetBytes(24)));
         return (new PdfOutputPasswords(password, owner, granted), new Warning(WarningCodes.ProtectionNotEnforced,
             "The input was opened with its user password, so the output opens with that password and keeps the permissions the input grants, "
-            + "under a new owner password that no one knows: the input's owner password does not lift them on the output.")
-        {
-            Hint = "Confirm that the document's owner accepts this; replace the protection with --encrypt-env, or have the owner protect the output again.",
-        });
+            + "under a new owner password that no one knows: the input's owner password does not lift them on the output."));
     }
 
     /// <summary>

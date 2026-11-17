@@ -23,7 +23,6 @@ public sealed class WordsCliTests : IClassFixture<WordsFixture>, IDisposable
         JsonNode error = JsonNode.Parse(refused.StdErr)!["error"]!;
         Assert.Equal("USAGE_ERROR", error["code"]!.GetValue<string>());
         Assert.Equal("words edit", error["details"]!["suggestions"]![0]!.GetValue<string>());
-        Assert.Contains("import_sections", error["hint"]!.GetValue<string>(), StringComparison.Ordinal);
     }
 
     [Category(TestCategory.Slow)]
@@ -166,11 +165,10 @@ public sealed class WordsCliTests : IClassFixture<WordsFixture>, IDisposable
     }
 
     /// <summary>
-    /// An encrypted template is refused with the convert that writes an unencrypted Flat OPC
-    /// copy of it, and that copy, run as the hint says, serves as the template with its styles.
+    /// An encrypted template is refused before anything is written.
     /// </summary>
     [Fact]
-    public void Create_FromAnEncryptedTemplate_PointsToAnUnencryptedCopyThatServesAsTheTemplate()
+    public void Create_FromAnEncryptedTemplate_IsPasswordRequired()
     {
         var template = new Document();
         Style brand = template.Styles.Add(StyleType.Paragraph, "Brand Heading");
@@ -185,25 +183,7 @@ public sealed class WordsCliTests : IClassFixture<WordsFixture>, IDisposable
         Assert.Equal(3, refused.ExitCode);
         JsonNode error = JsonNode.Parse(refused.StdErr)!["error"]!;
         Assert.Equal("PASSWORD_REQUIRED", error["code"]!.GetValue<string>());
-        string hint = error["hint"]!.GetValue<string>();
-        Assert.Contains("encrypted template", hint, StringComparison.Ordinal);
-        Assert.Contains("ask the user for an unencrypted copy", hint, StringComparison.Ordinal);
         Assert.False(File.Exists(_workspace.File("letter.docx")));
-
-        // Run the convert the hint names, with the password in the variable it leaves to fill.
-        string command = System.Text.RegularExpressions.Regex.Match(hint, "'(aspose-cli words convert [^']+)'").Groups[1].Value;
-        CliResult copied = _workspace.RunCommandLine(
-            command.Replace("<password-env>", "TEMPLATE_PASSWORD", StringComparison.Ordinal),
-            new Dictionary<string, string?> { ["TEMPLATE_PASSWORD"] = "template-secret" });
-        Assert.True(copied.ExitCode == 0, $"{command}{Environment.NewLine}{copied.StdErr}");
-        string copy = _workspace.File("locked.unencrypted.xml");
-
-        CliResult created = _workspace.Run(
-            "words", "create", "letter.docx", "--template", copy, "--from-text", "body.txt", "--output-format", "json");
-
-        Assert.True(created.ExitCode == 0, created.StdErr);
-        Style kept = new Document(_workspace.File("letter.docx")).Styles["Brand Heading"]!;
-        Assert.Equal(31, kept.Font.Size);
     }
 
     [Fact]
@@ -221,17 +201,12 @@ public sealed class WordsCliTests : IClassFixture<WordsFixture>, IDisposable
                 "words", "read", "notes.docx", "--section", "1", "--blocks", "2-3", "--max-blocks", "1", "--output-format", "json"));
 
         Assert.True(spread.ExitCode == 0, spread.StdErr);
-        Assert.EndsWith(
-            " --blocks 3,5 --content text --max-chars 20000 --max-blocks 1 --output-format json",
-            JsonNode.Parse(spread.StdOut)!["window"]!["next"]!.GetValue<string>(),
-            StringComparison.Ordinal);
+        JsonNode spreadNext = JsonNode.Parse(spread.StdOut)!["window"]!["next"]!;
+        Assert.Equal(("3,5", "20000"), (spreadNext["blocks"]!.GetValue<string>(), spreadNext["max-chars"]!.GetValue<string>()));
         Assert.True(section.ExitCode == 0, section.StdErr);
         JsonNode read = JsonNode.Parse(section.StdOut)!;
         Assert.Equal(2, Assert.Single(read["blocks"]!.AsArray())!["block"]!.GetValue<int>());
-        Assert.EndsWith(
-            " --blocks 3 --section 1 --content text --max-chars 20000 --max-blocks 1 --output-format json",
-            read["window"]!["next"]!.GetValue<string>(),
-            StringComparison.Ordinal);
+        Assert.Equal(("3", "20000"), (read["window"]!["next"]!["blocks"]!.GetValue<string>(), read["window"]!["next"]!["max-chars"]!.GetValue<string>()));
     }
 
     [Fact]
@@ -250,10 +225,10 @@ public sealed class WordsCliTests : IClassFixture<WordsFixture>, IDisposable
         Assert.Equal("hit", window["unit"]!.GetValue<string>());
         Assert.Equal(2, window["returned"]!.GetValue<int>());
         Assert.True(window["truncated"]!.GetValue<bool>());
-        string next = window["next"]!.GetValue<string>();
-        Assert.EndsWith(" --pattern needle --scope body --max-hits 2 --skip 2 --output-format json", next, StringComparison.Ordinal);
+        JsonNode next = window["next"]!;
+        Assert.Equal("2", next["skip"]!.GetValue<string>());
 
-        CliResult second = _workspace.RunCommandLine(next);
+        CliResult second = _workspace.RunNext(next, "words", "search", "notes.docx", "--pattern", "needle", "--max-hits", "2", "--output-format", "json");
 
         Assert.True(second.ExitCode == 0, second.StdErr);
         JsonNode rest = JsonNode.Parse(second.StdOut)!;
@@ -282,27 +257,6 @@ public sealed class WordsCliTests : IClassFixture<WordsFixture>, IDisposable
             expected,
             string.Join('|', JsonNode.Parse(compared.StdOut)!["samples"]!.AsArray()
                 .Select(static sample => $"{sample!["kind"]!.GetValue<string>()}:{sample["text"]?.GetValue<string>()}")));
-    }
-
-    /// <summary>
-    /// A replace_text that matches nothing says so with a hint the caller can follow as written,
-    /// which the run's hint check verifies: the wider scope is the op's own field.
-    /// </summary>
-    [Category(TestCategory.Slow)]
-    [Fact]
-    public void ReplaceText_WithNoMatch_HintsAtTheOpsScope()
-    {
-        File.WriteAllText(_workspace.File("source.md"), "Party A pays.\n");
-        Assert.Equal(0, _workspace.Run("words", "create", "contract.docx", "--from-markdown", "source.md").ExitCode);
-
-        CliResult edited = _workspace.RunWithInput(
-            """{ "ops": [ { "op": "replace_text", "find": "Party Z", "replace": "Party Y" } ] }""",
-            "words", "edit", "contract.docx", "--ops", "-", "--out", "edited.docx", "--output-format", "json");
-
-        Assert.True(edited.ExitCode == 0, edited.StdErr);
-        JsonNode warning = JsonNode.Parse(edited.StdOut)!["warnings"]!.AsArray()
-            .Single(static item => item!["code"]!.GetValue<string>() == "OP_NO_EFFECT")!;
-        Assert.Contains("\"scope\": \"all\"", warning["hint"]!.GetValue<string>(), StringComparison.Ordinal);
     }
 
     /// <summary>

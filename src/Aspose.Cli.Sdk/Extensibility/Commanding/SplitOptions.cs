@@ -1,5 +1,4 @@
 using System.CommandLine;
-using System.Runtime.CompilerServices;
 using Aspose.Cli.Sdk.Addressing;
 using Aspose.Cli.Sdk.Errors;
 
@@ -18,9 +17,6 @@ public sealed class SplitOptions
 
     /// <summary>The option that names one page group per part.</summary>
     internal const string GroupsOption = "--groups";
-
-    // The --groups options of the splits that take them, by the option.
-    private static readonly ConditionalWeakTable<Option, object> Grouping = [];
 
     private readonly IReadOnlyList<SplitBy> _divisions;
     private readonly Option<string> _by;
@@ -65,7 +61,6 @@ public sealed class SplitOptions
                     Description = "A page group with --by pages, one part each; repeat for more, such as --groups 1-3 --groups 4-6.",
                 }.WithInput(InputKind.None).MistakenFor("--ranges");
                 options.Add(_groups);
-                Grouping.AddOrUpdate(_groups, _divisions);
             }
 
             _pages = new PartRangeOption("page", "every page", onlyWith: "--by pages");
@@ -89,10 +84,6 @@ public sealed class SplitOptions
     /// <summary>The options, for a product command's option list.</summary>
     public IReadOnlyList<Option> Options { get; }
 
-    /// <summary>Whether <paramref name="command"/> is a split that writes one part per page group it is given (<c>--groups</c>).</summary>
-    internal static bool SplitsByGroups(Command command) =>
-        command.Options.Any(static option => Grouping.TryGetValue(option, out _));
-
     /// <summary>Returns the validated plan.</summary>
     /// <exception cref="CliException">
     /// <c>OPTION_INVALID</c> for a page option without <c>--by pages</c>, <c>--groups</c> with
@@ -113,7 +104,7 @@ public sealed class SplitOptions
                 : null;
             if (stray is not null)
             {
-                throw CliErrors.OptionInvalid(stray, $"applies only with {ByOption} pages, not {ByOption} {SplitPlan.Spell(by)}", $"Use {ByOption} pages or omit {stray}.");
+                throw CliErrors.OptionInvalid(stray, $"applies only with {ByOption} pages, not {ByOption} {SplitPlan.Spell(by)}");
             }
 
             return new SplitPlan(by, null, null, null);
@@ -121,7 +112,7 @@ public sealed class SplitOptions
 
         if (every is < 1)
         {
-            throw CliErrors.OptionInvalid(EveryOption, "must be at least 1", "Pass a positive page count, such as --every 2.");
+            throw CliErrors.OptionInvalid(EveryOption, "must be at least 1");
         }
 
         if (groupTexts is { Length: > 0 })
@@ -130,8 +121,7 @@ public sealed class SplitOptions
             {
                 throw CliErrors.OptionInvalid(
                     GroupsOption,
-                    $"cannot be combined with {(every is not null ? EveryOption : _pages!.Name)}",
-                    $"Give the parts as {GroupsOption}, or select pages with {_pages!.Name} and size the parts with {EveryOption}.");
+                    $"cannot be combined with {(every is not null ? EveryOption : _pages!.Name)}");
             }
 
             return new SplitPlan(by, null, [.. groupTexts.Select(static text => PageRange.ParseOption(GroupsOption, text))], null);

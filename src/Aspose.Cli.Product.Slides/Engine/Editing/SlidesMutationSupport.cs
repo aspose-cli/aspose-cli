@@ -1,7 +1,5 @@
 using System.Drawing;
 using System.Globalization;
-using System.Text.Encodings.Web;
-using System.Text.Json;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Slides;
 using Aspose.Slides.Charts;
@@ -12,7 +10,6 @@ namespace Aspose.Cli.Product.Slides.Engine.Editing;
 /// <summary>Resolves mutation targets and translates handler failures.</summary>
 internal static class SlidesMutationSupport
 {
-    internal const string ShapeListing = "'slides read --content shapes' lists each shape's shapeId, shapeName and placeholder";
 
     internal static ISlide ResolveSlide(Presentation presentation, SlideTargetOp op)
     {
@@ -28,8 +25,7 @@ internal static class SlidesMutationSupport
             SlidesDiagnostics.SlideNotFound,
             "slide id",
             Invariant(op.SlideId!.Value),
-            presentation.Slides.Select(static item => Invariant(item.SlideId)).ToArray(),
-            hint: "Use a slideId from details.available, or address the slide by its number with 'slide'.");
+            presentation.Slides.Select(static item => Invariant(item.SlideId)).ToArray());
     }
 
     internal static IReadOnlyList<ISlide> ResolveSlides(Presentation presentation, string range) =>
@@ -54,8 +50,7 @@ internal static class SlidesMutationSupport
                     SlidesDiagnostics.ShapeNotFound,
                     "shape id",
                     Invariant(shapeId),
-                    shapes.Select(static item => Invariant(item.OfficeInteropShapeId)).ToArray(),
-                    hint: $"Use a shape id from details.available; {ShapeListing}.");
+                    shapes.Select(static item => Invariant(item.OfficeInteropShapeId)).ToArray());
         }
 
         if (op.ShapeName is { } name)
@@ -65,8 +60,7 @@ internal static class SlidesMutationSupport
                     SlidesDiagnostics.ShapeNotFound,
                     "shape",
                     name,
-                    Names(shapes.Select(static item => item.Name)),
-                    hint: $"Use a shape name from details.available, or address the shape by its 'shapeId'; {ShapeListing}.");
+                    Names(shapes.Select(static item => item.Name)));
         }
 
         string role = op.Placeholder!;
@@ -76,46 +70,21 @@ internal static class SlidesMutationSupport
                 SlidesDiagnostics.PlaceholderNotFound,
                 "placeholder",
                 role,
-                Names(shapes.Select(PlaceholderRole)),
-                hint: $"Use a placeholder role from details.available, or address the shape by its 'shapeId' or 'shapeName'; {ShapeListing}.");
+                Names(shapes.Select(PlaceholderRole)));
     }
 
     /// <summary>
     /// The shape whose text set_title replaces, the slide's title shape
     /// (<see cref="SlidesAuthoring.Title"/>). A slide without one is refused rather than given a
-    /// box over whatever it shows, and the refusal says how it gets one (<see cref="TitledBy"/>).
+    /// box over whatever it shows.
     /// </summary>
-    internal static IAutoShape ResolveTitle(Presentation presentation, ISlide slide) =>
+    internal static IAutoShape ResolveTitle(ISlide slide) =>
         SlidesAuthoring.Title(slide)
             ?? throw CliErrors.NotFound(
                 SlidesDiagnostics.PlaceholderNotFound,
                 "placeholder",
                 SlidesPlaceholderRoles.Title,
-                Names(slide.Shapes.Select(PlaceholderRole)),
-                hint: $"set_title writes a slide's title placeholder, and this slide has none{TitledBy(presentation, slide)}. Text that set_text writes into one of its shapes, or a text box insert_shape adds, shows on the slide but is not its title; {ShapeListing}.");
-
-    /// <summary>
-    /// How the slide gets a title placeholder that overwrites none it has: the set_layout of a layout
-    /// of its master with one, its own first and Title Only next, that set_layout finds by its name
-    /// and that keeps the role of each placeholder (<see cref="SlidesPlaceholders.Keeps"/>), or of
-    /// each but the footers, dates and slide numbers, which the batch deletes and set_footer sets again.
-    /// </summary>
-    private static string TitledBy(Presentation presentation, ISlide slide)
-    {
-        ILayoutSlide[] titled = [.. slide.LayoutSlide.MasterSlide.LayoutSlides
-            .Where(item => SlidesPlaceholders.HasTitle(item) && !string.IsNullOrWhiteSpace(item.Name) && ResolveLayout(presentation, item.Name, item.MasterSlide) == item)
-            .OrderBy(item => item != slide.LayoutSlide).ThenBy(static item => item.LayoutType != SlideLayoutType.TitleOnly)];
-        IEnumerable<bool> Moved(ILayoutSlide layout) => // whether each placeholder it would not keep is a footer, date or slide number
-            slide.Shapes.Where(shape => shape.Placeholder is { } placeholder && !SlidesPlaceholders.Keeps(layout, placeholder))
-            .Select(static shape => PlaceholderRole(shape) is SlidesPlaceholderRoles.Footer or SlidesPlaceholderRoles.Date or SlidesPlaceholderRoles.SlideNumber);
-        ILayoutSlide? layout = titled.FirstOrDefault(item => !Moved(item).Any()) ?? titled.FirstOrDefault(item => Moved(item).All(static footer => footer));
-        bool footers = layout is not null && Moved(layout).Any();
-        return layout is not null
-            ? $$""". To give it one, {{(footers ? "first delete_shape each footer, date and slide-number placeholder of the slide, then " : "")}}put {"op":"set_layout","slides":"{{Invariant(presentation.Slides.IndexOf(slide) + 1)}}","layout":"{{JsonEncodedText.Encode(layout.Name!, JavaScriptEncoder.UnsafeRelaxedJsonEscaping)}}"} before this set_title in its batch, where the slide's number counts the slides as the operations before it leave them{{(footers ? ", and after the set_title set them again with one set_footer that gives the footer's text, showNumber and showDate" : "")}}; the slide keeps its {{(footers ? "other " : "")}}shapes, so delete_shape a text box that stood for its title"""
-            : titled.Length > 0
-                ? ". A layout with one could give the title role to a placeholder the slide has other than a footer, date or slide number, whose text set_title would then overwrite, so look at its placeholders before you change its layout"
-                : ", and no layout of its master that set_layout can name has one";
-    }
+                Names(slide.Shapes.Select(PlaceholderRole)));
 
     /// <summary>
     /// The shape whose paragraphs set_body replaces: the slide's first body placeholder, else its
@@ -130,8 +99,7 @@ internal static class SlidesMutationSupport
                 SlidesDiagnostics.PlaceholderNotFound,
                 "placeholder",
                 SlidesPlaceholderRoles.Body,
-                Names(slide.Shapes.Select(PlaceholderRole)),
-                hint: $"set_body writes a body placeholder, or a subtitle where the slide has none, and this slide has neither: write the text into one of its shapes with set_text, or add a text box with insert_shape; {ShapeListing}.");
+                Names(slide.Shapes.Select(PlaceholderRole)));
 
     /// <summary>
     /// The layout a name names, case-insensitively: a layout of <paramref name="master"/>, a
@@ -156,8 +124,7 @@ internal static class SlidesMutationSupport
         if (found.Length > 1)
         {
             throw new OperationInvalidException(
-                $"{description} matches {found.Length} shapes on this slide (ids {string.Join(", ", found.Select(static item => Invariant(item.OfficeInteropShapeId)))}).",
-                "Address the shape by its 'shapeId' instead.");
+                $"{description} matches {found.Length} shapes on this slide (ids {string.Join(", ", found.Select(static item => Invariant(item.OfficeInteropShapeId)))}).");
         }
 
         return found.FirstOrDefault();
@@ -198,8 +165,7 @@ internal static class SlidesMutationSupport
 
     internal static CliException ChartDataInvalid(string reason) => new(
         SlidesDiagnostics.ChartDataInvalid,
-        $"Slides chart data is invalid: {reason}",
-        hint: "Use matching category and series lengths with a supported chart kind.");
+        $"Slides chart data is invalid: {reason}");
 
 }
 

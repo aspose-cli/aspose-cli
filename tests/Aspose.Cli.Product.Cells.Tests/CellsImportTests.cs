@@ -383,8 +383,6 @@ public sealed class CellsImportTests : IClassFixture<CellsFixture>
             }));
 
         Assert.Equal(code, error.Code.Name);
-        Assert.Contains("\"sourcePasswordEnv\"", error.Hint, StringComparison.Ordinal);
-        Assert.DoesNotContain("--password-env", error.Hint, StringComparison.Ordinal);
         Assert.Equal(source, error.Details!["path"]!.GetValue<string>());
     }
 

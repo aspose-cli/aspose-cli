@@ -166,7 +166,7 @@ public sealed record ReplaceTextOp : WordsOp
     {
         if (TextReplacement.Problem(Find, Regex, CaseSensitive) is { } problem)
         {
-            throw new OperationInvalidException(problem.Reason, problem.Hint);
+            throw new OperationInvalidException(problem);
         }
 
         return this;
@@ -558,8 +558,7 @@ public abstract record HeaderFooterOp : WordsOp
     {
         OperationInvalidException.Require(
             Paragraphs?.All(static paragraph => paragraph.List is null) != false,
-            "a header or footer paragraph takes no list",
-            "Give the paragraph text and a style; insert list items in the body with insert_paragraphs.");
+            "a header or footer paragraph takes no list");
         return this;
     }
 }
@@ -626,8 +625,7 @@ public sealed record SetPageNumbersOp : WordsOp
     {
         OperationInvalidException.Require(
             !new[] { "{PAGE}", "{NUMPAGES}", "{SECTIONPAGES}" }.Any(field => Text?.Contains(field, StringComparison.Ordinal) == true),
-            "text would write {PAGE}, {NUMPAGES} or {SECTIONPAGES} as literal words: they are how a read shows those fields",
-            "Write {n} for the page number and {N} for the page count.");
+            "text would write {PAGE}, {NUMPAGES} or {SECTIONPAGES} as literal words: they are how a read shows those fields");
         return this;
     }
 }
@@ -707,11 +705,10 @@ public sealed record FormatTextOp : WordsOp
     {
         OperationInvalidException.Require(
             Match is not null || !(Regex || CaseSensitive || WholeWord),
-            "regex, caseSensitive and wholeWord true need match, the text to match",
-            "Give match the text or pattern, or drop regex, caseSensitive and wholeWord.");
+            "regex, caseSensitive and wholeWord true need match, the text to match");
         if (Match is not null && TextReplacement.Problem(Match, Regex, CaseSensitive) is { } problem)
         {
-            throw new OperationInvalidException(problem.Reason, problem.Hint);
+            throw new OperationInvalidException(problem);
         }
 
         return this;
@@ -824,8 +821,7 @@ public sealed record SetListOp : WordsOp
     {
         OperationInvalidException.Require(
             Kind == "number" || (NumberStyle is null && NumberFormat is null && Start is null),
-            "numberStyle, numberFormat and start number a list, and a bullet list shows no numbers",
-            "Give kind number, or drop numberStyle, numberFormat and start.");
+            "numberStyle, numberFormat and start number a list, and a bullet list shows no numbers");
         if (NumberFormat is { } format)
         {
             // The pattern has checked that each % starts %% or a placeholder %1 to %9.
@@ -836,8 +832,7 @@ public sealed record SetListOp : WordsOp
                     char next = format[++index];
                     OperationInvalidException.Require(
                         next == '%' || next - '0' <= Level,
-                        $"numberFormat shows %{next}, the number of a level deeper than level {Level}",
-                        $"Use only %1 to %{Level} at level {Level}, and %% for a percent sign.");
+                        $"numberFormat shows %{next}, the number of a level deeper than level {Level}");
                 }
             }
         }
@@ -916,22 +911,19 @@ public sealed record SetPropertiesOp : WordsOp
             if (string.IsNullOrWhiteSpace(key))
             {
                 throw new OperationInvalidException(
-                    "custom must not name a property with a blank name",
-                    "Give every custom property a name.");
+                    "custom must not name a property with a blank name");
             }
 
             if (new[] { "title", "author", "subject", "keywords" }.FirstOrDefault(name => string.Equals(name, key, StringComparison.OrdinalIgnoreCase)) is { } standard)
             {
                 throw new OperationInvalidException(
-                    $"custom must not name the standard property '{key}'",
-                    $"Set it with the {standard} field instead.");
+                    $"custom must not name the standard property '{key}'");
             }
 
             if (key.StartsWith("custom:", StringComparison.Ordinal))
             {
                 throw new OperationInvalidException(
-                    $"custom must not name '{key}': the prefix 'custom:' marks a read key, not a name",
-                    "Name the property without the 'custom:' prefix.");
+                    $"custom must not name '{key}': the prefix 'custom:' marks a read key, not a name");
             }
         }
 

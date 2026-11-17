@@ -45,8 +45,7 @@ internal static class RenderCommand
                 {
                     throw CliErrors.OptionInvalid(
                         sheets.Name,
-                        "the range already names its sheet",
-                        "Qualify the sheet in one place only: drop --sheets, or the sheet name of --range.");
+                        "the range already names its sheet");
                 }
 
                 return new CellsRenderRequest
@@ -59,7 +58,6 @@ internal static class RenderCommand
                     Range = range?.Range,
                     Dpi = resolution,
                     Password = standard.InputPassword,
-                    Continuation = standard.Continuation,
                 };
             },
             Table)

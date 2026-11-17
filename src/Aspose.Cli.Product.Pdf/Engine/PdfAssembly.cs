@@ -194,7 +194,6 @@ internal static class PdfAssembly
             ? null
             : ContentLoss.Warning([ContentKind.Portfolios],
                 $"{(input is null ? "The input" : $"Input '{input}'")} is a PDF portfolio: its attachments were copied as plain attachments, but the portfolio presentation, such as its file list layout, columns and sort order, was not kept.",
-                "List the attachments with 'pdf inspect --detail attachments'; rebuild the portfolio in a PDF editor if readers must open it as a portfolio.",
                 affectsCompleteness: true);
 
     /// <summary>The name a reader shows for an attachment, or null when it has none.</summary>

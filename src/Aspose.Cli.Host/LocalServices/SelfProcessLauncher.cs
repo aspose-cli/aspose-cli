@@ -7,17 +7,14 @@ namespace Aspose.Cli.Host.LocalServices;
 /// <summary>Launches this executable as a silent background child.</summary>
 internal static class SelfProcessLauncher
 {
-    public static ProcessStartInfo CreateBackground(
-        string optionName,
-        string missingExecutableHint)
+    public static ProcessStartInfo CreateBackground(string optionName)
     {
         string? processPath = Environment.ProcessPath;
         if (processPath is null)
         {
             throw CliErrors.OptionInvalid(
                 optionName,
-                "the current executable path is unavailable",
-                missingExecutableHint);
+                "the current executable path is unavailable");
         }
 
         var start = new ProcessStartInfo(processPath)
@@ -37,14 +34,10 @@ internal static class SelfProcessLauncher
             {
                 throw CliErrors.OptionInvalid(
                     optionName,
-                    "the managed entry assembly is unavailable",
-                    missingExecutableHint);
+                    "the managed entry assembly is unavailable");
             }
 
-            start.ArgumentList.Add(ResolveManagedEntryAssemblyPath(
-                entryAssembly,
-                optionName,
-                missingExecutableHint));
+            start.ArgumentList.Add(ResolveManagedEntryAssemblyPath(entryAssembly, optionName));
         }
         foreach (string name in new[]
         {
@@ -65,10 +58,7 @@ internal static class SelfProcessLauncher
     /// than the assembly's own location, because a single-file app reports no
     /// location for what is embedded in it.
     /// </summary>
-    internal static string ResolveManagedEntryAssemblyPath(
-        Assembly entryAssembly,
-        string optionName,
-        string missingExecutableHint)
+    internal static string ResolveManagedEntryAssemblyPath(Assembly entryAssembly, string optionName)
     {
         ArgumentNullException.ThrowIfNull(entryAssembly);
         string path = Path.Combine(
@@ -78,8 +68,7 @@ internal static class SelfProcessLauncher
         {
             throw CliErrors.OptionInvalid(
                 optionName,
-                "the managed entry assembly path is unavailable",
-                missingExecutableHint);
+                "the managed entry assembly path is unavailable");
         }
 
         return Path.GetFullPath(path);

@@ -112,16 +112,15 @@ internal static class KnownViolations
     }
 
     /// <summary>
-    /// Runs one case: a rule case's check, with the hints of its runs as problems of its invariant
-    /// (<see cref="RuleWorkspace.CollectHintProblems"/>), or a scenario; a fixture that cannot be
-    /// built is a problem of its own.
+    /// Runs one case: a rule case's check or a scenario; a fixture that cannot be built is a
+    /// problem of its own.
     /// </summary>
     internal static IReadOnlyList<ScenarioProblem> Problems(InvariantCase item)
     {
         try
         {
             return item.Check is { } check
-                ? RuleWorkspace.CollectHintProblems(item.Invariant, check)
+                ? check()
                 : ScenarioRunner.Run(item.Scenario!).Problems;
         }
         catch (InvalidOperationException exception) when (exception.Message.StartsWith("A scenario fixture", StringComparison.Ordinal))
@@ -133,7 +132,7 @@ internal static class KnownViolations
     /// <summary>The invariant a problem breaks: a contract check names its own, an expectation the case's.</summary>
     public static string InvariantOf(InvariantCase item, string check) =>
         check is ScenarioContract.NoInternalError or ScenarioContract.ErrorEnvelope or ScenarioContract.ResultEnvelope
-            or ScenarioContract.TargetLocation or ScenarioContract.LocalPath or ScenarioContract.ByteOrderMark or ExecutableHints.Check
+            or ScenarioContract.TargetLocation or ScenarioContract.LocalPath or ScenarioContract.ByteOrderMark
             ? check
             : item.Invariant;
 

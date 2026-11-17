@@ -10,10 +10,9 @@ namespace Aspose.Cli.Product.Pdf.Tests;
 /// <summary>
 /// The Markdown export writes each picture it links as a file beside its output, which is
 /// published alone: a conversion to md keeps the text as the export writes it without the
-/// pictures, writes no picture file, and names the pictures it leaves out as <c>pictures</c> with
-/// the <c>pdf extract --what images</c> command that takes them out. The scenario
-/// <c>pdf-convert-of-a-pdf-with-a-picture-writes-every-format</c> runs the conversion and its hint
-/// in both license modes.
+/// pictures, writes no picture file, and names the pictures it leaves out as <c>pictures</c>. The
+/// scenario <c>pdf-convert-of-a-pdf-with-a-picture-writes-every-format</c> runs the conversion in
+/// both license modes.
 /// </summary>
 public sealed partial class PdfMarkdownPictureTests
 {
@@ -22,10 +21,10 @@ public sealed partial class PdfMarkdownPictureTests
 
     /// <summary>
     /// From the command line: the md holds the heading and both paragraphs and links no picture,
-    /// and the command the warning's hint gives, run as written, writes the picture as an image.
+    /// and the warning counts the picture.
     /// </summary>
     [Fact]
-    public void ConvertToMarkdown_KeepsTheTextAndItsHintTakesThePictureOut()
+    public void ConvertToMarkdown_KeepsTheTextAndCountsThePicture()
     {
         using var workspace = new TempWorkspace();
         File.WriteAllBytes(workspace.File("dot.png"), Convert.FromBase64String(Png));
@@ -44,20 +43,13 @@ public sealed partial class PdfMarkdownPictureTests
         Assert.DoesNotContain("](", markdown, StringComparison.Ordinal);
         JsonNode lost = Assert.Single(converted.Json()["warnings"]!.AsArray(), static warning => warning!["details"]?["content"]?.ToJsonString() == """["pictures"]""")!;
         Assert.Contains("1 of them stored as image objects", lost["message"]!.GetValue<string>(), StringComparison.Ordinal);
-
-        CliResult extracted = workspace.RunCommandLine(Assert.Single(QuotedCommand().Matches(lost["hint"]!.GetValue<string>())).Groups[1].Value);
-
-        Assert.True(extracted.ExitCode == 0, extracted.StdOut + extracted.StdErr);
-        string picture = Assert.Single(extracted.Json()["outputs"]!.AsArray())!["path"]!.GetValue<string>();
-        Assert.True(File.Exists(picture), picture);
-        Assert.EndsWith(".png", picture, StringComparison.Ordinal);
     }
 
     /// <summary>
-    /// The warning counts the pictures as the extraction its hint gives writes them: the two in
-    /// table cells, which the export writes no file for, as well as the two in the text. A scenario
-    /// cannot state the count, since its warning is found by its place in the list and evaluation
-    /// mode puts its own warning first, and the hint holds the workspace's path.
+    /// The warning counts the pictures as their extraction writes them: the two in table cells,
+    /// which the export writes no file for, as well as the two in the text. A scenario cannot state
+    /// the count, since its warning is found by its place in the list and evaluation mode puts its
+    /// own warning first.
     /// </summary>
     [Fact]
     public void ConvertToMarkdown_CountsThePicturesItsExtractionWrites()
@@ -77,9 +69,6 @@ public sealed partial class PdfMarkdownPictureTests
         Assert.True(converted.ExitCode == 0, converted.StdOut + converted.StdErr);
         JsonNode lost = Assert.Single(converted.Json()["warnings"]!.AsArray(), static warning => warning!["details"]?["content"]?.ToJsonString() == """["pictures"]""")!;
         Assert.Contains("4 of them stored as image objects", lost["message"]!.GetValue<string>(), StringComparison.Ordinal);
-        CliResult extracted = workspace.RunCommandLine(Assert.Single(QuotedCommand().Matches(lost["hint"]!.GetValue<string>())).Groups[1].Value);
-        Assert.True(extracted.ExitCode == 0, extracted.StdOut + extracted.StdErr);
-        Assert.Equal(4, extracted.Json()["outputs"]!.AsArray().Count);
     }
 
     /// <summary>
@@ -107,7 +96,6 @@ public sealed partial class PdfMarkdownPictureTests
         Assert.Equal(["out.md"], Directory.GetFileSystemEntries(folder).Select(Path.GetFileName));
         Warning[] named = [.. (result.Warnings ?? []).Where(static warning => warning.Details?["content"]?.ToJsonString() == """["pictures"]""")];
         Assert.Equal(pictures, named.Length);
-        Assert.All(named, static warning => Assert.Contains("'pdf extract --what images'", warning.Hint, StringComparison.Ordinal));
     }
 
     /// <summary>
@@ -283,6 +271,4 @@ public sealed partial class PdfMarkdownPictureTests
         return (result, folder);
     }
 
-    [GeneratedRegex("'(aspose-cli [^']+)'")]
-    private static partial Regex QuotedCommand();
 }

@@ -28,18 +28,13 @@ public sealed class PdfEvaluationLimitTests : IDisposable
         var refusal = new IndexOutOfRangeException("Only 4 elements of any collection can be viewed in evaluation mode.");
 
         CliException error = Assert.Throws<CliException>(() => EvaluationLimits.Run<int>(Outputs(LicenseState.Evaluation), () => throw refusal));
-        CliException selectable = Assert.Throws<CliException>(() => EvaluationLimits.Run<int>(
-            Outputs(LicenseState.Evaluation), () => throw refusal, static unit => unit == "pages" ? "--pages" : null));
         Exception licensed = Assert.Throws<IndexOutOfRangeException>(() => EvaluationLimits.Run<int>(Outputs(LicenseState.Licensed), () => throw refusal));
 
-        EvaluationLimits.AssertShape(error.Code.Name, error.Message, error.Hint, error.Details!.Select(static pair => pair.Key), "Aspose.PDF");
+        EvaluationLimits.AssertShape(error.Code.Name, error.Message, error.Details!.Select(static pair => pair.Key), "Aspose.PDF");
         Assert.Equal(4, error.Details!["limit"]!.GetValue<int>());
         Assert.Equal("pages", error.Details["unit"]!.GetValue<string>());
         Assert.Same(refusal, error.InnerException);
         Assert.Same(refusal, licensed);
-        // Only a command whose selection keeps the engine within the limit is offered one.
-        Assert.Equal("Apply an Aspose.PDF license.", error.Hint);
-        Assert.Equal("Apply an Aspose.PDF license, or pass --pages 1-4.", selectable.Hint);
     }
 
     [Fact]
@@ -55,10 +50,8 @@ public sealed class PdfEvaluationLimitTests : IDisposable
         EvaluationLimits.AssertShape(
             error["code"]!.GetValue<string>(),
             error["message"]!.GetValue<string>(),
-            error["hint"]?.GetValue<string>(),
             error["details"]!.AsObject().Select(static pair => pair.Key),
             "Aspose.PDF");
-        Assert.Contains("--pages 1-4", error["hint"]!.GetValue<string>(), StringComparison.Ordinal);
         Assert.Empty(Directory.GetFiles(_workspace.Path, "page*.png"));
     }
 
@@ -83,14 +76,13 @@ public sealed class PdfEvaluationLimitTests : IDisposable
             Assert.True(convert.ExitCode == 7, $"{format} {string.Join(' ', selection)}: {convert.StdOut}{convert.StdErr}");
             JsonNode error = JsonNode.Parse(convert.StdErr)!["error"]!;
             AssertLimit(error);
-            Assert.Equal("Apply an Aspose.PDF license. " + RequestedEvaluation, error["hint"]!.GetValue<string>());
             Assert.Equal(["six.pdf"], Directory.GetFiles(_workspace.Path).Select(Path.GetFileName));
         }
     }
 
     /// <summary>Page text reads only the pages it shows, so a selection within the limit is offered.</summary>
     [Fact]
-    public void EvaluationMode_ConvertOfEveryPageToText_OffersASelectionWithinTheLimit()
+    public void EvaluationMode_ConvertOfEveryPageToText_ReportsTheLimit()
     {
         CreateSixPages();
         const string format = "txt";
@@ -103,7 +95,6 @@ public sealed class PdfEvaluationLimitTests : IDisposable
         Assert.True(every.ExitCode == 7, every.StdOut + every.StdErr);
         JsonNode error = JsonNode.Parse(every.StdErr)!["error"]!;
         AssertLimit(error);
-        Assert.Equal("Apply an Aspose.PDF license, or pass --pages 1-4. " + RequestedEvaluation, error["hint"]!.GetValue<string>());
         Assert.True(first.ExitCode == 0, first.StdErr);
     }
 
@@ -121,12 +112,10 @@ public sealed class PdfEvaluationLimitTests : IDisposable
 
     /// <summary>
     /// A merge in evaluation mode of inputs that hold more pages than evaluation mode reads is
-    /// refused before the engine reads them: the hint states the pages the inputs hold and the
-    /// limit, offers the merge of fewer, and, as evaluation mode was requested, how to apply the
-    /// configured license instead. The details keep only the limit and its unit.
+    /// refused before the engine reads them; the details keep only the limit and its unit.
     /// </summary>
     [Fact]
-    public void RequestedEvaluation_MergePastThePageLimit_HintStatesThePagesAndTheWaysAround()
+    public void RequestedEvaluation_MergePastThePageLimit_ReportsTheLimit()
     {
         using (var fixture = new PdfEngineFixture())
         {
@@ -140,11 +129,6 @@ public sealed class PdfEvaluationLimitTests : IDisposable
         Assert.True(merge.ExitCode == 7, merge.StdOut + merge.StdErr);
         JsonNode error = JsonNode.Parse(merge.StdErr)!["error"]!;
         Assert.Equal("EVALUATION_LIMIT", error["code"]!.GetValue<string>());
-        string hint = error["hint"]!.GetValue<string>();
-        Assert.StartsWith("Apply an Aspose.PDF license", hint, StringComparison.Ordinal);
-        Assert.Contains("5 pages", hint, StringComparison.Ordinal);
-        Assert.Contains("at most 4 pages in total", hint, StringComparison.Ordinal);
-        Assert.EndsWith(RequestedEvaluation, hint, StringComparison.Ordinal);
         Assert.Equal(["limit", "unit"], error["details"]!.AsObject().Select(static pair => pair.Key).Order(StringComparer.Ordinal));
         Assert.Equal(4, error["details"]!["limit"]!.GetValue<int>());
         Assert.False(File.Exists(_workspace.File("merged.pdf")));
@@ -152,13 +136,9 @@ public sealed class PdfEvaluationLimitTests : IDisposable
 
     public void Dispose() => _workspace.Dispose();
 
-    /// <summary>The sentence that ends the hint of an evaluation limit when the command asked for evaluation mode.</summary>
-    private const string RequestedEvaluation = "Evaluation mode was requested: drop --license-mode evaluation to apply the configured license.";
-
     private static void AssertLimit(JsonNode error) => EvaluationLimits.AssertShape(
         error["code"]!.GetValue<string>(),
         error["message"]!.GetValue<string>(),
-        error["hint"]?.GetValue<string>(),
         error["details"]!.AsObject().Select(static pair => pair.Key),
         "Aspose.PDF");
 

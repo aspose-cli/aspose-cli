@@ -109,7 +109,7 @@ public sealed class BoundedOperationModelTests
     {
         var model = new Model(static (_, _) => { })
         {
-            Explanation = static op => new NoEffect(NoEffectReasons.NoMatch, $"Operation {op.Id} (note) found no anchor.") { Hint = "Add an anchor." },
+            Explanation = static op => new NoEffect(NoEffectReasons.NoMatch, $"Operation {op.Id} (note) found no anchor.") { },
         };
 
         AppliedBatch applied = BoundedOperationRunner.Run(Catalog, Batch(new NoteOp { Text = "n" }), bestEffort: false, deadline: null, model);
@@ -117,7 +117,6 @@ public sealed class BoundedOperationModelTests
         Warning warning = Assert.Single(applied.Warnings);
         Assert.Equal(NoEffectReasons.NoMatch, warning.Details!["reason"]!.GetValue<string>());
         Assert.Equal("Operation op-0001 (note) found no anchor.", warning.Message);
-        Assert.Equal("Add an anchor.", warning.Hint);
     }
 
     [Fact]
@@ -205,7 +204,7 @@ public sealed class BoundedOperationModelTests
     {
         var model = new Model(static (_, document) => document.Pages[0] = "A");
         VerificationIssue issue = VerificationIssues.Of(
-            DiagnosticDescriptor.Verification("TEST_MISMATCH", "test"), "Operation op-0001 (set): page 1 reads 'a'.", "page/1", "Inspect the page.");
+            DiagnosticDescriptor.Verification("TEST_MISMATCH", "test"), "Operation op-0001 (set): page 1 reads 'a'.", "page/1");
 
         AppliedBatch applied = BoundedOperationRunner.Run(Catalog, Batch(new SetOp { Value = 1 }), bestEffort: false, deadline: null, model, new Verifier());
         VerifiedBatch verified = applied.Verified(new VerificationFacts([issue], ["op-0001"]));
@@ -229,14 +228,14 @@ public sealed class BoundedOperationModelTests
     }
 
     /// <summary>
-    /// A warning that affects completeness is an issue with its location and hint, before the
+    /// A warning that affects completeness is an issue with its location, before the
     /// issues of the read-back, and fails the verification; any other warning is none.
     /// </summary>
     [Fact]
-    public void Verified_ReportsAWarningThatAffectsCompletenessAsAnIssue_WithItsLocationAndHint()
+    public void Verified_ReportsAWarningThatAffectsCompletenessAsAnIssue_WithItsLocation()
     {
         var model = new Model(static (_, document) => document.Pages[0] = "A");
-        var lost = new Warning(WarningCodes.LossyConversion, "Content was lost.") { Location = "page/1", Hint = "Keep it.", AffectsCompleteness = true };
+        var lost = new Warning(WarningCodes.LossyConversion, "Content was lost.") { Location = "page/1", AffectsCompleteness = true };
         var informational = new Warning(WarningCodes.OpNoEffect, "Nothing changed.");
         VerificationIssue mismatch = VerificationIssues.Of(DiagnosticDescriptor.Verification("TEST_MISMATCH", "test"), "Page 1 reads 'a'.");
         var facts = new VerificationFacts([], ["op-0001"]);
@@ -250,7 +249,6 @@ public sealed class BoundedOperationModelTests
         VerificationIssue issue = Assert.Single(verified.Issues);
         Assert.Equal(VerificationIssue.From(lost), issue);
         Assert.Equal("page/1", issue.Location);
-        Assert.Equal("Keep it.", issue.Hint);
         Assert.Equal([issue, mismatch], both.Issues);
     }
 

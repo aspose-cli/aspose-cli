@@ -31,14 +31,6 @@ internal static class PdfRedactionAudit
     /// <param name="Pages">The identities of the pages it covered, or null for every page.</param>
     internal sealed record Redaction(string Id, Regex Pattern, IReadOnlyList<PdfPageIdentity>? Pages);
 
-    private const string Hint =
-        "Nothing was written. Take the text out where the location names it, with set_form_field, set_properties or clear_properties, "
-        + "delete_bookmarks or delete_attachment, then redact again; search the pages with 'pdf search'.";
-
-    private const string PropertyHint =
-        "Nothing was written. The document's own property still holds text the pattern matches: add clear_properties before "
-        + "redact_text in the same batch, which also removes the XMP metadata, or redact with a more specific pattern.";
-
     /// <summary>Every place the output still matches a redaction's pattern.</summary>
     /// <param name="output">The reopened output.</param>
     /// <param name="properties">The document's properties before the save (<see cref="Properties"/>).</param>
@@ -64,8 +56,7 @@ internal static class PdfRedactionAudit
                 issues.Add(VerificationIssues.Of(
                     PdfDiagnostics.VerificationIncomplete,
                     $"Operation '{redaction.Id}' (redact_text): its pattern exceeded its time budget, so the output could not be searched for it and was not written.",
-                    location: null,
-                    "Simplify the expression, then redact again."));
+                    location: null));
             }
         }
 
@@ -74,8 +65,8 @@ internal static class PdfRedactionAudit
 
     private static void Check(Document output, IReadOnlyDictionary<string, string> properties, Redaction redaction, int[] pages, LicenseState license, OperationDeadline? deadline, List<VerificationIssue> issues)
     {
-        void Found(string place, string location, string hint) => issues.Add(VerificationIssues.Of(
-            PdfDiagnostics.RedactedTextFound, $"Operation '{redaction.Id}' (redact_text): {place} of the output still matches its pattern.", location, hint));
+        void Found(string place, string location) => issues.Add(VerificationIssues.Of(
+            PdfDiagnostics.RedactedTextFound, $"Operation '{redaction.Id}' (redact_text): {place} of the output still matches its pattern.", location));
 
         foreach (int number in pages)
         {
@@ -89,13 +80,12 @@ internal static class PdfRedactionAudit
                 issues.Add(VerificationIssues.Of(
                     PdfDiagnostics.RedactedTextFound,
                     string.Create(CultureInfo.InvariantCulture, $"Operation '{redaction.Id}' (redact_text): page {number} of the output still has {remaining} match(es) of its pattern."),
-                    location,
-                    "Nothing was written. Check whether a later operation added the text again, or redact the area with redact_area, then search the output with 'pdf search'."));
+                    location));
             }
 
             if (page.Annotations.Where(static annotation => annotation is not WidgetAnnotation).Any(annotation => Matches(redaction.Pattern, Texts(annotation))))
             {
-                Found(string.Create(CultureInfo.InvariantCulture, $"an annotation on page {number}"), location, Hint);
+                Found(string.Create(CultureInfo.InvariantCulture, $"an annotation on page {number}"), location);
             }
         }
 
@@ -104,7 +94,7 @@ internal static class PdfRedactionAudit
             if ((redaction.Pages is null || PdfForms.PageOf(field) is int page && pages.Contains(page))
                 && Matches(redaction.Pattern, [PdfForms.State(field).Value]))
             {
-                Found($"the value of form field {PdfInfoProjection.Address("field", name)}", PdfInfoProjection.Address("field", name), Hint);
+                Found($"the value of form field {PdfInfoProjection.Address("field", name)}", PdfInfoProjection.Address("field", name));
             }
         }
 
@@ -117,7 +107,7 @@ internal static class PdfRedactionAudit
         {
             if (Matches(redaction.Pattern, [item.Title]))
             {
-                Found($"the title of bookmark {item.Bookmark}", $"bookmark/{item.Bookmark}", Hint);
+                Found($"the title of bookmark {item.Bookmark}", $"bookmark/{item.Bookmark}");
             }
         }
 
@@ -129,7 +119,7 @@ internal static class PdfRedactionAudit
                 string address = key.StartsWith(XmpPrefix, StringComparison.Ordinal)
                     ? $"property/xmp:{TargetName.Escape(key[XmpPrefix.Length..])}"
                     : PdfInfoProjection.PropertyAddress(key[InfoPrefix.Length..]);
-                Found($"document property {address}", address, PropertyHint);
+                Found($"document property {address}", address);
             }
         }
 
@@ -137,11 +127,11 @@ internal static class PdfRedactionAudit
         {
             if (Matches(redaction.Pattern, [attachment.Name]))
             {
-                Found("the name of an attachment", "attachment/all", Hint);
+                Found("the name of an attachment", "attachment/all");
             }
             else if (Matches(redaction.Pattern, [file.Description]))
             {
-                Found($"the description of attachment {PdfInfoProjection.Address("attachment", attachment.Name)}", PdfInfoProjection.Address("attachment", attachment.Name), Hint);
+                Found($"the description of attachment {PdfInfoProjection.Address("attachment", attachment.Name)}", PdfInfoProjection.Address("attachment", attachment.Name));
             }
         }
     }

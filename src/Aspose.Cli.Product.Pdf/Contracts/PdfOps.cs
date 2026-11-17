@@ -501,28 +501,22 @@ public sealed record SetPropertiesOp : PdfOp
         {
             OperationInvalidException.Require(
                 key.Length > 0,
-                "custom must not have an empty name",
-                "Give each custom entry a name.");
+                "custom must not have an empty name");
 
             // PDF-INFO-KEY-BEYOND-LATIN1: the engine writes such a name garbled.
             OperationInvalidException.Require(
                 key.All(static character => character <= 'ÿ'),
-                $"custom must not name '{key}': a name with characters beyond Latin-1 is written garbled",
-                "Name the custom entry with Latin-1 characters, such as ASCII letters; its value may hold any text.");
+                $"custom must not name '{key}': a name with characters beyond Latin-1 is written garbled");
 
             if (PdfPropertyNames.Standard(key) is { } standard)
             {
                 throw new OperationInvalidException(
-                    $"custom must not name the standard entry '{key}'",
-                    standard.Field is { } field
-                        ? $"Set it with the {field} field instead."
-                        : $"The engine writes '{standard.Name}' into every PDF it saves; drop it from custom.");
+                    $"custom must not name the standard entry '{key}'");
             }
 
             OperationInvalidException.Require(
                 !key.StartsWith("info:", StringComparison.OrdinalIgnoreCase) && !key.StartsWith("xmp:", StringComparison.OrdinalIgnoreCase),
-                $"custom must not name '{key}': names starting with info: or xmp: are reserved for how 'pdf inspect' reports entries",
-                "Name the custom entry without the info: or xmp: prefix.");
+                $"custom must not name '{key}': names starting with info: or xmp: are reserved for how 'pdf inspect' reports entries");
         }
 
         return this;
@@ -643,12 +637,11 @@ public sealed record DeleteBookmarksOp : PdfOp
         foreach (string bookmark in Bookmarks)
         {
             OperationInvalidException.Require(
-                seen.Add(bookmark), $"bookmarks must not repeat \"{bookmark}\"", $"Remove the repeated \"{bookmark}\".");
+                seen.Add(bookmark), $"bookmarks must not repeat \"{bookmark}\"");
             if (Bookmarks.FirstOrDefault(other => bookmark.StartsWith(other + "/", StringComparison.Ordinal)) is { } parent)
             {
                 throw new OperationInvalidException(
-                    $"bookmarks must not list \"{bookmark}\" with \"{parent}\": deleting bookmark {parent} already deletes its children",
-                    $"Remove \"{bookmark}\" from bookmarks.");
+                    $"bookmarks must not list \"{bookmark}\" with \"{parent}\": deleting bookmark {parent} already deletes its children");
             }
         }
 
@@ -745,7 +738,7 @@ public sealed record FlattenFormsOp : PdfOp
 }
 
 /// <summary>Encrypts the document with AES-256; the published file needs the user password to open when one is set.</summary>
-[Operation("encrypt_document"), EncryptsOutput]
+[Operation("encrypt_document")]
 [MistakenFor("encrypt")]
 public sealed record EncryptDocumentOp : PdfOp
 {

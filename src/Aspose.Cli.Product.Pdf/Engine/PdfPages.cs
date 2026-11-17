@@ -46,8 +46,7 @@ internal static class PdfPages
     /// <see cref="FormValuesNotInText"/> names.
     /// </summary>
     /// <param name="document">The document read.</param>
-    /// <param name="inspection">The command line that reads the input's field values, or null for a command made without one.</param>
-    internal sealed class TextReading(Document document, string? inspection)
+    internal sealed class TextReading(Document document)
     {
         private readonly List<int> _read = [];
 
@@ -79,7 +78,6 @@ internal static class PdfPages
                 : new Warning(PdfDiagnostics.FormValuesNotInText,
                     $"The page text leaves out the values of {filled.Count} filled form field{(filled.Count == 1 ? "" : "s")} on the pages read: {PdfForms.Listed(filled)}.")
                 {
-                    Hint = $"A field's value is not page text: read the values with {PdfForms.Inspection(inspection)}, which gives each field's name, value, page and rect.",
                     Location = filled.Count == 1 ? PdfInfoProjection.Address("field", filled[0]) : null,
                 };
         }

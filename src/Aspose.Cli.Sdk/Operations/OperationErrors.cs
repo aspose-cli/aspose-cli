@@ -24,20 +24,18 @@ internal static class OperationErrors
     /// </summary>
     /// <param name="reason">One of <see cref="OpsInvalidReasons"/>.</param>
     /// <param name="explanation">Why, completing the message.</param>
-    /// <param name="hint">The next step.</param>
     /// <param name="field">The path of the field it is about, if any.</param>
     /// <param name="allowed">The unknown or mistyped field's object and the fields it accepts, if any.</param>
-    internal static CliException Invalid(string reason, string explanation, string hint, string? field = null, AllowedFieldsException? allowed = null)
+    internal static CliException Invalid(string reason, string explanation, string? field = null, AllowedFieldsException? allowed = null)
     {
         var details = new JsonObject { ["reason"] = reason, ["field"] = field };
         AddAllowedFields(details, allowed);
-        return CliException.Create(ErrorCodes.OpsInvalid, $"The operation document is invalid: {explanation}{Listed(allowed?.Mistake)}",
-            hint: allowed?.Mistake?.Hint(hint) ?? hint, details: details);
+        return CliException.Create(ErrorCodes.OpsInvalid, $"The operation document is invalid: {explanation}{Listed(allowed?.Mistake)}", details: details);
     }
 
     /// <summary>Rejects the document as a whole for the serializer's rejection, by its reason and field.</summary>
-    internal static CliException Invalid(JsonException rejection, string hint) =>
-        Invalid(ReasonOf(rejection), rejection.Message, hint, FieldOf(rejection), rejection as AllowedFieldsException);
+    internal static CliException Invalid(JsonException rejection) =>
+        Invalid(ReasonOf(rejection), rejection.Message, FieldOf(rejection), rejection as AllowedFieldsException);
 
     /// <summary>
     /// Rejects one operation; <paramref name="name"/> is null when the entry names no known
@@ -46,7 +44,7 @@ internal static class OperationErrors
     /// closest as <c>suggestions</c>.
     /// </summary>
     internal static CliException InvalidAt(
-        string id, string? name, string reason, string explanation, string hint, string? field = null, ErrorCode? cause = null,
+        string id, string? name, string reason, string explanation, string? field = null, ErrorCode? cause = null,
         AllowedFieldsException? allowed = null, Mistake? value = null, string? path = null)
     {
         JsonObject details = Identify(id, name);
@@ -57,17 +55,16 @@ internal static class OperationErrors
         AddAllowedFields(details, allowed);
         value?.WriteTo(details);
         Mistake? mistake = value ?? allowed?.Mistake;
-        return CliException.Create(ErrorCodes.OpsInvalid, $"{Subject(id, name)} is invalid: {explanation}{Listed(mistake)}",
-            hint: mistake?.Hint(hint) ?? hint, details: details);
+        return CliException.Create(ErrorCodes.OpsInvalid, $"{Subject(id, name)} is invalid: {explanation}{Listed(mistake)}", details: details);
     }
 
     /// <summary>Rejects one operation the serializer could not read, by the rejection's reason and field.</summary>
-    internal static CliException InvalidAt(string id, string? name, JsonException rejection, string hint) =>
-        InvalidAt(id, name, ReasonOf(rejection), rejection.Message, hint, FieldOf(rejection), allowed: rejection as AllowedFieldsException);
+    internal static CliException InvalidAt(string id, string? name, JsonException rejection) =>
+        InvalidAt(id, name, ReasonOf(rejection), rejection.Message, FieldOf(rejection), allowed: rejection as AllowedFieldsException);
 
     /// <summary>Rejects one operation whose value its constraints, its own check or its handler refused.</summary>
-    internal static CliException InvalidAt(string id, string name, OperationInvalidException rejection, string defaultHint) =>
-        InvalidAt(id, name, OpsInvalidReasons.InvalidValue, rejection.Message, rejection.Hint ?? defaultHint, rejection.Field,
+    internal static CliException InvalidAt(string id, string name, OperationInvalidException rejection) =>
+        InvalidAt(id, name, OpsInvalidReasons.InvalidValue, rejection.Message, rejection.Field,
             value: rejection.Mistake, path: rejection.Path);
 
     /// <summary>
@@ -91,8 +88,7 @@ internal static class OperationErrors
             : $"{failures.Count} problems make {operations} operations invalid";
         return CliException.Create(
             ErrorCodes.OpsInvalid,
-            $"{counted}, each listed in details.errors; the first: {first.Message}",
-            hint: first.Hint, details: details);
+            $"{counted}, each listed in details.errors; the first: {first.Message}", details: details);
     }
 
     /// <summary>
@@ -100,14 +96,13 @@ internal static class OperationErrors
     /// <c>available</c> and, when some are likely meant, naming them in <c>suggestions</c>;
     /// <c>details.op</c> is the op name as the entry wrote it, so the caller finds the entry.
     /// </summary>
-    internal static CliException UnknownAt(string id, string explanation, string hint, Mistake operation)
+    internal static CliException UnknownAt(string id, string explanation, Mistake operation)
     {
         JsonObject details = Identify(id, operation.Requested);
         details["reason"] = OpsInvalidReasons.UnknownOp;
         details["field"] = "op";
         operation.WriteTo(details);
-        return CliException.Create(ErrorCodes.OpsInvalid, $"{Subject(id, name: null)} is invalid: {explanation}{Listed(operation)}",
-            hint: operation.Hint(hint), details: details);
+        return CliException.Create(ErrorCodes.OpsInvalid, $"{Subject(id, name: null)} is invalid: {explanation}{Listed(operation)}", details: details);
     }
 
     /// <summary>Keeps a domain failure's own code (for example SHEET_NOT_FOUND) and names the operation.</summary>
@@ -116,8 +111,7 @@ internal static class OperationErrors
         JsonObject details = cause.Details?.DeepClone().AsObject() ?? [];
         details["id"] = id;
         details["op"] = name;
-        return CliException.Create(cause.Code, $"{Subject(id, name)} failed: {cause.Message}",
-            hint: cause.Hint, details: details, innerException: cause);
+        return CliException.Create(cause.Code, $"{Subject(id, name)} failed: {cause.Message}", details: details, innerException: cause);
     }
 
     /// <summary>

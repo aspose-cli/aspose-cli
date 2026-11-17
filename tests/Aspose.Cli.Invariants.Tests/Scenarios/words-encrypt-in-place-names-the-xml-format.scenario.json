@@ -13,9 +13,7 @@
         "exitCode": 2,
         "error": "OPTION_INVALID",
         "json": [
-          { "path": "error.message", "contains": "'wordml' format cannot be password-protected" },
-          { "path": "error.hint", "contains": "--out" },
-          { "path": "error.hint", "contains": ".docx" }
+          { "path": "error.message", "contains": "'wordml' format cannot be password-protected" }
         ],
         "files": { "nothingWritten": true }
       }
@@ -27,8 +25,7 @@
         "exitCode": 2,
         "error": "OPTION_INVALID",
         "json": [
-          { "path": "error.message", "contains": "'flatopc' format cannot be password-protected" },
-          { "path": "error.hint", "contains": "--out" }
+          { "path": "error.message", "contains": "'flatopc' format cannot be password-protected" }
         ],
         "files": { "nothingWritten": true }
       }

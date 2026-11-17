@@ -6,36 +6,8 @@ using Xunit;
 
 namespace Aspose.Cli.Platform.Tests.Sdk;
 
-public sealed class ContinuationCommandTests
+public sealed class ReadContinuationTests
 {
-    [Fact]
-    public void ToString_NamesThisExecutableQuotesValuesAndAsksForJson()
-    {
-        string command = new ContinuationCommand("pdf", "query", "pages")
-            .Argument(@"C:\My Files\report $1.pdf")
-            .Option("--pages", "4-9,12")
-            .Flag("--notes")
-            .Flag("--hidden", enabled: false)
-            .Option("--max-chars", 20_000)
-            .ToString();
-
-        Assert.Equal(
-            DistributionInfo.CommandName
-                + " pdf query pages \"C:\\My Files\\report \\$1.pdf\" --pages 4-9,12 --notes --max-chars 20000 --output-format json",
-            command);
-    }
-
-    [Theory]
-    [InlineData("Sales", "Sales")]
-    [InlineData("A1:F50", "A1:F50")]
-    [InlineData("", "\"\"")]
-    [InlineData("Q1 Sales", "\"Q1 Sales\"")]
-    [InlineData("say \"hi\"", "\"say \\\"hi\\\"\"")]
-    [InlineData("`cmd`", "\"\\`cmd\\`\"")]
-    [InlineData("@list", "\"@list\"")]
-    public void Quote_LeavesSafeTokensBareAndEscapesShellSpecials(string value, string expected) =>
-        Assert.Equal(expected, CommandLineText.Quote(value));
-
     [Fact]
     public void After_ResumesAfterTheLastCompletePartAsRanges()
     {

@@ -171,11 +171,11 @@ public sealed class SlidesOutputEncryptionTests : IDisposable
     }
 
     /// <summary>
-    /// An encrypted source an <c>import_slides</c> names without its variable is refused with a
-    /// hint that names the operation's own password field, not a command option.
+    /// An encrypted source an <c>import_slides</c> names without its variable is refused with
+    /// <c>PASSWORD_REQUIRED</c>.
     /// </summary>
     [Fact]
-    public void ImportSlides_WithoutItsVariable_HintNamesSourcePasswordEnv()
+    public void ImportSlides_WithoutItsVariable_IsPasswordRequired()
     {
         using var fixture = new SlidesEngineFixture();
         string input = fixture.CreatePresentation("base.pptx", slides: 1);
@@ -189,8 +189,6 @@ public sealed class SlidesOutputEncryptionTests : IDisposable
         }));
 
         Assert.Equal(ErrorCodes.PasswordRequired, error.Code);
-        Assert.Contains("\"sourcePasswordEnv\"", error.Hint, StringComparison.Ordinal);
-        Assert.DoesNotContain("--password-env", error.Hint, StringComparison.Ordinal);
     }
 
     /// <summary>

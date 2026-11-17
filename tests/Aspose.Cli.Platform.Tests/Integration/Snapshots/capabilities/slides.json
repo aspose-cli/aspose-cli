@@ -5139,7 +5139,7 @@
           }
         },
         "window": {
-          "description": "The window of the read or search: how much it returned and how to continue.",
+          "description": "The window of the read or search: how much it returned and the option values that continue it.",
           "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/result-window.schema.json"
         },
         "license": {
@@ -5798,7 +5798,7 @@
           }
         },
         "window": {
-          "description": "The window of the read or search: how much it returned and how to continue.",
+          "description": "The window of the read or search: how much it returned and the option values that continue it.",
           "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/result-window.schema.json"
         },
         "license": {

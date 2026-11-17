@@ -64,7 +64,6 @@ public sealed class SlidesShapeAddressingTests
         }));
 
         Assert.Equal(SlidesDiagnostics.ShapeNotFound, error.Code);
-        Assert.Contains("'shapeId'", error.Hint!, StringComparison.Ordinal);
         Assert.Equal("op-0001", (string)error.Details!["id"]!);
         Assert.Equal("title 2", (string?)error.Details["requested"]);
         Assert.Contains("Title 2", error.Details["available"]!.AsArray().Select(static name => (string?)name));
@@ -94,7 +93,6 @@ public sealed class SlidesShapeAddressingTests
 
         Assert.Equal(ErrorCodes.OpsInvalid, error.Code);
         Assert.Contains("matches 2 shapes", error.Message, StringComparison.Ordinal);
-        Assert.Contains("'shapeId'", error.Hint!, StringComparison.Ordinal);
     }
 
     [Fact]

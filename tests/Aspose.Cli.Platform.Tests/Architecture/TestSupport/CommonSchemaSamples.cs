@@ -25,7 +25,6 @@ internal static class CommonSchemaSamples
                 ["requested"] = "missing",
                 ["available"] = new JsonArray("first", "second"),
             },
-            Hint = "Use one of the available item names.",
         },
     };
 

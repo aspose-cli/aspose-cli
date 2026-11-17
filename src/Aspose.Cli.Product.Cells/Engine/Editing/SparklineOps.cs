@@ -68,9 +68,7 @@ internal static class SparklineOps
 
             throw new OperationInvalidException(
                 $"'at' overlaps sparkline {(overlapped.Count == 1 ? "group" : "groups")} {string.Join(" and ", numbers)} on sheet '{sheet.Name}', "
-                    + $"drawn in {string.Join(" and ", places)}, and a cell holds one sparkline",
-                hint: $"Clear {(overlapped.Count == 1 ? "that group" : "those groups")} first with {string.Join(",", clears)}, "
-                    + "which clears the values and formats in those cells too, or draw these sparklines in other cells.");
+                    + $"drawn in {string.Join(" and ", places)}, and a cell holds one sparkline");
         }
 
         // Known issue CELLS-SPARKLINE-APOSTROPHE (KNOWN-ISSUES.md): the engine's

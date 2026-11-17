@@ -16,8 +16,7 @@
         "exitCode": 0,
         "warnings": { "present": ["ROWS_SHIFTED"] },
         "json": [
-          { "path": "warnings[0].message", "contains": "1 row inserted at right row 3" },
-          { "path": "warnings[0].hint", "contains": "'aspose-cli cells read <left workbook> --sheet Sheet1 --range A3:B3 --output-format json', then 'aspose-cli cells read <right workbook> --sheet Sheet1 --range A3:B3 --output-format json'" }
+          { "path": "warnings[0].message", "contains": "1 row inserted at right row 3" }
         ]
       }
     },
@@ -27,8 +26,7 @@
         "exitCode": 0,
         "warnings": { "present": ["ROWS_SHIFTED"] },
         "json": [
-          { "path": "warnings[0].message", "contains": "1 row deleted at left row 3" },
-          { "path": "warnings[0].hint", "contains": "'aspose-cli cells read <left workbook> --sheet Sheet1 --range A3:B3 --output-format json', then 'aspose-cli cells read <right workbook> --sheet Sheet1 --range A3:B3 --output-format json'" }
+          { "path": "warnings[0].message", "contains": "1 row deleted at left row 3" }
         ]
       }
     },
@@ -40,10 +38,7 @@
       "args": ["cells", "compare", "left.xlsx", "renamed.xlsx"],
       "expect": {
         "exitCode": 0,
-        "warnings": { "present": ["ROWS_SHIFTED"] },
-        "json": [
-          { "path": "warnings[0].hint", "contains": "'aspose-cli cells read <left workbook> --sheet Sheet1 --range A3:B3 --output-format json', then 'aspose-cli cells read <right workbook> --sheet \"My Data\" --range A3:B3 --output-format json'" }
-        ]
+        "warnings": { "present": ["ROWS_SHIFTED"] }
       }
     },
     {

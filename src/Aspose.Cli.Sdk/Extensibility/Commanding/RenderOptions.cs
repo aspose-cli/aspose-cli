@@ -60,13 +60,10 @@ public sealed class DpiOption
         {
             throw CliErrors.OptionInvalid(
                 typed.Name,
-                $"{format.Id} output is vector and has no pixel size",
-                $"Drop {typed.Name} to render {format.Id}, or render --to png at that size.");
+                $"{format.Id} output is vector and has no pixel size");
         }
 
-        return parse.GetInRange(
-            _dpi,
-            string.Create(CultureInfo.InvariantCulture, $"Use {RenderPixelGuard.MinimumDpi}-{RenderPixelGuard.MaximumDpi} DPI; {RenderPixelGuard.DefaultDpi} gives crisp text."));
+        return parse.GetInRange(_dpi);
     }
 }
 

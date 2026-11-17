@@ -7,8 +7,8 @@ namespace Aspose.Cli.Product.Slides.Tests;
 /// <summary>
 /// A Markdown output holds the slides' text alone, so a convert to it warns
 /// <c>LOSSY_CONVERSION</c> with <c>details.content</c> <c>["pictures"]</c>, naming the converted
-/// slides that show pictures and how many pictures they show: as many as the
-/// <c>slides extract --what media</c> of its hint writes, which counts a picture shown twice
+/// slides that show pictures and how many pictures they show: as many as
+/// <c>slides extract --what media</c> writes, which counts a picture shown twice
 /// once and a slide's background and picture fills too. A layout's picture is the deck's design
 /// and counts on no slide; a video is no picture. Every text here is at most five characters
 /// long, which evaluation mode reads whole.
@@ -40,8 +40,6 @@ public sealed class SlidesMarkdownPictureTests
 
         Warning warning = Assert.Single(PictureWarnings(result));
         Assert.Equal("The md output holds the slides' text alone and leaves out the 2 picture(s) shown on slide(s) 2.", warning.Message);
-        Assert.Contains(" --what media --slides 2 --out-dir ", warning.Hint, StringComparison.Ordinal);
-        Assert.Contains(Path.Combine(Path.GetDirectoryName(output)!, "pictured.pictures"), warning.Hint, StringComparison.Ordinal);
         Assert.False(warning.AffectsCompleteness);
         string markdown = File.ReadAllText(output);
         Assert.Contains("T2", markdown, StringComparison.Ordinal);
@@ -126,10 +124,10 @@ public sealed class SlidesMarkdownPictureTests
 
     /// <summary>
     /// One picture shown once on slide 2 and twice on slide 3 is one picture: the warning says so,
-    /// and the extract its hint names writes one image file for it.
+    /// and the media extract writes one image file for it.
     /// </summary>
     [Fact]
-    public void Warning_CountsAPictureShownOnSeveralSlides_AsTheExtractOfItsHintWritesIt()
+    public void Warning_CountsAPictureShownOnSeveralSlides_AsTheExtractWritesIt()
     {
         using var fixture = new SlidesEngineFixture();
         string input = fixture.File("repeated.pptx");
@@ -164,7 +162,6 @@ public sealed class SlidesMarkdownPictureTests
         });
 
         Assert.Equal("The md output holds the slides' text alone and leaves out the 1 picture(s) shown on slide(s) 2, 3.", warning.Message);
-        Assert.Contains(" --slides 2,3 ", warning.Hint, StringComparison.Ordinal);
         Assert.Single(extracted.Outputs);
     }
 

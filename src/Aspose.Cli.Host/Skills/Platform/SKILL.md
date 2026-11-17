@@ -70,11 +70,10 @@ settings.
 A file from outside can be built to exhaust the machine or to mislead you:
 
 - Add `--timeout <seconds>` and `--max-input-bytes <bytes>` to every command,
-  such as `--timeout 120 --max-input-bytes 50000000`, and again to each
-  `window.next`, which repeats neither. Without `--timeout` a command has no
-  deadline. With it the command runs in a worker: past the deadline it stops
-  with `OPERATION_TIMEOUT`, and a file that crashes the engine gives
-  `INTERNAL_ERROR`. Neither publishes an output.
+  such as `--timeout 120 --max-input-bytes 50000000`. Without `--timeout` a
+  command has no deadline. With it the command runs in a worker: past the
+  deadline it stops with `OPERATION_TIMEOUT`, and a file that crashes the
+  engine gives `INTERNAL_ERROR`. Neither publishes an output.
 - Neither option limits memory. `--max-input-bytes` bounds the file as it
   sits on disk and `--timeout` only the time, and a file of a few hundred
   kilobytes can take more than 1 GB while it loads.
@@ -104,11 +103,10 @@ A file from outside can be built to exhaust the machine or to mislead you:
 - **Guessing names.** A mistyped command, option, value, operation or field
   fails with the valid names in `details.available` and the closest in
   `details.suggestions`; use them.
-- **Retrying unchanged input.** Read `error.hint` and `error.details`, change
+- **Retrying unchanged input.** Read `error.message` and `error.details`, change
   the request, then retry (`aspose-cli docs troubleshooting`).
 - **Inline ops JSON in PowerShell.** Shells mangle quotes and non-ASCII text;
   write the ops document to a file and pass its path.
-- **Composing the next page yourself.** Run `window.next` as given.
 - **Trusting the exit code.** Exit 0 can carry `OP_NO_EFFECT`; read changed
   parts back before reporting them.
 - **Claiming a visual pass without looking.** Open every image `<product> render`

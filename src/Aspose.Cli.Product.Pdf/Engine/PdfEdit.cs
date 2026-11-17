@@ -29,8 +29,7 @@ internal static class PdfEdit
         {
             throw CliErrors.OptionInvalid(
                 "--encrypt-env",
-                $"it encrypts the output and would replace the passwords and permissions that operation {encrypt.Id} (encrypt_document) sets",
-                "Remove --encrypt-env (or --encrypt-stdin) to keep the operation's passwords and permissions, or remove the encrypt_document operation to encrypt with --encrypt-env alone.");
+                $"it encrypts the output and would replace the passwords and permissions that operation {encrypt.Id} (encrypt_document) sets");
         }
 
         LicenseState state = session.Outputs.License;
@@ -52,11 +51,6 @@ internal static class PdfEdit
         PdfEditVerifier? verifier = request.Verify ? new PdfEditVerifier(loaded.Document, model.PageIdentities) : null;
         AppliedBatch applied = BoundedOperationRunner.Run(
             PdfOp.Catalog, batch.Ops, request.Options.BestEffort, deadline: null, model, verifier, PdfSnapshots.PageUnit);
-        if (batch.Ops.Any(static op => op is DecryptDocumentOp))
-        {
-            session.Outputs.Decrypted();
-        }
-
         // PDF-ENCRYPTED-INFO-TEXT: document information beyond Latin-1 set in this batch survives
         // only an encryption applied to a reopened copy.
         EncryptDocumentOp? encryptCopy = batch.Ops.Any(static op => op is SetPropertiesOp)
@@ -78,7 +72,7 @@ internal static class PdfEdit
         try
         {
             publication = Publish(session, loaded.Document, request, request.EncryptPassword ?? model.OutputPassword, encryptCopy, precondition, model, verifier, applied,
-                () => [.. warnings, .. Navigation().Warnings(request.OutlineInspection)], state,
+                () => [.. warnings, .. Navigation().Warnings()], state,
                 output =>
                 {
                     intactAfter = intact.Count == 0 ? intact : PdfInfoProjection.IntactSignatures(output);
@@ -96,7 +90,7 @@ internal static class PdfEdit
         finally { operationInputs.ThrowIfFailed(); }
         // Navigation the batch left leading to no page: only what led to a page still in the output
         // leaves it incomplete.
-        warnings.AddRange(Navigation().Warnings(request.OutlineInspection));
+        warnings.AddRange(Navigation().Warnings());
         if (SignaturesInvalidated(intact, publication.Output is null ? null : intactAfter, request.Options.DryRun) is { } invalidated)
         {
             warnings.Insert(0, invalidated);
@@ -241,10 +235,7 @@ internal static class PdfEdit
         return ids.Length == 0
             ? null
             : new Warning(PdfDiagnostics.MetadataRewritten, $"Aspose.PDF writes the creator, producer and modificationDate document information into every PDF it saves, "
-                + $"so the output holds them although {(ids.Length == 1 ? "operation " : "operations ")}{string.Join(", ", ids)} removed or set them.")
-            {
-                Hint = "They name the PDF library and the time of this save, and no operation removes them; the operation's targets name only the entries the output changed.",
-            };
+                + $"so the output holds them although {(ids.Length == 1 ? "operation " : "operations ")}{string.Join(", ", ids)} removed or set them.");
     }
 
     /// <summary>
@@ -256,8 +247,6 @@ internal static class PdfEdit
             $"Operation '{id}' (add_page_numbers) numbered {PageList(pages)}, whose header or footer already shows a page number, so {(pages.Count == 1 ? "it shows" : "they show")} two.")
         {
             Location = $"{PdfSnapshots.PageUnit}/{pages[0].ToString(CultureInfo.InvariantCulture)}",
-            Hint = $"A PDF converted from a Word document or a spreadsheet often numbers its pages already: read the page with 'pdf read --pages {pages[0].ToString(CultureInfo.InvariantCulture)}' to see the number it shows. "
-                + "To keep one number, edit the input again without add_page_numbers, or with its pages limited to the pages that show none.",
             Details = new JsonObject { ["id"] = id, ["op"] = "add_page_numbers" },
         };
 
@@ -301,10 +290,7 @@ internal static class PdfEdit
             : new Warning(WarningCodes.SignatureInvalidated,
                 $"{(names.Length == 1 ? "Signature" : "Signatures")} {string.Join(", ", names.Select(static name => $"'{name}'"))} of the input "
                 + (dryRun ? "would no longer be intact in the output" : "no longer verify over the whole output")
-                + ": saving the edited PDF rewrites the bytes a signature covers, also when no operation changed anything.")
-            {
-                Hint = "Validate signatures again and apply any required signature only after the final edit; to keep a signature, deliver the signed file unedited.",
-            };
+                + ": saving the edited PDF rewrites the bytes a signature covers, also when no operation changed anything.");
     }
 
     /// <summary>
@@ -352,8 +338,6 @@ internal static class PdfEdit
             warnings.Add(new Warning(PdfDiagnostics.RedactionTextMoved, (textMoved.Count == 1 ? "Operation " : "Operations ") + string.Join(", ", textMoved)
                     + " moved the text that followed what was removed on its line to the left, so part of it may now lie under the cover.")
             {
-                Hint = "The moved text is still in the file and searchable; to keep the line visible, redact the source document and create the PDF again. "
-                    + "When only the PDF exists, tell the user that text after the redacted values on those pages may be hidden.",
                 AffectsCompleteness = true,
             });
         }
@@ -365,8 +349,6 @@ internal static class PdfEdit
                 "Redaction covers also removed characters of neighbouring lines beside what they selected, not counting spaces: "
                     + string.Join("; ", textBeside) + ". The engine removes the characters of a neighbouring line that a cover overlaps.")
             {
-                Hint = "A cover always spans all it selects, so nothing of it shows, also on a scanned image under the text. "
-                    + "Render the pages with 'pdf render' to see what else was covered; to keep that text, redact the source document and create the PDF again.",
                 AffectsCompleteness = true,
             });
         }
@@ -419,16 +401,13 @@ internal static class PdfEdit
             EncryptedOutput.Option => $"The output {(dryRun ? "would open" : "opens")} only with the --encrypt password, which grants every permission.",
             "decrypt_document" => $"The output {(dryRun ? "would not be encrypted, so it would no longer restrict" : "is not encrypted, so it no longer restricts")} anyone.",
             "encrypt_document" => $"The output {(dryRun ? "would be" : "is")} encrypted with the passwords and permissions the encrypt operation set.",
-            _ => $"The output {(dryRun ? "would keep" : "keeps")} the input's encryption and permissions; edit with the owner password to change them.",
+            _ => $"The output {(dryRun ? "would keep" : "keeps")} the input's encryption and permissions.",
         };
         string opened = openPassword
             ? "The input was opened with its user password, whose permissions"
             : "The input has no open password and was opened without its owner password, so its reader permissions apply; they";
         return new Warning(WarningCodes.ProtectionNotEnforced, $"{opened} do not allow {string.Join(", ", changes)}; the engine does not enforce them, so "
-                + (dryRun ? "the batch would change it if it were not a dry run." : "the batch changed it."))
-        {
-            Hint = $"Confirm that the document's owner authorized the change. {output}",
-        };
+                + (dryRun ? "the batch would change it if it were not a dry run. " : "the batch changed it. ") + output);
     }
 
     private static bool Permitted(string op, Permissions granted) => op switch

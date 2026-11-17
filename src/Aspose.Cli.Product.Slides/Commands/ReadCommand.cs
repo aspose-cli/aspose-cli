@@ -49,8 +49,8 @@ internal static class ReadCommand
                 CommandHelpLink.Docs(SlidesModule.Manifest, "verification", "slide read-back and visual review"),
                 new("aspose-cli docs reading", "reading every product within bounded windows"),
             ],
-            Finish = (_, request, result, standard) =>
-                result with { Window = result.Window with { Next = Next(standard.Continuation(), slides.Name, request, result) } },
+            Finish = (_, request, result, _) =>
+                result with { Window = result.Window with { Next = Next(slides.Name, request, result) } },
         };
     }
 
@@ -82,10 +82,10 @@ internal static class ReadCommand
     }
 
     /// <summary>
-    /// The read that resumes where this one stopped, or null when it covered the selection.
-    /// Without --slides the selection is every slide, read ten at a time.
+    /// The option values of the read that resumes where this one stopped, or null when it covered
+    /// the selection. Without --slides the selection is every slide, read ten at a time.
     /// </summary>
-    private static string? Next(ContinuationCommand resume, string slidesOption, SlidesReadRequest request, SlidesReadResult result)
+    private static IReadOnlyDictionary<string, string>? Next(string slidesOption, SlidesReadRequest request, SlidesReadResult result)
     {
         if (!result.Window.Truncated || result.SlideCount == 0)
         {
@@ -97,13 +97,6 @@ internal static class ReadCommand
         return ReadContinuation.After(
                 selection,
                 [.. result.Slides.Select(static slide => new ReadPart(slide.Slide, slide.ContentTruncated))],
-                request.MaxCharacters) is { } continuation
-            ? resume
-                .Option(slidesOption, continuation.Parts)
-                .Option("--content", request.Content)
-                .Flag("--notes", request.IncludeNotes)
-                .Option(MaxCharactersOption.Name, continuation.MaxCharacters)
-                .ToString()
-            : null;
+                request.MaxCharacters)?.Next(slidesOption);
     }
 }

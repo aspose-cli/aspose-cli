@@ -39,23 +39,23 @@ public static class OptionGuards
 
     /// <summary>Reads an option declared with <see cref="InRange{T}"/>.</summary>
     /// <exception cref="CliException"><c>OPTION_INVALID</c> outside the declared bounds.</exception>
-    public static int GetInRange(this ParseResult parse, Option<int> option, string? hint = null)
+    public static int GetInRange(this ParseResult parse, Option<int> option)
     {
         ArgumentNullException.ThrowIfNull(parse);
         int value = parse.GetValue(option);
-        Ensure(option, value, hint);
+        Ensure(option, value);
         return value;
     }
 
     /// <summary>Reads an optional option declared with <see cref="InRange{T}"/>; an absent value is null.</summary>
     /// <exception cref="CliException"><c>OPTION_INVALID</c> outside the declared bounds.</exception>
-    public static int? GetInRange(this ParseResult parse, Option<int?> option, string? hint = null)
+    public static int? GetInRange(this ParseResult parse, Option<int?> option)
     {
         ArgumentNullException.ThrowIfNull(parse);
         int? value = parse.GetValue(option);
         if (value is { } present)
         {
-            Ensure(option, present, hint);
+            Ensure(option, present);
         }
 
         return value;
@@ -63,13 +63,13 @@ public static class OptionGuards
 
     /// <summary>Reads an optional option declared with <see cref="InRange{T}"/>; an absent value is null.</summary>
     /// <exception cref="CliException"><c>OPTION_INVALID</c> outside the declared bounds.</exception>
-    public static long? GetInRange(this ParseResult parse, Option<long?> option, string? hint = null)
+    public static long? GetInRange(this ParseResult parse, Option<long?> option)
     {
         ArgumentNullException.ThrowIfNull(parse);
         long? value = parse.GetValue(option);
         if (value is { } present)
         {
-            Ensure(option, present, hint);
+            Ensure(option, present);
         }
 
         return value;
@@ -80,19 +80,17 @@ public static class OptionGuards
         string option,
         int value,
         int min,
-        int max,
-        string hint)
+        int max)
     {
         if (value < min || value > max)
         {
             throw CliErrors.OptionInvalid(
                 option,
-                $"value must be between {min} and {max}",
-                hint);
+                $"value must be between {min} and {max}");
         }
     }
 
-    private static void Ensure(Option option, long value, string? hint)
+    private static void Ensure(Option option, long value)
     {
         if (!Declared.TryGetValue(option, out Bounds? bounds))
         {
@@ -103,8 +101,7 @@ public static class OptionGuards
         {
             throw CliErrors.OptionInvalid(
                 option.Name,
-                string.Create(CultureInfo.InvariantCulture, $"value must be between {bounds.Minimum} and {bounds.Maximum}"),
-                hint ?? string.Create(CultureInfo.InvariantCulture, $"Pass a value from {bounds.Minimum} to {bounds.Maximum}."));
+                string.Create(CultureInfo.InvariantCulture, $"value must be between {bounds.Minimum} and {bounds.Maximum}"));
         }
     }
 
@@ -160,7 +157,6 @@ public static class JsonInputSource
         return CliException.Create(
             missing.Code,
             missing.Message,
-            hint: $"{missing.Hint} To pass the JSON itself, start the value with {{ or [ (inline) or use '-' for stdin.",
             details: missing.Details,
             docs: missing.Docs);
     }
@@ -170,8 +166,7 @@ public static class JsonInputSource
     {
         if (string.IsNullOrWhiteSpace(source))
         {
-            throw CliErrors.OptionInvalid(option, "the value is empty",
-                "Pass a path to the document, inline JSON starting with { or [, or '-' for stdin.");
+            throw CliErrors.OptionInvalid(option, "the value is empty");
         }
         if (source == "-") { return JsonSourceKind.StandardInput; }
         string trimmed = source.TrimStart();
@@ -198,8 +193,7 @@ internal static class StandardInputSources
         {
             throw CliErrors.OptionInvalid(
                 readers[1].Name,
-                $"stdin can hold one value, and {Spelled(readers[0])} reads it",
-                "Pass one value on stdin and the other through a file or its -env option.");
+                $"stdin can hold one value, and {Spelled(readers[0])} reads it");
         }
     }
 
@@ -260,7 +254,7 @@ internal sealed class OutputFileOption
         PathResolver paths,
         params IReadOnlyList<string?> inputPaths) =>
         Resolve(parseResult, paths, inputPaths)
-            ?? throw CliErrors.OptionInvalid(OutOption, "is required", "Pass the output file path.");
+            ?? throw CliErrors.OptionInvalid(OutOption, "is required");
 
     /// <summary>
     /// Resolves an output file the caller names, such as a create command's file argument,
@@ -276,20 +270,12 @@ internal sealed class OutputFileOption
         PathResolver paths,
         string output,
         string parameter,
-        params IReadOnlyList<string?> inputPaths) =>
-        ResolveExplicit(paths, output, parameter, inPlaceAvailable: false, inputPaths);
-
-    internal static string ResolveExplicit(
-        PathResolver paths,
-        string output,
-        string parameter,
-        bool inPlaceAvailable,
-        IReadOnlyList<string?> inputPaths)
+        params IReadOnlyList<string?> inputPaths)
     {
         ArgumentNullException.ThrowIfNull(paths);
         RefuseStandardStream(output, parameter);
         string resolved = paths.ResolveOutput(output, parameter);
-        EnsureNotInput(resolved, parameter, inPlaceAvailable, inputPaths);
+        EnsureNotInput(resolved, parameter, inputPaths);
         return resolved;
     }
 
@@ -299,33 +285,30 @@ internal sealed class OutputFileOption
     /// </summary>
     /// <param name="output">The output as given.</param>
     /// <param name="parameter">The option or argument that names it.</param>
-    /// <param name="directory">Whether the output is a directory.</param>
     /// <exception cref="CliException"><c>OPTION_INVALID</c> for <c>-</c>.</exception>
-    internal static void RefuseStandardStream(string output, string parameter, bool directory = false)
+    internal static void RefuseStandardStream(string output, string parameter)
     {
         if (output == "-")
         {
-            throw CliErrors.OutputIsStandardStream(parameter, directory);
+            throw CliErrors.OutputIsStandardStream(parameter);
         }
     }
 
     /// <summary>Rejects a resolved output, named by the caller or derived, that is one of the inputs.</summary>
     /// <param name="output">The resolved output path.</param>
     /// <param name="parameter">The option or argument that names the output, or would name it, for the error.</param>
-    /// <param name="inPlaceAvailable">Whether the command can replace its input in place instead.</param>
     /// <param name="inputPaths">The resolved input files; an absent optional input is null.</param>
     /// <exception cref="CliException"><c>OPTION_INVALID</c> when the output resolves to an input.</exception>
     internal static void EnsureNotInput(
         string output,
         string parameter,
-        bool inPlaceAvailable,
         IReadOnlyList<string?> inputPaths)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(parameter);
         ArgumentNullException.ThrowIfNull(inputPaths);
         if (inputPaths.Any(input => input is not null && OutputPathValidator.IsSameFile(output, input)))
         {
-            throw CliErrors.OutputIsInput(parameter, output, inPlaceAvailable);
+            throw CliErrors.OutputIsInput(parameter, output);
         }
     }
 
@@ -407,8 +390,7 @@ public sealed class PasswordOptions
     /// <summary>The error of a required password that no option gave.</summary>
     internal CliException Missing() => CliErrors.OptionInvalid(
         $"{_prefix}-env",
-        "the password is required",
-        $"Name the environment variable that holds it with {_prefix}-env, or pass it on stdin with {_prefix}-stdin.");
+        "the password is required");
 
     /// <summary>The options that supply the password, in help order.</summary>
     public IReadOnlyList<Option> Options =>
@@ -432,15 +414,6 @@ public sealed class PasswordOptions
 
     /// <summary>The environment variable the caller named for the password, or null.</summary>
     internal string? EnvironmentName(ParseResult parseResult) => parseResult.GetValue(_fromEnvironment);
-
-    /// <summary>
-    /// How a command that continues the invocation passes this password on: the option that names
-    /// its variable, with the variable the caller named, or with none when the caller gave the
-    /// password on stdin or literally, which a printed command never repeats, so the command names
-    /// a placeholder for a variable instead; null when no password was given.
-    /// </summary>
-    internal (string Option, string? Variable)? Continued(ParseResult parseResult) =>
-        SelectedOption(parseResult) is null ? null : (EnvironmentOption, EnvironmentName(parseResult));
 
     /// <summary>
     /// Returns the option that supplies the secret, or null when none was given, so an error
@@ -477,10 +450,7 @@ public sealed class PasswordOptions
         {
             throw CliErrors.OptionInvalid(
                 _prefix,
-                "more than one password source was given",
-                _required
-                    ? $"Use only one of {_prefix}-env or {_prefix}-stdin."
-                    : $"Use only one of {_prefix}, {_prefix}-env or {_prefix}-stdin.");
+                "more than one password source was given");
         }
 
         if (literal is not null)
@@ -489,8 +459,7 @@ public sealed class PasswordOptions
                 ? new Secret(literal)
                 : throw CliErrors.OptionInvalid(
                     _prefix,
-                    "the password is empty",
-                    $"Pass a non-empty password, or drop {_prefix} entirely.");
+                    "the password is empty");
         }
 
         if (environmentName is not null)
@@ -498,7 +467,7 @@ public sealed class PasswordOptions
             string? value = readEnvironment(environmentName);
             return !string.IsNullOrEmpty(value)
                 ? new Secret(value)
-                : throw CliErrors.SecretMissing($"{_prefix}-env", environmentName, $"{_prefix}-stdin");
+                : throw CliErrors.SecretMissing($"{_prefix}-env", environmentName);
         }
 
         if (!fromStandardInput)
@@ -508,13 +477,12 @@ public sealed class PasswordOptions
 
         // Piped or redirected, stdin holds bytes, read as UTF-8 as every value on stdin is; at a console, what is typed.
         string line = Console.IsInputRedirected
-            ? inputs.ReadSecretLine(Console.OpenStandardInput(), $"{_prefix}-stdin", EnvironmentOption)
+            ? inputs.ReadSecretLine(Console.OpenStandardInput(), $"{_prefix}-stdin")
             : inputs.ReadSecretLine(Console.In);
         return !string.IsNullOrEmpty(line)
             ? new Secret(line)
             : throw CliErrors.OptionInvalid(
                 $"{_prefix}-stdin",
-                "no password was provided on stdin",
-                "Provide the password as the first line of standard input.");
+                "no password was provided on stdin");
     }
 }

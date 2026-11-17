@@ -26,12 +26,11 @@ public sealed class VerificationIssueTests
     public void Of_TakesTheCodeFromTheDescriptor()
     {
         VerificationIssue issue = VerificationIssues.Of(
-            CountChanged, "The count changed.", "sheet:Data", "Inspect the sheet.");
+            CountChanged, "The count changed.", "sheet:Data");
 
         Assert.Equal("TEST_COUNT_CHANGED", issue.Code);
         Assert.Equal("The count changed.", issue.Message);
         Assert.Equal("sheet:Data", issue.Location);
-        Assert.Equal("Inspect the sheet.", issue.Hint);
     }
 
     [Fact]
@@ -43,11 +42,10 @@ public sealed class VerificationIssueTests
     }
 
     [Fact]
-    public void From_KeepsTheWarningsLocationAndHint()
+    public void From_KeepsTheWarningsLocation()
     {
         var warning = new Warning(new WarningCode("TEST_WARNING"), "A bounded warning.")
         {
-            Hint = "Inspect the affected item.",
             Docs = "test/verification",
             Location = "page:2",
             AffectsCompleteness = true,
@@ -56,8 +54,8 @@ public sealed class VerificationIssueTests
         VerificationIssue issue = VerificationIssue.From(warning);
 
         Assert.Equal(
-            ("TEST_WARNING", "A bounded warning.", "page:2", "Inspect the affected item."),
-            (issue.Code, issue.Message, issue.Location, issue.Hint));
+            ("TEST_WARNING", "A bounded warning.", "page:2"),
+            (issue.Code, issue.Message, issue.Location));
     }
 
     [Fact]

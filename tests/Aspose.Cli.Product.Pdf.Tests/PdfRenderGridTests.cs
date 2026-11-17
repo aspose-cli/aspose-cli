@@ -123,7 +123,6 @@ public sealed class PdfRenderGridTests
         }));
 
         Assert.Equal("Invalid use of --grid: applies only to png and jpeg output", error.Message);
-        Assert.Equal("Render the page with --to png or --to jpeg to draw a coordinate grid.", error.Hint);
     }
 
     [Fact]

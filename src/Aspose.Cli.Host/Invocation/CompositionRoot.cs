@@ -95,8 +95,7 @@ internal static class CompositionRoot
             ? full
             : throw CliErrors.OptionInvalid(
                 GlobalOptionNames.WorkDir,
-                $"directory does not exist: {full}",
-                "Pass an existing directory, or drop --workdir to use the current directory.");
+                $"directory does not exist: {full}");
     }
 
     private static string? ResolveLicensePath(

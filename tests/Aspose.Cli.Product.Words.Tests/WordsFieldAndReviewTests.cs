@@ -325,7 +325,6 @@ public sealed class WordsFieldAndReviewTests
         Assert.Equal(["op-0001", "op-0002"], warnings.Select(static warning => warning.Details!["id"]!.GetValue<string>()));
         Assert.All(warnings, static warning => Assert.Equal("no-match", warning.Details!["reason"]!.GetValue<string>()));
         Assert.Contains("accept_revisions", warnings[0].Message, StringComparison.Ordinal);
-        Assert.Contains("'Li (B)'", warnings[0].Hint, StringComparison.Ordinal);
         Assert.Contains("delete_comments", warnings[1].Message, StringComparison.Ordinal);
         Assert.Equal(6, new Document(output).Revisions.Count);
     }

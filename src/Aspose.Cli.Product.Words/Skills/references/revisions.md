@@ -91,9 +91,9 @@ the `LOSSY_CONVERSION` warnings a convert of a `docx` redline to that format
 reports, except for the revisions it is written to show: a `pdf`, `html` or
 e-book redline marks them and is not warned about them, while a `txt` or `md`
 redline cannot mark them (deleted text stands beside inserted text, and
-inserted or reformatted text reads as any other) and warns, with a hint to
-write it as DOCX, PDF or HTML. An `epub`, `azw3`, `mobi`, `txt`
-or `md` redline also leaves out the headers and footers and names them.
+inserted or reformatted text reads as any other) and warns. An `epub`,
+`azw3`, `mobi`, `txt` or `md` redline also leaves out the headers and
+footers and names them.
 
 `--granularity word` (the default) marks whole changed words. Chinese and
 Japanese text has no spaces between words, so a one-character edit marks the

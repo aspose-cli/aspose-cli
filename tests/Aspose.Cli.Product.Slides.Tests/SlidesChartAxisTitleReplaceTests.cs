@@ -22,9 +22,6 @@ public sealed class SlidesChartAxisTitleReplaceTests : IDisposable
 
     private const string AxisTitle = "axis-title";
 
-    private const string NoOperationHint =
-        "No operation changes a chart's axis titles, so the chart keeps that text: report it as unchanged, or change it in a presentation editor.";
-
     private readonly TempWorkspace _workspace = new();
 
     public SlidesChartAxisTitleReplaceTests() => ScenarioLicense.Project(_workspace.Path);
@@ -33,8 +30,7 @@ public sealed class SlidesChartAxisTitleReplaceTests : IDisposable
 
     /// <summary>
     /// A find text an axis title holds leaves the title as it was and warns at the chart's shape
-    /// address, with a hint that gives no address or operation to run, while the text box with the
-    /// same text changes.
+    /// address, while the text box with the same text changes.
     /// </summary>
     [Fact]
     public void ReplaceText_LeavesAMatchingAxisTitleAndSaysNoOperationChangesIt()
@@ -54,7 +50,6 @@ public sealed class SlidesChartAxisTitleReplaceTests : IDisposable
         Assert.Equal(
             $"Operation year (replace_text) found a match in an axis title of chart 'Sales' (shapeId {chartId}) on slide 2 and left it as it was: replace_text does not change a chart's axis titles.",
             warning["message"]!.GetValue<string>());
-        Assert.Equal(NoOperationHint, warning["hint"]!.GetValue<string>());
 
         using var output = new Presentation(_workspace.File("out.pptx"));
         ISlide slide = output.Slides[1];
@@ -165,7 +160,6 @@ public sealed class SlidesChartAxisTitleReplaceTests : IDisposable
         Assert.Equal(
             $"Operation year (replace_text) found a match in an axis title of chart 'Sales' (shapeId {chartId}) in group 'Pair' (shapeId {groupId}) on slide 1 and left it as it was: replace_text does not change a chart's axis titles.",
             warning.Message);
-        Assert.Equal(NoOperationHint, warning.Hint);
     }
 
     /// <summary>

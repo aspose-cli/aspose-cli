@@ -29,7 +29,6 @@ public sealed class WordsVerificationIssueTests
         VerificationIssue issue = Assert.Single(result.Verification.Issues);
         Assert.Equal("PROTECTION_MISMATCH", issue.Code);
         Assert.Contains("expected read-only, found none", issue.Message, StringComparison.Ordinal);
-        Assert.Equal("odt may not keep protection; save to docx or another Word format and verify again.", issue.Hint);
     }
 
     [Fact]
@@ -67,32 +66,6 @@ public sealed class WordsVerificationIssueTests
             });
 
         Assert.Equal(["op-0001"], result.Verification!.CheckedOps);
-    }
-
-    /// <summary>
-    /// No realistic edit loses this state through a Word-format save, so the hint is checked
-    /// directly: advising a Word format again would send the caller round the same loop.
-    /// </summary>
-    [Theory]
-    [InlineData("docx")]
-    [InlineData("doc")]
-    [InlineData("flatopc")]
-    public void Hint_ForAWordFormatOutput_DoesNotAdviseSavingToAWordFormat(string format)
-    {
-        string hint = WordsEdit.KeepStateHint("fields", format, WordsFormats.WordIds);
-
-        Assert.DoesNotContain("save to", hint, StringComparison.Ordinal);
-        Assert.Contains($"did not survive save and reopen in {format}", hint, StringComparison.Ordinal);
-    }
-
-    [Theory]
-    [InlineData("odt")]
-    [InlineData("rtf")]
-    public void Hint_ForRevisionsInAFormatThatStoresThem_DoesNotAdviseAnotherFormat(string format)
-    {
-        string hint = WordsEdit.KeepStateHint("tracked revisions", format, WordsFormats.RevisionIds);
-
-        Assert.DoesNotContain("save to", hint, StringComparison.Ordinal);
     }
 
     [Fact]

@@ -97,7 +97,6 @@ internal sealed record WorkbookSavePlan(string FormatId, SaveFormat Format, Save
         return new Warning(CellsDiagnostics.SheetsDropped, string.Create(CultureInfo.InvariantCulture,
             $"Only worksheet '{written.Name}' was exported; the '{FormatId}' output holds one worksheet, so {dropped.Length} other worksheet(s) were not written: {named}."))
         {
-            Hint = "Use a multi-sheet format (xlsx, xlsb, ods, pdf) to retain every worksheet.",
             AffectsCompleteness = true,
         };
     }
@@ -144,7 +143,6 @@ internal sealed record WorkbookSavePlan(string FormatId, SaveFormat Format, Save
         if (others > 0) { lost.Add($"{others} other drawing(s), such as text boxes, shapes or groups,"); kinds.Add(ContentKind.Shapes); }
         return lost.Count == 0 ? null : ContentLoss.Warning(kinds,
             $"The '{FormatId}' output holds the cells of worksheet '{sheet.Name}' as a table, so its {string.Join(" and ", lost)} were not written.",
-            "To keep them, render the sheet as an image with aspose-cli cells render, or convert to xlsx or pdf.",
             affectsCompleteness: true);
     }
 

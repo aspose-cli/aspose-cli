@@ -14,7 +14,6 @@ internal static class PublicationErrors
         Exception? inner = null) => CliException.Create(
         ErrorCodes.OutputConflict,
         $"Output changed while the operation was preparing to publish it: {path}",
-        hint: "Inspect the newer file, then retry from that version or choose a different output path.",
         details: new JsonObject
         {
             ["path"] = path,
@@ -72,7 +71,6 @@ internal static class PublicationErrors
             return CliException.Create(
                 original.Code,
                 original.Message,
-                hint: original.Hint,
                 details: originalDetails,
                 docs: original.Docs,
                 innerException: original);
@@ -85,9 +83,6 @@ internal static class PublicationErrors
             recovery.RecoveryComplete
                 ? "The output set could not be published; every target was restored and verified."
                 : "The output set could not be published and recovery left one or more targets in an unknown or mixed state.",
-            hint: recovery.RecoveryComplete
-                ? "Correct the original output error and retry."
-                : "Stop modifying the listed targets, inspect details.targets, and restore unknown targets from a trusted backup before retrying.",
             details: details,
             innerException: commitFailure);
     }

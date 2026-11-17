@@ -97,7 +97,6 @@ public sealed class PdfRenderSelectionTests
         Assert.Equal("--pages", error.Details!["option"]!.GetValue<string>());
         Assert.Equal(20, error.Details["limit"]!.GetValue<int>());
         Assert.Equal(21, error.Details["actual"]!.GetValue<int>());
-        Assert.Contains("--pages 1-20", error.Hint, StringComparison.Ordinal);
         Assert.Empty(Directory.GetFiles(fixture.File("out")));
     }
 

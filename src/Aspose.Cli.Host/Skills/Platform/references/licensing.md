@@ -14,9 +14,9 @@ aspose-cli license status --output-format json
 `products[]` has one entry per product (`--product <id>` selects one) with its
 `mode` and the effective `source`; `aspose-cli schema
 v2/common/license-status` describes every field. A `mode` of `invalid` means a
-configured source was rejected: its `problem` and `hint` say why and how to
-fix it. `license status` is diagnostic and still exits 0 then, while document
-commands refuse that source with exit 7.
+configured source was rejected: its `problem` says why. `license status` is
+diagnostic and still exits 0 then, while document commands refuse that source
+with exit 7.
 
 A document result that ran in evaluation mode carries `license`, with its
 `mode`; a licensed result omits `license`.
@@ -58,7 +58,7 @@ or logged.
 ## License errors
 
 A license error exits 7. When a configured source is missing or rejected, the
-error's `details.source` names the source and its message and hint say what is
+error's `details.source` names the source and its message says what is
 wrong: fix the path or file, or remove the setting to run in evaluation mode.
 Do not retry unchanged input.
 
@@ -78,9 +78,7 @@ Do not retry unchanged input.
   replacement rather than what the file holds: check the file's text in
   rendered images instead, and do not report the file as damaged.
 - `EVALUATION_LIMIT` (exit 7) means an evaluation limit stopped the command,
-  and nothing was written. `details.limit` and `details.unit` give the limit,
-  and the hint offers a way without a license, such as a smaller selection,
-  only where one works for that command.
+  and nothing was written. `details.limit` and `details.unit` give the limit.
 - With a license, `EVALUATION_INPUT_MARKED` means the output keeps evaluation
   marks that an earlier save without a license wrote into its input; its
   message lists them. The license does not remove them, so tell the user and

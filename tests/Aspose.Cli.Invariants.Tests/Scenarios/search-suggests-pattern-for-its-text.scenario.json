@@ -29,8 +29,7 @@
         "exitCode": 2,
         "error": "USAGE_ERROR",
         "json": [
-          { "path": "error.details.suggestions[0]", "equals": "--pattern" },
-          { "path": "error.hint", "contains": "--pattern" }
+          { "path": "error.details.suggestions[0]", "equals": "--pattern" }
         ]
       }
     }

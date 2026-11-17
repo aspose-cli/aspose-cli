@@ -12,7 +12,7 @@ internal static class SheetOps
 {
     public static void AddSheet(Workbook workbook, InsertSheetOp op)
     {
-        RequireUnusedName(workbook, op.Name, "Give the new sheet another name, or rename or delete the existing sheet first.");
+        RequireUnusedName(workbook, op.Name);
         int index = workbook.Worksheets.Add();
         Worksheet sheet = workbook.Worksheets[index];
         sheet.Name = op.Name;
@@ -24,7 +24,7 @@ internal static class SheetOps
 
     public static void RenameSheet(Worksheet sheet, RenameSheetOp op)
     {
-        RequireUnusedName(sheet.Workbook, op.Name, "Choose another name, or rename or delete the existing sheet first.", sheet);
+        RequireUnusedName(sheet.Workbook, op.Name, sheet);
         sheet.Name = op.Name;
     }
 
@@ -33,12 +33,12 @@ internal static class SheetOps
     /// sheet names (case-insensitively); <paramref name="renamed"/>, the sheet that takes the name,
     /// may keep its own.
     /// </summary>
-    public static void RequireUnusedName(Workbook workbook, string name, string hint, Worksheet? renamed = null)
+    public static void RequireUnusedName(Workbook workbook, string name, Worksheet? renamed = null)
     {
         if (workbook.Worksheets.Cast<Worksheet>().FirstOrDefault(existing => existing.Index != renamed?.Index
             && string.Equals(existing.Name, name, StringComparison.OrdinalIgnoreCase)) is { } taken)
         {
-            throw new OperationInvalidException($"the workbook already has a sheet named '{taken.Name}'", hint);
+            throw new OperationInvalidException($"the workbook already has a sheet named '{taken.Name}'");
         }
     }
 
@@ -54,8 +54,7 @@ internal static class SheetOps
         OperationInvalidException.Require(
             visibility == VisibilityType.Visible
                 || sheets.Cast<Worksheet>().Any(other => other.Index != sheet.Index && other.IsVisible),
-            $"sheet '{sheet.Name}' is the only visible sheet, and a workbook keeps at least one visible",
-            "Show another sheet with set_sheet_visibility first, in the same batch.");
+            $"sheet '{sheet.Name}' is the only visible sheet, and a workbook keeps at least one visible");
 
         // The engine, as Excel's Unhide does, activates a sheet it shows; the operation changes
         // the sheet's visibility alone, so the active sheet stays. Hiding the active sheet moves

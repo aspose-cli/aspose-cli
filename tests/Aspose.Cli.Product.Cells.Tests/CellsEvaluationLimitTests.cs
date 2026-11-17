@@ -37,7 +37,7 @@ public sealed class CellsEvaluationLimitTests
 
         CliException error = Assert.Throws<CliException>(() => EvaluationLimits.Run<int>(Outputs(LicenseState.Evaluation), () => throw refusal));
 
-        EvaluationLimits.AssertShape(error.Code.Name, error.Message, error.Hint, error.Details!.Select(static pair => pair.Key), "Aspose.Cells");
+        EvaluationLimits.AssertShape(error.Code.Name, error.Message, error.Details!.Select(static pair => pair.Key), "Aspose.Cells");
         Assert.Equal(100, error.Details!["limit"]!.GetValue<int>());
         Assert.Equal("files", error.Details["unit"]!.GetValue<string>());
         Assert.Same(refusal, error.InnerException);

@@ -269,8 +269,7 @@ internal sealed class CommandExecutor
         {
             throw CliErrors.OptionInvalid(
                 GlobalOptionNames.Timeout,
-                "value must be a positive number of seconds",
-                "Pass a timeout like --timeout 30, or omit it to run unbounded.");
+                "value must be a positive number of seconds");
         }
         return TimeSpan.FromSeconds(seconds);
     }

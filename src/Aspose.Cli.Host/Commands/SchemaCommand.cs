@@ -45,8 +45,7 @@ internal static class SchemaCommand
                     _ => operationId is not null
                         ? throw CliErrors.OptionInvalid(
                             "--operation",
-                            "requires a schema id",
-                            "Pass an ops schema id before --operation.")
+                            "requires a schema id")
                         : new SchemaListResult
                     {
                         Schemas = available,
@@ -84,9 +83,6 @@ internal static class SchemaCommand
                     operations.Count == 0
                         ? $"schema '{id}' has no indexed operations"
                         : $"unknown operation '{operationId}' for schema '{id}'",
-                    operations.Count == 0
-                        ? "Use --operation only with a product ops schema."
-                        : "Choose an operation advertised by capabilities.",
                     Mistake.Of(operationId, operations));
         }
 
@@ -98,6 +94,5 @@ internal static class SchemaCommand
     private static CliException UnknownId(string id, IReadOnlyList<string> available) => CliErrors.OptionInvalid(
         "schema id",
         $"unknown schema id '{id}'",
-        "Choose one of the available schema ids.",
         Mistake.Of(id, available));
 }

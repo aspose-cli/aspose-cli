@@ -81,11 +81,11 @@ public sealed class ScenarioTests
                   "args": ["--vresion"],
                   "expect": {
                     "json": [
-                      { "path": "error.hint", "startsWith": "Did you mean '--version'?" },
+                      { "path": "error.code", "startsWith": "USAGE_" },
                       { "path": "error.details.suggestions", "notContains": "--verbose" },
                       { "path": "error.message", "notContains": "--verbose" },
                       { "path": "error.details.errors", "notContains": "anything" },
-                      { "path": "error.hint", "startsWith": "Run" },
+                      { "path": "error.code", "startsWith": "Run" },
                       { "path": "error.details.suggestions", "notContains": "--version" },
                       { "path": "error.message", "notContains": "vresion" },
                       { "path": "error.details", "notContains": "--version" },
@@ -100,7 +100,7 @@ public sealed class ScenarioTests
         ScenarioOutcome outcome = ScenarioRunner.Run(scenario);
 
         Assert.Equal(
-            ["error.hint", "error.details.suggestions", "error.message", "error.details", "error.details.missing"],
+            ["error.code", "error.details.suggestions", "error.message", "error.details", "error.details.missing"],
             outcome.Problems.Select(static problem => problem.Message.Split(' ')[0]));
         Assert.All(outcome.Problems, static problem => Assert.Equal(ScenarioRunner.JsonCheck, problem.Check));
     }

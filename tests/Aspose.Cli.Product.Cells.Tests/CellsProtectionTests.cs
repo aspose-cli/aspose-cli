@@ -36,12 +36,10 @@ public sealed class CellsProtectionTests(CellsProtectionTests.ProtectedBook book
         Warning sheet = Unenforced(book.Edit("protected-sheet.xlsx", """{"op":"set_values","sheet":"Data","range":"A1","values":[[1]]}"""));
         Assert.Equal("sheet/Data", sheet.Location);
         Assert.Contains("protected sheet 'Data'", sheet.Message, StringComparison.Ordinal);
-        Assert.Contains("keeps the protection", sheet.Hint, StringComparison.Ordinal);
 
         Warning structure = Unenforced(book.Edit("protected-structure.csv", """{"op":"insert_sheet","name":"Extra"}"""));
         Assert.Null(structure.Location);
         Assert.Contains("the protected workbook structure", structure.Message, StringComparison.Ordinal);
-        Assert.Contains("A csv output does not keep the protection", structure.Hint, StringComparison.Ordinal);
 
         // Neither an unprotected sheet nor one the batch unprotected first goes through protection.
         Assert.DoesNotContain(
@@ -85,7 +83,6 @@ public sealed class CellsProtectionTests(CellsProtectionTests.ProtectedBook book
             Warning structure = Unenforced(book.Edit($"tab-color-{++edit}.xlsx", op));
             Assert.Null(structure.Location);
             Assert.Contains("The edit changed the protected workbook structure;", structure.Message, StringComparison.Ordinal);
-            Assert.Contains("renames, moves, hides and recolors no sheets", structure.Hint, StringComparison.Ordinal);
         }
 
         // A batch through a protected sheet and the structure names both, tab colors among the structure's.
@@ -93,7 +90,6 @@ public sealed class CellsProtectionTests(CellsProtectionTests.ProtectedBook book
             """{"op":"set_values","sheet":"Data","range":"A1","values":[[1]]},{"op":"set_tab_color","sheet":"Data","color":"#4472C4"}"""));
         Assert.Null(both.Location);
         Assert.Contains("protected sheet 'Data' and the protected workbook structure", both.Message, StringComparison.Ordinal);
-        Assert.Contains("and no sheets or tab colors while the structure is protected", both.Hint, StringComparison.Ordinal);
 
         // The panes and the print area go through no protection, set or cleared, even on the protected sheet 'Data'.
         foreach (string op in (string[])[
@@ -131,7 +127,6 @@ public sealed class CellsProtectionTests(CellsProtectionTests.ProtectedBook book
             $$"""{"op":"unprotect_sheet","sheet":"Data","passwordEnv":"{{OtherPasswordVariable}}"}"""));
         Assert.Equal("PASSWORD_INVALID", wrong["code"]!.GetValue<string>());
         Assert.Contains("sheet 'Data'", wrong["message"]!.GetValue<string>(), StringComparison.Ordinal);
-        Assert.Contains("\"passwordEnv\"", wrong["hint"]!.GetValue<string>(), StringComparison.Ordinal);
 
         JsonNode missing = Refused(book.Run("unprotect-missing.xlsx", """{"op":"unprotect_sheet","sheet":"Data"}"""));
         Assert.Equal("PASSWORD_REQUIRED", missing["code"]!.GetValue<string>());
@@ -151,7 +146,6 @@ public sealed class CellsProtectionTests(CellsProtectionTests.ProtectedBook book
 
         Assert.Equal("OPS_INVALID", error["code"]!.GetValue<string>());
         Assert.Equal("op-0002", error["details"]!["id"]!.GetValue<string>());
-        Assert.Contains("unprotect_workbook", error["hint"]!.GetValue<string>(), StringComparison.Ordinal);
     }
 
     private static JsonNode Refused(CliResult result, int exitCode = 3)
@@ -165,8 +159,7 @@ public sealed class CellsProtectionTests(CellsProtectionTests.ProtectedBook book
         JsonNode warning = Assert.Single(Warnings(result), static warning => Code(warning) == "PROTECTION_NOT_ENFORCED");
         return new Warning(
             warning["location"]?.GetValue<string>(),
-            warning["message"]!.GetValue<string>(),
-            warning["hint"]!.GetValue<string>());
+            warning["message"]!.GetValue<string>());
     }
 
     private static JsonNode[] Warnings(JsonNode result) =>
@@ -177,7 +170,7 @@ public sealed class CellsProtectionTests(CellsProtectionTests.ProtectedBook book
     private static JsonNode Sheet(JsonNode workbook, string name) =>
         Assert.Single(workbook["sheets"]!.AsArray(), sheet => sheet!["name"]!.GetValue<string>() == name)!;
 
-    private sealed record Warning(string? Location, string Message, string Hint);
+    private sealed record Warning(string? Location, string Message);
 
     /// <summary>
     /// book.xlsx with sheet 'Data' protected by a password, sheet 'Open' unprotected and the

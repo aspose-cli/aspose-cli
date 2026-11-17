@@ -39,8 +39,7 @@ internal sealed class FontDirectoryOptions
         {
             throw CliErrors.OptionInvalid(
                 "--font-dir",
-                $"at most {MaximumDirectories} directories are allowed",
-                "Remove duplicate or unnecessary font directories.");
+                $"at most {MaximumDirectories} directories are allowed");
         }
 
         var directories = new List<string>(values.Length);
@@ -104,6 +103,5 @@ internal sealed class FontDirectoryOptions
     private static CliException Invalid(string value, string reason) =>
         CliErrors.OptionInvalid(
             "--font-dir",
-            $"'{value}' {reason}",
-            "Use an existing directory on a fixed local disk; relative paths resolve against --workdir, and UNC and device paths are rejected.");
+            $"'{value}' {reason}");
 }

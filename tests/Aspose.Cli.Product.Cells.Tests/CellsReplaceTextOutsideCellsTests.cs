@@ -15,7 +15,7 @@ namespace Aspose.Cli.Product.Cells.Tests;
 /// title, an axis title or a text box of its sheet holds a match, matched as the operation
 /// matches a cell (regex, caseSensitive, wholeWord), and a header on the text it prints, it
 /// leaves that text as it was and warns <c>TEXT_NOT_REPLACED</c> once for each of these parts,
-/// with its kind in <c>details.part</c>, its location and a hint that runs as written; the edit
+/// with its kind in <c>details.part</c> and its location; the edit
 /// still exits 0 and its verification is what it is without that text. A title linked to a cell
 /// follows the cell and is not named. The commands run with the test license when the run has
 /// one, and in evaluation mode otherwise.
@@ -49,13 +49,10 @@ public sealed class CellsReplaceTextOutsideCellsTests : IDisposable
         Assert.Equal(3, warnings.Length);
         JsonNode page = Assert.Single(warnings, static warning => Text(warning, "location") == "page-setup/Data");
         Assert.Contains("the header (center) and the footer (center) on worksheet 'Data'", Text(page, "message"), StringComparison.Ordinal);
-        Assert.Contains("set_page_setup", Text(page, "hint"), StringComparison.Ordinal);
         JsonNode comment = Assert.Single(warnings, static warning => Text(warning, "location") == "comment/Data!B2");
         Assert.Contains("the comment of cell B2 on worksheet 'Data'", Text(comment, "message"), StringComparison.Ordinal);
-        Assert.Contains("set_comment", Text(comment, "hint"), StringComparison.Ordinal);
         JsonNode chart = Assert.Single(warnings, static warning => Text(warning, "location") == "chart/Data/1");
         Assert.Contains("the title of chart 1 on worksheet 'Data'", Text(chart, "message"), StringComparison.Ordinal);
-        Assert.Contains("set_chart", Text(chart, "hint"), StringComparison.Ordinal);
         Assert.All(warnings, static warning =>
         {
             Assert.DoesNotContain("Acme", Text(warning, "message"), StringComparison.Ordinal);
@@ -148,11 +145,10 @@ public sealed class CellsReplaceTextOutsideCellsTests : IDisposable
     }
 
     /// <summary>
-    /// A match in the left section of the header is named with its section, and the hint says
-    /// that no operation changes it, where set_page_setup changes the center section.
+    /// A match in the left section of the header is named with its section.
     /// </summary>
     [Fact]
-    public void ReplaceText_MatchingTheLeftHeader_SaysNoOperationChangesIt()
+    public void ReplaceText_MatchingTheLeftHeader_NamesItsSection()
     {
         Book("book.xlsx", outside: true);
         MoveTheHeaderLeft("book.xlsx");
@@ -161,7 +157,6 @@ public sealed class CellsReplaceTextOutsideCellsTests : IDisposable
 
         JsonNode page = Assert.Single(Outside(result), static warning => Text(warning, "location") == "page-setup/Data");
         Assert.Contains("the header (left) and the footer (center)", Text(page, "message"), StringComparison.Ordinal);
-        Assert.Contains("no operation changes the left and right sections", Text(page, "hint"), StringComparison.Ordinal);
     }
 
     /// <summary>
@@ -232,16 +227,15 @@ public sealed class CellsReplaceTextOutsideCellsTests : IDisposable
 
     /// <summary>
     /// The first page's own header and the even pages' own footer print only when the sheet uses
-    /// them: then a match there is named with its part and section, and the hint does not send
-    /// the caller to a read that does not report them; with the default header holding a match
-    /// too, the hint gives both. A sheet that does not use them keeps their text unprinted, so a
+    /// them: then a match there is named with its part and section. A sheet that does not use them
+    /// keeps their text unprinted, so a
     /// match there is not named.
     /// </summary>
     [Theory]
-    [InlineData("Quarterly", true, "the first-page header (left) and the even-page footer (right)", false)]
-    [InlineData("Acme report", true, "the header (center) and the first-page header (left) and the even-page footer (right)", true)]
-    [InlineData("Quarterly", false, null, false)]
-    public void ReplaceText_NamesTheFirstPageAndEvenPageHeaders_OnlyWhenTheSheetUsesThem(string header, bool used, string? named, bool readable)
+    [InlineData("Quarterly", true, "the first-page header (left) and the even-page footer (right)")]
+    [InlineData("Acme report", true, "the header (center) and the first-page header (left) and the even-page footer (right)")]
+    [InlineData("Quarterly", false, null)]
+    public void ReplaceText_NamesTheFirstPageAndEvenPageHeaders_OnlyWhenTheSheetUsesThem(string header, bool used, string? named)
     {
         Author("book.xlsx", sheet =>
         {
@@ -266,14 +260,11 @@ public sealed class CellsReplaceTextOutsideCellsTests : IDisposable
         JsonNode page = Assert.Single(warnings);
         Assert.Equal("page-setup/Data header-footer", $"{Text(page, "location")} {Text(page["details"]!, "part")}");
         Assert.Contains($"found a match in {named} on worksheet 'Data' and left them as they were", Text(page, "message"), StringComparison.Ordinal);
-        string hint = Text(page, "hint");
-        Assert.Equal(readable, hint.Contains("cells inspect <file> --detail layout", StringComparison.Ordinal));
-        Assert.Contains("No operation reads or changes the header and footer of the first page and of the even pages", hint, StringComparison.Ordinal);
     }
 
     /// <summary>
-    /// An axis title that holds a match is named with its chart and axis, at the chart, with a
-    /// hint that reads and sets it; the chart title, which holds none, is not named.
+    /// An axis title that holds a match is named with its chart and axis, at the chart; the chart
+    /// title, which holds none, is not named.
     /// </summary>
     [Theory]
     [InlineData("Amount", "the axis title of chart 1 (category)", "it as it was")]
@@ -297,14 +288,11 @@ public sealed class CellsReplaceTextOutsideCellsTests : IDisposable
 
         Assert.Equal("chart/Data/1 axis-title", $"{Text(axis, "location")} {Text(axis["details"]!, "part")}");
         Assert.Contains($"found a match in {named} on worksheet 'Data' and left {left}", Text(axis, "message"), StringComparison.Ordinal);
-        string hint = Text(axis, "hint");
-        Assert.Contains("cells inspect <file> --detail charts", hint, StringComparison.Ordinal);
-        Assert.Contains("set_chart, its axisTitles", hint, StringComparison.Ordinal);
     }
 
     /// <summary>
-    /// A text box whose text holds a match is named by its name, at its sheet, with a hint that
-    /// says no operation changes it; one whose text holds none is not named.
+    /// A text box whose text holds a match is named by its name, at its sheet; one whose text
+    /// holds none is not named.
     /// </summary>
     [Theory]
     [InlineData("Acme note", true)]
@@ -329,7 +317,6 @@ public sealed class CellsReplaceTextOutsideCellsTests : IDisposable
         JsonNode box = Assert.Single(warnings);
         Assert.Equal("sheet/Data text-box", $"{Text(box, "location")} {Text(box["details"]!, "part")}");
         Assert.Contains("found a match in the text of drawing 'Note box' on worksheet 'Data' and left it as it was", Text(box, "message"), StringComparison.Ordinal);
-        Assert.Contains("No operation reads or changes the text of a text box", Text(box, "hint"), StringComparison.Ordinal);
     }
 
     /// <summary>

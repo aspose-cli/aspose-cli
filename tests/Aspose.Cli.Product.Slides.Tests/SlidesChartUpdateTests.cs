@@ -219,7 +219,6 @@ public sealed class SlidesChartUpdateTests
             $"Shape {groupId} is a group, not a chart: no operation addresses chart 'Sales' (shapeId {chartId}) inside it.",
             error.Message,
             StringComparison.Ordinal);
-        Assert.Contains("apply delete_shape to the group", error.Hint, StringComparison.Ordinal);
         Assert.False(File.Exists(output));
     }
 

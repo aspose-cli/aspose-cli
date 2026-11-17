@@ -97,32 +97,7 @@ Every step is also checked, whatever it expects, against the CLI's own catalog
 - `byte-order-mark`: no file the step creates or changes starts with the UTF-8 byte order mark,
   unless the step asks for one with `--bom`, edits an input that starts with one, or extracts the
   files a document embeds (`pdf extract --what attachments`, `words extract --what images`,
-  `slides extract --what media`), which keep the bytes the document stores;
-- `executable-hint`: what each `error.hint`, `warnings[].hint` and `window.next` names runs as written
-  (`ExecutableHints`): a quoted or unquoted `aspose-cli` command runs on the step's own files in
-  a copy of its workspace, with `--dry-run` where the command has one, and must not fail with
-  `USAGE_ERROR`, `OPTION_INVALID` or `OPS_INVALID`. When the step gives the password of its
-  input in an environment variable (`--password-env`), the command runs without `--dry-run`,
-  which does not open the input, and must not fail with `PASSWORD_REQUIRED` or
-  `PASSWORD_INVALID` either: a command that names the input passes that variable on, and one
-  whose input the check fills in gets it with the input. A JSON operation runs through the
-  product's `edit --ops … --dry-run`, with the step's password variable; an option named alone
-  must be one of the step's command, with an allowed value; an operation named must be one
-  of the product's; and a password placeholder given to an option, as in
-  `--password-env "<password-env>"`, must be in double quotes, which a shell passes as written.
-  Scenarios and generated cases also judge variants: a command that writes runs
-  for real, without `--dry-run`, and must not fail with `OUTPUT_EXISTS` when its `--out` or
-  `--out-dir` is the step's own output (what its result says it wrote, or the output it was
-  given with `--overwrite`), nor
-  replace any other existing file with `--overwrite`; run a second time over what it wrote, it
-  must succeed with `--overwrite` and may fail only with `OUTPUT_EXISTS` without it;
-  a hint that says to run the command again with options runs the step again with them over what
-  it wrote; and a step one of whose hints names its input runs again on an encrypted copy of that
-  input opened with `--password-env`, on the same opened with `--password-stdin`, whose hints'
-  commands get the input's password in a variable the check sets for `<password-env>`, and each
-  other `<…-env>` placeholder a variable of its own that holds another password, and must
-  not fail with `PASSWORD_REQUIRED` or `PASSWORD_INVALID`, and on one at a path with a space, and
-  the commands its hints name there must run as written too.
+  `slides extract --what media`), which keep the bytes the document stores.
 
 ## License mode
 

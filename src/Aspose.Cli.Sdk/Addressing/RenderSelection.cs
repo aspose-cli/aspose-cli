@@ -1,4 +1,3 @@
-using System.Globalization;
 using Aspose.Cli.Sdk.Errors;
 
 namespace Aspose.Cli.Sdk.Addressing;
@@ -35,8 +34,7 @@ public static class RenderSelection
                 option,
                 part,
                 parts.Count,
-                MaximumParts,
-                string.Create(CultureInfo.InvariantCulture, $"Render at most {MaximumParts} {part}s per run, such as {option} 1-{MaximumParts}."));
+                MaximumParts);
         }
 
         return parts;

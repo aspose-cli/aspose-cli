@@ -122,7 +122,6 @@ public sealed class PdfOutputEncryptionTests : IDisposable
     [Fact]
     public void MergeAndSplitOfAnInputWithAnOpenPassword_KeepThatPassword()
     {
-        // One after another: the hint check of each run copies the workspace, which a run publishing into it would break.
         JsonNode merged = Run("pdf", "merge", "locked.pdf", "plain.pdf", "--password-env", "PDF_USER", "--out", "merged.pdf").Json();
         JsonNode split = Run("pdf", "split", "locked.pdf", "--password-env", "PDF_USER",
             "--by", "pages", "--every", "1", "--out-dir", "parts").Json();
@@ -148,7 +147,6 @@ public sealed class PdfOutputEncryptionTests : IDisposable
     [Fact]
     public void MergeAndSplitOpenedWithTheOwnerPassword_DiscloseThatItBecomesTheOpenPassword()
     {
-        // One after another: the hint check of each run copies the workspace, which a run publishing into it would break.
         JsonNode merged = Run("pdf", "merge", "locked.pdf", "plain.pdf", "--password-env", "PDF_OWNER", "--out", "merged.pdf").Json();
         JsonNode split = Run("pdf", "split", "locked.pdf", "--password-env", "PDF_OWNER",
             "--by", "pages", "--every", "1", "--out-dir", "parts").Json();
@@ -172,7 +170,6 @@ public sealed class PdfOutputEncryptionTests : IDisposable
     [Fact]
     public void OnePasswordThatIsAlsoTheOwnerPassword_IsReportedAsTheOwnerPassword()
     {
-        // One after another: the hint check of each run copies the workspace, which a run publishing into it would break.
         Run("pdf", "edit", "plain.pdf", "--ops", Metadata, "--out", "same.pdf", "--encrypt-env", "PDF_NEW").Json();
         JsonNode merged = Run("pdf", "merge", "locked.pdf", "plain.pdf", "--password-env", "PDF_OWNER", "--out", "merged.pdf").Json();
         Warning(merged, "PROTECTION_NOT_ENFORCED", "which is also its owner password");
@@ -205,7 +202,6 @@ public sealed class PdfOutputEncryptionTests : IDisposable
         }
 
         Encrypt("form.pdf", "locked-form.pdf", user: UserPassword);
-        // One after another: the hint check of each run copies the workspace, which a run publishing into it would break.
         JsonNode[] results =
         [
             Run("pdf", "extract", "locked-form.pdf", "--password-env", "PDF_USER", "--what", "forms", "--form-format", "json", "--out-dir", "fields").Json(),
@@ -243,7 +239,6 @@ public sealed class PdfOutputEncryptionTests : IDisposable
     public void Encrypt_ProtectsEveryWrittenPdfWithItsPassword()
     {
         File.WriteAllText(_workspace.File("text.txt"), "Created text.\n");
-        // One after another: the hint check of each run copies the workspace, which a run publishing into it would break.
         JsonNode[] results =
         [
             Run("pdf", "create", "created.pdf", "--from-text", "text.txt", "--encrypt-env", "PDF_NEW").Json(),

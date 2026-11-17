@@ -162,7 +162,7 @@ public static class ResultText
     /// <c>verification: needs attention</c>, the operations it checked and
     /// <paramref name="evidence"/>, then a <c>  not checked ID: REASON</c> line for each operation
     /// it did not read back, and for each issue a <c>  CODE [LOCATION]: MESSAGE</c> line, without
-    /// the location when it has none, and a <c>    hint: HINT</c> line when it has a hint.
+    /// the location when it has none.
     /// </summary>
     /// <param name="surface">The surface to write to.</param>
     /// <param name="verification">The verification, which may be absent.</param>
@@ -186,16 +186,12 @@ public static class ResultText
         {
             string at = issue.Location is null ? string.Empty : $" [{issue.Location}]";
             surface.Out.WriteLine($"  {issue.Code}{at}: {issue.Message}");
-            if (issue.Hint is { } hint)
-            {
-                surface.Out.WriteLine($"    hint: {hint}");
-            }
         }
     }
 
     /// <summary>
     /// Writes a bounded edit: the dry-run or produced-file headline, one line per operation
-    /// with the error and hint of every failed one, and the backup.
+    /// with the error of every failed one, and the backup.
     /// </summary>
     public static void Edit(
         TableSurface surface,
@@ -230,10 +226,6 @@ public static class ResultText
             if (op.Error is { } error)
             {
                 surface.Out.WriteLine($"      {error.Code}: {error.Message}");
-                if (error.Hint is { } hint)
-                {
-                    surface.Out.WriteLine($"      hint: {hint}");
-                }
             }
         }
 

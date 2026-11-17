@@ -94,7 +94,7 @@ internal static partial class ContractRules
 
     /// <summary>
     /// Runs one invocation in a fresh <see cref="RuleWorkspace"/> and returns its result, or null
-    /// with why; the hints of the result must run as written.
+    /// with why.
     /// </summary>
     private static JsonObject? RunSample(Invocation invocation, out string? failure)
     {

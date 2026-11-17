@@ -15,10 +15,7 @@
         "error": "PLACEHOLDER_NOT_FOUND",
         "json": [
           { "path": "error.details.requested", "equals": "title" },
-          { "path": "error.details.available", "equals": [] },
-          { "path": "error.hint", "contains": "set_text" },
-          { "path": "error.hint", "contains": "insert_shape" },
-          { "path": "error.hint", "contains": "shapeId, shapeName and placeholder" }
+          { "path": "error.details.available", "equals": [] }
         ],
         "files": { "absent": ["titled.pptx"], "unchanged": ["blank.pptx"] }
       }
@@ -36,9 +33,6 @@
       "expect": {
         "exitCode": 4,
         "error": "PLACEHOLDER_NOT_FOUND",
-        "json": [
-          { "path": "error.hint", "contains": "shapeId, shapeName and placeholder" }
-        ],
         "files": { "absent": ["body.pptx"], "unchanged": ["blank.pptx"] }
       }
     },

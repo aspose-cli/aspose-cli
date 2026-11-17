@@ -27,14 +27,6 @@
           {
             "path": "verification.issues[0].code",
             "equals": "NAVIGATION_DEGRADED"
-          },
-          {
-            "path": "verification.issues[0].hint",
-            "contains": "Bookmark(s) 1 of the output lost their page but hold other bookmarks, which deleting them deletes too, and add_bookmark adds only a bookmark that opens a page, so what they hold cannot always be added back: tell the user which no longer open their page."
-          },
-          {
-            "path": "verification.issues[0].hint",
-            "notContains": "delete_bookmarks"
           }
         ]
       }
@@ -62,7 +54,7 @@
             "contains": {
               "code": "NAVIGATION_DEGRADED",
               "message": "1 bookmark(s), 0 link(s) and 0 named destination(s) lead to pages the edit deleted.",
-              "hint": "The pages they led to were deleted as the batch asked. Bookmark(s) 2 of the output lost their page but hold other bookmarks, which deleting them deletes too, so keep them or tell the user."
+              "details": { "bookmarks": ["2"] }
             }
           }
         ]

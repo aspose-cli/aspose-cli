@@ -10,17 +10,13 @@ namespace Aspose.Cli.Sdk.Operations;
 /// </summary>
 public sealed class OperationInvalidException : Exception
 {
-    /// <summary>Creates a rejection with a reason, an optional recovery hint and the mistake it reports, if any.</summary>
-    public OperationInvalidException(string reason, string? hint = null, Mistake? mistake = null)
+    /// <summary>Creates a rejection with a reason and the mistake it reports, if any.</summary>
+    public OperationInvalidException(string reason, Mistake? mistake = null)
         : base(reason)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(reason);
-        Hint = hint;
         Mistake = mistake;
     }
-
-    /// <summary>Actionable recovery guidance, or null for the pipeline default.</summary>
-    public string? Hint { get; }
 
     /// <summary>A value that names none of the values it may take, with the closest ones; null otherwise.</summary>
     public Mistake? Mistake { get; }
@@ -35,11 +31,11 @@ public sealed class OperationInvalidException : Exception
     public string? Field { get; init; }
 
     /// <summary>Throws a rejection unless <paramref name="condition"/> holds.</summary>
-    public static void Require(bool condition, string reason, string? hint = null)
+    public static void Require(bool condition, string reason)
     {
         if (!condition)
         {
-            throw new OperationInvalidException(reason, hint);
+            throw new OperationInvalidException(reason);
         }
     }
 }

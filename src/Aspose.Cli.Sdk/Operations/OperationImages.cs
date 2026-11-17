@@ -26,5 +26,5 @@ public static class OperationImages
     public static byte[] Read(InputResourceScope inputs, string path) => ImageInput.Read(inputs, path, Invalid);
 
     private static Exception Invalid(string path, string reason) =>
-        new OperationInvalidException($"image '{path}' is not a valid image: {reason}", ImageInput.Hint) { Path = path };
+        new OperationInvalidException($"image '{path}' is not a valid image: {reason}") { Path = path };
 }

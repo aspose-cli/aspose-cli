@@ -84,8 +84,8 @@ internal sealed partial class ParsedInvocation
         if (Problems() is { } refused)
         {
             throw refused.ValuesOnly
-                ? CliErrors.OptionValuesRefused(refused.Problems, refused.Parameter!, refused.Mistake, refused.Hint)
-                : CliErrors.Usage(refused.Problems, refused.Mistake, refused.Corrected, refused.Parameter, refused.Hint);
+                ? CliErrors.OptionValuesRefused(refused.Problems, refused.Parameter!, refused.Mistake)
+                : CliErrors.Usage(refused.Problems, refused.Mistake, refused.Parameter);
         }
     }
 
@@ -104,7 +104,6 @@ internal sealed partial class ParsedInvocation
         ?? HelpOrVersionWord()
         ?? Placeholder()
         ?? MissingValue()
-        ?? OutputOptionOfAnArgument()
         ?? ParseProblems();
 
     /// <summary>A command that only groups others, given none of them (<see cref="LacksCommand"/>); null otherwise.</summary>
@@ -146,17 +145,16 @@ internal sealed partial class ParsedInvocation
     /// <summary>
     /// Every parse error is a value the command refused (<see cref="Refused"/>) and no argument
     /// took an option: the command line itself parses, so the refusal is about the values alone,
-    /// with the first one's mistake and hint; null otherwise.
+    /// with the first one's mistake; null otherwise.
     /// </summary>
     private Refusal? RefusedValues(string[] problems, RefusedValue? first, int refused, string[] optionLike) =>
         first is not null && refused == ParseResult.Errors.Count && optionLike.Length == 0
-            ? new(problems, first.Mistake, first.Parameter, ValuesOnly: true) { Hint = first.Hint }
+            ? new(problems, first.Mistake, first.Parameter, ValuesOnly: true)
             : null;
 
     /// <summary>
     /// Any other failing command line: the first unknown option suggests the options closest to
-    /// it (<see cref="UnknownOptionMistake"/>) with the hint the command declares for it; without
-    /// one, a stray argument suggests the missing option it stands for
+    /// it (<see cref="UnknownOptionMistake"/>); without one, a stray argument suggests the missing option it stands for
     /// (<see cref="StrayArgumentMistake"/>), else the first refused value its own mistake, else a
     /// single missing option its values. A token left over after an option's value is about
     /// that option (<see cref="OptionWithValueBefore"/>).
@@ -172,22 +170,15 @@ internal sealed partial class ParsedInvocation
                 ? Mistake.Of(string.Empty, allowed)
                 : null);
         string? parameter = unknownOption ?? crowded?.Name ?? missing?.Name ?? MissingArguments().FirstOrDefault()?.Name ?? first?.Parameter;
-        return new(problems, mistake, parameter, ValuesOnly: false)
-        {
-            Hint = unknownOption is not null ? Command.RefusedOptionHint(unknownOption)
-                : crowded is not null ? OneValueHint(crowded)
-                : null,
-        };
+        return new(problems, mistake, parameter, ValuesOnly: false);
     }
 
     /// <summary>
     /// The name of an argument written in place of its value beside the value itself, such as
     /// <c>words read file a.docx</c>, as a usage line reads: the name is taken as the value and
-    /// the value is left over. The command line without the name is parsed again: when it
-    /// parses it is the correction, ready to run, as <see cref="ContinuationCommand.Repeating"/>
-    /// writes it, saying to pipe again a document it read from stdin; otherwise its own problems
-    /// are reported beside the name. Null when no argument holds its own name while a token is
-    /// left over.
+    /// the value is left over. The command line without the name is parsed again, and its own
+    /// problems are reported beside the name. Null when no argument holds its own name while a
+    /// token is left over.
     /// </summary>
     private Refusal? Placeholder()
     {
@@ -208,18 +199,12 @@ internal sealed partial class ParsedInvocation
             string[] values = [.. ParseResult.Tokens.Select(static item => item.Value)];
             int index = Array.IndexOf(values, placeholder.Value);
             string[] corrected = [.. values[..index], .. values[(index + 1)..]];
-            ParsedInvocation line = Reparsed(corrected);
-            Refusal? rest = line.Problems();
-            string? repeated = rest is null ? ContinuationCommand.Repeating(line.ParseResult)?.Quoted() : null;
+            Refusal? rest = Reparsed(corrected).Problems();
             return new(
                 [$"'{placeholder.Value}' stands for the <{name}> argument, whose value follows it.", .. rest?.Problems ?? []],
                 rest?.Mistake,
                 name,
-                ValuesOnly: false,
-                Corrected: repeated)
-            {
-                Hint = rest is null && repeated is null ? $"Write the command line again without '{placeholder.Value}'." : null,
-            };
+                ValuesOnly: false);
         }
 
         return null;
@@ -229,19 +214,11 @@ internal sealed partial class ParsedInvocation
     private ParsedInvocation Reparsed(IReadOnlyList<string> tokens) =>
         new(ParseResult.RootCommandResult.Command.Parse(tokens, InvocationParser.Configuration), _globals, catalog: _catalog);
 
-    /// <summary>What fails a command line; see <see cref="Problems"/>. <c>Corrected</c> is the command line that fixes it, when one is known and holds no secret.</summary>
-    private sealed record Refusal(string[] Problems, Mistake? Mistake, string? Parameter, bool ValuesOnly, string? Corrected = null)
-    {
-        /// <summary>The hint the command declares for the unknown option, in place of the advice to read help.</summary>
-        public string? Hint { get; init; }
-    }
+    /// <summary>What fails a command line; see <see cref="Problems"/>.</summary>
+    private sealed record Refusal(string[] Problems, Mistake? Mistake, string? Parameter, bool ValuesOnly);
 
     /// <summary>A value the command refused: the sentence that states it, its option or argument, and the mistake when it has a list of values.</summary>
-    private sealed record RefusedValue(string Problem, string Parameter, Mistake? Mistake)
-    {
-        /// <summary>The advice to run another command that takes the value, in place of the advice to read help.</summary>
-        public string? Hint { get; init; }
-    }
+    private sealed record RefusedValue(string Problem, string Parameter, Mistake? Mistake);
 
     /// <summary>The command as the caller typed it, such as <c>aspose-cli cells</c>.</summary>
     private string Path() => string.Join(' ', [DistributionInfo.CommandName, .. CommandPath.Select(static command => command.Name)]);
@@ -342,8 +319,7 @@ internal sealed partial class ParsedInvocation
     /// <c>--help</c> and <c>--version</c>; a name commands declare they are mistaken for, such as
     /// a command that no longer exists, suggests those commands first. A product's command written
     /// without its product, such as <c>read a.docx</c>, suggests that command of the product whose
-    /// format the file's extension names, with the command line that runs it, and a command of the
-    /// root written below a product, the command line that runs it (<see cref="RootCommandLine"/>). <paramref name="written"/> is the whole
+    /// format the file's extension names. <paramref name="written"/> is the whole
     /// command line when this one is only the part of it before a value taken for a command
     /// (<see cref="BeforeValueTakenForCommand"/>).
     /// </summary>
@@ -364,26 +340,18 @@ internal sealed partial class ParsedInvocation
         string parent = string.Join(' ', [DistributionInfo.CommandName, .. CommandPath.Select(static command => command.Name)]);
         Command[] declaring = [.. Command.Subcommands
             .Where(command => !command.Hidden && command.MistakenNames().Contains(token, StringComparer.Ordinal))];
-        (string Path, string? Corrected)? product =token is "help" or "version" ? null : ProductCommand(token, written);
-        string? root = RootCommandLine(token);
+        string? product = token is "help" or "version" ? null : ProductCommand(token);
         string[] meant = token switch
         {
             "help" => [Below(GlobalOptionNames.Help)],
             "version" when CommandPath.Count == 0 => [GlobalOptionNames.Version],
-            _ when root is not null => [root],
-            _ => [.. product is { } command ? [command.Path] : Array.Empty<string>(), .. declaring.Select(static command => command.Name).Select(Below)],
+            _ => [.. product is { } command ? [command] : Array.Empty<string>(), .. declaring.Select(static command => command.Name).Select(Below)],
         };
         return new(
             [$"'{token}' is not a command of '{parent}'."],
-            Mistake.Of(token, commands.Select(Below), meant, keyOf: static name => name[(name.LastIndexOf(' ') + 1)..], closest: root is null),
+            Mistake.Of(token, commands.Select(Below), meant, keyOf: static name => name[(name.LastIndexOf(' ') + 1)..]),
             null,
-            ValuesOnly: false,
-            product?.Corrected)
-        {
-            Hint = root is not null
-                ? $"'{token}' is a top-level command; run it without '{CommandPath[0].Name}'."
-                : declaring.Select(static command => command.MistakenNameHint()).FirstOrDefault(static hint => hint is not null),
-        };
+            ValuesOnly: false);
     }
 
     /// <summary>
@@ -409,12 +377,10 @@ internal sealed partial class ParsedInvocation
     /// <summary>
     /// The product command <paramref name="token"/>, typed at the root, stands for: the command of
     /// that name of the product whose format the extension of the first file after it names, as
-    /// the catalog routes the file, and the command line with the product written before it, as
-    /// <see cref="ContinuationCommand.Repeating"/> writes it, when that line parses, or reads once
-    /// the name of an argument written before its value is dropped. Null below the root, without a
-    /// file, or for an extension no product with that command claims.
+    /// the catalog routes the file. Null below the root, without a file, or for an extension no
+    /// product with that command claims.
     /// </summary>
-    private (string Path, string? Corrected)? ProductCommand(string token, string[]? written)
+    private string? ProductCommand(string token)
     {
         if (CommandPath.Count > 0 || _catalog is null
             || ParseResult.UnmatchedTokens.Skip(1).FirstOrDefault(static value => !value.StartsWith('-') && System.IO.Path.GetExtension(value).Length > 1) is not { } file
@@ -429,12 +395,7 @@ internal sealed partial class ParsedInvocation
             return null;
         }
 
-        string[] values = written ?? [.. ParseResult.Tokens.Select(static item => item.Value)];
-        int index = Array.IndexOf(values, token);
-        string[] corrected = [.. values[..index], group.Name, .. values[index..]];
-        ParsedInvocation line = Reparsed(corrected);
-        Refusal? rest = line.Problems();
-        return ($"{group.Name} {token}", rest is not null ? rest.Corrected : ContinuationCommand.Repeating(line.ParseResult)?.Quoted());
+        return $"{group.Name} {token}";
     }
 
     /// <summary>
@@ -462,29 +423,25 @@ internal sealed partial class ParsedInvocation
     /// does: its own, the recursive ones of its parents and the root's, compared without their
     /// dashes, with the options that declare it a common mistake for them first. A single letter,
     /// such as <c>-o</c>, most likely abbreviates the options that start with it, and <c>-?</c>
-    /// asks for help. An option the command declares it refuses stands for what its hint says,
-    /// never for an option that merely looks like it.
+    /// asks for help.
     /// </summary>
     private Mistake UnknownOptionMistake(string unknown)
     {
         Option[] options = AcceptedOptions();
         string[] names = [.. options.Select(static option => option.Name)];
-        bool refused = Command.RefusedOptionHint(unknown) is not null;
-        IEnumerable<string> abbreviated = refused
-            ? []
-            : unknown switch
-            {
-                "-?" or "/?" => [GlobalOptionNames.Help],
-                ['-', var letter] when char.IsAsciiLetter(letter) =>
-                    names.Where(name => name.StartsWith("--" + letter, StringComparison.Ordinal)),
-                _ => [],
-            };
+        IEnumerable<string> abbreviated = unknown switch
+        {
+            "-?" or "/?" => [GlobalOptionNames.Help],
+            ['-', var letter] when char.IsAsciiLetter(letter) =>
+                names.Where(name => name.StartsWith("--" + letter, StringComparison.Ordinal)),
+            _ => [],
+        };
         string[] meant =
         [
             .. options.Where(option => option.MistakenNames().Contains(unknown, StringComparer.Ordinal)).Select(static option => option.Name),
             .. abbreviated,
         ];
-        return Mistake.Of(unknown, names, meant, keyOf: static name => name.TrimStart('-'), closest: !refused);
+        return Mistake.Of(unknown, names, meant, keyOf: static name => name.TrimStart('-'));
     }
 
     /// <summary>
@@ -555,10 +512,7 @@ internal sealed partial class ParsedInvocation
         if (allowed.Count > 0
             && tokens.Select(static token => token.Value).LastOrDefault(value => !allowed.Contains(value, StringComparer.Ordinal)) is { } value)
         {
-            return new($"'{value}' is not a value of {name}.", parameter, Mistake.Of(value, allowed, MeantValue(option, value, allowed)))
-            {
-                Hint = option is null ? null : SiblingTarget(option, value),
-            };
+            return new($"'{value}' is not a value of {name}.", parameter, Mistake.Of(value, allowed, MeantValue(option, value, allowed)));
         }
 
         Type type = option?.ValueType ?? argument!.ValueType;
@@ -590,75 +544,6 @@ internal sealed partial class ParsedInvocation
             => string.Join(' ', allowed.Select(each => $"{option.Name} {each}")),
         _ => null,
     };
-
-    /// <summary>
-    /// A format given to <c>--to</c> that the command does not write but a command beside it
-    /// writes through its own <c>--to</c>, as <c>png</c> given to a convert that leaves images to
-    /// render, or a name that <c>--to</c> declares it stands for, as <c>jpg</c> for <c>jpeg</c>:
-    /// the advice to run that command on the same input, with its password passed on as every
-    /// command on the input passes it (<c>ContinuationOf</c>), and to the same <c>--out</c>; null otherwise.
-    /// </summary>
-    private string? SiblingTarget(Option option, string value)
-    {
-        if (option.Name != "--to" || CommandPath.Count < 2)
-        {
-            return null;
-        }
-
-        (Command Command, string Format)? writer = CommandPath[^2].Subcommands
-            .Where(command => !command.Hidden && command != Command)
-            .Select(command => command.Options.FirstOrDefault(static candidate => candidate.Name == "--to") is { } to
-                && Writes(to, value) is { } format
-                ? ((Command Command, string Format)?)(command, format)
-                : null)
-            .FirstOrDefault(static candidate => candidate is not null);
-        if (writer is not { } found)
-        {
-            return null;
-        }
-
-        // The input as the caller wrote it, with its password passed on as every command on the
-        // input passes it when the command beside this one takes the same option, so that command
-        // opens the input as this one would.
-        string input = Command.Arguments.FirstOrDefault() is { } argument
-            && ParseResult.GetResult(argument) is { Tokens: [var token, ..] }
-            ? token.Value
-            : "<file>";
-        ContinuationInput source = ParseResult.ContinuationOf(input);
-        if (source.PasswordOption is { } passed && !found.Command.Options.Any(candidate => candidate.Name == passed))
-        {
-            source = source with { PasswordOption = null, PasswordVariable = null };
-        }
-
-        ContinuationCommand line = source
-            .ContinuationAt([.. CommandPath.SkipLast(1).Select(static command => command.Name), found.Command.Name])
-            .Option("--to", found.Format)
-            .Carrying(ParseResult, found.Command, found.Format, "--to", "--out", "--overwrite");
-        if (Given("--out") is { } output)
-        {
-            // The output this command was asked to write, replaced only when the caller allowed it.
-            line.Out(ContinuationOutput.Requested(output,
-                Command.Options.FirstOrDefault(static candidate => candidate.Name == "--overwrite") is Option<bool> overwrite && ParseResult.GetValue(overwrite)));
-        }
-
-        return $"Run '{line}' for {found.Format}.{line.LeftOut}";
-
-        // The first value the caller gave the command's option of this name, or null.
-        string? Given(string name) =>
-            Command.Options.FirstOrDefault(candidate => candidate.Name == name) is { } declared
-            && ParseResult.GetResult(declared) is { Tokens: [var given, ..] }
-                ? given.Value
-                : null;
-
-        // The value a --to writes for the one given: itself, or the value it declares the given one stands for.
-        static string? Writes(Option to, string value)
-        {
-            IReadOnlyList<string> values = OptionCompletions.Read(to);
-            return values.Contains(value, StringComparer.Ordinal) ? value
-                : to.MeantValue(value) is { } meant && values.Contains(meant, StringComparer.Ordinal) ? meant
-                : null;
-        }
-    }
 
     /// <summary>
     /// A file format given to <c>--output-format</c>, which selects how results are printed:

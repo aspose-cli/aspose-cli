@@ -8,15 +8,15 @@ using Xunit;
 
 namespace Aspose.Cli.Product.Words.Tests;
 
-/// <summary>Messages and hints that must point the caller the right way.</summary>
+/// <summary>Messages that must not mislead the caller.</summary>
 public sealed class WordsDefectHintTests
 {
     /// <summary>
     /// RTF stores a linked picture as an INCLUDEPICTURE field, so the reopened output has a field
-    /// the edited document did not: the hint must not say the format loses fields.
+    /// the edited document did not.
     /// </summary>
     [Fact]
-    public void Verify_OfAnRtfOutputThatGainedAField_DoesNotSayTheFormatLosesFields()
+    public void Verify_OfAnRtfOutputThatGainedAField_ReportsTheFieldCounts()
     {
         using var fixture = new WordsFixture();
         var source = new Document();
@@ -39,13 +39,10 @@ public sealed class WordsDefectHintTests
         VerificationIssue issue = Assert.Single(result.Verification!.Issues, static issue => issue.Code == "FIELD_COUNT_MISMATCH");
         System.Text.RegularExpressions.Match counts = System.Text.RegularExpressions.Regex.Match(issue.Message, @"expected (\d+), found (\d+)");
         Assert.True(int.Parse(counts.Groups[2].Value, CultureInfo.InvariantCulture) > int.Parse(counts.Groups[1].Value, CultureInfo.InvariantCulture), issue.Message);
-        Assert.DoesNotContain("may not keep", issue.Hint, StringComparison.Ordinal);
-        Assert.DoesNotContain("did not survive", issue.Hint, StringComparison.Ordinal);
-        Assert.Contains("INCLUDEPICTURE", issue.Hint, StringComparison.Ordinal);
     }
 
     [Fact]
-    public void ImportSections_OfAnEncryptedSourceWithoutItsPassword_NamesTheOperationField()
+    public void ImportSections_OfAnEncryptedSourceWithoutItsPassword_IsPasswordRequired()
     {
         using var fixture = new WordsFixture();
         string source = fixture.CreateEncryptedDocument("secret", "source.docx");
@@ -58,8 +55,6 @@ public sealed class WordsDefectHintTests
         }));
 
         Assert.Equal(ErrorCodes.PasswordRequired, error.Code);
-        Assert.Contains("\"sourcePasswordEnv\"", error.Hint, StringComparison.Ordinal);
-        Assert.DoesNotContain("--password-env", error.Hint, StringComparison.Ordinal);
     }
 
     /// <summary>A truncation notice may come from an earlier save, so the message does not say this open cut the document.</summary>
@@ -112,8 +107,6 @@ public sealed class WordsDefectHintTests
         string[] available = [.. error.Details!["available"]!.AsArray().Select(static node => node!.GetValue<string>())];
         Assert.Contains("Table Grid", available);
         Assert.DoesNotContain(available, static name => name is "Heading 1" or "Normal" or "Default Paragraph Font");
-        Assert.Contains("'Table Grid'", error.Hint, StringComparison.Ordinal);
-        Assert.Contains("'Grid Table 4'", error.Hint, StringComparison.Ordinal);
     }
 
     /// <summary>The built-in table styles need not be in the document; the guard for the list that leaves them out.</summary>
@@ -145,14 +138,14 @@ public sealed class WordsDefectHintTests
 
     /// <summary>
     /// The report's table is block 5. Whichever way an address reaches it, the refusal says which
-    /// block it reached and what that block is, and the hint gives a next step without an address.
+    /// block it reached and what that block is.
     /// </summary>
     [Theory]
-    [InlineData("add_comment", "comment", "Metric", null, null)]
-    [InlineData("insert_bookmark", "bookmark", "Metric", null, null)]
-    [InlineData("add_comment", "comment", null, 5, null)]
-    [InlineData("insert_bookmark", "bookmark", "Revenue", null, 2)]
-    public void Annotation_OnATable_NamesTheBlockAndPointsToAParagraph(string op, string annotation, string? find, int? block, int? nth)
+    [InlineData("add_comment", "Metric", null, null)]
+    [InlineData("insert_bookmark", "Metric", null, null)]
+    [InlineData("add_comment", null, 5, null)]
+    [InlineData("insert_bookmark", "Revenue", null, 2)]
+    public void Annotation_OnATable_NamesTheBlock(string op, string? find, int? block, int? nth)
     {
         using var fixture = new WordsFixture();
 
@@ -160,9 +153,6 @@ public sealed class WordsDefectHintTests
 
         Assert.Equal(ErrorCodes.OpsInvalid, error.Code);
         Assert.Contains($"{op} must target a paragraph block, but block/5 is a table", error.Message, StringComparison.Ordinal);
-        Assert.Contains($"A {annotation} anchors only to a body paragraph", error.Hint, StringComparison.Ordinal);
-        Assert.Contains("the paragraph before or after the table", error.Hint, StringComparison.Ordinal);
-        Assert.DoesNotContain("{", error.Hint, StringComparison.Ordinal);
     }
 
     /// <summary>The guard for the refusal above: a find text in a body paragraph, also when the same text is in a table later on.</summary>

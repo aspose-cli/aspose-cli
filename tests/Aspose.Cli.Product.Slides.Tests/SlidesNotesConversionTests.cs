@@ -53,7 +53,6 @@ public sealed class SlidesNotesConversionTests
 
         Warning warning = Assert.Single(NotesWarnings(result));
         Assert.Equal($"The {format} output does not include the speaker notes of slide(s) 2: an export holds the slides alone.", warning.Message);
-        Assert.Contains("'slides read --slides 2 --notes'", warning.Hint, StringComparison.Ordinal);
         Assert.False(warning.AffectsCompleteness);
         // The text an output holds shows the slides' text but not the notes; an image is the one
         // of the same deck without notes. PdfExport_LeavesSpeakerNotesOut reads a PDF's text.

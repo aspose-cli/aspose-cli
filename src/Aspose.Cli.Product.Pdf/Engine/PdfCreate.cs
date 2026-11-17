@@ -169,13 +169,10 @@ internal static class PdfCreate
             return null;
         }
 
-        int needed = (int)Math.Ceiling(SharpPixelsPerInch * longerSidePoints / 72);
         return new Warning(PdfDiagnostics.ImageResolutionLow, string.Create(CultureInfo.InvariantCulture,
             $"Image '{Path.GetFileName(path)}' ({codec.Info.Width} x {codec.Info.Height} pixels) is drawn on page {page} at {perInch:0} pixels per inch, enlarged beyond its own size, so it shows blurred."))
         {
             Location = string.Create(CultureInfo.InvariantCulture, $"page/{page}"),
-            Hint = string.Create(CultureInfo.InvariantCulture,
-                $"Use an image with at least {needed} pixels on its longer side, or a smaller --page-size or wider --margins."),
         };
     }
 
@@ -307,8 +304,7 @@ internal static class PdfCreate
         }
 
         return losses.Count == 0 ? null : ContentLoss.Warning(kinds,
-            $"The HTML importer keeps the name and value of single-line text inputs only: {string.Join("; ", losses)}.",
-            "Read the fields with 'pdf inspect --detail forms' and match each field's page and rect to the label beside it before filling; give a dropped input type=\"text\" to keep it as a field, and place the picture of an image input with add_stamp_image.");
+            $"The HTML importer keeps the name and value of single-line text inputs only: {string.Join("; ", losses)}.");
     }
 
     /// <summary>
@@ -338,8 +334,7 @@ internal static class PdfCreate
 
         // The place a link led to is in the document, but the link no longer leads there.
         return new PdfNavigationLoss(new PdfNavigationCensus(0, nowhere, 0), default).StrandedWarning(
-            "lead nowhere: the importer gives a link to an element id or to a local file no target",
-            "Mark each place a link leads to with <a name=\"...\"></a>, which the importer links to, give a link to another document its https address, and create the PDF again.");
+            "lead nowhere: the importer gives a link to an element id or to a local file no target");
     }
 
     private static bool IsLocal(string? address) => Uri.TryCreate(address, UriKind.Absolute, out Uri? uri) && uri.IsFile;
@@ -439,8 +434,7 @@ internal static class PdfCreate
                 PdfOptionNames.Margins,
                 page is null
                     ? "values must be non-negative and leave a positive content area"
-                    : $"values must be non-negative and leave a positive content area on {page}",
-                "Use smaller top,right,bottom,left values in points.");
+                    : $"values must be non-negative and leave a positive content area on {page}");
         }
     }
 
@@ -479,8 +473,7 @@ internal static class PdfCreate
         {
             throw CliErrors.OptionInvalid(
                 PdfOptionNames.FromImages,
-                "more than 1000 inputs were requested",
-                "Create smaller PDFs and merge them in bounded batches.");
+                "more than 1000 inputs were requested");
         }
 
         foreach (string path in paths)

@@ -25,7 +25,6 @@ public sealed class WarningContractTests
     {
         var warning = new Warning(new WarningCode("TEST_WARNING"), "A bounded warning.")
         {
-            Hint = "Inspect the affected item.",
             Docs = "test/verification",
             Location = "page:2",
             AffectsCompleteness = true,
@@ -34,7 +33,7 @@ public sealed class WarningContractTests
         JsonObject json = Serialize(warning);
 
         Assert.Equal(
-            ["code", "message", "hint", "docs", "location", "affectsCompleteness"],
+            ["code", "message", "docs", "location", "affectsCompleteness"],
             json.Select(static item => item.Key));
         Assert.Equal("page:2", json["location"]!.GetValue<string>());
         Assert.True(json["affectsCompleteness"]!.GetValue<bool>());

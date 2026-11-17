@@ -77,12 +77,7 @@ internal static class WordsMergeGaps
 
         return gaps.Count == 0 ? null : new Warning(WordsDiagnostics.MergeValueMissing, string.Create(
                 CultureInfo.InvariantCulture,
-                $"mail_merge had no value for {gaps.Count} template merge field(s) in some records: {string.Join("; ", gaps)}."))
-        {
-            Hint = "A null value or a missing key merges as blank text. "
-                + "Supply the missing values in the merge data, rename a misspelled data field to its template field, "
-                + "or confirm that the result is acceptable.",
-        };
+                $"mail_merge had no value for {gaps.Count} template merge field(s) in some records: {string.Join("; ", gaps)}."));
     }
 
     /// <summary>

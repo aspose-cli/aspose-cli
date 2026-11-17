@@ -98,7 +98,7 @@ internal static partial class ContractRules
 
     /// <summary>
     /// The text capabilities publishes for people and agents: the descriptions of the visible
-    /// commands and of their visible options and arguments, which help prints too. Hints, schema
+    /// commands and of their visible options and arguments, which help prints too. Schema
     /// descriptions and Skills are outside capabilities, so this part does not read them.
     /// </summary>
     private static IEnumerable<(string Where, string Text)> PublicTexts(CliCatalog catalog, IReadOnlyList<TreeCommand> tree)

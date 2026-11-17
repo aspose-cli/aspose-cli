@@ -1,4 +1,5 @@
 using System.CommandLine;
+using System.Globalization;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Text;
 
@@ -96,31 +97,16 @@ public sealed class SearchOptions
     }
 
     /// <summary>
-    /// Completes the window a search returned: when hits remain, <c>next</c> is
-    /// <paramref name="resume"/> (see <see cref="StandardInvocation.Continuation"/>, plus the
-    /// product's own options) followed by the query's options and a <c>--skip</c> past the
-    /// returned hits.
+    /// Completes the window a search returned: when hits remain, <c>next</c> holds the
+    /// <c>--skip</c> past the returned hits.
     /// </summary>
-    public static ResultWindow Continue(SearchQuery query, ResultWindow window, ContinuationCommand resume)
+    public static ResultWindow Continue(SearchQuery query, ResultWindow window)
     {
         ArgumentNullException.ThrowIfNull(query);
         ArgumentNullException.ThrowIfNull(window);
-        ArgumentNullException.ThrowIfNull(resume);
-        if (!window.Truncated)
-        {
-            return window;
-        }
-
-        resume.Option(PatternOption, query.Text.Pattern)
-            .Flag(RegexOption, query.Text.Expression is not null)
-            .Flag(CaseSensitiveOption, query.Text.CaseSensitive);
-        if (query.Scope is not null)
-        {
-            resume.Option(query.ScopeOption ?? ScopeOption, query.Scope);
-        }
-
-        resume.Option(MaxHitsOption, query.MaxHits).Option(SkipOption, query.Skip + window.Returned);
-        return window with { Next = resume.ToString() };
+        return window.Truncated
+            ? window with { Next = ResultWindow.Options((SkipOption, (query.Skip + window.Returned).ToString(CultureInfo.InvariantCulture))) }
+            : window;
     }
 
     /// <summary>The search options in help order, for a product command's option list.</summary>
@@ -130,14 +116,9 @@ public sealed class SearchOptions
     public SearchQuery Read(ParseResult parse)
     {
         ArgumentNullException.ThrowIfNull(parse);
-        int maxHits = parse.GetInRange(_maxHits, "Keep the hit budget modest and narrow the search instead.");
+        int maxHits = parse.GetInRange(_maxHits);
         int skip = parse.GetValue(_skip);
-        OptionGuards.EnsureInRange(
-            SkipOption,
-            skip,
-            0,
-            int.MaxValue,
-            "Use the --skip value from the previous result's window.next.");
+        OptionGuards.EnsureInRange(SkipOption, skip, 0, int.MaxValue);
         return new SearchQuery(
             TextSearch.Create(
                 parse.GetRequiredValue(_pattern),

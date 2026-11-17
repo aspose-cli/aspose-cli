@@ -641,10 +641,6 @@
           {
             "path": "error.message",
             "contains": "radio group 'g'"
-          },
-          {
-            "path": "error.hint",
-            "contains": "then this redact_area and the operations after it in a second 'pdf edit'"
           }
         ],
         "files": {
@@ -680,10 +676,6 @@
           {
             "path": "error.message",
             "contains": "radio group 'g'"
-          },
-          {
-            "path": "error.hint",
-            "contains": "then this set_form_field and the operations after it in a second 'pdf edit'"
           }
         ],
         "files": {

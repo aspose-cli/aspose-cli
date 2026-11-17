@@ -51,21 +51,12 @@ internal sealed class CellsWorkbookLoader
     /// </summary>
     internal static readonly InputLoading Loading = new(
         "spreadsheet",
-        "Verify the file opens in a spreadsheet application and is one of the supported input formats.",
         Classify);
 
     private static LoadFailureKind Classify(Exception exception) =>
         exception is CellsException { Code: ExceptionType.IncorrectPassword or ExceptionType.Permission }
             ? LoadFailureKind.Password
             : LoadFailureKind.Corrupt;
-
-    // An input named as a format cells only writes, such as report.json: what to give instead.
-    private static readonly InputLoading WrittenOnly = new(
-        "spreadsheet",
-        $"cells writes {string.Join(", ", CellsFormats.Definitions.Where(static format => !format.Uses.HasFlag(FormatUse.Input) && format.Uses.HasFlag(FormatUse.Convert)).Select(static format => format.Id))} "
-            + "with convert but does not read them; give it a workbook (xlsx, xls, xlsb, ods) or delimited text (csv, tsv, txt) "
-            + "instead, such as the file the export was made from.",
-        Classify);
 
     private static readonly HashSet<FileFormatType> OpenableFormats =
     [
@@ -240,8 +231,7 @@ internal sealed class CellsWorkbookLoader
             {
                 throw CliErrors.OptionInvalid(
                     textImport.Encoding is not null ? CellsOptionNames.Encoding : CellsOptionNames.Culture,
-                    "it applies only to delimited text input such as CSV or TSV",
-                    "Drop --encoding and --culture for this input.");
+                    "it applies only to delimited text input such as CSV or TSV");
             }
 
             return plan;
@@ -276,7 +266,7 @@ internal sealed class CellsWorkbookLoader
         }
         catch (InvalidDataException exception)
         {
-            throw For(path).Unreadable(path, "its OpenDocument package is damaged: " + exception.Message, exception);
+            throw Loading.Unreadable(path, "its OpenDocument package is damaged: " + exception.Message, exception);
         }
 
         resources.NoteSvgPictures(cleaned.References, cleaned.Pictures);
@@ -300,8 +290,7 @@ internal sealed class CellsWorkbookLoader
                 // A read-back is an output the CLI wrote or the edit baseline, a verified copy of
                 // an input this loader opened first, and so refused already if it was encrypted.
                 throw CliErrors.EngineDefect(
-                    $"The OpenDocument spreadsheet {path} is encrypted: while it loads, the engine would open the files and addresses its SVG pictures name, and the CLI cannot remove them from an encrypted package first.",
-                    "Remove the password in the application that made the file, or save it as xlsx there, then open that copy.");
+                    $"The OpenDocument spreadsheet {path} is encrypted: while it loads, the engine would open the files and addresses its SVG pictures name, and the CLI cannot remove them from an encrypted package first.");
             }
 
             return LoadPlan.Auto with { Encrypted = true };
@@ -346,22 +335,18 @@ internal sealed class CellsWorkbookLoader
         string content = CellsEngineFormats.IdOf(detected == FileFormatType.XHtml ? FileFormatType.Html : detected);
         if (WrittenOnlyFormats.Any(format => format.Id == content))
         {
-            throw WrittenOnly.Unloadable(path, content);
+            throw Loading.Unloadable(path, content);
         }
 
         if (detected != FileFormatType.Unknown)
         {
-            throw For(path).Unloadable(path, detected.ToString());
+            throw Loading.Unloadable(path, detected.ToString());
         }
 
-        throw For(path).Unreadable(path, ContainerSignatures.IsZip(ContainerSignatures.ReadPrefix(path, ContainerSignatures.ZipLocalFileHeader.Length))
+        throw Loading.Unreadable(path, ContainerSignatures.IsZip(ContainerSignatures.ReadPrefix(path, ContainerSignatures.ZipLocalFileHeader.Length))
             ? "it is an incomplete or damaged ZIP container, as an interrupted download or copy leaves it; ask for the file again"
             : "content does not match any supported spreadsheet format");
     }
-
-    /// <summary>How a file that does not load is reported: with what to give instead when its extension names a format cells only writes.</summary>
-    private static InputLoading For(string path) =>
-        WrittenOnlyFormats.NamedBy(path).Count > 0 && Inputs.NamedBy(path).Count == 0 ? WrittenOnly : Loading;
 
     // The formats convert writes and no input declares.
     private static readonly IReadOnlyList<FormatDescriptor> WrittenOnlyFormats =
@@ -369,7 +354,7 @@ internal sealed class CellsWorkbookLoader
             .Where(static format => format.Uses.HasFlag(FormatUse.Convert) && !format.Uses.HasFlag(FormatUse.Input))];
 
     private static CliException NotNamedAsInput(string path) =>
-        For(path).NotNamedAsInput(path, "delimited text", CellsFormats.Delimited, "as text");
+        Loading.NotNamedAsInput(path, "delimited text", CellsFormats.Delimited, "as text");
 
     private static char? DetectDelimiter(string path)
     {

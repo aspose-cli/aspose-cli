@@ -101,8 +101,8 @@ whose output keeps a saved notice on its first 4 pages warns
   `pdf edit`, and encrypt a copy of a PDF/A file, never the archive itself.
 - Trusting the black box: confirm a redaction with `pdf search`, which reads
   page text alone: when it warns `FORM_VALUES_NOT_IN_TEXT`, read the fields it
-  names with `pdf inspect --detail forms`. Act on `OP_NO_EFFECT` as its hint
-  says, and on `REDACTION_TEXT_MOVED` and `REDACTION_NEARBY_TEXT_REMOVED`
+  names with `pdf inspect --detail forms`. Act on `OP_NO_EFFECT`,
+  `REDACTION_TEXT_MOVED` and `REDACTION_NEARBY_TEXT_REMOVED`
   ([redaction](references/editing.md)).
 - Guessing rectangles: take them from a `pdf search` hit's `rect`, a field's
   `rect` or a `pdf render --grid` image.

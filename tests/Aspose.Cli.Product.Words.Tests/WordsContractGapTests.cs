@@ -468,7 +468,7 @@ public sealed class WordsContractGapTests
         Assert.Equal("op-0001", warning.Details!["id"]!.GetValue<string>());
         Assert.Equal("replace_text", warning.Details["op"]!.GetValue<string>());
         Assert.Equal("no-match", warning.Details["reason"]!.GetValue<string>());
-        Assert.DoesNotContain("eleven", warning.Message + warning.Hint, StringComparison.Ordinal);
+        Assert.DoesNotContain("eleven", warning.Message, StringComparison.Ordinal);
     }
 
     [Fact]

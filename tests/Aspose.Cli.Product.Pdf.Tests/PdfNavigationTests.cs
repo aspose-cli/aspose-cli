@@ -20,8 +20,7 @@ public sealed class PdfNavigationTests
     /// A table of contents' link and a bookmark lead to page 2, which the edit deletes as asked:
     /// the warning counts them and does not leave the output incomplete, so the verified edit
     /// exits 0, and the link to page 3, which the engine reads by the number it had before the
-    /// deletion, is not counted. The hint names the operation that removes the bookmark, and
-    /// ending the batch with it does.
+    /// deletion, is not counted. A batch that ends with delete_bookmarks counts no bookmark.
     /// </summary>
     [Fact]
     public void DeletePages_ThatNavigationLeadsTo_CountsItWithoutFailingTheVerification()
@@ -51,10 +50,6 @@ public sealed class PdfNavigationTests
         JsonNode warning = Assert.Single(result["warnings"]!.AsArray(), static item => item!["code"]!.GetValue<string>() == "NAVIGATION_DEGRADED")!;
         Assert.Null(warning["affectsCompleteness"]);
         Assert.Equal("1 bookmark(s), 1 link(s) and 0 named destination(s) lead to pages the edit deleted.", warning["message"]!.GetValue<string>());
-        string hint = warning["hint"]!.GetValue<string>();
-        // The hint names the bookmark by its address in the output, as pdf inspect reports it.
-        Assert.Contains("""{"op":"delete_bookmarks","bookmarks":["1"]}""", hint, StringComparison.Ordinal);
-        Assert.Contains("No operation deletes links or named destinations", hint, StringComparison.Ordinal);
 
         CliResult cleaned = workspace.Run("pdf", "edit", "chapters.pdf", "--out", "cleaned.pdf", "--verify", "--output-format", "json", "--ops",
             """[{"op":"delete_pages","pages":"2"},{"op":"delete_bookmarks","bookmarks":["1"]}]""");
@@ -65,9 +60,8 @@ public sealed class PdfNavigationTests
 
     /// <summary>
     /// PDF-MOVE-BOOKMARK: a bookmark with a top of 0 on a moved page no longer leads to the
-    /// page, which is still in the output, so the verified edit exits 8. The hint names the two
-    /// operations and gives the command that reads, run as written, the page the bookmark opened
-    /// in the input; deleting it and adding it again in the same batch makes the edit exit 0.
+    /// page, which is still in the output, so the verified edit exits 8; deleting it and adding it
+    /// again in the same batch makes the edit exit 0.
     /// </summary>
     [Fact]
     public void MovePages_ThatStrandsABookmark_FailsTheVerificationUntilTheBatchAddsItAgain()
@@ -87,10 +81,6 @@ public sealed class PdfNavigationTests
         Assert.Equal("NAVIGATION_DEGRADED", Assert.Single(result["verification"]!["issues"]!.AsArray())!["code"]!.GetValue<string>());
         JsonNode warning = Assert.Single(result["warnings"]!.AsArray(), static item => item!["code"]!.GetValue<string>() == "NAVIGATION_DEGRADED")!;
         Assert.True(warning["affectsCompleteness"]!.GetValue<bool>());
-        string hint = warning["hint"]!.GetValue<string>();
-        Assert.Contains("""{"op":"delete_bookmarks","bookmarks":["3"]}""", hint, StringComparison.Ordinal);
-        Assert.Contains("add_bookmark", hint, StringComparison.Ordinal);
-        Assert.Equal(3, OpenedPage(workspace.RunCommandLine(InspectionIn(hint)), "Chapter 3"));
 
         CliResult fixedUp = workspace.Run("pdf", "edit", "chapters.pdf", "--out", "fixed.pdf", "--verify", "--output-format", "json", "--ops",
             $$"""[{{Move}},{"op":"delete_bookmarks","bookmarks":["3"]},{"op":"add_bookmark","title":"Chapter 3","page":1}]""");
@@ -104,12 +94,9 @@ public sealed class PdfNavigationTests
         Assert.Contains("Chapter 3", Text(output.Pages[((ExplicitDestination)chapter.Destination).PageNumber]), StringComparison.Ordinal);
     }
 
-    /// <summary>
-    /// A title with a slash, no title and titles two bookmarks share change nothing in the hint,
-    /// which names no bookmark: it still says how to repair them and gives the command to read them.
-    /// </summary>
+    /// <summary>A title with a slash, no title and titles two bookmarks share: each bookmark is counted.</summary>
     [Fact]
-    public void MovePages_OfBookmarksWithAwkwardTitles_GivesTheSameHint()
+    public void MovePages_OfBookmarksWithAwkwardTitles_CountsEachOfThem()
     {
         using var workspace = new TempWorkspace();
         const string Target = "/Dest [5 0 R /XYZ 72 0 0]";
@@ -133,65 +120,6 @@ public sealed class PdfNavigationTests
         Assert.True(moved.ExitCode == 8, moved.StdOut + moved.StdErr);
         JsonNode warning = Assert.Single(JsonNode.Parse(moved.StdOut)!["warnings"]!.AsArray(), static item => item!["code"]!.GetValue<string>() == "NAVIGATION_DEGRADED")!;
         Assert.StartsWith("4 bookmark(s), 0 link(s)", warning["message"]!.GetValue<string>(), StringComparison.Ordinal);
-        string hint = warning["hint"]!.GetValue<string>();
-        Assert.Contains("""{"op":"delete_bookmarks","bookmarks":["1","2","3","4"]}""", hint, StringComparison.Ordinal);
-        Assert.Contains("add_bookmark", hint, StringComparison.Ordinal);
-        Assert.DoesNotContain("Part A/B", hint, StringComparison.Ordinal);
-        Assert.Equal(3, OpenedPage(workspace.RunCommandLine(InspectionIn(hint)), "Part A/B"));
-    }
-
-    /// <summary>
-    /// An in-place edit replaces its input, so the command of the hint reads the backup, which
-    /// still holds the bookmarks' pages; without a backup no file holds them, and the hint says so
-    /// without giving a command that would read the edited file.
-    /// </summary>
-    [Fact]
-    public void MovePages_InPlace_PointsTheHintAtTheBackupOrAtACopyOfTheOriginal()
-    {
-        using var fixture = new PdfEngineFixture();
-        using var workspace = new TempWorkspace();
-        using (Document document = Chapters())
-        {
-            document.Save(workspace.File("backed.pdf"));
-            document.Save(workspace.File("bare.pdf"));
-        }
-
-        const string Ops = """[{"op":"move_pages","pages":"3","to":1}]""";
-        CliResult backed = workspace.Run("pdf", "edit", "backed.pdf", "--in-place", "--backup", "--verify", "--output-format", "json", "--ops", Ops);
-        CliResult bare = workspace.Run("pdf", "edit", "bare.pdf", "--in-place", "--verify", "--output-format", "json", "--ops", Ops);
-
-        Assert.True(backed.ExitCode == 8, backed.StdOut + backed.StdErr);
-        JsonNode result = JsonNode.Parse(backed.StdOut)!;
-        string command = InspectionIn(Assert.Single(result["warnings"]!.AsArray(), static item => item!["code"]!.GetValue<string>() == "NAVIGATION_DEGRADED")!["hint"]!.GetValue<string>());
-        Assert.Contains(Path.GetFileName(result["backup"]!["path"]!.GetValue<string>()), command, StringComparison.Ordinal);
-        Assert.Equal(3, OpenedPage(workspace.RunCommandLine(command), "Chapter 3"));
-
-        Assert.True(bare.ExitCode == 8, bare.StdOut + bare.StdErr);
-        string hint = Assert.Single(JsonNode.Parse(bare.StdOut)!["warnings"]!.AsArray(), static item => item!["code"]!.GetValue<string>() == "NAVIGATION_DEGRADED")!["hint"]!.GetValue<string>();
-        Assert.Contains("'pdf inspect --detail outline' on a copy of the original", hint, StringComparison.Ordinal);
-        Assert.DoesNotContain("aspose-cli", hint, StringComparison.Ordinal);
-    }
-
-    /// <summary>On an encrypted input the command of the hint carries its password variable, and run as written it reads the bookmarks.</summary>
-    [Fact]
-    public void MovePages_OfAnEncryptedPdf_GivesAnInspectionWithItsPasswordVariable()
-    {
-        using var fixture = new PdfEngineFixture();
-        using var workspace = new TempWorkspace();
-        using (Document document = Chapters())
-        {
-            document.Encrypt("user-secret", "owner-secret", Aspose.Pdf.Facades.DocumentPrivilege.ForbidAll, CryptoAlgorithm.AESx256, usePdf20: false);
-            document.Save(workspace.File("locked chapters.pdf"));
-        }
-
-        var variables = new Dictionary<string, string?>(StringComparer.Ordinal) { ["PDF_USER"] = "user-secret" };
-        CliResult moved = workspace.RunWithEnv(variables, "pdf", "edit", "locked chapters.pdf", "--password-env", "PDF_USER", "--out", "moved.pdf", "--verify", "--output-format", "json", "--ops",
-            """[{"op":"move_pages","pages":"3","to":1}]""");
-
-        Assert.True(moved.ExitCode == 8, moved.StdOut + moved.StdErr);
-        string command = InspectionIn(Assert.Single(JsonNode.Parse(moved.StdOut)!["warnings"]!.AsArray(), static item => item!["code"]!.GetValue<string>() == "NAVIGATION_DEGRADED")!["hint"]!.GetValue<string>());
-        Assert.Contains(" --password-env PDF_USER", command, StringComparison.Ordinal);
-        Assert.Equal(3, OpenedPage(workspace.RunCommandLine(command, variables), "Chapter 3"));
     }
 
     // Three chapters, each with a bookmark to its page at the destination given, by default at a
@@ -211,14 +139,6 @@ public sealed class PdfNavigationTests
 
         return document;
     }
-
-    // The one runnable command a warning's hint quotes.
-    private static string InspectionIn(string hint) =>
-        Assert.Single(System.Text.RegularExpressions.Regex.Matches(hint, "'(aspose-cli [^']+ --detail outline --output-format json)'")).Groups[1].Value;
-
-    // The page the outline a command read opens for the bookmark of a title.
-    private static int OpenedPage(CliResult inspected, string title) =>
-        inspected.Json()["outline"]!.AsArray().First(item => item!["title"]!.GetValue<string>() == title)!["page"]!.GetValue<int>();
 
     /// <summary>
     /// Destinations and link areas with long fractions, as other producers write them, are
@@ -251,7 +171,6 @@ public sealed class PdfNavigationTests
         JsonNode warning = Assert.Single(JsonNode.Parse(moved.StdOut)!["warnings"]!.AsArray(), static item => item!["code"]!.GetValue<string>() == "NAVIGATION_DEGRADED")!;
         Assert.True(warning["affectsCompleteness"]!.GetValue<bool>());
         Assert.StartsWith("2 bookmark(s), 2 link(s) and 0 named destination(s) no longer lead to a page", warning["message"]!.GetValue<string>(), StringComparison.Ordinal);
-        Assert.Contains("No operation re-creates links or named destinations", warning["hint"]!.GetValue<string>(), StringComparison.Ordinal);
     }
 
     /// <summary>
@@ -648,10 +567,8 @@ public sealed class PdfNavigationTests
         Assert.Equal(2, warnings.Length);
         Assert.StartsWith("0 bookmark(s), 1 link(s) and 1 named destination(s) no longer lead to their page", warnings[0].Message, StringComparison.Ordinal);
         Assert.True(warnings[0].AffectsCompleteness);
-        Assert.DoesNotContain("add_bookmark", warnings[0].Hint, StringComparison.Ordinal);
         Assert.StartsWith("2 bookmark(s) of the merged document open their page as a whole", warnings[1].Message, StringComparison.Ordinal);
         Assert.False(warnings[1].AffectsCompleteness);
-        Assert.DoesNotContain("add_bookmark", warnings[1].Hint, StringComparison.Ordinal);
     }
 
     /// <summary>

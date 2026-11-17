@@ -63,8 +63,7 @@ public static class FileFingerprints
         {
             throw CliErrors.OptionInvalid(
                 "--if-match",
-                "the fingerprint must be exactly 64 hexadecimal SHA-256 characters",
-                "Copy input.fingerprint.sha256 from a current inspect or query result.");
+                "the fingerprint must be exactly 64 hexadecimal SHA-256 characters");
         }
 
         if (!string.Equals(

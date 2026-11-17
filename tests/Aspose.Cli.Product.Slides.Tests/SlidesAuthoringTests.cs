@@ -237,7 +237,6 @@ public sealed class SlidesAuthoringTests
         }));
 
         Assert.Equal("PLACEHOLDER_NOT_FOUND", refused.Code.Name);
-        Assert.Contains("set_text", refused.Hint, StringComparison.Ordinal);
         Assert.False(File.Exists(output));
         // With no title shape there is no title to read either: the text of another shape is not one.
         SlidesReadResult read = SlidesRead.Run(fixture.Session, new SlidesReadRequest { Input = input, Content = SlidesReadContents.Shapes });

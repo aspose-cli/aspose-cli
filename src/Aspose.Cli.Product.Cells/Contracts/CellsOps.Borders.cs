@@ -37,8 +37,7 @@ public sealed record SetBordersOp : CellsSheetOp
         OperationInvalidException.Require(
             A1.ParseRange(Range).Range.CellCount > 1
                 || Edges.Any(static edge => edge is not (CellsBorderEdges.Inside or CellsBorderEdges.Horizontal or CellsBorderEdges.Vertical)),
-            $"a single-cell range has no inner boundaries, so edges [{string.Join(", ", Edges)}] would draw nothing",
-            "Use outline (or top/bottom/left/right) on a single cell, or a multi-cell range for inside borders.");
+            $"a single-cell range has no inner boundaries, so edges [{string.Join(", ", Edges)}] would draw nothing");
         return this;
     }
 }

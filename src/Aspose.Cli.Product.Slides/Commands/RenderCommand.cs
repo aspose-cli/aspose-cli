@@ -40,8 +40,7 @@ internal static class RenderCommand
                 {
                     throw CliErrors.OptionInvalid(
                         "--width",
-                        "cannot be combined with --dpi",
-                        "Drop --dpi to render at an exact pixel width, or drop --width to render at a DPI.");
+                        "cannot be combined with --dpi");
                 }
 
                 return new SlidesRenderRequest

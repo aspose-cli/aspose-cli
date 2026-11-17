@@ -59,8 +59,6 @@ public sealed class CellsFormatDetectionTests(CellsFixture fixture) : IClassFixt
         }
 
         CliException refused = Assert.Throws<CliException>(() => CellsInfo.Run(fixture.Session, new CellsInspectRequest { Input = path }));
-
-        Assert.StartsWith("cells writes html, mhtml", refused.Hint, StringComparison.Ordinal);
     }
 
     private string SaveWorkbook(string fileName, SaveFormat format)

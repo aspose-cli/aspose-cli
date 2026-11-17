@@ -75,7 +75,6 @@ public sealed class StandardInputSecretCliTests
         Assert.Equal(
             ("OPTION_INVALID", "Invalid use of --encrypt-stdin: stdin is read as UTF-8 text, and the password on it is not", "--encrypt-stdin"),
             (error["code"]!.GetValue<string>(), error["message"]!.GetValue<string>(), error["details"]!["option"]!.GetValue<string>()));
-        Assert.Contains("--encrypt-env", error["hint"]!.GetValue<string>(), StringComparison.Ordinal);
         Assert.False(File.Exists(workspace.File("gbk.xlsx")));
 
         CliResult empty = Piped(workspace, [], ["cells", "create", "empty.xlsx", "--encrypt-stdin", "--output-format", "json"]);

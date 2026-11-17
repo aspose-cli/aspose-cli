@@ -33,8 +33,32 @@ public sealed class TempWorkspace : IDisposable
         Execute(standardInput, variables: null, args);
 
     /// <summary>
-    /// Runs a command line the CLI printed for the caller to run verbatim, such as a result's
-    /// <c>window.next</c>: it is split the way a shell splits the quoting the continuation writes
+    /// Runs <paramref name="args"/> again with the option values a result's <c>window.next</c>
+    /// gives, each in place of the same option's value, or added after the others.
+    /// </summary>
+    public CliResult RunNext(System.Text.Json.Nodes.JsonNode next, params string[] args)
+    {
+        ArgumentNullException.ThrowIfNull(next);
+        var run = new List<string>(args);
+        foreach ((string name, System.Text.Json.Nodes.JsonNode? value) in next.AsObject())
+        {
+            int at = run.IndexOf("--" + name);
+            if (at >= 0)
+            {
+                run[at + 1] = value!.GetValue<string>();
+            }
+            else
+            {
+                run.AddRange(["--" + name, value!.GetValue<string>()]);
+            }
+        }
+
+        return Run([.. run]);
+    }
+
+    /// <summary>
+    /// Runs a command line the CLI printed for the caller to run verbatim: it is split the way a
+    /// shell splits the quoting it writes
     /// (double quotes, with <c>\"</c>, <c>\$</c> and <c>\`</c> escaped inside them, and single
     /// quotes, inside which every character is literal), and its leading executable name is dropped.
     /// </summary>
@@ -171,12 +195,7 @@ public sealed class TempWorkspace : IDisposable
         CliResult result = new CliProcess(
             CliRunner.ExecutablePath,
             environment).Run(Path, standardInput, args: [.. args]);
-        result = ValidateJsonContract(result, args);
-        if (RequestsJson(args) && !IsSchemaCommand(args))
-        {
-            Scenarios.ExecutableHints.Require(new Scenarios.HintRun(args, Path, _configDirectory.Path, variables, standardInput), result);
-        }
-        return result;
+        return ValidateJsonContract(result, args);
     }
 
     private static CliResult ValidateJsonContract(

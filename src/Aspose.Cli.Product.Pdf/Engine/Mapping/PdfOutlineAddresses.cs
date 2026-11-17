@@ -27,7 +27,7 @@ internal static class PdfOutlineAddresses
                 || position < 1 || position > siblings.Length)
             {
                 throw CliErrors.NotFoundAt(
-                    ErrorCodes.BookmarkNotFound, "bookmark", index, siblings.Length, OutlineHint(parentIndex, siblings.Length));
+                    ErrorCodes.BookmarkNotFound, "bookmark", index, siblings.Length);
             }
 
             found = siblings[position - 1];
@@ -51,14 +51,4 @@ internal static class PdfOutlineAddresses
         parentIndex is null
             ? position.ToString(CultureInfo.InvariantCulture)
             : $"{parentIndex}/{position.ToString(CultureInfo.InvariantCulture)}";
-
-    private static string OutlineHint(string? parentIndex, int count) => (parentIndex, count) switch
-    {
-        (null, 0) => "The document has no bookmarks.",
-        (null, 1) => "The document has one top-level bookmark; use 1.",
-        (null, _) => $"Use a top-level bookmark from 1 through {count}.",
-        (_, 0) => $"Bookmark {parentIndex} has no child bookmarks.",
-        (_, 1) => $"Bookmark {parentIndex} has one child bookmark; use {parentIndex}/1.",
-        _ => $"Bookmark {parentIndex} has {count} child bookmarks; use {parentIndex}/1 through {parentIndex}/{count}.",
-    };
 }

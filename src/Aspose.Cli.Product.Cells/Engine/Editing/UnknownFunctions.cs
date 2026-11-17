@@ -51,8 +51,6 @@ internal static partial class UnknownFunctions
                 + (findings.Length > ListedCells ? $"; and {findings.Length - ListedCells} more cell(s)" : string.Empty)
                 + ". Those formulas evaluate to #NAME?.")
         {
-            Hint = "Correct a misspelled name, and replace a localized one with its English name. " + CellOps.EnglishFormulaHint
-                + " An add-in or VBA function, or one newer than the engine, keeps its name in the file for Excel to calculate.",
             Docs = "cells/editing",
         };
     }

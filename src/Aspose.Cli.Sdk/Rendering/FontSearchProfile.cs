@@ -69,7 +69,7 @@ public sealed class FontSearchProfile
                     if (info.Length > MaximumFontBytes
                         || totalBytes > MaximumProfileBytes - info.Length)
                     {
-                        throw Invalid("the font files exceed the byte budget");
+                        throw Invalid($"the font files exceed {MaximumFontBytes / (1024 * 1024)} MiB per file or {MaximumProfileBytes / (1024 * 1024)} MiB in total");
                     }
                     totalBytes += info.Length;
                 }
@@ -86,10 +86,7 @@ public sealed class FontSearchProfile
     private static CliException Invalid(string reason) =>
         CliErrors.OptionInvalid(
             "--font-dir",
-            reason,
-            $"Use readable local font directories with at most {MaximumCandidates} font files, "
-                + $"each at most {MaximumFontBytes / (1024 * 1024)} MiB and "
-                + $"{MaximumProfileBytes / (1024 * 1024)} MiB in total.");
+            reason);
 
     private static bool IsFontFile(string path)
     {

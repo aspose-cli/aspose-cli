@@ -30,7 +30,7 @@ public sealed class PdfOutputFormatTests : IDisposable
     public void Dispose() => _workspace.Dispose();
 
     [Fact]
-    public void EditToADocx_PointsToTheWordsConversionThatWritesAnEditableDocument()
+    public void EditToADocx_IsRefused()
     {
         CliResult refused = Run("pdf", "edit", "in.pdf", "--ops", "x.json", "--out", "y.docx");
 
@@ -38,26 +38,16 @@ public sealed class PdfOutputFormatTests : IDisposable
         JsonNode error = JsonNode.Parse(refused.StdErr)!["error"]!;
         Assert.Equal("OPTION_INVALID", error["code"]!.GetValue<string>());
         Assert.Equal("docx", error["details"]!["format"]!.GetValue<string>());
-        string hint = error["hint"]!.GetValue<string>();
-        Assert.Equal("Give --out one of these extensions, then run 'aspose-cli words convert <that file> --to docx --output-format json' for docx.", hint);
-        Assert.DoesNotContain("pdf convert", hint, StringComparison.Ordinal);
         Assert.False(File.Exists(_workspace.File("y.docx")));
-
-        // The hint works as written: the same edit to a .pdf, then the conversion it names.
-        CliResult kept = Run("pdf", "edit", "in.pdf", "--ops", "x.json", "--out", "kept.pdf");
-        Assert.True(kept.ExitCode == 0, kept.StdErr);
-        CliResult converted = Run("words", "convert", "kept.pdf", "--to", "docx", "--out", "y.docx");
-        Assert.True(converted.ExitCode == 0, converted.StdErr);
-        Assert.Equal("docx", JsonNode.Parse(converted.StdOut)!["outputs"]![0]!["format"]!.GetValue<string>());
     }
 
-    /// <summary>Every other format the PDF conversion writes is still pointed to it.</summary>
+    /// <summary>Every other format the PDF conversion writes is refused too.</summary>
     [Theory]
     [InlineData("y.html", "html")]
     [InlineData("y.xlsx", "xlsx")]
     [InlineData("y.pptx", "pptx")]
     [InlineData("y.md", "md")]
-    public void EditToAnotherConvertedFormat_StillPointsToThePdfConversion(string output, string format)
+    public void EditToAnotherConvertedFormat_IsRefused(string output, string format)
     {
         CliResult refused = Run("pdf", "edit", "in.pdf", "--ops", "x.json", "--out", output);
 
@@ -65,143 +55,6 @@ public sealed class PdfOutputFormatTests : IDisposable
         JsonNode error = JsonNode.Parse(refused.StdErr)!["error"]!;
         Assert.Equal("OPTION_INVALID", error["code"]!.GetValue<string>());
         Assert.Equal(format, error["details"]!["format"]!.GetValue<string>());
-        Assert.Equal(
-            $"Give --out one of these extensions, then run 'aspose-cli pdf convert <that file> --to {format} --output-format json' for {format}.",
-            error["hint"]!.GetValue<string>());
-    }
-
-    [Fact]
-    public void ConvertToDocx_WarnsLossy_AndNamesTheWordsConversionOfTheInputForAnEditableDocument()
-    {
-        CliResult converted = Run("pdf", "convert", "in.pdf", "--to", "docx", "--out", "framed.docx");
-
-        Assert.True(converted.ExitCode == 0, converted.StdErr);
-        string command = EditableConversion(converted);
-        Assert.StartsWith("aspose-cli words convert ", command, StringComparison.Ordinal);
-        Assert.Contains(" --to docx --out ", command, StringComparison.Ordinal);
-        Assert.Contains(" --overwrite", command, StringComparison.Ordinal);
-
-        // The shown command runs as written: Words converts this input over the file just written.
-        AssertWordsReplaces(_workspace.RunCommandLine(command), "in.pdf", "framed.docx");
-    }
-
-    /// <summary>
-    /// A conversion that names no output writes beside the input, where the Words conversion
-    /// would write too: the shown command names that file and replaces it.
-    /// </summary>
-    [Fact]
-    public void ConvertToDocxBesideTheInput_NamesTheWordsConversionThatReplacesThatFile()
-    {
-        CliResult converted = Run("pdf", "convert", "in.pdf", "--to", "docx");
-
-        Assert.True(converted.ExitCode == 0, converted.StdErr);
-        Assert.Equal(
-            Path.GetFullPath(_workspace.File("in.docx")),
-            Path.GetFullPath(JsonNode.Parse(converted.StdOut)!["outputs"]![0]!["path"]!.GetValue<string>()),
-            ignoreCase: true);
-        string command = EditableConversion(converted);
-
-        // The shown command runs as written: Words writes the same in.docx again.
-        AssertWordsReplaces(_workspace.RunCommandLine(command), "in.pdf", "in.docx");
-    }
-
-    /// <summary>
-    /// The Words conversion of an input opened with the password an environment variable holds
-    /// names that variable, so it opens the input as written.
-    /// </summary>
-    [Fact]
-    public void ConvertOfAnEncryptedInputToDocx_NamesTheWordsConversionWithItsPasswordVariable()
-    {
-        const string Password = "editable-secret";
-        Dictionary<string, string?> variables = new(StringComparer.Ordinal) { [PasswordVariable] = Password };
-        CliResult encrypted = _workspace.RunWithEnv(
-            variables, "pdf", "edit", "in.pdf", "--ops", "x.json", "--out", "locked.pdf", "--encrypt-env", PasswordVariable, "--output-format", "json");
-        Assert.True(encrypted.ExitCode == 0, encrypted.StdErr);
-
-        CliResult converted = _workspace.RunWithEnv(
-            variables, "pdf", "convert", "locked.pdf", "--password-env", PasswordVariable, "--to", "docx", "--out", "framed.docx", "--output-format", "json");
-
-        Assert.True(converted.ExitCode == 0, converted.StdErr);
-        string command = EditableConversion(converted);
-        Assert.StartsWith("aspose-cli words convert ", command, StringComparison.Ordinal);
-        Assert.Contains($" --password-env {PasswordVariable} ", command, StringComparison.Ordinal);
-        Assert.Contains(" --overwrite", command, StringComparison.Ordinal);
-        Assert.DoesNotContain(Password, converted.StdOut, StringComparison.Ordinal);
-
-        // The shown command opens the encrypted input as written and converts it over the file just written.
-        AssertWordsReplaces(_workspace.RunCommandLine(command, variables), "locked.pdf", "framed.docx");
-    }
-
-    /// <summary>
-    /// A conversion of selected pages to docx names the Words conversion of those pages alone:
-    /// the split of the pages from the input, then the conversion of the part over the file just
-    /// written. Run as written, the docx holds the selected page, not the whole document.
-    /// </summary>
-    [Category(TestCategory.Slow)]
-    [Fact]
-    public void ConvertOfSelectedPagesToDocx_NamesTheWordsConversionOfThosePagesAlone()
-    {
-        using (var document = new Aspose.Pdf.Document())
-        {
-            foreach (string line in new[] { "First page.", "Second page.", "Third page." })
-            {
-                document.Pages.Add().Paragraphs.Add(new Aspose.Pdf.Text.TextFragment(line));
-            }
-
-            document.Save(_workspace.File("three.pdf"));
-        }
-
-        CliResult converted = Run("pdf", "convert", "three.pdf", "--pages", "2", "--to", "docx", "--out", "page.docx");
-
-        Assert.True(converted.ExitCode == 0, converted.StdErr);
-        string hint = JsonNode.Parse(converted.StdOut)!["warnings"]!.AsArray()
-            .Single(static warning => warning!["code"]!.GetValue<string>() == "LOSSY_CONVERSION")!["hint"]!.GetValue<string>();
-        string[] commands = [.. System.Text.RegularExpressions.Regex.Matches(hint, "'(aspose-cli [^']+)'").Select(static match => match.Groups[1].Value)];
-        Assert.Equal(2, commands.Length);
-        Assert.StartsWith("aspose-cli pdf split ", commands[0], StringComparison.Ordinal);
-        Assert.Contains(" --by pages --groups 2 ", commands[0], StringComparison.Ordinal);
-        Assert.StartsWith("aspose-cli words convert ", commands[1], StringComparison.Ordinal);
-        Assert.Contains(" --overwrite", commands[1], StringComparison.Ordinal);
-        Assert.EndsWith($"' instead; once the conversion has run, delete \"{_workspace.File("page-editable-part")}\", the folder the split created beside the output for the part.", hint, StringComparison.OrdinalIgnoreCase);
-
-        CliResult split = _workspace.RunCommandLine(commands[0]);
-        Assert.True(split.ExitCode == 0, split.StdErr);
-        AssertWordsReplaces(_workspace.RunCommandLine(commands[1]), Path.Combine("page-editable-part", "three.1.pdf"), "page.docx");
-        JsonNode inspected = Run("words", "inspect", "page.docx").Json();
-        Assert.Equal(1, inspected["document"]!["pageCount"]!.GetValue<int>());
-        string text = Run("words", "read", "page.docx").StdOut;
-        Assert.Contains("Second page.", text, StringComparison.Ordinal);
-        Assert.DoesNotContain("First page.", text, StringComparison.Ordinal);
-    }
-
-    // The command the LOSSY_CONVERSION warning of a conversion shows for an editable document.
-    private static string EditableConversion(CliResult converted)
-    {
-        JsonNode lossy = JsonNode.Parse(converted.StdOut)!["warnings"]!.AsArray()
-            .Single(static warning => warning!["code"]!.GetValue<string>() == "LOSSY_CONVERSION")!;
-        string hint = lossy["hint"]!.GetValue<string>();
-        const string Shown = "For an editable document, run '";
-        int at = hint.IndexOf(Shown, StringComparison.Ordinal);
-        Assert.True(at >= 0, hint);
-        Assert.EndsWith("' instead.", hint, StringComparison.Ordinal);
-        return hint[(at + Shown.Length)..].Split('\'', 2)[0];
-    }
-
-    // A Words conversion that succeeded and wrote the named docx from the named input.
-    private void AssertWordsReplaces(CliResult rebuilt, string input, string output)
-    {
-        Assert.True(rebuilt.ExitCode == 0, rebuilt.StdErr);
-        JsonNode result = JsonNode.Parse(rebuilt.StdOut)!;
-        Assert.EndsWith("/v2/words/convert-result.schema.json", result["schema"]!.GetValue<string>(), StringComparison.Ordinal);
-        Assert.Equal("docx", result["outputs"]![0]!["format"]!.GetValue<string>());
-        Assert.Equal(
-            Path.GetFullPath(_workspace.File(input)),
-            Path.GetFullPath(result["input"]!["path"]!.GetValue<string>()),
-            ignoreCase: true);
-        Assert.Equal(
-            Path.GetFullPath(_workspace.File(output)),
-            Path.GetFullPath(result["outputs"]![0]!["path"]!.GetValue<string>()),
-            ignoreCase: true);
     }
 
     private CliResult Run(params string[] arguments) => _workspace.Run([.. arguments, "--output-format", "json"]);

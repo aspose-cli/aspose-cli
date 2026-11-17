@@ -91,11 +91,6 @@ public sealed class SlidesTextCoverageTests
         Assert.Equal(NoEffectReasons.NoMatch, warning.Details["reason"]!.GetValue<string>());
         Assert.Contains("'notes'", warning.Message, StringComparison.Ordinal);
         Assert.DoesNotContain("bc", warning.Message, StringComparison.Ordinal);
-        // SLD-3: the sentences of the hint are joined with a space.
-        Assert.Equal(
-            "Search with 'slides search' and the same pattern and scope, or set \"scope\": \"all\" on the op to cover both shape text and speaker notes. "
-                + "A match outside shape text and notes, such as in a chart or an alternative text, is never replaced and is named by TEXT_NOT_REPLACED.",
-            warning.Hint);
     }
 
     [Fact]
@@ -288,8 +283,6 @@ public sealed class SlidesTextCoverageTests
         Assert.Equal(0, Assert.Single(result.Applied).ItemsAffected);
         Warning noEffect = Assert.Single(result.Warnings!, static warning => warning.Code == WarningCodes.OpNoEffect);
         Assert.Equal(NoEffectReasons.EvaluationTruncated, noEffect.Details!["reason"]!.GetValue<string>());
-        Assert.Contains("license", noEffect.Hint, StringComparison.Ordinal);
-        Assert.DoesNotContain("Search with", noEffect.Hint, StringComparison.Ordinal);
         Assert.True(File.Exists(output));
     }
 

@@ -163,7 +163,6 @@ public sealed class PdfEditVerificationTests
 
         Warning degraded = Assert.Single(result.Warnings!, static warning => warning.Code.Name == "NAVIGATION_DEGRADED");
         Assert.False(degraded.AffectsCompleteness);
-        Assert.Contains("delete_bookmarks", degraded.Hint, StringComparison.Ordinal);
         Assert.True(result.Verification!.Ok, string.Join("; ", result.Verification.Issues.Select(static issue => issue.Message)));
         Assert.Equal(["op-0001"], result.Verification.CheckedOps);
         Assert.False(result.HasFailures);
@@ -201,7 +200,6 @@ public sealed class PdfEditVerificationTests
         string text = writer.ToString();
         Assert.Contains("verification: needs attention", text, StringComparison.Ordinal);
         Assert.Contains("REDACTED_TEXT_FOUND [page/1]: Operation 'op-0001' (redact_text)", text, StringComparison.Ordinal);
-        Assert.Contains("hint: ", text, StringComparison.Ordinal);
     }
 
     [Fact]

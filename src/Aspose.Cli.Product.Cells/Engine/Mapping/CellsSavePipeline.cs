@@ -152,7 +152,6 @@ internal sealed class CellsSavePipeline(OutputPipeline<Workbook> outputs)
                 + $"so data beyond it was discarded: {string.Join("; ", overflowed)}.")
         {
             AffectsCompleteness = true,
-            Hint = "Convert to a modern format (xlsx, xlsb, ods) to keep every row and column.",
         };
     }
 
@@ -188,7 +187,6 @@ internal sealed class CellsSavePipeline(OutputPipeline<Workbook> outputs)
                 + "65,536-row xls grid). The cached values are kept, but the live formulas are broken.")
         {
             AffectsCompleteness = true,
-            Hint = "Convert to a modern format (xlsx, xlsb) to preserve every formula.",
         };
     }
 

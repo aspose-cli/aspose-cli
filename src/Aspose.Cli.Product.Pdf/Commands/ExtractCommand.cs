@@ -47,20 +47,19 @@ internal static class ExtractCommand
                 {
                     if (format is null)
                     {
-                        throw CliErrors.OptionInvalid("--form-format", "is required with --what forms", "Use --form-format json, fdf or xfdf.");
+                        throw CliErrors.OptionInvalid("--form-format", "is required with --what forms", Mistake.Of(string.Empty, PdfFormats.FormData.Select(static candidate => candidate.Id)));
                     }
                 }
                 else if (format is not null)
                 {
                     throw CliErrors.OptionInvalid(
                         "--form-format",
-                        "it chooses the format of form data and is valid only with --what forms",
-                        $"Drop --form-format; --what {kind} writes its files in their own formats.");
+                        "it chooses the format of form data and is valid only with --what forms");
                 }
 
                 if (kind is PdfExtractKinds.Attachments or PdfExtractKinds.Forms && pageText is not null)
                 {
-                    throw CliErrors.OptionInvalid(pages.Name, $"{kind} belong to the document rather than individual pages", $"Omit {pages.Name} when extracting {kind}.");
+                    throw CliErrors.OptionInvalid(pages.Name, $"{kind} belong to the document rather than individual pages");
                 }
 
                 PageRange? range = pages.ReadRange(parse);
@@ -74,8 +73,6 @@ internal static class ExtractCommand
                     Password = standard.InputPassword,
                     ByteOrderMark = byteOrderMark,
                     FormFormat = format,
-                    TextExtraction = PdfInputs.TextExtraction(standard, directory, pageText),
-                    FormsInspection = PdfInputs.FormsInspection(standard),
                 };
             },
             Table)

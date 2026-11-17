@@ -56,11 +56,10 @@ public sealed class RenderPixelGuardTests
 
         RenderPixelGuard.EnsureFits(budgets, limit, 1, dpi: 72);
         CliException error = Assert.Throws<CliException>(() =>
-            RenderPixelGuard.EnsureFits(budgets, limit, 2, dpi: null, hint: "Shrink it."));
+            RenderPixelGuard.EnsureFits(budgets, limit, 2, dpi: null));
 
         Assert.Equal(ResourceBudgetDefaults.RasterPixels, limit);
         Assert.Equal(ErrorCodes.RenderTooLarge, error.Code);
-        Assert.Equal("Shrink it.", error.Hint);
         Assert.Equal(limit, error.Details?["limit"]?.GetValue<long>());
         Assert.Equal(limit * 2, error.Details?["actual"]?.GetValue<long>());
         Assert.Equal("pixels", error.Details?["unit"]?.GetValue<string>());
@@ -76,7 +75,6 @@ public sealed class RenderPixelGuardTests
 
         Assert.Equal(ErrorCodes.RenderTooLarge, error.Code);
         Assert.Equal(long.MaxValue, error.Details?["width"]?.GetValue<long>());
-        Assert.Contains("smaller render region", error.Hint, StringComparison.Ordinal);
     }
 
     [Fact]

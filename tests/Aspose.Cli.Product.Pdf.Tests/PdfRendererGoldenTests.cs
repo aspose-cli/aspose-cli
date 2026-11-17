@@ -191,7 +191,7 @@ public sealed class PdfRendererGoldenTests
     }
 
     [Fact]
-    public void Edit_WithVerification_PrintsOutcomesPagesIssuesAndHints()
+    public void Edit_WithVerification_PrintsOutcomesPagesAndIssues()
     {
         var result = new PdfEditResult
         {
@@ -215,7 +215,7 @@ public sealed class PdfRendererGoldenTests
                 CheckedOps = ["stamp"],
                 Issues =
                 [
-                    VerificationIssue.From(new Warning(new WarningCode("TEXT_NOT_FOUND"), "the stamp text was not read back") { Location = "page/2", Hint = "Check the font." }),
+                    VerificationIssue.From(new Warning(new WarningCode("TEXT_NOT_FOUND"), "the stamp text was not read back") { Location = "page/2"}),
                     VerificationIssue.From(new Warning(new WarningCode("REDACTION_PARTIAL"), "1 match remains")),
                 ],
             },
@@ -232,7 +232,6 @@ public sealed class PdfRendererGoldenTests
             pages touched: 2
             verification: needs attention; checked ops: stamp
               TEXT_NOT_FOUND [page/2]: the stamp text was not read back
-                hint: Check the font.
               REDACTION_PARTIAL: 1 match remains
             """,
             text);

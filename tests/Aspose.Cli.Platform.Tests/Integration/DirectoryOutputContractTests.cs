@@ -67,9 +67,9 @@ public sealed class DirectoryOutputContractTests
     /// format still works.
     /// </summary>
     [Theory]
-    [InlineData("pdf split input.pdf --by pages --out-dir parts.pdf", "--out-dir", "parts.pdf", "--out-dir parts")]
-    [InlineData("pdf extract input.pdf --what images --out-dir images.png", "--out-dir", "images.png", "--out-dir images")]
-    public void ADirectoryNamedLikeAFile_IsRefused(string commandLine, string option, string directory, string fix)
+    [InlineData("pdf split input.pdf --by pages --out-dir parts.pdf", "--out-dir", "parts.pdf")]
+    [InlineData("pdf extract input.pdf --what images --out-dir images.png", "--out-dir", "images.png")]
+    public void ADirectoryNamedLikeAFile_IsRefused(string commandLine, string option, string directory)
     {
         using var workspace = new TempWorkspace();
         File.WriteAllText(workspace.File("content.txt"), "Directory output fixture");
@@ -82,9 +82,6 @@ public sealed class DirectoryOutputContractTests
         JsonNode error = JsonNode.Parse(result.StdErr)!["error"]!;
         Assert.Equal("OPTION_INVALID", error["code"]!.GetValue<string>());
         Assert.Equal(option, error["details"]!["option"]!.GetValue<string>());
-        string hint = error["hint"]!.GetValue<string>();
-        Assert.Contains("directory", hint, StringComparison.Ordinal);
-        Assert.Contains($"as in {fix}", hint, StringComparison.Ordinal);
         Assert.False(Directory.Exists(workspace.File(directory)));
         Assert.False(File.Exists(workspace.File(directory)));
     }

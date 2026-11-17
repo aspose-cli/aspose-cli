@@ -41,7 +41,6 @@ internal static class SdkMetadataNames
     internal const string OperationAttribute = OperationsNamespace + ".OperationAttribute";
     internal const string OperationInputAttribute = OperationsNamespace + ".OperationInputAttribute";
     internal const string MistakenForAttribute = OperationsNamespace + ".MistakenForAttribute";
-    internal const string EncryptsOutputAttribute = OperationsNamespace + ".EncryptsOutputAttribute";
     internal const string RecordRuleAttribute = OperationsNamespace + ".RecordRuleAttribute";
     internal const string MemberCountAttribute = OperationsNamespace + ".MemberCountAttribute";
     internal const string MinPropertiesAttribute = OperationsNamespace + ".MinPropertiesAttribute";

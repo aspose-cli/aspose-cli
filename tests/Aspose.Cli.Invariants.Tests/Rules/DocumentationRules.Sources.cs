@@ -5,7 +5,7 @@ namespace Aspose.Cli.Invariants.Tests;
 
 /// <summary>
 /// The one reader of the texts that name commands, options, codes, operations and fields. In the
-/// C# sources: every string literal (error messages, hints, help), with adjacent literals joined
+/// C# sources: every string literal (error messages, help), with adjacent literals joined
 /// by <c>+</c> read as one text and each interpolation hole read as <c>…</c>, and every
 /// documentation comment (<c>///</c>), which the schemas publish as descriptions, with its XML
 /// tags removed. A literal inside an interpolation hole is a text of its own. In Markdown (the
@@ -355,7 +355,7 @@ internal static partial class ContractRules
                 }
                 else if (StringStart() is { } start)
                 {
-                    // A literal inside a hole, such as a hint a ternary picks, is a text of its own.
+                    // A literal inside a hole, such as one a ternary picks, is a text of its own.
                     int line = _line;
                     _holeTexts.Add(new SourceText(line, ReadString(start)));
                 }

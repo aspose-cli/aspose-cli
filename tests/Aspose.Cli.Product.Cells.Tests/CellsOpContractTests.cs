@@ -129,12 +129,11 @@ public sealed class CellsOpContractTests : IClassFixture<CellsFixture>
         Assert.False(OpsSchema<CellsModule>.Accepts($$"""{"ops":[{{operation}}]}"""));
 
     [Fact]
-    public void AHeaderMarginInsideMargins_PointsToHeaderMargin()
+    public void AHeaderMarginInsideMargins_IsRefused()
     {
         CliException error = Assert.Throws<CliException>(() => Parse("""{"ops":[{"op":"set_page_setup","margins":{"top":72,"header":20}}]}"""));
 
         Assert.Equal(ErrorCodes.OpsInvalid, error.Code);
-        Assert.StartsWith("The header and footer distances are headerMargin and footerMargin, beside margins.", error.Hint, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -233,7 +232,6 @@ public sealed class CellsOpContractTests : IClassFixture<CellsFixture>
 
         Assert.Equal("OPS_INVALID", error.Code.Name);
         Assert.Contains(field, error.Details!.ToJsonString(), StringComparison.Ordinal);
-        Assert.Contains($"Did you mean '{field}'", error.Hint, StringComparison.Ordinal);
     }
 
     [Theory]
@@ -285,16 +283,15 @@ public sealed class CellsOpContractTests : IClassFixture<CellsFixture>
     }
 
     [Theory]
-    [InlineData("""{"op":"set_autofilter","sheet":"Data","off":true}""", "clear_autofilter")]
-    [InlineData("""{"op":"set_tab_color","sheet":"Data"}""", "clear_tab_color")]
-    [InlineData("""{"op":"set_print_area","sheet":"Data","titleRows":"1"}""", "clear_print_area")]
-    [InlineData("""{"op":"freeze_panes","sheet":"Data","cell":"A1"}""", "unfreeze_panes")]
-    public void AnOperationThatWouldRemoveState_PointsAtTheOperationThatRemovesIt(string operation, string remover)
+    [InlineData("""{"op":"set_autofilter","sheet":"Data","off":true}""")]
+    [InlineData("""{"op":"set_tab_color","sheet":"Data"}""")]
+    [InlineData("""{"op":"set_print_area","sheet":"Data","titleRows":"1"}""")]
+    [InlineData("""{"op":"freeze_panes","sheet":"Data","cell":"A1"}""")]
+    public void AnOperationThatWouldRemoveState_IsRefused(string operation)
     {
         CliException error = Assert.Throws<CliException>(() => Parse($$"""{"ops":[{{operation}}]}"""));
 
         Assert.Equal("OPS_INVALID", error.Code.Name);
-        Assert.Contains(remover, error.Hint, StringComparison.Ordinal);
     }
 
     /// <summary>
@@ -309,7 +306,6 @@ public sealed class CellsOpContractTests : IClassFixture<CellsFixture>
         CliException error = Assert.Throws<CliException>(() => Parse($$"""{"ops":[{{operation}}]}"""));
 
         Assert.Equal("path", error.Details!["suggestions"]!.AsArray()[0]!.GetValue<string>());
-        Assert.StartsWith("Did you mean 'path'", error.Hint, StringComparison.Ordinal);
     }
 
     private static CellsOpsBatch Parse(string json) =>
