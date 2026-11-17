@@ -3,8 +3,8 @@ using Aspose.Cli.Sdk.Contracts;
 namespace Aspose.Cli.Host.Output.Rendering;
 
 /// <summary>
-/// Human renderers for the product-neutral result families (license, doctor,
-/// fonts, skill install, update). A second product reuses these unchanged.
+/// Human renderers for the product-neutral result families (license, fonts, skill
+/// install). A second product reuses these unchanged.
 /// </summary>
 internal static class CommonRenderers
 {
@@ -127,43 +127,6 @@ internal static class CommonRenderers
         }
     }
 
-    public static void Render(DoctorResult doctor, TableSurface surface)
-    {
-        surface.Out.WriteLine(doctor.Ok ? "doctor: ready" : "doctor: not ready");
-        surface.Out.WriteLine();
-
-        var table = new TextTable("check", "status", "detail");
-        foreach (DoctorCheck check in doctor.Checks)
-        {
-            table.AddRow(check.Name, check.Status, check.Detail);
-        }
-
-        table.WriteTo(surface.Out, surface.Format);
-
-        foreach (DoctorCheck check in doctor.Checks)
-        {
-            if (check.Hint is { } hint)
-            {
-                surface.Out.WriteLine($"  {check.Name}: {hint}");
-            }
-        }
-
-        if (doctor.Products is { Count: > 0 } products)
-        {
-            surface.Out.WriteLine();
-            var productTable = new TextTable("product", "engine", "license");
-            foreach (DoctorProductStatus product in products)
-            {
-                productTable.AddRow(
-                    product.Product,
-                    product.Engine,
-                    product.LicenseMode);
-            }
-
-            productTable.WriteTo(surface.Out, surface.Format);
-        }
-    }
-
     public static void Render(SchemaListResult result, TableSurface surface)
     {
         surface.Out.WriteLine("schemas:");
@@ -192,22 +155,6 @@ internal static class CommonRenderers
             {
                 table.AddRow(name, fallback, source.Kind, source.Location);
             }
-        }
-
-        table.WriteTo(surface.Out, surface.Format);
-    }
-
-    public static void Render(FontCheckResult check, TableSurface surface)
-    {
-        surface.Out.WriteLine(check.AllAvailable
-            ? $"{check.Input.Path}: all fonts available"
-            : $"{check.Input.Path}: some fonts substituted");
-        surface.Out.WriteLine();
-
-        var table = new TextTable("font", "available", "substituted by");
-        foreach (FontAvailability font in check.Fonts)
-        {
-            table.AddRow(font.Name, TableText.YesNo(font.Available), font.SubstitutedBy);
         }
 
         table.WriteTo(surface.Out, surface.Format);

@@ -173,7 +173,7 @@ if ($customerPublish) {
         [string]$layout.Identity.commandName
     }
     # The native libraries the engines load, beside the executable: the Slides drawing library
-    # (which needs the Visual C++ runtime, see doctor) and SkiaSharp's.
+    # (which needs the Visual C++ runtime) and SkiaSharp's.
     $nativeLibraries = @('aspose.slides.drawing.capi_vc14x64.dll', 'libSkiaSharp.dll')
     $requiredCustomerFiles = @($executableName, $script:BuildManifestName) + $nativeLibraries + $noticeFiles
     $missingCustomerFiles = @(

@@ -59,17 +59,6 @@ public sealed class LicenseModeTests : IDisposable
         Assert.Contains(requested["warnings"]!.AsArray(), warning => warning!["code"]!.GetValue<string>() == "EVALUATION_MODE");
     }
 
-    [Fact]
-    public void Doctor_SaysTheEvaluationModeWasRequested()
-    {
-        JsonNode doctor = _workspace.Run("doctor", "--license-mode", "evaluation", "--output-format", "json").Json();
-
-        JsonNode license = Assert.Single(
-            doctor["checks"]!.AsArray(), check => check!["name"]!.GetValue<string>() == "license")!;
-        Assert.Equal("warn", license["status"]!.GetValue<string>());
-        Assert.Contains("--license-mode evaluation", license["detail"]!.GetValue<string>(), StringComparison.Ordinal);
-    }
-
     private JsonNode Create(string output, string[] options)
     {
         CliResult result = _workspace.Run(

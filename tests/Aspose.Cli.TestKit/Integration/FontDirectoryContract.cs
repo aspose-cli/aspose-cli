@@ -5,24 +5,11 @@ namespace Aspose.Cli.TestKit;
 
 /// <summary>
 /// Proves through the real CLI that a relative <c>--font-dir</c> makes the
-/// fixture family available to <c>fonts check</c> and the
-/// commands that lay out and save documents, and that the family is missing
-/// again as soon as the option is omitted.
+/// fixture family available to the commands that lay out and save documents,
+/// and that the family is missing again as soon as the option is omitted.
 /// </summary>
 public static class FontDirectoryContract
 {
-    /// <param name="workspace">Workspace whose working directory holds <paramref name="fileName"/>.</param>
-    /// <param name="fileName">Document that uses <see cref="FontFixtures.UniqueFamily"/>.</param>
-    public static void Verify(TempWorkspace workspace, string fileName)
-    {
-        ArgumentNullException.ThrowIfNull(workspace);
-        FontFixtures.WriteUniqueFont(workspace.File("fonts"));
-
-        Assert.False(FixtureAvailable(workspace, ["fonts", "check", fileName]));
-        Assert.True(FixtureAvailable(workspace, ["fonts", "check", fileName, "--font-dir", "fonts"]));
-        Assert.False(FixtureAvailable(workspace, ["fonts", "check", fileName]));
-    }
-
     /// <summary>
     /// Proves through the real CLI that a command lays out and saves its PDF output with
     /// the fixture family from a relative <c>--font-dir</c>, and substitutes another font
@@ -50,21 +37,12 @@ public static class FontDirectoryContract
     public static bool EmbedsFixture(TempWorkspace workspace, string pdf)
     {
         ArgumentNullException.ThrowIfNull(workspace);
-        JsonNode result = Succeed(workspace.Run(["fonts", "check", pdf, "--output-format", "json"]));
+        JsonNode result = Succeed(workspace.Run(["pdf", "inspect", pdf, "--detail", "fonts", "--output-format", "json"]));
         return result["fonts"]!.AsArray().Any(static font =>
-            IsFixture(font!["name"]!.GetValue<string>()) && font["available"]!.GetValue<bool>());
+            IsFixture(font!["name"]!.GetValue<string>()) && font["embedded"]!.GetValue<bool>());
     }
 
-    private static bool FixtureAvailable(TempWorkspace workspace, string[] args)
-    {
-        JsonNode result = Succeed(workspace.Run([.. args, "--output-format", "json"]));
-        JsonNode font = Assert.Single(
-            result["fonts"]!.AsArray(),
-            font => IsFixture(font!["name"]!.GetValue<string>()))!;
-        return font["available"]!.GetValue<bool>();
-    }
-
-    /// <summary>A result on stdout: complete (0), or partial (8) when a checked font is missing.</summary>
+    /// <summary>A result on stdout: complete (0), or partial (8).</summary>
     private static JsonNode Succeed(CliResult result)
     {
         Assert.True(result.ExitCode is 0 or 8, $"exit {result.ExitCode}: {result.StdErr}");

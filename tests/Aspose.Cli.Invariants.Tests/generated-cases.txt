@@ -15,8 +15,6 @@ C-R03 | fonts declared
 C-R03 | fonts without a subcommand
 C-R03 | license declared
 C-R03 | license without a subcommand
-C-R03 | mcp declared
-C-R03 | mcp without a subcommand
 C-R03 | pdf declared
 C-R03 | pdf without a subcommand
 C-R03 | skill declared
@@ -50,7 +48,6 @@ C-R06 | cells inspect
 C-R06 | cells read
 C-R06 | cells render
 C-R06 | cells search
-C-R06 | fonts check
 C-R06 | fonts list
 C-R06 | license install
 C-R06 | license remove
@@ -97,7 +94,6 @@ C-R08 | cells inspect
 C-R08 | cells read
 C-R08 | cells render
 C-R08 | cells search
-C-R08 | fonts check
 C-R08 | fonts list
 C-R08 | license install
 C-R08 | license remove
@@ -148,7 +144,6 @@ C-R10 | cells inspect declared
 C-R10 | cells read declared
 C-R10 | cells render declared
 C-R10 | cells search declared
-C-R10 | fonts check declared
 C-R10 | pdf convert declared
 C-R10 | pdf create declared
 C-R10 | pdf edit --encrypt-stdin with --ops
@@ -489,12 +484,10 @@ C-R17 | v2/common/backup
 C-R17 | v2/common/capabilities
 C-R17 | v2/common/capabilities-summary
 C-R17 | v2/common/diagnostic-details
-C-R17 | v2/common/doctor
 C-R17 | v2/common/dry-run-result
 C-R17 | v2/common/error
 C-R17 | v2/common/error-payload
 C-R17 | v2/common/file-fingerprint
-C-R17 | v2/common/font-check
 C-R17 | v2/common/font-list
 C-R17 | v2/common/input
 C-R17 | v2/common/license
@@ -771,12 +764,10 @@ C-R18 | v2/common/backup
 C-R18 | v2/common/capabilities
 C-R18 | v2/common/capabilities-summary
 C-R18 | v2/common/diagnostic-details
-C-R18 | v2/common/doctor
 C-R18 | v2/common/dry-run-result
 C-R18 | v2/common/error
 C-R18 | v2/common/error-payload
 C-R18 | v2/common/file-fingerprint
-C-R18 | v2/common/font-check
 C-R18 | v2/common/font-list
 C-R18 | v2/common/input
 C-R18 | v2/common/license
@@ -1806,9 +1797,6 @@ C-R20 | v2/common/capabilities-summary variants
 C-R20 | v2/common/diagnostic-details fixednames
 C-R20 | v2/common/diagnostic-details spelling
 C-R20 | v2/common/diagnostic-details variants
-C-R20 | v2/common/doctor fixednames
-C-R20 | v2/common/doctor spelling
-C-R20 | v2/common/doctor variants
 C-R20 | v2/common/dry-run-result fixednames
 C-R20 | v2/common/dry-run-result spelling
 C-R20 | v2/common/dry-run-result variants
@@ -1821,9 +1809,6 @@ C-R20 | v2/common/error-payload variants
 C-R20 | v2/common/file-fingerprint fixednames
 C-R20 | v2/common/file-fingerprint spelling
 C-R20 | v2/common/file-fingerprint variants
-C-R20 | v2/common/font-check fixednames
-C-R20 | v2/common/font-check spelling
-C-R20 | v2/common/font-check variants
 C-R20 | v2/common/font-list fixednames
 C-R20 | v2/common/font-list spelling
 C-R20 | v2/common/font-list variants
@@ -3227,9 +3212,6 @@ C-R22 | words edit --ops with a bare array
 C-R23 | cells inspect fails in table mode
 C-R23 | cells inspect succeeds in JSON mode
 C-R23 | cells inspect succeeds in table mode
-C-R23 | doctor fails in table mode
-C-R23 | doctor succeeds in JSON mode
-C-R23 | doctor succeeds in table mode
 C-R23 | pdf inspect fails in table mode
 C-R23 | pdf inspect succeeds in JSON mode
 C-R23 | pdf inspect succeeds in table mode
@@ -3241,8 +3223,6 @@ C-R23 | words inspect succeeds in JSON mode
 C-R23 | words inspect succeeds in table mode
 C-R24 | cells exit codes follow their category
 C-R24 | common exit codes follow their category
-C-R24 | doctor with a missing license file
-C-R24 | fonts check of a document whose font is missing
 C-R24 | input file errors exit 3
 C-R24 | internal errors exit 1
 C-R24 | license errors exit 7
@@ -3605,8 +3585,6 @@ C-R31 | v2/common/capabilities-summary fields
 C-R31 | v2/common/capabilities-summary outputs
 C-R31 | v2/common/diagnostic-details fields
 C-R31 | v2/common/diagnostic-details outputs
-C-R31 | v2/common/doctor fields
-C-R31 | v2/common/doctor outputs
 C-R31 | v2/common/dry-run-result fields
 C-R31 | v2/common/dry-run-result outputs
 C-R31 | v2/common/error fields
@@ -3615,8 +3593,6 @@ C-R31 | v2/common/error-payload fields
 C-R31 | v2/common/error-payload outputs
 C-R31 | v2/common/file-fingerprint fields
 C-R31 | v2/common/file-fingerprint outputs
-C-R31 | v2/common/font-check fields
-C-R31 | v2/common/font-check outputs
 C-R31 | v2/common/font-list fields
 C-R31 | v2/common/font-list outputs
 C-R31 | v2/common/input fields
@@ -3933,9 +3909,6 @@ C-R33 | v2/common/capabilities-summary none
 C-R33 | v2/common/diagnostic-details envelope
 C-R33 | v2/common/diagnostic-details names
 C-R33 | v2/common/diagnostic-details none
-C-R33 | v2/common/doctor envelope
-C-R33 | v2/common/doctor names
-C-R33 | v2/common/doctor none
 C-R33 | v2/common/dry-run-result envelope
 C-R33 | v2/common/dry-run-result names
 C-R33 | v2/common/dry-run-result none
@@ -3948,9 +3921,6 @@ C-R33 | v2/common/error-payload none
 C-R33 | v2/common/file-fingerprint envelope
 C-R33 | v2/common/file-fingerprint names
 C-R33 | v2/common/file-fingerprint none
-C-R33 | v2/common/font-check envelope
-C-R33 | v2/common/font-check names
-C-R33 | v2/common/font-check none
 C-R33 | v2/common/font-list envelope
 C-R33 | v2/common/font-list names
 C-R33 | v2/common/font-list none
@@ -4354,14 +4324,11 @@ C-R34 | cells read
 C-R34 | cells render
 C-R34 | cells search
 C-R34 | docs
-C-R34 | doctor
-C-R34 | fonts check
 C-R34 | fonts list
 C-R34 | global options folded
 C-R34 | license install
 C-R34 | license remove
 C-R34 | license status
-C-R34 | mcp serve
 C-R34 | pdf convert
 C-R34 | pdf create
 C-R34 | pdf edit
@@ -4411,16 +4378,12 @@ C-R35 | cells read --help
 C-R35 | cells render --help
 C-R35 | cells search --help
 C-R35 | docs --help
-C-R35 | doctor --help
 C-R35 | fonts --help
-C-R35 | fonts check --help
 C-R35 | fonts list --help
 C-R35 | license --help
 C-R35 | license install --help
 C-R35 | license remove --help
 C-R35 | license status --help
-C-R35 | mcp --help
-C-R35 | mcp serve --help
 C-R35 | pdf --help
 C-R35 | pdf convert --help
 C-R35 | pdf create --help
@@ -4472,8 +4435,6 @@ C-R36 | words formats
 C-R36 | words render --to
 C-R37 | cells inspect --quiet and --verbose in json mode
 C-R37 | cells inspect --quiet and --verbose in table mode
-C-R37 | doctor --quiet and --verbose in json mode
-C-R37 | doctor --quiet and --verbose in table mode
 C-R37 | pdf inspect --quiet and --verbose in json mode
 C-R37 | pdf inspect --quiet and --verbose in table mode
 C-R37 | slides inspect --quiet and --verbose in json mode
@@ -4711,7 +4672,6 @@ corrupt-input | cells inspect
 corrupt-input | cells read
 corrupt-input | cells render
 corrupt-input | cells search
-corrupt-input | fonts check
 corrupt-input | pdf convert
 corrupt-input | pdf edit
 corrupt-input | pdf extract
@@ -4819,7 +4779,6 @@ executable-hint | cells render --password-env --to jpeg
 executable-hint | cells render --password-env --to png
 executable-hint | cells render --password-env --to svg
 executable-hint | cells search --password-env
-executable-hint | fonts check --password-env
 executable-hint | pdf convert --password-env --to docx
 executable-hint | pdf convert --password-env --to epub
 executable-hint | pdf convert --password-env --to html
@@ -4968,7 +4927,6 @@ missing-input | cells inspect
 missing-input | cells read
 missing-input | cells render
 missing-input | cells search
-missing-input | fonts check
 missing-input | pdf convert
 missing-input | pdf edit
 missing-input | pdf extract
@@ -5146,7 +5104,6 @@ read-only | cells inspect --detail tables
 read-only | cells inspect --detail validation
 read-only | cells read
 read-only | cells search
-read-only | fonts check
 read-only | pdf inspect
 read-only | pdf inspect --detail attachments
 read-only | pdf inspect --detail fonts
@@ -5293,12 +5250,6 @@ secret-hidden | cells search --password-env
 secret-hidden | cells search --password-env with a wrong password
 secret-hidden | cells search --password-stdin
 secret-hidden | cells search --password-stdin with a wrong password
-secret-hidden | fonts check --password
-secret-hidden | fonts check --password with a wrong password
-secret-hidden | fonts check --password-env
-secret-hidden | fonts check --password-env with a wrong password
-secret-hidden | fonts check --password-stdin
-secret-hidden | fonts check --password-stdin with a wrong password
 secret-hidden | pdf convert --password
 secret-hidden | pdf convert --password with a wrong password
 secret-hidden | pdf convert --password-env
@@ -5509,16 +5460,12 @@ unknown-command | cells read as readd
 unknown-command | cells render as rneder
 unknown-command | cells search as saerch
 unknown-command | docs as docss
-unknown-command | doctor as dcotor
 unknown-command | fonts as fontss
-unknown-command | fonts check as checkk
 unknown-command | fonts list as listt
 unknown-command | license as lciense
 unknown-command | license install as isntall
 unknown-command | license remove as rmeove
 unknown-command | license status as sattus
-unknown-command | mcp as mcpp
-unknown-command | mcp serve as servee
 unknown-command | pdf as pdff
 unknown-command | pdf convert as cnovert
 unknown-command | pdf create as cerate
@@ -5965,10 +5912,6 @@ unknown-option | cells search --pattern as --ptatern
 unknown-option | cells search --regex as --regexx
 unknown-option | cells search --sheet as --sheett
 unknown-option | cells search --skip as --skipp
-unknown-option | fonts check --font-dir as --fnot-dir
-unknown-option | fonts check --password as --psasword
-unknown-option | fonts check --password-env as --psasword-env
-unknown-option | fonts check --password-stdin as --psasword-stdin
 unknown-option | fonts list --product as --porduct
 unknown-option | license install --dry-run as --dyr-run
 unknown-option | license install --product as --porduct

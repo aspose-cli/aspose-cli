@@ -1,5 +1,5 @@
 {
-  "name": "an output may use the common alternative extension its format declares, and a .txt input still routes to words",
+  "name": "an output may use the common alternative extension its format declares",
   "files": {
     "book.xlsx": { "fixture": "cells.xlsx" },
     "doc.docx": { "fixture": "words.docx" },
@@ -31,14 +31,6 @@
         "json": [{ "path": "outputs[0].format", "equals": "md" }],
         "files": { "present": ["notes.markdown"], "unchanged": ["doc.docx"] },
         "reopens": ["notes.markdown"]
-      }
-    },
-    {
-      "args": ["fonts", "check", "notes.txt"],
-      "expect": {
-        "exitCode": 0,
-        "json": [{ "path": "input.format", "equals": "txt" }],
-        "files": { "unchanged": ["notes.txt"] }
       }
     }
   ]

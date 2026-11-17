@@ -9,36 +9,6 @@ namespace Aspose.Cli.Product.Pdf.Tests;
 [Collection(ProcessFontSourcesCollection.Name)]
 public sealed class PdfFontDirectoryTests
 {
-    [Fact]
-    public void UseFonts_AddsTheDirectoryOnlyForTheScope()
-    {
-        using var fixture = new PdfEngineFixture();
-        string fonts = fixture.File("fonts");
-        string font = FontFixtures.WriteUniqueFont(fonts);
-        string input = CreateDocument(fixture, fixture.File("fixture.pdf"), font);
-        Func<string, bool> isFixture = static name => name.StartsWith("AsposeCLIFixtureSans", StringComparison.Ordinal);
-        var environment = new PdfFontEnvironment(fixture.Outputs(ProductTestBudgets.Start<PdfModule>().Writer), ProductTestBudgets.Create<PdfModule>());
-
-        Assert.False(FontFixtures.Available(environment, input, isFixture));
-        using (environment.UseFonts(FontSearchProfile.Explicit([fonts])))
-        {
-            Assert.True(FontFixtures.Available(environment, input, isFixture));
-        }
-        Assert.False(FontFixtures.Available(environment, input, isFixture));
-    }
-
-    [Category(TestCategory.Slow)]
-    [Fact]
-    public void Cli_FontsCheckUsesTheFontDirectory()
-    {
-        using var fixture = new PdfEngineFixture();
-        using var workspace = new TempWorkspace();
-        using var source = new TempDirectory();
-        CreateDocument(fixture, workspace.File("fixture.pdf"), FontFixtures.WriteUniqueFont(source.Path));
-
-        FontDirectoryContract.Verify(workspace, "fixture.pdf");
-    }
-
     [Category(TestCategory.Slow)]
     [Fact]
     public void Cli_ConvertAndEditResolveTheFontDirectoryFont()

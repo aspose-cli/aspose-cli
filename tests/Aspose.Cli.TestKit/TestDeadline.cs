@@ -11,8 +11,8 @@ namespace Aspose.Cli.TestKit;
 public static class TestDeadline
 {
     /// <summary>
-    /// The timeout a test gives a command run under the timeout supervisor (<c>--timeout</c>, or
-    /// the MCP <c>timeoutSeconds</c>): far above any loaded run, and below the 120-second bound of
+    /// The timeout a test gives a command run under the timeout supervisor (<c>--timeout</c>):
+    /// far above any loaded run, and below the 120-second bound of
     /// <see cref="CliProcess"/>, so a hang still ends as the CLI's own timeout error.
     /// </summary>
     public const int CliTimeoutSeconds = 100;

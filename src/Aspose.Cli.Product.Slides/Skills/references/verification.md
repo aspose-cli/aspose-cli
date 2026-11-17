@@ -69,7 +69,7 @@ footer and slide-number placement, and hidden slides.
 ## Fonts
 
 Saving shrinks text that auto-fits its shape using the fonts' metrics, so pass the same
-`--font-dir` to `slides create`, `edit`, `convert` and `render` as to `fonts check`.
+`--font-dir` to `slides create`, `edit`, `convert` and `render`.
 
 ## Existing chart fidelity
 

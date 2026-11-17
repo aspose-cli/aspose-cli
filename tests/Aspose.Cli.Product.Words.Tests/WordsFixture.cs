@@ -27,7 +27,7 @@ public sealed class WordsFixture : IDisposable
 
     internal WordsFontEnvironment Fonts =>
         ProductTestBudgets.StartEngine<WordsModule, WordsFontEnvironment>(
-            (budgets, writer) => new WordsFontEnvironment(Outputs(writer), budgets));
+            (_, _) => new WordsFontEnvironment());
 
     /// <summary>The write pipeline of one invocation, as the product binding creates it.</summary>
     internal OutputPipeline<Document> Outputs(SafeFileWriter writer) => new(Gate, new WordsEvaluationProfile(), writer);

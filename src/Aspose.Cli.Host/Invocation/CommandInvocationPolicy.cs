@@ -4,34 +4,16 @@ using System.Runtime.CompilerServices;
 namespace Aspose.Cli.Host.Invocation;
 
 /// <summary>Host-owned execution policy attached where a command tree is assembled.</summary>
-internal enum CommandExecutionOwnership { Worker, Service, ParentHandoff }
-
 /// <param name="ProductId">The product whose document commands the command belongs to.</param>
-/// <param name="Execution">Who owns the process that runs the command.</param>
-/// <param name="McpAllowed">
-/// Whether MCP <c>execute</c> may run this host command. Every product command
-/// is available through MCP; of the host commands, only those that change no
-/// user or service state beyond publishing new outputs are, as
-/// <see cref="InvocationParser.McpHostCommands"/> lists them. <c>capabilities</c> has its own MCP tool.
-/// </param>
 /// <param name="OutputBytesLimit">A command-specific output byte limit.</param>
 /// <param name="RefusesEvaluationRequest">
 /// Whether the command refuses <c>--license-mode evaluation</c> because its effect outlives the
-/// command, such as the installed licenses or the shared App. The refusal comes before any input
-/// is read.
-/// </param>
-/// <param name="ReachesNetwork">
-/// Whether the host command itself requests web addresses, such as the release feed, and so is
-/// admitted to the <see cref="Aspose.Cli.Sdk.IO.Input.NetworkGate"/> with web access. Every other
-/// command reaches the network only through a declared <see cref="Aspose.Cli.Sdk.Extensibility.Commanding.NetworkOptIn"/>.
+/// command, such as the installed licenses. The refusal comes before any input is read.
 /// </param>
 internal sealed record CommandInvocationPolicy(
     string? ProductId = null,
-    CommandExecutionOwnership Execution = CommandExecutionOwnership.Worker,
-    bool McpAllowed = false,
     long? OutputBytesLimit = null,
-    bool RefusesEvaluationRequest = false,
-    bool ReachesNetwork = false);
+    bool RefusesEvaluationRequest = false);
 
 internal static class CommandInvocationPolicies
 {

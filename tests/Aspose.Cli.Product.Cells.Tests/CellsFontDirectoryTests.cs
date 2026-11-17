@@ -8,34 +8,6 @@ namespace Aspose.Cli.Product.Cells.Tests;
 [Collection(ProcessFontSourcesCollection.Name)]
 public sealed class CellsFontDirectoryTests
 {
-    [Fact]
-    public void UseFonts_AddsTheDirectoryOnlyForTheScope()
-    {
-        using var fixture = new CellsFixture();
-        string fonts = fixture.Temp.File("fonts");
-        FontFixtures.WriteUniqueFont(fonts);
-        string input = CreateWorkbook(fixture, fixture.Temp.File("fixture.xlsx"));
-        IFontEnvironment environment = fixture.Fonts;
-
-        Assert.False(FontFixtures.Available(environment, input));
-        using (environment.UseFonts(FontSearchProfile.Explicit([fonts])))
-        {
-            Assert.True(FontFixtures.Available(environment, input));
-        }
-        Assert.False(FontFixtures.Available(environment, input));
-    }
-
-    [Category(TestCategory.Slow)]
-    [Fact]
-    public void Cli_FontsCheckUsesTheFontDirectory()
-    {
-        using var fixture = new CellsFixture();
-        using var workspace = new TempWorkspace();
-        CreateWorkbook(fixture, workspace.File("fixture.xlsx"));
-
-        FontDirectoryContract.Verify(workspace, "fixture.xlsx");
-    }
-
     [Category(TestCategory.Slow)]
     [Fact]
     public void Cli_ConvertLaysOutWithTheFontDirectory()

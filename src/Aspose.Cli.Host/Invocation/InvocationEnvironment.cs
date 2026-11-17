@@ -5,7 +5,7 @@ using Aspose.Cli.Sdk.Licensing;
 
 namespace Aspose.Cli.Host.Invocation;
 
-/// <summary>Explicit child-process environment policy shared by MCP and supervised commands.</summary>
+/// <summary>Explicit child-process environment policy of supervised commands.</summary>
 internal static class InvocationEnvironment
 {
     private static readonly string[] Baseline =

@@ -1,7 +1,7 @@
 # License ownership
 
-`LicenseManager` is the management entry point for the `license` and `doctor`
-commands and the startup notice. It selects catalog products, reports each product
+`LicenseManager` is the management entry point for the `license` commands and the
+startup notice. It selects catalog products, reports each product
 independently, and coordinates validated installation/removal through the SDK
 storage module.
 
@@ -20,8 +20,8 @@ lifetime, identity and atomic storage. Each product Engine retains only its own
 - Installation/removal results come from explicit validated configuration changes. Only
   the supervisor publishes worker outputs; ordinary file reads always address physical files.
   Existing license targets must be regular files reached without links or reparse points.
-- Human startup messages are emitted once at the outer CLI boundary. JSON, MCP,
-  verbose JSONL and internal protocols remain parseable.
+- Human startup messages are emitted once at the outer CLI boundary. JSON, verbose JSONL
+  and internal protocols remain parseable.
 
 The public status contract is `LicenseStatusResult.Products`; `Identity` is an opaque
 key for a fully validated snapshot, not a substitute for SDK validation.

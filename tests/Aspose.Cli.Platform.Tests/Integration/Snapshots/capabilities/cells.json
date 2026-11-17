@@ -140,7 +140,6 @@
           "convert"
         ],
         "operations": [
-          "fonts",
           "open"
         ],
         "declaredOwnership": "default",
@@ -235,7 +234,6 @@
           "convert"
         ],
         "operations": [
-          "fonts",
           "open"
         ],
         "declaredOwnership": "default",
@@ -300,7 +298,6 @@
           "convert"
         ],
         "operations": [
-          "fonts",
           "open"
         ],
         "declaredOwnership": "default",
@@ -321,7 +318,6 @@
           "convert"
         ],
         "operations": [
-          "fonts",
           "open"
         ],
         "declaredOwnership": "default",
@@ -342,7 +338,6 @@
           "convert"
         ],
         "operations": [
-          "fonts",
           "open"
         ],
         "declaredOwnership": "default",
@@ -363,7 +358,6 @@
           "convert"
         ],
         "operations": [
-          "fonts",
           "open"
         ],
         "declaredOwnership": "default",
@@ -384,7 +378,6 @@
           "convert"
         ],
         "operations": [
-          "fonts",
           "open"
         ],
         "declaredOwnership": "default",
@@ -405,7 +398,6 @@
           "convert"
         ],
         "operations": [
-          "fonts",
           "open"
         ],
         "declaredOwnership": "default",
@@ -426,7 +418,6 @@
           "convert"
         ],
         "operations": [
-          "fonts",
           "open"
         ],
         "declaredOwnership": "default",
@@ -2098,7 +2089,6 @@
       "extension": ".csv",
       "product": "cells",
       "operations": [
-        "fonts",
         "open"
       ],
       "requiresContentProbe": true,
@@ -2109,7 +2099,6 @@
       "extension": ".ods",
       "product": "cells",
       "operations": [
-        "fonts",
         "open"
       ],
       "requiresContentProbe": true,
@@ -2120,7 +2109,6 @@
       "extension": ".tsv",
       "product": "cells",
       "operations": [
-        "fonts",
         "open"
       ],
       "requiresContentProbe": true,
@@ -2131,7 +2119,6 @@
       "extension": ".xls",
       "product": "cells",
       "operations": [
-        "fonts",
         "open"
       ],
       "requiresContentProbe": true,
@@ -2142,7 +2129,6 @@
       "extension": ".xlsb",
       "product": "cells",
       "operations": [
-        "fonts",
         "open"
       ],
       "requiresContentProbe": true,
@@ -2153,7 +2139,6 @@
       "extension": ".xlsm",
       "product": "cells",
       "operations": [
-        "fonts",
         "open"
       ],
       "requiresContentProbe": true,
@@ -2164,7 +2149,6 @@
       "extension": ".xlsx",
       "product": "cells",
       "operations": [
-        "fonts",
         "open"
       ],
       "requiresContentProbe": true,
@@ -2175,7 +2159,6 @@
       "extension": ".xltm",
       "product": "cells",
       "operations": [
-        "fonts",
         "open"
       ],
       "requiresContentProbe": true,
@@ -2186,7 +2169,6 @@
       "extension": ".xltx",
       "product": "cells",
       "operations": [
-        "fonts",
         "open"
       ],
       "requiresContentProbe": true,

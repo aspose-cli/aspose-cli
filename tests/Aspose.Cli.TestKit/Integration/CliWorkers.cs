@@ -135,10 +135,10 @@ public static class CliWorkers
             : "evaluation";
     }
 
-    /// <summary>The first words of the command lines that run as child processes: license state and MCP.</summary>
+    /// <summary>The first words of the command lines that run as child processes: license state.</summary>
     private static readonly HashSet<string> ChildCommands = new(StringComparer.Ordinal)
     {
-        "license", "mcp",
+        "license",
     };
 
     /// <summary>

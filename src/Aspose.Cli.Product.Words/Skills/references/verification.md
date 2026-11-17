@@ -1,6 +1,6 @@
 # Verification
 
-The delivery checklist and font checks are in
+The delivery checklist and fonts are in
 `aspose-cli docs verification`. This page covers what Words adds.
 
 ## Semantic verification

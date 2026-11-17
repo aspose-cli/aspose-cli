@@ -24,12 +24,10 @@ Commands:
   words                             Word-processing document automation with layout fidelity.
   license                           Inspect and manage the Aspose license used by the CLI.
   capabilities <product> <command>  Describe everything this build supports (products, verbs, formats), as data.
-  doctor                            Diagnose the environment: runtime, native libraries, resource budgets and output writability.
   skill                             List or install Agent Skills bundled with this binary.
   schema <id>                       List schema ids as an envelope, or print one raw JSON Schema document when an id is supplied.
   docs <topic>                      Print an offline reference document bundled with this binary.
   fonts                             Diagnose the font environment used for rendering.
-  mcp                               Expose this CLI to a local MCP client over stdio.
 
 Examples:
   aspose-cli capabilities cells edit --output-format json
@@ -89,24 +87,6 @@ Learn more:
   aspose-cli docs  offline documentation bundled in this binary
 
 
-## aspose-cli doctor --help
-Description:
-  Diagnose the environment: runtime, native libraries, resource budgets and output writability.
-
-Usage:
-  aspose-cli doctor
-
-Global options:
-  -h/--help, --output-format, -q/--quiet, -v/--verbose, --license, --license-mode, --workdir, --timeout, --max-input-bytes (see aspose-cli --help)
-
-Examples:
-  aspose-cli doctor
-  aspose-cli doctor --output-format json
-
-Learn more:
-  aspose-cli docs troubleshooting  recovering from errors and environment problems
-
-
 ## aspose-cli fonts --help
 Description:
   Diagnose the font environment used for rendering.
@@ -115,8 +95,7 @@ Usage:
   aspose-cli fonts [command]
 
 Commands:
-  list          List each engine's font sources and its default fallback font.
-  check <file>  Check whether a document's fonts are available here, and what they substitute to.
+  list  List each engine's font sources and its default fallback font.
 
 Global options:
   -h/--help, --output-format, -q/--quiet, -v/--verbose, --license, --license-mode, --workdir, --timeout, --max-input-bytes (see aspose-cli --help)
@@ -125,34 +104,7 @@ Examples:
   aspose-cli fonts list --output-format json
 
 Learn more:
-  aspose-cli docs verification  the delivery checklist and font checks
-
-
-## aspose-cli fonts check --help
-Description:
-  Check whether a document's fonts are available here, and what they substitute to.
-
-Usage:
-  aspose-cli fonts check <file> [options]
-
-Arguments:
-  <file>  Supported document whose fonts to check.
-
-Options:
-  --password <password>          Password for the document. Discouraged: visible in the process list; prefer --password-env.
-  --password-env <password-env>  Name of an environment variable holding the password for the document.
-  --password-stdin               Read the password for the document from the first line of stdin.
-  --font-dir <font-dir>          Local font directory searched in addition to the system fonts; repeat for more.
-
-Global options:
-  -h/--help, --output-format, -q/--quiet, -v/--verbose, --license, --license-mode, --workdir, --timeout, --max-input-bytes (see aspose-cli --help)
-
-Examples:
-  aspose-cli fonts check report.docx
-  aspose-cli fonts check report.docx --font-dir fonts --output-format json
-
-Learn more:
-  aspose-cli docs verification  the delivery checklist and font checks
+  aspose-cli docs verification  the delivery checklist and fonts
 
 
 ## aspose-cli fonts list --help
@@ -173,7 +125,7 @@ Examples:
   aspose-cli fonts list --output-format json
 
 Learn more:
-  aspose-cli docs verification  the delivery checklist and font checks
+  aspose-cli docs verification  the delivery checklist and fonts
 
 
 ## aspose-cli license --help
@@ -265,38 +217,6 @@ Examples:
 
 Learn more:
   aspose-cli docs licensing  license sources, installation and evaluation mode
-
-
-## aspose-cli mcp --help
-Description:
-  Expose this CLI to a local MCP client over stdio.
-
-Usage:
-  aspose-cli mcp [command]
-
-Commands:
-  serve  Run the single-session MCP stdio server.
-
-Global options:
-  -h/--help, --output-format, -q/--quiet, -v/--verbose, --license, --license-mode, --workdir, --timeout, --max-input-bytes (see aspose-cli --help)
-
-
-## aspose-cli mcp serve --help
-Description:
-  Run the single-session MCP stdio server.
-
-Usage:
-  aspose-cli mcp serve
-
-Global options:
-  -h/--help, --output-format, -q/--quiet, -v/--verbose, --license, --license-mode, --workdir, --timeout, --max-input-bytes (see aspose-cli --help)
-
-Examples:
-  aspose-cli mcp serve
-  aspose-cli mcp serve --license-mode evaluation
-
-Learn more:
-  aspose-cli docs  offline documentation bundled in this binary
 
 
 ## aspose-cli schema --help

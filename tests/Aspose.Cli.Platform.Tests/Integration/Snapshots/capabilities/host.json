@@ -1027,118 +1027,6 @@
       "description": "Base schema for product-owned diagnostic details: an object whose members a product may narrow without changing the common envelope.",
       "type": "object"
     },
-    "v2/common/doctor": {
-      "$schema": "https://json-schema.org/draft/2020-12/schema",
-      "$id": "https://schemas.aspose.com/aspose-cli/v2/common/doctor.schema.json",
-      "description": "Result of aspose-cli doctor: environment self-diagnosis so an agent (or a user) can tell whether the CLI is ready — licensed, on a supported runtime, able to write output — before a task fails midway.",
-      "type": "object",
-      "required": [
-        "schema",
-        "schemaVersion",
-        "ok",
-        "checks"
-      ],
-      "additionalProperties": false,
-      "properties": {
-        "schema": {
-          "description": "URI of the JSON schema this result conforms to.",
-          "const": "https://schemas.aspose.com/aspose-cli/v2/common/doctor.schema.json"
-        },
-        "schemaVersion": {
-          "description": "Version of this result contract.",
-          "const": 2
-        },
-        "ok": {
-          "description": "true when no check failed; warnings still allow readiness.",
-          "type": "boolean"
-        },
-        "checks": {
-          "description": "The diagnostic checks, in run order.",
-          "type": "array",
-          "items": {
-            "$ref": "#/$defs/doctorCheck"
-          }
-        },
-        "products": {
-          "description": "License readiness for each compiled product.",
-          "type": "array",
-          "items": {
-            "$ref": "#/$defs/doctorProductStatus"
-          }
-        },
-        "warnings": {
-          "description": "Warnings the agent is expected to act on (for example EVALUATION_MODE: tell the user about the evaluation watermark). Omitted when empty.",
-          "type": "array",
-          "items": {
-            "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/warning.schema.json"
-          }
-        }
-      },
-      "$defs": {
-        "doctorCheck": {
-          "description": "Outcome of one diagnostic check.",
-          "type": "object",
-          "required": [
-            "name",
-            "status",
-            "detail"
-          ],
-          "additionalProperties": false,
-          "properties": {
-            "name": {
-              "description": "Short stable identifier, e.g. license or runtime.",
-              "type": "string"
-            },
-            "status": {
-              "description": "Whether the check passed (ok), found a non-fatal concern (warn) or a blocking problem (fail).",
-              "type": "string",
-              "enum": [
-                "ok",
-                "warn",
-                "fail"
-              ]
-            },
-            "detail": {
-              "description": "What was found.",
-              "type": "string"
-            },
-            "hint": {
-              "description": "How to improve a warn/fail result; omitted when ok.",
-              "type": "string"
-            }
-          }
-        },
-        "doctorProductStatus": {
-          "description": "Readiness of one compiled-in product.",
-          "type": "object",
-          "required": [
-            "product",
-            "licenseMode",
-            "engine"
-          ],
-          "additionalProperties": false,
-          "properties": {
-            "product": {
-              "description": "Product id, e.g. cells.",
-              "type": "string"
-            },
-            "licenseMode": {
-              "description": "The license mode the product runs under.",
-              "type": "string",
-              "enum": [
-                "evaluation",
-                "licensed",
-                "invalid"
-              ]
-            },
-            "engine": {
-              "description": "Engine id the product runs.",
-              "type": "string"
-            }
-          }
-        }
-      }
-    },
     "v2/common/dry-run-result": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
       "$id": "https://schemas.aspose.com/aspose-cli/v2/common/dry-run-result.schema.json",
@@ -1571,81 +1459,6 @@
           "description": "Lower-case SHA-256 digest of the complete file.",
           "type": "string",
           "pattern": "^[0-9a-f]{64}$"
-        }
-      }
-    },
-    "v2/common/font-check": {
-      "$schema": "https://json-schema.org/draft/2020-12/schema",
-      "$id": "https://schemas.aspose.com/aspose-cli/v2/common/font-check.schema.json",
-      "description": "Result of aspose-cli fonts check <file>: whether the fonts a document uses are available on this machine and, if not, what they will be substituted with. This is the rendering-fidelity diagnostic that a product listing of the used fonts cannot give. A document with a font that is not available here exits 8.",
-      "type": "object",
-      "required": [
-        "schema",
-        "schemaVersion",
-        "input",
-        "allAvailable",
-        "fonts"
-      ],
-      "additionalProperties": false,
-      "properties": {
-        "schema": {
-          "description": "URI of the JSON schema this result conforms to.",
-          "const": "https://schemas.aspose.com/aspose-cli/v2/common/font-check.schema.json"
-        },
-        "schemaVersion": {
-          "description": "Version of this result contract.",
-          "const": 2
-        },
-        "input": {
-          "description": "The document that was checked.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/input.schema.json"
-        },
-        "allAvailable": {
-          "description": "true when every used font is available — no substitution.",
-          "type": "boolean"
-        },
-        "fonts": {
-          "description": "Each font the document uses, with its availability.",
-          "type": "array",
-          "items": {
-            "$ref": "#/$defs/fontAvailability"
-          }
-        },
-        "license": {
-          "description": "License mode the engine ran under; omitted when it ran licensed.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/license.schema.json"
-        },
-        "warnings": {
-          "description": "Warnings the agent is expected to act on (for example EVALUATION_MODE: tell the user about the evaluation watermark). Omitted when empty.",
-          "type": "array",
-          "items": {
-            "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/warning.schema.json"
-          }
-        }
-      },
-      "$defs": {
-        "fontAvailability": {
-          "description": "Availability of one font a document uses.",
-          "type": "object",
-          "required": [
-            "name",
-            "available"
-          ],
-          "additionalProperties": false,
-          "properties": {
-            "name": {
-              "description": "The font family name as stored in the document.",
-              "type": "string"
-            },
-            "available": {
-              "description": "Whether the engine can render with this exact font.",
-              "type": "boolean"
-            },
-            "substitutedBy": {
-              "description": "The font used instead; omitted when the font is available.",
-              "type": "string"
-            }
-          }
         }
       }
     },
@@ -2761,106 +2574,12 @@
       ]
     },
     {
-      "path": "aspose-cli doctor",
-      "name": "doctor",
-      "aliases": [],
-      "description": "Diagnose the environment: runtime, native libraries, resource budgets and output writability.",
-      "options": [],
-      "arguments": []
-    },
-    {
       "path": "aspose-cli fonts",
       "name": "fonts",
       "aliases": [],
       "description": "Diagnose the font environment used for rendering.",
       "options": [],
       "arguments": []
-    },
-    {
-      "path": "aspose-cli fonts check",
-      "name": "check",
-      "aliases": [],
-      "description": "Check whether a document's fonts are available here, and what they substitute to.",
-      "options": [
-        {
-          "name": "--font-dir",
-          "aliases": [],
-          "type": "string[]",
-          "minimumArity": 1,
-          "maximumArity": 16,
-          "required": false,
-          "recursive": false,
-          "hidden": false,
-          "hasDefault": false,
-          "allowedValues": [],
-          "secret": false,
-          "valueSource": "command-line",
-          "description": "Local font directory searched in addition to the system fonts; repeat for more."
-        },
-        {
-          "name": "--password",
-          "aliases": [],
-          "type": "string",
-          "minimumArity": 1,
-          "maximumArity": 1,
-          "required": false,
-          "recursive": false,
-          "hidden": false,
-          "hasDefault": false,
-          "allowedValues": [],
-          "secret": true,
-          "valueSource": "command-line",
-          "description": "Password for the document. Discouraged: visible in the process list; prefer --password-env."
-        },
-        {
-          "name": "--password-env",
-          "aliases": [],
-          "type": "string",
-          "minimumArity": 1,
-          "maximumArity": 1,
-          "required": false,
-          "recursive": false,
-          "hidden": false,
-          "hasDefault": false,
-          "allowedValues": [],
-          "secret": true,
-          "valueSource": "environment-variable-name",
-          "description": "Name of an environment variable holding the password for the document."
-        },
-        {
-          "name": "--password-stdin",
-          "aliases": [],
-          "type": "boolean",
-          "minimumArity": 0,
-          "maximumArity": 1,
-          "required": false,
-          "recursive": false,
-          "hidden": false,
-          "hasDefault": true,
-          "allowedValues": [
-            "false",
-            "true"
-          ],
-          "secret": true,
-          "valueSource": "stdin",
-          "description": "Read the password for the document from the first line of stdin."
-        }
-      ],
-      "arguments": [
-        {
-          "name": "file",
-          "type": "string",
-          "inputKind": "file",
-          "valueSource": "command-line",
-          "secret": false,
-          "minimumArity": 1,
-          "maximumArity": 1,
-          "required": true,
-          "hasDefault": false,
-          "allowedValues": [],
-          "description": "Supported document whose fonts to check."
-        }
-      ]
     },
     {
       "path": "aspose-cli fonts list",
@@ -3035,22 +2754,6 @@
           "description": "Inspect only this product."
         }
       ],
-      "arguments": []
-    },
-    {
-      "path": "aspose-cli mcp",
-      "name": "mcp",
-      "aliases": [],
-      "description": "Expose this CLI to a local MCP client over stdio.",
-      "options": [],
-      "arguments": []
-    },
-    {
-      "path": "aspose-cli mcp serve",
-      "name": "serve",
-      "aliases": [],
-      "description": "Run the single-session MCP stdio server.",
-      "options": [],
       "arguments": []
     },
     {

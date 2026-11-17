@@ -4,7 +4,7 @@ using Aspose.Words;
 namespace Aspose.Cli.Product.Words.Engine.Mapping;
 
 /// <summary>
-/// The fonts a document's text is drawn with, for inspection and font checks alike. The font
+/// The fonts a document's text is drawn with, for inspection. The font
 /// table is not the answer: it lists whatever fonts the producing application recorded, which
 /// need not be the ones the text uses.
 /// </summary>

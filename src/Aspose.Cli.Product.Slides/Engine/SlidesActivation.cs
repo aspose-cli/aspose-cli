@@ -14,7 +14,7 @@ internal static class SlidesActivation
             ApplyLicense,
             new SlidesEvaluationProfile(),
             outputs => Session(outputs, context.ResourceBudgets),
-            outputs => new SlidesFontEnvironment(outputs, context.ResourceBudgets));
+            _ => new SlidesFontEnvironment());
 
     /// <summary>The session of one invocation's write pipeline and budgets.</summary>
     internal static SlidesSession Session(OutputPipeline<Aspose.Slides.Presentation> outputs, ResourceBudgetLedger budgets) =>

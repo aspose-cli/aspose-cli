@@ -1,6 +1,5 @@
 using System.CommandLine;
 using Aspose.Cli.Host.Invocation;
-using Aspose.Cli.Host.Mcp;
 
 namespace Aspose.Cli.Host.Commands;
 
@@ -49,15 +48,10 @@ internal static class RootCommandFactory
             executor,
             globals,
             capabilitySnapshot));
-        root.Subcommands.Add(DoctorCommand.Create(executor, catalog, globals)
-            .WithInvocationPolicy(new CommandInvocationPolicy(McpAllowed: true)));
         root.Subcommands.Add(SkillCommandGroup.Create(executor, host.Skills, globals));
-        root.Subcommands.Add(SchemaCommand.Create(executor, host.Schemas, globals)
-            .WithInvocationPolicy(new CommandInvocationPolicy(McpAllowed: true)));
-        root.Subcommands.Add(DocsCommand.Create(executor, host.Docs, globals)
-            .WithInvocationPolicy(new CommandInvocationPolicy(McpAllowed: true)));
+        root.Subcommands.Add(SchemaCommand.Create(executor, host.Schemas, globals));
+        root.Subcommands.Add(DocsCommand.Create(executor, host.Docs, globals));
         root.Subcommands.Add(FontsCommandGroup.Create(executor, catalog, globals));
-        root.Subcommands.Add(McpCommand.Create(host, globals));
 
         root.ValidateParameters();
         HostHelpMetadata.Attach(root, catalog);

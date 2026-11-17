@@ -13,7 +13,6 @@ namespace Aspose.Cli.Host.Contracts;
     WriteIndented = true)]
 [JsonSerializable(typeof(CapabilitiesSummaryResult))]
 [JsonSerializable(typeof(LicenseStatusResult))]
-[JsonSerializable(typeof(DoctorResult))]
 [JsonSerializable(typeof(SchemaListResult))]
 [JsonSerializable(typeof(SkillInstallResult))]
 [JsonSerializable(typeof(SkillListResult))]

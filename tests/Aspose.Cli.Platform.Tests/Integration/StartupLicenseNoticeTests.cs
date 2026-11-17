@@ -156,18 +156,6 @@ public sealed class StartupLicenseNoticeTests
         Assert.DoesNotContain("license:", result.StdOut);
     }
 
-    [Theory]
-    [InlineData("mcp", "serve")]
-    public void InternalAndProtocolEntrypoints_DoNotAddStartupNoise(params string[] entrypoint)
-    {
-        using var workspace = new TempWorkspace();
-        CliResult result = workspace.Run([.. entrypoint, "--help", "--output-format", "table"]);
-
-        Assert.Equal(0, result.ExitCode);
-        Assert.Empty(result.StdErr);
-        Assert.DoesNotContain("license:", result.StdOut);
-    }
-
     private static void AssertAllEvaluation(string stderr)
     {
         string notice = Assert.Single(Lines(stderr));

@@ -17,13 +17,10 @@ Run these once per session:
 
 ```powershell
 aspose-cli --version --output-format json
-aspose-cli doctor --output-format json
 aspose-cli license status --output-format json
 aspose-cli capabilities --summary --output-format json
 ```
 
-- `doctor` checks the runtime, budgets, licenses and output folder; `ok`
-  false means a check failed, and the command then exits 8.
 - `license status` says which products run licensed and which in evaluation
   mode (`aspose-cli docs licensing`).
 - `capabilities --summary` lists each product's commands, formats and
@@ -40,7 +37,6 @@ aspose-cli capabilities --summary --output-format json
 | Word processing: DOCX, DOC, RTF, ODT, Markdown, HTML | `aspose-cli-words` | `aspose-cli docs words/overview` |
 
 Read the product overview before the first command on that document type.
-`fonts check` chooses the product from the file's content.
 
 ## How to work
 
