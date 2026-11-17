@@ -73,10 +73,10 @@ minimal SDK-only case.
 ## Version 2.0 is in progress
 
 `master` still holds what this direction removes, each part until the change that deletes it:
-the local App, Preview and viewer services, `review`, `update`, `mcp` and `doctor`; hints and
-continuation commands; wrong-name recovery; `--verify`, `--dry-run`, `--best-effort`,
+hints and continuation commands; wrong-name recovery; `--verify`, `--dry-run`, `--best-effort`,
 `--if-match`, `--backup` and `--timeout`; publication recovery; per-operation snapshots,
-verifiers and warnings; operations that choose for the caller; workarounds for engine defects.
+verifiers and warnings; operations that choose for the caller; workarounds for engine defects;
+the installer's `-Mcp` registration.
 Do not extend or repair these parts, except for a wrong result. 2.0 keeps no compatibility with
 1.x: delete cleanly, with no alias, compatibility layer or transitional path.
 
